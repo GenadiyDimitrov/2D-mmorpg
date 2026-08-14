@@ -7,10 +7,51 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.67.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.67.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
+
+## 0.67.1 — 2026-08-14 — a collect step never counted anything
+
+Playtest-23, his first finding: *"the smiths quests (bring common ingots) dont count the ingots as
+items… i kill mobs they drop or i added 200 with admin command - didnt increase the quest count 0/20
+still"*.
+
+**Server-only. Protocol stays 20; no DB reset. The APK does not need rebuilding** — nothing on the
+wire changed, and the label check has not gated login since 0.28.25, so a 0.67.0 client talks to a
+0.67.1 server fine.
+
+### `QuestStepType.CollectItem` was declared, rendered, persisted — and never advanced
+
+The enum member existed. The quest window drew its `0/20`. `CharacterQuestState.Counter` saved and
+loaded it. But **no code anywhere in the server ever incremented it**: there was no item-side hook at
+all, so the counter could only ever be the zero it was created with. A quest that reached such a step
+stalled forever.
+
+This is the *identical* hole `QuestStepType.ReachLevel` sat in until a quest finally used it — a step
+type is not implemented by being in the enum, and the thing that hides it is that no quest exercises
+it until one does. Here five quests did: **all five crafting professions are gated behind a collect
+step**, so `BL-05`'s entire feature — every profession, every recipe, the whole grade ladder — has
+been unreachable by normal play since it shipped in 0.63.0. Only the debug join path worked.
+
+- **`AdvanceCollectQuests` is hung off `SendInventory`**, the one funnel every item gain and loss
+  already pushes through. Same shape as `SupplyStepItems` on `SendQuestLog`: a future source of items
+  (a drop, a craft, a trade, a warehouse withdrawal, `/give`) cannot forget to credit a collect step,
+  because it cannot forget to show the player their own bag. It is also re-checked on **accept** and
+  after a **talk** step, for the case where the master finishes his pitch and you are already carrying
+  the twenty.
+- 🔑 **The counter reads the BAG, not a tally.** Mats leave a bag — sold, salvaged, spent on a craft —
+  as easily as they arrive, so a counter incremented on pickup would drift the first time one is spent
+  and then lie about a step the player can no longer satisfy. `Summarize` and `BuildQuestEntry` both
+  read the live count, so the two windows cannot disagree.
+- 🔑 **Nothing is consumed in the field.** A collect step is a *hold* requirement; the master takes the
+  mats when he hires you, in `CompleteQuestAtNpc`. Items must not evaporate out in a field the instant
+  the 20th one drops. The turn-in re-checks the hold first and puts you back on the collect step if
+  the pile is gone, so selling the ingots on the way in does not buy a free profession.
+
+⚠ Existing characters need no repair: a stalled quest is stored as `StepIndex` on the collect step, and
+the first inventory push after login — login sends one — credits it against what the bag already holds.
 
 ## 0.67.0 — 2026-08-14 — three of the four he ruled on
 

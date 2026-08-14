@@ -10922,9 +10922,22 @@ var effect = def.Effect;
             player.Inventory.Remove(item);
     }
 
-    private void SendInventory(Entity player) =>
+    private void SendInventory(Entity player)
+    {
         SendTo(player, "Inventory", new InventoryUpdate(
             player.Inventory.Select(i => i.ToDto()).ToArray()));
+
+        // A COLLECT step is credited HERE, off the one funnel every item gain and loss already pushes
+        // through — see AdvanceCollectQuests for why. ⚠ Re-entrancy: the advance pushes the quest log,
+        // which supplies step props, which can add an item and push the bag again. The guard makes that
+        // terminate at depth one rather than leaning on the prop grant being idempotent.
+        if (_creditingCollectSteps) return;
+        _creditingCollectSteps = true;
+        try { AdvanceCollectQuests(player); }
+        finally { _creditingCollectSteps = false; }
+    }
+
+    private bool _creditingCollectSteps;
 
     private void SendGold(Entity player) =>
         SendTo(player, "Gold", new GoldUpdate(player.Gold));
@@ -12785,7 +12798,13 @@ var effect = def.Effect;
         int stepIndex = state?.StepIndex ?? 0;
         int counter = state?.Counter ?? 0;
         var step = def.Steps[Math.Min(stepIndex, def.Steps.Length - 1)];
-        int needed = step.Type == QuestStepType.KillMobs ? step.Count : 1;
+        int needed = step.Type is QuestStepType.KillMobs or QuestStepType.CollectItem
+                   ? Math.Max(1, step.Count) : 1;
+        // 🔑 A COLLECT step reads the BAG, never a stored tally: mats leave a bag (sold, salvaged, spent
+        // on a craft) as easily as they arrive, so a counter incremented on pickup would drift the first
+        // time one is spent and then lie about a step the player can no longer satisfy.
+        if (step.Type == QuestStepType.CollectItem && state is not null)
+            counter = Math.Min(needed, CountItem(player, step.TargetId ?? ""));
         // Ready to turn in = on the final step and that step is a TalkTo.
         bool canComplete = state is not null
             && stepIndex == def.Steps.Length - 1
@@ -12894,8 +12913,10 @@ var effect = def.Effect;
         player.ActiveQuests[questId] = new CharacterQuestState(questId, 0, 0, false, autoTrack);
         SendSystemToEntity(player, $"Quest accepted: {def.Name}");
         // A quest can OPEN on a "reach level N" step the player already satisfies (they took it late),
-        // and nothing else would ever re-check it — level-ups are the only other trigger.
+        // and nothing else would ever re-check it — level-ups are the only other trigger. Likewise a
+        // collect step you are already carrying the items for.
         AdvanceLevelQuests(player);
+        AdvanceCollectQuests(player);
         SendQuestLog(player);
         // Re-send the OPEN dialog so it shows the objective straight away. Without this the panel kept
         // rendering the pre-accept text — the quest still offered, no word on what to kill — and the
@@ -13021,8 +13042,9 @@ var effect = def.Effect;
             }
         }
         // Same reason as in AdvanceKillQuests: a talk step can hand over to a "reach level N" step the
-        // player already satisfies, and only a level-up would otherwise re-check it.
-        if (changed) { AdvanceLevelQuests(player); SendQuestLog(player); SaveEntity(player); }
+        // player already satisfies, and only a level-up would otherwise re-check it. A COLLECT step is
+        // the same case — the master finishes his pitch and you were already carrying the twenty ingots.
+        if (changed) { AdvanceLevelQuests(player); AdvanceCollectQuests(player); SendQuestLog(player); SaveEntity(player); }
     }
 
     private void CompleteQuestAtNpc(Entity player, string questId, Guid npcEntityId)
@@ -13036,6 +13058,27 @@ var effect = def.Effect;
         if (finalStep.Type != QuestStepType.TalkTo) return;
         if (!_world.Entities.TryGetValue(npcEntityId, out var npc)
             || !def.StepTargetMatches(finalStep.TargetId, npc.NpcId ?? "")) return;
+
+        // THE COLLECT STEPS ARE PAID HERE — a CollectItem step only ever checked that the bag HELD the
+        // mats (see AdvanceCollectQuests), and the master takes them when he hires you. Re-checked first
+        // because the hold can be broken between the field and the counter: sell, salvage or craft with
+        // the twenty ingots and you go back to that step instead of getting the profession for nothing.
+        for (int i = 0; i < def.Steps.Length; i++)
+        {
+            var s = def.Steps[i];
+            if (s.Type != QuestStepType.CollectItem || s.TargetId is null) continue;
+            int need = Math.Max(1, s.Count);
+            if (CountItem(player, s.TargetId) >= need) continue;
+            SendSystemToEntity(player,
+                $"{def.Name}: bring {need}x {ItemCatalog.Get(s.TargetId)?.Name ?? s.TargetId}.");
+            player.ActiveQuests[questId] = state with { StepIndex = i, Counter = 0 };
+            SendQuestLog(player);
+            SendDialog(player, npc);
+            return;
+        }
+        foreach (var s in def.Steps)
+            if (s.Type == QuestStepType.CollectItem && s.TargetId is not null)
+                ConsumeItem(player, s.TargetId, Math.Max(1, s.Count));
 
         // Grant rewards. The gathered tokens are cashed FIRST so their exp joins the quest's own in one
         // levelling pass rather than two.
@@ -13331,6 +13374,63 @@ var effect = def.Effect;
         if (changed) SendQuestLog(player);
     }
 
+    /// <summary>Credit any active quest sitting on a <see cref="QuestStepType.CollectItem"/> step whose
+    /// item the player now holds enough of.
+    ///
+    /// <para>Playtest-23: the five profession joining quests each ask for 20 common mats and sat at 0/20
+    /// forever — farming them moved nothing, and neither did being handed 200 with <c>/give</c>. The step
+    /// type was declared in the enum, rendered by the quest window and persisted, but NOTHING anywhere
+    /// advanced it: exactly the hole <see cref="QuestStepType.ReachLevel"/> sat in until a quest finally
+    /// used it. Every crafting profession in the game was unreachable.</para>
+    ///
+    /// <para>Hung off <see cref="SendInventory"/> — the one funnel every item gain and loss already
+    /// pushes through — for the same reason <see cref="SupplyStepItems"/> hangs off
+    /// <see cref="SendQuestLog"/>: a future source of items (a drop, a craft, a trade, a warehouse
+    /// withdrawal, an admin grant) cannot forget to credit a collect step, because it cannot forget to
+    /// show the player their own bag.</para>
+    ///
+    /// <para>🔑 Nothing is consumed here. A collect step is a HOLD requirement and the mats are handed
+    /// over at the master (<see cref="CompleteQuestAtNpc"/>): items must not evaporate out in a field the
+    /// instant the 20th one drops, and the turn-in re-checks the count anyway, so nobody is hired for
+    /// free by selling the pile on the way in.</para></summary>
+    private void AdvanceCollectQuests(Entity player)
+    {
+        if (player.Kind != EntityKind.Player || player.ActiveQuests.Count == 0) return;
+
+        bool changed = false, onCollectStep = false;
+        foreach (var qid in player.ActiveQuests.Keys.ToList())
+        {
+            var def = QuestCatalog.Get(qid);
+            var state = player.ActiveQuests[qid];
+            if (def is null || state.Completed) continue;
+
+            var step = def.Steps[state.StepIndex];
+            if (step.Type != QuestStepType.CollectItem || step.TargetId is null) continue;
+            onCollectStep = true;
+            if (CountItem(player, step.TargetId) < Math.Max(1, step.Count)) continue;
+
+            if (state.StepIndex < def.Steps.Length - 1)
+            {
+                player.ActiveQuests[qid] = state with { StepIndex = state.StepIndex + 1, Counter = 0 };
+                SendSystemToEntity(player, $"{def.Name}: {def.Steps[state.StepIndex + 1].Text}");
+            }
+            else
+            {
+                // Last step: park the counter at its target, the shape a finished kill step ends in.
+                player.ActiveQuests[qid] = state with { Counter = Math.Max(1, step.Count) };
+            }
+            changed = true;
+        }
+        // Same reason as in AdvanceTalkStep: a collect step can hand over to a "reach level N" step the
+        // player already satisfies, and only a level-up would otherwise re-check it.
+        if (changed) { AdvanceLevelQuests(player); SendQuestLog(player); SaveEntity(player); }
+        // 🔴 A PARTIAL pile has to be pushed too, and this is the half that IS the reported symptom. The
+        // count is computed live, so the server was always right — but nothing told the client, so the
+        // tracker sat on whatever number it was last sent and read exactly like a counter that does not
+        // count. Markers are skipped: a mat landing in a bag cannot change who has a "!" over their head.
+        else if (onCollectStep) SendQuestLog(player, withMarks: false);
+    }
+
     private void AdvanceLevelQuests(Entity player)
     {
         bool changed = false;
@@ -13521,9 +13621,13 @@ var effect = def.Effect;
             // A step BEFORE the one you are on is done; the current one carries the live counter. On a
             // quest you have not taken, nothing is done and nothing is current — it reads as a plan.
             bool done = state is not null && (state.Completed || state.StepIndex > i);
+            // A collect step's counter is the BAG, same as in Summarize — the two windows must not
+            // disagree about how many ingots you are holding.
+            int have = current && step.Type == QuestStepType.CollectItem
+                     ? Math.Min(needed, CountItem(player, step.TargetId ?? ""))
+                     : current ? state!.Counter : done ? needed : 0;
             steps[i] = new QuestStepDto(step.Text, StepLocation(def, step),
-                                        current ? state!.Counter : done ? needed : 0,
-                                        needed, done, current);
+                                        have, needed, done, current);
         }
 
         var gathers = def.GatherLines

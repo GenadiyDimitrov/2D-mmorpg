@@ -1005,6 +1005,132 @@ Check("SUBCLASS's bar survived the relog too",
 b.MyId = entered2.EntityId;
 
 // -------------------------------------------------------------------------------------------
+// 5a. A COLLECT STEP MUST ACTUALLY COUNT (0.67.1). Playtest-23, his first finding: *"the smiths quests
+//     (bring common ingots) dont count the ingots as items .. i kill mobs they drop or i added 200 with
+//     admin command - didnt increase the quest count 0/20 still"*.
+//
+//     `QuestStepType.CollectItem` was in the enum, drawn by the quest window and saved in
+//     `CharacterQuestState.Counter` — and NOTHING in the server ever incremented it. All five crafting
+//     professions are gated behind such a step, so `BL-05` was unreachable by normal play from the day
+//     it shipped.
+//
+//     🔑 THIS IS WHY THE JOINING QUEST IS PLAYED HERE FOR REAL. Section 5b below debug-grants the
+//     profession (`DebugSetProfession`) and then proves a craft works — which is precisely how a whole
+//     crafting suite stayed green while nobody in the game could become a crafter. 5b proves a smith can
+//     forge; only this proves anyone can BECOME a smith.
+// -------------------------------------------------------------------------------------------
+{
+    const Profession prof = Profession.WeaponSmith;
+    string joinQuest = QuestCatalog.JoiningQuestFor(prof)!;
+    string ingot = Crafting.MaterialId(MaterialType.Ingot, ItemRarity.Common);
+    var masterNpc = WorldMap.Npcs.First(n => n.Id == WorldMap.CraftMasterId(prof));
+
+    int Held(string defId) => b.Inv?.Items.Where(i => i.DefId == defId).Sum(i => i.Quantity) ?? 0;
+    QuestSummary? Q() => b.Quests?.Active.FirstOrDefault(q => q.Id == joinQuest);
+
+    // ⚠ Section 5 signs off standing on the level-5 SUBCLASS, and no master takes an apprentice below
+    // 20. Back to the level-81 main — the level a player joining a profession would actually be at.
+    await b.Hub.SendAsync("SwitchSubclass", mainSlot);
+    await b.Settle();
+
+    // Stand at the master: the protocol addresses an NPC by its runtime Guid and nothing else, and the
+    // turn-in is refused anywhere but in front of him.
+    // ⚠ A spawn carries the BARE name ("Gorran"); the catalogue's is the full "Master Smith Gorran",
+    // with the title split off into the entity's Title field. Match on the given name.
+    string masterGivenName = masterNpc.Name.Split(' ')[^1];
+    await b.Hub.SendAsync("DebugTeleport", masterNpc.X, masterNpc.Y);
+    // 🔑 Poll, never sleep: a teleport re-runs interest management on the SERVER's tick, so whether the
+    // master's spawn lands inside a flat 500 ms is a coin flip (the WaitFor lesson, found again).
+    await b.WaitFor(() => b.EntityNames.Any(kv => kv.Value == masterGivenName));
+    var masterId = b.EntityNames.FirstOrDefault(kv => kv.Value == masterGivenName).Key;
+    Check($"the {prof} master ({masterNpc.Name}) is in view", masterId != Guid.Empty,
+          $"saw [{string.Join(", ", b.EntityNames.Values.Distinct().Take(12))}]");
+
+    if (masterId != Guid.Empty)
+    {
+        // Beat 1 (the pitch) is a TalkTo, so accepting alone leaves you on step 0 — talking moves you
+        // onto the collect step, which is the one that was broken.
+        await b.Hub.SendAsync("QuestAction", "accept", joinQuest, masterId);
+        await b.Settle();
+        await b.Hub.SendAsync("TalkToNpc", masterId);
+        await b.Settle();
+
+        int carried = Held(ingot);      // 4c banked its mats, but never assume an empty bag
+        var q = Q();
+        Check("the joining quest is active, and his pitch hands over to the COLLECT step",
+              q is { StepIndex: 1, CounterNeeded: 20 },
+              q is null ? "quest not active at all" : $"step {q.StepIndex}, needs {q.CounterNeeded}");
+        Check("🔑 the collect counter reads the BAG, not a tally that starts at zero",
+              q is not null && q.Counter == Math.Min(20, carried),
+              $"counter {q?.Counter}, carrying {carried}");
+
+        // THE BUG, EXACTLY AS HE HIT IT: hand over ingots, watch the number. A PARTIAL pile must move
+        // the counter and must NOT advance the step — "20/20 or nothing" would have passed a test that
+        // only ever granted the full amount.
+        await b.Hub.SendAsync("DebugGive", ingot, 7);
+        await b.Settle();
+        q = Q();
+        Check("🔴 ingots arriving in the bag MOVE the counter (0/20 forever was the bug)",
+              q is { StepIndex: 1 } && q.Counter == Math.Min(20, carried + 7),
+              $"step {q?.StepIndex}, counter {q?.Counter} (expected {Math.Min(20, carried + 7)})");
+
+        // Top up to the full twenty. He hit this with `/give` and with drops; both land through the same
+        // inventory push, which is where the credit is hung.
+        int missing = Math.Max(0, 20 - Held(ingot));
+        if (missing > 0) { await b.Hub.SendAsync("DebugGive", ingot, missing); await b.Settle(); }
+        q = Q();
+        Check("holding all twenty advances to the hand-in step",
+              q is { CanComplete: true } && q.StepIndex == 2,
+              $"step {q?.StepIndex}, canComplete {q?.CanComplete}");
+
+        // A HOLD, NOT A CONFISCATION: the mats must still be in the bag out in the field. The master
+        // takes them at the counter, not the instant the twentieth one drops.
+        int atHandIn = Held(ingot);
+        Check("🔑 nothing was consumed in the field — the ingots are still carried",
+              atHandIn >= 20, $"carrying {atHandIn}");
+
+        // ...and the turn-in re-checks the hold, so binning the pile on the way in cannot buy a free
+        // profession. Throw them away, try to hand in, and expect to be put back on the collect step.
+        var ingotStack = b.Inv?.Items.FirstOrDefault(i => i.DefId == ingot);
+        if (ingotStack is not null)
+        {
+            await b.Hub.SendAsync("RemoveItem", ingotStack.InstanceId, true, 0);
+            await b.Settle();
+        }
+        if (Held(ingot) == 0)
+        {
+            await b.Hub.SendAsync("QuestAction", "complete", joinQuest, masterId);
+            await b.Settle();
+            q = Q();
+            Check("🔑 handing in without the mats is refused, and puts you back on the collect step",
+                  q is { StepIndex: 1 } && (b.Crafting?.Profession ?? 0) != (int)prof,
+                  $"step {q?.StepIndex}, profession {b.Crafting?.Profession}");
+            await b.Hub.SendAsync("DebugGive", ingot, 20);
+            await b.Settle();
+        }
+
+        // The real hand-in.
+        int before = Held(ingot);
+        await b.Hub.SendAsync("QuestAction", "complete", joinQuest, masterId);
+        await b.Settle();
+        Check("🔴 THE QUEST COMPLETES — the profession is granted by PLAYING it, not by a debug command",
+              (b.Crafting?.Profession ?? 0) == (int)prof
+                  && (b.Quests?.Completed.Contains(joinQuest) ?? false),
+              $"profession {b.Crafting?.Profession} (want {(int)prof}), "
+              + $"completed={b.Quests?.Completed.Contains(joinQuest)}");
+        Check("...and the master TOOK the twenty ingots",
+              Held(ingot) == before - 20, $"{before} -> {Held(ingot)}, expected {before - 20}");
+    }
+
+    // ⚠ Leave the character AWAY FROM THE WEAPONSMITH: 5b's first assertion is that a craft away from
+    // your master is refused, and this section parked him right on top of him. The Armorer is a real,
+    // deterministic "somewhere else" — a different master, in the same town.
+    var elsewhere = WorldMap.Npcs.First(n => n.Id == WorldMap.CraftMasterId(Profession.ArmorSmith));
+    await b.Hub.SendAsync("DebugTeleport", elsewhere.X, elsewhere.Y);
+    await b.Settle();
+}
+
+// -------------------------------------------------------------------------------------------
 // 5b. CRAFTING — the master, the level gate, the three-way gear roll and the blueprint (`BL-05`).
 //
 //     Crafting had NEVER been exercised end-to-end, which hid a static-init crash (RecipeCatalog threw
@@ -1685,6 +1811,11 @@ sealed class Session : IAsyncDisposable
     /// <summary>The last "Dialog" push — what an NPC offered when talked to.</summary>
     public NpcDialog? Dialog;
 
+    /// <summary>The last "QuestLog" push. A quest's live COUNTER only exists here — the dialog carries a
+    /// summary only while you stand at the NPC, and the whole 0.67.1 bug (a collect step that never
+    /// counted) is a number on this message that never moved.</summary>
+    public QuestLog? Quests;
+
     /// <summary>The last "Gold" push. Needed to assert a teleport actually CHARGED, and to know whether a
     /// fee is affordable before asserting the travel succeeded.</summary>
     public long Gold;
@@ -1739,6 +1870,7 @@ sealed class Session : IAsyncDisposable
         Hub.On<QuestMarks>("QuestMarks", m => Marks = m);
         Hub.On<TargetDetails>("TargetDetails", d => Details = d);
         Hub.On<NpcDialog>("Dialog", d => Dialog = d);
+        Hub.On<QuestLog>("QuestLog", q => Quests = q);
         Hub.On<GoldUpdate>("Gold", g => Gold = g.Gold);
         Hub.On<CombatEvent>("Combat", c => Combat.Add(c));
         Hub.On<ChatMessage>("Chat", m => { AllChat.Add(m); if (m.Channel == ChatChannel.System) { SystemChat.Add(m.Text); Console.WriteLine($"        [SYSTEM] {m.Text}"); } });

@@ -124,6 +124,11 @@ surprised by a new NPC, but **do not spend this pass on it**.
 
 ---
 
+## My Finds 0.67.0
+
+- [x] - All five Proffession `Apprentice` quests cannot be done - need common mats that dont increase the quest items count
+  - Its fixed
+
 ## 80. `BL-65` / `68` / `69` / `70` / `71` — THE PLAYTEST-22 BUILD BATCH (0.64.0)
 
 - `80a` [] - 🔑 **NINE NEW FIELDS, EIGHTEEN NEW CAMPS — every 16-40 band now exists four times.**
@@ -133,11 +138,11 @@ surprised by a new NPC, but **do not spend this pass on it**.
   grid at x ≈ 31000 / 36000 / 41000, each lane keeping the original field's shape — low band nearest
   the city, high band furthest out:
 
-  | | x ≈ 31000 | x ≈ 36000 | x ≈ 41000 |
-  |---|---|---|---|
-  | y ≈ 6500 | Sunward Moor 16-24 | Highstone Ridge 24-32 | Emberdust Barrens 32-40 |
-  | y ≈ 12000 | Thornfen Moor 16-24 | Ravencrag Ridge 24-32 | Palewind Barrens 32-40 |
-  | y ≈ 17500 | Mistlow Moor 16-24 | Bleakspur Ridge 24-32 | Cinderflat Barrens 32-40 |
+  |           | x ≈ 31000           | x ≈ 36000             | x ≈ 41000                |
+  | --------- | ------------------- | --------------------- | ------------------------ |
+  | y ≈ 6500  | Sunward Moor 16-24  | Highstone Ridge 24-32 | Emberdust Barrens 32-40  |
+  | y ≈ 12000 | Thornfen Moor 16-24 | Ravencrag Ridge 24-32 | Palewind Barrens 32-40   |
+  | y ≈ 17500 | Mistlow Moor 16-24  | Bleakspur Ridge 24-32 | Cinderflat Barrens 32-40 |
 
   🔑 **The city was NOT moved.** You offered (*"the whole City can move to the right"*) and it turned
   out not to be needed — the generator places a field by bearing and distance, so more ground is just
@@ -153,11 +158,11 @@ surprised by a new NPC, but **do not spend this pass on it**.
   `grave_robber_fighter` (32) and `dread_knight` (65) — three unrelated creatures wearing a "44-48"
   sign. Fixed at the **roster**:
 
-  | Dungeon | Rooms | Boss | Entrance gated to |
-  |---|---|---|---|
-  | **Hollow Crypt** (same place) | 39-42 | Grave Lich **44** | Greymarsh |
-  | **Sunless Warrens** (new) | 58-64 | Dread Knight **65** | Ironreach Keep |
-  | **Ashen Sepulchre** (new) | 80-85 | Disciple of the Dawn **90** | Frostmere |
+  | Dungeon                       | Rooms | Boss                        | Entrance gated to |
+  | ----------------------------- | ----- | --------------------------- | ----------------- |
+  | **Hollow Crypt** (same place) | 39-42 | Grave Lich **44**           | Greymarsh         |
+  | **Sunless Warrens** (new)     | 58-64 | Dread Knight **65**         | Ironreach Keep    |
+  | **Ashen Sepulchre** (new)     | 80-85 | Disciple of the Dawn **90** | Frostmere         |
 
   Both new dungeons are the crypt's outline **translated** (10k and 22k south-west) on purpose — a
   known-good narrow diagonal the wall clamp, the entrance annex and the move order have all been
@@ -194,6 +199,8 @@ surprised by a new NPC, but **do not spend this pass on it**.
   staff. Still *hittable* by area damage — `/god` is the separate switch, your own distinction.
   **Test with two clients: hide in front of the other one and confirm you VANISH from his screen, not
   just from the mobs.** ->
+    - Admins `/invis` works - mobs stop the chase - hides from players
+    - `Shrouding hymn` works - mobs that chased before continue, while new dont aggro
 
 - `80d` [] - 🔑 **MOBS HAVE A SOCIAL CIRCLE, and the rogue has a way around it.** Twelve clans (`orc`,
   `mantis`, `redhorn`, `wildhorn`, `radiant`, `drake`, `skeleton`, `dread`, `mirror`, `lizardman`,
@@ -279,10 +286,10 @@ surprised by a new NPC, but **do not spend this pass on it**.
   is literally the CSV's *"???? Resistance"* row, filled in). A **negative** value is a magic
   WEAKNESS, which is what makes the anti-physical half mean something.
 
-  | | P.Def | M.Def | mRes | who |
-  |---|---|---|---|---|
-  | **Warded** (anti-magic) | ×0.8 | ×1.5 | +20% | Grave Lich 44 · Aether Wisp 58 · Spiteful Ghost 66 |
-  | **Ironhide** (anti-physical) | ×1.5 | ×0.8 | **−20%** | Shield Skeleton 20 · Fomor Brute 45 · Dread Knight 65 |
+  |                              | P.Def | M.Def | mRes     | who                                                   |
+  | ---------------------------- | ----- | ----- | -------- | ----------------------------------------------------- |
+  | **Warded** (anti-magic)      | ×0.8  | ×1.5  | +20%     | Grave Lich 44 · Aether Wisp 58 · Spiteful Ghost 66    |
+  | **Ironhide** (anti-physical) | ×1.5  | ×0.8  | **−20%** | Shield Skeleton 20 · Fomor Brute 45 · Dread Knight 65 |
 
   Watcher Eye (26) keeps its own steeper 2.0/0.5 and gains the mRes half; Obsidian Knight (63) takes
   Magic Resistance **L5**, so the golem that already resists arrows and blades is the one a mage
@@ -376,14 +383,14 @@ surprised by a new NPC, but **do not spend this pass on it**.
 - `82h` [] - 🔴 **RESURRECT / PARTY / PvP-FLAG, RE-SPECCED — you replaced the old rule entirely.** It
   was self-based (*"you cannot res a party member while YOU are flagged"*); it is now **target-based**:
 
-  | situation | rule |
-  |---|---|
-  | single-target support of a **non-party** player | allowed **if they are not pvp/pk** |
-  | target **is** pvp/pk | allowed **only** from inside their party |
-  | supporting a still-flagged player | 🔑 **flags you** |
-  | party invite to a pvp/pk player | allowed |
-  | trade | allowed with **pvp**, **never** with pk |
-  | res in the same party | allowed for **both** |
+  | situation                                       | rule                                     |
+  | ----------------------------------------------- | ---------------------------------------- |
+  | single-target support of a **non-party** player | allowed **if they are not pvp/pk**       |
+  | target **is** pvp/pk                            | allowed **only** from inside their party |
+  | supporting a still-flagged player               | 🔑 **flags you**                          |
+  | party invite to a pvp/pk player                 | allowed                                  |
+  | trade                                           | allowed with **pvp**, **never** with pk  |
+  | res in the same party                           | allowed for **both**                     |
 
   ⚠ **This OPENS something that used to be shut**: support was party-only and anything else fell
   through to a self-cast. Helping a passing stranger is legal now, and the flag is what prices it —
