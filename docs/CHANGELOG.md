@@ -7,10 +7,45 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.67.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.67.2**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
+
+## 0.67.2 — 2026-08-14 — the Phantom gets Vanish back
+
+His instruction: *"add vanish to the phantom - its not there cannot test the invis logic with non admin
+invis"*.
+
+**🔴 NEEDS A NEW APK** (protocol still **20**, no DB reset). The client builds its Learn tab from the
+`ClassSkills` catalog it *compiled against* (`GameUi.Skills.cs`), not from a server push, so a learn line
+added server-side is invisible to an older client. Server zip and APK both published at 0.67.2.
+
+### `Vanish` was in the catalog, and nothing on earth could learn it
+
+The 2026-08-10 **40+ purge** deleted every invented 3rd-class learn assignment — deliberately, and that
+rule still stands. It took `Vanish` (with Shadowstep, Repelling Shot and Snare Trap) out of the Phantom's
+kit while leaving the `SkillDef` in place, as the purge did everywhere.
+
+The consequence was not noticed at the time: **`Vanish` is the only skill in the game with
+`GrantsHide`**. So `BL-69`'s kind-1 hide — the one enforced by *omission from the snapshot*, the headline
+of that whole feature — had no player-reachable trigger. Its **counter shipped without it**: Signal Flare
+(`RevealsHidden`, `NoHideTicks`) is learnable on the rogue's own level-28 rung, answering something
+nobody could cast. The only route into the code was the admin toggle, which is a different path and
+proves nothing about the skill's own cast / break / reveal rules.
+
+- One learn line: **`Vanish` at level 40** on the Phantom, the discipline's own floor and its identity
+  beat (*"Vanishes, then opens with a devastating ambush"*). Registered for all three races to match the
+  file's idiom; only the Elf can hold this discipline today, so the other two keys are inert.
+- 🔑 Standing exactly as `BL-35`'s two level-83 skills do — **a skill he named individually, not a repeal
+  of the purge.** Not licence to rebuild the rogue kit around it.
+- ⚠ **Its SP price is left unset (the `SkillDef` default of 1).** That never mattered while the skill was
+  unlearnable, so Vanish is currently the cheapest 40+ skill in the game by four orders of magnitude —
+  Prowl @20 costs 3400, Signal Flare @28 costs 12000. Pricing it is 40+ balance and belongs in his CSVs,
+  so it is flagged rather than invented.
+
+Nothing else changed: the hide logic itself (`GameLoopService`, cast-completion break, aggro shed,
+`NoHideTicks` gate) was already built and untouched.
 
 ## 0.67.1 — 2026-08-14 — a collect step never counted anything
 
