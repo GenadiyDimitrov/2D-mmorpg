@@ -51,7 +51,7 @@ Index of everything under `docs/`.
 - [AutoHunt.md](design/AutoHunt.md) — idle / offline auto-hunt.
 - [Regions.md](design/Regions.md) — polygonal fields and towns (not built).
 - [RogueArcherMerge.md](design/RogueArcherMerge.md) — one class to 40 (shipped 0.29.0).
-- [Disciplines.md](design/Disciplines.md) · [Descipline.md](design/Descipline.md) — 3rd-class discipline design.
+- [Disciplines.md](design/Disciplines.md) — **the** 3rd-class file: the 10 discipline kits, race identity, the 40+ CSV format, engine gaps. (Absorbed `Descipline.md` + `DisciplineIdentity.md`, both deleted 2026-08-14.)
 - [BareHands.md](design/BareHands.md) · [Unarmored.md](design/Unarmored.md) — unarmed / unarmored penalty investigations.
 
 ## `balance/` — measured balance
