@@ -40,6 +40,12 @@ public static class MobMasteries
     // Weapon-type resistance (P.Def coefficient vs Sword-Dual / Blunt / Bow). Neutral = L7, value 1.
     private static readonly float[] ResistTable =
         { 0f, 0.5f, 0.6f, 0.7f, 0.8f, 0.9f, 1f, 1.11f, 1.25f, 1.43f, 1.67f, 2f, 999999f };
+    // MAGIC RESISTANCE (BL-11) — the "???? Resistance" row of mobs_passives.csv, filled in. Same
+    // twelve rungs and the same neutral (L7) as the three weapon resists above, so a mob is tuned
+    // the same way; the VALUE is read differently, because mRes is a fraction, not a P.Def
+    // coefficient. The table below is the coefficient, and Build converts: coef 1.25 → mRes +0.25
+    // → takes ×0.8 magic damage; coef 0.8 → mRes −0.20 → takes ×1.25. Below L7 is a WEAKNESS,
+    // which is what makes "anti physical" (more P.Def, less M.Def) an actual invitation to a mage.
 
     // Neutral (×1) level of each track — the "average" default every mob sits at.
     public const int WeaponWeightNeutral = 5, ArmorWeightNeutral = 2;
@@ -54,7 +60,7 @@ public static class MobMasteries
         int weaponWeight = 0, int armorWeight = 0,
         int mAtk = 0, int pAtk = 0, int maxHp = 0, int maxMp = 0,
         int hpRegen = 0, int mpRegen = 0, int mDef = 0, int pDef = 0,
-        int pierce = 0, int blunt = 0, int bow = 0,
+        int pierce = 0, int blunt = 0, int bow = 0, int magicResist = 0,
         bool boss = false, string name = "")
     {
         float pAtkMul = 1f, pDefMul = 1f, atkSpd = 1f;
@@ -87,6 +93,8 @@ public static class MobMasteries
             PierceResist: pierce > 0 ? At(ResistTable, pierce) : 1f,
             BluntResist: blunt > 0 ? At(ResistTable, blunt) : 1f,
             BowDefResist: bow > 0 ? At(ResistTable, bow) : 1f,
+            // Coefficient → fraction: L9 (1.25) becomes mRes +0.25, L5 (0.9) becomes −0.10.
+            MagicResist: magicResist > 0 ? At(ResistTable, magicResist) - 1f : 0f,
             Boss: boss,
             Name: name);
     }

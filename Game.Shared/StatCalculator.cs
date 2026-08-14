@@ -822,6 +822,28 @@ public static class StatCalculator
         _                          => 300,  // weaponless
     };
 
+    /// <summary>MOB per-hit POWER factor for the weapon it holds (BL-14) — the other half of giving
+    /// monsters weapon types. *"Archer is slower but does more dmg, the fast attacking have more crit
+    /// rate and more atck speed but less dmg."*
+    ///
+    /// A PLAYER gets this for free from the weapon ITEM: a 2H sword carries more P.Atk than duals, so
+    /// a slow weapon buys per-hit damage. A mob has no item — its P.Atk is one level curve — so when
+    /// weapons were handed out on 2026-08-10 the ONLY thing the weapon changed was the attack rate.
+    /// A club mob (379) simply became 12% worse than a claw mob (433) at nothing, and the fast
+    /// attacker was strictly better instead of trading damage for rate. This is the missing trade.
+    ///
+    /// The reference is the DUAL's 433 — the speed every mob in the game was pinned to before that
+    /// change — so this is DPS-neutral against the pin: nothing is nerfed, the mobs that were
+    /// silently slowed get their lost damage back as per-hit power, and a claw mob's advantage is
+    /// now what he said it should be: rate and CRIT RATE (the dagger/claw weapon crit factor is 3×
+    /// a club's), paid for with the smallest hit.
+    ///
+    /// ⚠ BOW returns 1. An archer mob already pays this exact trade explicitly in its ROLE
+    /// (<c>MobRole.Archer</c>: ×2 P.Atk, 450 range, less P.Def), and charging his one sentence twice
+    /// would make archers ~3× per arrow. If the role's ×2 is ever removed, this is where it goes.</summary>
+    public static float MobWeaponPowerFactor(WeaponType w) =>
+        w == WeaponType.Bow ? 1f : 433f / WeaponAttackBaseSpeed(w);
+
     // (MobBareHandAttackSpeed — added and removed the same day, 2026-08-10. It pinned mobs to 433
     //  because his weaponless 300 would otherwise have slowed the WHOLE bestiary by 31%, every mob
     //  being WeaponType.None. He then ruled the real fix: *"most mobs must have a weapon ... so

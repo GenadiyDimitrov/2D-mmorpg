@@ -60,19 +60,28 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
 
 ## Combat & stats
 
-- `BL-06` 🔴 **Skill evasion as its own channel.** *"normaly no1 can evade a physical skill … now on
-  then i miss a skill which is anoying — stab fails."* So: **a physical skill never misses by
-  default**; evading one is an explicit, granted chance. The rogue ultimate is the only source —
-  **25% → 40%**, and *"76lvl the physical phantom gets a 90% for 15s"*. *(playtest-21 `69e`, and
-  `62e` before it.)*
+- `BL-06` ✅ **BUILT 2026-08-14 (0.65.0)** — a physical skill is no longer subject to the
+  accuracy-vs-evasion roll at all; the caster's accuracy, `Precision` and `EvadeFloor` were all
+  removed from that branch and now govern basic attacks only. The **only** thing that dodges a skill
+  is `Entity.SkillEvadeChance`, and **Evasion Boost is its only source: 25%**. That also settles the
+  CSV's *"skill evasion x1.25"* — it was the 25%, not a multiplier. See `CHANGELOG.md`. Delete at the
+  next sweep.
+  - 🔵 **The 40% rung is NOT built and needs you.** `rogue 20-35.csv` gives Evasion Boost a single
+    level, so there is no rung to hang it on and inventing one re-specs your CSV. Same for *"76lvl the
+    physical phantom gets a 90% for 15s"* — a 4th-class skill. Both wait on `BL-02`.
 
-- `BL-07` 🔴 **Physical skill reflect.** *"a warrior can get a 30% chance to reflect a physical
-  [skill] … so we can have a 100% chance to reflect 15% p skill dmg, or 15% chance to reflect 100%
-  p skill dmg."* Your default: warrior **@40 → 0.15 chance ×1 reflected**, **@76 → 0.30**.
-  *(playtest-21, "My Finds", left as a bare `[]`.)*
+- `BL-07` ✅ **BUILT 2026-08-14 (0.65.0)** — `Deflection`, the warrior passive, your numbers exactly:
+  **@40 → 0.15 chance ×1.0 reflected, @76 → 0.30 ×1.0**. Auto-granted at the class change like the
+  identity floors, on its own 40/76 ladder. Reflected damage is the full hit and can kill the caster;
+  a bounce is applied directly so it never bounces twice. Kept separate from the armor sets' basic-
+  attack `Reflect`. See `CHANGELOG.md`. Delete at the next sweep.
 
-- `BL-08` 🔴 **Debuff reflect.** *"tanks get 30% chance to reflect a debuff -> u cast on tank he
-  reflects u get the debuff."* *(playtest-21, same block.)*
+- `BL-08` ✅ **BUILT 2026-08-14 (0.65.0)** — `Backlash`, the tank passive: **30% chance a debuff lands
+  on its caster instead**, on both debuff paths (contested CC and the fizzle model). Rolled BEFORE the
+  land contest, because a bounce is not a resist. See `CHANGELOG.md`. Delete at the next sweep.
+  - ⚠ **One thing is mine, not yours: the LEVEL.** You gave the 30% and never said when a tank gets
+    it. It is granted at the **3rd class change (40)**, beside Deflection. If you want it at the 2nd
+    (20), say so — it is one line.
 
 - `BL-09` 🔵 **A floor under the wrong-weapon magic penalty, bought back by Spellcaster Mastery.**
   ⚠ **Re-marked 🔵 on 2026-08-14 — it contradicts your own CSV.** This asks for five Mastery rungs
@@ -90,23 +99,49 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
   entirely when you punch down. You were asked whether you want a floor under it and the reply is
   still empty. *(playtest-21 `64e`.)*
 
-- `BL-11` 🔴 **Anti-magic / anti-physical mobs feed the mRes ladder.** *"We had a anti magic mobs
-  (lower pdef more mdef) and anty physical (less m def more pdef) — this should feed your mres
-  passive."* No mob feeds it today. *(playtest-21 `64i`.)*
+- `BL-11` ✅ **BUILT 2026-08-14 (0.65.0)** — the mob layer gains an **mRes channel**
+  (`MobMod.MagicResist` + a *Magic Resistance* mastery track, the CSV's own "???? Resistance" row
+  filled in), and the pair is actually authored: **Warded** (P.Def ×0.8 / M.Def ×1.5 / mRes +20%) on
+  Grave Lich, Aether Wisp and Spiteful Ghost; **Ironhide** (P.Def ×1.5 / M.Def ×0.8 / mRes **−20%**,
+  a real magic WEAKNESS) on Shield Skeleton, Fomor Brute and Dread Knight, plus a Magic Resistance
+  rung on Obsidian Knight's Stoneplate. Before this, one mob in the game was anti-magic and none was
+  anti-physical. See `CHANGELOG.md`. Delete at the next sweep.
 
 - `BL-12` 🔵 **Enchant bonus should scale with what you put in.** Your objection to the flat-offset
   ruling, unanswered: *"not a warrior invest +3 and gets the same bonus as cleric +16."* Today the
   offset is identical for every class, by grade. Needs your call before anything moves.
   *(playtest-21 `68e`; the 0.60.0 model is in `docs/balance/BalanceMatrix.md` §E.)*
 
-- `BL-13` 🔴 **Boss HP — check the ×2 passive is actually landing.** *"boss had 260? He should have
-  520? Check."* Your targets: a **field boss ~6 minutes** for a 3-DD party (it dies in ~180s now),
-  and *"a world [boss] should take an hour for ~10 parties (~50 DDs)"*. *(playtest-21 `62m`.)*
+- `BL-13` 🔵 **CHECKED 2026-08-14 — the multiplier IS landing, and the real problem is a different
+  one. Needs your ruling.** A level-20 field boss spawns with exactly 36,000 HP = `MobBaseStats.Hp(20)`
+  × the rank's ×100, and the scale survives every recompute. Nothing is being eaten. But measured
+  against your 6-minute / 3-DD target (new `BalanceMatrix` section, ceilings — no downtime):
 
-- `BL-14` 🔴 **Mob attack speed comes off the weapon, not a pinned 433.** *"didn't we gave monsters
-  weapon types? Archer is slower but does more dmg, the fast attacking have more crit rate and more
-  atck speed but less dmg."* Drive it off `InnateWeaponType`, which already exists.
-  *(playtest-21 `62i`.)*
+  | Lvl | boss HP | 3-DD dps | TTK | vs 360s |
+  |---|---|---|---|---|
+  | 20 | 36,000 | 448 | **80s** | 4.5× too fast |
+  | 40 | 132,000 | 446 | 296s | about right |
+  | 60 | 292,000 | 427 | **684s** | ~2× too slow |
+  | 76 | 466,000 | 525 | **888s** | ~2.5× too slow |
+  | 85 | 582,000 | 840 | 693s | ~2× too slow |
+
+  A flat ×100 **cannot** hit 360s at every level: mob HP grows as `0.8·L²` while a geared party's DPS
+  is nearly flat (448 → 525), so the boss rank swings **11× in difficulty between 20 and 76**. Nothing
+  was changed — the curve is a ruling. **Two questions:** should a level-20 field boss take a
+  level-20 party six minutes, and do the late bosses come DOWN to 360s or does the target rise with
+  level? The table prints what each level would need (×448 / ×122 / ×53 / ×41 / ×52).
+  - 🔵 **The world boss has nowhere to live.** `MobRank` is Normal/Elite/Boss; only the respawn timer
+    separates your 21-hour spawn from a 30-minute one. ~50 DDs for an hour is **~167×** a field boss —
+    a new rank with its own drops/phases/lockout, not a bigger number. Not invented.
+
+- `BL-14` ✅ **BUILT 2026-08-14 (0.65.0)** — two of your three clauses were already true (a mob's
+  attack SPEED and CRIT RATE have come off `InnateWeaponType` since 2026-08-10); the third was not.
+  `MobWeaponPowerFactor` (`433 / weaponBaseSpeed`) gives a mob the per-hit power a player gets free
+  from the weapon ITEM, so a slow weapon buys damage instead of being a pure nerf. Measured at 40:
+  Dual 171 P.Atk / 13.2% crit, Blunt 195 / 4.4%, 2H 227 / 8.8% — and **DPS is flat across all of
+  them**, which is what makes it a trade. ⚠ **BOW is ×1.00 on purpose**: `MobRole.Archer` already pays
+  that trade explicitly (P.Atk ×2, 450 range), and doubling it would put an archer at ~3× per arrow.
+  See `CHANGELOG.md`. Delete at the next sweep.
 
 - `BL-15` 🔵 **`precision` / `anti_magic` floor rungs should follow the CLASS CHANGE, not level 76.**
   Implied by your rogue ruling and never carried back into either checklist — recorded in the

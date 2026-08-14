@@ -100,6 +100,11 @@ public class BuffInstance
     public float PhysMpCostPct { get; init; }
     public float MagicMpCostPct { get; init; }
 
+    /// <summary>BL-06 — chance the owner dodges an incoming PHYSICAL SKILL while this buff is up.
+    /// Rides as a field, like the two above, because the SkillEffect flag enum has no bits left.
+    /// The rogue's Evasion Boost is the only skill in the game that sets it.</summary>
+    public float SkillEvadeChance { get; init; }
+
     /// <summary>What this buff does to a monster's payout — the premium reward runes' whole payload
     /// (see <see cref="RewardRates"/>). Default = neutral, which every other buff in the game is.
     /// Rides as a field, like the two above, because the SkillEffect flag enum has no bits left.</summary>
@@ -773,6 +778,19 @@ public class Entity
     public float MagicDefCoef => Math.Max(0.01f, 1f + MagicResist);
     public float EvadeFloor { get; set; }        // rogue: guaranteed min chance to dodge physical attacks
     public float HitFloor { get; set; }          // warrior: guaranteed min chance THIS entity lands a physical attack
+    // ----- The three SKILL-defence channels (BL-06/07/08). All folded by MAX, like the floors
+    //       above: they are class GUARANTEES, so two sources never compound. -----
+    /// <summary>BL-06 — chance to dodge an incoming PHYSICAL SKILL. A physical skill is not subject
+    /// to the accuracy-vs-evasion roll at all any more (*"normaly no1 can evade a physical skill"*),
+    /// so this is the ONLY thing that makes one miss. Rogue ultimate only, today.</summary>
+    public float SkillEvadeChance { get; set; }
+    /// <summary>BL-07 — chance that a physical SKILL which hits me is reflected at its caster, and
+    /// the fraction of its damage that goes back. Basic attacks are the separate MeleeReflect
+    /// channel; spells reflect nothing.</summary>
+    public float PhysSkillReflectChance { get; set; }
+    public float PhysSkillReflectPct { get; set; }
+    /// <summary>BL-08 — chance that a DEBUFF aimed at me lands on its caster instead.</summary>
+    public float DebuffReflectChance { get; set; }
     public bool Immune { get; set; }             // ultimate total-avoid (future buff); attacks always miss/fail
     public float HpRegenBonus { get; set; }     // flat HP/s from gear attributes
     public float MpRegenBonus { get; set; }     // flat MP/s from gear attributes
@@ -1634,6 +1652,10 @@ public class Entity
         MagicFailBonus = 0f;   // "magic evasion" points, buffs only (see the field)
         EvadeFloor = 0f;
         HitFloor = 0f;
+        SkillEvadeChance = 0f;
+        PhysSkillReflectChance = 0f;
+        PhysSkillReflectPct = 0f;
+        DebuffReflectChance = 0f;
         Immune = false;
         CooldownReduction = 0f;
         CritRateResist = 0f;
@@ -2230,6 +2252,16 @@ public class Entity
                 EvadeFloor = Math.Max(EvadeFloor, pe.EvadeFloor);
                 HitFloor = Math.Max(HitFloor, pe.HitFloor);
                 MagicFailMod = Math.Max(MagicFailMod, pe.MagicFailMod);
+                // The three skill-defence channels (BL-06/07/08) — same rule. The reflect PCT rides
+                // with its own chance rather than being maxed independently, or a 15%-chance-×1.0
+                // passive and a 100%-chance-×0.15 one would combine into 100% × 1.0.
+                SkillEvadeChance = Math.Max(SkillEvadeChance, pe.SkillEvadeChance);
+                if (pe.PhysSkillReflectChance > PhysSkillReflectChance)
+                {
+                    PhysSkillReflectChance = pe.PhysSkillReflectChance;
+                    PhysSkillReflectPct = pe.PhysSkillReflectPct;
+                }
+                DebuffReflectChance = Math.Max(DebuffReflectChance, pe.DebuffReflectChance);
                 // Heal power (output) + heal received (target). No M.Atk in the heal formula.
                 HealPowerFlat += pe.HealPowerFlat;
                 if (pe.HealPowerPct != 0f) HealPowerMod *= 1f + pe.HealPowerPct;
@@ -2358,6 +2390,9 @@ public class Entity
             if (buff.Has(SkillEffect.DebuffHealRecv)) HealReceivedMod *= 1f - buff.Percent(SkillEffect.DebuffHealRecv);   // anti-heal
             PhysMpCostReduction += buff.PhysMpCostPct;   // MP-cost reduction (rides as buff fields, not a flag)
             MagicMpCostReduction += buff.MagicMpCostPct;
+            // BL-06 skill evasion — a buff field for the same reason (the flag enum is full), and
+            // MAXed with the passive side rather than added: it is a guarantee, not a stat.
+            SkillEvadeChance = Math.Max(SkillEvadeChance, buff.SkillEvadeChance);
             if (buff.Has(SkillEffect.BuffCooldown)) CooldownReduction += buff.Flat(SkillEffect.BuffCooldown) + buff.Percent(SkillEffect.BuffCooldown);
             if (buff.Has(SkillEffect.BuffPveSkillDamage)) PveSkillDamageBonus += buff.Flat(SkillEffect.BuffPveSkillDamage) + buff.Percent(SkillEffect.BuffPveSkillDamage);
             if (buff.Has(SkillEffect.BuffPveMagicDamage)) PveMagicDamageBonus += buff.Flat(SkillEffect.BuffPveMagicDamage) + buff.Percent(SkillEffect.BuffPveMagicDamage);
@@ -2393,6 +2428,14 @@ public class Entity
         MagicFailMod = Math.Max(1f, MagicFailMod);            // never below neutral
         CooldownReduction = Math.Clamp(CooldownReduction, 0f, 0.8f);
         MeleeReflect = Math.Clamp(MeleeReflect, 0f, 0.5f);   // never reflect more than half
+        // The skill-defence channels. Evade and the two reflect CHANCES stop short of 1 on purpose —
+        // "never dodges anything, ever" and "a skill user can never touch this class" are both
+        // degenerate, and his own top rung is 0.90, not 1.0. The reflected FRACTION is uncapped at 1
+        // because he authored exactly ×1 ("0.15 chance x1 reflected").
+        SkillEvadeChance = Math.Clamp(SkillEvadeChance, 0f, 0.95f);
+        PhysSkillReflectChance = Math.Clamp(PhysSkillReflectChance, 0f, 0.95f);
+        PhysSkillReflectPct = Math.Clamp(PhysSkillReflectPct, 0f, 1f);
+        DebuffReflectChance = Math.Clamp(DebuffReflectChance, 0f, 0.95f);
         CcResist = Math.Clamp(CcResist, 0f, 0.8f);           // never fully CC-immune from gear
         PhysMpCostReduction = Math.Clamp(PhysMpCostReduction, 0f, 0.8f);
         MagicMpCostReduction = Math.Clamp(MagicMpCostReduction, 0f, 0.8f);
@@ -2459,11 +2502,29 @@ public class Entity
             PierceDefCoef = mod.PierceResist;
             BluntDefCoef = mod.BluntResist;
             BowDefCoef = mod.BowDefResist;
+            // BL-11 — MAGIC RESISTANCE, the missing sibling of the three weapon resists above.
+            // *"We had a anti magic mobs (lower pdef more mdef) and anty physical (less m def more
+            // pdef) — this should feed your mres passive."* Until now a template could only raise
+            // M.DEF, which is a flat divisor a mage out-scales; mRes is the percentage channel his
+            // own mob ladder is written in, and it is what a player's Anti-Magic passives already
+            // read. A NEGATIVE value is a magic WEAKNESS, which is what makes the anti-PHYSICAL
+            // half of his pair mean something: the armoured brute is the mage's target.
+            MagicResist = Math.Clamp(mod.MagicResist, -0.9f, 0.9f);
             if (mod.Boss)   // raid-boss passive: resists crits + arrows
             {
                 CritRateResist = Math.Max(CritRateResist, 0.3f);
                 BowResist = Math.Max(BowResist, 0.3f);
             }
+        }
+
+        // BL-14 — the weapon a mob holds now decides its per-hit POWER as well as its rate, the way
+        // a player's weapon item does. Applied after the template's own P.Atk passive so a hand-tuned
+        // champion multiplier is not diluted, and before the ROLE, which has its own trade.
+        float weaponPower = StatCalculator.MobWeaponPowerFactor(WeaponType);
+        if (weaponPower != 1f)
+        {
+            AttackPower = Math.Max(1, (int)(AttackPower * weaponPower));
+            BasicAttackPower = Math.Max(1, (int)(BasicAttackPower * weaponPower));
         }
 
         if (MobAccFlat != 0) Accuracy += MobAccFlat;

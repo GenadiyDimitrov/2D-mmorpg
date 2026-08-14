@@ -123,6 +123,14 @@ public static class SkillText
         Pct(o, "Min hit chance", p.HitFloor);
         // Magic has no floor — a MULTIPLIER on the enemy's fail chance instead.
         if (p.MagicFailMod > 1f) o.Add($"Enemy spells fizzle ×{p.MagicFailMod:0.##}");
+        // The three skill-defence channels (BL-06/07/08). Worded from the DEFENDER's side, which is
+        // whose card they appear on, and the reflect pair reads as one line — the chance alone is
+        // meaningless without knowing how much comes back.
+        Pct(o, "Dodge physical skills", p.SkillEvadeChance);
+        if (p.PhysSkillReflectChance > 0f)
+            o.Add($"Reflect physical skills {p.PhysSkillReflectChance * 100f:0.#}% "
+                + $"of the time, for {p.PhysSkillReflectPct * 100f:0.#}% damage");
+        Pct(o, "Reflect debuffs", p.DebuffReflectChance);
 
         // Healing
         Flat(o, "Heal power", p.HealPowerFlat);       Pct(o, "Heal power", p.HealPowerPct);

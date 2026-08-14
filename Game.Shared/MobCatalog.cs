@@ -44,6 +44,11 @@ public readonly record struct MobMod(
     float PierceResist = 1f, // vs sword / dual
     float BluntResist = 1f,  // vs blunt
     float BowDefResist = 1f, // vs bow (P.Def route; distinct from BowResist damage fraction)
+    // MAGIC RESISTANCE (BL-11) — the fourth resist, and the only one that is not a P.Def coefficient:
+    // it is the mRes DAMAGE-REDUCTION channel players already have (Entity.MagicResist), authored the
+    // way the CSVs write it. +0.25 = takes ×0.8 magic damage; NEGATIVE = a magic WEAKNESS, which is
+    // how the "anti physical" half of his pair is expressed. 0 = neutral.
+    float MagicResist = 0f,
     // Extra leveled-mastery multipliers (see MobMasteries): max MP, attack speed (>1 = faster),
     // HP/MP regen, and a FLAT evasion add (from the Armor Weight mastery). Defaults inert.
     float MaxMp = 1f, float AtkSpeed = 1f, float HpRegen = 1f, float MpRegen = 1f,
@@ -72,6 +77,12 @@ public readonly record struct MobMod(
         if (PierceResist != 1f) yield return $"Sword/Dual {ResistWord(PierceResist)}";
         if (BluntResist != 1f)  yield return $"Blunt {ResistWord(BluntResist)}";
         if (BowDefResist != 1f) yield return $"Bow {ResistWord(BowDefResist)}";
+        // mRes reads as a percentage, not a coefficient — it is the player-facing "takes X% less
+        // magic damage" number, and negative means the opposite, so it must say which.
+        if (MagicResist != 0f)
+            yield return MagicResist > 0f
+                ? $"Magic resistant (−{MagicResist * 100:0}% magic damage taken)"
+                : $"Magic WEAK (+{-MagicResist * 100:0}% magic damage taken)";
         if (MaxMp != 1f)   yield return $"Max MP {Sign(MaxMp)}";
         if (AtkSpeed != 1f) yield return $"Atk.Spd {Sign(AtkSpeed)}";
         if (HpRegen != 1f) yield return $"HP Regen {Sign(HpRegen)}";
@@ -747,6 +758,29 @@ public static class MobCatalog
         return drops.ToArray();
     }
 
+    // ===================================================================================
+    //  THE TWO DEFENCE ARCHETYPES (BL-11). *"We had a anti magic mobs (lower pdef more mdef) and
+    //  anty physical (less m def more pdef) — this should feed your mres passive."*
+    //
+    //  The pair only existed as a comment on MobMod and as ONE template (Watcher Eye), and neither
+    //  half touched mRes — so an "anti magic" mob was just a bigger M.Def divisor, which a levelling
+    //  mage out-scales, and there was no anti-physical mob in the game at all.
+    //
+    //  Authored ONCE here and shared, so the pattern reads in the bestiary instead of being eight
+    //  hand-tuned numbers. Each is a genuine two-way trade: the warded thing wants a fighter, the
+    //  armoured thing wants a mage. That is what makes a party composition matter in a field.
+    // ===================================================================================
+    /// <summary>Warded: harder for a MAGE (M.Def ×1.5 AND −20% magic damage taken), softer for a
+    /// fighter (P.Def ×0.8). Wisps, wraiths, liches — things made of magic.</summary>
+    private static MobMod AntiMagic(string name = "Warded") =>
+        new(PDef: 0.8f, MDef: 1.5f, MagicResist: 0.20f, Name: name);
+
+    /// <summary>Ironhide: harder for a FIGHTER (P.Def ×1.5), softer for a mage (M.Def ×0.8 and
+    /// +20% magic damage TAKEN — a real weakness, not merely the absence of a resist). Shielded
+    /// skeletons, plated knights, brutes.</summary>
+    private static MobMod AntiPhysical(string name = "Ironhide") =>
+        new(PDef: 1.5f, MDef: 0.8f, MagicResist: -0.20f, Name: name);
+
     private static Dictionary<string, MobType> Build()
     {
         var list = new[]
@@ -763,13 +797,18 @@ public static class MobCatalog
             Mob("hook_spider", "Hook Spider", 14, MobCategory.Insect, 130f, true),
             Mob("orc_archer", "Orc Archer", 16, MobCategory.Humanoid, 132f, true, role: MobRole.Archer, clan: ClanOrc),
             Mob("skeleton_grunt", "Skeleton Grunt", 18, MobCategory.Undead, 120f, true, clan: ClanSkeleton),
-            Mob("shield_skeleton", "Shield Skeleton", 20, MobCategory.Undead, 115f, true, clan: ClanSkeleton),
+            // ANTI-PHYSICAL (BL-11): the shield is the whole creature. The first of the pair a
+            // player meets, deliberately early — it is where "bring the mage" is taught.
+            Mob("shield_skeleton", "Shield Skeleton", 20, MobCategory.Undead, 115f, true,
+                AntiPhysical("Shieldwall"), clan: ClanSkeleton),
             Mob("grizzly_bear", "Grizzly Bear", 22, MobCategory.Animal, 135f, true),
             Mob("cinder_imp", "Cinder Imp", 24, MobCategory.Demon, 142f, true),
             // MAGIC monster: high M.Def / low P.Def — hard for mages, easy for fighters.
             // Also a CASTER (Mage role): no basic attack, nukes from range, sits helpless at 0 MP.
+            // Its own numbers are kept (2.0 / 0.5 — steeper than the shared AntiMagic preset, and
+            // it is the archetype's namesake); BL-11 adds the mRes half it never had.
             Mob("watcher_eye", "Watcher Eye", 26, MobCategory.MagicCreature, 130f, true,
-                new MobMod(MDef: 2f, PDef: 0.5f, Name: "Magic Monster"), MobRole.Mage),
+                new MobMod(MDef: 2f, PDef: 0.5f, MagicResist: 0.25f, Name: "Magic Monster"), MobRole.Mage),
             Mob("lizardman_warrior", "Lizardman Warrior", 28, MobCategory.Humanoid, 132f, true, clan: ClanLizard),
             Mob("marauder_recruit", "Marauder Recruit", 30, MobCategory.Humanoid, 132f, true, clan: ClanMarauder),
             Mob("mantis_worker", "Mantis Worker", 32, MobCategory.Insect, 140f, true, clan: ClanMantis),
@@ -785,8 +824,10 @@ public static class MobCatalog
             Mob("dune_orc_archer", "Dune Orc Archer", 40, MobCategory.Humanoid, 132f, true, role: MobRole.Archer, clan: ClanOrc),
             Mob("ridge_orc_overlord", "Ridge Orc Overlord", 42, MobCategory.Humanoid, 132f, true, clan: ClanOrc),
             Mob("harpy", "Harpy", 42, MobCategory.Humanoid, 138f, true),
-            Mob("grave_lich", "Grave Lich", 44, MobCategory.Undead, 120f, true),
-            Mob("fomor_brute", "Fomor Brute", 45, MobCategory.Humanoid, 132f, true),
+            // ANTI-MAGIC (BL-11): a lich is made of the stuff. Also the Hollow Crypt boss.
+            Mob("grave_lich", "Grave Lich", 44, MobCategory.Undead, 120f, true, AntiMagic("Deathward")),
+            // ANTI-PHYSICAL (BL-11): the mid-band plated brute.
+            Mob("fomor_brute", "Fomor Brute", 45, MobCategory.Humanoid, 132f, true, AntiPhysical("Ironhide")),
             Mob("marsh_marauder", "Marsh Marauder", 46, MobCategory.Humanoid, 132f, true, clan: ClanMarauder),
             Mob("warped_drake", "Warped Drake", 47, MobCategory.Dragon, 150f, true, clan: ClanDrake),
             Mob("wildhorn_grunt", "Wildhorn Grunt", 48, MobCategory.Humanoid, 132f, true, clan: ClanWildhorn),
@@ -801,7 +842,9 @@ public static class MobCatalog
             Mob("mirror_wraith", "Hall of Mirrors Wraith", 56, MobCategory.Undead, 125f, true, clan: ClanMirror),
             Mob("mirror_ghost", "Mirror Ghost", 56, MobCategory.Undead, 125f, true, clan: ClanMirror),
             Mob("dune_orc_porter", "Dune Orc Porter", 57, MobCategory.Humanoid, 132f, false, clan: ClanOrc),
-            Mob("aether_wisp", "Aether Wisp", 58, MobCategory.MagicCreature, 115f, true, role: MobRole.Mage),
+            // ANTI-MAGIC (BL-11): a wisp IS magic. A caster too, so a fighter has to close on it.
+            Mob("aether_wisp", "Aether Wisp", 58, MobCategory.MagicCreature, 115f, true,
+                AntiMagic("Aetherward"), MobRole.Mage),
             Mob("hollow_one", "Hollow One", 58, MobCategory.Humanoid, 132f, true),
             Mob("valley_treant", "Valley Treant", 60, MobCategory.Plant, 90f, false),
             Mob("sand_ratman", "Sand Ratman", 60, MobCategory.Humanoid, 132f, true),
@@ -812,12 +855,15 @@ public static class MobCatalog
             // Resistance L10 (×1.43 P.Def vs sword/dual), Bow Resistance L12 (×2), Blunt Resistance
             // IG (×0.5 = weak). Same effect as a hand MobMod, but "picks a level" like a class.
             Mob("obsidian_knight", "Obsidian Knight", 63, MobCategory.Humanoid, 132f, true,
-                MobMasteries.Build(pierce: 10, bow: 12, blunt: 2, name: "Stoneplate")),
+                MobMasteries.Build(pierce: 10, bow: 12, blunt: 2, magicResist: 5, name: "Stoneplate")),
             Mob("crimson_drake", "Crimson Drake", 64, MobCategory.Dragon, 150f, true, clan: ClanDrake),
             Mob("wildhorn_scout", "Wildhorn Scout", 64, MobCategory.Humanoid, 138f, true, clan: ClanWildhorn),
-            Mob("dread_knight", "Dread Knight", 65, MobCategory.Undead, 135f, true, clan: ClanDread),
+            // ANTI-PHYSICAL (BL-11): full plate. Also the Sunless Warrens boss.
+            Mob("dread_knight", "Dread Knight", 65, MobCategory.Undead, 135f, true,
+                AntiPhysical("Dreadplate"), clan: ClanDread),
             Mob("wildhorn_elder", "Wildhorn Elder", 66, MobCategory.Humanoid, 132f, true, clan: ClanWildhorn),
-            Mob("spiteful_ghost", "Spiteful Ghost", 66, MobCategory.Undead, 125f, true),
+            // ANTI-MAGIC (BL-11): incorporeal — a blade passes through it, a spell does not.
+            Mob("spiteful_ghost", "Spiteful Ghost", 66, MobCategory.Undead, 125f, true, AntiMagic("Spiteward")),
             Mob("highland_kookaburra", "Highland Kookaburra", 67, MobCategory.Animal, 135f, false),
             Mob("highland_buffalo", "Highland Buffalo", 68, MobCategory.Animal, 130f, false),
             Mob("highland_buffalo_tamed", "Highland Buffalo (Tamed)", 68, MobCategory.Animal, 130f, false),

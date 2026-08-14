@@ -389,9 +389,16 @@ public static partial class SkillCatalog
         // that turns a caster's 99% success into 95%; against a caster punching UP it stacks on top
         // of a fail chance that is already climbing. 4, the top of his "3-4" — a 900s ultimate.
         //
-        // 🔴 STILL NOT BUILT: "skill evasion x1.25". Dodging a physical SKILL separately from a basic
-        // attack is a new resolution mechanic, not a new number, and he has not ruled on it. Left out
-        // rather than folded into the flat +20, which would silently make this stronger than authored.
+        // ✅ SKILL EVASION IS BUILT (BL-06, his `69e` ruling): *"normaly no1 can evade a physical
+        // skill … no1 evades only rogues gets a floor while in an ulitmate 25%,40%"*. The CSV's
+        // "skill evasion x1.25" turned out not to be a multiplier on anything — it is the 25%, and
+        // THIS buff is the only source of it in the game. A physical skill is otherwise never
+        // dodged at all (the accuracy-vs-evasion roll was removed from that branch entirely).
+        //
+        // 🔵 The 40% rung is NOT here. It is the second number of his pair and belongs to a rung
+        // this skill does not have — the CSV authors Evasion Boost as a single level, and adding
+        // one would re-spec his data (BL-02: the 40+ kits are owed). Same for *"76lvl the physical
+        // phantom gets a 90% for 15s"*, which is a 4th-class Phantom skill that does not exist yet.
         //
         // No buff FAMILY on purpose (same as Defensive Wall): an ultimate must stack on top of the
         // Agility ladder, not evict a potion or be evicted by one.
@@ -400,14 +407,16 @@ public static partial class SkillCatalog
             MpCost: 20, CastTicks: 5, CooldownTicks: 9000, Range: 0, Power: 0,
             DurationTicks: 300, BuffKey: "evasion_boost", Rank: 1,
             Category: SkillCategory.Buff, TargetMode: TargetMode.SelfOnly, SpCost: 3400,
+            SkillEvadeChance: 0.25f,
             Magnitudes: new EffectMagnitude[]
             {
                 new(SkillEffect.BuffEvasion, 20, ModifierMode.Flat),
                 new(SkillEffect.BuffCancelResist, 0.80f, ModifierMode.Percent),
                 new(SkillEffect.BuffMagicEvasion, 4, ModifierMode.Flat),
             },
-            Description: "Slip every blow for 30s: +20 Evasion, spells cast at you are 4% more "
-                       + "likely to fail, and your buffs strongly resist being cancelled."),
+            Description: "Slip every blow for 30s: +20 Evasion, a 25% chance to dodge physical "
+                       + "SKILLS outright, spells cast at you are 4% more likely to fail, and your "
+                       + "buffs strongly resist being cancelled."),
 
         // Bow Expertise — long self-buff: +8% bow attack speed (requires a bow) for 20 min.
         new(BowExpertise, "Bow Expertise", BaseClass.Fighter, SkillEffect.BuffAtkSpeed,

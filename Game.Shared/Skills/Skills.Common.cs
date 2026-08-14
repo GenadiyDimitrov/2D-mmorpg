@@ -57,6 +57,10 @@ public static partial class SkillCatalog
     //  the archer→rogue merge, so it was granted to nobody. See the CommonSkills() note.)
     public const string Precision    = "precision";     // Warrior 10/20/30% hit floor
     public const string AntiMagic    = "anti_magic";    // Tank    x2/2.5/3 on enemy magic fizzle
+    // ---- The two SKILL-defence passives (BL-07 / BL-08), auto-granted on the 3rd class change
+    //      like the three above. Their ladder is the owner's own 40 / 76 pair. See ReflectPassiveFor. ----
+    public const string Deflection   = "deflection";    // Warrior 15/30% chance to reflect a physical skill
+    public const string Backlash     = "backlash";      // Tank    30% chance to bounce a debuff back
     // ---- HEALING-potion skills. The potion ITEM names one of these; the SKILL does the
     //      healing and consumes the item (its ConsumableId). Everything is a skill — only
     //      what GRANTS it differs. The HoT ones are ordinary buffs, so they show on the buff
@@ -367,6 +371,31 @@ public static partial class SkillCatalog
             // Archer any more. A bow character is a Rogue whose discipline is ranged (above).
             // Mages get NO auto magic-fail floor — it comes from their LEARNED Anti-Magic
             // (anti_magic_mage), available to every mage class.
+            _ => null
+        };
+    }
+
+    /// <summary>The SECOND auto-granted identity passive — the skill-defence channels of `69e`
+    /// (BL-07 warrior / BL-08 tank) — as (skill id, skill LEVEL), or null. Granted alongside
+    /// <see cref="FloorPassiveFor"/> in AutoLearnCoreSkills.
+    ///
+    /// It is deliberately its OWN method rather than a second return from FloorPassiveFor: the two
+    /// ladders do not line up. The floors start at the 2nd class change (20); these start at the
+    /// THIRD (40), which is where the owner put them — *"default warrior @40 -> 0.15 chance x1
+    /// reflected; @76 -> 0.3"*. Below 40 an archetype has nothing here at all.
+    ///
+    /// ⚠ 76 is used as the Lv2 milestone here because he named it himself for this skill. That is
+    /// NOT a contradiction of the "76 is only a level, not a class change" rule that keeps Evasion
+    /// Mastery Lv3 unreachable — he wrote "@76" for Deflection and never did for the floors.
+    ///
+    /// ⚠ The TANK's rung (Backlash) has no authored level. 40 is mine; see the def.</summary>
+    public static (string Id, int Level)? ReflectPassiveFor(Archetype? archetype, int level)
+    {
+        if (level < 40) return null;
+        return archetype switch
+        {
+            Archetype.Warrior => (Deflection, level >= 76 ? 2 : 1),
+            Archetype.Tank    => (Backlash, 1),
             _ => null
         };
     }
@@ -688,6 +717,26 @@ public static partial class SkillCatalog
         LeveledPassive(AntiMagic, "Anti-Magic", BaseClass.Fighter,
             "Passive. Hostile spells are 2/2.5/3× more likely to fizzle on you.",
             new PassiveEffect(MagicFailMod: 2f), new PassiveEffect(MagicFailMod: 2.5f), new PassiveEffect(MagicFailMod: 3f)),
+
+        // ===== The two SKILL-defence passives (BL-07 / BL-08) — the other half of `69e`'s block =====
+        // DEFLECTION (warrior, BL-07). His numbers exactly: *"default warrior @40 -> 0.15 chance x1
+        // reflected; @76 -> 0.3 chance x1 reflected"*. He offered both shapes of the same budget
+        // (*"a 100% chance to reflect 15% p skill dmg, or 15% chance to reflect 100%"*) and then
+        // picked the second, so the PCT stays 1.0 at both rungs and only the CHANCE moves.
+        // ⚠ Only PHYSICAL SKILLS bounce — not basic attacks (that is the armor sets' `Reflect`,
+        // a separate channel) and not spells. Reflected damage is what the skill actually dealt.
+        LeveledPassive(Deflection, "Deflection", BaseClass.Fighter,
+            "Passive. 15/30% chance to reflect a physical skill's full damage back at its caster.",
+            new PassiveEffect(PhysSkillReflectChance: 0.15f, PhysSkillReflectPct: 1.0f),
+            new PassiveEffect(PhysSkillReflectChance: 0.30f, PhysSkillReflectPct: 1.0f)),
+        // BACKLASH (tank, BL-08): *"tanks get 30% chance to reflect a debuff -> u cast on tank he
+        // reflects u get the debuff"*. One number, one rung — he gave no ladder, so none is invented.
+        // ⚠ THE LEVEL IS MINE, NOT HIS: he never said when a tank gets it. It is granted at the 3rd
+        // class change (40) to sit beside Deflection, which he DID date. If he wants it at the 2nd
+        // class change instead, that is one line in ReflectPassiveFor.
+        LeveledPassive(Backlash, "Backlash", BaseClass.Fighter,
+            "Passive. 30% chance that a debuff cast at you lands on its caster instead.",
+            new PassiveEffect(DebuffReflectChance: 0.30f)),
 
         // (Wind Walk / Mass Wind Walk DELETED 2026-07-31 — the buff-ladder pass. They were a second,
         //  unranked source of move speed sitting outside every family; the improved Speed buff and

@@ -1333,6 +1333,12 @@ public class GameLoopService : BackgroundService
         if (SkillCatalog.FloorPassiveFor(player.Archetype, player.Level, player.Discipline) is { } floor)
             player.LearnedSkills[floor.Id] = floor.Level;
 
+        // The SECOND identity passive — the skill-defence channels (BL-07 warrior Deflection /
+        // BL-08 tank Backlash). Its own ladder because it starts at the 3rd class change, not the
+        // 2nd. Plain assignment like the floor above, so a rung is never stuck once granted.
+        if (SkillCatalog.ReflectPassiveFor(player.Archetype, player.Level) is { } reflect)
+            player.LearnedSkills[reflect.Id] = reflect.Level;
+
         // Class Balance passive — the per-class tuning hook. ⚠ COMMENTED OUT 2026-08-07 on the
         // owner's ruling (*"class_balance should be commented for now"*, playtest-19 `0a`): the defs
         // and this grant come out of the live path but stay in the file, ready to come back. They
@@ -7087,6 +7093,13 @@ public class GameLoopService : BackgroundService
 
         if (effect.HasFlag(SkillEffect.PhysicalDamage))
         {
+            // BL-06: a physical skill lands unless the victim was GRANTED a skill-evade chance. This
+            // path never rolled accuracy in the first place, so the only new thing is the grant.
+            if (!def.SureHit && (victim.Immune || _rng.NextDouble() < victim.SkillEvadeChance))
+            {
+                BroadcastCombat(attacker, victim, 0, CombatOutcome.Miss, name);
+                return;
+            }
             var (pFlat, pMod) = def.PhysDamageAt(lvl);
             int dmg = StatCalculator.PhysicalDamageFM(
                 (int)attacker.EffectiveAttack, pFlat, pMod, (int)victim.EffectiveDefence,
@@ -7094,6 +7107,7 @@ public class GameLoopService : BackgroundService
             dmg = FinalizeDamage(attacker, victim, dmg, DamageKind.SkillPhysical, def);
             BroadcastCombat(attacker, victim, dmg, CombatOutcome.Hit, name);
             ApplyDamage(victim, dmg, attacker);
+            ReflectPhysicalSkill(attacker, victim, dmg, name);   // BL-07
         }
         if (effect.HasFlag(SkillEffect.MagicDamage) && !victim.Dead)
         {
@@ -7120,6 +7134,42 @@ public class GameLoopService : BackgroundService
         }
         if (victim.Hp <= 0 && !victim.Dead)
             Kill(victim, attacker);
+    }
+
+    /// <summary>BL-07 — PHYSICAL SKILL REFLECT. A skill that lands on someone carrying Deflection has
+    /// a chance to be thrown back at its caster for a fraction of the damage it dealt (the warrior
+    /// default is 15%/30% chance × the FULL damage — his own pick of the two shapes he offered).
+    ///
+    /// Deliberately separate from <see cref="Entity.MeleeReflect"/>, which is the armor sets' counter
+    /// to vampirism and fires on BASIC attacks only. A caster is never hit by both for one blow.
+    ///
+    /// Applied directly, never through the skill pipeline, so a reflected skill cannot be reflected
+    /// again — two Deflection warriors hitting each other terminate after one bounce.</summary>
+    private void ReflectPhysicalSkill(Entity caster, Entity target, int damage, string name)
+    {
+        if (damage <= 0 || target.PhysSkillReflectChance <= 0f || caster == target) return;
+        if (_rng.NextDouble() >= target.PhysSkillReflectChance) return;
+        int reflected = (int)(damage * target.PhysSkillReflectPct);
+        if (reflected <= 0) return;
+        reflected = ApplyDamage(caster, reflected, target);
+        BroadcastCombat(target, caster, reflected, CombatOutcome.Hit, name + " [Reflect]");
+        if (caster.Hp <= 0) Kill(caster, target);
+    }
+
+    /// <summary>BL-08 — DEBUFF REFLECT. Rolled before a debuff's own land/fizzle contest: on a hit the
+    /// effect is applied to the CASTER instead and the intended target takes nothing at all
+    /// (*"u cast on tank he reflects u get the debuff"*).
+    ///
+    /// The bounced copy is applied directly, so the caster gets no resist roll and no second reflect —
+    /// a debuff can bounce exactly once. Self-casts and mob-on-mob effects never bounce.</summary>
+    private bool TryReflectDebuff(Entity caster, Entity target, SkillDef def, int lvl,
+        int durationOverride, string castName)
+    {
+        if (caster == target || target.DebuffReflectChance <= 0f) return false;
+        if (_rng.NextDouble() >= target.DebuffReflectChance) return false;
+        ApplyBuff(caster, def, lvl, durationOverride: durationOverride);
+        BroadcastCombat(target, caster, 0, CombatOutcome.Buff, castName + " [Reflect]");
+        return true;
     }
 
     /// <summary>Hostiles of the caster within a radius: for a MOB caster that's nearby players;
@@ -8166,11 +8216,16 @@ var effect = def.Effect;
         if (effect.HasFlag(SkillEffect.PhysicalDamage))
         {
             offensive = true;
-            float miss = StatCalculator.ResolveAvoidChance(
-                caster.Accuracy + SkillMath.PhysicalSkillAccuracyBonus, (int)target.EffectiveEvasion,
-                target.EvadeFloor, caster.HitFloor,
-                caster.Level, target.Level,
-                sureHit: def.SureHit, defenderImmune: target.Immune);
+            // BL-06 — A PHYSICAL SKILL IS NOT SUBJECT TO THE ACCURACY-vs-EVASION ROLL. His `69e`
+            // ruling: *"normaly no1 can evade a physical skill … now on then i miss a skill which is
+            // anoying - stab fails... then stab should land but misses ... no1 evades only rogues
+            // gets a floor while in an ulitmate"*. So the ONLY ways a skill fails to land are the
+            // defender's explicit grant (Evasion Boost, 25%) and total immunity.
+            //
+            // ⚠ This is why the caster's accuracy, the caster's HitFloor (Precision) and the
+            // defender's EvadeFloor (Evasion Mastery) no longer appear here at all — they were the
+            // thing being complained about. All three still govern BASIC attacks, untouched.
+            float miss = target.Immune ? 1f : def.SureHit ? 0f : target.SkillEvadeChance;
 
             if (_rng.NextDouble() < miss)
             {
@@ -8223,6 +8278,7 @@ var effect = def.Effect;
                 damage = finalDmg;
                 BroadcastCombat(caster, target, damage, outcome, castName);
                 ApplyDamage(target, damage, caster);
+                ReflectPhysicalSkill(caster, target, damage, castName);   // BL-07
                 TryInterruptCast(target, def.InterruptPower);
             }
         }
@@ -8365,23 +8421,29 @@ var effect = def.Effect;
         if ((effect & SkillEffect.ContestCc) != 0)
         {
             offensive = true;
-            bool agiBased = (effect & (SkillEffect.Bleed | SkillEffect.Venom)) != 0;
-            int atkStat = agiBased ? (int)caster.EffectiveAgi : caster.AtkStat;
-            int defStat = def.DebuffSchool == DebuffSchool.Magical ? (int)target.EffectiveWit : target.Con;
-            float land = target.Immune ? 0f : StatCalculator.DebuffLandChance(atkStat, defStat);
-            land *= 1f - target.CcResist;   // gear/buff CC resistance lowers the land chance
-            if (_rng.NextDouble() < land)
+            // BL-08: the reflect roll comes FIRST — before the contest, because a bounced debuff is
+            // not "resisted", it is redirected. A tank who bounces your stun is not tested against it,
+            // and you are not tested against your own.
+            if (!TryReflectDebuff(caster, target, def, lvl, doubledTicks, castName))
             {
-                if ((effect & SkillEffect.AnyDot) != 0)
-                    ApplyDotStack(caster, target, def, lvl);   // stacking DoT (refresh on reapply)
+                bool agiBased = (effect & (SkillEffect.Bleed | SkillEffect.Venom)) != 0;
+                int atkStat = agiBased ? (int)caster.EffectiveAgi : caster.AtkStat;
+                int defStat = def.DebuffSchool == DebuffSchool.Magical ? (int)target.EffectiveWit : target.Con;
+                float land = target.Immune ? 0f : StatCalculator.DebuffLandChance(atkStat, defStat);
+                land *= 1f - target.CcResist;   // gear/buff CC resistance lowers the land chance
+                if (_rng.NextDouble() < land)
+                {
+                    if ((effect & SkillEffect.AnyDot) != 0)
+                        ApplyDotStack(caster, target, def, lvl);   // stacking DoT (refresh on reapply)
+                    else
+                        ApplyBuff(target, def, lvl, durationOverride: doubledTicks);   // single CC buff
+                    BroadcastCombat(caster, target, 0, CombatOutcome.Buff,
+                        durationDoubled ? castName + " [Double]" : castName);
+                }
                 else
-                    ApplyBuff(target, def, lvl, durationOverride: doubledTicks);   // single CC buff
-                BroadcastCombat(caster, target, 0, CombatOutcome.Buff,
-                    durationDoubled ? castName + " [Double]" : castName);
-            }
-            else
-            {
-                BroadcastCombat(caster, target, 0, CombatOutcome.Fail, castName);  // resisted
+                {
+                    BroadcastCombat(caster, target, 0, CombatOutcome.Fail, castName);  // resisted
+                }
             }
         }
 
@@ -8390,21 +8452,25 @@ var effect = def.Effect;
         if ((effect & SkillEffect.AnyDebuff & ~SkillEffect.ContestCc) != 0)
         {
             offensive = true;
-            float fail = def.SureHit ? 0f
-                       : target.Immune ? 1f
-                       : StatCalculator.MagicFailChance(caster.Level, target.Level,
-                             target.MagicFailMod,
-                             StatCalculator.MagicWeaponFailMod(caster.UntrainedCasterWeapon),
-                             target.MagicFailBonus);
-            if (_rng.NextDouble() < fail)
+            // BL-08 first, same rule as the contested branch above: a bounce is not a fizzle.
+            if (!TryReflectDebuff(caster, target, def, lvl, doubledTicks, castName))
             {
-                BroadcastCombat(caster, target, 0, CombatOutcome.Fail, castName);
-            }
-            else
-            {
-                ApplyBuff(target, def, lvl, durationOverride: doubledTicks);
-                BroadcastCombat(caster, target, 0, CombatOutcome.Buff,
-                    durationDoubled ? castName + " [Double]" : castName);
+                float fail = def.SureHit ? 0f
+                           : target.Immune ? 1f
+                           : StatCalculator.MagicFailChance(caster.Level, target.Level,
+                                 target.MagicFailMod,
+                                 StatCalculator.MagicWeaponFailMod(caster.UntrainedCasterWeapon),
+                                 target.MagicFailBonus);
+                if (_rng.NextDouble() < fail)
+                {
+                    BroadcastCombat(caster, target, 0, CombatOutcome.Fail, castName);
+                }
+                else
+                {
+                    ApplyBuff(target, def, lvl, durationOverride: doubledTicks);
+                    BroadcastCombat(caster, target, 0, CombatOutcome.Buff,
+                        durationDoubled ? castName + " [Double]" : castName);
+                }
             }
         }
 
@@ -8714,6 +8780,7 @@ var effect = def.Effect;
             Replaces = def.Replaces ?? Array.Empty<string>(),
             PhysMpCostPct = def.PhysMpCostPct,
             MagicMpCostPct = def.MagicMpCostPct,
+            SkillEvadeChance = def.SkillEvadeChance,   // BL-06, rogue ultimate only
             // Reward-rune payload, at the LEVEL that landed: a Rune of Experience (20%) is level 3 of
             // one ladder skill, so reading the def's own field here would hand out the +5% rung.
             Rewards = def.RewardsAt(level),

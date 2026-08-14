@@ -266,7 +266,13 @@ public record SkillDef(
     // on one. The rogue's Lure is what this is for: it is a taunt, and a taunt aimed at a person is
     // meaningless — but without an explicit refusal it would look like a working PvP skill that
     // silently does nothing, which is worse than a skill that says no.
-    bool MobTargetOnly = false)
+    bool MobTargetOnly = false,
+    // SKILL EVASION (BL-06) — the chance the HOLDER of this buff dodges an incoming physical SKILL.
+    // A physical skill is never evaded by the ordinary accuracy-vs-evasion contest any more (owner,
+    // playtest-21 `69e`: *"normaly no1 can evade a physical skill … now on then i miss a skill which
+    // is anoying — stab fails"*); the ONLY way one is dodged is an explicit grant like this.
+    // Rides as a field, not a SkillEffect flag — the flag enum is full (1L << 62 was the last bit).
+    float SkillEvadeChance = 0f)
 {
     /// <summary>Hash on the ID alone — and this override MUST stay.
     ///
@@ -629,7 +635,20 @@ public readonly record struct PassiveEffect(
     // endHeal = (HealPowerFlat + skillPower)·HealPowerMod, then the target's (HealReceivedFlat +
     // endHeal)·HealReceivedMod. Default 0 flat / +0% (so an untrained healer heals exactly skillPower).
     int HealPowerFlat = 0, float HealPowerPct = 0f,
-    int HealReceivedFlat = 0, float HealReceivedPct = 0f)
+    int HealReceivedFlat = 0, float HealReceivedPct = 0f,
+    // ----- The three DEFENCE CHANNELS against skills (BL-06/07/08, playtest-21 "New formulas").
+    // All three are GUARANTEES, so the resolver takes the MAX across passives/buffs, never a sum —
+    // the same rule as EvadeFloor / HitFloor / MagicFailMod above. -----
+    // BL-06: chance to dodge an incoming PHYSICAL SKILL. Nothing else can dodge one.
+    float SkillEvadeChance = 0f,
+    // BL-07: a physical skill that hits you is reflected back at its caster — Chance to reflect,
+    // Pct of the damage returned. His own framing: *"we can have a 100% chance to reflect 15% p
+    // skill dmg, or 15% chance to reflect 100% p skill dmg"*; the warrior default is the latter.
+    float PhysSkillReflectChance = 0f, float PhysSkillReflectPct = 0f,
+    // BL-08: chance that a DEBUFF cast at you lands on its caster instead — *"u cast on tank he
+    // reflects u get the debuff"*. Rolled before the land/fizzle contest; a reflected debuff is
+    // not re-rolled and cannot bounce a second time.
+    float DebuffReflectChance = 0f)
 {
     /// <summary>Hash on a few representative fields instead of all ~60. Same IL2CPP bracket-nesting
     /// reason as <see cref="SkillDef.GetHashCode"/>: this record is the SECOND largest in the
@@ -797,5 +816,8 @@ public static class SkillMath
         Math.Max(1, (int)((healPowerFlat + skillPower) * healPowerMod));
 
     public const float CritMultiplierSkills = 2.0f;
-    public const int PhysicalSkillAccuracyBonus = 10;
+    // (PhysicalSkillAccuracyBonus DELETED 2026-08-14, BL-06. It was +10 accuracy on a physical
+    //  skill's miss roll — a softener on a roll that no longer happens at all: a physical skill is
+    //  not evaded by accuracy-vs-evasion any more, only by an explicit SkillEvadeChance grant.
+    //  Don't re-add it; it would have nothing to modify.)
 }

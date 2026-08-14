@@ -1329,6 +1329,78 @@ Console.WriteLine();
 //  What this deliberately does NOT do: invent a mob archetype table, add an HP passive skill, or touch
 //  MobCatalog. The point of a feasibility check is to learn the SHAPE of the problem before authoring.
 // =====================================================================================================
+// =====================================================================================================
+//  BL-13 — BOSS PACE. *"boss had 260? He should have 520? Check."* plus his two targets: a FIELD boss
+//  should take a 3-DD party about SIX MINUTES, and *"a world [boss] should take an hour for ~10 parties
+//  (~50 DDs)"*.
+//
+//  Everything here is measured through the real entities and the real rank multipliers that
+//  GameLoopService.BuildMob applies (MobHpScale / MobPAtkScale / MobAccFlat), so the HP printed is the
+//  HP a boss actually spawns with — which is the "check" half of his question.
+//
+//  ⚠ The party DPS is a CEILING: three champions swinging with no downtime, no deaths, no adds, no
+//  boss phases and no time spent walking back in. A real fight is slower, so a boss tuned to exactly
+//  360s here will run longer in play. That is the right direction to be wrong in.
+// =====================================================================================================
+// =====================================================================================================
+//  BL-14 — WHAT THE WEAPON A MOB HOLDS IS WORTH. *"Archer is slower but does more dmg, the fast
+//  attacking have more crit rate and more atck speed but less dmg."* Attack speed and crit rate came
+//  off the weapon already (2026-08-10); per-hit POWER did not, so a slow weapon was a pure nerf.
+//  MobWeaponPowerFactor is the missing trade. Read the DPS column: it should be FLAT across the
+//  melee rows — that is what "trade, not nerf" means — while hit size and crit rate diverge.
+// =====================================================================================================
+Console.WriteLine("=== BL-14: a mob's weapon — the trade, measured (level 40, vs a same-level geared champion) ===");
+Console.WriteLine($"{"weapon",16} {"atk base",9} {"pwr x",7} {"P.Atk",8} {"crit",7} {"dps",8}");
+{
+    const int L = 40;
+    var victim = BuildPlayer(Race.Human, BaseClass.Fighter, L, warrior: true);
+    foreach (var w in new[] { WeaponType.Dual, WeaponType.Sword, WeaponType.Blunt,
+                              WeaponType.TwoHandedSword, WeaponType.Bow, WeaponType.None })
+    {
+        var s = StatCalculator.MobStats(L);
+        var m = new Entity { Name = "mob", Kind = EntityKind.Mob, Level = L, InnateWeaponType = w };
+        m.Con = s.Con; m.AtkStat = s.Atk; m.Wit = s.Wit; m.Agi = s.Agi; m.Spt = s.Spt;
+        m.RecomputeDerived();
+        Console.WriteLine($"{w,16} {StatCalculator.WeaponAttackBaseSpeed(w),9} "
+            + $"{"x" + StatCalculator.MobWeaponPowerFactor(w).ToString("0.00"),7} "
+            + $"{(int)m.EffectiveAttack,8} {(m.CritChance * 100f).ToString("0.0") + "%",7} {Dps(m, victim),8:F1}");
+    }
+}
+Console.WriteLine("  BOW is x1.00 on purpose: MobRole.Archer already pays the same trade explicitly (P.Atk x2,");
+Console.WriteLine("     450 range, less P.Def), and charging his one sentence twice would make archers ~3x per arrow.");
+Console.WriteLine();
+
+Console.WriteLine("=== BL-13: BOSS PACE — does a field boss last his six minutes? ===");
+Console.WriteLine("  rank multipliers are BuildMob's own: Elite HP x4 / P.Atk x1.5; Boss HP x100 / P.Atk x10, Acc +20.");
+Console.WriteLine($"{"Lvl",4} {"rank",6} {"boss HP",10} {"1 DD dps",9} {"3-DD dps",9} {"TTK",9} {"target",8} {"HP x needed",12}");
+foreach (int L in new[] { 20, 40, 60, 76, 85 })
+{
+    var dd = BuildPlayer(Race.Human, BaseClass.Fighter, L, warrior: true);
+    foreach (var (rankName, hpMul, atkMul, accFlat) in
+             new[] { ("Elite", 4f, 1.5f, 0), ("Boss", 100f, 10f, 20) })
+    {
+        var boss = BuildMobEntity(L);
+        boss.MobHpScale = hpMul; boss.MobPAtkScale = atkMul; boss.MobMAtkScale = atkMul;
+        boss.MobAccFlat = accFlat;
+        boss.RecomputeDerived();   // the whole point of playtest-20 #7: the scale must survive a recompute
+
+        float one = Dps(dd, boss);
+        float three = one * 3f;
+        float ttk = boss.MaxHp / Math.Max(0.01f, three);
+        // His target applies to the BOSS rank only; an elite is a trash-plus, not a set piece.
+        float bossTarget = rankName == "Boss" ? 360f : 0f;
+        string need = bossTarget > 0f ? "x" + (bossTarget / Math.Max(0.01f, ttk) * hpMul).ToString("0") : "-";
+        Console.WriteLine($"{L,4} {rankName,6} {boss.MaxHp,10} {one,9:F0} {three,9:F0} "
+            + $"{ttk,8:F0}s {(bossTarget > 0 ? bossTarget + "s" : "-"),8} {need,12}");
+    }
+}
+Console.WriteLine("  'HP x needed' = the rank HP multiplier that would put a 3-DD party at exactly 360s.");
+Console.WriteLine("  ⚠ THE WORLD BOSS IS NOT IN THIS TABLE — there is no such rank. MobRank is Normal/Elite/Boss,");
+Console.WriteLine("     and the only thing separating his 21-hour spawn from a 30-minute one is the respawn timer.");
+Console.WriteLine("     ~50 DDs for 3600s is ~16.7x the party and 10x the time = ~167x a field boss's HP, which is a");
+Console.WriteLine("     new rank, not a bigger number. Not invented here.");
+Console.WriteLine();
+
 Console.WriteLine("#####################################################################################");
 Console.WriteLine("###  G3 MOB-AS-PLAYER FEASIBILITY — measurement only, nothing built                ###");
 Console.WriteLine("#####################################################################################");

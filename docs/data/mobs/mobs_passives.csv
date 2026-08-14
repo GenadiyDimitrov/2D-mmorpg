@@ -12,6 +12,7 @@ P.Def Mod,Increase/Decrease P.Def with a value,P.Def,prc,"[0,0.39,0.43,0.47,0.52
 Piercing Resistance,Weak/Strong agains sword/dual type weapons,P.Def,prc,"[0,0.5,0.6,0.7,0.8,0.9,1,1.11,1.25,1.43,1.67,2,999999]",0 always land; 999999 is total immunity
 Blunt Resistance,Weak/Strong agains blunt type weapons,P.Def,prc,"[0,0.5,0.6,0.7,0.8,0.9,1,1.11,1.25,1.43,1.67,2,999999]"
 Bow Resistance,Weak/Strong agains bow type weapons,P.Def,prc,"[0,0.5,0.6,0.7,0.8,0.9,1,1.11,1.25,1.43,1.67,2,999999]"
+Magic Resistance,Weak/Strong agains magic damage (feeds the mRes channel; below 1 is a WEAKNESS),mRes,prc,"[0,0.5,0.6,0.7,0.8,0.9,1,1.11,1.25,1.43,1.67,2,999999]",BUILT — this is the anti-magic/anti-physical pair's channel. Coef 1.25 = mRes +25% = takes x0.8 magic dmg
 Stun Resistance,Weak/Strong agains stun atacks,Stun Resist,prc,"[0,0.5,0.6,0.7,0.8,0.9,1,1.11,1.25,1.43,1.67,2,999999]"
 Fear Resistance,Weak/Strong agains fear atacks,Fear Resist,prc,"[0,0.5,0.6,0.7,0.8,0.9,1,1.11,1.25,1.43,1.67,2,999999]"
 ???? Resistance,Weak/Strong agains ???? atacks,???? Resist,prc,"[0,0.5,0.6,0.7,0.8,0.9,1,1.11,1.25,1.43,1.67,2,999999]",the same logic for all other resistances we will have
