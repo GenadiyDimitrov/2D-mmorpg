@@ -3,7 +3,8 @@
 > **Rolling and unversioned.** Playtest 23 (2026-08-15) closed the five-version backlog: §79, §75, §80a/b/e,
 > §81a/d/e, §82a-d/f/g and §83a all came back `[x]` and are **gone from this file** — they live in
 > [Playtest-Archive.md#playtest-23](Playtest-Archive.md#playtest-23) with your comments verbatim. What is
-> below is what you did **not** reach, what you **ruled on** and I then built, and the new §85.
+> below is what you did **not** reach, what you **ruled on** and I then built, and the new §85 and §86.
+> **§86 is the newest** — three items built after the 0.68.0 notes were written, while this APK waited.
 
 Rows are the format you picked (option 2): write your comment after the `->`. Put `x` in the `[]` if
 it passed with nothing to say, `~` if it works but wants a change, `!` if it is a bug or priority,
