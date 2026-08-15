@@ -14,6 +14,11 @@ namespace Game.Client
     {
         public RectTransform Target;
 
+        /// <summary>Set by <see cref="WindowGeometry"/>: a locked window stays where it was put
+        /// (playtest 23 — *"a small button with a lock so it's locked in position and in size"*). Raising
+        /// it on touch still works, because that is not moving it.</summary>
+        public bool Locked;
+
         private Canvas _canvas;
 
         public void OnPointerDown(PointerEventData eventData)
@@ -25,7 +30,7 @@ namespace Game.Client
 
         public void OnDrag(PointerEventData eventData)
         {
-            if (Target == null) return;
+            if (Target == null || Locked) return;
             if (_canvas == null) _canvas = GetComponentInParent<Canvas>();
 
             float scale = _canvas != null && _canvas.scaleFactor > 0f ? _canvas.scaleFactor : 1f;

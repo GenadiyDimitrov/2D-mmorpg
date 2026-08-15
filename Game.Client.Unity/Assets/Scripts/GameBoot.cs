@@ -2380,10 +2380,21 @@ namespace Game.Client
             catch (Exception ex) { ClientLog.Warn("Equip: " + ex.Message); }
         }
 
+        /// <summary>Drink/read a consumable. 🔴 It now always carries the CURRENT TARGET, and that is the
+        /// whole of the playtest-23 resurrection-scroll bug: *"cannot use scroll of resurrection ... but
+        /// scroll says 'need a fallen ally as its target'."* The server has had a targeted path since the
+        /// scroll shipped (<c>UsePotionOn</c>) — this client only ever called the untargeted one, so a
+        /// res scroll validated a target that was never sent and refused itself every time. The cleric's
+        /// skill worked because a CAST has always carried its target.
+        ///
+        /// <para>Sending the target on every consumable is safe and deliberate: the server reads it only
+        /// for a skill with <c>Resurrect</c>, and everything else channels on the user regardless. A
+        /// null target still reaches the untargeted overload, so drinking with nothing selected is
+        /// unchanged.</para></summary>
         public async void UsePotion(Guid instanceId)
         {
             if (Phase != ClientPhase.InWorld) return;
-            try { await _net.UsePotionAsync(instanceId); }
+            try { await _net.UsePotionAsync(instanceId, TargetId); }
             catch (Exception ex) { ClientLog.Warn("UsePotion: " + ex.Message); }
         }
 

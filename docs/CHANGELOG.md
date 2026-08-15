@@ -7,10 +7,134 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.67.2**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.68.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
+
+## 0.68.0 — 2026-08-15 — the playtest-23 batch
+
+His first device pass in five versions came back with almost everything green and **sixteen finds**, and
+this is all of them that were mine to act on. The pass itself is archived verbatim at
+[testing/Playtest-Archive.md#playtest-23](testing/Playtest-Archive.md#playtest-23).
+
+**🔴 NEEDS A NEW APK** — protocol **20 → 21**, and half of this is client work. **No DB reset**: nothing
+persisted changed shape.
+
+### Two things were built and could never fire
+
+- 🔴 **Signal Flare could not catch anybody, ever.** *"Flare does nothing ...cannot find flagged player
+  next to me. Doesn't cancel his vanish skill."* `RevealHidden` walked `PlayersInRadius`, which is the
+  **party-support** enumeration: it returns the caster plus party members, and it deliberately skips
+  `e.Hidden` because a party heal must not silently find someone nobody can see. Both halves are exactly
+  wrong for a flare, whose entire subject is a hidden NON-party enemy — so the two rules cancelled and the
+  skill was a no-op with a success message. It walks the grid itself now.
+- 🔴 **No taunt had ever fired from the auto-hunt chain.** *"Provoke is not auto used in any form."*
+  `ClassifyAuto` sorted it into `Other`, the never-cast bucket, because the debuff test asks for
+  `ContestCc` or a `DebuffSchool` and a taunt is neither — it is not contested and has no school to
+  resist. Taunts now have their own rung, **above Attack** (a tank's attack chain is never idle, so a rung
+  below it would fire on no tick at all). Also answers *"check the cyclic logic ...I feel there is a
+  problem"*: the cursor walk is correct, and what looked broken was armed rows the chain silently
+  ignored — **it now says which rows it cannot cast** instead of skipping them in silence.
+- **The resurrection scroll refused every valid corpse.** *"cannot use scroll of resurrection (cleric
+  skill works) but scroll says 'need a fallen ally as its target'."* The server has had a targeted
+  item-use path since the scroll shipped; **this client only ever called the untargeted one**, so the
+  scroll validated a target that was never sent. The cleric's skill worked because a cast has always
+  carried its target.
+
+### His rulings on things already built
+
+- 🔴 **Mob social clans are OFF, and the system is untouched.** *"way to harsh with our mobs position …
+  hitting one wolf getting ganked by 10 other … For a mage lvl 9 hitting a warefolf means dead … remove
+  all mobs social clan (leave the system ..we will use it just not now) … Make a note to turn it on once
+  the world map is in place."* 🔑 The defect is **spawn DENSITY, not the 450 radius** — every camp
+  generates on nearly one point, so a cry reaches all of it. His target shape (*"it will call ONE, and
+  while you fight, if others wander in the social range they will aggro"*) is what the same radius already
+  does once a camp occupies real ground. One switch, `GameConstants.MobClansEnabled`; the twelve clans
+  stay authored and every line of `CryForHelp` stays live. Note filed as **`BL-73`**.
+- 🔴 **The three hide skills are re-homed to the classes he named.** **`Prowl` → every melee rogue at 40**
+  (was rogue 20, which handed the dagger's stance to every future archer too), **`Signal Flare` → every
+  archer at 60**, **`Vanish` → every melee rogue at 60** with a **2 min cooldown / 30s duration**, his
+  numbers. 🔑 The counter now sits **level with** what it counters instead of twelve levels below it, and
+  the 2-minute reuse is what makes the flare's 30s no-hide stamp mean something — at the old 30s cooldown
+  the stamp expired at the same moment the skill came back. "Melee rogue" and "archer" are three
+  disciplines each (the archer merge splits the rogue by race at 40). Supersedes 0.67.2's Phantom-only
+  stopgap; still a named exception to `BL-02`, not a repeal of the 40+ purge.
+- 🔴 **The preservation skills are a DEATH PROMPT now, not a refusal to die.** *"now is literally undying
+  will ... U just don't die u heal +30% when your hp reaches 0"* → *"the tanks and healers are like you die
+  (mobs stop attacking etc ..the hole pipe) and get a resurrection promp if you click yes u resurrect on
+  the spot, else back to town"* → *"I want phebyx blood - u die -> u stay dead until you click the
+  resurrection prompt."* Undying Will and Rite of Preservation now run the **whole death pipeline** and
+  then offer a self-resurrection **that never expires**. One call changed, from `ResurrectTarget` to
+  `OfferResurrect` — everything he listed as "the whole pipe" was already running before that line.
+  ⚠ The heal-at-0 shape he liked for a warrior is **not deleted**: it is `LastStand` (`LethalSave`, 50%),
+  already in the catalog and waiting on a class and a level like every other 40+ skill — **`BL-75`**.
+- 🔴 **The PvP flag is paid at the START of a resurrection.** *"In a mass pvp if my friend is dead
+  (flagged/pk) and I start to resurrect I become pvp while I resurrect him not after he stands.. So other
+  ppl can kill me or attempt to stop the resurrection."* It was charged in `ResurrectTarget` — after a 10s
+  channel **and** a prompt the corpse might never answer — so the entire window in which the res could be
+  contested was a window in which the resurrector was untouchable. Charged on both the cast and the scroll
+  path, and not refunded on an interrupt: you were visibly holding a channel over an outlaw's body.
+- 🔴 **Boss EXP: the party split is out, the respawn wait is in.** *"a 90 elite gives ~200k exp while boss
+  gives 6kk … 30times more and feel like a waste ... make it give atleast 20kk ... we should take the
+  respawn time and the time it takes a 1 dd to kill the boss not 5."* Two changes, and the first is his
+  argument rather than his arithmetic: the 1.5 boss efficiency was justified *by* the five-way split he has
+  now struck out, so priced for one damage dealer it becomes **2.0**, the top of his own "x1.2~2". The
+  second is a factor the formula did not have at all — **what you spend waiting for the thing to come
+  back**, measured against the world's own authored 22s trash cadence (`BaselineRespawnSeconds`), so
+  ordinary trash comes out at ×1.00 and normal levelling does not move. A level-90 field boss goes
+  **~6kk → ~24kk**, inside his "at least 20kk"; an elite gains ~29%. ⚠ The **exponent (0.25) is the one
+  invented number** and the only knob: 1.0 would pay the wait in full, which assumes you stand at the
+  corpse for thirty minutes. `M`-table `BL-49` in BalanceMatrix prints all of it, now with 89 and 90 rows.
+- 🔴 **Dark Dominion is deleted.** *"it falls in the category for deletion."* Six E-grade pieces and a real
+  set bonus that **nothing dropped, sold or boxed** — the last hand-authored set outside the generator, and
+  the same category as `79e`'s 64 off-ladder items. The rule it leaves has no exception at all now: gear is
+  **LADDER** or **TRAINING**, there is no third kind.
+
+### What the screen tells you
+
+- 🔴 **The drop tab applies the LEVEL-GAP PENALTY it always hid.** *"the drop value with double drop rune
+  shows double chances ..the problem is there should be the same penalty as exp/sp when mob and player have
+  a difference and that penalty is not displayed."* The kill roll has always multiplied by
+  `LevelGapMultiplier`; the inspect list never did. 🔑 The rune was the tell — both are per-player scalars
+  on the same roll, and showing one while hiding the other is worse than showing neither, because the
+  visible one certifies the number as personal and it is then wrong by up to 100%. A header states the
+  penalty when there is one, and says outright when a creature drops nothing for you.
+- 🔴 **The target frame: the title bar IS the name.** *"put the name in place of `Target`. The title of the
+  window to be the targets name"* · *"the current name text can be removed so the title window be smaller
+  in size."* The duplicate name row is gone (the frame is 28px shorter) and the half-clipped type line is
+  full width and rewritten to his format: **`Mob: 44, Aggressive, Social (wolf)`** / **`Player: Vagabond`**.
+  ⚠ "Vagabond" is not waiting on a lookup — there are no player clans in the game yet, so every player
+  genuinely is clanless.
+- **The mob info sheet leads with BEHAVIOUR and drops what it never used.** *"Remove mobs unused info
+  statuses; add info like -> agro:true/false, social: true/false, social clan: clanName."* Aggression, the
+  social clan and the rank go **first**, because they are the only part of that sheet you need *before* you
+  pull. A mob's mana and an all-zero Utility block are gone; players keep both, because another player's MP
+  is exactly what tells a healer whether they can still cast.
+- **The chat and combat windows move, resize and LOCK, remembered on the device.** *"a small button with a
+  lock so it's locked in position and in size - persistent for the apk not the server"* · *"I want to be
+  able to move the window side to side or on top of the other without they obscure my view."* A corner grip
+  and an L/U button in the title bar; position, size and lock state live in `PlayerPrefs`. 🔑 Device, not
+  server, and that is the right home: where a window sits is a property of the screen it is read on.
+- **The chat input clears the camera cutout.** *"move the chat text box with 10-20 pixels more higher. Now
+  it's the middle of the screen and it's under my front camera circle."* 🔑 It only reads as mid-screen
+  **while typing** — the row lives at the bottom edge and the soft-keyboard lift is what puts it level with
+  a landscape punch-hole. So the 20px clearance is added to the lift, not to the resting position.
+
+### For him to author
+
+- **The eight level-40+ CSV files exist now, seeded.** *"u can add files next to other skills 20-35.Csv the
+  mele rogues one, one for archers, one for buffers and one for healers ..with what u have after 40 so I
+  start with them later on."* `melee rogue` / `archer` / `healer` / `buffer`, each `40-74` and `76-85`, in
+  the 40+ format (the 20-35 header plus a trailing `RACE` column), holding **exactly what the game already
+  registers above 40** — nothing invented. Written by `tools/SkillCsvSeed`, which **refuses to overwrite**,
+  so they are his from the moment he opens one. `docs/data/classes_skills_csv/README.md` explains the
+  discipline mapping. ⚠ Four of the eight are nearly empty, and that is the honest picture.
+- ⚠ **The break banner is at 10 MINUTES, temporarily, at his request** — *"change it to 10mins. (tag it to
+  return to default 3h after test)"*, because `13a` has gone untested for six passes for the obvious
+  reason. `GameConstants.BreakReminderSeconds`. **Put it back to 3h once he has seen it.**
+- **`BL-74`** filed for the Game Launcher: everything a manifest can claim is already claimed, so the
+  remaining variable is outside it (install source / Play category), and it needs his device to settle.
 
 ## 0.67.2 — 2026-08-14 — the Phantom gets Vanish back
 

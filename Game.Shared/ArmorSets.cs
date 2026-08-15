@@ -35,7 +35,10 @@ public record ArmorSetDef(string Id, string Name, ClassFlatBonus Bonus,
 public static class ArmorSetCatalog
 {
     // ----- Stable set ids -----
-    public const string DarkDominion = "set_dark_dominion";
+    // ⚠ `set_dark_dominion` was here and is DELETED (playtest 23) along with its six pieces — an
+    // authored set nothing could obtain. Kept out of the "retired ids" block below on purpose: those
+    // exist so an old SAVE still resolves a name, and no save can hold a Dark Dominion piece, because
+    // no drop, shop or box ever produced one.
     // F grade's sets. The ids MUST match what the tiered generator emits for ItemLevel 1
     // (ItemCatalog.TieredArmor: "set_{weight}_t{level}" and "set_acc_t{level}") — a set is joined to
     // its pieces by nothing but this string, so a mismatch is a bonus that silently never applies.
@@ -54,10 +57,6 @@ public static class ArmorSetCatalog
 
     private static readonly Dictionary<string, ArmorSetDef> _byId = new[]
     {
-        new ArmorSetDef(DarkDominion, "Dark Dominion",
-            // "+con/atk + max hp/mp" expressed as flat secondary deltas (tune later).
-            new ClassFlatBonus(MaxHp: 150, MaxMp: 80, Defence: 25, Attack: 18,
-                               Evasion: 6, Accuracy: 6)),
         // Newbie sets — the light/robe BODY grants the bonus; both share the same
         // newbie accessory line (boots/gloves/helm). Full set = body + 3 accessories.
         // ===== F GRADE ("Ferrite") — the old Newbie sets, now the F tier's own =====

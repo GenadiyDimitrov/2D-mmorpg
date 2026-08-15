@@ -1,0 +1,2 @@
+LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR, INIT MP,FINIT MP ,SP COST,REPLACES,RACE
+76,Madness,Magic/Buff,600,self/party,1.5,1,1200,"Drives you and nearby allies berserk: −6% Max HP/MP, but +9% P.Atk / M.Atk / attack & cast speed, +9 Move Speed and −8 Evasion for 20 minutes.",44,176,100000,[],

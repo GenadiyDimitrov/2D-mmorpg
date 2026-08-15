@@ -1408,8 +1408,8 @@ Console.WriteLine();
 Console.WriteLine("=== BL-49: WHAT A RANK PAYS — is an hour on bosses worth his 1.2-2 hours on trash? ===");
 Console.WriteLine("  exp = MobExpReward(level) x killTimeRatio x rankEfficiency.  killTimeRatio = HP x P.Def,");
 Console.WriteLine("  measured off the spawned mob; your DPS cancels, so this is character-independent.");
-Console.WriteLine($"{"Lvl",4} {"rank",6} {"trash exp",11} {"rank exp",13} {"exp x",8} {"TTK x",8} {"exp/sec x",10} {"was",9} {"% of level",11} {"/ 9-man",9}");
-foreach (int L in new[] { 20, 40, 60, 76, 85 })
+Console.WriteLine($"{"Lvl",4} {"rank",6} {"trash exp",11} {"rank exp",13} {"exp x",8} {"TTK x",8} {"resp x",7} {"exp/sec x",10} {"was 0.67",11} {"% of level",11} {"/ 9-man",9}");
+foreach (int L in new[] { 20, 40, 60, 76, 85, 89, 90 })
 {
     long trashExp = StatCalculator.MobExpReward(L);
     foreach (var (rankName, rank, hpMul, atkMul) in new[]
@@ -1424,11 +1424,19 @@ foreach (int L in new[] { 20, 40, 60, 76, 85 })
         float hpRatio  = mob.MaxHp / (float)Math.Max(1, MobBaseStats.Hp(L));
         float defRatio = mob.EffectiveDefence / Math.Max(1f, MobBaseStats.PDef(L));
         float timeRatio = Math.Clamp(hpRatio * Math.Max(0.25f, defRatio), 0.25f, 400f);
-        float eff = rank == MobRank.Boss ? 1.5f : 1.2f;
+        // 🔴 PLAYTEST 23: a boss is 2.0 (the 1.5 was justified by a 5-way party split he has struck out
+        // — "the time it takes a 1 dd to kill the boss not 5"), and a THIRD factor is in: what you spend
+        // WAITING for the thing to respawn. The world's own authored cadences are the inputs — 22s trash,
+        // 60-90s elite, 1800s field boss, 21h world boss.
+        float eff = rank == MobRank.Boss ? 2.0f : 1.2f;
+        float respawnSeconds = rank == MobRank.Boss ? 1800f : 60f;
+        float respawn = Math.Clamp(
+            MathF.Pow(respawnSeconds / GameConstants.BaselineRespawnSeconds, GameConstants.RespawnScarcityExponent),
+            1f, 12f);
 
-        long rankExp = Math.Max(1L, (long)(trashExp * timeRatio * eff));
-        // What the OLD HP-only rule paid, clamp and all — the size of the correction.
-        long oldExp = Math.Max(1L, (long)(trashExp * Math.Clamp(hpRatio, 0.25f, 20f)));
+        long rankExp = Math.Max(1L, (long)(trashExp * timeRatio * eff * respawn));
+        // What 0.67.0 paid: the same time ratio at the OLD efficiency, with no respawn term at all.
+        long oldExp = Math.Max(1L, (long)(trashExp * timeRatio * (rank == MobRank.Boss ? 1.5f : 1.2f)));
 
         // The number that decides whether the efficiency constant is SANE rather than merely
         // self-consistent: one kill as a fraction of the level it happens at, solo and split 9 ways.
@@ -1438,14 +1446,17 @@ foreach (int L in new[] { 20, 40, 60, 76, 85 })
         Console.WriteLine($"{L,4} {rankName,6} {trashExp,11:N0} {rankExp,13:N0} "
             + $"{"x" + (rankExp / (double)trashExp).ToString("0.0"),8} "
             + $"{"x" + timeRatio.ToString("0.0"),8} "
-            + $"{"x" + (rankExp / (double)trashExp / timeRatio).ToString("0.00"),10} "
-            + $"{"x" + (oldExp / (double)trashExp).ToString("0.0"),9} "
+            + $"{"x" + respawn.ToString("0.00"),7} "
+            + $"{"x" + (rankExp / (double)trashExp / timeRatio / respawn).ToString("0.00"),10} "
+            + $"{oldExp,11:N0} "
             + $"{pctSolo.ToString("0.0") + "%",11} {(pctSolo / 9.0).ToString("0.0") + "%",9}");
     }
 }
-Console.WriteLine("  'exp/sec x' IS his ruling and must read 1.20 / 1.50 on every row — anything else means the");
-Console.WriteLine("     time ratio and the payout have come apart. 'was' is the old HP-only toughness: note it");
-Console.WriteLine("     reads x20.0 for EVERY boss at EVERY level, because the 20x clamp ate the whole rank.");
+Console.WriteLine("  'exp/sec x' IS his ruling and must read 1.20 / 2.00 on every row — anything else means the");
+Console.WriteLine("     time ratio and the payout have come apart. 'resp x' is the NEW playtest-23 term: what you");
+Console.WriteLine("     are paid for the time spent WAITING for the thing to come back — 22s trash is x1.00 by");
+Console.WriteLine("     construction, so ordinary levelling is untouched. 'was 0.67' is the same kill under the");
+Console.WriteLine("     shipped 0.67.0 rule: his complaint was a level-90 boss paying 6kk when he wanted 20kk+.");
 Console.WriteLine("  '% of level' is ONE kill against ExpToNext at that level; '/ 9-man' is the same kill split");
 Console.WriteLine("     across a full party, which is how a boss is actually fought. A boss takes ~100x a trash");
 Console.WriteLine("     mob's time, so a large share of a level is CORRECT here — the check is that it is not a");

@@ -840,6 +840,24 @@ public static partial class SkillCatalog
         // ⚠ NOT AUTHORED, deliberately: a consumable cost. Angel's Protection eats 5 Skill Stones,
         // and these outrank it for free, which makes the stone cost on the weaker skill look odd. He
         // named no cost, so none was invented — say the word and it is one argument each.
+        //
+        // 🔴 RE-SPECCED IN PLAYTEST 23 — THEY ARE A DEATH PROMPT, NOT A REFUSAL TO DIE. As shipped they
+        // called ResurrectTarget the instant you died, which stood you straight back up with no prompt;
+        // from the chair that is indistinguishable from never dying, and that is how he read it: *"now is
+        // literally undying will ... U just don't die u heal +30% when your hp reaches 0."* His
+        // replacement, verbatim: *"you die (mobs stop attacking etc ..the hole pipe) and get a
+        // resurrection promp if you click yes u resurrect on the spot, else back to town"* and *"I want
+        // phebyx blood - u die -> u stay dead until you click the resurrection prompt."*
+        //
+        // 🔑 Nothing here changed to do it — the whole re-spec is one call in GameLoopService.Kill, from
+        // ResurrectTarget to OfferResurrect with a window that never expires. The full death pipeline
+        // (aggro shed, karma, exp penalty, auto-hunt stop) already ran before that line, which is exactly
+        // his *"the hole pipe"*; declining leaves you dead with the ordinary town respawn.
+        //
+        // ⚠ The heal-at-0 shape he liked (*"good skill for a warrior ork, when he must die just heal
+        // himself 30%"*) is NOT deleted and NOT re-homed here — it already exists as `LastStand`
+        // (SkillEffect.LethalSave, 50%), whose learn line went in the 40+ purge. Giving it a class and a
+        // level is 40+ authoring, so it waits for his CSVs like everything else; see `BL-75`.
 
         // The LIGHTBRINGER's: cast on an ALLY (or yourself), and it is the ally who stands back up.
         new(RiteOfPreservation, "Rite of Preservation", BaseClass.Mage, SkillEffect.None,
@@ -847,9 +865,10 @@ public static partial class SkillCatalog
             Category: SkillCategory.Buff, SpCost: 100000,
             DurationTicks: 36000, BuffKey: "buff_preservation", Rank: 2, InitialMpCost: 60,
             KeepsBuffsOnDeath: true, AutoResurrect: true, ResExpPct: 1f,
-            Description: "Blesses an ally (or yourself): their buffs survive their next death and they "
-                       + "rise again where they fell at 30% HP and MP, losing NO experience. "
-                       + "Lasts 60 minutes or until it saves them. 60 minute reuse."),
+            Description: "Blesses an ally (or yourself): they DIE normally, keep their buffs, and are "
+                       + "offered a resurrection where they fell at 30% HP and MP, losing NO experience. "
+                       + "The offer waits as long as they like. Lasts 60 minutes or until it saves them. "
+                       + "60 minute reuse."),
 
         // The BULWARK's: the SELF version. Same effect, no target — a tank's own last stand.
         // SelfOnly is what makes it "the self version" mechanically; Range 0 alone would not, since a
@@ -860,8 +879,8 @@ public static partial class SkillCatalog
             DurationTicks: 36000, BuffKey: "buff_preservation", Rank: 3, InitialMpCost: 60,
             TargetMode: TargetMode.SelfOnly,
             KeepsBuffsOnDeath: true, AutoResurrect: true, ResExpPct: 1f,
-            Description: "Your buffs survive your next death and you rise again where you fell at 30% "
-                       + "HP and MP, losing NO experience. Lasts 60 minutes or until it saves you. "
-                       + "60 minute reuse."),
+            Description: "You DIE normally and keep your buffs, then choose when to rise where you fell "
+                       + "at 30% HP and MP, losing NO experience — the offer waits as long as you like. "
+                       + "Lasts 60 minutes or until it saves you. 60 minute reuse."),
     };
 }

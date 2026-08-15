@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.67.2";
+    public const string GameVersion = "0.68.0";
 
     /// <summary>
     /// The WIRE contract's version, and the ONLY thing compatibility is decided on.
@@ -57,7 +57,13 @@ public static class GameConstants
     /// no Break-down button. The number still moves, because the handshake is the only place a client
     /// that CALLS a method the server does not have gets caught, and this is the direction that breaks:
     /// a NEW client against an OLD server would throw on the send, not degrade.
-    public const int ProtocolVersion = 20;
+    /// 20 → 21 (2026-08-15, playtest 23): three DTO additions, all with defaults. `EntityDto` and
+    /// `TargetDetails` gained the mob BEHAVIOUR fields (`SocialClan`, and `Aggressive` on the details
+    /// sheet), and `ResurrectOffer` gained `SelfRes` so the preservation prompt can word itself. All are
+    /// trailing optional parameters, so an old client deserialises them as defaults and merely shows
+    /// less — but the number moves anyway, because the whole point of a contract version is that "it
+    /// happens to still work" is not something either side should have to work out at runtime.
+    public const int ProtocolVersion = 21;
 
     /// <summary>
     /// The oldest protocol this server still speaks. Equal to <see cref="ProtocolVersion"/> means
@@ -316,6 +322,46 @@ public static class GameConstants
     /// Note this is LARGER than <see cref="MobAggroRange"/> (400) on purpose: a camp that answers only
     /// as far as it can already see you is not a camp, it is four independent mobs.</summary>
     public const float MobClanCallRadius = 450f;
+
+    /// <summary>⚠⚠ TEMPORARY — 10 MINUTES INSTEAD OF 3 HOURS, FOR PLAYTEST 24 ONLY. His request, because
+    /// checklist row `13a` (the "take a break" banner) has gone untested for six passes for the obvious
+    /// reason: *"change it to 10mins. (tag it to return to default 3h after test)"*.
+    /// 🔴 **PUT THIS BACK TO <c>3 * 3600</c> ONCE HE CONFIRMS HE HAS SEEN THE BANNER.**</summary>
+    public const long BreakReminderSeconds = 10 * 60;   // ← was 3 * 3600
+
+    /// <summary>The ordinary field respawn cadence, and the yardstick a mob's SCARCITY is measured
+    /// against for EXP (`BL-49`, playtest 23). 22s is not invented — it is the number every ordinary
+    /// spawn zone in <see cref="WorldMap"/> is authored with, which is what makes normal trash come out
+    /// at exactly ×1.00 and leaves plain levelling untouched by the whole mechanism.</summary>
+    public const float BaselineRespawnSeconds = 22f;
+
+    /// <summary>What SHARE of a long respawn a rare creature is paid for. See
+    /// <c>GameLoopService.RespawnScarcity</c> — 1.0 would pay the wait in full, which assumes you stand
+    /// at the corpse doing nothing; 0.25 is tuned to land a level-90 field boss on his stated *"at least
+    /// 20kk"*. ⚠ This is the one invented number in the boss-EXP rule and the only knob to turn.</summary>
+    public const float RespawnScarcityExponent = 0.25f;
+
+    /// <summary>🔴 THE MOB SOCIAL-CLAN MASTER SWITCH, and it is OFF — his instruction, playtest 23
+    /// (2026-08-15): *"Now we can remove all mobs social clan (leave the system ..we will use it just
+    /// not now) only mobs not to be social for now ... Make a note to turn it on once the world map is
+    /// in place."* The note is `BL-73`.
+    ///
+    /// <para>🔑 What he saw is NOT this feature misbehaving — it is spawn DENSITY meeting it: *"all mobs
+    /// are spawning almost next to each other and hitting one wolf getting ganked by 10 other … For a
+    /// mage lvl 9 hitting a warefolf means dead."* Every camp is currently generated on nearly one point,
+    /// so a 450 radius reaches the whole camp at once. The shape he wants is *"it will call ONE, and
+    /// while you fight, if others wander in the social range they will aggro"* — which is what this same
+    /// radius already does once a camp occupies real ground. So the retune that eventually follows is the
+    /// SPACING, not this number.</para>
+    ///
+    /// <para>⚠ Deliberately a switch and not a data deletion: the twelve clans stay authored on the mobs
+    /// in <see cref="MobCatalog"/> and every line of <c>CryForHelp</c> stays live, so turning this back
+    /// to <c>true</c> is the whole of re-enabling it. Do not "clean up" the clan column while this is
+    /// off — re-authoring it later from memory is exactly the work this avoids.</para></summary>
+    /// <remarks><c>static readonly</c> and not <c>const</c> on purpose: a const <c>false</c> makes the
+    /// whole of <c>CryForHelp</c> compile-time unreachable and the build starts warning about the code
+    /// we are deliberately keeping alive.</remarks>
+    public static readonly bool MobClansEnabled = false;
 
     /// <summary>Default hard-commit window after a taunt lands, when the skill doesn't author its
     /// own (DurationTicks). During it the mob will not retarget away from the taunter even if

@@ -134,10 +134,20 @@ namespace Game.Client
             var offer = Boot.PendingResurrect;
             _resPanel.gameObject.SetActive(offer != null);
             if (offer != null)
-                _resText.text = offer.FromName + " offers to resurrect you.\n"
+            {
+                // A SELF-res reads as your own doing, not as a stranger's offer — the preservation
+                // skills (Undying Will / Rite of Preservation) send this prompt with the fallen
+                // player as their own rescuer, and "Gena offers to resurrect you" over your own
+                // corpse reads like a bug. Its window also never expires, which is worth saying:
+                // the whole point of the re-spec is that the decision waits for you.
+                bool self = offer.SelfRes;
+                _resText.text = (self ? "Your own preservation holds you together.\n"
+                                      : offer.FromName + " offers to resurrect you.\n")
                               + "You would recover " + (int)(offer.ExpPct * 100f) + "% of the exp you lost"
                               + (offer.ExpRestored > 0 ? "  (" + offer.ExpRestored.ToString("N0") + ")" : "")
-                              + ".\n\nAccepting revives you WHERE YOU FELL.";
+                              + ".\n\nAccepting revives you WHERE YOU FELL."
+                              + (self ? "\nThis offer does not expire." : "");
+            }
 
             if (!_detailsPanel.gameObject.activeSelf) return;
 
@@ -209,8 +219,33 @@ namespace Game.Client
         private static string StatsText(TargetDetails d)
         {
             var t = new StringBuilder();
-            t.AppendLine(Pair("HP", d.Hp + " / " + d.MaxHp, "MP", d.Mp + " / " + d.MaxMp));
-            t.AppendLine(Pair("HP regen", d.HpRegen.ToString("0.#") + "/s", "MP regen", d.MpRegen.ToString("0.#") + "/s"));
+
+            // 🔴 BEHAVIOUR FIRST, for a mob (playtest 23): *"add info like -> agro:true/false, social:
+            // true/false, social clan: clanName, info that will be helpful to a player."* It goes at the
+            // TOP because it is the only part of this sheet you need BEFORE you pull — everything below
+            // it tells you how the fight goes, this tells you whether there is one and how many.
+            if (d.IsMob)
+            {
+                t.AppendLine("<b>Behaviour</b>");
+                t.AppendLine(Pair("Aggressive", d.Aggressive ? "yes — attacks on sight" : "no — leaves you alone",
+                                  "", ""));
+                t.AppendLine(Pair("Social", string.IsNullOrEmpty(d.SocialClan)
+                                      ? "no — fights alone"
+                                      : "yes — " + d.SocialClan + " answer its cry", "", ""));
+                if (!string.IsNullOrEmpty(d.Rank) && d.Rank != "Normal")
+                    t.AppendLine(Pair("Rank", d.Rank, "", ""));
+                t.AppendLine();
+            }
+
+            // A mob's MANA is deliberately not shown — it is one of the "unused info statuses" he asked
+            // to be rid of. Nothing you can do changes it and no mob is ever stopped by it, so a full
+            // MP bar on every creature was a column of noise. Players keep both halves: another player's
+            // MP is exactly what tells a healer whether they can still cast.
+            t.AppendLine(d.IsMob
+                ? Pair("HP", d.Hp + " / " + d.MaxHp, "HP regen", d.HpRegen.ToString("0.#") + "/s")
+                : Pair("HP", d.Hp + " / " + d.MaxHp, "MP", d.Mp + " / " + d.MaxMp));
+            if (!d.IsMob)
+                t.AppendLine(Pair("HP regen", d.HpRegen.ToString("0.#") + "/s", "MP regen", d.MpRegen.ToString("0.#") + "/s"));
 
             t.AppendLine();
             t.AppendLine("<b>Attributes</b>");
@@ -235,10 +270,16 @@ namespace Game.Client
             t.AppendLine(Pair("Crit res", Pct(d.CritResist), "Crit dmg res", Pct(d.CritDmgResist)));
             t.AppendLine(Pair("Bow res", Pct(d.BowResist), "Magic res", Pct(d.MagicResist)));
 
-            t.AppendLine();
-            t.AppendLine("<b>Utility</b>");
-            t.AppendLine(Pair("Cooldown", Pct(d.CooldownReduction), "Melee vamp", Pct(d.MeleeVamp)));
-            t.AppendLine(Pair("Spell vamp", Pct(d.SpellVamp), "", ""));
+            // The Utility block is dropped entirely when every number in it is zero, which for a mob is
+            // essentially always — three rows of "0%" is the clearest example of the "unused info
+            // statuses" he asked to be rid of. It reappears the moment a mob actually carries one.
+            if (d.CooldownReduction != 0f || d.MeleeVamp != 0f || d.SpellVamp != 0f)
+            {
+                t.AppendLine();
+                t.AppendLine("<b>Utility</b>");
+                t.AppendLine(Pair("Cooldown", Pct(d.CooldownReduction), "Melee vamp", Pct(d.MeleeVamp)));
+                t.AppendLine(Pair("Spell vamp", Pct(d.SpellVamp), "", ""));
+            }
 
             if (d.Effects != null && d.Effects.Length > 0)
             {

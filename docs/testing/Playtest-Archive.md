@@ -12,6 +12,7 @@ original file's content, unchanged, under its own marker. The reason for the mer
 
 | pass | date | what it was |
 |---|---|---|
+| [Playtest-23](#playtest-23) | 2026-08-15 | the five-version pass (0.63.0->0.67.2). Almost everything green; seven free-form finds of his own and five rulings that change built systems — mob clans off, Undying Will re-specced, the boss EXP curve, the res flag, the hide skills re-homed |
 | [Playtest-22](#playtest-22) | 2026-08-13 | the 0.62.0 pass. Five whole sections passed outright; the mage-MP question closed after three passes. Twelve free-form finds, most of them DESIGN — invisibility, mob social clans, the aggro/taunt model |
 | [Playtest-21](#playtest-21) | 2026-08-11/12 | the eight-build pass (0.58.0->0.60.1). Crafting and the enchant rework played for the first time; the shield double-dip, the tutorial dead-end, the inert dummies |
 | [Playtest-20](#playtest-20) | 2026-08-10 | the ten-build pass (0.49.0→0.57.0). 12 free-form finds; the dagger-evasion and weapon-speed roots |
@@ -29,6 +30,128 @@ Answered checklists that fed these passes (`Open-Checklist-0.45.0/-0.47.0/-0.48.
 transcribed into the playtest files at the time and are in git history.
 
 
+
+---
+
+<a id="playtest-23"></a>
+
+# ══ Playtest-23 ══
+
+# Playtest-23 — the five-version pass, 0.63.0 → 0.67.2 (owner, 2026-08-15)
+
+The first device pass in five versions: the 0.67.0 APK carried 0.63.0-0.67.0 plus the never-tested
+playtest-22 fix batch, and 0.67.1/0.67.2 were hotfixed **during** the pass (a collect step that never
+counted, and Vanish being unlearnable). **Below is his own text, unedited.**
+
+**The shape of it:** almost everything passed. §79 (the whole playtest-22 fix batch), §75 (item tags),
+§80a/b/e, §81a/d/e, §82a/b/c/f/g and §83a all came back `[x]` with nothing to say. What he wrote instead
+is a **new top section of his own, "My Finds 0.67.0"**, plus five `[!]`/`[~]` rulings that change built
+systems: mob social clans go off, Undying Will is the wrong shape, the boss EXP curve is ~30× short, the
+PvP flag is at the wrong end of a resurrection, and the three hide skills move to classes he named.
+
+---
+
+## His marks
+
+| section | rows | verdict |
+|---|---|---|
+| §79 the playtest-22 fix batch | `79a`-`79j` | **all `[x]`** — first APK for all of it |
+| §75 item tags | `75a`-`75g` | **all `[x]`** |
+| §76 premium runes | `76b` `76c` `76f` `[x]` · `76e` `[~]` | the drop tab hides the level penalty |
+| §80 the 0.64.0 batch | `80a` `80b` `80e` `[x]` · `80c` `80d` `[~]` | hide re-homed; clans off |
+| §81 the combat channels | `81a` `81d` `81e` `[x]` · `81b` `81c` `[]` | reflects never reached |
+| §82 the eight rulings | `82a`-`82d` `82f` `82g` `[x]` · `82e` `82h` `[!]` | |
+| §83 the polish pass | `83a` `[x]` · `83b` `[!]` · `83c` `[~]` | |
+| carried forward | `32z` `36e` `25b` `[x]` · `0a` `[~]` · `37d` `37e` `13a` `[]` | |
+
+---
+
+## My Finds 0.67.0 (his own section, verbatim)
+
+- [~] Delete the `dark dominion` it falls in the category for deletion.
+
+- [x] All five Proffession `Apprentice` quests cannot be done - need common mats that dont increase the quest items count
+  -  [*Fixed in 0.67.1*]
+
+- [~] Remove mobs unused info statuses
+	* add info like -> agro:true/false, social: true/false, social clan: clanName, info that will be helpful to a player.
+
+- [~] Redesign the target window a bit.
+	* put the name in please of `Target`. The title of the window to be the targets name
+	* the type "mob/player" is half visible - there u can put agro,social for mob (for player will be his clan rank - king/soldier etc) now each player can have there a "vagabond" or some other word for clanless
+		- ex: `Mob: 44, Aggressive, Social`
+		- ex: `Player: Vagabond`
+	* the current name text can be removed so the title window be smaller in size.
+
+- [~] Make the chat windowses resizable (a small button with a lock so it's locked in position and in size - persistent for the apk not the server),size position lock status is persistant for the apk
+	* I want to be able to move the window side to side ot on top of the other without they obscure my view
+	* Also move the chat text box with 10-20 pixels more higher. Now it's the middle of the screen and it's under my front camera circle. And I cannot see the first few letters of what I'm typing.
+
+- [!] Provoke is not auto used in any form
+
+- [?] check the cyclic logic ...I feel there is a problem ...also check if auto attack is not on 1st slot what will happen ?
+
+---
+
+## His comments on the rows, verbatim
+
+**`80c` [~] invisibility**
+```
+    - Admins `/invis`
+      * works - mobs stop the chase - hides from players
+    - `Shrouding hymn` and `Prowl`
+      * works - mobs that chased before continue, while new dont aggro
+      * `Prowl` should be learnable by all mele rogues @40 3rd class (not auto, like a normal skill)
+      * `Signal Flare` should be learnable by all archers @60 3rd class (not auto, like a normal skill)
+	      - Flare does nothing ...cannot find flagged player next to me. Doesn't cancel his vanish skill
+	- `Vanish`
+      *  Learnable as of *0.67.2*
+      * should be learnable by all mele rogues @60 3rd class (not auto, like a normal skill)
+      * cool down 2 min, duration - 30s.
+    - once the csv land they will be there (u can add files next to other skills 20-35.Csv the mele rogues one,one for archers, one for buffers and one for healers ..with what u have after 40 so I start with them later on.. `Healers 40-74.csv` and 76-85)
+```
+
+**`80d` [~] mob social clans** — *It works...but way to harsh with our mobs position ... Now all mobs are
+spawning almost next to each other and hitting one wolf getting ganked by 10 other ... In the IG and later
+in our game ..the mobs will be spread out a lot more ... And hitting one won't call 20 ... It will call one
+and while you fight if others wander in the social range Wil agro ... Not hit one fight 10 ... For a mage
+lvl 9 hitting a warefolf means dead .... Now we can remove all mobs social clan (leave the system ..we will
+use it just not now) only mobs not to be social for now ... Make a note to turn it on once the world map is
+in place.*
+
+**`82e` [!] the two level-83 preservation skills** — *That idea for undying skill is good for a warrior
+ork,when he must diejustbhealhimself 30q*
+```
+	  * but the tanks and healers are like you die (mobs stop attacking etc ..the hole pipe) and get a resurrection promp if you click yes u resurrect on the spot , else back to town ...it's like you die with angels protection on and some1 instantly resurects you.
+	* now is literally undying will ... U just don't die u heal +30% when your hp reaches 0. - as I said good skill for a warrior ...
+	* I want phebyx blood - u die -> u stay dead until you click the resurrection prompt.
+```
+
+**`82h` [!] resurrect / party / PvP-flag** — *the flag should happen at the initializing the resurrect
+..not after the dead agrees to resurrect. In a mass pvp if my friend is dead(flagged/pk) and I start to
+resurrect I become pvp while I resurrect him not after hee stands.. So other ppv can kill me or attempt to
+stop the resurrection..*
+```
+	  * cannot use scroll of resurrection ... (cleric skill works) but scroll says "need a fallen ally as its target"
+```
+
+**`83b` [!] the launcher icon** — *as of 0.67.2 still game launcher don't threat it as a game. May be
+because of its development insataltion not store one. Dunno. Need to research how the phone and when it
+treats an app as a game.*
+
+**`83c` [~] a boss pays for the time it costs** — *a 90 elite gives ~200k exp while boss gives 6kk ...
+30times more and feel like a waste...make it give atleast 20kk. Now 6kk are ~0.2% for lvl 91 dunno how
+much are fore 89,90 but we should take the respawn time and the time it takes a 1dd to kill the boss not 5*
+
+**`76e` [~] the drop bonus** — *the drop value with double drop rune shoes double chances ..the problem is
+there should be the same penalty as exp/sp when mob and player have a difference and that penalty is not
+displayed ... If you can modify the info drop rates with a rune u can add the actual drop rates from the
+penalty as well*
+
+**`79i` [x] MP regen on walk** — *now a mage can farm alone with vamp bolt when low on hp, restore when mp
+is low ... Now it works.*
+
+**`13a` [] the break banner** — *change it to 10mins. (tag it to retunt to default 3h after test)*
 
 ---
 

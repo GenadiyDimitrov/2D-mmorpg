@@ -1426,7 +1426,7 @@ public class Entity
     /// <summary>Cyclic cursor per priority group (index into AutoSkills of the LAST one cast, +1).
     /// Indexed by <c>(int)AutoSkillKind</c>; reset whenever the config changes.
     /// ⚠ Sized to the enum — <c>MpHeal</c> (BL-67) made it 6.</summary>
-    public int[] AutoChainCursor { get; } = new int[6];
+    public int[] AutoChainCursor { get; } = new int[7];
     /// <summary>Disconnected but still auto-hunting in the world (no connection = no UI pushes).</summary>
     public bool IsOfflineFarming { get; set; }
     /// <summary>Link-dead grace: connection lost while out of combat + not auto-farming. Frozen in
@@ -2655,7 +2655,16 @@ public class Entity
     public EntityDto ToDto() =>
         new(Id, Name, Kind, Race, BaseClass, X, Y, Speed, Level,
             Hp, MaxHp, Mp, MaxMp, SecondClass, ThirdClass, Dead, IsDisconnected, FlagState,
-            Kind == EntityKind.Mob && Aggressive, Title, TitleColor);
+            Kind == EntityKind.Mob && Aggressive, Title, TitleColor, SocialClanShown);
+
+    /// <summary>The social clan the target frame prints (playtest 23), or "" for a loner, a
+    /// non-mob — or for EVERY mob while the clan system is switched off (`BL-73`). The frame must
+    /// never advertise a behaviour the simulation is not running: with the switch off nothing answers
+    /// a cry, so nothing is social, and saying otherwise would teach the player a rule that is false
+    /// today and true again later.</summary>
+    private string SocialClanShown =>
+        Kind == EntityKind.Mob && GameConstants.MobClansEnabled && MobTypeId is string id
+            ? MobCatalog.Get(id).Clan : "";
 
     /// <summary>The tick-to-tick DYNAMIC fields only (see EntityLean) — position, vitals, dead/dc/flag.
     /// Sent while an entity is already in view; the static fields ride the full spawn DTO.</summary>
@@ -2676,5 +2685,5 @@ public class Entity
         a.SecondClass == b.SecondClass && a.ThirdClass == b.ThirdClass && a.Aggressive == b.Aggressive &&
         // Title is static too: changing it (or losing the board, or recolouring it) must force a full
         // DTO, or the new title would only reach the people who walked into view after it changed.
-        a.Title == b.Title && a.TitleColor == b.TitleColor;
+        a.Title == b.Title && a.TitleColor == b.TitleColor && a.SocialClan == b.SocialClan;
 }

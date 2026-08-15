@@ -1,0 +1,2 @@
+LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR, INIT MP,FINIT MP ,SP COST,REPLACES,RACE
+83,Rite of Preservation,Magic/Buff,600,self/target,3,3600,3600,"Blesses an ally (or yourself): they DIE normally, keep their buffs, and are offered a resurrection where they fell at 30% HP and MP, losing NO experience. The offer waits as long as they like. Lasts 60 minutes or until it saves them. 60 minute reuse.",60,240,100000,[],

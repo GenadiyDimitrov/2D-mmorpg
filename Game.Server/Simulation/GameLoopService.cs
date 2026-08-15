@@ -1686,6 +1686,20 @@ public class GameLoopService : BackgroundService
                     $"{corpse.Name} is an outlaw — only their own party can resurrect them.");
                 return;
             }
+            // 🔴 THE FLAG IS PAID AT THE START OF THE CAST, not when the corpse accepts (playtest 23):
+            // *"the flag should happen at the initializing the resurrect ..not after the dead agrees to
+            // resurrect. In a mass pvp if my friend is dead(flagged/pk) and I start to resurrect I become
+            // pvp while I resurrect him ... So other ppl can kill me or attempt to stop the
+            // resurrection."* It used to be charged in ResurrectTarget, i.e. after a 10s channel AND a
+            // prompt the corpse might never answer — so the whole window in which someone could contest
+            // the res was a window in which the resurrector was untouchable. This is the point of the
+            // rule: raising an outlaw is an act, and it prices itself while it is happening.
+            //
+            // ⚠ Charged here rather than at cast COMPLETION for the same reason — completion is already
+            // 10 seconds too late. It is a no-op on an innocent target, so a normal res still flags
+            // nobody; and it is not refunded if the cast is interrupted, which is correct: you were
+            // visibly holding a channel over an outlaw's body.
+            FlagForSupporting(caster, corpse);
             targetId = rid;
         }
         else if (offensive)
@@ -3597,6 +3611,9 @@ public class GameLoopService : BackgroundService
                     SendSystemToEntity(player, $"{skill.Name} needs a fallen ally as its target.");
                     return false;
                 }
+                // Same rule as the cast path: reading a res scroll over an outlaw flags you NOW, for
+                // the duration of the read, not when they stand up (playtest 23).
+                FlagForSupporting(player, corpse);
                 player.QueuedSkillId = skill.Id;
                 player.QueuedTargetId = rid;
                 return true;
@@ -4314,6 +4331,7 @@ public class GameLoopService : BackgroundService
         p.AutoSkills.Clear();
         foreach (var s in c.Skills ?? Array.Empty<AutoSkillDto>())
             p.AutoSkills.Add(new AutoSkillDto(s.SkillId, s.Enabled, Math.Max(0, s.ExtraDelayTicks)));
+        WarnUncastableAutoSkills(p);
         p.AutoBuffPotionIds.Clear();
         foreach (var id in c.BuffPotionIds ?? Array.Empty<string>())
             p.AutoBuffPotionIds.Add(id);
@@ -4344,6 +4362,26 @@ public class GameLoopService : BackgroundService
         Array.Clear(p.AutoChainCursor);   // the bar changed under the cursors; start the cycle over
         if (p.AutoHuntEnabled) { p.FarmCenterX = p.X; p.FarmCenterY = p.Y; }   // (re)anchor the static circle
         SendAutoHuntStatus(p);   // persisted by the normal autosave/logout snapshot
+    }
+
+    /// <summary>Say out loud which armed rows the chain is going to ignore.
+    ///
+    /// <para>🔑 This is the other half of the Provoke find (playtest 23: *"Provoke is not auto used in
+    /// any form"*, and *"check the cyclic logic ...I feel there is a problem"*). A skill that classifies
+    /// as <see cref="AutoSkillKind.Other"/> is skipped in silence — the row sits on the bar with its Auto
+    /// mark lit and simply never fires, which from the outside is indistinguishable from a broken cycle.
+    /// Provoke was the case that mattered and it is fixed; what stays in that bucket is the handful of
+    /// skills that genuinely should not autopilot (a hide, a reveal, a trap, a resurrection), and the
+    /// player is now told rather than left to time them.</para></summary>
+    private void WarnUncastableAutoSkills(Entity p)
+    {
+        var ignored = p.AutoSkills
+            .Where(s => s.Enabled && SkillCatalog.Get(s.SkillId) is SkillDef d && ClassifyAuto(d) == AutoSkillKind.Other)
+            .Select(s => SkillCatalog.Get(s.SkillId)!.Name)
+            .ToList();
+        if (ignored.Count == 0) return;
+        SendSystemToEntity(p, $"Auto-hunt cannot cast {string.Join(", ", ignored)} — " +
+                              (ignored.Count == 1 ? "it is" : "they are") + " for you to press yourself.");
     }
 
     private void HandleToggleAutoHunt(ToggleAutoHuntCmd cmd)
@@ -4815,7 +4853,7 @@ public class GameLoopService : BackgroundService
     }
 
     // ⚠ AutoChainCursor is sized to this enum — adding a member means widening that array too.
-    private enum AutoSkillKind { Attack, Debuff, Buff, Heal, MpHeal, Other }
+    private enum AutoSkillKind { Attack, Debuff, Buff, Heal, MpHeal, Taunt, Other }
 
     private static AutoSkillKind ClassifyAuto(SkillDef def)
     {
@@ -4831,6 +4869,15 @@ public class GameLoopService : BackgroundService
         // cannot be reasoned about from the settings screen, which is the whole complaint behind BL-67.
         if (def.Lifesteal > 0f) return AutoSkillKind.Heal;
         if ((e & (SkillEffect.PhysicalDamage | SkillEffect.MagicDamage)) != 0) return AutoSkillKind.Attack;
+        // 🔴 A PURE TAUNT IS ITS OWN RUNG (playtest 23: *"Provoke is not auto used in any form"*). It had
+        // no rung at all and fell through to `Other`, the never-cast bucket — so no taunt in the game had
+        // ever fired from the chain, which makes an auto-farming tank a damage dealer with less damage.
+        // 🔑 Why it landed there: Provoke carries `SkillEffect.Taunt` and `SkillCategory.Debuff`, and the
+        // debuff test below asks for ContestCc or a DebuffSchool. A taunt is neither — it is not contested
+        // and it has no school to resist — so every branch missed it.
+        // Tested AFTER damage on purpose: a taunt that also hits (a Shield Bash shape) belongs in the
+        // attack rotation, where its damage is the reason to press it; its taunt lands either way.
+        if (def.TauntPower > 0) return AutoSkillKind.Taunt;
         if ((e & SkillEffect.Heal) != 0) return AutoSkillKind.Heal;
         // An MP-restore is its OWN priority group (BL-67), sitting directly under Heal: him,
         // *"below the Heal as priority but above all other (need mp to cast/buff)"*. It used to share
@@ -4911,6 +4958,11 @@ public class GameLoopService : BackgroundService
         if (AutoManaWanted(p) && TryAutoChain(p, target, AutoSkillKind.MpHeal)) return true;
         if (TryAutoChain(p, target, AutoSkillKind.Buff)) return true;
         if (TryAutoChain(p, target, AutoSkillKind.Debuff)) return true;
+        // A TAUNT outranks the damage rotation (playtest 23). It has to: the whole point of a taunt is
+        // that it lands BEFORE the party out-damages you, and a tank's attack chain is never idle, so a
+        // rung below Attack would only ever fire on a tick where nothing else could — which for a tank
+        // is no tick at all.
+        if (TryAutoChain(p, target, AutoSkillKind.Taunt)) return true;
         return TryAutoChain(p, target, AutoSkillKind.Attack);
     }
 
@@ -5006,6 +5058,14 @@ public class GameLoopService : BackgroundService
                     // Missing or WEAKER on the enemy (owner) — the old test was "any buff with this
                     // key", which let a rank-1 poison block the rank-3 one for its whole duration.
                     if (target is null || AutoBuffCovered(target, def, 0, def.Rank)) continue;
+                    tgtId = target.Id; break;
+                case AutoSkillKind.Taunt:
+                    // Mob-only, exactly like a manual Provoke, and pointless on one already locked to
+                    // you by an unexpired taunt — re-taunting inside your own commit window burns the
+                    // reuse and buys no cushion. Anything else (someone else's mob, a mob merely
+                    // attacking you) is fair game: the cushion is what a tank is renewing.
+                    if (target is null || target.Kind != EntityKind.Mob) continue;
+                    if (target.TauntLockTicks > 0 && target.CombatTargetId == p.Id) continue;
                     tgtId = target.Id; break;
                 case AutoSkillKind.Attack:
                     if (target is null) continue;
@@ -7413,8 +7473,12 @@ public class GameLoopService : BackgroundService
         if (_tick % GameConstants.TickRate == 0)
             entity.TotalOnlineSeconds++;
 
-        // Every 3h of THIS session, nudge the player to rest (health-notice, not a penalty).
-        const long threeHoursTicks = 3L * 3600 * GameConstants.TickRate;
+        // Every BreakReminderSeconds of THIS session, nudge the player to rest (a health notice, not a
+        // penalty). ⚠⚠ TEMPORARILY 10 MINUTES FOR PLAYTEST 24 — his request, because `13a` has sat
+        // untested for six passes purely because nobody plays 3 hours straight to see it: *"change it to
+        // 10mins. (tag it to return to default 3h after test)"*. **PUT IT BACK TO 3h ONCE HE HAS SEEN THE
+        // BANNER.** The constant is in GameConstants so there is exactly one number to move.
+        long threeHoursTicks = GameConstants.BreakReminderSeconds * GameConstants.TickRate;
         if (entity.SessionOnlineTicks > 0 && entity.SessionOnlineTicks % threeHoursTicks == 0)
             SendTo(entity, "Notice", "You've been playing for an extended period — please take a break.");
     }
@@ -9309,13 +9373,29 @@ var effect = def.Effect;
     /// <summary>The archer's answer to a rogue who is simply not there (BL-69): end every HIDE in
     /// radius and stamp those it caught so they cannot hide again for a while. The second half is
     /// the part that makes it a counter — a hide you can re-cast a heartbeat later is not countered,
-    /// it is inconvenienced.</summary>
+    /// it is inconvenienced.
+    ///
+    /// <para>🔴 It walked <c>PlayersInRadius</c> until playtest 23, and that made it a NO-OP that could
+    /// never catch anybody — *"Flare does nothing ...cannot find flagged player next to me. Doesn't
+    /// cancel his vanish skill."* That helper is the PARTY-support enumeration: it returns the caster
+    /// plus party members only, and it deliberately skips <c>e.Hidden</c> because a party heal must not
+    /// silently find someone nobody can see. Both halves are exactly wrong here — the flare's whole
+    /// subject is a hidden NON-party enemy. So the two rules cancelled: reveal only your own party,
+    /// and never the hidden ones.</para>
+    ///
+    /// <para>This walks the grid itself instead. Everyone within the radius is a candidate: it is an
+    /// area flare, not a targeted dispel, and there is no side to it — hiding beside a friendly archer
+    /// who fires one is the same mistake as hiding beside a hostile one.</para></summary>
     private void RevealHidden(Entity caster, SkillDef def, string castName)
     {
         int caught = 0;
-        foreach (var e in PlayersInRadius(caster, def.AreaRadius))
+        float r2 = def.AreaRadius * def.AreaRadius;
+        foreach (var e in _world.Grid.Nearby(caster))
         {
+            if (e.Kind != EntityKind.Player || e.Dead) continue;
             if (e.Id == caster.Id || e.AdminInvisible) continue;
+            float dx = e.X - caster.X, dy = e.Y - caster.Y;
+            if (dx * dx + dy * dy > r2) continue;
             if (e.HideTicks <= 0 && def.NoHideTicks <= 0) continue;
             if (e.HideTicks > 0) { BreakHide(e); caught++; }
             if (def.NoHideTicks > 0)
@@ -9450,6 +9530,9 @@ var effect = def.Effect;
     /// the radius is the fight's size — not a fuse.</summary>
     private void CryForHelp(Entity mob, Entity attacker)
     {
+        // 🔴 OFF since playtest 23 (BL-73) — see GameConstants.MobClansEnabled for why, and note that
+        // the reason is the world's spawn density, not anything in this method.
+        if (!GameConstants.MobClansEnabled) return;
         if (mob.CriedForHelp || mob.TrainingDummy || attacker.Kind != EntityKind.Player) return;
         string clan = MobCatalog.Get(mob.MobTypeId).Clan;
         if (string.IsNullOrEmpty(clan)) return;
@@ -9857,16 +9940,32 @@ var effect = def.Effect;
             else if (victim.AutoHuntEnabled)
                 StopAutoHunt(victim, "you were defeated.");
 
-            // Auto-resurrect (`BL-35` — the tank self-res and the healer target-auto-res): the consumed
-            // preservation buff stands the player back up at 30% HP/MP in place, no prompt. Buffs
-            // already survived (keptBuffs).
+            // 🔴 THE PRESERVATION SKILLS ARE A DEATH PROMPT, NOT A REFUSAL TO DIE (`BL-35`, re-specced
+            // in playtest 23). They used to call ResurrectTarget here, which stood you straight back up
+            // at 30% with no prompt — and from the chair that is indistinguishable from never dying,
+            // which is exactly how he read it: *"now is literally undying will ... U just don't die u
+            // heal +30% when your hp reaches 0."*
             //
-            // ⚠ The death penalty above ALREADY APPLIED, and that ordering is deliberate: his rule is
+            // What he asked for instead, verbatim: *"the tanks and healers are like you die (mobs stop
+            // attacking etc ..the hole pipe) and get a resurrection promp if you click yes u resurrect
+            // on the spot, else back to town ...it's like you die with angels protection on and some1
+            // instantly resurects you"* · *"I want phebyx blood - u die -> u stay dead until you click
+            // the resurrection prompt."*
+            //
+            // 🔑 So the ONLY change is which pipe this line calls. Everything above has already run —
+            // the death broadcast, the aggro shed, the karma, the death penalty, the auto-hunt stop —
+            // which is precisely his *"the hole pipe"*. The offer never expires
+            // (<see cref="ResurrectOfferForever"/>), so you lie there for as long as you like and the
+            // decision stays yours; declining leaves you dead with the ordinary town respawn still on
+            // the screen, which is his *"else back to town"*.
+            //
+            // ⚠ The death penalty ALREADY APPLIED and that ordering is still deliberate: his rule is
             // "you die, you have the penalty". The exp comes back through the res, not by skipping the
-            // penalty — so a 100% skill nets to zero while a partial one still costs you, and the two
-            // are the same mechanism the resurrection SKILLS already use.
+            // penalty — so a 100% skill nets to zero while a partial one still costs you.
+            //
+            // ⚠ The buff is consumed either way, above. Declining spends it: you took the death.
             if (autoRes)
-                ResurrectTarget(victim, victim, autoResExpPct);
+                OfferResurrect(victim, victim, autoResExpPct, ResurrectOfferForever);
         }
     }
 
@@ -10148,15 +10247,49 @@ var effect = def.Effect;
     ///
     /// <para>⚠ Derived, not authored: if he re-curves boss HP under `BL-13`, the EXP follows on its own
     /// and there is no second table to remember to change.</para></summary>
-    private static long MobExpValue(Entity mob) =>
+    private long MobExpValue(Entity mob) =>
         Math.Max(1L, (long)(StatCalculator.MobExpReward(mob.Level)
-                            * MobKillTimeRatio(mob) * RankExpEfficiency(mob.Rank)));
+                            * MobKillTimeRatio(mob) * RankExpEfficiency(mob.Rank)
+                            * RespawnScarcity(mob)));
 
     /// <summary>SP for one kill. The same scaling applies, so a bulky mob pays its multiple of SP
     /// exactly as it pays its multiple of EXP; the level-dependent SP:EXP ratio lives in ExpCurve.</summary>
-    private static long MobSpValue(Entity mob) =>
+    private long MobSpValue(Entity mob) =>
         Math.Max(1L, (long)(StatCalculator.MobSpReward(mob.Level)
-                            * MobKillTimeRatio(mob) * RankExpEfficiency(mob.Rank)));
+                            * MobKillTimeRatio(mob) * RankExpEfficiency(mob.Rank)
+                            * RespawnScarcity(mob)));
+
+    /// <summary>🔴 THE SECOND HALF OF THE TIME COST: what you spend WAITING for this thing to come back.
+    ///
+    /// <para>His playtest-23 ruling: *"a 90 elite gives ~200k exp while boss gives 6kk ... 30times more
+    /// and feel like a waste ... make it give atleast 20kk ... we should take the **respawn time** and the
+    /// time it takes a **1 dd** to kill the boss **not 5**."* The kill-time half was already here; the
+    /// wait was not counted at all, so a creature you may fight twice an hour was paid as if you could
+    /// line up thirty of them.</para>
+    ///
+    /// <para>The ratio is against the world's own authored trash cadence
+    /// (<see cref="GameConstants.BaselineRespawnSeconds"/> = 22s, the number every ordinary field uses),
+    /// so an ordinary mob comes out at exactly ×1.00 and nothing about normal levelling moves. A field
+    /// boss at 30 minutes is 81.8× that; an elite at 60-90s is 2.7-4.1×.</para>
+    ///
+    /// <para>⚠ THE EXPONENT IS THE ONE INVENTED NUMBER HERE, and it is deliberately not 1.0. Paying the
+    /// wait in full assumes you stand at the corpse for thirty minutes doing nothing, which nobody does —
+    /// you farm the camp around it, and that time is already being paid for by the trash. The exponent is
+    /// what says "a share of the wait", and 0.25 is the share that lands a level-90 field boss on HIS
+    /// stated target: 8kk from the kill-time half × 3.0 here ≈ 24kk, against his *"at least 20kk"*.
+    /// It is one number to move if he wants bosses richer or poorer.</para>
+    ///
+    /// <para>Read off the SPAWN ZONE, not the template: the same creature is worth more where it is rare.
+    /// A mob with no resolvable zone (a summon, a debug spawn) scores 1.0 and is unaffected.</para></summary>
+    private float RespawnScarcity(Entity mob)
+    {
+        if (mob.ZoneId is null) return 1f;
+        var zr = _zones.FirstOrDefault(z => z.Zone.Id == mob.ZoneId);
+        if (zr is null) return 1f;
+        float ratio = (float)zr.Zone.RespawnSeconds / GameConstants.BaselineRespawnSeconds;
+        if (ratio <= 1f) return 1f;   // as common as trash, or commoner: no scarcity premium
+        return Math.Clamp(MathF.Pow(ratio, GameConstants.RespawnScarcityExponent), 1f, 12f);
+    }
 
     /// <summary>How much LONGER this spawn takes to kill than a plain mob of its level, as a multiple.
     ///
@@ -10183,18 +10316,24 @@ var effect = def.Effect;
     /// trash. A curve, in his words, not a formula: normal is break-even by definition, an elite is a
     /// small premium for a fight you can still take solo, and a boss pays his own "twice (or 1.5)".
     ///
-    /// <para>1.5 rather than 2.0 for a boss because the ratio it multiplies is already large and a boss
-    /// is fought by a PARTY: five people kill it five times faster and split the pot five ways, so the
-    /// efficiency they each see is exactly this number — the party size cancels, and 2.0 would make
-    /// boss-camping strictly dominant over every other way to level.</para>
+    /// <para>🔴 A BOSS IS 2.0, NOT 1.5, SINCE PLAYTEST 23 — and it moved because he struck out the
+    /// ARGUMENT for 1.5, not because the number was measured wrong. That argument was: "a boss is fought
+    /// by a PARTY — five people kill it five times faster and split the pot five ways, so the efficiency
+    /// each sees is exactly this constant." His answer: *"we should take the respawn time and the time it
+    /// takes a **1 dd** to kill the boss **not 5**."* Priced for one damage dealer there is no five-way
+    /// split in the number any more, and what is left is the top of his own *"x1.2~2"*.</para>
+    ///
+    /// <para>An elite stays at 1.2. Nothing about it was ever justified by a party split — an elite is a
+    /// fight you take solo, which is the whole reason it sits between trash and a boss.</para>
     ///
     /// <para>A world boss has no rank of its own (it is a <see cref="MobRank.Boss"/> carrying extra HP
-    /// via its template), so it lands here at 1.5 and is paid for its real bulk by the ratio above —
-    /// which is the correct behaviour and the reason nothing here needs a fourth rung.</para></summary>
+    /// via its template), so it lands here at 2.0 and is paid for its real bulk by the ratio above and
+    /// for its 21-hour respawn by <see cref="RespawnScarcity"/>. `BL-13` still says it wants a rank of
+    /// its own; nothing here needs a fourth rung until it gets one.</para></summary>
     private static float RankExpEfficiency(MobRank rank) => rank switch
     {
         MobRank.Elite => 1.2f,
-        MobRank.Boss  => 1.5f,
+        MobRank.Boss  => 2.0f,
         _             => 1.0f,
     };
 
@@ -10245,20 +10384,29 @@ var effect = def.Effect;
     /// <summary>Ticks a resurrection OFFER lingers before it auto-expires (30s at 10 t/s).</summary>
     private const int ResurrectOfferTicks = 300;
 
+    /// <summary>An offer that does NOT expire — the preservation skills' own window (see
+    /// <see cref="Kill"/>). His rule, playtest 23: *"u die -> u stay dead until you click the
+    /// resurrection prompt."* A promise you paid a level-83 skill for is not something to lose by
+    /// looking away; the only ways out of it are accepting, declining, or walking back to town.
+    /// ⚠ Not <c>int.MaxValue</c>: the tick loop decrements this every tick, so the value has to survive
+    /// the subtraction forever without wrapping past zero. A week of ticks does that with room to spare
+    /// and still reads as a number rather than a sentinel.</summary>
+    private const int ResurrectOfferForever = 10 * 60 * 60 * 24 * 7;
+
     /// <summary>Offer a resurrection to a fallen player: they see a confirm prompt (who revived them + how
     /// much exp comes back) and must ACCEPT before actually reviving — so they don't stand up on top of the
-    /// mob that killed them. Generic on caster==target, so a future self-res reuses this same pipe.</summary>
-    private void OfferResurrect(Entity caster, Entity target, float expPct)
+    /// mob that killed them. Generic on caster==target, so a self-res reuses this same pipe.</summary>
+    private void OfferResurrect(Entity caster, Entity target, float expPct, int ticks = ResurrectOfferTicks)
     {
         if (target is null || target.Kind != EntityKind.Player || !target.Dead) return;
         expPct = Math.Clamp(expPct, 0f, 1f);
         target.PendingResFromId = caster.Id;
         target.PendingResExpPct = expPct;
-        target.PendingResTicks = ResurrectOfferTicks;
+        target.PendingResTicks = ticks;
         long wouldRestore = (long)(target.LostExp * expPct);
         if (_world.EntityToConnection.TryGetValue(target.Id, out var conn))
             _ = _hub.Clients.Client(conn).SendAsync("ResurrectOffer",
-                new ResurrectOffer(caster.Name, expPct, wouldRestore));
+                new ResurrectOffer(caster.Name, expPct, wouldRestore, SelfRes: caster.Id == target.Id));
         if (target != caster)
             SendSystemToEntity(caster, $"You offer to resurrect {target.Name}.");
     }
@@ -11613,16 +11761,40 @@ var effect = def.Effect;
             // inspect list quietly lie to every player wearing one.
             float lookMult = player.DropRateMult;
 
+            // 🔴 …AND THE LEVEL GAP, which this list did NOT apply and the kill roll always did (playtest
+            // 23): *"the drop value with double drop rune shows double chances ..the problem is there
+            // should be the same penalty as exp/sp when mob and player have a difference and that penalty
+            // is not displayed ... you can add the actual drop rates from the penalty as well."* It is the
+            // same `ExpCurve.LevelGapMultiplier(killer.Level - mob.Level)` RollDrop uses, off the same two
+            // levels — so the tab now shows the chance THIS character rolls against THIS creature, which
+            // is what the rune half already promised and the gap half quietly broke.
+            //
+            // 🔑 The rune was the tell. Both are per-player scalars on the same roll; showing one and
+            // hiding the other is worse than showing neither, because the visible one certifies the
+            // number as personal and it is then wrong by up to 100%.
+            float lookGap = isMob ? ExpCurve.LevelGapMultiplier(player.Level - t.Level) : 1f;
+            float Shown(DropEntry d) => Math.Min(1f, MobCatalog.EffectiveChance(d, lookMult) * lookGap);
+
             var lines = new List<string>();
+            // The header states the penalty rather than leaving the reader to wonder why a 5% row reads
+            // 1.4%. Silent at ×1.00 — an in-band kill is the common case and needs no explanation — and
+            // it names the gap, because the gap is the thing the player can actually change.
+            if (lookGap < 0.999f)
+            {
+                int gap = player.Level - t.Level;
+                lines.Add(lookGap <= 0f
+                    ? $"⚠ {Math.Abs(gap)} levels apart — this creature drops NOTHING for you."
+                    : $"⚠ {Math.Abs(gap)} levels apart: every chance below is already cut to {lookGap * 100:0.#}%.");
+            }
             // GroupId 0 rolls independently, so each entry is its own row carrying its own chance.
             foreach (var d in rows.Where(d => d.GroupId == 0))
-                lines.Add($"{ItemLine(d)}  ({Math.Min(1f, MobCatalog.EffectiveChance(d, lookMult)) * 100:0.##}%)");
+                lines.Add($"{ItemLine(d)}  ({Shown(d) * 100:0.##}%)");
             // A GROUP is ONE roll shared by its members, so it reads as a TREE (32f): a title line with
             // the group's own chance, then the items it can land on indented beneath. As flat rows a
             // single 5% group looked like five separate 5% drops, which is five times the truth.
             foreach (var g in rows.Where(d => d.GroupId != 0).GroupBy(d => d.GroupId))
             {
-                float chance = Math.Min(1f, g.Sum(d => MobCatalog.EffectiveChance(d, lookMult)));
+                float chance = Math.Min(1f, g.Sum(d => MobCatalog.EffectiveChance(d, lookMult)) * lookGap);
                 lines.Add($"{GroupTitle(g.Key)}  ({chance * 100:0.##}%)");
                 // EVERY member prints its own chance (owner, playtest-16: "add the rows also individual
                 // %"). It used to print one only when a per-item override had been set, so an untouched
@@ -11661,7 +11833,13 @@ var effect = def.Effect;
             HpRegen: hpReg, MpRegen: mpReg,
             InterruptResist: t.InterruptResist, CritDmgResist: t.CritDmgResist, MagicResist: t.MagicResist,
             Rank: isMob ? t.Rank.ToString() : "",
-            Skills: skills));
+            Skills: skills,
+            // Behaviour (playtest 23). Aggression is read off the SPAWN, not the template: a zone can
+            // turn a passive creature hostile (`SpawnZone.AllAggressive`), and the sheet has to describe
+            // the thing in front of you rather than its species.
+            Aggressive: isMob && t.Aggressive,
+            SocialClan: isMob && GameConstants.MobClansEnabled && t.MobTypeId is string mid
+                        ? MobCatalog.Get(mid).Clan : ""));
     }
 
     /// <summary>Roll to interrupt a cast when the caster is hit. Resist = caster

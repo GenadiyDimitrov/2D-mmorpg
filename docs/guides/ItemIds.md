@@ -4,7 +4,7 @@
 `dotnet run --project tools/ItemIds` after adding or removing an item. Every id below is a real
 id the server will accept today.
 
-**1078 items.** Generated 2026-08-13.
+**1073 items.** Generated 2026-08-15.
 
 ```
 /give <player> <itemId> [sellPrice] [tradable] [timed] ["name"] [enchant] [canStorePrivate] [canStoreAccount] [amount]
@@ -467,7 +467,7 @@ is full (it tells you how many fit).
 | `shield_t80_legendary` | Soulcrystal Aegis | S | Legendary |  |
 | `shield_t80` | Soulcrystal Aegis | S | Mythic |  |
 
-## Armor  (256)
+## Armor  (251)
 
 ### no tier (training / one-off)
 
@@ -475,12 +475,6 @@ is full (it tells you how many fit).
 |---|---|---|---|---|
 | `training_leather_armor` | Training Leather Armor | F | Common | untradable, Light, Body |
 | `training_robe` | Training Robe | F | Common | untradable, Robe, Body |
-| `set_dark_dominion_gloves` | Dark Dominion Gauntlets | E | Rare | Gloves |
-| `set_dark_dominion_head` | Dark Dominion Helm | E | Rare | Head |
-| `set_dark_dominion_body_light` | Dark Dominion Leathers | E | Rare | Light, Body |
-| `set_dark_dominion_body_heavy` | Dark Dominion Plate | E | Rare | Heavy, Body |
-| `set_dark_dominion_body_robe` | Dark Dominion Robe | E | Rare | Robe, Body |
-| `set_dark_dominion_boots` | Dark Dominion Sabatons | E | Rare | Boots |
 
 ### Lv 1
 
@@ -697,6 +691,7 @@ is full (it tells you how many fit).
 | `boots_t61` | Bloodsteel Greaves | A | Mythic | Boots |
 | `helm_t61` | Bloodsteel Helm | A | Mythic | Head |
 | `light_t61` | Bloodsteel Leathers | A | Mythic | Light, Body |
+| `robe_t61_sup` | Bloodsteel Raiment | A | Mythic | Robe, Body |
 | `robe_t61` | Bloodsteel Robe | A | Mythic | Robe, Body |
 | `light_t61_dmg` | Bloodsteel Warhide | A | Mythic | Light, Body |
 | `heavy_t61_dmg` | Bloodsteel Warplate | A | Mythic | Heavy, Body |
@@ -1047,7 +1042,7 @@ is full (it tells you how many fit).
 | `skill_stone` | Skill Stone | F | Uncommon | stacks |
 | `potion_speed_u` | Swift Potion | F | Uncommon | stacks |
 | `potion_speed_c` | Swift Potion (Lesser) | F | Common | stacks |
-| `scroll_resurrect_ultimate` | Ultimate Scroll of Resurrection | F | Rare | untradable, stacks |
+| `scroll_resurrect_ultimate` | Ultimate Scroll of Resurrection | F | Rare | stacks |
 | `scroll_resurrect_ultimate_bound` | Ultimate Scroll of Resurrection (Bound) | F | Rare | untradable, stacks |
 | `scroll_return_ultimate` | Ultimate Scroll of Return | F | Rare | untradable, stacks |
 | `scroll_return_ultimate_bound` | Ultimate Scroll of Return (Bound) | F | Rare | untradable, stacks |
@@ -1091,42 +1086,42 @@ is full (it tells you how many fit).
 | `box_acc_t76` | Adamantine Accessory Box | A | Rare |  |
 | `box_buff_scrolls` | Blessing Box | F | Rare |  |
 | `box_acc_t61` | Bloodsteel Accessory Box | A | Rare |  |
-| `recipe_craft_shield_t76` | Blueprint: Adamantine Aegis | A | Epic |  |
-| `recipe_craft_ring_t76` | Blueprint: Adamantine Band | A | Epic |  |
-| `recipe_craft_staff_t76` | Blueprint: Adamantine Battlestaff | A | Epic |  |
-| `recipe_craft_sword1h_t76` | Blueprint: Adamantine Blade | A | Epic |  |
-| `recipe_craft_heavy_t76` | Blueprint: Adamantine Bulwark | A | Epic |  |
-| `recipe_craft_duals_t76` | Blueprint: Adamantine Fangs | A | Epic |  |
-| `recipe_craft_gloves_t76` | Blueprint: Adamantine Gauntlets | A | Epic |  |
-| `recipe_craft_sword2h_t76` | Blueprint: Adamantine Greatsword | A | Epic |  |
-| `recipe_craft_boots_t76` | Blueprint: Adamantine Greaves | A | Epic |  |
-| `recipe_craft_helm_t76` | Blueprint: Adamantine Helm | A | Epic |  |
-| `recipe_craft_light_t76` | Blueprint: Adamantine Leathers | A | Epic |  |
-| `recipe_craft_bow_t76` | Blueprint: Adamantine Longbow | A | Epic |  |
-| `recipe_craft_blunt1h_t76` | Blueprint: Adamantine Mace | A | Epic |  |
-| `recipe_craft_blunt2h_t76` | Blueprint: Adamantine Maul | A | Epic |  |
-| `recipe_craft_necklace_t76` | Blueprint: Adamantine Pendant | A | Epic |  |
-| `recipe_craft_robe_t76` | Blueprint: Adamantine Robe | A | Epic |  |
-| `recipe_craft_earring_t76` | Blueprint: Adamantine Stud | A | Epic |  |
-| `recipe_craft_wand_t76` | Blueprint: Adamantine Wand | A | Epic |  |
-| `recipe_craft_shield_t80` | Blueprint: Soulcrystal Aegis | A | Epic |  |
-| `recipe_craft_ring_t80` | Blueprint: Soulcrystal Band | A | Epic |  |
-| `recipe_craft_staff_t80` | Blueprint: Soulcrystal Battlestaff | A | Epic |  |
-| `recipe_craft_sword1h_t80` | Blueprint: Soulcrystal Blade | A | Epic |  |
-| `recipe_craft_heavy_t80` | Blueprint: Soulcrystal Bulwark | A | Epic |  |
-| `recipe_craft_duals_t80` | Blueprint: Soulcrystal Fangs | A | Epic |  |
-| `recipe_craft_gloves_t80` | Blueprint: Soulcrystal Gauntlets | A | Epic |  |
-| `recipe_craft_sword2h_t80` | Blueprint: Soulcrystal Greatsword | A | Epic |  |
-| `recipe_craft_boots_t80` | Blueprint: Soulcrystal Greaves | A | Epic |  |
-| `recipe_craft_helm_t80` | Blueprint: Soulcrystal Helm | A | Epic |  |
-| `recipe_craft_light_t80` | Blueprint: Soulcrystal Leathers | A | Epic |  |
-| `recipe_craft_bow_t80` | Blueprint: Soulcrystal Longbow | A | Epic |  |
-| `recipe_craft_blunt1h_t80` | Blueprint: Soulcrystal Mace | A | Epic |  |
-| `recipe_craft_blunt2h_t80` | Blueprint: Soulcrystal Maul | A | Epic |  |
-| `recipe_craft_necklace_t80` | Blueprint: Soulcrystal Pendant | A | Epic |  |
-| `recipe_craft_robe_t80` | Blueprint: Soulcrystal Robe | A | Epic |  |
-| `recipe_craft_earring_t80` | Blueprint: Soulcrystal Stud | A | Epic |  |
-| `recipe_craft_wand_t80` | Blueprint: Soulcrystal Wand | A | Epic |  |
+| `recipe_craft_shield_t76` | Blueprint: Adamantine Aegis | A | Epic | stacks |
+| `recipe_craft_ring_t76` | Blueprint: Adamantine Band | A | Epic | stacks |
+| `recipe_craft_staff_t76` | Blueprint: Adamantine Battlestaff | A | Epic | stacks |
+| `recipe_craft_sword1h_t76` | Blueprint: Adamantine Blade | A | Epic | stacks |
+| `recipe_craft_heavy_t76` | Blueprint: Adamantine Bulwark | A | Epic | stacks |
+| `recipe_craft_duals_t76` | Blueprint: Adamantine Fangs | A | Epic | stacks |
+| `recipe_craft_gloves_t76` | Blueprint: Adamantine Gauntlets | A | Epic | stacks |
+| `recipe_craft_sword2h_t76` | Blueprint: Adamantine Greatsword | A | Epic | stacks |
+| `recipe_craft_boots_t76` | Blueprint: Adamantine Greaves | A | Epic | stacks |
+| `recipe_craft_helm_t76` | Blueprint: Adamantine Helm | A | Epic | stacks |
+| `recipe_craft_light_t76` | Blueprint: Adamantine Leathers | A | Epic | stacks |
+| `recipe_craft_bow_t76` | Blueprint: Adamantine Longbow | A | Epic | stacks |
+| `recipe_craft_blunt1h_t76` | Blueprint: Adamantine Mace | A | Epic | stacks |
+| `recipe_craft_blunt2h_t76` | Blueprint: Adamantine Maul | A | Epic | stacks |
+| `recipe_craft_necklace_t76` | Blueprint: Adamantine Pendant | A | Epic | stacks |
+| `recipe_craft_robe_t76` | Blueprint: Adamantine Robe | A | Epic | stacks |
+| `recipe_craft_earring_t76` | Blueprint: Adamantine Stud | A | Epic | stacks |
+| `recipe_craft_wand_t76` | Blueprint: Adamantine Wand | A | Epic | stacks |
+| `recipe_craft_shield_t80` | Blueprint: Soulcrystal Aegis | A | Epic | stacks |
+| `recipe_craft_ring_t80` | Blueprint: Soulcrystal Band | A | Epic | stacks |
+| `recipe_craft_staff_t80` | Blueprint: Soulcrystal Battlestaff | A | Epic | stacks |
+| `recipe_craft_sword1h_t80` | Blueprint: Soulcrystal Blade | A | Epic | stacks |
+| `recipe_craft_heavy_t80` | Blueprint: Soulcrystal Bulwark | A | Epic | stacks |
+| `recipe_craft_duals_t80` | Blueprint: Soulcrystal Fangs | A | Epic | stacks |
+| `recipe_craft_gloves_t80` | Blueprint: Soulcrystal Gauntlets | A | Epic | stacks |
+| `recipe_craft_sword2h_t80` | Blueprint: Soulcrystal Greatsword | A | Epic | stacks |
+| `recipe_craft_boots_t80` | Blueprint: Soulcrystal Greaves | A | Epic | stacks |
+| `recipe_craft_helm_t80` | Blueprint: Soulcrystal Helm | A | Epic | stacks |
+| `recipe_craft_light_t80` | Blueprint: Soulcrystal Leathers | A | Epic | stacks |
+| `recipe_craft_bow_t80` | Blueprint: Soulcrystal Longbow | A | Epic | stacks |
+| `recipe_craft_blunt1h_t80` | Blueprint: Soulcrystal Mace | A | Epic | stacks |
+| `recipe_craft_blunt2h_t80` | Blueprint: Soulcrystal Maul | A | Epic | stacks |
+| `recipe_craft_necklace_t80` | Blueprint: Soulcrystal Pendant | A | Epic | stacks |
+| `recipe_craft_robe_t80` | Blueprint: Soulcrystal Robe | A | Epic | stacks |
+| `recipe_craft_earring_t80` | Blueprint: Soulcrystal Stud | A | Epic | stacks |
+| `recipe_craft_wand_t80` | Blueprint: Soulcrystal Wand | A | Epic | stacks |
 | `box_acc_t52` | Cobalt Accessory Box | B | Rare |  |
 | `box_acc_t40` | Darksteel Accessory Box | B | Rare |  |
 | `box_acc_t20` | Electrum Accessory Box | E | Rare |  |

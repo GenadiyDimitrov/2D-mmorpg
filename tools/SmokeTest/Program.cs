@@ -1551,8 +1551,16 @@ await c.DisposeAsync();
     var dropping = MobCatalog.Templates
         .Where(m => m.Drops is { Length: > 0 })
         .Select(m => m.Name).ToHashSet(StringComparer.Ordinal);
-    var withMobs = WorldMap.SpawnZones.First(z => z.MobTypes.Any(t =>
-        MobCatalog.Get(t).Drops is { Length: > 0 }));
+    // 🔴 …AND IN THE GM'S OWN LEVEL BAND. Since playtest 23 the inspect screen applies the LEVEL-GAP
+    // penalty the kill roll always applied (his `76e`), so a level-90 admin reading a level-4 fox is now
+    // correctly shown 0.00% on every row — and a rune cannot double zero. The old "first zone with
+    // drops" pick was a low-level field, which turned this whole check into 0 vs 0 the moment the
+    // display became honest. Pick a field this character can actually farm.
+    int myLevel = Math.Max(1, gm.Progress?.Level ?? 1);
+    var withMobs = WorldMap.SpawnZones
+        .Where(z => z.MobTypes.Any(t => MobCatalog.Get(t).Drops is { Length: > 0 }))
+        .OrderBy(z => Math.Abs((z.MinLevel + z.MaxLevel) / 2 - myLevel))
+        .First();
     await gm.Hub.SendAsync("DebugTeleport", withMobs.X, withMobs.Y);
     await gm.Settle();
     var mob = gm.EntityNames.FirstOrDefault(kv => kv.Key != gm.MyId && dropping.Contains(kv.Value)).Key;

@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Dev tool, deliberately NOT in Game.sln (same rule as BalanceMatrix and ItemIds): `dotnet build`
+       on the solution must not build it and the owner's startup project stays untouched.
+
+       It writes the level-40+ SKILL CSV SEEDS into docs/data/classes_skills_csv/ — the files he asked
+       for in playtest 23: "u can add files next to other skills 20-35.Csv the mele rogues one, one for
+       archers, one for buffers and one for healers ..with what u have after 40 so I start with them
+       later on.. `Healers 40-74.csv` and 76-85".
+
+       GENERATED, never hand-edited, for exactly one pass: the FIRST one. After that the files are HIS
+       — he authors over them and the tool must not be run again, or it overwrites his work. It refuses
+       to overwrite a file that already exists unless run with the "force" switch, which makes that safe.
+
+           dotnet run (from this folder)
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Game.Tools.SkillCsvSeed</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Game.Shared\Game.Shared.csproj" />
+  </ItemGroup>
+
+</Project>

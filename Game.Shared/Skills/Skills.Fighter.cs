@@ -643,13 +643,18 @@ public static partial class SkillCatalog
             Category: SkillCategory.Physical, KnockbackRange: 200f,
             Description: "A forceful shot that damages and knocks the target back."),
 
-        // Vanish — STEALTH: become invisible to monsters for the duration (broken by any offensive
-        //          action). Sheds mobs already locked on. The Phantom's opener setup.
+        // Vanish — HIDE (BL-69, kind 1): withheld from the world snapshot itself, not merely unseen by
+        //          mob AI. The melee rogue's opener setup.
+        //
+        // ⚠ 30s duration / 2 min cooldown are HIS numbers (playtest 23): *"cool down 2 min, duration -
+        // 30s."* They replace the 20s/30s it shipped with — a 30s cooldown on a full hide made the
+        // counter (Signal Flare's 30s no-hide stamp) meaningless, because the stamp expired at the same
+        // moment the skill came back. At 2 min the counter now buys a real window.
         new(Vanish, "Vanish", BaseClass.Fighter, SkillEffect.None,
-            MpCost: 30, CastTicks: 0, CooldownTicks: 300, Range: 0, Power: 0,
-            DurationTicks: 200, Category: SkillCategory.Physical,
+            MpCost: 30, CastTicks: 0, CooldownTicks: 1200, Range: 0, Power: 0,
+            DurationTicks: 300, Category: SkillCategory.Physical,
             TargetMode: TargetMode.SelfOnly, GrantsHide: true,
-            Description: "Vanish completely for 20s — nobody can see or target you, and every monster " +
+            Description: "Vanish completely for 30s — nobody can see or target you, and every monster " +
                          "loses you. Anything but walking ends it."),
 
         // Prowl — STEALTH (BL-69, kind 2). A stance, not an opener, and the difference is the whole

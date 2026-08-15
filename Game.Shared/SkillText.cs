@@ -372,9 +372,12 @@ public static class SkillText
         if (def.AutoResurrect)
         {
             float pct = def.ResExpPctAt(level);
+            // You DIE first and then choose (playtest 23) — the card has to say so, or the skill reads
+            // as immortality and the death that does happen looks like a bug.
             o.Add(pct > 0f
-                ? $"Revives you where you fell at 30% HP/MP, restoring {pct * 100f:0.#}% of the lost exp"
-                : "Revives you where you fell at 30% HP/MP");
+                ? $"On death, offers to revive you where you fell at 30% HP/MP, restoring {pct * 100f:0.#}% of the lost exp"
+                : "On death, offers to revive you where you fell at 30% HP/MP");
+            o.Add("The offer does not expire — you stay down until you answer it");
         }
 
         // ---- Damage shaping ----

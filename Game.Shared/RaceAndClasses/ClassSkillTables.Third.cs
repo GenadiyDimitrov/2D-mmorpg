@@ -88,40 +88,46 @@ public static partial class ClassSkillTables
         // by name on 2026-08-14 (`BL-35`). Two learn lines, nothing else — the Lightbringer and
         // Bulwark kits above stay commented out.
         RegisterPreservation();
-        // …and a THIRD, on the same terms: the Phantom's Vanish, which he named on 2026-08-14.
-        RegisterPhantomVanish();
+        // …and a THIRD, on the same terms: the three HIDE skills, which he placed by hand.
+        RegisterHideKit();
     }
 
-    /// <summary>The Phantom's <c>Vanish</c> — his instruction, 2026-08-14: *"add vanish to the phantom -
-    /// its not there cannot test the invis logic with non admin invis"*.
+    /// <summary>The three invisibility skills, re-homed exactly where he put them in playtest 23
+    /// (2026-08-15). ⚠ Same standing as <see cref="RegisterPreservation"/>: skills HE placed by name and
+    /// by level, not a repeal of the 40+ purge at the top of this file.
     ///
-    /// <para>⚠ Same standing as <see cref="RegisterPreservation"/>: a skill HE named individually, not a
-    /// repeal of the 40+ purge at the top of this file. One learn line, nothing else — do not take this
-    /// as licence to rebuild the rogue kit around it.</para>
+    /// <para>His three lines, verbatim: *"`Prowl` should be learnable by all mele rogues @40 3rd class
+    /// (not auto, like a normal skill)"* · *"`Signal Flare` should be learnable by all archers @60 3rd
+    /// class"* · *"`Vanish` … should be learnable by all mele rogues @60 3rd class … cool down 2 min,
+    /// duration - 30s."* "Not auto" is already how every entry in these tables works — a
+    /// <see cref="ClassSkill"/> makes a skill LEARNABLE at that level for SP; nothing here grants it.</para>
     ///
-    /// <para>🔴 Why it was worth fixing immediately rather than waiting for the CSVs: the purge deleted
-    /// the learn line but kept the SkillDef, and <c>Vanish</c> is the <b>only</b> skill in the game with
-    /// <c>GrantsHide</c>. So `BL-69`'s kind-1 hide — the one enforced by OMISSION from the snapshot, the
-    /// headline of that whole feature — had no player-reachable trigger at all. Its COUNTER
-    /// (<c>SignalFlare</c>, learnable at rogue 28) shipped; the thing it counters did not. The only way
-    /// to reach the code was the admin toggle, which is a different path and proves nothing about the
-    /// skill's own cast/break/reveal rules.</para>
+    /// <para>🔑 "All melee rogues" and "all archers" are three disciplines each, because the archer merge
+    /// (2026-07-29) split the rogue by RACE at 40: melee = Nullblade (human) · Venomweaver (ork) ·
+    /// Phantom (elf); ranged = Sharpshooter (human) · Hunter (ork) · Trapper (elf). Registered for all
+    /// three races on each, matching the file's idiom — <see cref="Disciplines.Of"/> is what actually
+    /// gates who can hold the discipline, so the off-race keys are inert.</para>
     ///
-    /// <para>Level 40 = the discipline's own floor, and Vanish is the Phantom's identity beat ("Vanishes,
-    /// then opens with a devastating ambush" — <see cref="Disciplines.Blurb"/>). Registered for all three
-    /// races to match the file's idiom; only the Elf can currently hold this discipline
-    /// (<see cref="Disciplines.Of"/>), so the other two keys are inert.</para>
+    /// <para>This SUPERSEDES the 0.67.2 stopgap that put Vanish on the Phantom alone at 40, which existed
+    /// only because Vanish is the one skill in the game carrying <c>GrantsHide</c> and the purge had left
+    /// `BL-69`'s headline feature with no player-reachable trigger. He has now placed it properly.</para>
     ///
-    /// <para>⚠ ITS SP PRICE IS UNSET and left that way on purpose. <c>SkillDef.SpCost</c> defaults to 1,
-    /// which never mattered while the skill was unlearnable — so Vanish is currently the cheapest 40+
-    /// skill in the game by four orders of magnitude (Prowl @20 costs 3400, Signal Flare @28 costs
-    /// 12000). Pricing it is 40+ BALANCE, which belongs to his CSVs, not to me — and leaving it at 1
-    /// also keeps the already-installed client honest, since the learn window reads the price out of the
-    /// catalog it compiled against. Raise it when the CSVs land.</para></summary>
-    private static void RegisterPhantomVanish()
+    /// <para>⚠ Vanish's SP price is still the record default of 1 and is still HIS to set — it is 40+
+    /// balance, and Prowl (3400) and Signal Flare (12000) are the neighbours it should be priced against.</para></summary>
+    private static void RegisterHideKit()
     {
+        var melee  = new[] { Discipline.Nullblade, Discipline.Venomweaver, Discipline.Phantom };
+        var ranged = new[] { Discipline.Sharpshooter, Discipline.Hunter, Discipline.Trapper };
+
         foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
-            ClassSkills.RegisterThird(race, Discipline.Phantom, new ClassSkill(Vanish, 40));
+        {
+            foreach (var d in melee)
+                ClassSkills.RegisterThird(race, d,
+                    new ClassSkill(Prowl, 40, SkillLevel: 1),
+                    new ClassSkill(Vanish, 60));
+            foreach (var d in ranged)
+                ClassSkills.RegisterThird(race, d, new ClassSkill(SignalFlare, 60, SkillLevel: 1));
+        }
     }
 
     /// <summary>`BL-35` — the two level-83 auto-resurrect skills, and NOTHING else from either kit.

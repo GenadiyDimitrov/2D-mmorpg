@@ -53,7 +53,15 @@ public record EntityDto(
     // For an NPC this is the ROLE half of its name ("Elder" over "Marius").
     // Empty for everyone not wearing one, so it costs an empty string per snapshot.
     string Title = "",
-    string TitleColor = "");
+    string TitleColor = "",
+    // Mobs only: the SOCIAL CLAN this creature answers a cry from, or "" for a loner. Playtest 23:
+    // *"add info like -> agro:true/false, social: true/false, social clan: clanName, info that will be
+    // helpful to a player."* It is the raw clan NAME rather than a bool because "social" alone does not
+    // tell you the thing that matters — which OTHER creatures come — and the target frame prints the
+    // name for exactly that reason.
+    // ⚠ Sent as "" while GameConstants.MobClansEnabled is off (`BL-73`), so the frame never advertises
+    // a behaviour the simulation is not currently running. It comes back on with the switch.
+    string SocialClan = "");
 
 /// <summary>What to draw over an NPC's head about quests. Sent per player, because availability is
 /// personal — level, race, class and what you have already done all decide it.</summary>
@@ -127,7 +135,12 @@ public record CastInfo(string SkillName, float Seconds);
 /// <summary>Server -> a fallen player: an ally (or a scroll) offers to resurrect you. The client shows a
 /// confirm prompt; the player accepts/declines (see ResurrectResponse) so they don't revive on top of the
 /// mob that killed them. ExpPct is the fraction of lost exp restored; ExpRestored is the resulting amount.</summary>
-public record ResurrectOffer(string FromName, float ExpPct, long ExpRestored);
+/// <summary><paramref name="SelfRes"/> marks the preservation skills' own prompt (Undying Will / Rite of
+/// Preservation): there is no rescuer, the caster IS the corpse, and the offer never expires. The client
+/// needs it to word the prompt — "&lt;your own name&gt; offers to resurrect you" reads like a bug — and it
+/// travels as a flag rather than a name comparison because a name match would also fire on a same-named
+/// character raising you.</summary>
+public record ResurrectOffer(string FromName, float ExpPct, long ExpRestored, bool SelfRes = false);
 
 /// <summary>Server -> nearby clients: a MOB started casting (drives a cast bar over the mob's head,
 /// so a boss's telegraphed slam is visible/dodgeable). Seconds 0 = the cast ended/was cancelled.</summary>
@@ -347,7 +360,14 @@ public record TargetDetails(
     // skill followed by indented detail lines, the same shape Drops uses. Empty for a plain melee
     // creature (which is the useful answer, not a missing section) and for players: a mob's kit is
     // bestiary knowledge, another player's is not.
-    string[]? Skills = null);
+    string[]? Skills = null,
+    // 🔴 For a MOB only: how it BEHAVES, which is what he asked the info window to start with (playtest
+    // 23): *"add info like -> agro:true/false, social: true/false, social clan: clanName, info that will
+    // be helpful to a player."* Aggression is per-SPAWN (a zone can turn a passive template hostile), so
+    // it is read off the entity and not the template. SocialClan is "" for a loner and for every mob
+    // while `BL-73`'s switch is down.
+    bool Aggressive = false,
+    string SocialClan = "");
 
 /// <summary>Server -> owning client: the result of an enchant attempt.</summary>
 public record EnchantResultDto(string ItemName, int NewEnchant, string Outcome, bool Destroyed);

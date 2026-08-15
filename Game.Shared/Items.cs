@@ -713,14 +713,16 @@ public static class ItemCatalog
     public const string BoxNewbieArmorRobe  = "box_newbie_armor_robe";
     public const string BoxNewbieJewels     = "box_newbie_jewels";
     public const string BoxNewbieWeapons    = "box_newbie_weapons";   // SELECTION box
-    // Dark Dominion armor set: two BODY weight variants (heavy/robe) sharing the
-    // same three accessories. Wearing a body + all 3 accessories grants the set bonus.
-    public const string DarkDominionHeavyBody = "set_dark_dominion_body_heavy";
-    public const string DarkDominionLightBody = "set_dark_dominion_body_light";
-    public const string DarkDominionRobeBody = "set_dark_dominion_body_robe";
-    public const string DarkDominionHead = "set_dark_dominion_head";
-    public const string DarkDominionGloves = "set_dark_dominion_gloves";
-    public const string DarkDominionBoots = "set_dark_dominion_boots";
+    // 🔴 THE SIX "Dark Dominion" IDS ARE GONE (playtest 23, his ruling: *"Delete the `dark dominion` it
+    // falls in the category for deletion."*). They were a hand-authored E-grade set from before the
+    // grade ladder existed — six real pieces with a real set bonus that NOTHING dropped, sold or boxed,
+    // so no character could ever have assembled it. That is the same category as `79e`'s 64 off-ladder
+    // items; the only reason they outlived that sweep is that a designed SET is a decision to delete,
+    // not a cleanup, so it was put to him instead. Now ruled.
+    //
+    // ⚠ THE RULE THIS LEAVES IS UNCHANGED (and now has no exception at all): gear is **LADDER**
+    // (ItemLevel > 0, generated from gear_sets.csv) or **TRAINING** (its own CSV block). There is no
+    // third category, and no hand-authored named set outside the generator.
 
     // ===================================================================================
     //  THE ENCHANT SCROLL TABLE — the single source of truth for the 18 scrolls (D1).
@@ -807,25 +809,10 @@ public static class ItemCatalog
         // ===================================================================
 
         // ===================================================================
-        //  NAMED ARMOR SETS — hand-authored. A set tags its pieces with a SetId;
-        //  wearing all 4 slots of one set grants its bonus (ArmorSetCatalog).
-        //  Dark Dominion: heavy OR robe body, sharing the same 3 accessories.
+        //  NAMED ARMOR SETS — none. The six Dark Dominion pieces stood here until playtest 23 and are
+        //  deleted on his ruling; see the id block above for why. Every set in the game is now emitted
+        //  by the tiered generator, which is what guarantees a set's pieces can actually be obtained.
         // ===================================================================
-        list.Add(new ItemDef(DarkDominionHeavyBody, "Dark Dominion Plate", EquipSlot.Armor,
-            ItemGrade.E, ItemRarity.Rare, Weight: ArmorWeight.Heavy, ArmorSlot: ArmorSlot.Body,
-            DefBonus: 28, HpBonus: 130, SetId: ArmorSetCatalog.DarkDominion));
-        list.Add(new ItemDef(DarkDominionLightBody, "Dark Dominion Leathers", EquipSlot.Armor,
-            ItemGrade.E, ItemRarity.Rare, Weight: ArmorWeight.Light, ArmorSlot: ArmorSlot.Body,
-            DefBonus: 18, HpBonus: 70, EvaBonus: 6, SetId: ArmorSetCatalog.DarkDominion));
-        list.Add(new ItemDef(DarkDominionRobeBody, "Dark Dominion Robe", EquipSlot.Armor,
-            ItemGrade.E, ItemRarity.Rare, Weight: ArmorWeight.Robe, ArmorSlot: ArmorSlot.Body,
-            DefBonus: 10, HpBonus: 20, MpBonus: 130, SetId: ArmorSetCatalog.DarkDominion));
-        list.Add(new ItemDef(DarkDominionHead, "Dark Dominion Helm", EquipSlot.Armor,
-            ItemGrade.E, ItemRarity.Rare, ArmorSlot: ArmorSlot.Head, SetId: ArmorSetCatalog.DarkDominion));
-        list.Add(new ItemDef(DarkDominionGloves, "Dark Dominion Gauntlets", EquipSlot.Armor,
-            ItemGrade.E, ItemRarity.Rare, ArmorSlot: ArmorSlot.Gloves, SetId: ArmorSetCatalog.DarkDominion));
-        list.Add(new ItemDef(DarkDominionBoots, "Dark Dominion Sabatons", EquipSlot.Armor,
-            ItemGrade.E, ItemRarity.Rare, ArmorSlot: ArmorSlot.Boots, SetId: ArmorSetCatalog.DarkDominion));
 
         // ===================================================================
         //  POTIONS

@@ -87,10 +87,13 @@ public static partial class ClassSkillTables
                 // Lure (BL-70) on the rogue's own 20/28/36 rungs — its ladder is REACH (200/400/600),
                 // so the three levels are the three ranges and nothing else changes.
                 new ClassSkill(Lure, 20, SkillLevel: 1),
-                // Prowl (BL-69, kind 2) — the stance that lets a rogue cross a field instead of
-                // fighting it. Learned with the rest of the 20-block: his purpose for it is farming,
-                // and a farming tool that arrives at 40 is a farming tool for someone else.
-                new ClassSkill(Prowl, 20, SkillLevel: 1),
+                // 🔴 Prowl MOVED 20 -> 40 (melee rogue only) by his playtest-23 ruling: *"`Prowl` should
+                // be learnable by all mele rogues @40 3rd class (not auto, like a normal skill)"*. It is
+                // registered in ClassSkillTables.Third.RegisterHideKit(), not here — the 2nd-class rogue
+                // block covers BOTH weapons to 40 (the archer merge), so leaving it at 20 handed the
+                // dagger's stance to every future archer as well. The earlier note here argued the
+                // opposite ("a farming tool that arrives at 40 is a farming tool for someone else") and
+                // he has overruled it; the farming stance is now part of what the melee split BUYS.
                 new ClassSkill(RogueArmorMastery, 24, SkillLevel: 2),
                 new ClassSkill(RogueWeaponMastery, 24, SkillLevel: 2),
                 new ClassSkill(PiercingStab, 24, SkillLevel: 2),
@@ -102,9 +105,11 @@ public static partial class ClassSkillTables
                 // Evasion Boost — the rogue's ultimate (CSV rogue 20-35, added playtest-20).
                 new ClassSkill(EvasionBoost, 28, SkillLevel: 1),
                 new ClassSkill(Lure, 28, SkillLevel: 2),
-                // Signal Flare (BL-69) — the counter to a full hide, and it belongs to the bow half
-                // of the rogue, which owns the bow until 40 (the archer merge).
-                new ClassSkill(SignalFlare, 28, SkillLevel: 1),
+                // 🔴 Signal Flare MOVED 28 -> 60 (archer disciplines only) by his playtest-23 ruling:
+                // *"`Signal Flare` should be learnable by all archers @60 3rd class"*. See
+                // ClassSkillTables.Third.RegisterHideKit(). 🔑 The counter now sits ABOVE what it counters
+                // (Vanish @60 on the melee rogue) rather than twelve levels below it, which is the shape
+                // he asked for: you meet the hide before you can answer it.
                 new ClassSkill(RogueArmorMastery, 32, SkillLevel: 4),
                 new ClassSkill(RogueWeaponMastery, 32, SkillLevel: 4),
                 new ClassSkill(PiercingStab, 32, SkillLevel: 4),

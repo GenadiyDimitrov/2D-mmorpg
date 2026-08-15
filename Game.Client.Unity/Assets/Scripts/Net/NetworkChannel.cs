@@ -345,8 +345,13 @@ namespace Game.Client
         public Task EquipItemAsync(Guid instanceId) =>
             _connection.SendAsync("EquipItem", instanceId);
 
-        public Task UsePotionAsync(Guid instanceId) =>
-            _connection.SendAsync("UsePotion", instanceId);
+        /// <summary>Use a consumable, optionally ON a target — the targeted overload is what a
+        /// resurrection scroll needs (see <c>GameBoot.UsePotion</c>). Routed to the untargeted hub method
+        /// when there is no selection, so the server never has to treat Guid.Empty as "nobody".</summary>
+        public Task UsePotionAsync(Guid instanceId, Guid? targetId = null) =>
+            targetId is Guid t
+                ? _connection.SendAsync("UsePotionOn", instanceId, t)
+                : _connection.SendAsync("UsePotion", instanceId);
 
         // ----- party ------------------------------------------------------------------------------
         public Task PartyInviteAsync(Guid targetId) => _connection.SendAsync("PartyInvite", targetId);

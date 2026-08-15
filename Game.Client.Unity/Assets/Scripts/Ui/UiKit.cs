@@ -180,6 +180,69 @@ namespace Game.Client
         /// Every window gets this rather than hand-placing its own title and ✕, so they all move, all
         /// close the same way, and a new window inherits both for free.
         /// </summary>
+        /// <summary>Make a <see cref="WindowChrome"/> window RESIZABLE and LOCKABLE, and remember its
+        /// position, size and lock state on the DEVICE (playtest 23 — *"persistent for the apk not the
+        /// server"*). Two things are added: a lock button in the title bar left of the X, and a drag grip
+        /// in the bottom-right corner.
+        ///
+        /// <para><paramref name="key"/> is the PlayerPrefs namespace and must be stable across builds —
+        /// change it and the user's layout silently resets to the default. Use the window's own name.</para>
+        ///
+        /// <para>Only the windows he named get this. It is not applied wholesale: a grip costs a corner
+        /// of every window it is on, and most windows here are sized to their content and have nothing to
+        /// gain from being stretched.</para></summary>
+        public static WindowGeometry MakeAdjustable(RectTransform panel, string key, Vector2 minSize)
+        {
+            var geometry = panel.gameObject.AddComponent<WindowGeometry>();
+            geometry.Panel = panel;
+            geometry.Key = key;
+            geometry.MinSize = minSize;
+
+            var inner = panel.GetChild(0);
+            var bar = inner.Find("TitleBar");
+            if (bar != null) geometry.Drag = bar.GetComponent<DragMove>();
+
+            // The grip: bottom-right, deliberately larger than it looks. A 20px visual corner is an
+            // impossible target for a thumb, so the hit box is 44 and the glyph inside it is the hint.
+            var grip = TextButton(inner, "//", () => { }, 15f);
+            var gripRect = Rect(grip.gameObject);
+            Place(gripRect, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-4f, 4f), new Vector2(44f, 44f));
+            // Not a button in the end — it only ever drags. Killing the Button component stops it eating
+            // the press as a click and leaves the drag handler the only thing listening.
+            UnityEngine.Object.Destroy(grip);
+            gripRect.gameObject.AddComponent<ResizeGrip>().Geometry = geometry;
+            geometry.Grip = gripRect;
+
+            if (bar != null)
+            {
+                var lockButton = TextButton(bar.transform, "L", geometry.ToggleLock, 18f);
+                Place(Rect(lockButton.gameObject), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
+                      new Vector2(-58f, 0f), new Vector2(44f, 34f));
+                var label = lockButton.GetComponentInChildren<TextMeshProUGUI>();
+                // "L" / "U", not a padlock: the bundled LiberationSans atlas is static and has no lock
+                // glyph, so TMP would draw the hollow box that keeps turning up in the checklist.
+                void Paint() { if (label != null) label.text = geometry.Locked ? "L" : "U"; }
+                geometry.LockChanged += Paint;
+                Paint();
+            }
+            return geometry;
+        }
+
+        /// <summary>Retitle a window built by <see cref="WindowChrome"/>. Used by the target frame,
+        /// whose title IS the target's name (playtest 23) rather than the word "Target". Finds the
+        /// label by walking the title bar, so no caller has to hold a reference it would otherwise
+        /// only need for this.</summary>
+        public static void SetWindowTitle(RectTransform panel, string title)
+        {
+            if (panel == null) return;
+            var bar = panel.GetChild(0).Find("TitleBar");
+            if (bar == null) return;
+            var found = bar.Find("TitleLabel");
+            if (found == null) return;
+            var label = found.GetComponent<TextMeshProUGUI>();
+            if (label != null) label.text = title;
+        }
+
         public static float WindowChrome(RectTransform panel, string title, Action onClose)
         {
             const float height = 46f;
@@ -196,6 +259,9 @@ namespace Game.Client
             bar.gameObject.AddComponent<DragMove>().Target = panel;
 
             var label = Label(bar.transform, title, 22f, Text, TextAlignmentOptions.Left);
+            // Named so SetWindowTitle can find it by NAME rather than by "the first TMP in the bar" —
+            // the bar can gain buttons (the lock, from MakeAdjustable) and each of them carries a label.
+            label.gameObject.name = "TitleLabel";
             Place(Rect(label.gameObject), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
                   new Vector2(16f, 0f), new Vector2(320f, 30f));
 

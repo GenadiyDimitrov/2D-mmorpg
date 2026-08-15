@@ -33,6 +33,11 @@ So `BL-05` (the two unruled crafting pieces), `BL-22`'s unreachable S budget and
 pile vs the party loot rule) are **not to be worked on or re-raised** until he opens that playtest.
 Nothing about them is blocked or broken — they are waiting on a test only he can run.
 
+**Playtest 23 (2026-08-15) added `BL-73` and `BL-74`** — mob social clans back on once the world map
+spreads the camps out, and the Game-Launcher research. Everything else he found that pass was either a
+**bug** (they went to `testing/Open-Checklist.md` and are built as 0.68.0) or a **ruling on something
+already built**, which by rule 1 rewrote the thing in place rather than opening an entry here.
+
 ## The rules this file runs on
 
 1. **Newest ruling wins, and it is the ONLY one shown.** When you re-spec something, its entry is
@@ -311,6 +316,15 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
 
 ---
 
+- `BL-75` 🔵 **The heal-at-0 skill wants a warrior/ork home.** Playtest 23, on the old Undying Will
+  behaviour: *"That idea for undying skill is good for a warrior ork, when he must die just heal himself
+  30%"* — and *"as I said good skill for a warrior"*. 🔑 **It is already built and needs no new mechanic**:
+  `LastStand` (`SkillEffect.LethalSave`, revives to 50% of max HP off a fatal blow, buff consumed) has
+  been in the catalog the whole time; its learn line went in the 40+ purge. What is missing is only a
+  **class + a level + the percentage** — which is 40+ authoring, so it waits on `BL-02` with everything
+  else. Your two words to settle when you get there: is it Ravager/Warlord or race-gated to the ork, and
+  is the number your 30% or the skill's existing 50%?
+
 ## UI & client
 
 - `BL-41` 🔵 **A grade filter on the craft Gear page.** 62-63 rows is a long scroll on the phone.
@@ -327,6 +341,17 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
   still `StatMods`, not skills, so **buff-bar row 3 (item effects) is permanently empty**; and the
   set tooltip's **shield row** has nothing to show until shields belong to sets. You called this
   optional at the time.
+
+- `BL-74` 🔵 **The phone still does not treat the app as a game** — playtest 23: *"as of 0.67.2 still
+  game launcher don't treat it as a game. May be because of its development installation not store one.
+  Dunno. Need to research how the phone and when it treats an app as a game."* Everything a manifest can
+  claim is already claimed and shipped in 0.67.0 (`BL-46`): the duplicate LAUNCHER activity is deleted,
+  `android:appCategory="game"` and Samsung's older `isGame="true"` are both declared, and exactly one
+  launcher entry stands behind them. So the remaining variable is **outside the manifest** — One UI's
+  Game Launcher is known to classify partly by Play Store category and install source, which a sideloaded
+  debug APK has neither of. 🔵 **Owed as RESEARCH, not a build**, and it cannot be verified from here:
+  it needs your device (does Game Booster's "add app manually" find it? does a release-signed APK behave
+  differently from a debug one?). Nothing is broken in the game either way.
 
 - `BL-45` 🔵 **The presentation pass.** Your words, still true: *"no sounds, a bit woody, no good
   visuals."* The loudest remaining gap. **You have reserved it for its own discussion** (2026-08-14:
@@ -360,6 +385,17 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
   - **The 60-85 band and the fighter kill-speed sanity check**, neither ever run. Note the cumulative
     trash-kill count reaches **631k by level 86** against 21k by level 62 — whatever the old *"60-85
     runs ~3× faster"* note meant, the measured curve now says the opposite and wants your call.
+
+- `BL-73` 🔵 **Mob social clans go back ON once the world map spreads the camps out** — your own note
+  from playtest 23, *"Make a note to turn it on once the world map is in place."* The feature works and
+  you saw it work; what makes it unplayable is **spawn DENSITY, not the 450 radius**: *"all mobs are
+  spawning almost next to each other and hitting one wolf getting ganked by 10 other … For a mage lvl 9
+  hitting a warefolf means dead."* Your target shape is *"it will call ONE, and while you fight, if
+  others wander in the social range they will aggro"* — which is what the same 450 radius already does
+  once a camp is not stacked on one point. **Nothing was deleted**: the twelve clans are still authored
+  on the mobs and every line of the call code is intact, behind **one switch**
+  (`GameConstants.MobClansEnabled`). Flip it when the camps are laid out; the retune that follows is
+  the SPACING, not this feature.
 
 - `BL-50` ⏸ **A boss/elite crafting-mat pile must obey the party loot rule.** Written as *(not
   tested)* and never tested. **PARKED with the rest of crafting** (see the top of this file) — it can

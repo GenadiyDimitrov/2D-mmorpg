@@ -34,7 +34,9 @@ namespace Game.Client
         private const float PlateGap = 12f;
 
         // self / target
-        private TextMeshProUGUI _selfName, _targetName, _targetDetail;
+        // _targetName is gone (playtest 23) — the target frame's title bar carries the name now, so the
+        // row it used to sit in was 28px of duplication.
+        private TextMeshProUGUI _selfName, _targetDetail;
         private TextMeshProUGUI _selfHpText, _selfMpText, _selfXpText, _targetHpText, _targetMpText;
         private Image _selfHp, _selfMp, _selfXp, _targetHp, _targetMp;
         private RectTransform _targetMpRow;
@@ -337,21 +339,22 @@ namespace Game.Client
             // where your eyes already are — above your character — rather than in a corner. It is
             // movable, so this is only the starting position.
             _targetPanel = UiKit.PanelBox(_worldRoot, "TargetPanel");
+            // 🔴 28px SHORTER since playtest 23, because the name row is gone: *"the current name text
+            // can be removed so the title window be smaller in size."* The title bar carries the name now.
             UiKit.Place(_targetPanel, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-                        new Vector2(0f, -48f), new Vector2(300f, 176f));
+                        new Vector2(0f, -48f), new Vector2(300f, 148f));
             var inner = _targetPanel.GetChild(0);
 
             // Deliberately NOT CloseWindow: this panel is not in the stack, and hiding it while the
             // target still existed would only make it reappear on the next frame.
+            // 🔑 The title is a PLACEHOLDER — RefreshTarget overwrites it with the target's own name
+            // every frame (*"put the name in place of `Target`. The title of the window to be the
+            // targets name"*). It is only ever seen for the split second before the first refresh.
             float chrome = UiKit.WindowChrome(_targetPanel, "Target", () => Boot.TargetId = null);
-
-            _targetName = UiKit.Label(inner, "", 18f);
-            UiKit.Place(UiKit.Rect(_targetName.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(12f, -chrome - 6f), new Vector2(272f, 24f));
 
             _targetHp = UiKit.ValueBar(inner, UiKit.Hp);
             UiKit.Place(UiKit.Rect(_targetHp.transform.parent.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(12f, -chrome - 34f), new Vector2(276f, 22f));
+                        new Vector2(12f, -chrome - 6f), new Vector2(276f, 22f));
             _targetHpText = UiKit.BarLabel(_targetHp, 13f);
 
             // MP bar — shown for PLAYER targets only (owner). A mob's mana tells you nothing you can act
@@ -359,12 +362,15 @@ namespace Game.Client
             _targetMp = UiKit.ValueBar(inner, UiKit.Mp);
             _targetMpRow = UiKit.Rect(_targetMp.transform.parent.gameObject);
             UiKit.Place(_targetMpRow, new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(12f, -chrome - 56f), new Vector2(276f, 18f));
+                        new Vector2(12f, -chrome - 28f), new Vector2(276f, 18f));
             _targetMpText = UiKit.BarLabel(_targetMp, 12f);
 
+            // 🔴 THE DETAIL LINE IS FULL-WIDTH NOW. It was 190px against a 300px panel, which is the
+            // *"the type mob/player is half visible"* he reported — and it is about to hold a great deal
+            // more than a kind: `Mob: 44, Aggressive, Social (wolf)` / `Player: Vagabond`.
             _targetDetail = UiKit.Label(inner, "", 14f, UiKit.TextDim);
             UiKit.Place(UiKit.Rect(_targetDetail.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(12f, -chrome - 76f), new Vector2(190f, 20f));
+                        new Vector2(12f, -chrome - 48f), new Vector2(276f, 20f));
 
             // Two rows of contextual action buttons, so every target command is one tap — no slash typing.
             // The server refuses anything invalid, but RefreshTarget only SHOWS the ones that apply to the
@@ -584,6 +590,12 @@ namespace Game.Client
         private Vector2[] _cmdBarHome;
         private float _keyboardLift = -1f;
 
+        /// <summary>Extra canvas units the command row clears the soft keyboard by — his 10-20px, taken
+        /// at the top of that range because a punch-hole is round and clipping its lower arc is still
+        /// clipping. Canvas units, not screen pixels: the canvas scales, so this stays the same visual
+        /// gap on every device.</summary>
+        private const float KeyboardClearance = 20f;
+
         /// <summary>Lift the command row above the soft keyboard while it is open.
         ///
         /// Android's keyboard is an OVERLAY — it does not resize the game view and Unity reports no
@@ -605,6 +617,15 @@ namespace Game.Client
                 float px = TouchScreenKeyboard.area.height;
                 if (px <= 0f || px >= Screen.height) px = Screen.height * 0.45f;
                 lift = px * (UiKit.Reference.y / Screen.height);
+                // 🔴 +20 ON TOP OF THE KEYBOARD (playtest 23): *"Also move the chat text box with 10-20
+                // pixels more higher. Now it's the middle of the screen and it's under my front camera
+                // circle. And I cannot see the first few letters of what I'm typing."*
+                // 🔑 It reads as "the middle of the screen" because that is only true WHILE TYPING — the
+                // row lives at the bottom edge and this lift is what puts it mid-screen, level with a
+                // landscape phone's punch-hole camera. So the clearance belongs here and not in
+                // BuildCommandBar, or the row would float 20px off the bottom edge for the rest of the
+                // time to fix a problem that only exists with the keyboard up.
+                lift += KeyboardClearance;
             }
 
             if (Mathf.Approximately(lift, _keyboardLift)) return;
@@ -809,16 +830,25 @@ namespace Game.Client
             var content = UiKit.ScrollArea(inner, out scroll, 1f);
             UiKit.Stretch((RectTransform)scroll.transform, 10f, chrome + 40f, 10f, 46f);
 
+            // Both bottom-right buttons shifted 48px left of where they were: the resize grip now owns
+            // that corner, and a grip you cannot reach because a button is sitting on it is no grip.
             var clear = UiKit.TextButton(inner, "Clear", () => ClientLog.Clear(), 16f);
             UiKit.Place(UiKit.Rect(clear.gameObject), new Vector2(1f, 0f), new Vector2(1f, 0f),
-                        new Vector2(-10f, 8f), new Vector2(100f, 34f));
+                        new Vector2(-58f, 8f), new Vector2(100f, 34f));
 
             // Reply: fills the command box with "/w <last whisperer> ". Answering a whisper otherwise
             // means retyping a name you can see on screen but cannot copy.
             _chatReplyButton = UiKit.TextButton(inner, "Reply",
                                                 () => Boot.ComposeWhisper(Boot.LastWhisperName), 16f);
             UiKit.Place(UiKit.Rect(_chatReplyButton.gameObject), new Vector2(1f, 0f), new Vector2(1f, 0f),
-                        new Vector2(-118f, 8f), new Vector2(100f, 34f));
+                        new Vector2(-166f, 8f), new Vector2(100f, 34f));
+
+            // 🔴 MOVABLE, RESIZABLE, LOCKABLE — and remembered on the device (playtest 23). The chat and
+            // combat windows are the two he named, and they are the right two: they are the only windows
+            // that stay open WHILE you play, so they are the only ones whose size is a trade against the
+            // view of the world rather than a fit to their own content.
+            // ⚠ The minimum is not arbitrary — below ~520 the six tab buttons stop fitting on one row.
+            UiKit.MakeAdjustable(panel, "chat", new Vector2(520f, 200f));
 
             _chatView = new LogView
             {
@@ -855,9 +885,15 @@ namespace Game.Client
             UiKit.Stretch((RectTransform)scroll.transform, 10f, chrome + 6f, 10f, 46f);
 
             // ClearTab, not Clear: this window's Clear must not take the conversation with it.
+            // Shifted left of the resize grip, same as the chat window's.
             var clear = UiKit.TextButton(inner, "Clear", () => ClientLog.ClearTab(ClientLog.Tab.Combat), 16f);
             UiKit.Place(UiKit.Rect(clear.gameObject), new Vector2(1f, 0f), new Vector2(1f, 0f),
-                        new Vector2(-10f, 8f), new Vector2(100f, 34f));
+                        new Vector2(-58f, 8f), new Vector2(100f, 34f));
+
+            // The second of the two windows he named. Its minimum is smaller than chat's — it has no tab
+            // row to fit, just a feed and one button — so it can be shrunk to a genuinely thin ticker
+            // down one side, which is most of the point of *"without they obscure my view"*.
+            UiKit.MakeAdjustable(panel, "combat", new Vector2(300f, 160f));
 
             _combatView = new LogView
             {
@@ -1151,7 +1187,6 @@ namespace Game.Client
             _targetPanel.gameObject.SetActive(target != null);
             if (target == null) return;
 
-            string level = target.Kind == EntityKind.Player && target.Level <= 0 ? "" : "  Lv " + target.Level;
             // The title rides in front of the name here rather than on its own line: this frame is one
             // row, and an NPC that now plates as `Elder` over `Marius` must still read as a whole
             // person in the window you opened to talk to them.
@@ -1160,7 +1195,9 @@ namespace Game.Client
                         : "<color=#" + (string.IsNullOrEmpty(target.TitleColor)
                                         ? TitleCatalog.DefaultHex : target.TitleColor) + ">"
                           + target.Title + "</color> ";
-            _targetName.text = worn + target.Name + level + (target.Dead ? "   (dead)" : "");
+            // 🔴 THE TITLE BAR IS THE NAME (playtest 23). Level moves down to the detail line with the
+            // rest of the facts about the thing, so the bar holds one thing and holds it large.
+            UiKit.SetWindowTitle(_targetPanel, worn + target.Name + (target.Dead ? "   (dead)" : ""));
             bool self = Boot.Entities != null && Boot.TargetId == Boot.Entities.SelfId;
             bool player = target.Kind == EntityKind.Player && !self;
             bool mob = target.Kind == EntityKind.Mob;
@@ -1179,7 +1216,37 @@ namespace Game.Client
                 _targetMpText.text = target.Mp.ToString("N0") + " / " + target.MaxMp.ToString("N0");
             }
 
-            _targetDetail.text = target.Kind + (target.Aggressive ? "   aggressive" : "");
+            // 🔴 THE DETAIL LINE, rewritten to his spec (playtest 23): *"the type mob/player ... there u
+            // can put agro,social for mob (for player will be his clan rank - king/soldier etc) now each
+            // player can have there a 'vagabond' or some other word for clanless"* — his own examples
+            // were `Mob: 44, Aggressive, Social` and `Player: Vagabond`.
+            //
+            // 🔑 The LEVEL rides here because the title bar took the name: `Mob: 44` is his format read
+            // literally, and it is also the only place a mob's level can now appear. A player's level
+            // stays private (the server sends 0), so a player row has no number in it, which is correct
+            // rather than a gap.
+            //
+            // ⚠ "Vagabond" is not a placeholder waiting on a lookup — there are NO player clans in the
+            // game yet, so every player is genuinely clanless and every row reads the same. When clans
+            // exist this becomes the rank; nothing else about the line changes.
+            var bits = new List<string>();
+            if (mob)
+            {
+                if (target.Aggressive) bits.Add("Aggressive");
+                // Social is OFF game-wide right now (`BL-73`) — the server sends "" for every mob while
+                // the switch is down, so this simply prints nothing rather than claiming a camp answers.
+                if (!string.IsNullOrEmpty(target.SocialClan)) bits.Add("Social (" + target.SocialClan + ")");
+                if (bits.Count == 0) bits.Add("Passive");
+                _targetDetail.text = "Mob: " + target.Level + ", " + string.Join(", ", bits);
+            }
+            else if (target.Kind == EntityKind.Npc)
+            {
+                _targetDetail.text = "NPC";
+            }
+            else
+            {
+                _targetDetail.text = "Player: Vagabond";
+            }
 
             // A targeted PLAYER carries NO fast buttons at all (owner, 2026-07-24): attack, follow,
             // assist, party and trade all come off the frame. They are not lost — they belong in the
@@ -1207,7 +1274,9 @@ namespace Game.Client
         private void DrawDistantPartyTarget(PartyMemberDto m)
         {
             _targetPanel.gameObject.SetActive(true);
-            _targetName.text = m.Name + "  Lv " + m.Level;
+            // The name goes in the title bar like every other target (playtest 23); a party member's
+            // level is not private, so it can ride along with it here.
+            UiKit.SetWindowTitle(_targetPanel, m.Name + "  Lv " + m.Level);
 
             UiKit.SetBar(_targetHp, m.Hp, m.MaxHp);
             _targetHpText.text = m.MaxHp > 0
