@@ -202,6 +202,35 @@ changed shape, so your characters survive this one.
 
 ---
 
+## 86. AFTER 0.68.0 — built while the APK waits
+
+- `86a` [] - 🔴 **THE ADMIN GEAR PICKER IS A SELECTION BOX** (`BL-56`), and it could only ever hand out
+  **Mythic** before. That was not a choice: the authored piece IS the Mythic one and every lesser quality
+  is a generated copy at a suffixed id, so five sixths of the gear ladder was unreachable from the window
+  you use to set a test up. The Equip tab is now one page — **type / quality / tier** chips and the list
+  under them, no Back button. 🔑 Chips rather than a dropdown, your *"whichever is easier"*: a dropdown
+  built in code needs a template hierarchy nobody can verify without opening the Editor, and chips show
+  every option at once. ⚠ Below **Epic** there is no full-set button, because a generated copy carries no
+  set id and no attributes — four matching pieces are four separate items. ⚠ At level **80+** the four
+  lowest qualities dim: S grade is top-half only. **Give yourself a Rare level-52 set and a Mythic one and
+  compare the numbers.** ->
+
+- `86b` [] - **`G3` MOBS-AS-PLAYERS IS DOCUMENTED** (`BL-47` step 1) →
+  [design/MobsAsPlayers.md](../design/MobsAsPlayers.md). **Nothing to test — read it and answer §8.**
+  🔑 Two things you will want to know before you do: the **inflated ATK/CON you objected to already drove
+  nothing** — only the target sheet printed them, and **that is now removed** (`86c`) — and **four of your
+  five passive families already ship** as the mob-mastery layer. The recommendation is to finish those
+  rather than migrate, and the counter-case is stated honestly. ⚠ **Six questions in §8, B gates the rest.** ->
+
+- `86c` [] - **A MOB'S ATTRIBUTES BLOCK IS NOW AGI + WIT ONLY.** Target a creature: **Power (ATK), CON and
+  SPT are gone from the sheet.** Those were the "over inflated" numbers — a level-80 mob read CON 175 /
+  ATK 168 — and they were inflated, but **only as text**: a mob's HP, MP, P.Atk, M.Atk, P.Def and M.Def all
+  come off the `MobBaseStats` curve and not one of them consults those stats. SPT went with them because
+  `MobStats` says in its own comment that mobs never read it. **Nothing about how a mob fights changed** —
+  if a creature feels different, that is a real bug and worth saying so. Players keep all five. ->
+
+---
+
 ## 81. THE TWO REFLECTS — never reached in playtest 23
 
 - `81b` [] - **`Deflection` — physical-skill reflect, warrior.** *"default warrior @40 → 0.15 chance ×1
@@ -247,7 +276,8 @@ changed shape, so your characters survive this one.
 - **`BL-73` mob social clans** — off by one switch at your instruction, back on when the world map
   spreads the camps out.
 - **`BL-74` the game launcher** — still not treating the app as a game; research owed.
-- **`G3` mobs-as-players** — needs the document and the BalanceMatrix tables first (`BL-47`).
+- **`G3` mobs-as-players** — ✅ the document and the tables are **done** (`86b`); it now waits on your
+  answers in `design/MobsAsPlayers.md` §8, not on work.
 - **Instances** — you are holding (`BL-48`); the dungeons were the cheap half and are built.
 - **Two playtest-20 bugs closed on a reading of the code, never re-tested**: Frost Bind stripping a
   dummy's/elite's HP multiplier (`BL-63`) and the target lost during a physical cast (`BL-64`).

@@ -12,6 +12,74 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 0.68.0, part two — 2026-08-16 — the admin gear picker, and `G3` documented
+
+⚠ **Same version, same APK as the section below.** 0.68.0 was authored on 2026-08-15 and then sat
+unpublished — `builds/` still held 0.67.2 — so this work went in before the build ran rather than after
+it, and rides into the one APK he installs. There is no 0.68.1. Two backlog items he cleared to build
+while playtest 24 waited on that APK, plus one new entry recorded.
+
+### `BL-56` — the admin gear picker is a selection box
+
+The Equip tab was a two-level drill-down (category → level → piece) that **could only ever hand out
+MYTHIC gear**. That is not a filter someone chose: the catalog's authored piece *is* the Mythic one and
+every lesser quality is a generated copy at a suffixed id (`{id}_rare`), so the list's
+`Rarity == Mythic` filter — correct, and load-bearing, since it is what stops the picker handing out the
+Epic copy at 70% of the real stats — also made five sixths of the gear ladder unreachable from the
+window an admin uses to set up a test. Kitting a character in what a player at that level would actually
+be wearing was the one thing this window could not do.
+
+It is now a single page with three selection boxes — **type / quality / tier** — and the list under
+them. Every axis visible at once, no Back button, and the whole ladder reachable.
+
+- 🔑 **Chips, not a `TMP_Dropdown`.** His entry offered either shape and said *"Pick wichever is easier
+  to implemment."* A dropdown built in code needs a template hierarchy (caption, item template, its own
+  scroll rect) that cannot be verified without opening the Editor, and chips win on the thing that
+  prompted the entry anyway: every option is visible rather than behind a tap. The strip wraps at 6, so
+  the tier row cannot squeeze its labels to nothing as tiers are authored.
+- ⚠ **`ItemCatalog.QualityId` falls back to the Mythic id instead of returning null**, so the chosen
+  rarity is re-checked before a row is drawn (`QualityDef`). Without that a rung the catalog does not
+  generate would silently hand out the Mythic piece — the same class of bug as the stale-filter one
+  above, in the same window.
+- **S grade is top-half only**, so below Epic at level 80+ the quality chips dim and the list says why
+  rather than showing an empty page.
+- **The full-set button now respects quality** and is withheld below Epic, where a generated copy
+  carries no `SetId` and no attributes — offering it there would promise a set bonus that cannot exist.
+- The quality choice is deliberately **not** reset by a tab switch, unlike type and tier: a drill-down
+  position is somewhere you navigated to, a quality is a filter you picked.
+
+### `BL-47` / `G3` — step 1 delivered: the document and the tables
+
+His order was *"I want it documented and balance matrix tables. So I can make comparisons. And later we
+can do 2~5 mobs so I can test."* → **[docs/design/MobsAsPlayers.md](design/MobsAsPlayers.md)**. No game
+code was touched; the `G3` measurement sections have existed since 2026-08-05.
+
+Three findings that were not known when the entry was written:
+
+- 🔑 **The inflated ATK/CON he objected to are already inert, and the only thing left of them is a
+  DISPLAY.** `MobStats` still sets `Con 15+2·level` / `Atk 8+2·level` (level 80 → 175 / 168), but
+  `RecomputeDerived` sends a mob to `MobBaseStats` for HP, MP, P.Atk, M.Atk, P.Def and M.Def — neither
+  stat is read by any of them. Only AGI 30 and WIT 5 do anything. `GameUi.Target.cs` printed both
+  numbers on the target sheet, which is the whole of what he saw — **so that line is now gone**, and with
+  it SPT, whose own comment in `MobStats` says mobs never read it. A mob's Attributes block is AGI and
+  WIT, the two that are live. Nothing in the simulation moved; the inflated numbers were only ever text.
+- 🔑 **Four of his five passive families already ship**, as `MobMasteries` / `MobMod` plus 0.65.0's mob
+  weapon types — armor weight (3 rungs, no robe arm), weapon weight (17 rungs, ~4 of his 7 axes), M.Def
+  and HP tracks. **Speed is the only family with no track at all.** The design is ~70% built under a
+  different name, which is the argument against migrating rather than finishing it.
+- ⚠ **The `G3` verdict block was lying.** It restated its own tables as hardcoded prose, and three of
+  its claims had drifted: TTK "4-16s vs 2-16s" (really **1.9-35.7s vs 2.4-20.5s**), level-80 dps "13-33
+  vs 46" (really **13-37 vs 71**), and a swing-clock side effect that has since been **fixed to ×1.00**.
+  The verdict now computes from the same values the table prints, and says so when the clocks agree.
+
+### Recorded, not built
+
+- **`BL-76` — boss skill gems**, his new design: a boss drops a gem for its own level in three rarities
+  (Epic 50% / Legendary 5% / Mythic 0.5%) granting a damage skill at 1/5, 1/2 or 1/1 of a class skill,
+  with a PvP/PvE atk/def passive from Legendary and a random +1 stat at Mythic. His numbers are
+  explicitly pre-authorised to move. It would be the **first real consumer of the PvP/PvE damage
+  multiplier hooks**, which have been hardcoded 1.0 and reserved under the held `BL-19`.
+
 ## 0.68.0 — 2026-08-15 — the playtest-23 batch
 
 His first device pass in five versions came back with almost everything green and **sixteen finds**, and

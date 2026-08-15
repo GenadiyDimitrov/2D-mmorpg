@@ -249,9 +249,23 @@ namespace Game.Client
 
             t.AppendLine();
             t.AppendLine("<b>Attributes</b>");
-            t.AppendLine(Pair("Power (ATK)", d.Atk.ToString(), "CON", d.Con.ToString()));
-            t.AppendLine(Pair("AGI", d.Agi.ToString(), "WIT", d.Wit.ToString()));
-            t.AppendLine(Pair("SPT", d.Spt.ToString(), "", ""));
+            // A MOB's ATK, CON and SPT are shown to NOBODY, because a mob reads none of them: its HP, MP,
+            // P.Atk, M.Atk, P.Def and M.Def all come from the MobBaseStats curve, and StatCalculator.MobStats
+            // says so itself for SPT ("mobs don't use it … it's here so the record is complete"). They were
+            // the numbers that looked "over inflated" on a level-80 creature — CON 175, ATK 168 — and they
+            // were inflated, but only as text: nothing downstream ever read them. Printing a stat that
+            // drives nothing is the same "unused info statuses" problem as the mob MP bar above and the
+            // all-zero Utility block below. AGI and WIT stay: those two are live on a mob.
+            if (!d.IsMob)
+            {
+                t.AppendLine(Pair("Power (ATK)", d.Atk.ToString(), "CON", d.Con.ToString()));
+                t.AppendLine(Pair("AGI", d.Agi.ToString(), "WIT", d.Wit.ToString()));
+                t.AppendLine(Pair("SPT", d.Spt.ToString(), "", ""));
+            }
+            else
+            {
+                t.AppendLine(Pair("AGI", d.Agi.ToString(), "WIT", d.Wit.ToString()));
+            }
 
             t.AppendLine();
             t.AppendLine("<b>Offense</b>");

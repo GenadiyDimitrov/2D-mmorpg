@@ -43,8 +43,31 @@ namespace Game.Client
         private readonly List<Button> _debugTabButtons = new();
 
         private int _debugTab;             // 0 equip, 1 consumables, 2 functions, 3 teleport, 4 class, 5 tuning
-        private string _debugEquipCat = "";  // "" = root, else armor/weapon/jewel
+        private string _debugEquipCat = "armor";  // armor / weapon / jewel / box
         private int _debugEquipLevel;      // 0 = still choosing
+
+        /// <summary>The quality the Equip tab hands out (`BL-56`). Mythic is the default because it is the
+        /// AUTHORED piece and was the only thing this picker could give before — so the window opens on the
+        /// behaviour it has always had, and the rest of the ladder is one tap away.
+        ///
+        /// 🔑 Deliberately NOT reset by <see cref="ShowDebugTab"/>, unlike the type and tier beside it. A
+        /// drill-down position is a place you navigated to and being returned there is disorienting; a
+        /// quality is a FILTER you chose, and re-picking "Rare" on every tier while kitting out a test
+        /// character is the friction this entry exists to remove.</summary>
+        private ItemRarity _debugEquipRarity = ItemRarity.Mythic;
+
+        // The Equip tab's two fixed selection boxes. The tier box is discovered from the catalog instead
+        // (GearLevels), so an authored tier appears the day it lands.
+        private static readonly (string Value, string Label)[] EquipTypes =
+        {
+            ("armor", "Armor"), ("weapon", "Weapons"), ("jewel", "Jewels"), ("box", "Boxes")
+        };
+
+        private static readonly (ItemRarity Value, string Label)[] Qualities =
+        {
+            (ItemRarity.Common, "Common"), (ItemRarity.Uncommon, "Uncommon"), (ItemRarity.Rare, "Rare"),
+            (ItemRarity.Epic, "Epic"), (ItemRarity.Legendary, "Legendary"), (ItemRarity.Mythic, "Mythic")
+        };
         private int _debugTpView;          // 0 root, 1 npcs, 2 zones, 3 cities
         private int _debugItemsView;       // 0 root, 1 crafting materials, 2 blueprints
         private bool _debugAddDiscView;
@@ -111,7 +134,7 @@ namespace Game.Client
         private void ShowDebugTab(int tab)
         {
             _debugTab = tab;
-            _debugEquipCat = "";
+            _debugEquipCat = "armor";   // the page is one screen now, so there is no "root" to return to
             _debugEquipLevel = 0;
             _debugTpView = 0;
             _debugItemsView = 0;
@@ -180,6 +203,53 @@ namespace Game.Client
             le.preferredHeight = 24f;
         }
 
+        /// <summary>A horizontal strip of small "chips" — `BL-56`'s selection box, in the one shape a phone
+        /// can actually use. The selected chip is bracketed, the same convention the tab strip above
+        /// already uses, so there is nothing new to learn.
+        ///
+        /// 🔑 A real TMP_Dropdown was the other reading of "selection box" and was deliberately NOT built.
+        /// A dropdown constructed in code needs a template hierarchy of its own (caption, item template,
+        /// its own scroll rect) that cannot be verified without opening the Editor, and the instruction on
+        /// this entry was *"Pick wichever is easier to implemment."* Chips also beat a dropdown at the
+        /// thing that prompted the entry: every option is visible at once instead of behind a tap.
+        ///
+        /// Wraps at <paramref name="perRow"/>, because a strip that keeps growing eventually squeezes its
+        /// labels to nothing — the tier row is already 8 wide and gains one every time a tier is authored.
+        /// A chip reported unavailable by <paramref name="enabled"/> is dimmed but still selectable: the
+        /// list underneath then says WHY it is empty, which is more useful than a tap that does nothing.</summary>
+        private void DebugChips<T>(IReadOnlyList<(T Value, string Label)> options,
+                                   Func<T, bool> selected, Action<T> pick,
+                                   Func<T, bool> enabled = null, int perRow = 6)
+        {
+            for (int start = 0; start < options.Count; start += perRow)
+            {
+                var strip = new GameObject("Chips", typeof(RectTransform));
+                strip.transform.SetParent(_debugContent, false);
+                var group = strip.AddComponent<HorizontalLayoutGroup>();
+                group.spacing = 4f;
+                group.childForceExpandWidth = false;
+                group.childForceExpandHeight = true;
+                group.childControlWidth = true;
+                group.childControlHeight = true;
+                strip.AddComponent<LayoutElement>().minHeight = 34f;
+
+                int end = Math.Min(start + perRow, options.Count);
+                for (int i = start; i < end; i++)
+                {
+                    var (value, label) = options[i];
+                    bool on = selected(value);
+                    var chip = UiKit.TextButton(strip.transform, on ? "[" + label + "]" : label,
+                                                () => pick(value), 13f);
+                    var le = chip.gameObject.AddComponent<LayoutElement>();
+                    le.flexibleWidth = 1f;
+                    le.minHeight = 34f;
+                    if (enabled != null && !enabled(value)
+                        && chip.GetComponentInChildren<TextMeshProUGUI>() is TextMeshProUGUI t)
+                        t.color = UiKit.TextDim;
+                }
+            }
+        }
+
         // ---- Equip -------------------------------------------------------------------------------
 
         /// <summary>The gear LEVELS present in the catalog — discovered, never hardcoded, so new tiers
@@ -208,16 +278,40 @@ namespace Game.Client
             })
             .OrderBy(d => d.Slot).ThenBy(d => d.Name, StringComparer.Ordinal);
 
+        /// <summary>The chosen QUALITY of an authored (Mythic) piece, or null when that rung does not exist.
+        ///
+        /// ⚠ <see cref="ItemCatalog.QualityId"/> falls back to the MYTHIC id rather than returning null, so
+        /// the rarity has to be re-checked here. Without that re-check a rung the catalog does not generate
+        /// would silently hand out the Mythic piece instead — which is exactly the failure the Mythic-filter
+        /// comment on <see cref="GearLevels"/> records: a picker that looks complete while quietly giving
+        /// out the wrong item is how every balance number taken off admin gear went wrong last time.</summary>
+        private ItemDef QualityDef(ItemDef authored)
+        {
+            var def = ItemCatalog.Get(ItemCatalog.QualityId(authored.Id, _debugEquipRarity));
+            return def is not null && def.Rarity == _debugEquipRarity ? def : null;
+        }
+
+        /// <summary>The gear picker, `BL-56`. It was a two-level drill-down (category > level > piece) that
+        /// could only ever hand out MYTHIC, because the catalog's authored piece IS the Mythic one and the
+        /// lesser qualities are generated copies with a suffixed id. So the one thing an admin most needs to
+        /// set up — a character in the gear a player at that level would actually be wearing — was the one
+        /// thing this window could not do.
+        ///
+        /// Now it is a single page with three selection boxes (type / quality / tier) and the list under
+        /// them: every axis visible at once, no Back button, and the whole quality ladder reachable.</summary>
         private void BuildDebugEquip()
         {
-            if (_debugEquipCat == "")
-            {
-                _debugTitle.text = "Gear, boxes and legendary items";
-                DebugHeader("Tiered gear (pick a level, then a piece)");
-                DebugAction("Armor & Shields >", () => { _debugEquipCat = "armor"; _debugEquipLevel = 0; RefreshDebugPanel(); });
-                DebugAction("Weapons >", () => { _debugEquipCat = "weapon"; _debugEquipLevel = 0; RefreshDebugPanel(); });
-                DebugAction("Jewels >", () => { _debugEquipCat = "jewel"; _debugEquipLevel = 0; RefreshDebugPanel(); });
+            DebugHeader("Type");
+            DebugChips(EquipTypes, v => v == _debugEquipCat,
+                       v => { _debugEquipCat = v; RefreshDebugPanel(); }, perRow: 4);
 
+            if (_debugEquipCat == "box")
+            {
+                _debugTitle.text = "Boxes";
+                // (The "Legendary" row here handed out the two GOD-tier debug pieces. Both items and
+                //  ItemRarity.God were deleted 2026-08-07 — playtest-19 `0b`, *"nothing that can't
+                //  be acquired in game"*. The replacement rig is `/enchant <value>` + `/spd`, plus
+                //  the ordinary tiered gear the other three pages give.)
                 DebugHeader("Boxes");
                 DebugGive(ItemCatalog.BoxNewbie, "Newbie Box");
                 DebugGive(ItemCatalog.BoxTreasure, "Treasure Chest");
@@ -225,11 +319,6 @@ namespace Game.Client
                 DebugGive(ItemCatalog.BoxNewbieArmorRobe, "Newbie Robe Armor Box");
                 DebugGive(ItemCatalog.BoxNewbieJewels, "Newbie Jewels Box");
                 DebugGive(ItemCatalog.BoxNewbieWeapons, "Newbie Weapons Box (select)");
-
-                // (The "Legendary" row handed out the two GOD-tier debug pieces. Both items and
-                //  ItemRarity.God were deleted 2026-08-07 — playtest-19 `0b`, *"nothing that can't
-                //  be acquired in game"*. The replacement rig is `/enchant <value>` + `/spd`, plus
-                //  the ordinary tiered gear the Weapons/Armor/Jewels pages above already give.)
                 return;
             }
 
@@ -238,47 +327,83 @@ namespace Game.Client
                 "armor" => "Armor & Shields", "weapon" => "Weapons", _ => "Jewels"
             };
 
+            // A quality is dimmed when the TIER in hand does not carry it. S grade is top-half only, so
+            // below Epic at level 80+ there is genuinely no item to give — the note below says so.
+            DebugHeader("Quality");
+            DebugChips(Qualities, r => r == _debugEquipRarity,
+                       r => { _debugEquipRarity = r; RefreshDebugPanel(); },
+                       r => _debugEquipLevel == 0
+                            || !ItemCatalog.IsTopHalfOnly(_debugEquipLevel)
+                            || ItemCatalog.HasIdentity(r));
+
+            DebugHeader("Tier");
+            var levels = GearLevels()
+                .Select(l => (l, $"{ItemCatalog.TierLetter(l)} {l}"))
+                .ToList();
+            DebugChips(levels, l => l == _debugEquipLevel,
+                       l => { _debugEquipLevel = l; RefreshDebugPanel(); });
+
             if (_debugEquipLevel == 0)
             {
-                _debugTitle.text = catLabel + " — pick a level";
-                DebugAction("< Back", () => { _debugEquipCat = ""; RefreshDebugPanel(); });
-                foreach (int lv in GearLevels())
-                {
-                    int level = lv;
-                    DebugAction($"Level {level}  ({ItemCatalog.TierLetter(level)}-Grade) >",
-                                () => { _debugEquipLevel = level; RefreshDebugPanel(); });
-                }
+                _debugTitle.text = catLabel + " — pick a tier";
+                DebugNote("Pick a tier above to list its pieces.");
                 return;
             }
 
-            _debugTitle.text = $"{catLabel} — Level {_debugEquipLevel} " +
+            _debugTitle.text = $"{catLabel} — {_debugEquipRarity}, Level {_debugEquipLevel} " +
                                $"({ItemCatalog.TierLetter(_debugEquipLevel)}-Grade)";
-            DebugAction("< Back", () => { _debugEquipLevel = 0; RefreshDebugPanel(); });
+
+            if (ItemCatalog.IsTopHalfOnly(_debugEquipLevel) && !ItemCatalog.HasIdentity(_debugEquipRarity))
+            {
+                DebugNote($"S grade carries Epic, Legendary and Mythic only — there is no " +
+                          $"{_debugEquipRarity} rung at level {_debugEquipLevel}.");
+                return;
+            }
 
             // A set bonus needs all four pieces, so one click has to be able to produce a whole set —
             // otherwise testing a set bonus is four taps of hunting through a list.
             if (_debugEquipCat == "armor")
             {
-                int lvl = _debugEquipLevel;
-                foreach (var (key, label) in new[] { ("heavy", "Heavy"), ("light", "Light"), ("robe", "Robe") })
+                if (!ItemCatalog.HasIdentity(_debugEquipRarity))
                 {
-                    string bodyId = $"{key}_t{lvl}";
-                    if (ItemCatalog.Get(bodyId) is null) continue;
-                    DebugAction($"* Full {label} Set (body + helm + gloves + boots)", () =>
+                    // Below Epic a generated copy carries no SetId and no attributes (the 70% split), so
+                    // four matching pieces are still four separate items. Offering a "full set" button
+                    // there would promise a bonus that cannot exist.
+                    DebugNote("Below Epic a piece has no set bonus and no attributes — no set to hand out.");
+                }
+                else
+                {
+                    int lvl = _debugEquipLevel;
+                    foreach (var (key, label) in new[] { ("heavy", "Heavy"), ("light", "Light"), ("robe", "Robe") })
                     {
-                        foreach (var id in new[] { bodyId, $"helm_t{lvl}", $"gloves_t{lvl}", $"boots_t{lvl}" })
-                            if (ItemCatalog.Get(id) is not null)
+                        if (ItemCatalog.Get($"{key}_t{lvl}") is not ItemDef body) continue;
+                        if (QualityDef(body) is null) continue;
+                        var pieces = new List<string>();
+                        foreach (var pieceId in new[] { $"{key}_t{lvl}", $"helm_t{lvl}", $"gloves_t{lvl}", $"boots_t{lvl}" })
+                            if (ItemCatalog.Get(pieceId) is ItemDef authored && QualityDef(authored) is ItemDef q)
+                                pieces.Add(q.Id);
+                        DebugAction($"* Full {label} Set (body + helm + gloves + boots)", () =>
+                        {
+                            foreach (var id in pieces)
                             {
                                 string give = id;
                                 Boot.Debug(n => n.DebugGiveAsync(give, 1), "give");
                             }
-                    });
+                        });
+                    }
+                    DebugHeader("Individual pieces");
                 }
-                DebugHeader("Individual pieces");
             }
 
+            int listed = 0;
             foreach (var def in GearAt(_debugEquipCat, _debugEquipLevel))
-                DebugGive(def.Id, def.Name);
+            {
+                if (QualityDef(def) is not ItemDef q) continue;
+                DebugGive(q.Id, q.Name);
+                listed++;
+            }
+            if (listed == 0)
+                DebugNote($"No {_debugEquipRarity} {catLabel.ToLowerInvariant()} at level {_debugEquipLevel}.");
         }
 
         // ---- Consumables -------------------------------------------------------------------------

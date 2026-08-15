@@ -1592,6 +1592,15 @@ Console.WriteLine("=== G3.4: TIME TO KILL, both directions — geared player vs 
 Console.WriteLine("  'player' = BuildPlayer Champion, best gear for tier, War Rune on (the real play state).");
 Console.WriteLine($"{"Lvl",4} {"opponent",22} {"opp HP",8} {"plr dps",8} {"plr TTK",8} | " +
                   $"{"opp dps",8} {"plr TTK'd",10} {"miss->opp",10} {"miss->plr",10}");
+
+// ⚠ The VERDICT block at the end of G3 used to restate these figures as hardcoded prose, and by
+// 2026-08-15 all three of its numbers had drifted from the table printed directly above them —
+// a reader comparing the two would have believed whichever they read second. Everything the verdict
+// claims is accumulated here instead, so the summary can only ever say what the run measured.
+float g3TtkMobLo = float.MaxValue, g3TtkMobHi = 0f, g3TtkMpLo = float.MaxValue, g3TtkMpHi = 0f;
+float g3TopMobDps = 0f, g3TopMpDpsLo = float.MaxValue, g3TopMpDpsHi = 0f;
+int g3TopLevel = g3Levels[^1];
+
 foreach (int L in g3Levels)
 {
     var player = BuildPlayer(Race.Human, BaseClass.Fighter, L, warrior: true);
@@ -1600,14 +1609,32 @@ foreach (int L in g3Levels)
     foreach (var arch in g3Archs)
         opponents.Add(($"mob-player {arch}", BuildMobPlayer(L, arch, tierDrop: 1, ItemRarity.Common, 0, kit: true)));
 
+    bool isTodaysMob = true;
     foreach (var (label, opp) in opponents)
     {
         float pDps = Dps(player, opp);
         float oDps = Dps(opp, player);
+        float ttk = opp.MaxHp / Math.Max(0.01f, pDps);
         Console.WriteLine($"{L,4} {label,22} {opp.MaxHp,8} {pDps,8:F0} " +
-            $"{opp.MaxHp / Math.Max(0.01f, pDps),7:F1}s | {oDps,8:F0} " +
+            $"{ttk,7:F1}s | {oDps,8:F0} " +
             $"{player.MaxHp / Math.Max(0.01f, oDps),9:F1}s " +
             $"{Pct(Miss(player, opp)),10} {Pct(Miss(opp, player)),10}");
+
+        if (isTodaysMob)
+        {
+            g3TtkMobLo = Math.Min(g3TtkMobLo, ttk); g3TtkMobHi = Math.Max(g3TtkMobHi, ttk);
+            if (L == g3TopLevel) g3TopMobDps = oDps;
+        }
+        else
+        {
+            g3TtkMpLo = Math.Min(g3TtkMpLo, ttk); g3TtkMpHi = Math.Max(g3TtkMpHi, ttk);
+            if (L == g3TopLevel)
+            {
+                g3TopMpDpsLo = Math.Min(g3TopMpDpsLo, oDps);
+                g3TopMpDpsHi = Math.Max(g3TopMpDpsHi, oDps);
+            }
+        }
+        isTodaysMob = false;
     }
     Console.WriteLine();
 }
@@ -1618,6 +1645,7 @@ foreach (int L in g3Levels)
 //    not a one-line flag flip.
 // -----------------------------------------------------------------------------------------------
 Console.WriteLine("=== G3.5: what flipping Kind actually changes (measured side effects) ===");
+float g3SwingRatio = 1f;   // read by the verdict block below — see the note at G3.4.
 {
     const int L = 60;
     var oldMob = BuildMobEntity(L);
@@ -1629,8 +1657,10 @@ Console.WriteLine("=== G3.5: what flipping Kind actually changes (measured side 
                      * GameConstants.TickSeconds;
     float newSwing = Math.Max(2, (int)(GameConstants.PlayerAttackIntervalTicks * newMob.EffectiveAttackSpeedMultiplier))
                      * GameConstants.TickSeconds;
+    g3SwingRatio = oldSwing / newSwing;
     Console.WriteLine($"  swing interval   Kind=Mob {oldSwing:F2}s -> Kind=Player {newSwing:F2}s "
-        + $"(x{oldSwing / newSwing:0.00} swings/sec, unauthored)");
+        + $"(x{g3SwingRatio:0.00} swings/sec"
+        + (Math.Abs(g3SwingRatio - 1f) < 0.005f ? ", no drift — the two clocks agree)" : ", unauthored)"));
 
     // (b) THE NEUTRAL-OPPONENT BENCHMARK. Mob AGI is flat 30 on purpose (owner 2026-08-02) so a
     //     same-level pair sits at the 5% floor both ways, and MobAgiReference IS the human-fighter
@@ -1761,11 +1791,17 @@ Console.WriteLine("  * HP is the cleanest case: archetype + level alone lands wi
 Console.WriteLine("    Warrior. Rogue (x1.4) and especially Nuker (x3.3) need real HP passives.");
 Console.WriteLine("  * a FROZEN per-template loadout rots across zone bands (G3.3) — a level->grade function is");
 Console.WriteLine("    mandatory, not optional, if 'the zone assigns the level' survives.");
-Console.WriteLine("  * the FIGHTS are already playable (G3.4): mob-player TTKs land 4-16s against today's 2-16s.");
-Console.WriteLine("    Their damage OUT is the weak side — at L80 a mob-player deals 13-33 dps where today's mob");
-Console.WriteLine("    deals 46, which is the same attack gap seen in G3.1/G3.2 showing up in the fight.");
-Console.WriteLine("  * flipping Kind moves the SWING CLOCK by side effect (G3.5a). The AGI benchmark survives for");
-Console.WriteLine("    fighter archetypes by construction — MobAgiReference IS the human-fighter base.");
+Console.WriteLine($"  * the FIGHTS are already playable (G3.4): mob-player TTKs land {g3TtkMpLo:F1}-{g3TtkMpHi:F1}s "
+                + $"against today's {g3TtkMobLo:F1}-{g3TtkMobHi:F1}s.");
+Console.WriteLine($"    Their damage OUT is the weak side — at L{g3TopLevel} a mob-player deals "
+                + $"{g3TopMpDpsLo:F0}-{g3TopMpDpsHi:F0} dps where today's mob deals {g3TopMobDps:F0},");
+Console.WriteLine("    which is the same attack gap seen in G3.1/G3.2 showing up in the fight.");
+Console.WriteLine(Math.Abs(g3SwingRatio - 1f) < 0.005f
+    ? "  * the SWING CLOCK no longer moves when Kind flips (G3.5a, x1.00) — it did once, and that is now"
+    + "\n    a closed side effect rather than a cost of the migration."
+    : $"  * flipping Kind moves the SWING CLOCK by side effect (G3.5a, x{g3SwingRatio:0.00}).");
+Console.WriteLine("    The AGI benchmark survives for fighter archetypes by construction — MobAgiReference");
+Console.WriteLine("    IS the human-fighter base. See docs/design/MobsAsPlayers.md for what this all means.");
 Console.WriteLine();
 
 // =====================================================================================================

@@ -38,6 +38,9 @@ spreads the camps out, and the Game-Launcher research. Everything else he found 
 **bug** (they went to `testing/Open-Checklist.md` and are built as 0.68.0) or a **ruling on something
 already built**, which by rule 1 rewrote the thing in place rather than opening an entry here.
 
+**2026-08-15, after that pass, added `BL-76`** — boss skill gems in three rarities. New design, not a
+playtest find; queued 🔴 with its numbers explicitly marked as yours to alter later.
+
 ## The rules this file runs on
 
 1. **Newest ruling wins, and it is the ONLY one shown.** When you re-spec something, its entry is
@@ -277,6 +280,46 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
 - `BL-30` ⏸ **Recipe drops below A grade** — no recipe item exists under A (below 76 they are
   learned by level). Add the same way A+ was added, when there is a reason to.
 
+- `BL-76` 🔴 **BOSS SKILL GEMS — a boss drops, for its own level, a gem that grants a skill.** Your
+  design, 2026-08-15: *"A bosses to drop for their lvl a special skill gem .. 3 rarities ..
+  Epic/Legend/Mythic ... Chance for boss like 50% for a epic ... 5 for l and 0.5 for myth ... A epic
+  can get u a magic or a physical dmg skill for the current lvl that do 1:5 of a nukers/fighters skill
+  as dmg .. A legend can get u a passive that increase pvp/pve atk/def + 1:2 skills dmg ... And myth
+  can also increase a stat +1 (at random) with 1:1 dmg and higher % for pvp /pve dmg."* Your closing
+  clause is part of the spec: ***"the % and values can be then altered"*** — the numbers below are
+  placeholders you have pre-authorised to move, so do not treat a retune of them as re-speccing you.
+
+  | Rarity | Drop chance / boss | What the gem carries |
+  |---|---|---|
+  | Epic | **50%** | one damage skill (magic OR physical) at the boss's level, **1/5** of the class skill's damage |
+  | Legendary | **5%** | a passive: PvP/PvE **atk + def** — plus the skill at **1/2** damage |
+  | Mythic | **0.5%** | the Legendary passive at a **higher** PvP/PvE %, **+1 to a random stat**, skill at **1/1** |
+
+  🔑 **Why this one is worth building even before the numbers settle:** it is the first content that
+  makes a boss kill matter *for its own sake* rather than as a lump of EXP, and it is the only reward
+  in the game whose value is not on the gear ladder. It also gives the **PvP/PvE damage multiplier
+  hooks a first real consumer** — they exist and are hardcoded 1.0 today, reserved under `BL-19`, which
+  you are holding. A Legendary gem is what turns them on, so this entry is where that hold gets lifted.
+
+  🔵 **Five shape questions, all small, all answerable at build time — none of them blocks queueing
+  this.** Recorded now so the build does not invent them silently:
+  1. **Is a gem consumed into a permanent learn, or is it worn?** "Get u a skill" reads as consumed.
+     But a stat +1 and a PvP passive read as *equipment* — and a worn gem needs a slot, which the
+     paperdoll does not have. Consumed-and-learned needs no new slot and no new UI.
+  2. **What decides WHICH damage skill?** Rolled at the drop (so a gem is a lottery you can trade) or
+     picked by the holder (so it is a reward you steer). Trade value differs completely.
+  3. **"For their lvl" — does the gem carry the BOSS's level or the opener's?** A level-20 boss gem
+     used at 60 is either dead weight or a free rung, and those are opposite economies.
+  4. **Duplicates.** A second Epic gem of the same skill — refused, upgraded, or a second copy to sell?
+  5. **`1:5` of WHOSE skill?** A nuker's and a fighter's top skill at the same level are not the same
+     number, so the ratio needs one named reference skill per channel or it drifts by class.
+
+  ⚠ **It lands on top of an unruled boss curve.** `BL-13` says a flat ×100 swings boss difficulty
+  **11×** between level 20 and 76, and `BL-49` says one boss kill is worth **1000× more** at 20 than at
+  85. A 50% gem drop hangs a real reward on that curve, so a level-20 boss becomes the cheapest gem in
+  the game by a wide margin. Build the gems whenever you like — but the drop chances are not meaningful
+  until those two are ruled, which is another reason the % are explicitly yours to move.
+
 ---
 
 ## Classes & skills
@@ -361,11 +404,29 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
 
 ## World & mobs
 
-- `BL-47` 🔵 **`G3` — mobs built like players.** Mobs stop carrying inflated STR/CON and move onto
-  `RecomputeDerived` + real equipment, with passive "type" layers (armor weight, weapon type, jewel,
-  hp, speed). Your three ordered steps: *"I want it documented and balance matrix tables … and later
-  we can do 2~5 mobs so I can test."* **None of the three is done** — step 1 is a doc and a matrix,
-  and it needs no code.
+- `BL-47` 🔵 **`G3` — mobs built like players. STEP 1 IS DONE (2026-08-15) and it needs your ruling
+  before step 2.** Your three ordered steps were *"I want it documented and balance matrix tables …
+  and later we can do 2~5 mobs so I can test."* The document is
+  **[design/MobsAsPlayers.md](design/MobsAsPlayers.md)**; the `BalanceMatrix` `G3` tables it reads from
+  have existed since 2026-08-05. No game code was touched. Three things it found that change the entry:
+  - 🔑 **The inflated ATK/CON you objected to are already inert.** `MobStats` still sets them (level 80 →
+    CON 175 / ATK 168) but `RecomputeDerived` sends a mob to `MobBaseStats` for HP, MP, P.Atk, M.Atk,
+    P.Def and M.Def — **not one of them reads either stat**. Only AGI 30 and WIT 5 do anything. What you
+    actually saw is a DISPLAY: the target sheet printed both numbers. ✅ **Fixed 2026-08-16** — a mob's
+    Attributes block is now AGI and WIT only (SPT went too; `MobStats` says in its own comment that mobs
+    never read it). No simulation change, and it answers *"it looks over inflated"* on its own.
+  - 🔑 **Four of your five passive families already ship** as `MobMasteries`/`MobMod` + 0.65.0's mob
+    weapon types. What is genuinely missing is small: armor weight has **3 rungs and no robe arm** (you
+    asked for ~15 and a caster rung), the weapon type carries ~4 of your 7 axes, and **speed has no
+    track at all**.
+  - ⚠ **The migration itself is measured and the recommendation is NOT to do it** — no gear combination
+    closes the gaps (`G3.2`), the reconciliation would have to come from per-band passives anyway, and
+    rebuilding on the player pipeline would discard the IG-measured base curve. The counter-case is
+    real and stated in the doc: mob-player fights *are* playable, and creatures that hold visible gear
+    is a design preference no table can settle. **§8 of the doc lists six questions; B is the one that
+    gates everything.**
+  - Step 2 (the **2-5 mobs to fight**) is specced in §7 and costs little — but it is answering question
+    B by feel, so say whether you want it before it is built.
 
 - `BL-48` ⏸ **Instances — you are holding.** Design is written (`design/Instances.md`). One
   load-bearing decision is still open: the daily attempt **GLOBAL vs PER-INSTANCE**. It changes the
@@ -444,8 +505,12 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
 
 ## Admin & debug tools
 
-- `BL-56` 🔵 **The admin item picker as a selection box.** Either *rarity box → item* or *type box →
-  rarity*: *"Pick wichever is easier to implemment."* Never actioned.
+- `BL-56` ✅ **BUILT 2026-08-15** — the Equip tab is one page with three selection boxes (type /
+  quality / tier) instead of a drill-down. 🔑 The cause was worth knowing: it could only ever hand out
+  **Mythic**, because the authored piece IS the Mythic one and the lesser qualities are generated copies
+  at suffixed ids — so five sixths of the gear ladder was unreachable from the window used to set up a
+  test. Chips rather than a dropdown, per your *"whichever is easier"*. See `CHANGELOG.md`. Delete at
+  the next sweep.
 
 - `BL-66` ✅ **BUILT 2026-08-13** — the item-id reference and the staff-only id row. Kept here for one
   release only because it is the thing that unblocked his own §75/§76 testing; delete at the next
