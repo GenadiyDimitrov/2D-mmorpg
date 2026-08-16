@@ -3,8 +3,8 @@
 > **Rolling and unversioned.** Playtest 24 (2026-08-16) ran the 0.68.0 APK: `85b`, `85e`, `85f`, `85g`,
 > `85h`, `85i`, `85m` and `86c` all came back `[x]` and are **gone from this file** — they live in
 > [Playtest-Archive.md#playtest-24](Playtest-Archive.md#playtest-24) with your comments verbatim. What is
-> below is the four rows you marked `[~]`, the eight you never reached, and the **new §87** — the two bugs
-> and the four changes that pass produced. **Nothing in §87 is built yet**; it is here so it is not lost.
+> below is the four rows you marked `[~]`, the eight you never reached, and **§87 — the two bugs and the
+> four changes that pass produced, all six now BUILT in 0.69.0** and carrying test instructions.
 >
 > ⚠ **Your marks came to me as an uploaded copy, not through the repo.** The working tree was untouched,
 > so if you edit this file in place next pass, say so — otherwise I will look in the wrong place again.
@@ -91,50 +91,77 @@ it passed with nothing to say, `~` if it works but wants a change, `!` if it is 
 
 ---
 
-## 87. PLAYTEST-24 FINDS — ⚠ NOT BUILT YET, nothing here is testable
+## 87. PLAYTEST-24 FINDS — ✅ ALL BUILT IN 0.69.0, test them
 
-These are your two `[!]` finds and the four changes your `[~]` rows asked for. Rows stay `[]` and the
-bodies get rewritten with test instructions the moment each one is built.
+Your two `[!]` finds and the four changes your `[~]` rows asked for. **Everything below is in the
+0.69.0 APK + server.** No DB reset, protocol unchanged.
 
-- `87a` [] - 🔴 **REFLECT FLAGS THE DEFENDER — your anti-PK exploit.** *"Reflect should not flag me -
-  That's a big anti pk exploit...som1 comes to me and wants to kill me but I don't want to ..so he hits me
-  see I become pvp flag and he just kills me."* Not yet diagnosed in code. ⚠ **Which reflect matters**:
-  `81b` Deflection and `81c` Backlash have never been reached in two passes, so what you hit is almost
-  certainly the **armour sets' `MeleeReflect`** (5%, basic attacks only) — but the fix has to cover all
-  three paths or the next one you meet does the same thing. ->
+- `87a` [] - 🔴 **REFLECT NO LONGER FLAGS THE DEFENDER — your anti-PK exploit, fixed.** *"Reflect should
+  not flag me — that's a big anti pk exploit...som1 comes to me and wants to kill me but I don't want to
+  ..so he hits me see I become pvp flag and he just kills me."* You were exactly right about the
+  mechanism: reflect damage runs through the same damage function as a real blow with the roles
+  SWAPPED, so the code that flags "the attacker" was flagging you.
+  **Test:** two characters outside town, wear an armour set with reflect, turn YOUR PvP **off**, let the
+  other one (PvP on) hit you until a `Reflect` line appears in the combat feed. **Your name must stay
+  white** and he must stay purple. Kill him with reflect if you can — that should still count as a
+  normal PvP kill, not a PK, and give you no karma. ⚠ **All three reflect paths were covered**, so if
+  you ever reach `81b` Deflection or `81c` Backlash, check the same thing there. ->
 
-- `87b` [] - 🔴 **THE SYSTEM CHAT TAB LAGS THE GAME.** *"System chat lagging the game ... Other tabs don't
-  just system(respectedly and 'all')"* · *"actually my 1st admin acc have a problem with the game chat ....
-  After fame restart it wirks."* 🔑 Two facts that narrow it a lot: only **System and All** (the two tabs
-  that receive every message rather than a filtered slice), and **a restart clears it** — so it is state
-  that accumulates in the client, not the transport. ->
+- `87b` [] - 🔴 **THE SYSTEM/ALL CHAT TABS NO LONGER LAG.** Your two clues were the whole diagnosis:
+  only System and All, and a restart cures it. Those are the only tabs the 1000-line buffer actually
+  fills, and every time the window was reopened or the tab was switched the client rebuilt **the entire
+  buffer** — up to 1000 text rows in one frame — then threw ~880 of them away immediately. It now draws
+  only as many rows as the window can hold.
+  **Test:** play until the log is well filled (an hour of anything), then switch tabs back and forth
+  onto System and All repeatedly, and close/reopen the chat window. It should be instant, and **it must
+  not get worse the longer the session runs** — that "worse over time, fine after a restart" is the
+  exact symptom to watch for. ->
 
-- `87c` [] - 🔴 **THE PVP FLAG AS THE AOE TARGET FILTER** — your rule from `85a`, now **`BL-77`** because it
-  is a system, not a flare fix: pvp-off = an area skill reaches creatures only · pvp-on = it reaches
-  players **and flags you on the reach, not on the damage** · a no-damage skill castable on a player is
-  monster-only with PvP off and flags with it on. 🔑 **Same principle as `87a`** — the flag follows
-  **intent**: what you deliberately do flags you, what your gear does back to an attacker does not.
-  ⚠ Three shape questions on the `BL-77` entry (party members inside the area; whether a *heal* aimed at a
-  stranger counts; whether the person revealed is flagged too). ->
+- `87c` [] - 🔴 **THE PVP FLAG IS NOW THE AOE FILTER** — your rule from `85a`, built as `BL-77`.
+  **Test with PvP OFF:** an area skill and the flare reach **creatures only** — a player standing in
+  the radius is untouched and unrevealed, and the flare tells you so instead of saying "nobody was
+  hiding". **Test with PvP ON:** the same cast reaches players, reveals a hidden one, **and flags you**
+  — including when it deals no damage at all, which was the flare's whole complaint. A taunt or a
+  cancel aimed at a player flags you now too; it never did.
+  ⚠ **Three things I decided, because they were open and none of them blocked the build. Say if any is
+  wrong:** (1) **your own party is never touched**, PvP on or off, same as every other system here;
+  (2) **support is not routed through this** — a heal or a buff on a stranger keeps its own rule, since
+  it is castable on a player but is not an attack; (3) **only YOU flag** — the person your flare
+  revealed did nothing, and flagging him is your own exploit wearing a different coat. ->
 
-- `87d` [] - **THE TARGET FRAME CLIPS ITS FIRST ROW** (`85k`). *"the text 'mob:..' is hidden. Same problem
-  we had with every window and the text inside ..the texblock don't take into account the title row. And
-  the 1st text is half hidden."* ⚠ You call it the **generic** window bug rather than one frame's mistake,
-  so the fix is in the shared panel layout, and every window gets re-walked after it. ->
+- `87d` [] - **THE TARGET FRAME'S FIRST ROW IS NO LONGER COVERED** (`85k`). ⚠ **You read the cause as
+  the title row and it was the opposite end** — the `Mob: 44, Aggressive` line was under the **Attack
+  button**, not under the title bar. It is the other half of the shrink you asked for in playtest 23:
+  the rows below the title moved up with the deleted name row, and the buttons, which hang off the
+  panel's floor, moved up with it — into them. The frame now has ONE button row (five of the seven
+  buttons have been hidden since playtest 23 anyway) and 12px more height.
+  **Test:** target a mob — the level/aggro line must be fully readable with the Attack and Info buttons
+  clear of it. Then an NPC (Talk) and a player (no buttons).
+  ✅ **You called it the generic bug, so all 23 windows with a title bar were checked. You were right
+  twice**: the **trade** window's partner-name line was biting 6px out of both column headers — fixed,
+  and its row positions are now measured off the title bar instead of a hand-picked number. The other
+  21 are clean. Worth a glance at the trade window while you are in one. ->
 
-- `87e` [] - **THE CHAT / COMBAT WINDOWS — four separate asks** (`85l`). They move and resize; what is
-  wrong: **(a)** the combat window *"cannot go left below certain distance"*; **(b)** the resize is
-  **inverted** — *"I drag down it goes from bottom to top increasing is height but the bottom is the frozen
-  position. The drag button should move not thebtop/left"*; **(c)** *"remove the row with 'clear' and
-  'replay' it's now an empty space and the text never gets to the bottom"* — move them **up beside L/U**,
-  clear as a **bin** icon, replay as a **speech bubble**; **(d)** the grip *"is shown only on unlocked so it
-  can cut into the text"* while unlocked, and **L/U wants a padlock icon**. ⚠ (c) and (d) are icons —
-  check the TMP atlas before picking glyphs, it is static and 250 glyphs. ->
+- `87e` [] - **THE CHAT / COMBAT WINDOWS — all four asks** (`85l`).
+  **(a)** The combat window reaches the left edge now. The clamp assumed every window was centred and
+  neither of these is, so a right-pinned window could be dragged far off the right and stopped dead
+  just past the left. **(b)** Resize follows the grip: dragging down grows the window downward and the
+  **top-left corner stays put**. **(c)** The Clear/Reply row is gone, the text runs to the bottom of
+  the window, and both are icons in the title bar beside the padlock — **bin** = clear, **speech
+  bubble** = reply. **(d)** The grip no longer vanishes when you lock; it stays and dims, so the corner
+  it occupies is the same corner at all times.
+  ⚠ **The three icons are DRAWN, not font characters** — the bundled font has no bin, bubble or padlock
+  and would have given you the hollow box you have reported twice. Tell me if any of them reads as
+  something else at that size; they are shapes I can adjust. ->
 
-- `87f` [] - **THE GEAR PICKER, AND THE `G3` ANSWER.** Two unrelated halves of `86a`/`86b`.
-  **Picker** (`86a`): *"good just make the selection buttons smaller in height and add a header on the
-  filtered gear list. Now it's the same row as the grade (needs a splitter)."*
-  **`G3`** (`86b`): you ruled **migrate**, and you were right about the measurement. My sweep had two
+- `87f` [] - **THE GEAR PICKER** (`86a`) — *"make the selection buttons smaller in height and add a
+  header on the filtered gear list. Now it's the same row as the grade (needs a splitter)."* Both done:
+  chips are 28px instead of 34, and the list now opens with a header naming what it is filtered to.
+  ✅ The `G3`/`86b` half of this row is closed — it is design, not something to test; it is the block
+  below, kept here because it is the record of what you ruled. ->
+
+- **`G3` / `86b` — NOTHING TO TEST, this is where the answer is written down.** You ruled **migrate**,
+  and you were right about the measurement. My sweep had two
   blind spots you found: it stopped at **+16** enchant, and it moved every slot **together**, so your
   *"S grade Mace +60 and B grade leather"* was never constructed. **`G3.7` re-runs it your way:
   12 of 16 archetype-levels land inside your ×2 passive on all four stats at once**, worst miss

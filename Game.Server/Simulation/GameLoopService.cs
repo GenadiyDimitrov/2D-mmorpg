@@ -7364,7 +7364,9 @@ public class GameLoopService : BackgroundService
         if (_rng.NextDouble() >= target.PhysSkillReflectChance) return;
         int reflected = (int)(damage * target.PhysSkillReflectPct);
         if (reflected <= 0) return;
-        reflected = ApplyDamage(caster, reflected, target);
+        // `reflected: true` — Deflection is the defender's gear/passive answering, not an act of his,
+        // so it flags nobody (87a). Same clause as the armor sets' MeleeReflect.
+        reflected = ApplyDamage(caster, reflected, target, reflected: true);
         BroadcastCombat(target, caster, reflected, CombatOutcome.Hit, name + " [Reflect]");
         if (caster.Hp <= 0) Kill(caster, target);
     }
@@ -7374,7 +7376,15 @@ public class GameLoopService : BackgroundService
     /// (*"u cast on tank he reflects u get the debuff"*).
     ///
     /// The bounced copy is applied directly, so the caster gets no resist roll and no second reflect —
-    /// a debuff can bounce exactly once. Self-casts and mob-on-mob effects never bounce.</summary>
+    /// a debuff can bounce exactly once. Self-casts and mob-on-mob effects never bounce.
+    ///
+    /// <para>🔑 The third reflect path of `87a`, and it needed no change — but only by accident, so it
+    /// is written down: the bounce goes through <see cref="ApplyBuff"/> and NOT
+    /// <see cref="ApplyDotStack"/>, so a reflected bleed carries no <c>SourceId</c>. Its ticks are
+    /// credited to nobody, which means <see cref="ApplyDamage"/> never sees a player attacker and the
+    /// reflector is never flagged. ⚠ If anyone ever "fixes" that by stamping the reflector as the
+    /// source for kill credit, the anti-PK exploit comes back through this door — pass
+    /// <c>reflected: true</c> down with it.</para></summary>
     private bool TryReflectDebuff(Entity caster, Entity target, SkillDef def, int lvl,
         int durationOverride, string castName)
     {
@@ -7385,17 +7395,48 @@ public class GameLoopService : BackgroundService
         return true;
     }
 
-    /// <summary>Hostiles of the caster within a radius: for a MOB caster that's nearby players;
-    /// for a PLAYER caster it's nearby mobs. Used by enemy-AoE skills (boss slams).</summary>
+    /// <summary>Hostiles of the caster within a radius. For a MOB caster that is nearby players; for a
+    /// PLAYER caster it is nearby creatures — <b>plus nearby players, but only with the PvP toggle
+    /// ON</b>. Used by every area skill (boss slams today, the AOE warrior class when `BL-02` lands).
+    ///
+    /// <para>🔑 `BL-77`, playtest 24 — THE PVP FLAG IS THE AREA FILTER. His rule: *"pvp-off = using AOE
+    /// skills hit only nearby monsters"* · *"pvp-on = hit nearby players as well"* · *"goes for all AOE
+    /// skills."* Until now the toggle was read only where a player picked a SINGLE target; an area cast
+    /// has no target to check, so its victim set was decided by kind alone and could never touch a
+    /// player at all. Putting the rule here means every area skill inherits it at once — the same
+    /// reason <see cref="CanPvpHit"/> lives in one place.</para>
+    ///
+    /// <para>⚠ The player arm delegates to <see cref="CanPvpHit"/>, so an area cast is bound by every
+    /// rule a single swing is: never your own party, never in or into a safe zone, never yourself.
+    /// A HIDDEN player is deliberately still a candidate — an area hit is positional, and the hit
+    /// itself is what drags him out (<see cref="ApplyDamage"/>). An admin-invisible one is not.</para>
+    ///
+    /// <para>⚠ MINE, not his, and one line to reverse: <c>PvpEnabled</c> is tested *as well as*
+    /// <c>CanPvpHit</c>, so with PvP OFF an area skill reaches nobody — not even a player who is
+    /// already purple or red and whom you could freely hit with a single attack. His rule reads that
+    /// strictly, and the loose reading re-opens the exploit he reported in the same breath: a flagged
+    /// aggressor standing in your mob pile would be clipped by your AoE, and clipping a purple player
+    /// flags YOU.</para></summary>
     private IEnumerable<Entity> EnemiesInRadius(Entity caster, float radius)
     {
         float r2 = radius * radius;
-        var wantKind = caster.Kind == EntityKind.Mob ? EntityKind.Player : EntityKind.Mob;
+        bool mobCaster = caster.Kind == EntityKind.Mob;
         foreach (var e in _world.Grid.Nearby(caster))
         {
-            if (e.Kind != wantKind || e.Dead || e.TrainingDummy)
+            if (e.Dead || e.TrainingDummy)
                 continue;
-            if (wantKind == EntityKind.Player && GameConstants.InSafeZone(e.X, e.Y))
+            bool hostile = e.Kind switch
+            {
+                // A creature is fair game for a player's AoE and never for another creature's.
+                EntityKind.Mob => !mobCaster,
+                // A player: a mob's slam always reaches him (outside town); another player's area
+                // skill only with PvP on, and then only where a normal attack would land.
+                EntityKind.Player => mobCaster
+                    ? !GameConstants.InSafeZone(e.X, e.Y)
+                    : caster.PvpEnabled && !e.AdminInvisible && CanPvpHit(caster, e),
+                _ => false,
+            };
+            if (!hostile)
                 continue;
             float dx = e.X - caster.X, dy = e.Y - caster.Y;
             if (dx * dx + dy * dy <= r2)
@@ -8425,7 +8466,13 @@ var effect = def.Effect;
         if (def.TargetMode == TargetMode.EnemiesInRadius)
         {
             foreach (var foe in EnemiesInRadius(caster, def.AreaRadius).ToList())
+            {
+                // BL-77: the flag lands on the REACH. Before the hit, so a miss, a zero roll or a
+                // target who dies to the first victim's cleave still costs you the purple name —
+                // you chose to sweep an area with players in it.
+                FlagForPvpAction(caster, foe);
                 DeliverSimpleHit(caster, foe, def, lvl, castName);
+            }
             return;
         }
 
@@ -9175,6 +9222,33 @@ var effect = def.Effect;
         SendPvpState(caster);
     }
 
+    /// <summary>`BL-77` — FLAG ON THE REACH, NOT ON THE DAMAGE. A deliberate hostile act aimed at
+    /// another player turns you purple even when it deals nothing at all: *"flare with pvp on reveals
+    /// nearby players and Act as hit so flags"* · *"any skill that does no dmg and can be casted on a
+    /// player if the PvP is off is (monster only) but if pvp is on it cast on a player and flags."*
+    ///
+    /// <para><see cref="ApplyDamage"/> already does this for anything that lands damage; this is the
+    /// same rule for the acts that land none — a reveal, and every future no-damage hostile area
+    /// skill. Same two exemptions as the damage path: you never flag against a PK (executing an outlaw
+    /// is justified) and a PK stays red.</para>
+    ///
+    /// <para>🔑 Only the ACTOR flags. The player who was revealed or clipped did nothing, and flagging
+    /// him is the exploit shape from `87a` in a different coat — one where the aggressor manufactures
+    /// a legal victim. Support is not routed here either: a heal or a buff aimed at a stranger is
+    /// castable on a player but is not an attack, and it has its own rule in
+    /// <see cref="FlagForSupporting"/>. ⚠ Both of those are answers to open questions on the `BL-77`
+    /// entry — they are the shapes every other system in this game already has, not his words.</para></summary>
+    private void FlagForPvpAction(Entity caster, Entity target)
+    {
+        if (caster.Kind != EntityKind.Player || target.Kind != EntityKind.Player
+            || caster.Id == target.Id)
+            return;
+        if (FlagOf(target) == PvpFlag.Pk || FlagOf(caster) == PvpFlag.Pk)
+            return;
+        caster.PvpFlagUntilTick = _tick + PvpFlagTicks;
+        SendPvpState(caster);
+    }
+
     /// <summary>Restore one target's MP and broadcast it (mirrors HealOne for the MP
     /// channel; used by MP Restore skills).</summary>
     private void RestoreMpOne(Entity caster, Entity target, int amount, string skillName)
@@ -9383,20 +9457,23 @@ var effect = def.Effect;
     /// subject is a hidden NON-party enemy. So the two rules cancelled: reveal only your own party,
     /// and never the hidden ones.</para>
     ///
-    /// <para>This walks the grid itself instead. Everyone within the radius is a candidate: it is an
-    /// area flare, not a targeted dispel, and there is no side to it — hiding beside a friendly archer
-    /// who fires one is the same mistake as hiding beside a hostile one.</para></summary>
+    /// <para>This walks the grid itself instead — but through the same area filter every other AoE now
+    /// uses (`BL-77`, playtest 24). It was side-less until then: *everyone* in radius was a candidate.
+    /// His rule makes the PvP toggle the filter — *"any skill that does no dmg and can be casted on a
+    /// player if the PvP is off is (monster only) but if pvp is on it cast on a player and flags"* — and
+    /// a flare is exactly that skill. Nothing hides but players, so with PvP OFF this now catches
+    /// nobody and says so; with it ON it catches anyone <see cref="CanPvpHit"/> would let you swing at
+    /// (so: not your own party, not in town) and it FLAGS YOU, once, on the first person it reaches.
+    /// That is his *"Act as hit so flags"* — the flare deals no damage, so no damage path can flag
+    /// it.</para></summary>
     private void RevealHidden(Entity caster, SkillDef def, string castName)
     {
         int caught = 0;
-        float r2 = def.AreaRadius * def.AreaRadius;
-        foreach (var e in _world.Grid.Nearby(caster))
+        foreach (var e in EnemiesInRadius(caster, def.AreaRadius).ToList())
         {
-            if (e.Kind != EntityKind.Player || e.Dead) continue;
-            if (e.Id == caster.Id || e.AdminInvisible) continue;
-            float dx = e.X - caster.X, dy = e.Y - caster.Y;
-            if (dx * dx + dy * dy > r2) continue;
+            if (e.Kind != EntityKind.Player) continue;   // creatures do not hide (BL-69 is player-side)
             if (e.HideTicks <= 0 && def.NoHideTicks <= 0) continue;
+            FlagForPvpAction(caster, e);   // BL-77: reaching him is the act, revealed or not
             if (e.HideTicks > 0) { BreakHide(e); caught++; }
             if (def.NoHideTicks > 0)
             {
@@ -9405,9 +9482,11 @@ var effect = def.Effect;
             }
         }
         BroadcastCombat(caster, caster, 0, CombatOutcome.Buff, castName);
-        SendSystemToEntity(caster, caught > 0
-            ? $"Signal flare: {caught} hidden {(caught == 1 ? "enemy" : "enemies")} revealed."
-            : "Signal flare: nobody was hiding.");
+        SendSystemToEntity(caster,
+            caught > 0 ? $"Signal flare: {caught} hidden {(caught == 1 ? "enemy" : "enemies")} revealed."
+            : caster.Kind == EntityKind.Player && !caster.PvpEnabled
+                ? "Signal flare: with PvP off it sweeps creatures only — no player was touched."
+                : "Signal flare: nobody was hiding.");
     }
 
     /// <summary>Shed every mob currently aggro'd on an entity (used when it stealths): forget its
@@ -9429,6 +9508,13 @@ var effect = def.Effect;
     private void AfterOffensiveSkill(Entity caster, Entity target)
     {
         BreakHide(caster);   // acting reveals you (BL-69) — a stealth BUFF is untouched by this
+
+        // BL-77, the SINGLE-TARGET half of the same hole the flare had: a hostile skill that lands no
+        // damage — a taunt, a cancel, a debuff that was resisted — never touched ApplyDamage, so it
+        // never flagged. Aiming one at a player is already gated on CanPvpHit (so with PvP off it was
+        // refused, "monster only"); what was missing is that with PvP on it must cost you the purple
+        // name. Idempotent with the damage path, which will have flagged you a moment ago.
+        FlagForPvpAction(caster, target);
 
         // A skill NEVER starts a melee chase. The rule is the owner's and it has no class in it:
         // nothing walks you into melee range unless you explicitly commanded it (owner, playtest-15).
@@ -9679,7 +9765,8 @@ var effect = def.Effect;
                 int reflected = (int)(damage * target.MeleeReflect);
                 if (reflected > 0)
                 {
-                    reflected = ApplyDamage(attacker, reflected, target);
+                    // `reflected: true` — the armour set answers for itself; it never flags its wearer (87a).
+                    reflected = ApplyDamage(attacker, reflected, target, reflected: true);
                     BroadcastCombat(target, attacker, reflected, CombatOutcome.Hit, "Reflect");
                     if (attacker.Hp <= 0) Kill(attacker, target);
                 }
@@ -9694,8 +9781,21 @@ var effect = def.Effect;
             Kill(target, attacker);
     }
 
-    /// <summary>Apply damage unless the target is in god mode.</summary>
-    private int ApplyDamage(Entity target, int damage, Entity? attacker = null)
+    /// <summary>Apply damage unless the target is in god mode.
+    ///
+    /// <para>🔑 <paramref name="reflected"/> — THE FLAG FOLLOWS INTENT (playtest 24, `87a`). Reflect
+    /// damage runs through here with the roles SWAPPED — the defender becomes the `attacker` argument —
+    /// so the flag block below was turning the *defender* purple for a blow he never struck. His words:
+    /// *"Reflect should not flag me — that's a big anti pk exploit ... som1 comes to me and wants to
+    /// kill me but I don't want to ..so he hits me see I become pvp flag and he just kills me."* An
+    /// aggressor could farm consent by walking into a reflect. What your GEAR does back to an attacker
+    /// on its own is not an act of yours, so it flags nobody and records no attacker — the pairing to
+    /// `BL-77`, where what you deliberately do with PvP on flags you even when it deals nothing.</para>
+    ///
+    /// <para>⚠ Everything else about a reflect is unchanged: it still damages, still kills, and the
+    /// kill is still a justified PvP kill rather than a PK, because the aggressor flagged himself with
+    /// his own blow one line earlier.</para></summary>
+    private int ApplyDamage(Entity target, int damage, Entity? attacker = null, bool reflected = false)
     {
         if (target.GodMode)
             return 0;
@@ -9717,7 +9817,9 @@ var effect = def.Effect;
         // PvP flagging: the victim records its attacker (for counter-attack), and the ATTACKER goes
         // PURPLE (freely attackable) — unless the target is a PK (attacking a red player is justified,
         // no flag). An already-red attacker stays red (FlagOf prioritises karma).
-        if (pvp)
+        // `reflected` skips BOTH halves (see the summary): a reflect is not an act of its owner's, so
+        // it neither flags him nor lets the aggressor claim him as "the man who attacked me".
+        if (pvp && !reflected)
         {
             target.LastPvpAttackerId = attacker!.Id;
             if (FlagOf(target) != PvpFlag.Pk)

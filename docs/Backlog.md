@@ -42,9 +42,11 @@ already built**, which by rule 1 rewrote the thing in place rather than opening 
 playtest find; queued 🔴 with its numbers explicitly marked as yours to alter later.
 
 **Playtest 24 (2026-08-16) added `BL-77`** — the PvP flag as the input to every AOE and no-damage skill's
-target filter. It also **answered `BL-47`/`G3` §8-B**: *migrate*, and it named three levers the design doc
-never swept (enchant, race as the main-stat carrier, a ×2 elite passive) — see that entry. Its two bug
-finds (reflect flagging the defender; the System chat tab lagging) went to `testing/Open-Checklist.md`.
+target filter — and it was **BUILT the same day in 0.69.0**, together with both of its bug finds (reflect
+flagging the defender; the System chat tab lagging), which live in `testing/Open-Checklist.md` §87. The
+pass also **answered `BL-47`/`G3` §8-B**: *migrate*, and it named three levers the design doc never swept
+(enchant, race as the main-stat carrier, a ×2 elite passive) — see that entry, whose step 2 is the only
+thing playtest 24 produced that is not yet built.
 
 ## The rules this file runs on
 
@@ -325,41 +327,15 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
   the game by a wide margin. Build the gems whenever you like — but the drop chances are not meaningful
   until those two are ruled, which is another reason the % are explicitly yours to move.
 
-- `BL-77` 🔴 **THE PVP FLAG DECIDES WHO AN AREA SKILL CAN TOUCH — one rule, every AOE and every
-  no-damage skill in the game.** Playtest 24, from `85a` (Signal Flare landing but not flagging), which
-  you immediately generalised. Your text, verbatim:
-
-  > *"it works but it should also flag me ...if I have the PvP on I should able to attack near my target
-  > and reavel it"* · *"goes for all AOE skills. (the second warrior class is AOE and need to use the
-  > same logic)"*
-  > - *"pvp-off = using AOE skills hit only nearby monsters"*
-  > - *"pvp-on = hit nearby players as well"*
-  > - *"flare with pvp on reveals nearby players and Act as hit so flags"*
-  > - *"any skill that does no dmg and can be casted on a player if the PvP is off is (monster only) but
-  >   if pvp is on it cast on a player and flags"*
-
-  🔑 **This is a targeting rule, not a flare fix.** Today the PvP toggle is read at the moment a player
-  picks a *single* target; an area skill has no target to check, so its victim set is decided by the
-  skill's own filter. Your rule makes the toggle an **input to the area filter**: with PvP off an area
-  skill enumerates creatures only, and with it on the same cast reaches players and **flags the caster
-  on the reach, not on the damage** — which is why a flare, which deals nothing, still flags.
-
-  🔑 **It pairs with the reflect exploit from the same pass** (in `testing/Open-Checklist.md`, a bug and
-  so not duplicated here): a **deliberate** act with PvP on flags you, and something your **gear** does
-  back to an attacker on its own must not. The two are one principle — *the flag follows intent* — and
-  fixing either half alone leaves the other looking arbitrary.
-
-  🔵 **Three things the rule does not yet settle**, all cheap, none blocking:
-  1. **Party and clan members inside an area cast.** "Hit nearby players as well" with PvP on — does that
-     include the party standing next to you? Every other system in this game excludes them.
-  2. **A no-damage skill split by intent.** Your last clause makes any castable-on-a-player skill flag
-     when PvP is on — but a **heal or a buff** aimed at a stranger is castable on a player and is not an
-     attack. Presumably only *hostile* no-damage skills flag (reveal, debuff, taunt), not support.
-  3. **Does the flag land on the caster only, or is the revealed/hit player flagged too?** A flare's
-     victim did nothing; today only the aggressor flags, which is the shape that survives the exploit.
-
-  ⚠ **The second warrior class is AOE and does not exist yet** — that is `BL-02` authoring. Build this
-  against the AOE skills that ship today (the mage's area nukes, the flare) and the class inherits it.
+- `BL-77` ✅ **BUILT 2026-08-16 (0.69.0)** — the PvP flag is the area filter, for every AOE and every
+  no-damage skill at once, and it pairs with the reflect fix from the same pass: *the flag follows
+  intent*. See `CHANGELOG.md`. Delete at the next sweep.
+  - ⚠ **Three shape questions were open and I answered them as the shape every other system here
+    already has** — party excluded from an area cast, support not routed through the rule, and only the
+    ACTOR flagged (never the person revealed). Each is marked as mine in the source and on checklist
+    row `87c`. **Re-rule any of them and it is a one-line change**; nothing depends on them.
+  - ⏳ **The second warrior class is AOE and still does not exist** — that is `BL-02` authoring. It
+    inherits this rule with no work: the filter lives in the shared area enumeration, not in a skill.
 
 ---
 

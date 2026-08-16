@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 namespace Game.Client
 {
@@ -25,11 +26,14 @@ namespace Game.Client
         public RectTransform Panel;
         public DragMove Drag;
         public RectTransform Grip;
+        public Image GripImage;
+        public TMPro.TextMeshProUGUI GripLabel;
         public Vector2 MinSize = new Vector2(320f, 200f);
         public string Key = "";
 
-        /// <summary>Locked = neither moves nor resizes. The grip disappears with it, because a grip you
-        /// can see and cannot use is worse than no grip.</summary>
+        /// <summary>Locked = neither moves nor resizes. The grip STAYS VISIBLE and dims (`87e`(d)) — it
+        /// used to be hidden outright, which meant the bottom-right corner was covered while unlocked
+        /// and free while locked, so nothing could be laid out against it.</summary>
         public bool Locked { get; private set; }
 
         public event Action LockChanged;
@@ -74,20 +78,47 @@ namespace Game.Client
         private void Apply()
         {
             if (Drag != null) Drag.Locked = Locked;
-            if (Grip != null) Grip.gameObject.SetActive(!Locked);
+            // Dim, never hide (see Locked). A locked grip is inert because Resize refuses, so the only
+            // job left here is to say so.
+            float alpha = Locked ? 0.25f : 1f;
+            if (GripImage != null)
+            {
+                var c = GripImage.color; c.a = alpha; GripImage.color = c;
+            }
+            if (GripLabel != null)
+            {
+                var c = GripLabel.color; c.a = alpha; GripLabel.color = c;
+            }
         }
 
         /// <summary>Resize by a drag delta, clamped so a window can never be shrunk past the point where
         /// its own title bar and buttons stop fitting — the phone equivalent of losing a window off the
-        /// edge, and just as unrecoverable.</summary>
+        /// edge, and just as unrecoverable.
+        ///
+        /// <para>🔴 THE GRIP MOVES, THE WINDOW'S TOP-LEFT DOES NOT (`87e`(b), playtest 24): *"I drag down
+        /// it goes from bottom to top increasing its height but the bottom is the frozen position. The
+        /// drag button should move not the top/left."* He is describing a PIVOT, not a bug in the
+        /// arithmetic: the size was growing correctly, but a uGUI rect grows away from its pivot, and
+        /// both of these windows are pinned by a BOTTOM corner (chat bottom-left, combat bottom-right).
+        /// So height was added upwards and the grip — which is at the bottom — never followed the
+        /// finger. Compensating the anchored position by the pivot pins the top-left corner instead, for
+        /// any anchor either window is ever given.</para></summary>
         public void Resize(Vector2 delta)
         {
             if (Locked || Panel == null) return;
-            var size = Panel.sizeDelta + new Vector2(delta.x, -delta.y);   // y grows downward on a grip
+            Vector2 old = Panel.sizeDelta;
+            var size = old + new Vector2(delta.x, -delta.y);   // y grows downward on a grip
             var parent = Panel.parent as RectTransform;
             Vector2 max = parent != null ? parent.rect.size : new Vector2(4000f, 4000f);
-            Panel.sizeDelta = new Vector2(Mathf.Clamp(size.x, MinSize.x, max.x),
-                                          Mathf.Clamp(size.y, MinSize.y, max.y));
+            var applied = new Vector2(Mathf.Clamp(size.x, MinSize.x, max.x),
+                                      Mathf.Clamp(size.y, MinSize.y, max.y));
+            Panel.sizeDelta = applied;
+
+            // Keep the TOP-LEFT corner where it was. Left edge = pos.x − pivot.x·w, top edge =
+            // pos.y + (1−pivot.y)·h; hold both constant and solve for the new position.
+            Vector2 grew = applied - old;
+            Panel.anchoredPosition += new Vector2(Panel.pivot.x * grew.x,
+                                                  -(1f - Panel.pivot.y) * grew.y);
         }
 
         private string K(string suffix) => "win." + Key + "." + suffix;

@@ -40,22 +40,42 @@ namespace Game.Client
 
         /// <summary>Keep a sliver of the window on screen. A window dragged fully off has no title bar
         /// left to grab, so it can never be brought back — on a phone there is no window menu to
-        /// rescue it with.</summary>
+        /// rescue it with.
+        ///
+        /// <para>🔴 IT ASSUMED EVERY WINDOW WAS CENTRE-ANCHORED, and none of the movable ones are
+        /// (`87e`(a), playtest 24: the combat window *"cannot go left below certain distance"*). The old
+        /// arithmetic read anchoredPosition as an offset from the parent's CENTRE and clamped it to
+        /// ±(halfParent + halfWindow); that is only true at anchor/pivot (0.5, 0.5). The chat window is
+        /// pinned bottom-LEFT and the combat window bottom-RIGHT, so for the combat window the same
+        /// numbers allowed a long drag off the right edge and stopped it dead a few pixels past the
+        /// left one — the asymmetry he hit. Working in the parent's own coordinates instead makes anchor
+        /// and pivot drop out, and both directions get the same 60 units of guaranteed handle.</para></summary>
         private void Clamp()
         {
             var parent = Target.parent as RectTransform;
             if (parent == null) return;
 
-            Vector2 half = Target.rect.size * 0.5f;
-            Vector2 bounds = parent.rect.size * 0.5f;
             const float keepVisible = 60f;
 
-            var position = Target.anchoredPosition;
-            position.x = Mathf.Clamp(position.x, -bounds.x - half.x + keepVisible,
-                                                  bounds.x + half.x - keepVisible);
-            position.y = Mathf.Clamp(position.y, -bounds.y - half.y + keepVisible,
-                                                  bounds.y + half.y - keepVisible);
-            Target.anchoredPosition = position;
+            // The window's rect expressed in the PARENT's local space, which is where anchoredPosition
+            // lives: start from the anchor point, then step back by the pivot.
+            Vector2 size = Target.rect.size;
+            var anchor = new Vector2(
+                Mathf.Lerp(parent.rect.xMin, parent.rect.xMax, (Target.anchorMin.x + Target.anchorMax.x) * 0.5f),
+                Mathf.Lerp(parent.rect.yMin, parent.rect.yMax, (Target.anchorMin.y + Target.anchorMax.y) * 0.5f));
+            Vector2 position = Target.anchoredPosition;
+            Vector2 min = anchor + position - new Vector2(Target.pivot.x * size.x, Target.pivot.y * size.y);
+            Vector2 max = min + size;
+
+            // Push back only as far as it takes to leave `keepVisible` on screen on each axis.
+            float dx = 0f, dy = 0f;
+            if (max.x < parent.rect.xMin + keepVisible) dx = parent.rect.xMin + keepVisible - max.x;
+            else if (min.x > parent.rect.xMax - keepVisible) dx = parent.rect.xMax - keepVisible - min.x;
+            if (max.y < parent.rect.yMin + keepVisible) dy = parent.rect.yMin + keepVisible - max.y;
+            else if (min.y > parent.rect.yMax - keepVisible) dy = parent.rect.yMax - keepVisible - min.y;
+
+            if (dx != 0f || dy != 0f)
+                Target.anchoredPosition = position + new Vector2(dx, dy);
         }
     }
 }

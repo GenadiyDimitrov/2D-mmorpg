@@ -58,7 +58,15 @@ namespace Game.Client
             UiKit.Place(UiKit.Rect(_tradeTitle.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(16f, -chrome - 6f), new Vector2(500f, 24f));
 
-            const float colW = 400f, top = 96f;
+            // 🔴 `top` IS DERIVED FROM `chrome`, NOT A HAND-PICKED 96 (playtest 24, `87d`). His report was
+            // about the target frame, but he called it the generic bug — *"same problem we had with every
+            // window and the text inside .. the textblock don't take into account the title row"* — and a
+            // sweep of all 23 windows with a title bar found he was right twice. Here the column headers
+            // sat at 70→92 from the panel top while the partner-name line, correctly placed at
+            // chrome + 6, ran 52→76: a 6px bite out of both "You offer" and "Your bag". Anything measured
+            // off the title bar's real height cannot drift out of step with it again.
+            const float colW = 400f;
+            float top = chrome + 60f;
 
             // ---- left column: the two offers, then my gold entry ----
             UiKit.Place(UiKit.Rect(UiKit.Label(inner, "You offer", 14f, UiKit.Accent).gameObject),

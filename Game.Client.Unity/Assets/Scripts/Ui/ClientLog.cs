@@ -66,6 +66,16 @@ namespace Game.Client
         {
             if (_hooked) return;
             _hooked = true;
+
+            // The second half of `87b`, and the other reason the SYSTEM tab is the expensive one: every
+            // Info/Good/Warn line goes through Debug.Log (see AddTagged), and on a device Unity captures
+            // a managed STACK TRACE for each one — chat lines deliberately do not, which is why no other
+            // tab pays this. Nothing reads the trace of an informational line, so turn it off for those
+            // two levels and keep it where it is the whole point: errors, exceptions and asserts, i.e.
+            // the crash trail this buffer exists for.
+            Application.SetStackTraceLogType(LogType.Log, StackTraceLogType.None);
+            Application.SetStackTraceLogType(LogType.Warning, StackTraceLogType.None);
+
             Application.logMessageReceived += OnUnityLog;
         }
 

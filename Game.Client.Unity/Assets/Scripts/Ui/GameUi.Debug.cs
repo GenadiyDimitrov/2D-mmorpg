@@ -231,7 +231,10 @@ namespace Game.Client
                 group.childForceExpandHeight = true;
                 group.childControlWidth = true;
                 group.childControlHeight = true;
-                strip.AddComponent<LayoutElement>().minHeight = 34f;
+                // 28, not 34 (`87f`, playtest 24: *"just make the selection buttons smaller in height"*).
+                // There are three strips of these above the list and the tier row already wraps to two,
+                // so six chip rows were eating the window before a single item appeared.
+                strip.AddComponent<LayoutElement>().minHeight = 28f;
 
                 int end = Math.Min(start + perRow, options.Count);
                 for (int i = start; i < end; i++)
@@ -242,7 +245,7 @@ namespace Game.Client
                                                 () => pick(value), 13f);
                     var le = chip.gameObject.AddComponent<LayoutElement>();
                     le.flexibleWidth = 1f;
-                    le.minHeight = 34f;
+                    le.minHeight = 28f;
                     if (enabled != null && !enabled(value)
                         && chip.GetComponentInChildren<TextMeshProUGUI>() is TextMeshProUGUI t)
                         t.color = UiKit.TextDim;
@@ -362,6 +365,7 @@ namespace Game.Client
 
             // A set bonus needs all four pieces, so one click has to be able to produce a whole set —
             // otherwise testing a set bonus is four taps of hunting through a list.
+            bool listHeaded = false;
             if (_debugEquipCat == "armor")
             {
                 if (!ItemCatalog.HasIdentity(_debugEquipRarity))
@@ -392,8 +396,16 @@ namespace Game.Client
                         });
                     }
                     DebugHeader("Individual pieces");
+                    listHeaded = true;
                 }
             }
+
+            // 🔴 THE LIST GETS ITS OWN HEADER (`87f`): *"add a header on the filtered gear list. Now it's
+            // the same row as the grade (needs a splitter)."* Only the armor-with-sets branch had one
+            // ("Individual pieces"), so on weapons, jewels and sub-Epic armor the first give-button
+            // butted straight onto the tier chips and read as a fourth row of them.
+            if (!listHeaded)
+                DebugHeader($"{catLabel} — {_debugEquipRarity}, {ItemCatalog.TierLetter(_debugEquipLevel)} grade");
 
             int listed = 0;
             foreach (var def in GearAt(_debugEquipCat, _debugEquipLevel))

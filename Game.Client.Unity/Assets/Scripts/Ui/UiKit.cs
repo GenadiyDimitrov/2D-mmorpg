@@ -146,6 +146,128 @@ namespace Game.Client
             return label;
         }
 
+        // ----- icons -----------------------------------------------------------------------------
+        //
+        // 🔑 WHY THESE ARE DRAWN FROM RECTANGLES AND NOT TYPED AS CHARACTERS (playtest 24, `87e`).
+        // He asked for a bin, a speech bubble and a padlock. The bundled LiberationSans TMP atlas is
+        // STATIC and holds ~250 glyphs — no 🗑, no 💬, no 🔒, and TMP draws a missing glyph as a hollow
+        // box, which is the "[]" that has turned up on the close buttons and the bullet lists twice
+        // before. Adding glyphs to the atlas needs the Editor, which the owner never opens. So an icon
+        // here is a handful of Images laid out in NORMALISED coordinates inside the button's face: no
+        // font, no atlas, no sprite asset, and it scales with whatever size the button is given.
+
+        /// <summary>The icon set. Deliberately tiny — each one is hand-composed below, so this grows
+        /// only when a button genuinely cannot be a word.</summary>
+        public enum Icon { Lock, Unlock, Bin, Bubble }
+
+        /// <summary>One rectangle of an icon, positioned in the face's NORMALISED space (0..1, y up),
+        /// so the whole glyph scales with the button instead of being pinned to a pixel size.</summary>
+        private static void IconPart(Transform face, float x0, float y0, float x1, float y1,
+                                     Color colour, float rotation = 0f)
+        {
+            var box = Box(face, "Part", colour, blocksInput: false);
+            var rt = Rect(box.gameObject);
+            rt.anchorMin = new Vector2(x0, y0);
+            rt.anchorMax = new Vector2(x1, y1);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.offsetMin = Vector2.zero;
+            rt.offsetMax = Vector2.zero;
+            if (rotation != 0f) rt.localRotation = Quaternion.Euler(0f, 0f, rotation);
+        }
+
+        private static void PaintIcon(Transform face, Icon icon)
+        {
+            switch (icon)
+            {
+                case Icon.Lock:
+                    // Body, then a shackle whose two posts both reach it — a closed loop.
+                    IconPart(face, 0.16f, 0.06f, 0.84f, 0.56f, Text);
+                    IconPart(face, 0.28f, 0.56f, 0.38f, 0.86f, Text);
+                    IconPart(face, 0.62f, 0.56f, 0.72f, 0.86f, Text);
+                    IconPart(face, 0.28f, 0.80f, 0.72f, 0.92f, Text);
+                    IconPart(face, 0.45f, 0.20f, 0.55f, 0.40f, PanelLight);   // keyhole
+                    break;
+                case Icon.Unlock:
+                    // The same body with the shackle swung OPEN to the left: only one post comes down,
+                    // and it stops short of the body. That gap is the whole difference at 44px.
+                    IconPart(face, 0.16f, 0.06f, 0.84f, 0.56f, Text);
+                    IconPart(face, 0.62f, 0.56f, 0.72f, 0.86f, Text);
+                    IconPart(face, 0.20f, 0.80f, 0.72f, 0.92f, Text);
+                    IconPart(face, 0.20f, 0.66f, 0.30f, 0.92f, Text);
+                    IconPart(face, 0.45f, 0.20f, 0.55f, 0.40f, PanelLight);   // keyhole
+                    break;
+                case Icon.Bin:
+                    IconPart(face, 0.38f, 0.86f, 0.62f, 0.96f, Text);         // handle
+                    IconPart(face, 0.08f, 0.72f, 0.92f, 0.84f, Text);         // lid
+                    IconPart(face, 0.18f, 0.08f, 0.82f, 0.68f, Text);         // body
+                    IconPart(face, 0.34f, 0.18f, 0.42f, 0.58f, PanelLight);   // ribs
+                    IconPart(face, 0.58f, 0.18f, 0.66f, 0.58f, PanelLight);
+                    break;
+                case Icon.Bubble:
+                    IconPart(face, 0.08f, 0.34f, 0.92f, 0.94f, Text);         // body
+                    IconPart(face, 0.18f, 0.16f, 0.36f, 0.40f, Text, 45f);    // tail
+                    IconPart(face, 0.22f, 0.52f, 0.78f, 0.60f, PanelLight);   // two lines of "speech"
+                    IconPart(face, 0.22f, 0.70f, 0.66f, 0.78f, PanelLight);
+                    break;
+            }
+        }
+
+        /// <summary>A button whose face is a drawn icon rather than text. Same shape and states as
+        /// <see cref="TextButton"/> so the two sit together in a row without looking like different
+        /// widgets.</summary>
+        public static Button IconButton(Transform parent, Icon icon, Action onClick)
+        {
+            var image = Box(parent, "IconButton", PanelLight);
+            var button = image.gameObject.AddComponent<Button>();
+            button.targetGraphic = image;
+
+            var colors = button.colors;
+            colors.highlightedColor = new Color(0.26f, 0.31f, 0.37f, 1f);
+            colors.pressedColor = Accent;
+            colors.disabledColor = new Color(0.13f, 0.15f, 0.18f, 0.6f);
+            button.colors = colors;
+
+            // A named, transparent face so SetIcon can find and repaint it without touching the button.
+            var face = Box(image.transform, "Icon", new Color(0, 0, 0, 0), blocksInput: false);
+            Stretch(Rect(face.gameObject), 9f, 5f, 9f, 5f);
+            PaintIcon(face.transform, icon);
+
+            if (onClick != null) button.onClick.AddListener(() => onClick());
+            return button;
+        }
+
+        /// <summary>Repaint an <see cref="IconButton"/> — the lock toggle is the only caller.
+        /// ⚠ Detaches before destroying: Destroy is deferred to end-of-frame, so the old rectangles
+        /// would otherwise be drawn UNDER the new ones for a frame and the padlock would flicker into
+        /// an unreadable smear at exactly the moment you tapped it.</summary>
+        public static void SetIcon(Button button, Icon icon)
+        {
+            if (button == null) return;
+            var face = button.transform.Find("Icon");
+            if (face == null) return;
+            for (int i = face.childCount - 1; i >= 0; i--)
+            {
+                var part = face.GetChild(i);
+                part.SetParent(null, false);
+                UnityEngine.Object.Destroy(part.gameObject);
+            }
+            PaintIcon(face, icon);
+        }
+
+        /// <summary>Where the <paramref name="slot"/>-th button sits in a title bar, counted from the
+        /// right and INSIDE the close button. Slot 0 is the lock (<see cref="MakeAdjustable"/> owns
+        /// it); windows that want more title-bar buttons take 1, 2, … so nothing has to know the
+        /// pixel arithmetic twice.</summary>
+        public static Button TitleBarIcon(RectTransform panel, int slot, Icon icon, Action onClick)
+        {
+            var bar = panel.GetChild(0).Find("TitleBar");
+            if (bar == null) return null;
+            var button = IconButton(bar.transform, icon, onClick);
+            Place(Rect(button.gameObject), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
+                  new Vector2(-58f - slot * 48f, 0f), new Vector2(44f, 34f));
+            return button;
+        }
+
         public static Button TextButton(Transform parent, string text, Action onClick, float size = 18f)
         {
             var image = Box(parent, "Button", PanelLight);
@@ -212,16 +334,22 @@ namespace Game.Client
             UnityEngine.Object.Destroy(grip);
             gripRect.gameObject.AddComponent<ResizeGrip>().Geometry = geometry;
             geometry.Grip = gripRect;
+            // 🔴 `87e`(d): the grip used to VANISH when locked — *"is shown only on unlocked so it can
+            // cut into the text"*. Appearing and disappearing is what made it a hazard: the content is
+            // laid out once, so the corner it covers is occupied either way, and a control that is
+            // sometimes there cannot be designed around. It stays put now and merely DIMS when locked
+            // (WindowGeometry.Apply), so the corner it owns is the same corner at all times.
+            geometry.GripImage = gripRect.GetComponent<Image>();
+            geometry.GripLabel = gripRect.GetComponentInChildren<TextMeshProUGUI>();
 
             if (bar != null)
             {
-                var lockButton = TextButton(bar.transform, "L", geometry.ToggleLock, 18f);
+                // 🔴 A PADLOCK, not "L"/"U" (`87e`(d)). It could not be a glyph — see the icon block
+                // above for why the atlas cannot supply one — so it is drawn.
+                var lockButton = IconButton(bar.transform, Icon.Unlock, geometry.ToggleLock);
                 Place(Rect(lockButton.gameObject), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
                       new Vector2(-58f, 0f), new Vector2(44f, 34f));
-                var label = lockButton.GetComponentInChildren<TextMeshProUGUI>();
-                // "L" / "U", not a padlock: the bundled LiberationSans atlas is static and has no lock
-                // glyph, so TMP would draw the hollow box that keeps turning up in the checklist.
-                void Paint() { if (label != null) label.text = geometry.Locked ? "L" : "U"; }
+                void Paint() => SetIcon(lockButton, geometry.Locked ? Icon.Lock : Icon.Unlock);
                 geometry.LockChanged += Paint;
                 Paint();
             }

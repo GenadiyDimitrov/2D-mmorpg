@@ -341,8 +341,18 @@ namespace Game.Client
             _targetPanel = UiKit.PanelBox(_worldRoot, "TargetPanel");
             // 🔴 28px SHORTER since playtest 23, because the name row is gone: *"the current name text
             // can be removed so the title window be smaller in size."* The title bar carries the name now.
+            //
+            // 🔴 …AND 12px TALLER AGAIN (playtest 24, `87d`): *"the text 'mob:..' is hidden ... the 1st
+            // text is half hidden."* He read it as the title row, but the arithmetic says it was the
+            // BOTTOM: the detail line ran 94→114 from the top while the first button row, being
+            // bottom-anchored, ran 76→104 in a 148-tall panel — so Attack covered the top half of
+            // "Mob: 44, Aggressive". That collision was the other half of the same 28px shrink: the top
+            // rows moved up with the deleted name row, and the bottom-anchored buttons moved up with the
+            // panel's floor, straight into them. Fixed twice over — one BUTTON ROW instead of two (five
+            // of the seven buttons have been permanently hidden since playtest 23, so the second row
+            // held one button and a gap), and 12px of room so the gap is real rather than a tie.
             UiKit.Place(_targetPanel, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-                        new Vector2(0f, -48f), new Vector2(300f, 148f));
+                        new Vector2(0f, -48f), new Vector2(300f, 160f));
             var inner = _targetPanel.GetChild(0);
 
             // Deliberately NOT CloseWindow: this panel is not in the stack, and hiding it while the
@@ -372,41 +382,49 @@ namespace Game.Client
             UiKit.Place(UiKit.Rect(_targetDetail.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(12f, -chrome - 48f), new Vector2(276f, 20f));
 
-            // Two rows of contextual action buttons, so every target command is one tap — no slash typing.
-            // The server refuses anything invalid, but RefreshTarget only SHOWS the ones that apply to the
-            // current target (enemy vs player) so the frame stays honest. x-slots for three-across.
+            // ONE row of contextual action buttons (`87d`), so every target command is one tap — no slash
+            // typing. The server refuses anything invalid, but RefreshTarget only SHOWS the ones that
+            // apply to the current target (enemy vs player) so the frame stays honest. Three across.
+            //
+            // ⚠ It was two rows until playtest 24, and the SECOND row is what overlapped the detail line.
+            // It can afford to be one because RefreshTarget hides five of these seven outright: since
+            // playtest 23 a mob shows Attack + Info, an NPC shows Talk, and a player shows nothing at all.
+            // Follow / Assist / Party / Trade are kept as dead fields rather than deleted (the Actions tab
+            // of the Skills window owns those verbs now) — ⚠ if one is ever un-hidden it needs a slot in
+            // THIS row and 94px more panel width, not the old y=44 row, which would land on the text again.
             float bx0 = 10f, bx1 = 104f, bx2 = 198f, bw = 88f;
+            const float rowY = 8f;
 
-            // Top row (y=44): Attack / Follow / Assist.
             _targetAttackButton = UiKit.TextButton(inner, "Attack", () =>
             {
                 // The same verb as the second tap and the bar's Attack action — never its own logic.
                 if (Boot.TargetId.HasValue) Boot.AttackOrFollow(Boot.TargetId.Value);
             }, 14f);
             UiKit.Place(UiKit.Rect(_targetAttackButton.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
-                        new Vector2(bx0, 44f), new Vector2(bw, 28f));
+                        new Vector2(bx0, rowY), new Vector2(bw, 28f));
 
             _targetFollowButton = UiKit.TextButton(inner, "Follow", () =>
             {
                 if (Boot.TargetId.HasValue) Boot.Follow(Boot.TargetId.Value);
             }, 14f);
             UiKit.Place(UiKit.Rect(_targetFollowButton.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
-                        new Vector2(bx1, 44f), new Vector2(bw, 28f));
+                        new Vector2(bx1, rowY), new Vector2(bw, 28f));
 
             _targetAssistButton = UiKit.TextButton(inner, "Assist", () =>
             {
                 if (Boot.TargetId.HasValue) Boot.Assist(Boot.TargetId.Value);
             }, 14f);
             UiKit.Place(UiKit.Rect(_targetAssistButton.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
-                        new Vector2(bx2, 44f), new Vector2(bw, 28f));
+                        new Vector2(bx2, rowY), new Vector2(bw, 28f));
 
-            // Bottom row (y=8): Party / Trade / Info.
+            // The four hidden ones share slots with the three live ones on purpose — they are never
+            // active at the same time, so overlapping rects cost nothing and the row stays three wide.
             _targetPartyButton = UiKit.TextButton(inner, "Party", () =>
             {
                 if (Boot.TargetId.HasValue) Boot.PartyInvite(Boot.TargetId.Value);
             }, 14f);
             UiKit.Place(UiKit.Rect(_targetPartyButton.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
-                        new Vector2(bx0, 8f), new Vector2(bw, 28f));
+                        new Vector2(bx0, rowY), new Vector2(bw, 28f));
 
             _targetTradeButton = UiKit.TextButton(inner, "Trade", () =>
             {
@@ -417,11 +435,11 @@ namespace Game.Client
                 }
             }, 14f);
             UiKit.Place(UiKit.Rect(_targetTradeButton.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
-                        new Vector2(bx1, 8f), new Vector2(bw, 28f));
+                        new Vector2(bx1, rowY), new Vector2(bw, 28f));
 
             _targetInfoButton = UiKit.TextButton(inner, "Info", OpenTargetDetails, 14f);
             UiKit.Place(UiKit.Rect(_targetInfoButton.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
-                        new Vector2(bx2, 8f), new Vector2(bw, 28f));
+                        new Vector2(bx1, rowY), new Vector2(bw, 28f));
 
             // NPCs only (C9 / M13). It shares the Info slot — the two never show together, since Info is
             // a mob's stats-and-drops window and an NPC has neither.
@@ -430,7 +448,7 @@ namespace Game.Client
                 if (Boot.TargetId.HasValue) Boot.ApproachAndTalk(Boot.TargetId.Value);
             }, 14f);
             UiKit.Place(UiKit.Rect(_targetTalkButton.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
-                        new Vector2(bx2, 8f), new Vector2(bw, 28f));
+                        new Vector2(bx1, rowY), new Vector2(bw, 28f));
             _targetTalkButton.gameObject.SetActive(false);
         }
 
@@ -826,22 +844,14 @@ namespace Game.Client
             UiKit.Place(UiKit.Rect(_combatTabButton.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(12f + names.Length * 100f, -chrome - 4f), new Vector2(96f, 32f));
 
+            // 🔴 THE FEED NOW REACHES THE BOTTOM OF THE WINDOW (`87e`(c), playtest 24): *"remove the row
+            // with 'clear' and 'replay' — it's now an empty space and the text never gets to the
+            // bottom."* The bottom inset was 46 to clear a button row that is gone; it is 10 now, which
+            // is the same margin as every other edge. The two buttons moved into the TITLE BAR beside the
+            // padlock, as icons — see below.
             ScrollRect scroll;
             var content = UiKit.ScrollArea(inner, out scroll, 1f);
-            UiKit.Stretch((RectTransform)scroll.transform, 10f, chrome + 40f, 10f, 46f);
-
-            // Both bottom-right buttons shifted 48px left of where they were: the resize grip now owns
-            // that corner, and a grip you cannot reach because a button is sitting on it is no grip.
-            var clear = UiKit.TextButton(inner, "Clear", () => ClientLog.Clear(), 16f);
-            UiKit.Place(UiKit.Rect(clear.gameObject), new Vector2(1f, 0f), new Vector2(1f, 0f),
-                        new Vector2(-58f, 8f), new Vector2(100f, 34f));
-
-            // Reply: fills the command box with "/w <last whisperer> ". Answering a whisper otherwise
-            // means retyping a name you can see on screen but cannot copy.
-            _chatReplyButton = UiKit.TextButton(inner, "Reply",
-                                                () => Boot.ComposeWhisper(Boot.LastWhisperName), 16f);
-            UiKit.Place(UiKit.Rect(_chatReplyButton.gameObject), new Vector2(1f, 0f), new Vector2(1f, 0f),
-                        new Vector2(-166f, 8f), new Vector2(100f, 34f));
+            UiKit.Stretch((RectTransform)scroll.transform, 10f, chrome + 40f, 10f, 10f);
 
             // 🔴 MOVABLE, RESIZABLE, LOCKABLE — and remembered on the device (playtest 23). The chat and
             // combat windows are the two he named, and they are the right two: they are the only windows
@@ -849,6 +859,15 @@ namespace Game.Client
             // view of the world rather than a fit to their own content.
             // ⚠ The minimum is not arbitrary — below ~520 the six tab buttons stop fitting on one row.
             UiKit.MakeAdjustable(panel, "chat", new Vector2(520f, 200f));
+
+            // The two ex-buttons, now icons in the title bar (`87e`(c)) — *"move them up beside L/U,
+            // clear as a bin, replay as a speech bubble."* Slot 0 is the padlock MakeAdjustable just
+            // added, so these take 1 and 2, counting inwards from the close button.
+            // ⚠ "Replay" is his word for REPLY: it fills the command box with "/w <last whisperer> ",
+            // which is why the icon is a speech bubble and not a rewind.
+            UiKit.TitleBarIcon(panel, 1, UiKit.Icon.Bin, () => ClientLog.Clear());
+            _chatReplyButton = UiKit.TitleBarIcon(panel, 2, UiKit.Icon.Bubble,
+                                                  () => Boot.ComposeWhisper(Boot.LastWhisperName));
 
             _chatView = new LogView
             {
@@ -880,20 +899,19 @@ namespace Game.Client
             float chrome = UiKit.WindowChrome(panel, "Combat",
                                               () => { CloseWindow(panel); HighlightChatTabs(); });
 
+            // Same as the chat window (`87e`(c)): the feed runs to the bottom now and Clear is an icon
+            // in the title bar. This one has no Reply — there is nobody to answer in a damage feed.
             ScrollRect scroll;
             var content = UiKit.ScrollArea(inner, out scroll, 1f);
-            UiKit.Stretch((RectTransform)scroll.transform, 10f, chrome + 6f, 10f, 46f);
-
-            // ClearTab, not Clear: this window's Clear must not take the conversation with it.
-            // Shifted left of the resize grip, same as the chat window's.
-            var clear = UiKit.TextButton(inner, "Clear", () => ClientLog.ClearTab(ClientLog.Tab.Combat), 16f);
-            UiKit.Place(UiKit.Rect(clear.gameObject), new Vector2(1f, 0f), new Vector2(1f, 0f),
-                        new Vector2(-58f, 8f), new Vector2(100f, 34f));
+            UiKit.Stretch((RectTransform)scroll.transform, 10f, chrome + 6f, 10f, 10f);
 
             // The second of the two windows he named. Its minimum is smaller than chat's — it has no tab
-            // row to fit, just a feed and one button — so it can be shrunk to a genuinely thin ticker
-            // down one side, which is most of the point of *"without they obscure my view"*.
+            // row to fit, just a feed — so it can be shrunk to a genuinely thin ticker down one side,
+            // which is most of the point of *"without they obscure my view"*.
             UiKit.MakeAdjustable(panel, "combat", new Vector2(300f, 160f));
+
+            // ClearTab, not Clear: this window's bin must not take the conversation with it.
+            UiKit.TitleBarIcon(panel, 1, UiKit.Icon.Bin, () => ClientLog.ClearTab(ClientLog.Tab.Combat));
 
             _combatView = new LogView
             {
@@ -930,9 +948,23 @@ namespace Game.Client
         private void RebuildLogRows(LogView view)
         {
             for (int i = view.Content.childCount - 1; i >= 0; i--)
-                Destroy(view.Content.GetChild(i).gameObject);
+                DropRow(view.Content.GetChild(i));
             view.RenderedSeq = -1;
             view.SeenRevision = -1;   // force RefreshLogView to run even if no new line has arrived
+        }
+
+        /// <summary>Remove a console row NOW and destroy it whenever Unity gets round to it.
+        ///
+        /// <para>⚠ The <c>SetParent(null)</c> is the whole point and it is not tidiness: <c>Destroy</c>
+        /// is deferred to the end of the frame, so a row that has only been destroyed is still a CHILD
+        /// for the rest of this frame — it still counts in <c>childCount</c> and it is still laid out.
+        /// Every piece of arithmetic in <see cref="RefreshLogView"/> is over <c>childCount</c>, so
+        /// leaving the corpses in place made the trim measure a number that included rows already on
+        /// their way out. Detaching first makes the count honest inside the frame that changed it.</para></summary>
+        private static void DropRow(Transform row)
+        {
+            row.SetParent(null, false);
+            Destroy(row.gameObject);
         }
 
         /// <summary>True if a line belongs in the chat tab being shown. All (-1) accepts everything
@@ -1674,8 +1706,34 @@ namespace Game.Client
                 RebuildLogRows(view);
             }
 
+            // 🔴 NEVER BUILD A ROW THIS SAME CALL IS ABOUT TO THROW AWAY (playtest 24, `87b`:
+            // *"System chat lagging the game ... Other tabs don't, just system (respectively and
+            // 'all')"* · *"after a game restart it works"*).
+            //
+            // The append rewrite fixed the per-LINE case and left the per-BATCH one: a batch was
+            // whatever had not been drawn yet, and three routes make that the ENTIRE 1000-line buffer —
+            // switching tab (RebuildLogRows resets RenderedSeq to -1), reopening the window (the
+            // refresh early-outs while it is closed, so the backlog is waiting when it opens), and a
+            // Clear generation. Every one of those built up to 1000 labels, each with a
+            // ContentSizeFitter, in ONE frame, and then the trim below destroyed ~880 of them
+            // immediately. That is the whole report: it is System and All because those are the only
+            // tabs the buffer actually fills — Local/World/PM hold a handful of lines and their batch
+            // is a handful of rows — and a restart cures it because a restart empties the buffer.
+            //
+            // So find the OLDEST line still inside the display cap and start there. The cap is the
+            // number of rows the window can hold at all, so nothing visible is lost: the lines older
+            // than that were never going to survive the trim.
+            int first = lines.Count;
+            int budget = ConsoleDisplayRows;
+            for (int i = lines.Count - 1; i >= 0; i--)
+            {
+                if (lines[i].Seq <= view.RenderedSeq) break;   // everything older is already drawn
+                if (view.Accepts(lines[i].Where) && --budget < 0) break;
+                first = i;
+            }
+
             int appended = 0;
-            for (int i = 0; i < lines.Count; i++)
+            for (int i = first; i < lines.Count; i++)
             {
                 if (lines[i].Seq <= view.RenderedSeq) continue;   // already drawn
                 // A line this view does not want is SKIPPED, not remembered: RenderedSeq only advances
@@ -1696,10 +1754,11 @@ namespace Game.Client
             // FREEZES: Unity's Destroy is deferred to end-of-frame, so childCount does NOT drop inside
             // the loop — the condition stays true and GetChild(0) keeps returning the same (already
             // marked) object forever. That infinite loop is what locked the phone in 0.28.77; this is
-            // the real fix on top of the append rewrite.
+            // the real fix on top of the append rewrite. DropRow detaches as well as destroying, so the
+            // count is honest even when a rebuild ran earlier in this same frame (`87b`).
             int excess = view.Content.childCount - ConsoleDisplayRows;
             for (int i = 0; i < excess; i++)
-                Destroy(view.Content.GetChild(i).gameObject);
+                DropRow(view.Content.GetChild(0));
 
             if (appended > 0)
             {

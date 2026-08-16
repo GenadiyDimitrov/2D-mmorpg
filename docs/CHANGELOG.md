@@ -7,10 +7,98 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.68.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.69.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
+
+## 0.69.0 — 2026-08-16 — the playtest-24 batch: the flag follows intent
+
+Everything playtest 24 produced except the mob-as-player demo (`BL-47` step 2, which is content, not a
+fix). Protocol unchanged at 21 — nothing here touches the wire — and **no DB reset**.
+
+**The two bugs he found.**
+
+- 🔴 **REFLECT NO LONGER FLAGS THE DEFENDER** — his anti-PK exploit (`87a`). *"Reflect should not flag
+  me — that's a big anti pk exploit ... som1 comes to me and wants to kill me but I don't want to ..so
+  he hits me see I become pvp flag and he just kills me."* Reflect damage runs through `ApplyDamage`
+  with the roles swapped — the defender arrives as the `attacker` argument — so the flag block turned
+  the *defender* purple for a blow he never struck, and an aggressor could manufacture a legal victim
+  by walking into a reflect. `ApplyDamage` takes a `reflected` flag that skips both halves of the PvP
+  block (the flag AND the `LastPvpAttackerId` record, so the aggressor cannot claim the defender as
+  "the man who attacked me" either). **All three reflect paths covered**: the armor sets'
+  `MeleeReflect`, `BL-07` Deflection, and `BL-08` Backlash — the third needed no change, but only by
+  accident (a bounced debuff carries no `SourceId`, so its ticks credit nobody), and that accident is
+  now written down at the call site so a future kill-credit "fix" cannot re-open the door.
+- 🔴 **THE SYSTEM/ALL CHAT TABS NO LONGER LAG THE GAME** (`87b`). *"System chat lagging the game ...
+  Other tabs don't just system(respectedly and 'all')"* · *"after a game restart it works."* The
+  per-line append path was already fast; the per-BATCH one was not. A batch is everything not yet
+  drawn, and three routes make that the whole 1000-line buffer — switching tab, reopening the window
+  (the refresh early-outs while it is closed, so the backlog waits for it) and a Clear generation.
+  Each built up to 1000 labels with ContentSizeFitters in ONE frame and then destroyed ~880 of them
+  immediately. That is exactly the report: System and All are the only tabs the buffer fills, and a
+  restart empties it. The draw batch is now capped at the display cap, so a row is never created only
+  to be trimmed. Two smaller cuts alongside: console rows are DETACHED before `Destroy` (deferred
+  destruction was leaving corpses in `childCount`, which every piece of the trim arithmetic reads),
+  and stack-trace capture is off for `Log`/`Warning` — every System line goes through `Debug.Log` and
+  chat lines deliberately do not, which is the other reason that tab cost more than the rest.
+
+**The rule he gave.**
+
+- 🔑 **`BL-77` — THE PVP FLAG IS THE AREA FILTER** (`87c`), from `85a` and generalised by him on the
+  spot: *"pvp-off = using AOE skills hit only nearby monsters"* · *"pvp-on = hit nearby players as
+  well"* · *"flare with pvp on reveals nearby players and Act as hit so flags"* · *"any skill that does
+  no dmg and can be casted on a player if the PvP is off is (monster only) but if pvp is on it cast on
+  a player and flags."* Built where every area skill inherits it at once (`EnemiesInRadius`), so the
+  AOE warrior class picks it up when `BL-02` lands. The player arm delegates to `CanPvpHit`, so an area
+  cast obeys every rule a single swing does — never your own party, never in or into a safe zone. Two
+  no-damage holes closed with it: the flare now flags (and, with PvP off, sweeps creatures only and
+  says so instead of silently doing nothing), and a single-target hostile skill that lands no damage —
+  a taunt, a cancel, a resisted debuff — flags too, which it never did.
+  🔑 **Read with `87a`: the flag follows INTENT.** What you deliberately do with PvP on costs you the
+  purple name even when it deals nothing; what your gear does back to an attacker on its own costs you
+  nothing. ⚠ Three shape questions on that entry were answered as the shape every other system here
+  already has, and they are marked as mine in the source: party excluded, support skills not routed
+  through it, and only the ACTOR flagged (never the person revealed).
+
+**The four `[~]` changes.**
+
+- **The target frame's first row is no longer covered** (`87d`). *"the text 'mob:..' is hidden ... the
+  1st text is half hidden."* He read it as the title row; the arithmetic says the bottom. The detail
+  line ran 94→114 from the panel top while the first button row, being bottom-anchored, ran 76→104 in
+  a 148-tall panel — the other half of playtest 23's 28px shrink, where the top rows moved up with the
+  deleted name row and the bottom-anchored buttons moved up with the panel floor, into them. Fixed
+  twice over: ONE button row instead of two (five of the seven buttons have been permanently hidden
+  since playtest 23) and 12px more height, so the gap is real rather than a tie.
+- ⚠ **…and he called it the GENERIC window bug, so all 23 windows with a title bar were swept.** He was
+  right twice: the **trade window's** partner-name line bit 6px out of both column headers, because
+  their row constant was a hand-picked 96 instead of being measured off the title bar — it is derived
+  from `chrome` now, so it cannot drift again. The other 21 are clean. (The skills window's right-hand
+  readout does sit inside the title-bar band, but it is drawn over an empty part of the bar and hides
+  nothing — left alone deliberately.)
+- **The chat and combat windows — all four asks** (`87e`).
+  **(a)** The combat window can reach the left edge. `DragMove.Clamp` assumed every window was
+  centre-anchored and none of the movable ones are; for a bottom-RIGHT-pinned window the same numbers
+  allowed a long drag off the right edge and stopped it dead just past the left one. It works in the
+  parent's own coordinates now, so anchor and pivot drop out and both directions get the same 60 units
+  of guaranteed handle.
+  **(b)** Resize is no longer inverted. *"The drag button should move not the top/left."* He was
+  describing a PIVOT: the size grew correctly but a uGUI rect grows away from its pivot, and both
+  windows are pinned by a bottom corner — so height was added upwards and the grip never followed the
+  finger. The position is compensated by the pivot, pinning the TOP-LEFT corner instead.
+  **(c)** The Clear/Reply row is gone and the feed runs to the bottom of the window. Both moved into
+  the title bar beside the padlock, as a **bin** and a **speech bubble**.
+  **(d)** The grip no longer appears and disappears — it stays and DIMS when locked, so the corner it
+  owns is the same corner at all times, and the lock is a **padlock**.
+  🔑 **The three icons are drawn from rectangles, not typed as characters.** The bundled TMP atlas is
+  static and has no 🗑/💬/🔒; TMP draws a missing glyph as the hollow box that has turned up twice
+  before, and adding glyphs needs the Editor, which is not part of this workflow. `UiKit.Icon` composes
+  each one from a handful of Images in normalised coordinates — no font, no sprite asset, scales with
+  the button.
+- **The gear picker** (`87f`): selection chips are 28px instead of 34 (three strips of them sat above
+  the list, and the tier row already wraps to two), and the filtered list gets its own header. Only the
+  armor-with-sets branch had one, so on weapons, jewels and sub-Epic armor the first give-button butted
+  onto the tier chips and read as a fourth row of them.
 
 ## 0.68.0, part two — 2026-08-16 — the admin gear picker, and `G3` documented
 
