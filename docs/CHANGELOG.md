@@ -7,10 +7,77 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.69.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.70.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
+
+## 0.70.0 — 2026-08-16 — `BL-47` step 2: five creatures built like players
+
+The demo he asked for in playtest 24 — *"and later we can do 2~5 mobs so I can test"* — after ruling
+**migrate** on `86b`. **Server-only: no DTO, no hub method, no push name changed, so the protocol stays
+at 21 and the 0.69.0 APK he already has talks to this server unchanged.** No DB reset — mobs are
+runtime-only and nothing persisted moved.
+
+**Where they are.** A new gatekeeper destination, **Proving Grounds**, on the row south of the training
+dummies (the Training Grounds field was extended south to hold it). Five columns; in each one the
+player-built creature stands north and its **curve twin** — an ordinary `MobBaseStats` creature of the
+same level, no passives, holding the same weapon — stands directly south. Nothing is aggressive and
+nothing drops loot: you pick the fight and the only thing that changes hands is exp.
+
+| # | Creature | Lv | Race lean (±5) | Loadout | Passive |
+|---|---|---|---|---|---|
+| 1 | Goblin Raider | 40 | +5 CON / +5 ATK / −5 AGI | t40 Rare 2H sword over t1 Uncommon heavy | **none** |
+| 2 | Goblin Elder Raider | 45 | same | **identical to #1** | **none** |
+| 3 | Cairn Lich | 60 | −5 CON / +5 WIT | t52 Common staff +30 over t1 Epic robe | HP ×3.73, P.Def ×1.02, M.Def ×0.78, M.Atk ×0.97 |
+| 4 | Fallen Seraph | 80 | +5 AGI / −5 CON | t80 Epic 2H sword +16 over t52 Common heavy | HP ×1.46, P.Def ×1.05, M.Def ×0.61, **P.Atk ×2.07** |
+| 5 | Fallen Seraph, Runebearer | 80 | same | **identical to #4** + a held War Rune | same, **no attack passive** |
+
+**What it already answered** (new `BalanceMatrix` section **`G3.8`**, each creature divided by its twin):
+
+- 🔑 **His ±5 band works on everything except attack.** The same authored loadout five levels apart
+  holds defence and HP (P.Def x1.04 → x0.95, HP x1.10 → x1.06) and **loses a quarter of its P.Atk**
+  (x0.87 → x0.64) — the mob attack curve is the steep one. So *"prefixed 100+ mobs and give them +-5
+  lvl ranges"* costs **one number per band, and it is the attack number.** Both goblins are left
+  deliberately bare so the drift can be felt rather than read.
+- 🔑 **A held War Rune replaces an authored attack passive.** Bare, the level-80 build reads **x0.48**
+  of its curve's P.Atk. The authored per-band passive gets it to x1.00; **the rune gets it to x0.97.**
+  One item against a table that drifts with level — his B3, measured.
+- ⚠ **The level-80 attack passive needed ×2.07, not `G3.7`'s ×1.55, and nobody was wrong.** `G3.7`
+  measures against the bare `MobBaseStats` curve; the creature that actually spawns beside it also
+  carries **BL-14's weapon power factor** (a slow 2H weapon buys per-hit damage). `G3.8` measures
+  against the game, and it is the one to trust. Every `MobMod` number in the demo is fitted from it —
+  **re-run `G3.8` after touching a demo template.**
+
+**How it is built, and how little it moves.** `MobType.Build` (a new `MobBuild`) carries the class, the
+±5 lean, the split loadout — weapon and armour on **separate** tiers, which is the whole finding of
+`G3.7` — and any held item. `Entity.ApplyMobBuild` gives the creature its identity and puts the gear ON
+it before the recompute (the equip loop is what turns worn gear into stats, so a piece added afterwards
+does nothing until something else re-runs). `Entity.PlayerBuilt` then swings the **six stat bases**
+plus the weapon P.Atk/M.Atk fold and the two magic level terms onto the player side of
+`RecomputeDerived`.
+
+- **That is all it moves.** It is still a Mob to aggro, drops, targeting, the client's plate, PvP and
+  party. It deliberately does NOT take the player-only branches around it: no armor sets, no
+  learned-passive main-stat loop, no armor-weight masteries, no race+class speed override (so it can
+  still be kited) and no grade penalty (it wears under-grade gear by design, so the gap is 0 anyway).
+- **Rank and `MobMod` still land on top** in `ApplyMobScale` — the design in one line: gear gets you
+  most of the way, the passive carries the remainder. Two things are switched OFF there for a
+  player-built creature because they would pay twice: BL-14's weapon power factor (it holds the real
+  weapon) and the ROLE's stat lean (a robe, a staff and a mage class curve already make it a caster).
+- **The bag is HELD, never looted.** A mob's loot is its drop table and nothing in the death path looks
+  at its inventory — his *"not a dropped one..but just to hold stuff"* needed no work at all, which is
+  what admits the War Rune. Its buff is applied once at spawn and never expires: the player-side rune
+  reconciliation is player-only and clock-driven, and a creature has neither a clock nor a login.
+- **Two boot guards.** `MobCatalog.ValidateBuilds` fails startup if a build names gear that does not
+  exist — a missing id is silent *and flattering*, since the creature just spawns without that slot and
+  a half-naked entity reads as "the player pipeline under-delivers". And `MobType.HandPlaced` fences
+  these nine templates out of `MobCatalog.InBand`, without which a level-40 Goblin Raider would have
+  been rostered into every generated 40-44 camp in the game the moment it was authored.
+
+**One line on the target window.** A player-built creature says so when you inspect it, listing its
+weapon, its armour and anything it holds. It rides the existing passive-lines array, which is why the
+whole feature needs no client build.
 
 ## 0.69.0 — 2026-08-16 — the playtest-24 batch: the flag follows intent
 

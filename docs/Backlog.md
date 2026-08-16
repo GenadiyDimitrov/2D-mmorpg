@@ -421,9 +421,28 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
 
 ## World & mobs
 
-- `BL-47` 🔵 **`G3` — mobs built like players. STEP 1 IS DONE (2026-08-15) and it needs your ruling
-  before step 2.** Your three ordered steps were *"I want it documented and balance matrix tables …
-  and later we can do 2~5 mobs so I can test."* The document is
+- `BL-47` 🔴 **`G3` — mobs built like players. STEPS 1 AND 2 ARE BOTH BUILT. Step 3 is yours: FIGHT THEM.**
+  Your three ordered steps were *"I want it documented and balance matrix tables … and later we can do
+  2~5 mobs so I can test."* Both are done — the document is `design/MobsAsPlayers.md`, and **step 2
+  shipped 2026-08-16 (0.70.0)** as the **Proving Grounds**, a gatekeeper destination south of the
+  training dummies holding five creatures built through the player pipeline, each beside the ordinary
+  creature of its own level. ⚠ **Server-only — the 0.69.0 APK you already have works against it.**
+  - 🔑 **YOUR ±5 BAND WORKS, EXCEPT ON ATTACK.** The same authored loadout five levels apart holds
+    defence and HP (P.Def x1.04 → x0.95, HP x1.10 → x1.06) and **loses a quarter of its P.Atk**
+    (x0.87 → x0.64), because the mob attack curve is the steep one. So *"prefixed 100+ mobs and give
+    them +-5 lvl ranges"* costs **one number per band, and it is the attack number**. Both goblins are
+    left deliberately bare so you can feel the drift rather than read about it.
+  - 🔑 **A HELD WAR RUNE REPLACES AN AUTHORED ATTACK PASSIVE — measured, your B3.** Bare, the level-80
+    build reads **x0.48** of its curve's P.Atk. An authored per-band passive gets it to x1.00; **the
+    rune gets it to x0.97**. One item against a table that drifts with level. If you like how it
+    fights, the whole attack side of this design collapses into something a creature carries.
+  - ⚠ **One number came out past your ×2 and it is nobody's mistake.** `G3.7` said the level-80 attack
+    passive needed ×1.55; the creature needs **×2.07**. `G3.7` measured against the bare `MobBaseStats`
+    curve — but what actually spawns beside it also carries **BL-14's weapon power factor**. `G3.8` is
+    the section that measures against the game, and it is the one to trust.
+  - **Everything below is step 1's record**, kept because it is what the rulings were made on.
+
+  The document is
   **[design/MobsAsPlayers.md](design/MobsAsPlayers.md)**; the `BalanceMatrix` `G3` tables it reads from
   have existed since 2026-08-05. No game code was touched. Three things it found that change the entry:
   - 🔑 **The inflated ATK/CON you objected to are already inert.** `MobStats` still sets them (level 80 →
@@ -477,10 +496,14 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
     "frozen loadout rots to 6% of curve at 85" test stretched one template across 65 levels, which this
     catalogue never does — so a **level→grade function is not mandatory** after all. ⚠ The one place that
     does stretch a roster is **`zone.ForceZoneLevel`** (the 85-90 field), which is the thing he objects to.
-  - **Step 2 is unblocked** and §7 of the doc is rebuilt around races, the `G3.7` split loadout, a held
-    rune and normal rank. Its two decisive comparisons: **one loadout across a ±5 band**, and **a held War
-    Rune instead of an authored attack passive**. §8 **C/D/E remain open** (armor-weight rungs and the robe
-    arm · whether the weapon type carries `matk`/`cast`/`critdmg` · speed as a passive).
+  - ✅ **Step 2 is BUILT** (see the top of this entry) — both decisive comparisons came back answered.
+    §8 **C/D/E remain open** (armor-weight rungs and the robe arm · whether the weapon type carries
+    `matk`/`cast`/`critdmg` · speed as a passive), and none of them blocked the demo.
+  - 🔵 **What is owed AFTER you fight them — "then we do a system number".** The demo says the machinery
+    works; it does not say how many creatures to build with it, and that was always yours to set. Two
+    things to decide with a controller in your hand: whether the ±5 attack drift needs a per-band number
+    or is simply how a band should feel, and whether the rune or the passive is how a creature gets its
+    damage. Everything else is authoring.
 
 - `BL-48` ⏸ **Instances — you are holding.** Design is written (`design/Instances.md`). One
   load-bearing decision is still open: the daily attempt **GLOBAL vs PER-INSTANCE**. It changes the

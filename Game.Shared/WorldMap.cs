@@ -55,6 +55,53 @@ public static class WorldMap
         new(X: 27500, Y: 4000, Radius: 200, MinLevel: 80, MaxLevel: 80,
             MobTypes: new[] { "dummy_physical" }, MaxCount: 1, RespawnSeconds: 5),
 
+        // ===== THE PROVING GROUNDS (BL-47 step 2) — the five creatures built like PLAYERS, each with
+        //       the ordinary creature of its own level standing beside it. His step 2: *"and later we
+        //       can do 2~5 mobs so I can test."*
+        //
+        // Laid out as FIVE COLUMNS on the row south of the dummies, so the comparison is a walk and not
+        // a memory: in every column the PLAYER-BUILT creature is the north one (y=2600) and its CURVE
+        // TWIN — an ordinary MobBaseStats mob of the same level, no passives — is directly south of it
+        // (y=2000). Kill one, turn round, kill the other.
+        //
+        //   col 1  x=22200  Lv 40 · Goblin Raider          — the baseline: gear alone, no stat passive
+        //   col 2  x=23400  Lv 45 · Goblin Elder Raider    — THE SAME BUILD, +5 levels (his ±5 band)
+        //   col 3  x=24600  Lv 60 · Cairn Lich             — the caster, and its x3.3 HP passive
+        //   col 4  x=25800  Lv 80 · Fallen Seraph          — the top band, with a x1.55 attack passive
+        //   col 5  x=27000  Lv 80 · Seraph, Runebearer     — the same, but a HELD WAR RUNE and NO passive
+        //
+        // 1 vs 2 answers "does one loadout cover a ±5 band"; 4 vs 5 answers "can a held rune replace an
+        // authored attack passive". Nothing here is aggressive and nothing drops loot — you pick the
+        // fight and the only thing that changes hands is exp.
+        //
+        // ⚠ These sit inside the TRAINING GROUNDS field polygon, which was extended south to hold them
+        // (Regions.cs). Move a column and that polygon has to follow it, exactly as the striking dummies
+        // taught: a spawner outside every field fails ValidateSpawnersInFields and the server will not boot.
+        new(X: 22200, Y: 2600, Radius: 150, MinLevel: 40, MaxLevel: 40,
+            MobTypes: new[] { "demo_goblin_raider" }, MaxCount: 1, RespawnSeconds: 15),
+        new(X: 22200, Y: 2000, Radius: 150, MinLevel: 40, MaxLevel: 40,
+            MobTypes: new[] { "demo_curve_40" }, MaxCount: 1, RespawnSeconds: 15),
+
+        new(X: 23400, Y: 2600, Radius: 150, MinLevel: 45, MaxLevel: 45,
+            MobTypes: new[] { "demo_goblin_raider_elder" }, MaxCount: 1, RespawnSeconds: 15),
+        new(X: 23400, Y: 2000, Radius: 150, MinLevel: 45, MaxLevel: 45,
+            MobTypes: new[] { "demo_curve_45" }, MaxCount: 1, RespawnSeconds: 15),
+
+        new(X: 24600, Y: 2600, Radius: 150, MinLevel: 60, MaxLevel: 60,
+            MobTypes: new[] { "demo_lich" }, MaxCount: 1, RespawnSeconds: 15),
+        new(X: 24600, Y: 2000, Radius: 150, MinLevel: 60, MaxLevel: 60,
+            MobTypes: new[] { "demo_curve_60" }, MaxCount: 1, RespawnSeconds: 15),
+
+        new(X: 25800, Y: 2600, Radius: 150, MinLevel: 80, MaxLevel: 80,
+            MobTypes: new[] { "demo_seraph" }, MaxCount: 1, RespawnSeconds: 15),
+        new(X: 25800, Y: 2000, Radius: 150, MinLevel: 80, MaxLevel: 80,
+            MobTypes: new[] { "demo_curve_80" }, MaxCount: 1, RespawnSeconds: 15),
+
+        new(X: 27000, Y: 2600, Radius: 150, MinLevel: 80, MaxLevel: 80,
+            MobTypes: new[] { "demo_seraph_rune" }, MaxCount: 1, RespawnSeconds: 15),
+        new(X: 27000, Y: 2000, Radius: 150, MinLevel: 80, MaxLevel: 80,
+            MobTypes: new[] { "demo_curve_80" }, MaxCount: 1, RespawnSeconds: 15),
+
         // ===== Boss placeholders (more bosses/instances later) =====
         // The lone emberwyrm ELITE that used to roam here is GONE: every Frostmere field now generates its
         // own elite camp at its band cap (80 / 84 / 90), placed 1500 out from the field's top camp — so a

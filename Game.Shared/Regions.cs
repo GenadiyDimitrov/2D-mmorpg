@@ -134,9 +134,16 @@ public static class RegionMap
         // 27500 — both outside it, which made ValidateSpawnersInFields throw and the server refuse to
         // boot at all. Extended 1400u east (nothing else is within 5000u of here; the whole quadrant
         // east of the outpost is empty). Move a dummy east again and this edge has to follow it.
+        // ⚠ It was ALSO extended SOUTH, from y=3100 down to y=1600, to hold the BL-47 Proving Grounds:
+        // ten spawners on two rows at y=2600 and y=2000 (WorldMap.cs). Same rule as the east edge above —
+        // move a column and this polygon follows it, or the boot fails on a rogue spawner. Nothing else
+        // lives south of the dummy row; the generated fields are all north and east of here.
         new("field_training", "Training Grounds", RegionKind.Field,
-            new[] { new Vec2(21500, 3500), new Vec2(21900, 3100), new Vec2(27500, 3100), new Vec2(27900, 3500), new Vec2(27900, 4050), new Vec2(27600, 4450), new Vec2(24350, 5900), new Vec2(23650, 5900), new Vec2(21800, 4450), new Vec2(21500, 4050) },
-            new[] { Gate("field_training#0", "Training Grounds", "Immortal dummies at Lv 20 / 40 / 60 / 80, then two that hit back", 22500, 4000) }),
+            new[] { new Vec2(21500, 3500), new Vec2(21500, 1600), new Vec2(27900, 1600), new Vec2(27900, 4050), new Vec2(27600, 4450), new Vec2(24350, 5900), new Vec2(23650, 5900), new Vec2(21800, 4450), new Vec2(21500, 4050) },
+            new[] { Gate("field_training#0", "Training Grounds", "Immortal dummies at Lv 20 / 40 / 60 / 80, then two that hit back", 22500, 4000),
+                    // BL-47 step 2 — its own gate, because it is its own errand: you go there to fight
+                    // five creatures built like players next to the ordinary creature of the same level.
+                    Gate("field_training#1", "Proving Grounds", "Lv 40-80 · creatures built like players, each beside its ordinary twin", 22200, 2300) }),
 
         // Sunken Vale — the valley-treant BOSS field (band 58-60). The boss sits alone in the centre;
         // its two trash spawners are >3500u away on the flanks, so you reach the boss without aggro.

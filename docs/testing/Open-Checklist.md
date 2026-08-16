@@ -6,6 +6,10 @@
 > below is the four rows you marked `[~]`, the eight you never reached, and **§87 — the two bugs and the
 > four changes that pass produced, all six now BUILT in 0.69.0** and carrying test instructions.
 >
+> 🆕 **§88 is the mob demo** (`BL-47` step 2, 0.70.0) — the only section here that is a DESIGN call
+> rather than a fix. ⚠ **Server-only: the 0.69.0 APK you already have works against it**, so it costs
+> you nothing extra to walk over and fight them.
+>
 > ⚠ **Your marks came to me as an uploaded copy, not through the repo.** The working tree was untouched,
 > so if you edit this file in place next pass, say so — otherwise I will look in the wrong place again.
 
@@ -88,6 +92,64 @@ it passed with nothing to say, `~` if it works but wants a change, `!` if it is 
 - **`/give`'s `sellPrice` argument, your `[?]`.** `-1` → *unsellable* · `0`, `-` or omitted → use the
   catalog's price · any positive number → that exact price (`k`/`m`/`b` and `1_000_000` both parse).
   Every argument after the item id follows the same rule: `-` is always *no opinion*.
+
+---
+
+## 88. THE MOB DEMO YOU ASKED FOR — ✅ BUILT (0.70.0), and it is the one thing here that is a DESIGN call
+
+`BL-47` step 2: *"and later we can do 2~5 mobs so I can test."* Five creatures built through the PLAYER
+pipeline, each standing beside the ordinary creature of its own level. ⚠ **Server-only — the 0.69.0 APK
+you already have works against this server**, so this rides along with playtest 25 at no extra install.
+
+**Where:** any gatekeeper → **Proving Grounds** (a second gate on the Training Grounds, on the row
+south of the dummies). Five columns; in each one the **player-built** creature is NORTH and its
+**curve twin** — an ordinary mob of the same level, no passives, same weapon — is directly SOUTH.
+Nothing attacks on sight and nothing drops loot: kill one, turn round, kill the other.
+
+| col | player-built | Lv | its twin |
+|---|---|---|---|
+| 1 | Goblin Raider | 40 | Standard Marker (Lv 40) |
+| 2 | Goblin Elder Raider | 45 | Standard Marker (Lv 45) |
+| 3 | Cairn Lich (caster) | 60 | Standard Marker (Lv 60) |
+| 4 | Fallen Seraph | 80 | Standard Marker (Lv 80) |
+| 5 | Fallen Seraph, Runebearer | 80 | Standard Marker (Lv 80) |
+
+Inspect any of them and the target window now says what it is built from — its weapon, its armour and
+anything it holds.
+
+- `88a` [] - 🔴 **COLUMNS 1 AND 2 — YOUR ±5 BAND.** These two are the SAME authored loadout five levels
+  apart, and both carry **no passive at all**. Measured, defence and HP hold across the band (P.Def
+  x1.04 → x0.95) but **P.Atk falls x0.87 → x0.64** — a quarter of its damage, because the mob attack
+  curve is the steep one. It is left that way on purpose so you can feel it instead of reading it.
+  **Test:** fight column 1's pair, then column 2's. **The question is whether the Elder Raider feels
+  too soft for its level** — if it does, a band needs one attack number and *"prefixed 100+ mobs with
+  +-5 lvl ranges"* costs one more column in the table. If it does not, the band is free. ->
+
+- `88b` [] - 🔴 **COLUMNS 4 AND 5 — THE RUNE vs THE PASSIVE, and this is the one that decides the
+  design.** They are identical creatures. #4 gets its damage from an **authored ×2.07 attack passive**;
+  #5 has **no attack passive at all** and instead **holds a War Rune**. On the numbers they land in the
+  same place (x1.00 vs x0.97). **Test:** fight both and tell me if they feel the same. If they do,
+  **the whole attack side of this design becomes an item a creature carries** — no per-band table, no
+  drift with level, and a creature that visibly holds the thing that makes it dangerous. ⚠ The rune is
+  **held, never dropped** — you cannot loot it, which is your own *"not a dropped one..but just to
+  hold stuff"*. ->
+
+- `88c` [] - **COLUMN 3 — DOES A ×3.7 HP LICH READ AS A CASTER OR AS A SPONGE?** A caster creature is
+  the one archetype gear cannot reach: its HP needs a passive far past your ×2, which your own *"and hp
+  boost"* anticipated. On the numbers it lands exactly on the curve. **Test:** kill the Cairn Lich and
+  then its twin, and say whether the fight lengths feel alike. This is a FEEL question — the arithmetic
+  already agrees. ->
+
+- `88d` [] - **NOTHING ELSE IN THE WORLD CHANGED, and that is worth one look.** These nine templates
+  are fenced out of the generated rosters, so no ordinary field should have gained a Goblin Raider or a
+  "Standard Marker". **Test:** hunt anywhere at 40-45 or 76-85 for a few minutes and confirm you meet
+  only the creatures you always met. If one of these shows up in a real field, say so — that is the
+  fence leaking, and it is one line. ->
+
+- 🔵 **WHAT I OWE YOU AFTER THIS: "then we do a system number."** The demo says the machinery works; it
+  does not say how many creatures to build with it, and that number was always yours. Two decisions come
+  out of the fights above — whether a band needs its own attack number (`88a`), and whether a creature's
+  damage comes from a rune or a passive (`88b`). Everything after that is authoring.
 
 ---
 

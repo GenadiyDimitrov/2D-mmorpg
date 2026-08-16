@@ -1867,6 +1867,46 @@ Console.WriteLine($"  worst single miss after the best split loadout: {g37WorstM
 Console.WriteLine($"  the biggest ATTACK passive still needed anywhere: x{g37WorstAtkPassive:0.00}.");
 Console.WriteLine();
 
+// 8. THE DEMO ITSELF (BL-47 step 2, 2026-08-16). Everything above is a SEARCH — it asks what a
+//    loadout could do. This asks what the five creatures actually authored in MobCatalog DO, spawned
+//    the way the server spawns them, against the ordinary creature of the same level standing next to
+//    them in the Proving Grounds.
+//
+//    🔑 It builds them through Entity.ApplyMobBuild — the SAME method GameLoopService.BuildMob calls —
+//    rather than reproducing the construction here. A tool that rebuilds a creature by hand ends up
+//    measuring one the server does not spawn, which is how a fitted number goes stale without anyone
+//    touching it.
+Console.WriteLine("=== G3.8: THE DEMO — the five authored creatures vs their curve twins ===");
+Console.WriteLine("     (x1.00 = the player-built creature lands exactly on today's mob curve)");
+Console.WriteLine($"{"creature",-26} {"lvl",3} {"HP",10} {"P.Atk",8} {"P.Def",8} {"M.Def",8} {"M.Atk",8}");
+foreach (var (demoId, twinId) in new[]
+         {
+             ("demo_goblin_raider",       "demo_curve_40"),
+             ("demo_goblin_raider_elder", "demo_curve_45"),
+             ("demo_lich",                "demo_curve_60"),
+             ("demo_seraph",              "demo_curve_80"),
+             ("demo_seraph_rune",         "demo_curve_80"),
+         })
+{
+    var d = SpawnTemplate(demoId);
+    var t = SpawnTemplate(twinId);
+    var type = MobCatalog.Get(demoId);
+    Console.WriteLine($"{type.Name,-26} {type.Level,3} {d.MaxHp,10:N0} {(int)d.EffectiveAttack,8} "
+        + $"{(int)d.EffectiveDefence,8} {(int)d.EffectiveMagicDefence,8} {(int)d.EffectiveMagicAttack,8}");
+    Console.WriteLine($"{"  vs " + MobCatalog.Get(twinId).Name,-26} {"",3} "
+        + $"{Ratio(d.MaxHp, t.MaxHp),10} {Ratio(d.EffectiveAttack, t.EffectiveAttack),8} "
+        + $"{Ratio(d.EffectiveDefence, t.EffectiveDefence),8} {Ratio(d.EffectiveMagicDefence, t.EffectiveMagicDefence),8} "
+        + $"{Ratio(d.EffectiveMagicAttack, t.EffectiveMagicAttack),8}");
+}
+Console.WriteLine();
+Console.WriteLine("  #1 vs #2 (Raider 40 vs 45) is the +-5 BAND question: the same authored loadout, five");
+Console.WriteLine("     levels apart. If both rows sit near x1.00, one loadout covers a band and his");
+Console.WriteLine("     \"prefixed 100+ mobs with +-5 lvl ranges\" needs no level->grade function at all.");
+Console.WriteLine("  #4 vs #5 (Seraph vs Runebearer) is the RUNE question: identical creatures except one");
+Console.WriteLine("     carries a x1.55 authored attack passive and the other a held War Rune (+100% P.Atk)");
+Console.WriteLine("     and no passive. The P.Atk gap between those two rows is the whole answer.");
+Console.WriteLine();
+
 Console.WriteLine("=== G3: VERDICT INPUTS (read the tables, not this line) ===");
 Console.WriteLine(g37Fits == g37Rows
     ? "  * GEAR PLUS A x2 PASSIVE CLOSES IT (G3.7) — his loadout shape (over-enchanted weapon over"
@@ -3074,6 +3114,56 @@ static Entity BuildRogue(int level)
 }
 
 // ----- G3 helpers -----------------------------------------------------------------------------
+
+/// <summary>One creature, spawned from its MobCatalog template the way GameLoopService.BuildMob does
+/// it — natural level, the template's own weapon resolution, its MobMod passives via MobTypeId, and,
+/// for a player-built one, <see cref="Entity.ApplyMobBuild"/>, which is literally the method the server
+/// calls. Normal rank throughout (his B4: *"a elite and bosses will scale with passives out of them"*),
+/// so this measures the base creature and nothing else.
+///
+/// <para>⚠ The HELD RUNE is applied here as a permanent buff, exactly as BuildMob does. The player-side
+/// reconciliation loop that normally keeps a rune buff up is player-only and clock-driven; a creature
+/// has neither a clock nor a login, so for a mob the rune is not a consumable — it is part of what the
+/// creature IS.</para></summary>
+static Entity SpawnTemplate(string mobId)
+{
+    var type = MobCatalog.Get(mobId);
+    int level = type.Level;
+    var s = StatCalculator.MobStats(level);
+    var e = new Entity
+    {
+        Name = type.Name, Kind = EntityKind.Mob, Level = level, MobTypeId = mobId,
+        InnateWeaponType =
+            type.Role == MobRole.Archer ? WeaponType.Bow
+            : type.Mod is MobMod wm && wm.Weapon != WeaponType.None ? wm.Weapon
+            : MobCatalog.DefaultWeaponFor(type.Category),
+    };
+    e.Con = s.Con; e.AtkStat = s.Atk; e.Wit = s.Wit; e.Agi = s.Agi; e.Spt = s.Spt;
+
+    if (type.Build is MobBuild build) e.ApplyMobBuild(build);
+
+    if (type.Role == MobRole.Mage)
+    {
+        e.CasterMob = true;
+        int spellLevel = SkillCatalog.MobSpellLevel(level);
+        e.LearnedSkills[SkillCatalog.MobNukeSkill] = spellLevel;
+        e.LearnedSkills[SkillCatalog.MobBoltSkill] = spellLevel;
+    }
+
+    e.RecomputeDerived();
+
+    if (type.Build is MobBuild rb && rb.Held.Length > 0
+        && ItemCatalog.Get(rb.Held) is { RuneBuffSkillId: { Length: > 0 } runeBuffId }
+        && SkillCatalog.Get(runeBuffId) is SkillDef runeSkill)
+    {
+        e.Buffs.Add(new Game.Server.Simulation.BuffInstance
+        {
+            Effect = runeSkill.Effect, Magnitudes = runeSkill.Magnitudes,
+            TicksRemaining = int.MaxValue, Name = runeSkill.Name, Key = runeSkill.BuffKey,
+        });
+    }
+    return e;
+}
 
 /// <summary>The authored gear-grade ladder, in item-level terms (F, E, D, C, B, A, S).</summary>
 static int[] G3GearLadder() => new[] { ItemCatalog.FGradeLevel, 20, 40, 52, 61, 76, ItemCatalog.SGradeLevel };

@@ -102,6 +102,85 @@ public readonly record struct MobMod(
         coef <= 0f ? "Vulnerable" : coef > 1f ? $"Resist {(coef - 1f) * 100:0}%" : $"Weak {(1f - coef) * 100:0}%";
 }
 
+/// <summary>BL-47 step 2 — a creature whose stats come from the PLAYER pipeline instead of the
+/// authored mob curve: real base stats, a real class HP/MP curve, real gear it actually wears.
+///
+/// <para>His ruling (playtest 24, `86b`): *"try to recreate mobs with different races (main stats)
+/// with player formulas ... so same weapon type and just enchanted or a mob passives that boost PAtk
+/// and or other stats."* The shape below is the one `BalanceMatrix` `G3.7` measured and he named
+/// first — the WEAPON and the ARMOUR are dressed **independently**, because the one loadout that
+/// reconciles a player-shaped entity with the mob curve is an over-enchanted weapon over under-grade
+/// armour (*"S grade Mace enchanted to +60 ... and B grade leather"*). Moving every slot together —
+/// what the earlier `G3.2` sweep did — cannot express that, and wrongly concluded no gear closes it.</para>
+///
+/// <para>RACE is a flat ±5 lean on the stat block and nothing else (his `B1`: *"ork have higher
+/// con/atk less agi ..while elf have higher agi less atk/con ... No lvl curve. Can go +-5 same as the
+/// swap passives"*). ±5 on a ~40-point stat is ±12.5%, so race is FLAVOUR — what actually separates
+/// a lich from a goblin is its kit, its gear and its <see cref="MobMod"/> passives, which still ride
+/// on top of everything here exactly as they do for an ordinary creature.</para>
+///
+/// <para>A held item (his `B3`: *"if mob is a player it can have inventory (not a dropped one..but
+/// just to hold stuff)"*) is carried and NEVER looted — a mob's loot is its drop table and nothing
+/// reads its bag. That is what admits the War Rune, which is worth ×2.00 P.Atk against the ×1.55-1.60
+/// an authored attack passive would otherwise have to supply.</para></summary>
+public readonly record struct MobBuild(
+    BaseClass Class,
+    int SecondClass,          // a real ClassCatalog id → an Archetype → the HP/MP class-level curve
+    string Body,              // "heavy" / "light" / "robe"
+    string Weapon,            // "sword1h" / "sword2h" / "staff" / …
+    int ArmorTier, ItemRarity ArmorQuality, int ArmorEnchant,
+    int WeaponTier, ItemRarity WeaponQuality, int WeaponEnchant,
+    // The race lean, ±5 (his B1). Added to the StatBase block below; 0 = no lean on that stat.
+    int Con = 0, int Atk = 0, int Wit = 0, int Agi = 0, int Spt = 0,
+    // Which player stat block the lean is applied TO. Human is the neutral one, and keeping every
+    // demo creature on it is what makes the ±5 the ONLY difference between them.
+    Race StatBase = Race.Human,
+    string Held = "",         // a held, never-looted item (ItemCatalog.WarRune) — "" = none
+    bool Jewels = true)       // a creature need not wear jewels; dropping them is the M.Def lever
+{
+    /// <summary>Item-id quality suffix. The AUTHORED piece is the Mythic one (bare id); every lesser
+    /// quality is a generated copy suffixed with its rarity name — see ItemCatalog's DropTiers. This
+    /// is why an admin gear picker that drilled down by name could only ever hand out Mythic.</summary>
+    public static string QualitySuffix(ItemRarity q) =>
+        q == ItemRarity.Mythic ? "" : "_" + q.ToString().ToLowerInvariant();
+
+    /// <summary>Everything this creature carries, as (item id, enchant) pairs. Accessories and jewels
+    /// follow the ARMOUR — only the weapon is dressed on its own axis.</summary>
+    public IEnumerable<(string DefId, int Enchant)> Pieces()
+    {
+        string aq = QualitySuffix(ArmorQuality), wq = QualitySuffix(WeaponQuality);
+        yield return ($"{Weapon}_t{WeaponTier}{wq}", WeaponEnchant);
+        yield return ($"{Body}_t{ArmorTier}{aq}", ArmorEnchant);
+        yield return ($"helm_t{ArmorTier}{aq}", ArmorEnchant);
+        yield return ($"gloves_t{ArmorTier}{aq}", ArmorEnchant);
+        yield return ($"boots_t{ArmorTier}{aq}", ArmorEnchant);
+        if (Jewels)
+        {
+            yield return ($"necklace_t{ArmorTier}{aq}", ArmorEnchant);
+            yield return ($"ring_t{ArmorTier}{aq}", ArmorEnchant);
+            yield return ($"ring_t{ArmorTier}{aq}", ArmorEnchant);
+            yield return ($"earring_t{ArmorTier}{aq}", ArmorEnchant);
+            yield return ($"earring_t{ArmorTier}{aq}", ArmorEnchant);
+        }
+        if (Held.Length > 0) yield return (Held, 0);
+    }
+
+    /// <summary>One line for the target-inspect window, so the thing you are fighting says what it is.
+    /// It rides <see cref="MobMod.Describe"/>'s existing passive list — no protocol change, no client
+    /// build: the creature simply has one more sentence about itself.</summary>
+    public IEnumerable<string> Describe()
+    {
+        // Three short lines rather than one long one: this list is drawn in a phone-width panel, and a
+        // sentence that wraps mid-number is harder to read than three that do not wrap at all.
+        static string Ench(int e) => e > 0 ? $" +{e}" : "";
+        yield return "Built like a player";
+        yield return $"  Weapon: t{WeaponTier} {WeaponQuality} {Weapon}{Ench(WeaponEnchant)}";
+        yield return $"  Armour: t{ArmorTier} {ArmorQuality} {Body}{Ench(ArmorEnchant)}"
+                   + (Jewels ? "" : ", no jewels");
+        if (Held.Length > 0) yield return $"  Holds: {ItemCatalog.Get(Held)?.Name ?? Held} (never dropped)";
+    }
+}
+
 /// <summary>Creature family — flavor today, a hook for faction/damage-type rules later
 /// (e.g. holy vs Undead, bane potions vs Insect). Maps the CSV "Type" column.</summary>
 public enum MobCategory
@@ -146,7 +225,16 @@ public record MobType(
     // aggro range. That single rule is what makes a LURE the intended way to pull one member out of
     // a camp — his picture is a rogue crossing an elite field, taunting the one mob the party wants
     // and walking it back, with the rest of the settlement never learning it happened.
-    string Clan = "");
+    string Clan = "",
+    // BL-47 step 2. Set this and the creature's stats come from the PLAYER pipeline — base stats, a
+    // class HP/MP curve and gear it actually wears — instead of MobBaseStats' authored curve. Null
+    // (every template but the demo five) = today's mob, unchanged. See MobBuild.
+    MobBuild? Build = null,
+    // HAND-PLACED: this template is placed by an authored spawner and must never be rostered into a
+    // generated camp by its level band. See MobCatalog.InBand — without it a level-40 demo creature
+    // would immediately appear in every generated 40-44 camp in the game, which is the one thing the
+    // BL-47 experiment promises not to do.
+    bool HandPlaced = false);
 
 /// <summary>
 /// THE place to manage mobs. Each entry is a creature template with its own drop
@@ -177,6 +265,46 @@ public static class MobCatalog
         new(id, name, run * 0.55f, run, Aggressive: aggressive,
             Drops: StandardDrops(level, cat), Mod: mod, Level: level, Category: cat, Role: role,
             Clan: clan);
+
+    // ----- BL-47 step 2 authoring helpers. See the demo block at the bottom of Build(). -----
+
+    /// <summary>A player-built demo creature. Never aggressive (you pick the fight, one at a time, the
+    /// way you would with a dummy) and no drops (an experiment changes no economy). Its Title says which
+    /// half of the experiment it is, in the same place every plate already draws one.</summary>
+    private static MobType Demo(string id, string name, int level, MobCategory cat, float run,
+        MobBuild build, MobMod mod, MobRole role = MobRole.Melee) =>
+        new(id, name, run * 0.55f, run, Aggressive: false, Drops: null, Mod: mod, Level: level,
+            Category: cat, Role: role, Title: "Player-built", Build: build, HandPlaced: true);
+
+    /// <summary>The CURVE TWIN of a demo creature: an ordinary MobBaseStats mob at the same level with
+    /// no passive, so a column of the Proving Grounds is one level built the two ways. Also never
+    /// aggressive and dropless, for the same reasons.</summary>
+    private static MobType Curve(string id, string name, int level, WeaponType weapon,
+        MobRole role = MobRole.Melee) =>
+        new(id, $"{name} (Lv {level})", 132f * 0.55f, 132f, Aggressive: false, Drops: null,
+            Mod: new MobMod(Weapon: weapon, Name: "Today's mob curve, no passives"),
+            Level: level, Category: MobCategory.Humanoid, Role: role, Title: "Curve", HandPlaced: true);
+
+    /// <summary>A player-built WARRIOR (Champion, id 14): heavy body, two-handed sword — the archetype
+    /// every `G3` table is measured on. The armour and the weapon take SEPARATE tiers on purpose; that
+    /// split is the whole finding of G3.7 and collapsing them back into one is what G3.2 got wrong.</summary>
+    private static MobBuild Warrior(int armorTier, ItemRarity armorQ, int armorEnch,
+        int weaponTier, ItemRarity weaponQ, int weaponEnch,
+        int con = 0, int atk = 0, int wit = 0, int agi = 0, int spt = 0, string held = "") =>
+        new(BaseClass.Fighter, 14, "heavy", "sword2h",
+            armorTier, armorQ, armorEnch, weaponTier, weaponQ, weaponEnch,
+            Con: con, Atk: atk, Wit: wit, Agi: agi, Spt: spt, Held: held);
+
+    /// <summary>A player-built NUKER (Sorcerer, id 18): robe and staff. Its M.Atk, cast speed and magic
+    /// crit all come from the same places a player's do — which is why the Mage ROLE's stat lean is
+    /// skipped for a player-built creature (see Entity.ApplyMobScale); it would pay for the caster
+    /// shape twice.</summary>
+    private static MobBuild Nuker(int armorTier, ItemRarity armorQ, int armorEnch,
+        int weaponTier, ItemRarity weaponQ, int weaponEnch,
+        int con = 0, int atk = 0, int wit = 0, int agi = 0, int spt = 0, string held = "") =>
+        new(BaseClass.Mage, 18, "robe", "staff",
+            armorTier, armorQ, armorEnch, weaponTier, weaponQ, weaponEnch,
+            Con: con, Atk: atk, Wit: wit, Agi: agi, Spt: spt, Held: held);
 
     // ===================================================================================
     //  SOCIAL CLANS (BL-70). Which creatures answer each other's cry for help.
@@ -908,6 +1036,103 @@ public static class MobCatalog
                 Dummy: true, Strikes: DummyAttack.Magic, Title: "Magic"),
             new MobType("dummy_physical", "Striking Training Dummy", 0f, 0f,
                 Dummy: true, Strikes: DummyAttack.Physical, Title: "Physical"),
+
+            // ===================================================================================
+            //  BL-47 STEP 2 — THE FIVE CREATURES BUILT LIKE PLAYERS, and the four ordinary ones to
+            //  fight them beside. His words: *"and later we can do 2~5 mobs so I can test"*, and
+            //  *"make a demo then we do a system number"* — so these exist to be FOUGHT, not to be
+            //  the roster. They are hand-placed in the Proving Grounds and fenced out of `InBand`,
+            //  so nothing else in the world changes.
+            //
+            //  ⚠ THE RACES ARE PLACEHOLDERS. Goblin / Lich / Angel are three names to hang a ±5 lean
+            //  on, per his B1 (*"ork have higher con/atk less agi ..while elf have higher agi less
+            //  atk/con ... No lvl curve. Can go +-5"*). They are not a proposed bestiary.
+            //
+            //  🔑 TWO COMPARISONS DECIDE THE SYSTEM, and the row is laid out so each is one step:
+            //    • Raider 40 vs Raider 45 — the SAME authored loadout across the ±5 band a template
+            //      can spawn in. If one loadout covers the band, no level→grade function is ever
+            //      needed, and his "prefixed 100+ mobs with +-5 lvl ranges" costs one number per mob.
+            //    • Seraph vs Seraph (Rune) — an authored ×1.55 attack passive against a HELD War Rune
+            //      and no passive at all. If the rune stands in, the whole attack side of this design
+            //      collapses into an item a creature carries.
+            //
+            //  The loadouts are `BalanceMatrix` G3.7's own answers, not hand-picked: the optimiser
+            //  chose lowest-tier armour under a weapon at or near level tier with enchant on top —
+            //  which is his "S grade Mace enchanted to +60 and B grade leather", found by search.
+            //  No drops: an experiment pays exp for the fight and changes no economy.
+            //
+            //  ⚠ THE MobMod MULTIPLIERS ARE MEASURED, NOT COPIED FROM G3.7. They started as G3.7's
+            //  "passive still needed" column and were then corrected against `G3.8`, which spawns the
+            //  creature and divides it by the twin standing next to it. They differ, and the reason
+            //  matters: G3.7 measures against the BARE `MobBaseStats` curve, while a real creature of
+            //  the same level ALSO carries BL-14's weapon power factor (a slow 2H weapon buys per-hit
+            //  damage). So the attack passive the Seraph actually needs is **×2.07**, not G3.7's
+            //  ×1.55 — a whisker past the ×2 he proposed, and past it for a reason that is nobody's
+            //  mistake. Re-run `G3.8` after any change here; the numbers are fitted, not derived.
+            // ===================================================================================
+
+            // #1 — the BASELINE. At 40 the split loadout alone lands x1.04 / x0.99 / x1.02, so this
+            //      creature is deliberately given NO stat passive. If it fights like a level-40 mob,
+            //      gear alone reproduced the curve.
+            Demo("demo_goblin_raider", "Goblin Raider", 40, MobCategory.Humanoid, 132f,
+                Warrior(armorTier: 1, armorQ: ItemRarity.Uncommon, armorEnch: 0,
+                        weaponTier: 40, weaponQ: ItemRarity.Rare, weaponEnch: 0,
+                        con: +5, atk: +5, agi: -5),
+                new MobMod(Name: "Goblin blood (CON +5, ATK +5, AGI -5)")),
+
+            // #2 — the ±5 BAND. Byte-identical build to #1, five levels up, and deliberately left just
+            //      as bare, because what it reads IS the answer. Measured (G3.8): defence and HP hold
+            //      (P.Def x1.04 -> x0.95, HP x1.10 -> x1.06) but **P.Atk falls x0.87 -> x0.64 in five
+            //      levels** — the mob attack curve is the steep one. So one loadout covers a ±5 band on
+            //      everything except how hard the creature hits, and that is the number a per-band
+            //      passive (or one more enchant rung) would have to carry. Do NOT tune this row flat:
+            //      it exists to show the drift, and hiding it would answer his question with a guess.
+            Demo("demo_goblin_raider_elder", "Goblin Elder Raider", 45, MobCategory.Humanoid, 132f,
+                Warrior(armorTier: 1, armorQ: ItemRarity.Uncommon, armorEnch: 0,
+                        weaponTier: 40, weaponQ: ItemRarity.Rare, weaponEnch: 0,
+                        con: +5, atk: +5, agi: -5),
+                new MobMod(Name: "Goblin blood (CON +5, ATK +5, AGI -5)")),
+
+            // #3 — THE ONE ARCHETYPE THAT MISSES HIS ×2. A caster creature's HP is the single stat
+            //      gear cannot reach: G3.6 reads x2.01 at 20 rising to x3.48 at 80, and x3.32 at 60.
+            //      His own *"and hp boost"* anticipated it. The question this one asks is not whether
+            //      the number works — it does, arithmetically — but whether a x3.3 HP passive READS as
+            //      a fair caster or as a sponge.
+            Demo("demo_lich", "Cairn Lich", 60, MobCategory.Undead, 120f,
+                Nuker(armorTier: 1, armorQ: ItemRarity.Epic, armorEnch: 0,
+                      weaponTier: 52, weaponQ: ItemRarity.Common, weaponEnch: 30,
+                      con: -5, wit: +5),
+                new MobMod(Hp: 3.73f, PDef: 1.02f, MDef: 0.78f, MAtk: 0.97f,
+                           Name: "Deathward (CON -5, WIT +5)"),
+                MobRole.Mage),
+
+            // #4 — THE TOP BAND, where gear alone still leaves the attack passive real work: x1.55.
+            Demo("demo_seraph", "Fallen Seraph", 80, MobCategory.Angel, 140f,
+                Warrior(armorTier: 52, armorQ: ItemRarity.Common, armorEnch: 0,
+                        weaponTier: 80, weaponQ: ItemRarity.Epic, weaponEnch: 16,
+                        agi: +5, con: -5),
+                new MobMod(Hp: 1.46f, PDef: 1.05f, MDef: 0.61f, PAtk: 2.07f,
+                           Name: "Seraphic wrath (AGI +5, CON -5)")),
+
+            // #5 — HIS B3 ANSWER, MEASURED, AND IT IS A YES. Identical to #4 except the attack passive
+            //      is GONE and the creature holds a War Rune instead. Bare, this build reads x0.48 of
+            //      its curve's P.Atk; the rune's +100% takes it to **x0.97** — the same place #4 gets to
+            //      with an authored, per-band, per-creature ×2.07. One item, no table, no drift.
+            Demo("demo_seraph_rune", "Fallen Seraph, Runebearer", 80, MobCategory.Angel, 140f,
+                Warrior(armorTier: 52, armorQ: ItemRarity.Common, armorEnch: 0,
+                        weaponTier: 80, weaponQ: ItemRarity.Epic, weaponEnch: 16,
+                        agi: +5, con: -5, held: ItemCatalog.WarRune),
+                new MobMod(Hp: 1.46f, PDef: 1.05f, MDef: 0.61f,
+                           Name: "Seraphic wrath (AGI +5, CON -5)")),
+
+            // The CURVE TWINS — ordinary creatures off MobBaseStats at the same levels, carrying no
+            // passive at all, so each column of the Proving Grounds is "the same level, built the two
+            // ways". They wield what the player-built one wields (BL-14: a mob's weapon decides its
+            // per-hit power and rate) — otherwise the comparison silently includes a weapon swap.
+            Curve("demo_curve_40", "Standard Marker", 40, WeaponType.TwoHandedSword),
+            Curve("demo_curve_45", "Standard Marker", 45, WeaponType.TwoHandedSword),
+            Curve("demo_curve_60", "Standard Marker", 60, WeaponType.None, MobRole.Mage),
+            Curve("demo_curve_80", "Standard Marker", 80, WeaponType.TwoHandedSword),
         };
         var dict = new Dictionary<string, MobType>(StringComparer.OrdinalIgnoreCase);
         foreach (var m in list)
@@ -936,7 +1161,33 @@ public static class MobCatalog
     /// roster could — and did — put a level-12 Werewolf in the level 1-12 starter camp. Choosing the
     /// roster BY level makes that impossible by construction rather than by vigilance.
     ///
-    /// Dummies are excluded: the training dummies are placed by hand at fixed levels.</summary>
+    /// Dummies are excluded: the training dummies are placed by hand at fixed levels.
+    ///
+    /// ⚠ So is everything else HAND-PLACED, which today means the BL-47 Proving Grounds — the five
+    /// player-built creatures and their four curve twins. Same reason: the demo's whole promise is that
+    /// *nothing else in the world changes*, and without this clause a level-40 Goblin Raider would
+    /// immediately be rostered into every generated 40-44 camp in the game. **Clear `HandPlaced` on a
+    /// creature when it is ready to join the roster** — that is the switch, and it is per-template.</summary>
     public static MobType[] InBand(int min, int max) =>
-        Templates.Where(m => !m.Dummy && m.Level >= min && m.Level <= max).ToArray();
+        Templates.Where(m => !m.Dummy && !m.HandPlaced && m.Level >= min && m.Level <= max).ToArray();
+
+    /// <summary>Boot guard: every piece a <see cref="MobBuild"/> names must actually exist in the item
+    /// catalogue. A missing id is silent and flattering — the creature simply spawns without that slot,
+    /// and a naked entity reads as "the player pipeline under-delivers" when the truth is a typo. Not
+    /// every rung exists (the S grade is Epic-and-up), so this is a real hazard, not a theoretical one.
+    /// Same spirit as the skill-id and abbreviation guards: fail the boot, name the offenders.</summary>
+    public static void ValidateBuilds()
+    {
+        var bad = new List<string>();
+        foreach (var m in Templates)
+        {
+            if (m.Build is not MobBuild b) continue;
+            foreach (var (defId, _) in b.Pieces())
+                if (ItemCatalog.Get(defId) is null)
+                    bad.Add($"{m.Id} (Lv {m.Level}): no such item '{defId}'");
+        }
+        if (bad.Count > 0)
+            throw new InvalidOperationException(
+                "Player-built creatures naming gear that does not exist:\n  " + string.Join("\n  ", bad));
+    }
 }

@@ -1557,6 +1557,20 @@ public class Entity
     /// <summary>Caster mob (Mage role): no basic attack — casts the mob spells gated on MP;
     /// out of MP it stands helpless. Set at spawn from MobType.Role.</summary>
     public bool CasterMob { get; set; }
+
+    /// <summary>BL-47 step 2 — this creature's SIX stat bases come from the player formulas (core stats
+    /// × the class level curve × the gear it wears) instead of MobBaseStats' authored curve. Set at
+    /// spawn from <see cref="MobType.Build"/>; false for every ordinary mob, which is unchanged.
+    ///
+    /// <para>⚠ It moves the STAT DERIVATION and nothing else. This is still a Mob to the whole rest of
+    /// the game — aggro, drops, targeting, the client's plate, PvP, party — and it deliberately does NOT
+    /// take the player-only branches around it: no armor SETS (a set bonus is player identity and would
+    /// arrive as hidden stats), no learned-passive main-stat loop, no armor-weight masteries, no
+    /// race+class speed override (a creature's speed is its template's, so it can still be kited), and
+    /// no grade penalty (it wears UNDER-grade gear by design, so the gap is 0 either way). The rank and
+    /// <see cref="MobMod"/> multipliers still land on top in ApplyMobScale — that is the whole design:
+    /// gear gets you most of the way and the passive carries the remainder.</para></summary>
+    public bool PlayerBuilt { get; set; }
     public MobRank Rank { get; set; }
     public bool Aggressive { get; set; }
 
@@ -1617,6 +1631,66 @@ public class Entity
         return null;
     }
 
+    /// <summary>BL-47 — the stat block a player-built creature spawns with: a real player base block,
+    /// plus his ±5 race lean.
+    ///
+    /// <para>The lean is a FLAT offset with no level curve, which is his `B1` ruling verbatim
+    /// (*"ork have higher con/atk less agi ..while elf have higher agi less atk/con ... No lvl curve.
+    /// Can go +-5 same as the swap passives"*). ⚠ Worth being clear-eyed about what that buys: ±5 on a
+    /// ~40-point stat is ±12.5%, against reconciliation multipliers of ×1.5-2.0. Race is FLAVOUR here —
+    /// what separates a lich from a goblin is its class curve, its gear and its passives, and the lean
+    /// is the seasoning on top. Keeping every demo creature on the same <c>StatBase</c> is what makes
+    /// the lean the only thing that differs between two of them.</para></summary>
+    public static StatCalculator.BaseStats PlayerBuiltStats(MobBuild b)
+    {
+        var s = StatCalculator.GetBaseStats(b.StatBase, b.Class);
+        return new StatCalculator.BaseStats(
+            Con: Math.Max(1, s.Con + b.Con),
+            Atk: Math.Max(1, s.Atk + b.Atk),
+            Wit: Math.Max(1, s.Wit + b.Wit),
+            Agi: Math.Max(1, s.Agi + b.Agi),
+            Spt: Math.Max(1, s.Spt + b.Spt));
+    }
+
+    /// <summary>BL-47 — give this creature its player identity and put its gear ON it. Call BEFORE the
+    /// recompute: the equip loop inside <see cref="RecomputeDerived"/> is what turns worn gear into
+    /// stats, so a piece added afterwards sits in the bag doing nothing until the next recompute
+    /// happens to run.
+    ///
+    /// <para>🔑 The bag is HELD, never looted. A mob's loot is its DROP TABLE and nothing in the death
+    /// path so much as looks at its inventory — which is the shape he asked for (*"not a dropped
+    /// one..but just to hold stuff"*) and is why a War Rune can be handed to a creature at all.</para>
+    ///
+    /// <para>Shared with <c>tools/BalanceMatrix</c> so the measured creature and the spawned one are
+    /// built by the same code. A tool that reproduces a construction by hand eventually measures a
+    /// creature the server does not spawn.</para></summary>
+    public void ApplyMobBuild(MobBuild build)
+    {
+        PlayerBuilt = true;
+        Race = build.StatBase;
+        BaseClass = build.Class;
+        // The 2nd class is what gives the creature an Archetype and therefore an HP/MP class-level
+        // curve — without it a player-built entity falls back to the classless curve and every HP
+        // number is wrong. Below 20 there is no 2nd class to have, exactly as for a player.
+        if (Level >= 20) SecondClass = build.SecondClass;
+
+        var s = PlayerBuiltStats(build);
+        Con = s.Con; AtkStat = s.Atk; Wit = s.Wit; Agi = s.Agi; Spt = s.Spt;
+
+        foreach (var (defId, ench) in build.Pieces())
+        {
+            if (ItemCatalog.Get(defId) is not ItemDef piece) continue;   // ValidateBuilds fails the boot on a typo
+            Inventory.Add(new InventoryItem
+            {
+                DefId = defId,
+                // A rune is HELD, not worn — the rule for players too, and equipping it would do
+                // nothing anyway: a rune's power is the buff it keeps up, not a stat line on the item.
+                Equipped = piece.Slot != EquipSlot.Rune,
+                Enchant = ench
+            });
+        }
+    }
+
     /// <summary>Recomputes everything derived from core stats, level and
     /// equipped items. Call on creation, level-up, equip changes and class
     /// change.</summary>
@@ -1656,12 +1730,16 @@ public class Entity
         // BASE curve (docs/data/mobs/mob_base_stats.csv) — the "level modifier" term of the mob
         // formula. CON/passives (MobMod, later masteries) and rank multipliers layer on top
         // in SpawnOneInZone. See MobBaseStats.
-        MaxHp = Kind == EntityKind.Player
+        //
+        // BL-47 step 2: a PLAYER-BUILT creature takes the player side of all six of these — that is
+        // what "built like a player" means and it is the only thing PlayerBuilt changes. See the field.
+        bool playerStats = Kind == EntityKind.Player || PlayerBuilt;
+        MaxHp = playerStats
             ? StatCalculator.MaxHp(Con + BonusCon, Level,
                 StatCalculator.HpClassLevelModifier(BaseClass, Archetype),
                 StatCalculator.Level1BaseHp(Race, BaseClass))
             : MobBaseStats.Hp(Level);
-        MaxMp = Kind == EntityKind.Player
+        MaxMp = playerStats
             ? StatCalculator.MaxMp(EffectiveSpt, Level,
                 StatCalculator.MpClassLevelModifier(BaseClass, Archetype),
                 StatCalculator.Level1BaseMp(BaseClass))
@@ -1671,22 +1749,22 @@ public class Entity
         // base here — the weapon's own P.Atk accumulates in the loop, then the multiplier is applied.
         // Unarmed → fist only → feeble, no penalty branch. M.Atk keeps its additive base × levelMod²
         // (the signed-off magic balance) and is UNCHANGED.
-        AttackPower = Kind == EntityKind.Player
+        AttackPower = playerStats
             ? 0
             : MobBaseStats.PAtk(Level);
         // Player M.Atk is now WEAPON-based like P.Atk: seed 0 (no additive stat floor), let the equipped
         // weapon's M.Atk accumulate below, then multiply by the stat (StatCalculator.MagicAttackStatScaled)
         // and levelMod². The old additive seed (atkStat + level·2 + INT·3) is what made a level-1 mage read
         // ~40 M.Atk (IG: ~8); removed. INT-via-dye will return as a stat-mult input, not a flat add.
-        MagicAttack = Kind == EntityKind.Player
+        MagicAttack = playerStats
             ? 0
             : MobBaseStats.MAtk(Level);
         // Defence (authentic IG): players use armor/jewel-driven base + level²/100, no CON
         // term. Mobs use their authored base curve (P.Def and M.Def separately).
-        Defence = Kind == EntityKind.Player
+        Defence = playerStats
             ? StatCalculator.PhysicalDefenceBase(Level)
             : MobBaseStats.PDef(Level);
-        MagicDefence = Kind == EntityKind.Player
+        MagicDefence = playerStats
             ? StatCalculator.MagicDefenceBase(Level)   // tank magic identity = his Anti-Magic passive, not a level/2 mDef bonus
             : MobBaseStats.MDef(Level);
         // Resolution "sure" floors come from learned passives (Evasion Mastery / Precision),
@@ -1887,7 +1965,11 @@ public class Entity
         //
         // M.Atk is UNCHANGED: base (atkStat + level·2 + weaponM) × MAtkFactor, then × levelMod² later.
         // That is the signed-off magic balance; only the P channel moved to the multiplicative form.
-        if (Kind == EntityKind.Player)
+        //
+        // ⚠ A PLAYER-BUILT creature must take this branch or its weapon is worse than useless: the
+        // accumulated weapon P.Atk would sit there as a bare additive number over a base of 0, with the
+        // ATK stat and the level modifier never applied at all.
+        if (playerStats)
         {
             int weaponPAtk = (int)(AttackPower * weaponPFactor);
             AttackPower = StatCalculator.PhysicalAttackPower(weaponPAtk, EffectiveAtk, Level);
@@ -2376,7 +2458,8 @@ public class Entity
         // Both multiply the finished flat pool (base + gear + jewels + passives). Buffs
         // layer on afterwards in the Effective* getters. PLAYERS ONLY — a mob's M.Atk/M.Def
         // come from its own authored curve (MobBaseStats), which is already a final number.
-        if (Kind == EntityKind.Player)
+        // A player-built creature has no such curve, so it takes the terms like a player (BL-47).
+        if (playerStats)
         {
             MagicAttack = (int)(MagicAttack * StatCalculator.MagicAttackLevelMod(Level));
             // M.Atk stays the INTERNAL (base·levelMod²) value — the √ magic formulas depend on it and mobs
@@ -2565,7 +2648,11 @@ public class Entity
         // BL-14 — the weapon a mob holds now decides its per-hit POWER as well as its rate, the way
         // a player's weapon item does. Applied after the template's own P.Atk passive so a hand-tuned
         // champion multiplier is not diluted, and before the ROLE, which has its own trade.
-        float weaponPower = StatCalculator.MobWeaponPowerFactor(WeaponType);
+        //
+        // ⚠ NOT for a player-built creature (BL-47): this factor exists to give a mob the per-hit power
+        // a player gets free from the weapon ITEM, and a player-built creature is holding the actual
+        // item. Applying it too would pay for the same weapon twice.
+        float weaponPower = PlayerBuilt ? 1f : StatCalculator.MobWeaponPowerFactor(WeaponType);
         if (weaponPower != 1f)
         {
             AttackPower = Math.Max(1, (int)(AttackPower * weaponPower));
@@ -2575,23 +2662,36 @@ public class Entity
         if (MobAccFlat != 0) Accuracy += MobAccFlat;
 
         // 3. The mob's ROLE — ranged/caster archetypes on top of base + passives.
+        //
+        // ⚠ For a PLAYER-BUILT creature the role keeps its BEHAVIOUR (how far it reaches, whether it
+        // swings at all) and loses its STAT LEAN (BL-47). Those multipliers are compensation aimed at
+        // the authored mob curve; a player-built caster already gets the caster's shape from the things
+        // a player gets it from — a robe, a staff, a mage class curve — and stacking the lean on top
+        // would measure the two systems at once and credit the wrong one.
+        bool roleStats = !PlayerBuilt;
         switch (mobType?.Role)
         {
             case MobRole.Archer:
                 // Fires from ~450 range with a bow; higher P.Atk but light armor (less P.Def, a
                 // little more evasion). Uses the normal auto-attack — just at longer range.
                 BasicAttackRange = 450f;
-                AttackPower = Math.Max(1, (int)(AttackPower * 2f));
-                BasicAttackPower = Math.Max(1, (int)(BasicAttackPower * 2f));
-                Defence = Math.Max(1, (int)(Defence * 0.85f));
-                Evasion += 8;
+                if (roleStats)
+                {
+                    AttackPower = Math.Max(1, (int)(AttackPower * 2f));
+                    BasicAttackPower = Math.Max(1, (int)(BasicAttackPower * 2f));
+                    Defence = Math.Max(1, (int)(Defence * 0.85f));
+                    Evasion += 8;
+                }
                 break;
             case MobRole.Mage:
                 // No basic attack — casts the mob spells gated on MP; out of MP it stands helpless.
-                MagicAttack = Math.Max(1, (int)(MagicAttack * 1.5f));
-                AttackPower = Math.Max(1, (int)(AttackPower * 0.5f));
+                if (roleStats)
+                {
+                    MagicAttack = Math.Max(1, (int)(MagicAttack * 1.5f));
+                    AttackPower = Math.Max(1, (int)(AttackPower * 0.5f));
+                    Defence = Math.Max(1, (int)(Defence * 0.7f));
+                }
                 BasicAttackPower = 1;
-                Defence = Math.Max(1, (int)(Defence * 0.7f));
                 BasicAttackRange = 0f;
                 break;
         }

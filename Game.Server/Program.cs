@@ -100,6 +100,11 @@ try
     // with the offending coordinates rather than letting a field-less circle onto the map.
     Game.Shared.RegionMap.ValidateSpawnersInFields();
 
+    // BL-47 — every piece of gear a player-built creature names must exist. A missing id is silent AND
+    // flattering: the creature spawns without that slot, and a half-naked entity reads as "the player
+    // pipeline under-delivers" when the truth is a typo in a tier.
+    Game.Shared.MobCatalog.ValidateBuilds();
+
     // The generated world layout: camp spacing, elite distance, town clearance, no overlapping fields, and
     // every camp's roster inside its own level band (the "pig next to a werewolf" guard). A bearing is not
     // a picture — none of this is visible in the source, and all of it is obvious only after walking there.

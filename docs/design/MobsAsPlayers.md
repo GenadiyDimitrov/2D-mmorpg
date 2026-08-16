@@ -296,32 +296,69 @@ for you.
 
 ---
 
-## 7. Step 2, specced: the 2-5 mobs you asked to fight
+## 7. Step 2 — ✅ BUILT 2026-08-16, and the two comparisons are already answered
 
-Whatever you decide in §8, the experiment you asked for is cheap and does not commit the project to
-anything. The shape that answers the most with the least:
+The five creatures you asked for (*"and later we can do 2~5 mobs so I can test"*) are in the game, in
+the **Proving Grounds** — a gatekeeper destination on the row south of the training dummies. Each one
+stands beside its **curve twin**: an ordinary `MobBaseStats` creature of the same level, no passives,
+holding the same weapon, so the comparison is a walk and not a memory. Nothing is aggressive, nothing
+drops loot, and **nothing else in the world changes** — the templates are fenced out of the generated
+rosters (`MobCatalog.HandPlaced`).
 
-🔴 **Rebuilt 2026-08-16 around what you actually ruled** — races, not archetypes; the split loadout
-`G3.7` found; a held rune; and normal rank throughout.
+| # | Creature | Lv | Race lean (±5) | Loadout | Passive it carries |
+|---|---|---|---|---|---|
+| 1 | **Goblin Raider** | 40 | +5 CON / +5 ATK / −5 AGI | t40 Rare sword2h over t1 Uncommon heavy | **none** |
+| 2 | **Goblin Elder Raider** | 45 | same | **identical to #1** | **none** |
+| 3 | **Cairn Lich** | 60 | −5 CON / +5 WIT | t52 Common staff **+30** over t1 Epic robe | HP ×3.73, P.Def ×1.02, M.Def ×0.78, M.Atk ×0.97 |
+| 4 | **Fallen Seraph** | 80 | +5 AGI / −5 CON | t80 Epic sword2h **+16** over t52 Common heavy | HP ×1.46, P.Def ×1.05, M.Def ×0.61, **P.Atk ×2.07** |
+| 5 | **Fallen Seraph, Runebearer** | 80 | same | **identical to #4**, plus a held **War Rune** | HP ×1.46, P.Def ×1.05, M.Def ×0.61, **no attack passive** |
 
-| # | Creature | Race lean (±5) | Built how | What it tests |
-|---|---|---|---|---|
-| 1 | **Goblin Raider**, level 40 | +5 ATK / +5 CON / −5 AGI | mob-player, `G3.7` split loadout, no rune, 3-skill kit | The baseline. At 40 the split gear alone lands x1.04 / x0.99 / x1.02 — this should feel like a mob with **no passive at all** |
-| 2 | **Goblin Raider**, level 45 | same block | **identical** template, +5 levels | Your ±5 band. One authored loadout across the whole range a template can spawn in |
-| 3 | **Lich**, level 60 | −5 CON / +5 WIT | mob-player caster, split loadout, **×3.3 HP passive** | The one archetype that misses your ×2 — does the HP passive read as a fair caster or as a sponge? |
-| 4 | **Angel**, level 80 | +5 AGI / −5 CON | mob-player, split loadout, **×1.60 attack passive** | The top band, where gear alone still leaves ×1.55-1.60 of attack to the passive |
-| 5 | **Angel**, level 80, **holding a War Rune** | same | identical to #4 but with the rune and **no** attack passive | Your B3 answer, measured: does the rune replace the passive outright? |
+### What it measures — `BalanceMatrix` `G3.8`, demo ÷ its twin
 
-Ship them behind a spawner in one field, next to their `Kind=Mob` equivalents so the comparison is a
-walk and not a memory. **Nothing else in the world changes**, which is what keeps this an experiment.
+| creature | HP | P.Atk | P.Def | M.Def | M.Atk |
+|---|---|---|---|---|---|
+| Goblin Raider 40 | x1.10 | **x0.87** | x1.04 | x0.99 | x1.04 |
+| Goblin Elder Raider 45 | x1.06 | **x0.64** | x0.95 | x0.96 | x0.79 |
+| Cairn Lich 60 | x1.00 | — | x1.00 | x1.00 | x1.00 |
+| Fallen Seraph 80 | x1.01 | **x1.00** | x1.00 | x1.01 | x0.72 |
+| Seraph Runebearer 80 | x1.01 | **x0.97** | x1.00 | x1.01 | x0.72 |
 
-🔑 **#1 vs #2 and #4 vs #5 are the two comparisons that decide the system.** The first says whether one
-loadout covers a ±5 band (if it does, no level→grade function is ever needed). The second says whether a
-held rune can stand in for an authored passive — if it can, the whole attack side of this design collapses
-into an item a creature carries.
+🔴 **#1 vs #2 — one loadout covers a ±5 band on everything EXCEPT how hard it hits.** Defence and HP
+barely move across five levels (P.Def x1.04 → x0.95, HP x1.10 → x1.06); **P.Atk falls x0.87 → x0.64**,
+because the mob attack curve is the steep one. So your *"prefixed 100+ mobs and give them +-5 lvl
+ranges"* works, and the one number that has to move within a band is attack — one enchant rung, or the
+band's own attack passive. Both goblins are left deliberately BARE so the drift is visible; tuning it
+flat would have answered your question with a guess.
 
-⚠ **The races are placeholders for the demo.** You said *"make a demo then we do a system number"*, so
-these three exist to be fought, not to be the roster.
+🔴 **#4 vs #5 — YES, THE RUNE REPLACES THE PASSIVE.** Bare, that level-80 build reads **x0.48** of its
+curve's P.Atk. The authored passive gets it to x1.00 and costs a per-creature, per-band number. The
+**held War Rune gets it to x0.97 and costs an item**. That is your B3 answer measured rather than
+argued, and it is the cheapest lever in this document: no table, no drift, and a creature that visibly
+carries the thing that makes it dangerous.
+
+⚠ **One number came out past your ×2, and the reason is worth keeping.** `G3.7` said the level-80
+attack passive needed **×1.55**; the creature actually needs **×2.07**. `G3.7` measures against the bare
+`MobBaseStats` curve, but the creature standing next to it *also* carries **BL-14's weapon power factor**
+— a slow 2H weapon buys per-hit damage. Against what really spawns, the gap is bigger than the search
+said. Nobody was wrong; the two things were measured against different targets, and `G3.8` is the one
+that measures against the game.
+
+⚠ **The races are placeholders.** You said *"make a demo then we do a system number"* — Goblin, Lich
+and Angel are three names to hang a ±5 lean on, not a proposed bestiary.
+
+### How it is built, in one paragraph
+
+`MobType.Build` (a `MobBuild`) carries the class, the ±5 lean, the split loadout and any held item.
+At spawn `Entity.ApplyMobBuild` gives the creature its identity and puts the gear ON it, and
+`Entity.PlayerBuilt` swings the **six stat bases** — MaxHp, MaxMp, P.Atk, M.Atk, P.Def, M.Def — plus the
+weapon P.Atk fold and the two magic level terms onto the player side of `RecomputeDerived`. **That is
+all it moves.** It is still a Mob to aggro, drops, targeting, the client's plate, PvP and party; it
+deliberately does not take armor SETS, the learned-passive loop, armor-weight masteries, the race+class
+speed override (so it can still be kited) or the grade penalty. Rank and `MobMod` still land on top in
+`ApplyMobScale` — which is the design: **gear gets you most of the way, the passive carries the
+remainder.** Two things are switched off there for a player-built creature, both because they would pay
+twice: BL-14's weapon power factor (it is holding the real weapon) and the ROLE's stat lean (a robe, a
+staff and a mage class curve already make it a caster).
 
 ---
 
@@ -355,9 +392,10 @@ these three exist to be fought, not to be the roster.
 - **D. Does the weapon TYPE carry `matk` / `cast` / `critdmg`?** Today it carries P.Atk, attack speed and
   crit. The other three are authored separately if at all.
 - **E. Speed as a passive, or left as a template field?** It is the only one of your five with no track.
-- **F. Do you still want the 2-5 experimental mobs (§7)?** ⚠ If yes, **§7 needs rebuilding around RACES
-  rather than archetypes** — a lich, a goblin and an angel at two levels each, next to their `Kind=Mob`
-  equivalents. Cheap, and it answers B1 by feel.
+- ✅ **F. The 2-5 experimental mobs are BUILT** (2026-08-16) — see §7 for what they are, where they are
+  and what they already measured. What is left is yours: **fight them**. The numbers say the system
+  works; only you can say whether a ×3.7 HP lich reads as a fair caster or as a sponge, and whether a
+  goblin at the bottom of its ±5 band hits softly enough to notice.
 
 ---
 
@@ -369,6 +407,10 @@ dotnet run --project tools/BalanceMatrix        # scroll to "G3 MOB-AS-PLAYER FE
 
 `G3.1` per-stat ratios · `G3.2` the gear sweep · `G3.3` the frozen loadout across bands · `G3.4` TTK both
 directions · `G3.5` the side effects of flipping `Kind` · `G3.6` the passive multipliers and their drift ·
+🆕 **`G3.8` THE DEMO — the five authored creatures spawned the way the server spawns them, each divided
+by its curve twin.** It builds them through `Entity.ApplyMobBuild`, the same method `BuildMob` calls, so
+the measured creature and the spawned one can never drift apart. **Re-run it after touching a demo
+template**: those `MobMod` numbers are fitted, not derived. ·
 🆕 **`G3.7` HIS loadout — weapon and armour swept SEPARATELY, enchant to +60, scored against his ×2
 passive bar.** ⚠ `G3.2` was deliberately **left untouched** when `G3.7` was added, so its old reading
 stays attributable; `G3.7` is the same question asked without `G3.2`'s two blind spots.

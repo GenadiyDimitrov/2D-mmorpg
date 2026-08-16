@@ -11775,10 +11775,14 @@ var effect = def.Effect;
         if (t.Kind == EntityKind.Npc) return;   // plain NPCs have nothing to inspect
 
         bool isMob = t.Kind == EntityKind.Mob;
-        string[] passives = isMob && t.MobTypeId is not null
-            && MobCatalog.Get(t.MobTypeId).Mod is MobMod mod
-                ? mod.Describe().ToArray()
-                : Array.Empty<string>();
+        var template = isMob && t.MobTypeId is not null ? MobCatalog.Get(t.MobTypeId) : null;
+        var passiveLines = new List<string>();
+        // BL-47 — a player-built creature says so FIRST, above its passives, because the loadout is the
+        // thing under test and its passives are only what the loadout did not cover. Reusing this list
+        // is what keeps the demo free of a protocol change and therefore of a new APK.
+        if (template?.Build is MobBuild built) passiveLines.AddRange(built.Describe());
+        if (template?.Mod is MobMod mod) passiveLines.AddRange(mod.Describe());
+        string[] passives = passiveLines.ToArray();
 
         // A mob's ACTIVE kit — the Skills tab (playtest-20: "a new tab for the mob's skills, actives
         // and passives"). `LearnedSkills` is the WHOLE truth about what a mob can throw at you:
@@ -14096,6 +14100,9 @@ var effect = def.Effect;
     private Entity BuildMob(string mobId, int level, MobRank rank, float x, float y, string zoneId)
     {
         var mobType = MobCatalog.Get(mobId);
+        // A PLAYER-BUILT creature overwrites these a few lines down, in ApplyMobBuild, with a real
+        // player stat block plus his ±5 race lean (BL-47). Everything else here treats it as the
+        // ordinary mob it still is, which is the point: only the numbers move.
         var stats = StatCalculator.MobStats(level);
 
         // Elites/bosses are tougher versions of the base mob.
@@ -14204,6 +14211,15 @@ var effect = def.Effect;
         mob.MobMAtkScale = atkMul;
         mob.MobAccFlat = accFlat;
 
+        // BL-47 — DRESS a player-built creature. This has to happen before the recompute below, because
+        // the equip loop inside RecomputeDerived is what turns worn gear into stats; a piece added
+        // afterwards would sit in the bag doing nothing until the next recompute happened to run.
+        //
+        // 🔑 The bag is HELD, never looted. A mob's loot is its DROP TABLE and nothing in the death path
+        // so much as looks at its inventory — which is exactly the shape he asked for (*"not a dropped
+        // one..but just to hold stuff"*) and is why the War Rune can be handed to a creature at all.
+        if (mobType.Build is MobBuild build) mob.ApplyMobBuild(build);
+
         // The template's MobMod and its ROLE stat lean are read straight off the catalog by
         // ApplyMobScale (via MobTypeId), so nothing about them needs copying here. What DOES belong
         // here is anything a recompute cannot re-derive: learned skills and the spawn-time flags.
@@ -14244,6 +14260,19 @@ var effect = def.Effect;
         // that actually produces the mob's final stats. Every one of them is re-derivable from here
         // on, which is the point — RecomputeDerived is idempotent for mobs now.
         mob.RecomputeDerived();
+
+        // BL-47 — a HELD rune's power is the buff it keeps up, and the reconciliation loop that keeps it
+        // up for a player is player-only and clock-driven (ReconcileTimedItems). A creature has no clock
+        // and no login, so the buff is applied once here and never expires: for a mob the rune is not a
+        // consumable, it is part of what the creature IS. This is the whole of comparison #4 vs #5 —
+        // whether a rune can stand in for an authored attack passive.
+        if (mobType.Build is MobBuild rb && rb.Held.Length > 0
+            && ItemCatalog.Get(rb.Held) is { RuneBuffSkillId: { Length: > 0 } runeBuffId } runeDef
+            && SkillCatalog.Get(runeBuffId) is SkillDef runeSkill)
+        {
+            ApplyBuff(mob, runeSkill, Math.Max(1, runeDef.RuneBuffLevel),
+                      displayName: runeDef.Name, durationOverride: int.MaxValue);
+        }
 
         mob.Hp = mob.MaxHp;
         mob.Mp = mob.MaxMp;
