@@ -18,8 +18,31 @@ Two kinds of entry:
 
 ## Superseded backlog entries
 
-*(none yet — this file was created 2026-08-12, at the same time as the backlog. The first entry
-lands here the first time you re-spec something in `Backlog.md`.)*
+### `BL-47` — "do not migrate mobs onto the player pipeline; finish the passive layer instead"
+**Replaced 2026-08-16 by his playtest-24 answer** (`86b`), which is *migrate*. The recommendation
+below stood for one day and is kept because it is the reason `MobsAsPlayers.md` reads the way it
+does, and because two of its four arguments survive his ruling intact (the base curve is reference
+data; `RecomputeDerived` branches on `Kind` in 21 places). The one it overturns is the third:
+
+> ⚠ **The migration itself is measured and the recommendation is NOT to do it** — no gear combination
+> closes the gaps (`G3.2`), the reconciliation would have to come from per-band passives anyway, and
+> rebuilding on the player pipeline would discard the IG-measured base curve. The counter-case is
+> real and stated in the doc: mob-player fights *are* playable, and creatures that hold visible gear
+> is a design preference no table can settle. **§8 of the doc lists six questions; B is the one that
+> gates everything.**
+
+⚠ **Why it was overturned, recorded honestly, and it was not a close call.** The `G3.2` sweep behind
+*"no gear combination closes the gaps"* had two blind spots he found and I had not: its enchant axis
+stopped at **+16** (the player's practical ceiling — but a mob's enchant is an authored number, and his
+example is **+60**), and it moved **every slot together**, so *"S grade Mace ... and B grade leather"* —
+an over-enchanted weapon over under-grade armour, the one shape that can fix a mirror — was outside the
+sweep by construction. **The claim was true of that sweep and overstated as a claim about gear.**
+
+`G3.7` re-asks it his way and the answer flips: **12 of 16 archetype-levels land inside his ×2 passive on
+all four stats at once**, the worst single miss falls from 185-221% to **94%**, and the biggest attack
+passive still needed anywhere is **×1.60**. The optimiser also picked his loadout unprompted — lowest-tier
+armour, weapon at level tier plus enchant. The four failures are all one failure, **the Nuker's HP**
+(×2.01 → ×3.48), which his own *"and hp boost"* had already allowed for.
 
 ---
 

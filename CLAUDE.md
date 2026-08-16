@@ -117,10 +117,17 @@ from IG references.
   buff scales shield values (only with a shield equipped). Skills can carry
   `BlockAccuracy` to bypass blocks. Magic is NOT blocked (mitigated by defence only)
   to avoid stacking fail+interrupt+block and making mages useless.
-- **Mobs are templates** (`MobCatalog`: id, name, speeds, behavior, drop table) with
-  NO fixed level — the **ZONE assigns level** (stats derive from it). Same creature
-  at any level = same drops; different loot = new mob id; tougher elsewhere = higher
-  zone. **Drop tables** are per-mob `DropEntry(itemId, chance:float, minQty, maxQty,
+- **Mobs are templates** (`MobCatalog`: id, name, speeds, behavior, drop table) and the
+  **ZONE assigns level** (stats derive from it) — ⚠ **but only where a template has no natural
+  level of its own, which is the minority.** `GameLoopService.cs:13959` reads
+  `mobType.Level > 0 && !zone.ForceZoneLevel` → **the template's own level WINS**, and **80 templates
+  carry one**, spaced ~2 levels apart. In practice this is an IG-style **per-level roster**, not one
+  creature stretched across the game; owner, playtest 24: *"Prefixed 100+ mobs and give them +-5 lvl
+  ranges ... Not a lvl 1 mob scaled with lvl to 85"* — the roster grows and gains a **±5 band**, which
+  today is ±0. **Do not reason as though one template spans 1-85** (a `G3.3` measurement did exactly
+  that and drew a wrong conclusion); `zone.ForceZoneLevel`, the 85-90 field, is the only place it
+  happens. Same creature at any level = same drops; different loot = new mob id; tougher elsewhere =
+  higher zone. **Drop tables** are per-mob `DropEntry(itemId, chance:float, minQty, maxQty,
   MinLevel, MaxLevel)`; the level band lets one mob drop different loot at different
   levels. ⚠ A mob's HP curve is **`MobBaseStats.Hp(level) = 40 + 0.8·level²`** — NOT the linear
   `StatCalculator.MobMaxHp`, which is a different, mostly-unused path; check which one a mob

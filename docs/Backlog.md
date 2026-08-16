@@ -41,6 +41,11 @@ already built**, which by rule 1 rewrote the thing in place rather than opening 
 **2026-08-15, after that pass, added `BL-76`** — boss skill gems in three rarities. New design, not a
 playtest find; queued 🔴 with its numbers explicitly marked as yours to alter later.
 
+**Playtest 24 (2026-08-16) added `BL-77`** — the PvP flag as the input to every AOE and no-damage skill's
+target filter. It also **answered `BL-47`/`G3` §8-B**: *migrate*, and it named three levers the design doc
+never swept (enchant, race as the main-stat carrier, a ×2 elite passive) — see that entry. Its two bug
+finds (reflect flagging the defender; the System chat tab lagging) went to `testing/Open-Checklist.md`.
+
 ## The rules this file runs on
 
 1. **Newest ruling wins, and it is the ONLY one shown.** When you re-spec something, its entry is
@@ -320,6 +325,42 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
   the game by a wide margin. Build the gems whenever you like — but the drop chances are not meaningful
   until those two are ruled, which is another reason the % are explicitly yours to move.
 
+- `BL-77` 🔴 **THE PVP FLAG DECIDES WHO AN AREA SKILL CAN TOUCH — one rule, every AOE and every
+  no-damage skill in the game.** Playtest 24, from `85a` (Signal Flare landing but not flagging), which
+  you immediately generalised. Your text, verbatim:
+
+  > *"it works but it should also flag me ...if I have the PvP on I should able to attack near my target
+  > and reavel it"* · *"goes for all AOE skills. (the second warrior class is AOE and need to use the
+  > same logic)"*
+  > - *"pvp-off = using AOE skills hit only nearby monsters"*
+  > - *"pvp-on = hit nearby players as well"*
+  > - *"flare with pvp on reveals nearby players and Act as hit so flags"*
+  > - *"any skill that does no dmg and can be casted on a player if the PvP is off is (monster only) but
+  >   if pvp is on it cast on a player and flags"*
+
+  🔑 **This is a targeting rule, not a flare fix.** Today the PvP toggle is read at the moment a player
+  picks a *single* target; an area skill has no target to check, so its victim set is decided by the
+  skill's own filter. Your rule makes the toggle an **input to the area filter**: with PvP off an area
+  skill enumerates creatures only, and with it on the same cast reaches players and **flags the caster
+  on the reach, not on the damage** — which is why a flare, which deals nothing, still flags.
+
+  🔑 **It pairs with the reflect exploit from the same pass** (in `testing/Open-Checklist.md`, a bug and
+  so not duplicated here): a **deliberate** act with PvP on flags you, and something your **gear** does
+  back to an attacker on its own must not. The two are one principle — *the flag follows intent* — and
+  fixing either half alone leaves the other looking arbitrary.
+
+  🔵 **Three things the rule does not yet settle**, all cheap, none blocking:
+  1. **Party and clan members inside an area cast.** "Hit nearby players as well" with PvP on — does that
+     include the party standing next to you? Every other system in this game excludes them.
+  2. **A no-damage skill split by intent.** Your last clause makes any castable-on-a-player skill flag
+     when PvP is on — but a **heal or a buff** aimed at a stranger is castable on a player and is not an
+     attack. Presumably only *hostile* no-damage skills flag (reveal, debuff, taunt), not support.
+  3. **Does the flag land on the caster only, or is the revealed/hit player flagged too?** A flare's
+     victim did nothing; today only the aggressor flags, which is the shape that survives the exploit.
+
+  ⚠ **The second warrior class is AOE and does not exist yet** — that is `BL-02` authoring. Build this
+  against the AOE skills that ship today (the mage's area nukes, the flare) and the class inherits it.
+
 ---
 
 ## Classes & skills
@@ -419,14 +460,51 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
     weapon types. What is genuinely missing is small: armor weight has **3 rungs and no robe arm** (you
     asked for ~15 and a caster rung), the weapon type carries ~4 of your 7 axes, and **speed has no
     track at all**.
-  - ⚠ **The migration itself is measured and the recommendation is NOT to do it** — no gear combination
-    closes the gaps (`G3.2`), the reconciliation would have to come from per-band passives anyway, and
-    rebuilding on the player pipeline would discard the IG-measured base curve. The counter-case is
-    real and stated in the doc: mob-player fights *are* playable, and creatures that hold visible gear
-    is a design preference no table can settle. **§8 of the doc lists six questions; B is the one that
-    gates everything.**
-  - Step 2 (the **2-5 mobs to fight**) is specced in §7 and costs little — but it is answering question
-    B by feel, so say whether you want it before it is built.
+  - 🔴 **§8-B IS ANSWERED — playtest 24 (2026-08-16): MIGRATE.** The doc recommended finishing the
+    passive layer instead; he rejected the premise it rested on. His words: *"u said u cannot manage to
+    balance a player with current mobs curve ... human fighter with S grade Mace enchanted to +60
+    (that's why we van have a mobs weapons) and B grade leather only have the same pDef and twice less
+    p atk g if we make the elite passive x2 p atk and hp boost we can make him the same values ... try
+    to recreate mobs with different races (main stats) with player formulas ... so same weapon type and
+    just enchanted or a mob passives that boost PAtk and or other stats"* — plus, in chat the same day:
+    *"If we have different mob races like litches,angels,goblins etc all will have different main stats
+    (near players one) and just boost with passives and lower gears."*
+    The superseded recommendation is in [BacklogArchive.md](BacklogArchive.md#bl-47).
+  - 🔑 **He named the levers `G3.2` never swept, the sweep was re-run his way as `G3.7`, and HE IS
+    RIGHT.** Two blind spots: the enchant axis stopped at **+16** (a player's practical ceiling — a mob's
+    enchant is just an authored number), and every slot moved **together**, so an over-enchanted weapon
+    over under-grade armour was never constructed. Swept separately, weapon enchant to +60:
+    **12 of 16 archetype-levels land inside his ×2 passive on all four stats at once**, the worst single
+    miss drops **185-221% → 94%**, and the biggest attack passive still needed anywhere is **×1.60**.
+    The optimiser picked his loadout unprompted — lowest-tier armour, weapon at level tier plus enchant.
+    ⚠ **The four failures are one failure: the Nuker's HP** (×2.01 at 20 → ×3.48 at 80). Every P.Def,
+    M.Def and attack figure is inside ×2 at every level. His *"and hp boost"* already allowed for it.
+    🔵 Next lever if the 80 row needs tightening: `G3.7` still dresses all nine slots, and at 80 the
+    binding constraint is **M.Def over-delivering ×1.65** — a creature need not wear jewels at all.
+  - 🔑 **RACE as the main-stat carrier is the better shape and it costs nothing to adopt.** The doc used
+    player *archetypes*, which §5 correctly called invented machinery; races are content the world wants
+    anyway, so the "mob archetype table" stops being scaffolding and becomes the thing being built.
+  - ✅ **He answered the three questions that gated step 2, same day (2026-08-16).**
+    **Race = a flat ±5 stat offset, no level curve** (*"ork have higher con/atk less agi ..while elf have
+    higher agi less atk/con ... Can go +-5 same as the swap passives"*) — ⚠ which makes race **flavour,
+    not the reconciliation**: ±5 on a ~40-point stat is ±12.5% against passive needs of ×1.5-2.0, so a
+    lich differs from a goblin by **kit, gear and passives**. **A demo first, the roster number after.**
+    **A mob may hold an inventory** — *"not a dropped one..but just to hold stuff"* — so **yes to the War
+    Rune**, held and never looted. And **balance against NORMAL mobs**, elite/boss scaling on top: ✅ every
+    `G3` number already does, since rank multipliers are applied at spawn. 🔑 For the record, since he
+    could not remember: **Elite = HP ×4 / ATK ×1.5, Boss = HP ×100 / ATK ×10** (`GameLoopService.cs:14014`).
+  - 🔴 **HIS ROSTER RULING, and it is ~90% already built.** *"we can do a IG logic... Prefixed 100+ mobs
+    and give them +-5 lvl ranges so they can offset a bit ... Not a lvl 1 mob scaled with lvl to 85."*
+    **`MobCatalog` already holds 80 templates, each with its own natural level, ~2 levels apart**, and
+    `GameLoopService.cs:13959` gives a natural level priority over the zone band. What is missing is the
+    **±5 variance** (today ±0) and ~20 more templates. 🔑 **This retires `G3.3` as an objection**: the
+    "frozen loadout rots to 6% of curve at 85" test stretched one template across 65 levels, which this
+    catalogue never does — so a **level→grade function is not mandatory** after all. ⚠ The one place that
+    does stretch a roster is **`zone.ForceZoneLevel`** (the 85-90 field), which is the thing he objects to.
+  - **Step 2 is unblocked** and §7 of the doc is rebuilt around races, the `G3.7` split loadout, a held
+    rune and normal rank. Its two decisive comparisons: **one loadout across a ±5 band**, and **a held War
+    Rune instead of an authored attack passive**. §8 **C/D/E remain open** (armor-weight rungs and the robe
+    arm · whether the weapon type carries `matk`/`cast`/`critdmg` · speed as a passive).
 
 - `BL-48` ⏸ **Instances — you are holding.** Design is written (`design/Instances.md`). One
   load-bearing decision is still open: the daily attempt **GLOBAL vs PER-INSTANCE**. It changes the

@@ -1779,11 +1779,107 @@ foreach (var arch in g3Archs)
     Console.WriteLine();
 }
 
+// -----------------------------------------------------------------------------------------------
+// 7. HIS COUNTER-ARGUMENT, playtest 24 (2026-08-16). He rejected G3.2's "no gear closes it" and named
+//    the reason it was wrong: *"a human fighter with S grade Mace enchanted to +60 ... and B grade
+//    leather only have the same pDef and twice less p atk ... if we make the elite passive x2 p atk
+//    and hp boost we can make him the same values"*.
+//
+//    Two things G3.2 could not do, and he is right about both:
+//      (a) its enchant axis stopped at +16 — the realistic PLAYER ceiling, but a mob's enchant is an
+//          authored number, not something it has to farm scrolls for. His is +60.
+//      (b) it moved every slot together, so "over-enchanted weapon + under-grade armor" — the exact
+//          shape that fixes the mirror — was never constructed.
+//    G3.2 is left untouched so its old reading stays attributable. This is the same question asked
+//    the way he asked it, and the last column is HIS test: does what remains fit inside a x2 passive?
+// -----------------------------------------------------------------------------------------------
+Console.WriteLine("=== G3.7: HIS loadout — weapon and armor swept SEPARATELY, enchant to +60 ===");
+Console.WriteLine("  best = the smallest worst-miss over armor(grade x quality x ench) x weapon(grade x quality x ench).");
+Console.WriteLine("  'passive needed' = what a mob passive must still supply. His hypothesis: all of it inside x2.");
+Console.WriteLine($"{"Lvl",4} {"archetype",9} {"armor",16} {"weapon",16} | {"P.Def x",8} {"M.Def x",8} " +
+                  $"{"atk x",7} | {"passive needed (pd/md/atk/hp)",30} {"fits x2?",9}");
+var g37Qualities = new[] { ItemRarity.Common, ItemRarity.Uncommon, ItemRarity.Rare,
+                           ItemRarity.Epic, ItemRarity.Legendary, ItemRarity.Mythic };
+int[] g37ArmorEnch  = { 0, 8, 16 };
+int[] g37WeaponEnch = { 0, 16, 30, 45, 60 };
+int g37Fits = 0, g37Rows = 0;
+double g37WorstMiss = 0, g37WorstAtkPassive = 0;
+foreach (int L in g3Levels)
+{
+    foreach (var arch in g3Archs)
+    {
+        bool caster = arch is Archetype.Nuker or Archetype.Healer;
+        (string A, string W, double PDef, double MDef, double Atk, double Score, int Hp) best =
+            ("-", "-", 0, 0, 0, double.MaxValue, 0);
+
+        foreach (int aDrop in new[] { 0, 1, 2, 3 })
+            foreach (var aq in g37Qualities)
+            {
+                if (!G3LoadoutExists(G3Tier(L, aDrop), aq)) continue;
+                foreach (int aEnch in g37ArmorEnch)
+                    foreach (int wDrop in new[] { 0, 1, 2, 3 })
+                        foreach (var wq in g37Qualities)
+                        {
+                            if (!G3WeaponExists(arch, G3Tier(L, wDrop), wq)) continue;
+                            foreach (int wEnch in g37WeaponEnch)
+                            {
+                                var e = BuildMobPlayerSplit(L, arch, G3Tier(L, aDrop), aq, aEnch,
+                                                                     G3Tier(L, wDrop), wq, wEnch);
+                                double pd = e.EffectiveDefence      / (double)MobBaseStats.PDef(L);
+                                double md = e.EffectiveMagicDefence / (double)MobBaseStats.MDef(L);
+                                double at = caster
+                                    ? e.EffectiveMagicAttack / (double)MobBaseStats.MAtk(L)
+                                    : e.EffectiveAttack      / (double)MobBaseStats.PAtk(L);
+                                double score = Math.Max(Math.Abs(Math.Log(Math.Max(1e-6, pd))),
+                                               Math.Max(Math.Abs(Math.Log(Math.Max(1e-6, md))),
+                                                        Math.Abs(Math.Log(Math.Max(1e-6, at)))));
+                                if (score < best.Score)
+                                    best = ($"t{G3Tier(L, aDrop)} {aq}{(aEnch > 0 ? " +" + aEnch : "")}",
+                                            $"t{G3Tier(L, wDrop)} {wq}{(wEnch > 0 ? " +" + wEnch : "")}",
+                                            pd, md, at, score, e.MaxHp);
+                            }
+                        }
+            }
+
+        // What a passive must still supply on top of the best loadout. >1 = the passive adds.
+        double needPd = 1.0 / Math.Max(1e-6, best.PDef);
+        double needMd = 1.0 / Math.Max(1e-6, best.MDef);
+        double needAt = 1.0 / Math.Max(1e-6, best.Atk);
+        double needHp = MobBaseStats.Hp(L) / (double)Math.Max(1, best.Hp);
+        // His x2: a passive that only ever DOUBLES. A need below 1.0 means the gear over-delivers and
+        // no passive can pull it down, so that is a miss too — hence the two-sided window.
+        bool fits = new[] { needPd, needMd, needAt, needHp }.All(n => n >= 0.5 && n <= 2.0);
+        if (fits) g37Fits++;
+        g37Rows++;
+        g37WorstMiss = Math.Max(g37WorstMiss, Math.Exp(best.Score) - 1);
+        g37WorstAtkPassive = Math.Max(g37WorstAtkPassive, needAt);
+
+        Console.WriteLine($"{L,4} {arch,9} {best.A,16} {best.W,16} | " +
+            $"{"x" + best.PDef.ToString("0.00"),8} {"x" + best.MDef.ToString("0.00"),8} " +
+            $"{"x" + best.Atk.ToString("0.00"),7} | " +
+            $"{$"x{needPd:0.00} / x{needMd:0.00} / x{needAt:0.00} / x{needHp:0.00}",30} " +
+            $"{(fits ? "YES" : "no"),9}");
+    }
+}
+Console.WriteLine($"  {g37Fits}/{g37Rows} rows land inside his x2 passive on all four stats at once.");
+Console.WriteLine($"  worst single miss after the best split loadout: {g37WorstMiss:P0} "
+                + $"(G3.2, coupled slots and +16 max, could not get under 185-221% at L80).");
+Console.WriteLine($"  the biggest ATTACK passive still needed anywhere: x{g37WorstAtkPassive:0.00}.");
+Console.WriteLine();
+
 Console.WriteLine("=== G3: VERDICT INPUTS (read the tables, not this line) ===");
-Console.WriteLine("  * NO gear combination closes all three gaps at once (G3.2): the player pipeline is the");
-Console.WriteLine("    MIRROR of the mob curve — armor over-delivers P.Def/M.Def while the weapon under-delivers");
-Console.WriteLine("    attack by 2-5x, at every level and every grade. Today's mob is a glass cannon; a");
-Console.WriteLine("    player-shaped entity of the same level is the opposite. Gear cannot flip that sign.");
+Console.WriteLine(g37Fits == g37Rows
+    ? "  * GEAR PLUS A x2 PASSIVE CLOSES IT (G3.7) — his loadout shape (over-enchanted weapon over"
+    + "\n    under-grade armor) leaves every stat inside a x2 passive at every level tested. G3.2's"
+    + "\n    'no gear combination works' was true of ITS sweep (coupled slots, +16 ceiling), not of gear."
+    : g37Fits > 0
+    ? $"  * PARTLY (G3.7): {g37Fits}/{g37Rows} archetype-levels land inside his x2 passive once the weapon"
+    + "\n    and armor are dressed separately and the weapon can go past +16. G3.2's flat 'no gear"
+    + $"\n    combination works' was overstated — the biggest attack passive still needed is x{g37WorstAtkPassive:0.00}."
+    : "  * NO gear combination closes all three gaps at once — and G3.7 says that survives BOTH of his"
+    + "\n    levers: splitting the weapon from the armor and enchanting to +60. The player pipeline is the"
+    + "\n    MIRROR of the mob curve — armor over-delivers P.Def/M.Def while the weapon under-delivers"
+    + "\n    attack, at every level and every grade. Gear cannot flip that sign.");
 Console.WriteLine("  * so the TYPE PASSIVES carry the reconciliation, not the gear — and G3.6 says the");
 Console.WriteLine("    multipliers they must supply DRIFT with level, so each passive needs a per-band table.");
 Console.WriteLine("    That is his 'levelled passive with a name per level' — the design already assumes it.");
@@ -3070,6 +3166,56 @@ static Entity BuildMobPlayerFixedTier(int level, Archetype arch, int tier, ItemR
 
     e.RecomputeDerived();
     return e;
+}
+
+/// <summary>HIS loadout shape, playtest 24: the WEAPON and the ARMOR are dressed independently — a
+/// high-grade, heavily-enchanted weapon over low-grade armor (*"S grade Mace enchanted to +60 ... and
+/// B grade leather"*). G3.2 could not build this and that is its blind spot: it moved grade, quality
+/// and enchant on **every slot at once**, so the one shape that can fix the mirror — attack short,
+/// defence long — was outside the sweep by construction. Accessories and jewels follow the ARMOR.</summary>
+static Entity BuildMobPlayerSplit(int level, Archetype arch,
+                                  int armorTier, ItemRarity armorQ, int armorEnch,
+                                  int weaponTier, ItemRarity weaponQ, int weaponEnch)
+{
+    var (race, cls, secondId) = arch switch
+    {
+        Archetype.Tank    => (Race.Human, BaseClass.Fighter, 13),
+        Archetype.Warrior => (Race.Human, BaseClass.Fighter, 14),
+        Archetype.Rogue   => (Race.Human, BaseClass.Fighter, 15),
+        Archetype.Healer  => (Race.Human, BaseClass.Mage,    17),
+        _                 => (Race.Human, BaseClass.Mage,    18),   // Nuker
+    };
+
+    var s = StatCalculator.GetBaseStats(race, cls);
+    var e = new Entity { Name = "mob-player", Kind = EntityKind.Player, Race = race, BaseClass = cls, Level = level };
+    e.Con = s.Con; e.AtkStat = s.Atk; e.Wit = s.Wit; e.Agi = s.Agi; e.Spt = s.Spt;
+    if (level >= 20) e.SecondClass = secondId;
+
+    bool caster = arch is Archetype.Nuker or Archetype.Healer;
+    string aq = G3Quality(armorQ), wq = G3Quality(weaponQ);
+    string body   = caster ? "robe" : arch == Archetype.Rogue ? "light" : "heavy";
+    string weapon = caster ? "staff" : arch == Archetype.Warrior ? "sword2h" : "sword1h";
+
+    EquipEnchanted(e, $"{weapon}_t{weaponTier}{wq}", weaponEnch);
+    EquipEnchanted(e, $"{body}_t{armorTier}{aq}", armorEnch);
+    if (arch == Archetype.Tank) EquipEnchanted(e, $"shield_t{armorTier}{aq}", armorEnch);
+    foreach (var acc in new[] { "helm", "gloves", "boots" }) EquipEnchanted(e, $"{acc}_t{armorTier}{aq}", armorEnch);
+    EquipEnchanted(e, $"necklace_t{armorTier}{aq}", armorEnch);
+    EquipEnchanted(e, $"ring_t{armorTier}{aq}", armorEnch);    EquipEnchanted(e, $"ring_t{armorTier}{aq}", armorEnch);
+    EquipEnchanted(e, $"earring_t{armorTier}{aq}", armorEnch); EquipEnchanted(e, $"earring_t{armorTier}{aq}", armorEnch);
+
+    e.RecomputeDerived();
+    return e;
+}
+
+/// <summary>True when the catalogue holds this archetype's WEAPON at this tier+quality. The armor
+/// side is covered by <see cref="G3LoadoutExists"/>; a weapon needs its own check because G3.7 moves
+/// the two independently and a missing weapon measures a bare-handed entity.</summary>
+static bool G3WeaponExists(Archetype arch, int tier, ItemRarity q)
+{
+    bool caster = arch is Archetype.Nuker or Archetype.Healer;
+    string weapon = caster ? "staff" : arch == Archetype.Warrior ? "sword2h" : "sword1h";
+    return ItemCatalog.Get($"{weapon}_t{tier}{G3Quality(q)}") is not null;
 }
 
 static void EquipEnchanted(Entity e, string defId, int enchant)

@@ -12,6 +12,7 @@ original file's content, unchanged, under its own marker. The reason for the mer
 
 | pass | date | what it was |
 |---|---|---|
+| [Playtest-24](#playtest-24) | 2026-08-16 | the 0.68.0 pass. Small and heavy: eight rows green, two new bugs of his own (reflect FLAGS the defender — an anti-PK exploit; the System/All chat tab lags the game), a system RULE for AOE and no-damage skills under the PvP flag, and his counter-argument to the `G3` mobs-as-players verdict |
 | [Playtest-23](#playtest-23) | 2026-08-15 | the five-version pass (0.63.0->0.67.2). Almost everything green; seven free-form finds of his own and five rulings that change built systems — mob clans off, Undying Will re-specced, the boss EXP curve, the res flag, the hide skills re-homed |
 | [Playtest-22](#playtest-22) | 2026-08-13 | the 0.62.0 pass. Five whole sections passed outright; the mage-MP question closed after three passes. Twelve free-form finds, most of them DESIGN — invisibility, mob social clans, the aggro/taunt model |
 | [Playtest-21](#playtest-21) | 2026-08-11/12 | the eight-build pass (0.58.0->0.60.1). Crafting and the enchant rework played for the first time; the shield double-dip, the tutorial dead-end, the inert dummies |
@@ -30,6 +31,105 @@ Answered checklists that fed these passes (`Open-Checklist-0.45.0/-0.47.0/-0.48.
 transcribed into the playtest files at the time and are in git history.
 
 
+
+---
+
+<a id="playtest-24"></a>
+
+# ══ Playtest-24 ══
+
+# Playtest-24 — the 0.68.0 pass (owner, 2026-08-16)
+
+The first pass on the 0.68.0 APK (protocol 21), covering the playtest-23 fix batch §85 and the three §86
+items built while that APK waited. His own words: *"Done playtest 24 (it had not much but need to be
+thinked about)"* — and that is the shape of it. Eight rows came back `[x]` with nothing to say; what he
+wrote instead is **two new bugs**, **one system rule** that reaches every AOE and every no-damage skill in
+the game, and a **counter-argument to the `G3` mobs-as-players recommendation** that names three levers the
+document never swept. **Below is his own text, unedited.**
+
+⚠ **His edits arrived as an upload, not in the repo working tree** (which stayed clean at `3ac9411`). If a
+later session cannot find his marks in `Open-Checklist.md`, that is why — ask him for the file.
+
+---
+
+## His marks
+
+| section | rows | verdict |
+|---|---|---|
+| §85 the playtest-23 fix batch | `85b` `85e` `85f` `85g` `85h` `85i` `85m` `[x]` · `85a` `85j` `85k` `85l` `[~]` · `85c` `85d` `85n` `[]` | the death prompt, the res flag, the res scroll and the drop penalty all landed first time |
+| §86 built while the APK waited | `86c` `[x]` · `86a` `86b` `[~]` | the picker wants polish; `86b` is a design answer, not a test result |
+| §81 the two reflects | `81b` `81c` `[]` | never reached for a **second** pass |
+| carried forward | `0a` `[~]` · `37d` `37e` `13a` `[]` | untouched |
+| My Finds 0.68.0 | 2 rows, both `[!]` | reflect flags the defender · the System chat tab lags the game |
+
+---
+
+## My Finds 0.68.0 (his own section, verbatim)
+
+- [!] Reflect should not flag me - That's a big anti pk exploit...som1 comes to me and wants to kill me but I don't want to ..so he hits me see I become pvp flag and he just kills me
+
+- [!] System chat lagging the game ... Other tabs don't just system(respectedly and "all")
+	* actually my 1st admin acc have a problem with the game chat .... After fame restart it wirks
+
+---
+
+## §85 — the playtest-23 fix batch
+
+- `85a` [~] Signal Flare — **it works but it should also flag me** ...if  I have the PvP on I should able to attack near my target and reavel it
+	  * goes for all AOE skills. (the second warrior class is AOE and need to use the same logic)
+			- pvp-off = using AOE skills hit only nearby monsters
+			- pvp-on = hit nearby players as well
+			- flare with pvp on reveals nearby players and Act as hit so flags
+			- any skill that does no dmg and can be casted on a player if the PvP is off is (monster only) but if pvp is on it cast on a player and flags
+
+- `85b` [x] the three hide skills are where he put them — no comment.
+
+- `85c` [] the taunt auto-chain rung — **never reached**.
+
+- `85d` [] mob social clans off — **never reached**.
+
+- `85e` [x] Undying Will / Rite of Preservation as a death prompt — no comment.
+
+- `85f` [x] the res flag is paid when the cast starts — no comment.
+
+- `85g` [x] the resurrection scroll works — no comment.
+
+- `85h` [x] the drop tab shows the level penalty — no comment.
+
+- `85i` [x] Dark Dominion is gone — no comment.
+
+- `85j` [~] boss exp — it still feels low for a 90 lvl boss. Leave it like that after we have the 40/76 kits the time will change and we will need to boost bosses and doing so will increase the exp propotionally
+
+- `85k` [~] the target frame — it's OK but the text "mob:.." is hidden. Same problem we had with every window and the text inside ..the texblock don't take into account the title row. And the 1st text is half hidden
+
+- `85l` [~] the chat and combat windows — they move tey resize...the problem is
+	* combat window cannot go left below certain distance.
+	* And the bot chats resize - resizing them in reverse .. I drag down it goes from bottom to top increasing is height but the bottom is the frozen position. The drag button should move not thebtop/left
+	- also remove the row with "clear" and "replay" it's now an empty space and the text never gets to the bottom. Move the buttons top next to L/U clear can be a bin icon, reply a soeach bubble or something ... The resize is shown only on unlocked so it can cut into the text for the time is unlocked ...also l/u if you can add un/locked padlock icon.
+
+- `85m` [x] the chat input clears the camera cutout — no comment.
+
+- `85n` [] the eight seeded 40+ CSVs — **not read**.
+
+---
+
+## §86 — built while the APK waited
+
+- `86a` [~] the admin gear picker — good just make the selection buttons smaller in height and add a header on the filtered gear list. Now it's the same row as the grade (needs a splitter)
+
+- `86b` [~] `G3` mobs-as-players — u said u cannot manage to balance a player with current mobs curve
+	  * a human fighter lvl 85 vs Disable of down elite 85lvl ...
+			- human fighter with S grade Mace enchanted to +60 (that's why we van have a mobs weapons) and B grade leather only have the same pDef and twice less p atk g if we make the elite passive x2 p atk and hp boost we can make him the same values ...
+			- try to recreate mobs with different races (main stats) with player formulas (they currently using weapon types )so same weapon type and just enchanted or a mob passives that boost PA tk and or other stats ... Enchanted gear of power grade something like that ?
+
+- `86c` [x] a mob's attributes block is AGI + WIT only — no comment.
+
+---
+
+## Said in the same session, in chat (not in the file)
+
+> If we have different mob races like litches,angels,goblins etc all will have different mainnstatsn(near
+> players one) and just boost with passives and lower gears..
 
 ---
 
