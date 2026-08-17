@@ -12,6 +12,7 @@ original file's content, unchanged, under its own marker. The reason for the mer
 
 | pass | date | what it was |
 |---|---|---|
+| [Playtest-25](#playtest-25) | 2026-08-16/17 | the 0.69.0-APK + 0.70.0-server pass. **Every built row green** — all five 0.69.0 fixes and all four mob-demo rows — so the pass IS his eight free-form finds: `BL-13` answered (a boss is 10-30 minutes), the mob demo *"works"* but loses the global curve lever, mobs feel easy and are ~3× short on HP, two new uses for player-built mobs (town guards, fortress sieges), and taunt must never be automatable |
 | [Playtest-24](#playtest-24) | 2026-08-16 | the 0.68.0 pass. Small and heavy: eight rows green, two new bugs of his own (reflect FLAGS the defender — an anti-PK exploit; the System/All chat tab lags the game), a system RULE for AOE and no-damage skills under the PvP flag, and his counter-argument to the `G3` mobs-as-players verdict |
 | [Playtest-23](#playtest-23) | 2026-08-15 | the five-version pass (0.63.0->0.67.2). Almost everything green; seven free-form finds of his own and five rulings that change built systems — mob clans off, Undying Will re-specced, the boss EXP curve, the res flag, the hide skills re-homed |
 | [Playtest-22](#playtest-22) | 2026-08-13 | the 0.62.0 pass. Five whole sections passed outright; the mage-MP question closed after three passes. Twelve free-form finds, most of them DESIGN — invisibility, mob social clans, the aggro/taunt model |
@@ -31,6 +32,128 @@ Answered checklists that fed these passes (`Open-Checklist-0.45.0/-0.47.0/-0.48.
 transcribed into the playtest files at the time and are in git history.
 
 
+
+---
+
+<a id="playtest-25"></a>
+
+# ══ Playtest-25 ══
+
+# Playtest-25 — the 0.69.0 APK on the 0.70.0 server (owner, 2026-08-16/17)
+
+The pass that ran the whole playtest-24 fix batch (§87) **and** the mob demo (§88) in one sitting, the demo
+riding along because 0.70.0 was server-only. **Every single built row came back `[x]`** — the reflect flag,
+the chat-tab lag, the PvP/AOE filter, the target frame, the chat windows, and all four demo rows. So the
+content of this pass is not the marks: it is **eight free-form finds**, two of which change built systems
+and one of which finally answers `BL-13`. **Below is his own text, unedited.**
+
+✅ **His marks were in the repo working tree this time**, not an upload — the request at the top of the
+playtest-24 checklist worked.
+
+---
+
+## His marks
+
+| section | rows | verdict |
+|---|---|---|
+| §88 the mob demo (0.70.0) | `88a` `88b` `88c` `88d` all `[x]` | all four green with no row comment — **his verdict is the free-form "The mob demo -> It works" block instead**, and it is not an approval of the design |
+| §87 the playtest-24 batch (0.69.0) | `87a` `87b` `87c` `87d` `87e` `[x]` · `87f` `[~]` | five fixes landed first time, including both of his `[!]` bugs; only the gear picker wants another polish pass |
+| §85 carried from 0.68.0 | `85d` `[x]` · `85c` `[~]` · `85n` `[]` | `85c` comes back as a **reversal**, not a confirmation; `85n` untouched for the third pass |
+| §81 the two reflects · CARRIED FORWARD | `81b` `81c` `0a` `37d` `37e` `13a` | never reached again |
+
+---
+
+## My Finds — his own, verbatim
+
+- [~] Mob titles like the dummies etc can be in their "mob:" row in the target window. The title-row of the window to be only the name of the target. No lvl no target.title, now the [title + name + lvl] overflows of the window
+
+- [`bl-13`]  not nececerily the 20lvl should take 6mins ..but they can take a lot more ... It's a Boss the bosses should take 10-15 even 30 mins to kill (depending on the gear). It should feel hard but rewarding .. A 3 min boss is not a boss its a stronger elite mob .. Bosses should have stronger defences,more atk (not one shooting but a tank can feel it), A healer,tank and dds in a party are a must ...
+
+- [~] The mob demo -> It works
+  - they relatevley feel the same
+  - but I have the feeling that controling the curve and the mobs per lvl will be harder this way. 
+  - I open now the skills tab and see a passive with much random numbers (skipping the overenchanted weapons)
+  - If we use the players as mobs(pMob) we will have very hard time to alter them (we will need to alter each mob separately) - with current mobs we can say: "this one will have x2 hp" and whole the mobs on the field are altered.. while with the pMobs we will alter one and it will be good in the lvl range (+-5) not across the board ...
+  - now mobs as general feel easy ... tank get hit fo 30 .. others for 100-200 but the rogue almost one blow it ... mage one/two shot it .. and there is no thrill in fighting .. and i used uncommon t40 for 40-45, uncommon t52 for 60 and epic t76 for the 80, and tank kills them the same way and cant die, mage is the only one with @40+ skills
+  - also i think mobs should have more hp, the 80 mobs should have 15k not 5 .. the 60 lich is with 1500 he h... - caster mobs are not weaker than the other, they just use spells (and have a bit less pdef,evasion not twice less)
+  - the player mobs can be a 
+    * "town/field Guards" 
+      - a lvl 80 mob with Mythic t80 equip that is only aggressive thowards PK (ignores mobs/pvpOrNormal-players) aggro range for mele 400 for archers 600 -> ofc if u hit them (pvp-on) they act as passive mobs + pk radar
+      - they can have a class with passives
+      - each towns exit will have two guards - a tank and an archer, they dont use skills (only normal attack) but can have rune_war (unlimited)
+      - a pk cant use npcs - if he manages to kill them and enter town
+    * fortresses with actual mobs as players 
+      - fortress is like a small siege in a specific times in a week .. let say once a week all fortresses can be attacked 
+      - once defeated they cannot be reengaged - (mobs dont respawn - no quest retaken - quest available only 30 min before sieges start)
+      - A social mobs that for example: fortress lvl 60, mobs 58-62
+      - have a troopers/foot soldiers with equipment of common t52 - warriors/tanks - basic atk - aggro(400-aggro range),social
+      - have a archers with common_t52 - basic atk - aggro(400),social, atack range 600
+      - mages common_t52 (use spells)k - aggro(400),social, atack range 600
+      - healers common_t52 - can heal allies (does no dmg) - passive,social, heal range 500 - uses normal heals not quick
+      - commanders (tank,mage,archer,warrior,healer) with rare_t52 - they can use skills
+      - kings guard rare_t61 - (archer,mage + two healers, and if king is warrior the other guard is a tank, if king is tank the other guard is a warrior) - they can use skills
+      - and a king or whatevr is the highest a mythic_t61 - stronger mob (buffed with war rune), twice hp/pdef/mdef/patk/matk
+      - its a small fortress like structure -> it have one entrence
+        - the otside have small amount of troops -> 10-15 with 2-3 archers 2-3 mages
+        - once the mobs outside are killed u can attack a "mob-gate" (its become targetable and mortal once all the mobs of its side are killed) a targetable imovable door with high hp and defence (or takes 1dmg - cannot be critted and have like 1000hp) - to take about 1k hits (immune to physical/magical skills/dot/debuffs) - noramal atcks only work
+        - once you enter the fotress -> there are 20-30 troops with 10-15 archars and ~10 mages and ~10 healers
+        - once they are killed a commanders are spawned - like a enemy party 
+          - healer heals with quick/party/remove debuffs/almost infinite mp (kill the healer 1st idea) 
+          - tank can taunt - use ultimate
+          - archer,mage,warrior can stun/debuf to skills/spells to dmg
+        - once the comanders are killes a inner gate can be descroyed
+        - once the inner gate is down it spawn the leaders + the king -> stronger party with strong king as a frontline (warrior king + tank guard, or tank king + warrior guard) - same logic as the commanders party
+      - if we make a template of a fortress - we can reause it just change the grade of equipment
+      - once you enter the fortress field u automatically flag as pvp - the other parties/clans can atack the same fortress - the king drops boss loot + high amount of raid poits
+      - once the siege is finished every participant (not all that took the quest - but who fought inside - or your party has killed a tropper) can compleate the quest that gives you gold/exp and raid points
+  - this system can be defered and just have it as idea or can build some base ground for it
+
+- [~] Admin in God mode cannot be debuffed(immune to all - can be used on him but resisted), 
+  - same as bosses - not hold/slow/stun/paralize etc, but bosses can only have their p/mDef, p/mAtk lowered, can be Dot-ed and hp/mp hp regen limited ..  
+  - admins resist any debuff (in god mode)
+
+- [~] Add a flag for admin to see that he is in god/invis 
+  - once the game design is placed (models etc) the players in shtealt will see themselves with opacity to 0.7 and in invis 0.4 (for them selves only - for others stealth does nothing, invis vanishes them)
+  - same for admins but now i cannot see nothing - a god admin can have his color or border golden, and invis players+admin can have their opacity changed or some color  
+
+- [?] can we have some reaserch for 5-10 mobs of every lv of the IG to compare its stats to our of the same lvl - i have the feeling that our mobs are weaker or atleast with alot less hp ... 
+    - we then alter the hp curve to be a bit more - a healer with 1500 hp getting hit for 300 is abit harsh ... one time less defence cuz of robe the second hinder is the amount of hp ..   
+
+- [~] decreasing the width of the chat leaves the [combat] button floating in the air - make the buttons smaller or like the icons on the top
+
+---
+
+## §88 — the mob demo (0.70.0), all four rows
+
+- `88a` [x] — columns 1 and 2, the ±5 band (P.Atk falls x0.87 → x0.64 across five levels). *No comment.*
+- `88b` [x] — columns 4 and 5, the authored ×2.07 attack passive vs the held War Rune. *No row comment;
+  answered in My Finds:* **"they relatevley feel the same"**.
+- `88c` [x] — column 3, the ×3.7-HP Cairn Lich as caster or sponge. *No row comment; the My Finds block
+  says the lich's 1500 HP is too low and that a caster mob should not be squishy at all.*
+- `88d` [x] — the fence holds; no demo template leaked into a generated field.
+
+---
+
+## §87 — the playtest-24 fix batch (0.69.0)
+
+- `87a` [x] — reflect no longer flags the defender (his anti-PK exploit).
+- `87b` [x] — the System/All chat tabs no longer lag.
+- `87c` [x] — the PvP flag is now the AOE filter (`BL-77`), including the three clauses decided for him.
+- `87d` [x] — the target frame's first row is no longer covered, and the trade window's headers with it.
+- `87e` [x] — the chat/combat windows: left edge, resize anchor, the drawn bin/bubble/padlock icons, the
+  grip that dims instead of vanishing.
+- `87f` [~] — the gear picker. His words: **"Make the buttons even smaller. Like the tab buttons in height.
+  Also there is no splitter bellown theb [S 80] button."**
+
+---
+
+## §85 — carried from the 0.68.0 batch
+
+- `85c` [~] — the taunt auto-chain rung. His words: **"I think remove the taunt as being able to be auto. I
+  feel it like an exploit. Get a tank leave it auto he taunts almost impossible to kill you farm with ur
+  other hero. Taunt should be active play only."** ⚠ A **reversal** of the 0.68.0 fix, not a confirmation.
+- `85d` [x] — mob social clans off, nothing deleted.
+- `85n` [] — the eight seeded 40+ CSVs. Untouched for a third pass.
 
 ---
 

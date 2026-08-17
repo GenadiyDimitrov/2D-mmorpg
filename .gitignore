@@ -32,3 +32,7 @@ Game.Client.Unity/Assets/Resources/PerformanceTestRunSettings.json.meta
 
 # Local build artifacts staged for the phone (APK + server publish). Large and regenerated.
 builds/
+
+# Google Drive sync temp copies (they appear mid-write, then vanish)
+.tmp.driveupload/
+.tmp.drivedownload/

@@ -18,6 +18,26 @@ Two kinds of entry:
 
 ## Superseded backlog entries
 
+### `BL-13` — "a flat ×100 cannot hit 360s at every level; do the late bosses come DOWN?"
+**Replaced 2026-08-16/17 by his playtest-25 ruling**, which is *"bosses should take 10-15 even 30 mins
+to kill"*. The measurement below is still correct and is quoted on the live entry; what it got wrong is
+the **question it asked him**. It read the 11× spread as a defect and offered "bring the late bosses
+down to 360s" as one of two options — but 360s was never his target, it was mine, extrapolated from an
+old *"6 minutes"* remark he had not repeated. Against the band he actually wants, the late rows were
+right all along and the early ones are 2-7.5× too fast. Kept as the reason `BalanceMatrix`'s boss
+section exists and prints what it prints.
+
+> A level-20 field boss spawns with exactly 36,000 HP = `MobBaseStats.Hp(20)` × the rank's ×100, and
+> the scale survives every recompute. Nothing is being eaten. But measured against your 6-minute /
+> 3-DD target (new `BalanceMatrix` section, ceilings — no downtime): 20 → **80s** (4.5× too fast),
+> 40 → 296s (about right), 60 → **684s** (~2× too slow), 76 → **888s** (~2.5× too slow), 85 → 693s.
+>
+> A flat ×100 **cannot** hit 360s at every level: mob HP grows as `0.8·L²` while a geared party's DPS
+> is nearly flat (448 → 525), so the boss rank swings **11× in difficulty between 20 and 76**. Nothing
+> was changed — the curve is a ruling. **Two questions:** should a level-20 field boss take a level-20
+> party six minutes, and do the late bosses come DOWN to 360s or does the target rise with level? The
+> table prints what each level would need (×448 / ×122 / ×53 / ×41 / ×52).
+
 ### `BL-47` — "do not migrate mobs onto the player pipeline; finish the passive layer instead"
 **Replaced 2026-08-16 by his playtest-24 answer** (`86b`), which is *migrate*. The recommendation
 below stood for one day and is kept because it is the reason `MobsAsPlayers.md` reads the way it

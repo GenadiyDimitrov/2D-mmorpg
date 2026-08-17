@@ -1,22 +1,22 @@
-# OPEN CHECKLIST — after playtest 24
+# OPEN CHECKLIST — after playtest 25
 
-> **Rolling and unversioned.** Playtest 24 (2026-08-16) ran the 0.68.0 APK: `85b`, `85e`, `85f`, `85g`,
-> `85h`, `85i`, `85m` and `86c` all came back `[x]` and are **gone from this file** — they live in
-> [Playtest-Archive.md#playtest-24](Playtest-Archive.md#playtest-24) with your comments verbatim. What is
-> below is the four rows you marked `[~]`, the eight you never reached, and **§87 — the two bugs and the
-> four changes that pass produced, all six now BUILT in 0.69.0** and carrying test instructions.
+> **Rolling and unversioned.** Playtest 25 (2026-08-16/17) ran the 0.69.0 APK against the 0.70.0 server.
+> **Every built row came back `[x]`** — all five 0.69.0 fixes (§87) and all four mob-demo rows (§88) — so
+> those two sections are **gone from this file** and live in
+> [Playtest-Archive.md#playtest-25](Playtest-Archive.md#playtest-25) with your comments verbatim.
 >
-> 🆕 **§88 is the mob demo** (`BL-47` step 2, 0.70.0) — the only section here that is a DESIGN call
-> rather than a fix. ⚠ **Server-only: the 0.69.0 APK you already have works against it**, so it costs
-> you nothing extra to walk over and fight them.
+> 🔑 **The pass was your eight free-form finds, not the rows.** Where each one went is §89 below.
+> Nothing from playtest 25 is built yet, so **there is nothing new to test in this file today** — what is
+> below is the four rows that were never reached in the last three passes, and the answers I owe you.
 >
-> ⚠ **Your marks came to me as an uploaded copy, not through the repo.** The working tree was untouched,
-> so if you edit this file in place next pass, say so — otherwise I will look in the wrong place again.
+> ✅ **Your marks were in the repo this time, not an upload.** That is the right way round — keep doing
+> it and I will always find them.
 
 Rows are the format you picked (option 2): write your comment after the `->`. Put `x` in the `[]` if
 it passed with nothing to say, `~` if it works but wants a change, `!` if it is a bug or priority,
 `?` for a question. A `-` row with no id is a free line for that section — add as many as you like.
-**Your own "My Finds" section is at the top** — keep using it, it worked twice now.
+**Your own "My Finds" section is at the top** — keep using it, it has worked three passes running and
+it is now where most of the real content arrives.
 
 🔑 **This file is for TESTING. What is still owed to be BUILT lives in
 [docs/Backlog.md](../Backlog.md)** as permanent `BL-nn` ids.
@@ -39,34 +39,42 @@ it passed with nothing to say, `~` if it works but wants a change, `!` if it is 
 
 ## 0. ANSWERS I OWE YOU — read, don't test
 
-### ✅ Closed by playtest 24
+### ✅ Closed by playtest 25
 
-- ✅ ~~**`85j` the boss EXP number**~~ — **you parked it yourself**: *"it still feels low for a 90 lvl boss.
-  Leave it like that after we have the 40/76 kits the time will change and we will need to boost bosses and
-  doing so will increase the exp propotionally."* So the **0.25 respawn exponent stays as it is** until
-  `BL-02` lands, and the boost comes with the kits. Recorded so nobody re-tunes it in the meantime.
-- ✅ ~~**`G3` §8-A, the mob attribute display**~~ — `86c` came back `[x]`. The two rows are gone and
-  nothing about how a creature fights changed.
-- ✅ ~~**`G3` §8-B, migrate or finish the passives**~~ — **you ruled: migrate** (`86b`). `BL-47` is rewritten
-  around your answer and the superseded recommendation is in `BacklogArchive.md`. **Three questions of mine
-  are on that entry and step 2 waits on them** — see §87f below.
+- ✅ ~~**`BL-13` the boss curve**~~ — **you ruled, and it inverts the question I asked.** *"bosses should
+  take 10-15 even 30 mins to kill ... A 3 min boss is not a boss its a stronger elite mob."* So the
+  target **rises**; the late bosses were right all along (60 → 684s, 76 → 888s, 85 → 693s are all inside
+  600-1800s) and **only levels 20 and 40 are wrong**, at 2-7.5× too fast. My "should the late ones come
+  down to 360s" was extrapolated from an old *"6 minutes"* remark, and it was the wrong question.
+  The entry now carries three jobs, and only the first is arithmetic: lift the low end, **give a boss
+  defence and attack** (today `Boss` is HP ×100 / ATK ×10 with **no defence term at all**, which is
+  exactly why it reads as a sponge), and **re-base the target on a real party** — tank + healer + DDs —
+  since the current table measures three DDs and no healer. ⚠ Your `85j` EXP park partly resolves itself:
+  boss EXP is derived from kill time.
+- ✅ ~~**`88b` the rune vs the passive**~~ — *"they relatevley feel the same"*. **The attack side of a
+  player-built creature is an item it carries.** No per-band attack table, no drift with level.
+- ✅ ~~**`G3` §8, the mobs-as-players verdict**~~ — you fought them and the answer is a **split**, not a
+  yes or a no. See `BL-47`; the one open question is restated in §89 below.
 
 ### 🔴 Still yours to rule
 
-- 🔴 **`BL-13` the boss curve — the ×100 IS landing, and that is not the problem.** A level-20 field
-  boss spawns with exactly 36,000 HP. But against your six-minute / 3-DD target a single flat multiplier
-  swings **11×** across the game: TTK **80s at 20**, 296s at 40, 684s at 60, **888s at 76**. Mob HP grows
-  as `0.8·L²` while a geared party's DPS is nearly flat (448 → 525). Two decisions are yours: *should a
-  level-20 field boss really take a level-20 party six minutes*, and do the late bosses come **down** to
-  360s or does the target itself **rise** with level.
-  🔵 **The world boss has no rank to live in** — your *"an hour for ~10 parties"* is ~**167×** a field
-  boss, which is a new rank with its own drops, phases and lockout, not a bigger number.
-  ⚠ Your `85j` park makes this **more** urgent, not less: you have deferred the EXP number to the kits,
-  and the EXP number is derived from the kill time this entry is about.
+- 🔴 **`BL-47` — the ONE question left on mobs-as-players, and it is a yes/no.** You marked the demo
+  *"It works"* and then named its real cost: *"with current mobs we can say 'this one will have x2 hp'
+  and whole the mobs on the field are altered.. while with the pMobs we will alter one and it will be
+  good in the lvl range (+-5) not across the board."* **That is correct and structural** — one function
+  moves every creature; a per-creature loadout has to be re-authored one at a time. But you also named
+  where they *should* go: **town guards** and **fortress sieges**, both hand-placed and few. So:
+  **do ordinary field creatures stay on the `MobBaseStats` curve with ×2 passives, and player-built mobs
+  become a hand-placed CONTENT tool instead of the general pipeline?** Everything already built serves
+  that shape unchanged. Say yes and `BL-79`/`BL-80` are the roadmap.
+  ⚠ **One thing from the demo you never commented on**: `88a`, whether the level-45 Elder Raider felt too
+  soft beside the level-40 Raider (its P.Atk falls x0.87 → x0.64 across the band). It only matters if a
+  pMob carries a ±5 band at all, so it can wait for the answer above.
 
 - 🔴 **`BL-49` — the levelling curve, not the boss rule.** One **level-20** field boss is **125% of a
   level** solo while a level-85 one is **0.1%** — the same 150 trash kills either way. §85j moved the
   boss multiplier where you asked, and that spread survives it untouched, because it is the EXP curve.
+  ⚠ **`BL-13` now sits on top of this**: a boss that takes 3-10× longer carries 3-10× the EXP with it.
 
 - 🔴 **`BL-22` salvage: the S row cannot be moved by this feature at all.** Your budget was *"10~20%
   decrease in time"*; the early rungs got exactly that (E −3% · D −10% · C −18%) and **A and S got −0%**.
@@ -82,11 +90,11 @@ it passed with nothing to say, `~` if it works but wants a change, `!` if it is 
   not caught up — and `BL-71` made it load-bearing rather than cosmetic.
 
 - ⚠ **Numbers that are mine, not yours** — each flagged in the source: the top rung of **Madness**; the
-  Ultimate Scroll of Resurrection's **15,000 Value**; the three subclass-swap clauses; and now the
+  Ultimate Scroll of Resurrection's **15,000 Value**; the three subclass-swap clauses; and the
   **0.25 respawn exponent**, which your `85j` park leaves standing as mine.
 
 - **The heavy sets' shield clauses are still unchanged PERCENTAGES** (`shield.p.def x1.10 / x1.25 /
-  x1.30`). Left alone a third time on purpose: §79c moved the block channel and you passed it, so moving
+  x1.30`). Left alone a fourth time on purpose: §79c moved the block channel and you passed it, so moving
   these now would make the next reading un-attributable.
 
 - **`/give`'s `sellPrice` argument, your `[?]`.** `-1` → *unsellable* · `0`, `-` or omitted → use the
@@ -95,171 +103,43 @@ it passed with nothing to say, `~` if it works but wants a change, `!` if it is 
 
 ---
 
-## 88. THE MOB DEMO YOU ASKED FOR — ✅ BUILT (0.70.0), and it is the one thing here that is a DESIGN call
+## 89. WHERE PLAYTEST 25 WENT — nothing to test yet, this is the routing
 
-`BL-47` step 2: *"and later we can do 2~5 mobs so I can test."* Five creatures built through the PLAYER
-pipeline, each standing beside the ordinary creature of its own level. ⚠ **Server-only — the 0.69.0 APK
-you already have works against this server**, so this rides along with playtest 25 at no extra install.
+Your eight finds, and what each one became. **None of it is built**, so no row here has a `[]` — they
+come back as testable rows once they ship.
 
-**Where:** any gatekeeper → **Proving Grounds** (a second gate on the Training Grounds, on the row
-south of the dummies). Five columns; in each one the **player-built** creature is NORTH and its
-**curve twin** — an ordinary mob of the same level, no passives, same weapon — is directly SOUTH.
-Nothing attacks on sight and nothing drops loot: kill one, turn round, kill the other.
+| your find | where it went | state |
+|---|---|---|
+| bosses should take 10-30 min, more def + atk, party mandatory | **`BL-13`** — rewritten around your ruling | 🔴 ready |
+| mobs feel easy · 80 mob wants **15k HP not 5k** · a caster mob is not squishy · the **IG comparison research** | **`BL-78`** (new) | 🔴 ready |
+| town/field **guards** — Lv 80 Mythic t80, aggro on PK only, PK radar, two per town exit | **`BL-79`** (new) | 🔴 ready |
+| **fortress sieges** — the whole design, verbatim | **`BL-80`** (new) | 🔵 you said it can be deferred |
+| god mode resists every debuff · a **boss** is immune to control only (DoT and stat-down still land) | **`BL-81`** (new) | 🔴 ready |
+| an admin can't see he is in god/invis · the stealth opacity rule | **`BL-82`** (new) | 🔴 ready |
+| **remove taunt from the auto chain** (`85c`) | **`BL-83`** (new) | 🔴 ready |
+| the mob demo verdict | **`BL-47`**, rewritten — one yes/no question left, in §0 above | 🔵 yours |
 
-| col | player-built | Lv | its twin |
-|---|---|---|---|
-| 1 | Goblin Raider | 40 | Standard Marker (Lv 40) |
-| 2 | Goblin Elder Raider | 45 | Standard Marker (Lv 45) |
-| 3 | Cairn Lich (caster) | 60 | Standard Marker (Lv 60) |
-| 4 | Fallen Seraph | 80 | Standard Marker (Lv 80) |
-| 5 | Fallen Seraph, Runebearer | 80 | Standard Marker (Lv 80) |
+**Three UI changes have no `BL` id because they are small and go in the next batch**, listed here so
+they are not lost:
+- **The target window's title row** — *"only the name of the target. No lvl no target.title, now the
+  [title + name + lvl] overflows"*; the mob title moves down into the `Mob:` row. ⚠ This is one layer
+  further into the frame `87d` just fixed.
+- **The chat window's buttons** — *"decreasing the width of the chat leaves the [combat] button floating
+  in the air - make the buttons smaller or like the icons on the top"*. Same family as `87e`.
+- **The gear picker, second pass** (`87f`) — *"Make the buttons even smaller. Like the tab buttons in
+  height. Also there is no splitter bellow the [S 80] button."*
 
-Inspect any of them and the target window now says what it is built from — its weapon, its armour and
-anything it holds.
-
-- `88a` [] - 🔴 **COLUMNS 1 AND 2 — YOUR ±5 BAND.** These two are the SAME authored loadout five levels
-  apart, and both carry **no passive at all**. Measured, defence and HP hold across the band (P.Def
-  x1.04 → x0.95) but **P.Atk falls x0.87 → x0.64** — a quarter of its damage, because the mob attack
-  curve is the steep one. It is left that way on purpose so you can feel it instead of reading it.
-  **Test:** fight column 1's pair, then column 2's. **The question is whether the Elder Raider feels
-  too soft for its level** — if it does, a band needs one attack number and *"prefixed 100+ mobs with
-  +-5 lvl ranges"* costs one more column in the table. If it does not, the band is free. ->
-
-- `88b` [] - 🔴 **COLUMNS 4 AND 5 — THE RUNE vs THE PASSIVE, and this is the one that decides the
-  design.** They are identical creatures. #4 gets its damage from an **authored ×2.07 attack passive**;
-  #5 has **no attack passive at all** and instead **holds a War Rune**. On the numbers they land in the
-  same place (x1.00 vs x0.97). **Test:** fight both and tell me if they feel the same. If they do,
-  **the whole attack side of this design becomes an item a creature carries** — no per-band table, no
-  drift with level, and a creature that visibly holds the thing that makes it dangerous. ⚠ The rune is
-  **held, never dropped** — you cannot loot it, which is your own *"not a dropped one..but just to
-  hold stuff"*. ->
-
-- `88c` [] - **COLUMN 3 — DOES A ×3.7 HP LICH READ AS A CASTER OR AS A SPONGE?** A caster creature is
-  the one archetype gear cannot reach: its HP needs a passive far past your ×2, which your own *"and hp
-  boost"* anticipated. On the numbers it lands exactly on the curve. **Test:** kill the Cairn Lich and
-  then its twin, and say whether the fight lengths feel alike. This is a FEEL question — the arithmetic
-  already agrees. ->
-
-- `88d` [] - **NOTHING ELSE IN THE WORLD CHANGED, and that is worth one look.** These nine templates
-  are fenced out of the generated rosters, so no ordinary field should have gained a Goblin Raider or a
-  "Standard Marker". **Test:** hunt anywhere at 40-45 or 76-85 for a few minutes and confirm you meet
-  only the creatures you always met. If one of these shows up in a real field, say so — that is the
-  fence leaking, and it is one line. ->
-
-- 🔵 **WHAT I OWE YOU AFTER THIS: "then we do a system number."** The demo says the machinery works; it
-  does not say how many creatures to build with it, and that number was always yours. Two decisions come
-  out of the fights above — whether a band needs its own attack number (`88a`), and whether a creature's
-  damage comes from a rune or a passive (`88b`). Everything after that is authoring.
+🔑 **What I would build first, if you do not say otherwise:** `BL-78`, because *"mobs feel easy"* is the
+one that changes how the game plays, it moves every TTK and farm number the other entries are measured
+against, and `BL-13` is partly downstream of it. The three UI changes ride along in the same APK.
 
 ---
 
-## 87. PLAYTEST-24 FINDS — ✅ ALL BUILT IN 0.69.0, test them
+## 85. NEVER REACHED — still owed from the 0.68.0 batch
 
-Your two `[!]` finds and the four changes your `[~]` rows asked for. **Everything below is in the
-0.69.0 APK + server.** No DB reset, protocol unchanged.
-
-- `87a` [] - 🔴 **REFLECT NO LONGER FLAGS THE DEFENDER — your anti-PK exploit, fixed.** *"Reflect should
-  not flag me — that's a big anti pk exploit...som1 comes to me and wants to kill me but I don't want to
-  ..so he hits me see I become pvp flag and he just kills me."* You were exactly right about the
-  mechanism: reflect damage runs through the same damage function as a real blow with the roles
-  SWAPPED, so the code that flags "the attacker" was flagging you.
-  **Test:** two characters outside town, wear an armour set with reflect, turn YOUR PvP **off**, let the
-  other one (PvP on) hit you until a `Reflect` line appears in the combat feed. **Your name must stay
-  white** and he must stay purple. Kill him with reflect if you can — that should still count as a
-  normal PvP kill, not a PK, and give you no karma. ⚠ **All three reflect paths were covered**, so if
-  you ever reach `81b` Deflection or `81c` Backlash, check the same thing there. ->
-
-- `87b` [] - 🔴 **THE SYSTEM/ALL CHAT TABS NO LONGER LAG.** Your two clues were the whole diagnosis:
-  only System and All, and a restart cures it. Those are the only tabs the 1000-line buffer actually
-  fills, and every time the window was reopened or the tab was switched the client rebuilt **the entire
-  buffer** — up to 1000 text rows in one frame — then threw ~880 of them away immediately. It now draws
-  only as many rows as the window can hold.
-  **Test:** play until the log is well filled (an hour of anything), then switch tabs back and forth
-  onto System and All repeatedly, and close/reopen the chat window. It should be instant, and **it must
-  not get worse the longer the session runs** — that "worse over time, fine after a restart" is the
-  exact symptom to watch for. ->
-
-- `87c` [] - 🔴 **THE PVP FLAG IS NOW THE AOE FILTER** — your rule from `85a`, built as `BL-77`.
-  **Test with PvP OFF:** an area skill and the flare reach **creatures only** — a player standing in
-  the radius is untouched and unrevealed, and the flare tells you so instead of saying "nobody was
-  hiding". **Test with PvP ON:** the same cast reaches players, reveals a hidden one, **and flags you**
-  — including when it deals no damage at all, which was the flare's whole complaint. A taunt or a
-  cancel aimed at a player flags you now too; it never did.
-  ⚠ **Three things I decided, because they were open and none of them blocked the build. Say if any is
-  wrong:** (1) **your own party is never touched**, PvP on or off, same as every other system here;
-  (2) **support is not routed through this** — a heal or a buff on a stranger keeps its own rule, since
-  it is castable on a player but is not an attack; (3) **only YOU flag** — the person your flare
-  revealed did nothing, and flagging him is your own exploit wearing a different coat. ->
-
-- `87d` [] - **THE TARGET FRAME'S FIRST ROW IS NO LONGER COVERED** (`85k`). ⚠ **You read the cause as
-  the title row and it was the opposite end** — the `Mob: 44, Aggressive` line was under the **Attack
-  button**, not under the title bar. It is the other half of the shrink you asked for in playtest 23:
-  the rows below the title moved up with the deleted name row, and the buttons, which hang off the
-  panel's floor, moved up with it — into them. The frame now has ONE button row (five of the seven
-  buttons have been hidden since playtest 23 anyway) and 12px more height.
-  **Test:** target a mob — the level/aggro line must be fully readable with the Attack and Info buttons
-  clear of it. Then an NPC (Talk) and a player (no buttons).
-  ✅ **You called it the generic bug, so all 23 windows with a title bar were checked. You were right
-  twice**: the **trade** window's partner-name line was biting 6px out of both column headers — fixed,
-  and its row positions are now measured off the title bar instead of a hand-picked number. The other
-  21 are clean. Worth a glance at the trade window while you are in one. ->
-
-- `87e` [] - **THE CHAT / COMBAT WINDOWS — all four asks** (`85l`).
-  **(a)** The combat window reaches the left edge now. The clamp assumed every window was centred and
-  neither of these is, so a right-pinned window could be dragged far off the right and stopped dead
-  just past the left. **(b)** Resize follows the grip: dragging down grows the window downward and the
-  **top-left corner stays put**. **(c)** The Clear/Reply row is gone, the text runs to the bottom of
-  the window, and both are icons in the title bar beside the padlock — **bin** = clear, **speech
-  bubble** = reply. **(d)** The grip no longer vanishes when you lock; it stays and dims, so the corner
-  it occupies is the same corner at all times.
-  ⚠ **The three icons are DRAWN, not font characters** — the bundled font has no bin, bubble or padlock
-  and would have given you the hollow box you have reported twice. Tell me if any of them reads as
-  something else at that size; they are shapes I can adjust. ->
-
-- `87f` [] - **THE GEAR PICKER** (`86a`) — *"make the selection buttons smaller in height and add a
-  header on the filtered gear list. Now it's the same row as the grade (needs a splitter)."* Both done:
-  chips are 28px instead of 34, and the list now opens with a header naming what it is filtered to.
-  ✅ The `G3`/`86b` half of this row is closed — it is design, not something to test; it is the block
-  below, kept here because it is the record of what you ruled. ->
-
-- **`G3` / `86b` — NOTHING TO TEST, this is where the answer is written down.** You ruled **migrate**,
-  and you were right about the measurement. My sweep had two
-  blind spots you found: it stopped at **+16** enchant, and it moved every slot **together**, so your
-  *"S grade Mace +60 and B grade leather"* was never constructed. **`G3.7` re-runs it your way:
-  12 of 16 archetype-levels land inside your ×2 passive on all four stats at once**, worst miss
-  **185-221% → 94%**, biggest attack passive still needed **×1.60** — and the search picked your loadout
-  on its own. ⚠ **The four failures are one failure, the Nuker's HP** (×2.01 → ×3.48), which your *"and hp
-  boost"* already covered. `BL-47`, `MobsAsPlayers.md` §6/§8 and `BacklogArchive.md` are all rewritten.
-  ✅ **You answered all three the same day** (race = a flat ±5, no curve · demo first, roster number after ·
-  a mob may hold a non-droppable inventory, so **yes to the rune**), plus *balance against normal mobs* —
-  which every `G3` number already did. 🔑 **And your roster ruling is ~90% built already**: `MobCatalog`
-  holds **80 templates each with its own natural level**, ~2 levels apart, and a natural level already
-  beats the zone band — only the **±5 variance** and ~20 templates are missing. That **retires `G3.3`**:
-  no level→grade function is needed after all. **Step 2 is unblocked**; §7 of the doc is rebuilt around
-  races, the split loadout and a held rune. Still open: §8 **C/D/E**. ->
-
----
-
-## 85. NEVER REACHED IN PLAYTEST 24 — still owed from the 0.68.0 batch
-
-✅ `85b` `85e` `85f` `85g` `85h` `85i` `85m` all passed — [see the archive](Playtest-Archive.md#playtest-24).
-
-- `85c` [] - 🔴 **NO TAUNT HAD EVER FIRED FROM THE AUTO CHAIN** — *"Provoke is not auto used in any
-  form."* It sorted into the never-cast bucket, because the debuff test asks for a contested effect or a
-  debuff school and a taunt is neither. Taunts have their own rung now, **above Attack**: a tank's attack
-  chain is never idle, so anything below it would fire on no tick at all.
-  🔑 **This is also the answer to *"check the cyclic logic ...I feel there is a problem"*.** The cursor
-  walk itself is correct — each priority group keeps its own place in your bar and wraps. What made it
-  feel broken is that an armed row the chain cannot cast was skipped **in silence**. It now tells you
-  which rows those are the moment you save.
-  🔑 **And your other question — the Basic Attack row's POSITION is irrelevant.** It is a toggle, not a
-  chain entry. **Put a tank on auto with Provoke armed and watch it hold a mob.** ->
-
-- `85d` [] - 🔴 **MOB SOCIAL CLANS ARE OFF, AND NOTHING WAS DELETED.** Your instruction, and `BL-73` is
-  the note you asked for. 🔑 What you hit is **spawn density, not the 450 radius**: every camp generates
-  on nearly one point, so a cry reaches all of it at once. One switch (`GameConstants.MobClansEnabled`);
-  the twelve clans stay authored and every line of the call code stays live. `Lure` is untouched.
-  **Hit one wolf and confirm you fight one wolf.** ->
+✅ `85b` `85c` `85d` `85e` `85f` `85g` `85h` `85i` `85m` all closed — see the
+[playtest-24](Playtest-Archive.md#playtest-24) and [playtest-25](Playtest-Archive.md#playtest-25)
+archives. `85c` came back as a **reversal** and is now `BL-83`.
 
 - `85n` [] - 🔑 **YOUR EIGHT 40+ CSV FILES EXIST, SEEDED.** `melee rogue` · `archer` · `healer` · `buffer`,
   each `40-74` and `76-85`, in `docs/data/classes_skills_csv/`, in the 40+ format (the 20-35 header plus a
@@ -267,14 +147,16 @@ Your two `[!]` finds and the four changes your `[~]` rows asked for. **Everythin
   invented, `BL-02` still stands. Generated by `tools/SkillCsvSeed`, which **refuses to overwrite**.
   ⚠ **Four of the eight are nearly empty and that is the honest picture.** ⚠ **`Vanish` shows an SP cost
   of 1** (the record default) precisely so you can see it and price it. **Nothing to test — read them.**
-  🔴 Second pass in a row untouched, and it is still the single biggest unlock in the project. ->
+  🔴 **Third pass in a row untouched**, and it is still the single biggest unlock in the project. Your own
+  playtest-25 note names it again without meaning to: *"mage is the only one with @40+ skills"* — that is
+  what a missing kit looks like from inside a fight. ->
 
 ---
 
-## 81. THE TWO REFLECTS — never reached in playtest 23 OR 24
+## 81. THE TWO REFLECTS — never reached in playtest 23, 24 OR 25
 
-⚠ **These two now matter more than they did**: `87a` says a reflect flags the defender, and these are the
-other two reflect paths. Test them in the same sitting as that fix.
+⚠ **`87a` is now confirmed green**, so the reflect-flag bug is fixed on all three paths. These two are the
+other two paths and have still never been played. Check the flag behaviour in the same sitting.
 
 - `81b` [] - **`Deflection` — physical-skill reflect, warrior.** *"default warrior @40 → 0.15 chance ×1
   reflected; @76 → 0.3 chance ×1 reflected."* Your numbers verbatim: the fraction stays **×1.0** at both
@@ -294,7 +176,8 @@ other two reflect paths. Test them in the same sitting as that fix.
 
 - `0a` [~] - **Nuker vs champion, unbuffed.** Half of this closed itself in playtest 23: the **mage** can
   now farm solo (`79i`). The **champion** half is untouched — *"they both have hard time to farm without
-  buffs"* — and is `BL-72`. Do it in the same sitting as an auto-farm run. ->
+  buffs"* — and is `BL-72`. Do it in the same sitting as an auto-farm run. ⚠ **`BL-78` will invalidate any
+  reading taken before it lands** — a 3× mob HP change moves every number this row is about. ->
 
 - `37d` [] - A trade **shortfall aborts the whole trade** with nothing moved. ->
 
@@ -302,8 +185,8 @@ other two reflect paths. Test them in the same sitting as that fix.
   are refused. ⚠ Interacts with `75d` — a tagged item is always a new row. ->
 
 - `13a` [] - The **"take a break" banner**. ⚠ **Still at 10 MINUTES** — it was set there at your request
-  for the 0.68.0 pass and tagged in the source to go back to 3h, and playtest 24 did not reach it, so it
-  stays until you have actually read one (`GameConstants.BreakReminderSeconds`). ->
+  for the 0.68.0 pass and tagged in the source to go back to 3h, and neither playtest 24 nor 25 reached
+  it, so it stays until you have actually read one (`GameConstants.BreakReminderSeconds`). ->
 
 ---
 
@@ -315,15 +198,15 @@ other two reflect paths. Test them in the same sitting as that fix.
   🔑 The authoring format is settled in **[docs/design/Disciplines.md](../design/Disciplines.md)**: you
   author **by DISCIPLINE with a trailing RACE column** — **10 CSVs, not 30** — and **six questions in it
   are waiting on you**. ⚠ **`85n` seeded the files**, holding what already exists above 40, so you start
-  by editing rather than by an empty sheet. Your `85j` park now depends on this landing.
-- **`BL-77` the PvP/AOE flag rule** — new this pass, queued 🔴; the testable half is `87c`.
+  by editing rather than by an empty sheet. Your `85j` park depends on this landing.
+- **`BL-78` / `BL-79` / `BL-80` / `BL-81` / `BL-82` / `BL-83`** — new this pass, all queued 🔴 except the
+  fortress; see §89 for what each one is.
 - **`BL-05` / `BL-22` / `BL-50` crafting** — ⏸ parked by you; it wants its own ×100-rate playtest.
 - **`BL-73` mob social clans** — off by one switch at your instruction, back on when the world map
-  spreads the camps out.
+  spreads the camps out. ⚠ `BL-80`'s garrison presumes clans, so it is one of that entry's prerequisites.
 - **`BL-74` the game launcher** — still not treating the app as a game; research owed.
-- **`BL-76` boss skill gems** — recorded, not built; five shape questions on the entry.
-- **`G3` mobs-as-players** — ✅ documented, and **you ruled: migrate**. It now waits on the three
-  questions in `87f`, not on work.
+- **`BL-76` boss skill gems** — recorded, not built; five shape questions on the entry. ⚠ Read it beside
+  `BL-13` now — a 30-minute boss is a different drop proposition.
 - **Instances** — you are holding (`BL-48`); the dungeons were the cheap half and are built.
 - **Two playtest-20 bugs closed on a reading of the code, never re-tested**: Frost Bind stripping a
   dummy's/elite's HP multiplier (`BL-63`) and the target lost during a physical cast (`BL-64`).

@@ -6,8 +6,11 @@ other way round. Where there is no CSV, nothing is invented (`BL-02`).
 ## The 20-35 files (yours, authored)
 
 `fighter 01-15` · `mage 01-15` · `tank 20-35` · `warrior 20-35` · `rogue 20-35` · `nuker 20-35` ·
-`healer 20-35` — the base and 2nd classes. `rogue 20-35` covers **both** the dagger and the bow to
+`cleric 20-35` — the base and 2nd classes. `rogue 20-35` covers **both** the dagger and the bow to
 level 40 (the archer merge), which is why there is no separate archer file below 40.
+⚠ **`cleric 20-35` was `healer 20-35` until 2026-08-17** (his rename, content unchanged). The 40+ files
+are still `healer 40-74` / `76-85` — **cleric** is the 2nd class, **healer** is the discipline above it,
+so the two names are not a mistake unless he says so.
 
 ## The 40+ files (seeded for you, playtest 23)
 
