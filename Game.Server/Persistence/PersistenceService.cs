@@ -342,13 +342,13 @@ public class PersistenceService
             .Where(c => c.AccountId == accountId)
             .Select(c => new CharacterSummary(
                 c.Id, c.Name, c.Race, c.BaseClass, c.SecondClass, c.Level, c.PendingDeleteAt,
-                c.ThirdClass))
+                c.ThirdClass, c.FourthClass))
             .ToListAsync();
     }
 
     public record CharacterSummary(
         int Id, string Name, Race Race, BaseClass BaseClass, int SecondClass, int Level,
-        DateTime? PendingDeleteAt, int ThirdClass = 0);
+        DateTime? PendingDeleteAt, int ThirdClass = 0, int FourthClass = 0);
 
     /// <summary>Top <paramref name="count"/> characters for one leaderboard category, read straight from
     /// the DB (so it reflects the last autosave — good enough for a board; live values lag ≤60s).
@@ -580,6 +580,7 @@ public class PersistenceService
             BaseClass = r.BaseClass,
             SecondClass = r.SecondClass,
             ThirdClass = r.ThirdClass,
+            FourthClass = r.FourthClass,
             Level = r.Level,
             Exp = r.Exp,
             SkillPoints = r.SkillPoints,
@@ -649,6 +650,7 @@ public class PersistenceService
                 BaseClass = rec.BaseClass,
                 SecondClass = rec.SecondClass,
                 ThirdClass = rec.ThirdClass,
+                FourthClass = rec.FourthClass,
                 Level = rec.Level,
                 Exp = rec.Exp,
                 SkillPoints = rec.SkillPoints,
@@ -833,13 +835,13 @@ public class PersistenceService
     /// (no torn reads / "collection modified" from X/Y, inventory or skills changing).</summary>
     /// <summary>One owned class, captured for saving.</summary>
     public sealed record SubclassSnapshot(
-        int Slot, Race Race, BaseClass BaseClass, int SecondClass, int ThirdClass,
+        int Slot, Race Race, BaseClass BaseClass, int SecondClass, int ThirdClass, int FourthClass,
         int Level, long Exp, int SkillPoints,
         int Con, int Atk, int Wit, int Agi, int Spt,
         string LearnedSkillsCsv, string SkillBarJson)
     {
         public static SubclassSnapshot From(Subclass s) => new(
-            s.Slot, s.Race, s.BaseClass, s.SecondClass, s.ThirdClass,
+            s.Slot, s.Race, s.BaseClass, s.SecondClass, s.ThirdClass, s.FourthClass,
             s.Level, s.Exp, s.SkillPoints,
             s.Con, s.Atk, s.Wit, s.Agi, s.Spt,
             string.Join(',', s.LearnedSkills.Select(kv => $"{kv.Key}:{kv.Value}")),
@@ -852,7 +854,7 @@ public class PersistenceService
     /// state travels in <see cref="Subclasses"/>, which is the source of truth.</summary>
     public sealed record CharacterSnapshot(
         int CharacterId, Race Race, BaseClass BaseClass, int Level, long Exp, long Gold,
-        int SecondClass, int ThirdClass, int SkillPoints, int Profession, int CraftExp,
+        int SecondClass, int ThirdClass, int FourthClass, int SkillPoints, int Profession, int CraftExp,
         int Con, int Atk, int Wit, int Agi, int Spt, float X, float Y,
         string LearnedSkillsCsv, string CompletedQuestsCsv, string ActiveQuestsJson,
         string KnownRecipesCsv, string FriendsCsv, string BlockedCsv, string AutoHuntJson, string EquipPresetsJson,
@@ -890,7 +892,7 @@ public class PersistenceService
 
             return new CharacterSnapshot(
                 id, e.Race, e.BaseClass, e.Level, e.Exp, e.Gold,
-                e.SecondClass, e.ThirdClass, e.SkillPoints, (int)e.Profession, e.CraftExp,
+                e.SecondClass, e.ThirdClass, e.FourthClass, e.SkillPoints, (int)e.Profession, e.CraftExp,
                 e.Con, e.AtkStat, e.Wit, e.Agi, e.Spt, e.X, e.Y,
                 string.Join(',', e.LearnedSkills.Select(kv => $"{kv.Key}:{kv.Value}")),
                 string.Join(',', e.CompletedQuests),
@@ -1063,6 +1065,7 @@ public class PersistenceService
         rec.Exp = snap.Exp;
         rec.SecondClass = snap.SecondClass;
         rec.ThirdClass = snap.ThirdClass;
+        rec.FourthClass = snap.FourthClass;
         rec.SkillPoints = snap.SkillPoints;
         rec.LearnedSkillsCsv = snap.LearnedSkillsCsv;
         rec.Con = snap.Con;
@@ -1081,6 +1084,7 @@ public class PersistenceService
             BaseClass = s.BaseClass,
             SecondClass = s.SecondClass,
             ThirdClass = s.ThirdClass,
+            FourthClass = s.FourthClass,
             Level = s.Level,
             Exp = s.Exp,
             SkillPoints = s.SkillPoints,

@@ -1342,6 +1342,15 @@ public static class ItemCatalog
             list.Add(new ItemDef(ClassProofId(cls.Id), $"Seal of the {cls.Name}",
                 EquipSlot.QuestItem, ItemGrade.F, ItemRarity.Legendary));
         }
+        // The 4th-class key. ONE item, not one per class: the 4th class is not a choice (a discipline
+        // has exactly one ascension), so there is nothing for a per-class token to distinguish. Sold
+        // at the Apothecary for 100kk and consumed at the 4th-class master; untradeable so it can't
+        // be bought by a rich friend for a level-76 who has not earned the gold. SellPriceOverride 0
+        // because a QuestItem is unsellable anyway (IsSellable) — stated so nobody reads the 100kk
+        // BuyPrice and assumes a 40kk vendor refund.
+        list.Add(new ItemDef(FourthClassKey, "Rite of Ascension",
+            EquipSlot.QuestItem, ItemGrade.F, ItemRarity.Legendary,
+            BuyPriceOverride: 100_000_000, SellPriceOverride: 0, Tradable: false));
 
         // ----- Level-tier gear (docs/data/gear/gear_sets.csv): weapons + base armor/shield/accessory/
         //       jewel pieces. SET BONUSES (and the dmg/support VARIANTS) come later; these carry only
@@ -2204,6 +2213,14 @@ public static class ItemCatalog
     // in BuildCatalog from ClassCatalog; the quest chains reference them by these ids.
     public static string ClassTokenId(int classId) => $"qi_{classId}_token";
     public static string ClassProofId(int classId) => $"qi_{classId}_proof";
+
+    /// <summary>The 4th-class key — ONE item for all 36 fourth classes, bought at any Apothecary and
+    /// consumed by the 4th-class master (owner, 2026-08-17: *"now can be without quest but go in the
+    /// apothecary and buy a 100kk 4th_class_item and go to class master with it … then we add
+    /// additional long quest"*). The long chain replaces the PURCHASE, not the item — when it lands,
+    /// this comes off the Apothecary shelf and becomes the chain's reward, and nothing else in the
+    /// class-change path has to change.</summary>
+    public const string FourthClassKey = "qi_ascension_rite";
 
     public static IEnumerable<ItemDef> AllItems => All.Values;
 

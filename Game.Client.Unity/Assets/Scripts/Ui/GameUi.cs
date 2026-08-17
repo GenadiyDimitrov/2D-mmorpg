@@ -499,8 +499,13 @@ namespace Game.Client
 
         private static string CharacterClassName(CharacterSlot slot)
         {
+            // Highest tier first. ⚠ `.Name`, NOT `.Discipline.ToString()` — since 2026-08-17 the
+            // name is per RACE (an Ork tank is an Ironhide, not a Bulwark), and the enum only ever
+            // knew the discipline. The two agreed until they didn't.
+            if (slot.FourthClass > 0 && FourthClassCatalog.Get(slot.FourthClass) is { } fourth)
+                return fourth.Name;
             if (slot.ThirdClass > 0 && ThirdClassCatalog.Get(slot.ThirdClass) is { } third)
-                return third.Discipline.ToString();
+                return third.Name;
             if (slot.SecondClass > 0 && ClassCatalog.Get(slot.SecondClass) is { } second)
                 return second.Name;
             return slot.BaseClass.ToString();

@@ -42,6 +42,12 @@ public class Subclass
     /// <summary>0 = none; otherwise a ThirdClassCatalog id (101-136, taken at 40).</summary>
     public int ThirdClass { get; set; }
 
+    /// <summary>0 = none; otherwise a FourthClassCatalog id (201-236, taken at 76). Always the
+    /// ascension of <see cref="ThirdClass"/> — never a different discipline — so it is redundant
+    /// with it by construction and stored anyway, because "has the player taken it" is the only
+    /// thing that can be asked of a threshold.</summary>
+    public int FourthClass { get; set; }
+
     public int Level { get; set; } = 1;
     public long Exp { get; set; }
     public int SkillPoints { get; set; }

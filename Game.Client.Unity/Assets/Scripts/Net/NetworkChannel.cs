@@ -444,6 +444,9 @@ namespace Game.Client
             _connection.SendAsync("DebugSecondClass", classId);
         public Task DebugThirdClassAsync(int thirdClassId) =>
             _connection.SendAsync("DebugThirdClass", thirdClassId);
+        /// <summary>Ascend to the 4th class, or drop back to the 3rd — a toggle, and it takes no id
+        /// because a discipline has exactly one ascension.</summary>
+        public Task DebugFourthClassAsync() => _connection.SendAsync("DebugFourthClass");
         public Task DebugAddSubclassAsync(int thirdClassId) =>
             _connection.SendAsync("DebugAddSubclass", thirdClassId);
         public Task SwitchSubclassAsync(int slot) => _connection.SendAsync("SwitchSubclass", slot);

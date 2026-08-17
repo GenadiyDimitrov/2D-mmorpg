@@ -120,6 +120,13 @@ try
     // the bag looking exactly right and pays nothing. Cheap to check, invisible to a playtest.
     Game.Shared.ItemCatalog.ValidateRunes();
 
+    // No two classes may share a NAME (2026-08-17, per-race 3rd/4th names). The class-change NPC
+    // lists what you may become BY NAME, so a duplicate makes two different changes indistinguishable
+    // — and with 48 hand-written strings in one table, a repeat is the likeliest typo there is.
+    if (Game.Shared.ClassNames.DuplicateNames().ToList() is { Count: > 0 } dupes)
+        throw new InvalidOperationException(
+            "Duplicate class names in ClassNames.Table:\n  " + string.Join("\n  ", dupes));
+
     app.Logger.LogInformation("L2Clone server v{Version} starting.", Game.Shared.GameConstants.GameVersion);
 
     // Print the LAN address the phone should use. "Now listening on: http://0.0.0.0:5238" is technically

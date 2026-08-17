@@ -82,7 +82,8 @@ public class GameHub : Hub
 
         return new CharacterList(chars
             .Select(c => new CharacterSlot(c.Id, c.Name, c.Race, c.BaseClass, c.SecondClass, c.Level,
-                                          c.PendingDeleteAt, c.ThirdClass, OfflineLeft(c.Id)))
+                                          c.PendingDeleteAt, c.ThirdClass, OfflineLeft(c.Id),
+                                          c.FourthClass))
             .ToArray());
     }
 
@@ -843,6 +844,14 @@ public class GameHub : Hub
     {
         if (!Sessions.ContainsKey(Context.ConnectionId)) return Task.CompletedTask;
         _world.Commands.Enqueue(new DebugThirdClassCmd(Context.ConnectionId, thirdClassId));
+        return Task.CompletedTask;
+    }
+
+    /// <summary>Admin: ascend to (or drop back from) the 4th class, bypassing the Rite of Ascension.</summary>
+    public Task DebugFourthClass()
+    {
+        if (!Sessions.ContainsKey(Context.ConnectionId)) return Task.CompletedTask;
+        _world.Commands.Enqueue(new DebugFourthClassCmd(Context.ConnectionId));
         return Task.CompletedTask;
     }
 

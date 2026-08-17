@@ -1,0 +1,43 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet build)",
+      "Bash(dotnet build *)",
+      "PowerShell(dotnet build)",
+      "PowerShell(dotnet build *)",
+      "Bash(dotnet run --project tools/SmokeTest)",
+      "Bash(dotnet run --project tools/BalanceMatrix)",
+      "Bash(dotnet bin/Debug/net10.0/Game.Server.dll)",
+      "Bash(dotnet bin/Debug/net10.0/Game.Server.dll *)",
+      "PowerShell(Select-String*)",
+      "PowerShell(Get-Content*)",
+      "PowerShell(Get-ChildItem*)",
+      "PowerShell(Get-Process*)"
+    ]
+  },
+  "_comment": [
+    "Prompt-reduction rules for the commands this project actually runs, derived from 50 recent",
+    "session transcripts (2026-08-17).",
+    "",
+    "WHY THIS FILE IS SHORT. .claude/settings.local.json already allows 'Bash' and 'PowerShell'",
+    "wholesale, so a missing allow-rule is almost never what causes a prompt here. What still",
+    "prompts is SANDBOX ESCALATION - a command that spawns processes, touches the network, or",
+    "writes outside the sandbox - and that is suppressed by an exact/prefix rule, not by the",
+    "blanket tool grant. Every entry above is one of those.",
+    "",
+    "DELIBERATELY NOT LISTED:",
+    "  - grep / cat / ls / head / tail / find / sort / wc and git status|log|diff|show|branch:",
+    "    Claude Code auto-allows these, so a rule would be dead weight.",
+    "  - 'dotnet run *' as a wildcard: that is arbitrary code execution. Only the two sanctioned",
+    "    verification tools are listed, by their exact command lines. A third tool needs its own",
+    "    line - which is the point.",
+    "  - rm / Remove-Item / taskkill / git add|commit|push|checkout|stash|mv: these MUTATE. The",
+    "    ones already approved sit in settings.local.json where 'always allow' wrote them.",
+    "  - python / perl / pwsh / npx and friends: arbitrary code execution.",
+    "",
+    "Note 'dotnet build' IS a build, not a read-only command - it writes bin/obj and can run",
+    "MSBuild pre-build steps. It is here anyway because it is the single most frequent call in",
+    "the project by a wide margin and CLAUDE.md tells Claude to build freely. Remove the four",
+    "'dotnet build' lines if you would rather be asked."
+  ]
+}

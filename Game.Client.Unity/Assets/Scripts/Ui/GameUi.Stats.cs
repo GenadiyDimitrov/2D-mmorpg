@@ -61,6 +61,11 @@ namespace Game.Client
             {
                 string cls = ClassCatalog.Get(active.SecondClass)?.Name;
                 string disc = ThirdClassCatalog.Get(active.ThirdClass)?.Name;
+                // The 4th class REPLACES the discipline name in that cell rather than taking a row
+                // of its own: it is the same discipline awakened, so two rows would read as two
+                // classes. The arrow is what says a threshold was crossed.
+                string fourth = FourthClassCatalog.Get(active.FourthClass)?.Name;
+                if (fourth != null && disc != null) disc = disc + " → " + fourth;
                 t.AppendLine(Head("Class"));
                 t.AppendLine(Row2("Race", active.Race.ToString(), "Level", active.Level.ToString()));
                 t.AppendLine(Row2("Class", cls ?? active.BaseClass.ToString(), "Discipline", disc ?? "—"));

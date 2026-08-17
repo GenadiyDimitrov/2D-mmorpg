@@ -375,6 +375,12 @@ public record DebugResetCmd(string ConnectionId, Race Race, BaseClass BaseClass)
 /// chain + items. Parent 2nd class must already match the discipline.</summary>
 public record DebugThirdClassCmd(string ConnectionId, int ThirdClassId) : IAdminCommand;
 
+/// <summary>DEBUG-only: take the 4th class directly, bypassing the 100kk Rite of Ascension and the
+/// walk to Frostmere. No id argument — a discipline has exactly one ascension, so the only thing
+/// this can mean is "ascend the class I am". Toggles: run it again to drop back to the 3rd class,
+/// because testing the 76 gate needs BOTH directions and there is no other way back.</summary>
+public record DebugFourthClassCmd(string ConnectionId) : IAdminCommand;
+
 /// <summary>Debug-menu teleport to arbitrary world coordinates.</summary>
 public record DebugTeleportCmd(string ConnectionId, float X, float Y) : IAdminCommand;
 

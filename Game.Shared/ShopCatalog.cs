@@ -102,6 +102,14 @@ public static class ShopCatalog
                 // so the title colour is a thing given out, not a thing farmed for. Admin `/give` is
                 // the only in-game source until the event/premium shop exists.
                 // NOTE: enchant + attribute scrolls are intentionally DROP-ONLY (not sold).
+                //
+                // THE RITE OF ASCENSION — 100kk, the 4th class (owner, 2026-08-17: *"now can be
+                // without quest but go in the apothecary and buy a 100kk 4th_class_item and go to
+                // class master with it"*). It sits here as the INTERIM gate: the long quest chain
+                // replaces the purchase later, and on that day this one line comes out and the item
+                // becomes the chain's reward instead. Deliberately at the Apothecary rather than
+                // beside the class master — the gold is the trial for now, and it should cost a walk.
+                ItemCatalog.FourthClassKey,
             }),
             // WEAPONS. The LEGACY generated grid ("Worn Sword" at P.Atk 6, the Fine/Masterwork
             // prefixes) plus Ash Wand and Iron Mace came off this shelf in playtest-13 and were

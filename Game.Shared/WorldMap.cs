@@ -484,6 +484,14 @@ public static class WorldMap
         // "services east, class business west" split, and this is where the other 3rd-class quest NPCs
         // should join him rather than accumulating back in the starter town.
         yield return new NpcDef("master_class3", "Grandmaster Thorne", 34800, 33400, NpcRole.ClassChange);
+
+        // The 4th-class master lives in FROSTMERE — the last town on the level path out of
+        // Brackenford (north to Stonewatch, round to Greymarsh, Ironreach, and finally here), so it
+        // is the only town whose neighbours reach the level-76 ascension. Same west-side offset as
+        // Thorne (-1200, +400), which is a Y the ring-town layout already leaves free: the crafting
+        // quarter's jeweler was bumped to +650 for exactly this gap, and +400 clears the armorsmith
+        // (+150) and the jeweler by 250 each — over ValidateNpcLabels' 200 minimum.
+        yield return new NpcDef("master_class4", "Archmaster Sevrin", 10800, 15400, NpcRole.ClassChange);
     }
 
     /// <summary>A ring town's craft master's display name. The five are one ORDER with a chapter in every

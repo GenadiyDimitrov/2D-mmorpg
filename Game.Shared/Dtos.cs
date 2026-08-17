@@ -399,7 +399,9 @@ public record AutoSkillDto(string SkillId, bool Enabled, int ExtraDelayTicks);
 /// <summary>One class a character owns (an IG-style subclass). Server → client, so the UI can list
 /// them and let you swap. <paramref name="Active"/> = the one being played right now.</summary>
 public record SubclassDto(
-    int Slot, Race Race, BaseClass BaseClass, int SecondClass, int ThirdClass, int Level, bool Active);
+    int Slot, Race Race, BaseClass BaseClass, int SecondClass, int ThirdClass, int Level, bool Active,
+    // 0 = none; a FourthClassCatalog id (201-236). Defaulted so an older client still deserialises.
+    int FourthClass = 0);
 
 /// <summary>Every class this character owns. Pushed on login and after any add/swap.</summary>
 public record SubclassListDto(SubclassDto[] Classes);
@@ -866,7 +868,8 @@ public record AuthResponse(bool Success, string? Error, AccountRole Role = Accou
 /// farming with no time limit, >= 0 = seconds of offline budget left. The character screen is the
 /// ONLY place this can be seen — an offline farmer has no connection and no UI to push it to.</para></summary>
 public record CharacterSlot(int Id, string Name, Race Race, BaseClass BaseClass, int SecondClass,
-    int Level, DateTime? PendingDeleteAt = null, int ThirdClass = 0, int? OfflineSecondsLeft = null);
+    int Level, DateTime? PendingDeleteAt = null, int ThirdClass = 0, int? OfflineSecondsLeft = null,
+    int FourthClass = 0);
 
 /// <summary>Server -> Client: the account's characters.</summary>
 public record CharacterList(CharacterSlot[] Characters);

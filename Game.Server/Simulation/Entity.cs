@@ -609,6 +609,13 @@ public class Entity
         set => ActiveSubclass.ThirdClass = value;
     }
 
+    /// <summary>0 = none; otherwise a FourthClassCatalog id (201-236). PER CLASS.</summary>
+    public int FourthClass
+    {
+        get => ActiveSubclass.FourthClass;
+        set => ActiveSubclass.FourthClass = value;
+    }
+
     public Archetype? Archetype =>
         SecondClass > 0 ? ClassCatalog.Get(SecondClass)?.Archetype : null;
 
@@ -723,7 +730,7 @@ public class Entity
         {
             int best = 0;
             foreach (var s in Subclasses)
-                best = Math.Max(best, Crafting.BandCap(s.Level, s.ThirdClass > 0, hasFourthClass: false));
+                best = Math.Max(best, Crafting.BandCap(s.Level, s.ThirdClass > 0, s.FourthClass > 0));
             return best;
         }
     }

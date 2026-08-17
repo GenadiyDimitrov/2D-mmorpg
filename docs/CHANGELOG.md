@@ -12,6 +12,65 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-08-17 — the fourth class exists, and every class has a name of its own
+
+⚠ **New DB column** (`FourthClass`, on both the subclass rows and the character mirror) — `EnsureCreated()`
+does not ALTER, so **delete `Game.Server/game.db` (+ `-shm`/`-wal`)**. ⚠ **The client changed too**
+(class labels, stats sheet, debug panel), so this needs a **new APK**. `Game.sln` builds, the Unity
+client type-checks, the server boots green and **SmokeTest passes**.
+
+**3rd- and 4th-class names are PER RACE now.** His call, picked from three options: *"lets decide on
+class names for 3rd and 4th"*. `ThirdClassDef.Name` was `Discipline.ToString()`, so every race's tank
+read "Bulwark" — which sat badly against his own *"the varity will come from race diference"*: the KIT
+could differ per race (the trailing `RACE` column in the 40+ CSVs), but the LABEL could not, so the
+variety was invisible. The rogue line was the lone exception, because the 2026-07-29 archer merge had
+split it into real per-race disciplines. Now an Elf tank is an **Aegis**, an Ork tank an **Ironhide**,
+and at 76 a **Dawnshield** and a **Stonemaw**. All 48 strings live in one file,
+`Game.Shared/Classes.Names.cs`, keyed `(discipline, race)`.
+
+🔑 **Names are free to change; ids are not.** Nothing persists a class name — a character stores the
+number (101-136 for 3rd, 201-236 for 4th). Retune any string in that table and no save breaks. A
+**boot-time guard rejects duplicates**, because the class-change NPC lists what you may become *by
+name* and a repeat would make two different changes indistinguishable.
+
+⚠ **`Warlord` was retired as a name** — it is a class name in IG, the same rule that took the old town
+names and the old currency term. war_aoe is **Banneret / Galeherald / Skullbreaker** now. (`Sorcerer`,
+the Human nuker's 2nd class, is the identical slip and was deliberately **left alone** — renaming a 2nd
+class was not what he asked for.)
+
+**The 4th class is available.** His instruction: *"now can be without quest but go in the apothecary and
+buy a 100kk 4th_class_item and go to class amster with it … then we add additional long quest"*. So:
+level **76**, the **Rite of Ascension** at **100,000,000 gold** on every Apothecary shelf (untradeable),
+consumed by **Archmaster Sevrin** (`master_class4`) on the west side of **Frostmere** — the last town on
+the level path, and therefore the only one whose fields reach 76. When the long chain lands it replaces
+the **purchase**, not the item: the Rite comes off the shelf and becomes the chain's reward, and the
+class-change requirement itself does not change.
+
+🔑 **A 4th class does not branch** — it is the same discipline awakened, one ascension per 3rd class. So
+there is no fourth enum and no choice to make: `FourthClassDef` carries the `Discipline`, its id is the
+parent's + 100, and the debug affordance is a **toggle** (which steps back down too, because the real
+change is one-way and the not-yet-ascended state has to be reachable twice in one session).
+
+⚠ **It grants NO skills, on purpose.** `ClassKey` has no tier component, so a 4th kit registered against
+the discipline would leak to every level-40 — and the standing 40+ rule is *"anything that's not inside
+the csv should not exist"*. The kit lands with the `*.4th.csv` files (`BL-02`). Today the ascension buys
+**the name** and **the L5/L6 crafting band**, and nothing else.
+
+🔴 **`Crafting.RequireFourthClassForL5` flipped to `true`.** His gate is *"L5,6 needs 76 (4th class)"*,
+and it sat at `false` only because no 4th class existed to gate on. **This is a live change for anyone
+already at 76: the top two crafting rungs now cost the Rite.** One `const` reverts it. `Entity.CraftBandCap`
+stopped passing a hard-coded `false` the same day.
+
+⚠ **Vanguard and Tempest are still SELECTABLE.** The CSV README had claimed nothing reaches them — true
+of SKILLS, false of the class list: `Disciplines.Of` returns two disciplines per archetype, so a level-40
+Knight is still offered Vanguard at the Grandmaster. Collapsing that touches persisted ids, so it was left
+alone; both carry one name for all three races (Doomward / Skybreaker) rather than six invented names for
+two classes on their way out.
+
+The class tree in `docs/data/classes_skills_csv/README.md` was rewritten to match — it now names all 24
+third and 24 fourth classes, and the 🔴 it had been holding open ("only the ROGUE line has a name per
+race") is answered and gone.
+
 ## 2026-08-17 — the skill CSVs become class tiers, and a recheck that actually runs
 
 Docs and one tool. No game code changed; `Game.sln` builds clean and the protocol is untouched.

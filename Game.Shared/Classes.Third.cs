@@ -144,8 +144,11 @@ public static class ThirdClassCatalog
         {
             var (a, b) = Disciplines.Of(sc.Race, sc.Archetype);
             int baseId = 100 + (sc.Id - 1) * 2;   // 2nd id 1 -> 101/102 ... 18 -> 135/136
-            d[baseId + 1] = new ThirdClassDef(baseId + 1, a.ToString(), sc.Race, sc.Id, a);
-            d[baseId + 2] = new ThirdClassDef(baseId + 2, b.ToString(), sc.Race, sc.Id, b);
+            // The NAME is per (discipline, RACE) now — see ClassNames. It used to be
+            // `a.ToString()`, which is why every race's tank read "Bulwark". The id is unchanged
+            // and is the only thing persisted, so this renames labels and nothing else.
+            d[baseId + 1] = new ThirdClassDef(baseId + 1, ClassNames.Third(a, sc.Race), sc.Race, sc.Id, a);
+            d[baseId + 2] = new ThirdClassDef(baseId + 2, ClassNames.Third(b, sc.Race), sc.Race, sc.Id, b);
         }
         return d;
     }

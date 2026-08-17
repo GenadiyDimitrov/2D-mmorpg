@@ -145,19 +145,21 @@ public static class Crafting
     /// what stops a level-20 character grinding out L6 in town, which is the owner's stated reason for
     /// the gate existing at all (*"not i just to make 10 chars to sit in town and craft"*).
     ///
-    /// ⚠ The owner's gate is *"L5,6 needs 76 (4th class)"*, but *there is no 4th class yet* — it is
-    /// blocked on his 40+ CSVs. So the top band is opened by **level 76 alone** for now.
-    /// <see cref="RequireFourthClassForL5"/> is the one line to flip when 4th classes land; the argument
-    /// is already threaded through every caller so that flip touches nothing else.</summary>
+    /// ✅ The owner's gate is *"L5,6 needs 76 (4th class)"*, and as of 2026-08-17 a 4th class EXISTS —
+    /// so <see cref="RequireFourthClassForL5"/> was flipped and the top band now needs the ascension,
+    /// not merely level 76. This is the whole flip: the argument was already threaded through every
+    /// caller, and `Entity.CraftBandCap` stopped passing a hard-coded false the same day.</summary>
     public static int BandCap(int charLevel, bool hasThirdClass, bool hasFourthClass) =>
         charLevel >= 76 && (hasFourthClass || !RequireFourthClassForL5) ? MaxCraftLevel
         : charLevel >= 40 && hasThirdClass ? 4
         : charLevel >= 20 ? 2
         : 0;   // below 20 you cannot hold a profession at all — the master's quest is gated there too
 
-    /// <summary>Flip to true the day a 4th class exists. Until then level 76 opens L5/L6 on its own,
-    /// because gating on a class nobody can take would make the top two rungs unreachable.</summary>
-    public const bool RequireFourthClassForL5 = false;
+    /// <summary>TRUE since 2026-08-17, the day the 4th class landed. It was false only because gating
+    /// on a class nobody could take would have made the top two rungs unreachable — that reason is
+    /// gone. ⚠ This is a real gate change for anyone already at 76: L5/L6 now costs the 100kk Rite of
+    /// Ascension. Set it back to false to reopen L5/L6 on level alone.</summary>
+    public const bool RequireFourthClassForL5 = true;
 
     /// <summary>Clamp raw exp to the top of the band the character has earned. The excess is DISCARDED,
     /// not banked: banking would let a character sit at the cap accumulating invisible progress and then

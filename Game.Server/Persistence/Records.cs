@@ -68,6 +68,9 @@ public class CharacterRecord
     public BaseClass BaseClass { get; set; }
     public int SecondClass { get; set; }
     public int ThirdClass { get; set; }
+    /// <summary>⚠ NEW COLUMN 2026-08-17 (4th classes) — needs the `game.db` delete-and-recreate
+    /// described on <see cref="CraftExp"/> below.</summary>
+    public int FourthClass { get; set; }
     public int Profession { get; set; }   // crafting profession (0 = none)
 
     /// <summary>RAW crafting exp (`BL-05`), 12 points per same-level craft. The crafting LEVEL is
@@ -223,6 +226,9 @@ public class SubclassRecord
     public BaseClass BaseClass { get; set; }
     public int SecondClass { get; set; }
     public int ThirdClass { get; set; }
+    /// <summary>0 = none; a FourthClassCatalog id (201-236). ⚠ NEW COLUMN 2026-08-17 — see the
+    /// EnsureCreated note on CharacterRecord.CraftExp: delete `game.db` (+ `-shm`/`-wal`).</summary>
+    public int FourthClass { get; set; }
 
     public int Level { get; set; } = 1;
     public long Exp { get; set; }

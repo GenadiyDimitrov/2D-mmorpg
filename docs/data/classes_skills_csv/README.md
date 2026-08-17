@@ -101,93 +101,143 @@ the 2nd class, **healer** is one of the two disciplines above it, so both names 
 Every node below is what the game **registers today**, not a proposal. Tiers are
 `1st` 1-19 · `2nd` 20-39 · `3rd` 40-75 · `4th` 76+, and the file each node reads is in `code`.
 
-⚠ **No 4th class exists in any form** — no name, no id, no registered skill, and
-`ThirdClassCatalog.ChangeLevel = 40` is the last class change the code knows about. The `4th` rows are
-listed so the tree is complete and so the sixteen `4th` CSVs have somewhere to point.
-🔑 One thing is already waiting on it: **`Crafting.RequireFourthClassForL5`** — your gate is *"L5,6
-needs 76 (4th class)"*, and until a 4th class exists level 76 opens L5/L6 on its own. That flag is the
-one line to flip the day it lands.
+## The 4th class exists now (2026-08-17)
+
+It was the one hole in this tree — *"no name, no id, no registered skill"* — and it is closed.
+Your call: *"lets add 4th classes as available option (now can be without quest but go in the
+apothecary and buy a 100kk 4th_class_item and go to class master with it … then we add additional
+long quest)"*. So:
+
+| what | where |
+| ---- | ----- |
+| **level** | 76 (`FourthClassCatalog.ChangeLevel`) |
+| **the key** | **Rite of Ascension**, 100,000,000 gold, sold at **every Apothecary**, untradeable |
+| **the master** | **Archmaster Sevrin**, `master_class4`, west side of **Frostmere** — the last town on the level path, so the only one whose fields reach 76 |
+| **quest** | none yet, by your instruction. The long chain replaces the *purchase*, not the item: when it lands, the Rite comes off the shelf and becomes the chain's reward, and the class-change requirement itself does not change. |
+
+🔑 **A 4th class does not branch.** It is the *same discipline awakened* — one 3rd class has exactly
+one ascension, so there is nothing to pick. That is why it carries no enum of its own and why the
+debug panel offers a toggle rather than a list.
+
+⚠ **It grants NO skills yet, on purpose.** `ClassKey` has no tier component, so registering a 4th
+kit against the discipline would leak it to every level-40; and the standing 40+ rule is *"anything
+that's not inside the csv should not exist"*. The kit lands with your `*.4th.csv` files (`BL-02`).
+Until then the ascension buys you **the name** and **the L5/L6 crafting band** — and nothing else.
+
+🔴 **`Crafting.RequireFourthClassForL5` was flipped to `true`.** Your gate is *"L5,6 needs 76 (4th
+class)"*, and it sat at `false` only because no 4th class existed. It does now. **This is a real
+change for anyone already at 76: the top two crafting rungs now cost the 100kk Rite.** One `const`
+in `Crafting.cs` puts it back if you'd rather L5/L6 stayed on level alone.
+
+## The names are PER RACE now (2026-08-17)
+
+The old tree ended on a 🔴 asking whether a Human tank and an Ork tank should read as different
+classes. Answer: **yes, at both tiers.** It is what *"the varity will come from race diference"*
+already meant everywhere else — the kit could differ per race (the trailing `RACE` column), but the
+LABEL could not, so the variety was invisible.
+
+The whole table is **`Game.Shared/Classes.Names.cs`**, one row per (discipline, race). Two things
+worth knowing before you edit it:
+
+- **Names are free to change.** Nothing persists a class name — a character stores the numeric id
+  (101-136 for 3rd, 201-236 for 4th). Retune any string in that file and no save breaks. The **ids**
+  are the things that must never move.
+- **A boot-time guard rejects duplicates.** The class-change NPC lists what you may become *by
+  name*, so two classes sharing one would make two different changes indistinguishable. With 48
+  hand-written strings that is the likeliest typo there is, so the server refuses to start.
+
+⚠ **`Warlord` is retired.** It was the war_aoe discipline's name, and it is a class name in IG — the
+same rule that took the old town names and the old currency term. Its three races are **Banneret /
+Galeherald / Skullbreaker** now. (`Sorcerer`, the Human nuker's 2nd class, is the same kind of slip
+and is *not* fixed here — renaming a 2nd class is your call and it is not what you asked for.)
 
 ## Human
 
 ### Fighter — 1st, 1-19 · `fighter 1st`
 
 1. **Assassin** (rogue) 2nd · `rogue 2nd`
-   1. **Nullblade** (dual) 3rd · `dual 3rd` → *unnamed* 4th · `dual 4th`
-   2. **Sharpshooter** (archer) 3rd · `archer 3rd` → *unnamed* 4th · `archer 4th`
+   1. **Nullblade** (dual) 3rd · `dual 3rd` → **Hexbane** 4th · `dual 4th`
+   2. **Sharpshooter** (archer) 3rd · `archer 3rd` → **Deadeye** 4th · `archer 4th`
 2. **Champion** (warrior) 2nd · `warrior 2nd`
-   1. **Ravager** (warrior) 3rd · `warrior 3rd` → *unnamed* 4th · `warrior 4th`
-   2. **Warlord** (war_aoe) 3rd · `war_aoe 3rd` → *unnamed* 4th · `war_aoe 4th`
+   1. **Bladesworn** (warrior) 3rd · `warrior 3rd` → **Bladelord** 4th · `warrior 4th`
+   2. **Banneret** (war_aoe) 3rd · `war_aoe 3rd` → **Warmarshal** 4th · `war_aoe 4th`
 3. **Knight** (tank) 2nd · `tank 2nd`
-   1. **Bulwark** (tank) 3rd · `tank 3rd` → *unnamed* 4th · `tank 4th`
+   1. **Bulwark** (tank) 3rd · `tank 3rd` → **Ironcrown** 4th · `tank 4th`
 
 ### Mage — 1st, 1-19 · `mage 1st`
 
 1. **Sorcerer** (nuker) 2nd · `nuker 2nd`
-   1. **Magus** (nuker) 3rd · `nuker 3rd` → *unnamed* 4th · `nuker 4th`
+   1. **Magus** (nuker) 3rd · `nuker 3rd` → **Runelord** 4th · `nuker 4th`
 2. **Cleric** (cleric) 2nd · `cleric 2nd`
-   1. **Lightbringer** (healer) 3rd · `healer 3rd` → *unnamed* 4th · `healer 4th`
-   2. **Warchanter** (buffer) 3rd · `buffer 3rd` → *unnamed* 4th · `buffer 4th`
+   1. **Lightbringer** (healer) 3rd · `healer 3rd` → **Lifewarden** 4th · `healer 4th`
+   2. **Warchanter** (buffer) 3rd · `buffer 3rd` → **Oathkeeper** 4th · `buffer 4th`
 
 ## Elf
 
 ### Fighter — 1st
 
 1. **Shadowblade** (rogue) 2nd
-   1. **Phantom** (dual) 3rd → *unnamed* 4th
-   2. **Trapper** (archer) 3rd → *unnamed* 4th
+   1. **Phantom** (dual) 3rd → **Nightveil** 4th
+   2. **Trapper** (archer) 3rd → **Bramblewarden** 4th
 2. **Sentinel** (warrior) 2nd
-   1. **Ravager** (warrior) 3rd → *unnamed* 4th
-   2. **Warlord** (war_aoe) 3rd → *unnamed* 4th
+   1. **Thornblade** (warrior) 3rd → **Windreaver** 4th
+   2. **Galeherald** (war_aoe) 3rd → **Stormcrown** 4th
 3. **Templar** (tank) 2nd
-   1. **Bulwark** (tank) 3rd → *unnamed* 4th
+   1. **Aegis** (tank) 3rd → **Dawnshield** 4th
 
 ### Mage — 1st
 
 1. **Inquisitor** (nuker) 2nd
-   1. **Magus** (nuker) 3rd → *unnamed* 4th
+   1. **Starweaver** (nuker) 3rd → **Celestine** 4th
 2. **Priest** (cleric) 2nd
-   1. **Lightbringer** (healer) 3rd → *unnamed* 4th
-   2. **Warchanter** (buffer) 3rd → *unnamed* 4th
+   1. **Dawnsworn** (healer) 3rd → **Everdawn** 4th
+   2. **Harmonist** (buffer) 3rd → **Gracebinder** 4th
 
 ## Ork
 
 ### Fighter — 1st
 
 1. **Stalker** (rogue) 2nd
-   1. **Venomweaver** (dual) 3rd → *unnamed* 4th
-   2. **Hunter** (archer) 3rd → *unnamed* 4th
+   1. **Venomweaver** (dual) 3rd → **Plaguefang** 4th
+   2. **Hunter** (archer) 3rd → **Bloodhunter** 4th
 2. **Warrior** (warrior) 2nd
-   1. **Ravager** (warrior) 3rd → *unnamed* 4th
-   2. **Warlord** (war_aoe) 3rd → *unnamed* 4th
+   1. **Ravager** (warrior) 3rd → **Bloodrager** 4th
+   2. **Skullbreaker** (war_aoe) 3rd → **Bonecrusher** 4th
 3. **Beast** (tank) 2nd
-   1. **Bulwark** (tank) 3rd → *unnamed* 4th
+   1. **Ironhide** (tank) 3rd → **Stonemaw** 4th
 
 ### Mage — 1st
 
 1. **Witch** (nuker) 2nd
-   1. **Magus** (nuker) 3rd → *unnamed* 4th
+   1. **Cinderwitch** (nuker) 3rd → **Pyrelord** 4th
 2. **Shaman** (cleric) 2nd
-   1. **Lightbringer** (healer) 3rd → *unnamed* 4th
-   2. **Warchanter** (buffer) 3rd → *unnamed* 4th
+   1. **Bonemender** (healer) 3rd → **Spiritbinder** 4th
+   2. **Bloodchanter** (buffer) 3rd → **Totemlord** 4th
 
-## 🔴 The thing to decide: only the ROGUE line has a name per race
+## What each race's three names are trying to say
 
-Read the three trees side by side and the gap is obvious. The rogue's two branches are named
-**per race** — Nullblade/Phantom/Venomweaver and Sharpshooter/Trapper/Hunter, six names — because the
-archer merge split that line by race in 2026-07-29. **Every other 3rd class carries the same name for
-all three races**: an Ork Beast, an Elf Templar and a Human Knight all become a **Bulwark**.
+Not a rule the code enforces — a tone, so a new row has somewhere obvious to sit:
 
-That sits awkwardly next to your own ruling for the new map — *"the varity will come from race
-diference"*. The KIT can already differ per race (the `RACE` column in the 3rd/4th CSVs is exactly
-that), but the NAME cannot: `ThirdClassDef.Name` is just `Discipline.ToString()`, one string per
-discipline. If a Human tank and an Ork tank should read as different classes, that is **12 names to
-invent** (6 shared disciplines × 3 races, minus the 6 that exist) — and it is a naming decision, so it
-is yours. Nothing in the code blocks it; `ThirdClassCatalog.Build` would take a per-race name table.
+| race | the register | worked example |
+| ---- | ------------ | -------------- |
+| **Human** | martial, ordered, heraldic — rank and oath | Knight → Bulwark → Ironcrown |
+| **Elf** | light, wind, growth — precision and grace | Templar → Aegis → Dawnshield |
+| **Ork** | bone, blood, endurance — outlast and break | Beast → Ironhide → Stonemaw |
+
+Two disciplines changed which race owns their old name: **Ravager** moved to the **Ork** (it always
+read as the ork's word) and the Human took **Bladesworn**; **Magus** stayed **Human** and the other
+two races got names of their own. Nothing else was re-pointed.
 
 ## Two orphans from the old map
 
 `Discipline` still has **`Vanguard`** (the off-tank) and **`Tempest`** (the AoE nuker), which your
 2026-08-17 map drops and merges. They are left in the enum on purpose — the values persist on
-characters — and they hold no learn rows, so nothing reaches them. The `nuker 3rd.csv` rows carrying
-*Chain Lightning* and *Maelstrom* are Tempest's, folded in.
+characters — and they hold no learn rows, so no SKILL reaches them.
+
+⚠ But they are still **selectable**: `Disciplines.Of` returns two disciplines for every archetype, so
+a level-40 Knight is still offered `Vanguard` and a level-40 Sorcerer still offered `Tempest` at the
+Grandmaster. Collapsing that is a code change with persisted ids in it, not a rename, which is why
+the file rename did not do it. Until then the two carry **one name for all three races** (Vanguard →
+Doomward, Tempest → Skybreaker) rather than six invented names for two classes on their way out.
+
+The `nuker 3rd.csv` rows carrying *Chain Lightning* and *Maelstrom* are Tempest's, folded in.

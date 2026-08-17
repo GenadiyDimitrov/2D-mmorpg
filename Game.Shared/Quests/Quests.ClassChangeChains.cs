@@ -213,4 +213,26 @@ public static partial class ClassChangeRequirements
                 RequiredCurrentClass: tc.ParentSecondClassId));
         }
     }
+
+    /// <summary>The 4th class (level 76). Unlike tiers 2 and 3 there is no quest chain and no
+    /// per-class token: ONE bought item, the Rite of Ascension, is the whole gate for now (owner,
+    /// 2026-08-17). The long chain replaces the purchase later; this registration survives it
+    /// unchanged, because a requirement only asks what you HOLD.
+    ///
+    /// <para>RequiredCurrentClass is the parent THIRD class here — the field is tier-relative
+    /// ("the class you must already be"), which is why it is not named RequiredSecondClass.</para></summary>
+    static partial void RegisterFourthClassRequirements()
+    {
+        foreach (var fc in FourthClassCatalog.Playable)
+        {
+            Register(new Requirement(
+                SecondClassId: fc.Id,                 // target = the 4th-class id (201-236)
+                ClassName: fc.Name,
+                MinLevel: FourthClassCatalog.ChangeLevel,
+                RequiredItemIds: new[] { ItemCatalog.FourthClassKey },
+                NpcId: "master_class4",
+                Tier: 4,
+                RequiredCurrentClass: fc.ParentThirdClassId));
+        }
+    }
 }

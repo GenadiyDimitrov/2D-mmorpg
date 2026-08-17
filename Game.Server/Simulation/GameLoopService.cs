@@ -223,6 +223,7 @@ public class GameLoopService : BackgroundService
                 case DebugSpCmd c: HandleDebugSp(c); break;
                 case DebugResetCmd c: HandleDebugReset(c); break;
                 case DebugThirdClassCmd c: HandleDebugThirdClass(c); break;
+                case DebugFourthClassCmd c: HandleDebugFourthClass(c); break;
                 case DebugTeleportCmd c: HandleDebugTeleport(c); break;
                 case TradeRequestCmd c: HandleTradeRequest(c); break;
                 case TradeRespondCmd c: HandleTradeRespond(c); break;
@@ -3030,6 +3031,7 @@ public class GameLoopService : BackgroundService
 
         player.SecondClass = def.Id;
         player.ThirdClass = 0;   // the old discipline belonged to the old 2nd class
+        player.FourthClass = 0;  // …and the ascension belonged to the old discipline
         AutoLearnCoreSkills(player);
         player.RecomputeDerived();
         player.Hp = player.MaxHp;
@@ -3099,7 +3101,9 @@ public class GameLoopService : BackgroundService
         // No two of the same discipline (across races) — checked against ALL owned classes, active too.
         if (!player.CanAddDiscipline(cmd.ThirdClassId))
         {
-            SendSystemToEntity(player, $"You already have a {tcd.Discipline} class.");
+            // Names the CLASS, not the raw discipline: since names went per-race an Ork's Bulwark
+            // is called an Ironhide, and printing the enum would show a word he has never seen.
+            SendSystemToEntity(player, $"You already walk that path — {tcd.Name} shares it.");
             return;
         }
 
@@ -3279,7 +3283,7 @@ public class GameLoopService : BackgroundService
             .OrderBy(s => s.Slot)
             .Select(s => new SubclassDto(
                 s.Slot, s.Race, s.BaseClass, s.SecondClass, s.ThirdClass, s.Level,
-                s.Slot == p.ActiveSubclass.Slot))
+                s.Slot == p.ActiveSubclass.Slot, s.FourthClass))
             .ToArray()));
 
     /// <summary>The level ceiling this character is subject to. ADMINS ARE EXEMPT — an admin needs to
@@ -3479,7 +3483,7 @@ public class GameLoopService : BackgroundService
         // check — several classes may share a 2nd class as long as their disciplines differ.
         if (!player.CanTakeThirdClass(cmd.ThirdClassId))
         {
-            SendSystemToEntity(player, $"Another of your classes is already a {tcd.Discipline}.");
+            SendSystemToEntity(player, $"Another of your classes already walks the {tcd.Name} path.");
             return;
         }
 
@@ -3488,6 +3492,10 @@ public class GameLoopService : BackgroundService
         if (player.SecondClass != tcd.ParentSecondClassId)
             player.SecondClass = tcd.ParentSecondClassId;
         player.ThirdClass = cmd.ThirdClassId;
+        // A debug hop to a DIFFERENT discipline invalidates any ascension already taken — a 4th
+        // class is only ever its own 3rd's. Cleared unconditionally rather than compared, because
+        // re-picking the same discipline is a no-op that costs nothing to redo.
+        player.FourthClass = 0;
 
         AutoLearnCoreSkills(player);
         player.RecomputeDerived();
@@ -3499,6 +3507,48 @@ public class GameLoopService : BackgroundService
         SendSubclasses(player);   // keep the client's class list fresh so the add-class picker filters the main
         SaveEntity(player);
         BroadcastSystem($"{player.Name} has become a {tcd.Name}!");
+    }
+
+    /// <summary>DEBUG: ascend to the 4th class, or drop back to the 3rd. Deliberately a TOGGLE —
+    /// the real change is one-way and irreversible, so the only way to test the level-76 gate and
+    /// the not-yet-ascended UI twice in one session is to be able to step back down.
+    ///
+    /// Unlike the 3rd-class debug this does NOT check the level: an admin ascends to inspect the
+    /// state, and forcing a /level to 76 first would only add a step. The REAL path
+    /// (ClassChangeAvailable + DoQuestClassChange) still enforces every gate.</summary>
+    private void HandleDebugFourthClass(DebugFourthClassCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player)) return;
+
+        if (player.FourthClass != 0)
+        {
+            player.FourthClass = 0;
+            SendSystemToEntity(player, "[DEBUG] Dropped back to your 3rd class.");
+        }
+        else if (player.ThirdClass == 0)
+        {
+            SendSystemToEntity(player, "[DEBUG] Take a 3rd class first — a 4th class ascends one.");
+            return;
+        }
+        else if (FourthClassCatalog.ForParent(player.ThirdClass) is not { } fcd)
+        {
+            SendSystemToEntity(player, "[DEBUG] That 3rd class has no ascension registered.");
+            return;
+        }
+        else
+        {
+            player.FourthClass = fcd.Id;
+            SendSystemToEntity(player, $"[DEBUG] Ascended: you are a {fcd.Name}.");
+        }
+
+        // No AutoLearnCoreSkills: a 4th class grants NO skills yet (the kit waits on the owner's
+        // 4th CSVs — see Classes.Fourth.cs). RecomputeDerived is still called because the craft
+        // band cap reads FourthClass, and SendCrafting so the change is visible without a relog.
+        player.RecomputeDerived();
+        SendStats(player);
+        SendSubclasses(player);   // the ONLY message that moves the client's class label
+        SendCrafting(player);
+        SaveEntity(player);
     }
 
     /// <summary>Grant the new-character starter kit to a live entity (mirrors
@@ -5323,6 +5373,7 @@ public class GameLoopService : BackgroundService
     /// <summary>Class label for the party window: 3rd class name, else 2nd, else the base class.</summary>
     private static string PartyClassLabel(Entity e)
     {
+        if (e.FourthClass != 0 && FourthClassCatalog.Get(e.FourthClass) is FourthClassDef fcd) return fcd.Name;
         if (e.ThirdClass != 0 && ThirdClassCatalog.Get(e.ThirdClass) is ThirdClassDef tcd) return tcd.Name;
         if (e.SecondClass != 0 && ClassCatalog.Get(e.SecondClass) is SecondClassDef scd) return scd.Name;
         return e.BaseClass.ToString();
@@ -12964,12 +13015,20 @@ var effect = def.Effect;
                     .Select(id => player.Inventory.Any(i => i.DefId == id)).ToArray();
                 bool meets = player.Level >= req.MinLevel && has.All(h => h);
                 // "What this class does" blurb so the (irreversible) choice is informed:
-                // 2nd class = its archetype blurb; 3rd class = its discipline blurb.
-                string blurb = req.Tier >= 3
-                    ? (ThirdClassCatalog.Get(req.SecondClassId) is ThirdClassDef tcd
-                        ? Disciplines.Blurb(tcd.Discipline) : "")
-                    : (ClassCatalog.Get(req.SecondClassId) is SecondClassDef scd
-                        ? ClassCatalog.ArchetypeBlurb(scd.Archetype) : "");
+                // 2nd class = its archetype blurb; 3rd AND 4th = the discipline blurb (a 4th class
+                // is the same discipline awakened, so it describes itself with the same line).
+                // ⚠ Each tier reads its OWN catalog — the ids share one space but not one table, so
+                // the old `Tier >= 3` shape would have looked a 4th class up among the 3rd's and
+                // silently produced an empty blurb.
+                string blurb = req.Tier switch
+                {
+                    4 => FourthClassCatalog.Get(req.SecondClassId) is FourthClassDef fcd
+                        ? Disciplines.Blurb(fcd.Discipline) : "",
+                    3 => ThirdClassCatalog.Get(req.SecondClassId) is ThirdClassDef tcd
+                        ? Disciplines.Blurb(tcd.Discipline) : "",
+                    _ => ClassCatalog.Get(req.SecondClassId) is SecondClassDef scd
+                        ? ClassCatalog.ArchetypeBlurb(scd.Archetype) : "",
+                };
                 changes.Add(new ClassChangeOption(req.SecondClassId, req.ClassName, meets, names, has, blurb));
             }
         }
@@ -13435,6 +13494,17 @@ var effect = def.Effect;
                 && tcd.Race == player.Race
                 && player.CanTakeThirdClass(tcd.Id);
         }
+        if (req.Tier == 4)
+        {
+            // You must hold the EXACT parent 3rd class and not already be a 4th. No
+            // CanTakeFourthClass sibling is needed: a 4th class is the ascension of the discipline
+            // you already walk, so the "never the same discipline twice across subclasses" rule was
+            // already enforced when the 3rd class was taken — there is no second choice to police.
+            if (player.ThirdClass == 0 || player.FourthClass != 0) return false;
+            if (req.RequiredCurrentClass != player.ThirdClass) return false;
+            return FourthClassCatalog.Get(req.SecondClassId) is FourthClassDef fcd
+                && fcd.Race == player.Race;
+        }
         return false;
     }
 
@@ -13465,7 +13535,8 @@ var effect = def.Effect;
         foreach (var itemId in req.RequiredItemIds)
             ConsumeItem(player, itemId, 1);
 
-        if (req.Tier == 3) player.ThirdClass = classId;
+        if (req.Tier == 4) player.FourthClass = classId;
+        else if (req.Tier == 3) player.ThirdClass = classId;
         else player.SecondClass = classId;
 
         AutoLearnCoreSkills(player);
@@ -13484,6 +13555,9 @@ var effect = def.Effect;
         // class-change, the subclass swap and the character reset all send it; the REAL, quest-gated
         // class change was the one path that did not.
         SendSubclasses(player);
+        // The 4th class lifts the crafting band cap (Crafting.RequireFourthClassForL5), and that
+        // panel is not otherwise re-pushed until the next master visit.
+        SendCrafting(player);
         // A new class changes which quests are offered, and with them the "!" markers over NPC heads —
         // the same reason the subclass swap re-sends this.
         SendQuestLog(player);

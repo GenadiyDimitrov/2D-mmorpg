@@ -685,15 +685,32 @@ namespace Game.Client
                 {
                     if (takenElsewhere.Contains(tcd.Discipline))
                     {
-                        DebugNote($"     {tcd.Discipline} — another of your classes walks this");
+                        DebugNote($"     {tcd.Name} — another of your classes walks this");
                         continue;
                     }
                     int tid = tcd.Id;
                     bool current3rd = mine != null && mine.ThirdClass == tcd.Id;
-                    DebugAction($"     -> {tcd.Discipline}{(current3rd ? "   <- current" : "")}",
+                    DebugAction($"     -> {tcd.Name}{(current3rd ? "   <- current" : "")}",
                                 () => Boot.Debug(n => n.DebugThirdClassAsync(tid), "3rd class"));
                 }
             }
+
+            // THE 4TH CLASS (76). A toggle, not a list: a discipline has exactly one ascension, so
+            // there is nothing to pick — and it steps BACK down too, because the real change is
+            // one-way and the not-yet-ascended state has to be reachable twice in one session.
+            // Bypasses the 100kk Rite of Ascension and the walk to Frostmere, not the design: the
+            // 4th class still grants no skills (its kit waits on the 40+ CSVs), only the name and
+            // the L5/L6 crafting band.
+            DebugHeader($"4th class (level {FourthClassCatalog.ChangeLevel} in the real path)");
+            if (mine == null || mine.ThirdClass == 0)
+                DebugNote("Take a 3rd class first — a 4th class ascends one.");
+            else if (mine.FourthClass > 0 && FourthClassCatalog.Get(mine.FourthClass) is { } have)
+                DebugAction($"Drop back from {have.Name} to " +
+                            $"{ThirdClassCatalog.Get(mine.ThirdClass)?.Name}",
+                            () => Boot.Debug(n => n.DebugFourthClassAsync(), "4th class"));
+            else if (FourthClassCatalog.ForParent(mine.ThirdClass) is { } next)
+                DebugAction($"Ascend -> {next.Name}",
+                            () => Boot.Debug(n => n.DebugFourthClassAsync(), "4th class"));
 
             // The CRAFTING profession is a separate axis (it gates which recipes you can craft) and now
             // has its own rows, instead of being the accidental target of the class list above.
@@ -737,8 +754,10 @@ namespace Game.Client
 
         private static string SubclassLabel(SubclassDto sc)
         {
+            if (sc.FourthClass > 0 && FourthClassCatalog.Get(sc.FourthClass) is { } fcd)
+                return $"{fcd.Race} {fcd.Name}";
             if (sc.ThirdClass > 0 && ThirdClassCatalog.Get(sc.ThirdClass) is { } tcd)
-                return $"{tcd.Race} {tcd.Discipline}";
+                return $"{tcd.Race} {tcd.Name}";   // .Name, not .Discipline — it is per-race now
             return $"{sc.Race} {sc.BaseClass}";
         }
 
@@ -761,7 +780,7 @@ namespace Game.Client
                          .OrderBy(t => t.Discipline).ThenBy(t => t.Race))
             {
                 int id = tcd.Id;
-                DebugAction($"{tcd.Race} {tcd.Discipline}",
+                DebugAction($"{tcd.Race} {tcd.Name}",
                             () => Boot.Debug(n => n.DebugAddSubclassAsync(id), "add class"));
             }
         }

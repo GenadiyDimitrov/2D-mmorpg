@@ -37,8 +37,14 @@ public static partial class ClassChangeRequirements
     {
         RegisterClassChangeRequirements();
         RegisterThirdClassRequirements();
+        // NOTE there is no matching RegisterFourthClassChains() above: the 4th class is
+        // item-gated ONLY for now (buy the Rite, walk to the master), and the long chain the
+        // owner wants comes later. When it lands, add it beside the third's and give the Rite a
+        // quest reward instead of a shop shelf — the requirement below does not change.
+        RegisterFourthClassRequirements();
     }
 
     static partial void RegisterClassChangeRequirements();
     static partial void RegisterThirdClassRequirements();
+    static partial void RegisterFourthClassRequirements();
 }
