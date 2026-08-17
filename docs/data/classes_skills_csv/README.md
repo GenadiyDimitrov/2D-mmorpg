@@ -98,11 +98,96 @@ the 2nd class, **healer** is one of the two disciplines above it, so both names 
 
 # Classes Tree
 
+Every node below is what the game **registers today**, not a proposal. Tiers are
+`1st` 1-19 · `2nd` 20-39 · `3rd` 40-75 · `4th` 76+, and the file each node reads is in `code`.
+
+⚠ **No 4th class exists in any form** — no name, no id, no registered skill, and
+`ThirdClassCatalog.ChangeLevel = 40` is the last class change the code knows about. The `4th` rows are
+listed so the tree is complete and so the sixteen `4th` CSVs have somewhere to point.
+🔑 One thing is already waiting on it: **`Crafting.RequireFourthClassForL5`** — your gate is *"L5,6
+needs 76 (4th class)"*, and until a 4th class exists level 76 opens L5/L6 on its own. That flag is the
+one line to flip the day it lands.
+
 ## Human
-  1. Unanamed (Mage) 1st - 1~19
-     1. Unanamed (Nuker) 2st - 20~39
-        1. Unanamed (Nuker) 3st - 40~75
-           1. Unanamed (Nuker) 4st - 76+
-     2.  Unanamed (Cleric) 2st - 20~39
-        1.  Unanamed (Cleric) 3st - 40~75
-           1.  Unanamed (Cleric) 1st - 76+
+
+### Fighter — 1st, 1-19 · `fighter 1st`
+
+1. **Assassin** (rogue) 2nd · `rogue 2nd`
+   1. **Nullblade** (dual) 3rd · `dual 3rd` → *unnamed* 4th · `dual 4th`
+   2. **Sharpshooter** (archer) 3rd · `archer 3rd` → *unnamed* 4th · `archer 4th`
+2. **Champion** (warrior) 2nd · `warrior 2nd`
+   1. **Ravager** (warrior) 3rd · `warrior 3rd` → *unnamed* 4th · `warrior 4th`
+   2. **Warlord** (war_aoe) 3rd · `war_aoe 3rd` → *unnamed* 4th · `war_aoe 4th`
+3. **Knight** (tank) 2nd · `tank 2nd`
+   1. **Bulwark** (tank) 3rd · `tank 3rd` → *unnamed* 4th · `tank 4th`
+
+### Mage — 1st, 1-19 · `mage 1st`
+
+1. **Sorcerer** (nuker) 2nd · `nuker 2nd`
+   1. **Magus** (nuker) 3rd · `nuker 3rd` → *unnamed* 4th · `nuker 4th`
+2. **Cleric** (cleric) 2nd · `cleric 2nd`
+   1. **Lightbringer** (healer) 3rd · `healer 3rd` → *unnamed* 4th · `healer 4th`
+   2. **Warchanter** (buffer) 3rd · `buffer 3rd` → *unnamed* 4th · `buffer 4th`
+
+## Elf
+
+### Fighter — 1st
+
+1. **Shadowblade** (rogue) 2nd
+   1. **Phantom** (dual) 3rd → *unnamed* 4th
+   2. **Trapper** (archer) 3rd → *unnamed* 4th
+2. **Sentinel** (warrior) 2nd
+   1. **Ravager** (warrior) 3rd → *unnamed* 4th
+   2. **Warlord** (war_aoe) 3rd → *unnamed* 4th
+3. **Templar** (tank) 2nd
+   1. **Bulwark** (tank) 3rd → *unnamed* 4th
+
+### Mage — 1st
+
+1. **Inquisitor** (nuker) 2nd
+   1. **Magus** (nuker) 3rd → *unnamed* 4th
+2. **Priest** (cleric) 2nd
+   1. **Lightbringer** (healer) 3rd → *unnamed* 4th
+   2. **Warchanter** (buffer) 3rd → *unnamed* 4th
+
+## Ork
+
+### Fighter — 1st
+
+1. **Stalker** (rogue) 2nd
+   1. **Venomweaver** (dual) 3rd → *unnamed* 4th
+   2. **Hunter** (archer) 3rd → *unnamed* 4th
+2. **Warrior** (warrior) 2nd
+   1. **Ravager** (warrior) 3rd → *unnamed* 4th
+   2. **Warlord** (war_aoe) 3rd → *unnamed* 4th
+3. **Beast** (tank) 2nd
+   1. **Bulwark** (tank) 3rd → *unnamed* 4th
+
+### Mage — 1st
+
+1. **Witch** (nuker) 2nd
+   1. **Magus** (nuker) 3rd → *unnamed* 4th
+2. **Shaman** (cleric) 2nd
+   1. **Lightbringer** (healer) 3rd → *unnamed* 4th
+   2. **Warchanter** (buffer) 3rd → *unnamed* 4th
+
+## 🔴 The thing to decide: only the ROGUE line has a name per race
+
+Read the three trees side by side and the gap is obvious. The rogue's two branches are named
+**per race** — Nullblade/Phantom/Venomweaver and Sharpshooter/Trapper/Hunter, six names — because the
+archer merge split that line by race in 2026-07-29. **Every other 3rd class carries the same name for
+all three races**: an Ork Beast, an Elf Templar and a Human Knight all become a **Bulwark**.
+
+That sits awkwardly next to your own ruling for the new map — *"the varity will come from race
+diference"*. The KIT can already differ per race (the `RACE` column in the 3rd/4th CSVs is exactly
+that), but the NAME cannot: `ThirdClassDef.Name` is just `Discipline.ToString()`, one string per
+discipline. If a Human tank and an Ork tank should read as different classes, that is **12 names to
+invent** (6 shared disciplines × 3 races, minus the 6 that exist) — and it is a naming decision, so it
+is yours. Nothing in the code blocks it; `ThirdClassCatalog.Build` would take a per-race name table.
+
+## Two orphans from the old map
+
+`Discipline` still has **`Vanguard`** (the off-tank) and **`Tempest`** (the AoE nuker), which your
+2026-08-17 map drops and merges. They are left in the enum on purpose — the values persist on
+characters — and they hold no learn rows, so nothing reaches them. The `nuker 3rd.csv` rows carrying
+*Chain Lightning* and *Maelstrom* are Tempest's, folded in.
