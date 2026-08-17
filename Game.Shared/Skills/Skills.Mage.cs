@@ -140,6 +140,11 @@ public static partial class SkillCatalog
                     Description: "+30 magic defence and 10% magic resistance."),
                 new SkillLevel(SpCost: 25000, Passive: new PassiveEffect(MagicDefence: 36, MagicResist: 0.10f),
                     Description: "+36 magic defence and 10% magic resistance."),
+                // Level 7 = the healer's level-40 row (`healer 3rd.csv`, his). His 40+ ladder continues
+                // to 74 in that file, but everything past this rung is marked "not done" and is not
+                // written here.
+                new SkillLevel(SpCost: 36000, Passive: new PassiveEffect(MagicDefence: 43, MagicResist: 0.15f),
+                    Description: "+43 magic defence and 15% magic resistance."),
             }),
 
         // Vampiric Bolt — magic nuke that heals the caster for 40% of damage dealt. Level 1 is

@@ -105,6 +105,12 @@ public class BuffInstance
     /// The rogue's Evasion Boost is the only skill in the game that sets it.</summary>
     public float SkillEvadeChance { get; init; }
 
+    /// <summary>Per-school control resistance while this buff is up — the healer's Clarity (magical,
+    /// the SPT-defended school) and Fortitude (physical, the CON-defended one). Rides as fields, like
+    /// the one above, because the SkillEffect flag enum has no bits left.</summary>
+    public float CcResistMagical { get; init; }
+    public float CcResistPhysical { get; init; }
+
     /// <summary>What this buff does to a monster's payout — the premium reward runes' whole payload
     /// (see <see cref="RewardRates"/>). Default = neutral, which every other buff in the game is.
     /// Rides as a field, like the two above, because the SkillEffect flag enum has no bits left.</summary>
@@ -854,6 +860,10 @@ public class Entity
     public float CritDmgResist { get; set; }     // reduces incoming physical crit EXTRA damage
     public float BowResist { get; set; }         // reduces damage taken from BOW attacks
     public float CcResist { get; set; }          // reduces the LAND chance of contested CC vs you
+    // …and the same, but only against ONE school. Composes with CcResist multiplicatively at the roll,
+    // so armour's blanket resistance and a healer's targeted blessing never cancel or mask each other.
+    public float CcResistMagical { get; set; }   // vs SPT-defended debuffs (Clarity)
+    public float CcResistPhysical { get; set; }  // vs CON-defended debuffs (Fortitude)
     // Weapon-TYPE resistance: a multiplier on MY P.Def applied only when the attacker uses
     // that weapon type (the resist rides inside pDef so a def-ignore skill bypasses it).
     // 1 = neutral, >1 = resistant, <1 = weak, ≤0 = no defence (one-shot of that type).
@@ -1796,6 +1806,8 @@ public class Entity
         CritDmgResist = 0f;
         BowResist = 0f;
         CcResist = 0f;
+        CcResistMagical = 0f;
+        CcResistPhysical = 0f;
         PierceDefCoef = 1f;
         BluntDefCoef = 1f;
         BowDefCoef = 1f;
@@ -2528,6 +2540,11 @@ public class Entity
             // BL-06 skill evasion — a buff field for the same reason (the flag enum is full), and
             // MAXed with the passive side rather than added: it is a guarantee, not a stat.
             SkillEvadeChance = Math.Max(SkillEvadeChance, buff.SkillEvadeChance);
+            // Per-school control resistance ADDS (unlike SkillEvadeChance, which is a guarantee and
+            // takes the max): these are ordinary stats stacked from gear and blessings, and the sum is
+            // clamped below like CcResist is.
+            CcResistMagical += buff.CcResistMagical;
+            CcResistPhysical += buff.CcResistPhysical;
             if (buff.Has(SkillEffect.BuffCooldown)) CooldownReduction += buff.Flat(SkillEffect.BuffCooldown) + buff.Percent(SkillEffect.BuffCooldown);
             if (buff.Has(SkillEffect.BuffPveSkillDamage)) PveSkillDamageBonus += buff.Flat(SkillEffect.BuffPveSkillDamage) + buff.Percent(SkillEffect.BuffPveSkillDamage);
             if (buff.Has(SkillEffect.BuffPveMagicDamage)) PveMagicDamageBonus += buff.Flat(SkillEffect.BuffPveMagicDamage) + buff.Percent(SkillEffect.BuffPveMagicDamage);
@@ -2572,6 +2589,10 @@ public class Entity
         PhysSkillReflectPct = Math.Clamp(PhysSkillReflectPct, 0f, 1f);
         DebuffReflectChance = Math.Clamp(DebuffReflectChance, 0f, 0.95f);
         CcResist = Math.Clamp(CcResist, 0f, 0.8f);           // never fully CC-immune from gear
+        // Each school's own resistance is capped the same way, and because the two multiply with the
+        // blanket one at the roll, the floor on a landing debuff is still the contest's own 10%.
+        CcResistMagical = Math.Clamp(CcResistMagical, 0f, 0.8f);
+        CcResistPhysical = Math.Clamp(CcResistPhysical, 0f, 0.8f);
         PhysMpCostReduction = Math.Clamp(PhysMpCostReduction, 0f, 0.8f);
         MagicMpCostReduction = Math.Clamp(MagicMpCostReduction, 0f, 0.8f);
         MeleeVamp = Math.Clamp(MeleeVamp, 0f, 1f);

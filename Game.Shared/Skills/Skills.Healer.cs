@@ -153,14 +153,26 @@ public static partial class SkillCatalog
 
         // Restore Mana — replenishes an ally's MP (flat power). Later "ultimate" restores
         // will add a % of max MP via a Percent magnitude on the RestoreMp effect.
-        // Costs MORE MP than it restores (~1.2×), so it's a net MP TRANSFER to a non-caster.
-        // Cannot target yourself or another mana-restorer (see HandleSkill), so a healer can't
-        // refund their own/another healer's mana — it's for empowering non-MP-restoring allies.
+        // ⚠ IT IS NOW A LOSSLESS TRANSFER, and that is a REVERSAL (owner 2026-08-17: *"restore mana
+        // is @30 - 52 power, 35 - 60 power same mana cost as power"*). It used to cost ~1.2× what it
+        // gave, so moving mana around a party burned some — his ruling is that the cost EQUALS the
+        // power, so 52 MP buys 52 MP. What still keeps it from being a party-wide mana battery is the
+        // targeting rule, not the price: it cannot target yourself or another mana-restorer (see
+        // HandleSkill), so it only ever empowers an ally who has no way to refill their own bar.
         new(RestoreMana, "Restore Mana", BaseClass.Mage, SkillEffect.RestoreMp,
-            MpCost: 72, CastTicks: 20, CooldownTicks: 20, Range: 600, Power: 60,
-            Category: SkillCategory.Heal, InitialMpCost: 18, SpCost: 25000,
-            Description: "Transfers 60 MP to an ally (costs 72 — a net loss). Can't be used on "
-                       + "yourself or another mana-restorer."),
+            MpCost: 52, CastTicks: 20, CooldownTicks: 20, Range: 600, Power: 52,
+            Category: SkillCategory.Heal, InitialMpCost: 13, SpCost: 12800,
+            Description: "Transfers MP to an ally at no loss. Can't be used on yourself or another "
+                       + "mana-restorer.",
+            Levels: new[]
+            {
+                new SkillLevel(MpCost: 52, InitialMpCost: 13, SpCost: 12800, Power: 52,
+                    Description: "Transfers 52 MP to an ally (costs 52). Can't be used on yourself or another mana-restorer."),
+                new SkillLevel(MpCost: 60, InitialMpCost: 15, SpCost: 25000, Power: 60,
+                    Description: "Transfers 60 MP to an ally (costs 60). Can't be used on yourself or another mana-restorer."),
+                new SkillLevel(MpCost: 70, InitialMpCost: 20, SpCost: 36000, Power: 70,
+                    Description: "Transfers 70 MP to an ally (costs 70). Can't be used on yourself or another mana-restorer."),
+            }),
 
         // Body and Soul — the vitality group. Level 1 is exactly the +10% HP regen this buff has
         // always cast; the higher levels fold in MP regen, then Max HP, then Max MP, reaching the
@@ -212,13 +224,19 @@ public static partial class SkillCatalog
                 CasterMastery(new PassiveEffect(MagAtk: 8,  PhysAtk: 6,  CastSpeedPct: 0.05f, CooldownPct: 0.10f, MpRegenPct: 0.10f)),
                 CasterMastery(new PassiveEffect(MagAtk: 10, PhysAtk: 8,  CastSpeedPct: 0.05f, CooldownPct: 0.10f, MpRegenPct: 0.10f)),
                 CasterMastery(new PassiveEffect(MagAtk: 12, PhysAtk: 10, CastSpeedPct: 0.05f, CooldownPct: 0.10f, MpRegenPct: 0.50f, HpRegenPct: 0.10f)),
+                // Level 5 = the healer's level-40 row (his `healer 3rd.csv`). Note the jump: +23 M.Atk
+                // against level 4's +12 — a 3rd class is where a caster's damage actually moves.
+                CasterMastery(new PassiveEffect(MagAtk: 23, PhysAtk: 18, CastSpeedPct: 0.07f, CooldownPct: 0.10f, MpRegenPct: 0.50f, HpRegenPct: 0.10f)),
             },
             Levels: new[]
             {
                 new SkillLevel(SpCost: 3200,  Description: "With sword/blunt: +6 M.Atk, +4 P.Atk, -10% skill reuse."),
-                new SkillLevel(SpCost: 6400,  Description: "With sword/blunt: +8 M.Atk, +6 P.Atk, +5% cast, -10% reuse, +10% MP regen."),
+                // 12800, not 6400 — his CSV's number. The ladder is 3200 / 12800 / 12800 / 25000, which
+                // is irregular but authored; it was silently "regularised" here and is now put back.
+                new SkillLevel(SpCost: 12800, Description: "With sword/blunt: +8 M.Atk, +6 P.Atk, +5% cast, -10% reuse, +10% MP regen."),
                 new SkillLevel(SpCost: 12800, Description: "With sword/blunt: +10 M.Atk, +8 P.Atk, +5% cast, -10% reuse, +10% MP regen."),
                 new SkillLevel(SpCost: 25000, Description: "With sword/blunt: +12 M.Atk, +10 P.Atk, +5% cast, -10% reuse, +50% MP regen, +10% HP regen."),
+                new SkillLevel(SpCost: 36000, Description: "With sword/blunt: +23 M.Atk, +18 P.Atk, +7% cast, -10% reuse, +50% MP regen, +10% HP regen."),
             }),
 
         // Force and Ward — the caster's group. Levels 1-2 are the numbers this buff already cast
@@ -381,32 +399,69 @@ public static partial class SkillCatalog
             Description: "Toggle. Channel your magic into melee: +50% P.Atk but -50% M.Atk "
                        + "(weaker heals and spells). Click again to end."),
 
-        // Antidote — targeted CURE: removes poison and venom from an ally (DispelMask). A
-        // cheaper, focused alternative to a full Cleanse. (Cure-bleed would add Bleed here.)
+        // Antidote — targeted CURE: strips DoTs from an ally. A cheaper, focused alternative to a
+        // full Cleanse.
+        //
+        // 🔑 ITS LADDER IS A RANK CEILING, NOT A LIST (owner 2026-08-17: *"antidote have lvl and should
+        // cure poison + bleed below some level ... you get a posion 10 and bleed 5 .. ur antidote is lvl
+        // 3 (cures below lvl 7) and cures the bleed only"*). WHAT it cures never changes — poison, venom
+        // and bleed at every level. What grows is how strong an ailment it can reach, so a cure can be
+        // outclassed by a big DoT instead of trivialising every one. `SkillLevel.DispelMaxLevel` exists
+        // for this and Antidote is its only user; *"later healers will learn more levels"* (BL-02).
+        //
+        // The ceilings are HIS (he wrote them into the CSV after seeing a first guess of 3/5): the cure
+        // reaches rank 1 at level 1 and rank 2 at level 2 — the ladder is simply level = rank, and it is
+        // deliberately TIGHT, so a healer out-levels an ailment slowly rather than all at once.
+        //
+        // ⚠ IT IS INERT TODAY. Every DoT in the game is authored at Rank 1 (the Venomweaver trio; mob
+        // spells carry no rank at all), so any ceiling ≥ 1 currently cures everything. The mechanic
+        // only starts to bite once DoTs carry a real rank — which is what his "poison 10" implies.
         new(Antidote, "Antidote", BaseClass.Mage, SkillEffect.Cleanse,
             MpCost: 16, CastTicks: 8, CooldownTicks: 30, Range: 600, Power: 0,
-            Category: SkillCategory.Heal, InitialMpCost: 4,
-            DispelMask: SkillEffect.Poison | SkillEffect.Venom,
-            Description: "Cures poison and venom from an ally (or self)."),
+            Category: SkillCategory.Heal, InitialMpCost: 4, SpCost: 3200,
+            DispelMask: SkillEffect.Poison | SkillEffect.Venom | SkillEffect.Bleed,
+            DispelMaxLevel: 1,
+            Description: "Cures poison, venom and bleed from an ally (or self), up to a rank its own "
+                       + "level can reach.",
+            Levels: new[]
+            {
+                new SkillLevel(MpCost: 16, InitialMpCost: 4, SpCost: 3200, DispelMaxLevel: 1,
+                    Description: "Cures poison, venom and bleed of rank 1 or lower from an ally (or self)."),
+                new SkillLevel(MpCost: 20, InitialMpCost: 5, SpCost: 12800, DispelMaxLevel: 2,
+                    Description: "Cures poison, venom and bleed of rank 2 or lower from an ally (or self)."),
+            }),
 
         // Resurrection — revive a fallen ally to 30% HP/MP and restore a fraction of the exp they lost to
-        // the death penalty. 4 levels (25/50/75/100%), learned for SP at 20/40/52/61 like any other skill.
-        // The target must be dead (checked at cast).
+        // the death penalty. The target must be dead (checked at cast).
+        //
+        // 🔑 TWO LEVELS, AND LEVEL 1 GIVES THE EXP BACK — NOTHING (owner 2026-08-17: *"resurect - lvl 20 no
+        // exp, @30 - 20% exp .. ill add 40+"*). That is the whole shape of the skill: a 2nd-class cleric can
+        // put you back on your feet but cannot save your experience, so a res early on is a rescue, not an
+        // undo. It replaced a 4-level 25/50/75/100% ladder that was invented here.
+        // ⚠ THE 40+ RUNGS ARE HIS AND ARE NOT WRITTEN YET (*"ill add 40+"*, BL-02). The old L3@52 / L4@61
+        // Lightbringer grants were removed with the ladder — do not re-invent them to fill the gap.
         // 10s base cast at EVERY level, and deliberately NOT FixedCast: cast speed is the only thing that
         // shortens it, so investing in cast speed is what makes a res usable mid-fight. At the 1999 cast-speed
         // cap that's 333/1999 ≈ 1.67s — fast, but never instant (which would be OP).
+        // MP is his too (2026-08-17), authored as the CSV's two columns — 10 up front + 50 on the finish
+        // at level 1, 20 + 70 at level 2. `MpCost` is the TOTAL and `InitialMpCost` the up-front slice,
+        // so those read 60 and 90 here. It is roughly HALF what this skill used to cost (120/150).
         new(Resurrection, "Resurrection", BaseClass.Mage, SkillEffect.None,
-            MpCost: 120, CastTicks: 100, CooldownTicks: 100, Range: 600, Power: 0,
-            Category: SkillCategory.Heal, InitialMpCost: 24,
-            Resurrect: true, ResExpPct: 0.25f,
-            Description: "Revives a fallen ally at 30% HP and MP and restores part of the experience they "
-                       + "lost on death (25% to 100% by level).",
+            MpCost: 60, CastTicks: 100, CooldownTicks: 100, Range: 600, Power: 0,
+            Category: SkillCategory.Heal, InitialMpCost: 10,
+            Resurrect: true, ResExpPct: 0f,
+            Description: "Revives a fallen ally at 30% HP and MP. Higher levels also give back part of the "
+                       + "experience they lost on death.",
             Levels: new[]
             {
-                new SkillLevel(MpCost: 120, InitialMpCost: 24, SpCost: 6400,  ResExpPct: 0.25f, Description: "Revive at 30% HP/MP; restore 25% of lost exp."),
-                new SkillLevel(MpCost: 150, InitialMpCost: 30, SpCost: 12800, ResExpPct: 0.50f, Description: "Revive at 30% HP/MP; restore 50% of lost exp."),
-                new SkillLevel(MpCost: 180, InitialMpCost: 36, SpCost: 25000, ResExpPct: 0.75f, Description: "Revive at 30% HP/MP; restore 75% of lost exp."),
-                new SkillLevel(MpCost: 210, InitialMpCost: 42, SpCost: 50000, ResExpPct: 1.00f, Description: "Revive at 30% HP/MP; restore 100% of lost exp."),
+                new SkillLevel(MpCost: 60, InitialMpCost: 10, SpCost: 6400,  ResExpPct: 0f,
+                    Description: "Revive at 30% HP/MP. Does not give back any lost exp."),
+                new SkillLevel(MpCost: 90, InitialMpCost: 20, SpCost: 12800, ResExpPct: 0.20f,
+                    Description: "Revive at 30% HP/MP; restore 20% of lost exp."),
+                // Level 3 = his `healer 3rd.csv` level-40 row. The rungs above it (his file sketches
+                // 40/50/60/70%) sit in the part he marked "not done", so they are NOT written here.
+                new SkillLevel(MpCost: 120, InitialMpCost: 30, SpCost: 36000, ResExpPct: 0.30f,
+                    Description: "Revive at 30% HP/MP; restore 30% of lost exp."),
             }),
     };
 }

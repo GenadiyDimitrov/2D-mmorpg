@@ -55,6 +55,13 @@ public static partial class SkillCatalog
     public const string FamMagCrit  = "mcrit_rate";   // Insight  — % magic crit rate
     public const string FamFrenzy   = "frenzy";       // Frenzy   — the whole trade-off buff
 
+    // ---- CONTROL RESISTANCE, one family per SCHOOL (owner 2026-08-17, the healer's level-40 pair).
+    //      They are two families and not one because the schools are defended by different stats —
+    //      SPT for magical, CON for physical — so "hard to lock down" is two different investments,
+    //      and a party can be blessed against the threat it actually faces. ----
+    public const string FamCcResMag  = "cc_res_mag";   // Clarity   — % resist vs SPT-defended debuffs
+    public const string FamCcResPhys = "cc_res_phys";  // Fortitude — % resist vs CON-defended debuffs
+
     // ---------------------------------------------------------------------------------------
     //  Single-buff ids. `Rung(family, n)` builds them, so these consts are only for the places
     //  that name one directly (class-buff child lists, the NPC buffer).
@@ -117,6 +124,22 @@ public static partial class SkillCatalog
     /// the owner asked for the scroll to carry "the full frenzy". It still behaves like every
     /// other family: one key, six rungs, stronger replaces weaker. The Max HP/MP penalty SHRINKS
     /// as the rung climbs, so power is monotonic even though two of its numbers move opposite ways.</summary>
+    /// <summary>One rung of a control-resistance family. Like <see cref="FrenzyRung"/> this cannot go
+    /// through <see cref="Ladder"/>, because its payload is a FIELD rather than an EffectMagnitude — the
+    /// SkillEffect flag enum has no bits left, so per-school CC resistance rides on SkillDef fields.
+    /// Carries no Effect at all: it changes nothing until a debuff is rolled against its holder.</summary>
+    private static SkillDef CcResistRung(string family, string name, int rank,
+        float magical = 0f, float physical = 0f)
+    {
+        string what = magical > 0f ? "magical (SPT)" : "physical (CON)";
+        float v = magical > 0f ? magical : physical;
+        return new SkillDef(Rung(family, rank), name, BaseClass.Mage, SkillEffect.None,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+            BuffKey: family, Rank: rank, Category: SkillCategory.Buff,
+            CcResistMagical: magical, CcResistPhysical: physical,
+            Description: $"+{v * 100:0.#}% resistance to {what} debuffs.");
+    }
+
     private static SkillDef FrenzyRung(int rank, float penalty, float gain, int move, int eva = 8) =>
         new(Rung(FamFrenzy, rank), "Frenzy", BaseClass.Fighter,
             SkillEffect.BuffHp | SkillEffect.BuffMp | SkillEffect.BuffPhysAtk | SkillEffect.BuffMagAtk
@@ -217,6 +240,14 @@ public static partial class SkillCatalog
         // grew with the rung would make a higher rung genuinely worse in one respect, which is
         // exactly what the rank rule cannot express. Rung 1 = the cleric's Frenzy today (bar that
         // evasion), rung 6 = the NPC buffer's.
+        // ===== Control resistance, per school — ONE rung each, and that is deliberate =====
+        // These are his level-40 healer rows ("30% resist to SPT debuffs" / "15% resist to CON debuffs"),
+        // written as "? L1", so a ladder is coming. ⚠ Only the rung he authored exists: inventing rungs
+        // 2-6 here is exactly what BL-02 forbids, and a resist ladder is not a curve anyone can guess —
+        // 30% and 15% are not even the same number, so there is no shared shape to extrapolate from.
+        list.Add(CcResistRung(FamCcResMag, "Clarity", 1, magical: 0.30f));
+        list.Add(CcResistRung(FamCcResPhys, "Fortitude", 1, physical: 0.15f));
+
         list.Add(FrenzyRung(1, 0.30f, 0.05f, 5));
         list.Add(FrenzyRung(2, 0.26f, 0.06f, 6));
         list.Add(FrenzyRung(3, 0.22f, 0.06f, 6));
@@ -323,6 +354,10 @@ public static partial class SkillCatalog
         Castable(FamCast, "Alacrity", SkillEffect.BuffCastSpeed, new[] { BuffAlacrityC, BuffAlacrityU, BuffAlacrityR }, "faster casting");
         Castable(FamEva, "Agility", SkillEffect.BuffEvasion, new[] { BuffAgilityC, BuffAgilityU, BuffAgilityR }, "more Evasion");
         Castable(FamAs, "Haste", SkillEffect.BuffAtkSpeed, new[] { BuffHasteC, BuffHasteU, BuffHasteR }, "faster attacks");
+        // The two control-resistance blessings. `SkillEffect.None` because their payload is a field,
+        // not a magnitude — the wrapper still buffs, it just has no flag that describes it.
+        Castable(FamCcResMag, "Clarity", SkillEffect.None, Rungs(FamCcResMag, 1), "a mind harder to bind");
+        Castable(FamCcResPhys, "Fortitude", SkillEffect.None, Rungs(FamCcResPhys, 1), "a body harder to break");
         // Frenzy's castable single already exists as the cleric's `holy_frenzy` (Skills.Healer.cs) —
         // it was a wrapper over one family before this, so it needed no second copy.
 

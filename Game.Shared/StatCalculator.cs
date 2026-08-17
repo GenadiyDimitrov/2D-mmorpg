@@ -742,9 +742,15 @@ public static class StatCalculator
     }
 
     /// <summary>Chance a contested debuff (slow/stun/root/fear/…) LANDS: the attacker's
-    /// ATK (core power stat) vs the defender's resisting stat (CON for physical, WIT for
-    /// magical). 50% when equal, scaling by the ratio, clamped to [10%, 90%]
-    /// (per docs/design/Disciplines.md). Bosses are made immune by the caller.</summary>
+    /// ATK (core power stat) vs the defender's resisting stat. 50% when equal, scaling by the
+    /// ratio, clamped to [10%, 90%] (per docs/design/Disciplines.md). Bosses are made immune
+    /// by the caller.
+    /// <para>🔑 THE TWO DEFENDING STATS ARE THE ONES YOU GAVE UP (owner 2026-08-17). Magical
+    /// debuffs are resisted by <b>SPT</b>, not WIT — *"the actual stat u give up to increase wit
+    /// and atk as a mage, so u get easily debuffed by magic debuffs"*. Physical ones (bleed,
+    /// hold, stun) are resisted by <b>CON</b>, *"same logic, you give up con to increase atk and
+    /// agi"*. Both sides of the contest are therefore a real build cost, not a free stat: the
+    /// glassier your offence, the easier you are to control.</para></summary>
     public static float DebuffLandChance(int attackerAtk, int defenderStat)
     {
         int sum = attackerAtk + defenderStat;

@@ -50,6 +50,30 @@ public class TrapInstance
     public int LifeTicks { get; set; }
 }
 
+/// <summary>A placed TOTEM (the Ork healer's level-40 skill). Server-only for now, exactly like
+/// <see cref="TrapInstance"/> — a dedicated visual is client work, and until it exists a totem is felt
+/// (allies visibly heal) rather than seen. The mirror image of a trap: a trap waits once for an ENEMY
+/// and dies, a totem pulses repeatedly at ALLIES on a timer until its life runs out.
+/// <para>⚠ Deliberately NOT an Entity. A new <c>EntityKind</c> would have to be audited through ~137
+/// server call sites, 54 of which ask "is this a mob / not a player" — a totem would silently become a
+/// valid aggro, damage or loot target in whichever one was missed. PETS are the case that will justify
+/// paying that cost, because a pet must move, fight and be targetable; a totem needs none of it.</para></summary>
+public class TotemInstance
+{
+    public required Guid OwnerId { get; init; }
+    public required string SkillId { get; init; }
+    public int Level { get; init; } = 1;
+    public float X { get; init; }
+    public float Y { get; init; }
+    public float Radius { get; init; }
+    /// <summary>Heal applied to each ally in radius per pulse (the skill's Power at its level).</summary>
+    public int PulseAmount { get; init; }
+    /// <summary>Ticks between pulses, and the countdown to the next one.</summary>
+    public int PulseTicks { get; init; } = 10;
+    public int NextPulseIn { get; set; }
+    public int LifeTicks { get; set; }
+}
+
 /// <summary>A live adventuring party. Owned by the loop thread. The leader can invite/kick;
 /// members share XP (split among those in range) and are the targets of AoE ally heals/buffs.</summary>
 public class Party
@@ -115,6 +139,9 @@ public class World
 
     /// <summary>Live placed traps (Trapper). Scanned each tick for intruders.</summary>
     public List<TrapInstance> Traps { get; } = new();
+
+    /// <summary>Live placed totems (healer). Pulsed each tick at the allies standing in them.</summary>
+    public List<TotemInstance> Totems { get; } = new();
 
     /// <summary>invitedEntityId -> inviterEntityId (one pending party invite each).</summary>
     public Dictionary<Guid, Guid> PendingPartyInvites { get; } = new();

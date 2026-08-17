@@ -410,7 +410,9 @@ public static class SkillText
             bool cancel = (def.Effect & SkillEffect.Cancel) != 0;
             string what = cancel ? "enemy buffs" : "debuffs";
             string many = def.DispelCount > 0 ? $"up to {def.DispelCount}" : "all";
-            string cap = def.DispelMaxLevel > 0 ? $" of rank {def.DispelMaxLevel} or lower" : "";
+            // Per LEVEL: a cure's ladder is this ceiling, so the tooltip has to move with it.
+            int maxRank = def.DispelMaxLevelAt(level);
+            string cap = maxRank > 0 ? $" of rank {maxRank} or lower" : "";
             o.Add($"Removes {many} {what}{cap}");
         }
         if (!def.Cancellable) o.Add("Cannot be cancelled or cured");
@@ -432,6 +434,9 @@ public static class SkillText
                 : "Reveals everyone hidden in the area");
 
         // ---- Traps ----
+        if (def.PlacesTotem)
+            o.Add($"Plants a totem that heals allies within {(int)def.TotemRadius} "
+                + $"every {def.TotemPulseTicks / 10f:0.#}s for {def.TotemLifeTicks / 10}s");
         if (def.PlacesTrap)
             o.Add($"Drops a trap at your feet: triggers within {(int)def.TrapRadius}, "
                 + $"lasts {Secs(def.TrapLifeTicks)}");

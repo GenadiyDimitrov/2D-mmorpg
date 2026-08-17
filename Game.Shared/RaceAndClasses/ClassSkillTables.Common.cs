@@ -25,30 +25,33 @@ public static partial class ClassSkillTables
                 new ClassSkill(TankAntiMagic, 20, SkillLevel: 1),
                 new ClassSkill(TankWeaponMastery, 20, SkillLevel: 1),
                 new ClassSkill(DefensiveWall, 20, SkillLevel: 1),
-                // Provoke is now a LADDER, not a one-off (BL-71): its taunt POWER is what keeps a mob
+                // Provoke is a LADDER, not a one-off (BL-71): its taunt POWER is what keeps a mob
                 // on the tank once the 3s lock expires, so it has to grow with the damage the party
-                // behind him is doing. Same 20/24/28/32/36 cadence as every other tank line here.
-                new ClassSkill(Provoke, 20, SkillLevel: 1),
+                // behind him is doing. ⚠ It is the ONE tank line that does NOT start at 20 — the
+                // owner authored it at 24/28/32/36 in `tank 2nd.csv` (2026-08-17) and deleted the
+                // level-20 row himself, so a tank has no taunt for his first four levels. That gap is
+                // DELIBERATE and was confirmed when queried ("delibered is taunt at 24") — it is not a
+                // transcription slip, so do not helpfully restore a rung at 20.
                 new ClassSkill(TankArmorMastery, 24, SkillLevel: 2),
                 new ClassSkill(TankShieldMastery, 24, SkillLevel: 2),
                 new ClassSkill(TankAntiMagic, 24, SkillLevel: 2),
                 new ClassSkill(TankWeaponMastery, 24, SkillLevel: 2),
-                new ClassSkill(Provoke, 24, SkillLevel: 2),
+                new ClassSkill(Provoke, 24, SkillLevel: 1),
                 new ClassSkill(TankArmorMastery, 28, SkillLevel: 3),
                 new ClassSkill(TankShieldMastery, 28, SkillLevel: 3),
                 new ClassSkill(TankAntiMagic, 28, SkillLevel: 3),
                 new ClassSkill(TankWeaponMastery, 28, SkillLevel: 3),
                 new ClassSkill(TankShieldStun, 28, SkillLevel: 1),
-                new ClassSkill(Provoke, 28, SkillLevel: 3),
+                new ClassSkill(Provoke, 28, SkillLevel: 2),
                 new ClassSkill(TankArmorMastery, 32, SkillLevel: 4),
                 new ClassSkill(TankShieldMastery, 32, SkillLevel: 4),
                 new ClassSkill(TankAntiMagic, 32, SkillLevel: 4),
                 new ClassSkill(TankWeaponMastery, 32, SkillLevel: 4),
-                new ClassSkill(Provoke, 32, SkillLevel: 4),
+                new ClassSkill(Provoke, 32, SkillLevel: 3),
                 new ClassSkill(TankArmorMastery, 36, SkillLevel: 5),
                 new ClassSkill(TankAntiMagic, 36, SkillLevel: 5),
                 new ClassSkill(TankWeaponMastery, 36, SkillLevel: 5),
-                new ClassSkill(Provoke, 36, SkillLevel: 5),
+                new ClassSkill(Provoke, 36, SkillLevel: 4),
                 new ClassSkill(TankStay, 36, SkillLevel: 1));
             // Warrior (CSV warrior 2nd): Two-Hand Mastery + Body Mastery (5 levels each),
             // Strike continues (levels 4-8), and the low-HP Battle stances.
@@ -283,16 +286,14 @@ public static partial class ClassSkillTables
                 // 30 — Might L4 (adds vampirism), Speed L3 (adds evasion).
                 new ClassSkill(CastId(FamVamp), 30, SkillLevel: 2),         // Vampirism 6%
                 new ClassSkill(CastId(FamEva), 30, SkillLevel: 2),          // Agility +2 evasion
-                new ClassSkill(CastId(FamAccuracy), 30, SkillLevel: 2),     // Aim     +2 accuracy
-                // 35 — Speed L4 (adds attack speed), Body L1, Frenzy.
-                new ClassSkill(CastId(FamCast), 35, SkillLevel: 3),         // Alacrity +30% cast
+                new ClassSkill(CastId(FamAccuracy), 30, SkillLevel: 1),     // Aim     +1 accuracy
+                // 35 — Speed L4 (adds attack speed), Body L1, Frenzy. ⚠ Alacrity STOPS at L2 (+23%) for
+                // the cleric: he took the L3 rung out of the CSV, so cast speed past 23% is a 3rd-class
+                // reward now. Don't re-add it here from the old ladder.
                 new ClassSkill(CastId(FamAs), 35, SkillLevel: 1),           // Haste   +15% attack speed
                 new ClassSkill(CastId(FamHpRegen), 35, SkillLevel: 2),      // Vigor   +10% HP regen
                 new ClassSkill(CastId(FamMagDef), 35, SkillLevel: 1),       // Ward    +10% M.Def
                 new ClassSkill(HolyFrenzy, 35, SkillLevel: 1),              // Frenzy (already a single)
-
-                // Restore Mana — MP restore on an ally (35 only).
-                new ClassSkill(RestoreMana, 35, SkillLevel: 1),
 
                 // Anti-Magic — continues the base-mage passive (lvls 3-6).
                 new ClassSkill(MageAntiMagic, 20, SkillLevel: 3),
@@ -312,17 +313,31 @@ public static partial class ClassSkillTables
                 new ClassSkill(ArmorMasterySkill, 30, SkillLevel: 3),
                 new ClassSkill(ArmorMasterySkill, 35, SkillLevel: 4),
 
-                // Combat Stance — TOGGLE: trade M.Atk for P.Atk to melee-farm (mace).
-                new ClassSkill(CombatStance, 20, SkillLevel: 1),
+                // ⚠ COMBAT STANCE IS NOT LEARNED ANY MORE (owner 2026-08-17: *"the only one created
+                // after the csv was the combat stence which we will remove and add it to the buffer
+                // later in different form"*). It was the one cleric skill this project invented rather
+                // than took from his CSV, which is exactly why it is the one being taken back out. The
+                // SkillDef stays in the catalog — the toggle returns on the BUFFER in a different
+                // shape — and nothing is orphaned by dropping the row: the fighter's stealth toggle
+                // (Skills.Fighter.cs) is a second user of the toggle mechanic.
 
-                // Antidote — targeted cure (poison/venom).
-                new ClassSkill(Antidote, 25, SkillLevel: 1),
+                // Antidote — targeted cure. It always cures poison/venom/bleed; the level is a RANK
+                // CEILING on how strong a DoT it can strip. His levels: 20 and 35, with more coming
+                // on the 3rd-class healers (*"later healers will learn more levels"*).
+                new ClassSkill(Antidote, 20, SkillLevel: 1),
+                new ClassSkill(Antidote, 35, SkillLevel: 2),
+
+                // Restore Mana — a lossless MP transfer to an ally. His levels and his powers: 52 at
+                // 30, 60 at 35, each costing exactly what it gives.
+                new ClassSkill(RestoreMana, 30, SkillLevel: 1),
+                new ClassSkill(RestoreMana, 35, SkillLevel: 2),
 
                 // Resurrection — revive a fallen ally. Learned for SP like any other skill (owner,
-                // 2026-07-17: it used to be auto-granted). EVERY cleric gets L1/L2 regardless of the
-                // 3rd class they go on to take; L3/L4 are the Lightbringer's alone (see the third table).
+                // 2026-07-17: it used to be auto-granted). His levels: 20 (revive only, no exp back)
+                // and 30 (20% of the lost exp). EVERY cleric gets both, whatever 3rd class follows.
+                // ⚠ There are no 40+ rungs any more — he is authoring those himself ("ill add 40+").
                 new ClassSkill(Resurrection, 20, SkillLevel: 1),
-                new ClassSkill(Resurrection, 40, SkillLevel: 2));
+                new ClassSkill(Resurrection, 30, SkillLevel: 2));
         }
     }
 }

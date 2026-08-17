@@ -7,10 +7,57 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.70.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.71.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
+
+## 2026-08-17 — 0.71.0: the cleric says what it does, and the healer reaches 40
+
+⚠ **Needs a new APK** — the Learn tab is built client-side from the compiled class tables, so none of the
+new skills appear on the phone until it is rebuilt. `Game.sln` builds, the Unity client type-checks, the
+server boots green, and `cleric 2nd.csv` now reports **zero** findings from `SkillCsvSeed --check` (the
+repo total went 53 → 25).
+
+**`cleric 2nd.csv` was the last document still describing the PRE-SPLIT buffs.** It wrote Might as P.Atk
+*and* P.Def, Speed as cast+move+evasion, Force as M.Atk plus a magic-cancel line — bundles the code
+stopped granting on 2026-07-31, when he asked for *"the cleric to learn the individual buffs"*. The 11
+bundled rows are now 17 single rows naming the buffs the game actually casts. **Nothing was retuned**: his
+numbers survived the split intact, and the "decrease magic dmg by 18/25" on the old Force rows turns out
+to be the Resolve interrupt ladder. He then edited it back — Antidote's cure ranks, Aim down to L1, and
+Alacrity capped at L2 — and the code follows him.
+
+**Taunt is his ladder now.** He authored it into `tank 2nd.csv`: **four rungs at 24/28/32/36, power
+4500 / 5000 / 5500 / 6000**, replacing the five-rung 1500→5100 curve `BL-71` had derived from his
+playtest-22 endpoints. His is higher at the bottom and far flatter — and it **starts at 24**, because he
+deleted the level-20 row by hand. Confirmed deliberate when queried: a tank has no taunt for his first
+four levels.
+
+**Combat Stance is gone from the cleric** — *"the only one created after the csv ... which we will remove
+and add it to the buffer later in different form"*. It was the one cleric skill this project invented
+rather than took from him, which is why it is the one taken back out; the `SkillDef` stays so it can
+return on the buffer.
+
+**Magical debuffs are resisted by SPT, not WIT.** His rule, and it makes both halves of the contest a real
+build cost: *"the actual stat u give up to increase wit and atk as a mage (so u get easily debuffed by
+magic debuffs) — con is for physical ... same logic you give up con to increase atk and agi"*. The
+glassier your offence, the easier you are to lock down.
+
+**Totems exist.** A totem is the mirror image of a trap — a trap waits once for an ENEMY and dies, a totem
+pulses at ALLIES on a timer — so it is built the same way, as a placed server-side object rather than an
+Entity. That is deliberate: a new `EntityKind` would need auditing through ~137 call sites, 54 of which
+ask "is this a mob", and a totem would quietly become a valid aggro or loot target in whichever one was
+missed. **Pets** are the case that will justify paying that cost. A totem outlives its owner's death, on
+purpose: it is planted ground, not a channel.
+
+**His `healer 3rd.csv` landed, and its whole level-40 block is built** — the first authored 3rd-class
+discipline (`BL-02`). Race splits the kit twice, once on the heal and once on the debuff: Human gets Quick
+Great Heal + Gravity, Elf gets Healer Blessing + Bind, Ork gets the Healing Totem + Armor Break. Where a
+row landed on an existing skill's exact slot the **id was reused rather than retired** — which is right for
+the data and wrong for reading code, and is now `BL-84`. Two new buffs needed a new engine piece,
+**per-school control resistance**: **Clarity** (30% vs SPT-defended debuffs) and **Fortitude** (15% vs
+CON-defended ones), riding as fields because the SkillEffect flag enum is full. Only the rungs he authored
+exist. ⚠ Everything at level **44 and above** in that file is marked "not done" and was left alone.
 
 ## 2026-08-17 — the fourth class exists, and every class has a name of its own
 

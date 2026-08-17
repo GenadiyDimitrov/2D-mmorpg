@@ -280,6 +280,30 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
   🔵 Open: does this cover **every** threat skill (`Lure`, the mob-only rogue pull, and any 40+ taunt from
   `BL-02`) or only single-target taunts? Assume all threat-generating skills unless he says otherwise.
 
+- `BL-84` ⏸ **RENAME EVERY SKILL ID TO MATCH ITS NAME — QUEUED BEHIND THE HEALER, ON HIS INSTRUCTION.**
+  2026-08-17: *"After the healer is done I want to change all the game skills id's to match the skill
+  names ... not `lb_elf_dawn` <> Healer's Blessing, it should be `healers_blessing` or something that
+  matches it. Make a note to remind me after the healer is done (I want all the skills, not only the
+  healers — all 1st, 2nd + healer 3rd)."*
+  **Scope, his**: every skill in the **1st** and **2nd** class tables plus the **healer 3rd** — not the
+  healer alone. The other seven disciplines follow when their CSVs land, so the convention has to be
+  settled here and then simply obeyed.
+  🔑 **Why it is worth doing**: the ids were named after the SLOT a skill sat in, not the skill. Three
+  level-40 healer ids now openly contradict the thing they identify — `lb_elf_dawn` is *Healer Blessing*,
+  `lb_human_mend` is *Quick Great Heal*, `lb_ork_font` is *Healing Totem* — because each was reused when
+  his authored row landed on its slot. That is the right call for data (see `BL-02`) and the wrong one
+  for reading code, and it gets worse with every CSV he writes.
+  ✅ **NO MIGRATION NEEDED — he settled it the same day**: *"I'll reset the db anyways so it's not of a
+  concern."* Ids are persisted (learned skills + the skill bar's `SkillBarCsv`), so a rename would
+  normally orphan every character's bar — the failure `retired-skill-ids-leak` recorded once. A DB reset
+  removes that entirely, which turns this from a migration into an ordinary rename. **Do it in one pass
+  while the reset is happening**, not spread across versions, or the two halves meet in a live DB and the
+  problem comes back. ⚠ Ids also appear in `docs/` and in the premium/consumable catalogs, and
+  `SkillCsvSeed` matches CSV rows to code **by NAME**, so the checker can neither verify this pass nor
+  catch a mistake in it — the compiler is the only safety net, which is fine for constants.
+  🔵 Convention to settle with him before starting: strip the `lb_`/discipline prefixes entirely, or keep
+  a short one for per-race variants that share a display name across races?
+
 ---
 
 ## Items & economy

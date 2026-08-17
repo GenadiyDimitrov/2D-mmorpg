@@ -225,6 +225,19 @@ public record SkillDef(
     bool PlacesTrap = false,
     float TrapRadius = 150f,
     int TrapLifeTicks = 300,
+    // TOTEM (owner 2026-08-17, the Ork healer's level-40 skill — *"u can start with the totems, it
+    // will be needed and probably will help for pets later"*). The cast plants a stationary object at
+    // the caster's feet which PULSES this skill's payload to nearby ALLIES every TotemPulseTicks for
+    // TotemLifeTicks, then expires. The mirror image of a trap: a trap waits once for an enemy and
+    // dies; a totem fires repeatedly at friends on a timer.
+    //
+    // The pulse amount is the skill's own Power (a heal per pulse), so a totem's ladder is authored
+    // exactly like every other heal's. TotemRadius is the reach around the TOTEM, not the caster —
+    // planting it well is the skill.
+    bool PlacesTotem = false,
+    float TotemRadius = 300f,
+    int TotemLifeTicks = 300,
+    int TotemPulseTicks = 10,
     // Fixed-timing flags (Return skill + future ultimate/event skills). FixedCast = cast time
     // ignores cast-speed (always the authored CastTicks). FixedCooldown = reuse ignores
     // cooldown-reduction buffs. FragileCast = ANY damage taken cancels the cast (bypasses the
@@ -272,7 +285,16 @@ public record SkillDef(
     // playtest-21 `69e`: *"normaly no1 can evade a physical skill … now on then i miss a skill which
     // is anoying — stab fails"*); the ONLY way one is dodged is an explicit grant like this.
     // Rides as a field, not a SkillEffect flag — the flag enum is full (1L << 62 was the last bit).
-    float SkillEvadeChance = 0f)
+    float SkillEvadeChance = 0f,
+    // CONTROL RESISTANCE, PER SCHOOL (owner 2026-08-17 — the healer's Clarity and Fortitude). Cuts the
+    // LAND chance of a contested debuff against the HOLDER of this buff, on top of the school-blind
+    // `CcResist` that armour grants. TWO numbers rather than one because his two rows are two separate
+    // buffs with different values: *"30% resist to SPT debuffs"* and *"15% resist to CON debuffs"* —
+    // and because the schools are defended by different stats (SPT vs CON), so a single number could
+    // never express "tough in body, open in mind".
+    // Rides as fields, not SkillEffect flags — the flag enum is full (1L << 62 was the last bit).
+    float CcResistMagical = 0f,
+    float CcResistPhysical = 0f)
 {
     /// <summary>Hash on the ID alone — and this override MUST stay.
     ///
@@ -359,6 +381,29 @@ public record SkillDef(
     {
         int t = Lvl(level)?.TauntPower ?? 0;
         return t > 0 ? t : TauntPower;
+    }
+
+    /// <summary>Per-school control resistance at a LEVEL. A level's 0 means "inherit", so a
+    /// single-level resist buff needs no per-level entry (see SkillLevel.CcResistMagical).</summary>
+    public float CcResistMagicalAt(int level)
+    {
+        float v = Lvl(level)?.CcResistMagical ?? 0f;
+        return v > 0f ? v : CcResistMagical;
+    }
+
+    /// <summary>Per-school control resistance at a LEVEL. See <see cref="CcResistMagicalAt"/>.</summary>
+    public float CcResistPhysicalAt(int level)
+    {
+        float v = Lvl(level)?.CcResistPhysical ?? 0f;
+        return v > 0f ? v : CcResistPhysical;
+    }
+
+    /// <summary>The highest ailment Rank this skill can strip at a LEVEL. A level's 0 means "inherit",
+    /// so a cure with one flat ceiling needs no per-level entry (see SkillLevel.DispelMaxLevel).</summary>
+    public int DispelMaxLevelAt(int level)
+    {
+        int m = Lvl(level)?.DispelMaxLevel ?? 0;
+        return m > 0 ? m : DispelMaxLevel;
     }
 
     /// <summary>Authored range at a LEVEL. A level's 0 means "inherit", so every skill whose reach
@@ -516,7 +561,17 @@ public record SkillLevel(
     // property of the spell, not of how far up its ladder you are — but the rogue's LURE is exactly
     // the exception: its whole ladder IS reach (200/400/600), because how far away you can start a
     // pull is the skill.
-    float Range = 0f);
+    float Range = 0f,
+    // HOW STRONG AN AILMENT THIS LEVEL CAN STRIP (0 = inherit the SkillDef's DispelMaxLevel). This is
+    // a cure's whole ladder: WHAT it cures never changes, only how far up the ailment's own Rank it
+    // can reach. Owner 2026-08-17: *"antidote have lvl and should cure poison + bleed below some level
+    // ... you get a posion 10 and bleed 5 .. ur antidote is lvl 3 (cures below lvl 7) and cures the
+    // bleed only"*. Same "unset = inherit" shape as TauntPower above.
+    int DispelMaxLevel = 0,
+    // PER-SCHOOL CONTROL RESISTANCE at THIS level (0 = inherit the SkillDef's). Clarity and Fortitude
+    // climb a ladder like every other buff; see SkillDef.CcResistMagical.
+    float CcResistMagical = 0f,
+    float CcResistPhysical = 0f);
 
 /// <summary>What a buff does to the four things a MONSTER pays out: experience, skill points, the
 /// gold it drops and the CHANCE its table rolls. The premium rune family (Rune of Experience /

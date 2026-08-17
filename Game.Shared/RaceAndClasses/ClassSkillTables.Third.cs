@@ -236,20 +236,58 @@ public static partial class ClassSkillTables
     private static void RegisterLightbringer()
     {
         // Mage 3rd-class learn cadence: 40, 44, 48, 52.
-        // Resurrection L3/L4 are the Lightbringer's alone — every cleric learns L1/L2 from the 2nd-class
-        // table, but only the dedicated healer restores 75%/100% of a death's lost exp.
+        // ⚠ RESURRECTION HAS NO 40+ RUNGS ANY MORE. It used to hand the Lightbringer L3@52 / L4@61
+        // (75% / 100% of the lost exp), but that ladder was invented here, and the owner replaced its
+        // bottom with his own on 2026-08-17 — *"resurect - lvl 20 no exp, @30 - 20% exp .. ill add 40+"*.
+        // The top is his to write (BL-02), so the grants are gone rather than left at invented values.
+        // ---- LEVEL 40 IS HIS, authored in `healer 3rd.csv` (rows 3-22, 2026-08-17). Everything at 44
+        //      and above in that file is marked "not done", so the 44/48/52 rows below are still the
+        //      INVENTED kit and are left exactly as they were — they will be reconciled when he writes
+        //      those levels. ⚠ That leaves one known overlap: the Elf has both his `Bind` at 40 and the
+        //      invented `Warding Step` at 44, and both are roots. ----
+        // The shared half of level 40: three passives, the three upgraded heals/nuke, the res rung, and
+        // the buff blessings. Every race learns these.
+        ClassSkill[] LightbringerShared40() => new[]
+        {
+            new ClassSkill(MageAntiMagic, 40, SkillLevel: 7),
+            new ClassSkill(SpellMastery, 40, SkillLevel: 5),
+            new ClassSkill(ArmorMasterySkill, 40, SkillLevel: 5),
+            new ClassSkill(HolyRay, 40),
+            new ClassSkill(GreatHeal, 40),
+            new ClassSkill(PartyGreatHeal, 40),
+            new ClassSkill(Conceal, 40),
+            new ClassSkill(Resurrection, 40, SkillLevel: 3),
+            new ClassSkill(RestoreMana, 40, SkillLevel: 3),
+            new ClassSkill(CastId(FamPhysAtk), 40, SkillLevel: 3),    // Might L3   +15% P.Atk
+            new ClassSkill(CastId(FamAccuracy), 40, SkillLevel: 2),   // Aim L2     +2 Accuracy
+            new ClassSkill(CastId(FamCritDmg), 40, SkillLevel: 4),    // Ferocity   +25% crit damage
+            new ClassSkill(CastId(FamCcResMag), 40, SkillLevel: 1),   // Clarity    30% vs SPT debuffs
+            new ClassSkill(CastId(FamCcResPhys), 40, SkillLevel: 1),  // Fortitude  15% vs CON debuffs
+        };
         ClassSkills.RegisterThird(Race.Human, Discipline.Lightbringer,
-            new ClassSkill(LbHumanMend, 40), new ClassSkill(LbHumanPurify, 44),
-            new ClassSkill(LbBlessing, 48), new ClassSkill(LbDevotion, 52),
-            new ClassSkill(Resurrection, 52, SkillLevel: 3), new ClassSkill(Resurrection, 61, SkillLevel: 4));
+            LightbringerShared40().Concat(new[]
+            {
+                new ClassSkill(LbHumanMend, 40),        // Quick Great Heal
+                new ClassSkill(LbHumanGravity, 40),     // Gravity
+                new ClassSkill(LbHumanPurify, 44),
+                new ClassSkill(LbBlessing, 48), new ClassSkill(LbDevotion, 52),
+            }).ToArray());
         ClassSkills.RegisterThird(Race.Elf, Discipline.Lightbringer,
-            new ClassSkill(LbElfDawn, 40), new ClassSkill(LbElfWarden, 44),
-            new ClassSkill(LbBlessing, 48), new ClassSkill(LbDevotion, 52),
-            new ClassSkill(Resurrection, 52, SkillLevel: 3), new ClassSkill(Resurrection, 61, SkillLevel: 4));
+            LightbringerShared40().Concat(new[]
+            {
+                new ClassSkill(LbElfDawn, 40),          // Healer Blessing
+                new ClassSkill(LbElfBind, 40),          // Bind
+                new ClassSkill(LbElfWarden, 44),
+                new ClassSkill(LbBlessing, 48), new ClassSkill(LbDevotion, 52),
+            }).ToArray());
         ClassSkills.RegisterThird(Race.Ork, Discipline.Lightbringer,
-            new ClassSkill(LbOrkFont, 40), new ClassSkill(LbOrkSap, 44),
-            new ClassSkill(LbBlessing, 48), new ClassSkill(LbDevotion, 52),
-            new ClassSkill(Resurrection, 52, SkillLevel: 3), new ClassSkill(Resurrection, 61, SkillLevel: 4));
+            LightbringerShared40().Concat(new[]
+            {
+                new ClassSkill(LbOrkFont, 40),          // Healing Totem
+                new ClassSkill(LbOrkArmorBreak, 40),    // Armor Break
+                new ClassSkill(LbOrkSap, 44),
+                new ClassSkill(LbBlessing, 48), new ClassSkill(LbDevotion, 52),
+            }).ToArray());
     }
 
     // Warchanter (Healer B) — buffer: per-race DMG + party mega-buff + party HoT + passive.

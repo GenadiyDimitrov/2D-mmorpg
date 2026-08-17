@@ -1657,10 +1657,12 @@ public class GameLoopService : BackgroundService
         Guid targetId;
         // A support skill lands on a party member only if IsAllyTargetable says so — see that helper for
         // why the test cannot be Effect-only.
-        if (def.PlacesTrap || def.GrantsHide)
+        if (def.PlacesTrap || def.PlacesTotem || def.GrantsHide)
         {
-            // Self-delivered: a trap drops at the caster's feet; stealth cloaks the caster. Even
-            // though a trap carries damage/CC flags (its deferred payload), it needs no live target.
+            // Self-delivered: a trap drops at the caster's feet, a totem is planted there, stealth
+            // cloaks the caster. Even though these carry damage/CC/heal flags (their deferred payload),
+            // they need no live target — and a totem must reach this arm or it would be refused for
+            // having nothing selected.
             targetId = caster.Id;
         }
         else if (def.Resurrect)
@@ -7267,6 +7269,7 @@ public class GameLoopService : BackgroundService
         }
 
         TickTraps();
+        TickTotems();
 
         // End offline sessions that hit their cap or died (deferred so we don't mutate the entity
         // dict mid-iteration).
@@ -7314,6 +7317,75 @@ public class GameLoopService : BackgroundService
                 continue;
             FireTrap(owner, victim, trap);
             _world.Traps.RemoveAt(i);
+        }
+    }
+
+    /// <summary>The target's control resistance for ONE school — Clarity against the SPT-defended
+    /// (magical) debuffs, Fortitude against the CON-defended (physical) ones. A debuff with no school
+    /// at all is resisted by neither: it is not part of the stat contest in the first place.</summary>
+    private static float SchoolCcResist(Entity target, DebuffSchool school) => school switch
+    {
+        DebuffSchool.Magical  => target.CcResistMagical,
+        DebuffSchool.Physical => target.CcResistPhysical,
+        _ => 0f,
+    };
+
+    /// <summary>Advance placed totems: expire the timed-out ones and pulse the rest at the allies
+    /// standing inside them. A totem outlives its owner's DEATH on purpose — it is planted ground,
+    /// not a channel, and a totem that vanished the moment the healer fell would be worth least at
+    /// exactly the moment it is needed most. It is dropped only when the owner leaves the world.</summary>
+    private void TickTotems()
+    {
+        if (_world.Totems.Count == 0)
+            return;
+        for (int i = _world.Totems.Count - 1; i >= 0; i--)
+        {
+            var totem = _world.Totems[i];
+            if (--totem.LifeTicks <= 0)
+            {
+                _world.Totems.RemoveAt(i);
+                continue;
+            }
+            if (!_world.Entities.TryGetValue(totem.OwnerId, out var owner))
+            {
+                _world.Totems.RemoveAt(i);   // owner gone from the world entirely — drop it
+                continue;
+            }
+            if (--totem.NextPulseIn > 0)
+                continue;
+            totem.NextPulseIn = totem.PulseTicks;
+
+            string name = ClassSkills.DisplayName(
+                totem.SkillId, owner.Race, owner.BaseClass, owner.Archetype, owner.Discipline);
+            foreach (var ally in AlliesAroundPoint(owner, totem.X, totem.Y, totem.Radius))
+                HealOne(owner, ally, totem.PulseAmount, 0, name);
+        }
+    }
+
+    /// <summary>The owner and their party-mates standing within `radius` of a POINT. The same rules as
+    /// <see cref="PlayersInRadius"/> — party members only, never the dead, never someone Hidden
+    /// (BL-69) — but centred on a placed object rather than on the caster, because the whole skill of
+    /// a totem is where you put it and then walking away from it.</summary>
+    private IEnumerable<Entity> AlliesAroundPoint(Entity owner, float x, float y, float radius)
+    {
+        float r2 = radius * radius;
+        bool InRange(Entity e)
+        {
+            float dx = e.X - x, dy = e.Y - y;
+            return dx * dx + dy * dy <= r2;
+        }
+        if (!owner.Dead && InRange(owner))
+            yield return owner;
+        if (!_world.Parties.TryGetValue(owner.Id, out var party))
+            yield break;   // solo: the owner alone
+        foreach (var e in _world.Grid.Nearby(owner))
+        {
+            if (e.Kind != EntityKind.Player || e.Dead || e.Id == owner.Id)
+                continue;
+            if (!party.Contains(e.Id) || e.Hidden)
+                continue;
+            if (InRange(e))
+                yield return e;
         }
     }
 
@@ -7387,9 +7459,10 @@ public class GameLoopService : BackgroundService
         if ((effect & SkillEffect.ContestCc) != 0 && !victim.Dead)
         {
             int atkStat = attacker.AtkStat;
-            int defStat = def.DebuffSchool == DebuffSchool.Magical ? (int)victim.EffectiveWit : victim.Con;
+            int defStat = def.DebuffSchool == DebuffSchool.Magical ? (int)victim.EffectiveSpt : victim.Con;
             float land = victim.Immune ? 0f : StatCalculator.DebuffLandChance(atkStat, defStat);
             land *= 1f - victim.CcResist;
+            land *= 1f - SchoolCcResist(victim, def.DebuffSchool);
             if (_rng.NextDouble() < land)
             {
                 ApplyBuff(victim, def, lvl);
@@ -8485,6 +8558,26 @@ var effect = def.Effect;
             return;
         }
 
+        // ---- Totem placement: plant it at the caster's feet and finish. Unlike a trap it fires
+        //      immediately and then on its own timer, so standing in it pays from the first second
+        //      rather than after a full pulse interval. ----
+        if (def.PlacesTotem)
+        {
+            _world.Totems.Add(new TotemInstance
+            {
+                OwnerId = caster.Id, SkillId = def.Id, Level = lvl,
+                X = caster.X, Y = caster.Y,
+                Radius = def.TotemRadius,
+                PulseAmount = def.PowerAt(lvl),
+                PulseTicks = Math.Max(1, def.TotemPulseTicks),
+                NextPulseIn = 0,
+                LifeTicks = Math.Max(1, def.TotemLifeTicks)
+            });
+            BroadcastCombat(caster, caster, 0, CombatOutcome.Buff, castName);
+            SendSystemToEntity(caster, $"{castName} planted.");
+            return;
+        }
+
         // ---- REVEAL (BL-69): drag every hidden character in radius back into view and bar them
         //      from hiding again. Deals nothing, so it never raises a mob clan. ----
         if (def.RevealsHidden)
@@ -8709,16 +8802,16 @@ var effect = def.Effect;
         {
             if (def.TargetMode == TargetMode.AlliesInRadius)
                 foreach (var ally in PlayersInRadius(caster, def.AreaRadius))
-                    Dispel(caster, ally, def, positive: false, castName);
+                    Dispel(caster, ally, def, positive: false, castName, lvl);
             else
-                Dispel(caster, target, def, positive: false, castName);
+                Dispel(caster, target, def, positive: false, castName, lvl);
         }
 
         // ---- Cancel / Dispel — strip POSITIVE buffs from an enemy (DispelCount = random N). ----
         if (effect.HasFlag(SkillEffect.Cancel))
         {
             offensive = true;
-            Dispel(caster, target, def, positive: true, castName);
+            Dispel(caster, target, def, positive: true, castName, lvl);
         }
 
         // ---- Crowd control + DoT (Slow/Stun/Fear/Root, Bleed/Poison/Venom) — lands via the
@@ -8743,9 +8836,10 @@ var effect = def.Effect;
             {
                 bool agiBased = (effect & (SkillEffect.Bleed | SkillEffect.Venom)) != 0;
                 int atkStat = agiBased ? (int)caster.EffectiveAgi : caster.AtkStat;
-                int defStat = def.DebuffSchool == DebuffSchool.Magical ? (int)target.EffectiveWit : target.Con;
+                int defStat = def.DebuffSchool == DebuffSchool.Magical ? (int)target.EffectiveSpt : target.Con;
                 float land = target.Immune ? 0f : StatCalculator.DebuffLandChance(atkStat, defStat);
                 land *= 1f - target.CcResist;   // gear/buff CC resistance lowers the land chance
+                land *= 1f - SchoolCcResist(target, def.DebuffSchool);   // …and the per-school blessing
                 if (_rng.NextDouble() < land)
                 {
                     if ((effect & SkillEffect.AnyDot) != 0)
@@ -9107,6 +9201,10 @@ var effect = def.Effect;
             // same reason Rewards uses RewardsAt just above: if these ever grow levels, the buff must
             // carry the rung that actually landed.
             AutoResExpPct = def.ResExpPctAt(level),
+            // Clarity / Fortitude — per-LEVEL for the same reason as everything else here: the buff has
+            // to carry the rung that actually landed, not the skill's first one.
+            CcResistMagical = def.CcResistMagicalAt(level),
+            CcResistPhysical = def.CcResistPhysicalAt(level),
             // The bar's tap popup reads the LEVEL's text whenever a level authored one — a group's
             // numbers live there ("Move +33, Cast +30%, Evasion +4, Attack Speed +33%"), and so do a
             // reward rune's ("+50% experience"), where the skill's own blurb is only the first rung.
@@ -9319,16 +9417,20 @@ var effect = def.Effect;
     /// <summary>Remove effects from a target — CURE (positive=false: strip the target's
     /// debuffs, e.g. cure-poison) or CANCEL (positive=true: strip an enemy's buffs). Honours
     /// the skill's DispelMask (effect filter), DispelMaxLevel (Rank ≤) and DispelCount
-    /// (0 = all matching; N = up to N at random). Skips Internal and non-Cancellable effects.</summary>
-    private void Dispel(Entity caster, Entity target, SkillDef def, bool positive, string skillName)
+    /// (0 = all matching; N = up to N at random). Skips Internal and non-Cancellable effects.
+    /// <para>The RANK CEILING is read PER LEVEL: a cure's ladder is how strong an ailment it can reach,
+    /// not which ailments it knows — a level-3 Antidote takes a rank-5 bleed and leaves a rank-10
+    /// poison alone.</para></summary>
+    private void Dispel(Entity caster, Entity target, SkillDef def, bool positive, string skillName, int lvl = 1)
     {
         if (target.Dead) return;
         SkillEffect mask = def.DispelMask;
+        int maxRank = def.DispelMaxLevelAt(lvl);
         var cands = target.Buffs.Where(b =>
             !b.Internal && b.Cancellable &&
             (positive ? !b.IsDebuff : b.IsDebuff) &&
             (mask == SkillEffect.None || (b.Effect & mask) != 0) &&
-            (def.DispelMaxLevel <= 0 || b.Rank <= def.DispelMaxLevel)).ToList();
+            (maxRank <= 0 || b.Rank <= maxRank)).ToList();
 
         // Random subset if a count is set and there are more candidates than that.
         if (def.DispelCount > 0 && cands.Count > def.DispelCount)

@@ -571,31 +571,28 @@ public static partial class SkillCatalog
         //     once that window closes. Threat is damage, so the number reads literally: at level 5
         //     another player must out-damage the tank by 5,100 to pull it off him.
         //
-        // The ladder is anchored on the owner's two endpoints (playtest-22): "1000-2000 at L1"
-        // rising to "20-30k" so a 7-8k physical skill cannot steal a mob. Five rungs is all the
-        // 2nd-class cadence has room for (20/24/28/32/36) — it is a ×1.36 step, which continues
-        // 7000 / 9500 / 12900 / 17500 / 23900 and lands inside his 20-30k at level 10. Those five
-        // rungs are NOT authored here: they belong to the 3rd/4th-class kits and wait on his CSVs
-        // (BL-02), like every other 40+ number in this project.
+        // ⚠ THE LADDER IS THE OWNER'S, from `tank 2nd.csv` (2026-08-17). It replaced the BL-71 ladder
+        // that was derived here from his playtest-22 endpoints ("1000-2000 at L1" → "20-30k"), which
+        // ran 1500/2000/2800/3800/5100 across 20/24/28/32/36. His is FOUR rungs, starts at 24, and is
+        // both higher at the bottom and much flatter: 4500 / 5000 / 5500 / 6000, a straight +500 step.
+        // Do not "restore" the geometric curve — a taunt that already beats a 2nd-class nuke at rung 1
+        // is the point; the tank is meant to hold aggro from the moment he has the skill at all.
+        // The 40+ continuation is still not authored here: it waits on his 3rd/4th CSVs (BL-02).
         new(Provoke, "Provoke", BaseClass.Fighter, SkillEffect.Taunt,
             MpCost: 15, CastTicks: 0, CooldownTicks: 60, Range: 600, Power: 0,
             DurationTicks: 30,   // the hard-commit window: ~3s locked onto the taunter
-            Category: SkillCategory.Debuff, TauntPower: 1500,
+            Category: SkillCategory.Debuff, TauntPower: 4500,
             Levels: new SkillLevel[]
             {
-                // Level 1 keeps the price it has always shipped at (SpCost 1). The four NEW rungs are
-                // priced on Smash's ladder — the tank's neighbour on the same 24/28/32/36 cadence —
-                // rather than on a scale invented for this one skill.
-                new(MpCost: 15, SpCost: 1,     TauntPower: 1500,
-                    Description: "Forces a monster to attack you: puts you at the top of its aggro and locks it on you for 3s, then leaves you 1,500 aggro ahead."),
-                new(MpCost: 18, SpCost: 6400,  TauntPower: 2000,
-                    Description: "Forces a monster to attack you: puts you at the top of its aggro and locks it on you for 3s, then leaves you 2,000 aggro ahead."),
-                new(MpCost: 22, SpCost: 12000, TauntPower: 2800,
-                    Description: "Forces a monster to attack you: puts you at the top of its aggro and locks it on you for 3s, then leaves you 2,800 aggro ahead."),
-                new(MpCost: 26, SpCost: 22000, TauntPower: 3800,
-                    Description: "Forces a monster to attack you: puts you at the top of its aggro and locks it on you for 3s, then leaves you 3,800 aggro ahead."),
-                new(MpCost: 30, SpCost: 40000, TauntPower: 5100,
-                    Description: "Forces a monster to attack you: puts you at the top of its aggro and locks it on you for 3s, then leaves you 5,100 aggro ahead."),
+                // SP is his too, and it is the tank's standard 24/28/32/36 price line (Smash's).
+                new(MpCost: 15, SpCost: 6400,  TauntPower: 4500,
+                    Description: "Forces a monster to attack you: puts you at the top of its aggro and locks it on you for 3s, then leaves you 4,500 aggro ahead."),
+                new(MpCost: 18, SpCost: 12000, TauntPower: 5000,
+                    Description: "Forces a monster to attack you: puts you at the top of its aggro and locks it on you for 3s, then leaves you 5,000 aggro ahead."),
+                new(MpCost: 22, SpCost: 22000, TauntPower: 5500,
+                    Description: "Forces a monster to attack you: puts you at the top of its aggro and locks it on you for 3s, then leaves you 5,500 aggro ahead."),
+                new(MpCost: 26, SpCost: 40000, TauntPower: 6000,
+                    Description: "Forces a monster to attack you: puts you at the top of its aggro and locks it on you for 3s, then leaves you 6,000 aggro ahead."),
             },
             Description: "Forces a monster to attack you — puts you at the top of its aggro list and locks it onto you briefly."),
 

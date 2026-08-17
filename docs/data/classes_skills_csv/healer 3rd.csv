@@ -1,2 +1,70 @@
 LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR, INIT MP,FINIT MP ,SP COST,REPLACES,RACE
-# nothing above level 40 exists yet for this discipline — start here.
+
+40,Anti magic,Passive,0,self,0,0,0,"magic def +43, mRes +15%",0,0,36k,[]
+40,Spell Mastery,Passive,0,self,0,0,0,"with sword/blunt Decreses the reuse delay with 10%, mAtk +23, pAtk +18, mpReg x1.5,hpReg x1.1, cast speed x1.07",0,0,36k,[]
+40,Armor Mastery,Passive,0,self,0,0,0,"Robe: mpReg x1.2, pDef +39, maxMP +70; Light: mpReg x1.2, pDef +39, cast x1.9, as x2 (composes to cast x0.95 / as x1 after Spellcaster Mastery), evasion +2",0,0,36k,[]
+40,Holy Ray,Magic/Dmg,600,enemy,2.5,1,0,m.Atk +42,0,30,36k,[Holy Bolt]
+40,Great Heal,Magic/Heal,600,self/target,5,2,0,heal with power 400,13,49,36k,[Heal]
+40,Party Great Heal,Magic/Heal,600,self/party,7,5,0,heal party with power 320,26,98,36k,[Party Heal]
+40,Quick Great Heal,Magic/Heal,600,self/target,2,1,0,heal with power 400,19,74,36k,[Quick Heal],Human
+40,Healer Blessing,Magic/Heal,600,self/target,3,1,0,Cure bleed and potions of rank 3 or lower and heals the target with 320 power,13,49,36k,[Quick Heal],Elf
+40,Healing Totem,Magic/Heal,0,self/target,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +30/s,19,74,36k,[Quick Heal],Ork
+40,Resurrection,Magic/Heal,600,dead ally,10,10,0,Revive at 30% HP/MP; restore 30% of lost exp.,30,90,36k,[]
+40,Might L3,Magic/Buff,600,self/target,1,1,1200,+15% P.Atk.,12,48,36k,[]
+40,Restore Mana,Magic/Heal,600,ally,2,2,0,Transfers 70 MP to an ally (costs 70). Not on yourself or another mana-restorer.,20,50,36k,[]
+40,Aim L2,Magic/Buff,600,self/target,1,1,1200,+2 Accuracy.,12,48,36k,[]
+40,? L1,Magic/Buff,600,self/target,1,1,1200,+25% critical damage.,12,48,36k,[]
+40,? L1,Magic/Buff,600,self/target,1,1,1200,30% resist to SPT debuffs,12,48,36k,[]
+40,? L1,Magic/Buff,600,self/target,1,1,1200,15% resist to CON debuffs,12,48,36k,[]
+40,Conceal,Magic/Buff,0,self,5,10,30,Monsters that haven't already noticed you leave you alone. Anything already chasing you keeps chasing,0,100,36k,[],
+40,Bind,Magical Active,600,enemy,2.5,5,30,Hold enemy for 30s (ATK vs SPT),7,28,36k,[],Elf
+40,Armor Break,Magical Active,600,enemy,2.5,5,30,Decrease enemy P.Def by 10% and MDef by 5% (ATK vs SPT),7,28,36k,[],Ork
+40,Gravity,Magical Active,600,enemy,2.5,5,30,Decrease enemy Atack speed by 23% and cast speed by 12% (ATK vs SPT),7,28,36k,[],Human
+
+44,Anti magic,Passive,0,self,0,0,0,"magic def +49, mRes +15%",0,0,36k,[]
+
+48,Anti magic,Passive,0,self,0,0,0,"magic def +56, mRes +15%",0,0,36k,[]
+
+52,Anti magic,Passive,0,self,0,0,0,"magic def +63, mRes +20%",0,0,36k,[]
+
+56,Anti magic,Passive,0,self,0,0,0,"magic def +70, mRes +20%",0,0,36k,[]
+
+60,Anti magic,Passive,0,self,0,0,0,"magic def +78, mRes +20%",0,0,36k,[]
+
+62,Anti magic,Passive,0,self,0,0,0,"magic def +82, mRes +20%",0,0,36k,[]
+
+64,Anti magic,Passive,0,self,0,0,0,"magic def +86, mRes +20%",0,0,36k,[]
+
+66,Anti magic,Passive,0,self,0,0,0,"magic def +91, mRes +25%",0,0,36k,[]
+
+68,Anti magic,Passive,0,self,0,0,0,"magic def +95, mRes +25%",0,0,36k,[]
+
+70,Anti magic,Passive,0,self,0,0,0,"magic def +99, mRes +25%",0,0,36k,[]
+
+72,Anti magic,Passive,0,self,0,0,0,"magic def +104, mRes +25%",0,0,36k,[]
+
+74,Anti magic,Passive,0,self,0,0,0,"magic def +108, mRes +25%",0,0,36k,[]
+
+
+40,Resurrection,Magic/Heal,600,dead ally,10,10,0,Revive at 30% HP/MP; restore 40% of lost exp.,40,110,36k,[]
+40,Resurrection,Magic/Heal,600,dead ally,10,10,0,Revive at 30% HP/MP; restore 50% of lost exp.,50,130,36k,[]
+40,Resurrection,Magic/Heal,600,dead ally,10,10,0,Revive at 30% HP/MP; restore 60% of lost exp.,60,150,36k,[]
+40,Resurrection,Magic/Heal,600,dead ally,10,10,0,Revive at 30% HP/MP; restore 70% of lost exp.,70,170,36k,[]
+
+
+35,Restore Mana,Magic/Heal,600,ally,2,2,0,Transfers 60 MP to an ally (costs 60). Not on yourself or another mana-restorer.,15,45,25000,[]
+
+40,Ward L2,Magic/Buff,600,self/target,1,1,1200,+23% M.Def.,6,24,36k,[]
+20,Might L2,Magic/Buff,600,self/target,1,1,1200,+12% P.Atk.,8,32,6400,[]
+20,Swift L2,Magic/Buff,600,self/target,1,1,1200,+20 Move Speed.,8,32,6400,[]
+20,Alacrity L1,Magic/Buff,600,self/target,1,1,1200,+15% Cast Speed.,6,24,3200,[]
+20,Resolve L1,Magic/Buff,600,self/target,1,1,1200,+18 interrupt resistance.,6,24,3200,[]
+25,Bulwark L2,Magic/Buff,600,self/target,1,1,1200,+12% P.Def.,8,32,6400,[]
+25,Force L2,Magic/Buff,600,self/target,1,1,1200,+25% M.Atk.,8,32,6400,[]
+25,Focus L4,Magic/Buff,600,self/target,1,1,1200,+20% critical rate.,8,34,25000,[]
+30,Agility L2,Magic/Buff,600,self/target,1,1,1200,+2 Evasion.,8,32,6400,[]
+30,Aim L2,Magic/Buff,600,self/target,1,1,1200,+2 Accuracy.,8,32,6400,[]
+35,Haste L1,Magic/Buff,600,self/target,1,1,1200,+15% Attack Speed.,6,24,3200,[]
+35,Vigor L2,Magic/Buff,600,self/target,1,1,1200,+10% HP regeneration.,6,28,6400,[]
+35,Ward L1,Magic/Buff,600,self/target,1,1,1200,+10% M.Def.,6,24,3200,[]
+35,Frenzy,Magic/Buff,600,self/target,1,1,1200,"MaxHP x0.7, MaxMp x0.7, pAtk x1.05, mAtk x1.1, cast x1.05, as x1.05, ms +5",25,100,25000,[]
