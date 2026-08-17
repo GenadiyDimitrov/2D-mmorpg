@@ -109,7 +109,7 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
   is `Entity.SkillEvadeChance`, and **Evasion Boost is its only source: 25%**. That also settles the
   CSV's *"skill evasion x1.25"* — it was the 25%, not a multiplier. See `CHANGELOG.md`. Delete at the
   next sweep.
-  - 🔵 **The 40% rung is NOT built and needs you.** `rogue 20-35.csv` gives Evasion Boost a single
+  - 🔵 **The 40% rung is NOT built and needs you.** `rogue 2nd.csv` gives Evasion Boost a single
     level, so there is no rung to hang it on and inventing one re-specs your CSV. Same for *"76lvl the
     physical phantom gets a 90% for 15s"* — a 4th-class skill. Both wait on `BL-02`.
 
@@ -128,7 +128,7 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
 
 - `BL-09` 🔵 **A floor under the wrong-weapon magic penalty, bought back by Spellcaster Mastery.**
   ⚠ **Re-marked 🔵 on 2026-08-14 — it contradicts your own CSV.** This asks for five Mastery rungs
-  walking the penalty 0.5 → 0.05; `docs/data/classes_skills_csv/mage 01-15.csv` authors Spellcaster
+  walking the penalty 0.5 → 0.05; `docs/data/classes_skills_csv/mage 1st.csv` authors Spellcaster
   Mastery as a **single-level, auto-granted, never-replaced** passive carrying the whole rule
   (*"Bow/Dagger/None: cast x0.5, mAtk x0.5, mAcc x0.5"*), and the code matches it exactly
   (`Entity.cs:2264-2282`, `StatCaps.UntrainedWeaponMagicFailMod = 25`). Adding rungs re-specs the CSV.
@@ -204,8 +204,8 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
 
 - `BL-16` 🔵 **Heal powers need re-authoring — and they are YOUR numbers, so you have to move them.**
   They sit at ~151-301 against a scale that has moved to ~1000. ⚠ **Re-marked 🔵 on 2026-08-14**: the
-  ladder is authored in `docs/data/classes_skills_csv/cleric 20-35.csv` (his rename, 2026-08-17; it was
-  `healer 20-35.csv`) — *"heal with power 151 / 195 /
+  ladder is authored in `docs/data/classes_skills_csv/cleric 2nd.csv` (two of his renames on 2026-08-17,
+  content untouched: `healer 20-35` → `cleric 20-35` → `cleric 2nd`) — *"heal with power 151 / 195 /
   245 / 301"* on Heal and Quick Heal at learn levels 20/25/30/35, and 121/156/196/241 on Party Heal.
   Raising it in code is a CSV retune, which your own rule forbids, so it was left alone (your call,
   2026-08-14: *leave the CSVs alone*).

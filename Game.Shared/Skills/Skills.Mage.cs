@@ -26,7 +26,7 @@ public static partial class SkillCatalog
     //  nobody. SkillEffect.Cancel / DispelCount remain in the engine for a future authored skill.)
     public const string ManaBarrier = "mana_barrier";         // mana shield (damage→MP)
     public const string PhaseShift = "phase_shift";           // blink away from target (escape)
-    // --- Nuker 2nd-class (CSV nuker 20-35) ---
+    // --- Nuker 2nd-class (CSV nuker 2nd) ---
     public const string ElementalBolt = "elemental_bolt";     // nuker basic nuke (replaces Magic Bolt)
     public const string QuickBolt = "quick_bolt";             // short-range fast nuke
     public const string RestoreSpirit = "restore_spirit";     // trades HP for MP (self)
@@ -122,7 +122,7 @@ public static partial class SkillCatalog
         // damage-reduction stat existed (owner, 2026-08-10: *"the problem was we didn't have a mdmg
         // reduction, that's why we converted them to a floor"*). It is a damage reduction now, and
         // the mage@14 rung's old "5% chance for spells to fizzle on you" wording went with it.
-        // The numbers are straight from healer/nuker 20-35.csv — don't retune them here.
+        // The numbers are straight from cleric/nuker 2nd.csv — don't retune them here.
         new(MageAntiMagic, "Anti-Magic", BaseClass.Mage, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive,
@@ -223,7 +223,7 @@ public static partial class SkillCatalog
 
         // Restore Spirit — trades HP for MP (self). Costs HP, not MP.
         //
-        // ⚠ LEVEL 1 IS THE AUTHORED CSV and must stay verbatim: `nuker 20-35.csv` line 14 says
+        // ⚠ LEVEL 1 IS THE AUTHORED CSV and must stay verbatim: `nuker 2nd.csv` line 14 says
         // "exchanges HP (-65) for MP (+20)", SP 6400, learned at 25. Nothing in the 20-35 band may be
         // retuned here — that file is the owner's source of truth for it.
         //

@@ -58,7 +58,7 @@ public static partial class SkillCatalog
 
     private static SkillDef[] ArmorMasterySkills() => new SkillDef[]
     {
-        // Tank — Heavy Armor Mastery (CSV tank 20-35): in HEAVY armor, big flat P.Def plus
+        // Tank — Heavy Armor Mastery (CSV tank 2nd): in HEAVY armor, big flat P.Def plus
         // ×1.07 P.Def, 15% crit-damage reduction and ×1.1 max MP, at a small evasion cost.
         // 5 levels (@20/24/28/32/36). Immune to off-weight penalties (Neutral otherwise).
         new(TankArmorMastery, "Heavy Armor Mastery", BaseClass.Fighter, SkillEffect.None,
@@ -80,7 +80,7 @@ public static partial class SkillCatalog
                 TankHeavy(40), TankHeavy(47), TankHeavy(54), TankHeavy(61), TankHeavy(70, mpReg: 3.4f),
             }),
 
-        // Warrior — Armor Mastery (CSV warrior 20-35): +P.Def and +max MP with any weight;
+        // Warrior — Armor Mastery (CSV warrior 2nd): +P.Def and +max MP with any weight;
         // LIGHT armor additionally boosts evasion. Continues the base fighter mastery (which it
         // replaces) with 5 levels (@20/24/28/32/36).
         new(WarriorArmorMastery, "Armor Mastery", BaseClass.Fighter, SkillEffect.None,
@@ -103,7 +103,7 @@ public static partial class SkillCatalog
                 WarriorArmor(28, 9), WarriorArmor(32, 9),
             }),
 
-        // Rogue — Armor Mastery (CSV rogue 20-35): "with all" = ×1.1 MP regen + flat P.Def (at L5
+        // Rogue — Armor Mastery (CSV rogue 2nd): "with all" = ×1.1 MP regen + flat P.Def (at L5
         // ×1.8 MP regen and ×1.2 HP regen); "with light" adds big evasion, +15% crit-rate resist
         // and (from L3) move speed. 5 levels (@20/24/28/32/36). Replaces the base fighter mastery.
         new(RogueArmorMastery, "Armor Mastery", BaseClass.Fighter, SkillEffect.None,
@@ -133,7 +133,7 @@ public static partial class SkillCatalog
         // (Archer Armor Mastery DELETED 2026-08-07 with its id — the rogue light mastery above is
         //  what a bow character wears since the merge.)
 
-        // Nuker — Mage Armor Mastery (CSV nuker 20-35): in ROBE, +MP regen, +P.Def, +max MP
+        // Nuker — Mage Armor Mastery (CSV nuker 2nd): in ROBE, +MP regen, +P.Def, +max MP
         // and a "mpWhenRestored" bonus (extra MP each time Restore Spirit lands). Light/Heavy
         // penalise casting (mage). 4 levels (@20/25/30/35). Replaces the base Robe/Light mastery.
         new(NukerArmorMastery, "Mage Armor Mastery", BaseClass.Mage, SkillEffect.None,
@@ -156,7 +156,7 @@ public static partial class SkillCatalog
             },
             ArmorMasteryLevels: new[]
             {
-                // ⚠ RUNGS 1-4 ARE THE AUTHORED CSV (`docs/data/classes_skills_csv/nuker 20-35.csv`)
+                // ⚠ RUNGS 1-4 ARE THE AUTHORED CSV (`docs/data/classes_skills_csv/nuker 2nd.csv`)
                 // — mpWhenRestored 25/30/35/40 at character 20/25/30/35. DO NOT RETUNE THEM HERE;
                 // that file is the owner's source of truth for the whole 20-35 band.
                 NukerRobe(pDef: 20, maxMp: 20, restore: 25),

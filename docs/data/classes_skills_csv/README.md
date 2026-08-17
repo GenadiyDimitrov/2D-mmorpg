@@ -3,51 +3,106 @@
 **These files are AUTHORITATIVE.** Nothing in the repo retunes them; the code reads them, never the
 other way round. Where there is no CSV, nothing is invented (`BL-02`).
 
-## The 20-35 files (yours, authored)
+## The names are CLASS TIERS, not level bands (2026-08-17)
 
-`fighter 01-15` · `mage 01-15` · `tank 20-35` · `warrior 20-35` · `rogue 20-35` · `nuker 20-35` ·
-`cleric 20-35` — the base and 2nd classes. `rogue 20-35` covers **both** the dagger and the bow to
-level 40 (the archer merge), which is why there is no separate archer file below 40.
-⚠ **`cleric 20-35` was `healer 20-35` until 2026-08-17** (his rename, content unchanged). The 40+ files
-are still `healer 40-74` / `76-85` — **cleric** is the 2nd class, **healer** is the discipline above it,
-so the two names are not a mistake unless he says so.
+Your call: *"well for fighters 20-35 is not right .. they have skills at 36 .. so 2nd class is more
+suited and understandable"*. A band in a filename is a claim about the content, and it was already
+false. So every file is now `<name> <tier>`:
 
-## The 40+ files (seeded for you, playtest 23)
+| tier  | what it is              | files                                             |
+| ----- | ----------------------- | ------------------------------------------------- |
+| `1st` | base class              | `fighter` · `mage`                                |
+| `2nd` | the five 2nd classes    | `tank` · `warrior` · `rogue` · `nuker` · `cleric` |
+| `3rd` | the discipline, from 40 | the eight below                                   |
+| `4th` | the discipline, from 76 | the same eight                                    |
 
-Your instruction: *"u can add files next to other skills 20-35.Csv the mele rogues one, one for
-archers, one for buffers and one for healers ..with what u have after 40 so I start with them later
-on.. `Healers 40-74.csv` and 76-85"*.
+⚠ **Nothing but the names changed.** No row was added, removed or edited by the rename. The old
+names, for reading old commits: `fighter/mage 01-15` → `1st`, `… 20-35` → `2nd`, `… 40-74` → `3rd`,
+`… 76-85` → `4th`, and `melee rogue` → `dual`.
 
-| file | discipline(s) it registers | rows seeded |
-|---|---|---|
-| `melee rogue 40-74` / `76-85` | **Nullblade** (human) · **Phantom** (elf) · **Venomweaver** (ork) | Prowl 40, Vanish 60 |
-| `archer 40-74` / `76-85` | **Sharpshooter** (human) · **Trapper** (elf) · **Hunter** (ork) | Signal Flare 60 |
-| `healer 40-74` / `76-85` | **Lightbringer** | Rite of Preservation 83 |
-| `buffer 40-74` / `76-85` | **Warchanter** | the whole buff ladder, + Madness 76 |
+## The discipline map (yours, 2026-08-17)
 
-🔑 **A "melee rogue" or "archer" file is THREE disciplines**, because the rogue splits by RACE at 40 —
-one melee and one ranged branch per race. Every other group is one discipline for all three races.
-That is what collapses 30 third classes into **10 CSVs**; see
-[docs/design/Disciplines.md](../../design/Disciplines.md) §1 for the other six and for the six
-questions in it still waiting on you.
+*"class 2nd => desc1/desc2 3rd => desc1/desc2 4th"* —
+
+| 2nd class | 3rd/4th disciplines       | your note                                                                                                                           |
+| --------- | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `cleric`  | **buffer** / **healer**   |                                                                                                                                     |
+| `rogue`   | **archer** / **dual**     | *"same logic as warrior — one is range the other mele, diferent kits"*                                                              |
+| `warrior` | **warrior** / **war_aoe** | *"one is aoe and more tanky .. the other is like a mele nuker"*                                                                     |
+| `tank`    | **tank**                  | *"one tank is enough — wont have the vanguard the off tank, we have a warrior for that — the varity will come from race diference"* |
+| `nuker`   | **nuker**                 | *"same logic as the tank, 1 discipline ... 3 identities"*                                                                           |
+
+**Eight disciplines, sixteen 40+ files.** The three identities inside a one-discipline file are the
+**RACE** column — that is the whole point of it, and it is why the plan is 16 files and not 48.
+
+### Two things the map changed, and what happened to their content
+
+- **`Vanguard` is gone** (the off-tank). Nothing was lost: the 2026-08-10 purge had already removed
+  every Vanguard learn line, so `tank 3rd/4th` seeds from Bulwark alone.
+- **`Magus` and `Tempest` merged into `nuker`.** These two carried the only substantial 40+ kit in
+  the game outside the buffer's ladder, and **no seeded file had ever covered them** — `nuker 3rd`
+  is 20 rows, and this is the first time you can see them in your own format. Because it is two kits
+  folded into one, **two skills appear twice under different names**: `FlameBolt` as *Annihilate*
+  (Magus) and *Chain Lightning* (Tempest), `GreaterWeakness` as *Mana Burn* and *Maelstrom*.
+  Reconciling those two pairs is yours — they are the same underlying skill.
+
+⚠ **The `Discipline` enum in code is NOT collapsed yet.** Its values persist on characters, so the
+merge happens when the authored kits arrive, not because a file was renamed.
+
+## What is actually in the sixteen 40+ files
+
+| file               | rows | what                                                                                                                                                         |
+| ------------------ | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `nuker 3rd`        | 20   | Elemental Burst L1-L10 (40→75), Frost Bind, Entangling Roots, Glacial Spike, Creeping Frost, Phase Shift, Mana Barrier, + the four duplicate-name rows above |
+| `buffer 3rd`       | 39   | the whole buff ladder — singles topped out, three Harmonies, five improved groups                                                                            |
+| `dual 3rd`         | 2    | Prowl 40, Vanish 60                                                                                                                                          |
+| `archer 3rd`       | 1    | Signal Flare 60                                                                                                                                              |
+| `buffer 4th`       | 1    | Madness 76                                                                                                                                                   |
+| `healer 4th`       | 1    | Rite of Preservation 83                                                                                                                                      |
+| `tank 4th`         | 1    | Undying Will 83                                                                                                                                              |
+| the other **nine** | 0    | `tank 3rd` · `warrior 3rd/4th` · `war_aoe 3rd/4th` · `dual 4th` · `archer 4th` · `healer 3rd` · `nuker 4th`                                                  |
+
+**Nine empty files is the honest picture, not an oversight.** It is what the game registers above 40.
 
 ### The format
 
-The 20-35 header **plus a trailing `RACE` column** — `human` / `elf` / `ork`, or blank for all three.
-A skill for two races gets two rows. Everything else behaves as in the 20-35 files, `REPLACES`
-included. A skill with more than one rung is written as one row per rung, named `… L2`, `… L3`.
+The 2nd-class header **plus a trailing `RACE` column** — `human` / `elf` / `ork`, or blank for all
+three. A skill for two races gets two rows. Everything else behaves as in the 2nd-class files,
+`REPLACES` included. A skill with more than one rung is written as one row per rung, named `… L2`,
+`… L3`.
 
 ### ⚠ Two things about the seeded content
 
-- **It is what the game ALREADY registers above 40, not a proposed kit.** Nothing was invented to fill
-  these in. Four of the eight files are nearly empty, and that is the honest picture: outside the
-  Warchanter's buff ladder there is almost nothing above level 40 in this game yet.
-- **The rows are your starting point, not a decision.** `Vanish` in particular ships with an **SP cost
-  of 1** — the record default — because pricing a 40+ skill is 40+ balance and therefore yours. It is
-  visible in the file for exactly that reason.
+- **It is what the game ALREADY registers above 40, not a proposed kit.** Nothing was invented to
+  fill these in.
+- **The rows are your starting point, not a decision.** `Vanish` in particular ships with an **SP
+  cost of 1** — the record default — because pricing a 40+ skill is 40+ balance and therefore yours.
+  It is visible in the file for exactly that reason.
 
 ### Regenerating
 
-`tools/SkillCsvSeed` wrote the eight 40+ files, once. **It refuses to overwrite an existing file**, so
-running it again is safe and does nothing — the moment you edit one it is yours, and the tool will not
-touch it. (There is a force switch. Do not use it.)
+`tools/SkillCsvSeed` writes the 40+ files from the compiled class tables. **It refuses to overwrite
+an existing file**, so running it again is safe and does nothing — the moment you edit one it is
+yours, and the tool will not touch it. (There is a force switch. Do not use it.)
+
+⚠ The old band suffixes left **level 75 in neither file**, which silently dropped Elemental Burst's
+10th rung. `3rd` now closes at 75; that rung is the last row of `nuker 3rd`.
+
+## The seven authored files (yours)
+
+`fighter 1st` · `mage 1st` · `tank 2nd` · `warrior 2nd` · `rogue 2nd` · `nuker 2nd` · `cleric 2nd`.
+`rogue 2nd` covers **both** the dagger and the bow to level 40 (the archer merge), which is why there
+is no separate archer file below 40. `cleric 2nd` was `healer 20-35` until 2026-08-17 — **cleric** is
+the 2nd class, **healer** is one of the two disciplines above it, so both names are correct.
+
+
+# Classes Tree
+
+## Human
+  1. Unanamed (Mage) 1st - 1~19
+     1. Unanamed (Nuker) 2st - 20~39
+        1. Unanamed (Nuker) 3st - 40~75
+           1. Unanamed (Nuker) 4st - 76+
+     2.  Unanamed (Cleric) 2st - 20~39
+        1.  Unanamed (Cleric) 3st - 40~75
+           1.  Unanamed (Cleric) 1st - 76+

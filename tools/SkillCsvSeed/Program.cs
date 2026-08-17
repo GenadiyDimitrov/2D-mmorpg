@@ -15,6 +15,12 @@ using Game.Shared;
 //
 //  🔴 IT REFUSES TO OVERWRITE. Once a file exists it belongs to HIM; re-running the tool would silently
 //  eat whatever he authored. --force is the deliberate escape hatch and should essentially never be used.
+//
+//  ⚠ 2026-08-17 — the file names moved from level bands (`healer 40-74`) to CLASS TIERS (`healer 3rd`),
+//  his call: *"well for fighters 20-35 is not right .. they have skills at 36 .. so 2nd class is more
+//  suited and understandable"*. A band in a filename is a claim about content, and it was already false.
+//  The refuse-to-overwrite check keys on the NEW names, so the four files it had already written are
+//  safe under their new names and only the four new disciplines get generated.
 // =====================================================================================================
 
 bool force = args.Contains("--force");
@@ -26,20 +32,46 @@ if (dir is null) { Console.Error.WriteLine("Could not find the repo root (Game.s
 string outDir = Path.Combine(dir.FullName, "docs", "data", "classes_skills_csv");
 Directory.CreateDirectory(outDir);
 
-// The four groups he named, mapped to the disciplines that actually carry them. `melee rogue` and
-// `archer` are THREE disciplines each — the archer merge splits the rogue by race at 40 — which is the
-// whole reason the CSV plan is 10 files and not 30 (docs/design/Disciplines.md §1).
+// --check writes nothing. It reads the authored files back against the registered tables — see Check.cs.
+if (args.Contains("--check")) return Check.Run(outDir);
+
+// ===== HIS DISCIPLINE MAP (2026-08-17) =============================================================
+// He redrew the 3rd-class split and named the files himself: *"class 2nd => desc1/desc2 3rd =>
+// desc1/desc2 4th"*, with
+//     cleric  => buffer / healer
+//     rogue   => archer / dual      "same logic as warrior — one is range the other mele"
+//     warrior => warrior / war_aoe  "one is aoe and more tanky .. the other is like a mele nuker"
+//     tank    => tank               "i think one tank is enough — wont have the vanguard the off tank,
+//                                    we have a warrior for that — the varity will come from race"
+//     nuker   => nuker              "same logic as the tank, 1 discipline ... 3 identities"
+//
+// So EIGHT discipline files, not twelve, and RACE (the trailing column) is what makes three identities
+// out of one file. Two consequences worth knowing:
+//   - `Vanguard` is dropped as a discipline. Nothing is registered for it (the 40+ purge took it), so
+//     the tank file loses nothing by seeding from Bulwark alone.
+//   - `nuker` seeds from BOTH Magus and Tempest, because he is merging them and their two kits are the
+//     only substantial 40+ content in the game outside the Warchanter's buff ladder. FlameBolt lands
+//     twice — once as "Annihilate", once as "Chain Lightning" — which is the honest picture of two kits
+//     being folded into one, and his to reconcile.
+//
+// ⚠ The enum in Classes.Third.cs is NOT changed by this. Discipline values persist on characters; the
+// collapse happens when the authored CSVs arrive, not because a file was renamed.
 var groups = new (string File, Discipline[] Disciplines)[]
 {
-    ("melee rogue", new[] { Discipline.Nullblade, Discipline.Phantom, Discipline.Venomweaver }),
-    ("archer",      new[] { Discipline.Sharpshooter, Discipline.Trapper, Discipline.Hunter }),
-    ("healer",      new[] { Discipline.Lightbringer }),
-    ("buffer",      new[] { Discipline.Warchanter }),
+    ("tank",    new[] { Discipline.Bulwark }),
+    ("warrior", new[] { Discipline.Ravager }),      // the melee nuker
+    ("war_aoe", new[] { Discipline.Warlord }),      // the aoe/tanky one
+    ("dual",    new[] { Discipline.Nullblade, Discipline.Phantom, Discipline.Venomweaver }),
+    ("archer",  new[] { Discipline.Sharpshooter, Discipline.Trapper, Discipline.Hunter }),
+    ("healer",  new[] { Discipline.Lightbringer }),
+    ("buffer",  new[] { Discipline.Warchanter }),
+    ("nuker",   new[] { Discipline.Magus, Discipline.Tempest }),
 };
 
-// His two bands. 75 is in neither on purpose — it is his split, not mine, and the 20-35 files have the
-// same kind of gap.
-var bands = new (string Suffix, int Min, int Max)[] { ("40-74", 40, 74), ("76-85", 76, 85) };
+// His two tiers. ⚠ The old suffixes were `40-74` / `76-85` and level 75 fell in NEITHER — which silently
+// dropped Elemental Burst's 10th rung (registered at char 75). The tier names carry no band promise, so
+// 3rd now closes at 75 and nothing falls in a gap.
+var bands = new (string Suffix, int Min, int Max)[] { ("3rd", 40, 75), ("4th", 76, 85) };
 
 const string Header = "LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR, " +
                       "INIT MP,FINIT MP ,SP COST,REPLACES,RACE";

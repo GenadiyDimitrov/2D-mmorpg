@@ -352,7 +352,7 @@ public static partial class SkillCatalog
     ///
     /// ⚠ 2026-08-10 — ALL THREE ARE NOW AUTHORED IN THE CSVs (owner: *"Put evasion mastery/anymagic/
     /// precision inside the csv for the warrior/tank/rogue"*), as a level-20 row in
-    /// `docs/data/classes_skills_csv/{rogue,tank,warrior} 20-35.csv`. The CSV is the AUTHORITY on
+    /// `docs/data/classes_skills_csv/{rogue,tank,warrior} 2nd.csv`. The CSV is the AUTHORITY on
     /// their numbers — change a floor there first, then mirror it into the Levels below. They stay
     /// auto-granted from here (SP 0) rather than bought, which is why the CSV rows carry SP 0.
     /// ⚠ The tank's CSV also has a *different* skill called "Tank Anti-Magic" (m.def +25/+45) —

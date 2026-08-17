@@ -33,6 +33,35 @@ Game.Client.Unity/Assets/Resources/PerformanceTestRunSettings.json.meta
 # Local build artifacts staged for the phone (APK + server publish). Large and regenerated.
 builds/
 
-# Google Drive sync temp copies (they appear mid-write, then vanish)
+# ===== GOOGLE DRIVE ==================================================================================
+# This repo lives inside a Drive-synced tree, so Drive's own bookkeeping keeps appearing next to real
+# files. None of it is content: it is written by the sync client, it is machine-specific, and most of it
+# appears mid-write and vanishes again — which is exactly how it gets swept into whatever commit happens
+# to be running at the time.
+#
+# Sync scratch. The two named ones appear mid-write, then vanish; the wildcard catches the variants
+# (.tmp.drive-*, per-transfer suffixes) that the named two miss.
 .tmp.driveupload/
 .tmp.drivedownload/
+.tmp.drive*/
+
+# Per-folder view state Drive/Explorer drops into any folder it touches. Hidden, so it is easy to miss
+# in `git status` and easy to commit by accident with `git add .`.
+desktop.ini
+Desktop.ini
+
+# Shared-drive shortcut mount point — a synthetic folder, not real files.
+.shortcut-targets-by-id/
+
+# Google-native documents. These are NOT documents: each is a tiny JSON stub holding a doc id, useless
+# to anyone but the Drive client, and the actual content lives on Google's servers. Committing one
+# commits a dead link.
+*.gdoc
+*.gsheet
+*.gslides
+*.gdraw
+*.gform
+*.gtable
+*.gmap
+*.gsite
+*.glink

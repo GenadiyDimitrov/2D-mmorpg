@@ -38,7 +38,7 @@ public static partial class SkillCatalog
     public const string SignalFlare = "signal_flare";         // archer AoE: strips HIDE + bars re-hiding
     public const string SnareTrap = "snare_trap";             // Trapper: place a rooting damage trap
 
-    // --- Base fighter CORE actives (CSV fighter 01-15, continuing into 2nd-class) ---
+    // --- Base fighter CORE actives (CSV fighter 1st, continuing into 2nd-class) ---
     public const string Strike = "strike";                    // sword/blunt attack (can double)
     public const string Stab = "stab";                        // dual BLOW (full on crit, else 10%)
     public const string Shot = "shot";                        // bow ranged attack
@@ -51,20 +51,20 @@ public static partial class SkillCatalog
     public const string PiercingStab = "piercing_stab";            // rogue: continues Stab; replaces Stab/Strike
     public const string PreciseShot = "precise_shot";              // rogue: continues Shot (range 700); replaces Shot/Strike
 
-    // --- Warrior 2nd-class (CSV warrior 20-35) ---
+    // --- Warrior 2nd-class (CSV warrior 2nd) ---
     public const string BodyMastery = "body_mastery";              // +max HP + HP regen
     public const string BattleRegeneration = "battle_regeneration";// self-heal 10% max HP
     public const string BattlePresence = "battle_presence";        // HP<60% stance: +p.Atk
     public const string BattleDefence = "battle_defence";          // HP<60% stance: +p.Def
 
-    // --- Tank 2nd-class (CSV tank 20-35) ---
+    // --- Tank 2nd-class (CSV tank 2nd) ---
     public const string TankShieldMastery = "tank_shield_mastery"; // passive: +shield def/rate + bow resist
     public const string TankAntiMagic = "tank_anti_magic";         // passive: +magic def
     public const string DefensiveWall = "defensive_wall";          // huge def buff (self, -move)
     public const string TankShieldStun = "tank_shield_stun";       // stun 9s
     public const string TankStay = "tank_stay";                    // root/hold 15s
 
-    // --- Rogue 2nd-class (CSV rogue 20-35) ---
+    // --- Rogue 2nd-class (CSV rogue 2nd) ---
     public const string Sprint = "sprint";                         // burst move-speed buff
     public const string BowExpertise = "bow_expertise";            // bow attack-speed buff
     public const string EvasionBoost = "evasion_boost";            // the rogue's ultimate: +evasion, 30s
@@ -191,7 +191,7 @@ public static partial class SkillCatalog
                 new SkillLevel(Power: 427, MpCost: 21, InitialMpCost: 21, SpCost: 3200,  Description: "Piercing Stab — blow power 427."),
                 new SkillLevel(Power: 571, MpCost: 24, InitialMpCost: 24, SpCost: 6000,  Description: "Piercing Stab — blow power 571."),
                 // 28, not the CSV's original 58: he ruled it a typo on 2026-08-11 (*"should be 28.. a
-                // typeo"*) and edited `rogue 20-35.csv` line 19 himself. It had sat between level 3's
+                // typeo"*) and edited `rogue 2nd.csv` line 19 himself. It had sat between level 3's
                 // 24 and level 5's 30 as the one spike in the line.
                 new SkillLevel(Power: 752, MpCost: 28, InitialMpCost: 28, SpCost: 11000, Description: "Piercing Stab — blow power 752."),
                 new SkillLevel(Power: 977, MpCost: 30, InitialMpCost: 30, SpCost: 20000, Description: "Piercing Stab — blow power 977."),
@@ -214,7 +214,7 @@ public static partial class SkillCatalog
                 new SkillLevel(Power: 868, MpCost: 67, InitialMpCost: 67, SpCost: 20000, Description: "Precise Shot — power 868."),
             }),
 
-        // ===== Warrior 2nd-class (CSV warrior 20-35) =====
+        // ===== Warrior 2nd-class (CSV warrior 2nd) =====
 
         // Body Mastery — flat max HP + HP-regen multiplier (passive, 5 levels @20/24/28/32/36).
         new(BodyMastery, "Body Mastery", BaseClass.Fighter, SkillEffect.None,
@@ -265,7 +265,7 @@ public static partial class SkillCatalog
             Description: "A desperate defence: DOUBLES your P.Def for 90s. Usable only at ≤60% HP. "
                        + "Cannot be combined with Battle Presence."),
 
-        // ===== Tank 2nd-class (CSV tank 20-35) =====
+        // ===== Tank 2nd-class (CSV tank 2nd) =====
 
         // Shield Mastery — PASSIVE (4 levels @20/24/28/32): scales the equipped shield's
         // block chance and defence, and adds bow resistance. Inert without a shield.
@@ -315,7 +315,7 @@ public static partial class SkillCatalog
         // Defensive Wall — the tank's panic button: enormous P.Def & M.Def (flat + ×2), high
         // cancel resistance, but move speed halved, for 30s (long reuse). All channels are
         // ordinary buff magnitudes (BuffDef/BuffMagicDef accept flat AND percent).
-        // ⚠ 30s, not 60: he corrected `tank 20-35.csv` during playtest-20 ("Tanks Ultimate is 30s
+        // ⚠ 30s, not 60: he corrected `tank 2nd.csv` during playtest-20 ("Tanks Ultimate is 30s
         // not 60"). 900s reuse for 30s of near-immunity is the intended ratio.
         new(DefensiveWall, "Defensive Wall", BaseClass.Fighter,
             SkillEffect.BuffDef | SkillEffect.BuffMagicDef | SkillEffect.BuffCancelResist | SkillEffect.BuffMoveSpeed,
@@ -348,7 +348,7 @@ public static partial class SkillCatalog
             Category: SkillCategory.Debuff, DebuffSchool: DebuffSchool.Physical, SpCost: 40000,
             Description: "Roots the target in place for 15s (it can still act). ATK-vs-CON; bosses immune."),
 
-        // ===== Rogue 2nd-class (CSV rogue 20-35) =====
+        // ===== Rogue 2nd-class (CSV rogue 2nd) =====
 
         // Sprint — short, sharp burst of move speed for 15s, on a 30s reuse (half the Dash potion's).
         //
@@ -375,7 +375,7 @@ public static partial class SkillCatalog
             }),
 
         // Evasion Boost — the ROGUE's ultimate, the mirror of the tank's Defensive Wall: 30s of
-        // greatly raised evasion on a 900s reuse (CSV `rogue 20-35.csv`, added by him in
+        // greatly raised evasion on a 900s reuse (CSV `rogue 2nd.csv`, added by him in
         // playtest-20). This is the burst his evasion design depends on: with the discipline's
         // stray +32 gone (see Classes.Third.cs), a rogue's resting evasion lead over an equal
         // attacker is ~10-20 points and THIS is what briefly takes it to ~40-50 — *"later all

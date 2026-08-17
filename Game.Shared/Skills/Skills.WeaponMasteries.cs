@@ -59,7 +59,7 @@ public static partial class SkillCatalog
 
     private static SkillDef[] WeaponMasterySkills() => new SkillDef[]
     {
-        // Warrior — Two-Handed Mastery (CSV warrior 20-35): big P.Atk + crit damage with a
+        // Warrior — Two-Handed Mastery (CSV warrior 2nd): big P.Atk + crit damage with a
         // 2H sword/blunt, at the cost of some defence (p.def ×0.8) and evasion. 5 levels.
         new(WarriorWeaponMastery, "Two-Hand Mastery", BaseClass.Fighter, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
@@ -90,7 +90,7 @@ public static partial class SkillCatalog
                 TwoHand(new PassiveEffect(PhysAtkPct: 0.50f, PhysAtk: 20, CritDamageFlat: 106f, Accuracy: 6, Evasion: -3, DefencePct: -0.10f)),
             }),
 
-        // Rogue — Weapon Mastery (CSV rogue 20-35): DUAL and BOW both gain +8.5% P.Atk plus
+        // Rogue — Weapon Mastery (CSV rogue 2nd): DUAL and BOW both gain +8.5% P.Atk plus
         // shared crit-damage / accuracy / crit-rate / attack-speed; each also gets its own flat
         // P.Atk, and BOW gains +200 range. 5 levels. Replaces the base fighter weapon mastery.
         new(RogueWeaponMastery, "Weapon Mastery", BaseClass.Fighter, SkillEffect.None,
@@ -124,7 +124,7 @@ public static partial class SkillCatalog
         // (Archer "Bow Mastery" DELETED 2026-08-07 with its id — the rogue mastery above carries
         //  the bow profile since the merge.)
 
-        // Tank — Weapon Mastery (CSV tank 20-35): flat + 8.5% attack power with ANY weapon.
+        // Tank — Weapon Mastery (CSV tank 2nd): flat + 8.5% attack power with ANY weapon.
         // 5 levels (@20/24/28/32/36). Replaces the base fighter weapon mastery.
         new(TankWeaponMastery, "Weapon Mastery", BaseClass.Fighter, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,

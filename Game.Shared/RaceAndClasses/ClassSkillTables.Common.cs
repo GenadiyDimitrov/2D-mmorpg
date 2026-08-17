@@ -17,7 +17,7 @@ public static partial class ClassSkillTables
         foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
         {
             // Fighter archetypes — 2nd-class learn cadence: 20, 24, 28, 32, 36.
-            // Tank (CSV tank 20-35): Heavy Armor + Shield Mastery, Tank Anti-Magic, any-weapon
+            // Tank (CSV tank 2nd): Heavy Armor + Shield Mastery, Tank Anti-Magic, any-weapon
             // Weapon Mastery, Defensive Wall, Taunt (Provoke), Shield Stun, Stay!.
             ClassSkills.Register(race, BaseClass.Fighter, Archetype.Tank,
                 new ClassSkill(TankArmorMastery, 20, SkillLevel: 1),
@@ -50,7 +50,7 @@ public static partial class ClassSkillTables
                 new ClassSkill(TankWeaponMastery, 36, SkillLevel: 5),
                 new ClassSkill(Provoke, 36, SkillLevel: 5),
                 new ClassSkill(TankStay, 36, SkillLevel: 1));
-            // Warrior (CSV warrior 20-35): Two-Hand Mastery + Body Mastery (5 levels each),
+            // Warrior (CSV warrior 2nd): Two-Hand Mastery + Body Mastery (5 levels each),
             // Strike continues (levels 4-8), and the low-HP Battle stances.
             ClassSkills.Register(race, BaseClass.Fighter, Archetype.Warrior,
                 new ClassSkill(WarriorArmorMastery, 20, SkillLevel: 1),
@@ -76,7 +76,7 @@ public static partial class ClassSkillTables
                 new ClassSkill(BodyMastery, 36, SkillLevel: 5),
                 new ClassSkill(Smash, 36, SkillLevel: 5),
                 new ClassSkill(BattleDefence, 36, SkillLevel: 1));
-            // Rogue (CSV rogue 20-35): Rogue Armor/Weapon Mastery, Stab + Shot continue (levels
+            // Rogue (CSV rogue 2nd): Rogue Armor/Weapon Mastery, Stab + Shot continue (levels
             // 4-8), Sprint, Bow Expertise.
             ClassSkills.Register(race, BaseClass.Fighter, Archetype.Rogue,
                 new ClassSkill(RogueArmorMastery, 20, SkillLevel: 1),
@@ -102,7 +102,7 @@ public static partial class ClassSkillTables
                 new ClassSkill(RogueWeaponMastery, 28, SkillLevel: 3),
                 new ClassSkill(PiercingStab, 28, SkillLevel: 3),
                 new ClassSkill(PreciseShot, 28, SkillLevel: 3),
-                // Evasion Boost — the rogue's ultimate (CSV rogue 20-35, added playtest-20).
+                // Evasion Boost — the rogue's ultimate (CSV rogue 2nd, added playtest-20).
                 new ClassSkill(EvasionBoost, 28, SkillLevel: 1),
                 new ClassSkill(Lure, 28, SkillLevel: 2),
                 // 🔴 Signal Flare MOVED 28 -> 60 (archer disciplines only) by his playtest-23 ruling:
@@ -147,7 +147,7 @@ public static partial class ClassSkillTables
                 // ⚠ The SkillDef STAYS in the catalog (Skills.Fighter.cs); see the note there.
                 new ClassSkill(Sprint, 40, SkillLevel: 2));
 
-            // Nuker (CSV nuker 20-35): Elemental Bolt (replaces Magic Bolt), Quick Bolt,
+            // Nuker (CSV nuker 2nd): Elemental Bolt (replaces Magic Bolt), Quick Bolt,
             // Vampiric Bolt (continues, lvls 2-5), Restore Spirit, Mage Armor Mastery,
             // Anti-Magic (lvls 3-6) and Spell Mastery. Cadence 20/25/30/35.
             ClassSkills.Register(race, BaseClass.Mage, Archetype.Nuker,

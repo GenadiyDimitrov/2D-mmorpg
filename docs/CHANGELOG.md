@@ -12,6 +12,62 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-08-17 — the skill CSVs become class tiers, and a recheck that actually runs
+
+Docs and one tool. No game code changed; `Game.sln` builds clean and the protocol is untouched.
+
+**The filenames are class TIERS now.** His call: *"well for fighters 20-35 is not right .. they have
+skills at 36 .. so 2nd class is more suited and understandable"* — a level band in a filename is a claim
+about the content, and that one was already false. `fighter/mage 01-15` → `1st`, the five `… 20-35` →
+`2nd`, `… 40-74` → `3rd`, `… 76-85` → `4th`, and `melee rogue` → **`dual`**. All fifteen moved with
+`git mv`; **not one row was edited**. References were swept through the code comments, `Backlog.md` and
+`Open-Checklist.md` `85n`; `Playtest-Archive.md` and older changelog entries were left alone, being a
+verbatim record.
+
+**His new discipline map — eight, not twelve.** *"class 2nd => desc1/desc2 3rd => desc1/desc2 4th"*:
+cleric → **buffer**/**healer**, rogue → **archer**/**dual**, warrior → **warrior**/**war_aoe**, and then
+tank → **tank** and nuker → **nuker** alone, because *"the varity will come from race diference"*. So
+`Vanguard` is dropped (*"we have a warrior for that"*) and Magus+Tempest merge. The **RACE column is the
+third identity**, which is what keeps this at 16 files instead of 48. ⚠ The `Discipline` enum is NOT
+collapsed — its values persist on characters, so that happens when the authored kits land.
+
+`tools/SkillCsvSeed` grew the new map and wrote the eight files that had none. The one that matters is
+**`nuker 3rd.csv`, 20 rows** — the Magus/Tempest kit (Elemental Burst L1-L10, Frost Bind, Entangling
+Roots, Glacial Spike, Creeping Frost, Phase Shift, Mana Barrier) is the only substantial 40+ content
+outside the buffer's ladder and **no seeded file had ever covered it**. Folding two kits into one leaves
+two skills under two names each (`FlameBolt` as *Annihilate* and *Chain Lightning*, `GreaterWeakness` as
+*Mana Burn* and *Maelstrom*), which is his to reconcile. Nine of the sixteen are empty; that is the
+honest picture, not an oversight.
+
+⚠ The old suffixes left **level 75 in neither band**, silently dropping Elemental Burst's 10th rung.
+`3rd` now closes at 75 and that rung is the last row of the file.
+
+**`dotnet run --project tools/SkillCsvSeed -- --check`** — the recheck he asked for, as a tool rather
+than a read-through, because a rung is implied by ORDER (`Heal` at 20/25/30/35 *is* levels 1-4) and
+eyeballing 180 rows is how a wrong number gets ratified. It reports **53 discrepancies**, and three
+lessons are baked into it after each produced a page of fake findings first: **MP must be compared as a
+TOTAL** (his sheet puts the whole cost in `INIT MP`, the engine splits it two-stage); **the code side
+must be band-limited to the tier** (`Elemental Bolt` is registered 20→80 against a file authoring
+20-35); and **an auto-granted rung has no class-table row**, so leaving it in shifts the whole ladder by
+one. Name drift is paired up and reported once, not twice.
+
+It found one real defect, and it was in the CSV rather than the code: **`tank 2nd.csv` had two
+transposed learn levels** — Tank Anti-Magic authored at 20/**34**/**38**/32/36 where the code registers
+20/24/28/32/36. In file order the magnitudes (25/30/35/40/45) and SP (1700/3200/6000/11000/20000) match
+the code exactly, so `34` was a typo for 24 and `38` for 28. **He fixed both himself the same day**, and
+the row is gone from the report — which is the tool doing the only job it was built for.
+
+Two things it flags that are sheet CONVENTION, not defects, and are staying: `Shield Stun` and `Stay!`
+leave the DURRATION column at 0 while their own descriptions say "for 9s" / "for 15s" (the code uses 9
+and 15); and his SP-0 rows are auto-granted skills, which by definition have no class-table entry.
+
+**`.gitignore` — the Google Drive block grew up.** The repo sits inside a Drive-synced tree and only the
+two `.tmp.drive{upload,download}/` folders were covered. Added: the `.tmp.drive*/` wildcard for the
+variants those two miss, `desktop.ini` (hidden, so it slips past a glance at `git status` and rides in
+on `git add .`), `.shortcut-targets-by-id/`, and the Google-native document stubs — `*.gdoc`, `*.gsheet`,
+`*.gslides` and the rest. Those last are not documents: each is a tiny JSON stub holding a doc id, so
+committing one commits a dead link. Nothing matching was tracked, so nothing had to be un-tracked.
+
 ## 0.70.0 — 2026-08-16 — `BL-47` step 2: five creatures built like players
 
 The demo he asked for in playtest 24 — *"and later we can do 2~5 mobs so I can test"* — after ruling

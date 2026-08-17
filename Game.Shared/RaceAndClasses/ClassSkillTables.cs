@@ -20,7 +20,7 @@ public static partial class ClassSkillTables
     // Base-class kits (shared by everyone before the level-20 change).
     static ClassSkillTables()
     {
-        // --- Base Fighter --- (CSV fighter 01-15, learn cadence 5/10/15). Strike (sword/blunt),
+        // --- Base Fighter --- (CSV fighter 1st, learn cadence 5/10/15). Strike (sword/blunt),
         // Stab (dual BLOW) and Shot (bow) are weapon-gated core actives that keep leveling into
         // the 2nd-class warrior/rogue tables. Everything is SP-learned (no auto-grant).
         foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })

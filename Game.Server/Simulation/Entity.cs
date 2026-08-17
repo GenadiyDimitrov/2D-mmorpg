@@ -2272,7 +2272,7 @@ public class Entity
                 // and not 7 points scaled by whatever else is on. StatMods.MoveSpeed already
                 // existed here but nothing read it — the rogue light mastery's CSV "speed +7" was
                 // being authored as MoveSpeedPct 0.06 (×1.06) instead, which he corrected in
-                // `rogue 20-35.csv` during playtest-20 ("Also speed is +7 flat not x1.07").
+                // `rogue 2nd.csv` during playtest-20 ("Also speed is +7 flat not x1.07").
                 RunSpeed = (RunSpeed + sm.MoveSpeed) * (1f + sm.MoveSpeedPct);
                 WalkSpeed = RunSpeed * MovementTuning.WalkSpeedFactor;
                 Speed = RunSpeed;
