@@ -12,6 +12,93 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-08-19 (later) — the bolts read his sheet, and four healer mechanics get their engine
+
+⚠ **NO VERSION BUMP, deliberately.** `GameConstants.GameVersion` gates the client/server handshake, and
+the APK is knowingly stale (*"dont build apk untill the healer atleast is out"*) — bumping it would lock
+the phone out of a server it can otherwise talk to. Nothing here changes the wire.
+⚠ **The client's skill CARDS will read the OLD bolt powers** until an APK is built: `SkillCatalog` is
+compiled into `Game.Shared.dll` and shipped inside the app. The SERVER deals the new numbers regardless,
+so the cards are wrong, not the damage.
+
+### The nuker's bolt power now matches `nuker 2nd.csv` and `mage 1st.csv` (his call: *"fix the nuker bolt power"*)
+
+The four authored rungs were **~25-30% above his own sheet** and nothing caught it: `SkillCsvSeed --check`
+compares learn level, range, cast, cooldown, duration, MP and SP — **not power**, which lives in the
+free-text `DESCR` column. This is the drift that gap was always going to produce.
+
+| skill | his 20/25/30/35 | code carried | continued to (80) | was |
+|---|---|---|---|---|
+| Elemental Bolt | 26/32/38/44 | 37/44/50/57 | **98** | 116 |
+| Vampiric Bolt (+21 @14) | 26/32/38/44 | 37/44/50/57 | **98** | 116 |
+| Quick Bolt | 21/26/30/36 | 30/35/40/46 | **81** | 93 |
+| Magic Bolt @7 / @14 | 15 / 21 | 17 / 24 | — | — |
+
+🔑 **His four points are exactly linear**, so rungs 5-13 are not invented — they are his own line continued:
+Elemental/Vampiric `26 + 1.2 per character level`, Quick Bolt `21 + 1.0`, which holds Quick Bolt at ~81% of
+Elemental at every rung. The ladder had been anchored at "power 108 @ level 74", an IG top-nuke reading that
+was **ours**; where his band and our anchor disagreed, the band wins. The MP column had already been given
+this exact treatment on 2026-08-19 morning — power was simply missed.
+
+**Measured, `BalanceMatrix`** (nuke damage / casts-to-kill vs a same-level normal): 20 → 602/0.6 becomes
+**423/0.9**; 52 → 710/3.1 becomes **579/3.8**; 85 → 886/6.6 becomes **749/7.8**. The nuker's MP economy pays
+for it too — kills before out-of-mana at level 20 fall **22 → 16**, at 52 **24 → 20**. Full-character farm
+hours at S move 603h → **618h**.
+🔴 **Worth his eye: this is a 16-30% nuker cut landing directly on top of 0.73.0's ~3× tougher creatures.**
+Applied as authored, on his instruction; flagged, not softened.
+
+### Engine prep for four skills on his in-progress healer file — *no healer content built*
+
+He is still writing `healer 3rd.csv` (*"dont build/retune healer .. until im finished there can be more
+changes"*), so this is the machinery only. **Two of the four needed nothing at all:**
+
+- **Mana Blessing** (−10% physical / −5% magic MP cost) — `SkillDef.PhysMpCostPct` / `MagicMpCostPct`
+  already run end to end, buff → `Entity.PhysMpCostReduction` → charged at cast. Authoring only.
+- **The four-way Great Might / Great Bulwark override** — *"3 lvls of the same key ... they will override
+  eachother and cannot be buffed lvl-down"* — is what `ApplyBuff` already does for one shared `BuffKey`
+  with ranks 1/2/3: a lower rank is refused outright, an equal rank keeps whichever runs longer (so a
+  fresh cast always swaps), and single and group collide because they are literally the same key.
+
+**Two needed building:**
+
+- 🆕 **`SkillDef.DamageToMp` — mana damage (Mana Ray).** The magic pipeline's own number is subtracted
+  from MP instead of HP: same formula, same M.Def divisor, same magic-resist coefficient, same fizzle,
+  same magic crit, exactly his *"same formula; mRes; can fizzle; etc"*. His *"half effect on monsters"* is
+  the **existing** `PveDamageMult: 0.5f`, not a second knob — two knobs for one number drift apart. It
+  runs through the ordinary `ApplyDamage` (one `toMp` flag, not a parallel method) so threat, the combat
+  timer, PvP flagging, the hide break and the interrupt contest cannot fall out of step; absorb shields,
+  the mana shield (which would divert mana damage into mana) and the lethal save are skipped, spell-vamp
+  is blocked off it, and MP floors at 0 so it can never kill.
+- 🆕 **`SkillDef.EndsOnDamageTaken` — Meditation.** Checked in `ApplyDamage`, the one choke point every
+  source of damage passes, so a DoT tick, an AoE, a reflect and a swing all end it with no per-source
+  code. ⚠ Not a hide: it does **not** break on the owner's own actions — his words are "canceled on dmg
+  taken", and whether a meditating healer may cast is his to rule.
+- 🔧 **A FLAT per-second regen buff now works at all.** Meditation's *"+30/s"* was silently reading as
+  **zero**: `Regenerate` accumulated only the `Percent` half of `BuffHpRegen`/`BuffMpRegen`, so the `Flat`
+  mode that already existed on the magnitude went nowhere. Added beside the gear/passive flat bonus (so
+  the stance multiplier still applies — sitting to meditate pays), and mirrored into `StandingRegen` so
+  the stats window cannot disagree with what is actually paid.
+
+### 🆕 `SkillDef.NeverAuto` — a skill can declare itself manual (his ruling, same day)
+
+*"Mana Ray can be removed from auto - no point in 'farming' with it .. its a strategy move - depleate
+boss/enemy mp not a farming tool ... same goes for 'Mana Strain'"*. Checked **first** in `ClassifyAuto`,
+because Mana Ray carries `MagicDamage` and the attack test would claim it two lines later — and no rule
+about effect flags could ever tell it from a nuke. What makes it manual is what it is *for*.
+🔑 It routes to `Other`, the never-cast bucket, which means `WarnUncastableAutoSkills` (0.68.0) already
+**tells the player the moment they arm the row** that it is theirs to press — so this is an exclusion that
+explains itself rather than one that looks like the silent-skip bug playtest 23 found.
+🔵 **`BL-83`'s taunts are one flag away** and were deliberately NOT flipped here — he ruled on Mana Ray,
+not on that, in this message.
+
+### Mana Strain's half: MP cost can now be RAISED, not only lowered
+
+`PhysMpCostReduction`/`MagicMpCostReduction` were clamped to `[0, 0.8]`, which made a cost-**increasing**
+effect impossible — and that is exactly *"a debuff that increases mana consumption of the enemy"*. The
+clamp is now `[-2, +0.8]`: from three times the price to a 80% discount, one number read from both ends,
+because a discount and a surcharge are the same multiplier and two fields would only get a chance to
+disagree.
+
 ## 2026-08-19 — 0.73.0: the creatures stop being paper (`BL-78`, defence and attack)
 
 🔴 **Server-side balance only — no protocol change, no client change.** The APK debt from 0.72.0 is

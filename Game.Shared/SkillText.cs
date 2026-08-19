@@ -386,6 +386,9 @@ public static class SkillText
         if (def.ConditionalOn != TargetCondition.None && def.ConditionalDamagePct != 0f)
             o.Add($"{Sign(def.ConditionalDamagePct)}{def.ConditionalDamagePct * 100f:0.#}% damage "
                 + $"against a {def.ConditionalOn.ToString().ToLowerInvariant()} target");
+        // Mana damage first: it changes what every damage line above this actually drains, so a card
+        // that mentions it last reads as though the spell does both.
+        if (def.DamageToMp) o.Add("Damages MP, not HP (cannot kill)");
         if (def.PveDamageMult != 1f) o.Add($"Damage vs monsters x{def.PveDamageMult:0.##}");
         if (def.PvpDamageMult != 1f) o.Add($"Damage vs players x{def.PvpDamageMult:0.##}");
 
@@ -452,6 +455,10 @@ public static class SkillText
                 : "Toggle — stays up until switched off");
         if (def.PhysMpCostPct > 0f) o.Add($"Physical skills cost {def.PhysMpCostPct * 100f:0.#}% less MP");
         if (def.MagicMpCostPct > 0f) o.Add($"Magic skills cost {def.MagicMpCostPct * 100f:0.#}% less MP");
+        // The condition that ends the buff belongs on the card: a Meditation whose downside is only
+        // discoverable by being hit is a skill the player learns twice.
+        if (def.EndsOnDamageTaken) o.Add("Ends the moment you take damage");
+        if (def.NeverAuto) o.Add("Manual only — auto-hunt never casts this");
 
         // ---- Reward rates (the premium runes) ----
         var r = def.RewardsAt(level);

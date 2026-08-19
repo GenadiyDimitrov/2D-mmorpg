@@ -294,7 +294,45 @@ public record SkillDef(
     // never express "tough in body, open in mind".
     // Rides as fields, not SkillEffect flags — the flag enum is full (1L << 62 was the last bit).
     float CcResistMagical = 0f,
-    float CcResistPhysical = 0f)
+    float CcResistPhysical = 0f,
+    // MANA DAMAGE (the healer's Mana Ray, his 3rd-class 56/58 rows — *"Like a magic attack but damages
+    // MP not HP. Same formula; mRes; can fizzle; etc). In PVE dmg is halved (x0.5)"*). Set it on an
+    // ordinary `SkillEffect.MagicDamage` skill and the number the magic pipeline produces is subtracted
+    // from the target's MP instead of its HP — SAME formula, same M.Def divisor, same magic-resist
+    // coefficient, same fizzle roll, same magic crit. That is the point: it is not a second damage
+    // system, it is the one we already have, pointed at the other pool.
+    //
+    // 🔑 The PvE halving is NOT part of this flag — it is `PveDamageMult: 0.5f`, which already exists
+    // above and is already applied by FinalizeDamage. Two knobs for one number would drift apart.
+    // ⚠ Absorb shields, mana shields and the lethal save are all deliberately skipped for a mana hit
+    // (a mana shield diverting mana damage INTO mana is a loop), and it can never kill: MP floors at 0.
+    // Everything else a hit does — threat, the combat timer, PvP flagging, breaking a hide, the
+    // interrupt contest — is unchanged, because being hit is being hit.
+    // Rides as a flag field: the SkillEffect enum is full (1L << 62 was the last bit).
+    bool DamageToMp = false,
+    // ENDS ON DAMAGE TAKEN (the healer's Meditation, his 3rd-class 56 row — *"Decrease Pdef by
+    // 90%(x0.1) and Add MP regen +30/s for 30 seconds - The status is canceled on dmg taken"*). While
+    // this buff is up its owner is wide open and refilling fast; the moment anything actually lands on
+    // them it is gone. Checked in ApplyDamage, the single choke point every source of damage passes
+    // through, so a DoT tick, an AoE, a reflect and a mob's swing all end it with no per-source code.
+    //
+    // ⚠ NOT the same rule as a HIDE, which also breaks on the owner's own ACTIONS. This one only cares
+    // about damage arriving — his words are "canceled on dmg taken", and whether a meditating healer
+    // may cast is his call to make, not a rule to assume here.
+    // Rides as a flag field for the same reason as DamageToMp.
+    bool EndsOnDamageTaken = false,
+    // NEVER AUTOMATABLE (owner 2026-08-19, on Mana Ray): *"can be removed from auto - no point in
+    // 'farming' with it .. its a strategy move - depleate boss/enemy mp not a farming tool ... same
+    // goes for 'Mana Strain'"*. The skill is sorted into the auto chain's never-cast bucket no matter
+    // what its effect flags say, and `WarnUncastableAutoSkills` then TELLS the player, the moment they
+    // arm the row, that it is theirs to press — so a deliberately manual skill can never again look
+    // like the silent-skip bug playtest 23 found.
+    //
+    // 🔑 It is a property of the SKILL, not of its shape. Mana Ray classifies as an Attack purely
+    // because it carries MagicDamage, and no rule about damage flags could tell it apart from a nuke;
+    // the thing that makes it manual is what it is FOR. Anything else he rules manual — `BL-83`'s
+    // taunts are the queued case — sets this one flag rather than growing another branch below.
+    bool NeverAuto = false)
 {
     /// <summary>Hash on the ID alone — and this override MUST stay.
     ///

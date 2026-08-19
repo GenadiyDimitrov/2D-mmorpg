@@ -111,6 +111,11 @@ public class BuffInstance
     public float CcResistMagical { get; init; }
     public float CcResistPhysical { get; init; }
 
+    /// <summary>This buff ends the instant its owner TAKES damage (the healer's Meditation). Carried
+    /// on the buff, like <see cref="HidesFromMobs"/>, so it is checked at the one place damage is
+    /// applied and needs no second bookkeeping path. See <c>SkillDef.EndsOnDamageTaken</c>.</summary>
+    public bool EndsOnDamageTaken { get; init; }
+
     /// <summary>What this buff does to a monster's payout — the premium reward runes' whole payload
     /// (see <see cref="RewardRates"/>). Default = neutral, which every other buff in the game is.
     /// Rides as a field, like the two above, because the SkillEffect flag enum has no bits left.</summary>
@@ -2593,8 +2598,13 @@ public class Entity
         // blanket one at the roll, the floor on a landing debuff is still the contest's own 10%.
         CcResistMagical = Math.Clamp(CcResistMagical, 0f, 0.8f);
         CcResistPhysical = Math.Clamp(CcResistPhysical, 0f, 0.8f);
-        PhysMpCostReduction = Math.Clamp(PhysMpCostReduction, 0f, 0.8f);
-        MagicMpCostReduction = Math.Clamp(MagicMpCostReduction, 0f, 0.8f);
+        // MP cost: −2 … +0.8, i.e. from THREE TIMES the price up to a 80% discount. The floor used to
+        // be 0, which quietly made a cost-RAISING effect impossible — and that is exactly Mana Strain
+        // (owner 2026-08-19: *"a debuff that increases mana consumption of the enemy"*). One number
+        // covers both directions because a discount and a surcharge are the same multiplier read from
+        // opposite ends; a second field would only give the two a chance to disagree.
+        PhysMpCostReduction = Math.Clamp(PhysMpCostReduction, -2f, 0.8f);
+        MagicMpCostReduction = Math.Clamp(MagicMpCostReduction, -2f, 0.8f);
         MeleeVamp = Math.Clamp(MeleeVamp, 0f, 1f);
         SpellVamp = Math.Clamp(SpellVamp, 0f, 1f);
 

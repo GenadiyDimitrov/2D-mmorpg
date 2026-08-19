@@ -41,9 +41,12 @@ public static partial class SkillCatalog
             Levels: new[]
             {                                                                              // learn level
                 // MP is his `mage 1st.csv` (2026-08-19): 2+7 / 2+8 / 3+12.
+                // ⚠ POWER IS HIS TOO, and was 12/17/24 until 2026-08-19 — the CSV says 12/15/21 and the
+                // `--check` tool does not compare power, so this drifted unseen. His learn levels are
+                // 1/7/14, not the 1/5/10 the old trailing comment claimed.
                 new SkillLevel(Power: 12, MpCost: 9,  InitialMpCost: 2, SpCost: 0,    Description: "Magic damage, power 12."),   // 1
-                new SkillLevel(Power: 17, MpCost: 10, InitialMpCost: 2, SpCost: 480,  Description: "Magic damage, power 17."),   // 5
-                new SkillLevel(Power: 24, MpCost: 15, InitialMpCost: 3, SpCost: 2200, Description: "Magic damage, power 24."),   // 10
+                new SkillLevel(Power: 15, MpCost: 10, InitialMpCost: 2, SpCost: 480,  Description: "Magic damage, power 15."),   // 7
+                new SkillLevel(Power: 21, MpCost: 15, InitialMpCost: 3, SpCost: 2200, Description: "Magic damage, power 21."),   // 14
             }),
 
         // Self Heal — the base MAGE heal: SELF ONLY, 3 levels (1/7/14). The nuker keeps this
@@ -161,33 +164,44 @@ public static partial class SkillCatalog
                 // the one bolt nobody could afford to spam. Rungs 6-14 have no CSV, so they carry the
                 // SAME RATIO his band implies (×0.728 of the old numbers, rounded) — that keeps the
                 // curve's shape and avoids a cliff at 40, where 62 used to jump straight to 90.
-                new SkillLevel(Power: 29,  MpCost: 28,  InitialMpCost: 6,  SpCost: 2200,   Description: "Drain power 29; heals 40% of damage."),   // 14
-                new SkillLevel(Power: 37,  MpCost: 40,  InitialMpCost: 8,  SpCost: 3200,   Description: "Drain power 37; heals 40% of damage."),   // 20
-                new SkillLevel(Power: 44,  MpCost: 46,  InitialMpCost: 10, SpCost: 6400,   Description: "Drain power 44; heals 40% of damage."),   // 25
-                new SkillLevel(Power: 50,  MpCost: 52,  InitialMpCost: 12, SpCost: 12800,  Description: "Drain power 50; heals 40% of damage."),   // 30
-                new SkillLevel(Power: 57,  MpCost: 62,  InitialMpCost: 14, SpCost: 25000,  Description: "Drain power 57; heals 40% of damage."),   // 35
-                new SkillLevel(Power: 63,  MpCost: 65,  InitialMpCost: 13, SpCost: 40000,  Description: "Drain power 63; heals 40% of damage."),   // 40
-                new SkillLevel(Power: 70,  MpCost: 73,  InitialMpCost: 15, SpCost: 60000,  Description: "Drain power 70; heals 40% of damage."),   // 45
-                new SkillLevel(Power: 76,  MpCost: 80,  InitialMpCost: 16, SpCost: 85000,  Description: "Drain power 76; heals 40% of damage."),   // 50
-                new SkillLevel(Power: 83,  MpCost: 87,  InitialMpCost: 17, SpCost: 115000, Description: "Drain power 83; heals 40% of damage."),   // 55
-                new SkillLevel(Power: 90,  MpCost: 95,  InitialMpCost: 19, SpCost: 150000, Description: "Drain power 90; heals 40% of damage."),   // 60
-                new SkillLevel(Power: 96,  MpCost: 100, InitialMpCost: 20, SpCost: 190000, Description: "Drain power 96; heals 40% of damage."),   // 65
-                new SkillLevel(Power: 103, MpCost: 108, InitialMpCost: 22, SpCost: 235000, Description: "Drain power 103; heals 40% of damage."),  // 70
-                new SkillLevel(Power: 109, MpCost: 115, InitialMpCost: 23, SpCost: 285000, Description: "Drain power 109; heals 40% of damage."),  // 75
-                new SkillLevel(Power: 116, MpCost: 122, InitialMpCost: 24, SpCost: 340000, Description: "Drain power 116; heals 40% of damage."),  // 80
+                //
+                // ⚠ POWER RUNGS 1-5 ARE ALSO HIS, and were WRONG until 2026-08-19 (his call: "fix the
+                // nuker bolt power"). His files say 21 @14 and 26/32/38/44 @20-35; the code carried
+                // 29/37/44/50/57, ~25-30% high. `--check` compares MP and SP but NOT power, so nothing
+                // caught it. His four nuker points are exactly linear — **26 + 1.2 per character level**
+                // — and rungs 6-14 are that same line continued, which is the identical treatment the MP
+                // column above already got. Vampiric and Elemental Bolt share one power ladder on his
+                // sheet (both 26/32/38/44), so they are kept identical here.
+                new SkillLevel(Power: 21,  MpCost: 28,  InitialMpCost: 6,  SpCost: 2200,   Description: "Drain power 21; heals 40% of damage."),   // 14
+                new SkillLevel(Power: 26,  MpCost: 40,  InitialMpCost: 8,  SpCost: 3200,   Description: "Drain power 26; heals 40% of damage."),   // 20
+                new SkillLevel(Power: 32,  MpCost: 46,  InitialMpCost: 10, SpCost: 6400,   Description: "Drain power 32; heals 40% of damage."),   // 25
+                new SkillLevel(Power: 38,  MpCost: 52,  InitialMpCost: 12, SpCost: 12800,  Description: "Drain power 38; heals 40% of damage."),   // 30
+                new SkillLevel(Power: 44,  MpCost: 62,  InitialMpCost: 14, SpCost: 25000,  Description: "Drain power 44; heals 40% of damage."),   // 35
+                new SkillLevel(Power: 50,  MpCost: 65,  InitialMpCost: 13, SpCost: 40000,  Description: "Drain power 50; heals 40% of damage."),   // 40
+                new SkillLevel(Power: 56,  MpCost: 73,  InitialMpCost: 15, SpCost: 60000,  Description: "Drain power 56; heals 40% of damage."),   // 45
+                new SkillLevel(Power: 62,  MpCost: 80,  InitialMpCost: 16, SpCost: 85000,  Description: "Drain power 62; heals 40% of damage."),   // 50
+                new SkillLevel(Power: 68,  MpCost: 87,  InitialMpCost: 17, SpCost: 115000, Description: "Drain power 68; heals 40% of damage."),   // 55
+                new SkillLevel(Power: 74,  MpCost: 95,  InitialMpCost: 19, SpCost: 150000, Description: "Drain power 74; heals 40% of damage."),   // 60
+                new SkillLevel(Power: 80,  MpCost: 100, InitialMpCost: 20, SpCost: 190000, Description: "Drain power 80; heals 40% of damage."),   // 65
+                new SkillLevel(Power: 86,  MpCost: 108, InitialMpCost: 22, SpCost: 235000, Description: "Drain power 86; heals 40% of damage."),   // 70
+                new SkillLevel(Power: 92,  MpCost: 115, InitialMpCost: 23, SpCost: 285000, Description: "Drain power 92; heals 40% of damage."),   // 75
+                new SkillLevel(Power: 98,  MpCost: 122, InitialMpCost: 24, SpCost: 340000, Description: "Drain power 98; heals 40% of damage."),   // 80
             }),
 
         // Elemental Bolt — the Nuker's MAIN nuke (replaces Magic Bolt). 13 levels, learned
         // every 5 levels from 20 to 80.
         //
-        // The power ladder is IG's own nuke curve: linear in character level, anchored at
-        // POWER 108 @ LEVEL 74 (IG's Hurricane / Hydro Blast / Death Spike / Prominence).
-        // It used to stop at 4 levels and power 44 — which is why a level-85 mage still fought
-        // with a level-35 spell and needed ~79 casts to kill a same-level mob, and why he hit
-        // a tank for ~100 instead of the ~350 he should. This ladder IS the mage's scaling;
-        // don't cap it at the 2nd class (in IG your main nuke keeps gaining levels for life).
+        // The power ladder is LINEAR IN CHARACTER LEVEL, and since 2026-08-19 the line is HIS:
+        // `nuker 2nd.csv` authors 26/32/38/44 at 20/25/30/35, which is exactly **26 + 1.2 per
+        // level**, and rungs 5-13 are that same line continued to 98 @ 80.
+        // ⚠ It used to be anchored at POWER 108 @ LEVEL 74 (an IG top-nuke reading) and ran
+        // 37 → 116, ~25-30% above his own band in the four levels he actually authored. That is
+        // the drift he told us to fix; the anchor was ours, the band is his, and the band wins.
+        // The ladder still IS the mage's scaling — don't cap it at the 2nd class (in IG your main
+        // nuke keeps gaining levels for life), and don't re-raise the 40+ half on its own: it is
+        // one straight line through his four points and a kink there is a kink in the mage curve.
         new(ElementalBolt, "Elemental Bolt", BaseClass.Mage, SkillEffect.MagicDamage,
-            MpCost: 27, CastTicks: 40, CooldownTicks: 10, Range: 750, Power: 37,
+            MpCost: 27, CastTicks: 40, CooldownTicks: 10, Range: 750, Power: 26,
             Replaces: new[] { MagicBolt },
             Category: SkillCategory.Magic, InitialMpCost: 5,
             Description: "A bolt of raw elemental force — the Nuker's basic attack (replaces Magic Bolt).",
@@ -198,45 +212,50 @@ public static partial class SkillCatalog
                 // numbers), so there is no cliff at 40. Quick Bolt below runs the identical MP line —
                 // that is his sheet's choice, not a copy slip: the two bolts differ in cast time and
                 // range, not in what they cost.
-                new SkillLevel(Power: 37,  MpCost: 20, InitialMpCost: 4,  SpCost: 3200,   Description: "Magic damage, power 37."),   // 20
-                new SkillLevel(Power: 44,  MpCost: 23, InitialMpCost: 5,  SpCost: 6400,   Description: "Magic damage, power 44."),   // 25
-                new SkillLevel(Power: 50,  MpCost: 26, InitialMpCost: 6,  SpCost: 12800,  Description: "Magic damage, power 50."),   // 30
-                new SkillLevel(Power: 57,  MpCost: 31, InitialMpCost: 7,  SpCost: 25000,  Description: "Magic damage, power 57."),   // 35
-                new SkillLevel(Power: 63,  MpCost: 33, InitialMpCost: 7,  SpCost: 40000,  Description: "Magic damage, power 63."),   // 40
-                new SkillLevel(Power: 70,  MpCost: 37, InitialMpCost: 7,  SpCost: 60000,  Description: "Magic damage, power 70."),   // 45
-                new SkillLevel(Power: 76,  MpCost: 40, InitialMpCost: 8,  SpCost: 85000,  Description: "Magic damage, power 76."),   // 50
-                new SkillLevel(Power: 83,  MpCost: 44, InitialMpCost: 9,  SpCost: 115000, Description: "Magic damage, power 83."),   // 55
-                new SkillLevel(Power: 90,  MpCost: 48, InitialMpCost: 10, SpCost: 150000, Description: "Magic damage, power 90."),   // 60
-                new SkillLevel(Power: 96,  MpCost: 51, InitialMpCost: 10, SpCost: 190000, Description: "Magic damage, power 96."),   // 65
-                new SkillLevel(Power: 103, MpCost: 54, InitialMpCost: 11, SpCost: 235000, Description: "Magic damage, power 103."),  // 70
-                new SkillLevel(Power: 109, MpCost: 58, InitialMpCost: 12, SpCost: 285000, Description: "Magic damage, power 109."),  // 75
-                new SkillLevel(Power: 116, MpCost: 62, InitialMpCost: 12, SpCost: 340000, Description: "Magic damage, power 116."),  // 80
+                // ⚠ POWER RUNGS 1-4 ARE HIS TOO (same file, same date, his "fix the nuker bolt power").
+                // 26/32/38/44 — the code carried 37/44/50/57. Rungs 5-13 continue his own +1.2/level.
+                new SkillLevel(Power: 26,  MpCost: 20, InitialMpCost: 4,  SpCost: 3200,   Description: "Magic damage, power 26."),   // 20
+                new SkillLevel(Power: 32,  MpCost: 23, InitialMpCost: 5,  SpCost: 6400,   Description: "Magic damage, power 32."),   // 25
+                new SkillLevel(Power: 38,  MpCost: 26, InitialMpCost: 6,  SpCost: 12800,  Description: "Magic damage, power 38."),   // 30
+                new SkillLevel(Power: 44,  MpCost: 31, InitialMpCost: 7,  SpCost: 25000,  Description: "Magic damage, power 44."),   // 35
+                new SkillLevel(Power: 50,  MpCost: 33, InitialMpCost: 7,  SpCost: 40000,  Description: "Magic damage, power 50."),   // 40
+                new SkillLevel(Power: 56,  MpCost: 37, InitialMpCost: 7,  SpCost: 60000,  Description: "Magic damage, power 56."),   // 45
+                new SkillLevel(Power: 62,  MpCost: 40, InitialMpCost: 8,  SpCost: 85000,  Description: "Magic damage, power 62."),   // 50
+                new SkillLevel(Power: 68,  MpCost: 44, InitialMpCost: 9,  SpCost: 115000, Description: "Magic damage, power 68."),   // 55
+                new SkillLevel(Power: 74,  MpCost: 48, InitialMpCost: 10, SpCost: 150000, Description: "Magic damage, power 74."),   // 60
+                new SkillLevel(Power: 80,  MpCost: 51, InitialMpCost: 10, SpCost: 190000, Description: "Magic damage, power 80."),   // 65
+                new SkillLevel(Power: 86,  MpCost: 54, InitialMpCost: 11, SpCost: 235000, Description: "Magic damage, power 86."),   // 70
+                new SkillLevel(Power: 92,  MpCost: 58, InitialMpCost: 12, SpCost: 285000, Description: "Magic damage, power 92."),   // 75
+                new SkillLevel(Power: 98,  MpCost: 62, InitialMpCost: 12, SpCost: 340000, Description: "Magic damage, power 98."),   // 80
             }),
 
         // Quick Bolt — a short-range (150), fast (1.5s) nuke for weaving between casts.
         // Same 13-level ladder as Elemental Bolt at ~80% of its power (it trades damage for
         // cast time), same MP — the point is casts-per-second, not damage-per-cast.
         new(QuickBolt, "Quick Bolt", BaseClass.Mage, SkillEffect.MagicDamage,
-            MpCost: 27, CastTicks: 15, CooldownTicks: 10, Range: 150, Power: 30,
+            MpCost: 27, CastTicks: 15, CooldownTicks: 10, Range: 150, Power: 21,
             Category: SkillCategory.Magic, InitialMpCost: 5,
             Description: "A fast, close-range bolt (1.5s cast).",
             Levels: new[]
             {                                                                                    // learn level
                 // MP: his `nuker 2nd.csv` rungs 1-4, then the same ×0.734 continuation as Elemental
                 // Bolt above — the two bolts share one MP line on his sheet.
-                new SkillLevel(Power: 30, MpCost: 20, InitialMpCost: 4,  SpCost: 3200,   Description: "Magic damage, power 30."),   // 20
-                new SkillLevel(Power: 35, MpCost: 23, InitialMpCost: 5,  SpCost: 6400,   Description: "Magic damage, power 35."),   // 25
-                new SkillLevel(Power: 40, MpCost: 26, InitialMpCost: 6,  SpCost: 12800,  Description: "Magic damage, power 40."),   // 30
-                new SkillLevel(Power: 46, MpCost: 31, InitialMpCost: 7,  SpCost: 25000,  Description: "Magic damage, power 46."),   // 35
-                new SkillLevel(Power: 50, MpCost: 33, InitialMpCost: 7,  SpCost: 40000,  Description: "Magic damage, power 50."),   // 40
-                new SkillLevel(Power: 56, MpCost: 37, InitialMpCost: 7,  SpCost: 60000,  Description: "Magic damage, power 56."),   // 45
-                new SkillLevel(Power: 61, MpCost: 40, InitialMpCost: 8,  SpCost: 85000,  Description: "Magic damage, power 61."),   // 50
-                new SkillLevel(Power: 66, MpCost: 44, InitialMpCost: 9,  SpCost: 115000, Description: "Magic damage, power 66."),   // 55
-                new SkillLevel(Power: 72, MpCost: 48, InitialMpCost: 10, SpCost: 150000, Description: "Magic damage, power 72."),   // 60
-                new SkillLevel(Power: 77, MpCost: 51, InitialMpCost: 10, SpCost: 190000, Description: "Magic damage, power 77."),   // 65
-                new SkillLevel(Power: 82, MpCost: 54, InitialMpCost: 11, SpCost: 235000, Description: "Magic damage, power 82."),   // 70
-                new SkillLevel(Power: 87, MpCost: 58, InitialMpCost: 12, SpCost: 285000, Description: "Magic damage, power 87."),   // 75
-                new SkillLevel(Power: 93, MpCost: 62, InitialMpCost: 12, SpCost: 340000, Description: "Magic damage, power 93."),   // 80
+                // ⚠ POWER rungs 1-4 are his as well (21/26/30/36, was 30/35/40/46). His four points run
+                // **21 + 1.0 per character level**, so rungs 5-13 continue that; it keeps Quick Bolt at
+                // ~81% of Elemental Bolt at every rung, which is the trade this skill is built on.
+                new SkillLevel(Power: 21, MpCost: 20, InitialMpCost: 4,  SpCost: 3200,   Description: "Magic damage, power 21."),   // 20
+                new SkillLevel(Power: 26, MpCost: 23, InitialMpCost: 5,  SpCost: 6400,   Description: "Magic damage, power 26."),   // 25
+                new SkillLevel(Power: 30, MpCost: 26, InitialMpCost: 6,  SpCost: 12800,  Description: "Magic damage, power 30."),   // 30
+                new SkillLevel(Power: 36, MpCost: 31, InitialMpCost: 7,  SpCost: 25000,  Description: "Magic damage, power 36."),   // 35
+                new SkillLevel(Power: 41, MpCost: 33, InitialMpCost: 7,  SpCost: 40000,  Description: "Magic damage, power 41."),   // 40
+                new SkillLevel(Power: 46, MpCost: 37, InitialMpCost: 7,  SpCost: 60000,  Description: "Magic damage, power 46."),   // 45
+                new SkillLevel(Power: 51, MpCost: 40, InitialMpCost: 8,  SpCost: 85000,  Description: "Magic damage, power 51."),   // 50
+                new SkillLevel(Power: 56, MpCost: 44, InitialMpCost: 9,  SpCost: 115000, Description: "Magic damage, power 56."),   // 55
+                new SkillLevel(Power: 61, MpCost: 48, InitialMpCost: 10, SpCost: 150000, Description: "Magic damage, power 61."),   // 60
+                new SkillLevel(Power: 66, MpCost: 51, InitialMpCost: 10, SpCost: 190000, Description: "Magic damage, power 66."),   // 65
+                new SkillLevel(Power: 71, MpCost: 54, InitialMpCost: 11, SpCost: 235000, Description: "Magic damage, power 71."),   // 70
+                new SkillLevel(Power: 76, MpCost: 58, InitialMpCost: 12, SpCost: 285000, Description: "Magic damage, power 76."),   // 75
+                new SkillLevel(Power: 81, MpCost: 62, InitialMpCost: 12, SpCost: 340000, Description: "Magic damage, power 81."),   // 80
             }),
 
         // Restore Spirit — trades HP for MP (self). Costs HP, not MP.

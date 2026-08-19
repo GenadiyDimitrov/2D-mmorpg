@@ -4909,6 +4909,13 @@ public class GameLoopService : BackgroundService
     private static AutoSkillKind ClassifyAuto(SkillDef def)
     {
         var e = def.Effect;
+        // 🔴 DECLARED MANUAL beats every rule below it (owner 2026-08-19, on Mana Ray: *"its a strategy
+        // move - depleate boss/enemy mp not a farming tool"*). It has to be FIRST: Mana Ray carries
+        // MagicDamage and would be claimed by the attack test two lines down, and Mana Strain is a
+        // debuff that the debuff test would claim just as happily. `Other` is the never-cast bucket, and
+        // WarnUncastableAutoSkills already tells the player it is theirs to press — so this is an
+        // exclusion that explains itself instead of one that looks like a bug.
+        if (def.NeverAuto) return AutoSkillKind.Other;
         // 🔑 A LIFESTEAL attack is a HEAL and NOTHING ELSE (him, 2026-08-13): *"I want it only with a
         // treshold .. if I want it permanent ill do cycle or 100% treshold"*. Checked BEFORE the damage
         // test, which would otherwise claim it for the attack chain. Vampiric Bolt is the only skill in
@@ -8728,10 +8735,15 @@ var effect = def.Effect;
                              target.MagicFailMod,
                              StatCalculator.MagicWeaponFailMod(caster.UntrainedCasterWeapon),
                              target.MagicFailBonus);
+            // MANA RAY: the identical number, taken off MP instead of HP. Nothing above this line
+            // knows or cares — same formula, same M.Def divisor, same mRes, same fizzle, same crit,
+            // and the "half vs monsters" is the skill's own PveDamageMult, already applied by
+            // FinalizeDamage. See SkillDef.DamageToMp.
+            bool toMp = def.DamageToMp;
             if (_rng.NextDouble() < fail)
             {
                 damage = Math.Max(1, damage / 3);
-                ApplyDamage(target, damage, caster);
+                ApplyDamage(target, damage, caster, toMp: toMp);
                 TryInterruptCast(target, magicInterrupt);
                 BroadcastCombat(caster, target, damage, CombatOutcome.Fail, castName);
             }
@@ -8749,13 +8761,15 @@ var effect = def.Effect;
                 {
                     BroadcastCombat(caster, target, damage, CombatOutcome.Hit, castName);
                 }
-                ApplyDamage(target, damage, caster);
+                ApplyDamage(target, damage, caster, toMp: toMp);
                 TryInterruptCast(target, magicInterrupt);
             }
 
             // Vampiric: heal the caster for a fraction of the magic damage dealt
             // (the skill's own Lifesteal plus any Spell Vamp buff).
-            float spellVamp = def.Lifesteal + caster.SpellVamp;
+            // ⚠ NEVER off a mana hit: a Spell Vamp buff worn while casting Mana Ray would otherwise
+            // turn someone else's MP into the caster's HP, which is a second drain nobody authored.
+            float spellVamp = toMp ? 0f : def.Lifesteal + caster.SpellVamp;
             if (spellVamp > 0f && damage > 0)
             {
                 int leech = (int)(damage * spellVamp);
@@ -9203,6 +9217,7 @@ var effect = def.Effect;
             PhysMpCostPct = def.PhysMpCostPct,
             MagicMpCostPct = def.MagicMpCostPct,
             SkillEvadeChance = def.SkillEvadeChance,   // BL-06, rogue ultimate only
+            EndsOnDamageTaken = def.EndsOnDamageTaken, // Meditation: gone the moment anything lands
             // Reward-rune payload, at the LEVEL that landed: a Rune of Experience (20%) is level 3 of
             // one ladder skill, so reading the def's own field here would hand out the +5% rung.
             Rewards = def.RewardsAt(level),
@@ -9959,7 +9974,14 @@ var effect = def.Effect;
     /// <para>⚠ Everything else about a reflect is unchanged: it still damages, still kills, and the
     /// kill is still a justified PvP kill rather than a PK, because the aggressor flagged himself with
     /// his own blow one line earlier.</para></summary>
-    private int ApplyDamage(Entity target, int damage, Entity? attacker = null, bool reflected = false)
+    /// <param name="toMp">MANA damage (the healer's Mana Ray): everything a hit does still happens —
+    /// the combat timer, PvP flagging, the hide break, threat, the damage ledger — but the number comes
+    /// off MP instead of HP, and the three HP-only defences in the middle of this method are skipped:
+    /// an absorb shield soaks blows, a mana shield diverting mana damage into mana is a loop, and a
+    /// lethal save has nothing to save from since MP simply floors at 0. One method rather than a
+    /// parallel one, so the flagging and threat rules above can never drift apart between them.</param>
+    private int ApplyDamage(Entity target, int damage, Entity? attacker = null, bool reflected = false,
+        bool toMp = false)
     {
         if (target.GodMode)
             return 0;
@@ -9996,6 +10018,17 @@ var effect = def.Effect;
         if (damage > 0 && target.HideTicks > 0)
             BreakHide(target);
 
+        // …and it ends a buff that said it could not survive being hit (the healer's Meditation). Here
+        // for the same reason the hide break is here: this is the ONE place every source of damage
+        // arrives, so a DoT tick, an AoE, a reflect and an ordinary swing all end it for free. A mana
+        // hit counts — being hit is being hit, whichever pool paid for it.
+        if (damage > 0 && target.Buffs.Any(b => b.EndsOnDamageTaken))
+        {
+            target.Buffs.RemoveAll(b => b.EndsOnDamageTaken);
+            target.RecomputeDerived();
+            if (target.Kind == EntityKind.Player) { PushBuffs(target); SendStats(target); }
+        }
+
         // Threat: damage to a mob from a known attacker builds aggro (retargets to top threat).
         if (attacker is not null && target.Kind == EntityKind.Mob && damage > 0)
         {
@@ -10014,6 +10047,23 @@ var effect = def.Effect;
             if (attacker.Kind == EntityKind.Player)
                 target.DamageLog[attacker.Id] =
                     target.DamageLog.TryGetValue(attacker.Id, out var had) ? had + damage : damage;
+        }
+
+        // ---- MANA damage (Mana Ray) leaves here. Everything above applies to it unchanged; the three
+        //      HP defences below do not (see the `toMp` remark on this method). MP floors at 0, so this
+        //      branch can never kill and never calls Kill — a drained caster is disarmed, not dead.
+        if (toMp)
+        {
+            int drained = Math.Min(damage, target.Mp);
+            target.Mp -= drained;
+            // Being hit while sitting breaks the sit, exactly as a normal blow does below.
+            if (target.Kind == EntityKind.Player && target.MoveState == MoveState.Sitting)
+            {
+                target.MoveState = MoveState.Running;
+                target.StandUpTicks = MovementTuning.StandUpTicks;
+            }
+            if (target.Kind == EntityKind.Player) SendStats(target);
+            return drained;
         }
 
         // Absorb shields soak damage before HP; a depleted shield is removed.
@@ -10997,11 +11047,28 @@ var effect = def.Effect;
             multiplier *= MovementTuning.RegenMultiplier(entity.MoveState);
 
         // Regen buffs (e.g. Warchanter's chant): +% to HP/MP regen.
+        //
+        // …and, since 2026-08-19, a FLAT per-second grant as well. Every regen buff in the game had
+        // been a percentage of a formula whose base is tiny early on, which is fine for "+20% MP
+        // regen" and useless for the healer's Meditation (*"Add MP regen +30/s for 30 seconds"*): 30
+        // per second is not a multiple of anything, it is a number. The Flat mode already existed on
+        // the magnitude — only these two lines were missing, so a Flat BuffMpRegen was silently
+        // reading as zero. Added to the same place gear and passives put theirs (entity.MpRegenBonus),
+        // i.e. INSIDE the stance/safe-zone multiplier: sitting to meditate should pay.
         float hpRegenPct = 0f, mpRegenPct = 0f;
+        float hpRegenFlat = 0f, mpRegenFlat = 0f;
         foreach (var b in entity.Buffs)
         {
-            if (b.Has(SkillEffect.BuffHpRegen)) hpRegenPct += b.Percent(SkillEffect.BuffHpRegen);
-            if (b.Has(SkillEffect.BuffMpRegen)) mpRegenPct += b.Percent(SkillEffect.BuffMpRegen);
+            if (b.Has(SkillEffect.BuffHpRegen))
+            {
+                hpRegenPct += b.Percent(SkillEffect.BuffHpRegen);
+                hpRegenFlat += b.Flat(SkillEffect.BuffHpRegen);
+            }
+            if (b.Has(SkillEffect.BuffMpRegen))
+            {
+                mpRegenPct += b.Percent(SkillEffect.BuffMpRegen);
+                mpRegenFlat += b.Flat(SkillEffect.BuffMpRegen);
+            }
         }
 
         // The formulas are authored PER SECOND, so a tick pays out one period's worth. This is what
@@ -11024,7 +11091,7 @@ var effect = def.Effect;
         if (entity.Hp < entity.MaxHp)
         {
             float perSecond = player
-                ? StatCalculator.HpRegenPerSecond(entity.Con, entity.Level) + entity.HpRegenBonus
+                ? StatCalculator.HpRegenPerSecond(entity.Con, entity.Level) + entity.HpRegenBonus + hpRegenFlat
                 : StatCalculator.MobHpRegenPerSecond(entity.MaxHp, engaged);
             int regen = Math.Max(1,
                 (int)(perSecond * multiplier * entity.HpRegenMult * (1f + hpRegenPct) * period));
@@ -11034,7 +11101,7 @@ var effect = def.Effect;
         if (entity.Mp < entity.MaxMp)
         {
             float perSecond = player
-                ? StatCalculator.MpRegenPerSecond(entity.EffectiveSpt, entity.Level) + entity.MpRegenBonus
+                ? StatCalculator.MpRegenPerSecond(entity.EffectiveSpt, entity.Level) + entity.MpRegenBonus + mpRegenFlat
                 : StatCalculator.MobMpRegenPerSecond(entity.MaxMp, engaged);
             int regen = Math.Max(1,
                 (int)(perSecond * multiplier * entity.MpRegenMult * (1f + mpRegenPct) * period));
@@ -11621,17 +11688,18 @@ var effect = def.Effect;
     /// was paying the bonus the whole time. Now the number moves when the stance does.</summary>
     private static (float Hp, float Mp) StandingRegen(Entity p)
     {
-        float hpPct = 0f, mpPct = 0f;
+        float hpPct = 0f, mpPct = 0f, hpFlat = 0f, mpFlat = 0f;
         foreach (var b in p.Buffs)
         {
-            if (b.Has(SkillEffect.BuffHpRegen)) hpPct += b.Percent(SkillEffect.BuffHpRegen);
-            if (b.Has(SkillEffect.BuffMpRegen)) mpPct += b.Percent(SkillEffect.BuffMpRegen);
+            if (b.Has(SkillEffect.BuffHpRegen)) { hpPct += b.Percent(SkillEffect.BuffHpRegen); hpFlat += b.Flat(SkillEffect.BuffHpRegen); }
+            if (b.Has(SkillEffect.BuffMpRegen)) { mpPct += b.Percent(SkillEffect.BuffMpRegen); mpFlat += b.Flat(SkillEffect.BuffMpRegen); }
         }
-        // Read off Regenerate, in the same order, so the two cannot drift apart.
+        // Read off Regenerate, in the same order, so the two cannot drift apart — INCLUDING the flat
+        // per-second buff grant (Meditation), which is added beside the gear/passive flat bonus there.
         float stance = MovementTuning.RegenMultiplier(p.MoveState)
                      * (GameConstants.InSafeZone(p.X, p.Y) ? GameConstants.SafeZoneRegenMultiplier : 1f);
-        float hp = (StatCalculator.HpRegenPerSecond(p.Con, p.Level) + p.HpRegenBonus) * p.HpRegenMult * (1f + hpPct) * stance;
-        float mp = (StatCalculator.MpRegenPerSecond(p.EffectiveSpt, p.Level) + p.MpRegenBonus) * p.MpRegenMult * (1f + mpPct) * stance;
+        float hp = (StatCalculator.HpRegenPerSecond(p.Con, p.Level) + p.HpRegenBonus + hpFlat) * p.HpRegenMult * (1f + hpPct) * stance;
+        float mp = (StatCalculator.MpRegenPerSecond(p.EffectiveSpt, p.Level) + p.MpRegenBonus + mpFlat) * p.MpRegenMult * (1f + mpPct) * stance;
         return (hp, mp);
     }
 
