@@ -76,7 +76,17 @@ public readonly record struct StatMods(
     // and the mechanic are the same number. Not a fizzle chance (ruling `57d`, 2026-08-10).
     float MagicResist = 0f,
     // PvP damage RECEIVED, as a delta: −0.05 = "PVP Dmg Received x0.95". Only bites player-vs-player.
-    float PvpDamageTakenPct = 0f)
+    float PvpDamageTakenPct = 0f,
+    // ATK — the ONE power stat (STR for a fighter, INT for a mage; see StatCalculator.GetBaseStats).
+    // Added 2026-08-19 with the contested-debuff rework, where his rule is that gear counts:
+    // *"an armor con/atk/spt should count and statSwap as well"*. CON and SPT already folded in
+    // through the primary-stat block above; ATK had no field at all to fold, so an armour set could
+    // not raise it even in principle.
+    //
+    // `Str` and `Int` above fold into the SAME place (Entity.RecomputeDerived's primary-stat pre-pass)
+    // — they are ATK under the two names the gear CSVs write it with, fighter and mage. This field is
+    // for authoring ATK directly. The three are summed; a set never carries more than one of them.
+    float Atk = 0f)
 {
     // NOTE: cooldown, interrupt POWER, the PvE/PvP×skill/magic/basic matrix, shield BLOCK CHANCE, bow
     // range and the combat FLOORS are added as the passive/buff sources migrate (docs/design/StatMods.md).
@@ -99,7 +109,8 @@ public readonly record struct StatMods(
         Str * f, Agi * f, Con * f, Int * f, Wit * f, Spt * f,
         MeleeVamp * f, SpellVamp * f, Reflect * f,
         ShieldDefPct * f,
-        CritRateFlat * f, CritDamageFlat * f, MagicResist * f, PvpDamageTakenPct * f);
+        CritRateFlat * f, CritDamageFlat * f, MagicResist * f, PvpDamageTakenPct * f,
+        Atk * f);
 
     /// <summary>Fold a set of source mods into running totals (flats SUM, percents COMPOUND
     /// — see docs/design/StatMods.md: final = (base + Σflat) × ∏(1+pct%)).</summary>
@@ -139,7 +150,8 @@ public readonly record struct StatTotals(
     float MeleeVamp = 0f, float SpellVamp = 0f, float Reflect = 0f,
     float ShieldDefPct = 0f,
     float CritRateFlat = 0f, float CritDamageFlat = 0f, float MagicResist = 0f,
-    float PvpDamageTakenPct = 0f)
+    float PvpDamageTakenPct = 0f,
+    float Atk = 0f)
 {
     /// <summary>Compound two percents: ∏(1+p)−1, so combining is multiplicative and 0 = inert.</summary>
     private static float Mul(float a, float b) => (1f + a) * (1f + b) - 1f;
@@ -172,7 +184,8 @@ public readonly record struct StatTotals(
         // heavy-S set carries the clause twice — once on the set, once on its shield extra — and the CSV
         // means ×0.95 × ×0.95, not −10%.
         CritRateFlat + s.CritRateFlat, CritDamageFlat + s.CritDamageFlat,
-        MagicResist + s.MagicResist, PvpDamageTakenPct + s.PvpDamageTakenPct);
+        MagicResist + s.MagicResist, PvpDamageTakenPct + s.PvpDamageTakenPct,
+        Atk + s.Atk);
 
     /// <summary>Apply a (flat, pct) pair to a base value: `(base + flat) × (1 + pct)`,
     /// floored at 0. The single place the combine convention is defined.</summary>

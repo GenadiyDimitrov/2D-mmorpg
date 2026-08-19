@@ -712,6 +712,10 @@ public class Entity
     /// <summary>SPT actually used by the math: born-with base + the stat-swap passives and set
     /// bonuses. Same rule as <see cref="EffectiveWit"/>.</summary>
     public int EffectiveSpt => Spt + BonusSpt;
+    /// <summary>CON including armour-set and stat-swap deltas. Added 2026-08-19 so the contested-debuff
+    /// contest reads the same CON that Max HP already did (`Con + BonusCon`, inline in
+    /// RecomputeDerived) — his rule: *"an armor con/atk/spt should count and statSwap as well"*.</summary>
+    public int EffectiveCon => Con + BonusCon;
 
     /// <summary>Crafting profession (one per character). Granted by that profession's MASTER after his
     /// joining quest, and quittable at him (`BL-05`).</summary>
@@ -1736,6 +1740,20 @@ public class Entity
             var pm = activeSet.Mods;
             BonusStr = (int)pm.Str; BonusAgi = (int)pm.Agi; BonusCon = (int)pm.Con;
             BonusInt = (int)pm.Int; BonusWit = (int)pm.Wit; BonusSpt = (int)pm.Spt;
+            // ARMOUR POWER LANDS ON ATK (owner ruling 2026-08-19: *"input the armor stats to the
+            // effective stats"*). This engine has ONE power stat — ATK, which is STR for a fighter and
+            // INT for a mage (StatCalculator.GetBaseStats) — so a set's `Str: 3` and `Int: 2` are the
+            // same stat under two names, and until now both landed in BonusStr/BonusInt, which NOTHING
+            // reads. Every armour set in the game has been carrying a dead offensive line.
+            //
+            // All three fold into BonusAtk: STR and INT because they ARE ATK here, and StatMods.Atk for
+            // anything authored directly. A set never carries both Str and Int, so summing rather than
+            // picking by class needs no branch — and a hybrid that did carry both would want both.
+            //
+            // ⚠ This raises P.Atk AND M.Atk on every set that authors Str/Int, because EffectiveAtk
+            // multiplies the weapon in PhysicalAttackPower / MagicAttackStatScaled. It is a real damage
+            // change, not a bookkeeping one — see the CHANGELOG for the measured size.
+            BonusAtk = (int)(pm.Str + pm.Int + pm.Atk);
         }
         if (Kind == EntityKind.Player)
         {

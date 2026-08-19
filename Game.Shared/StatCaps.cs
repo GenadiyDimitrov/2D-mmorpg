@@ -1,3 +1,5 @@
+using System;
+
 namespace Game.Shared;
 
 /// <summary>
@@ -66,6 +68,67 @@ public static class StatCaps
     /// owner ruling 2026-08-10, `57d`. ×25 on the fail points: 25% fail at parity, ~55% at Δ+3,
     /// pinned to the 95% ceiling from Δ+6. Hindered, not disarmed.</summary>
     public const float UntrainedWeaponMagicFailMod = 25f;
+
+    // ----- Contested debuffs: the LEVEL term (owner ruling 2026-08-19) -----------------
+    // A contested debuff (stun/root/fear/slow/DoT) used to be a PURE stat ratio with no level
+    // term at all, while magic damage and physical accuracy both had one. That asymmetry was
+    // invisible because it never bit in the direction you would notice: the mob stat it was
+    // measured against carried the level growth instead (CON `15 + 2·level` → 175 at 80, so a
+    // high-level creature simply could not be stunned; SPT was never even copied onto the entity,
+    // so every magical hold landed at the ceiling). His ruling separates the two concerns:
+    //
+    //   the STAT contest says who is built for this   (flat numbers, authored per mob role)
+    //   the LEVEL term says how far you can reach      (this block)
+    //
+    // 🔑 THE LEVEL TERM SCALES THE DEFENDER'S STAT, NOT THE CHANCE. The ratio formula
+    // (StatCalculator.DebuffLandChance) is symmetric in attacker/defender, so ONE geometric
+    // factor on the defender's side lands the floor and the ceiling at exactly ±CcLevelFloorGap
+    // and leaves parity at exactly ×1 — *"same level should be x1 (and pure stat vs stat)"*.
+    // Scaling the CHANCE instead would flatten every build to the same number at a gap; scaling
+    // the STAT keeps a debuff-built caster ahead of a nuker at every gap, which is the point.
+
+    /// <summary>Land-chance floor/ceiling for a contested debuff. Nothing is ever a certainty and
+    /// nothing is ever impossible — the same rule as <see cref="MagicFailMax"/> and AvoidSoftCeil.</summary>
+    public const float CcLandMin = 0.10f;
+    /// <inheritdoc cref="CcLandMin"/>
+    public const float CcLandMax = 0.90f;
+
+    /// <summary>Levels of gap at which an EQUAL-STAT contest reaches the floor (casting up) or the
+    /// ceiling (casting down). <b>18, matched to the fizzle curve</b> (owner: *"match the fizzel 18 it
+    /// is"*): 1.3^18 = 112 fail points, which is where <see cref="MagicFailMax"/> clamps, so the level
+    /// at which your spells stop landing and the level at which your control stops landing are the same
+    /// level. Change THIS to retune the reach — <see cref="CcLevelBase"/> follows automatically.</summary>
+    public const int CcLevelFloorGap = 18;
+
+    /// <summary>The per-level factor on the defender's resisting stat, DERIVED so the floor lands
+    /// exactly on <see cref="CcLevelFloorGap"/>: at the floor the defender's stat must be
+    /// (1−min)/min = 9× the attacker's, so the base is 9^(1/18) ≈ 1.130. Equal stats then give
+    /// 1/(1+base^Δ): 50% at parity, 34.7% at Δ+5, 22.5% at Δ+10, 10% at Δ+18 — and exactly
+    /// complementary below (65.3% / 77.5% / 90%).</summary>
+    public static readonly float CcLevelBase =
+        MathF.Pow((1f - CcLandMin) / CcLandMin, 1f / CcLevelFloorGap);
+
+    /// <summary>RANK's multiplier on all THREE contest stats — ATK, CON and SPT together (owner ruling
+    /// 2026-08-19: *"elites can get x1.33 atk/con/spt stats increase so it will give them more
+    /// resists/chance .. bosses can get x2"*).
+    ///
+    /// <para>🔑 It multiplies the OFFENSIVE stat as well as the two defensive ones, and that is what
+    /// makes a rank read as a BIGGER creature rather than merely a tougher one: an elite is harder to
+    /// hold *and* lands its own control more often, off one number. (This supersedes the first pass's
+    /// ×1.5-on-defence-only, which had the perverse effect of leaving a boss's signature stun weaker
+    /// than a trash mob's.)</para>
+    ///
+    /// <para>A BOSS takes the ×2 <b>and</b> the control immunity — they are not alternatives. The
+    /// immunity covers <see cref="SkillEffect.ControlCc"/> only; against everything else it is merely
+    /// very resistant, which is his point exactly: *"even at 10% u still can debuff a boss but
+    /// strategicly to not waste mp that can be used to taunt/heal"*. The floor never locks a debuffer
+    /// out — it makes the attempt a bad trade, which is a decision rather than a wall.</para></summary>
+    public static float CcRankMult(MobRank rank) => rank switch
+    {
+        MobRank.Elite => 1.33f,
+        MobRank.Boss  => 2.0f,
+        _             => 1f,
+    };
 
     // ----- Unified hit resolution (see docs/design/CombatResolution.md) -----
     // One resolver decides land-vs-avoid for BOTH channels (physical miss, magic fail).

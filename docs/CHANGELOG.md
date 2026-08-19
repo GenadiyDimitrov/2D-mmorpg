@@ -12,6 +12,155 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-08-19 (latest) — the debuff contest gets a level, and mobs get a CON worth having
+
+⚠ **NO VERSION BUMP**, for the same reason as the entry below: nothing here touches the wire (the
+target-inspect DTO already carried CON and SPT), and the APK is knowingly stale. No client rebuild is
+needed — every number here is rolled on the server.
+
+His question: *"mobs con with 175 .. wont get stunned at all? .. if con does nothing on the mobs, the
+fighter mobs should have 40, tanks 45 and mages 35 .. and if we add a lvl curve like the magic fail one"*.
+
+### 🔴 Two bugs found on the way in
+
+**Mob SPT was ZERO, on every creature in the game.** `BuildMob` assigned CON, ATK, WIT and AGI and
+simply never assigned SPT, so `DebuffLandChance(atk, 0)` came out at 1.0 and clamped to the **90%
+ceiling**. Every root, hold and fear has been landing nine times in ten on everything since the contest
+was written — **raid bosses included**, which have no `CcResist` either (that field only ever
+accumulates from player gear). A boss has been perma-rootable this whole time.
+
+**Every armour set's `Str` / `Int` line was inert.** They landed in `BonusStr` / `BonusInt`, and nothing
+in the engine reads either — this game's one power stat is `Atk`. So `Ironforge +3 STR` did nothing at
+all. **Fixed on his ruling** (*"input the armor stats to the effective stats"*) — see below.
+
+### The level term rides the DEFENDER'S STAT, not the chance
+
+```
+land% = 0.5 + 0.5·(atk − def·L) / (atk + def·L),   clamped [10%, 90%]
+L     = 1.1298 ^ (targetLevel − casterLevel)
+```
+
+`DebuffLandChance` is symmetric in attacker/defender, so **one** geometric factor puts the floor and the
+ceiling at exactly ±20 levels and leaves parity at exactly ×1 — *"same level should be x1 (and pure stat
+vs stat)"*. Scaling the CHANCE instead would flatten every build to the same number at a gap; scaling
+the STAT keeps a debuff-built caster ahead of a nuker at every gap, which is the point.
+
+`StatCaps.CcLevelBase` is **derived**, not authored: at the floor the defender's stat must be
+`(1−CcLandMin)/CcLandMin` = 9× the attacker's, so the base is `9^(1/CcLevelFloorGap)`. Retune the reach
+by moving `CcLevelFloorGap` alone; move the clamp and the curve follows it.
+
+**The gap is 18** — *"match the fizzel 18 it is"*. `1.3^18` = 112 fail points, which is exactly where
+`MagicFailMax` clamps, so **the level at which your spells stop landing and the level at which your
+control stops landing are now the same level.**
+
+| Δlvl | −18 | −10 | −5 | **0** | +5 | +10 | +13 | **+18** |
+|---|---|---|---|---|---|---|---|---|
+| equal stats | 90% | 77.2% | 64.8% | **50%** | 35.2% | 22.8% | 17.0% | **10%** |
+
+### All THREE contest stats are now flat and authored by ROLE
+
+CON was `15 + 2·level`, SPT was 30, **and ATK was `8 + 2·level`** — 168 at level 80 against a player CON
+of ~43, which is a 4:1 ratio, which is the 90% ceiling, which is his *"ill get perma stunned"*. The
+level growth on all three was silently doing the job of the level term the contest never had. It has a
+level term now, so these three say only what the creature IS.
+
+🔑 **They cost nothing else.** A mob's HP is `MobBaseStats.Hp(level)`, its MP is `MobBaseStats.Mp(level)`,
+its P.Atk / M.Atk are `MobBaseStats.PAtk/MAtk(level)` and its regen is a fraction of its own pool — no
+mob number reads a core stat. `EffectiveAtk` only reaches attack power on the *player* branch of
+`RecomputeDerived`. So **flattening ATK does not weaken a creature's damage**; the one real side effect
+is `PhysicalDoubleChance`, which mobs were pinning at its 25% cap and now sit at 10-13% on, and which
+only fires on a `CanDouble` skill — no mob skill is one today.
+
+"Normal ranges" is also the domain the rest of the math assumes: `PAtkStatReference` is 40 and
+`PhysicalDoubleChance` caps at 60, so a mob at 168 was outside the reach of its own formulas.
+
+| role | ATK | its stun on a fighter / a mage |
+|---|---|---|
+| Melee, Archer | 40 | 48.2% / 59.7% |
+| Mage | 45 | 51.1% / 62.5% (slow: 64.3% / 53.6%) |
+| **BOSS** (×2) | **80** | **65.0% / 74.8%** (slow: 76.2% / 67.2%) |
+
+A boss's Devastating Slam lands at 65% on a fighter — down from the ~80% the runaway curve gave it, and
+restored to a real threat by the rank multiplier rather than by the level term.
+
+| role | CON | SPT | ATK | stun/bleed *on* it | root/hold *on* it |
+|---|---|---|---|---|---|
+| Melee (fighter) | 45 | 38 | 40 | 47.1% | 51.3% |
+| Archer | 43 | 40 | 40 | 48.2% | 50.0% |
+| Mage | 40 | **58** | **45** | 50.0% | 40.8% |
+| tank | **50** | 40 | 40 | 44.4% | 50.0% |
+
+(vs a level-matched ATK 40 attacker.) The lean is his own defensive rule turned around — a fighter
+shrugs off stuns and eats holds, a caster is the reverse — and the mage leans highest on ATK because a
+caster is the creature that debuffs.
+
+Was `15 + 2·level` / 30 / `8 + 2·level`.
+
+**A TANK is not a `MobRole`.** Role says how a creature *fights* and a tank fights melee; it is authored
+per template with the new `MobMod.Con` / `MobMod.Spt` (0 = take the role default), in the same place its
+P.Def passive already lives. The inspect window prints them as *"Stun/bleed resistance high"*, not as a
+raw number, and only when a template overrides its role.
+
+### Ranks: one multiplier, both directions
+
+**`StatCaps.CcRankMult` scales all THREE stats — elite ×1.33, boss ×2** (*"elites can get x1.33
+atk/con/spt stats increase so it will give them more resists/chance .. bosses can get x2"*).
+
+🔑 **It multiplies the OFFENSIVE stat as well as the two defences**, which is what makes a rank read as a
+*bigger* creature rather than merely a tougher one: it is harder to hold **and** lands its own control
+harder, off one number.
+
+| at parity, ATK 40 vs a melee | normal | elite ×1.33 | boss ×2 |
+|---|---|---|---|
+| your bleed lands | 47.1% | 40.0% | **30.8%** |
+| its stun lands on a fighter | 48.2% | 55.2% | **65.0%** |
+
+- **Boss** takes the ×2 **and** a hard **zero** for control — stun, root, fear and slow never land, at
+  any stat, at any level. The two are not alternatives. Everything else it is merely very resistant to,
+  which is his point exactly: *"even at 10% u still can debuff a boss but strategicly to not waste mp
+  that can be used to taunt/heal"*. A bleed on a boss is 30.8% at parity and hits the 10% floor by
+  Δ+13 — never a lockout, just a bad trade, which is a decision rather than a wall.
+  New mask `SkillEffect.ControlCc`.
+- The affliction half is untouched — bleeds, poisons and venoms land, tick, and carry their stat
+  debuffs, which is his allow-list exactly (*"only dot/bleeds dmg/def mp debuffs"*).
+- ⚠ **SLOW counts as control.** He named stun/root/fear/confuse and allow-listed dot/dmg/def/mp; slow is
+  on neither list, so it fell on the blocked side. One identifier to reverse. (Confusion has no flag
+  yet; when it gets one it belongs in that mask.)
+- ⚠ A DoT carrying a slow as a **rider** (`Rupture = Bleed | Slow`) still lands whole on a boss — the
+  test is "purely control", because a magnitude-level slow is not the perma-lock the rule guards
+  against and splitting one buff's magnitudes apart is not worth the machinery.
+
+### Gear and swaps now count — and armour power finally lands at all
+
+The contest read `AtkStat` and `Con` — **raw** base stats, so a level-20 and a level-85 character landed
+debuffs with the same number and neither gear nor the level-40 stat swaps did anything. It now reads
+`EffectiveAtk` / `EffectiveCon` / `EffectiveSpt` (new `EffectiveCon`, mirroring what Max HP already did
+inline). Swaps are ±5, sets ±3, so the attacker side moves ~34-48 rather than exploding.
+
+🔴 **And armour `Str` / `Int` now fold into ATK** (*"input the armor stats to the effective stats"*).
+This engine has ONE power stat — ATK, which *is* STR for a fighter and INT for a mage
+(`GetBaseStats`) — so the gear CSVs' two names are the same stat, and both landed in fields nothing
+read. All three (`Str`, `Int`, the new `StatMods.Atk`) now sum into `BonusAtk`. A set never carries more
+than one, so summing needs no per-class branch.
+
+⚠ **This is a real damage change, not bookkeeping** — `EffectiveAtk` multiplies the weapon in
+`PhysicalAttackPower` and `MagicAttackStatScaled`. Measured on BalanceMatrix, best-gear, before → after:
+
+| | before | after | |
+|---|---|---|---|
+| tank TTK @52 | 10.4s | **9.7s** | −7% |
+| champion TTK @52 | 8.0s | **7.5s** | −6% |
+| nuker M.Atk @85 | 1690 | **1814** | +7.3% |
+| nuker TTK @85 | 27.7s | **26.0s** | −6% |
+| rogue TTK @52 | 5.8s | **5.9s** | **+2%** |
+
+🔑 **The rogue getting *worse* is the sheets working.** `Nightleaf 52` authors `Str: -1` — the light set
+trades a point of power for its AGI — and now that STR lands, the trade is real in both directions. Every
+negative in the gear CSVs started counting on the same line as every positive.
+
+`tools/BalanceMatrix` prints the whole thing as a new **CONTESTED DEBUFFS** section, next to MAGIC
+LANDING.
+
 ## 2026-08-19 (later) — the bolts read his sheet, and four healer mechanics get their engine
 
 ⚠ **NO VERSION BUMP, deliberately.** `GameConstants.GameVersion` gates the client/server handshake, and

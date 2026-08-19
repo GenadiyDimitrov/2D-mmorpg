@@ -61,6 +61,16 @@ public readonly record struct MobMod(
     // so a fast attacking mob can be knives type, goblins use a club so 1h blunt, knights/skeletons
     // use swords ... so weaponless won't be for many mobs."*
     WeaponType Weapon = WeaponType.None,
+    // CC-RESIST OVERRIDES (owner ruling 2026-08-19). 0 = take the ROLE default
+    // (StatCalculator.MobCcCon / MobCcSpt). This is how a TANK creature is authored — there is no
+    // MobRole.Tank, because Role says how a creature fights and a tank fights melee. His numbers:
+    // a tank is Con: 50, Spt: 40 (a same-level stun drops from 47% to 44%).
+    //
+    // 🔑 They cost nothing else. A mob's CON and SPT feed the contested-debuff roll and NOTHING
+    // MORE — its HP, MP and regen all come off MobBaseStats and its own pool. So this pair is safe
+    // to author freely per template: it changes how controllable the creature is and no other number
+    // in the game.
+    int Con = 0, int Spt = 0,
     string Name = "")        // display label for the inspect/target window
 {
     /// <summary>Human-readable passive lines for the target-inspect window.</summary>
@@ -89,6 +99,11 @@ public readonly record struct MobMod(
         if (MpRegen != 1f) yield return $"MP Regen {Sign(MpRegen)}";
         if (EvaFlat != 0)  yield return $"Evasion {(EvaFlat > 0 ? "+" : "")}{EvaFlat}";
         if (Weapon != WeaponType.None) yield return $"Wields: {MobCatalog.WeaponWord(Weapon)}";
+        // The two CC-resist stats read as what they DO, not as raw numbers — "CON 50" tells a player
+        // nothing, "hard to stun" tells them which debuff to bring. Only shown when the template
+        // overrides its role default, so an ordinary creature's plate is unchanged.
+        if (Con != 0) yield return $"Stun/bleed resistance {(Con >= 48 ? "high" : Con >= 42 ? "average" : "low")} (CON {Con})";
+        if (Spt != 0) yield return $"Hold/fear resistance {(Spt >= 48 ? "high" : Spt >= 38 ? "average" : "low")} (SPT {Spt})";
         // Bow/Crit resist are rendered from the numeric DTO fields (uniform for mobs
         // and players), so they're not repeated here.
         if (Boss) yield return "Raid Boss";

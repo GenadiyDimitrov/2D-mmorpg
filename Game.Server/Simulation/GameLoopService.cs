@@ -7348,6 +7348,25 @@ public class GameLoopService : BackgroundService
         _ => 0f,
     };
 
+    /// <summary>A RAID BOSS is immune to CONTROL — stun, root, fear and slow simply never land on it,
+    /// at any stat, at any level (owner ruling 2026-08-19: *"bosses x0 .. never stunn never
+    /// root/fear/confuse ... only dot/bleeds dmg/def mp debuffs"*).
+    ///
+    /// <para>It is a hard zero rather than a big CON/SPT number on purpose. A boss's whole design is a
+    /// 10-30 minute fight that a party has to survive (playtest 25), and a control effect that lands
+    /// even 10% of the time — the floor DebuffLandChance can never go below — is a fight the party wins
+    /// by chain-rolling it instead. The affliction half of the contest is untouched: bleeds, poisons and
+    /// venoms still land, still tick, and still carry their own stat debuffs, which is exactly the
+    /// allow-list he named.</para>
+    ///
+    /// <para>⚠ The test is "PURELY control". A DoT that carries a slow as a rider (Rupture =
+    /// Bleed | Slow) still lands whole — see SkillEffect.ControlCc for why that concession is
+    /// deliberate rather than an oversight.</para></summary>
+    private static bool BossShrugsOff(Entity target, SkillEffect effect) =>
+        target.Rank == MobRank.Boss
+        && (effect & SkillEffect.ControlCc) != 0
+        && (effect & SkillEffect.AnyDot) == 0;
+
     /// <summary>Advance placed totems: expire the timed-out ones and pulse the rest at the allies
     /// standing inside them. A totem outlives its owner's DEATH on purpose — it is planted ground,
     /// not a channel, and a totem that vanished the moment the healer fell would be worth least at
@@ -7476,9 +7495,11 @@ public class GameLoopService : BackgroundService
         // Contested CC (Root/Stun/Slow): the control payload.
         if ((effect & SkillEffect.ContestCc) != 0 && !victim.Dead)
         {
-            int atkStat = attacker.AtkStat;
-            int defStat = def.DebuffSchool == DebuffSchool.Magical ? (int)victim.EffectiveSpt : victim.Con;
-            float land = victim.Immune ? 0f : StatCalculator.DebuffLandChance(atkStat, defStat);
+            int atkStat = attacker.EffectiveAtk;
+            int defStat = def.DebuffSchool == DebuffSchool.Magical ? victim.EffectiveSpt : victim.EffectiveCon;
+            float land = victim.Immune || BossShrugsOff(victim, effect)
+                ? 0f
+                : StatCalculator.DebuffLandChance(atkStat, defStat, attacker.Level, victim.Level);
             land *= 1f - victim.CcResist;
             land *= 1f - SchoolCcResist(victim, def.DebuffSchool);
             if (_rng.NextDouble() < land)
@@ -8860,9 +8881,11 @@ var effect = def.Effect;
             if (!TryReflectDebuff(caster, target, def, lvl, doubledTicks, castName))
             {
                 bool agiBased = (effect & (SkillEffect.Bleed | SkillEffect.Venom)) != 0;
-                int atkStat = agiBased ? (int)caster.EffectiveAgi : caster.AtkStat;
-                int defStat = def.DebuffSchool == DebuffSchool.Magical ? (int)target.EffectiveSpt : target.Con;
-                float land = target.Immune ? 0f : StatCalculator.DebuffLandChance(atkStat, defStat);
+                int atkStat = agiBased ? (int)caster.EffectiveAgi : caster.EffectiveAtk;
+                int defStat = def.DebuffSchool == DebuffSchool.Magical ? target.EffectiveSpt : target.EffectiveCon;
+                float land = target.Immune || BossShrugsOff(target, effect)
+                    ? 0f
+                    : StatCalculator.DebuffLandChance(atkStat, defStat, caster.Level, target.Level);
                 land *= 1f - target.CcResist;   // gear/buff CC resistance lowers the land chance
                 land *= 1f - SchoolCcResist(target, def.DebuffSchool);   // …and the per-school blessing
                 if (_rng.NextDouble() < land)
@@ -14438,7 +14461,22 @@ var effect = def.Effect;
         // A PLAYER-BUILT creature overwrites these a few lines down, in ApplyMobBuild, with a real
         // player stat block plus his ±5 race lean (BL-47). Everything else here treats it as the
         // ordinary mob it still is, which is the point: only the numbers move.
-        var stats = StatCalculator.MobStats(level);
+        var stats = StatCalculator.MobStats(level, mobType.Role);
+
+        // THE THREE CONTEST STATS (owner ruling 2026-08-19). Role default → the template's own MobMod
+        // override (how a TANK creature is authored) → the RANK multiplier, which scales ATTACK as well
+        // as the two defences (elite ×1.33, boss ×2 — StatCaps.CcRankMult). A boss takes the ×2 AND the
+        // control immunity; the immunity is handled where the contest is rolled.
+        //
+        // 🔴 SPT USED TO BE ZERO ON EVERY MOB IN THE GAME. The block below assigns five core stats and
+        // Spt was simply not one of them, so DebuffLandChance(atk, 0) came out at 1.0 and clamped to the
+        // 90% ceiling — every root, hold and fear has been landing 9 times in 10 on everything since the
+        // contest was written, raid bosses included. That is the bug this line closes, and it is why the
+        // magical school gets NOTICEABLY harder with this change while the physical school gets easier.
+        float ccRank = StatCaps.CcRankMult(rank);
+        int ccCon = (int)MathF.Round((mobType.Mod is MobMod cm && cm.Con > 0 ? cm.Con : stats.Con) * ccRank);
+        int ccSpt = (int)MathF.Round((mobType.Mod is MobMod sm && sm.Spt > 0 ? sm.Spt : stats.Spt) * ccRank);
+        int ccAtk = (int)MathF.Round(stats.Atk * ccRank);
 
         // Elites/bosses are tougher versions of the base mob.
         //
@@ -14521,10 +14559,14 @@ var effect = def.Effect;
             RunSpeed = mobType.RunSpeed,
             Speed = mobType.RunSpeed,
             Level = level,
-            Con = stats.Con,
-            AtkStat = stats.Atk,   // eva/acc/crit only; mob P/M.Atk comes from the base curve
+            Con = ccCon,           // physical-debuff resistance and NOTHING else (HP is MobBaseStats)
+            // ⚠ This comment used to read "eva/acc/crit only" and that was simply wrong: AtkStat feeds
+            // NEITHER evasion, accuracy nor crit (those are AGI). It feeds the contested-debuff roll and
+            // StatCalculator.PhysicalDoubleChance, and nothing else — mob P/M.Atk come from the base curve.
+            AtkStat = ccAtk,       // how hard this creature lands CONTROL on you (flat, by role × rank)
             Wit = stats.Wit,
             Agi = stats.Agi,
+            Spt = ccSpt,           // magical-debuff resistance and NOTHING else (MP is MobBaseStats)
             // ELITES attack on sight; BOSSES do not (owner). A raid/field boss sits in its lair and is
             // fought when you choose to pull it — making it aggressive turned every approach into an
             // ambush and put a "*" on the Treant. Boss difficulty comes from its kit, not from jumping you.

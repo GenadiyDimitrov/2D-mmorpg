@@ -751,12 +751,20 @@ public static class StatCalculator
     /// hold, stun) are resisted by <b>CON</b>, *"same logic, you give up con to increase atk and
     /// agi"*. Both sides of the contest are therefore a real build cost, not a free stat: the
     /// glassier your offence, the easier you are to control.</para></summary>
-    public static float DebuffLandChance(int attackerAtk, int defenderStat)
+    /// <param name="attackerLevel">Caster's level. <paramref name="defenderLevel"/> above it scales the
+    /// defender's stat UP by <see cref="StatCaps.CcLevelBase"/> per level; below it scales it down. Equal
+    /// levels = ×1 exactly, so the contest is pure stat vs stat — the owner's rule. See the StatCaps
+    /// block for why the level term rides the STAT and not the chance.</param>
+    /// <param name="defenderLevel">Target's level.</param>
+    public static float DebuffLandChance(int attackerAtk, int defenderStat,
+                                         int attackerLevel, int defenderLevel)
     {
-        int sum = attackerAtk + defenderStat;
-        if (sum <= 0) return 0.5f;
-        float chance = 0.5f + 0.5f * (attackerAtk - defenderStat) / sum;
-        return Math.Clamp(chance, 0.10f, 0.90f);
+        float def = defenderStat
+                  * MathF.Pow(StatCaps.CcLevelBase, defenderLevel - attackerLevel);
+        float sum = attackerAtk + def;
+        if (sum <= 0f) return 0.5f;
+        float chance = 0.5f + 0.5f * (attackerAtk - def) / sum;
+        return Math.Clamp(chance, StatCaps.CcLandMin, StatCaps.CcLandMax);
     }
 
     // ----- Cast & attack speed (authentic IG model) ------------------------
@@ -890,10 +898,13 @@ public static class StatCalculator
     // Atk grows level*2 (was level*3, which out-scaled players and 2-shot squishy
     // classes). Tuning knob — raise/lower the level coefficient to make mobs hit
     // harder/softer globally. (Con/Agi unchanged.)
-    public static BaseStats MobStats(int level) =>
-        // Spt 30 = the neutral middle of the SPT curve. Mobs don't use it (MobMaxMp / MobMagicDefence
-        // are their own curves) — it's here so the record is complete rather than defaulting to 0,
-        // which would sit at the curve's floor if a mob ever did read it.
+    public static BaseStats MobStats(int level, MobRole role = MobRole.Melee) =>
+        //
+        // ⚠ CON AND SPT ARE FLAT AND AUTHORED BY ROLE (owner ruling 2026-08-19) — see MobCcCon /
+        // MobCcSpt. They used to be `15 + 2·level` and 30, and the level growth was doing the whole
+        // job of the level term that contested debuffs never had: CON 175 at level 80 meant a big
+        // creature could not be stunned at all. The level difference now lives in
+        // DebuffLandChance where it can be tuned once, and these two say only what the creature IS.
         //
         // ⚠ AGI IS FLAT, and deliberately (owner, 2026-08-02). It used to be `10 + level`, which was
         // the real cause of the accuracy collapse: AGI drives accuracy, evasion, crit rate and attack
@@ -901,7 +912,73 @@ public static class StatCalculator
         // fix that on its own — the level terms cancel and the mob's own AGI growth still runs away.
         // MobAgiReference is the human-fighter base, so a same-level normal mob is a NEUTRAL opponent
         // (5% both ways) and every point of spread comes from gear and passives, where it is earned.
-        new(Con: 15 + level * 2, Atk: 8 + level * 2, Wit: 5, Agi: MobAgiReference, Spt: 30);
+        new(Con: MobCcCon(role), Atk: MobCcAtk(role), Wit: 5, Agi: MobAgiReference, Spt: MobCcSpt(role));
+
+    // ----- The THREE contested-debuff stats, by ROLE (owner ruling 2026-08-19) ------------
+    //
+    // 🔑 These are the mob's ONLY use for CON, SPT and ATK. Its HP is MobBaseStats.Hp(level), its MP is
+    // MobBaseStats.Mp(level), its P/M.Atk are MobBaseStats.PAtk/MAtk(level) and its regen is a fraction
+    // of its own pool — none of them read a core stat (see Entity.RecomputeDerived and
+    // GameLoopService.Regenerate). So these numbers are pure identity: change them and nothing moves
+    // except how easily the creature controls, and is controlled.
+    //
+    // The lean is his own defensive rule turned around ("the stat you give up"): a fighter shrugs off
+    // stuns and eats holds, a caster is the reverse. Against a typical ATK 40 attacker at the same
+    // level that reads as:
+    //
+    //     role      CON  SPT   stun/bleed   root/hold
+    //     Melee      45   38      47.1%        51.3%
+    //     Archer     43   40      48.2%        50.0%
+    //     Mage       40   58      50.0%        40.8%
+    //     (tank)     50   40      44.4%        50.0%   ← MobMod.Con/Spt, not a role
+    //
+    // A TANK is not a MobRole — Role says how a creature FIGHTS, and a tank fights melee. It is
+    // authored per template with MobMod.Con/Spt, in the same place its P.Def passive already lives.
+
+    /// <summary>Flat ATK by fighting role — the OFFENSIVE half of the same contest (owner ruling
+    /// 2026-08-19: *"need to make the same for mobs ATK .. if they have 200atk and i 43 con ... ill get
+    /// perma stunned ... lower it to normal ranges"*).
+    ///
+    /// <para>It was <c>8 + 2·level</c> — 168 at level 80, against a player CON of ~43. That is a 4:1
+    /// ratio, i.e. the 90% ceiling, i.e. a permanent stun. The same reasoning that flattened CON and
+    /// SPT applies here and harder: the level difference is the level term's job now, so this stat says
+    /// only how hard the creature LEANS on control. "Normal ranges" is the player band, which every
+    /// other formula in this file already assumes — <see cref="PAtkStatReference"/> is 40 and
+    /// <see cref="PhysicalDoubleChance"/> caps at 60, so a mob at 168 was outside the domain of its own
+    /// math. The MAGE leans highest: a caster is the creature that debuffs.</para>
+    ///
+    /// <para>⚠ A mob's P.Atk and M.Atk do NOT come from here — they are MobBaseStats.PAtk/MAtk(level),
+    /// and Entity.RecomputeDerived only feeds EffectiveAtk into attack power on the PLAYER branch. So
+    /// this does not weaken a creature's damage. The one real side effect is
+    /// <see cref="PhysicalDoubleChance"/>, which mobs were pinning at its 25% cap and now sit at
+    /// 10-13% on — and that only bites on a skill flagged CanDouble, which no mob skill is today.</para>
+    ///
+    /// <para>⚠ RANK DOES NOT MULTIPLY THIS. An elite gets ×1.5 on its DEFENSIVE pair and nothing here,
+    /// and a boss gets neither (it is flatly control-immune instead). That asymmetry is deliberate but
+    /// unruled: it means a boss's signature stun lands ~48% on a fighter rather than the ~80% it used
+    /// to. If a boss should hit harder with control than a trash mob, this is the one line to change.</para></summary>
+    public static int MobCcAtk(MobRole role) => role switch
+    {
+        MobRole.Mage => 45,
+        _            => 40,   // Melee, Archer
+    };
+
+    /// <summary>Flat CON (physical-debuff resistance: stun, bleed, venom) by fighting role.</summary>
+    public static int MobCcCon(MobRole role) => role switch
+    {
+        MobRole.Mage   => 40,
+        MobRole.Archer => 43,
+        _              => 45,   // Melee
+    };
+
+    /// <summary>Flat SPT (magical-debuff resistance: root, fear, poison) by fighting role. The mage's
+    /// is the outlier on purpose — it is the one creature that is genuinely hard to hold.</summary>
+    public static int MobCcSpt(MobRole role) => role switch
+    {
+        MobRole.Mage   => 58,
+        MobRole.Archer => 40,
+        _              => 38,   // Melee
+    };
 
     /// <summary>A normal mob's AGI at every level — the human-fighter base, so it is the neutral
     /// benchmark both sides of the miss roll are measured against. A tougher/nimbler creature buys

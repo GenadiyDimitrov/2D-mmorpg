@@ -169,6 +169,19 @@ public enum SkillEffect : long
     // Crowd-control / DoT that lands via the ATK-vs-CON/WIT contest (not the fizzle model).
     // Resolved in their own ExecuteSkill branch; excluded from the legacy debuff branch.
     ContestCc = Slow | Stun | Fear | Root | Bleed | Poison | Venom,
+    // The CONTROL half of ContestCc — the effects that take a creature's turn away from it rather
+    // than wearing it down. A RAID BOSS is flatly immune to these (owner ruling 2026-08-19:
+    // *"bosses x0 .. never stunn never root/fear/confuse ... only dot/bleeds dmg/def mp debuffs"*),
+    // while the afflictions (AnyDot) and every stat debuff still land on it normally.
+    //
+    // ⚠ SLOW is counted as control. He named stun/root/fear/confuse and gave an allow-list of
+    // "dot/bleeds, dmg/def, mp" that slow is not on — so it falls on the blocked side. Moving it is
+    // one identifier here. (Confusion has no flag yet; when it gets one it belongs in this mask.)
+    // ⚠ A DoT that carries a slow as a RIDER (Rupture = Bleed | Slow) still lands in full on a boss:
+    // the boss test is "purely control", because a bleed's magnitude-level slow is not the perma-lock
+    // this rule exists to prevent, and splitting one buff's magnitudes apart to strip it is not worth
+    // the machinery.
+    ControlCc = Slow | Stun | Fear | Root,
 }
 
 /// <summary>Which stat a debuff contests against when landing: physical debuffs are

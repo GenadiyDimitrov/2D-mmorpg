@@ -554,6 +554,67 @@ Console.WriteLine($"  {"mRes",6} {"coef",6} {"dmg taken",10}   (the mob ladder's
 foreach (float r in new[] { 0f, 0.05f, 0.10f, 0.15f, 0.25f, 0.5f, 1.0f })
     Console.WriteLine($"  {r,6:P0} {1f + r,6:F2} {1f / (1f + r),10:F3}");
 Console.WriteLine();
+Console.WriteLine("=== CONTESTED DEBUFFS: stun/root/fear/slow + the DoTs (owner ruling 2026-08-19) ===");
+Console.WriteLine("  land% = 0.5 + 0.5*(atk - def*L) / (atk + def*L),  clamped to "
+                + $"[{StatCaps.CcLandMin:P0}, {StatCaps.CcLandMax:P0}]");
+Console.WriteLine($"  where L = {StatCaps.CcLevelBase:F4}^(targetLvl - casterLvl) scales the DEFENDER's stat, so parity");
+Console.WriteLine($"  is exactly x1 (pure stat vs stat) and equal stats hit the floor/ceiling at +-{StatCaps.CcLevelFloorGap} levels.");
+Console.WriteLine("  Attacker stat = EffectiveAtk (base + stat swaps + armour), or EffectiveAgi for bleed/venom.");
+Console.WriteLine("  Defender stat = EffectiveCon (physical school) or EffectiveSpt (magical school).");
+Console.WriteLine();
+Console.WriteLine($"  {"dLvl",5} {"equal",7} {"melee",7} {"archer",7} {"mage",7} {"tank",7} {"elite",7} {"BOSS",7}   "
+                + "(a level-60 attacker, ATK 40)");
+foreach (int d in new[] { -18, -13, -10, -5, -2, 0, 2, 5, 8, 10, 13, 16, 18 })
+{
+    // The physical school (CON), which is what a stun or a bleed contests.
+    float Land(int def) => StatCalculator.DebuffLandChance(40, def, 60, 60 + d);
+    int melee = StatCalculator.MobCcCon(MobRole.Melee);
+    int elite = (int)MathF.Round(melee * StatCaps.CcRankMult(MobRank.Elite));
+    int boss  = (int)MathF.Round(melee * StatCaps.CcRankMult(MobRank.Boss));
+    string note = d == 0 ? "  <- parity" : d == StatCaps.CcLevelFloorGap ? "  <- floor" : "";
+    Console.WriteLine($"  {d,+5} {Land(40),7:P1} {Land(melee),7:P1} {Land(StatCalculator.MobCcCon(MobRole.Archer)),7:P1} "
+                    + $"{Land(StatCalculator.MobCcCon(MobRole.Mage)),7:P1} {Land(50),7:P1} {Land(elite),7:P1} "
+                    + $"{Land(boss),7:P1}{note}");
+}
+Console.WriteLine();
+Console.WriteLine("  The two schools at the SAME level, so the role lean is readable (attacker ATK 40):");
+Console.WriteLine($"  {"role",8} {"CON",5} {"SPT",5} {"stun/bleed",11} {"root/hold",10}");
+foreach (var (name, con, spt) in new[]
+{
+    ("melee",  StatCalculator.MobCcCon(MobRole.Melee),  StatCalculator.MobCcSpt(MobRole.Melee)),
+    ("archer", StatCalculator.MobCcCon(MobRole.Archer), StatCalculator.MobCcSpt(MobRole.Archer)),
+    ("mage",   StatCalculator.MobCcCon(MobRole.Mage),   StatCalculator.MobCcSpt(MobRole.Mage)),
+    ("tank",   50, 40),
+})
+    Console.WriteLine($"  {name,8} {con,5} {spt,5} {StatCalculator.DebuffLandChance(40, con, 60, 60),11:P1} "
+                    + $"{StatCalculator.DebuffLandChance(40, spt, 60, 60),10:P1}");
+Console.WriteLine();
+Console.WriteLine("  The MOB's own attack side, same level (it was 8 + 2*lvl = 168 at 80 — a permanent stun):");
+Console.WriteLine($"  {"attacker",18} {"ATK",5} {"vs fighter",11} {"vs mage",9}   (CON for a stun, SPT for a slow)");
+foreach (var (name, role, rank, physical) in new[]
+{
+    ("melee stun",      MobRole.Melee, MobRank.Normal, true),
+    ("mage stun",       MobRole.Mage,  MobRank.Normal, true),
+    ("mage slow",       MobRole.Mage,  MobRank.Normal, false),
+    ("ELITE melee stun",MobRole.Melee, MobRank.Elite,  true),
+    ("BOSS slam (stun)",MobRole.Melee, MobRank.Boss,   true),
+    ("BOSS thorn (slow)",MobRole.Melee,MobRank.Boss,   false),
+})
+{
+    int atk = (int)MathF.Round(StatCalculator.MobCcAtk(role) * StatCaps.CcRankMult(rank));
+    var ftr = StatCalculator.GetBaseStats(Race.Human, BaseClass.Fighter);
+    var mag = StatCalculator.GetBaseStats(Race.Human, BaseClass.Mage);
+    int fDef = physical ? ftr.Con : ftr.Spt, mDef = physical ? mag.Con : mag.Spt;
+    Console.WriteLine($"  {name,18} {atk,5} {StatCalculator.DebuffLandChance(atk, fDef, 60, 60),11:P1} "
+                    + $"{StatCalculator.DebuffLandChance(atk, mDef, 60, 60),9:P1}");
+}
+Console.WriteLine();
+Console.WriteLine("  ! The BOSS column above is what a DoT or a stat debuff rolls against it. Stun/root/fear/");
+Console.WriteLine("    slow never land on a boss at all, at any rate — it takes the x2 AND the immunity.");
+Console.WriteLine($"  ! Rank multiplies ALL THREE stats (elite x{StatCaps.CcRankMult(MobRank.Elite):0.##}, "
+                + $"boss x{StatCaps.CcRankMult(MobRank.Boss):0.##}), so a rank is harder to");
+Console.WriteLine("    control AND lands its own control harder — one number, both directions.");
+Console.WriteLine();
 Console.WriteLine("=== TANK / FIGHTER (Human Fighter, best gear for tier) ===");
 Console.WriteLine("  'basic' = autoattack; 'skill' = best physical skill. Compare SKILL against the mage's");
 Console.WriteLine("  nuke — the basic column is not the fighter's damage, it is its filler.");
