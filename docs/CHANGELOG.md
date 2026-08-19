@@ -7,10 +7,103 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.72.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.73.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
+
+## 2026-08-19 — 0.73.0: the creatures stop being paper (`BL-78`, defence and attack)
+
+🔴 **Server-side balance only — no protocol change, no client change.** The APK debt from 0.72.0 is
+unchanged and still deliberately unpaid (*"dont build apk untill the healer atleast is out"*).
+⚠ **Delete `Game.Server/game.db`** before the next run — still owed from 0.71.0's schema change.
+
+### The measurement first: `MobBaseStats` was fitted to a chronicle of IG that no longer exists
+
+The old curve was not sloppy — it was faithful to an **older chronicle**. The public IG databases
+disagree by ~3× because they are different versions of the game: creature 22225 at level 80 reads
+**3,290 HP / 1,600 P.Atk / 341 P.Def** in the databases the 2026-07-14 fit used, and **13,763 / 4,514 /
+1,053** in the one he is playing against. Its six reference creatures (Keltir, Grizzly, Ghoul, Grandis,
+Invader Shaman, Tracker Howl) are all old-chronicle. **The old reasoning is rewritten into
+`MobBaseStats.cs`, not deleted** — whoever refits this next needs to know "measured against IG" is not
+one number.
+
+**New sample: 2,831 creatures** — every monster `l2elo.com` lists at levels 1-83, each read with its
+**NPC skill list**. That list is why this is a re-derivation and not another guess: IG authors a creature
+exactly the way `MobMod`/`MobMasteries` does, and says the grade out loud (`HP Increase (3x)`,
+`Strong P. Atk. Lv15`, `Average P. Def. Lv11`). So the base curve is the median over the creatures **IG
+itself tags as `Average`** — the ×1 rung by construction, not a median over a mixed roster.
+
+🔑 **Our passive layer is already IG's, measured.** Pooled over levels 20-90, the tier words are worth
+**Weak ×0.82 / Average ×1.00 / Strong ×1.21 / Very Strong ×1.61** — which is `MobMasteries.DefTable`'s
+own ladder (0.83 / 1.00 / 1.21 / 1.61). Nothing above the curve needed touching.
+
+### One smooth function per stat — his binding constraint, checked before accuracy
+
+*"everithing above lvl 20 should walk normal curve because there are bosses/instances that will derive
+from it (with passives)"*. A boss is base × a passive, so a kink in the base is inherited and multiplied
+by every derived creature. All four columns are now the same family, `a·(level + shift)^k`:
+
+```
+P.Def(L) = 0.00113 · (L + 44)^2.743      P.Atk(L) = 1.12e-6 · (L + 31)^4.539
+M.Def(L) = 0.0027  · (L + 38)^2.542      M.Atk(L) = 1.14e-7 · (L + 32)^4.904
+```
+
+Strictly increasing and infinitely differentiable at every level. **Both old discontinuities went with
+them**: the `Math.Max(44, …)` P.Def floor (a corner at ~level 10) and the 57-node interpolated P.Atk /
+M.Atk table (a slope change at every node). Verified off the compiled code across levels 1-95: **zero
+decreasing steps**, and the only second-difference wobble is ±1 from integer truncation.
+
+| lvl | P.Def | M.Def | P.Atk | M.Atk |
+|---|---|---|---|---|
+| 1  | 44 → **38** | 30 → **29** | 4 → **7** | 2 → **3** |
+| 20 | 84 → **101** | 63 → **82** | 48 → **63** | 32 → **29** |
+| 40 | 168 → **214** | 126 → **174** | 171 → **283** | 118 → **146** |
+| 60 | 251 → **385** | 189 → **311** | 529 → **873** | 370 → **486** |
+| 80 | 336 → **624** | 252 → **498** | 1,321 → **2,152** | 929 → **1,277** |
+| 85 | 356 → **695** | 268 → **554** | 1,627 → **2,629** | 1,145 → **1,582** |
+
+- ✅ **HP is deliberately untouched** — his ruling. Our base HP shape measures 0.87 → 1.08 of IG's from
+  40 up. His *"the 80 mobs should have 15k not 5"* is real but it is **not this curve**: 77% of IG
+  creatures are `HP Increase (1x)` and 23% carry ×2-×5, so 4,298 at 76 × 3 = 12,894 and × 5 = 21,490.
+  The bulk is bought by `MobMod.Hp`, which exists and works. **Authoring it is what is still owed.**
+- ✅ **Below 20 came free, so it was taken** (he ruled it a nice-to-have that must not cost the smooth
+  curve above 20 — the shift term means it costs nothing). It fixes a real bug on the way past: a
+  level-10 mage **no longer one-shots a same-level creature** (nuke 149 → 92 against 120 HP).
+- ✅ **M.Atk barely moves** (×0.93 at 20, ×1.37 at 80) because it was the one attack column already close
+  to IG. P.Atk was the deficit: ~×1.65 across the whole midgame and endgame.
+
+### What it did to the game — `BalanceMatrix`, before and after
+
+| | before | after |
+|---|---|---|
+| Champion TTK on a same-level creature, L60 / L80 | 20.5s / 17.9s | **31.4s / 33.2s** |
+| Creature DPS onto that champion, L60 / L80 | 47 / 71 | **77 / 116** |
+| Tank survives standing still, L20 / L52 | 133s / 109s | **104s / 65s** |
+| Kills before the HP bar empties, L52 champion / nuker | 26 / 6 | **9 / 2** |
+| Field boss TTK, 3 DD, L60 / L76 / L85 | 11.4 / 14.8 / 11.6 min | **17.4 / 26.4 / 22.6 min** |
+| Kills per hour, S band | 75 | **65** |
+| Full S-grade character, farm hours (`M12c`) | 347h | **603h** |
+
+- ✅ **`BL-13` lands without touching a boss.** His playtest-25 ruling was *10-30 minutes*; field bosses
+  now sit inside it at every level, because a boss's defence *is* the base curve (rank multiplies HP and
+  P.Atk only), so it inherited the rise.
+- ✅ **EXP and SP per kill are unchanged.** `MobKillTimeRatio` reads HP and P.Def as *ratios to the base
+  curve*, so a normal creature still scores exactly 1.0 and the elite/boss premiums are untouched. What
+  moved is EXP per *hour*, through TTK.
+- 🔴 **The farm economy is the bill, and it needs your call.** A full S-grade character went 347h →
+  **603h**, and an elite camp fell from 115% of a normal farm to **76%**. `BL-22`'s budget was already
+  unreachable at S and is now further out by ~1.7×; that solve has to be re-run against these numbers.
+- 🔴 **An unattended farm no longer sustains itself** at level and grade parity (52: 26 kills → 9).
+
+### Tooling
+
+- **`dotnet run --project tools/BalanceMatrix -- --dump-mob-csv`** regenerates
+  `docs/data/mobs/mob_base_stats.csv` FROM `MobBaseStats`, so the documented dump can never drift again.
+  It had already drifted: the file still carried the pre-2026-07-25 M.Def coefficient.
+- Full measurement, method (including the `l2elo.com` JSON API and its two traps — the 400-row band cap
+  and the raid-boss levels ending in 4 and 9) and the per-level table:
+  **[balance/MobCurveVsIG.md](balance/MobCurveVsIG.md)**.
 
 ## 2026-08-19 — 0.72.0: one rate knob, and the buffs cost what the sheet says
 

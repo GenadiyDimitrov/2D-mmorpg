@@ -20,6 +20,32 @@ using Game.Shared;
 // LEVEL 61/76/85 damage columns are a floor, not a forecast. Treat them as "this is the worst the
 // endgame can be" and re-run the moment the discipline CSVs land.
 
+// `--dump-mob-csv <path>` regenerates docs/data/mobs/mob_base_stats.csv FROM the code, so the
+// documented dump can never drift from MobBaseStats. It keeps every authored column (id, name,
+// level, type, speeds) and rewrites only the six stat columns. Run it after any curve edit.
+if (args.Length > 0 && args[0] == "--dump-mob-csv")
+{
+    string path = args.Length > 1 ? args[1] : "docs/data/mobs/mob_base_stats.csv";
+    var lines = File.ReadAllLines(path);
+    var outp = new List<string> { lines[0] };
+    for (int i = 1; i < lines.Length; i++)
+    {
+        if (string.IsNullOrWhiteSpace(lines[i])) continue;
+        var c = lines[i].Split(',');
+        int lvl = int.Parse(c[2]);
+        c[4] = MobBaseStats.Hp(lvl).ToString();
+        c[5] = MobBaseStats.Mp(lvl).ToString();
+        c[6] = MobBaseStats.PDef(lvl).ToString();
+        c[7] = MobBaseStats.MDef(lvl).ToString();
+        c[8] = MobBaseStats.PAtk(lvl).ToString();
+        c[9] = MobBaseStats.MAtk(lvl).ToString();
+        outp.Add(string.Join(',', c));
+    }
+    File.WriteAllLines(path, outp);
+    Console.WriteLine($"rewrote {outp.Count - 1} rows in {path} from MobBaseStats");
+    return;
+}
+
 int[] levels = { 20, 40, 52, 61, 76, 85 };
 
 Console.WriteLine();
@@ -2750,8 +2776,10 @@ Console.WriteLine($"{"gr",3} {"levels",8} {"normal TTK",11} {"elite TTK",10} {"e
 foreach (var (name, floor, top) in gradeBands.Where(b => b.Name is "B" or "A" or "S"))
     Console.WriteLine($"{name,3} {floor + "-" + top,8} {BandTtk(top),10:F1}s {EliteHpMul * BandTtk(top),9:F1}s "
         + $"{EliteKillsPerHour(top),14:F0} {eliteCeiling,9:F0} {EliteKillsPerHour(top) / KillsPerHour(top),14:P0}");
-Console.WriteLine("  This is the number §7f said was missing. An elite camp is still the better farm at the top —");
-Console.WriteLine("  four times the HP, but no walking — which is what makes it a viable home for the top mats.");
+Console.WriteLine("  This is the number §7f said was missing. An elite camp trades four times the HP for no walking,");
+Console.WriteLine("  which is what makes it a candidate home for the top mats — read 'vs normal farm' to see whether");
+Console.WriteLine("  that trade is still winning. It was 115% at S before the 0.73.0 mob-curve refit and is not now:");
+Console.WriteLine("  doubling creature defence doubles the elite's TTK too, and the walking it saves did not change.");
 Console.WriteLine();
 
 // Mats per hour BY TYPE at a band, optionally including the ELITE layer (which is applied at kill time by

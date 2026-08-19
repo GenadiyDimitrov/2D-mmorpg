@@ -131,7 +131,14 @@ from IG references.
   MinLevel, MaxLevel)`; the level band lets one mob drop different loot at different
   levels. ⚠ A mob's HP curve is **`MobBaseStats.Hp(level) = 40 + 0.8·level²`** — NOT the linear
   `StatCalculator.MobMaxHp`, which is a different, mostly-unused path; check which one a mob
-  actually uses before quoting numbers. **Mob regen is a fraction of the mob's OWN pool with no
+  actually uses before quoting numbers. ⚠ **The other four columns are NOT linear and NOT a table any
+  more** (0.73.0, `BL-78`): P.Def, M.Def, P.Atk and M.Atk are each **one smooth `a·(level+shift)^k`**,
+  refitted to the CURRENT chronicle of IG off 2,831 creatures — the old `4.2·lvl` / `3.16·lvl` /
+  interpolated-table numbers were fitted to an OLDER chronicle that has since been rescaled ~3×
+  (`docs/balance/MobCurveVsIG.md`). **Keep it one smooth function**: bosses and instances derive from
+  the base with passives, so a kink is inherited and multiplied. The CSV dump is regenerated FROM the
+  code — `dotnet run --project tools/BalanceMatrix -- --dump-mob-csv`, never by hand.
+  **Mob regen is a fraction of the mob's OWN pool with no
   level term** (0.1%/s engaged, 5%/s idle) — players keep the exponential CON curve, which is
   correct for a 36-47 CON spread and absurd for a mob's `15 + 2·level`.
 - **Rates are TWO knobs, composed in ONE place** (`MobCatalog.EffectiveRate`): the global

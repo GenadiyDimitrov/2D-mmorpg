@@ -1,12 +1,16 @@
 # The mob curve against IG — the re-derivation asked for in `BL-78`
 
-**Measured 2026-08-19.** This is `BL-78` item 3: *"can we have some research for 5-10 mobs of every lvl
-of the IG to compare its stats to ours of the same lvl — i have the feeling that our mobs are weaker or
-atleast with a lot less hp."*
+**Measured 2026-08-19, refitted and BUILT the same day (0.73.0).** This began as `BL-78` item 3:
+*"can we have some research for 5-10 mobs of every lvl of the IG to compare its stats to ours of the
+same lvl — i have the feeling that our mobs are weaker or atleast with a lot less hp."*
 
-**The short answer: the instinct is right.** Against the IG data a player actually meets today, our
-creatures are **half the defence, half the attack, and — once IG's HP multipliers are counted — a third
-to a fifth of the HP.** The one thing that is not wrong is the shape of our *base* HP curve above 40.
+**The short answer: the instinct was right.** Against the IG data a player actually meets today, our
+creatures were **half the defence and half the attack**, and — once IG's HP multipliers are counted —
+a third to a fifth of the HP on the creatures that carry one. The one thing that was never wrong is
+the shape of our *base* HP curve above 40.
+
+**What shipped in 0.73.0:** P.Def, M.Def, P.Atk and M.Atk refitted to the current-chronicle curve, as
+**one smooth function each**. HP untouched. §6 is the before/after.
 
 ---
 
@@ -21,93 +25,96 @@ from two of them:**
 | current-chronicle database | **13,763** | **4,514** | 2,257 | **1,053** | 750 |
 | **ratio** | **4.2×** | **2.8×** | 1.0× | **3.1×** | **3.0×** |
 
-🔑 **`MobBaseStats` was fitted to the OLDER one.** The comment block in `MobBaseStats.cs` names its six
-reference creatures — Keltir L1, Grizzly L17, Ghoul L32, Grandis L40, Invader Shaman L63, Tracker Howl
-L81 — and those are all old-chronicle creatures. The 2026-07-14 fit was not sloppy; it was faithful to a
-version of IG that has since been re-scaled roughly 3× on defence and attack.
+🔑 **`MobBaseStats` was fitted to the OLDER one.** The old comment block in `MobBaseStats.cs` named its
+six reference creatures — Keltir L1, Grizzly L17, Ghoul L32, Grandis L40, Invader Shaman L63, Tracker
+Howl L81 — and those are all old-chronicle creatures. The 2026-07-14 fit was not sloppy; it was faithful
+to a version of IG that has since been re-scaled roughly 3× on defence and attack. **That history is
+kept in the new comment block, not deleted**, so whoever refits this next knows that "measured against
+IG" is not one number.
 
 **Everything below is measured against the CURRENT chronicle**, because that is the game he is comparing
-against when he says ours feel weak. Sample: **170 creatures** pulled individually across levels 1-85
-(≈10 per 5-level band), each giving HP, P.Def, M.Def, P.Atk, M.Atk **and its NPC skill list**, plus a
-2,886-creature old-chronicle sweep used only for the cross-check above.
+against when he says ours feel weak.
 
 ---
 
-## 1. How IG actually authors a creature — and it is our design
+## 1. How IG actually authors a creature — and it is our design, exactly
 
 Every IG creature carries a list of graded passives. A level-83 Drakos Warrior reads, verbatim:
 
 > `HP Increase (3x)` Lv11 · `Strong P. Atk.` Lv15 · `Average M. Atk.` Lv11 · `Very Strong P. Def.` Lv17 ·
 > `Weak M. Def.` Lv7 · `Standard Type` Lv2 · `Bare Hands` Lv1 · `Dragons` Lv10 · `Fire Attacks` Lv1
 
-🔑 **That is `MobMod` / `MobMasteries`, one for one** — and it confirms the design note already sitting in
-`MobBaseStats.cs`: a lean shared base curve, with identity bought by passives on top. The architecture is
-right. What is missing is that **we barely use the layer.**
+🔑 **That is `MobMod` / `MobMasteries`, one for one.** A lean shared base curve, with identity bought by
+passives on top. The architecture is right; what was wrong was the curve underneath it.
+
+**And the tag layer is our tag layer, measured.** Taking, at each level, the median of the creatures
+carrying each tier word and dividing by the `Average` creatures of the same level (pooled over levels
+20-90):
+
+| tier word | measured × Average | `MobMasteries.DefTable` rung |
+|---|---|---|
+| `Weak P. Def.` | **×0.82** | 0.83 (L10) |
+| `Average P. Def.` | ×1.00 | 1.00 (L12, the neutral) |
+| `Strong P. Def.` | **×1.21** | 1.21 (L14) |
+| `Very Strong P. Def.` | **×1.61** | 1.61 (L17) |
+
+`P. Atk.` reads the same ladder (×0.82 / ×1.00 / ×1.27). **The passive layer needed no change at all** —
+only the curve under it did.
+
+🔑 **This is also what makes the base curve READABLE rather than guessed.** "IG base" below is not a
+median over a mixed roster: it is the median over the creatures **IG itself tags as `Average`**, which
+is the ×1 rung by construction.
 
 ### The HP multiplier is the load-bearing one, and it is common
 
-In the 170-creature sample the `HP Increase` tag distributes:
-
-| tag | count | share |
-|---|---|---|
-| `1x` | 122 | 77% |
-| `2x` | 14 | 9% |
-| `4x` | 15 | 9% |
-| `3x` | 6 | 4% |
-| `5x` | 2 | 1% |
-
-**Roughly a quarter of all creatures carry a multiplier, and it goes to ×5** (he reports seeing ×6, which
-this sample simply did not reach — nothing contradicts it).
+In the sample the `HP Increase` tag distributes ~77% `1x`, ~23% spread over ×2-×5 (one ×8 seen).
 
 ✅ **This is exactly his read, and the arithmetic lands:** base HP at 76 is **4,298**, so
 - ×3 → **12,894** — his *"the 15k were a x3hp mobs"*
 - ×5 → **21,490** — his *"normal field mobs have x6 hp and have 21k hp"*
 
-So the 15k and 21k creatures are real, they are ordinary field creatures, and they get there **through the
-multiplier, not through the base curve.**
+So the 15k and 21k creatures are real, they are ordinary field creatures, and they get there **through
+the multiplier, not through the base curve.** ⚠ **That authoring is still owed** — see §7.
 
 ---
 
-## 2. The curve, current chronicle
+## 2. The curve, current chronicle, as measured
 
-`IG base` = the modal value among `1x` creatures at that level — i.e. the shared curve before any
-multiplier. `our` = `MobBaseStats` today.
+`IG` = the median among the creatures tagged `Average <stat>` at that level. `old` = `MobBaseStats`
+before 0.73.0. `new` = the fitted curve that shipped.
 
-| lvl | IG base HP | our HP | x | IG P.Def | our | x | IG M.Def | our | x | IG P.Atk | our | x |
+| lvl | IG P.Def | old | new | IG M.Def | old | new | IG P.Atk | old | new | IG M.Atk | old | new |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 1  | 62    | 40    | **0.65** | 39  | 44  | 1.13 | 29  | 30  | 1.03 | 8     | 4     | 0.50 |
-| 6  | 147   | 68    | **0.46** | 51  | 44  | 0.86 | 40  | 30  | 0.75 | 14    | 10    | 0.71 |
-| 11 | 292   | 136   | **0.47** | 68  | 46  | 0.68 | 53  | 34  | 0.64 | 25    | 20    | 0.80 |
-| 16 | 417   | 244   | **0.59** | 72  | 67  | 0.93 | 62  | 50  | 0.81 | 50    | 34    | 0.68 |
-| 21 | 364   | 392   | 1.08 | 90  | 88  | 0.98 | 76  | 66  | 0.87 | 52    | 52    | 1.00 |
-| 26 | 769   | 580   | 0.75 | 149 | 109 | 0.73 | 120 | 82  | 0.68 | 100   | 75    | 0.75 |
-| 31 | 1,003 | 808   | 0.81 | 166 | 130 | 0.78 | 119 | 97  | 0.82 | 141   | 105   | 0.74 |
-| 36 | 1,278 | 1,076 | 0.84 | 181 | 151 | 0.83 | 150 | 113 | 0.75 | 216   | 143   | 0.66 |
-| 41 | 1,593 | 1,384 | 0.87 | 177 | 172 | 0.97 | 154 | 129 | 0.84 | 374   | 187   | **0.50** |
-| 46 | 1,943 | 1,732 | 0.89 | 263 | 193 | 0.73 | 209 | 145 | 0.69 | 454   | 255   | **0.56** |
-| 51 | 2,323 | 2,120 | 0.91 | 319 | 214 | **0.67** | 234 | 161 | 0.69 | 607   | 333   | **0.55** |
-| 56 | 2,724 | 2,548 | 0.94 | 325 | 235 | 0.72 | 281 | 176 | **0.63** | 815   | 431   | **0.53** |
-| 61 | 3,136 | 3,016 | 0.96 | 317 | 256 | 0.81 | 281 | 192 | **0.68** | 1,150 | 556   | **0.48** |
-| 66 | 3,546 | 3,524 | 0.99 | 451 | 277 | **0.61** | 365 | 208 | **0.57** | 1,170 | 708   | 0.61 |
-| 71 | 3,939 | 4,072 | 1.03 | 487 | 298 | **0.61** | 387 | 224 | **0.58** | 1,568 | 892   | **0.57** |
-| 76 | 4,298 | 4,660 | 1.08 | 622 | 319 | **0.51** | 434 | 240 | **0.55** | 1,614 | 1,113 | 0.69 |
+| 1  | 39  | 44  | 39  | 29  | 30  | 30  | 8     | 4     | 8     | 3     | 2    | 3    |
+| 5  | 49  | 44  | 49  | 37  | 30  | 38  | 12    | 9     | 13    | 5     | 5    | 6    |
+| 10 | 64  | 44  | 64  | 50  | 32  | 51  | 22    | 18    | 23    | 11    | 12   | 10   |
+| 15 | 83  | 63  | 81  | 66  | 47  | 65  | 34    | 31    | 39    | 21    | 21   | 18   |
+| 20 | 102 | 84  | 102 | 80  | 63  | 82  | 57    | 48    | 63    | 25    | 32   | 30   |
+| 25 | 126 | 105 | 125 | 103 | 79  | 101 | 93    | 70    | 96    | 44    | 48   | 47   |
+| 30 | 134 | 126 | 151 | 114 | 95  | 123 | 132   | 98    | 142   | 64    | 67   | 70   |
+| 35 | 183 | 147 | 181 | 143 | 111 | 147 | 200   | 135   | 203   | 106   | 93   | 103  |
+| 40 | 207 | 168 | 214 | 164 | 126 | 174 | 275   | 171   | 283   | 133   | 118  | 146  |
+| 45 | 243 | 189 | 251 | 201 | 142 | 204 | 394   | 241   | 386   | 206   | 167  | 203  |
+| 50 | 280 | 210 | 292 | 227 | 158 | 237 | 509   | 316   | 515   | 264   | 220  | 277  |
+| 55 | 335 | 231 | 337 | 271 | 174 | 272 | 695   | 410   | 676   | 387   | 286  | 370  |
+| 60 | 373 | 252 | 385 | 302 | 190 | 311 | 861   | 529   | 874   | 473   | 370  | 487  |
+| 65 | 481 | 273 | 438 | 355 | 205 | 353 | 1,115 | 675   | 1,114 | 655   | 473  | 631  |
+| 70 | 477 | 294 | 496 | 364 | 221 | 398 | 1,304 | 852   | 1,402 | 776   | 598  | 807  |
+| 76 | 622 | 319 | 571 | 434 | 240 | 457 | 1,614 | 1,113 | 1,822 | 995   | 782  | 1,069 |
 
 ### What it says
 
-- ✅ **Our base HP shape is right from 40 up** — 0.87 → 1.08 of IG's base, drifting mildly hot at the top.
-  The `40 + 0.8·lvl²` curve does not need replacing.
-- 🔴 **Our base HP is HALF of IG's below 20** (0.46-0.65 at levels 6-16). The early game is the worst-fitted
-  part of the curve and nobody has ever looked at it.
-- 🔴 **Defence is ~0.5-0.8× and gets worse with level** — 0.51 P.Def and 0.55 M.Def at 76. This directly
-  reverses what the old fit concluded; against the current chronicle our creatures are *paper*, not walls.
-- 🔴 **Attack is ~0.5-0.7× across the entire midgame and endgame.** This is the flattest, most consistent
-  deficit in the table.
-- 🔴 **And none of the above counts the multipliers.** Add the ~23% of creatures carrying ×2-×5 HP and the
-  effective gap on those is another 2-5× on top.
-
-🔑 **Put together: an IG creature at 60-76 has roughly twice our defence, twice our attack, and — if it is
-one of the multiplied ones — three to five times our HP.** That is *"no thrill in fighting"* with a
-measurement behind it.
+- 🔴 **Defence was ~0.5-0.8× and got worse with level** — 0.51 P.Def and 0.55 M.Def at 76. This directly
+  reverses what the old fit concluded; against the current chronicle our creatures were *paper*, not
+  walls. **Fixed in 0.73.0.**
+- 🔴 **Attack was ~0.5-0.7× across the entire midgame and endgame** — the flattest, most consistent
+  deficit in the table. **Fixed in 0.73.0.**
+- ✅ **M.Atk was the one attack column that was never badly out** (0.9-1.2× of IG below 40), which is why
+  it rises only ×1.37 at the top while P.Atk rises ×1.65.
+- ✅ **Our base HP shape is right from 40 up** — 0.87 → 1.08 of IG's base. The `40 + 0.8·lvl²` curve does
+  not need replacing. 🔴 Below 20 it is ~0.5× IG's; ruled acceptable (levelling is fast there).
+- 🔴 **And none of the above counts the multipliers.** Add the ~23% of creatures carrying ×2-×5 HP and
+  the effective gap on those is another 2-5× on top. That layer is still unauthored — §7.
 
 ---
 
@@ -117,30 +124,21 @@ measurement behind it.
 
 **Yes, and IG does exactly that — but it is the exception, not the rule.**
 
-The rule: at a given level, `1x` creatures overwhelmingly share ONE HP number. Every `1x` creature sampled
-at 41 reads **1,593**; at 46, **1,943**; at 81, **2,917**. That is a shared base curve, and it is what gives
-IG the global lever `BL-47` was worried about losing.
+The rule: at a given level, `1x` creatures overwhelmingly share ONE HP number. Every `1x` creature
+sampled at 41 reads **1,593**; at 46, **1,943**. That is a shared base curve, and it is what gives IG the
+global lever `BL-47` was worried about losing.
 
-The exception: some creatures are authored clean off it while still tagged `1x`.
+The exception: some creatures are authored clean off it while still tagged `1x` — 22688 (L82, `1x`,
+**3,643**) against 22795 (L84, `1x`, **32,745**). Two levels apart, **9× the HP**. So the tag is a
+**descriptor on the sheet, not the computation**.
 
-| id | name | lvl | tag | HP |
-|---|---|---|---|---|
-| 22688 | Evil Spirit of the Mine | 82 | `1x` | **3,643** |
-| 22795 | Divinity Manager | 84 | `1x` | **32,745** |
-| 22225 | Deinonychus | 80 | `1x` | **13,763** |
-
-Two levels apart, same tag, **9× the HP**. So the tag is a **descriptor on the sheet, not the computation** —
-the creature's HP is authored and the tag reports roughly where it landed.
-
-🔑 **What this means for us:** keep `MobBaseStats` as the global lever, and treat `MobMod.Hp` as the normal
-way a creature gets its bulk — which is already how it works. The engine needs **no change** to do what he
-is describing. What is missing is *authoring*: today the multiplier is used on a handful of creatures, and
-in IG it is on a quarter of them.
+🔑 **What this means for us:** keep `MobBaseStats` as the global lever, and treat `MobMod.Hp` as the
+normal way a creature gets its bulk — which is already how it works. The engine needs **no change**.
 
 ### "There is something called Vitality, 0 to 3720 — what does it do?"
 
-**It is the EXP-bonus economy and has nothing to do with HP or difficulty.** Vitality is a player resource
-that grants bonus EXP/SP (up to +300%), and it is *consumed* by killing ordinary creatures. The per-creature
+**It is the EXP-bonus economy and has nothing to do with HP or difficulty.** Vitality is a player
+resource granting bonus EXP/SP (up to +300%), *consumed* by killing ordinary creatures. The per-creature
 number is how much a kill drains:
 
 > **Vitality consumed = Exp ÷ Level² × 100 ÷ 9**
@@ -148,73 +146,118 @@ number is how much a kill drains:
 Checked against his own reading — creature 22688, exp 19,224 at level 82:
 `19,224 ÷ 6,724 × 11.11 =` **31.8**, and he read **32**. It is a derived number, not an authored knob.
 
-⚠ **So it is not the mechanism he was hoping for**, and it should not be modelled. If we ever build a
-vitality/rest-bonus system it belongs with EXP rates, not with the mob curve. The answer to "can two
-creatures at the same level have wildly different HP" is the section above, and it is yes for a different
-reason.
-
 ⚠ One reading detail worth knowing: **his database prints HP with the multiplier already applied; the one
 used here prints it before.** Creature 22757 reads 111,547 here with `HP Increase (2x)`, and he read
-**223k** — exactly 2×. Neither is wrong; they are showing different halves of the same sum. Worth
-remembering before two numbers get compared that were never the same quantity.
+**223k** — exactly 2×. Neither is wrong; they are showing different halves of the same sum.
 
 ---
 
-## 4. What `BL-78` should actually do
+## 4. The fit that shipped
 
-The entry says *"the 80 mobs should have 15k not 5"*. **That target is correct and it is reachable without
-touching the base curve** — which is the good news, because the base curve is the one edit that moves every
-creature at once and the one `BL-47` warned about spending.
+His constraint, verbatim: *"everithing above lvl 20 should walk normal curve because there are
+bosses/instances that will derive from it (with passives)"*. A boss is base × a passive, so **any kink in
+the base is inherited and multiplied by every derived creature.** So the requirement was one function,
+checked for smoothness *before* accuracy.
 
-In order of size:
+All four are the same family:
 
-1. 🔴 **Author the HP multiplier across the roster.** Base 4,298 at 76 × 3 = 12,894; × 5 = 21,490. His 15k
-   and 21k both fall out. `MobMod.Hp` already exists and already works. Target something like IG's own mix —
-   ~75% at ×1, ~25% spread over ×2-×5, with the fat ones being the ones that should read as dangerous.
-2. 🔴 **Raise creature ATTACK ~1.5-2×** across 40-80. This is the most consistent deficit in the table and
-   it is the one that produces *"tank get hit fo 30"*. Author it as a graded attack preset, the way IG does.
-3. 🔴 **Raise creature DEFENCE ~1.3-2×**, weighted to the top (P.Def 0.51 and M.Def 0.55 at 76). ⚠ This one
-   directly contradicts the 2026-07-14 note in `MobBaseStats.cs` claiming defence was already right — that
-   note was true against the older chronicle and is false against this one. It should be rewritten, not
-   deleted, so the reason is preserved.
-4. 🟡 **Fix the early game.** Our base HP is **~0.5× IG's at levels 6-16**. Nobody has complained, because
-   the early game is short — but it is the worst-fitted stretch of the curve.
-5. 🔴 **Stop charging caster creatures twice** (`BL-78` item 2). IG's caster tag is `Light Armor Type` —
-   *"Weak P. Def. and strong Evasion"* — it costs defence and buys evasion, and **does not touch HP**. Ours
-   pays `PDef 0.5` *and* a small HP pool. His *"caster mobs are not weaker than the other, they just use
-   spells (and have a bit less pdef, evasion not twice less)"* is IG's own rule, word for word.
-6. ⚠ **Mob social clans are OFF** (`GameConstants.MobClansEnabled`, `BL-73`). A large share of IG's field
-   danger is the pack answering. Any "thrill" judgement made with clans off is measuring a different game,
-   and this half is already built.
+```
+P.Def(L) = 0.00113  · (L + 44)^2.743
+M.Def(L) = 0.0027   · (L + 38)^2.542
+P.Atk(L) = 1.12e-6  · (L + 31)^4.539
+M.Atk(L) = 1.14e-7  · (L + 32)^4.904
+```
 
-### 🔵 The one decision that is his
-**Which chronicle do we target?** Everything above measures against the current one. Adopting it means a
-roughly 2× defence and attack rescale of every creature in the game plus a real multiplier layer — and then
-**every player-facing number moves**: TTK, farm times, EXP/hour, the `BL-13` boss table, the `BL-22` farm
-budget. That is not a reason not to do it; it is a reason to do it in one measured pass with
-`BalanceMatrix` before and after, rather than in pieces.
+`a·(L + shift)^k` with positive `a`, `shift`, `k` is strictly increasing and infinitely differentiable at
+every level — **no floor, no band, no piecewise table.** Both of the old discontinuities are gone with it:
+the `Math.Max(44, …)` P.Def floor (a corner at level ~10) and the 57-node interpolated P.Atk/M.Atk table
+(a slope change at every node).
 
-### ⚠ One observation that does not reproduce
-*"the 60 lich is with 1500"* — the only level-60 lich in the game is the Proving Grounds **Cairn Lich**, and
-`BalanceMatrix` `G3.8` reads it at **2,909 HP**, exactly on curve (×1.00). Worth pinning down before it is
-treated as evidence, because as a curve datapoint it is wrong by half.
+**Verified off the compiled code**, levels 1-95, all four columns: **zero decreasing steps**; the only
+second-difference wobble is ±1 from integer truncation (largest third difference above level 20 = 3
+units), not a feature of the curve.
+
+**Accuracy** against the measured series: P.Def and M.Def within 4% at every sampled level from 1 to 70
+(worst: +13% at 30, −9% at 65); P.Atk within 8% from 25 to 70; M.Atk within 11%. The fit runs ~10% hot
+above 70 — the price of one curve that also has to fit 45-70, and the direction he asked for anyway.
+
+✅ **The sub-20 stretch came free, so it was taken.** Fitting from level 1 costs nothing above 20 (the
+shift term does the work), and it fixes a real bug on the way past: a level-10 mage **no longer one-shots
+a same-level creature** (`LOW LEVEL 1-10` in `BalanceMatrix`: nuke 149 → 92 against 120 HP).
 
 ---
 
 ## 5. Method, so this is repeatable
 
-- **Current chronicle**, 170 creatures: individual lookups on a database that publishes the full stat block
-  *and* the NPC skill list, sampled ≈10 per 5-level band across 1-85. Fields: level, HP, MP, P.Def, M.Def,
-  P.Atk, M.Atk, STR/DEX/INT/WIT, elemental defences, and every NPC skill with its id and level. The
-  `HP Increase (Nx)` tag is read from that skill list, which is what makes the base-vs-multiplier split
-  possible at all.
-- **Older chronicle**, 2,886 creatures: bulk level-band listings (name, level, aggro, exp, sp, HP, P.Atk,
-  M.Atk, runSpd, atkRange), used only for the cross-chronicle check in §0 and for the exp figures behind
-  the vitality formula.
-- "IG base" = the **modal** value among `1x` creatures at a level, which is well defined because they agree
-  exactly (n=3-10 per level); "IG P.Def/M.Def/P.Atk" = the **median** among the same creatures, which do
-  *not* agree exactly because those tiers vary per creature.
-- Excluded: creatures above 85 (instance and epic content — the median at 85 is 111,546 HP and meaningless),
-  zero-exp rows, and the fortress-siege garrison families.
-- Ours: `MobBaseStats.Hp/PDef/MDef/PAtk` read directly, plus the `=== MOB CURVE ===` block of
-  `tools/BalanceMatrix`.
+- **Source: `l2elo.com`, his call** — server-rendered, current chronicle, and the only database that
+  publishes the **NPC skill list**, which is what makes the base-vs-tag split readable at all.
+- **Next.js JSON API, no scraping.** `buildId` from `"buildId":"…"` in any page HTML (it changes when
+  they redeploy). Roster: `/_next/data/<buildId>/en/database/npcs/type/l2monster.json?lvl=41-50` — ⚠ only
+  the ten canonical decade bands are accepted, anything else is silently ignored, and each band is capped
+  at **400 rows** (which is why 79-80 and 84-85 are missing: the 71-80 and 81-90 bands fill up before
+  reaching them). Detail: `/_next/data/<buildId>/en/database/npcs/<id>.json` → `pageProps.npcData` is a
+  JSON **string** holding `information.{level,hp,mp,physical_attack,magical_attack,physical_defence,
+  magical_defence,evasion,accuracy,attack_speed,exp,…}` and `skills[]`.
+- **Sample: 2,831 creatures — every `l2monster` the roster would return, levels 1-83**, each read
+  individually with its full stat block and skill list.
+- **Per-level value** = median among the creatures tagged `Average <stat>`. ⚠ **Levels ending in 4 and 9
+  are excluded from the fit**: IG's raid bosses sit on those levels and their minions crowd the roster
+  there (level 49 reads 498 P.Def against 280 at 50). Levels with fewer than 3 tagged creatures are
+  dropped, then three rounds of 25% outlier rejection.
+- **Fitting**: grid search on `shift`, weighted linear least squares on `log y` vs `log(L + shift)` —
+  log space because the error that matters across a curve spanning 8 → 2,600 is *relative*, weighted by
+  √(sample count) so a level with 86 creatures behind it outvotes one with three.
+- ⚠ **Do NOT mix in `pmfun`/`dropspoil`** — those are the old chronicle. See §0.
+- Excluded throughout: creatures above 83, raid/grand-boss types, and the 400-cap gaps above.
+
+---
+
+## 6. What it did to the game — `BalanceMatrix`, before and after
+
+| | before | after |
+|---|---|---|
+| Champion TTK on a same-level creature, L60 / L80 | 20.5s / 17.9s | **31.4s / 33.2s** |
+| Creature DPS onto that champion, L60 / L80 | 47 / 71 | **77 / 116** |
+| Tank survives (standing still), L20 / L52 | 133s / 109s | **104s / 65s** |
+| Nuker survives, L52 | 16s | **9s** |
+| Kills before the HP bar empties, L52 champion / nuker | 26 / 6 | **9 / 2** |
+| Field boss TTK, 3 DD, L60 / L76 / L85 | 684s / 888s / 693s | **1,046s / 1,586s / 1,353s** |
+| Kills per hour, S band (80-85) | 75 | **65** |
+| Full S-grade character, farm hours (`M12c`) | 347h | **603h** |
+
+- ✅ **`BL-13` lands without touching a boss.** His playtest-25 ruling was *10-30 minutes*; field bosses
+  now read **17.4 min at 60, 26.4 min at 76, 22.5 min at 85** — because a boss's defence is the base
+  curve (rank multiplies HP and P.Atk only), so it inherited the rise. It was 11-15 min before.
+- 🔴 **The farm economy is the bill.** TTK roughly doubles at the top, so an elite camp fell from 115% of
+  a normal farm to **76%**, and a full S-grade character went from 347 to **603 farm hours**. `BL-22`'s
+  budget was already unreachable at S; it is now unreachable by ~1.7×. **That solve has to be re-run
+  against these numbers, not the old ones.**
+- 🔴 **An unattended farm now dies.** "Kills before the HP bar empties" at 52 falls from 26 to 9 (nuker
+  6 → 2). Auto-hunt at level and grade parity is no longer self-sustaining without consumables.
+- ✅ EXP and SP **per kill** are unchanged: `MobKillTimeRatio` reads HP and P.Def as *ratios to the base
+  curve*, so a normal creature still scores exactly 1.0 and the boss/elite premiums are untouched. What
+  moved is EXP per *hour*, through TTK.
+
+---
+
+## 7. What `BL-78` still owes after this
+
+1. 🔴 **Author the HP multiplier across the roster** — the biggest remaining item and the one his
+   *"the 80 mobs should have 15k not 5"* actually names. `MobMod.Hp` exists and works; IG puts a
+   multiplier on ~23% of creatures, we put it on a handful. Target IG's own mix: ~75% at ×1, the rest
+   spread over ×2-×5, with the fat ones being the creatures that should read as dangerous.
+2. 🔴 **Stop charging caster creatures twice** (`BL-78` item 2). IG's caster tag is `Light Armor Type` —
+   *"Weak P. Def. and strong Evasion"* — it costs defence and buys evasion, and **does not touch HP**.
+   Ours pays `PDef 0.5` *and* a small HP pool. His *"caster mobs are not weaker than the other, they just
+   use spells (and have a bit less pdef, evasion not twice less)"* is IG's own rule, word for word.
+3. 🔵 **The player side of the same question** (`BL-78` item 4) — *"a healer with 1500 hp getting hit for
+   300 is abit harsh"*. Creature attack just rose ~1.65×, which makes this louder, not quieter.
+4. ⚠ **Mob social clans are OFF** (`GameConstants.MobClansEnabled`, `BL-73`). A large share of IG's field
+   danger is the pack answering. Any "thrill" judgement made with clans off is measuring a different
+   game, and this half is already built.
+5. 🔴 **Re-solve `BL-22`'s farm budget** against §6.
+
+### ⚠ One observation that does not reproduce
+*"the 60 lich is with 1500"* — the only level-60 lich in the game is the Proving Grounds **Cairn Lich**,
+and `BalanceMatrix` `G3.8` reads it at **2,909 HP**, exactly on curve (×1.00). Worth pinning down before
+it is treated as evidence, because as a curve datapoint it is wrong by half.

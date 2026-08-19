@@ -18,6 +18,40 @@ Two kinds of entry:
 
 ## Superseded backlog entries
 
+### `BL-78` — "mobs are too easy and the HP curve is ~3× short"
+**Replaced 2026-08-19**, after item 3's research came back and you ruled on it. Two things in the text
+below turned out to be wrong, and both are worth keeping because they are the reason the fix looks the
+way it does. (a) It read the deficit as **HP**; measured, our base HP shape is 0.87 → 1.08 of IG's from
+level 40 up and the gap was in **defence and attack** (~0.5×), which is what 0.73.0 refitted. (b) Your
+15k and 21k creatures are real, but they come from IG's **`HP Increase` multiplier tag** — 23% of its
+roster carries ×2-×5 — not from the shared curve, so the fix is authoring `MobMod.Hp`, not moving the
+lever `BL-47` warned about spending. Full measurement: `balance/MobCurveVsIG.md`.
+
+> - `BL-78` 🔴 **MOBS ARE TOO EASY AND THE HP CURVE IS ~3× SHORT — playtest 25, and it is the biggest
+>   balance find in the file.** Your words: *"now mobs as general feel easy ... tank get hit fo 30 .. others
+>   for 100-200 but the rogue almost one blow it ... mage one/two shot it .. and there is no thrill in
+>   fighting"*, fought in **uncommon t40 at 40-45, uncommon t52 at 60, epic t76 at 80** — i.e. deliberately
+>   under-geared, not a best-in-slot run. Four separate things, and they do not all move together:
+>   1. 🔴 **HP.** *"the 80 mobs should have 15k not 5 .. the 60 lich is with 1500"*. Today
+>      `MobBaseStats.Hp(level) = 40 + 0.8·level²` → **5,160 at 80**. Your 15k is **×2.9**, and it is a
+>      curve change, not a constant: at 60 it reads 2,920 against a lich you measured at 1,500.
+>      ⚠ **This is the one edit that moves every creature in the game at once** — and per `BL-47` it is
+>      exactly the lever a per-creature pipeline would have cost you.
+>   2. 🔴 **A CASTER MOB IS NOT A SQUISHY MOB** — *"caster mobs are not weaker than the other, they just use
+>      spells (and have a bit less pdef, evasion not twice less)"*. The caster archetype currently pays
+>      twice (low P.Def **and** low HP) for a role that should cost it a little P.Def and nothing else.
+>   3. 🔵 **THE RESEARCH YOU ASKED FOR** — *"can we have some reaserch for 5-10 mobs of every lv of the IG to
+>      compare its stats to our of the same lvl - i have the feeling that our mobs are weaker or atleast
+>      with alot less hp"*. Owed as a table: IG creature HP/P.Def/P.Atk at matched levels against ours, so
+>      the new curve is fitted rather than guessed. ⚠ **`MobBaseStats` was originally derived from IG
+>      reference data**, so this is a re-derivation, and it should say what changed and why.
+>   4. 🔵 **AND IT MAY BE THE PLAYER CURVE TOO** — *"a healer with 1500 hp getting hit for 300 is abit harsh
+>      .. one time less defence cuz of robe the second hinder is the amount of hp"*. A robe class paying
+>      for its role twice, on the player side, is the same complaint as (2) pointed the other way. Decide
+>      these two together or a healer ends up in the same hole a caster mob just climbed out of.
+>   🔑 **Measure it in `BalanceMatrix` before and after.** A 3× HP change moves every TTK, every farm time,
+>   every EXP-per-hour figure and the `BL-13` boss table, all of which are printed by that tool.
+
 ### `BL-13` — "a flat ×100 cannot hit 360s at every level; do the late bosses come DOWN?"
 **Replaced 2026-08-16/17 by his playtest-25 ruling**, which is *"bosses should take 10-15 even 30 mins
 to kill"*. The measurement below is still correct and is quoted on the live entry; what it got wrong is

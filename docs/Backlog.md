@@ -672,30 +672,41 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
   ⚠ **Untested against a real camp** — it needs a playtest in an orc/mantis field to say whether 450
   and "the answering mobs don't cry in turn" give the fight the size you pictured.
 
-- `BL-78` 🔴 **MOBS ARE TOO EASY AND THE HP CURVE IS ~3× SHORT — playtest 25, and it is the biggest
-  balance find in the file.** Your words: *"now mobs as general feel easy ... tank get hit fo 30 .. others
-  for 100-200 but the rogue almost one blow it ... mage one/two shot it .. and there is no thrill in
-  fighting"*, fought in **uncommon t40 at 40-45, uncommon t52 at 60, epic t76 at 80** — i.e. deliberately
-  under-geared, not a best-in-slot run. Four separate things, and they do not all move together:
-  1. 🔴 **HP.** *"the 80 mobs should have 15k not 5 .. the 60 lich is with 1500"*. Today
-     `MobBaseStats.Hp(level) = 40 + 0.8·level²` → **5,160 at 80**. Your 15k is **×2.9**, and it is a
-     curve change, not a constant: at 60 it reads 2,920 against a lich you measured at 1,500.
-     ⚠ **This is the one edit that moves every creature in the game at once** — and per `BL-47` it is
-     exactly the lever a per-creature pipeline would have cost you.
+- `BL-78` 🔴 **MOBS ARE TOO EASY — the DEFENCE and ATTACK halves are BUILT (0.73.0); what is left is
+  authoring, and one bill.** Your playtest-25 words: *"now mobs as general feel easy ... tank get hit fo
+  30 .. others for 100-200 but the rogue almost one blow it .. mage one/two shot it .. and there is no
+  thrill in fighting"*. The research you asked for was done first and is
+  **[balance/MobCurveVsIG.md](balance/MobCurveVsIG.md)** — 2,831 IG creatures, levels 1-83, read with
+  their NPC skill lists off `l2elo.com`. It found `MobBaseStats` had been fitted to an **older chronicle
+  of IG** (the same creature id reads ~3× lower there), that the gap was **defence and attack, not HP**,
+  and that IG authors creatures exactly the way `MobMod`/`MobMasteries` does — its tier words measure
+  ×0.82 / ×1.00 / ×1.21 / ×1.61, which is our own `DefTable` ladder. **Shipped 0.73.0:** P.Def, M.Def,
+  P.Atk and M.Atk refitted to the current chronicle as one smooth `a·(level+shift)^k` each (your
+  bosses/instances constraint — no floor, no band, no kink anywhere), ~×1.9 defence and ~×1.65 attack at
+  the top, level with the old curve at level 1. What is left:
+  1. 🔴 **THE HP MULTIPLIER, AUTHORED ACROSS THE ROSTER — this is your *"the 80 mobs should have 15k not
+     5"*, and it is NOT a curve change.** Measured: 77% of IG creatures are tagged `HP Increase (1x)`,
+     23% carry ×2-×5. Base HP at 76 is 4,298, so ×3 = **12,894** and ×5 = **21,490** — your 15k and your
+     21k, both, and you worked that out yourself. `MobMod.Hp` already exists and already works; we use it
+     on a handful of creatures where IG uses it on a quarter of them. So the job is choosing which
+     creatures read as dangerous, not moving the lever `BL-47` warned about spending. ✅ The base HP
+     shape was left alone on your ruling — it measures 0.87 → 1.08 of IG's from 40 up.
   2. 🔴 **A CASTER MOB IS NOT A SQUISHY MOB** — *"caster mobs are not weaker than the other, they just use
      spells (and have a bit less pdef, evasion not twice less)"*. The caster archetype currently pays
      twice (low P.Def **and** low HP) for a role that should cost it a little P.Def and nothing else.
-  3. 🔵 **THE RESEARCH YOU ASKED FOR** — *"can we have some reaserch for 5-10 mobs of every lv of the IG to
-     compare its stats to our of the same lvl - i have the feeling that our mobs are weaker or atleast
-     with alot less hp"*. Owed as a table: IG creature HP/P.Def/P.Atk at matched levels against ours, so
-     the new curve is fitted rather than guessed. ⚠ **`MobBaseStats` was originally derived from IG
-     reference data**, so this is a re-derivation, and it should say what changed and why.
-  4. 🔵 **AND IT MAY BE THE PLAYER CURVE TOO** — *"a healer with 1500 hp getting hit for 300 is abit harsh
+     ⚠ **This is IG's own rule, word for word**: its caster tag is `Light Armor Type` — *"Weak P. Def.
+     and strong Evasion"* — which costs defence, buys evasion, and does not touch HP.
+  3. 🔵 **AND IT MAY BE THE PLAYER CURVE TOO** — *"a healer with 1500 hp getting hit for 300 is abit harsh
      .. one time less defence cuz of robe the second hinder is the amount of hp"*. A robe class paying
      for its role twice, on the player side, is the same complaint as (2) pointed the other way. Decide
      these two together or a healer ends up in the same hole a caster mob just climbed out of.
-  🔑 **Measure it in `BalanceMatrix` before and after.** A 3× HP change moves every TTK, every farm time,
-  every EXP-per-hour figure and the `BL-13` boss table, all of which are printed by that tool.
+     ⚠ **0.73.0 made this louder, not quieter** — creature attack rose ~×1.65.
+  4. 🔴 **THE BILL FROM 0.73.0, and it is your call.** Doubling creature defence doubles time-to-kill, so
+     a full S-grade character went from **347 to 603 farm hours** and an elite camp fell from 115% of a
+     normal farm to **76%** — `BL-22`'s budget has to be re-solved against the new numbers. An unattended
+     farm at level parity also stopped sustaining itself (level 52: 26 kills before the HP bar empties,
+     now 9), so auto-hunt at parity now needs consumables. ✅ The same change put field bosses inside
+     your `BL-13` band (17-26 min) without touching a boss.
 
 - `BL-79` 🔴 **TOWN / FIELD GUARDS — the first real use for `BL-47`'s player-built creatures, and it is
   small.** Your design, playtest 25, verbatim: a **Lv 80 mob in Mythic t80** that is *"only aggressive
