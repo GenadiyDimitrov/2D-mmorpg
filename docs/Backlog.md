@@ -667,8 +667,11 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
     `BL-41` asks about the craft page, in a different window.
 
 - `BL-70` ✅ **BUILT 2026-08-13 (0.64.0)** — mob clans + the rogue's `Lure`. Twelve clans authored on
-  the name-root families, a 450 radius, damage-only trigger, and a no-damage mob-only taunt at
-  20/28/36 whose ladder is reach (200/400/600). See `CHANGELOG.md`. Delete at the next sweep.
+  the name-root families, a 450 radius, damage-only trigger, and a no-damage mob-only taunt whose
+  ladder is reach (200/400/600). See `CHANGELOG.md`. Delete at the next sweep.
+  🔴 **`Lure` MOVED 2026-08-19** — it was the 2nd-class rogue's at 20/28/36 and is now the melee/DUAL
+  3rd's at **40, level 1 only** (*"No lure for lvl 29 and below .. It's a skill that need the prawl
+  effect"*). Levels 2-3 are unreachable until you place their rungs in `dual 3rd.csv`.
   ⚠ **Untested against a real camp** — it needs a playtest in an orc/mantis field to say whether 450
   and "the answering mobs don't cry in turn" give the fight the size you pictured.
 

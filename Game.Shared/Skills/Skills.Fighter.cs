@@ -563,7 +563,7 @@ public static partial class SkillCatalog
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffCancelResist, 0.80f) },
             Description: "For 30s your buffs have an 80% chance to resist being cancelled/dispelled."),
 
-        // Provoke — TAUNT: forces a monster's aggro onto you. Two separate guarantees, and they are
+        // Taunt — forces a monster's aggro onto you. Two separate guarantees, and they are
         // not the same thing (BL-71):
         //   • it lands you at the TOP of the mob's threat table right now, and holds it there for
         //     DurationTicks no matter what anyone else does — the taunt's promise;
@@ -578,7 +578,15 @@ public static partial class SkillCatalog
         // Do not "restore" the geometric curve — a taunt that already beats a 2nd-class nuke at rung 1
         // is the point; the tank is meant to hold aggro from the moment he has the skill at all.
         // The 40+ continuation is still not authored here: it waits on his 3rd/4th CSVs (BL-02).
-        new(Provoke, "Provoke", BaseClass.Fighter, SkillEffect.Taunt,
+        //
+        // 🔑 THE DISPLAY NAME IS "Taunt" — his name, ruled 2026-08-19 when `tank 2nd.csv` was aligned
+        // to the game and the sheet had to be told the game called it something else. ⚠ The skill ID
+        // stays `provoke`: ids are append-only and are what a saved skill bar, a hotkey and every
+        // persisted character reference by. Renaming the id would silently empty bars on next login.
+        // So in code/comments it is still Provoke; on screen and in the CSV it is Taunt.
+        // ⚠ A display-name change needs a NEW APK — the client builds its Learn tab from the compiled
+        // ClassSkills, not from a server push.
+        new(Provoke, "Taunt", BaseClass.Fighter, SkillEffect.Taunt,
             MpCost: 15, CastTicks: 0, CooldownTicks: 60, Range: 600, Power: 0,
             DurationTicks: 30,   // the hard-commit window: ~3s locked onto the taunter
             Category: SkillCategory.Debuff, TauntPower: 4500,
@@ -607,8 +615,13 @@ public static partial class SkillCatalog
         //     fizzling;
         //   • its LADDER IS REACH — 200 / 400 / 600, his numbers. How far away you can start a pull
         //     IS the skill, which is why this is the one place SkillLevel.Range earns its keep.
-        //     Level 3 out-ranges a mob's own 400 aggro, so a level-36 rogue can pull without ever
-        //     stepping into the camp's notice.
+        //     Level 3 out-ranges a mob's own 400 aggro, so its holder can pull without ever stepping
+        //     into the camp's notice.
+        //
+        // 🔴 WHERE IT IS LEARNED MOVED on 2026-08-19: it was the 2nd-class rogue's at 20/28/36 and is
+        // now the melee/DUAL 3rd's, at 40, level 1 only — *"No lure for lvl 29 and below .. It's a
+        // skill that need the prawl effect."* Levels 2-3 are therefore UNREACHABLE until he authors
+        // their rungs in `dual 3rd.csv`. That is deliberate; see ClassSkillTables.Third.RegisterHideKit.
         //
         // Power 500 is his figure, and it is deliberately far below the tank's Provoke: a lure is
         // how you START a fight, not how you keep a mob off the party.

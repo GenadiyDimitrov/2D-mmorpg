@@ -12,7 +12,281 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-08-19 (latest) — the debuff contest gets a level, and mobs get a CON worth having
+## 2026-08-19 (latest) — Provoke is called Taunt, and Lure moves to the dual 3rd at 40
+
+⚠ **NO VERSION BUMP**, but 🔴 **BOTH CHANGES NEED A NEW APK.** A display name and a class-skill TABLE
+are read from the compiled `Game.Shared` the client ships with, not pushed by the server — so on the
+current APK the skill still reads "Provoke" and a level-20 rogue still sees Lure in his Learn tab.
+Nothing to do now (the APK is deliberately parked until the healer is out); this is the note that says
+why the phone disagrees with the server until then.
+
+### `Provoke` → **`Taunt`** (display name only)
+
+His call: *"Rename to taunt."* — closing the last mismatch from this morning's CSV alignment, in the
+direction that keeps HIS name.
+
+🔑 **The skill ID stays `provoke`.** Ids are append-only and are what a saved skill bar, a hotkey and
+every persisted character hold; renaming the id would silently empty bars on the next login. So the
+code and its comments still say Provoke, while the screen and `tank 2nd.csv` say Taunt. One line in
+`Skills.Fighter.cs`; the four CSV rows follow it back to his spelling.
+
+### `Lure` moves from the 2nd-class rogue to the **melee/dual 3rd, at 40**
+
+His call: *"move lure from rogue to dual 3rd (@40) I'll author it to the corresponding lvls as I'm
+making the file. No lure for lvl 29 and below .. It's a skill that need the prawl effect."*
+
+The reasoning is the pairing: a pull is only survivable if you can leave the camp afterwards, and
+**Prowl is a 40+ melee-rogue skill**. Lure at 20 handed out one half of a two-part tactic twenty levels
+before the other — and handed it to future ARCHERS too, since the 2nd-class rogue block covers both
+weapons up to 40.
+
+- **Removed** from `ClassSkillTables.Common.cs` (the rogue's 20/28/36 rungs) and from `rogue 2nd.csv`.
+- **Registered** in `ClassSkillTables.Third.RegisterHideKit()` next to Prowl — Nullblade, Venomweaver,
+  Phantom, all three races, **level 1 only**.
+- ⚠ **Levels 2-3 (reach 400 and 600) are now UNREACHABLE**, and that is the intended state: the ladder
+  is his to place as he writes `dual 3rd.csv`. **No row was added to that file** — it is his to author
+  (*"I'll author it to the corresponding lvls"*), which is why the CSV mirror rule is not being broken
+  here. This is the one thing to re-check when `dual 3rd.csv` lands.
+
+`--check` still reports **"No discrepancies"** on all seven 1st/2nd files; `Game.sln` and the Unity
+`Assembly-CSharp.csproj` both build clean.
+
+## 2026-08-19 — the 1st/2nd-tier CSVs are made to match the game, and `--check` runs clean
+
+⚠ **NO CODE CHANGE AT ALL.** Documentation only: three CSV files corrected. No skill was retuned, no
+class table touched, nothing rebuilt.
+
+🔑 **HIS RULING, AND IT REVERSES THE USUAL DIRECTION FOR THESE FILES ONLY**: *"1st and 2nd are
+currently in the game based out of csv files … should not have much differences … Mage + cleric +
+nuker 2nd should be 1:1 … while fighter files should be made to match what's in game."* So for the
+**fighter side of tiers 1-2** the GAME is the reference and the CSV is corrected to it — the opposite
+of the standing rule (`docs/data/classes_skills_csv/` is authoritative). The reason is forward-looking:
+he is about to author the 3rd/4th kits, and a reference sheet that disagrees with the running game is
+worse than no sheet. **⚠ This is NOT a general licence to edit CSVs to match code.** It applies to
+these three files, on his word, on this date. Everywhere else the CSV still wins.
+
+⚠ **3rd/4th were deliberately NOT touched** (*"3rd and 4th u should skip and don't touch for now"*).
+
+### `tank 2nd.csv`
+
+- `Defencive Wall` → **`Defensive Wall`** (spelling).
+- 🔑 **`Taunt` → `Provoke`** — the same skill under two names, which is why `--check` reported it as
+  *"NOT REGISTERED"* + *"NOT IN THE CSV"* rather than as a field mismatch, and therefore **never
+  compared its numbers**. With the name aligned, four columns turned out to be wrong: range **400 →
+  600**, cast **1 → 0**, cooldown **10 → 6**, duration **0 → 3** (the hard-commit lock), and MP
+  **10 flat → 15/18/22/26**. His taunt POWER ladder (4500/5000/5500/6000) and SP were already right —
+  the code took those from this file in the first place.
+- `Shield Stun` and `Stay!` had **duration 0** in the column while their own DESCR said 9s and 15s.
+  Now 9 and 15, matching the code.
+
+### `warrior 2nd.csv`
+
+- `Two Handed Mastery` → **`Two-Hand Mastery`**.
+- 🔑 **`Strike` → `Smash`** — same story as Taunt/Provoke. The five rows already carried Smash's exact
+  powers (105/143/191/251/326), MP and SP, so this was purely a name, but it too was slipping past the
+  numeric comparison. Two things the rows did not say and now do: `REPLACES` is **`[Strike Stab Shot]`**
+  (a warrior loses the dagger and bow lines), and the weapon gate is **2H** sword/blunt, not any
+  sword/blunt.
+
+### `rogue 2nd.csv`
+
+- Five names aligned: `Rogue Armor Mastery` → **`Armor Mastery`**, `Rogue Weapon Mastery` →
+  **`Weapon Mastery`** (the game shows the plain names; the `[Armor Mastery]`/`[Weapon Mastery]` in
+  REPLACES still points at the BASE fighter skill, which is a different id), `Stab` → **`Piercing
+  Stab`** `[Stab Strike]`, `Shot` → **`Precise Shot`** `[Shot Strike]`, `Bow Expretise` →
+  **`Bow Expertise`**.
+- `Sprint` cast **0.1 → 0.2**.
+- 🆕 **`Lure` added at 20/28/36** — it was in the game (BL-70) and in no CSV. Its ladder is REACH:
+  200/400/600, MP 12/16/20, SP 3400/12000/40000, agro power 500 flat, monsters only.
+
+### The one number left alone
+
+⚠ `Precise Shot` rung 4 (@32) costs **34 MP** where rung 3 costs 53 and rung 5 costs 67. The code and
+the CSV agree, so it is not drift — but it reads like a transposed typo in the original authoring
+(43?). Left exactly as authored; his call.
+
+**`dotnet run --project tools/SkillCsvSeed -- --check` now reports "No discrepancies"** across all
+seven 1st/2nd files. The only remaining lines are ⚪ AUTO-GRANTED notes (Precision, Evasion Mastery,
+Anti-Magic, Spellcaster Mastery, Magic Bolt L1), which are the SP-0 rows and not defects.
+
+## 2026-08-19 — mpWhenRestored becomes a PERCENT, and mana-over-time joins one pipe
+
+⚠ **NO VERSION BUMP.** Server-side numbers only.
+
+His ruling: *"I should reauthor bonus restore to be a % rather than flat bonus … so it works like the
+heal hot … a 100 heal/s with 30% increase will heal 130/s … 120+80 = 200 … 125x1.6 = 200 … And the
+mana over time will go trough the same pipe as other mana restores."*
+
+### The stat
+
+`StatMods.RestoreMpBonus` (flat `+N` MP per restore) → **`StatMods.RestoreMpPct`** (a fraction), and
+`Entity.RestoreMpBonus` (int) → **`Entity.RestoreMpMod`** (float, starts at ×1) — the exact twin of
+`HealReceivedMod`. `RestoreMpOne` multiplies instead of adding.
+
+🔑 **The `payRestoreBonus` special case from this morning is DELETED.** It only existed because a flat
+per-event bonus had to be suppressed on ticks; a percent scales with whatever landed, so a cast and a
+totem pulse go through **one pipe**, which is what he asked for. A robed nuker in a mana totem now gets
+his ×1.6 on every pulse — his own worked example (10/s → 16/s, ~30/s → 48/s at the top).
+
+### The ladder — the old flat × 0.75
+
+His anchor is the top rung: `120 + 80 = 200` and `125 × 1.6 = 200`, so **+80 flat → +60%**, and 60/80
+= 0.75 applied to the whole ladder keeps its shape ("keep the linear feel"):
+
+| rung @ char | 20 | 25 | 30 | 35 | 40 | 50 | 60 | 70 |
+|---|---|---|---|---|---|---|---|---|
+| was (flat MP) | +25 | +30 | +35 | +40 | +50 | +60 | +70 | +80 |
+| now (percent) | +19% | +23% | +26% | +30% | +38% | +45% | +53% | **+60%** |
+
+### 🔴 MEASURED — the conversion is anchored at 80 and costs a LOT below it
+
+`BalanceMatrix` E3, delivered MP per Restore Spirit cast:
+
+| lvl | base | ×mast | now | flat before | Δ |
+|---|---|---|---|---|---|
+| 25 | 20 | 1.23 | **25** | 50 | **−50%** |
+| 36 | 20 | 1.30 | **26** | 60 | **−57%** |
+| 44 | 45 | 1.38 | **62** | 95 | **−35%** |
+| 52 | 65 | 1.45 | **94** | 125 | **−25%** |
+| 60 | 85 | 1.53 | **130** | 155 | −16% |
+| 70 | 105 | 1.60 | **168** | 185 | −9% |
+| 80 | 120 | 1.60 | **192** | 200 | **−4%** ← his anchor, and *"nothing is lost"* holds here |
+
+That is inherent to the change, not a tuning slip: a flat bonus is worth relatively MORE the smaller
+the base, so +25 on a 20 MP restore was more than doubling it and no sane percent can match that.
+`nukes/cast` (how many nukes one cast pays for, designed to clear 1.0) now reads **0.95 at level 44**
+where it used to clear comfortably, and `MP/HP` fell from an authored 1.18 → 1.00 curve to 0.38 → 0.96.
+
+🔑 **He already called this** — *"so i need to increase the restore spirit and do a % based robe
+mastery"*. The base is his to raise (*"I'll reautor it later as I do the mage"*); to hold the OLD
+delivered numbers a level-25 Restore Spirit would need ~37 MP instead of 20, and that row is his
+authored CSV, so it is not ours to move.
+
+### CSVs updated as reference (his request)
+
+- **`nuker 2nd.csv`** — the four authored rungs now read `mpWhenRestored +19%/+23%/+26%/+30%`, and
+  Restore Spirit's line says *multiplied by* rather than *plus*.
+- **`nuker 3rd.csv`** — had **no** robe-mastery or Restore Spirit rows at all. Added what the code
+  actually runs above 35: mastery rungs 5-8 @40/50/60/70 and Restore Spirit levels 2-10 @40 then every
+  5 to 80. ⚠ **These rows are OURS**, not his authoring — the 40+ band has never had a CSV. They are
+  there so he can see the current numbers while re-authoring the mage.
+
+## 2026-08-19 — the totem grows a second channel, for his Mana Totem
+
+⚠ **NO VERSION BUMP** and **no skill authored** — he is still writing `healer 3rd.csv` (*"when the
+file is finished we will add the skills"*). This is the **ground** only: the engine now supports the
+Mana Totem he wrote, so adding it later is a `SkillDef` row and nothing else.
+
+### What was already there
+
+The totem engine has existed since 2026-08-17 (the Ork healer's level-40 **Healing Totem**): placement
+at the caster's feet, lifetime, pulse timer, `AlliesAroundPoint` (party-only, never the dead, never a
+hidden member, measured from **the totem** so walking away from it costs you the pulse), owner-gone
+cleanup, and the `PlacesTotem` arm of the targeting path that lets the cast succeed with nothing
+selected. ⚠ A totem is **deliberately not an `Entity`** — see the comment on `TotemInstance`; it is
+felt, not seen, until a client visual exists.
+
+### What it could not do
+
+**It pulsed HP and only HP** — `TickTotems` called `HealOne` unconditionally. His `Mana Totem` rows
+(52/56/58/60/62, +10…+14 MP/s, 60s reuse, 30s life, 300 range) had no channel to run on.
+
+- `TotemInstance.Effect` now snapshots the placing skill's own `SkillEffect`, and `TickTotems` pulses
+  `Heal` → HP, `RestoreMp` → MP, both flags → both. 🔑 **A totem flavour is therefore an ordinary
+  heal/restore skill with `PlacesTotem` set** — no second totem type, no new flag (the enum is full
+  anyway), and `SkillText` reads the same flags so the skill card describes itself correctly.
+
+### 🔴 Two defects fixed on the way in
+
+**`RestoreMpBonus` would have been paid on every pulse.** The nuker robe mastery grants "MP restored
++25…+80", priced **per cast** — that is what makes someone else's Recharge worth taking. A totem
+pulses 30 times, so a robed nuker standing in a Mana Totem authored to give **300 MP** would have
+collected `30 × (12 + 80)` = **2760**, with the *bonus* running eight times the skill it is a bonus to.
+`RestoreMpOne` gained a `payRestoreBonus` parameter; periodic restores pay the authored number.
+
+**Totems stacked without limit.** `PlacesTotem` only ever appended. His Healing Totem authors a **25s
+reuse on a 30s totem**, so every healer would have run a permanent overlapping stack and multiplied the
+pulse by however many he could squeeze up. A recast now **moves** a totem: one per owner *per skill*,
+so a Healing Totem and a Mana Totem still coexist.
+
+### Still open — his calls, not mine
+
+- **A totem heal generates no threat.** `HealOne` is called directly, so `AddSupportThreat` (BL-71,
+  *"a heal is aggro, scaled by heads reached"*) never runs for a totem. Left alone deliberately: making
+  a 30-pulse object generate aggro 30 times is a balance ruling, not a bug fix.
+- **The built Healing Totem is off his current CSV** — code has Power 30 and 19/93 MP where rows 11/35/…
+  now read +64/s and 42/196. Not touched: the file is unfinished, and `SkillCsvSeed --check` does not
+  read the 3rd-tier CSVs yet, so nothing was silently validating it either.
+
+## 2026-08-19 — magic crit gets headroom under the cap, and a damage stat of its own
+
+⚠ **NO VERSION BUMP.** The wire is unchanged in the only way that matters: `StatsUpdate` gained one
+trailing field (`MagicCritDamage`, default 2) which an older client simply ignores, and every number
+here is rolled on the server. The new **"Magic crit dmg"** row in the client's stat window will not
+appear until the next APK — the APK is knowingly stale.
+
+His ruling: *"Magic crit rate should be lowered a bit … (still max 20% but one day if we want to
+increase it no mage to be short on crit) … Magic crit dmg is default x2 … base critDmg x multiPliers
+x (1 - debuffs) … we need to add mcritdmg as a editable stat and formula"*.
+
+### The rate: the cap stops being the ceiling a mage already lives on
+
+`StatCalculator.MagicCharacterCritBase` **50 → 40** on IG's 0-1000 scale (5% → 4%). One constant; the
+witMod curve, the flat/mult chain and the 20% cap are all untouched.
+
+The point is not the nerf, it is the **headroom**. At 50, a fully-kitted elf (WIT 30, ×2.00) computed
+exactly 20% off Insight alone — he was pinned to the cap, so the 4th-class crit-rate buff being
+authored would have bought him **nothing**, and raising the cap later would have bought him nothing
+either. At 40 (measured, `BalanceMatrix`, and matching all four of his targets):
+
+| WIT | who | bare | ×2 Insight | ×4 (Insight + the 4th-class buff) |
+|---|---|---|---|---|
+| 30 | elf mage + set +2 + swap +5 | **8.0%** | **16.0%** | **32.0%** → capped at 20% |
+| 27 | human, same kit | 6.8% | 13.6% | 27.2% → capped |
+| 26 | ork, same kit | 6.4% | 12.8% | 25.6% → capped |
+
+His asks were "7-8% bare", "15-16% with Insight only", "31% at ×4", and "humans/orks over 20% at ×4".
+All four hold (the ×4 elf figure is 32, not 31 — the rounder base 40 was preferred to a 38.75 that
+would hit 31 exactly).
+
+### The damage: a flat ×3 becomes a base ×2 with a knob
+
+`StatCaps.MagicCritDamage` (flat ×3) is replaced by **`MagicCritDamageBase` = ×2** plus a
+**`MagicCritDamageCap` = ×5** of headroom, and `StatCalculator.MagicCritMult` now takes the chain:
+
+```
+magic crit damage = 2.0 × ∏(1 + multipliers) × (1 − Σ debuffs),   clamped to [1, 5]
+```
+
+which is his formula verbatim. The rule that made it flat in the first place **still holds**: this
+reads its own channel and never `CritDamageBonus`, so Ferocity and the crit-damage item attribute —
+both authored for fighters — still pay a mage nothing.
+
+Plumbed everywhere a stat is authored, so the 4th-class blessings need no engine work when the CSVs
+land — only rows:
+
+- **`SkillDef.MagicCritDamage` / `.MagicCritDamageDebuff`** (+ per-`SkillLevel` overrides and the
+  `…At(level)` accessors), riding as **fields, not `SkillEffect` flags** — the flag enum has had zero
+  bits left since `1L << 62`.
+- **`PassiveEffect.MagicCritDamage`** and **`StatMods.MagicCritDamage`** (appended at the END of
+  `StatMods`, per that file's own warning) for a kit passive, an armour set or a mastery.
+- **`Entity.MagicCritDamageMult` / `.MagicCritDamageResist`**, folded in `RecomputeDerived` from all
+  three sources — multipliers **compound**, debuffs **sum** — and read through the one getter
+  `Entity.EffectiveMagicCritDamage`. His arithmetic falls out of it: the buffer's or healer's +30%
+  gives ×2.6, and both together give **×2 × 1.3 × 1.3 = ×3.38**.
+- **`/stat mcdmg <x>`** sets the FINISHED multiplier (`3.38` reproduces a fully-blessed 4th-class
+  caster today, with no 4th class in the game), alongside the existing `mcrate`.
+- The grade-penalty block shrinks **only the excess** (`1 + (mult−1)×penalty`), never the ×2 base.
+
+### ⚠ What this costs the nuker right now
+
+Both halves land before any of the buffs that give them back exist. An elf with Insight goes from
+`0.80 + 0.20×3 = ×1.40` average damage to `0.84 + 0.16×2 = ×1.16` — **about −17% magic damage**, on
+top of the bolt-power correction and 0.73.0's tougher creatures. The 4th-class kits are what restore
+it (×4 rate to the cap, ×3.38 damage → `0.80 + 0.20×3.38 = ×1.48`, better than today ever was), and
+they are blocked on his CSVs.
+
+## 2026-08-19 — the debuff contest gets a level, and mobs get a CON worth having
 
 ⚠ **NO VERSION BUMP**, for the same reason as the entry below: nothing here touches the wire (the
 target-inspect DTO already carried CON and SPT), and the APK is knowingly stale. No client rebuild is

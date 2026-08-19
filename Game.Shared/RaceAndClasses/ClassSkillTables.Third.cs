@@ -124,6 +124,17 @@ public static partial class ClassSkillTables
             foreach (var d in melee)
                 ClassSkills.RegisterThird(race, d,
                     new ClassSkill(Prowl, 40, SkillLevel: 1),
+                    // 🔴 Lure joins the hide kit, his ruling 2026-08-19: *"move lure from rogue to dual
+                    // 3rd (@40) … No lure for lvl 29 and below .. It's a skill that need the prawl
+                    // effect."* It used to sit on the 2nd-class rogue at 20/28/36 (see
+                    // ClassSkillTables.Common.cs), which handed out the pull twenty levels before the
+                    // stance that makes a pull survivable — and to archers as well, since the 2nd-class
+                    // rogue block covers both weapons to 40.
+                    // ⚠ LEVEL 1 ONLY, deliberately: the 200/400/600 reach ladder and its SP are HIS to
+                    // place as he writes `dual 3rd.csv` (*"I'll author it to the corresponding lvls as
+                    // I'm making the file"*). Levels 2-3 exist in the catalog and are unreachable until
+                    // he does — that is the intended state, not a gap to helpfully fill.
+                    new ClassSkill(Lure, 40, SkillLevel: 1),
                     new ClassSkill(Vanish, 60));
             foreach (var d in ranged)
                 ClassSkills.RegisterThird(race, d, new ClassSkill(SignalFlare, 60, SkillLevel: 1));

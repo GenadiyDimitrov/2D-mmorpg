@@ -87,9 +87,13 @@ public static partial class ClassSkillTables
                 new ClassSkill(PiercingStab, 20, SkillLevel: 1),
                 new ClassSkill(PreciseShot, 20, SkillLevel: 1),
                 new ClassSkill(Sprint, 20, SkillLevel: 1),
-                // Lure (BL-70) on the rogue's own 20/28/36 rungs — its ladder is REACH (200/400/600),
-                // so the three levels are the three ranges and nothing else changes.
-                new ClassSkill(Lure, 20, SkillLevel: 1),
+                // 🔴 Lure (BL-70) MOVED 20/28/36 -> 40, melee/dual disciplines only, by his ruling of
+                // 2026-08-19: *"move lure from rogue to dual 3rd (@40) … No lure for lvl 29 and below ..
+                // It's a skill that need the prawl effect."* The pull only makes sense with the stance
+                // that lets you walk away from the camp afterwards, and Prowl is a 40+ melee-rogue skill
+                // — so a lure at 20 was a tool whose other half arrived twenty levels later. It is
+                // registered in ClassSkillTables.Third.RegisterHideKit() next to Prowl, at LEVEL 1 only;
+                // the 200/400/600 reach ladder is HIS to place as he authors `dual 3rd.csv`.
                 // 🔴 Prowl MOVED 20 -> 40 (melee rogue only) by his playtest-23 ruling: *"`Prowl` should
                 // be learnable by all mele rogues @40 3rd class (not auto, like a normal skill)"*. It is
                 // registered in ClassSkillTables.Third.RegisterHideKit(), not here — the 2nd-class rogue
@@ -107,7 +111,6 @@ public static partial class ClassSkillTables
                 new ClassSkill(PreciseShot, 28, SkillLevel: 3),
                 // Evasion Boost — the rogue's ultimate (CSV rogue 2nd, added playtest-20).
                 new ClassSkill(EvasionBoost, 28, SkillLevel: 1),
-                new ClassSkill(Lure, 28, SkillLevel: 2),
                 // 🔴 Signal Flare MOVED 28 -> 60 (archer disciplines only) by his playtest-23 ruling:
                 // *"`Signal Flare` should be learnable by all archers @60 3rd class"*. See
                 // ClassSkillTables.Third.RegisterHideKit(). 🔑 The counter now sits ABOVE what it counters
@@ -124,7 +127,6 @@ public static partial class ClassSkillTables
                 // Bow Expertise moved 28 -> 36: he corrected the CSV in playtest-20 ("The Bow
                 // expertice was with the 36 lvl skills but it was lvl 28 so i fixed it as well").
                 new ClassSkill(BowExpertise, 36, SkillLevel: 1),
-                new ClassSkill(Lure, 36, SkillLevel: 3),
                 // Sprint level 2 (+60) — G5 gave the LEVEL and its value but not where it is learned,
                 // and the authored rogue CSV stops at 36. ⚠ 40 is MY pick: it is the next rung on this
                 // block's own 4-level cadence and the level the 3rd-class disciplines already sit at.
