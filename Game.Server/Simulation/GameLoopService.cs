@@ -7362,6 +7362,27 @@ public class GameLoopService : BackgroundService
     /// <para>⚠ The test is "PURELY control". A DoT that carries a slow as a rider (Rupture =
     /// Bleed | Slow) still lands whole — see SkillEffect.ControlCc for why that concession is
     /// deliberate rather than an oversight.</para></summary>
+    /// <summary>The level a cast SKILL RUNG counts as — the character level at which the caster's class
+    /// learns that rung, NOT the caster's own level (owner ruling 2026-08-19: *"it should be difference
+    /// enemy lvl and skill learned lvl .. not casters"*).
+    ///
+    /// <para>His case is a hold whose every rung is identical — same 30s duration, nothing else on the
+    /// sheet — so with the caster's level driving the contest, *"casting it lvl 1 (@40) or lvl 10 (@74)
+    /// when character is lvl 75 wont do nothing of a difference"*. Reading the RUNG makes the ladder the
+    /// whole point of the skill: at level 75 the @74 rung lands ~48% and the @40 rung sits on the floor.
+    /// It is also what makes an old rung decay on its own — *"if im lvl 80 and cast lvl 74 debuff it
+    /// should be weaker than a 80 lvl debuff"*.</para>
+    ///
+    /// <para>🔑 Same rule, same fallback as BL-71's buff threat, which prices a buff on the level its
+    /// class learns it at for exactly this reason. A skill no class list owns — a mob spell, a scroll —
+    /// has no rung level, and only then does the caster's own stand in.</para></summary>
+    private static int RungLevel(Entity caster, SkillDef def, int lvl)
+    {
+        int learn = ClassSkills.LearnLevelOf(def.Id, lvl, caster.Race, caster.BaseClass,
+                                             caster.Archetype, caster.Discipline);
+        return learn > 0 ? learn : caster.Level;
+    }
+
     private static bool BossShrugsOff(Entity target, SkillEffect effect) =>
         target.Rank == MobRank.Boss
         && (effect & SkillEffect.ControlCc) != 0
@@ -7499,7 +7520,8 @@ public class GameLoopService : BackgroundService
             int defStat = def.DebuffSchool == DebuffSchool.Magical ? victim.EffectiveSpt : victim.EffectiveCon;
             float land = victim.Immune || BossShrugsOff(victim, effect)
                 ? 0f
-                : StatCalculator.DebuffLandChance(atkStat, defStat, attacker.Level, victim.Level);
+                : StatCalculator.DebuffLandChance(atkStat, defStat,
+                                                  RungLevel(attacker, def, lvl), victim.Level);
             land *= 1f - victim.CcResist;
             land *= 1f - SchoolCcResist(victim, def.DebuffSchool);
             if (_rng.NextDouble() < land)
@@ -8885,7 +8907,8 @@ var effect = def.Effect;
                 int defStat = def.DebuffSchool == DebuffSchool.Magical ? target.EffectiveSpt : target.EffectiveCon;
                 float land = target.Immune || BossShrugsOff(target, effect)
                     ? 0f
-                    : StatCalculator.DebuffLandChance(atkStat, defStat, caster.Level, target.Level);
+                    : StatCalculator.DebuffLandChance(atkStat, defStat,
+                                                      RungLevel(caster, def, lvl), target.Level);
                 land *= 1f - target.CcResist;   // gear/buff CC resistance lowers the land chance
                 land *= 1f - SchoolCcResist(target, def.DebuffSchool);   // …and the per-school blessing
                 if (_rng.NextDouble() < land)
@@ -9013,10 +9036,8 @@ var effect = def.Effect;
             // only handed to mobs already fighting somebody the cast helped. A buffer draws aggro for
             // re-buffing MID-FIGHT, which is exactly when he should. His own note that buffs run
             // "20 or so minutes" is what makes the big number safe.
-            int grantLevel = ClassSkills.LearnLevelOf(def.Id, lvl, caster.Race, caster.BaseClass,
-                                                      caster.Archetype, caster.Discipline);
-            if (grantLevel <= 0) grantLevel = caster.Level;
-            AddSupportThreat(caster, blessed, SkillDef.BuffThreat(grantLevel, blessed.Count));
+            AddSupportThreat(caster, blessed,
+                SkillDef.BuffThreat(RungLevel(caster, def, lvl), blessed.Count));
         }
 
         if (offensive)

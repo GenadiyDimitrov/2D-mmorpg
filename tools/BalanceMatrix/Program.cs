@@ -561,6 +561,9 @@ Console.WriteLine($"  where L = {StatCaps.CcLevelBase:F4}^(targetLvl - casterLvl
 Console.WriteLine($"  is exactly x1 (pure stat vs stat) and equal stats hit the floor/ceiling at +-{StatCaps.CcLevelFloorGap} levels.");
 Console.WriteLine("  Attacker stat = EffectiveAtk (base + stat swaps + armour), or EffectiveAgi for bleed/venom.");
 Console.WriteLine("  Defender stat = EffectiveCon (physical school) or EffectiveSpt (magical school).");
+Console.WriteLine("  ! dLvl is the target's level MINUS THE RUNG'S LEARN LEVEL — not the caster's level. A");
+Console.WriteLine("    rung learned at 40, cast by a level-80 character at a level-80 mob, is dLvl +40.");
+Console.WriteLine("    A skill no class list owns (mob spell, scroll) falls back to the caster's level.");
 Console.WriteLine();
 Console.WriteLine($"  {"dLvl",5} {"equal",7} {"melee",7} {"archer",7} {"mage",7} {"tank",7} {"elite",7} {"BOSS",7}   "
                 + "(a level-60 attacker, ATK 40)");
@@ -607,6 +610,54 @@ foreach (var (name, role, rank, physical) in new[]
     int fDef = physical ? ftr.Con : ftr.Spt, mDef = physical ? mag.Con : mag.Spt;
     Console.WriteLine($"  {name,18} {atk,5} {StatCalculator.DebuffLandChance(atk, fDef, 60, 60),11:P1} "
                     + $"{StatCalculator.DebuffLandChance(atk, mDef, 60, 60),9:P1}");
+}
+Console.WriteLine();
+// EVERY authored contested-CC rung, and the target level at which its TOP rung stops working. This is
+// generated from the class tables, so it re-measures itself as the CSV ladders land — the whole point
+// of the rung rule is that a skill with one rung expires and a skill with ten does not.
+Console.WriteLine();
+Console.WriteLine("  THE RUNG LADDERS — where each CC skill's BEST rung hits the 10% floor:");
+{
+    var rungs = new Dictionary<string, (string Name, SortedSet<int> Learn)>();
+    foreach (Discipline d in Enum.GetValues<Discipline>())
+    {
+        var baseCls = Disciplines.Parent(d) is Archetype.Healer or Archetype.Nuker
+            ? BaseClass.Mage : BaseClass.Fighter;
+        foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
+            foreach (var cs in ClassSkills.Cumulative(race, baseCls, Disciplines.Parent(d), d))
+            {
+                if (SkillCatalog.Get(cs.SkillId) is not SkillDef sd) continue;
+                if ((sd.Effect & SkillEffect.ContestCc) == 0) continue;
+                if (!rungs.TryGetValue(cs.SkillId, out var e))
+                    e = rungs[cs.SkillId] = (sd.Name, new SortedSet<int>());
+                e.Learn.Add(cs.LearnLevel);
+            }
+    }
+    Console.WriteLine($"  {"skill",22} {"rungs",6} {"learn levels",16} {"top rung floors at",18}");
+    foreach (var (id, e) in rungs.OrderBy(r => r.Value.Learn.Min))
+    {
+        string rungLevels = string.Join("/", e.Learn);
+        int floorAt = e.Learn.Max + StatCaps.CcLevelFloorGap;
+        string verdict = floorAt >= 90 ? "never (caps out)" : $"target lvl {floorAt}+";
+        Console.WriteLine($"  {e.Name,22} {e.Learn.Count,6} {rungLevels,16} {verdict,18}");
+    }
+    if (rungs.Count == 0) Console.WriteLine("  (none authored)");
+
+    // CC skills that exist as SkillDefs but no class can LEARN — the 40+ purge left the Lightbringer
+    // and Warchanter kits commented out pending his CSVs, so their holds are defs with no learn line.
+    // Worth printing: an unlearnable skill is not a balance problem, and confusing it for one wastes a
+    // pass. It disappears from this line by itself the moment a learn line is authored.
+    var ccOrphans = SkillCatalog.AllSkills
+        .Where(s => (s.Effect & SkillEffect.ContestCc) != 0 && !rungs.ContainsKey(s.Id)
+                 && !s.Id.StartsWith("mob_") && !s.Id.StartsWith("boss_"))
+        .Select(s => s.Name).OrderBy(n => n).ToList();
+    if (ccOrphans.Count > 0)
+    {
+        Console.WriteLine();
+        Console.WriteLine($"  ! In the catalog but NOT learnable by any class ({ccOrphans.Count}): "
+                        + string.Join(", ", ccOrphans));
+        Console.WriteLine("    These cost nothing and mean nothing until a CSV gives them a learn line.");
+    }
 }
 Console.WriteLine();
 Console.WriteLine("  ! The BOSS column above is what a DoT or a stat debuff rolls against it. Stun/root/fear/");

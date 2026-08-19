@@ -130,6 +130,40 @@ harder, off one number.
   test is "purely control", because a magnitude-level slow is not the perma-lock the rule guards
   against and splitting one buff's magnitudes apart is not worth the machinery.
 
+### 🔴 The attacker's level is the RUNG'S, not the caster's
+
+*"it should be difference enemy lvl and skill learned lvl .. not casters."* His case: a hold whose every
+rung is identical — same 30s, nothing else on the sheet — so with the caster's level driving the
+contest, *"casting it lvl 1 (@40) or lvl 10 (@74) when character is lvl 75 wont do nothing of a
+difference"*. Reading the RUNG makes the ladder the whole point: at 75 the @74 rung lands ~48% and the
+@40 rung sits on the floor. And an old rung decays on its own — *"if im lvl 80 and cast lvl 74 debuff it
+should be weaker than a 80 lvl debuff"*.
+
+🔑 **Same rule and same fallback as `BL-71`'s buff threat**, which already prices a buff on the level its
+class learns it at for exactly this reason. Both now share one helper, `GameLoopService.RungLevel`. A
+skill no class list owns — a mob spell, a scroll — has no rung level, and only then does the caster's
+own stand in (so a boss's slam still fires at its own level).
+
+⚠ **This expires every CC skill in the game today, and he took that knowingly.** All five learnable ones
+are single-rung; the floor is Δ+18, so:
+
+| skill | rungs | learn | its top rung floors at |
+|---|---|---|---|
+| Shield Stun | 1 | 28 | target lvl **46+** |
+| Stay! | 1 | 36 | target lvl **54+** |
+| Frost Bind | 1 | 40 | target lvl **58+** |
+| Entangling Roots | 1 | 40 | target lvl **58+** |
+| Creeping Frost | 1 | 44 | target lvl **62+** |
+
+He chose this over an auto-switch, because the ladders are the next authoring job. **The fix is a CSV,
+not code**: give a skill more rungs and it stops expiring, with nothing to change here.
+
+🔑 And nine more CC skills — Bind, Warding Step, Envenom, Hamstring, Rupture, Shield Bash, Snare Trap,
+Terrifying Roar, Toxic Sting — **are in the catalog but learnable by nobody**. `RegisterLightbringer()`
+and `RegisterWarchanter()` are still commented out from the 40+ purge, so his healer's own hold does not
+exist as a learnable skill yet: the rung rule has nothing to break there. BalanceMatrix prints both
+lists, generated from the class tables, so they re-measure themselves as the CSVs land.
+
 ### Gear and swaps now count — and armour power finally lands at all
 
 The contest read `AtkStat` and `Con` — **raw** base stats, so a level-20 and a level-85 character landed
