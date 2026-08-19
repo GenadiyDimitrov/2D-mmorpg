@@ -40,9 +40,10 @@ public static partial class SkillCatalog
             Description: "Hurls a bolt of force. Spells fail rather than miss.",
             Levels: new[]
             {                                                                              // learn level
+                // MP is his `mage 1st.csv` (2026-08-19): 2+7 / 2+8 / 3+12.
                 new SkillLevel(Power: 12, MpCost: 9,  InitialMpCost: 2, SpCost: 0,    Description: "Magic damage, power 12."),   // 1
-                new SkillLevel(Power: 17, MpCost: 12, InitialMpCost: 2, SpCost: 480,  Description: "Magic damage, power 17."),   // 5
-                new SkillLevel(Power: 24, MpCost: 17, InitialMpCost: 3, SpCost: 2200, Description: "Magic damage, power 24."),   // 10
+                new SkillLevel(Power: 17, MpCost: 10, InitialMpCost: 2, SpCost: 480,  Description: "Magic damage, power 17."),   // 5
+                new SkillLevel(Power: 24, MpCost: 15, InitialMpCost: 3, SpCost: 2200, Description: "Magic damage, power 24."),   // 10
             }),
 
         // Self Heal — the base MAGE heal: SELF ONLY, 3 levels (1/7/14). The nuker keeps this
@@ -155,20 +156,25 @@ public static partial class SkillCatalog
             Description: "A draining bolt that heals you for 40% of the damage dealt.",
             Levels: new[]
             {                                                                                     // learn level
-                new SkillLevel(Power: 29,  MpCost: 40,  InitialMpCost: 8,  SpCost: 2200,   Description: "Drain power 29; heals 40% of damage."),   // 14
-                new SkillLevel(Power: 37,  MpCost: 54,  InitialMpCost: 11, SpCost: 3200,   Description: "Drain power 37; heals 40% of damage."),   // 20
-                new SkillLevel(Power: 44,  MpCost: 64,  InitialMpCost: 13, SpCost: 6400,   Description: "Drain power 44; heals 40% of damage."),   // 25
-                new SkillLevel(Power: 50,  MpCost: 72,  InitialMpCost: 14, SpCost: 12800,  Description: "Drain power 50; heals 40% of damage."),   // 30
-                new SkillLevel(Power: 57,  MpCost: 82,  InitialMpCost: 16, SpCost: 25000,  Description: "Drain power 57; heals 40% of damage."),   // 35
-                new SkillLevel(Power: 63,  MpCost: 90,  InitialMpCost: 18, SpCost: 40000,  Description: "Drain power 63; heals 40% of damage."),   // 40
-                new SkillLevel(Power: 70,  MpCost: 100, InitialMpCost: 20, SpCost: 60000,  Description: "Drain power 70; heals 40% of damage."),   // 45
-                new SkillLevel(Power: 76,  MpCost: 110, InitialMpCost: 22, SpCost: 85000,  Description: "Drain power 76; heals 40% of damage."),   // 50
-                new SkillLevel(Power: 83,  MpCost: 120, InitialMpCost: 24, SpCost: 115000, Description: "Drain power 83; heals 40% of damage."),   // 55
-                new SkillLevel(Power: 90,  MpCost: 130, InitialMpCost: 26, SpCost: 150000, Description: "Drain power 90; heals 40% of damage."),   // 60
-                new SkillLevel(Power: 96,  MpCost: 138, InitialMpCost: 28, SpCost: 190000, Description: "Drain power 96; heals 40% of damage."),   // 65
-                new SkillLevel(Power: 103, MpCost: 148, InitialMpCost: 30, SpCost: 235000, Description: "Drain power 103; heals 40% of damage."),  // 70
-                new SkillLevel(Power: 109, MpCost: 158, InitialMpCost: 32, SpCost: 285000, Description: "Drain power 109; heals 40% of damage."),  // 75
-                new SkillLevel(Power: 116, MpCost: 168, InitialMpCost: 34, SpCost: 340000, Description: "Drain power 116; heals 40% of damage."),  // 80
+                // ⚠ MP RUNGS 1-5 ARE HIS (`mage 1st.csv` @14, `nuker 2nd.csv` @20-35, 2026-08-19):
+                // 6+22 / 8+32 / 10+36 / 12+40 / 14+48. They were ~37% higher, which is what made this
+                // the one bolt nobody could afford to spam. Rungs 6-14 have no CSV, so they carry the
+                // SAME RATIO his band implies (×0.728 of the old numbers, rounded) — that keeps the
+                // curve's shape and avoids a cliff at 40, where 62 used to jump straight to 90.
+                new SkillLevel(Power: 29,  MpCost: 28,  InitialMpCost: 6,  SpCost: 2200,   Description: "Drain power 29; heals 40% of damage."),   // 14
+                new SkillLevel(Power: 37,  MpCost: 40,  InitialMpCost: 8,  SpCost: 3200,   Description: "Drain power 37; heals 40% of damage."),   // 20
+                new SkillLevel(Power: 44,  MpCost: 46,  InitialMpCost: 10, SpCost: 6400,   Description: "Drain power 44; heals 40% of damage."),   // 25
+                new SkillLevel(Power: 50,  MpCost: 52,  InitialMpCost: 12, SpCost: 12800,  Description: "Drain power 50; heals 40% of damage."),   // 30
+                new SkillLevel(Power: 57,  MpCost: 62,  InitialMpCost: 14, SpCost: 25000,  Description: "Drain power 57; heals 40% of damage."),   // 35
+                new SkillLevel(Power: 63,  MpCost: 65,  InitialMpCost: 13, SpCost: 40000,  Description: "Drain power 63; heals 40% of damage."),   // 40
+                new SkillLevel(Power: 70,  MpCost: 73,  InitialMpCost: 15, SpCost: 60000,  Description: "Drain power 70; heals 40% of damage."),   // 45
+                new SkillLevel(Power: 76,  MpCost: 80,  InitialMpCost: 16, SpCost: 85000,  Description: "Drain power 76; heals 40% of damage."),   // 50
+                new SkillLevel(Power: 83,  MpCost: 87,  InitialMpCost: 17, SpCost: 115000, Description: "Drain power 83; heals 40% of damage."),   // 55
+                new SkillLevel(Power: 90,  MpCost: 95,  InitialMpCost: 19, SpCost: 150000, Description: "Drain power 90; heals 40% of damage."),   // 60
+                new SkillLevel(Power: 96,  MpCost: 100, InitialMpCost: 20, SpCost: 190000, Description: "Drain power 96; heals 40% of damage."),   // 65
+                new SkillLevel(Power: 103, MpCost: 108, InitialMpCost: 22, SpCost: 235000, Description: "Drain power 103; heals 40% of damage."),  // 70
+                new SkillLevel(Power: 109, MpCost: 115, InitialMpCost: 23, SpCost: 285000, Description: "Drain power 109; heals 40% of damage."),  // 75
+                new SkillLevel(Power: 116, MpCost: 122, InitialMpCost: 24, SpCost: 340000, Description: "Drain power 116; heals 40% of damage."),  // 80
             }),
 
         // Elemental Bolt — the Nuker's MAIN nuke (replaces Magic Bolt). 13 levels, learned
@@ -187,19 +193,24 @@ public static partial class SkillCatalog
             Description: "A bolt of raw elemental force — the Nuker's basic attack (replaces Magic Bolt).",
             Levels: new[]
             {                                                                                    // learn level
-                new SkillLevel(Power: 37,  MpCost: 27, InitialMpCost: 5,  SpCost: 3200,   Description: "Magic damage, power 37."),   // 20
-                new SkillLevel(Power: 44,  MpCost: 32, InitialMpCost: 6,  SpCost: 6400,   Description: "Magic damage, power 44."),   // 25
-                new SkillLevel(Power: 50,  MpCost: 36, InitialMpCost: 7,  SpCost: 12800,  Description: "Magic damage, power 50."),   // 30
-                new SkillLevel(Power: 57,  MpCost: 41, InitialMpCost: 8,  SpCost: 25000,  Description: "Magic damage, power 57."),   // 35
-                new SkillLevel(Power: 63,  MpCost: 45, InitialMpCost: 9,  SpCost: 40000,  Description: "Magic damage, power 63."),   // 40
-                new SkillLevel(Power: 70,  MpCost: 50, InitialMpCost: 10, SpCost: 60000,  Description: "Magic damage, power 70."),   // 45
-                new SkillLevel(Power: 76,  MpCost: 55, InitialMpCost: 11, SpCost: 85000,  Description: "Magic damage, power 76."),   // 50
-                new SkillLevel(Power: 83,  MpCost: 60, InitialMpCost: 12, SpCost: 115000, Description: "Magic damage, power 83."),   // 55
-                new SkillLevel(Power: 90,  MpCost: 65, InitialMpCost: 13, SpCost: 150000, Description: "Magic damage, power 90."),   // 60
-                new SkillLevel(Power: 96,  MpCost: 69, InitialMpCost: 14, SpCost: 190000, Description: "Magic damage, power 96."),   // 65
-                new SkillLevel(Power: 103, MpCost: 74, InitialMpCost: 15, SpCost: 235000, Description: "Magic damage, power 103."),  // 70  (74 ≈ 108)
-                new SkillLevel(Power: 109, MpCost: 79, InitialMpCost: 16, SpCost: 285000, Description: "Magic damage, power 109."),  // 75
-                new SkillLevel(Power: 116, MpCost: 84, InitialMpCost: 17, SpCost: 340000, Description: "Magic damage, power 116."),  // 80
+                // ⚠ MP RUNGS 1-4 ARE HIS (`nuker 2nd.csv`, 2026-08-19): 4+16 / 5+18 / 6+20 / 7+24.
+                // Rungs 5-13 have no CSV and carry the same ratio his band implies (×0.734 of the old
+                // numbers), so there is no cliff at 40. Quick Bolt below runs the identical MP line —
+                // that is his sheet's choice, not a copy slip: the two bolts differ in cast time and
+                // range, not in what they cost.
+                new SkillLevel(Power: 37,  MpCost: 20, InitialMpCost: 4,  SpCost: 3200,   Description: "Magic damage, power 37."),   // 20
+                new SkillLevel(Power: 44,  MpCost: 23, InitialMpCost: 5,  SpCost: 6400,   Description: "Magic damage, power 44."),   // 25
+                new SkillLevel(Power: 50,  MpCost: 26, InitialMpCost: 6,  SpCost: 12800,  Description: "Magic damage, power 50."),   // 30
+                new SkillLevel(Power: 57,  MpCost: 31, InitialMpCost: 7,  SpCost: 25000,  Description: "Magic damage, power 57."),   // 35
+                new SkillLevel(Power: 63,  MpCost: 33, InitialMpCost: 7,  SpCost: 40000,  Description: "Magic damage, power 63."),   // 40
+                new SkillLevel(Power: 70,  MpCost: 37, InitialMpCost: 7,  SpCost: 60000,  Description: "Magic damage, power 70."),   // 45
+                new SkillLevel(Power: 76,  MpCost: 40, InitialMpCost: 8,  SpCost: 85000,  Description: "Magic damage, power 76."),   // 50
+                new SkillLevel(Power: 83,  MpCost: 44, InitialMpCost: 9,  SpCost: 115000, Description: "Magic damage, power 83."),   // 55
+                new SkillLevel(Power: 90,  MpCost: 48, InitialMpCost: 10, SpCost: 150000, Description: "Magic damage, power 90."),   // 60
+                new SkillLevel(Power: 96,  MpCost: 51, InitialMpCost: 10, SpCost: 190000, Description: "Magic damage, power 96."),   // 65
+                new SkillLevel(Power: 103, MpCost: 54, InitialMpCost: 11, SpCost: 235000, Description: "Magic damage, power 103."),  // 70
+                new SkillLevel(Power: 109, MpCost: 58, InitialMpCost: 12, SpCost: 285000, Description: "Magic damage, power 109."),  // 75
+                new SkillLevel(Power: 116, MpCost: 62, InitialMpCost: 12, SpCost: 340000, Description: "Magic damage, power 116."),  // 80
             }),
 
         // Quick Bolt — a short-range (150), fast (1.5s) nuke for weaving between casts.
@@ -211,19 +222,21 @@ public static partial class SkillCatalog
             Description: "A fast, close-range bolt (1.5s cast).",
             Levels: new[]
             {                                                                                    // learn level
-                new SkillLevel(Power: 30, MpCost: 27, InitialMpCost: 5,  SpCost: 3200,   Description: "Magic damage, power 30."),   // 20
-                new SkillLevel(Power: 35, MpCost: 32, InitialMpCost: 6,  SpCost: 6400,   Description: "Magic damage, power 35."),   // 25
-                new SkillLevel(Power: 40, MpCost: 36, InitialMpCost: 7,  SpCost: 12800,  Description: "Magic damage, power 40."),   // 30
-                new SkillLevel(Power: 46, MpCost: 41, InitialMpCost: 8,  SpCost: 25000,  Description: "Magic damage, power 46."),   // 35
-                new SkillLevel(Power: 50, MpCost: 45, InitialMpCost: 9,  SpCost: 40000,  Description: "Magic damage, power 50."),   // 40
-                new SkillLevel(Power: 56, MpCost: 50, InitialMpCost: 10, SpCost: 60000,  Description: "Magic damage, power 56."),   // 45
-                new SkillLevel(Power: 61, MpCost: 55, InitialMpCost: 11, SpCost: 85000,  Description: "Magic damage, power 61."),   // 50
-                new SkillLevel(Power: 66, MpCost: 60, InitialMpCost: 12, SpCost: 115000, Description: "Magic damage, power 66."),   // 55
-                new SkillLevel(Power: 72, MpCost: 65, InitialMpCost: 13, SpCost: 150000, Description: "Magic damage, power 72."),   // 60
-                new SkillLevel(Power: 77, MpCost: 69, InitialMpCost: 14, SpCost: 190000, Description: "Magic damage, power 77."),   // 65
-                new SkillLevel(Power: 82, MpCost: 74, InitialMpCost: 15, SpCost: 235000, Description: "Magic damage, power 82."),   // 70
-                new SkillLevel(Power: 87, MpCost: 79, InitialMpCost: 16, SpCost: 285000, Description: "Magic damage, power 87."),   // 75
-                new SkillLevel(Power: 93, MpCost: 84, InitialMpCost: 17, SpCost: 340000, Description: "Magic damage, power 93."),   // 80
+                // MP: his `nuker 2nd.csv` rungs 1-4, then the same ×0.734 continuation as Elemental
+                // Bolt above — the two bolts share one MP line on his sheet.
+                new SkillLevel(Power: 30, MpCost: 20, InitialMpCost: 4,  SpCost: 3200,   Description: "Magic damage, power 30."),   // 20
+                new SkillLevel(Power: 35, MpCost: 23, InitialMpCost: 5,  SpCost: 6400,   Description: "Magic damage, power 35."),   // 25
+                new SkillLevel(Power: 40, MpCost: 26, InitialMpCost: 6,  SpCost: 12800,  Description: "Magic damage, power 40."),   // 30
+                new SkillLevel(Power: 46, MpCost: 31, InitialMpCost: 7,  SpCost: 25000,  Description: "Magic damage, power 46."),   // 35
+                new SkillLevel(Power: 50, MpCost: 33, InitialMpCost: 7,  SpCost: 40000,  Description: "Magic damage, power 50."),   // 40
+                new SkillLevel(Power: 56, MpCost: 37, InitialMpCost: 7,  SpCost: 60000,  Description: "Magic damage, power 56."),   // 45
+                new SkillLevel(Power: 61, MpCost: 40, InitialMpCost: 8,  SpCost: 85000,  Description: "Magic damage, power 61."),   // 50
+                new SkillLevel(Power: 66, MpCost: 44, InitialMpCost: 9,  SpCost: 115000, Description: "Magic damage, power 66."),   // 55
+                new SkillLevel(Power: 72, MpCost: 48, InitialMpCost: 10, SpCost: 150000, Description: "Magic damage, power 72."),   // 60
+                new SkillLevel(Power: 77, MpCost: 51, InitialMpCost: 10, SpCost: 190000, Description: "Magic damage, power 77."),   // 65
+                new SkillLevel(Power: 82, MpCost: 54, InitialMpCost: 11, SpCost: 235000, Description: "Magic damage, power 82."),   // 70
+                new SkillLevel(Power: 87, MpCost: 58, InitialMpCost: 12, SpCost: 285000, Description: "Magic damage, power 87."),   // 75
+                new SkillLevel(Power: 93, MpCost: 62, InitialMpCost: 12, SpCost: 340000, Description: "Magic damage, power 93."),   // 80
             }),
 
         // Restore Spirit — trades HP for MP (self). Costs HP, not MP.
@@ -399,7 +412,7 @@ public static partial class SkillCatalog
             Levels: new[]
             {
                 new SkillLevel(Power: 21, MpCost: 20, InitialMpCost: 4, SpCost: 3200,  Description: "Magic damage, power 21."),
-                new SkillLevel(Power: 25, MpCost: 23, InitialMpCost: 5, SpCost: 3200,  Description: "Magic damage, power 25."),
+                new SkillLevel(Power: 25, MpCost: 23, InitialMpCost: 5, SpCost: 6400,  Description: "Magic damage, power 25."),
                 new SkillLevel(Power: 30, MpCost: 26, InitialMpCost: 6, SpCost: 12800, Description: "Magic damage, power 30."),
                 new SkillLevel(Power: 36, MpCost: 31, InitialMpCost: 7, SpCost: 25000, Description: "Magic damage, power 36."),
             }),

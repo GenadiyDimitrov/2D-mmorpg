@@ -782,8 +782,11 @@ Console.WriteLine("=== ECONOMY: expected TRASH GOLD per kill (real drop tables x
 static IEnumerable<(DropEntry Entry, float Chance)> Marginals(IEnumerable<DropEntry> table, int mobLevel)
 {
     var applicable = table.Where(e => e.AppliesAtLevel(mobLevel)).ToList();
+    // ⚠ NOT clamped to 1 any more: above 100% the roll pays COPIES (MobCatalog.DropCopies), so the
+    // expected yield per kill really is the raw number and clamping here would under-report every
+    // high-rate server by exactly the amount the clamp used to throw away.
     foreach (var e in applicable.Where(e => e.GroupId == 0))
-        yield return (e, Math.Min(1f, MobCatalog.EffectiveChance(e)));
+        yield return (e, MobCatalog.EffectiveChance(e));
     foreach (var g in applicable.Where(e => e.GroupId != 0).GroupBy(e => e.GroupId))
     {
         // Weights are the PER-ITEM-TUNED chances (MobCatalog.ItemWeight), matching RollDrop exactly —
@@ -791,7 +794,7 @@ static IEnumerable<(DropEntry Entry, float Chance)> Marginals(IEnumerable<DropEn
         float sum = g.Sum(MobCatalog.ItemWeight);
         // (Lambda, not a method group: EffectiveChance now takes the PLAYER's drop multiplier as an
         //  optional second argument — this tool has no player, so it measures the bare server rates.)
-        float trigger = Math.Min(1f, g.Sum(e => MobCatalog.EffectiveChance(e)));
+        float trigger = g.Sum(e => MobCatalog.EffectiveChance(e));
         foreach (var e in g)
             yield return (e, sum <= 0 ? 0 : trigger * (MobCatalog.ItemWeight(e) / sum));
     }
@@ -805,14 +808,14 @@ static (double Gear, double Mats, double Consumables, double Gold, double Items)
     foreach (var (e, chance) in Marginals(mob.Drops ?? Array.Empty<DropEntry>(), mobLevel))
     {
         if (ItemCatalog.Get(e.ItemId) is not ItemDef def) continue;
-        double qty = (e.MinQty + e.MaxQty) / 2.0 * RateConfig.DropAmountRate;
+        double qty = (e.MinQty + e.MaxQty) / 2.0 * RateConfig.World.DropAmount;
         double value = chance * qty * ItemCatalog.SellPrice(def);
         items += chance;
         if (MobCatalog.IsGearGroup(e.GroupId)) gear += value;
         else if (e.GroupId == MobCatalog.GroupMats || def.Id.StartsWith("mat_")) mats += value;
         else cons += value;
     }
-    return (gear, mats, cons, StatCalculator.MobGoldReward(mobLevel) * RateConfig.GoldAmountRate, items);
+    return (gear, mats, cons, StatCalculator.MobGoldReward(mobLevel) * RateConfig.World.Gold, items);
 }
 
 // The roster mob(s) closest to a given level — averaged, so one odd template can't skew a row.
@@ -843,8 +846,9 @@ Console.WriteLine();
 // on) and at x1, because a 10x exp rate means 10x FEWER kills for the same level — and therefore 10x
 // less trash gold. Getting that backwards is how a "16x cut" turns into "68x".
 Console.WriteLine("=== ECONOMY: cumulative TRASH GOLD by level (kills-to-level x gold-per-kill) ===");
-Console.WriteLine($"  live ExpRate = x{RateConfig.ExpRate:0.##}, DropChanceRate = x{RateConfig.DropChanceRate:0.##}"
-    + $" (gear groups x{RateConfig.DropGroupRate("armor"):0.##}; mats/scrolls/always are EXEMPT from the global rate)");
+Console.WriteLine($"  live ExpRate = x{RateConfig.World.Exp:0.##}, DropChanceRate = x{RateConfig.World.DropChance:0.##}"
+    + $" (gear groups x{RateConfig.DropGroupRate("armor"):0.##}; the global now reaches EVERY group —"
+    + " above 100% a drop pays COPIES rather than clamping)");
 Console.WriteLine($"{"Lvl",4} {"kills(live)",12} {"sold(live)",14} | {"kills(x1)",11} {"sold(x1)",14}");
 double soldLive = 0, soldX1 = 0;
 double killsLive = 0, killsX1 = 0;
@@ -856,7 +860,7 @@ for (int L = 1; L <= 85; L++)
     long next = ExpCurve.ExpToNext(L);
     if (next <= 0 || exp <= 0) continue;
     double kX1 = next / (double)exp;
-    double kLive = kX1 / Math.Max(0.01f, RateConfig.ExpRate);
+    double kLive = kX1 / Math.Max(0.01f, RateConfig.World.Exp);
     killsX1 += kX1; killsLive += kLive;
     soldX1 += kX1 * perKill; soldLive += kLive * perKill;
     if (L is 10 or 20 or 25 or 40 or 61 or 85)
@@ -883,11 +887,11 @@ foreach (float mul in new[] { 1f, 0.5f, 0.34f, 0.25f, 0.1f })
         long exp = StatCalculator.MobExpReward(L);
         long next = ExpCurve.ExpToNext(L);
         if (next <= 0 || exp <= 0) continue;
-        double kills = next / (double)exp / Math.Max(0.01f, RateConfig.ExpRate);
+        double kills = next / (double)exp / Math.Max(0.01f, RateConfig.World.Exp);
         sold += kills * MobsNear(L).Select(m => KillValue(m, L))
             .Average(x => x.Gear + x.Mats + x.Consumables + x.Gold);
     }
-    Console.WriteLine($"{mul,8:0.##} {mul * RateConfig.DropChanceRate,10:0.##}x {sold,14:N0} "
+    Console.WriteLine($"{mul,8:0.##} {mul * RateConfig.World.DropChance,10:0.##}x {sold,14:N0} "
         + $"{sold / 400_000.0,16:0.00}x");
 }
 for (int i = 0; i < saved.Length; i++)
@@ -921,7 +925,7 @@ Console.WriteLine();
         long exp = StatCalculator.MobExpReward(L);
         long next = ExpCurve.ExpToNext(L);
         if (next <= 0 || exp <= 0) continue;
-        double k = next / (double)exp / Math.Max(0.01f, RateConfig.ExpRate * expMult);
+        double k = next / (double)exp / Math.Max(0.01f, RateConfig.World.Exp * expMult);
         kills += k;
         // A kill pays coin (the Gold rune) and a table (the Drop rune). Only the gear/mats/consumable
         // half scales with drop chance — the coin is not a drop roll.
@@ -968,7 +972,7 @@ Console.WriteLine($"{"level",6} {"exp gained",14} {"levels gained",14} {"gold + 
 foreach (int L in new[] { 34, 50, 70 })
 {
     var v = MobsNear(L).Select(m => KillValue(m, L)).Average(x => x.Gold + x.Gear + x.Mats + x.Consumables);
-    // Sinister: ExpRateMult and SpRateMult are 0, everything else untouched.
+    // Sinister: the rune set's Exp and Sp are 0, everything else untouched.
     Console.WriteLine($"{L,6} {0,14:N0} {0,14:N0} {1000 * v,14:N0}");
 }
 Console.WriteLine("  ^ zero exp by design (*\"so a grinder can grind and no lvl up\"*) and the full loot of");
@@ -2286,7 +2290,7 @@ static double[] MatsPerKill(int level)
         foreach (var (e, chance) in Marginals(mob.Drops ?? Array.Empty<DropEntry>(), level))
             if (ItemCatalog.Get(e.ItemId) is { Slot: EquipSlot.Material } def)
                 byRarity[(int)def.Rarity] +=
-                    chance * ((e.MinQty + e.MaxQty) / 2.0) * RateConfig.DropAmountRate / near.Length;
+                    chance * ((e.MinQty + e.MaxQty) / 2.0) * RateConfig.World.DropAmount / near.Length;
     return byRarity;
 }
 
@@ -2601,7 +2605,7 @@ static double[,] MatsByType(int lo, int hi)
                 for (int t = 0; t < Crafting.MaterialTypes.Length; t++)
                     if (e.ItemId == Crafting.MaterialId(Crafting.MaterialTypes[t], def.Rarity))
                         res[t, (int)def.Rarity] +=
-                            chance * ((e.MinQty + e.MaxQty) / 2.0) * RateConfig.DropAmountRate / band.Length;
+                            chance * ((e.MinQty + e.MaxQty) / 2.0) * RateConfig.World.DropAmount / band.Length;
     return res;
 }
 
@@ -2646,7 +2650,7 @@ static (double Scrolls, double Enchants, double Potions, double BuffSeconds) Con
         foreach (var (e, chance) in Marginals(mob.Drops ?? Array.Empty<DropEntry>(), level))
         {
             if (ItemCatalog.Get(e.ItemId) is not ItemDef def) continue;
-            double n = chance * ((e.MinQty + e.MaxQty) / 2.0) * RateConfig.DropAmountRate / near.Length;
+            double n = chance * ((e.MinQty + e.MaxQty) / 2.0) * RateConfig.World.DropAmount / near.Length;
             if (def.Slot == EquipSlot.Scroll) { scrolls += n; if (def.ScrollGrade != EnchantGrade.None) ench += n; }
             else if (def.Slot == EquipSlot.Consumable)
             {
@@ -2697,7 +2701,7 @@ foreach (var rank in new[] { MobRank.Elite, MobRank.Boss })
         + $"{perCamp / normalKph,17:P1}");
 }
 foreach (var rank in new[] { MobRank.Elite, MobRank.Boss })
-    Console.WriteLine($"  {rank,6} enchant scrolls: {MobCatalog.EnchantScrollDrops(gradeBands[^1].Top, rank).Sum(e => Math.Min(1f, MobCatalog.EffectiveChance(e))),6:0.###} per kill "
+    Console.WriteLine($"  {rank,6} enchant scrolls: {MobCatalog.EnchantScrollDrops(gradeBands[^1].Top, rank).Sum(e => MobCatalog.EffectiveChance(e)),6:0.###} per kill "
         + $"at level {gradeBands[^1].Top}");
 Console.WriteLine("  This is D1's precedent for the top MATS: when the normal-mob scroll faucet closed at B, the top of");
 Console.WriteLine("  that ladder moved to elites and bosses rather than being deleted. The question M8 leaves open is");
@@ -2780,7 +2784,7 @@ static double[,] MatsPerHourByType(int lo, int hi, bool elite, double kph, bool 
                 for (int t = 0; t < Crafting.MaterialTypes.Length; t++)
                     if (e.ItemId == Crafting.MaterialId(Crafting.MaterialTypes[t], def.Rarity))
                         res[t, (int)def.Rarity] +=
-                            chance * ((e.MinQty + e.MaxQty) / 2.0) * RateConfig.DropAmountRate * kph / band.Length;
+                            chance * ((e.MinQty + e.MaxQty) / 2.0) * RateConfig.World.DropAmount * kph / band.Length;
                 continue;
             }
 
@@ -2798,7 +2802,7 @@ static double[,] MatsPerHourByType(int lo, int hi, bool elite, double kph, bool 
                 int t = Array.IndexOf(Crafting.MaterialTypes, s.Type);
                 if (t >= 0)
                     res[t, (int)s.Rarity] +=
-                        chance * ((e.MinQty + e.MaxQty) / 2.0) * s.Qty * RateConfig.DropAmountRate
+                        chance * ((e.MinQty + e.MaxQty) / 2.0) * s.Qty * RateConfig.World.DropAmount
                         * kph / band.Length;
             }
         }

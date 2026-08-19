@@ -53,13 +53,15 @@ public static partial class ClassSkillTables
                 new ClassSkill(MagicBolt, 7, SkillLevel: 2),
                 new ClassSkill(MasteryRobe, 7, SkillLevel: 1),       // Robe Armor Mastery +7 P.Def
                 new ClassSkill(SelfHeal, 7, SkillLevel: 2),          // self heal power 67
-                // The base mage's first buffs. These used to be ONE skill (the group "Might") —
-                // it is the Warchanter's now, so the base mage learns the two singles instead
-                // (owner 2026-07-31). Same +8%/+8%, two casts, 30 MP each.
+                // The base mage's first buffs. These used to be ONE skill (the group "Might") — it is
+                // the Warchanter's now, so the base mage learns the two singles instead (owner
+                // 2026-07-31). ⚠ They are NOT learned together any more: he split the `mage 1st.csv`
+                // row on 2026-08-19 and put Bulwark at 14 (*"i splitted them"*), so a level-7 mage buys
+                // offence and waits a tier for defence. 20 MP and 960 SP each — his numbers.
                 new ClassSkill(CastId(FamPhysAtk), 7),               // Might   +8% P.Atk
-                new ClassSkill(CastId(FamPhysDef), 7),               // Bulwark +8% P.Def
                 new ClassSkill(MageAntiMagic, 7, SkillLevel: 1),     // +12 M.Def
                 new ClassSkill(MagicBolt, 14, SkillLevel: 3),
+                new ClassSkill(CastId(FamPhysDef), 14),              // Bulwark +8% P.Def
                 new ClassSkill(VampiricBolt, 14),
                 new ClassSkill(MageAntiMagic, 14, SkillLevel: 2),    // +16 M.Def + 5% fizzle
                 new ClassSkill(SelfHeal, 14, SkillLevel: 3),         // self heal power 107

@@ -366,9 +366,24 @@ individual buffs"*.
 
 | Tier | Skill | MP | Target | Learned |
 |---|---|---|---|---|
-| **single** | `cast_{family}` — one effect, one level per rung | **30-50** | one ally | base mage (7), cleric (20-35), Warchanter tops the ladders 40-64 |
+| **single** | `cast_{family}` — one effect, one level per rung | **20-50** | one ally | base mage (7/14), cleric (20-35), Warchanter tops the ladders 40-64 |
 | **improved** | the groups — four or five effects in one cast | **150-200** | **party** | Warchanter, one per level at 66 / 68 / 70 / 72 / 74 |
 | **Harmony** | no potion, no scroll, no NPC; stacks on top | 200 | **party** | Warchanter (60 / 62 / 64) |
+
+**Shield Bless and Harden** (Warchanter 66) is a sixth improved group, over the two shield families —
+`shield_def` (*Shield Harden*, % shield P.Def) and `shield_block` (*Shield Bless*, % block **chance**;
+reduction is never raised). ⚠ **Each family has one rung today, carrying the group's own +50% / +30%.**
+The owner is writing the singles' ladder in the healer file (Shield Harden is drafted at +5% @40, +10%
+@48); when it lands, those become the top rungs and the group re-points at the top index. Don't
+interpolate the middle first.
+
+⚠ **A single's price is AUTHORED PER RUNG now, not derived** (owner, 2026-08-19). It used to be
+`30 + 20·i/(n−1)` across a family's rungs; his re-priced `cleric 2nd.csv` prices a buff by **the level
+it is learned at** instead — 20 → 20 MP, 25 → 26, 30 → 33, 35 → 40 — while `buffer 3rd.csv` still runs
+30-50 by rung. The two readings cannot both hold (Focus L4 is 42 by formula, 26 on his sheet), so the
+sheets win: `RungCost[]` in `Skills.BuffLadders.cs` carries each authored `INIT MP` / `FINIT MP` / `SP`
+verbatim, and the old formula survives only as the default for rungs no CSV has reached. **Ladders that
+look irregular there are irregular on purpose** — don't regularise them.
 
 Every rung the cleric learns is the one that group level used to hand out, so **a cleric who buffs
 their whole list lands exactly where they did before** — it just costs more casts. The group is not a
@@ -387,9 +402,10 @@ you learn to cast them in one breath.
 `ClassSkillTables.Third.cs` exists so the singles, improved and Harmony tiers have somewhere to live
 until the 3rd-class CSV lands; the rest of that discipline is still commented out.
 
-**Frenzy is the one single that isn't 30-50 MP** (125 at rung 1 → 175 at rung 6). It is a family whose
-rung is a whole eight-effect buff, and that was its price before the split; it was left alone rather
-than quietly rebalanced.
+**Frenzy is the one single priced like a group** (145 at rung 3 → 175 at rung 6). It is a family whose
+rung is a whole eight-effect buff, and that was its price before the split. ⚠ Its **rung 1 is the
+exception to the exception**: 40 MP / 12800 SP, his 2026-08-19 cleric row, so the level-35 cleric's
+Frenzy is cheap and the buffer's is not.
 
 ## Build order
 

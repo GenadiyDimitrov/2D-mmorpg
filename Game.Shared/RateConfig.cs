@@ -10,42 +10,48 @@ namespace Game.Shared;
 /// </summary>
 public static class RateConfig
 {
-    /// <summary>Experience multiplier (x10 = ten times normal exp).
-    /// ⚠ **x1 is the default now** (owner, 2026-08-05: *"make default x1 exp/drop/sp, I'll tune them if
-    /// I need to"*). It shipped at 10 as a testing convenience and stayed there for a year of builds, so
-    /// every levelling-pace number anyone has quoted from a playtest was a x10 number.</summary>
-    public static float ExpRate = 1f;
-
-    /// <summary>Skill-point multiplier. SP still accrues at 1/4 exp; this scales
-    /// that result independently so you can tune the SP economy separately.</summary>
-    public static float SpRate = 1f;
-
-    /// <summary>Multiplier on each drop's CHANCE (x3 = three times as likely).
-    /// Result is clamped to 100%.
+    /// <summary>THE SERVER'S OWN RATES — exp, sp, gold, drop chance, drop amount in one
+    /// <see cref="RateSet"/> rather than five loose statics.
     ///
-    /// The authored drop tables are the **x1 design** (owner, 2026-07-30): 5% authored means 5% at x1 and
-    /// 15% at x3. This is the SERVER's rate knob and it is expected to move — including to absurd values
-    /// like x200 for an event — which is exactly why it no longer touches everything (see
-    /// <see cref="DropGroupRates"/>).
+    /// <para>Make the game N times faster with <c>World = RateSet.Uniform(30f)</c>: you kill 1/30 as many
+    /// creatures per level, and every reward is x30, so rewards-PER-LEVEL — which is what the economy
+    /// actually is — come out identical to x1. Above 100% a drop chance pays COPIES
+    /// (<see cref="MobCatalog.DropCopies"/>), so nothing is lost to a clamp and no second knob is needed;
+    /// that is why <c>Uniform</c> deliberately leaves <c>DropAmount</c> at 1.</para>
     ///
-    /// ⚠ **x1 is the default now** (owner, 2026-08-05). It was 3, and the file already warned that
-    /// going back to 1 means RE-MEASURE rather than reflexively resetting the group rates with it. So
-    /// the x3 was FOLDED INTO the groups that were actually taking it — gear 0.025 → 0.075, `other`
-    /// 1 → 3 — and `tools/BalanceMatrix` confirms every delivered number is unchanged: the reference
-    /// farm still totals 1,038,115 and attribute scrolls still land at 3.6 %/kill. The knob reads 1
-    /// and the game plays exactly as it was measured; only the units moved.</summary>
-    public static float DropChanceRate = 1f;
+    /// <para>⚠ **x1 is the default** (owner, 2026-08-05: *"make default x1 exp/drop/sp, I'll tune them if
+    /// I need to"*). Exp shipped at 10 as a testing convenience and stayed there for a year of builds, so
+    /// every levelling-pace number anyone quoted from a playtest before that date was a x10 number.</para>
+    ///
+    /// <para>The authored drop tables are the **x1 design** (owner, 2026-07-30): 5% authored means 5% at
+    /// x1 and 15% at x3. Drop chance is expected to move — including to absurd values like x200 for an
+    /// event — which is what <see cref="DropGroupRates"/> is for. ⚠ Drop chance went back to 1 on
+    /// 2026-08-05 and the x3 was FOLDED INTO the groups actually taking it (gear 0.025 → 0.075, `other`
+    /// 1 → 3); `tools/BalanceMatrix` confirmed every delivered number was unchanged. Only the units
+    /// moved — so if it ever moves again, RE-MEASURE rather than reflexively resetting the groups.</para>
+    ///
+    /// <para>Live-editable from the admin tuning panel and, for drops, <c>/droprate global|amount</c>.</para></summary>
+    public static RateSet World = RateSet.One;
+
+    /// <summary>QUEST rewards only, composed ON TOP of <see cref="World"/>. At <see cref="RateSet.One"/>
+    /// it changes nothing on its own — but routing quest rewards through it is what finally makes them
+    /// obey the server rates at all: quest GOLD and quest SP used to be added raw, so on a x30 server
+    /// every quest paid 1/30 of what the same effort paid in the field. Only <c>Exp</c>, <c>Sp</c> and
+    /// <c>Gold</c> are read here; a quest hands out authored items, never a drop roll.</summary>
+    public static RateSet Quest = RateSet.One;
 
     /// <summary>Per-GROUP multipliers, composed on top of <see cref="DropChanceRate"/>. The owner's own
     /// example: *"drop chance x200 and armor group multiplier x0.01 — in reality armor will be x2 drops."*
     /// So a group's real rate is `DropChanceRate x DropGroupRates[group]`, and one group can be tuned
     /// without touching another or re-authoring a mob.
     ///
-    /// The GUARANTEED groups (mats / scrolls / always) are exempt from <see cref="DropChanceRate"/>
-    /// entirely — see <c>MobCatalog.EffectiveRate</c>. Their chances are authored as absolutes (mats 100%,
-    /// always 100%, scrolls 70%) and the owner wants them to stay put *"at x10 or x200"*. Multiplying them
-    /// by a server rate does not make them more generous, it just pins them at the 100% clamp and throws
-    /// away every weight inside the group. Their multiplier here still works, so they remain tunable.
+    /// ⚠ The GUARANTEED groups (mats / scrolls / always) USED TO BE exempt from <see cref="DropChanceRate"/>
+    /// and no longer are (2026-08-18). That exemption existed because of the 100% CLAMP: multiplying a
+    /// 100% group by a server rate could not make it more generous, it only pinned it at the clamp and
+    /// threw away every weight inside the group. <c>MobCatalog.DropCopies</c> removed the clamp, so a
+    /// 100% group at x30 now fires thirty weighted picks with the table's proportions intact — and the
+    /// owner's *"at x10 or x200 I still want the group chances at their current ones"* is honoured by the
+    /// AUTHORED numbers staying untouched, not by the knob skipping them.
     ///
     /// Live-editable with <c>/droprate</c> (admin), so a rate can be dialled in DURING a playtest rather
     /// than guessed at and rebuilt.</summary>
@@ -105,11 +111,4 @@ public static class RateConfig
     public static float DropItemRate(string itemId) =>
         itemId is not null && DropItemRates.TryGetValue(itemId, out float v) ? v : 1f;
 
-    /// <summary>Multiplier on each drop's QUANTITY (stack size).</summary>
-    public static float DropAmountRate = 1f;
-
-    // ----- Currency -------
-
-    /// <summary>Multiplier on gold drop AMOUNT.</summary>
-    public static float GoldAmountRate = 1f;
 }

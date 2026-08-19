@@ -62,6 +62,17 @@ public static partial class SkillCatalog
     public const string FamCcResMag  = "cc_res_mag";   // Clarity   — % resist vs SPT-defended debuffs
     public const string FamCcResPhys = "cc_res_phys";  // Fortitude — % resist vs CON-defended debuffs
 
+    // ---- THE SHIELD PAIR (owner, 2026-08-19). Two families, because his group at buffer 66 is
+    //      "Shield Bless AND Harden" and *"it should rapladse Shield Harder and Shield Bless"* — a
+    //      group names the singles it contains, so the singles have to exist for it to be one.
+    //      ⚠ EACH HAS EXACTLY ONE RUNG TODAY, and that rung is the GROUP's own number. He is writing
+    //      the real ladder now (*"im now authoring its singles in the healers file"*: Shield Harden is
+    //      already drafted at +5% @40 and +10% @48). When it lands, these become the TOP rungs of a
+    //      6-rung ladder and the group re-points at the top index — one line each, in Skills.Healer.cs.
+    //      Do NOT interpolate 5 → 50 here to fill the gap first.
+    public const string FamShieldDef   = "shield_def";     // Shield Harden — % shield P.Def
+    public const string FamShieldBlock = "shield_block";   // Shield Bless  — % block CHANCE (never reduction)
+
     // ---------------------------------------------------------------------------------------
     //  Single-buff ids. `Rung(family, n)` builds them, so these consts are only for the places
     //  that name one directly (class-buff child lists, the NPC buffer).
@@ -174,31 +185,51 @@ public static partial class SkillCatalog
     private const int SingleBuffMpLow = 30, SingleBuffMpHigh = 50;   // owner: "make it 30-50"
     private static readonly int[] BuffSpCosts = { 3200, 6400, 12800, 25000, 50000, 100000 };
 
-    /// <summary>One castable single buff, with a level per rung of its family. MP climbs across the
-    /// rungs from 30 to 50 — the ceiling is the owner's, and it is what makes the improved group
-    /// (150+) the efficient choice for a class that has one.</summary>
+    /// <summary>The price of ONE rung, as authored in his CSVs: the two-stage MP exactly as his sheet
+    /// writes it (`INIT MP` + `FINIT MP`, which SUM to the total) and the SP. A zero field means
+    /// "nobody has authored this rung" and falls back to the formula below.
+    ///
+    /// ⚠ These exist because the 2026-08-19 pass on `cleric 2nd.csv` re-priced the buffs by the LEVEL
+    /// THEY ARE LEARNED AT (20 → 20 MP, 25 → 26, 30 → 33, 35 → 40) rather than by their rung, which is
+    /// what the `30 + 20·i/(n−1)` formula assumed. The two readings cannot both be true — Focus L4 is
+    /// 42 by formula and 26 in his sheet — so the sheet wins and the formula is only a default for the
+    /// rungs no CSV has reached yet. Don't "regularise" a ladder that looks irregular here: it looks
+    /// that way because a cleric rung and a buffer rung were priced on different days.</summary>
+    private readonly record struct RungCost(int Init, int Total, int Sp);
+
+    /// <summary>One castable single buff, with a level per rung of its family. Where his CSV prices a
+    /// rung, `costs` carries that price verbatim; where it does not, MP climbs across the rungs from
+    /// 30 to 50 — the ceiling is the owner's, and it is what makes the improved group (150+) the
+    /// efficient choice for a class that has one.</summary>
     /// <param name="children">The family's rungs, weakest first — one skill LEVEL each. Passed in
     /// rather than derived, because the speed families shipped first and their ids are named
     /// (`buff_swift_c`), not numbered.</param>
     /// <param name="text">The rung's own description, used as the level's.</param>
+    /// <param name="costs">Authored per-rung prices, weakest first. May be shorter than the ladder,
+    /// and any zero field falls back to the formula.</param>
     private static SkillDef CastSingle(string family, string name, SkillEffect effect,
-        string[] children, Func<string, string> text, string desc)
+        string[] children, Func<string, string> text, string desc, RungCost[]? costs = null)
     {
         int n = children.Length;
         var levels = new SkillLevel[n];
         for (int i = 0; i < n; i++)
         {
-            int mp = n == 1 ? SingleBuffMpLow
+            var c = costs is not null && i < costs.Length ? costs[i] : default;
+            int mp = c.Total > 0 ? c.Total
+                   : n == 1 ? SingleBuffMpLow
                    : SingleBuffMpLow + (SingleBuffMpHigh - SingleBuffMpLow) * i / (n - 1);
-            levels[i] = new SkillLevel(MpCost: mp, InitialMpCost: mp / 5,
-                SpCost: BuffSpCosts[Math.Min(i, BuffSpCosts.Length - 1)],
+            levels[i] = new SkillLevel(MpCost: mp, InitialMpCost: c.Init > 0 ? c.Init : mp / 5,
+                SpCost: c.Sp > 0 ? c.Sp : BuffSpCosts[Math.Min(i, BuffSpCosts.Length - 1)],
                 ChildBuffs: new[] { children[i] }, Description: text(children[i]));
         }
+        // The def's own MpCost/SpCost are level 1's — a skill with Levels reads them per level, but
+        // anything that looks at the def alone (the learn list, a tooltip before you own it) sees
+        // rung 1, which is what it would be handed.
         return new SkillDef(CastId(family), name, BaseClass.Mage, effect,
-            MpCost: SingleBuffMpLow, CastTicks: 10, CooldownTicks: 10, Range: 600, Power: 0,
-            DurationTicks: 12000, InitialMpCost: SingleBuffMpLow / 5,
+            MpCost: levels[0].MpCost, CastTicks: 10, CooldownTicks: 10, Range: 600, Power: 0,
+            DurationTicks: 12000, InitialMpCost: levels[0].InitialMpCost,
             ChildBuffs: new[] { children[0] },
-            Category: SkillCategory.Buff, SpCost: BuffSpCosts[0],
+            Category: SkillCategory.Buff, SpCost: levels[0].SpCost,
             Description: desc, Levels: levels);
     }
 
@@ -240,12 +271,22 @@ public static partial class SkillCatalog
         // grew with the rung would make a higher rung genuinely worse in one respect, which is
         // exactly what the rank rule cannot express. Rung 1 = the cleric's Frenzy today (bar that
         // evasion), rung 6 = the NPC buffer's.
-        // ===== Control resistance, per school — ONE rung each, and that is deliberate =====
-        // These are his level-40 healer rows ("30% resist to SPT debuffs" / "15% resist to CON debuffs"),
-        // written as "? L1", so a ladder is coming. ⚠ Only the rung he authored exists: inventing rungs
-        // 2-6 here is exactly what BL-02 forbids, and a resist ladder is not a curve anyone can guess —
-        // 30% and 15% are not even the same number, so there is no shared shape to extrapolate from.
-        list.Add(CcResistRung(FamCcResMag, "Clarity", 1, magical: 0.30f));
+        // ===== Control resistance, per school — only the rungs he has authored =====
+        // Fortitude is his level-40 healer row ("15% resist to CON debuffs") and still stands alone.
+        // ⚠ Inventing rungs to fill a ladder out is exactly what BL-02 forbids, and a resist ladder is
+        // not a curve anyone can guess — 20/30% and 15% are not even the same number line.
+        //
+        // Clarity gained a rung on 2026-08-19: he put it on `cleric 2nd.csv` at level 25 for **20%**,
+        // below the **30%** his `healer 3rd.csv` already gave at 40. So 20% is rung 1 and the healer's
+        // grant moved up to rung 2 — it keeps the number he authored for it (ClassSkillTables.Third).
+        // ===== The shield pair — one rung each, at the group's own numbers (see the family consts) =====
+        // Both are PERCENT of what the shield already carries, which makes them free of a "do you have
+        // a shield" check: a bare arm has 0 shield defence and 0 block chance, and 0 × 1.5 is still 0.
+        list.AddRange(Ladder(FamShieldDef,   "Shield Harden", SkillEffect.BuffShieldDef,   ModifierMode.Percent, "shield P.Def", 0.50f));
+        list.AddRange(Ladder(FamShieldBlock, "Shield Bless",  SkillEffect.BuffBlockChance, ModifierMode.Percent, "block chance", 0.30f));
+
+        list.Add(CcResistRung(FamCcResMag, "Clarity", 1, magical: 0.20f));
+        list.Add(CcResistRung(FamCcResMag, "Clarity", 2, magical: 0.30f));
         list.Add(CcResistRung(FamCcResPhys, "Fortitude", 1, physical: 0.15f));
 
         list.Add(FrenzyRung(1, 0.30f, 0.05f, 5));
@@ -331,33 +372,68 @@ public static partial class SkillCatalog
              ?? alreadyBuilt.FirstOrDefault(s => s.Id == childId))?.Description ?? "";
         string[] Rungs(string family, int n) => Enumerable.Range(1, n).Select(i => Rung(family, i)).ToArray();
 
-        void Castable(string family, string name, SkillEffect effect, string[] children, string what) =>
+        void Castable(string family, string name, SkillEffect effect, string[] children, string what,
+                      RungCost[]? costs = null) =>
             list.Add(CastSingle(family, name, effect, children, Text,
-                $"Blesses an ally (or self) with {what} for 20 minutes."));
+                $"Blesses an ally (or self) with {what} for 20 minutes.", costs));
 
-        Castable(FamPhysAtk, "Might", SkillEffect.BuffPhysAtk, Rungs(FamPhysAtk, 3), "more Physical Attack");
-        Castable(FamPhysDef, "Bulwark", SkillEffect.BuffDef, Rungs(FamPhysDef, 3), "more Physical Defence");
-        Castable(FamMagAtk, "Force", SkillEffect.BuffMagAtk, Rungs(FamMagAtk, 3), "more Magic Attack");
-        Castable(FamMagDef, "Ward", SkillEffect.BuffMagicDef, Rungs(FamMagDef, 3), "more Magic Defence");
-        Castable(FamAccuracy, "Aim", SkillEffect.BuffAccuracy, Rungs(FamAccuracy, 3), "a steadier hand");
-        Castable(FamVamp, "Vampirism", SkillEffect.BuffMeleeVamp, Rungs(FamVamp, 3), "melee attacks that heal");
-        Castable(FamInterrupt, "Resolve", SkillEffect.BuffInterruptResist, Rungs(FamInterrupt, 4), "casting that is harder to cancel");
-        Castable(FamCritRate, "Focus", SkillEffect.BuffCritRate, Rungs(FamCritRate, 6), "a higher critical rate");
-        Castable(FamCritDmg, "Ferocity", SkillEffect.BuffCritDamage, Rungs(FamCritDmg, 6), "heavier criticals");
-        Castable(FamMagCrit, "Insight", SkillEffect.BuffMagicCritRate, Rungs(FamMagCrit, 6), "more magic criticals");
-        Castable(FamMaxHp, "Body", SkillEffect.BuffHp, Rungs(FamMaxHp, 6), "more Max HP");
-        Castable(FamMaxMp, "Soul", SkillEffect.BuffMp, Rungs(FamMaxMp, 6), "more Max MP");
-        Castable(FamHpRegen, "Vigor", SkillEffect.BuffHpRegen, Rungs(FamHpRegen, 6), "faster HP regeneration");
-        Castable(FamMpRegen, "Serenity", SkillEffect.BuffMpRegen, Rungs(FamMpRegen, 6), "faster MP regeneration");
+        // The prices below are read straight off his sheets — `mage 1st.csv` (rungs a base mage buys),
+        // `cleric 2nd.csv` (2026-08-19) and `buffer 3rd.csv`. A `default` entry is a rung no CSV has
+        // priced yet and keeps the 30→50 formula. See RungCost for why the two schemes disagree.
+        RungCost[] C(params RungCost[] c) => c;
+        RungCost R(int init, int total, int sp) => new(init, total, sp);
+
+        Castable(FamPhysAtk, "Might", SkillEffect.BuffPhysAtk, Rungs(FamPhysAtk, 3), "more Physical Attack",
+            C(R(4, 20, 960), R(4, 20, 1700), R(10, 50, 12800)));
+        Castable(FamPhysDef, "Bulwark", SkillEffect.BuffDef, Rungs(FamPhysDef, 3), "more Physical Defence",
+            C(R(4, 20, 960), R(6, 26, 3200), R(10, 50, 12800)));
+        Castable(FamMagAtk, "Force", SkillEffect.BuffMagAtk, Rungs(FamMagAtk, 3), "more Magic Attack",
+            C(default, R(6, 26, 3200), R(10, 50, 12800)));
+        // ⚠ Ward L1 is his cleric row at 35 and L2 his buffer row at 48: the same 40 MP, and the SP
+        // actually goes DOWN (12800 → 6400). Both are authored; neither is a transcription slip here.
+        Castable(FamMagDef, "Ward", SkillEffect.BuffMagicDef, Rungs(FamMagDef, 3), "more Magic Defence",
+            C(R(8, 40, 12800), R(8, 40, 6400), R(10, 50, 12800)));
+        Castable(FamAccuracy, "Aim", SkillEffect.BuffAccuracy, Rungs(FamAccuracy, 3), "a steadier hand",
+            C(R(6, 30, 6400), default, R(10, 50, 12800)));
+        Castable(FamVamp, "Vampirism", SkillEffect.BuffMeleeVamp, Rungs(FamVamp, 3), "melee attacks that heal",
+            C(default, R(8, 33, 6400), R(10, 50, 12800)));
+        Castable(FamInterrupt, "Resolve", SkillEffect.BuffInterruptResist, Rungs(FamInterrupt, 4), "casting that is harder to cancel",
+            C(R(4, 20, 1700), R(6, 26, 3200), R(8, 43, 12800), R(10, 50, 25000)));
+        Castable(FamCritRate, "Focus", SkillEffect.BuffCritRate, Rungs(FamCritRate, 6), "a higher critical rate",
+            C(default, default, default, R(6, 26, 3200), R(9, 46, 50000), R(10, 50, 100000)));
+        Castable(FamCritDmg, "Ferocity", SkillEffect.BuffCritDamage, Rungs(FamCritDmg, 6), "heavier criticals",
+            C(default, default, R(7, 38, 12800), default, default, R(10, 50, 100000)));
+        Castable(FamMagCrit, "Insight", SkillEffect.BuffMagicCritRate, Rungs(FamMagCrit, 6), "more magic criticals",
+            C(default, R(6, 34, 6400), default, R(8, 42, 25000), default, R(10, 50, 100000)));
+        Castable(FamMaxHp, "Body", SkillEffect.BuffHp, Rungs(FamMaxHp, 6), "more Max HP",
+            C(default, default, R(7, 38, 12800), default, R(9, 46, 50000), R(10, 50, 100000)));
+        Castable(FamMaxMp, "Soul", SkillEffect.BuffMp, Rungs(FamMaxMp, 6), "more Max MP",
+            C(default, default, R(7, 38, 12800), default, R(9, 46, 50000), R(10, 50, 100000)));
+        Castable(FamHpRegen, "Vigor", SkillEffect.BuffHpRegen, Rungs(FamHpRegen, 6), "faster HP regeneration",
+            C(default, R(8, 40, 12800), default, R(8, 42, 25000), default, R(10, 50, 100000)));
+        Castable(FamMpRegen, "Serenity", SkillEffect.BuffMpRegen, Rungs(FamMpRegen, 6), "faster MP regeneration",
+            C(default, default, default, R(8, 42, 25000), default, R(10, 50, 100000)));
         // The speed four shipped first, so their rungs are named rather than numbered.
-        Castable(FamMove, "Swift", SkillEffect.BuffMoveSpeed, new[] { BuffSwiftC, BuffSwiftU, BuffSwiftR }, "more Move Speed");
-        Castable(FamCast, "Alacrity", SkillEffect.BuffCastSpeed, new[] { BuffAlacrityC, BuffAlacrityU, BuffAlacrityR }, "faster casting");
-        Castable(FamEva, "Agility", SkillEffect.BuffEvasion, new[] { BuffAgilityC, BuffAgilityU, BuffAgilityR }, "more Evasion");
-        Castable(FamAs, "Haste", SkillEffect.BuffAtkSpeed, new[] { BuffHasteC, BuffHasteU, BuffHasteR }, "faster attacks");
+        Castable(FamMove, "Swift", SkillEffect.BuffMoveSpeed, new[] { BuffSwiftC, BuffSwiftU, BuffSwiftR }, "more Move Speed",
+            C(default, R(4, 20, 1700), R(8, 33, 6400)));
+        Castable(FamCast, "Alacrity", SkillEffect.BuffCastSpeed, new[] { BuffAlacrityC, BuffAlacrityU, BuffAlacrityR }, "faster casting",
+            C(R(4, 20, 1700), R(8, 40, 12800)));
+        Castable(FamEva, "Agility", SkillEffect.BuffEvasion, new[] { BuffAgilityC, BuffAgilityU, BuffAgilityR }, "more Evasion",
+            C(default, R(8, 33, 6400), R(10, 50, 12800)));
+        // ⚠ Haste L1 has NO price because nothing learns it any more: he took the cleric's level-35
+        // Haste row out on 2026-08-19. The rung still exists (a potion and a scroll hand it out).
+        Castable(FamAs, "Haste", SkillEffect.BuffAtkSpeed, new[] { BuffHasteC, BuffHasteU, BuffHasteR }, "faster attacks",
+            C(default, R(8, 40, 6400), R(10, 50, 12800)));
         // The two control-resistance blessings. `SkillEffect.None` because their payload is a field,
         // not a magnitude — the wrapper still buffs, it just has no flag that describes it.
-        Castable(FamCcResMag, "Clarity", SkillEffect.None, Rungs(FamCcResMag, 1), "a mind harder to bind");
+        Castable(FamCcResMag, "Clarity", SkillEffect.None, Rungs(FamCcResMag, 2), "a mind harder to bind",
+            C(R(6, 26, 3200)));
         Castable(FamCcResPhys, "Fortitude", SkillEffect.None, Rungs(FamCcResPhys, 1), "a body harder to break");
+        // The shield pair. ⚠ NOTHING LEARNS THESE YET — they exist so *Shield Bless and Harden* can be
+        // a real group (it names them in ChildBuffs and Replaces). His healer singles will put the
+        // learn rows on the class table and turn each into a ladder.
+        Castable(FamShieldDef, "Shield Harden", SkillEffect.BuffShieldDef, Rungs(FamShieldDef, 1), "a sturdier shield");
+        Castable(FamShieldBlock, "Shield Bless", SkillEffect.BuffBlockChance, Rungs(FamShieldBlock, 1), "a shield that catches more");
         // Frenzy's castable single already exists as the cleric's `holy_frenzy` (Skills.Healer.cs) —
         // it was a wrapper over one family before this, so it needed no second copy.
 

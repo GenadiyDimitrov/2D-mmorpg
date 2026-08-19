@@ -7,10 +7,89 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.71.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.72.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
+
+## 2026-08-19 — 0.72.0: one rate knob, and the buffs cost what the sheet says
+
+🔴 **Needs a new APK, and it is deliberately NOT built yet** — his instruction: *"dont build apk untill
+the healer atleast is out"*. Two things in here require one, so the next build carries both: `DebugConfigDto`
+lost a field, and the class skill tables changed (the Learn tab is built client-side from the compiled
+tables, not from a server push). `Game.sln` builds, the Unity client type-checks, the server boots green.
+⚠ **Delete `Game.Server/game.db`** before the next run — still owed from 0.71.0's schema change.
+
+### 🔑 A NEW STANDING RULE: the CSVs and the game move together, both ways
+
+Owner: *"I want the csv-s to represent what is inside the game at all time … I author the skills through
+the file so you update the game; if I author a skill through you, you update the file."* Written into
+`CLAUDE.md`. `docs/data/classes_skills_csv/` is not documentation that trails the build — it is the skill
+data, mirrored, and a commit that changes a `SkillDef` or a `ClassSkill` without touching a CSV should
+make you check why. `SkillCsvSeed --check` is what makes "at all times" verifiable; this release took it
+from **25 findings to 8**, and **not one MP or SP number disagrees with a CSV any more**. The 8 that
+remain are all naming or never-authored rows (`Taunt`/`Provoke`, `Strike`/`Smash`, `Lure`, two spellings,
+two duration-column conventions).
+
+### Rates: one knob, and nothing lost to a clamp
+
+*"if i make the dropMod = 30f … killing a mob to yield stuff as much as i killed 30"*. **`/droprate global
+30` now means ×30 of everything.** Above 100% a drop pays **COPIES** — whole part guaranteed, fraction
+rolled flat, so the expected value is exactly the multiplier (`MobCatalog.DropCopies`; 250% = two copies
+plus a 50% roll for a third). Floor was rejected: it would make the knob dead between integers.
+
+- **The guaranteed-group exemption came off.** It only ever existed because of the 100% clamp, which
+  pinned a mats group and threw away the weights inside it. With copies, a 100% mats group at ×30 fires
+  30 weighted picks in exact table proportion, so his authored numbers are honoured by being *untouched*
+  rather than by the knob skipping them.
+- 🔑 **Every rate should be the same N.** You kill 1/N as many mobs per level, so ×N on exp, SP, gold and
+  drop chance leaves rewards-per-level identical to x1. **`DropAmount` is not a rate** — setting it too
+  squares the multiplier — so it left the Debug panel for `/droprate amount <x>`.
+- 🔴 **Bug fixed in passing: quest gold and quest SP were paid RAW.** On a x30 server every quest paid x1.
+  Both now route through `RateConfig.Quest` × World × runes.
+- The five rate floats became one **`RateSet`** (`Game.Shared/RateSet.cs`), composed with `*` across three
+  scopes: World × Quest × the character's runes.
+- Verified with `tools/BalanceMatrix`: **at x1 the output is byte-identical**, so his normal build is
+  untouched. At ×30, mats/kill went 1.76 → 52.8 — that group used to be exempt and moved not at all.
+
+### Buffs: a single's price is authored per rung now, not derived
+
+His re-priced `cleric 2nd.csv` prices a buff by **the level it is learned at** (20 → 20 MP, 25 → 26,
+30 → 33, 35 → 40); `buffer 3rd.csv` still prices by rung, 30-50. The two cannot both be true — Focus L4 is
+42 by the old `30 + 20·i/(n−1)` formula and 26 on his sheet — so `RungCost[]` in `Skills.BuffLadders.cs`
+now carries each authored `INIT MP` / `FINIT MP` / `SP` verbatim, and the formula survives only as the
+default for rungs no CSV has reached. ⚠ **Ladders that look irregular are irregular on purpose**: Ward L1
+and L2 both cost 40 MP and the SP goes *down* between them; Frenzy L1 fell 125 → 40 while rungs 3 and 6
+keep the buffer's 145/175.
+
+- **`mage 1st.csv`**: he split the level-7 buff row, so **Might stays at 7 and Bulwark moves to 14**. A
+  level-7 mage buys offence and waits a tier for defence.
+- **`cleric 2nd.csv`**: Swift L3 moved 25 → 30, Alacrity L2 moved 25 → 35, **Haste is gone** from the
+  cleric entirely (attack speed is a buffer reward from 40), and **Shrouding Hymn left the cleric for the
+  buffer** — which settles the one row in that file whose values were never his.
+- **Clarity is new at 25, at his 20%.** The family had one rung (the healer's 30% at 40), so 20% became
+  rung 1 and the Lightbringer's grant moved to rung 2 — the number he authored is unchanged, only its index.
+- 🔑 **A mastery's SP is the level's SP**: 3200 / 6400 / 12800 / 25000 at 20/25/30/35, for every Armor and
+  Spell Mastery. *"i dont know why they were so overinflated"* — the cleric's Armor Mastery and the nuker's
+  separate `Mage Armor Mastery` both opened at 9600. He corrected `nuker 2nd.csv` himself in the same pass,
+  so both sheets and the code now say 3200 / 6400.
+- **Bolt MP came down to his sheets.** Magic Bolt (12/17 → 10/15), Vampiric Bolt (40/54/64/72/82 →
+  28/40/46/52/62), Elemental and Quick Bolt (27/32/36/41 → 20/23/26/31). The unauthored rungs above 35
+  carry the same ratio his band implies, so there is no cliff at 40 — Vampiric used to jump 62 → 90.
+
+### Shield Bless and Harden — the sixth improved group (Warchanter 66)
+
+His `buffer 3rd.csv` row. Its `REPLACES` column read `[Swift Alacrity Agility Haste]`, copied from the row
+below it; this was reported as a paste error and **he corrected it** — *"it should rapladse Shield Harder
+and Shield Bless"*. The copy was the contents, not the intent. So two families were created,
+`shield_def` (*Shield Harden*, % shield P.Def) and `shield_block` (*Shield Bless*, % block **chance** —
+reduction is never raised), and `HolyShield` names both in `ChildBuffs` (which is what makes the engine
+treat it as a group, covering their families at group rank) and in `Replaces` (which collapses them off the
+learn list). Party, 40 + 160 MP, 100k SP, 1s cast, 20 minutes; in `AdminBuffSet`, not the newbie NPC's set.
+**Self-gating** — both numbers are a percent of what the shield carries, and 0 × 1.5 is still 0.
+⏰ **Each family has ONE rung, at the group's own +50% / +30%**, because that is all that exists. He is
+authoring the singles now (`healer 3rd.csv` drafts Shield Harden at +5% @40, +10% @48); when they land the
+rungs become a ladder and the group re-points at the top index. Nothing between 5% and 50% was invented.
 
 ## 2026-08-17 — 0.71.0: the cleric says what it does, and the healer reaches 40
 

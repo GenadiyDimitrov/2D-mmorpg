@@ -47,6 +47,9 @@ public static partial class SkillCatalog
     public const string NpcHarmonyProtection = "npc_harmony_protection";
     public const string NpcHarmonyWarrior    = "npc_harmony_warrior";
     public const string NpcHarmonyWizard     = "npc_harmony_wizard";
+    // (Shield Bless and Harden — his `buffer 3rd.csv` @66 — is NOT here. It is a real improved GROUP
+    // over the two shield families, so it lives with the other groups in Skills.Healer.cs as
+    // `HolyShield`. AdminBuffSet still hands it out.)
 
     public const int NpcBuffTicks = 36000;   // 1 hour @ 10 ticks/s
     public const int NpcBuffRank  = 100;     // overrides player self-buffs (rank 1-4)
@@ -78,7 +81,7 @@ public static partial class SkillCatalog
     /// same picture through twice the work.</summary>
     public static readonly string[] AdminBuffSet =
         new[] { NpcMightGroup, NpcForceGroup, NpcFocusGroup, NpcBodyGroup, NpcSpeed,
-                NpcHarmonyProtection, NpcHarmonyWarrior, NpcHarmonyWizard }
+                NpcHarmonyProtection, NpcHarmonyWarrior, NpcHarmonyWizard, HolyShield }
             .Concat(NewbieBuffSet).ToArray();
 
     /// <summary>A HARMONY blessing — the layer above the basic buffs, with no potion, no scroll and

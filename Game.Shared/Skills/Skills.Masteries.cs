@@ -144,11 +144,17 @@ public static partial class SkillCatalog
                        + "MP from your own MP-restoration. Light/heavy armor slows your casting.",
             Levels: new[]
             {
-                new SkillLevel(SpCost: 9600),
-                new SkillLevel(SpCost: 12800),
+                // 🔑 A MASTERY'S SP IS THE LEVEL'S SP, nothing else (owner, 2026-08-19: *"armor and
+                // spell masteries should fallow the lvl SP requirement"* — *"i dont know why they were
+                // so overinflated"*). The 20-35 band is 3200 / 6400 / 12800 / 25000, the same schedule
+                // the cleric's Armor Mastery and both Spell Masteries run. The first two rungs were
+                // 9600 / 12800, which made a passive the most expensive thing a level-20 nuker could buy.
+                new SkillLevel(SpCost: 3200),
+                new SkillLevel(SpCost: 6400),
                 new SkillLevel(SpCost: 12800),
                 new SkillLevel(SpCost: 25000),
-                // Rungs 5-8 (@40/50/60/70) — see the note below.
+                // Rungs 5-8 (@40/50/60/70) — see the note below. ⚠ These are NOT on his schedule: there
+                // is no authored level→SP table above 35 yet, so they are left as they were.
                 new SkillLevel(SpCost: 48000),
                 new SkillLevel(SpCost: 90000),
                 new SkillLevel(SpCost: 145000),

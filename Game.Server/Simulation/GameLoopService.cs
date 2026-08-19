@@ -843,8 +843,7 @@ public class GameLoopService : BackgroundService
 
     // ----- Debug live-tuning (admin only) -----
     private DebugConfigDto CurrentDebugConfig() => new(
-        RateConfig.ExpRate, RateConfig.SpRate, RateConfig.DropChanceRate, RateConfig.DropAmountRate,
-        RateConfig.GoldAmountRate,
+        RateConfig.World.Exp, RateConfig.World.Sp, RateConfig.World.DropChance, RateConfig.World.Gold,
         _karmaBase, (float)_karmaConsecGrowth, (float)_karmaLevelGrowth, _karmaLossPerDeath, _karmaLossPerMob,
         _idleCapSeconds, _offlineCapSeconds, _graceSeconds,
         _testSkillPower, _testSkillMod,
@@ -871,11 +870,11 @@ public class GameLoopService : BackgroundService
 
     private void ApplyDebugConfig(DebugConfigDto c)
     {
-        RateConfig.ExpRate        = Math.Max(0f, c.ExpRate);
-        RateConfig.SpRate         = Math.Max(0f, c.SpRate);
-        RateConfig.DropChanceRate = Math.Max(0f, c.DropChanceRate);
-        RateConfig.DropAmountRate = Math.Max(0f, c.DropAmountRate);
-        RateConfig.GoldAmountRate = Math.Max(0f, c.GoldRate);
+        // DropAmount is NOT on the panel: it is the stack-size knob, not a rate, and the two boxes read
+        // as two rate knobs that must both be raised (owner, 2026-08-18 — "fix the two boxes ... to
+        // become one global drop"). Carried through untouched here; `/droprate amount` still tunes it.
+        RateConfig.World = new RateSet(
+            c.ExpRate, c.SpRate, c.GoldRate, c.DropChanceRate, RateConfig.World.DropAmount).Clamped();
         _karmaBase          = Math.Max(0, c.KarmaBase);
         _karmaConsecGrowth  = Math.Max(1.0, c.KarmaConsecGrowth);
         _karmaLevelGrowth   = Math.Max(1.0, c.KarmaLevelGrowth);
@@ -5739,7 +5738,7 @@ public class GameLoopService : BackgroundService
                     : "Admin: /jail, /unjail, /kick, /ban, /unban, /chatban, /unchatban, /jailed, " +
                       "/role <name> <player|moderator|admin>, /tp <name>, /where <name>, /god, /invis, " +
                       "/spd <m|a|c> <v> (bare /spd resets), /bag <name>, /give <name>, " +
-                      "/givegold <name> <amount>, /droprate [group|gear|global|item <id>] [mult], " +
+                      "/givegold <name> <amount>, /droprate [group|gear|global|amount|item <id>] [mult], " +
                       "/titleright <name> <on|off>");
                 break;
 
@@ -6160,7 +6159,8 @@ public class GameLoopService : BackgroundService
                 if (parts.Length == 0)
                 {
                     SendSystemToEntity(admin,
-                        $"Global drop rate x{RateConfig.DropChanceRate:0.###}  (mats/scrolls/always are exempt)");
+                        $"Global drop rate x{RateConfig.World.DropChance:0.###} (reaches EVERY group; above "
+                        + $"100% a drop pays copies)   |   stack size x{RateConfig.World.DropAmount:0.###}");
                     foreach (var (name, mul) in RateConfig.DropGroupRates.OrderBy(k => k.Key))
                         SendSystemToEntity(admin, $"  {name,-10} x{mul:0.###}");
                     // Per-item overrides are listed only when there ARE any — an empty section every
@@ -6173,8 +6173,9 @@ public class GameLoopService : BackgroundService
                                 $"  {ItemCatalog.Get(id)?.Name ?? id} ({id}) x{mul:0.###}");
                     }
                     SendSystemToEntity(admin,
-                        "Usage: /droprate <group|gear|global> <multiplier>  — 'gear' sets all four " +
-                        "equipment groups at once, 'global' sets the server-wide rate.");
+                        "Usage: /droprate <group|gear|global|amount> <multiplier>  — 'gear' sets all four " +
+                        "equipment groups at once, 'global' sets the server-wide rate, 'amount' sets " +
+                        "stack size (not a rate).");
                     SendSystemToEntity(admin,
                         "       /droprate item <id or name> <multiplier>  — tunes ONE item on its own " +
                         "(x1 clears it). Inside a group this moves its share, not its rarity rung.");
@@ -6230,24 +6231,34 @@ public class GameLoopService : BackgroundService
                 string which = parts[0].ToLowerInvariant();
                 if (which == "global")
                 {
-                    RateConfig.DropChanceRate = mult;
-                    SendSystemToEntity(admin, $"Global drop rate = x{mult:0.###}.");
+                    RateConfig.World = RateConfig.World with { DropChance = mult };
+                    SendSystemToEntity(admin, $"Global drop rate = x{mult:0.###} — every group, and above "
+                        + "100% a drop pays that many copies instead of clamping.");
+                }
+                else if (which == "amount")
+                {
+                    // The stack-size knob, off the tuning panel on purpose (it read as a second rate and
+                    // invited setting both, which squares the multiplier on everything stackable). Still
+                    // reachable here, because a knob with no way to reach it is a knob that rots.
+                    RateConfig.World = RateConfig.World with { DropAmount = mult };
+                    SendSystemToEntity(admin, $"Stack size = x{mult:0.###} (stackables only — a piece of "
+                        + "gear is one row per copy however high this goes). Not a rate: leave it at 1 "
+                        + "unless you want bigger stacks specifically.");
                 }
                 else if (which == "gear")
                 {
                     foreach (var g in new[] { "armor", "accessory", "weapon", "jewel" })
                         RateConfig.DropGroupRates[g] = mult;
                     SendSystemToEntity(admin, $"armor/accessory/weapon/jewel = x{mult:0.###} "
-                        + $"(effective x{RateConfig.DropChanceRate * mult:0.###} with the global rate).");
+                        + $"(effective x{RateConfig.World.DropChance * mult:0.###} with the global rate).");
                 }
                 else if (RateConfig.DropGroupRates.ContainsKey(which))
                 {
                     RateConfig.DropGroupRates[which] = mult;
-                    // mats/scrolls/always are exempt from the global rate, so their multiplier IS the
-                    // effective one — say which it is rather than printing a number that isn't true.
-                    float eff = which is "mats" or "scrolls" or "always"
-                        ? mult : mult * RateConfig.DropChanceRate;
-                    SendSystemToEntity(admin, $"{which} = x{mult:0.###} (effective x{eff:0.###}).");
+                    // Every group takes the global now (the mats/scrolls/always exemption came off with
+                    // the 100% clamp), so the effective rate is one multiplication for all of them.
+                    SendSystemToEntity(admin, $"{which} = x{mult:0.###} "
+                        + $"(effective x{mult * RateConfig.World.DropChance:0.###}).");
                 }
                 else
                 {
@@ -10242,7 +10253,7 @@ var effect = def.Effect;
 
         // Gold ALWAYS splits evenly among in-range members regardless of loot mode; the killer takes
         // the remainder. Solo = it all goes to the killer. (Level x rate, +/-20% variance.)
-        int gold = (int)(StatCalculator.MobGoldReward(mob.Level) * RateConfig.GoldAmountRate * dropGap
+        int gold = (int)(StatCalculator.MobGoldReward(mob.Level) * RateConfig.World.Gold * dropGap
             * (0.8f + (float)_rng.NextDouble() * 0.4f));
         if (gold > 0)
             AwardGold(killer, eligible, gold);
@@ -10276,62 +10287,116 @@ var effect = def.Effect;
 
         // Everyone who received something this kill (refresh their inventory once at the end).
         var touched = new HashSet<Entity>();
-        void Award(DropEntry entry)
+
+        // ONE entry, firing `copies` times (MobCatalog.DropCopies — the rate above 100% is copies, not a
+        // clamp). Every copy draws its OWN recipient, which is what keeps RoundRobin/Random spreading a
+        // x30 kill across the party instead of dumping the whole pile on one member; the copies are then
+        // batched per recipient so a stackable arrives as ONE stack and ONE chat line rather than thirty.
+        void Award(DropEntry entry, int copies)
         {
-            if (ItemCatalog.Get(entry.ItemId) is not ItemDef def)
+            if (ItemCatalog.Get(entry.ItemId) is not ItemDef def || copies <= 0)
                 return;
-            int qty = _rng.Next(entry.MinQty, entry.MaxQty + 1);
-            qty = Math.Max(1, (int)(qty * RateConfig.DropAmountRate));
-            // The recipient is chosen PER ITEM so RoundRobin/Random spread across the party.
-            var to = LootRecipient(killer, eligible, party);
-            if (!AddItem(to, def.Id, qty))
+            bool stack = def.IsStackable;
+            var perPlayer = new Dictionary<Entity, int>();
+            for (int c = 0; c < copies; c++)
             {
-                SendSystemToEntity(to, $"{mob.Name} dropped {def.Name} — inventory full!");
-                return;
+                var who = LootRecipient(killer, eligible, party);
+                // A stackable accumulates its rolled QUANTITY; a piece of gear is one item per copy
+                // (AddItem writes Quantity=1 for anything non-stackable, so a count is all that means).
+                int n = stack ? _rng.Next(entry.MinQty, entry.MaxQty + 1) : 1;
+                perPlayer[who] = perPlayer.TryGetValue(who, out int had) ? had + n : n;
             }
-            string qtyLabel = qty > 1 ? $" x{qty}" : "";
-            SendCombatToEntity(to, "LOOT", $"You looted: {def.Name}{qtyLabel} [{def.Grade}/{def.Rarity}]");
-            // Let the rest of the in-range party see where it went.
-            if (eligible.Count > 1)
-                foreach (var m in eligible)
-                    if (m.Id != to.Id)
-                        SendCombatToEntity(m, "LOOT", $"{to.Name} looted {def.Name}{qtyLabel}.");
-            touched.Add(to);
+
+            foreach (var (to, rolled) in perPlayer)
+            {
+                int got;
+                if (stack)
+                {
+                    // World.DropAmount is the STACK-SIZE knob and still applies only here — it never made
+                    // gear drop twice (one row per piece) and it still doesn't. The rate multiplier lives
+                    // in the copies now, so these two knobs no longer overlap.
+                    int qty = Math.Max(1, (int)(rolled * RateConfig.World.DropAmount));
+                    got = AddItem(to, def.Id, qty) ? qty : 0;
+                }
+                else
+                {
+                    // Non-stackable: one bag slot each, so stop at the first refusal — the rest is lost
+                    // exactly as a single over-cap drop always was.
+                    got = 0;
+                    while (got < rolled && AddItem(to, def.Id, 1)) got++;
+                }
+
+                if (got <= 0)
+                {
+                    SendSystemToEntity(to, $"{mob.Name} dropped {def.Name} — inventory full!");
+                    continue;
+                }
+                if (got < rolled)
+                    SendSystemToEntity(to, $"{mob.Name} dropped {rolled}x {def.Name} — only {got} fit!");
+
+                string qtyLabel = got > 1 ? $" x{got}" : "";
+                SendCombatToEntity(to, "LOOT", $"You looted: {def.Name}{qtyLabel} [{def.Grade}/{def.Rarity}]");
+                // Let the rest of the in-range party see where it went.
+                if (eligible.Count > 1)
+                    foreach (var m in eligible)
+                        if (m.Id != to.Id)
+                            SendCombatToEntity(m, "LOOT", $"{to.Name} looted {def.Name}{qtyLabel}.");
+                touched.Add(to);
+            }
         }
 
         // The KILLER's Rune of Drop scales every roll on this kill, the same entity whose level gap
         // already scales them. It is passed INTO EffectiveChance so the inspect screen (which asks the
         // same function with the same player) shows exactly the chance that is rolled here.
-        float dropMult = killer.DropRateMult;
+        float dropMult = killer.Runes.DropChance;
 
-        // Independent entries (GroupId == 0): each its own rate-scaled roll.
+        // Independent entries (GroupId == 0): each its own rate-scaled roll. Above 100% the excess is
+        // COPIES, not a discarded remainder — a 3.6% row at x30 is 108%, i.e. one guaranteed plus an 8%
+        // second, so the knob delivers exactly x30 instead of the x27.8 a clamp would have paid.
         foreach (var entry in applicable.Where(e => e.GroupId == 0))
-        {
-            float chance = Math.Min(1f, MobCatalog.EffectiveChance(entry, dropMult) * dropGap);
-            if (_rng.NextDouble() <= chance)
-                Award(entry);
-        }
+            Award(entry, MobCatalog.DropCopies(
+                MobCatalog.EffectiveChance(entry, dropMult) * dropGap, _rng.NextDouble()));
 
-        // Drop groups (GroupId > 0): roll once at the summed chance, then pick one weighted member. The
-        // rate is PER GROUP now (global x the group's own multiplier), so a server can run x200 drops
-        // without every kill also handing out a guaranteed potion three times over.
+        // Drop groups (GroupId > 0): roll the SUMMED chance, then take that many weighted picks. One
+        // pick is the old behaviour and still the normal case at x1 — the group stays mutually exclusive
+        // (owner: "never 20 light armors off one lucky kill") because a member's authored chance IS its
+        // marginal drop chance and the group's trigger is their sum, never a second authored number.
+        //
+        // 🔑 Above 100% the group fires REPEATEDLY, each copy an independent weighted pick, which is what
+        // preserves the authored weights at any rate — and is why the guaranteed groups no longer need
+        // to be exempt from the global (a 100% mats group at x30 = 30 picks in exact table proportion).
         foreach (var group in applicable.Where(e => e.GroupId != 0).GroupBy(e => e.GroupId))
         {
             var members = group.ToList();
-            float total = Math.Min(1f, members.Sum(e => MobCatalog.EffectiveChance(e, dropMult)) * dropGap);
-            if (_rng.NextDouble() > total)
+            int copies = MobCatalog.DropCopies(
+                members.Sum(e => MobCatalog.EffectiveChance(e, dropMult)) * dropGap, _rng.NextDouble());
+            if (copies <= 0)
                 continue;
             // Weighted pick within the group. The weight is the PER-ITEM-TUNED chance, the same
             // quantity the trigger above was summed from — take the raw authored chance here instead
             // and a per-item multiplier would move how often the group fires without moving which
             // member it lands on, which is the one thing the knob exists to do.
             double weightSum = members.Sum(e => (double)MobCatalog.ItemWeight(e));
-            double pick = _rng.NextDouble() * weightSum;
-            foreach (var e in members)
+            if (weightSum <= 0)
+                continue;
+            // Copies are tallied per member first, so thirty picks land as a handful of Award calls
+            // (and a handful of chat lines) rather than thirty.
+            var picks = new Dictionary<DropEntry, int>();
+            for (int c = 0; c < copies; c++)
             {
-                pick -= MobCatalog.ItemWeight(e);
-                if (pick <= 0) { Award(e); break; }
+                double pick = _rng.NextDouble() * weightSum;
+                foreach (var e in members)
+                {
+                    pick -= MobCatalog.ItemWeight(e);
+                    if (pick <= 0)
+                    {
+                        picks[e] = picks.TryGetValue(e, out int had) ? had + 1 : 1;
+                        break;
+                    }
+                }
             }
+            foreach (var (e, n) in picks)
+                Award(e, n);
         }
 
         // Boss/elite pile goes to ONE recipient per the loot rule (mats stay together).
@@ -10354,7 +10419,7 @@ var effect = def.Effect;
     {
         void Pay(Entity m, int share)
         {
-            int paid = (int)(share * m.GoldRateMult);
+            int paid = (int)(share * m.Runes.Gold);
             m.Gold += paid;
             TallyReward(m, 0, 0, paid);
             SendGold(m);
@@ -10838,12 +10903,13 @@ var effect = def.Effect;
         // multipliers — the premium Exp/SP runes, and the two zeroing runes which make these 0. This is
         // where the Rune of Sinister does its work: *"stops the exp gain (so a grinder can grind and no
         // lvl up)"*. Both channels are read here because this is the one place both are scaled.
-        long expGained = (long)(amount * RateConfig.ExpRate * player.ExpRateMult);
+        var rates = RateConfig.World * player.Runes;
+        long expGained = (long)(amount * rates.Exp);
         player.Exp += expGained;
 
         long sp = spAmount >= 0
-            ? (long)(spAmount * RateConfig.SpRate * player.SpRateMult)
-            : (long)(amount * GameConstants.SkillPointRatio * RateConfig.SpRate * player.SpRateMult);
+            ? (long)(spAmount * rates.Sp)
+            : (long)(amount * GameConstants.SkillPointRatio * rates.Sp);
         // SkillPoints SATURATES at int.MaxValue — deliberate (owner, 2026-07-24), not a stopgap. A full
         // 1->85 earns ~1.5e9 SP at x1, so the ceiling is genuinely reachable at higher SP rates, but the
         // planned sink makes that fine: SP EXTRACTION will convert 1 000 000 000 SP into one "SP bottle"
@@ -10854,7 +10920,7 @@ var effect = def.Effect;
         // The 1-SP floor exists so a tiny reward never rounds to nothing — but a ZEROED channel must
         // stay zero, or the Rune of Sinister would still hand out a skill point per kill and read as
         // broken. A rune that says "no SP" is not a rounding case.
-        long spBanked = player.SpRateMult <= 0f ? 0L : Math.Max(1L, sp);
+        long spBanked = rates.Sp <= 0f ? 0L : Math.Max(1L, sp);
         player.SkillPoints = (int)Math.Min(int.MaxValue, player.SkillPoints + spBanked);
         // Report what was actually BANKED, not what was computed — at the saturation ceiling those
         // differ, and a line claiming SP you did not receive is worse than no line.
@@ -12018,7 +12084,7 @@ var effect = def.Effect;
             // The chances are shown as THIS player would roll them, so a Rune of Drop moves the numbers
             // on the screen it moves in the kill roll. Reading the def's rate here instead would make the
             // inspect list quietly lie to every player wearing one.
-            float lookMult = player.DropRateMult;
+            float lookMult = player.Runes.DropChance;
 
             // 🔴 …AND THE LEVEL GAP, which this list did NOT apply and the kill roll always did (playtest
             // 23): *"the drop value with double drop rune shows double chances ..the problem is there
@@ -12032,7 +12098,12 @@ var effect = def.Effect;
             // hiding the other is worse than showing neither, because the visible one certifies the
             // number as personal and it is then wrong by up to 100%.
             float lookGap = isMob ? ExpCurve.LevelGapMultiplier(player.Level - t.Level) : 1f;
-            float Shown(DropEntry d) => Math.Min(1f, MobCatalog.EffectiveChance(d, lookMult) * lookGap);
+            float Shown(DropEntry d) => MobCatalog.EffectiveChance(d, lookMult) * lookGap;
+
+            // Above 100% a percentage stops meaning anything ("250%" is not a chance), so the label
+            // switches to what the roll actually does at that rate: copies per kill. Plain "x", never
+            // "×" — the client's TMP atlas is static and does not carry the multiplication sign.
+            static string Odds(double c) => c >= 1.0 ? $"x{c:0.##}/kill" : $"{c * 100:0.##}%";
 
             var lines = new List<string>();
             // The header states the penalty rather than leaving the reader to wonder why a 5% row reads
@@ -12047,26 +12118,31 @@ var effect = def.Effect;
             }
             // GroupId 0 rolls independently, so each entry is its own row carrying its own chance.
             foreach (var d in rows.Where(d => d.GroupId == 0))
-                lines.Add($"{ItemLine(d)}  ({Shown(d) * 100:0.##}%)");
+                lines.Add($"{ItemLine(d)}  ({Odds(Shown(d))})");
             // A GROUP is ONE roll shared by its members, so it reads as a TREE (32f): a title line with
             // the group's own chance, then the items it can land on indented beneath. As flat rows a
             // single 5% group looked like five separate 5% drops, which is five times the truth.
             foreach (var g in rows.Where(d => d.GroupId != 0).GroupBy(d => d.GroupId))
             {
-                float chance = Math.Min(1f, g.Sum(d => MobCatalog.EffectiveChance(d, lookMult)) * lookGap);
-                lines.Add($"{GroupTitle(g.Key)}  ({chance * 100:0.##}%)");
-                // EVERY member prints its own chance (owner, playtest-16: "add the rows also individual
-                // %"). It used to print one only when a per-item override had been set, so an untouched
-                // group was a bare name list and the reader was left to assume the members split the
-                // group's chance evenly — which is exactly what the weights do NOT guarantee. The number
-                // shown is what you actually get per kill: the group's chance times this item's share of
-                // the weights, so the members always sum back to the group's own line.
+                // 🔑 THE GROUP LINE CARRIES NO NUMBER (owner, 2026-08-18). It reads as a WRAPPER — what
+                // the members have in common (they are mutually exclusive) — and every number on screen
+                // is an item's own effective per-kill chance. His reasoning: a group % invites the
+                // reading "the group fires at 7%, and then the item has its own chance on top", which is
+                // not what this engine does — a member's authored chance IS its marginal, and the
+                // trigger is merely their sum. Showing the sum made the reader do arithmetic to recover
+                // the only number they actually wanted: *"C is good because you see effective drop per
+                // item ... you see 0.25% and know that this item will be dropped in about 400 kills."*
+                //
+                // ⚠ This supersedes playtest-16's "add the rows also individual %" tree, which printed
+                // BOTH. The members still print individually — only the group's own % line is gone.
+                lines.Add(GroupTitle(g.Key));
                 double weightSum = g.Sum(d => (double)MobCatalog.ItemWeight(d));
+                double trigger = g.Sum(d => (double)MobCatalog.EffectiveChance(d, lookMult)) * lookGap;
                 foreach (var d in g.GroupBy(ItemLine))
                 {
                     if (weightSum <= 0) { lines.Add("   " + d.Key); continue; }
                     double share = d.Sum(x => (double)MobCatalog.ItemWeight(x)) / weightSum;
-                    lines.Add($"   {d.Key}  ({chance * share * 100:0.##}%)");
+                    lines.Add($"   {d.Key}  ({Odds(trigger * share)})");
                 }
             }
             drops = lines.ToArray();
@@ -13529,14 +13605,27 @@ var effect = def.Effect;
         // levelling pass rather than two.
         var (gatherExp, gatherGold) = CashInGatheredTokens(player, def);
 
-        long exp = def.Reward.Exp + gatherExp;
-        if (exp > 0) AwardExp(player, exp);
-        if (def.Reward.SkillPoints > 0)
+        // QUEST rates ride on top of the world's (RateConfig.Quest, One by default). Exp and SP go
+        // through AwardExp so they take World x the player's runes there and land in ONE levelling pass.
+        //
+        // 🔑 Gold and SP used to be added RAW here, which meant a x30 server paid quests at x1 — the same
+        // effort was worth a thirtieth in a quest as in the field, and no knob could fix it because the
+        // rates never reached this code at all.
+        var qr = RateConfig.Quest;
+        long exp = (long)((def.Reward.Exp + gatherExp) * qr.Exp);
+        long sp  = (long)(def.Reward.SkillPoints * qr.Sp);
+        if (exp > 0 || sp > 0)
         {
-            player.SkillPoints += def.Reward.SkillPoints;
-            SendLearned(player);
+            // ⚠ A quest that authors SP gets it ON TOP of the SP its exp derives — that is what the two
+            // separate statements did before, and passing only the authored figure would silently drop
+            // the derived half. -1 keeps the plain "derive it from exp" path for the common case.
+            AwardExp(player, exp,
+                sp > 0 ? (long)(exp * GameConstants.SkillPointRatio) + sp : -1);
+            if (sp > 0)
+                SendLearned(player);   // the Learn tab prices skills against SP, so refresh it
         }
-        long gold = def.Reward.Gold + gatherGold;
+        long gold = (long)((def.Reward.Gold + gatherGold) * qr.Gold * RateConfig.World.Gold
+                           * player.Runes.Gold);
         if (gold > 0)
         {
             player.Gold += gold;
@@ -13775,9 +13864,11 @@ var effect = def.Effect;
             int held = CountItem(player, g.ItemId);
             if (held <= 0) continue;
             int mobLevel = Math.Max(1, MobCatalog.Get(g.MobId).Level);
+            // RAW, both of them: the quest-reward site applies World x Quest x the player's runes to
+            // exp and gold together. Scaling gold here (as this line used to) and not exp meant the two
+            // halves of one hand-in obeyed different rates.
             exp  += (long)(held * g.RewardModifier * StatCalculator.MobExpReward(mobLevel));
-            gold += (long)(held * g.RewardModifier * StatCalculator.MobGoldReward(mobLevel)
-                                * RateConfig.GoldAmountRate);
+            gold += (long)(held * g.RewardModifier * StatCalculator.MobGoldReward(mobLevel));
             ConsumeItem(player, g.ItemId, held);
             SendSystemToEntity(player,
                 $"Handed over {held}x {ItemCatalog.Get(g.ItemId)?.Name ?? g.ItemId}.");

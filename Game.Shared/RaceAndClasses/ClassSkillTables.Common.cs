@@ -253,9 +253,11 @@ public static partial class ClassSkillTables
                 new ClassSkill(QuickHeal, 30, SkillLevel: 3),
                 new ClassSkill(QuickHeal, 35, SkillLevel: 4),
 
-                // Shrouding Hymn (BL-69, kind 2) — the buffer's party stealth. At 30 rather than 20:
-                // it costs 300 MP, which is unpayable on a level-20 cleric's bar.
-                new ClassSkill(ShroudingHymn, 30, SkillLevel: 1),
+                // ⚠ SHROUDING HYMN IS NOT LEARNED HERE ANY MORE (owner, 2026-08-19). He moved its row
+                // out of `cleric 2nd.csv` and into `buffer 3rd.csv`, which settles the one row in the
+                // cleric file whose values were never his: it is the BUFFER's party stealth, not every
+                // cleric's. The grant moved with it (ClassSkillTables.Third, Warchanter) and kept his
+                // level 30 — a Warchanter exists only from 40, so in practice it arrives with the class.
 
                 // Party Heal — AoE heal to nearby allies.
                 new ClassSkill(PartyHeal, 20, SkillLevel: 1),
@@ -271,28 +273,35 @@ public static partial class ClassSkillTables
                 // Every rung below is the one the corresponding group level used to hand out, so a
                 // cleric who buffs their whole list ends up exactly where they were — it just costs
                 // more casts. See docs/design/BuffLadders.md.
-                // 20 — what Might L2 / Force L1 / Speed L1 gave.
+                //
+                // ⚠ THE LEVELS BELOW ARE HIS, re-cut on 2026-08-19 (*"the buffs were all over the place
+                // i fixed them"*). Four families moved and two rows left the file entirely — do not
+                // restore any of it from the older ladder:
+                //   · Swift L3 moved 25 → 30, Alacrity L2 moved 25 → 35 (each family now gains one
+                //     rung per learn level instead of two at 20-25 and nothing after).
+                //   · Haste is GONE from the cleric — attack speed is a buffer reward from 40.
+                //   · Clarity is NEW at 25, at his 20% (the healer's 30% became rung 2).
+                // 20 — one rung each of offence, movement, casting and interrupt.
                 new ClassSkill(CastId(FamPhysAtk), 20, SkillLevel: 2),      // Might   +12% P.Atk
                 new ClassSkill(CastId(FamMove), 20, SkillLevel: 2),         // Swift   +20 move
                 new ClassSkill(CastId(FamCast), 20, SkillLevel: 1),         // Alacrity +15% cast
                 new ClassSkill(CastId(FamInterrupt), 20, SkillLevel: 1),    // Resolve +18 interrupt
-                // 25 — Might L3, Force L2 (the +25% M.Atk rung), Focus L1, Speed L2.
+                // 25 — the defensive/magic half, plus the crit and debuff-resist blessings.
                 new ClassSkill(CastId(FamPhysDef), 25, SkillLevel: 2),      // Bulwark +12% P.Def
+                new ClassSkill(CastId(FamCcResMag), 25, SkillLevel: 1),     // Clarity 20% vs SPT debuffs
                 new ClassSkill(CastId(FamMagAtk), 25, SkillLevel: 2),       // Force   +25% M.Atk
                 new ClassSkill(CastId(FamInterrupt), 25, SkillLevel: 2),    // Resolve +25 interrupt
                 new ClassSkill(CastId(FamCritRate), 25, SkillLevel: 4),     // Focus   +20% crit rate
-                new ClassSkill(CastId(FamMove), 25, SkillLevel: 3),         // Swift   +33 move
-                new ClassSkill(CastId(FamCast), 25, SkillLevel: 2),         // Alacrity +23% cast
-                // 30 — Might L4 (adds vampirism), Speed L3 (adds evasion).
+                // 30
                 new ClassSkill(CastId(FamVamp), 30, SkillLevel: 2),         // Vampirism 6%
                 new ClassSkill(CastId(FamEva), 30, SkillLevel: 2),          // Agility +2 evasion
+                new ClassSkill(CastId(FamMove), 30, SkillLevel: 3),         // Swift   +33 move
                 new ClassSkill(CastId(FamAccuracy), 30, SkillLevel: 1),     // Aim     +1 accuracy
-                // 35 — Speed L4 (adds attack speed), Body L1, Frenzy. ⚠ Alacrity STOPS at L2 (+23%) for
-                // the cleric: he took the L3 rung out of the CSV, so cast speed past 23% is a 3rd-class
-                // reward now. Don't re-add it here from the old ladder.
-                new ClassSkill(CastId(FamAs), 35, SkillLevel: 1),           // Haste   +15% attack speed
+                // 35 — the cleric's last rungs. Alacrity STOPS at L2 (+23%): cast speed past that is a
+                // 3rd-class reward. No Haste row at all any more.
                 new ClassSkill(CastId(FamHpRegen), 35, SkillLevel: 2),      // Vigor   +10% HP regen
                 new ClassSkill(CastId(FamMagDef), 35, SkillLevel: 1),       // Ward    +10% M.Def
+                new ClassSkill(CastId(FamCast), 35, SkillLevel: 2),         // Alacrity +23% cast
                 new ClassSkill(HolyFrenzy, 35, SkillLevel: 1),              // Frenzy (already a single)
 
                 // Anti-Magic — continues the base-mage passive (lvls 3-6).

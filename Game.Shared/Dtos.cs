@@ -792,7 +792,11 @@ public record PvpState(bool Pvp, bool CounterAttack, int Karma = 0, int PkCount 
 /// <summary>Admin-only live-tuning knobs (Debug settings panel). Runtime only — the final values get
 /// moved back into the code defaults. Round-trips both ways (server sends current, client applies).</summary>
 public record DebugConfigDto(
-    float ExpRate, float SpRate, float DropChanceRate, float DropAmountRate, float GoldRate,
+    // ⚠ `DropAmountRate` was REMOVED from this record (2026-08-18, positional — the client's send order
+    // moved with it). Two drop boxes read as two rate knobs that both had to be raised, and raising both
+    // squares the multiplier on everything stackable. There is one drop rate now; stack size is not a
+    // rate and lives at `/droprate amount`.
+    float ExpRate, float SpRate, float DropChanceRate, float GoldRate,
     int KarmaBase, float KarmaConsecGrowth, float KarmaLevelGrowth, int KarmaLossPerDeath, int KarmaLossPerMob,
     int IdleCapSeconds, int OfflineCapSeconds, int GraceSeconds,
     // Test skills: the two debug damage skills read Flat=TestSkillPower, Mod=TestSkillMod. Lets the owner

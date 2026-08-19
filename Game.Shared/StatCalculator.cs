@@ -881,7 +881,7 @@ public static class StatCalculator
         return System.Math.Max(0.1f, 0.7f - (gap - 10) * 0.1f);   // 11→0.60 .. 16+→0.10
     }
 
-    /// <summary>Base gold a mob drops, by level (scaled by RateConfig.GoldAmountRate
+    /// <summary>Base gold a mob drops, by level (scaled by RateConfig.World.Gold
     /// and a small variance at the drop site).</summary>
     public static int MobGoldReward(int mobLevel) => 25 + mobLevel * 8;
 

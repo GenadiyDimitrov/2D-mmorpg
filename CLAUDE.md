@@ -247,6 +247,28 @@ fine. It bit twice before it was understood.
 - Discuss design before large mechanic changes; deliver focused, validated increments.
 - Cyrillic text from the owner is Bulgarian.
 
+### 🔑 THE CSVs AND THE GAME MOVE TOGETHER — BOTH WAYS (owner, 2026-08-19)
+*"I want the csv-s to represent what is inside the game at all time … I author the skills through the
+file so you update the game; if I author a skill through you, you update the file."*
+
+`docs/data/classes_skills_csv/` is not documentation that trails the build — it is **the skill data,
+mirrored**. Every skill change is a change to BOTH sides, in the same increment:
+
+| He edits a CSV row | → **update the code to match it.** The CSV is authoritative (see below). |
+|---|---|
+| He rules a skill change in chat | → **write it into the code AND edit the CSV row.** |
+| A skill is added/retuned while building anything else | → **the CSV row goes with it**, in the same commit. |
+
+⚠ **"While building anything else" is the clause that gets missed** — his examples were CHANGELOG,
+Backlog and playtest passes. A skill touched on the way past still owes its CSV row. A commit that
+changes a `SkillDef` or a `ClassSkill` and does not touch a CSV should make you check why.
+
+**Verify, don't eyeball:** `dotnet run --project tools/SkillCsvSeed -- --check` reads every authored row
+back against `ClassSkills.Cumulative` + `SkillCatalog`. Run it before committing skill work; it is the
+only thing that makes "at all times" checkable. ⚠ It compares learn level, range, cast, cooldown,
+duration, **MP total and SP** — it does **NOT** compare POWER, which lives in the free-text `DESCR`
+column. Power drift is therefore invisible to it and has to be read by hand.
+
 ## Style
 Keep changes consistent with the above. Prefer C# .NET idioms. For web/UI work the
 owner prefers ASP.NET + HTML/CSS, JavaScript only as a last resort.

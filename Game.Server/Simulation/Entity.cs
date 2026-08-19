@@ -895,19 +895,17 @@ public class Entity
     public float PvpDamageTaken { get; set; } = 1f;
     public float CancelResist { get; set; }          // chance each buff resists an enemy cancel
 
-    // ----- REWARD RATES: what a MONSTER pays this character, as MULTIPLIERS (1 = untouched). Fed by
+    // ----- REWARD RATES: what a MONSTER pays THIS character, as MULTIPLIERS (1 = untouched). Fed by
     //       the premium reward runes (RewardRunes.cs) and by nothing else today. 0 means "no reward at
-    //       all" — the Rune of Sinister zeroes the first two, the Rune of Sinners all four. -----
-    /// <summary>Multiplier on experience gained from a kill (AwardExp).</summary>
-    public float ExpRateMult { get; set; } = 1f;
-    /// <summary>Multiplier on SP gained from a kill (AwardExp).</summary>
-    public float SpRateMult { get; set; } = 1f;
-    /// <summary>Multiplier on the gold a kill pays THIS character (their share, in AwardGold).</summary>
-    public float GoldRateMult { get; set; } = 1f;
-    /// <summary>Multiplier on every drop CHANCE rolled for this character's kills. Fed INTO
-    /// <see cref="MobCatalog.EffectiveRate"/> rather than applied at the roll, so the kill roll, the
-    /// target-inspect list and BalanceMatrix all keep reading one number (see CLAUDE.md).</summary>
-    public float DropRateMult { get; set; } = 1f;
+    //       all" — the Rune of Sinister zeroes exp+sp, the Rune of Sinners everything. -----
+    /// <summary>This character's own reward multipliers — the third and innermost scope, composed with
+    /// <see cref="RateConfig.World"/> (and <see cref="RateConfig.Quest"/> on a quest) at every award.
+    ///
+    /// <para><c>DropChance</c> is fed INTO <see cref="MobCatalog.EffectiveRate"/> rather than applied at
+    /// the roll, so the kill roll, the target-inspect list and BalanceMatrix all keep reading one number
+    /// (see CLAUDE.md). <c>DropAmount</c> is always 1 — no rune grants stack size, and it stays in the
+    /// set only so one type describes every scope.</para></summary>
+    public RateSet Runes { get; set; } = RateSet.One;
 
     public string ActiveArmorSet { get; set; } = ""; // name of the completed armor set bonus, "" if none
     public string ArmorMasteryLabel { get; set; } = ""; // armor-weight mastery status for the UI
@@ -2559,10 +2557,12 @@ public class Entity
 
         // The reward multipliers, from the best rune held in each channel. A STOP wins outright: it is
         // the point of the Rune of Sinister ("no lvl up") and of the Rune of Sinners (nothing at all).
-        ExpRateMult  = stopExpSp ? 0f : 1f + bestExp;
-        SpRateMult   = stopExpSp ? 0f : 1f + bestSp;
-        GoldRateMult = stopGoldDrop ? 0f : 1f + bestGold;
-        DropRateMult = stopGoldDrop ? 0f : 1f + bestDrop;
+        Runes = new RateSet(
+            Exp:        stopExpSp    ? 0f : 1f + bestExp,
+            Sp:         stopExpSp    ? 0f : 1f + bestSp,
+            Gold:       stopGoldDrop ? 0f : 1f + bestGold,
+            DropChance: stopGoldDrop ? 0f : 1f + bestDrop,
+            DropAmount: 1f);
         // Fold the crit-RATE chain exactly once: base × (every passive/buff multiplier) + (every
         // flat source), then the single cap — StatCaps.PhysicalCritRate = his 500 on the 0-1000
         // scale. (The three 0.75 clamps that used to sit along the chain are gone: they clamped

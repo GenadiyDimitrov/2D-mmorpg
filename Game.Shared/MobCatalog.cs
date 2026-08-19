@@ -412,9 +412,19 @@ public static class MobCatalog
     public static bool IsGearGroup(int groupId) => groupId >= 10;
 
     /// <summary>Groups authored as ABSOLUTE chances rather than as a x1 design: mats 100%, always 100%,
-    /// scrolls 70%. The global drop rate does not apply to them (owner: *"at x10 or x200 I still want the
-    /// group chances at their current ones"*) — multiplying a 100% group by a server rate cannot make it
-    /// more generous, it only pins it at the clamp and discards every weight inside it.</summary>
+    /// scrolls 70%.
+    ///
+    /// <para>⚠ These used to be EXEMPT from <see cref="RateConfig.DropChanceRate"/> (owner: *"at x10 or
+    /// x200 I still want the group chances at their current ones"*), and the reason was the 100% CLAMP:
+    /// multiplying a 100% group by a server rate could not make it more generous, it only pinned it at
+    /// the clamp and discarded every weight inside it. <see cref="DropCopies"/> removed the clamp, so
+    /// that reason is gone — a 100% group at x30 now fires THIRTY weighted picks and the authored
+    /// weights survive intact. The exemption came off with it (owner, 2026-08-18: *"killing a mob to
+    /// yield stuff as much as i killed 30 ... no economy nor drop % nor drop amount is wasted"*, and his
+    /// own worked example: *"100% chance 100% item => x20 = 100% chance x20 amount"*).</para>
+    ///
+    /// <para>The predicate stays because the distinction is still real when READING a table — these are
+    /// the groups whose authored numbers are absolutes rather than a x1 design.</para></summary>
     public static bool IsGuaranteedGroup(int groupId) =>
         groupId is GroupMats or GroupScrolls or GroupAlways;
 
@@ -453,7 +463,7 @@ public static class MobCatalog
     /// scroll group would read as broken. The 100% groups are unaffected in practice — they are already at
     /// the clamp.</para></param>
     public static float EffectiveRate(int groupId, float playerMult = 1f) =>
-        (IsGuaranteedGroup(groupId) ? 1f : RateConfig.DropChanceRate)
+        RateConfig.World.DropChance
         * RateConfig.DropGroupRate(GroupName(groupId))
         * Math.Max(0f, playerMult);
 
@@ -468,6 +478,37 @@ public static class MobCatalog
     /// tools/BalanceMatrix — so the number on screen stays the number you get.</summary>
     public static float EffectiveChance(DropEntry e, float playerMult = 1f) =>
         ItemWeight(e) * EffectiveRate(e.GroupId, playerMult);
+
+    /// <summary>Hard ceiling on the copies ONE entry (or one group) may yield from a single kill. The
+    /// rate is admin-editable LIVE and the drop roll runs inside the single-writer tick loop, so a
+    /// mistyped x100000 must not turn one kill into a hundred thousand iterations.</summary>
+    public const int MaxDropCopies = 1000;
+
+    /// <summary>HOW MANY TIMES a drop fires. This is the whole of the rate model above 100%: the WHOLE
+    /// part of the chance is guaranteed and the FRACTION is rolled, so <c>E[copies] == chance</c> exactly
+    /// and "x30" means "as if you had killed thirty" with nothing lost to a clamp (owner, 2026-08-18).
+    ///
+    /// <para>His worked example: 250% = two guaranteed copies plus a flat 50% roll for a third. ⚠ The
+    /// remainder is FLAT — never re-multiplied by the item's or group's own chance. Those factors are
+    /// already inside <paramref name="chance"/>; applying them twice would under-deliver the rate, and
+    /// worst on the rarest rows (a 3.6% entry at x30 would pay x27.9 instead of x30).</para>
+    ///
+    /// <para>⚠ FLOOR, not roll, was considered and rejected: it would make the knob DEAD between whole
+    /// numbers — x1.5 and x1.99 would both pay exactly 1 — so every rate set between two integers would
+    /// silently do nothing.</para>
+    ///
+    /// <para>For a GROUP the chance passed here is the SUM of its members and each copy is then its own
+    /// weighted pick, so the authored weights are preserved however high the rate goes. That is what let
+    /// the guaranteed-group exemption come off — see <see cref="IsGuaranteedGroup"/>.</para></summary>
+    /// <param name="roll">A uniform [0,1) sample. Passed IN so this stays deterministic and RNG-free:
+    /// the server hands it its tick RNG, tools hand it whatever they measure with.</param>
+    public static int DropCopies(float chance, double roll)
+    {
+        if (chance <= 0f) return 0;
+        if (chance > MaxDropCopies) chance = MaxDropCopies;
+        int whole = (int)chance;
+        return whole + (roll < chance - whole ? 1 : 0);
+    }
 
     // The tables below are PROPERTIES, not static readonly fields, and that is load-bearing: `All =
     // Build()` is declared at the top of this class and C# runs static field initializers in declaration

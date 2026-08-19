@@ -16,6 +16,7 @@ public static partial class SkillCatalog
     public const string ArmorMasterySkill = "armor_mastery";   // data-driven, replaces Robe Mastery
     public const string HolyForce = "holy_force";    // "Force" — interrupt resist (+M.Atk @rank 2)
     public const string HolyFocus = "holy_focus";    // "Focus" — physical crit-rate buff
+    public const string HolyShield = "holy_shield";  // "Shield Bless and Harden" — the SHIELD group
     public const string HolyFrenzy = "holy_frenzy";  // "Frenzy" — berserk trade-off buff
     public const string CombatStance = "healer_combat_stance";  // TOGGLE: trade M.Atk for P.Atk
     public const string Antidote = "antidote";                  // cure: removes poison/venom
@@ -144,8 +145,11 @@ public static partial class SkillCatalog
                        + "LIGHT keeps you casting while sturdier; HEAVY weighs your casting and attacks down.",
             Levels: new[]
             {
-                new SkillLevel(SpCost: 9600),
-                new SkillLevel(SpCost: 12800),
+                // 3200 / 6400 / 12800 / 25000 — his re-priced `cleric 2nd.csv` (2026-08-19). The first
+                // two rungs were 9600 / 12800, which made Armor Mastery the single most expensive
+                // thing a level-20 cleric could buy.
+                new SkillLevel(SpCost: 3200),
+                new SkillLevel(SpCost: 6400),
                 new SkillLevel(SpCost: 12800),
                 new SkillLevel(SpCost: 25000),
             },
@@ -231,9 +235,11 @@ public static partial class SkillCatalog
             Levels: new[]
             {
                 new SkillLevel(SpCost: 3200,  Description: "With sword/blunt: +6 M.Atk, +4 P.Atk, -10% skill reuse."),
-                // 12800, not 6400 — his CSV's number. The ladder is 3200 / 12800 / 12800 / 25000, which
-                // is irregular but authored; it was silently "regularised" here and is now put back.
-                new SkillLevel(SpCost: 12800, Description: "With sword/blunt: +8 M.Atk, +6 P.Atk, +5% cast, -10% reuse, +10% MP regen."),
+                // 6400 again: he re-priced this rung himself on 2026-08-19, so the ladder is the plain
+                // 3200 / 6400 / 12800 / 25000. (It was 12800 for two days — his 2026-08-17 sheet had it
+                // that way and this comment used to explain why. His sheet is still the authority; the
+                // number it carries just changed back.)
+                new SkillLevel(SpCost: 6400, Description: "With sword/blunt: +8 M.Atk, +6 P.Atk, +5% cast, -10% reuse, +10% MP regen."),
                 new SkillLevel(SpCost: 12800, Description: "With sword/blunt: +10 M.Atk, +8 P.Atk, +5% cast, -10% reuse, +10% MP regen."),
                 new SkillLevel(SpCost: 25000, Description: "With sword/blunt: +12 M.Atk, +10 P.Atk, +5% cast, -10% reuse, +50% MP regen, +10% HP regen."),
                 new SkillLevel(SpCost: 36000, Description: "With sword/blunt: +23 M.Atk, +18 P.Atk, +7% cast, -10% reuse, +50% MP regen, +10% HP regen."),
@@ -324,7 +330,11 @@ public static partial class SkillCatalog
             Description: "A reckless surge: less Max HP/MP, but more attack and speed for 20 minutes.",
             Levels: new[]
             {
-                new SkillLevel(MpCost: 125, InitialMpCost: 25, SpCost: 25000,
+                // ⚠ Level 1 is 40 MP / 12800 SP, his 2026-08-19 `cleric 2nd.csv` row (8 + 32). That is a
+                // third of what it used to cost (125 / 25000) and it does NOT propagate up the ladder —
+                // rungs 3 and 6 are his buffer prices and are unchanged, so the jump from L1 to L3 is
+                // steep on purpose: a level-35 cleric's Frenzy is cheap, a buffer's is not.
+                new SkillLevel(MpCost: 40, InitialMpCost: 8, SpCost: 12800,
                     ChildBuffs: new[] { Rung(FamFrenzy, 1) },
                     Description: "−30% Max HP/MP, +5% offence and speed, +5 move, −8 evasion."),
                 new SkillLevel(MpCost: 135, InitialMpCost: 27, SpCost: 25000,
@@ -343,6 +353,36 @@ public static partial class SkillCatalog
                     ChildBuffs: new[] { Rung(FamFrenzy, 6) },
                     Description: "−10% Max HP/MP, +8% offence and speed, +8 move, −8 evasion."),
             }),
+
+        // ===== SHIELD BLESS AND HARDEN — the shield group (`buffer 3rd.csv` @66, owner 2026-08-19) ==
+        //
+        // 🔑 A REAL GROUP, on his word: *"tje shield bless & harder is a copy .. so it should rapladse
+        // Shield Harder and Shield Bless"*. So it names both singles in `ChildBuffs` (which is what
+        // makes the engine treat it as a group — it covers their families at GROUP rank, evicting them
+        // and refusing anything weaker afterwards) and in `Replaces` (which collapses them off the
+        // learn list, the same way Might and Bulwark eats its four).
+        //
+        // ⏰ ITS CHILDREN ARE RUNG 1 ONLY BECAUSE RUNG 1 IS ALL THAT EXISTS. He is authoring the
+        // singles' ladder in the healer file right now (Shield Harden is drafted at +5% @40, +10% @48),
+        // and *"once the healers buffs are in place they will be the same for the buffer 3rd"*. When
+        // they land, each family becomes a real ladder and these two `Rung(..., 1)` calls point at the
+        // TOP index instead. Same for levels: the groups and Harmonies get them at 60+ — this def has
+        // one level today because there is one rung to hand out.
+        //
+        // 🔑 BLOCK CHANCE, NOT BLOCK REDUCTION (owner, playtest 22): reduction is never raised. Both
+        // numbers are a PERCENT of what the shield already carries, so the buff is self-gating — a
+        // character with no shield has 0 shield defence and 0 block chance, and 0 × 1.5 is still 0.
+        // BlockChance is clamped to StatCaps.BlockChance afterwards, as always.
+        new(HolyShield, "Shield Bless and Harden", BaseClass.Mage,
+            SkillEffect.BuffShieldDef | SkillEffect.BuffBlockChance,
+            MpCost: 200, CastTicks: 10, CooldownTicks: 10, Range: 600, Power: 0,
+            DurationTicks: 12000, BuffKey: "holy_shield", Rank: 1, InitialMpCost: 40,
+            Category: SkillCategory.Buff, SpCost: 100000,
+            ChildBuffs: new[] { Rung(FamShieldDef, 1), Rung(FamShieldBlock, 1) },
+            TargetMode: TargetMode.AlliesInRadius, AreaRadius: 800f,
+            Replaces: new[] { CastId(FamShieldDef), CastId(FamShieldBlock) },
+            Description: "Blesses you and nearby allies with a sturdier shield: +50% shield P.Def and "
+                       + "+30% block chance for 20 minutes. Does nothing for anyone not carrying one."),
 
         // ===== MADNESS — the top of the Frenzy family, cast on the whole party (`BL-34`) ===========
         //
@@ -427,7 +467,8 @@ public static partial class SkillCatalog
             {
                 new SkillLevel(MpCost: 16, InitialMpCost: 4, SpCost: 3200, DispelMaxLevel: 1,
                     Description: "Cures poison, venom and bleed of rank 1 or lower from an ally (or self)."),
-                new SkillLevel(MpCost: 20, InitialMpCost: 5, SpCost: 12800, DispelMaxLevel: 2,
+                // 25000, his 2026-08-19 price — the second cure is a level-35 purchase, not a cheap one.
+                new SkillLevel(MpCost: 20, InitialMpCost: 5, SpCost: 25000, DispelMaxLevel: 2,
                     Description: "Cures poison, venom and bleed of rank 2 or lower from an ally (or self)."),
             }),
 
@@ -454,7 +495,9 @@ public static partial class SkillCatalog
                        + "experience they lost on death.",
             Levels: new[]
             {
-                new SkillLevel(MpCost: 60, InitialMpCost: 10, SpCost: 6400,  ResExpPct: 0f,
+                // SP 1700, his 2026-08-19 price: the first res is meant to be affordable the moment a
+                // cleric can cast it, so it costs about the same as one rung of a buff.
+                new SkillLevel(MpCost: 60, InitialMpCost: 10, SpCost: 1700,  ResExpPct: 0f,
                     Description: "Revive at 30% HP/MP. Does not give back any lost exp."),
                 new SkillLevel(MpCost: 90, InitialMpCost: 20, SpCost: 12800, ResExpPct: 0.20f,
                     Description: "Revive at 30% HP/MP; restore 20% of lost exp."),

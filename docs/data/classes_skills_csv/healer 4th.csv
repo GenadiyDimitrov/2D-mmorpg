@@ -1,2 +1,19 @@
 LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR, INIT MP,FINIT MP ,SP COST,REPLACES,RACE
 83,Rite of Preservation,Magic/Buff,600,self/target,3,3600,3600,"Blesses an ally (or yourself): they DIE normally, keep their buffs, and are offered a resurrection where they fell at 30% HP and MP, losing NO experience. The offer waits as long as they like. Lasts 60 minutes or until it saves them. 60 minute reuse.",60,240,100000,[],
+
+76,Resurrection,Magic/Heal,600,dead ally,5,5,0,Revive at 35% HP/MP; restore 100% of lost exp.,65,140,3.25kk,[]
+76,Resurrection Field,Magic/Heal,0,dead allies,10,60,0,Revive Dead allies 900 range around the caster at 35% HP/MP; restore 70% of lost exp.,130,280,3.25kk,[]
+
+80,Resurrection,Magic/Heal,600,dead ally,5,5,0,Revive at 40% HP/MP; restore 100% of lost exp.,100,150,36k,[]
+80,Resurrection Field,Magic/Heal,0,dead allies,5,60,0,Revive Dead allies 900 range around the caster at 40% HP/MP; restore 70% of lost exp.,200,300,43k,[]
+
+76 - 6.5kk
+77 - 11kk
+78 - 16kk
+79 - 80kk
+80 - 150kk + 10kk gold
+81 - 200kk + 25kk gold
+82 - 300kk + 50kk gold
+83 - 500kk + 100kk gold
+84 - 0 + 100kk gold + 1SP bottles (1kkk sp cost + 100kk gold for extraction)
+85 - 0 + 100kk gold + 2SP bottles + maybe quest item skillbook

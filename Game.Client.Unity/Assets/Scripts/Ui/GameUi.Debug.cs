@@ -79,8 +79,11 @@ namespace Game.Client
         {
             ("exp", "Exp rate x", true),
             ("sp", "SP rate x", true),
-            ("dropChance", "Drop chance x", true),
-            ("dropAmount", "Drop amount x", true),
+            // ONE drop knob. It was two ("chance" and "amount") and that read as two rate multipliers
+            // that both had to be raised for a x30 server — which squares the rate on everything
+            // stackable. x30 here is x30 of EVERYTHING (gear, mats, scrolls), because above 100% a drop
+            // pays copies instead of clamping. Stack size is not a rate: `/droprate amount`.
+            ("dropChance", "Drop rate x", true),
             ("gold", "Gold rate x", true),
             ("karmaBase", "Karma base", false),
             ("karmaConsec", "Karma x/consec kill", true),
@@ -825,7 +828,6 @@ namespace Game.Client
             Set("exp", S(d.ExpRate));
             Set("sp", S(d.SpRate));
             Set("dropChance", S(d.DropChanceRate));
-            Set("dropAmount", S(d.DropAmountRate));
             Set("gold", S(d.GoldRate));
             Set("karmaBase", I(d.KarmaBase));
             Set("karmaConsec", S(d.KarmaConsecGrowth));
@@ -853,7 +855,7 @@ namespace Game.Client
                 int.TryParse(f.text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var v) ? v : 0;
 
             var dto = new DebugConfigDto(
-                F("exp"), F("sp"), F("dropChance"), F("dropAmount"), F("gold"),
+                F("exp"), F("sp"), F("dropChance"), F("gold"),
                 I("karmaBase"), F("karmaConsec"), F("karmaLevel"), I("karmaDeath"), I("karmaMob"),
                 I("idleCap"), I("offlineCap"), I("grace"),
                 I("testSkillPower"), F("testSkillMod"),

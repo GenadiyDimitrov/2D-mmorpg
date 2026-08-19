@@ -177,6 +177,11 @@ public static partial class ClassSkillTables
     {
         foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
             ClassSkills.RegisterThird(race, Discipline.Warchanter,
+                // ---- Shrouding Hymn — the party stealth. It was the cleric's; he moved its row into
+                // `buffer 3rd.csv` on 2026-08-19, settling the one row in the cleric file whose values
+                // were never his. His level 30 is kept verbatim, and since a Warchanter does not exist
+                // below 40 the practical effect is that it arrives with the class change. ----
+                new ClassSkill(ShroudingHymn, 30, SkillLevel: 1),
                 // ---- 40-44: finish SPEED and MIGHT (the cleric got most of speed already) ----
                 new ClassSkill(CastId(FamEva), 40, SkillLevel: 3),        // Agility   +4 evasion
                 new ClassSkill(CastId(FamAs), 40, SkillLevel: 2),         // Haste     +23% atk speed
@@ -216,6 +221,7 @@ public static partial class ClassSkillTables
                 new ClassSkill(CastId(FamMaxMp), 64, SkillLevel: 6),      // Soul      +35% Max MP
                 new ClassSkill(HolyFrenzy, 64, SkillLevel: 6),            // Frenzy    rung 6
                 // ---- 66-74: the improved groups, one per level. Each REPLACES its singles. ----
+                new ClassSkill(HolyShield, 66),                  // Shield Bless and Harden (his 66 row)
                 new ClassSkill(HolySpeed, 66, SkillLevel: 6),    // Swift and Sure
                 new ClassSkill(Might, 68, SkillLevel: 6),        // Might and Bulwark
                 new ClassSkill(HolyForce, 70, SkillLevel: 6),    // Force and Ward
@@ -261,7 +267,10 @@ public static partial class ClassSkillTables
             new ClassSkill(CastId(FamPhysAtk), 40, SkillLevel: 3),    // Might L3   +15% P.Atk
             new ClassSkill(CastId(FamAccuracy), 40, SkillLevel: 2),   // Aim L2     +2 Accuracy
             new ClassSkill(CastId(FamCritDmg), 40, SkillLevel: 4),    // Ferocity   +25% crit damage
-            new ClassSkill(CastId(FamCcResMag), 40, SkillLevel: 1),   // Clarity    30% vs SPT debuffs
+            // ⚠ Clarity is rung 2 since 2026-08-19, NOT because this row was retuned: he added a 20%
+            // rung to `cleric 2nd.csv` at 25, so his 30% here is the SECOND rung of the family now.
+            // The number he authored is unchanged; only its index moved.
+            new ClassSkill(CastId(FamCcResMag), 40, SkillLevel: 2),   // Clarity    30% vs SPT debuffs
             new ClassSkill(CastId(FamCcResPhys), 40, SkillLevel: 1),  // Fortitude  15% vs CON debuffs
         };
         ClassSkills.RegisterThird(Race.Human, Discipline.Lightbringer,
