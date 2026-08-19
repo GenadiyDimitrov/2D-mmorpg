@@ -8,7 +8,7 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR, INIT MP,FIN
 40,Party Great Heal,Magic/Heal,600,self/party,7,5,0,heal party with power 320,26,98,36k,[Party Heal]
 40,Quick Great Heal,Magic/Heal,600,self/target,2,1,0,heal with power 400,19,74,36k,[Quick Heal],Human
 40,Healer Blessing,Magic/Heal,600,self/target,3,1,0,Cure bleed and potions of rank 3 or lower and heals the target with 320 power,13,49,36k,[Quick Heal],Elf
-40,Healing Totem,Magic/Heal,0,self/target,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +30/s,19,74,36k,[Quick Heal],Ork
+40,Healing Totem,Magic/Heal,0,ground,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +64/s,42,196,36k,[Quick Heal],Ork,Increased power and manacost - to match a heal over time
 40,Resurrection,Magic/Heal,600,dead ally,10,10,0,Revive at 30% HP/MP; restore 35% of lost exp.,25,70,19k,[],,Changed mana cost and SP and Exp restored
 40,Restore Mana,Magic/Heal,600,ally,2,2,0,Transfers 70 MP to an ally (costs 70). Not on yourself or another mana-restorer.,20,50,19k,[],,Changed SP
 40,Might,Magic/Buff,600,self/target,1,1,1200,+15% P.Atk.,12,48,19k,[],,Changed SP
@@ -16,11 +16,12 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR, INIT MP,FIN
 40,Ferocity,Magic/Buff,600,self/target,1,1,1200,+25% critical damage.,12,48,19k,[],,Changed SP
 40,Clarity,Magic/Buff,600,self/target,1,1,1200,30% resist to SPT debuffs,12,48,19k,[],,Changed SP
 40,Fortitude,Magic/Buff,600,self/target,1,1,1200,15% resist to CON debuffs,12,48,19k,[],,Changed SP
-40,Shield Harden,Magic/Buff,600,self/target,1,1,1200,Increases Shield PDef with 5%,12,48,19k,[],,New Buff
+40,Shield Bless,Magic/Buff,600,self/target,1,1,1200,Increases Shield Rate with 5%,12,48,19k,[],,Changed to the rate increase buff (harden at 58); my mistake to have them reversed
+40,Serenity,Magic/Buff,600,self/target,1,1,1200,+10% MP regeneration.,12,68,32k,[],,New insert
 40,Conceal,Magic/Buff,0,self,5,10,30,Monsters that haven't already noticed you leave you alone. Anything already chasing you keeps chasing,0,100,19k,[],,Changed SP
 40,Bind,Magical Debuff,600,enemy,2.5,5,30,Hold enemy for 30s (ATK vs SPT),7,28,36k,[],Elf
 40,Armor Break,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy P.Def by 10% and MDef by 5% (ATK vs SPT),7,28,36k,[],Ork
-40,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed by 23% and cast speed by 12% (ATK vs SPT),7,28,36k,[],Human
+40,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed by 15% and cast speed by 7% (ATK vs SPT),7,28,36k,[],Human,changed values
 ,,,,,,,,,,,,,,--------------------------------44--------------------------------
 44,Anti magic,Passive,0,self,0,0,0,"magic def +49, mRes +15%",0,0,43k,[]
 44,Spell Mastery,Passive,0,self,0,0,0,"with sword/blunt Decreses the reuse delay with 10%, mAtk +29, pAtk +23, mpReg x1.9,hpReg x1.6, cast speed x1.07",0,0,43k,[]
@@ -31,7 +32,7 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR, INIT MP,FIN
 44,Urgent Heal,Magic/Heal,600,self/target,8,30,0,heal for 15%,28,108,43k,[]
 44,Quick Great Heal,Magic/Heal,600,self/target,2,1,0,heal with power 460,21,79,43k,[Quick Heal],Human
 44,Healer Blessing,Magic/Heal,600,self/target,3,1,0,Cure bleed and potions of rank 3 or lower and heals the target with 370 power,14,54,43k,[Quick Heal],Elf
-44,Healing Totem,Magic/Heal,0,self/target,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +35/s,21,79,43k,[Quick Heal],Ork
+44,Healing Totem,Magic/Heal,0,ground,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +74/s,56,216,43k,[Quick Heal],Ork
 44,Antidote,Magic/Heal,600,self/target,0.8,3,0,"Cures poison, venom and bleed of rank 3 or lower from an ally (or self).",7,27,22k,[]
 44,Resurrection,Magic/Heal,600,dead ally,10,10,0,Revive at 30% HP/MP; restore 40% of lost exp.,25,75,22k,[]
 44,Resurrection Field,Magic/Heal,0,dead allies,15,60,0,Revive Dead allies 600 range around the caster at 30% HP/MP; restore 10% of lost exp.,50,150,22k,[]
@@ -48,7 +49,7 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR, INIT MP,FIN
 44,Resolve,Magic/Buff,600,self/target,1,1,1200,+36 interrupt resistance.,12,60,22k,[]
 44,Bind,Magical Debuff,600,enemy,2.5,5,30,Hold enemy for 30s,8,30,43k,[],Elf
 44,Armor Break,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy P.Def by 12% and MDef by 6%,8,30,43k,[],Ork
-44,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed by 25% and cast speed by 13%,8,30,43k,[],Human
+44,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed by 17% and cast speed by 9%,8,30,43k,[],Human
 ,,,,,,,,,,,,,,--------------------------------48--------------------------------
 48,Anti magic,Passive,0,self,0,0,0,"magic def +56, mRes +15%",0,0,64k,[]
 48,Spell Mastery,Passive,0,self,0,0,0,"with sword/blunt Decreses the reuse delay with 20%, mAtk +45, pAtk +38, mpReg x1.9,hpReg x1.6, cast speed x1.07",0,0,64k,[]
@@ -59,19 +60,20 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR, INIT MP,FIN
 48,Urgent Heal,Magic/Heal,600,self/target,8,30,0,heal for 20%,32,120,64k,[]
 48,Quick Great Heal,Magic/Heal,600,self/target,2,1,0,heal with power 520,24,90,64k,[Quick Heal],Human
 48,Healer Blessing,Magic/Heal,600,self/target,3,1,0,Cure bleed and potions of rank 4 or lower and heals the target with 410 power,16,60,64k,[Quick Heal],Elf
-48,Healing Totem,Magic/Heal,0,self/target,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +38/s,24,90,64k,[Quick Heal],Ork
+48,Healing Totem,Magic/Heal,0,ground,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +82/s,64,240,64k,[Quick Heal],Ork
 48,Resurrection,Magic/Heal,600,dead ally,10,10,0,Revive at 30% HP/MP; restore 45% of lost exp.,30,75,32k,[]
 48,Restore Mana,Magic/Heal,600,ally,2,2,0,Transfers 86 MP to an ally (costs 86). Not on yourself or another mana-restorer.,26,60,32k,[]
 48,Body,Magic/Buff,600,self/target,1,1,1200,+15% Max HP.,15,60,32k,[],
 48,Soul,Magic/Buff,600,self/target,1,1,1200,+15% Max MP.,15,60,32k,[],
-48,Shield Harden,Magic/Buff,600,self/target,1,1,1200,Increases Shield PDef with 10%,15,60,32k,[]
+48,Shield Bless,Magic/Buff,600,self/target,1,1,1200,Increases Shield Rate with 10%,15,60,32k,[]
 48,Vigor,Magic/Buff,600,self/target,1,1,1200,+15% HP regeneration.,15,60,32k,[]
+48,Serenity,Magic/Buff,600,self/target,1,1,1200,+15% MP regeneration.,15,60,32k,[]
 48,Clarity,Magic/Buff,600,self/target,1,1,1200,40% resist to SPT debuffs,15,60,32k,[]
 48,Aim,Magic/Buff,600,self/target,1,1,1200,+3 Accuracy.,15,60,32k,[]
 48,Ferocity,Magic/Buff,600,self/target,1,1,1200,+30% critical damage.,15,60,32k,[]
 48,Bind,Magical Debuff,600,enemy,2.5,5,30,Hold enemy for 30s,9,35,64k,[],Elf
 48,Armor Break,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy P.Def by 14% and MDef by 7%,9,35,64k,[],Ork
-48,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed by 27% and cast speed by 14%,9,35,64k,[],Human
+48,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed by 19% and cast speed by 11%,9,35,64k,[],Human
 ,,,,,,,,,,,,,,--------------------------------52--------------------------------
 52,Anti magic,Passive,0,self,0,0,0,"magic def +63, mRes +20%",0,0,74k,[]
 52,Spell Mastery,Passive,0,self,0,0,0,"with sword/blunt Decreses the reuse delay with 20%, mAtk +45, pAtk +38, mpReg x2.3,hpReg x1.7, cast speed x1.07",0,0,74k,[]
@@ -82,7 +84,8 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR, INIT MP,FIN
 52,Urgent Heal,Magic/Heal,600,self/target,8,30,0,heal for 25%,34,132,74k,[]
 52,Quick Great Heal,Magic/Heal,600,self/target,2,1,0,heal with power 570,25,99,74k,[Quick Heal],Human
 52,Healer Blessing,Magic/Heal,600,self/target,3,1,0,Cure bleed and potions of rank 4 or lower and heals the target with 430 power,17,66,74k,[Quick Heal],Elf
-52,Healing Totem,Magic/Heal,0,self/target,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +41/s,25,99,74k,[Quick Heal],Ork
+52,Healing Totem,Magic/Heal,0,ground,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +86/s,68,284,74k,[Quick Heal],Ork
+52,Mana Totem,Magic/Heal,0,ground,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +10/s,68,284,74k,[],Ork
 52,Resurrection,Magic/Heal,600,dead ally,9,10,0,Revive at 30% HP/MP; restore 50% of lost exp.,30,80,38k,[]
 52,Antidote,Magic/Heal,600,self/target,0.8,3,0,"Cures poison, venom and bleed of rank 4 or lower from an ally (or self).",9,33,74k,[]
 52,Restore Mana,Magic/Heal,600,ally,2,2,0,Transfers 94 MP to an ally (costs 94). Not on yourself or another mana-restorer.,28,66,38k,[]
@@ -98,50 +101,203 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR, INIT MP,FIN
 52,Frenzy,Magic/Buff,600,self/target,1,1,1200,"−10% Max HP/MP, +8% offence and speed, +8 move, −8 evasion.",15,65,38k,[]
 52,Bind,Magical Debuff,600,enemy,2.5,5,30,Hold enemy for 30s,10,38,74k,[],Elf
 52,Armor Break,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy P.Def by 16% and MDef by 8%,10,38,74k,[],Ork
-52,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed by 30% and cast speed by 15%,10,38,74k,[],Human
+52,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed by 22% and cast speed by 13%,10,38,74k,[],Human
+52,Mana Strain,Magic/Debuff,600,enemy,4,4,60,Increase Physical and Magic MP Cost by 100%,10,38,74k,[],,Increases Mana consumption of the target (x2) for 60 seconds; SPT resist
 ,,,,,,,,,,,,,,--------------------------------56--------------------------------
-
 56,Anti magic,Passive,0,self,0,0,0,"magic def +70, mRes +20%",0,0,81k,[]
-56,Resurrection,Magic/Heal,600,dead ally,8,10,0,Revive at 30% HP/MP; restore 55% of lost exp.,35,80,41k,[]
-
+56,Spell Mastery,Passive,0,self,0,0,0,"with sword/blunt Decreses the reuse delay with 20%, mAtk +52, pAtk +42, mpReg x2.3,hpReg x1.7, cast speed x1.1",0,0,81k,[]
+56,Armor Mastery,Passive,0,self,0,0,0,"Robe: mpReg x1.2, pDef +53, maxMP +140; Light: mpReg x1.2, pDef +53, cast x1.9, as x2 (composes to cast x0.95 / as x1 after Spellcaster Mastery), evasion +2",0,0,81k,[]
+56,Holy Ray,Magic/Dmg,600,enemy,2.5,1,0,m.Atk +63,11,41,81k,[Holy Bolt]
+56,Great Heal,Magic/Heal,600,self/target,5,2,0,heal with power 630,18,72,81k,[Heal]
+56,Party Great Heal,Magic/Heal,600,self/party,7,5,0,heal party with power 510,36,144,81k,[Party Heal]
+56,Urgent Heal,Magic/Heal,600,self/target,8,30,0,heal for 30%,36,144,81k,[]
+56,Quick Great Heal,Magic/Heal,600,self/target,2,1,0,heal with power 630,27,107,81k,[Quick Heal],Human
+56,Healer Blessing,Magic/Heal,600,self/target,3,1,0,Cure bleed and potions of rank 5 or lower and heals the target with 510 power,18,72,81k,[Quick Heal],Elf
+56,Healing Totem,Magic/Heal,0,ground,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +102/s,72,288,81k,[Quick Heal],Ork
+56,Mana Totem,Magic/Heal,0,ground,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +11/s,72,288,81k,[],Ork
+56,Resurrection,Magic/Heal,600,dead ally,8,10,0,Revive at 30% HP/MP; restore 55% of lost exp.,35,80,81k,[]
+56,Restore Mana,Magic/Heal,600,ally,2,2,0,Transfers 102 MP to an ally (costs 102). Not on yourself or another mana-restorer.,30,72,42k,[]
+56,Mana Ray,Magic/Active,600,enemy,2,2,0,Damages the MP of an enemy with +120 Power (Half effect on monsters),20,52,81k,[],,Like a magic attack but damages MP not HP. Same formula; mRes; can fizzle; etc). In PVE dmg is halved (x0.5)
+56,Clarity,Magic/Buff,600,self/target,1,1,1200,50% resist to SPT debuffs,20,65,42k,[]
+56,Vigor,Magic/Buff,600,self/target,1,1,1200,+20% HP regeneration.,20,65,42k,[]
+56,Serenity,Magic/Buff,600,self/target,1,1,1200,+20% MP regeneration.,20,65,42k,[]
+56,Aim,Magic/Buff,600,self/target,1,1,1200,+4 Accuracy.,20,65,42k,[]
+56,Ferocity,Magic/Buff,600,self/target,1,1,1200,+35% critical damage.,20,65,42k,[]
+56,Shield Bless,Magic/Buff,600,self/target,1,1,1200,Increases Shield Rate with 15%,20,65,42k,[]
+56,Body,Magic/Buff,600,self/target,1,1,1200,+25% Max HP.,20,65,42k,[]
+56,Soul,Magic/Buff,600,self/target,1,1,1200,+25% Max MP.,20,65,42k,[]
+56,Meditation,Magic/Buff,0,self,2,900,30,Decrease Pdef by 90%(x0.1) and Add MP regen +30/s for 30 seconds - The status is canceled on dmg taken,5,15,42k,[]
+56,Bind,Magical Debuff,600,enemy,2.5,5,30,Hold enemy for 30s,11,41,81k,[],Elf
+56,Armor Break,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy P.Def by 18% and MDef by 10%,11,41,81k,[],Ork
+56,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed by 25% and cast speed by 15%,11,41,81k,[],Human
+56,Mana Strain,Magic/Debuff,600,enemy,4,4,60,Increase Physical and Magic MP Cost by 110%,11,41,81k,[]
 ,,,,,,,,,,,,,,--------------------------------58--------------------------------
 58,Anti magic,Passive,0,self,0,0,0,"magic def +74, mRes +20%",0,0,88k,[]
+58,Spell Mastery,Passive,0,self,0,0,0,"with sword/blunt Decreses the reuse delay with 20%, mAtk +57, pAtk +45, mpReg x2.3,hpReg x2.1, cast speed x1.1",0,0,88k,[]
+58,Armor Mastery,Passive,0,self,0,0,0,"Robe: mpReg x1.2, pDef +56, maxMP +140; Light: mpReg x1.2, pDef +56, cast x1.9, as x2 (composes to cast x0.95 / as x1 after Spellcaster Mastery), evasion +2",0,0,88k,[]
+58,Holy Ray,Magic/Dmg,600,enemy,2.5,1,0,m.Atk +66,11,43,88k,[Holy Bolt]
+58,Great Heal,Magic/Heal,600,self/target,5,2,0,heal with power 660,19,76,88k,[Heal]
+58,Party Great Heal,Magic/Heal,600,self/party,7,5,0,heal party with power 540,38,152,88k,[Party Heal]
+58,Ultimate Heal,Magic/Heal,600,self/target,5,2,0,heal with power 730. Consumes 1 skill stone,19,76,88k,[]
+58,Ultimate party Heal,Magic/Heal,600,self/party,7,5,0,heal with power 730. Consumes 4 skill stones,38,152,88k,[]
+58,Quick Great Heal,Magic/Heal,600,self/target,2,1,0,heal with power 660,28,114,88k,[Quick Heal],Human
+58,Healer Blessing,Magic/Heal,600,self/target,3,1,0,Cure bleed and potions of rank 5 or lower and heals the target with 540 power,19,76,88k,[Quick Heal],Elf
+58,Healing Totem,Magic/Heal,0,ground,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +108/s,76,304,88k,[Quick Heal],Ork
+56,Mana Totem,Magic/Heal,0,ground,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +12/s,76,304,88k,[],Ork
 58,Resurrection,Magic/Heal,600,dead ally,7,10,0,Revive at 30% HP/MP; restore 60% of lost exp.,35,85,45k,[]
 58,Resurrection Field,Magic/Heal,0,dead allies,15,60,0,Revive Dead allies 700 range around the caster at 30% HP/MP; restore 30% of lost exp.,70,170,45k,[]
-
+58,Antidote,Magic/Heal,600,self/target,0.8,3,0,"Cures poison, venom and bleed of rank 5 or lower from an ally (or self).",10,40,88k,[]
+58,Restore Mana,Magic/Heal,600,ally,2,2,0,Transfers 106 MP to an ally (costs 106). Not on yourself or another mana-restorer.,32,74,45k,[]
+58,Mana Ray,Magic/Active,600,enemy,2,2,0,Damages the MP of an enemy with +125 Power (Half effect on monsters),21,53,88k,[]
+58,Shield Harden,Magic/Buff,600,self/target,1,1,1200,Increases Shield PDef with 30%,20,70,45k,[]
+58,Vampirism,Magic/Buff,600,self/target,1,1,1200,+8% melee vampirism.,20,70,45k,[]
+58,Mana Blessing,Magic/Buff,600,self/target,1,1,1200,Decrease Physical MP Cost by 10% and Magic MP Cost by 5%,20,70,45k,[]
+58,Great Might,Magic/Buff,600,self/target,1,1,1200,+5% P.Atk. Does not stack with Other Great Might|Bulwark effects effects.,20,70,45k,[],,Does not stack ('Great Bulwark'|'Great Group Bulwark'|'Great Group Might')
+58,Great Bulwark,Magic/Buff,600,self/target,1,1,1200,+5% P.Def. Does not stack with Other Great Might|Bulwark effects effects.,20,70,45k,[],,Does not stack ('Great Might'|'Great Group Might'|'Great Group Bulwark')
+58,Bind,Magical Debuff,600,enemy,2.5,5,30,Hold enemy for 30s,11,43,88k,[],Elf
+58,Armor Break,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy P.Def by 20% and MDef by 10%,11,43,88k,[],Ork
+58,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed by 27% and cast speed by 17%,11,43,88k,[],Human
+58,Mana Strain,Magic/Debuff,600,enemy,4,4,60,Increase Physical and Magic MP Cost by 120%,11,43,88k,[]
 ,,,,,,,,,,,,,,--------------------------------60--------------------------------
 60,Anti magic,Passive,0,self,0,0,0,"magic def +78, mRes +20%",0,0,120k,[]
+60,Spell Mastery,Passive,0,self,0,0,0,"with sword/blunt Decreses the reuse delay with 20%, mAtk +62, pAtk +49, mpReg x2.7,hpReg x2.1, cast speed x1.1",0,0,120k,[]
+60,Armor Mastery,Passive,0,self,0,0,0,"Robe: mpReg x1.2, pDef +58, maxMP +150; Light: mpReg x1.2, pDef +58, cast x1.9, as x2 (composes to cast x0.95 / as x1 after Spellcaster Mastery), evasion +2",0,0,120k,[]
+60,Holy Ray,Magic/Dmg,600,enemy,2.5,1,0,m.Atk +68,11,44,120k,[Holy Bolt]
+60,Great Heal,Magic/Heal,600,self/target,5,2,0,heal with power 690,20,78,120k,[Heal]
+60,Party Great Heal,Magic/Heal,600,self/party,7,5,0,heal party with power 550,40,156,120k,[Party Heal]
+60,Ultimate Heal,Magic/Heal,600,self/target,5,2,0,heal with power 750. Consumes 1 skill stone,20,78,120k,[]
+60,Ultimate party Heal,Magic/Heal,600,self/party,7,5,0,heal with power 750. Consumes 4 skill stones,40,156,120k,[]
+60,Quick Great Heal,Magic/Heal,600,self/target,2,1,0,heal with power 690,30,117,120k,[Quick Heal],Human
+60,Healer Blessing,Magic/Heal,600,self/target,3,1,0,Cure bleed and potions of rank 6 or lower and heals the target with 550 power,20,78,120k,[Quick Heal],Elf
+60,Healing Totem,Magic/Heal,0,ground,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +110/s,80,312,120k,[Quick Heal],Ork
+60,Mana Totem,Magic/Heal,0,ground,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +13/s,80,312,120k,[],Ork
 60,Resurrection,Magic/Heal,600,dead ally,6,10,0,Revive at 30% HP/MP; restore 65% of lost exp.,40,85,61k,[]
-
+60,Restore Mana,Magic/Heal,600,ally,2,2,0,Transfers 108 MP to an ally (costs 108). Not on yourself or another mana-restorer.,32,76,61k,[]
+60,Mana Ray,Magic/Active,600,enemy,2,2,0,Damages the MP of an enemy with +130 Power (Half effect on monsters),21,54,120k,[]
+60,Resolve,Magic/Buff,600,self/target,1,1,1200,+48 interrupt resistance.,25,70,61k,[]
+62,Weapon Break,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy P.Atk and M.Atk by 5%,11,44,120k,[]
+60,Bind,Magical Debuff,600,enemy,2.5,5,30,Hold enemy for 30s,11,44,120k,[],Elf
+60,Armor Break,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy P.Def by 22% and MDef by 11%,11,44,120k,[],Ork
+60,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed by 29% and cast speed by 19%,11,44,120k,[],Human
+60,Mana Strain,Magic/Debuff,600,enemy,4,4,60,Increase Physical and Magic MP Cost by 130%,11,44,120k,[]
 ,,,,,,,,,,,,,,--------------------------------62--------------------------------
 62,Anti magic,Passive,0,self,0,0,0,"magic def +82, mRes +20%",0,0,170k,[]
+62,Spell Mastery,Passive,0,self,0,0,0,"with sword/blunt Decreses the reuse delay with 20%, mAtk +67, pAtk +54, mpReg x2.7,hpReg x2.1, cast speed x1.1",0,0,170k,[]
+62,Armor Mastery,Passive,0,self,0,0,0,"Robe: mpReg x1.2, pDef +64, maxMP +150; Light: mpReg x1.2, pDef +64, cast x1.9, as x2 (composes to cast x0.95 / as x1 after Spellcaster Mastery), evasion +2",0,0,170k,[]
+62,Holy Ray,Magic/Dmg,600,enemy,2.5,1,0,m.Atk +71,12,46,170k,[Holy Bolt]
+62,Great Heal,Magic/Heal,600,self/target,5,2,0,heal with power 720,20,80,170k,[Heal]
+62,Party Great Heal,Magic/Heal,600,self/party,7,5,0,heal party with power 560,40,160,170k,[Party Heal]
+62,Ultimate Heal,Magic/Heal,600,self/target,5,2,0,heal with power 780. Consumes 1 skill stone,20,80,170k,[]
+62,Ultimate party Heal,Magic/Heal,600,self/party,7,5,0,heal with power 780. Consumes 4 skill stones,40,160,170k,[]
+62,Quick Great Heal,Magic/Heal,600,self/target,2,1,0,heal with power 720,30,117,170k,[Quick Heal],Human
+62,Healer Blessing,Magic/Heal,600,self/target,3,1,0,Cure bleed and potions of rank 6 or lower and heals the target with 560 power,20,80,170k,[Quick Heal],Elf
+62,Healing Totem,Magic/Heal,0,ground,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +112/s,80,320,170k,[Quick Heal],Ork
+62,Mana Totem,Magic/Heal,0,ground,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +14/s,80,320,170k,[],Ork
 62,Resurrection,Magic/Heal,600,dead ally,5,10,0,Revive at 30% HP/MP; restore 70% of lost exp.,40,90,86k,[]
-
+62,Antidote,Magic/Heal,600,self/target,0.8,3,0,"Cures poison, venom and bleed of rank 6 or lower from an ally (or self).",11,42,170k,[]
+62,Restore Mana,Magic/Heal,600,ally,2,2,0,Transfers 113 MP to an ally (costs 113). Not on yourself or another mana-restorer.,35,78,86k,[]
+62,Mana Ray,Magic/Active,600,enemy,2,2,0,Damages the MP of an enemy with +130 Power (Half effect on monsters),20,52,170k,[]
+62,Shield Bless,Magic/Buff,600,self/target,1,1,1200,Increases Shield Rate with 20%,25,75,86k,[]
+62,Insight,Magic/Buff,600,self/target,1,1,1200,+100% magic critical rate.,25,75,86k,[]
+62,Soul,Magic/Buff,600,self/target,1,1,1200,+30% Max MP.,25,75,86k,[]
+62,Bind,Magical Debuff,600,enemy,2.5,5,30,Hold enemy for 30s,12,46,170k,[],Elf
+62,Armor Break,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy P.Def by 22% and MDef by 11%,12,46,170k,[],Ork
+62,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed by 29% and cast speed by 19%,12,46,170k,[],Human,
+62,Mana Strain,Magic/Debuff,600,enemy,4,4,60,Increase Physical and Magic MP Cost by 140%,12,46,170k,[]
 ,,,,,,,,,,,,,,--------------------------------64--------------------------------
 64,Anti magic,Passive,0,self,0,0,0,"magic def +86, mRes +20%",0,0,190k,[]
+56,Spell Mastery,Passive,0,self,0,0,0,"with sword/blunt Decreses the reuse delay with 20%, mAtk +72, pAtk +58, mpReg x2.7,hpReg x2.6, cast speed x1.1",0,0,190k,[]
+56,Armor Mastery,Passive,0,self,0,0,0,"Robe: mpReg x1.2, pDef +68, maxMP +150; Light: mpReg x1.2, pDef +68, cast x1.9, as x2 (composes to cast x0.95 / as x1 after Spellcaster Mastery), evasion +2",0,0,190k,[]
+56,Holy Ray,Magic/Dmg,600,enemy,2.5,1,0,m.Atk +74,12,48,190k,[Holy Bolt]
+56,Great Heal,Magic/Heal,600,self/target,5,2,0,heal with power 750,21,84,190k,[Heal]
+56,Party Great Heal,Magic/Heal,600,self/party,7,5,0,heal party with power 600,42,168,190k,[Party Heal]
+56,Ultimate Heal,Magic/Heal,600,self/target,5,2,0,heal with power 800. Consumes 1 skill stone,21,84,190k,[]
+56,Ultimate party Heal,Magic/Heal,600,self/party,7,5,0,heal with power 800. Consumes 4 skill stones,42,168,190k,[]
+56,Quick Great Heal,Magic/Heal,600,self/target,2,1,0,heal with power 750,30,117,190k,[Quick Heal],Human
+56,Healer Blessing,Magic/Heal,600,self/target,3,1,0,Cure bleed and potions of rank 6 or lower and heals the target with 600 power,20,80,190k,[Quick Heal],Elf
+56,Healing Totem,Magic/Heal,0,ground,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +120/s,80,320,190k,[Quick Heal],Ork
+56,Mana Totem,Magic/Heal,0,ground,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +14/s,80,320,190k,[],Ork
 64,Resurrection,Magic/Heal,600,dead ally,5,10,0,Revive at 30% HP/MP; restore 75% of lost exp.,45,90,100k,[]
-
+52,Antidote,Magic/Heal,600,self/target,0.8,3,0,"Cures poison, venom and bleed of rank 6 or lower from an ally (or self).",11,42,190k,[]
+56,Restore Mana,Magic/Heal,600,ally,2,2,0,Transfers 116 MP to an ally (costs 116). Not on yourself or another mana-restorer.,37,79,86k,[]
+56,Mana Ray,Magic/Active,600,enemy,2,2,0,Damages the MP of an enemy with +135 Power (Half effect on monsters),25,55,190k,[]
+56,Body,Magic/Buff,600,self/target,1,1,1200,+30% Max HP.,30,75,100k,[]
+40,Fortitude,Magic/Buff,600,self/target,1,1,1200,30% resist to CON debuffs,30,75,100k,[]
+62,Weapon Break,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy P.Atk and M.Atk by 6%,12,48,190k,[]
+56,Bind,Magical Debuff,600,enemy,2.5,5,30,Hold enemy for 30s,12,48,190k,[],Elf
+56,Armor Break,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy P.Def by 26% and MDef by 14%,12,48,190k,[],Ork
+56,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed by 33% and cast speed by 23%,12,48,190k,[],Human
+60,Mana Strain,Magic/Debuff,600,enemy,4,4,60,Increase Physical and Magic MP Cost by 150%,12,48,190k,[]
 ,,,,,,,,,,,,,,--------------------------------66--------------------------------
 66,Anti magic,Passive,0,self,0,0,0,"magic def +91, mRes +25%",0,0,280k,[]
 66,Resurrection,Magic/Heal,600,dead ally,5,10,0,Revive at 30% HP/MP; restore 80% of lost exp.,45,95,145k,[],,enchanters get it to here
 66,Resurrection Field,Magic/Heal,0,dead allies,10,60,0,Revive Dead allies 800 range around the caster at 30% HP/MP; restore 50% of lost exp.,90,190,145k,[]
+52,Antidote,Magic/Heal,600,self/target,0.8,3,0,"Cures poison, venom and bleed of rank 7 or lower from an ally (or self).",9,33,74k,[]
+58,Great Might,Magic/Buff,600,self/target,1,1,1200,+7% P.Atk. Does not stack with Other Great Might|Bulwark effects effects.,20,65,42k,[]
+58,Great Bulwark,Magic/Buff,600,self/target,1,1,1200,+10% P.Def. Does not stack with Other Great Might|Bulwark effects effects.,20,65,42k,[]
+60,Mana Strain,Magic/Debuff,600,enemy,4,4,60,Increase Physical and Magic MP Cost by 160%,11,43,88k,[]
+
+asdadsddd
+
+64,Anti magic,Passive,0,self,0,0,0,"magic def +86, mRes +20%",0,0,190k,[]
+56,Spell Mastery,Passive,0,self,0,0,0,"with sword/blunt Decreses the reuse delay with 20%, mAtk +72, pAtk +58, mpReg x2.7,hpReg x2.6, cast speed x1.1",0,0,190k,[]
+56,Armor Mastery,Passive,0,self,0,0,0,"Robe: mpReg x1.2, pDef +68, maxMP +150; Light: mpReg x1.2, pDef +68, cast x1.9, as x2 (composes to cast x0.95 / as x1 after Spellcaster Mastery), evasion +2",0,0,190k,[]
+56,Holy Ray,Magic/Dmg,600,enemy,2.5,1,0,m.Atk +74,12,48,190k,[Holy Bolt]
+
+56,Great Heal,Magic/Heal,600,self/target,5,2,0,heal with power 750,21,84,190k,[Heal]
+56,Party Great Heal,Magic/Heal,600,self/party,7,5,0,heal party with power 600,42,168,190k,[Party Heal]
+56,Ultimate Heal,Magic/Heal,600,self/target,5,2,0,heal with power 800. Consumes 1 skill stone,21,84,190k,[]
+56,Ultimate party Heal,Magic/Heal,600,self/party,7,5,0,heal with power 800. Consumes 4 skill stones,42,168,190k,[]
+
+56,Quick Great Heal,Magic/Heal,600,self/target,2,1,0,heal with power 750,30,117,190k,[Quick Heal],Human
+56,Healer Blessing,Magic/Heal,600,self/target,3,1,0,Cure bleed and potions of rank 6 or lower and heals the target with 600 power,20,80,190k,[Quick Heal],Elf
+56,Healing Totem,Magic/Heal,0,ground,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +120/s,80,320,190k,[Quick Heal],Ork
+56,Mana Totem,Magic/Heal,0,ground,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +14/s,80,320,190k,[],Ork
+
+64,Resurrection,Magic/Heal,600,dead ally,5,10,0,Revive at 30% HP/MP; restore 75% of lost exp.,45,90,100k,[]
+
+52,Antidote,Magic/Heal,600,self/target,0.8,3,0,"Cures poison, venom and bleed of rank 6 or lower from an ally (or self).",11,42,190k,[]
+
+56,Restore Mana,Magic/Heal,600,ally,2,2,0,Transfers 116 MP to an ally (costs 116). Not on yourself or another mana-restorer.,37,79,86k,[]
+56,Mana Ray,Magic/Active,600,enemy,2,2,0,Damages the MP of an enemy with +135 Power (Half effect on monsters),25,55,190k,[]
+
+56,Body,Magic/Buff,600,self/target,1,1,1200,+30% Max HP.,30,75,100k,[]
+40,Fortitude,Magic/Buff,600,self/target,1,1,1200,30% resist to CON debuffs,30,75,100k,[]
+
+62,Weapon Break,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy P.Atk and M.Atk by 6%,12,48,190k,[]
+56,Bind,Magical Debuff,600,enemy,2.5,5,30,Hold enemy for 30s,12,48,190k,[],Elf
+56,Armor Break,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy P.Def by 26% and MDef by 14%,12,48,190k,[],Ork
+56,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed by 33% and cast speed by 23%,12,48,190k,[],Human
+60,Mana Strain,Magic/Debuff,600,enemy,4,4,60,Increase Physical and Magic MP Cost by 150%,12,48,190k,[]
 
 ,,,,,,,,,,,,,,--------------------------------68--------------------------------
 68,Anti magic,Passive,0,self,0,0,0,"magic def +95, mRes +25%",0,0,320k,[]
 68,Resurrection,Magic/Heal,600,dead ally,5,10,0,Revive at 30% HP/MP; restore 85% of lost exp.,50,95,165k,[]
+60,Mana Strain,Magic/Debuff,600,enemy,4,4,60,Increase Physical and Magic MP Cost by 170%,11,43,88k,[]
+62,Weapon Break,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy P.Atk and M.Atk by 8%,12,48,190k,[]
 
 ,,,,,,,,,,,,,,--------------------------------70--------------------------------
 70,Anti magic,Passive,0,self,0,0,0,"magic def +99, mRes +25%",0,0,390k,[]
 70,Resurrection,Magic/Heal,600,dead ally,5,10,0,Revive at 30% HP/MP; restore 90% of lost exp.,50,100,200k,[]
+52,Antidote,Magic/Heal,600,self/target,0.8,3,0,"Cures poison, venom and bleed of rank 8 or lower from an ally (or self).",9,33,74k,[]
+60,Mana Strain,Magic/Debuff,600,enemy,4,4,60,Increase Physical and Magic MP Cost by 180%,11,43,88k,[]
+56,Body,Magic/Buff,600,self/target,1,1,1200,+35% Max HP.,20,65,42k,[]
+56,Soul,Magic/Buff,600,self/target,1,1,1200,+35% Max MP.,20,65,42k,[]
 
 ,,,,,,,,,,,,,,--------------------------------72--------------------------------
 72,Anti magic,Passive,0,self,0,0,0,"magic def +104, mRes +25%",0,0,650k,[]
 72,Resurrection,Magic/Heal,600,dead ally,5,10,0,Revive at 30% HP/MP; restore 95% of lost exp.,55,100,330k,[]
+60,Mana Strain,Magic/Debuff,600,enemy,4,4,60,Increase Physical and Magic MP Cost by 190%,11,43,88k,[]
+62,Weapon Break,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy P.Atk and M.Atk by 10%,12,48,190k,[]
 
 ,,,,,,,,,,,,,,--------------------------------74--------------------------------
 74,Anti magic,Passive,0,self,0,0,0,"magic def +108, mRes +25%",0,0,880k,[]
 74,Resurrection,Magic/Heal,600,dead ally,5,10,0,Revive at 30% HP/MP; restore 100% of lost exp.,55,105,450k,[]
 74,Resurrection Field,Magic/Heal,0,dead allies,10,60,0,Revive Dead allies 900 range around the caster at 30% HP/MP; restore 70% of lost exp.,110,210,450k,[]
+52,Antidote,Magic/Heal,600,self/target,0.8,3,0,"Cures poison, venom and bleed of rank 9 or lower from an ally (or self).",9,33,74k,[]
+58,Great Might,Magic/Buff,600,self/target,1,1,1200,+10% P.Atk. Does not stack with Other Great Might|Bulwark effects effects.,20,65,42k,[]
+58,Great Bulwark,Magic/Buff,600,self/target,1,1,1200,+15% P.Def. Does not stack with Other Great Might|Bulwark effects effects.,20,65,42k,[]
+60,Mana Strain,Magic/Debuff,600,enemy,4,4,60,Increase Physical and Magic MP Cost by 200%,11,43,88k,[],,(x3)
 
 
 
@@ -156,11 +312,11 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR, INIT MP,FIN
 ,,,,,,,,,,,,,,----------------------------------------------------------------
 ,,,,,,,,,,,,,,----------------------------------------------------------------
 
-30,Vampirism,Magic/Buff,600,self/target,1,1,1200,+6% melee vampirism.,8,32,6400,[]
 20,Resolve,Magic/Buff,600,self/target,1,1,1200,+18 interrupt resistance.,6,24,3200,[]
 25,Force,Magic/Buff,600,self/target,1,1,1200,+25% M.Atk.,8,32,6400,[]
 30,Aim,Magic/Buff,600,self/target,1,1,1200,+2 Accuracy.,8,32,6400,[]
 35,Vigor,Magic/Buff,600,self/target,1,1,1200,+10% HP regeneration.,6,28,6400,[]
+60,Serenity L4,Magic/Buff,600,self/target,1,1,1200,+15% MP regeneration.,8,34,25000,[],
 40,Clarity,Magic/Buff,600,self/target,1,1,1200,30% resist to SPT debuffs,12,48,19k,[],,Changed SP
 40,Fortitude,Magic/Buff,600,self/target,1,1,1200,15% resist to CON debuffs,12,48,19k,[],,Changed SP
 64,Body,Magic/Buff,600,self/target,1,1,1200,+35% Max HP.,10,40,100000,[],

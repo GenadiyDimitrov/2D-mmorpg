@@ -50,10 +50,10 @@ public class TrapInstance
     public int LifeTicks { get; set; }
 }
 
-/// <summary>A placed TOTEM (the Ork healer's level-40 skill). Server-only for now, exactly like
+/// <summary>A placed TOTEM (the Ork healer's totem line). Server-only for now, exactly like
 /// <see cref="TrapInstance"/> — a dedicated visual is client work, and until it exists a totem is felt
-/// (allies visibly heal) rather than seen. The mirror image of a trap: a trap waits once for an ENEMY
-/// and dies, a totem pulses repeatedly at ALLIES on a timer until its life runs out.
+/// (allies visibly heal / refill) rather than seen. The mirror image of a trap: a trap waits once for an
+/// ENEMY and dies, a totem pulses repeatedly at ALLIES on a timer until its life runs out.
 /// <para>⚠ Deliberately NOT an Entity. A new <c>EntityKind</c> would have to be audited through ~137
 /// server call sites, 54 of which ask "is this a mob / not a player" — a totem would silently become a
 /// valid aggro, damage or loot target in whichever one was missed. PETS are the case that will justify
@@ -66,7 +66,14 @@ public class TotemInstance
     public float X { get; init; }
     public float Y { get; init; }
     public float Radius { get; init; }
-    /// <summary>Heal applied to each ally in radius per pulse (the skill's Power at its level).</summary>
+    /// <summary>WHICH POOL this totem fills, snapshotted from the placing skill's own Effect:
+    /// <see cref="SkillEffect.Heal"/> = HP (Healing Totem), <see cref="SkillEffect.RestoreMp"/> = MP
+    /// (Mana Totem). A skill carrying both pulses both. Snapshotted rather than looked up each pulse
+    /// for the same reason <see cref="PulseAmount"/> is: a totem is an OBJECT, and what it does was
+    /// decided when it was planted.</summary>
+    public SkillEffect Effect { get; init; } = SkillEffect.Heal;
+    /// <summary>Amount applied to each ally in radius per pulse (the skill's Power at its level) —
+    /// HP or MP according to <see cref="Effect"/>.</summary>
     public int PulseAmount { get; init; }
     /// <summary>Ticks between pulses, and the countdown to the next one.</summary>
     public int PulseTicks { get; init; } = 10;

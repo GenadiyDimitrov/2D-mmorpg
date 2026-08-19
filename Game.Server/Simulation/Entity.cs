@@ -111,6 +111,12 @@ public class BuffInstance
     public float CcResistMagical { get; init; }
     public float CcResistPhysical { get; init; }
 
+    /// <summary>Magic crit DAMAGE this buff grants its holder, as a fraction of the ×2 base
+    /// (0.30 = +30% → ×2.6). Rides as fields, like the ones above, because the SkillEffect flag
+    /// enum has no bits left. <see cref="MagicCritDamageDebuff"/> is the `(1 − debuffs)` side.</summary>
+    public float MagicCritDamage { get; init; }
+    public float MagicCritDamageDebuff { get; init; }
+
     /// <summary>This buff ends the instant its owner TAKES damage (the healer's Meditation). Carried
     /// on the buff, like <see cref="HidesFromMobs"/>, so it is checked at the one place damage is
     /// applied and needs no second bookkeeping path. See <c>SkillDef.EndsOnDamageTaken</c>.</summary>
@@ -587,6 +593,13 @@ public class Entity
         if (AdminStat("crate") is float cr) CritChance = cr;
         if (AdminStat("mcrate") is float mcr) MagicCritChance = mcr;
         if (AdminStat("cdmg") is float cd) CritDamageBonus = cd;
+        // "mcdmg" sets the FINISHED magic crit multiplier (2 = the base, 2.6 = one blessing), so
+        // /stat mcdmg 3.38 reproduces the fully-blessed 4th-class caster without the 4th class.
+        if (AdminStat("mcdmg") is float mcd)
+        {
+            MagicCritDamageMult = mcd / StatCaps.MagicCritDamageBase;
+            MagicCritDamageResist = 0f;
+        }
         if (AdminStat("cdflat") is float cdf) CritDamageFlat = cdf;
         if (AdminStat("hp") is float hp) MaxHp = Math.Max(1, (int)hp);
         if (AdminStat("mp") is float mp) MaxMp = Math.Max(0, (int)mp);
@@ -863,6 +876,18 @@ public class Entity
     // damage (a flat x3, not CritDamageBonus). Fold into MagicCritChance, read that.
     public float MagicCritRateMult { get; set; } = 1f;
     public float MagicCritRateFlat { get; set; }
+    // ----- Magic crit DAMAGE (owner ruling 2026-08-19) -----
+    // `base ×2 × multipliers × (1 − debuffs)` — his formula, and the reason the flat ×3 became a
+    // base with a knob: the 4th-class buffer/healer blessings are +30% each and COMPOUND (×3.38
+    // together). Multipliers compound, debuffs SUM. Read EffectiveMagicCritDamage, not these.
+    public float MagicCritDamageMult { get; set; } = 1f;
+    public float MagicCritDamageResist { get; set; }
+
+    /// <summary>The finished magic crit multiplier — the ONE thing the damage path should read.
+    /// (Its physical twin is spread across CritDamageBonus/CritDamageFlat, which are consumed
+    /// differently; magic has a single number, so it gets a single getter.)</summary>
+    public float EffectiveMagicCritDamage =>
+        StatCalculator.MagicCritMult(MagicCritDamageMult, MagicCritDamageResist);
     // ----- Healer buff/effect layer (folded from buffs + passives in RecomputeDerived) -----
     public float CooldownReduction { get; set; } // spell reuse-delay reduction (0..cap)
     public float CritRateResist { get; set; }    // reduces an attacker's physical crit CHANCE vs you
@@ -879,7 +904,14 @@ public class Entity
     public float PierceDefCoef { get; set; } = 1f; // vs sword / dual
     public float BluntDefCoef { get; set; } = 1f;  // vs blunt
     public float BowDefCoef { get; set; } = 1f;    // vs bow
-    public int RestoreMpBonus { get; set; }      // bonus MP when an MP-restore lands on you (nuker mastery)
+    /// <summary>MP-RESTORE RECEIVED multiplier — the MP twin of <see cref="HealReceivedMod"/>. Every
+    /// restore that lands on you (a cast, a totem pulse, anything) is scaled by this. 1 = untrained;
+    /// the nuker robe mastery raises it to ×1.60 at the top rung.
+    /// <para>⚠ It was a FLAT <c>int RestoreMpBonus</c> ("+N MP per restore") until 2026-08-19. A flat
+    /// per-EVENT bonus cannot survive a periodic restore — a mana totem pulsing 30 times paid it 30
+    /// times — so the owner re-authored it as a percent that scales with whatever actually lands,
+    /// exactly as healing already works. See StatMods.RestoreMpPct.</para></summary>
+    public float RestoreMpMod { get; set; } = 1f;
     // (MagicFailResist DELETED 2026-08-10 — the owner's magic-landing model has no caster-side
     //  accuracy stat. It was also the field the bow penalty halved, which is why `57d` was invisible.)
     public bool UntrainedCasterWeapon { get; set; }  // Spellcaster Mastery: bow/dual/bare → magic accuracy x0.5
@@ -1824,6 +1856,8 @@ public class Entity
         CritRateFlat = 0f;
         MagicCritRateMult = 1f;
         MagicCritRateFlat = 0f;
+        MagicCritDamageMult = 1f;
+        MagicCritDamageResist = 0f;
         CritDmgResist = 0f;
         BowResist = 0f;
         CcResist = 0f;
@@ -1832,7 +1866,7 @@ public class Entity
         PierceDefCoef = 1f;
         BluntDefCoef = 1f;
         BowDefCoef = 1f;
-        RestoreMpBonus = 0;
+        RestoreMpMod = 1f;
         MagicResist = 0f;
         UntrainedCasterWeapon = false;
         MeleeVamp = 0f;
@@ -2329,11 +2363,14 @@ public class Entity
                 InterruptResist += (int)sm.InterruptResist;
                 if (sm.CritRate != 0f) CritRateMult *= 1f + sm.CritRate;   // ×1.2, not +20 points
                 if (sm.MagicCritRate != 0f) MagicCritRateMult *= 1f + sm.MagicCritRate;   // ditto, magic channel
+                if (sm.MagicCritDamage != 0f) MagicCritDamageMult *= 1f + sm.MagicCritDamage;   // ×1.3, not +30 points
                 CritDamageBonus += sm.CritDamage;
                 CritDmgResist += sm.CritDmgResist;
                 CritRateResist += sm.CritRateResist;
                 BowResist += sm.BowResist;
-                RestoreMpBonus += (int)sm.RestoreMpBonus;
+                // ×1.6, not +60 points — the same convention as the crit-rate lines above. Masteries
+                // COMPOUND here, which is what lets a set bonus ride on top of the robe mastery.
+                if (sm.RestoreMpPct != 0f) RestoreMpMod *= 1f + sm.RestoreMpPct;
             }
 
             // A learned skill can SUPERSEDE another's passive via Replaces[] (e.g. Spell
@@ -2371,6 +2408,9 @@ public class Entity
                 // ×1.05 is nothing" — that base is exactly what the rework fixed, and an additive
                 // passive on top of it was the single biggest magic-crit source in the game.
                 if (pe.MagicCritRate != 0f) MagicCritRateMult *= 1f + pe.MagicCritRate;   // ×1.2, not +20 points
+                // Magic crit DAMAGE is its own channel too — pe.CritDamage above is PHYSICAL and
+                // must never leak into a spell (owner ruling 2026-08-06, still the rule).
+                if (pe.MagicCritDamage != 0f) MagicCritDamageMult *= 1f + pe.MagicCritDamage;   // ×1.3, not +30 points
                 HpRegenBonus += pe.HpRegen;
                 MpRegenBonus += pe.MpRegen;
                 if (pe.HpRegenPct != 0f) HpRegenMult *= 1f + pe.HpRegenPct;
@@ -2566,6 +2606,10 @@ public class Entity
             // clamped below like CcResist is.
             CcResistMagical += buff.CcResistMagical;
             CcResistPhysical += buff.CcResistPhysical;
+            // Magic crit damage — the blessings COMPOUND (×1.3 × ×1.3 = ×1.69 on the ×2 base, the
+            // owner's own ×3.38), the debuffs SUM. Both ride as buff fields; the flag enum is full.
+            if (buff.MagicCritDamage != 0f) MagicCritDamageMult *= 1f + buff.MagicCritDamage;
+            MagicCritDamageResist += buff.MagicCritDamageDebuff;
             if (buff.Has(SkillEffect.BuffCooldown)) CooldownReduction += buff.Flat(SkillEffect.BuffCooldown) + buff.Percent(SkillEffect.BuffCooldown);
             if (buff.Has(SkillEffect.BuffPveSkillDamage)) PveSkillDamageBonus += buff.Flat(SkillEffect.BuffPveSkillDamage) + buff.Percent(SkillEffect.BuffPveSkillDamage);
             if (buff.Has(SkillEffect.BuffPveMagicDamage)) PveMagicDamageBonus += buff.Flat(SkillEffect.BuffPveMagicDamage) + buff.Percent(SkillEffect.BuffPveMagicDamage);
@@ -2592,6 +2636,10 @@ public class Entity
         // intermediate values and contradicted the cap the design has always stated.)
         CritChance = Math.Clamp(CritChance * CritRateMult + CritRateFlat, 0f, StatCaps.PhysicalCritRate);
         MagicCritChance = Math.Clamp(MagicCritChance * MagicCritRateMult + MagicCritRateFlat, 0f, StatCaps.MagicCritRate);
+        // The magic crit-DAMAGE chain has no cap of its own here: StatCalculator.MagicCritMult
+        // applies StatCaps.MagicCritDamageCap at the point of use, so a debuff can still bite a
+        // stack that would otherwise be pinned to the ceiling. Only the debuff sum is bounded.
+        MagicCritDamageResist = Math.Clamp(MagicCritDamageResist, 0f, 0.9f);
         CritRateResist = Math.Clamp(CritRateResist, 0f, 1f);
         CritDmgResist = Math.Clamp(CritDmgResist, 0f, 0.9f);
         BowResist = Math.Clamp(BowResist, 0f, 0.9f);
@@ -2804,6 +2852,9 @@ public class Entity
             MagicCritChance *= weapon;
             CritDamageBonus *= weapon;
             CritDamageFlat *= weapon;
+            // Only the EXCESS shrinks: MagicCritDamageMult is 1-based, so scaling it whole would
+            // penalise the ×2 base that every caster has, which no other line here does.
+            MagicCritDamageMult = 1f + (MagicCritDamageMult - 1f) * weapon;
             Accuracy = (int)(Accuracy * weapon);
         }
     }

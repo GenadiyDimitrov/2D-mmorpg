@@ -27,9 +27,12 @@ public static class StatCaps
     /// <summary>Physical crit RATE ceiling (50%, from AGI).</summary>
     public const float PhysicalCritRate = 0.50f;
 
-    /// <summary>Magic crit RATE ceiling (20% = his 200 on the 0-1000 scale). A fully-kitted elf
-    /// mage (WIT 30 → ×2.00) with the ×2 Insight buff lands on it exactly, by design — the 76+
-    /// buff that raises this per-entity to 250 is deferred with the 4th-class CSVs.</summary>
+    /// <summary>Magic crit RATE ceiling (20% = his 200 on the 0-1000 scale).
+    /// ⚠ A fully-kitted elf mage USED to land on it exactly off Insight alone; since the base
+    /// rescale of 2026-08-19 (see <see cref="StatCalculator.MagicCharacterCritBase"/>) he sits
+    /// at 16% there and computes 32% at ×4, so this is a real ceiling with headroom under and
+    /// over it — which is exactly what the owner asked for ("one day if we want to increase it,
+    /// no mage to be short on crit"). Raising this number now genuinely pays a mage.</summary>
     public const float MagicCritRate = 0.20f;
 
     /// <summary>Physical SKILL "[Double]" RATE ceiling (25%, from the ATK stat — owner
@@ -39,10 +42,17 @@ public static class StatCaps
     /// <summary>Physical crit DAMAGE ceiling (x10).</summary>
     public const float PhysicalCritDamage = 10.0f;
 
-    /// <summary>Magic crit DAMAGE — a flat x3, not a ceiling: nothing adds to it (owner ruling
-    /// 2026-08-06, see StatCalculator.MagicCritMult). Physical's x10 IS a ceiling because the
-    /// class CSVs' flat crit-damage rungs climb toward it; magic has no such ladder.</summary>
-    public const float MagicCritDamage = 3.0f;
+    /// <summary>Magic crit DAMAGE — the BASE the multiplier chain starts from (owner ruling
+    /// 2026-08-19: *"Magic crit dmg is default x2"*). It was a flat x3 that nothing could touch;
+    /// the 4th-class buffer/healer blessings need a knob, so the flat constant became a base and
+    /// the knob is <see cref="Entity.MagicCritDamageMult"/>. See StatCalculator.MagicCritMult.</summary>
+    public const float MagicCritDamageBase = 2.0f;
+
+    /// <summary>Magic crit DAMAGE ceiling. The designed maximum is x3.38 (base x2 × the buffer's
+    /// +30% × the healer's +30%, compounding); this sits above it as headroom, not as a target —
+    /// it exists so a future stack of blessings cannot run away, the way PhysicalCritDamage's x10
+    /// caps the fighters' flat-crit-damage ladder.</summary>
+    public const float MagicCritDamageCap = 5.0f;
 
     // ----- Magic landing (owner ruling 2026-08-10, playtest-20 `57d`) ------------------
     // Magic does NOT go through the physical resolver. Its own formula, in percentage POINTS:

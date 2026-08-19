@@ -162,34 +162,47 @@ public static partial class SkillCatalog
             },
             ArmorMasteryLevels: new[]
             {
-                // ⚠ RUNGS 1-4 ARE THE AUTHORED CSV (`docs/data/classes_skills_csv/nuker 2nd.csv`)
-                // — mpWhenRestored 25/30/35/40 at character 20/25/30/35. DO NOT RETUNE THEM HERE;
-                // that file is the owner's source of truth for the whole 20-35 band.
-                NukerRobe(pDef: 20, maxMp: 20, restore: 25),
-                NukerRobe(pDef: 25, maxMp: 20, restore: 30),
-                NukerRobe(pDef: 30, maxMp: 30, restore: 35),
-                NukerRobe(pDef: 35, maxMp: 30, restore: 40),
+                // 🔑 mpWhenRestored IS A PERCENT since 2026-08-19 (owner) — "+19%" means any MP
+                // restore landing on this character is multiplied by 1.19. It was a flat "+N MP per
+                // restore"; see StatMods.RestoreMpPct for why flat could not survive mana-over-time.
+                //
+                // THE CONVERSION IS HIS ANCHOR, MECHANICAL: every rung is the OLD FLAT × 0.75, which
+                // puts the top rung on ×1.60 — *"120+80 = 200 … 125x1.6 = 200 … a 60% increase is a
+                // good way to do so"*. Restore Spirit's own 120 at level 80 therefore delivers 192
+                // where it used to deliver 200: *"Nothing is lost."* The ladder keeps the flat
+                // version's exact shape (steps of ~4 then ~7.5), which is the "linear feel" he asked
+                // to preserve until he re-authors it with the mage pass.
+                //
+                // ⚠ RUNGS 1-4 MIRROR THE AUTHORED CSV (`docs/data/classes_skills_csv/nuker 2nd.csv`)
+                // — old flat 25/30/35/40 at character 20/25/30/35, now 19/23/26/30%. DO NOT RETUNE
+                // THEM HERE; that file is the owner's source of truth for the whole 20-35 band.
+                NukerRobe(pDef: 20, maxMp: 20, restorePct: 0.19f),
+                NukerRobe(pDef: 25, maxMp: 20, restorePct: 0.23f),
+                NukerRobe(pDef: 30, maxMp: 30, restorePct: 0.26f),
+                NukerRobe(pDef: 35, maxMp: 30, restorePct: 0.30f),
                 // Rungs 5-8 (@40/50/60/70) are OURS, in the band that has no CSV yet — the same
                 // precedent as the bolt ladder above 35 (ClassSkillTables.Common.cs). They carry his
-                // 2026-08-07 ruling "mpRestore to a +80", which is a LATE-LEVEL number: it is the
-                // other half of "+200 MP for −200 HP", against Restore Spirit's own 120 at 80.
+                // 2026-08-07 ruling "mpRestore to a +80" (now 60%), which is a LATE-LEVEL number: it
+                // is the other half of "+200 MP for −200 HP", against Restore Spirit's own 120 at 80.
                 // ⚠ Only the RESTORE value grows. pDef and maxMp stay frozen at the rung-4 values on
                 // purpose — inventing defensive growth he never authored would quietly re-balance the
                 // robe. When the 40+ nuker CSV lands, these four rungs are the ones to replace.
-                NukerRobe(pDef: 35, maxMp: 30, restore: 50),
-                NukerRobe(pDef: 35, maxMp: 30, restore: 60),
-                NukerRobe(pDef: 35, maxMp: 30, restore: 70),
-                NukerRobe(pDef: 35, maxMp: 30, restore: 80),
+                NukerRobe(pDef: 35, maxMp: 30, restorePct: 0.38f),
+                NukerRobe(pDef: 35, maxMp: 30, restorePct: 0.45f),
+                NukerRobe(pDef: 35, maxMp: 30, restorePct: 0.53f),
+                NukerRobe(pDef: 35, maxMp: 30, restorePct: 0.60f),
             }),
     };
 
     /// <summary>Nuker robe-mastery level: ROBE gets +MP regen, flat P.Def, flat max MP and the
-    /// mpWhenRestored bonus. (CSV nuker "Robe: mpReg x1.2, pDef +N, maxMP +M, mpWhenRestored +R".)
+    /// mpWhenRestored bonus. (CSV nuker "Robe: mpReg x1.2, pDef +N, maxMP +M, mpWhenRestored +R%".)
+    /// ⚠ <paramref name="restorePct"/> is a FRACTION (0.60 = +60% MP from every restore), not the
+    /// flat "+60 MP" it was until 2026-08-19 — see StatMods.RestoreMpPct.
     /// ⚠ 2026-08-07: the off-weight cast/attack penalty is GONE from here. It belongs to Spellcaster
     /// Mastery, which is never replaced — so this skill is pure bonus and the two now STACK (its
     /// ×1.2 MP regen multiplies the Spellcaster robe ×1.2, which is the owner's intent: *"giving
     /// him x1.2 mp regen (now stacks with the SpellcasterMastery)"*). Duplicating the penalty here
     /// would have applied it TWICE once masteries began stacking.</summary>
-    private static ArmorMasteryProfile NukerRobe(int pDef, int maxMp, int restore) => new(
-        Robe: new StatMods(MpRegenPct: 0.2f, PDef: pDef, MaxMp: maxMp, RestoreMpBonus: restore));
+    private static ArmorMasteryProfile NukerRobe(int pDef, int maxMp, float restorePct) => new(
+        Robe: new StatMods(MpRegenPct: 0.2f, PDef: pDef, MaxMp: maxMp, RestoreMpPct: restorePct));
 }

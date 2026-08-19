@@ -7415,8 +7415,18 @@ public class GameLoopService : BackgroundService
 
             string name = ClassSkills.DisplayName(
                 totem.SkillId, owner.Race, owner.BaseClass, owner.Archetype, owner.Discipline);
+            bool heals    = totem.Effect.HasFlag(SkillEffect.Heal);
+            bool restores = totem.Effect.HasFlag(SkillEffect.RestoreMp);
             foreach (var ally in AlliesAroundPoint(owner, totem.X, totem.Y, totem.Radius))
-                HealOne(owner, ally, totem.PulseAmount, 0, name);
+            {
+                if (heals)
+                    HealOne(owner, ally, totem.PulseAmount, 0, name);
+                // No special case: the restore-received multiplier is a PERCENT, so a pulse scales
+                // the same way a cast does and a robed nuker standing in a mana totem gets ×1.6 of
+                // it — the owner's own worked example (10/s → 16/s, ~30/s → 48/s at the top).
+                if (restores)
+                    RestoreMpOne(owner, ally, totem.PulseAmount, name);
+            }
         }
     }
 
@@ -7974,7 +7984,7 @@ public class GameLoopService : BackgroundService
                 }
                 else if (_rng.NextDouble() < dummy.MagicCritChance)
                 {
-                    int dmg = (int)(1 * StatCalculator.MagicCritMult());
+                    int dmg = (int)(1 * dummy.EffectiveMagicCritDamage);
                     ApplyDamage(target, dmg, dummy);
                     BroadcastCombat(dummy, target, dmg, CombatOutcome.Crit, "Practice Bolt");
                 }
@@ -8597,7 +8607,7 @@ public class GameLoopService : BackgroundService
             return;
         }
 
-var effect = def.Effect;
+        var effect = def.Effect;
         bool offensive = false;
         // The name shown in combat text is the CASTER's class label for this skill, so a
         // race's renamed spell (e.g. Elf "Moonlight Bolt") reads correctly in floating text.
@@ -8624,11 +8634,20 @@ var effect = def.Effect;
         //      rather than after a full pulse interval. ----
         if (def.PlacesTotem)
         {
+            // ONE totem per owner PER SKILL — a recast moves it, it does not add a second one.
+            // Not fussiness: his ladder authors cooldowns SHORTER than the lifetime (Healing Totem
+            // is 25s reuse on a 30s totem), so without this every healer would run a permanent
+            // stack of overlapping totems and the pulse would multiply by however many he could
+            // squeeze up. Different totems (healing + mana) are different skills and coexist.
+            _world.Totems.RemoveAll(t => t.OwnerId == caster.Id && t.SkillId == def.Id);
             _world.Totems.Add(new TotemInstance
             {
                 OwnerId = caster.Id, SkillId = def.Id, Level = lvl,
                 X = caster.X, Y = caster.Y,
                 Radius = def.TotemRadius,
+                // WHICH pool it fills comes from the skill's own Effect, so a Mana Totem is an
+                // ordinary RestoreMp skill with PlacesTotem set — no second totem type, no new flag.
+                Effect = effect,
                 PulseAmount = def.PowerAt(lvl),
                 PulseTicks = Math.Max(1, def.TotemPulseTicks),
                 NextPulseIn = 0,
@@ -8794,10 +8813,11 @@ var effect = def.Effect;
             {
                 if (_rng.NextDouble() < caster.MagicCritChance)
                 {
-                    // Flat x3 — NOT caster.CritDamageBonus. That field is Ferocity + the crit-damage
-                    // item attribute, both authored for fighters; feeding it here made a mage's crit
-                    // ride on buffs bought for the physical channel. Separate channels now.
-                    damage = (int)(damage * StatCalculator.MagicCritMult());
+                    // The MAGIC channel's own multiplier — NOT caster.CritDamageBonus. That field is
+                    // Ferocity + the crit-damage item attribute, both authored for fighters; feeding
+                    // it here made a mage's crit ride on buffs bought for the physical channel.
+                    // `base x2 × multipliers × (1 − debuffs)` (owner 2026-08-19); it was a flat x3.
+                    damage = (int)(damage * caster.EffectiveMagicCritDamage);
                     BroadcastCombat(caster, target, damage, CombatOutcome.Crit, castName);
                 }
                 else
@@ -9275,6 +9295,9 @@ var effect = def.Effect;
             // to carry the rung that actually landed, not the skill's first one.
             CcResistMagical = def.CcResistMagicalAt(level),
             CcResistPhysical = def.CcResistPhysicalAt(level),
+            // Magic crit damage — per-LEVEL for the same reason.
+            MagicCritDamage = def.MagicCritDamageAt(level),
+            MagicCritDamageDebuff = def.MagicCritDamageDebuffAt(level),
             // The bar's tap popup reads the LEVEL's text whenever a level authored one — a group's
             // numbers live there ("Move +33, Cast +30%, Evasion +4, Attack Speed +33%"), and so do a
             // reward rune's ("+50% experience"), where the skill's own blurb is only the first rung.
@@ -9475,7 +9498,12 @@ var effect = def.Effect;
         if (target.Dead) return;
         if (amount > 0)
         {
-            amount += target.RestoreMpBonus;   // nuker robe mastery "mpWhenRestored"
+            // Target's MP-RESTORE RECEIVED — the exact shape HealOne applies to a heal, and the
+            // reason there is no longer a "periodic restores are different" branch here: a percent
+            // scales with whatever landed, so ONE pipe serves a cast and a totem pulse alike
+            // (owner 2026-08-19: *"the mana over time will go trough the same pipe as other mana
+            // restores"*). The old flat +N had to be suppressed on ticks or it paid 30 times.
+            amount = (int)Math.Round(amount * Math.Max(0f, target.RestoreMpMod));
             target.Mp = Math.Min(target.MaxMp, target.Mp + amount);
         }
         FlagForSupporting(caster, target);   // refuelling an outlaw flags you, same as healing one
@@ -11717,7 +11745,7 @@ var effect = def.Effect;
             p.CritRateResist, p.CritDmgResist, p.BowResist,
             p.InterruptResist, (int)p.EffectiveMagicAttack,   // MagicAttackInternal: the cosmic IG-reference value
             p.HealPowerFlat, p.HealPowerMod, p.HealReceivedFlat, p.HealReceivedMod,
-            p.CritDamageFlat));
+            p.CritDamageFlat, p.EffectiveMagicCritDamage));
     }
 
     /// <summary>The player's HP/MP regen per second AS IT IS ACTUALLY PAID right now — base + flat

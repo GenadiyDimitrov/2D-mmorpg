@@ -46,7 +46,15 @@ public readonly record struct StatMods(
     float InterruptResist = 0f,
     float CritDmgResist = 0f, float CritRateResist = 0f, float BowResist = 0f,
     float CcResist = 0f,   // reduces the LAND chance of contested CC (stun/fear/root/slow/DoT) vs you
-    float RestoreMpBonus = 0f,
+    // MP RESTORED, as a FRACTION (0.60 = "+60% MP from any restore that lands on you") — the MP twin
+    // of the heal channel's HealReceivedPct, and the nuker robe mastery's whole payload.
+    // ⚠ It was a FLAT "+N MP per restore" until 2026-08-19. Flat could not survive periodic restores:
+    // a mana totem pulsing 30 times paid the flat 30 times, so a +80 rung was worth 2400 MP off a
+    // 300 MP totem. A percent scales with whatever lands on you, cast or tick, which is exactly how
+    // healing already behaves (owner: *"so it works like the heal hot … a 100 heal/s with 30%
+    // increase will heal 130/s"*). His conversion anchor: the old +80 on Restore Spirit's 120-130
+    // ≈ 200-210, and ×1.60 lands on the same number — so the ladder is the old flat × 0.75.
+    float RestoreMpPct = 0f,
     // Primary-stat deltas (flat, SUMMED). Applied to the entity's core stats BEFORE the derived
     // stats are computed, so a set's "CON +3" actually raises HP, "AGI +1" raises eva/acc/crit, etc.
     // (item/set sources — the "formula counts for them" per owner).
@@ -86,7 +94,12 @@ public readonly record struct StatMods(
     // `Str` and `Int` above fold into the SAME place (Entity.RecomputeDerived's primary-stat pre-pass)
     // — they are ATK under the two names the gear CSVs write it with, fighter and mage. This field is
     // for authoring ATK directly. The three are summed; a set never carries more than one of them.
-    float Atk = 0f)
+    float Atk = 0f,
+    // MAGIC crit DAMAGE — a fraction added to the caster's ×2 base (0.30 = +30% → ×2.6). The magic
+    // twin of `CritDamage` above, which is PHYSICAL-only and must stay that way (owner 2026-08-06:
+    // a fighter's crit-damage gear must not pay a mage). Added 2026-08-19 with the magic-crit rework
+    // so a robe set or a spellcaster mastery CAN carry it; nothing authors it yet.
+    float MagicCritDamage = 0f)
 {
     // NOTE: cooldown, interrupt POWER, the PvE/PvP×skill/magic/basic matrix, shield BLOCK CHANCE, bow
     // range and the combat FLOORS are added as the passive/buff sources migrate (docs/design/StatMods.md).
@@ -105,12 +118,12 @@ public readonly record struct StatMods(
         HpRegen * f, HpRegenPct * f, MpRegen * f, MpRegenPct * f,
         InterruptResist * f,
         CritDmgResist * f, CritRateResist * f, BowResist * f,
-        CcResist * f, RestoreMpBonus * f,
+        CcResist * f, RestoreMpPct * f,
         Str * f, Agi * f, Con * f, Int * f, Wit * f, Spt * f,
         MeleeVamp * f, SpellVamp * f, Reflect * f,
         ShieldDefPct * f,
         CritRateFlat * f, CritDamageFlat * f, MagicResist * f, PvpDamageTakenPct * f,
-        Atk * f);
+        Atk * f, MagicCritDamage * f);
 
     /// <summary>Fold a set of source mods into running totals (flats SUM, percents COMPOUND
     /// — see docs/design/StatMods.md: final = (base + Σflat) × ∏(1+pct%)).</summary>
@@ -145,13 +158,14 @@ public readonly record struct StatTotals(
     float InterruptResist = 0f,
     float CritDmgResist = 0f, float CritRateResist = 0f, float BowResist = 0f,
     float CcResist = 0f,
-    float RestoreMpBonus = 0f,
+    float RestoreMpPct = 0f,
     float Str = 0f, float Agi = 0f, float Con = 0f, float Int = 0f, float Wit = 0f, float Spt = 0f,
     float MeleeVamp = 0f, float SpellVamp = 0f, float Reflect = 0f,
     float ShieldDefPct = 0f,
     float CritRateFlat = 0f, float CritDamageFlat = 0f, float MagicResist = 0f,
     float PvpDamageTakenPct = 0f,
-    float Atk = 0f)
+    float Atk = 0f,
+    float MagicCritDamage = 0f)
 {
     /// <summary>Compound two percents: ∏(1+p)−1, so combining is multiplicative and 0 = inert.</summary>
     private static float Mul(float a, float b) => (1f + a) * (1f + b) - 1f;
@@ -175,7 +189,7 @@ public readonly record struct StatTotals(
         InterruptResist + s.InterruptResist,
         CritDmgResist + s.CritDmgResist, CritRateResist + s.CritRateResist, BowResist + s.BowResist,
         CcResist + s.CcResist,
-        RestoreMpBonus + s.RestoreMpBonus,
+        RestoreMpPct + s.RestoreMpPct,
         Str + s.Str, Agi + s.Agi, Con + s.Con, Int + s.Int, Wit + s.Wit, Spt + s.Spt,
         MeleeVamp + s.MeleeVamp, SpellVamp + s.SpellVamp, Reflect + s.Reflect,
         Mul(ShieldDefPct, s.ShieldDefPct),
@@ -185,7 +199,9 @@ public readonly record struct StatTotals(
         // means ×0.95 × ×0.95, not −10%.
         CritRateFlat + s.CritRateFlat, CritDamageFlat + s.CritDamageFlat,
         MagicResist + s.MagicResist, PvpDamageTakenPct + s.PvpDamageTakenPct,
-        Atk + s.Atk);
+        // MagicCritDamage SUMS here like every other flat in this path; Entity.RecomputeDerived
+        // turns the total into the ONE multiplier (1 + total) it feeds MagicCritMult.
+        Atk + s.Atk, MagicCritDamage + s.MagicCritDamage);
 
     /// <summary>Apply a (flat, pct) pair to a base value: `(base + flat) × (1 + pct)`,
     /// floored at 0. The single place the combine convention is defined.</summary>

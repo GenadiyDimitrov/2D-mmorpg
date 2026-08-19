@@ -1343,12 +1343,17 @@ sustaining a rotation. **Ten rungs**, learned at 25/40/45/50/55/60/65/70/75/80:
   as a bug the first time it kills you.
 - Cast it at **low HP**: it must refuse (or not kill you) rather than burning HP you don't have.
 
-**55b. Mage Armor Mastery gains rungs 5-8 @40/50/60/70.** Only `mpWhenRestored` grows — **50 / 60 /
-70 / 80** — on top of the CSV's 25/30/35/40 at 20/25/30/35. P.Def (+35) and max MP (+30) are **frozen
-at the rung-4 values on purpose**; if you see those climbing, that is a defect.
-- The check that matters is the **sum**: at 80, in a ROBE, Restore Spirit should deliver
-  **120 + 80 = 200 MP for 200 HP** — his "+200 MP for −200 HP" endpoint, ~1.00 MP per HP.
+**55b. Mage Armor Mastery gains rungs 5-8 @40/50/60/70.** Only `mpWhenRestored` grows — **+38% / +45%
+/ +53% / +60%** — on top of the CSV's +19/+23/+26/+30% at 20/25/30/35. ⚠ **It is a PERCENT since
+2026-08-19**, not the flat "+N MP" it used to be: the card must read `MP restored +38%`, and a flat
+number there is a defect. P.Def (+35) and max MP (+30) are **frozen at the rung-4 values on purpose**;
+if you see those climbing, that is a defect.
+- The check that matters is the **product**: at 80, in a ROBE, Restore Spirit should deliver
+  **120 × 1.60 = 192 MP for 200 HP** — his "+200 MP for −200 HP" endpoint, ~0.96 MP per HP.
 - Out of a robe the mastery contributes nothing, so the same cast delivers only the base 120.
+- ⚠ **Below 60 the percent pays less than the old flat did** (a level-25 cast delivers 20×1.23 ≈ 25
+  where the flat gave 45). That is expected and known — the base ladder is his to re-author with the
+  mage pass; report how it FEELS, not that the number fell.
 
 **55c. The mage's MP clock — this is the reason for both of the above.** His playtest-19 finding was
 *"mages run out of MP in 2-3 minutes"*. Farm a mage for **10+ unbroken minutes** at 40+ and say

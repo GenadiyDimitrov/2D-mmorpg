@@ -93,6 +93,9 @@ namespace Game.Client
             // number, not a percent. [Double] is a pure ATK curve — the client can derive it itself.
             t.AppendLine(Row2("Crit dmg flat", "+" + s.CritDamageFlat.ToString("0"),
                               "[Double]", Pct(StatCalculator.PhysicalDoubleChance(s.Atk))));
+            // The MAGIC crit multiplier is its own number (x2 base, x2.6 / x3.38 blessed) and shares
+            // nothing with the two crit-damage lines above, which are the physical channel.
+            t.AppendLine(Row2("Magic crit dmg", "x" + s.MagicCritDamage.ToString("0.##"), "", ""));
             t.AppendLine(Row2("Atk speed", SpeedStat(s.AttackSpeedMult, StatCaps.AttackSpeed),
                               "Cast speed", SpeedStat(s.CastSpeedMult, StatCaps.CastSpeed)));
             t.AppendLine();

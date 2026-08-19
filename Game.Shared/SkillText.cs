@@ -172,7 +172,7 @@ public static class SkillText
         Pct(o, "Crit rate resist", m.CritRateResist);
         Pct(o, "Bow resist", m.BowResist);
         Pct(o, "CC resist", m.CcResist);
-        Flat(o, "MP restored", m.RestoreMpBonus);
+        Pct(o, "MP restored", m.RestoreMpPct);   // a PERCENT since 2026-08-19, not a flat +N MP
         Flat(o, "STR", m.Str);
         Flat(o, "AGI", m.Agi);
         Flat(o, "CON", m.Con);
@@ -438,8 +438,17 @@ public static class SkillText
 
         // ---- Traps ----
         if (def.PlacesTotem)
-            o.Add($"Plants a totem that heals allies within {(int)def.TotemRadius} "
+        {
+            // What it pulses is the skill's OWN effect, so the card must read it rather than assume
+            // HP — a Mana Totem is the same skill shape pointed at the other pool.
+            bool totemHeals = def.Effect.HasFlag(SkillEffect.Heal);
+            bool totemMana  = def.Effect.HasFlag(SkillEffect.RestoreMp);
+            string what = totemHeals && totemMana ? "heals and restores MP for"
+                        : totemMana               ? "restores MP for"
+                                                  : "heals";
+            o.Add($"Plants a totem that {what} allies within {(int)def.TotemRadius} "
                 + $"every {def.TotemPulseTicks / 10f:0.#}s for {def.TotemLifeTicks / 10}s");
+        }
         if (def.PlacesTrap)
             o.Add($"Drops a trap at your feet: triggers within {(int)def.TrapRadius}, "
                 + $"lasts {Secs(def.TrapLifeTicks)}");

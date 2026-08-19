@@ -275,7 +275,10 @@ public record StatsUpdate(
     int HealReceivedFlat = 0, float HealReceivedMod = 1f,
     // FLAT crit damage (the CSVs' "crit dmg +80"): attack added INSIDE the ratio on a crit only,
     // before the multiplier. Separate line from CritDamage, which is the multiplier bonus.
-    float CritDamageFlat = 0f);
+    float CritDamageFlat = 0f,
+    // The FINISHED magic crit multiplier (2 = base, 2.6 = one blessing, 3.38 = both). Its own line
+    // because CritDamage above is the PHYSICAL channel and the two share nothing.
+    float MagicCritDamage = 2f);
 
 /// <summary>Server -> owning client: a potion cooldown started (seconds),
 /// or an active potion effect changed. Cooldown 0 = ready.</summary>

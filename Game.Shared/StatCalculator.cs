@@ -595,9 +595,21 @@ public static class StatCalculator
     public static float PhysicalCritBase(int agi, WeaponType weapon) =>
         CharacterCritBase * WeaponCritFactor(weapon) * CritAgiMod(agi);
 
-    /// <summary>Character MAGIC crit-rate BASE — his "50" on IG's 0-1000 scale, i.e. 5%.
-    /// (owner ruling 2026-08-06; the magic twin of <see cref="CharacterCritBase"/>.)</summary>
-    public const float MagicCharacterCritBase = 0.050f;
+    /// <summary>Character MAGIC crit-rate BASE — "40" on IG's 0-1000 scale, i.e. 4%
+    /// (the magic twin of <see cref="CharacterCritBase"/>; was 50 from 2026-08-06 to 2026-08-19).
+    ///
+    /// <para>🛑 Lowered on purpose so the CAP IS NO LONGER THE CEILING A MAGE ALREADY LIVES ON
+    /// (owner ruling 2026-08-19): *"still max 20% but one day if we want to increase it no mage
+    /// to be short on crit"*. At 50 the fully-kitted elf (WIT 30, ×2.00) hit exactly 20% off
+    /// Insight alone, so the 4th-class crit-rate buff he is authoring would have bought him
+    /// NOTHING, and raising the cap later would have bought him nothing either. At 40 the chain
+    /// reads — WIT 30, i.e. elf mage + robe set +2 + stat swap +5:</para>
+    /// <code>bare        8.0%      (his "about 7-8% without buffs")
+    /// ×2 Insight  16.0%      (his "15-16%")
+    /// ×4 buffed   32.0%  →  clamped to the 20% cap, with real headroom above it</code>
+    /// and the human (WIT 27 → 6.8%) and ork (WIT 26 → 6.4%) both clear 20% at ×4 too, which
+    /// was the other half of the ruling.</summary>
+    public const float MagicCharacterCritBase = 0.040f;
 
     /// <summary>The WIT that sits at exactly ×1.00 — the HUMAN MAGE base, so an ordinary
     /// caster is the neutral reference and every point of spread comes from race, the robe
@@ -658,15 +670,27 @@ public static class StatCalculator
         return (flat + mod * (pAtk + critFlat)) / normal;
     }
 
-    /// <summary>Magic crit DAMAGE multiplier — a FLAT ×3, taking no bonus at all
-    /// (owner ruling 2026-08-06).
-    /// 🛑 It used to be <c>2.0 + CritDamageBonus</c>, sharing the ONE crit-damage field with
-    /// physical — so Ferocity and the crit-damage item attribute, both authored for fighters,
-    /// silently paid a mage too. Magic crit is a SEPARATE CHANNEL on both counts now: its own
-    /// rate (WIT, not AGI) and its own damage (this constant, not the fighters' buffs). If a
-    /// magic crit-damage buff is ever wanted, it needs its OWN field — do not re-point this at
-    /// CritDamageBonus.</summary>
-    public static float MagicCritMult() => StatCaps.MagicCritDamage;
+    /// <summary>Magic crit DAMAGE multiplier — <c>×2 base × multipliers × (1 − debuffs)</c>,
+    /// which is the owner's formula verbatim (2026-08-19):
+    /// *"base critDmg x multiPliers x (1 - debuffs)"*.
+    ///
+    /// <para>It was a FLAT ×3 taking no bonus at all (2026-08-06 → 2026-08-19). The flat form
+    /// existed to stop Ferocity and the crit-damage item attribute — both authored for fighters
+    /// — from silently paying a mage, and THAT part still holds: this reads
+    /// <see cref="Entity.MagicCritDamageMult"/>, its own channel, never
+    /// <c>CritDamageBonus</c>. What changed is that the channel now has a knob in it, because
+    /// the 4th-class kits need one: the buffer's and healer's +30% magic-crit-damage blessings
+    /// (×2.6 alone, ×3.38 with both, since multipliers COMPOUND).</para>
+    ///
+    /// <para>⚠ The base dropped ×3 → ×2 in the same ruling. Combined with the crit-RATE
+    /// rescale above, a nuker with only Insight goes from <c>0.80 + 0.20×3 = ×1.40</c> average
+    /// to <c>0.84 + 0.16×2 = ×1.16</c> — about −17% magic damage until the 4th-class buffs
+    /// exist to give it back.</para></summary>
+    /// <param name="mult">The caster's compounded magic-crit-damage multiplier (1 = none).</param>
+    /// <param name="resist">Summed magic-crit-damage DEBUFFS on the caster (0 = none).</param>
+    public static float MagicCritMult(float mult = 1f, float resist = 0f) =>
+        Math.Clamp(StatCaps.MagicCritDamageBase * mult * (1f - resist),
+                   1f, StatCaps.MagicCritDamageCap);
 
     // ----- Magic landing: its OWN formula, not the physical resolver ---------------------------
     //

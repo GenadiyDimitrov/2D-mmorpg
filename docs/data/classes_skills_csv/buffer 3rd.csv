@@ -1,4 +1,4 @@
-LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR, INIT MP,FINIT MP ,SP COST,REPLACES,RACE
+LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR, INIT MP,FINIT MP ,SP COST,REPLACES,RACE,Comment
 30,Shrouding Hymn,Magic/Buff,600,self/party,2,30,60,For 1 minute monsters that have not already noticed you and nearby allies leave you alone.,60,240,12000,[]
 40,Might L3,Magic/Buff,600,self/target,1,1,1200,+15% P.Atk.,10,40,12800,[],
 40,Bulwark L3,Magic/Buff,600,self/target,1,1,1200,+15% P.Def.,10,40,12800,[],
@@ -18,6 +18,8 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR, INIT MP,FIN
 56,Ferocity L6,Magic/Buff,600,self/target,1,1,1200,+35% critical damage.,10,40,100000,[],
 56,Focus L6,Magic/Buff,600,self/target,1,1,1200,+30% critical rate.,10,40,100000,[],
 56,Insight L4,Magic/Buff,600,self/target,1,1,1200,+65% magic critical rate.,8,34,25000,[],
+58,Great Group Might,Magic/Buff,600,self/party,1,1,1200,+5% P.Atk. Does not stack with Other Great Might|Bulwark effects effects.,8,34,25000,[],,Does not stack ('Great Bulwark'|'Great Group Bulwark'|'Great Might')
+58,Great Group Bulwark,Magic/Buff,600,self/party,1,1,1200,+5% P.Def. Does not stack with Other Great Might|Bulwark effects effects.,8,34,25000,[],,Does not stack ('Great Might'|'Great Group Might'|'Great Bulwark')
 60,Body L3,Magic/Buff,600,self/target,1,1,1200,+20% Max HP.,7,31,12800,[],
 60,Vigor L4,Magic/Buff,600,self/target,1,1,1200,+15% HP regeneration.,8,34,25000,[],
 60,Insight L6,Magic/Buff,600,self/target,1,1,1200,+100% magic critical rate.,10,40,100000,[],
@@ -34,9 +36,13 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR, INIT MP,FIN
 64,Soul L6,Magic/Buff,600,self/target,1,1,1200,+35% Max MP.,10,40,100000,[],
 64,Frenzy L6,Magic/Buff,600,self/target,1,1,1200,"−10% Max HP/MP, +8% offence and speed, +8 move, −8 evasion.",35,140,100000,[],
 64,Harmony of the Wizard,Magic/Buff,600,self/party,1.5,1,1200,"+30% cast speed, +10% M.Atk, +20% MP regen, −30% magic-skill MP cost (20 minutes).",40,160,100000,[],
+58,Great Group Might,Magic/Buff,600,self/party,1,1,1200,+7% P.Atk. Does not stack with Other Great Might|Bulwark effects effects.,8,34,25000,[],,Does not stack ('Great Bulwark'|'Great Group Bulwark'|'Great Might')
+58,Great Group Bulwark,Magic/Buff,600,self/party,1,1,1200,+10% P.Def. Does not stack with Other Great Might|Bulwark effects effects.,8,34,25000,[],,Does not stack ('Great Might'|'Great Group Might'|'Great Bulwark')
 66,Shield Bless and harden,Magic/Buff,600,self/party,1,1,1200,"Increases Shield PDef with 50%, and shield chance with 30%",40,160,100000,[Swift Alacrity Agility Haste],
 66,Swift and Sure L6,Magic/Buff,600,self/party,1,1,1200,"Move +33, Cast +30%, Evasion +4, Attack Speed +33%.",40,160,100000,[Swift Alacrity Agility Haste],
 68,Might and Bulwark L6,Magic/Buff,600,self/party,1,1,1200,"+15% P.Atk, +15% P.Def, 9% melee vampirism, +4 Accuracy.",40,160,50000,[Might Bulwark Vampirism Aim],
 70,Force and Ward L6,Magic/Buff,600,self/party,1,1,1200,"+60 interrupt resistance, +32% M.Atk, +30% M.Def.",40,160,100000,[Force Ward Resolve],
 72,Focus and Ferocity L6,Magic/Buff,600,self/party,1,1,1200,"+30% critical rate, +35% critical damage, double magic critical rate.",40,160,100000,[Focus Ferocity Insight],
 74,Body and Soul L6,Magic/Buff,600,self/party,1,1,1200,"+20% HP and MP regeneration, +35% Max HP and Max MP.",40,160,100000,[Body Soul Vigor Serenity],
+58,Great Group Might,Magic/Buff,600,self/party,1,1,1200,+10% P.Atk. Does not stack with Other Great Might|Bulwark effects effects.,8,34,25000,[],,Does not stack ('Great Bulwark'|'Great Group Bulwark'|'Great Might')
+58,Great Group Bulwark,Magic/Buff,600,self/party,1,1,1200,+15% P.Def. Does not stack with Other Great Might|Bulwark effects effects.,8,34,25000,[],,Does not stack ('Great Might'|'Great Group Might'|'Great Bulwark')

@@ -303,17 +303,29 @@ That base was the actual defect: `WIT x 0.001` put a human mage at **2.0%**, so 
 worth **+3 points** and the 200 cap needed **WIT 200**. Magic now runs the same chain:
 
 ```
-magicCrit = ( 50 x witMod x passives x buffs  +  flat ) x debuffs      clamp 0 .. 200 (20%)
+magicCrit = ( 40 x witMod x passives x buffs  +  flat ) x debuffs      clamp 0 .. 200 (20%)
 ```
 
 with **no weapon term** (rate is WIT + buffs only) and `witMod` **asymmetric** — `+0.10`/point above
 the WIT-20 anchor, `+0.05`/point below, clamped at 0. The lower slope is load-bearing: a symmetric
 0.10 zeroes the stat at WIT 10, and both the ork fighter (10) and every mob (5) live down there.
 
-Magic crit **damage** is a flat **x3** taking no bonus. It used to read `CritDamageBonus` — the single
-crit-damage field shared with physical — so Ferocity and the crit-damage attribute, both fighter
-buffs, paid a mage too. Rate and damage are both their own channel now. See `CHANGELOG.md` 0.51.0 and
-the `=== MAGIC CRIT ===` section of `tools/BalanceMatrix`.
+⚠ **The head of that chain was 50 until 2026-08-19** and is now **40**. Not a nerf for its own sake: at
+50 the fully-kitted elf (WIT 30) computed *exactly* the 20% cap off Insight alone, so he was pinned to
+the ceiling and the 4th-class crit-rate buff would have bought him nothing — nor would raising the cap.
+At 40 he reads **8% bare / 16% with Insight / 32% at ×4**, i.e. the cap is a real ceiling with room
+under *and* over it. That was the owner's whole point: *"one day if we want to increase it, no mage to
+be short on crit"*.
+
+Magic crit **damage** is `x2 base × ∏(1 + multipliers) × (1 − Σ debuffs)`, clamped `[1, 5]` — the
+owner's formula, 2026-08-19. It was a flat **x3** taking no bonus at all from 2026-08-06; the flat form
+existed because it used to read `CritDamageBonus`, the single crit-damage field shared with physical,
+so Ferocity and the crit-damage attribute (both fighter buffs) paid a mage too. **That rule still
+holds** — the chain reads `Entity.MagicCritDamageMult`, its own channel, fed only by
+`SkillDef`/`PassiveEffect`/`StatMods.MagicCritDamage`. What changed is that the channel now has a knob,
+for the 4th-class buffer/healer blessings (+30% each, **compounding**: ×2.6 alone, ×3.38 together).
+Rate and damage are both their own channel. See `CHANGELOG.md` 2026-08-19 and the `=== MAGIC CRIT ===`
+section of `tools/BalanceMatrix`.
 
 ### What it MEASURED (`tools/BalanceMatrix` §C2 / §C3) — read this before retuning anything
 

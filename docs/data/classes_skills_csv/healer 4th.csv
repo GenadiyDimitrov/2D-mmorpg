@@ -1,11 +1,14 @@
 LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR, INIT MP,FINIT MP ,SP COST,REPLACES,RACE
-83,Rite of Preservation,Magic/Buff,600,self/target,3,3600,3600,"Blesses an ally (or yourself): they DIE normally, keep their buffs, and are offered a resurrection where they fell at 30% HP and MP, losing NO experience. The offer waits as long as they like. Lasts 60 minutes or until it saves them. 60 minute reuse.",60,240,100000,[],
 
 76,Resurrection,Magic/Heal,600,dead ally,5,5,0,Revive at 35% HP/MP; restore 100% of lost exp.,65,140,3.25kk,[]
 76,Resurrection Field,Magic/Heal,0,dead allies,10,60,0,Revive Dead allies 900 range around the caster at 35% HP/MP; restore 70% of lost exp.,130,280,3.25kk,[]
+76,Antidote,Magic/Heal,600,self/target,0.8,3,0,"Cures poison, venom and bleed of rank 10 or lower from an ally (or self).",9,33,74k,[]
 
 80,Resurrection,Magic/Heal,600,dead ally,5,5,0,Revive at 40% HP/MP; restore 100% of lost exp.,100,150,36k,[]
 80,Resurrection Field,Magic/Heal,0,dead allies,5,60,0,Revive Dead allies 900 range around the caster at 40% HP/MP; restore 70% of lost exp.,200,300,43k,[]
+
+
+83,Rite of Preservation,Magic/Buff,600,self/target,3,3600,3600,"Blesses an ally (or yourself): they DIE normally, keep their buffs, and are offered a resurrection where they fell at 30% HP and MP, losing NO experience. The offer waits as long as they like. Lasts 60 minutes or until it saves them. 60 minute reuse.",60,240,100000,[],
 
 76 - 6.5kk
 77 - 11kk

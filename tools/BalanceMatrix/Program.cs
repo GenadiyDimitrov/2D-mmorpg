@@ -347,12 +347,14 @@ Console.WriteLine("=== E3: THE NUKER'S MP ECONOMY — why he sits out of mana ==
     Console.WriteLine("  25) while the bolt ladder grew 30 -> 116, so it slowed the drain instead of sustaining a");
     Console.WriteLine("  rotation. It now has TEN levels: level 1 @25 is the AUTHORED CSV and is untouched, and");
     Console.WriteLine("  levels 2-10 arrive @40 then every 5 to 80, ending at 120 MP for 200 HP. The ROBE mastery");
-    Console.WriteLine("  keeps its CSV rungs 25/30/35/40 (@20/25/30/35) and gains rungs 5-8 @40/50/60/70 carrying");
-    Console.WriteLine("  mpWhenRestored 50/60/70/80 — both halves of his \"+200 MP for -200 HP\" are 40+ content,");
-    Console.WriteLine("  which is the only band with no CSV. Cast "
+    Console.WriteLine("  keeps its CSV rungs (@20/25/30/35) and gains rungs 5-8 @40/50/60/70 — both halves of his");
+    Console.WriteLine("  \"+200 MP for -200 HP\" are 40+ content, the only band with no CSV.");
+    Console.WriteLine("  ⚠ mpWhenRestored is a PERCENT since 2026-08-19: 19/23/26/30 then 38/45/53/60, i.e. the old");
+    Console.WriteLine("  flat x0.75, so the top rung is x1.60 (120 -> 192 where the flat +80 gave 200). The '+mast'");
+    Console.WriteLine("  column is that MULTIPLIER. It buys the mana-over-time pipe: a totem pulse scales too. Cast "
         + $"{rs.CastTicks / 10f:F1}s, reuse {rs.CooldownTicks / 10f:F1}s.");
     Console.WriteLine($"  {"Lvl",3} {"sk",3} {"MaxMP",6} {"MaxHP",6} {"mpReg/s",8} {"nuke MP",8} {"nukes",6} |" +
-        $" {"base",5} {"+mast",6} {"restore",8} {"HP cost",8} {"MP/HP",7} {"%bar",6} {"%HP",5} {"MP/s",6} {"nukes/cast",11}");
+        $" {"base",5} {"xmast",6} {"restore",8} {"HP cost",8} {"MP/HP",7} {"%bar",6} {"%HP",5} {"MP/s",6} {"nukes/cast",11}");
     foreach (int L in new[] { 25, 30, 36, 44, 52, 60, 70, 80 })
     {
         var m = BuildPlayer(Race.Human, BaseClass.Mage, L);
@@ -363,14 +365,16 @@ Console.WriteLine("=== E3: THE NUKER'S MP ECONOMY — why he sits out of mana ==
         // level-80 mage is exactly the measuring error the old table made.
         int rl = Math.Max(1, m.SkillLevelOf(rs.Id));
         int baseMp = rs.PowerAt(rl), hpCost = rs.HpCostAt(rl);
-        int restored = baseMp + m.RestoreMpBonus;
+        // The robe mastery is a MULTIPLIER now (×1.19 … ×1.60), not a flat +N — same shape the
+        // engine applies in RestoreMpOne, so this stays a measurement and not a second formula.
+        int restored = (int)Math.Round(baseMp * m.RestoreMpMod);
         float cycle = (rs.CastTicks + rs.CooldownTicks) / 10f;
         float mpPct = m.Buffs.Where(b => b.Has(SkillEffect.BuffMpRegen))
                             .Sum(b => b.Percent(SkillEffect.BuffMpRegen));
         float mpReg = (StatCalculator.MpRegenPerSecond(m.EffectiveSpt, m.Level) + m.MpRegenBonus)
                       * m.MpRegenMult * (1f + mpPct);
         Console.WriteLine($"  {L,3} {rl,3} {m.MaxMp,6} {m.MaxHp,6} {mpReg,8:F1} {nukeMp,8} " +
-            $"{(nukeMp > 0 ? m.MaxMp / (float)nukeMp : 0),6:F1} | {baseMp,5} {m.RestoreMpBonus,6} {restored,8} {hpCost,8} " +
+            $"{(nukeMp > 0 ? m.MaxMp / (float)nukeMp : 0),6:F1} | {baseMp,5} {m.RestoreMpMod,6:F2} {restored,8} {hpCost,8} " +
             $"{(hpCost > 0 ? restored / (float)hpCost : 0),7:F2} " +
             $"{(m.MaxMp > 0 ? restored * 100f / m.MaxMp : 0),5:F0}% {(m.MaxHp > 0 ? hpCost * 100f / m.MaxHp : 0),4:F0}% " +
             $"{restored / cycle,6:F1} {(nukeMp > 0 ? restored / (float)nukeMp : 0),11:F2}");
@@ -387,7 +391,7 @@ Console.WriteLine("=== E3: THE NUKER'S MP ECONOMY — why he sits out of mana ==
     Console.WriteLine("  pure bonus. The CLERIC's light row is authored to CANCEL that penalty — cast x1.90 and");
     Console.WriteLine("  atkSpd x2.00 — so the numbers to check are the COMPOSED ones: light cast should read ~x0.95");
     Console.WriteLine("  and light attack speed ~x1.00 for the cleric, and x0.50 for the nuker.");
-    Console.WriteLine($"  {"who",-22} {"weight",7} {"cast x",7} {"atkSpd x",9} {"mpReg x",8} {"P.Def",6} {"MaxMP",6} {"restore",8}");
+    Console.WriteLine($"  {"who",-22} {"weight",7} {"cast x",7} {"atkSpd x",9} {"mpReg x",8} {"P.Def",6} {"MaxMP",6} {"restore x",9}");
     // 18 = Human Sorcerer (Nuker), 17 = Human Cleric (Healer). BuildPlayer hardwires the Sorcerer for
     // every mage, so the cleric has to be re-classed and re-taught from HIS table — otherwise both
     // rows measure the nuker and the cancellation this table exists to check is never exercised.
@@ -411,7 +415,7 @@ Console.WriteLine("=== E3: THE NUKER'S MP ECONOMY — why he sits out of mana ==
             e.RecomputeDerived();
             Console.WriteLine($"  {who,-22} {label,7} {1f / e.CastSpeedMultiplier,7:F2} " +
                 $"{1f / e.AttackSpeedMultiplier,9:F2} {e.MpRegenMult,8:F2} {(int)e.EffectiveDefence,6} " +
-                $"{e.MaxMp,6} {e.RestoreMpBonus,8}");
+                $"{e.MaxMp,6} {e.RestoreMpMod,8:F2}");
         }
         Console.WriteLine();
     }
@@ -490,11 +494,12 @@ foreach (int L in levels)
 }
 
 Console.WriteLine();
-Console.WriteLine("=== MAGIC CRIT (0.50.1 rework: base 50 x witMod x buffs x passives + flat) ===");
-Console.WriteLine("  Rate is WIT-only — no weapon term. Crit damage is a FLAT x3 and takes no buff:");
-Console.WriteLine($"  Ferocity and the crit-damage attribute are the PHYSICAL channel now. Cap {StatCaps.MagicCritRate:P0}.");
+Console.WriteLine("=== MAGIC CRIT (base 40 x witMod x buffs x passives + flat) ===");
+Console.WriteLine("  Rate is WIT-only — no weapon term. Crit DAMAGE is its own channel too:");
+Console.WriteLine($"  x{StatCaps.MagicCritDamageBase} base x multipliers x (1 - debuffs), cap x{StatCaps.MagicCritDamageCap}. Ferocity");
+Console.WriteLine($"  and the crit-damage attribute stay PHYSICAL. Rate cap {StatCaps.MagicCritRate:P0}.");
 Console.WriteLine();
-Console.WriteLine($"  {"WIT",4} {"witMod",7} {"base",6} {"x1.2 Res",9} {"x2 Insight",11} {"both",7}  who");
+Console.WriteLine($"  {"WIT",4} {"witMod",7} {"base",6} {"x1.2 Res",9} {"x2 Insight",11} {"x4 (4th)",9}  who");
 foreach ((int wit, string who) in new[]
 {
     (5,  "every MOB (flat WIT 5 at all levels)"),
@@ -513,9 +518,14 @@ foreach ((int wit, string who) in new[]
     // The chain as RecomputeDerived folds it: base x every multiplier, then the single clamp.
     float res = Math.Min(b * 1.2f, StatCaps.MagicCritRate);
     float ins = Math.Min(b * 2.0f, StatCaps.MagicCritRate);
-    float both = Math.Min(b * 2.0f * 1.2f, StatCaps.MagicCritRate);
-    Console.WriteLine($"  {wit,4} {witMod,7:F2} {b,6:P1} {res,9:P1} {ins,11:P1} {both,7:P1}  {who}");
+    // x4 = Insight x2 × the 4th-class buffer's crit-rate x2. NOT clamped in this column ON PURPOSE:
+    // the whole point of the 2026-08-19 rescale is that the computed value now sits ABOVE the cap,
+    // so raising StatCaps.MagicCritRate later actually pays a mage. The clamp is still real in game.
+    float four = b * 4.0f;
+    Console.WriteLine($"  {wit,4} {witMod,7:F2} {b,6:P1} {res,9:P1} {ins,11:P1} {four,9:P1}  {who}");
 }
+Console.WriteLine("  (the x4 column is UNCLAMPED headroom — in game it is capped at " +
+                  $"{StatCaps.MagicCritRate:P0}. His targets: elf 8 / 16 / 32.)");
 Console.WriteLine();
 Console.WriteLine("  MEASURED off real Entities (level 74, best gear) — the chain, not the formula:");
 Console.WriteLine($"  {"race",6} {"WIT",4} {"unbuffed",9} {"+Insight x2",12}   (no swap/attribute: BuildPlayer has neither)");
@@ -759,7 +769,7 @@ Console.WriteLine();
     var nuker = BuildPlayer(Race.Human, BaseClass.Mage, refLevel);
     ApplyNpcBuffs(nuker);
     int mAtk = (int)nuker.EffectiveMagicAttack;
-    float mCritF = CritFactor(nuker.MagicCritChance, StatCalculator.MagicCritMult());
+    float mCritF = CritFactor(nuker.MagicCritChance, nuker.EffectiveMagicCritDamage);
 
     int nukeHit = StatCalculator.MagicDamage(mAtk, nukePower, mobMDef, refLevel);
     // Cast time scales with CAST speed exactly as SkillReuseTicks does; reuse does not.
@@ -3502,7 +3512,7 @@ static float MagicDps(Entity atk, Entity def)
 {
     var (skill, lvl) = TopSkill(atk, SkillEffect.MagicDamage);
     if (skill is null) return 0f;
-    float critF = CritFactor(atk.MagicCritChance, StatCalculator.MagicCritMult());
+    float critF = CritFactor(atk.MagicCritChance, atk.EffectiveMagicCritDamage);
     int hitDmg = StatCalculator.MagicDamage((int)atk.EffectiveMagicAttack, skill.PowerAt(lvl),
         Math.Max(1, (int)def.EffectiveMagicDefence), atk.Level);
     return hitDmg * critF / SkillCycleSeconds(atk, skill);

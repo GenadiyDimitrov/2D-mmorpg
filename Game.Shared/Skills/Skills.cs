@@ -231,9 +231,16 @@ public record SkillDef(
     // TotemLifeTicks, then expires. The mirror image of a trap: a trap waits once for an enemy and
     // dies; a totem fires repeatedly at friends on a timer.
     //
-    // The pulse amount is the skill's own Power (a heal per pulse), so a totem's ladder is authored
-    // exactly like every other heal's. TotemRadius is the reach around the TOTEM, not the caster —
-    // planting it well is the skill.
+    // The pulse amount is the skill's own Power, so a totem's ladder is authored exactly like every
+    // other heal's. TotemRadius is the reach around the TOTEM, not the caster — planting it well is
+    // the skill.
+    //
+    // 🔑 WHICH POOL it fills is the skill's own Effect, not a totem setting: `Heal` = HP (Healing
+    // Totem), `RestoreMp` = MP (Mana Totem), both = both. So a new totem flavour is an ORDINARY
+    // heal/restore skill with PlacesTotem set — there is no second totem type to add, and the skill
+    // card (SkillText) reads the same flags to describe itself.
+    // A pulse goes through the SAME pipe as a cast (HealOne / RestoreMpOne), so heal-received and
+    // restore-received percentages apply to it exactly as they would to a direct heal or recharge.
     bool PlacesTotem = false,
     float TotemRadius = 300f,
     int TotemLifeTicks = 300,
@@ -295,6 +302,14 @@ public record SkillDef(
     // Rides as fields, not SkillEffect flags — the flag enum is full (1L << 62 was the last bit).
     float CcResistMagical = 0f,
     float CcResistPhysical = 0f,
+    // MAGIC CRIT DAMAGE (owner 2026-08-19 — the 4th-class buffer/healer blessings). A FRACTION the
+    // HOLDER's magic-crit multiplier is raised by: 0.30 = "+30% magic crit dmg", i.e. x2 base -> x2.6.
+    // Two of these COMPOUND (x2 × 1.3 × 1.3 = x3.38), which is the owner's own arithmetic.
+    // `MagicCritDamageDebuff` is the `(1 - debuffs)` term of the same formula — it SUBTRACTS, and is
+    // summed rather than compounded, so two debuffs of 0.2 take 40% off and not 36%.
+    // Rides as fields, not SkillEffect flags — the flag enum is full (1L << 62 was the last bit).
+    float MagicCritDamage = 0f,
+    float MagicCritDamageDebuff = 0f,
     // MANA DAMAGE (the healer's Mana Ray, his 3rd-class 56/58 rows — *"Like a magic attack but damages
     // MP not HP. Same formula; mRes; can fizzle; etc). In PVE dmg is halved (x0.5)"*). Set it on an
     // ordinary `SkillEffect.MagicDamage` skill and the number the magic pipeline produces is subtracted
@@ -434,6 +449,22 @@ public record SkillDef(
     {
         float v = Lvl(level)?.CcResistPhysical ?? 0f;
         return v > 0f ? v : CcResistPhysical;
+    }
+
+    /// <summary>Magic-crit-DAMAGE bonus at a LEVEL (a fraction: 0.30 = +30%). A level's 0 means
+    /// "inherit", so a single-rung blessing needs no per-level entry — but a ladder can climb
+    /// 0.10/0.20/0.30 like every other buff. See <see cref="CcResistMagicalAt"/>.</summary>
+    public float MagicCritDamageAt(int level)
+    {
+        float v = Lvl(level)?.MagicCritDamage ?? 0f;
+        return v > 0f ? v : MagicCritDamage;
+    }
+
+    /// <summary>The `(1 − debuffs)` side of the same stat, at a LEVEL. See <see cref="MagicCritDamageAt"/>.</summary>
+    public float MagicCritDamageDebuffAt(int level)
+    {
+        float v = Lvl(level)?.MagicCritDamageDebuff ?? 0f;
+        return v > 0f ? v : MagicCritDamageDebuff;
     }
 
     /// <summary>The highest ailment Rank this skill can strip at a LEVEL. A level's 0 means "inherit",
@@ -609,7 +640,10 @@ public record SkillLevel(
     // PER-SCHOOL CONTROL RESISTANCE at THIS level (0 = inherit the SkillDef's). Clarity and Fortitude
     // climb a ladder like every other buff; see SkillDef.CcResistMagical.
     float CcResistMagical = 0f,
-    float CcResistPhysical = 0f);
+    float CcResistPhysical = 0f,
+    // MAGIC CRIT DAMAGE at THIS level (0 = inherit the SkillDef's). See SkillDef.MagicCritDamage.
+    float MagicCritDamage = 0f,
+    float MagicCritDamageDebuff = 0f);
 
 /// <summary>What a buff does to the four things a MONSTER pays out: experience, skill points, the
 /// gold it drops and the CHANCE its table rolls. The premium rune family (Rune of Experience /
@@ -676,6 +710,10 @@ public readonly record struct PassiveEffect(
     float PhysAtkPct = 0f, float MagAtkPct = 0f,  // percent, channel-specific
     int Evasion = 0, int Accuracy = 0,
     float CritRate = 0f, float CritDamage = 0f, float MagicCritRate = 0f,
+    // MAGIC crit DAMAGE — a fraction the caster's ×2 base is raised by (0.30 = +30% → ×2.6).
+    // Its own channel: `CritDamage` above is PHYSICAL and never touches a spell (owner ruling
+    // 2026-08-06, kept). Compounds with buffs of the same kind. See StatCalculator.MagicCritMult.
+    float MagicCritDamage = 0f,
     // FLAT crit damage — the class CSVs' "crit dmg +80". NOT a multiplier: it joins ATTACK
     // inside the damage ratio on a crit only, K·((atk + flat)·… )/def, then the crit multiplier
     // scales the result. Off a crit it does nothing. See docs/design/CritBlowAndDouble.md §3.
