@@ -579,6 +579,10 @@ public readonly record struct WeaponMasteryProfile(
     // When set, the bonus applies ONLY if the equipped weapon's type is in this [Flags] MASK
     // (e.g. Warrior trains WeaponType.TwoHanded). None = any. The Sword/Blunt slots serve both
     // 1H and 2H via WeaponType.Base(); Dual/Bow are inherently 2H.
+    // (A `MagicWeaponOnly` flag — gating on ItemDef.IsMagicWeapon rather than on the type — was added
+    //  here on 2026-08-20 for the healer's mastery and removed the same day: he ruled the gate should
+    //  be plain `Blunt`, so a mace still works and simply gives less. Nothing else wanted the flag, and
+    //  a mastery that can refuse a weapon the type system says is fine is a wall, not a choice.)
     WeaponType RequiredWeapon = WeaponType.None)
 {
     /// <summary>The effect for the equipped weapon. Named slots for the four base types;
@@ -751,6 +755,11 @@ public readonly record struct PassiveEffect(
     // defender's only lever is this MULTIPLIER on the fail formula (the tank's Anti-Magic = 2).
     // The resolver takes the MAX across passives, like the floors above, never a product.
     float MagicFailMod = 0f,
+    // THE CASTER'S OWN side of the same roll, and the OPPOSITE convention: a PRODUCT, not a max, so
+    // penalties and bonuses compose in one chain (owner, 2026-08-20). The untrained weapon puts ×25
+    // in; a passive carrying 0.04 takes it back out exactly. ⚠ 0 = NOT IN THE CHAIN, never ×0 —
+    // `default(PassiveEffect)` is the inert value every unset mastery slot hands out.
+    float MagicFailSelfMult = 0f,
     // FLAT addition to the casting-speed STAT (not a percent). This is how IG's spirit-
     // the spell rune works: +40 flat on top of the multiplicative chain, so it matters a lot at low
     // cast speed and barely at high — unlike a percent, which compounds and runs away.

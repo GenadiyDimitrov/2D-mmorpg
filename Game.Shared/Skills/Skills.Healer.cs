@@ -49,6 +49,13 @@ public static partial class SkillCatalog
             Light: new StatMods(MpRegenPct: 0.2f, PDef: 30, CastSpeedPct: 0.90f, AtkSpeedPct: 1.00f)),
         new(Robe:  new StatMods(MpRegenPct: 0.2f, PDef: 35, MaxMp: 30),
             Light: new StatMods(MpRegenPct: 0.2f, PDef: 35, CastSpeedPct: 0.90f, AtkSpeedPct: 1.00f, Evasion: 2)),
+        // ---- Rung 5 @40 — THE BUFFER'S, not the healer's (`buffer 3rd.csv`, 2026-08-20: *"Continue the
+        //      line"*). The healer branches away here onto his own robe-only Healer Armor Mastery
+        //      (Skills.Lightbringer.cs), so from 40 this ladder belongs to the Warchanter alone — he is
+        //      the caster who keeps the light-armor row, and the one his heavy/shield passives are
+        //      coming for. Values verbatim from his row: pDef +39, maxMP +70, light unchanged + eva 2.
+        new(Robe:  new StatMods(MpRegenPct: 0.2f, PDef: 39, MaxMp: 70),
+            Light: new StatMods(MpRegenPct: 0.2f, PDef: 39, CastSpeedPct: 0.90f, AtkSpeedPct: 1.00f, Evasion: 2)),
     };
 
     private static SkillDef[] HealerSkills() => new SkillDef[]
@@ -152,6 +159,7 @@ public static partial class SkillCatalog
                 new SkillLevel(SpCost: 6400),
                 new SkillLevel(SpCost: 12800),
                 new SkillLevel(SpCost: 25000),
+                new SkillLevel(SpCost: 36000),   // @40, buffer only — see rung 5 above
             },
             ArmorMasteryLevels: HealerArmorMastery),
 
@@ -228,9 +236,13 @@ public static partial class SkillCatalog
                 CasterMastery(new PassiveEffect(MagAtk: 8,  PhysAtk: 6,  CastSpeedPct: 0.05f, CooldownPct: 0.10f, MpRegenPct: 0.10f)),
                 CasterMastery(new PassiveEffect(MagAtk: 10, PhysAtk: 8,  CastSpeedPct: 0.05f, CooldownPct: 0.10f, MpRegenPct: 0.10f)),
                 CasterMastery(new PassiveEffect(MagAtk: 12, PhysAtk: 10, CastSpeedPct: 0.05f, CooldownPct: 0.10f, MpRegenPct: 0.50f, HpRegenPct: 0.10f)),
-                // Level 5 = the healer's level-40 row (his `healer 3rd.csv`). Note the jump: +23 M.Atk
-                // against level 4's +12 — a 3rd class is where a caster's damage actually moves.
-                CasterMastery(new PassiveEffect(MagAtk: 23, PhysAtk: 18, CastSpeedPct: 0.07f, CooldownPct: 0.10f, MpRegenPct: 0.50f, HpRegenPct: 0.10f)),
+                // Level 5 = the level-40 row — THE BUFFER'S since 2026-08-20 (`buffer 3rd.csv`: *"Continue
+                // the line"*). It was authored off `healer 3rd.csv`, but the healer has replaced this
+                // skill with Healer Weapon Mastery, so the P.Atk half now belongs to the class that
+                // actually swings. Note the jump: +23 M.Atk against level 4's +12 — a 3rd class is where
+                // a caster's damage actually moves. ⚠ Reuse is 15% here, not the 10% of rungs 1-4: both
+                // his 40-level rows say 15%, and the code had carried 10% since the rung was written.
+                CasterMastery(new PassiveEffect(MagAtk: 23, PhysAtk: 18, CastSpeedPct: 0.07f, CooldownPct: 0.15f, MpRegenPct: 0.50f, HpRegenPct: 0.10f)),
             },
             Levels: new[]
             {
@@ -242,7 +254,7 @@ public static partial class SkillCatalog
                 new SkillLevel(SpCost: 6400, Description: "With sword/blunt: +8 M.Atk, +6 P.Atk, +5% cast, -10% reuse, +10% MP regen."),
                 new SkillLevel(SpCost: 12800, Description: "With sword/blunt: +10 M.Atk, +8 P.Atk, +5% cast, -10% reuse, +10% MP regen."),
                 new SkillLevel(SpCost: 25000, Description: "With sword/blunt: +12 M.Atk, +10 P.Atk, +5% cast, -10% reuse, +50% MP regen, +10% HP regen."),
-                new SkillLevel(SpCost: 36000, Description: "With sword/blunt: +23 M.Atk, +18 P.Atk, +7% cast, -10% reuse, +50% MP regen, +10% HP regen."),
+                new SkillLevel(SpCost: 36000, Description: "With sword/blunt: +23 M.Atk, +18 P.Atk, +7% cast, -15% reuse, +50% MP regen, +10% HP regen."),
             }),
 
         // Force and Ward — the caster's group. Levels 1-2 are the numbers this buff already cast

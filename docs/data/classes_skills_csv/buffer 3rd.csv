@@ -1,4 +1,6 @@
 LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR, INIT MP,FINIT MP ,SP COST,REPLACES,RACE,Comment
+40,Spell Mastery,Passive,0,self,0,0,0,"with sword/blunt Decreses the reuse delay with 15%, mAtk +23, pAtk +18, mpReg x1.5,hpReg x1.1, cast speed x1.07",0,0,36k,[],, Continue the line
+40,Armor Mastery,Passive,0,self,0,0,0,"Robe: mpReg x1.2, pDef +39, maxMP +70; Light: mpReg x1.2, pDef +39, cast x1.9, as x2 (composes to cast x0.95 / as x1 after Spellcaster Mastery), evasion +2",0,0,36k,[],, Continue the line
 30,Shrouding Hymn,Magic/Buff,600,self/party,2,30,60,For 1 minute monsters that have not already noticed you and nearby allies leave you alone.,60,240,12000,[]
 40,Might L3,Magic/Buff,600,self/target,1,1,1200,+15% P.Atk.,10,40,12800,[],
 40,Bulwark L3,Magic/Buff,600,self/target,1,1,1200,+15% P.Def.,10,40,12800,[],

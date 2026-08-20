@@ -151,6 +151,13 @@ public static partial class SkillCatalog
             Description: $"+{v * 100:0.#}% resistance to {what} debuffs.");
     }
 
+    /// <summary>One rung of Frenzy: ONE `gain` drives P.Atk, M.Atk, cast speed and attack speed alike,
+    /// against a slightly larger `penalty` on Max HP/MP.
+    ///
+    /// <para>🔑 A `magGain` parameter existed here for part of 2026-08-20, because his then-current row
+    /// read "pAtk x1.05, mAtk x1.1" and one shared gain could not say so. He re-authored the skill the
+    /// same day and the two channels are equal again at every rung, so the parameter went. Don't
+    /// reintroduce it on a hunch — reintroduce it if a row splits the channels again.</para></summary>
     private static SkillDef FrenzyRung(int rank, float penalty, float gain, int move, int eva = 8) =>
         new(Rung(FamFrenzy, rank), "Frenzy", BaseClass.Fighter,
             SkillEffect.BuffHp | SkillEffect.BuffMp | SkillEffect.BuffPhysAtk | SkillEffect.BuffMagAtk
@@ -289,8 +296,25 @@ public static partial class SkillCatalog
         list.Add(CcResistRung(FamCcResMag, "Clarity", 2, magical: 0.30f));
         list.Add(CcResistRung(FamCcResPhys, "Fortitude", 1, physical: 0.15f));
 
-        list.Add(FrenzyRung(1, 0.30f, 0.05f, 5));
-        list.Add(FrenzyRung(2, 0.26f, 0.06f, 6));
+        // ═══ RUNGS 1 AND 2 ARE HIS, verbatim (2026-08-20) ═══════════════════════════════════════════
+        //   L1, cleric @35:            −7% HP/MP, +5% P/M.Atk, +5% atk/cast speed, +5 move, −5 eva
+        //   L2, healer + buffer @52:  −10% HP/MP, +8% P/M.Atk, +8% atk/cast speed, +8 move, −8 eva
+        //
+        // 🔑 WHY THESE NUMBERS AND NOT IG'S: IG's Frenzy reads +16% M.Atk / +8% P.Atk, but IG applies
+        // magic buffs under a √ — √1.16 = ×1.077 — so its real effect is ~7.7%. Ours stores the HONEST
+        // percent (Entity squares BuffMagAtk precisely so the stored number is what lands), which is why
+        // 8% here equals 16% there. His words: *"the IG is sqrt(1.16) so x1.077 which is 7.7% .. we need
+        // to make it 8% increase in Matk and Patk .. we fixed the Force (IG-75% == Our-32%) and forgot
+        // the frenzy"*. ⚠ Copying an IG percentage straight into a magic buff DOUBLES it. Force was
+        // converted; Frenzy was missed, and rung 1 sat at −30% Max HP/MP for a +5% return.
+        //
+        // ⚠ RUNGS 3-7 BELOW ARE OURS and are now OUT OF LINE with these two — rung 3 gives +6% for −22%
+        // Max HP/MP, which is strictly worse than rung 2's +8% for −10%. That is not academic: a buffer
+        // learns rung 3 at 62, and ApplyBuff replaces on rank ≥ rank, so the weaker buff EVICTS the
+        // stronger one he had at 52. Left as-is rather than invented over (they are also the three
+        // Frenzy SCROLLS, ranks 2/4/6) — see the note in the CHANGELOG. His call.
+        list.Add(FrenzyRung(1, 0.07f, 0.05f, 5, eva: 5));
+        list.Add(FrenzyRung(2, 0.10f, 0.08f, 8, eva: 8));
         list.Add(FrenzyRung(3, 0.22f, 0.06f, 6));
         list.Add(FrenzyRung(4, 0.18f, 0.07f, 7));
         list.Add(FrenzyRung(5, 0.14f, 0.07f, 7));

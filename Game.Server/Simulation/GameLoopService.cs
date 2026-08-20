@@ -1345,14 +1345,14 @@ public class GameLoopService : BackgroundService
             && robeLv > robeRungs.Length)
             player.LearnedSkills[SkillCatalog.MasteryRobe] = robeRungs.Length;
 
-        // Divine Focus — the Healer 2nd class learns Lv1 at 20; the Warchanter discipline upgrades to Lv2 at
-        // 40 (softer heal penalty in fighter gear). Never downgrade a Warchanter back to Lv1.
-        if (player.Archetype == Archetype.Healer)
-        {
-            int want = player.Discipline == Discipline.Warchanter ? 2 : 1;
-            if (player.SkillLevelOf(SkillCatalog.DivineFocus) < want)
-                player.LearnedSkills[SkillCatalog.DivineFocus] = want;
-        }
+        // ---- Divine Focus — DELETED 2026-08-20 (owner): *"Remove the Divine Focus of cleric/buffers/
+        //      healers -> if a healer wants to use sword so be it, swords have lower mAtk and no cast
+        //      speed atri"*. The penalty (heal output ×0.5, ×0.75 for a Warchanter, while holding no
+        //      wand/staff) is gone, together with the M.Atk ×0.6 that Spellcaster Mastery charged for
+        //      the same choice — the WEAPON's own numbers are the trade now.
+        //      ⚠ It was AUTO-GRANTED, so every healer alive carries the id. Strip it on login, or it
+        //      sits in their skill window forever as a passive with no def behind it. ----
+        player.LearnedSkills.Remove("divine_focus");
 
         // Resurrection is NOT auto-granted (owner, 2026-07-17) — it is bought with SP off the class
         // tables like any other skill: L1 @20 / IG @40 on the cleric list (every cleric keeps those
@@ -8789,13 +8789,14 @@ public class GameLoopService : BackgroundService
             int magicInterrupt = def.InterruptPower + caster.MagicInterruptBonus;
 
             // Magic "fail" = reduced damage (not zero). Magic has its OWN formula, not the physical
-            // resolver: 1.3^levelGap × the defender's anti-magic modifier × the caster's weapon
-            // modifier (×25 with a bow). See StatCalculator.MagicFailChance.
+            // resolver: 1.3^levelGap × the defender's anti-magic modifier × the CASTER'S OWN CHAIN
+            // (MagicFailSelfMult — ×25 with a bow, divisible back out by a passive). See
+            // StatCalculator.MagicFailChance.
             float fail = def.SureHit ? 0f
                        : target.Immune ? 1f
                        : StatCalculator.MagicFailChance(caster.Level, target.Level,
                              target.MagicFailMod,
-                             StatCalculator.MagicWeaponFailMod(caster.UntrainedCasterWeapon),
+                             caster.MagicFailSelfMult,
                              target.MagicFailBonus);
             // MANA RAY: the identical number, taken off MP instead of HP. Nothing above this line
             // knows or cares — same formula, same M.Def divisor, same mRes, same fizzle, same crit,
@@ -8841,13 +8842,14 @@ public class GameLoopService : BackgroundService
         }
 
         // ---- Heal (single ally/self, or AoE to allies in radius) ----
-        // TWO halves: a FLAT part driven by the healer's M.Atk (so a caster weapon heals hard and a
-        // damage weapon doesn't), plus an optional % of the TARGET's max HP that ignores M.Atk and
-        // ignores heal-reduction. See HealOne.
+        // TWO halves: a FLAT part (the skill's power through the healer's HealPower stats), plus an
+        // optional % of the TARGET's max HP that ignores those and ignores heal-reduction. See HealOne.
         if (effect.HasFlag(SkillEffect.Heal))
         {
-            // Divine Focus: healing OUTPUT scaled down when the healer has no magic weapon (×0.5 / ×0.75).
-            int flat = (int)(SkillMath.HealAmount(def.PowerAt(lvl), caster.HealPowerFlat, caster.HealPowerMod) * caster.HealOutputMult);
+            // (The Divine Focus ×0.5/×0.75 non-magic-weapon scaling was removed here 2026-08-20 — see
+            //  AutoLearnCoreSkills. A heal is now exactly power → HealPowerFlat/Mod → the target's own
+            //  HealReceived*, with no weapon gate anywhere in the chain.)
+            int flat = SkillMath.HealAmount(def.PowerAt(lvl), caster.HealPowerFlat, caster.HealPowerMod);
             float pct = def.MagnitudeOf(SkillEffect.Heal, ModifierMode.Percent, lvl);
             var helped = new HashSet<Guid>();
             if (def.TargetMode == TargetMode.AlliesInRadius)
@@ -8959,7 +8961,7 @@ public class GameLoopService : BackgroundService
                            : target.Immune ? 1f
                            : StatCalculator.MagicFailChance(caster.Level, target.Level,
                                  target.MagicFailMod,
-                                 StatCalculator.MagicWeaponFailMod(caster.UntrainedCasterWeapon),
+                                 caster.MagicFailSelfMult,
                                  target.MagicFailBonus);
                 if (_rng.NextDouble() < fail)
                 {

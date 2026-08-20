@@ -12,7 +12,144 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-08-19 (latest) — Provoke is called Taunt, and Lure moves to the dual 3rd at 40
+## 2026-08-20 (latest) — the caster weapon rule collapses to ONE penalty, and the healer takes his own masteries
+
+⚠ **NO VERSION BUMP.** 🔴 **The buffer's two new learn lines NEED A NEW APK** — the Learn tab is built
+from the compiled `ClassSkills` the client ships with, not pushed by the server. Everything else here is
+server-side and lands on the running server immediately.
+
+### 1. A sword or mace costs a caster NOTHING now
+
+His ruling: *"magic weapon only is removed and it become a sword/blunt x1/x1 (no penalty) (bow/duals
+stay)"*. `Spellcaster Mastery` used to have three weapon cases; it has two.
+
+| held | before | now |
+|---|---|---|
+| wand / staff | cast ×1, M.Atk ×1 | unchanged |
+| **sword / mace** | cast ×1, **M.Atk ×0.6** | **cast ×1, M.Atk ×1** |
+| bow / dagger / bare | cast ×0.5, M.Atk ×0.5, ×25 fizzle | unchanged |
+
+🔑 **Why it was wrong twice over:** the item catalogue ALREADY prices this choice — a sword carries a low
+authored M.Atk and rolls no cast-speed attribute — so the class rule was charging a second time for a
+trade the player had already paid. `Entity.NonMagicWeaponMagicMult` is deleted; don't reinstate it as a
+per-item `MAtkFactor` either, which is the shape it had before 2026-08-07.
+
+**Effect: +67% magic damage** for any caster holding a non-magic sword/blunt (`×0.6 → ×1`).
+
+### 2. Divine Focus is deleted
+
+*"Remove the Divine Focus of cleric/buffers/healers -> if a healer wants to use sword so be it, swords
+have lower mAtk and no cast speed atri."* The heal-output penalty for holding no wand (×0.5, ×0.75 for a
+Warchanter) is gone with its skill, its id and `Entity.HealOutputMult`. A heal is now power →
+`HealPowerFlat/Mod` → the target's `HealReceived*`, with **no weapon gate anywhere in the chain**.
+
+⚠ It was AUTO-GRANTED, so every healer alive carries the id — `AutoLearnCoreSkills` strips it on login.
+That is the only place the `divine_focus` literal survives.
+
+### 3. The healer's masteries split off from the cleric's (his `healer 3rd.csv`)
+
+At 40 the two shared cleric masteries fork. **The healer replaces them; the buffer continues them.**
+
+| | healer (Lightbringer) | buffer (Warchanter) |
+|---|---|---|
+| weapon | **Healer Weapon Mastery** — *"Removed the P.Atk bonus and made it only for magic weapons"* | Spell Mastery rung 5 (keeps the +18 P.Atk) |
+| armor | **Healer Armor Mastery** — *"Removed the Light Armor bonus"*, robe only | Armor Mastery rung 5 (keeps the light row) |
+
+Both new skills carry his full 9-rung ladder (@40/44/48/52/56/58/60/62/64) and his SP prices
+(36k…190k). A pure healer's kit is now a **wand and a robe**, and that is expressed as a bonus he
+forgoes — not a penalty he carries, which is what Divine Focus was.
+
+🔑 **THE GATE IS THE TYPE `Blunt`, not a magic-weapon flag.** A `MagicWeaponOnly` flag (keyed on
+`ItemDef.IsMagicWeapon`) was built first and removed the same day on his ruling: *"the healers weapon
+mastery can say blunt .. as both wand/staff are blunts .. that way a sword wont work on a healer and
+cariing a normal blunt is lower matk and no attri .. so its a choice"*. Blunt leaves a plain mace
+**working** — it just carries less M.Atk and rolls no caster attributes, so the healer trades power for
+whatever the mace gives him. The flag was the stricter rule, and strictness is a wall, not a choice.
+
+⚠ **Built from a 3rd-tier CSV, which is a file he has not finished.** His note: *"you shouldn't have
+built anything from the 3rd csvs as they are not finished … later we will recheck them and fix them if
+any changes occur in the 64- lvls."* Left in place, to be re-checked against the finished file.
+
+⚠ `Spell Mastery` rung 5 also had its reuse corrected **10% → 15%**: both his level-40 rows say 15% and
+the code had carried 10% since the rung was written. Power drift like this is invisible to
+`SkillCsvSeed --check`, which does not read the `DESCR` column.
+
+### 4. The fizzle is a CHAIN now, so the bow penalty can be bought back
+
+His question: *"make the opposite of a bow/dagger fizzle … fizzleFormula x 25(penalty) x 1/(25 x bonus
+x bonus)"*. **Yes — that works, and it now exists.** `StatCalculator.MagicWeaponFailMod(bool)` (which
+could only ever say "penalised or not") is replaced by **`Entity.MagicFailSelfMult`**, a running product:
+
+```
+fail% = round( 1.3^(defLvl−atkLvl) × defenderMod × MagicFailSelfMult ) + flatMagicEvasion
+```
+
+The untrained weapon multiplies **×25** in; a passive carrying `PassiveEffect.MagicFailSelfMult: 0.04f`
+divides it back out **exactly**, because both meet inside the same `round()` — parity stays at 1% and a
++10 level gap stays at 14%, identical to a wand. Multiple entries compose, both directions.
+
+⚠ **`0` means "not in the chain", never ×0.** `default(PassiveEffect)` is the inert value every unset
+mastery slot hands out; a field that meant ×0 when blank would silence every spell in the game.
+
+⚠ **The rounding floor is real**: at level parity the base is 1 point, so a bonus milder than the full
+negation (say ×0.9) rounds back to 1% and does nothing. Sub-1 multipliers only bite across a level gap.
+Nothing authors this field yet — it is an engine, like the proc triggers.
+
+### 5. `--check` reads the DESCR column — the one place the VALUES live
+
+*"make it so a DESCR is read .. as it contains the values for the skills."* Every other column is a
+number in its own cell and has been compared for days; **power, +M.Atk, mpReg x1.2, -15% reuse live in
+free text and nothing verified them.** That is how `Spell Mastery` rung 5 sat on 10% reuse while both
+authored rows said 15%, and how the bolt powers drifted 25-30% over his sheet.
+
+`tools/SkillCsvSeed/Descr.cs` now segments each DESCR cell, binds every number to a stat, resolves it
+against what the game actually carries (PassiveEffect · StatMods · weapon/armor mastery rows · the
+skill's power · buff magnitudes, **following the buff ladder into the child rung**) and compares.
+
+🔑 **It reports what it could NOT read.** Every number must be consumed by a token or matched by an
+ignore rule (`20 min`, `rank 3`, `2h sword`); anything left prints as `UNREAD` under `-v`. A parser that
+quietly skips what it doesn't understand is worse than none — it reports "no discrepancies" over an
+unchecked file. **Coverage today: every value in all seven files is verified or explained.**
+
+**It found a real defect on the day it was written** — `Frenzy` rung 1 — which he then re-authored
+outright (see below). It also caught his `healer 3rd` @44 reuse reading 10% between 15% and 20%, and its
+own inability to read a **Unicode minus**: he writes "−5%" with U+2212, so the sign silently vanished
+and a penalty compared as a bonus.
+
+🔑 **A LADDER ONLY GOES UP.** His rule, given with that typo: *"the stats should go up not down - if
+they got down i made a mistake or swaped two levels"*. `--check` now walks each skill's rungs and prints
+a **`LADDER DIP`** when an authored stat falls as the levels rise. ⚠ Reported and counted **separately**:
+everything else the tool prints is a code defect measured against an authoritative CSV, while this one
+says the CSV itself looks wrong — conflating them would break the rule the file header states.
+
+### 6. Frenzy, re-authored: the IG √ conversion nobody applied
+
+His numbers, both rungs verbatim:
+
+| rung | learned by | Max HP/MP | P.Atk / M.Atk | atk & cast speed | move | evasion |
+|---|---|---|---|---|---|---|
+| **L1** | cleric @35 | **−7%** | **+5%** | +5% | +5 | −5 |
+| **L2** | healer + buffer @52 | **−10%** | **+8%** | +8% | +8 | −8 |
+
+🔑 **WHY 8% AND NOT IG'S 16%:** IG's Frenzy reads +16% M.Atk / +8% P.Atk, but IG applies magic buffs
+under a **√** — √1.16 = ×1.077 — so its real effect is ~7.7%. Ours stores the **honest** percent
+(`Entity` squares `BuffMagAtk` precisely so the stored number is what lands), which is why 8% here
+equals 16% there. His words: *"we fixed the Force (IG-75% == Our-32%) and forgot the frenzy"*.
+⚠ **Copying an IG percentage straight into a magic buff doubles it.** Rung 1 had been sitting at
+−30% Max HP/MP for a +5% return — a trade-off nobody would take.
+
+⚠ **Rungs 3-7 are OURS and are now out of line**: rung 3 gives +6% for −22% Max HP/MP, strictly worse
+than rung 2's +8% for −10%. A buffer learns rung 3 at 62, and `ApplyBuff` replaces on rank ≥ rank, so
+**the weaker buff would evict the stronger one he had at 52**. Left un-invented (they are also the three
+Frenzy SCROLLS, ranks 2/4/6) — his call whether to retune them or drop the 62/64 grants until L3+ is
+authored.
+
+⚠ Two divergences are **`RULED`**, not defects — a later ruling in chat beats the CSV, and the tool
+prints the reason: Shield Mastery's `ShieldDefPct` ×5 (2026-08-12, paired with the item cut) and Evasion
+Boost's magic evasion as flat points (2026-08-11, `62e`). ⚠ Add an entry only for a decision he actually
+made; the value of this pass is that an *unexplained* difference is loud.
+
+## 2026-08-19 — Provoke is called Taunt, and Lure moves to the dual 3rd at 40
 
 ⚠ **NO VERSION BUMP**, but 🔴 **BOTH CHANGES NEED A NEW APK.** A display name and a class-skill TABLE
 are read from the compiled `Game.Shared` the client ships with, not pushed by the server — so on the

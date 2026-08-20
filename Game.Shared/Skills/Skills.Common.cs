@@ -15,10 +15,8 @@ public static partial class SkillCatalog
     //      weapon type, not a StatMod. ----
     public const string WeaponProficiency = "weapon_proficiency";   // RETIRED — see SpellcasterMastery
     public const string SpellcasterMastery = "spellcaster_mastery";  // armor weight + weapon type, one rule
-    // ---- Divine Focus: clerics (Healer 2nd class) auto-learn Lv1 at 20; the Warchanter discipline
-    //      upgrades to Lv2 at 40. While NO magic weapon is equipped, healing OUTPUT is scaled: Lv1 ×0.5
-    //      (pure healers must wield a magic weapon), Lv2 ×0.75 (buffers stay relevant in fighter gear). ----
-    public const string DivineFocus = "divine_focus";
+    // (`divine_focus` — id DELETED 2026-08-20. The literal survives in exactly one place, the strip in
+    //  GameLoopService.AutoLearnCoreSkills, which is where a dead auto-granted id has to be cleaned up.)
     // ---- Novice's Grace: DISPLAY-ONLY passive, auto-shown below GameConstants.DeathExpPenaltyMinLevel so a
     //      newbie can SEE that death costs no exp yet. No mechanical effect (the level check in
     //      ApplyDeathExpPenalty does the work); auto-removed once they reach the level. ----
@@ -618,23 +616,26 @@ public static partial class SkillCatalog
         //
         //      ARMOR (data, SpellcasterLevels): robe = +20% MP regen · light/heavy/none = cast ×0.5,
         //      attack speed ×0.5.
-        //      WEAPON (Entity.RecomputeDerived — these three have no StatMods field):
-        //        • wand/staff  → cast ×1, M.Atk ×1                      (the trained weapon)
-        //        • sword/blunt → cast ×1, M.Atk ×NonMagicWeaponMagicMult (a mace casts, but weakly)
-        //        • bow/dagger/bare → cast ×0.5, M.Atk ×0.5, and ×25 MAGIC FAIL
-        //      ⚠ The wrong-weapon magic penalty was a COLLAPSE to ×0.05 before this; the owner set it
-        //      to ×0.5. ⚠⚠ The third clause was DEAD until 2026-08-10 (playtest-20 `57d`): "magic
+        //      WEAPON (Entity.RecomputeDerived — these have no StatMods field):
+        //        • sword/blunt (wand and staff ARE blunt) → cast ×1, M.Atk ×1 — NO PENALTY AT ALL
+        //        • bow/dagger/bare → cast ×0.5, M.Atk ×0.5, and ×25 into the fizzle chain
+        //      ⚠ 2026-08-20: the middle case is GONE. A non-magic sword/mace used to keep only ×0.6 of
+        //      its wielder's magic; his ruling deleted it — *"swords have lower mAtk and no cast speed
+        //      atri"*, i.e. the ITEM already charges for that choice and the class rule was charging
+        //      twice. There is now exactly ONE weapon penalty in the game, and it is the untrained one.
+        //      ⚠ The wrong-weapon magic penalty was a COLLAPSE to ×0.05 before 2026-08-07; the owner set
+        //      it to ×0.5. ⚠⚠ The fizzle clause was DEAD until 2026-08-10 (playtest-20 `57d`): "magic
         //      accuracy ×0.5" was built as `MagicFailResist *= 0.5`, and MagicFailResist is 0 on every
-        //      character alive, so a bow and a wand fizzled at exactly the same rate. It is now a ×25
-        //      multiplier on the fail formula — StatCaps.UntrainedWeaponMagicFailMod, the one number.
+        //      character alive, so a bow and a wand fizzled at exactly the same rate. It is now ×25 into
+        //      Entity.MagicFailSelfMult — a PRODUCT, so a passive can divide it back out.
         new(SpellcasterMastery, "Spellcaster Mastery", BaseClass.Mage, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive,
             Replaces: new[] { WeaponProficiency },
             Description: "Passive. A ROBE is a caster's armor: +20% MP regeneration. Light or heavy "
-                       + "armor — or none — halves your casting and attack speed. A wand or staff is "
-                       + "your trained weapon; a sword or mace still casts at full speed but for much "
-                       + "less magic attack; a bow, dual blades or bare hands halve your casting speed "
+                       + "armor — or none — halves your casting and attack speed. Any sword or blunt "
+                       + "weapon — wand, staff or mace alike — is a weapon you are trained with and "
+                       + "costs you nothing; a bow, dual blades or bare hands halve your casting speed "
                        + "and magic attack, and make your spells 25x more likely to fizzle.",
             ArmorMasteryLevels: SpellcasterLevels),
 
@@ -646,19 +647,13 @@ public static partial class SkillCatalog
             Category: SkillCategory.Passive,
             Description: "Passive. Superseded by Spellcaster Mastery."),
 
-        // ---- Divine Focus — clerics (Healer 2nd class) auto-learn Lv1 at 20; the Warchanter discipline
-        //      upgrades to Lv2 at 40. EFFECT: with NO magic weapon equipped, healing OUTPUT is scaled down
-        //      (Lv1 ×0.5, Lv2 ×0.75). Handled in Entity/heal by the magic-weapon flag. ----
-        new(DivineFocus, "Divine Focus", BaseClass.Mage, SkillEffect.None,
-            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            Category: SkillCategory.Passive,
-            Description: "Passive. Divine power flows through a magic weapon. With NO magic weapon (wand or "
-                       + "staff) equipped, your healing is halved — pure healers must wield one.",
-            Levels: new[]
-            {
-                new SkillLevel(SpCost: 0),
-                new SkillLevel(SpCost: 0, Description: "Divine Focus Lv.2 — the non-magic-weapon healing penalty eases to ×0.75 (buffers stay useful in fighter gear)."),
-            }),
+        // (Divine Focus — DELETED 2026-08-20, owner: *"Remove the Divine Focus of cleric/buffers/healers
+        //  -> if a healer wants to use sword so be it"*. Both its def and its `divine_focus` id are gone;
+        //  AutoLearnCoreSkills strips the id from characters that were auto-granted it. It is NOT retired-
+        //  in-place like Weapon Proficiency below, because nothing Replaces it and no table grants it —
+        //  a dangling id resolves to null and is skipped. The healer's magic-weapon lean now lives where
+        //  he put it: the BLUNT gate on the 3rd-class Healer Weapon Mastery, a BONUS you forgo rather
+        //  than a penalty you carry.)
 
         // Novice's Grace — display-only newbie protection (the level check does the real work; this just
         // tells the player). The description embeds the threshold constant so it stays in sync.

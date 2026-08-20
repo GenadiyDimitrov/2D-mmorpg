@@ -1,4 +1,4 @@
-LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR, INIT MP,FINIT MP ,SP COST,REPLACES
+LEARN @ LVL,NAME,TYPE,RANGE,TARGET,CAST s,CD s,DURRATION s,DESCR,INIT MP,FINIT MP,SP COST,REPLACES
 20,Armor Mastery,Passive,0,self,0,0,0,"Robe: mpReg x1.2, pDef +20, maxMP +20; Light: mpReg x1.2, pDef +20, cast x1.9, as x2 (composes to cast x0.95 / as x1 after Spellcaster Mastery)",0,0,3200,[Robe Armor Mastery]
 20,Anti magic,Passive,0,self,0,0,0,"magic def +20, mRes +5%",0,0,3200,[]
 20,Spell Mastery,Passive,0,self,0,0,0,"with sword/blunt Decreses the reuse delay with 10%, mAtk +6, pAtk +4",0,0,3200,[Weapon mastery]
@@ -49,4 +49,4 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR, INIT MP,FIN
 35,Vigor,Magic/Buff,600,self/target,1,1,1200,+10% HP regeneration.,8,32,12800,[]
 35,Ward,Magic/Buff,600,self/target,1,1,1200,+10% M.Def.,8,32,12800,[]
 35,Alacrity,Magic/Buff,600,self/target,1,1,1200,+23% Cast Speed.,8,32,12800,[]
-35,Frenzy,Magic/Buff,600,self/target,1,1,1200,"MaxHP x0.7, MaxMp x0.7, pAtk x1.05, mAtk x1.1, cast x1.05, as x1.05, ms +5",8,32,12800,[]
+35,Frenzy,Magic/Buff,600,self/target,1,1,1200,"−7% Max HP/MP, +5% offence and speed, +5 move, −5 evasion.",8,32,12800,[]

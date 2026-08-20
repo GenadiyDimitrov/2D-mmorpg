@@ -914,7 +914,7 @@ public class Entity
     public float RestoreMpMod { get; set; } = 1f;
     // (MagicFailResist DELETED 2026-08-10 — the owner's magic-landing model has no caster-side
     //  accuracy stat. It was also the field the bow penalty halved, which is why `57d` was invisible.)
-    public bool UntrainedCasterWeapon { get; set; }  // Spellcaster Mastery: bow/dual/bare → magic accuracy x0.5
+    public bool UntrainedCasterWeapon { get; set; }  // Spellcaster Mastery: bow/dual/bare (feeds MagicFailSelfMult ×25)
     public float MeleeVamp { get; set; }         // basic (melee) attack lifesteal fraction
     public float SpellVamp { get; set; }         // damage-spell lifesteal fraction
     public float MeleeReflect { get; set; }      // fraction of taken MELEE-basic damage returned to the attacker
@@ -984,13 +984,22 @@ public class Entity
     /// <summary>Weapon Proficiency: ×0.5 cast speed while wielding an untrained weapon (not sword/blunt).
     /// 1 = no penalty. Set in RecomputeDerived by WeaponType + the passive.</summary>
     public float CastSpeedPenaltyMult { get; set; } = 1f;
-    /// <summary>Divine Focus: heal-output multiplier when NO magic weapon is equipped (Lv1 ×0.5, Lv2 ×0.75).
-    /// 1 = no penalty.</summary>
-    public float HealOutputMult { get; set; } = 1f;
+    /// <summary>THE CASTER'S SIDE OF THE FIZZLE CHAIN — a multiplier on their own spell-fail roll
+    /// (<see cref="StatCalculator.MagicFailChance"/>'s <c>weaponMod</c>). 1 = neutral, &gt;1 = fizzles
+    /// more (the untrained weapon's ×25), &lt;1 = fizzles less.
+    /// <para>Owner, 2026-08-20: *"make the opposite of a bow/dagger fizzle … fizzleFormula x 25(penalty)
+    /// x 1/(25 x bonus x bonus)"*. It is a plain product, so every entry composes both ways and a
+    /// passive carrying <c>MagicFailSelfMult 0.04</c> divides the bow's ×25 back out EXACTLY — the two
+    /// meet inside the same round(), so parity stays at 1%. There is still no caster-side ACCURACY
+    /// STAT (that ruling stands); this is a chain of named modifiers, like the defender's ×2.</para></summary>
+    public float MagicFailSelfMult { get; set; } = 1f;
     /// <summary>Weapon Proficiency: M.Atk multiplier while wielding an UNTRAINED weapon (bow/dual/hands) —
-    /// ×0.05, so magic (damage + heals + the shown M.Atk) collapses. 1 = a trained weapon, no penalty.</summary>
+    /// ×0.5. 1 = a trained weapon (sword/blunt/wand/staff), no penalty.</summary>
     public float MagicWeaponPenaltyMult { get; set; } = 1f;
-    /// <summary>True while a magic weapon (wand/staff) is equipped — for Divine Focus.</summary>
+    /// <summary>True while a magic weapon (wand/staff) is equipped, per ItemDef.IsMagicWeapon.
+    /// ⚠ NOTHING READS THIS TODAY — Divine Focus was its last consumer and was deleted 2026-08-20, and
+    /// the healer's mastery gates on the TYPE (Blunt) rather than on this flag, deliberately. Kept
+    /// because the flag is real item data the stats window and a future caster rule can both want.</summary>
     public bool HasMagicWeapon { get; set; }
 
     // ----- Heal stats (owner 2026-07-17): heals no longer use M.Atk. A heal's OUTPUT is
@@ -1174,11 +1183,12 @@ public class Entity
     private static bool IsMageTrainedWeapon(WeaponType w) =>
         (w & (WeaponType.AnySword | WeaponType.AnyBlunt)) != 0;
 
-    /// <summary>How much of their magic a trained caster keeps while holding a NON-magic weapon (a mace
-    /// rather than a wand). Replaces the old per-item MAtkFactor 0.6: the number is the same order, but
-    /// it now lives on the CLASS rule instead of on every weapon, so a fighter picking up a wand is not
-    /// silently penalised for a caster's problem. Retune here, not in the item catalogue.</summary>
-    public const float NonMagicWeaponMagicMult = 0.6f;
+    // (NonMagicWeaponMagicMult — DELETED 2026-08-20, owner's ruling: *"magic weapon only is removed and
+    //  it become a sword/blunt x1/x1 (no penalty)"*. A caster holding a mace or a sword now keeps ALL of
+    //  their magic; the only weapon penalty left is the untrained one (bow/dual/bare). The trade a sword
+    //  makes is already in the ITEM — a sword's own M.Atk is low and it rolls no cast-speed attribute —
+    //  so the class rule was charging a second time for a choice the catalogue already prices.
+    //  ⚠ Don't reinstate it as a per-item MAtkFactor either: that is the form it had before 2026-08-07.)
 
     /// <summary>Buffed attack power for BASIC attacks (archetype-scaled). Basic attacks
     /// are physical, so they take the shared BuffAtk plus physical-only BuffPhysAtk.</summary>
@@ -1908,7 +1918,7 @@ public class Entity
         AttackSpeedMultiplier = 1f;
         CastSpeedFlatBonus = 0f;
         CastSpeedPenaltyMult = 1f;
-        HealOutputMult = 1f;
+        MagicFailSelfMult = 1f;
         MagicWeaponPenaltyMult = 1f;
         HasMagicWeapon = false;
         HealPowerFlat = 0; HealPowerMod = 1f;
@@ -2418,6 +2428,11 @@ public class Entity
                 if (pe.AtkSpeedPct != 0f) AttackSpeedMultiplier = Math.Clamp(AttackSpeedMultiplier * (1f - pe.AtkSpeedPct), 0.4f, 2.5f);
                 if (pe.CastSpeedPct != 0f) CastSpeedMultiplier = Math.Clamp(CastSpeedMultiplier * (1f - pe.CastSpeedPct), 0.4f, 2.5f);
                 CastSpeedFlatBonus += pe.CastSpeedFlat;   // spell rune-style flat +cast (added AFTER the multiplicative chain)
+                // FIZZLE CHAIN — 0 means "not in the chain", NOT "×0". Every other multiplier field in
+                // PassiveEffect reads the same way, and it has to: `default(PassiveEffect)` is the inert
+                // value handed out by every unset weapon/armor slot, so a field that meant ×0 when
+                // unset would silence every spell in the game the moment one profile left it blank.
+                if (pe.MagicFailSelfMult != 0f) MagicFailSelfMult *= pe.MagicFailSelfMult;
                 if (pe.MoveSpeedPct != 0f) { RunSpeed *= 1f + pe.MoveSpeedPct; WalkSpeed = RunSpeed * MovementTuning.WalkSpeedFactor; Speed = RunSpeed; }
                 CooldownReduction += pe.CooldownPct;
                 CritRateResist += pe.CritRateResist;
@@ -2489,36 +2504,28 @@ public class Entity
                     ApplyPassive(wm.For(WeaponType));
             }
 
-            // Conditional weapon passives (keyed on the equipped weapon, so not flat PassiveEffects):
-            //  • Weapon Proficiency (all mages): an untrained weapon (not sword/blunt; wand/staff ARE blunt)
-            //    halves cast speed.  • Divine Focus (clerics): no magic weapon scales healing down (Lv1 ×0.5,
-            //    Lv2 ×0.75 for Warchanters, so buffers stay useful in fighter gear).
-            // CAST SPEED is gated on the trained TYPE (sword/blunt — a wand and a mace are both Blunt),
-            // and collapses on anything else: bow, dagger, bare hands.
-            // ⚠ 2026-08-07: the gate is SPELLCASTER MASTERY now (Weapon Proficiency is retired and
-            // superseded by it), and the untrained-weapon magic penalty is the owner's ×0.5 — it was
-            // a ×0.05 COLLAPSE. ⚠ 2026-08-10: the "magic accuracy" clause is a ×25 on the FAIL roll
-            // (UntrainedCasterWeapon → StatCalculator.MagicWeaponFailMod), not a halving of a
-            // caster stat — the old form halved MagicFailResist, which is 0 on every character.
+            // THE ONE REMAINING WEAPON PENALTY (Spellcaster Mastery): an UNTRAINED weapon — bow, dagger
+            // or bare hands — halves cast speed and magic, and multiplies the fizzle roll. Sword and
+            // blunt (wand/staff ARE blunt) are the caster's trained types and cost nothing at all.
+            // ⚠ 2026-08-07: the gate is SPELLCASTER MASTERY (Weapon Proficiency is retired and
+            // superseded by it), and the untrained penalty is the owner's ×0.5 — it was a ×0.05 COLLAPSE.
+            // ⚠ 2026-08-10: the "magic accuracy" clause is a MULTIPLIER on the FAIL roll, not a halving
+            // of a caster stat — the old form halved MagicFailResist, which is 0 on every character.
+            // ⚠ 2026-08-20: the "magic weapon or lose 40% of your magic" clause is GONE (his ruling —
+            // *"if a healer wants to use sword so be it, swords have lower mAtk and no cast speed atri"*).
+            // A mace/sword caster keeps full M.Atk; the weapon's own low M.Atk is the whole trade now.
             bool spellcaster = HasSkill(SkillCatalog.SpellcasterMastery) || HasSkill(SkillCatalog.WeaponProficiency);
             if (spellcaster && !IsMageTrainedWeapon(WeaponType))
             {
                 CastSpeedPenaltyMult = 0.5f;
                 MagicWeaponPenaltyMult = 0.5f;    // bow / dual / bare hands → half magic, not a collapse
-                UntrainedCasterWeapon = true;     // ...and half magic accuracy, applied after the buffs
+                UntrainedCasterWeapon = true;
+                // ...and it enters the FIZZLE CHAIN as a ×25 penalty. Multiplicative on purpose, so a
+                // passive can divide it back out (see MagicFailSelfMult) — the owner's shape, 2026-08-20.
+                MagicFailSelfMult *= StatCaps.UntrainedWeaponMagicFailMod;
             }
-            // M.ATK is gated on the weapon being an actual MAGIC weapon, which the type cannot tell you:
-            // a wand and a mace are both Blunt, so the old type check waved a mace-swinging caster
-            // through at full magic power. That leak used to be plugged by MAtkFactor 0.6 on the ITEM —
-            // an invisible multiplier on the whole channel, with no in-game explanation for "why is my
-            // M.Atk 60%?". The weapon now just carries its authored M.Atk, and the CLASS's own passive
-            // states the rule instead: train with a magic weapon or lose most of your magic. Same
-            // outcome, but it is data a player can read rather than a constant they cannot.
-            else if (spellcaster && !HasMagicWeapon)
-                MagicWeaponPenaltyMult = NonMagicWeaponMagicMult;
-            int divineFocus = SkillLevelOf(SkillCatalog.DivineFocus);
-            if (divineFocus > 0 && !HasMagicWeapon)
-                HealOutputMult = divineFocus >= 2 ? 0.75f : 0.5f;
+            // (Divine Focus DELETED 2026-08-20 — the cleric/healer/buffer heal penalty for holding a
+            //  non-magic weapon is gone with the M.Atk one above, same ruling, same reason.)
 
             // (The combat-training attack bonus is now a normal LEVELED passive — its
             // per-level AttackPct flows through the loop above, no special-casing.)
@@ -2645,10 +2652,15 @@ public class Entity
         BowResist = Math.Clamp(BowResist, 0f, 0.9f);
         // (Spellcaster Mastery's untrained-weapon magic penalty is NOT folded in here any more.
         //  It was `MagicFailResist *= 0.5f` — inert, because MagicFailResist was 0 on everyone.
-        //  The bow now multiplies the FAIL side at the roll: UntrainedCasterWeapon feeds
-        //  StatCalculator.MagicWeaponFailMod at each of the three magic call sites.)
+        //  The bow now multiplies the FAIL side at the roll, via MagicFailSelfMult below.)
         MagicResist = Math.Clamp(MagicResist, -0.9f, 0.9f);   // negative = a magic WEAKNESS
         MagicFailMod = Math.Max(1f, MagicFailMod);            // never below neutral
+        // The CASTER'S chain is clamped only at zero — a product of ×25 penalties and ×0.04 negations
+        // has no meaningful ceiling, and its floor is already the fail formula's own clamp at 0%.
+        // ⚠ Deliberately NOT floored at 1: driving your fizzle BELOW parity is the whole point of the
+        // "opposite of the bow penalty" he asked for, and MagicFailMod above (the DEFENDER's) is the
+        // one that must never help the attacker.
+        MagicFailSelfMult = Math.Max(0f, MagicFailSelfMult);
         CooldownReduction = Math.Clamp(CooldownReduction, 0f, 0.8f);
         MeleeReflect = Math.Clamp(MeleeReflect, 0f, 0.5f);   // never reflect more than half
         // The skill-defence channels. Evade and the two reflect CHANCES stop short of 1 on purpose —

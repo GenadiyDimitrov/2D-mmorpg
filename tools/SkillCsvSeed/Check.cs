@@ -21,6 +21,18 @@ using Game.Shared;
 
 internal static class Check
 {
+    /// <summary>`-v`: also print the DESCR reader's ⚪ lines (what it could not verify). Off by default so
+    /// a clean run stays one screen; on when you are auditing how much of a file is actually covered.</summary>
+    public static bool Verbose;
+
+    /// <summary>Rungs where an authored stat goes DOWN — counted apart from `problems` on purpose: this
+    /// is the one thing the tool reports about the CSV rather than about the code.</summary>
+    private static int ladderDips;
+
+    private static string Num(float v, bool pct) =>
+        pct ? (v * 100f).ToString("0.##", CultureInfo.InvariantCulture) + "%"
+            : v.ToString("0.##", CultureInfo.InvariantCulture);
+
     private sealed record Spec(string File, BaseClass Base, Archetype? Archetype, int Min, int Max);
 
     // ⚠ The BAND matters. A 2nd-class ladder does not stop where his file stops — `Elemental Bolt` is
@@ -44,12 +56,18 @@ internal static class Check
     /// writes the whole cost in INIT MP and leaves FINIT MP at 0 (`Strike` 20/0), while the code books the
     /// same skill as 0/20. Comparing the columns separately reports every physical skill in the game as
     /// two defects and hides the one that matters — a total that actually differs.</para></summary>
+    /// <param name="Descr">His free-text DESCR cell (CSV side) — the stat VALUES, read by
+    /// <see cref="Descr"/>. Empty on the code side, which carries <paramref name="Def"/> instead.</param>
+    /// <param name="Def">The registered skill (code side only), so the DESCR pass can resolve what the
+    /// game actually carries at <paramref name="SkillLevel"/>.</param>
     private sealed record Rung(string Name, int LearnLevel, float Range, float Cast, float Cd,
-                               float Duration, int Mp, int Sp);
+                               float Duration, int Mp, int Sp,
+                               string Descr = "", SkillDef? Def = null, int SkillLevel = 1);
 
     public static int Run(string dir)
     {
         int problems = 0;
+        ladderDips = 0;
         foreach (var spec in Specs)
         {
             string path = Path.Combine(dir, spec.File + ".csv");
@@ -66,6 +84,9 @@ internal static class Check
         Console.WriteLine(problems == 0
             ? "No discrepancies. Every authored row matches a registered skill, and vice versa."
             : $"{problems} discrepanc(y/ies) above. The CSV is the authority — each one is a code defect until he rules otherwise.");
+        if (ladderDips > 0)
+            Console.WriteLine($"{ladderDips} LADDER DIP(S) above — those are in the CSV, not the code: " +
+                              "a stat that falls as the rungs rise is a typo or two swapped levels.");
         return 0;
     }
 
@@ -80,7 +101,7 @@ internal static class Check
             var f = SplitCsv(line);
             if (f.Count < 13) continue;
             rows.Add(new Rung(f[1].Trim(), I(f[0]), F(f[3]), F(f[5]), F(f[6]), F(f[7]),
-                              I(f[9]) + I(f[10]), I(f[11])));
+                              I(f[9]) + I(f[10]), I(f[11]), Descr: f[8].Trim()));
         }
         return rows;
     }
@@ -129,7 +150,7 @@ internal static class Check
                     def.RangeAt(cs.SkillLevel), def.CastTicks / 10f, def.CooldownTicks / 10f,
                     def.DurationTicks / 10f,
                     def.InitialMpAt(cs.SkillLevel) + def.FinishMpAt(cs.SkillLevel),
-                    def.SpCostAt(cs.SkillLevel)));
+                    def.SpCostAt(cs.SkillLevel), Def: def, SkillLevel: cs.SkillLevel));
             }
         return rows;
     }
@@ -223,6 +244,42 @@ internal static class Check
                     Console.WriteLine($"  🟡 {label} rung {i + 1} (CSV lvl {a[i].LearnLevel}): " +
                                       string.Join("; ", diffs));
                     problems++;
+                }
+
+                // ---- THE DESCR PASS. Everything above compares one cell to one field; this reads the
+                //      free text where the VALUES live (power, +M.Atk, mpReg x1.2, -15% reuse). Only
+                //      🟡 lines are defects — ⚪ lines say what the reader could not check, which is the
+                //      point: unverifiable has to be visible, not silent. ----
+                if (b[i].Def is SkillDef bdef)
+                    foreach (var (defect, line) in Descr.Compare(a[i].Descr, bdef, b[i].SkillLevel))
+                    {
+                        if (defect || Verbose) Console.WriteLine($"  {label} rung {i + 1}:\n{line}");
+                        if (defect) problems++;
+                    }
+            }
+
+            // ---- THE LADDER CHECK — his rule, 2026-08-20: *"the stats should go up not down - if they
+            //      got down i made a mistake or swaped two levels"*. It caught nothing on the day it was
+            //      written because he had just fixed the row that prompted it (`healer 3rd` @44 reuse read
+            //      10% between 15% and 20%), which is exactly the point: it is cheap and it is standing.
+            //
+            //      ⚠ Reported SEPARATELY and never counted with the rest. Everything else this tool
+            //      prints is a code defect measured against an authoritative CSV; this one says the CSV
+            //      itself looks wrong, and conflating the two would break the rule the file header states. ----
+            for (int i = 1; i < a.Count; i++)
+            {
+                var lo = Descr.Values(a[i - 1].Descr);
+                var hi = Descr.Values(a[i].Descr);
+                foreach (var (key, now) in hi)
+                {
+                    if (!lo.TryGetValue(key, out float was) || now >= was - 0.0001f) continue;
+                    var parts = key.Split('|');
+                    string scope = parts[2].Length == 0 ? "" : $" [{parts[2]}]";
+                    Console.WriteLine($"  🔵 LADDER DIP      {label}{scope} {parts[0]}: " +
+                                      $"rung {i} (lvl {a[i - 1].LearnLevel}) = {Num(was, parts[1] == "%")}, " +
+                                      $"rung {i + 1} (lvl {a[i].LearnLevel}) = {Num(now, parts[1] == "%")} — " +
+                                      "a stat that goes DOWN between rungs is a typo or two swapped levels.");
+                    ladderDips++;
                 }
             }
         }

@@ -90,6 +90,43 @@ public static partial class ClassSkillTables
         RegisterPreservation();
         // …and a THIRD, on the same terms: the three HIDE skills, which he placed by hand.
         RegisterHideKit();
+        // …and a FOURTH: the healer's own two masteries, which he authored into `healer 3rd.csv` on
+        // 2026-08-20 with a full 9-rung ladder. Same narrow standing as the three above — two learn
+        // lines' worth of skills he named himself, NOT a repeal of the purge. The rest of the
+        // Lightbringer kit stays commented out until his 44+ heals are settled.
+        RegisterHealerMasteries();
+    }
+
+    /// <summary>The healer's 3rd-class masteries — <b>Healer Weapon Mastery</b> (magic weapon only, no
+    /// P.Atk) and <b>Healer Armor Mastery</b> (robe only), 9 rungs each at 40/44/48/52/56/58/60/62/64.
+    ///
+    /// <para>They REPLACE the cleric's Spell Mastery / Armor Mastery rather than continuing them, which
+    /// is the whole point of his split: from 40 the healer's kit is a wand and a robe, and the BUFFER is
+    /// the caster who keeps the sword half and the light-armor row (see RegisterWarchanterBuffs).</para>
+    ///
+    /// <para>⚠ This lives here, not in <c>RegisterLightbringer()</c>, because that function is still
+    /// commented out pending his 44+ rows — and these two rungs are the one part of that band that is
+    /// fully authored and unambiguous. When it is switched back on, do NOT re-add them there.</para>
+    ///
+    /// <para>⚠ His last block's rows carry <c>56</c> in the LEARN column where the section header says
+    /// 64 — a copy/paste slip in a file he is still drafting. Built as 64, since a second rung at 56
+    /// would collide with the real one. Worth a one-word fix in the CSV.</para></summary>
+    private static void RegisterHealerMasteries()
+    {
+        int[] levels = { 40, 44, 48, 52, 56, 58, 60, 62, 64 };
+        var rungs = levels.SelectMany((lvl, i) => new[]
+        {
+            new ClassSkill(HealerWeaponMasterySkill, lvl, SkillLevel: i + 1),
+            new ClassSkill(HealerArmorMasterySkill, lvl, SkillLevel: i + 1),
+        })
+        // Frenzy L2 @52 — the healer's half of *"learned from Healers and Buffers at 52"*. The buffer's
+        // copy is in RegisterWarchanterBuffs; both point at the same rung, which is the point of the
+        // ruling. It rides along here because this is the only ACTIVE Lightbringer registration.
+        .Append(new ClassSkill(HolyFrenzy, 52, SkillLevel: 2))
+        .ToArray();
+
+        foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
+            ClassSkills.RegisterThird(race, Discipline.Lightbringer, rungs);
     }
 
     /// <summary>The three invisibility skills, re-homed exactly where he put them in playtest 23
@@ -193,6 +230,19 @@ public static partial class ClassSkillTables
                 // were never his. His level 30 is kept verbatim, and since a Warchanter does not exist
                 // below 40 the practical effect is that it arrives with the class change. ----
                 new ClassSkill(ShroudingHymn, 30, SkillLevel: 1),
+                // ---- The two CLERIC masteries, CONTINUED (his `buffer 3rd.csv`, 2026-08-20: *"Continue
+                //      the line"* on both rows). This is the other half of the healer's split: the healer
+                //      swapped to his own robe-only/magic-weapon-only pair, the buffer just gets rung 5.
+                //      He is now the only caster who keeps the LIGHT-armor row and the P.Atk half — which
+                //      is exactly the class his heavy/shield passives are meant for. ----
+                new ClassSkill(SpellMastery, 40, SkillLevel: 5),
+                new ClassSkill(ArmorMasterySkill, 40, SkillLevel: 5),
+                // ---- Frenzy L2 @52 — his 2026-08-20 ruling, the SAME rung for healer and buffer:
+                //      *"Frenzy(L2) is learned from Healers and Buffers at 52"*. The cleric's L1 at 35
+                //      (ClassSkillTables.Common.cs) is the rung below it. ⚠ The 62/64 grants further
+                //      down are rungs 3 and 6, which are OUR invented values and are now WEAKER than
+                //      this one — see the note on FrenzyRung. ----
+                new ClassSkill(HolyFrenzy, 52, SkillLevel: 2),
                 // ---- 40-44: finish SPEED and MIGHT (the cleric got most of speed already) ----
                 new ClassSkill(CastId(FamEva), 40, SkillLevel: 3),        // Agility   +4 evasion
                 new ClassSkill(CastId(FamAs), 40, SkillLevel: 2),         // Haste     +23% atk speed
@@ -267,8 +317,10 @@ public static partial class ClassSkillTables
         ClassSkill[] LightbringerShared40() => new[]
         {
             new ClassSkill(MageAntiMagic, 40, SkillLevel: 7),
-            new ClassSkill(SpellMastery, 40, SkillLevel: 5),
-            new ClassSkill(ArmorMasterySkill, 40, SkillLevel: 5),
+            // ⚠ 2026-08-20: the healer's two masteries are NOT here. He no longer continues the cleric
+            // pair — he REPLACES it — and since this whole function is still commented out pending his
+            // 44+ rows, the ladder lives in the ACTIVE RegisterHealerMasteries() instead. Do not add it
+            // back here as well: it would register every rung twice the day this block is switched on.
             new ClassSkill(HolyRay, 40),
             new ClassSkill(GreatHeal, 40),
             new ClassSkill(PartyGreatHeal, 40),

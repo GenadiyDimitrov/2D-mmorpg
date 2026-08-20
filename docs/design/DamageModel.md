@@ -127,15 +127,16 @@ below is kept for the record (it's why we chose B).
 Heals **no longer use M.Atk** (a caster-weapon fighter no longer overheals). Two `{Flat, Mod}` sides:
 
 ```
-endHeal   = (HealPowerFlat + skillPower) · HealPowerMod · HealOutputMult   (healer OUTPUT)
+endHeal   = (HealPowerFlat + skillPower) · HealPowerMod                    (healer OUTPUT)
 finalHeal = (HealReceivedFlat + endHeal) · HealReceivedMod                 (target RECEPTION) + the % half
 ```
 
 - `HealPower` (Flat/Mod) and `HealReceived` (Flat/Mod) are **new Entity stats**, default **0 / ×1**, so an
   untrained healer heals **exactly the skill power — nobody overheals unless a class / gear / passive / buff
   grants HealPower.** Set via `PassiveEffect.HealPowerFlat/Pct` + `HealReceivedFlat/Pct` (gear/passives).
-- `HealOutputMult` = Divine Focus (no magic weapon → ×0.5/0.75). Anti-heal debuffs (`DebuffHealRecv`) lower
-  `HealReceivedMod`. The **% -of-max-HP** heal half is unchanged (ignores all of this).
+- `HealOutputMult` / **Divine Focus** are **GONE** (2026-08-20, owner) — there is no weapon gate on healing any
+  more; a healer with a sword heals for full, and the sword's own low M.Atk is the only trade. Anti-heal
+  debuffs (`DebuffHealRecv`) lower `HealReceivedMod`. The **% -of-max-HP** heal half is unchanged (ignores all of this).
 - Shown in the stats window: **Heal power (flat / mod)** and **Heal received (flat / mod)** rows.
 - ⚠ **Heals are now WEAK by default** (= skill power, ~150-300) because no HealPower source exists yet. Next:
   the healer 20-min HealPower buff (needs a `BuffHealPower` effect) + a heal-power / skill-power retune.

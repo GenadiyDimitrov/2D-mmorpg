@@ -735,10 +735,10 @@ public static class StatCalculator
         return Math.Clamp(points / 100f, 0f, StatCaps.MagicFailMax);
     }
 
-    /// <summary>The caster's weapon multiplier for <see cref="MagicFailChance"/>. Untrained =
-    /// bow / dual / bare hands, as decided by Spellcaster Mastery in Entity.RecomputeDerived.</summary>
-    public static float MagicWeaponFailMod(bool untrainedWeapon) =>
-        untrainedWeapon ? StatCaps.UntrainedWeaponMagicFailMod : 1f;
+    // (MagicWeaponFailMod(bool) — REPLACED 2026-08-20 by `Entity.MagicFailSelfMult`, a running PRODUCT
+    //  the untrained weapon multiplies ×25 into and a passive can divide back out. A bool could only
+    //  ever say "penalised or not", which is exactly what made "the opposite of the bow penalty"
+    //  unauthorable. The weaponMod parameter of MagicFailChance is unchanged — only its source is.)
 
     /// <summary>Offensive MAGIC interrupt power from WIT. Mirrors the WIT scale in
     /// InterruptResist (wit*2) so a WIT-mage out-interrupts an equal-level ATK-mage

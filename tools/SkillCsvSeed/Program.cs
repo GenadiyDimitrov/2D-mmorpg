@@ -33,7 +33,10 @@ string outDir = Path.Combine(dir.FullName, "docs", "data", "classes_skills_csv")
 Directory.CreateDirectory(outDir);
 
 // --check writes nothing. It reads the authored files back against the registered tables — see Check.cs.
-if (args.Contains("--check")) return Check.Run(outDir);
+// `-v` additionally prints what the DESCR reader could NOT verify (⚪ lines): a value whose stat the
+// code has no field for, a percent authored against a flat field, and any number in the text the reader
+// failed to bind to a stat. Defects (🟡) always print. Read it when you want the COVERAGE, not the bugs.
+if (args.Contains("--check")) { Check.Verbose = args.Contains("-v") || args.Contains("--verbose"); return Check.Run(outDir); }
 
 // ===== HIS DISCIPLINE MAP (2026-08-17) =============================================================
 // He redrew the 3rd-class split and named the files himself: *"class 2nd => desc1/desc2 3rd =>
