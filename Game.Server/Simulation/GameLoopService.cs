@@ -1607,7 +1607,14 @@ public class GameLoopService : BackgroundService
             return;
         }
 
-        if (caster.Mp < def.MpCostAt(caster.SkillLevelOf(def.Id)))
+        // 🔑 THE GATE ASKS FOR THE WHOLE PRICE, AND FOR THE PRICE THIS CASTER ACTUALLY PAYS (owner,
+        // 2026-08-20). Two things, both easy to get wrong:
+        //   - the WHOLE price, not the 20% charged up front — the split is an engine detail and a cast
+        //     you cannot afford to finish must never start;
+        //   - the EFFECTIVE price, so a debuff that triples MP cost really does lock you out of a
+        //     100-MP skill below 300, and a 20% reduction lets you cast it at 80. The old check read
+        //     the authored number and ignored both.
+        if (caster.Mp < EffectiveMpCost(caster, def, Math.Max(1, caster.SkillLevelOf(def.Id))))
         {
             SendSystemToEntity(caster, "Not enough MP.");
             return;
@@ -1822,7 +1829,9 @@ public class GameLoopService : BackgroundService
         }
 
         int level = caster.SkillLevelOf(def.Id);
-        int mp = def.MpCostAt(level);
+        // A toggle has no cast, so there is nothing to split — it pays the whole effective price at
+        // once, through the same helper the cast gate uses.
+        int mp = EffectiveMpCost(caster, def, Math.Max(1, level));
         if (caster.Mp < mp)
         {
             SendSystemToEntity(caster, "Not enough MP.");
@@ -5085,8 +5094,7 @@ public class GameLoopService : BackgroundService
             if (def.RequireHpBelowFraction > 0f && p.Hp > p.MaxHp * def.RequireHpBelowFraction) continue;
 
             int lvl = Math.Max(1, p.SkillLevelOf(def.Id));
-            int mpNeed = (int)((def.InitialMpAt(lvl) + def.FinishMpAt(lvl)) * MpCostFactor(p, def));
-            if (p.Mp < mpNeed) continue;
+            if (p.Mp < EffectiveMpCost(p, def, lvl)) continue;
             // A skill PAID IN HP (Restore Spirit) must keep a margin — the cost floors at 1 HP, so
             // an unguarded autopilot would trade a mage's whole bar away one cast at a time.
             if (def.HpCostAt(lvl) > 0 && p.Hp <= def.HpCostAt(lvl) * 2) continue;
@@ -5231,7 +5239,7 @@ public class GameLoopService : BackgroundService
             if (!entry.Enabled) continue;
             if (SkillCatalog.Get(entry.SkillId) is not SkillDef def || !p.HasSkill(def.Id)) continue;
             int lvl = Math.Max(1, p.SkillLevelOf(def.Id));
-            float mp = (def.InitialMpAt(lvl) + def.FinishMpAt(lvl)) * MpCostFactor(p, def);
+            float mp = def.MpCostAt(lvl) * MpCostFactor(p, def);
             float reuseSec = Math.Max(0.1f, AutoCycleTicks(p, def, entry.ExtraDelayTicks) * GameConstants.TickSeconds);
             float mps = mp / reuseSec;
             totalMps += mps;
@@ -8411,12 +8419,22 @@ public class GameLoopService : BackgroundService
         mob.QueuedTargetId = targetId;
     }
 
-    /// <summary>MP-cost multiplier from the caster's MP-cost-reduction buffs — PHYSICAL-category
-    /// skills use the physical reduction, everything else (magic/buff/heal) the magic one.</summary>
+    /// <summary>MP-cost multiplier from the caster's MP-cost buffs AND debuffs — PHYSICAL-category
+    /// skills use the physical reduction, everything else (magic/buff/heal) the magic one.
+    ///
+    /// ⚠ It is NOT capped at 1. The reduction is clamped to [-2, +0.8] in <c>RecomputeDerived</c>, so
+    /// this returns 0.2× (a fully buffed caster) through 3× (a fully debuffed one) — the ×3 is the
+    /// owner's own worked example and the reason every MP question has to go through here.</summary>
     private static float MpCostFactor(Entity caster, SkillDef def) =>
         1f - (def.Category == SkillCategory.Physical
             ? caster.PhysMpCostReduction
             : caster.MagicMpCostReduction);
+
+    /// <summary>What this skill COSTS this caster, in full: the authored total scaled by his MP-cost
+    /// buffs/debuffs. This is the one number the player is quoted, the one the cast gate demands, and
+    /// the one the 20/80 payment is sliced out of — never re-derive it at a call site.</summary>
+    private static int EffectiveMpCost(Entity caster, SkillDef def, int skillLevel) =>
+        (int)(def.MpCostAt(skillLevel) * MpCostFactor(caster, def));
 
     private void UpdateQueuedSkill(Entity caster, string skillId)
     {
@@ -8470,9 +8488,10 @@ public class GameLoopService : BackgroundService
         caster.CastTicksRemaining = Math.Max(2,
             (int)(def.CastTicks * speedMult));
 
-        // Charge the initial MP portion up front (default 0; split skills charge
-        // some now, the rest on completion). Level-aware MP cost, reduced by MP-cost buffs.
-        int initialMp = (int)(def.InitialMpAt(Math.Max(1, caster.SkillLevelOf(def.Id))) * MpCostFactor(caster, def));
+        // Charge the up-front slice — 20% of the EFFECTIVE total for every skill (the remaining 80%
+        // lands with the cast). The gate in HandleCastSkill already proved he can afford all of it, so
+        // the Math.Min is only a floor against an MP drain landing between the gate and here.
+        int initialMp = SkillMath.InitialMpOf(EffectiveMpCost(caster, def, Math.Max(1, caster.SkillLevelOf(def.Id))));
         caster.CastInitialMpPaid = Math.Min(initialMp, caster.Mp);
         caster.Mp -= caster.CastInitialMpPaid;
 
@@ -8500,7 +8519,10 @@ public class GameLoopService : BackgroundService
         // The caster's learned LEVEL of this skill selects its per-level values
         // (Power / Magnitudes / MP). Default 1 for anything not in the learned set.
         int lvl = Math.Max(1, caster.SkillLevelOf(def.Id));
-        int finishMp = (int)(def.FinishMpAt(lvl) * MpCostFactor(caster, def));
+        // The REMAINDER of the price, not a second independently-rounded 80%: whatever the cast has
+        // already paid comes off the effective total. That keeps the two halves summing to exactly the
+        // number the player was quoted, and re-prices the balance if an MP-cost buff expired mid-cast.
+        int finishMp = Math.Max(0, EffectiveMpCost(caster, def, lvl) - caster.CastInitialMpPaid);
 
         if (caster.Mp < finishMp)
         {

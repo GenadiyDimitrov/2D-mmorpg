@@ -71,6 +71,13 @@ three. A skill for two races gets two rows. Everything else behaves as in the 2n
 `REPLACES` included. A skill with more than one rung is written as one row per rung, named `… L2`,
 `… L3`.
 
+**`MP` is ONE column, and it is the skill's WHOLE price** (2026-08-20). It used to be two — `INIT MP`
+paid on cast, `FINIT MP` on landing — and every file was collapsed to their sum on that day, his call:
+*"i can sum the IG values and we just split it in the code as 20/80"*. The sheets had never settled on
+a ratio (20/80 on a heal, the full cost up front on a physical strike) because the ratio was never a
+design decision. The engine now splits **every** skill 20/80 itself, so what you write here is what the
+player is quoted and what the cast gate demands in full before the cast will start.
+
 ### ⚠ Two things about the seeded content
 
 - **It is what the game ALREADY registers above 40, not a proposed kit.** Nothing was invented to

@@ -83,7 +83,6 @@ public record SkillDef(
     float AreaRadius = 0f,
     int InterruptDefense = 0,
     int InterruptPower = 0,
-    int InitialMpCost = -1,
     float BlockAccuracy = 0f,
     bool SureHit = false,
     // For contested crowd-control (Slow, later Stun/Root/Fear): which stat the LAND
@@ -527,22 +526,6 @@ public record SkillDef(
         return sum;
     }
 
-    /// <summary>MP charged when the cast STARTS (level-aware). Default (-1) = 0 up
-    /// front, full cost on completion. A level's own InitialMpCost overrides the
-    /// SkillDef's; both -1 = nothing up front.</summary>
-    public int InitialMpAt(int level)
-    {
-        int init = Lvl(level) is { } sl ? sl.InitialMpCost : InitialMpCost;
-        if (init < 0) init = InitialMpCost;   // level didn't specify → fall back to the def
-        return init < 0 ? 0 : Math.Min(init, MpCostAt(level));
-    }
-
-    /// <summary>MP charged when the cast COMPLETES (the remainder), level-aware.</summary>
-    public int FinishMpAt(int level) => MpCostAt(level) - InitialMpAt(level);
-
-    // Level-1 convenience (single-level skills / display fallback).
-    public int InitialMp => InitialMpAt(1);
-    public int FinishMp => FinishMpAt(1);
 }
 
 /// <summary>Per-armor-weight <see cref="StatMods"/> profile for an armor-mastery PASSIVE
@@ -613,7 +596,6 @@ public record SkillLevel(
     int MpCost = 0,
     int SpCost = 1,
     string? Description = null,
-    int InitialMpCost = -1,   // -1 = inherit the SkillDef's split (0 up front)
     // GOLD price of this level (0 = free). The stat-swap passives are bought with gold, not SP.
     int GoldCost = 0,
     // Resurrect skills: fraction (0..1) of the target's lost exp restored at THIS level.
@@ -872,6 +854,28 @@ public static partial class SkillCatalog
 /// <summary>Combat math + range/cast helpers.</summary>
 public static class SkillMath
 {
+    // ===== THE MP SPLIT ==============================================================================
+    //  A skill has ONE price. The player is quoted that one number and the cast gate demands all of it
+    //  up front; the two-stage payment below is an ENGINE detail, not an authoring one.
+    //
+    //  🔑 Owner, 2026-08-20: *"i can sum the IG values and we just split it in the code as 20/80 ..
+    //  (looking at IG numbers they seem like a 20/80 split)"*. The CSVs' `INIT MP` + `FINIT MP` columns
+    //  were collapsed into one `MP` the same day — his sheets never agreed on a ratio (20/80 on a heal,
+    //  100/0 on a physical strike) because the ratio was never a design decision, only bookkeeping.
+    //
+    //  What the split still BUYS: an interrupted cast keeps the 20% (the cost of trying) and refunds
+    //  nothing, while the 80% is only charged on a cast that actually lands.
+    // =================================================================================================
+
+    /// <summary>Fraction of a skill's MP charged when the cast STARTS; the remainder is charged when it
+    /// COMPLETES. Uniform for every skill — see the note above before making it per-skill again.</summary>
+    public const float InitialMpFraction = 0.20f;
+
+    /// <summary>The up-front slice of a cast's total MP. Pass the EFFECTIVE total (after the caster's
+    /// MP-cost buffs/debuffs), not the authored one, so the two halves always sum back to what the
+    /// player was charged.</summary>
+    public static int InitialMpOf(int totalMp) => (int)(totalMp * InitialMpFraction);
+
     /// <summary>Class-change tier from level: 1 (1-20), 2 (21-40), 3 (40+).
     /// Skill ranges scale with tier so reach grows as you advance.</summary>
     public static int RangeTier(int level) =>

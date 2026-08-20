@@ -381,8 +381,10 @@ interpolate the middle first.
 `30 + 20·i/(n−1)` across a family's rungs; his re-priced `cleric 2nd.csv` prices a buff by **the level
 it is learned at** instead — 20 → 20 MP, 25 → 26, 30 → 33, 35 → 40 — while `buffer 3rd.csv` still runs
 30-50 by rung. The two readings cannot both hold (Focus L4 is 42 by formula, 26 on his sheet), so the
-sheets win: `RungCost[]` in `Skills.BuffLadders.cs` carries each authored `INIT MP` / `FINIT MP` / `SP`
-verbatim, and the old formula survives only as the default for rungs no CSV has reached. **Ladders that
+sheets win: `RungCost[]` in `Skills.BuffLadders.cs` carries each authored `MP` / `SP` verbatim, and the
+old formula survives only as the default for rungs no CSV has reached. (It carried the sheet's `INIT MP`
+as a third number until 2026-08-20, when the two MP columns became one and the engine took over the
+20/80 split.) **Ladders that
 look irregular there are irregular on purpose** — don't regularise them.
 
 Every rung the cleric learns is the one that group level used to hand out, so **a cleric who buffs

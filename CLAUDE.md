@@ -109,7 +109,15 @@ from IG references.
   if target moves). ESC cancels + starts cooldown. **Interrupt is a stat contest**:
   caster `InterruptResist` (WIT + skill `InterruptDefense`) vs attacker
   `InterruptPower` (skill param). Enemy interrupt = no cooldown, retry; you keep the
-  initial-MP loss. Two-stage MP (`InitialMpCost`/`FinishMp`) for future toggles.
+  initial-MP loss.
+- **A skill has ONE MP price** (owner, 2026-08-20). The CSVs carry one `MP` column (the two-column
+  `INIT MP`/`FINIT MP` era ended that day), the player is quoted that one number, and the cast gate
+  demands **all** of it before the cast starts — you can never begin a cast you cannot finish. The
+  engine then splits it **20/80** for everyone (`SkillMath.InitialMpFraction`): 20% on cast start,
+  80% on landing, so an interrupt costs you the 20% and nothing more. ⚠ Every MP question — the gate,
+  both charges, autohunt's budget — goes through `GameLoopService.EffectiveMpCost`, which scales the
+  authored total by the caster's MP-cost buffs **and debuffs** (`MpCostFactor`, 0.2× to 3×). Reading
+  the authored number anywhere else is the bug: a ×3 debuff must really lock a 100-MP skill out below 300.
 - **Block (shields)**: shield carries BlockChance, BlockReduction%, ShieldDefense,
   ShieldCritDefense, ShieldEvasionPenalty. Resolution: shield lowers attacker crit
   CHANCE → if it still crits, crit ignores shield; else roll block → flat % damage

@@ -63,14 +63,14 @@ public static partial class SkillCatalog
         // Quick Heal — fast single-target heal (same powers as Heal, much shorter cast).
         new(QuickHeal, "Quick Heal", BaseClass.Mage, SkillEffect.Heal,
             MpCost: 45, CastTicks: 20, CooldownTicks: 10, Range: 600, Power: 151,
-            Category: SkillCategory.Heal, InitialMpCost: 9,
+            Category: SkillCategory.Heal,  
             Description: "A fast heal on an ally (or yourself). Scales with WIT.",
             Levels: new[]
             {
-                new SkillLevel(Power: 151, MpCost: 45, InitialMpCost: 9,  SpCost: 3200,  Description: "Quick heal power 151."),
-                new SkillLevel(Power: 195, MpCost: 57, InitialMpCost: 12, SpCost: 6400,  Description: "Quick heal power 195."),
-                new SkillLevel(Power: 245, MpCost: 65, InitialMpCost: 13, SpCost: 12800, Description: "Quick heal power 245."),
-                new SkillLevel(Power: 301, MpCost: 67, InitialMpCost: 15, SpCost: 25000, Description: "Quick heal power 301."),
+                new SkillLevel(Power: 151, MpCost: 45,  SpCost: 3200,  Description: "Quick heal power 151."),
+                new SkillLevel(Power: 195, MpCost: 57,  SpCost: 6400,  Description: "Quick heal power 195."),
+                new SkillLevel(Power: 245, MpCost: 65,  SpCost: 12800, Description: "Quick heal power 245."),
+                new SkillLevel(Power: 301, MpCost: 67,  SpCost: 25000, Description: "Quick heal power 301."),
             }),
 
         // Shrouding Hymn — the BUFFER's half of stealth (BL-69, kind 2). Exactly what the rogue's
@@ -82,7 +82,7 @@ public static partial class SkillCatalog
         // level a cleric learns it is most of the bar, so this is a journey, not a rotation.
         new(ShroudingHymn, "Shrouding Hymn", BaseClass.Mage, SkillEffect.None,
             MpCost: 300, CastTicks: 20, CooldownTicks: 300, Range: 600, Power: 0,
-            DurationTicks: 600, BuffKey: "shrouding_hymn", Rank: 1, InitialMpCost: 60,
+            DurationTicks: 600, BuffKey: "shrouding_hymn", Rank: 1,  
             Category: SkillCategory.Buff, SpCost: 12000,
             TargetMode: TargetMode.AlliesInRadius, AreaRadius: 800f,
             GrantsMobStealth: true,
@@ -92,15 +92,15 @@ public static partial class SkillCatalog
         // Party Heal — AoE heal to nearby allies (lower power than single-target).
         new(PartyHeal, "Party Heal", BaseClass.Mage, SkillEffect.Heal,
             MpCost: 60, CastTicks: 70, CooldownTicks: 50, Range: 600, Power: 121,
-            Category: SkillCategory.Heal, InitialMpCost: 12,
+            Category: SkillCategory.Heal,  
             TargetMode: TargetMode.AlliesInRadius, AreaRadius: 800f,
             Description: "Heals you and nearby allies. Scales with WIT.",
             Levels: new[]
             {
-                new SkillLevel(Power: 121, MpCost: 60, InitialMpCost: 12, SpCost: 3200,  Description: "Party heal power 121."),
-                new SkillLevel(Power: 156, MpCost: 76, InitialMpCost: 16, SpCost: 6400,  Description: "Party heal power 156."),
-                new SkillLevel(Power: 196, MpCost: 94, InitialMpCost: 18, SpCost: 12800, Description: "Party heal power 196."),
-                new SkillLevel(Power: 241, MpCost: 96, InitialMpCost: 20, SpCost: 25000, Description: "Party heal power 241."),
+                new SkillLevel(Power: 121, MpCost: 60,  SpCost: 3200,  Description: "Party heal power 121."),
+                new SkillLevel(Power: 156, MpCost: 76,  SpCost: 6400,  Description: "Party heal power 156."),
+                new SkillLevel(Power: 196, MpCost: 94,  SpCost: 12800, Description: "Party heal power 196."),
+                new SkillLevel(Power: 241, MpCost: 96,  SpCost: 25000, Description: "Party heal power 241."),
             }),
 
         // Improved Speed — the first IMPROVED (group) buff: it applies no buff of its own, only its
@@ -114,7 +114,7 @@ public static partial class SkillCatalog
         new(HolySpeed, "Swift and Sure", BaseClass.Mage,
             SkillEffect.BuffCastSpeed | SkillEffect.BuffMoveSpeed | SkillEffect.BuffEvasion | SkillEffect.BuffAtkSpeed,
             MpCost: 150, CastTicks: 10, CooldownTicks: 10, Range: 600, Power: 0,
-            DurationTicks: 12000, BuffKey: "holy_speed", Rank: 1, InitialMpCost: 30,
+            DurationTicks: 12000, BuffKey: "holy_speed", Rank: 1,  
             Category: SkillCategory.Buff,
             ChildBuffs: new[] { BuffSwiftU, BuffAlacrityC },
             TargetMode: TargetMode.AlliesInRadius, AreaRadius: 800f,
@@ -122,22 +122,22 @@ public static partial class SkillCatalog
             Description: "Blesses you and nearby allies: faster casting and movement for 20 minutes.",
             Levels: new[]
             {
-                new SkillLevel(MpCost: 150, InitialMpCost: 30, SpCost: 3200,
+                new SkillLevel(MpCost: 150,  SpCost: 3200,
                     ChildBuffs: new[] { BuffSwiftU, BuffAlacrityC },
                     Description: "Move +20, Cast +15%."),
-                new SkillLevel(MpCost: 160, InitialMpCost: 32, SpCost: 6400,
+                new SkillLevel(MpCost: 160,  SpCost: 6400,
                     ChildBuffs: new[] { BuffSwiftR, BuffAlacrityU },
                     Description: "Move +33, Cast +23%."),
-                new SkillLevel(MpCost: 170, InitialMpCost: 34, SpCost: 12800,
+                new SkillLevel(MpCost: 170,  SpCost: 12800,
                     ChildBuffs: new[] { BuffSwiftR, BuffAlacrityU, BuffAgilityU },
                     Description: "Move +33, Cast +23%, Evasion +2."),
-                new SkillLevel(MpCost: 180, InitialMpCost: 36, SpCost: 25000,
+                new SkillLevel(MpCost: 180,  SpCost: 25000,
                     ChildBuffs: new[] { BuffSwiftR, BuffAlacrityR, BuffAgilityU, BuffHasteC },
                     Description: "Move +33, Cast +30%, Evasion +2, Attack Speed +15%."),
-                new SkillLevel(MpCost: 190, InitialMpCost: 38, SpCost: 50000,
+                new SkillLevel(MpCost: 190,  SpCost: 50000,
                     ChildBuffs: new[] { BuffSwiftR, BuffAlacrityR, BuffAgilityR, BuffHasteU },
                     Description: "Move +33, Cast +30%, Evasion +4, Attack Speed +23%."),
-                new SkillLevel(MpCost: 200, InitialMpCost: 40, SpCost: 100000,
+                new SkillLevel(MpCost: 200,  SpCost: 100000,
                     ChildBuffs: new[] { BuffSwiftR, BuffAlacrityR, BuffAgilityR, BuffHasteR },
                     Description: "Move +33, Cast +30%, Evasion +4, Attack Speed +33%."),
             }),
@@ -173,16 +173,16 @@ public static partial class SkillCatalog
         // HandleSkill), so it only ever empowers an ally who has no way to refill their own bar.
         new(RestoreMana, "Restore Mana", BaseClass.Mage, SkillEffect.RestoreMp,
             MpCost: 52, CastTicks: 20, CooldownTicks: 20, Range: 600, Power: 52,
-            Category: SkillCategory.Heal, InitialMpCost: 13, SpCost: 12800,
+            Category: SkillCategory.Heal,  SpCost: 12800,
             Description: "Transfers MP to an ally at no loss. Can't be used on yourself or another "
                        + "mana-restorer.",
             Levels: new[]
             {
-                new SkillLevel(MpCost: 52, InitialMpCost: 13, SpCost: 12800, Power: 52,
+                new SkillLevel(MpCost: 52,  SpCost: 12800, Power: 52,
                     Description: "Transfers 52 MP to an ally (costs 52). Can't be used on yourself or another mana-restorer."),
-                new SkillLevel(MpCost: 60, InitialMpCost: 15, SpCost: 25000, Power: 60,
+                new SkillLevel(MpCost: 60,  SpCost: 25000, Power: 60,
                     Description: "Transfers 60 MP to an ally (costs 60). Can't be used on yourself or another mana-restorer."),
-                new SkillLevel(MpCost: 70, InitialMpCost: 20, SpCost: 36000, Power: 70,
+                new SkillLevel(MpCost: 70,  SpCost: 36000, Power: 70,
                     Description: "Transfers 70 MP to an ally (costs 70). Can't be used on yourself or another mana-restorer."),
             }),
 
@@ -194,7 +194,7 @@ public static partial class SkillCatalog
         new(HolyBody, "Body and Soul", BaseClass.Mage,
             SkillEffect.BuffHpRegen | SkillEffect.BuffMpRegen | SkillEffect.BuffHp | SkillEffect.BuffMp,
             MpCost: 150, CastTicks: 10, CooldownTicks: 10, Range: 600, Power: 0,
-            DurationTicks: 12000, BuffKey: "holy_body", Rank: 1, InitialMpCost: 30,
+            DurationTicks: 12000, BuffKey: "holy_body", Rank: 1,  
             Category: SkillCategory.Buff, SpCost: 25000,
             ChildBuffs: new[] { Rung(FamHpRegen, 2) },
             TargetMode: TargetMode.AlliesInRadius, AreaRadius: 800f,
@@ -202,22 +202,22 @@ public static partial class SkillCatalog
             Description: "Blesses you and nearby allies with vitality — regeneration, and at higher ranks Max HP and MP.",
             Levels: new[]
             {
-                new SkillLevel(MpCost: 150, InitialMpCost: 30, SpCost: 25000,
+                new SkillLevel(MpCost: 150,  SpCost: 25000,
                     ChildBuffs: new[] { Rung(FamHpRegen, 2) },
                     Description: "+10% HP regeneration."),
-                new SkillLevel(MpCost: 160, InitialMpCost: 32, SpCost: 25000,
+                new SkillLevel(MpCost: 160,  SpCost: 25000,
                     ChildBuffs: new[] { Rung(FamHpRegen, 3), Rung(FamMpRegen, 2) },
                     Description: "+12% HP and +10% MP regeneration."),
-                new SkillLevel(MpCost: 170, InitialMpCost: 34, SpCost: 50000,
+                new SkillLevel(MpCost: 170,  SpCost: 50000,
                     ChildBuffs: new[] { Rung(FamHpRegen, 4), Rung(FamMpRegen, 3), Rung(FamMaxHp, 1) },
                     Description: "+15% HP and +12% MP regeneration, +10% Max HP."),
-                new SkillLevel(MpCost: 180, InitialMpCost: 36, SpCost: 50000,
+                new SkillLevel(MpCost: 180,  SpCost: 50000,
                     ChildBuffs: new[] { Rung(FamHpRegen, 5), Rung(FamMpRegen, 4), Rung(FamMaxHp, 2), Rung(FamMaxMp, 1) },
                     Description: "+17% HP and +15% MP regeneration, +15% Max HP, +10% Max MP."),
-                new SkillLevel(MpCost: 190, InitialMpCost: 38, SpCost: 100000,
+                new SkillLevel(MpCost: 190,  SpCost: 100000,
                     ChildBuffs: new[] { Rung(FamHpRegen, 6), Rung(FamMpRegen, 5), Rung(FamMaxHp, 4), Rung(FamMaxMp, 3) },
                     Description: "+20% HP and +17% MP regeneration, +25% Max HP, +20% Max MP."),
-                new SkillLevel(MpCost: 200, InitialMpCost: 40, SpCost: 100000,
+                new SkillLevel(MpCost: 200,  SpCost: 100000,
                     ChildBuffs: new[] { Rung(FamHpRegen, 6), Rung(FamMpRegen, 6), Rung(FamMaxHp, 6), Rung(FamMaxMp, 6) },
                     Description: "+20% HP and MP regeneration, +35% Max HP and Max MP."),
             }),
@@ -265,7 +265,7 @@ public static partial class SkillCatalog
         new(HolyForce, "Force and Ward", BaseClass.Mage,
             SkillEffect.BuffInterruptResist | SkillEffect.BuffMagAtk | SkillEffect.BuffMagicDef,
             MpCost: 150, CastTicks: 10, CooldownTicks: 10, Range: 600, Power: 0,
-            DurationTicks: 12000, BuffKey: "holy_force", Rank: 1, InitialMpCost: 30,
+            DurationTicks: 12000, BuffKey: "holy_force", Rank: 1,  
             Category: SkillCategory.Buff,
             ChildBuffs: new[] { BuffIntr1 },
             TargetMode: TargetMode.AlliesInRadius, AreaRadius: 800f,
@@ -273,22 +273,22 @@ public static partial class SkillCatalog
             Description: "Steadies the casting of you and nearby allies; higher ranks add Magic Attack and Magic Defence.",
             Levels: new[]
             {
-                new SkillLevel(MpCost: 150, InitialMpCost: 30, SpCost: 3200,
+                new SkillLevel(MpCost: 150,  SpCost: 3200,
                     ChildBuffs: new[] { BuffIntr1 },
                     Description: "+18 interrupt resistance (harder to cancel your casts)."),
-                new SkillLevel(MpCost: 160, InitialMpCost: 32, SpCost: 6400,
+                new SkillLevel(MpCost: 160,  SpCost: 6400,
                     ChildBuffs: new[] { BuffIntr2, BuffMAtk2 },
                     Description: "+25 interrupt resistance and +25% M.Atk."),
-                new SkillLevel(MpCost: 170, InitialMpCost: 34, SpCost: 12800,
+                new SkillLevel(MpCost: 170,  SpCost: 12800,
                     ChildBuffs: new[] { BuffIntr3, BuffMAtk2, BuffMDef1 },
                     Description: "+40 interrupt resistance, +25% M.Atk, +10% M.Def."),
-                new SkillLevel(MpCost: 180, InitialMpCost: 36, SpCost: 25000,
+                new SkillLevel(MpCost: 180,  SpCost: 25000,
                     ChildBuffs: new[] { BuffIntr3, BuffMAtk3, BuffMDef2 },
                     Description: "+40 interrupt resistance, +32% M.Atk, +20% M.Def."),
-                new SkillLevel(MpCost: 190, InitialMpCost: 38, SpCost: 50000,
+                new SkillLevel(MpCost: 190,  SpCost: 50000,
                     ChildBuffs: new[] { BuffIntr4, BuffMAtk3, BuffMDef2 },
                     Description: "+60 interrupt resistance, +32% M.Atk, +20% M.Def."),
-                new SkillLevel(MpCost: 200, InitialMpCost: 40, SpCost: 100000,
+                new SkillLevel(MpCost: 200,  SpCost: 100000,
                     ChildBuffs: new[] { BuffIntr4, BuffMAtk3, BuffMDef3 },
                     Description: "+60 interrupt resistance, +32% M.Atk, +30% M.Def."),
             }),
@@ -299,7 +299,7 @@ public static partial class SkillCatalog
         new(HolyFocus, "Focus and Ferocity", BaseClass.Mage,
             SkillEffect.BuffCritRate | SkillEffect.BuffCritDamage | SkillEffect.BuffMagicCritRate,
             MpCost: 150, CastTicks: 10, CooldownTicks: 10, Range: 600, Power: 0,
-            DurationTicks: 12000, BuffKey: "holy_focus", Rank: 1, InitialMpCost: 30,
+            DurationTicks: 12000, BuffKey: "holy_focus", Rank: 1,  
             Category: SkillCategory.Buff, SpCost: 6400,
             ChildBuffs: new[] { Rung(FamCritRate, 4) },
             TargetMode: TargetMode.AlliesInRadius, AreaRadius: 800f,
@@ -307,22 +307,22 @@ public static partial class SkillCatalog
             Description: "Sharpens you and nearby allies: critical rate, and at higher ranks critical damage and magic criticals.",
             Levels: new[]
             {
-                new SkillLevel(MpCost: 150, InitialMpCost: 30, SpCost: 6400,
+                new SkillLevel(MpCost: 150,  SpCost: 6400,
                     ChildBuffs: new[] { Rung(FamCritRate, 4) },
                     Description: "+20% physical critical rate."),
-                new SkillLevel(MpCost: 160, InitialMpCost: 32, SpCost: 12800,
+                new SkillLevel(MpCost: 160,  SpCost: 12800,
                     ChildBuffs: new[] { Rung(FamCritRate, 5), Rung(FamCritDmg, 1) },
                     Description: "+25% critical rate, +10% critical damage."),
-                new SkillLevel(MpCost: 170, InitialMpCost: 34, SpCost: 25000,
+                new SkillLevel(MpCost: 170,  SpCost: 25000,
                     ChildBuffs: new[] { Rung(FamCritRate, 5), Rung(FamCritDmg, 3), Rung(FamMagCrit, 1) },
                     Description: "+25% critical rate, +20% critical damage, +20% magic critical rate."),
-                new SkillLevel(MpCost: 180, InitialMpCost: 36, SpCost: 50000,
+                new SkillLevel(MpCost: 180,  SpCost: 50000,
                     ChildBuffs: new[] { Rung(FamCritRate, 6), Rung(FamCritDmg, 4), Rung(FamMagCrit, 2) },
                     Description: "+30% critical rate, +25% critical damage, +35% magic critical rate."),
-                new SkillLevel(MpCost: 190, InitialMpCost: 38, SpCost: 100000,
+                new SkillLevel(MpCost: 190,  SpCost: 100000,
                     ChildBuffs: new[] { Rung(FamCritRate, 6), Rung(FamCritDmg, 5), Rung(FamMagCrit, 4) },
                     Description: "+30% critical rate, +30% critical damage, +65% magic critical rate."),
-                new SkillLevel(MpCost: 200, InitialMpCost: 40, SpCost: 100000,
+                new SkillLevel(MpCost: 200,  SpCost: 100000,
                     ChildBuffs: new[] { Rung(FamCritRate, 6), Rung(FamCritDmg, 6), Rung(FamMagCrit, 6) },
                     Description: "+30% critical rate, +35% critical damage, double magic critical rate."),
             }),
@@ -336,7 +336,7 @@ public static partial class SkillCatalog
             | SkillEffect.BuffCastSpeed | SkillEffect.BuffAtkSpeed | SkillEffect.BuffMoveSpeed
             | SkillEffect.BuffEvasion,
             MpCost: 125, CastTicks: 10, CooldownTicks: 10, Range: 600, Power: 0,
-            DurationTicks: 12000, BuffKey: "holy_frenzy", Rank: 1, InitialMpCost: 25,
+            DurationTicks: 12000, BuffKey: "holy_frenzy", Rank: 1,  
             Category: SkillCategory.Buff, SpCost: 25000,
             ChildBuffs: new[] { Rung(FamFrenzy, 1) },
             Description: "A reckless surge: less Max HP/MP, but more attack and speed for 20 minutes.",
@@ -346,22 +346,22 @@ public static partial class SkillCatalog
                 // third of what it used to cost (125 / 25000) and it does NOT propagate up the ladder —
                 // rungs 3 and 6 are his buffer prices and are unchanged, so the jump from L1 to L3 is
                 // steep on purpose: a level-35 cleric's Frenzy is cheap, a buffer's is not.
-                new SkillLevel(MpCost: 40, InitialMpCost: 8, SpCost: 12800,
+                new SkillLevel(MpCost: 40,  SpCost: 12800,
                     ChildBuffs: new[] { Rung(FamFrenzy, 1) },
                     Description: "−30% Max HP/MP, +5% offence and speed, +5 move, −8 evasion."),
-                new SkillLevel(MpCost: 135, InitialMpCost: 27, SpCost: 25000,
+                new SkillLevel(MpCost: 135,  SpCost: 25000,
                     ChildBuffs: new[] { Rung(FamFrenzy, 2) },
                     Description: "−26% Max HP/MP, +6% offence and speed, +6 move, −8 evasion."),
-                new SkillLevel(MpCost: 145, InitialMpCost: 29, SpCost: 50000,
+                new SkillLevel(MpCost: 145,  SpCost: 50000,
                     ChildBuffs: new[] { Rung(FamFrenzy, 3) },
                     Description: "−22% Max HP/MP, +6% offence and speed, +6 move, −8 evasion."),
-                new SkillLevel(MpCost: 155, InitialMpCost: 31, SpCost: 50000,
+                new SkillLevel(MpCost: 155,  SpCost: 50000,
                     ChildBuffs: new[] { Rung(FamFrenzy, 4) },
                     Description: "−18% Max HP/MP, +7% offence and speed, +7 move, −8 evasion."),
-                new SkillLevel(MpCost: 165, InitialMpCost: 33, SpCost: 100000,
+                new SkillLevel(MpCost: 165,  SpCost: 100000,
                     ChildBuffs: new[] { Rung(FamFrenzy, 5) },
                     Description: "−14% Max HP/MP, +7% offence and speed, +7 move, −8 evasion."),
-                new SkillLevel(MpCost: 175, InitialMpCost: 35, SpCost: 100000,
+                new SkillLevel(MpCost: 175,  SpCost: 100000,
                     ChildBuffs: new[] { Rung(FamFrenzy, 6) },
                     Description: "−10% Max HP/MP, +8% offence and speed, +8 move, −8 evasion."),
             }),
@@ -388,7 +388,7 @@ public static partial class SkillCatalog
         new(HolyShield, "Shield Bless and Harden", BaseClass.Mage,
             SkillEffect.BuffShieldDef | SkillEffect.BuffBlockChance,
             MpCost: 200, CastTicks: 10, CooldownTicks: 10, Range: 600, Power: 0,
-            DurationTicks: 12000, BuffKey: "holy_shield", Rank: 1, InitialMpCost: 40,
+            DurationTicks: 12000, BuffKey: "holy_shield", Rank: 1,  
             Category: SkillCategory.Buff, SpCost: 100000,
             ChildBuffs: new[] { Rung(FamShieldDef, 1), Rung(FamShieldBlock, 1) },
             TargetMode: TargetMode.AlliesInRadius, AreaRadius: 800f,
@@ -424,7 +424,7 @@ public static partial class SkillCatalog
             | SkillEffect.BuffEvasion,
             // MP sits above the improved groups' 200 — it buffs the party AND it is the family's top.
             MpCost: 220, CastTicks: 15, CooldownTicks: 10, Range: 600, Power: 0,
-            DurationTicks: 12000, BuffKey: "madness", Rank: 1, InitialMpCost: 44,
+            DurationTicks: 12000, BuffKey: "madness", Rank: 1,  
             Category: SkillCategory.Buff, SpCost: 100000,
             ChildBuffs: new[] { Rung(FamFrenzy, 7) },
             // Party-targeted for the same reason every improved group is (docs/design/BuffLadders.md):
@@ -470,17 +470,17 @@ public static partial class SkillCatalog
         // only starts to bite once DoTs carry a real rank — which is what his "poison 10" implies.
         new(Antidote, "Antidote", BaseClass.Mage, SkillEffect.Cleanse,
             MpCost: 16, CastTicks: 8, CooldownTicks: 30, Range: 600, Power: 0,
-            Category: SkillCategory.Heal, InitialMpCost: 4, SpCost: 3200,
+            Category: SkillCategory.Heal,  SpCost: 3200,
             DispelMask: SkillEffect.Poison | SkillEffect.Venom | SkillEffect.Bleed,
             DispelMaxLevel: 1,
             Description: "Cures poison, venom and bleed from an ally (or self), up to a rank its own "
                        + "level can reach.",
             Levels: new[]
             {
-                new SkillLevel(MpCost: 16, InitialMpCost: 4, SpCost: 3200, DispelMaxLevel: 1,
+                new SkillLevel(MpCost: 16,  SpCost: 3200, DispelMaxLevel: 1,
                     Description: "Cures poison, venom and bleed of rank 1 or lower from an ally (or self)."),
                 // 25000, his 2026-08-19 price — the second cure is a level-35 purchase, not a cheap one.
-                new SkillLevel(MpCost: 20, InitialMpCost: 5, SpCost: 25000, DispelMaxLevel: 2,
+                new SkillLevel(MpCost: 20,  SpCost: 25000, DispelMaxLevel: 2,
                     Description: "Cures poison, venom and bleed of rank 2 or lower from an ally (or self)."),
             }),
 
@@ -496,12 +496,12 @@ public static partial class SkillCatalog
         // 10s base cast at EVERY level, and deliberately NOT FixedCast: cast speed is the only thing that
         // shortens it, so investing in cast speed is what makes a res usable mid-fight. At the 1999 cast-speed
         // cap that's 333/1999 ≈ 1.67s — fast, but never instant (which would be OP).
-        // MP is his too (2026-08-17), authored as the CSV's two columns — 10 up front + 50 on the finish
-        // at level 1, 20 + 70 at level 2. `MpCost` is the TOTAL and `InitialMpCost` the up-front slice,
-        // so those read 60 and 90 here. It is roughly HALF what this skill used to cost (120/150).
+        // MP is his too (2026-08-17): 60 at level 1, 90 at level 2 — roughly HALF what this skill used
+        // to cost (120/150). Those were authored as the CSV's old two columns (10+50 / 20+70); the
+        // sheet carries one TOTAL now and the engine splits every skill 20/80 (`SkillMath.InitialMpFraction`).
         new(Resurrection, "Resurrection", BaseClass.Mage, SkillEffect.None,
             MpCost: 60, CastTicks: 100, CooldownTicks: 100, Range: 600, Power: 0,
-            Category: SkillCategory.Heal, InitialMpCost: 10,
+            Category: SkillCategory.Heal,  
             Resurrect: true, ResExpPct: 0f,
             Description: "Revives a fallen ally at 30% HP and MP. Higher levels also give back part of the "
                        + "experience they lost on death.",
@@ -509,13 +509,13 @@ public static partial class SkillCatalog
             {
                 // SP 1700, his 2026-08-19 price: the first res is meant to be affordable the moment a
                 // cleric can cast it, so it costs about the same as one rung of a buff.
-                new SkillLevel(MpCost: 60, InitialMpCost: 10, SpCost: 1700,  ResExpPct: 0f,
+                new SkillLevel(MpCost: 60,  SpCost: 1700,  ResExpPct: 0f,
                     Description: "Revive at 30% HP/MP. Does not give back any lost exp."),
-                new SkillLevel(MpCost: 90, InitialMpCost: 20, SpCost: 12800, ResExpPct: 0.20f,
+                new SkillLevel(MpCost: 90,  SpCost: 12800, ResExpPct: 0.20f,
                     Description: "Revive at 30% HP/MP; restore 20% of lost exp."),
                 // Level 3 = his `healer 3rd.csv` level-40 row. The rungs above it (his file sketches
                 // 40/50/60/70%) sit in the part he marked "not done", so they are NOT written here.
-                new SkillLevel(MpCost: 120, InitialMpCost: 30, SpCost: 36000, ResExpPct: 0.30f,
+                new SkillLevel(MpCost: 120,  SpCost: 36000, ResExpPct: 0.30f,
                     Description: "Revive at 30% HP/MP; restore 30% of lost exp."),
             }),
     };

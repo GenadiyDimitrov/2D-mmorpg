@@ -360,7 +360,7 @@ Console.WriteLine("=== E3: THE NUKER'S MP ECONOMY — why he sits out of mana ==
         var m = BuildPlayer(Race.Human, BaseClass.Mage, L);
         ApplyNpcBuffs(m);
         var (nuke, nl) = TopSkill(m, SkillEffect.MagicDamage);
-        int nukeMp = nuke is null ? 0 : nuke.InitialMpAt(nl) + nuke.FinishMpAt(nl);
+        int nukeMp = nuke is null ? 0 : nuke.MpCostAt(nl);
         // The LEARNED level of Restore Spirit is what he actually casts — reading level 1 for a
         // level-80 mage is exactly the measuring error the old table made.
         int rl = Math.Max(1, m.SkillLevelOf(rs.Id));
@@ -447,7 +447,7 @@ Console.WriteLine("=== E4: THE FARM LOOP — cost per KILL, which is what an off
             if (skill is not null)
             {
                 float cycle = Math.Max(0.1f, SkillCycleSeconds(e, skill));
-                mpPerKill = ttk / cycle * (skill.InitialMpAt(sl) + skill.FinishMpAt(sl));
+                mpPerKill = ttk / cycle * skill.MpCostAt(sl);
             }
 
             float hpLost = Dps(mob, e) * ttk;

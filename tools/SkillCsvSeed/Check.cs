@@ -51,11 +51,11 @@ internal static class Check
 
     /// <summary>One rung, from either side, reduced to the fields worth comparing.
     ///
-    /// <para>⚠ <b>Mp is the TOTAL, not the two columns.</b> The two-stage model (`InitialMpCost` paid on
-    /// cast, `FinishMp` on landing) is an engine concept his sheet does not share: on a physical active he
-    /// writes the whole cost in INIT MP and leaves FINIT MP at 0 (`Strike` 20/0), while the code books the
-    /// same skill as 0/20. Comparing the columns separately reports every physical skill in the game as
-    /// two defects and hides the one that matters — a total that actually differs.</para></summary>
+    /// <para>⚠ <b>Mp is the TOTAL</b>, on both sides — column 9 in his sheet, <c>MpCostAt</c> in the code.
+    /// Until 2026-08-20 the sheet carried it as `INIT MP` + `FINIT MP` and this record summed them,
+    /// because the two-stage payment was an engine concept his file did not share: a physical active was
+    /// authored 20/0 and booked 0/20, which read as two defects per skill and hid the only thing worth
+    /// reporting — a total that differs. The columns are one now and the engine splits 20/80 itself.</para></summary>
     /// <param name="Descr">His free-text DESCR cell (CSV side) — the stat VALUES, read by
     /// <see cref="Descr"/>. Empty on the code side, which carries <paramref name="Def"/> instead.</param>
     /// <param name="Def">The registered skill (code side only), so the DESCR pass can resolve what the
@@ -99,9 +99,9 @@ internal static class Check
         {
             if (line.Length == 0 || line.StartsWith('#') || line.StartsWith("LEARN")) continue;
             var f = SplitCsv(line);
-            if (f.Count < 13) continue;
+            if (f.Count < 12) continue;
             rows.Add(new Rung(f[1].Trim(), I(f[0]), F(f[3]), F(f[5]), F(f[6]), F(f[7]),
-                              I(f[9]) + I(f[10]), I(f[11]), Descr: f[8].Trim()));
+                              I(f[9]), I(f[10]), Descr: f[8].Trim()));
         }
         return rows;
     }
@@ -149,7 +149,7 @@ internal static class Check
                 rows.Add(new Rung(cs.DisplayName ?? def.Name, cs.LearnLevel,
                     def.RangeAt(cs.SkillLevel), def.CastTicks / 10f, def.CooldownTicks / 10f,
                     def.DurationTicks / 10f,
-                    def.InitialMpAt(cs.SkillLevel) + def.FinishMpAt(cs.SkillLevel),
+                    def.MpCostAt(cs.SkillLevel),
                     def.SpCostAt(cs.SkillLevel), Def: def, SkillLevel: cs.SkillLevel));
             }
         return rows;

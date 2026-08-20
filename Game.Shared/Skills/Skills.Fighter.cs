@@ -100,9 +100,9 @@ public static partial class SkillCatalog
             Description: "A weapon strike (sword or blunt) that adds power to your attack. Can strike for DOUBLE.",
             Levels: new[]
             {
-                new SkillLevel(Power: 35,  MpCost: 10, InitialMpCost: 10, SpCost: 160,   Description: "Strike — power 35."),
-                new SkillLevel(Power: 65,  MpCost: 13, InitialMpCost: 13, SpCost: 910,   Description: "Strike — power 65."),
-                new SkillLevel(Power: 84,  MpCost: 17, InitialMpCost: 17, SpCost: 910,   Description: "Strike — power 84."),
+                new SkillLevel(Power: 35,  MpCost: 10,  SpCost: 160,   Description: "Strike — power 35."),
+                new SkillLevel(Power: 65,  MpCost: 13,  SpCost: 910,   Description: "Strike — power 65."),
+                new SkillLevel(Power: 84,  MpCost: 17,  SpCost: 910,   Description: "Strike — power 84."),
             }),
 
         // Stab — dagger (dual) BLOW: full power only on a critical/double, else a soft 10%.
@@ -113,9 +113,9 @@ public static partial class SkillCatalog
             Description: "A dagger blow (duals). Lands for FULL power only on a critical or double — a soft 10% otherwise.",
             Levels: new[]
             {
-                new SkillLevel(Power: 88,  MpCost: 10, InitialMpCost: 10, SpCost: 160,   Description: "Stab — blow power 88 (10% without a crit)."),
-                new SkillLevel(Power: 137, MpCost: 11, InitialMpCost: 11, SpCost: 910,   Description: "Stab — blow power 137."),
-                new SkillLevel(Power: 210, MpCost: 15, InitialMpCost: 15, SpCost: 910,   Description: "Stab — blow power 210."),
+                new SkillLevel(Power: 88,  MpCost: 10,  SpCost: 160,   Description: "Stab — blow power 88 (10% without a crit)."),
+                new SkillLevel(Power: 137, MpCost: 11,  SpCost: 910,   Description: "Stab — blow power 137."),
+                new SkillLevel(Power: 210, MpCost: 15,  SpCost: 910,   Description: "Stab — blow power 210."),
             }),
 
         // Shot — bow ranged attack; can [Double]. Base reach 350 (rogue extends it later).
@@ -126,9 +126,9 @@ public static partial class SkillCatalog
             Description: "A bow shot dealing heavy ranged damage (fighter reach 350). Can strike for DOUBLE.",
             Levels: new[]
             {
-                new SkillLevel(Power: 78,  MpCost: 20, InitialMpCost: 20, SpCost: 160,   Description: "Shot — power 78."),
-                new SkillLevel(Power: 122, MpCost: 25, InitialMpCost: 25, SpCost: 910,   Description: "Shot — power 122."),
-                new SkillLevel(Power: 187, MpCost: 34, InitialMpCost: 34, SpCost: 910,   Description: "Shot — power 187."),
+                new SkillLevel(Power: 78,  MpCost: 20,  SpCost: 160,   Description: "Shot — power 78."),
+                new SkillLevel(Power: 122, MpCost: 25,  SpCost: 910,   Description: "Shot — power 122."),
+                new SkillLevel(Power: 187, MpCost: 34,  SpCost: 910,   Description: "Shot — power 187."),
             }),
 
         // Armor Mastery — base fighter, all-weight defence + MP regen (data-driven).
@@ -169,11 +169,11 @@ public static partial class SkillCatalog
             Description: "A crushing sword/blunt blow — the warrior's Strike upgrade. Can strike for DOUBLE.",
             Levels: new[]
             {
-                new SkillLevel(Power: 105, MpCost: 20, InitialMpCost: 20, SpCost: 3400,  Description: "Smash — power 105."),
-                new SkillLevel(Power: 143, MpCost: 23, InitialMpCost: 23, SpCost: 6400,  Description: "Smash — power 143."),
-                new SkillLevel(Power: 191, MpCost: 25, InitialMpCost: 25, SpCost: 12000, Description: "Smash — power 191."),
-                new SkillLevel(Power: 251, MpCost: 30, InitialMpCost: 30, SpCost: 22000, Description: "Smash — power 251."),
-                new SkillLevel(Power: 326, MpCost: 35, InitialMpCost: 35, SpCost: 40000, Description: "Smash — power 326."),
+                new SkillLevel(Power: 105, MpCost: 20,  SpCost: 3400,  Description: "Smash — power 105."),
+                new SkillLevel(Power: 143, MpCost: 23,  SpCost: 6400,  Description: "Smash — power 143."),
+                new SkillLevel(Power: 191, MpCost: 25,  SpCost: 12000, Description: "Smash — power 191."),
+                new SkillLevel(Power: 251, MpCost: 30,  SpCost: 22000, Description: "Smash — power 251."),
+                new SkillLevel(Power: 326, MpCost: 35,  SpCost: 40000, Description: "Smash — power 326."),
             }),
 
         // Piercing Stab — ROGUE: continues the Stab BLOW chain, REPLACES Stab + Strike. Dual.
@@ -187,14 +187,14 @@ public static partial class SkillCatalog
                        + "critical/double (a soft 10% otherwise).",
             Levels: new[]
             {
-                new SkillLevel(Power: 314, MpCost: 18, InitialMpCost: 18, SpCost: 1700,  Description: "Piercing Stab — blow power 314."),
-                new SkillLevel(Power: 427, MpCost: 21, InitialMpCost: 21, SpCost: 3200,  Description: "Piercing Stab — blow power 427."),
-                new SkillLevel(Power: 571, MpCost: 24, InitialMpCost: 24, SpCost: 6000,  Description: "Piercing Stab — blow power 571."),
+                new SkillLevel(Power: 314, MpCost: 18,  SpCost: 1700,  Description: "Piercing Stab — blow power 314."),
+                new SkillLevel(Power: 427, MpCost: 21,  SpCost: 3200,  Description: "Piercing Stab — blow power 427."),
+                new SkillLevel(Power: 571, MpCost: 24,  SpCost: 6000,  Description: "Piercing Stab — blow power 571."),
                 // 28, not the CSV's original 58: he ruled it a typo on 2026-08-11 (*"should be 28.. a
                 // typeo"*) and edited `rogue 2nd.csv` line 19 himself. It had sat between level 3's
                 // 24 and level 5's 30 as the one spike in the line.
-                new SkillLevel(Power: 752, MpCost: 28, InitialMpCost: 28, SpCost: 11000, Description: "Piercing Stab — blow power 752."),
-                new SkillLevel(Power: 977, MpCost: 30, InitialMpCost: 30, SpCost: 20000, Description: "Piercing Stab — blow power 977."),
+                new SkillLevel(Power: 752, MpCost: 28,  SpCost: 11000, Description: "Piercing Stab — blow power 752."),
+                new SkillLevel(Power: 977, MpCost: 30,  SpCost: 20000, Description: "Piercing Stab — blow power 977."),
             }),
 
         // Precise Shot — ROGUE: continues the Shot chain at RANGE 700, REPLACES Shot + Strike.
@@ -207,11 +207,11 @@ public static partial class SkillCatalog
             Description: "A long-range aimed shot (reach 700) — the rogue's Shot upgrade. Can strike for DOUBLE.",
             Levels: new[]
             {
-                new SkillLevel(Power: 279, MpCost: 40, InitialMpCost: 40, SpCost: 1700,  Description: "Precise Shot — power 279."),
-                new SkillLevel(Power: 379, MpCost: 45, InitialMpCost: 45, SpCost: 3200,  Description: "Precise Shot — power 379."),
-                new SkillLevel(Power: 507, MpCost: 53, InitialMpCost: 53, SpCost: 6000,  Description: "Precise Shot — power 507."),
-                new SkillLevel(Power: 669, MpCost: 34, InitialMpCost: 34, SpCost: 11000, Description: "Precise Shot — power 669."),
-                new SkillLevel(Power: 868, MpCost: 67, InitialMpCost: 67, SpCost: 20000, Description: "Precise Shot — power 868."),
+                new SkillLevel(Power: 279, MpCost: 40,  SpCost: 1700,  Description: "Precise Shot — power 279."),
+                new SkillLevel(Power: 379, MpCost: 45,  SpCost: 3200,  Description: "Precise Shot — power 379."),
+                new SkillLevel(Power: 507, MpCost: 53,  SpCost: 6000,  Description: "Precise Shot — power 507."),
+                new SkillLevel(Power: 669, MpCost: 34,  SpCost: 11000, Description: "Precise Shot — power 669."),
+                new SkillLevel(Power: 868, MpCost: 67,  SpCost: 20000, Description: "Precise Shot — power 868."),
             }),
 
         // ===== Warrior 2nd-class (CSV warrior 2nd) =====
@@ -421,7 +421,7 @@ public static partial class SkillCatalog
         // Bow Expertise — long self-buff: +8% bow attack speed (requires a bow) for 20 min.
         new(BowExpertise, "Bow Expertise", BaseClass.Fighter, SkillEffect.BuffAtkSpeed,
             MpCost: 25, CastTicks: 30, CooldownTicks: 20, Range: 0, Power: 0,
-            DurationTicks: 12000, BuffKey: "bow_expertise", Rank: 1, InitialMpCost: 5,
+            DurationTicks: 12000, BuffKey: "bow_expertise", Rank: 1,  
             Category: SkillCategory.Buff, TargetMode: TargetMode.SelfOnly, SpCost: 22000,
             RequiredWeapon: WeaponType.Bow,
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffAtkSpeed, 0.08f) },

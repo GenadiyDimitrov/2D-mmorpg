@@ -12,7 +12,69 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-08-20 (latest) — the caster weapon rule collapses to ONE penalty, and the healer takes his own masteries
+## 2026-08-20 (latest) — a skill has ONE MP price: the CSVs collapse to one column, the engine splits 20/80
+
+⚠ **NO VERSION BUMP, and NO APK NEEDED.** No skill's total cost moved by a single point — the two CSV
+columns always summed to the total the code already carried, and `--check` runs clean on all seven
+compared files after the collapse, which is the proof. The client already showed the total and still
+does; everything new here is server-side.
+
+His ask: *"i sould like to be a one number .. players will see that its split at start and at finish ..
+but for the whole skill theyll need the full mp"*, then *"i can sum the IG values and we just split it
+in the code as 20/80 .. (looking at IG numbers they seem like a 20/80 split)"*.
+
+### 1. `INIT MP` + `FINIT MP` → one `MP` column
+
+Every `.csv` in `docs/data/classes_skills_csv/` (23 files) now carries the SUM in a single column. **Only those two cells were rewritten** — his instruction was explicit that a skill whose CSV
+row disagrees with the code stays as authored: *"do not fix skills in the code from the csv if they
+differ .. just colapce the two column into one"*. Nothing else in any file was touched, `buffer_auto
+3rd.md` included (it is the rejected generated draft and is not authoritative).
+
+🔑 **Why the ratio was never real.** His sheets split 20/80 on a heal and put the whole cost up front on
+a physical strike, and the code books physical skills the other way round (`Strike` authored 20/0,
+registered 0/20). Two spellings of one number, disagreeing for no design reason — which is exactly why
+`--check` had to sum them before comparing anything.
+
+### 2. The split moves into the engine, once, for everything
+
+`SkillMath.InitialMpFraction = 0.20f` — 20% charged when the cast starts, the remaining 80% when it
+lands. `SkillDef.InitialMpCost` and `SkillLevel.InitialMpCost` are **deleted** along with `InitialMpAt`
+/ `FinishMpAt`; ~180 authored per-skill values went with them across six skill files, and `RungCost` in
+`Skills.BuffLadders.cs` lost its `Init` field. Don't reinstate a per-skill split.
+
+What the split still buys, and the only reason it exists: **an interrupted cast keeps the 20%** (the
+price of trying) and is never charged the 80%.
+
+### 3. The cast gate asks for the WHOLE price — and for the price THIS caster pays
+
+Two bugs in one line. `HandleCastSkill` read `def.MpCostAt(...)` raw: the total (right), but the
+**authored** total, ignoring the caster's own MP-cost modifiers (wrong). Both charge points then applied
+`MpCostFactor` — so a debuffed caster could start a cast the gate had approved and be refused halfway.
+
+Everything now goes through one helper, `GameLoopService.EffectiveMpCost` = authored total ×
+`MpCostFactor`, and `MpCostFactor` runs **0.2× to 3×** (the reduction is clamped to `[-2, +0.8]`), not
+0.2×-1×. His worked example, which is now literally what happens:
+
+| caster | 100-MP skill costs | can cast at |
+|---|---|---|
+| plain | 100 | 100 MP |
+| −20% MP cost | 80 | 80 MP |
+| ×3 MP debuff | 300 | **300 MP** |
+
+The 20% up front is sliced off that effective number, and the finish charge is the **remainder** of it
+(`effective − CastInitialMpPaid`) rather than a second independently-rounded 80% — so the two halves
+always sum to exactly what the player was quoted, and a buff expiring mid-cast re-prices the balance
+instead of double-charging. The toggle path (`HandleToggle`) and auto-hunt's MP budget read the same
+helper.
+
+### 4. Tools
+
+`SkillCsvSeed` writes the one-column header and `def.MpCostAt`; `--check` reads column 9 as the total
+(it summed 9+10 before); `BalanceMatrix` reads `MpCostAt` instead of adding the two halves.
+
+---
+
+## 2026-08-20 — the caster weapon rule collapses to ONE penalty, and the healer takes his own masteries
 
 ⚠ **NO VERSION BUMP.** 🔴 **The buffer's two new learn lines NEED A NEW APK** — the Learn tab is built
 from the compiled `ClassSkills` the client ships with, not pushed by the server. Everything else here is

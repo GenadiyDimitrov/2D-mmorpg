@@ -1,50 +1,49 @@
-LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR, INIT MP,FINIT MP ,SP COST,REPLACES,RACE,Comment
-40,Spell Mastery,Passive,0,self,0,0,0,"with sword/blunt Decreses the reuse delay with 15%, mAtk +23, pAtk +18, mpReg x1.5,hpReg x1.1, cast speed x1.07",0,0,36k,[],, Continue the line
-40,Armor Mastery,Passive,0,self,0,0,0,"Robe: mpReg x1.2, pDef +39, maxMP +70; Light: mpReg x1.2, pDef +39, cast x1.9, as x2 (composes to cast x0.95 / as x1 after Spellcaster Mastery), evasion +2",0,0,36k,[],, Continue the line
-30,Shrouding Hymn,Magic/Buff,600,self/party,2,30,60,For 1 minute monsters that have not already noticed you and nearby allies leave you alone.,60,240,12000,[]
-40,Might L3,Magic/Buff,600,self/target,1,1,1200,+15% P.Atk.,10,40,12800,[],
-40,Bulwark L3,Magic/Buff,600,self/target,1,1,1200,+15% P.Def.,10,40,12800,[],
-40,Haste L2,Magic/Buff,600,self/target,1,1,1200,+23% Attack Speed.,8,32,6400,[],
-40,Agility L3,Magic/Buff,600,self/target,1,1,1200,+4 Evasion.,10,40,12800,[],
-44,Aim L3,Magic/Buff,600,self/target,1,1,1200,+4 Accuracy.,10,40,12800,[],
-44,Haste L3,Magic/Buff,600,self/target,1,1,1200,+33% Attack Speed.,10,40,12800,[],
-44,Vampirism L3,Magic/Buff,600,self/target,1,1,1200,+9% melee vampirism.,10,40,12800,[],
-48,Force L3,Magic/Buff,600,self/target,1,1,1200,+32% M.Atk.,10,40,12800,[],
-48,Ward L2,Magic/Buff,600,self/target,1,1,1200,+20% M.Def.,8,32,6400,[],
-48,Resolve L3,Magic/Buff,600,self/target,1,1,1200,+40 interrupt resistance.,8,35,12800,[],
-52,Ferocity L3,Magic/Buff,600,self/target,1,1,1200,+20% critical damage.,7,31,12800,[],
-52,Focus L5,Magic/Buff,600,self/target,1,1,1200,+25% critical rate.,9,37,50000,[],
-52,Ward L3,Magic/Buff,600,self/target,1,1,1200,+30% M.Def.,10,40,12800,[],
-52,Resolve L4,Magic/Buff,600,self/target,1,1,1200,+60 interrupt resistance.,10,40,25000,[],
-52,Insight L2,Magic/Buff,600,self/target,1,1,1200,+35% magic critical rate.,6,28,6400,[],
-56,Ferocity L6,Magic/Buff,600,self/target,1,1,1200,+35% critical damage.,10,40,100000,[],
-56,Focus L6,Magic/Buff,600,self/target,1,1,1200,+30% critical rate.,10,40,100000,[],
-56,Insight L4,Magic/Buff,600,self/target,1,1,1200,+65% magic critical rate.,8,34,25000,[],
-58,Great Group Might,Magic/Buff,600,self/party,1,1,1200,+5% P.Atk. Does not stack with Other Great Might|Bulwark effects effects.,8,34,25000,[],,Does not stack ('Great Bulwark'|'Great Group Bulwark'|'Great Might')
-58,Great Group Bulwark,Magic/Buff,600,self/party,1,1,1200,+5% P.Def. Does not stack with Other Great Might|Bulwark effects effects.,8,34,25000,[],,Does not stack ('Great Might'|'Great Group Might'|'Great Bulwark')
-60,Body L3,Magic/Buff,600,self/target,1,1,1200,+20% Max HP.,7,31,12800,[],
-60,Vigor L4,Magic/Buff,600,self/target,1,1,1200,+15% HP regeneration.,8,34,25000,[],
-60,Insight L6,Magic/Buff,600,self/target,1,1,1200,+100% magic critical rate.,10,40,100000,[],
-60,Soul L3,Magic/Buff,600,self/target,1,1,1200,+20% Max MP.,7,31,12800,[],
-60,Serenity L4,Magic/Buff,600,self/target,1,1,1200,+15% MP regeneration.,8,34,25000,[],
-60,Harmony of Protection,Magic/Buff,600,self/party,1.5,1,1200,"+25% P.Def & M.Def, +30% Max HP, +20% HP regen, +3 evasion, reflects 20% of melee damage (20 minutes).",40,160,100000,[],
-62,Body L5,Magic/Buff,600,self/target,1,1,1200,+30% Max HP.,9,37,50000,[],
-62,Vigor L6,Magic/Buff,600,self/target,1,1,1200,+20% HP regeneration.,10,40,100000,[],
-62,Soul L5,Magic/Buff,600,self/target,1,1,1200,+30% Max MP.,9,37,50000,[],
-62,Serenity L6,Magic/Buff,600,self/target,1,1,1200,+20% MP regeneration.,10,40,100000,[],
-62,Frenzy L3,Magic/Buff,600,self/target,1,1,1200,"−22% Max HP/MP, +6% offence and speed, +6 move, −8 evasion.",29,116,50000,[],
-62,Harmony of the Warrior,Magic/Buff,600,self/party,1.5,1,1200,"+12% P.Atk, +15% atk speed, +35% crit damage, +75% crit rate, +4 acc, 8% vamp, −20% physical-skill MP cost (20 minutes).",40,160,100000,[],
-64,Body L6,Magic/Buff,600,self/target,1,1,1200,+35% Max HP.,10,40,100000,[],
-64,Soul L6,Magic/Buff,600,self/target,1,1,1200,+35% Max MP.,10,40,100000,[],
-64,Frenzy L6,Magic/Buff,600,self/target,1,1,1200,"−10% Max HP/MP, +8% offence and speed, +8 move, −8 evasion.",35,140,100000,[],
-64,Harmony of the Wizard,Magic/Buff,600,self/party,1.5,1,1200,"+30% cast speed, +10% M.Atk, +20% MP regen, −30% magic-skill MP cost (20 minutes).",40,160,100000,[],
-58,Great Group Might,Magic/Buff,600,self/party,1,1,1200,+7% P.Atk. Does not stack with Other Great Might|Bulwark effects effects.,8,34,25000,[],,Does not stack ('Great Bulwark'|'Great Group Bulwark'|'Great Might')
-58,Great Group Bulwark,Magic/Buff,600,self/party,1,1,1200,+10% P.Def. Does not stack with Other Great Might|Bulwark effects effects.,8,34,25000,[],,Does not stack ('Great Might'|'Great Group Might'|'Great Bulwark')
-66,Shield Bless and harden,Magic/Buff,600,self/party,1,1,1200,"Increases Shield PDef with 50%, and shield chance with 30%",40,160,100000,[Swift Alacrity Agility Haste],
-66,Swift and Sure L6,Magic/Buff,600,self/party,1,1,1200,"Move +33, Cast +30%, Evasion +4, Attack Speed +33%.",40,160,100000,[Swift Alacrity Agility Haste],
-68,Might and Bulwark L6,Magic/Buff,600,self/party,1,1,1200,"+15% P.Atk, +15% P.Def, 9% melee vampirism, +4 Accuracy.",40,160,50000,[Might Bulwark Vampirism Aim],
-70,Force and Ward L6,Magic/Buff,600,self/party,1,1,1200,"+60 interrupt resistance, +32% M.Atk, +30% M.Def.",40,160,100000,[Force Ward Resolve],
-72,Focus and Ferocity L6,Magic/Buff,600,self/party,1,1,1200,"+30% critical rate, +35% critical damage, double magic critical rate.",40,160,100000,[Focus Ferocity Insight],
-74,Body and Soul L6,Magic/Buff,600,self/party,1,1,1200,"+20% HP and MP regeneration, +35% Max HP and Max MP.",40,160,100000,[Body Soul Vigor Serenity],
-58,Great Group Might,Magic/Buff,600,self/party,1,1,1200,+10% P.Atk. Does not stack with Other Great Might|Bulwark effects effects.,8,34,25000,[],,Does not stack ('Great Bulwark'|'Great Group Bulwark'|'Great Might')
-58,Great Group Bulwark,Magic/Buff,600,self/party,1,1,1200,+15% P.Def. Does not stack with Other Great Might|Bulwark effects effects.,8,34,25000,[],,Does not stack ('Great Might'|'Great Group Might'|'Great Bulwark')
+LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,REPLACES,RACE,Comment
+40,Spell Mastery,Passive,0,self,0,0,0,"with sword/blunt Decreses the reuse delay with 15%, mAtk +23, pAtk +18, mpReg x1.5,hpReg x1.1, cast speed x1.07",0,36k,[],, Continue the line
+40,Armor Mastery,Passive,0,self,0,0,0,"Robe: mpReg x1.2, pDef +39, maxMP +70; Light: mpReg x1.2, pDef +39, cast x1.9, as x2 (composes to cast x0.95 / as x1 after Spellcaster Mastery), evasion +2",0,36k,[],, Continue the line
+30,Shrouding Hymn,Magic/Buff,600,self/party,2,30,60,For 1 minute monsters that have not already noticed you and nearby allies leave you alone.,300,12000,[]
+40,Might L3,Magic/Buff,600,self/target,1,1,1200,+15% P.Atk.,50,12800,[],
+40,Bulwark L3,Magic/Buff,600,self/target,1,1,1200,+15% P.Def.,50,12800,[],
+40,Haste L2,Magic/Buff,600,self/target,1,1,1200,+23% Attack Speed.,40,6400,[],
+40,Agility L3,Magic/Buff,600,self/target,1,1,1200,+4 Evasion.,50,12800,[],
+44,Aim L3,Magic/Buff,600,self/target,1,1,1200,+4 Accuracy.,50,12800,[],
+44,Haste L3,Magic/Buff,600,self/target,1,1,1200,+33% Attack Speed.,50,12800,[],
+44,Vampirism L3,Magic/Buff,600,self/target,1,1,1200,+9% melee vampirism.,50,12800,[],
+48,Force L3,Magic/Buff,600,self/target,1,1,1200,+32% M.Atk.,50,12800,[],
+48,Ward L2,Magic/Buff,600,self/target,1,1,1200,+20% M.Def.,40,6400,[],
+48,Resolve L3,Magic/Buff,600,self/target,1,1,1200,+40 interrupt resistance.,43,12800,[],
+52,Ferocity L3,Magic/Buff,600,self/target,1,1,1200,+20% critical damage.,38,12800,[],
+52,Focus L5,Magic/Buff,600,self/target,1,1,1200,+25% critical rate.,46,50000,[],
+52,Ward L3,Magic/Buff,600,self/target,1,1,1200,+30% M.Def.,50,12800,[],
+52,Resolve L4,Magic/Buff,600,self/target,1,1,1200,+60 interrupt resistance.,50,25000,[],
+64,Frenzy,Magic/Buff,600,self/target,1,1,1200,"−10% Max HP/MP, +8% offence and speed, +8 move, −8 evasion.",175,100000,[],
+52,Insight L2,Magic/Buff,600,self/target,1,1,1200,+35% magic critical rate.,34,6400,[],
+56,Ferocity L6,Magic/Buff,600,self/target,1,1,1200,+35% critical damage.,50,100000,[],
+56,Focus L6,Magic/Buff,600,self/target,1,1,1200,+30% critical rate.,50,100000,[],
+56,Insight L4,Magic/Buff,600,self/target,1,1,1200,+65% magic critical rate.,42,25000,[],
+58,Great Group Might,Magic/Buff,600,self/party,1,1,1200,+5% P.Atk. Does not stack with Other Great Might|Bulwark effects effects.,42,25000,[],,Does not stack ('Great Bulwark'|'Great Group Bulwark'|'Great Might')
+58,Great Group Bulwark,Magic/Buff,600,self/party,1,1,1200,+5% P.Def. Does not stack with Other Great Might|Bulwark effects effects.,42,25000,[],,Does not stack ('Great Might'|'Great Group Might'|'Great Bulwark')
+60,Body L3,Magic/Buff,600,self/target,1,1,1200,+20% Max HP.,38,12800,[],
+60,Vigor L4,Magic/Buff,600,self/target,1,1,1200,+15% HP regeneration.,42,25000,[],
+60,Insight L6,Magic/Buff,600,self/target,1,1,1200,+100% magic critical rate.,50,100000,[],
+60,Soul L3,Magic/Buff,600,self/target,1,1,1200,+20% Max MP.,38,12800,[],
+60,Serenity L4,Magic/Buff,600,self/target,1,1,1200,+15% MP regeneration.,42,25000,[],
+60,Harmony of Protection,Magic/Buff,600,self/party,1.5,1,1200,"+25% P.Def & M.Def, +30% Max HP, +20% HP regen, +3 evasion, reflects 20% of melee damage (20 minutes).",200,100000,[],
+62,Body L5,Magic/Buff,600,self/target,1,1,1200,+30% Max HP.,46,50000,[],
+62,Vigor L6,Magic/Buff,600,self/target,1,1,1200,+20% HP regeneration.,50,100000,[],
+62,Soul L5,Magic/Buff,600,self/target,1,1,1200,+30% Max MP.,46,50000,[],
+62,Serenity L6,Magic/Buff,600,self/target,1,1,1200,+20% MP regeneration.,50,100000,[],
+62,Harmony of the Warrior,Magic/Buff,600,self/party,1.5,1,1200,"+12% P.Atk, +15% atk speed, +35% crit damage, +75% crit rate, +4 acc, 8% vamp, −20% physical-skill MP cost (20 minutes).",200,100000,[],
+64,Body L6,Magic/Buff,600,self/target,1,1,1200,+35% Max HP.,50,100000,[],
+64,Soul L6,Magic/Buff,600,self/target,1,1,1200,+35% Max MP.,50,100000,[],
+64,Harmony of the Wizard,Magic/Buff,600,self/party,1.5,1,1200,"+30% cast speed, +10% M.Atk, +20% MP regen, −30% magic-skill MP cost (20 minutes).",200,100000,[],
+58,Great Group Might,Magic/Buff,600,self/party,1,1,1200,+7% P.Atk. Does not stack with Other Great Might|Bulwark effects effects.,42,25000,[],,Does not stack ('Great Bulwark'|'Great Group Bulwark'|'Great Might')
+58,Great Group Bulwark,Magic/Buff,600,self/party,1,1,1200,+10% P.Def. Does not stack with Other Great Might|Bulwark effects effects.,42,25000,[],,Does not stack ('Great Might'|'Great Group Might'|'Great Bulwark')
+66,Shield Bless and harden,Magic/Buff,600,self/party,1,1,1200,"Increases Shield PDef with 50%, and shield chance with 30%",200,100000,[Swift Alacrity Agility Haste],
+66,Swift and Sure L6,Magic/Buff,600,self/party,1,1,1200,"Move +33, Cast +30%, Evasion +4, Attack Speed +33%.",200,100000,[Swift Alacrity Agility Haste],
+68,Might and Bulwark L6,Magic/Buff,600,self/party,1,1,1200,"+15% P.Atk, +15% P.Def, 9% melee vampirism, +4 Accuracy.",200,50000,[Might Bulwark Vampirism Aim],
+70,Force and Ward L6,Magic/Buff,600,self/party,1,1,1200,"+60 interrupt resistance, +32% M.Atk, +30% M.Def.",200,100000,[Force Ward Resolve],
+72,Focus and Ferocity L6,Magic/Buff,600,self/party,1,1,1200,"+30% critical rate, +35% critical damage, double magic critical rate.",200,100000,[Focus Ferocity Insight],
+74,Body and Soul L6,Magic/Buff,600,self/party,1,1,1200,"+20% HP and MP regeneration, +35% Max HP and Max MP.",200,100000,[Body Soul Vigor Serenity],
+58,Great Group Might,Magic/Buff,600,self/party,1,1,1200,+10% P.Atk. Does not stack with Other Great Might|Bulwark effects effects.,42,25000,[],,Does not stack ('Great Bulwark'|'Great Group Bulwark'|'Great Might')
+58,Great Group Bulwark,Magic/Buff,600,self/party,1,1,1200,+15% P.Def. Does not stack with Other Great Might|Bulwark effects effects.,42,25000,[],,Does not stack ('Great Might'|'Great Group Might'|'Great Bulwark')

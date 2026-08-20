@@ -803,7 +803,7 @@ public static partial class SkillCatalog
             MpCost: 30, CastTicks: 10, CooldownTicks: 100, Range: 600, Power: 0,
             Category: SkillCategory.Buff, SpCost: 0,
             FixedCast: true, FixedCooldown: true,
-            DurationTicks: 36000, BuffKey: "buff_preservation", Rank: 1, InitialMpCost: 6,
+            DurationTicks: 36000, BuffKey: "buff_preservation", Rank: 1,  
             KeepsBuffsOnDeath: true,
             ConsumableId: ItemCatalog.SkillStone, ConsumableAmount: 5,
             Description: "Blesses an ally (or yourself) so their other buffs SURVIVE their next death (only "
@@ -858,7 +858,7 @@ public static partial class SkillCatalog
         new(RiteOfPreservation, "Rite of Preservation", BaseClass.Mage, SkillEffect.None,
             MpCost: 300, CastTicks: 30, CooldownTicks: 36000, Range: 600, Power: 0,
             Category: SkillCategory.Buff, SpCost: 100000,
-            DurationTicks: 36000, BuffKey: "buff_preservation", Rank: 2, InitialMpCost: 60,
+            DurationTicks: 36000, BuffKey: "buff_preservation", Rank: 2,  
             KeepsBuffsOnDeath: true, AutoResurrect: true, ResExpPct: 1f,
             Description: "Blesses an ally (or yourself): they DIE normally, keep their buffs, and are "
                        + "offered a resurrection where they fell at 30% HP and MP, losing NO experience. "
@@ -871,7 +871,7 @@ public static partial class SkillCatalog
         new(UndyingWill, "Undying Will", BaseClass.Fighter, SkillEffect.None,
             MpCost: 300, CastTicks: 30, CooldownTicks: 36000, Range: 0, Power: 0,
             Category: SkillCategory.Buff, SpCost: 100000,
-            DurationTicks: 36000, BuffKey: "buff_preservation", Rank: 3, InitialMpCost: 60,
+            DurationTicks: 36000, BuffKey: "buff_preservation", Rank: 3,  
             TargetMode: TargetMode.SelfOnly,
             KeepsBuffsOnDeath: true, AutoResurrect: true, ResExpPct: 1f,
             Description: "You DIE normally and keep your buffs, then choose when to rise where you fell "

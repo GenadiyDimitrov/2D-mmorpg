@@ -99,7 +99,7 @@ public static partial class SkillCatalog
         new(id, name, BaseClass.Mage, effect,
             MpCost: 200, CastTicks: 15, CooldownTicks: 10, Range: 600, Power: 0,
             DurationTicks: 12000, BuffKey: buffKey, Rank: NpcBuffRank,
-            Category: SkillCategory.Buff, Magnitudes: mags, InitialMpCost: 40, SpCost: 100000,
+            Category: SkillCategory.Buff, Magnitudes: mags,  SpCost: 100000,
             // Party buffs, like the improved groups they sit above. This was already the recorded
             // decision in docs/design/BuffLadders.md: the autopilot hard-targets SELF for buffs, so a
             // single-target Harmony could never be handed out by a buffer left on auto-farm.

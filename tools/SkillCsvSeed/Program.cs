@@ -76,8 +76,11 @@ var groups = new (string File, Discipline[] Disciplines)[]
 // 3rd now closes at 75 and nothing falls in a gap.
 var bands = new (string Suffix, int Min, int Max)[] { ("3rd", 40, 75), ("4th", 76, 85) };
 
-const string Header = "LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR, " +
-                      "INIT MP,FINIT MP ,SP COST,REPLACES,RACE";
+// ⚠ ONE `MP` COLUMN since 2026-08-20. It was `INIT MP` + `FINIT MP`, and his own sheets never agreed on
+// a ratio because the ratio was never his decision — the engine now splits every skill 20/80 itself
+// (`SkillMath.InitialMpFraction`). What goes in this column is the skill's WHOLE price.
+const string Header = "LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR," +
+                      "MP,SP COST,REPLACES,RACE";
 
 int written = 0, skipped = 0;
 foreach (var (fileName, disciplines) in groups)
@@ -167,8 +170,7 @@ static string Row(SkillDef def, int learnLevel, int skillLevel, string? displayN
         F(def.RangeAt(skillLevel)), target,
         F(def.CastTicks / 10f), F(def.CooldownTicks / 10f), F(def.DurationTicks / 10f),
         Q(def.DescriptionAt(skillLevel)),
-        def.InitialMpAt(skillLevel).ToString(CultureInfo.InvariantCulture),
-        def.FinishMpAt(skillLevel).ToString(CultureInfo.InvariantCulture),
+        def.MpCostAt(skillLevel).ToString(CultureInfo.InvariantCulture),
         def.SpCostAt(skillLevel).ToString(CultureInfo.InvariantCulture),
         Q(replaces), raceTag);
 

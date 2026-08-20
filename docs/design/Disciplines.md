@@ -41,10 +41,10 @@ changing for this: 3rd-class skills already register per `(race, discipline)`.
 Same header as the 20-35 files, plus **`RACE`** at the end. Blank = every race.
 
 ```
-LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR, INIT MP,FINIT MP ,SP COST,REPLACES,RACE
-40,Shield Strike,physical active,40,enemy,0,6,0,power 210 + taunt - requires shield,32,0,12000,[],
-44,Ground Stomp,physical active,0,enemy,0,15,10,aoe radius 250 - taunt + atk -20%,60,0,24000,[],ork
-44,Rallying Shout,physical active,0,enemy,0,15,0,aoe radius 250 - taunt + shield 5% maxHP per enemy hit - cap 30%,60,0,24000,[],human
+LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,REPLACES,RACE
+40,Shield Strike,physical active,40,enemy,0,6,0,power 210 + taunt - requires shield,32,12000,[],
+44,Ground Stomp,physical active,0,enemy,0,15,10,aoe radius 250 - taunt + atk -20%,60,24000,[],ork
+44,Rallying Shout,physical active,0,enemy,0,15,0,aoe radius 250 - taunt + shield 5% maxHP per enemy hit - cap 30%,60,24000,[],human
 ```
 
 - **`RACE`** — `human` / `elf` / `ork`, or empty. One race per row; a skill for two races gets two rows

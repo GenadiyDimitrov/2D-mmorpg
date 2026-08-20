@@ -55,17 +55,17 @@ public static partial class SkillCatalog
         //       CSV's REPLACES column says and what keeps the bar from filling with obsolete rows. -----
         new(HolyRay, "Holy Ray", BaseClass.Mage, SkillEffect.MagicDamage,
             MpCost: 30, CastTicks: 25, CooldownTicks: 10, Range: 600, Power: 42,
-            Category: SkillCategory.Magic, InitialMpCost: 0, SpCost: 36000,
+            Category: SkillCategory.Magic,  SpCost: 36000,
             Replaces: new[] { HolyStrike },
             Description: "The healer's attack spell: faster and stronger than Holy Bolt, at shorter range."),
         new(GreatHeal, "Great Heal", BaseClass.Mage, SkillEffect.Heal,
             MpCost: 62, CastTicks: 50, CooldownTicks: 20, Range: 600, Power: 400,
-            Category: SkillCategory.Heal, InitialMpCost: 13, SpCost: 36000,
+            Category: SkillCategory.Heal,  SpCost: 36000,
             Replaces: new[] { Heal },
             Description: "Heals a single ally for 400."),
         new(PartyGreatHeal, "Party Great Heal", BaseClass.Mage, SkillEffect.Heal,
             MpCost: 124, CastTicks: 70, CooldownTicks: 50, Range: 600, Power: 320,
-            Category: SkillCategory.Heal, InitialMpCost: 26, SpCost: 36000,
+            Category: SkillCategory.Heal,  SpCost: 36000,
             TargetMode: TargetMode.AlliesInRadius, AreaRadius: 600f,
             Replaces: new[] { PartyHeal },
             Description: "Heals you and nearby party members for 320."),
@@ -74,7 +74,7 @@ public static partial class SkillCatalog
         // exactly as authored — you commit the whole cost on the finish.
         new(Conceal, "Conceal", BaseClass.Mage, SkillEffect.None,
             MpCost: 100, CastTicks: 50, CooldownTicks: 100, Range: 0, Power: 0,
-            DurationTicks: 300, BuffKey: "conceal", Rank: 1, InitialMpCost: 0,
+            DurationTicks: 300, BuffKey: "conceal", Rank: 1,  
             Category: SkillCategory.Buff, SpCost: 36000,
             TargetMode: TargetMode.SelfOnly, GrantsMobStealth: true,
             Description: "For 30s, monsters that haven't already noticed you leave you alone. " +
@@ -87,14 +87,14 @@ public static partial class SkillCatalog
         // retired next to a near-duplicate. It shipped as "Mending Light" at power 230.
         new(LbHumanMend, "Quick Great Heal", BaseClass.Mage, SkillEffect.Heal,
             MpCost: 93, CastTicks: 20, CooldownTicks: 10, Range: 600, Power: 400,
-            Category: SkillCategory.Heal, InitialMpCost: 19, SpCost: 36000,
+            Category: SkillCategory.Heal,  SpCost: 36000,
             Replaces: new[] { QuickHeal },
             Description: "A fast, powerful heal on a single ally. The Human Lightbringer's " +
                          "hallmark: more single-target throughput, less area coverage."),
         new(LbHumanGravity, "Gravity", BaseClass.Mage,
             SkillEffect.DebuffAtkSpeed | SkillEffect.DebuffCastSpeed,
             MpCost: 35, CastTicks: 25, CooldownTicks: 50, Range: 600, Power: 0,
-            DurationTicks: 300, BuffKey: "gravity", Rank: 1, InitialMpCost: 7,
+            DurationTicks: 300, BuffKey: "gravity", Rank: 1,  
             DebuffSchool: DebuffSchool.Magical, Category: SkillCategory.Debuff, SpCost: 36000,
             Magnitudes: new EffectMagnitude[]
             {
@@ -115,7 +115,7 @@ public static partial class SkillCatalog
         // ceiling Antidote runs on, so the two cures now sit on one ladder.
         new(LbElfDawn, "Healer Blessing", BaseClass.Mage, SkillEffect.Heal | SkillEffect.Cleanse,
             MpCost: 62, CastTicks: 30, CooldownTicks: 10, Range: 600, Power: 320,
-            Category: SkillCategory.Heal, InitialMpCost: 13, SpCost: 36000,
+            Category: SkillCategory.Heal,  SpCost: 36000,
             DispelMask: SkillEffect.Bleed | SkillEffect.Poison | SkillEffect.Venom,
             DispelMaxLevel: 3,
             Replaces: new[] { QuickHeal },
@@ -123,7 +123,7 @@ public static partial class SkillCatalog
                          "The Elf Lightbringer answers a hurt ally and a poisoned one with one cast."),
         new(LbElfBind, "Bind", BaseClass.Mage, SkillEffect.Root,
             MpCost: 35, CastTicks: 25, CooldownTicks: 50, Range: 600, Power: 0,
-            DurationTicks: 300, BuffKey: "root", Rank: 1, InitialMpCost: 7,
+            DurationTicks: 300, BuffKey: "root", Rank: 1,  
             DebuffSchool: DebuffSchool.Magical, Category: SkillCategory.Debuff, SpCost: 36000,
             Description: "Holds an enemy in place for 30s."),
         new(LbElfWarden, "Warding Step", BaseClass.Mage, SkillEffect.Root | SkillEffect.Detaunt,
@@ -145,7 +145,7 @@ public static partial class SkillCatalog
         // the same 40-level slot spent on ground you leave behind rather than on a cast you aim.
         new(LbOrkFont, "Healing Totem", BaseClass.Mage, SkillEffect.Heal,
             MpCost: 93, CastTicks: 10, CooldownTicks: 250, Range: 0, Power: 30,
-            Category: SkillCategory.Heal, InitialMpCost: 19, SpCost: 36000,
+            Category: SkillCategory.Heal,  SpCost: 36000,
             // SelfOnly, like the trap: you plant it where you stand, so the cast needs no target and
             // must not be rejected for lacking one.
             TargetMode: TargetMode.SelfOnly,
@@ -160,7 +160,7 @@ public static partial class SkillCatalog
         new(LbOrkArmorBreak, "Armor Break", BaseClass.Mage,
             SkillEffect.DebuffDef | SkillEffect.BuffMagicDef,
             MpCost: 35, CastTicks: 25, CooldownTicks: 50, Range: 600, Power: 0,
-            DurationTicks: 300, BuffKey: "armor_break", Rank: 1, InitialMpCost: 7,
+            DurationTicks: 300, BuffKey: "armor_break", Rank: 1,  
             DebuffSchool: DebuffSchool.Magical, Category: SkillCategory.Debuff, SpCost: 36000,
             Magnitudes: new EffectMagnitude[]
             {
