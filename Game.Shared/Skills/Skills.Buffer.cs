@@ -146,13 +146,13 @@ public static partial class SkillCatalog
         // ---- The MIGHT family, one button each (was a single four-effect "Might"). ----
         NpcSingle(NpcMight, "Might", BuffPAtk3, SkillEffect.BuffPhysAtk, "+15% P.Atk"),
         NpcSingle(NpcBulwark, "Bulwark", BuffPDef3, SkillEffect.BuffDef, "+15% P.Def"),
-        NpcSingle(NpcVampirism, "Vampirism", BuffVamp3, SkillEffect.BuffMeleeVamp, "9% melee vampirism"),
-        NpcSingle(NpcAccuracy, "Accuracy", BuffAcc3, SkillEffect.BuffAccuracy, "+4 Accuracy"),
+        NpcSingle(NpcVampirism, "Vampirism", BuffVamp5, SkillEffect.BuffMeleeVamp, "9% melee vampirism"),
+        NpcSingle(NpcAccuracy, "Accuracy", BuffAcc4, SkillEffect.BuffAccuracy, "+4 Accuracy"),
 
         // ---- The FORCE family (was a single three-effect "Force"). ----
-        NpcSingle(NpcForce, "Force", BuffMAtk3, SkillEffect.BuffMagAtk, "+32% M.Atk"),
-        NpcSingle(NpcWard, "Ward", BuffMDef3, SkillEffect.BuffMagicDef, "+30% M.Def"),
-        NpcSingle(NpcResolve, "Resolve", BuffIntr4, SkillEffect.BuffInterruptResist,
+        NpcSingle(NpcForce, "Force", BuffMAtk4, SkillEffect.BuffMagAtk, "+32% M.Atk"),
+        NpcSingle(NpcWard, "Ward", BuffMDef4, SkillEffect.BuffMagicDef, "+30% M.Def"),
+        NpcSingle(NpcResolve, "Resolve", BuffIntr7, SkillEffect.BuffInterruptResist,
             "+60 interrupt resistance"),
 
         // ---- The FOCUS family (was a single three-effect "Focus"). ----
@@ -177,11 +177,11 @@ public static partial class SkillCatalog
         //      can be checked without levelling a Warchanter to 74. ----
         NpcBuffGroup(NpcMightGroup, "Might and Bulwark",
             SkillEffect.BuffPhysAtk | SkillEffect.BuffDef | SkillEffect.BuffMeleeVamp | SkillEffect.BuffAccuracy,
-            new[] { BuffPAtk3, BuffPDef3, BuffVamp3, Rung(FamAccuracy, 3) },
+            new[] { BuffPAtk3, BuffPDef3, BuffVamp5, BuffAcc4 },
             "+15% P.Atk & P.Def, 9% melee vampirism, +4 accuracy"),
         NpcBuffGroup(NpcForceGroup, "Force and Ward",
             SkillEffect.BuffMagAtk | SkillEffect.BuffMagicDef | SkillEffect.BuffInterruptResist,
-            new[] { BuffMAtk3, BuffMDef3, BuffIntr4 },
+            new[] { BuffMAtk4, BuffMDef4, BuffIntr7 },
             "+32% M.Atk, +30% M.Def, +60 interrupt resistance"),
         NpcBuffGroup(NpcFocusGroup, "Focus and Ferocity",
             SkillEffect.BuffCritRate | SkillEffect.BuffCritDamage | SkillEffect.BuffMagicCritRate,

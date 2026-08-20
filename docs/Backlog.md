@@ -79,9 +79,13 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
 `BL-03` the Stat-Swap tab and `BL-04` the auto buff potion/scroll tab — the last two took `BL-39`
 (the Mindwriter's misleading `(cost …)`) out with them. See `CHANGELOG.md`. Two are left.
 
-- `BL-02` 🔵 **The 40+ class kits (3rd and 4th tier).** Blocked on your skill CSVs —
-  `docs/data/classes_skills_csv/` holds nothing above level 35. Still the single biggest content
-  unlock in the project; nothing is invented in the meantime, by your own rule.
+- `BL-02` 🔵 **The 40+ class kits (3rd and 4th tier)** — ✅ **ONE OF TEN IS DONE.** The
+  **Lightbringer (healer) shipped in 0.74.0**, 40 to 74, every rung off `healer 3rd.csv`, verified by
+  `SkillCsvSeed --check`. That is the proof the pipeline works end to end; the other nine disciplines
+  are unchanged and still blocked on your files. `buffer 3rd.csv` is a PLACEHOLDER seeded from code
+  (your own *"you shouldn't have built anything from the 3rd csvs as they are not finished"*), and the
+  eight fighter disciplines have no file at all. Still the single biggest content unlock in the
+  project; nothing is invented in the meantime, by your own rule.
 
 - `BL-05` 🔵 **Crafting — the two pieces you did NOT rule.** The system itself SHIPPED in 0.63.0
   (masters, six levels, the freeze, the grade ladder, the gear roll, the mat costs, quitting). What is
@@ -280,7 +284,9 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
   🔵 Open: does this cover **every** threat skill (`Lure`, the mob-only rogue pull, and any 40+ taunt from
   `BL-02`) or only single-target taunts? Assume all threat-generating skills unless he says otherwise.
 
-- `BL-84` ⏸ **RENAME EVERY SKILL ID TO MATCH ITS NAME — QUEUED BEHIND THE HEALER, ON HIS INSTRUCTION.**
+- `BL-84` 🔴 **RENAME EVERY SKILL ID TO MATCH ITS NAME — UNBLOCKED 2026-08-20: THE HEALER IS DONE.**
+  ⏰ This is the reminder you asked for. The trigger you named has fired — `healer 3rd.csv` is built and
+  shipped in 0.74.0 — so this is now next in the queue whenever you want it, not a filed idea.
   2026-08-17: *"After the healer is done I want to change all the game skills id's to match the skill
   names ... not `lb_elf_dawn` <> Healer's Blessing, it should be `healers_blessing` or something that
   matches it. Make a note to remind me after the healer is done (I want all the skills, not only the

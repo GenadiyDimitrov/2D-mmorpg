@@ -33,7 +33,8 @@ internal static class Check
         pct ? (v * 100f).ToString("0.##", CultureInfo.InvariantCulture) + "%"
             : v.ToString("0.##", CultureInfo.InvariantCulture);
 
-    private sealed record Spec(string File, BaseClass Base, Archetype? Archetype, int Min, int Max);
+    private sealed record Spec(string File, BaseClass Base, Archetype? Archetype, int Min, int Max,
+                               Discipline? Discipline = null);
 
     // ⚠ The BAND matters. A 2nd-class ladder does not stop where his file stops — `Elemental Bolt` is
     // registered at 20…80 while `nuker 2nd.csv` authors 20-35, and without the band every one of those
@@ -47,6 +48,17 @@ internal static class Check
         new("rogue 2nd",   BaseClass.Fighter, Archetype.Rogue,   20, 39),
         new("nuker 2nd",   BaseClass.Mage,    Archetype.Nuker,   20, 39),
         new("cleric 2nd",  BaseClass.Mage,    Archetype.Healer,  20, 39),
+        // ---- 3rd TIER. A discipline spec needs the DISCIPLINE as well, because two disciplines share
+        //      an archetype and `Cumulative` would otherwise hand back both kits as one.
+        //
+        // 🔑 ONLY FILES HE HAS FINISHED GO HERE. `healer 3rd` was added the day the healer was built
+        // (2026-08-20). `buffer 3rd` is deliberately absent: it is a PLACEHOLDER seeded FROM code, so
+        // checking it would only prove the seed round-trips — and the moment he authors it for real it
+        // earns its line. `nuker 3rd`, `dual 3rd` and the rest are the same.
+        //
+        // ⚠ The BAND is 40-75, not 40-74: the nuker's Elemental Burst caps its last rung at 75, and a
+        // tier's band is the tier, never where one file happens to stop.
+        new("healer 3rd",  BaseClass.Mage,    Archetype.Healer,  40, 75, Game.Shared.Discipline.Lightbringer),
     };
 
     /// <summary>One rung, from either side, reduced to the fields worth comparing.
@@ -100,6 +112,11 @@ internal static class Check
             if (line.Length == 0 || line.StartsWith('#') || line.StartsWith("LEARN")) continue;
             var f = SplitCsv(line);
             if (f.Count < 12) continue;
+            // ⚠ SKIP THE SECTION BANNERS. The 3rd-tier files separate their level blocks with a row of
+            // bare commas ending in `----40----`, which has the full column count and sails through the
+            // width test — producing a nameless "skill" at level 0 that then NAME-DRIFT-matched itself
+            // onto a real one and reported five invented mismatches. A row with no NAME is not a rung.
+            if (f[1].Trim().Length == 0) continue;
             rows.Add(new Rung(f[1].Trim(), I(f[0]), F(f[3]), F(f[5]), F(f[6]), F(f[7]),
                               I(f[9]), I(f[10]), Descr: f[8].Trim()));
         }
@@ -141,14 +158,23 @@ internal static class Check
         var seen = new HashSet<(string, int, int)>();
         var rows = new List<Rung>();
         foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
-            foreach (var cs in ClassSkills.Cumulative(race, spec.Base, spec.Archetype, null))
+            foreach (var cs in ClassSkills.Cumulative(race, spec.Base, spec.Archetype, spec.Discipline))
             {
                 if (cs.LearnLevel < spec.Min || cs.LearnLevel > spec.Max) continue;
                 if (!seen.Add((cs.SkillId, cs.SkillLevel, cs.LearnLevel))) continue;
                 if (SkillCatalog.Get(cs.SkillId) is not SkillDef def) continue;
+                // ⚠ THE STAT-SWAP PASSIVES ARE NOT CSV CONTENT. Ten of them sit at level 40 in every
+                // mage table (`Spirit (Power)`, `Insight (Vigour)`, …) and they are bought with GOLD, not
+                // SP. They are the "class balance" his 2026-08-10 purge explicitly spared, so they belong
+                // in no skill file and would report as ten phantom rows on every 3rd-tier check.
+                if (def.ExclusiveGroup.Length > 0) continue;
+                // A TOTEM's "duration" is its LIFE, not a buff duration — `PlacesTotem` skills carry
+                // DurationTicks 0 and TotemLifeTicks 300, while his DURATION column reads 30 (seconds).
+                // Comparing the wrong field made every totem rung a defect.
+                float duration = (def.PlacesTotem ? def.TotemLifeTicks : def.DurationTicks) / 10f;
                 rows.Add(new Rung(cs.DisplayName ?? def.Name, cs.LearnLevel,
-                    def.RangeAt(cs.SkillLevel), def.CastTicks / 10f, def.CooldownTicks / 10f,
-                    def.DurationTicks / 10f,
+                    def.RangeAt(cs.SkillLevel), def.CastTicksAt(cs.SkillLevel) / 10f, def.CooldownTicks / 10f,
+                    duration,
                     def.MpCostAt(cs.SkillLevel),
                     def.SpCostAt(cs.SkillLevel), Def: def, SkillLevel: cs.SkillLevel));
             }
@@ -351,8 +377,19 @@ internal static class Check
         return sb.ToString();
     }
 
-    private static int I(string s) =>
-        int.TryParse(s.Trim(), NumberStyles.Any, CultureInfo.InvariantCulture, out var v) ? v : 0;
+    /// <summary>An integer cell. ⚠ <b>A `k` SUFFIX IS THOUSANDS</b> — he writes SP as `36k` / `880k` in
+    /// the 3rd-tier files where the 1st/2nd ones spell `36000` out, and without this every one of those
+    /// ~300 rows parsed as 0 and reported as an SP mismatch against perfectly correct code. A parser
+    /// that reads a number it does not understand as ZERO is worse than one that refuses: it produced a
+    /// screen of confident, wrong defects the first time `healer 3rd` was checked.</summary>
+    private static int I(string s)
+    {
+        s = s.Trim();
+        bool thousands = s.EndsWith('k') || s.EndsWith('K');
+        if (thousands) s = s[..^1].Trim();
+        if (!float.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var v)) return 0;
+        return (int)Math.Round(thousands ? v * 1000f : v);
+    }
 
     private static float F(string s) =>
         float.TryParse(s.Trim(), NumberStyles.Any, CultureInfo.InvariantCulture, out var v) ? v : 0f;

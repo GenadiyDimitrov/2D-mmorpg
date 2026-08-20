@@ -49,7 +49,28 @@ internal static class Descr
         // POWER IS FIRST ON PURPOSE. Ties in distance fall back to this order, and his transfer/heal
         // lines put a stat word the same distance away on the other side ("Transfers 60 MP to an ally" —
         // `transfers` one char left, `mp` one char right). The number there is the skill's POWER.
-        ("power",         new[] { "power", "transfers", "heal for", "heals for", "restores" }),
+        // ⚠ TWO OF THESE ARE HIS EXACT PHRASES AND ARE HERE TO WIN A TIE, not to read new prose:
+        //  · "damages the mp"  — Mana Ray's row is *"Damages the MP of an enemy with +100 Power"*, and
+        //    the trailing "mp" sits EXACTLY 18 characters before the number, i.e. precisely on the
+        //    distance cap. Without a power alias at the same distance the drain read as MP REGEN.
+        //    `power` is the first entry in this table and `Nearest` keeps the earliest on a tie, so
+        //    naming his phrase here is what settles it.
+        //  · "friendly targets" — both totem rows put the pulse at the very end (*"heals nearby
+        //    friendly targets (300 range) for +64/s"*) with no stat word near it at all; the
+        //    parenthetical is stripped as commentary, which leaves this as the nearest anchor.
+        ("power",         new[] { "power", "transfers", "heal for", "heals for", "restores",
+                                  "damages the mp", "friendly targets" }),
+        // ⚠ THE SHIELD PAIR SITS ABOVE `pdef` ON PURPOSE — "Increases Shield PDef with 30%" contains
+        // `pdef` at the SAME distance from the number as `shield pdef`, and a tie keeps whichever metric
+        // comes first in this table. Below the plain stat, every Shield Harden rung compared against an
+        // ordinary P.Def the skill does not carry. "shield defence RATE" is the block CHANCE and "shield
+        // defence" is the shield's P.Def — two different stats one word apart — so the rate spellings
+        // must also be able to out-reach the other. ("shiled" is his spelling in `tank 2nd.csv`, and the
+        // CSV is the authority: the reader learns it rather than the file being corrected to suit it.)
+        ("blockrate",     new[] { "shield defence rate", "shield defense rate", "shield rate",
+                                  "block rate", "block chance" }),
+        ("shielddef",     new[] { "shield.p.def", "shiled defence", "shield defence", "shield def",
+                                  "shield pdef", "shield p.def" }),
         ("mdef",          new[] { "magic defence", "magic defense", "magic def", "m.def", "mdef" }),
         ("matk",          new[] { "magic attack", "m.atk", "matk", "mattack" }),
         ("patk",          new[] { "physical attack", "p.atk", "patk", "pattack", "p.attack" }),
@@ -59,6 +80,11 @@ internal static class Descr
         // ⚠ Bare `mp` / `hp` LAST in each list and AFTER maxmp/maxhp above: his warrior row writes the
         // regen multiplier as just "mp x1.1". A tie in distance keeps the earlier metric, so "maxMP +20"
         // still reads as maxmp and only a naked "mp" falls through to regen.
+        // ⚠ MP COST MUST OUT-REACH `mpreg` BELOW, whose alias list ends in a bare "mp". His healer rows
+        // read "Increase Physical and Magic MP Cost by 100%" and "Decrease Physical MP Cost by 15% and
+        // Magic MP Cost by 7%" — with only the bare "mp" to match on, every one of those numbers was
+        // filed as MP REGENERATION and reported as unreadable. Longest-first, and before mpreg.
+        ("mpcost",        new[] { "mp consumption", "mp cost", "mana cost", "mana consumption" }),
         ("mpreg",         new[] { "mp regeneration", "mp regen", "mpreg", "mp reg", "mp" }),
         ("hpreg",         new[] { "hp regeneration", "hp regen", "hpreg", "hp reg" }),
         ("cast",          new[] { "cast speed", "casting speed", "cast" }),
@@ -85,13 +111,6 @@ internal static class Descr
         ("interrupt",     new[] { "interrupt resistance", "interrupt" }),
         ("vamp",          new[] { "vampirism", "vamp" }),
         ("restoremp",     new[] { "mpwhenrestored", "mp when restored" }),
-        // ⚠ "shield defence RATE" is the block CHANCE and "shield defence" is the shield's P.Def — two
-        // different stats one word apart, so the rate spellings must be able to out-reach the other.
-        ("blockrate",     new[] { "shield defence rate", "shield defense rate", "shield rate",
-                                  "block rate", "block chance" }),
-        // "shiled" is his spelling in `tank 2nd.csv` and the CSV is the authority, so the reader learns
-        // it rather than the file being corrected to suit the reader.
-        ("shielddef",     new[] { "shield.p.def", "shiled defence", "shield defence", "shield def" }),
         ("bowrange",      new[] { "range" }),
         ("bowresist",     new[] { "bow resistance", "bow resist", "arrow defence" }),
         ("ccresist",      new[] { "cc resist", "ccresist" }),
@@ -101,6 +120,11 @@ internal static class Descr
         ("ccresist",      new[] { "resist to spt", "resist to con" }),
         ("cancelresist",  new[] { "cancel resist", "buff cancel resist" }),
         ("aggro",         new[] { "aggro", "threat" }),
+        // A REAGENT COUNT is checkable data, not noise: his two Ultimate heals read "Consumes 1 skill
+        // stone" / "Consumes 4 skill stones" against `ConsumableAmount`. Reading it beats an ignore
+        // rule — an ignore rule would have hidden a row that asked for four and got one.
+        ("reagent",       new[] { "consumes", "skill stones", "skill stone",
+                                  "elemental stones", "elemental stone" }),
         ("resexp",        new[] { "of lost exp", "lost exp" }),
         ("lifesteal",     new[] { "of the damage dealt", "of damage dealt", "heals you" }),
         // ONE number, FOUR stats — his Frenzy shorthand "+5% offence and speed" means P.Atk, M.Atk,
@@ -327,6 +351,16 @@ internal static class Descr
         // POWER — the single most-authored value in the files ("heal with power 400").
         if (scope is null) Add("power", false, def.PowerAt(level));
 
+        // SKILL MP-COST CHANGE (Mana Blessing makes them cheaper, Mana Strain dearer). Stored as a
+        // FRACTION on the SkillDef/SkillLevel because the SkillEffect enum is full; his rows write it
+        // as a percent, so it goes into the percent side of the pool. A curse stores it NEGATIVE and
+        // he authors it positive — Compare's sign-flip rule covers that, the same as an M.Def curse.
+        if (scope is null)
+        {
+            Add("mpcost", true, def.PhysMpCostPctAt(level));
+            Add("mpcost", true, def.MagicMpCostPctAt(level));
+        }
+
         // ARMOR MASTERY: the row for the named weight, or every row when unscoped.
         if (def.ArmorMasteryAt(level) is ArmorMasteryProfile amp)
         {
@@ -355,6 +389,7 @@ internal static class Descr
         if (scope is null)
         {
             Add("aggro", false, def.TauntPowerAt(level));
+            if (def.ConsumableId.Length > 0) Add("reagent", false, def.ConsumableAmount);
             Add("lifesteal", true, def.Lifesteal);
             Add("skilleva", true, def.SkillEvadeChance);
             Add("resexp", true, def.ResExpPctAt(level));
@@ -394,8 +429,16 @@ internal static class Descr
     private static void AddMagnitudes(Action<string, bool, float> add, SkillDef def, int level)
     {
         foreach (var mag in def.MagnitudesAt(level) ?? Array.Empty<EffectMagnitude>())
+        {
             if (Metric(mag.Effect) is string metric)
                 add(metric, mag.Mode == ModifierMode.Percent, mag.Value);
+            // ⚠ `DebuffAtk` IS BOTH CHANNELS — one flag that cuts P.Atk and M.Atk together (there is no
+            // `DebuffMagAtk`; the enum is full). `Metric` can only name one, so his Weapon Break row
+            // ("Decrease enemy P.Atk and M.Atk by 9%") had its M.Atk half read as a value the skill
+            // does not carry. Both halves are the same number, which is exactly what the flag means.
+            if (mag.Effect == SkillEffect.DebuffAtk)
+                add("matk", mag.Mode == ModifierMode.Percent, mag.Value);
+        }
     }
 
     /// <summary>A weapon-mastery slot, RAW — deliberately not <c>For()</c>; see the note at the call site.</summary>
@@ -583,6 +626,17 @@ internal static class Descr
                     continue;
                 }
                 if (values.Any(v => Math.Abs(v - t.Value) < 0.005f)) continue;
+                // 🔑 A REDUCTION IS AUTHORED POSITIVE AND STORED NEGATIVE, in the two places the engine
+                // has no debuff flag of its own: M.Def (no `DebuffMagicDef` exists — the enum is full,
+                // so an M.Def curse is a negative magnitude on `BuffMagicDef`) and Meditation's own
+                // −90% P.Def (a NEGATIVE `BuffDef`, deliberately not `DebuffDef`, which would have made
+                // a self-cast look offensive and demand an enemy target).
+                //
+                // His rows write both as plain positives — "Decrease enemy P.Def by 10% and MDef by 5%",
+                // "Decrease Pdef by 90%(x0.1)" — and the word that makes them reductions is prose the
+                // token reader does not parse. So a sign flip here is agreement, not a defect. ⚠ Only a
+                // FLIP: 5% against −5% passes, 5% against −6% still reports.
+                if (values.Any(v => v < 0f && Math.Abs(-v - t.Value) < 0.005f)) continue;
                 string shown = $"CSV {Show(t.Value, t.Pct)} vs code " +
                                string.Join(" / ", values.Select(v => Show(v, t.Pct)));
                 if (Ruled.TryGetValue((def.Name.ToLowerInvariant(), t.Metric), out var why))

@@ -91,7 +91,8 @@ public static partial class SkillCatalog
     public const string BuffAlacrityR = "buff_alacrity_r";  // +30% cast
     public const string BuffAgilityC = "buff_agility_c";    // +1 evasion
     public const string BuffAgilityU = "buff_agility_u";    // +2 evasion
-    public const string BuffAgilityR = "buff_agility_r";    // +4 evasion
+    public const string BuffAgility3 = "buff_agility_3";    // +3 evasion (healer @44) — rank 3
+    public const string BuffAgilityR = "buff_agility_r";    // +4 evasion — rank 4 since 2026-08-20
     public const string BuffHasteC = "buff_haste_c";        // +15% attack speed
     public const string BuffHasteU = "buff_haste_u";        // +23% attack speed
     public const string BuffHasteR = "buff_haste_r";        // +33% attack speed
@@ -527,7 +528,14 @@ public static partial class SkillCatalog
             new(SkillEffect.BuffEvasion, 1, ModifierMode.Flat), "+1 Evasion."),
         SingleBuff(BuffAgilityU, "Agility", FamEva, 2, SkillEffect.BuffEvasion,
             new(SkillEffect.BuffEvasion, 2, ModifierMode.Flat), "+2 Evasion."),
-        SingleBuff(BuffAgilityR, "Agility", FamEva, 3, SkillEffect.BuffEvasion,
+        // ---- Rung 3 is NEW (his `healer 3rd.csv` @44: *"+3 Evasion"*), and it INSERTS: the +4 rung
+        //      below moved from rank 3 to rank 4 to make room. Its ID did not move — `buff_agility_r`
+        //      is append-only and is what the Greater potion and scroll name — only its RANK changed,
+        //      and rank is a runtime comparison, never persisted. Aim (accuracy) took the identical
+        //      insertion on the same day; the two ladders are deliberate mirrors of each other. ----
+        SingleBuff(BuffAgility3, "Agility", FamEva, 3, SkillEffect.BuffEvasion,
+            new(SkillEffect.BuffEvasion, 3, ModifierMode.Flat), "+3 Evasion."),
+        SingleBuff(BuffAgilityR, "Agility", FamEva, 4, SkillEffect.BuffEvasion,
             new(SkillEffect.BuffEvasion, 4, ModifierMode.Flat), "+4 Evasion."),
 
         SingleBuff(BuffHasteC, "Haste", FamAs, 1, SkillEffect.BuffAtkSpeed,

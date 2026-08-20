@@ -116,7 +116,10 @@ public static partial class SkillCatalog
                     ChildBuffs: new[] { BuffPAtk3, BuffPDef3, BuffVamp2, BuffAcc2 },
                     Description: "+15% P.Atk, +15% P.Def, 6% melee vampirism, +2 Accuracy."),
                 new SkillLevel(MpCost: 200,  SpCost: 50000,
-                    ChildBuffs: new[] { BuffPAtk3, BuffPDef3, BuffVamp3, BuffAcc3 },
+                    // ⚠ BuffVamp5 / BuffAcc4 are the TOPS of their families, not typos: both ladders
+                    // gained middle rungs for his healer file on 2026-08-20 and everything above the
+                    // insertion renumbered. The numbers this level hands out did not change.
+                    ChildBuffs: new[] { BuffPAtk3, BuffPDef3, BuffVamp5, BuffAcc4 },
                     Description: "+15% P.Atk, +15% P.Def, 9% melee vampirism, +4 Accuracy."),
             }),
 
@@ -144,12 +147,10 @@ public static partial class SkillCatalog
                     Description: "+30 magic defence and 10% magic resistance."),
                 new SkillLevel(SpCost: 25000, Passive: new PassiveEffect(MagicDefence: 36, MagicResist: 0.10f),
                     Description: "+36 magic defence and 10% magic resistance."),
-                // Level 7 = the healer's level-40 row (`healer 3rd.csv`, his). His 40+ ladder continues
-                // to 74 in that file, but everything past this rung is marked "not done" and is not
-                // written here.
+                // Level 7 = the healer's level-40 row (`healer 3rd.csv`, his).
                 new SkillLevel(SpCost: 36000, Passive: new PassiveEffect(MagicDefence: 43, MagicResist: 0.15f),
                     Description: "+43 magic defence and 15% magic resistance."),
-            }),
+            }.Concat(HealerAntiMagicRungs()).ToArray()),
 
         // Vampiric Bolt — magic nuke that heals the caster for 40% of damage dealt. Level 1 is
         // the base-mage skill (@14); the Nuker CONTINUES it at levels 2-5 (@20/25/30/35).

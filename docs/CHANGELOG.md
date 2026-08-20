@@ -7,12 +7,182 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.73.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.74.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-08-20 (latest) — Mana Ray drains a SHARE OF THE TARGET'S POOL, not a magic-damage number
+## 2026-08-20 (latest) — THE HEALER IS BUILT: `healer 3rd.csv`, levels 40-74, end to end (0.74.0)
+
+**The Lightbringer is the first fully-authored 3rd class in the game.** He finished the file and said
+go — *"OK get the healer 3rd file and build away"* — so the 40+ purge no longer has a healer-shaped
+hole in it: every rung of the discipline, 40 to 74, comes off one of his rows. Roughly **340 authored
+rows** became **~430 learn entries**, 12 new skills and 6 re-laddered buff families.
+
+🔑 **`--check` NOW COVERS IT.** `tools/SkillCsvSeed --check` walked seven files before today; it walks
+eight, and `healer 3rd.csv` reports **zero discrepancies** with **every number either verified or
+explained by a ruling** (`--check -v`). That is what makes "the CSVs and the game move together"
+checkable for a 3rd-tier file rather than a promise — and it is the only reason a build this size can
+be called correct instead of merely finished.
+
+🔴 **NEEDS A NEW APK.** The Learn tab is built from the compiled `ClassSkills`, so none of this is
+reachable on his current phone build. 🔴 **And a `game.db` delete** — no schema changed, but the buff
+rung ids underneath six families moved (below).
+
+### What the discipline is
+
+Three races, one job, and the split happens **exactly twice** — once on the fast heal and once on the
+control debuff. Everything else in the 40-74 kit is shared.
+
+| | Human | Elf | Ork |
+|---|---|---|---|
+| its heal | **Quick Great Heal** — Great Heal's power on a 2s cast for 1.5x the MP | **Healer Blessing** — heals less, and cures bleed/poison up to a rank that climbs 3 → 9 | **Healing Totem** — planted ground, +64 → 150 HP/s for 30s |
+| its debuff | **Gravity** — −7 → −23% attack AND cast speed | **Bind** — a 30s hold at every rung | **Armor Break** — −10 → −30% P.Def, −5 → −15% M.Def |
+| extra | — | — | **Mana Totem** from 52 — +10 → 20 MP/s |
+
+**Twelve new skills**: Urgent Heal (a % of the target's OWN max HP, four rungs and then it stops for
+good — that is why it stays relevant at 74), Ultimate Heal and Ultimate Party Heal (Skill Stones, 1
+and 4), **Resurrection Field**, Mana Totem, **Mana Ray**, **Mana Strain**, Meditation, Weapon Break,
+Mana Blessing, and the **Great Might / Great Bulwark** pair.
+
+🔑 **GREAT MIGHT AND GREAT BULWARK SHARE A BUFF KEY.** That single line IS his *"Does not stack with
+Other Great Might|Bulwark effects"* — a shared family key is non-stacking in this engine, so the rule
+needed no new mechanism. Both sit at Rank 1 at every level so the choice stays re-makeable mid-fight;
+a rank ladder would have let a level-74 Might lock out a level-74 Bulwark. ⚠ They are NOT rungs of the
+ordinary Might/Bulwark families and must never be folded into them — they stack **on top**.
+
+### Three engine gaps his file opened
+
+1. **`SkillLevel.CastTicks`** — Resurrection's cast SHORTENS with its rung, 10s at 40 down to 5s from
+   62. It is the only ladder in the game that does that, and a res you can land inside a fight is now
+   something you **buy** rather than something cast speed alone gives you.
+2. **`SkillLevel.AreaRadius`** + **the area resurrect**. Resurrection Field is a res aimed at the
+   GROUND, and nothing else in the game targets the DEAD in an area (`PlayersInRadius` skips them by
+   construction). It needed its own scan (`DeadPartyInRadius`) and its own arm through all three places
+   a res is gated — hence `AreaResurrect(def)`, so the three cannot drift apart. The offer is still
+   **per person**: a res is a prompt the corpse answers, so a field is N offers, not one group decision.
+   ⚠ Its PvP flag is paid at EXECUTION, not at cast start like the single-target res — forced, because
+   at cast start it has no target to be flagged for. Worth a ruling if it matters.
+3. **`SkillLevel.PhysMpCostPct` / `MagicMpCostPct`.** Mana Blessing climbs 10 → 20% and Mana Strain
+   100 → 200%, and both fields lived on the SkillDef, which has one of each — so **every rung would
+   have silently applied rung 1's number**. Found by the DESCR reader the moment it was taught the
+   metric, which is precisely what that reader is for.
+
+### 🐛 CLARITY AND FORTITUDE WERE INERT — a bug found on the way past
+
+Their entire payload is the `CcResistMagical/Physical` **fields** (the SkillEffect enum is full), so
+their `Effect` is `None` — and the buff-apply arm in `ExecuteSkill` gated on `AnyBuff`. The cast landed,
+charged the MP, announced itself and **applied nothing**. It never showed because nothing could learn
+them until now. Fixed by adding `Category == Buff` to that gate, which is the same lesson
+`IsAllyTargetable` had already learned; every future field-only buff gets it free. Mana Strain needed
+the debuff twin of the same fix (`Category == Debuff` in the offensive-target test and the debuff arm).
+
+### ⚠ SIX BUFF LADDERS GREW A MIDDLE RUNG
+
+His file authored values that sit BETWEEN existing ones — M.Atk 28%, M.Def 23%, +3 accuracy, +3
+evasion, 7 and 8% vampirism, 36/42/48 interrupt. A family's rung index IS its rank, so the only
+monotonic way to hold a new middle value is to renumber everything above it.
+
+🔑 **No value changed anywhere.** The Greater potions, the NPC buffer, the improved groups and the
+Harmonies all still hand out exactly what they did — they just name a higher index. `BuffMAtk3` is
+28% now and `BuffMAtk4` is the 32% top; **read a const's comment, never its number.** Nothing persists
+a rung id (buffs die with the session), so no character carries a stale one.
+
+⚠ `interrupt` kept a rung nobody authors (40) between his 36 and 42, because `Force and Ward` levels
+3-4 hand it out and dropping it would have quietly retuned a group he has not re-authored. A ladder may
+carry a rung no CSV names; it may not carry one that goes backwards.
+
+**Shield Bless and Shield Harden are real ladders at last** — 5→30% over six rungs and 30→50% over
+three — so the buffer's `Shield Bless and Harden` group finally names the TOP of each family instead
+of a lone placeholder.
+
+### What is NOT here
+
+Five invented skills the discipline used to teach — **Blessing of Light, Devotion, Purify, Warding
+Step and Soul Sap** — are on none of his rows and are no longer granted by anybody. Their DEFS survive
+in the catalog (deleting one orphans every character who bought it). 🔴 That also settles the known
+overlap: `Warding Step` was an invented 8-second root sitting beside his 30-second `Bind`.
+
+`RegisterHealerMasteries()` is gone — it existed for one day, teaching the two masteries and Frenzy L2
+while `RegisterLightbringer()` was still commented out. Both would have registered every rung twice.
+
+### ✅ EVERY LADDER IN THE FILE NOW GOES UP — his four rulings, applied to BOTH sides
+
+The first pass mirrored a dozen flat rungs and dipping prices verbatim and reported them. **He ruled on
+all of them the same day**, so `healer 3rd.csv` and the code were corrected together and the file now
+has **zero MP dips, zero SP dips, and zero repeated descriptions** (machine-checked, not eyeballed).
+
+**His four rules, which are the durable part:**
+
+1. **Resurrection SP = the BUFF ladder** — *"Resurrection sp should match the buffs of the same lvl"*.
+   A res is priced like a blessing learned at the same character level (19k at 40 … 450k at 74), NOT
+   like the far dearer combat band ladder an attack or a heal runs on. His draft was already on it at
+   every rung but one: **56 read 81k where the buff price is 42k.** Restore Mana turns out to be on the
+   same ladder (its @72 read 200k, repeating @70 — now 330k), and so is Resurrection Field.
+2. **Antidote SP = the COMBAT band ladder** — *"as much as any other passive/active (except buffs and
+   resurrect)"* — and **its cure rank runs exactly one band behind the Elf's Healer Blessing**:
+   *"Elf learns tire 3 at 40 antidote tire 3 at 44... Elf tire 4 at 48 antidote t4 at 52"*.
+   The Elf first reaches rank 3/4/5/6/7/8/9 at 40/48/56/60/64/68/72, so Antidote reaches each one rung
+   later, at **44/52/58/62/66/70/74**. 🔑 That is the design in one line: the race that specialises in
+   curing always gets there first, and the general-purpose cure catches up.
+   ⚠ **That is SEVEN rungs, not the eight his draft had.** The level-64 row gave rank 7 at the *same*
+   level the Elf gets it and duplicated the 66 row, so no value could satisfy the rule — **the row was
+   removed** rather than given an invented number. Say so if that was not the intent.
+3. **A buff's MP is the standard price at the level it is learned.** Serenity's *"New insert"* @40 read
+   80 MP / 32k SP against every other 40-level buff's 60 / 19k.
+4. 🔑 **THE DIAGNOSTIC, and it is worth keeping**: *"if the 40 lvl description is the same as 44 one then
+   the description is wrong ... if the descr goes up then the mp is wrong — mp cost should match the
+   descr and should go up."* So a repeated description means the DESCRIPTION is the defect; a rising
+   description over a flat MP means the MP is.
+
+**What rule 4 caught.** A rung counts as repeated only when **nothing** in it improved — a mastery rung
+whose M.Atk is flat but whose regen climbs is fine, which is why Healer Weapon Mastery was left alone
+and Healer Armor Mastery (whose 48/52 pair improved in *nothing*) was not.
+
+| | was | now |
+|---|---|---|
+| Gravity 66-74 | flat 23% | the +2 stride continues → **25/27/29/31/33%** |
+| Armor Break 68-74 | flat 30% / 15% | **32/34/36/38%** P.Def, half that M.Def |
+| Armor Break @56 | 18% / **10%** (duplicating @58) | **9%** — M.Def is exactly half P.Def at every other rung |
+| Holy Ray @52 | 52 (duplicating @48) | **57**, continuing +5 and smoothing the +11 jump to 63 |
+| Quick Great Heal @72 | power 820 (duplicating @70) | **840** |
+| Mana Totem 64-72 | 14,15,16,17,18 with a flat pair | **15,16,17,18,19** — a clean +1 line, 10→20 |
+| Healer Armor Mastery @48 | pDef 50 (duplicating @52) | **47**, giving 39/44/47/50/53 |
+| Antidote @74 | MP 42 | **64** |
+| Mana Ray @68 | SP 280k (repeating @66) | **320k**, the band ladder |
+| Restore Mana @44 | DESCR 77 vs MP column 79 | **77** — the column moved to the text, per rule 4. The one lossy transfer in the game is gone |
+| Meditation @68 | MP 52 (repeating @64) | **57** |
+| Great Heal / Healer Blessing @74 | MP 117 | **120** |
+| Party Great Heal 72/74 · Ultimate Party Heal 72/74 | MP 228 | **234 / 240** |
+| Quick Great Heal @74 · Ultimate Heal @74 | MP 175 / 114 | **180 / 120** |
+| Ultimate Heal @72 | MP 114 | **117** |
+| Healing Totem · Mana Totem @74 | MP 464 | **476** |
+
+🔑 **THREE IDENTITIES IN HIS OWN FILE MADE MOST OF THIS DETERMINATE RATHER THAN GUESSWORK**, and they
+are worth knowing before anyone retunes these: **Party Great Heal MP = 2 × Great Heal MP** · **Ultimate
+Heal MP = Great Heal MP, and Quick Great Heal POWER = Great Heal power** · **Armor Break M.Def =
+P.Def ÷ 2**. Each holds at every rung and each broke in exactly the places above.
+
+⚠ **Bind is the one skill whose description legitimately repeats** — a hold is 30 seconds at rung 1 and
+at rung 14. What its ladder buys is the LEVEL CONTEST (`DebuffLandChance` reads the attacker's level)
+and the price, which is how every CC ladder in the game works.
+
+### The checker learned five things
+
+Each was a real blind spot, and four of them produced confident wrong output first:
+- **`36k` is 36000.** The 3rd-tier files write SP with a `k` suffix; the parser read every one as **0**
+  and reported ~300 SP mismatches against perfectly correct code. A parser that reads what it does not
+  understand as zero is worse than one that refuses.
+- **A section banner is not a rung.** `,,,,,,,,,,,,,----40----` has the full column count.
+- **A totem's "duration" is its LIFE** (`TotemLifeTicks`), not `DurationTicks`.
+- **A reduction is authored positive and stored negative** — M.Def curses and Meditation's −90% P.Def.
+- **The stat-swap passives are not CSV content**; they are bought with gold and his purge spared them.
+
+Plus four new metrics it can now read: `mpcost`, `reagent` (a Skill Stone count is checkable data, not
+noise), `shield pdef` above plain `pdef`, and `DebuffAtk` as **both** channels.
+
+
+## 2026-08-20 — Mana Ray drains a SHARE OF THE TARGET'S POOL, not a magic-damage number
 
 ⚠ **ENGINE ONLY — the skill itself is still NOT authored.** There is no `mana_ray` `SkillDef` and no
 class-table row; his `healer 3rd.csv` rungs (56-70) are still being written and were not touched here.

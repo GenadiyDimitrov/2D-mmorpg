@@ -182,9 +182,12 @@ public static partial class SkillCatalog
                     Description: "Transfers 52 MP to an ally (costs 52). Can't be used on yourself or another mana-restorer."),
                 new SkillLevel(MpCost: 60,  SpCost: 25000, Power: 60,
                     Description: "Transfers 60 MP to an ally (costs 60). Can't be used on yourself or another mana-restorer."),
-                new SkillLevel(MpCost: 70,  SpCost: 36000, Power: 70,
+                // Level 3 = his `healer 3rd.csv` @40 row: 70 power for 70 MP, and 19k SP (it was 36k
+                // before his file priced it — Restore Mana runs on the cheap support column, not the
+                // combat band ladder).
+                new SkillLevel(MpCost: 70,  SpCost: 19000, Power: 70,
                     Description: "Transfers 70 MP to an ally (costs 70). Can't be used on yourself or another mana-restorer."),
-            }),
+            }.Concat(HealerRestoreManaRungs()).ToArray()),
 
         // Body and Soul — the vitality group. Level 1 is exactly the +10% HP regen this buff has
         // always cast; the higher levels fold in MP regen, then Max HP, then Max MP, reaching the
@@ -280,16 +283,16 @@ public static partial class SkillCatalog
                     ChildBuffs: new[] { BuffIntr2, BuffMAtk2 },
                     Description: "+25 interrupt resistance and +25% M.Atk."),
                 new SkillLevel(MpCost: 170,  SpCost: 12800,
-                    ChildBuffs: new[] { BuffIntr3, BuffMAtk2, BuffMDef1 },
+                    ChildBuffs: new[] { BuffIntr4, BuffMAtk2, BuffMDef1 },
                     Description: "+40 interrupt resistance, +25% M.Atk, +10% M.Def."),
                 new SkillLevel(MpCost: 180,  SpCost: 25000,
-                    ChildBuffs: new[] { BuffIntr3, BuffMAtk3, BuffMDef2 },
+                    ChildBuffs: new[] { BuffIntr4, BuffMAtk4, BuffMDef2 },
                     Description: "+40 interrupt resistance, +32% M.Atk, +20% M.Def."),
                 new SkillLevel(MpCost: 190,  SpCost: 50000,
-                    ChildBuffs: new[] { BuffIntr4, BuffMAtk3, BuffMDef2 },
+                    ChildBuffs: new[] { BuffIntr7, BuffMAtk4, BuffMDef2 },
                     Description: "+60 interrupt resistance, +32% M.Atk, +20% M.Def."),
                 new SkillLevel(MpCost: 200,  SpCost: 100000,
-                    ChildBuffs: new[] { BuffIntr4, BuffMAtk3, BuffMDef3 },
+                    ChildBuffs: new[] { BuffIntr7, BuffMAtk4, BuffMDef4 },
                     Description: "+60 interrupt resistance, +32% M.Atk, +30% M.Def."),
             }),
 
@@ -349,9 +352,12 @@ public static partial class SkillCatalog
                 new SkillLevel(MpCost: 40,  SpCost: 12800,
                     ChildBuffs: new[] { Rung(FamFrenzy, 1) },
                     Description: "−30% Max HP/MP, +5% offence and speed, +5 move, −8 evasion."),
-                new SkillLevel(MpCost: 135,  SpCost: 25000,
+                // ⚠ Level 2 is 80 MP / 38k SP — his `healer 3rd.csv` @52 row, which is where BOTH the
+                // healer and the buffer learn this rung (*"Frenzy(L2) is learned from Healers and
+                // Buffers at 52"*). It was 135 / 25000 before his file priced it.
+                new SkillLevel(MpCost: 80,  SpCost: 38000,
                     ChildBuffs: new[] { Rung(FamFrenzy, 2) },
-                    Description: "−26% Max HP/MP, +6% offence and speed, +6 move, −8 evasion."),
+                    Description: "−10% Max HP/MP, +8% offence and speed, +8 move, −8 evasion."),
                 new SkillLevel(MpCost: 145,  SpCost: 50000,
                     ChildBuffs: new[] { Rung(FamFrenzy, 3) },
                     Description: "−22% Max HP/MP, +6% offence and speed, +6 move, −8 evasion."),
@@ -390,7 +396,7 @@ public static partial class SkillCatalog
             MpCost: 200, CastTicks: 10, CooldownTicks: 10, Range: 600, Power: 0,
             DurationTicks: 12000, BuffKey: "holy_shield", Rank: 1,  
             Category: SkillCategory.Buff, SpCost: 100000,
-            ChildBuffs: new[] { Rung(FamShieldDef, 1), Rung(FamShieldBlock, 1) },
+            ChildBuffs: new[] { Rung(FamShieldDef, 3), Rung(FamShieldBlock, 6) },
             TargetMode: TargetMode.AlliesInRadius, AreaRadius: 800f,
             Replaces: new[] { CastId(FamShieldDef), CastId(FamShieldBlock) },
             Description: "Blesses you and nearby allies with a sturdier shield: +50% shield P.Def and "
@@ -482,7 +488,14 @@ public static partial class SkillCatalog
                 // 25000, his 2026-08-19 price — the second cure is a level-35 purchase, not a cheap one.
                 new SkillLevel(MpCost: 20,  SpCost: 25000, DispelMaxLevel: 2,
                     Description: "Cures poison, venom and bleed of rank 2 or lower from an ally (or self)."),
-            }),
+                // Levels 3-9 = his `healer 3rd.csv` Antidote rows, at 44/52/58/62/66/70/74 — SEVEN rungs
+                // reaching rank 9, RE-RULED 2026-08-20.
+                //
+                // 🔑 THE CEILING IS ONE BAND BEHIND THE ELF'S HEALER BLESSING, which is the whole design:
+                // the Elf's heal-and-cure gets each rank first and Antidote catches up a rung later, so a
+                // dedicated cure never out-reaches the race that specialises in curing. See
+                // SkillCatalog.HealerAntidoteRungs for his wording and for why his level-64 row went.
+            }.Concat(HealerAntidoteRungs()).ToArray()),
 
         // Resurrection — revive a fallen ally to 30% HP/MP and restore a fraction of the exp they lost to
         // the death penalty. The target must be dead (checked at cast).
@@ -513,10 +526,15 @@ public static partial class SkillCatalog
                     Description: "Revive at 30% HP/MP. Does not give back any lost exp."),
                 new SkillLevel(MpCost: 90,  SpCost: 12800, ResExpPct: 0.20f,
                     Description: "Revive at 30% HP/MP; restore 20% of lost exp."),
-                // Level 3 = his `healer 3rd.csv` level-40 row. The rungs above it (his file sketches
-                // 40/50/60/70%) sit in the part he marked "not done", so they are NOT written here.
-                new SkillLevel(MpCost: 120,  SpCost: 36000, ResExpPct: 0.30f,
-                    Description: "Revive at 30% HP/MP; restore 30% of lost exp."),
-            }),
+                // Levels 3-16 = his `healer 3rd.csv` rows, 40 → 74. The exp restored climbs 35% → 100%
+                // in even 5-point steps, so a level-74 Lightbringer undoes a death completely.
+                //
+                // 🔑 THE CAST TIME IS PART OF THE LADDER — 10s at 40 down to 5s from 62 — which is the
+                // only ladder in the game that shortens a cast, and the reason `SkillLevel.CastTicks`
+                // exists at all. A res you can land inside a fight is something you BUY.
+                // 🔑 SP IS THE BUFF LADDER, rung for rung — his ruling 2026-08-20: *"Resurrection sp
+                // should match the buffs of the same lvl"*. Not the far dearer COMBAT band ladder an
+                // attack or a heal runs on: a res is priced like a blessing learned at the same level.
+            }.Concat(HealerResurrectionRungs()).ToArray()),
     };
 }

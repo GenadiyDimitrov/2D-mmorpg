@@ -466,6 +466,23 @@ public record SkillDef(
         return v > 0f ? v : MagicCritDamageDebuff;
     }
 
+    /// <summary>Skill MP-cost change at a LEVEL — positive makes skills CHEAPER (Mana Blessing),
+    /// negative DEARER (Mana Strain). ⚠ The "unset = inherit" test is <c>!= 0</c>, not <c>&gt; 0</c> like
+    /// its neighbours above: a negative value here is meaningful, and a <c>&gt; 0</c> test would have
+    /// thrown away every rung of the curse and silently fallen back to the def's.</summary>
+    public float PhysMpCostPctAt(int level)
+    {
+        float v = Lvl(level)?.PhysMpCostPct ?? 0f;
+        return v != 0f ? v : PhysMpCostPct;
+    }
+
+    /// <summary>See <see cref="PhysMpCostPctAt"/>.</summary>
+    public float MagicMpCostPctAt(int level)
+    {
+        float v = Lvl(level)?.MagicMpCostPct ?? 0f;
+        return v != 0f ? v : MagicMpCostPct;
+    }
+
     /// <summary>The highest ailment Rank this skill can strip at a LEVEL. A level's 0 means "inherit",
     /// so a cure with one flat ceiling needs no per-level entry (see SkillLevel.DispelMaxLevel).</summary>
     public int DispelMaxLevelAt(int level)
@@ -480,6 +497,26 @@ public record SkillDef(
     {
         float r = Lvl(level)?.Range ?? 0f;
         return r > 0f ? r : Range;
+    }
+
+    /// <summary>Base cast time at a LEVEL, in ticks (0 = inherit the SkillDef's). Almost every skill
+    /// casts in the same time at every rung — the exception is his Resurrection ladder, which is the
+    /// whole reason this exists: 10s at 40 down to 5s at 62 (`healer 3rd.csv`), so investing in the
+    /// skill is what makes a battlefield res possible, not just cast speed. Same "0 = inherit" shape
+    /// as <see cref="RangeAt"/>. ⚠ Cooldown deliberately has no twin — no authored ladder moves it.</summary>
+    public int CastTicksAt(int level)
+    {
+        int c = Lvl(level)?.CastTicks ?? 0;
+        return c > 0 ? c : CastTicks;
+    }
+
+    /// <summary>Area radius at a LEVEL (0 = inherit the SkillDef's). His Resurrection Field grows its
+    /// reach with the rung (600/700/800/900) while everything else about it stays put, so the radius
+    /// needs the same per-level treatment <see cref="RangeAt"/> gives reach.</summary>
+    public float AreaRadiusAt(int level)
+    {
+        float r = Lvl(level)?.AreaRadius ?? 0f;
+        return r > 0f ? r : AreaRadius;
     }
 
     /// <summary>Threat a HEAL is worth to every monster fighting the people it helped:
@@ -617,6 +654,12 @@ public record SkillLevel(
     // the exception: its whole ladder IS reach (200/400/600), because how far away you can start a
     // pull is the skill.
     float Range = 0f,
+    // BASE CAST TIME at THIS level, in ticks (0 = inherit the SkillDef's CastTicks). His Resurrection
+    // shortens from 10s to 5s as it climbs — the rung is what buys a res you can land in a fight.
+    int CastTicks = 0,
+    // AREA RADIUS at THIS level (0 = inherit the SkillDef's AreaRadius). Resurrection Field's reach
+    // is its ladder (600/700/800/900); nothing else in the game grows an area with its rung.
+    float AreaRadius = 0f,
     // HOW STRONG AN AILMENT THIS LEVEL CAN STRIP (0 = inherit the SkillDef's DispelMaxLevel). This is
     // a cure's whole ladder: WHAT it cures never changes, only how far up the ailment's own Rank it
     // can reach. Owner 2026-08-17: *"antidote have lvl and should cure poison + bleed below some level
@@ -629,7 +672,13 @@ public record SkillLevel(
     float CcResistPhysical = 0f,
     // MAGIC CRIT DAMAGE at THIS level (0 = inherit the SkillDef's). See SkillDef.MagicCritDamage.
     float MagicCritDamage = 0f,
-    float MagicCritDamageDebuff = 0f);
+    float MagicCritDamageDebuff = 0f,
+    // SKILL MP-COST CHANGE at THIS level (0 = inherit the SkillDef's). Positive = costs LESS (Mana
+    // Blessing), negative = costs MORE (Mana Strain). Both of those are LADDERS — 10/15/20% and
+    // 100%…200% — and without a per-level slot every rung would have silently applied rung 1's number,
+    // because the fields live on the SkillDef and a def has one of each.
+    float PhysMpCostPct = 0f,
+    float MagicMpCostPct = 0f);
 
 /// <summary>What a buff does to the four things a MONSTER pays out: experience, skill points, the
 /// gold it drops and the CHANCE its table rolls. The premium rune family (Rune of Experience /

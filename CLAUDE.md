@@ -210,8 +210,9 @@ version-shaped digest (goes stale between passes); `docs/Roadmap.md` is the full
 archive of past playtest queues. Built since this file's list was first written: the
 gold wallet, NPC vendors, teleport-for-fee, the buff ladder (potions + scrolls), party/grouping with
 loot modes, boss mechanics (±10-level rule, phases, adds, enrage), PvP/karma, auto-hunt, crafting, the
-generated level 1-90 world, the Unity client, and repeatable quests. Still to do: 3rd/4th class kits (blocked on the
-owner's CSVs); the 3-tab quest window; instances/dungeons; castles + vault
+generated level 1-90 world, the Unity client, and repeatable quests. Still to do: the remaining 3rd/4th class kits — the
+**Lightbringer (healer) is DONE** (0.74.0, 40-74, off `healer 3rd.csv`); the other nine disciplines are
+still blocked on his CSVs; the 3-tab quest window; instances/dungeons; castles + vault
 (consumes the `VendorBuyTaxRate` hook); perfect/excellent block; position bonuses; PvP/PvE damage
 multipliers (hooks default 1.0); the presentation pass. **Dropped, don't re-add:** a magic-resist stat
 and per-hit damage consumables — offence comes from the held **War Rune / Spell Rune** instead
@@ -280,9 +281,13 @@ changes a `SkillDef` or a `ClassSkill` and does not touch a CSV should make you 
 
 **Verify, don't eyeball:** `dotnet run --project tools/SkillCsvSeed -- --check` reads every authored row
 back against `ClassSkills.Cumulative` + `SkillCatalog`. Run it before committing skill work; it is the
-only thing that makes "at all times" checkable. ⚠ It compares learn level, range, cast, cooldown,
-duration, **MP total and SP** — it does **NOT** compare POWER, which lives in the free-text `DESCR`
-column. Power drift is therefore invisible to it and has to be read by hand.
+only thing that makes "at all times" checkable. It compares learn level, range, cast, cooldown,
+duration, **MP total and SP** — and since 2026-08-20 it ALSO READS THE FREE-TEXT `DESCR` COLUMN
+(`tools/SkillCsvSeed/Descr.cs`), where the power, the +M.Atk, the `mpReg x1.2` and the reuse % live.
+Every number in every checked file is now either verified or explained; `--check -v` shows the
+coverage, and a number it could not read prints as `UNREAD` rather than being silently skipped.
+⚠ **It only walks the files listed in `Check.Specs`** — the seven 1st/2nd files plus `healer 3rd`.
+A 3rd-tier file earns its line the day he finishes it, never while it is a placeholder.
 
 ## Style
 Keep changes consistent with the above. Prefer C# .NET idioms. For web/UI work the

@@ -33,9 +33,10 @@ public static partial class SkillCatalog
     public const string FamPhysDef = "def_phys";    // Bulwark — % P.Def
     public const string FamMagAtk  = "atk_mag";     // Force   — % M.Atk
     public const string FamMagDef  = "def_mag";     // Ward    — % M.Def
-    // Aim is accuracy's ladder and it is the exact mirror of Agility's (evasion): 1 / 2 / 4, its own
-    // potion and its own scroll. Hit and evasion are the two halves of one contest, so a player who
-    // can buy one must be able to buy the other (owner 2026-07-31).
+    // Aim is accuracy's ladder and it is the exact mirror of Agility's (evasion): 1 / 2 / 3 / 4, its
+    // own potion and its own scroll. Hit and evasion are the two halves of one contest, so a player
+    // who can buy one must be able to buy the other (owner 2026-07-31) — and when his healer file
+    // added a +3 rung to one on 2026-08-20, the other took it in the same pass for the same reason.
     public const string FamAccuracy = "accuracy";   // Aim     — flat accuracy
 
     // ---- Families with NO consumable at all: they exist only as children of a class buff.
@@ -65,11 +66,12 @@ public static partial class SkillCatalog
     // ---- THE SHIELD PAIR (owner, 2026-08-19). Two families, because his group at buffer 66 is
     //      "Shield Bless AND Harden" and *"it should rapladse Shield Harder and Shield Bless"* — a
     //      group names the singles it contains, so the singles have to exist for it to be one.
-    //      ⚠ EACH HAS EXACTLY ONE RUNG TODAY, and that rung is the GROUP's own number. He is writing
-    //      the real ladder now (*"im now authoring its singles in the healers file"*: Shield Harden is
-    //      already drafted at +5% @40 and +10% @48). When it lands, these become the TOP rungs of a
-    //      6-rung ladder and the group re-points at the top index — one line each, in Skills.Healer.cs.
-    //      Do NOT interpolate 5 → 50 here to fill the gap first.
+    //      ✅ BOTH ARE FULL LADDERS since 2026-08-20 — the healer authors Shield Bless at 5/10/15/20/
+    //      25/30% (@40-70) and Shield Harden at 30/40/50% (@58/66/72), and the group now points at the
+    //      TOP rung of each rather than at a lone placeholder. ⚠ He had them REVERSED in an earlier
+    //      draft and fixed it himself in the 40 row's comment (*"Changed to the rate increase buff
+    //      (harden at 58); my mistake to have them reversed"*): Bless is the block CHANCE, Harden the
+    //      shield's P.Def. Nothing in either family ever raises block REDUCTION (playtest 22).
     public const string FamShieldDef   = "shield_def";     // Shield Harden — % shield P.Def
     public const string FamShieldBlock = "shield_block";   // Shield Bless  — % block CHANCE (never reduction)
 
@@ -81,13 +83,30 @@ public static partial class SkillCatalog
 
     public const string BuffPAtk1 = "buff_atk_phys_1", BuffPAtk2 = "buff_atk_phys_2", BuffPAtk3 = "buff_atk_phys_3";
     public const string BuffPDef1 = "buff_def_phys_1", BuffPDef2 = "buff_def_phys_2", BuffPDef3 = "buff_def_phys_3";
-    public const string BuffMAtk1 = "buff_atk_mag_1",  BuffMAtk2 = "buff_atk_mag_2",  BuffMAtk3 = "buff_atk_mag_3";
-    public const string BuffMDef1 = "buff_def_mag_1",  BuffMDef2 = "buff_def_mag_2",  BuffMDef3 = "buff_def_mag_3";
+    // ⚠⚠ SIX LADDERS GREW A MIDDLE RUNG on 2026-08-20, when his `healer 3rd.csv` authored values that
+    // sat BETWEEN two existing ones (M.Atk 28, M.Def 23, accuracy 3, evasion 3, vampirism 7 and 8,
+    // interrupt 36/42/48). A family's rung index IS its rank, so the only monotonic way to hold a new
+    // middle value is to renumber everything above it — which is why the "top" const of each of those
+    // families is no longer the number you would guess from its name.
+    //
+    // 🔑 What did NOT change: the family's TOP VALUE, and every consumer of it. The Greater potions,
+    // the NPC buffer, the improved groups and the Harmonies all still hand out exactly what they did
+    // — they just name a higher index to do it. Read a const's COMMENT, never its number.
+    // ⚠ Ids are append-only and none was reused: `buff_atk_mag_3` still exists, it just means 28% now.
+    // Nothing persists a rung id (buffs die with the session), so no character carries a stale one.
+    public const string BuffMAtk1 = "buff_atk_mag_1",  BuffMAtk2 = "buff_atk_mag_2";
+    public const string BuffMAtk3 = "buff_atk_mag_3",  BuffMAtk4 = "buff_atk_mag_4";   // 28% / 32% ← TOP
+    public const string BuffMDef1 = "buff_def_mag_1",  BuffMDef2 = "buff_def_mag_2";
+    public const string BuffMDef3 = "buff_def_mag_3",  BuffMDef4 = "buff_def_mag_4";   // 23% / 30% ← TOP
 
     public const string BuffVamp1 = "buff_vamp_1", BuffVamp2 = "buff_vamp_2", BuffVamp3 = "buff_vamp_3";
-    public const string BuffAcc1  = "buff_accuracy_1", BuffAcc2 = "buff_accuracy_2", BuffAcc3 = "buff_accuracy_3";
+    public const string BuffVamp4 = "buff_vamp_4", BuffVamp5 = "buff_vamp_5";          //  8% /  9% ← TOP
+    public const string BuffAcc1  = "buff_accuracy_1", BuffAcc2 = "buff_accuracy_2";
+    public const string BuffAcc3  = "buff_accuracy_3", BuffAcc4 = "buff_accuracy_4";   // +3 / +4 ← TOP
     public const string BuffIntr1 = "buff_interrupt_1", BuffIntr2 = "buff_interrupt_2";
-    public const string BuffIntr3 = "buff_interrupt_3", BuffIntr4 = "buff_interrupt_4";
+    public const string BuffIntr3 = "buff_interrupt_3", BuffIntr4 = "buff_interrupt_4";  // 36 / 40
+    public const string BuffIntr5 = "buff_interrupt_5", BuffIntr6 = "buff_interrupt_6";  // 42 / 48
+    public const string BuffIntr7 = "buff_interrupt_7";                                  // 60 ← TOP
 
     // ---------------------------------------------------------------------------------------
     //  Consumable skill ids (the item's UseSkillId). The item owns the rarity; the SKILL owns
@@ -255,16 +274,23 @@ public static partial class SkillCatalog
         // the base-mage and cleric Might already casts, so nobody's buff changes number today.
         list.AddRange(Ladder(FamPhysAtk, "Might",   SkillEffect.BuffPhysAtk, ModifierMode.Percent, "P.Atk", 0.08f, 0.12f, 0.15f));
         list.AddRange(Ladder(FamPhysDef, "Bulwark", SkillEffect.BuffDef,     ModifierMode.Percent, "P.Def", 0.08f, 0.12f, 0.15f));
-        // M.Atk tops out at the NPC buffer's 32%; the middle rung is the cleric's current 25%.
-        // Percent M.Atk is authored at the EFFECTIVE value (see docs — magic-buff authoring).
-        list.AddRange(Ladder(FamMagAtk,  "Force",   SkillEffect.BuffMagAtk,  ModifierMode.Percent, "M.Atk", 0.15f, 0.25f, 0.32f));
-        list.AddRange(Ladder(FamMagDef,  "Ward",    SkillEffect.BuffMagicDef,ModifierMode.Percent, "M.Def", 0.10f, 0.20f, 0.30f));
-        // Aim mirrors Agility exactly — the two sides of the hit/evade contest cost the same.
-        list.AddRange(Ladder(FamAccuracy,"Aim",     SkillEffect.BuffAccuracy,ModifierMode.Flat,    "Accuracy", 1, 2, 4));
+        // M.Atk tops out at the NPC buffer's 32%; rung 2 is the cleric's 25% (`cleric 2nd.csv` @25)
+        // and rung 3 the healer's 28% (`healer 3rd.csv` @44). Percent M.Atk is authored at the
+        // EFFECTIVE value (see docs — magic-buff authoring).
+        list.AddRange(Ladder(FamMagAtk,  "Force",   SkillEffect.BuffMagAtk,  ModifierMode.Percent, "M.Atk", 0.15f, 0.25f, 0.28f, 0.32f));
+        // Ward: 10% is the cleric's @35, 23% the healer's @44, 30% his @52 (and the NPC buffer's).
+        list.AddRange(Ladder(FamMagDef,  "Ward",    SkillEffect.BuffMagicDef,ModifierMode.Percent, "M.Def", 0.10f, 0.20f, 0.23f, 0.30f));
+        // Aim mirrors Agility exactly — the two sides of the hit/evade contest cost the same. Both
+        // grew a +3 rung for his healer @44/@48; see the note on BuffAgility3 in Skills.Common.cs.
+        list.AddRange(Ladder(FamAccuracy,"Aim",     SkillEffect.BuffAccuracy,ModifierMode.Flat,    "Accuracy", 1, 2, 3, 4));
 
         // ===== No-consumable families — class buffs only =====
-        list.AddRange(Ladder(FamVamp,     "Vampirism", SkillEffect.BuffMeleeVamp,      ModifierMode.Percent, "melee vampirism", 0.03f, 0.06f, 0.09f));
-        list.AddRange(Ladder(FamInterrupt,"Resolve",   SkillEffect.BuffInterruptResist,ModifierMode.Flat,    "interrupt resistance", 18, 25, 40, 60));
+        list.AddRange(Ladder(FamVamp,     "Vampirism", SkillEffect.BuffMeleeVamp,      ModifierMode.Percent, "melee vampirism", 0.03f, 0.06f, 0.07f, 0.08f, 0.09f));
+        // ⚠ 40 IS NOT ONE OF HIS NUMBERS and is kept anyway. His healer authors 36 / 42 / 48 (@44/52/60)
+        // between the cleric's 25 and the NPC buffer's 60 — but 40 was already the rung `Force and Ward`
+        // levels 3-4 hand out, and dropping it would silently retune a group nobody has re-authored.
+        // A ladder may carry a rung no CSV names; it may not carry one that goes backwards.
+        list.AddRange(Ladder(FamInterrupt,"Resolve",   SkillEffect.BuffInterruptResist,ModifierMode.Flat,    "interrupt resistance", 18, 25, 36, 40, 42, 48, 60));
 
         // ===== Scroll-only families — SIX rungs; the scrolls are rungs 2 / 4 / 6 =====
         list.AddRange(Ladder(FamMaxHp,   "Body",     SkillEffect.BuffHp,           ModifierMode.Percent, "Max HP", 0.10f, 0.15f, 0.20f, 0.25f, 0.30f, 0.35f));
@@ -282,22 +308,33 @@ public static partial class SkillCatalog
         // exactly what the rank rule cannot express. Rung 1 = the cleric's Frenzy today (bar that
         // evasion), rung 6 = the NPC buffer's.
         // ===== Control resistance, per school — only the rungs he has authored =====
-        // Fortitude is his level-40 healer row ("15% resist to CON debuffs") and still stands alone.
-        // ⚠ Inventing rungs to fill a ladder out is exactly what BL-02 forbids, and a resist ladder is
-        // not a curve anyone can guess — 20/30% and 15% are not even the same number line.
-        //
-        // Clarity gained a rung on 2026-08-19: he put it on `cleric 2nd.csv` at level 25 for **20%**,
-        // below the **30%** his `healer 3rd.csv` already gave at 40. So 20% is rung 1 and the healer's
-        // grant moved up to rung 2 — it keeps the number he authored for it (ClassSkillTables.Third).
-        // ===== The shield pair — one rung each, at the group's own numbers (see the family consts) =====
+        // Every rung below is his: `cleric 2nd.csv` @25 for Clarity's first, `healer 3rd.csv` for the
+        // other seven. ⚠ Inventing rungs to fill a ladder out is exactly what BL-02 forbids, and a
+        // resist ladder is not a curve anyone can guess — the two schools do not even share a shape.
+        // ===== The shield pair — full ladders since his healer file authored the singles =====
         // Both are PERCENT of what the shield already carries, which makes them free of a "do you have
         // a shield" check: a bare arm has 0 shield defence and 0 block chance, and 0 × 1.5 is still 0.
-        list.AddRange(Ladder(FamShieldDef,   "Shield Harden", SkillEffect.BuffShieldDef,   ModifierMode.Percent, "shield P.Def", 0.50f));
-        list.AddRange(Ladder(FamShieldBlock, "Shield Bless",  SkillEffect.BuffBlockChance, ModifierMode.Percent, "block chance", 0.30f));
+        //
+        // ✅ BOTH ARE REAL LADDERS SINCE 2026-08-20 — the singles he promised (*"im now authoring its
+        // singles in the healers file"*) landed in `healer 3rd.csv`, so the one-rung placeholders are
+        // gone. Shield Bless climbs 5 → 30% over six rungs (40/48/56/62/66/70) and Shield Harden
+        // 30 → 50% over three (58/66/72). The TOP of each is unchanged, which is what keeps
+        // `Shield Bless and Harden` (the buffer's group @66) handing out exactly what it always did.
+        list.AddRange(Ladder(FamShieldDef,   "Shield Harden", SkillEffect.BuffShieldDef,   ModifierMode.Percent, "shield P.Def", 0.30f, 0.40f, 0.50f));
+        list.AddRange(Ladder(FamShieldBlock, "Shield Bless",  SkillEffect.BuffBlockChance, ModifierMode.Percent, "block chance", 0.05f, 0.10f, 0.15f, 0.20f, 0.25f, 0.30f));
 
+        // Clarity: 20% is the cleric's @25; 30/40/50 are the healer's @40/48/56.
         list.Add(CcResistRung(FamCcResMag, "Clarity", 1, magical: 0.20f));
         list.Add(CcResistRung(FamCcResMag, "Clarity", 2, magical: 0.30f));
+        list.Add(CcResistRung(FamCcResMag, "Clarity", 3, magical: 0.40f));
+        list.Add(CcResistRung(FamCcResMag, "Clarity", 4, magical: 0.50f));
+        // Fortitude is the healer's alone — 15/20/30/40% at 40/52/64/72. ⚠ It climbs SLOWER than
+        // Clarity and ends lower on purpose: the physical school is the one CON already defends, and
+        // his two 40-level rows (30% vs 15%) set that gap on the first rung.
         list.Add(CcResistRung(FamCcResPhys, "Fortitude", 1, physical: 0.15f));
+        list.Add(CcResistRung(FamCcResPhys, "Fortitude", 2, physical: 0.20f));
+        list.Add(CcResistRung(FamCcResPhys, "Fortitude", 3, physical: 0.30f));
+        list.Add(CcResistRung(FamCcResPhys, "Fortitude", 4, physical: 0.40f));
 
         // ═══ RUNGS 1 AND 2 ARE HIS, verbatim (2026-08-20) ═══════════════════════════════════════════
         //   L1, cleric @35:            −7% HP/MP, +5% P/M.Atk, +5% atk/cast speed, +5 move, −5 eva
@@ -356,13 +393,13 @@ public static partial class SkillCatalog
         Pair(PotBulwarkR, ScrBulwarkR, "Bulwark Potion (Greater)", "Scroll of Bulwark (Greater)", BuffPDef3, SkillEffect.BuffDef, "+15% P.Def");
         Pair(PotForceC, ScrForceC, "Force Potion (Lesser)",  "Scroll of Force (Lesser)",  BuffMAtk1, SkillEffect.BuffMagAtk, "+15% M.Atk");
         Pair(PotForceU, ScrForceU, "Force Potion",           "Scroll of Force",           BuffMAtk2, SkillEffect.BuffMagAtk, "+25% M.Atk");
-        Pair(PotForceR, ScrForceR, "Force Potion (Greater)", "Scroll of Force (Greater)", BuffMAtk3, SkillEffect.BuffMagAtk, "+32% M.Atk");
+        Pair(PotForceR, ScrForceR, "Force Potion (Greater)", "Scroll of Force (Greater)", BuffMAtk4, SkillEffect.BuffMagAtk, "+32% M.Atk");
         Pair(PotWardC, ScrWardC, "Ward Potion (Lesser)",  "Scroll of Ward (Lesser)",  BuffMDef1, SkillEffect.BuffMagicDef, "+10% M.Def");
         Pair(PotWardU, ScrWardU, "Ward Potion",           "Scroll of Ward",           BuffMDef2, SkillEffect.BuffMagicDef, "+20% M.Def");
-        Pair(PotWardR, ScrWardR, "Ward Potion (Greater)", "Scroll of Ward (Greater)", BuffMDef3, SkillEffect.BuffMagicDef, "+30% M.Def");
+        Pair(PotWardR, ScrWardR, "Ward Potion (Greater)", "Scroll of Ward (Greater)", BuffMDef4, SkillEffect.BuffMagicDef, "+30% M.Def");
         Pair(PotAimC, ScrAimC, "Aim Potion (Lesser)",  "Scroll of Aim (Lesser)",  Rung(FamAccuracy, 1), SkillEffect.BuffAccuracy, "+1 Accuracy");
         Pair(PotAimU, ScrAimU, "Aim Potion",           "Scroll of Aim",           Rung(FamAccuracy, 2), SkillEffect.BuffAccuracy, "+2 Accuracy");
-        Pair(PotAimR, ScrAimR, "Aim Potion (Greater)", "Scroll of Aim (Greater)", Rung(FamAccuracy, 3), SkillEffect.BuffAccuracy, "+4 Accuracy");
+        Pair(PotAimR, ScrAimR, "Aim Potion (Greater)", "Scroll of Aim (Greater)", BuffAcc4, SkillEffect.BuffAccuracy, "+4 Accuracy");
 
         // Scroll-only families. The rarity is the PRICE tier, the rung is the POWER — Epic reads
         // rung 2, Legendary rung 4, Mythic rung 6. There is no potion of any of these.
@@ -405,62 +442,82 @@ public static partial class SkillCatalog
                 $"Blesses an ally (or self) with {what} for 20 minutes.", costs));
 
         // The prices below are read straight off his sheets — `mage 1st.csv` (rungs a base mage buys),
-        // `cleric 2nd.csv` (2026-08-19) and `buffer 3rd.csv`. A `default` entry is a rung no CSV has
-        // priced yet and keeps the 30→50 formula. See RungCost for why the two schemes disagree.
+        // `cleric 2nd.csv` (2026-08-19), `healer 3rd.csv` (2026-08-20) and `buffer 3rd.csv`. A
+        // `default` entry is a rung no CSV has priced yet and keeps the 30→50 formula. See RungCost
+        // for why the two schemes disagree.
+        //
+        // 🔑 A rung's price is the price of the LEVEL ITS OWNER LEARNS IT AT, and the healer file makes
+        // that unmistakable: every 40-level buff row is 60 MP / 19k SP, every 44 row 72 / 22k, every 52
+        // row 80 / 38k, and so on to 125 / 330k at 72. So a family's cost array is NOT a curve — it is
+        // whatever levels happened to claim those rungs. Do not smooth one.
         RungCost[] C(params RungCost[] c) => c;
         RungCost R(int total, int sp) => new(total, sp);
+        // The healer's per-LEVEL buff price, so his rows read as the level he wrote them at rather
+        // than as two loose numbers. (Serenity @40 is the one row that breaks the table: 80 / 32k.)
+        RungCost H40 = R(60, 19000),  H44 = R(72, 22000),  H48 = R(75, 32000),  H52 = R(80, 38000);
+        RungCost H56 = R(85, 42000),  H58 = R(90, 45000),  H60 = R(95, 61000),  H62 = R(100, 86000);
+        RungCost H64 = R(105, 100000), H66 = R(110, 145000), H70 = R(120, 200000), H72 = R(125, 330000);
 
         Castable(FamPhysAtk, "Might", SkillEffect.BuffPhysAtk, Rungs(FamPhysAtk, 3), "more Physical Attack",
-            C(R(20, 960), R(20, 1700), R(50, 12800)));
+            C(R(20, 960), R(20, 1700), H40));
         Castable(FamPhysDef, "Bulwark", SkillEffect.BuffDef, Rungs(FamPhysDef, 3), "more Physical Defence",
-            C(R(20, 960), R(26, 3200), R(50, 12800)));
-        Castable(FamMagAtk, "Force", SkillEffect.BuffMagAtk, Rungs(FamMagAtk, 3), "more Magic Attack",
-            C(default, R(26, 3200), R(50, 12800)));
+            C(R(20, 960), R(26, 3200), H44));
+        Castable(FamMagAtk, "Force", SkillEffect.BuffMagAtk, Rungs(FamMagAtk, 4), "more Magic Attack",
+            C(default, R(26, 3200), H44, H52));
         // ⚠ Ward L1 is his cleric row at 35 and L2 his buffer row at 48: the same 40 MP, and the SP
         // actually goes DOWN (12800 → 6400). Both are authored; neither is a transcription slip here.
-        Castable(FamMagDef, "Ward", SkillEffect.BuffMagicDef, Rungs(FamMagDef, 3), "more Magic Defence",
-            C(R(40, 12800), R(40, 6400), R(50, 12800)));
-        Castable(FamAccuracy, "Aim", SkillEffect.BuffAccuracy, Rungs(FamAccuracy, 3), "a steadier hand",
-            C(R(30, 6400), default, R(50, 12800)));
-        Castable(FamVamp, "Vampirism", SkillEffect.BuffMeleeVamp, Rungs(FamVamp, 3), "melee attacks that heal",
-            C(default, R(33, 6400), R(50, 12800)));
-        Castable(FamInterrupt, "Resolve", SkillEffect.BuffInterruptResist, Rungs(FamInterrupt, 4), "casting that is harder to cancel",
-            C(R(20, 1700), R(26, 3200), R(43, 12800), R(50, 25000)));
+        Castable(FamMagDef, "Ward", SkillEffect.BuffMagicDef, Rungs(FamMagDef, 4), "more Magic Defence",
+            C(R(40, 12800), R(40, 6400), H44, H52));
+        Castable(FamAccuracy, "Aim", SkillEffect.BuffAccuracy, Rungs(FamAccuracy, 4), "a steadier hand",
+            C(R(30, 6400), H40, H48, H56));
+        Castable(FamVamp, "Vampirism", SkillEffect.BuffMeleeVamp, Rungs(FamVamp, 5), "melee attacks that heal",
+            C(default, R(33, 6400), H44, H58, H72));
+        // ⚠ Rung 4 (the un-authored 40) keeps the FORMULA price, so the array dips 72 → ~43 → 80 across
+        // rungs 3-5. That is the honest reading: rungs 3/5/6 are the healer's 44/52/60 rows and rung 4
+        // belongs to nobody. It is only reachable through `Force and Ward`, which prices itself.
+        Castable(FamInterrupt, "Resolve", SkillEffect.BuffInterruptResist, Rungs(FamInterrupt, 7), "casting that is harder to cancel",
+            C(R(20, 1700), R(26, 3200), H44, default, H52, H60, R(50, 25000)));
         Castable(FamCritRate, "Focus", SkillEffect.BuffCritRate, Rungs(FamCritRate, 6), "a higher critical rate",
-            C(default, default, default, R(26, 3200), R(46, 50000), R(50, 100000)));
+            C(default, default, default, R(26, 3200), H44, H52));
         Castable(FamCritDmg, "Ferocity", SkillEffect.BuffCritDamage, Rungs(FamCritDmg, 6), "heavier criticals",
-            C(default, default, R(38, 12800), default, default, R(50, 100000)));
+            C(default, default, R(38, 12800), H40, H48, H56));
         Castable(FamMagCrit, "Insight", SkillEffect.BuffMagicCritRate, Rungs(FamMagCrit, 6), "more magic criticals",
-            C(default, R(34, 6400), default, R(42, 25000), default, R(50, 100000)));
+            C(default, R(34, 6400), H62, R(42, 25000), default, H70));
+        // Body and Soul are the one pair the healer owns end to end — all six rungs are his rows.
         Castable(FamMaxHp, "Body", SkillEffect.BuffHp, Rungs(FamMaxHp, 6), "more Max HP",
-            C(default, default, R(38, 12800), default, R(46, 50000), R(50, 100000)));
+            C(H44, H48, H52, H56, H64, H70));
         Castable(FamMaxMp, "Soul", SkillEffect.BuffMp, Rungs(FamMaxMp, 6), "more Max MP",
-            C(default, default, R(38, 12800), default, R(46, 50000), R(50, 100000)));
+            C(H44, H48, H52, H56, H62, H70));
         Castable(FamHpRegen, "Vigor", SkillEffect.BuffHpRegen, Rungs(FamHpRegen, 6), "faster HP regeneration",
-            C(default, R(40, 12800), default, R(42, 25000), default, R(50, 100000)));
+            C(default, R(40, 12800), default, H48, default, H56));
+        // ⚠ Serenity rung 2 is his level-40 *"New insert"* row. It read 80 MP / 32k SP, out of line with
+        // every other 40-level buff; he ruled it *"should match other buffs mp cost at its learning
         Castable(FamMpRegen, "Serenity", SkillEffect.BuffMpRegen, Rungs(FamMpRegen, 6), "faster MP regeneration",
-            C(default, default, default, R(42, 25000), default, R(50, 100000)));
+            C(default, H40, default, H48, default, H56));
         // The speed four shipped first, so their rungs are named rather than numbered.
         Castable(FamMove, "Swift", SkillEffect.BuffMoveSpeed, new[] { BuffSwiftC, BuffSwiftU, BuffSwiftR }, "more Move Speed",
             C(default, R(20, 1700), R(33, 6400)));
         Castable(FamCast, "Alacrity", SkillEffect.BuffCastSpeed, new[] { BuffAlacrityC, BuffAlacrityU, BuffAlacrityR }, "faster casting",
             C(R(20, 1700), R(40, 12800)));
-        Castable(FamEva, "Agility", SkillEffect.BuffEvasion, new[] { BuffAgilityC, BuffAgilityU, BuffAgilityR }, "more Evasion",
-            C(default, R(33, 6400), R(50, 12800)));
-        // ⚠ Haste L1 has NO price because nothing learns it any more: he took the cleric's level-35
-        // Haste row out on 2026-08-19. The rung still exists (a potion and a scroll hand it out).
+        Castable(FamEva, "Agility", SkillEffect.BuffEvasion, new[] { BuffAgilityC, BuffAgilityU, BuffAgility3, BuffAgilityR }, "more Evasion",
+            C(default, R(33, 6400), H44, H52));
+        // ⚠ Haste rung 1 is the healer's @44 row and rung 3 his @52 one; rung 2 (23%) belongs to nobody
+        // and keeps the formula, so the array reads 72 / ~40 / 80. Same shape as Resolve above.
         Castable(FamAs, "Haste", SkillEffect.BuffAtkSpeed, new[] { BuffHasteC, BuffHasteU, BuffHasteR }, "faster attacks",
-            C(default, R(40, 6400), R(50, 12800)));
+            C(H44, R(40, 6400), H52));
         // The two control-resistance blessings. `SkillEffect.None` because their payload is a field,
         // not a magnitude — the wrapper still buffs, it just has no flag that describes it.
-        Castable(FamCcResMag, "Clarity", SkillEffect.None, Rungs(FamCcResMag, 2), "a mind harder to bind",
-            C(R(26, 3200)));
-        Castable(FamCcResPhys, "Fortitude", SkillEffect.None, Rungs(FamCcResPhys, 1), "a body harder to break");
-        // The shield pair. ⚠ NOTHING LEARNS THESE YET — they exist so *Shield Bless and Harden* can be
-        // a real group (it names them in ChildBuffs and Replaces). His healer singles will put the
-        // learn rows on the class table and turn each into a ladder.
-        Castable(FamShieldDef, "Shield Harden", SkillEffect.BuffShieldDef, Rungs(FamShieldDef, 1), "a sturdier shield");
-        Castable(FamShieldBlock, "Shield Bless", SkillEffect.BuffBlockChance, Rungs(FamShieldBlock, 1), "a shield that catches more");
+        Castable(FamCcResMag, "Clarity", SkillEffect.None, Rungs(FamCcResMag, 4), "a mind harder to bind",
+            C(R(26, 3200), H40, H48, H56));
+        Castable(FamCcResPhys, "Fortitude", SkillEffect.None, Rungs(FamCcResPhys, 4), "a body harder to break",
+            C(H40, H52, H64, H72));
+        // The shield pair — LEARNABLE at last (his healer rows at 40-70 and 58-72 respectively). They
+        // still double as the children of *Shield Bless and Harden*, the buffer's group at 66, which
+        // now names each family's TOP rung.
+        Castable(FamShieldDef, "Shield Harden", SkillEffect.BuffShieldDef, Rungs(FamShieldDef, 3), "a sturdier shield",
+            C(H58, H66, H72));
+        Castable(FamShieldBlock, "Shield Bless", SkillEffect.BuffBlockChance, Rungs(FamShieldBlock, 6), "a shield that catches more",
+            C(H40, H48, H56, H62, H66, H70));
         // Frenzy's castable single already exists as the cleric's `holy_frenzy` (Skills.Healer.cs) —
         // it was a wrapper over one family before this, so it needed no second copy.
 

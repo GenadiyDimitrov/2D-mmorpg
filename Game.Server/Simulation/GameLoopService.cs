@@ -1657,18 +1657,27 @@ public class GameLoopService : BackgroundService
             return;
         }
 
+        // ⚠ `Category == Debuff` is here for the same reason the buff arm in ExecuteSkill grew its
+        // Category test: his Mana Strain's entire payload is the MP-cost FIELDS, so its Effect is None
+        // and a flags-only test would route a curse aimed at an enemy into the self-cast branch.
         bool offensive = (def.Effect & (SkillEffect.PhysicalDamage
-            | SkillEffect.MagicDamage | SkillEffect.AnyDebuff | SkillEffect.Cancel | SkillEffect.Taunt)) != 0;
+            | SkillEffect.MagicDamage | SkillEffect.AnyDebuff | SkillEffect.Cancel | SkillEffect.Taunt)) != 0
+            || def.Category == SkillCategory.Debuff;
 
         Guid targetId;
         // A support skill lands on a party member only if IsAllyTargetable says so — see that helper for
         // why the test cannot be Effect-only.
-        if (def.PlacesTrap || def.PlacesTotem || def.GrantsHide)
+        if (def.PlacesTrap || def.PlacesTotem || def.GrantsHide || AreaResurrect(def))
         {
             // Self-delivered: a trap drops at the caster's feet, a totem is planted there, stealth
             // cloaks the caster. Even though these carry damage/CC/heal flags (their deferred payload),
             // they need no live target — and a totem must reach this arm or it would be refused for
             // having nothing selected.
+            //
+            // 🔑 RESURRECTION FIELD is here for exactly the same reason, and it is why the Resurrect
+            // arm below cannot simply be widened: the field is aimed at GROUND, not at a corpse. It has
+            // no target to pick and must not demand one — you cast it standing among the fallen, and
+            // which bodies it reaches is decided when it LANDS, not when you press it.
             targetId = caster.Id;
         }
         else if (def.Resurrect)
@@ -5221,7 +5230,8 @@ public class GameLoopService : BackgroundService
     {
         float castMult = def.Category == SkillCategory.Physical
             ? p.EffectiveAttackSpeedMultiplier : p.EffectiveCastSpeedMultiplier;
-        int castTicks = Math.Max(2, (int)(def.CastTicks * castMult));
+        int castTicks = Math.Max(2,
+            (int)(def.CastTicksAt(Math.Max(1, p.SkillLevelOf(def.Id))) * castMult));
         int reducedCd = def.CooldownTicks;
         if (reducedCd > 0 && p.CooldownReduction > 0f)
             reducedCd = Math.Max(1, (int)(reducedCd * (1f - p.CooldownReduction)));
@@ -8485,8 +8495,9 @@ public class GameLoopService : BackgroundService
             : def.Category == SkillCategory.Physical
                 ? caster.EffectiveAttackSpeedMultiplier
                 : caster.EffectiveCastSpeedMultiplier;
+        // ⚠ CastTicksAt, not CastTicks: a rung may shorten the base cast (his Resurrection, 10s → 5s).
         caster.CastTicksRemaining = Math.Max(2,
-            (int)(def.CastTicks * speedMult));
+            (int)(def.CastTicksAt(Math.Max(1, caster.SkillLevelOf(def.Id))) * speedMult));
 
         // Charge the up-front slice — 20% of the EFFECTIVE total for every skill (the remaining 80%
         // lands with the cast). The gate in HandleCastSkill already proved he can afford all of it, so
@@ -8560,9 +8571,11 @@ public class GameLoopService : BackgroundService
             : caster.CastTargetId is Guid tid ? _world.Entities.GetValueOrDefault(tid) : null;
 
         // Resurrect is the ONLY skill that may target a DEAD ally; everything else needs a live target.
+        // ⚠ The AREA res is the exception to the exception: its "target" is the LIVING caster, because
+        // it is aimed at the ground he is standing on. It must not be refused for holding no corpse.
         if (target is null
             || (!def.Resurrect && target.Dead && target != caster)
-            || (def.Resurrect && !target.Dead))
+            || (def.Resurrect && !AreaResurrect(def) && !target.Dead))
         {
             SendSystemToEntity(caster, def.Resurrect ? "You can only resurrect a fallen ally." : "Target lost.");
             return;
@@ -8625,6 +8638,32 @@ public class GameLoopService : BackgroundService
         //      the exp they lost to the death penalty, then finish. ----
         if (def.Resurrect)
         {
+            if (AreaResurrect(def))
+            {
+                // ---- RESURRECTION FIELD (his `healer 3rd.csv` rows at 44/58/66/74) — every fallen
+                //      party member inside the rung's own radius gets the same offer at once.
+                //
+                // 🔑 The offer is still PER PERSON. A res is a prompt the corpse answers (nobody is
+                // dragged back to their feet against their will), so a field is N offers, not one
+                // group decision — and someone who declines simply stays down while the rest rise.
+                //
+                // ⚠ THE PVP FLAG IS PAID HERE, not at cast start like the single-target res, and that
+                // is forced rather than chosen: at cast start this skill has no target, so there is no
+                // outlaw to be flagged for yet. Each corpse is still checked with CanSupport, so
+                // raising a red player still costs the same flag — it just arrives 10 seconds later
+                // than the single-target rule he wrote (playtest 23). Worth a ruling if it matters.
+                int raised = 0;
+                foreach (var corpse in DeadPartyInRadius(caster, def.AreaRadiusAt(lvl)))
+                {
+                    if (!CanSupport(caster, corpse)) continue;
+                    FlagForSupporting(caster, corpse);
+                    OfferResurrect(caster, corpse, def.ResExpPctAt(lvl));
+                    raised++;
+                }
+                if (raised == 0)
+                    SendSystemToEntity(caster, "No fallen allies within reach.");
+                return;
+            }
             OfferResurrect(caster, target, def.ResExpPctAt(lvl));
             return;
         }
@@ -8893,7 +8932,7 @@ public class GameLoopService : BackgroundService
             float pct = def.MagnitudeOf(SkillEffect.Heal, ModifierMode.Percent, lvl);
             var helped = new HashSet<Guid>();
             if (def.TargetMode == TargetMode.AlliesInRadius)
-                foreach (var ally in PlayersInRadius(caster, def.AreaRadius))
+                foreach (var ally in PlayersInRadius(caster, def.AreaRadiusAt(lvl)))
                 {
                     HealOne(caster, ally, flat, (int)(ally.MaxHp * pct), castName);
                     helped.Add(ally.Id);
@@ -8911,7 +8950,7 @@ public class GameLoopService : BackgroundService
             // actually landed: it is a design number, so a full-HP target, a heal-reduction debuff or
             // the caster's weapon must not change who the monster hits.
             AddSupportThreat(caster, helped,
-                SkillDef.SupportThreat(def.PowerAt(lvl), def.CastTicks, helped.Count));
+                SkillDef.SupportThreat(def.PowerAt(lvl), def.CastTicksAt(lvl), helped.Count));
         }
 
         // ---- MP Restore (single ally/self, or AoE) — flat power (+optional % of max MP) ----
@@ -8920,7 +8959,7 @@ public class GameLoopService : BackgroundService
             int flat = def.PowerAt(lvl);
             float pct = def.MagnitudeOf(SkillEffect.RestoreMp, ModifierMode.Percent, lvl);
             if (def.TargetMode == TargetMode.AlliesInRadius)
-                foreach (var ally in PlayersInRadius(caster, def.AreaRadius))
+                foreach (var ally in PlayersInRadius(caster, def.AreaRadiusAt(lvl)))
                     RestoreMpOne(caster, ally, flat + (int)(ally.MaxMp * pct), castName);
             else
                 RestoreMpOne(caster, target, flat + (int)(target.MaxMp * pct), castName);
@@ -8931,7 +8970,7 @@ public class GameLoopService : BackgroundService
         if (effect.HasFlag(SkillEffect.Cleanse))
         {
             if (def.TargetMode == TargetMode.AlliesInRadius)
-                foreach (var ally in PlayersInRadius(caster, def.AreaRadius))
+                foreach (var ally in PlayersInRadius(caster, def.AreaRadiusAt(lvl)))
                     Dispel(caster, ally, def, positive: false, castName, lvl);
             else
                 Dispel(caster, target, def, positive: false, castName, lvl);
@@ -8991,7 +9030,11 @@ public class GameLoopService : BackgroundService
 
         // ---- Debuffs (defence curse / anti-heal / root) — can fizzle like a spell ----
         //      (Contested CC above is excluded so it doesn't double-resolve.)
-        if ((effect & SkillEffect.AnyDebuff & ~SkillEffect.ContestCc) != 0)
+        // The Category arm is the debuff twin of the buff gate below: a curse whose payload is a FIELD
+        // (Mana Strain's MP-cost multiplier) has no AnyDebuff flag to be recognised by. It is still
+        // excluded when the skill carries contested CC, so nothing resolves twice.
+        if ((effect & SkillEffect.AnyDebuff & ~SkillEffect.ContestCc) != 0
+            || (def.Category == SkillCategory.Debuff && (effect & SkillEffect.ContestCc) == 0))
         {
             offensive = true;
             // BL-08 first, same rule as the contested branch above: a bounce is not a fizzle.
@@ -9058,7 +9101,15 @@ public class GameLoopService : BackgroundService
 
         // ---- Beneficial buffs (any of the buff flags, or a pure MARKER buff — Angel's Protection,
         //      the buffer's party stealth — which carries no stat effect at all) ----
-        if ((effect & SkillEffect.AnyBuff) != 0 || def.KeepsBuffsOnDeath || def.GrantsMobStealth)
+        //
+        // 🔑 THE `Category == Buff` ARM IS NOT BELT-AND-BRACES — it is the same lesson `IsAllyTargetable`
+        // already learned, and it was found unlearned here on 2026-08-20: **Clarity and Fortitude were
+        // silently inert.** Their whole payload is the `CcResistMagical/Physical` FIELDS (the SkillEffect
+        // enum is full), so `Effect` is None, so this gate refused them and the cast landed, charged the
+        // MP, announced itself and applied nothing. Nobody could learn them until his healer file, which
+        // is the only reason it never showed. Every future field-only buff gets the fix for free.
+        if ((effect & SkillEffect.AnyBuff) != 0 || def.Category == SkillCategory.Buff
+            || def.KeepsBuffsOnDeath || def.GrantsMobStealth)
         {
             // The display name is the CASTER's class label for this skill, so a
             // cleric's Wind Walk shows as "Holy Speed" wherever it lands.
@@ -9071,7 +9122,7 @@ public class GameLoopService : BackgroundService
             if (def.TargetMode == TargetMode.AlliesInRadius)
             {
                 // Buff the caster + every nearby player character in range.
-                foreach (var ally in PlayersInRadius(caster, def.AreaRadius))
+                foreach (var ally in PlayersInRadius(caster, def.AreaRadiusAt(lvl)))
                 {
                     ApplyBuff(ally, def, lvl, buffName, durationOverride: doubledTicks);
                     BroadcastCombat(caster, ally, 0, CombatOutcome.Buff, shownName);
@@ -9320,8 +9371,11 @@ public class GameLoopService : BackgroundService
             Rank = rank,
             Level = level,
             Replaces = def.Replaces ?? Array.Empty<string>(),
-            PhysMpCostPct = def.PhysMpCostPct,
-            MagicMpCostPct = def.MagicMpCostPct,
+            // At the LEVEL that landed, for the same reason as `Rewards` below: Mana Blessing climbs
+            // 10 → 20% and Mana Strain 100 → 200%, and reading the def's own field would hand out
+            // rung 1's number to every rung of both.
+            PhysMpCostPct = def.PhysMpCostPctAt(level),
+            MagicMpCostPct = def.MagicMpCostPctAt(level),
             SkillEvadeChance = def.SkillEvadeChance,   // BL-06, rogue ultimate only
             EndsOnDamageTaken = def.EndsOnDamageTaken, // Meditation: gone the moment anything lands
             // Reward-rune payload, at the LEVEL that landed: a Rune of Experience (20%) is level 3 of
@@ -11620,6 +11674,34 @@ public class GameLoopService : BackgroundService
         }
     }
 
+    /// <summary>Is this a RESURRECTION FIELD — a res aimed at the ground rather than at one corpse?
+    /// Three places have to agree about it (the cast-start target arm, the cast-finish live/dead gate
+    /// and the execution branch), and a two-condition test spelled out three times is how they drift
+    /// apart. His four rows at 44/58/66/74 are the only user.</summary>
+    private static bool AreaResurrect(SkillDef def) =>
+        def.Resurrect && def.TargetMode == TargetMode.AlliesInRadius;
+
+    /// <summary>The caster's fallen PARTY members within a radius — the mirror image of
+    /// <see cref="PlayersInRadius"/>, which deliberately skips the dead.
+    ///
+    /// <para>Party only, and never the caster (a dead caster cannot cast). A HIDDEN corpse is included
+    /// where a living hidden ally would be skipped: hiding does not survive dying, so the flag on a
+    /// body is stale state rather than a player choosing not to be found.</para></summary>
+    private IEnumerable<Entity> DeadPartyInRadius(Entity caster, float radius)
+    {
+        if (!_world.Parties.TryGetValue(caster.Id, out var party))
+            yield break;   // solo: nobody else to raise
+        float r2 = radius * radius;
+        foreach (var e in _world.Grid.Nearby(caster))
+        {
+            if (e.Kind != EntityKind.Player || !e.Dead || e.Id == caster.Id) continue;
+            if (!party.Contains(e.Id)) continue;
+            float dx = e.X - caster.X, dy = e.Y - caster.Y;
+            if (dx * dx + dy * dy <= r2)
+                yield return e;
+        }
+    }
+
     /// <summary>Is this skill an improved (GROUP) buff with MORE THAN ONE child? Only those are worth
     /// collapsing on the buff bar. A potion and a scroll are one-child groups by the same mechanism,
     /// and merging one square into one square would only replace the effect's name with the bottle's.
@@ -12204,9 +12286,9 @@ public class GameLoopService : BackgroundService
                 lines.Add(def.MaxLevel > 1 ? $"{def.Name}  (Lv {kv.Value})" : def.Name);
 
                 var facts = new List<string> { def.Category.ToString() };
-                if (def.Range > 0f) facts.Add($"{def.Range:0} range");
-                if (def.AreaRadius > 0f) facts.Add($"{def.AreaRadius:0} radius");
-                facts.Add($"{def.CastTicks / 10f:0.#}s cast");
+                if (def.RangeAt(kv.Value) > 0f) facts.Add($"{def.RangeAt(kv.Value):0} range");
+                if (def.AreaRadiusAt(kv.Value) > 0f) facts.Add($"{def.AreaRadiusAt(kv.Value):0} radius");
+                facts.Add($"{def.CastTicksAt(kv.Value) / 10f:0.#}s cast");
                 facts.Add($"{def.CooldownTicks / 10f:0.#}s reuse");
                 lines.Add("   " + string.Join(" · ", facts));
 

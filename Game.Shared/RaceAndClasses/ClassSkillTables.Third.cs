@@ -3,12 +3,16 @@ namespace Game.Shared;
 using static Game.Shared.SkillCatalog;
 
 /// <summary>
-/// PLACEHOLDER 3rd-class (discipline) kits for Phase 24.0. Each discipline gets a
-/// small list at learn-level 40, reusing existing skill ids with a display-name
-/// hint so the framework is exercised end-to-end (learn tab, skill bar, class
-/// label) before the real per-(race,discipline) skills are authored in the
-/// content slices. The same idea is shared by all three races for now; the slices
-/// will diverge them (e.g. the Ork Lightbringer's totem vs. the Human's cleanse).
+/// 3rd-class (discipline) learn tables.
+///
+/// <para><b>ONE discipline is fully authored</b> — the Lightbringer (healer), 40 to 74, straight off
+/// `docs/data/classes_skills_csv/healer 3rd.csv` (2026-08-20). See RegisterLightbringer.</para>
+///
+/// <para>Everything else in this file is still governed by the 2026-08-10 purge at the top of
+/// RegisterThirdClasses: the two NUKER disciplines keep the placeholder kit he explicitly spared, the
+/// Warchanter keeps the buff ladder he has a (placeholder) CSV for, and the eight fighter disciplines
+/// teach nothing at all until their files exist. The Lightbringer being switched on is what a finished
+/// CSV looks like — it is not a reason to switch on anything else.</para>
 /// </summary>
 public static partial class ClassSkillTables
 {
@@ -77,12 +81,16 @@ public static partial class ClassSkillTables
         foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
             ClassSkills.RegisterThird(race, Discipline.Magus, new ClassSkill(ManaBarrier, 44));
 
-        // Healer disciplines (Lightbringer = healer, Warchanter = buffer) are dropped
-        // pending the new lvl-40 CSVs. Their skill DEFS remain in the catalog; only the
-        // learn assignments are gone, so nothing references them until re-authored.
-        // RegisterLightbringer();  RegisterWarchanter();
+        // ✅ THE LIGHTBRINGER IS ON, 2026-08-20. `healer 3rd.csv` is finished and he authorised the
+        // build, so the healer discipline is no longer an exception carved out of the 40+ purge — it
+        // is the first fully-authored 3rd class in the game, 40 to 74, every row his.
         //
-        // …with ONE exception: the buffer's two exclusive layers now have somewhere to live.
+        // ⚠ THE PURGE STILL STANDS FOR EVERYONE ELSE. This line is not a precedent for switching the
+        // others back on: `RegisterWarchanter()` below stays off because `buffer 3rd.csv` is still a
+        // PLACEHOLDER seeded from code (his own warning: *"you shouldn't have built anything from the
+        // 3rd csvs as they are not finished"*), and the eight fighter disciplines have no file at all.
+        RegisterLightbringer();
+        // …and the buffer's two exclusive layers still live in their own narrow helper.
         RegisterWarchanterBuffs();
         // …and now a SECOND, equally narrow one: the two level-83 preservation skills he authorised
         // by name on 2026-08-14 (`BL-35`). Two learn lines, nothing else — the Lightbringer and
@@ -90,43 +98,9 @@ public static partial class ClassSkillTables
         RegisterPreservation();
         // …and a THIRD, on the same terms: the three HIDE skills, which he placed by hand.
         RegisterHideKit();
-        // …and a FOURTH: the healer's own two masteries, which he authored into `healer 3rd.csv` on
-        // 2026-08-20 with a full 9-rung ladder. Same narrow standing as the three above — two learn
-        // lines' worth of skills he named himself, NOT a repeal of the purge. The rest of the
-        // Lightbringer kit stays commented out until his 44+ heals are settled.
-        RegisterHealerMasteries();
-    }
-
-    /// <summary>The healer's 3rd-class masteries — <b>Healer Weapon Mastery</b> (magic weapon only, no
-    /// P.Atk) and <b>Healer Armor Mastery</b> (robe only), 9 rungs each at 40/44/48/52/56/58/60/62/64.
-    ///
-    /// <para>They REPLACE the cleric's Spell Mastery / Armor Mastery rather than continuing them, which
-    /// is the whole point of his split: from 40 the healer's kit is a wand and a robe, and the BUFFER is
-    /// the caster who keeps the sword half and the light-armor row (see RegisterWarchanterBuffs).</para>
-    ///
-    /// <para>⚠ This lives here, not in <c>RegisterLightbringer()</c>, because that function is still
-    /// commented out pending his 44+ rows — and these two rungs are the one part of that band that is
-    /// fully authored and unambiguous. When it is switched back on, do NOT re-add them there.</para>
-    ///
-    /// <para>⚠ His last block's rows carry <c>56</c> in the LEARN column where the section header says
-    /// 64 — a copy/paste slip in a file he is still drafting. Built as 64, since a second rung at 56
-    /// would collide with the real one. Worth a one-word fix in the CSV.</para></summary>
-    private static void RegisterHealerMasteries()
-    {
-        int[] levels = { 40, 44, 48, 52, 56, 58, 60, 62, 64 };
-        var rungs = levels.SelectMany((lvl, i) => new[]
-        {
-            new ClassSkill(HealerWeaponMasterySkill, lvl, SkillLevel: i + 1),
-            new ClassSkill(HealerArmorMasterySkill, lvl, SkillLevel: i + 1),
-        })
-        // Frenzy L2 @52 — the healer's half of *"learned from Healers and Buffers at 52"*. The buffer's
-        // copy is in RegisterWarchanterBuffs; both point at the same rung, which is the point of the
-        // ruling. It rides along here because this is the only ACTIVE Lightbringer registration.
-        .Append(new ClassSkill(HolyFrenzy, 52, SkillLevel: 2))
-        .ToArray();
-
-        foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
-            ClassSkills.RegisterThird(race, Discipline.Lightbringer, rungs);
+        // (A FOURTH, `RegisterHealerMasteries()`, existed for one day and is gone: it taught the two
+        //  healer masteries and Frenzy L2 while RegisterLightbringer was still commented out. Those
+        //  rungs are in the shared ladder now, and keeping both would have registered every one twice.)
     }
 
     /// <summary>The three invisibility skills, re-homed exactly where he put them in playtest 23
@@ -244,19 +218,19 @@ public static partial class ClassSkillTables
                 //      this one — see the note on FrenzyRung. ----
                 new ClassSkill(HolyFrenzy, 52, SkillLevel: 2),
                 // ---- 40-44: finish SPEED and MIGHT (the cleric got most of speed already) ----
-                new ClassSkill(CastId(FamEva), 40, SkillLevel: 3),        // Agility   +4 evasion
+                new ClassSkill(CastId(FamEva), 40, SkillLevel: 4),        // Agility   +4 evasion (rung 4 since the +3 insert)
                 new ClassSkill(CastId(FamAs), 40, SkillLevel: 2),         // Haste     +23% atk speed
                 new ClassSkill(CastId(FamPhysAtk), 40, SkillLevel: 3),    // Might     +15% P.Atk
                 new ClassSkill(CastId(FamPhysDef), 40, SkillLevel: 3),    // Bulwark   +15% P.Def
                 new ClassSkill(CastId(FamAs), 44, SkillLevel: 3),         // Haste     +33% atk speed
-                new ClassSkill(CastId(FamVamp), 44, SkillLevel: 3),       // Vampirism 9%
-                new ClassSkill(CastId(FamAccuracy), 44, SkillLevel: 3),   // Aim       +4 accuracy
+                new ClassSkill(CastId(FamVamp), 44, SkillLevel: 5),       // Vampirism 9% (rung 5 since the 7/8% inserts)
+                new ClassSkill(CastId(FamAccuracy), 44, SkillLevel: 4),   // Aim       +4 accuracy (rung 4 since the +3 insert)
                 // ---- 48-52: finish FORCE, start FOCUS ----
-                new ClassSkill(CastId(FamMagAtk), 48, SkillLevel: 3),     // Force     +32% M.Atk
+                new ClassSkill(CastId(FamMagAtk), 48, SkillLevel: 4),     // Force     +32% M.Atk (rung 4 since the 28% insert)
                 new ClassSkill(CastId(FamMagDef), 48, SkillLevel: 2),     // Ward      +20% M.Def
-                new ClassSkill(CastId(FamInterrupt), 48, SkillLevel: 3),  // Resolve   +40 interrupt
-                new ClassSkill(CastId(FamMagDef), 52, SkillLevel: 3),     // Ward      +30% M.Def
-                new ClassSkill(CastId(FamInterrupt), 52, SkillLevel: 4),  // Resolve   +60 interrupt
+                new ClassSkill(CastId(FamInterrupt), 48, SkillLevel: 4),  // Resolve   +40 interrupt (rung 4 since the 36 insert)
+                new ClassSkill(CastId(FamMagDef), 52, SkillLevel: 4),     // Ward      +30% M.Def (rung 4 since the 23% insert)
+                new ClassSkill(CastId(FamInterrupt), 52, SkillLevel: 7),  // Resolve   +60 interrupt (rung 7 since the 36/42/48 inserts)
                 new ClassSkill(CastId(FamCritRate), 52, SkillLevel: 5),   // Focus     +25% crit
                 new ClassSkill(CastId(FamCritDmg), 52, SkillLevel: 3),    // Ferocity  +20% crit dmg
                 new ClassSkill(CastId(FamMagCrit), 52, SkillLevel: 2),    // Insight   +35% magic crit
@@ -296,70 +270,136 @@ public static partial class ClassSkillTables
                 new ClassSkill(Madness, 76));
     }
 
-    // The first fully-authored discipline (Phase 24.1): one shared idea (keep the
-    // party alive), three race expressions. The 2nd-class healer kit still applies
-    // cumulatively, so these are the discipline's NEW tools on top. Each race now
-    // gets the shared Blessing (party buff) + Devotion (passive) to fill the kit.
+    /// <summary>THE LIGHTBRINGER, 40-74 — every row of <c>docs/data/classes_skills_csv/healer 3rd.csv</c>,
+    /// built 2026-08-20 when he said go. The first discipline in the game that is authored end to end.
+    ///
+    /// <para>🔑 <b>THE BANDS ARE HIS FILE'S SPINE</b>: 40, 44, 48, 52, then 56, 58, 60, 62, 64, 66, 68,
+    /// 70, 72, 74. The stride HALVES at 56 — a 3rd class levels slowly enough by then that four levels
+    /// between rungs would be most of an evening — which is why a ladder here is fourteen rungs and not
+    /// nine, and why <c>Band(i)</c> exists rather than <c>40 + i * 4</c>.</para>
+    ///
+    /// <para>🔑 <b>WHAT IS NOT HERE.</b> Five invented skills the discipline used to teach — Blessing of
+    /// Light, Devotion, Purify, Warding Step and Soul Sap — are on none of his rows and are no longer
+    /// granted by anybody. Their DEFS survive in the catalog (deleting one orphans every character who
+    /// bought it), which is the same treatment the 2026-08-10 purge gave the fighter kits. Do not put
+    /// them back: *"Anything that's not inside the csv should not exist except the class balance."*</para>
+    ///
+    /// <para>⚠ The two masteries and Frenzy L2 used to live in a narrow <c>RegisterHealerMasteries()</c>,
+    /// because this function was commented out while his 44+ rows were still being drafted. That helper
+    /// is GONE — its rungs are in the shared ladder below. Registering both would have taught every rung
+    /// twice.</para></summary>
     private static void RegisterLightbringer()
     {
-        // Mage 3rd-class learn cadence: 40, 44, 48, 52.
-        // ⚠ RESURRECTION HAS NO 40+ RUNGS ANY MORE. It used to hand the Lightbringer L3@52 / L4@61
-        // (75% / 100% of the lost exp), but that ladder was invented here, and the owner replaced its
-        // bottom with his own on 2026-08-17 — *"resurect - lvl 20 no exp, @30 - 20% exp .. ill add 40+"*.
-        // The top is his to write (BL-02), so the grants are gone rather than left at invented values.
-        // ---- LEVEL 40 IS HIS, authored in `healer 3rd.csv` (rows 3-22, 2026-08-17). Everything at 44
-        //      and above in that file is marked "not done", so the 44/48/52 rows below are still the
-        //      INVENTED kit and are left exactly as they were — they will be reconciled when he writes
-        //      those levels. ⚠ That leaves one known overlap: the Elf has both his `Bind` at 40 and the
-        //      invented `Warding Step` at 44, and both are roots. ----
-        // The shared half of level 40: three passives, the three upgraded heals/nuke, the res rung, and
-        // the buff blessings. Every race learns these.
-        ClassSkill[] LightbringerShared40() => new[]
-        {
-            new ClassSkill(MageAntiMagic, 40, SkillLevel: 7),
-            // ⚠ 2026-08-20: the healer's two masteries are NOT here. He no longer continues the cleric
-            // pair — he REPLACES it — and since this whole function is still commented out pending his
-            // 44+ rows, the ladder lives in the ACTIVE RegisterHealerMasteries() instead. Do not add it
-            // back here as well: it would register every rung twice the day this block is switched on.
-            new ClassSkill(HolyRay, 40),
-            new ClassSkill(GreatHeal, 40),
-            new ClassSkill(PartyGreatHeal, 40),
-            new ClassSkill(Conceal, 40),
-            new ClassSkill(Resurrection, 40, SkillLevel: 3),
-            new ClassSkill(RestoreMana, 40, SkillLevel: 3),
-            new ClassSkill(CastId(FamPhysAtk), 40, SkillLevel: 3),    // Might L3   +15% P.Atk
-            new ClassSkill(CastId(FamAccuracy), 40, SkillLevel: 2),   // Aim L2     +2 Accuracy
-            new ClassSkill(CastId(FamCritDmg), 40, SkillLevel: 4),    // Ferocity   +25% crit damage
-            // ⚠ Clarity is rung 2 since 2026-08-19, NOT because this row was retuned: he added a 20%
-            // rung to `cleric 2nd.csv` at 25, so his 30% here is the SECOND rung of the family now.
-            // The number he authored is unchanged; only its index moved.
-            new ClassSkill(CastId(FamCcResMag), 40, SkillLevel: 2),   // Clarity    30% vs SPT debuffs
-            new ClassSkill(CastId(FamCcResPhys), 40, SkillLevel: 1),  // Fortitude  15% vs CON debuffs
-        };
+        // His fourteen learn levels, and a rung index → level lookup so every ladder below reads as
+        // "one rung per band" rather than as fourteen hand-written numbers that can drift.
+        int[] band = SkillCatalog.HealerBands;
+        int Band(int i) => band[i];
+
+        // A full 14-rung ladder: skill level i+1 at band i. The shape of almost everything he wrote.
+        ClassSkill[] Full(string skill, int startBand = 0, int startLevel = 1) =>
+            Enumerable.Range(0, band.Length - startBand)
+                .Select(i => new ClassSkill(skill, Band(startBand + i), SkillLevel: startLevel + i))
+                .ToArray();
+
+        // A ladder that appears only at some bands — his buffs, the cures, the four-rung debuffs.
+        // Pairs are (character level, skill level), read straight off the rows.
+        ClassSkill[] At(string skill, params (int Level, int Rung)[] rows) =>
+            rows.Select(r => new ClassSkill(skill, r.Level, SkillLevel: r.Rung)).ToArray();
+
+        // ---- THE SHARED KIT. Everything below is learned by all three races; only the fast heal and
+        //      the control debuff differ, and those are the three blocks at the bottom. ----
+        var shared = new List<ClassSkill>();
+
+        // --- The three passives, one rung per band. Anti-Magic continues the cleric's ladder (rung 7
+        //     is his @40 row); the two masteries REPLACE the cleric's pair rather than continuing it,
+        //     which is the whole point of the 2026-08-20 split — the healer's kit is a wand and a robe,
+        //     and the BUFFER is the caster who keeps the sword half and the light-armor row.
+        shared.AddRange(Full(MageAntiMagic, startLevel: 7));
+        shared.AddRange(Full(HealerWeaponMasterySkill));
+        shared.AddRange(Full(HealerArmorMasterySkill));
+
+        // --- The nuke and the two ordinary heals, one rung per band. Each replaces its 2nd-class
+        //     original (Holy Bolt / Heal / Party Heal), so the bar does not fill with obsolete rows.
+        shared.AddRange(Full(HolyRay));
+        shared.AddRange(Full(GreatHeal));
+        shared.AddRange(Full(PartyGreatHeal));
+
+        // --- Restore Mana and Resurrection continue the cleric's ladders (both are at rung 3 by 40).
+        shared.AddRange(Full(Resurrection, startLevel: 3));
+        shared.AddRange(Full(RestoreMana, startLevel: 3));
+
+        // --- The 44+ heals. Urgent Heal has FOUR rungs and then stops for good at 56: it heals a
+        //     PERCENTAGE of the target's own bar, so it never needs another one. The two Ultimates
+        //     start at 58 and run to 74, and cost Skill Stones rather than a bigger number.
+        shared.AddRange(Full(UrgentHeal, startBand: 1).Take(4).ToArray());
+        shared.AddRange(Full(UltimateHeal, startBand: 5));
+        shared.AddRange(Full(UltimatePartyHeal, startBand: 5));
+
+        // --- Resurrection Field: four rungs, deliberately far apart. Antidote's ceiling climbs on its
+        //     own schedule (his rows, not a band per rung).
+        shared.AddRange(At(ResurrectionField, (44, 1), (58, 2), (66, 3), (74, 4)));
+        shared.AddRange(At(Antidote, (44, 3), (52, 4), (58, 5), (62, 6), (66, 7), (70, 8), (74, 9)));
+
+        // --- The mana kit. Mana Ray from 56, Mana Strain from 52, Meditation on four rungs.
+        shared.AddRange(Full(ManaRay, startBand: 4));
+        shared.AddRange(Full(ManaStrain, startBand: 3));
+        shared.AddRange(At(Meditation, (56, 1), (60, 2), (64, 3), (68, 4)));
+        shared.AddRange(At(WeaponBreak, (62, 1), (66, 2), (70, 3), (74, 4)));
+
+        // --- Conceal: one rung at 40, the self-only twin of the buffer's party stealth.
+        shared.Add(new ClassSkill(Conceal, 40));
+
+        // ═══ THE BUFF ROWS ═══════════════════════════════════════════════════════════════════════
+        // 🔑 EVERY ONE OF THESE IS A RUNG OF A FAMILY, not a skill of its own. His row says "learn
+        // Ferocity at 48 for +30% crit damage"; the family ladder in Skills.BuffLadders.cs holds the
+        // number and this table holds only WHICH rung and WHEN. That is what stops a healer's Ferocity
+        // and a Ferocity scroll from stacking — they are literally the same buff.
+        //
+        // ⚠ SIX of these indices moved on 2026-08-20 because his file authored values BETWEEN existing
+        // rungs (M.Atk 28%, M.Def 23%, +3 accuracy, +3 evasion, 7/8% vampirism, 36/42/48 interrupt).
+        // Read the comment, not the number: `SkillLevel: 5` on Focus is +25%, which is his 44 row.
+        shared.AddRange(At(CastId(FamPhysAtk),   (40, 3)));                     // Might      15%
+        shared.AddRange(At(CastId(FamPhysDef),   (44, 3)));                     // Bulwark    15%
+        shared.AddRange(At(CastId(FamMagAtk),    (44, 3), (52, 4)));            // Force      28 → 32%
+        shared.AddRange(At(CastId(FamMagDef),    (44, 3), (52, 4)));            // Ward       23 → 30%
+        shared.AddRange(At(CastId(FamAccuracy),  (40, 2), (48, 3), (56, 4)));   // Aim        +2 → +4
+        shared.AddRange(At(CastId(FamEva),       (44, 3), (52, 4)));            // Agility    +3 → +4
+        shared.AddRange(At(CastId(FamAs),        (44, 1), (52, 3)));            // Haste      15 → 33%
+        shared.AddRange(At(CastId(FamVamp),      (44, 3), (58, 4), (72, 5)));   // Vampirism  7 → 9%
+        shared.AddRange(At(CastId(FamInterrupt), (44, 3), (52, 5), (60, 6)));   // Resolve    36 → 48
+        shared.AddRange(At(CastId(FamCritRate),  (44, 5), (52, 6)));            // Focus      25 → 30%
+        shared.AddRange(At(CastId(FamCritDmg),   (40, 4), (48, 5), (56, 6)));   // Ferocity   25 → 35%
+        shared.AddRange(At(CastId(FamMagCrit),   (62, 3), (70, 6)));            // Insight    50 → 100%
+        shared.AddRange(At(CastId(FamMaxHp),     (44, 1), (48, 2), (52, 3), (56, 4), (64, 5), (70, 6)));  // Body
+        shared.AddRange(At(CastId(FamMaxMp),     (44, 1), (48, 2), (52, 3), (56, 4), (62, 5), (70, 6)));  // Soul
+        shared.AddRange(At(CastId(FamHpRegen),   (48, 4), (56, 6)));            // Vigor      15 → 20%
+        shared.AddRange(At(CastId(FamMpRegen),   (40, 2), (48, 4), (56, 6)));   // Serenity   10 → 20%
+        shared.AddRange(At(CastId(FamCcResMag),  (40, 2), (48, 3), (56, 4)));   // Clarity    30 → 50%
+        shared.AddRange(At(CastId(FamCcResPhys), (40, 1), (52, 2), (64, 3), (72, 4)));  // Fortitude 15 → 40%
+        // The shield pair. ⚠ These do NOTHING for a healer holding no shield (both are a PERCENT of
+        // what the shield already carries, and 0 × 1.5 is 0) — they are for the tank he is blessing.
+        shared.AddRange(At(CastId(FamShieldBlock), (40, 1), (48, 2), (56, 3), (62, 4), (66, 5), (70, 6)));
+        shared.AddRange(At(CastId(FamShieldDef),   (58, 1), (66, 2), (72, 3)));
+        // Frenzy L2 @52 — his ruling, and the SAME rung for healer and buffer: *"Frenzy(L2) is learned
+        // from Healers and Buffers at 52"*. The cleric's L1 at 35 is the rung below it.
+        shared.Add(new ClassSkill(HolyFrenzy, 52, SkillLevel: 2));
+        // Mana Blessing and the "Great" pair: three rungs each, at 58 / 66 / 74. Great Might and Great
+        // Bulwark share a buff key and therefore EXCLUDE each other — an ally wears one, never both.
+        shared.AddRange(At(ManaBlessing, (58, 1), (66, 2), (74, 3)));
+        shared.AddRange(At(GreatMight,   (58, 1), (66, 2), (74, 3)));
+        shared.AddRange(At(GreatBulwark, (58, 1), (66, 2), (74, 3)));
+
+        // ═══ THE RACE SPLIT — it happens TWICE, and only twice ════════════════════════════════════
+        // Once on the fast heal (Human throughput / Elf heal-and-cure / Ork planted totem) and once on
+        // the control debuff (Gravity / Bind / Armor Break). Both are full 14-rung ladders, and the Ork
+        // carries a third: the Mana Totem, from 52.
         ClassSkills.RegisterThird(Race.Human, Discipline.Lightbringer,
-            LightbringerShared40().Concat(new[]
-            {
-                new ClassSkill(LbHumanMend, 40),        // Quick Great Heal
-                new ClassSkill(LbHumanGravity, 40),     // Gravity
-                new ClassSkill(LbHumanPurify, 44),
-                new ClassSkill(LbBlessing, 48), new ClassSkill(LbDevotion, 52),
-            }).ToArray());
+            shared.Concat(Full(LbHumanMend)).Concat(Full(LbHumanGravity)).ToArray());
         ClassSkills.RegisterThird(Race.Elf, Discipline.Lightbringer,
-            LightbringerShared40().Concat(new[]
-            {
-                new ClassSkill(LbElfDawn, 40),          // Healer Blessing
-                new ClassSkill(LbElfBind, 40),          // Bind
-                new ClassSkill(LbElfWarden, 44),
-                new ClassSkill(LbBlessing, 48), new ClassSkill(LbDevotion, 52),
-            }).ToArray());
+            shared.Concat(Full(LbElfDawn)).Concat(Full(LbElfBind)).ToArray());
         ClassSkills.RegisterThird(Race.Ork, Discipline.Lightbringer,
-            LightbringerShared40().Concat(new[]
-            {
-                new ClassSkill(LbOrkFont, 40),          // Healing Totem
-                new ClassSkill(LbOrkArmorBreak, 40),    // Armor Break
-                new ClassSkill(LbOrkSap, 44),
-                new ClassSkill(LbBlessing, 48), new ClassSkill(LbDevotion, 52),
-            }).ToArray());
+            shared.Concat(Full(LbOrkFont)).Concat(Full(LbOrkArmorBreak))
+                  .Concat(Full(ManaTotem, startBand: 3)).ToArray());
     }
 
     // Warchanter (Healer B) — buffer: per-race DMG + party mega-buff + party HoT + passive.
