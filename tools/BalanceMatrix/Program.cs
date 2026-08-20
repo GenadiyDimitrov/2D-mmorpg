@@ -46,6 +46,149 @@ if (args.Length > 0 && args[0] == "--dump-mob-csv")
     return;
 }
 
+// `--mana-ray [power] [level]` sizes a DamageToMp spell (the healer's Mana Ray) against real
+// same-level players: the magic pipeline's own number, read against the TARGET'S MP POOL rather
+// than its HP. A mana drain is only balanced relative to the pool it drains, and that pool is
+// 1/8th the size of an HP bar — which is why a nuke-sized power reads as enormous here.
+if (args.Length > 0 && args[0] == "--mana-ray")
+{
+    float power = args.Length > 1 ? float.Parse(args[1]) : 160f;
+    int L = args.Length > 2 ? int.Parse(args[2]) : 74;
+    // Optional HYPOTHETICAL magic resistance, as a fraction: `--mana-ray 165 74 0.20 0.30`.
+    // -1 = use whatever the real Entity computes (fighters 0.00, casters 0.10 off Robe Mastery).
+    float fRes = args.Length > 3 ? float.Parse(args[3]) : -1f;
+    float cRes = args.Length > 4 ? float.Parse(args[4]) : -1f;
+
+    var healer = BuildPlayer(Race.Human, BaseClass.Mage, L, healer: true);
+    int hAtk = (int)healer.EffectiveMagicAttack;
+
+    Console.WriteLine();
+    Console.WriteLine($"=== MANA RAY: power {power} at level {L} (Human Cleric, wand + best gear, Spell Rune on) ===");
+    Console.WriteLine($"  caster internal M.Atk {hAtk} (shown {(int)healer.EffectiveMagicAttackShown}), " +
+                      $"magic crit {healer.MagicCritChance:P1} x{StatCaps.MagicCritDamageBase}");
+    Console.WriteLine();
+    Console.WriteLine($"  {"target",-14} {"M.Def",6} {"mRes",5} {"MaxMP",7} | {"hit",6} {"crit",6} {"fizzle",6} | " +
+                      $"{"%pool",6} {"casts",6}");
+
+    foreach (var (who, t) in Targets(L, fRes, cRes))
+    {
+        int hit = StatCalculator.MagicDamageFM(hAtk, 0, power,
+            (int)t.EffectiveMagicDefence, t.MagicDefCoef);
+        int crit = (int)(hit * StatCaps.MagicCritDamageBase);
+        int fizzle = Math.Max(1, hit / 3);
+        float pct = hit / (float)Math.Max(1, t.MaxMp);
+        Console.WriteLine($"  {who,-14} {(int)t.EffectiveMagicDefence,6} {t.MagicDefCoef,5:F2} {t.MaxMp,7} | " +
+                          $"{hit,6} {crit,6} {fizzle,6} | {pct,6:P0} {t.MaxMp / (float)Math.Max(1, hit),6:F1}");
+    }
+
+    // THE EXCHANGE RATE is the real balance metric, not the raw number: a drain is worth casting
+    // only if it takes more MP off the target than it costs the caster, and it only MATTERS for as
+    // long as the target cannot regenerate it back.
+    Console.WriteLine();
+    Console.WriteLine($"  caster pool {healer.MaxMp} MP, regen {StatCalculator.MpRegenPerSecond((int)healer.EffectiveSpt, L):F1}/s");
+    Console.WriteLine($"  {"target",-14} {"regen/s",8} {"sec to undo one hit",20}");
+    foreach (var (who, t) in Targets(L, fRes, cRes).Where(x => x.Item1 is "tank" or "nuker"))
+    {
+        int hit = StatCalculator.MagicDamageFM(hAtk, 0, power, (int)t.EffectiveMagicDefence, t.MagicDefCoef);
+        float rg = StatCalculator.MpRegenPerSecond((int)t.EffectiveSpt, L);
+        Console.WriteLine($"  {who,-14} {rg,8:F1} {Math.Min(hit, t.MaxMp) / rg,20:F0}");
+    }
+
+    // Same spell against the MOB curve, where his "half effect on monsters" (PveDamageMult 0.5)
+    // applies. A mob's MP pool is MobBaseStats.Mp, not the player curve.
+    Console.WriteLine();
+    Console.WriteLine($"  vs MOBS (x0.5 PveDamageMult): {"lvl",4} {"M.Def",6} {"MP",6} {"hit",6} {"%pool",6}");
+    foreach (int ml in new[] { L - 5, L, L + 5 })
+    {
+        int hit = (int)(StatCalculator.MagicDamageFM(hAtk, 0, power, MobBaseStats.MDef(ml), 1f) * 0.5f);
+        Console.WriteLine($"  {"",28} {ml,4} {MobBaseStats.MDef(ml),6} {MobBaseStats.Mp(ml),6} {hit,6} " +
+                          $"{hit / (float)Math.Max(1, MobBaseStats.Mp(ml)),6:P0}");
+    }
+
+    // What power lands a chosen fraction of each target's pool, so the number can be CHOSEN
+    // rather than guessed: power scales the damage linearly, so this is an exact inversion.
+    Console.WriteLine();
+    Console.WriteLine("  POWER NEEDED for a given share of the target's MP pool (per cast):");
+    Console.WriteLine($"  {"target",-14} {"5%",7} {"10%",7} {"15%",7} {"20%",7} {"25%",7}");
+    foreach (var (who, t) in Targets(L, fRes, cRes))
+    {
+        int at1 = StatCalculator.MagicDamageFM(hAtk, 0, 100f, (int)t.EffectiveMagicDefence, t.MagicDefCoef);
+        string Row(float share) => $"{share * t.MaxMp / (at1 / 100f),7:F0}";
+        Console.WriteLine($"  {who,-14} {Row(0.05f)} {Row(0.10f)} {Row(0.15f)} {Row(0.20f)} {Row(0.25f)}");
+    }
+    // ---- THE THREE CANDIDATE MODELS (owner, 2026-08-20) ----
+    // A = today's engine: the magic pipeline's own number, taken off MP (K·power·√mAtk / mDef·mRes).
+    // B = FLAT: the authored power IS the MP drained, divided by the target's magic resistance
+    //     (resist protects, the same direction as every other defence in the game).
+    // C = "MANA PUNISHMENT": flat, but MULTIPLIED by magic resistance — the more the target armours
+    //     himself against magic damage, the more his mana is exposed. Deliberately inverted.
+    // D = POOL SHARE: the drain is a percentage of the target's OWN max MP (power/10, so his authored
+    //     ladder 120..153 reads as 12.0%..15.3%). Pool-independent BY CONSTRUCTION — the only model of
+    //     the four in which one authored number means the same thing to a 696-MP tank and a 3158-MP
+    //     healer, because it is the 4.5x pool gap, not the defence, that makes A and B lopsided.
+    Console.WriteLine();
+    Console.WriteLine($"  ---- MODELS at power {power} ---- (drain per cast / % of pool / casts to zero)");
+    Console.WriteLine($"  {"target",-10} {"pool",5} {"mRes",5} | {"A pipeline",-19} {"B flat/mRes",-19} " +
+                      $"{"C flat x mRes",-19} {"D pool share",-19}");
+    foreach (var (who, t) in Targets(L, fRes, cRes))
+    {
+        int a = StatCalculator.MagicDamageFM(hAtk, 0, power, (int)t.EffectiveMagicDefence, t.MagicDefCoef);
+        int b = (int)(power / t.MagicDefCoef);
+        int c = (int)(power * t.MagicDefCoef);
+        int d = StatCalculator.ManaDrain(t.MaxMp, power);   // the SHIPPED formula, not a copy of it
+        string Cell(int x) => $"{x,4} {x / (float)t.MaxMp,5:P0} {t.MaxMp / (float)Math.Max(1, x),4:F1}x";
+        Console.WriteLine($"  {who,-10} {t.MaxMp,5} {t.MagicDefCoef,5:F2} | {Cell(a),-19} {Cell(b),-19} " +
+                          $"{Cell(c),-19} {Cell(d),-19}");
+    }
+
+    // ---- CAN THE HEALER AFFORD IT? ----
+    // The metric that actually decides this skill: a full drain is only a "strategy move" if it costs
+    // the caster a real share of his OWN bar. mpCost 90 is his authored level-70 rung; x3 is his ask.
+    Console.WriteLine();
+    Console.WriteLine("  ---- COST OF A FULL DRAIN (share of the healer's OWN bar to zero the target) ----");
+    foreach (var (model, drain) in new (string, Func<Entity, int>)[]
+    {
+        ("A pipeline", t => StatCalculator.MagicDamageFM(hAtk, 0, power, (int)t.EffectiveMagicDefence, t.MagicDefCoef)),
+        ("B flat    ", t => (int)(power / t.MagicDefCoef)),
+        ("D share   ", t => StatCalculator.ManaDrain(t.MaxMp, power)),
+    })
+    foreach (int cost in new[] { 90, 270 })
+    {
+        Console.Write($"  {model} mpCost {cost,3} (x{cost / 90f:F0}):  ");
+        foreach (var (who, t) in Targets(L, fRes, cRes))
+            Console.Write($"{who} {t.MaxMp / (float)Math.Max(1, drain(t)) * cost / healer.MaxMp,5:P0}   ");
+        Console.WriteLine();
+    }
+    Console.WriteLine($"  (100% = the healer empties his entire {healer.MaxMp}-MP bar to fully drain that target.)");
+    Console.WriteLine();
+    return;
+}
+
+// The four same-level PvP targets a drain is judged against. One list, so every table below
+// measures the same characters.
+//
+// ⚠ fighterRes/casterRes OVERRIDE the measured MagicResist with a HYPOTHETICAL one (owner,
+// 2026-08-20: *"add a tanks mresist as 20% .. mages mresist as 30%"* — explicitly NOT authored
+// values). Today's real spread is 0% on fighters and 10% on casters, which is why the drain
+// models barely separate; these let the question "what if mRes actually had a spread" be
+// measured instead of guessed. Set after RecomputeDerived, which zeroes and rebuilds the field.
+static (string, Entity)[] Targets(int L, float fighterRes = -1f, float casterRes = -1f)
+{
+    var list = new (string, Entity)[]
+    {
+        ("tank",     BuildPlayer(Race.Human, BaseClass.Fighter, L)),
+        ("champion", BuildPlayer(Race.Human, BaseClass.Fighter, L, warrior: true)),
+        ("nuker",    BuildPlayer(Race.Human, BaseClass.Mage, L)),
+        ("healer",   BuildPlayer(Race.Human, BaseClass.Mage, L, healer: true)),
+    };
+    foreach (var (_, e) in list)
+    {
+        float over = e.BaseClass == BaseClass.Fighter ? fighterRes : casterRes;
+        if (over >= 0f) e.MagicResist = over;
+    }
+    return list;
+}
+
 int[] levels = { 20, 40, 52, 61, 76, 85 };
 
 Console.WriteLine();
@@ -3713,7 +3856,10 @@ static int TopPhysSkillPower(Entity e)
 /// "legendary" / "rare" / … to measure the six-quality ladder's other rungs.</param>
 /// <param name="warrior">Fighters default to the KNIGHT (tank) 2nd class; set this for the CHAMPION
 /// (warrior), whose kit is the damage-dealing one.</param>
-static Entity BuildPlayer(Race race, BaseClass cls, int level, string? quality = null, bool warrior = false)
+/// <param name="healer">Mages default to the SORCERER (nuker) 2nd class; set this for the CLERIC,
+/// who takes the healer kit and — since the 2026-08-20 mastery fork — a WAND, not a staff.</param>
+static Entity BuildPlayer(Race race, BaseClass cls, int level, string? quality = null, bool warrior = false,
+                          bool healer = false)
 {
     var s = StatCalculator.GetBaseStats(race, cls);
     var e = new Entity { Name = "calc", Kind = EntityKind.Player };
@@ -3724,7 +3870,8 @@ static Entity BuildPlayer(Race race, BaseClass cls, int level, string? quality =
 
     // Second class at 20 (Human Sorcerer / Human Knight) so the archetype kits apply.
     // 18 = Sorcerer (nuker), 13 = Knight (tank), 14 = Champion (warrior).
-    if (level >= 20) e.SecondClass = cls == BaseClass.Mage ? 18 : warrior ? 14 : 13;
+    // 17 = Human Cleric (healer).
+    if (level >= 20) e.SecondClass = cls == BaseClass.Mage ? (healer ? 17 : 18) : warrior ? 14 : 13;
 
     // Every skill the class table teaches by this level, at the highest level learnable.
     //
@@ -3776,7 +3923,7 @@ static Entity BuildPlayer(Race race, BaseClass cls, int level, string? quality =
     // instead of asserting it.
     int t = GearTier(level);
     string q = quality is null or "epic" ? "" : "_" + quality;
-    Equip(e, (cls == BaseClass.Mage ? $"staff_t{t}" : $"sword1h_t{t}") + q);
+    Equip(e, (cls == BaseClass.Mage ? (healer ? $"wand_t{t}" : $"staff_t{t}") : $"sword1h_t{t}") + q);
     Equip(e, (cls == BaseClass.Mage ? $"robe_t{t}" : $"heavy_t{t}") + q);
     if (cls == BaseClass.Fighter) Equip(e, $"shield_t{t}{q}");
     foreach (var acc in new[] { "helm", "gloves", "boots" }) Equip(e, $"{acc}_t{t}{q}");

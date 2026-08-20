@@ -552,6 +552,26 @@ public static class StatCalculator
         return Math.Max(1, (int)dmg);
     }
 
+    /// <summary>MANA DRAIN (the healer's Mana Ray) — a share of the TARGET'S OWN max MP, NOT the magic
+    /// damage number. <paramref name="power"/> is the authored skill power read as PER MILLE, so his
+    /// 145 = 14.5% of the pool; that keeps the CSV column and the `DESCR` text authored as an ordinary
+    /// "+145 Power" and leaves `SkillCsvSeed --check` reading the same number the engine does.
+    /// <para>🔑 WHY IT IGNORES M.Atk, M.Def AND mRes (owner, 2026-08-20, after four models were
+    /// measured). M.Def is nearly identical across classes at level 74 (697-782) but MP POOLS differ
+    /// <b>4.5×</b> — 696 on a fighter against 3158 on a healer. So any drain whose size is independent
+    /// of the pool is lopsided by construction: the magic-damage model emptied a fighter in 1.2 casts
+    /// while taking 5-6 on a caster. Magic resistance cannot correct that — pushed to `MagicResist`'s
+    /// hard ±0.9 clamp a fighter still fell in 2.0-2.3 casts, and mRes is the same coefficient that
+    /// divides real magic damage, so widening it to fix a drain would gut every nuke. A share of the
+    /// pool is the only shape where one authored number means the same thing to everyone: 14.5% is
+    /// 7.0 casts to zero, whoever it lands on. Re-measure with
+    /// `dotnet run --project tools/BalanceMatrix -- --mana-ray &lt;power&gt; &lt;level&gt;`.</para>
+    /// <para>⚠ Deliberately NOT multiplied by weapon variance: the drain no longer reads the weapon at
+    /// all, and a predictable share is the whole point of the model. The PvE ×0.5, the fizzle and the
+    /// magic crit still apply — those are the caller's, not this method's.</para></summary>
+    public static int ManaDrain(int targetMaxMp, float power) =>
+        Math.Max(1, (int)(Math.Max(0, targetMaxMp) * power / 1000f));
+
     /// <summary>Weapon damage variance — a ± random band. Spikier weapons (bow,
     /// dagger) get a wider band; steady weapons (blunt) narrower. Returns a
     /// multiplier around 1.0.</summary>

@@ -8799,11 +8799,29 @@ public class GameLoopService : BackgroundService
             offensive = true;
             var (mFlat, mMod) = def.Id == SkillCatalog.TestMagicSkill
                 ? (_testSkillPower, _testSkillMod) : def.MagicDamageAt(lvl);   // test skill: live debug Flat/Mod
-            int damage = StatCalculator.MagicDamageFM(
-                (int)caster.EffectiveMagicAttack, mFlat, mMod,
-                (int)target.EffectiveMagicDefence,    // magic channel: divides by mDef
-                target.MagicDefCoef);                 // ...times his MAGIC RESISTANCE (1.25 → ×0.8)
-            damage = (int)(damage * StatCalculator.WeaponVariance(caster.WeaponType, _rng));
+            int damage;
+            if (def.DamageToMp)
+            {
+                // MANA RAY takes a SHARE OF THE TARGET'S OWN MAX MP and never touches M.Atk, M.Def or
+                // mRes — see StatCalculator.ManaDrain for the four-model measurement behind that.
+                // No weapon variance either: the drain reads no weapon, and a predictable share is the
+                // point. Everything BELOW this block is deliberately shared with an ordinary nuke —
+                // the fizzle, the magic crit, the interrupt contest, the threat — because his ruling
+                // was only ever about the SIZE of the number, not about what a hit does.
+                damage = StatCalculator.ManaDrain(target.MaxMp, mMod);
+            }
+            else
+            {
+                damage = StatCalculator.MagicDamageFM(
+                    (int)caster.EffectiveMagicAttack, mFlat, mMod,
+                    (int)target.EffectiveMagicDefence,    // magic channel: divides by mDef
+                    target.MagicDefCoef);                 // ...times his MAGIC RESISTANCE (1.25 → ×0.8)
+                damage = (int)(damage * StatCalculator.WeaponVariance(caster.WeaponType, _rng));
+            }
+            // Still FinalizeDamage for a drain: it carries his "half effect on monsters"
+            // (PveDamageMult 0.5) and the PvP matrix, and doing that arithmetic here instead would be
+            // a second copy of it. ⚠ It also means magic-damage BONUSES scale a drain — flagged to the
+            // owner as a consequence of routing one path, not a separate rule.
             damage = FinalizeDamage(caster, target, damage, DamageKind.SkillMagic, def);
 
             // WIT drives the caster's offensive magic interrupt power on top of the

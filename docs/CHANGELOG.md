@@ -12,7 +12,74 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-08-20 (latest) — a skill has ONE MP price: the CSVs collapse to one column, the engine splits 20/80
+## 2026-08-20 (latest) — Mana Ray drains a SHARE OF THE TARGET'S POOL, not a magic-damage number
+
+⚠ **ENGINE ONLY — the skill itself is still NOT authored.** There is no `mana_ray` `SkillDef` and no
+class-table row; his `healer 3rd.csv` rungs (56-70) are still being written and were not touched here.
+*"u can fix the code and w8 to finish the file"*. **No version bump, no APK** — nothing reachable
+changed, because nothing carries `DamageToMp` yet.
+
+### The model, and why the obvious one was wrong
+
+`DamageToMp` shipped reusing the magic pipeline verbatim, which was his own earlier ruling (*"Same
+formula; mRes; can fizzle; etc"*). Measured at level 74 against real geared Entities, that model
+emptied a **fighter in 1.2 casts** while taking 5-6 on a caster. The cause is not defence: M.Def is
+nearly identical across classes (697-782). It is that **MP pools differ 4.5×** — 696 on a fighter
+against 2662/3158 on a nuker/healer — so any drain whose size ignores the pool is lopsided by
+construction. Owner: *"a healer vs tank/fighter making the fighter and a tank in 2 cast to 0 mp .. and
+they are sitting targets to your 80% mp"*.
+
+Four models were measured (`tools/BalanceMatrix -- --mana-ray`, added here). Casts-to-zero at power 165:
+
+| model | tank | champion | nuker | healer |
+|---|---|---|---|---|
+| A the magic pipeline (what shipped) | **1.4×** | **1.3×** | 5.8× | 6.9× |
+| B flat ÷ mRes | 5.1× | 5.1× | **21.1×** | **25.1×** |
+| C flat × mRes ("mana punishment") | **3.5×** | **3.5×** | 12.4× | 14.8× |
+| **D share of the target's max MP** ✅ | 6.1× | 6.1× | 6.1× | 6.1× |
+
+🔑 **Magic resistance cannot fix this, and that is measured, not argued.** He proposed hypothetical
+20%/30% resistances to rescue model A; they moved the tank from 1.2 to **1.4** casts. Pushed to
+`MagicResist`'s hard ±0.9 clamp (`Entity.cs`) — coefficient 1.90, the most the engine can express — a
+fighter still falls in **2.0-2.3**. Model A would need ~4.2, which is impossible *and* would cut every
+nuke landing on that fighter by 76%, because mRes is the same coefficient that divides real magic
+damage. 🔑 His **C reversal bites the wrong way**: multiplying by resistance raises the fighter's
+number too, and his is the small pool — 28% of a fighter's bar per cast against 8% of a mage's.
+
+### What was built
+
+- 🆕 **`StatCalculator.ManaDrain(targetMaxMp, power)`** — the drain is `power` PER MILLE of the
+  target's own max MP, so his authored **145 = 14.5%** (*"ill make it to a max of 145 power to be less
+  OP"*). Reading the power as per mille is what lets the CSV keep an ordinary `+145 Power` cell and
+  keeps `SkillCsvSeed --check` and `Descr.cs` reading the same number the engine does.
+- The magic block in `GameLoopService` **branches once**: a `DamageToMp` skill takes the pool share and
+  skips `MagicDamageFM` and weapon variance entirely (it reads no weapon, and a predictable share is
+  the point). Everything below the branch is deliberately still shared with an ordinary nuke — the
+  fizzle ÷3, the magic crit, the interrupt contest, threat, the hide break — because his ruling was
+  about the SIZE of the number, never about what a hit does. `FinalizeDamage` still runs, so his
+  *"half effect on monsters"* (`PveDamageMult 0.5`) and the PvP matrix are unchanged and un-duplicated.
+  ⚠ That also means magic-damage BONUSES still scale a drain; flagged to him as a consequence of
+  keeping one path rather than a rule anyone chose.
+- `SkillText` now states the SHARE (`Drains 14.5% of the target's MAXIMUM MP`) plus a line saying it
+  ignores magic defence and resistance. A card showing the raw `145` next to a 3158-MP pool would read
+  as 145 MP.
+- `tools/BalanceMatrix` gained `--mana-ray <power> <level> [fighterRes] [casterRes]`, a `healer:` mode
+  on `BuildPlayer` (Cleric = class 17, **wand** not staff) and a shared `Targets()` list. Its D column
+  calls the shipped `ManaDrain`, not a copy of it.
+
+**At 14.5% the result is 7.0 casts to zero every target** (100/cast off a fighter's 696, 457 off a
+healer's 3158), ≈13.8 casts to strip a boss after the ×0.5.
+
+### Still owed when his file lands
+
+The `SkillDef` + class rows, and the **MP cost ×3** he ruled (*"i should tripple the mp cost"*): at his
+authored 90 a full drain costs the healer 4% of his own bar, at 270 it costs a flat **59-60% against
+every target** — the "strategy move, not a farming tool" the `NeverAuto` flag already encodes.
+⚠ His ladder tops out at 145 **already at level 68** (56→120 … 68→145, 70→153, 72→157), so a literal
+cap flattens 70/72/74 onto the 68 rung for 390k-650k SP. Raised with him; respacing is his call, and
+`--check` cannot see a flat top — it only catches a ladder going down.
+
+## 2026-08-20 — a skill has ONE MP price: the CSVs collapse to one column, the engine splits 20/80
 
 ⚠ **NO VERSION BUMP, and NO APK NEEDED.** No skill's total cost moved by a single point — the two CSV
 columns always summed to the total the code already carried, and `--check` runs clean on all seven

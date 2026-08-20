@@ -388,7 +388,17 @@ public static class SkillText
                 + $"against a {def.ConditionalOn.ToString().ToLowerInvariant()} target");
         // Mana damage first: it changes what every damage line above this actually drains, so a card
         // that mentions it last reads as though the spell does both.
-        if (def.DamageToMp) o.Add("Damages MP, not HP (cannot kill)");
+        if (def.DamageToMp)
+        {
+            // The card must state the SHARE, not the authored power. The number in the CSV is per
+            // mille (145 = 14.5%) so that column stays an ordinary "+145 Power" for --check; a player
+            // shown "145" next to a 3158-MP pool would read it as 145 MP. See StatCalculator.ManaDrain.
+            float share = def.MagicDamageAt(level).Mod / 10f;
+            o.Add(share > 0f
+                ? $"Drains {share:0.#}% of the target's MAXIMUM MP — not HP, so it cannot kill"
+                : "Damages MP, not HP (cannot kill)");
+            o.Add("Ignores magic defence and magic resistance (the share is the same on any target)");
+        }
         if (def.PveDamageMult != 1f) o.Add($"Damage vs monsters x{def.PveDamageMult:0.##}");
         if (def.PvpDamageMult != 1f) o.Add($"Damage vs players x{def.PvpDamageMult:0.##}");
 
