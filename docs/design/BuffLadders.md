@@ -100,7 +100,7 @@ of its two headline children.
 
 | Group | Children |
 |---|---|
-| **Swift and Sure** (was "Improved Speed") | Swift (move) · Alacrity (cast) · Agility (evasion) · Haste (attack speed) |
+| **Swift and Sure** (was "Improved Speed") | Swift (move) · Alacrity (cast) · Agility (evasion) · Fury (attack speed) |
 | **Might and Bulwark** | Might (% P.Atk) · Bulwark (% P.Def) · Vampirism · Accuracy |
 | **Force and Ward** | Force (% M.Atk) · Ward (% M.Def) · Resolve (interrupt resist) |
 | **Focus and Ferocity** | Focus (crit rate) · Ferocity (crit damage) · Insight (magic crit) |
@@ -131,7 +131,7 @@ player strictly worse off with no recourse but to cancel the whole buff.
 ## The decision  *(⚠ REVERSED IN 0.42.0 — see the block at the top)*
 
 **An improved buff is a bag of single buffs.** The cleric/warchanter "Speed" does not apply a
-buff of its own — it applies four *children* (swift, force, agility, haste), each an ordinary
+buff of its own — it applies four *children* (swift, force, agility, fury), each an ordinary
 buff on its own family key with its own rank. Each child resolves independently against whatever
 the player already has, using the rank rule already implemented in `ApplyBuff`.
 
@@ -237,7 +237,7 @@ Owner-authored (playtest-15 §2). Single buffs, C/U/R = ranks 1/2/3:
 | `spd_move` | swift — move speed | flat | 15 | 20 | 33 |
 | `spd_cast` | force — cast speed | % | 15 | 23 | 30 |
 | `spd_eva`  | agility — evasion  | flat | 1 | 2 | 4 |
-| `spd_as`   | haste — attack speed | % | 15 | 23 | 33 |
+| `spd_as`   | fury — attack speed | % | 15 | 23 | 33 |
 
 Consumables, per tier: **potion** 20 min / 1s cooldown / instant cast · **scroll** 1 h /
 1s cooldown / 1s cast. Same tiers, same ranks — only duration differs.
@@ -245,7 +245,7 @@ Consumables, per tier: **potion** 20 min / 1s cooldown / instant cast · **scrol
 The improved buff "Speed" (cleric / warchanter), six levels — every value is exactly one of the
 tiers above, so the levels are pure child references:
 
-| Level | swift | force | agility | haste |
+| Level | swift | force | agility | fury |
 |---|---|---|---|---|
 | L1 | U (20) | C (15%) | — | — |
 | L2 | R (33) | U (23%) | — | — |
@@ -326,8 +326,8 @@ contest, so a player who can buy one must be able to buy the other (owner, 0.41.
 
 | Family | Single | Mode | rungs |
 |---|---|---|---|
-| `vamp` | Vampirism | % | 3 / 6 / **9** |
-| `interrupt` | Resolve | flat | 18 / 25 / 40 / **60** |
+| `vamp` | Vampirism | % | 3 / 6 / 7 / 8 / **9** |
+| `interrupt` | Resolve | flat | 18 / 25 / 36 / 40 / 42 / 48 / **54** — 60 was parked 2026-08-21 |
 
 **Scroll only, six rungs; the scrolls are rungs 2 / 4 / 6 = Epic / Legendary / Mythic:**
 
@@ -370,12 +370,12 @@ individual buffs"*.
 | **improved** | the groups — four or five effects in one cast | **150-200** | **party** | Warchanter, one per level at 66 / 68 / 70 / 72 / 74 |
 | **Harmony** | no potion, no scroll, no NPC; stacks on top | 200 | **party** | Warchanter (60 / 62 / 64) |
 
-**Shield Bless and Harden** (Warchanter 66) is a sixth improved group, over the two shield families —
-`shield_def` (*Shield Harden*, % shield P.Def) and `shield_block` (*Shield Bless*, % block **chance**;
-reduction is never raised). ⚠ **Each family has one rung today, carrying the group's own +50% / +30%.**
-The owner is writing the singles' ladder in the healer file (Shield Harden is drafted at +5% @40, +10%
-@48); when it lands, those become the top rungs and the group re-points at the top index. Don't
-interpolate the middle first.
+**Shield Blessing and Harden** (Warchanter 66) is a sixth improved group, over the two shield families —
+`shield_def` (*Shield Hardening*, % shield P.Def) and `shield_block` (*Shield Blessing*, % block **chance**;
+reduction is never raised). ✅ **BOTH ARE FULL LADDERS since 2026-08-20** — his healer file authors
+Shield Blessing at 5/10/15/20/25/**30**% (@40/48/56/62/66/70) and Shield Hardening at 30/40/**50**%
+(@58/66/72), and the group points at the TOP rung of each. It still hands out exactly the +50% / +30%
+it always did.
 
 ⚠ **A single's price is AUTHORED PER RUNG now, not derived** (owner, 2026-08-19). It used to be
 `30 + 20·i/(n−1)` across a family's rungs; his re-priced `cleric 2nd.csv` prices a buff by **the level
@@ -414,7 +414,7 @@ Frenzy is cheap and the buffer's is not.
 1. ✅ `ChildBuffs` on `SkillDef`/`SkillLevel` + the `ApplyBuff` fan-out + parent `SourceSkillId`.
 2. ✅ The equal-rank duration rule, and the refused-consumable fix.
 3. ✅ The auto-buff "already up" child test + the sweep for parent-key assumptions.
-4. ✅ The four `spd_*` families, the new Swift/Alacrity/Agility/Haste potions + scrolls, the Dash
+4. ✅ The four `spd_*` families, the new Swift/Alacrity/Agility/Fury potions + scrolls, the Dash
    line, Wind Walk deleted, Improved Speed re-authored to six levels.
 5. ✅ Client: collapse buffs by `SourceSkillId` (0.37.0). No protocol bump was needed after all — a
    DTO field WITH A DEFAULT degrades gracefully; only a hub signature change breaks the wire.

@@ -16,9 +16,9 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,R
 40,Ferocity,Magic/Buff,600,self/target,1,1,1200,+25% critical damage.,60,19k,[],,Changed SP
 40,Clarity,Magic/Buff,600,self/target,1,1,1200,30% resist to SPT debuffs,60,19k,[],,Changed SP
 40,Fortitude,Magic/Buff,600,self/target,1,1,1200,15% resist to CON debuffs,60,19k,[],,Changed SP
-40,Shield Bless,Magic/Buff,600,self/target,1,1,1200,Increases Shield Rate with 5%,60,19k,[],,Changed to the rate increase buff (harden at 58); my mistake to have them reversed
+40,Shield Blessing,Magic/Buff,600,self/target,1,1,1200,Increases Shield Rate with 5%,60,19k,[],,Changed to the rate increase buff (harden at 58); my mistake to have them reversed
 40,Serenity,Magic/Buff,600,self/target,1,1,1200,+10% MP regeneration.,60,19k,[],,New insert
-40,Conceal,Magic/Buff,0,self,5,10,30,Monsters that haven't already noticed you leave you alone. Anything already chasing you keeps chasing,100,19k,[],,Changed SP
+40,Conceal,Magic/Buff,0,self,5,10,30,"Monsters that haven't already noticed you leave you alone. Anything already chasing you keeps chasing, Increase mana consuption by 50% while active",100,19k,[]
 40,Bind,Magical Debuff,600,enemy,2.5,5,30,Hold enemy for 30s (ATK vs SPT),35,36k,[],Elf
 40,Armor Break,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy P.Def by 10% and MDef by 5% (ATK vs SPT),35,36k,[],Ork
 40,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed and cast speed by 7% (ATK vs SPT),35,36k,[],Human,changed values
@@ -38,7 +38,7 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,R
 44,Resurrection Field,Magic/Heal,0,dead allies,15,60,0,Revive Dead allies 600 range around the caster at 30% HP/MP; restore 10% of lost exp.,200,22k,[]
 44,Restore Mana,Magic/Heal,600,ally,2,2,0,Transfers 77 MP to an ally (costs 77). Not on yourself or another mana-restorer.,77,22k,[]
 44,Bulwark,Magic/Buff,600,self/target,1,1,1200,+15% P.Def.,72,22k,[]
-44,Haste,Magic/Buff,600,self/target,1,1,1200,+15% Attack Speed.,72,22k,[]
+44,Fury,Magic/Buff,600,self/target,1,1,1200,+15% Attack Speed.,72,22k,[]
 44,Ward,Magic/Buff,600,self/target,1,1,1200,+23% M.Def.,72,22k,[]
 44,Body,Magic/Buff,600,self/target,1,1,1200,+10% Max HP.,72,22k,[]
 44,Soul,Magic/Buff,600,self/target,1,1,1200,+10% Max MP.,72,22k,[]
@@ -65,7 +65,7 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,R
 48,Restore Mana,Magic/Heal,600,ally,2,2,0,Transfers 86 MP to an ally (costs 86). Not on yourself or another mana-restorer.,86,32k,[]
 48,Body,Magic/Buff,600,self/target,1,1,1200,+15% Max HP.,75,32k,[],
 48,Soul,Magic/Buff,600,self/target,1,1,1200,+15% Max MP.,75,32k,[],
-48,Shield Bless,Magic/Buff,600,self/target,1,1,1200,Increases Shield Rate with 10%,75,32k,[]
+48,Shield Blessing,Magic/Buff,600,self/target,1,1,1200,Increases Shield Rate with 10%,75,32k,[]
 48,Vigor,Magic/Buff,600,self/target,1,1,1200,+15% HP regeneration.,75,32k,[]
 48,Serenity,Magic/Buff,600,self/target,1,1,1200,+15% MP regeneration.,75,32k,[]
 48,Clarity,Magic/Buff,600,self/target,1,1,1200,40% resist to SPT debuffs,75,32k,[]
@@ -97,7 +97,7 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,R
 52,Resolve,Magic/Buff,600,self/target,1,1,1200,+42 interrupt resistance.,80,38k,[]
 52,Body,Magic/Buff,600,self/target,1,1,1200,+20% Max HP.,80,38k,[],
 52,Soul,Magic/Buff,600,self/target,1,1,1200,+20% Max MP.,80,38k,[],
-52,Haste,Magic/Buff,600,self/target,1,1,1200,+33% Attack Speed.,80,38k,[]
+52,Fury,Magic/Buff,600,self/target,1,1,1200,+33% Attack Speed.,80,38k,[]
 52,Ward,Magic/Buff,600,self/target,1,1,1200,+30% M.Def.,80,38k,[]
 52,Frenzy,Magic/Buff,600,self/target,1,1,1200,"−10% Max HP/MP, +8% offence and speed, +8 move, −8 evasion.",80,38k,[]
 52,Bind,Magical Debuff,600,enemy,2.5,5,30,Hold enemy for 30s,48,74k,[],Elf
@@ -124,7 +124,7 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,R
 56,Serenity,Magic/Buff,600,self/target,1,1,1200,+20% MP regeneration.,85,42k,[]
 56,Aim,Magic/Buff,600,self/target,1,1,1200,+4 Accuracy.,85,42k,[]
 56,Ferocity,Magic/Buff,600,self/target,1,1,1200,+35% critical damage.,85,42k,[]
-56,Shield Bless,Magic/Buff,600,self/target,1,1,1200,Increases Shield Rate with 15%,85,42k,[]
+56,Shield Blessing,Magic/Buff,600,self/target,1,1,1200,Increases Shield Rate with 15%,85,42k,[]
 56,Body,Magic/Buff,600,self/target,1,1,1200,+25% Max HP.,85,42k,[]
 56,Soul,Magic/Buff,600,self/target,1,1,1200,+25% Max MP.,85,42k,[]
 56,Meditation,Magic/Buff,0,self,2,900,30,Decrease Pdef by 90%(x0.1) and Add MP regen +25/s for 30 seconds - The status is canceled on dmg taken,40,42k,[]
@@ -150,7 +150,7 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,R
 58,Antidote,Magic/Heal,600,self/target,0.8,3,0,"Cures poison, venom and bleed of rank 5 or lower from an ally (or self).",50,88k,[]
 58,Restore Mana,Magic/Heal,600,ally,2,2,0,Transfers 106 MP to an ally (costs 106). Not on yourself or another mana-restorer.,106,45k,[]
 58,Mana Ray,Magic/Active,600,enemy,2,2,0,Damages the MP of an enemy with +105 Power (Half effect on monsters),222,88k,[]
-58,Shield Harden,Magic/Buff,600,self/target,1,1,1200,Increases Shield PDef with 30%,90,45k,[]
+58,Shield Hardening,Magic/Buff,600,self/target,1,1,1200,Increases Shield PDef with 30%,90,45k,[]
 58,Vampirism,Magic/Buff,600,self/target,1,1,1200,+8% melee vampirism.,90,45k,[]
 58,Mana Blessing,Magic/Buff,600,self/target,1,1,1200,Decrease Physical MP Cost by 10% and Magic MP Cost by 5%,90,45k,[]
 58,Great Might,Magic/Buff,600,self/target,1,1,1200,+5% P.Atk. Does not stack with Other Great Might|Bulwark effects effects.,90,45k,[],,Does not stack ('Great Bulwark'|'Great Group Bulwark'|'Great Group Might')
@@ -198,7 +198,7 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,R
 62,Antidote,Magic/Heal,600,self/target,0.8,3,0,"Cures poison, venom and bleed of rank 6 or lower from an ally (or self).",53,170k,[]
 62,Restore Mana,Magic/Heal,600,ally,2,2,0,Transfers 113 MP to an ally (costs 113). Not on yourself or another mana-restorer.,113,86k,[]
 62,Mana Ray,Magic/Active,600,enemy,2,2,0,Damages the MP of an enemy with +115 Power (Half effect on monsters),233,170k,[]
-62,Shield Bless,Magic/Buff,600,self/target,1,1,1200,Increases Shield Rate with 20%,100,86k,[]
+62,Shield Blessing,Magic/Buff,600,self/target,1,1,1200,Increases Shield Rate with 20%,100,86k,[]
 62,Insight,Magic/Buff,600,self/target,1,1,1200,+50% magic critical rate.,100,86k,[]
 62,Soul,Magic/Buff,600,self/target,1,1,1200,+30% Max MP.,100,86k,[]
 62,Weapon Break,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy P.Atk and M.Atk by 9%,58,170k,[]
@@ -249,8 +249,8 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,R
 66,Mana Ray,Magic/Active,600,enemy,2,2,0,Damages the MP of an enemy with +125 Power (Half effect on monsters),245,280k,[]
 66,Great Might,Magic/Buff,600,self/target,1,1,1200,+7% P.Atk. Does not stack with Other Great Might|Bulwark effects effects.,110,145k,[]
 66,Great Bulwark,Magic/Buff,600,self/target,1,1,1200,+10% P.Def. Does not stack with Other Great Might|Bulwark effects effects.,110,145k,[]
-66,Shield Bless,Magic/Buff,600,self/target,1,1,1200,Increases Shield Rate with 25%,110,145k,[]
-66,Shield Harden,Magic/Buff,600,self/target,1,1,1200,Increases Shield PDef with 40%,110,145k,[]
+66,Shield Blessing,Magic/Buff,600,self/target,1,1,1200,Increases Shield Rate with 25%,110,145k,[]
+66,Shield Hardening,Magic/Buff,600,self/target,1,1,1200,Increases Shield PDef with 40%,110,145k,[]
 66,Mana Blessing,Magic/Buff,600,self/target,1,1,1200,Decrease Physical MP Cost by 15% and Magic MP Cost by 7%,110,145k,[]
 66,Weapon Break,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy P.Atk and M.Atk by 11%,62,280k,[]
 66,Bind,Magical Debuff,600,enemy,2.5,5,30,Hold enemy for 30s,62,280k,[],Elf
@@ -274,6 +274,7 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,R
 68,Restore Mana,Magic/Heal,600,ally,2,2,0,Transfers 124 MP to an ally (costs 124). Not on yourself or another mana-restorer.,124,165k,[]
 68,Mana Ray,Magic/Active,600,enemy,2,2,0,Damages the MP of an enemy with +130 Power (Half effect on monsters),250,320k,[]
 68,Meditation,Magic/Buff,0,self,2,900,30,Decrease Pdef by 90%(x0.1) and Add MP regen +40/s for 30 seconds - The status is canceled on dmg taken,57,165k,[]
+68,Resolve,Magic/Buff,600,self/target,1,1,1200,+54 interrupt resistance.,115,165k,[]
 68,Bind,Magical Debuff,600,enemy,2.5,5,30,Hold enemy for 30s,64,320k,[],Elf
 68,Armor Break,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy P.Def by 32% and MDef by 16%,64,320k,[],Ork
 68,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed and cast speed by 27%,64,320k,[],Human
@@ -295,7 +296,7 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,R
 70,Antidote,Magic/Heal,600,self/target,0.8,3,0,"Cures poison, venom and bleed of rank 8 or lower from an ally (or self).",60,390k,[]
 70,Restore Mana,Magic/Heal,600,ally,2,2,0,Transfers 129 MP to an ally (costs 129). Not on yourself or another mana-restorer.,129,200k,[]
 70,Mana Ray,Magic/Active,600,enemy,2,2,0,Damages the MP of an enemy with +135 Power (Half effect on monsters),270,390k,[]
-70,Shield Bless,Magic/Buff,600,self/target,1,1,1200,Increases Shield Rate with 30%,120,200k,[]
+70,Shield Blessing,Magic/Buff,600,self/target,1,1,1200,Increases Shield Rate with 30%,120,200k,[]
 70,Insight,Magic/Buff,600,self/target,1,1,1200,+100% magic critical rate.,120,200k,[]
 70,Body,Magic/Buff,600,self/target,1,1,1200,+35% Max HP.,120,200k,[]
 70,Soul,Magic/Buff,600,self/target,1,1,1200,+35% Max MP.,120,200k,[]
@@ -320,9 +321,12 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,R
 72,Resurrection,Magic/Heal,600,dead ally,5,10,0,Revive at 30% HP/MP; restore 95% of lost exp.,155,330k,[]
 72,Restore Mana,Magic/Heal,600,ally,2,2,0,Transfers 133 MP to an ally (costs 133). Not on yourself or another mana-restorer.,133,330k,[]
 72,Mana Ray,Magic/Active,600,enemy,2,2,0,Damages the MP of an enemy with +140 Power (Half effect on monsters),300,650k,[]
-72,Shield Harden,Magic/Buff,600,self/target,1,1,1200,Increases Shield PDef with 50%,125,330k,[] 
+72,Shield Hardening,Magic/Buff,600,self/target,1,1,1200,Increases Shield PDef with 50%,125,330k,[] 
 72,Fortitude,Magic/Buff,600,self/target,1,1,1200,40% resist to CON debuffs,125,330k,[]
 72,Vampirism,Magic/Buff,600,self/target,1,1,1200,+9% melee vampirism.,125,330k,[]
+72,Great Might,Magic/Buff,600,self/target,1,1,1200,+10% P.Atk. Does not stack with Other Great Might|Bulwark effects effects.,125,330k,[]
+72,Great Bulwark,Magic/Buff,600,self/target,1,1,1200,+15% P.Def. Does not stack with Other Great Might|Bulwark effects effects.,125,330k,[]
+72,Mana Blessing,Magic/Buff,600,self/target,1,1,1200,Decrease Physical MP Cost by 20% and Magic MP Cost by 10%,125,330k,[]
 72,Bind,Magical Debuff,600,enemy,2.5,5,30,Hold enemy for 30s,67,650k,[],Elf
 72,Armor Break,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy P.Def by 36% and MDef by 18%,67,650k,[],Ork
 72,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed and cast speed by 31%,67,650k,[],Human
@@ -345,9 +349,6 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,R
 74,Antidote,Magic/Heal,600,self/target,0.8,3,0,"Cures poison, venom and bleed of rank 9 or lower from an ally (or self).",64,880k,[]
 74,Restore Mana,Magic/Heal,600,ally,2,2,0,Transfers 140 MP to an ally (costs 140). Not on yourself or another mana-restorer.,140,450k,[]
 74,Mana Ray,Magic/Active,600,enemy,2,2,0,Damages the MP of an enemy with +145 Power (Half effect on monsters),360,880k,[]
-74,Great Might,Magic/Buff,600,self/target,1,1,1200,+10% P.Atk. Does not stack with Other Great Might|Bulwark effects effects.,130,450k,[]
-74,Great Bulwark,Magic/Buff,600,self/target,1,1,1200,+15% P.Def. Does not stack with Other Great Might|Bulwark effects effects.,130,450k,[]
-74,Mana Blessing,Magic/Buff,600,self/target,1,1,1200,Decrease Physical MP Cost by 20% and Magic MP Cost by 10%,130,450k,[]
 74,Weapon Break,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy P.Atk and M.Atk by 15%,69,880k,[]
 74,Bind,Magical Debuff,600,enemy,2.5,5,30,Hold enemy for 30s,69,880k,[],Elf
 74,Armor Break,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy P.Def by 38% and MDef by 19%,69,880k,[],Ork

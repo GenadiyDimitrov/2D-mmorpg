@@ -1,2 +1,17 @@
 LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,REPLACES,RACE
-76,Madness,Magic/Buff,600,self/party,1.5,1,1200,"Drives you and nearby allies berserk: −6% Max HP/MP, but +9% P.Atk / M.Atk / attack & cast speed, +9 Move Speed and −8 Evasion for 20 minutes.",220,100000,[],
+,,,,,,,,,,,,,---------------------------------------------------------------------------------------------Harmonies-------------------------------------------------
+,,,,,,,,,,,,,------------------------------Harmony of Protection------------------------------
+76,Harmony of Protection,Magic/Buff,600,self/party,1,120,300,"+30% M.Def, +20% HP Regen, +25% P.Def, +30% Max HP, +20% Mele Reflect, +10% Bow Resistance",464,100000,[],
+,,,,,,,,,,,,,------------------------------Harmony of the Wizard------------------------------
+77,Harmony of the Wizard,Magic/Buff,600,self/party,1,120,300,"+10% M.Atk, 30% cast speed, +20% MP Regen",199,100000,[],
+78,Harmony of the Wizard,Magic/Buff,600,self/party,1,120,300,"+10% M.Atk, 30% cast speed, +20% MP Regen, +30% magic crit rate",279,100000,[],
+,,,,,,,,,,,,,------------------------------Harmony of the Soul------------------------------
+77,Harmony of the Soul,Magic/Buff,600,self/party,1,120,300,"-10% Magical Reuse, -20% Physical Reuse, -10% Magic MP Consumption, -10% Physical MP Consumption",279,100000,[],
+78,Harmony of the Soul,Magic/Buff,600,self/party,1,120,300,"-15% Magical Reuse, -25% Physical Reuse, -12% Magic MP Consumption, -15% Physical MP Consumption",279,100000,[],
+79,Harmony of the Soul,Magic/Buff,600,self/party,1,120,300,"-20% Magical Reuse, -30% Physical Reuse, -15% Magic MP Consumption, -20% Physical MP Consumption",279,100000,[],
+80,Harmony of the Soul,Magic/Buff,600,self/party,1,120,300,"-20% Magical Reuse, -30% Physical Reuse, -15% Magic MP Consumption, -20% Physical MP Consumption, +5% Healing Received",367,100000,[],
+81,Harmony of the Soul,Magic/Buff,600,self/party,1,120,300,"-20% Magical Reuse, -30% Physical Reuse, -15% Magic MP Consumption, -20% Physical MP Consumption, +10% Healing Received",367,100000,[],
+82,Harmony of the Soul,Magic/Buff,600,self/party,1,120,300,"-20% Magical Reuse, -30% Physical Reuse, -15% Magic MP Consumption, -20% Physical MP Consumption, +15% Healing Received, +20% SPT Debuff Resistance",464,100000,[],
+83,Harmony of the Soul,Magic/Buff,600,self/party,1,120,300,"-20% Magical Reuse, -30% Physical Reuse, -15% Magic MP Consumption, -20% Physical MP Consumption, +20% Healing Received, +30% SPT Debuff Resistance",464,100000,[],
+,,,,,,,,,,,,,------------------------------Harmony of Madness------------------------------
+83,Harmony of Madness,Magic/Buff,600,self/party,1,120,300,"−10% Max HP/MP, +8% offence and speed, +8 move, −8 evasion.",367,45k,[]

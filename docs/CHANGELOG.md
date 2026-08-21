@@ -12,7 +12,267 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-08-21 (latest) — the healer's missing cast-speed buff: Alacrity rung 3 at 48
+## 2026-08-21 (latest) — THE WARCHANTER'S BUFF LAYER, 40-74: nine groups split by lane, four Harmony ladders
+
+The second discipline authored end to end, and the first built from a HALF-finished file. Owner:
+*"buffer 3rd is done to the 186 row ---NOT DONE--- everything below is not done.. I managed to do all
+the buffs all the harmonies and all the group buffs to lvl 74 .. leter ill do his passive/atack skills"*.
+
+### Why it happened: the groups mixed the two channels
+
+He opened the session with the complaint: *"i would like to change the grouped buffs .. not to mix magic
+with fighters buff .. to be like the haromonies several for fighter several for mage and several
+combined(defences)"*. He was right, and the five old groups show it plainly:
+
+| old group | children | the problem |
+|---|---|---|
+| Swift and Sure | move, **cast speed**, evasion, **attack speed** | fighter and mage in one cast |
+| Focus and Ferocity | crit rate, crit dmg, **magic crit** | ditto |
+| Might and Bulwark | P.Atk, **P.Def**, vamp, accuracy | fighter offence + a shared defence |
+| Force and Ward | M.Atk, **M.Def**, interrupt | mage offence + a shared defence |
+| Body and Soul | Max HP/MP, both regens | genuinely combined — the only clean one |
+
+He then authored the replacement himself, and the NAMES carry the lane: **Feral\*** = fighter,
+**Arcane\*** = mage, **Arcane and Feral \*** = both.
+
+| group | lane | children | @ |
+|---|---|---|---|
+| Feral Precision | fighter | crit rate · crit damage · accuracy | 58 |
+| Feral Bloodlust | fighter | P.Atk · attack speed · vampirism | 74 |
+| Arcane Insight | mage | M.Atk · magic crit | 72 |
+| Arcane Serenity | mage | cast speed · interrupt · MP regen | 70 |
+| Soul Reinforcement | mage | Max MP · M.Def · MP cost | 74 |
+| Body Reinforcement | combined | Max HP · P.Def · HP regen | 72 |
+| Shield Reinforcement | tank | shield P.Def · block chance | 74 |
+| Arcane and Feral Protection | combined | both CC resists | 74 |
+| Wind Grace | combined | move speed · evasion | 56 |
+
+Plus three PARTY ECHOES — `War Frenzy` @56, `War Might` / `War Bulwark` @74 — each handing the whole
+party what its single-target version gives one ally.
+
+🔑 **EVERY GROUP ARRIVES ONE LEARN TIER AFTER ITS LAST CHILD TOPS OUT.** His rule: *"The group buff
+shoul be learned 1 learn tire after the last buff is maxed out"*. Each line in the class table carries
+the child levels it derives from, so the rule stays checkable instead of being trusted.
+
+### 🔑 THE MP COLUMN IS SELF-CHECKING — and it caught four errors proof-reading missed
+
+Row 2 of his file states the rule: *"Each max lvl buff of the group MP + the group learned lvl MP
+cost"*. So `groupMp = Σ(each child single's TOP-rung MP) + the band MP at the group's own learn level`.
+All eleven groups and echoes satisfy it to the MP — and because they do, the sum **identifies the
+children**, which is how four copy-paste slips were found in rows that read perfectly:
+
+- **`Body Reinforcement` @72** — 402 only decomposes as Body 120 + **Bulwark 72** + Vigor 85 + 125. Its
+  `REPLACES` said `[Ward Soul Mana Blessing]` (copied from Soul Reinforcement) and its `DESCR` said
+  "+35% Max HP **and Max MP**" while omitting Bulwark's +15% P.Def. Both wrong; the arithmetic wasn't.
+- **`Wind Grace` @56** — 198 only closes with the CLERIC's level-30 Swift (33) + Agility (80) + 85,
+  which is what identified its two children in a file that authors no Swift row of its own.
+- **`Arcane and Feral Protection` @74** — children right, but SP was 42k: the level-**56** band.
+- **`Resurrection` @56** — SP 81k against the healer's 42k, and 81k → 45k ran backwards.
+
+### 🔑 HARMONIES ARE A DIFFERENT SHAPE NOW: 5 minutes, 2-minute reuse
+
+Not 20 minutes. His reasoning, verbatim: *"its not a buffs they are additional support … The idea is
+the buffer is a must .. not enter party buffs get kicked for 20 mins ... need to stay and rebuff thats
+his job"*. IG's own is 2 minutes; 5 is the compromise he settled on.
+
+They are still **not groups** — own `BuffKey`, cover no family, evict nothing, and MULTIPLY on top of
+the basic layer. That is the whole reason the tier exists.
+
+**MP is `60 × 1.1^i` per buff inside**, summed: 60 / 66 / 73 / 80 / 88 / 97, so the ladders total
+60 / 126 / 199 / 279 / 367 / 464.
+
+| harmony | rungs | ends |
+|---|---|---|
+| Harmony of the Warrior | 6 @ 40/44/48/56/58/74 | double crit rate, +35% crit dmg, +4 acc, +12% P.Atk, +15% atk speed, 8% vamp |
+| Harmony of Protection | 5 @ 44/52/56/66/74 | +30% M.Def, +20% HP regen, +25% P.Def, +30% Max HP, 20% melee reflect |
+| Harmony of Speed | 2 @ 48/58 | +20 move, +3 evasion — **and it stops** |
+| Harmony of the Wizard | 2 @ 48/52 | +10% M.Atk, +30% cast — **continues in `buffer 4th.csv`** |
+
+⚠ **Speed stopping at 58 and the Wizard at 52 is a RULING, not an unfinished ladder** (*"The speed one
+stops - no more buffs for it; Wizard continue in Buffer 4th"*). The Wizard's old +20% MP regen and
+−30% magic MP cost are deliberately gone from the 3rd tier: the MP-cost half is Mana Blessing's job
+now, the regen half is on the 4th-class ladder. Do not restore them.
+
+### 🔑 HARMONY OF THE WARRIOR IS +100% CRIT RATE, NOT +75%
+
+He asked why it was 75, and the answer was that **nothing had decided it**. The 0.75f was authored
+2026-07-03 in `6211942`, a month before the crit model landed, and was never reconciled — his own
+worked ladder in `docs/design/CritBlowAndDouble.md` §5 uses **Harmony ×2** on every line (dagger
+`132 ×1.3 ×1.5 ×2 = 514 → capped 500`; bow `205 ×2 = 410`; sword `88 ×1.3 ×2 = 228`). Every *other*
+multiplier in that chain already matched the code — Focus ×1.30, the rogue passives ×1.20/×1.50, the
+3:2:1 weapon factors — so Harmony was the lone survivor of the old numbers.
+
+It matters beyond tidiness: at ×2 a maxed melee rogue reaches 514 and is clamped to the **50% cap**,
+which is what the cap is *for*. At ×1.75 he stopped at 45% and **nothing in the game ever touched the
+ceiling**. He authored ×2 into every rung of the ladder.
+
+⚠ `TestChecklist.Unity.md` §52d still asserts the ×1.75 figure ("Add Harmony of the Warrior on top →
+**36%**"). It is **41%** now.
+
+### 🔑 THE CHECKER NOW STOPS AT HIS `NOT DONE` BANNER — so a half-finished file is checkable
+
+`Check.ReadCsv` breaks on the banner, and **`buffer 3rd` earned its line in `Check.Specs`**. The
+authored half is compared; the stubs below are invisible. As he moves the banner down, the
+newly-authored rows start being checked automatically.
+
+That paid for itself immediately — with the spec added, `--check` found four real code defects that
+the build could not:
+
+- `Great Might` / `Great Bulwark` / `Mana Blessing` rung 3 still sat at level 74 / 130 MP / 450k SP.
+  He moved all three to **72 / 125 MP / 330k SP** in BOTH files this session; the class table had been
+  updated for the buffer and not for the healer, and the `SkillDef` levels not at all.
+- `Shrouding Hymn` SP was 12000 against his 880000.
+
+And the catalog's own startup guard caught a fifth before that: `Rung(FamAs, 3)` produced
+`buff_spd_as_3`, which does not exist — **the four speed families use hand-written ids**
+(`buff_haste_r`, `buff_alacrity_r`, `buff_swift_r`, `buff_agility_r`), not the `buff_{family}_{n}`
+shape every other ladder uses. Worth remembering: `Rung()` is not universal.
+
+### What else moved
+
+- **His singles are the healer's ladder, rung for rung** — all twenty-five families are learned at the
+  same character level and the same rung index the Lightbringer gets, verified family by family. So
+  the class table authors no values at all: it is WHICH rung and WHEN. Retuning a ladder moves both
+  disciplines together, automatically.
+- **`Resurrection` stops at 66** for the buffer (80% of lost exp) where the healer's runs to 74 and
+  100% — the clearest line between the two disciplines.
+- **`Shrouding Hymn` moved 30 → 74.** It is the PARTY stealth and belongs at the top (*"IG learns it at
+  ~80"*); the level-40 SELF version is `Conceal`.
+- 🔑 **`Madness` IS `War Frenzy` — renamed, not replaced** (*"madness is now named War Frenzy and its
+  the 56lvl group frenzy buff"*). Its level 76 was always an explicitly temporary home (*"and when the
+  kits land we will move it"*); this is that kit landing. **The id stays `madness`** — append-only, and
+  characters carry it — while the const is now `WarFrenzy` and the skill is called War Frenzy. It drops
+  76 → **56**, rung 7 → **rung 2** (his row is Frenzy @52's payload verbatim: the reward is the PARTY,
+  not a bigger number), MP 220 → **165** and SP 100k → **45k** — and 165 satisfies the group-MP rule as
+  Frenzy's top-rung 80 + the 85 his band charges at 56. ⚠ A first pass of this build invented a
+  SECOND skill (`wc_war_frenzy`) for it, which would have left the original orphaned; that was backed
+  out. ⚠ **`FamFrenzy` rung 7 is now reached by nothing** — allowed (Resolve carries a dead rung too),
+  but it is not live content, and rungs 3-6 are still weaker than his authored rung 2.
+- **The five old groups are no longer taught**, nor is `HolyShield`. Their defs stay in the catalog —
+  deleting one orphans every character who bought it — but no class grants them.
+- **`AdminBuffSet` rebuilt** around the nine lane groups, the two echoes and the four harmonies.
+- 🔴 **`RegisterWarchanter()` is now genuinely dead code.** It was already switched off; its per-race
+  Bolt/Chant/Renew/Pass were the invented pre-CSV kit, and the attack half of his file replaces them.
+
+### The MP budget he sized it against
+
+> *"buffer needs 3268 /20 min to keep buffs active ~2.72mp/s and 1126/5min to keep harmonies ~3.75/s ..
+> so ~6.5 mp regen keeps all up and runing ... and thats is without the mp consumption buff so i say 5k
+> mp one time to fully buff a whole party is a good way to start farming"*
+
+`dotnet build` clean · `--check` green on `healer 3rd` **and** `buffer 3rd` · Unity `Assembly-CSharp`
+clean. ⚠ Needs the **APK that is already pending** — the client builds its Learn tab locally from the
+compiled `ClassSkills`. No version bump: that is his call at deploy time.
+
+
+## 2026-08-21 — three renames from his CSVs, and Resolve caps at +54
+
+Four owner edits made straight into his CSVs, mid-session, while he was authoring `buffer 3rd.csv`.
+
+### 1. `Haste` → `Fury` (the attack-speed family)
+
+He renamed the rows himself in **both** `buffer 3rd.csv` and `healer 3rd.csv`. Because `healer 3rd.csv`
+is one of the eight files `--check` walks, that immediately went red — and red in the way the name
+mismatch always goes red, which is worth recording because it hides everything else:
+
+```
+🔴 NOT REGISTERED  Fury — 2 authored rung(s) at 44/52, the class learns none.
+🟠 NOT IN THE CSV  Haste — the class learns 2 rung(s) at 44/52 with nothing authored.
+```
+
+Four numeric columns on those two rows went unchecked for as long as the names disagreed. Same shape
+as the `Taunt`/`Provoke` mismatch in the fighter files.
+
+**DISPLAY NAMES ONLY — every id is untouched**, because ids are append-only: the family is still
+`spd_as`, the rungs are still `buff_as_1..3`, the potion skills are still `pot_haste_*`, the scroll
+skills `scr_haste_*`, and the items `potion_atk_c/u` and `scroll_atk_r`. Read the const, not its name.
+
+- `Skills.Common.cs` — the three ladder rungs, the three potions (`Fury Potion` / `(Lesser)` /
+  `(Greater)`), the three scrolls (`Scroll of Fury …`).
+- `Skills.BuffLadders.cs` — the castable family name. `Skills.Buffer.cs` — the NPC buffer's single.
+- `Items.cs` — the two potion `ItemDef`s and `Scroll of Fury`.
+- `nuker 3rd.csv` — its two rows still said `Haste` (the same values, copied from the healer's).
+  Brought in line; it is not a `--check` file yet, so nothing would have caught it.
+- `GameUi.Debug.cs` — the debug-give button's label.
+- `docs/design/BuffLadders.md`, `docs/guides/ItemIds.md`. CHANGELOG and `Playtest-Archive.md` keep the
+  old name: they are the record of what was said, not of what the game currently calls things.
+
+⚠ **The consumables followed the family**, the way Swift/Alacrity/Agility already do — a Fury Potion
+grants Fury. ⚠ `Battle Fury` (`battle_fury`) still exists in the catalog: retired, granted by nobody,
+def kept so it does not orphan anyone. No collision, but the two names now sit together in a search.
+
+### 2. Resolve +54 at 68 — and 54 becomes the ceiling: the 60 rung is parked
+
+Owner: *"for healer again forgot … 1 more lvl"*, then
+`68,Resolve,Magic/Buff,600,self/target,1,1,1200,+54 interrupt resistance.,115,165k,[]` — followed a few
+minutes later by the ruling that decides the rest of it: *"54 is max resolve for now .. comment out the
+60lvl .. no1 is leatrning itatm"*, and *"the healer buffs are source of truth now ... buffer later"*.
+
++54 sat **between** rung 6 (48) and the old top of 60. A family's rung index *is* its rank, so holding a
+middle value normally means inserting and renumbering everything above it — the treatment six families
+got on 2026-08-20. Here the top was **capped instead**: `Resolve` is `18, 25, 36, 40, 42, 48, 54`, seven
+rungs, and **54 is the ceiling**.
+
+🔑 **60 IS PARKED, NOT DELETED.** The value left `Ladder(FamInterrupt, …)` and `BuffIntr8` is commented
+out beside the live consts. Re-adding 60 to that one array is the whole restoration — the id is reserved
+and nothing else has to move. ⚠ Ids are append-only, so `buff_interrupt_8` must never be reused for
+anything else.
+
+⚠ **He was almost right that nobody learns it.** The Warchanter did — `Third.cs:233`, +60 at 52 — but
+that is the *invented* pre-CSV buffer kit, and his second message settles it: the healer's authored
+numbers are the source of truth and the buffer is rebuilt from `buffer 3rd.csv` later. So everything
+that handed out 60 now hands out his 54:
+
+- `Skills.Buffer.cs` — `NpcResolve` (the NPC newbie buffer's hour-long single) and `Force and Ward`'s
+  child list, both descriptions with them.
+- `Skills.Healer.cs` — `HolyForce` levels 5 and 6.
+- `ClassSkillTables.Third.cs` — the Warchanter's row at 52 is now `SkillLevel: 7`.
+
+The healer's own line gains the rung: `At(CastId(FamInterrupt), (44, 3), (52, 5), (60, 6), (68, 7))`.
+Its price comes from a new band constant `H68 = R(115, 165000)`, which lands cleanly between
+`H66 = R(110, 145000)` and `H70 = R(120, 200000)` — monotonic in MP and in SP.
+
+⚠ `docs/design/BuffLadders.md`'s ladder table was **two edits stale** and is now current: `interrupt`
+read `18 / 25 / 40 / 60` (it never got the 36/42/48 inserts) and `vamp` read `3 / 6 / 9` (it never got
+7/8%). Both corrected.
+
+### 3. The shield pair renamed: `Shield Bless` → **Shield Blessing**, `Shield Harden` → **Shield Hardening**
+
+Display names only, both times — the families are still `shield_block` / `shield_def` and the rungs are
+still `buff_shield_block_1..6` / `buff_shield_def_1..3`.
+
+He renamed Blessing in `healer 3rd.csv` himself; Hardening he renamed in `buffer 3rd.csv` and ruled in
+chat, so the healer's three rows (@58/66/72) were brought over to match — *"the healer buffs are source
+of truth now"*. `nuker 3rd.csv` carried stale copies of both and was brought in line too (it is not a
+`--check` file, so nothing would have caught it).
+
+🔑 **THE TWO RENAMES FAILED DIFFERENTLY, AND THAT IS THE USEFUL PART.** `Shield Bless` → `Shield
+Blessing` reported as
+`🔵 NAME DRIFT  CSV "Shield Blessing" = code "Shield Bless" (matched on spelling; rungs 6 vs 6)` — a
+fuzzy match, so **all six rungs were still compared**. `Haste` → `Fury` shares no spelling, so it
+reported as two unrelated skills (`🔴 NOT REGISTERED` + `🟠 NOT IN THE CSV`) and **compared nothing**.
+The checker degrades gracefully on a near-miss and goes blind on a true rename — so a rename to an
+unrelated word is the one that has to be re-checked deliberately.
+
+- `Skills.BuffLadders.cs` — both ladder names and both castable names, plus the family comments.
+- `docs/design/BuffLadders.md`. His own quoted words (*"it should rapladse Shield Harder and Shield
+  Bless"*) are left verbatim — they record what was said, not what things are called.
+
+🔴 **THE GROUPS WERE DELIBERATELY NOT TOUCHED.** `HolyShield` still reads `"Shield Bless and Harden"`
+even though both of its singles have been renamed, because he is redoing the improved groups with new
+names of his own — `buffer 3rd.csv` already calls this one **Shield Reinforcement** @74. An earlier pass
+in this session had renamed the group to match its singles; that was **reverted**, so this commit
+contains no group-name decision at all.
+
+⚠ That doc paragraph was also stale: it still claimed **"each family has one rung today"**, which stopped
+being true on 2026-08-20 when both shield ladders were authored in full. Corrected to the real ladders —
+Shield Blessing 5/10/15/20/25/**30**% (@40/48/56/62/66/70), Shield Hardening 30/40/**50**% (@58/66/72).
+
+`dotnet build` clean, `--check` green with no `UNREAD`, Unity `Assembly-CSharp` clean.
+⚠ All of it is class-skill-table/catalog change and needs the **APK that is already pending**.
+
+
+## 2026-08-21 — the healer's missing cast-speed buff: Alacrity rung 3 at 48
 
 Owner, mid-session: *"have forgoten on healer the cast speed buff"*, then the row itself —
 `48,Alacrity,Magic/Buff,600,self/target,1,1,1200,+30% Cast Speed.,75,32k,[]` (now `healer 3rd.csv:74`).

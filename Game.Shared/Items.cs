@@ -434,7 +434,7 @@ public static class ItemCatalog
     public const string SpeedPotionU = "potion_speed_u";
     public const string CastPotionC = "potion_cast_c";     // Alacrity (cast speed)
     public const string CastPotionU = "potion_cast_u";
-    public const string AtkPotionC = "potion_atk_c";       // Haste    (attack speed)
+    public const string AtkPotionC = "potion_atk_c";       // Fury     (attack speed)
     public const string AtkPotionU = "potion_atk_u";
     public const string EvaPotionC = "potion_eva_c";       // Agility  (evasion)
     public const string EvaPotionU = "potion_eva_u";
@@ -987,9 +987,9 @@ public static class ItemCatalog
             ItemGrade.F, ItemRarity.Common, UseSkillId: SkillCatalog.PotAlacrityC, SellPriceOverride: 0, Value: 1500));
         list.Add(new ItemDef(CastPotionU, "Alacrity Potion", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Uncommon, UseSkillId: SkillCatalog.PotAlacrityU, SellPriceOverride: 0, Value: 5000));
-        list.Add(new ItemDef(AtkPotionC, "Haste Potion (Lesser)", EquipSlot.Consumable,
+        list.Add(new ItemDef(AtkPotionC, "Fury Potion (Lesser)", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Common, UseSkillId: SkillCatalog.PotHasteC, SellPriceOverride: 0, Value: 1500));
-        list.Add(new ItemDef(AtkPotionU, "Haste Potion", EquipSlot.Consumable,
+        list.Add(new ItemDef(AtkPotionU, "Fury Potion", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Uncommon, UseSkillId: SkillCatalog.PotHasteU, SellPriceOverride: 0, Value: 5000));
         list.Add(new ItemDef(EvaPotionC, "Agility Potion (Lesser)", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Common, UseSkillId: SkillCatalog.PotAgilityC, SellPriceOverride: 0, Value: 1500));
@@ -1046,7 +1046,7 @@ public static class ItemCatalog
         //       value, so a boxed set is exactly a buffer's blessing for an hour. -----
         BuffScroll(SpeedScrollR,   "Scroll of Swift",    SkillCatalog.ScrSwiftR);
         BuffScroll(CastScrollR,    "Scroll of Alacrity", SkillCatalog.ScrAlacrityR);
-        BuffScroll(AtkScrollR,     "Scroll of Haste",    SkillCatalog.ScrHasteR);
+        BuffScroll(AtkScrollR,     "Scroll of Fury",    SkillCatalog.ScrHasteR);
         BuffScroll(EvaScrollR,     "Scroll of Agility",  SkillCatalog.ScrAgilityR);
         BuffScroll(MightScrollR,   "Scroll of Might",    SkillCatalog.ScrMightR);
         BuffScroll(BulwarkScrollR, "Scroll of Bulwark",  SkillCatalog.ScrBulwarkR);

@@ -324,7 +324,7 @@ public static partial class SkillCatalog
                     Description: "−10% physical and −5% magic skill MP cost."),
                 new SkillLevel(MpCost: 110, SpCost: 145000, PhysMpCostPct: 0.15f, MagicMpCostPct: 0.07f,
                     Description: "−15% physical and −7% magic skill MP cost."),
-                new SkillLevel(MpCost: 130, SpCost: 450000, PhysMpCostPct: 0.20f, MagicMpCostPct: 0.10f,
+                new SkillLevel(MpCost: 125, SpCost: 330000, PhysMpCostPct: 0.20f, MagicMpCostPct: 0.10f,
                     Description: "−20% physical and −10% magic skill MP cost."),
             },
             PhysMpCostPct: 0.10f, MagicMpCostPct: 0.05f),
@@ -352,7 +352,7 @@ public static partial class SkillCatalog
             {
                 GreatRung(SkillEffect.BuffPhysAtk, 0.05f, mp: 90,  sp: 45000,  "P.Atk"),
                 GreatRung(SkillEffect.BuffPhysAtk, 0.07f, mp: 110, sp: 145000, "P.Atk"),
-                GreatRung(SkillEffect.BuffPhysAtk, 0.10f, mp: 130, sp: 450000, "P.Atk"),
+                GreatRung(SkillEffect.BuffPhysAtk, 0.10f, mp: 125, sp: 330000, "P.Atk"),
             }),
 
         new(GreatBulwark, "Great Bulwark", BaseClass.Mage, SkillEffect.BuffDef,
@@ -368,7 +368,7 @@ public static partial class SkillCatalog
                 // the defensive half is the one worth taking on a tank.
                 GreatRung(SkillEffect.BuffDef, 0.05f, mp: 90,  sp: 45000,  "P.Def"),
                 GreatRung(SkillEffect.BuffDef, 0.10f, mp: 110, sp: 145000, "P.Def"),
-                GreatRung(SkillEffect.BuffDef, 0.15f, mp: 130, sp: 450000, "P.Def"),
+                GreatRung(SkillEffect.BuffDef, 0.15f, mp: 125, sp: 330000, "P.Def"),
             }),
 
         // ═══ CONCEAL ═════════════════════════════════════════════════════════════════════════════

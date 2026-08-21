@@ -871,6 +871,7 @@ public static partial class SkillCatalog
         list.AddRange(BufferSkills());        // Skills.Buffer.cs (NPC newbie-buffer buffs)
         list.AddRange(LightbringerSkills());  // Skills.Lightbringer.cs
         list.AddRange(WarchanterSkills());    // Skills.Warchanter.cs
+        list.AddRange(Warchanter3rdSkills()); // Skills.Warchanter3rd.cs (his 40-74 groups + harmonies)
         list.AddRange(MobSpellSkills());      // Skills.MobSpells.cs (caster-mob nuke + jab)
         list.AddRange(RewardRuneSkills());    // Skills.RewardRunes.cs (exp/sp/gold/drop runes + Sinister/Sinners)
 

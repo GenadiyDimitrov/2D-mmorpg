@@ -81,7 +81,7 @@ public static partial class SkillCatalog
     public const string FamMove = "spd_move";   // Swift    — flat move speed
     public const string FamCast = "spd_cast";   // Alacrity — % cast speed
     public const string FamEva  = "spd_eva";    // Agility  — flat evasion
-    public const string FamAs   = "spd_as";     // Haste    — % attack speed
+    public const string FamAs   = "spd_as";     // Fury     — % attack speed
 
     public const string BuffSwiftC = "buff_swift_c";        // +15 move
     public const string BuffSwiftU = "buff_swift_u";        // +20 move
@@ -538,11 +538,11 @@ public static partial class SkillCatalog
         SingleBuff(BuffAgilityR, "Agility", FamEva, 4, SkillEffect.BuffEvasion,
             new(SkillEffect.BuffEvasion, 4, ModifierMode.Flat), "+4 Evasion."),
 
-        SingleBuff(BuffHasteC, "Haste", FamAs, 1, SkillEffect.BuffAtkSpeed,
+        SingleBuff(BuffHasteC, "Fury", FamAs, 1, SkillEffect.BuffAtkSpeed,
             new(SkillEffect.BuffAtkSpeed, 0.15f), "+15% Attack Speed."),
-        SingleBuff(BuffHasteU, "Haste", FamAs, 2, SkillEffect.BuffAtkSpeed,
+        SingleBuff(BuffHasteU, "Fury", FamAs, 2, SkillEffect.BuffAtkSpeed,
             new(SkillEffect.BuffAtkSpeed, 0.23f), "+23% Attack Speed."),
-        SingleBuff(BuffHasteR, "Haste", FamAs, 3, SkillEffect.BuffAtkSpeed,
+        SingleBuff(BuffHasteR, "Fury", FamAs, 3, SkillEffect.BuffAtkSpeed,
             new(SkillEffect.BuffAtkSpeed, 0.33f), "+33% Attack Speed."),
 
         // ---- Potions: 20 minutes, instant, 1s reuse. ----
@@ -555,9 +555,9 @@ public static partial class SkillCatalog
         Potion(PotAgilityC, "Agility Potion (Lesser)", BuffAgilityC, SkillEffect.BuffEvasion, "+1 Evasion"),
         Potion(PotAgilityU, "Agility Potion",          BuffAgilityU, SkillEffect.BuffEvasion, "+2 Evasion"),
         Potion(PotAgilityR, "Agility Potion (Greater)",BuffAgilityR, SkillEffect.BuffEvasion, "+4 Evasion"),
-        Potion(PotHasteC, "Haste Potion (Lesser)", BuffHasteC, SkillEffect.BuffAtkSpeed, "+15% Attack Speed"),
-        Potion(PotHasteU, "Haste Potion",          BuffHasteU, SkillEffect.BuffAtkSpeed, "+23% Attack Speed"),
-        Potion(PotHasteR, "Haste Potion (Greater)",BuffHasteR, SkillEffect.BuffAtkSpeed, "+33% Attack Speed"),
+        Potion(PotHasteC, "Fury Potion (Lesser)", BuffHasteC, SkillEffect.BuffAtkSpeed, "+15% Attack Speed"),
+        Potion(PotHasteU, "Fury Potion",          BuffHasteU, SkillEffect.BuffAtkSpeed, "+23% Attack Speed"),
+        Potion(PotHasteR, "Fury Potion (Greater)",BuffHasteR, SkillEffect.BuffAtkSpeed, "+33% Attack Speed"),
 
         // ---- Scrolls: the same tiers for an HOUR, but they take a second to read. ----
         Scroll(ScrSwiftC, "Scroll of Swift (Lesser)", BuffSwiftC, SkillEffect.BuffMoveSpeed, "+15 Move Speed"),
@@ -569,9 +569,9 @@ public static partial class SkillCatalog
         Scroll(ScrAgilityC, "Scroll of Agility (Lesser)", BuffAgilityC, SkillEffect.BuffEvasion, "+1 Evasion"),
         Scroll(ScrAgilityU, "Scroll of Agility",          BuffAgilityU, SkillEffect.BuffEvasion, "+2 Evasion"),
         Scroll(ScrAgilityR, "Scroll of Agility (Greater)",BuffAgilityR, SkillEffect.BuffEvasion, "+4 Evasion"),
-        Scroll(ScrHasteC, "Scroll of Haste (Lesser)", BuffHasteC, SkillEffect.BuffAtkSpeed, "+15% Attack Speed"),
-        Scroll(ScrHasteU, "Scroll of Haste",          BuffHasteU, SkillEffect.BuffAtkSpeed, "+23% Attack Speed"),
-        Scroll(ScrHasteR, "Scroll of Haste (Greater)",BuffHasteR, SkillEffect.BuffAtkSpeed, "+33% Attack Speed"),
+        Scroll(ScrHasteC, "Scroll of Fury (Lesser)", BuffHasteC, SkillEffect.BuffAtkSpeed, "+15% Attack Speed"),
+        Scroll(ScrHasteU, "Scroll of Fury",          BuffHasteU, SkillEffect.BuffAtkSpeed, "+23% Attack Speed"),
+        Scroll(ScrHasteR, "Scroll of Fury (Greater)",BuffHasteR, SkillEffect.BuffAtkSpeed, "+33% Attack Speed"),
 
         // ---- DASH — its own family, so it never touches your Swift buff. 15s, 1 min reuse.
         //      Ranks are the MAGNITUDE order of the whole family, Sprint included (see FamDash). ----

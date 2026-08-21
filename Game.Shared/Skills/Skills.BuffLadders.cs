@@ -66,14 +66,14 @@ public static partial class SkillCatalog
     // ---- THE SHIELD PAIR (owner, 2026-08-19). Two families, because his group at buffer 66 is
     //      "Shield Bless AND Harden" and *"it should rapladse Shield Harder and Shield Bless"* — a
     //      group names the singles it contains, so the singles have to exist for it to be one.
-    //      ✅ BOTH ARE FULL LADDERS since 2026-08-20 — the healer authors Shield Bless at 5/10/15/20/
-    //      25/30% (@40-70) and Shield Harden at 30/40/50% (@58/66/72), and the group now points at the
+    //      ✅ BOTH ARE FULL LADDERS since 2026-08-20 — the healer authors Shield Blessing at 5/10/15/20/
+    //      25/30% (@40-70) and Shield Hardening at 30/40/50% (@58/66/72), and the group now points at the
     //      TOP rung of each rather than at a lone placeholder. ⚠ He had them REVERSED in an earlier
     //      draft and fixed it himself in the 40 row's comment (*"Changed to the rate increase buff
     //      (harden at 58); my mistake to have them reversed"*): Bless is the block CHANCE, Harden the
     //      shield's P.Def. Nothing in either family ever raises block REDUCTION (playtest 22).
-    public const string FamShieldDef   = "shield_def";     // Shield Harden — % shield P.Def
-    public const string FamShieldBlock = "shield_block";   // Shield Bless  — % block CHANCE (never reduction)
+    public const string FamShieldDef   = "shield_def";     // Shield Hardening — % shield P.Def
+    public const string FamShieldBlock = "shield_block";   // Shield Blessing — % block CHANCE (never reduction)
 
     // ---------------------------------------------------------------------------------------
     //  Single-buff ids. `Rung(family, n)` builds them, so these consts are only for the places
@@ -106,7 +106,8 @@ public static partial class SkillCatalog
     public const string BuffIntr1 = "buff_interrupt_1", BuffIntr2 = "buff_interrupt_2";
     public const string BuffIntr3 = "buff_interrupt_3", BuffIntr4 = "buff_interrupt_4";  // 36 / 40
     public const string BuffIntr5 = "buff_interrupt_5", BuffIntr6 = "buff_interrupt_6";  // 42 / 48
-    public const string BuffIntr7 = "buff_interrupt_7";                                  // 60 ← TOP
+    public const string BuffIntr7 = "buff_interrupt_7";                                  // 54
+    // public const string BuffIntr8 = "buff_interrupt_8";                               // 60 — PARKED
 
     // ---------------------------------------------------------------------------------------
     //  Consumable skill ids (the item's UseSkillId). The item owns the rarity; the SKILL owns
@@ -287,10 +288,14 @@ public static partial class SkillCatalog
         // ===== No-consumable families — class buffs only =====
         list.AddRange(Ladder(FamVamp,     "Vampirism", SkillEffect.BuffMeleeVamp,      ModifierMode.Percent, "melee vampirism", 0.03f, 0.06f, 0.07f, 0.08f, 0.09f));
         // ⚠ 40 IS NOT ONE OF HIS NUMBERS and is kept anyway. His healer authors 36 / 42 / 48 (@44/52/60)
-        // between the cleric's 25 and the NPC buffer's 60 — but 40 was already the rung `Force and Ward`
+        // between the cleric's 25 and what was then the top of 60 — but 40 was already the rung `Force and Ward`
         // levels 3-4 hand out, and dropping it would silently retune a group nobody has re-authored.
         // A ladder may carry a rung no CSV names; it may not carry one that goes backwards.
-        list.AddRange(Ladder(FamInterrupt,"Resolve",   SkillEffect.BuffInterruptResist,ModifierMode.Flat,    "interrupt resistance", 18, 25, 36, 40, 42, 48, 60));
+        // ⚠ 2026-08-21: the old top rung of 60 is GONE from the ladder — his ruling, *"54 is max resolve
+        // for now .. no1 is learning it atm"*. It is parked, not deleted: `BuffIntr8` above is the id it
+        // would reclaim, and re-adding 60 here is the whole change. Everything that used to hand out 60
+        // — the NPC buffer, `Force and Ward`, the Warchanter's row at 52 — now hands out his 54.
+        list.AddRange(Ladder(FamInterrupt,"Resolve",   SkillEffect.BuffInterruptResist,ModifierMode.Flat,    "interrupt resistance", 18, 25, 36, 40, 42, 48, 54));
 
         // ===== Scroll-only families — SIX rungs; the scrolls are rungs 2 / 4 / 6 =====
         list.AddRange(Ladder(FamMaxHp,   "Body",     SkillEffect.BuffHp,           ModifierMode.Percent, "Max HP", 0.10f, 0.15f, 0.20f, 0.25f, 0.30f, 0.35f));
@@ -317,11 +322,11 @@ public static partial class SkillCatalog
         //
         // ✅ BOTH ARE REAL LADDERS SINCE 2026-08-20 — the singles he promised (*"im now authoring its
         // singles in the healers file"*) landed in `healer 3rd.csv`, so the one-rung placeholders are
-        // gone. Shield Bless climbs 5 → 30% over six rungs (40/48/56/62/66/70) and Shield Harden
+        // gone. Shield Blessing climbs 5 → 30% over six rungs (40/48/56/62/66/70) and Shield Hardening
         // 30 → 50% over three (58/66/72). The TOP of each is unchanged, which is what keeps
         // `Shield Bless and Harden` (the buffer's group @66) handing out exactly what it always did.
-        list.AddRange(Ladder(FamShieldDef,   "Shield Harden", SkillEffect.BuffShieldDef,   ModifierMode.Percent, "shield P.Def", 0.30f, 0.40f, 0.50f));
-        list.AddRange(Ladder(FamShieldBlock, "Shield Bless",  SkillEffect.BuffBlockChance, ModifierMode.Percent, "block chance", 0.05f, 0.10f, 0.15f, 0.20f, 0.25f, 0.30f));
+        list.AddRange(Ladder(FamShieldDef,   "Shield Hardening", SkillEffect.BuffShieldDef,   ModifierMode.Percent, "shield P.Def", 0.30f, 0.40f, 0.50f));
+        list.AddRange(Ladder(FamShieldBlock, "Shield Blessing",  SkillEffect.BuffBlockChance, ModifierMode.Percent, "block chance", 0.05f, 0.10f, 0.15f, 0.20f, 0.25f, 0.30f));
 
         // Clarity: 20% is the cleric's @25; 30/40/50 are the healer's @40/48/56.
         list.Add(CcResistRung(FamCcResMag, "Clarity", 1, magical: 0.20f));
@@ -359,7 +364,10 @@ public static partial class SkillCatalog
         list.Add(FrenzyRung(4, 0.18f, 0.07f, 7));
         list.Add(FrenzyRung(5, 0.14f, 0.07f, 7));
         list.Add(FrenzyRung(6, 0.10f, 0.08f, 8));
-        // Rung 7 — the TOP of the family, and the only thing `Madness` hands out (`BL-34`). Nothing
+        // Rung 7 — the TOP of the family. ⚠ NOTHING HANDS IT OUT ANY MORE: it was invented for `Madness`
+        // at level 76, and on 2026-08-21 that skill became `War Frenzy` at 56 handing out RUNG 2 (his
+        // row). A ladder may carry a rung no CSV names — Resolve does too — but do not read this as
+        // live content. Nothing
         // else in the game reaches it: no potion, no scroll, no NPC buffer, and no single-target
         // Frenzy. It is the party cast's whole reward for being a level-76 skill.
         //
@@ -456,7 +464,8 @@ public static partial class SkillCatalog
         // than as two loose numbers. (Serenity @40 is the one row that breaks the table: 80 / 32k.)
         RungCost H40 = R(60, 19000),  H44 = R(72, 22000),  H48 = R(75, 32000),  H52 = R(80, 38000);
         RungCost H56 = R(85, 42000),  H58 = R(90, 45000),  H60 = R(95, 61000),  H62 = R(100, 86000);
-        RungCost H64 = R(105, 100000), H66 = R(110, 145000), H70 = R(120, 200000), H72 = R(125, 330000);
+        RungCost H64 = R(105, 100000), H66 = R(110, 145000), H68 = R(115, 165000);
+        RungCost H70 = R(120, 200000), H72 = R(125, 330000);
 
         Castable(FamPhysAtk, "Might", SkillEffect.BuffPhysAtk, Rungs(FamPhysAtk, 3), "more Physical Attack",
             C(R(20, 960), R(20, 1700), H40));
@@ -476,7 +485,7 @@ public static partial class SkillCatalog
         // rungs 3-5. That is the honest reading: rungs 3/5/6 are the healer's 44/52/60 rows and rung 4
         // belongs to nobody. It is only reachable through `Force and Ward`, which prices itself.
         Castable(FamInterrupt, "Resolve", SkillEffect.BuffInterruptResist, Rungs(FamInterrupt, 7), "casting that is harder to cancel",
-            C(R(20, 1700), R(26, 3200), H44, default, H52, H60, R(50, 25000)));
+            C(R(20, 1700), R(26, 3200), H44, default, H52, H60, H68));
         Castable(FamCritRate, "Focus", SkillEffect.BuffCritRate, Rungs(FamCritRate, 6), "a higher critical rate",
             C(default, default, default, R(26, 3200), H44, H52));
         Castable(FamCritDmg, "Ferocity", SkillEffect.BuffCritDamage, Rungs(FamCritDmg, 6), "heavier criticals",
@@ -506,7 +515,7 @@ public static partial class SkillCatalog
             C(default, R(33, 6400), H44, H52));
         // ⚠ Haste rung 1 is the healer's @44 row and rung 3 his @52 one; rung 2 (23%) belongs to nobody
         // and keeps the formula, so the array reads 72 / ~40 / 80. Same shape as Resolve above.
-        Castable(FamAs, "Haste", SkillEffect.BuffAtkSpeed, new[] { BuffHasteC, BuffHasteU, BuffHasteR }, "faster attacks",
+        Castable(FamAs, "Fury", SkillEffect.BuffAtkSpeed, new[] { BuffHasteC, BuffHasteU, BuffHasteR }, "faster attacks",
             C(H44, R(40, 6400), H52));
         // The two control-resistance blessings. `SkillEffect.None` because their payload is a field,
         // not a magnitude — the wrapper still buffs, it just has no flag that describes it.
@@ -517,9 +526,9 @@ public static partial class SkillCatalog
         // The shield pair — LEARNABLE at last (his healer rows at 40-70 and 58-72 respectively). They
         // still double as the children of *Shield Bless and Harden*, the buffer's group at 66, which
         // now names each family's TOP rung.
-        Castable(FamShieldDef, "Shield Harden", SkillEffect.BuffShieldDef, Rungs(FamShieldDef, 3), "a sturdier shield",
+        Castable(FamShieldDef, "Shield Hardening", SkillEffect.BuffShieldDef, Rungs(FamShieldDef, 3), "a sturdier shield",
             C(H58, H66, H72));
-        Castable(FamShieldBlock, "Shield Bless", SkillEffect.BuffBlockChance, Rungs(FamShieldBlock, 6), "a shield that catches more",
+        Castable(FamShieldBlock, "Shield Blessing", SkillEffect.BuffBlockChance, Rungs(FamShieldBlock, 6), "a shield that catches more",
             C(H40, H48, H56, H62, H66, H70));
         // Frenzy's castable single already exists as the cleric's `holy_frenzy` (Skills.Healer.cs) —
         // it was a wrapper over one family before this, so it needed no second copy.

@@ -1012,8 +1012,8 @@ is full (it tells you how many fit).
 | `elemental_stone` | Elemental Stone | F | Rare | stacks |
 | `potion_matk_u` | Force Potion | F | Uncommon | stacks |
 | `potion_matk_c` | Force Potion (Lesser) | F | Common | stacks |
-| `potion_atk_u` | Haste Potion | F | Uncommon | stacks |
-| `potion_atk_c` | Haste Potion (Lesser) | F | Common | stacks |
+| `potion_atk_u` | Fury Potion | F | Uncommon | stacks |
+| `potion_atk_c` | Fury Potion (Lesser) | F | Common | stacks |
 | `potion_instant` | Instant Healing Potion | F | Rare | stacks |
 | `potion_instant_bound` | Instant Healing Potion (Bound) | F | Rare | untradable, stacks |
 | `potion_patk_u` | Might Potion | F | Uncommon | stacks |
@@ -1029,7 +1029,7 @@ is full (it tells you how many fit).
 | `scroll_crit_m` | Scroll of Focus | F | Rare | untradable, stacks |
 | `scroll_matk_r` | Scroll of Force | F | Rare | untradable, stacks |
 | `scroll_frenzy_m` | Scroll of Frenzy | F | Rare | untradable, stacks |
-| `scroll_atk_r` | Scroll of Haste | F | Rare | untradable, stacks |
+| `scroll_atk_r` | Scroll of Fury | F | Rare | untradable, stacks |
 | `scroll_mcrit_m` | Scroll of Insight | F | Rare | untradable, stacks |
 | `scroll_patk_r` | Scroll of Might | F | Rare | untradable, stacks |
 | `scroll_resurrect` | Scroll of Resurrection | F | Uncommon | stacks |

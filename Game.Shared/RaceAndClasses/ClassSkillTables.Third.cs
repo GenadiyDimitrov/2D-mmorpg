@@ -85,12 +85,15 @@ public static partial class ClassSkillTables
         // build, so the healer discipline is no longer an exception carved out of the 40+ purge — it
         // is the first fully-authored 3rd class in the game, 40 to 74, every row his.
         //
-        // ⚠ THE PURGE STILL STANDS FOR EVERYONE ELSE. This line is not a precedent for switching the
-        // others back on: `RegisterWarchanter()` below stays off because `buffer 3rd.csv` is still a
-        // PLACEHOLDER seeded from code (his own warning: *"you shouldn't have built anything from the
-        // 3rd csvs as they are not finished"*), and the eight fighter disciplines have no file at all.
+        // ⚠ THE PURGE STILL STANDS FOR EVERYONE ELSE. This is not a precedent for switching the others
+        // back on: the eight fighter disciplines have no file at all.
         RegisterLightbringer();
-        // …and the buffer's two exclusive layers still live in their own narrow helper.
+        // THE WARCHANTER, 40-74 — his `buffer 3rd.csv` rows 1-185, built 2026-08-21. The file is only
+        // HALF authored (it carries a `NOT DONE` banner; his passives and attack skills are still being
+        // written), so this teaches the buff/harmony/group layer and nothing else.
+        // 🔴 `RegisterWarchanter()` at the bottom of this file STAYS OFF, and is now genuinely dead:
+        // its per-race Bolt/Chant/Renew/Pass were the INVENTED pre-CSV kit, and the attack half of his
+        // file is what replaces them. Do not switch it back on — delete it when his rows land.
         RegisterWarchanterBuffs();
         // …and now a SECOND, equally narrow one: the two level-83 preservation skills he authorised
         // by name on 2026-08-14 (`BL-35`). Two learn lines, nothing else — the Lightbringer and
@@ -176,98 +179,134 @@ public static partial class ClassSkillTables
         }
     }
 
-    /// <summary>The Warchanter's buff kit — the rest of the discipline still waits for its CSV
-    /// (owner 2026-07-31: *"just to have somewhere the improved and harmony to go … it will be
-    /// changed with the 3rd class CSV"*), so every level below is a placeholder.
+    /// <summary>THE WARCHANTER (buffer), 40-74 — every row of
+    /// <c>docs/data/classes_skills_csv/buffer 3rd.csv</c> above its <c>NOT DONE</c> marker (line 186),
+    /// built 2026-08-21 when he said the buff half was finished: *"I managed to do all the buffs all
+    /// the harmonies and all the group buffs to lvl 74 .. leter ill do his passive/atack skills"*.
     ///
-    /// The shape the owner asked for, and the reason it reads bottom-up:
+    /// <para>🔑 <b>HIS SINGLES ARE THE HEALER'S LADDER, RUNG FOR RUNG.</b> All twenty-five buff
+    /// families below are learned at the SAME character level and the SAME rung index the
+    /// Lightbringer gets them at — that is his standing rule (*"once the healers buffs are in place
+    /// they will be the same for the buffer 3rd"*), and it was verified family by family against
+    /// <see cref="RegisterLightbringer"/> before this table was written. So nothing here authors a
+    /// value: the whole table is WHICH rung and WHEN. If a ladder is ever retuned, both classes move
+    /// together automatically.</para>
     ///
-    /// - **40-64: the singles, topped out.** The cleric leaves off mid-ladder (Might L2 of 3, Focus
-    ///   L4 of 6, …) and never sees Ferocity, Insight, Body, Soul or Serenity at all. The Warchanter
-    ///   finishes every ladder, and finishes each family **before** the improved buff that contains
-    ///   it. Not a hard requirement — nothing enforces the order — just the logic of the class:
-    ///   you learn the parts, then you learn to cast them in one breath.
-    /// - **60 / 62 / 64: the three Harmony blessings.** The layer with no potion, no scroll and no
-    ///   NPC that sells it, stacking on top of the basic buffs. It is what keeps a buffer worth
-    ///   grouping with now that consumables can cover the whole basic layer.
-    /// - **66-74: the five improved groups**, one per learnable level. Each one `Replaces` the
-    ///   singles it contains, so the bar collapses as the class matures: four skills become one.
+    /// <para>🔑 <b>WHAT IS ACTUALLY NEW IS THE TOP LAYER</b> — nine improved GROUPS split by lane
+    /// (Feral* fighter, Arcane* mage, the rest combined), three party ECHOES of single-target buffs,
+    /// and four HARMONY ladders. Those live in Skills.Warchanter3rd.cs; the reasoning and the
+    /// self-checking MP rule are documented there.</para>
     ///
-    /// Frenzy is deliberately NOT one of the five — its "rung" is already a whole eight-effect buff,
-    /// so it ramps with the singles. See docs/design/BuffLadders.md.</summary>
+    /// <para>🔑 <b>EVERY GROUP AND ECHO ARRIVES ONE LEARN TIER AFTER ITS LAST CHILD TOPS OUT</b> —
+    /// his rule, verbatim: *"The group buff shoul be learned 1 learn tire after the last buff is
+    /// maxed out"*. Each line below carries the child levels it is derived from, so the rule stays
+    /// checkable rather than being a number somebody has to trust.</para>
+    ///
+    /// <para>⚠ <b>THE FIVE OLD GROUPS ARE NO LONGER GRANTED.</b> Might and Bulwark, Force and Ward,
+    /// Focus and Ferocity, Body and Soul and Swift and Sure each mixed the physical and magic
+    /// channels in one cast, which is exactly what he asked to end. Their defs stay in the catalog
+    /// (deleting one orphans every character who bought it) but no class teaches them any more.
+    /// <c>HolyShield</c> ("Shield Bless and Harden") is likewise superseded, by
+    /// <c>Shield Reinforcement</c> at 74.</para>
+    ///
+    /// <para>⚠ <b>Resurrection STOPS at 66</b> here (80% of lost exp) where the Lightbringer's runs to
+    /// 74 and 100%. That is his file, and it is the clearest line between the two disciplines: the
+    /// buffer can raise you, the healer raises you properly.</para>
+    ///
+    /// <para>⚠ <b>Shrouding Hymn moved 30 → 74.</b> It used to arrive with the class change. His
+    /// ruling: it is the PARTY stealth and belongs at the top (*"IG learns it at ~80"*); the level-40
+    /// SELF version is <c>Conceal</c>, which the healer and the rogue already have.</para>
+    ///
+    /// <para>⚠ <b>MADNESS IS GONE FROM THIS TABLE.</b> It sat at 76 as an explicitly temporary home
+    /// (*"and when the kits land we will move it"*) — this is that kit landing. Nothing grants it
+    /// today; it needs a home in his 4th-class file.</para></summary>
     private static void RegisterWarchanterBuffs()
     {
+        int[] band = SkillCatalog.HealerBands;   // 40 44 48 52 56 58 60 62 64 66 68 70 72 74
+
+        ClassSkill[] Full(string skill, int startLevel = 1) =>
+            Enumerable.Range(0, band.Length)
+                .Select(i => new ClassSkill(skill, band[i], SkillLevel: startLevel + i))
+                .ToArray();
+
+        ClassSkill[] At(string skill, params (int Level, int Rung)[] rows) =>
+            rows.Select(r => new ClassSkill(skill, r.Level, SkillLevel: r.Rung)).ToArray();
+
+        var kit = new List<ClassSkill>();
+
+        // ---- PASSIVES. Anti-Magic continues the cleric's ladder exactly as the healer's does:
+        //      rung 7 is his @40 row, one rung per band to +108 M.Def / 25% mRes at 74. ----
+        kit.AddRange(Full(MageAntiMagic, startLevel: 7));
+
+        // ---- ACTIVE SUPPORT. Ten rungs and it stops — see the class note above. ----
+        kit.AddRange(At(Resurrection,
+            (40, 3), (44, 4), (48, 5), (52, 6), (56, 7),
+            (58, 8), (60, 9), (62, 10), (64, 11), (66, 12)));
+
+        // ---- THE FIGHTER SINGLES ----
+        kit.AddRange(At(CastId(FamPhysAtk),  (40, 3)));                      // Might      +15% P.Atk
+        kit.AddRange(At(CastId(FamAs),       (44, 1), (52, 3)));             // Fury       15 → 33%
+        kit.AddRange(At(CastId(FamVamp),     (44, 3), (58, 4), (72, 5)));    // Vampirism  7 → 9%
+        kit.AddRange(At(CastId(FamCritRate), (44, 5), (52, 6)));             // Focus      25 → 30%
+        kit.AddRange(At(CastId(FamCritDmg),  (40, 4), (48, 5), (56, 6)));    // Ferocity   25 → 35%
+        kit.AddRange(At(CastId(FamAccuracy), (40, 2), (48, 3), (56, 4)));    // Aim        +2 → +4
+
+        // ---- THE MAGE SINGLES ----
+        kit.AddRange(At(CastId(FamMagAtk),   (44, 3), (52, 4)));             // Force      28 → 32%
+        kit.AddRange(At(CastId(FamMagCrit),  (62, 3), (70, 6)));             // Insight    50 → 100%
+        kit.AddRange(At(CastId(FamCast),     (48, 3)));                      // Alacrity   +30% cast
+        kit.AddRange(At(CastId(FamInterrupt),(44, 3), (52, 5), (60, 6), (68, 7)));  // Resolve 36 → 54
+        kit.AddRange(At(CastId(FamMpRegen),  (40, 2), (48, 4), (56, 6)));    // Serenity   10 → 20%
+        kit.AddRange(At(CastId(FamMagDef),   (44, 3), (52, 4)));             // Ward       23 → 30%
+        kit.AddRange(At(CastId(FamMaxMp),    (44, 1), (48, 2), (52, 3), (56, 4), (62, 5), (70, 6)));  // Soul
+        kit.AddRange(At(ManaBlessing,        (58, 1), (66, 2), (72, 3)));    // −10/5 → −20/10% MP cost
+
+        // ---- THE COMBINED SINGLES ----
+        kit.AddRange(At(CastId(FamPhysDef),  (44, 3)));                      // Bulwark    +15% P.Def
+        kit.AddRange(At(CastId(FamHpRegen),  (48, 4), (56, 6)));             // Vigor      15 → 20%
+        kit.AddRange(At(CastId(FamMaxHp),    (44, 1), (48, 2), (52, 3), (56, 4), (64, 5), (70, 6)));  // Body
+        kit.AddRange(At(CastId(FamEva),      (44, 3), (52, 4)));             // Agility    +3 → +4
+        kit.AddRange(At(CastId(FamCcResMag), (40, 2), (48, 3), (56, 4)));    // Clarity    30 → 50%
+        kit.AddRange(At(CastId(FamCcResPhys),(40, 1), (52, 2), (64, 3), (72, 4)));  // Fortitude 15 → 40%
+        // The shield pair. ⚠ Both do NOTHING for the buffer himself unless he carries a shield —
+        // they are a PERCENT of what the shield already has. They are for the tank he is blessing.
+        kit.AddRange(At(CastId(FamShieldBlock), (40, 1), (48, 2), (56, 3), (62, 4), (66, 5), (70, 6)));
+        kit.AddRange(At(CastId(FamShieldDef),   (58, 1), (66, 2), (72, 3)));
+
+        // ---- FRENZY, and the "GREAT" pair that shares one key (an ally wears one, never both). ----
+        kit.AddRange(At(HolyFrenzy,   (52, 2)));
+        kit.AddRange(At(GreatMight,   (58, 1), (66, 2), (72, 3)));
+        kit.AddRange(At(GreatBulwark, (58, 1), (66, 2), (72, 3)));
+
+        // ---- THE PARTY ECHOES ----
+        kit.Add(new ClassSkill(WarFrenzy, 56));    // Frenzy maxed at 52
+        kit.Add(new ClassSkill(WcWarMight, 74));     // Great Might maxed at 72
+        kit.Add(new ClassSkill(WcWarBulwark, 74));   // Great Bulwark maxed at 72
+
+        // ---- THE NINE GROUPS ----
+        kit.Add(new ClassSkill(WcWindGrace, 56));         // Swift 30, Agility 52
+        kit.Add(new ClassSkill(WcFeralPrecision, 58));    // Focus 52, Ferocity 56, Aim 56
+        kit.Add(new ClassSkill(WcArcaneSerenity, 70));    // Alacrity 48, Resolve 68, Serenity 56
+        kit.Add(new ClassSkill(WcArcaneInsight, 72));     // Force 52, Insight 70
+        kit.Add(new ClassSkill(WcBodyReinforce, 72));     // Body 70, Bulwark 44, Vigor 56
+        kit.Add(new ClassSkill(WcFeralBloodlust, 74));    // Might 40, Fury 52, Vampirism 72
+        kit.Add(new ClassSkill(WcSoulReinforce, 74));     // Ward 52, Soul 70, Mana Blessing 72
+        kit.Add(new ClassSkill(WcShieldReinforce, 74));   // Shield Blessing 70, Shield Hardening 72
+        kit.Add(new ClassSkill(WcArcaneFeralProt, 74));   // Clarity 56, Fortitude 72
+
+        // ---- THE PARTY STEALTH, at the top. ----
+        kit.Add(new ClassSkill(ShroudingHymn, 74, SkillLevel: 1));
+
+        // ---- THE FOUR HARMONIES. Not groups: own key, cover nothing, MULTIPLY on top of the basic
+        //      layer. 5 minutes on a 2-minute reuse — the buffer has to stay with the party.
+        //      ⚠ Speed stops at 58 and the Wizard at 52 BY RULING, not by omission. ----
+        kit.AddRange(At(NpcHarmonyWarrior,    (40, 1), (44, 2), (48, 3), (56, 4), (58, 5), (74, 6)));
+        kit.AddRange(At(NpcHarmonyProtection, (44, 1), (52, 2), (56, 3), (66, 4), (74, 5)));
+        kit.AddRange(At(WcHarmonySpeed,       (48, 1), (58, 2)));
+        kit.AddRange(At(NpcHarmonyWizard,     (48, 1), (52, 2)));
+
         foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
-            ClassSkills.RegisterThird(race, Discipline.Warchanter,
-                // ---- Shrouding Hymn — the party stealth. It was the cleric's; he moved its row into
-                // `buffer 3rd.csv` on 2026-08-19, settling the one row in the cleric file whose values
-                // were never his. His level 30 is kept verbatim, and since a Warchanter does not exist
-                // below 40 the practical effect is that it arrives with the class change. ----
-                new ClassSkill(ShroudingHymn, 30, SkillLevel: 1),
-                // ---- The two CLERIC masteries, CONTINUED (his `buffer 3rd.csv`, 2026-08-20: *"Continue
-                //      the line"* on both rows). This is the other half of the healer's split: the healer
-                //      swapped to his own robe-only/magic-weapon-only pair, the buffer just gets rung 5.
-                //      He is now the only caster who keeps the LIGHT-armor row and the P.Atk half — which
-                //      is exactly the class his heavy/shield passives are meant for. ----
-                new ClassSkill(SpellMastery, 40, SkillLevel: 5),
-                new ClassSkill(ArmorMasterySkill, 40, SkillLevel: 5),
-                // ---- Frenzy L2 @52 — his 2026-08-20 ruling, the SAME rung for healer and buffer:
-                //      *"Frenzy(L2) is learned from Healers and Buffers at 52"*. The cleric's L1 at 35
-                //      (ClassSkillTables.Common.cs) is the rung below it. ⚠ The 62/64 grants further
-                //      down are rungs 3 and 6, which are OUR invented values and are now WEAKER than
-                //      this one — see the note on FrenzyRung. ----
-                new ClassSkill(HolyFrenzy, 52, SkillLevel: 2),
-                // ---- 40-44: finish SPEED and MIGHT (the cleric got most of speed already) ----
-                new ClassSkill(CastId(FamEva), 40, SkillLevel: 4),        // Agility   +4 evasion (rung 4 since the +3 insert)
-                new ClassSkill(CastId(FamAs), 40, SkillLevel: 2),         // Haste     +23% atk speed
-                new ClassSkill(CastId(FamPhysAtk), 40, SkillLevel: 3),    // Might     +15% P.Atk
-                new ClassSkill(CastId(FamPhysDef), 40, SkillLevel: 3),    // Bulwark   +15% P.Def
-                new ClassSkill(CastId(FamAs), 44, SkillLevel: 3),         // Haste     +33% atk speed
-                new ClassSkill(CastId(FamVamp), 44, SkillLevel: 5),       // Vampirism 9% (rung 5 since the 7/8% inserts)
-                new ClassSkill(CastId(FamAccuracy), 44, SkillLevel: 4),   // Aim       +4 accuracy (rung 4 since the +3 insert)
-                // ---- 48-52: finish FORCE, start FOCUS ----
-                new ClassSkill(CastId(FamMagAtk), 48, SkillLevel: 4),     // Force     +32% M.Atk (rung 4 since the 28% insert)
-                new ClassSkill(CastId(FamMagDef), 48, SkillLevel: 2),     // Ward      +20% M.Def
-                new ClassSkill(CastId(FamInterrupt), 48, SkillLevel: 4),  // Resolve   +40 interrupt (rung 4 since the 36 insert)
-                new ClassSkill(CastId(FamMagDef), 52, SkillLevel: 4),     // Ward      +30% M.Def (rung 4 since the 23% insert)
-                new ClassSkill(CastId(FamInterrupt), 52, SkillLevel: 7),  // Resolve   +60 interrupt (rung 7 since the 36/42/48 inserts)
-                new ClassSkill(CastId(FamCritRate), 52, SkillLevel: 5),   // Focus     +25% crit
-                new ClassSkill(CastId(FamCritDmg), 52, SkillLevel: 3),    // Ferocity  +20% crit dmg
-                new ClassSkill(CastId(FamMagCrit), 52, SkillLevel: 2),    // Insight   +35% magic crit
-                // ---- 56: finish FOCUS ----
-                new ClassSkill(CastId(FamCritRate), 56, SkillLevel: 6),   // Focus     +30% crit
-                new ClassSkill(CastId(FamCritDmg), 56, SkillLevel: 6),    // Ferocity  +35% crit dmg
-                new ClassSkill(CastId(FamMagCrit), 56, SkillLevel: 4),    // Insight   +65% magic crit
-                // ---- 60-64: the BODY ladder, Frenzy, and the three Harmonies ----
-                new ClassSkill(NpcHarmonyProtection, 60),
-                new ClassSkill(CastId(FamMagCrit), 60, SkillLevel: 6),    // Insight   double magic crit
-                new ClassSkill(CastId(FamMaxHp), 60, SkillLevel: 3),      // Body      +20% Max HP
-                new ClassSkill(CastId(FamMaxMp), 60, SkillLevel: 3),      // Soul      +20% Max MP
-                new ClassSkill(CastId(FamHpRegen), 60, SkillLevel: 4),    // Vigor     +15% HP regen
-                new ClassSkill(CastId(FamMpRegen), 60, SkillLevel: 4),    // Serenity  +15% MP regen
-                new ClassSkill(NpcHarmonyWarrior, 62),
-                new ClassSkill(CastId(FamMaxHp), 62, SkillLevel: 5),      // Body      +30% Max HP
-                new ClassSkill(CastId(FamMaxMp), 62, SkillLevel: 5),      // Soul      +30% Max MP
-                new ClassSkill(CastId(FamHpRegen), 62, SkillLevel: 6),    // Vigor     +20% HP regen
-                new ClassSkill(CastId(FamMpRegen), 62, SkillLevel: 6),    // Serenity  +20% MP regen
-                new ClassSkill(HolyFrenzy, 62, SkillLevel: 3),            // Frenzy    rung 3
-                new ClassSkill(NpcHarmonyWizard, 64),
-                new ClassSkill(CastId(FamMaxHp), 64, SkillLevel: 6),      // Body      +35% Max HP
-                new ClassSkill(CastId(FamMaxMp), 64, SkillLevel: 6),      // Soul      +35% Max MP
-                new ClassSkill(HolyFrenzy, 64, SkillLevel: 6),            // Frenzy    rung 6
-                // ---- 66-74: the improved groups, one per level. Each REPLACES its singles. ----
-                new ClassSkill(HolyShield, 66),                  // Shield Bless and Harden (his 66 row)
-                new ClassSkill(HolySpeed, 66, SkillLevel: 6),    // Swift and Sure
-                new ClassSkill(Might, 68, SkillLevel: 6),        // Might and Bulwark
-                new ClassSkill(HolyForce, 70, SkillLevel: 6),    // Force and Ward
-                new ClassSkill(HolyFocus, 72, SkillLevel: 6),    // Focus and Ferocity
-                new ClassSkill(HolyBody, 74, SkillLevel: 6),     // Body and Soul
-                // ---- 76: MADNESS (`BL-34`) — the party Frenzy at the top of the family. ----
-                // His 2026-08-14 ruling put it here on purpose: *"put it at 76 on the buffer"*, so an
-                // ADMIN (whose seed character is a level-90 Warchanter) can party-buff with it now,
-                // *"and when the kits land we will move it"*. Treat this line as temporary — it is the
-                // first thing the 40+ CSVs should relocate, not a rung to build more on top of.
-                new ClassSkill(Madness, 76));
+            ClassSkills.RegisterThird(race, Discipline.Warchanter, kit.ToArray());
     }
 
     /// <summary>THE LIGHTBRINGER, 40-74 — every row of <c>docs/data/classes_skills_csv/healer 3rd.csv</c>,
@@ -358,20 +397,23 @@ public static partial class ClassSkillTables
         // ⚠ SIX of these indices moved on 2026-08-20 because his file authored values BETWEEN existing
         // rungs (M.Atk 28%, M.Def 23%, +3 accuracy, +3 evasion, 7/8% vampirism, 36/42/48 interrupt).
         // Read the comment, not the number: `SkillLevel: 5` on Focus is +25%, which is his 44 row.
+        // ⚠ INTERRUPT MOVED AGAIN on 2026-08-21: his 68 row authored +54, between 48 and the old top of
+        // 60 — and he then CAPPED the family there (*"54 is max resolve for now"*), so 60 left the ladder
+        // altogether. Resolve is SEVEN rungs, rung 7 is 54, and everyone who used to get 60 now gets 54.
         shared.AddRange(At(CastId(FamPhysAtk),   (40, 3)));                     // Might      15%
         shared.AddRange(At(CastId(FamPhysDef),   (44, 3)));                     // Bulwark    15%
         shared.AddRange(At(CastId(FamMagAtk),    (44, 3), (52, 4)));            // Force      28 → 32%
         shared.AddRange(At(CastId(FamMagDef),    (44, 3), (52, 4)));            // Ward       23 → 30%
         shared.AddRange(At(CastId(FamAccuracy),  (40, 2), (48, 3), (56, 4)));   // Aim        +2 → +4
         shared.AddRange(At(CastId(FamEva),       (44, 3), (52, 4)));            // Agility    +3 → +4
-        shared.AddRange(At(CastId(FamAs),        (44, 1), (52, 3)));            // Haste      15 → 33%
+        shared.AddRange(At(CastId(FamAs),        (44, 1), (52, 3)));            // Fury       15 → 33%
         // ⚠ ALACRITY WAS MISSING until 2026-08-21 (owner: *"have forgoten on healer the cast speed
         // buff"*), and its absence was invisible because the cleric already teaches rungs 1-2 — the
         // healer simply never finished the family. His row is rung 3 verbatim, so nothing new was
         // authored: `ClassSkillTables.Common.cs` already said cast speed past L2 is a 3rd-class reward.
         shared.AddRange(At(CastId(FamCast),      (48, 3)));                     // Alacrity   +30% cast
         shared.AddRange(At(CastId(FamVamp),      (44, 3), (58, 4), (72, 5)));   // Vampirism  7 → 9%
-        shared.AddRange(At(CastId(FamInterrupt), (44, 3), (52, 5), (60, 6)));   // Resolve    36 → 48
+        shared.AddRange(At(CastId(FamInterrupt), (44, 3), (52, 5), (60, 6), (68, 7)));  // Resolve  36 → 54
         shared.AddRange(At(CastId(FamCritRate),  (44, 5), (52, 6)));            // Focus      25 → 30%
         shared.AddRange(At(CastId(FamCritDmg),   (40, 4), (48, 5), (56, 6)));   // Ferocity   25 → 35%
         shared.AddRange(At(CastId(FamMagCrit),   (62, 3), (70, 6)));            // Insight    50 → 100%
@@ -390,9 +432,9 @@ public static partial class ClassSkillTables
         shared.Add(new ClassSkill(HolyFrenzy, 52, SkillLevel: 2));
         // Mana Blessing and the "Great" pair: three rungs each, at 58 / 66 / 74. Great Might and Great
         // Bulwark share a buff key and therefore EXCLUDE each other — an ally wears one, never both.
-        shared.AddRange(At(ManaBlessing, (58, 1), (66, 2), (74, 3)));
-        shared.AddRange(At(GreatMight,   (58, 1), (66, 2), (74, 3)));
-        shared.AddRange(At(GreatBulwark, (58, 1), (66, 2), (74, 3)));
+        shared.AddRange(At(ManaBlessing, (58, 1), (66, 2), (72, 3)));
+        shared.AddRange(At(GreatMight,   (58, 1), (66, 2), (72, 3)));
+        shared.AddRange(At(GreatBulwark, (58, 1), (66, 2), (72, 3)));
 
         // ═══ THE RACE SPLIT — it happens TWICE, and only twice ════════════════════════════════════
         // Once on the fast heal (Human throughput / Elf heal-and-cure / Ork planted totem) and once on

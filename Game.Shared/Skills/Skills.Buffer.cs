@@ -67,45 +67,26 @@ public static partial class SkillCatalog
           NpcBody, NpcSoul, NpcVigor, NpcSerenity,
           NpcSwift, NpcAlacrity, NpcAgility, NpcHaste,
           NpcFrenzy };
-
-    /// <summary>What the ADMIN buff button hands out: EVERYTHING that exists — the improved groups,
-    /// the three Harmony blessings and every single (owner 2026-07-31). Harmony and the groups are
-    /// the two layers no NPC sells and no consumable can reach, so this is the only way to see a
-    /// fully-buffed character, which is the state the balance numbers are read at.
+    /// <summary>What the ADMIN buff button hands out: EVERYTHING that exists — his nine lane groups,
+    /// the two "War" party echoes, all four Harmonies and every single. Those top layers are the ones
+    /// no NPC sells and no consumable can reach, so this is the only way to see a fully-buffed
+    /// character, which is the state the balance numbers are read at.
     ///
-    /// ⚠ The GROUPS come first, and now they simply WIN: a group covers its families at group rank,
-    /// so every single it contains is refused when it arrives after. The bar ends up as the five
-    /// group squares + the three Harmonies + Frenzy (the one family no group contains) — nine rows
-    /// for the whole game's buff layer, which is the point of the improved tier. The order is kept
+    /// ⚠ The GROUPS come first, and they simply WIN: a group covers its families at group rank, so
+    /// every single it contains is refused when it arrives after. The bar ends up as the group squares
+    /// + the Harmonies + War Frenzy — which is the point of the improved tier. The order is kept
     /// deliberate anyway: reversed, the singles would land first and then be evicted, which is the
+    /// same picture through twice the work.
+    ///
+    /// ⚠ War Might is listed and War Bulwark is NOT — they share one buff key on purpose (an ally
+    /// wears one or the other, never both), so granting both would only show whichever landed last.</summary>
     /// same picture through twice the work.</summary>
     public static readonly string[] AdminBuffSet =
-        new[] { NpcMightGroup, NpcForceGroup, NpcFocusGroup, NpcBodyGroup, NpcSpeed,
-                NpcHarmonyProtection, NpcHarmonyWarrior, NpcHarmonyWizard, HolyShield }
+        new[] { WcFeralPrecision, WcFeralBloodlust, WcArcaneInsight, WcArcaneSerenity,
+                WcSoulReinforce, WcBodyReinforce, WcShieldReinforce, WcArcaneFeralProt, WcWindGrace,
+                WarFrenzy, WcWarMight,
+                NpcHarmonyProtection, WcHarmonySpeed, NpcHarmonyWarrior, NpcHarmonyWizard }
             .Concat(NewbieBuffSet).ToArray();
-
-    /// <summary>A HARMONY blessing — the layer above the basic buffs, with no potion, no scroll and
-    /// no NPC that sells it. Unlike the rest of this file these are LEARNABLE (Warchanter, from
-    /// level 40 — owner 2026-07-31: "for now just to have somewhere the harmony to go"), so they
-    /// carry a real MP cost, a cast time and a range. Duration is the ordinary player-buff 20
-    /// minutes, not the NPC's hour.
-    ///
-    /// They keep their own BuffKeys and are NOT split into children: Harmony's whole job is to
-    /// stack ON TOP of the basic layer, and nothing else grants what they grant, so there is no
-    /// family for them to compete on. Splitting them waits for a second Harmony-tier source.</summary>
-    private static SkillDef HarmonyBuff(string id, string name, string buffKey,
-        SkillEffect effect, EffectMagnitude[] mags, string desc,
-        float physMpCost = 0f, float magicMpCost = 0f) =>
-        new(id, name, BaseClass.Mage, effect,
-            MpCost: 200, CastTicks: 15, CooldownTicks: 10, Range: 600, Power: 0,
-            DurationTicks: 12000, BuffKey: buffKey, Rank: NpcBuffRank,
-            Category: SkillCategory.Buff, Magnitudes: mags,  SpCost: 100000,
-            // Party buffs, like the improved groups they sit above. This was already the recorded
-            // decision in docs/design/BuffLadders.md: the autopilot hard-targets SELF for buffs, so a
-            // single-target Harmony could never be handed out by a buffer left on auto-farm.
-            TargetMode: TargetMode.AlliesInRadius, AreaRadius: 800f,
-            PhysMpCostPct: physMpCost, MagicMpCostPct: magicMpCost,
-            Description: desc + " (20 minutes).");
 
     private static SkillDef NpcBuff(string id, string name, string buffKey,
         SkillEffect effect, EffectMagnitude[] mags, string desc,
@@ -153,7 +134,7 @@ public static partial class SkillCatalog
         NpcSingle(NpcForce, "Force", BuffMAtk4, SkillEffect.BuffMagAtk, "+32% M.Atk"),
         NpcSingle(NpcWard, "Ward", BuffMDef4, SkillEffect.BuffMagicDef, "+30% M.Def"),
         NpcSingle(NpcResolve, "Resolve", BuffIntr7, SkillEffect.BuffInterruptResist,
-            "+60 interrupt resistance"),
+            "+54 interrupt resistance"),
 
         // ---- The FOCUS family (was a single three-effect "Focus"). ----
         NpcSingle(NpcFocus, "Focus", Rung(FamCritRate, 6), SkillEffect.BuffCritRate, "+30% critical rate"),
@@ -182,7 +163,7 @@ public static partial class SkillCatalog
         NpcBuffGroup(NpcForceGroup, "Force and Ward",
             SkillEffect.BuffMagAtk | SkillEffect.BuffMagicDef | SkillEffect.BuffInterruptResist,
             new[] { BuffMAtk4, BuffMDef4, BuffIntr7 },
-            "+32% M.Atk, +30% M.Def, +60 interrupt resistance"),
+            "+32% M.Atk, +30% M.Def, +54 interrupt resistance"),
         NpcBuffGroup(NpcFocusGroup, "Focus and Ferocity",
             SkillEffect.BuffCritRate | SkillEffect.BuffCritDamage | SkillEffect.BuffMagicCritRate,
             new[] { Rung(FamCritRate, 6), Rung(FamCritDmg, 6), Rung(FamMagCrit, 6) },
@@ -196,7 +177,7 @@ public static partial class SkillCatalog
         NpcSingle(NpcSwift, "Swift", BuffSwiftR, SkillEffect.BuffMoveSpeed, "+33 Move Speed"),
         NpcSingle(NpcAlacrity, "Alacrity", BuffAlacrityR, SkillEffect.BuffCastSpeed, "+30% Cast Speed"),
         NpcSingle(NpcAgility, "Agility", BuffAgilityR, SkillEffect.BuffEvasion, "+4 Evasion"),
-        NpcSingle(NpcHaste, "Haste", BuffHasteR, SkillEffect.BuffAtkSpeed, "+33% Attack Speed"),
+        NpcSingle(NpcHaste, "Fury", BuffHasteR, SkillEffect.BuffAtkSpeed, "+33% Attack Speed"),
 
         // ---- The BODY family (was a single four-effect "Body"). ----
         NpcSingle(NpcBody, "Body", Rung(FamMaxHp, 6), SkillEffect.BuffHp, "+35% Max HP"),
@@ -210,39 +191,10 @@ public static partial class SkillCatalog
         NpcSingle(NpcFrenzy, "Frenzy", Rung(FamFrenzy, 6), SkillEffect.BuffPhysAtk,
             "-10% Max HP/MP but +8% P.Atk / +8% M.Atk / +8% atk & cast speed / +8 move / -8 evasion"),
 
-        // ----- Greater "Harmony" buffs (max-level). Reflect (Protection) and the −physical/−magic
-        // MP-consumption (Warrior/Wizard) are now WIRED. -----
-        HarmonyBuff(NpcHarmonyProtection, "Harmony of Protection", "harmony_protection",
-            SkillEffect.BuffDef | SkillEffect.BuffMagicDef | SkillEffect.BuffHp
-            | SkillEffect.BuffHpRegen | SkillEffect.BuffEvasion | SkillEffect.BuffReflect,
-            new EffectMagnitude[]
-            {
-                new(SkillEffect.BuffDef, 0.25f), new(SkillEffect.BuffMagicDef, 0.25f),
-                new(SkillEffect.BuffHp, 0.30f), new(SkillEffect.BuffHpRegen, 0.20f),
-                new(SkillEffect.BuffEvasion, 3, ModifierMode.Flat), new(SkillEffect.BuffReflect, 0.20f),
-            },
-            "+25% P.Def & M.Def, +30% Max HP, +20% HP regen, +3 evasion, reflects 20% of melee damage"),
-
-        HarmonyBuff(NpcHarmonyWarrior, "Harmony of the Warrior", "harmony_warrior",
-            SkillEffect.BuffPhysAtk | SkillEffect.BuffAtkSpeed | SkillEffect.BuffCritDamage
-            | SkillEffect.BuffCritRate | SkillEffect.BuffAccuracy | SkillEffect.BuffMeleeVamp,
-            new EffectMagnitude[]
-            {
-                new(SkillEffect.BuffPhysAtk, 0.12f), new(SkillEffect.BuffAtkSpeed, 0.15f),
-                new(SkillEffect.BuffCritDamage, 0.35f), new(SkillEffect.BuffCritRate, 0.75f),
-                new(SkillEffect.BuffAccuracy, 4, ModifierMode.Flat), new(SkillEffect.BuffMeleeVamp, 0.08f),
-            },
-            "+12% P.Atk, +15% atk speed, +35% crit damage, +75% crit rate, +4 acc, 8% vamp, −20% physical-skill MP cost",
-            physMpCost: 0.20f),
-
-        HarmonyBuff(NpcHarmonyWizard, "Harmony of the Wizard", "harmony_wizard",
-            SkillEffect.BuffCastSpeed | SkillEffect.BuffMagAtk | SkillEffect.BuffMpRegen,
-            new EffectMagnitude[]
-            {
-                new(SkillEffect.BuffCastSpeed, 0.30f), new(SkillEffect.BuffMagAtk, 0.10f),
-                new(SkillEffect.BuffMpRegen, 0.20f),
-            },
-            "+30% cast speed, +10% M.Atk, +20% MP regen, −30% magic-skill MP cost",
-            magicMpCost: 0.30f),
+        // ----- The three original "Harmony" blessings MOVED OUT on 2026-08-21 -----
+        // They are now LADDERS (Protection 5 rungs, Warrior 6, Wizard 2) on his `buffer 3rd.csv`
+        // rows, with a 5-minute duration and a 2-minute reuse, and they live beside the fourth one
+        // (Harmony of Speed) in Skills.Warchanter3rd.cs. Their IDS DID NOT CHANGE — `npc_harmony_*`
+        // is append-only and AdminBuffSet still names them.
     };
 }

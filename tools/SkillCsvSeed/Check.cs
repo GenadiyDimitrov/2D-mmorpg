@@ -51,14 +51,17 @@ internal static class Check
         // ---- 3rd TIER. A discipline spec needs the DISCIPLINE as well, because two disciplines share
         //      an archetype and `Cumulative` would otherwise hand back both kits as one.
         //
-        // 🔑 ONLY FILES HE HAS FINISHED GO HERE. `healer 3rd` was added the day the healer was built
-        // (2026-08-20). `buffer 3rd` is deliberately absent: it is a PLACEHOLDER seeded FROM code, so
-        // checking it would only prove the seed round-trips — and the moment he authors it for real it
-        // earns its line. `nuker 3rd`, `dual 3rd` and the rest are the same.
+        // 🔑 ONLY FILES HE HAS FINISHED GO HERE — or, since 2026-08-21, the FINISHED HALF of one.
+        // `healer 3rd` was added the day the healer was built (2026-08-20). `buffer 3rd` earned its line
+        // when he authored its buff/harmony/group layer and marked the rest `NOT DONE` — `ReadCsv` stops
+        // at that banner, so the authored half is checked and the stubs below are invisible. As he moves
+        // the banner down, the newly-authored rows start being checked automatically — which is exactly
+        // the pressure we want. `nuker 3rd`, `dual 3rd` and the rest are still absent: no authored rows.
         //
         // ⚠ The BAND is 40-75, not 40-74: the nuker's Elemental Burst caps its last rung at 75, and a
         // tier's band is the tier, never where one file happens to stop.
         new("healer 3rd",  BaseClass.Mage,    Archetype.Healer,  40, 75, Game.Shared.Discipline.Lightbringer),
+        new("buffer 3rd",  BaseClass.Mage,    Archetype.Healer,  40, 75, Game.Shared.Discipline.Warchanter),
     };
 
     /// <summary>One rung, from either side, reduced to the fields worth comparing.
@@ -109,6 +112,12 @@ internal static class Check
         var rows = new List<Rung>();
         foreach (var line in File.ReadAllLines(path))
         {
+            // ⚠ STOP AT HIS "NOT DONE" BANNER. A 3rd-tier file he is still writing marks the line
+            // where the authored half ends; everything below it is a seed or a stub and is not his
+            // yet. Honouring the marker is what lets a HALF-finished file be checked at all — the
+            // buffer was built from rows 1-185 while its passives and attack skills were still
+            // being written. A file with no such banner is read whole, exactly as before.
+            if (line.IndexOf("NOT DONE", StringComparison.OrdinalIgnoreCase) >= 0) break;
             if (line.Length == 0 || line.StartsWith('#') || line.StartsWith("LEARN")) continue;
             var f = SplitCsv(line);
             if (f.Count < 12) continue;

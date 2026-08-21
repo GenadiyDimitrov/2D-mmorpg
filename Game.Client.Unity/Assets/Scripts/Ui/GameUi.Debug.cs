@@ -461,7 +461,7 @@ namespace Game.Client
             DebugGive(ItemCatalog.SpeedPotionC, "Swift Potion (Lesser) x5", 5);
             DebugGive(ItemCatalog.SpeedPotionU, "Swift Potion x5", 5);
             DebugGive(ItemCatalog.CastPotionU, "Alacrity Potion x5", 5);
-            DebugGive(ItemCatalog.AtkPotionU, "Haste Potion x5", 5);
+            DebugGive(ItemCatalog.AtkPotionU, "Fury Potion x5", 5);
             DebugGive(ItemCatalog.EvaPotionU, "Agility Potion x5", 5);
             DebugGive(ItemCatalog.SpeedScrollR, "Scroll of Swift x5", 5);
             DebugGive(ItemCatalog.CastScrollR, "Scroll of Alacrity x5", 5);

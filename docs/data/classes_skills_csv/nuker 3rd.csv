@@ -176,12 +176,12 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,R
 56,Serenity,Magic/Buff,600,self/target,1,1,1200,+20% MP regeneration.,85,42k,[]
 
 ,,,,,,,,,,,,,---------------------------Shield Bless---------------------------
-40,Shield Bless,Magic/Buff,600,self/target,1,1,1200,Increases Shield Rate with 5%,60,19k,[],,Changed to the rate increase buff (harden at 58); my mistake to have them reversed
-48,Shield Bless,Magic/Buff,600,self/target,1,1,1200,Increases Shield Rate with 10%,75,32k,[]
-56,Shield Bless,Magic/Buff,600,self/target,1,1,1200,Increases Shield Rate with 15%,85,42k,[]
-62,Shield Bless,Magic/Buff,600,self/target,1,1,1200,Increases Shield Rate with 20%,100,86k,[]
-66,Shield Bless,Magic/Buff,600,self/target,1,1,1200,Increases Shield Rate with 25%,110,145k,[]
-70,Shield Bless,Magic/Buff,600,self/target,1,1,1200,Increases Shield Rate with 30%,120,200k,[]
+40,Shield Blessing,Magic/Buff,600,self/target,1,1,1200,Increases Shield Rate with 5%,60,19k,[],,Changed to the rate increase buff (harden at 58); my mistake to have them reversed
+48,Shield Blessing,Magic/Buff,600,self/target,1,1,1200,Increases Shield Rate with 10%,75,32k,[]
+56,Shield Blessing,Magic/Buff,600,self/target,1,1,1200,Increases Shield Rate with 15%,85,42k,[]
+62,Shield Blessing,Magic/Buff,600,self/target,1,1,1200,Increases Shield Rate with 20%,100,86k,[]
+66,Shield Blessing,Magic/Buff,600,self/target,1,1,1200,Increases Shield Rate with 25%,110,145k,[]
+70,Shield Blessing,Magic/Buff,600,self/target,1,1,1200,Increases Shield Rate with 30%,120,200k,[]
 
 ,,,,,,,,,,,,,------------------------------Agility------------------------------
 44,Agility,Magic/Buff,600,self/target,1,1,1200,+3 Evasion.,72,22k,[]
@@ -217,8 +217,8 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,R
 52,Force,Magic/Buff,600,self/target,1,1,1200,+32% M.Atk.,80,38k,[]
 
 ,,,,,,,,,,,,,------------------------------Haste------------------------------
-44,Haste,Magic/Buff,600,self/target,1,1,1200,+15% Attack Speed.,72,22k,[]
-52,Haste,Magic/Buff,600,self/target,1,1,1200,+33% Attack Speed.,80,38k,[]
+44,Fury,Magic/Buff,600,self/target,1,1,1200,+15% Attack Speed.,72,22k,[]
+52,Fury,Magic/Buff,600,self/target,1,1,1200,+33% Attack Speed.,80,38k,[]
 
 ,,,,,,,,,,,,,------------------------------Resolve------------------------------
 44,Resolve,Magic/Buff,600,self/target,1,1,1200,+36 interrupt resistance.,72,22k,[]
@@ -321,9 +321,9 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,R
 74,Mana Blessing,Magic/Buff,600,self/target,1,1,1200,Decrease Physical MP Cost by 20% and Magic MP Cost by 10%,130,450k,[]
 
 ,,,,,,,,,,,,,--------------------------Shield Harden--------------------------
-58,Shield Harden,Magic/Buff,600,self/target,1,1,1200,Increases Shield PDef with 30%,90,45k,[]
-66,Shield Harden,Magic/Buff,600,self/target,1,1,1200,Increases Shield PDef with 40%,110,145k,[]
-72,Shield Harden,Magic/Buff,600,self/target,1,1,1200,Increases Shield PDef with 50%,125,330k,[] 
+58,Shield Hardening,Magic/Buff,600,self/target,1,1,1200,Increases Shield PDef with 30%,90,45k,[]
+66,Shield Hardening,Magic/Buff,600,self/target,1,1,1200,Increases Shield PDef with 40%,110,145k,[]
+72,Shield Hardening,Magic/Buff,600,self/target,1,1,1200,Increases Shield PDef with 50%,125,330k,[] 
 
 ,,,,,,,,,,,,,--------------------------Ultimate Heal--------------------------
 58,Ultimate Heal,Magic/Heal,600,self/target,5,2,0,heal with power 730. Consumes 1 skill stone,95,88k,[]
