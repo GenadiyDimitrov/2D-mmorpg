@@ -100,6 +100,7 @@ public static class SkillText
         // ones stating a bare number with the condition buried in the prose.
         Pct(o, "Block chance (with a shield)", p.BlockChancePct);
         Pct(o, "Shield def (with a shield)", p.ShieldDefPct);
+        Pct(o, "P.Def (with a shield)", p.DefencePctWithShield);
         Flat(o, "Bow range (with a bow)", p.BowRange);
 
         // Resists + interrupt

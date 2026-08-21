@@ -100,16 +100,16 @@ foreach (var (fileName, disciplines) in groups)
         // (learnLevel, skillLevel, skillId, race) — one row per race that learns it, then collapsed:
         // a skill all three races learn at the same level is ONE row with a blank RACE, which is the
         // format's own rule and the shape he reads fastest.
-        var rows = new List<(int Lvl, int SkillLvl, string Id, string? Name, Race Race)>();
+        var rows = new List<(int Lvl, int SkillLvl, string Id, string? Name, int? Sp, Race Race)>();
         foreach (var d in disciplines)
             foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
                 foreach (var cs in ClassSkills.ForClass(race, BaseOf(d), Disciplines.Parent(d), d))
                     if (cs.LearnLevel >= min && cs.LearnLevel <= max)
-                        rows.Add((cs.LearnLevel, cs.SkillLevel, cs.SkillId, cs.DisplayName, race));
+                        rows.Add((cs.LearnLevel, cs.SkillLevel, cs.SkillId, cs.DisplayName, cs.SpCost, race));
 
         var collapsed = rows
-            .GroupBy(r => (r.Lvl, r.SkillLvl, r.Id, r.Name))
-            .Select(g => (g.Key.Lvl, g.Key.SkillLvl, g.Key.Id, g.Key.Name,
+            .GroupBy(r => (r.Lvl, r.SkillLvl, r.Id, r.Name, r.Sp))
+            .Select(g => (g.Key.Lvl, g.Key.SkillLvl, g.Key.Id, g.Key.Name, g.Key.Sp,
                           Races: g.Select(x => x.Race).Distinct().OrderBy(x => (int)x).ToArray()))
             .OrderBy(r => r.Lvl).ThenBy(r => r.Name ?? r.Id)
             .ToList();
@@ -121,7 +121,7 @@ foreach (var (fileName, disciplines) in groups)
             // race-specific 40+ skill looks like in his format.
             var tags = r.Races.Length == 3 ? new[] { "" } : r.Races.Select(x => x.ToString().ToLowerInvariant()).ToArray();
             foreach (var tag in tags)
-                sb.AppendLine(Row(def, r.Lvl, r.SkillLvl, r.Name, tag));
+                sb.AppendLine(Row(def, r.Lvl, r.SkillLvl, r.Name, tag, r.Sp));
         }
 
         if (collapsed.Count == 0)
@@ -140,7 +140,7 @@ static BaseClass BaseOf(Discipline d) =>
     Disciplines.Parent(d) is Archetype.Healer or Archetype.Nuker ? BaseClass.Mage : BaseClass.Fighter;
 
 // One CSV line in the 20-35 files' own column order, plus the RACE column the 40+ format adds.
-static string Row(SkillDef def, int learnLevel, int skillLevel, string? displayName, string raceTag)
+static string Row(SkillDef def, int learnLevel, int skillLevel, string? displayName, string raceTag, int? spOverride = null)
 {
     string name = displayName ?? def.Name;
     if (skillLevel > 1) name += $" L{skillLevel}";
@@ -171,7 +171,7 @@ static string Row(SkillDef def, int learnLevel, int skillLevel, string? displayN
         F(def.CastTicks / 10f), F(def.CooldownTicks / 10f), F(def.DurationTicks / 10f),
         Q(def.DescriptionAt(skillLevel)),
         def.MpCostAt(skillLevel).ToString(CultureInfo.InvariantCulture),
-        def.SpCostAt(skillLevel).ToString(CultureInfo.InvariantCulture),
+        (spOverride ?? def.SpCostAt(skillLevel)).ToString(CultureInfo.InvariantCulture),
         Q(replaces), raceTag);
 
     static string F(float v) => v.ToString("0.##", CultureInfo.InvariantCulture);

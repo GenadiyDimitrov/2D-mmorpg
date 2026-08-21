@@ -916,6 +916,7 @@ public class Entity
     //  accuracy stat. It was also the field the bow penalty halved, which is why `57d` was invisible.)
     public bool UntrainedCasterWeapon { get; set; }  // Spellcaster Mastery: bow/dual/bare (feeds MagicFailSelfMult ×25)
     public float MeleeVamp { get; set; }         // basic (melee) attack lifesteal fraction
+    public float ManaVamp { get; set; }          // basic (melee) attack MANA-steal fraction (Warchanter)
     public float SpellVamp { get; set; }         // damage-spell lifesteal fraction
     public float MeleeReflect { get; set; }      // fraction of taken MELEE-basic damage returned to the attacker
     public float PhysMpCostReduction { get; set; }  // reduce PHYSICAL-skill MP cost (fraction)
@@ -996,6 +997,12 @@ public class Entity
     /// <summary>Weapon Proficiency: M.Atk multiplier while wielding an UNTRAINED weapon (bow/dual/hands) —
     /// ×0.5. 1 = a trained weapon (sword/blunt/wand/staff), no penalty.</summary>
     public float MagicWeaponPenaltyMult { get; set; } = 1f;
+
+    /// <summary>Products banked by passives that CANCEL the untrained-caster-weapon penalty (Harmonist
+    /// Bow Proficiency). 1 = nothing cancels it. Multiplied into CastSpeedPenaltyMult /
+    /// MagicWeaponPenaltyMult after the penalty block, so a bow buffer lands back on 1.0.</summary>
+    public float CasterCastPenaltyCancel { get; set; } = 1f;
+    public float CasterMagicPenaltyCancel { get; set; } = 1f;
     /// <summary>True while a magic weapon (wand/staff) is equipped, per ItemDef.IsMagicWeapon.
     /// ⚠ NOTHING READS THIS TODAY — Divine Focus was its last consumer and was deleted 2026-08-20, and
     /// the healer's mastery gates on the TYPE (Blunt) rather than on this flag, deliberately. Kept
@@ -1575,6 +1582,13 @@ public class Entity
     /// down each tick; absent or ≤0 = ready. Runtime-only.</summary>
     public Dictionary<string, int> PotionCooldowns { get; } = new();
 
+    /// <summary>Internal cooldowns for ON-HIT PROC passives (Warchanter Combo Mastery), keyed by the
+    /// passive's skill id and counted in TICKS. A proc that has just fired sits here until its
+    /// <see cref="SkillDef.ProcCooldownTicks"/> expire, which is what stops a 3%-per-swing roll from
+    /// being permanently up at high attack speed. Runtime only — never persisted: a relog is allowed
+    /// to hand the proc back, the same way it hands back skill cooldowns.</summary>
+    public Dictionary<string, int> ProcCooldowns { get; } = new();
+
     public bool Dead { get; set; }
 
     // ----- Mob-only state ----------------------------------------------------------------
@@ -1880,6 +1894,7 @@ public class Entity
         MagicResist = 0f;
         UntrainedCasterWeapon = false;
         MeleeVamp = 0f;
+        ManaVamp = 0f;
         SpellVamp = 0f;
         MeleeReflect = 0f;
         PhysMpCostReduction = 0f;
@@ -1918,6 +1933,8 @@ public class Entity
         AttackSpeedMultiplier = 1f;
         CastSpeedFlatBonus = 0f;
         CastSpeedPenaltyMult = 1f;
+        CasterCastPenaltyCancel = 1f;
+        CasterMagicPenaltyCancel = 1f;
         MagicFailSelfMult = 1f;
         MagicWeaponPenaltyMult = 1f;
         HasMagicWeapon = false;
@@ -2433,6 +2450,11 @@ public class Entity
                 // value handed out by every unset weapon/armor slot, so a field that meant ×0 when
                 // unset would silence every spell in the game the moment one profile left it blank.
                 if (pe.MagicFailSelfMult != 0f) MagicFailSelfMult *= pe.MagicFailSelfMult;
+                // Same convention, for the other two thirds of the untrained-weapon penalty. Banked
+                // here and multiplied in AFTER the penalty block below, which is the only order that
+                // works: the penalty has not been applied yet when this passive runs.
+                if (pe.CastPenaltyMult != 0f) CasterCastPenaltyCancel *= pe.CastPenaltyMult;
+                if (pe.MagicPenaltyMult != 0f) CasterMagicPenaltyCancel *= pe.MagicPenaltyMult;
                 if (pe.MoveSpeedPct != 0f) { RunSpeed *= 1f + pe.MoveSpeedPct; WalkSpeed = RunSpeed * MovementTuning.WalkSpeedFactor; Speed = RunSpeed; }
                 CooldownReduction += pe.CooldownPct;
                 CritRateResist += pe.CritRateResist;
@@ -2456,11 +2478,19 @@ public class Entity
                     // number that will actually be subtracted.
                     if (pe.ShieldDefPct != 0f)
                         ShieldDefense = (int)(ShieldDefense * (1f + pe.ShieldDefPct));
+                    // Shield Mastery rungs 3-4: "+10% P.Def" on the WHOLE physical defence, not just
+                    // the shield's share — but only while the shield is up. His ruling, 2026-08-21.
+                    // ⚠ IG gates this on heavy armour AS WELL ("IG is shield+heavy but I'm not sure if
+                    // we can") — we can, `ArmorWeight` is right here; he asked for shield-only, so that
+                    // is what this is. Adding the weight test is one `&&` if he wants IG parity.
+                    if (pe.DefencePctWithShield != 0f)
+                        Defence = (int)(Defence * (1f + pe.DefencePctWithShield));
                 }
                 MagicResist += pe.MagicResist;
                 MagicInterruptBonus += pe.InterruptPower;
                 InterruptResist += pe.InterruptResist;
                 MeleeVamp += pe.MeleeVamp;
+                ManaVamp += pe.ManaVamp;
                 SpellVamp += pe.SpellVamp;
                 PveSkillDamageBonus += pe.PveSkillDamagePct;
                 PveMagicDamageBonus += pe.PveMagicDamagePct;
@@ -2524,6 +2554,13 @@ public class Entity
                 // passive can divide it back out (see MagicFailSelfMult) — the owner's shape, 2026-08-20.
                 MagicFailSelfMult *= StatCaps.UntrainedWeaponMagicFailMod;
             }
+            // ...and a passive may take it back out. The Elf Warchanter's Harmonist Bow Proficiency is
+            // the only thing that does: with a BOW it banks ×2 / ×2 / ×0.04, which lands exactly on the
+            // 1.0 / 1.0 / ×1 an untrained weapon was charged. ⚠ Applied unconditionally rather than
+            // inside the `if` above, because these are factors on the multiplier, not on the penalty —
+            // if the penalty never applied, multiplying 1.0 by a cancel nobody banked is still 1.0.
+            CastSpeedPenaltyMult *= CasterCastPenaltyCancel;
+            MagicWeaponPenaltyMult *= CasterMagicPenaltyCancel;
             // (Divine Focus DELETED 2026-08-20 — the cleric/healer/buffer heal penalty for holding a
             //  non-magic weapon is gone with the M.Atk one above, same ruling, same reason.)
 
@@ -2684,6 +2721,7 @@ public class Entity
         PhysMpCostReduction = Math.Clamp(PhysMpCostReduction, -2f, 0.8f);
         MagicMpCostReduction = Math.Clamp(MagicMpCostReduction, -2f, 0.8f);
         MeleeVamp = Math.Clamp(MeleeVamp, 0f, 1f);
+        ManaVamp = Math.Clamp(ManaVamp, 0f, 1f);
         SpellVamp = Math.Clamp(SpellVamp, 0f, 1f);
 
         ApplyGradePenalty();

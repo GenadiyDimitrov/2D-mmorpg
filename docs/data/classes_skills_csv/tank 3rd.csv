@@ -1,2 +1,2 @@
 LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,REPLACES,RACE
-# nothing above level 40 exists yet for this discipline — start here.
+52,Shield Mastery,Passive,0,self,0,0,0,"Shield P.Def +60%, Shield Rate +100%; +10% P.Def, bow resistance 24%",0,74k,[]

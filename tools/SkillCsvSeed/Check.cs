@@ -51,17 +51,23 @@ internal static class Check
         // ---- 3rd TIER. A discipline spec needs the DISCIPLINE as well, because two disciplines share
         //      an archetype and `Cumulative` would otherwise hand back both kits as one.
         //
-        // 🔑 ONLY FILES HE HAS FINISHED GO HERE — or, since 2026-08-21, the FINISHED HALF of one.
-        // `healer 3rd` was added the day the healer was built (2026-08-20). `buffer 3rd` earned its line
-        // when he authored its buff/harmony/group layer and marked the rest `NOT DONE` — `ReadCsv` stops
-        // at that banner, so the authored half is checked and the stubs below are invisible. As he moves
-        // the banner down, the newly-authored rows start being checked automatically — which is exactly
-        // the pressure we want. `nuker 3rd`, `dual 3rd` and the rest are still absent: no authored rows.
+        // 🔑 ONLY FILES HE HAS FINISHED GO HERE. `healer 3rd` was added the day the healer was built
+        // (2026-08-20). `buffer 3rd` earned its line when he authored its buff/harmony/group layer and
+        // marked the rest `NOT DONE` — `ReadCsv` stopped at that banner, so only the authored half was
+        // checked. ⚠ HE REMOVED THE BANNER on 2026-08-21 ("Ok i finished the buffer"), so the whole
+        // 341-row file is live now and the sixteen still-unbuilt skill families report as 🔴 NOT
+        // REGISTERED. That is the pressure working as designed, not a regression.
+        // `nuker 3rd`, `dual 3rd` and the rest are still absent: no authored rows.
         //
         // ⚠ The BAND is 40-75, not 40-74: the nuker's Elemental Burst caps its last rung at 75, and a
         // tier's band is the tier, never where one file happens to stop.
         new("healer 3rd",  BaseClass.Mage,    Archetype.Healer,  40, 75, Game.Shared.Discipline.Lightbringer),
         new("buffer 3rd",  BaseClass.Mage,    Archetype.Healer,  40, 75, Game.Shared.Discipline.Warchanter),
+        // `tank 3rd` earned its line on 2026-08-21, when he replaced its "start here" placeholder with
+        // a real row: Shield Mastery's fourth rung at 52. One row is still a file that has to match.
+        // Bulwark, not Vanguard, only because a spec needs ONE discipline and the row is registered to
+        // both — check the pair by hand if that ever stops being true.
+        new("tank 3rd",    BaseClass.Fighter, Archetype.Tank,    40, 75, Game.Shared.Discipline.Bulwark),
     };
 
     /// <summary>One rung, from either side, reduced to the fields worth comparing.
@@ -185,7 +191,7 @@ internal static class Check
                     def.RangeAt(cs.SkillLevel), def.CastTicksAt(cs.SkillLevel) / 10f, def.CooldownTicks / 10f,
                     duration,
                     def.MpCostAt(cs.SkillLevel),
-                    def.SpCostAt(cs.SkillLevel), Def: def, SkillLevel: cs.SkillLevel));
+                    cs.SpCostFor(def), Def: def, SkillLevel: cs.SkillLevel));
             }
         return rows;
     }

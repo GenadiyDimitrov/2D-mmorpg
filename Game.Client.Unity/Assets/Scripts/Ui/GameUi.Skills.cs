@@ -327,7 +327,9 @@ namespace Game.Client
                     var def = SkillCatalog.Get(cs.SkillId);
                     if (def == null) continue;
 
-                    int sp = def.SpCostAt(cs.SkillLevel);
+                    // Per-class price when the class table overrides it (Shield Mastery: 3200 for a
+                    // tank at 20, 36000 for a Human Warchanter at 40). See ClassSkill.SpCost.
+                    int sp = cs.SpCostFor(def);
                     // Stat swaps are bought with GOLD, and priced by how many rungs you already own
                     // rather than per level — the same computation the server charges, so the shelf
                     // price and the bill agree. Everything else uses its own authored per-level cost.

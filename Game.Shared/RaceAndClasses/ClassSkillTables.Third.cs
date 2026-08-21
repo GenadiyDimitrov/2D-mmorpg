@@ -88,9 +88,13 @@ public static partial class ClassSkillTables
         // ⚠ THE PURGE STILL STANDS FOR EVERYONE ELSE. This is not a precedent for switching the others
         // back on: the eight fighter disciplines have no file at all.
         RegisterLightbringer();
-        // THE WARCHANTER, 40-74 — his `buffer 3rd.csv` rows 1-185, built 2026-08-21. The file is only
-        // HALF authored (it carries a `NOT DONE` banner; his passives and attack skills are still being
-        // written), so this teaches the buff/harmony/group layer and nothing else.
+        // THE WARCHANTER, 40-74 — his `buffer 3rd.csv`. Built so far: the buff/harmony/group layer
+        // (2026-08-21) and Shield Mastery (same day, registered at the bottom of RegisterWarchanterBuffs).
+        // ⚠ HE FINISHED AUTHORING THE FILE ON 2026-08-21 and removed its `NOT DONE` banner, so
+        // `--check` now walks all 341 rows: sixteen skill families below the old banner report as
+        // 🔴 NOT REGISTERED (Sound Burst, Sound Smash, Sharpening, Reinforcement, Harmony of
+        // Restoration, Combo Mastery, Mana Vampirism, the three armour/bow masteries, Great Heal,
+        // Armor Mastery, Spell Mastery, Bow Expertise, …). Those are the remaining build, not defects.
         // 🔴 `RegisterWarchanter()` at the bottom of this file STAYS OFF, and is now genuinely dead:
         // its per-race Bolt/Chant/Renew/Pass were the INVENTED pre-CSV kit, and the attack half of his
         // file is what replaces them. Do not switch it back on — delete it when his rows land.
@@ -101,6 +105,9 @@ public static partial class ClassSkillTables
         RegisterPreservation();
         // …and a THIRD, on the same terms: the three HIDE skills, which he placed by hand.
         RegisterHideKit();
+        // …and a FOURTH: Shield Mastery's rung 4 at 52, the single row he authored into the previously
+        // empty `tank 3rd.csv` on 2026-08-21. Same narrow terms — one learn line, nothing around it.
+        RegisterTankShieldMastery();
         // (A FOURTH, `RegisterHealerMasteries()`, existed for one day and is gone: it taught the two
         //  healer masteries and Frenzy L2 while RegisterLightbringer was still commented out. Those
         //  rungs are in the shared ladder now, and keeping both would have registered every one twice.)
@@ -307,6 +314,95 @@ public static partial class ClassSkillTables
 
         foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
             ClassSkills.RegisterThird(race, Discipline.Warchanter, kit.ToArray());
+
+        // ═══ THE NON-BUFF HALF — his passives, actives and toggles, 40-74 ═════════════════════════
+        // Built 2026-08-21 from the rows below his old `NOT DONE` banner, once he said the file was
+        // finished. Defs in Skills.Warchanter3rd.Kit.cs; the two extended ladders in Skills.Healer.cs.
+
+        // The bands his file uses. FOURTEEN = 40 44 48 52 56 58 60 62 64 66 68 70 72 74 (the full
+        // 3rd-class spine); THIRTEEN is the same list with 44 dropped, which is what every damage and
+        // toggle ladder in the file runs on.
+        int[] band14 = { 40, 44, 48, 52, 56, 58, 60, 62, 64, 66, 68, 70, 72, 74 };
+        int[] band13 = { 40, 48, 52, 56, 58, 60, 62, 64, 66, 68, 70, 72, 74 };
+        int[] band8  = { 40, 48, 56, 60, 64, 68, 70, 74 };
+
+        // Rungs 1..N of `id` at the given levels. Used for every ladder that starts at rung 1.
+        static IEnumerable<ClassSkill> Ladder(string id, int[] levels, int startRung = 1) =>
+            levels.Select((lv, i) => new ClassSkill(id, lv, SkillLevel: startRung + i));
+
+        var kit2 = new List<ClassSkill>();
+
+        // ---- Shared by all three races -----------------------------------------------------------
+        // Armor Mastery and Spell Mastery CONTINUE the cleric's ladders: rungs 1-4 were bought at
+        // 20-35, so the buffer's fourteen rows are rungs 5-18. Getting that offset wrong is the whole
+        // difficulty here — a `ClassSkill` names the RUNG, not the row number in his file.
+        kit2.AddRange(Ladder(ArmorMasterySkill, band14, startRung: 5));
+        kit2.AddRange(Ladder(SpellMastery, band14, startRung: 5));
+        // Great Heal: ELEVEN rungs, 40-68. His file stops there; the healer's own ladder runs to 74,
+        // and the extra three rungs are the Lightbringer's alone.
+        kit2.AddRange(Ladder(GreatHeal, new[] { 40, 44, 48, 52, 56, 58, 60, 62, 64, 66, 68 }));
+        kit2.AddRange(Ladder(WcHarmonyRestoration, band14));
+        kit2.AddRange(Ladder(WcReinforcement, band13));
+        kit2.AddRange(Ladder(WcSharpening, band13));
+        kit2.AddRange(Ladder(WcComboMastery, new[] { 52, 64, 74 }));
+
+        // ---- HUMAN: the shield tank. Blunt + shield, ONE damage skill. ---------------------------
+        var human = new List<ClassSkill>(kit2);
+        human.AddRange(Ladder(WcChanterHeavy, new[] { 40 }));
+        human.AddRange(Ladder(WcManaVampirism, new[] { 40, 60, 70 }));
+        human.AddRange(Ladder(WcSoundSmash, band13));
+
+        // ---- ELF: the archer. Light armour, bow, ranged damage, no shield and no blunt line. ------
+        var elf = new List<ClassSkill>(kit2);
+        elf.AddRange(Ladder(WcHarmonistLight, new[] { 40 }));
+        elf.AddRange(Ladder(WcHarmonistBowProf, new[] { 40 }));
+        elf.AddRange(Ladder(WcHarmonistBowMast, band8));
+        elf.AddRange(Ladder(WcBowExpertise, new[] { 56 }));
+        elf.AddRange(Ladder(WcSoundBurst, band13));
+
+        // ---- ORK: the melee fighter. Heavy armour, blunt, and TWO damage skills — his ruling,
+        //      2026-08-21: *"ork is mele fighter so need more than 1dmg skill"*. Acoustic Shock is
+        //      Sound Smash's twin with a stun, and it exists for exactly that reason. -------------
+        var ork = new List<ClassSkill>(kit2);
+        ork.AddRange(Ladder(WcChanterHeavy, new[] { 40 }));
+        ork.AddRange(Ladder(WcManaVampirism, new[] { 40, 60, 70 }));
+        ork.AddRange(Ladder(WcBloodhanterBlunt, band8));
+        ork.AddRange(Ladder(WcSoundSmash, band13));
+        ork.AddRange(Ladder(WcAcousticShock, band13));
+
+        ClassSkills.RegisterThird(Race.Human, Discipline.Warchanter, human.ToArray());
+        ClassSkills.RegisterThird(Race.Elf,   Discipline.Warchanter, elf.ToArray());
+        ClassSkills.RegisterThird(Race.Ork,   Discipline.Warchanter, ork.ToArray());
+
+        // ---- SHIELD MASTERY — HUMAN ONLY, and the same skill the tank learns. ------------------
+        // His `buffer 3rd.csv` rows (RACE column = Human): 40 / 60 / 70, rungs 1-3, and he gives the
+        // Human Warchanter NO rung 4 — the tank's 52 is the only place that one exists. The SP is the
+        // buffer's own band price (36k / 120k / 390k, the same numbers every other 40/60/70 row in his
+        // file carries), which is why ClassSkill carries an SpCost override: the ability is shared, the
+        // price is a property of the level you buy it at.
+        //
+        // 🔑 It is NOT in `kit` above because `kit` is registered for all three races — the Elf gets
+        // the bow line and the Ork the blunt line in its place.
+        ClassSkills.RegisterThird(Race.Human, Discipline.Warchanter,
+            new ClassSkill(TankShieldMastery, 40, SkillLevel: 1, SpCost: 36_000),
+            new ClassSkill(TankShieldMastery, 60, SkillLevel: 2, SpCost: 120_000),
+            new ClassSkill(TankShieldMastery, 70, SkillLevel: 3, SpCost: 390_000));
+    }
+
+    /// <summary>Shield Mastery's FOURTH rung, at 52 — his one authored row in
+    /// <c>docs/data/classes_skills_csv/tank 3rd.csv</c> (2026-08-21), which until then was an empty
+    /// placeholder. Both tank disciplines get it: the file has a RACE column and he left it blank, and
+    /// nothing in the row distinguishes a Bulwark from a Vanguard.
+    ///
+    /// <para>⚠ This is the ONLY 3rd-class row a tank has. The purge of 2026-08-10 still stands for the
+    /// rest of the kit — do not read one authored line as permission to restore Shield Bash, Aegis,
+    /// Last Stand and the others that are still commented out below.</para></summary>
+    private static void RegisterTankShieldMastery()
+    {
+        foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
+            foreach (var disc in new[] { Discipline.Bulwark, Discipline.Vanguard })
+                ClassSkills.RegisterThird(race, disc,
+                    new ClassSkill(TankShieldMastery, 52, SkillLevel: 4, SpCost: 74_000));
     }
 
     /// <summary>THE LIGHTBRINGER, 40-74 — every row of <c>docs/data/classes_skills_csv/healer 3rd.csv</c>,

@@ -32,23 +32,27 @@ public static partial class ClassSkillTables
                 // level-20 row himself, so a tank has no taunt for his first four levels. That gap is
                 // DELIBERATE and was confirmed when queried ("delibered is taunt at 24") — it is not a
                 // transcription slip, so do not helpfully restore a rung at 20.
+                // ⚠ SHIELD MASTERY IS NO LONGER ON THE 20/24/28/32 CADENCE. He re-authored it
+                // 2026-08-21 onto 20 / 28 / 36 — and its FOURTH rung left this file entirely for
+                // `tank 3rd.csv` at 52 (registered in ClassSkillTables.Third.RegisterTankShieldMastery).
+                // So a tank now holds rung 2 from 28 and rung 3 from 36, not 24 and 28; the gaps at
+                // 24 and 32 are his, exactly like Provoke's missing level-20 row above.
                 new ClassSkill(TankArmorMastery, 24, SkillLevel: 2),
-                new ClassSkill(TankShieldMastery, 24, SkillLevel: 2),
                 new ClassSkill(TankAntiMagic, 24, SkillLevel: 2),
                 new ClassSkill(TankWeaponMastery, 24, SkillLevel: 2),
                 new ClassSkill(Provoke, 24, SkillLevel: 1),
                 new ClassSkill(TankArmorMastery, 28, SkillLevel: 3),
-                new ClassSkill(TankShieldMastery, 28, SkillLevel: 3),
+                new ClassSkill(TankShieldMastery, 28, SkillLevel: 2),
                 new ClassSkill(TankAntiMagic, 28, SkillLevel: 3),
                 new ClassSkill(TankWeaponMastery, 28, SkillLevel: 3),
                 new ClassSkill(TankShieldStun, 28, SkillLevel: 1),
                 new ClassSkill(Provoke, 28, SkillLevel: 2),
                 new ClassSkill(TankArmorMastery, 32, SkillLevel: 4),
-                new ClassSkill(TankShieldMastery, 32, SkillLevel: 4),
                 new ClassSkill(TankAntiMagic, 32, SkillLevel: 4),
                 new ClassSkill(TankWeaponMastery, 32, SkillLevel: 4),
                 new ClassSkill(Provoke, 32, SkillLevel: 3),
                 new ClassSkill(TankArmorMastery, 36, SkillLevel: 5),
+                new ClassSkill(TankShieldMastery, 36, SkillLevel: 3),
                 new ClassSkill(TankAntiMagic, 36, SkillLevel: 5),
                 new ClassSkill(TankWeaponMastery, 36, SkillLevel: 5),
                 new ClassSkill(Provoke, 36, SkillLevel: 4),

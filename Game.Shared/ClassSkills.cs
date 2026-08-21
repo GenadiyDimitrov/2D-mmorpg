@@ -8,9 +8,22 @@ namespace Game.Shared;
 /// and BuffKey stay shared, but this class sees its own name/icon on the skill
 /// bar, buff bar and skills window. Leave them null to use the SkillDef's
 /// canonical name.</summary>
+/// <param name="SpCost">OPTIONAL per-class SP price for this rung. Null = the SkillDef's own
+/// <c>SpCostAt(SkillLevel)</c>, which is what almost every entry wants. It exists because SP in this
+/// game is priced by the LEVEL YOU LEARN AT, not by the ability: Shield Mastery is ONE skill that the
+/// tank buys at 20/28/36/52 for 3200/3200/40000/74000 and the Human Warchanter buys at 40/60/70 for
+/// 36000/120000/390000 (his `tank 2nd`, `tank 3rd` and `buffer 3rd` CSVs, 2026-08-21). Splitting that
+/// into two SkillDefs would duplicate a ladder he authored identically in both files and invite it to
+/// drift; overriding the price keeps one ability with one set of magnitudes.</param>
 public readonly record struct ClassSkill(
     string SkillId, int LearnLevel, string? DisplayName = null, string? Icon = null,
-    int SkillLevel = 1);
+    int SkillLevel = 1, int? SpCost = null)
+{
+    /// <summary>What THIS class pays for THIS rung — the per-class override when it has one, the
+    /// skill's own authored price otherwise. Every SP reader goes through here or through
+    /// <see cref="ClassSkills.SpCostOf"/>; reading <c>def.SpCostAt</c> directly is now the bug.</summary>
+    public int SpCostFor(SkillDef def) => SpCost ?? def.SpCostAt(SkillLevel);
+}
 
 /// <summary>
 /// THE place to manage which class learns which skill, and when. The actual
@@ -173,6 +186,18 @@ public static class ClassSkills
             if (cs.SkillId == skillId && cs.SkillLevel == skillLevel)
                 return cs.LearnLevel;
         return 0;
+    }
+
+    /// <summary>The SP this class pays to take <paramref name="def"/> to <paramref name="skillLevel"/>.
+    /// Falls back to the skill's own authored price when the class table carries no override.
+    /// See <see cref="ClassSkill.SpCost"/> for why an override exists at all.</summary>
+    public static int SpCostOf(SkillDef def, int skillLevel, Race race, BaseClass baseClass,
+        Archetype? archetype, Discipline? discipline = null)
+    {
+        foreach (var cs in Cumulative(race, baseClass, archetype, discipline))
+            if (cs.SkillId == def.Id && cs.SkillLevel == skillLevel && cs.SpCost is int sp)
+                return sp;
+        return def.SpCostAt(skillLevel);
     }
 
     /// <summary>The highest skill-level of a skill this class can ever learn (0 = none).</summary>

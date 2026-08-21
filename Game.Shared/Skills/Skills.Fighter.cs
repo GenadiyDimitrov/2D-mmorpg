@@ -267,10 +267,26 @@ public static partial class SkillCatalog
 
         // ===== Tank 2nd-class (CSV tank 2nd) =====
 
-        // Shield Mastery — PASSIVE (4 levels @20/24/28/32): scales the equipped shield's
-        // block chance and defence, and adds bow resistance. Inert without a shield.
-        // 🔑 ShieldDefPct went x5 (0.30/0.40 -> 1.50/2.00) on 2026-08-12 and that is NOT a buff — it is
-        // the other half of cutting every shield's flat defence 5x (Items.cs shDef). His words:
+        // Shield Mastery — PASSIVE (4 levels): scales the equipped shield's block chance and defence.
+        // 🔑 TWO CLASSES LEARN IT, ON DIFFERENT SCHEDULES (2026-08-21, his `tank 2nd`/`tank 3rd`/
+        // `buffer 3rd` rows). The TANK takes rungs 1-3 at 20/28/36 and rung 4 at 52 (3rd class); the
+        // HUMAN WARCHANTER takes rungs 1-3 at 40/60/70 and never reaches rung 4. Same ability, same
+        // magnitudes — only the learn levels and the SP differ, which is why the price is a per-class
+        // `ClassSkill.SpCost` override rather than a second SkillDef.
+        //
+        // 🔑 BOW RESISTANCE RESTORED 2026-08-21, on rungs 3 and 4 only. It vanished when he re-authored
+        // the rows; asked about it he said *"My mistake in the hurry .. Make lvl 3 +16% and lvl 4 +24%
+        // bow resist"*. This passive is its ONLY carrier in the whole player kit — `PassiveEffect.BowResist`,
+        // `Entity.BowResist` and `SkillEffect.BuffBowResist` have no other source — so deleting it from
+        // these two lines makes a built stat unreachable. Note it moved UP the ladder: it used to start
+        // at rung 2 (16/16/24), it now starts at rung 3 (—/—/16/24).
+        // 🔑 ShieldDefPct is HIS IG PERCENTAGE x5, and that is NOT a buff — it is the other half of
+        // cutting every shield's flat defence 5x (Items.cs shDef). His CSV rows are authored in IG
+        // units (30/40/50/60%) and this ladder is the compensated build (150/200/250/300%) — his
+        // instruction, 2026-08-21: *"the % of the shield mastery are the IG one so fix them in the
+        // process"*. The DESCR checker knows: see the `("shield mastery","shielddef")` entry in
+        // tools/SkillCsvSeed/Descr.cs, which prints both numbers as ⚪ RULED rather than a defect.
+        // His words when the pair was made:
         // "same as .2 just to increase the shield Defence increase skills/passives — 40% tanks to become
         //  200% ... 51 -> 153 ... which is good now for 61lvl without the 3rd class kits". The point of
         // the PAIR (the item cut and this raise) is WHO keeps the defence: a shielded mage/cleric drops
@@ -282,20 +298,30 @@ public static partial class SkillCatalog
         //     "sheild_mastery.Shield_PDef will be the only part that will increase 5 times the sheild
         //      chance, arrow defence and other passives, sets and buffs that increase the shieldPdef/
         //      chance etc are kept as is."
-        // So BlockChancePct and BowResist below are untouched, the Shield Mastery BUFF keeps its +50%,
-        // and the heavy sets' "shield.p.def x1.25" clauses keep theirs. Those are all percentages of a
-        // number that is now a fifth of what it was, and he wants them that way.
+        // So BlockChancePct below is untouched — "Shield Rate" is copied from his row verbatim
+        // (50/70/85/100%) — the Shield Mastery BUFF keeps its +50%, and the heavy sets'
+        // "shield.p.def x1.25" clauses keep theirs. Those are all percentages of a number that is now
+        // a fifth of what it was, and he wants them that way.
+        //
+        // ⚠ The "+10% P.Def" on rungs 3 and 4 is the WHOLE physical defence (armour, jewels, the lot),
+        // and it is SHIELD-GATED — `DefencePctWithShield`, not plain `DefencePct`. His ruling when
+        // asked, 2026-08-21: *"The 10% pDef (overall pDef not only shieldPDef) is only when shield is
+        // equipped (IG is shield+heavy but I'm not sure if we can)"*. We can test the weight too; he
+        // asked for shield-only, so that is what is built. See the note in Entity.ApplyPassive.
         new(TankShieldMastery, "Shield Mastery", BaseClass.Fighter, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive,
-            Description: "Passive. Greatly improves your shield's block chance and defence, and "
-                       + "reduces damage from bows (only while a shield is equipped).",
+            Description: "Passive. Greatly improves your shield's block chance and defence "
+                       + "and, from level 3, your whole P.Def and your resistance to bows. "
+                       + "Every part of it needs a shield equipped.",
             Levels: new[]
             {
-                new SkillLevel(SpCost: 1700, Passive: new PassiveEffect(ShieldDefPct: 1.50f, BlockChancePct: 0.50f)),
-                new SkillLevel(SpCost: 3200, Passive: new PassiveEffect(ShieldDefPct: 1.50f, BlockChancePct: 0.50f, BowResist: 0.16f)),
-                new SkillLevel(SpCost: 6000, Passive: new PassiveEffect(ShieldDefPct: 2.00f, BlockChancePct: 0.70f, BowResist: 0.16f)),
-                new SkillLevel(SpCost: 11000, Passive: new PassiveEffect(ShieldDefPct: 2.00f, BlockChancePct: 0.70f, BowResist: 0.24f)),
+                // SP here is the TANK's price (his 20/28/36/52 rows). The Human Warchanter's
+                // 36000/120000/390000 comes from the ClassSkill.SpCost override on its own table.
+                new SkillLevel(SpCost: 3200,  Passive: new PassiveEffect(ShieldDefPct: 1.50f, BlockChancePct: 0.50f)),
+                new SkillLevel(SpCost: 3200,  Passive: new PassiveEffect(ShieldDefPct: 2.00f, BlockChancePct: 0.70f)),
+                new SkillLevel(SpCost: 40000, Passive: new PassiveEffect(ShieldDefPct: 2.50f, BlockChancePct: 0.85f, DefencePctWithShield: 0.10f, BowResist: 0.16f)),
+                new SkillLevel(SpCost: 74000, Passive: new PassiveEffect(ShieldDefPct: 3.00f, BlockChancePct: 1.00f, DefencePctWithShield: 0.10f, BowResist: 0.24f)),
             }),
 
         // Tank Anti-Magic — passive flat magic defence (5 levels @20/24/28/32/36).

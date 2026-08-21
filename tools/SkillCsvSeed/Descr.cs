@@ -109,6 +109,9 @@ internal static class Descr
         ("eva",           new[] { "evasion", "eva" }),
         ("acc",           new[] { "accuracy", "acc" }),
         ("interrupt",     new[] { "interrupt resistance", "interrupt" }),
+        // ⚠ MANA vampirism ABOVE plain vampirism, longest-first: they are two different stats one word
+        // apart (ManaVamp refills MP, MeleeVamp heals HP) and his Warchanter row says "mana vampirism".
+        ("manavamp",      new[] { "mana vampirism", "mana vamp" }),
         ("vamp",          new[] { "vampirism", "vamp" }),
         ("restoremp",     new[] { "mpwhenrestored", "mp when restored" }),
         ("bowrange",      new[] { "range" }),
@@ -116,7 +119,11 @@ internal static class Descr
         ("ccresist",      new[] { "cc resist", "ccresist" }),
         ("critrateres",   new[] { "crit rate resist", "critical rate resist" }),
         ("critdmgres",    new[] { "crit dmg reduction", "crit dmg resist", "crit damage reduction",
-                                  "critical damage reduction" }),
+                                  "critical damage reduction", "critical damage resist" }),
+        // A PROC CHANCE. Bare "chance" is safe only because every other use of the word is already
+        // claimed by a longer alias above it ("block chance" -> blockrate), and the table is walked
+        // longest-first. It exists so Combo Mastery's "With 3% Chance" is VERIFIED rather than UNREAD.
+        ("procchance",    new[] { "chance" }),
         ("ccresist",      new[] { "resist to spt", "resist to con" }),
         ("cancelresist",  new[] { "cancel resist", "buff cancel resist" }),
         ("aggro",         new[] { "aggro", "threat" }),
@@ -405,6 +412,7 @@ internal static class Descr
 
         // A PLAIN PASSIVE and the skill's buff MAGNITUDES apply whatever the scope.
         if (def.PassiveAt(level) is PassiveEffect pe) AddPassive(Add, pe);
+        Add("procchance", true, def.ProcChance);
         AddMagnitudes(Add, def, level);
 
         // 🔑 FOLLOW THE BUFF LADDER. `Might` is `cast_atk_phys`, and a cast-skill's level carries only
@@ -414,6 +422,20 @@ internal static class Descr
         foreach (var childId in def.ChildBuffsAt(level) ?? Array.Empty<string>())
             if (SkillCatalog.Get(childId) is SkillDef child)
                 AddMagnitudes(Add, child, 1);
+
+        // 🔑 AND FOLLOW AN ON-HIT PROC to the buff it hands out. Combo Mastery is a PASSIVE with no
+        // magnitudes of its own — its numbers live on the Combo Rush rung it fires, indexed by this
+        // level. Without this the three authored rungs read "the code has no such value" for every
+        // number in them, which is the whole row. Only the SELF rung is offered: his row states the
+        // caster's numbers plainly and puts the party's half in parentheses, which the segmenter
+        // strips as commentary — and that is the right shape, because two `as` tokens in one row
+        // would collide and the later would silently win (the `mAtk +23, mAtk +15` trap).
+        if (def.ProcSelfRungs is { Length: > 0 } procRungs)
+        {
+            int idx = Math.Clamp(level - 1, 0, procRungs.Length - 1);
+            if (SkillCatalog.Get(procRungs[idx]) is SkillDef procBuff)
+                AddMagnitudes(Add, procBuff, 1);
+        }
 
         // "offence and speed" is only a real metric when the four channels agree. Built LAST, from the
         // finished pool, so it sees whatever the passive/magnitude/child walk above put there.
@@ -438,6 +460,19 @@ internal static class Descr
             // does not carry. Both halves are the same number, which is exactly what the flag means.
             if (mag.Effect == SkillEffect.DebuffAtk)
                 add("matk", mag.Mode == ModifierMode.Percent, mag.Value);
+            // ⚠ A HEAL-OVER-TIME AND A MANA-OVER-TIME ON THE SAME BUFF COLLIDE ON `power`. Harmony of
+            // Restoration's top rungs read *"Restores +90 HP/s and +5 MP/s"* — one buff, two bars — and
+            // `RestoreMp` already answers to "power" because Restore Mana's row is written that way.
+            // With only one candidate per metric the HP number was compared against the MP one and
+            // every rung from 64 up reported a defect. Offer each half under its own regen alias too,
+            // so both numbers in his sentence have something to match.
+            if (mag.Effect == SkillEffect.HealOverTime)
+            {
+                add("power", mag.Mode == ModifierMode.Percent, mag.Value);
+                add("hpreg", mag.Mode == ModifierMode.Percent, mag.Value);
+            }
+            if (mag.Effect == SkillEffect.RestoreMp)
+                add("mpreg", mag.Mode == ModifierMode.Percent, mag.Value);
         }
     }
 
@@ -489,6 +524,7 @@ internal static class Descr
         add("patk", true, p.PhysAtkPct);      add("patk", true, p.AttackPct);
         add("matk", true, p.MagAtkPct);       add("matk", true, p.AttackPct);
         add("pdef", false, p.Defence);        add("pdef", true, p.DefencePct);
+        add("pdef", true, p.DefencePctWithShield);   // Shield Mastery 3-4: whole P.Def, shield-gated
         add("mdef", false, p.MagicDefence);   add("mdef", true, p.MagicDefencePct);
         add("maxhp", false, p.MaxHp);         add("maxhp", true, p.MaxHpPct);
         add("maxmp", false, p.MaxMp);         add("maxmp", true, p.MaxMpPct);
@@ -501,6 +537,7 @@ internal static class Descr
         add("hpreg", false, p.HpRegen);       add("hpreg", true, p.HpRegenPct);
         add("mpreg", false, p.MpRegen);       add("mpreg", true, p.MpRegenPct);
         add("mres", true, p.MagicResist);     add("vamp", true, p.MeleeVamp);
+        add("manavamp", true, p.ManaVamp);
         add("interrupt", false, p.InterruptResist);
         add("interrupt", false, p.InterruptPower);
         add("critdmgres", true, p.CritDmgResist);
@@ -559,9 +596,25 @@ internal static class Descr
     private static readonly Dictionary<(string Skill, string Metric), string> Ruled = new()
     {
         [("shield mastery", "shielddef")] =
-            "2026-08-12 — ShieldDefPct went x5 (0.30/0.40 → 1.50/2.00) as the other half of cutting every "
-          + "shield's flat defence 5x in Items.cs. His words: \"40% tanks to become 200%\". The CSV row "
-          + "predates the pair and was deliberately not re-authored.",
+            "2026-08-12, reaffirmed 2026-08-21 — ShieldDefPct is the authored percentage x5, the other "
+          + "half of cutting every shield's flat defence 5x in Items.cs. His words then: \"40% tanks to "
+          + "become 200%\". THE CSV COLUMN IS DELIBERATELY IN IG UNITS: when he re-authored the whole "
+          + "ladder on 2026-08-21 (30/40/50/60% at tank 20/28/36/52 and Human Warchanter 40/60/70) he "
+          + "said \"the % of the shield mastery are the IG one so fix them in the process\" — so the "
+          + "file keeps IG's number and the build carries 150/200/250/300%. ⚠ The x5 stops here: block "
+          + "CHANCE (\"Shield Rate\") and the +10% P.Def are copied verbatim, per the same 2026-08-12 "
+          + "ruling that only the mastery's shield-P.Def half ever scaled.",
+        // The two Warchanter armour masteries write the RESULT and the code stores the FACTOR that
+        // produces it. Both are only meaningful against Spellcaster Mastery's x0.5, which is applied
+        // separately — exactly like the cleric's light row (see HealerArmorMastery).
+        [("chanter heavy mastery", "cast")] =
+            "2026-08-21 — his row is *\"Restored Cast Speed to 90%(x1.8)\"*: 90% is the ANSWER and x1.8 "
+          + "is the input. Spellcaster Mastery charges heavy armour x0.50, so the mastery must carry "
+          + "0.80 (x1.80) for the product to land on the 90% he wrote. The reader takes the percent it "
+          + "can see; the code has to hold the multiplier.",
+        [("harmonist light mastery", "cast")] =
+            "2026-08-21 — same as Chanter Heavy Mastery above: \"90%(x1.8)\" is result-then-input, and "
+          + "0.80 x Spellcaster's 0.50 is the 90%.",
         [("evasion boost", "magiceva")] =
             "2026-08-11 (`62e`) — magic evasion became FLAT POINTS on the fail roll, his words: \"the "
           + "magic evasion should be magic fail chance like 3-4\". A multiplier is worth almost nothing "

@@ -1522,7 +1522,9 @@ public class GameLoopService : BackgroundService
             return;
         }
 
-        int cost = def.SpCostAt(target);
+        // The class table may override the price (Shield Mastery is one skill the tank buys at 20 for
+        // 3200 and the Human Warchanter buys at 40 for 36000) — see ClassSkill.SpCost.
+        int cost = ClassSkills.SpCostOf(def, target, player.Race, player.BaseClass, player.Archetype, player.Discipline);
         if (player.SkillPoints < cost)
         {
             SendSystemToEntity(player, $"Not enough skill points ({cost} needed).");
@@ -7685,8 +7687,83 @@ public class GameLoopService : BackgroundService
     // one shared buffer is safe (cleared and fully drained within each call).
     private readonly List<string> _expiredCooldowns = new();
 
+    /// <summary>ON-HIT PROCS — call once per damaging hit the entity DEALS. Walks the owner's learned
+    /// passives, and for each that carries a <see cref="SkillDef.ProcChance"/> rolls it, honouring the
+    /// passive's weapon requirement and its own internal cooldown.
+    ///
+    /// <para>The Warchanter's Combo Mastery is the first and so far only user. Its buff is ONE SIX-RUNG
+    /// FAMILY, and the caster and the party take different rungs of it — his design, 2026-08-21:
+    /// *"u get the 20% and party 10% -> so something like 6 levels of that passives proc-buff and u get
+    /// 4,5,6 while party gets 1,2,3"*. One family is the whole trick: because every rung shares a
+    /// BuffKey, your own rung 4-6 simply outranks any rung 1-3 a party-mate's proc throws at you, and
+    /// the ordinary stacking rule does the work with nothing special-cased.</para>
+    ///
+    /// <para>⚠ Players only. A mob with a proc passive would need its own learned-skill list, and mob
+    /// passives come from `MobCatalog`, not from here.</para></summary>
+    /// <summary>The buff rung a proc hands out at <paramref name="level"/> — rungs[level-1], or null if
+    /// this passive has no ladder on that side. Clamped rather than thrown: a passive with fewer rungs
+    /// than levels keeps handing out its top one.</summary>
+    private static SkillDef? Rung(string[]? rungs, int level)
+    {
+        if (rungs is not { Length: > 0 }) return null;
+        return SkillCatalog.Get(rungs[Math.Clamp(level - 1, 0, rungs.Length - 1)]);
+    }
+
+    private void TryOnHitProcs(Entity attacker)
+    {
+        if (attacker.Kind != EntityKind.Player || attacker.LearnedSkills.Count == 0)
+            return;
+
+        foreach (var (skillId, level) in attacker.LearnedSkills)
+        {
+            if (SkillCatalog.Get(skillId) is not SkillDef def || def.ProcChance <= 0f)
+                continue;
+            if (attacker.ProcCooldowns.ContainsKey(skillId))
+                continue;
+            // "Require: Box/Blunt" — the mask is on the passive, and an empty hand fails it too.
+            if (def.RequiredWeapon != WeaponType.None
+                && (attacker.WeaponType.Base() & def.RequiredWeapon) == 0)
+                continue;
+            if (_rng.NextDouble() >= def.ProcChance)
+                continue;
+
+            attacker.ProcCooldowns[skillId] = Math.Max(1, def.ProcCooldownTicks);
+            string label = ClassSkills.DisplayName(def.Id, attacker.Race, attacker.BaseClass,
+                                                   attacker.Archetype, attacker.Discipline);
+
+            if (Rung(def.ProcSelfRungs, level) is SkillDef selfBuff)
+            {
+                ApplyBuff(attacker, selfBuff, 1, label, sourceSkillId: def.Id);
+                BroadcastCombat(attacker, attacker, 0, CombatOutcome.Buff, label);
+            }
+            if (Rung(def.ProcPartyRungs, level) is SkillDef partyBuff)
+                foreach (var ally in PlayersInRadius(attacker, partyBuff.AreaRadius))
+                {
+                    // The caster already took his own, stronger rung above. Handing him the party rung
+                    // too would be harmless (it is weaker, so ApplyBuff refuses it) but it would spend
+                    // a floating-text line saying nothing happened.
+                    if (ally.Id == attacker.Id) continue;
+                    ApplyBuff(ally, partyBuff, 1, label, sourceSkillId: def.Id);
+                    BroadcastCombat(attacker, ally, 0, CombatOutcome.Buff, label);
+                }
+        }
+    }
+
     private void TickSkillCooldowns(Entity entity)
     {
+        // Proc internal cooldowns run on the same clock. Kept in their own dictionary because they are
+        // NOT skill cooldowns: they never reach the client, never appear on the bar, and a reuse buff
+        // must not shorten them.
+        if (entity.ProcCooldowns.Count > 0)
+        {
+            _expiredCooldowns.Clear();
+            foreach (var key in entity.ProcCooldowns.Keys)
+                if (--entity.ProcCooldowns[key] <= 0)
+                    _expiredCooldowns.Add(key);
+            foreach (var key in _expiredCooldowns)
+                entity.ProcCooldowns.Remove(key);
+        }
+
         if (entity.SkillCooldowns.Count == 0)
             return;
 
@@ -8776,6 +8853,13 @@ public class GameLoopService : BackgroundService
             // thing being complained about. All three still govern BASIC attacks, untouched.
             float miss = target.Immune ? 1f : def.SureHit ? 0f : target.SkillEvadeChance;
 
+            // MULTI-HIT (Sound Burst: *"Deals Physical Damag With Power +1000 Twice"*). Each hit is an
+            // INDEPENDENT resolution — its own miss roll, its own crit, its own block — which is why
+            // this is a loop rather than a ×2 on the power. Stop early if the target dies, so a corpse
+            // never takes the second arrow. HitCount is 1 for every other skill in the game.
+            for (int hit = 0; hit < Math.Max(1, def.HitCount); hit++)
+            {
+            if (target.Dead) break;
             if (_rng.NextDouble() < miss)
             {
                 BroadcastCombat(caster, target, 0, CombatOutcome.Miss, castName);
@@ -8829,6 +8913,8 @@ public class GameLoopService : BackgroundService
                 ApplyDamage(target, damage, caster);
                 ReflectPhysicalSkill(caster, target, damage, castName);   // BL-07
                 TryInterruptCast(target, def.InterruptPower);
+                if (damage > 0) TryOnHitProcs(caster);   // the skill path's half of the proc trigger
+            }
             }
         }
 
@@ -10105,6 +10191,22 @@ public class GameLoopService : BackgroundService
                 int leech = (int)(damage * attacker.MeleeVamp);
                 if (leech > 0) HealOne(attacker, attacker, leech, 0, "Vampiric");   // lifesteal = a FLAT heal
             }
+            // ON-HIT PROCS (Combo Mastery). Basic attacks are one of the two damage paths that can
+            // fire one; the physical-skill path is the other. Rolled on a landed hit only.
+            if (damage > 0) TryOnHitProcs(attacker);
+            // MANA vampirism (Warchanter Mana Vampirism) — the same trigger, a different bar. His row
+            // says "physical basic atack only", which is exactly where this sits: a skill never drains.
+            // Bows are excluded for the same reason melee vamp excludes them, and the mastery that
+            // grants it is blunt-gated anyway.
+            if (attacker.ManaVamp > 0f && damage > 0 && attacker.WeaponType != WeaponType.Bow)
+            {
+                int mana = (int)(damage * attacker.ManaVamp);
+                if (mana > 0 && attacker.Mp < attacker.MaxMp)
+                {
+                    attacker.Mp = Math.Min(attacker.MaxMp, attacker.Mp + mana);
+                    BroadcastCombat(attacker, attacker, mana, CombatOutcome.Heal, "Mana");
+                }
+            }
             // Melee reflect (counter to vamp): return a fraction of the taken damage to the
             // attacker. MELEE only (bows excluded); applied directly, so it never re-reflects.
             if (target.MeleeReflect > 0f && damage > 0 && attacker.WeaponType != WeaponType.Bow)
@@ -11287,15 +11389,35 @@ public class GameLoopService : BackgroundService
 
     private void TickHealOverTime(Entity entity)
     {
-        if (entity.Dead || entity.Hp >= entity.MaxHp)
+        if (entity.Dead)
             return;
-        float pct = 0f, flat = 0f;
+        float pct = 0f, flat = 0f, mpFlat = 0f;
         foreach (var b in entity.Buffs)
+        {
             if (b.Has(SkillEffect.HealOverTime))
             {
                 pct  += b.Percent(SkillEffect.HealOverTime);   // e.g. Warchanter Renew (% of max HP/s)
                 flat += b.Flat(SkillEffect.HealOverTime);       // the flat potion HoTs (HP/s)
             }
+            // MANA over time, on the SAME clock as the HoT — Harmony of Restoration's top rungs read
+            // *"Restores +90 HP/s and +5 MP/s"*, one buff feeding two bars. It rides RestoreMp's Flat
+            // magnitude on a buff (the effect's cast-time meaning is "give MP now"; on a lasting buff
+            // it means "give MP each second"), so no new SkillEffect bit was needed — there are none
+            // left. ⚠ This must NOT go through Regenerate: natural regen is combat-gated and a HoT is
+            // the one thing that has to keep paying while the party is being hit.
+            if (b.Has(SkillEffect.RestoreMp))
+                mpFlat += b.Flat(SkillEffect.RestoreMp);
+        }
+        if (mpFlat > 0f && entity.Mp < entity.MaxMp)
+        {
+            int gain = Math.Max(1, (int)mpFlat);
+            int had = entity.Mp;
+            entity.Mp = Math.Min(entity.MaxMp, entity.Mp + gain);
+            if (entity.Mp > had)
+                BroadcastCombat(entity, entity, entity.Mp - had, CombatOutcome.Heal, "Mana");
+        }
+        if (entity.Hp >= entity.MaxHp)
+            return;
         if (pct <= 0f && flat <= 0f)
             return;
         // Flat HoT is hindered by heal-received debuffs; the % HoT is not — the same split HealOne uses,

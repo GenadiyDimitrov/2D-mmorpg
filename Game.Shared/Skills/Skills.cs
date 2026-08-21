@@ -163,6 +163,30 @@ public record SkillDef(
     // A TOGGLE skill (stance/aura): clicking it applies its self-buff indefinitely;
     // clicking again removes it. Instant, no cast bar; MP charged on activation only.
     bool Toggle = false,
+    // How many times ONE cast resolves against the target. 1 = an ordinary skill. The Warchanter's
+    // Sound Burst is his *"Deals Physical Damag With Power +1000 Twice"* — TWO independent
+    // resolutions of the SAME power, so each one rolls its own evasion, block and crit rather than
+    // being one hit at double power. That distinction is the whole reason it is a field: a 2×1000
+    // volley against an evasive target is worth less than one 2000, and against a shield it is worth
+    // more. MP and cooldown are charged ONCE, for the cast.
+    int HitCount = 1,
+    // ---- ON-HIT PROC (Warchanter Combo Mastery, 2026-08-21) --------------------------------------
+    // A PASSIVE that fires when its owner DEALS damage. ProcChance is rolled per damaging hit;
+    // on success the two named skills' buffs are applied (self / party) at the SAME level as the
+    // passive's own, and the passive will not fire again for ProcCooldownTicks. This is his
+    // "Doing Damage Increases Attack/Cast Speed ... With 3% Chance" row, and it is the first proc in
+    // the game — hence the fields rather than a bespoke hook. ⚠ RequiredWeapon is honoured: his row
+    // says "Require: Box/Blunt", so it is inert with a bow.
+    float ProcChance = 0f,
+    int ProcCooldownTicks = 0,
+    // The buff rungs the proc hands out, INDEXED BY THIS PASSIVE'S LEVEL (rung[level-1]). Two arrays
+    // because the caster and the party get DIFFERENT rungs of the SAME family — his design, 2026-08-21:
+    // *"half of both goes to the party as buff (u get the 20% and party 10%) -> so something like 6
+    // levels of that passives proc-buff and u get 4,5,6 while party gets 1,2,3"*. Keeping the offset in
+    // the DATA rather than as an arithmetic rule is deliberate: which rung a level hands out is the
+    // thing he is authoring, and it is legible here.
+    string[]? ProcSelfRungs = null,
+    string[]? ProcPartyRungs = null,
     // Optional REAGENT: an item this skill consumes to cast (e.g. an ultimate that needs
     // a rare catalyst). "" = no requirement (casts freely). The amount is consumed when the
     // cast COMPLETES; availability is checked up front so the cast isn't started in vain.
@@ -768,11 +792,24 @@ public readonly record struct PassiveEffect(
     // Shield passive (Tank Shield Mastery): scale the equipped shield's block chance and
     // shield defence (fractions; only matter with a shield equipped). Re-clamped after passives.
     float BlockChancePct = 0f, float ShieldDefPct = 0f,
+    // ⚠ NOT the same stat as ShieldDefPct above. This raises the wearer's WHOLE physical defence —
+    // armour, jewels, everything — but only while a shield is equipped; ShieldDefPct scales the
+    // shield's own contribution. Shield Mastery rungs 3-4 carry "+10% P.Def" and he ruled it
+    // shield-conditional (2026-08-21: *"The 10% pDef (overall pDef not only shieldPDef) is only when
+    // shield is equipped"*). It exists as its own field because plain DefencePct is unconditional and
+    // is used by masteries that must keep paying with a two-hander.
+    float DefencePctWithShield = 0f,
     // Bow range bonus (Rogue/Archer Weapon Mastery "range +200"): added to basic-attack range
     // while a BOW is equipped. Inert with any other weapon.
     float BowRange = 0f,
     int InterruptPower = 0, int InterruptResist = 0,
     float MeleeVamp = 0f, float SpellVamp = 0f,
+    // MANA vampirism — a BASIC physical attack returns this fraction of its damage to you as MP.
+    // His `buffer 3rd.csv` Mana Vampirism row, and deliberately its own field rather than a reuse of
+    // MeleeVamp: that one heals HP, this one refills the bar the buffer actually runs out of. Basic
+    // attacks only ("physical basic atack only" — a skill never drains), and gated by RequiredWeapon
+    // on the mastery that grants it.
+    float ManaVamp = 0f,
     // Damage-OUT bonuses (fractions): the 2×3 matrix of context (PvE/PvP) × source
     // (skill=physical skill / magic / basic). Set as many as the effect should touch.
     float PveSkillDamagePct = 0f, float PveMagicDamagePct = 0f, float PveBasicDamagePct = 0f,
@@ -791,6 +828,16 @@ public readonly record struct PassiveEffect(
     // in; a passive carrying 0.04 takes it back out exactly. ⚠ 0 = NOT IN THE CHAIN, never ×0 —
     // `default(PassiveEffect)` is the inert value every unset mastery slot hands out.
     float MagicFailSelfMult = 0f,
+    // THE OTHER TWO THIRDS OF THE UNTRAINED-WEAPON PENALTY, on the same "0 = not in the chain,
+    // otherwise a PRODUCT" convention as MagicFailSelfMult above. Spellcaster Mastery puts ×0.5 into
+    // each of CastSpeedPenaltyMult and MagicWeaponPenaltyMult for a bow/dagger/bare hand; a passive
+    // carrying 2.0 takes one back out exactly. Written for the Elf Warchanter's Harmonist Bow
+    // Proficiency — *"Bow: Removed Penalty [cast(x2), mAtk(x2), mAcc(x0.04)]"* — which is the first
+    // skill in the game that UNDOES the caster weapon rule instead of working around it.
+    // ⚠ Applied AFTER the penalty block in RecomputeDerived, so the order the two are written in
+    // does not matter; they are factors on the same two numbers.
+    float CastPenaltyMult = 0f,
+    float MagicPenaltyMult = 0f,
     // FLAT addition to the casting-speed STAT (not a percent). This is how IG's spirit-
     // the spell rune works: +40 flat on top of the multiplicative chain, so it matters a lot at low
     // cast speed and barely at high — unlike a percent, which compounds and runs away.
@@ -872,6 +919,7 @@ public static partial class SkillCatalog
         list.AddRange(LightbringerSkills());  // Skills.Lightbringer.cs
         list.AddRange(WarchanterSkills());    // Skills.Warchanter.cs
         list.AddRange(Warchanter3rdSkills()); // Skills.Warchanter3rd.cs (his 40-74 groups + harmonies)
+        list.AddRange(WarchanterKitSkills()); // Skills.Warchanter3rd.Kit.cs (his 40-74 passives/actives/toggles)
         list.AddRange(MobSpellSkills());      // Skills.MobSpells.cs (caster-mob nuke + jab)
         list.AddRange(RewardRuneSkills());    // Skills.RewardRunes.cs (exp/sp/gold/drop runes + Sinister/Sinners)
 

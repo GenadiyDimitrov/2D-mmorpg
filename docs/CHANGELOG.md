@@ -7,12 +7,234 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.74.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.75.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-08-21 (latest) — THE WARCHANTER'S BUFF LAYER, 40-74: nine groups split by lane, four Harmony ladders
+## 2026-08-21 (latest) — THE WHOLE WARCHANTER: the buffer's non-buff half, 40-74, and the ork gets a second fist
+
+He finished authoring `buffer 3rd.csv` — *"Ok i finished the buffer"* — removed its `NOT DONE`
+banner, and said build it. This is the other half of the class: sixteen skill families below the old
+banner, plus one skill that did not exist until he asked for it in the same message. **`--check` is
+green on all ten files, for the first time since `buffer 3rd` earned its line.**
+
+### What the file needed that the engine did not have
+
+Five primitives, because five of his rows described things nothing in the game did yet. All are
+FIELDS, never new `SkillEffect` flags — there are none left (bit 62 is the last, and it is taken).
+
+| his row | the primitive |
+|---|---|
+| Sound Burst: *"…With Power +1000 **Twice**"* | **`SkillDef.HitCount`** — N independent resolutions of one cast, each rolling its own miss/crit/block. Not a ×2 on power: a 2×1000 volley is worth less than one 2000 against an evasive target and more against a shield. |
+| Mana Vampirism: *"+3% mana vampirism (physical basic atack only)"* | **`PassiveEffect.ManaVamp` → `Entity.ManaVamp`**, drained on a landed BASIC attack. Its own field, not a reuse of `MeleeVamp`: that heals HP, this refills the bar the buffer actually runs out of. |
+| Harmony of Restoration @64+: *"+90 HP/s **and +5 MP/s**"* | **MP-over-time**, riding `RestoreMp`'s Flat magnitude on a lasting buff and ticked in `TickHealOverTime`. ⚠ Deliberately NOT `Regenerate`: natural regen is combat-gated, and a party HoT is the one thing that must keep paying while the party is being hit. |
+| Combo Mastery: *"**Doing Damage** Increases Attack/Cast Speed … With 3% Chance"* | **THE FIRST ON-HIT PROC IN THE GAME** — `ProcChance` / `ProcCooldownTicks` / `ProcSelfRungs` / `ProcPartyRungs` on `SkillDef`, `Entity.ProcCooldowns`, and `GameLoopService.TryOnHitProcs` called from both damage paths. |
+| Harmonist Bow Proficiency: *"Bow: Removed Penalty [cast(x2), mAtk(x2), mAcc(x0.04)]"* | **`PassiveEffect.CastPenaltyMult` / `MagicPenaltyMult`**, on the same "0 = not in the chain, otherwise a PRODUCT" convention `MagicFailSelfMult` already used. |
+
+🔑 **That last one is the most interesting thing in the build.** It is the first skill that *undoes*
+the untrained-caster-weapon rule instead of working around it. Spellcaster Mastery charges a bow
+×0.5 cast, ×0.5 M.Atk and ×25 into the fizzle chain; his three numbers are the exact inverses, so an
+Elf Warchanter with a bow is a **full** caster. That is the whole reason his elf can be an archer and
+a buffer at once, and it only works because every one of those penalties was already built as a
+multiplier a passive could divide back out.
+
+### The race split IS the class
+
+His design, verbatim: *"human is tank - 1dmg skill and higher Def, elf is archer - range/evasion 1dmg
+skill, ork is mele fighter so need more than 1dmg skill"*. One discipline, three combat kits:
+
+| | armour | weapon | damage skills | its own line |
+|---|---|---|---|---|
+| **Human** | heavy (Chanter Heavy Mastery) | blunt + **shield** | Sound Smash | Shield Mastery 40/60/70 |
+| **Elf** | light (Harmonist Light Mastery) | **bow** | Sound Burst (hits twice, 900 range) | Bow Proficiency · Bow Mastery ×8 · Bow Expertise |
+| **Ork** | heavy | blunt | Sound Smash **+ Acoustic Shock** | Bloodhanter Blunt Mastery ×8 |
+
+Shared by all three: Armor Mastery and Spell Mastery (rungs 5-18), Great Heal (11 rungs, 40-68),
+Harmony of Restoration, the Reinforcement and Sharpening stances, Combo Mastery, Mana Vampirism
+(Human/Ork).
+
+### Acoustic Shock — the ork's second fist
+
+*"Add another skill to the ork buffer same as sound smash (name it Acoustic Shock) just with a stun
+effect"*. Same thirteen rungs as Sound Smash — same power 1000→4000, same MP, same SP, same 40 range
+and 1s cast — with a **5s stun** on top, and ORK ONLY. Its thirteen rows were written into
+`buffer 3rd.csv` in the same pass, because a skill ruled in chat owes its CSV row.
+⚠ The stun is **contested** (ATK vs CON, `DebuffSchool.Physical`) like every other CC in the game, so
+it is a chance, not a lock, and bosses are immune.
+
+### Two things in his file that were wrong, and what was done about them
+
+🔑 **`mAtk +23, mAtk +15` — the second one is P.Atk.** Every Spell Mastery row in the 40-74 band
+carries two M.Atk tokens, which cannot both be M.Atk; his own `cleric 2nd.csv` writes the identical
+skill as *"mAtk +6, pAtk +4"*. **Fixed in the CSV** (14 rows) and built as `MagAtk` / `PhysAtk`.
+⚠ Note the knock-on: rung 5 had carried `PhysAtk: 18` since it was written, and his row says **15**.
+The CSV is the authority, so the built rung moved.
+
+⚠ **Armor Mastery's Light row lost its speed clauses from rung 5 up, and that is a fix.** His 40+
+rows read *"Robe/Light/Heavy: mpReg x1.2, pDef +N, maxMP +M"* — one line, three weights, **no speed
+clause**. From 40 the penalty-cancelling belongs to the RACE masteries; the copy that rung 5 was
+carrying stacked with Harmonist Light Mastery's own ×1.8/×2 and drove an Elf Warchanter straight into
+the cast-speed clamp. All three weights are now identical, exactly as his line reads.
+
+### Also in this pass
+
+**Spell Mastery's weapon pair changes at rung 5.** Rungs 1-4 are the cleric's *"with sword/blunt"*;
+every 40+ row says *"With blunt/bow weapon"*, so rungs 5-18 use a new `BufferMastery` helper
+(Blunt + Bow, never sword). A caster mastery that pays on a **bow** is unusual, and it only works
+because Bow Proficiency has already cancelled the penalty that would be eating the same character's
+magic.
+
+**The verifier learned four things**: `mana vampirism` as a metric distinct from plain vampirism (one
+word apart, two different stats), his *"critical damage resist"* spelling, a fix for the
+HoT-vs-MP-over-time collision on `power` (both halves of *"+90 HP/s and +5 MP/s"* now have a
+candidate), and two ruled divergences for the armour masteries, whose rows write the RESULT
+(*"90%(x1.8)"*) while the code must hold the factor that produces it.
+
+⚠ **One thing `--check` still cannot read, on purpose:** Combo Mastery's compound *"+10/5% and
++5/3%"* notation. No alias table decomposes `X/Y%`. It prints as UNREAD rather than being silently
+skipped, which is the tool working correctly — the numbers are verified by eye against the three
+rungs in `Skills.Warchanter3rd.Kit.cs`.
+
+### Combo Rush, corrected — one six-rung family, and the only ladder in the game that dips
+
+His compound `+10/5% and +5/3%` notation was the one thing `--check` could not read, so it got asked
+about, and the answer reshaped the skill: *"Cast speed goes 5->10->15%, atack speed goes 10->15->20%
+and half of both goes to the party as buff (u get the 20% and party 10%) -> so something like 6 levels
+of that passives proc-buff and u get 4,5,6 while party gets 1,2,3"*.
+
+| rung | atk speed | cast | who gets it |
+|---|---|---|---|
+| 1 | 5% | 2.5% | your PARTY, from a Combo Mastery **L1** buffer |
+| 2 | 7.5% | 5% | your PARTY, from an **L2** buffer |
+| 3 | 10% | 7.5% | your PARTY, from an **L3** buffer |
+| 4 | 10% | 5% | **YOU**, at Combo Mastery L1 |
+| 5 | 15% | 10% | **YOU**, at L2 |
+| 6 | 20% | 15% | **YOU**, at L3 |
+
+🔑 **ONE FAMILY IS THE WHOLE MECHANISM.** All six rungs share the BuffKey `wc_combo` and carry their
+index as `Rank`, so the ordinary `ApplyBuff` rule — same family, higher rank wins, weaker is ignored
+entirely — does everything. Your own rung 4-6 simply outranks any rung 1-3 a party-mate's proc throws
+at you. Nothing is special-cased, and two buffers in one party never fight over a bar square. (The
+first build had them as two *separate* hidden buffs with different keys, which would have let both
+land at once and stack.)
+
+⚠⚠ **RUNG 3 → RUNG 4 GOES BACKWARDS ON CAST SPEED (7.5% → 5%), AND IT IS MEANT TO.** A ladder that
+moves backwards is normally a typo and the tool says so. Here it falls out of ranking *half of a
+strong buffer's* above *all of a weak buffer's* — and he called the consequence in the same breath as
+the design: *"even if some other buffer procs lvl 3 buff u still get your effect over (loosing only 2%
+cast in the process)"*. That is precisely this row: an L1 buffer standing next to an L3 buffer keeps
+his own rung 4 and forgoes the 2.5% extra cast speed rung 3 would have handed him. **Do not straighten
+it into a rising line.**
+
+`SkillDef` therefore carries `ProcSelfRungs` / `ProcPartyRungs` — arrays indexed by the passive's
+level — rather than one id per side. The 4/5/6-vs-1/2/3 offset is the thing he is authoring, so it
+lives in the data where it can be read, not in an arithmetic rule.
+
+**And the row is now fully verified.** `--check` follows a proc to the buff it fires (the numbers are
+never on the passive itself), and learned `chance` as a metric, so *"attack speed +10% and cast speed
++5% … With 3% Chance"* is checked end to end. The party half stays in **parentheses** on purpose: the
+segmenter strips those as commentary, and two `as` tokens in one row would collide and let the later
+one silently win — which is exactly the `mAtk +23, mAtk +15` trap this same pass had to fix.
+
+### Verified
+
+`dotnet build` clean (server + shared + the Unity client's own csproj); the server boots at v0.75.0
+with no catalog-collision failure; **`tools/SmokeTest` ALL CHECKS PASSED** against a live server on a
+fresh `game.db` — worth running here because this pass adds ~150 learn rows and the skill bar's
+auto-placement is server-side; `--check` reports **no discrepancies** across all ten files.
+
+🔴 **Needs a new APK** — the client builds its Learn tab locally from the compiled `ClassSkills`.
+
+## 2026-08-21 — Shield Mastery re-authored: one skill, two classes, and the ×5 kept where it belongs
+
+He re-authored Shield Mastery across three files in one pass — `tank 2nd.csv`, the previously empty
+`tank 3rd.csv`, and `buffer 3rd.csv` — and told us what to do with the numbers in it: *"there is
+shield mastery for human buffer and for tanks but human buffer leans it 40+ while tank have the 3 lvls
+before the 40 .. and 4th at 52 while humab buffer dont learn lvl 4 ... and the % of the shield mastery
+are the IG one so fix them in the process"*.
+
+### The ladder — his percentages, ×5 on one column only
+
+| rung | his DESCR (IG units) | built | tank learns @ | Human Warchanter learns @ |
+|---|---|---|---|---|
+| 1 | Shield P.Def **+30%**, Shield Rate +50% | `ShieldDefPct 1.50`, `BlockChancePct 0.50` | **20** (3200 SP) | **40** (36k SP) |
+| 2 | Shield P.Def **+40%**, Shield Rate +70% | `ShieldDefPct 2.00`, `BlockChancePct 0.70` | **28** (3200 SP) | **60** (120k SP) |
+| 3 | Shield P.Def **+50%**, Rate +85%, +10% P.Def, bow resist 16% | `ShieldDefPct 2.50`, `BlockChancePct 0.85`, `DefencePctWithShield 0.10`, `BowResist 0.16` | **36** (40k SP) | **70** (390k SP) |
+| 4 | Shield P.Def **+60%**, Rate +100%, +10% P.Def, bow resist 24% | `ShieldDefPct 3.00`, `BlockChancePct 1.00`, `DefencePctWithShield 0.10`, `BowResist 0.24` | **52** (74k SP) | *never* |
+
+🔑 **The ×5 is on the shield-P.Def column and nowhere else**, which is not a new decision — it is the
+2026-08-12 ruling still standing: *"sheild_mastery.Shield_PDef will be the only part that will increase
+5 times — the sheild chance, arrow defence and other passives, sets and buffs that increase the
+shieldPdef/chance etc are kept as is."* Every shield's flat `ShieldDefense` is a fifth of what it was
+(`90 143 203 …` → `18 29 41 …`, Items.cs), so the mastery multiplier is the half that gives it back to
+the class that paid SP for it. **Shield Rate (block chance) and the new +10% P.Def are copied verbatim.**
+
+🔑 **THE CSV STAYS IN IG UNITS ON PURPOSE.** `--check` reads the DESCR column now, so a 30-vs-150
+mismatch would print on every run; the `("shield mastery","shielddef")` entry in
+`tools/SkillCsvSeed/Descr.cs` was rewritten to cover the whole four-rung ladder and both files, and it
+prints as **⚪ RULED** with both numbers side by side rather than as a defect. His file reads in the
+units he authors in; the game runs the compensated number.
+
+### The +10% P.Def is SHIELD-GATED, and bow resist came back
+
+Both were queried and both were ruled the same day.
+
+**The +10% P.Def** is the wearer's WHOLE physical defence — armour, jewels, everything, not just the
+shield's share — and it pays only while a shield is equipped: *"The 10% pDef (overall pDef not only
+shieldPDef) is only when shield is equipped (IG is shield+heavy but I'm not sure if we can)"*. It has
+its own field, **`PassiveEffect.DefencePctWithShield`**, because plain `DefencePct` is unconditional
+and is used by masteries that must keep paying with a two-hander. ⚠ We *can* test the armour weight
+too — `ArmorWeight` is right there in the same block — so IG's shield+heavy version is one `&&` away
+if he wants it; he asked for shield-only and that is what is built.
+
+**Bow resistance** had vanished from every row when he re-authored them: *"My mistake in the hurry ..
+Make lvl 3 +16% and lvl 4 +24% bow resist"*. Restored, and note it moved UP the ladder — it used to
+start at rung 2 (16/16/24) and now starts at rung 3 (—/—/16/24). Worth flagging because this passive
+is the **only** carrier of `BowResist` in the entire player kit: with those two lines gone, a built
+stat had no source at all.
+
+### One skill, two prices — `ClassSkill.SpCost`
+
+The tank pays 3200 for rung 1 at level 20; the Human Warchanter pays 36,000 for the same rung at 40.
+SP in this game is priced by **the level you buy at**, not by the ability, so `ClassSkill` gained an
+optional `SpCost` override and a `SpCostFor(def)` accessor; `ClassSkills.SpCostOf(...)` is the server's
+lookup. All four readers go through it — the learn charge in `GameLoopService`, the client's Learn tab,
+`--check`, and the CSV seeder. The alternative was a second `SkillDef` named "Shield Mastery", which
+would have duplicated a ladder he authored identically in both files and invited it to drift.
+
+### What actually moved, measured
+
+`tools/BalanceMatrix`, tank in 1H+shield, before → after:
+
+| level | P.Def | survives |
+|---|---|---|
+| 20 | 498 → **498** | 104s → **104s** |
+| 28 | 533 → **533** | 80s → **80s** |
+| 36 | 556 → **617** | 64s → **71s** |
+| 44 | 717 → **796** | 74s → **80s** |
+| 52 | 801 → **892** | 65s → **73s** |
+
+**Nothing regresses.** The old ladder was `1.50 1.50 2.00 2.00` at 20/24/28/32 and the new one is
+`1.50 2.00 2.50 3.00` at 20/28/36/52, and those happen to agree exactly up to 35 — a tank holds 1.50
+from 20 and 2.00 from 28 either way. From 36 he is ~11% better off and keeps gaining at 52, where the
+old ladder had been flat for twenty levels. The gaps at 24 and 32 are his, like Provoke's missing
+level-20 row.
+
+### Also: `tank 3rd` joins `--check`, and the buffer file's banner is gone
+
+`tank 3rd.csv` was a `# start here` placeholder until this pass; it has one real row now, so it earned
+its line in `Check.Specs` (as Bulwark — the row is registered to Vanguard too, and one spec names one
+discipline). And he removed the `NOT DONE` banner from `buffer 3rd.csv` — *"Ok i finished the buffer"* —
+so `ReadCsv` no longer stops at line 186 and the whole file is live. That immediately reported sixteen
+unbuilt skill families as 🔴 NOT REGISTERED — which is the pressure working exactly as designed, and
+which the entry above this one then went and built.
+
+🔴 **Needs a new APK**: the client builds its Learn tab locally from the compiled `ClassSkills`, and
+this pass moves four learn rows and adds three.
+
+
+## 2026-08-21 — THE WARCHANTER'S BUFF LAYER, 40-74: nine groups split by lane, four Harmony ladders
 
 The second discipline authored end to end, and the first built from a HALF-finished file. Owner:
 *"buffer 3rd is done to the 186 row ---NOT DONE--- everything below is not done.. I managed to do all

@@ -115,12 +115,12 @@ Your call: *"lets add 4th classes as available option (now can be without quest 
 apothecary and buy a 100kk 4th_class_item and go to class master with it … then we add additional
 long quest)"*. So:
 
-| what | where |
-| ---- | ----- |
-| **level** | 76 (`FourthClassCatalog.ChangeLevel`) |
-| **the key** | **Rite of Ascension**, 100,000,000 gold, sold at **every Apothecary**, untradeable |
-| **the master** | **Archmaster Sevrin**, `master_class4`, west side of **Frostmere** — the last town on the level path, so the only one whose fields reach 76 |
-| **quest** | none yet, by your instruction. The long chain replaces the *purchase*, not the item: when it lands, the Rite comes off the shelf and becomes the chain's reward, and the class-change requirement itself does not change. |
+| what           | where                                                                                                                                                                                                                     |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **level**      | 76 (`FourthClassCatalog.ChangeLevel`)                                                                                                                                                                                     |
+| **the key**    | **Rite of Ascension**, 100,000,000 gold, sold at **every Apothecary**, untradeable                                                                                                                                        |
+| **the master** | **Archmaster Sevrin**, `master_class4`, west side of **Frostmere** — the last town on the level path, so the only one whose fields reach 76                                                                               |
+| **quest**      | none yet, by your instruction. The long chain replaces the *purchase*, not the item: when it lands, the Rite comes off the shelf and becomes the chain's reward, and the class-change requirement itself does not change. |
 
 🔑 **A 4th class does not branch.** It is the *same discipline awakened* — one 3rd class has exactly
 one ascension, so there is nothing to pick. That is why it carries no enum of its own and why the
@@ -225,11 +225,11 @@ and is *not* fixed here — renaming a 2nd class is your call and it is not what
 
 Not a rule the code enforces — a tone, so a new row has somewhere obvious to sit:
 
-| race | the register | worked example |
-| ---- | ------------ | -------------- |
+| race      | the register                               | worked example               |
+| --------- | ------------------------------------------ | ---------------------------- |
 | **Human** | martial, ordered, heraldic — rank and oath | Knight → Bulwark → Ironcrown |
-| **Elf** | light, wind, growth — precision and grace | Templar → Aegis → Dawnshield |
-| **Ork** | bone, blood, endurance — outlast and break | Beast → Ironhide → Stonemaw |
+| **Elf**   | light, wind, growth — precision and grace  | Templar → Aegis → Dawnshield |
+| **Ork**   | bone, blood, endurance — outlast and break | Beast → Ironhide → Stonemaw  |
 
 Two disciplines changed which race owns their old name: **Ravager** moved to the **Ork** (it always
 read as the ork's word) and the Human took **Bladesworn**; **Magus** stayed **Human** and the other

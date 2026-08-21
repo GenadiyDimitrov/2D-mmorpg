@@ -36,6 +36,15 @@ public static partial class SkillCatalog
     internal static WeaponMasteryProfile CasterMastery(PassiveEffect bonus) =>
         new(Sword: bonus, Blunt: bonus);
 
+    /// <summary>The WARCHANTER's version of the same thing: BLUNT or BOW, never sword. Every one of his
+    /// `buffer 3rd.csv` Spell Mastery rows reads *"With blunt/bow weapon"*, because his buffer's three
+    /// races hold a blunt (Human, Ork) or a bow (Elf) and nothing else. It is a separate helper rather
+    /// than a parameter so the difference is visible at every call site — a caster mastery that pays on
+    /// a BOW is unusual, and it only works at all because Harmonist Bow Proficiency cancels the
+    /// untrained-weapon penalty that would otherwise be eating half the same character's magic.</summary>
+    internal static WeaponMasteryProfile BufferMastery(PassiveEffect bonus) =>
+        new(Blunt: bonus, Bow: bonus);
+
     /// <summary>A two-handed sword/blunt profile carrying the same PassiveEffect for both
     /// (the warrior 2H mastery doesn't distinguish sword vs blunt), gated to TwoHand.</summary>
     private static WeaponMasteryProfile TwoHand(PassiveEffect pe) =>
