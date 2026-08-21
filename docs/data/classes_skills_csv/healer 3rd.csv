@@ -71,6 +71,7 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,R
 48,Clarity,Magic/Buff,600,self/target,1,1,1200,40% resist to SPT debuffs,75,32k,[]
 48,Aim,Magic/Buff,600,self/target,1,1,1200,+3 Accuracy.,75,32k,[]
 48,Ferocity,Magic/Buff,600,self/target,1,1,1200,+30% critical damage.,75,32k,[]
+48,Alacrity,Magic/Buff,600,self/target,1,1,1200,+30% Cast Speed.,75,32k,[]
 48,Bind,Magical Debuff,600,enemy,2.5,5,30,Hold enemy for 30s,44,64k,[],Elf
 48,Armor Break,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy P.Def by 14% and MDef by 7%,44,64k,[],Ork
 48,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed and cast speed by 11%,44,64k,[],Human

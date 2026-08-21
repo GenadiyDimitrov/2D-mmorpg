@@ -12,7 +12,36 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-08-21 (latest) — Mana Ray vs the IG drain formula: MEASURED, NOT CHANGED (+ the fizzle curve, documented)
+## 2026-08-21 (latest) — the healer's missing cast-speed buff: Alacrity rung 3 at 48
+
+Owner, mid-session: *"have forgoten on healer the cast speed buff"*, then the row itself —
+`48,Alacrity,Magic/Buff,600,self/target,1,1,1200,+30% Cast Speed.,75,32k,[]` (now `healer 3rd.csv:74`).
+
+**Nothing new was authored.** `Alacrity` already existed as family `spd_cast` with three rungs
+(+15% / +23% / +30%), and his +30% is `BuffAlacrityR` verbatim — same magnitude, same 600 range, same
+1s cast, same 1200s duration. What was missing was the *learn row*: the cleric teaches rungs 1-2 (at
+20 and 35) and the Lightbringer's buff block simply never finished the family, which is exactly why
+the gap was invisible — the buff worked, nobody could reach its top rung.
+
+🔑 **THE CODE HAD ALREADY PREDICTED THE ROW.** `ClassSkillTables.Common.cs` said of the cleric's L2:
+*"Alacrity STOPS at L2 (+23%): cast speed past that is a 3rd-class reward"* — and `H48 = R(75, 32000)`
+was already sitting in the healer's per-level price table. His row is that reward, at that price.
+
+- `ClassSkillTables.Third.cs` — `At(CastId(FamCast), (48, 3))` added to the shared Lightbringer block.
+- `Skills.BuffLadders.cs` — **rung 3 was UNPRICED**: the cost array held two entries for three
+  children, so +30% fell through to the generic 30→50 formula. Added `H48`, so it now costs the
+  level's own price like every other healer buff row.
+- `ClassSkillTables.Common.cs` — the "3rd-class reward" comment now names where the reward landed.
+
+✅ `dotnet run --project tools/SkillCsvSeed -- --check` — **no discrepancies**, all eight files.
+🔴 **NEEDS THE PENDING APK** — a class-skill TABLE change; the Learn tab is built from the compiled
+`ClassSkills`, not pushed by the server.
+
+⚠ **The WARCHANTER still has no `FamCast` row either** — it reaches +30% cast only through *Swift and
+Sure* at 70, never learning the single. Left alone deliberately: `buffer 3rd.csv` is a placeholder the
+owner is editing right now, and nothing is built from it until he says it is done.
+
+## 2026-08-21 — Mana Ray vs the IG drain formula: MEASURED, NOT CHANGED (+ the fizzle curve, documented)
 
 He brought IG's own mana-drain formula — `mpDmg = √mAtk · power · (enemyMaxMp / 97) / enemyMDef` —
 and asked how ours compares. Read it carefully and **it is our model D with the magic pipeline

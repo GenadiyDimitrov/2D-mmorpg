@@ -365,6 +365,11 @@ public static partial class ClassSkillTables
         shared.AddRange(At(CastId(FamAccuracy),  (40, 2), (48, 3), (56, 4)));   // Aim        +2 → +4
         shared.AddRange(At(CastId(FamEva),       (44, 3), (52, 4)));            // Agility    +3 → +4
         shared.AddRange(At(CastId(FamAs),        (44, 1), (52, 3)));            // Haste      15 → 33%
+        // ⚠ ALACRITY WAS MISSING until 2026-08-21 (owner: *"have forgoten on healer the cast speed
+        // buff"*), and its absence was invisible because the cleric already teaches rungs 1-2 — the
+        // healer simply never finished the family. His row is rung 3 verbatim, so nothing new was
+        // authored: `ClassSkillTables.Common.cs` already said cast speed past L2 is a 3rd-class reward.
+        shared.AddRange(At(CastId(FamCast),      (48, 3)));                     // Alacrity   +30% cast
         shared.AddRange(At(CastId(FamVamp),      (44, 3), (58, 4), (72, 5)));   // Vampirism  7 → 9%
         shared.AddRange(At(CastId(FamInterrupt), (44, 3), (52, 5), (60, 6)));   // Resolve    36 → 48
         shared.AddRange(At(CastId(FamCritRate),  (44, 5), (52, 6)));            // Focus      25 → 30%

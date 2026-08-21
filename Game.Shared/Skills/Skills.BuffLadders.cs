@@ -497,8 +497,11 @@ public static partial class SkillCatalog
         // The speed four shipped first, so their rungs are named rather than numbered.
         Castable(FamMove, "Swift", SkillEffect.BuffMoveSpeed, new[] { BuffSwiftC, BuffSwiftU, BuffSwiftR }, "more Move Speed",
             C(default, R(20, 1700), R(33, 6400)));
+        // ⚠ Rung 3 was UNPRICED until 2026-08-21 — the array stopped at two entries while the family has
+        // three children, so +30% fell through to the 30→50 formula. His healer row at 48 prices it
+        // (75 / 32k, the level's own price), which is why H48 appears here and not a hand-picked number.
         Castable(FamCast, "Alacrity", SkillEffect.BuffCastSpeed, new[] { BuffAlacrityC, BuffAlacrityU, BuffAlacrityR }, "faster casting",
-            C(R(20, 1700), R(40, 12800)));
+            C(R(20, 1700), R(40, 12800), H48));
         Castable(FamEva, "Agility", SkillEffect.BuffEvasion, new[] { BuffAgilityC, BuffAgilityU, BuffAgility3, BuffAgilityR }, "more Evasion",
             C(default, R(33, 6400), H44, H52));
         // ⚠ Haste rung 1 is the healer's @44 row and rung 3 his @52 one; rung 2 (23%) belongs to nobody

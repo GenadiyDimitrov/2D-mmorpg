@@ -300,7 +300,8 @@ public static partial class ClassSkillTables
                 new ClassSkill(CastId(FamMove), 30, SkillLevel: 3),         // Swift   +33 move
                 new ClassSkill(CastId(FamAccuracy), 30, SkillLevel: 1),     // Aim     +1 accuracy
                 // 35 — the cleric's last rungs. Alacrity STOPS at L2 (+23%): cast speed past that is a
-                // 3rd-class reward. No Haste row at all any more.
+                // 3rd-class reward — collected 2026-08-21 as the Lightbringer's rung 3 at 48 (+30%),
+                // in ClassSkillTables.Third.cs. No Haste row at all any more.
                 new ClassSkill(CastId(FamHpRegen), 35, SkillLevel: 2),      // Vigor   +10% HP regen
                 new ClassSkill(CastId(FamMagDef), 35, SkillLevel: 1),       // Ward    +10% M.Def
                 new ClassSkill(CastId(FamCast), 35, SkillLevel: 2),         // Alacrity +23% cast
