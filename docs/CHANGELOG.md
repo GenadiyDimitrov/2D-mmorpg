@@ -7,12 +7,26 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.75.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.76.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-08-21 (latest) — THE WHOLE WARCHANTER: the buffer's non-buff half, 40-74, and the ork gets a second fist
+## 2026-08-21 (latest) — 0.76.0 shipped: the APK and the server the Warchanter actually needs
+
+The 0.75.0 APK was built at 15:22; the whole Warchanter non-buff half landed at 19:34 and **bumped
+nothing**, the same slip as the buff layer before it. A class-skill TABLE change is exactly the case
+the wire cannot carry — the client builds its Learn tab locally from the compiled `ClassSkills` — so
+0.75.0 on the phone is blind to sixteen new families. Bumped to **0.76.0** and republished both
+halves: `builds/L2Clone-0.76.0.apk` (41.0 MB, log line `[build] version 0.76.0 (code 7600)`) and
+`builds/Game.Server-0.76.0.zip` (14.9 MB). No wire change, so `ProtocolVersion` stays 21.
+
+Verified in the order that matters: `dotnet build Game.sln` (0 errors) refreshed
+`Assets/Plugins/Game.Shared.dll` **before** Unity ran, the client type-check was clean, and the
+published server boots reporting `L2Clone server v0.76.0 starting.` The DLL's timestamp (20:42) is
+older than the APK's (20:46) — the check that catches an APK stamped with the previous version.
+
+## 2026-08-21 — THE WHOLE WARCHANTER: the buffer's non-buff half, 40-74, and the ork gets a second fist
 
 He finished authoring `buffer 3rd.csv` — *"Ok i finished the buffer"* — removed its `NOT DONE`
 banner, and said build it. This is the other half of the class: sixteen skill families below the old
