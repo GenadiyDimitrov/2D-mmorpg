@@ -23,9 +23,113 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,R
 ,,,,,,,,,,,,,   Insight                -> Insight L2@52 Insight L4@56 Insight L6@60
 
 ,,,,,,,,,,,,,--------------------------------Aim--------------------------------
-40,Aim,Magic/Buff,600,self/target,1,1,1200,+2 Accuracy.,60,19k,[],,Changed SP
+40,Aim,Magic/Buff,600,self/target,1,1,1200,+2 Accuracy.,60,19k,[]
 48,Aim,Magic/Buff,600,self/target,1,1,1200,+3 Accuracy.,75,32k,[]
 56,Aim,Magic/Buff,600,self/target,1,1,1200,+4 Accuracy.,85,42k,[]
+,,,,,,,,,,,,,------------------------------Clarity------------------------------
+40,Clarity,Magic/Buff,600,self/target,1,1,1200,30% resist to SPT debuffs,60,19k,[]
+48,Clarity,Magic/Buff,600,self/target,1,1,1200,40% resist to SPT debuffs,75,32k,[]
+56,Clarity,Magic/Buff,600,self/target,1,1,1200,50% resist to SPT debuffs,85,42k,[]
+,,,,,,,,,,,,,-----------------------------Ferocity-----------------------------
+40,Ferocity,Magic/Buff,600,self/target,1,1,1200,+25% critical damage.,60,19k,[]
+48,Ferocity,Magic/Buff,600,self/target,1,1,1200,+30% critical damage.,75,32k,[]
+56,Ferocity,Magic/Buff,600,self/target,1,1,1200,+35% critical damage.,85,42k,[]
+,,,,,,,,,,,,,----------------------------Fortitude----------------------------
+40,Fortitude,Magic/Buff,600,self/target,1,1,1200,15% resist to CON debuffs,60,19k,[]
+52,Fortitude,Magic/Buff,600,self/target,1,1,1200,20% resist to CON debuffs,80,38k,[]
+64,Fortitude,Magic/Buff,600,self/target,1,1,1200,30% resist to CON debuffs,105,100k,[]
+72,Fortitude,Magic/Buff,600,self/target,1,1,1200,40% resist to CON debuffs,125,330k,[]
+,,,,,,,,,,,,,------------------------------Might------------------------------
+40,Might,Magic/Buff,600,self/target,1,1,1200,+15% P.Atk.,60,19k,[]
+,,,,,,,,,,,,,---------------------------Resurrection---------------------------
+40,Resurrection,Magic/Heal,600,dead ally,10,10,0,Revive at 30% HP/MP; restore 35% of lost exp.,95,19k,[]
+44,Resurrection,Magic/Heal,600,dead ally,10,10,0,Revive at 30% HP/MP; restore 40% of lost exp.,100,22k,[]
+48,Resurrection,Magic/Heal,600,dead ally,10,10,0,Revive at 30% HP/MP; restore 45% of lost exp.,105,32k,[]
+52,Resurrection,Magic/Heal,600,dead ally,9,10,0,Revive at 30% HP/MP; restore 50% of lost exp.,110,38k,[]
+56,Resurrection,Magic/Heal,600,dead ally,8,10,0,Revive at 30% HP/MP; restore 55% of lost exp.,115,81k,[]
+58,Resurrection,Magic/Heal,600,dead ally,7,10,0,Revive at 30% HP/MP; restore 60% of lost exp.,120,45k,[]
+60,Resurrection,Magic/Heal,600,dead ally,6,10,0,Revive at 30% HP/MP; restore 65% of lost exp.,125,61k,[]
+62,Resurrection,Magic/Heal,600,dead ally,5,10,0,Revive at 30% HP/MP; restore 70% of lost exp.,130,86k,[]
+64,Resurrection,Magic/Heal,600,dead ally,5,10,0,Revive at 30% HP/MP; restore 75% of lost exp.,135,100k,[]
+66,Resurrection,Magic/Heal,600,dead ally,5,10,0,Revive at 30% HP/MP; restore 80% of lost exp.,140,145k,[]
+,,,,,,,,,,,,,-----------------------------Serenity-----------------------------
+40,Serenity,Magic/Buff,600,self/target,1,1,1200,+10% MP regeneration.,80,32k,[]
+48,Serenity,Magic/Buff,600,self/target,1,1,1200,+15% MP regeneration.,75,32k,[]
+56,Serenity,Magic/Buff,600,self/target,1,1,1200,+20% MP regeneration.,85,42k,[]
+,,,,,,,,,,,,,------------------------------Agility------------------------------
+44,Agility,Magic/Buff,600,self/target,1,1,1200,+3 Evasion.,72,22k,[]
+52,Agility,Magic/Buff,600,self/target,1,1,1200,+4 Evasion.,80,38k,[]
+,,,,,,,,,,,,,-------------------------------Body-------------------------------
+44,Body,Magic/Buff,600,self/target,1,1,1200,+10% Max HP.,72,22k,[]
+48,Body,Magic/Buff,600,self/target,1,1,1200,+15% Max HP.,75,32k,[],
+52,Body,Magic/Buff,600,self/target,1,1,1200,+20% Max HP.,80,38k,[],
+56,Body,Magic/Buff,600,self/target,1,1,1200,+25% Max HP.,85,42k,[]
+64,Body,Magic/Buff,600,self/target,1,1,1200,+30% Max HP.,105,100k,[]
+70,Body,Magic/Buff,600,self/target,1,1,1200,+35% Max HP.,120,200k,[]
+,,,,,,,,,,,,,------------------------------Bulwark------------------------------
+44,Bulwark,Magic/Buff,600,self/target,1,1,1200,+15% P.Def.,72,22k,[]
+,,,,,,,,,,,,,------------------------------Focus------------------------------
+44,Focus,Magic/Buff,600,self/target,1,1,1200,+25% critical rate.,72,22k,[]
+52,Focus,Magic/Buff,600,self/target,1,1,1200,+30% critical rate.,80,38k,[]
+,,,,,,,,,,,,,------------------------------Force------------------------------
+44,Force,Magic/Buff,600,self/target,1,1,1200,+28% M.Atk.,72,22k,[]
+52,Force,Magic/Buff,600,self/target,1,1,1200,+32% M.Atk.,80,38k,[]
+,,,,,,,,,,,,,------------------------------Haste------------------------------
+44,Haste,Magic/Buff,600,self/target,1,1,1200,+15% Attack Speed.,72,22k,[]
+52,Haste,Magic/Buff,600,self/target,1,1,1200,+33% Attack Speed.,80,38k,[]
+,,,,,,,,,,,,,------------------------------Resolve------------------------------
+44,Resolve,Magic/Buff,600,self/target,1,1,1200,+36 interrupt resistance.,72,22k,[]
+52,Resolve,Magic/Buff,600,self/target,1,1,1200,+42 interrupt resistance.,80,38k,[]
+60,Resolve,Magic/Buff,600,self/target,1,1,1200,+48 interrupt resistance.,95,61k,[]
+,,,,,,,,,,,,,-------------------------------Soul-------------------------------
+44,Soul,Magic/Buff,600,self/target,1,1,1200,+10% Max MP.,72,22k,[]
+48,Soul,Magic/Buff,600,self/target,1,1,1200,+15% Max MP.,75,32k,[],
+52,Soul,Magic/Buff,600,self/target,1,1,1200,+20% Max MP.,80,38k,[],
+56,Soul,Magic/Buff,600,self/target,1,1,1200,+25% Max MP.,85,42k,[]
+62,Soul,Magic/Buff,600,self/target,1,1,1200,+30% Max MP.,100,86k,[]
+70,Soul,Magic/Buff,600,self/target,1,1,1200,+35% Max MP.,120,200k,[]
+,,,,,,,,,,,,,----------------------------Vampirism----------------------------
+44,Vampirism,Magic/Buff,600,self/target,1,1,1200,+7% melee vampirism.,72,22k,[]
+58,Vampirism,Magic/Buff,600,self/target,1,1,1200,+8% melee vampirism.,90,45k,[]
+72,Vampirism,Magic/Buff,600,self/target,1,1,1200,+9% melee vampirism.,125,330k,[]
+,,,,,,,,,,,,,-------------------------------Ward-------------------------------
+44,Ward,Magic/Buff,600,self/target,1,1,1200,+23% M.Def.,72,22k,[]
+52,Ward,Magic/Buff,600,self/target,1,1,1200,+30% M.Def.,80,38k,[]
+,,,,,,,,,,,,,------------------------------Vigor------------------------------
+48,Vigor,Magic/Buff,600,self/target,1,1,1200,+15% HP regeneration.,75,32k,[]
+56,Vigor,Magic/Buff,600,self/target,1,1,1200,+20% HP regeneration.,85,42k,[]
+,,,,,,,,,,,,,------------------------------Frenzy------------------------------
+52,Frenzy,Magic/Buff,600,self/target,1,1,1200,"−10% Max HP/MP, +8% offence and speed, +8 move, −8 evasion.",80,38k,[]
+,,,,,,,,,,,,,--------------------------Great Bulwark--------------------------
+58,Great Bulwark,Magic/Buff,600,self/target,1,1,1200,+5% P.Def. Does not stack with Other Great Might|Bulwark effects.,90,45k,[],,Does not stack ('Great Might'|'Great Group Might'|'Great Group Bulwark')
+66,Great Bulwark,Magic/Buff,600,self/target,1,1,1200,+10% P.Def. Does not stack with Other Great Might|Bulwark effects.,110,145k,[]
+74,Great Group Bulwark,Magic/Buff,600,self/target,1,1,1200,+15% P.Def. Does not stack with Other Great Might|Bulwark effects eects.,260,880k,[Great Bulwark]
+,,,,,,,,,,,,,----------------------------Great Might----------------------------
+58,Great Might,Magic/Buff,600,self/target,1,1,1200,+5% P.Atk. Does not stack with Other Great Might|Bulwark effects.,90,45k,[],,Does not stack ('Great Bulwark'|'Great Group Bulwark'|'Great Group Might')
+66,Great Might,Magic/Buff,600,self/target,1,1,1200,+7% P.Atk. Does not stack with Other Great Might|Bulwark effects.,110,145k,[]
+74,Great Group Might,Magic/Buff,600,self/target,1,1,1200,+10% P.Atk. Does not stack with Other Great Might|Bulwark effects.,260,880k,[Great Might]
+,,,,,,,,,,,,,--------------------------Mana Blessing--------------------------
+58,Mana Blessing,Magic/Buff,600,self/target,1,1,1200,Decrease Physical MP Cost by 10% and Magic MP Cost by 5%,90,45k,[]
+66,Mana Blessing,Magic/Buff,600,self/target,1,1,1200,Decrease Physical MP Cost by 15% and Magic MP Cost by 7%,110,145k,[]
+74,Mana Blessing,Magic/Buff,600,self/target,1,1,1200,Decrease Physical MP Cost by 20% and Magic MP Cost by 10%,130,450k,[]
+,,,,,,,,,,,,,------------------------------Insight------------------------------
+62,Insight,Magic/Buff,600,self/target,1,1,1200,+50% magic critical rate.,100,86k,[]
+70,Insight,Magic/Buff,600,self/target,1,1,1200,+100% magic critical rate.,120,200k,[]
+,,,,,,,,,,,,,---------------------------Shield Bless---------------------------
+40,Shield Bless,Magic/Buff,600,self/target,1,1,1200,Increases Shield Rate with 5%,60,19k,[]
+48,Shield Bless,Magic/Buff,600,self/target,1,1,1200,Increases Shield Rate with 10%,75,32k,[]
+56,Shield Bless,Magic/Buff,600,self/target,1,1,1200,Increases Shield Rate with 15%,85,42k,[]
+62,Shield Bless,Magic/Buff,600,self/target,1,1,1200,Increases Shield Rate with 20%,100,86k,[]
+66,Shield Bless,Magic/Buff,600,self/target,1,1,1200,Increases Shield Rate with 25%,110,145k,[]
+70,Shield Bless,Magic/Buff,600,self/target,1,1,1200,Increases Shield Rate with 30%,120,200k,[]
+,,,,,,,,,,,,,--------------------------Shield Harden--------------------------
+58,Shield Harden,Magic/Buff,600,self/target,1,1,1200,Increases Shield PDef with 30%,90,45k,[]
+66,Shield Harden,Magic/Buff,600,self/target,1,1,1200,Increases Shield PDef with 40%,110,145k,[]
+72,Shield Harden,Magic/Buff,600,self/target,1,1,1200,Increases Shield PDef with 50%,125,330k,[] 
+,,,,,,,,,,,,,--------------------------Shield Harden & Shield Bless--------------------------
+74,Shield Bless and harden,Magic/Buff,600,self/party,1,1,1200,"Increases Shield PDef with 50%, and shield chance with 30%",250,880k,[Shield Harden; Shield Bless],
+
+
 
 ,,,,,,,,,,,,,----------------------------Anti magic----------------------------
 40,Anti magic,Passive,0,self,0,0,0,"magic def +43, mRes +15%",0,36k,[]
@@ -75,24 +179,9 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,R
 72,Bind,Magical Debuff,600,enemy,2.5,5,30,Hold enemy for 30s,67,650k,[],Elf
 74,Bind,Magical Debuff,600,enemy,2.5,5,30,Hold enemy for 30s,69,880k,[],Elf
 
-,,,,,,,,,,,,,------------------------------Clarity------------------------------
-40,Clarity,Magic/Buff,600,self/target,1,1,1200,30% resist to SPT debuffs,60,19k,[],,Changed SP
-48,Clarity,Magic/Buff,600,self/target,1,1,1200,40% resist to SPT debuffs,75,32k,[]
-56,Clarity,Magic/Buff,600,self/target,1,1,1200,50% resist to SPT debuffs,85,42k,[]
 
 ,,,,,,,,,,,,,------------------------------Conceal------------------------------
 40,Conceal,Magic/Buff,0,self,5,10,30,Monsters that haven't already noticed you leave you alone. Anything already chasing you keeps chasing,100,19k,[],,Changed SP
-
-,,,,,,,,,,,,,-----------------------------Ferocity-----------------------------
-40,Ferocity,Magic/Buff,600,self/target,1,1,1200,+25% critical damage.,60,19k,[],,Changed SP
-48,Ferocity,Magic/Buff,600,self/target,1,1,1200,+30% critical damage.,75,32k,[]
-56,Ferocity,Magic/Buff,600,self/target,1,1,1200,+35% critical damage.,85,42k,[]
-
-,,,,,,,,,,,,,----------------------------Fortitude----------------------------
-40,Fortitude,Magic/Buff,600,self/target,1,1,1200,15% resist to CON debuffs,60,19k,[],,Changed SP
-52,Fortitude,Magic/Buff,600,self/target,1,1,1200,20% resist to CON debuffs,80,38k,[]
-64,Fortitude,Magic/Buff,600,self/target,1,1,1200,30% resist to CON debuffs,105,100k,[]
-72,Fortitude,Magic/Buff,600,self/target,1,1,1200,40% resist to CON debuffs,125,330k,[]
 
 ,,,,,,,,,,,,,------------------------------Gravity------------------------------
 40,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed and cast speed by 7% (ATK vs SPT),35,36k,[],Human,changed values
@@ -206,8 +295,6 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,R
 72,Holy Ray,Magic/Dmg,600,enemy,2.5,1,0,m.Atk +84,67,650k,[Holy Bolt]
 74,Holy Ray,Magic/Dmg,600,enemy,2.5,1,0,m.Atk +87,69,880k,[Holy Bolt]
 
-,,,,,,,,,,,,,------------------------------Might------------------------------
-40,Might,Magic/Buff,600,self/target,1,1,1200,+15% P.Atk.,60,19k,[],,Changed SP
 
 ,,,,,,,,,,,,,-------------------------Party Great Heal-------------------------
 40,Party Great Heal,Magic/Heal,600,self/party,7,5,0,heal party with power 320,124,36k,[Party Heal]
@@ -257,38 +344,6 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,R
 72,Restore Mana,Magic/Heal,600,ally,2,2,0,Transfers 133 MP to an ally (costs 133). Not on yourself or another mana-restorer.,133,200k,[]
 74,Restore Mana,Magic/Heal,600,ally,2,2,0,Transfers 140 MP to an ally (costs 140). Not on yourself or another mana-restorer.,140,450k,[]
 
-,,,,,,,,,,,,,---------------------------Resurrection---------------------------
-40,Resurrection,Magic/Heal,600,dead ally,10,10,0,Revive at 30% HP/MP; restore 35% of lost exp.,95,19k,[],,Changed mana cost and SP and Exp restored
-44,Resurrection,Magic/Heal,600,dead ally,10,10,0,Revive at 30% HP/MP; restore 40% of lost exp.,100,22k,[]
-48,Resurrection,Magic/Heal,600,dead ally,10,10,0,Revive at 30% HP/MP; restore 45% of lost exp.,105,32k,[]
-52,Resurrection,Magic/Heal,600,dead ally,9,10,0,Revive at 30% HP/MP; restore 50% of lost exp.,110,38k,[]
-56,Resurrection,Magic/Heal,600,dead ally,8,10,0,Revive at 30% HP/MP; restore 55% of lost exp.,115,81k,[]
-58,Resurrection,Magic/Heal,600,dead ally,7,10,0,Revive at 30% HP/MP; restore 60% of lost exp.,120,45k,[]
-60,Resurrection,Magic/Heal,600,dead ally,6,10,0,Revive at 30% HP/MP; restore 65% of lost exp.,125,61k,[]
-62,Resurrection,Magic/Heal,600,dead ally,5,10,0,Revive at 30% HP/MP; restore 70% of lost exp.,130,86k,[]
-64,Resurrection,Magic/Heal,600,dead ally,5,10,0,Revive at 30% HP/MP; restore 75% of lost exp.,135,100k,[]
-66,Resurrection,Magic/Heal,600,dead ally,5,10,0,Revive at 30% HP/MP; restore 80% of lost exp.,140,145k,[],,enchanters get it to here
-68,Resurrection,Magic/Heal,600,dead ally,5,10,0,Revive at 30% HP/MP; restore 85% of lost exp.,145,165k,[]
-70,Resurrection,Magic/Heal,600,dead ally,5,10,0,Revive at 30% HP/MP; restore 90% of lost exp.,150,200k,[]
-72,Resurrection,Magic/Heal,600,dead ally,5,10,0,Revive at 30% HP/MP; restore 95% of lost exp.,155,330k,[]
-74,Resurrection,Magic/Heal,600,dead ally,5,10,0,Revive at 30% HP/MP; restore 100% of lost exp.,160,450k,[]
-
-,,,,,,,,,,,,,-----------------------------Serenity-----------------------------
-40,Serenity,Magic/Buff,600,self/target,1,1,1200,+10% MP regeneration.,80,32k,[],,New insert
-48,Serenity,Magic/Buff,600,self/target,1,1,1200,+15% MP regeneration.,75,32k,[]
-56,Serenity,Magic/Buff,600,self/target,1,1,1200,+20% MP regeneration.,85,42k,[]
-
-,,,,,,,,,,,,,---------------------------Shield Bless---------------------------
-40,Shield Bless,Magic/Buff,600,self/target,1,1,1200,Increases Shield Rate with 5%,60,19k,[],,Changed to the rate increase buff (harden at 58); my mistake to have them reversed
-48,Shield Bless,Magic/Buff,600,self/target,1,1,1200,Increases Shield Rate with 10%,75,32k,[]
-56,Shield Bless,Magic/Buff,600,self/target,1,1,1200,Increases Shield Rate with 15%,85,42k,[]
-62,Shield Bless,Magic/Buff,600,self/target,1,1,1200,Increases Shield Rate with 20%,100,86k,[]
-66,Shield Bless,Magic/Buff,600,self/target,1,1,1200,Increases Shield Rate with 25%,110,145k,[]
-70,Shield Bless,Magic/Buff,600,self/target,1,1,1200,Increases Shield Rate with 30%,120,200k,[]
-
-,,,,,,,,,,,,,------------------------------Agility------------------------------
-44,Agility,Magic/Buff,600,self/target,1,1,1200,+3 Evasion.,72,22k,[]
-52,Agility,Magic/Buff,600,self/target,1,1,1200,+4 Evasion.,80,38k,[]
 
 ,,,,,,,,,,,,,-----------------------------Antidote-----------------------------
 44,Antidote,Magic/Heal,600,self/target,0.8,3,0,"Cures poison, venom and bleed of rank 3 or lower from an ally (or self).",34,22k,[]
@@ -300,33 +355,6 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,R
 70,Antidote,Magic/Heal,600,self/target,0.8,3,0,"Cures poison, venom and bleed of rank 8 or lower from an ally (or self).",60,200k,[]
 74,Antidote,Magic/Heal,600,self/target,0.8,3,0,"Cures poison, venom and bleed of rank 9 or lower from an ally (or self).",42,880k,[]
 
-,,,,,,,,,,,,,-------------------------------Body-------------------------------
-44,Body,Magic/Buff,600,self/target,1,1,1200,+10% Max HP.,72,22k,[]
-48,Body,Magic/Buff,600,self/target,1,1,1200,+15% Max HP.,75,32k,[],
-52,Body,Magic/Buff,600,self/target,1,1,1200,+20% Max HP.,80,38k,[],
-56,Body,Magic/Buff,600,self/target,1,1,1200,+25% Max HP.,85,42k,[]
-64,Body,Magic/Buff,600,self/target,1,1,1200,+30% Max HP.,105,100k,[]
-70,Body,Magic/Buff,600,self/target,1,1,1200,+35% Max HP.,120,200k,[]
-
-,,,,,,,,,,,,,------------------------------Bulwark------------------------------
-44,Bulwark,Magic/Buff,600,self/target,1,1,1200,+15% P.Def.,72,22k,[]
-
-,,,,,,,,,,,,,------------------------------Focus------------------------------
-44,Focus,Magic/Buff,600,self/target,1,1,1200,+25% critical rate.,72,22k,[]
-52,Focus,Magic/Buff,600,self/target,1,1,1200,+30% critical rate.,80,38k,[]
-
-,,,,,,,,,,,,,------------------------------Force------------------------------
-44,Force,Magic/Buff,600,self/target,1,1,1200,+28% M.Atk.,72,22k,[]
-52,Force,Magic/Buff,600,self/target,1,1,1200,+32% M.Atk.,80,38k,[]
-
-,,,,,,,,,,,,,------------------------------Haste------------------------------
-44,Haste,Magic/Buff,600,self/target,1,1,1200,+15% Attack Speed.,72,22k,[]
-52,Haste,Magic/Buff,600,self/target,1,1,1200,+33% Attack Speed.,80,38k,[]
-
-,,,,,,,,,,,,,------------------------------Resolve------------------------------
-44,Resolve,Magic/Buff,600,self/target,1,1,1200,+36 interrupt resistance.,72,22k,[]
-52,Resolve,Magic/Buff,600,self/target,1,1,1200,+42 interrupt resistance.,80,38k,[]
-60,Resolve,Magic/Buff,600,self/target,1,1,1200,+48 interrupt resistance.,95,61k,[]
 
 ,,,,,,,,,,,,,------------------------Resurrection Field------------------------
 44,Resurrection Field,Magic/Heal,0,dead allies,15,60,0,Revive Dead allies 600 range around the caster at 30% HP/MP; restore 10% of lost exp.,200,22k,[]
@@ -334,35 +362,12 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,R
 66,Resurrection Field,Magic/Heal,0,dead allies,10,60,0,Revive Dead allies 800 range around the caster at 30% HP/MP; restore 50% of lost exp.,280,145k,[]
 74,Resurrection Field,Magic/Heal,0,dead allies,10,60,0,Revive Dead allies 900 range around the caster at 30% HP/MP; restore 70% of lost exp.,320,450k,[]
 
-,,,,,,,,,,,,,-------------------------------Soul-------------------------------
-44,Soul,Magic/Buff,600,self/target,1,1,1200,+10% Max MP.,72,22k,[]
-48,Soul,Magic/Buff,600,self/target,1,1,1200,+15% Max MP.,75,32k,[],
-52,Soul,Magic/Buff,600,self/target,1,1,1200,+20% Max MP.,80,38k,[],
-56,Soul,Magic/Buff,600,self/target,1,1,1200,+25% Max MP.,85,42k,[]
-62,Soul,Magic/Buff,600,self/target,1,1,1200,+30% Max MP.,100,86k,[]
-70,Soul,Magic/Buff,600,self/target,1,1,1200,+35% Max MP.,120,200k,[]
 
 ,,,,,,,,,,,,,----------------------------Urgent Heal----------------------------
 44,Urgent Heal,Magic/Heal,600,self/target,8,30,0,heal for 15%,136,43k,[]
 48,Urgent Heal,Magic/Heal,600,self/target,8,30,0,heal for 20%,152,64k,[]
 52,Urgent Heal,Magic/Heal,600,self/target,8,30,0,heal for 25%,166,74k,[]
 56,Urgent Heal,Magic/Heal,600,self/target,8,30,0,heal for 30%,180,81k,[]
-
-,,,,,,,,,,,,,----------------------------Vampirism----------------------------
-44,Vampirism,Magic/Buff,600,self/target,1,1,1200,+7% melee vampirism.,72,22k,[]
-58,Vampirism,Magic/Buff,600,self/target,1,1,1200,+8% melee vampirism.,90,45k,[]
-72,Vampirism,Magic/Buff,600,self/target,1,1,1200,+9% melee vampirism.,125,330k,[]
-
-,,,,,,,,,,,,,-------------------------------Ward-------------------------------
-44,Ward,Magic/Buff,600,self/target,1,1,1200,+23% M.Def.,72,22k,[]
-52,Ward,Magic/Buff,600,self/target,1,1,1200,+30% M.Def.,80,38k,[]
-
-,,,,,,,,,,,,,------------------------------Vigor------------------------------
-48,Vigor,Magic/Buff,600,self/target,1,1,1200,+15% HP regeneration.,75,32k,[]
-56,Vigor,Magic/Buff,600,self/target,1,1,1200,+20% HP regeneration.,85,42k,[]
-
-,,,,,,,,,,,,,------------------------------Frenzy------------------------------
-52,Frenzy,Magic/Buff,600,self/target,1,1,1200,"−10% Max HP/MP, +8% offence and speed, +8 move, −8 evasion.",80,38k,[]
 
 ,,,,,,,,,,,,,----------------------------Mana Strain----------------------------
 52,Mana Strain,Magic/Debuff,600,enemy,4,4,60,Increase Physical and Magic MP Cost by 100%,48,74k,[],,Increases Mana consumption of the target (x2) for 60 seconds; SPT resist
@@ -407,27 +412,6 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,R
 60,Meditation,Magic/Buff,0,self,2,900,30,Decrease Pdef by 90%(x0.1) and Add MP regen +30/s for 30 seconds - The status is canceled on dmg taken,47,61k,[]
 64,Meditation,Magic/Buff,0,self,2,900,30,Decrease Pdef by 90%(x0.1) and Add MP regen +35/s for 30 seconds - The status is canceled on dmg taken,52,100k,[]
 68,Meditation,Magic/Buff,0,self,2,900,30,Decrease Pdef by 90%(x0.1) and Add MP regen +40/s for 30 seconds - The status is canceled on dmg taken,52,165k,[]
-
-,,,,,,,,,,,,,--------------------------Great Bulwark--------------------------
-58,Great Bulwark,Magic/Buff,600,self/target,1,1,1200,+5% P.Def. Does not stack with Other Great Might|Bulwark effects effects.,90,45k,[],,Does not stack ('Great Might'|'Great Group Might'|'Great Group Bulwark')
-66,Great Bulwark,Magic/Buff,600,self/target,1,1,1200,+10% P.Def. Does not stack with Other Great Might|Bulwark effects effects.,110,145k,[]
-74,Great Bulwark,Magic/Buff,600,self/target,1,1,1200,+15% P.Def. Does not stack with Other Great Might|Bulwark effects effects.,130,450k,[]
-
-,,,,,,,,,,,,,----------------------------Great Might----------------------------
-58,Great Might,Magic/Buff,600,self/target,1,1,1200,+5% P.Atk. Does not stack with Other Great Might|Bulwark effects effects.,90,45k,[],,Does not stack ('Great Bulwark'|'Great Group Bulwark'|'Great Group Might')
-66,Great Might,Magic/Buff,600,self/target,1,1,1200,+7% P.Atk. Does not stack with Other Great Might|Bulwark effects effects.,110,145k,[]
-74,Great Might,Magic/Buff,600,self/target,1,1,1200,+10% P.Atk. Does not stack with Other Great Might|Bulwark effects effects.,130,450k,[]
-
-,,,,,,,,,,,,,--------------------------Mana Blessing--------------------------
-58,Mana Blessing,Magic/Buff,600,self/target,1,1,1200,Decrease Physical MP Cost by 10% and Magic MP Cost by 5%,90,45k,[]
-66,Mana Blessing,Magic/Buff,600,self/target,1,1,1200,Decrease Physical MP Cost by 15% and Magic MP Cost by 7%,110,145k,[]
-74,Mana Blessing,Magic/Buff,600,self/target,1,1,1200,Decrease Physical MP Cost by 20% and Magic MP Cost by 10%,130,450k,[]
-
-,,,,,,,,,,,,,--------------------------Shield Harden--------------------------
-58,Shield Harden,Magic/Buff,600,self/target,1,1,1200,Increases Shield PDef with 30%,90,45k,[]
-66,Shield Harden,Magic/Buff,600,self/target,1,1,1200,Increases Shield PDef with 40%,110,145k,[]
-72,Shield Harden,Magic/Buff,600,self/target,1,1,1200,Increases Shield PDef with 50%,125,330k,[] 
-
 ,,,,,,,,,,,,,--------------------------Ultimate Heal--------------------------
 58,Ultimate Heal,Magic/Heal,600,self/target,5,2,0,heal with power 730. Consumes 1 skill stone,95,88k,[]
 60,Ultimate Heal,Magic/Heal,600,self/target,5,2,0,heal with power 750. Consumes 1 skill stone,98,120k,[]
@@ -450,9 +434,6 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,R
 72,Ultimate party Heal,Magic/Heal,600,self/party,7,5,0,heal with power 930. Consumes 4 skill stones,228,650k,[]
 74,Ultimate party Heal,Magic/Heal,600,self/party,7,5,0,heal with power 1000. Consumes 4 skill stones,228,880k,[]
 
-,,,,,,,,,,,,,------------------------------Insight------------------------------
-62,Insight,Magic/Buff,600,self/target,1,1,1200,+50% magic critical rate.,100,86k,[]
-70,Insight,Magic/Buff,600,self/target,1,1,1200,+100% magic critical rate.,120,200k,[]
 
 ,,,,,,,,,,,,,---------------------------Weapon Break---------------------------
 62,Weapon Break,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy P.Atk and M.Atk by 9%,58,170k,[]
@@ -516,4 +497,3 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,R
 72,Body and Soul,Magic/Buff,600,self/party,1,1,1200,"+20% HP and MP regeneration, +35% Max HP and Max MP.",200,100000,[Body Soul Vigor Serenity],
 72,Focus and Ferocity,Magic/Buff,600,self/party,1,1,1200,"+30% critical rate, +35% critical damage, double magic critical rate.",200,100000,[Focus Ferocity Insight],
 
-74,Shield Bless and harden,Magic/Buff,600,self/party,1,1,1200,"Increases Shield PDef with 50%, and shield chance with 30%",200,100000,[Swift Alacrity Agility Haste],
