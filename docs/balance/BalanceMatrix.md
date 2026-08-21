@@ -43,6 +43,81 @@
 
 ---
 
+## ⚡ MAGIC FIZZLE CURVE — level 74 caster vs 60-90 (2026-08-21, CURRENT)
+
+**Not stale.** Generated from the shipped `StatCalculator.MagicFailChance`; regenerate with
+
+```
+dotnet run --project tools/BalanceMatrix -- --fizzle [casterLevel] [from] [to]
+```
+
+⚠ **THE SKILL'S OWN LEVEL IS NOT AN INPUT.** `GameLoopService` passes `caster.Level` and
+`target.Level` — a level-80 healer casting his level-74 rung fizzles as an 80, and a level-74
+healer casting the level-56 rung fizzles as a 74. There is no per-rung fizzle.
+
+⚠ **A fizzle is not a miss.** The spell still lands for `damage / 3` and still rolls the
+interrupt contest. Ceiling 95% (`StatCaps.MagicFailMax`), so nothing is ever immune.
+
+⚠ **M.Def and magic resistance do not enter this roll at all** — they only divide the damage.
+The inputs are levels, the tank's Anti-Magic `defenderMod`, magic evasion, and the weapon.
+
+```
+fail% = round( 1.3^(defenderLvl − casterLvl) × defenderMod × weaponMod ) + magicEvasionPoints
+```
+
+| def lvl | Δ | normal | tank ×2 | +4 mEvasion | bow ×25 |
+|--------:|--:|-------:|--------:|------------:|--------:|
+| 60 | −14 |  0% |  0% |  4% |  1% |
+| 61 | −13 |  0% |  0% |  4% |  1% |
+| 62 | −12 |  0% |  0% |  4% |  1% |
+| 63 | −11 |  0% |  0% |  4% |  1% |
+| 64 | −10 |  0% |  0% |  4% |  2% |
+| 65 |  −9 |  0% |  0% |  4% |  2% |
+| 66 |  −8 |  0% |  0% |  4% |  3% |
+| 67 |  −7 |  0% |  0% |  4% |  4% |
+| 68 |  −6 |  0% |  0% |  4% |  5% |
+| 69 |  −5 |  0% |  1% |  4% |  7% |
+| 70 |  −4 |  0% |  1% |  4% |  9% |
+| 71 |  −3 |  0% |  1% |  4% | 11% |
+| 72 |  −2 |  1% |  1% |  5% | 15% |
+| 73 |  −1 |  1% |  2% |  5% | 19% |
+| **74** | **0** | **1%** | **2%** | **5%** | **25%** |
+| 75 |  +1 |  1% |  3% |  5% | 32% |
+| 76 |  +2 |  2% |  3% |  6% | 42% |
+| 77 |  +3 |  2% |  4% |  6% | 55% |
+| 78 |  +4 |  3% |  6% |  7% | 71% |
+| 79 |  +5 |  4% |  7% |  8% | 93% |
+| 80 |  +6 |  5% | 10% |  9% | 95% |
+| 81 |  +7 |  6% | 13% | 10% | 95% |
+| 82 |  +8 |  8% | 16% | 12% | 95% |
+| 83 |  +9 | 11% | 21% | 15% | 95% |
+| 84 | +10 | 14% | 28% | 18% | 95% |
+| 85 | +11 | 18% | 36% | 22% | 95% |
+| 86 | +12 | 23% | 47% | 27% | 95% |
+| 87 | +13 | 30% | 61% | 34% | 95% |
+| 88 | +14 | 39% | 79% | 43% | 95% |
+| 89 | +15 | 51% | 95% | 55% | 95% |
+| 90 | +16 | 67% | 95% | 71% | 95% |
+
+**Casting DOWN is free.** `1.3^Δ` rounds to zero from Δ−3, so everything at 71 and below is a
+flat 0%. The entire curve lives above you.
+
+**Casting UP is the punishing half**, by design: 5% at +6, 18% at +11, 67% at +16, pinned to the
+ceiling from +18. `StatCaps.CcLevelFloorGap` is deliberately matched to that 18 (owner: *"match
+the fizzel 18 it is"*), so the level at which your spells stop landing is the level at which your
+control stops landing.
+
+**The three modifiers behave differently on purpose:**
+- **Tank Anti-Magic** (`defenderMod: 2`) MULTIPLIES — cheap at parity (1%→2%), decisive at a gap
+  (85: 18%→36%; 89: 51%→95%).
+- **Magic evasion** is FLAT percentage points added AFTER the multiply (owner ruling `62e`), so
+  the rogue's Evasion Boost +4 is worth a lot at parity and nearly nothing at +14. Multiplying it
+  would invert that, which is the opposite of a defensive burst.
+- **Bow / dual / bare hands** (`UntrainedWeaponMagicFailMod` ×25) is the only thing that makes
+  PARITY hurt: 25% at 74-vs-74, ceiling from +5. Hindered, not disarmed.
+
+---
+
 ## A. Reference formulas (owner's canonical IG-Legacy spec)
 ```
 Max HP        = [((Base_HP_At_Level  * CON_Modifier) * Passives) * Buffs] + Flat_HP

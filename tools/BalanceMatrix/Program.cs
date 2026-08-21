@@ -46,6 +46,35 @@ if (args.Length > 0 && args[0] == "--dump-mob-csv")
     return;
 }
 
+// `--fizzle [casterLevel] [from] [to]` prints the MAGIC FAIL curve straight out of
+// StatCalculator.MagicFailChance — the shipped function, not a copy. It answers "what does a caster
+// of level N lose against defenders of level X..Y", which is a question about LEVELS ONLY.
+// ⚠ THE SKILL'S OWN LEVEL IS NOT AN INPUT ANYWHERE IN THE MAGIC-FAIL PATH. GameLoopService passes
+// `caster.Level` and `target.Level`; a level-80 healer casting his level-74 rung fizzles as an 80.
+if (args.Length > 0 && args[0] == "--fizzle")
+{
+    int cl   = args.Length > 1 ? int.Parse(args[1]) : 74;
+    int from = args.Length > 2 ? int.Parse(args[2]) : 60;
+    int to   = args.Length > 3 ? int.Parse(args[3]) : 90;
+    Console.WriteLine();
+    Console.WriteLine($"=== MAGIC FIZZLE: a level-{cl} CASTER vs defenders {from}-{to} ===");
+    Console.WriteLine("  A fizzle is NOT a miss: the spell still lands for damage/3 (GameLoopService),");
+    Console.WriteLine("  and it still rolls the interrupt. Ceiling {0:P0}, so nothing is ever immune.",
+                      StatCaps.MagicFailMax);
+    Console.WriteLine();
+    Console.WriteLine($"  {"def lvl",7} {"delta",6} | {"normal",8} {"tank x2",8} {"+4 mEvasion",12} {"bow x25",8}");
+    for (int dl = from; dl <= to; dl++)
+    {
+        float plain = StatCalculator.MagicFailChance(cl, dl);
+        float tank  = StatCalculator.MagicFailChance(cl, dl, defenderMod: 2f);
+        float evade = StatCalculator.MagicFailChance(cl, dl, defenderFlatPoints: 4f);
+        float bow   = StatCalculator.MagicFailChance(cl, dl,
+                          weaponMod: StatCaps.UntrainedWeaponMagicFailMod);
+        Console.WriteLine($"  {dl,7} {dl - cl,+6} | {plain,8:P0} {tank,8:P0} {evade,12:P0} {bow,8:P0}");
+    }
+    return;
+}
+
 // `--mana-ray [power] [level]` sizes a DamageToMp spell (the healer's Mana Ray) against real
 // same-level players: the magic pipeline's own number, read against the TARGET'S MP POOL rather
 // than its HP. A mana drain is only balanced relative to the pool it drains, and that pool is
@@ -126,20 +155,50 @@ if (args.Length > 0 && args[0] == "--mana-ray")
     //     ladder 120..153 reads as 12.0%..15.3%). Pool-independent BY CONSTRUCTION — the only model of
     //     the four in which one authored number means the same thing to a 696-MP tank and a 3158-MP
     //     healer, because it is the 4.5x pool gap, not the defence, that makes A and B lopsided.
+    // 🔴 E AND E' ARE MEASUREMENT ONLY — NOT SHIPPED. The owner saw this table on 2026-08-21 and ruled
+    //    *"leave it as is"*: the engine keeps model D. These two columns stay so the comparison does
+    //    not have to be re-derived if the question comes back.
+    // E = THE IG FORMULA, verbatim (owner, 2026-08-21): √mAtk · power · (targetMaxMp / 97) / targetMDef.
+    //     Read it carefully and it is MODEL D WITH THE MAGIC PIPELINE BOLTED BACK ON: the (maxMp/97)
+    //     term is the same pool-proportionality that made D fair, and √mAtk/mDef is our own magic
+    //     ratio. So IG did not choose between "a share" and "a damage number" — it multiplied them.
+    //     ⚠ Its 97 is a constant on IG'S M.Atk scale, so column E's SIZE is meaningless to us; only
+    //     its SHAPE (how the drain moves with gear and with the target's M.Def) transfers.
+    // E' = that shape renormalised onto our numbers: model D times (√mAtk / mDef) measured against a
+    //     reference pair, so a baseline healer hitting a baseline same-level target drains exactly D
+    //     and everything above/below that is gear and defence. This is the shippable form of E.
+    float mDefRef = Targets(L, fRes, cRes).Average(x => x.Item2.EffectiveMagicDefence);
+    float igRef   = MathF.Sqrt(hAtk) / mDefRef;    // the baseline healer against a baseline target
     Console.WriteLine();
     Console.WriteLine($"  ---- MODELS at power {power} ---- (drain per cast / % of pool / casts to zero)");
     Console.WriteLine($"  {"target",-10} {"pool",5} {"mRes",5} | {"A pipeline",-19} {"B flat/mRes",-19} " +
-                      $"{"C flat x mRes",-19} {"D pool share",-19}");
+                      $"{"C flat x mRes",-19} {"D pool share",-19} {"E IG raw",-19} {"E' IG renormalised",-19}");
     foreach (var (who, t) in Targets(L, fRes, cRes))
     {
         int a = StatCalculator.MagicDamageFM(hAtk, 0, power, (int)t.EffectiveMagicDefence, t.MagicDefCoef);
         int b = (int)(power / t.MagicDefCoef);
         int c = (int)(power * t.MagicDefCoef);
         int d = StatCalculator.ManaDrain(t.MaxMp, power);   // the SHIPPED formula, not a copy of it
+        int e = (int)(MathF.Sqrt(hAtk) * power * (t.MaxMp / 97f) / Math.Max(1f, t.EffectiveMagicDefence));
+        int e2 = (int)(d * (MathF.Sqrt(hAtk) / Math.Max(1f, t.EffectiveMagicDefence)) / igRef);
         string Cell(int x) => $"{x,4} {x / (float)t.MaxMp,5:P0} {t.MaxMp / (float)Math.Max(1, x),4:F1}x";
         Console.WriteLine($"  {who,-10} {t.MaxMp,5} {t.MagicDefCoef,5:F2} | {Cell(a),-19} {Cell(b),-19} " +
-                          $"{Cell(c),-19} {Cell(d),-19}");
+                          $"{Cell(c),-19} {Cell(d),-19} {Cell(e),-19} {Cell(e2),-19}");
     }
+
+    // ---- WHAT THE IG SHAPE ACTUALLY BUYS: how far the drain swings with M.Atk and with M.Def.
+    // The whole question is whether (√mAtk / mDef) has enough spread here to be worth the loss of
+    // "one number means one thing". Measure both ends instead of assuming.
+    Console.WriteLine();
+    Console.WriteLine("  ---- E' SENSITIVITY (multiplier on the D share) ----");
+    Console.Write($"  caster M.Atk: ");
+    foreach (float mult in new[] { 0.5f, 0.75f, 1f, 1.5f, 2f, 3f })
+        Console.Write($"x{mult:F2} gear -> x{MathF.Sqrt(hAtk * mult) / MathF.Sqrt(hAtk),5:F2}   ");
+    Console.WriteLine();
+    Console.Write($"  target M.Def: ");
+    foreach (var (who, t) in Targets(L, fRes, cRes))
+        Console.Write($"{who} {t.EffectiveMagicDefence,4:F0} -> x{mDefRef / Math.Max(1f, t.EffectiveMagicDefence),5:F2}   ");
+    Console.WriteLine();
 
     // ---- CAN THE HEALER AFFORD IT? ----
     // The metric that actually decides this skill: a full drain is only a "strategy move" if it costs

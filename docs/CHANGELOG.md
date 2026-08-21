@@ -12,7 +12,49 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-08-20 (latest) — THE HEALER IS BUILT: `healer 3rd.csv`, levels 40-74, end to end (0.74.0)
+## 2026-08-21 (latest) — Mana Ray vs the IG drain formula: MEASURED, NOT CHANGED (+ the fizzle curve, documented)
+
+He brought IG's own mana-drain formula — `mpDmg = √mAtk · power · (enemyMaxMp / 97) / enemyMDef` —
+and asked how ours compares. Read it carefully and **it is our model D with the magic pipeline
+multiplied back in**: the `(enemyMaxMp / 97)` term *is* the pool-proportionality that made D fair,
+and `√mAtk / mDef` is our own magic ratio on top. IG never chose between "a share of the pool" and
+"a damage number"; it multiplied them.
+
+**Measured**, not argued — two new columns in `tools/BalanceMatrix -- --mana-ray`:
+
+| target | pool | D pool share | E' IG shape, renormalised |
+|---|---:|---|---|
+| tank | 696 | 100 · 14% · 7.0× | 96 · 14% · 7.2× |
+| champion | 696 | 100 · 14% · 7.0× | 107 · 15% · 6.5× |
+| nuker | 2662 | 385 · 14% · 6.9× | 378 · 14% · 7.0× |
+| healer | 3158 | 457 · 14% · 6.9× | 449 · 14% · 7.0× |
+
+The fairness invariant survives the IG shape (±8%: "7 casts to zero anyone" becomes 6.5–7.2) because
+M.Def is nearly flat across classes at 74, and it would have bought back a gear axis (×2 M.Atk →
+×1.41 drain). A single constant was enough for the whole level range — the ratio drifts only 19%
+from 40 to 85, so no level-indexed reference curve was needed.
+
+🔴 **RULING: `"leave it as is"`.** The engine keeps model D. Nothing in `Game.Shared` or
+`Game.Server` changed. The `E`/`E'` columns stay in BalanceMatrix, labelled as measurement only, so
+the comparison never has to be re-derived.
+
+🆕 **`--fizzle [casterLevel] [from] [to]`** — a new BalanceMatrix mode printing the magic-fail curve
+out of the shipped `StatCalculator.MagicFailChance`, with the tank ×2, the +4 magic-evasion and the
+bow ×25 columns beside the plain one. Its level-74 output is now written into
+`docs/balance/BalanceMatrix.md` as a **CURRENT** section, above that file's stale banner's reach.
+
+🔑 **THE SKILL'S OWN LEVEL IS NOT AN INPUT TO THE FIZZLE.** `GameLoopService` passes `caster.Level`
+and `target.Level` — a level-80 healer casting his level-74 rung fizzles as an 80. There is no
+per-rung fizzle, and the question "what is the fizzle of a 74 skill" has no answer except through
+the caster.
+
+🔑 **Casting DOWN is free** (`1.3^Δ` rounds to zero from Δ−3, so 71 and below is a flat 0%);
+**casting up** is 5% at +6, 18% at +11, 67% at +16, ceiling from +18 — matched to
+`StatCaps.CcLevelFloorGap`, so spells and control stop landing at the same level. And a fizzle is
+**not a miss**: it still lands `damage / 3` and still rolls the interrupt.
+
+
+## 2026-08-20 — THE HEALER IS BUILT: `healer 3rd.csv`, levels 40-74, end to end (0.74.0)
 
 **The Lightbringer is the first fully-authored 3rd class in the game.** He finished the file and said
 go — *"OK get the healer 3rd file and build away"* — so the 40+ purge no longer has a healer-shaped
