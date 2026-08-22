@@ -1791,7 +1791,7 @@ public class GameLoopService : BackgroundService
         }
 
         // Restore Mana can't target yourself or another mana-restorer (no self/healer refunds).
-        if ((def.Effect & SkillEffect.RestoreMp) != 0 &&
+        if (IsRestoreManaCast(def) &&
             _world.Entities.TryGetValue(targetId, out var mpTarget) &&
             mpTarget.HasSkill(SkillCatalog.RestoreMana))
         {
@@ -5165,6 +5165,20 @@ public class GameLoopService : BackgroundService
     private static bool IsManaRestore(SkillDef def) =>
         (def.Effect & SkillEffect.RestoreMp) != 0 && (def.Effect & SkillEffect.Heal) == 0;
 
+    /// <summary>The ONE skill the "not on a mana-restorer" rule applies to. Owner, 2026-08-21:
+    /// *"only Restore is forbidden other means of mp regen should work"*.
+    ///
+    /// ⚠ This used to read the <see cref="SkillEffect.RestoreMp"/> FLAG, which caught every source of
+    /// MP in the game rather than the one skill the rule is about — the Mana Totem, and **Harmony of
+    /// Restoration**, whose MP/s half rides that same flag on a heal-over-time. Since a Warchanter
+    /// carries Restore Mana himself, and a party HoT resolves on the caster too, his own party heal
+    /// was refused outright the moment he tried to cast it.
+    ///
+    /// What the rule exists to stop is Restore Mana's own arithmetic: it converts HP into MP at a
+    /// fixed rate, so two restorers topping each other up print mana for free. A totem pulse and a
+    /// HoT tick are paid for by their cast and can't be looped, so neither is in scope.</summary>
+    private static bool IsRestoreManaCast(SkillDef def) => def.Id == SkillCatalog.RestoreMana;
+
     /// <summary>Who this MP-restore should land on: the emptiest party member (or yourself) under the
     /// mana threshold and in range. Mirrors AutoHealTarget on the OTHER bar, and honours the same
     /// "not on a mana-restorer" rule the manual cast enforces, so the autopilot never queues a cast
@@ -5174,7 +5188,7 @@ public class GameLoopService : BackgroundService
         Entity? best = null;
         float bestPct = float.MaxValue;
         bool Wants(Entity e) => e.MaxMp > 0 && e.Mp * 100f / e.MaxMp < p.AutoMpPct
-                             && !e.HasSkill(SkillCatalog.RestoreMana);
+                             && (!IsRestoreManaCast(def) || !e.HasSkill(SkillCatalog.RestoreMana));
 
         // The HP price is the caster's, so the caster's own HP gates every target, not just self.
         if (p.AutoMpPct <= 0) return null;
@@ -8643,6 +8657,20 @@ public class GameLoopService : BackgroundService
         // potion", with movement as the only exception.
         BreakHide(caster);
 
+        // ---- THE AREA FLASH (owner, 2026-08-22): *"When done casting for a brief moment shows the
+        //      range - resurrection field .. The party heal .. They just flash one time when cast ends
+        //      as if the effect is applied"*. ----
+        //
+        // ONE call, here, rather than one at each of the seven places an AoE resolves. Every player
+        // area skill in the game is centred on the CASTER — PlayersInRadius, EnemiesInRadius and
+        // DeadPartyInRadius all take him as the origin — so his position IS the circle, and a single
+        // site cannot drift out of step with a skill added later.
+        //
+        // Past every gate and past BreakHide, so it marks the moment the skill LANDS. A cast that was
+        // interrupted, cancelled, or refused for MP has already returned above and draws nothing.
+        if (def.AreaRadiusAt(lvl) is float areaR && areaR > 0f)
+            BroadcastAreaEffect(caster, areaR, AreaKindOf(def));
+
         bool selfTargeted = caster.CastTargetId == caster.Id;
         Entity? target = selfTargeted ? caster
             : caster.CastTargetId is Guid tid ? _world.Entities.GetValueOrDefault(tid) : null;
@@ -11566,6 +11594,11 @@ public class GameLoopService : BackgroundService
 
             _lastSentByConn[connectionId] = current;   // this is now "what they have"
 
+            // Totems ride OUTSIDE the entity diff and above the heartbeat `continue` below: a totem
+            // is not an entity, so a world where nobody moves still has to be able to report one
+            // appearing. Silent unless the viewer's visible SET changed.
+            SendTotemsIfChanged(player, connectionId, sends);
+
             // Nothing changed for this viewer — stay silent, UNLESS they are due a heartbeat. Silence
             // and a dead server are indistinguishable to a client, so a calm world still has to say
             // something once a second.
@@ -11593,12 +11626,90 @@ public class GameLoopService : BackgroundService
             {
                 _lastSentByConn.Remove(conn);
                 _lastSentAtByConn.Remove(conn);   // or the heartbeat clock leaks a row per logout
+                _lastTotemsByConn.Remove(conn);   // ...and so would the totem set
             }
         }
 
         try { await Task.WhenAll(sends); }
         catch { /* disconnects clean up via LeaveCommand */ }
     }
+
+    /// <summary>The totem ids each connection has been told about, so the push can stay silent while
+    /// nothing changes. Keyed the same way the snapshot diff is, and cleaned up beside it.</summary>
+    private readonly Dictionary<string, HashSet<Guid>> _lastTotemsByConn = new();
+
+    /// <summary>Send this viewer the totems they can see — but ONLY if the set has changed since the
+    /// last time, which for a totem means planted, moved, or expired.
+    ///
+    /// <para>Deliberately a WHOLE list rather than a diff: there are single-figure totems in a world,
+    /// each a handful of floats, and the diff bookkeeping would be more code than the payload. The
+    /// list is also self-healing — a client that missed a message is corrected by the next one instead
+    /// of holding a phantom circle forever.</para>
+    ///
+    /// <para>⚠ Time is NOT on the wire. A totem's <c>NextPulseIn</c> and <c>LifeTicks</c> change every
+    /// single tick, so including either would turn "send when it changes" into "send ten times a
+    /// second, per viewer, per totem". The client draws what the server currently lists and drops what
+    /// it stops listing, which is the same information without the traffic.</para></summary>
+    private void SendTotemsIfChanged(Entity player, string connectionId, List<Task> sends)
+    {
+        List<TotemDto>? visible = null;
+        if (_world.Totems.Count > 0)
+        {
+            const float rangeSq = GameConstants.ViewRange * GameConstants.ViewRange;
+            foreach (var t in _world.Totems)
+            {
+                float dx = t.X - player.X, dy = t.Y - player.Y;
+                if (dx * dx + dy * dy > rangeSq) continue;
+                (visible ??= new()).Add(new TotemDto(
+                    t.Id, t.X, t.Y, t.Radius,
+                    (t.Effect & SkillEffect.Heal) != 0,
+                    (t.Effect & SkillEffect.RestoreMp) != 0));
+            }
+        }
+
+        if (!_lastTotemsByConn.TryGetValue(connectionId, out var last))
+            _lastTotemsByConn[connectionId] = last = new HashSet<Guid>();
+
+        // Unchanged if the ids match. A totem never moves without being replaced (a recast removes
+        // the old instance and adds a new one with a new id), so ids alone settle it.
+        bool same = visible is null ? last.Count == 0
+                                    : visible.Count == last.Count && visible.All(v => last.Contains(v.Id));
+        if (same) return;
+
+        last.Clear();
+        if (visible is not null) foreach (var v in visible) last.Add(v.Id);
+
+        sends.Add(_hub.Clients.Client(connectionId)
+            .SendAsync("Totems", new TotemList(visible?.ToArray() ?? Array.Empty<TotemDto>())));
+    }
+
+    /// <summary>Flash the footprint of an area skill for everyone who can see where it landed. One
+    /// shot: the client draws a ring that fades on its own, so there is nothing to expire or clean up.
+    ///
+    /// <para>Called from the one place a cast COMMITS, so it fires exactly when the effect does — an
+    /// interrupted cast, or one refused for MP, never draws a circle it did not earn.</para></summary>
+    private void BroadcastAreaEffect(Entity caster, float radius, AreaEffectKind kind)
+    {
+        var evt = new AreaEffectEvent(caster.X, caster.Y, radius, kind);
+        foreach (var nearby in _world.Grid.Nearby(caster))
+            if (_world.EntityToConnection.TryGetValue(nearby.Id, out var conn))
+                _ = _hub.Clients.Client(conn).SendAsync("AreaEffect", evt);
+        // The caster is not necessarily in his own Nearby list — send to him explicitly, and never twice.
+        if (_world.EntityToConnection.TryGetValue(caster.Id, out var own)
+            && !_world.Grid.Nearby(caster).Any(n => n.Id == caster.Id))
+            _ = _hub.Clients.Client(own).SendAsync("AreaEffect", evt);
+    }
+
+    /// <summary>Which colour an area skill's flash gets, read off what the skill DOES. Resurrection
+    /// first because a res field also carries Heal, and "you can be raised here" is the thing the
+    /// player standing in it needs to read.</summary>
+    private static AreaEffectKind AreaKindOf(SkillDef def) =>
+        AreaResurrect(def)                              ? AreaEffectKind.Resurrect
+        : (def.Effect & SkillEffect.Heal) != 0
+          || (def.Effect & SkillEffect.HealOverTime) != 0 ? AreaEffectKind.Heal
+        : (def.Effect & SkillEffect.RestoreMp) != 0     ? AreaEffectKind.Mana
+        : def.Category == SkillCategory.Buff            ? AreaEffectKind.Buff
+        : AreaEffectKind.Harm;
 
     private void BroadcastCombat(Entity attacker, Entity target, int damage,
         CombatOutcome outcome, string? skill = null)

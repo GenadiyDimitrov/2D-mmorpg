@@ -22,6 +22,13 @@ namespace Game.Client
         public event Action<SnapshotDelta> SnapshotDeltaReceived;
         public event Action<ChatMessage> ChatReceived;
         public event Action<CombatEvent> CombatReceived;
+
+        /// <summary>Every totem this viewer can see, whole — sent only when the set changes. A totem
+        /// is not an entity, so it can never arrive in a snapshot; this is the only channel it has.</summary>
+        public event Action<TotemList> TotemsReceived;
+
+        /// <summary>An area skill just landed nearby — flash its footprint once.</summary>
+        public event Action<AreaEffectEvent> AreaEffectReceived;
         public event Action<ProgressUpdate> ProgressReceived;
         public event Action<CastInfo> CastReceived;
         /// <summary>A MOB near you started (or stopped) casting — drives a cast bar over ITS head, so a
@@ -129,6 +136,8 @@ namespace Game.Client
             _connection.On<SnapshotDelta>("SnapshotDelta", d => SnapshotDeltaReceived?.Invoke(d));
             _connection.On<ChatMessage>("Chat", m => ChatReceived?.Invoke(m));
             _connection.On<CombatEvent>("Combat", c => CombatReceived?.Invoke(c));
+            _connection.On<TotemList>("Totems", t => TotemsReceived?.Invoke(t));
+            _connection.On<AreaEffectEvent>("AreaEffect", a => AreaEffectReceived?.Invoke(a));
             _connection.On<ProgressUpdate>("Progress", p => ProgressReceived?.Invoke(p));
             _connection.On<CastInfo>("Cast", c => CastReceived?.Invoke(c));
             _connection.On<MobCastInfo>("MobCast", c => MobCastReceived?.Invoke(c));

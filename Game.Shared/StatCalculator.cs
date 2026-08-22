@@ -5,6 +5,7 @@ namespace Game.Shared;
 /// estimated damage) while the server stays the only authority.
 /// Base stats follow the design doc:
 ///   Ork/Demon  Fighter 40/30/10/20  Mage 30/30/20/20   (CON/ATK/WIT/AGI)
+/// (⚠ stale sketch — the live table is GetBaseStats below, and the ork mage ATK is 47.)
 ///   Elf/Angel  Fighter 30/20/20/30  Mage 20/20/30/30
 ///   Human      Fighter 35/25/15/25  Mage 25/25/25/25
 /// </summary>
@@ -23,8 +24,29 @@ public static class StatCalculator
         // fighter stays the sturdiest — a flat fighter value erased that (owner, 2026-07-20).
         // MAGES take the owner's spread off the human mage: ork +7%, elf −7%. The curve is flat
         // (~1.6%/point), so those need wide gaps — hence 45 and 32, not 42 and 40.
+        // ⚠ THE ORK MAGE'S ATK IS 47, NOT IG'S 31 — and this is the one deliberate break in the row.
+        //
+        // IG carries TWO power stats: STR for melee, INT for magic. We collapsed them into ONE ATK
+        // (see the class note in CLAUDE.md), and for mages that one stat was seeded from IG's INT.
+        // That silently threw away the half of IG's spread the ork mystic actually WINS: his STR is
+        // the highest of any mystic (25, against the human's 22 and the elf's 21) while his INT is
+        // the lowest. Copying INT alone therefore gave the ork the magic deficit and none of the
+        // melee edge — which is exactly what the owner measured on 2026-08-21: *"2h blunt ork have
+        // almost the same as 1h mace human (with 1000pdef on top)"*. BalanceMatrix `--warchanter`
+        // reproduced it at +5.1% P.Atk for the two-hander, against a shield worth +56% P.Def.
+        //
+        // 47 = 41 × (25/22), the human mage's ATK scaled by IG's own mystic STR ratio. His ruling:
+        // *"check IG for ork mage INT and if it's 31 for our game we should increase it over the
+        // human"* — it is 31, verbatim, so it rises. Measured outcome: the ork Warchanter's maul
+        // goes to +45.6% P.Atk over the human's mace, which is a clean two-hander/shield trade, and
+        // the shared-stat side effect on the ork NUKER is +11.7% M.Atk paid for with the game's
+        // slowest cast (x0.87 vs x0.75) and lowest magic crit.
+        //
+        // 🔑 It also completes his sentence *"Elf have wit/agi - ork have con/spt/int human is in
+        // between"*: with ATK at 47 the human mage is the MIDDLE value of all five stats, and each
+        // of the other two owns exactly the pair he named.
         (Race.Ork, BaseClass.Fighter) => new BaseStats(47, 40, 10, 26, 27),
-        (Race.Ork, BaseClass.Mage)    => new BaseStats(31, 31, 19, 20, 45),
+        (Race.Ork, BaseClass.Mage)    => new BaseStats(31, 47, 19, 20, 45),
         (Race.Elf, BaseClass.Fighter) => new BaseStats(36, 36, 20, 35, 26),
         (Race.Elf, BaseClass.Mage)    => new BaseStats(25, 37, 23, 24, 32),
         (Race.Human, BaseClass.Fighter) => new BaseStats(43, 40, 15, 30, 25),

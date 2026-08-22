@@ -273,15 +273,43 @@ public static class SkillText
     public static List<string> Buff(SkillDef def, int level = 1)
     {
         var o = new List<string>();
-        var mags = def.MagnitudesAt(level);
-        if (mags is null) return o;
-        foreach (var m in mags)
+        foreach (var m in EffectiveMagnitudes(def, level))
         {
             string label = EffectLabel(m.Effect);
             if (label.Length == 0) continue;
             if (m.Mode == ModifierMode.Flat) Flat(o, label, m.Value);
             else Pct(o, label, m.Value);
         }
+        return o;
+    }
+
+    /// <summary>What a buff actually hands out — its OWN magnitudes, or, when it has none of its own,
+    /// the magnitudes of the CHILD buffs it applies.
+    ///
+    /// <para>🔑 A group buff (and a party echo like War Frenzy) carries no magnitudes at all: it exists
+    /// to apply <see cref="SkillDef.ChildBuffs"/>, and every number lives one level down in the rungs
+    /// it names. Reading <c>MagnitudesAt</c> alone therefore returned an EMPTY list for every one of
+    /// them, so the skill card printed its prose and then said nothing whatsoever about what the skill
+    /// does — on the ten Warchanter groups, the two War echoes and Frenzy alike. The numbers were in
+    /// the catalog the whole time, one hop away.</para>
+    ///
+    /// <para>⚠ <c>ChildBuffsAt</c>, never <c>ChildBuffs</c> — a laddered group names DIFFERENT rungs at
+    /// each of its levels, and the def's own list is only the fallback for the ones that don't. Read
+    /// flat, Frenzy Lv2 described rung 1's numbers (−7%/+5%) while applying rung 2's (−10%/+8%).</para>
+    ///
+    /// <para>A child is then read at level 1 because a rung id IS the level — <c>buff_frenzy_2</c> is
+    /// the second rung, not level 2 of a ladder. Order is the authored child order, which is disjoint
+    /// by design: a group's children never cover the same effect twice.</para></summary>
+    public static IEnumerable<EffectMagnitude> EffectiveMagnitudes(SkillDef def, int level = 1)
+    {
+        var mags = def.MagnitudesAt(level);
+        if (mags is { Length: > 0 }) return mags;
+        if (def.ChildBuffsAt(level) is not { Length: > 0 } kids) return Array.Empty<EffectMagnitude>();
+
+        var o = new List<EffectMagnitude>();
+        foreach (var childId in kids)
+            if (SkillCatalog.Get(childId)?.MagnitudesAt(1) is { Length: > 0 } cm)
+                o.AddRange(cm);
         return o;
     }
 

@@ -60,6 +60,10 @@ public class TrapInstance
 /// paying that cost, because a pet must move, fight and be targetable; a totem needs none of it.</para></summary>
 public class TotemInstance
 {
+    /// <summary>Identity for the CLIENT's benefit — the key it keeps a drawn disc under, so a recast
+    /// that moves a totem replaces the circle instead of leaving a ghost behind. The server itself
+    /// still addresses a totem by (owner, skill), which is what "one per owner per skill" means.</summary>
+    public Guid Id { get; } = Guid.NewGuid();
     public required Guid OwnerId { get; init; }
     public required string SkillId { get; init; }
     public int Level { get; init; } = 1;

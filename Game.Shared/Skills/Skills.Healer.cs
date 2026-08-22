@@ -389,7 +389,12 @@ public static partial class SkillCatalog
                 // steep on purpose: a level-35 cleric's Frenzy is cheap, a buffer's is not.
                 new SkillLevel(MpCost: 40,  SpCost: 12800,
                     ChildBuffs: new[] { Rung(FamFrenzy, 1) },
-                    Description: "−30% Max HP/MP, +5% offence and speed, +5 move, −8 evasion."),
+                    // ⚠ WAS "−30% Max HP/MP … −8 evasion", and had been stale since the rung was
+                    // re-authored: `FrenzyRung(1, 0.07f, 0.05f, 5, eva: 5)` gives −7% and −5. His
+                    // `cleric 2nd.csv` row agrees with the RUNG, so the prose was the wrong half.
+                    // It only surfaced once the card started printing the child's real numbers
+                    // underneath the sentence that contradicted them.
+                    Description: "−7% Max HP/MP, +5% offence and speed, +5 move, −5 evasion."),
                 // ⚠ Level 2 is 80 MP / 38k SP — his `healer 3rd.csv` @52 row, which is where BOTH the
                 // healer and the buffer learn this rung (*"Frenzy(L2) is learned from Healers and
                 // Buffers at 52"*). It was 135 / 25000 before his file priced it.
@@ -473,7 +478,15 @@ public static partial class SkillCatalog
             Category: SkillCategory.Buff, SpCost: 45000,
             ChildBuffs: new[] { Rung(FamFrenzy, 2) },
             TargetMode: TargetMode.AlliesInRadius, AreaRadius: 800f,
-            Replaces: new[] { CastId(FamFrenzy) },
+            // ⚠ `HolyFrenzy` IS THE SINGLE, and it is the one that has to be named here. This list
+            // read `CastId(FamFrenzy)` alone — `cast_frenzy`, the generic ladder caster — and NO CLASS
+            // LEARNS THAT ID: both the Warchanter (52) and the Lightbringer (52) are granted
+            // `holy_frenzy`, the def whose display name is plainly "Frenzy". So his REPLACES column
+            // said `[Frenzy]`, the code agreed on paper, and the skill it named was never on anyone's
+            // learn list — the single survived buying the party version (owner, 2026-08-21:
+            // *"haven't removed my learned Frenzy skill .. Should replace it"*). `cast_frenzy` is kept
+            // beside it so a future class granted the generic ladder collapses the same way.
+            Replaces: new[] { HolyFrenzy, CastId(FamFrenzy) },
             Description: "Drives you and nearby allies to fight recklessly: −10% Max HP/MP, but +8% "
                        + "P.Atk / M.Atk / attack & cast speed, +8 Move Speed and −8 Evasion for 20 minutes."),
 

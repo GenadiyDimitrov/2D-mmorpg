@@ -51,6 +51,8 @@ namespace Game.Client
         public CameraRig CameraRig;
         public MoveMarker Marker;
         public ZoneOverlay Zones;
+        /// <summary>The ground circles — totem footprints and area-skill flashes.</summary>
+        public GroundDecals Decals;
 
         // ----- State the HUD reads -------------------------------------------------------------
         public ClientPhase Phase { get; private set; } = ClientPhase.Offline;
@@ -937,6 +939,12 @@ namespace Game.Client
                 Marker = FindAnyObjectByType<MoveMarker>();
                 if (Marker == null) Marker = new GameObject("MoveMarker").AddComponent<MoveMarker>();
             }
+
+            if (Decals == null)
+            {
+                Decals = FindAnyObjectByType<GroundDecals>();
+                if (Decals == null) Decals = new GameObject("GroundDecals").AddComponent<GroundDecals>();
+            }
         }
 
         private async void Start()
@@ -1213,6 +1221,10 @@ namespace Game.Client
             });
             _net.ChatReceived += m => Main(() => AppendChat(m));
             _net.CombatReceived += OnCombat;
+            // The ground circles. Both go straight to the decal renderer — nothing here decides
+            // anything, because the server already decided what is visible and what colour it is.
+            _net.TotemsReceived += t => Main(() => Decals?.SetTotems(t));
+            _net.AreaEffectReceived += a => Main(() => Decals?.Flash(a));
             _net.CastReceived += c => Main(() =>
             {
                 // Seconds <= 0 is the server saying the cast ENDED (finished or was cancelled), not a
@@ -1245,6 +1257,7 @@ namespace Game.Client
                 StatusMessage = "Disconnected: " + m;
                 ClientLog.Error(StatusMessage);
                 if (Entities != null) Entities.Clear();
+                Decals?.ClearTotems();
             });
             _net.ForceDisconnected += m => Main(() =>
             {
@@ -1450,6 +1463,7 @@ namespace Game.Client
                 // That is the "waiting for your entity …" bug: mobs trickled back in as they wandered,
                 // you never did.
                 if (Entities != null) { Entities.Clear(); Entities.SetSelf(Guid.Empty); }
+                Decals?.ClearTotems();
                 if (CameraRig != null) CameraRig.Target = null;   // re-acquire on the next frame
                 if (Marker != null) { Marker.Follow = null; Marker.Hide(); }
 
@@ -1569,6 +1583,7 @@ namespace Game.Client
                 Main(() =>
                 {
                     if (Entities != null) Entities.Clear();
+                    Decals?.ClearTotems();
                     ResetWorldTransients();
                     Characters = fresh;
                     Phase = ClientPhase.CharacterSelect;
@@ -1611,6 +1626,7 @@ namespace Game.Client
                 Main(() =>
                 {
                     if (Entities != null) Entities.Clear();
+                    Decals?.ClearTotems();
                     ResetWorldTransients();
                     Characters = fresh;
                     Phase = ClientPhase.CharacterSelect;
@@ -1649,6 +1665,7 @@ namespace Game.Client
             Main(() =>
             {
                 if (Entities != null) { Entities.Clear(); Entities.SetSelf(Guid.Empty); }
+                Decals?.ClearTotems();
                 if (CameraRig != null) CameraRig.Target = null;
                 if (Marker != null) { Marker.Follow = null; Marker.Hide(); }
                 ResetWorldTransients();

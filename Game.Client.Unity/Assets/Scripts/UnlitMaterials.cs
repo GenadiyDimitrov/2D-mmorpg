@@ -65,6 +65,43 @@ namespace Game.Client
         }
 
         /// <summary>
+        /// A new material that RESPECTS ALPHA — the ground decals (totem footprints, area-effect
+        /// flashes) are all semi-transparent, and every other disc in this project is deliberately
+        /// opaque (see MoveMarker's note: "transparency in URP would mean a second material, a render
+        /// queue and sorting"). That note is still true; this is the one place paying that price,
+        /// because a circle you have to STAND IN has to let you see yourself standing in it.
+        ///
+        /// <para>URP's Unlit is opaque until told otherwise, and telling it takes four properties, a
+        /// shader keyword and a render queue — set <c>_BaseColor</c>'s alpha alone and you get a solid
+        /// disc. The built-in fallbacks have no alpha at all, in which case this degrades to an opaque
+        /// circle, which is the owner's own stated fallback.</para>
+        ///
+        /// <para><c>ZWrite</c> stays OFF so the decal never punches a hole in the entities drawn after
+        /// it, and the queue is Transparent so it sorts behind them.</para>
+        /// </summary>
+        public static Material CreateTransparent(Color color)
+        {
+            var material = Create(color);
+            if (material == null) return null;
+
+            if (material.HasProperty("_Surface")) material.SetFloat("_Surface", 1f);   // 0 opaque, 1 transparent
+            if (material.HasProperty("_Blend")) material.SetFloat("_Blend", 0f);       // alpha blend
+            if (material.HasProperty("_SrcBlend")) material.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            if (material.HasProperty("_DstBlend")) material.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            if (material.HasProperty("_ZWrite")) material.SetFloat("_ZWrite", 0f);
+            if (material.HasProperty("_AlphaClip")) material.SetFloat("_AlphaClip", 0f);
+
+            material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+            material.DisableKeyword("_ALPHATEST_ON");
+            material.SetShaderPassEnabled("ShadowCaster", false);
+            material.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+
+            SetColor(material, color);   // again: the queue/keyword changes above can reset it
+            return material;
+        }
+
+        /// <summary>
         /// Sets the colour on whichever property the shader that actually loaded uses: URP's Unlit
         /// exposes <c>_BaseColor</c>, the built-in ones <c>_Color</c>. URP tags <c>_BaseColor</c> as
         /// [MainColor] so <c>material.color</c> usually routes there anyway, but "usually" is how the

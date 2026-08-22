@@ -569,6 +569,23 @@ public class PersistenceService
             into[id] = colon < 0 ? 1
                      : int.TryParse(token[(colon + 1)..], out int lvl) ? Math.Max(1, lvl) : 1;
         }
+
+        // ---- SUPERSEDED SKILLS DIE ON LOAD TOO, for the same reason retired ids do. ----
+        //
+        // `Replaces` used to be enforced at LEARN time only, which is fine exactly once: it assumes the
+        // replacement list a skill carried the day you bought it is the list it will carry forever. It
+        // isn't. War Frenzy named `cast_frenzy` — an id no class ever learns — so every Warchanter who
+        // bought it kept his single Frenzy sitting on the bar (owner, 2026-08-21). Fixing the list is
+        // only half the fix: without this, the correction reaches nobody who had already spent the SP,
+        // and the only way out is deleting the character.
+        //
+        // Retroactive by design, and it is the same rule the LEARN LIST has always applied — see
+        // GameLoopService.IsSuperseded, which hides a skill you can no longer buy because something you
+        // own supersedes it. A skill hidden from the shop and still on your bar was never a coherent
+        // state; this makes the two agree at the one point where the character enters memory.
+        foreach (var id in into.Keys.ToList())
+            if (SkillCatalog.Get(id)?.Replaces is { Length: > 0 } rep)
+                foreach (var r in rep) into.Remove(r);
     }
 
     private static Subclass ToSubclass(SubclassRecord r)

@@ -223,6 +223,73 @@ if (args.Length > 0 && args[0] == "--mana-ray")
     return;
 }
 
+if (args.Length > 0 && args[0] == "--warchanter")
+{
+    int L = args.Length > 1 ? int.Parse(args[1]) : 90;
+    // Optional ork ATK override sweep: `--warchanter 90 31 38 41 44 47`
+    var sweep = args.Skip(2).Select(int.Parse).ToArray();
+    if (sweep.Length == 0) sweep = new[] { 31, 38, 41, 44, 47 };
+
+    Console.WriteLine();
+    Console.WriteLine($"=== THE THREE WARCHANTERS at level {L} — the race split measured, not asserted ===");
+    Console.WriteLine("  Each race in the weapon and armour ITS OWN masteries train (his kit split):");
+    Console.WriteLine("    Human  heavy + 1H mace + SHIELD   Ork  heavy + 2H maul   Elf  light + bow");
+    Console.WriteLine("  Best-for-tier gear, every Warchanter skill learnable by this level, War/Spell Rune ON,");
+    Console.WriteLine("  NO buffs cast (this is the naked character sheet he compared).");
+    Console.WriteLine();
+    Console.WriteLine($"  {"race",-7} {"CON",4} {"ATK",4} {"WIT",4} {"AGI",4} {"SPT",4} | " +
+                      $"{"P.Atk",7} {"M.Atk",7} {"P.Def",7} {"M.Def",7} {"acc",5} {"eva",5} | {"HP",7} {"MP",7}");
+    foreach (var (race, label) in new[] { (Race.Human, "human"), (Race.Ork, "ork"), (Race.Elf, "elf") })
+    {
+        var e = BuildWarchanter(race, L);
+        var s = StatCalculator.GetBaseStats(race, BaseClass.Mage);
+        Console.WriteLine($"  {label,-7} {s.Con,4} {s.Atk,4} {s.Wit,4} {s.Agi,4} {s.Spt,4} | " +
+                          $"{(int)e.EffectiveAttack,7} {(int)e.EffectiveMagicAttackShown,7} " +
+                          $"{(int)e.EffectiveDefence,7} {(int)e.EffectiveMagicDefence,7} " +
+                          $"{e.Accuracy,5} {(int)e.EffectiveEvasion,5} | {e.MaxHp,7} {e.MaxMp,7}");
+    }
+
+    Console.WriteLine();
+    Console.WriteLine($"=== WHAT AN ORK ATK RAISE ACTUALLY BUYS (level {L}) ===");
+    Console.WriteLine("  The ork's ATK is the ONLY thing changed; his gear, kit and every other stat stand still.");
+    Console.WriteLine("  'vs human' is the ork's P.Atk over the human's — who also carries a SHIELD the ork has not.");
+    Console.WriteLine();
+    var human = BuildWarchanter(Race.Human, L);
+    var elf = BuildWarchanter(Race.Elf, L);
+    int hP = (int)human.EffectiveAttack, hD = (int)human.EffectiveDefence;
+    int eP = (int)elf.EffectiveAttack;
+    Console.WriteLine($"  reference: human P.Atk {hP} / P.Def {hD}   elf P.Atk {eP} / P.Def {(int)elf.EffectiveDefence}");
+    Console.WriteLine();
+    Console.WriteLine($"  {"ork ATK",8} {"P.Atk",7} {"M.Atk",7} | {"vs human",9} {"vs elf",8}");
+    foreach (int a in sweep)
+    {
+        var e = BuildWarchanter(Race.Ork, L, atkOverride: a);
+        int p = (int)e.EffectiveAttack;
+        Console.WriteLine($"  {a,8} {p,7} {(int)e.EffectiveMagicAttackShown,7} | " +
+                          $"{(p - hP) * 100f / hP,8:+0.0;-0.0}% {(p - eP) * 100f / eP,7:+0.0;-0.0}%");
+    }
+
+    // ⚠ ATK IS ONE STAT PER RACE+BASECLASS. Raising it for the buffer raises it for every ork MAGE
+    // — the Shaman and the Witch too. The nuker is the one that could be broken by it, so measure
+    // him rather than reasoning about him: same staff, same robe, only the base ATK moves.
+    Console.WriteLine();
+    Console.WriteLine($"=== THE SIDE EFFECT: the ORK NUKER (staff + robe), who shares the same ATK ===");
+    var humanNuke = BuildWarchanter(Race.Human, L, disc: Discipline.Magus);
+    int hM = (int)humanNuke.EffectiveMagicAttackShown;
+    Console.WriteLine($"  reference: human Magus M.Atk {hM}, WIT {StatCalculator.GetBaseStats(Race.Human, BaseClass.Mage).Wit} " +
+                      $"(cast x{humanNuke.EffectiveCastSpeedMultiplier:F2}, magic crit {humanNuke.MagicCritChance:P1})");
+    Console.WriteLine();
+    Console.WriteLine($"  {"ork ATK",8} {"M.Atk",7} | {"vs human",9} | {"cast",6} {"m.crit",7}");
+    foreach (int a in sweep)
+    {
+        var n = BuildWarchanter(Race.Ork, L, atkOverride: a, disc: Discipline.Magus);
+        int m = (int)n.EffectiveMagicAttackShown;
+        Console.WriteLine($"  {a,8} {m,7} | {(m - hM) * 100f / hM,8:+0.0;-0.0}% | " +
+                          $"x{n.EffectiveCastSpeedMultiplier,5:F2} {n.MagicCritChance,7:P1}");
+    }
+    return;
+}
+
 // The four same-level PvP targets a drain is judged against. One list, so every table below
 // measures the same characters.
 //
@@ -4058,6 +4125,68 @@ static Entity BuildStarter(BaseClass cls, int level)
     // Training kit only — no runes, no jewels (jewels are earned; the point is the FLOOR gear).
     Equip(e, cls == BaseClass.Mage ? ItemCatalog.TrainingWand : ItemCatalog.TrainingSword);
     Equip(e, cls == BaseClass.Mage ? ItemCatalog.TrainingRobe : ItemCatalog.TrainingLeather);
+
+    e.RecomputeDerived();
+    return e;
+}
+
+/// <summary>A REAL Warchanter of a given race — the 3rd class set, its whole learnable kit, and the
+/// weapon/armour ITS OWN masteries train. `BuildPlayer` cannot do this: it stops at the 2nd class and
+/// dresses every mage in a wand or a staff, which is exactly the wrong weapon for all three of them.
+///
+/// <para><paramref name="atkOverride"/> replaces the race's base ATK and nothing else, so a what-if on
+/// the power stat can be MEASURED through the real formulas instead of scaled by hand.</para></summary>
+static Entity BuildWarchanter(Race race, int level, int? atkOverride = null,
+                              Discipline disc = Discipline.Warchanter)
+{
+    var s = StatCalculator.GetBaseStats(race, BaseClass.Mage);
+    var e = new Entity { Name = "warchanter", Kind = EntityKind.Player, Race = race, BaseClass = BaseClass.Mage };
+    e.Level = level;
+    e.Con = s.Con; e.AtkStat = atkOverride ?? s.Atk; e.Wit = s.Wit; e.Agi = s.Agi; e.Spt = s.Spt;
+
+    // 2nd class = this race's Cleric (the buffer's parent), 3rd = its Warchanter — or, for the
+    // side-effect check, its Nuker/Magus. ATK is ONE stat shared by every mage of the race, so a
+    // raise aimed at the buffer lands on the nuker too and has to be measured there as well.
+    var arch = Disciplines.Parent(disc);
+    var second = ClassCatalog.Playable.First(c => c.Race == race && c.Archetype == arch);
+    e.SecondClass = second.Id;
+    e.ThirdClass = ThirdClassCatalog.Playable
+        .First(c => c.Race == race && c.Discipline == disc).Id;
+
+    foreach (var cs in ClassSkills.ForClass(race, BaseClass.Mage, null, null))
+        if (cs.LearnLevel <= level)
+            e.LearnedSkills[cs.SkillId] = Math.Max(e.SkillLevelOf(cs.SkillId), cs.SkillLevel);
+    foreach (var cs in ClassSkills.Cumulative(race, BaseClass.Mage, e.Archetype, e.Discipline))
+        if (cs.LearnLevel <= level)
+            e.LearnedSkills[cs.SkillId] = Math.Max(e.SkillLevelOf(cs.SkillId), cs.SkillLevel);
+    foreach (var id in e.LearnedSkills.Keys.ToList())
+        if (SkillCatalog.Get(id)?.Replaces is { } replaced)
+            foreach (var r in replaced) e.LearnedSkills.Remove(r);
+    e.LearnedSkills[SkillCatalog.SpellcasterMastery] = 1;
+    GrantFloorPassive(e, level);
+
+    var rune = SkillCatalog.Get(SkillCatalog.SpellRuneBuff);
+    if (rune != null)
+        e.Buffs.Add(new Game.Server.Simulation.BuffInstance
+        {
+            Effect = rune.Effect, Magnitudes = rune.Magnitudes,
+            TicksRemaining = int.MaxValue, Name = rune.Name, Key = rune.BuffKey,
+        });
+
+    // HIS race split, verbatim: *"human is tank - 1dmg skill and higher Def, elf is archer -
+    // range/evasion 1dmg skill, ork is mele fighter"*. Human alone carries the shield.
+    int t = GearTier(level);
+    if (disc != Discipline.Warchanter) { Equip(e, $"staff_t{t}"); Equip(e, $"robe_t{t}"); }
+    else switch (race)
+    {
+        case Race.Human: Equip(e, $"blunt1h_t{t}"); Equip(e, $"shield_t{t}"); Equip(e, $"heavy_t{t}"); break;
+        case Race.Ork:   Equip(e, $"blunt2h_t{t}"); Equip(e, $"heavy_t{t}"); break;
+        default:         Equip(e, $"bow_t{t}");     Equip(e, $"light_t{t}"); break;
+    }
+    foreach (var acc in new[] { "helm", "gloves", "boots" }) Equip(e, $"{acc}_t{t}");
+    Equip(e, $"necklace_t{t}");
+    Equip(e, $"ring_t{t}"); Equip(e, $"ring_t{t}");
+    Equip(e, $"earring_t{t}"); Equip(e, $"earring_t{t}");
 
     e.RecomputeDerived();
     return e;

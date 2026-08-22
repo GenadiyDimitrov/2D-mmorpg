@@ -11,8 +11,278 @@ from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVers
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
+## 2026-08-22 (latest) — the ground says where the effect is: totem footprints, and a flash on every AoE
 
-## 2026-08-21 (latest) — 0.76.0 shipped: the APK and the server the Warchanter actually needs
+*"Build a totem visual in the client .. I want to see where it stands and the AOE so I can stand
+inside … Same goes for all AOE skills … They just flash one time when cast ends as if the effect is
+applied … while the totem just stays on the ground … (blue mana, green hp)"*.
+
+### Why nothing was drawn: a totem was never on the wire at all
+
+🔑 **A totem is not an entity.** It is a `TotemInstance` in a plain `List` on the world, deliberately
+so — that is what made "a totem is a heal skill with `PlacesTotem`, not a creature" cheap. But every
+pixel the client draws comes out of the entity snapshot, so a totem could never appear in it, and
+nothing else ever mentioned one. It was not a rendering gap; there was no data.
+
+So it needed a channel of its own, and it got the smallest one that works.
+
+| | |
+|---|---|
+| `TotemDto(Id, X, Y, Radius, Heals, Restores)` | one totem, as the ground needs it |
+| `TotemList` → `"Totems"` | every totem the viewer can see, **whole** |
+| `AreaEffectEvent(X, Y, Radius, Kind)` → `"AreaEffect"` | one shot, fire and forget |
+
+**Whole list, not a diff.** There are single-figure totems in a world and the bookkeeping would cost
+more than the payload — and a whole list is *self-healing*: a client that misses a message is
+corrected by the next one instead of holding a phantom circle for ever. The loop sends it only when
+the visible SET changes, so a world with no totems is silent.
+
+⚠ **Time is deliberately NOT on the wire.** `NextPulseIn` and `LifeTicks` change every tick, so
+including either would turn "send when it changes" into ten sends a second per viewer per totem. The
+client draws what the server lists and drops what it stops listing — same information, no traffic.
+
+⚠ It is sent **above** the snapshot loop's heartbeat `continue`, or a totem planted beside a player
+who is standing still would wait for someone to move.
+
+### The flash is ONE call, not seven
+
+`ExecuteSkill` gets a single line, and every area skill in the game inherits it — party heal, the
+resurrection field, all nine Warchanter groups, enemy AoE. That works because **every player area
+skill is centred on the CASTER**: `PlayersInRadius`, `EnemiesInRadius` and `DeadPartyInRadius` all
+take him as the origin. One site cannot drift out of step with a skill added later; seven would.
+
+It sits past every gate and past `BreakHide`, so it marks the moment the skill *lands* — an
+interrupted cast, or one refused for MP, has already returned above and draws nothing. `AreaKindOf`
+reads the colour off what the skill DOES, checking resurrection first because a res field also
+carries `Heal`, and "you can be raised here" is what the player standing in it needs to read.
+
+### The circles
+
+New `GroundDecals`, built from squashed cylinders like `MoveMarker` and `ZoneOverlay` — but for the
+first time **transparent**. `MoveMarker`'s note has always said transparency in URP means a second
+material, a render queue and sorting; that is still true, and this is the one place worth paying it,
+because a circle you have to STAND IN has to let you see yourself standing in it.
+
+`UnlitMaterials.CreateTransparent` does the paying: URP's Unlit is opaque until told otherwise, and
+telling it takes `_Surface`, `_Blend`, `_SrcBlend`, `_DstBlend`, `_ZWrite`, the
+`_SURFACE_TYPE_TRANSPARENT` keyword and the Transparent queue. Set `_BaseColor`'s alpha alone and you
+get a solid disc. On the built-in fallback shaders there is no alpha at all and it degrades to an
+opaque circle — which is his own stated fallback: *"if not I'll work with static semy transperant
+circle"*.
+
+- **Totem** — drawn at the server's real radius, resting alpha 0.16, breathing ±0.09 on a 2s cycle.
+  **Green HP, blue mana**, his colours; a totem that fills both pools gets **both rings**, the mana one
+  drawn slightly smaller and a hair higher so it reads as two rings and not one muddled average.
+  The pulse is on the client's own clock — the server's pulse interval is not on the wire, and putting
+  it there to drive an animation would have cost a message a second.
+- **Flash** — 0.55s, starts at 75% of its radius and snaps out to the true one while the alpha fades
+  quadratically. Size is the message, alpha is the goodbye.
+- Colliders are stripped from every disc, for the same reason the move marker strips its own: a decal
+  must never eat a tap meant for the ground, or standing in your own totem would stop you walking out.
+- Circles are cleared at all five places the client tears down the entity list, so a logout never
+  leaves one burned into the map.
+
+⚠ **Every AoE BUFF flashes too** — that is "same goes for all AOE skills" taken literally, and a full
+group-buff rotation is a lot of yellow in a row. If it reads as noise, muting `AreaEffectKind.Buff`
+(or shortening `FlashSeconds`) is a one-line change.
+
+⚠ **A MOB's AoE does not flash.** The one call sits in `ExecuteSkill`, which is the PLAYER cast path;
+a boss resolves its own area attacks down a separate branch. Deliberate for now — telegraphing a
+boss's ground slam is a real feature and a real balance decision, not a side effect of this one — but
+it is the obvious next thing if he wants it.
+
+### Checked headlessly, because this is exactly the bug class the smoke test exists for
+
+A totem worked perfectly for weeks and was invisible; a human playtest cannot tell "the server never
+sent it" from "the client never drew it", and it was reported as the latter. So `tools/SmokeTest`
+grew a section that reads the pushes directly, on an ork Lightbringer (both totems are his):
+
+```
+--- totem + area-effect pushes ---
+  planting a totem PUSHES it to the client · carrying the HP flag · and the server's own radius
+  the MANA totem is accepted and pushed too (the mana-restorer gate no longer eats it)
+  ...and the two totems COEXIST, one per skill rather than one per owner
+  an AoE skill flashes its footprint when it LANDS · at the real radius · coloured by what it DOES
+  walking out of range clears the circles (the push is a WHOLE list, so it self-heals)
+```
+
+🔑 **Writing it found nothing wrong with the feature and three things wrong with the test**, and the
+third is worth keeping:
+
+1. `ConnectAsync` **logs in, it does not register**, so a made-up account throws rather than failing a
+   check.
+2. **Every `Debug*` command is an `IAdminCommand`** — a fresh character is refused with "That is an
+   admin-only command." and the section then measures a level-1 nobody. `PromoteToAdminAsync` already
+   existed for exactly this.
+3. ⚠ **THE WAITS WERE TOO SHORT, AND THE FEATURE LOOKED BROKEN.** Eight checks failed against code
+   that was working perfectly. The thing that said so was the **cast bar**: `Healing Totem 4.6s` for a
+   skill authored at 1s. This character is NAKED and an ork — WIT 19, the worst in the game — so
+   `EffectiveCastSpeedMultiplier` is ~4.6×, and Party Great Heal's 7s cast becomes **32.6s**. The
+   harness's default 4s timeout never stood a chance. `WaitFor` returns the instant the condition
+   holds, so the fix costs nothing: raise the ceiling, don't shorten the work.
+
+⚠ **And the check order is load-bearing.** A totem lives 30s; the party heal takes ~33s to cast. Run
+the range check *after* the flash and the totems have already expired, so "walking out of range clears
+the circles" passes against an empty list — a false pass proving nothing. It now runs first, with an
+explicit assertion that both totems are still standing when it does.
+
+⚠ The AoE skill is **read off the learned set, shortest cast first**, never hard-coded: the
+Lightbringer's Ultimate Party Heal `Replaces` the plain one *and* then demands 4× Skill Stone, so a
+literal `party_heal` fails twice over for reasons that have nothing to do with flashes.
+
+🔴 **Needs an APK** — all of the client half ships inside it. No `ProtocolVersion` change: the two new
+pushes are additive, an old client simply never subscribes and an old server simply never sends.
+
+## 2026-08-21 — the ork mage stops paying IG's INT bill for a melee he never gets
+
+His three-buffer stat comparison: *"Human got ~3200 Def and 1700 patk the ork have 1800patk and 2200
+Def … the only problem is that ork have 31 atk … And 2h blunt ork have almost the same as 1h mace
+human (with 1000pdef on top) — check IG for ork mage INT and if it's 31 for our game we should
+increase it over the human"*.
+
+### It is 31, verbatim — and that is the bug, not the evidence against it
+
+IG's mystic bases, read off the same source as the mob-curve research:
+
+| mystic | INT | WIT | MEN | **STR** | CON | DEX |
+|---|---|---|---|---|---|---|
+| ork | **31** | 21 | 42 | **25** | 31 | 20 |
+| human | 41 | 20 | 39 | 22 | 27 | 21 |
+| elf | 37 | 23 | 40 | 21 | 25 | 24 |
+
+Our mage ATK column was 31 / 41 / 37 — IG's INT, copied straight across.
+
+🔑 **IG has TWO power stats and we have ONE.** STR drives melee there, INT drives magic; our single
+`Atk` feeds both. Seeding it from INT alone took the half of the spread the ork mystic LOSES and
+threw away the half he WINS — **his STR is the highest of any mystic**, 25 against the human's 22.
+So the ork inherited the magic deficit with none of the melee edge, which is exactly why his
+two-hander lands where a one-hander-plus-shield does.
+
+### Measured, not asserted — `BalanceMatrix --warchanter`
+
+New mode. It builds all three Warchanters with their real 3rd class, the whole kit they can learn,
+and the weapon and armour **their own masteries train** — human heavy/mace/shield, ork heavy/maul,
+elf light/bow. `BuildPlayer` could not be used: it stops at the 2nd class and puts a wand or a staff
+in every mage's hands, which is the wrong weapon for all three.
+
+It reproduced his reading before anything was changed. At level 90, ork ATK 31:
+
+```
+race     CON  ATK  WIT  AGI  SPT |   P.Atk   M.Atk   P.Def   M.Def
+human     27   41   20   21   39 |     946     918    1458    1919
+ork       31   31   19   20   45 |     994     792     936    1947
+elf       25   37   23   24   32 |    2139     854     826    1720
+```
+
+**+5.1% P.Atk for the two-hander, against a shield worth +56% P.Def** — his "almost the same … with
+1000pdef on top", to the point. And the sweep shows why: at ATK 41, level with the human, the maul
+alone is worth **+30.3%**. The ork's ten missing ATK were eating his entire weapon class.
+
+### 47
+
+`41 × (25/22)` — the human mage's ATK scaled by IG's own mystic STR ratio, so the number is derived
+from IG rather than invented. Outcome: **+45.6% P.Atk over the human**, which is a clean
+two-hander-versus-shield trade instead of a strictly dominated build.
+
+🔑 **It also completes his sentence** — *"Elf have wit/agi - ork have con/spt/int human is in
+between"*. At 47 the human mage is the **middle value of all five stats**, and the other two own
+exactly the pairs he named:
+
+| | CON | ATK | WIT | AGI | SPT |
+|---|---|---|---|---|---|
+| ork | **31** | **47** | 19 | 20 | **45** |
+| human | 27 | 41 | 20 | 21 | 39 |
+| elf | 25 | 37 | **23** | **24** | 32 |
+
+⚠ **ATK is one stat per race+base class, so this lands on every ork MAGE** — the Shaman and the Witch
+too. Measured rather than reasoned about: the ork **nuker** gains **+11.7% M.Atk** over the human's,
+and pays for it with the game's slowest cast (×0.87 against ×0.75) and its lowest magic crit (4.4% vs
+4.8%). A slow, heavy-hitting nuker — a coherent identity, not a broken one. If it ever reads as too
+much, **44** is the same trade at +37.9% P.Atk and +5.8% M.Atk; the mode takes the sweep as arguments.
+
+⚠ **Base stats are written at character CREATION and persisted**, so this reaches new characters only.
+His three test buffers keep their 31 until the `game.db` delete he already owes.
+
+
+## 2026-08-21 — playtest 26, first three finds: the party HoT he could not cast, and Frenzy that would not die
+
+Three reports off the 0.76.0 APK, all on the Warchanter, and each one turned out to be a different
+kind of miss.
+
+### 1. Harmony of Restoration was refused outright — the gate read a FLAG, not a skill
+
+His words: *"cannot use harmony of restoration ... (system: cannot be used on mana restorer) ... only
+Restore is forbidden other means of mp regen should work"*.
+
+The rule exists for one skill. **Restore Mana** converts the caster's HP into the target's MP at a
+fixed rate, so two restorers topping each other up print mana for free — hence "not on yourself or
+another mana-restorer". But the gate was written as `(def.Effect & SkillEffect.RestoreMp) != 0`,
+which is **every source of MP in the game**, and Harmony of Restoration carries `RestoreMp` because
+its @64 MP/s half rides that flag on a heal-over-time. A party HoT resolves on the caster too, and a
+Warchanter *is* a mana-restorer — so his own party heal refused itself.
+
+Now `IsRestoreManaCast(def)` — `def.Id == SkillCatalog.RestoreMana`, all thirteen rungs. What it
+frees, exactly:
+
+| skill | carries `RestoreMp` | blocked before | blocked now |
+|---|---|---|---|
+| Restore Mana | ✔ | ✔ | ✔ — the rule is its own |
+| Harmony of Restoration | ✔ (the @64 MP/s half) | ✔ | — |
+| Mana Totem | ✔ | ✔ | — |
+| Restore Spirit | ✔ | ✔ | — |
+
+The autopilot's `AutoManaTarget` carried a copy of the same test and was narrowed with it, so auto
+and manual still refuse exactly the same casts.
+
+### 2. War Frenzy did not remove Frenzy — it named an id nobody learns
+
+`Replaces` read `CastId(FamFrenzy)` = **`cast_frenzy`**, the generic ladder caster. No class is
+granted that id: both the Warchanter (52) and the Lightbringer (52) learn **`holy_frenzy`**, whose
+display name is plainly "Frenzy". So his CSV column said `[Frenzy]`, the code looked like it agreed,
+and the skill it actually named was on nobody's learn list. Now `[holy_frenzy, cast_frenzy]`.
+
+**🔑 And fixing the list was only half of it.** `Replaces` was enforced at LEARN time only, which
+assumes the list a skill carried the day you bought it is the list it carries forever. It is not —
+it just changed twice in one commit. Without more, the correction would reach nobody who had already
+spent the SP, and the only cure would be deleting the character. So superseded ids now **die on
+load**, in `ParseLearnedSkills`, next to the retired-id line that has always done the same job. It is
+the rule the LEARN LIST has applied all along (`IsSuperseded` hides what you can no longer buy
+because you own its replacement) — a skill hidden from the shop and still sitting on the bar was
+never a coherent state.
+
+⚠ **His Quick Heal does not come back by itself.** Harmony used to replace it (see below), so it was
+stripped when he bought Harmony. Nothing replaces it now, so it returns to the Learn list at the
+cleric's 20/25/30/35 rungs — at SP he has already paid once.
+
+### 3. Harmony of Restoration replaces PARTY HEAL, not Quick Heal — his own correction
+
+*"harmony of restoration (my bad that I have forgot) but need to replace party heal"*. It is the
+right way round: Great Heal already takes Heal, Harmony is the party heal so it supersedes the party
+heal, and Quick Heal survives as the fast single-target cast the Warchanter still wants. All
+fourteen `buffer 3rd.csv` rows moved with the code.
+
+### And what "War Frenzy has no description" actually was
+
+The prose was there — the card printed it. What was missing was every NUMBER underneath it.
+`SkillText.Buff` read `MagnitudesAt` alone, and **a group buff has no magnitudes of its own**: it
+exists to apply `ChildBuffs`, and the numbers live one hop down in the rungs it names. So the card
+showed a sentence and then said nothing whatsoever about what the skill does — on War Frenzy, War
+Might/Bulwark, Frenzy itself, and **all ten Warchanter groups**. `SkillText.EffectiveMagnitudes`
+falls through to the children, so War Frenzy now reads `Max HP −10% | Max MP −10% | P.Atk +8% |
+M.Atk +8% | Cast speed +8% | Atk speed +8% | Move speed +8 | Evasion −8`.
+
+⚠ **`ChildBuffsAt(level)`, not `ChildBuffs`** — a laddered group names different rungs at each level.
+Read flat (the first cut of this), Frenzy Lv2 described rung 1's −7%/+5% while applying rung 2's
+−10%/+8%.
+
+**It immediately caught a stale line of its own.** With the numbers printed under the prose, Frenzy
+Lv1 read *"−30% Max HP/MP"* over a rung that gives **−7%**, and *"−8 evasion"* over **−5**. The rung
+was re-authored when the IG-√ conversion landed and the sentence never followed; his
+`cleric 2nd.csv` row agrees with the rung, so the prose was the wrong half and was corrected to it.
+
+`--check` stays green on all ten files.
+
+## 2026-08-21 — 0.76.0 shipped: the APK and the server the Warchanter actually needs
 
 The 0.75.0 APK was built at 15:22; the whole Warchanter non-buff half landed at 19:34 and **bumped
 nothing**, the same slip as the buff layer before it. A class-skill TABLE change is exactly the case

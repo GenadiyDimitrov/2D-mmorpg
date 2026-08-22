@@ -1753,6 +1753,134 @@ await gm.Hub.SendAsync("LeaveWorld");
 await Task.Delay(300);
 await gm.DisposeAsync();
 
+// ============================================================================================
+//  THE GROUND CIRCLES — a totem is not an entity, so it can only be checked HERE.
+//
+//  This is precisely the bug class this harness exists for. A totem worked perfectly for weeks and
+//  was INVISIBLE, because it lives in a plain list on the world and nothing ever put it on the wire.
+//  A human playtest cannot tell "the server never sent it" from "the client never drew it", and the
+//  owner reported it as the latter. The push either happens or it does not, and that is a fact a
+//  headless client can read directly.
+// ============================================================================================
+{
+    Console.WriteLine();
+    Console.WriteLine("--- totem + area-effect pushes ---");
+
+    // ORK, because both totems are the Ork Lightbringer's: the race split puts the planted object on
+    // his side of the fast heal, and the Mana Totem is his alone.
+    // ⚠ `test1`, not a fresh account: ConnectAsync LOGS IN and throws if the account is missing — it
+    // does not register — and the seeded accounts are the only ones that exist. An account holds many
+    // characters, so the ork below is simply another of test1's, on its own connection.
+    var tt = await ConnectAsync("test1", "test");
+    string tname = "Totem" + DateTime.UtcNow.ToString("HHmmssff");
+    var terr = await tt.Hub.InvokeAsync<string?>("CreateCharacter",
+        new CreateCharacterRequest(tname, Race.Ork, BaseClass.Mage));
+    Check("created an ork mage for the totem checks", terr is null, terr);
+
+    if (terr is null)
+    {
+        // ⚠ EVERY Debug* command is an IAdminCommand and a fresh character is a plain player, so
+        // without this the level/class/learn steps are all silently refused ("That is an admin-only
+        // command.") and the section fails with an empty character rather than a real result. `/role`
+        // works on an OFFLINE character, so it goes before EnterWorld.
+        await PromoteToAdminAsync(tname);
+
+        var tchars = await tt.Hub.InvokeAsync<CharacterList>("ListCharacters");
+        var tpick = tchars.Characters.First(c => c.Name == tname);
+        var tin = await tt.Hub.InvokeAsync<LoginResult>("EnterWorld", new EnterWorldRequest(tpick.Id));
+        tt.MyId = tin.EntityId;
+        tt.MyX = tin.X; tt.MyY = tin.Y;
+
+        // 1 -> 81, in the +10 steps the debug button allows. Past 52, so the Mana Totem exists too.
+        for (int i = 0; i < 8; i++) await tt.Hub.SendAsync("DebugLevel", 10);
+        var lb = ThirdClassCatalog.Playable
+            .First(t => t.Race == Race.Ork && t.Discipline == Discipline.Lightbringer);
+        await tt.Hub.SendAsync("DebugThirdClass", lb.Id);
+        await tt.Hub.SendAsync("DebugLearnAll");
+        await tt.Settle();
+
+        // 🔑 EVERY WAIT HERE IS GENEROUS, AND THAT IS NOT SLOPPINESS. This character is NAKED and an
+        // ork — WIT 19, the worst in the game, no gear — so `EffectiveCastSpeedMultiplier` is ~4.6x
+        // and a 1-second totem takes 4.6s to plant. The first cut of this section waited the harness's
+        // default 4s and reported eight failures against a feature that worked perfectly; the cast bar
+        // was the thing that said so ("Healing Totem 4.6s"). WaitFor returns the instant the condition
+        // holds, so a large ceiling costs nothing when things are working.
+        const int CastWait = 15000;
+
+        // ---- The HEALING totem: green, and the one he confirmed already worked. ----
+        await tt.Hub.SendAsync("UseSkill", SkillCatalog.LbOrkFont, tt.MyId);
+        bool planted = await tt.WaitFor(() => (tt.Totems?.Totems.Length ?? 0) > 0, CastWait);
+        Check("planting a totem PUSHES it to the client (it never used to reach the wire at all)",
+              planted, $"{tt.Totems?.Totems.Length ?? 0} totems");
+
+        var hp = tt.Totems?.Totems.FirstOrDefault(t => t.Heals);
+        Check("...carrying the HP flag, so the client can colour it green",
+              hp is not null);
+        Check("...and the server's own radius, which is the whole point of drawing it",
+              hp is not null && hp.Radius > 0f, $"radius {hp?.Radius ?? -1f}");
+
+        // ---- The MANA totem: blue, and the one that was REFUSED until the RestoreMp gate was
+        //      narrowed to Restore Mana itself. *"only Restore is forbidden other means of mp regen
+        //      should work"*. A totem coexists with the healing one — different skills. ----
+        await tt.Hub.SendAsync("UseSkill", SkillCatalog.ManaTotem, tt.MyId);
+        bool both = await tt.WaitFor(() => (tt.Totems?.Totems.Count(t => t.Restores) ?? 0) > 0, CastWait);
+        Check("the MANA totem is accepted and pushed too (the mana-restorer gate no longer eats it)",
+              both, $"{tt.Totems?.Totems.Length ?? 0} totems, "
+                  + $"{tt.Totems?.Totems.Count(t => t.Restores) ?? 0} restoring");
+        Check("...and the two totems COEXIST, one per skill rather than one per owner",
+              (tt.Totems?.Totems.Length ?? 0) >= 2, $"{tt.Totems?.Totems.Length ?? 0} totems");
+
+        // ---- The set is WHOLE, so walking away must drop it. ⚠ THIS GOES BEFORE THE AoE CHECK, and
+        //      the order is load-bearing: a totem lives 30s and the party heal below takes ~33s to
+        //      cast on this naked ork, so run the other way round the totems have already EXPIRED and
+        //      this check passes against an empty list — a false pass that proves nothing. ----
+        // Away from the map EDGE, not just "+6000": a teleport that clamps would leave him inside
+        // view range and fail the check for a reason that is not the one being measured.
+        Check("...and both are still standing when the range check runs (not expired)",
+              (tt.Totems?.Totems.Length ?? 0) >= 2, $"{tt.Totems?.Totems.Length ?? 0} totems");
+        float away = tt.MyX > 12000f ? tt.MyX - GameConstants.ViewRange * 2f
+                                     : tt.MyX + GameConstants.ViewRange * 2f;
+        await tt.Hub.SendAsync("DebugTeleport", away, tt.MyY);
+        bool gone = await tt.WaitFor(() => (tt.Totems?.Totems.Length ?? 0) == 0, 6000);
+        Check("walking out of range clears the circles (the push is a WHOLE list, so it self-heals)",
+              gone, $"{tt.Totems?.Totems.Length ?? 0} totems still listed");
+
+        // ---- The AREA FLASH. Pick the SHORTEST-cast area skill he actually holds and can afford to
+        //      cast: hard-coding Party Heal fails for two unrelated reasons — the Lightbringer's
+        //      Ultimate Party Heal `Replaces` the plain one, and the Ultimate then demands 4x Skill
+        //      Stone. Reading it off the learned set tests the flash instead of the roster. ----
+        var aoeChoice = (tt.Learned?.Skills ?? Array.Empty<SkillRef>())
+            .Select(s => (def: SkillCatalog.Get(s.Id), lvl: s.Level))
+            .Where(x => x.def is not null
+                     && x.def.Passive is null
+                     && x.def.AreaRadiusAt(x.lvl) > 0f
+                     && string.IsNullOrEmpty(x.def.ConsumableId))
+            .OrderBy(x => x.def!.CastTicksAt(x.lvl))
+            .FirstOrDefault();
+
+        Check("the healer holds an area skill to flash at all", aoeChoice.def is not null);
+        if (aoeChoice.def is not null)
+        {
+            tt.Areas.Clear();
+            await tt.Hub.SendAsync("UseSkill", aoeChoice.def.Id, tt.MyId);
+            // ⚠ 45s: see the CastWait note. Party Great Heal is a 7s cast that this naked ork takes
+            //    32.6s to finish, and WaitFor returns the moment it lands.
+            bool flashed = await tt.WaitFor(() => tt.Areas.Count > 0, 45000);
+            Check($"an AoE skill flashes its footprint when it LANDS ({aoeChoice.def.Id})",
+                  flashed, $"{tt.Areas.Count} area events");
+            Check("...at the skill's real radius, which is what makes it something to stand in",
+                  flashed && tt.Areas[0].Radius == aoeChoice.def.AreaRadiusAt(aoeChoice.lvl),
+                  flashed ? $"{tt.Areas[0].Radius} vs {aoeChoice.def.AreaRadiusAt(aoeChoice.lvl)}" : "none");
+            Check("...coloured by what the skill DOES, not by its id",
+                  flashed && tt.Areas[0].Kind == AreaEffectKind.Heal,
+                  flashed ? tt.Areas[0].Kind.ToString() : "none");
+        }
+    }
+
+    await tt.LeaveWorldAsync();
+    await tt.DisposeAsync();
+}
+
 return Finish();
 
 int Finish()
@@ -1857,6 +1985,14 @@ sealed class Session : IAsyncDisposable
     /// where the number is actually sent.</summary>
     public TargetDetails? Details;
 
+    /// <summary>The last "Totems" push — the whole visible set, so this IS the current truth rather
+    /// than a running tally. Null until the server first has something to say.</summary>
+    public TotemList? Totems;
+
+    /// <summary>Every area-effect flash seen. A list because they are one-shot events with no state:
+    /// missing one is only visible as an absence, which is exactly what these tests check.</summary>
+    public readonly List<AreaEffectEvent> Areas = new();
+
     public async Task OpenAsync(string url)
     {
         Hub = new HubConnectionBuilder().WithUrl(url).Build();
@@ -1881,6 +2017,8 @@ sealed class Session : IAsyncDisposable
         Hub.On<QuestLog>("QuestLog", q => Quests = q);
         Hub.On<GoldUpdate>("Gold", g => Gold = g.Gold);
         Hub.On<CombatEvent>("Combat", c => Combat.Add(c));
+        Hub.On<TotemList>("Totems", t => Totems = t);
+        Hub.On<AreaEffectEvent>("AreaEffect", a => Areas.Add(a));
         Hub.On<ChatMessage>("Chat", m => { AllChat.Add(m); if (m.Channel == ChatChannel.System) { SystemChat.Add(m.Text); Console.WriteLine($"        [SYSTEM] {m.Text}"); } });
         await Hub.StartAsync();
     }

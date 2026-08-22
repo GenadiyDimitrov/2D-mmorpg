@@ -196,7 +196,12 @@ public static partial class SkillCatalog
 
         // ===== ACTIVES ===========================================================================
 
-        // ---- Harmony of Restoration — the party heal-over-time, 14 rungs, replacing Quick Heal.
+        // ---- Harmony of Restoration — the party heal-over-time, 14 rungs, replacing PARTY HEAL.
+        //      ⚠ His CSV column said `[Quick Heal]` and he corrected it himself on 2026-08-21:
+        //      *"harmony of restoration (my bad that I have forgot) but need to replace party heal"*.
+        //      It is the right way round — this is the party heal, so it supersedes the party heal;
+        //      Great Heal already takes Heal, and Quick Heal survives as the fast single-target one
+        //      the Warchanter still needs. The CSV rows moved with this.
         //      +30 to +100 HP/s for 30s, and from rung 9 (@64) it also carries MP/s. The MP half
         //      rides RestoreMp's Flat magnitude on a lasting buff — see TickHealOverTime; there were
         //      no SkillEffect bits left for an "MP over time" of its own. ----
@@ -208,7 +213,7 @@ public static partial class SkillCatalog
             MpCost: hotCost[0], CastTicks: 20, CooldownTicks: 100, Range: 600, Power: 0,
             DurationTicks: 300, BuffKey: "wc_restoration", Rank: 1,
             Category: SkillCategory.Heal, TargetMode: TargetMode.AlliesInRadius, AreaRadius: 800f,
-            Replaces: new[] { QuickHeal },
+            Replaces: new[] { PartyHeal },
             Description: "A sustained hymn: heals you and your party a little every second for 30s.",
             Levels: Enumerable.Range(0, 14).Select(i => new SkillLevel(
                 MpCost: hotCost[i], SpCost: BandSp14[i],

@@ -100,6 +100,38 @@ public record EntityLean(
 /// where absence meant "removed"). This stops re-sending ~11 static fields per entity 10×/second.</summary>
 public record SnapshotDelta(EntityDto[] Spawns, EntityLean[] Updates, Guid[] Despawns);
 
+/// <summary>Server -&gt; Client: one planted totem, as the ground needs to draw it.
+///
+/// <para>🔑 A totem is NOT an entity — it is a <c>TotemInstance</c> in a plain list on the world, so it
+/// never travelled in a snapshot and the client had no idea one existed. The owner planted totems for
+/// weeks and saw nothing: *"Totem work (invisible but work)"*. This is the whole of what a viewer
+/// needs to stand in the right place, and nothing else.</para>
+///
+/// <para><paramref name="Radius"/> is the SERVER radius (the same units as X/Y) — the client scales it
+/// through WorldMapper like every other distance. <paramref name="Heals"/> / <paramref name="Restores"/>
+/// come from the totem's snapshotted Effect, and they are not exclusive: a totem carrying both pulses
+/// both, and the client blends the two colours rather than picking one.</para></summary>
+public record TotemDto(Guid Id, float X, float Y, float Radius, bool Heals, bool Restores);
+
+/// <summary>Server -&gt; Client: every totem this viewer can see, whole. Small and rare enough that a
+/// diff would cost more than it saves — the loop sends it only when the visible SET changes, so a
+/// world with no totems in it is silent.</summary>
+public record TotemList(TotemDto[] Totems);
+
+/// <summary>What an area effect DID, so the client can colour the flash without knowing any skill
+/// ids. Heal and Mana match the totem colours on purpose — the same green and blue mean the same
+/// thing whether they linger or flash.</summary>
+public enum AreaEffectKind { Buff = 0, Heal = 1, Mana = 2, Harm = 3, Resurrect = 4 }
+
+/// <summary>Server -&gt; Clients nearby: an area skill just LANDED, centred here. One shot, no id and
+/// nothing to clean up — the client flashes the circle and forgets it.
+///
+/// <para>The owner's ask: *"When done casting for a brief moment shows the range — resurrection field
+/// .. The party heal .. They just flash one time when cast ends as if the effect is applied"*. Sent at
+/// the point the cast is committed, so it fires exactly when the effect does — never on a cast that
+/// was interrupted or refused for MP.</para></summary>
+public record AreaEffectEvent(float X, float Y, float Radius, AreaEffectKind Kind);
+
 /// <summary>Server -> Client: a chat line. To is set for whispers.</summary>
 public record ChatMessage(string From, string Text, ChatChannel Channel, string? To = null);
 
