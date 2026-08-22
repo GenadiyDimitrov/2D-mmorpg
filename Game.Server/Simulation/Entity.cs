@@ -511,7 +511,7 @@ public class Entity
     public AccountRole Role { get; set; } = AccountRole.Player;
 
     /// <summary>Full admin: every command, god mode, no cap enforcement. NOT a moderator.</summary>
-    public bool IsAdmin => Role == AccountRole.Admin;
+    public bool IsAdmin => Role >= AccountRole.Admin;   // Owner is an Admin and more
 
     /// <summary>Any staff (admin OR moderator) — the gate for "may issue moderation commands at all".
     /// WHICH commands is then decided per-command; a moderator gets jail/kick/chatban only.</summary>

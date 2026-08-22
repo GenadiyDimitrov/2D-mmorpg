@@ -585,24 +585,37 @@ public static class Leaderboards
 /// </summary>
 public static class TitleCatalog
 {
+    // ─── THE FOUR STAFF TITLES ───────────────────────────────────────────────────────────────
+    // The RANKS are plain words (Owner/Admin/Moderator/Chat Moderator — see AccountRole), and the
+    // TITLES are the fantasy ones. That split is his ruling from playtest 26: a moderation message has
+    // to be unambiguous about who has authority ("jailed by Moderator Kaido"), while the words floating
+    // over a head are part of the world. Both layers already existed; only the words are new.
+    /// <summary>Held by <see cref="AccountRole.Owner"/>. Append-only string, like a skill id.</summary>
+    public const string Owner = "staff_owner";
     /// <summary>Held by <see cref="AccountRole.Admin"/>. Append-only string, like a skill id.</summary>
     public const string Admin = "staff_admin";
     /// <summary>Held by <see cref="AccountRole.Moderator"/>.</summary>
     public const string Moderator = "staff_mod";
+    /// <summary>Held by <see cref="AccountRole.ChatModerator"/>.</summary>
+    public const string ChatModerator = "staff_chatmod";
 
     /// <summary>The pseudo-id a CUSTOM title is worn under. Never appears in a picker — it is what
     /// <see cref="TitlesDto.Worn"/> reads when the worn title is one the player wrote.</summary>
     public const string Custom = "custom";
 
-    /// <summary>The title ids this account role holds unconditionally (empty for a player).</summary>
+    /// <summary>The title ids this account role holds unconditionally (empty for a player). A rank holds
+    /// ONLY its own title, not the ones below it — the Owner wears Supreme Being, not a choice of four.</summary>
     public static string[] ForRole(AccountRole role) => role switch
     {
-        AccountRole.Admin     => new[] { Admin },
-        AccountRole.Moderator => new[] { Moderator },
-        _                     => Array.Empty<string>(),
+        AccountRole.Owner         => new[] { Owner },
+        AccountRole.Admin         => new[] { Admin },
+        AccountRole.Moderator     => new[] { Moderator },
+        AccountRole.ChatModerator => new[] { ChatModerator },
+        _                         => Array.Empty<string>(),
     };
 
-    public static bool IsStaffTitle(string id) => id == Admin || id == Moderator;
+    public static bool IsStaffTitle(string id) =>
+        id == Owner || id == Admin || id == Moderator || id == ChatModerator;
 
     /// <summary>True if this id names a GRANTED title — a board category or a staff title. The server
     /// validates a wear request against this, so an unknown id can never reach a plate.</summary>
@@ -611,17 +624,24 @@ public static class TitleCatalog
     /// <summary>Display text for a granted title id.</summary>
     public static string Text(string id) => id switch
     {
-        Admin     => "Game Master",
-        Moderator => "Moderator",
-        _         => Leaderboards.TopTitle(id ?? ""),
+        // The fantasy half of his split ruling. "Game Master" became "God" and "Moderator" became
+        // "Sentinel" here and NOWHERE else — the RANK is still called Admin and Moderator in every
+        // system message, log line and `/role` argument.
+        Owner         => "Supreme Being",
+        Admin         => "God",
+        Moderator     => "Sentinel",
+        ChatModerator => "Silencer",
+        _             => Leaderboards.TopTitle(id ?? ""),
     };
 
     /// <summary>Where the title came from, in words — the picker's "— top of Wealth" line, and the
     /// only place a staff title has to explain that no board is involved.</summary>
     public static string Source(string id) => id switch
     {
+        Owner     => "staff",
         Admin     => "staff",
         Moderator => "staff",
+        ChatModerator => "staff",
         _         => "top of " + Leaderboards.Label(id ?? ""),
     };
 
@@ -641,8 +661,10 @@ public static class TitleCatalog
         "pk"       => "8C1F26",   // dark red
         "level"    => "5FC8FF",   // sky
         "charisma" => "FF8FC4",   // rose
-        Admin      => "FF5555",   // staff, loud on purpose
-        Moderator  => "4FC3F7",
+        Owner         => "FFD24A",   // the one gold above the gold board's — there is exactly one
+        Admin         => "FF5555",   // staff, loud on purpose
+        Moderator     => "4FC3F7",
+        ChatModerator => "6FD3B0",   // cooler and quieter than a Sentinel's blue: less authority, on purpose
         _          => DefaultHex,
     };
 
@@ -710,8 +732,10 @@ public static class TitleCatalog
         if (t.Length == 0) return false;
         foreach (var cat in Leaderboards.Categories)
             if (string.Equals(Leaderboards.TopTitle(cat), t, StringComparison.OrdinalIgnoreCase)) return true;
-        return string.Equals(Text(Admin), t, StringComparison.OrdinalIgnoreCase)
-            || string.Equals(Text(Moderator), t, StringComparison.OrdinalIgnoreCase);
+        // Every staff word is reserved, so nobody with writing rights can type themselves a rank.
+        foreach (var staff in new[] { Owner, Admin, Moderator, ChatModerator })
+            if (string.Equals(Text(staff), t, StringComparison.OrdinalIgnoreCase)) return true;
+        return false;
     }
 
     /// <summary>Validate a player-written title. <paramref name="reason"/> is a sentence to show the

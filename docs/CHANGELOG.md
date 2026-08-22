@@ -7,11 +7,239 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.76.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.78.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-08-22 (latest) — the ground says where the effect is: totem footprints, and a flash on every AoE
+
+## 2026-08-22 (latest) — 0.78.0: his six playtest-26 finds, five built
+
+*"Read open checklist and my finds (other I haven't done) - when u are done u can reset them and move
+them to the backlog or mark them with green circle emote as done"*.
+
+Six free-form finds in `Open-Checklist.md`'s **My Finds** section, none of the `90*` rows played yet.
+**Five are built here**; the sixth's outstanding half (a big red on-screen countdown) is `BL-86`, and a
+defect found on the way past is `BL-85`.
+
+### `ProtocolVersion` 22 → 23, and this one is a REDEFINITION
+
+Almost every previous bump added something an old client could ignore. This one **renumbers an existing
+enum**: `AccountRole` gained two ranks, and `ChatModerator` was inserted at 1, so `Moderator` moved 1 → 2
+and `Admin` 2 → 3, with `Owner` at 4. It travels on `AuthResponse` and `AdminStateDto` as a plain int, so
+an old client against this server would read a Moderator as a Chat Moderator, an Admin as a Moderator,
+and would hide the admin toolbox from a real admin. **Nothing throws** — which is exactly why the
+handshake has to catch it. `MinAcceptedProtocol` stays 8.
+
+⚠ **It also means the DB.** `CharacterRecord.Role` is persisted as that int, so rows written before
+today read one rank too low. Survivable only because the `game.db` delete is already owed from the
+0.71.0 schema change; **do it in the same sitting.**
+
+---
+
+### 1. Two characters could be called nothing at all — the name rule
+
+*"I can register two chars named - " " & " " - naming should be cace incentive so admin can write names
+with all low. -should we disable the cirulyc ot it works everywhere . Same question for space in the name
+or allowed symbol"*.
+
+`Trim()` was the whole rule, and it does not catch what he hit: **U+200B ZERO WIDTH SPACE is not
+whitespace to .NET**, so two names made of one and of two of them are both non-empty, both distinct, and
+both render as nothing.
+
+One validator now, `GameConstants.IsValidCharacterName`, in `Game.Shared` so the server's create path and
+the client's create screen cannot disagree — the server re-runs it regardless, because the client is not
+trusted with what a legal name is. **His three questions, answered as one narrow rule:**
+
+| | |
+|---|---|
+| **ASCII letters and digits only** | so **no Cyrillic** — his own suggestion, and the reason is that every name-addressed command (`/whisper`, `/ptinv`, `/jail`, the friend list) needs a name **every other player's keyboard can produce** |
+| **No spaces, no symbols** | every name-taking command parses the name as the first token or splits on the last space (`/role <name> <role>`), so a space breaks the parser, not just the eye |
+| **Must start with a letter**, 3-16 characters | an all-digit name collides with every command that takes a number in the same slot; the **3** is mine, not his — a 1-character name is the same problem one step along |
+
+⚠ **Case-insensitivity was already there** and was not the bug: `CreateCharacterAsync` has compared
+lower-cased names since it was written, and every slash-command lookup is `OrdinalIgnoreCase`.
+
+⚠ What this deliberately does **not** fix is `IlIlllIIllI`. No charset rule solves visually confusable
+names — that is what the next item is for.
+
+### 2. `@target` — every name command now takes the target instead
+
+*"we should make @target or %target or ~ so admin/players commands to work on the target (take the name
+from the target window) because a player named "IlIlllIIllI" for a human is impossible to read."*
+
+Substituted **once, on the client, before any command is parsed** — so it works on every command that
+takes a name, including ones written later, with **no server change at all**: `/jail @target`,
+`/w ~ hello`, `/ptinv @target`, `/give @target sword1h_t10`. Targeting is client-side in this game (the
+server is only ever told a target id when you act on something), so the client is the only place that
+knows the answer.
+
+All four spellings work — `@target`, `%target`, `@t` and a bare `~` — and only as **whole tokens**, so a
+message containing one of those characters is untouched. With nothing targeted the command is **not sent
+at all** rather than reaching the server as the literal word "@target".
+
+### 3. `/server shutdown|reboot|on` — the countdown, on his ladder
+
+*"Can we do something like 'The server is Shutting down' - countdown"*, and then a full specification.
+
+Built as written, in `Game.Server/Simulation/ServerControl.cs`:
+
+```
+/server shutdown|stop  [minutes] [adminOnly]
+/server reboot|restart [minutes] [adminOnly]
+/server on|online      [minutes]
+```
+
+- **minutes** — `-`, blank or `0` is instant; anything **unparseable is 30 minutes**. His rule, and it is
+  the safe way round: a typo delays the server rather than killing it under a full population.
+- **adminOnly** — writes a flag file beside the exe, and the server that comes back up **admits staff
+  only** until an admin types `/server on`. Checked per CHARACTER at `EnterWorld`, so an admin's ordinary
+  character is refused too — the role is per character by design.
+- **on** — cancels any procedure **instantly**, and lifts the lock now (no time) or after the minutes
+  given. Each command replaces the one before it, which is why there is no separate cancel verb.
+- **reboot** relaunches a detached copy of our own executable and exits **66**, so it needs no supervisor
+  (he runs the server under termux-ubuntu on a phone) but a supervisor can take the job over later.
+
+**The announcement ladder is his, verbatim** — whole hours above an hour, then every 10 minutes, then
+every minute under 10, then **every second for the last 60**. `/server shutdown 117` says:
+
+```
+1:57h (opening), 1:00h, 50 min, 40 min, 30 min, 20 min, 10 min, 9…1 min, 59…1 sec
+```
+
+🔑 The countdown is a **tick job, not a timer**, because when it fires it runs `AutoSaveAll()` first —
+the same single-writer thread that owns every entity, so the snapshot cannot be torn. Killing the process
+from anywhere else would cost every player whatever they had done since the last 60-second autosave.
+
+⚠ Every line goes out on the existing `Notice` toast plus System chat, which needed **no protocol
+change** — so this works on a client built before it. It is **not** yet his *"red big"* permanent
+overlay; that is `BL-86` and is his call.
+
+### 4. Five staff ranks, plain names and fantasy titles
+
+*"Can we have a (1)Suprime Being > (2)Gods > (3)Sentinels > (4)Silencers > (5)Player … the gods/snetinel
+have the fantasy game feeling, but isnt it to childish ?"*
+
+His ruling on being asked: **split them.** The enum, every `/role` argument and every system message use
+the plain words; the wearable staff TITLE keeps the flavour. Both layers already existed, so only the
+words are new.
+
+| Rank (messages, `/role`) | Title (over the head) | Can |
+|---|---|---|
+| **Owner** | Supreme Being | everything, **and is the only rank that can grant or revoke Admin** |
+| **Admin** | God | unchanged — every command, and may rank people **below** himself |
+| **Moderator** | Sentinel | jail · kick · chatban · where |
+| **Chat Moderator** | Silencer | **(un)chatban and nothing else** |
+| Player | — | — |
+
+🔑 **The Chat Moderator's omissions are the design.** No kick or jail, because *"the jail and kick will
+allow them to farm undisturbed - go to zone .. kick players/jail then start to farm"*; no `/where`,
+because it *"will allow them to know anywhone on the map where he is so he can take revange or bully
+kill"*. This is the rank you hand to someone you do not fully trust.
+
+🔑 **The Owner is a file, not a row.** `owner.txt` beside the exe, one character name on the first
+non-blank non-`#` line, **read once at startup**. Deliberately not in the database and not reachable from
+any command — his own *"a file in the directory that can be altered only by hand .. read only at start ..
+no db no nothing"* — so the top of the hierarchy cannot be granted, stolen or lost to a careless `/role`.
+"Cannot have two" is enforced by reading rather than validating. A fresh DB seeds it with `Admin`, so the
+whole hierarchy is testable the moment the database is deleted.
+
+⚠ **A real bug fell out of this.** `/role` guarded with `newRole > admin.Role`, which allows **equal** —
+so any admin could mint another admin, in flat contradiction of the comment sitting on that very line.
+It is now `>=`: you may only grant a rank strictly below your own, which is what makes Admin the Owner's
+gift and nobody else's.
+
+### 5. The admin full buff was stale AND stuck at level 1
+
+*"asmin fullbuff should give the new buffs and should fallow buffers buf changes.. Meaning if new
+buff/harmony should be added as well in the fullbuff and max effect - now harmonies are L1"*.
+
+Two faults, both fixed at the root:
+
+- **It was a hand-written array**, naming the nine lane groups and four harmonies that existed the day it
+  was typed. It is now **DERIVED** from the Warchanter's own class tables — every buff every race of
+  Warchanter can learn, filtered to `Category == Buff && DurationTicks > 0` (which drops his attack
+  skills, heals, totems and passives in one test), groups first so they cover and evict the singles, then
+  the NPC hour-long singles for anything uncovered. **34 hand-listed entries became 62 derived ones.** Add
+  a rung, a harmony or a whole new group to `buffer 3rd.csv` and it appears with no second edit.
+- **Every buff was applied at level 1.** `GrantFullBuffSet` now applies each at `def.MaxLevel`, so
+  Harmony of the Warrior lands at rung 6 and Harmony of Protection at rung 5 instead of rung 1. The NPC
+  buffer is untouched — those defs are single-level.
+
+### 6. `/buff [name] [level]`
+
+*"we can add admin command `/buff name [name of buff] [effect level]`"*.
+
+```
+/buff                       the whole admin set, every buff at its own top rung
+/buff harmony of wizard     that one buff, at ITS top rung
+/buff hw 2                  the same buff by acronym, at rung 2
+```
+
+The name matcher is forgiving in tiers, first hit wins: **exact name or skill id · acronym · every word
+in order · prefix · substring**. It has to be, because his own example does not match literally — he
+types "harmony of wizard" for a buff actually called "Harmony of **the** Wizard", so joining words are
+skipped on both sides. Acronyms are generated three ways (`hotw`, `how`, `hw`) since there is no one
+convention a person uses.
+
+Two details that matter more than they look:
+
+- **The admin set is searched first**, the rest of the catalog only if that finds nothing. Without it,
+  "mana blessing" is ambiguous against the hidden per-rung defs that exist only as a group's children —
+  names a buffer never casts and an admin never means.
+- **One display name means one buff.** "Might" is both the buffer's 3-rung ladder and the NPC's hour-long
+  single; reporting that would print *"ambiguous: Might, Might"*. The strongest wins, since the pool is
+  ordered groups → class buffs → NPC singles.
+
+An out-of-range rung is **not clamped** — it says what the range is, which is the only way to learn a
+ladder's depth without opening the CSV: *"if effect lvl is out of range just system msg with the effect
+lvl"*.
+
+### Found on the way past, NOT built — `BL-85`
+
+`/buff harmony of protection 3` on a fully-buffed character **downgrades it from rung 5**, and that is
+not the command's fault. Every rung of a Harmony is one `SkillDef` with `Levels[]` and **one** `Rank`, so
+`BuffPlan` treats rung 1 and rung 5 as equal — and equal rank keeps whichever has the longer time left.
+In a party that means **a level-44 Warchanter's Harmony Lv1 replaces a level-74's Lv5** the moment the
+Lv5 has under five minutes on it. The single ladders are fine (they are one-child wrappers, so each rung
+resolves to a child carrying its own rank); it is the childless multi-level buffs — the four harmonies,
+Great Might, Great Bulwark, Mana Blessing — that fall through to a flat number.
+
+The fix is one line, and it is **deliberately not in this batch**: `BuffPlan` is the resolver every buff
+in the game goes through, and moving it alongside two 3rd-class kits would make the playtest unreadable.
+See `BL-85`. His Combo Rush ruling is the precedent — *"even if some other buffer procs lvl 3 buff u
+still get your effect over"*.
+
+### Checks
+
+`dotnet build` on both halves · **server boots at v0.78.0** (the `net10.0` exe, not the stale `net8.0`
+one) · `SmokeTest` **all checks passed** against a freshly-deleted DB · `SkillCsvSeed --check` green on
+all ten files · `BalanceMatrix` unchanged · and every new command driven live against the running server
+through a headless client — `/help`, `/buff` (full, by name, by acronym, out of range, no match),
+`/server` (usage, shutdown, restart, on) and `/role` (grant, promote to admin as Owner, refuse to
+re-rank the Owner).
+
+
+## 2026-08-22 — 0.77.0 shipped: the playtest-26 fixes and the circles reach the phone
+
+*"Build apk/server"*.
+
+`1ead74d` fixed three Warchanter bugs, gave every group buff its numbers back and drew the ground
+circles — and, for the **third feature commit running**, bumped nothing. So 0.76.0 on his phone is
+blind to all of it, and in the way that is hardest to spot: `Replaces` and the `SkillText` fall-through
+live in `Game.Shared.dll`, which the client **compiles in**, and the whole totem/AoE renderer is client
+code. Nothing about it could arrive over the wire. Bumped to **0.77.0** and republished both halves.
+
+### `ProtocolVersion` moves this time: 21 → 22
+
+The previous two releases left it alone because nothing on the wire had changed. This one adds a
+channel: two server→client pushes, `"Totems"` (the whole visible `TotemList`, resent when the set
+changes) and `"AreaEffect"` (a one-shot flash), plus the `TotemDto` they carry. An old client
+subscribes to neither and merely draws no circles — but the direction worth catching is the reverse,
+the same case as protocol 16: a **new client on an old server** would render empty ground exactly where
+the healing is, and the handshake is the only place that pair is refused. `MinAcceptedProtocol` stays
+8, so every previously-shipped APK still logs in.
+
+
 
 *"Build a totem visual in the client .. I want to see where it stands and the AOE so I can stand
 inside … Same goes for all AOE skills … They just flash one time when cast ends as if the effect is

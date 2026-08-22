@@ -67,10 +67,18 @@ public static partial class SkillCatalog
           NpcBody, NpcSoul, NpcVigor, NpcSerenity,
           NpcSwift, NpcAlacrity, NpcAgility, NpcHaste,
           NpcFrenzy };
-    /// <summary>What the ADMIN buff button hands out: EVERYTHING that exists — his nine lane groups,
-    /// the two "War" party echoes, all four Harmonies and every single. Those top layers are the ones
-    /// no NPC sells and no consumable can reach, so this is the only way to see a fully-buffed
-    /// character, which is the state the balance numbers are read at.
+    /// <summary>What the ADMIN buff button and `/buff` hand out: EVERYTHING a max-level BUFFER can
+    /// give, at that buffer's TOP rung, plus every NPC single. Those top layers are the ones no NPC
+    /// sells and no consumable can reach, so this is the only way to see a fully-buffed character,
+    /// which is the state the balance numbers are read at.
+    ///
+    /// 🔑 It is DERIVED from the Warchanter's own class tables, not hand-listed (owner, playtest 26:
+    /// *"admin fullbuff should give the new buffs and should fallow buffers buf changes.. Meaning if
+    /// new buff/harmony should be added as well in the fullbuff and max effect"*). The hand-written
+    /// array it replaces had gone stale in exactly the way he predicted: it named the nine lane groups
+    /// and four harmonies that existed the day it was typed, and it applied every one of them at
+    /// **level 1**, which is why he saw L1 harmonies. Add a rung, a harmony or a whole new group to
+    /// `buffer 3rd.csv` and it appears here with no second edit.
     ///
     /// ⚠ The GROUPS come first, and they simply WIN: a group covers its families at group rank, so
     /// every single it contains is refused when it arrives after. The bar ends up as the group squares
@@ -78,15 +86,47 @@ public static partial class SkillCatalog
     /// deliberate anyway: reversed, the singles would land first and then be evicted, which is the
     /// same picture through twice the work.
     ///
-    /// ⚠ War Might is listed and War Bulwark is NOT — they share one buff key on purpose (an ally
-    /// wears one or the other, never both), so granting both would only show whichever landed last.</summary>
-    /// same picture through twice the work.</summary>
-    public static readonly string[] AdminBuffSet =
-        new[] { WcFeralPrecision, WcFeralBloodlust, WcArcaneInsight, WcArcaneSerenity,
-                WcSoulReinforce, WcBodyReinforce, WcShieldReinforce, WcArcaneFeralProt, WcWindGrace,
-                WarFrenzy, WcWarMight,
-                NpcHarmonyProtection, WcHarmonySpeed, NpcHarmonyWarrior, NpcHarmonyWizard }
-            .Concat(NewbieBuffSet).ToArray();
+    /// ⚠ It is LAZY (a property, not a field). It reads <see cref="Get"/> and <c>ClassSkills</c>, both
+    /// of which have to be built first; a static field initialiser here would run inside the catalog's
+    /// own construction and see an empty table.</summary>
+    public static IReadOnlyList<string> AdminBuffSet => _adminBuffSet ??= BuildAdminBuffSet();
+    private static string[]? _adminBuffSet;
+
+    /// <summary>Buffs a max-level buffer CAN cast that the admin set deliberately skips. War Bulwark
+    /// shares one buff key with War Might on purpose (an ally wears one or the other, never both), so
+    /// granting both would only show whichever landed last.</summary>
+    private static readonly HashSet<string> AdminBuffSkip = new() { WcWarBulwark };
+
+    private static string[] BuildAdminBuffSet()
+    {
+        // Every skill every RACE of Warchanter can learn — three races, because the kit is split by
+        // race and the admin wants the union, not one race's half.
+        var learnable = new List<string>();
+        foreach (var third in ThirdClassCatalog.Playable)
+        {
+            if (third.Discipline != Discipline.Warchanter) continue;
+            if (ClassCatalog.Get(third.ParentSecondClassId) is not SecondClassDef parent) continue;
+            foreach (var cs in ClassSkills.Cumulative(third.Race, parent.Base, parent.Archetype, third.Discipline))
+                learnable.Add(cs.SkillId);
+        }
+
+        // Keep only what is actually a TIMED BUFF. One test drops his attack skills, his heals, his
+        // totems and every passive — and it is the test that keeps this honest as the kit grows.
+        bool IsGrantableBuff(string id) =>
+            !AdminBuffSkip.Contains(id)
+            && Get(id) is { Category: SkillCategory.Buff, DurationTicks: > 0 };
+
+        bool IsGroup(string id) =>
+            Get(id) is SkillDef d && d.ChildBuffsAt(d.MaxLevel) is { Length: > 1 };
+
+        var classBuffs = learnable.Where(IsGrantableBuff).Distinct().ToList();
+
+        return classBuffs.Where(IsGroup)           // groups first — they cover and evict the singles
+            .Concat(classBuffs.Where(id => !IsGroup(id)))
+            .Concat(NewbieBuffSet)                 // then the NPC hour-long singles, for anything uncovered
+            .Distinct()
+            .ToArray();
+    }
 
     private static SkillDef NpcBuff(string id, string name, string buffKey,
         SkillEffect effect, EffectMagnitude[] mags, string desc,

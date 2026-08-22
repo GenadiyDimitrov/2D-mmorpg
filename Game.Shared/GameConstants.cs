@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.76.0";
+    public const string GameVersion = "0.78.0";
 
     /// <summary>
     /// The WIRE contract's version, and the ONLY thing compatibility is decided on.
@@ -63,7 +63,20 @@ public static class GameConstants
     /// trailing optional parameters, so an old client deserialises them as defaults and merely shows
     /// less — but the number moves anyway, because the whole point of a contract version is that "it
     /// happens to still work" is not something either side should have to work out at runtime.
-    public const int ProtocolVersion = 21;
+    /// 21 → 22 (2026-08-22, playtest 26): the ground decals gave the world a second channel. Two new
+    /// server→client pushes — `"Totems"` (the WHOLE `TotemList` a viewer can see, resent when the set
+    /// changes) and `"AreaEffect"` (a one-shot `AreaEffectEvent` flash) — plus the `TotemDto` they
+    /// carry. An old client subscribes to neither and simply draws no circles. The direction that
+    /// actually matters is the reverse one, the same case as 16: a NEW client on an OLD server would
+    /// draw a scene whose totems are never sent, showing empty ground where the healing really is, and
+    /// the handshake is the only place that pair gets caught.
+    /// 22 → 23 (2026-08-22, playtest 26): <see cref="AccountRole"/> gained two ranks and its numbers
+    /// MOVED — ChatModerator was inserted at 1, so Moderator went 1 → 2 and Admin 2 → 3, with Owner at 4.
+    /// It rides on `AuthResponse` and `AdminStateDto` as a plain int, so this is the rare bump that is not
+    /// an addition but a REDEFINITION: an old client on this server reads a Moderator as a Chat Moderator
+    /// and an Admin as a Moderator, and hides the admin toolbox from a real admin. Nothing crashes, which
+    /// is exactly why it has to be caught by the handshake rather than noticed later.
+    public const int ProtocolVersion = 23;
 
     /// <summary>
     /// The oldest protocol this server still speaks. Equal to <see cref="ProtocolVersion"/> means
@@ -189,6 +202,56 @@ public static class GameConstants
     public const float BasePlayerSpeed = 250f;
 
     public const int MaxCharacterNameLength = 16;
+
+    /// <summary>Shortest character name. THREE, not one — his playtest-26 find was that a name made of
+    /// nothing at all got through, and a 1-character name is the same problem one step along: it cannot
+    /// be typed at, reported, or told apart on a plate.</summary>
+    public const int MinCharacterNameLength = 3;
+
+    /// <summary>Is this a legal character name? ONE rule, shared by the server's create path and (once
+    /// the client is rebuilt) the create screen, so the two can never disagree about what is legal.
+    ///
+    /// 🔑 The rule is deliberately narrow, and it answers all three of his playtest-26 questions at once
+    /// (*"should we disable the cirulyc … Same question for space in the name or allowed symbol"*):
+    ///   • **ASCII letters and digits only.** No Cyrillic, no accents, no emoji. A name has to be
+    ///     TYPEABLE by every other player in the world — `/whisper`, `/ptinv`, `/jail` and the friend
+    ///     list are all name-addressed, and a name nobody else's keyboard can produce is a name nobody
+    ///     can whisper, invite, report or moderate.
+    ///   • **No spaces and no symbols.** Every name-taking command in the game parses `name` as the
+    ///     first token or splits on the last space (`/role <name> <role>`, `/jail <name> [min]`), so a
+    ///     space in a name breaks the parser, not just the eye.
+    ///   • **Must START with a letter**, and cannot be all digits — an all-digit name collides with
+    ///     every command that takes a number in the same slot.
+    ///
+    /// ⚠ What it does NOT try to fix is `IlIlllIIllI` — visually confusable names are a real problem and
+    /// no charset rule solves them (that is what the `@target` token is for). This rule is about names
+    /// that cannot be ADDRESSED at all.
+    ///
+    /// ⚠ It also closes the exact hole he found: a name of one or more invisible characters. `Trim()`
+    /// alone did not, because U+200B ZERO WIDTH SPACE is not whitespace to .NET — two such names are
+    /// both non-empty, both distinct, and both render as nothing.</summary>
+    public static bool IsValidCharacterName(string? name, out string error)
+    {
+        string n = (name ?? "").Trim();
+        if (n.Length < MinCharacterNameLength || n.Length > MaxCharacterNameLength)
+        {
+            error = $"Name must be {MinCharacterNameLength}-{MaxCharacterNameLength} characters.";
+            return false;
+        }
+        foreach (char c in n)
+            if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')))
+            {
+                error = "Name may use English letters and digits only — no spaces, symbols or accents.";
+                return false;
+            }
+        if (!char.IsLetter(n[0]))
+        {
+            error = "Name must start with a letter.";
+            return false;
+        }
+        error = "";
+        return true;
+    }
 
     /// <summary>Character slots per account — enough for every race/class/discipline
     /// combination so a player needn't make extra accounts.</summary>

@@ -198,7 +198,59 @@ public enum PvpFlag : byte { Innocent = 0, Flagged = 1, Pk = 2 }
 /// player spirit of the game); Admin = everything, and only an Admin may act on a Moderator.
 /// The server AUTHORIZES every non-debug admin action against this — unlike the DEBUG cheats, which are
 /// removed by `#if DEBUG` and never ship.</summary>
-public enum AccountRole { Player = 0, Moderator = 1, Admin = 2 }
+/// <summary>Staff rank, held per CHARACTER. Ordered: every authority check in the game is a `&lt;`
+/// comparison on this enum (see `Outranks`), so the numbers ARE the hierarchy and the order must stay
+/// ascending. Five tiers, his playtest-26 design:
+///
+///   • <b>Player</b> — no staff powers.
+///   • <b>ChatModerator</b> — chat ONLY: (un)chatban and nothing else. Deliberately has no kick, no
+///     jail and no <c>/where</c>, in his own words because those are the ones a dishonest volunteer can
+///     turn into an advantage: *"the jail and kick will allow them to farm undisturbed"*, and
+///     <c>/where</c> *"will allow them to know anywhone on the map where he is so he can take revange"*.
+///   • <b>Moderator</b> — the trusted volunteer: jail / kick / chatban / where.
+///   • <b>Admin</b> — the current admin, unchanged: every command, and may rank people BELOW himself.
+///   • <b>Owner</b> — exactly one character, named in <c>owner.txt</c> beside the server and read at
+///     startup only. The only rank that can grant or revoke <b>Admin</b>, and the only one no command
+///     can hand out.
+///
+/// ⚠ THE NUMBERS MOVED (0.78.0): ChatModerator was inserted at 1, so Moderator went 1 → 2 and Admin
+/// 2 → 3. Persisted <c>CharacterRecord.Role</c> values from an older DB therefore read one rank too
+/// low — every old Moderator would come back a ChatModerator and every old Admin a Moderator. That is
+/// survivable only because the DB is being deleted this version anyway (the 0.71.0 schema change is
+/// still owed); if that ever stops being true, this needs a migration, not a renumber.
+///
+/// The names here are the PLAIN ones on purpose (owner's ruling, playtest 26): the enum and every
+/// system message say "Moderator", while the wearable staff TITLE keeps the fantasy — Supreme Being,
+/// God, Sentinel, Silencer. See <see cref="TitleCatalog"/>.</summary>
+public enum AccountRole { Player = 0, ChatModerator = 1, Moderator = 2, Admin = 3, Owner = 4 }
+
+/// <summary>The words for <see cref="AccountRole"/> — the PLAIN half of his split ruling. Every system
+/// message, every `/role` argument and every "you can't use that" line reads from here; the fantasy
+/// words live in <c>TitleCatalog</c> and appear only over a head.</summary>
+public static class Roles
+{
+    public static string Name(AccountRole role) => role switch
+    {
+        AccountRole.Owner         => "Owner",
+        AccountRole.Admin         => "Admin",
+        AccountRole.Moderator     => "Moderator",
+        AccountRole.ChatModerator => "Chat Moderator",
+        _                         => "Player",
+    };
+
+    /// <summary>Parse a `/role` argument. Owner is NOT parseable on purpose — the one Owner is named in
+    /// `owner.txt` beside the server and read at startup, so no command can create or destroy one
+    /// (owner: *"a file in the directory that can be altered only by hand .. read only at start"*).
+    /// The fantasy words are accepted as aliases, because he will type them.</summary>
+    public static AccountRole? Parse(string? text) => (text ?? "").Trim().ToLowerInvariant() switch
+    {
+        "player" or "none" or "remove"                        => AccountRole.Player,
+        "chatmod" or "chatmoderator" or "chat" or "silencer"  => AccountRole.ChatModerator,
+        "moderator" or "mod" or "sentinel"                    => AccountRole.Moderator,
+        "admin" or "administrator" or "god" or "gm"           => AccountRole.Admin,
+        _                                                     => null,
+    };
+}
 
 /// <summary>A party member's presence, for the roster's AFK indicator. Auto = online but
 /// auto-hunting (AFK-ish); Offline = disconnected but still offline-farming in the world.</summary>

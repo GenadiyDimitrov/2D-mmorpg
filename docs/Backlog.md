@@ -79,13 +79,15 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
 `BL-03` the Stat-Swap tab and `BL-04` the auto buff potion/scroll tab — the last two took `BL-39`
 (the Mindwriter's misleading `(cost …)`) out with them. See `CHANGELOG.md`. Two are left.
 
-- `BL-02` 🔵 **The 40+ class kits (3rd and 4th tier)** — ✅ **ONE OF TEN IS DONE.** The
-  **Lightbringer (healer) shipped in 0.74.0**, 40 to 74, every rung off `healer 3rd.csv`, verified by
-  `SkillCsvSeed --check`. That is the proof the pipeline works end to end; the other nine disciplines
-  are unchanged and still blocked on your files. `buffer 3rd.csv` is a PLACEHOLDER seeded from code
-  (your own *"you shouldn't have built anything from the 3rd csvs as they are not finished"*), and the
-  eight fighter disciplines have no file at all. Still the single biggest content unlock in the
-  project; nothing is invented in the meantime, by your own rule.
+- `BL-02` 🔵 **The 40+ class kits (3rd and 4th tier)** — ✅ **TWO OF TEN ARE DONE.** The
+  **Lightbringer (healer) shipped in 0.74.0** and the **whole Warchanter (buffer) in 0.76.0**, both 40 to
+  74, every rung off your finished `healer 3rd.csv` and `buffer 3rd.csv`, and `SkillCsvSeed --check` is
+  green on all ten files. That is the proof the pipeline works end to end. The other **eight disciplines
+  are still blocked on your files** — `tank` · `warrior` · `war_aoe` · `dual` · `archer` · `nuker`, each
+  `3rd` and `4th`, plus the two `4th` files for the two you have finished. They are seeded from code
+  holding exactly what the game already registers above 40, so you start by editing, not from an empty
+  sheet. Still the single biggest content unlock in the project; nothing is invented in the meantime, by
+  your own rule.
 
 - `BL-05` 🔵 **Crafting — the two pieces you did NOT rule.** The system itself SHIPPED in 0.63.0
   (masters, six levels, the freeze, the grade ladder, the gear roll, the mat costs, quitting). What is
@@ -423,6 +425,25 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
 ---
 
 ## Classes & skills
+
+- `BL-85` 🔴 **A HARMONY'S RUNGS ALL SHARE ONE RANK, SO A LOWER ONE OVERWRITES A HIGHER ONE.** Found on
+  the way past while building `/buff` (0.78.0), NOT one of your finds — but it is the same rule you
+  already ruled on for Combo Rush, broken in the place it matters most.
+  - **What happens:** every rung of a Harmony is one `SkillDef` with `Levels[]` and **one** `Rank`
+    (`NpcBuffRank`, 100) for all of them. `GameLoopService.BuffPlan` reads `def.Rank` flat for a buff
+    with no children, so rung 1 and rung 5 are the SAME rank — and equal rank keeps whichever has the
+    longer time left. So a level-44 Warchanter's **Harmony of Protection Lv1 replaces a level-74's Lv5**
+    the moment the Lv5 has under five minutes on it. `/buff harmony of protection 3` on a fully-buffed
+    character does the same thing, which is how it surfaced.
+  - **Why the single ladders are fine:** Might, Focus and the rest are one-child WRAPPERS, so each rung
+    resolves to a different child def carrying its own `Rank`. Harmonies (and Great Might, Great Bulwark
+    and Mana Blessing) have no children and fall through to the flat number.
+  - **The fix is one line** — for a childless multi-level buff, rank should carry the level
+    (`def.Rank + level - 1`), which is what `GroupRank(level)` already does for groups. It is left
+    unbuilt on purpose: `BuffPlan` is the resolver EVERY buff in the game goes through, and moving it in
+    the same batch as two 3rd-class kits would make the playtest unreadable. It wants its own increment.
+  - ⚠ Your Combo Rush ruling is the precedent: *"even if some other buffer procs lvl 3 buff u still get
+    your effect over"*. This is that sentence, for the harmonies.
 
 - `BL-34` ✅ **BUILT 2026-08-14 (0.66.0)** — **Madness**, a party-cast Frenzy handing out a new **rung 7**
   of the family, at **76 on the Warchanter** so an admin can party-buff with it. Your deliberate
@@ -803,6 +824,16 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
     the same rule `BL-69` already enforces server-side (hide is an OMISSION from the snapshot, not a flag
     the client is trusted to honour). So the opacity is a purely local effect and must never be derived
     from anything sent about another player.
+
+- `BL-86` 🔵 **THE SHUTDOWN COUNTDOWN IS TEXT, NOT A BIG RED BANNER — your call whether that is enough.**
+  `/server shutdown|reboot|on` is **BUILT** (0.78.0) with your whole announcement ladder — hours, then
+  10-minute steps, then minutes, then every second for the last 60. What it is NOT yet is your
+  *"onscreen/chat message - red big"* and *"its permanent on the screen 60..59..58"*: every line goes out
+  on the existing `Notice` toast plus System chat, which fades after a few seconds and is drawn in the
+  ordinary toast colour. That was deliberate — the toast needed no protocol change, so the whole feature
+  works on a client built before it. Making it a red, large, and (under 60s) persistent overlay is a
+  client-side element and a new push. **Say if the toast reads well enough**; if not, this is small and
+  rides the next client batch with §89's three UI changes.
 
 - `BL-72` 🔵 **Unbuffed auto-farm is not survivable for either damage kit.** His `0a` note
   (playtest-22): *"they both have hard time to farm without buffs .. when i login in 1-2h after the

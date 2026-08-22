@@ -164,6 +164,10 @@ public class PersistenceService
 
         await SeedAsync("admin", "admin", "Admin");
         await EndgameKitAsync("Admin");
+        // On a fresh DB the seeded Admin is also the OWNER — the top of the hierarchy has to exist for
+        // any of it to be testable, and this is the only place that knows a server is brand new. Never
+        // overwrites an existing owner.txt, so a real deployment's choice stands.
+        Game.Server.Simulation.ServerControl.SeedOwnerFile("Admin");
         for (int i = 1; i <= 9; i++)
             await SeedAsync($"test{i}", "test", $"Test{i}");
     }
@@ -428,7 +432,7 @@ public class PersistenceService
             return (false, null, "Character not found.");
 
         // Staff characters get the short undo window in every build — see CharacterDeleteDelay.
-        var delay = GameConstants.CharacterDeleteDelay(rec.Level, rec.Role == AccountRole.Admin);
+        var delay = GameConstants.CharacterDeleteDelay(rec.Level, rec.Role >= AccountRole.Admin);
         if (delay <= TimeSpan.Zero)
         {
             db.Characters.Remove(rec);
@@ -457,9 +461,12 @@ public class PersistenceService
     public async Task<(bool Success, string? Error)> CreateCharacterAsync(
         int accountId, string name, Race race, BaseClass baseClass)
     {
-        name = name.Trim();
-        if (name.Length is 0 or > GameConstants.MaxCharacterNameLength)
-            return (false, $"Name must be 1-{GameConstants.MaxCharacterNameLength} characters.");
+        name = (name ?? "").Trim();
+        // ONE validator, in Game.Shared, so the create screen can enforce the same rule the moment the
+        // client is rebuilt. Until then this is the only gate — and it is the authoritative one either
+        // way, because the client is not trusted with what a legal name is.
+        if (!GameConstants.IsValidCharacterName(name, out string nameError))
+            return (false, nameError);
 
         await using var db = await _factory.CreateDbContextAsync();
 
@@ -842,7 +849,9 @@ public class PersistenceService
             (entity.X, entity.Y) = GameConstants.JailArrival(Random.Shared);
         }
         entity.ChatBannedUntil = rec.ChatBannedUntilUtc;
-        entity.Role = rec.Role;   // staff role is per CHARACTER, not per account (owner)
+        // Staff role is per CHARACTER, not per account (owner) — and owner.txt overrides the stored row
+        // for the one character it names, every load, so the Owner cannot be demoted by any command.
+        entity.Role = Game.Server.Simulation.ServerControl.EffectiveRole(rec.Name, rec.Role);
         return entity;
     }
 

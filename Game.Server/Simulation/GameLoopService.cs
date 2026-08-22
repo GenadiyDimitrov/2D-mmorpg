@@ -32,14 +32,20 @@ public class GameLoopService : BackgroundService
     private readonly List<ZoneRuntime> _zones = new();
     private DayPhase _lastPhase = DayPhase.Day;
 
+    /// <summary>How the shutdown procedure ends the process (`/server shutdown|reboot`).</summary>
+    private readonly IHostApplicationLifetime _lifetime;
+
     public GameLoopService(World world, IHubContext<GameHub> hub,
-        ILogger<GameLoopService> log, Game.Server.Persistence.PersistenceService db)
+        ILogger<GameLoopService> log, Game.Server.Persistence.PersistenceService db,
+        IHostApplicationLifetime lifetime)
     {
         _world = world;
         _hub = hub;
         _log = log;
         _db = db;
-        LoadDebugConfig();   // restore persisted debug tuning (rates/karma/caps) between runs
+        _lifetime = lifetime;
+        LoadDebugConfig();     // restore persisted debug tuning (rates/karma/caps) between runs
+        ServerControl.LoadLockdown();   // did the last run go down "staff only"?
     }
 
     protected override async Task ExecuteAsync(CancellationToken ct)
@@ -906,6 +912,7 @@ public class GameLoopService : BackgroundService
     private static readonly string DebugConfigFile =
         System.IO.Path.Combine(System.AppContext.BaseDirectory, "debug-config.json");
 
+
     private void LoadDebugConfig()
     {
         try
@@ -1078,6 +1085,39 @@ public class GameLoopService : BackgroundService
     /// <summary>Periodic crash-safety save of every online player. Snapshots all of
     /// them on-thread, then hands the batch to ONE background write (one DbContext,
     /// one SaveChanges) — no thundering herd of connections off the tick.</summary>
+    /// <summary>Drive the shutdown/reboot countdown (see <see cref="ServerControl"/>) and, when it runs
+    /// out, take the process down — after ONE last save of every character in the world.
+    ///
+    /// 🔑 The save is the reason this is a tick job and not a timer: it is the same single-writer thread
+    /// that owns every entity, so the snapshot it takes cannot be torn by a concurrent mutation. Killing
+    /// the process from anywhere else would cost every player whatever they had done since the last
+    /// 60-second autosave.</summary>
+    private void TickServerControl()
+    {
+        string? line = ServerControl.Tick(out bool fire);
+        if (line is not null)
+        {
+            BroadcastSystem(line);
+            // Same text on the on-screen banner. It rides the existing "Notice" channel, so it works on
+            // a client built before this — no protocol change and nothing to install.
+            _ = _hub.Clients.All.SendAsync("Notice", line);
+        }
+        if (!fire) return;
+
+        AutoSaveAll();
+        var kind = _shutdownKind;
+        _shutdownKind = ServerControl.Procedure.None;
+        _log.LogWarning("Server {Kind} triggered by an admin — going down.",
+            kind == ServerControl.Procedure.Reboot ? "reboot" : "shutdown");
+        Environment.ExitCode = ServerControl.Execute(kind);
+        _lifetime.StopApplication();
+    }
+
+    /// <summary>What the countdown will do when it fires. Held here rather than read back out of
+    /// <see cref="ServerControl"/> because <c>Tick</c> clears its own state the moment it fires — the
+    /// procedure must not be able to run twice.</summary>
+    private ServerControl.Procedure _shutdownKind = ServerControl.Procedure.None;
+
     private void AutoSaveAll()
     {
         List<PersistenceService.CharacterSnapshot>? snaps = null;
@@ -5743,6 +5783,27 @@ public class GameLoopService : BackgroundService
         "help", "jail", "unjail", "jailed", "kick", "chatban", "unchatban", "where",
     };
 
+    /// <summary>A CHAT MODERATOR's whole vocabulary — the mute and nothing else (owner, playtest 26).
+    ///
+    /// 🔑 The omissions are the design, not an oversight. No `kick`/`jail`, because *"the jail and kick
+    /// will allow them to farm undisturbed — go to zone .. kick players/jail then start to farm"*; no
+    /// `where`, because it *"will allow them to know anywhone on the map where he is so he can take
+    /// revange or bully kill"*. This rank exists to be handed to someone you do NOT fully trust.</summary>
+    private static readonly HashSet<string> ChatModeratorCommands = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "help", "chatban", "unchatban",
+    };
+
+    /// <summary>The allow-list for a role, or null for "everything" (Admin and Owner). The one power
+    /// the Owner has and an Admin does not is not a command at all — it is `/role admin`, and that gate
+    /// lives inside `/role` as a rank comparison (see below), because it is about the ARGUMENT.</summary>
+    private static HashSet<string>? AllowedCommands(AccountRole role) => role switch
+    {
+        AccountRole.ChatModerator => ChatModeratorCommands,
+        AccountRole.Moderator     => ModeratorCommands,
+        _                         => null,
+    };
+
     /// <summary>May <paramref name="actor"/> use a moderation command on a character of role
     /// <paramref name="targetRole"/>? Strictly downward: you can only act on someone RANKED BELOW you.
     ///
@@ -5763,24 +5824,34 @@ public class GameLoopService : BackgroundService
         var command = cmd.Command.ToLowerInvariant();
         var arg = cmd.Argument.Trim();
 
-        // A moderator's allow-list. Unknown commands fall through to the switch's default.
-        if (admin.Role == AccountRole.Moderator && !ModeratorCommands.Contains(command))
+        // The caller's allow-list, if their rank has one. Unknown commands fall through to the switch's
+        // default. (Admin and Owner have no list — they may use everything.)
+        if (AllowedCommands(admin.Role) is HashSet<string> allowed && !allowed.Contains(command))
         {
-            SendSystemToEntity(admin, $"Moderators can't use /{command}.");
+            SendSystemToEntity(admin, $"{Roles.Name(admin.Role)}s can't use /{command}.");
             return;
         }
 
         switch (command)
         {
             case "help":
-                SendSystemToEntity(admin, admin.Role == AccountRole.Moderator
-                    ? "Moderator: /jail <name> [min], /unjail <name>, /kick <name> [min], " +
-                      "/chatban <name> [min], /unchatban <name>, /jailed, /where <name>"
-                    : "Admin: /jail, /unjail, /kick, /ban, /unban, /chatban, /unchatban, /jailed, " +
-                      "/role <name> <player|moderator|admin>, /tp <name>, /where <name>, /god, /invis, " +
-                      "/spd <m|a|c> <v> (bare /spd resets), /bag <name>, /give <name>, " +
-                      "/givegold <name> <amount>, /droprate [group|gear|global|amount|item <id>] [mult], " +
-                      "/titleright <name> <on|off>");
+                SendSystemToEntity(admin, admin.Role switch
+                {
+                    AccountRole.ChatModerator =>
+                        "Chat Moderator: /chatban <name> [min], /unchatban <name>",
+                    AccountRole.Moderator =>
+                        "Moderator: /jail <name> [min], /unjail <name>, /kick <name> [min], " +
+                        "/chatban <name> [min], /unchatban <name>, /jailed, /where <name>",
+                    _ =>
+                        "Admin: /jail, /unjail, /kick, /ban, /unban, /chatban, /unchatban, /jailed, " +
+                        "/role <name> <player|chatmod|moderator|admin>, /tp <name>, /where <name>, " +
+                        "/god, /invis, /spd <m|a|c> <v> (bare /spd resets), /bag <name>, /give <name>, " +
+                        "/givegold <name> <amount>, /droprate [group|gear|global|amount|item <id>] [mult], " +
+                        "/titleright <name> <on|off>, /buff [name] [level], " +
+                        "/server <shutdown|reboot|on> [min] [adminOnly]" +
+                        (admin.Role == AccountRole.Owner
+                            ? "  —  Owner: only you may /role … admin." : ""),
+                });
                 break;
 
             case "god":
@@ -5853,36 +5924,45 @@ public class GameLoopService : BackgroundService
                 int sp = arg.LastIndexOf(' ');
                 if (sp <= 0)
                 {
-                    SendSystemToEntity(admin, "Usage: /role <name> <player|moderator|admin>");
+                    SendSystemToEntity(admin, "Usage: /role <name> <player|chatmod|moderator|admin>");
                     break;
                 }
                 string targetName = arg[..sp].Trim();
-                string roleText = arg[(sp + 1)..].Trim().ToLowerInvariant();
-                AccountRole? newRole = roleText switch
-                {
-                    "player" or "none" => AccountRole.Player,
-                    "moderator" or "mod" => AccountRole.Moderator,
-                    "admin" => AccountRole.Admin,
-                    _ => null,
-                };
+                string roleText = arg[(sp + 1)..].Trim();
+                AccountRole? newRole = Roles.Parse(roleText);
                 if (newRole is null)
                 {
-                    SendSystemToEntity(admin, $"Unknown role '{roleText}'. Use player, moderator or admin.");
+                    SendSystemToEntity(admin,
+                        $"Unknown role '{roleText}'. Use player, chatmod, moderator or admin. "
+                        + "(Owner is set in owner.txt, not by command.)");
                     break;
                 }
                 _ = Task.Run(async () =>
                 {
-                    // You may only re-rank someone currently BELOW you, and never up to your own rank —
-                    // otherwise a second admin could be minted by anyone who already has the command.
+                    // You may only re-rank someone currently BELOW you, and only INTO a rank below your
+                    // own. The second half is what makes Admin the Owner's gift and nobody else's: an
+                    // Admin can create Moderators and Chat Moderators all day and can never mint a peer.
+                    //
+                    // ⚠ It used to be `newRole > admin.Role`, which allowed EQUAL — so any admin could
+                    // make another admin, in flat contradiction of the comment that sat right here.
                     var current = FindOnlinePlayer(targetName)?.Role ?? await _db.GetRoleAsync(targetName);
                     if (current is null)
                     {
                         SendSystemToEntity(admin, $"No character '{targetName}'.");
                         return;
                     }
-                    if (!Outranks(admin, current.Value) || newRole.Value > admin.Role)
+                    if (!Outranks(admin, current.Value) || newRole.Value >= admin.Role)
                     {
                         SendSystemToEntity(admin, $"You can't change {targetName}'s role.");
+                        return;
+                    }
+                    // The Owner is held by owner.txt, not by the DB, so re-ranking that character would
+                    // change a row nothing reads and leave them Owner at the next login. Say so.
+                    if (ServerControl.OwnerCharacterName is string ownerName
+                        && string.Equals(ownerName, targetName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        SendSystemToEntity(admin,
+                            $"{targetName} is the Owner — change owner.txt and restart the server.");
                         return;
                     }
                     string? canonical = await _db.SetRoleAsync(targetName, newRole.Value);
@@ -5892,15 +5972,15 @@ public class GameLoopService : BackgroundService
                     if (FindOnlinePlayer(canonical) is Entity live)
                     {
                         live.Role = newRole.Value;
-                        if (newRole.Value != AccountRole.Admin) live.GodMode = false;
+                        if (newRole.Value < AccountRole.Admin) live.GodMode = false;
                         SendAdminState(live);
                         // The staff TITLE is held by role (C17), so a demotion has to strip a worn one
                         // here and a promotion has to offer it — without this the picker (and the
                         // plate) would keep the old role's title until the next relog.
                         RefreshTitle(live);
-                        SendSystemToEntity(live, $"Your role is now {newRole.Value}.");
+                        SendSystemToEntity(live, $"Your role is now {Roles.Name(newRole.Value)}.");
                     }
-                    SendSystemToEntity(admin, $"{canonical} is now {newRole.Value}.");
+                    SendSystemToEntity(admin, $"{canonical} is now {Roles.Name(newRole.Value)}.");
                 });
                 break;
             }
@@ -6309,6 +6389,110 @@ public class GameLoopService : BackgroundService
                 break;
             }
 
+            // `/server <shutdown|stop|reboot|restart|on|online> [minutes] [adminOnly]` — the whole
+            // procedure lives in ServerControl; this is only the parsing and the first announcement.
+            // Every command REPLACES the one before it, which is why there is no "cancel" verb: `on` is
+            // the cancel, and it is also the thing that reopens the door afterwards.
+            case "server":
+            {
+                var parts = arg.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                string verb = parts.Length > 0 ? parts[0].ToLowerInvariant() : "";
+                string timeToken = parts.Length > 1 ? parts[1] : "";
+                bool adminOnly = parts.Length > 2 && ParseTriState(parts[2]) == true;
+                int minutes = ServerControl.ParseMinutes(timeToken);
+
+                switch (verb)
+                {
+                    case "shutdown" or "stop":
+                    case "reboot" or "restart":
+                    {
+                        var kind = verb is "reboot" or "restart"
+                            ? ServerControl.Procedure.Reboot : ServerControl.Procedure.Shutdown;
+                        _shutdownKind = kind;
+                        string opening = ServerControl.Schedule(kind, minutes, adminOnly);
+                        BroadcastSystem(opening);
+                        _ = _hub.Clients.All.SendAsync("Notice", opening);
+                        SendSystemToEntity(admin, adminOnly
+                            ? $"Scheduled. It will come back STAFF ONLY — type /server on to reopen it."
+                            : "Scheduled.");
+                        break;
+                    }
+
+                    case "on" or "online":
+                    {
+                        _shutdownKind = ServerControl.Procedure.None;
+                        string text = ServerControl.Online(minutes);
+                        BroadcastSystem(text);
+                        _ = _hub.Clients.All.SendAsync("Notice", text);
+                        break;
+                    }
+
+                    default:
+                        SendSystemToEntity(admin,
+                            "Usage: /server <shutdown|reboot|on> [minutes] [adminOnly]  —  "
+                            + "minutes: '-'/'0'/blank = now, unparseable = 30. "
+                            + (ServerControl.DueUtc is DateTime due
+                                ? $"Running: {ServerControl.Kind} in "
+                                  + ServerControl.Format((int)(due - DateTime.UtcNow).TotalSeconds) + "."
+                                : "Nothing scheduled."));
+                        break;
+                }
+                break;
+            }
+
+            // `/buff [name] [level]` — the typed half of the debug buff button (owner, playtest 26).
+            //   /buff                        the whole ADMIN set, every buff at its own top rung
+            //   /buff harmony of wizard      that one buff, at ITS top rung
+            //   /buff hw 2                   the same buff by acronym, at rung 2
+            // An out-of-range rung is not silently clamped — it says what the range is, which is the
+            // only way to learn a ladder's depth without reading the CSV (*"if effect lvl is out of
+            // range just system msg with the effect lvl"*).
+            case "buff":
+            {
+                if (admin.Dead) { SendSystemToEntity(admin, "Not while dead."); break; }
+
+                var (buffName, buffLevel) = SplitTrailingLevel(arg);
+                if (buffName.Length == 0)
+                {
+                    GrantFullBuffSet(admin, SkillCatalog.AdminBuffSet);
+                    SendSystemToEntity(admin,
+                        $"Full buff: {SkillCatalog.AdminBuffSet.Count} buffs, each at its top rung.");
+                    break;
+                }
+
+                var matches = MatchBuffsByName(buffName);
+                if (matches.Count == 0)
+                {
+                    SendSystemToEntity(admin, $"No buff matches '{buffName}'.");
+                    break;
+                }
+                if (matches.Count > 1)
+                {
+                    SendSystemToEntity(admin, $"'{buffName}' is ambiguous: "
+                        + string.Join(", ", matches.Take(8).Select(d => d.Name))
+                        + (matches.Count > 8 ? $", +{matches.Count - 8} more" : ""));
+                    break;
+                }
+
+                var buffDef = matches[0];
+                int level = buffLevel ?? buffDef.MaxLevel;
+                if (level < 1 || level > buffDef.MaxLevel)
+                {
+                    SendSystemToEntity(admin,
+                        $"{buffDef.Name} has {buffDef.MaxLevel} level{(buffDef.MaxLevel == 1 ? "" : "s")} "
+                        + $"(1-{buffDef.MaxLevel}); {level} is out of range.");
+                    break;
+                }
+                if (!ApplyBuff(admin, buffDef, level))
+                {
+                    SendSystemToEntity(admin,
+                        $"{buffDef.Name} Lv{level} was refused — something stronger of that family is already on you.");
+                    break;
+                }
+                SendSystemToEntity(admin, $"{buffDef.Name} Lv{level} applied.");
+                break;
+            }
+
             case "bag":
             {
                 // Read-only-ish view of another player's inventory, with a remove button per row.
@@ -6665,6 +6849,104 @@ public class GameLoopService : BackgroundService
         _world.Entities.Values.FirstOrDefault(e =>
             e.Kind == EntityKind.Player &&
             string.Equals(e.Name, name, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>Peel a trailing integer off a command argument, so `/buff harmony of wizard 2` splits
+    /// into ("harmony of wizard", 2) while `/buff harmony of wizard` splits into (…, null). A buff name
+    /// never ends in a bare number, so this is unambiguous — and it is why the level does not need a
+    /// flag or a separator.</summary>
+    private static (string Name, int? Level) SplitTrailingLevel(string arg)
+    {
+        string text = (arg ?? "").Trim();
+        int sp = text.LastIndexOf(' ');
+        if (sp > 0 && int.TryParse(text[(sp + 1)..], out int lvl))
+            return (text[..sp].TrimEnd(), lvl);
+        // A bare number on its own is a level with no name — treat it as a name so the caller reports
+        // "no buff matches", rather than silently full-buffing.
+        return (text, null);
+    }
+
+    /// <summary>Everything only letters and digits, lower-cased — so "Harmony of Wizard",
+    /// "harmony_of_wizard" and "HarmonyOfWizard" are one needle.</summary>
+    private static string NameKey(string s)
+    {
+        var sb = new System.Text.StringBuilder(s.Length);
+        foreach (char c in s) if (char.IsLetterOrDigit(c)) sb.Append(char.ToLowerInvariant(c));
+        return sb.ToString();
+    }
+
+    /// <summary>Words a name-match may skip. They carry no information — nobody distinguishes two buffs
+    /// by whether one says "the" — and skipping them is what lets his own example work: he types
+    /// "harmony of wizard" for a buff actually called "Harmony of <b>the</b> Wizard".</summary>
+    private static readonly HashSet<string> NoiseWords =
+        new(StringComparer.OrdinalIgnoreCase) { "of", "the", "and", "a" };
+
+    /// <summary>The initials of a display name, three ways, because there is no one convention a person
+    /// uses: "Harmony of the Wizard" → "hotw" (every word), "how" (dropping only "the") and "hw"
+    /// (dropping all the joining words). His example was typing `hiw`, which is "how" with one
+    /// thumb-slip on a phone keyboard — o and i are neighbours.</summary>
+    private static IEnumerable<string> Acronyms(string name)
+    {
+        var words = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (words.Length == 0) yield break;
+        yield return string.Concat(words.Select(w => char.ToLowerInvariant(w[0])));
+        yield return string.Concat(words.Where(w => !w.Equals("the", StringComparison.OrdinalIgnoreCase))
+                                        .Select(w => char.ToLowerInvariant(w[0])));
+        yield return string.Concat(words.Where(w => !NoiseWords.Contains(w))
+                                        .Select(w => char.ToLowerInvariant(w[0])));
+    }
+
+    /// <summary>Does every word of the needle appear, in order, as the start of a word of the name?
+    /// "harmony of wizard" matches "Harmony of the Wizard"; "harm wiz" matches it too; "wizard harmony"
+    /// does not, because order is what keeps this from matching half the catalog.</summary>
+    private static bool WordsMatchInOrder(string name, string needle)
+    {
+        var want = needle.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                         .Where(w => !NoiseWords.Contains(w)).ToArray();
+        if (want.Length == 0) return false;
+        var have = name.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                       .Where(w => !NoiseWords.Contains(w)).ToArray();
+        int i = 0;
+        foreach (var h in have)
+        {
+            if (i < want.Length && NameKey(h).StartsWith(NameKey(want[i]), StringComparison.Ordinal)) i++;
+        }
+        return i == want.Length;
+    }
+
+    /// <summary>Resolve a typed buff name for `/buff`. Tried in order, and the FIRST tier that hits
+    /// anything wins, so a full name is never dragged into an ambiguity by a substring: exact name or
+    /// skill id · acronym · every word in order · name prefix · name substring.
+    ///
+    /// 🔑 The ADMIN buff set is searched first and the rest of the catalog only if that finds nothing.
+    /// Without that, "mana blessing" is ambiguous against the hidden per-rung defs that exist only as a
+    /// group's children — names a buffer never casts and an admin never means.</summary>
+    private static List<SkillDef> MatchBuffsByName(string needle)
+    {
+        string key = NameKey(needle);
+        if (key.Length == 0) return new List<SkillDef>();
+
+        var primary = SkillCatalog.AdminBuffSet
+            .Select(SkillCatalog.Get).OfType<SkillDef>().ToList();
+        var fallback = SkillCatalog.AllSkills
+            .Where(d => d.Category == SkillCategory.Buff && d.DurationTicks > 0)
+            .Where(d => !primary.Contains(d)).ToList();
+
+        foreach (var pool in new[] { primary, fallback })
+        {
+            var hits = pool.Where(d => NameKey(d.Name) == key || NameKey(d.Id) == key).ToList();
+            if (hits.Count == 0) hits = pool.Where(d => Acronyms(d.Name).Any(a => a == key)).ToList();
+            if (hits.Count == 0) hits = pool.Where(d => WordsMatchInOrder(d.Name, needle)).ToList();
+            if (hits.Count == 0) hits = pool.Where(d => NameKey(d.Name).StartsWith(key, StringComparison.Ordinal)).ToList();
+            if (hits.Count == 0) hits = pool.Where(d => NameKey(d.Name).Contains(key, StringComparison.Ordinal)).ToList();
+            // Several defs share ONE display name on purpose — "Might" is both the buffer's 3-rung
+            // ladder and the NPC's hour-long single. Reporting that as ambiguous would print
+            // "ambiguous: Might, Might", so one name means one buff: the FIRST, and the pool is ordered
+            // groups → class buffs → NPC singles, which is strongest first.
+            hits = hits.GroupBy(d => NameKey(d.Name)).Select(g => g.First()).ToList();
+            if (hits.Count > 0) return hits;
+        }
+        return new List<SkillDef>();
+    }
 
     /// <summary>Friend list add / remove / list (per character). NOT admin-gated. "list" reports online
     /// status; add validates the name is a real character (even offline).</summary>
@@ -7186,6 +7468,8 @@ public class GameLoopService : BackgroundService
 
         if (_tick % GameConstants.AutoSaveIntervalTicks == 0)
             AutoSaveAll();
+
+        TickServerControl();
 
         TickTitles();
 
@@ -13592,13 +13876,18 @@ public class GameLoopService : BackgroundService
         SendBufferDialog(player, npc);   // refresh (restore cost drops to 0, gold changed)
     }
 
-    /// <summary>Lay a whole buff set on a player. The buffer NPC passes its own set; the debug
-    /// button passes the ADMIN set, which is the same list plus Harmony.</summary>
-    private void GrantFullBuffSet(Entity player, string[]? set = null)
+    /// <summary>Lay a whole buff set on a player. The buffer NPC passes its own set; the debug button
+    /// and `/buff` pass the ADMIN set, which is every buff a max-level Warchanter can cast.
+    ///
+    /// 🔑 Each buff lands at its OWN TOP RUNG (<c>def.MaxLevel</c>), not at level 1 — owner, playtest 26:
+    /// *"if new buff/harmony should be added as well in the fullbuff and max effect - now harmonies are
+    /// L1"*. The NPC set is unaffected (those defs are single-level), so this changes the admin button
+    /// and nothing a player can buy.</summary>
+    private void GrantFullBuffSet(Entity player, IReadOnlyList<string>? set = null)
     {
         foreach (var id in set ?? SkillCatalog.NewbieBuffSet)
             if (SkillCatalog.Get(id) is SkillDef def)
-                ApplyBuff(player, def, refresh: false);
+                ApplyBuff(player, def, def.MaxLevel, refresh: false);
         // One refresh after all buffs (instead of per-buff recompute/push).
         player.RecomputeDerived();
         PushBuffs(player);

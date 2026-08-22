@@ -101,15 +101,17 @@ namespace Game.Client
         /// sending admin commands when it believes it's allowed (the server re-checks regardless).</summary>
         public AccountRole Role { get; private set; } = AccountRole.Player;
 
-        /// <summary>STAFF — may use the moderation commands (/jail, /kick, /bag …). Moderators included.</summary>
-        public bool IsAdmin => Role == AccountRole.Admin || Role == AccountRole.Moderator;
+        /// <summary>STAFF — may TYPE a slash command at all. Every rank above Player is included; which
+        /// commands each may actually use is the server's business (see `AllowedCommands`), and a chat
+        /// moderator typing `/jail` gets told so rather than being told the command does not exist.</summary>
+        public bool IsAdmin => Role != AccountRole.Player;
 
         /// <summary>May use the ADMIN TOOLBOX (the former debug menu — free levels, gold, items, class
         /// changes). Admin ONLY, deliberately narrower than <see cref="IsAdmin"/>, because that is exactly
         /// what the server's gate is (<c>Entity.IsAdmin</c> is <c>Role == Admin</c>). Showing a moderator a
         /// menu whose every button answers "that is an admin-only command" is worse than not showing it:
         /// moderators moderate, they do not cheat.</summary>
-        public bool CanUseAdminTools => Role == AccountRole.Admin;
+        public bool CanUseAdminTools => Role >= AccountRole.Admin;
 
         /// <summary>
         /// The skill bar, exactly as the SERVER sent it — 60 slots of skill id / "action:…" / "item:…"
@@ -401,6 +403,58 @@ namespace Game.Client
         {
             try { await _net.LikeAsync(name); }
             catch (Exception ex) { ClientLog.Warn("Like: " + ex.Message); }
+        }
+
+        /// <summary>The `@target` token, his playtest-26 find: *"we should make @target or %target or ~
+        /// so admin/players commands to work on the target (take the name from the target window) because
+        /// a player named "IlIlllIIllI" for a human is impossible to read."*
+        ///
+        /// 🔑 It is a CLIENT substitution, done once before any command is parsed, and it therefore works
+        /// on EVERY command that takes a name — `/jail @target`, `/w ~ hello`, `/ptinv @target`,
+        /// `/give @target sword1h_t10` — including ones written later, with no server change at all.
+        /// Targeting is client-side in this game (the server is only ever told a target id when you act
+        /// on something), so the client is the only place that knows the answer.
+        ///
+        /// All four spellings work: `@target`, `%target`, `@t` and a bare `~`. Whole tokens only, so a
+        /// name or a message containing one of those characters is untouched.
+        ///
+        /// Returns false when a token was used with nothing targeted — the command is then not sent at
+        /// all, rather than reaching the server as the literal word "@target".</summary>
+        private bool TrySubstituteTargetToken(string raw, out string result)
+        {
+            result = raw;
+            if (raw.IndexOf('@') < 0 && raw.IndexOf('%') < 0 && raw.IndexOf('~') < 0) return true;
+
+            var parts = raw.Split(' ');
+            bool used = false;
+            string name = null;
+            for (int i = 0; i < parts.Length; i++)
+            {
+                string p = parts[i];
+                bool isToken = p.Equals("@target", StringComparison.OrdinalIgnoreCase)
+                            || p.Equals("%target", StringComparison.OrdinalIgnoreCase)
+                            || p.Equals("@t", StringComparison.OrdinalIgnoreCase)
+                            || p == "~";
+                if (!isToken) continue;
+
+                if (!used)
+                {
+                    used = true;
+                    // Whatever is targeted, not just a player: an admin typing `/where @target` on an NPC
+                    // should get the server's "no character" answer, not a silent wrong guess here.
+                    if (TargetId.HasValue && TargetId.Value != SelfId && Entities != null
+                        && Entities.TryGetState(TargetId.Value, out var e))
+                        name = e.Name;
+                }
+                if (string.IsNullOrEmpty(name))
+                {
+                    ClientLog.Warn("Nothing targeted — " + p + " has no one to stand for.");
+                    return false;
+                }
+                parts[i] = name;
+            }
+            if (used) result = string.Join(" ", parts);
+            return true;
         }
 
         /// <summary>The NAME of the currently targeted player, or null when the target is missing, is a
@@ -1397,6 +1451,11 @@ namespace Game.Client
         public async Task CreateCharacter(string name, Race race, BaseClass baseClass)
         {
             if (_busy) return;
+            // Same rule the server enforces, read from Game.Shared so the two cannot disagree — this is
+            // only here to say WHY before a round trip, never to decide. The server is the authority and
+            // re-runs the identical check (GameConstants.IsValidCharacterName).
+            if (!GameConstants.IsValidCharacterName(name, out string nameError))
+            { Fail("Create failed: " + nameError); return; }
             _busy = true;
             try
             {
@@ -2509,6 +2568,7 @@ namespace Game.Client
         {
             if (string.IsNullOrWhiteSpace(raw)) return;
             raw = raw.Trim();
+            if (!TrySubstituteTargetToken(raw, out raw)) return;
             try
             {
                 if (raw.StartsWith("!"))

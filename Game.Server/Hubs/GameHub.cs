@@ -147,7 +147,16 @@ public class GameHub : Hub
         if (entity is null)
             return new LoginResult(false, "Character not found.", Guid.Empty, 0, 0);
 
-        // entity.Role came from the character row in LoadCharacterAsync — nothing to overlay here.
+        // entity.Role came from the character row in LoadCharacterAsync (with owner.txt overlaid there,
+        // so the Owner is Owner before this line reads the rank).
+
+        // MAINTENANCE LOCK — a server that came back up "staff only" after `/server shutdown 10 1`, or
+        // one an admin locked by hand. Checked HERE, after the load, because the gate is per CHARACTER:
+        // an admin's ordinary character is not staff and does not get in either (the role is per
+        // character by design — see CharacterRecord.Role).
+        if (Game.Server.Simulation.ServerControl.LockedToStaff && !entity.IsStaff)
+            return new LoginResult(false,
+                Game.Server.Simulation.ServerControl.LockedMessage(), Guid.Empty, 0, 0);
 
         // The ACCOUNT bank is read here, on the async login path, not on the tick thread. The loop
         // discards it if that account already has a live list (see EnterWorldCommand).
