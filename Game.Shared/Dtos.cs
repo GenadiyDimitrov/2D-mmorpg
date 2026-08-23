@@ -922,11 +922,38 @@ public record AuthRequest(string Username, string Password, int Protocol = 0);
 /// the /give picker. <paramref name="OwnerName"/> is always the character the action TARGETS.</summary>
 public record AdminBagDto(string OwnerName, long Gold, InventoryItemDto[] Items);
 
-/// <summary>Server -> client: admin-only state worth showing PERMANENTLY on screen. God mode and forced
-/// speeds are invisible otherwise — the only way to recall whether god mode was on was to type /god
-/// again and see which way it toggled.</summary>
-public record AdminStateDto(
-    AccountRole Role, bool GodMode, float? CastSpeed, float? AttackSpeed, float? MoveSpeed);
+/// <summary>Server -> owning client: everything about YOUR OWN state that the world does not draw
+/// by itself (`BL-82`). Two families live here for one reason — both are states you are IN, and both
+/// were previously announced by a single chat line that had scrolled away by the time you wondered.
+///
+/// <para><b>Staff states</b> (<paramref name="Role"/>, <paramref name="GodMode"/>, the three forced
+/// speeds): the owner's *"Add a flag for admin to see that he is in god/invis ... but now i cannot
+/// see nothing."* God mode and a forced speed change nothing you can look at, so the only way to
+/// recall whether god was on was to type <c>/god</c> again and read which way it toggled.</para>
+///
+/// <para><b>Visibility</b> (<paramref name="Invisible"/>, <paramref name="Hidden"/>,
+/// <paramref name="Stealthed"/>): the three kinds of `BL-69`, split out rather than merged into one
+/// "how see-through am I" number, because they do not mean the same thing and the client draws them
+/// differently — his rule is *"the players in shtealt will see themselves with opacity to 0.7 and in
+/// invis 0.4"*. <c>Stealthed</c> is the buff-carried kind (Prowl / Conceal / Shrouding Hymn) and is
+/// sent as the server's own cached answer rather than a list of skill ids, so a stealth buff added
+/// later fades you with no client change.</para>
+///
+/// <para>🔑 <b>This describes the RECIPIENT and nobody else, and that is load-bearing.</b> His
+/// sentence ends *"(for them selves only - for others stealth does nothing, invis vanishes them)"* —
+/// an observer must learn nothing from another player's stealth. There is no wire shape here that
+/// could leak it: this push goes to one connection and speaks only about that connection's own
+/// character. The observer half needs no field at all, because it is already true server-side — a
+/// hidden entity is an OMISSION from the snapshot (see <c>GameLoopService.CanSee</c>), never a flag
+/// the client is trusted to honour.</para>
+///
+/// <para>Pushed on CHANGE, from the tick loop, rather than from each command that could cause one.
+/// Hide ends by expiry, by damage, by acting, by a flare, by death and by <c>/invis</c> being typed
+/// again — enumerating those call sites is how one gets missed and the fade sticks on a visible
+/// character.</para></summary>
+public record SelfStateDto(
+    AccountRole Role, bool GodMode, float? CastSpeed, float? AttackSpeed, float? MoveSpeed,
+    bool Invisible = false, bool Hidden = false, bool Stealthed = false);
 
 /// <summary>Account login/register result. Carries no staff role: authorization now belongs to the
 /// CHARACTER (see <see cref="LoginResult.Role"/>), so logging in proves identity only.</summary>

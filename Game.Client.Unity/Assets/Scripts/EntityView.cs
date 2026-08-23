@@ -106,6 +106,13 @@ namespace Game.Client
         private Color _color = Color.white;
         private bool _dead;
 
+        // `BL-82` — the stealth fade and the god ring. Both are SELF-ONLY effects; nothing here is ever
+        // driven by another player's state, because nothing on the wire describes it.
+        private float _alpha = 1f;
+        private Material _opaqueMaterial, _fadeMaterial;
+        private Transform _halo;
+        private Renderer _haloRenderer;
+
         public void Init(Color color)
         {
             _renderer = GetComponent<Renderer>();
@@ -115,7 +122,7 @@ namespace Game.Client
                 // Via UnlitMaterials, NOT Shader.Find here — see that class for why the direct call
                 // made every entity magenta on the phone while looking fine in the Editor.
                 var material = UnlitMaterials.Create(color);
-                if (material != null) _renderer.material = material;
+                if (material != null) { _renderer.material = material; _opaqueMaterial = _renderer.material; }
             }
             SetColor(color);
             _cam = Camera.main != null ? Camera.main.transform : null;
@@ -143,10 +150,77 @@ namespace Game.Client
             Apply();
         }
 
+        /// <summary>How see-through this marker draws (`BL-82`): 1 solid, 0.7 stealthed, 0.4 invisible.
+        /// Only ever called for the SELF marker.
+        ///
+        /// <para>The material is swapped rather than made transparent up front, and that is deliberate.
+        /// Every marker in this project is opaque on purpose (see <c>UnlitMaterials.CreateTransparent</c>:
+        /// transparency in URP costs a second material, a render queue and back-to-front sorting), so a
+        /// character who is not hiding keeps exactly the rendering he had before this feature existed.
+        /// The transparent copy is built on the first fade and then kept — a rogue toggles a lot.</para></summary>
+        public void SetOpacity(float alpha)
+        {
+            alpha = Mathf.Clamp01(alpha);
+            if (Mathf.Approximately(_alpha, alpha)) return;
+            _alpha = alpha;
+
+            if (_renderer != null)
+            {
+                bool fade = _alpha < 0.999f;
+                if (fade && _fadeMaterial == null)
+                    _fadeMaterial = UnlitMaterials.CreateTransparent(_color);
+
+                var want = fade ? _fadeMaterial : _opaqueMaterial;
+                if (want != null && _renderer.sharedMaterial != want)
+                {
+                    // Re-read through the getter and keep THAT: Unity hands a renderer its own instance
+                    // of a material, and holding the object we passed in would make the check above
+                    // false on every toggle — a fresh material per hide, for as long as the rogue plays.
+                    _renderer.material = want;
+                    if (fade) _fadeMaterial = _renderer.material;
+                    else _opaqueMaterial = _renderer.material;
+                }
+            }
+            Apply();
+        }
+
+        /// <summary>A translucent shell around the marker — the god-mode ring (`BL-82`). Built on first
+        /// use and then just shown/hidden, and it carries NO collider: it is bigger than the marker, and
+        /// a ring that swallowed taps would make an admin unable to click past himself.</summary>
+        public void SetHalo(bool on, Color color)
+        {
+            if (!on && _halo == null) return;   // the overwhelmingly common case: never build it
+
+            if (_halo == null)
+            {
+                var go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                go.name = "Halo";
+                go.transform.SetParent(transform, false);
+                go.transform.localPosition = Vector3.zero;
+                go.transform.localScale = Vector3.one * 1.5f;   // relative to the marker, so it scales with it
+                var collider = go.GetComponent<Collider>();
+                if (collider != null) Destroy(collider);
+
+                _haloRenderer = go.GetComponent<Renderer>();
+                var material = UnlitMaterials.CreateTransparent(color);
+                if (material != null && _haloRenderer != null) _haloRenderer.material = material;
+                _halo = go.transform;
+            }
+
+            if (_haloRenderer != null)
+            {
+                UnlitMaterials.SetColor(_haloRenderer.material, color);
+                _haloRenderer.enabled = on;
+            }
+            _halo.gameObject.SetActive(on);
+        }
+
         private void Apply()
         {
             if (_renderer == null || _renderer.material == null) return;
-            UnlitMaterials.SetColor(_renderer.material, _dead ? _color * 0.3f : _color);
+            var color = _dead ? _color * 0.3f : _color;
+            color.a = _alpha;                      // last word: _color * 0.3f dims alpha too
+            UnlitMaterials.SetColor(_renderer.material, color);
         }
 
         /// <summary>

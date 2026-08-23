@@ -113,6 +113,11 @@ namespace Game.Client
         /// moderators moderate, they do not cheat.</summary>
         public bool CanUseAdminTools => Role >= AccountRole.Admin;
 
+        /// <summary>Your own otherwise-undrawable state (`BL-82`) — god mode, forced speeds, and which
+        /// of the three kinds of invisibility you are in. Null until the first push, which arrives on
+        /// the first tick after entering the world; treat null as "ordinary, nothing on".</summary>
+        public SelfStateDto SelfState { get; private set; }
+
         /// <summary>
         /// The skill bar, exactly as the SERVER sent it — 60 slots of skill id / "action:…" / "item:…"
         /// / null. **This client never authors a bar.** The server owns it and does the placement; a
@@ -1184,6 +1189,16 @@ namespace Game.Client
                 PkCount = p.PkCount;
                 PvpCount = p.PvpCount;
             });
+            // `BL-82`. Two consumers, and they read DIFFERENT halves: the badge reads the staff flags,
+            // the world reads the visibility ones. The role is taken from here too — this push is the
+            // live one, so a /role while you are standing there moves the toolbox without a relog.
+            _net.SelfStateReceived += s => Main(() =>
+            {
+                if (s == null) return;
+                SelfState = s;
+                Role = s.Role;
+                ApplySelfVisibility();
+            });
             _net.TitlesReceived += t => Main(() =>
             {
                 HeldTitles = t?.Held ?? new string[0];
@@ -1364,6 +1379,29 @@ namespace Game.Client
         /// timer starts, so the first Seconds seen for a token IS its full reuse. It is only replaced
         /// when Seconds comes back HIGHER than what we were counting down to — i.e. the timer restarted.
         /// </summary>
+        /// <summary>Translate the visibility half of <see cref="SelfState"/> into how YOUR OWN marker
+        /// draws (`BL-82`). His rule, verbatim: *"the players in shtealt will see themselves with
+        /// opacity to 0.7 and in invis 0.4 (for them selves only - for others stealth does nothing,
+        /// invis vanishes them)"* — plus a golden ring for an admin in god mode.
+        ///
+        /// <para>Both invisibilities share the 0.4, because they make the same promise to the player:
+        /// nobody can see you. That they end differently (a hide breaks when you act, <c>/invis</c>
+        /// never does) is not something an opacity can say, and the chat line already does.</para>
+        ///
+        /// <para>🔑 This is a LOCAL effect on ONE marker — the self one. It must never be derived from
+        /// anything the server says about another player, and it cannot be: nothing on the wire
+        /// describes another player's stealth. A hidden character is simply not sent.</para></summary>
+        private void ApplySelfVisibility()
+        {
+            if (Entities == null) return;
+            var s = SelfState;
+            float alpha = s == null ? 1f
+                        : s.Invisible || s.Hidden ? 0.4f
+                        : s.Stealthed ? 0.7f
+                        : 1f;
+            Entities.SetSelfVisual(alpha, s != null && s.GodMode);
+        }
+
         private void ApplyCooldowns(CooldownUpdate update)
         {
             var entries = update?.Entries;
@@ -1738,6 +1776,7 @@ namespace Game.Client
             _authUser = _authPass = null;
             _lastCharacterId = -1;
             Role = AccountRole.Player;
+            SelfState = null;   // or the next character inherits this one's badge until its first tick
 
             try { if (_net != null && _net.IsConnected && Phase == ClientPhase.InWorld) await _net.LeaveWorldAsync(); }
             catch (Exception ex) { ClientLog.Warn("Logout (leave): " + ex.Message); }

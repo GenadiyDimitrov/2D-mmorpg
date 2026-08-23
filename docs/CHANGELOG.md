@@ -7,12 +7,60 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.79.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.80.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-08-23 (latest) — 0.79.0 shipped: the playtest-27 build, and a wire bump that is not optional
+## 2026-08-23 (latest) — 0.80.0: you can see that you are in god mode, and stealth looks like stealth (`BL-82`)
+
+His question was *"What happen to the /god /invis + prowl/conceal/hymn visual?"* — and the honest answer
+was that the Unity client never had one. The god-mode badge lived in the **WPF harness** and died with it
+in 0.42.8 (`00f17fb`). The server has been pushing the state ever since — `SendAdminState` on every `/god`
+and `/spd` — into a message name **no Unity handler was ever registered for**, so it went into the void;
+`/invis` did not even push, and `AdminStateDto` had no field for it. The rest (his opacity rule) had been
+parked as "later, once models exist", which was never a real gate: a capsule takes an alpha exactly as
+well as a model will.
+
+**The badge.** Top strip, left of the version. Rank, plus `GOD`, `INVIS` and any forced speed, on a
+background that carries the alarm on its own — red for god mode, indigo for invisible, neutral for staff
+with nothing on, hidden entirely for an ordinary player. It is painted from the SERVER's view of the
+character, never from local memory of what was typed: `/role` dropping someone below admin also clears
+their god mode, and a client tracking its own toggles would go on showing GOD to someone who no longer
+has it (the old PvP-button bug, which guessed and was wrong every time the server refused a toggle).
+
+**The opacity**, exactly as he ruled it in playtest 25 — *"the players in shtealt will see themselves
+with opacity to 0.7 and in invis 0.4 (for them selves only - for others stealth does nothing, invis
+vanishes them)"*. Stealth (Prowl / Conceal / Shrouding Hymn) fades your own marker to **0.7**; both
+invisibilities — `/invis` and the rogue's Vanish — to **0.4**; a god admin gets a **golden ring**, a
+translucent shell around the marker rather than a repaint of it, so the dot keeps its own colour. The
+marker's material is swapped for a transparent one **on the first fade only**: every marker in this
+project is deliberately opaque (transparency in URP costs a second material, a render queue and
+back-to-front sorting), so a character who is not hiding renders exactly as before.
+
+🔑 **"For themselves only" is enforced by there being nothing to leak.** The push describes ONE
+connection's own character and says nothing about anybody else's, and the observer half was already true
+server-side: `BL-69` makes a hidden entity an **omission from the snapshot** (`CanSee`), never a flag the
+client is trusted to honour. Stealth, correctly, changes nothing for an observer — the stealthed player
+is still sent, still drawn, still clickable; it is the unaggroed MOBS that decline to start on him.
+
+**Pushed on change, from the tick loop** — not from each command that could cause one. That is the whole
+design of `PushSelfState`: hide starts on a cast and ends on expiry, on damage taken, on any action, on a
+Signal Flare, on death; stealth ends on toggle-off, dispel, expiry, an unaffordable upkeep tick and death.
+Enumerating those call sites is how one gets missed, and a missed one leaves a character faded while he
+stands in plain sight — a bug that looks exactly like the feature working until someone walks up and kills
+him. Comparing the finished record (records compare by value) costs one allocation per player per tick and
+cannot be missed. The dead-check `continue` sits below it deliberately, so a corpse is never left faded.
+
+⚠ **`ProtocolVersion` 24 → 25, and it is a RENAME, not an addition.** `AdminStateDto` is now
+`SelfStateDto` — three fields richer (`Invisible`, `Hidden`, `Stealthed`) and pushed as `"SelfState"`
+instead of `"AdminState"`. An old client subscribes to a message the server no longer sends and shows
+none of this, which is the very hole this version closes. **Install both halves.**
+
+Verified: `dotnet build Game.sln` clean, the Unity type-check clean against the refreshed
+`Assets/Plugins/Game.Shared.dll`, and the server boots reporting `L2Clone server v0.80.0 starting.`
+
+## 2026-08-23 — 0.79.0 shipped: the playtest-27 build, and a wire bump that is not optional
 
 Playtest 27 landed across two commits (`8619a6b`, `a00385f`) and **bumped nothing** — the same slip as
 the Warchanter kit before it. Bumped to **0.79.0** and republished both halves:

@@ -32,6 +32,10 @@ namespace Game.Client
         private Image _statusDot, _reconnectNotice;
         private TextMeshProUGUI _statusText, _versionText;
 
+        // staff badge (`BL-82`) — god mode / invisibility / forced speeds, permanently on screen
+        private Image _staffBadge;
+        private TextMeshProUGUI _staffBadgeText;
+
         // login
         private RectTransform _loginPanel;
         private TMP_InputField _urlField, _userField, _passField;
@@ -163,6 +167,22 @@ namespace Game.Client
             UiKit.Place(UiKit.Rect(_versionText.gameObject), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
                         new Vector2(-12f, 0f), new Vector2(120f, 20f));
 
+            // THE STAFF BADGE (`BL-82`): *"Add a flag for admin to see that he is in god/invis ... but
+            // now i cannot see nothing."* It lives in the strip beside the version, LEFT of it, because
+            // the whole top-left below the strip is already spoken for — vitals down to -162 and the
+            // buff rows from -170 — and a badge that only appears sometimes must not push those around.
+            //
+            // Its background carries the alarm and the text carries the detail, so a glance is enough to
+            // answer "am I god right now" without reading: red = god mode, indigo = invisible, neutral =
+            // staff with nothing on. Hidden outright for an ordinary player, who has none of these.
+            _staffBadge = UiKit.Box(strip.transform, "StaffBadge", new Color(0.18f, 0.18f, 0.22f, 0.75f));
+            UiKit.Place(UiKit.Rect(_staffBadge.gameObject), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
+                        new Vector2(-140f, 0f), new Vector2(250f, 26f));
+            _staffBadgeText = UiKit.Label(_staffBadge.transform, "", 15f, UiKit.Text,
+                                          TextAlignmentOptions.Right);
+            UiKit.Stretch(UiKit.Rect(_staffBadgeText.gameObject), 8f, 0f, 8f, 0f);
+            _staffBadge.gameObject.SetActive(false);
+
             // Shown only while a silent reconnect is in flight. It is deliberately a NOTICE and not a
             // full-screen takeover: the world behind it is still the world you were in, and saying so
             // is better than the client pretending you had logged out.
@@ -225,6 +245,38 @@ namespace Game.Client
                 if (!live) text += "   STALLED";
             }
             _statusText.text = text;
+
+            RefreshStaffBadge(inWorld);
+        }
+
+        /// <summary>Paint the staff badge from the server's own view of you (`BL-82`).
+        ///
+        /// <para>Read from <see cref="GameBoot.SelfState"/> and NOT from local memory of what was
+        /// typed: <c>/god</c> can also be turned off FOR you (a demotion clears it server-side), and a
+        /// client that tracked its own toggles would keep showing GOD to someone who no longer has it.
+        /// That is the same class of bug as the old PvP button, which guessed and was wrong every time
+        /// the server refused the toggle.</para></summary>
+        private void RefreshStaffBadge(bool inWorld)
+        {
+            var s = Boot.SelfState;
+            bool staff = s != null && s.Role != AccountRole.Player;
+            bool show = inWorld && staff;
+            if (_staffBadge.gameObject.activeSelf != show) _staffBadge.gameObject.SetActive(show);
+            if (!show) return;
+
+            // Plain text only — the TMP atlas is static, so a shield or an eye glyph would draw as a
+            // hollow box (see the tmp-font-atlas-is-static note).
+            string text = Roles.Name(s.Role).ToUpperInvariant();
+            if (s.GodMode) text += "  ·  GOD";
+            if (s.Invisible) text += "  ·  INVIS";
+            if (s.CastSpeed is float c) text += "  ·  cast " + c.ToString("0.##");
+            if (s.AttackSpeed is float a) text += "  ·  atk " + a.ToString("0.##");
+            if (s.MoveSpeed is float m) text += "  ·  spd " + m.ToString("0.##");
+            _staffBadgeText.text = text;
+
+            _staffBadge.color = s.GodMode  ? new Color(0.55f, 0.10f, 0.10f, 0.88f)
+                              : s.Invisible ? new Color(0.24f, 0.20f, 0.46f, 0.88f)
+                                            : new Color(0.18f, 0.18f, 0.22f, 0.75f);
         }
 
         // ----- login -----------------------------------------------------------------------------

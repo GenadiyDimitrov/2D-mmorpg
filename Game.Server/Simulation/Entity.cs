@@ -1421,6 +1421,13 @@ public class Entity
     /// <summary>Unseen by players AND mobs — the two absolute kinds.</summary>
     public bool Hidden => HideTicks > 0 || AdminInvisible;
 
+    /// <summary>The last <see cref="SelfStateDto"/> this player's client was sent (`BL-82`), so the
+    /// tick loop can push only on a real change. Runtime-only and deliberately NOT reset on logout:
+    /// the entity itself is gone, and a fresh one starts null, which makes the first tick after
+    /// entering the world push the state — so the badge is right on login and not only after you
+    /// toggle something.</summary>
+    public SelfStateDto? LastSelfState { get; set; }
+
     /// <summary>Should an UNAGGROED mob decline to start on this entity? True for every kind: a full
     /// hide implies it. This is the predicate the mob AI's aggro scan reads, and it deliberately says
     /// nothing about mobs already in the fight — that difference is the whole point of stealth.</summary>

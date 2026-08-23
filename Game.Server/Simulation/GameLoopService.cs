@@ -5945,7 +5945,7 @@ public class GameLoopService : BackgroundService
             case "god":
                 admin.GodMode = !admin.GodMode;
                 SendSystemToEntity(admin, $"God mode {(admin.GodMode ? "ON" : "OFF")}.");
-                SendAdminState(admin);   // persistent on-screen indicator, not just this one line
+                PushSelfState(admin);   // persistent on-screen indicator, not just this one line
                 break;
 
             // ADMIN INVISIBILITY (BL-69, kind 3) — the absolute one. Nothing in the simulation ends
@@ -5960,6 +5960,7 @@ public class GameLoopService : BackgroundService
                 SendSystemToEntity(admin, admin.AdminInvisible
                     ? "Invisible. Nobody can see or target you (you are still hittable — /god for that)."
                     : "Visible again.");
+                PushSelfState(admin);   // the badge and the 0.4 fade (`BL-82`), not just this one line
                 break;
 
             case "titleright":
@@ -6061,7 +6062,7 @@ public class GameLoopService : BackgroundService
                     {
                         live.Role = newRole.Value;
                         if (newRole.Value < AccountRole.Admin) live.GodMode = false;
-                        SendAdminState(live);
+                        PushSelfState(live);
                         // The staff TITLE is held by role (C17), so a demotion has to strip a worn one
                         // here and a promotion has to offer it — without this the picker (and the
                         // plate) would keep the old role's title until the next relog.
@@ -6265,7 +6266,7 @@ public class GameLoopService : BackgroundService
                     admin.AdminMoveSpeed = null;
                     SendSystemToEntity(admin, "Speeds back to normal.");
                     SendStats(admin);
-                    SendAdminState(admin);
+                    PushSelfState(admin);
                     break;
                 }
 
@@ -6289,7 +6290,7 @@ public class GameLoopService : BackgroundService
                 else { admin.AdminAttackSpeed = v; label = "attack"; }
                 SendSystemToEntity(admin, $"{label} speed forced to {v:0.##}.");
                 SendStats(admin);
-                SendAdminState(admin);
+                PushSelfState(admin);
                 break;
             }
 
@@ -6312,7 +6313,7 @@ public class GameLoopService : BackgroundService
                     admin.RecomputeDerived();
                     SendSystemToEntity(admin, "All stat overrides cleared.");
                     SendStats(admin);
-                    SendAdminState(admin);
+                    PushSelfState(admin);
                     break;
                 }
 
@@ -6348,7 +6349,7 @@ public class GameLoopService : BackgroundService
                 string statWhat = Array.Find(Entity.AdminStatKeys, k => k.Key == statKey).What;
                 SendSystemToEntity(admin, $"{statWhat} forced to {statV:0.##}.");
                 SendStats(admin);
-                SendAdminState(admin);
+                PushSelfState(admin);
                 break;
             }
 
@@ -6983,13 +6984,28 @@ public class GameLoopService : BackgroundService
         });
     }
 
-    /// <summary>Push the admin-only client indicators (god mode, forced speeds) so the state is VISIBLE
-    /// instead of something you rediscover by typing /god again and watching which way it toggles.</summary>
-    private void SendAdminState(Entity e)
+    /// <summary>Push the owning client's own invisible state (`BL-82`) — staff flags AND the three
+    /// kinds of invisibility — IF it changed since the last push.
+    ///
+    /// <para>The change test is the whole design. The alternative is calling this from every place
+    /// that could alter one of these, and the visibility half has a lot of them: hide starts on a
+    /// cast, and ends on expiry, on damage taken, on any action, on a Signal Flare, on death, on a
+    /// zone move; stealth ends on toggle-off, dispel, expiry, an unaffordable upkeep tick and death.
+    /// Miss one and the client keeps a character faded who is standing in plain sight — a bug that
+    /// looks exactly like the feature working until someone walks up and kills you. Comparing the
+    /// finished record costs one allocation per player per tick and cannot be missed.</para>
+    ///
+    /// <para>Records compare by VALUE, which is what makes <c>!=</c> here a field-by-field test and
+    /// what will keep covering a field added later.</para></summary>
+    private void PushSelfState(Entity e)
     {
         if (e.Kind != EntityKind.Player) return;
-        SendTo(e, "AdminState", new AdminStateDto(
-            e.Role, e.GodMode, e.AdminCastSpeed, e.AdminAttackSpeed, e.AdminMoveSpeed));
+        var state = new SelfStateDto(
+            e.Role, e.GodMode, e.AdminCastSpeed, e.AdminAttackSpeed, e.AdminMoveSpeed,
+            Invisible: e.AdminInvisible, Hidden: e.HideTicks > 0, Stealthed: e.StealthFromBuffs);
+        if (state == e.LastSelfState) return;
+        e.LastSelfState = state;
+        SendTo(e, "SelfState", state);
     }
 
     private Entity? FindOnlinePlayer(string name) =>
@@ -7671,6 +7687,9 @@ public class GameLoopService : BackgroundService
 
             if (entity.Kind == EntityKind.Player)
             {
+                // `BL-82`: BEFORE the Dead check below, which `continue`s — death clears a hide, and a
+                // corpse that is still drawn at 0.4 opacity is exactly the stuck fade this guards.
+                PushSelfState(entity);
                 if (_tick % GameConstants.SecondIntervalTicks == 0) TickToggleUpkeep(entity);
                 TickPotion(entity);
                 TickRegionNotice(entity);

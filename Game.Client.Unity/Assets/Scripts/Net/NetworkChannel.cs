@@ -54,6 +54,12 @@ namespace Game.Client
         /// flag locally by flipping a bool on every tap, which is a guess: the server refuses the
         /// toggle in a safe zone, and nothing told the button. This push is the authority.</summary>
         public event Action<PvpState> PvpStateReceived;
+        /// <summary>Your OWN otherwise-undrawable state (`BL-82`): the staff flags (role, god mode,
+        /// forced speeds) and which of the three kinds of invisibility you are in. Pushed on change,
+        /// including once on entering the world, so nothing here has to be inferred from a chat line
+        /// that has scrolled away. It speaks only about THIS client's character — an observer learns
+        /// nothing about anyone else's stealth from it, by construction.</summary>
+        public event Action<SelfStateDto> SelfStateReceived;
         /// <summary>Which leaderboard titles you currently HOLD, and which you are wearing. Pushed on
         /// login, whenever the server re-reads the boards, and on every pick.</summary>
         public event Action<TitlesDto> TitlesReceived;
@@ -171,6 +177,7 @@ namespace Game.Client
             _connection.On<AutoTargetUpdate>("AutoTarget", t => AutoTargetReceived?.Invoke(t));
             _connection.On<TargetDetails>("TargetDetails", d => TargetDetailsReceived?.Invoke(d));
             _connection.On<PvpState>("PvpState", p => PvpStateReceived?.Invoke(p));
+            _connection.On<SelfStateDto>("SelfState", s => SelfStateReceived?.Invoke(s));
             _connection.On<TitlesDto>("Titles", t => TitlesReceived?.Invoke(t));
             _connection.On<ResurrectOffer>("ResurrectOffer", o => ResurrectOfferReceived?.Invoke(o));
             _connection.On<PartyUpdate>("Party", p => PartyReceived?.Invoke(p));

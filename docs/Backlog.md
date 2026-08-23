@@ -852,18 +852,24 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
   → `docs/guides/ItemIds.md` (1,078 ids, **generated** by `tools/ItemIds`, never hand-written) and an
   `id <defId>` line under the enchant line on every item card, staff only.
 
-- `BL-82` 🔴 **YOU CANNOT SEE THAT YOU ARE IN GOD MODE OR INVISIBLE.** Playtest 25: *"Add a flag for admin
-  to see that he is in god/invis ... but now i cannot see nothing."* Two halves, and the first is small
-  enough to ship on its own:
-  - **Now:** a persistent on-screen indicator for each staff state that is currently silent — god mode and
-    invisibility. Text or a badge; the client already knows both, nothing new has to be sent.
-  - **Later, once models exist:** your rule for the whole stealth family — *"the players in shtealt will
-    see themselves with opacity to 0.7 and in invis 0.4 (for them selves only - for others stealth does
-    nothing, invis vanishes them)"*, and **a god admin gets a golden colour or border**. 🔑 The important
-    half of that sentence is *for themselves only*: **an observer must learn nothing from it**, which is
-    the same rule `BL-69` already enforces server-side (hide is an OMISSION from the snapshot, not a flag
-    the client is trusted to honour). So the opacity is a purely local effect and must never be derived
-    from anything sent about another player.
+- `BL-82` ✅ **BUILT 2026-08-23 (0.80.0) — BOTH halves, not just the badge.** Playtest 25: *"Add a flag
+  for admin to see that he is in god/invis ... but now i cannot see nothing."* Kept here for one release
+  because it is the item you asked after by name; delete at the next sweep.
+  - **The badge** — top strip, beside the version: your rank, plus `GOD`, `INVIS` and any forced speed.
+    Red background for god, indigo for invisible. Staff only, and read from the SERVER's view of you, so
+    a demotion that clears god mode clears the badge too.
+  - **The opacity**, exactly as you ruled it: **0.7 stealthed** (Prowl / Conceal / Shrouding Hymn) and
+    **0.4 invisible** (`/invis` and the rogue's Vanish both), on **your own marker only** — plus the
+    **golden ring** around a god admin. 🔑 *For themselves only* is enforced by there being nothing to
+    leak: the push describes one connection's own character and no one else's, and the observer half was
+    already true server-side (`BL-69` — a hidden entity is an OMISSION from the snapshot, never a flag
+    the client is trusted to honour).
+  - 🔑 Why it had been silent: the god badge existed in the **WPF harness** and died with it in 0.42.8.
+    The server never stopped pushing the state — the Unity client simply had no handler, so it went into
+    the void, and `/invis` never pushed at all. `AdminStateDto` is now `SelfStateDto`, three fields
+    richer, and it is pushed **on change from the tick loop** rather than from each command that could
+    cause one: hide ends by expiry, damage, acting, a flare and death, and missing one of those would
+    leave a visible character faded. Protocol **24 → 25**; see `CHANGELOG.md`.
 
 - `BL-86` 🔵 **THE SHUTDOWN COUNTDOWN IS TEXT, NOT A BIG RED BANNER — your call whether that is enough.**
   `/server shutdown|reboot|on` is **BUILT** (0.78.0) with your whole announcement ladder — hours, then

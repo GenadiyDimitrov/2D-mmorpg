@@ -40,6 +40,33 @@ namespace Game.Client
         /// than the marker.</summary>
         public const float TapTargetScale = 2.0f;
 
+        // How the SELF marker currently draws (`BL-82`): opacity for the stealth family, a golden ring
+        // for god mode. Held here rather than pushed straight at the view because the view is created
+        // and destroyed by the snapshot feed — walk far enough for a resync and a freshly built self
+        // marker would come back solid, mid-stealth, with nothing to tell it otherwise.
+        private float _selfAlpha = 1f;
+        private bool _selfGod;
+
+        /// <summary>Set how your own marker draws. See <c>GameBoot.ApplySelfVisibility</c> for the
+        /// rule; this end just applies it and remembers it for the next self view.</summary>
+        public void SetSelfVisual(float alpha, bool god)
+        {
+            _selfAlpha = alpha;
+            _selfGod = god;
+            if (SelfId != Guid.Empty && _views.TryGetValue(SelfId, out var self) && self != null)
+                ApplySelfVisual(self);
+        }
+
+        private void ApplySelfVisual(EntityView view)
+        {
+            view.SetOpacity(_selfAlpha);
+            view.SetHalo(_selfGod, GodHalo);
+        }
+
+        /// <summary>The god-mode ring. Gold, and deliberately translucent — it is a border around your
+        /// marker, not a repaint of it, so you can still read your own dot's normal colour through it.</summary>
+        private static readonly Color GodHalo = new Color(1.00f, 0.82f, 0.25f, 0.42f);
+
         /// <summary>Raised when a frame referenced an entity we never saw spawn — the one symptom of a
         /// desynced delta stream. GameBoot answers it with a resync request.</summary>
         public event Action MissingEntity;
@@ -163,6 +190,7 @@ namespace Game.Client
             view.IsSelf = e.Id == SelfId;
             view.SetTarget(WorldMapper.ToUnity(e.X, e.Y));
             view.SetColor(ColorFor(e));
+            if (view.IsSelf) ApplySelfVisual(view);   // `BL-82` — survives a respawn of the marker
             // Dead entities stay in the world (corpses are lootable/visible) but are dimmed rather
             // than hidden, so a kill is legible instead of things silently vanishing.
             view.SetDead(e.Dead);

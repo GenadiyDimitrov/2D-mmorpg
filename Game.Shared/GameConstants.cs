@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.79.0";
+    public const string GameVersion = "0.80.0";
 
     /// <summary>
     /// The WIRE contract's version, and the ONLY thing compatibility is decided on.
@@ -72,8 +72,9 @@ public static class GameConstants
     /// the handshake is the only place that pair gets caught.
     /// 22 → 23 (2026-08-22, playtest 26): <see cref="AccountRole"/> gained two ranks and its numbers
     /// MOVED — ChatModerator was inserted at 1, so Moderator went 1 → 2 and Admin 2 → 3, with Owner at 4.
-    /// It rides on `AuthResponse` and `AdminStateDto` as a plain int, so this is the rare bump that is not
-    /// an addition but a REDEFINITION: an old client on this server reads a Moderator as a Chat Moderator
+    /// It rides on `AuthResponse` and `AdminStateDto` (renamed `SelfStateDto` at 25) as a plain int, so
+    /// this is the rare bump that is not an addition but a REDEFINITION: an old client on this server
+    /// reads a Moderator as a Chat Moderator
     /// and an Admin as a Moderator, and hides the admin toolbox from a real admin. Nothing crashes, which
     /// is exactly why it has to be caught by the handshake rather than noticed later.
     /// 23 → 24 (2026-08-23, playtest 27): <see cref="BuffDto"/> gained a `Level`, so the effects bar can
@@ -83,7 +84,15 @@ public static class GameConstants
     /// legal in names now, `~` and `%target` stopped being target tokens (`~` is the relative-coordinate
     /// prefix for `/tp`) while ``/`` started being one, and a non-admin may send a bare `/where`.
     /// Pairing an old client with this server would silently mean the wrong name rule and a dead ``.
-    public const int ProtocolVersion = 24;
+    /// 24 → 25 (2026-08-23, `BL-82`): `AdminStateDto` became <see cref="SelfStateDto"/> — renamed, three
+    /// fields richer (`Invisible`, `Hidden`, `Stealthed`) and pushed on the hub message `"SelfState"`
+    /// instead of `"AdminState"`. A RENAME, so this is not a bump an old client survives by reading
+    /// less: it subscribes to a message name the server no longer sends, and the god-mode badge and
+    /// the stealth fade are simply absent — which is the same "you cannot see that you are in god
+    /// mode" hole this version exists to close. It is also the direction that matters least in the
+    /// reverse: a new client on an old server subscribes to a message that never arrives and shows
+    /// nothing, silently. The handshake is the only place either pairing is caught.
+    public const int ProtocolVersion = 25;
 
     /// <summary>
     /// The oldest protocol this server still speaks. Equal to <see cref="ProtocolVersion"/> means
