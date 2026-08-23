@@ -76,7 +76,14 @@ public static class GameConstants
     /// an addition but a REDEFINITION: an old client on this server reads a Moderator as a Chat Moderator
     /// and an Admin as a Moderator, and hides the admin toolbox from a real admin. Nothing crashes, which
     /// is exactly why it has to be caught by the handshake rather than noticed later.
-    public const int ProtocolVersion = 23;
+    /// 23 → 24 (2026-08-23, playtest 27): <see cref="BuffDto"/> gained a `Level`, so the effects bar can
+    /// finally say WHICH rung it is showing (*"The title just says Aim no lvl"*). A pure addition — an old
+    /// client would simply not read it — but the same version carries three CLIENT-side rules that a
+    /// server cannot enforce alone and that would look like bugs if the halves disagreed: `_ . -` are
+    /// legal in names now, `~` and `%target` stopped being target tokens (`~` is the relative-coordinate
+    /// prefix for `/tp`) while ``/`` started being one, and a non-admin may send a bare `/where`.
+    /// Pairing an old client with this server would silently mean the wrong name rule and a dead ``.
+    public const int ProtocolVersion = 24;
 
     /// <summary>
     /// The oldest protocol this server still speaks. Equal to <see cref="ProtocolVersion"/> means
@@ -225,9 +232,14 @@ public static class GameConstants
     ///     TYPEABLE by every other player in the world — `/whisper`, `/ptinv`, `/jail` and the friend
     ///     list are all name-addressed, and a name nobody else's keyboard can produce is a name nobody
     ///     can whisper, invite, report or moderate.
-    ///   • **No spaces and no symbols.** Every name-taking command in the game parses `name` as the
-    ///     first token or splits on the last space (`/role <name> <role>`, `/jail <name> [min]`), so a
-    ///     space in a name breaks the parser, not just the eye.
+    ///   • **No spaces.** Every name-taking command in the game parses `name` as the first token or
+    ///     splits on the last space (`/role <name> <role>`, `/jail <name> [min]`), so a space in a name
+    ///     breaks the parser, not just the eye.
+    ///   • **Three symbols ARE allowed: `_` `.` `-`** (owner, playtest 27: *"symbols like _ . - I see no
+    ///     reason why cannot be included. Players should be able to separate `Name_.-Family`"*). None of
+    ///     the three is a token separator, none needs a keyboard layout nobody has, and none can be
+    ///     confused with nothing at all — which is what the rule is actually for. Consecutive ones are
+    ///     legal on purpose: his own example is `Name_.-Family`.
     ///   • **Must START with a letter**, and cannot be all digits — an all-digit name collides with
     ///     every command that takes a number in the same slot.
     ///
@@ -247,9 +259,10 @@ public static class GameConstants
             return false;
         }
         foreach (char c in n)
-            if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')))
+            if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')
+                  || c == '_' || c == '.' || c == '-'))
             {
-                error = "Name may use English letters and digits only — no spaces, symbols or accents.";
+                error = "Name may use English letters, digits and _ . - only — no spaces or other symbols.";
                 return false;
             }
         if (!char.IsLetter(n[0]))

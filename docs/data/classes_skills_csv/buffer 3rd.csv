@@ -52,9 +52,9 @@ LEARN @ LVL,NAME,TYPE,RANGE,TARGET,CAST s,CD s,DURRATION s,DESCR,MP,SP COST,REPL
 64,Combo Mastery,Passive,0,self/party,0,60,30,"Doing Damage With 3% Chance: attack speed +15% and cast speed +10% for you, half of both (+7.5%/+5%) to the party. Require: Box/Blunt",0,190k,[],,
 74,Combo Mastery,Passive,0,self/party,0,60,30,"Doing Damage With 3% Chance: attack speed +20% and cast speed +15% for you, half of both (+10%/+7.5%) to the party. Require: Box/Blunt",0,880k,[],,
 ,,,,,,,,,,,,,-----------------------Mana Restoration-----------------------
-40,Mana Vampirism,Passive,0,self,0,0,0,"+3% mana vampirism (physical basic atack only), Require: Box/Blunt",0,36k,[],,
-60,Mana Vampirism,Passive,0,self,0,0,0,"+7% mana vampirism (physical basic atack only), Require: Box/Blunt",0,120k,[],,
-70,Mana Vampirism,Passive,0,self,0,0,0,"+10% mana vampirism (physical basic atack only), Require: Box/Blunt",0,390k,[],,
+40,Mana Vampirism,Passive,0,self,0,0,0,"+1% mana vampirism (physical basic atack only), Require: Box/Blunt",0,36k,[],,
+60,Mana Vampirism,Passive,0,self,0,0,0,"+1.5% mana vampirism (physical basic atack only), Require: Box/Blunt",0,120k,[],,
+70,Mana Vampirism,Passive,0,self,0,0,0,"+2% mana vampirism (physical basic atack only), Require: Box/Blunt",0,390k,[],,
 ,,,,,,,,,,,,,-----------------------heavy Armor Mastery-----------------------
 40,Chanter Heavy Mastery,Passive,0,self,0,0,0,"Heavy: Restored Cast Speed to 90%(x1.8) and Attack speed to 100%(x2), Critical damage resist +15%;",0,36k,[],Human;Ork,
 ,,,,,,,,,,,,,-----------------------Harmonist Armor Mastery-----------------------

@@ -405,57 +405,82 @@ namespace Game.Client
             catch (Exception ex) { ClientLog.Warn("Like: " + ex.Message); }
         }
 
-        /// <summary>The `@target` token, his playtest-26 find: *"we should make @target or %target or ~
-        /// so admin/players commands to work on the target (take the name from the target window) because
-        /// a player named "IlIlllIIllI" for a human is impossible to read."*
+        /// <summary>The `@target` / `@self` tokens. Playtest 26 asked for the first: *"we should make
+        /// @target or %target or ~ so admin/players commands to work on the target (take the name from
+        /// the target window) because a player named "IlIlllIIllI" for a human is impossible to read."*
+        /// Playtest 27 fixed the spellings: *"other symbols than @t/target or @s/self should not work"*.
         ///
         /// 🔑 It is a CLIENT substitution, done once before any command is parsed, and it therefore works
-        /// on EVERY command that takes a name — `/jail @target`, `/w ~ hello`, `/ptinv @target`,
-        /// `/give @target sword1h_t10` — including ones written later, with no server change at all.
-        /// Targeting is client-side in this game (the server is only ever told a target id when you act
-        /// on something), so the client is the only place that knows the answer.
+        /// on EVERY command that takes a name — `/jail @target`, `/w @t hello`, `/ptinv @target`,
+        /// `/give @target sword1h_t10`, `/buff @s aim 1` — including ones written later, with no server
+        /// change at all. Targeting is client-side in this game (the server is only ever told a target id
+        /// when you act on something), so the client is the only place that knows the answer.
         ///
-        /// All four spellings work: `@target`, `%target`, `@t` and a bare `~`. Whole tokens only, so a
-        /// name or a message containing one of those characters is untouched.
+        /// TWO tokens, two spellings each:
+        ///   • `@target` / `@t` → the name of whatever you have targeted.
+        ///   • `@self` / `@s` → your own character's name.
+        ///
+        /// ⚠ **`~` and `%target` were REMOVED here.** `%target` was a spelling nobody asked to keep, and
+        /// `~` is now the RELATIVE-COORDINATE prefix (`/tp ~100 ~-50`) — one character cannot mean both
+        /// "my target" and "relative to me" in the same command line. Whole tokens only, so a name or a
+        /// message containing one of these characters is untouched.
         ///
         /// Returns false when a token was used with nothing targeted — the command is then not sent at
         /// all, rather than reaching the server as the literal word "@target".</summary>
         private bool TrySubstituteTargetToken(string raw, out string result)
         {
             result = raw;
-            if (raw.IndexOf('@') < 0 && raw.IndexOf('%') < 0 && raw.IndexOf('~') < 0) return true;
+            if (raw.IndexOf('@') < 0) return true;
 
             var parts = raw.Split(' ');
-            bool used = false;
-            string name = null;
+            bool changed = false;
+            string targetName = null;
             for (int i = 0; i < parts.Length; i++)
             {
                 string p = parts[i];
-                bool isToken = p.Equals("@target", StringComparison.OrdinalIgnoreCase)
-                            || p.Equals("%target", StringComparison.OrdinalIgnoreCase)
-                            || p.Equals("@t", StringComparison.OrdinalIgnoreCase)
-                            || p == "~";
-                if (!isToken) continue;
+                bool wantsSelf = p.Equals("@self", StringComparison.OrdinalIgnoreCase)
+                              || p.Equals("@s", StringComparison.OrdinalIgnoreCase);
+                bool wantsTarget = p.Equals("@target", StringComparison.OrdinalIgnoreCase)
+                                || p.Equals("@t", StringComparison.OrdinalIgnoreCase);
+                if (!wantsSelf && !wantsTarget) continue;
 
-                if (!used)
+                if (wantsSelf)
                 {
-                    used = true;
+                    // Your own name always exists, so @self can never fail the way @target can.
+                    string me = SelfName();
+                    if (string.IsNullOrEmpty(me))
+                    {
+                        ClientLog.Warn("Your character is not loaded yet — " + p + " has no one to stand for.");
+                        return false;
+                    }
+                    parts[i] = me;
+                    changed = true;
+                    continue;
+                }
+
+                if (targetName == null)
+                {
                     // Whatever is targeted, not just a player: an admin typing `/where @target` on an NPC
                     // should get the server's "no character" answer, not a silent wrong guess here.
                     if (TargetId.HasValue && TargetId.Value != SelfId && Entities != null
                         && Entities.TryGetState(TargetId.Value, out var e))
-                        name = e.Name;
+                        targetName = e.Name;
                 }
-                if (string.IsNullOrEmpty(name))
+                if (string.IsNullOrEmpty(targetName))
                 {
                     ClientLog.Warn("Nothing targeted — " + p + " has no one to stand for.");
                     return false;
                 }
-                parts[i] = name;
+                parts[i] = targetName;
+                changed = true;
             }
-            if (used) result = string.Join(" ", parts);
+            if (changed) result = string.Join(" ", parts);
             return true;
         }
+
+        /// <summary>Your own character's name, or null before the world state has arrived.</summary>
+        private string SelfName() =>
+            Entities != null && Entities.TryGetState(SelfId, out var me) ? me.Name : null;
 
         /// <summary>The NAME of the currently targeted player, or null when the target is missing, is a
         /// mob, or is yourself. Used by the name-only actions, which take a target instead of typing.</summary>
@@ -2680,11 +2705,20 @@ namespace Game.Client
 
                 if (raw.StartsWith("/"))
                 {
-                    if (!IsAdmin) { ClientLog.Warn("Unknown command: " + raw); return; }
                     var body = raw.Substring(1).Trim();
                     int sp = body.IndexOf(' ');
                     string cmd = sp < 0 ? body : body.Substring(0, sp);
                     string arg = sp < 0 ? "" : body.Substring(sp + 1).Trim();
+                    // Almost every slash command is staff-only, and the client refuses the rest rather
+                    // than letting them travel — but a few are for EVERYONE, and the server is the one
+                    // that decides how far each goes. `/where` with no argument is the first (owner,
+                    // playtest 27: *"/where should work for anyone - they can see their own map
+                    // coordinates -> to tell friends where to find them -> while /where player-name
+                    // should work only for admins+"*), so the ARGUMENT form still lands on the staff
+                    // gate server-side and is refused there.
+                    bool playerAllowed = cmd.Equals("where", StringComparison.OrdinalIgnoreCase)
+                                         && arg.Length == 0;
+                    if (!IsAdmin && !playerAllowed) { ClientLog.Warn("Unknown command: " + raw); return; }
                     await _net.AdminCommandAsync(cmd, arg);
                     return;
                 }

@@ -150,8 +150,17 @@ public static partial class SkillCatalog
                 .ToArray()));
 
         // ---- Mana Vampirism — 3 rungs @40/60/70. His only mana-return line, and the reason the
-        //      blunt buffer can keep buffing: 3 to 10% of a BASIC attack's damage back as MP.
-        //      ⚠ ManaVamp is its own field, not MeleeVamp — see PassiveEffect. ----
+        //      blunt buffer can keep buffing: a slice of a BASIC attack.s damage back as MP.
+        //      ⚠ ManaVamp is its own field, not MeleeVamp — see PassiveEffect.
+        //
+        //      RETUNED 2026-08-23, playtest 27: *"Should lower the buffers mana vamp - to op - same
+        //      levels just 1,1.5,2% or 10% on 10/15/20% chance"*. It was 3/7/10% of EVERY blunt hit,
+        //      unconditionally, which on a buffer who attacks all day is a second mana bar.
+        //
+        //      🔑 His two options are the SAME EXPECTED VALUE — 10% x 10/15/20% chance is 1/1.5/2%
+        //      — so this is a feel question, not a numbers one, and the FLAT one won: a sustain line
+        //      is the wrong place for variance. You want to know whether you can keep buffing, not
+        //      roll for it. The proc version is one ProcChance field away if he wants the spike. ----
         list.Add(new SkillDef(WcManaVampirism, "Mana Vampirism", BaseClass.Mage, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive,
@@ -164,9 +173,9 @@ public static partial class SkillCatalog
             },
             WeaponMasteryLevels: new[]
             {
-                new WeaponMasteryProfile(Blunt: new PassiveEffect(ManaVamp: 0.03f)),
-                new WeaponMasteryProfile(Blunt: new PassiveEffect(ManaVamp: 0.07f)),
-                new WeaponMasteryProfile(Blunt: new PassiveEffect(ManaVamp: 0.10f)),
+                new WeaponMasteryProfile(Blunt: new PassiveEffect(ManaVamp: 0.010f)),
+                new WeaponMasteryProfile(Blunt: new PassiveEffect(ManaVamp: 0.015f)),
+                new WeaponMasteryProfile(Blunt: new PassiveEffect(ManaVamp: 0.020f)),
             }));
 
         // ---- Combo Mastery — 3 rungs @52/64/74, and THE FIRST ON-HIT PROC IN THE GAME.

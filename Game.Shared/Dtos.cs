@@ -342,7 +342,15 @@ public record CooldownUpdate(CooldownEntry[] Entries);
 /// square with the bottle's name instead of the effect's would be noise, not grouping.</para>
 public record BuffDto(string Name, string Description, float SecondsLeft, bool IsDebuff,
     string Key = "", int Stacks = 1, BuffRow Row = BuffRow.Buff, string Icon = "",
-    string SourceSkillId = "", string SourceName = "");
+    string SourceSkillId = "", string SourceName = "",
+    /// <summary>The skill LEVEL this buff landed at, and 0 for anything that has no ladder (a synthetic
+    /// row, a single-level buff). Owner, playtest 27: *"I can't see a buff's rank once I have it as
+    /// effect - I see it in 'known' as `Aim Lv.1` but once is in the effects bar and click on it to
+    /// open details. The title just says Aim no lvl"*. The bar knew the buff's LEVEL server-side all
+    /// along (BuffInstance.Level, kept so a buff can be rebuilt on login) and simply never sent it, so
+    /// the one screen where you go to ask "which rung am I actually carrying" could not answer.
+    /// MaxLevel is deliberately NOT sent: the client has the whole catalog and can look it up.</summary>
+    int Level = 0);
 
 /// <summary>Server -> client: the character's learned skills (id + current level) + SP.</summary>
 public record LearnedSkills(SkillRef[] Skills, int SkillPoints);

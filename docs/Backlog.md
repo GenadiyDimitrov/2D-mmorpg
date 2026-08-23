@@ -475,6 +475,16 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
   - ⚠ `GameLoopService.BuffPlan` was made `public` so the census reads the real resolver rather than a
     copy of it. ⚠ No CSV column changed — `--check` is green on all ten files.
 
+
+- `BL-88` 🔴 **THREE UI CHANGES FROM PLAYTEST 25, STILL WITHOUT AN ID — giving them one so they stop
+  being lost.** They have been carried in `Open-Checklist.md` §89 across three passes with no `BL` number,
+  which is exactly the state this file exists to prevent. Small, client-side, and they ride the next batch.
+  - **The target window's title row** — *"only the name of the target. No lvl no target.title, now the
+    [title + name + lvl] overflows"*; the mob title moves down into the `Mob:` row.
+  - **The chat window's buttons** — *"decreasing the width of the chat leaves the [combat] button floating
+    in the air - make the buttons smaller or like the icons on the top"*.
+  - **The gear picker, second pass** (`87f`) — *"Make the buttons even smaller. Like the tab buttons in
+    height. Also there is no splitter bellow the [S 80] button."*
 - `BL-34` ✅ **BUILT 2026-08-14 (0.66.0)** — **Madness**, a party-cast Frenzy handing out a new **rung 7**
   of the family, at **76 on the Warchanter** so an admin can party-buff with it. Your deliberate
   temporary home — *"when the kits land we will move it"*. See `CHANGELOG.md`. Delete at the next sweep.

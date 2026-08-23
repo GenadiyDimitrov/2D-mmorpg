@@ -1425,6 +1425,14 @@ public class Entity
     /// hide implies it. This is the predicate the mob AI's aggro scan reads, and it deliberately says
     /// nothing about mobs already in the fight — that difference is the whole point of stealth.</summary>
     public bool Stealthed => Hidden || StealthFromBuffs;
+    /// <summary>The ONE skill queued to run when the current cast finishes — his playtest-27 chain
+    /// rule: *"I want to be able to click one skill clock second and when 1st is done the second to
+    /// begin (only 2)"*. Distinct from <see cref="QueuedSkillId"/>, which is a cast already COMMITTED
+    /// and walking into range; this one has not been gated yet and is re-checked in full when it
+    /// fires. Clicking a third skill replaces it. Cleared by cancel, stun, death and a class swap.</summary>
+    public string? ChainedSkillId { get; set; }
+    public Guid? ChainedTargetId { get; set; }
+
 
     public string? QueuedSkillId { get; set; }
     public Guid? QueuedTargetId { get; set; }

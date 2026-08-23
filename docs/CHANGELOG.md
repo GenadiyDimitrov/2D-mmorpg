@@ -11,15 +11,20 @@ from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVers
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-08-23 (latest) — playtest 27: town regen halved, stat swaps off the Learn tab, the buff cap at 20
+## 2026-08-23 (latest) — playtest 27 in full: town regen, the buff cap, cast chaining, and every checklist comment
 
-A **fast pass** — three finds, sent through the checklist the same way the last four passes were.
-*"Made a fast/simple playtest ...look at the file"*. **All three are built**, the third after he ruled
-on the flag, the eviction order and what the cap applies to (`BL-87`).
+A **fast pass** — five finds plus nine comments written into the checklist rows, all of them answered
+here. *"Made a fast/simple playtest ...look at the file"*. ⚠ **The comments were missed on the first
+sweep** and three rows were built in isolation; everything else landed in the same day.
 
-⚠ **No `ProtocolVersion` change, and no DB change.** The regen fix is pure server; the Learn-tab fix
-is pure client and needs the next APK. The `game.db` delete owed from 0.71.0 / 0.78.0 is unaffected —
-still owed, still for the same two reasons.
+⚠ **Mana Vampirism 3/7/10% → 1/1.5/2%** (`buffer 3rd.csv` moved with it): *"Should lower the buffers
+mana vamp - to op - same levels just 1,1.5,2% or 10% on 10/15/20% chance"*. 🔑 His two options are the
+SAME expected value — 10% on a 10/15/20% chance averages 1/1.5/2% — so it was a feel question, and the
+flat one won: a sustain line is the wrong place for variance.
+
+⚠ **`ProtocolVersion` 23 → 24 and most of this is client-side — the 0.79.0 APK is owed.** No DB change
+of its own; the `game.db` delete owed from 0.71.0 / 0.78.0 is unaffected, still owed, still for the same
+two reasons.
 
 ---
 
@@ -121,6 +126,96 @@ Lightbringer `holy_*` and 5 NPC-buffer versions of the same lanes · 49 class si
 families.
 
 ⚠ No CSV column changed — `SkillCsvSeed --check` is green on all ten files.
+
+---
+
+### 4. Cast chaining, and cancelling that only cancels what you meant
+
+*"Cancel casting should be done only from clicking the same skill on the bar (it's X) or the cast bar ..
+Now I click one skill and clicking the second cancels the first and start the seconds cast ...I have no
+way of chaining skills … Now if I do it fast I can skip buffs"*.
+
+Starting a skill ran `CancelCast(caster)` and began the new one, so tapping down a buff bar cast the LAST
+one and silently threw away everything before it. Now, while a cast is in flight **or** a queued skill is
+walking into range:
+
+- the **same** skill → cancels it, exactly as the cast bar's X does, cooldown and all;
+- **any other** skill → becomes the chained one, replacing whatever was chained before.
+
+**One chain slot**, per his *"(only 2)"*: what is running, and what runs next.
+
+🔑 **The chained cast is re-gated when it FIRES, not when you click it.** `HandleSkill` was split into a
+re-enterable `BeginSkill`, and the chain re-enters it: MP, cooldown, range and target validity are all
+re-checked at that moment. Nothing is reserved, nothing is pre-paid, and a chain that has become
+impossible fails exactly as if the button had been pressed then. `TryStartChainedSkill` clears the slot
+*before* re-entering, so a failure cannot retry forever one tick at a time.
+
+**A cancel ends the whole plan**, chain included — an enemy interrupt too. An armed chain surviving a
+cancel would hand the player a surprise cast at some unrelated later moment, which is the class of "why
+did I just cast that" this was built to remove. **Toggles are never chained** (instant, no cast time), and
+the cast bar's X now also drops a queued skill that has not started casting — there was no way to call
+one of those off before.
+
+### 5. The rest of his §90/§91 comments
+
+Five follow-ups he had written into the checklist rows, all answered in the same increment.
+
+**`_ . -` are legal in names** (`91a`) — *"I see no reason why cannot be included. Players should be able
+to separate `Name_.-Family`"*. He is right: none of the three is a token separator, none needs a keyboard
+layout nobody has, and none can be confused with *nothing at all*, which is what the rule was built for.
+Consecutive ones are legal on purpose — his own example has three in a row. Everything else stands: no
+spaces, no Cyrillic, must start with a letter.
+
+**`owner.txt` writes itself when missing** (`91d`) — ⚠ **`ServerControl.EnsureOwnerFileForDev`, and the
+name says the whole story.** `SeedOwnerFile` only fires on a fresh DATABASE; his loop is the other one —
+he deletes the deployed FOLDER on every build, which takes `owner.txt` with it while the database he keeps
+survives, leaving an install with no Owner and no way to appoint one (the rank is deliberately unreachable
+from any command). The generated file contains `Owner` plus two comments telling you to put your own name
+there. **On a public server this is exactly wrong** — a file that writes itself is a file an attacker can
+predict — so the method, its comment block and its call site all say DELETE BEFORE PUBLIC.
+
+**`/buff` finally takes a target** (`91f`) — *"the name was a player's name … Now target don't work cannot
+buff no1 else except me"*. It applied to the caster and nothing else. The client substitutes `@t`/`@target`
+and `@s`/`@self` into a NAME before sending, so the server only decides whether the first word is a
+person: **names someone online → that is the target; otherwise the whole argument is the buff and the
+target is you.** `/buff @t`, `/buff Ivan`, `/buff @s aim 1` and the old `/buff aim 1` all read as written.
+
+And the token rules he fixed with it: **only `@t`/`@target` and `@s`/`@self`** — `%target` and bare `~` are
+gone as target tokens — because **`~` is the relative-coordinate prefix now**. `/tp` gained coordinates:
+`/tp 100 123` exact, `/tp ~100 ~-50` relative, a bare `~` meaning "unchanged" so `/tp ~ 5000` walks north
+on your own x. One character cannot mean both "my target" and "offset from here" on one command line.
+
+**`/where` split in two** — bare `/where` works for **anyone** and reports your own coordinates and town
+(*"to tell friends where to find them"*); `/where <name>` stays staff. It is handled before the staff gate
+in `HandleAdmin`, and the client — which used to refuse every `/` command from a non-admin before it left
+the phone — now lets that one through.
+
+**The buff level reaches the effects popup** (`91g`) — *"I see it in 'known' as `Aim Lv.1` but once is in
+the effects bar and click on it to open details. The title just says Aim no lvl"*. The server knew it all
+along (`BuffInstance.Level`, kept so a buff can be rebuilt on login) and never sent it, so the one screen
+you go to in order to ask which rung you are carrying could not answer. `BuffDto` gained a `Level` and the
+title reads `Aim   Lv.1`. Sent as 0 for a buff with no ladder, so "Frenzy Lv.1" never appears.
+
+**Harmony of Restoration's mana tick is blue** (`90l`) — *"the mana part is no different of the healing -
+show same green 10 as +100 while the mana totem is a blue 20"*. One word: the tick was broadcast as
+`CombatOutcome.Heal` with the skill named "Mana". The distinct `ManaHeal` outcome already existed — it is
+what makes the totem blue — and this path was written before it and never moved.
+
+**Quick Heal (`90h`) is ANSWERED, not built.** *"what will be good replacement for it … harmony of
+protection? or any of the 3 passives?"* — **neither, and nothing needs to.** Both candidates would
+re-create this row's own bug: `Replaces` between unrelated skills is what stripped Quick Heal in the first
+place (a passive called "Harmony" replacing a heal). The ladder is already whole — Human Lightbringer's
+Quick Great Heal and Elf's Healer Blessing both replace it; the Ork keeps it because his answer is a
+Healing Totem, a different tool. The Warchanter keeps it too and should: his Renew verse is a party heal in
+a 600 radius **centred on himself** and cannot reach a hurt ally across the field, so it does not supersede
+a 600-range targeted heal. The double-SP worry answers itself on the `game.db` delete already owed.
+
+### `ProtocolVersion` 23 → 24
+
+`BuffDto` gained a field, which is a pure addition — but the same version carries three CLIENT-side rules a
+server cannot enforce alone, and mismatched halves would look like bugs rather than a version skew: the new
+name charset, the changed target tokens, and a non-admin being allowed to send `/where`.
+
 
 ---
 

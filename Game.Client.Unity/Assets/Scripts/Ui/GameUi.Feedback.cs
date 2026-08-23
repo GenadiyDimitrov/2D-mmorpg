@@ -134,6 +134,9 @@ namespace Game.Client
             public bool IsDebuff;
             public string BuffName, Description;
             public int Stacks;
+            /// <summary>The rung this buff landed at — 0 when it has no ladder. Shown in the popup title
+            /// so the effects bar can answer "which Aim am I carrying" the way the Known tab does.</summary>
+            public int Level;
             public float Seconds;
         }
 
@@ -151,6 +154,8 @@ namespace Game.Client
             public float Seconds;
             public bool IsDebuff;
             public int Stacks = 1;
+            public int Level;
+            public string SkillId = "";
             public BuffRow Row;
             public readonly List<string> Keys = new List<string>();
         }
@@ -182,7 +187,7 @@ namespace Game.Client
                     var single = new BuffView
                     {
                         Name = b.Name, Description = b.Description, Seconds = b.SecondsLeft,
-                        IsDebuff = b.IsDebuff, Stacks = b.Stacks, Row = b.Row,
+                        IsDebuff = b.IsDebuff, Stacks = b.Stacks, Row = b.Row, Level = b.Level,
                     };
                     single.Keys.Add(b.Key);
                     views.Add(single);
@@ -195,7 +200,8 @@ namespace Game.Client
                     {
                         Name = string.IsNullOrEmpty(b.SourceName) ? b.Name : b.SourceName,
                         Description = b.Description,
-                        Seconds = b.SecondsLeft, IsDebuff = b.IsDebuff, Row = b.Row,
+                        Seconds = b.SecondsLeft, IsDebuff = b.IsDebuff, Row = b.Row, Level = b.Level,
+                        SkillId = b.SourceSkillId,
                     };
                     byGroup[b.SourceSkillId] = view;
                     parts[b.SourceSkillId] = new List<string>();
@@ -288,7 +294,12 @@ namespace Game.Client
         private void ShowBuffPopup(BuffSquare square)
         {
             if (_buffPopup == null) return;
-            _buffPopupTitle.text = square.BuffName + (square.Stacks > 1 ? "  x" + square.Stacks : "");
+            // The RUNG belongs in the title, beside the name, spelled the way the Known tab spells it
+            // (owner, playtest 27). Only when the buff actually has a ladder — "Frenzy Lv.1" on a
+            // one-level buff is noise, not information.
+            _buffPopupTitle.text = square.BuffName
+                + (square.Level > 0 ? "   Lv." + square.Level : "")
+                + (square.Stacks > 1 ? "  x" + square.Stacks : "");
 
             var t = new System.Text.StringBuilder();
             if (!string.IsNullOrWhiteSpace(square.Description)) t.AppendLine(square.Description).AppendLine();
@@ -407,6 +418,7 @@ namespace Game.Client
                 square.BuffName = buff.Name;
                 square.Description = buff.Description;
                 square.Stacks = buff.Stacks;
+                square.Level = buff.Level;
                 square.Seconds = buff.Seconds;
 
                 square.Label.text = Abbreviations.For(buff.Name) + (buff.Stacks > 1 ? " x" + buff.Stacks : "");

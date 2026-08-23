@@ -46,6 +46,7 @@ public class GameLoopService : BackgroundService
         _lifetime = lifetime;
         LoadDebugConfig();     // restore persisted debug tuning (rates/karma/caps) between runs
         ServerControl.LoadLockdown();   // did the last run go down "staff only"?
+        ServerControl.EnsureOwnerFileForDev();   // ⚠ DEV ONLY — delete before going public
     }
 
     protected override async Task ExecuteAsync(CancellationToken ct)
@@ -1605,16 +1606,43 @@ public class GameLoopService : BackgroundService
         SaveEntity(player);
     }
 
+
+    /// <summary>Fire the chained skill, if there is one and the caster is free to take it. Called the
+    /// instant a cast lands (see UpdateAction) and after a queued cast is abandoned.
+    ///
+    /// It CLEARS the slot before re-entering <see cref="BeginSkill"/>, not after: the re-entry can
+    /// legitimately fail — no MP, target gone, out of range, a cooldown that started when the first
+    /// skill landed — and a chain that survived its own failure would retry forever, one tick at a
+    /// time, for as long as the player stood still. Failing loudly once is the honest behaviour, and
+    /// it is exactly what pressing the button yourself at that moment would have done.</summary>
+    private void TryStartChainedSkill(Entity entity)
+    {
+        if (entity.ChainedSkillId is not string next) return;
+        entity.ChainedSkillId = null;
+        var target = entity.ChainedTargetId;
+        entity.ChainedTargetId = null;
+        if (entity.Kind != EntityKind.Player || entity.Dead) return;
+        if (entity.CastingSkillId is not null || entity.QueuedSkillId is not null) return;
+        BeginSkill(entity, next, target, fromChain: true);
+    }
     private void HandleSkill(SkillCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var caster) || caster.Dead)
             return;
+        BeginSkill(caster, cmd.SkillId, cmd.TargetId);
+    }
 
+    /// <summary>Start (or CHAIN, or CANCEL) one skill for a player. Split out of
+    /// <see cref="HandleSkill"/> so the CHAIN can re-enter it with no connection id — the chained cast
+    /// re-runs every gate below at the moment it actually fires, which is the only honest way to do it:
+    /// MP, cooldown, range and target validity are all different two seconds later.</summary>
+    private void BeginSkill(Entity caster, string skillId, Guid? requestedTargetId, bool fromChain = false)
+    {
         // No casting during the stand-up recovery, nor while seated — stand first.
         if (caster.StandUpTicks > 0 || caster.MoveState == MoveState.Sitting)
             return;
 
-        var def = SkillCatalog.Get(cmd.SkillId);
+        var def = SkillCatalog.Get(skillId);
         if (def is null || !caster.HasSkill(def.Id))
             return;
 
@@ -1622,6 +1650,46 @@ public class GameLoopService : BackgroundService
         if (def.Category == SkillCategory.Passive)
             return;
 
+
+        // ---- CANCEL vs CHAIN — his playtest-27 rule, and the reason it existed as a bug ----------
+        //
+        // *"Cancel casting should be done only from clicking the same skill on the bar (it's X) or the
+        // cast bar .. Now I click one skill and clicking the second cancels the first and start the
+        // seconds cast ...I have no way of chaining skills -> I want to be able to click one skill
+        // clock second and when 1st is done the second to begin (only 2) while 1st is cast ..clicking
+        // on any other skill chains the last clicked ... Now if I do it fast I can skip buffs"*.
+        //
+        // What it used to do was `CancelCast(caster)` further down and start the new skill instead, so
+        // a fast tap through a buff bar cast the LAST one and quietly threw away everything before it.
+        // Now, while a cast is in flight (or a queued skill is walking into range):
+        //   • the SAME skill        → cancel it, exactly as the cast bar's X does (cooldown starts).
+        //   • any OTHER skill       → becomes the chained one, replacing whatever was chained before.
+        // ONE chain slot, per his "(only 2)": what is running, and what runs next.
+        //
+        // ⚠ The chained skill is re-entered through this same method when the first finishes, so every
+        // gate above and below is re-checked THEN. Nothing is reserved, nothing is pre-paid, and a
+        // chain that has become impossible (no MP, target dead, walked out of range) simply fails the
+        // way it would have if you had pressed it yourself at that moment.
+        // ⚠ A TOGGLE is never chained: it is instant, costs no cast time, and stopping mid-cast to
+        // remember a stance for later would be strictly worse than just flipping it now.
+        if (!fromChain && !def.Toggle
+            && (caster.CastingSkillId is not null || caster.QueuedSkillId is not null))
+        {
+            string current = caster.CastingSkillId ?? caster.QueuedSkillId!;
+            if (current == def.Id)
+            {
+                caster.ChainedSkillId = null;
+                caster.ChainedTargetId = null;
+                if (caster.CastingSkillId is not null) CancelCast(caster, startCooldown: true);
+                else { caster.QueuedSkillId = null; caster.QueuedTargetId = null; }
+                SendSystemToEntity(caster, $"{def.Name} cancelled.");
+                return;
+            }
+            caster.ChainedSkillId = def.Id;
+            caster.ChainedTargetId = requestedTargetId;
+            SendSystemToEntity(caster, $"{def.Name} will follow.");
+            return;
+        }
         // JAILED players can't ESCAPE — no Return / teleport-to-town skills (owner).
         if (caster.Jailed && def.TeleportsToTown)
         {
@@ -1727,7 +1795,7 @@ public class GameLoopService : BackgroundService
             // Resurrection is the one skill that WANTS a dead target (a fallen ally chosen via the party
             // window or a Shift-click corpse-select). A dead caster can't cast at all (refused above), so
             // the skill only ever revives someone else — self-res is the scroll's job (item-use path).
-            if (cmd.TargetId is not Guid rid || rid == caster.Id ||
+            if (requestedTargetId is not Guid rid || rid == caster.Id ||
                 !_world.Entities.TryGetValue(rid, out var corpse) ||
                 corpse.Kind != EntityKind.Player || !corpse.Dead ||
                 DistanceSq(caster, corpse) > GameConstants.ViewRange * GameConstants.ViewRange)
@@ -1764,7 +1832,7 @@ public class GameLoopService : BackgroundService
         }
         else if (offensive)
         {
-            if (cmd.TargetId is not Guid tid ||
+            if (requestedTargetId is not Guid tid ||
                 tid == caster.Id ||
                 !_world.Entities.TryGetValue(tid, out var target) ||
                 target.Dead ||
@@ -1814,7 +1882,7 @@ public class GameLoopService : BackgroundService
         // — the permission is the TARGET's flag now, not the caster's.
         else if (IsAllyTargetable(def) &&
                  def.TargetMode != TargetMode.SelfOnly && def.Range > 0 &&
-                 cmd.TargetId is Guid allyId &&
+                 requestedTargetId is Guid allyId &&
                  _world.Entities.TryGetValue(allyId, out var ally) &&
                  ally.Kind == EntityKind.Player && !ally.Dead && !ally.Hidden &&
                  CanSupport(caster, ally))
@@ -1839,6 +1907,10 @@ public class GameLoopService : BackgroundService
             return;
         }
 
+        // Nothing should be in flight here any more — a cast or a queued skill is now caught much
+        // earlier and turned into a CANCEL or a CHAIN (playtest 27), so this only ever fires for the
+        // chained re-entry, where it is a no-op. Kept as the belt: starting a second cast on top of a
+        // first is the one state this method must never leave behind.
         CancelCast(caster);
 
         // Casting a skill CANCELS the auto-attack chase (owner). Double-clicking a mob starts a walk
@@ -3303,6 +3375,8 @@ public class GameLoopService : BackgroundService
     {
         CancelCast(player);
         player.QueuedSkillId = null;
+        player.ChainedSkillId = null;
+        player.ChainedTargetId = null;
         Disengage(player);
         player.Buffs.Clear();          // buffs belong to the class that was cast on
 
@@ -5815,12 +5889,26 @@ public class GameLoopService : BackgroundService
 
     private void HandleAdmin(AdminCmd cmd)
     {
+        // ⚠ ONE command on this path is NOT staff-only, and it is handled before the gate: a bare
+        // `/where`. Owner, playtest 27: *"/where should work for anyone - they can see their own map
+        // coordinates -> to tell friends where to find them -> while /where player-name should work
+        // only for admins+"*. Telling someone your own position is a social act, not a moderation
+        // one; asking where SOMEONE ELSE is stays staff, and falls through to the gate below.
+        if (cmd.Command.Equals("where", StringComparison.OrdinalIgnoreCase)
+            && cmd.Argument.Trim().Length == 0
+            && TryGetPlayer(cmd.ConnectionId, out var self))
+        {
+            var here = WorldMap.SafeZoneAt(self.X, self.Y);
+            SendSystemToEntity(self, $"You are at ({(int)self.X}, {(int)self.Y})"
+                + (here is null ? "." : $", in {here.Name}."));
+            return;
+        }
+
         // SERVER-AUTHORIZED (owner): every moderation action re-checks the caller's role here, in
         // addition to the hub's session check — these SHIP in release, so authorization can't rely on a
         // compile flag the way the DEBUG cheats do.
         if (!TryGetPlayer(cmd.ConnectionId, out var admin) || !admin.IsStaff)
             return;
-
         var command = cmd.Command.ToLowerInvariant();
         var arg = cmd.Argument.Trim();
 
@@ -6105,8 +6193,32 @@ public class GameLoopService : BackgroundService
                 break;
 
             case "tp":
-                // Teleport the ADMIN to a named online player (admin-only movement aid).
-                if (FindOnlinePlayer(arg) is Entity dest)
+            {
+                // THREE forms (owner, playtest 27 added the last two):
+                //   /tp <name>          → to a named online player, as before.
+                //   /tp 100 123         → to those EXACT world coordinates.
+                //   /tp ~100 ~-50       → RELATIVE: *"teleports me current coordinates +100x and -50y"*.
+                //
+                // 🔑 `~` means "relative to me" and nothing else now. It used to be a fourth spelling of
+                // @target on the client, which is exactly the collision this form would have had: one
+                // character cannot mean both "my target" and "offset from here" on the same line. The
+                // token substitution dropped it in the same increment.
+                //
+                // Mixing is allowed and useful — `/tp ~0 5000` walks straight north on your own x.
+                var tpParts = arg.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                if (tpParts.Length == 2
+                    && TryReadCoord(tpParts[0], admin.X, out float tx)
+                    && TryReadCoord(tpParts[1], admin.Y, out float ty))
+                {
+                    tx = Math.Clamp(tx, GameConstants.WorldMinX, GameConstants.ZoneWidth);
+                    ty = Math.Clamp(ty, GameConstants.WorldMinY, GameConstants.ZoneHeight);
+                    PlaceEntity(admin, tx, ty);
+                    admin.TargetX = null;
+                    admin.TargetY = null;
+                    admin.Engaged = false;
+                    SendSystemToEntity(admin, $"Teleported to ({(int)tx}, {(int)ty}).");
+                }
+                else if (FindOnlinePlayer(arg) is Entity dest)
                 {
                     PlaceEntity(admin, dest.X + _rng.Next(-60, 60), dest.Y + _rng.Next(-60, 60));
                     admin.TargetX = null;
@@ -6114,8 +6226,10 @@ public class GameLoopService : BackgroundService
                     admin.Engaged = false;
                     SendSystemToEntity(admin, $"Teleported to {dest.Name}.");
                 }
-                else SendSystemToEntity(admin, $"{arg} is not online.");
+                else SendSystemToEntity(admin, $"'{arg}' is neither an online player nor a coordinate pair. "
+                                             + "Try /tp <name>, /tp <x> <y>, or /tp ~<dx> ~<dy>.");
                 break;
+            }
 
             case "tpme":
                 // REVERSE teleport (owner): bring a named online player TO the admin.
@@ -6451,12 +6565,42 @@ public class GameLoopService : BackgroundService
             {
                 if (admin.Dead) { SendSystemToEntity(admin, "Not while dead."); break; }
 
+                // ---- WHO gets it (owner, playtest 27) -------------------------------------------
+                // *"the name was a player's name ... /buff @target [buff-name-optional]
+                // [level-optional] ... Now target don't work cannot buff no1 else except me"*.
+                // He was right: this command applied to the caster and nothing else.
+                //
+                // The client substitutes @t/@target and @s/@self into a NAME before sending, so the
+                // server never sees a token — it only has to decide whether the FIRST word is a
+                // person. The rule is "a player wins": if the first token names someone online, it is
+                // the target and the rest is the buff; otherwise the whole argument is the buff name
+                // and the target is you. That keeps `/buff aim 1` working untouched, and it is the
+                // reading he described (`/buff Ivan`, `/buff @s aim 1`).
+                //
+                // ⚠ A player named after a buff would shadow it. Names are 3-16 characters and buffs
+                // are things like "Aim" and "Might", so the collision is possible — and deliberately
+                // resolved toward the PLAYER, because the person is the thing you cannot spell
+                // another way, while the buff can always be reached with `/buff @s <name>`.
+                var (targetWord, buffArg) = SplitFirstWord(arg);
+                Entity buffTarget = admin;
+                if (targetWord.Length > 0 && FindOnlinePlayer(targetWord) is Entity named)
+                {
+                    buffTarget = named;
+                    arg = buffArg;
+                }
+                if (buffTarget.Dead)
+                {
+                    SendSystemToEntity(admin, $"{buffTarget.Name} is dead.");
+                    break;
+                }
+                string buffWho = ReferenceEquals(buffTarget, admin) ? "you" : buffTarget.Name;
+
                 var (buffName, buffLevel) = SplitTrailingLevel(arg);
                 if (buffName.Length == 0)
                 {
-                    GrantFullBuffSet(admin, SkillCatalog.AdminBuffSet);
+                    GrantFullBuffSet(buffTarget, SkillCatalog.AdminBuffSet);
                     SendSystemToEntity(admin,
-                        $"Full buff: {SkillCatalog.AdminBuffSet.Count} buffs, each at its top rung.");
+                        $"Full buff on {buffWho}: {SkillCatalog.AdminBuffSet.Count} buffs, each at its top rung.");
                     break;
                 }
 
@@ -6483,13 +6627,16 @@ public class GameLoopService : BackgroundService
                         + $"(1-{buffDef.MaxLevel}); {level} is out of range.");
                     break;
                 }
-                if (!ApplyBuff(admin, buffDef, level))
+                if (!ApplyBuff(buffTarget, buffDef, level))
                 {
                     SendSystemToEntity(admin,
-                        $"{buffDef.Name} Lv{level} was refused — something stronger of that family is already on you.");
+                        $"{buffDef.Name} Lv{level} was refused — something stronger of that family is "
+                        + $"already on {buffWho}.");
                     break;
                 }
-                SendSystemToEntity(admin, $"{buffDef.Name} Lv{level} applied.");
+                SendSystemToEntity(admin, $"{buffDef.Name} Lv{level} applied to {buffWho}.");
+                if (!ReferenceEquals(buffTarget, admin))
+                    SendSystemToEntity(buffTarget, $"{admin.Name} blessed you with {buffDef.Name} Lv{level}.");
                 break;
             }
 
@@ -6854,6 +7001,35 @@ public class GameLoopService : BackgroundService
     /// into ("harmony of wizard", 2) while `/buff harmony of wizard` splits into (…, null). A buff name
     /// never ends in a bare number, so this is unambiguous — and it is why the level does not need a
     /// flag or a separator.</summary>
+    /// <summary>Split "Ivan aim 1" into ("Ivan", "aim 1"). Used by `/buff`, where the first word MAY be
+    /// <summary>Read one coordinate for `/tp`. A leading `~` means RELATIVE to <paramref name="origin"/>
+    /// — `~100` is +100, `~-50` is −50, and a bare `~` is "unchanged", which is what makes
+    /// `/tp ~ 5000` mean "same x, y=5000". No `~` = an absolute world coordinate.</summary>
+    private static bool TryReadCoord(string token, float origin, out float value)
+    {
+        value = 0f;
+        if (string.IsNullOrEmpty(token)) return false;
+        if (token[0] != '~')
+            return float.TryParse(token, System.Globalization.NumberStyles.Float,
+                                  System.Globalization.CultureInfo.InvariantCulture, out value);
+        string rest = token.Substring(1);
+        if (rest.Length == 0) { value = origin; return true; }
+        if (!float.TryParse(rest, System.Globalization.NumberStyles.Float,
+                            System.Globalization.CultureInfo.InvariantCulture, out float delta))
+            return false;
+        value = origin + delta;
+        return true;
+    }
+
+    /// a player name — the caller decides by asking whether anyone online answers to it.</summary>
+    private static (string First, string Remainder) SplitFirstWord(string arg)
+    {
+        string s = (arg ?? "").Trim();
+        if (s.Length == 0) return ("", "");
+        int sp = s.IndexOf(' ');
+        return sp < 0 ? (s, "") : (s.Substring(0, sp), s.Substring(sp + 1).Trim());
+    }
+
     private static (string Name, int? Level) SplitTrailingLevel(string arg)
     {
         string text = (arg ?? "").Trim();
@@ -8609,6 +8785,8 @@ public class GameLoopService : BackgroundService
         {
             if (entity.CastingSkillId is not null) CancelCast(entity, startCooldown: false);
             entity.QueuedSkillId = null;
+            entity.ChainedSkillId = null;   // a stun ends the whole plan, not just the current cast
+            entity.ChainedTargetId = null;
             return;
         }
 
@@ -8619,6 +8797,10 @@ public class GameLoopService : BackgroundService
                 entity.CastingSkillId = null;
                 if (SkillCatalog.Get(castingId) is SkillDef def)
                     ExecuteSkill(entity, def);
+                // THE CHAIN (playtest 27). Taken only if the cast that just landed did not start
+                // something else of its own — a fighter's skill→melee combo re-engages in
+                // AfterOffensiveSkill, and a chained cast must not stamp on that.
+                TryStartChainedSkill(entity);
             }
             return;
         }
@@ -11727,8 +11909,13 @@ public class GameLoopService : BackgroundService
             int gain = Math.Max(1, (int)mpFlat);
             int had = entity.Mp;
             entity.Mp = Math.Min(entity.MaxMp, entity.Mp + gain);
+            // ⚠ ManaHeal, NOT Heal. It was `Heal` with the skill named "Mana", which draws the BLUE
+            // mana tick as a GREEN heal number — owner, playtest 27: *"the harmony of restoration the
+            // mana part is no different of the healing - show same green 10 as +100 while the mana
+            // totem is a blue 20"*. The distinct outcome already existed (the totem uses it); this one
+            // path was written before it and never moved.
             if (entity.Mp > had)
-                BroadcastCombat(entity, entity, entity.Mp - had, CombatOutcome.Heal, "Mana");
+                BroadcastCombat(entity, entity, entity.Mp - had, CombatOutcome.ManaHeal, "Mana");
         }
         if (entity.Hp >= entity.MaxHp)
             return;
@@ -12250,7 +12437,10 @@ public class GameLoopService : BackgroundService
             b.Toggle ? -1f : b.TicksRemaining * GameConstants.TickSeconds, b.IsDebuff, b.Key, b.Stacks,
             b.Row, BuffIcon(player, b.SourceSkillId),
             IsMultiChildGroup(b.SourceSkillId) ? b.SourceSkillId : "",
-            IsMultiChildGroup(b.SourceSkillId) ? GroupDisplayName(player, b.SourceSkillId) : "")).ToList();
+            IsMultiChildGroup(b.SourceSkillId) ? GroupDisplayName(player, b.SourceSkillId) : "",
+            // 0 when the buff has no ladder at all — "Frenzy Lv.1" on a one-level buff is noise, and
+            // deciding it HERE keeps the client from needing the parent def to answer the question.
+            SkillCatalog.Get(b.SkillId) is { MaxLevel: > 1 } ? b.Level : 0)).ToList();
 
         // The GRADE PENALTY rides along as a synthetic, never-expiring DEBUFF row. It is not a real
         // BuffInstance (nothing casts it — it's a property of what you're wearing), but without a row on
@@ -12434,6 +12624,12 @@ public class GameLoopService : BackgroundService
 
         entity.CastingSkillId = null;
         entity.CastTargetId = null;
+        // A cancel ends the whole PLAN, not just this cast (playtest 27). Leaving the chain armed would
+        // hand the player a surprise cast at some unrelated later moment — after an enemy interrupt, or
+        // minutes after they pressed the cast bar's X — which is exactly the class of "why did I just
+        // cast that" the chain was introduced to remove.
+        entity.ChainedSkillId = null;
+        entity.ChainedTargetId = null;
         entity.CastTicksRemaining = 0;
         entity.CastInitialMpPaid = 0;
         entity.CastFromItemInstance = null;   // interrupted: the scroll stays in the bag
@@ -12454,8 +12650,14 @@ public class GameLoopService : BackgroundService
     /// <summary>Player pressed ESC to cancel their own cast — starts cooldown.</summary>
     private void HandleCancelCast(CancelCastCmd cmd)
     {
-        if (TryGetPlayer(cmd.ConnectionId, out var player))
-            CancelCast(player, startCooldown: true);
+        if (!TryGetPlayer(cmd.ConnectionId, out var player)) return;
+        // The cast bar's X also drops a QUEUED skill that has not started casting yet — it is still
+        // "the thing I am doing", and there was otherwise no way to call it off.
+        player.QueuedSkillId = null;
+        player.QueuedTargetId = null;
+        CancelCast(player, startCooldown: true);
+        player.ChainedSkillId = null;
+        player.ChainedTargetId = null;
     }
 
     /// <summary>Open a box/chest: consume one and roll each loot entry independently

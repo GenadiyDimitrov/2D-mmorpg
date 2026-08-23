@@ -1,31 +1,35 @@
-# OPEN CHECKLIST — the 0.78.0 pass
+# OPEN CHECKLIST — the 0.79.0 pass
 
 > **Rolling and unversioned.** §90 is everything built between 0.71.0 and 0.77.0 that you have not
-> played yet — **it is still the section for this pass and nothing in it has moved.** §91 is new: your
-> six free-form finds from 2026-08-22, five of them built the same day.
+> played yet. §91 is your six free-form finds from 2026-08-22.
 >
-> 🔑 **Playtest 26 is IN PROGRESS, not finished.** You played the 0.76.0 APK as a Warchanter, sent three
-> finds (all fixed, §90 D), then sent six more (§91). The pass continues from where you stopped.
+> 🔑 **PLAYTEST 27 (2026-08-23) IS ANSWERED IN FULL — all five My Finds, and every `->` comment you
+> left in §90 and §91.** ⚠ I missed the comments on the first pass and built only three rows; they are
+> all done now. What is answered rather than built is marked 🟠 and says why.
 >
-> 🔴 **THE 0.78.0 APK IS *NOT* BUILT.** `builds/L2Clone-0.77.0.apk` is what exists, and it is now one
-> version behind: `@target`, the create-screen name check and the new `AccountRole` numbers are all
-> client-side. **Say the word and I will build both halves** — this was a "read my finds and build
-> them" request, not a release request, so nothing was published.
+> **Built 2026-08-23:** city regen ×5→×2 and city-only · stat swaps off the Learn tab · the **max buff
+> cap at 20** with a per-buff flag (`BL-87`) · mana vamp 3/7/10% → **1/1.5/2%** · **cast chaining**
+> (same skill cancels, another chains) · `_ . -` legal in names · `owner.txt` self-creates for dev ·
+> **`/buff` finally takes a target**, `@s`/`@self`, `~` becomes relative coords for `/tp`, `/where` for
+> everyone · the buff **level in the effects popup** · Harmony of Restoration's mana tick is blue.
 >
-> 🔴 **TWO THINGS BEFORE YOU PLAY:**
-> 1. **Delete `Game.Server/game.db`** (and `-shm`/`-wal`) — owed since the 0.71.0 schema change, and now
->    owed twice: `AccountRole`'s numbers MOVED (§91d), so an old row reads one rank too low. ⚠ It is in
->    `Game.Server/`, not `bin/Debug/`. **`90k` (the ork's ATK) is new-characters-only anyway.**
-> 2. **Install BOTH halves once the 0.78.0 APK exists.** `ProtocolVersion` is 21 → 22 → **23** across the
->    two versions, so a 0.76.0 client is refused and a 0.77.0 one would misread every staff rank.
+> 🔴 **THE 0.79.0 APK IS NOT BUILT.** `ProtocolVersion` is **23 → 24** and most of the above is
+> client-side. **Say the word and I will build both halves.**
 >
-> ✅ **Your marks go in the repo, not an upload** — that has worked four passes running.
+> 🔴 **STILL NOT BUILT, ON PURPOSE:** `BL-85` (a harmony's rungs share one rank) — `91g`'s first half.
+> And §89's three UI changes, which ride the next client batch.
+>
+> 🔴 **BEFORE YOU PLAY: delete `Game.Server/game.db`** (and `-shm`/`-wal`) — owed since the 0.71.0
+> schema change and again since `AccountRole` renumbered (§91d). ⚠ It is in `Game.Server/`, not
+> `bin/Debug/`. **Install BOTH halves** — protocol 21 → 22 → 23 → **24** across four versions.
+>
+> ✅ **Your marks go in the repo, not an upload** — that has worked five passes running.
 
 Rows are the format you picked (option 2): write your comment after the `->`. Put `x` in the `[]` if
 it passed with nothing to say, `~` if it works but wants a change, `!` if it is a bug or priority,
 `?` for a question. A `-` row with no id is a free line for that section — add as many as you like.
 **Your own "My Finds" section is at the top** — keep using it, it is where most of the real content
-arrives and playtest 26's three finds all came in that way.
+arrives, and playtest 27's five finds all came in that way.
 
 🔑 **This file is for TESTING. What is still owed to be BUILT lives in
 [docs/Backlog.md](../Backlog.md)** as permanent `BL-nn` ids.
@@ -36,15 +40,61 @@ arrives and playtest 26's three finds all came in that way.
 
 *(Reset 2026-08-22. Your previous six went to §91 — five built, one routed to `BL-86`.)*
 
-- [!] Hp/mp regen in cities should be decreased to x2 and only in the big cities ..not in a starting point of elit dungeon ...I can sit with the healer with 220mp/s regen and heal like crazy. 
+**All five of these are BUILT (2026-08-23).** The regen and buff-cap changes are server-side; the rest
+need the **0.79.0 APK**.
 
-- [~] The stat swap,passive should not be in the "to learn" tab. They have their own. Only show in the passives already learned. 
+- [!] 🟢 **BUILT.** Hp/mp regen in cities should be decreased to x2 and only in the big cities ..not in a starting point of elit dungeon ...I can sit with the healer with 220mp/s regen and heal like crazy.
+  -> Multiplier **5 → 2**, and it is a **CITY** bonus now, not a safe-zone one: new `SafeZone.RegenBoost`,
+  **false on the Training Outpost and all three dungeon entrances** (Hollow Crypt, Sunless Warrens, Ashen
+  Sepulchre). They keep everything else a safe zone does — no mobs, no aggro — they just are not rest
+  stops. 🔑 **The stack was the real number**: town ×5 × sitting ×1.8 = **×9**, and Meditation's flat
+  +MP/s sits INSIDE that multiplier on purpose, so it was being paid ×9 too — that alone was most of your
+  220. It is **×3.6** now. ⚠ **The Training Outpost is my call, not your words** — you said "big cities",
+  and it is a 400-radius hut beside the dummies. Say if you want it back. ->
 
-- [~] we need make max buffs limit. Now I have 24 buffs as healer ... So if we make it 20 then the buffer becomes a must. Tell me how much buffs we have how many harmonies and we should make the buffs to have a flag - do they count in the limit or no. Some buffs like rogues dash,dash pots ..some other limited time buffs won't be caunt to the limit ..toggles also are never vaunted.  For now the only buffs that are with a caunt are group/harmones/singles every else self/temporary/ultimate is not to the limit
+- [~] 🟢 **BUILT (CLIENT).** The stat swap,passive should not be in the "to learn" tab. They have their own. Only show in the passives already learned.
+  -> Filtered out of the Learn tab entirely. They are bought on the **Stats** tab — a basket you stage
+  for free, a running "Added:" line, one total — and read back on **Known**, greyed, once owned. The
+  per-rung gold pricing that had to be duplicated in the Learn tab went with the rows, so exactly ONE
+  place in the client prices a swap now. ->
 
-- [~] Should lower the buffers mana vamp - to op - same levels just 1,1.5,2% or 10% on 10/15/20% chance
+- [~] 🟢 **BUILT — `BL-87`.** we need make max buffs limit. Now I have 24 buffs as healer ... So if we make it 20 then the buffer becomes a must. Tell me how much buffs we have how many harmonies and we should make the buffs to have a flag - do they count in the limit or no. Some buffs like rogues dash,dash pots ..some other limited time buffs won't be caunt to the limit ..toggles also are never vaunted.  For now the only buffs that are with a caunt are group/harmones/singles every else self/temporary/ultimate is not to the limit
+  -> 🔑 **HALF OF THIS ALREADY EXISTED AND YOU WERE SITTING IN IT.** A cap with FIFO eviction has been in
+  the engine since the buff-ladder work — **at 24**. That is why you counted exactly 24: you were **at
+  the cap**, and buffs had been quietly falling off the back of your bar. It is **20** now.
+  - **The flag is per buff, default TRUE** (`SkillDef.CountsTowardBuffLimit`) — not derived from self,
+    not derived from duration. **Bow Expertise counts**, as you said. Authored `false` on: the six Combo
+    Rush rungs, War Cry / Greater War Cry, Battle Fury, Fortify, Shrouding Hymn, the three racial Renew
+    verses, **Harmony of Restoration** (the party HoT), Aegis, Battle Presence / Battle Defence, Conceal,
+    Defensive Wall, Evasion Boost, Indomitable, Last Stand, Mana Barrier, Meditation, the eight
+    Dash/Sprint rungs and the three healing potions. Every one is ≤90s — that fell out, it is not the
+    rule. **Toggles, debuffs and the gear/rune row** were already free and stay free.
+  - **FIFO exactly as you ruled** — oldest applied goes first, 2h left or not, and the new buff always
+    lands. Never a refusal. **The cap counts only counted buffs**, so your `20 + 14` is right.
+  - 🔑 **Measured: a fully-buffed character sits at 16 / 20 — four free.** Buffing yourself off the NPC
+    buffer instead costs **19 of 20** for a strictly weaker set. The cap squeezes the ALTERNATIVE to the
+    buffer, not the buffer. **`dotnet run --project tools/BalanceMatrix -- --buffs`** prints it. ->
 
-- [!] Cancel casting should be done only from clicking the same skill on the bar (it's X) or the cast bar .. Now I click one skill and clicking the second cancels the first and start the seconds cast ...I have no way of chaining skills -> I want to be able to click one skill clock second and when 1st is done the second to begin (only 2) while 1st is cast ..clicking on any other skill chains the last clicked ... Now if I do it fast I can skip buffs ...
+- [~] 🟢 **BUILT.** Should lower the buffers mana vamp - to op - same levels just 1,1.5,2% or 10% on 10/15/20% chance
+  -> **1% / 1.5% / 2%**, code and `buffer 3rd.csv` both. 🔑 **Your two options are the same expected
+  value** — 10% on a 10/15/20% chance averages 1/1.5/2% — so it was a FEEL question, not a numbers one,
+  and the flat one won: a sustain line is the wrong place for variance. You want to know whether you can
+  keep buffing, not roll for it. The proc version is one `ProcChance` field away if you want the spike. ->
+
+- [!] 🟢 **BUILT.** Cancel casting should be done only from clicking the same skill on the bar (it's X) or the cast bar .. Now I click one skill and clicking the second cancels the first and start the seconds cast ...I have no way of chaining skills -> I want to be able to click one skill clock second and when 1st is done the second to begin (only 2) while 1st is cast ..clicking on any other skill chains the last clicked ... Now if I do it fast I can skip buffs ...
+  -> **Exactly your rule.** While a cast is in flight (or a queued skill is walking into range):
+  **the same skill cancels it** (and pays the reuse, same as the cast bar's X); **any other skill becomes
+  the chained one**, replacing whatever was chained before. **ONE chain slot**, per your "(only 2)".
+  - 🔑 **The chained cast is re-gated when it FIRES, not when you click it.** MP, cooldown, range and
+    target are all re-checked at that moment, so a chain that has become impossible just fails the way it
+    would have if you had pressed it yourself — nothing is reserved and nothing is pre-paid.
+  - **A cancel ends the whole plan**, chain included — including an enemy interrupt. Leaving it armed
+    would hand you a surprise cast minutes later, which is the thing this was built to remove.
+  - **Toggles are never chained** — instant, no cast time, so they just fire.
+  - ⚠ The cast bar's X now also drops a QUEUED skill that has not started casting yet. There was no way
+    to call one of those off before. ->
+
+- [ ] 
 
 - [ ] 
 
@@ -65,6 +115,12 @@ need the client are marked, and **the 0.78.0 APK does not exist yet** — say th
   other player's* keyboard, and `/role <name> <role>` splits on the last space. ⚠ **The 3-character
   minimum is mine, not yours** — say if you want 1 back. ⚠ Case-insensitive matching was **already
   there** and was not the bug. -> 'symbols like _ . - I see no reason why cannot be included. Players should be able to separate `Name_.-Family `
+  ⤷ 🟢 **DONE — the three symbols are legal now** (`_` `.` `-`, anywhere after the first character,
+  consecutive ones included, so `Name_.-Family` is exactly what your example says it is). You are right
+  that they cost nothing: none of the three is a token separator, none needs a keyboard layout nobody
+  has, and none can be confused with *nothing at all*, which is what the rule was actually built for.
+  **Everything else stands** — no spaces, no Cyrillic, must start with a letter. ⚠ **CLIENT + SERVER**:
+  the create screen runs the same shared rule, so it needs the APK to stop refusing them.
 
 - `91b` 🟢 [x] - **`@target` WORKS ON EVERY COMMAND THAT TAKES A NAME.** *"a player named "IlIlllIIllI"
   for a human is impossible to read"*. All four spellings — `@target`, `%target`, `@t`, bare `~` — and
@@ -93,6 +149,14 @@ need the client are marked, and **the 0.78.0 APK does not exist yet** — say th
   line said the opposite. Now strictly below your own, which is what makes Admin the Owner's gift.
   ⚠ **The enum's NUMBERS moved**, so this is the second reason to delete `game.db`, and old clients
   misread every rank. -> can u make it for time being if now owner.txt is missing at start to create it with name Owner - each time I remove the GameServer folder it will remove it as well - make a comment to delete the file creation when game going public. Otherwise the rank/roles work
+  ⤷ 🟢 **DONE.** `ServerControl.EnsureOwnerFileForDev()` runs at startup and writes the file when it is
+  missing, containing the name **`Owner`** plus two comment lines telling you to put YOUR character there
+  and restart. 🔑 **Why the old seed did not cover you**: it only fires on a fresh DATABASE, and your loop
+  is the other one — you delete the deployed FOLDER, which takes `owner.txt` with it while the DB you keep
+  survives, so the second install had no Owner and no way to appoint one (the rank is deliberately
+  unreachable from any command). ⚠ **The method is named `...ForDev`, shouts in a comment block, and both
+  it and its one call site say DELETE BEFORE PUBLIC** — a file that writes itself is a file an attacker can
+  predict, and on a real server a missing owner.txt must mean NO owner.
 
 - `91e` 🟢 [x] - **THE ADMIN FULL BUFF FOLLOWS THE BUFFER NOW, AND AT MAX RUNG.** Both halves of your
   find were real. It was a **hand-written list** that had gone stale exactly as you predicted — it is
@@ -115,6 +179,23 @@ need the client are marked, and **the 0.78.0 APK does not exist yet** — say th
 	- other symbols than @t/target or @s/self should not work
 	- ~ symbol should be used for relativity as for example /tp 100 123 -> teleports me on exactly 100x and 123y ...while /tp ~100 ~-50 -> teleports me current coordinates +100x and -50y
 	- /where should work for anyone - they can see their own map coordinates -> to tell friends where to find them -> while /where player-name should work only for admins+
+  ⤷ 🟢 **ALL FIVE DONE.** I had read "the name" as the buff's name; it was the player's. `/buff` applied
+  to the caster and nothing else, which is the bug you hit.
+  - **`/buff [who] [buff] [level]`.** The client turns `@t`/`@target` and `@s`/`@self` into a NAME before
+    sending, so the server only has to decide whether the first word is a person: **if it names someone
+    online it is the target, otherwise the whole argument is the buff and the target is you.** So
+    `/buff @t`, `/buff Ivan`, `/buff @s aim 1` and the old `/buff aim 1` all read the way you wrote them.
+    The target gets a "so-and-so blessed you" line. ⚠ A player named after a buff would shadow it —
+    resolved toward the PLAYER on purpose, since a buff can always be reached with `/buff @s <name>`.
+  - **Only `@t`/`@target` and `@s`/`@self` are tokens now.** `%target` is gone and so is bare `~`.
+  - **`~` is the RELATIVE prefix**, and `/tp` gained coordinates: `/tp 100 123` is exact, `/tp ~100 ~-50`
+    is "+100x, −50y from here", a bare `~` means "unchanged" so `/tp ~ 5000` walks straight north on your
+    own x. Mixing is allowed. Clamped to the world bounds. `/tp <name>` is untouched.
+    🔑 **This is why `~` had to stop meaning "my target"** — one character cannot mean both on one line.
+  - **`/where` is now two commands.** Bare `/where` works for **anyone** and reports your own coordinates
+    (and the town you are standing in, if any). `/where <name>` stays **staff**, unchanged. ⚠ The client
+    used to refuse every `/` command from a non-admin before it left the phone, so this needed a client
+    change too — **needs the APK**.
 
 - `91g` [~] - 🔴 **FOUND ON THE WAY PAST, NOT BUILT — `BL-85`, and it is your Combo Rush rule again.**
   `/buff harmony of protection 3` on a fully-buffed character **downgrades it from rung 5**, and the
@@ -126,6 +207,13 @@ need the client are marked, and **the 0.78.0 APK does not exist yet** — say th
   deliberately not in this batch** — `BuffPlan` is the resolver every buff in the game goes through,
   and moving it in the same version as two 3rd-class kits would make this pass unreadable. Ruling
   wanted: build it next, or fold it into the pass? -> I can't see a buffs rank once I have it as effect - I see it in "known" as `Aim Lv.1` but once is in the effects bar and click on it to open details. The title just says Aim no lvl.. 
+  ⤷ 🟢 **DONE — that is a different bug from `BL-85`, and a simpler one.** The server knew the level all
+  along (`BuffInstance.Level`, kept so a buff can be rebuilt on login) and simply never sent it, so the
+  one screen you go to in order to ask "which rung am I carrying" could not answer. `BuffDto` gained a
+  `Level` and the popup title now reads **`Aim   Lv.1`**, spelled the way the Known tab spells it.
+  ⚠ Only when the buff actually HAS a ladder — "Frenzy Lv.1" on a one-level buff is noise, so the server
+  sends 0 there and the title stays clean. ⚠ **Protocol 23 → 24, needs the APK.**
+  🔴 **`BL-85` itself is still NOT built** — that is the rank collision, still wanting its own increment.
 
 ---
 
@@ -183,6 +271,22 @@ and E is engine work that has only ever been checked by build, smoke test and Ba
   Harmony fix (§D): Harmony used to replace Quick Heal, so buying Harmony stripped it. Nothing replaces
   it now, so it returns at the cleric's 20/25/30/35 rungs. ⚠ **You will be asked for the SP a second
   time.** Say if that is unacceptable and it becomes a refund. -> harmony of restoration replace e party heal .. Heal is replaced buy great heal .. We need something that replaces quick heal - what will be good replacement for it or which has the Mos logical to replace it ..harmony of protection ?or any of the 3 passives (shield/2h/bow)?
+  ⤷ 🟠 **MY ANSWER: NOTHING SHOULD, AND NOTHING NEEDS TO — no code changed.** Both candidates you name
+  would re-create the exact bug this row is: Harmony of Protection is a defensive BUFF and the three
+  masteries are weapon passives, and wiring `Replaces` between unrelated skills is what stripped Quick
+  Heal in the first place (a passive called "Harmony" was replacing a heal).
+  - **`Replaces` is for "this is strictly the better version of that", and the ladder is already whole**:
+    Human Lightbringer → **Quick Great Heal** replaces it (Great Heal's power on a 2s cast). Elf
+    Lightbringer → **Healer Blessing** replaces it (heal + cure in one). Ork Lightbringer → keeps it,
+    correctly: his answer is a **Healing Totem**, which is a different tool, not a better Quick Heal.
+  - **The Warchanter keeps it too**, and should: his own heal is a Renew verse — a party heal in a 600
+    radius **centred on himself**. It cannot reach a hurt ally across the field, so it does not supersede
+    a 600-range targeted heal. Take Quick Heal away and the buffer loses a real ability.
+  - **The double SP charge answers itself**: it only existed for a character that had already paid before
+    the strip, and your `game.db` delete is owed twice over anyway. On a fresh DB nobody pays twice.
+  - ⚠ Say the word if you would rather have it gone from the buffer for kit-size reasons — that is a
+    different argument (too many buttons), and then the honest tool is removing the learn rows, not a
+    `Replaces` that lies about why.
 
 - `90i` [x] - **Every group buff now PRINTS ITS NUMBERS on the card.** *"War frenzy have no description"*
   was really "no numbers": a group buff has no magnitudes of its own — they live one hop down in the
@@ -221,6 +325,10 @@ All three fixed, all three inside the 0.77.0 APK.
   Restoration, Mana Totem, Restore Spirit.** Restore Mana still refuses a restorer, which is its own
   rule. Auto-hunt carried a copy of the same test and was narrowed with it, so auto and manual refuse
   exactly the same casts. -> they work just the harmony of restoration the mana part is no different of the healing -bshowbsame green 10 as +100 whilenthebmanantotrem is a blue 20
+  ⤷ 🟢 **DONE — one word.** The MP tick was broadcast as `CombatOutcome.Heal` with the skill named
+  "Mana", so it drew the green heal number; the distinct **`ManaHeal`** outcome already existed (it is
+  what makes the Mana Totem blue) and this one path was written before it and never moved. Harmony of
+  Restoration's mana half now reads **`+20 MP` in blue**, like the totem. ⚠ Server-side, live on restart.
 
 - `90m` [x] - **War Frenzy now removes Frenzy — including on a character that already owns both.**
   `Replaces` named `cast_frenzy`, an id **no class learns**; everyone is granted `holy_frenzy`, whose
@@ -362,8 +470,8 @@ Six versions of server work. Nothing here has a client tell; it shows up as numb
 The eight finds became `BL-13`, `BL-47`, `BL-78` … `BL-83`; that table lives in
 [docs/Backlog.md](../Backlog.md), and only `BL-78`'s two halves have been built since (`90o`).
 
-**The three UI changes still have no `BL` id and are still not built.** Listed a second time so they are
-not lost again — they are small, and they ride the next client batch:
+**The three UI changes are now `BL-88`** (2026-08-23 — three passes without an id was the problem). Still
+not built; small, client-side, and they ride the next batch:
 - **The target window's title row** — *"only the name of the target. No lvl no target.title, now the
   [title + name + lvl] overflows"*; the mob title moves down into the `Mob:` row.
 - **The chat window's buttons** — *"decreasing the width of the chat leaves the [combat] button floating

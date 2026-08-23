@@ -144,6 +144,39 @@ internal static class ServerControl
         catch { /* no owner file = no Owner; every other rank still works */ }
     }
 
+
+    // ⚠⚠ DEV CONVENIENCE — DELETE THIS METHOD AND ITS CALL BEFORE THE GAME GOES PUBLIC. ⚠⚠
+    //
+    // Owner, playtest 27: *"can u make it for time being if now owner.txt is missing at start to create
+    // it with name Owner - each time I remove the GameServer folder it will remove it as well - make a
+    // comment to delete the file creation when game going public."*
+    //
+    // SeedOwnerFile above only runs on a fresh DATABASE, and his loop is the other one: he deletes the
+    // deployed server FOLDER on every build, which takes owner.txt with it while the database he keeps
+    // survives — so the second install had no Owner at all and no way to get one, the rank being
+    // deliberately unreachable from any command.
+    //
+    // On a public server this is exactly the wrong behaviour: an owner.txt that writes itself is an
+    // owner.txt an attacker can predict, and "the file was missing" would silently appoint whoever
+    // holds that name. The real deployment wants the file placed by hand, ONCE, and a missing file to
+    // mean NO owner. Hence the shouting above.
+    internal static void EnsureOwnerFileForDev()
+    {
+        try
+        {
+            if (File.Exists(OwnerFile)) return;
+            File.WriteAllText(OwnerFile,
+                "# The one Owner character. Read at STARTUP only; edit by hand and restart.\n"
+                + "# The first non-blank, non-# line wins — there can only ever be one.\n"
+                + "#\n"
+                + "# This file was AUTO-CREATED because it was missing (dev convenience, see\n"
+                + "# ServerControl.EnsureOwnerFileForDev). Put YOUR character's name below and restart.\n"
+                + "Owner\n");
+            _ownerName = "Owner";
+            _ownerLoaded = true;
+        }
+        catch { /* no owner file = no Owner; every other rank still works */ }
+    }
     /// <summary>The rank a character actually holds: whatever the DB row says, unless owner.txt names
     /// them, in which case Owner and nothing else. Applied on every load, so appointing the Owner costs
     /// one line in a file and one relog.</summary>
