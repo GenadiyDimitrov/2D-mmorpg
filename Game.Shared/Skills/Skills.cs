@@ -370,7 +370,27 @@ public record SkillDef(
     // because it carries MagicDamage, and no rule about damage flags could tell it apart from a nuke;
     // the thing that makes it manual is what it is FOR. Anything else he rules manual — `BL-83`'s
     // taunts are the queued case — sets this one flag rather than growing another branch below.
-    bool NeverAuto = false)
+    bool NeverAuto = false,
+    // ---- THE BUFF-SLOT FLAG (owner, playtest 27) ------------------------------------------------
+    // Does this buff occupy one of GameConstants.MaxBuffSlots? His rule, verbatim: *"A self buff that
+    // is 20min still counts as a buff while a self 30s buff is temporary and is not .... For example
+    // the bow expertise is a buff that counts toward the limit ... the flag is not self or not, the
+    // flag is per buff .. default is true (counts towards max) - toggle don't and heals etc"*.
+    //
+    // 🔑 So it is NOT derived from TargetMode, and NOT derived from duration: it is authored, and it
+    // DEFAULTS TO TRUE, which is the safe direction — a new blessing costs a slot unless its author
+    // says otherwise. Today every `false` in the catalog is also ≤90 seconds, but that is a
+    // consequence of what short buffs ARE, not the rule; a future 30-second blessing that should
+    // cost a slot only has to say nothing.
+    //
+    // ⚠ Read it off the buff that LANDS, never the wrapper. A one-child wrapper (a potion, a scroll,
+    // a blessing) resolves to its CHILD in ApplyBuff, so a Dash potion is flagged on `buff_dash_*`
+    // and a Might potion is not flagged at all — a Might potion IS a single of the might family, out
+    // of a bottle, and should cost its slot.
+    //
+    // Toggles are excluded by the engine regardless (CountsAgainstBuffCap), as are debuffs and the
+    // gear/rune row; this flag is for the collected buffs that remain.
+    bool CountsTowardBuffLimit = true)
 {
     /// <summary>Hash on the ID alone — and this override MUST stay.
     ///

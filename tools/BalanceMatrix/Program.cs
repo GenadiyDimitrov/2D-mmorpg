@@ -289,6 +289,8 @@ if (args.Length > 0 && args[0] == "--warchanter")
     }
     return;
 }
+// `--buffs` — the buff census (see BuffCensus at the bottom of this file).
+if (args.Length > 0 && args[0] == "--buffs") { BuffCensus.Run(); return; }
 
 // The four same-level PvP targets a drain is judged against. One list, so every table below
 // measures the same characters.
@@ -4191,3 +4193,130 @@ static Entity BuildWarchanter(Race race, int level, int? atkOverride = null,
     e.RecomputeDerived();
     return e;
 }
+
+// ============================================================================================
+//  `--buffs` — THE BUFF CENSUS (playtest 27: "we need make max buffs limit ... Tell me how much
+//  buffs we have how many harmonies").
+//
+//  Two questions, answered from the catalog rather than by counting squares on a screenshot:
+//    1. How many SQUARES does a fully-buffed character actually carry? Replays what /fullbuff
+//       hands out through the real BuffPlan + conflict rules, so groups evict the singles they
+//       cover exactly as the server does, and prints what survives.
+//    2. What is the CATALOG made of — groups, harmonies, class singles, NPC singles, potion and
+//       scroll rungs, self buffs, toggles — so the limit can be set against a real denominator.
+// ============================================================================================
+
+static class BuffCensus
+{
+    public static void Run()
+    {
+        Console.WriteLine();
+        Console.WriteLine("=== 1. THE FULL BAR — what /fullbuff (AdminBuffSet) actually leaves standing ===");
+        Console.WriteLine("  Applied in the set's own order, through GameLoopService.BuffPlan + the family");
+        Console.WriteLine("  conflict rule. 'EVICTED' = a group covering that family landed first.");
+        Console.WriteLine();
+
+        // key -> (label, covered families). Mirrors ApplyBuff's bookkeeping.
+        var bar = new List<(string Key, string Label, string[] Covered, int Rank, string Kind, bool Slot)>();
+        var evicted = new List<string>();
+
+        foreach (var id in SkillCatalog.AdminBuffSet)
+        {
+            if (SkillCatalog.Get(id) is not SkillDef def) continue;
+            int lvl = def.MaxLevel;
+            var (key, rank, covered, _) = GameLoopService.BuffPlan(def, lvl);
+            string kind = Classify(def, lvl);
+
+            int hit = bar.FindIndex(b => Conflicts(b.Key, b.Covered, key, covered));
+            if (hit >= 0)
+            {
+                if (rank > bar[hit].Rank) { evicted.Add($"{bar[hit].Label} (out-ranked)"); bar[hit] = (key, def.Name, covered, rank, kind, SlotLabel(def) == "SLOT"); }
+                else evicted.Add($"{def.Name} [{kind}] — covered by {bar[hit].Label}");
+                continue;
+            }
+            bar.Add((key, def.Name, covered, rank, kind, SlotLabel(def) == "SLOT"));
+        }
+
+        foreach (var kindGroup in bar.GroupBy(b => b.Kind).OrderBy(g => Order(g.Key)))
+        {
+            Console.WriteLine($"  {kindGroup.Key.ToUpperInvariant()} ({kindGroup.Count()})");
+            foreach (var b in kindGroup)
+                Console.WriteLine($"      {b.Label,-34} key={b.Key,-24} rank={b.Rank,-4} {(b.Slot ? "SLOT" : "  - ")}");
+        }
+        Console.WriteLine();
+        int slots = bar.Count(b => b.Slot);
+        Console.WriteLine($"  >>> SQUARES ON THE BAR: {bar.Count}   (refused/evicted along the way: {evicted.Count})");
+        Console.WriteLine($"  >>> OF WHICH COUNT AGAINST THE CAP: {slots} / {GameConstants.MaxBuffSlots}" +
+                          $"   — {GameConstants.MaxBuffSlots - slots} free");
+        Console.WriteLine();
+        foreach (var kindGroup in bar.GroupBy(b => b.Kind).OrderBy(g => Order(g.Key)))
+            Console.WriteLine($"      {kindGroup.Key,-22} {kindGroup.Count(),3}");
+
+        Console.WriteLine();
+        Console.WriteLine("=== 2. THE CATALOG — every timed buff that exists, by what it is ===");
+        Console.WriteLine();
+        var all = SkillCatalog.AllSkills
+            .Where(s => (s.Effect & SkillEffect.AnyBuff) != 0 || s.Category == SkillCategory.Buff)
+            .Where(s => s.DurationTicks > 0 || s.Toggle)
+            .ToList();
+
+        foreach (var g in all.GroupBy(s => Classify(s, s.MaxLevel)).OrderBy(g => Order(g.Key)))
+        {
+            Console.WriteLine($"  {g.Key,-22} {g.Count(),3} skills   {DistinctFamilies(g),3} distinct families/keys");
+            foreach (var s in g.OrderBy(s => s.Name))
+                Console.WriteLine($"      {s.Name,-34} {(s.MaxLevel > 1 ? $"Lv1-{s.MaxLevel}" : "     "),-8} {DurLabel(s),9} {SlotLabel(s)}  {s.Id}");
+            Console.WriteLine();
+        }
+        Console.WriteLine($"  TOTAL timed-buff skills in the catalog: {all.Count}");
+    }
+
+    /// <summary>Exactly the engine rule (GameLoopService.CountsAgainstBuffCap), so the census cannot
+    /// claim a buff costs a slot that the server would let through free.</summary>
+    private static string SlotLabel(SkillDef d)
+    {
+        // Resolve a ONE-CHILD wrapper to its child, exactly as ApplyBuff does — a Dash potion never
+        // lands, `buff_dash_*` does, and it is the child that carries the flag.
+        var landing = d;
+        if (d.ChildBuffsAt(d.MaxLevel) is { Length: 1 } kid && SkillCatalog.Get(kid[0]) is SkillDef c)
+            landing = c;
+        return landing.CountsTowardBuffLimit && !landing.Toggle
+            && (d.BuffRow is BuffRow.Buff or BuffRow.Consumable) ? "SLOT" : "  - ";
+    }
+
+    private static string DurLabel(SkillDef d)
+    {
+        if (d.Toggle) return "toggle";
+        int t = d.DurationTicks;
+        // Duration is per-SkillDef only (no per-level override exists today).
+        if (t <= 0) return "-";
+        int s = t / 10;
+        return s >= 60 ? $"{s / 60}m{(s % 60 == 0 ? "" : $"{s % 60}s")}" : $"{s}s";
+    }
+
+    private static int DistinctFamilies(IEnumerable<SkillDef> defs) =>
+        defs.Select(d => GameLoopService.BuffPlan(d, d.MaxLevel).Key).Distinct().Count();
+
+    private static bool Conflicts(string keyA, string[] covA, string keyB, string[] covB) =>
+        keyA == keyB || covA.Contains(keyB) || covB.Contains(keyA) || covA.Intersect(covB).Any();
+
+    private static int Order(string kind) => kind switch
+    {
+        "harmony" => 0, "group" => 1, "class single" => 2, "npc single" => 3,
+        "self" => 4, "toggle" => 5, "potion/scroll" => 6, _ => 7
+    };
+
+    private static string Classify(SkillDef d, int level)
+    {
+        if (d.Toggle) return "toggle";
+        var kids = d.ChildBuffsAt(level);
+        bool harmony = d.Name.Contains("Harmony", StringComparison.OrdinalIgnoreCase)
+                    || d.Id.Contains("harmony", StringComparison.OrdinalIgnoreCase);
+        if (harmony) return "harmony";
+        if (kids is { Length: > 1 }) return "group";
+        if (d.BuffRow == BuffRow.Consumable) return "potion/scroll";
+        if (d.Id.StartsWith("npc_", StringComparison.Ordinal)) return "npc single";
+        if (d.TargetMode == TargetMode.SelfOnly) return "self";
+        return "class single";
+    }
+}
+

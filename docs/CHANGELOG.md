@@ -11,8 +11,121 @@ from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVers
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
+## 2026-08-23 (latest) — playtest 27: town regen halved, stat swaps off the Learn tab, the buff cap at 20
 
-## 2026-08-22 (latest) — 0.78.0: his six playtest-26 finds, five built
+A **fast pass** — three finds, sent through the checklist the same way the last four passes were.
+*"Made a fast/simple playtest ...look at the file"*. **All three are built**, the third after he ruled
+on the flag, the eviction order and what the cap applies to (`BL-87`).
+
+⚠ **No `ProtocolVersion` change, and no DB change.** The regen fix is pure server; the Learn-tab fix
+is pure client and needs the next APK. The `game.db` delete owed from 0.71.0 / 0.78.0 is unaffected —
+still owed, still for the same two reasons.
+
+---
+
+### 1. A sitting healer in town regenerated 220 MP/s
+
+*"Hp/mp regen in cities should be decreased to x2 and only in the big cities ..not in a starting point
+of elit dungeon ...I can sit with the healer with 220mp/s regen and heal like crazy"*.
+
+Two separate things were wrong, and he named both.
+
+**The multiplier is 5 → 2** (`GameConstants.SafeZoneRegenMultiplier`). The number that actually hurt was
+never 5 on its own — it was the **stack**: town ×5 × sitting ×1.8 = **×9**, applied on top of every regen
+buff *and* on top of Meditation's flat +MP/s, which sits inside the same multiplier on purpose ("sitting
+to meditate should pay"). At ×2 the sitting healer runs **×3.6** — still obviously the place to rest, no
+longer a second mana bar.
+
+**And it is a CITY bonus now, not a safe-zone bonus.** `SafeZone` gained a `RegenBoost` flag, defaulting
+true and set **false** on the four safe zones that are not cities: the **Training Outpost** and the three
+dungeon entrances — **Hollow Crypt**, **Sunless Warrens**, **Ashen Sepulchre**. They keep everything else
+a safe zone does — no mobs, no aggro, no PvP — they simply are not rest stops, so an elite dungeon can no
+longer be farmed from a chair one step outside its door.
+
+🔑 **Read it through `GameConstants.SafeZoneRegen(x, y)`, never by testing `InSafeZone` yourself.** Being
+safe and being able to rest are two different questions from today, and both regen call sites
+(`Regenerate` and the stats-window `StandingRegen`, which must never drift from it) go through the one
+helper.
+
+⚠ **The Training Outpost is my call, not his words.** He said "big cities"; the outpost is a 400-radius
+hut beside the dummies. Flagged on the checklist row as trivially reversible.
+
+### 2. The stat swaps were listed twice, and one of the two places couldn't price them properly
+
+*"The stat swap,passive should not be in the 'to learn' tab. They have their own. Only show in the
+passives already learned."*
+
+The Learn tab now filters them out (`SkillCatalog.StatSwapOf(cs.SkillId) is null`). They were always
+buyable in two places, which is the "a bit chaotic" complaint from an earlier pass showing up again: the
+**Stats** tab is built for them — a basket you stage for free, a running "Added:" line, one total — and
+the Learn tab could only ever show twelve pair-shaped rows priced one at a time. Bought rungs still read
+back on **Known**, greyed, as the passives they are.
+
+The per-rung gold computation that had to be duplicated in the Learn tab (swaps are priced by **rungs
+owned**, not per level) went with the rows, so exactly one place in the client prices a swap now.
+
+⚠ **CLIENT-SIDE — needs a new APK.**
+
+### 3. The buff cap is 20, and what counts is now a per-buff flag
+
+*"we need make max buffs limit. Now I have 24 buffs as healer … So if we make it 20 then the buffer
+becomes a must."* Three rulings followed, and all three are built.
+
+🔑 **He had been living inside this feature without knowing it.** A `MaxBuffSlots` cap with FIFO eviction
+has existed since the buff-ladder work — **at 24**. That is why he counted exactly 24: he was *at the
+cap*, and buffs had been quietly falling off the back of his bar all session. **24 → 20.**
+
+**What counts is authored, per buff.** New `SkillDef.CountsTowardBuffLimit`, **default true** — his rule
+verbatim: *"the flag is not self or not, the flag is per buff .. default is true (counts towards max) -
+toggle don't and heals etc"*, and *"a self buff that is 20min still counts … For example the bow
+expertise is a buff that counts toward the limit"*. So it is deliberately **not** derived from
+`TargetMode`, and **not** derived from duration either — that every `false` in the catalog also happens
+to be ≤90 seconds is a consequence of what short buffs *are*, not the rule. A future 30-second blessing
+that should cost a slot only has to say nothing.
+
+⚠ **The flag is read off the buff that LANDS, never the wrapper.** A one-child wrapper resolves to its
+child in `ApplyBuff`, so Dash is flagged on `buff_dash_*` and a **Might potion is not flagged at all** —
+it *is* a single of the might family, out of a bottle, and it pays its slot like one.
+
+Authored `false`: the six Combo Rush rungs · War Cry / Greater War Cry · Battle Fury · Fortify ·
+Shrouding Hymn · the three racial Renew verses · Harmony of Restoration (the party HoT) · Aegis · Battle
+Presence / Battle Defence · Conceal · Defensive Wall · Evasion Boost · Indomitable · Last Stand · Mana
+Barrier · Meditation · the eight Dash/Sprint rungs · the three healing potions. Toggles, debuffs and the
+gear/rune row were already excluded by the engine, for reasons that are not authoring questions, and
+still are.
+
+**FIFO stands** — *"1st buff buffed gets removed…if the 1st buff still have 2h time remaining I still can
+overbuff and remove it"*. That was already the behaviour; only the count and the cap moved. **And the cap
+is on counted buffs only**, so his *"20+14"* is right: uncounted buffs stack on top without limit.
+
+**The measured result: a fully-buffed character sits at 16 / 20, four free.** Buffing yourself off the
+NPC buffer instead costs **19 of 20**, for a strictly weaker set, because a group packs three or four
+families into one slot and a single never can. **The cap does not squeeze the buffer; it squeezes the
+alternative to him.**
+
+### The census that proves it: `BalanceMatrix --buffs`
+
+New mode — `dotnet run --project tools/BalanceMatrix -- --buffs`. It replays what `/fullbuff` hands out
+through the **real** `GameLoopService.BuffPlan` and the real family-conflict rules, prints what survives
+with a `SLOT` / `-` column computed by the engine's own rule (resolving wrappers the way `ApplyBuff`
+does), then censuses the whole catalog by kind. `BuffPlan` was made `public` for it: one access modifier,
+so the census can never drift from the resolver every buff already goes through.
+
+It earned its keep immediately — it caught a bulk edit that had wrongly exempted the three **Swift**
+rungs, which are real singles and must cost a slot.
+
+What it says today: **210 timed buffs** — 5 harmonies (Protection, Warrior, Wizard, Speed, plus
+Restoration, which is the party HoT and does not count) · 20 group skills over 9 Warchanter lanes, 6
+Lightbringer `holy_*` and 5 NPC-buffer versions of the same lanes · 49 class singles over **36 families**
+· 19 NPC-buffer singles · 18 self buffs over 14 families · 3 toggles · 96 potion/scroll/rune rows over 28
+families.
+
+⚠ No CSV column changed — `SkillCsvSeed --check` is green on all ten files.
+
+---
+
+
+## 2026-08-22 — 0.78.0: his six playtest-26 finds, five built
 
 *"Read open checklist and my finds (other I haven't done) - when u are done u can reset them and move
 them to the backlog or mark them with green circle emote as done"*.

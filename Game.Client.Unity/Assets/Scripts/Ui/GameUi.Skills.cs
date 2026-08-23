@@ -295,8 +295,9 @@ namespace Game.Client
 
         /// <summary>
         /// The next learnable LEVEL of each class skill, grouped by the character level that unlocks
-        /// it — mirroring the WPF panel. Hidden: skills something you already know supersedes, and
-        /// skills locked out by an exclusive group (the stat-swap passives are a permanent choice).
+        /// it — mirroring the WPF panel. Hidden: skills something you already know supersedes, skills
+        /// locked out by an exclusive group, and the level-40 STAT SWAPS, which are bought on the
+        /// Stats tab and read back on Known once owned.
         /// </summary>
         private void BuildLearnTab()
         {
@@ -311,6 +312,14 @@ namespace Game.Client
             var groups = all
                 .Where(cs => cs.SkillLevel == Boot.Learned.GetValueOrDefault(cs.SkillId) + 1
                              && !Superseded(cs.SkillId)
+                             // The level-40 stat swaps have their OWN tab (Stats), where they are a
+                             // basket you can see before you pay. Listing them here as well put twelve
+                             // pair-shaped rows in the middle of the skill ladder, each priced on its
+                             // own, which is the "a bit chaotic" he first complained about and then
+                             // ruled outright (playtest 27): *"The stat swap,passive should not be in
+                             // the 'to learn' tab. They have their own. Only show in the passives
+                             // already learned."* Bought ones still appear on Known, as passives.
+                             && SkillCatalog.StatSwapOf(cs.SkillId) is null
                              && !LockedByExclusiveGroup(cs.SkillId))
                 .GroupBy(cs => cs.LearnLevel)
                 .OrderBy(g => g.Key);
@@ -330,15 +339,11 @@ namespace Game.Client
                     // Per-class price when the class table overrides it (Shield Mastery: 3200 for a
                     // tank at 20, 36000 for a Human Warchanter at 40). See ClassSkill.SpCost.
                     int sp = cs.SpCostFor(def);
-                    // Stat swaps are bought with GOLD, and priced by how many rungs you already own
-                    // rather than per level — the same computation the server charges, so the shelf
-                    // price and the bill agree. Everything else uses its own authored per-level cost.
-                    long gold = SkillCatalog.StatSwapOf(cs.SkillId) is not null
-                        ? SkillCatalog.StatSwapPriceRange(
-                              SkillCatalog.StatSwapRungsOwned(Boot.Learned),
-                              SkillCatalog.StatSwapRungsOwned(Boot.Learned)
-                                  + (cs.SkillLevel - (Boot.Learned.TryGetValue(cs.SkillId, out int have) ? have : 0)))
-                        : def.GoldCostAt(cs.SkillLevel);
+                    // The authored per-level gold cost, if the skill has one. The stat-swap pricing
+                    // that used to branch here went with the rows themselves — swaps are priced by
+                    // RUNGS OWNED, not per level, and that computation now lives only in the Stats
+                    // tab, which is the only place they can be bought.
+                    long gold = def.GoldCostAt(cs.SkillLevel);
                     bool canLearn = levelMet && Boot.SkillPoints >= sp && (gold == 0 || Boot.Gold >= gold);
 
                     string levelTag = def.MaxLevel > 1 ? "  Lv." + cs.SkillLevel : "";

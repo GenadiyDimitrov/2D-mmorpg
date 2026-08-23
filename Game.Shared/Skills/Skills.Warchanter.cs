@@ -43,7 +43,7 @@ public static partial class SkillCatalog
     private static SkillDef WcRenew(string id, string name) => new(
         id, name, BaseClass.Mage, SkillEffect.Heal | SkillEffect.HealOverTime,
         MpCost: 70, CastTicks: 20, CooldownTicks: 300, Range: 0, Power: 150,
-        DurationTicks: 100, BuffKey: "wc_renew", Rank: 1,
+        DurationTicks: 100, BuffKey: "wc_renew", Rank: 1, CountsTowardBuffLimit: false,   // a heal, not a blessing
         Magnitudes: new EffectMagnitude[] { new(SkillEffect.HealOverTime, 0.02f) },
         Category: SkillCategory.Heal, TargetMode: TargetMode.AlliesInRadius, AreaRadius: 600,
         SpCost: 500,

@@ -162,16 +162,24 @@ public static class GameConstants
     /// <summary>Simulation ticks per second on the server.</summary>
     public const int TickRate = 10;
 
-    /// <summary>How many COLLECTED buffs one entity may carry — the buffer's blessings, the potions
-    /// and the scrolls (bar rows Buff and Consumable). Debuffs are not counted: a poison is not
-    /// something you chose, and letting one evict a blessing would turn every DoT into a dispel.
-    /// Persistent gear effects are not counted either — they are re-applied the moment they are
-    /// removed, so "evicting" one only produces a flicker.
+    /// <summary>How many COUNTED buffs one entity may carry. **20** since playtest 27, down from 24:
+    /// *"Now I have 24 buffs as healer ... So if we make it 20 then the buffer becomes a must"*, and he
+    /// was right for a reason worth writing down. A Warchanter-buffed character spends **13** of these
+    /// (nine improved groups + four harmonies) and has seven to spare; the same character buffing
+    /// himself off the NPC buffer spends **19**, for a strictly weaker set — because a GROUP packs
+    /// three or four families into one slot and a single never can. So the cap does not limit the
+    /// buffer, it limits the ALTERNATIVE to the buffer. To make it bite harder, lower this number;
+    /// do not touch the flag. Measure it with `dotnet run --project tools/BalanceMatrix -- --buffs`.
     ///
-    /// Over the cap the OLDEST buff is dropped and the new one lands. It is never the other way
-    /// round: a refusal arrives mid-fight and sends you hunting through the bar for something to
-    /// cancel, which is the exact moment you cannot afford to be reading icons.</summary>
-    public const int MaxBuffSlots = 24;
+    /// WHAT COUNTS is per-buff and authored: `SkillDef.CountsTowardBuffLimit`, default true, false on
+    /// the temporary ones. Toggles, debuffs and the gear/rune row are excluded by the engine — see
+    /// GameLoopService.CountsAgainstBuffCap for why each.
+    ///
+    /// Over the cap the OLDEST buff is dropped and the new one lands, FIFO, *"if the 1st buff still
+    /// have 2h time remaining I still can overbuff and remove it"*. It is never the other way round: a
+    /// refusal arrives mid-fight and sends you hunting through the bar for something to cancel, which
+    /// is the exact moment you cannot afford to be reading icons.</summary>
+    public const int MaxBuffSlots = 20;
 
     /// <summary>Seconds per tick (0.1s at 10 t/s).</summary>
     public const float TickSeconds = 1f / TickRate;
@@ -294,7 +302,21 @@ public static class GameConstants
     /// natural regen is multiplied while inside.</summary>
     public const float SafeZoneRadius = 1200f;
 
-    public const int SafeZoneRegenMultiplier = 5;
+    /// <summary>Regen multiplier while resting in a CITY. Was 5 until playtest 27, when a sitting
+    /// healer measured 220 MP/s and the sit stack was doing the damage: town x5 * sitting x1.8 = x9
+    /// on top of every regen buff, which made downtime free and a mana pool decorative. Owner:
+    /// *"Hp/mp regen in cities should be decreased to x2 and only in the big cities"*. At x2 the same
+    /// sitting healer runs x3.6 — still the obvious place to rest, no longer a second mana bar.
+    ///
+    /// Paid ONLY where <see cref="SafeZone.RegenBoost"/> is set: the five cities, never the training
+    /// outpost or a dungeon entrance. Read it through <see cref="SafeZoneRegen"/>, never by testing
+    /// <see cref="InSafeZone"/> yourself — safety and rest are two different questions now.</summary>
+    public const int SafeZoneRegenMultiplier = 2;
+
+    /// <summary>The regen multiplier a point is worth: the city bonus inside a resting safe zone,
+    /// 1 everywhere else (open world, outposts, dungeon entrances).</summary>
+    public static float SafeZoneRegen(float x, float y) =>
+        WorldMap.SafeZoneAt(x, y) is { RegenBoost: true } ? SafeZoneRegenMultiplier : 1f;
 
     // NOTE: there is deliberately NO combat regen multiplier (owner, 2026-07-29). Regen is modified by
     // STANCE only — MovementTuning.RegenMultiplier: sitting ×1.8, walking ×1.2, running ×1.0 — plus the

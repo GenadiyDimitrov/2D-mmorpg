@@ -296,7 +296,7 @@ public static partial class SkillCatalog
         new(Meditation, "Meditation", BaseClass.Mage,
             SkillEffect.BuffDef | SkillEffect.BuffMpRegen,
             MpCost: 40, CastTicks: 20, CooldownTicks: 9000, Range: 0, Power: 0,
-            DurationTicks: 300, BuffKey: "meditation", Rank: 1,
+            DurationTicks: 300, BuffKey: "meditation", Rank: 1, CountsTowardBuffLimit: false,
             Category: SkillCategory.Buff, SpCost: 42000,
             TargetMode: TargetMode.SelfOnly, EndsOnDamageTaken: true,
             Description: "Sit inside your own magic for 30s: MP floods back and your Physical Defence "
@@ -376,7 +376,7 @@ public static partial class SkillCatalog
         // you), a third of the duration, and no party to carry.
         new(Conceal, "Conceal", BaseClass.Mage, SkillEffect.None,
             MpCost: 100, CastTicks: 50, CooldownTicks: 100, Range: 0, Power: 0,
-            DurationTicks: 300, BuffKey: "conceal", Rank: 1,
+            DurationTicks: 300, BuffKey: "conceal", Rank: 1, CountsTowardBuffLimit: false,
             Category: SkillCategory.Buff, SpCost: 19000,
             TargetMode: TargetMode.SelfOnly, GrantsMobStealth: true,
             Description: "For 30s, monsters that haven't already noticed you leave you alone. " +

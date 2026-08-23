@@ -34,7 +34,7 @@ public static class Towns
         // Small outpost beside the Training Grounds, so you can buff up and teleport out without leaving
         // the dummies. Sits just SOUTH of the dummy row (y=4000, radius 200), clear of them — a safe zone
         // keeps mobs out, and the dummies ARE mobs.
-        new("outpost_training", "Training Outpost", 24000, 5000, 400),
+        new("outpost_training", "Training Outpost", 24000, 5000, 400, RegenBoost: false),
         // The Hollow Crypt dungeon ENTRANCE, in the negative quadrant with the dungeon. A safe arrive/
         // regroup spot before the elite rooms just NE of it.
         //
@@ -44,15 +44,15 @@ public static class Towns
         // earn your way to. The crypt's band (44-48) sits inside Greymarsh's (40-60), so Greymarsh is the
         // door. The gate itself is not one-way: the entrance has no gatekeeper, and you leave the way
         // every dungeon is left — a Scroll of Return, or the halls' own exit.
-        new("dungeon_hollow_crypt", "Hollow Crypt", -12000, -12000, 500, GatedByCityId: "town_greymarsh"),
+        new("dungeon_hollow_crypt", "Hollow Crypt", -12000, -12000, 500, GatedByCityId: "town_greymarsh", RegenBoost: false),
         // The other two dungeon entrances (BL-65), each 100 units off its own dungeon's corner —
         // the same offset the crypt uses, which is what makes WorldDomain's "the entrance is the
         // nearest negative-quadrant safe zone that TOUCHES the box" pick the right one for each.
         // Gated to the city whose band contains the dungeon's, for the same reason the crypt is
         // gated to Greymarsh: a safe zone is otherwise a destination on EVERY gatekeeper's list, and
         // a level-1 should not be offered the level-85 vaults next to his first hunting field.
-        new("dungeon_sunless_warrens", "Sunless Warrens", -22000, -22000, 500, GatedByCityId: "castle_ironreach"),
-        new("dungeon_ashen_sepulchre", "Ashen Sepulchre", -34000, -34000, 500, GatedByCityId: "town_frostmere"),
+        new("dungeon_sunless_warrens", "Sunless Warrens", -22000, -22000, 500, GatedByCityId: "castle_ironreach", RegenBoost: false),
+        new("dungeon_ashen_sepulchre", "Ashen Sepulchre", -34000, -34000, 500, GatedByCityId: "town_frostmere", RegenBoost: false),
     };
 
     /// <summary>The STARTER town (map centre). Used where "nearest" would leak information — a player

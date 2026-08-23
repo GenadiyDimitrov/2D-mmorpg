@@ -320,7 +320,7 @@ public static partial class SkillCatalog
         // of HP, at 0.5 MP per 1 damage (until MP runs out). Self, 30s.
         new(ManaBarrier, "Mana Barrier", BaseClass.Mage, SkillEffect.ManaShield,
             MpCost: 30, CastTicks: 0, CooldownTicks: 300, Range: 0, Power: 0,
-            DurationTicks: 300, BuffKey: "mana_barrier", Rank: 1, TargetMode: TargetMode.SelfOnly,
+            DurationTicks: 300, BuffKey: "mana_barrier", Rank: 1, CountsTowardBuffLimit: false, TargetMode: TargetMode.SelfOnly,
             Category: SkillCategory.Buff,
             Magnitudes: new EffectMagnitude[]
             {

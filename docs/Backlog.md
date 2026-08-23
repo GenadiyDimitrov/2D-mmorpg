@@ -445,6 +445,36 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
   - ⚠ Your Combo Rush ruling is the precedent: *"even if some other buffer procs lvl 3 buff u still get
     your effect over"*. This is that sentence, for the harmonies.
 
+- `BL-87` ✅ **BUILT 2026-08-23 — THE BUFF CAP IS 20, AND WHAT COUNTS IS A PER-BUFF FLAG.** Playtest 27:
+  *"we need make max buffs limit. Now I have 24 buffs as healer ... So if we make it 20 then the buffer
+  becomes a must"*, then his rules: *"A self buff that is 20min still counts as a buff while a self 30s
+  buff is temporary and is not .... For example the bow expertise is a buff that counts toward the limit
+  ... the flag is not self or not, the flag is per buff .. default is true (counts towards max) - toggle
+  don't and heals etc"* · *"FIFO ..1st buff buffed gets removed"* · *"If a buff is not counted u can have
+  20+14"*. Delete at the next sweep.
+  - 🔑 **Half of it was already built and he had been living inside it.** A `MaxBuffSlots` cap with FIFO
+    eviction has existed since the buff-ladder work — at **24**. That is why he counted exactly 24: he
+    was *at the cap*, and buffs had been quietly falling off the back of his bar. `24 → 20`.
+  - **New `SkillDef.CountsTowardBuffLimit`, default TRUE**, authored `false` on the temporary ones. NOT
+    derived from `TargetMode` (Bow Expertise is `SelfOnly` and counts) and NOT derived from duration
+    (that is a consequence, not the rule). ⚠ Read off the buff that **LANDS**: a one-child wrapper
+    resolves to its child, so Dash is flagged on `buff_dash_*` and a Might potion is not flagged at all —
+    it IS a single of the might family, out of a bottle, and pays its slot.
+  - **Authored `false`** (every one ≤90s, which is what made the line easy to draw): the six Combo Rush
+    rungs · War Cry / Greater War Cry · Battle Fury · Fortify · Shrouding Hymn · the three racial Renew
+    verses · Harmony of Restoration (the party HoT) · Aegis · Battle Presence / Battle Defence · Conceal ·
+    Defensive Wall · Evasion Boost · Indomitable · Last Stand · Mana Barrier · Meditation · the eight
+    Dash/Sprint rungs · the three healing potions. Toggles, debuffs and the gear/rune row were already
+    excluded by the engine and still are.
+  - **The measured result: a fully-buffed character sits at 16 / 20**, four free. Self-serving off the
+    NPC buffer costs **19 of 20** for a strictly weaker set — a group packs three or four families into
+    one slot and a single never can. **The cap limits the alternative to the buffer, not the buffer.**
+  - **Verify it with `dotnet run --project tools/BalanceMatrix -- --buffs`**, which prints a `SLOT` /
+    `-` column using the same rule the engine uses, resolving wrappers the way `ApplyBuff` does. It was
+    the tool that caught a bulk edit wrongly exempting the three **Swift** rungs.
+  - ⚠ `GameLoopService.BuffPlan` was made `public` so the census reads the real resolver rather than a
+    copy of it. ⚠ No CSV column changed — `--check` is green on all ten files.
+
 - `BL-34` ✅ **BUILT 2026-08-14 (0.66.0)** — **Madness**, a party-cast Frenzy handing out a new **rung 7**
   of the family, at **76 on the Warchanter** so an admin can party-buff with it. Your deliberate
   temporary home — *"when the kits land we will move it"*. See `CHANGELOG.md`. Delete at the next sweep.

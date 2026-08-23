@@ -9569,7 +9569,7 @@ public class GameLoopService : BackgroundService
     /// resolves to its child, because that is the buff that lands — the wrapper only lends it a
     /// duration. This is the single source of truth for both applying a buff and asking whether it
     /// WOULD apply.</summary>
-    private static (string Key, int Rank, string[] Covered, int Duration) BuffPlan(SkillDef def, int level)
+    public static (string Key, int Rank, string[] Covered, int Duration) BuffPlan(SkillDef def, int level)
     {
         var kids = def.ChildBuffsAt(level);
         if (kids is { Length: 1 } && SkillCatalog.Get(kids[0]) is SkillDef only)
@@ -9732,7 +9732,7 @@ public class GameLoopService : BackgroundService
         // Rule 3 — the SLOT CAP. Run last, after the two rules above have freed whatever they were
         // going to free, so a buff that merely replaces another never evicts a third by accident.
         BuffRow landingRow = rowOverride ?? def.BuffRow;
-        if (CountsAgainstBuffCap(landingRow, toggle))
+        if (CountsAgainstBuffCap(landingRow, toggle, def.CountsTowardBuffLimit))
             EvictOldestBuffIfFull(target);
 
         // A leveled-stack effect starts at stack 1's entry; otherwise the skill's own effect.
@@ -9760,6 +9760,7 @@ public class GameLoopService : BackgroundService
             AppliedAtTick = _tick,
             Cancellable = def.Cancellable,
             SourceRow = rowOverride ?? def.BuffRow,   // which buff-bar row this lands in (debuffs override it)
+            CountsTowardBuffLimit = def.CountsTowardBuffLimit,   // the LANDING def, i.e. the child for a wrapper
             // The skill whose icon the bar shows. For a one-child wrapper that is the WRAPPER (the
             // potion / the blessing), so a Swift potion and a cleric's Swift look like what cast them.
             SourceSkillId = string.IsNullOrEmpty(sourceSkillId) ? def.Id : sourceSkillId!,
@@ -9816,21 +9817,23 @@ public class GameLoopService : BackgroundService
         return true;
     }
 
-    /// <summary>Does a buff landing in this row occupy one of the <see cref="GameConstants.MaxBuffSlots"/>
-    /// slots — and, equivalently, may it be evicted to make room for another?
+    /// <summary>Does a buff occupy one of the <see cref="GameConstants.MaxBuffSlots"/> slots — and,
+    /// equivalently, may it be evicted to make room for another?
     ///
-    /// Only what a player COLLECTS: the buffer's blessings (row Buff) and what came out of the bag
-    /// (row Consumable). Three things are deliberately outside the budget:
+    /// Since playtest 27 the last word belongs to the SKILL: <c>SkillDef.CountsTowardBuffLimit</c>,
+    /// default true, authored false on the temporary ones (owner: *"a self 30s buff is temporary and
+    /// is not [counted] ... the flag is not self or not, the flag is per buff"*). The three engine
+    /// exclusions below are older and stay, because none of them is an authoring question:
     ///   • DEBUFFS — you did not choose them. Counting them would let an enemy's poison push a
     ///     blessing off your bar, making every DoT a dispel; refusing them would make a full bar a
     ///     debuff immunity. Both are worse than not counting them.
     ///   • Row Item — armor sets, weapon abilities, the War/Spell Rune. These are re-applied by
     ///     reconciliation the moment they vanish, so evicting one buys a slot for a fraction of a
     ///     second and costs a flicker on the bar.
-    ///   • TOGGLES — you switched it on and only you switch it off. A toggle that silently died
-    ///     because you drank a potion would look like a bug, and re-arming it is a manual act.</summary>
-    private static bool CountsAgainstBuffCap(BuffRow row, bool toggle) =>
-        !toggle && row is BuffRow.Buff or BuffRow.Consumable;
+    ///   • TOGGLES — *"toggle don't"*. You switched it on and only you switch it off; one that
+    ///     silently died because you drank a potion would look like a bug.</summary>
+    private static bool CountsAgainstBuffCap(BuffRow row, bool toggle, bool authored) =>
+        authored && !toggle && row is BuffRow.Buff or BuffRow.Consumable;
 
     /// <summary>Make room for one more collected buff, dropping the OLDEST if the target is already at
     /// the cap (owner's rule: drop the oldest, never refuse the new one — a refusal arrives mid-fight
@@ -9840,7 +9843,7 @@ public class GameLoopService : BackgroundService
     {
         while (true)
         {
-            var counted = target.Buffs.Where(b => CountsAgainstBuffCap(b.SourceRow, b.Toggle)).ToList();
+            var counted = target.Buffs.Where(b => CountsAgainstBuffCap(b.SourceRow, b.Toggle, b.CountsTowardBuffLimit)).ToList();
             if (counted.Count < GameConstants.MaxBuffSlots) return;
 
             // Oldest by application, and among equals the one expiring soonest — on login every
@@ -11619,9 +11622,8 @@ public class GameLoopService : BackgroundService
         // sustained play outright: auto-farm re-asserts Engaged every tick a target exists, so a farming
         // fighter regenerated nothing at all until they stopped (playtest-13). Regen is now governed by
         // stance, SPT/CON, the safe zone and buffs only.
-        float multiplier = entity.Kind == EntityKind.Player &&
-                           GameConstants.InSafeZone(entity.X, entity.Y)
-            ? GameConstants.SafeZoneRegenMultiplier
+        float multiplier = entity.Kind == EntityKind.Player
+            ? GameConstants.SafeZoneRegen(entity.X, entity.Y)
             : 1f;
 
         // Movement-state bonus (Walking +20%, Sitting +80%) for players.
@@ -12410,7 +12412,7 @@ public class GameLoopService : BackgroundService
         // Read off Regenerate, in the same order, so the two cannot drift apart — INCLUDING the flat
         // per-second buff grant (Meditation), which is added beside the gear/passive flat bonus there.
         float stance = MovementTuning.RegenMultiplier(p.MoveState)
-                     * (GameConstants.InSafeZone(p.X, p.Y) ? GameConstants.SafeZoneRegenMultiplier : 1f);
+                     * GameConstants.SafeZoneRegen(p.X, p.Y);
         float hp = (StatCalculator.HpRegenPerSecond(p.Con, p.Level) + p.HpRegenBonus + hpFlat) * p.HpRegenMult * (1f + hpPct) * stance;
         float mp = (StatCalculator.MpRegenPerSecond(p.EffectiveSpt, p.Level) + p.MpRegenBonus + mpFlat) * p.MpRegenMult * (1f + mpPct) * stance;
         return (hp, mp);

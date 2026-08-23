@@ -75,6 +75,12 @@ public class BuffInstance
     /// it — see <see cref="Row"/>.</summary>
     public BuffRow SourceRow { get; init; } = BuffRow.Buff;
 
+    /// <summary>Does this buff occupy one of <see cref="GameConstants.MaxBuffSlots"/>? Copied from the
+    /// LANDING skill's <c>CountsTowardBuffLimit</c> (the child, for a one-child wrapper — a Dash potion
+    /// resolves to `buff_dash_*` and it is that def's flag that decides). Default true, matching the
+    /// SkillDef default, so a synthetic buff built without one costs a slot like any other.</summary>
+    public bool CountsTowardBuffLimit { get; init; } = true;
+
     /// <summary>The row the client should render this in. Harmful effects always go to the debuff
     /// row no matter what the skill declared, so an offensive skill never has to set it.</summary>
     public BuffRow Row => IsDebuff ? BuffRow.Debuff : SourceRow;

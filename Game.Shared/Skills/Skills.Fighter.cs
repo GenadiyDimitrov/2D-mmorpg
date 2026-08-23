@@ -243,7 +243,7 @@ public static partial class SkillCatalog
         new(BattlePresence, "Battle Presence", BaseClass.Fighter,
             SkillEffect.BuffPhysAtk | SkillEffect.BuffAccuracy,
             MpCost: 20, CastTicks: 5, CooldownTicks: 3000, Range: 0, Power: 0,
-            DurationTicks: 900, BuffKey: "battle_stance", Rank: 1,
+            DurationTicks: 900, BuffKey: "battle_stance", Rank: 1, CountsTowardBuffLimit: false,
             Category: SkillCategory.Buff, TargetMode: TargetMode.SelfOnly, SpCost: 11000,
             RequireHpBelowFraction: 0.60f, RequiredWeapon: WeaponType.TwoHandedSword | WeaponType.TwoHandedBlunt,
             Magnitudes: new EffectMagnitude[]
@@ -258,7 +258,7 @@ public static partial class SkillCatalog
         // 90s. Shares "battle_stance" with Battle Presence (mutually exclusive).
         new(BattleDefence, "Battle Defence", BaseClass.Fighter, SkillEffect.BuffDef,
             MpCost: 20, CastTicks: 5, CooldownTicks: 3000, Range: 0, Power: 0,
-            DurationTicks: 900, BuffKey: "battle_stance", Rank: 1,
+            DurationTicks: 900, BuffKey: "battle_stance", Rank: 1, CountsTowardBuffLimit: false,
             Category: SkillCategory.Buff, TargetMode: TargetMode.SelfOnly, SpCost: 20000,
             RequireHpBelowFraction: 0.60f,
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffDef, 1.0f, ModifierMode.Percent) },
@@ -346,7 +346,7 @@ public static partial class SkillCatalog
         new(DefensiveWall, "Defensive Wall", BaseClass.Fighter,
             SkillEffect.BuffDef | SkillEffect.BuffMagicDef | SkillEffect.BuffCancelResist | SkillEffect.BuffMoveSpeed,
             MpCost: 20, CastTicks: 5, CooldownTicks: 9000, Range: 0, Power: 0,
-            DurationTicks: 300, BuffKey: "defensive_wall", Rank: 1,
+            DurationTicks: 300, BuffKey: "defensive_wall", Rank: 1, CountsTowardBuffLimit: false,
             Category: SkillCategory.Buff, TargetMode: TargetMode.SelfOnly, SpCost: 3400,
             Magnitudes: new EffectMagnitude[]
             {
@@ -431,7 +431,7 @@ public static partial class SkillCatalog
         new(EvasionBoost, "Evasion Boost", BaseClass.Fighter,
             SkillEffect.BuffEvasion | SkillEffect.BuffCancelResist | SkillEffect.BuffMagicEvasion,
             MpCost: 20, CastTicks: 5, CooldownTicks: 9000, Range: 0, Power: 0,
-            DurationTicks: 300, BuffKey: "evasion_boost", Rank: 1,
+            DurationTicks: 300, BuffKey: "evasion_boost", Rank: 1, CountsTowardBuffLimit: false,
             Category: SkillCategory.Buff, TargetMode: TargetMode.SelfOnly, SpCost: 3400,
             SkillEvadeChance: 0.25f,
             Magnitudes: new EffectMagnitude[]
@@ -566,7 +566,7 @@ public static partial class SkillCatalog
         // Aegis — self ABSORB SHIELD: soaks 8% of max HP for 15s (the damage-absorb primitive).
         new(Aegis, "Aegis", BaseClass.Fighter, SkillEffect.Shield,
             MpCost: 20, CastTicks: 0, CooldownTicks: 150, Range: 0, Power: 0,
-            DurationTicks: 150, BuffKey: "aegis", Rank: 1, TargetMode: TargetMode.SelfOnly,
+            DurationTicks: 150, BuffKey: "aegis", Rank: 1, CountsTowardBuffLimit: false, TargetMode: TargetMode.SelfOnly,
             Category: SkillCategory.Buff,
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.Shield, 0.08f) },
             Description: "Raises a shield that absorbs 8% of your max HP for 15s before HP is hit."),
@@ -575,7 +575,7 @@ public static partial class SkillCatalog
         // 50% of max HP (consumes the buff). Long cooldown.
         new(LastStand, "Last Stand", BaseClass.Fighter, SkillEffect.LethalSave,
             MpCost: 30, CastTicks: 0, CooldownTicks: 3000, Range: 0, Power: 0,
-            DurationTicks: 100, BuffKey: "last_stand", Rank: 1, TargetMode: TargetMode.SelfOnly,
+            DurationTicks: 100, BuffKey: "last_stand", Rank: 1, CountsTowardBuffLimit: false, TargetMode: TargetMode.SelfOnly,
             Category: SkillCategory.Buff,
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.LethalSave, 0.50f) },
             Description: "For 10s, the next blow that would kill you instead leaves you at 50% HP."),
@@ -584,7 +584,7 @@ public static partial class SkillCatalog
         // off enemy dispels. (Cancel resist is rolled per-buff in Dispel.)
         new(Indomitable, "Indomitable", BaseClass.Fighter, SkillEffect.BuffCancelResist,
             MpCost: 40, CastTicks: 0, CooldownTicks: 1200, Range: 0, Power: 0,
-            DurationTicks: 300, BuffKey: "indomitable", Rank: 1, TargetMode: TargetMode.SelfOnly,
+            DurationTicks: 300, BuffKey: "indomitable", Rank: 1, CountsTowardBuffLimit: false, TargetMode: TargetMode.SelfOnly,
             Category: SkillCategory.Buff,
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffCancelResist, 0.80f) },
             Description: "For 30s your buffs have an 80% chance to resist being cancelled/dispelled."),
@@ -737,14 +737,14 @@ public static partial class SkillCatalog
 
         new(WarCry, "War Cry", BaseClass.Fighter, SkillEffect.BuffAtk,
             MpCost: 15, CastTicks: 5, CooldownTicks: 300, Range: 0, Power: 0,
-            DurationTicks: 300, BuffKey: "might", Rank: 1,
+            DurationTicks: 300, BuffKey: "might", Rank: 1, CountsTowardBuffLimit: false,
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffAtk, 0.20f) },
             Category: SkillCategory.Buff,
             Description: "Battle shout: +20% Attack Power for 30s."),
 
         new(GreaterWarCry, "Greater War Cry", BaseClass.Fighter, SkillEffect.BuffAtk,
             MpCost: 18, CastTicks: 5, CooldownTicks: 300, Range: 0, Power: 0,
-            DurationTicks: 300, BuffKey: "might", Rank: 2,
+            DurationTicks: 300, BuffKey: "might", Rank: 2, CountsTowardBuffLimit: false,
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffAtk, 0.30f) },
             Category: SkillCategory.Buff,
             Description: "Battle shout: +30% Attack Power for 30s."),
@@ -752,7 +752,7 @@ public static partial class SkillCatalog
         new(BattleFury, "Battle Fury", BaseClass.Fighter,
             SkillEffect.BuffAtk | SkillEffect.BuffMoveSpeed,
             MpCost: 15, CastTicks: 5, CooldownTicks: 300, Range: 0, Power: 0,
-            DurationTicks: 300, BuffKey: "battle_fury", Rank: 1,
+            DurationTicks: 300, BuffKey: "battle_fury", Rank: 1, CountsTowardBuffLimit: false,
             Magnitudes: new EffectMagnitude[]
             {
                 new(SkillEffect.BuffAtk, 0.20f),
@@ -763,7 +763,7 @@ public static partial class SkillCatalog
 
         new(Fortify, "Fortify", BaseClass.Fighter, SkillEffect.BuffDef,
             MpCost: 20, CastTicks: 5, CooldownTicks: 250, Range: 0, Power: 0,
-            DurationTicks: 250, BuffKey: "fortify", Rank: 1,
+            DurationTicks: 250, BuffKey: "fortify", Rank: 1, CountsTowardBuffLimit: false,
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffDef, 0.50f) },
             Category: SkillCategory.Buff,
             Description: "Tank stance: +50% Defence for 25s."),

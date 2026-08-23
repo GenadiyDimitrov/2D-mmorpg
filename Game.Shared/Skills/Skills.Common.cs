@@ -205,11 +205,11 @@ public static partial class SkillCatalog
     /// on its own: it is applied as a CHILD, by a potion, a scroll or one level of an improved
     /// group buff, and the applier supplies the duration (hence DurationTicks 0 here).</summary>
     private static SkillDef SingleBuff(string id, string name, string family, int rank,
-        SkillEffect effect, EffectMagnitude mag, string desc) => new(
+        SkillEffect effect, EffectMagnitude mag, string desc, bool counts = true) => new(
         id, name, BaseClass.Fighter, effect,
         MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
         BuffKey: family, Rank: rank, Magnitudes: new[] { mag },
-        Category: SkillCategory.Buff, Description: desc);
+        Category: SkillCategory.Buff, Description: desc, CountsTowardBuffLimit: counts);
 
     /// <summary>A consumable that grants ONE single buff: the item's skill, which owns the
     /// DURATION, the cast time and the reuse, and applies the child. Potion and scroll of a tier
@@ -461,19 +461,19 @@ public static partial class SkillCatalog
         // DRINK cooldown lives on the ITEM (PotionCooldownTicks), independent per tier.
         new(PotHealMinor, "Common Healing", BaseClass.Fighter, SkillEffect.HealOverTime,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            DurationTicks: 150, BuffKey: "potion_heal", Rank: 1,
+            DurationTicks: 150, BuffKey: "potion_heal", Rank: 1, CountsTowardBuffLimit: false,
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.HealOverTime, 20f, ModifierMode.Flat) },
             Category: SkillCategory.Buff, BuffRow: BuffRow.Consumable,
             Description: "Restores 20 HP per second for 15s."),
         new(PotHeal, "Uncommon Healing", BaseClass.Fighter, SkillEffect.HealOverTime,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            DurationTicks: 150, BuffKey: "potion_heal", Rank: 2,
+            DurationTicks: 150, BuffKey: "potion_heal", Rank: 2, CountsTowardBuffLimit: false,
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.HealOverTime, 70f, ModifierMode.Flat) },
             Category: SkillCategory.Buff, BuffRow: BuffRow.Consumable,
             Description: "Restores 70 HP per second for 15s."),
         new(PotHealGreater, "Rare Healing", BaseClass.Fighter, SkillEffect.HealOverTime,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            DurationTicks: 300, BuffKey: "potion_heal", Rank: 3,
+            DurationTicks: 300, BuffKey: "potion_heal", Rank: 3, CountsTowardBuffLimit: false,
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.HealOverTime, 150f, ModifierMode.Flat) },
             Category: SkillCategory.Buff, BuffRow: BuffRow.Consumable,
             Description: "Restores 150 HP per second for 30s."),
@@ -576,21 +576,21 @@ public static partial class SkillCatalog
         // ---- DASH — its own family, so it never touches your Swift buff. 15s, 1 min reuse.
         //      Ranks are the MAGNITUDE order of the whole family, Sprint included (see FamDash). ----
         SingleBuff(BuffDashC, "Dash", FamDash, 1, SkillEffect.BuffMoveSpeed,
-            new(SkillEffect.BuffMoveSpeed, 15, ModifierMode.Flat), "+15 Move Speed."),
+            new(SkillEffect.BuffMoveSpeed, 15, ModifierMode.Flat), "+15 Move Speed.", counts: false),
         SingleBuff(BuffDashU, "Dash", FamDash, 2, SkillEffect.BuffMoveSpeed,
-            new(SkillEffect.BuffMoveSpeed, 30, ModifierMode.Flat), "+30 Move Speed."),
+            new(SkillEffect.BuffMoveSpeed, 30, ModifierMode.Flat), "+30 Move Speed.", counts: false),
         SingleBuff(BuffSprint1, "Sprint", FamDash, 3, SkillEffect.BuffMoveSpeed,
-            new(SkillEffect.BuffMoveSpeed, 40, ModifierMode.Flat), "+40 Move Speed."),
+            new(SkillEffect.BuffMoveSpeed, 40, ModifierMode.Flat), "+40 Move Speed.", counts: false),
         SingleBuff(BuffDashR, "Dash", FamDash, 4, SkillEffect.BuffMoveSpeed,
-            new(SkillEffect.BuffMoveSpeed, 45, ModifierMode.Flat), "+45 Move Speed."),
+            new(SkillEffect.BuffMoveSpeed, 45, ModifierMode.Flat), "+45 Move Speed.", counts: false),
         SingleBuff(BuffDashE, "Dash", FamDash, 5, SkillEffect.BuffMoveSpeed,
-            new(SkillEffect.BuffMoveSpeed, 50, ModifierMode.Flat), "+50 Move Speed."),
+            new(SkillEffect.BuffMoveSpeed, 50, ModifierMode.Flat), "+50 Move Speed.", counts: false),
         SingleBuff(BuffDashL, "Dash", FamDash, 6, SkillEffect.BuffMoveSpeed,
-            new(SkillEffect.BuffMoveSpeed, 55, ModifierMode.Flat), "+55 Move Speed."),
+            new(SkillEffect.BuffMoveSpeed, 55, ModifierMode.Flat), "+55 Move Speed.", counts: false),
         SingleBuff(BuffDashM, "Dash", FamDash, 7, SkillEffect.BuffMoveSpeed,
-            new(SkillEffect.BuffMoveSpeed, 60, ModifierMode.Flat), "+60 Move Speed."),
+            new(SkillEffect.BuffMoveSpeed, 60, ModifierMode.Flat), "+60 Move Speed.", counts: false),
         SingleBuff(BuffSprint2, "Sprint", FamDash, 8, SkillEffect.BuffMoveSpeed,
-            new(SkillEffect.BuffMoveSpeed, 60, ModifierMode.Flat), "+60 Move Speed."),
+            new(SkillEffect.BuffMoveSpeed, 60, ModifierMode.Flat), "+60 Move Speed.", counts: false),
 
         DashPotion(PotDashC, "Dash Potion (Lesser)",   BuffDashC, 15),
         DashPotion(PotDashU, "Dash Potion",            BuffDashU, 30),

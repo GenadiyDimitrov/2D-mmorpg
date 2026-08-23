@@ -36,16 +36,15 @@ arrives and playtest 26's three finds all came in that way.
 
 *(Reset 2026-08-22. Your previous six went to §91 — five built, one routed to `BL-86`.)*
 
-- [ ] 
+- [!] Hp/mp regen in cities should be decreased to x2 and only in the big cities ..not in a starting point of elit dungeon ...I can sit with the healer with 220mp/s regen and heal like crazy. 
 
+- [~] The stat swap,passive should not be in the "to learn" tab. They have their own. Only show in the passives already learned. 
 
-- [ ] 
+- [~] we need make max buffs limit. Now I have 24 buffs as healer ... So if we make it 20 then the buffer becomes a must. Tell me how much buffs we have how many harmonies and we should make the buffs to have a flag - do they count in the limit or no. Some buffs like rogues dash,dash pots ..some other limited time buffs won't be caunt to the limit ..toggles also are never vaunted.  For now the only buffs that are with a caunt are group/harmones/singles every else self/temporary/ultimate is not to the limit
 
-- [ ] 
+- [~] Should lower the buffers mana vamp - to op - same levels just 1,1.5,2% or 10% on 10/15/20% chance
 
-- [ ] 
-
-- [ ] 
+- [!] Cancel casting should be done only from clicking the same skill on the bar (it's X) or the cast bar .. Now I click one skill and clicking the second cancels the first and start the seconds cast ...I have no way of chaining skills -> I want to be able to click one skill clock second and when 1st is done the second to begin (only 2) while 1st is cast ..clicking on any other skill chains the last clicked ... Now if I do it fast I can skip buffs ...
 
 - [ ] 
 
@@ -56,7 +55,7 @@ arrives and playtest 26's three finds all came in that way.
 🟢 = built and ready to confirm. Every row is **server-side unless it says otherwise**; the three that
 need the client are marked, and **the 0.78.0 APK does not exist yet** — say the word.
 
-- `91a` 🟢 [] - **A NAME CANNOT BE NOTHING ANY MORE.** *"I can register two chars named - " " & " ""*.
+- `91a` 🟢 [~] - **A NAME CANNOT BE NOTHING ANY MORE.** *"I can register two chars named - " " & " ""*.
   🔑 `Trim()` was never going to catch it: **U+200B ZERO WIDTH SPACE is not whitespace to .NET**, so one
   and two of them are two different non-empty names that both draw as nothing. One rule now, in
   `Game.Shared`, run by the server AND (once rebuilt) the create screen: **English letters and digits
@@ -65,16 +64,16 @@ need the client are marked, and **the 0.78.0 APK does not exist yet** — say th
   `/ptinv`, `/jail` and the friend list are all name-addressed, so a name must be typeable on *every
   other player's* keyboard, and `/role <name> <role>` splits on the last space. ⚠ **The 3-character
   minimum is mine, not yours** — say if you want 1 back. ⚠ Case-insensitive matching was **already
-  there** and was not the bug. ->
+  there** and was not the bug. -> 'symbols like _ . - I see no reason why cannot be included. Players should be able to separate `Name_.-Family `
 
-- `91b` 🟢 [] - **`@target` WORKS ON EVERY COMMAND THAT TAKES A NAME.** *"a player named "IlIlllIIllI"
+- `91b` 🟢 [x] - **`@target` WORKS ON EVERY COMMAND THAT TAKES A NAME.** *"a player named "IlIlllIIllI"
   for a human is impossible to read"*. All four spellings — `@target`, `%target`, `@t`, bare `~` — and
   it is substituted **once, on the client, before anything is parsed**, so it covers commands that do
   not exist yet: `/jail @target`, `/w ~ hello`, `/ptinv @target`, `/give @target sword1h_t10`. Whole
   tokens only, so an ordinary message is untouched; with nothing targeted the command is **not sent at
   all**. ⚠ **CLIENT-SIDE — needs the APK.** ->
 
-- `91c` 🟢 [] - **`/server shutdown|reboot|on [minutes] [adminOnly]`**, built to your spec.
+- `91c` 🟢 [x] - **`/server shutdown|reboot|on [minutes] [adminOnly]`**, built to your spec.
   `-`/blank/`0` = instant, **unparseable = 30 min**; each command replaces the one before it, which is
   why `on` is the cancel. `adminOnly` writes a flag beside the exe and the server comes back **staff
   only** until `/server on` — checked per CHARACTER, so an admin's ordinary character is refused too.
@@ -84,7 +83,7 @@ need the client are marked, and **the 0.78.0 APK does not exist yet** — say th
   existing toast + System chat, which is what let it work with no protocol change. That half is
   **`BL-86`** and is your call. ->
 
-- `91d` 🟢 [] - **FIVE STAFF RANKS — plain names, fantasy titles.** Your ruling when asked: the enum,
+- `91d` 🟢 [~] - **FIVE STAFF RANKS — plain names, fantasy titles.** Your ruling when asked: the enum,
   `/role` and every system message say **Owner / Admin / Moderator / Chat Moderator / Player**, and the
   worn TITLE keeps your words — **Supreme Being · God · Sentinel · Silencer**. 🔑 **The Chat Moderator
   has (un)chatban and nothing else** — no kick, no jail, no `/where` — for exactly the reasons you
@@ -93,23 +92,31 @@ need the client are marked, and **the 0.78.0 APK does not exist yet** — say th
   `/role` allowed granting your OWN rank, so any admin could mint another admin — the comment on that
   line said the opposite. Now strictly below your own, which is what makes Admin the Owner's gift.
   ⚠ **The enum's NUMBERS moved**, so this is the second reason to delete `game.db`, and old clients
-  misread every rank. ->
+  misread every rank. -> can u make it for time being if now owner.txt is missing at start to create it with name Owner - each time I remove the GameServer folder it will remove it as well - make a comment to delete the file creation when game going public. Otherwise the rank/roles work
 
-- `91e` 🟢 [] - **THE ADMIN FULL BUFF FOLLOWS THE BUFFER NOW, AND AT MAX RUNG.** Both halves of your
+- `91e` 🟢 [x] - **THE ADMIN FULL BUFF FOLLOWS THE BUFFER NOW, AND AT MAX RUNG.** Both halves of your
   find were real. It was a **hand-written list** that had gone stale exactly as you predicted — it is
   now **derived from the Warchanter's own class tables**, so a new rung/harmony/group in
   `buffer 3rd.csv` appears with no second edit (**34 entries → 62**). And it applied **everything at
   level 1**, which is why your harmonies were L1; each buff now lands at its own top rung — Harmony of
   the Warrior at 6, Harmony of Protection at 5. ⚠ The paid NPC buffer is untouched. ->
 
-- `91f` 🟢 [] - **`/buff [name] [level]`.** `/buff` alone = the whole set at max. The matcher is
+- `91f` 🟢 [~] - **`/buff [name] [level]`.** `/buff` alone = the whole set at max. The matcher is
   forgiving in tiers — exact · acronym · every word in order · prefix · substring — because **your own
   example does not match literally**: you type "harmony of wizard" for a buff called "Harmony of **the**
   Wizard", so joining words are skipped on both sides, and acronyms are generated three ways (`hotw`,
   `how`, `hw`). An out-of-range rung is **not clamped**; it tells you the range, per your own sentence.
-  ⚠ `hw` really is ambiguous — Warrior and Wizard — and it says so rather than guessing. ->
+  ⚠ `hw` really is ambiguous — Warrior and Wizard — and it says so rather than guessing. -> the name was a player's name ...`/buff @target [buff-name-optional] [level-optional]` lates make each player name I have to write I can do -> Gena == @t|@target or If I want myself -> MyName == @s|@self
+	  - if my name is admin and player name is Ivan and I have him as my target
+		- /buff @t == /buff @target == /buff Ivan
+		- /buff @s == /buff @self == /buff admin
+		- optional buff name /buff @s aim 1 == buf myself with Aim buff lvl 1 => acc +1
+	- Now target don't work cannot buff no1 else except me ...and I have a button...
+	- other symbols than @t/target or @s/self should not work
+	- ~ symbol should be used for relativity as for example /tp 100 123 -> teleports me on exactly 100x and 123y ...while /tp ~100 ~-50 -> teleports me current coordinates +100x and -50y
+	- /where should work for anyone - they can see their own map coordinates -> to tell friends where to find them -> while /where player-name should work only for admins+
 
-- `91g` [] - 🔴 **FOUND ON THE WAY PAST, NOT BUILT — `BL-85`, and it is your Combo Rush rule again.**
+- `91g` [~] - 🔴 **FOUND ON THE WAY PAST, NOT BUILT — `BL-85`, and it is your Combo Rush rule again.**
   `/buff harmony of protection 3` on a fully-buffed character **downgrades it from rung 5**, and the
   command is not at fault: every rung of a Harmony shares **one** `Rank`, so rung 1 and rung 5 are
   equal, and equal rank keeps whichever has longer left. In a party that means **a level-44
@@ -118,7 +125,7 @@ need the client are marked, and **the 0.78.0 APK does not exist yet** — say th
   Great Might, Great Bulwark and Mana Blessing that fall through. **The fix is one line and it is
   deliberately not in this batch** — `BuffPlan` is the resolver every buff in the game goes through,
   and moving it in the same version as two 3rd-class kits would make this pass unreadable. Ruling
-  wanted: build it next, or fold it into the pass? ->
+  wanted: build it next, or fold it into the pass? -> I can't see a buffs rank once I have it as effect - I see it in "known" as `Aim Lv.1` but once is in the effects bar and click on it to open details. The title just says Aim no lvl.. 
 
 ---
 
@@ -136,12 +143,12 @@ and E is engine work that has only ever been checked by build, smoke test and Ba
   worth your attention is not whether the skills fire but whether the kit **plays as a healer** —
   heal-per-cast against a fight's damage, MP against a fight's length. ->
 
-- `90b` [] - **THE WARCHANTER'S BUFF LAYER, 40-74** — nine group buffs split by lane and four Harmony
+- `90b` [x] - **THE WARCHANTER'S BUFF LAYER, 40-74** — nine group buffs split by lane and four Harmony
   ladders. 🔑 **A harmony does NOT evict your singles**: it carries its own key, so it stacks and the
   two multiply. That is the design, not a bug — but it is the thing most likely to look wrong from
   inside the buff list. ->
 
-- `90c` [] - **THE WARCHANTER'S NON-BUFF HALF** — 16 families, and the race split IS the class, in your
+- `90c` [x] - **THE WARCHANTER'S NON-BUFF HALF** — 16 families, and the race split IS the class, in your
   own words: **Human** heavy + blunt + shield, Sound Smash · **Elf** light + bow, Sound Burst (two hits,
   900 range) · **Ork** heavy + blunt, Sound Smash **plus your new Acoustic Shock** (Sound Smash's twin
   ladder with a contested 5s stun, ork-only). ⚠ **Two defects in your CSV were found and fixed** on the
@@ -150,11 +157,11 @@ and E is engine work that has only ever been checked by build, smoke test and Ba
   Mastery's **Light** row was stripped of its speed clauses from rung 5 up — stacked with Harmonist Light
   Mastery they drove an elf straight into the cast-speed clamp. **Do not put them back.** ->
 
-- `90d` [] - **Combo Mastery — the FIRST ON-HIT PROC in the game.** A new engine primitive: a chance on
+- `90d` [x] - **Combo Mastery — the FIRST ON-HIT PROC in the game.** A new engine primitive: a chance on
   landing a hit to cast a skill at yourself or the party, on its own cooldown. Nothing else in the game
   works this way, so it is the one most likely to misbehave under fast attack speed. ->
 
-- `90e` [] - **Harmonist Bow Proficiency — an elf Warchanter with a BOW is a full caster.** It is the
+- `90e` [x] - **Harmonist Bow Proficiency — an elf Warchanter with a BOW is a full caster.** It is the
   first skill in the game that **undoes** the untrained-caster-weapon rule: your `cast x2, mAtk x2,
   mAcc x0.04` are the exact inverses of Spellcaster Mastery's bow penalty, so the three multipliers
   cancel to 1. ⚠ It only works with the passive learned — a bow before it is still a ×0.5 / ×0.5 / ×25
@@ -165,19 +172,19 @@ and E is engine work that has only ever been checked by build, smoke test and Ba
   *"even if some other buffer procs lvl 3 buff u still get your effect over"*. One family, one key, index
   as rank — so your own rung 4-6 always outranks a party-mate's rung 1-3. ->
 
-- `90g` [] - **Shield Mastery, one skill on two classes** — tank at 20/28/36/**52**, Human Warchanter at
+- `90g` [x] - **Shield Mastery, one skill on two classes** — tank at 20/28/36/**52**, Human Warchanter at
   40/60/70 (no rung 4). 🔑 Your CSV percentages are **IG units**; the build multiplies the shield-P.Def
   column by 5 and leaves everything else literal. The bow resist is back at rungs 3/4 (16% / 24%), and
   the +10% P.Def is **shield-gated** — no shield, no bonus. Both your rulings. ->
 
 ### B. The two kits' cost to everything else
 
-- `90h` [] - **Quick Heal is back on the Learn list, at SP you have already paid.** Fallout from the
+- `90h` [~] - **Quick Heal is back on the Learn list, at SP you have already paid.** Fallout from the
   Harmony fix (§D): Harmony used to replace Quick Heal, so buying Harmony stripped it. Nothing replaces
   it now, so it returns at the cleric's 20/25/30/35 rungs. ⚠ **You will be asked for the SP a second
-  time.** Say if that is unacceptable and it becomes a refund. ->
+  time.** Say if that is unacceptable and it becomes a refund. -> harmony of restoration replace e party heal .. Heal is replaced buy great heal .. We need something that replaces quick heal - what will be good replacement for it or which has the Mos logical to replace it ..harmony of protection ?or any of the 3 passives (shield/2h/bow)?
 
-- `90i` [] - **Every group buff now PRINTS ITS NUMBERS on the card.** *"War frenzy have no description"*
+- `90i` [x] - **Every group buff now PRINTS ITS NUMBERS on the card.** *"War frenzy have no description"*
   was really "no numbers": a group buff has no magnitudes of its own — they live one hop down in the
   rungs it names — so the card printed prose and then said nothing. War Frenzy now reads
   `Max HP −10% | Max MP −10% | P.Atk +8% | M.Atk +8% | Cast speed +8% | Atk speed +8% | Move speed +8 |
@@ -187,7 +194,7 @@ and E is engine work that has only ever been checked by build, smoke test and Ba
 
 ### C. What you can SEE — the client half
 
-- `90j` [] - **TOTEM FOOTPRINTS AND AN AoE FLASH** — *"I want to see where it stands and the AOE so I can
+- `90j` [x] - **TOTEM FOOTPRINTS AND AN AoE FLASH** — *"I want to see where it stands and the AOE so I can
   stand inside"*. 🔑 A totem was **never on the wire at all** (it is not an entity), so this is a new
   channel, not a rendering fix. Green HP, blue mana, both rings if a totem fills both pools; the ring is
   drawn at the server's real radius. The flash is 0.55s at the true footprint, coloured by what the
@@ -199,7 +206,7 @@ and E is engine work that has only ever been checked by build, smoke test and Ba
 - `90k` [] - **THE ORK MAGE'S ATK IS 31 → 47** — your find, and the root cause is worth one line: **IG has
   two power stats and we have one.** Our mage ATK column was IG's **INT**, copied straight across, which
   took the half of the spread the ork mystic LOSES and threw away the half he WINS (his STR is 25, the
-  highest of any mystic). 47 = 41 × 25/22, derived from IG's own ratio rather than invented. 🔑 The check
+  highest of any mystic). 47 = 41 × 25/22, derived from IG's own ratio rather than invented. 🔑 Thm09u54check
   that it is right is your own sentence — at 47 the **human mage is the middle value of all five stats**,
   ork owns CON/SPT/ATK, elf owns WIT/AGI. ⚠ **Base stats are read at character creation: this needs a NEW
   character.** ⚠ It lands on every ork MAGE, so the ork nuker gains ~+12% M.Atk too. ->
@@ -208,20 +215,20 @@ and E is engine work that has only ever been checked by build, smoke test and Ba
 
 All three fixed, all three inside the 0.77.0 APK.
 
-- `90l` [] - **Harmony of Restoration can be cast again.** The gate read the `RestoreMp` **flag** — every
+- `90l` [~] - **Harmony of Restoration can be cast again.** The gate read the `RestoreMp` **flag** — every
   MP source in the game — and a Warchanter is himself a mana-restorer, so his own party HoT refused
   itself. It is now the skill id, per your ruling *"only Restore is forbidden"*. **Freed: Harmony of
   Restoration, Mana Totem, Restore Spirit.** Restore Mana still refuses a restorer, which is its own
   rule. Auto-hunt carried a copy of the same test and was narrowed with it, so auto and manual refuse
-  exactly the same casts. ->
+  exactly the same casts. -> they work just the harmony of restoration the mana part is no different of the healing -bshowbsame green 10 as +100 whilenthebmanantotrem is a blue 20
 
-- `90m` [] - **War Frenzy now removes Frenzy — including on a character that already owns both.**
+- `90m` [x] - **War Frenzy now removes Frenzy — including on a character that already owns both.**
   `Replaces` named `cast_frenzy`, an id **no class learns**; everyone is granted `holy_frenzy`, whose
   display name is plainly "Frenzy". 🔑 The more important half: `Replaces` was enforced **at learn time
   only**, so a correction reached nobody who had already spent the SP. Superseded ids now **die on
   load**. Your existing Warchanter is fixed by logging in — no new character needed for this one. ->
 
-- `90n` [] - **Harmony of Restoration replaces PARTY HEAL**, your own correction. Great Heal takes Heal,
+- `90n` [x] - **Harmony of Restoration replaces PARTY HEAL**, your own correction. Great Heal takes Heal,
   Harmony takes Party Heal, Quick Heal survives as the fast single-target (see `90h`). All fourteen
   `buffer 3rd.csv` rows moved with the code. ->
 
@@ -248,7 +255,7 @@ Six versions of server work. Nothing here has a client tell; it shows up as numb
 - `90r` [] - **Magic crit: rate cap 50% → 40%, damage ×2, and the rate ladder gets headroom** (8/16/32%).
   The cut buys room under the cap for the 40+ rungs that now exist. ->
 
-- `90s` [] - **`mpWhenRestored` is a PERCENT**, and casts and totem pulses go down one pipe. 🔴 Anchored
+- `90s` [x] - **`mpWhenRestored` is a PERCENT**, and casts and totem pulses go down one pipe. 🔴 Anchored
   at 80 it is worth **−25% to −57% below level 60** — that is your own CSV row, flagged rather than
   silently rescaled. ->
 
@@ -271,12 +278,12 @@ Six versions of server work. Nothing here has a client tell; it shows up as numb
   ladder at 24/28/32/36 · **Resolve caps at +54** (the 60 rung is commented out, not deleted — *"no1 is
   leatrning it atm"*) · Alacrity gained **rung 3 at 48**, the cast-speed buff missing from the healer. ->
 
-- `90x` [] - **One caster weapon penalty left, and the healer took his own masteries.** Sword and blunt
+- `90x` [x] - **One caster weapon penalty left, and the healer took his own masteries.** Sword and blunt
   are ×1/×1, **Divine Focus is deleted**, and the fork is blunt-only / robe-only. 🔑 The gate is the
   weapon TYPE. 🔑 The fizzle chain is a **product** — a `0` means "not in the chain", never "zero
   chance". ->
 
-- `90y` [] - **The magic fizzle curve, written down** (`docs/balance/BalanceMatrix.md`, marked CURRENT,
+- `90y` [x] - **The magic fizzle curve, written down** (`docs/balance/BalanceMatrix.md`, marked CURRENT,
   plus `BalanceMatrix --fizzle`). 🔑 It reads the **caster's** level, never the skill's: casting DOWN is
   **0%**, up is 5% at +6, 18% at +11, 67% at +16. 🔑 M.Def and mRes are **not** in the roll — and a
   fizzle still lands `dmg/3`. **Read, don't test.** ->

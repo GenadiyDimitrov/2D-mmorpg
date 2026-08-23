@@ -785,5 +785,12 @@ public record NpcDef(string Id, string Name, float X, float Y, NpcRole Role);
 /// part of levelling into that band rather than a line on every menu from level 1. Enforced in
 /// <see cref="WorldMap.TeleportDestinationsFrom"/>; the gated zone's own gatekeeper (if it has one)
 /// still offers everything, so a dungeon is never a one-way trip.</param>
-public record SafeZone(string Id, string Name, float X, float Y, float Radius, string GatedByCityId = "");
+/// <param name="RegenBoost">Does standing here pay the town regen multiplier? TRUE for the five
+/// CITIES only. FALSE for the training outpost and the three dungeon ENTRANCES (owner, playtest 27:
+/// *"only in the big cities ..not in a starting point of elit dungeon ...I can sit with the healer
+/// with 220mp/s regen and heal like crazy"*). A safe zone still does everything else it always did
+/// there — no mobs, no aggro, no PvP — it just is not a rest stop, so an elite dungeon cannot be
+/// farmed from a chair one step outside its door.</param>
+public record SafeZone(string Id, string Name, float X, float Y, float Radius, string GatedByCityId = "",
+    bool RegenBoost = true);
 

@@ -102,7 +102,7 @@ public static partial class SkillCatalog
         // level a cleric learns it is most of the bar, so this is a journey, not a rotation.
         new(ShroudingHymn, "Shrouding Hymn", BaseClass.Mage, SkillEffect.None,
             MpCost: 300, CastTicks: 20, CooldownTicks: 300, Range: 600, Power: 0,
-            DurationTicks: 600, BuffKey: "shrouding_hymn", Rank: 1,  
+            DurationTicks: 600, BuffKey: "shrouding_hymn", Rank: 1, CountsTowardBuffLimit: false,  
             Category: SkillCategory.Buff, SpCost: 880000,
             TargetMode: TargetMode.AlliesInRadius, AreaRadius: 800f,
             GrantsMobStealth: true,
