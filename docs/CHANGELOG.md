@@ -7,11 +7,39 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.78.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.79.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-08-23 (latest) — playtest 27 in full: town regen, the buff cap, cast chaining, and every checklist comment
+
+## 2026-08-23 (latest) — 0.79.0 shipped: the playtest-27 build, and a wire bump that is not optional
+
+Playtest 27 landed across two commits (`8619a6b`, `a00385f`) and **bumped nothing** — the same slip as
+the Warchanter kit before it. Bumped to **0.79.0** and republished both halves:
+`builds/L2Clone-0.79.0.apk` (41.1 MB, log line `[build] version 0.79.0 (code 7900)`) and
+`builds/Game.Server-0.79.0.zip` (14.9 MB).
+
+⚠ **`ProtocolVersion` is 24 here, and unlike 0.76.0 the two halves must move together.** The buff-level
+field in the effects popup is a pure addition an old client would simply not read — but the same build
+carries three CLIENT-side rules a server cannot enforce alone: `_ . -` are legal in character names,
+`~` and `%target` stopped being target tokens (`~` is now the relative-coordinate prefix for `/tp`)
+while ``/`` started being one, and a non-admin may send a bare `/where`. An old APK against this
+server means the wrong name rule and a dead ``. **Install both halves.**
+
+Most of this build is client-side anyway — the stat swaps leaving the Learn tab, the buff-level label,
+the blue mana HoT and the cast-chaining feel all live in the APK, not on the wire.
+
+**No schema change of its own.** The `game.db` delete owed from 0.71.0 and re-owed by 0.78.0's
+`AccountRole` renumber is **still owed on the phone**, for the same two reasons; the zip ships without
+a database on purpose, so his characters are never overwritten by this workstation's.
+
+Verified in the order that matters: `dotnet build Game.sln` (0 errors) refreshed
+`Assets/Plugins/Game.Shared.dll` **before** Unity ran — the DLL carries `0.79.0` and its timestamp
+(07:36) is older than the APK's (07:42), the check that catches an APK stamped with the previous
+version — the client type-check was clean, and the published server boots reporting
+`L2Clone server v0.79.0 starting.`
+
+## 2026-08-23 — playtest 27 in full: town regen, the buff cap, cast chaining, and every checklist comment
 
 A **fast pass** — five finds plus nine comments written into the checklist rows, all of them answered
 here. *"Made a fast/simple playtest ...look at the file"*. ⚠ **The comments were missed on the first
