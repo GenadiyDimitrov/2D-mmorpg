@@ -340,3 +340,47 @@ public class BossTimerRecord
     /// <summary>UTC time at which the boss should next be alive.</summary>
     public DateTime RespawnAtUtc { get; set; }
 }
+
+/// <summary>
+/// ONE LINE OF PLAYER CHAT, kept for moderation.
+///
+/// 🔑 Owner, playtest 28: *"don't we need a chat log — I mean in db as who said what and when and to
+/// who … because now an admin/mod should ban based on som1 is trying to sell u for $ on private chat —
+/// how the big games work it out? with tickets with a screenshot, or they have their chat log?"*
+///
+/// The answer is: they have the log. A screenshot is evidence a REPORTER supplies and an accused
+/// player can dispute; a server-side log is what the moderator actually reads, and it is the only way
+/// to answer "what else has this account been saying" rather than judging one cropped image. Tickets
+/// are how the case OPENS — the log is how it is decided. So the log exists now, and the ban tools
+/// (`/chatban`, `/jail`, the account ban) already exist to act on it.
+///
+/// What is stored is exactly his four columns, plus the channel:
+///   • <see cref="AtUtc"/>       — when.
+///   • <see cref="SenderCharacterId"/> / <see cref="SenderName"/> — who. The ID as well as the name,
+///     because a name can be freed by a delete and re-taken by somebody else.
+///   • <see cref="Channel"/> + <see cref="ReceiverName"/> — to whom. A whisper names one character;
+///     Local and World name nobody, and the channel IS the audience. Keeping them in two columns
+///     rather than one overloaded field is what lets "every whisper this account sent" be a query.
+///   • <see cref="Text"/>        — what.
+///
+/// ⚠ It logs what the server ACCEPTED. A message refused for a chat ban, a jail, the world-chat level
+/// floor or an empty/over-long body never reaches here — those were not said to anyone. A WHISPER to
+/// someone who has blocked you is refused outright and is not logged either; a block on Local or World
+/// only filters who RECEIVES the line, so it is logged — it was said, some people just did not hear it.
+/// </summary>
+public class ChatLogRecord
+{
+    public int Id { get; set; }
+    public DateTime AtUtc { get; set; }
+
+    public int SenderCharacterId { get; set; }
+    public required string SenderName { get; set; }
+
+    /// <summary>The <c>ChatChannel</c> value (Local / World / Whisper) as an int.</summary>
+    public int Channel { get; set; }
+
+    /// <summary>The whispered-to character's name, or empty for a channel with no single recipient.</summary>
+    public string ReceiverName { get; set; } = "";
+
+    public required string Text { get; set; }
+}

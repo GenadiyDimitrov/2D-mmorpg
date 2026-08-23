@@ -1131,6 +1131,26 @@ public class GameLoopService : BackgroundService
             RunSave(() => _db.SaveCharactersAsync(snaps));
 
         SaveDirtyBudgets();
+        FlushChatLog();
+    }
+
+    /// <summary>Chat lines accepted since the last autosave, waiting to be written (playtest 28).
+    ///
+    /// A plain List, not a concurrent one: only the tick loop ever touches it — HandleChat runs on the
+    /// tick like every other command, and the flush hands a DETACHED copy to the background writer.</summary>
+    private readonly List<Persistence.ChatLogRecord> _chatLogPending = new();
+
+    /// <summary>Hard ceiling on the pending buffer. If the database write is failing or the server is
+    /// under a chat flood, this drops the OLDEST lines rather than growing without bound — a
+    /// moderation log is worth having, it is not worth an out-of-memory.</summary>
+    private const int ChatLogPendingCap = 5000;
+
+    private void FlushChatLog()
+    {
+        if (_chatLogPending.Count == 0) return;
+        var batch = _chatLogPending.ToList();
+        _chatLogPending.Clear();
+        RunSave(() => _db.AppendChatLogAsync(batch));
     }
 
     /// <summary>Write back every account allowance that has been spent since the last save. Snapshots
@@ -1753,7 +1773,9 @@ public class GameLoopService : BackgroundService
 
         // Weapon requirement: a skill gated to certain weapon types (Strike = sword/blunt,
         // Stab = dual, Shot = bow) can only be used while a matching weapon is equipped.
-        if (def.RequiredWeapon != WeaponType.None && (def.RequiredWeapon & caster.WeaponType) == 0)
+        // ⚠ Through WeaponTypes.Satisfies, NOT a raw mask test: a skill authored `Blunt` means any
+        // blunt, maul and staff included (playtest 28). See that helper for why the fold is conditional.
+        if (!caster.WeaponType.Satisfies(def.RequiredWeapon))
         {
             string need = def.RequiredWeapon.ToString().ToLowerInvariant().Replace(",", " or");
             SendSystemToEntity(caster, $"{def.Name} requires a {need} weapon.");
@@ -1901,7 +1923,7 @@ public class GameLoopService : BackgroundService
         // Restore Mana can't target yourself or another mana-restorer (no self/healer refunds).
         if (IsRestoreManaCast(def) &&
             _world.Entities.TryGetValue(targetId, out var mpTarget) &&
-            mpTarget.HasSkill(SkillCatalog.RestoreMana))
+            IsManaRestorer(mpTarget))
         {
             SendSystemToEntity(caster, "Restore Mana can't be used on a mana-restorer.");
             return;
@@ -5215,7 +5237,7 @@ public class GameLoopService : BackgroundService
             // and cost, so auto-farm was casting a dual-only blow off a mace. The gate belongs HERE
             // rather than downstream: an unusable entry has to be SKIPPED so the cursor moves on to a
             // skill that can fire, not merely refused and the turn wasted.
-            if (def.RequiredWeapon != WeaponType.None && (def.RequiredWeapon & p.WeaponType) == 0) continue;
+            if (!p.WeaponType.Satisfies(def.RequiredWeapon)) continue;
             if (def.RequireHpBelowFraction > 0f && p.Hp > p.MaxHp * def.RequireHpBelowFraction) continue;
 
             int lvl = Math.Max(1, p.SkillLevelOf(def.Id));
@@ -5293,6 +5315,23 @@ public class GameLoopService : BackgroundService
     /// HoT tick are paid for by their cast and can't be looped, so neither is in scope.</summary>
     private static bool IsRestoreManaCast(SkillDef def) => def.Id == SkillCatalog.RestoreMana;
 
+    /// <summary>Is this entity a mana-restorer — i.e. may Restore Mana never land on it?
+    ///
+    /// 🔑 THE QUESTION IS THE KIT, NOT THE SKILL BOOK (owner, playtest 28: *"Not to check only current
+    /// learned ... should check the actual kit (future/present/etc) — a 20lvl cleric should not be able
+    /// to be restored even when he should learn it at lvl 30"*). It read <c>HasSkill</c> until then,
+    /// which made the rule a LEVEL WINDOW instead of a class one: a cleric was a legal restore target
+    /// from 1 to 29 and stopped being one at 30, so two of them could print mana off each other for
+    /// thirty levels and then have the door shut in their face. The loop this exists to prevent is a
+    /// property of the CLASS — two entities that can each turn HP into MP — so the class table is what
+    /// has to answer it, at every level.
+    ///
+    /// A mob or an NPC has no class table and answers false. Nothing casts this at one today, but a
+    /// helper that quietly said "yes, restorer" for everything without a class would be a trap.</summary>
+    private static bool IsManaRestorer(Entity e) =>
+        e.Kind == EntityKind.Player &&
+        ClassSkills.CanClassLearn(SkillCatalog.RestoreMana, e.Race, e.BaseClass, e.Archetype, e.Discipline);
+
     /// <summary>Who this MP-restore should land on: the emptiest party member (or yourself) under the
     /// mana threshold and in range. Mirrors AutoHealTarget on the OTHER bar, and honours the same
     /// "not on a mana-restorer" rule the manual cast enforces, so the autopilot never queues a cast
@@ -5302,7 +5341,7 @@ public class GameLoopService : BackgroundService
         Entity? best = null;
         float bestPct = float.MaxValue;
         bool Wants(Entity e) => e.MaxMp > 0 && e.Mp * 100f / e.MaxMp < p.AutoMpPct
-                             && (!IsRestoreManaCast(def) || !e.HasSkill(SkillCatalog.RestoreMana));
+                             && (!IsRestoreManaCast(def) || !IsManaRestorer(e));
 
         // The HP price is the caster's, so the caster's own HP gates every target, not just self.
         if (p.AutoMpPct <= 0) return null;
@@ -7545,6 +7584,25 @@ public class GameLoopService : BackgroundService
         NormalLeave(target);
     }
 
+    /// <summary>Queue one accepted chat line for the moderation log. Called at the point of DELIVERY,
+    /// never at the point of receipt: everything refused above this — a chat ban, a jail, the world-chat
+    /// level floor, a whisper to someone who blocked you — was not said to anybody and does not belong
+    /// in a record a ban will be based on.</summary>
+    private void LogChat(Entity sender, ChatChannel channel, string receiverName, string text)
+    {
+        if (sender.PersistentId is not int charId || charId <= 0) return;   // no DB row behind it
+        if (_chatLogPending.Count >= ChatLogPendingCap) _chatLogPending.RemoveAt(0);
+        _chatLogPending.Add(new Persistence.ChatLogRecord
+        {
+            AtUtc = DateTime.UtcNow,
+            SenderCharacterId = charId,
+            SenderName = sender.Name,
+            Channel = (int)channel,
+            ReceiverName = receiverName,
+            Text = text,
+        });
+    }
+
         private void HandleChat(ChatCmd chat)
     {
         if (!TryGetPlayer(chat.ConnectionId, out var sender))
@@ -7604,6 +7662,7 @@ public class GameLoopService : BackgroundService
             }
 
             var whisper = new ChatMessage(sender.Name, text, ChatChannel.Whisper, target.Name);
+            LogChat(sender, ChatChannel.Whisper, target.Name, text);
             _ = _hub.Clients.Client(targetConn).SendAsync("Chat", whisper);
             _ = _hub.Clients.Client(chat.ConnectionId).SendAsync("Chat", whisper);
             return;
@@ -7623,6 +7682,7 @@ public class GameLoopService : BackgroundService
         }
 
         var message = new ChatMessage(sender.Name, text, channel);
+        LogChat(sender, channel, "", text);
 
         if (channel == ChatChannel.World)
         {
@@ -8214,8 +8274,9 @@ public class GameLoopService : BackgroundService
             if (attacker.ProcCooldowns.ContainsKey(skillId))
                 continue;
             // "Require: Box/Blunt" — the mask is on the passive, and an empty hand fails it too.
-            if (def.RequiredWeapon != WeaponType.None
-                && (attacker.WeaponType.Base() & def.RequiredWeapon) == 0)
+            // Was a hand-rolled `.Base() & mask`, which folded UNCONDITIONALLY and so would have let a
+            // two-handed weapon pass a two-hands-only proc. WeaponTypes.Satisfies is the one rule now.
+            if (!attacker.WeaponType.Satisfies(def.RequiredWeapon))
                 continue;
             if (_rng.NextDouble() >= def.ProcChance)
                 continue;
@@ -10028,9 +10089,15 @@ public class GameLoopService : BackgroundService
     ///   • DEBUFFS — you did not choose them. Counting them would let an enemy's poison push a
     ///     blessing off your bar, making every DoT a dispel; refusing them would make a full bar a
     ///     debuff immunity. Both are worse than not counting them.
-    ///   • Row Item — armor sets, weapon abilities, the War/Spell Rune. These are re-applied by
-    ///     reconciliation the moment they vanish, so evicting one buys a slot for a fraction of a
-    ///     second and costs a flicker on the bar.
+    ///   • Row Item — armor sets and weapon abilities. These are re-applied by reconciliation the
+    ///     moment they vanish, so evicting one buys a slot for a fraction of a second and costs a
+    ///     flicker on the bar.
+    ///     ⚠ THIS LINE USED TO CLAIM THE RUNES TOO, AND IT WAS WRONG (owner, playtest 28: *"Runes are
+    ///     caunted towards the buff limit"*). Every rune buff in the game — War, Spell and the whole
+    ///     reward-rune ladder — is authored <c>BuffRow.Consumable</c>, not Item, so the exemption
+    ///     described here never reached one and a rune ate a slot like a blessing. They are exempt
+    ///     now via the authored flag instead (<c>CountsTowardBuffLimit: false</c>), which is where the
+    ///     answer belongs: it is a property of the buff, not of which row it draws in.
     ///   • TOGGLES — *"toggle don't"*. You switched it on and only you switch it off; one that
     ///     silently died because you drank a potion would look like a bug.</summary>
     private static bool CountsAgainstBuffCap(BuffRow row, bool toggle, bool authored) =>
@@ -12449,10 +12516,35 @@ public class GameLoopService : BackgroundService
             ? ClassSkills.DisplayName(def.Id, p.Race, p.BaseClass, p.Archetype, p.Discipline)
             : "";
 
+    /// <summary>The buff's description with a SOURCE line in front of it when what applied the buff was
+    /// a bottle rather than a caster.
+    ///
+    /// 🔑 Owner, playtest 28: *"I want buff potions in their details to say Potion of 'name' — I'm
+    /// getting buffed 'Mig' and don't know if it's my or the potions."* And he could not: a potion's
+    /// wrapper owns the duration and the bar row, but the buff that LANDS is the family rung — the
+    /// literally identical buff a buffer casts, under the same key, at the same rank. That identity is
+    /// the whole design (it is what makes the two compete instead of stack), so the only place the
+    /// difference can be told is the label, and the label was the child's.
+    ///
+    /// It goes in the DESCRIPTION rather than the NAME on purpose: the square's abbreviation is drawn
+    /// from the name, and "Might Potion (Lesser)" abbreviates to something that is not "Mig". The
+    /// answer belongs where he asked for it — the details — and the bar keeps reading the same as the
+    /// buff it is.</summary>
+    private static string BuffDescriptionWithSource(BuffInstance b)
+    {
+        if (string.IsNullOrEmpty(b.SourceSkillId) || b.SourceSkillId == b.SkillId) return b.Description;
+        // A one-child wrapper on the Consumable row IS a potion, a scroll or a burst — the three
+        // things you drink. A group buff is also a wrapper but has several children and its own row.
+        if (SkillCatalog.Get(b.SourceSkillId) is not { BuffRow: BuffRow.Consumable, ChildBuffs.Length: 1 } src)
+            return b.Description;
+        return $"From: {src.Name}."
+             + (string.IsNullOrWhiteSpace(b.Description) ? "" : "\n\n" + b.Description);
+    }
+
     private void PushBuffs(Entity player)
     {
         var dtos = player.Buffs.Where(b => !b.Internal).Select(b => new BuffDto(
-            b.Name, b.Description,
+            b.Name, BuffDescriptionWithSource(b),
             b.Toggle ? -1f : b.TicksRemaining * GameConstants.TickSeconds, b.IsDebuff, b.Key, b.Stacks,
             b.Row, BuffIcon(player, b.SourceSkillId),
             IsMultiChildGroup(b.SourceSkillId) ? b.SourceSkillId : "",
@@ -13960,19 +14052,30 @@ public class GameLoopService : BackgroundService
 
     // ----- NPC buffer: three PAID options (owner, 2026-07-15) --------------------------------------
     //
-    // Level window 6-75 (unchanged — the full-buff NPC is the solo stopgap to 75). FREE at ≤40; PAID
-    // above 40. Prices are tunable consts, sized against mob gold drops at 35-45 (~1h of farming should
-    // roughly cover a full buff). All three options gate the same way.
+    // ⚠ THE WINDOW MOVED, playtest 28. It was 6-75 available / free ≤40, on the reading that the NPC
+    // was a stopgap you grew out of at the 3rd class. His ruling replaces both halves: *"available
+    // (6~75 -> 6~90) — free 6~39 -> 6~75; paid 40~75 -> 75~90 — after 75 we make the payment
+    // required"*. So the NPC now reaches the END of the game and is FREE for five sixths of it; the
+    // gold gate is the last fifteen levels only.
+    //
+    // 🔑 That is a deliberate reversal of what the price was for. The old shape made you pay from 40,
+    // exactly when a real buffer class becomes available, so the NPC competed with a player on price.
+    // The new one lets the NPC be the free floor for the whole levelling game and charges only in the
+    // endgame band, where gold is plentiful and the buffer you actually want is a person. What squeezes
+    // the NPC below 75 is the buff CAP and the set's ceiling (basic rungs, no groups, no harmonies) —
+    // not a bill.
     //
     // TODO (owner, deferred): the buffs are MAX-LEVEL for everyone; they should scale with character
     // level once the buff skills become multi-level (same blocker as level-appropriate buffs). The cost
     // formula already reads a per-buff level, so it scales automatically when that lands.
 
-    private const int BufferMinLvl = 6, BufferMaxLvl = 75, BufferFreeUnderLvl = 40;
+    private const int BufferMinLvl = 6;
+    private const int BufferMaxLvl = GameConstants.MaxPlayerLevel;   // 90 — "the max of the game"
+    private const int BufferFreeUnderLvl = 75;
     // Halved when the buffer's five bundled blessings were split into singles (0.40.0): the set
     // went from 9 buttons to 19, and per-buff pricing would have doubled the full-set bill on an
     // economy the owner had just signed off. 19 x 1500 x 5 ~= the old 9 x 3000 x 5.
-    private const long BuffCostPerLevel = 1_500;   // per buff, per buff-LEVEL, when 41-75
+    private const long BuffCostPerLevel = 1_500;   // per buff, per buff-LEVEL, when 76-90
     private const long RestoreCostCap = 10_000;    // per pool (HP, MP); a full restore of both = 20k
 
     // The NPC buffs are single-level defs today but they are the MAX-STRENGTH set, so we price each as
@@ -13982,7 +14085,7 @@ public class GameLoopService : BackgroundService
     // become multi-level, swap this nominal 5 for the real per-buff level and the cost tracks it.
     private const int BufferBuffNominalLevel = 5;
 
-    /// <summary>Cost to cast one buff for this player (0 if ≤40).</summary>
+    /// <summary>Cost to cast one buff for this player (0 at or below BufferFreeUnderLvl, i.e. 75).</summary>
     private static long SingleBuffCost(Entity player, string skillId)
     {
         if (player.Level <= BufferFreeUnderLvl) return 0;
@@ -13990,7 +14093,7 @@ public class GameLoopService : BackgroundService
         return BuffCostPerLevel * lvl;
     }
 
-    /// <summary>Cost to restore missing HP + MP: cap·(1−hp/max) + cap·(1−mp/max). 0 if ≤40 or full.</summary>
+    /// <summary>Cost to restore missing HP + MP: cap·(1−hp/max) + cap·(1−mp/max). 0 at ≤75 or full.</summary>
     private static long RestoreCost(Entity player)
     {
         if (player.Level <= BufferFreeUnderLvl) return 0;
@@ -14006,7 +14109,9 @@ public class GameLoopService : BackgroundService
             ? $"Come back at level {BufferMinLvl} and I'll bless you."
             : player.Level > BufferMaxLvl
                 ? "You are well beyond a newbie buffer's help."
-                : player.Level <= BufferFreeUnderLvl ? "My blessings are free until level 40." : "";
+                : player.Level <= BufferFreeUnderLvl
+                    ? $"My blessings are free until level {BufferFreeUnderLvl}."
+                    : "";
 
         long fullCost = canBuff
             ? SkillCatalog.NewbieBuffSet.Sum(id => SingleBuffCost(player, id)) : 0;

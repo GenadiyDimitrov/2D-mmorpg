@@ -1104,9 +1104,27 @@ public class Entity
     public int DetauntTicks { get; set; }
     public Guid? DetauntFromId { get; set; }
 
-    /// <summary>Apply all buffs for one effect to a base value using the
-    /// standard formula: (base + sum flats) * (1 + sum percents). Optionally a
-    /// second (debuff) flag subtracts its percents/flats (used for defence).</summary>
+    /// <summary>Apply all buffs for one effect to a base value.
+    ///
+    /// 🔑 THE FORMULA IS <c>base × (1 + Σpercent) + Σflat</c> — PERCENTS FIRST, FLATS LAST (owner,
+    /// playtest 28: *"sharpening and reinforcement toggles should apply after everything as a flat
+    /// bonus not before buffs. Armor x buffs + reinforcement"*). It was <c>(base + Σflat) × (1 +
+    /// Σpercent)</c> until then, which put every flat bonus INSIDE the percentage stack and so paid it
+    /// out at whatever multiplier happened to be running: Reinforcement's +600 P.Def was worth 600 to
+    /// an unbuffed character and ~900 to a fully-buffed one, and the toggle you turn on to survive a
+    /// bad pull was worth least exactly when you were unbuffed and needed it.
+    ///
+    /// The new order makes a flat bonus mean the number it says, always. It also puts the two kinds of
+    /// bonus in the right relationship: a percent buff scales what you BUILT (your armor, your weapon,
+    /// your gear), a flat buff adds on top of the result. That is the only reading under which
+    /// stacking a stance with a blessing is additive rather than quietly multiplicative.
+    ///
+    /// ⚠ It applies to EVERY flat magnitude in the game, not just the two stances — Resolve's flat
+    /// interrupt resistance, Aim's flat accuracy, the Spell Rune's flat +40 cast, a flat debuff. That
+    /// is deliberate: two orders of composition living side by side is how a formula becomes
+    /// unpredictable, and his rule reads as a rule about flats, not about two skill ids.
+    ///
+    /// The optional second flag subtracts its percents/flats (used for defence debuffs).</summary>
     private float ModifiedStat(float baseValue, SkillEffect plusFlag, SkillEffect minusFlag = SkillEffect.None)
     {
         float flat = 0f, percent = 0f;
@@ -1123,11 +1141,12 @@ public class Entity
                 percent -= buff.Percent(minusFlag);
             }
         }
-        return Math.Max(0f, (baseValue + flat) * (1f + percent));
+        return Math.Max(0f, baseValue * (1f + percent) + flat);
     }
 
     /// <summary>Folds TWO additive buff flags (a shared one + a channel-specific one),
-    /// e.g. BuffAtk (both channels) plus BuffPhysAtk / BuffMagAtk (one channel only).</summary>
+    /// e.g. BuffAtk (both channels) plus BuffPhysAtk / BuffMagAtk (one channel only).
+    /// Same percents-then-flats order as <see cref="ModifiedStat"/> — see there for why.</summary>
     private float ModifiedStatDual(float baseValue, SkillEffect plusA, SkillEffect plusB)
     {
         float flat = 0f, percent = 0f;
@@ -1136,7 +1155,7 @@ public class Entity
             if (buff.Has(plusA)) { flat += buff.Flat(plusA); percent += buff.Percent(plusA); }
             if (buff.Has(plusB)) { flat += buff.Flat(plusB); percent += buff.Percent(plusB); }
         }
-        return Math.Max(0f, (baseValue + flat) * (1f + percent));
+        return Math.Max(0f, baseValue * (1f + percent) + flat);
     }
 
     public float EffectiveAttack =>

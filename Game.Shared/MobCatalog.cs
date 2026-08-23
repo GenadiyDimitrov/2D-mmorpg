@@ -838,18 +838,27 @@ public static class MobCatalog
         // Apothecary's Blessing Box and nothing else, which is what gives 250k something to buy. The
         // rung weights are UNCHANGED, so removing 17 ids from the lists does not cut the faucet — it
         // concentrates it on the potions and Dash, which is the intended trade.
+        //
+        // 🔑 ONLY THREE FAMILIES DROP, playtest 28 (owner: *"potions drop are limited to
+        // alacrity/fury/swift + dash-ocassionally -> the other buff potions are only from the
+        // apothecary masters"*). Swift, Alacrity and Fury are the THREE SPEED families — move, cast
+        // and attack — and Dash is the burst. The six that left the faucet (Agility, Might, Bulwark,
+        // Force, Ward, Aim) are on the Apothecary's shelf instead, BOTH rungs, so nothing became
+        // unobtainable; it moved from a faucet to a price.
+        //
+        // ⚠ The rung WEIGHTS are untouched again, exactly as when the scrolls came out: this does not
+        // narrow the faucet, it concentrates it. Ten ids became four at rung 1, so a buff potion drops
+        // just as often and is two and a half times more likely to be one of the three you can only
+        // get this way. That is the point — a speed potion is a levelling consumable you burn, the
+        // stat potions are a shopping decision.
         BuffRung(0.0105f,
             new[] { ItemCatalog.SpeedPotionC, ItemCatalog.CastPotionC, ItemCatalog.AtkPotionC,
-                    ItemCatalog.EvaPotionC, ItemCatalog.DashPotionC,
-                    ItemCatalog.MightPotionC, ItemCatalog.BulwarkPotionC,
-                    ItemCatalog.ForcePotionC, ItemCatalog.WardPotionC, ItemCatalog.AimPotionC });
+                    ItemCatalog.DashPotionC });
         if (level >= 20)
         {
             BuffRung(0.0053f,
                 new[] { ItemCatalog.SpeedPotionU, ItemCatalog.CastPotionU, ItemCatalog.AtkPotionU,
-                        ItemCatalog.EvaPotionU, ItemCatalog.DashPotionU,
-                        ItemCatalog.MightPotionU, ItemCatalog.BulwarkPotionU,
-                        ItemCatalog.ForcePotionU, ItemCatalog.WardPotionU, ItemCatalog.AimPotionU });
+                        ItemCatalog.DashPotionU });
         }
         // Rung 3 and up are DASH ONLY now: the Rare buff potion was deleted (it duplicated the scroll's
         // rung) and the scroll-only families never had a potion at any rarity. So from 45 up this group

@@ -12,7 +12,129 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-08-23 (latest) — 0.80.0: you can see that you are in god mode, and stealth looks like stealth (`BL-82`)
+## 2026-08-23 (latest) — 0.81.0: playtest 28, twelve finds — an exploit that was a level window, a buff cap that never reached a rune, and a blunt skill that refused a maul
+
+Twelve free-form finds in one pass, eleven built. Three of them are the same shape and worth naming
+first, because in each case the rule we thought was in the game **was written down and never reached
+the thing it was about**.
+
+**The mana-restore exploit was not a hole, it was a level window.** His words: *"a healer/buffer that
+haven't learned mana restore can be restored — should check the actual kit (future/present/etc); a 20lvl
+cleric should not be able to be restored even when he should learn it at lvl 30."* The rule that stops
+two restorers printing mana off each other tested `HasSkill(restore_mana)` — a LEARNED check. So a cleric
+was a legal restore target from level 1 to 29 and stopped being one at 30, which is not an exception, it
+is a thirty-level window with the door shut at the end of it. The loop is a property of the CLASS, so
+`ClassSkills.CanClassLearn` answers it now, at every level, at both call sites (the manual cast and the
+autopilot's target pick).
+
+**Runes counted against the buff cap because the exemption named the wrong row.** `CountsAgainstBuffCap`
+exempts `BuffRow.Item` and its own comment claimed the War/Spell Rune among them — while every rune buff
+in the game, those two included, is authored `BuffRow.Consumable`. The written exemption reached nothing.
+They carry `CountsTowardBuffLimit: false` now, which is where the answer belongs: it is a property of the
+buff, not of which row it draws in. Evicting one was pointless as well as unfair — the rune
+reconciliation re-applies it on the next tick, so the cap spent a slot, dropped a real blessing to free
+it, and ended the second with the rune still on the bar.
+
+**`Blunt` and `TwoHandedBlunt` are two different bits.** *"Cannot use acoustic shock and sound smash with
+maul (2h blunt), only work with 1h .. Should work with the 4 weapons (maul, mace, wand, staff — all
+blunts), same goes for all other."* The gate was `(required & equipped) != 0`, so a skill authored
+"blunt" silently meant "one-handed blunt" and the Warchanter's own maul locked him out of his own damage
+skills. One helper now — `WeaponTypes.Satisfies` — at all four places that ask: the cast gate, the
+auto-farm's skill pick, the on-hit proc check and the weapon-mastery passive. ⚠ **The fold is
+conditional**, and that is the whole subtlety: folding a two-handed weapon to its base type
+unconditionally would also let a maul pass a genuinely two-hands-only requirement, because
+`TwoHandedBlunt.Base()` is `Blunt`. So a requirement that NAMES a two-handed bit is matched exactly; one
+that names only base types has hands folded out of the question. Both authored shapes keep working with
+no skill row edited. (The proc check had been folding unconditionally — the same bug pointing the other
+way.)
+
+**Flat buffs apply after percentages.** *"Sharpening and reinforcement toggles should apply after
+everything as a flat bonus not before buffs. Armor x buffs + reinforcement."* It was
+`(base + Σflat) × (1 + Σ%)`, which put every flat bonus inside the percentage stack — Reinforcement's
++600 P.Def was worth 600 to an unbuffed character and ~900 to a fully-buffed one, so the toggle you flip
+to survive a bad pull was worth least exactly when you needed it. It is `base × (1 + Σ%) + Σflat` now.
+⚠ It applies to **every** flat magnitude, not just the two stances, deliberately: two orders of
+composition side by side is how a formula stops being predictable. `BalanceMatrix` is byte-for-byte
+identical before and after — every buff set it models is pure percentage — so the change is arithmetic
+and small: about −6% total P.Def while Reinforcement is up at a 30% buff stack.
+
+**The NPC buffer: nineteen singles down to his eleven, and the window moved to 6-90 free-to-75.** He
+listed the survivors by hand — Body, Vigor, Resolve, Alacrity, Might, Bulwark, Vampirism, Ward, Force,
+Fury, Frenzy — and his own parenthesis is the shape: one buff per axis a levelling character actually
+feels. The eight that went are all one thing, **the optimiser's row**: the whole accuracy/crit block, the
+MP pair (the HP pair stayed, because dying is what a new character does), move speed and evasion. This is
+the other half of `BL-87`: nineteen singles against a cap of twenty left ONE free slot, so taking the
+full NPC set and grouping with a real buffer were mutually exclusive. Eleven leaves nine.
+
+The price window is a deliberate reversal of what the price was for. It charged from 40 — exactly when a
+real buffer class becomes available — so the NPC competed with a *player* on price. Now it is free for
+the whole levelling game and charges only 76-90, where gold is plentiful and the buffer you want is a
+person. What squeezes the NPC below 75 is the cap and the set's ceiling, not a bill.
+
+**Buff potions: three families drop, six are shop-only.** Swift, Alacrity, Fury and Dash stay in the loot
+tables; Agility, Might, Bulwark, Force, Ward and Aim leave them and are stocked at the Apothecary
+instead — **both rungs**, because she only sold the Common one and shop-only + Common-only would have
+quietly deleted the Uncommon rung from the game. The rung weights are untouched, exactly as when the
+scrolls came out: ten ids became four, so a buff potion drops as often as before and is 2.5× more likely
+to be one of the three you can only get that way.
+
+**A buff's details say which bottle it came from.** *"I'm getting buffed 'Mig' and don't know if it's my
+or the potions."* And he could not tell: a potion's wrapper owns the duration and the bar row, but the
+buff that LANDS is the family rung — literally the same buff a buffer casts, same key, same rank. That
+identity is the design (it is what makes the two compete instead of stack), so the only place the
+difference can live is the text. A `From: Might Potion (Lesser).` line now leads the details popup. It is
+in the description rather than the name on purpose: the square's abbreviation is built from the name, and
+"Might Potion (Lesser)" does not abbreviate to `Mig`.
+
+**Chat is filed per character instead of wiped.** *"Chat again is saved between logins. Don't reset"* —
+which reads like a reversal of playtest-17's `C1` (*"chat must reset on exit"*) and is not. `C1` was
+reported because a freshly created character opened onto a **deleted** character's conversation. Both
+rulings say the chat belongs to the CHARACTER: the first complaint was it leaking across characters, this
+one is it being thrown away within one. So leaving the world stores the chat under whoever was talking
+and entering restores that character's own. It goes to **disk**, and flushes on `OnApplicationPause` too
+— "between logins" on a phone mostly means the OS killed us, and an in-memory stash would have failed the
+likeliest case. The System tab is still never stored: it is the crash trail, it is not per-character, and
+it is the one thing you want fresh for the relog you are doing right now.
+
+**A chat log, for moderation.** His question — *"how do the big games work it out? with tickets with a
+screenshot, or they have their chat log?"* — has an answer: they have the log. A screenshot is evidence
+the reporter supplies and the accused can dispute; the log is what the moderator reads, and it is the
+only thing that answers "what else has this account been saying". Tickets are how a case opens; the log
+is how it is decided. `ChatLogRecord` carries his four columns plus the channel — time, sender id AND
+name (a name can be freed by a delete and re-taken, and a six-month-old row that only says "Aldric" is
+evidence against the wrong person), channel and receiver in two columns rather than one overloaded field
+(that is what makes "every whisper this account sent" a query), and the text. It logs what was
+DELIVERED: anything refused above the send — a chat ban, a jail, the world-chat level floor, a whisper to
+someone who blocked you — was not said to anybody. A `/block` on Local or World only filters who hears
+it, so that IS logged. Written off the tick: the loop buffers a minute and the autosave flushes one
+batch. 🔴 **No reader command yet** — today it is a table you open with a SQLite browser.
+
+**Client: you can target yourself, and a live toggle looks live.** Tapping your own vitals panel now
+targets you; the character sheet moved to a `[Char]` button in the bag beside `[Equip]`. He was literally
+right that self-targeting was impossible: a world tap on your own body is refused on purpose (so your own
+collider cannot steal a tap meant for the ground under your feet) and the party window only exists in a
+party, so a solo healer had no way to select himself at all. A toggle that is on now draws a muted aqua
+ring **outside** the green auto ring, so a slot can carry both marks — no protocol change and no server
+work, because a live toggle was already a buff on the bar with no timer and nothing was reading it from
+the slot's side.
+
+**The sound skills retire Holy Bolt**, the way Holy Ray already does for the healer. All three carry the
+clause — an ork can buy Smash and Shock at 40 in either order and the retirement must not depend on the
+shopping order. ⚠ The trade is real: Holy Bolt is a spell with no weapon requirement and all three of
+these are weapon-gated, so a Warchanter with the wrong weapon in hand now has no attack skill rather than
+a weak one.
+
+**Answered, not built:** *"shouldn't lvl 14 vamp bolt fail all the time fighting 37/39 mobs?"* No — the
+fizzle roll reads the CASTER's level, never the skill's, and casting DOWN is 0%. The interesting half is
+the 300 damage: with `K·(mAtk·lvlMod + power)/def` and a rung-1 power of 21, the rung is 3-5% of that hit
+and the gear is the rest. That is why a level-14 skill still works at 40 — and a Warchanter never gets
+another rung of it, because rungs 2-5 are on the nuker ladder. The honest fix for that is the power
+ladder, not a landing penalty.
+
+⚠ **Schema change** (the chat log table) — delete `Game.Server/game.db` or let the stale-schema check
+recreate it. Protocol stays **25**; nothing on the wire changed shape.
+
+## 2026-08-23 — 0.80.0: you can see that you are in god mode, and stealth looks like stealth (`BL-82`)
 
 His question was *"What happen to the /god /invis + prowl/conceal/hymn visual?"* — and the honest answer
 was that the Unity client never had one. The god-mode badge lived in the **WPF harness** and died with it

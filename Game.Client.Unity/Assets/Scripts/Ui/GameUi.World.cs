@@ -56,6 +56,12 @@ namespace Game.Client
         private readonly Button[] _slotButtons = new Button[SlotsPerPage];
         private readonly TextMeshProUGUI[] _slotFaces = new TextMeshProUGUI[SlotsPerPage];
         private readonly Image[] _slotBorders = new Image[SlotsPerPage];
+        /// <summary>The "this stance is ON" ring — one per square, drawn OUTSIDE the green auto ring so
+        /// a slot can carry both marks at once (owner, playtest 28: *"toggle skill on the skill bar
+        /// should be marked with aqua border or different color (not so bright just different form the
+        /// rest) when 'on'"*). It answers a question the buff bar technically already answered and the
+        /// thumb could not: the toggle is where you press it, the buff square is somewhere else.</summary>
+        private readonly Image[] _slotToggleBorders = new Image[SlotsPerPage];
         private readonly TextMeshProUGUI[] _slotCancel = new TextMeshProUGUI[SlotsPerPage];
         private readonly Image[] _slotReuse = new Image[SlotsPerPage];
         private readonly RectTransform[] _slotReuseRects = new RectTransform[SlotsPerPage];
@@ -296,13 +302,29 @@ namespace Game.Client
                         new Vector2(12f, -48f), new Vector2(330f, 114f));
             var inner = panel.GetChild(0);
 
-            // TAPPING YOUR OWN PANEL OPENS THE CHARACTER SHEET. That is what the sheet is about, and
-            // it is where you are already looking when you wonder — so "Char" does not need a
-            // permanent button competing with the ones you press in a fight. The button is on the
-            // BORDER object, so the whole panel is the target rather than a strip of it.
+            // TAPPING YOUR OWN PANEL TARGETS YOU.
+            //
+            // 🔑 It opened the character sheet until playtest 28, and the sheet was the wrong thing to
+            // put there: *"clicking on myself (name upper left) should targets me … as a healer in a
+            // party it's hard to target urself fast from the window, and now outside party u cannot
+            // target ursel at all"*. He is right that it was impossible — TouchInput refuses a world
+            // tap on your own body (`!view.IsSelf`, so your own collider can never steal a tap meant
+            // for the ground under your feet), and the party window only exists when you are in a
+            // party. A solo healer had NO way to select himself, which on a bar full of ally-targeted
+            // skills is the difference between a heal landing and a cast being thrown away.
+            //
+            // This panel is the obvious door: it is your name, it is always on screen, and it is
+            // nowhere near the skill bar. The character sheet moved to a [Char] button in the bag,
+            // beside [Equip] — his call, and the better home for it anyway.
+            //
+            // The button is on the BORDER object, so the whole panel is the target rather than a
+            // strip of it.
             var open = panel.gameObject.AddComponent<Button>();
             open.targetGraphic = panel.GetComponent<Image>();
-            open.onClick.AddListener(() => ToggleWindow(_statsPanel));
+            open.onClick.AddListener(() =>
+            {
+                if (Boot.SelfId != Guid.Empty) Boot.TargetId = Boot.SelfId;
+            });
 
             _selfName = UiKit.Label(inner, "waiting for your entity ...", 19f);
             UiKit.Place(UiKit.Rect(_selfName.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
@@ -481,6 +503,19 @@ namespace Game.Client
                 // rather than a marked one. The frame is thinner now, the slot face below is opaque so
                 // nothing bleeds through, and the actual "this repeats" signal is the small green A in
                 // the corner (see below) rather than colour over the whole square.
+                // The TOGGLE-ON ring, OUTSIDE the auto ring (peeks 5px to the auto ring's 2px), so a
+                // stance that is both on and auto-marked shows an aqua edge around a green one instead
+                // of one hiding the other. Added first = drawn first = furthest back.
+                //
+                // The colour is deliberately muted (his words: "not so bright just different form the
+                // rest"). A saturated cyan on a dark bar reads as an ALERT, and a stance being on is
+                // the opposite of an alert — it is the state you meant to be in.
+                var onBorder = UiKit.Box(inner, "ToggleBorder", new Color(0.30f, 0.68f, 0.72f), blocksInput: false);
+                UiKit.Place(UiKit.Rect(onBorder.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                            at + new Vector2(-5f, 5f), new Vector2(slot + 10f, slot + 10f));
+                onBorder.enabled = false;
+                _slotToggleBorders[i] = onBorder;
+
                 var border = UiKit.Box(inner, "AutoBorder", new Color(0.35f, 0.85f, 0.40f), blocksInput: false);
                 UiKit.Place(UiKit.Rect(border.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                             at + new Vector2(-2f, 2f), new Vector2(slot + 4f, slot + 4f));
@@ -1001,10 +1036,20 @@ namespace Game.Client
             UiKit.Place(UiKit.Rect(_bagEquipToggle.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(16f, -chrome - 36f), new Vector2(92f, 32f));
 
+            // CHAR — the character sheet, beside Equip exactly where he asked for it (playtest 28:
+            // *"the details/char info button should be in the inventory next to the [equip] button"*).
+            // It used to be the ONLY way in: tapping your own vitals panel opened the sheet, and that
+            // tap is now how you TARGET yourself, so the sheet needed a door of its own. This is the
+            // right one — the sheet and the paper-doll are the same question asked twice, and you are
+            // already in the bag when you want to know what a piece of gear did to your numbers.
+            var charButton = UiKit.TextButton(inner, "Char", () => ToggleWindow(_statsPanel), 14f);
+            UiKit.Place(UiKit.Rect(charButton.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(112f, -chrome - 36f), new Vector2(92f, 32f));
+
             _bagDelToggle = UiKit.TextButton(inner, "Del: off",
                 () => { _bagFastDel = !_bagFastDel; _bagRevision = -1; }, 14f);
             UiKit.Place(UiKit.Rect(_bagDelToggle.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(112f, -chrome - 36f), new Vector2(92f, 32f));
+                        new Vector2(208f, -chrome - 36f), new Vector2(92f, 32f));
 
             _bagTabButtons = BuildCategoryTabs(inner, BagTabs, new Vector2(16f, -chrome - 72f), 80f,
                                                cat => { _bagTab = cat; _bagRevision = -1; });
@@ -1373,6 +1418,9 @@ namespace Game.Client
                 _slotBorders[i].enabled = auto;
                 _slotAutoMarks[i].gameObject.SetActive(auto);
 
+                // Aqua frame OUTSIDE that one = this slot holds a TOGGLE and the toggle is on.
+                _slotToggleBorders[i].enabled = IsToggleOn(token);
+
                 // The reuse sheet + its countdown. Driven from the client's own clock (the server sends
                 // one message when the timer starts, not one per tick), so this animates at frame rate.
                 float left, fraction;
@@ -1403,6 +1451,27 @@ namespace Game.Client
                 _slotCancel[i].gameObject.SetActive(casting);
                 if (casting) _slotButtons[i].interactable = true;
             }
+        }
+
+        /// <summary>Is this bar token a TOGGLE skill that is currently switched on?
+        ///
+        /// The server does not push a "toggles that are on" list and does not need to: a live toggle is
+        /// a buff on the bar under the skill's own <c>BuffKey</c>, with no timer (SecondsLeft &lt; 0,
+        /// because a stance runs until you or your MP stop it). So the answer is already in the buff
+        /// push — it just had nothing reading it from the SLOT's side.
+        ///
+        /// A non-toggle token answers false without touching the buff list, which is most of the bar.
+        /// </summary>
+        private bool IsToggleOn(string token)
+        {
+            if (string.IsNullOrEmpty(token)) return false;
+            if (SkillCatalog.Get(token) is not { Toggle: true } def) return false;
+            string key = string.IsNullOrEmpty(def.BuffKey) ? def.Id : def.BuffKey;
+            var buffs = Boot.Buffs;
+            if (buffs == null) return false;
+            for (int i = 0; i < buffs.Length; i++)
+                if (buffs[i].Key == key) return true;
+            return false;
         }
 
         /// <summary>What to print on a slot. Skills resolve icon → authored Abbrev →

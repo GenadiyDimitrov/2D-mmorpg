@@ -467,8 +467,11 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
     Dash/Sprint rungs · the three healing potions. Toggles, debuffs and the gear/rune row were already
     excluded by the engine and still are.
   - **The measured result: a fully-buffed character sits at 16 / 20**, four free. Self-serving off the
-    NPC buffer costs **19 of 20** for a strictly weaker set — a group packs three or four families into
+    NPC buffer cost **19 of 20** for a strictly weaker set — a group packs three or four families into
     one slot and a single never can. **The cap limits the alternative to the buffer, not the buffer.**
+    ⚠ **That 19 is now 11** (0.81.0): playtest 28 cut the NPC set to his eleven, so the NPC bar and a
+    real buffer's groups can finally coexist. The conclusion is unchanged and better served — what the
+    cap squeezes is still the substitute, it just no longer squeezes it to the point of absurdity.
   - **Verify it with `dotnet run --project tools/BalanceMatrix -- --buffs`**, which prints a `SLOT` /
     `-` column using the same rule the engine uses, resolving wrappers the way `ApplyBuff` does. It was
     the tool that caught a bulk edit wrongly exempting the three **Swift** rungs.
@@ -485,6 +488,21 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
     in the air - make the buttons smaller or like the icons on the top"*.
   - **The gear picker, second pass** (`87f`) — *"Make the buttons even smaller. Like the tab buttons in
     height. Also there is no splitter bellow the [S 80] button."*
+
+- `BL-89` 🔴 **A READER FOR THE CHAT LOG — the table exists, nothing opens it in-game.** Playtest 28,
+  your question: *"don't we need a chat log … because now an admin/mod should ban based on som1 is trying
+  to sell u for $ on private chat"*. **The WRITE half is built (0.81.0)** — every delivered line goes to
+  `ChatLogRecord` with time, sender id + name, channel, receiver and text. What is missing is the way a
+  moderator on a phone actually reads it; today it is a SQLite table you open on the machine.
+  - **The command shape it wants:** `/chatlog <name>` (that account's last N lines), `/chatlog <name>
+    -w` (whispers only — the channel this whole feature is FOR), and `/chatlog around <time>` for a
+    reported incident. Output into the System tab, paged, staff-only.
+  - ⚠ **RETENTION IS UNDECIDED AND IS YOURS TO RULE.** The table grows forever right now. A real answer
+    is a purge — 30 or 90 days — but the sensible window depends on how long after the fact a report
+    arrives, which you know and I do not. Say a number and it becomes one line in the autosave path.
+  - ⚠ It is also the first table in the game that holds something a player would call **private**. Worth
+    deciding once, before there is real data in it, whether staff below admin can read whispers.
+
 - `BL-34` ✅ **BUILT 2026-08-14 (0.66.0)** — **Madness**, a party-cast Frenzy handing out a new **rung 7**
   of the family, at **76 on the Warchanter** so an admin can party-buff with it. Your deliberate
   temporary home — *"when the kits land we will move it"*. See `CHANGELOG.md`. Delete at the next sweep.

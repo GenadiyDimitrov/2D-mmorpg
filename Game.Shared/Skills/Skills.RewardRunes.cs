@@ -49,7 +49,11 @@ public static partial class SkillCatalog
             // DurationTicks is NOMINAL only: ReconcileTimedItems overwrites TicksRemaining from the
             // ITEM's wall clock every second, which is what lets a rune's timer run while offline.
             DurationTicks: 36000, BuffKey: id, Rank: 1,
-            Category: SkillCategory.Buff, BuffRow: BuffRow.Consumable,
+            // 🔑 NEVER against the buff cap (owner, playtest 28) — same reason as the War/Spell Rune
+            // in Skills.Common.cs: the rune reconciliation re-applies it on the very next tick, so an
+            // eviction would cost a real blessing and buy a slot for a tenth of a second. It is also
+            // not a blessing you chose to wear over another one — it is the item in your bag.
+            Category: SkillCategory.Buff, BuffRow: BuffRow.Consumable, CountsTowardBuffLimit: false,
             Abbrev: abbrev, Description: desc, SpCost: 0,
             Levels: levels, Rewards: rates);
 }

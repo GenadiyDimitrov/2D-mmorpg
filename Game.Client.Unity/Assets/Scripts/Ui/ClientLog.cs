@@ -171,5 +171,143 @@ namespace Game.Client
                 Revision++; ClearGeneration++;
             }
         }
+
+        // ===================== CHAT THAT SURVIVES A RELOG (playtest 28) =====================
+        //
+        // 🔑 HIS TWO RULINGS ARE NOT IN CONFLICT, THEY ARE THE SAME RULE. C1 (playtest 17) said *"chat
+        // must reset on exit"* because a newly created character opened onto a DELETED character's
+        // conversation. Playtest 28 says *"chat again is saved between logins. Don't reset"*. What he
+        // wanted both times is that the chat belongs to the CHARACTER — the first report was it leaking
+        // ACROSS characters, the second is it being thrown away WITHIN one.
+        //
+        // So the buffer is now filed per character instead of wiped: leaving the world stores the chat
+        // under whoever was talking, entering it restores that character's own and nobody else's. A
+        // character that never spoke restores nothing, which is what a fresh character sees.
+        //
+        // It goes to DISK, not just memory. "Between logins" on a phone includes the app being killed
+        // in the background, and an in-memory stash would quietly not survive the one case he is most
+        // likely to hit.
+        //
+        // The System tab is still never stored and never restored: it is the diagnostics trail, it is
+        // not per-character, and writing every logcat line of a session to disk on exit is a cost with
+        // no reader.
+
+        /// <summary>Which character's chat is currently in the buffer (empty = none / the login
+        /// screen). Kept so <see cref="SwitchCharacter"/> knows what file to write on the way out.</summary>
+        private static string _chatOwner = "";
+
+        /// <summary>How many chat lines are carried across a relog. Well under <see cref="Capacity"/>
+        /// on purpose: this is "what were we just talking about", not an archive, and the file is read
+        /// and written on the main thread at two moments where a stall would be felt.</summary>
+        private const int PersistedChatLines = 300;
+
+        /// <summary>Hand the chat buffer to a different character (or to nobody — pass an empty key
+        /// when leaving for the character screen).
+        ///
+        /// Saves the outgoing character's chat, clears the buffer, then loads the incoming one's.
+        /// Calling it twice with the same key is a no-op, so the login path can call it freely.</summary>
+        public static void SwitchCharacter(string characterKey)
+        {
+            characterKey = characterKey ?? "";
+            if (characterKey == _chatOwner) return;
+
+            SaveChat(_chatOwner);
+            ClearChat();
+            _chatOwner = characterKey;
+            LoadChat(characterKey);
+        }
+
+        /// <summary>Write the current character's chat lines out. Safe to call with no owner.</summary>
+        public static void SaveChat(string characterKey)
+        {
+            if (string.IsNullOrEmpty(characterKey)) return;
+            try
+            {
+                var sb = new System.Text.StringBuilder();
+                lock (_lines)
+                {
+                    int from = 0;
+                    int chat = 0;
+                    for (int i = _lines.Count - 1; i >= 0; i--)
+                        if (_lines[i].Where != Tab.System && ++chat >= PersistedChatLines) { from = i; break; }
+                    for (int i = from; i < _lines.Count; i++)
+                    {
+                        var l = _lines[i];
+                        if (l.Where == Tab.System) continue;
+                        // tab|r|g|b|text — the text is last, so it may contain anything but a newline
+                        // (and it cannot: every line is one Append).
+                        sb.Append((int)l.Where).Append('|')
+                          .Append(l.Color.r.ToString("0.###")).Append('|')
+                          .Append(l.Color.g.ToString("0.###")).Append('|')
+                          .Append(l.Color.b.ToString("0.###")).Append('|')
+                          .Append(l.Text.Replace('\n', ' ')).Append('\n');
+                    }
+                }
+                System.IO.File.WriteAllText(ChatFilePath(characterKey), sb.ToString());
+            }
+            catch (Exception e)
+            {
+                // Never let a storage problem take the client down — the chat log is a convenience.
+                Debug.LogWarning("[hud] chat save failed: " + e.Message);
+            }
+        }
+
+        private static void LoadChat(string characterKey)
+        {
+            if (string.IsNullOrEmpty(characterKey)) return;
+            try
+            {
+                string path = ChatFilePath(characterKey);
+                if (!System.IO.File.Exists(path)) return;
+                var restored = new List<Line>();
+                foreach (var raw in System.IO.File.ReadAllLines(path))
+                {
+                    if (string.IsNullOrEmpty(raw)) continue;
+                    var parts = raw.Split(new[] { '|' }, 5);
+                    if (parts.Length < 5) continue;
+                    int tab; float r, g, b;
+                    if (!int.TryParse(parts[0], out tab)) continue;
+                    float.TryParse(parts[1], out r);
+                    float.TryParse(parts[2], out g);
+                    float.TryParse(parts[3], out b);
+                    restored.Add(new Line { Text = parts[4], Color = new Color(r, g, b), Where = (Tab)tab });
+                }
+                if (restored.Count == 0) return;
+
+                lock (_lines)
+                {
+                    // The restored lines go in FRONT of whatever the current session already logged
+                    // (the connect/handshake System lines), because they are older. Seq is re-stamped
+                    // in order so the console's append-only draw still sees a monotonic sequence.
+                    var merged = new List<Line>(restored.Count + _lines.Count);
+                    merged.AddRange(restored);
+                    merged.AddRange(_lines);
+                    _lines.Clear();
+                    _seq = 0;
+                    for (int i = 0; i < merged.Count; i++)
+                    {
+                        var l = merged[i];
+                        l.Seq = _seq++;
+                        _lines.Add(l);
+                    }
+                    while (_lines.Count > Capacity) _lines.RemoveAt(0);
+                    Revision++; ClearGeneration++;
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning("[hud] chat load failed: " + e.Message);
+            }
+        }
+
+        /// <summary>One file per character, named by a sanitised key so a character name can never
+        /// walk out of the folder or collide with another file the client keeps.</summary>
+        private static string ChatFilePath(string characterKey)
+        {
+            var safe = new System.Text.StringBuilder(characterKey.Length);
+            foreach (char c in characterKey)
+                safe.Append(char.IsLetterOrDigit(c) ? c : '_');
+            return System.IO.Path.Combine(Application.persistentDataPath, "chat_" + safe + ".log");
+        }
     }
 }

@@ -1611,6 +1611,11 @@ namespace Game.Client
                 Main(() =>
                 {
                     if (Entities != null) Entities.SetSelf(_selfId);   // re-tints anything already spawned
+                    // Hand the chat buffer to THIS character — restores what he was saying last time
+                    // and nobody else's (playtest 28; see ClientLog.SwitchCharacter for why this and
+                    // C1's "reset on exit" are the same rule). Keyed by character id, not name, so a
+                    // rename keeps the history and two characters can never share a file.
+                    ClientLog.SwitchCharacter(characterId.ToString());
                     _enteredAt = Time.realtimeSinceStartup;
                     Phase = ClientPhase.InWorld;
                     StatusMessage = "In world";
@@ -1662,9 +1667,14 @@ namespace Game.Client
             AutoConfig = new AutoHuntConfigDto(false, 60, 40, false, new AutoSkillDto[0], new string[0]);
             // C1: the chat log is per CHARACTER too. A new character inherited the DELETED one's chat
             // (owner) for the same reason the auto-hunt marks above did — the buffer is a singleton
-            // that outlives whoever was talking. Only the chat channels go; the System tab is the
-            // diagnostics trail and is not per-character (see ClientLog.ClearChat).
-            ClientLog.ClearChat();
+            // that outlives whoever was talking.
+            //
+            // ⚠ It is FILED now, not wiped (playtest 28: *"chat again is saved between logins. Don't
+            // reset"*). SwitchCharacter("") stores the outgoing character's chat on disk and empties the
+            // buffer, so the character screen and the next character still see a clean one — C1's
+            // requirement — while the conversation is waiting when you come back. The System tab is
+            // untouched either way: it is the diagnostics trail, not per-character.
+            ClientLog.SwitchCharacter("");
         }
 
         public async void LeaveWorld()
@@ -2862,8 +2872,21 @@ namespace Game.Client
 
         private static void Main(Action a) => UnityMainThreadDispatcher.Instance.Enqueue(a);
 
+        /// <summary>Flush the chat to disk when Android backgrounds us.
+        ///
+        /// ⚠ This is the case that actually matters on a phone: the OS kills a backgrounded app without
+        /// running OnDestroy, so waiting for a tidy exit would mean the chat only survived the relogs
+        /// you did on purpose — not the ones the phone did for you, which is most of them.</summary>
+        private void OnApplicationPause(bool paused)
+        {
+            if (paused && Phase == ClientPhase.InWorld && _lastCharacterId > 0)
+                ClientLog.SaveChat(_lastCharacterId.ToString());
+        }
+
         private async void OnDestroy()
         {
+            if (Phase == ClientPhase.InWorld && _lastCharacterId > 0)
+                ClientLog.SaveChat(_lastCharacterId.ToString());
             if (_net != null) await _net.DisposeAsync();
         }
     }

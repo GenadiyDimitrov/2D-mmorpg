@@ -10,6 +10,7 @@ public class GameDbContext : DbContext
     public DbSet<SubclassRecord> Subclasses => Set<SubclassRecord>();
     public DbSet<AccountItemRecord> AccountItems => Set<AccountItemRecord>();
     public DbSet<BossTimerRecord> BossTimers => Set<BossTimerRecord>();
+    public DbSet<ChatLogRecord> ChatLog => Set<ChatLogRecord>();
 
     public GameDbContext(DbContextOptions<GameDbContext> options) : base(options) { }
 
@@ -55,5 +56,14 @@ public class GameDbContext : DbContext
         });
 
         b.Entity<BossTimerRecord>(e => e.HasIndex(t => t.ZoneId).IsUnique());
+
+        // The moderation log is written constantly and read by hand, so it is indexed for the two
+        // questions a moderator actually asks: "what was said around this time" and "what has this
+        // account been saying". Nothing else queries it.
+        b.Entity<ChatLogRecord>(e =>
+        {
+            e.HasIndex(c => c.AtUtc);
+            e.HasIndex(c => c.SenderName);
+        });
     }
 }

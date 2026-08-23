@@ -367,6 +367,24 @@ public static partial class SkillCatalog
         return new SkillDef(id, name, BaseClass.Mage, effect,
             MpCost: SoundMp[0], CastTicks: castTicks, CooldownTicks: 30, Range: range, Power: SoundPower[0],
             Category: SkillCategory.Physical,
+            // 🔑 A SOUND SKILL RETIRES HOLY BOLT (owner, playtest 28: *"holy bolt should be replaced from
+            // sound smash/burst — [they] are the attack skills of buffers; healers replace [it] with a
+            // stronger one, same should be valit for the buffers"*). He is describing something the
+            // healer already does and the buffer did not: Holy Ray carries `Replaces: [HolyStrike]`, so a
+            // Lightbringer's Learn tab and bar lose the obsolete bolt the moment the real spell arrives.
+            // The Warchanter inherited Holy Bolt from the cleric tier and kept it forever beside a kit
+            // that was supposed to have superseded it.
+            //
+            // ⚠ ALL THREE carry it, not just the first one a race learns. Sound Smash and Acoustic Shock
+            // are both learnable at 40 by an ork, in whichever order he buys them — putting the clause on
+            // one of them would make the retirement depend on the shopping order.
+            //
+            // ⚠ THE TRADE IS REAL AND IT IS HIS TO ACCEPT: Holy Bolt is a SPELL with no weapon
+            // requirement, and all three of these are weapon-gated (blunt, blunt, bow). A Warchanter
+            // caught with the wrong weapon in his hands now has no attack skill at all rather than a weak
+            // one. That is consistent with the rest of his 3rd-class design — each race's Warchanter is
+            // built around one weapon — but it is a door closing, not just a door opening.
+            Replaces: new[] { HolyStrike },
             RequiredWeapon: weapon, HitCount: hits,
             DurationTicks: stunTicks,
             DebuffSchool: stunTicks > 0 ? DebuffSchool.Physical : DebuffSchool.None,

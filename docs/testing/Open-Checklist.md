@@ -1,29 +1,41 @@
-# OPEN CHECKLIST — the 0.79.0 pass
+# OPEN CHECKLIST — the 0.80.0 pass
 
 > **Rolling and unversioned.** §90 is everything built between 0.71.0 and 0.77.0 that you have not
 > played yet. §91 is your six free-form finds from 2026-08-22.
 >
-> 🔑 **PLAYTEST 27 (2026-08-23) IS ANSWERED IN FULL — all five My Finds, and every `->` comment you
-> left in §90 and §91.** ⚠ I missed the comments on the first pass and built only three rows; they are
-> all done now. What is answered rather than built is marked 🟠 and says why.
+> 🔑 **PLAYTEST 28 (2026-08-23, your twelve new My Finds) IS ANSWERED IN FULL — eleven built, one
+> answered.** Playtest 27 before it is answered in full too (all five finds and every `->` comment in
+> §90 and §91). What is answered rather than built is marked 🟠 and says why.
 >
-> **Built 2026-08-23:** city regen ×5→×2 and city-only · stat swaps off the Learn tab · the **max buff
-> cap at 20** with a per-buff flag (`BL-87`) · mana vamp 3/7/10% → **1/1.5/2%** · **cast chaining**
-> (same skill cancels, another chains) · `_ . -` legal in names · `owner.txt` self-creates for dev ·
-> **`/buff` finally takes a target**, `@s`/`@self`, `~` becomes relative coords for `/tp`, `/where` for
-> everyone · the buff **level in the effects popup** · Harmony of Restoration's mana tick is blue.
+> **Built for playtest 28:** the mana-restore exploit now reads the **KIT, not the skill book** ·
+> **chat is filed per character** and survives a relog and an app kill · a **chat log table** for
+> moderation · **runes off the buff cap** (the exemption was written down and never reached one) ·
+> the buff details say **which potion** they came from · the NPC buffer cut **19 → your 11** and its
+> window moved to **6-90, free to 75** · buff-potion drops down to **Swift / Alacrity / Fury / Dash**,
+> the other six shop-only (both rungs) · tapping your own panel **targets you**, [Char] moved into the
+> bag · a **blunt skill accepts a maul** — and every other weapon gate with it · flat buffs apply
+> **after** percentages · the sound skills **retire Holy Bolt** · an **aqua ring** on a live toggle.
 >
-> 🔴 **THE 0.79.0 APK IS NOT BUILT.** `ProtocolVersion` is **23 → 24** and most of the above is
-> client-side. **Say the word and I will build both halves.**
+> **Built 2026-08-23 (playtest 27):** city regen ×5→×2 and city-only · stat swaps off the Learn tab ·
+> the **max buff cap at 20** with a per-buff flag (`BL-87`) · mana vamp 3/7/10% → **1/1.5/2%** ·
+> **cast chaining** · `_ . -` legal in names · **`/buff` takes a target**, `@s`/`@self`, `~` relative
+> `/tp`, `/where` for everyone · the buff **level in the effects popup** · the god badge and stealth
+> opacity (0.80.0).
+>
+> 🔴 **THE APK IS STILL NOT BUILT.** `ProtocolVersion` is **25** and a big share of the above is
+> client-side — the chat filing, the self-target, the [Char] button, the toggle ring, and the Learn tab
+> losing Holy Bolt. **Say the word and I will build both halves.**
 >
 > 🔴 **STILL NOT BUILT, ON PURPOSE:** `BL-85` (a harmony's rungs share one rank) — `91g`'s first half.
-> And §89's three UI changes, which ride the next client batch.
+> And §89's three UI changes, which ride the next client batch. The chat log has **no reader command**
+> yet (see the row).
 >
 > 🔴 **BEFORE YOU PLAY: delete `Game.Server/game.db`** (and `-shm`/`-wal`) — owed since the 0.71.0
-> schema change and again since `AccountRole` renumbered (§91d). ⚠ It is in `Game.Server/`, not
-> `bin/Debug/`. **Install BOTH halves** — protocol 21 → 22 → 23 → **24** across four versions.
+> schema change, again since `AccountRole` renumbered (§91d), and again now for the **chat log table**.
+> ⚠ It is in `Game.Server/`, not `bin/Debug/`. The stale-schema check should recreate it for you on
+> first boot; deleting it by hand is the certain version. **Install BOTH halves.**
 >
-> ✅ **Your marks go in the repo, not an upload** — that has worked five passes running.
+> ✅ **Your marks go in the repo, not an upload** — that has worked six passes running.
 
 Rows are the format you picked (option 2): write your comment after the `->`. Put `x` in the `[]` if
 it passed with nothing to say, `~` if it works but wants a change, `!` if it is a bug or priority,
@@ -36,12 +48,12 @@ arrives, and playtest 27's five finds all came in that way.
 
 ---
 
-## My Finds — next pass
+## My Finds — playtest 27 + 28
 
 *(Reset 2026-08-22. Your previous six went to §91 — five built, one routed to `BL-86`.)*
 
-**All five of these are BUILT (2026-08-23).** The regen and buff-cap changes are server-side; the rest
-need the **0.79.0 APK**.
+**Playtest 27 — all five BUILT (2026-08-23).** The regen and buff-cap changes are server-side; the rest
+need the new APK. **Playtest 28 — the twelve below them, eleven built and one answered.**
 
 - [!] 🟢 **BUILT.** Hp/mp regen in cities should be decreased to x2 and only in the big cities ..not in a starting point of elit dungeon ...I can sit with the healer with 220mp/s regen and heal like crazy.
   -> Multiplier **5 → 2**, and it is a **CITY** bonus now, not a safe-zone one: new `SafeZone.RegenBoost`,
@@ -93,6 +105,191 @@ need the **0.79.0 APK**.
   - **Toggles are never chained** — instant, no cast time, so they just fire.
   - ⚠ The cast bar's X now also drops a QUEUED skill that has not started casting yet. There was no way
     to call one of those off before. ->
+
+- [!] 🟢 **BUILT.** A healer/buffer that haven't learned mana restore can be restored - it's a exploit .. Not to check only current learned ..should check the actual kit (future/oresent/etc) 20lvl cleric should not be able to be restored even when he should learn it at lvl 30
+  -> **Exactly your rule: the KIT answers now, not the skill book** (`IsManaRestorer`, one helper, both
+  call sites — the manual cast and the autopilot's target pick). 🔑 **It was worse than you saw.** The old
+  test was `HasSkill`, which does not make a level-20 cleric an exception — it makes the rule a **level
+  window**: a cleric was a legal restore target from **1 to 29** and stopped being one at 30. So two
+  clerics could print mana off each other for thirty levels and then have the door shut in their faces.
+  The loop this exists to stop is a property of the CLASS — two characters who can each turn HP into MP
+  — so the class table is what has to answer it, at every level. ->
+
+- [!] 🟢 **BUILT (CLIENT).** chat again is saved between logins. Don't reset
+  -> 🔑 **This and playtest-17's `C1` are the SAME rule, not opposite ones**, which is why it is worth
+  saying how it landed. `C1` was *"chat must reset on exit"* — because a freshly created character opened
+  onto a **deleted** character's conversation. You want it kept between logins. Both readings say the
+  chat belongs to the **CHARACTER**: the first complaint was it leaking ACROSS characters, this one is it
+  being thrown away WITHIN one. So it is **filed, not wiped** — leaving the world stores the chat under
+  whoever was talking, entering it restores that character's own and nobody else's.
+  - **It goes to disk**, not just memory, and it also flushes when Android backgrounds the app. "Between
+    logins" on a phone mostly means *the OS killed us*, and an in-memory stash would have quietly failed
+    the one case you are most likely to hit. Last **300** chat lines per character.
+  - The **System tab is still never saved** — it is the crash trail, it is not per-character, and it is
+    the one thing you want fresh for the relog you are doing right now. ->
+
+- [?] 🟢 **BUILT (the log half).** don't we need a chat log -I Mean in db as who said what and when abs to who - columns: time/sender/receiver(charid or world or normal or guild etc)/message - because now an admin/mod should ban based on som1 is trying to sell u for $ on private chat - how the bug games work it out ?with tickets with a screenshot or they have their chat log?
+  -> **They have the log.** A screenshot is evidence the *reporter* supplies and the accused can dispute;
+  a server-side log is what the moderator actually reads, and it is the only thing that answers "what
+  else has this account been saying" instead of judging one cropped image. **Tickets are how a case
+  opens — the log is how it is decided.** So: `ChatLogRecord`, your four columns plus the channel —
+  `AtUtc` / `SenderCharacterId` + `SenderName` / `Channel` + `ReceiverName` / `Text`.
+  - **The id AS WELL AS the name**, because a name can be freed by a delete and re-taken by someone else,
+    and a six-month-old log row that only says "Aldric" is then evidence against the wrong person.
+  - **Channel and receiver are two columns, not one overloaded field** — that is what makes *"every
+    whisper this account sent"* a query rather than a string search.
+  - **It logs what was DELIVERED.** A line refused for a chat ban, a jail, the world-chat level floor or
+    an empty body never reaches the table — it was not said to anyone. A whisper to someone who blocked
+    you is refused too. A `/block` on Local/World only filters who *hears* it, so that IS logged.
+  - **Written off the tick**: the loop buffers a minute of chat and the autosave flushes it in one batch.
+  - 🔴 **What is NOT built is the READER.** There is no `/chatlog` command yet — today it is a table you
+    open with a SQLite browser. Say the word and it becomes an admin command (by name, by time window, by
+    channel). It is also a **schema change**, which the stale-schema check will handle by recreating
+    `game.db` on first boot. ->
+
+- [!] 🟢 **BUILT.** Runes are caunted towards the buff limit ... If I have auto buff pots on -> I buff some buffs fade for over buffing then pots start to buff me and in the end I have semi buff form npc buffer and semi potions
+	- I want buff potions in their details to say Potion of "name" I'm getting buffed "Mig" and don't know if it's my or the potions.
+  -> **Both halves, and the first one was a real bug with an embarrassing cause.** The cap's own comment
+  claimed runes were exempt — and it exempted `BuffRow.Item`, while **every rune in the game is authored
+  `Consumable`**. So the exemption was written down and never reached a single rune. War Rune, Spell Rune
+  and the whole reward-rune ladder now carry `CountsTowardBuffLimit: false`. Evicting one was pointless
+  as well as unfair: the rune reconciliation puts it straight back on the next tick, so the cap spent a
+  slot, dropped a real blessing to free it, and ended the second with the rune still on your bar.
+  - **The details now say where the buff came from** — a `From: Might Potion (Lesser).` line at the top
+    of the popup. It is in the DESCRIPTION rather than the name on purpose: the square's abbreviation is
+    built from the name, and "Might Potion (Lesser)" does not abbreviate to `Mig`. You asked for it in
+    the details, and the bar keeps reading as the buff it actually is.
+  - 🔑 **Why the label could not already tell you:** a potion's wrapper owns the duration and the bar
+    row, but the buff that LANDS is the family rung — literally the same buff a buffer casts, same key,
+    same rank. That identity is the whole design (it is what makes the two compete instead of stack), so
+    the only place the difference can live is the text. ->
+
+- [~] 🟢 **BUILT.** to much buffs from npc and potions (only buff potions - not healing nor scrolls) 
+	- npc buffer should have only: Body,vigor,resolve,alacrity,might,bulwarc,vamp,ward,force,fury,frenzy -> (p/m.Def,p/m.atk,p/m.speed,hp max/regen, cast interrupt/vamp,frenzy)
+	- potions drop are limited to alacrity/fury/swift + dash-ocassionally -> the other buff potions are only from the apothecary masters
+	- those 11 buffs are enough for the start of the game from the npc buffer
+  -> **Nineteen → your eleven, and the drop faucet down to three families + Dash.**
+  - **The buffer keeps:** Might, Bulwark, Force, Ward, Vampirism, Resolve, Body, Vigor, Alacrity, Fury,
+    Frenzy. **Gone:** Aim, Focus, Ferocity, Insight, Soul, Serenity, Swift, Agility. 🔑 Your parenthesis
+    is the shape and the eight that left are all one thing — **the optimiser's row**: the whole
+    accuracy/crit block, the MP pair (the HP pair stayed, because dying is what a new character does),
+    move speed (Dash covers it) and evasion.
+  - ⚠ **"Fury" is the attack-speed family and "Alacrity" is cast speed** — its NPC single is still filed
+    under the old id `npc_haste`, so if you ever grep for it, that is why. Not a typo either way.
+  - 🔑 **This is the other half of `BL-87`.** Nineteen NPC singles against a cap of twenty left you ONE
+    free slot, so taking the full NPC set and grouping with a real buffer were mutually exclusive.
+    Eleven leaves **nine free**, which is what makes a buffer worth having instead of a cheaper
+    substitute for one. It also kills the churn you described: 11 NPC + the 3 potion families that are
+    left = 14, comfortably under 20, so nothing gets evicted and no potion tops up a hole.
+  - **Drops:** rung 1 and rung 2 now carry **Swift / Alacrity / Fury / Dash** and nothing else. The rung
+    WEIGHTS are untouched, exactly as when the scrolls came out — this does not narrow the faucet, it
+    concentrates it: ten ids became four, so a buff potion drops just as often and is 2.5× more likely to
+    be one of the three you can only get that way.
+  - **The Apothecary now stocks BOTH rungs** of the six that left the loot tables (Agility, Might,
+    Bulwark, Force, Ward, Aim). She only sold the Common rung before, so shop-only + Common-only would
+    have quietly deleted the Uncommon rung from the game. ->
+
+- [~] 🟢 **BUILT.** make npc buffer free until 75
+	-  not limited 75 as max, but to the max of the game(currently 90) 
+		- available (6~75 -> 6~90)
+		- free 6~39 -> 6~75; paid 40~75 -> 75~90
+	-  after 75 we make the payment required.
+  -> **6-90 available, free to 75, paid 76-90.** The max reads `GameConstants.MaxPlayerLevel`, so it
+  follows the cap if the game ever grows past 90 rather than needing a second edit.
+  - 🔑 **This reverses what the price was FOR, and I think you are right to.** The old shape charged from
+    40 — exactly when a real buffer class becomes available — so the NPC competed with a *player* on
+    price. The new one makes the NPC the free floor for the whole levelling game and only charges in the
+    endgame band, where gold is plentiful and the buffer you actually want is a person. What squeezes the
+    NPC below 75 now is the **buff cap and the set's ceiling** (basic rungs, no groups, no harmonies) —
+    not a bill.
+  - The dialog line reads the constant now instead of saying "level 40" in hard-coded text. ->
+
+- [~] 🟢 **BUILT (CLIENT).** clicking on myself (name upper left) should targets me - the details/char info button should be in the inventory next to the [equip] button, as a healer in a party it's hard to target urself fast from the window,and now outside party u cannot target ursel at all
+  -> **Both, and you were literally right that it was impossible.** A world tap on your own body is
+  refused on purpose (`!view.IsSelf`, so your own collider can never steal a tap meant for the ground
+  under your feet) and the party window only exists when you are in a party — so a **solo healer had no
+  way at all to select himself**, which on a bar full of ally-targeted skills is the difference between a
+  heal landing and a cast being thrown away.
+  - Tapping your vitals panel now **targets you**. The character sheet moved to a **[Char] button in the
+    bag, between [Equip] and [Del]** — your call, and the better home anyway: the sheet and the
+    paper-doll are the same question asked twice.
+  - The target frame already handled "the target is me" (it hides the Attack/Invite row), so nothing else
+    needed teaching. ->
+
+- [!] 🟢 **BUILT.** cannot use acoustic shock and sound smash with maul (2h blunt) only work with 1h .. Should work with the 4 weapons (maul,mace,wand,staff - all blunts) same goes for all other.
+  -> 🔑 **`Blunt` and `TwoHandedBlunt` are two different BITS**, and the gate was a raw mask test — so a
+  skill authored "blunt" silently meant "one-handed blunt", and your own maul locked you out of your own
+  damage skills. One rule now (`WeaponTypes.Satisfies`) at **all four** places that asked the question:
+  the cast gate, the auto-farm's skill pick, the on-hit proc check and the weapon-mastery passive.
+  - ⚠ **The fold is conditional, and that is the whole subtlety.** Folding a two-handed weapon down to
+    its base type unconditionally would also let a maul pass a genuinely **two-hands-only** requirement —
+    Whirlwind, Crushing Blow, the 2H mastery — because `TwoHandedBlunt.Base()` is `Blunt`. So: if a
+    requirement NAMES a two-handed bit it is asking about hands and is matched exactly; if it names only
+    base types, hands are not its business and the weapon is folded. Both authored shapes keep working
+    with no skill row edited.
+  - The proc check was already folding — **unconditionally**, which is the bug in the other direction. It
+    is on the same helper now. ->
+
+- [!] 🟢 **BUILT.** sharpening and reinforcement toggles should apply after everitying as a flat bonus not before buffs. Armor x buffs + reinforcement 
+  -> **`base × (1 + Σ%) + Σflat`.** It was `(base + Σflat) × (1 + Σ%)`, which put every flat bonus INSIDE
+  the percentage stack — so Reinforcement's +600 P.Def was worth 600 to an unbuffed character and ~900 to
+  a fully-buffed one. **The toggle you flip to survive a bad pull was worth least exactly when you were
+  unbuffed and needed it most.** Now a flat bonus means the number it says, always.
+  - ⚠ **It applies to EVERY flat magnitude, not just the two stances** — Resolve's flat interrupt
+    resistance, Aim's flat accuracy, the Spell Rune's flat +40 cast, a flat debuff. Deliberate: two
+    orders of composition living side by side is how a formula stops being predictable, and your rule
+    reads as a rule about *flats*, not about two skill ids. Say if you meant it narrower.
+  - **Measured: `BalanceMatrix` is byte-for-byte identical before and after** — every buff set it models
+    is pure percentage, so nothing it reports moved at all. The real change is arithmetic and small: at a
+    ~30% P.Def buff stack, Reinforcement L13 goes from +780 effective to +600, i.e. about **−6% total
+    P.Def while the stance is up**. Sharpening L13 loses ~120 of ~1500 P.Atk on a ~40% stack. ->
+
+- 🟢 **BUILT.** I think holy bolt should be replaced from sound smash/burst - are the attack skills of buffers - healers replace wit with stronger one, same should be valit for the buffers.
+  -> **You were describing something the healer already does and the buffer never did.** Holy Ray carries
+  `Replaces: [holy_strike]`, so a Lightbringer's Learn tab and bar drop the obsolete bolt the moment the
+  real spell arrives. The Warchanter inherited Holy Bolt from the cleric tier and kept it forever, beside
+  a kit that was supposed to have superseded it. **All three sound skills carry the clause now** — Sound
+  Smash, Sound Burst and Acoustic Shock — not just the first one a race learns, because an ork can buy
+  Smash and Shock at 40 in either order and the retirement must not depend on the shopping order.
+  - ⚠ **The trade is real and it is yours to accept.** Holy Bolt is a SPELL with **no weapon
+    requirement**; all three of these are weapon-gated (blunt / bow / blunt). A Warchanter caught with the
+    wrong weapon in his hands now has **no attack skill at all** rather than a weak one. That fits the
+    rest of your 3rd-class design — each race's Warchanter is built around one weapon — but it is a door
+    closing as well as opening. Say if you want Holy Bolt left as the bare-handed fallback.
+  - 🔴 **Needs the new APK**: the client builds its Learn tab locally from the compiled class tables. ->
+
+- [!] 🟠 **ANSWERED — no, and here is why it does not.** shouldn't lvl 14 vamp bolt fail all the time fighting 37/39 mobs ? I hit them for ~300 and vamp ~120.
+  -> 🔑 **The fizzle roll reads the CASTER's level, never the skill's** — `fail% = 1.3^(mobLvl −
+  casterLvl) × …`. You are above those mobs, so you are casting DOWN, and casting down is **0%**. The
+  rung is not in the roll and never has been (that was measured and ruled on 2026-08-22; the table is in
+  `docs/balance/BalanceMatrix.md`). Your 120 is exactly 40% of 300, so the drain is working too.
+  - 🔑 **The interesting half is the 300, not the fizzle.** Damage is `K·(mAtk·lvlMod + power)/def`. Your
+    rung-1 power is **21**. At your level `mAtk·lvlMod` is in the hundreds — so the rung contributes
+    something like 3-5% of that hit and your *gear* is doing the rest. That is why a level-14 skill still
+    works at 40, and it is the same reason buying rungs feels like it does nothing.
+  - ⚠ **And a Warchanter never gets another rung.** Rungs 2-5 of Vampiric Bolt are on the **nuker**
+    ladder; the cleric line takes rung 1 at 14 and stops. So this is not "a low rung I haven't upgraded",
+    it is the only rung your class will ever have — which is a decent argument for your OWN next row,
+    the one that retires Holy Bolt for the sound skills. Vampiric Bolt is the same kind of leftover.
+  - **What I did NOT do:** put the skill's rung into the fizzle roll. It would break every class that
+    legitimately carries an old rung, and the honest fix for "a rung-1 nuke is still fine at 40" is the
+    power ladder, not a landing penalty. Say if you want it looked at as a balance pass. ->
+
+- [~] 🟢 **BUILT (CLIENT).** toggle skill on the skill bar should be marked with aqua border or different color (not so bright just different form the rest) when "on" (I see the buff but more visual is OK)
+  -> **A muted aqua ring, drawn OUTSIDE the green auto ring** so a stance that is both on and auto-marked
+  shows both instead of one hiding the other (aqua peeks 5px, green 2px). The colour is deliberately
+  desaturated, per your "not so bright": a saturated cyan on a dark bar reads as an ALERT, and a stance
+  being on is the opposite of an alert — it is the state you meant to be in.
+  - No protocol change and no server work: **a live toggle is already a buff on the bar** under the
+    skill's own key with no timer, so the client always had the answer — nothing was reading it from the
+    SLOT's side. Which is also the honest version of your "I see the buff but more visual is OK": the
+    information was there, it was just in the wrong place for a thumb. ->
+
+---
+
+## My Finds — 2026-08-23, second batch
+
+*(Empty — the twelve above are answered. Use this space for the next pass.)*
 
 - [ ] 
 
@@ -307,7 +504,7 @@ and E is engine work that has only ever been checked by build, smoke test and Ba
   muting it is one line. ⚠ **A MOB's AoE does not flash** — deliberate for now, because telegraphing a
   boss's ground slam is a real balance decision and not a side effect of this. Say if you want it. ->
 
-- `90k` [] - **THE ORK MAGE'S ATK IS 31 → 47** — your find, and the root cause is worth one line: **IG has
+- `90k` [x] - **THE ORK MAGE'S ATK IS 31 → 47** — your find, and the root cause is worth one line: **IG has
   two power stats and we have one.** Our mage ATK column was IG's **INT**, copied straight across, which
   took the half of the spread the ork mystic LOSES and threw away the half he WINS (his STR is 25, the
   highest of any mystic). 47 = 41 × 25/22, derived from IG's own ratio rather than invented. 🔑 Thm09u54check

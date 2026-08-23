@@ -172,6 +172,30 @@ public static class WeaponTypes
         WeaponType.TwoHandedBlunt => WeaponType.Blunt,
         _ => w
     };
+
+    /// <summary>Does <paramref name="equipped"/> satisfy a skill's <c>RequiredWeapon</c> mask?
+    ///
+    /// 🔑 A BARE TYPE MEANS "ANY HANDS OF IT" (owner, playtest 28: *"cannot use acoustic shock and
+    /// sound smash with maul (2h blunt), only work with 1h .. Should work with the 4 weapons
+    /// (maul, mace, wand, staff — all blunts), same goes for all other"*). The gate used to be a raw
+    /// <c>(required &amp; equipped) != 0</c>, and <c>Blunt</c> and <c>TwoHandedBlunt</c> are two
+    /// different BITS — so a skill authored "blunt" silently meant "one-handed blunt", and the
+    /// Warchanter's own maul locked him out of his own damage skills.
+    ///
+    /// ⚠ THE FOLD IS CONDITIONAL, and that is the whole subtlety. Folding the equipped weapon down to
+    /// its base unconditionally would also let a maul pass a genuinely two-hands-only requirement
+    /// (Whirlwind, Crushing Blow, the 2H mastery) — <c>TwoHandedBlunt.Base()</c> is <c>Blunt</c>, which
+    /// sits inside those masks' opposite. So: if the requirement NAMES a two-handed bit, it is asking
+    /// about hands and is matched exactly; if it names only base types, hands are not its business and
+    /// the equipped weapon is folded. Both authored shapes keep working with no row edited.</summary>
+    public static bool Satisfies(this WeaponType equipped, WeaponType required)
+    {
+        if (required == WeaponType.None) return true;
+        if ((required & equipped) != 0) return true;
+        // The requirement talks about HANDS — take it literally, no folding.
+        if ((required & WeaponType.TwoHanded) != 0) return false;
+        return (required & equipped.Base()) != 0;
+    }
 }
 
 /// <summary>Enchant scroll TYPE — what a FAILURE costs (owner, playtest-17 D1). This is now only

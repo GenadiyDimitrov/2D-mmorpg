@@ -59,13 +59,30 @@ public static partial class SkillCatalog
     /// 1h of single basic buff"). So no GROUP buff and no Harmony: the buffer's edge over a potion
     /// is the DURATION, and its ceiling stays below a real buffer class, which keeps the improved
     /// groups. Frenzy stays in (it's a FULL buffer; cancel that one buff if you don't want its
-    /// −10% Max HP/MP).</summary>
+    /// −10% Max HP/MP).
+    ///
+    /// 🔑 CUT FROM NINETEEN TO ELEVEN, playtest 28. He named the survivors by hand — *"npc buffer
+    /// should have only: Body, vigor, resolve, alacrity, might, bulwarc, vamp, ward, force, fury,
+    /// frenzy -> (p/m.Def, p/m.atk, p/m.speed, hp max/regen, cast interrupt/vamp, frenzy) … those 11
+    /// buffs are enough for the start of the game"* — and his parenthesis is the shape: ONE buff per
+    /// axis that a levelling character actually feels, and nothing per axis that only matters once you
+    /// are optimising. So the eight that went are the optimiser's row: Aim, Focus, Ferocity and Insight
+    /// (the whole accuracy/crit block), Soul and Serenity (the MP pair — the HP pair stayed because
+    /// dying is the thing a new character does), Swift (move speed — Dash and a mount cover it) and
+    /// Agility (evasion).
+    ///
+    /// ⚠ This is also the other half of the buff CAP (`BL-87`). Nineteen NPC singles against a cap of
+    /// twenty meant taking the full set left you one free slot and no room for a real buffer's groups;
+    /// eleven leaves nine, so the NPC set and a party buffer can now sit on the same bar — which is
+    /// what makes a buffer worth grouping with instead of a cheaper substitute for one.
+    ///
+    /// ⚠ "Fury" is <see cref="NpcHaste"/>: the ATTACK-SPEED family is named Fury on the ladder and its
+    /// NPC single kept the older id. Alacrity is CAST speed. Neither is a typo for the other.</summary>
     public static readonly string[] NewbieBuffSet =
-        { NpcMight, NpcBulwark, NpcVampirism, NpcAccuracy,
+        { NpcMight, NpcBulwark, NpcVampirism,
           NpcForce, NpcWard, NpcResolve,
-          NpcFocus, NpcFerocity, NpcInsight,
-          NpcBody, NpcSoul, NpcVigor, NpcSerenity,
-          NpcSwift, NpcAlacrity, NpcAgility, NpcHaste,
+          NpcBody, NpcVigor,
+          NpcAlacrity, NpcHaste,
           NpcFrenzy };
     /// <summary>What the ADMIN buff button and `/buff` hand out: EVERYTHING a max-level BUFFER can
     /// give, at that buffer's TOP rung, plus every NPC single. Those top layers are the ones no NPC

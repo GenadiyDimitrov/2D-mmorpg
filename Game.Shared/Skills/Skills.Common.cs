@@ -487,12 +487,19 @@ public static partial class SkillCatalog
 
         // ----- RUNE buffs. Applied/kept by the rune reconciliation while a matching rune sits in the
         //       main inventory unexpired; its remaining time is driven by the item's wall-clock expiry, so
-        //       DurationTicks here is only the nominal apply value (the loop overwrites TicksRemaining). -----
+        //       DurationTicks here is only the nominal apply value (the loop overwrites TicksRemaining).
+        //
+        // 🔑 A RUNE NEVER COUNTS AGAINST THE BUFF CAP (owner, playtest 28: *"Runes are counted towards
+        // the buff limit"*). The cap's own doc-comment already claimed runes were exempt, and it was
+        // wrong: it exempts <c>BuffRow.Item</c>, and every rune buff in the game is authored
+        // <c>Consumable</c>, which counts. Evicting one is pointless as well as unfair — the
+        // reconciliation pass puts it straight back on the next tick, so the cap would spend a slot,
+        // drop a real blessing to free it, and end the second with the rune still on the bar. -----
         new(WarRuneBuff, "War Rune", BaseClass.Fighter, SkillEffect.BuffPhysAtk,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             DurationTicks: 36000, BuffKey: "rune_war", Rank: 1,
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffPhysAtk, 1.00f) },
-            Category: SkillCategory.Buff, BuffRow: BuffRow.Consumable,
+            Category: SkillCategory.Buff, BuffRow: BuffRow.Consumable, CountsTowardBuffLimit: false,
             Description: "War Rune: +100% P.Atk (physical damage) while the rune is held."),
         new(SpellRuneBuff, "Spell Rune", BaseClass.Mage, SkillEffect.BuffMagAtk | SkillEffect.BuffCastSpeed,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
@@ -502,7 +509,7 @@ public static partial class SkillCatalog
                 new(SkillEffect.BuffMagAtk, 0.414f),                       // +41% EFFECTIVE M.Atk = ×1.414 magic
                 new(SkillEffect.BuffCastSpeed, 40, ModifierMode.Flat),     // flat +40 cast stat (not %, per the old passive)
             },
-            Category: SkillCategory.Buff, BuffRow: BuffRow.Consumable,
+            Category: SkillCategory.Buff, BuffRow: BuffRow.Consumable, CountsTowardBuffLimit: false,
             Description: "Spell Rune: +magic damage and cast speed while the rune is held."),
 
         // ================== BUFF LADDERS — the single buffs and their consumables ==================

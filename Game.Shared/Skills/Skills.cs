@@ -653,7 +653,7 @@ public readonly record struct WeaponMasteryProfile(
     /// <see cref="Other"/> for empty hand / anything else. Inert outside RequiredWeapon.</summary>
     public PassiveEffect For(WeaponType wt)
     {
-        if (RequiredWeapon != WeaponType.None && (RequiredWeapon & wt) == 0) return default;
+        if (!wt.Satisfies(RequiredWeapon)) return default;
         return wt.Base() switch
         {
             WeaponType.Sword => Sword,

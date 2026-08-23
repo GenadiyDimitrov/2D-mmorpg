@@ -74,6 +74,7 @@ public class PersistenceService
                 _ = await db.Subclasses.OrderBy(x => x.Id).FirstOrDefaultAsync();
                 _ = await db.Items.OrderBy(x => x.Id).FirstOrDefaultAsync();
                 _ = await db.BossTimers.OrderBy(x => x.Id).FirstOrDefaultAsync();
+                _ = await db.ChatLog.OrderBy(x => x.Id).FirstOrDefaultAsync();
                 return false;   // schema is current
             }
             catch (SqliteException ex)
@@ -1269,6 +1270,23 @@ public class PersistenceService
             db.BossTimers.Remove(rec);
             await db.SaveChangesAsync();
         }
+    }
+
+    /// <summary>Append a batch of accepted chat lines to the moderation log (playtest 28).
+    ///
+    /// It takes a BATCH because the tick loop buffers a minute of chat and flushes it with the autosave:
+    /// one context and one SaveChanges for a minute's traffic, rather than a database round trip per
+    /// sentence typed on the server. Nothing reads the log at runtime, so the delay costs nothing — a
+    /// moderator reading it is a human, minutes after the fact.
+    ///
+    /// ⚠ It swallows nothing and is called through the same background RunSave path as the character
+    /// autosave, so a storage failure surfaces there and never stalls a tick.</summary>
+    public async Task AppendChatLogAsync(IReadOnlyList<ChatLogRecord> rows)
+    {
+        if (rows.Count == 0) return;
+        await using var db = await _factory.CreateDbContextAsync();
+        db.ChatLog.AddRange(rows);
+        await db.SaveChangesAsync();
     }
 
     // ----- Admin moderation (jail / kick / ban) — all target by CHARACTER name so they work even when
