@@ -12,9 +12,11 @@
 > moderation · **runes off the buff cap** (the exemption was written down and never reached one) ·
 > the buff details say **which potion** they came from · the NPC buffer cut **19 → your 11** and its
 > window moved to **6-90, free to 75** · buff-potion drops down to **Swift / Alacrity / Fury / Dash**,
-> the other six shop-only (both rungs) · tapping your own panel **targets you**, [Char] moved into the
-> bag · a **blunt skill accepts a maul** — and every other weapon gate with it · flat buffs apply
-> **after** percentages · the sound skills **retire Holy Bolt** · an **aqua ring** on a live toggle.
+> the other six off the loot tables — shop keeps **Common only**, the **CRAFTER** supplies the Uncommon
+> rung (your correction; and yes, potions are tradable, always were) · tapping your own panel **targets
+> you**, [Char] moved into the bag · a **blunt skill accepts a maul** — and every other weapon gate with
+> it · flat buffs apply **after** percentages · the sound skills **retire Holy Bolt** · an **aqua ring**
+> on a live toggle.
 >
 > **Built 2026-08-23 (playtest 27):** city regen ×5→×2 and city-only · stat swaps off the Learn tab ·
 > the **max buff cap at 20** with a per-buff flag (`BL-87`) · mana vamp 3/7/10% → **1/1.5/2%** ·
@@ -27,8 +29,9 @@
 > losing Holy Bolt. **Say the word and I will build both halves.**
 >
 > 🔴 **STILL NOT BUILT, ON PURPOSE:** `BL-85` (a harmony's rungs share one rank) — `91g`'s first half.
-> And §89's three UI changes, which ride the next client batch. The chat log has **no reader command**
-> yet (see the row).
+> And §89's three UI changes (`BL-88`), which ride the next client batch. The chat log has **no reader
+> command** yet → **`BL-89`**, which also carries **two questions only you can answer**: how long to keep
+> the log, and whether staff below admin may read whispers.
 >
 > 🔴 **BEFORE YOU PLAY: delete `Game.Server/game.db`** (and `-shm`/`-wal`) — owed since the 0.71.0
 > schema change, again since `AccountRole` renumbered (§91d), and again now for the **chat log table**.
@@ -301,9 +304,16 @@ need the new APK. **Playtest 28 — the twelve below them, eleven built and one 
 
 ---
 
-## My Finds — 2026-08-23, second batch
+## My Finds — next pass (empty, write here)
 
-*(Empty — the twelve above are answered. Use this space for the next pass.)*
+*The twelve above are answered — this is the blank page for whatever the 0.81.1 build turns up.*
+
+⚠ **What is worth aiming at first**, because it is where this pass changed the most and none of it has
+been played: the **buff bar** (11 NPC buffs + potions, nothing should silently fade any more), a
+**Warchanter with a maul** (Sound Smash / Acoustic Shock must fire), **Reinforcement and Sharpening**
+under a full buff set, and **relogging with chat on screen**.
+
+- [ ] 
 
 - [ ] 
 
