@@ -1,4 +1,4 @@
-# OPEN CHECKLIST — the 0.80.0 pass
+# OPEN CHECKLIST — the 0.81.1 pass
 
 > **Rolling and unversioned.** §90 is everything built between 0.71.0 and 0.77.0 that you have not
 > played yet. §91 is your six free-form finds from 2026-08-22.
@@ -185,9 +185,23 @@ need the new APK. **Playtest 28 — the twelve below them, eleven built and one 
     WEIGHTS are untouched, exactly as when the scrolls came out — this does not narrow the faucet, it
     concentrates it: ten ids became four, so a buff potion drops just as often and is 2.5× more likely to
     be one of the three you can only get that way.
-  - **The Apothecary now stocks BOTH rungs** of the six that left the loot tables (Agility, Might,
-    Bulwark, Force, Ward, Aim). She only sold the Common rung before, so shop-only + Common-only would
-    have quietly deleted the Uncommon rung from the game. ->
+  - 🔑 **CORRECTED, same day, on your reply.** *"By apothecary master I meant the CRAFTER not the shop …
+    the shop can supply common only and the crafter can supply the rest."* I had read "apothecary
+    masters" as the shop NPC and stocked the Uncommon rungs on her shelf; that is reverted. **The shop
+    sells the Common rung of all nine families and nothing above it.**
+  - **Nothing had to be built for the crafter — he already makes all of it.** The Potion Master's ladder
+    (your own: *"l2 - common buff pots … l4 - uncommon buff pots"*) has carried all nine Common potions
+    at craft **L2** and all nine Uncommon at craft **L4** since the crafting build. So the six that left
+    the loot tables land exactly where you wanted them: **a player Potion Master at L4 is now the ONLY
+    source of an Uncommon Agility / Might / Bulwark / Force / Ward / Aim potion in the game.** That is
+    the real content of this change — it hands a whole rung of a consumable to the player economy
+    instead of to a vendor.
+  - **And yes, potions are tradable — all of them, and always have been.** It is your own ruling from
+    playtest-18 `V2b`: *"buff pots are 0 sell (ppl still can sell them to others if they want)"* —
+    `SellPriceOverride: 0` so a **vendor** will not buy one back, `Tradable` left at its default so a
+    **player** can. Nothing needed changing. ⚠ The one consumable that is NOT tradable is the buff
+    **SCROLL** (`Tradable: false`, playtest-17 `E3`) — box-only and bound, because the Blessing Box was
+    the tradable thing. Say if you want that reconsidered now that the crafter has a real shelf. ->
 
 - [~] 🟢 **BUILT.** make npc buffer free until 75
 	-  not limited 75 as max, but to the max of the game(currently 90) 

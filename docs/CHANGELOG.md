@@ -12,7 +12,7 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-08-23 (latest) — 0.81.0: playtest 28, twelve finds — an exploit that was a level window, a buff cap that never reached a rune, and a blunt skill that refused a maul
+## 2026-08-23 (latest) — 0.81.1: playtest 28, twelve finds — an exploit that was a level window, a buff cap that never reached a rune, and a blunt skill that refused a maul
 
 Twelve free-form finds in one pass, eleven built. Three of them are the same shape and worth naming
 first, because in each case the rule we thought was in the game **was written down and never reached
@@ -71,12 +71,26 @@ real buffer class becomes available — so the NPC competed with a *player* on p
 the whole levelling game and charges only 76-90, where gold is plentiful and the buffer you want is a
 person. What squeezes the NPC below 75 is the cap and the set's ceiling, not a bill.
 
-**Buff potions: three families drop, six are shop-only.** Swift, Alacrity, Fury and Dash stay in the loot
-tables; Agility, Might, Bulwark, Force, Ward and Aim leave them and are stocked at the Apothecary
-instead — **both rungs**, because she only sold the Common one and shop-only + Common-only would have
-quietly deleted the Uncommon rung from the game. The rung weights are untouched, exactly as when the
-scrolls came out: ten ids became four, so a buff potion drops as often as before and is 2.5× more likely
-to be one of the three you can only get that way.
+**Buff potions: three families drop, and the sixth Uncommon rung moves to the player economy.** Swift,
+Alacrity, Fury and Dash stay in the loot tables; Agility, Might, Bulwark, Force, Ward and Aim leave them.
+The rung weights are untouched, exactly as when the scrolls came out: ten ids became four, so a buff
+potion drops as often as before and is 2.5× more likely to be one of the three you can only get that way.
+
+⚠ **His "apothecary masters" meant the CRAFTER, not the shop NPC** — corrected the same day: *"the shop
+can supply common only and the crafter can supply the rest … and if they are not tradeble we should make
+them so a crafter can sell them to others."* So the Apothecary's shelf keeps the **Common** rung of all
+nine families and nothing above it, and **nothing had to be built for the crafter**: the Potion Master's
+ladder is his own (*"l2 - common buff pots … l4 - uncommon buff pots"*) and has carried all nine Common
+recipes at craft L2 and all nine Uncommon at L4 since the crafting build. The six that left the loot
+tables therefore land where he wanted them — **a player Potion Master at L4 is now the only source of an
+Uncommon Agility/Might/Bulwark/Force/Ward/Aim potion in the game.** That is the real content of the
+change: a whole rung of a consumable moves from a vendor to the player economy.
+
+**Potions were already tradable** — every potion in the catalog, by his own playtest-18 `V2b` ruling:
+*"buff pots are 0 sell (ppl still can sell them to others if they want)"*. `SellPriceOverride: 0` stops a
+**vendor** buying one back; `Tradable` was never touched, so a **player** always could. The one bound
+consumable is the buff **SCROLL** (playtest-17 `E3`), box-only because the Blessing Box was the tradable
+thing.
 
 **A buff's details say which bottle it came from.** *"I'm getting buffed 'Mig' and don't know if it's my
 or the potions."* And he could not tell: a potion's wrapper owns the duration and the bar row, but the

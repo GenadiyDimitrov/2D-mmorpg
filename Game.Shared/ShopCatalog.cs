@@ -66,23 +66,29 @@ public static class ShopCatalog
                 // potion-economy design where the top tier stays out of the shop.
                 ItemCatalog.MinorPotion,
                 ItemCatalog.HealingPotion,
-                // Buff potions. Individual scrolls are NOT sold — see the Blessing Box below.
+                // Common buff potions. Individual scrolls are NOT sold — see the Blessing Box below.
                 //
-                // 🔑 THE SHELF IS NOW THE ONLY SOURCE OF SIX OF THE NINE FAMILIES (playtest 28: *"the
-                // other buff potions are only from the apothecary masters"*). Swift / Alacrity / Fury
-                // are the three that still drop, so they keep the old shape — Common on the shelf, the
-                // Uncommon rung found. Agility, Might, Bulwark, Force, Ward and Aim dropped out of the
-                // loot tables entirely, so BOTH their rungs are stocked here: leaving only the Common
-                // one would have quietly deleted the Uncommon rung from the game.
+                // 🔑 COMMON ONLY, AND THAT IS THE WHOLE RULE (owner, playtest 28: *"the shop can supply
+                // common only and the crafter can supply the rest"*). ⚠ His "apothecary masters" meant
+                // the **Potion Master profession**, not this NPC — I read it as the shelf first and
+                // stocked the Uncommon rungs here, which he corrected. So the three sources are now:
+                //   • DROPS — Swift, Alacrity, Fury and Dash, and nothing else.
+                //   • THIS SHELF — the Common rung of all nine families, for gold.
+                //   • A PLAYER Potion Master — Common at craft L2, **Uncommon at craft L4**, which is
+                //     the only source of an Uncommon Agility/Might/Bulwark/Force/Ward/Aim potion in the
+                //     game now that they have left the loot tables.
+                // That third line is the point of the change: it hands a whole rung of a consumable to
+                // the player economy instead of to a vendor, and buff potions are tradable (they always
+                // were — see the `SellPriceOverride: 0` note in Items.cs) precisely so he can sell it.
                 ItemCatalog.SpeedPotionC,
                 ItemCatalog.CastPotionC,
                 ItemCatalog.AtkPotionC,
-                ItemCatalog.EvaPotionC,   ItemCatalog.EvaPotionU,
-                ItemCatalog.MightPotionC, ItemCatalog.MightPotionU,
-                ItemCatalog.BulwarkPotionC, ItemCatalog.BulwarkPotionU,
-                ItemCatalog.ForcePotionC, ItemCatalog.ForcePotionU,
-                ItemCatalog.WardPotionC,  ItemCatalog.WardPotionU,
-                ItemCatalog.AimPotionC,   ItemCatalog.AimPotionU,
+                ItemCatalog.EvaPotionC,
+                ItemCatalog.MightPotionC,
+                ItemCatalog.BulwarkPotionC,
+                ItemCatalog.ForcePotionC,
+                ItemCatalog.WardPotionC,
+                ItemCatalog.AimPotionC,
                 // The Blessing Box (250k) — buff SCROLLS are sold only as a pick-10 box, and only here
                 // (playtest-17 E3). The Dash potion left this shelf with the same change: it is
                 // drop-and-boss-points only now, deliberately not something gold can top up.
