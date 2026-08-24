@@ -100,6 +100,11 @@ try
     // with the offending coordinates rather than letting a field-less circle onto the map.
     Game.Shared.RegionMap.ValidateSpawnersInFields();
 
+    // The two promises a generated dungeon makes that arithmetic could quietly break: the clear run-up to
+    // the boss (his rule — a respawning guard must not be able to pull you off it), and the corridor mouth
+    // actually overlapping its entrance safe zone. Neither is visible on a map screenshot.
+    Game.Shared.DungeonLayout.Validate();
+
     // BL-47 — every piece of gear a player-built creature names must exist. A missing id is silent AND
     // flattering: the creature spawns without that slot, and a half-naked entity reads as "the player
     // pipeline under-delivers" when the truth is a typo in a tier.

@@ -120,68 +120,20 @@ public static class WorldMap
             MobTypes: new[] { "fen_lizardman", "cursed_blade", "wildhorn_scout" }, MaxCount: 7,
             RespawnSeconds: 22, RespawnVariance: 7),
 
-        // ===== DUNGEONS — in the NEGATIVE quadrant (owner: dungeons live at minus coords, reached by
-        // teleport, off the overworld). A dungeon is just a SpawnZone cluster + an ENTRANCE safe zone;
-        // any gatekeeper teleports you to it. ELITE rooms that respawn normally, ending in a boss.
-        // Normal drops (unlike an instance). A field polygon in Regions.cs wraps each cluster.
+        // ===== DUNGEONS: see DungeonLayout, which generates every one of them ==============
+        // They used to be twelve literal circles here — four per dungeon on a diagonal — with three
+        // hand-drawn polygons in Regions.cs that had to keep agreeing with them. Both sides are now
+        // generated from ONE group list per dungeon, because his 2026-08-24 layout rule is a rule about
+        // COUNTS: N mob groups means N-1 side rooms off a main corridor, with group N standing in front
+        // of the boss at the end of it. Add a group there and the room, the wall and the outline all
+        // appear together.
         //
-        // ⚠ THE BAND IS THE WHOLE POINT (BL-65). His report: *"Now a 32 lvl mobs almost next to a 65
-        // lvl which protect the 44 lvl boss ... The mob lvls are all over the place."* Those are the
-        // literal numbers the crypt was spawning, and the cause is one line in SpawnMobFor: a mob with
-        // a NATURAL level brings its own, and the spawner's MinLevel/MaxLevel is then only a label.
-        // The crypt's roster was hollow_one (58), grave_robber_fighter (32) and dread_knight (65) —
-        // three unrelated levels wearing a "44-48" sign.
-        //
-        // So the fix is the ROSTER, not the sign: every room below is stocked with creatures whose
-        // NATURAL level sits in the band, and the band written here now agrees with what spawns. Where
-        // a level has no creature authored for it at all (90), and only there, ForceZoneLevel makes
-        // the zone win — the same deliberate reuse the 85-90 field already runs on.
-
-        // --- Hollow Crypt (~40, boss 44). Stays where it is and keeps its lich, per his layout. ---
-        new(X: -10800, Y: -11500, Radius: 350, MinLevel: 39, MaxLevel: 40,
-            MobTypes: new[] { "fen_lizardman_archer", "dune_orc_archer" }, MaxCount: 6,
-            RespawnSeconds: 60, RespawnVariance: 15, Rank: MobRank.Elite),
-        new(X: -9600,  Y: -11000, Radius: 350, MinLevel: 42, MaxLevel: 42,
-            MobTypes: new[] { "harpy" }, MaxCount: 6,
-            RespawnSeconds: 60, RespawnVariance: 15, Rank: MobRank.Elite),
-        new(X: -8400,  Y: -10500, Radius: 350, MinLevel: 42, MaxLevel: 42,
-            MobTypes: new[] { "ridge_orc_overlord" }, MaxCount: 5,
-            RespawnSeconds: 90, RespawnVariance: 20, Rank: MobRank.Elite),
-        new(X: -7200,  Y: -10000, Radius: 300, MinLevel: 44, MaxLevel: 44,
-            MobTypes: new[] { "grave_lich" }, MaxCount: 1,
-            RespawnSeconds: 30 * 60, RespawnVariance: 5 * 60, Rank: MobRank.Boss),
-
-        // --- Sunless Warrens (~60, boss 65). NEW (BL-65) — the crypt's layout shifted 10k SW, so the
-        //     three dungeons share a shape and differ only in who lives there. ---
-        new(X: -20800, Y: -21500, Radius: 350, MinLevel: 58, MaxLevel: 60,
-            MobTypes: new[] { "hollow_one", "sand_ratman" }, MaxCount: 6,
-            RespawnSeconds: 60, RespawnVariance: 15, Rank: MobRank.Elite),
-        new(X: -19600, Y: -21000, Radius: 350, MinLevel: 61, MaxLevel: 62,
-            MobTypes: new[] { "cursed_blade", "fen_lizardman" }, MaxCount: 6,
-            RespawnSeconds: 60, RespawnVariance: 15, Rank: MobRank.Elite),
-        new(X: -18400, Y: -20500, Radius: 350, MinLevel: 63, MaxLevel: 64,
-            MobTypes: new[] { "obsidian_knight", "crimson_drake" }, MaxCount: 5,
-            RespawnSeconds: 90, RespawnVariance: 20, Rank: MobRank.Elite),
-        new(X: -17200, Y: -20000, Radius: 300, MinLevel: 65, MaxLevel: 65,
-            MobTypes: new[] { "dread_knight" }, MaxCount: 1,
-            RespawnSeconds: 30 * 60, RespawnVariance: 5 * 60, Rank: MobRank.Boss),
-
-        // --- Ashen Sepulchre (~85, boss 90). NEW (BL-65). The boss is the ONE spawner here that forces
-        //     its level: nothing is authored above 85, and 90 is the number he asked for. ---
-        new(X: -32800, Y: -33500, Radius: 350, MinLevel: 80, MaxLevel: 82,
-            MobTypes: new[] { "wrathborn_demon", "scarlet_mantis", "radiant_berserker" }, MaxCount: 6,
-            RespawnSeconds: 60, RespawnVariance: 15, Rank: MobRank.Elite),
-        new(X: -31600, Y: -33000, Radius: 350, MinLevel: 83, MaxLevel: 84,
-            MobTypes: new[] { "splinter_mantis_walker", "needle_mantis_overseer" }, MaxCount: 6,
-            RespawnSeconds: 60, RespawnVariance: 15, Rank: MobRank.Elite),
-        new(X: -30400, Y: -32500, Radius: 350, MinLevel: 85, MaxLevel: 85,
-            MobTypes: new[] { "drake_leader", "disciple_of_the_dawn" }, MaxCount: 5,
-            RespawnSeconds: 90, RespawnVariance: 20, Rank: MobRank.Elite),
-        new(X: -29200, Y: -32000, Radius: 300, MinLevel: 90, MaxLevel: 90,
-            MobTypes: new[] { "disciple_of_the_dawn" }, MaxCount: 1,
-            RespawnSeconds: 30 * 60, RespawnVariance: 5 * 60, Rank: MobRank.Boss,
-            ForceZoneLevel: true),
-    }).ToArray();
+        // ⚠ THE BAND IS STILL THE POINT (BL-65). His report: *"Now a 32 lvl mobs almost next to a 65
+        // lvl which protect the 44 lvl boss ... The mob lvls are all over the place."* A mob with a
+        // NATURAL level brings its own and the spawner's Min/Max is then only a label, so each roster is
+        // stocked with creatures whose natural level sits in the band it advertises. The rosters moved
+        // across to DungeonLayout unchanged.
+    }).Concat(DungeonLayout.SpawnZones).ToArray();
 
     /// <summary>Safe zones (cities/castles). AUTHORED IN <see cref="Towns"/> — this forwards, so every
     /// existing call site is unchanged. They moved out because <see cref="SpawnZones"/> is generated from
@@ -194,14 +146,33 @@ public static class WorldMap
     /// location stays secret.</summary>
     public static SafeZone StartingTown => Towns.Starting;
 
-    /// <summary>The safe zone nearest to a point (always returns one). Used to
-    /// respawn the dead at their closest town instead of the map centre.</summary>
-    public static SafeZone NearestSafeZone(float x, float y)
+    /// <summary>The safe zone nearest to a point (always returns one). Used where the question really is
+    /// "which safe circle is closest" — labelling an NPC's or a quest giver's location, for instance.
+    ///
+    /// ⚠ NOT the right question for SENDING somebody home: this counts a dungeon entrance as a
+    /// destination, and inside a dungeon the entrance is always the nearest one. Use
+    /// <see cref="NearestTown"/> for that.</summary>
+    public static SafeZone NearestSafeZone(float x, float y) => Nearest(x, y, dungeonEntrances: true);
+
+    /// <summary>The nearest place that counts as a TOWN — the same search as
+    /// <see cref="NearestSafeZone"/> with the dungeon doors taken out of it.
+    ///
+    /// <para>🔑 This is the Scroll of Return's answer (owner, 2026-08-24: *"using scroll of return ->
+    /// returns me to the starting chamber of the crypt .. not a main town … the return scrolls should
+    /// teleprt you back in town not in the start of the dungeon - its valid even for a instance (u
+    /// reenter)"*). A dungeon entrance is a safe zone in every other respect, so the escape button was
+    /// finding it first and putting you back on the doorstep of the place you were escaping. Escaping
+    /// TO a dungeon door is not escaping; and since the door is a teleport destination, being sent to a
+    /// real town costs you nothing but the trip back in.</para></summary>
+    public static SafeZone NearestTown(float x, float y) => Nearest(x, y, dungeonEntrances: false);
+
+    private static SafeZone Nearest(float x, float y, bool dungeonEntrances)
     {
         SafeZone best = SafeZones[0];
         float bestSq = float.MaxValue;
         foreach (var z in SafeZones)
         {
+            if (!dungeonEntrances && z.DungeonEntrance) continue;
             float dx = x - z.X, dy = y - z.Y;
             float sq = dx * dx + dy * dy;
             if (sq < bestSq) { bestSq = sq; best = z; }
@@ -791,6 +762,17 @@ public record NpcDef(string Id, string Name, float X, float Y, NpcRole Role);
 /// with 220mp/s regen and heal like crazy"*). A safe zone still does everything else it always did
 /// there — no mobs, no aggro, no PvP — it just is not a rest stop, so an elite dungeon cannot be
 /// farmed from a chair one step outside its door.</param>
+/// <param name="DungeonEntrance">Is this a DUNGEON DOOR rather than a settlement? TRUE for the three
+/// entrances generated by <see cref="DungeonLayout.EntranceZones"/>, false for everything else.
+///
+/// It exists for one rule (owner, 2026-08-24): *"the return scrolls should teleprt you back in town not
+/// in the start of the dungeon - its valid even for a instance (u reenter)."* A Scroll of Return asks
+/// for the nearest safe zone, and inside a dungeon the nearest safe zone is the dungeon's own door — so
+/// the escape button was walking you back to the room you were trying to escape from. It is a separate
+/// flag from <see cref="RegenBoost"/> on purpose: they happen to be false for the same three zones
+/// today, but one is about resting and the other is about where "home" is, and the training outpost is
+/// the case that separates them — no regen boost, but a perfectly good place to be sent home to.
+/// See <see cref="WorldMap.NearestTown"/>.</param>
 public record SafeZone(string Id, string Name, float X, float Y, float Radius, string GatedByCityId = "",
-    bool RegenBoost = true);
+    bool RegenBoost = true, bool DungeonEntrance = false);
 

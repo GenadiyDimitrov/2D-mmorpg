@@ -368,7 +368,7 @@ Check("server pushed the warehouse on login", a.Ware is not null);
     var orphan = RegionMap.Fields.Where(f => f.CityId.Length == 0)
                                  .Select(f => f.Id).ToArray();
     Check("every planned field records a managing city",
-          orphan.All(id => id is "field_training" or "field_treant" or "field_dungeon"),
+          orphan.All(id => id is "field_training" or "field_treant"),
           string.Join(", ", orphan));
     Check("every city owns at least two fields",
           WorldPlan.Cities.All(c => RegionMap.FieldsOf(c.Id).Length >= 2),

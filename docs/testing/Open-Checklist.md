@@ -317,7 +317,7 @@ need the new APK. **Playtest 28 — the twelve below them, eleven built and one 
     SLOT's side. Which is also the honest version of your "I see the buff but more visual is OK": the
     information was there, it was just in the wrong place for a thumb. ->
 
-- [!] Hollow Crypt:
+- [~] 🟢 **ALL THREE BUILT 2026-08-24 (0.82.0) — 🔴 NEEDS THE NEW APK.** Hollow Crypt:
   - Entering trough GK teleports me in the middle ... not the start.. 
   - also using scroll of return -> returns me to the starting chamber of the crypt .. not a main town ... 
     - the return scrolls should teleprt you back in town not in the start of the dungeon - its valid even for a instance (u reenter)
@@ -325,6 +325,68 @@ need the new APK. **Playtest 28 — the twelve below them, eleven built and one 
     - if 3 mob groups -> 2 rooms and the last one is protecting the boss as of now
     - number of mobs groups -1 is the rooms on the sides .. and in the end of cooridor is the boss with the last group
   upfont (far enought so u can go trough and atack the boss without newly spawned elites to aggro u - same as now)
+  -> **1. The gate.** Literally true and easy to miss: the crypt's gate was authored at `(-9600,-11000)`,
+  which is the centre of the SECOND of its four spawn rings — the middle, by construction. It is
+  generated at the corridor mouth now, just inside the entrance safe zone.
+  -> **2. The scroll.** `ReturnToTown` asked for the nearest SAFE ZONE, and a dungeon entrance is one — so
+  inside a dungeon it is always the nearest thing there is. Two changes: dungeon doors are flagged and
+  skipped, and the scroll now asks the MANAGING CITY first. That second half matters — nearest-town alone
+  answers **Frostmere** from the crypt, and Greymarsh is the only gatekeeper that lists the crypt, so your
+  *"(u reenter)"* would have cost a second jump. You now land in the town you can leave from.
+  -> **3. The shape — generated, not drawn** (`Game.Shared/DungeonLayout.cs`). Your rule is about COUNTS,
+  so a dungeon is now a door + a direction + a group list, and the outline, the gate, every spawner and
+  the wall all come off it. **3 groups → 2 side rooms + the guard camp in front of the boss.** Add a
+  fourth group to a roster and the third room appears with it. Corridor 600 wide and ~4950 long, rooms
+  900 × 750 alternating sides so you cannot reach the boss without walking past every door, boss chamber
+  1400 × 1400 at the end.
+  - 🔑 **Your run-up rule is a NUMBER now: 850 units of clear ground between the guard camp and the boss,
+    against a 400 aggro range** — and the server refuses to boot if an edit ever breaks it.
+  - ⚠ **WHAT TO ACTUALLY LOOK AT, because it is the part I could not test:** walk from one side room
+    diagonally into the one opposite. The game has no pathfinding — a move order clamps its destination
+    and then draws a straight line — so that walk **clips the wall corner**, by up to ~680 units. Measured
+    at 40% of random point pairs (the old shape: 0.76%). The walk the dungeon is actually *made* for
+    (door → room → room → guard → boss) peaks at 102 and looks fine. Say if the clipping reads badly and
+    the rooms get shallower.
+  - ⚠ A real bug fell out of that and is fixed: the ward that pulls you back inside a dungeon was set at
+    500 units, which a legitimate 683-unit corner cut clears — it would have teleported you to the door on
+    roughly one long cross-room walk in 125.
+  - ⚠ **Three bosses reset their respawn timer once** (a boss timer is keyed on its coordinates, and they
+    moved). Nothing else changed: same dungeons, rosters, bands, ranks and timers.
+  - 🔴 **The APK is not optional here.** The dungeon's WALL is shared code, not a message — an old client
+    holds the old polygon and would refuse to enter rooms that now exist. Protocol 25 → 26, the first bump
+    in the game's history where no byte of the wire moved. ->
+
+- [ ] 🟠 **`BL-90` — YOUR OWN COMMENT COLUMN, ANSWERED BUT NOT BUILT.** I did not read the comments in
+  `nuker 3rd.csv` on the first pass, only the numbers; you were right to ask. Four rows want a **lower
+  debuff success rate**: Frost Spikes *"does dmg but have a lower success rate for the slow - interrupt
+  unaffected"*, Frost Pierce the same for its bleed, Witches Curse for its curse, and a bare *"lower
+  success rate"* on Arcane Void and Witches Scarecrow.
+  - **The engine cannot do it today.** There is exactly ONE landing roll — `DebuffLandChance` — and it is
+    a pure stat contest with no per-skill term, so Frost Spikes' slow would land exactly as often as a
+    dedicated Slow. The fix is small: one `SkillDef` factor multiplied into two call sites.
+  - 🔑 Your *"interrupt unaffected"* is already free — the interrupt is a separate contest and never
+    touches this roll. It stays that way.
+  - ❓ **What I need is the number.** Two tiers would cover all five rows — say ×0.6 for a damage spell's
+    rider and ×0.75 for a strong pure debuff — but the split is yours to rule. ->
+
+- [ ] 🔵 **THE NUKER 3rd KIT IS UNBLOCKED — your CSV landed 2026-08-24 and nothing is built off it yet.**
+  40-74, and it is the biggest single piece of work now sitting in front of us. Say when you want it
+  started; `BL-90` above should land inside it rather than before it. ->
+
+- [ ] ⚪ Everything else you touched on 2026-08-24 is already in: `nuker 2nd`'s mpWhenRestored ladder is
+  your 10/15/20/25 (the 19/23/26/30 in there was our conversion arithmetic, not your number), Restore
+  Spirit rung 1 is −66 HP for +22 MP, and "Healer Weapon Mastery" is **Spellcaster Weapon Mastery** on all
+  fourteen rungs — display name only, the id stays `healer_weapon_mastery` because renaming a skill id
+  strands every saved character's learned rows. `--check` is green on all ten files. ->
+
+- [ ] ⚠ **Your Restore Spirit comment is worth one sanity read on the phone.** *"Intentionally decreased
+  as mp regen with x3.4(weapon mastery)/x1.2(Spellcaster)/x1.2 = ~x5"* — those multipliers compound, and
+  −66 HP for +22 MP at rung 1 is the stingiest the skill has ever been. If a level-25 nuker cannot sustain
+  a rotation at all, that is the row to look at, not the bolt ladder. ->
+
+- [ ] ⚠ **Still owed from 0.81.2, and now it matters more:** you said a fizzled spell *"shouldn't hit at
+  all on the floor"*. It still lands `damage/3`, so a ceilinged spell does ~37%, not 0%. That is a second
+  ruling on the fizzle PAYLOAD rather than its chance, and it was deliberately not built. Say the word. ->
 
 ---
 

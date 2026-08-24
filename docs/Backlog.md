@@ -503,6 +503,28 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
   - ⚠ It is also the first table in the game that holds something a player would call **private**. Worth
     deciding once, before there is real data in it, whether staff below admin can read whispers.
 
+- `BL-90` 🔴 **A PER-SKILL DEBUFF SUCCESS RATE — your nuker 3rd COMMENT column asks for one, and the
+  engine has no knob for it.** Four skills in `nuker 3rd.csv` carry the same note in the Comment column:
+  Frost Spikes *"does dmg but have a lower success rate for the slow - interrupt unaffected"*, Frost
+  Pierce the same for its bleed, Witches Curse *"does dmg but have a lower success rate for the curse"*,
+  and Arcane Void / Witches Scarecrow a bare *"lower success rate"*.
+  - **The rule you are stating** is a hybrid tax: a spell that deals damage AND hangs a debuff should land
+    that debuff LESS often than a spell whose whole job is the debuff. Pure-debuff skills that are simply
+    strong (a cancel; the scarecrow) pay the same tax for the same reason.
+  - **Today there is exactly one landing roll and it has no per-skill term.**
+    `StatCalculator.DebuffLandChance(attackerAtk, defenderStat, attackerLevel, defenderLevel)` is a pure
+    stat contest — every debuff in the game rides the identical curve, so Frost Spikes' slow would land
+    exactly as often as a dedicated Slow. The shape of the fix is small: one `SkillDef` field (a landing
+    FACTOR, 1.0 = today), multiplied into that result at the two call sites in `ExecuteSkill`.
+  - 🔑 **Your "interrupt unaffected" is already true for free** and must stay that way: the interrupt is a
+    separate contest (`StatCalculator.InterruptChance`, caster resist vs skill power) and never touches
+    the debuff roll. Whatever the factor does, it must not be applied there.
+  - ❓ **What I need from you is the NUMBER, or the tiers.** "Lower" is not a value. The cheapest thing
+    that answers all five rows is two tiers — say ×0.6 for a damage spell's rider and ×0.75 for a strong
+    pure debuff — but the split is yours. Name them and this is an afternoon.
+  - ⚠ Blocked with the rest of the **nuker 3rd kit**, which your CSV unblocked on 2026-08-24 and which is
+    not built yet. The factor should land WITH that kit, not before it — nothing today would use it.
+
 - `BL-34` ✅ **BUILT 2026-08-14 (0.66.0)** — **Madness**, a party-cast Frenzy handing out a new **rung 7**
   of the family, at **76 on the Warchanter** so an admin can party-buff with it. Your deliberate
   temporary home — *"when the kits land we will move it"*. See `CHANGELOG.md`. Delete at the next sweep.

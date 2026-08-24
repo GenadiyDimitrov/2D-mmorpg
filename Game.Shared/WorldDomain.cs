@@ -83,9 +83,18 @@ public readonly record struct WorldDomain(
     /// shape drawn for that same safe zone.</para>
     ///
     /// <para>KNOWN AND ACCEPTED: a move order is a straight line to the clamped destination, so a walk
-    /// across a concave notch can cut the corner. Measured on the crypt: 0.76% of point pairs, worst
-    /// excursion 129 units. It never rubber-bands — client and server draw the same line from the same
-    /// geometry — and routing around it is pathfinding, which the game does not have.</para></summary>
+    /// across a concave notch can cut the corner. It never rubber-bands — client and server draw the same
+    /// line from the same geometry — and routing around it is pathfinding, which the game does not have.
+    ///
+    /// ⚠ THE PRICE WENT UP ON 2026-08-24, deliberately. A dungeon used to be a shallow diagonal band and
+    /// cut on 0.76% of point pairs by at most 129 units; it is now a corridor with side rooms off it
+    /// (<see cref="DungeonLayout"/>, his layout rule), which is deeply concave by construction, and the
+    /// same measurement over 400,000 pairs reads 40% and 683. What that buys is a dungeon you walk DOWN,
+    /// past doors, instead of four circles in a line. What it costs is a clipped wall corner when you tap
+    /// straight from one side room into the one opposite — never on the route the dungeon is actually
+    /// walked (entrance → rooms → guard → boss peaks at 102). One thing did have to move for it:
+    /// <see cref="DungeonLayout.MaxCornerCut"/> now sets the dungeon ward's tolerance, because a
+    /// legitimate 683-unit cut was about to trip a net set at 500.</para></summary>
     public static WorldDomain OfDungeon(Region d)
     {
         var (cx, cy, r) = EntranceOf(d);

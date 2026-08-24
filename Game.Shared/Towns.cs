@@ -1,3 +1,5 @@
+using System.Linq;
+
 namespace Game.Shared;
 
 /// <summary>
@@ -24,36 +26,25 @@ public static class Towns
     ///
     /// FIVE cities (owner, 2026-07-29) — Emberfall and Duskvale are gone, their rosters redistributed.
     /// Each owns a level range and 2-3 hunting fields; see <see cref="WorldPlan.Plans"/>.</summary>
-    public static readonly SafeZone[] All =
+    public static readonly SafeZone[] All = new[]
     {
-        new("town_brackenford", "Brackenford",     24000, 24000, 3500),   // 1-16
-        new("town_stonewatch",  "Stonewatch",      24000, 10000, 2000),   // 16-40
-        new("town_greymarsh",   "Greymarsh",       36000, 33000, 2000),   // 40-60
-        new("castle_ironreach", "Ironreach Keep",  24000, 38000, 2200),   // 60-75
-        new("town_frostmere",   "Frostmere",       12000, 15000, 2000),   // 76-90
+        new SafeZone("town_brackenford", "Brackenford",     24000, 24000, 3500),   // 1-16
+        new SafeZone("town_stonewatch",  "Stonewatch",      24000, 10000, 2000),   // 16-40
+        new SafeZone("town_greymarsh",   "Greymarsh",       36000, 33000, 2000),   // 40-60
+        new SafeZone("castle_ironreach", "Ironreach Keep",  24000, 38000, 2200),   // 60-75
+        new SafeZone("town_frostmere",   "Frostmere",       12000, 15000, 2000),   // 76-90
         // Small outpost beside the Training Grounds, so you can buff up and teleport out without leaving
         // the dummies. Sits just SOUTH of the dummy row (y=4000, radius 200), clear of them — a safe zone
         // keeps mobs out, and the dummies ARE mobs.
-        new("outpost_training", "Training Outpost", 24000, 5000, 400, RegenBoost: false),
-        // The Hollow Crypt dungeon ENTRANCE, in the negative quadrant with the dungeon. A safe arrive/
-        // regroup spot before the elite rooms just NE of it.
-        //
-        // GATED TO GREYMARSH. Being a safe zone used to make it a destination from EVERY gatekeeper
-        // automatically — so a level-1 in Brackenford was offered a level 44-48 dungeon in the same list
-        // as his first hunting field, and the crypt read as one more town rather than as somewhere you
-        // earn your way to. The crypt's band (44-48) sits inside Greymarsh's (40-60), so Greymarsh is the
-        // door. The gate itself is not one-way: the entrance has no gatekeeper, and you leave the way
-        // every dungeon is left — a Scroll of Return, or the halls' own exit.
-        new("dungeon_hollow_crypt", "Hollow Crypt", -12000, -12000, 500, GatedByCityId: "town_greymarsh", RegenBoost: false),
-        // The other two dungeon entrances (BL-65), each 100 units off its own dungeon's corner —
-        // the same offset the crypt uses, which is what makes WorldDomain's "the entrance is the
-        // nearest negative-quadrant safe zone that TOUCHES the box" pick the right one for each.
-        // Gated to the city whose band contains the dungeon's, for the same reason the crypt is
-        // gated to Greymarsh: a safe zone is otherwise a destination on EVERY gatekeeper's list, and
-        // a level-1 should not be offered the level-85 vaults next to his first hunting field.
-        new("dungeon_sunless_warrens", "Sunless Warrens", -22000, -22000, 500, GatedByCityId: "castle_ironreach", RegenBoost: false),
-        new("dungeon_ashen_sepulchre", "Ashen Sepulchre", -34000, -34000, 500, GatedByCityId: "town_frostmere", RegenBoost: false),
-    };
+        new SafeZone("outpost_training", "Training Outpost", 24000, 5000, 400, RegenBoost: false),
+    }
+    // The three dungeon ENTRANCES come from DUNGEONLAYOUT, not from a literal here — the door and the
+    // corridor that starts inside it are the same shape, and they were being authored in two files that
+    // had to keep agreeing (the crypt's outline began 212 units from a centre written down over here).
+    // DungeonLayout depends on nothing, so reading it from Towns cannot rebuild the initialisation cycle
+    // this class was extracted to break. Each entrance is gated to the city whose band contains its
+    // dungeon's — see DungeonLayout.EntranceZones for why.
+    .Concat(DungeonLayout.EntranceZones).ToArray();
 
     /// <summary>The STARTER town (map centre). Used where "nearest" would leak information — a player
     /// released from jail is sent here rather than to whatever town happens to be closest, so the jail's

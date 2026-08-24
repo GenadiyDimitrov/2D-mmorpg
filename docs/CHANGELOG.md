@@ -7,12 +7,113 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.81.2**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.82.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-08-24 (latest) — 0.81.2: a spell fizzles on the level it was LEARNED at, not the level you are
+## 2026-08-24 (latest) — 0.82.0: a dungeon is a CORRIDOR now, the gate lands you at its mouth, and a Scroll of Return goes to a town
+
+Three finds in the Hollow Crypt, and the third is a shape.
+
+**1. THE GATEKEEPER WAS DROPPING HIM IN THE MIDDLE.** *"Entering trough GK teleports me in the middle …
+not the start."* Literally true and easy to miss in the source: the crypt's field gate was authored at
+`(-9600, -11000)`, which is the centre of the SECOND of its four spawn rings — the middle of the dungeon
+by construction. The gate is generated at the corridor mouth now, just inside the entrance safe zone.
+
+**2. THE ESCAPE BUTTON WAS PUTTING HIM BACK IN THE CRYPT.** *"using scroll of return -> returns me to the
+starting chamber of the crypt .. not a main town … the return scrolls should teleprt you back in town not
+in the start of the dungeon - its valid even for a instance (u reenter)."* `ReturnToTown` asked for the
+NEAREST SAFE ZONE — and a dungeon entrance is a safe zone, so inside a dungeon it is always the nearest
+one there is. The escape button was finding the door of the place he was escaping from.
+
+Two things changed, not one. `SafeZone` gained a `DungeonEntrance` flag and `WorldMap.NearestTown` skips
+those — a separate flag from `RegenBoost`, which happens to be false for the same three zones today but
+means something different (resting, not home; the training outpost is the case that splits them). And the
+scroll asks `RegionMap.ManagingCity` FIRST, exactly as a town respawn already does: nearest-town alone
+answers **Frostmere** from inside the Hollow Crypt, which is geometrically true and useless, because
+Greymarsh is the only gatekeeper that lists the crypt. His *"(u reenter)"* is the whole point — you
+leave to a town you can leave FROM.
+
+**3. AND THE SHAPE.** *"can we make the dungeons(valid for all) with one main cooridor few side rooms for
+mobs — if 3 mob groups -> 2 rooms and the last one is protecting the boss as of now … number of mobs
+groups -1 is the rooms on the sides .. and in the end of cooridor is the boss with the last group upfont
+(far enought so u can go trough and atack the boss without newly spawned elites to aggro u - same as
+now)."*
+
+🔑 **That is a rule about COUNTS, not a drawing, so it is GENERATED** — `Game.Shared/DungeonLayout.cs`.
+A dungeon is now one plan: a door, a direction, a list of mob groups and a boss. From that the file
+derives the outline, the arrival gate, every spawner and the wall. **N groups ⇒ N−1 side rooms, the Nth
+group in the corridor in front of the boss.** Add a fourth group to a roster and the third room, its
+walls and its spawner all appear together.
+
+What it replaced is why: twelve literal spawn circles in `WorldMap.cs` and three hand-drawn twelve-vertex
+polygons in `Regions.cs` — the second and third being the first translated 10k and 22k SW — which had to
+be kept agreeing with each other by eye. A corridor with rooms is not a shape anyone should draw twice.
+
+The measurements, since none of this is visible from the source:
+
+| | |
+|---|---|
+| corridor | 600 wide, mouth inside the entrance circle, ~4950 long to the boss chamber |
+| side rooms | 900 × 750, alternating sides, 1400 pitch — you cannot reach the boss without walking past every door |
+| boss chamber | 1400 × 1400 at the end |
+| **guard → boss clear ground** | **850 units, against a 400 aggro range** |
+
+That last row IS his rule, and `DungeonLayout.Validate()` asserts it at boot rather than trusting the
+arithmetic to survive the next edit — the symptom of getting it wrong is a boss fight that occasionally
+goes wrong, not an error. A second boot guard checks the corridor mouth still overlaps its entrance
+circle, because the failure there is a wall across the only door.
+
+🔴 **THE PRICE, MEASURED AND ACCEPTED: corner-cutting got much worse, and it had to be paid for.** This
+game has no pathfinding — a move order clamps its DESTINATION once and then draws a straight line — so a
+concave world lets a walk clip a wall corner. The old diagonal band cut on 0.76% of point pairs by at
+most 129 units. A corridor with rooms is concave by construction: over 400,000 pairs it reads **40% and
+683 units**. Client and server draw the same line from the same geometry, so it never rubber-bands, and
+the route the dungeon is actually walked (entrance → rooms → guard → boss) peaks at **102**. The cutting
+happens when you tap straight from one side room into the one opposite.
+
+⚠ **One real bug fell out of that and is fixed here:** the dungeon WARD — the anti-cheat net that
+teleports anyone found too far outside a dungeon back to its door — was set at 500 units, which a
+legitimate 683-unit corner cut clears. It would have started yanking players to the entrance on roughly
+**one long cross-room walk in 125**. Its tolerance is `DungeonLayout.MaxCornerCut` now (1050, a generous
+bound on room depth plus corridor width). An anti-cheat net that fires on ordinary movement is worse than
+no net, and it is the hardest kind of bug to diagnose from a report.
+
+⚠ **The map fill also had to be fixed, in the CLIENT.** `BuildRegionFill` triangulated every region as a
+TRIANGLE FAN from vertex 0, on the stated grounds that "the outlines are convex". They were not, and a
+corridor with rooms emphatically is not — a fan across it fills in every gap between two rooms, so the
+map would have drawn a solid blob with only the rim hinting at the real shape. It is ear clipping now:
+correct for any simple polygon, run once per region at startup, verified against every region in the
+world by area (14 triangles for 16 vertices, exact).
+
+**Nothing about the dungeons themselves changed** — same three, same rosters, same bands, same elite
+ranks and respawn timers, same managing cities. The gate DESCRIPTION is derived rather than authored now
+("Lv 39-42 · 2 side rooms off the corridor, all aggressive · Lv 44 boss at the end"), so a roster edit
+cannot leave the menu advertising a dungeon that no longer exists. ⚠ The bosses moved, and a boss's
+persisted respawn timer is keyed on its coordinates (`SpawnZone.Id`), so all three reset once.
+
+🔴 **PROTOCOL 25 → 26, AND THIS IS THE FIRST BUMP WHERE NOT ONE BYTE OF THE WIRE MOVED.** No DTO, no hub
+method, no push name. It moves because a dungeon's wall is shared CODE, not a message: `WorldDomain`
+lives in `Game.Shared` precisely so the client can stop you at the surface while the server keeps its
+clamp as the backstop — *"two halves enforcing the same rule is only safe if they cannot disagree"*. An
+old APK holds the OLD polygon, so inside a dungeon it would refuse to walk into rooms that now exist,
+rubber-band along walls that no longer do, and draw the old outline. Nothing crashes, which is exactly
+why the handshake has to catch it. **A new APK is required.**
+
+**Also: `13a` closed.** The "take a break" banner is back to 3 hours (`GameConstants.BreakReminderSeconds`)
+after five passes at 10 minutes — *"Working - Can return it to 3h"*.
+
+**Noted, not built — `BL-90`, your own COMMENT column.** Four rows in `nuker 3rd.csv` ask for a lower
+debuff success rate on a spell that also deals damage (Frost Spikes' slow, Frost Pierce's bleed, Witches
+Curse's curse), plus a bare *"lower success rate"* on Arcane Void and Witches Scarecrow. The engine has
+one landing roll, `StatCalculator.DebuffLandChance`, and it is a pure stat contest with **no per-skill
+term at all** — so today that rider would land exactly as often as a dedicated Slow. Your *"interrupt
+unaffected"* is already free (the interrupt is a separate contest and never touches this roll). The fix
+is one `SkillDef` field multiplied into two call sites; what is missing is the NUMBER. It belongs with
+the nuker 3rd kit, which your CSV has just unblocked.
+
+## 2026-08-24 — 0.81.2: a spell fizzles on the level it was LEARNED at, not the level you are
 
 *"A dmg spell should fail if it's to low lvl … same as debuffs … we made dbufs to fail (hit floors) on
 lvl difference, why we haven't done the same for dmg spells … if I hit you with lvl 1 vamp that I have

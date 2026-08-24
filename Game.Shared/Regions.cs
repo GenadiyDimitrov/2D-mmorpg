@@ -152,43 +152,22 @@ public static class RegionMap
             new[] { Gate("field_treant#0", "Sunken Vale West", "Lv 58-60 · trash flank, west of the boss", 20500, 45000),
                     Gate("field_treant#1", "Sunken Vale East", "Lv 58-60 · trash flank, east of the boss", 27500, 45000) }),
 
-        // Hollow Crypt — the DUNGEON field (band 44-48), in the NEGATIVE quadrant (owner: dungeons live at
-        // minus coords, off the overworld, reached by teleport). Elite rooms + the grave-lich boss; its
-        // entrance safe zone (dungeon_hollow_crypt) sits just SW as a separate island.
+        // THE THREE DUNGEONS come from DungeonLayout — outline, arrival gate and managing city all
+        // generated from the same numbers that place their spawners (WorldMap.SpawnZones). They were
+        // three hand-drawn twelve-vertex bands here, the second and third being the first translated
+        // 10k and 22k SW, and every one of them had to be kept agreeing with four circles typed out in
+        // another file. His 2026-08-24 layout rule made that untenable: one main corridor, N-1 side
+        // rooms for N mob groups, boss at the end. That shape is not something to draw by eye.
         //
-        // MANAGED BY GREYMARSH (44-48 sits inside Greymarsh's 40-60). It used to be managed by nobody,
-        // which had two consequences that both read as bugs. Its gate appeared in NO gatekeeper's menu,
-        // so the only way into the halls was to teleport to the entrance and walk. And dying in it fell
-        // through to nearest-city — from a point at (-9600, -11000) that is a meaningless answer, since
-        // every city is thousands of units away in the positive quadrant. Naming the city fixes both:
-        // Greymarsh lists the halls, and the crypt returns its dead to the city that sent them.
+        // Each is MANAGED BY the city whose band contains its own (Greymarsh, Ironreach, Frostmere).
+        // That is not decoration: a field's managing city is where its dead respawn, and a dungeon that
+        // named nobody fell through to nearest-city — a meaningless answer from a point 12k into the
+        // negative quadrant, where every city is thousands of units away. It also puts the dungeon's
+        // gate on that city's gatekeeper menu, which is the only way in that is not a walk.
         // (The boss vale is deliberately NOT given a city the same way: its band, 58-60, is the last two
         // levels of Greymarsh's range but it sits on Ironreach's doorstep, so band and geography
         // disagree and there is no obviously right answer to pick on the owner's behalf.)
-        new("field_dungeon", "Hollow Crypt", RegionKind.Field,
-            new[] { new Vec2(-11850, -11950), new Vec2(-11400, -12400), new Vec2(-10800, -12450), new Vec2(-7750, -11350), new Vec2(-6550, -10650), new Vec2(-6150, -10200), new Vec2(-6200, -9600), new Vec2(-6600, -9150), new Vec2(-7150, -9100), new Vec2(-8550, -9450), new Vec2(-11500, -10800), new Vec2(-11900, -11300) },
-            new[] { Gate("field_dungeon#0", "Hollow Crypt Halls", "Lv 39-42 · elite rooms, all aggressive · Lv 44 boss", -9600, -11000) },
-            "town_greymarsh"),
-
-        // THE OTHER TWO DUNGEONS (BL-65). His ask was *"put them in the lvl ranges and make 2 more
-        // dungeons"* — a 40, a 60 and an 85. Both are the crypt's outline translated (10k SW and 22k
-        // SW), which is deliberate: the shape is a known-good narrow diagonal band that the wall
-        // clamp, the entrance annex and the move-order straight line have all been measured against
-        // (see WorldDomain.OfDungeon). Inventing three different cave shapes would have bought
-        // nothing and re-opened all three of those.
-        //
-        // Managed by the city whose own band contains the dungeon's, same rule as the crypt's:
-        // Ironreach for the 60s, Frostmere for the 80s.
-        new("field_dungeon_warrens", "Sunless Warrens", RegionKind.Field,
-            new[] { new Vec2(-21850, -21950), new Vec2(-21400, -22400), new Vec2(-20800, -22450), new Vec2(-17750, -21350), new Vec2(-16550, -20650), new Vec2(-16150, -20200), new Vec2(-16200, -19600), new Vec2(-16600, -19150), new Vec2(-17150, -19100), new Vec2(-18550, -19450), new Vec2(-21500, -20800), new Vec2(-21900, -21300) },
-            new[] { Gate("field_dungeon_warrens#0", "Sunless Warrens Depths", "Lv 58-64 · elite rooms, all aggressive · Lv 65 boss", -19600, -21000) },
-            "castle_ironreach"),
-
-        new("field_dungeon_sepulchre", "Ashen Sepulchre", RegionKind.Field,
-            new[] { new Vec2(-33850, -33950), new Vec2(-33400, -34400), new Vec2(-32800, -34450), new Vec2(-29750, -33350), new Vec2(-28550, -32650), new Vec2(-28150, -32200), new Vec2(-28200, -31600), new Vec2(-28600, -31150), new Vec2(-29150, -31100), new Vec2(-30550, -31450), new Vec2(-33500, -32800), new Vec2(-33900, -33300) },
-            new[] { Gate("field_dungeon_sepulchre#0", "Ashen Sepulchre Vaults", "Lv 80-85 · elite rooms, all aggressive · Lv 90 boss", -31600, -33000) },
-            "town_frostmere"),
-    }).ToArray();
+    }).Concat(DungeonLayout.Fields).ToArray();
 
     private static TeleportPoint Gate(string id, string name, string description, float x, float y) =>
         new(id, name, description, new Vec2(x, y));

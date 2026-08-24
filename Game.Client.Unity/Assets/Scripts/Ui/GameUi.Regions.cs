@@ -247,10 +247,16 @@ namespace Game.Client
             _regionOutlines.SetActive(false);
         }
 
-        /// <summary>A flat filled polygon on the ground at height <paramref name="height"/>. Triangulated
-        /// as a fan (the outlines are convex) and made double-sided so it shows regardless of winding.
-        /// Fields use their level colour at a low y; towns use a neutral fill at a higher y so they mask
-        /// the field beneath them (the island look).</summary>
+        /// <summary>A flat filled polygon on the ground at height <paramref name="height"/>, made
+        /// double-sided so it shows regardless of winding. Fields use their level colour at a low y;
+        /// towns use a neutral fill at a higher y so they mask the field beneath them (the island look).
+        ///
+        /// ⚠ This used to be a TRIANGLE FAN from vertex 0, on the stated grounds that "the outlines are
+        /// convex". They are not, and since 2026-08-24 they are emphatically not: a dungeon is now a
+        /// corridor with side rooms off it (`DungeonLayout`), and a fan across that shape fills in every
+        /// gap between two rooms — the map would draw a solid blob where the walls are, with only the
+        /// LineRenderer rim hinting at the real outline. Ear clipping costs a few dozen lines and is
+        /// correct for any simple polygon, convex ones included.</summary>
         private void BuildRegionFill(Region region, Color col, float height)
         {
             var poly = region.Outline;
@@ -262,15 +268,14 @@ namespace Game.Client
                 verts[i] = u;
             }
 
-            // Fan (0, i, i+1) — the field outlines are convex, so a fan tessellates them cleanly. Emit
-            // each triangle in BOTH windings so back-face culling can never hide it.
-            int tri = poly.Length - 2;
-            var tris = new int[tri * 6];
-            int t = 0;
-            for (int i = 1; i < poly.Length - 1; i++)
+            // Emit each triangle in BOTH windings so back-face culling can never hide it.
+            var ears = Triangulate(poly);
+            var tris = new int[ears.Count * 2];
+            for (int i = 0; i < ears.Count; i += 3)
             {
-                tris[t++] = 0; tris[t++] = i; tris[t++] = i + 1;
-                tris[t++] = 0; tris[t++] = i + 1; tris[t++] = i;
+                int a = ears[i], b = ears[i + 1], c = ears[i + 2];
+                tris[i * 2 + 0] = a; tris[i * 2 + 1] = b; tris[i * 2 + 2] = c;
+                tris[i * 2 + 3] = a; tris[i * 2 + 4] = c; tris[i * 2 + 5] = b;
             }
 
             var mesh = new Mesh { name = region.Id + "_fill" };
@@ -285,6 +290,80 @@ namespace Game.Client
             mr.material = UnlitMaterials.Create(col);
             mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             mr.receiveShadows = false;
+        }
+
+        /// <summary>EAR CLIPPING — triangulate a simple polygon into index triples into its own vertex
+        /// array. O(n²) and run ONCE per region at startup on outlines of a few dozen points, so the
+        /// simple algorithm is the right one; the alternative was a fan that is only correct for the
+        /// convex case the world stopped being.
+        ///
+        /// <para>Works in WORLD coordinates (the region's own Vec2s), not the mapped Unity ones, so the
+        /// winding test is not at the mercy of whatever axis flip <c>WorldMapper</c> applies. The
+        /// resulting indices address the same slots either way.</para>
+        ///
+        /// <para>Degenerate input never hangs it: if no ear can be found — which a self-intersecting
+        /// outline would cause — it falls back to a fan over whatever is left, so a bad polygon draws
+        /// something slightly wrong instead of freezing the map build.</para></summary>
+        private static System.Collections.Generic.List<int> Triangulate(Vec2[] poly)
+        {
+            var tris = new System.Collections.Generic.List<int>((poly.Length - 2) * 3);
+            if (poly.Length < 3) return tris;
+
+            // Work on a ring of indices, wound counter-clockwise so "convex" has one meaning below.
+            var ring = new System.Collections.Generic.List<int>(poly.Length);
+            for (int i = 0; i < poly.Length; i++) ring.Add(i);
+            if (SignedArea(poly) < 0f) ring.Reverse();
+
+            int guard = ring.Count * ring.Count;
+            while (ring.Count > 3 && guard-- > 0)
+            {
+                bool clipped = false;
+                for (int i = 0; i < ring.Count; i++)
+                {
+                    int ia = ring[(i + ring.Count - 1) % ring.Count], ib = ring[i], ic = ring[(i + 1) % ring.Count];
+                    Vec2 a = poly[ia], b = poly[ib], c = poly[ic];
+                    if (Cross(a, b, c) <= 0f) continue;              // reflex corner — not an ear
+
+                    bool contains = false;
+                    foreach (int j in ring)
+                    {
+                        if (j == ia || j == ib || j == ic) continue;
+                        if (InTriangle(poly[j], a, b, c)) { contains = true; break; }
+                    }
+                    if (contains) continue;                          // another vertex is inside it
+
+                    tris.Add(ia); tris.Add(ib); tris.Add(ic);
+                    ring.RemoveAt(i);
+                    clipped = true;
+                    break;
+                }
+                if (!clipped) break;                                 // no ear found: bail to the fan below
+            }
+
+            for (int i = 1; i < ring.Count - 1; i++)
+            {
+                tris.Add(ring[0]); tris.Add(ring[i]); tris.Add(ring[i + 1]);
+            }
+            return tris;
+        }
+
+        private static float SignedArea(Vec2[] poly)
+        {
+            float sum = 0f;
+            for (int i = 0, j = poly.Length - 1; i < poly.Length; j = i++)
+                sum += (poly[j].X * poly[i].Y) - (poly[i].X * poly[j].Y);
+            return sum * 0.5f;
+        }
+
+        private static float Cross(Vec2 a, Vec2 b, Vec2 c) =>
+            (b.X - a.X) * (c.Y - a.Y) - (b.Y - a.Y) * (c.X - a.X);
+
+        private static bool InTriangle(Vec2 p, Vec2 a, Vec2 b, Vec2 c)
+        {
+            // Strictly inside, and >= 0 on the edges so a vertex lying exactly on one still blocks the
+            // ear — clipping through it would produce a zero-area sliver.
+            float d1 = Cross(a, b, p), d2 = Cross(b, c, p), d3 = Cross(c, a, p);
+            return d1 >= 0f && d2 >= 0f && d3 >= 0f;
         }
 
         /// <summary>Green (low) → yellow → red (high), matching ZoneOverlay's disc colours so a field and

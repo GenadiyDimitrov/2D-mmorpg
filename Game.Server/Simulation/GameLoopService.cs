@@ -1250,8 +1250,18 @@ public class GameLoopService : BackgroundService
 
     /// <summary>Safety net for broken geodata / a prediction slip: if a (non-jailed) player has ended up
     /// more than <see cref="WallTolerance"/> OUTSIDE every dungeon while in the negative quadrant, a ward
-    /// teleports them back into the nearest dungeon. Movement is already walled; this catches the rest.</summary>
+    /// teleports them back into the nearest dungeon. Movement is already walled; this catches the rest.
+    ///
+    /// ⚠ THE TOLERANCE IS NOT 500 ANY MORE — it is the larger of 500 and
+    /// <see cref="DungeonLayout.MaxCornerCut"/>. A dungeon became a corridor with side rooms on
+    /// 2026-08-24, and a straight walk between two rooms legitimately clips the wall corner between them
+    /// (this game has no pathfinding; a move order clamps its DESTINATION and then draws a line). Measured,
+    /// that cut reaches 683 units — past the old 500 — so the ward was about to start teleporting players
+    /// to the door on roughly one long cross-room walk in 125. An anti-cheat net that fires on ordinary
+    /// movement is worse than no net.</summary>
     private const float WallTolerance = 500f;
+    private static readonly float DungeonWallTolerance =
+        Math.Max(WallTolerance, DungeonLayout.MaxCornerCut);
     private void EnforceDungeonWalls(Entity p)
     {
         if (p.Jailed || (p.X >= 0 && p.Y >= 0)) return;   // jail + overworld handled elsewhere
@@ -1269,7 +1279,7 @@ public class GameLoopService : BackgroundService
         foreach (var d in RegionMap.Dungeons)
         {
             float outside = WorldDomain.OfDungeon(d).DistanceOutside(p.X, p.Y);
-            if (outside <= WallTolerance) return;   // inside, or within the tolerance band at the wall
+            if (outside <= DungeonWallTolerance) return;   // inside, or within the tolerance band at the wall
             if (outside < best) { best = outside; nearest = d; }
         }
         if (nearest != null)
@@ -11772,10 +11782,24 @@ public class GameLoopService : BackgroundService
 
     /// <summary>Teleport a player to the nearest safe town and drop them out of combat. Shared by the
     /// CHANNELLED Return path (the cast completing) and the INSTANT one (the Ultimate scroll, whose whole
-    /// purpose is to have no cast at all — see UsePotion).</summary>
+    /// purpose is to have no cast at all — see UsePotion).
+    ///
+    /// 🔑 <see cref="WorldMap.NearestTown"/>, NOT <c>NearestSafeZone</c> — the difference is a dungeon
+    /// entrance, and inside a dungeon the entrance is always the nearest safe zone there is. That is the
+    /// bug he reported on 2026-08-24: *"using scroll of return -> returns me to the starting chamber of
+    /// the crypt .. not a main town … the return scrolls should teleprt you back in town not in the
+    /// start of the dungeon - its valid even for a instance (u reenter)."* The escape button was putting
+    /// him back on the doorstep of the place he was escaping from.
+    ///
+    /// 🔑 And it asks the MANAGING CITY first, exactly as a town respawn does (see the comment on the
+    /// respawn path). Nearest-town alone answers "Frostmere" from inside the Hollow Crypt — geometrically
+    /// true and useless, because Greymarsh is the only gatekeeper that lists the crypt, so the scroll
+    /// would cost you a second jump to undo. His *"(u reenter)"* is the whole point of the ruling: you
+    /// leave to a town you can leave FROM. Nearest-town remains the failsafe for open ground.</summary>
     private void ReturnToTown(Entity caster)
     {
-        var town = WorldMap.NearestSafeZone(caster.X, caster.Y);
+        var town = RegionMap.ManagingCity(caster.X, caster.Y)
+                   ?? WorldMap.NearestTown(caster.X, caster.Y);
         PlaceEntity(caster, town.X + _rng.Next(-150, 150), town.Y + _rng.Next(-150, 150));
         caster.Engaged = false;
         caster.CombatTargetId = null;

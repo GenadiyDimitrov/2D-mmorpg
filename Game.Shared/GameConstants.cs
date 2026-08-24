@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.81.2";
+    public const string GameVersion = "0.82.0";
 
     /// <summary>
     /// The WIRE contract's version, and the ONLY thing compatibility is decided on.
@@ -92,7 +92,17 @@ public static class GameConstants
     /// mode" hole this version exists to close. It is also the direction that matters least in the
     /// reverse: a new client on an old server subscribes to a message that never arrives and shows
     /// nothing, silently. The handshake is the only place either pairing is caught.
-    public const int ProtocolVersion = 25;
+    /// 25 → 26 (2026-08-24): the three DUNGEONS were re-shaped into a corridor with side rooms
+    /// (<see cref="DungeonLayout"/>), and this is the first bump where NOT ONE BYTE OF THE WIRE MOVED.
+    /// No DTO, no hub method, no push name. It moves because the dungeon's WALL is shared code, not a
+    /// message: <see cref="WorldDomain"/> lives in Game.Shared precisely so the client can stop you at
+    /// the surface while the server keeps its clamp as the anti-cheat backstop — *"two halves enforcing
+    /// the same rule is only safe if they cannot disagree"*. An old APK holds the OLD polygon, so inside
+    /// a dungeon the two halves clamp to different shapes: the client would refuse to walk into rooms
+    /// that now exist, rubber-band along walls that no longer do, and draw the old outline on the map.
+    /// Nothing crashes — which is exactly why the handshake has to catch it. Same reasoning as 23 → 24,
+    /// where the client-side rules, not the DTO, were what forced the number.
+    public const int ProtocolVersion = 26;
 
     /// <summary>
     /// The oldest protocol this server still speaks. Equal to <see cref="ProtocolVersion"/> means
