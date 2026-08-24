@@ -275,11 +275,26 @@ need the new APK. **Playtest 28 — the twelve below them, eleven built and one 
     closing as well as opening. Say if you want Holy Bolt left as the bare-handed fallback.
   - 🔴 **Needs the new APK**: the client builds its Learn tab locally from the compiled class tables. ->
 
-- [!] 🟠 **ANSWERED — no, and here is why it does not.** shouldn't lvl 14 vamp bolt fail all the time fighting 37/39 mobs ? I hit them for ~300 and vamp ~120.
-  -> 🔑 **The fizzle roll reads the CASTER's level, never the skill's** — `fail% = 1.3^(mobLvl −
-  casterLvl) × …`. You are above those mobs, so you are casting DOWN, and casting down is **0%**. The
-  rung is not in the roll and never has been (that was measured and ruled on 2026-08-22; the table is in
-  `docs/balance/BalanceMatrix.md`). Your 120 is exactly 40% of 300, so the drain is working too.
+- [~] 🟢 **REVERSED AND BUILT 2026-08-24 (0.81.2) — you were right, it does now.** shouldn't lvl 14 vamp bolt fail all the time fighting 37/39 mobs ? I hit them for ~300 and vamp ~120.
+  -> **The answer below was correct about the code and wrong about the design, and you overruled it:**
+  *"a dmg spell should fail if it's to low lvl … the fizzle effect is based of spell.learned-lvl not
+  caster.lvl vs enemy.lvl … if I learn 35 lvl spell at lvl 50 it should use the 35."* The fizzle roll
+  now takes the RUNG'S learn level, on damage spells and uncontested debuffs alike — the rule contested
+  CC has had since 2026-08-19. **Your vamp bolt @14 vs a 37/39 mob is now pinned at the 95% ceiling**,
+  i.e. your ~120 becomes ~40 on 19 casts in 20.
+  - 🔑 **It nearly missed your own example.** `Cumulative` lists the CURRENT tier only, so a base-mage
+    line like Vampiric Bolt @14 is invisible once you have an archetype and the lookup returned "no
+    rung" → caster level → no change at all. `RungLevel` asks the base tier second now.
+  - ⚠ **Magic Bolt goes the same way** (2 rungs, top @14 → ceiling at 32) for every mage line, and Holy
+    Bolt (@35) at 53. That is the ruling working, not a side effect — but say if a starting bolt dying
+    at 32 is further than you meant.
+  - 🔴 **Still true, and now it matters more:** rungs 2-14 of Vampiric Bolt are on the NUKER ladder. The
+    Warchanter/cleric line takes rung 1 at 14 and never gets another, so for you this is not "a rung I
+    haven't upgraded" — it is the whole skill retiring. Same for the single-rung 40+ placeholders
+    Flamebolt (@40, dead at 58) and Glacial Spike (@44, at 62): **the fix is a CSV ladder, not code.**
+  - ⚠ **A fizzle is still not a miss** — it lands `damage/3`, so a ceilinged spell does ~37%, not 0%.
+    Your *"I should not be able to hit (atleast on floor)"* is a SECOND ruling, on the fizzle payload
+    rather than its chance, and it was NOT built. Say the word and it becomes a real floor. ->
   - 🔑 **The interesting half is the 300, not the fizzle.** Damage is `K·(mAtk·lvlMod + power)/def`. Your
     rung-1 power is **21**. At your level `mAtk·lvlMod` is in the hundreds — so the rung contributes
     something like 3-5% of that hit and your *gear* is doing the rest. That is why a level-14 skill still
@@ -288,7 +303,7 @@ need the new APK. **Playtest 28 — the twelve below them, eleven built and one 
     ladder; the cleric line takes rung 1 at 14 and stops. So this is not "a low rung I haven't upgraded",
     it is the only rung your class will ever have — which is a decent argument for your OWN next row,
     the one that retires Holy Bolt for the sound skills. Vampiric Bolt is the same kind of leftover.
-  - **What I did NOT do:** put the skill's rung into the fizzle roll. It would break every class that
+  - ~~**What I did NOT do:** put the skill's rung into the fizzle roll.~~ **Superseded — you asked for it and it is in.** The worry below was right about the cost (Magic Bolt, vamp, Holy Bolt and two placeholders all retire) and wrong about who decides; the retirements are visible in `BalanceMatrix`'s new SPELL LADDERS table rather than left to be discovered. The original reasoning, for the record: it would break every class that
     legitimately carries an old rung, and the honest fix for "a rung-1 nuke is still fine at 40" is the
     power ladder, not a landing penalty. Say if you want it looked at as a balance pass. ->
 
@@ -302,6 +317,15 @@ need the new APK. **Playtest 28 — the twelve below them, eleven built and one 
     SLOT's side. Which is also the honest version of your "I see the buff but more visual is OK": the
     information was there, it was just in the wrong place for a thumb. ->
 
+- [!] Hollow Crypt:
+  - Entering trough GK teleports me in the middle ... not the start.. 
+  - also using scroll of return -> returns me to the starting chamber of the crypt .. not a main town ... 
+    - the return scrolls should teleprt you back in town not in the start of the dungeon - its valid even for a instance (u reenter)
+  - also can we make the dungeons(valid for all) with one main cooridor few side rooms for mobs
+    - if 3 mob groups -> 2 rooms and the last one is protecting the boss as of now
+    - number of mobs groups -1 is the rooms on the sides .. and in the end of cooridor is the boss with the last group
+  upfont (far enought so u can go trough and atack the boss without newly spawned elites to aggro u - same as now)
+
 ---
 
 ## My Finds — next pass (empty, write here)
@@ -313,7 +337,7 @@ been played: the **buff bar** (11 NPC buffs + potions, nothing should silently f
 **Warchanter with a maul** (Sound Smash / Acoustic Shock must fire), **Reinforcement and Sharpening**
 under a full buff set, and **relogging with chat on screen**.
 
-- [ ] 
+- [ ]
 
 - [ ] 
 
@@ -613,9 +637,11 @@ Six versions of server work. Nothing here has a client tell; it shows up as numb
   chance". ->
 
 - `90y` [x] - **The magic fizzle curve, written down** (`docs/balance/BalanceMatrix.md`, marked CURRENT,
-  plus `BalanceMatrix --fizzle`). 🔑 It reads the **caster's** level, never the skill's: casting DOWN is
-  **0%**, up is 5% at +6, 18% at +11, 67% at +16. 🔑 M.Def and mRes are **not** in the roll — and a
-  fizzle still lands `dmg/3`. **Read, don't test.** ->
+  plus `BalanceMatrix --fizzle` and the new SPELL LADDERS table). 🔑 **UPDATED 2026-08-24: it reads the
+  RUNG'S learn level now, not the caster's** — your ruling; the curve itself did not move, only which
+  level you read it at. Casting DOWN is **0%**, up is 5% at +6, 18% at +11, 67% at +16, ceiling from
+  +18. 🔑 M.Def and mRes are **not** in the roll — and a fizzle still lands `dmg/3`. **Read, don't
+  test.** ->
 
 ---
 
@@ -751,9 +777,10 @@ other two paths and have still never been played. Check the flag behaviour in th
 - `37e` [] - **Full-bag judging** on a trade: merges into an existing stack succeed, brand-new items
   are refused. ⚠ Interacts with `75d` — a tagged item is always a new row. ->
 
-- `13a` [] - The **"take a break" banner**. ⚠ **Still at 10 MINUTES** — set there at your request for the
-  0.68.0 pass, tagged in the source to go back to 3h, and reached by no playtest since, so it stays until
-  you have actually read one (`GameConstants.BreakReminderSeconds`). ->
+- `13a` [X] ✅ **PASSED, AND THE TAG IS DISCHARGED.** The **"take a break" banner**. -> Working - Can
+  return it to 3h -> **Done, 2026-08-24**: `GameConstants.BreakReminderSeconds` is back to `3 * 3600`
+  after five passes at 10 minutes. Server-side constant, no APK needed. This row is now closed —
+  it took six passes to get read once, so it does not go back on the list.
 
 ---
 

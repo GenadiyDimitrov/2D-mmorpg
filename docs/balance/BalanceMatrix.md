@@ -43,17 +43,26 @@
 
 ---
 
-## ⚡ MAGIC FIZZLE CURVE — level 74 caster vs 60-90 (2026-08-21, CURRENT)
+## ⚡ MAGIC FIZZLE CURVE — a spell LEARNED AT 74, vs targets 60-90 (2026-08-21, CURRENT)
 
 **Not stale.** Generated from the shipped `StatCalculator.MagicFailChance`; regenerate with
 
 ```
-dotnet run --project tools/BalanceMatrix -- --fizzle [casterLevel] [from] [to]
+dotnet run --project tools/BalanceMatrix -- --fizzle [spellLearnLevel] [from] [to]
 ```
 
-⚠ **THE SKILL'S OWN LEVEL IS NOT AN INPUT.** `GameLoopService` passes `caster.Level` and
-`target.Level` — a level-80 healer casting his level-74 rung fizzles as an 80, and a level-74
-healer casting the level-56 rung fizzles as a 74. There is no per-rung fizzle.
+🔑 **THE ATTACKER LEVEL IS THE RUNG'S LEARN LEVEL, NOT THE CASTER'S** (owner ruling 2026-08-24:
+*"the fizzle effect is based of spell.learned-lvl not caster.lvl vs enemy.lvl … if I learn 35 lvl
+spell at lvl 50 it should use the 35"*). `GameLoopService` passes `RungLevel(caster, def, lvl)`, so
+a level-90 nuker casting his @80 bolt fizzles as an **80**, and the @14 rung still on his bar
+fizzles as a **14**. The numbers in the table below did not move — only which level you read them
+at. **The caster's own level is the FALLBACK only**, for a spell no class list owns (a mob spell, a
+scroll, the practice dummy). Same rule and same helper as contested CC (2026-08-19) and BL-71's
+buff threat: all three landing rolls now read one number.
+
+⚠ Before that ruling the caster's level was the input, so the whole curve was per-character and a
+low rung cost nothing to keep casting. Any pre-2026-08-24 note claiming "there is no per-rung
+fizzle" is describing the old behaviour.
 
 ⚠ **A fizzle is not a miss.** The spell still lands for `damage / 3` and still rolls the
 interrupt contest. Ceiling 95% (`StatCaps.MagicFailMax`), so nothing is ever immune.
@@ -62,7 +71,7 @@ interrupt contest. Ceiling 95% (`StatCaps.MagicFailMax`), so nothing is ever imm
 The inputs are levels, the tank's Anti-Magic `defenderMod`, magic evasion, and the weapon.
 
 ```
-fail% = round( 1.3^(defenderLvl − casterLvl) × defenderMod × weaponMod ) + magicEvasionPoints
+fail% = round( 1.3^(defenderLvl − rungLvl) × defenderMod × weaponMod ) + magicEvasionPoints
 ```
 
 | def lvl | Δ | normal | tank ×2 | +4 mEvasion | bow ×25 |
@@ -115,6 +124,42 @@ control stops landing.
   would invert that, which is the opposite of a defensive burst.
 - **Bow / dual / bare hands** (`UntrainedWeaponMagicFailMod` ×25) is the only thing that makes
   PARITY hurt: 25% at 74-vs-74, ceiling from +5. Hindered, not disarmed.
+
+### THE SPELL LADDERS — where each fizzling spell's BEST rung stops working (2026-08-24, CURRENT)
+
+Printed by a plain `dotnet run --project tools/BalanceMatrix` (the MAGIC LANDING section). It exists
+because, with the rung rule above, "does this class have a rung near the cap" is now a balance
+question: a ladder that ends at 14 is a class that stops casting that spell at 32. Target levels.
+
+⚠ **It is keyed by (spell, DISCIPLINE), and it walks the BASE-class list too.** Merging the classes
+is what hides the real answers: Vampiric Bolt has fourteen rungs to @80 on the nuker ladder and
+exactly **one, at 14**, on the Warchanter's — the same spell id, healthy for one class and finished
+at 32 for the other.
+
+| spell | rungs | top rung @ | 5% by | 50% by | 95% by | classes |
+|---|--:|--:|--:|--:|--:|---|
+| **Magic Bolt** | 2 | **14** | 20 | 29 | **32** | all four mage disciplines |
+| **Vampiric Bolt** | **1** | **14** | 20 | 29 | **32** | Lightbringer, Warchanter |
+| **Holy Bolt** | 4 | **35** | 41 | 50 | **53** | Lightbringer, Warchanter |
+| **Flamebolt** (Annihilate / Chain Lightning) | **1** | **40** | 46 | 55 | **58** | Magus, Tempest |
+| **Glacial Spike** | **1** | **44** | 50 | 59 | **62** | Magus, Tempest |
+| Holy Ray · Gravity · Armor Break · Mana Ray · Weapon Break | 4-14 | 74 | 80 | 89 | — | Lightbringer |
+| Elemental Burst | 10 | 75 | 81 | 90 | — | Magus, Tempest |
+| Elemental Bolt · Quick Bolt · Vampiric Bolt | 13-14 | 80 | 86 | — | — | Magus, Tempest |
+
+🔑 **The top three rows are the ruling working as asked** — his own example was *"lvl 1 vamp that I
+have learned at lvl 14 … should stop be effective at some point"*, and that is the second row
+exactly. Magic Bolt is the same shape: the mage's starting bolt has no rung above 14 anywhere in the
+game, so it fades from 20 and is finished at 32, by which point every mage line has a real nuke.
+
+🔴 **Flamebolt (@40) and Glacial Spike (@44) are the ones to look at** — single-rung 40+
+PLACEHOLDERS, on the ceiling by target 58 / 62, the exact shape the five single-rung CC skills have
+had since 2026-08-19 (*"literal now, ladders later"*). **The fix is a CSV ladder, not code**, and it
+arrives with the nuker CSVs. Holy Bolt @35 is a soft case: the Lightbringer's Holy Ray takes over at
+40, and the Warchanter's sound skills retire it anyway.
+
+⚠ A spell on the 95% ceiling is not doing 0% damage — a fizzle still lands `damage/3`, so it is
+doing ~37%.
 
 ---
 

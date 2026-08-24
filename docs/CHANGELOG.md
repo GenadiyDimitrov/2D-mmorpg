@@ -7,12 +7,122 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.81.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.81.2**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-08-23 (latest) — 0.81.1: playtest 28, twelve finds — an exploit that was a level window, a buff cap that never reached a rune, and a blunt skill that refused a maul
+## 2026-08-24 (latest) — 0.81.2: a spell fizzles on the level it was LEARNED at, not the level you are
+
+*"A dmg spell should fail if it's to low lvl … same as debuffs … we made dbufs to fail (hit floors) on
+lvl difference, why we haven't done the same for dmg spells … if I hit you with lvl 1 vamp that I have
+learned at lvl 14 it should stop be effective at some point."* And the mechanism, in his own words:
+**"the fizzle effect is based of spell.learned-lvl not caster.lvl vs enemy.lvl … if I learn 35 lvl spell
+at lvl 50 it should use the 35."**
+
+The magic-fail roll took the CASTER'S level, so a level-80 mage's first bolt fizzled exactly as little
+as his last one — the ladder was worth power and nothing else, and an obsolete rung stayed a perfectly
+accurate spell forever. Contested CC stopped working that way on 2026-08-19, when he ruled the attacker
+level is the RUNG'S learn level; that ruling now reaches the other two arms of `ExecuteSkill` that roll
+`MagicFailChance` — **magic damage, and the uncontested debuffs**. `GameLoopService.RungLevel` is the
+one helper all three landing rolls read (the third is `BL-71`'s buff threat, which prices a buff on the
+level its class learns it at for the same reason).
+
+**The formula did not move a single point** — `StatCalculator.MagicFailChance` is untouched, and its
+table in `docs/balance/BalanceMatrix.md` is valid exactly as printed. What changed is which level you
+read it at: 1% at parity with the rung, 5% at +6, 18% at +11, 67% at +16, pinned to the 95% ceiling from
++18 — all now measured from the rung. Casting DOWN is still free (0% from −3), so an old rung is never
+*worse* than useless, it simply stops keeping up. A skill no class list owns — a mob spell, a scroll,
+the practice dummy — has no rung to read and still falls back to the caster's own level.
+
+⚠ **A fizzle is still not a miss**: it lands `damage / 3` and still rolls the interrupt. So a spell
+pinned at the 95% ceiling is doing about **37%** of its damage, not zero. His *"I should not be able to
+hit (atleast on floor)"* would be a second, separate ruling — the fizzle payload has never been zero and
+was deliberately not changed here.
+
+🔑 **A HOLE THAT WOULD HAVE DEFEATED HIS OWN EXAMPLE.** `ClassSkills.Cumulative` returns the CURRENT
+tier only — the 2nd-class list plus the 3rd-class one — so every skill bought on the base path before
+level 20 is invisible to it the moment you have an archetype, and the rung lookup returned 0 for exactly
+those skills, falling back to the caster's level. Vampiric Bolt @14 is a BASE MAGE line: his *"lvl 1
+vamp that I have learned at lvl 14"* would have gone on fizzling as an 80. `RungLevel` now asks the base
+tier second, when the current tier does not own the id — and `BalanceMatrix` walks the same two lists in
+the same order, so the table cannot hide it again. ⚠ It applies to all three rolls sharing the helper,
+so a base-class buff's threat is now priced at its own learn level too.
+
+🔴 **What actually stops working, measured per CLASS** (the merged-by-skill first cut was worthless —
+Vampiric Bolt has 14 rungs to @80 on the nuker ladder and exactly ONE, at 14, on the Warchanter's):
+
+| spell | rungs | top @ | 95% by | classes |
+|---|--:|--:|--:|---|
+| Magic Bolt | 2 | 14 | **32** | all four mage disciplines |
+| Vampiric Bolt | 1 | 14 | **32** | Lightbringer, Warchanter |
+| Holy Bolt | 4 | 35 | **53** | Lightbringer, Warchanter |
+| Flamebolt (Annihilate / Chain Lightning) | 1 | 40 | **58** | Magus, Tempest |
+| Glacial Spike | 1 | 44 | **62** | Magus, Tempest |
+
+The first two rows are the ruling doing exactly what he asked — his vamp-bolt case is the second one.
+The last two are the ones to look at: single-rung **40+ placeholders**, the same shape as the five
+single-rung CC skills, where he chose *"literal now, ladders later"*. **The fix is a CSV ladder, not
+code**, and it arrives with the nuker CSVs. Everything with a real ladder is untouched: the nuker bolts
+run to @80 (14% fail on a level-90 target), Elemental Burst to @75, the Lightbringer's Holy Ray /
+Gravity / Mana Ray / Armor Break to @74.
+
+`tools/BalanceMatrix` grew a **SPELL LADDERS** table next to the CC one — every fizzling spell, its
+rungs, and the target level at which its best rung reaches 5% / 50% / 95% — because "does this class
+have a rung near the cap" is now a balance question rather than a curiosity. `--fizzle`'s first argument
+is a SPELL'S learn level now, not a caster level; its output is unchanged.
+
+**Also in this build — the progression triad `/lvl`, `/sp`, `/exp`** (owner). Staff-only, and written to
+read exactly like `/givegold`: `[name] <value>`, where the **name is optional** (omit it and the subject
+is you), the value takes `1_000_000`, `100k/m/b/t` and a negative sign, and `max` is a word rather than a
+number to remember. `@t` / `@self` already substitute into a name on the client, so `/sp @t max` works
+with nothing added there — and because the client passes any unknown `/verb` straight through for staff,
+**no new APK is needed**.
+
+- `/lvl [name] <level|max>` **SETS** the level outright — not a delta like the debug +1/+10 buttons —
+  clamped to the subject's own ceiling (`LevelCapFor`: 90 for a player, the deliberate staff exemption
+  for an admin), itself held to the end of the *authored* exp curve so a typo cannot park someone on an
+  extrapolated level. Delevelling keeps the learned skills, his standing rule; only the auto-granted,
+  level-derived passives re-sync (`AutoLearnCoreSkills`).
+- `/sp [name] <amount|max>` **ADDS** skill points; `max` is `int.MaxValue`, the saturation ceiling SP
+  already has in `AwardExp` rather than a new rule. A negative amount takes SP away, floored at zero.
+- `/exp [name] <amount|max>` **ADDS RAW exp — deliberately NOT through `AwardExp`**, which would scale it
+  by the server's ×10 exp rate and by the subject's runes, so "give exactly this many" would quietly be a
+  lie. It runs the same level-up loop and the same at-the-ceiling parking rule. `max` leaves them one
+  point short of the next level: *"a single drop of 1 exp can lvl the target to the next"*.
+
+⚠ `/sp` and `/spd` are distinct verbs — the dispatcher splits on the first space, so the speed-override
+rig is untouched.
+
+Server-only: no DTO, no hub method, no push name, so **protocol stays 25** and the 0.81.1 APK talks to
+this server unchanged.
+
+**And three CSV edits of his, walked back into the code** — the other half of "the CSVs and the game
+move together". `--check` was red on six rows before this and is green after:
+
+- **`nuker 2nd.csv` — mpWhenRestored is 10 / 15 / 20 / 25%**, down from 19/23/26/30. Those were never
+  his numbers: they were the 2026-08-19 flat→percent conversion (old flat × 0.75) that *we* wrote into
+  his file. He has replaced it with a round 5-point ladder, and a much smaller one, in exactly the band
+  where Restore Spirit's own number is smallest — an early nuker's mana now comes from the SKILL, not
+  from the robe. ⚠ Rungs 5-8 (@40-70, ours, no CSV yet) keep their 38-60%: that endpoint is his separate
+  *"+200 MP for −200 HP at 80"* ruling. The hand-off at 40 is 25→38 now instead of 30→38 — monotonic,
+  just steeper, and the 40+ nuker CSV is what resolves it.
+- **`nuker 2nd.csv` — Restore Spirit rung 1 is −66 HP for +22 MP**, was −65/+20. `--check` does not read
+  those two numbers out of DESCR, so this one was found by reading the diff, not by the tool.
+- **`healer 3rd.csv` — "Healer Weapon Mastery" is now "Spellcaster Weapon Mastery"**, on all fourteen
+  rungs. The skill was never healer-flavoured — it is what a 3rd-class caster's blunt does, and the
+  nuker file will want the same row. 🔑 **The id stays `healer_weapon_mastery`**: skill ids are
+  append-only, and renaming one strands the learned rows of every saved character. Display names move
+  freely, ids do not. ⚠ This is the one line here with a client tell — the Learn tab builds its labels
+  from the compiled `SkillCatalog`, so the phone keeps saying "Healer Weapon Mastery" until the next APK.
+- **`nuker 3rd.csv`** — his in-progress authoring, committed as-authored. It is a placeholder file, not
+  in `Check.Specs`, and nothing in the code reads it yet; the nuker 3rd kit is still unbuilt.
+
+**Also: the "take a break" banner is back to 3 hours** (`GameConstants.BreakReminderSeconds`). It ran at
+10 minutes from playtest 24 to 28 at his own request, tagged in the source to be put back, and checklist
+row `13a` finally came back read — *"Working - Can return it to 3h"*. Five passes to get one banner seen.
+
+## 2026-08-23 — 0.81.1: playtest 28, twelve finds — an exploit that was a level window, a buff cap that never reached a rune, and a blunt skill that refused a maul
 
 Twelve free-form finds in one pass, eleven built. Three of them are the same shape and worth naming
 first, because in each case the rule we thought was in the game **was written down and never reached

@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.81.1";
+    public const string GameVersion = "0.81.2";
 
     /// <summary>
     /// The WIRE contract's version, and the ONLY thing compatibility is decided on.
@@ -430,11 +430,13 @@ public static class GameConstants
     /// as far as it can already see you is not a camp, it is four independent mobs.</summary>
     public const float MobClanCallRadius = 450f;
 
-    /// <summary>⚠⚠ TEMPORARY — 10 MINUTES INSTEAD OF 3 HOURS, FOR PLAYTEST 24 ONLY. His request, because
-    /// checklist row `13a` (the "take a break" banner) has gone untested for six passes for the obvious
-    /// reason: *"change it to 10mins. (tag it to return to default 3h after test)"*.
-    /// 🔴 **PUT THIS BACK TO <c>3 * 3600</c> ONCE HE CONFIRMS HE HAS SEEN THE BANNER.**</summary>
-    public const long BreakReminderSeconds = 10 * 60;   // ← was 3 * 3600
+    /// <summary>How long you play before the client shows the "take a break" banner.
+    ///
+    /// ✅ BACK TO 3 HOURS on 2026-08-24. It sat at 10 MINUTES from playtest 24 to playtest 28 — his own
+    /// request (*"change it to 10mins. (tag it to return to default 3h after test)"*) because checklist
+    /// row `13a` had gone untested for six passes for the obvious reason. He has now seen it:
+    /// *"Working - Can return it to 3h"*, so the tag is discharged and the default is restored.</summary>
+    public const long BreakReminderSeconds = 3 * 3600;
 
     /// <summary>The ordinary field respawn cadence, and the yardstick a mob's SCARCITY is measured
     /// against for EXP (`BL-49`, playtest 23). 22s is not invented — it is the number every ordinary

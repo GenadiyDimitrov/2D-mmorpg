@@ -261,9 +261,9 @@ public static partial class SkillCatalog
 
         // Restore Spirit — trades HP for MP (self). Costs HP, not MP.
         //
-        // ⚠ LEVEL 1 IS THE AUTHORED CSV and must stay verbatim: `nuker 2nd.csv` line 14 says
-        // "exchanges HP (-65) for MP (+20)", SP 6400, learned at 25. Nothing in the 20-35 band may be
-        // retuned here — that file is the owner's source of truth for it.
+        // ⚠ LEVEL 1 IS THE AUTHORED CSV and must stay verbatim: `nuker 2nd.csv` says
+        // "exchanges HP (-66) for MP (+22)", SP 6400, learned at 25 — he re-authored it from -65/+20 on
+        // 2026-08-24. Nothing in the 20-35 band may be retuned here; that file is the source of truth.
         //
         // Levels 2-10 (@40 then every 5 to 80) are OURS, in the band that has no CSV, exactly like
         // the bolt ladder. They exist because ONE level for life was the real defect: 20 MP is most
@@ -285,13 +285,13 @@ public static partial class SkillCatalog
         // ⚠ A nuker in LIGHT or HEAVY earns no mastery bonus and pays full price for the base number
         // alone (3.25 → 1.67 HP per MP). That is the robe's identity, not a bug.
         new(RestoreSpirit, "Restore Spirit", BaseClass.Mage, SkillEffect.RestoreMp,
-            MpCost: 0, CastTicks: 40, CooldownTicks: 50, Range: 0, Power: 20,
+            MpCost: 0, CastTicks: 40, CooldownTicks: 50, Range: 0, Power: 22,
             Category: SkillCategory.Heal, TargetMode: TargetMode.SelfOnly, SpCost: 6400,
-            HpCost: 65,
+            HpCost: 66,
             Description: "Burns HP to restore MP to yourself (much more with robe mastery).",
             Levels: new[]
             {
-                new SkillLevel(Power: 20,  HpCost: 65,  SpCost: 6400,   Description: "Burns 65 HP to restore 20 MP."),   // 25  ← CSV
+                new SkillLevel(Power: 22,  HpCost: 66,  SpCost: 6400,   Description: "Burns 66 HP to restore 22 MP."),   // 25  ← CSV
                 new SkillLevel(Power: 45,  HpCost: 90,  SpCost: 26000,  Description: "Burns 90 HP to restore 45 MP."),   // 40
                 new SkillLevel(Power: 55,  HpCost: 105, SpCost: 40000,  Description: "Burns 105 HP to restore 55 MP."),  // 45
                 new SkillLevel(Power: 65,  HpCost: 118, SpCost: 56000,  Description: "Burns 118 HP to restore 65 MP."),  // 50

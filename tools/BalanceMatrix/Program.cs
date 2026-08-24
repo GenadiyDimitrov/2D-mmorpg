@@ -46,18 +46,21 @@ if (args.Length > 0 && args[0] == "--dump-mob-csv")
     return;
 }
 
-// `--fizzle [casterLevel] [from] [to]` prints the MAGIC FAIL curve straight out of
-// StatCalculator.MagicFailChance — the shipped function, not a copy. It answers "what does a caster
+// `--fizzle [spellLevel] [from] [to]` prints the MAGIC FAIL curve straight out of
+// StatCalculator.MagicFailChance — the shipped function, not a copy. It answers "what does a SPELL
 // of level N lose against defenders of level X..Y", which is a question about LEVELS ONLY.
-// ⚠ THE SKILL'S OWN LEVEL IS NOT AN INPUT ANYWHERE IN THE MAGIC-FAIL PATH. GameLoopService passes
-// `caster.Level` and `target.Level`; a level-80 healer casting his level-74 rung fizzles as an 80.
+// 🔑 THE ATTACKER LEVEL IS THE RUNG'S LEARN LEVEL (owner 2026-08-24). GameLoopService passes
+// `RungLevel(caster, def, lvl)`, so a level-80 nuker casting his @80 bolt fizzles as an 80 and the
+// @40 rung in the same bar fizzles as a 40 — the caster's own level is only the fallback for a spell
+// no class list owns (mob spells, scrolls, the practice dummy).
 if (args.Length > 0 && args[0] == "--fizzle")
 {
     int cl   = args.Length > 1 ? int.Parse(args[1]) : 74;
     int from = args.Length > 2 ? int.Parse(args[2]) : 60;
     int to   = args.Length > 3 ? int.Parse(args[3]) : 90;
     Console.WriteLine();
-    Console.WriteLine($"=== MAGIC FIZZLE: a level-{cl} CASTER vs defenders {from}-{to} ===");
+    Console.WriteLine($"=== MAGIC FIZZLE: a spell LEARNED AT {cl} vs defenders {from}-{to} ===");
+    Console.WriteLine("  (the caster may be any level at all — only the rung's learn level is read)");
     Console.WriteLine("  A fizzle is NOT a miss: the spell still lands for damage/3 (GameLoopService),");
     Console.WriteLine("  and it still rolls the interrupt. Ceiling {0:P0}, so nothing is ever immune.",
                       StatCaps.MagicFailMax);
@@ -834,6 +837,77 @@ Console.WriteLine("  MAGIC RESISTANCE is a DAMAGE reduction, not a fizzle (mRes 
 Console.WriteLine($"  {"mRes",6} {"coef",6} {"dmg taken",10}   (the mob ladder's 1.25 is exactly mRes +25%)");
 foreach (float r in new[] { 0f, 0.05f, 0.10f, 0.15f, 0.25f, 0.5f, 1.0f })
     Console.WriteLine($"  {r,6:P0} {1f + r,6:F2} {1f / (1f + r),10:F3}");
+Console.WriteLine();
+
+// THE SPELL LADDERS. Owner ruling 2026-08-24: the fizzle's attacker level is the RUNG'S learn level,
+// not the caster's, so a spell ladder now decays with age exactly like the CC ladders below it. That
+// makes "where does the TOP rung stop working" a real balance number for every fizzling spell — and
+// "does this class even have a rung near the level cap" a question the tool has to answer, because a
+// ladder that stops at 40 is a class that stops nuking at 58.
+//
+// ⚠ IT IS KEYED BY (spell, DISCIPLINE), not by spell. Merging the disciplines is what hides the only
+// casualties worth finding: Vampiric Bolt has 13 rungs to @80 on the NUKER ladder and exactly ONE, at
+// 14, on the Warchanter's — so a spell that looks healthy in a merged table is dead at 32 for the class
+// that actually carries it. Disciplines sharing an identical top rung are collapsed onto one row.
+Console.WriteLine("  THE SPELL LADDERS — where each FIZZLING spell's BEST rung stops working, PER CLASS:");
+{
+    // (skillId, topRung) -> the disciplines that stop there, plus the rung count on that ladder.
+    var spells = new Dictionary<(string Id, int Top), (string Name, int Rungs, SortedSet<string> Discs)>();
+    foreach (Discipline d in Enum.GetValues<Discipline>())
+    {
+        var baseCls = Disciplines.Parent(d) is Archetype.Healer or Archetype.Nuker
+            ? BaseClass.Mage : BaseClass.Fighter;
+        var perSkill = new Dictionary<string, (string Name, SortedSet<int> Learn)>();
+        foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
+            // ⚠ The BASE-class list is walked too. `Cumulative` is the CURRENT tier only, so without
+            // this every skill bought before level 20 — Magic Bolt, the base mage's Vampiric Bolt @14 —
+            // is missing from the table, which is precisely the set the rung rule bites hardest.
+            // GameLoopService.RungLevel asks the same two lists in the same order.
+            foreach (var cs in ClassSkills.Cumulative(race, baseCls, Disciplines.Parent(d), d)
+                         .Concat(ClassSkills.ForClass(race, baseCls, null, null)))
+            {
+                if (SkillCatalog.Get(cs.SkillId) is not SkillDef sd) continue;
+                // Exactly the two arms of ExecuteSkill that roll MagicFailChance: magic damage, and
+                // an UNCONTESTED debuff (a contested one rolls DebuffLandChance instead — that is the
+                // CC table below). SureHit spells never fizzle at all, so they are not on a ladder.
+                bool fizzles = (sd.Effect & SkillEffect.MagicDamage) != 0
+                            || ((sd.Effect & SkillEffect.AnyDebuff & ~SkillEffect.ContestCc) != 0
+                                && (sd.Effect & SkillEffect.ContestCc) == 0);
+                if (!fizzles || sd.SureHit) continue;
+                if (!perSkill.TryGetValue(cs.SkillId, out var e))
+                    e = perSkill[cs.SkillId] = (sd.Name, new SortedSet<int>());
+                e.Learn.Add(cs.LearnLevel);
+            }
+        foreach (var (id, e) in perSkill)
+        {
+            var key = (id, e.Learn.Max);
+            if (!spells.TryGetValue(key, out var row))
+                row = spells[key] = (e.Name, e.Learn.Count, new SortedSet<string>());
+            row.Discs.Add(d.ToString());
+        }
+    }
+    Console.WriteLine($"  {"spell",18} {"rungs",6} {"top @",6} {"5% by",6} {"50% by",7} {"95% by",7}  classes");
+    foreach (var (key, row) in spells.OrderBy(r => r.Key.Top).ThenBy(r => r.Key.Id))
+    {
+        int top = key.Top;
+        int At(float pct)
+        {
+            for (int t = top; t <= 200; t++)
+                if (StatCalculator.MagicFailChance(top, t) >= pct) return t;
+            return 200;
+        }
+        string Lvl(int t) => t > 90 ? "-" : t.ToString();
+        string flag = At(StatCaps.MagicFailMax) <= 90 ? " !" : "";
+        Console.WriteLine($"  {row.Name,18} {row.Rungs,6} {top,6} {Lvl(At(0.05f)),6} {Lvl(At(0.50f)),7} "
+                        + $"{Lvl(At(StatCaps.MagicFailMax)),7}{flag}  {string.Join(",", row.Discs)}");
+    }
+    if (spells.Count == 0) Console.WriteLine("  (none authored)");
+    Console.WriteLine();
+    Console.WriteLine("  ! Target levels, and PARITY WITH THE RUNG is 1% fail. A '!' marks a ladder that");
+    Console.WriteLine("    reaches the 95% ceiling inside the level range — that class stops casting it.");
+    Console.WriteLine("  ! A fizzle is not a miss: it still lands damage/3, so a spell pinned at the ceiling");
+    Console.WriteLine("    is doing ~37% of its damage, not 0%. The fix for a short ladder is a CSV ladder.");
+}
 Console.WriteLine();
 Console.WriteLine("=== CONTESTED DEBUFFS: stun/root/fear/slow + the DoTs (owner ruling 2026-08-19) ===");
 Console.WriteLine("  land% = 0.5 + 0.5*(atk - def*L) / (atk + def*L),  clamped to "

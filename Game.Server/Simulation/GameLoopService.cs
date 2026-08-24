@@ -3448,6 +3448,16 @@ public class GameLoopService : BackgroundService
     private static int LevelCapFor(Entity player) =>
         player.IsAdmin ? int.MaxValue : GameConstants.MaxPlayerLevel;
 
+    /// <summary>Push the XP bar and the SP counter. <paramref name="leveled"/> is what makes the client
+    /// play the level-up feedback, so pass it truthfully — a false positive fires the effect on a bare
+    /// EXP adjustment.</summary>
+    private void PushProgress(Entity player, bool leveled)
+    {
+        if (_world.EntityToConnection.TryGetValue(player.Id, out var conn))
+            _ = _hub.Clients.Client(conn).SendAsync("Progress", new ProgressUpdate(
+                player.Level, player.Exp, StatCalculator.ExpToNext(player.Level), leveled, player.SkillPoints));
+    }
+
     /// <summary>DEBUG: move the character's level by a delta (+1 / +10 / −1 / −10).
     ///
     /// DELEVELLING DOES NOT TOUCH LearnedSkills (owner). You keep everything you learned, so you can
@@ -5973,7 +5983,8 @@ public class GameLoopService : BackgroundService
                         "Admin: /jail, /unjail, /kick, /ban, /unban, /chatban, /unchatban, /jailed, " +
                         "/role <name> <player|chatmod|moderator|admin>, /tp <name>, /where <name>, " +
                         "/god, /invis, /spd <m|a|c> <v> (bare /spd resets), /bag <name>, /give <name>, " +
-                        "/givegold <name> <amount>, /droprate [group|gear|global|amount|item <id>] [mult], " +
+                        "/givegold <name> <amount>, /lvl [name] <level|max>, /sp [name] <amount|max>, " +
+                        "/exp [name] <amount|max>, /droprate [group|gear|global|amount|item <id>] [mult], " +
                         "/titleright <name> <on|off>, /buff [name] [level], " +
                         "/server <shutdown|reboot|on> [min] [adminOnly]" +
                         (admin.Role == AccountRole.Owner
@@ -6421,6 +6432,151 @@ public class GameLoopService : BackgroundService
                     SendSystemToEntity(gt, delta >= 0
                         ? $"You received {delta:#,##0} gold."
                         : $"{-delta:#,##0} gold was taken from you.");
+                break;
+            }
+
+            // ---- The progression triad: `/lvl`, `/sp`, `/exp` (owner) ------------------------------
+            // Same shape as `/givegold`, and deliberately so: `[name] <value>` where the NAME IS
+            // OPTIONAL (omit it and the subject is you), the value takes `1_000_000`, `100k/m/b/t` and
+            // a negative sign, and `max` is spelled out rather than being a magic number to remember.
+            // `@t` / `@self` already substitute into the name on the client, so `/sp @t max` works with
+            // nothing added here.
+            //
+            //   /lvl  SETS the level outright — it is not a delta like the debug +1/+10 buttons — and
+            //         is clamped to the subject's own ceiling (LevelCapFor: 90 for a player, the staff
+            //         exemption for an admin), itself held to the end of the AUTHORED exp curve so a
+            //         typo cannot park someone on an extrapolated level.
+            //   /sp   ADDS skill points. `max` is int.MaxValue, which is the saturation ceiling SP
+            //         already has in AwardExp — not a new rule.
+            //   /exp  ADDS RAW exp, NOT through AwardExp: that scales by the server's exp rate and by
+            //         the subject's runes, so "give exactly this many" would quietly be a lie. `max`
+            //         parks them one point short of the next level — *"a single drop of 1 exp can lvl
+            //         the target to the next"*.
+            case "lvl":
+            case "sp":
+            case "exp":
+            {
+                if (arg.Length == 0)
+                {
+                    SendSystemToEntity(admin, $"Usage: /{command} [name] <value|max>   (no name = you)");
+                    break;
+                }
+
+                int psp = arg.LastIndexOf(' ');
+                string progValue = (psp < 0 ? arg : arg[(psp + 1)..]).Trim();
+                string progName  = psp < 0 ? "" : arg[..psp].Trim();
+
+                Entity? pt = progName.Length == 0 ? admin : FindOnlinePlayer(progName);
+                if (pt is null) { SendSystemToEntity(admin, $"{progName} is not online."); break; }
+
+                bool progMax = progValue.Equals("max", StringComparison.OrdinalIgnoreCase);
+                long progAmount = 0;
+                if (!progMax && !TryParseGold(progValue, out progAmount))
+                {
+                    SendSystemToEntity(admin,
+                        $"Usage: /{command} [name] <value|max>  — k/m/b/t suffixes and 1_000_000 both "
+                      + $"work (e.g. /{command} @t 100k, /{command} max).");
+                    break;
+                }
+
+                // The ceiling every one of the three obeys. LevelCapFor keeps the staff exemption that
+                // exists so the top of the curve can be tested; ExpCurve.MaxLevel keeps even that
+                // inside authored data, because past it every level cost is extrapolated.
+                int progCap = Math.Min(LevelCapFor(pt), ExpCurve.MaxLevel);
+
+                if (command == "lvl")
+                {
+                    int want = progMax ? progCap : (int)Math.Clamp(progAmount, 1, progCap);
+                    if (want == pt.Level)
+                    {
+                        SendSystemToEntity(admin, $"{pt.Name} is already level {want}.");
+                        break;
+                    }
+
+                    bool lvlUp = want > pt.Level;
+                    pt.Level = want;
+                    pt.Exp = 0;
+                    if (lvlUp)
+                    {
+                        OnLevelUp(pt);
+                    }
+                    else
+                    {
+                        // DELEVELLING KEEPS THE LEARNED SKILLS (owner) — the same rule as the debug
+                        // -1/-10 buttons. Only the AUTO-granted, level-derived passives are re-synced,
+                        // which is exactly what AutoLearnCoreSkills does (the class floor passive and
+                        // Novice's Grace both move with the level).
+                        AutoLearnCoreSkills(pt);
+                        pt.RecomputeDerived();
+                        pt.Hp = Math.Min(pt.Hp, pt.MaxHp);
+                        pt.Mp = Math.Min(pt.Mp, pt.MaxMp);
+                        SendStats(pt);
+                        SendLearned(pt);
+                    }
+
+                    PushProgress(pt, lvlUp);
+                    SaveEntity(pt);
+                    SendSystemToEntity(admin, $"{pt.Name} is now level {pt.Level}"
+                        + (!progMax && progAmount > progCap ? $" (capped at {progCap})." : "."));
+                    if (pt.Id != admin.Id)
+                        SendSystemToEntity(pt, $"Your level was set to {pt.Level} by staff.");
+                    break;
+                }
+
+                if (command == "sp")
+                {
+                    // SkillPoints is an int and SATURATES rather than wrapping — see AwardExp, where
+                    // that ceiling is a design decision, not a stopgap. Clamp at both ends so a
+                    // negative amount takes SP away without ever going below zero.
+                    int spBefore = pt.SkillPoints;
+                    pt.SkillPoints = progMax
+                        ? int.MaxValue
+                        : (int)Math.Clamp(pt.SkillPoints + progAmount, 0L, int.MaxValue);
+                    int spDelta = pt.SkillPoints - spBefore;
+
+                    SendStats(pt);
+                    SendLearned(pt);
+                    PushProgress(pt, false);
+                    SaveEntity(pt);
+                    SendSystemToEntity(admin,
+                        $"{pt.Name}: {spDelta:+#,##0;-#,##0;0} SP (now {pt.SkillPoints:#,##0}).");
+                    if (pt.Id != admin.Id && spDelta != 0)
+                        SendSystemToEntity(pt, spDelta > 0
+                            ? $"You received {spDelta:#,##0} SP."
+                            : $"{-spDelta:#,##0} SP was taken from you.");
+                    break;
+                }
+
+                // ---- /exp ----
+                if (progMax)
+                    pt.Exp = Math.Max(0, StatCalculator.ExpToNext(pt.Level) - 1);
+                else
+                    pt.Exp = Math.Max(0, pt.Exp + progAmount);
+
+                bool expLeveled = false;
+                while (pt.Level < progCap && pt.Exp >= StatCalculator.ExpToNext(pt.Level))
+                {
+                    pt.Exp -= StatCalculator.ExpToNext(pt.Level);
+                    pt.Level++;
+                    expLeveled = true;
+                }
+                // At the ceiling EXP parks at the bar's start — AwardExp's rule, kept here so the two
+                // paths cannot disagree. Say it out loud, or `/exp <name> max` on a capped character
+                // looks like it did nothing.
+                if (pt.Level >= progCap)
+                {
+                    pt.Exp = 0;
+                    SendSystemToEntity(admin,
+                        $"{pt.Name} is at the level ceiling ({progCap}) — EXP parks at 0 there.");
+                }
+
+                if (expLeveled) OnLevelUp(pt);
+                PushProgress(pt, expLeveled);
+                SaveEntity(pt);
+                SendSystemToEntity(admin,
+                    $"{pt.Name}: level {pt.Level}, {pt.Exp:#,##0} / {StatCalculator.ExpToNext(pt.Level):#,##0} EXP.");
+                if (pt.Id != admin.Id && !expLeveled)
+                    SendSystemToEntity(pt, "Your EXP was adjusted by staff.");
                 break;
             }
 
@@ -7948,11 +8104,27 @@ public class GameLoopService : BackgroundService
     ///
     /// <para>🔑 Same rule, same fallback as BL-71's buff threat, which prices a buff on the level its
     /// class learns it at for exactly this reason. A skill no class list owns — a mob spell, a scroll —
-    /// has no rung level, and only then does the caster's own stand in.</para></summary>
+    /// has no rung level, and only then does the caster's own stand in.</para>
+    ///
+    /// <para>🆕 2026-08-24 it drives the MAGIC-FAIL (fizzle) roll too, for damage spells and for the
+    /// uncontested debuffs — *"a dmg spell should fail if it's to low lvl … same as debuffs … if I hit
+    /// you with lvl 1 vamp that I have learned at lvl 14 it should stop be effective at some point"*.
+    /// So all three landing rolls in the game — fizzle, contested CC, buff threat — now read the same
+    /// number, and a nuke ladder decays with age exactly as a hold ladder does.</para></summary>
     private static int RungLevel(Entity caster, SkillDef def, int lvl)
     {
         int learn = ClassSkills.LearnLevelOf(def.Id, lvl, caster.Race, caster.BaseClass,
                                              caster.Archetype, caster.Discipline);
+        // 🔑 THEN THE BASE-CLASS TIER. `Cumulative` returns the CURRENT tier only — the 2nd-class list
+        // plus the 3rd-class one — so every skill bought on the base path before level 20 is invisible
+        // to it once you have an archetype, and the lookup above returns 0 for it. Without this second
+        // ask, the caster's own level would stand in for exactly the skills the rule is aimed at: his
+        // own example is *"lvl 1 vamp that I have learned at lvl 14"*, and Vampiric Bolt @14 is a BASE
+        // MAGE line. A base-tier skill is still "the level your class learns it at" — the tier it was
+        // learned on does not change what it is worth. Asked second so a class list that re-teaches the
+        // same id at its own level always wins.
+        if (learn == 0 && caster.Archetype is not null)
+            learn = ClassSkills.LearnLevelOf(def.Id, lvl, caster.Race, caster.BaseClass, null, null);
         return learn > 0 ? learn : caster.Level;
     }
 
@@ -9531,9 +9703,14 @@ public class GameLoopService : BackgroundService
             // resolver: 1.3^levelGap × the defender's anti-magic modifier × the CASTER'S OWN CHAIN
             // (MagicFailSelfMult — ×25 with a bow, divisible back out by a passive). See
             // StatCalculator.MagicFailChance.
+            // ⚠ The attacker level is the RUNG'S, not the caster's (owner 2026-08-24: *"the fizzle
+            // effect is based of spell.learned-lvl not caster.lvl vs enemy.lvl … if I learn 35 lvl
+            // spell at lvl 50 it should use the 35"*) — the same rule contested CC has had since
+            // 2026-08-19, extended here so an old rung decays for a nuke exactly as it does for a
+            // hold. See RungLevel.
             float fail = def.SureHit ? 0f
                        : target.Immune ? 1f
-                       : StatCalculator.MagicFailChance(caster.Level, target.Level,
+                       : StatCalculator.MagicFailChance(RungLevel(caster, def, lvl), target.Level,
                              target.MagicFailMod,
                              caster.MagicFailSelfMult,
                              target.MagicFailBonus);
@@ -9700,9 +9877,11 @@ public class GameLoopService : BackgroundService
             // BL-08 first, same rule as the contested branch above: a bounce is not a fizzle.
             if (!TryReflectDebuff(caster, target, def, lvl, doubledTicks, castName))
             {
+                // Rung level, not caster level — the same input the contested branch above uses, so a
+                // level-1 curse cast by a level-80 mage floors exactly like a level-1 hold does.
                 float fail = def.SureHit ? 0f
                            : target.Immune ? 1f
-                           : StatCalculator.MagicFailChance(caster.Level, target.Level,
+                           : StatCalculator.MagicFailChance(RungLevel(caster, def, lvl), target.Level,
                                  target.MagicFailMod,
                                  caster.MagicFailSelfMult,
                                  target.MagicFailBonus);

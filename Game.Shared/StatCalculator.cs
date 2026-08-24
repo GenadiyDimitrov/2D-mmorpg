@@ -757,6 +757,11 @@ public static class StatCalculator
 
     /// <summary>Probability a spell FIZZLES on the defender (fail = reduced damage / a debuff that
     /// doesn't land — never zero damage). See the block above for the formula.</summary>
+    /// <param name="attackerLevel">The level the SPELL counts as — since 2026-08-24 the caller passes
+    /// the RUNG'S learn level (<c>GameLoopService.RungLevel</c>), not the caster's own, so an old rung
+    /// decays as the caster outgrows it: *"if I learn 35 lvl spell at lvl 50 it should use the 35"*.
+    /// A spell no class list owns (a mob spell, a scroll, the practice dummy) still falls back to the
+    /// caster's level, because it has no rung to read.</param>
     /// <param name="defenderMod">Defender's magic-fail modifier: 1 normally, 2 with the tank's
     /// Anti-Magic passive.</param>
     /// <param name="weaponMod">Caster's weapon modifier: 1 trained,

@@ -586,9 +586,15 @@ public static partial class SkillCatalog
         // for holding no wand) was DELETED in the same pass. He forgoes a BONUS, which is the shape
         // every other mastery in the game already has.
 
-        // ---- Healer Weapon Mastery — replaces Spell Mastery. BLUNT ONLY, and no P.Atk at any rung.
+        // ---- Spellcaster Weapon Mastery — replaces Spell Mastery. BLUNT ONLY, and no P.Atk at any rung.
         //      FOURTEEN rungs now (his file runs the ladder to 74; it stopped at 64 on 2026-08-20
         //      because that was as far as the draft went).
+        //
+        //      ⚠ RENAMED 2026-08-24 in `healer 3rd.csv`, from "Healer Weapon Mastery" — the skill is
+        //      not healer-flavoured, it is what a 3rd-class CASTER's blunt does, and the nuker file
+        //      will want the same row. **The id stays `healer_weapon_mastery`**: skill ids are
+        //      append-only and a rename would strand every learned row in every saved character.
+        //      Display names are free to move, ids are not.
         //
         //      🔑 THE GATE IS THE TYPE `Blunt`, NOT a magic-weapon flag — his ruling: *"the healers
         //      weapon mastery can say blunt .. as both wand/staff are blunts .. that way a sword wont
@@ -596,7 +602,7 @@ public static partial class SkillCatalog
         //      choice"*. A `MagicWeaponOnly` flag was built first and removed the same day: Blunt
         //      leaves a plain mace WORKING, it just carries less M.Atk and rolls no caster attributes.
         //      A mastery that can refuse a weapon the type system says is fine is a wall, not a choice.
-        new(HealerWeaponMasterySkill, "Healer Weapon Mastery", BaseClass.Mage, SkillEffect.None,
+        new(HealerWeaponMasterySkill, "Spellcaster Weapon Mastery", BaseClass.Mage, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive, Replaces: new[] { SpellMastery },
             Description: "Passive. Divine power flows through a BLUNT weapon — wand, staff or mace: "
@@ -716,7 +722,7 @@ public static partial class SkillCatalog
             },
             Description: $"+{mpPerSecond} MP/s and −90% P.Def for 30s; ends on any damage taken.");
 
-    /// <summary>One rung of Healer Weapon Mastery, as his row writes it. <paramref name="MpReg"/> and
+    /// <summary>One rung of Spellcaster Weapon Mastery, as his row writes it. <paramref name="MpReg"/> and
     /// <paramref name="HpReg"/> are the BONUS (x2.3 in his file = 1.3 here).</summary>
     private readonly record struct WeaponRung(int MAtk, float Reuse, float Cast, float MpReg, float HpReg);
 
@@ -752,7 +758,7 @@ public static partial class SkillCatalog
         new(64, 150), new(68, 150), new(72, 180), new(75, 180), new(79, 180), new(83, 200), new(87, 200),
     };
 
-    /// <summary>One rung of Healer Weapon Mastery — the BLUNT slot only (wand, staff and mace all fold
+    /// <summary>One rung of Spellcaster Weapon Mastery — the BLUNT slot only (wand, staff and mace all fold
     /// to <c>WeaponType.Blunt</c> via <c>Base()</c>, 1H and 2H alike). NO P.Atk at any rung, which is the
     /// whole point of the split; a sword earns nothing here.</summary>
     private static WeaponMasteryProfile HealerWeapon(int mAtk, float reuse, float cast, float mpReg, float hpReg) =>

@@ -667,7 +667,7 @@ public static partial class SkillCatalog
         //  AutoLearnCoreSkills strips the id from characters that were auto-granted it. It is NOT retired-
         //  in-place like Weapon Proficiency below, because nothing Replaces it and no table grants it —
         //  a dangling id resolves to null and is skipped. The healer's magic-weapon lean now lives where
-        //  he put it: the BLUNT gate on the 3rd-class Healer Weapon Mastery, a BONUS you forgo rather
+        //  he put it: the BLUNT gate on the 3rd-class Spellcaster Weapon Mastery, a BONUS you forgo rather
         //  than a penalty you carry.)
 
         // Novice's Grace — display-only newbie protection (the level check does the real work; this just

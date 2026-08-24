@@ -162,24 +162,22 @@ public static partial class SkillCatalog
             },
             ArmorMasteryLevels: new[]
             {
-                // 🔑 mpWhenRestored IS A PERCENT since 2026-08-19 (owner) — "+19%" means any MP
-                // restore landing on this character is multiplied by 1.19. It was a flat "+N MP per
+                // 🔑 mpWhenRestored IS A PERCENT since 2026-08-19 (owner) — "+10%" means any MP
+                // restore landing on this character is multiplied by 1.10. It was a flat "+N MP per
                 // restore"; see StatMods.RestoreMpPct for why flat could not survive mana-over-time.
                 //
-                // THE CONVERSION IS HIS ANCHOR, MECHANICAL: every rung is the OLD FLAT × 0.75, which
-                // puts the top rung on ×1.60 — *"120+80 = 200 … 125x1.6 = 200 … a 60% increase is a
-                // good way to do so"*. Restore Spirit's own 120 at level 80 therefore delivers 192
-                // where it used to deliver 200: *"Nothing is lost."* The ladder keeps the flat
-                // version's exact shape (steps of ~4 then ~7.5), which is the "linear feel" he asked
-                // to preserve until he re-authors it with the mage pass.
-                //
                 // ⚠ RUNGS 1-4 MIRROR THE AUTHORED CSV (`docs/data/classes_skills_csv/nuker 2nd.csv`)
-                // — old flat 25/30/35/40 at character 20/25/30/35, now 19/23/26/30%. DO NOT RETUNE
-                // THEM HERE; that file is the owner's source of truth for the whole 20-35 band.
-                NukerRobe(pDef: 20, maxMp: 20, restorePct: 0.19f),
-                NukerRobe(pDef: 25, maxMp: 20, restorePct: 0.23f),
-                NukerRobe(pDef: 30, maxMp: 30, restorePct: 0.26f),
-                NukerRobe(pDef: 35, maxMp: 30, restorePct: 0.30f),
+                // and he RE-AUTHORED THEM ON 2026-08-24: **10 / 15 / 20 / 25%** at character
+                // 20/25/30/35. They were 19/23/26/30, which was never his number — it was the
+                // 2026-08-19 flat→percent conversion (old flat × 0.75) written into his file by us.
+                // He has replaced it with a round 5-point ladder that is a good deal smaller, in
+                // exactly the band where Restore Spirit's own number is smallest: an early nuker's
+                // mana now comes from the SKILL, not from the robe. DO NOT RETUNE THESE HERE; that
+                // file is the owner's source of truth for the whole 20-35 band.
+                NukerRobe(pDef: 20, maxMp: 20, restorePct: 0.10f),
+                NukerRobe(pDef: 25, maxMp: 20, restorePct: 0.15f),
+                NukerRobe(pDef: 30, maxMp: 30, restorePct: 0.20f),
+                NukerRobe(pDef: 35, maxMp: 30, restorePct: 0.25f),
                 // Rungs 5-8 (@40/50/60/70) are OURS, in the band that has no CSV yet — the same
                 // precedent as the bolt ladder above 35 (ClassSkillTables.Common.cs). They carry his
                 // 2026-08-07 ruling "mpRestore to a +80" (now 60%), which is a LATE-LEVEL number: it
@@ -187,6 +185,10 @@ public static partial class SkillCatalog
                 // ⚠ Only the RESTORE value grows. pDef and maxMp stay frozen at the rung-4 values on
                 // purpose — inventing defensive growth he never authored would quietly re-balance the
                 // robe. When the 40+ nuker CSV lands, these four rungs are the ones to replace.
+                // ⚠ NOT touched by his 2026-08-24 re-authoring of rungs 1-4 — the 40+ endpoint is a
+                // separate ruling of his ("+200 MP for −200 HP" at 80) and still stands. The step from
+                // rung 4 to rung 5 is therefore 25→38 now instead of 30→38: still monotonic, just a
+                // steeper hand-off at 40, and the 40+ CSV is what resolves it.
                 NukerRobe(pDef: 35, maxMp: 30, restorePct: 0.38f),
                 NukerRobe(pDef: 35, maxMp: 30, restorePct: 0.45f),
                 NukerRobe(pDef: 35, maxMp: 30, restorePct: 0.53f),

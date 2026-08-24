@@ -261,7 +261,7 @@ public static partial class SkillCatalog
                 CasterMastery(new PassiveEffect(MagAtk: 12, PhysAtk: 10, CastSpeedPct: 0.05f, CooldownPct: 0.10f, MpRegenPct: 0.50f, HpRegenPct: 0.10f)),
                 // Level 5 = the level-40 row — THE BUFFER'S since 2026-08-20 (`buffer 3rd.csv`: *"Continue
                 // the line"*). It was authored off `healer 3rd.csv`, but the healer has replaced this
-                // skill with Healer Weapon Mastery, so the P.Atk half now belongs to the class that
+                // skill with Spellcaster Weapon Mastery, so the P.Atk half now belongs to the class that
                 // actually swings. Note the jump: +23 M.Atk against level 4's +12 — a 3rd class is where
                 // a caster's damage actually moves. ⚠ Reuse is 15% here, not the 10% of rungs 1-4: both
                 // his 40-level rows say 15%, and the code had carried 10% since the rung was written.
