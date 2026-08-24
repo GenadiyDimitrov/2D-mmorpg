@@ -799,17 +799,66 @@ public static class StatCalculator
     /// InterruptPower subtracts. Tune the coefficients here.</summary>
     public static int InterruptResist(int wit, int level) => wit * 2 + level;
 
-    /// <summary>Per-hit chance to interrupt a cast. base + attacker power − caster
-    /// resist, clamped. With power=0 and a normal caster, interrupts are
-    /// occasional; high InterruptPower (an interrupt skill) makes it reliable;
-    /// high InterruptDefense (an ultimate) makes it ~never.</summary>
-    public static float InterruptChance(int casterResist, int skillDefense, int attackerPower)
+    // ----- INTERRUPT: A DPS CONTEST (owner ruling 2026-08-24, `BL-91`) --------------------------
+    //
+    // *"the interrupt is some dmg treashold per skill lvl/dmg-dealer-lvl to interrupt a spell cast ->
+    //  we can make it chance per spell to interrupt 33% (at same lvl spell vs dmgDealer) - We need to
+    //  do some base dps to interrupt if the target does dmg with higher dps (base_dmg/base_cast+
+    //  base_reuse) vs the casted spell DPS - then high atack speed low dmg will interrupt on average
+    //  same amount as high dmg low as... and the average should be 33%"*
+    //
+    // 🔑 THE INVARIANT HE IS ASKING FOR IS PER-CAST, NOT PER-HIT. Over one full cast the EXPECTED
+    // number of interrupts must be the same whether it was delivered as one big hit or eight small
+    // ones. That forces the per-hit chance to be proportional to that hit's SHARE of the damage:
+    //
+    //     hits during the cast   N = castSeconds / attackerCycle
+    //     wanted total           Σp = InterruptPerCast × attackerDps / spellDps
+    //     therefore              p  = InterruptPerCast × hitDamage / (spellDps × castSeconds)
+    //
+    // …and the attacker's DPS cancels out of the per-hit formula entirely. What is left is beautifully
+    // literal: **the chance one hit breaks a cast is how big that hit is next to everything the spell
+    // itself would produce in the time it takes to cast.** Fast-and-weak and slow-and-heavy land on the
+    // same total by construction, which is exactly his sentence, and out-DPSing the caster raises the
+    // total in proportion, which is the rest of it.
+    //
+    // 🔑 PARITY IS EXACTLY 33%. Equal DPS gives Σp = InterruptPerCast, and the stat term below is a
+    // straight RATIO of two identical formulas, so equal WIT and equal level is ×1 with no rounding —
+    // the same "parity is exactly ×1" rule CcLevelBase is built on.
+    //
+    // 🔴 WHAT THIS REPLACED WAS DEAD. The old model was `0.25 + (power − resist)/100` with
+    // `resist = wit·2 + level` and no level term on the attacker's side, so a level-60 caster sat at
+    // resist 100 against an attacker power of 40 and EVERY interrupt in the game clamped to zero. The
+    // only thing that ever interrupted anything was Disrupt's InterruptPower 99999 — which still works
+    // here, unchanged, because 99999 dwarfs any defender's points and the clamp does the rest.
+
+    /// <summary>Interrupt POINTS for one side of the contest — WIT and level, the same formula for the
+    /// attacker and the defender so that parity is exactly ×1. Identical to the old
+    /// <see cref="InterruptResist"/> on purpose: it IS that number, now read from both ends.</summary>
+    public static int InterruptPoints(int wit, int level) => wit * 2 + level;
+
+    /// <summary>Base probability that ONE FULL CAST is interrupted, when the attacker's DPS equals the
+    /// casted spell's DPS and neither side has an interrupt stat edge. His number: *"the average should
+    /// be 33%"*.</summary>
+    public const float InterruptPerCast = 0.33f;
+
+    /// <summary>Per-HIT chance to interrupt a cast. See the block above for the derivation.</summary>
+    /// <param name="hitDamage">Damage this single hit actually dealt to the caster.</param>
+    /// <param name="spellCastValue">`spellDps × castSeconds` for the cast in progress — i.e. what the
+    /// spell itself is worth over the time it takes to cast. Computed ONCE at cast start and parked on
+    /// the entity, never per hit. Zero or less disables the interrupt (nothing to measure against).</param>
+    /// <param name="attackerPoints">Attacker's <see cref="InterruptPoints"/> plus the striking skill's
+    /// <c>InterruptPower</c>.</param>
+    /// <param name="defenderPoints">Caster's <see cref="InterruptPoints"/> plus the casting skill's
+    /// <c>InterruptDefense</c> plus any interrupt-resist buff (Resolve).</param>
+    /// <param name="skillMult">The striking skill's <c>InterruptMult</c> — his *"Higher chance to
+    /// interrupt enemy casts"* column. 1 = ordinary.</param>
+    public static float InterruptChance(float hitDamage, float spellCastValue,
+                                        int attackerPoints, int defenderPoints, float skillMult = 1f)
     {
-        // Scale the stat difference into a probability. 0 diff ≈ 25% baseline.
-        float baseChance = 0.25f;
-        float diff = (attackerPower) - (casterResist + skillDefense);
-        float chance = baseChance + diff * 0.01f;
-        return Math.Clamp(chance, 0f, 1f);
+        if (spellCastValue <= 0f || hitDamage <= 0f) return 0f;
+        float share = hitDamage / spellCastValue;
+        float stat  = defenderPoints <= 0 ? 1f : attackerPoints / (float)defenderPoints;
+        return Math.Clamp(InterruptPerCast * share * stat * Math.Max(0f, skillMult), 0f, 1f);
     }
 
     /// <summary>Chance a contested debuff (slow/stun/root/fear/…) LANDS: the attacker's

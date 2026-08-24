@@ -8279,7 +8279,7 @@ public class GameLoopService : BackgroundService
             ApplyDamage(victim, dmg, attacker);
         }
         // Contested CC (Root/Stun/Slow): the control payload.
-        if ((effect & SkillEffect.ContestCc) != 0 && !victim.Dead)
+        if (IsContestedDebuff(def, effect) && !victim.Dead)
         {
             int atkStat = attacker.EffectiveAtk;
             int defStat = def.DebuffSchool == DebuffSchool.Magical ? victim.EffectiveSpt : victim.EffectiveCon;
@@ -8287,6 +8287,7 @@ public class GameLoopService : BackgroundService
                 ? 0f
                 : StatCalculator.DebuffLandChance(atkStat, defStat,
                                                   RungLevel(attacker, def, lvl), victim.Level);
+            land = ApplyDebuffLandMod(land, def, lvl);   // BL-90
             land *= 1f - victim.CcResist;
             land *= 1f - SchoolCcResist(victim, def.DebuffSchool);
             if (_rng.NextDouble() < land)
@@ -9318,6 +9319,12 @@ public class GameLoopService : BackgroundService
         caster.CastTicksRemaining = Math.Max(2,
             (int)(def.CastTicksAt(Math.Max(1, caster.SkillLevelOf(def.Id))) * speedMult));
 
+        // BL-91: what this cast is WORTH over its own cast time, the denominator every interrupt roll
+        // against it will divide by. Once, here — never per incoming hit. See the field.
+        caster.CastingInterruptReference =
+            CastInterruptReference(caster, def, Math.Max(1, caster.SkillLevelOf(def.Id)),
+                                   caster.CastTicksRemaining);
+
         // Charge the up-front slice — 20% of the EFFECTIVE total for every skill (the remaining 80%
         // lands with the cast). The gate in HandleCastSkill already proved he can afford all of it, so
         // the Math.Min is only a floor against an MP drain landing between the gate and here.
@@ -9668,7 +9675,7 @@ public class GameLoopService : BackgroundService
                 BroadcastCombat(caster, target, damage, outcome, castName);
                 ApplyDamage(target, damage, caster);
                 ReflectPhysicalSkill(caster, target, damage, castName);   // BL-07
-                TryInterruptCast(target, def.InterruptPower);
+                TryInterruptCast(target, def.InterruptPower, damage, caster, def.InterruptMult);
                 if (damage > 0) TryOnHitProcs(caster);   // the skill path's half of the proc trigger
             }
             }
@@ -9733,7 +9740,7 @@ public class GameLoopService : BackgroundService
             {
                 damage = Math.Max(1, damage / 3);
                 ApplyDamage(target, damage, caster, toMp: toMp);
-                TryInterruptCast(target, magicInterrupt);
+                TryInterruptCast(target, magicInterrupt, damage, caster, def.InterruptMult);
                 BroadcastCombat(caster, target, damage, CombatOutcome.Fail, castName);
             }
             else
@@ -9752,7 +9759,7 @@ public class GameLoopService : BackgroundService
                     BroadcastCombat(caster, target, damage, CombatOutcome.Hit, castName);
                 }
                 ApplyDamage(target, damage, caster, toMp: toMp);
-                TryInterruptCast(target, magicInterrupt);
+                TryInterruptCast(target, magicInterrupt, damage, caster, def.InterruptMult);
             }
 
             // Vampiric: heal the caster for a fraction of the magic damage dealt
@@ -9842,7 +9849,7 @@ public class GameLoopService : BackgroundService
             && _rng.NextDouble() < StatCalculator.PhysicalDoubleChance(caster.AtkStat);
         int doubledTicks = durationDoubled ? def.DurationTicks * 2 : -1;
 
-        if ((effect & SkillEffect.ContestCc) != 0)
+        if (IsContestedDebuff(def, effect))
         {
             offensive = true;
             // BL-08: the reflect roll comes FIRST — before the contest, because a bounced debuff is
@@ -9857,6 +9864,8 @@ public class GameLoopService : BackgroundService
                     ? 0f
                     : StatCalculator.DebuffLandChance(atkStat, defStat,
                                                       RungLevel(caster, def, lvl), target.Level);
+                // BL-90: the PER-SKILL multiplier, before the target's own resistances.
+                land = ApplyDebuffLandMod(land, def, lvl);
                 land *= 1f - target.CcResist;   // gear/buff CC resistance lowers the land chance
                 land *= 1f - SchoolCcResist(target, def.DebuffSchool);   // …and the per-school blessing
                 if (_rng.NextDouble() < land)
@@ -9875,13 +9884,14 @@ public class GameLoopService : BackgroundService
             }
         }
 
-        // ---- Debuffs (defence curse / anti-heal / root) — can fizzle like a spell ----
-        //      (Contested CC above is excluded so it doesn't double-resolve.)
+        // ---- Debuffs (defence curse / anti-heal) — can fizzle like a spell ----
+        //      (Everything CONTESTED above is excluded so it doesn't double-resolve.)
         // The Category arm is the debuff twin of the buff gate below: a curse whose payload is a FIELD
-        // (Mana Strain's MP-cost multiplier) has no AnyDebuff flag to be recognised by. It is still
-        // excluded when the skill carries contested CC, so nothing resolves twice.
-        if ((effect & SkillEffect.AnyDebuff & ~SkillEffect.ContestCc) != 0
-            || (def.Category == SkillCategory.Debuff && (effect & SkillEffect.ContestCc) == 0))
+        // (Mana Strain's MP-cost multiplier) has no AnyDebuff flag to be recognised by.
+        // ⚠ THE EXCLUSION IS `IsContestedDebuff`, NOT THE ContestCc FLAG. Both arms used to test the
+        // flag mask alone, which is exactly how four skills that declare a DebuffSchool ended up on
+        // the fizzle roll — see IsContestedDebuff for the whole story.
+        else if ((effect & SkillEffect.AnyDebuff) != 0 || def.Category == SkillCategory.Debuff)
         {
             offensive = true;
             // BL-08 first, same rule as the contested branch above: a bounce is not a fizzle.
@@ -9895,6 +9905,12 @@ public class GameLoopService : BackgroundService
                                  target.MagicFailMod,
                                  caster.MagicFailSelfMult,
                                  target.MagicFailBonus);
+                // BL-90: the per-skill tier, expressed on the SAME quantity it means on the contested
+                // path — the probability the debuff STICKS. `1 − fail` is that probability here, so
+                // scaling it and inverting keeps one number meaning one thing on both paths. A ×1
+                // (SureHit included) leaves the arithmetic exactly as it was.
+                float landMod = def.DebuffLandModAt(lvl);
+                if (landMod != 1f) fail = 1f - (1f - fail) * Math.Clamp(landMod, 0f, 1f);
                 if (_rng.NextDouble() < fail)
                 {
                     BroadcastCombat(caster, target, 0, CombatOutcome.Fail, castName);
@@ -10993,7 +11009,7 @@ public class GameLoopService : BackgroundService
                 }
             }
             // Rogues carry magic-interrupt power on basic attacks; others = 0.
-            TryInterruptCast(target, attacker.BasicAttackInterruptPower);
+            TryInterruptCast(target, attacker.BasicAttackInterruptPower, damage, attacker);
         }
 
         Retaliate(target, attacker);
@@ -13648,7 +13664,99 @@ public class GameLoopService : BackgroundService
         (c.HasFlag(TargetCondition.Stunned) && t.IsStunned) ||
         (c.HasFlag(TargetCondition.Feared)  && t.IsFeared);
 
-    private void TryInterruptCast(Entity target, int attackerInterruptPower)
+    /// <summary>Apply a skill's authored `(success chance xN)` to a contested land chance (`BL-90`).
+    ///
+    /// <para>The multiplier goes on AFTER the <see cref="StatCaps.CcLandMin"/>/<see cref="StatCaps.CcLandMax"/>
+    /// clamp, and only the CEILING is re-applied. That asymmetry is deliberate: the 10% floor exists
+    /// because a stat CONTEST should never be hopeless — you can always get lucky against something
+    /// bigger — whereas a ×0.5 is the skill saying it is unreliable BY DESIGN, and re-flooring it would
+    /// quietly delete his number at exactly the level gaps where it matters most. The ceiling stays
+    /// because "nothing is ever a certainty" is a rule about the game, not about the contest.</para></summary>
+    private static float ApplyDebuffLandMod(float land, SkillDef def, int lvl)
+    {
+        float mod = def.DebuffLandModAt(lvl);
+        return mod == 1f ? land : Math.Clamp(land * mod, 0f, StatCaps.CcLandMax);
+    }
+
+    /// <summary>Does this skill's debuff land on the CONTESTED roll (<see cref="StatCalculator.DebuffLandChance"/>,
+    /// ~50% at parity) rather than the fizzle roll (<see cref="StatCalculator.MagicFailChance"/>, ~99%)?
+    ///
+    /// <para>🔑 TWO WAYS IN, AND THE SECOND ONE WAS MISSING UNTIL 2026-08-24. A `ContestCc` effect flag
+    /// (Slow/Stun/Fear/Root/Bleed/Poison/Venom) has always routed here. But a skill can also DECLARE
+    /// itself contested by setting <see cref="DebuffSchool"/> — the enum's own documentation says
+    /// *"None = not a contested debuff"* — and that declaration was never read. Armor Break, Weapon
+    /// Break, Gravity and Mana Strain all set it, all said *"Contested ATK vs SPT"* on their cards, and
+    /// all silently took the fizzle roll instead, landing ~99% of the time.</para>
+    ///
+    /// <para>It surfaced through his `BL-90` numbers: *"armor/weapon break + gravity … should be 75% at
+    /// parity (x1.5) and the other should be 25% at parity (x0.5)"*. ×1.5 only reaches 75% off a 50%
+    /// base, so his arithmetic only closes on the contested curve — the multiplier he was asking for
+    /// could not exist without this fix.</para>
+    ///
+    /// <para>⚠ The two are OR'd, never overlapping in effect: a skill with both a ContestCc flag and a
+    /// school resolves once, here. The `else if` on the fizzle branch is what guarantees that.</para></summary>
+    private static bool IsContestedDebuff(SkillDef def, SkillEffect effect) =>
+        (effect & SkillEffect.ContestCc) != 0 || def.DebuffSchool != DebuffSchool.None;
+
+    /// <summary>`spellDps × castSeconds` for a cast about to start — the interrupt contest's
+    /// denominator (`BL-91`). His definition of a spell's DPS is verbatim
+    /// <c>base_dmg / (base_cast + base_reuse)</c>, so this is that, multiplied back up by the cast time.
+    ///
+    /// <para>🔑 THE SPELL IS PRICED AGAINST THE CASTER'S OWN DEFENCES. The incoming hit it will be
+    /// compared with has already been mitigated by the caster's armour, so measuring the spell against
+    /// a target as tough as the caster puts both numbers on ONE yardstick. Any other reference (a mob's
+    /// defence, none at all) would make the ratio mean something different for every match-up.</para>
+    ///
+    /// <para>⚠ THE BUFF/UTILITY FALLBACK IS INVENTED AND IS HIS TO RULE. A cast with no damage and no
+    /// heal — a buff, a resurrection, a teleport — has no throughput to divide by, and zero would make
+    /// it uninterruptible. It is priced at the caster's <c>EffectiveMagicAttack</c>, which is merely a
+    /// never-zero, level-scaled number. Nothing about it is measured.</para></summary>
+    private static float CastInterruptReference(Entity caster, SkillDef def, int lvl, int castTicks)
+    {
+        if (def.FragileCast) return 0f;   // cancelled by any damage anyway; never rolled
+
+        var effect = def.Effect;   // the UNION for a stacking skill; good enough for a yardstick
+        float value;
+        if ((effect & SkillEffect.MagicDamage) != 0)
+        {
+            var (flat, mod) = def.MagicDamageAt(lvl);
+            value = StatCalculator.MagicDamageFM((int)caster.EffectiveMagicAttack, flat, mod,
+                                                 (int)caster.EffectiveMagicDefence, caster.MagicDefCoef);
+        }
+        else if ((effect & SkillEffect.PhysicalDamage) != 0)
+        {
+            var (flat, mod) = def.PhysDamageAt(lvl);
+            value = StatCalculator.PhysicalDamageFM((int)caster.EffectiveAttack, flat, mod,
+                                                    (int)caster.EffectiveDefence);
+        }
+        else if ((effect & SkillEffect.Heal) != 0 || def.Category == SkillCategory.Heal)
+        {
+            value = def.PowerAt(lvl);   // a heal's throughput IS its power — no mitigation to undo
+        }
+        else
+        {
+            value = caster.EffectiveMagicAttack;   // ⚠ the invented fallback, see the summary
+        }
+        if (value <= 0f) value = Math.Max(1f, caster.EffectiveMagicAttack);
+
+        float castSeconds  = castTicks * GameConstants.TickSeconds;
+        float reuseSeconds = def.CooldownTicks * GameConstants.TickSeconds;
+        float cycle = castSeconds + reuseSeconds;
+        if (cycle <= 0f) return 0f;
+        return value / cycle * castSeconds;   // = spellDps × castSeconds
+    }
+
+    /// <summary>Roll one hit against a cast in progress (`BL-91`). See
+    /// <see cref="StatCalculator.InterruptChance"/> for the model and why it replaced a formula that
+    /// clamped to zero at every level.</summary>
+    /// <param name="hitDamage">What this hit actually took off the caster.</param>
+    /// <param name="attackerInterruptPower">The striking skill's flat <c>InterruptPower</c> (Disrupt's
+    /// 99999 still guarantees a break) plus, for a magic hit, the attacker's WIT-driven bonus.</param>
+    /// <param name="attacker">Whose points enter the contest. Null falls back to parity, so a source
+    /// with no attacker (a DoT tick, a trap) neither gains nor loses on the stat term.</param>
+    /// <param name="skillMult">The striking skill's <c>InterruptMult</c>.</param>
+    private void TryInterruptCast(Entity target, int attackerInterruptPower,
+                                  int hitDamage = 0, Entity? attacker = null, float skillMult = 1f)
     {
         if (target.CastingSkillId is null)
             return;
@@ -13657,9 +13765,21 @@ public class GameLoopService : BackgroundService
             return;
 
         // Fragile casts (Return) are cancelled by ANY damage — no interrupt contest.
-        float chance = def.FragileCast ? 1f
-            : StatCalculator.InterruptChance(
-                target.InterruptResist, def.InterruptDefense, attackerInterruptPower);
+        float chance;
+        if (def.FragileCast)
+        {
+            chance = 1f;
+        }
+        else
+        {
+            // Both sides read the SAME formula, which is what makes parity exactly x1.
+            int defenderPoints = target.InterruptResist + def.InterruptDefense;
+            int attackerPoints = attackerInterruptPower
+                + (attacker is null ? defenderPoints
+                   : StatCalculator.InterruptPoints((int)attacker.EffectiveWit, attacker.Level));
+            chance = StatCalculator.InterruptChance(hitDamage, target.CastingInterruptReference,
+                                                    attackerPoints, defenderPoints, skillMult);
+        }
         if (_rng.NextDouble() < chance)
         {
             CancelCast(target, startCooldown: false);

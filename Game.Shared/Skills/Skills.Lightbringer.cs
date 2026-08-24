@@ -268,8 +268,10 @@ public static partial class SkillCatalog
             MpCost: 48, CastTicks: 40, CooldownTicks: 40, Range: 600, Power: 0,
             DurationTicks: 600, BuffKey: "mana_strain", Rank: 1,
             DebuffSchool: DebuffSchool.Magical, Category: SkillCategory.Debuff, SpCost: 74000,
+            // his healer CSV: "(success chance x0.5)" = 25% at parity. Contested via DebuffSchool.
+            DebuffLandMod: 0.5f,
             NeverAuto: true,
-            Description: "For 60s every skill the target uses costs far more MP. Contested ATK vs SPT.",
+            Description: "For 60s every skill the target uses costs far more MP.",
             Levels: HealerRungs(3, 11, (i, sp) =>
             {
                 float[] pct = { 1.0f, 1.1f, 1.2f, 1.3f, 1.4f, 1.5f, 1.6f, 1.7f, 1.8f, 1.9f, 2.0f };
@@ -416,8 +418,7 @@ public static partial class SkillCatalog
             {
                 new(SkillEffect.DebuffAtkSpeed, 0.07f), new(SkillEffect.DebuffCastSpeed, 0.07f),
             },
-            Description: "Weighs an enemy down for 30s: slower attacks AND slower casting. "
-                       + "Contested ATK vs SPT.",
+            Description: "Weighs an enemy down for 30s: slower attacks AND slower casting.",
             // ⚠ ONE NUMBER FOR BOTH CHANNELS since his 2026-08-20 edit (*"changed values"*). It used to
             // be −23% attack / −12% cast at level 1; the whole ladder is now 7% → 23% on both.
             // ⚠ It USED TO FLATTEN at 64 — 23% repeated for the last six rungs. He ruled that shape a
@@ -462,6 +463,7 @@ public static partial class SkillCatalog
         new(LbElfBind, "Bind", BaseClass.Mage, SkillEffect.Root,
             MpCost: 35, CastTicks: 25, CooldownTicks: 50, Range: 600, Power: 0,
             DurationTicks: 300, BuffKey: "root", Rank: 1,
+            DebuffLandMod: 0.7f,   // his healer CSV: "(success chance x0.7)"
             DebuffSchool: DebuffSchool.Magical, Category: SkillCategory.Debuff, SpCost: 36000,
             Description: "Holds an enemy in place for 30s. Contested ATK vs SPT.",
             // ⚠ NOTHING BUT THE PRICE MOVES. A hold is a hold — 30 seconds at rung 1 and at rung 14 —
@@ -533,12 +535,12 @@ public static partial class SkillCatalog
             MpCost: 35, CastTicks: 25, CooldownTicks: 50, Range: 600, Power: 0,
             DurationTicks: 300, BuffKey: "armor_break", Rank: 1,
             DebuffSchool: DebuffSchool.Magical, Category: SkillCategory.Debuff, SpCost: 36000,
+            DebuffLandMod: 1.5f,   // his healer CSV: "(success chance x1.5)" = 75% at parity
             Magnitudes: new EffectMagnitude[]
             {
                 new(SkillEffect.DebuffDef, 0.10f), new(SkillEffect.BuffMagicDef, -0.05f),
             },
-            Description: "Shatters an enemy's guard for 30s: less P.Def and less M.Def. "
-                       + "Contested ATK vs SPT.",
+            Description: "Shatters an enemy's guard for 30s: less P.Def and less M.Def.",
             // 🔑 M.DEF IS EXACTLY HALF P.DEF AT EVERY RUNG. That identity is what resolved two of his
             // 2026-08-20 defects: the ladder repeated 30/15 for the last five rungs (fixed by continuing
             // the +2 stride to 38/19), and the @56 row read 18/10 where the half-rule says 9 — which was
@@ -562,8 +564,9 @@ public static partial class SkillCatalog
             MpCost: 58, CastTicks: 25, CooldownTicks: 50, Range: 600, Power: 0,
             DurationTicks: 300, BuffKey: "weapon_break", Rank: 1,
             DebuffSchool: DebuffSchool.Magical, Category: SkillCategory.Debuff, SpCost: 170000,
+            DebuffLandMod: 1.5f,   // his healer CSV: "(success chance x1.5)" = 75% at parity
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.DebuffAtk, 0.09f) },
-            Description: "Blunts an enemy's weapon and their magic alike for 30s. Contested ATK vs SPT.",
+            Description: "Blunts an enemy's weapon and their magic alike for 30s.",
             Levels: new[]
             {
                 WeaponBreakRung(0.09f, mp: 58, sp: 170000),
@@ -668,6 +671,7 @@ public static partial class SkillCatalog
         new(LbElfWarden, "Warding Step", BaseClass.Mage, SkillEffect.Root | SkillEffect.Detaunt,
             MpCost: 30, CastTicks: 6, CooldownTicks: 120, Range: 500, Power: 0,
             DurationTicks: 80, BuffKey: "root", Rank: 1, DebuffSchool: DebuffSchool.Magical,
+            DebuffLandMod: 0.5f,   // BL-90: a MAGICAL hold, his general "x0.5". Physical ones stay x1 (CON saves).
             Category: SkillCategory.Debuff, SpCost: 6000,
             Description: "Holds an enemy in place for 8s and sheds the caster's aggro "
                        + "from nearby foes (they look elsewhere)."),

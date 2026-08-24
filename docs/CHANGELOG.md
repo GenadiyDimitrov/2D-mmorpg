@@ -7,12 +7,108 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.82.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.83.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-08-24 (latest) — 0.82.0: a dungeon is a CORRIDOR now, the gate lands you at its mouth, and a Scroll of Return goes to a town
+## 2026-08-24 (latest) — 0.83.0: a debuff has its own SUCCESS RATE, interrupt becomes a DPS contest, and four skills stop lying about being contested
+
+Three asks, then three rulings on the first pass's answers. What follows is the ruled version.
+
+**1. `SkillDef.DebuffLandMod` — ONE FLOAT, DEFAULT 1, PER SKILL AND PER RUNG.** *"DebuffLandMod should be
+floating one value - default 1"*. A first pass gave it four named tiers in `StatCaps`; he replaced them
+with a plain float and authored the values themselves into the CSVs' DESCR column as
+`(success chance x1.5)`. That is the right home — the number belongs to the skill, in his file, like
+every other authored magnitude. `SkillLevel.DebuffLandMod` (0 = inherit) carries the per-rung half.
+
+It multiplies **the probability the debuff sticks**, on whichever roll decided it, and never touches
+damage or interrupt — his *"interrupt unaffected"*.
+
+**2. 🔑 THE ROUTING BUG HIS ARITHMETIC EXPOSED.** *"armor/weapon break + gravity + Arcane/Fros/Pyro
+blasts(nuker 3rd) should be 75% at parity (x1.5) and the other should be 25% at parity (x0.5)."*
+
+×1.5 only reaches 75% off a **50%** base. 50% is the CONTESTED curve; the fizzle path is ~99%. So his own
+numbers said those skills must be contested — and they were not. **Armor Break, Weapon Break, Gravity and
+Mana Strain each set `DebuffSchool.Magical`, each printed *"Contested ATK vs SPT"* on the skill card, and
+each took the fizzle roll anyway**, because the branch tested the effect-FLAG mask (`ContestCc`) and never
+read the school the author had declared. `DebuffSchool`'s own documentation has said *"None = not a
+contested debuff"* the whole time; nothing read it.
+
+`GameLoopService.IsContestedDebuff` now reads both, and the fizzle branch became an `else if` so nothing
+can resolve twice. Exactly four skills move, and they are precisely the four whose descriptions already
+claimed to be contested: **~99% → 75% / 75% / 50% / 25%** at parity.
+
+⚠ This is the change most likely to be felt in play. Armor Break used to land nine times in ten.
+
+**3. THE VALUES, FROM HIS CSVs.** Armor Break ×1.5 · Weapon Break ×1.5 · Gravity ×1 · Bind ×0.7 · Mana
+Strain ×0.5. From his general rule, MAGICAL only: Entangling Roots, Warding Step ×0.5. ⚠ **His message and
+his CSV disagree about Gravity** — the message groups it with the ×1.5 set, all fourteen authored rows say
+`x1`. The CSV won.
+
+🔑 **PHYSICAL DEBUFFS STAY ×1** — his narrowing ruling in the same pass: *"physical debuffs should be x1
+for now .. Con saves .. we deside later"*. The physical school already contests **CON**, which a fighter
+really carries, where the magical one contests SPT, which a mage has given up; taxing both would
+double-charge the physical side. Shield Stun, Shield Bash, Stay! and Terrifying Roar went back to ×1.
+
+**4. `--check` READS THE NEW COLUMN — 119 authored rows.** It needed a carve-out that is worth naming:
+`Descr.cs` strips every parenthetical as commentary (a rule earned from four false alarms), and his
+multiplier lives *inside* brackets. Without lifting it out first, the one number this whole feature is
+about would have been the only authored value in the files that nothing verified. Proven by breaking
+Armor Break to ×1.4 and watching it report.
+
+**5. 🔴 INTERRUPT WAS DEAD, AND IS NOW A DPS CONTEST.** He asked for the measurement first; the
+measurement said the baseline was zero. The old rule was `0.25 + (power − resist)/100` with
+`resist = wit·2 + LEVEL` and **no level term on the attacker's side** — measured mage vs mage at parity,
+**5% / 0% / 0% / 0%** at levels 20/40/60/80. One authored `InterruptPower` in the whole catalog (Disrupt,
+99999), zero authored `InterruptDefense`. Nothing had ever interrupted anything.
+
+His replacement: *"chance per spell to interrupt 33% … high atack speed low dmg will interrupt on average
+same amount as high dmg low … the average should be 33%"*.
+
+🔑 **Requiring the per-cast total to be independent of cadence FORCES the per-hit chance to be that hit's
+share of the damage — and then the attacker's DPS cancels out of the formula entirely:**
+
+```
+p(hit) = 0.33 × hitDamage / (spellDps × castSeconds) × attackerPoints/defenderPoints × InterruptMult
+```
+
+So the chance one hit breaks a cast is literally *how big that hit is next to everything the spell itself
+would produce in the time it takes to cast*. `spellDps = base_dmg / (base_cast + base_reuse)` is his
+definition verbatim, priced against the **caster's own defences** so the incoming hit and the spell sit on
+one yardstick, and computed once at cast start rather than per incoming swing. `points = wit·2 + level` on
+**both** sides, so parity is exactly ×1 — the same rule `CcLevelBase` is built on. Disrupt is unchanged.
+
+Verified: three attackers with identical DPS and cadences of 2s / 1s / 0.25s all come out at **28.9%** over
+one cast. The invariant holds exactly.
+
+⚠ `Entity.MagicInterruptBonus` no longer seeds itself with `wit·2`. Both sides now read WIT through
+`InterruptPoints`, so the old seed would have counted a caster's WIT twice and broken the parity property.
+The field now means what its name says: the buff/passive bonus on top.
+
+**6. TWO QUESTIONS THE MEASUREMENT ASKS BACK** — both on `BL-91`, both printed by the tool:
+**real builds land at 58-94% per cast** (his parity is *DPS* parity, and a geared fighter out-DPSes a
+mage's nuke), and **Resolve's +54 decays** from a 47% cut at level 20 to 30% at 80, because a flat buff on
+a ratio always shrinks.
+
+**7. `BalanceMatrix` gained `=== DEBUFF SUCCESS ===`, `=== INTERRUPT ===` and `=== BALANCING RESOLVE ===`,
+the last on his ask — Elemental Blast and Thunderstorm against a tank, a warrior and duals, basic attack
+and best skill, with and without Resolve.
+
+🔴 **AND IT FOUND SOMETHING.** Thunderstorm is **100% interrupted by everything**, because his rule prices
+a cast against its OWN DPS and a 300-second reuse makes that DPS almost nothing. The big rare nuke is the
+easiest thing in the game to break. If a long-cooldown spell should instead be HARDER to break, the
+reference has to be the spell's DAMAGE, not its DPS — his call, and it is a one-line change.
+
+**8. EIGHT CSVs REGROUPED PER SKILL.** *"please redo the Healer 3rd and all 1st/2nds to be per skill not
+per level organized (to be like buffer/nuker)"*. `healer 3rd` and all seven 1st/2nd files: level banners
+out, a `----Name----` banner per skill with its rungs ascending. **Row text byte-identical** — verified by
+comparing the sorted multiset of non-banner rows before and after, then `--check` green.
+
+⚠ **A new APK is owed** for the corrected skill descriptions, which the client reads from its own copy of
+`Game.Shared.dll`. No wire change — protocol stays 26.
+
+## 2026-08-24 — 0.82.0: a dungeon is a CORRIDOR now, the gate lands you at its mouth, and a Scroll of Return goes to a town
 
 Three finds in the Hollow Crypt, and the third is a shape.
 

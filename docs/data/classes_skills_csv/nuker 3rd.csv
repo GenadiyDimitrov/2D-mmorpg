@@ -75,6 +75,18 @@ LEARN @ LVL,NAME,TYPE,RANGE,TARGET,CAST s,CD s,DURRATION s,DESCR,MP,SP COST,REPL
 70,Elemental Blast,Magic/Dmg,900,enemy,4,1,0,m.Atk +102,65,390k,[Elemental Bolt]
 72,Elemental Blast,Magic/Dmg,900,enemy,4,1,0,m.Atk +105,67,650k,[Elemental Bolt]
 74,Elemental Blast,Magic/Dmg,900,enemy,4,1,0,m.Atk +108,69,880k,[Elemental Bolt]
+,,,,,,,,,,,,,-----------------------------Elemental Burst-----------------------------
+58,Elemental Burst,Magic/Dmg,900,enemy,1,300,0,"Gathers Elemental energy to burst the enemy, power 120. Consumes 2 Elemental Stone.",120,88k,[],
+66,Elemental Burst,Magic/Dmg,900,enemy,1,300,0,"Gathers Elemental energy to burst the enemy, power 133. Consumes 2 Elemental Stone.",133,280k,[],
+74,Elemental Burst,Magic/Dmg,900,enemy,1,300,0,"Gathers Elemental energy to burst the enemy, power 154. Consumes 2 Elemental Stone.",154,880k,[],
+,,,,,,,,,,,,,-----------------------------Arcane Burst-----------------------------
+62,Thunderstorm,Magic/Dmg,900,enemy,5,300,0,"Calls down thunderstorm to stike the enemy, power 178. Consumes 3 Elemental Stone.",178,4000,[],
+70,Thunderstorm,Magic/Dmg,900,enemy,5,300,0,"Calls down thunderstorm to stike the enemy, power 204. Consumes 3 Elemental Stone.",204,4000,[],
+74,Thunderstorm,Magic/Dmg,900,enemy,5,300,0,"Calls down thunderstorm to stike the enemy, power 216. Consumes 3 Elemental Stone.",216,880k,[],
+,,,,,,,,,,,,,-----------------------------X Burst-----------------------------
+74,Arcane Burst,Magic/Dmg,900,enemy,1,300,0,"Arcance Magic spell, power 150. Decrease SPT resistance by 40% (success chance x1.5), Never Fizzle",150,880k,[],Human
+74,Frost Burst,Magic/Dmg,900,enemy,1,300,15,"Frost Magic spell, power 150. Freeze the enemy: -30% M.def and prevents movement (success chance x1.5), Never Fizzle",150,880k,[],Elf
+74,Pyro Burst,Magic/Dmg,900,enemy,1,300,15,"Fire Magic spell, power 150. Burns the enemy for -100hp/s and decrease hp/mp received by 70% (success chance x1.5), Never Fizzle",150,880k,[],Ork,new effect like a DOT but its not poision nor bleed nor venom -> burn = true dmg per second no cure and can kill 
 ,,,,,,,,,,,,,-----------------------------Quick Blast-----------------------------
 40,Quick Blast,Magic/Dmg,300,enemy,2,0.5,0,m.Atk +42; Power in PVP x0.5,33,36k,[Quick Bolt]
 44,Quick Blast,Magic/Dmg,300,enemy,2,0.5,0,m.Atk +47; Power in PVP x0.5,38,43k,[Quick Bolt]
@@ -106,35 +118,35 @@ LEARN @ LVL,NAME,TYPE,RANGE,TARGET,CAST s,CD s,DURRATION s,DESCR,MP,SP COST,REPL
 72,Elemental Wave,Magic/Dmg,200,enemy,4,4,0,Hit nearby enemies in 200 radius with m.Atk +62;,100,650k,[]
 74,Elemental Wave,Magic/Dmg,200,enemy,4,4,0,Hit nearby enemies in 200 radius with m.Atk +64;,103,880k,[]
 ,,,,,,,,,,,,,-----------------------------Frost Spikes-----------------------------
-40,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +30; Apply 15% Slow effect; Higher chance to interrupt enemy casts;,33,36k,[Vampiric Bolt],Elf,does dmg but have a lower success rate for the slow - interrupt unaffected
-44,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +35; Apply 20% Slow effect; Higher chance to interrupt enemy casts;,38,43k,[Vampiric Bolt],Elf
-48,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +39; Apply 20% Slow effect; Higher chance to interrupt enemy casts;,44,64k,[Vampiric Bolt],Elf
-52,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +43; Apply 25% Slow effect; Higher chance to interrupt enemy casts;,48,74k,[Vampiric Bolt],Elf
-56,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +46; Apply 25% Slow effect; Higher chance to interrupt enemy casts;,52,81k,[Vampiric Bolt],Elf
-58,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +48; Apply 28% Slow effect; Higher chance to interrupt enemy casts;,54,88k,[Vampiric Bolt],Elf
-60,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +50; Apply 28% Slow effect; Higher chance to interrupt enemy casts;,55,120k,[Vampiric Bolt],Elf
-62,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +52; Apply 31% Slow effect; Higher chance to interrupt enemy casts;,58,170k,[Vampiric Bolt],Elf
-64,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +54; Apply 31% Slow effect; Higher chance to interrupt enemy casts;,60,190k,[Vampiric Bolt],Elf
-66,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +56; Apply 34% Slow effect; Higher chance to interrupt enemy casts;,62,280k,[Vampiric Bolt],Elf
-68,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +58; Apply 34% Slow effect; Higher chance to interrupt enemy casts;,64,320k,[Vampiric Bolt],Elf
-70,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +60; Apply 37% Slow effect; Higher chance to interrupt enemy casts;,65,390k,[Vampiric Bolt],Elf
-72,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +62; Apply 37% Slow effect; Higher chance to interrupt enemy casts;,67,650k,[Vampiric Bolt],Elf
-74,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +64; Apply 40% Slow effect; Higher chance to interrupt enemy casts;,69,880k,[Vampiric Bolt],Elf
+40,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +30; Apply 15% Slow effect (success chance x0.7); Higher chance to interrupt enemy casts;,33,36k,[Vampiric Bolt],Elf,does dmg but have a lower success rate for the slow - interrupt unaffected
+44,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +35; Apply 20% Slow effect (success chance x0.7); Higher chance to interrupt enemy casts;,38,43k,[Vampiric Bolt],Elf
+48,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +39; Apply 20% Slow effect (success chance x0.7); Higher chance to interrupt enemy casts;,44,64k,[Vampiric Bolt],Elf
+52,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +43; Apply 25% Slow effect (success chance x0.7); Higher chance to interrupt enemy casts;,48,74k,[Vampiric Bolt],Elf
+56,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +46; Apply 25% Slow effect (success chance x0.7); Higher chance to interrupt enemy casts;,52,81k,[Vampiric Bolt],Elf
+58,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +48; Apply 28% Slow effect (success chance x0.7); Higher chance to interrupt enemy casts;,54,88k,[Vampiric Bolt],Elf
+60,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +50; Apply 28% Slow effect (success chance x0.7); Higher chance to interrupt enemy casts;,55,120k,[Vampiric Bolt],Elf
+62,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +52; Apply 31% Slow effect (success chance x0.7); Higher chance to interrupt enemy casts;,58,170k,[Vampiric Bolt],Elf
+64,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +54; Apply 31% Slow effect (success chance x0.7); Higher chance to interrupt enemy casts;,60,190k,[Vampiric Bolt],Elf
+66,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +56; Apply 34% Slow effect (success chance x0.7); Higher chance to interrupt enemy casts;,62,280k,[Vampiric Bolt],Elf
+68,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +58; Apply 34% Slow effect (success chance x0.7); Higher chance to interrupt enemy casts;,64,320k,[Vampiric Bolt],Elf
+70,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +60; Apply 37% Slow effect (success chance x0.7); Higher chance to interrupt enemy casts;,65,390k,[Vampiric Bolt],Elf
+72,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +62; Apply 37% Slow effect (success chance x0.7); Higher chance to interrupt enemy casts;,67,650k,[Vampiric Bolt],Elf
+74,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +64; Apply 40% Slow effect (success chance x0.7); Higher chance to interrupt enemy casts;,69,880k,[Vampiric Bolt],Elf
 ,,,,,,,,,,,,,-----------------------------Frost Pierce-----------------------------
-40,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +30; Applies bleed effect rank 3; Higher chance to interrupt enemy casts;,33,36k,[],Elf,does dmg but have a lower success rate for the bleed - interrupt unaffected
-44,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +35; Applies bleed effect rank 4; Higher chance to interrupt enemy casts;,38,43k,[],Elf
-48,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +39; Applies bleed effect rank 4; Higher chance to interrupt enemy casts;,44,64k,[],Elf
-52,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +43; Applies bleed effect rank 5; Higher chance to interrupt enemy casts;,48,74k,[],Elf
-56,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +46; Applies bleed effect rank 5; Higher chance to interrupt enemy casts;,52,81k,[],Elf
-58,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +48; Applies bleed effect rank 6; Higher chance to interrupt enemy casts;,54,88k,[],Elf
-60,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +50; Applies bleed effect rank 6; Higher chance to interrupt enemy casts;,55,120k,[],Elf
-62,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +52; Applies bleed effect rank 7; Higher chance to interrupt enemy casts;,58,170k,[],Elf
-64,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +54; Applies bleed effect rank 7; Higher chance to interrupt enemy casts;,60,190k,[],Elf
-66,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +56; Applies bleed effect rank 8; Higher chance to interrupt enemy casts;,62,280k,[],Elf
-68,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +58; Applies bleed effect rank 8; Higher chance to interrupt enemy casts;,64,320k,[],Elf
-70,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +60; Applies bleed effect rank 9; Higher chance to interrupt enemy casts;,65,390k,[],Elf
-72,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +62; Applies bleed effect rank 9; Higher chance to interrupt enemy casts;,67,650k,[],Elf
-74,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +64; Applies bleed effect rank 10; Higher chance to interrupt enemy casts;,69,880k,[],Elf
+40,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +30; Applies bleed effect rank 3 (success chance x0.5); Higher chance to interrupt enemy casts;,33,36k,[],Elf,does dmg but have a lower success rate for the bleed - interrupt unaffected
+44,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +35; Applies bleed effect rank 4 (success chance x0.5); Higher chance to interrupt enemy casts;,38,43k,[],Elf
+48,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +39; Applies bleed effect rank 4 (success chance x0.5); Higher chance to interrupt enemy casts;,44,64k,[],Elf
+52,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +43; Applies bleed effect rank 5 (success chance x0.5); Higher chance to interrupt enemy casts;,48,74k,[],Elf
+56,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +46; Applies bleed effect rank 5 (success chance x0.5); Higher chance to interrupt enemy casts;,52,81k,[],Elf
+58,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +48; Applies bleed effect rank 6 (success chance x0.5); Higher chance to interrupt enemy casts;,54,88k,[],Elf
+60,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +50; Applies bleed effect rank 6 (success chance x0.5); Higher chance to interrupt enemy casts;,55,120k,[],Elf
+62,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +52; Applies bleed effect rank 7 (success chance x0.5); Higher chance to interrupt enemy casts;,58,170k,[],Elf
+64,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +54; Applies bleed effect rank 7 (success chance x0.5); Higher chance to interrupt enemy casts;,60,190k,[],Elf
+66,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +56; Applies bleed effect rank 8 (success chance x0.5); Higher chance to interrupt enemy casts;,62,280k,[],Elf
+68,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +58; Applies bleed effect rank 8 (success chance x0.5); Higher chance to interrupt enemy casts;,64,320k,[],Elf
+70,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +60; Applies bleed effect rank 9 (success chance x0.5); Higher chance to interrupt enemy casts;,65,390k,[],Elf
+72,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +62; Applies bleed effect rank 9 (success chance x0.5); Higher chance to interrupt enemy casts;,67,650k,[],Elf
+74,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +64; Applies bleed effect rank 10 (success chance x0.5); Higher chance to interrupt enemy casts;,69,880k,[],Elf
 ,,,,,,,,,,,,,-----------------------------Arcane Wave-----------------------------
 40,Arcane Wave,Magic/Dmg,900,enemy,4,1,0,Attack the enemt with m.Atk +30 in 400 radius around the target;,53,36k,[],Human
 44,Arcane Wave,Magic/Dmg,900,enemy,4,1,0,Attack the enemt with m.Atk +35 in 400 radius around the target;,59,43k,[],Human
@@ -166,109 +178,36 @@ LEARN @ LVL,NAME,TYPE,RANGE,TARGET,CAST s,CD s,DURRATION s,DESCR,MP,SP COST,REPL
 72,Vampiric Bolt,Magic/Dmg,900,enemy,4,1,0,A draining bolt (m.Atk +105) that heals you for 40% of the damage dealt.,134,650k,[],Human
 74,Vampiric Bolt,Magic/Dmg,900,enemy,4,1,0,A draining bolt (m.Atk +108) that heals you for 40% of the damage dealt.,138,880k,[],Human
 ,,,,,,,,,,,,,------------------------------Arcane Void------------------------------
-52,Arcane Void,Magic/Buff,0,self,4,30,0,Chance to remove 1~2 positive effect of the target.,96,74k,[],Human,lower success rate
-62,Arcane Void,Magic/Buff,0,self,4,30,0,Chance to remove 2~3 positive effect of the target.,116,170k,[],Human,lower success rate
-72,Arcane Void,Magic/Buff,0,self,4,30,0,Chance to remove 2~4 positive effect of the target.,138,650k,[],Human,lower success rate
+52,Arcane Void,Magic/Buff,0,self,4,30,0,Chance to remove 1~2 positive effect of the target (success chance x0.3),96,74k,[],Human,lower success rate
+62,Arcane Void,Magic/Buff,0,self,4,30,0,Chance to remove 2~3 positive effect of the target (success chance x0.3),116,170k,[],Human,lower success rate
+72,Arcane Void,Magic/Buff,0,self,4,30,0,Chance to remove 2~4 positive effect of the target (success chance x0.3),138,650k,[],Human,lower success rate
 ,,,,,,,,,,,,,-----------------------------Witches Curse-----------------------------
-40,Witches Curse,Magic/Debuff,900,enemy,2.5,1,30,m.Atk +42; A chance to curse enemies for -10% M.Def; ,66,36k,[Vampiric Bolt],Ork,does dmg but have a lower success rate for the curse
-44,Witches Curse,Magic/Debuff,900,enemy,2.5,1,30,m.Atk +47; A chance to curse enemies for -10% M.Def; ,76,43k,[Vampiric Bolt],Ork
-48,Witches Curse,Magic/Debuff,900,enemy,2.5,1,30,m.Atk +52; A chance to curse enemies for -13% M.Def; ,88,64k,[Vampiric Bolt],Ork
-52,Witches Curse,Magic/Debuff,900,enemy,2.5,1,30,m.Atk +52; A chance to curse enemies for -13% M.Def; ,96,74k,[Vampiric Bolt],Ork
-56,Witches Curse,Magic/Debuff,900,enemy,2.5,1,30,m.Atk +63; A chance to curse enemies for -17% M.Def; ,104,81k,[Vampiric Bolt],Ork
-58,Witches Curse,Magic/Debuff,900,enemy,2.5,1,30,m.Atk +66; A chance to curse enemies for -17% M.Def; ,108,88k,[Vampiric Bolt],Ork
-60,Witches Curse,Magic/Debuff,900,enemy,2.5,1,30,m.Atk +68; A chance to curse enemies for -20% M.Def; ,110,120k,[Vampiric Bolt],Ork
-62,Witches Curse,Magic/Debuff,900,enemy,2.5,1,30,m.Atk +71; A chance to curse enemies for -20% M.Def; ,116,170k,[Vampiric Bolt],Ork
-64,Witches Curse,Magic/Debuff,900,enemy,2.5,1,30,m.Atk +74; A chance to curse enemies for -23% M.Def; ,120,190k,[Vampiric Bolt],Ork
-66,Witches Curse,Magic/Debuff,900,enemy,2.5,1,30,m.Atk +77; A chance to curse enemies for -23% M.Def; ,124,280k,[Vampiric Bolt],Ork
-68,Witches Curse,Magic/Debuff,900,enemy,2.5,1,30,m.Atk +79; A chance to curse enemies for -27% M.Def; ,128,320k,[Vampiric Bolt],Ork
-70,Witches Curse,Magic/Debuff,900,enemy,2.5,1,30,m.Atk +82; A chance to curse enemies for -27% M.Def; ,130,390k,[Vampiric Bolt],Ork
-72,Witches Curse,Magic/Debuff,900,enemy,2.5,1,30,m.Atk +84; A chance to curse enemies for -30% M.Def; ,134,650k,[Vampiric Bolt],Ork
-74,Witches Curse,Magic/Debuff,900,enemy,2.5,1,30,m.Atk +87; A chance to curse enemies for -30% M.Def; ,138,880k,[Vampiric Bolt],Ork
+40,Witches Curse,Magic/Debuff,900,enemy,2.5,1,30,m.Atk +42; A chance to curse enemies for -10% M.Def; (success chance x0.7),66,36k,[Vampiric Bolt],Ork,does dmg but have a lower success rate for the curse
+44,Witches Curse,Magic/Debuff,900,enemy,2.5,1,30,m.Atk +47; A chance to curse enemies for -10% M.Def; (success chance x0.7),76,43k,[Vampiric Bolt],Ork
+48,Witches Curse,Magic/Debuff,900,enemy,2.5,1,30,m.Atk +52; A chance to curse enemies for -13% M.Def; (success chance x0.7),88,64k,[Vampiric Bolt],Ork
+52,Witches Curse,Magic/Debuff,900,enemy,2.5,1,30,m.Atk +52; A chance to curse enemies for -13% M.Def; (success chance x0.7),96,74k,[Vampiric Bolt],Ork
+56,Witches Curse,Magic/Debuff,900,enemy,2.5,1,30,m.Atk +63; A chance to curse enemies for -17% M.Def; (success chance x0.7),104,81k,[Vampiric Bolt],Ork
+58,Witches Curse,Magic/Debuff,900,enemy,2.5,1,30,m.Atk +66; A chance to curse enemies for -17% M.Def; (success chance x0.7),108,88k,[Vampiric Bolt],Ork
+60,Witches Curse,Magic/Debuff,900,enemy,2.5,1,30,m.Atk +68; A chance to curse enemies for -20% M.Def; (success chance x0.7),110,120k,[Vampiric Bolt],Ork
+62,Witches Curse,Magic/Debuff,900,enemy,2.5,1,30,m.Atk +71; A chance to curse enemies for -20% M.Def; (success chance x0.7),116,170k,[Vampiric Bolt],Ork
+64,Witches Curse,Magic/Debuff,900,enemy,2.5,1,30,m.Atk +74; A chance to curse enemies for -23% M.Def; (success chance x0.7),120,190k,[Vampiric Bolt],Ork
+66,Witches Curse,Magic/Debuff,900,enemy,2.5,1,30,m.Atk +77; A chance to curse enemies for -23% M.Def; (success chance x0.7),124,280k,[Vampiric Bolt],Ork
+68,Witches Curse,Magic/Debuff,900,enemy,2.5,1,30,m.Atk +79; A chance to curse enemies for -27% M.Def; (success chance x0.7),128,320k,[Vampiric Bolt],Ork
+70,Witches Curse,Magic/Debuff,900,enemy,2.5,1,30,m.Atk +82; A chance to curse enemies for -27% M.Def; (success chance x0.7),130,390k,[Vampiric Bolt],Ork
+72,Witches Curse,Magic/Debuff,900,enemy,2.5,1,30,m.Atk +84; A chance to curse enemies for -30% M.Def; (success chance x0.7),134,650k,[Vampiric Bolt],Ork
+74,Witches Curse,Magic/Debuff,900,enemy,2.5,1,30,m.Atk +87; A chance to curse enemies for -30% M.Def; (success chance x0.7),138,880k,[Vampiric Bolt],Ork
 ,,,,,,,,,,,,,-----------------------------Vampiric Bolt-----------------------------
-40,Witches Scarecrow,Magic/Debuff,900,enemy,2,5,10,Fear the enemy;,66,36k,[],Ork,lower success rate
-44,Witches Scarecrow,Magic/Debuff,900,enemy,2,5,10,Fear the enemy;,76,43k,[],Ork
-48,Witches Scarecrow,Magic/Debuff,900,enemy,2,5,10,Fear the enemy;,88,64k,[],Ork
-52,Witches Scarecrow,Magic/Debuff,900,enemy,2,5,10,Fear the enemy;,96,74k,[],Ork
-56,Witches Scarecrow,Magic/Debuff,900,enemy,2,5,10,Fear the enemy;,104,81k,[],Ork
-58,Witches Scarecrow,Magic/Debuff,900,enemy,2,5,10,Fear the enemy;,108,88k,[],Ork
-60,Witches Scarecrow,Magic/Debuff,900,enemy,2,5,10,Fear the enemy;,110,120k,[],Ork
-62,Witches Scarecrow,Magic/Debuff,900,enemy,2,5,10,Fear the enemy;,116,170k,[],Ork
-64,Witches Scarecrow,Magic/Debuff,900,enemy,2,5,10,Fear the enemy;,120,190k,[],Ork
-66,Witches Scarecrow,Magic/Debuff,900,enemy,2,5,10,Fear the enemy;,124,280k,[],Ork
-68,Witches Scarecrow,Magic/Debuff,900,enemy,2,5,10,Fear the enemy;,128,320k,[],Ork
-70,Witches Scarecrow,Magic/Debuff,900,enemy,2,5,10,Fear the enemy;,130,390k,[],Ork
-72,Witches Scarecrow,Magic/Debuff,900,enemy,2,5,10,Fear the enemy;,134,650k,[],Ork
-74,Witches Scarecrow,Magic/Debuff,900,enemy,2,5,10,Fear the enemy;,138,880k,[],Ork
-
-
-
-
-,,,,,,,,,,,,,-------------------------------------------------NOT DONE-------------------------------------------------
-
-,,,,,,,,,,,,,------------------------------Gravity------------------------------
-40,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed and cast speed by 7% (ATK vs SPT),35,36k,[],Human,changed values
-44,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed and cast speed by 9%,38,43k,[],Human
-48,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed and cast speed by 11%,44,64k,[],Human
-52,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed and cast speed by 13%,48,74k,[],Human
-56,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed and cast speed by 15%,52,81k,[],Human
-58,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed and cast speed by 17%,54,88k,[],Human
-60,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed and cast speed by 19%,55,120k,[],Human
-62,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed and cast speed by 21%,58,170k,[],Human,
-64,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed and cast speed by 23%,60,190k,[],Human
-66,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed and cast speed by 23%,62,280k,[],Human
-68,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed and cast speed by 23%,64,320k,[],Human
-70,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed and cast speed by 23%,65,390k,[],Human
-72,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed and cast speed by 23%,67,650k,[],Human
-74,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed and cast speed by 23%,69,880k,[],Human
-
-,,,,,,,,,,,,,-----------------------------Holy Ray-----------------------------
-40,Holy Ray,Magic/Dmg,600,enemy,2.5,1,0,m.Atk +42,30,36k,[Holy Bolt]
-44,Holy Ray,Magic/Dmg,600,enemy,2.5,1,0,m.Atk +47,38,43k,[Holy Bolt]
-48,Holy Ray,Magic/Dmg,600,enemy,2.5,1,0,m.Atk +52,44,64k,[Holy Bolt]
-52,Holy Ray,Magic/Dmg,600,enemy,2.5,1,0,m.Atk +52,48,74k,[Holy Bolt]
-56,Holy Ray,Magic/Dmg,600,enemy,2.5,1,0,m.Atk +63,52,81k,[Holy Bolt]
-58,Holy Ray,Magic/Dmg,600,enemy,2.5,1,0,m.Atk +66,54,88k,[Holy Bolt]
-60,Holy Ray,Magic/Dmg,600,enemy,2.5,1,0,m.Atk +68,55,120k,[Holy Bolt]
-62,Holy Ray,Magic/Dmg,600,enemy,2.5,1,0,m.Atk +71,58,170k,[Holy Bolt]
-64,Holy Ray,Magic/Dmg,600,enemy,2.5,1,0,m.Atk +74,60,190k,[Holy Bolt]
-66,Holy Ray,Magic/Dmg,600,enemy,2.5,1,0,m.Atk +77,62,280k,[Holy Bolt]
-68,Holy Ray,Magic/Dmg,600,enemy,2.5,1,0,m.Atk +79,64,320k,[Holy Bolt]
-70,Holy Ray,Magic/Dmg,600,enemy,2.5,1,0,m.Atk +82,65,390k,[Holy Bolt]
-72,Holy Ray,Magic/Dmg,600,enemy,2.5,1,0,m.Atk +84,67,650k,[Holy Bolt]
-74,Holy Ray,Magic/Dmg,600,enemy,2.5,1,0,m.Atk +87,69,880k,[Holy Bolt]
-
-,,,,,,,,,,,,,---------------------------Restore Mana---------------------------
-40,Restore Mana,Magic/Heal,600,ally,2,2,0,Transfers 70 MP to an ally (costs 70). Not on yourself or another mana-restorer.,70,19k,[],,Changed SP
-44,Restore Mana,Magic/Heal,600,ally,2,2,0,Transfers 77 MP to an ally (costs 77). Not on yourself or another mana-restorer.,79,22k,[]
-48,Restore Mana,Magic/Heal,600,ally,2,2,0,Transfers 86 MP to an ally (costs 86). Not on yourself or another mana-restorer.,86,32k,[]
-52,Restore Mana,Magic/Heal,600,ally,2,2,0,Transfers 94 MP to an ally (costs 94). Not on yourself or another mana-restorer.,94,38k,[]
-56,Restore Mana,Magic/Heal,600,ally,2,2,0,Transfers 102 MP to an ally (costs 102). Not on yourself or another mana-restorer.,102,42k,[]
-58,Restore Mana,Magic/Heal,600,ally,2,2,0,Transfers 106 MP to an ally (costs 106). Not on yourself or another mana-restorer.,106,45k,[]
-60,Restore Mana,Magic/Heal,600,ally,2,2,0,Transfers 108 MP to an ally (costs 108). Not on yourself or another mana-restorer.,108,61k,[]
-62,Restore Mana,Magic/Heal,600,ally,2,2,0,Transfers 113 MP to an ally (costs 113). Not on yourself or another mana-restorer.,113,86k,[]
-64,Restore Mana,Magic/Heal,600,ally,2,2,0,Transfers 116 MP to an ally (costs 116). Not on yourself or another mana-restorer.,116,100k,[]
-66,Restore Mana,Magic/Heal,600,ally,2,2,0,Transfers 120 MP to an ally (costs 120). Not on yourself or another mana-restorer.,120,145k,[]
-68,Restore Mana,Magic/Heal,600,ally,2,2,0,Transfers 124 MP to an ally (costs 124). Not on yourself or another mana-restorer.,124,165k,[]
-70,Restore Mana,Magic/Heal,600,ally,2,2,0,Transfers 129 MP to an ally (costs 129). Not on yourself or another mana-restorer.,129,200k,[]
-72,Restore Mana,Magic/Heal,600,ally,2,2,0,Transfers 133 MP to an ally (costs 133). Not on yourself or another mana-restorer.,133,200k,[]
-74,Restore Mana,Magic/Heal,600,ally,2,2,0,Transfers 140 MP to an ally (costs 140). Not on yourself or another mana-restorer.,140,450k,[]
-
-,,,,,,,,,,,,,-------------------------------------------------OLD SKILLS-------------------------------------------------
-40,Elemental Burst,Magic/Dmg,900,self/target,5,3,0,"Magic damage, power 150. Consumes 1 Elemental Stone.",60,4000,[],
-40,Entangling Roots,Magic/Debuff,900,self/target,1.5,8,8,"Snares the target in place for 8s (cannot move, can still act). ATK-vs-WIT contest; bosses immune.",28,1,[],
-40,Frost Bind,Magic/Debuff,900,self/target,2,6,10,Magic slow â cuts the target's move speed by 50% for 10s. Lands on an ATK-vs-WIT contest (bosses are immune).,25,1,[],
-44,Creeping Frost,physical active,900,self/target,1.5,2,10,"A deepening chill â slows 10%/20%/30% on stacks 1-3, then FREEZES (stuns) on the 4th. Each landing cast adds a stack; ATK-vs-WIT contest.",18,1,[],
-44,Elemental Burst L2,Magic/Dmg,900,self/target,5,3,0,"Magic damage, power 161. Consumes 1 Elemental Stone.",65,5000,[],
-44,Glacial Spike,Magic/Dmg,900,self/target,4,1.5,0,A shard of ice (power 90) that strikes for +50% damage if the target is slowed or rooted.,30,1,[],
-44,Maelstrom,Magic/Debuff,900,self/target,0.5,30,20,A deeper curse: -45% Defence for 20s (never fizzles).,22,1,[],
-44,Mana Burn,Magic/Debuff,900,self/target,0.5,30,20,A deeper curse: -45% Defence for 20s (never fizzles).,22,1,[],
-44,Mana Barrier,Magic/Buff,0,self,0,30,30,"Diverts 70% of incoming damage to MP (0.5 MP per damage) for 30s, while MP lasts.",30,1,[],
-48,Elemental Burst L3,Magic/Dmg,900,self/target,5,3,0,"Magic damage, power 172. Consumes 1 Elemental Stone.",70,6000,[],
-48,Phase Shift,Magic/Buff,0,self,0,8,0,Blink 400 away from the nearest enemy to create distance (no target needed).,20,1,[],
-52,Elemental Burst L4,Magic/Dmg,900,self/target,5,3,0,"Magic damage, power 183. Consumes 1 Elemental Stone.",75,7000,[],
-56,Elemental Burst L5,Magic/Dmg,900,self/target,5,3,0,"Magic damage, power 194. Consumes 1 Elemental Stone.",80,8000,[],
-60,Elemental Burst L6,Magic/Dmg,900,self/target,5,3,0,"Magic damage, power 205. Consumes 1 Elemental Stone.",85,9000,[],
-64,Elemental Burst L7,Magic/Dmg,900,self/target,5,3,0,"Magic damage, power 216. Consumes 1 Elemental Stone.",90,10000,[],
-68,Elemental Burst L8,Magic/Dmg,900,self/target,5,3,0,"Magic damage, power 227. Consumes 1 Elemental Stone.",95,11000,[],
-72,Elemental Burst L9,Magic/Dmg,900,self/target,5,3,0,"Magic damage, power 238. Consumes 1 Elemental Stone.",100,12000,[],
-75,Elemental Burst L10,Magic/Dmg,900,self/target,5,3,0,"Magic damage, power 250. Consumes 1 Elemental Stone.",105,13000,[],
+40,Witches Scarecrow,Magic/Debuff,900,enemy,2,5,10,Fear the enemy (success chance x0.5);,66,36k,[],Ork,lower success rate
+44,Witches Scarecrow,Magic/Debuff,900,enemy,2,5,10,Fear the enemy (success chance x0.5);,76,43k,[],Ork
+48,Witches Scarecrow,Magic/Debuff,900,enemy,2,5,10,Fear the enemy (success chance x0.5);,88,64k,[],Ork
+52,Witches Scarecrow,Magic/Debuff,900,enemy,2,5,10,Fear the enemy (success chance x0.5);,96,74k,[],Ork
+56,Witches Scarecrow,Magic/Debuff,900,enemy,2,5,10,Fear the enemy (success chance x0.5);,104,81k,[],Ork
+58,Witches Scarecrow,Magic/Debuff,900,enemy,2,5,10,Fear the enemy (success chance x0.5);,108,88k,[],Ork
+60,Witches Scarecrow,Magic/Debuff,900,enemy,2,5,10,Fear the enemy (success chance x0.5);,110,120k,[],Ork
+62,Witches Scarecrow,Magic/Debuff,900,enemy,2,5,10,Fear the enemy (success chance x0.5);,116,170k,[],Ork
+64,Witches Scarecrow,Magic/Debuff,900,enemy,2,5,10,Fear the enemy (success chance x0.5);,120,190k,[],Ork
+66,Witches Scarecrow,Magic/Debuff,900,enemy,2,5,10,Fear the enemy (success chance x0.5);,124,280k,[],Ork
+68,Witches Scarecrow,Magic/Debuff,900,enemy,2,5,10,Fear the enemy (success chance x0.5);,128,320k,[],Ork
+70,Witches Scarecrow,Magic/Debuff,900,enemy,2,5,10,Fear the enemy (success chance x0.5);,130,390k,[],Ork
+72,Witches Scarecrow,Magic/Debuff,900,enemy,2,5,10,Fear the enemy (success chance x0.5);,134,650k,[],Ork
+74,Witches Scarecrow,Magic/Debuff,900,enemy,2,5,10,Fear the enemy (success chance x0.5);,138,880k,[],Ork

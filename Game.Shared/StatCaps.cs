@@ -118,6 +118,30 @@ public static class StatCaps
     public static readonly float CcLevelBase =
         MathF.Pow((1f - CcLandMin) / CcLandMin, 1f / CcLevelFloorGap);
 
+    // ----- THE DEBUFF SUCCESS MULTIPLIER (owner ruling 2026-08-24, `BL-90`) --------------------
+    //
+    // *"DebuffLandMod should be floating one value - default 1 … armor/weapon break + gravity +
+    //  Arcane/Fros/Pyro blasts(nuker 3rd) should be 75% at parity (x1.5) and the other should be
+    //  25% at parity (x0.5)"*
+    //
+    // 🔑 THERE ARE DELIBERATELY NO TIER CONSTANTS. A first pass gave this four named tiers; he
+    // replaced them with "one floating value, default 1" and then authored the values themselves into
+    // the CSVs' DESCR column as `(success chance x1.5)`. The number belongs to the SKILL, in his file,
+    // not to a tier name in this one — the same rule as every other authored magnitude. Read
+    // `SkillDef.DebuffLandMod`; there is nothing to look up here.
+    //
+    // 🔑 HIS "AT PARITY" ARITHMETIC IS WHAT PINS THE MODEL DOWN. x1.5 = 75% and x0.5 = 25% only if
+    // the base at parity is 50% — which is the CONTESTED curve (DebuffLandChance), not the fizzle one
+    // (~99%). That is why Armor Break, Weapon Break, Gravity and Mana Strain were moved onto the
+    // contested path: their SkillDefs always set DebuffSchool and their descriptions always claimed
+    // "Contested ATK vs SPT", but the branch test read the effect-FLAG mask and silently sent them to
+    // the fizzle roll instead. See ExecuteSkill / DebuffLandChance.
+    //
+    // The multiplier is applied AFTER the [CcLandMin, CcLandMax] clamp and the result is re-clamped to
+    // [0, CcLandMax]: the 10% floor is a property of the STAT CONTEST (you can always get lucky), so a
+    // deliberately unreliable skill is allowed under it, while "nothing is ever a certainty" still
+    // holds at the top.
+
     /// <summary>RANK's multiplier on all THREE contest stats — ATK, CON and SPT together (owner ruling
     /// 2026-08-19: *"elites can get x1.33 atk/con/spt stats increase so it will give them more
     /// resists/chance .. bosses can get x2"*).

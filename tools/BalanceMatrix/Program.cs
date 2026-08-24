@@ -1021,6 +1021,272 @@ Console.WriteLine($"  ! Rank multiplies ALL THREE stats (elite x{StatCaps.CcRank
                 + $"boss x{StatCaps.CcRankMult(MobRank.Boss):0.##}), so a rank is harder to");
 Console.WriteLine("    control AND lands its own control harder — one number, both directions.");
 Console.WriteLine();
+
+// =====================================================================================================
+//  DEBUFF SUCCESS — what a skill's authored `(success chance xN)` is actually worth (BL-90).
+//
+//  His ruling, 2026-08-24: *"DebuffLandMod should be floating one value - default 1 … armor/weapon
+//  break + gravity + Arcane/Fros/Pyro blasts(nuker 3rd) should be 75% at parity (x1.5) and the other
+//  should be 25% at parity (x0.5)"*. Those two numbers only close off a 50% base — the CONTESTED
+//  curve — which is what forced the routing fix (see GameLoopService.IsContestedDebuff). This table's
+//  job is to prove that his arithmetic actually holds in the built game, per skill.
+// =====================================================================================================
+Console.WriteLine("=== DEBUFF SUCCESS: the per-skill multiplier (BL-90) ===");
+Console.WriteLine("  A debuff lands on ONE of two rolls:");
+Console.WriteLine("    CONTESTED — a ContestCc flag OR a declared DebuffSchool -> DebuffLandChance, 50% at parity");
+Console.WriteLine("    FIZZLE    — neither                                     -> 1 - MagicFailChance, ~99%");
+Console.WriteLine("  DebuffLandMod multiplies the probability it STICKS on whichever roll ran. It never");
+Console.WriteLine("  touches damage and never touches interrupt. Default 1 = untagged.");
+Console.WriteLine();
+{
+    float contested  = StatCalculator.DebuffLandChance(40, 40, 60, 60);
+    float fizzleLand = 1f - StatCalculator.MagicFailChance(60, 60);
+    Console.WriteLine($"  HIS SCALE, on the contested curve ({contested:P0} at parity):");
+    Console.WriteLine($"  {"x0.3",8} {"x0.5",8} {"x0.7",8} {"x1.0",8} {"x1.5",8}");
+    Console.WriteLine($"  {contested * 0.3f,8:P0} {contested * 0.5f,8:P0} {contested * 0.7f,8:P0} "
+                    + $"{contested * 1.0f,8:P0} {Math.Min(contested * 1.5f, StatCaps.CcLandMax),8:P0}");
+    Console.WriteLine();
+
+    // Generated from the catalog, so it re-measures itself as kits land and cannot drift.
+    var tagged = SkillCatalog.AllSkills
+        .Where(s => s.DebuffLandMod != 1f && !s.Id.StartsWith("mob_") && !s.Id.StartsWith("boss_"))
+        .OrderByDescending(s => s.DebuffLandMod).ThenBy(s => s.Name).ToList();
+    Console.WriteLine($"  TAGGED IN CODE ({tagged.Count}) — everything else runs at x1:");
+    Console.WriteLine($"  {"skill",22} {"mod",6} {"path",10} {"at parity",10}");
+    foreach (var s in tagged)
+    {
+        bool isContested = (s.Effect & SkillEffect.ContestCc) != 0 || s.DebuffSchool != DebuffSchool.None;
+        float at = isContested
+            ? Math.Clamp(contested * s.DebuffLandMod, 0f, StatCaps.CcLandMax)
+            : Math.Clamp(fizzleLand * s.DebuffLandMod, 0f, 1f);
+        string warn = isContested ? "" : "   <- FIZZLE path: his parity arithmetic does NOT hold here";
+        Console.WriteLine($"  {s.Name,22} x{s.DebuffLandMod,-5:0.##} {(isContested ? "contested" : "FIZZLE"),-10} "
+                        + $"{at,10:P1}{warn}");
+    }
+    if (tagged.Count == 0) Console.WriteLine("  (none)");
+    Console.WriteLine();
+
+    // The four skills the routing fix moved. Named explicitly because this is the behaviour change
+    // most likely to surprise him in play: they used to land ~99% of the time and now do not.
+    Console.WriteLine("  MOVED FROM FIZZLE TO CONTESTED BY THE ROUTING FIX (they declare a DebuffSchool):");
+    foreach (var s in SkillCatalog.AllSkills
+                 .Where(s => s.DebuffSchool != DebuffSchool.None
+                          && (s.Effect & SkillEffect.ContestCc) == 0
+                          && !s.Id.StartsWith("mob_") && !s.Id.StartsWith("boss_"))
+                 .OrderBy(s => s.Name))
+        Console.WriteLine($"  {s.Name,22} x{s.DebuffLandMod,-5:0.##} "
+                        + $"was ~{fizzleLand,4:P0} -> now {Math.Clamp(contested * s.DebuffLandMod, 0f, StatCaps.CcLandMax),6:P0} at parity");
+    Console.WriteLine();
+    Console.WriteLine("  ! Parity is a BEST CASE. Both curves read the RUNG'S learn level, so an old rung decays");
+    Console.WriteLine("    from here — see THE SPELL LADDERS and THE RUNG LADDERS above.");
+    Console.WriteLine("  ! The multiplier is applied AFTER the [10%, 90%] clamp and only the CEILING is re-applied:");
+    Console.WriteLine("    a x0.5 skill is allowed under the floor (it is unreliable by design), a x1.5 one is not");
+    Console.WriteLine("    allowed past 90% (nothing is ever a certainty).");
+    Console.WriteLine("  ! Snare Trap (dmg+root) and the Warchanter's stun-rider are deliberately left at x1 —");
+    Console.WriteLine("    retro-taxing a built class is your call, one line each.");
+}
+Console.WriteLine();
+
+
+// =====================================================================================================
+//  INTERRUPT — his model, `BL-91`: *"we can make it chance per spell to interrupt 33% (at same lvl
+//  spell vs dmgDealer) … then high atack speed low dmg will interrupt on average same amount as high
+//  dmg low as… and the average should be 33% … then the Resolve skill that does +54 interupt resist
+//  (after we know what dps difference is the interrupt treshold we can balance the buff)"*.
+//
+//  The last clause is what this section is FOR: he cannot price Resolve until the threshold is a
+//  number, so the table ends on what +54 actually buys.
+// =====================================================================================================
+Console.WriteLine("=== INTERRUPT: the DPS contest (BL-91) ===");
+Console.WriteLine($"  p(one hit) = {StatCalculator.InterruptPerCast:P0} x hitDamage / (spellDps x castSeconds)"
+                + " x attackerPoints/defenderPoints x skill.InterruptMult");
+Console.WriteLine("  points = wit*2 + level on BOTH sides (+ skill InterruptPower / InterruptDefense),");
+Console.WriteLine("  so equal wit and equal level is exactly x1 and the whole thing reduces to the DPS race.");
+Console.WriteLine("  spellDps = base_dmg / (base_cast + base_reuse), his definition, priced against the");
+Console.WriteLine("  CASTER's own defences so the incoming hit and the spell are on one yardstick.");
+Console.WriteLine();
+{
+    // THE INVARIANT, MEASURED. Three attackers with the SAME dps and wildly different cadence must all
+    // come out at 33% over one cast. If this column is ever not flat, the model is broken.
+    Console.WriteLine("  HIS INVARIANT — same DPS, different cadence, over ONE 2.5s cast at parity:");
+    Console.WriteLine($"  {"attacker",22} {"hit dmg",8} {"cycle s",8} {"hits",5} {"p/hit",7} {"TOTAL",7}");
+    const float spellDamage = 600f, spellCast = 2.5f, spellReuse = 1.0f;
+    float spellCastValue = spellDamage / (spellCast + spellReuse) * spellCast;
+    foreach (var (name, hit, cycle) in new[]
+    {
+        ("slow + heavy",   300f, 2.0f),
+        ("medium",         150f, 1.0f),
+        ("fast + light",    37.5f, 0.25f),
+    })
+    {
+        float p = StatCalculator.InterruptChance(hit, spellCastValue, 100, 100);
+        float hits = spellCast / cycle;
+        Console.WriteLine($"  {name,22} {hit,8:0.#} {cycle,8:0.##} {hits,5:0.#} {p,7:P1} {p * hits,7:P1}");
+    }
+    Console.WriteLine("  (all three deal 150 dps; the spell deals 600/3.5 = 171 dps, so they sit just under parity)");
+    Console.WriteLine();
+
+    // The DPS race itself — the thing he actually wants to tune against.
+    Console.WriteLine("  THE DPS RACE — total interrupt chance over one cast, by how the attacker compares:");
+    Console.WriteLine($"  {"attacker dps / spell dps",26} {"total over one cast",20}");
+    foreach (float ratio in new[] { 0.25f, 0.5f, 0.75f, 1.0f, 1.5f, 2.0f, 3.0f })
+    {
+        float attackerDps = spellDamage / (spellCast + spellReuse) * ratio;
+        float hit = attackerDps * 1.0f;                    // a 1s cycle, so hit == dps
+        float p = StatCalculator.InterruptChance(hit, spellCastValue, 100, 100);
+        float total = p * (spellCast / 1.0f);
+        string note = ratio == 1.0f ? "  <- parity, his 33%" : "";
+        Console.WriteLine($"  {"x" + ratio.ToString("0.##"),26} {total,20:P1}{note}");
+    }
+    Console.WriteLine();
+
+    // Real characters, so the parity assumption is checked rather than assumed.
+    Console.WriteLine("  MEASURED, REAL BUILDS — a fighter's best skill vs a mage's cast, both best-in-tier:");
+    Console.WriteLine($"  {"lvl",4} {"mage nuke",10} {"spellRef",9} {"ftr hit",8} {"pts f/m",9} {"p/hit",7} {"per cast",9}");
+    foreach (int L in new[] { 20, 40, 60, 80 })
+    {
+        var mage = BuildPlayer(Race.Human, BaseClass.Mage, L);
+        var ftr  = BuildPlayer(Race.Human, BaseClass.Fighter, L);
+        var (nukeDef, nukeLvl) = TopSkill(mage, SkillEffect.MagicDamage);
+        if (nukeDef is null) { Console.WriteLine($"  {L,4}  (no nuke on the mage's list)"); continue; }
+
+        var (nFlat, nMod) = nukeDef.MagicDamageAt(nukeLvl);
+        float nuke = StatCalculator.MagicDamageFM((int)mage.EffectiveMagicAttack, nFlat, nMod,
+                                                  (int)mage.EffectiveMagicDefence, mage.MagicDefCoef);
+        float castS  = nukeDef.CastTicks * GameConstants.TickSeconds * mage.EffectiveCastSpeedMultiplier;
+        float reuseS = nukeDef.CooldownTicks * GameConstants.TickSeconds;
+        float refv   = castS + reuseS <= 0 ? 0 : nuke / (castS + reuseS) * castS;
+
+        int ftrHit = StatCalculator.PhysicalDamage((int)ftr.EffectiveAttack, TopPhysSkillPower(ftr),
+                                                   (int)mage.EffectiveDefence, L);
+        int fPts = StatCalculator.InterruptPoints((int)ftr.EffectiveWit, ftr.Level);
+        int mPts = mage.InterruptResist;
+        float p  = StatCalculator.InterruptChance(ftrHit, refv, fPts, mPts);
+        float hitsPerCast = castS / Math.Max(0.1f, AutoAttackSeconds(ftr));
+        Console.WriteLine($"  {L,4} {nuke,10:0} {refv,9:0} {ftrHit,8} {fPts + "/" + mPts,9} {p,7:P1} "
+                        + $"{Math.Min(1f, p * hitsPerCast),9:P1}");
+    }
+    Console.WriteLine("  (per cast = p/hit x the fighter's autoattacks inside the cast window — a floor, since");
+    Console.WriteLine("   his skill hits harder than his autoattack and lands on top of it)");
+    Console.WriteLine();
+
+    // What he asked to be shown last: the price of Resolve, now that the threshold is a number.
+    Console.WriteLine("  WHAT RESOLVE BUYS — the stat term is a straight ratio, so a flat +N is a clean % cut:");
+    Console.WriteLine($"  {"lvl",4} {"base pts",9} {"+54 pts",8} {"interrupts kept",16} {"cut",6}");
+    foreach (int L in new[] { 20, 40, 60, 80 })
+    {
+        var mage = BuildPlayer(Race.Human, BaseClass.Mage, L);
+        int b = mage.InterruptResist;
+        float kept = b / (float)(b + 54);
+        Console.WriteLine($"  {L,4} {b,9} {b + 54,8} {kept,16:P1} {1f - kept,6:P0}");
+    }
+    Console.WriteLine();
+    Console.WriteLine("  ! RESOLVE DECAYS. +54 cuts interrupts by 47% at level 20 and only 30% at 80, because");
+    Console.WriteLine("    points grow with level and a FLAT buff on a RATIO always shrinks. If you want it to");
+    Console.WriteLine("    mean the same thing at 40 and at 80 it has to be a PERCENT, or a ladder.");
+    Console.WriteLine("  ! 🔴 REAL BUILDS COME OUT WELL ABOVE 33%. The parity in your rule is DPS parity, and a");
+    Console.WriteLine("    geared fighter simply out-DPSes a mage's single nuke — 58-94% per cast in the table");
+    Console.WriteLine("    above. That is the model doing what you specified, not a bug, but it means a caster");
+    Console.WriteLine("    under melee cannot finish a cast. Three levers: lower InterruptPerCast below 0.33,");
+    Console.WriteLine("    give casts a baseline InterruptDefense, or make Resolve mandatory. Your call.");
+    Console.WriteLine("  ! Disrupt (InterruptPower 99999) is unchanged and still always breaks a cast.");
+    Console.WriteLine("  ! A skill says 'higher chance to interrupt' with InterruptMult, NOT more");
+    Console.WriteLine("    InterruptPower — power rides the stat ratio and so depends on the target's WIT.");
+    Console.WriteLine("    Frost Spikes / Frost Pierce want InterruptMult ~2 (66% at parity); unauthored, the");
+    Console.WriteLine("    nuker 3rd kit is not built.");
+    Console.WriteLine("  ! ⚠ A cast with no damage and no heal (a buff, a res) has no throughput to divide by.");
+    Console.WriteLine("    It is priced at the caster's M.Atk as a never-zero placeholder — INVENTED, unmeasured,");
+    Console.WriteLine("    and the one number in this section that is mine rather than yours.");
+}
+Console.WriteLine();
+Console.WriteLine();
+// =====================================================================================================
+//  THE RESOLVE TABLE — his ask, 2026-08-24: *"show me visual table a mage normal elemental blast and
+//  thunderstorm in a table vs tank/war/duals (normal/skills) to see it how to balance the Resolve"*.
+//
+//  ⚠ NEITHER SPELL IS IN THE CATALOG. Both are `nuker 3rd` and that kit is not built, so their numbers
+//  are read off his CSV's TOP RUNG (@74) and modelled here: Elemental Blast power 108 / 4s cast / 1s
+//  reuse, Thunderstorm power 216 / 5s cast / 300s reuse. Everything on the ATTACKER side is a real
+//  Entity with real gear running the real formulas.
+// =====================================================================================================
+Console.WriteLine("=== BALANCING RESOLVE: two nukes vs three melee, at 74 ===");
+{
+    const int L = 74;
+    var mage = BuildPlayer(Race.Human, BaseClass.Mage, L);
+    int mDefOfMage = (int)mage.EffectiveDefence;
+
+    // His two casts, off the CSV's top rung. (power, castS, reuseS)
+    var casts = new (string Name, int Power, float Cast, float Reuse)[]
+    {
+        ("Elemental Blast", 108, 4f, 1f),
+        ("Thunderstorm",    216, 5f, 300f),
+    };
+
+    var attackers = new (string Name, Entity E)[]
+    {
+        ("tank",    BuildPlayer(Race.Human, BaseClass.Fighter, L)),
+        ("warrior", BuildPlayer(Race.Human, BaseClass.Fighter, L, warrior: true)),
+        ("dual",    BuildRogue(L)),
+    };
+
+    foreach (var (cname, power, castS, reuseS) in casts)
+    {
+        // The spell's own throughput, priced against the CASTER's defences (see CastInterruptReference).
+        float dmg = StatCalculator.MagicDamageFM((int)mage.EffectiveMagicAttack, 0, power,
+                                                 (int)mage.EffectiveMagicDefence, mage.MagicDefCoef);
+        float castMult = mage.EffectiveCastSpeedMultiplier;
+        float realCast = castS * castMult;
+        float refv = dmg / (realCast + reuseS) * realCast;
+        Console.WriteLine();
+        Console.WriteLine($"  --- {cname}: power {power}, {castS}s base cast -> {realCast:0.0}s real, "
+                        + $"{reuseS:0}s reuse. dmg {dmg:0}, spellRef {refv:0} ---");
+        Console.WriteLine($"  {"attacker",10} {"source",16} {"hit",6} {"every",6} {"hits",5} "
+                        + $"{"p/hit",7} {"PER CAST",9} | {"+Resolve",9} {"saved",6}");
+
+        foreach (var (aname, a) in attackers)
+        {
+            int aPts = StatCalculator.InterruptPoints((int)a.EffectiveWit, a.Level);
+            int dPts = mage.InterruptResist;
+            int dPtsR = dPts + 54;
+
+            // BASIC attack and BEST PHYSICAL SKILL, each with its own cadence.
+            int basicHit = StatCalculator.PhysicalDamage((int)a.EffectiveBasicAttack, 0, mDefOfMage, L);
+            float basicEvery = AutoAttackSeconds(a);
+            var (sk, skLvl) = TopSkill(a, SkillEffect.PhysicalDamage);
+            int skillHit = StatCalculator.PhysicalDamage((int)a.EffectiveAttack,
+                                                         TopPhysSkillPower(a), mDefOfMage, L);
+            float skillEvery = sk is null ? basicEvery : Math.Max(basicEvery, SkillCycleSeconds(a, sk));
+
+            foreach (var (src, hit, every) in new[]
+            {
+                ("basic attack", basicHit, basicEvery),
+                (sk is null ? "skill" : sk.Name, skillHit, skillEvery),
+            })
+            {
+                float p  = StatCalculator.InterruptChance(hit, refv, aPts, dPts);
+                float pR = StatCalculator.InterruptChance(hit, refv, aPts, dPtsR);
+                float n  = realCast / Math.Max(0.05f, every);
+                float per  = 1f - MathF.Pow(1f - p,  n);   // at least one interrupt in the window
+                float perR = 1f - MathF.Pow(1f - pR, n);
+                Console.WriteLine($"  {aname,10} {src,16} {hit,6} {every,6:0.00} {n,5:0.#} "
+                                + $"{p,7:P1} {per,9:P1} | {perR,9:P1} {per - perR,6:P0}");
+            }
+        }
+    }
+    Console.WriteLine();
+    Console.WriteLine("  ! PER CAST = 1-(1-p)^hits, i.e. the chance the cast is broken AT ALL. A melee lands");
+    Console.WriteLine("    BOTH rows at once (skill on cooldown, autoattacks filling), so the true number for");
+    Console.WriteLine("    one attacker is worse than either line alone.");
+    Console.WriteLine("  ! 🔴 THUNDERSTORM IS THE FINDING. Its 300s reuse makes its DPS almost nothing, and your");
+    Console.WriteLine("    rule prices a cast against its own DPS — so the big rare nuke is the EASIEST thing in");
+    Console.WriteLine("    the game to interrupt, by a wide margin. If a long-cooldown spell should instead be");
+    Console.WriteLine("    HARDER to break, the reference has to be the spell's DAMAGE, not its DPS.");
+    Console.WriteLine("  ! +54 is measured against a level-74 mage (resist " 
+                    + $"{BuildPlayer(Race.Human, BaseClass.Mage, 74).InterruptResist}), so it multiplies "
+                    + $"interrupts by x{BuildPlayer(Race.Human, BaseClass.Mage, 74).InterruptResist / (float)(BuildPlayer(Race.Human, BaseClass.Mage, 74).InterruptResist + 54):0.00}.");
+    Console.WriteLine("    To make Resolve actually protect a cast it needs to be a PERCENT or a much bigger");
+    Console.WriteLine("    number — the 'saved' column is what +54 buys today.");
+}
 Console.WriteLine("=== TANK / FIGHTER (Human Fighter, best gear for tier) ===");
 Console.WriteLine("  'basic' = autoattack; 'skill' = best physical skill. Compare SKILL against the mage's");
 Console.WriteLine("  nuke — the basic column is not the fighter's damage, it is its filler.");

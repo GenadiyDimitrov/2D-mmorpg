@@ -391,6 +391,7 @@ public static partial class SkillCatalog
         new(EntanglingRoots, "Entangling Roots", BaseClass.Mage, SkillEffect.Root,
             MpCost: 28, CastTicks: 15, CooldownTicks: 80, Range: 900, Power: 0,
             DurationTicks: 80, BuffKey: "root", Rank: 1,  
+            DebuffLandMod: 0.5f,   // BL-90: a MAGICAL hold, his general "x0.5". Physical ones stay x1 (CON saves).
             Category: SkillCategory.Debuff, DebuffSchool: DebuffSchool.Magical,
             Description: "Snares the target in place for 8s (cannot move, can still act). "
                        + "ATK-vs-WIT contest; bosses immune."),

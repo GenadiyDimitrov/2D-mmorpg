@@ -1467,6 +1467,16 @@ public class Entity
     public Guid? CastTargetId { get; set; }
     public int CastTicksRemaining { get; set; }
 
+    /// <summary>`spellDps × castSeconds` for the cast in progress — what this spell is worth over the
+    /// time it takes to cast. The denominator of the interrupt contest (`BL-91`, see
+    /// <see cref="StatCalculator.InterruptChance"/>).
+    ///
+    /// <para>🔑 COMPUTED ONCE AT CAST START, NOT PER HIT. It needs the caster's own stats and the
+    /// rung's damage/heal numbers; doing that inside <c>TryInterruptCast</c> would run it on every
+    /// swing of every attacker hitting the caster. It is runtime-only and never persisted — a cast does
+    /// not survive a logout.</para></summary>
+    public float CastingInterruptReference { get; set; }
+
     /// <summary>MP already charged for the in-progress cast (the initial portion),
     /// so we know what was spent if it's interrupted/cancelled and what remains
     /// to charge on completion.</summary>
@@ -1955,7 +1965,14 @@ public class Entity
         // seeded here. The mult/flat accumulators above then carry it to the single fold at the end.
         MagicCritChance = StatCalculator.MagicCritBase((int)EffectiveWit);
         InterruptResist = StatCalculator.InterruptResist(EffectiveWit, Level);
-        MagicInterruptBonus = StatCalculator.MagicInterruptPower(EffectiveWit);
+        // ⚠ SEEDED AT ZERO SINCE `BL-91`, and that is NOT a nerf. This used to start at
+        // MagicInterruptPower(wit) = wit·2, back when it was the attacker's ONLY term. The new contest
+        // reads StatCalculator.InterruptPoints(wit, level) for BOTH sides, so wit·2 is already in the
+        // attacker's number — leaving the seed here would count a caster's WIT twice and quietly break
+        // the "parity is exactly ×1" property the whole model rests on. What remains is what the field
+        // now means: the buff/passive bonus ON TOP of your natural WIT (BuffInterruptPower, "magic
+        // cancel"), which is exactly what its siblings below add into it.
+        MagicInterruptBonus = 0;
         BasicAttackInterruptPower = 0;   // rogue "cancel on basic" is now a 3rd-class discipline passive (anti-magic rogue), not a base-rogue trait
         BasicAttackRange = GameConstants.MeleeRange;
         // A mob's innate weapon (claws/club/blade/bow) seeds this; an equipped weapon overwrites it

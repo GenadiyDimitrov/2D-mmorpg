@@ -83,11 +83,46 @@ public record SkillDef(
     float AreaRadius = 0f,
     int InterruptDefense = 0,
     int InterruptPower = 0,
+    /// <summary>This skill's MULTIPLIER on the interrupt chance it rolls when it hits a caster
+    /// (`BL-91`). 1 = ordinary. This is his nuker 3rd column *"Higher chance to interrupt enemy
+    /// casts"* — a multiplier rather than more <see cref="InterruptPower"/> because power is a STAT
+    /// term (it rides the attacker/defender points ratio, so its value depends on the target's WIT and
+    /// level) while "this spell is better at interrupting" is a property of the spell alone.
+    /// <para>⚠ Unrelated to <see cref="DebuffLandMod"/>, and deliberately so: his rule for those
+    /// spells is *"does dmg but have a lower success rate for the slow - interrupt unaffected"*.</para></summary>
+    float InterruptMult = 1f,
     float BlockAccuracy = 0f,
     bool SureHit = false,
     // For contested crowd-control (Slow, later Stun/Root/Fear): which stat the LAND
     // chance contests against — Physical = ATK vs CON, Magical = ATK vs WIT.
     DebuffSchool DebuffSchool = DebuffSchool.None,
+    /// <summary>PER-SKILL DEBUFF SUCCESS MULTIPLIER (`BL-90`, owner 2026-08-24). Multiplies the
+    /// probability this skill's DEBUFF sticks — and nothing else. 1.0 = the stock chance.
+    ///
+    /// <para>🔑 HIS NUMBERS ARE READ OFF THE CONTESTED CURVE, WHOSE PARITY IS 50%: *"armor/weapon break
+    /// + gravity + Arcane/Fros/Pyro blasts(nuker 3rd) should be 75% at parity (x1.5) and the other
+    /// should be 25% at parity (x0.5)"*. So ×1.5 → 75%, ×1 → 50%, ×0.7 → 35%, ×0.5 → 25%, ×0.3 → 15%.
+    /// A skill carrying one of these must therefore be CONTESTED, which for a non-`ContestCc` payload
+    /// means declaring a <see cref="DebuffSchool"/> — see <c>GameLoopService.IsContestedDebuff</c>.</para>
+    ///
+    /// <para>🔑 THE VALUES LIVE IN HIS CSVs, NOT IN A TIER TABLE. He authors them into the DESCR column
+    /// as <c>(success chance x1.5)</c>; `SkillCsvSeed --check` reads that column and compares it here,
+    /// so the two cannot drift. Default 1 = untagged = the stock chance.</para>
+    ///
+    /// <para>It also works on the FIZZLE path (a debuff with neither a `ContestCc` flag nor a school),
+    /// where it scales the surviving <c>1 − fail</c> — the same quantity, so one number means one thing
+    /// everywhere. ⚠ But his parity arithmetic does NOT hold there (that base is ~99%, not 50%), so an
+    /// authored value belongs with a school.</para>
+    ///
+    /// <para>🔑 IT NEVER TOUCHES DAMAGE OR INTERRUPT. His rule for the hybrid nukes is *"does dmg but
+    /// have a lower success rate for the slow - interrupt unaffected"*: the damage arm keeps its own
+    /// fizzle roll and the interrupt is a separate contest (<see cref="StatCalculator.InterruptChance"/>),
+    /// so one cast can hit for full, break the target's cast, and still miss its rider.</para>
+    ///
+    /// <para>Per-LEVEL via <see cref="SkillLevel.DebuffLandMod"/> (a level's 0 = inherit), because his
+    /// ask was explicitly *"a sucess multiplier (per skill/lvl)"* — a ladder can buy reliability as it
+    /// climbs.</para></summary>
+    float DebuffLandMod = 1f,
     // "[Double]" physical skills: a flat ×2 on the caster's ATK curve (2.5-25%). Ordinary
     // physical skills never double. Magic skills use magic crit.
     bool CanDouble = false,
@@ -494,6 +529,14 @@ public record SkillDef(
         return v > 0f ? v : CcResistPhysical;
     }
 
+    /// <summary>This skill's DEBUFF SUCCESS MULTIPLIER at a LEVEL. A level's 0 means "inherit", so a
+    /// skill carrying one flat factor needs no per-level entry at all. See <see cref="DebuffLandMod"/>.</summary>
+    public float DebuffLandModAt(int level)
+    {
+        float v = Lvl(level)?.DebuffLandMod ?? 0f;
+        return v > 0f ? v : DebuffLandMod;
+    }
+
     /// <summary>Magic-crit-DAMAGE bonus at a LEVEL (a fraction: 0.30 = +30%). A level's 0 means
     /// "inherit", so a single-rung blessing needs no per-level entry — but a ladder can climb
     /// 0.10/0.20/0.30 like every other buff. See <see cref="CcResistMagicalAt"/>.</summary>
@@ -722,7 +765,11 @@ public record SkillLevel(
     // 100%…200% — and without a per-level slot every rung would have silently applied rung 1's number,
     // because the fields live on the SkillDef and a def has one of each.
     float PhysMpCostPct = 0f,
-    float MagicMpCostPct = 0f);
+    float MagicMpCostPct = 0f,
+    // DEBUFF SUCCESS MULTIPLIER at THIS level (0 = inherit the SkillDef's). See SkillDef.DebuffLandMod.
+    // His ask names the ladder explicitly — *"a sucess multiplier (per skill/lvl)"* — so a hold whose
+    // rungs are otherwise identical can still get more reliable as it climbs.
+    float DebuffLandMod = 0f);
 
 /// <summary>What a buff does to the four things a MONSTER pays out: experience, skill points, the
 /// gold it drops and the CHANCE its table rolls. The premium rune family (Rune of Experience /

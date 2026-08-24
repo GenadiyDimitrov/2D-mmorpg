@@ -123,6 +123,10 @@ internal static class Descr
         // A PROC CHANCE. Bare "chance" is safe only because every other use of the word is already
         // claimed by a longer alias above it ("block chance" -> blockrate), and the table is walked
         // longest-first. It exists so Combo Mastery's "With 3% Chance" is VERIFIED rather than UNREAD.
+        // `BL-90` — his authored debuff success multiplier, written "(success chance x1.5)". It MUST
+        // sit above the bare "chance" alias: the table is walked longest-first, so the two-word phrase
+        // claims the number and a proc chance never steals it.
+        ("successchance", new[] { "success chance" }),
         ("procchance",    new[] { "chance" }),
         ("ccresist",      new[] { "resist to spt", "resist to con" }),
         ("cancelresist",  new[] { "cancel resist", "buff cancel resist" }),
@@ -187,8 +191,17 @@ internal static class Descr
     /// correct. Same for "(in l2 is strikes the target with 35 power added to p.atk)".</summary>
     private static readonly Regex Parenthetical = new(@"\([^)]*\)");
 
+    /// <summary>THE ONE PARENTHETICAL THAT IS DATA. He authors the `BL-90` debuff success multiplier
+    /// INSIDE brackets — *"Apply 15% Slow effect (success chance x0.7)"* — and the commentary rule above
+    /// would have silently eaten all 119 of them, leaving the one number this whole feature is about as
+    /// the only authored value in the files that nothing checks. Lifted out before the strip and handed
+    /// back as its own clause.</summary>
+    private static readonly Regex SuccessChanceLift =
+        new(@"\(\s*(success\s+chance\s*x\s*\d+(?:\.\d+)?)\s*\)", RegexOptions.IgnoreCase);
+
     private static List<(Scope? Scope, string Text)> Segments(string descr)
     {
+        descr = SuccessChanceLift.Replace(descr, m => "; " + m.Groups[1].Value + " ; ");
         descr = Parenthetical.Replace(descr, " ");
         var outp = new List<(Scope?, string)>();
         foreach (var chunk in descr.Split(';', StringSplitOptions.RemoveEmptyEntries))
@@ -366,6 +379,15 @@ internal static class Descr
         {
             Add("mpcost", true, def.PhysMpCostPctAt(level));
             Add("mpcost", true, def.MagicMpCostPctAt(level));
+
+            // DEBUFF SUCCESS MULTIPLIER (`BL-90`) — his `(success chance x1.5)`.
+            // ⚠ TWO THINGS ARE DELIBERATE HERE. (1) It is stored as a PERCENT and as `mod − 1`, because
+            // that is how the token reader already renders every "xN" in his files (`mpReg x1.2` → the
+            // fraction 0.2) and the two sides have to speak the same dialect. (2) It goes straight into
+            // the dictionary rather than through Add(), which drops zeros — an authored
+            // "(success chance x1)" tokenises to exactly 0, and his fourteen Gravity rows carry it, so
+            // Add() would have printed his most-authored value as UNCHECKED.
+            pool[("successchance", true)] = new List<float> { def.DebuffLandModAt(level) - 1f };
         }
 
         // ARMOR MASTERY: the row for the named weight, or every row when unscoped.

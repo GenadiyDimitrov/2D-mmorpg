@@ -503,27 +503,83 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
   - ⚠ It is also the first table in the game that holds something a player would call **private**. Worth
     deciding once, before there is real data in it, whether staff below admin can read whispers.
 
-- `BL-90` 🔴 **A PER-SKILL DEBUFF SUCCESS RATE — your nuker 3rd COMMENT column asks for one, and the
-  engine has no knob for it.** Four skills in `nuker 3rd.csv` carry the same note in the Comment column:
-  Frost Spikes *"does dmg but have a lower success rate for the slow - interrupt unaffected"*, Frost
-  Pierce the same for its bleed, Witches Curse *"does dmg but have a lower success rate for the curse"*,
-  and Arcane Void / Witches Scarecrow a bare *"lower success rate"*.
-  - **The rule you are stating** is a hybrid tax: a spell that deals damage AND hangs a debuff should land
-    that debuff LESS often than a spell whose whole job is the debuff. Pure-debuff skills that are simply
-    strong (a cancel; the scarecrow) pay the same tax for the same reason.
-  - **Today there is exactly one landing roll and it has no per-skill term.**
-    `StatCalculator.DebuffLandChance(attackerAtk, defenderStat, attackerLevel, defenderLevel)` is a pure
-    stat contest — every debuff in the game rides the identical curve, so Frost Spikes' slow would land
-    exactly as often as a dedicated Slow. The shape of the fix is small: one `SkillDef` field (a landing
-    FACTOR, 1.0 = today), multiplied into that result at the two call sites in `ExecuteSkill`.
-  - 🔑 **Your "interrupt unaffected" is already true for free** and must stay that way: the interrupt is a
-    separate contest (`StatCalculator.InterruptChance`, caster resist vs skill power) and never touches
-    the debuff roll. Whatever the factor does, it must not be applied there.
-  - ❓ **What I need from you is the NUMBER, or the tiers.** "Lower" is not a value. The cheapest thing
-    that answers all five rows is two tiers — say ×0.6 for a damage spell's rider and ×0.75 for a strong
-    pure debuff — but the split is yours. Name them and this is an afternoon.
-  - ⚠ Blocked with the rest of the **nuker 3rd kit**, which your CSV unblocked on 2026-08-24 and which is
-    not built yet. The factor should land WITH that kit, not before it — nothing today would use it.
+- `BL-90` 🟢 **BUILT 2026-08-24 (0.83.0) — A PER-SKILL DEBUFF SUCCESS MULTIPLIER, AND THE ROUTING BUG IT
+  EXPOSED.** Your final shape: *"DebuffLandMod should be floating one value - default 1 … armor/weapon
+  break + gravity + Arcane/Fros/Pyro blasts(nuker 3rd) should be 75% at parity (x1.5) and the other should
+  be 25% at parity (x0.5)"*, with the values themselves authored into the CSVs as `(success chance xN)`.
+  - ✅ `SkillDef.DebuffLandMod` + `SkillLevel.DebuffLandMod` (0 = inherit), read as `DebuffLandModAt(lvl)`
+    — one plain float, default 1, per skill AND per rung. **No tier constants**: a first pass had four and
+    you replaced them with the CSV column, which is the right home.
+  - ✅ 🔑 **THE ROUTING FIX YOUR ARITHMETIC FORCED.** ×1.5 only reaches 75% off a **50%** base, and 50% is
+    the CONTESTED curve — the fizzle path is ~99%. Armor Break, Weapon Break, Gravity and Mana Strain all
+    declared `DebuffSchool.Magical`, all said *"Contested ATK vs SPT"* on their cards, and all took the
+    **fizzle** roll anyway, because the branch tested the effect-FLAG mask and never read the school.
+    `IsContestedDebuff` now reads both. Those four moved from ~99% to 75/50/75/25% at parity.
+  - ✅ `SkillCsvSeed --check` **reads the `(success chance xN)` column** (119 authored rows). It needed a
+    carve-out: the DESCR reader strips parentheticals as commentary, which was eating every one of them.
+  - ✅ `BalanceMatrix` prints **=== DEBUFF SUCCESS ===** — your scale, every tagged skill, and the four
+    that the routing fix moved.
+  - **Applied from your CSVs:** Armor Break ×1.5 · Weapon Break ×1.5 · Gravity ×1 · Bind ×0.7 · Mana
+    Strain ×0.5. **From your general rule, MAGICAL only:** Entangling Roots, Warding Step ×0.5.
+  - 🔑 **PHYSICAL DEBUFFS STAY ×1** — your ruling: *"physical debuffs should be x1 for now .. Con saves ..
+    we deside later"*. The physical school already contests **CON**, a stat a fighter really carries, so
+    taxing it too would double-charge. Reverted on Shield Stun, Shield Bash, Stay!, Terrifying Roar.
+    ⏳ Explicitly a HOLD, not an answer — re-raise when physical CC is actually measured.
+  - ⚠ **YOUR MESSAGE AND YOUR CSV DISAGREE ON GRAVITY** — the message puts it in the ×1.5 group, all
+    fourteen rows in `healer 3rd.csv` say `(success chance x1)`. The CSV won, per the standing rule. Say
+    the word and it is one edit in both places.
+  - 🔴 **STILL OPEN — the nuker 3rd values have no code to attach to.** Arcane/Frost/Pyro Burst ×1.5,
+    Frost Spikes ×0.7, Frost Pierce ×0.5, Witches Curse ×0.7, Witches Scarecrow ×0.5, Arcane Void ×0.3 are
+    authored and waiting on the kit. `nuker 3rd.csv` also earns its line in `Check.Specs` that day.
+  - 🔴 **STILL OPEN — Snare Trap and the Warchanter's stun-rider** are hybrids that already exist and are
+    deliberately left at ×1. Retro-taxing a built class is your call; one line each.
+  - 🔴 **STILL OPEN — "buff removeal" has nothing to tag.** Dispel Magic was deleted 2026-08-07. Arcane
+    Void ×0.3 is the cancel you have authored, and it lands with the nuker kit.
+  - ℹ️ Your *"(did the same for buffer)"* was a slip — *"did the same for healer ... my bad"*. Confirmed:
+    `healer 3rd` and `nuker 3rd` carry the column, `buffer 3rd` has none and owes none.
+
+- `BL-91` 🟡 **THE INTERRUPT MODEL IS BUILT (0.83.0) — AND THE MEASUREMENT ASKS YOU TWO QUESTIONS.**
+  - 🔴 **WHAT IT REPLACED WAS DEAD.** The old rule was `0.25 + (power − resist)/100` with
+    `resist = wit·2 + LEVEL` and **no level term on the attacker's side**. Measured mage vs mage at parity:
+    **5% / 0% / 0% / 0%** at levels 20/40/60/80. One authored `InterruptPower` in the entire catalog
+    (Disrupt, 99999), zero authored `InterruptDefense`. Nothing has ever interrupted anything.
+  - ✅ **BUILT, your model.** *"chance per spell to interrupt 33% … high atack speed low dmg will interrupt
+    on average same amount as high dmg low … the average should be 33%"*. Making the per-cast total
+    independent of cadence forces the per-hit chance to be that hit's SHARE of the damage, and when you
+    write it out the attacker's DPS cancels:
+    - `p(hit) = 0.33 × hitDamage / (spellDps × castSeconds) × attackerPoints/defenderPoints × InterruptMult`
+    - `spellDps = base_dmg / (base_cast + base_reuse)`, your definition, priced against the **caster's own
+      defences** so the incoming hit and the spell are on one yardstick. Computed once at cast start.
+    - `points = wit·2 + level` on **both** sides, so parity is exactly ×1 and the whole thing reduces to
+      the DPS race. Disrupt's 99999 still always breaks a cast, unchanged.
+    - Verified: three attackers with the same DPS and cadences of 2s / 1s / 0.25s all come out at **28.9%**
+      over one cast. The invariant holds exactly.
+  - ✅ `SkillDef.InterruptMult` is how a skill says *"Higher chance to interrupt enemy casts"* — a
+    multiplier, not more `InterruptPower`, because power rides the stat ratio and so depends on the
+    target's WIT. Frost Spikes / Frost Pierce want ~×2 (66% at parity) when the nuker kit lands.
+  - ❓ **QUESTION 1 — REAL BUILDS COME OUT WELL ABOVE 33%.** The parity in your rule is *DPS* parity, and a
+    geared fighter simply out-DPSes a mage's single nuke: the matrix measures **58-94% per cast** at
+    20/40/60/80. That is the model doing exactly what you specified, but it means a caster under melee
+    cannot finish a cast. Three levers: lower `InterruptPerCast` below 0.33, give casts a baseline
+    `InterruptDefense`, or make Resolve mandatory.
+  - ❓ **QUESTION 2 — RESOLVE'S +54 DECAYS.** The stat term is a straight ratio, so a flat buff shrinks as
+    points grow: +54 cuts interrupts by **47% at level 20 and only 30% at 80**. If you want it to mean the
+    same thing at 40 and at 80 it has to be a PERCENT or a ladder. This is the *"we can balance the buff"*
+    you asked to do last, and the numbers are in `BalanceMatrix` under `=== INTERRUPT ===`.
+  - ⚠ **ONE INVENTED NUMBER, and it is mine not yours:** a cast with no damage and no heal (a buff, a res,
+    a teleport) has no throughput to divide by, so it is priced at the caster's M.Atk purely to avoid a
+    divide-by-zero. Unmeasured. Everything else in the model is your specification.
+
+- `BL-92` 🔵 **MP REGEN IS SEVERAL TIMES IG'S — you asked to be shown it later.** Your words,
+  2026-08-24: *"ask me later to see the mp regen (ours is several times more than IG)"*. Recorded here so
+  it is not lost; **nothing measured or changed yet**, and nothing should be until you open it.
+  - When you do: the comparison wants the same treatment the mob curve got in 0.73.0 — measure ours
+    against IG's real numbers at several levels and refit, rather than scaling by a guessed factor.
+    ⚠ Mob regen and player regen are deliberately different models (a mob is a flat fraction of its own
+    pool; a player rides the exponential CON/Spirit curve), so they are two separate questions.
+  - ⚠ It interacts with things already ruled: town regen is **×2 city-only** (playtest 27), Meditation is
+    an enormous MP-regen burst, and `mpReg x1.2` sits in every mage's armour mastery. Retuning the base
+    moves all three.
 
 - `BL-34` ✅ **BUILT 2026-08-14 (0.66.0)** — **Madness**, a party-cast Frenzy handing out a new **rung 7**
   of the family, at **76 on the Warchanter** so an admin can party-buff with it. Your deliberate
