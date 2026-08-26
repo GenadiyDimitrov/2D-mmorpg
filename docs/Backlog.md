@@ -483,9 +483,11 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
   - 🔑 **It flushes before it reads.** Lines wait for the 60-second autosave, so a straight query would
     have been blind to the last minute — and the case this exists for is a LIVE report. Typing `/chatlog`
     the moment you are told and seeing nothing would read as innocence.
-  - 🔴 **RETENTION IS STILL YOURS TO RULE, AND IT IS NOW ONE NUMBER.**
-    `GameConstants.ChatLogRetentionDays` = **0 = never purge**, which is what ships. The six-hourly sweep
-    is wired and returns immediately at 0. Say 30 or 90 and it starts working — nothing else to build.
+  - ✅ **RETENTION RULED 2026-08-26: 90 DAYS.** *"90 days retention no point in keeping more .. if some1
+    gets reported .. must take no more than a week to deem him banable or not"*. Live in 0.86.1 —
+    `ChatLogRetentionDays` = 90 and the six-hourly sweep is deleting. 🔑 The window is sized to how long
+    a CASE stays open (a week), not to how long the evidence stays interesting; **don't raise it "to be
+    safe"** — that is the instinct the ruling rejected.
   - 🔴 **THE PRIVACY QUESTION, ANSWERED PROVISIONALLY — reverse it in one line if you disagree.**
     **Moderator and above read whispers** (they hold the jail and the kick, and the private channel is the
     case the feature is for). **A Chat Moderator reads PUBLIC channels only** — that rank goes to someone

@@ -1351,13 +1351,14 @@ public class PersistenceService
     /// <summary>Delete moderation-log lines older than <paramref name="days"/>. Returns the number
     /// removed.
     ///
-    /// 🔴 IT IS WIRED BUT INERT, AND THAT IS DELIBERATE — retention is the owner's ruling
-    /// (BL-89: *"a real answer is a purge — 30 or 90 days — but the sensible window depends on how
-    /// long after the fact a report arrives"*). `GameLoopService.FlushChatLog` calls this every six
-    /// hours, but `GameConstants.ChatLogRetentionDays` is **0 = never purge** until he names a
-    /// number, and 0 returns here immediately. So the machinery is finished and nothing is destroyed
-    /// by a default nobody chose — deleting the evidence a ban would rest on is not a thing to guess
-    /// at, and the day he says "90" it is one number, not a wiring job.</summary>
+    /// 🔑 **LIVE since 2026-08-26 at 90 days** (`BL-89`, the owner's ruling — the reasoning lives on
+    /// <see cref="GameConstants.ChatLogRetentionDays"/>, and it is the part to read before changing
+    /// the number). `GameLoopService.FlushChatLog` calls this every six hours.
+    ///
+    /// ⚠ <paramref name="days"/> ≤ 0 returns 0 and deletes NOTHING. That guard is not defensive
+    /// tidiness — it is the difference between "retention is switched off" and "purge everything",
+    /// and this method deletes the evidence a ban rests on. A misread config that wiped the table
+    /// would be silent, irreversible, and only discovered by a moderator who needed a row.</summary>
     public async Task<int> PurgeChatLogAsync(int days)
     {
         if (days <= 0) return 0;

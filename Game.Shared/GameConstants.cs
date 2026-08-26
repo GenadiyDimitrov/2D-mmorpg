@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.86.0";
+    public const string GameVersion = "0.86.1";
 
     // ----- SP BOTTLE (owner, 2026-08-26) -------------------------------------------------------
     // *"u can make an npc to take your 1kkk SP + 100kk gold and give you a tradable/sellabel
@@ -764,16 +764,21 @@ public static class GameConstants
 
     // ----- Admin / jail (Phase 5) ----------------------------------------------
 
-    /// <summary>How many days of chat the moderation log keeps. <b>0 = keep everything, forever</b>,
-    /// and that is the shipped value.
+    /// <summary>How many days of chat the moderation log keeps. Swept every six hours by
+    /// <c>GameLoopService.FlushChatLog</c>. <b>0 would mean keep everything forever</b> — it does not
+    /// any more.
     ///
-    /// 🔴 **THE NUMBER IS THE OWNER'S TO NAME AND HE HAS NOT NAMED IT** (`BL-89`: *"a real answer is a
-    /// purge — 30 or 90 days — but the sensible window depends on how long after the fact a report
-    /// arrives"*). Everything a purge needs is wired: put 30 or 90 here and the six-hourly sweep in
-    /// <c>FlushChatLog</c> starts deleting. It defaults to never-purge because the rows it would delete
-    /// are the evidence a ban rests on, and destroying those on a default nobody chose is worse than a
-    /// table that grows — chat is small, and 90 days of it is megabytes.</summary>
-    public const int ChatLogRetentionDays = 0;
+    /// **90, ruled by the owner 2026-08-26** (`BL-89`): *"90 days retention no point in keeping more ..
+    /// if some1 gets reported .. must take no more than a week to deem him banable or not"*.
+    ///
+    /// 🔑 **The reasoning is the useful part, because it is what a future change has to argue against.**
+    /// The window is not sized to how long the evidence stays *interesting* — it is sized to how long a
+    /// CASE can stay open, and a case is a week. 90 days is therefore ~12× the longest decision he will
+    /// tolerate: enough slack for a report that arrives late, a moderator on holiday, or a pattern that
+    /// only shows up when someone finally looks, while still being far short of a permanent record of
+    /// everything every player ever whispered. Do not raise it "to be safe" — that is the exact instinct
+    /// he ruled against, and an indefinite chat archive is a liability, not a safety margin.</summary>
+    public const int ChatLogRetentionDays = 90;
 
     /// <summary>Jail sits in the NEGATIVE quadrant (owner: dungeons + jail live at minus coordinates,
     /// away from the overworld). It is the CENTRE of the jail yard, not where inmates stand.</summary>

@@ -149,9 +149,9 @@ need the new APK. **Playtest 28 — the twelve below them, eleven built and one 
     into the System tab, 25 lines a page, oldest-first, staff-only. `around` takes `15m`/`2h`/`1d` as well
     as a clock time, because a report sounds like *"about ten minutes ago"*. It **flushes the pending
     buffer before it reads**, so a line said seconds ago is already there — a live report was the whole
-    point. 🔴 **Two things are still yours to say:** the RETENTION window (`ChatLogRetentionDays` is 0 =
-    never purge; the sweep is wired and waiting on a number), and whether you agree that a **Moderator**
-    may read whispers while a **Chat Moderator** gets public channels only. ->
+    point. ✅ **RETENTION RULED: 90 DAYS** (0.86.1) — *"must take no more than a week to deem him banable
+    or not"*, so 90 is ~12× the longest a case stays open. 🔴 **One thing still yours to say:** whether you
+    agree that a **Moderator** may read whispers while a **Chat Moderator** gets public channels only. ->
 
 - [!] 🟢 **BUILT.** Runes are caunted towards the buff limit ... If I have auto buff pots on -> I buff some buffs fade for over buffing then pots start to buff me and in the end I have semi buff form npc buffer and semi potions
 	- I want buff potions in their details to say Potion of "name" I'm getting buffed "Mig" and don't know if it's my or the potions.

@@ -7,11 +7,36 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.86.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.86.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-08-26 (latest) — 0.86.0: `BL-89` — the chat log gets a READER, and it does not wait for the autosave
+## 2026-08-26 (latest) — 0.86.1: retention is 90 days
+
+One number, and it switches the purge on. Owner: *"90 days retention no point in keeping more .. if
+some1 gets reported .. must take no more than a week to deem him banable or not"*.
+
+`GameConstants.ChatLogRetentionDays` goes **0 → 90**, and the six-hourly sweep wired in 0.86.0 starts
+deleting. `_nextChatLogPurgeUtc` is `MinValue`, so the first autosave after a boot sweeps — a server
+restarted more often than every six hours would otherwise never purge at all, which is this machine's
+habit exactly.
+
+🔑 **The reasoning is worth more than the number, because it is what a future change has to argue
+against.** The window is not sized to how long the evidence stays *interesting* — it is sized to how
+long a CASE can stay open, and a case is a week. 90 days is ~12× the longest decision he will tolerate:
+slack for a report that arrives late, a moderator on holiday, or a pattern nobody notices until someone
+finally looks — and still far short of a permanent record of everything every player ever whispered.
+**Do not raise it "to be safe"**; that is the instinct he ruled against, and an indefinite chat archive
+is a liability rather than a safety margin.
+
+`PurgeChatLogAsync` still returns 0 and deletes nothing for `days <= 0`. That guard now matters more,
+not less: it is the difference between *retention is switched off* and *purge everything*, on a method
+whose rows are the evidence a ban rests on.
+
+That closes `BL-89` completely — nothing about the chat log is owed any more except a playtest.
+**Protocol stays 27.** No APK, no `game.db` delete.
+
+## 2026-08-26 — 0.86.0: `BL-89` — the chat log gets a READER, and it does not wait for the autosave
 
 The write half shipped in 0.81.0 and nothing ever opened it. Every delivered line has been going into
 `ChatLogRecord` for days; the only way to *see* one was to open `game.db` on the machine, which is not

@@ -1153,9 +1153,9 @@ public class GameLoopService : BackgroundService
     private const int ChatLogPageSize = 25;
     private static readonly TimeSpan ChatLogAroundWindow = TimeSpan.FromMinutes(10);
 
-    /// <summary>When the retention purge may next run. The purge itself is a no-op until the owner
-    /// names a window (<see cref="GameConstants.ChatLogRetentionDays"/> is 0 = keep forever), so this
-    /// only exists so that the day he DOES name one, it is a number and not a wiring job.</summary>
+    /// <summary>When the retention purge may next run. <c>MinValue</c> so the FIRST autosave after a
+    /// boot sweeps — a server that is restarted more often than every six hours would otherwise never
+    /// purge at all, which is exactly this machine's habit.</summary>
     private DateTime _nextChatLogPurgeUtc = DateTime.MinValue;
 
     private void FlushChatLog()
