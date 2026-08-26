@@ -672,7 +672,28 @@ closed · **`BL-93` opened** for the in-game visuals discussion you asked for (*
   - **The IP rule applies to ART as hard as it does to names** — see `naming-no-trademarks`. Silhouettes
     and skins that read as another game's creatures are the same problem the town names were.
 
-  🔵 Yours to open. Nothing is invented until you do.
+  🟢 **OPENED AND ANSWERED, 2026-08-26/27. Direction set, step 1 built.** What you ruled:
+  - **Low-poly stylised, CC0 sources**, accepted once it was clear it is swappable later — and 🔑 the
+    thing that locks you in is **the RIG, not the polycount**: Unity **Humanoid** avatars mean a better
+    body drops onto the same skeleton with no code change. Generic would be the rebuild.
+  - **Downloadable assets** (*"a 100mb apk then download 10gb data"*) — yes, Addressables + a remote
+    catalog off `UseStaticFiles()` on the server you already run. 🔴 **Not needed yet** (43 MB APK with
+    zero art; low-poly lands ~60-90 MB) and ⚠ **bandwidth is the ceiling — your server is a phone.**
+    The seam is in for free: models load by key through one function.
+  - **Camera: unchanged for now.** *"Let's make proof of concept with models then see camera where it
+    stands."* I had argued for pulling in to a 3/4 view — **deferred behind the POC, don't re-propose.**
+
+  **Step 1 is BUILT (protocol 29, see the CHANGELOG):** `Category`/`Role` on the wire, the family→prefab
+  fallback chain, facing + attack/cast/death animation off messages that already existed, and a
+  "3D models: off" quality preset. Everything still renders as spheres until art lands — deliberately.
+  ⤷ 🔴 **OWED: one Unity Editor session** (import, Rig=Humanoid, save as
+  `Assets/Resources/Models/humanoid.prefab`) — the steps are in `docs/guides/UnityClient.md`,
+  *"Dropping in a model"*. **A version bump and a new APK go with it.**
+
+  Still un-started, in the order I'd do them: **terrain generated from the zone circles** (biggest
+  perceived change per hour, needs no art) → creature families → **8 skill-FX archetypes** (one enum +
+  colour on `SkillDef`; the client reads `SkillCatalog` directly, so no protocol change) → **~25 sound
+  clips + 2-3 ambient loops** → skybox/fog/day-night (🔑 `GameClock` is already server-synced).
 
 ---
 

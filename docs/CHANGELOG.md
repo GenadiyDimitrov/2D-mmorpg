@@ -7,12 +7,75 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.89.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.90.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-08-26 (latest) — 0.89.0: a boss becomes a boss — `BL-13` + `BL-81` + `BL-83` + `BL-88`
+## 2026-08-27 (latest) — 0.90.0: `BL-93` step 1 — the client can draw a body
+
+**⚠ Half a feature on purpose, and it ships in that state.** The engine side of the model pass is
+complete and the world still renders exactly as it did — flat coloured spheres — because there is no
+art in the repo yet. The other half is one Unity Editor session (below), and until it happens this
+change is invisible, which is the point.
+
+**Protocol 28 → 29.** `EntityDto` gained two fields, `Category` and `Role`.
+
+### The wire tells the client WHAT a creature is, never what it looks like
+
+The client could not draw a wolf as a wolf because it did not know it was a wolf: for a mob,
+`EntityDto` carried a name and a level and nothing else about its identity. It now carries the
+**authored** taxonomy — `MobCatalog`'s own `MobCategory` × `MobRole`, which every template already
+declares because it maps the CSV "Type" column.
+
+Deliberately *not* a model id on the wire. The server says what a thing **is**; the client decides how
+it **looks**. A mesh name in a DTO would put an art decision inside the simulation, where changing it
+costs a protocol bump — and a taxonomy invented for the client is a second table to keep in step with
+the first, which is a thing that drifts. Players and NPCs send nothing new at all: race, class and
+subclass were already on the wire and say strictly more than a model needs.
+
+### The art budget is per FAMILY, not per mob
+
+Nine categories × three roles is the whole model set for 100+ templates, with tint and scale
+separating members inside one family. A new creature inherits a model for free.
+
+`ModelLibrary` (in `EntityManager.cs`) resolves an entity down a **fallback chain**, most specific
+first — `mob_animal_archer` → `mob_animal` → `mob` → `humanoid` — and stops at the first hit. So a
+**single** `Resources/Models/humanoid.prefab` gives every player, NPC and humanoid mob in the game a
+body, and each more specific prefab added later peels one group off the general case with no code
+change. Art can arrive in any order over any number of months and the client is correct throughout.
+Missing lookups are cached as misses: until art lands *every* lookup fails, and an unremembered miss
+is a filesystem probe per spawn on a phone.
+
+### Animation cost no new messages
+
+Everything the server already sends turned out to be enough. `EntityLean.Speed` and the drawn
+position delta give walk speed **and facing** (no wire field for either — the interpolator has both);
+`CombatEvent` gives the swing, for every visible fight rather than only your own, so the hook sits
+*above* `OnCombat`'s self-only filter; `MobCastInfo` and `CastInfo` give the casting pose; `Dead`
+gives the fall. Every animator parameter is optional, so a controller with only `Speed` gets walking
+and no console noise — which is what matters while clips arrive one at a time.
+
+One thing that had to be kept apart: **a sphere billboards toward the camera, a body faces where it
+walks.** Doing both would spin every character to stare at you whenever the camera moved, so
+`EntityView.LateUpdate` picks one path or the other and they never mix.
+
+### "3D models: off" is a quality preset, not a debug switch
+
+In the Settings window with the other look options, persisted, and the OFF position is the exact
+client that shipped before this change — one draw call per entity, no skinning. A phone that cannot
+carry rigged meshes still gets a game rather than a slideshow. Animators are also culled off-screen
+by default (`CullUpdateTransforms`), because the server sends everything inside `ViewRange = 3000`,
+which is a good deal more than the camera is looking at.
+
+### ⚠ What is still owed — the Editor half
+
+Nothing here can be seen until someone opens Unity once: import a rigged model, set its **Rig to
+Humanoid** (never Generic — see `docs/guides/UnityClient.md`, "Dropping in a model"), and save it as
+`Assets/Resources/Models/humanoid.prefab`. **A version bump and a new APK go with it**, since the
+protocol moved.
+
+## 2026-08-26 — 0.89.0: a boss becomes a boss — `BL-13` + `BL-81` + `BL-83` + `BL-88`
 
 Four entries, one build, and the first APK since **0.81.1** — seven versions of server work had never
 reached the phone.

@@ -160,6 +160,22 @@ namespace Game.Client
             _zoneToggle = zones;
             y -= 48f;
 
+            // `BL-93` — 3D models on/off. This is the low-end quality preset, not a debug switch: OFF
+            // is the exact client that shipped before models existed (flat unlit spheres, one draw
+            // call, no skinning), so a device that cannot carry rigged meshes still has a game. It
+            // lives here rather than behind a Debug panel for that reason — the player whose phone is
+            // struggling is the one who needs to find it.
+            var models = UiKit.TextButton(inner, "", () =>
+            {
+                if (Boot.Entities == null) return;
+                Boot.Entities.SetModelsEnabled(!EntityManager.ModelsEnabled);
+                RefreshSettingsLabels();
+            }, 15f);
+            UiKit.Place(UiKit.Rect(models.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(18f, y), new Vector2(260f, 38f));
+            _modelToggle = models;
+            y -= 48f;
+
             var save = UiKit.TextButton(inner, "Save", () => PlayerPrefs.Save(), 16f);
             UiKit.Place(UiKit.Rect(save.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
                         new Vector2(18f, 16f), new Vector2(140f, 40f));
@@ -179,7 +195,7 @@ namespace Game.Client
             _settingsPanel.gameObject.SetActive(false);
         }
 
-        private Button _damageToggle, _zoneToggle, _projectionToggle;
+        private Button _damageToggle, _zoneToggle, _projectionToggle, _modelToggle;
 
         private void RefreshSettingsLabels()
         {
@@ -189,6 +205,8 @@ namespace Game.Client
             UiKit.SetButtonText(_damageToggle, _showDamageNumbers ? "Damage numbers: ON" : "Damage numbers: off");
             bool zonesOn = Boot.Zones != null && Boot.Zones.gameObject.activeSelf;
             UiKit.SetButtonText(_zoneToggle, zonesOn ? "Zone colours: ON" : "Zone colours: off");
+            UiKit.SetButtonText(_modelToggle,
+                EntityManager.ModelsEnabled ? "3D models: ON" : "3D models: off (faster)");
         }
 
         private static void Row(Transform parent, ref float y, Slider slider)

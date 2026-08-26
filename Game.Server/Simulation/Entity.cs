@@ -3120,7 +3120,18 @@ public class Entity
     public EntityDto ToDto() =>
         new(Id, Name, Kind, Race, BaseClass, X, Y, Speed, Level,
             Hp, MaxHp, Mp, MaxMp, SecondClass, ThirdClass, Dead, IsDisconnected, FlagState,
-            Kind == EntityKind.Mob && Aggressive, Title, TitleColor, SocialClanShown);
+            Kind == EntityKind.Mob && Aggressive, Title, TitleColor, SocialClanShown,
+            ModelCategory, ModelRole);
+
+    /// <summary>`BL-93` — the creature's authored family/role, for the client to pick a MODEL with.
+    /// Read from the template rather than stored on the entity: it never changes for the life of a
+    /// mob, and <see cref="MobCatalog.Get"/> already falls back safely on an unknown id. A player or
+    /// NPC keeps the defaults — the client has Race/BaseClass for those and needs nothing here.</summary>
+    private MobCategory ModelCategory =>
+        Kind == EntityKind.Mob && MobTypeId is string id ? MobCatalog.Get(id).Category : MobCategory.Humanoid;
+
+    private MobRole ModelRole =>
+        Kind == EntityKind.Mob && MobTypeId is string id ? MobCatalog.Get(id).Role : MobRole.Melee;
 
     /// <summary>The social clan the target frame prints (playtest 23), or "" for a loner, a
     /// non-mob — or for EVERY mob while the clan system is switched off (`BL-73`). The frame must
@@ -3150,5 +3161,10 @@ public class Entity
         a.SecondClass == b.SecondClass && a.ThirdClass == b.ThirdClass && a.Aggressive == b.Aggressive &&
         // Title is static too: changing it (or losing the board, or recolouring it) must force a full
         // DTO, or the new title would only reach the people who walked into view after it changed.
-        a.Title == b.Title && a.TitleColor == b.TitleColor && a.SocialClan == b.SocialClan;
+        a.Title == b.Title && a.TitleColor == b.TitleColor && a.SocialClan == b.SocialClan &&
+        // `BL-93` model family/role. Constant for a mob's whole life and derived from race+class for
+        // a player (which is already compared above), so this can never actually differ — it is here
+        // so that the day something DOES repolymorph a creature, the client is re-told instead of
+        // drawing the old mesh until it walks out of view and back.
+        a.Category == b.Category && a.Role == b.Role;
 }

@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.89.0";
+    public const string GameVersion = "0.90.0";
 
     // ----- SP BOTTLE (owner, 2026-08-26) -------------------------------------------------------
     // *"u can make an npc to take your 1kkk SP + 100kk gold and give you a tradable/sellabel
@@ -140,7 +140,12 @@ public static class GameConstants
     /// multipliers, the SPT curve, and the mastery ladder going from ×1.5…×3.4 to +1.5…+3.4. Those live
     /// in shared code the client compiles for its own tooltips and stat window, so an old client would
     /// quote the OLD regen at a player the server is paying the new one to. ⚠ A NEW APK IS REQUIRED.
-    public const int ProtocolVersion = 28;
+    /// 28 → 29 (2026-08-27): `BL-93` — two fields added to the spawn `EntityDto` (`Category`, `Role`),
+    /// so the client can tell a wolf from a warrior and choose a MODEL for it. A real wire change this
+    /// time, not a table-only bump: an old client deserializing the new spawn shape simply ignores
+    /// them, but the new client cannot work without them, so the two move together.
+    /// ⚠ A NEW APK IS REQUIRED.
+    public const int ProtocolVersion = 29;
 
     /// <summary>
     /// The oldest protocol this server still speaks. Equal to <see cref="ProtocolVersion"/> means

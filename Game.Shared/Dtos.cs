@@ -61,7 +61,26 @@ public record EntityDto(
     // name for exactly that reason.
     // ⚠ Sent as "" while GameConstants.MobClansEnabled is off (`BL-73`), so the frame never advertises
     // a behaviour the simulation is not currently running. It comes back on with the switch.
-    string SocialClan = "");
+    string SocialClan = "",
+    // `BL-93` — WHAT this creature IS, so the client can pick a MODEL for it.
+    //
+    // 🔑 Deliberately the AUTHORED taxonomy (`MobCatalog`'s own Category/Role) and NOT a new "model
+    // id" invented for the client. Three reasons, and they are the whole design:
+    //   1. The server says what a thing IS; the client decides how it LOOKS. A mesh name on the wire
+    //      would put an art decision in the simulation, where it can never be changed without a
+    //      protocol bump.
+    //   2. Every template ALREADY declares a Category (it maps the CSV "Type" column), so a new mob
+    //      inherits a model for free — nobody has to remember a second table. A parallel taxonomy is
+    //      a thing that drifts.
+    //   3. The art budget is per FAMILY, not per mob: nine categories × three roles is the whole
+    //      model set, and tint + scale separate members inside one.
+    //
+    // MOBS ONLY. For a player or NPC these stay at their defaults and the client uses Race +
+    // BaseClass + SecondClass/ThirdClass, which it already has and which says strictly more than a
+    // model needs. Both are enums with a cheap default, so a client that never reads them is
+    // unaffected — this costs two bytes on a SPAWN dto and nothing per tick (see EntityLean).
+    MobCategory Category = MobCategory.Humanoid,
+    MobRole Role = MobRole.Melee);
 
 /// <summary>What to draw over an NPC's head about quests. Sent per player, because availability is
 /// personal — level, race, class and what you have already done all decide it.</summary>

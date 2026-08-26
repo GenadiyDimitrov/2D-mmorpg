@@ -260,6 +260,70 @@ The upright billboards tilt into an angled view with **zero** other changes. Whe
 billboards for animated 3D models, it's a pure visual upgrade in `EntityManager.Create` /
 `EntityView` — the networking, coordinates, camera and input all stay exactly as they are.
 
+## Dropping in a model  (`BL-93` — the Editor half)
+
+The code side is done and shipped; the client draws spheres until a prefab exists. **This is the whole
+of what the Editor session has to do**, and the first one takes about ten minutes.
+
+### 1. Get a model
+Low-poly, CC0, already rigged: **Quaternius** (`quaternius.com`, RPG characters + monsters) or
+**Kenney** (`kenney.nl`). Animation clips: **Mixamo** (free, and it will auto-rig an unrigged mesh).
+⚠ **The IP rule applies to art exactly as it does to names** — nothing whose silhouette reads as
+another game's creature.
+
+### 2. Import it — the one setting that matters
+Select the imported `.fbx` → **Rig** tab → **Animation Type: Humanoid** → Apply.
+
+🔑 **Humanoid, never Generic.** This is the entire reason the art is swappable later: every Mixamo /
+Quaternius / asset-store humanoid retargets onto the same avatar, so replacing a 500-tri body with a
+15k-tri one keeps every animation clip working with **no code change at all**. Generic locks each clip
+to the one skeleton it was authored against, and re-doing that later is the rebuild this whole design
+exists to avoid. (Creatures that are not bipeds stay Generic — there is nothing to retarget them to.)
+
+### 3. Make the prefab
+Drag the model into the scene, add an **Animator** with a controller, drag it back into
+`Assets/Resources/Models/`, then delete it from the scene.
+
+**Name it `humanoid.prefab`** for the first one. That is the universal last-resort key: every player,
+NPC and humanoid mob in the game picks it up at once, which is exactly what a proof of concept wants
+to see before anyone commissions nine families.
+
+The loader walks from most specific to least and takes the first file it finds, so more specific names
+peel groups off later without touching code:
+
+| File in `Assets/Resources/Models/` | Who uses it |
+|---|---|
+| `player_<race>_<class>.prefab` | that one race+class, e.g. `player_ork_mage` |
+| `player_<class>.prefab` | every character of that base class |
+| `player.prefab` | every player character |
+| `mob_<category>_<role>.prefab` | e.g. `mob_animal_archer` — category × role from `MobCatalog` |
+| `mob_<category>.prefab` | e.g. `mob_undead` — the nine `MobCategory` values |
+| `mob.prefab` | every mob |
+| `npc.prefab` | every NPC |
+| `humanoid.prefab` | **anything at all that found nothing above** |
+
+Lower-case, exactly as spelled by the enums (`animal`, `humanoid`, `undead`, `insect`, `demon`,
+`dragon`, `plant`, `magiccreature`, `angel` × `melee`, `archer`, `mage`).
+
+### 4. Animator parameters — all optional
+Name them exactly, and add only the ones you have clips for. Anything missing is simply not driven:
+
+| Parameter | Type | Driven by |
+|---|---|---|
+| `Speed` | float | drawn movement, units/sec — 0 when standing |
+| `Attack` | trigger | every `CombatEvent` where this entity is the attacker |
+| `Casting` | bool | the cast bar (yours) / `MobCastInfo` (theirs) |
+| `Dead` | bool | the entity's `Dead` flag |
+
+### 5. Scale and pivot
+The prefab's **own** scale is what tunes the size — the client multiplies it by the entity-size slider
+and seats the model's origin on the ground. So author the prefab standing at origin, feet at y=0, and
+size it there.
+
+### 6. Check it
+`Settings → 3D models: ON` (the default). Toggling it OFF returns to spheres instantly — that is the
+low-end quality preset, and it is also the fastest way to see whether models are what is costing frames.
+
 ## What's in / what's next
 - **In:** connect + auth + character select/create + enter world; the **delta** feed → billboards
   with interpolation; follow camera; tap move/attack; login + HUD UI (HP/MP/XP, target panel,

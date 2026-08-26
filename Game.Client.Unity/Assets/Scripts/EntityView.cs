@@ -106,6 +106,27 @@ namespace Game.Client
         private Color _color = Color.white;
         private bool _dead;
 
+        // ----- `BL-93` the 3D model, if one exists for this creature -------------------------------
+        //
+        // Null for everything until art lands, and every branch below is written so that null means
+        // "behave exactly as this class did before the feature existed".
+        private Transform _model;
+        private Animator _animator;
+        private bool _hasSpeed, _hasAttack, _hasCasting, _hasDead;
+        private Vector3 _lastDrawn;
+        private bool _hasLastDrawn;
+        private float _facing;            // degrees, the direction the model is turned toward
+        private bool _hasFacing;
+
+        /// <summary>How fast a model turns to face where it is walking, degrees/second. Fast enough
+        /// that it never looks like it is skating sideways, slow enough that a click behind you reads
+        /// as a turn rather than a teleport of the head.</summary>
+        private const float TurnSpeed = 720f;
+
+        /// <summary>Below this drawn speed (Unity units/sec) we do not re-aim: interpolation jitter at
+        /// a standstill has a direction, and obeying it makes an idle character twitch on the spot.</summary>
+        private const float FacingDeadZone = 0.05f;
+
         // `BL-82` — the stealth fade and the god ring. Both are SELF-ONLY effects; nothing here is ever
         // driven by another player's state, because nothing on the wire describes it.
         private float _alpha = 1f;
@@ -148,6 +169,9 @@ namespace Game.Client
             if (_dead == dead) return;
             _dead = dead;
             Apply();
+            // `BL-93` — a body falls over instead of just dimming. Still dims as well: a corpse has to
+            // read as a corpse at top-down distance, where a lying-down mesh is a small smudge.
+            if (_animator != null && _hasDead) _animator.SetBool("Dead", dead);
         }
 
         /// <summary>How see-through this marker draws (`BL-82`): 1 solid, 0.7 stealthed, 0.4 invisible.
@@ -490,8 +514,140 @@ namespace Game.Client
 
         private void LateUpdate()
         {
-            if (_cam == null && Camera.main != null) _cam = Camera.main.transform;
-            if (_cam != null) transform.rotation = _cam.rotation;   // billboard toward the camera
+            // 🔑 A MODEL AND A BILLBOARD WANT OPPOSITE THINGS. The sphere turns to face the CAMERA
+            // (that is what keeps a flat unlit marker reading as a clean circle from any angle); a
+            // body has to face where it is WALKING. Doing both would spin every character to look at
+            // the player whenever the camera moved, which is the single most obvious way this feature
+            // could go wrong, so the two paths never mix.
+            if (_model == null)
+            {
+                if (_cam == null && Camera.main != null) _cam = Camera.main.transform;
+                if (_cam != null) transform.rotation = _cam.rotation;   // billboard toward the camera
+                return;
+            }
+
+            DriveModel();
+        }
+
+        /// <summary>
+        /// Turn the model toward its motion and tell the animator what it is doing.
+        ///
+        /// <para>🔑 Everything here is read from the position we ALREADY DREW — not from the wire.
+        /// Facing and walk speed cost no protocol field because the interpolator has both: it knows
+        /// where the entity was last frame and where it is now, and the difference is the answer for
+        /// a mob, a remote player and your own predicted walk alike, with no special case for any of
+        /// them.</para>
+        /// </summary>
+        private void DriveModel()
+        {
+            var pos = transform.position;
+            float dt = Mathf.Max(Time.deltaTime, 0.0001f);
+            var delta = _hasLastDrawn ? pos - _lastDrawn : Vector3.zero;
+            _lastDrawn = pos;
+            _hasLastDrawn = true;
+
+            delta.y = 0f;                       // walking is a ground-plane question
+            float speed = delta.magnitude / dt;
+
+            if (speed > FacingDeadZone)
+            {
+                float want = Mathf.Atan2(delta.x, delta.z) * Mathf.Rad2Deg;
+                _facing = _hasFacing ? Mathf.MoveTowardsAngle(_facing, want, TurnSpeed * dt) : want;
+                _hasFacing = true;
+            }
+
+            // The ROOT carries the facing, so the model prefab can be dropped in unrotated and the
+            // halo (a sphere) does not care. The tap collider is a cube centred on the root, so
+            // turning it changes nothing a finger can notice.
+            transform.rotation = Quaternion.Euler(0f, _facing, 0f);
+
+            if (_animator == null) return;
+            // Every parameter is optional. A prefab whose controller only has "Speed" gets walking and
+            // nothing else rather than a console full of "parameter does not exist" — which matters
+            // when the art is arriving one clip at a time.
+            if (_hasSpeed) _animator.SetFloat("Speed", speed);
+        }
+
+        /// <summary>
+        /// `BL-93` — give this entity a body. Called once, right after the sphere is built, and only
+        /// when <see cref="ModelLibrary"/> found a prefab for it.
+        ///
+        /// <para>The sphere is not destroyed, only un-drawn: its collider is the tap target, its
+        /// transform is what the whole interpolator writes to, and the god halo hangs off it. What
+        /// changes is which mesh the eye sees.</para>
+        ///
+        /// <para>⚠ The model is dropped at the root's BASE, not its centre. The interpolator parks the
+        /// root half a marker above the ground so a sphere sits ON the floor rather than half inside
+        /// it; a humanoid's origin is between its feet, so it needs that lift taken back off — in
+        /// LOCAL units, which is why <see cref="RefreshModelOffset"/> exists and runs again whenever
+        /// the entity-size slider moves.</para>
+        /// </summary>
+        public void AttachModel(GameObject model)
+        {
+            if (model == null) return;
+
+            _model = model.transform;
+            _model.SetParent(transform, false);
+            _model.localRotation = Quaternion.identity;
+            RefreshModelOffset();
+
+            // A model prefab may well ship with colliders of its own (asset packs usually do). They
+            // would sit in front of the deliberately generous box tap target and swallow taps on a
+            // thin limb, so the root's collider stays the only one.
+            foreach (var extra in model.GetComponentsInChildren<Collider>()) Destroy(extra);
+
+            // Un-draw the sphere, keep everything else. ⚠ KNOWN GAP: SetOpacity (`BL-82`'s stealth
+            // fade) works by swapping THIS renderer's material, so a self marker wearing a model does
+            // not fade when hiding. The god halo still works (it is its own child sphere). Fading a
+            // model means its imported materials have to support transparency, which is an art
+            // decision and cannot be settled from here — so it is left visibly owed rather than
+            // half-solved. Stealth still functions; only its self-visual cue is missing.
+            if (_renderer != null) _renderer.enabled = false;
+
+            _animator = model.GetComponentInChildren<Animator>();
+            if (_animator != null)
+            {
+                foreach (var p in _animator.parameters)
+                {
+                    if (p.name == "Speed") _hasSpeed = true;
+                    else if (p.name == "Attack") _hasAttack = true;
+                    else if (p.name == "Casting") _hasCasting = true;
+                    else if (p.name == "Dead") _hasDead = true;
+                }
+                if (_hasDead) _animator.SetBool("Dead", _dead);
+
+                // Off-screen entities do not need their skeletons evaluated. This is the cheapest
+                // animation LOD there is and it belongs on by default, not behind the quality preset:
+                // the server sends everything within ViewRange, which is a good deal more than the
+                // camera is looking at.
+                _animator.cullingMode = AnimatorCullingMode.CullUpdateTransforms;
+            }
+        }
+
+        /// <summary>Re-seat the model on the ground after the root's scale changes. See AttachModel.</summary>
+        public void RefreshModelOffset()
+        {
+            if (_model == null) return;
+            float scale = Mathf.Max(0.01f, transform.localScale.y);
+            _model.localPosition = new Vector3(0f, -HalfHeight / scale, 0f);
+        }
+
+        /// <summary>This entity just landed (or threw) a blow — play the swing.
+        ///
+        /// <para>🔑 Driven by <c>CombatEvent</c>, which the server already sends to everyone nearby, so
+        /// a full attack animation costs NO new message. The blow is resolved before the swing plays,
+        /// which is backwards from how a real arm works and completely invisible at a ~150ms offset —
+        /// and it buys the guarantee that nothing ever animates an attack that did not happen.</para></summary>
+        public void PlayAttack()
+        {
+            if (_animator != null && _hasAttack && !_dead) _animator.SetTrigger("Attack");
+        }
+
+        /// <summary>Show/hide the casting pose. Driven by <c>MobCastInfo</c> and the self cast bar —
+        /// again, both already on the wire.</summary>
+        public void SetCasting(bool casting)
+        {
+            if (_animator != null && _hasCasting) _animator.SetBool("Casting", casting);
         }
     }
 }

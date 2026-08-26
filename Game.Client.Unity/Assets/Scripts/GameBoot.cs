@@ -964,6 +964,9 @@ namespace Game.Client
             // the punishment this line exists to end. Only the account is governed by the checkbox.
             ServerUrl = PlayerPrefs.GetString(PrefUrl, ServerUrl);
             RememberLogin = PlayerPrefs.GetInt(PrefRemember, 1) == 1;
+            // `BL-93` — before ANYTHING spawns. Read late and the first creatures into view would be
+            // built with the wrong shape and keep it until they walked out and back.
+            EntityManager.LoadModelPreference();
             if (RememberLogin)
             {
                 // The inspector values are the FALLBACK, so a fresh install still comes up on the
@@ -1332,6 +1335,11 @@ namespace Game.Client
             {
                 // Seconds <= 0 is the server saying the cast ENDED (finished or was cancelled), not a
                 // zero-length cast — treating it as one would leave the bar stuck full.
+                // `BL-93` — your own casting pose, off the cast bar's own message. Unlike a mob's,
+                // this one IS told when the cast ends, so it needs no expiry of its own.
+                var self = Entities != null ? Entities.Find(_selfId) : null;
+                if (self != null) self.SetCasting(c != null && c.Seconds > 0f);
+
                 if (c == null || c.Seconds <= 0f) { CastingSkill = null; return; }
                 CastingSkill = c.SkillName;
                 CastStartedAt = Time.realtimeSinceStartup;
@@ -1347,12 +1355,19 @@ namespace Game.Client
                 // Seconds 0 = the mob's cast was cancelled or interrupted — drop the bar at once.
                 // A cast that COMPLETES sends nothing (the server has no "finished" push), so a
                 // finished bar has to expire on its own clock: see PruneMobCasts.
-                if (c.Seconds <= 0f) { _mobCasts.Remove(c.CasterId); return; }
+                var caster = Entities != null ? Entities.Find(c.CasterId) : null;
+                if (c.Seconds <= 0f)
+                {
+                    _mobCasts.Remove(c.CasterId);
+                    if (caster != null) caster.SetCasting(false);   // `BL-93`
+                    return;
+                }
                 float now = Time.realtimeSinceStartup;
                 _mobCasts[c.CasterId] = new MobCast
                 {
                     SkillName = c.SkillName, StartedAt = now, EndsAt = now + c.Seconds,
                 };
+                if (caster != null) caster.SetCasting(true);        // `BL-93`
             });
             _net.Disconnected += m => Main(() =>
             {
@@ -1912,7 +1927,14 @@ namespace Game.Client
             foreach (var kv in _mobCasts)
                 if (now >= kv.Value.EndsAt || Entities == null || !Entities.States.ContainsKey(kv.Key))
                     _mobCastsDone.Add(kv.Key);
-            foreach (var id in _mobCastsDone) _mobCasts.Remove(id);
+            foreach (var id in _mobCastsDone)
+            {
+                _mobCasts.Remove(id);
+                // `BL-93` — drop the casting pose with the bar. A mob's finished cast sends nothing
+                // (see the MobCastReceived handler), so this expiry is the ONLY thing that ever ends
+                // it — miss it and the creature stands there mid-incantation until it dies.
+                if (Entities != null) { var v = Entities.Find(id); if (v != null) v.SetCasting(false); }
+            }
         }
 
         /// <summary>The COMBAT feed's colours (D5). Damage you DEAL is green and damage dealt to YOU is
@@ -1929,6 +1951,17 @@ namespace Game.Client
         {
             Main(() =>
             {
+                // `BL-93` — the swing, BEFORE the self-filter below. Everything after that filter is
+                // about YOUR combat log, and rightly ignores two strangers trading blows; an animation
+                // is the opposite — the whole point is that the fight across the clearing looks like a
+                // fight. The server already sends this event to everyone nearby, so a full attack
+                // animation for every visible creature costs no new message and no new field.
+                if (Entities != null && e.AttackerId != Guid.Empty)
+                {
+                    var attacker = Entities.Find(e.AttackerId);
+                    if (attacker != null) attacker.PlayAttack();
+                }
+
                 if (e.AttackerId != _selfId && e.TargetId != _selfId) return;
                 // `BL-43`: remember who is hitting US, so the target cycle can put them first. Stamped
                 // on every inbound blow regardless of outcome — a MISS still tells you something has

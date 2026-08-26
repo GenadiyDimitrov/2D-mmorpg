@@ -33,7 +33,50 @@ namespace Game.Client
         {
             foreach (var kv in _views)
                 if (kv.Value != null)
+                {
                     kv.Value.transform.localScale = Vector3.one * EntityScale;
+                    // A model stands on its FEET at the root's base, and the base is a fixed distance
+                    // BELOW the root in world units — so the local offset that reaches it depends on
+                    // the scale that was just changed. Without this a resize sinks every model into
+                    // the ground or floats it.
+                    kv.Value.RefreshModelOffset();
+                }
+        }
+
+        /// <summary>`BL-93` — draw 3D models where one exists, or the classic coloured sphere.
+        ///
+        /// <para>ON by default, and the OFF position is not a debug switch: it is the low-end quality
+        /// preset and the safety net in one. Spheres are one draw call and no skinning, so a device
+        /// that cannot carry rigged meshes still gets the exact client that shipped before this
+        /// feature, rather than a slideshow.</para>
+        ///
+        /// <para>Persisted, because it is a property of the DEVICE — asking the player to re-answer
+        /// it every login would be asking them to re-discover that their phone is slow.</para></summary>
+        public static bool ModelsEnabled = true;
+
+        private const string ModelsPref = "bl93.models";
+
+        /// <summary>Read the saved preference. Called once at boot, before anything spawns.</summary>
+        public static void LoadModelPreference() =>
+            ModelsEnabled = PlayerPrefs.GetInt(ModelsPref, 1) != 0;
+
+        /// <summary>Flip models on/off and REBUILD what is already on screen. A rebuild rather than a
+        /// show/hide because the two shapes differ in more than a renderer — billboarding, facing and
+        /// the animator all hang off which one is in use, and half-applying that is how you get a
+        /// model that spins to face the camera.</summary>
+        public void SetModelsEnabled(bool on)
+        {
+            if (ModelsEnabled == on) return;
+            ModelsEnabled = on;
+            PlayerPrefs.SetInt(ModelsPref, on ? 1 : 0);
+            PlayerPrefs.Save();
+
+            // Respawn every view from the state we already hold. Nothing is asked of the server: the
+            // DTOs in States are the same ones Create() reads, so this is a pure client redraw.
+            var live = new List<EntityDto>(States.Values);
+            foreach (var kv in _views) if (kv.Value != null) Destroy(kv.Value.gameObject);
+            _views.Clear();
+            foreach (var e in live) Upsert(e);
         }
 
         /// <summary>The marker is smaller than a fingertip, so the tap target is deliberately bigger
@@ -229,6 +272,17 @@ namespace Game.Client
             view.Id = e.Id;
             view.IsSelf = e.Id == SelfId;
             view.Init(ColorFor(e));
+
+            // `BL-93` — the whole model feature is THIS, and it is deliberately the last thing that
+            // happens. Everything above built exactly the sphere that shipped before; if no prefab
+            // answers for this creature (which is every creature until art lands) nothing below has
+            // any effect and the client is byte-for-byte what it was. That is the fallback: not a
+            // placeholder mesh, not an error — the previous release.
+            if (ModelsEnabled)
+            {
+                var prefab = ModelLibrary.Prefab(e);
+                if (prefab != null) view.AttachModel(Instantiate(prefab));
+            }
             return view;
         }
 
@@ -242,6 +296,90 @@ namespace Game.Client
                 case EntityKind.Npc:    return Color.yellow;
                 default:                return Color.white;
             }
+        }
+    }
+
+    /// <summary>
+    /// `BL-93` — WHICH MODEL a creature draws with. The one place that turns "what the server says
+    /// this is" into "which prefab to load", and the only place in the client that knows a mesh exists.
+    ///
+    /// <para>🔑 <b>THE FALLBACK CHAIN IS THE WHOLE DESIGN.</b> Every lookup walks from the most
+    /// specific key it could possibly want down to the most general, and stops at the first hit. So
+    /// ONE file — <c>Resources/Models/humanoid.prefab</c> — already gives every player, every NPC and
+    /// every humanoid mob in the game a body, and each more specific prefab added later peels one
+    /// group off the general case without touching a line of code. The art can arrive in any order,
+    /// over any number of months, and the client is correct at every point in between.</para>
+    ///
+    /// <para>🔑 <b>The art budget is per FAMILY, not per mob.</b> The key is built from the AUTHORED
+    /// taxonomy the server sends (<see cref="MobCategory"/> × <see cref="MobRole"/>) — nine families
+    /// times three roles is the entire model set for 100+ templates, and tint plus scale separate the
+    /// members inside one. A new mob inherits a model for free because it already had to declare a
+    /// category.</para>
+    ///
+    /// <para>⚠ <b>Why <c>Resources.Load</c> and not Addressables:</b> the Addressables package is not
+    /// in this project's manifest, and adding it is an Editor decision the owner has not made. The key
+    /// STRINGS here are already Addressables-shaped ("Models/xxx"), and every load in the client goes
+    /// through <see cref="Load"/> — so the day content moves to a download-on-demand catalog served off
+    /// the game server, this is one function body, not a rewrite. That seam costs nothing today, which
+    /// is the only reason it is here.</para>
+    /// </summary>
+    public static class ModelLibrary
+    {
+        /// <summary>Resolved prefabs, INCLUDING the misses. Caching null matters more than caching the
+        /// hits: until art lands every lookup misses, and a miss that is not remembered is a
+        /// filesystem probe per spawn, forever, on a phone.</summary>
+        private static readonly Dictionary<string, GameObject> Cache = new Dictionary<string, GameObject>();
+
+        /// <summary>The best prefab for this entity, or null to keep the sphere.</summary>
+        public static GameObject Prefab(EntityDto e)
+        {
+            foreach (var key in Keys(e))
+            {
+                var prefab = Load(key);
+                if (prefab != null) return prefab;
+            }
+            return null;
+        }
+
+        /// <summary>The single load call in the client — see the Addressables note on the class.</summary>
+        private static GameObject Load(string key)
+        {
+            if (Cache.TryGetValue(key, out var cached)) return cached;
+            var prefab = Resources.Load<GameObject>(key);
+            Cache[key] = prefab;
+            return prefab;
+        }
+
+        /// <summary>Most specific first. Mobs are keyed by the server's family/role; players and NPCs
+        /// are keyed by what the client ALREADY knew — race and class say strictly more about how a
+        /// character should look than any field we could have added to the wire for it.</summary>
+        private static IEnumerable<string> Keys(EntityDto e)
+        {
+            switch (e.Kind)
+            {
+                case EntityKind.Mob:
+                    string cat = e.Category.ToString().ToLowerInvariant();
+                    yield return "Models/mob_" + cat + "_" + e.Role.ToString().ToLowerInvariant();
+                    yield return "Models/mob_" + cat;
+                    yield return "Models/mob";
+                    break;
+
+                case EntityKind.Npc:
+                    yield return "Models/npc";
+                    break;
+
+                default:
+                    string cls = e.BaseClass.ToString().ToLowerInvariant();
+                    yield return "Models/player_" + e.Race.ToString().ToLowerInvariant() + "_" + cls;
+                    yield return "Models/player_" + cls;
+                    yield return "Models/player";
+                    break;
+            }
+
+            // The universal last resort: one body that will stand in for anything at all. Drop a single
+            // prefab here and the entire world has models, badly — which is exactly what a proof of
+            // concept wants to see before anyone commissions nine families.
+            yield return "Models/humanoid";
         }
     }
 }
