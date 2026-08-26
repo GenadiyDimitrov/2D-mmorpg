@@ -99,6 +99,10 @@ public class BuffInstance
     public bool Internal { get; set; }
     /// <summary>Can this effect be removed by cure/cancel? (false = immune.)</summary>
     public bool Cancellable { get; set; } = true;
+    /// <summary>How much of the MP this holder RECEIVES the effect cuts away (0.70 = they get 30%).
+    /// The mana twin of the <see cref="SkillEffect.DebuffHealRecv"/> anti-heal, and a FIELD for the
+    /// usual reason — the flag enum is full. Pyro Burst is its only author today.</summary>
+    public float MpReceivedPct { get; set; }
     /// <summary>Remaining absorb pool for a Shield effect (damage soaked before HP). The buff
     /// is removed when it hits 0.</summary>
     public int ShieldPool { get; set; }
@@ -2787,6 +2791,9 @@ public class Entity
             if (buff.Has(SkillEffect.BuffSpellVamp)) SpellVamp += buff.Flat(SkillEffect.BuffSpellVamp) + buff.Percent(SkillEffect.BuffSpellVamp);
             if (buff.Has(SkillEffect.BuffReflect)) MeleeReflect += buff.Flat(SkillEffect.BuffReflect) + buff.Percent(SkillEffect.BuffReflect);
             if (buff.Has(SkillEffect.DebuffHealRecv)) HealReceivedMod *= 1f - buff.Percent(SkillEffect.DebuffHealRecv);   // anti-heal
+            // ...and its MANA twin, which rides as a field. A burn that stopped heals but left the
+            // victim refilling with Restore Spirit would be half a skill (owner's Pyro Burst row).
+            if (buff.MpReceivedPct != 0f) RestoreMpMod *= 1f - buff.MpReceivedPct;
             PhysMpCostReduction += buff.PhysMpCostPct;   // MP-cost reduction (rides as buff fields, not a flag)
             MagicMpCostReduction += buff.MagicMpCostPct;
             // BL-06 skill evasion — a buff field for the same reason (the flag enum is full), and

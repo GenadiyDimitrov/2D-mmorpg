@@ -178,15 +178,25 @@ public static partial class SkillCatalog
                 new SkillLevel(Power: 32,  MpCost: 46,   SpCost: 6400,   Description: "Drain power 32; heals 40% of damage."),   // 25
                 new SkillLevel(Power: 38,  MpCost: 52,   SpCost: 12800,  Description: "Drain power 38; heals 40% of damage."),   // 30
                 new SkillLevel(Power: 44,  MpCost: 62,   SpCost: 25000,  Description: "Drain power 44; heals 40% of damage."),   // 35
-                new SkillLevel(Power: 50,  MpCost: 65,   SpCost: 40000,  Description: "Drain power 50; heals 40% of damage."),   // 40
-                new SkillLevel(Power: 56,  MpCost: 73,   SpCost: 60000,  Description: "Drain power 56; heals 40% of damage."),   // 45
-                new SkillLevel(Power: 62,  MpCost: 80,   SpCost: 85000,  Description: "Drain power 62; heals 40% of damage."),   // 50
-                new SkillLevel(Power: 68,  MpCost: 87,   SpCost: 115000, Description: "Drain power 68; heals 40% of damage."),   // 55
-                new SkillLevel(Power: 74,  MpCost: 95,   SpCost: 150000, Description: "Drain power 74; heals 40% of damage."),   // 60
-                new SkillLevel(Power: 80,  MpCost: 100,  SpCost: 190000, Description: "Drain power 80; heals 40% of damage."),   // 65
-                new SkillLevel(Power: 86,  MpCost: 108,  SpCost: 235000, Description: "Drain power 86; heals 40% of damage."),   // 70
-                new SkillLevel(Power: 92,  MpCost: 115,  SpCost: 285000, Description: "Drain power 92; heals 40% of damage."),   // 75
-                new SkillLevel(Power: 98,  MpCost: 122,  SpCost: 340000, Description: "Drain power 98; heals 40% of damage."),   // 80
+                // ⚠ RUNGS 6-19 ARE HIS, from `nuker 3rd.csv` (2026-08-26), and they REPLACE the nine
+                // we extrapolated at 40/45/…/80. Vampiric Bolt is the HUMAN nuker's 3rd-class spell
+                // now, not a shared continuation — so it runs his fourteen bands (40 → 74), shares
+                // Elemental Blast's power ladder exactly as it did on his 2nd-class sheet, and costs
+                // the "heavy" MP line (66 → 138: twice a plain bolt, which is what the drain is worth).
+                new SkillLevel(Power: 52,  MpCost: 66,   SpCost: 36000, Range: 900f,  Description: "Drain power 52; heals 40% of damage."),   // 40
+                new SkillLevel(Power: 58,  MpCost: 76,   SpCost: 43000, Range: 900f,  Description: "Drain power 58; heals 40% of damage."),   // 44
+                new SkillLevel(Power: 65,  MpCost: 88,   SpCost: 64000, Range: 900f,  Description: "Drain power 65; heals 40% of damage."),   // 48
+                new SkillLevel(Power: 72,  MpCost: 96,   SpCost: 74000, Range: 900f,  Description: "Drain power 72; heals 40% of damage."),   // 52
+                new SkillLevel(Power: 78,  MpCost: 104,  SpCost: 81000, Range: 900f,  Description: "Drain power 78; heals 40% of damage."),   // 56
+                new SkillLevel(Power: 82,  MpCost: 108,  SpCost: 88000, Range: 900f,  Description: "Drain power 82; heals 40% of damage."),   // 58
+                new SkillLevel(Power: 85,  MpCost: 110,  SpCost: 120000, Range: 900f, Description: "Drain power 85; heals 40% of damage."),   // 60
+                new SkillLevel(Power: 89,  MpCost: 116,  SpCost: 170000, Range: 900f, Description: "Drain power 89; heals 40% of damage."),   // 62
+                new SkillLevel(Power: 92,  MpCost: 120,  SpCost: 190000, Range: 900f, Description: "Drain power 92; heals 40% of damage."),   // 64
+                new SkillLevel(Power: 96,  MpCost: 124,  SpCost: 280000, Range: 900f, Description: "Drain power 96; heals 40% of damage."),   // 66
+                new SkillLevel(Power: 99,  MpCost: 128,  SpCost: 320000, Range: 900f, Description: "Drain power 99; heals 40% of damage."),   // 68
+                new SkillLevel(Power: 102, MpCost: 130,  SpCost: 390000, Range: 900f, Description: "Drain power 102; heals 40% of damage."),  // 70
+                new SkillLevel(Power: 105, MpCost: 134,  SpCost: 650000, Range: 900f, Description: "Drain power 105; heals 40% of damage."),  // 72
+                new SkillLevel(Power: 108, MpCost: 138,  SpCost: 880000, Range: 900f, Description: "Drain power 108; heals 40% of damage."),  // 74
             }),
 
         // Elemental Bolt — the Nuker's MAIN nuke (replaces Magic Bolt). 13 levels, learned
@@ -289,18 +299,20 @@ public static partial class SkillCatalog
             Category: SkillCategory.Heal, TargetMode: TargetMode.SelfOnly, SpCost: 6400,
             HpCost: 66,
             Description: "Burns HP to restore MP to yourself (much more with robe mastery).",
+            // ⚠ RUNGS 2-5 RE-AUTHORED 2026-08-26 from `nuker 3rd.csv`, which replaces the nine WE
+            // invented at 40/45/…/80 while the 40+ band had no file. His are FOUR rungs at 40 / 52 /
+            // 58 / 66 and they are deliberately stingier than ours were — his own comment on the last
+            // row: *"Intentionally decreased as mp regen with x3.4(weapon mastery)/x1.2(Spellcaster)
+            // /x1.2 = ~x5; still alot more mp and alot less hp than IG"*. The mastery stack is what
+            // pays the mage now, not this skill. ⚠ The ladder STOPS at 66: a 4th-tier file may extend
+            // it, nothing else may.
             Levels: new[]
             {
-                new SkillLevel(Power: 22,  HpCost: 66,  SpCost: 6400,   Description: "Burns 66 HP to restore 22 MP."),   // 25  ← CSV
-                new SkillLevel(Power: 45,  HpCost: 90,  SpCost: 26000,  Description: "Burns 90 HP to restore 45 MP."),   // 40
-                new SkillLevel(Power: 55,  HpCost: 105, SpCost: 40000,  Description: "Burns 105 HP to restore 55 MP."),  // 45
-                new SkillLevel(Power: 65,  HpCost: 118, SpCost: 56000,  Description: "Burns 118 HP to restore 65 MP."),  // 50
-                new SkillLevel(Power: 75,  HpCost: 131, SpCost: 75000,  Description: "Burns 131 HP to restore 75 MP."),  // 55
-                new SkillLevel(Power: 85,  HpCost: 144, SpCost: 98000,  Description: "Burns 144 HP to restore 85 MP."),  // 60
-                new SkillLevel(Power: 95,  HpCost: 157, SpCost: 124000, Description: "Burns 157 HP to restore 95 MP."),  // 65
-                new SkillLevel(Power: 105, HpCost: 170, SpCost: 153000, Description: "Burns 170 HP to restore 105 MP."), // 70
-                new SkillLevel(Power: 113, HpCost: 185, SpCost: 185000, Description: "Burns 185 HP to restore 113 MP."), // 75
-                new SkillLevel(Power: 120, HpCost: 200, SpCost: 220000, Description: "Burns 200 HP to restore 120 MP."), // 80
+                new SkillLevel(Power: 22,  HpCost: 66,  SpCost: 6400,   Description: "Burns 66 HP to restore 22 MP."),    // 25  ← 2nd-class CSV
+                new SkillLevel(Power: 33,  HpCost: 100, SpCost: 36000,  Description: "Burns 100 HP to restore 33 MP."),   // 40
+                new SkillLevel(Power: 54,  HpCost: 162, SpCost: 74000,  Description: "Burns 162 HP to restore 54 MP."),   // 52
+                new SkillLevel(Power: 71,  HpCost: 213, SpCost: 88000,  Description: "Burns 213 HP to restore 71 MP."),   // 58
+                new SkillLevel(Power: 94,  HpCost: 272, SpCost: 280000, Description: "Burns 272 HP to restore 94 MP."),   // 66
             }),
 
         // Weapon Mastery — flat attack passive (asymmetric: more M.Atk than P.Atk).
@@ -331,10 +343,23 @@ public static partial class SkillCatalog
 
         // Phase Shift — BLINK back 400 (escape). No target needed: jumps away from the nearest
         // enemy. Tempest kite tool.
+        // ⚠ RE-AUTHORED 2026-08-26 from `nuker 3rd.csv` — it was a single 400-unit blink for 20 MP,
+        // invented before the file existed. His rows make it a THREE-RUNG LADDER whose ladder IS the
+        // distance (200 / 400 / 600 at 52 / 62 / 72), at 96-138 MP: an escape you pay real mana for.
         new(PhaseShift, "Phase Shift", BaseClass.Mage, SkillEffect.Blink,
-            MpCost: 20, CastTicks: 0, CooldownTicks: 80, Range: 0, Power: 0,
-            Category: SkillCategory.Buff, TargetMode: TargetMode.SelfOnly, BlinkRange: 400f,
-            Description: "Blink 400 away from the nearest enemy to create distance (no target needed)."),
+            MpCost: 96, CastTicks: 0, CooldownTicks: 80, Range: 0, Power: 0,
+            Category: SkillCategory.Buff, TargetMode: TargetMode.SelfOnly, BlinkRange: 200f,
+            SpCost: 74000,
+            Description: "Blink away from the nearest enemy to create distance (no target needed).",
+            Levels: new[]
+            {
+                new SkillLevel(MpCost: 96,  SpCost: 74000,  BlinkRange: 200f,
+                    Description: "Blink 200 away from the nearest enemy."),   // 52
+                new SkillLevel(MpCost: 116, SpCost: 170000, BlinkRange: 400f,
+                    Description: "Blink 400 away from the nearest enemy."),   // 62
+                new SkillLevel(MpCost: 138, SpCost: 650000, BlinkRange: 600f,
+                    Description: "Blink 600 away from the nearest enemy."),   // 72
+            }),
 
         new(Weakness, "Weakness", BaseClass.Mage, SkillEffect.DebuffDef,
             MpCost: 15, CastTicks: 5, CooldownTicks: 300, Range: 600, Power: 0,
@@ -352,27 +377,25 @@ public static partial class SkillCatalog
             Category: SkillCategory.Magic,
             Description: "A searing bolt — the nuker's stronger basic attack (replaces Magic Bolt)."),
 
-        // Elemental Burst — NUKER 3rd-class ULTIMATE. Consumes 1 Elemental Stone per
-        // cast (the reagent system) and ramps power 150 → 250 across 10 learn levels
-        // (char 40/44/48/…/72/75). Numbers are placeholders — tune freely.
+        // ⚠ RE-AUTHORED 2026-08-26 from `nuker 3rd.csv`. It was ten invented rungs (power 150 → 250,
+        // 4k SP, 1 stone, 3s reuse) written before his file existed. His Elemental Burst is THREE rungs
+        // at 58 / 66 / 74, power 120 / 133 / 154, on a ONE-SECOND cast and a FIVE-MINUTE reuse, eating
+        // TWO Elemental Stones — a cooldown you plan a fight around, not a rotation piece. MP equals
+        // power at every rung, which is his shape for the three big nukes in this file.
         new(ElementalBurst, "Elemental Burst", BaseClass.Mage, SkillEffect.MagicDamage,
-            MpCost: 60, CastTicks: 50, CooldownTicks: 30, Range: 900, Power: 150,
-            Category: SkillCategory.Magic,  
-            ConsumableId: ItemCatalog.ElementalStone, ConsumableAmount: 1,
-            Description: "An overwhelming elemental detonation. Consumes 1 Elemental Stone; "
-                       + "its power grows each level (150 → 250).",
+            MpCost: 120, CastTicks: 10, CooldownTicks: 3000, Range: 900, Power: 120,
+            Category: SkillCategory.Magic, SpCost: 88000,
+            ConsumableId: ItemCatalog.ElementalStone, ConsumableAmount: 2,
+            Description: "Gathers elemental energy and bursts it over one enemy. Five-minute reuse; "
+                       + "consumes 2 Elemental Stones.",
             Levels: new[]
             {
-                new SkillLevel(Power: 150, MpCost: 60,   SpCost: 4000,  Description: "Magic damage, power 150. Consumes 1 Elemental Stone."),
-                new SkillLevel(Power: 161, MpCost: 65,   SpCost: 5000,  Description: "Magic damage, power 161. Consumes 1 Elemental Stone."),
-                new SkillLevel(Power: 172, MpCost: 70,   SpCost: 6000,  Description: "Magic damage, power 172. Consumes 1 Elemental Stone."),
-                new SkillLevel(Power: 183, MpCost: 75,   SpCost: 7000,  Description: "Magic damage, power 183. Consumes 1 Elemental Stone."),
-                new SkillLevel(Power: 194, MpCost: 80,   SpCost: 8000,  Description: "Magic damage, power 194. Consumes 1 Elemental Stone."),
-                new SkillLevel(Power: 205, MpCost: 85,   SpCost: 9000,  Description: "Magic damage, power 205. Consumes 1 Elemental Stone."),
-                new SkillLevel(Power: 216, MpCost: 90,   SpCost: 10000, Description: "Magic damage, power 216. Consumes 1 Elemental Stone."),
-                new SkillLevel(Power: 227, MpCost: 95,   SpCost: 11000, Description: "Magic damage, power 227. Consumes 1 Elemental Stone."),
-                new SkillLevel(Power: 238, MpCost: 100,  SpCost: 12000, Description: "Magic damage, power 238. Consumes 1 Elemental Stone."),
-                new SkillLevel(Power: 250, MpCost: 105,  SpCost: 13000, Description: "Magic damage, power 250. Consumes 1 Elemental Stone."),
+                new SkillLevel(Power: 120, MpCost: 120, SpCost: 88000,
+                    Description: "Magic damage, power 120. Consumes 2 Elemental Stones."),   // 58
+                new SkillLevel(Power: 133, MpCost: 133, SpCost: 280000,
+                    Description: "Magic damage, power 133. Consumes 2 Elemental Stones."),   // 66
+                new SkillLevel(Power: 154, MpCost: 154, SpCost: 880000,
+                    Description: "Magic damage, power 154. Consumes 2 Elemental Stones."),   // 74
             }),
 
         // Frost Bind — first CONTESTED crowd-control skill (P1 primitive demo). A magical

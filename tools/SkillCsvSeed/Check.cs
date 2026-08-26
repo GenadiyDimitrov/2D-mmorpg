@@ -75,6 +75,12 @@ internal static class Check
         // Bulwark, not Vanguard, only because a spec needs ONE discipline and the row is registered to
         // both — check the pair by hand if that ever stops being true.
         new("tank 3rd",    BaseClass.Fighter, Archetype.Tank,    40, 75, Game.Shared.Discipline.Bulwark),
+        // `nuker 3rd` earned its line on 2026-08-26, the day the kit was built. Magus, not Tempest,
+        // only because a spec needs ONE discipline and the whole kit is registered to both — the same
+        // caveat the tank line above carries. Check the pair by hand if that ever stops being true.
+        // 🔴 CALM SPIRIT will report as NOT REGISTERED until he lifts his *"w8 on calm spirit"* hold;
+        // that is the flag doing its job, not a defect. See RegisterNuker3rd.
+        new("nuker 3rd",   BaseClass.Mage,    Archetype.Nuker,   40, 75, Game.Shared.Discipline.Magus),
         // ---- 4th TIER, 76-90. ONE file is authored: `healer 4th.csv`, which he calls finished
         //      (2026-08-26, 255 rows). `Also` folds in `shared 4th.csv` — the ALL-CLASSES block plus the
         //      eighteen Sigils — because those rows are in every ascended class's Cumulative and would

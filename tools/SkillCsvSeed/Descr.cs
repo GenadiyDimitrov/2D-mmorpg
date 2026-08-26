@@ -157,6 +157,9 @@ internal static class Descr
         new(@"\d+\s*(min|minutes|sec|secs|seconds|s\b)", RegexOptions.IgnoreCase),
         new(@"rank\s*\d+",                               RegexOptions.IgnoreCase),
         new(@"\d+\s*range",                              RegexOptions.IgnoreCase),
+        // A RADIUS is geometry, not a stat — his nuker AoE rows read "Hit nearby enemies in 200 radius
+        // with m.Atk +30", and without this the reader claimed the skill's M.Atk was 200.
+        new(@"\d+\s*radius",                             RegexOptions.IgnoreCase),
         new(@"\(\s*\d+\s*range\s*\)",                    RegexOptions.IgnoreCase),
         new(@"\bl\d\b",                                  RegexOptions.IgnoreCase),   // "in l2 is ..."
         new(@"lvl\s*\d+",                                RegexOptions.IgnoreCase),

@@ -186,36 +186,27 @@ public static partial class ClassSkillTables
                 new ClassSkill(MageAntiMagic, 35, SkillLevel: 6),
                 new ClassSkill(SpellMastery, 35, SkillLevel: 4));
 
-            // The nuke ladder does NOT stop at the 2nd class. In IG your main nuke keeps
-            // gaining levels for life, and that ladder IS the mage's damage scaling — capping
-            // it at 35 (power 44) is what left a level-85 mage fighting with a level-35 spell.
-            // Levels 5-13 of each bolt, learned every 5 levels from 40 to 80 (power 63 -> 116;
-            // 108 @ 74 is IG's anchor). See Skills.Mage.cs for the ladder itself.
-            // Vampiric Bolt is one level ahead of the other two (it starts at 14, not 20).
+            // ⚠⚠ THE 40+ HALF OF THE NUKER'S 2nd-CLASS TABLE WAS DELETED ON 2026-08-26, and it is the
+            // last of the "seeded from code" bands to go. It registered, for every race:
+            //   • Elemental Bolt and Quick Bolt rungs 5-13 at 40/45/…/80
+            //   • Vampiric Bolt rungs 6-14 on the same cadence
+            //   • Restore Spirit rungs 2-10 on the same cadence
+            //   • Mage Armor Mastery rungs 5-8 at 40/50/60/70
+            // Every one of those was OURS, written while `nuker 2nd.csv` stopped at 35 and no 40+ file
+            // existed — the comment that stood here said so and said the ladder IS the mage's damage
+            // scaling, which was true right up until he authored one. `nuker 3rd.csv` now carries all
+            // four, so keeping these would have double-taught them:
+            //   • the bolts are REPLACED by Elemental Blast and Quick Blast (his `REPLACES` column)
+            //   • Vampiric Bolt becomes the HUMAN nuker's 3rd-class spell, rungs 6-19 on his bands
+            //   • Restore Spirit's rungs 2-5 are his four rows, and its ladder now STOPS at 66
+            //   • Mage Armor Mastery's rungs 5-18 are his fourteen rows
+            // See RegisterNuker3rd in ClassSkillTables.Third.cs. ⚠ The 20-35 rungs above are still his
+            // `nuker 2nd.csv` and are untouched.
             //
-            // Restore Spirit rides the SAME cadence above 35, and for the same reason (2026-08-07):
-            // one level for life meant the mage's only mana tool was worth 20 MP forever while his
-            // bolt grew from 30 to 116, so it slowed the drain instead of sustaining a rotation.
-            // ⚠ Its level 1 @25 is the AUTHORED CSV and stays exactly where it is, above; levels
-            // 2-10 arrive 40 → 80, reaching the owner's 120-MP / 200-HP endpoint at 80.
-            //
-            // Mage Armor Mastery gets rungs 5-8 here too (@40/50/60/70), carrying his "mpRestore to
-            // a +80" — a LATE-level number, so it cannot live inside the 20-35 CSV rungs. Only the
-            // restore bonus grows on those rungs; see Skills.Masteries.cs.
-            for (int i = 0; i < 9; i++)
-            {
-                int learnLevel = 40 + i * 5;
-                ClassSkills.Register(race, BaseClass.Mage, Archetype.Nuker,
-                    new ClassSkill(ElementalBolt, learnLevel, SkillLevel: 5 + i),
-                    new ClassSkill(QuickBolt,     learnLevel, SkillLevel: 5 + i),
-                    new ClassSkill(VampiricBolt,  learnLevel, SkillLevel: 6 + i),
-                    new ClassSkill(RestoreSpirit, learnLevel, SkillLevel: 2 + i));
-            }
-            ClassSkills.Register(race, BaseClass.Mage, Archetype.Nuker,
-                new ClassSkill(NukerArmorMastery, 40, SkillLevel: 5),
-                new ClassSkill(NukerArmorMastery, 50, SkillLevel: 6),
-                new ClassSkill(NukerArmorMastery, 60, SkillLevel: 7),
-                new ClassSkill(NukerArmorMastery, 70, SkillLevel: 8));
+            // 🔑 NOTHING HERE WAS THE SOLE CARRIER OF A FLAG — checked, because that is how a built
+            // feature goes unreachable. The reagent path (ConsumableId), the HP-cost path (HpCost) and
+            // mpWhenRestored all keep authors in the new kit; Restore Spirit and Mage Armor Mastery
+            // are the same skill ids, merely re-laddered.
         }
 
         // Healer (cleric) 2nd-class kit — authored separately because Holy Bolt takes a per-race NAME.

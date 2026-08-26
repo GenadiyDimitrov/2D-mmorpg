@@ -79,19 +79,19 @@ LEARN @ LVL,NAME,TYPE,RANGE,TARGET,CAST s,CD s,DURRATION s,DESCR,MP,SP COST,REPL
 58,Elemental Burst,Magic/Dmg,900,enemy,1,300,0,"Gathers Elemental energy to burst the enemy, power 120. Consumes 2 Elemental Stone.",120,88k,[],
 66,Elemental Burst,Magic/Dmg,900,enemy,1,300,0,"Gathers Elemental energy to burst the enemy, power 133. Consumes 2 Elemental Stone.",133,280k,[],
 74,Elemental Burst,Magic/Dmg,900,enemy,1,300,0,"Gathers Elemental energy to burst the enemy, power 154. Consumes 2 Elemental Stone.",154,880k,[],
-,,,,,,,,,,,,,-----------------------------Arcane Burst-----------------------------
-62,Thunderstorm,Magic/Dmg,900,enemy,5,300,0,"Calls down thunderstorm to stike the enemy, power 178. Consumes 3 Elemental Stone.",178,4000,[],
-70,Thunderstorm,Magic/Dmg,900,enemy,5,300,0,"Calls down thunderstorm to stike the enemy, power 204. Consumes 3 Elemental Stone.",204,4000,[],
+,,,,,,,,,,,,,-----------------------------Thunderstorm-----------------------------
+62,Thunderstorm,Magic/Dmg,900,enemy,5,300,0,"Calls down thunderstorm to stike the enemy, power 178. Consumes 3 Elemental Stone.",178,170k,[],
+70,Thunderstorm,Magic/Dmg,900,enemy,5,300,0,"Calls down thunderstorm to stike the enemy, power 204. Consumes 3 Elemental Stone.",204,390k,[],
 74,Thunderstorm,Magic/Dmg,900,enemy,5,300,0,"Calls down thunderstorm to stike the enemy, power 216. Consumes 3 Elemental Stone.",216,880k,[],
-,,,,,,,,,,,,,-----------------------------X Burst-----------------------------
-74,Arcane Burst,Magic/Dmg,900,enemy,1,300,0,"Arcance Magic spell, power 150. Decrease SPT resistance by 40% (success chance x1.5), Never Fizzle",150,880k,[],Human
+,,,,,,,,,,,,,-----------------------------Race Bursts (74)-----------------------------
+74,Arcane Burst,Magic/Dmg,900,enemy,1,300,15,"Arcance Magic spell, power 150. Decrease SPT resistance by 40% (success chance x1.5), Never Fizzle",150,880k,[],Human
 74,Frost Burst,Magic/Dmg,900,enemy,1,300,15,"Frost Magic spell, power 150. Freeze the enemy: -30% M.def and prevents movement (success chance x1.5), Never Fizzle",150,880k,[],Elf
 74,Pyro Burst,Magic/Dmg,900,enemy,1,300,15,"Fire Magic spell, power 150. Burns the enemy for -100hp/s and decrease hp/mp received by 70% (success chance x1.5), Never Fizzle",150,880k,[],Ork,new effect like a DOT but its not poision nor bleed nor venom -> burn = true dmg per second no cure and can kill 
 ,,,,,,,,,,,,,-----------------------------Quick Blast-----------------------------
 40,Quick Blast,Magic/Dmg,300,enemy,2,0.5,0,m.Atk +42; Power in PVP x0.5,33,36k,[Quick Bolt]
 44,Quick Blast,Magic/Dmg,300,enemy,2,0.5,0,m.Atk +47; Power in PVP x0.5,38,43k,[Quick Bolt]
 48,Quick Blast,Magic/Dmg,300,enemy,2,0.5,0,m.Atk +52; Power in PVP x0.5,44,64k,[Quick Bolt]
-52,Quick Blast,Magic/Dmg,300,enemy,2,0.5,0,m.Atk +52; Power in PVP x0.5,48,74k,[Quick Bolt]
+52,Quick Blast,Magic/Dmg,300,enemy,2,0.5,0,m.Atk +57; Power in PVP x0.5,48,74k,[Quick Bolt]
 56,Quick Blast,Magic/Dmg,300,enemy,2,0.5,0,m.Atk +63; Power in PVP x0.5,52,81k,[Quick Bolt]
 58,Quick Blast,Magic/Dmg,300,enemy,2,0.5,0,m.Atk +66; Power in PVP x0.5,54,88k,[Quick Bolt]
 60,Quick Blast,Magic/Dmg,300,enemy,2,0.5,0,m.Atk +68; Power in PVP x0.5,55,120k,[Quick Bolt]
@@ -178,14 +178,14 @@ LEARN @ LVL,NAME,TYPE,RANGE,TARGET,CAST s,CD s,DURRATION s,DESCR,MP,SP COST,REPL
 72,Vampiric Bolt,Magic/Dmg,900,enemy,4,1,0,A draining bolt (m.Atk +105) that heals you for 40% of the damage dealt.,134,650k,[],Human
 74,Vampiric Bolt,Magic/Dmg,900,enemy,4,1,0,A draining bolt (m.Atk +108) that heals you for 40% of the damage dealt.,138,880k,[],Human
 ,,,,,,,,,,,,,------------------------------Arcane Void------------------------------
-52,Arcane Void,Magic/Buff,0,self,4,30,0,Chance to remove 1~2 positive effect of the target (success chance x0.3),96,74k,[],Human,lower success rate
-62,Arcane Void,Magic/Buff,0,self,4,30,0,Chance to remove 2~3 positive effect of the target (success chance x0.3),116,170k,[],Human,lower success rate
-72,Arcane Void,Magic/Buff,0,self,4,30,0,Chance to remove 2~4 positive effect of the target (success chance x0.3),138,650k,[],Human,lower success rate
+52,Arcane Void,Magic/Buff,900,enemy,4,30,0,Chance to remove 1~2 positive effect of the target (success chance x0.3),96,74k,[],Human,lower success rate
+62,Arcane Void,Magic/Buff,900,enemy,4,30,0,Chance to remove 2~3 positive effect of the target (success chance x0.3),116,170k,[],Human,lower success rate
+72,Arcane Void,Magic/Buff,900,enemy,4,30,0,Chance to remove 2~4 positive effect of the target (success chance x0.3),138,650k,[],Human,lower success rate
 ,,,,,,,,,,,,,-----------------------------Witches Curse-----------------------------
 40,Witches Curse,Magic/Debuff,900,enemy,2.5,1,30,m.Atk +42; A chance to curse enemies for -10% M.Def; (success chance x0.7),66,36k,[Vampiric Bolt],Ork,does dmg but have a lower success rate for the curse
 44,Witches Curse,Magic/Debuff,900,enemy,2.5,1,30,m.Atk +47; A chance to curse enemies for -10% M.Def; (success chance x0.7),76,43k,[Vampiric Bolt],Ork
 48,Witches Curse,Magic/Debuff,900,enemy,2.5,1,30,m.Atk +52; A chance to curse enemies for -13% M.Def; (success chance x0.7),88,64k,[Vampiric Bolt],Ork
-52,Witches Curse,Magic/Debuff,900,enemy,2.5,1,30,m.Atk +52; A chance to curse enemies for -13% M.Def; (success chance x0.7),96,74k,[Vampiric Bolt],Ork
+52,Witches Curse,Magic/Debuff,900,enemy,2.5,1,30,m.Atk +57; A chance to curse enemies for -13% M.Def; (success chance x0.7),96,74k,[Vampiric Bolt],Ork
 56,Witches Curse,Magic/Debuff,900,enemy,2.5,1,30,m.Atk +63; A chance to curse enemies for -17% M.Def; (success chance x0.7),104,81k,[Vampiric Bolt],Ork
 58,Witches Curse,Magic/Debuff,900,enemy,2.5,1,30,m.Atk +66; A chance to curse enemies for -17% M.Def; (success chance x0.7),108,88k,[Vampiric Bolt],Ork
 60,Witches Curse,Magic/Debuff,900,enemy,2.5,1,30,m.Atk +68; A chance to curse enemies for -20% M.Def; (success chance x0.7),110,120k,[Vampiric Bolt],Ork
@@ -196,7 +196,7 @@ LEARN @ LVL,NAME,TYPE,RANGE,TARGET,CAST s,CD s,DURRATION s,DESCR,MP,SP COST,REPL
 70,Witches Curse,Magic/Debuff,900,enemy,2.5,1,30,m.Atk +82; A chance to curse enemies for -27% M.Def; (success chance x0.7),130,390k,[Vampiric Bolt],Ork
 72,Witches Curse,Magic/Debuff,900,enemy,2.5,1,30,m.Atk +84; A chance to curse enemies for -30% M.Def; (success chance x0.7),134,650k,[Vampiric Bolt],Ork
 74,Witches Curse,Magic/Debuff,900,enemy,2.5,1,30,m.Atk +87; A chance to curse enemies for -30% M.Def; (success chance x0.7),138,880k,[Vampiric Bolt],Ork
-,,,,,,,,,,,,,-----------------------------Vampiric Bolt-----------------------------
+,,,,,,,,,,,,,-----------------------------Witches Scarecrow-----------------------------
 40,Witches Scarecrow,Magic/Debuff,900,enemy,2,5,10,Fear the enemy (success chance x0.5);,66,36k,[],Ork,lower success rate
 44,Witches Scarecrow,Magic/Debuff,900,enemy,2,5,10,Fear the enemy (success chance x0.5);,76,43k,[],Ork
 48,Witches Scarecrow,Magic/Debuff,900,enemy,2,5,10,Fear the enemy (success chance x0.5);,88,64k,[],Ork

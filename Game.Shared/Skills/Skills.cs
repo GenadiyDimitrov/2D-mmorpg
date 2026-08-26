@@ -206,6 +206,17 @@ public record SkillDef(
     int DispelCount = 0,
     int DispelMaxLevel = 0,
     bool Cancellable = true,
+    /// <summary>DAMAGE PER SECOND of this skill's damage-over-time, when that is NOT the same number as
+    /// the skill's <see cref="Power"/>. 0 = use Power, which is what every DoT before the nuker's Pyro
+    /// Burst did — a bleed IS its DoT, so one number served both. Pyro Burst hits for 150 on impact and
+    /// then burns for his authored 100 a second, and there was nowhere to say so.</summary>
+    int DotPower = 0,
+    /// <summary>How much of the MP a target RECEIVES this debuff cuts away (0.70 = they get 30%). The
+    /// mana twin of <see cref="SkillEffect.DebuffHealRecv"/>, which does the same to healing; Pyro Burst
+    /// asks for both in one row ("decrease hp/mp received by 70%") and a burn that stopped heals but let
+    /// the victim refill their bar with Restore Spirit would be half a skill. A FIELD, not a flag — the
+    /// SkillEffect enum has no bits left.</summary>
+    float MpReceivedPct = 0f,
     // Movement effects. BlinkRange: 0 = teleport the caster just BEHIND the target (gap-closer);
     // > 0 = teleport the caster that far AWAY from the target (escape). KnockbackRange: shove
     // the target that far away from the caster.
@@ -608,10 +619,38 @@ public record SkillDef(
 
     /// <summary>Per-school control resistance at a LEVEL. A level's 0 means "inherit", so a
     /// single-level resist buff needs no per-level entry (see SkillLevel.CcResistMagical).</summary>
+    /// <para>⚠ The test is <c>!= 0</c>, not <c>&gt; 0</c>, since 2026-08-26: the nuker's Arcane Burst
+    /// authors a NEGATIVE value (it EATS 40 points of the target's resistance), and a positives-only
+    /// test would have silently discarded it and fallen back to the def. No existing skill authors a
+    /// negative here, so nothing else changed.</para>
     public float CcResistMagicalAt(int level)
     {
         float v = Lvl(level)?.CcResistMagical ?? 0f;
-        return v > 0f ? v : CcResistMagical;
+        return v != 0f ? v : CcResistMagical;
+    }
+
+    /// <summary>How far this LEVEL blinks (0 = the def's BlinkRange). Phase Shift's whole ladder.</summary>
+    public float BlinkRangeAt(int level)
+    {
+        float v = Lvl(level)?.BlinkRange ?? 0f;
+        return v > 0f ? v : BlinkRange;
+    }
+
+    /// <summary>How many positive effects this LEVEL strips (0 = the def's, which in turn means "all
+    /// matching"). Arcane Void's ladder is nothing but this number.</summary>
+    public int DispelCountAt(int level)
+    {
+        int v = Lvl(level)?.DispelCount ?? 0;
+        return v > 0 ? v : DispelCount;
+    }
+
+    /// <summary>The DoT damage per second this LEVEL deals: the level's own DotPower, else the def's,
+    /// else the skill's Power — which is what every DoT authored before Pyro Burst relies on.</summary>
+    public int DotPowerAt(int level)
+    {
+        int v = Lvl(level)?.DotPower ?? 0;
+        if (v > 0) return v;
+        return DotPower > 0 ? DotPower : PowerAt(level);
     }
 
     /// <summary>Heal POWER this level of the buff grants its holder (flat), falling back to the def.</summary>
@@ -911,7 +950,17 @@ public record SkillLevel(
     int HealPowerFlat = 0,
     float HealPowerPct = 0f,
     float HealReceivedPct = 0f,
-    float MagicAccuracy = 0f);
+    float MagicAccuracy = 0f,
+    // HOW MANY POSITIVE EFFECTS THIS RUNG STRIPS (0 = inherit the SkillDef's DispelCount). The nuker's
+    // Arcane Void is the whole reason: 1-2 effects at 52, 2-3 at 62, 2-4 at 72 — the ladder IS the
+    // count, and without a per-level slot every rung would have silently stripped rung 1's two.
+    int DispelCount = 0,
+    // DoT DAMAGE PER SECOND at THIS level (0 = inherit the SkillDef's DotPower, which in turn falls
+    // back to Power). See SkillDef.DotPower.
+    int DotPower = 0,
+    // HOW FAR THIS RUNG BLINKS (0 = inherit the SkillDef's BlinkRange). The nuker's Phase Shift is the
+    // rogue's Lure all over again — 200 / 400 / 600 — where the whole ladder is the distance.
+    float BlinkRange = 0f);
 
 /// <summary>What a buff does to the four things a MONSTER pays out: experience, skill points, the
 /// gold it drops and the CHANCE its table rolls. The premium rune family (Rune of Experience /
@@ -1162,6 +1211,7 @@ public static partial class SkillCatalog
         list.AddRange(LightbringerSkills());  // Skills.Lightbringer.cs
         list.AddRange(WarchanterSkills());    // Skills.Warchanter.cs
         list.AddRange(Warchanter3rdSkills()); // Skills.Warchanter3rd.cs (his 40-74 groups + harmonies)
+        list.AddRange(Nuker3rdSkills());      // Skills.Nuker3rd.cs (his `nuker 3rd.csv`, 40-74)
         list.AddRange(WarchanterKitSkills()); // Skills.Warchanter3rd.Kit.cs (his 40-74 passives/actives/toggles)
         list.AddRange(MobSpellSkills());      // Skills.MobSpells.cs (caster-mob nuke + jab)
         list.AddRange(RewardRuneSkills());    // Skills.RewardRunes.cs (exp/sp/gold/drop runes + Sinister/Sinners)

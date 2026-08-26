@@ -153,12 +153,17 @@ public static partial class SkillCatalog
                 new SkillLevel(SpCost: 6400),
                 new SkillLevel(SpCost: 12800),
                 new SkillLevel(SpCost: 25000),
-                // Rungs 5-8 (@40/50/60/70) — see the note below. ⚠ These are NOT on his schedule: there
-                // is no authored level→SP table above 35 yet, so they are left as they were.
-                new SkillLevel(SpCost: 48000),
-                new SkillLevel(SpCost: 90000),
-                new SkillLevel(SpCost: 145000),
-                new SkillLevel(SpCost: 210000),
+                // Rungs 5-18 (@40 → 74) — HIS, from `nuker 3rd.csv` (2026-08-26). They replace the four
+                // we invented at 40/50/60/70, and the SP is now the 3rd tier's own band ladder, the same
+                // one the healer and buffer files run on: 36k → 880k. The old "no authored level→SP
+                // table above 35" caveat is dead — there is one, and this is it.
+                new SkillLevel(SpCost: 36000),  new SkillLevel(SpCost: 43000),
+                new SkillLevel(SpCost: 64000),  new SkillLevel(SpCost: 74000),
+                new SkillLevel(SpCost: 81000),  new SkillLevel(SpCost: 88000),
+                new SkillLevel(SpCost: 120000), new SkillLevel(SpCost: 170000),
+                new SkillLevel(SpCost: 190000), new SkillLevel(SpCost: 280000),
+                new SkillLevel(SpCost: 320000), new SkillLevel(SpCost: 390000),
+                new SkillLevel(SpCost: 650000), new SkillLevel(SpCost: 880000),
             },
             ArmorMasteryLevels: new[]
             {
@@ -178,21 +183,37 @@ public static partial class SkillCatalog
                 NukerRobe(pDef: 25, maxMp: 20, restorePct: 0.15f),
                 NukerRobe(pDef: 30, maxMp: 30, restorePct: 0.20f),
                 NukerRobe(pDef: 35, maxMp: 30, restorePct: 0.25f),
-                // Rungs 5-8 (@40/50/60/70) are OURS, in the band that has no CSV yet — the same
-                // precedent as the bolt ladder above 35 (ClassSkillTables.Common.cs). They carry his
-                // 2026-08-07 ruling "mpRestore to a +80" (now 60%), which is a LATE-LEVEL number: it
-                // is the other half of "+200 MP for −200 HP", against Restore Spirit's own 120 at 80.
-                // ⚠ Only the RESTORE value grows. pDef and maxMp stay frozen at the rung-4 values on
-                // purpose — inventing defensive growth he never authored would quietly re-balance the
-                // robe. When the 40+ nuker CSV lands, these four rungs are the ones to replace.
-                // ⚠ NOT touched by his 2026-08-24 re-authoring of rungs 1-4 — the 40+ endpoint is a
-                // separate ruling of his ("+200 MP for −200 HP" at 80) and still stands. The step from
-                // rung 4 to rung 5 is therefore 25→38 now instead of 30→38: still monotonic, just a
-                // steeper hand-off at 40, and the 40+ CSV is what resolves it.
-                NukerRobe(pDef: 35, maxMp: 30, restorePct: 0.38f),
-                NukerRobe(pDef: 35, maxMp: 30, restorePct: 0.45f),
-                NukerRobe(pDef: 35, maxMp: 30, restorePct: 0.53f),
-                NukerRobe(pDef: 35, maxMp: 30, restorePct: 0.60f),
+                // ⚠ RUNGS 5-18 ARE HIS — `nuker 3rd.csv`, 2026-08-26 — and they replace the four we
+                // invented at 40/50/60/70 with the note "when the 40+ nuker CSV lands, these four rungs
+                // are the ones to replace". It landed.
+                //
+                // 🔑 P.DEF AND MAX MP NOW GROW, which the invented rungs deliberately refused to do
+                // (frozen at rung 4 rather than inventing defensive growth he never authored). His file
+                // authors both: 39 → 87 P.Def and 70 → 200 Max MP across the fourteen bands.
+                //
+                // 🔑 mpWhenRestored REACHES 60% AT 70 AND THEN PLATEAUS — his last three rows all read
+                // 60%. That is the same endpoint the invented rung 8 carried, arrived at from his own
+                // ladder instead of from our extrapolation, and it is his "+200 MP for −200 HP" late-game
+                // balance against Restore Spirit. A plateau at the TOP of a ladder is authored, not a
+                // typo (owner, 2026-08-26) — do not "fix" it upward.
+                //
+                // ⚠ These are ALMOST the healer's robe rungs and are NOT interchangeable with them: his
+                // @48 row is 50 P.Def where the healer's is 47, and the healer's robe carries no restore
+                // bonus at all. That single difference is why the nuker keeps its own skill id.
+                NukerRobe(pDef: 39, maxMp:  70, restorePct: 0.33f),   // 40
+                NukerRobe(pDef: 44, maxMp:  70, restorePct: 0.35f),   // 44
+                NukerRobe(pDef: 50, maxMp: 100, restorePct: 0.37f),   // 48
+                NukerRobe(pDef: 50, maxMp: 100, restorePct: 0.40f),   // 52
+                NukerRobe(pDef: 53, maxMp: 140, restorePct: 0.43f),   // 56
+                NukerRobe(pDef: 56, maxMp: 140, restorePct: 0.45f),   // 58
+                NukerRobe(pDef: 58, maxMp: 150, restorePct: 0.47f),   // 60
+                NukerRobe(pDef: 64, maxMp: 150, restorePct: 0.50f),   // 62
+                NukerRobe(pDef: 68, maxMp: 150, restorePct: 0.53f),   // 64
+                NukerRobe(pDef: 72, maxMp: 180, restorePct: 0.55f),   // 66
+                NukerRobe(pDef: 75, maxMp: 180, restorePct: 0.57f),   // 68
+                NukerRobe(pDef: 79, maxMp: 180, restorePct: 0.60f),   // 70
+                NukerRobe(pDef: 83, maxMp: 200, restorePct: 0.60f),   // 72
+                NukerRobe(pDef: 87, maxMp: 200, restorePct: 0.60f),   // 74
             }),
     };
 

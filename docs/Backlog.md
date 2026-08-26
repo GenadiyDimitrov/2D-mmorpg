@@ -79,15 +79,28 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
 `BL-03` the Stat-Swap tab and `BL-04` the auto buff potion/scroll tab — the last two took `BL-39`
 (the Mindwriter's misleading `(cost …)`) out with them. See `CHANGELOG.md`. Two are left.
 
-- `BL-02` 🔵 **The 40+ class kits (3rd and 4th tier)** — ✅ **TWO OF TEN ARE DONE.** The
-  **Lightbringer (healer) shipped in 0.74.0** and the **whole Warchanter (buffer) in 0.76.0**, both 40 to
-  74, every rung off your finished `healer 3rd.csv` and `buffer 3rd.csv`, and `SkillCsvSeed --check` is
-  green on all ten files. That is the proof the pipeline works end to end. The other **eight disciplines
-  are still blocked on your files** — `tank` · `warrior` · `war_aoe` · `dual` · `archer` · `nuker`, each
-  `3rd` and `4th`, plus the two `4th` files for the two you have finished. They are seeded from code
-  holding exactly what the game already registers above 40, so you start by editing, not from an empty
-  sheet. Still the single biggest content unlock in the project; nothing is invented in the meantime, by
-  your own rule.
+- `BL-02` 🔵 **The 40+ class kits (3rd and 4th tier)** — ✅ **FOUR OF THE AUTHORED FILES ARE DONE.** The
+  **Lightbringer (healer) shipped in 0.74.0**, the **whole Warchanter (buffer) in 0.76.0**, the
+  **Lightbringer's 4th tier in 0.85.0** (with the shared kit and the eighteen Sigils), and the
+  **NUKER's 3rd tier in 0.87.0** — 208 rows, 21 families, Magus and Tempest, all three races, 40 to 74.
+  `SkillCsvSeed --check` is green on all twelve walked files. That is the proof the pipeline works end
+  to end, four times over.
+
+  ⚠ **The nuker one is the lesson worth keeping: `nuker 3rd.csv` had been FINISHED since before the
+  healer's was, and nobody noticed for six days** — it was never added to `Check.Specs`, so the one tool
+  that would have shouted about it never opened the file. **A finished file that no spec walks is
+  invisible.** When you finish a file, say so, and its `Check.Specs` line goes in the same day.
+
+  What is left, and it is now a short list:
+  - 🔵 **`buffer 4th.csv` — you are authoring it.** Rows through the Mark block are done; line 125 is
+    your `NOT DONE FOR NOW` banner and the bow/blunt/2H masteries, Twin Arrow, Sound Smash and Acoustic
+    Shock sit below it. Not started, on your instruction (2026-08-26: *"dont do buffer 4th as im
+    authoring it"*). When it lands, Harmony Mark's id is `harmony_mark` and it **must share `MarkKey`**
+    with the healer's three or a healer's Mark and a buffer's would stack.
+  - 🔵 **Five 3rd files are still two-line placeholders** — `tank` (one real row), `warrior`, `war_aoe`,
+    `dual`, `archer` — and **seven 4th files** with them. Same rule: nothing invented in the meantime.
+  - 🔴 **Calm Spirit**, one family of the nuker's file, is built-ready and **held by you** pending the
+    MP-regen question (`BL-92`). See 0.87.0 in `CHANGELOG.md`.
 
 - `BL-05` 🔵 **Crafting — the two pieces you did NOT rule.** The system itself SHIPPED in 0.63.0
   (masters, six levels, the freeze, the grade ladder, the gear roll, the mat costs, quitting). What is

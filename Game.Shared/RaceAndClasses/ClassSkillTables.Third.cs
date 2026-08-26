@@ -40,46 +40,21 @@ public static partial class ClassSkillTables
         // (For the record, the ranged rogue's three `PowerShot` renames had already gone on
         //  2026-08-07, playtest-19 M7: *"remove it from after 40lvl as well"*.)
 
-        // (skillId, displayName) placeholders — the two NUKER disciplines only, per his point 1.
-        var kit = new Dictionary<Discipline, (string Skill, string Name)[]>
-        {
-            [Discipline.Magus]        = new[] { (FlameBolt, "Annihilate"), (GreaterWeakness, "Mana Burn") },
-            [Discipline.Tempest]      = new[] { (FlameBolt, "Chain Lightning"), (GreaterWeakness, "Maelstrom") },
-        };
-
-        // Mage 3rd-class learn cadence: 40, 44, 48, … (step 4).
-        foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
-            foreach (var (discipline, skills) in kit)
-                ClassSkills.RegisterThird(race, discipline,
-                    skills.Select((s, i) => new ClassSkill(s.Skill, 40 + i * 4, s.Name)).ToArray());
-
-        // Nuker ULTIMATE — Elemental Burst (consumes 10 Elemental Stones). 10 levels at
-        // char 40/44/48/…/72/75 (step 4, last capped at 75), power 150 → 250. Shared by
-        // both nuker disciplines (Magus + Tempest), all races.
-        foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
-            foreach (var disc in new[] { Discipline.Magus, Discipline.Tempest })
-                ClassSkills.RegisterThird(race, disc,
-                    Enumerable.Range(1, 10)
-                        .Select(lvl => new ClassSkill(ElementalBurst,
-                            lvl <= 9 ? 36 + lvl * 4 : 75, SkillLevel: lvl))
-                        .ToArray());
-
-        // Frost Bind (Slow) + Entangling Roots (Root) + Glacial Spike (+dmg vs slowed/rooted)
-        // — nuker contested CC + conditional-damage payoff, @40/44 both disciplines.
-        foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
-            foreach (var disc in new[] { Discipline.Magus, Discipline.Tempest })
-                ClassSkills.RegisterThird(race, disc,
-                    new ClassSkill(FrostBind, 40), new ClassSkill(EntanglingRoots, 40),
-                    new ClassSkill(GlacialSpike, 44));
-        // Creeping Frost — stacking slow (10/20/30%) + Phase Shift (blink-back) — Tempest.
-        foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
-            ClassSkills.RegisterThird(race, Discipline.Tempest,
-                new ClassSkill(CreepingFrost, 44), new ClassSkill(PhaseShift, 48));
-
-        // Mana Barrier — Magus. The last survivor of the old shared fighter/mage block; every
-        // tank, warrior and rogue grant that stood here went in the 40+ purge (see the top).
-        foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
-            ClassSkills.RegisterThird(race, Discipline.Magus, new ClassSkill(ManaBarrier, 44));
+        // ✅ THE NUKER IS ON, 2026-08-26 — `nuker 3rd.csv`, 208 authored rows, finished long before the
+        // healer's and never built. Everything the two nuker disciplines used to teach above 40 was
+        // INVENTED here (the Annihilate/Chain-Lightning renames, the ten-rung Elemental Burst, Frost
+        // Bind, Entangling Roots, Glacial Spike, Creeping Frost, Mana Barrier and a lone Phase Shift)
+        // and survived the 2026-08-10 purge only under his point 1, *"leave the mage"* — i.e. as a
+        // placeholder until the file arrived. It has arrived, so the placeholders are gone and this is
+        // the third fully-authored 3rd class.
+        //
+        // ⚠ Their SkillDefs STAY in the catalog, same rule as always (LearnedSkills persists ids, so
+        // deleting a def breaks every character who bought one). Orphaned but defined, and NOT to be
+        // re-granted: Flamebolt, Greater Weakness, Frost Bind, Entangling Roots, Glacial Spike,
+        // Creeping Frost, Mana Barrier, Weakness. 🔑 That also retires the two dead-end rungs memory
+        // has been carrying — Flamebolt @40 and Glacial Spike @44 were single 40+ placeholders whose
+        // fizzle curve killed them by 58 and 62; his ladders replace both.
+        RegisterNuker3rd();
 
         // ✅ THE LIGHTBRINGER IS ON, 2026-08-20. `healer 3rd.csv` is finished and he authorised the
         // build, so the healer discipline is no longer an exception carved out of the 40+ purge — it
@@ -425,6 +400,102 @@ public static partial class ClassSkillTables
     /// because this function was commented out while his 44+ rows were still being drafted. That helper
     /// is GONE — its rungs are in the shared ladder below. Registering both would have taught every rung
     /// twice.</para></summary>
+
+    /// <summary>THE NUKER, 40-74 — every row of `docs/data/classes_skills_csv/nuker 3rd.csv`.
+    ///
+    /// <para>🔑 <b>REGISTERED TO BOTH MAGUS AND TEMPEST.</b> His file carries no discipline column and
+    /// the nuker archetype has two, so both get the whole kit — the same treatment `tank 3rd` already
+    /// gets for the same reason. That is deliberately the SAFE direction: nobody is locked out of a
+    /// spell he authored, and splitting them later is one line here plus a column in his file. What it
+    /// costs today is that Magus and Tempest are identical, which is the state the tank line is in too.
+    /// (The kit does carry both halves — Elemental Wave and Arcane Wave are the Tempest's shape,
+    /// Elemental Blast and the bursts the Magus's — so a split has material to work with.)</para>
+    ///
+    /// <para>🔑 <b>THE RACE SPLITS IT, and unlike the Lightbringer's it splits FOUR ways, not two:</b>
+    /// Human takes Arcane Wave / Vampiric Bolt / Arcane Void / Arcane Burst, Elf takes Frost Spikes /
+    /// Frost Pierce / Frost Burst, Ork takes Witches Curse / Witches Scarecrow / Pyro Burst. Eleven
+    /// families are shared. The Human's four vs the other two's three is his authoring, not a slip —
+    /// Arcane Void is a utility cast, not a damage one.</para>
+    ///
+    /// <para>🔴 <b>CALM SPIRIT IS NOT REGISTERED.</b> Its six rows (@40/48/56/62/68/74) multiply MP
+    /// regen by 0.3 → 0.7 while RUNNING and 1.03 → 1.2 while WALKING, on top of the engine's own stance
+    /// multipliers (run ×1.0, walk ×1.2). That makes a mage who learns it regenerate LESS while running
+    /// than one who never did — which is exactly what he intends (*"a farming mage will click walking,
+    /// and in pvp need to click run but regen slower"*), but he asked to hold it while the wider MP-regen
+    /// question is open (`BL-92`, *"ours is several times more than IG"*). Owner, 2026-08-26: *"w8 on
+    /// calm spirit"*. The rows stay in his file and `--check` will report the family as NOT REGISTERED
+    /// until he says go; that is the flag working, not a defect.</para></summary>
+    private static void RegisterNuker3rd()
+    {
+        // The same fourteen bands and the same SP column as the healer and the buffer — this IS the
+        // mage 3rd tier's cadence, and all three of his files were authored against it.
+        int[] band14 = { 40, 44, 48, 52, 56, 58, 60, 62, 64, 66, 68, 70, 72, 74 };
+
+        static IEnumerable<ClassSkill> Ladder(string id, int[] levels, int startRung = 1) =>
+            levels.Select((lv, i) => new ClassSkill(id, lv, SkillLevel: startRung + i));
+
+        static IEnumerable<ClassSkill> At(string id, params (int Level, int Rung)[] rows) =>
+            rows.Select(r => new ClassSkill(id, r.Level, SkillLevel: r.Rung));
+
+        var shared = new List<ClassSkill>();
+
+        // ---- The three passives. NONE of them is a new skill: two are shared outright with the
+        //      healer's kit and the third is the nuker's own, continued.
+        //      • Anti-Magic continues the mage ladder — rungs 1-6 were bought at 20-35, so his
+        //        fourteen rows are rungs 7-20, and those rungs are already in the def
+        //        (`HealerAntiMagicRungs`, his own "one shared ladder for all three files").
+        //      • Spellcaster Weapon Mastery IS the healer's skill. Its fourteen rungs matched this
+        //        file's rows to the last digit — see the note on HealerWeaponMasterySkill, which
+        //        predicted exactly that. `Replaces` retires the nuker's Spell Mastery for him.
+        //      • Mage Armor Mastery is the nuker's own (rungs 5-18) because it alone carries
+        //        mpWhenRestored, and because his @48 P.Def differs from the healer's by 3.
+        shared.AddRange(Ladder(MageAntiMagic, band14, startRung: 7));
+        shared.AddRange(Ladder(HealerWeaponMasterySkill, band14));
+        shared.AddRange(Ladder(NukerArmorMastery, band14, startRung: 5));
+
+        // ---- The two mana tools. Restore Spirit continues from the 2nd class (rung 1 @25), which is
+        //      why it starts at rung 2; Phase Shift is a fresh three-rung ladder whose ladder is its
+        //      distance.
+        shared.AddRange(At(RestoreSpirit, (40, 2), (52, 3), (58, 4), (66, 5)));
+        shared.AddRange(At(PhaseShift, (52, 1), (62, 2), (72, 3)));
+
+        // ---- The shared attack spells. Elemental Blast and Quick Blast REPLACE the 2nd-class bolts
+        //      (see the purge in ClassSkillTables.Common.cs — their 40+ half was ours, not his).
+        shared.AddRange(Ladder(ElementalBlast, band14));
+        shared.AddRange(Ladder(QuickBlast, band14));
+        shared.AddRange(Ladder(ElementalWave, band14));
+
+        // ---- The two five-minute nukes. Both eat Elemental Stones; Thunderstorm's five-second cast
+        //      is the price of its 216 power.
+        shared.AddRange(At(ElementalBurst, (58, 1), (66, 2), (74, 3)));
+        shared.AddRange(At(Thunderstorm,   (62, 1), (70, 2), (74, 3)));
+
+        // ═══ THE RACE SPLIT ══════════════════════════════════════════════════════════════════════
+        var human = new List<ClassSkill>(shared);
+        human.AddRange(Ladder(ArcaneWave, band14));
+        // Vampiric Bolt continues from the 2nd class too — rungs 1-5 were bought at 14-35, so his
+        // fourteen 3rd-class rows are rungs 6-19.
+        human.AddRange(Ladder(VampiricBolt, band14, startRung: 6));
+        human.AddRange(At(ArcaneVoid, (52, 1), (62, 2), (72, 3)));
+        human.Add(new ClassSkill(ArcaneBurst, 74));
+
+        var elf = new List<ClassSkill>(shared);
+        elf.AddRange(Ladder(FrostSpikes, band14));
+        elf.AddRange(Ladder(FrostPierce, band14));
+        elf.Add(new ClassSkill(FrostBurst, 74));
+
+        var ork = new List<ClassSkill>(shared);
+        ork.AddRange(Ladder(WitchesCurse, band14));
+        ork.AddRange(Ladder(WitchesScarecrow, band14));
+        ork.Add(new ClassSkill(PyroBurst, 74));
+
+        foreach (var disc in new[] { Discipline.Magus, Discipline.Tempest })
+        {
+            ClassSkills.RegisterThird(Race.Human, disc, human.ToArray());
+            ClassSkills.RegisterThird(Race.Elf,   disc, elf.ToArray());
+            ClassSkills.RegisterThird(Race.Ork,   disc, ork.ToArray());
+        }
+    }
     private static void RegisterLightbringer()
     {
         // His fourteen learn levels, and a rung index → level lookup so every ladder below reads as

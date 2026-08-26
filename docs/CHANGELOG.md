@@ -7,11 +7,120 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.86.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.87.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-08-26 (latest) — 0.86.1: retention is 90 days
+## 2026-08-26 (latest) — 0.87.0: the NUKER's 3rd class, off a file that had been finished for days
+
+The third fully-authored 3rd class. `docs/data/classes_skills_csv/nuker 3rd.csv` — **208 rows, 21
+families, no `NOT DONE` banner** — has been complete since before `healer 3rd.csv` was, and nothing in
+the game read it: the two nuker disciplines still taught the placeholder kit that survived the
+2026-08-10 purge under his point 1, *"leave the mage"*. They don't any more.
+
+**Magus and Tempest, all three races, 40 → 74.** Registered to **both** disciplines, because his file
+carries no discipline column — the same treatment `tank 3rd` gets, and deliberately the safe direction:
+nobody is locked out of a spell he wrote, and splitting them later is one line plus a column.
+
+### The kit
+
+Eleven families shared, and the race splits the rest — **four ways for the Human, three for the other
+two**, which is his authoring and not a slip (Arcane Void is utility, not damage):
+
+| | |
+|---|---|
+| shared | Anti-Magic · Spellcaster Weapon Mastery · Mage Armor Mastery · Restore Spirit · Phase Shift · **Elemental Blast** · **Quick Blast** · **Elemental Wave** · Elemental Burst · **Thunderstorm** |
+| Human | **Arcane Wave** · Vampiric Bolt · **Arcane Void** · **Arcane Burst** |
+| Elf | **Frost Spikes** · **Frost Pierce** · **Frost Burst** |
+| Ork | **Witches Curse** · **Witches Scarecrow** · **Pyro Burst** |
+
+🔑 **THREE OF THE FOUR PASSIVES WERE ALREADY BUILT AND ARE SHARED, NOT COPIED.** Anti-Magic's rungs
+7-20 are the ladder he asked to be shared across all three files. **Spellcaster Weapon Mastery IS the
+healer's skill** — its fourteen rungs matched this file's rows to the last digit, exactly as the note
+on that def predicted ("the nuker file will want the same row"). Only Mage Armor Mastery stays the
+nuker's own, because it alone carries `mpWhenRestored` and its @48 P.Def is 50 where the healer's is 47.
+
+### What the 40+ purge took out with it
+
+The invented half of the nuker's table is gone: the Annihilate / Chain-Lightning renames, the ten-rung
+Elemental Burst, Frost Bind, Entangling Roots, Glacial Spike, Creeping Frost, Mana Barrier, and the
+**2nd-class ladder's 40-80 tail** (Elemental Bolt, Quick Bolt, Vampiric Bolt, Restore Spirit and Mage
+Armor Mastery all continued past 35 by *us*, in the band that had no file). Defs stay in the catalog,
+learn lines are gone — the standing rule.
+
+🔑 **That also kills the two dead-end rungs the notes have been carrying**: Flamebolt @40 and Glacial
+Spike @44 were single 40+ placeholders whose fizzle curve made them unusable by 58 and 62. BalanceMatrix's
+SPELL LADDERS table now shows every nuker spell topping out at 74 and viable past 89 — **no `!` on a
+single one of them**.
+
+### Four skills re-authored to his rows
+
+**Elemental Burst** was ten invented rungs (150 → 250 power, 4k SP, 1 stone, 3s reuse); his is **three
+rungs at 58/66/74**, power 120/133/154, a **1-second cast on a 5-minute reuse**, eating **2** stones.
+**Phase Shift** was one 400-unit blink for 20 MP; his is a **three-rung ladder whose ladder is the
+distance** (200/400/600 at 52/62/72, 96-138 MP). **Restore Spirit**'s rungs 2-5 are his four rows and
+the ladder now **stops at 66** — deliberately stingier than ours, his own note: *"Intentionally
+decreased as mp regen with x3.4/x1.2/x1.2 = ~x5; still alot more mp and alot less hp than IG"*.
+**Vampiric Bolt** becomes the Human nuker's 3rd-class spell, rungs 6-19, and gains his **900 range**
+(the 2nd class keeps 750 — per-level `Range`).
+
+### Engine work: two new primitives, and three that turned out to already exist
+
+⚠ **Grep before declaring a primitive missing.** `SureHit` already zeroed the fizzle in all three
+landing arms, so **"Never Fizzle"** on the three level-74 bursts needed nothing. `Cancellable: false`
+already existed, so **BURN** — his *"true dmg per second no cure and can kill"* — needed nothing
+either: every DoT here already calls `ApplyDamage` with a **raw** number (true damage) and calls `Kill`
+if the bar empties, and non-cancellable is the existing switch `DispelFrom` honours. And *"decrease SPT
+resistance by 40%"* is simply a **negative `CcResistMagical`**, which `RecomputeDerived` already sums
+and clamps to [0, 0.8].
+
+Genuinely new:
+
+- **`SkillDef/SkillLevel.DotPower`** — the first skill where the impact and the burn are different
+  numbers. Pyro Burst hits for 150 and then burns for his 100/s; every DoT before it *was* its Power,
+  so `DotPowerAt` falls back to Power and nothing else in the catalog moved.
+- **`MpReceivedPct`** — the mana twin of the `DebuffHealRecv` anti-heal, multiplying the same
+  `Entity.RestoreMpMod` the robe mastery raises. His row asks for both halves; a burn that stopped
+  heals while the victim refilled with Restore Spirit would be half a skill.
+- **`SkillLevel.DispelCount`** and **`SkillLevel.BlinkRange`** — Arcane Void's whole ladder is the
+  count (2/3/4) and Phase Shift's is the distance. Both were def-only fields, so every rung would
+  silently have used rung 1's number.
+- `CcResistMagicalAt` tests `!= 0` instead of `> 0`, or Arcane Burst's negative would have been
+  discarded. No existing skill authors a negative there.
+
+Also finally used for the first time: **`PvpDamageMult`** (Quick Blast's *"Power in PVP x0.5"*) and
+**`InterruptMult`** (the elf's ×2 — and note his rule that this is UNRELATED to `DebuffLandMod`:
+*"does dmg but have a lower success rate for the slow - interrupt unaffected"*).
+
+### Five corrections to his file, all flagged
+
+- **Thunderstorm's SP read `4000` at @62 and @70** against a band ladder that is 170k and 390k there,
+  and 880k on the skill's own last rung. A 4,000-SP spell at 62 is free. → the band prices.
+- **Quick Blast and Witches Curse @52 both read power 52, the same as @48** — the identical defect
+  Holy Ray had at the identical rung of the identical ladder. → **57**, his own 2026-08-20 rule.
+  ⚠ Not a debuff-magnitude plateau at the top of a ladder, which he restored on purpose two days ago.
+- **Arcane Void's row said `0,self`** — copy-pasted from Phase Shift above it, identical MP column —
+  while its DESCR says "of the target". → `900,enemy`.
+- **Arcane Burst's DURRATION read 0** where its two siblings read 15. → 15.
+- Three section headers named the wrong skill (cosmetic, his file only).
+
+🔴 **CALM SPIRIT IS NOT BUILT — his hold, not an omission.** Its six rows multiply MP regen ×0.3 → ×0.7
+while **running** and ×1.03 → ×1.2 while **walking**, on top of the engine's stance multipliers (run
+×1.0, walk ×1.2), so at 74 a walking mage sits at ×1.44 and a running one at ×0.7. That is exactly what
+he intends — *"a farming mage will click walking, and in pvp need to click run but regen slower"* — but
+it lands in the middle of the open MP-regen question (`BL-92`), so: *"w8 on calm spirit"*. `--check`
+reports the family as NOT REGISTERED until he says go, which is the flag working.
+
+`--check` also gained a `\d+ radius` rule for its DESCR reader — his AoE rows read "in 200 radius with
+m.Atk +30" and it was calling the M.Atk 200.
+
+**Build green on both solutions · server boots at 0.87.0 (69 NPCs) · `SkillCsvSeed --check` clean on
+all twelve files but the held family · SmokeTest ALL CHECKS PASSED · BalanceMatrix's spell ladders
+confirm no nuker spell now dies inside the level range.** ⚠ **Protocol stays 27, but a NEW APK IS
+REQUIRED** — the client builds its Learn tab locally from the compiled `ClassSkills`, so a phone on
+0.81.1 will not show one row of this.
+
+## 2026-08-26 — 0.86.1: retention is 90 days
 
 One number, and it switches the purge on. Owner: *"90 days retention no point in keeping more .. if
 some1 gets reported .. must take no more than a week to deem him banable or not"*.

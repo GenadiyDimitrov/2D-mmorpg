@@ -10268,8 +10268,8 @@ public class GameLoopService : BackgroundService
         //      no target (self-cast escape) jumps away from the nearest hostile instead. ----
         if (effect.HasFlag(SkillEffect.Blink))
         {
-            if (target != caster) { offensive = true; DoBlink(caster, target, def.BlinkRange); }
-            else BlinkAwayFromNearest(caster, Math.Max(1f, def.BlinkRange));
+            if (target != caster) { offensive = true; DoBlink(caster, target, def.BlinkRangeAt(lvl)); }
+            else BlinkAwayFromNearest(caster, Math.Max(1f, def.BlinkRangeAt(lvl)));
         }
         if (effect.HasFlag(SkillEffect.Knockback)) { offensive = true; DoKnockback(caster, target, def.KnockbackRange); }
 
@@ -10534,7 +10534,13 @@ public class GameLoopService : BackgroundService
             // DoT damage effect (bleed/poison/venom): carries its per-tick damage so TickDots
             // hits for DotPower each second. Damage does NOT stack — stacks live on a separate
             // counter (see ApplyDotStack); the burst reads the counter, not this.
-            DotPower = (def.Effect & SkillEffect.AnyDot) != 0 ? def.PowerAt(level) : 0,
+            // ⚠ DotPowerAt, not PowerAt, since 2026-08-26: a DoT's per-second damage is USUALLY the
+            // skill's Power (a bleed is its DoT and nothing else), but the nuker's Pyro Burst hits for
+            // 150 on impact and then burns for his authored 100. DotPowerAt falls back to Power, so
+            // every DoT written before it is unchanged.
+            DotPower = (def.Effect & SkillEffect.AnyDot) != 0 ? def.DotPowerAt(level) : 0,
+            // The mana twin of the DebuffHealRecv anti-heal — a FIELD, the flag enum being full.
+            MpReceivedPct = def.MpReceivedPct,
             // Absorb shield: flat Power + a % of the target's max HP (a Percent Shield magnitude).
             ShieldPool = (def.Effect & SkillEffect.Shield) != 0
                 ? def.PowerAt(level) + (int)(target.MaxHp * def.MagnitudeOf(SkillEffect.Shield, ModifierMode.Percent, level))
@@ -10829,14 +10835,17 @@ public class GameLoopService : BackgroundService
             (maxRank <= 0 || b.Rank <= maxRank)).ToList();
 
         // Random subset if a count is set and there are more candidates than that.
-        if (def.DispelCount > 0 && cands.Count > def.DispelCount)
+        // ⚠ PER-LEVEL since 2026-08-26 — Arcane Void's whole ladder IS this number (2 / 3 / 4), and
+        // reading the def's would have made every rung strip rung 1's two.
+        int dispelCount = def.DispelCountAt(lvl);
+        if (dispelCount > 0 && cands.Count > dispelCount)
         {
-            for (int i = 0; i < def.DispelCount; i++)
+            for (int i = 0; i < dispelCount; i++)
             {
                 int j = _rng.Next(i, cands.Count);
                 (cands[i], cands[j]) = (cands[j], cands[i]);
             }
-            cands = cands.Take(def.DispelCount).ToList();
+            cands = cands.Take(dispelCount).ToList();
         }
 
         // CANCEL: each targeted buff rolls a SAVE against the victim's cancel resist — a saved
