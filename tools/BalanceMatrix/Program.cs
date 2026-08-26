@@ -297,6 +297,14 @@ if (args.Length > 0 && args[0] == "--buffs") { BuffCensus.Run(); return; }
 
 // `--mpregen` — the MP ECONOMY: spell-spam drain against natural and buffed regen, under BOTH the
 // model that ships today and the owner's proposed one (2026-08-26). Nothing here changes the engine.
+// `--hpregen` - the HP ECONOMY: regen against the potion throughput that really replaces HP,
+// and against a level-appropriate mob's damage. `BL-92` part two. Nothing here changes the engine.
+if (args.Length > 0 && args[0] == "--hpregen")
+{
+    HpEconomy(args.Skip(1).Select(int.Parse).ToArray());
+    return;
+}
+
 if (args.Length > 0 && args[0] == "--mpregen")
 {
     MpEconomy(args.Skip(1).Select(int.Parse).ToArray());
@@ -733,7 +741,7 @@ Console.WriteLine("=== E4: THE FARM LOOP — cost per KILL, which is what an off
             }
 
             float hpLost = Dps(mob, e) * ttk;
-            float hpRegen = (StatCalculator.HpRegenPerSecond(e.Con, e.Level) + e.HpRegenBonus) * e.HpRegenMult * ttk;
+            float hpRegen = (StatCalculator.HpRegenPerSecond(e.EffectiveCon, e.Level) + e.HpRegenBonus) * e.HpRegenMult * ttk;
             float mpPct = e.Buffs.Where(b => b.Has(SkillEffect.BuffMpRegen)).Sum(b => b.Percent(SkillEffect.BuffMpRegen));
             float mpRegen = (StatCalculator.MpRegenPerSecond(e.EffectiveSpt, e.Level) + e.MpRegenBonus)
                             * e.MpRegenMult * (1f + mpPct) * ttk;
@@ -4708,6 +4716,380 @@ static (string Name, int Mp, float Cycle, string MaxName, float MaxDrain) BestSp
 }
 
 static string Trim(string s, int n) => s.Length <= n ? s : s[..n];
+
+// ============================================================================================
+//  `--hpregen` — THE HP ECONOMY. `BL-92` part TWO: the half the owner deliberately HELD on
+//  2026-08-26 — *"I want to do the same checks for the HP regen as well .. to not over inflate it
+//  with multipliers .. but let finish with the MP first"*.
+//
+//  The MP question was "can a spamming mage pay for himself". The HP question is HIS OWN and it is
+//  different: *"the hp regen comes from potions so whatever number it is - its only to save on
+//  10-20% potions not more"*. So regen is judged against the two things that actually replace HP:
+//      POTION   — the sustained HP/s a potion tier delivers (Common 20 / Uncommon 70 / Rare 150).
+//                 'pot%' is regen as a share of the RARE tier: his 10-20% is the target.
+//      DAMAGE   — a level-appropriate mob's DPS onto that character. 'dps%' is how much of the
+//                 incoming damage regen quietly undoes; at 100% the mob can never kill you.
+//
+//  ⚠ NOTHING HERE CHANGES THE ENGINE. It mirrors GameLoopService.Regenerate's HP branch exactly,
+//  including the two places HP still differs from MP after 0.88.1:
+//      1. the flats sit INSIDE the multipliers (MP moved them out),
+//      2. the `hpReg x1.1…x2.7` mastery ladder is still a PRODUCT of percents — the exact shape
+//         that was measured at x4.84 on the MP side and ended free mana.
+// ============================================================================================
+
+static void HpEconomy(int[] argLevels)
+{
+    // The percent HP-regen buffs a real character carries. Vigor r6 and the Warchanter's harmony are
+    // the SAME family — the harmony evicts the single — so it is ONE x1.2, plus the chant's x1.2.
+    const float BuffPct = 1.20f * 1.20f;
+    const float RarePotion = 150f;   // Rare Healing Potion: 150 HP/s for 30s on a 20s drink cooldown
+    const float UncPotion = 70f;     // Uncommon: 70 HP/s for 15s on a 10s cooldown
+
+    int[] levels = argLevels.Length > 0 ? argLevels : new[] { 20, 30, 40, 52, 60, 68, 74, 80, 85 };
+
+    // Mirrors GameLoopService.Regenerate's HP branch EXACTLY. If this drifts, the report lies —
+    // which is the one thing it exists not to do.
+    //
+    // ⚠ THE FLATS ARE OUTSIDE since `BL-92` closed on 2026-08-26. HpRegenBonus now carries the
+    // `hpReg` mastery ladder as a flat +1.1…+2.7 HP/s; HpRegenMult keeps only what is genuinely a
+    // percent (the armour-SET bonus, the HpRegenPercent gear attribute).
+    //
+    // ⚠ StatCalculator.HpRegenPerSecond is fed entity.Con — the BASE stat. The MP branch one line
+    // below it feeds EffectiveSpt. That asymmetry is real and is reported in section 4.
+    static float Hp(Entity e, MoveState st, bool moving, float buffPct)
+    {
+        float stance = MovementTuning.RegenMultiplier(st, moving);
+        return StatCalculator.HpRegenPerSecond(e.EffectiveCon, e.Level) * stance * e.HpRegenMult * buffPct
+               + e.HpRegenBonus;
+    }
+
+    Console.WriteLine();
+    Console.WriteLine("=== THE HP ECONOMY (BL-92 part two) - regen vs potions vs damage taken ===");
+    Console.WriteLine();
+    Console.WriteLine("  HP/s = ( (3 + 0.1*L) x 1.03^(CON-40) + flats ) x stance x HpRegenMult x (1+buff%)");
+    Console.WriteLine("           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ flats INSIDE (MP moved them OUT in 0.88.0)");
+    Console.WriteLine("                                                HpRegenMult is still a PRODUCT of hpReg x1.1..x2.7");
+    Console.WriteLine("  stance: running 0.70 | walking 0.85 | STANDING STILL 1.00 | sitting 1.50   (shared with MP)");
+    Console.WriteLine($"  'bf' columns model the real buff stack at x{BuffPct:0.00} (Vigor-or-harmony x1.2, chant x1.2).");
+    Console.WriteLine($"  Potion throughput for scale: Common 20 HP/s | Uncommon {UncPotion:0} HP/s | Rare {RarePotion:0} HP/s.");
+    Console.WriteLine();
+
+    // ---- 1. IG vs OURS, IN ABSOLUTE HP/s ------------------------------------------------------
+    //
+    // His IG reference, given 2026-08-26:
+    //     HpRegen = ( base x ConMod x LvlMod + flat ) x buffs
+    //     base, without buffs or passives, is PER RACE + CLASS:
+    //         Fighters (Human, Ork, Dwarf) 2.5-3.0 | Elven fighters 2.0-2.5
+    //         Mages (Human, Elf)           1.5-2.0 | Ork Mystics    2.0-2.2
+    //     ConMod anchors: CON 43 -> 1.32, CON 30 -> 1.00.
+    //
+    // 🔑 OUR formula factors EXACTLY into his shape, which is what makes the comparison honest:
+    //     (3 + 0.1*L) x 1.03^(CON-40)  ==  3.00  x  (1 + L/30)  x  1.03^(CON-40)
+    //                                      base     LvlMod         ConMod
+    // and the differences are then only three numbers, not a change of model:
+    //     1. our base is 3.00 for EVERY race and class; IG's splits 1.5 -> 3.0 by race+class,
+    //     2. our ConMod is centred on CON 40, IG's on CON 30,
+    //     3. our per-point step is 1.03, IG's is 1.0216 (the exact fit through his two anchors).
+    Console.WriteLine("--- 1. IG vs OURS, IN HP/s (his reference numbers, 2026-08-26) ---");
+    Console.WriteLine();
+    Console.WriteLine("  IG:    HpRegen = ( base x ConMod x LvlMod + flat ) x buffs");
+    Console.WriteLine("         base is PER RACE+CLASS: fighter 2.5-3.0 | elf fighter 2.0-2.5 | mage 1.5-2.0 | ork mystic 2.0-2.2");
+    Console.WriteLine($"         ConMod fitted through HIS anchors CON 30 -> 1.00 and CON 43 -> 1.32, i.e. {IgConStep():0.0000}^(CON-30)");
+    Console.WriteLine("  OURS:  (3 + 0.1*L) x 1.03^(CON-40)   ==   3.00 x (1 + L/30) x 1.03^(CON-40)");
+    Console.WriteLine("                                            base   LvlMod       ConMod      <- the SAME shape");
+    Console.WriteLine("         so only three numbers differ: our base is 3.00 for EVERYONE, our ConMod centres on");
+    Console.WriteLine("         CON 40 not 30, and our per-point step is 1.03 not 1.0216.");
+    Console.WriteLine();
+
+    Console.WriteLine("  a) THE CON MODIFIER");
+    Console.WriteLine();
+    Console.WriteLine("     race/class     CON | IG ConMod | OUR ConMod | ours/IG");
+    Console.WriteLine("     -----------------------------------------------------");
+    foreach (var (race, cls) in RaceClassPairs())
+    {
+        int con = StatCalculator.GetBaseStats(race, cls).Con;
+        float ig = IgConMod(con);
+        float our = (float)Math.Pow(StatCalculator.ConRegenBase, con - 40);
+        Console.WriteLine($"     {race,-6} {cls,-8} {con,3} | {ig,9:0.000} | {our,10:0.000} | {our / ig,6:0.00}x");
+    }
+    Console.WriteLine();
+    Console.WriteLine("     Ours is the HARSHER curve on mages (centred 10 points higher) and the more generous");
+    Console.WriteLine("     one on nobody - every single row is below IG's modifier.");
+    Console.WriteLine();
+
+    Console.WriteLine("  b) HP/s AT LEVEL 1 - where LvlMod is ~1 in both, so his base numbers compare DIRECTLY");
+    Console.WriteLine();
+    Console.WriteLine("     race/class     CON |  IG base   x ConMod =    IG HP/s |  OUR HP/s | verdict");
+    Console.WriteLine("     ------------------------------------------------------------------------------------");
+    foreach (var (race, cls) in RaceClassPairs())
+    {
+        int con = StatCalculator.GetBaseStats(race, cls).Con;
+        var (lo, hi) = IgBase(race, cls);
+        float ig = IgConMod(con);
+        float igLo = lo * ig, igHi = hi * ig;
+        float our = StatCalculator.HpRegenPerSecond(con, 1);
+        string verdict = our < igLo ? $"BELOW IG by {(1 - our / igLo) * 100:0}%"
+                       : our > igHi ? $"ABOVE IG by {(our / igHi - 1) * 100:0}%"
+                                    : "inside IG's band";
+        Console.WriteLine($"     {race,-6} {cls,-8} {con,3} | {lo,4:0.0}-{hi,3:0.0}  x {ig,6:0.000} = {igLo,5:0.00}-{igHi,4:0.00} | {our,9:0.00} | {verdict}");
+    }
+    Console.WriteLine();
+
+    Console.WriteLine("  c) HP/s BY LEVEL - IG vs OURS, SIDE BY SIDE (natural: no passives, no buffs, standing)");
+    Console.WriteLine();
+    Console.WriteLine("     IG's LvlMod is L/100 + 0.89 - the SAME expression we already use as the damage lvlMod,");
+    Console.WriteLine("     (level+89)/100. It runs x0.90 at L1 to x1.74 at L85: a x1.93 climb across the game.");
+    Console.WriteLine("     OUR level term is 1 + L/30, which climbs x3.71 over the same span - nearly DOUBLE.");
+    Console.WriteLine("     That single difference is the whole of our divergence; the base and CON are fine.");
+    Console.WriteLine();
+    Console.Write("     race/class     CON |        |");
+    foreach (int L in IgLevels()) Console.Write($"    L{L,-2} |");
+    Console.WriteLine();
+    Console.Write("     -------------------------------");
+    foreach (int _ in IgLevels()) Console.Write("---------");
+    Console.WriteLine();
+    foreach (var (race, cls) in RaceClassPairs())
+    {
+        int con = StatCalculator.GetBaseStats(race, cls).Con;
+        var (lo, hi) = IgBase(race, cls);
+        float igMid = (lo + hi) / 2f * IgConMod(con);
+
+        Console.Write($"     {race,-6} {cls,-8} {con,3} | IG     |");
+        foreach (int L in IgLevels()) Console.Write($" {igMid * IgLvlMod(L),6:0.00} |");
+        Console.WriteLine();
+        Console.Write($"     {"",-19} | OURS   |");
+        foreach (int L in IgLevels()) Console.Write($" {StatCalculator.HpRegenPerSecond(con, L),6:0.00} |");
+        Console.WriteLine();
+        Console.Write($"     {"",-19} | ratio  |");
+        foreach (int L in IgLevels())
+            Console.Write($" {StatCalculator.HpRegenPerSecond(con, L) / (igMid * IgLvlMod(L)),5:0.00}x |");
+        Console.WriteLine();
+    }
+    Console.WriteLine();
+    Console.WriteLine("     We start ON IG at level 1 and end at ~2x IG for fighters and ~2.7x for mages.");
+    Console.WriteLine("     Nothing compounds here - it is one linear term outrunning another linear term.");
+    Console.WriteLine();
+
+    Console.WriteLine("  d) IF WE SWAP OUR LEVEL TERM FOR IG'S, AND CHANGE NOTHING ELSE");
+    Console.WriteLine();
+    Console.WriteLine("     i.e.  3.00 x (L+89)/100 x 1.03^(CON-40)   instead of   (3 + 0.1*L) x 1.03^(CON-40)");
+    Console.WriteLine("     The ratio to IG then stops moving with level, because the level term is IG's own:");
+    Console.WriteLine();
+    Console.Write("     race/class     CON |        |");
+    foreach (int L in IgLevels()) Console.Write($"    L{L,-2} |");
+    Console.WriteLine("  vs IG");
+    Console.Write("     -------------------------------");
+    foreach (int _ in IgLevels()) Console.Write("---------");
+    Console.WriteLine();
+    foreach (var (race, cls) in RaceClassPairs())
+    {
+        int con = StatCalculator.GetBaseStats(race, cls).Con;
+        var (lo, hi) = IgBase(race, cls);
+        float igMid = (lo + hi) / 2f * IgConMod(con);
+        float conMod = (float)Math.Pow(StatCalculator.ConRegenBase, con - 40);
+
+        Console.Write($"     {race,-6} {cls,-8} {con,3} | IG-lvl |");
+        foreach (int L in IgLevels()) Console.Write($" {3f * IgLvlMod(L) * conMod,6:0.00} |");
+        Console.WriteLine($"  {3f * conMod / igMid,5:0.00}x");
+        Console.Write($"     {"",-19} | today  |");
+        foreach (int L in IgLevels()) Console.Write($" {StatCalculator.HpRegenPerSecond(con, L),6:0.00} |");
+        Console.WriteLine();
+    }
+    Console.WriteLine();
+    Console.WriteLine("     Fighters land 0.90-1.04x IG and mages 1.07-1.24x, at EVERY level - because our single");
+    Console.WriteLine("     base of 3.00 cannot reproduce IG's 2x base split between fighter and mage, and our");
+    Console.WriteLine("     CON curve only carries the mage down to 62% of the fighter where IG's base puts");
+    Console.WriteLine("     him at 45%. Closing THAT gap needs either a race/class base split (IG's own shape)");
+    Console.WriteLine("     or a steeper CON step (~1.05 instead of 1.03). The level term is the big rock.");
+    Console.WriteLine();
+    Console.WriteLine("  ⚠ StatCalculator's own comment says CON 'sits at 36-47'. That is the FIGHTER range only:");
+    Console.WriteLine("    mages are 25-31, so the real spread is 25-47 and our exponential spans x1.92 end to end.");
+    Console.WriteLine("    IG's spans x1.60 over the same range - a FLATTER curve, off a race/class-split base.");
+    Console.WriteLine();
+
+    // ---- 2. THE FLAT LADDER — who actually owns an hpReg rung ---------------------------------
+    Console.WriteLine("--- 2. WHO GETS AN hpReg MASTERY AT ALL (a FLAT HP/s since BL-92, at 74) ---");
+    Console.WriteLine();
+    Console.WriteLine("  class        flat HP/s   x mult   where it comes from");
+    foreach (var (name, e, src) in HpSubjects(74))
+        Console.WriteLine($"  {name,-12} {e.HpRegenBonus,9:+0.0;-0.0;0.0}   {e.HpRegenMult,6:0.00}   {src}");
+    Console.WriteLine();
+    Console.WriteLine("  🔴 STILL OPEN (owner, 2026-08-26): the FIGHTER 3rd/4th kits are not authored yet, and");
+    Console.WriteLine("     when they are, a fighter's flat must end up HIGHER than a mage's - today the nuker's");
+    Console.WriteLine("     +2.7 beats the warrior's +1.6 and the tank has none at all. And the ORK BUFFER should");
+    Console.WriteLine("     carry more than the others; how much is NOT decided. Neither is built - do not invent");
+    Console.WriteLine("     numbers for either, they arrive with his CSVs.");
+    Console.WriteLine();
+
+    // ---- 3. THE LADDER, class by class --------------------------------------------------------
+    foreach (var (name, _, _) in HpSubjects(74))
+    {
+        Console.WriteLine($"--- 3. {name.ToUpperInvariant()}: REGEN vs POOL, MOB DAMAGE AND POTIONS ---");
+        Console.WriteLine();
+        Console.WriteLine("     L   MaxHP  base/s  flat   mult | nat.stnd  bf.stnd  bf.run   bf.sit | %pool/s  0->full | mobDPS  dps%  pot%");
+        Console.WriteLine("  --------------------------------------------------------------------------------------------------------------");
+        foreach (int L in levels)
+        {
+            var subject = HpSubjects(L).First(s => s.Name == name);
+            var e = subject.Entity;
+            float bas = StatCalculator.HpRegenPerSecond(e.EffectiveCon, e.Level);
+            float natStand = Hp(e, MoveState.Running, false, 1f);
+            float bfStand = Hp(e, MoveState.Running, false, BuffPct);
+            float bfRun = Hp(e, MoveState.Running, true, BuffPct);
+            float bfSit = Hp(e, MoveState.Sitting, false, BuffPct);
+            float mobDps = Dps(BuildMobEntity(L), e);
+            float pool = e.MaxHp > 0 ? bfStand / e.MaxHp : 0f;
+
+            Console.WriteLine($"  {L,4} {e.MaxHp,7} {bas,7:0.0} {e.HpRegenBonus,5:0.0} {e.HpRegenMult,6:0.00} | "
+                            + $"{natStand,8:0.0} {bfStand,8:0.0} {bfRun,7:0.0} {bfSit,7:0.0} | "
+                            + $"{pool * 100,6:0.00}% {(bfStand > 0 ? e.MaxHp / bfStand : 0),7:0}s | "
+                            + $"{mobDps,6:0.0} {(mobDps > 0 ? bfStand / mobDps : 0) * 100,4:0}% {bfStand / RarePotion * 100,4:0}%");
+        }
+        Console.WriteLine();
+    }
+
+    Console.WriteLine("  'dps%'  = buffed-standing regen / one level-appropriate mob's DPS onto you.");
+    Console.WriteLine("            Over 100% means natural regen alone outruns that mob - it can never kill you.");
+    Console.WriteLine("  'pot%'  = regen as a share of a RARE potion's 150 HP/s. His own framing for why HP regen");
+    Console.WriteLine("            is the smaller question: *\"the hp regen comes from potions so whatever number it");
+    Console.WriteLine("            is - its only to save on 10-20% potions not more\"*. After BL-92 it reads 5-12%");
+    Console.WriteLine("            at 60+, i.e. slightly UNDER the share he described. IG's own sits at 5-7%.");
+    Console.WriteLine();
+
+    // ---- 4. WHAT IS STILL OPEN --------------------------------------------------------------
+    Console.WriteLine("--- 4. STILL OPEN AFTER BL-92 (not built, not ruled) ---");
+    Console.WriteLine();
+    Console.WriteLine("  A. CON is read as the BASE stat, SPT as the EFFECTIVE one.");
+    Console.WriteLine("     GameLoopService.Regenerate feeds HpRegenPerSecond(entity.Con) and, one line below,");
+    Console.WriteLine("     MpRegenPerSecond(entity.EffectiveSpt). So a +CON buff/jewel raises your MAX HP and");
+    Console.WriteLine("     changes NOTHING about your regen, while +SPT raises both. One of the two is wrong.");
+    Console.WriteLine();
+    Console.WriteLine("  B. The LEVEL TERM. Ours is 1 + L/30 (x3.71 across 1-85); IG's is L/100 + 0.89 (x1.93),");
+    Console.WriteLine("     which is the same (level+89)/100 our DAMAGE formula already runs on. Swapping it was");
+    Console.WriteLine("     measured and explicitly NOT taken - owner, 2026-08-26: *\"Leave out lvl mod just leave");
+    Console.WriteLine("     the flat outside ... So we will have x2 more than IG but not as much as we have now");
+    Console.WriteLine("     ... Playtest will decide if it stays\"*. Section 5 prices exactly what that x2 is.");
+    Console.WriteLine();
+    Console.WriteLine("  C. No FLAT HP-regen source exists outside the masteries: the gear attribute");
+    Console.WriteLine("     AttributeType.HpRegen is defined but nothing in the tiered tables rolls it, and no");
+    Console.WriteLine("     HP-regen buff is authored in Flat mode. The flats-last rule is set; the channel is");
+    Console.WriteLine("     otherwise empty, so gear could use it whenever he wants it used.");
+    Console.WriteLine();
+    // ---- 5. THE BUILT MODEL, AGAINST IG -------------------------------------------------------
+    //
+    // Owner, 2026-08-26, closing the HP half of `BL-92`:
+    //     *"I want to make the passives + not x as the mp .. and buffs to carry the multiplier ..
+    //       and the flat is to added at the end"*, and on the level term:
+    //     *"Leave out lvl mod just leave the flat outside ... So we will have x2 more than IG but
+    //       not as much as we have now ... Playtest will decide if it stays"*.
+    //
+    //     BUILT:     [ base x ConMod x LvlMod x stance x (1+buff%) ]  +  masteryFlat + gearFlat
+    //     IG's own:  ( base x ConMod x LvlMod + flat ) x buffs
+    //
+    // The two differ in TWO places, both deliberate: IG multiplies its flat by the buffs where we add
+    // ours last (the flats-last house rule, playtest 28), and IG's LvlMod is flatter than ours. The
+    // second is the whole of the ~2x he accepted, and it is the thing a playtest is meant to judge.
+    Console.WriteLine("--- 5. THE BUILT MODEL vs IG (passives FLAT, buffs MULTIPLY, flats LAST) ---");
+    Console.WriteLine();
+    Console.WriteLine("  BUILT:     [ base x ConMod x LvlMod x stance x (1+buff%) ] + masteryFlat + gearFlat");
+    Console.WriteLine("  IG's own:  ( base x ConMod x LvlMod + flat ) x buffs      <- IG multiplies its flat by buffs");
+    Console.WriteLine("             we add ours last, by the flats-last house rule. ~1.2 HP/s at a x1.44 stack.");
+    Console.WriteLine();
+    Console.WriteLine("  'hpReg +2.7' is read as +2.7 HP/s - the whole rung, not its excess, exactly as mpReg is.");
+    Console.WriteLine("  All columns are BUFFED and STANDING, with the class's own mastery rung at that level.");
+    Console.WriteLine("  'was' = the pre-BL-92 multiplier form, for the record.");
+    Console.WriteLine();
+    Console.WriteLine("     class      L | mFlat |    was |  BUILT | if IG lvlMod |  IG's own | built/IG");
+    Console.WriteLine("  ------------------------------------------------------------------------------");
+    foreach (int L in new[] { 40, 52, 60, 68, 74, 85 })
+    {
+        foreach (var (name, e, _) in HpSubjects(L))
+        {
+            int con = e.EffectiveCon;
+            float conMod = (float)Math.Pow(StatCalculator.ConRegenBase, con - 40);
+            float mFlat = e.HpRegenBonus;
+            float bas = StatCalculator.HpRegenPerSecond(con, L);
+
+            // The multiplier form this replaced: the rung read as x(1+flat-1) = x(the rung itself).
+            float wasMult = mFlat > 0f ? mFlat : 1f;
+            float was = bas * wasMult * BuffPct;
+
+            float built = Hp(e, MoveState.Running, false, BuffPct);
+            float igLvl = 3f * IgLvlMod(L) * conMod * BuffPct + mFlat;
+
+            var (lo, hi) = IgBase(e.Race, e.BaseClass);
+            float igOwn = ((lo + hi) / 2f * IgConMod(con) * IgLvlMod(L) + mFlat) * BuffPct;
+
+            Console.WriteLine($"     {name,-9} {L,2} | {mFlat,5:0.0} | {was,6:0.0} | {built,6:0.0} | {igLvl,12:0.0} | {igOwn,9:0.0} |"
+                            + $" {built / igOwn,8:0.00}x");
+        }
+        Console.WriteLine();
+    }
+    Console.WriteLine("  READ IT LIKE THIS:");
+    Console.WriteLine("   - 'was' -> 'BUILT' is what the ruling bought. The mastery stops multiplying the level");
+    Console.WriteLine("     term, so the nuker's x2.7 collapses to a +2.7 and the class order INVERTS BACK: at 74");
+    Console.WriteLine("     it becomes warrior > rogue > tank > nuker, which is IG's own intent (a mage's base");
+    Console.WriteLine("     regen is half a fighter's). Before it, the nuker held the highest regen in the game.");
+    Console.WriteLine("   - 'built/IG' is the ~2x he accepted with his eyes open. It comes entirely from the LEVEL");
+    Console.WriteLine("     term, not from the masteries: 1 + L/30 climbs nearly twice as fast as IG's LvlMod.");
+    Console.WriteLine("     'if IG lvlMod' is the column that would close it - measured, offered, and DEFERRED to");
+    Console.WriteLine("     a playtest. Do not take it without a new ruling.");
+    Console.WriteLine("   ⚠ The price of the flats is that the ladder stops being progression: a nuker's six rungs");
+    Console.WriteLine("     from +1.1 to +2.7 used to buy +19 HP/s and now buy +1.6 across 34 levels. Same trade");
+    Console.WriteLine("     the mpReg ladder took. If he wants those rungs felt, the FLAT numbers get re-authored");
+    Console.WriteLine("     bigger in the CSVs - it is not an engine change.");
+    Console.WriteLine();
+    Console.WriteLine();
+}
+
+// ----- IG's HP-REGEN REFERENCE, exactly as the owner supplied it on 2026-08-26 ----------------
+//
+//     HpRegen = ( base x ConMod x LvlMod + flat ) x buffs
+//
+// Only two of those four are quoted in his message, so only two are encoded here. IG's LvlMod is
+// NOT given and is deliberately NOT invented — section 1c prints the LvlMod our own numbers imply
+// instead, which is a thing he can check against IG rather than a thing we made up.
+
+/// <summary>IG's per-point CON step, fitted EXACTLY through his two anchors (CON 30 -> 1.00,
+/// CON 43 -> 1.32): 13 stat points across x1.32, so the step is 1.32^(1/13) = 1.0216. Ours is 1.03,
+/// a steeper curve, and centred ten points higher.</summary>
+static float IgConStep() => (float)Math.Pow(1.32, 1.0 / 13.0);
+
+static float IgConMod(int con) => (float)Math.Pow(1.32, (con - 30) / 13.0);
+
+/// <summary>IG's HP-regen LEVEL modifier, his own expression (owner, 2026-08-26):
+/// <c>Level/100 + 0.89</c>. 🔑 That is character-for-character the lvlMod our DAMAGE formula already
+/// runs on — <c>(level+89)/100</c>, see StatCalculator's PhysicalK/MagicK path — so adopting it for
+/// regen removes a bespoke curve rather than adding one. It climbs x0.90 -> x1.74 across 1-85, where
+/// our own <c>1 + L/30</c> climbs x1.03 -> x3.83. That gap IS our divergence from IG.</summary>
+static float IgLvlMod(int level) => level / 100f + 0.89f;
+
+/// <summary>IG's base HP/s band, before buffs and passives, per race+class — his four rows. Our
+/// Dwarf/Dark-Elf-less roster maps straight onto them: Ork fighters read with the Human fighters,
+/// and the Ork mage is his "Ork Mystic" row, which is the one mage band that is raised.</summary>
+static (float Lo, float Hi) IgBase(Race race, BaseClass cls) =>
+    cls == BaseClass.Fighter
+        ? race == Race.Elf ? (2.0f, 2.5f) : (2.5f, 3.0f)
+        : race == Race.Ork ? (2.0f, 2.2f) : (1.5f, 2.0f);
+
+static (Race, BaseClass)[] RaceClassPairs() => new[]
+{
+    (Race.Human, BaseClass.Fighter), (Race.Elf, BaseClass.Fighter), (Race.Ork, BaseClass.Fighter),
+    (Race.Human, BaseClass.Mage),    (Race.Elf, BaseClass.Mage),    (Race.Ork, BaseClass.Mage),
+};
+
+static int[] IgLevels() => new[] { 1, 20, 40, 60, 74, 85 };
+
+/// <summary>The four characters the HP economy is measured on, each with the class chain that
+/// actually carries (or fails to carry) an `hpReg` ladder today.</summary>
+static (string Name, Entity Entity, string Source)[] HpSubjects(int level) => new[]
+{
+    ("nuker",   BuildNuker(Race.Human, level),                                    "Spellcaster Weapon Mastery hpReg x1.1->x2.7 (40-74)"),
+    ("warrior", BuildPlayer(Race.Human, BaseClass.Fighter, level, warrior: true), "Body Mastery hpReg x1.1->x1.6, DONE at 32 and never grows"),
+    ("tank",    BuildPlayer(Race.Human, BaseClass.Fighter, level),                "Body Mastery only - the class that TAKES the hits has no ladder"),
+    ("rogue",   BuildRogue(level),                                                "Armor Mastery hpReg x1.2 @36 (rogue 2nd.csv line 7)"),
+};
+
 
 // ============================================================================================
 //  `--buffs` — THE BUFF CENSUS (playtest 27: "we need make max buffs limit ... Tell me how much

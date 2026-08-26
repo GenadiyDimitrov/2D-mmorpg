@@ -586,21 +586,45 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
 
     divide-by-zero. Unmeasured. Everything else in the model is your specification.
 
-- `BL-92` ✅ **BUILT 2026-08-26 (0.88.0) — the MP half. The HP half is 🔵 OPEN below.** You opened it,
-  it was measured (`BalanceMatrix --mpregen`), and you ruled every question the same day. A buffed
-  level-74 mage was regenerating **288% of his own spell-spam cost**; he now sits at ~101%. The
-  mastery `mpReg` ladder is FLAT and outside, SPT has its own curve, and **standing still is a stance**.
-  Calm Spirit shipped with it. See 0.88.0 in `CHANGELOG.md`. Delete at the next sweep.
-  - 🔵 **STILL OWED — THE HP SIDE, your explicit hold:** *"I want to do the same checks for the HP regen
-    as well .. to not over inflate it with multipliers .. but let finish with the MP first then check IG
-    formulas on HP regen and ours and compare them"*. HP still has its flats INSIDE the multipliers and
-    still runs `hpReg x1.1 … x3.4` as multipliers. The new stance ladder already lands on it (one ladder
-    for both bars). Your own note on why it is the smaller question: *"the hp regen comes from potions so
-    whatever number it is - its only to save on 10-20% potions not more"*.
+- `BL-92` ✅ **BUILT 2026-08-26 — BOTH HALVES. MP in 0.88.0/0.88.1, HP in 0.88.2.** You opened it,
+  it was measured (`BalanceMatrix --mpregen`, then `--hpregen`), and you ruled every question the same
+  day. A buffed level-74 mage was regenerating **288% of his own spell-spam cost**; he now sits at ~88%.
+  The mastery `mpReg` ladder is FLAT and outside, SPT has its own curve, and **standing still is a
+  stance**. Calm Spirit shipped with it. See 0.88.0-0.88.2 in `CHANGELOG.md`. Delete at the next sweep.
+  - ✅ **THE HP HALF, ruled after you supplied IG's own numbers** (base 1.5-3.0 by race+class, ConMod
+    CON 30→1.00 / 43→1.32, LvlMod `L/100 + 0.89`): *"I want to make the passives + not x as the mp ..
+    and buffs to carry the multiplier .. and the flat is to added at the end"*. Every `hpReg` rung is
+    now a flat +1.1…+2.7 HP/s and the flats sit outside. It ended the inversion that measurement found
+    — a level-74 nuker on **27.5 HP/s against a tank's 16.4**, the class IG gives the lowest base regen
+    holding the game's highest. Now warrior 18.0 > rogue 17.6 > tank 16.4 > nuker 12.9.
+  - 🔵 **THE LEVEL TERM IS DEFERRED TO A PLAYTEST, NOT SETTLED.** *"Leave out lvl mod just leave the
+    flat outside … So we will have x2 more than IG but not as much as we have now … Playtest will
+    decide if it stays"*. We measure at **1.6-2.0× IG** at every level and the whole gap is ours
+    (`1 + L/30`, ×3.71 across 1-85) against IG's (`L/100 + 0.89`, ×1.93) — which is character-for-
+    character the `(level+89)/100` the damage formula already uses. `--hpregen` prints the swapped
+    column ("if IG lvlMod") so the playtest has the number ready. **Do not take it without a ruling.**
+  - 🔴 **THE FIGHTER FLATS ARE BACKWARDS AND YOU FLAGGED IT:** *"now fighters are not yet authored and
+    have higher regen flat bonuses than mage"* — when the fighter 3rd/4th CSVs land, a fighter's `hpReg`
+    flat must exceed a mage's. Today the nuker carries **+2.7**, the warrior **+1.6** (frozen at level
+    32), the rogue **+1.2**, and the **tank none at all**; archer and dual have no `hpReg` row either.
+  - 🔴 **THE ORK BUFFER SHOULD CARRY MORE — undecided.** *"buffer ork should have more but yet not
+    desided - note it"*. No number invented; it arrives with his authoring.
+  - ⚠ **The ladder stopped being progression**, knowingly: a nuker's six rungs from +1.1 to +2.7 used to
+    buy +19 HP/s and now buy **+1.6 across 34 levels**. Same trade the `mpReg` ladder took. If those
+    rungs should be felt, the FLAT numbers get re-authored bigger in the CSVs — not an engine change.
+  - ✅ **EVERY PRIMARY STAT IS READ EFFECTIVE** (same day, second ruling): *"Need effective con to count
+    on hp max/regen and whatever con have mod on … con armor set now will buy u nothing and atk-con
+    won't hinder you"*. CON and ATK were the last two read BASE — by HP regen and by the character
+    sheet / target panel, which sent `EffectiveWit/Agi/Spt` beside them. An armour set's `Con: -2,
+    Str: +3` moved pool, regen and damage with **nothing on screen**. Fixed at all five sites; mob
+    paths keep raw CON.
   - 🔴 **TWO ARMOUR ROWS FLAGGED, NOT CHANGED.** Your ruling was *"except armor masteries the 20%
     increase"*, so armour masteries kept their percents — but `rogue 2nd.csv` @36 carries `mpReg x1.8`
     and `tank 2nd.csv` @36 carries `mpReg x3.4`, which are weapon-mastery-sized numbers on armour rows.
     A tank at 36 therefore regenerates ×3.4. One-line change either way, waiting on you.
+    ⚠ The HP pass makes this visible inside ONE row: `rogue 2nd.csv` @36 now reads `hpReg +1.2` (a flat,
+    with every other hpReg) beside `mpReg x1.8` (still a percent, by the armour carve-out). Deliberate,
+    and it stays odd-looking until you rule on the two mpReg numbers above.
   - 🔴 **`BalanceMatrix.BuildPlayer` NEVER SETS A 3rd CLASS**, found while building the report: every
     other mage table in the tool measures the level-35 kit at any level (no 40+ spells, no 40+ mastery
     ladder). `--mpregen` uses its own `BuildNuker`; the rest were deliberately left alone rather than

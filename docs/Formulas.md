@@ -123,26 +123,65 @@ more hits. `spiritMod` is flattened from IG's: 20 SPT = ×1.00, 50 SPT = ×0.67.
 ## Pools and regen
 
 ```
-MaxHp        = (classMod * (L*L + 3L)/2 + level1Base) * conModifier(con)
-MaxMp        = (classMod * (L*L + 3L)/2 + level1Base) * sptModifier(spt)
+MaxHp        = (classMod * (L*L + 3L)/2 + level1Base) * conModifier(effectiveCon)
+MaxMp        = (classMod * (L*L + 3L)/2 + level1Base) * sptModifier(effectiveSpt)
 
-HpRegen/s    = ((3 + L*0.1) * 1.03^(con - 40) + flats) * stance * safeZone * hpRegenMult * (1+buff%)
-MpRegen/s    =  (2 + L*0.08) * sptRegenModifier(spt)
+HpRegen/s    =  (3 + L*0.1) * 1.03^(effectiveCon - 40)
+                  * stance * safeZone * hpRegenMult * (1+buff%)     + flats
+MpRegen/s    =  (2 + L*0.08) * sptRegenModifier(effectiveSpt)
                   * stance * calmSpirit * mpRegenMult * (1+buff%)   + flats
 
 sptRegenModifier(spt) = clamp(1 + (spt - 40)*0.02, 0.70, 1.30)
 stance                = running 0.70 | walking 0.85 | STANDING STILL 1.00 | sitting 1.50
+flats                 = the hpReg/mpReg mastery rungs + gear flats + flat regen buffs
 ```
+
+**IG's own HP regen, for reference** (owner supplied it 2026-08-26; ours is compared against it by
+`BalanceMatrix --hpregen`):
+
+```
+IG:  HpRegen = ( base * ConMod * LvlMod + flat ) * buffs      <- IG's flat is INSIDE, ours is last
+
+     base (no buffs/passives), per RACE+CLASS:
+         fighter Human/Ork  2.5-3.0      elven fighter  2.0-2.5
+         mage    Human/Elf  1.5-2.0      ork mystic     2.0-2.2
+     ConMod   CON 30 -> 1.00 , CON 43 -> 1.32        == 1.32^((con-30)/13) , i.e. 1.0216/point
+     LvlMod   Level/100 + 0.89                       == our damage lvlMod, (level+89)/100
+```
+
+🔑 **Our HP regen factors EXACTLY into IG's shape**, which is what makes the two comparable:
+
+```
+(3 + L*0.1) * 1.03^(con-40)   ==   3.00 * (1 + L/30) * 1.03^(con-40)
+                                   base    LvlMod      ConMod
+```
+
+Three numbers differ and nothing else: our base is **3.00 for every race and class**, our ConMod
+centres on **CON 40** not 30, our step is **1.03** not 1.0216. At level 1 every fighter lands inside
+IG's band and mages 6-13% above it.
 
 - `conModifier` is a **steep** curve (~3%/point); `sptModifier` is **gentle** (1.16 @20 → 1.65 @50).
 - 🔑 **MP regen has its OWN stat curve.** `sptModifier` still drives Max MP and M.Def, but regen left
   it on 2026-08-26 (`BL-92`) for the wider linear `sptRegenModifier` — so Spirit buys visible sustain
   (every fighter sits at the 0.70 floor; the ork mage reaches 1.10).
-- 🔑 **THE MP FLATS ARE OUTSIDE, THE HP FLATS ARE INSIDE.** Not a typo: the global "flats after
-  percentages" rule was applied to MP, and the **HP half is deliberately held** pending its own pass.
-  The mage weapon-mastery ladder (`mpReg +1.1 … +3.4`) is one of those MP flats; it was a ×1.1…×3.4
-  MULTIPLIER until that day, which is what let a buffed mage regenerate ~290% of his own spam cost.
-  The armour masteries' `mpReg x1.2` stays a percent.
+- 🔑 **BOTH BARS PUT THEIR FLATS OUTSIDE**, the global "flats after percentages" rule (playtest 28,
+  `Entity.ModifiedStat`). MP moved 2026-08-26, HP the same day once measured (`BL-92`).
+- 🔑 **EVERY `hpReg`/`mpReg` MASTERY IS A FLAT PER-SECOND GRANT**, read off the CSV rung **whole**:
+  `hpReg +2.7` = +2.7 HP/s, never ×2.7. Both were multipliers until `BL-92` and both were wrong the
+  same way (MP ×4.84 by 74; HP ×2.7, which put a level-74 nuker on 27.5 HP/s against a tank's 16.4).
+  **Never re-enter one as a percent.** The **armour** masteries' `mpReg x1.2` is the one carve-out
+  that stays a percent.
+- ⚠ **HP regen sits at ~1.6-2.0× IG — known and accepted**, owner 2026-08-26: *"we will have x2 more
+  than IG … Playtest will decide if it stays"*. The whole gap is the **level term** (ours ×3.71 across
+  1-85, IG's ×1.93). Swapping it was measured and **not** taken — don't close it without a new ruling.
+- 🔴 **Open:** fighter 3rd/4th kits unauthored — when they land, a fighter's `hpReg` flat must exceed a
+  mage's (today nuker **+2.7** > warrior **+1.6** > rogue **+1.2** > tank **0**; archer/dual have no
+  row). The **ork buffer** should carry more; how much is undecided.
+- 🔑 **EVERY primary stat is read EFFECTIVE** (base + armour-set + stat-swap deltas), owner
+  2026-08-26: *"Need effective con to count on hp max/regen and whatever con have mod on"*. CON and
+  ATK were the last two read BASE — by HP regen and by the character sheet / target panel — so a set's
+  `Con: -2, Str: +3` moved your pool, your regen and your damage with **nothing on screen**. Max HP,
+  HP regen, the debuff save and both panels now all read `Effective*`. Mob paths keep raw CON.
 - 🔑 **A mage gets that ×1.2 exactly ONCE**, from the armour he wears: **robe** from the born
   Spellcaster Mastery, **light** (cleric) / **heavy** (buffer) from their own Armor Mastery. It used to
   be granted twice on robe (×1.44). Never re-add `mpReg` to a `Robe:` slot.
@@ -153,6 +192,7 @@ stance                = running 0.70 | walking 0.85 | STANDING STILL 1.00 | sitt
 
 `StatCalculator.MaxHp/MaxMp/HpRegenPerSecond/MpRegenPerSecond/SptRegenModifier` ·
 `MovementTuning.RegenMultiplier` · `GameLoopService.Regenerate` · measured by `BalanceMatrix --mpregen`
+and `BalanceMatrix --hpregen` (the latter also prints IG's own numbers beside ours)
 
 ## Speed
 

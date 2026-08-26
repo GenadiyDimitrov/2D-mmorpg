@@ -223,11 +223,16 @@ public static partial class SkillCatalog
             Description: "Passive. Hardens your body — more maximum HP and faster HP regeneration.",
             Levels: new[]
             {
+                // ⚠ `hpReg` is a FLAT HP/s since `BL-92` (2026-08-26), read straight off the CSV rung:
+                // `warrior 2nd.csv` says `hpReg x1.1` and this carries 1.1f — the WHOLE number, not
+                // its excess over 1.0, exactly as the `mpReg` column is read. Never re-enter these as
+                // HpRegenPct: a multiplier here scales the level term and is what put a level-74 mage
+                // above a level-74 tank.
                 new SkillLevel(SpCost: 1700,  Passive: new PassiveEffect(MaxHp: 60)),
-                new SkillLevel(SpCost: 3200,  Passive: new PassiveEffect(MaxHp: 60,  HpRegenPct: 0.10f)),
-                new SkillLevel(SpCost: 6000,  Passive: new PassiveEffect(MaxHp: 100, HpRegenPct: 0.10f)),
-                new SkillLevel(SpCost: 11000, Passive: new PassiveEffect(MaxHp: 100, HpRegenPct: 0.60f)),
-                new SkillLevel(SpCost: 20000, Passive: new PassiveEffect(MaxHp: 150, HpRegenPct: 0.60f)),
+                new SkillLevel(SpCost: 3200,  Passive: new PassiveEffect(MaxHp: 60,  HpRegen: 1.1f)),
+                new SkillLevel(SpCost: 6000,  Passive: new PassiveEffect(MaxHp: 100, HpRegen: 1.1f)),
+                new SkillLevel(SpCost: 11000, Passive: new PassiveEffect(MaxHp: 100, HpRegen: 1.6f)),
+                new SkillLevel(SpCost: 20000, Passive: new PassiveEffect(MaxHp: 150, HpRegen: 1.6f)),
             }),
 
         // Battle Regeneration — instant self-heal for 10% of max HP (short cast, 90s cooldown).

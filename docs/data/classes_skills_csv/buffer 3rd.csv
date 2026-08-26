@@ -33,20 +33,20 @@ LEARN @ LVL,NAME,TYPE,RANGE,TARGET,CAST s,CD s,DURRATION s,DESCR,MP,SP COST,REPL
 72,Armor Mastery,Passive,0,self,0,0,0,"Light/Heavy: mpReg x1.2; Robe: pDef +83, maxMP +200;",0,650k,[],,
 74,Armor Mastery,Passive,0,self,0,0,0,"Light/Heavy: mpReg x1.2; Robe: pDef +87, maxMP +200;",0,880k,[],,
 ,,,,,,,,,,,,,----------------------Spell Mastery----------------------
-40,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 15%, mAtk +23, pAtk +15, mpReg +1.5,hpReg x1.1, cast speed x1.07",0,36k,[],,
-44,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 15%, mAtk +29, pAtk +20, mpReg +1.9,hpReg x1.6, cast speed x1.07",0,43k,[],,
-48,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +45, pAtk +25, mpReg +1.9,hpReg x1.6, cast speed x1.07",0,64k,[],,
-52,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +45, pAtk +30, mpReg +2.3,hpReg x1.7, cast speed x1.07",0,74k,[],,
-56,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +52, pAtk +35, mpReg +2.3,hpReg x1.7, cast speed x1.1 ",0,81k,[],,
-58,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +57, pAtk +40, mpReg +2.3,hpReg x2.1, cast speed x1.1 ",0,88k,[],,
-60,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +62, pAtk +45, mpReg +2.7,hpReg x2.1, cast speed x1.1 ",0,120k,[],,
-62,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +67, pAtk +50, mpReg +2.7,hpReg x2.1, cast speed x1.1 ",0,170k,[],,
-64,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +72, pAtk +55, mpReg +2.7,hpReg x2.6, cast speed x1.1 ",0,190k,[],,
-66,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +77, pAtk +60, mpReg +2.7,hpReg x2.6, cast speed x1.1 ",0,280k,[],,
-68,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +83, pAtk +65, mpReg +3.1,hpReg x2.6, cast speed x1.1 ",0,320k,[],,
-70,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +88, pAtk +70, mpReg +3.1,hpReg x2.6, cast speed x1.1 ",0,390k,[],,
-72,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +94, pAtk +75, mpReg +3.1,hpReg x2.6, cast speed x1.1 ",0,650k,[],,
-74,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +99, pAtk +80, mpReg +3.4,hpReg x2.7, cast speed x1.1 ",0,880k,[],,
+40,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 15%, mAtk +23, pAtk +15, mpReg +1.5,hpReg +1.1, cast speed x1.07",0,36k,[],,
+44,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 15%, mAtk +29, pAtk +20, mpReg +1.9,hpReg +1.6, cast speed x1.07",0,43k,[],,
+48,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +45, pAtk +25, mpReg +1.9,hpReg +1.6, cast speed x1.07",0,64k,[],,
+52,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +45, pAtk +30, mpReg +2.3,hpReg +1.7, cast speed x1.07",0,74k,[],,
+56,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +52, pAtk +35, mpReg +2.3,hpReg +1.7, cast speed x1.1 ",0,81k,[],,
+58,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +57, pAtk +40, mpReg +2.3,hpReg +2.1, cast speed x1.1 ",0,88k,[],,
+60,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +62, pAtk +45, mpReg +2.7,hpReg +2.1, cast speed x1.1 ",0,120k,[],,
+62,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +67, pAtk +50, mpReg +2.7,hpReg +2.1, cast speed x1.1 ",0,170k,[],,
+64,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +72, pAtk +55, mpReg +2.7,hpReg +2.6, cast speed x1.1 ",0,190k,[],,
+66,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +77, pAtk +60, mpReg +2.7,hpReg +2.6, cast speed x1.1 ",0,280k,[],,
+68,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +83, pAtk +65, mpReg +3.1,hpReg +2.6, cast speed x1.1 ",0,320k,[],,
+70,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +88, pAtk +70, mpReg +3.1,hpReg +2.6, cast speed x1.1 ",0,390k,[],,
+72,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +94, pAtk +75, mpReg +3.1,hpReg +2.6, cast speed x1.1 ",0,650k,[],,
+74,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +99, pAtk +80, mpReg +3.4,hpReg +2.7, cast speed x1.1 ",0,880k,[],,
 ,,,,,,,,,,,,,-----------------------Combo Mastery-----------------------
 52,Combo Mastery,Passive,0,self/party,0,60,30,"Doing Damage With 3% Chance: attack speed +10% and cast speed +5% for you, half of both (+5%/+2.5%) to the party. Require: Box/Blunt",0,74k,[],,
 64,Combo Mastery,Passive,0,self/party,0,60,30,"Doing Damage With 3% Chance: attack speed +15% and cast speed +10% for you, half of both (+7.5%/+5%) to the party. Require: Box/Blunt",0,190k,[],,
@@ -201,9 +201,9 @@ LEARN @ LVL,NAME,TYPE,RANGE,TARGET,CAST s,CD s,DURRATION s,DESCR,MP,SP COST,REPL
 ,,,,,,,,,,,,,---------------------------------------------------------------------------------------------BUFFS AND GROUPS-------------------------------------------------------------------------------------------------------------------
 ,,,,,,,,,,,,,---------------------------------------------------------------------------------------------Frenzy-------------------------------------------------------------------------------------------------------------------
 ,,,,,,,,,,,,,------------------------------Frenzy------------------------------
-52,Frenzy,Magic/Buff,600,self/target,1,1,1200,"Ã¢ÂÂ10% Max HP/MP, +8% offence and speed, +8 move, Ã¢ÂÂ8 evasion.",80,38k,[],,
+52,Frenzy,Magic/Buff,600,self/target,1,1,1200,"ÃÂ¢ÃÂÃÂ10% Max HP/MP, +8% offence and speed, +8 move, ÃÂ¢ÃÂÃÂ8 evasion.",80,38k,[],,
 ,,,,,,,,,,,,,------------------------------Frenzy------------------------------
-56,War Frenzy,Magic/Buff,600,self/party,1,1,1200,"Ã¢ÂÂ10% Max HP/MP, +8% offence and speed, +8 move, Ã¢ÂÂ8 evasion.",165,45k,[Frenzy],,
+56,War Frenzy,Magic/Buff,600,self/party,1,1,1200,"ÃÂ¢ÃÂÃÂ10% Max HP/MP, +8% offence and speed, +8 move, ÃÂ¢ÃÂÃÂ8 evasion.",165,45k,[Frenzy],,
 ,,,,,,,,,,,,,---------------------------------------------------------------------------------------------Great Bulwark-------------------------------------------------------------------------------------------------------------------
 ,,,,,,,,,,,,,--------------------------Great Bulwark--------------------------
 58,Great Bulwark,Magic/Buff,600,self/target,1,1,1200,+5% P.Def. Does not stack with Other Great Might|Bulwark effects.,90,45k,[],,Does not stack ('Great Might'|'Great Group Might'|'Great Group Bulwark')

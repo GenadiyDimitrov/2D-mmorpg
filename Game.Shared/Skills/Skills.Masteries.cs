@@ -127,7 +127,12 @@ public static partial class SkillCatalog
                 RogueArmor(new StatMods(MpRegenPct: 0.1f, PDef: 18), lightEva: 11),
                 RogueArmor(new StatMods(MpRegenPct: 0.1f, PDef: 20), lightEva: 13, lightSpeed: 7f),
                 RogueArmor(new StatMods(MpRegenPct: 0.1f, PDef: 22), lightEva: 13, lightSpeed: 7f),
-                RogueArmor(new StatMods(MpRegenPct: 0.8f, HpRegenPct: 0.2f, PDef: 25), lightEva: 13, lightSpeed: 7f),
+                // ⚠ The two regen columns of `rogue 2nd.csv` line 7 are read DIFFERENTLY, deliberately.
+                // `hpReg x1.2` became a FLAT +1.2 HP/s with every other hpReg passive (`BL-92`,
+                // 2026-08-26); `mpReg x1.8` stayed a percent because his MP ruling carved out armour
+                // masteries (*"except armor masteries the 20% increase"*) — and that x1.8 is still on
+                // the open list as a weapon-mastery-sized number sitting in an armour row.
+                RogueArmor(new StatMods(MpRegenPct: 0.8f, HpRegen: 1.2f, PDef: 25), lightEva: 13, lightSpeed: 7f),
             }),
 
         // (Archer Armor Mastery DELETED 2026-08-07 with its id — the rogue light mastery above is

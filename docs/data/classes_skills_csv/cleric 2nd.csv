@@ -13,7 +13,7 @@ LEARN @ LVL,NAME,TYPE,RANGE,TARGET,CAST s,CD s,DURRATION s,DESCR,MP,SP COST,REPL
 20,Spell Mastery,Passive,0,self,0,0,0,"with sword/blunt Decreses the reuse delay with 10%, mAtk +6, pAtk +4",0,3200,[Weapon mastery]
 25,Spell Mastery,Passive,0,self,0,0,0,"with sword/blunt Decreses the reuse delay with 10%, mAtk +8, pAtk +6, mpReg +1.1, cast speed x1.05",0,6400,[Weapon mastery]
 30,Spell Mastery,Passive,0,self,0,0,0,"with sword/blunt Decreses the reuse delay with 10%, mAtk +10, pAtk +8, mpReg +1.1, cast speed x1.05",0,12800,[Weapon mastery]
-35,Spell Mastery,Passive,0,self,0,0,0,"with sword/blunt Decreses the reuse delay with 10%, mAtk +12, pAtk +10, mpReg +1.5,hpReg x1.1, cast speed x1.05",0,25000,[Weapon mastery]
+35,Spell Mastery,Passive,0,self,0,0,0,"with sword/blunt Decreses the reuse delay with 10%, mAtk +12, pAtk +10, mpReg +1.5,hpReg +1.1, cast speed x1.05",0,25000,[Weapon mastery]
 ,,,,,,,,,,,,----------------------------Holy Bolt----------------------------
 20,Holy Bolt,Magic/Dmg,750,enemy,4,1,0,m.Atk +21,20,3200,[Magic Bolt]
 25,Holy Bolt,Magic/Dmg,750,enemy,4,1,0,m.Atk +25,23,6400,[Magic Bolt]

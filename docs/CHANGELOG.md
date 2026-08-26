@@ -7,12 +7,88 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.88.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.88.2**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-08-26 (latest) — 0.88.1: one ×1.2 per mage, not two
+## 2026-08-26 (latest) — 0.88.2: the HP half of `BL-92`, and the mage stops out-regenerating the tank
+
+The half he held two versions ago. He supplied IG's own HP-regen reference — base **1.5–3.0 by race
+and class**, a CON modifier anchored at **CON 30 → 1.00 / CON 43 → 1.32**, and
+`LvlMod = Level/100 + 0.89` — and it turned out our formula factors **exactly** into that shape:
+
+```
+(3 + 0.1·L) × 1.03^(CON−40)   ≡   3.00 × (1 + L/30) × 1.03^(CON−40)
+                                  base    LvlMod       ConMod
+```
+
+So the comparison was like-for-like, and it found two different problems.
+
+**What was measured** (`BalanceMatrix --hpregen`, new). At level 1 we sit inside IG's band for all
+three fighters and 6–13% above it for mages. Across the game we drift to **~2× IG for fighters and
+~2.7× for mages**, and, worse, the class order was **upside down**: buffed at 74 a nuker regenerated
+**27.5 HP/s** against a tank's **16.4** — the class IG deliberately gives the *lowest* base regen held
+the game's highest, because `hpReg x2.7` multiplied a level term the tank's `x1.00` did not.
+
+**His ruling**: *"I want to make the passives + not x as the mp .. and buffs to carry the multiplier ..
+and the flat is to added at the end"*.
+
+```
+HpRegen/s = [ (3 + 0.1·L) × 1.03^(CON−40) × stance × safeZone × (1+buff%) ] + flats
+```
+
+- **Every `hpReg` mastery rung is now a FLAT HP/s**, read off the CSV row whole exactly as `mpReg` is:
+  `hpReg +2.7` is +2.7 HP/s, not ×2.7. Body Mastery, Spell Mastery, Spellcaster Weapon Mastery (3rd
+  and 4th tier) and the rogue's Armor Mastery all converted; the CSVs moved in the same commit.
+- **Buffs keep the multiplier**, and **flats land last** — the same global rule MP took in 0.88.0.
+- `Entity.HpRegenMult` now carries only what is genuinely a percent (the armour-**set** bonus and the
+  `HpRegenPercent` gear attribute). `StatMods.HpRegen` is read at last, so a flat authored on a set or
+  an armour mastery actually pays.
+
+**The order is right again.** Buffed and standing at 74: warrior **18.0** > rogue **17.6** > tank
+**16.4** > nuker **12.9**, which is IG's own intent — a mage's base regen is half a fighter's.
+
+**⚠ We knowingly sit at ~1.6–2.0× IG, and that is deferred, not settled.** *"Leave out lvl mod just
+leave the flat outside … So we will have x2 more than IG but not as much as we have now … Playtest
+will decide if it stays"*. The entire residual is our **level term**: `1 + L/30` climbs ×3.71 across
+1–85 where IG's `L/100 + 0.89` climbs ×1.93 — and IG's is character-for-character the `(level+89)/100`
+our **damage** formula already runs on. The swap was measured and offered; `--hpregen` prints it as
+its own column so a playtest has the number ready. **Don't take it without a new ruling.**
+
+**⚠ Two things he flagged, neither built.** The fighter 3rd/4th kits are unauthored, and when they land
+*"fighters … have higher regen flat bonuses than mage"* must become true — today the nuker carries
++2.7, the warrior +1.6 (frozen at level 32), the rogue +1.2 and the **tank none at all** (archer and
+dual have no `hpReg` row either). And *"buffer ork should have more but yet not desided"* — no number
+invented.
+
+**⚠ The ladder stopped being progression**, knowingly. A nuker's six rungs from +1.1 to +2.7 used to
+buy +19 HP/s and now buy **+1.6 across 34 levels** — the same trade the `mpReg` ladder took. If those
+rungs should be felt, the flat numbers get re-authored bigger in the CSVs; it is not an engine change.
+
+**And every primary stat is now read EFFECTIVE.** *"Need effective con to count on hp max/regen and
+whatever con have mod on … con armor set now will buy u nothing and atk-con won't hinder you"*. CON
+and ATK were the last two read **base**: HP regen used `entity.Con`, and the character sheet and the
+target panel sent `p.Con` / `p.AtkStat` while sending `EffectiveWit/Agi/Spt` beside them. So an armour
+set's `Con: -2, Str: +3` moved your HP pool, your regen and your damage while **the stat window showed
+no change at all**. Max HP, HP regen (tick loop *and* the stats-window preview), the contested-debuff
+save and both panels now read `Effective*` uniformly. Mob paths keep raw CON — a mob has no bonus.
+
+**Found on the way:** fifteen rows of `healer 4th.csv` had lost their `mpReg` label (`, x3.4,hpReg …`),
+so `--check` could not read the value and had been skipping it silently. Label restored; the value
+already matched the code. And `StandingRegen` — the helper that tells the stats window what your regen
+is — still had the **old flats-inside** HP shape after the change above, so the number on screen would
+have disagreed with the number the tick pays. Both halves now mirror `Regenerate` exactly.
+
+Also new: **`BalanceMatrix --hpregen`**, which prints IG's numbers beside ours in HP/s, the flat ladder
+per class, regen against pool / mob DPS / potion throughput, and the level-term swap priced.
+`docs/Formulas.md` moved with it, in this commit.
+
+⚠ **Protocol stays 28** (no wire change). **A new APK is still required**: skill tooltips are built
+*locally* by the client from the compiled `SkillCatalog`, and every mastery rung's regen line changed
+from `HP regen x2.7` to `HP regen +2.7/s`. No schema change, so **no `game.db` delete**.
+
+## 2026-08-26 — 0.88.1: one ×1.2 per mage, not two
 
 The last thing 0.88.0 measured rather than changed. **The 20% MP-regen bonus was authored twice** —
 once on the born Spellcaster Mastery's Robe profile and again on every class Armor Mastery's Robe

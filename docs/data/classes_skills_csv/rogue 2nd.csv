@@ -4,7 +4,7 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,R
 24,Armor Mastery,passive,0,self,0,0,0,with light:  eva +11 and crit rate resist + 15% ; with all mpReg x1.1 and p.def +18,0,3200,[Armor Mastery]
 28,Armor Mastery,passive,0,self,0,0,0,with light:  eva +13 and crit rate resist + 15% and speed +7; with all mpReg x1.1 and p.def +20,0,6000,[Armor Mastery]
 32,Armor Mastery,passive,0,self,0,0,0,with light:  eva +13 and crit rate resist + 15% and speed +7; with all mpReg x1.1 and p.def +22,0,11000,[Armor Mastery]
-36,Armor Mastery,passive,0,self,0,0,0,with light:  eva +13 and crit rate resist + 15% and speed +7; with all mpReg x1.8 and hpReg x1.2 and p.def +25,0,20000,[Armor Mastery]
+36,Armor Mastery,passive,0,self,0,0,0,with light:  eva +13 and crit rate resist + 15% and speed +7; with all mpReg x1.8 and hpReg +1.2 and p.def +25,0,20000,[Armor Mastery]
 ,,,,,,,,,,,,----------------------------Weapon Mastery----------------------------
 20,Weapon Mastery,passive,0,self,0,0,0,with bow: p.Atk +30 and range +200; with dual: p.atk +8 ;With all: p.atk x1.085 and crit dmg +35 and crit rate x1.2;,0,3400,[Weapon Mastery]
 24,Weapon Mastery,passive,0,self,0,0,0,with bow: p.Atk +42 and range +200; with dual: p.atk +11 ;With all: p.atk x1.085 and crit dmg +64 and acc +3 and crit rate x1.2;,0,6400,[Weapon Mastery]

@@ -114,10 +114,10 @@ public static partial class SkillCatalog
     private static WeaponRung[] BuildFourthWeaponRungs()
     {
         int[] mAtk = { 101, 102, 104, 105, 106, 108, 109, 110, 112, 113, 115, 116, 117, 119, 120 };
-        // ⚠ The two regen columns are read DIFFERENTLY since `BL-92` (2026-08-26): MP is a FLAT MP/s
-        // straight off his row (`mpReg +3.4` → 3.4f), HP is still the old bonus form (`hpReg x2.7`
-        // → 1.7f) because the HP half is held. See the note on WeaponRung.
-        return mAtk.Select(m => new WeaponRung(m, 0.20f, 0.10f, 3.4f, 1.7f)).ToArray();
+        // ⚠ BOTH regen columns are FLAT per-second grants since `BL-92` (2026-08-26), read straight
+        // off his row: `mpReg +3.4` → 3.4f and `hpReg +2.7` → 2.7f. The whole rung, not its excess.
+        // HP followed MP the same day; see the note on WeaponRung.
+        return mAtk.Select(m => new WeaponRung(m, 0.20f, 0.10f, 3.4f, 2.7f)).ToArray();
     }
 
     internal static SkillLevel[] HealerFourthWeaponMasteryRungs() => F4Rungs(15, 1, (i, sp, gold) =>
@@ -125,7 +125,7 @@ public static partial class SkillCatalog
         var r = HealerFourthWeaponRungs[i];
         return new SkillLevel(SpCost: sp, GoldCost: gold,
             Description: $"With a wand or staff: +{r.MAtk} M.Atk, +{r.Cast * 100:0}% cast, "
-                       + $"−{r.Reuse * 100:0}% reuse, MP regen +{r.MpFlat:0.#}/s, HP regen x{1f + r.HpReg:0.#}.");
+                       + $"−{r.Reuse * 100:0}% reuse, MP regen +{r.MpFlat:0.#}/s, HP regen +{r.HpReg:0.#}/s.");
     });
 
     /// <summary>Healer Armor Mastery rungs 15-29. Four numbers move now, not two: P.Def and Max MP as

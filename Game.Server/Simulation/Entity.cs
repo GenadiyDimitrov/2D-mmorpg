@@ -758,8 +758,16 @@ public class Entity
     /// bonuses. Same rule as <see cref="EffectiveWit"/>.</summary>
     public int EffectiveSpt => Spt + BonusSpt;
     /// <summary>CON including armour-set and stat-swap deltas. Added 2026-08-19 so the contested-debuff
-    /// contest reads the same CON that Max HP already did (`Con + BonusCon`, inline in
-    /// RecomputeDerived) — his rule: *"an armor con/atk/spt should count and statSwap as well"*.</summary>
+    /// contest reads the same CON that Max HP already did — his rule: *"an armor con/atk/spt should
+    /// count and statSwap as well"*.
+    /// <para>🔑 **EVERY consumer of CON reads THIS, not <see cref="Con"/>** (owner, 2026-08-26):
+    /// *"Need effective con to count on hp max/regen and whatever con have mod on … con armor set now
+    /// will buy u nothing and atk-con won't hinder you"*. Max HP, HP regen (both the tick loop and the
+    /// stats-window preview), the contested-debuff save, and the CON shown on the character sheet and
+    /// the target panel. Before that ruling regen and both panels read the BASE stat, so a set's
+    /// `Con: -2` quietly shrank your pool while the screen showed no change at all.</para>
+    /// <para>⚠ The only deliberate exceptions are the MOB paths (`MobMaxHp`, `MobDefence`, the CC-stat
+    /// build in SpawnOneInZone), which take a mob's own authored CON and never had a Bonus to add.</para></summary>
     public int EffectiveCon => Con + BonusCon;
 
     /// <summary>Crafting profession (one per character). Granted by that profession's MASTER after his
@@ -1962,7 +1970,7 @@ public class Entity
         // what "built like a player" means and it is the only thing PlayerBuilt changes. See the field.
         bool playerStats = Kind == EntityKind.Player || PlayerBuilt;
         MaxHp = playerStats
-            ? StatCalculator.MaxHp(Con + BonusCon, Level,
+            ? StatCalculator.MaxHp(EffectiveCon, Level,
                 StatCalculator.HpClassLevelModifier(BaseClass, Archetype),
                 StatCalculator.Level1BaseHp(Race, BaseClass))
             : MobBaseStats.Hp(Level);
@@ -2342,6 +2350,12 @@ public class Entity
                 WalkSpeed = RunSpeed * MovementTuning.WalkSpeedFactor;
                 Speed = RunSpeed;
             }
+            // Flat regen from a StatMods lands in the BONUS, which `Regenerate` adds outside every
+            // multiplier (`BL-92`, 2026-08-26). Nothing authored a flat here before the HP masteries
+            // became flats, so this line reads 0 for every set in the game today — it exists so the
+            // channel behaves the same whichever authoring shape a future set uses.
+            HpRegenBonus += m.HpRegen;
+            MpRegenBonus += m.MpRegen;
             if (m.HpRegenPct != 0f) HpRegenMult *= 1f + m.HpRegenPct;
             if (m.MpRegenPct != 0f) MpRegenMult *= 1f + m.MpRegenPct;
             MeleeVamp += m.MeleeVamp;
@@ -2519,6 +2533,13 @@ public class Entity
                 RunSpeed = (RunSpeed + sm.MoveSpeed) * (1f + sm.MoveSpeedPct);
                 WalkSpeed = RunSpeed * MovementTuning.WalkSpeedFactor;
                 Speed = RunSpeed;
+                // ⚠ HP and MP are read DIFFERENTLY here and it is deliberate. The rogue's level-36
+                // Armor Mastery row carries BOTH `hpReg x1.2` and `mpReg x1.8`; `BL-92` converted the
+                // HP side to a flat (+1.2 HP/s) with every other hpReg passive on 2026-08-26, while
+                // the MP side stayed a percent because his MP ruling carved out armour masteries
+                // (*"except armor masteries the 20% increase"*). That `mpReg x1.8` is still on the
+                // open list as a weapon-mastery-sized number sitting in an armour row.
+                HpRegenBonus += sm.HpRegen;
                 HpRegenMult *= 1f + sm.HpRegenPct;
                 MpRegenMult *= 1f + sm.MpRegenPct;
                 MaxHp = (int)((MaxHp + sm.MaxHp) * (1f + sm.MaxHpPct));

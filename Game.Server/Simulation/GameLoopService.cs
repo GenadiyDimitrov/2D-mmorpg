@@ -12619,19 +12619,38 @@ public class GameLoopService : BackgroundService
 
         if (entity.Hp < entity.MaxHp)
         {
-            // ⚠ HP KEEPS ITS FLATS INSIDE, and that asymmetry with MP below is DELIBERATE — the owner
-            // held the HP half of `BL-92` on 2026-08-26: *"I want to do the same checks for the HP
-            // regen as well .. but let finish with the MP first then check IG formulas on HP regen"*.
-            // His reason it can wait: HP comes from POTIONS, so HP regen only shaves 10-20% off potion
-            // spend, where MP has no equivalent faucet and IS the economy. The new STANCE ladder does
-            // land on HP (one ladder for both bars — standing has to mean the same thing on each);
-            // only the `hpReg x1.1…x3.4` mastery multipliers and this flat placement are waiting.
-            float perSecond = player
-                ? StatCalculator.HpRegenPerSecond(entity.Con, entity.Level) + entity.HpRegenBonus + hpRegenFlat
-                : StatCalculator.MobHpRegenPerSecond(entity.MaxHp, engaged);
-            int regen = Math.Max(1,
-                (int)(perSecond * multiplier * entity.HpRegenMult * (1f + hpRegenPct) * period));
-            entity.Hp = Math.Min(entity.MaxHp, entity.Hp + regen);
+            // ⚠ THE FLATS ARE OUTSIDE — HP now matches MP exactly. Owner, 2026-08-26, closing the half
+            // of `BL-92` he had held: *"I want to make the passives + not x as the mp .. and buffs to
+            // carry the multiplier .. and the flat is to added at the end"*. So:
+            //
+            //     HpRegen/s = [ (3 + 0.1·L) × 1.03^(CON−40) × stance × safeZone × (1+buff%) ]
+            //                 + HpRegenBonus + flat buffs
+            //
+            // where HpRegenBonus now carries the `hpReg` MASTERY ladder, which used to be a
+            // ×1.1…×2.7 multiplier on HpRegenMult and is a flat +1.1…+2.7 HP/s since this change.
+            // HpRegenMult survives for what is still genuinely a percent: the armour-SET bonus and
+            // the `HpRegenPercent` gear attribute. It is NOT the mastery channel any more.
+            //
+            // 🔑 WHY: measured (`BalanceMatrix --hpregen`), the multiplier form put a level-74 nuker
+            // at 27.5 HP/s against a tank's 16.4 — the class with IG's LOWEST base regen had the
+            // game's highest, because ×2.7 multiplied a level term the tank's ×1.00 did not. As flats
+            // the order returns to warrior 18.0 > rogue 17.6 > tank 16.4 > nuker 12.9, which is IG's
+            // own intent (a mage's base regen is half a fighter's).
+            //
+            // ⚠ WE KNOWINGLY SIT AT ~2× IG. Owner, same ruling: *"So we will have x2 more than IG but
+            // not as much as we have now ... Playtest will decide if it stays"*. The residual is our
+            // LEVEL term (1 + L/30, ×3.71 across 1-85) against IG's (L/100 + 0.89, ×1.93). Swapping it
+            // was measured and explicitly NOT taken — *"Leave out lvl mod just leave the flat outside"*.
+            // Do not "fix" that gap without a new ruling.
+            float regen;
+            if (player)
+                regen = StatCalculator.HpRegenPerSecond(entity.EffectiveCon, entity.Level)
+                            * multiplier * entity.HpRegenMult * (1f + hpRegenPct)
+                        + entity.HpRegenBonus + hpRegenFlat;
+            else
+                regen = StatCalculator.MobHpRegenPerSecond(entity.MaxHp, engaged) * multiplier;
+
+            entity.Hp = Math.Min(entity.MaxHp, entity.Hp + Math.Max(1, (int)(regen * period)));
         }
 
         if (entity.Mp < entity.MaxMp)
@@ -13378,7 +13397,11 @@ public class GameLoopService : BackgroundService
     {
         var (hpReg, mpReg) = StandingRegen(p);
         SendTo(p, "Stats", new StatsUpdate(
-            p.Con, p.AtkStat, p.EffectiveWit, p.EffectiveAgi, p.EffectiveSpt,
+            // ⚠ ALL FIVE PRIMARIES ARE EFFECTIVE (owner, 2026-08-26). CON and ATK were the two sent
+            // BASE while WIT/AGI/SPT went effective, so an armour set's `Con: -2, Str: +3` moved your
+            // HP pool, your regen and your damage while the stat window showed nothing at all —
+            // *"con armor set now will buy u nothing and atk-con won't hinder you"*.
+            p.EffectiveCon, p.EffectiveAtk, p.EffectiveWit, p.EffectiveAgi, p.EffectiveSpt,
             p.MaxHp, p.MaxMp, (int)p.EffectiveAttack, (int)p.EffectiveDefence,
             p.Accuracy, (int)p.EffectiveEvasion, p.CritChance, p.BasicAttackRange, p.SecondClass,
             p.EffectiveSpeed, SkillMath.CastModifier(p.Wit), p.EffectiveCastSpeedMultiplier, p.EffectiveAttackSpeedMultiplier, p.SkillPoints, p.MoveState, (int)p.EffectiveMagicAttackShown, p.MagicCritChance,
@@ -13421,10 +13444,12 @@ public class GameLoopService : BackgroundService
             : p.MoveState == MoveState.Walking      ? p.MpRegenWalkMult
                                                     : p.MpRegenRunMult;
 
-        float hp = (StatCalculator.HpRegenPerSecond(p.Con, p.Level) + p.HpRegenBonus + hpFlat) * p.HpRegenMult * (1f + hpPct) * stance;
-        // ⚠ MP flats are OUTSIDE now (`BL-92`), and HP's are still inside. Mirror Regenerate exactly —
-        // the whole point of this helper is that the number the stats window shows is the number the
-        // tick loop pays, and the two halves of it are deliberately no longer symmetrical.
+        // ⚠ BOTH bars put their flats OUTSIDE (`BL-92`, 2026-08-26) and both read the EFFECTIVE stat.
+        // Mirror Regenerate exactly — the whole point of this helper is that the number the stats
+        // window shows is the number the tick loop pays. It has drifted before; keep them adjacent.
+        float hp = StatCalculator.HpRegenPerSecond(p.EffectiveCon, p.Level)
+                       * stance * p.HpRegenMult * (1f + hpPct)
+                   + p.HpRegenBonus + hpFlat;
         float mp = StatCalculator.MpRegenPerSecond(p.EffectiveSpt, p.Level)
                        * stance * mpStance * p.MpRegenMult * (1f + mpPct)
                    + p.MpRegenBonus + mpFlat;
@@ -13968,7 +13993,8 @@ public class GameLoopService : BackgroundService
             t.BowResist, t.CritRateResist,
             passives, effects, drops,
             // Extended: same fields the character sheet reads, off the target Entity's own getters.
-            Con: t.Con, Atk: t.AtkStat, Wit: (int)t.EffectiveWit, Agi: (int)t.EffectiveAgi, Spt: (int)t.EffectiveSpt,
+            // All five EFFECTIVE, same rule as the character sheet above (owner, 2026-08-26).
+            Con: t.EffectiveCon, Atk: t.EffectiveAtk, Wit: (int)t.EffectiveWit, Agi: (int)t.EffectiveAgi, Spt: (int)t.EffectiveSpt,
             MoveSpeed: t.EffectiveSpeed, AttackSpeedMult: t.EffectiveAttackSpeedMultiplier,
             CastSpeedMult: t.EffectiveCastSpeedMultiplier, AttackRange: t.BasicAttackRange,
             MagicCritChance: t.MagicCritChance, CritDamage: t.CritDamageBonus,
