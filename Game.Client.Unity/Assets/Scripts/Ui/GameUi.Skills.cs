@@ -25,7 +25,7 @@ namespace Game.Client
     {
         private RectTransform _skillsPanel, _skillsContent;
         private TextMeshProUGUI _skillsHeader, _assignHint;
-        private int _skillsTab;                 // 0 known, 1 learn, 2 actions, 3 stats
+        private int _skillsTab;                 // 0 known, 1 learn, 2 actions, 3 stats, 4 sigils
         private Button[] _skillsTabButtons;
         private int _skillsRevision = -1;
 
@@ -50,8 +50,13 @@ namespace Game.Client
             UiKit.Place(UiKit.Rect(_skillsHeader.gameObject), new Vector2(1f, 1f), new Vector2(1f, 1f),
                         new Vector2(-70f, -14f), new Vector2(300f, 28f));
 
-            _skillsTabButtons = new Button[4];
-            string[] names = { "Known", "Learn", "Actions", "Stats" };
+            // FIVE tabs since the 4th class (2026-08-26). The row is laid out from the panel width
+            // rather than from a fixed 150-pixel stride: five × 150 overflowed a 720-wide window and
+            // pushed "Sigils" off the right edge, where it was unreachable rather than merely ugly.
+            string[] names = { "Known", "Learn", "Actions", "Stats", "Sigils" };
+            _skillsTabButtons = new Button[names.Length];
+            const float tabGap = 6f;
+            float tabW = (720f - 36f - tabGap * (names.Length - 1)) / names.Length;
             for (int i = 0; i < names.Length; i++)
             {
                 int tab = i;
@@ -61,7 +66,7 @@ namespace Game.Client
                     _skillsRevision = -1;      // force a rebuild
                 }, 17f);
                 UiKit.Place(UiKit.Rect(button.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                            new Vector2(18f + i * 150f, -chrome - 6f), new Vector2(144f, 38f));
+                            new Vector2(18f + i * (tabW + tabGap), -chrome - 6f), new Vector2(tabW, 38f));
                 _skillsTabButtons[i] = button;
             }
 
@@ -224,7 +229,8 @@ namespace Game.Client
             if (_skillsTab == 0) BuildKnownTab();
             else if (_skillsTab == 1) BuildLearnTab();
             else if (_skillsTab == 2) BuildActionsTab();
-            else BuildStatsTab();
+            else if (_skillsTab == 3) BuildStatsTab();
+            else BuildSigilsTab();
         }
 
         /// <summary>Cheap stamp of the staged basket, so a [+] redraws the row, the price and the
@@ -306,8 +312,13 @@ namespace Game.Client
 
             var archetype = active.SecondClass > 0 ? ClassCatalog.Get(active.SecondClass)?.Archetype : null;
             var discipline = active.ThirdClass > 0 ? ThirdClassCatalog.Get(active.ThirdClass)?.Discipline : null;
+            // ⚠ THE 4th TIER IS GATED ON THE ASCENSION, NOT ON LEVEL 76. Without this flag a level-76
+            // Lightbringer who has not paid the Rite would still be offered his 76-90 kit here — and
+            // the server would refuse every purchase, which is the worst of both.
+            bool ascended = active.FourthClass > 0;
 
-            var all = ClassSkills.LearnableAt(active.Race, active.BaseClass, archetype, int.MaxValue, discipline);
+            var all = ClassSkills.LearnableAt(active.Race, active.BaseClass, archetype, int.MaxValue,
+                                              discipline, ascended);
 
             var groups = all
                 .Where(cs => cs.SkillLevel == Boot.Learned.GetValueOrDefault(cs.SkillId) + 1
@@ -320,6 +331,10 @@ namespace Game.Client
                              // the 'to learn' tab. They have their own. Only show in the passives
                              // already learned."* Bought ones still appear on Known, as passives.
                              && SkillCatalog.StatSwapOf(cs.SkillId) is null
+                             // …and the eighteen SIGILS, for exactly the same reason: they are a
+                             // three-slot GRID with its own tab, and eighteen mutually-exclusive rows
+                             // in the middle of a skill ladder would be the same complaint again.
+                             && SkillCatalog.SigilOf(cs.SkillId) is null
                              && !LockedByExclusiveGroup(cs.SkillId))
                 .GroupBy(cs => cs.LearnLevel)
                 .OrderBy(g => g.Key);
@@ -410,6 +425,108 @@ namespace Game.Client
         /// the two rung caps — gold is asked once, at Confirm. That is why [-] can never take back a
         /// rung you have already paid for: un-committing is the Mindwriter's job, it is free there, and
         /// it drops a whole pair at once, which is not something a [-] button should imply.</para>
+        // ----- the SIGILS tab (the 4th class, 2026-08-26) --------------------------------------------
+
+        /// <summary>
+        /// The Sigils tab: the three permanent choices a 4th class makes, laid out as three SLOTS
+        /// rather than as eighteen skills.
+        ///
+        /// <para>Shaped like the Stats tab and for the same reason — his ask was *"i want it to be
+        /// something like the Stat-Swap tab"*. What it is NOT is a staged basket: a sigil costs 20kk SP
+        /// and 10kk gold and there are only three of them, so there is nothing to plan and nothing to
+        /// total up. One tap, one purchase, through the ordinary LearnSkill command the Learn tab uses.</para>
+        ///
+        /// <para><b>The two rules are shown, not just enforced.</b> A row you cannot take because its
+        /// SLOT is spoken for reads differently from one you cannot take because you already wear that
+        /// CLASS's sigil in another slot — the server refuses both, and a tab that renders them
+        /// identically would look broken.</para>
+        /// </summary>
+        private void BuildSigilsTab()
+        {
+            var active = Boot.ActiveClass;
+            if (active == null) { Note("Waiting for your class ..."); return; }
+
+            if (active.FourthClass <= 0)
+            {
+                Note("Sigils are the mark of an awakened class.");
+                Note("Take your 4th class at Archmaster Sevrin in Frostmere first.");
+                return;
+            }
+
+            Note("Choose ONE Attack, ONE Defence and ONE Support sigil.");
+            Note("Each costs " + SkillCatalog.SigilSpCost.ToString("N0") + " SP + "
+                 + SkillCatalog.SigilGoldCost.ToString("N0") + " " + GameConstants.CurrencyName + ".");
+            Note("They are permanent. The Mindwright will strike one off for "
+                 + SkillCatalog.SigilResetGold.ToString("N0") + " " + GameConstants.CurrencyName
+                 + " — nothing is refunded.");
+
+            // What is already committed, so every row can say why it is or is not available.
+            string ownedAttack = null, ownedDefence = null, ownedSupport = null;
+            foreach (var kv in Boot.Learned)
+            {
+                var s = SkillCatalog.SigilOf(kv.Key);
+                if (s == null) continue;
+                if (s.Value.Slot == SkillCatalog.SigilSlot.Attack) ownedAttack = kv.Key;
+                else if (s.Value.Slot == SkillCatalog.SigilSlot.Defence) ownedDefence = kv.Key;
+                else ownedSupport = kv.Key;
+            }
+
+            foreach (SkillCatalog.SigilSlot slot in new[]
+                     { SkillCatalog.SigilSlot.Attack, SkillCatalog.SigilSlot.Defence, SkillCatalog.SigilSlot.Support })
+            {
+                string owned = slot == SkillCatalog.SigilSlot.Attack ? ownedAttack
+                             : slot == SkillCatalog.SigilSlot.Defence ? ownedDefence : ownedSupport;
+
+                Note(slot.ToString().ToUpperInvariant()
+                     + (owned != null ? "   -   " + (SkillCatalog.Get(owned)?.Name ?? owned) : "   -   open"));
+
+                foreach (var id in SkillCatalog.AllSigilIds)
+                {
+                    var s = SkillCatalog.SigilOf(id);
+                    if (s == null || s.Value.Slot != slot) continue;
+                    var def = SkillCatalog.Get(id);
+                    if (def == null) continue;
+
+                    bool have = Boot.Learned.ContainsKey(id);
+                    // The FLAVOUR rule: this class's sigil in ANOTHER slot blocks this one.
+                    string clash = SkillCatalog.SigilFlavourClash(id, Boot.Learned);
+                    bool affordable = Boot.SkillPoints >= SkillCatalog.SigilSpCost
+                                   && Boot.Gold >= SkillCatalog.SigilGoldCost;
+
+                    string label = "   " + def.Name;
+                    Color colour = UiKit.TextDim;
+                    string button = null;
+                    System.Action act = null;
+
+                    if (have)
+                    {
+                        label += "      WORN";
+                        colour = UiKit.Accent;
+                    }
+                    else if (owned != null)
+                    {
+                        label += "      (slot taken)";
+                    }
+                    else if (clash != null)
+                    {
+                        label += "      (you already wear " + (SkillCatalog.Get(clash)?.Name ?? clash) + ")";
+                    }
+                    else
+                    {
+                        colour = affordable ? UiKit.Text : UiKit.TextDim;
+                        button = "Commit";
+                        if (affordable)
+                        {
+                            string captured = id;
+                            act = () => { Boot.LearnSkill(captured); _skillsRevision = -1; };
+                        }
+                    }
+
+                    Row(label, button, act, colour, detailSkill: id);
+                }
+            }
+        }
+
         /// </summary>
         private void BuildStatsTab()
         {

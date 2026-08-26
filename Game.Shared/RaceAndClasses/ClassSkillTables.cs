@@ -74,9 +74,13 @@ public static partial class ClassSkillTables
         // 3rd-class (discipline) kits — placeholder lists in 24.0; fleshed out per
         // archetype in the content slices.
         RegisterThirdClasses();
+        // 4th-class (ASCENDED discipline) kits — the 76-90 band. Registered against a key that
+        // carries a TIER, so nothing here reaches a character who has not paid the Rite of Ascension.
+        RegisterFourthClasses();
     }
 
     // Implemented across the partial files; each appends its lines.
     static partial void RegisterSecondClasses();
     static partial void RegisterThirdClasses();
+    static partial void RegisterFourthClasses();
 }

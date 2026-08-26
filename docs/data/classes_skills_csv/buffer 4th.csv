@@ -119,7 +119,7 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,G
 88,Arcane and Feral Protection,Magic/Buff,600,self/party,1,1,1200,"63% resist to CON debuff, 50% resist to SPT debuffs",410,0,100kk
 90,Arcane and Feral Protection,Magic/Buff,600,self/party,1,1,1200,"65% resist to CON debuff, 50% resist to SPT debuffs",420,0,100kk
 ,,,,,,,,,,,,,,,---------------------------Mark----------------------------
-79,Ultimate Mark,Magic/Heal,900,self/party,5,120,300,"Increases: P/M.Atk, SPT Debuff resist with 10%; P/M [Def, Speed, Crit.Dmg, Crit.Rate, Max HP, Max MP, HP Reg, MP Reg] with 20%; CON Debuff Resists +5%, P/M.Acc +4; Consumes 10 skill stones; Do not Stack with Other 'Mark' Skills",300,80kk,1kk,,,,Same Principle as Great Might/Bulwark
+79,Harmony Mark,Magic/Heal,900,self/party,5,120,300,"Increases: Atk with 10%; Acc +3; Atk/Cast.Speed, Def, Crit.Rate, Crit.Dmg, Max HP/MP and regen with 20%;  Consumes 10 skill stones; Do not Stack with Other 'Mark' skills",300,80kk,1kk,,,,Same Principle as Great Might/Bulwark
 
 
 ,,,,,,,,,,,,,,,--------------------------------------------------------NOT DONE FOR NOW--------------------------------------------------------

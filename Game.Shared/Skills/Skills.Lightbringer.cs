@@ -110,7 +110,7 @@ public static partial class SkillCatalog
                 int[] mp  = { 30, 38, 44, 48, 52, 54, 55, 58, 60, 62, 64, 65, 67, 69 };
                 return new SkillLevel(Power: pow[i], MpCost: mp[i], SpCost: sp,
                     Description: $"Magic damage, m.Atk +{pow[i]}.");
-            })),
+            }).Concat(HealerFourthHolyRayRungs()).ToArray()),
 
         // ═══ THE HEALS ═══════════════════════════════════════════════════════════════════════════
         new(GreatHeal, "Great Heal", BaseClass.Mage, SkillEffect.Heal,
@@ -124,7 +124,7 @@ public static partial class SkillCatalog
                 int[] mp  = {  62,  68,  76,  83,  90,  95,  98, 100, 105, 108, 112, 114, 117, 120 };
                 return new SkillLevel(Power: pow[i], MpCost: mp[i], SpCost: sp,
                     Description: $"Heals a single ally for {pow[i]}.");
-            })),
+            }).Concat(HealerFourthGreatHealRungs()).ToArray()),
 
         new(PartyGreatHeal, "Party Great Heal", BaseClass.Mage, SkillEffect.Heal,
             MpCost: 124, CastTicks: 70, CooldownTicks: 50, Range: 600, Power: 320,
@@ -139,7 +139,7 @@ public static partial class SkillCatalog
                 int[] mp  = { 124, 136, 152, 166, 180, 190, 196, 200, 210, 216, 224, 228, 234, 240 };
                 return new SkillLevel(Power: pow[i], MpCost: mp[i], SpCost: sp,
                     Description: $"Heals you and nearby party members for {pow[i]}.");
-            })),
+            }).Concat(HealerFourthPartyHealRungs()).ToArray()),
 
         // ---- URGENT HEAL — a PERCENTAGE of the target's own Max HP, and the only heal in the game
         //      that is. Four rungs (44-56) and then it stops: 15 → 30% of a bar, on an 8s cast with a
@@ -176,7 +176,7 @@ public static partial class SkillCatalog
                 int[] mp  = {  95,  98, 100, 105, 108, 112, 114, 117, 120 };
                 return new SkillLevel(Power: pow[i], MpCost: mp[i], SpCost: sp,
                     Description: $"Heals a single ally for {pow[i]}. Consumes 1 Skill Stone.");
-            })),
+            }).Concat(HealerFourthUltimateHealRungs()).ToArray()),
 
         new(UltimatePartyHeal, "Ultimate Party Heal", BaseClass.Mage, SkillEffect.Heal,
             MpCost: 190, CastTicks: 70, CooldownTicks: 50, Range: 600, Power: 730,
@@ -191,7 +191,7 @@ public static partial class SkillCatalog
                 int[] mp  = { 190, 196, 200, 210, 216, 224, 228, 234, 240 };
                 return new SkillLevel(Power: pow[i], MpCost: mp[i], SpCost: sp,
                     Description: $"Heals you and nearby party members for {pow[i]}. Consumes 4 Skill Stones.");
-            })),
+            }).Concat(HealerFourthUltimatePartyRungs()).ToArray()),
 
         // ---- RESURRECTION FIELD — a res aimed at the GROUND (his rows at 44 / 58 / 66 / 74).
         //
@@ -220,7 +220,7 @@ public static partial class SkillCatalog
                     Description: "Revives fallen allies within 800 at 30% HP/MP; restores 50% of lost exp."),
                 new SkillLevel(MpCost: 320, SpCost: 450000, ResExpPct: 0.70f, AreaRadius: 900f, CastTicks: 100,
                     Description: "Revives fallen allies within 900 at 30% HP/MP; restores 70% of lost exp."),
-            }),
+            }.Concat(HealerFourthResFieldRungs()).ToArray()),
 
         // ═══ THE MANA KIT ════════════════════════════════════════════════════════════════════════
         //
@@ -253,7 +253,7 @@ public static partial class SkillCatalog
                 int[] sp  = { 81000, 88000, 120000, 170000, 190000, 280000, 320000, 390000, 650000, 880000 };
                 return new SkillLevel(Power: pow[i], MpCost: mp[i], SpCost: sp[i],
                     Description: $"Drains {pow[i] / 10f:0.#}% of the target's maximum MP (half that on a monster).");
-            })),
+            }).Concat(HealerFourthManaRayRungs()).ToArray()),
 
         // ---- MANA STRAIN — the other half of the same idea: instead of taking their mana, make
         //      everything they cast cost more. +100% at 52 climbing to +200% at 74, which the engine
@@ -282,7 +282,7 @@ public static partial class SkillCatalog
                 return new SkillLevel(MpCost: mp[i], SpCost: sp,
                     PhysMpCostPct: -pct[i], MagicMpCostPct: -pct[i],
                     Description: $"Raises the target's physical and magic MP costs by {pct[i] * 100:0}% for 60s.");
-            }),
+            }).Concat(HealerFourthManaStrainRungs()).ToArray(),
             PhysMpCostPct: -1.0f, MagicMpCostPct: -1.0f),
 
         // ---- MEDITATION — 30 seconds of enormous MP regeneration bought with your defence, and it
@@ -328,7 +328,7 @@ public static partial class SkillCatalog
                     Description: "−15% physical and −7% magic skill MP cost."),
                 new SkillLevel(MpCost: 125, SpCost: 330000, PhysMpCostPct: 0.20f, MagicMpCostPct: 0.10f,
                     Description: "−20% physical and −10% magic skill MP cost."),
-            },
+            }.Concat(HealerFourthManaBlessingRungs()).ToArray(),
             PhysMpCostPct: 0.10f, MagicMpCostPct: 0.05f),
 
         // ═══ THE 58+ "GREAT" PAIR — ONE OR THE OTHER, NEVER BOTH ═════════════════════════════════
@@ -407,7 +407,7 @@ public static partial class SkillCatalog
                 int[] mp  = {  93, 100, 114, 124, 134, 142, 147, 150, 153, 162, 167, 171, 175, 180 };
                 return new SkillLevel(Power: pow[i], MpCost: mp[i], SpCost: sp,
                     Description: $"Heals a single ally for {pow[i]} on a 2s cast.");
-            })),
+            }).Concat(HealerFourthQuickHealRungs()).ToArray()),
 
         new(LbHumanGravity, "Gravity", BaseClass.Mage,
             SkillEffect.DebuffAtkSpeed | SkillEffect.DebuffCastSpeed,
@@ -436,7 +436,7 @@ public static partial class SkillCatalog
                         new(SkillEffect.DebuffAtkSpeed, GravityPct[i]),
                         new(SkillEffect.DebuffCastSpeed, GravityPct[i]),
                     },
-                    Description: $"−{GravityPct[i] * 100:0}% attack speed and cast speed for 30s."))),
+                    Description: $"−{GravityPct[i] * 100:0}% attack speed and cast speed for 30s.")).Concat(HealerFourthGravityRungs()).ToArray()),
 
         // ═══ ELF: the heal-and-cure + Bind ═══════════════════════════════════════════════════════
         //
@@ -463,7 +463,7 @@ public static partial class SkillCatalog
                 int[] rank = {   3,   3,   4,   4,   5,   5,   6,   6,   7,   7,   8,   8,   9,   9 };
                 return new SkillLevel(Power: pow[i], MpCost: mp[i], SpCost: sp, DispelMaxLevel: rank[i],
                     Description: $"Heals an ally for {pow[i]} and cures their bleed and poison of rank {rank[i]} or lower.");
-            })),
+            }).Concat(HealerFourthBlessingRungs()).ToArray()),
 
         new(LbElfBind, "Bind", BaseClass.Mage, SkillEffect.Root,
             MpCost: 35, CastTicks: 25, CooldownTicks: 50, Range: 600, Power: 0,
@@ -477,7 +477,7 @@ public static partial class SkillCatalog
             // reason a CC ladder exists (see the CC level-curve work) and it is why this looks empty.
             Levels: HealerRungs(0, 14, (i, sp) =>
                 new SkillLevel(MpCost: DebuffMp[i], SpCost: sp,
-                    Description: "Holds an enemy in place for 30s."))),
+                    Description: "Holds an enemy in place for 30s.")).Concat(HealerFourthBindRungs()).ToArray()),
 
         // ═══ ORK: the two planted totems + Armor Break ═══════════════════════════════════════════
         //
@@ -509,7 +509,7 @@ public static partial class SkillCatalog
                 int[] mp  = { 238, 272, 304, 352, 360, 380, 392, 400, 420, 432, 448, 452, 464, 476 };
                 return new SkillLevel(Power: pow[i], MpCost: mp[i], SpCost: sp,
                     Description: $"A totem healing +{pow[i]}/s within 300 for 30s.");
-            })),
+            }).Concat(HealerFourthTotemRungs()).ToArray()),
 
         // ---- MANA TOTEM — the same object pointed at the other bar, from 52. Its numbers look tiny
         //      next to the healing one (20/s at 74 against 150/s) and that is the correct comparison:
@@ -567,7 +567,7 @@ public static partial class SkillCatalog
                         new(SkillEffect.DebuffDef, pDef[i]), new(SkillEffect.BuffMagicDef, -mDef[i]),
                     },
                     Description: $"−{pDef[i] * 100:0}% P.Def and −{mDef[i] * 100:0}% M.Def for 30s.");
-            })),
+            }).Concat(HealerFourthArmorBreakRungs()).ToArray()),
 
         // ---- WEAPON BREAK — the shared offensive debuff, from 62. Four rungs, both attack channels
         //      at once (`DebuffAtk` is the flag that covers P.Atk and M.Atk together), so one cast
@@ -585,7 +585,7 @@ public static partial class SkillCatalog
                 WeaponBreakRung(0.11f, mp: 62, sp: 280000),
                 WeaponBreakRung(0.13f, mp: 65, sp: 390000),
                 WeaponBreakRung(0.15f, mp: 69, sp: 880000),
-            }),
+            }.Concat(HealerFourthWeaponBreakRungs()).ToArray()),
 
         // ═══ THE HEALER'S OWN TWO MASTERIES ══════════════════════════════════════════════════════
         // He split the shared cleric masteries at 40: the healer takes these two, the BUFFER keeps
@@ -623,7 +623,7 @@ public static partial class SkillCatalog
             Description: "Passive. Divine power flows through a BLUNT weapon — wand, staff or mace: "
                        + "more M.Atk, faster casting, shorter reuse and much stronger HP/MP "
                        + "regeneration. A sword grants none of it.",
-            WeaponMasteryLevels: HealerWeaponRungs.Select(r =>
+            WeaponMasteryLevels: HealerWeaponRungs.Concat(HealerFourthWeaponRungs).Select(r =>
                 HealerWeapon(r.MAtk, r.Reuse, r.Cast, r.MpReg, r.HpReg)).ToArray(),
             Levels: HealerRungs(0, 14, (i, sp) =>
             {
@@ -631,7 +631,7 @@ public static partial class SkillCatalog
                 return new SkillLevel(SpCost: sp,
                     Description: $"With a wand or staff: +{r.MAtk} M.Atk, +{r.Cast * 100:0}% cast, "
                                + $"−{r.Reuse * 100:0}% reuse, MP regen x{1f + r.MpReg:0.#}, HP regen x{1f + r.HpReg:0.#}.");
-            })),
+            }).Concat(HealerFourthWeaponMasteryRungs()).ToArray()),
 
         // ---- Healer Armor Mastery — replaces Armor Mastery. ROBE ONLY: the Light row is cut, so a
         //      healer in light armor keeps Spellcaster Mastery's raw cast ×0.5 / atk ×0.5 with nothing
@@ -642,13 +642,14 @@ public static partial class SkillCatalog
             Description: "Passive. A ROBE is the healer's vestment: much more defence, max MP and MP "
                        + "regeneration. Light armor no longer keeps you casting — that is the "
                        + "buffer's path now.",
-            ArmorMasteryLevels: HealerRobeRungs.Select(r => HealerRobe(r.PDef, r.MaxMp)).ToArray(),
+            ArmorMasteryLevels: HealerRobeRungs.Select(r => HealerRobe(r.PDef, r.MaxMp))
+                .Concat(HealerFourthRobeRungs.Select(HealerRobe4)).ToArray(),
             Levels: HealerRungs(0, 14, (i, sp) =>
             {
                 var r = HealerRobeRungs[i];
                 return new SkillLevel(SpCost: sp,
                     Description: $"In a robe: +{r.PDef} P.Def, +{r.MaxMp} Max MP, MP regen x1.2.");
-            })),
+            }).Concat(HealerFourthArmorMasteryRungs()).ToArray()),
 
         // ═══ ORPHANED BY HIS FILE — DEFINED, NEVER GRANTED ═══════════════════════════════════════
         //

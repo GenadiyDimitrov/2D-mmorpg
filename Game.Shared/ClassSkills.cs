@@ -39,7 +39,13 @@ public static class ClassSkills
     /// <summary>Discipline = null identifies the base class (archetype null) or the
     /// 2nd class (archetype set). A non-null Discipline identifies a 3rd class — its
     /// Archetype is the parent archetype, so the key stays unambiguous.</summary>
-    public readonly record struct ClassKey(Race Race, BaseClass Base, Archetype? Archetype, Discipline? Discipline);
+    /// <param name="Fourth">TRUE = the FOURTH-tier list for that discipline. ⚠ This field is the whole
+    /// reason a 4th-class kit can exist at all: a 4th class is *the same discipline awakened*
+    /// (<see cref="FourthClassDef"/>), so without a tier on the key its skills would be registered
+    /// against <c>Discipline.Lightbringer</c> and leak to every level-40 Lightbringer. The 4th kit has
+    /// its own key and is only ever unioned in when the character has actually ascended.</param>
+    public readonly record struct ClassKey(Race Race, BaseClass Base, Archetype? Archetype,
+                                           Discipline? Discipline, bool Fourth = false);
 
     private static readonly Dictionary<ClassKey, List<ClassSkill>> Map = new();
 
@@ -56,6 +62,24 @@ public static class ClassSkills
         var archetype = Disciplines.Parent(discipline);
         RegisterKey(new ClassKey(race, BaseOf(archetype), archetype, discipline), skills);
     }
+
+    /// <summary>Register a 4th-class (ascended discipline) skill list — the 76-90 kit off his
+    /// `*.4th.csv` files. Same (race, discipline) as the 3rd class; the TIER on the key is what keeps
+    /// it away from a level-40 who has not paid the Rite of Ascension.</summary>
+    public static void RegisterFourth(Race race, Discipline discipline, params ClassSkill[] skills)
+    {
+        var archetype = Disciplines.Parent(discipline);
+        RegisterKey(new ClassKey(race, BaseOf(archetype), archetype, discipline, Fourth: true), skills);
+    }
+
+    /// <summary>The `shared 4th.csv` kit — EVERY class learns these on ascension, whatever its
+    /// discipline (his file: *"ALL CLASSES"*, and *"i created a Shared 4th file that all classes share
+    /// the same skills - every class get to learn them"*). Kept as ONE flat list rather than fanned out
+    /// across 36 (race, discipline) keys: cheaper, and impossible to get half-right.</summary>
+    private static readonly List<ClassSkill> FourthShared = new();
+
+    /// <summary>Add rows to the all-classes 4th-tier kit. Called from ClassSkillTables.Fourth.cs.</summary>
+    public static void RegisterFourthShared(params ClassSkill[] skills) => FourthShared.AddRange(skills);
 
     private static void RegisterKey(ClassKey key, ClassSkill[] skills)
     {
@@ -81,10 +105,10 @@ public static class ClassSkills
     /// <summary>The skills registered for exactly one tier of a class (the 2nd-class
     /// list when discipline is null, the 3rd-class list when it is set).</summary>
     public static IReadOnlyList<ClassSkill> ForClass(Race race, BaseClass baseClass,
-        Archetype? archetype, Discipline? discipline = null)
+        Archetype? archetype, Discipline? discipline = null, bool fourth = false)
     {
         EnsureInit();
-        var key = new ClassKey(race, baseClass, archetype, discipline);
+        var key = new ClassKey(race, baseClass, archetype, discipline, fourth);
         return Map.TryGetValue(key, out var list) ? list : Array.Empty<ClassSkill>();
     }
 
@@ -92,7 +116,7 @@ public static class ClassSkills
     /// list always, PLUS the 3rd-class discipline list once a discipline is chosen.
     /// This is what all the learn/display helpers below search.</summary>
     public static IEnumerable<ClassSkill> Cumulative(Race race, BaseClass baseClass,
-        Archetype? archetype, Discipline? discipline)
+        Archetype? archetype, Discipline? discipline, bool fourth = false)
     {
         foreach (var cs in ForClass(race, baseClass, archetype, null))
             yield return cs;
@@ -111,6 +135,22 @@ public static class ClassSkills
             foreach (var id in SkillCatalog.StatSwapsFor(baseClass, discipline))
                 for (int lvl = 1; lvl <= 5; lvl++)
                     yield return new ClassSkill(id, SkillCatalog.StatSwapLearnLevel, SkillLevel: lvl);
+
+        // ═══ THE FOURTH TIER ══════════════════════════════════════════════════════════════════════
+        // Only once the character has ASCENDED (paid the 100kk Rite at Archmaster Sevrin). Level 76
+        // alone is NOT enough — that is the entire point of the flag, and of the tier on ClassKey.
+        if (fourth && discipline is Discipline fd)
+        {
+            foreach (var cs in ForClass(race, baseClass, archetype, fd, fourth: true))
+                yield return cs;
+            foreach (var cs in FourthShared)      // his `shared 4th.csv` — every class, same rows
+                yield return cs;
+            // The SIGILS are the shared kit's second block, injected from the catalog rather than
+            // listed as learn lines, for the same reason the stat swaps are: they are a fixed grid
+            // (6 class flavours × 3 slots) bought on their OWN tab, not from Learn. See Skills.Sigils.cs.
+            foreach (var id in SkillCatalog.AllSigilIds)
+                yield return new ClassSkill(id, SkillCatalog.SigilLearnLevel);
+        }
     }
 
     /// <summary>The armor-mastery passives a class can learn, with learn levels.
@@ -170,9 +210,9 @@ public static class ClassSkills
     /// ones currently offered in the "Skills to Learn" tab (before SP/learned
     /// filtering). Includes 3rd-class skills once a discipline is set.</summary>
     public static IEnumerable<ClassSkill> LearnableAt(Race race, BaseClass baseClass,
-        Archetype? archetype, int level, Discipline? discipline = null)
+        Archetype? archetype, int level, Discipline? discipline = null, bool fourth = false)
     {
-        foreach (var cs in Cumulative(race, baseClass, archetype, discipline))
+        foreach (var cs in Cumulative(race, baseClass, archetype, discipline, fourth))
             if (level >= cs.LearnLevel)
                 yield return cs;
     }
@@ -180,9 +220,9 @@ public static class ClassSkills
     /// <summary>The character-level at which a class can learn a specific SKILL LEVEL
     /// (0 if that (skill, level) isn't on the class list).</summary>
     public static int LearnLevelOf(string skillId, int skillLevel, Race race, BaseClass baseClass,
-        Archetype? archetype, Discipline? discipline = null)
+        Archetype? archetype, Discipline? discipline = null, bool fourth = false)
     {
-        foreach (var cs in Cumulative(race, baseClass, archetype, discipline))
+        foreach (var cs in Cumulative(race, baseClass, archetype, discipline, fourth))
             if (cs.SkillId == skillId && cs.SkillLevel == skillLevel)
                 return cs.LearnLevel;
         return 0;
@@ -192,9 +232,9 @@ public static class ClassSkills
     /// Falls back to the skill's own authored price when the class table carries no override.
     /// See <see cref="ClassSkill.SpCost"/> for why an override exists at all.</summary>
     public static int SpCostOf(SkillDef def, int skillLevel, Race race, BaseClass baseClass,
-        Archetype? archetype, Discipline? discipline = null)
+        Archetype? archetype, Discipline? discipline = null, bool fourth = false)
     {
-        foreach (var cs in Cumulative(race, baseClass, archetype, discipline))
+        foreach (var cs in Cumulative(race, baseClass, archetype, discipline, fourth))
             if (cs.SkillId == def.Id && cs.SkillLevel == skillLevel && cs.SpCost is int sp)
                 return sp;
         return def.SpCostAt(skillLevel);
@@ -202,10 +242,10 @@ public static class ClassSkills
 
     /// <summary>The highest skill-level of a skill this class can ever learn (0 = none).</summary>
     public static int MaxClassLevelOf(string skillId, Race race, BaseClass baseClass,
-        Archetype? archetype, Discipline? discipline = null)
+        Archetype? archetype, Discipline? discipline = null, bool fourth = false)
     {
         int max = 0;
-        foreach (var cs in Cumulative(race, baseClass, archetype, discipline))
+        foreach (var cs in Cumulative(race, baseClass, archetype, discipline, fourth))
             if (cs.SkillId == skillId && cs.SkillLevel > max)
                 max = cs.SkillLevel;
         return max;
@@ -213,9 +253,9 @@ public static class ClassSkills
 
     /// <summary>Can this class ever learn this skill at all?</summary>
     public static bool CanClassLearn(string skillId, Race race, BaseClass baseClass,
-        Archetype? archetype, Discipline? discipline = null)
+        Archetype? archetype, Discipline? discipline = null, bool fourth = false)
     {
-        foreach (var cs in Cumulative(race, baseClass, archetype, discipline))
+        foreach (var cs in Cumulative(race, baseClass, archetype, discipline, fourth))
             if (cs.SkillId == skillId)
                 return true;
         return false;
@@ -224,9 +264,9 @@ public static class ClassSkills
     /// <summary>The class-specific display name for a skill (falls back to the
     /// SkillDef's canonical name). Same shared id, different label per class.</summary>
     public static string DisplayName(string skillId, Race race, BaseClass baseClass,
-        Archetype? archetype, Discipline? discipline = null)
+        Archetype? archetype, Discipline? discipline = null, bool fourth = false)
     {
-        foreach (var cs in Cumulative(race, baseClass, archetype, discipline))
+        foreach (var cs in Cumulative(race, baseClass, archetype, discipline, fourth))
             if (cs.SkillId == skillId && !string.IsNullOrEmpty(cs.DisplayName))
                 return cs.DisplayName!;
         return SkillCatalog.Get(skillId)?.Name ?? skillId;
@@ -234,9 +274,9 @@ public static class ClassSkills
 
     /// <summary>The class-specific icon key for a skill (null if none set).</summary>
     public static string? Icon(string skillId, Race race, BaseClass baseClass,
-        Archetype? archetype, Discipline? discipline = null)
+        Archetype? archetype, Discipline? discipline = null, bool fourth = false)
     {
-        foreach (var cs in Cumulative(race, baseClass, archetype, discipline))
+        foreach (var cs in Cumulative(race, baseClass, archetype, discipline, fourth))
             if (cs.SkillId == skillId && !string.IsNullOrEmpty(cs.Icon))
                 return cs.Icon;
         return null;

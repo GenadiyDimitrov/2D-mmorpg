@@ -771,14 +771,27 @@ public static class StatCalculator
     /// fail chance like 3-4"*). FLAT and additive on purpose: multiplying it would make a 4-point
     /// dodge worth almost nothing at parity (1% × 1.04) and enormous at a level gap, which is the
     /// opposite of a defensive burst. The only source today is the rogue's Evasion Boost.</param>
+    /// <param name="defenderFlatPoints">"M.Evasion" — percentage POINTS the DEFENDER adds to the roll,
+    /// making spells aimed at them fail more often.</param>
+    /// <param name="casterFlatPoints">"M.Accuracy" — percentage POINTS the CASTER takes back off it,
+    /// and the exact mirror of the line above (owner, 2026-08-26, asking what M.Acc was: *"the mAcc is
+    /// magic fizzle chance? what does Magic evasion do? so the oposite"* — yes, and yes).
+    ///
+    /// <para>⚠ This is NOT a reopening of the caster-side accuracy STAT the 2026-08-10 rework deleted.
+    /// That was a stat you carried and levelled; this is a flat grant a specific skill hands out, on
+    /// the same footing M.Evasion has had since 2026-08-11. Nothing derives it from WIT or from
+    /// anything else, and no gear rolls it — it exists because his Marks author it, and if no skill
+    /// authors it the number is 0 and the formula is what it was.</para></summary>
     public static float MagicFailChance(int attackerLevel, int defenderLevel,
                                         float defenderMod = 1f, float weaponMod = 1f,
-                                        float defenderFlatPoints = 0f)
+                                        float defenderFlatPoints = 0f,
+                                        float casterFlatPoints = 0f)
     {
         float levelMod = MathF.Pow(StatCaps.MagicLevelBase, defenderLevel - attackerLevel);
         float points = MathF.Round(StatCaps.MagicFailParityPoints * levelMod
                                    * Math.Max(0f, defenderMod) * Math.Max(0f, weaponMod))
-                     + Math.Max(0f, defenderFlatPoints);
+                     + Math.Max(0f, defenderFlatPoints)
+                     - Math.Max(0f, casterFlatPoints);
         return Math.Clamp(points / 100f, 0f, StatCaps.MagicFailMax);
     }
 

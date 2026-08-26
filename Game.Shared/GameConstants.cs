@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.84.0";
+    public const string GameVersion = "0.85.0";
 
     // ----- SP BOTTLE (owner, 2026-08-26) -------------------------------------------------------
     // *"u can make an npc to take your 1kkk SP + 100kk gold and give you a tradable/sellabel
@@ -119,7 +119,15 @@ public static class GameConstants
     /// that now exist, rubber-band along walls that no longer do, and draw the old outline on the map.
     /// Nothing crashes — which is exactly why the handshake has to catch it. Same reasoning as 23 → 24,
     /// where the client-side rules, not the DTO, were what forced the number.
-    public const int ProtocolVersion = 26;
+    /// 26 → 27 (2026-08-26): the FOURTH-CLASS KIT. Second bump running where not a byte of the wire
+    /// moved, and for the same reason as 25 → 26: the thing that changed is SHARED CODE both halves
+    /// compile. <see cref="ClassSkills.ClassKey"/> grew a TIER and `Cumulative` a `fourth` flag, and the
+    /// client builds its Learn tab LOCALLY from the compiled tables rather than from a server push —
+    /// so an old APK against this server shows an ascended Lightbringer an EMPTY 76-90 ladder, no
+    /// Sigils tab at all, and eighteen skills it has never heard of arriving in its Learned map. It
+    /// would not crash; it would simply be blind to the whole feature while the server happily sold it.
+    /// That is precisely the case the handshake exists to catch. ⚠ A NEW APK IS REQUIRED.
+    public const int ProtocolVersion = 27;
 
     /// <summary>
     /// The oldest protocol this server still speaks. Equal to <see cref="ProtocolVersion"/> means
@@ -361,6 +369,12 @@ public static class GameConstants
     /// outpost or a dungeon entrance. Read it through <see cref="SafeZoneRegen"/>, never by testing
     /// <see cref="InSafeZone"/> yourself — safety and rest are two different questions now.</summary>
     public const int SafeZoneRegenMultiplier = 2;
+
+    /// <summary>How full a resurrected player stands up, as a fraction of max HP and MP, when the
+    /// skill that raised them does not say otherwise. Every res before the 4th tier used this number
+    /// and the scroll still does; his `healer 4th.csv` is the first to override it (35% at 76, 40% at
+    /// 80) — see <c>SkillDef.ResHpPct</c>.</summary>
+    public const float DefaultResurrectHpPct = 0.30f;
 
     /// <summary>The regen multiplier a point is worth: the city bonus inside a resting safe zone,
     /// 1 everywhere else (open world, outposts, dungeon entrances).</summary>

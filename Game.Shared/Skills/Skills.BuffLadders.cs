@@ -225,7 +225,12 @@ public static partial class SkillCatalog
     /// 42 by formula and 26 in his sheet — so the sheet wins and the formula is only a default for the
     /// rungs no CSV has reached yet. Don't "regularise" a ladder that looks irregular here: it looks
     /// that way because a cleric rung and a buffer rung were priced on different days.</summary>
-    private readonly record struct RungCost(int Total, int Sp);
+    /// <param name="Sp">The SP price. 0 = "nobody authored this rung", falling back to the BuffSpCosts
+    /// ladder; NEGATIVE = authored as genuinely FREE in SP, which is what every 4th-tier rung above
+    /// level 79 is — past 80 his ladder charges gold and no SP at all, and a plain 0 there would have
+    /// been read as "unpriced" and silently handed the 3rd-tier SP price.</param>
+    /// <param name="Gold">The gold price of the rung (0 = free). Only the 4th tier uses it.</param>
+    private readonly record struct RungCost(int Total, int Sp, int Gold = 0);
 
     /// <summary>One castable single buff, with a level per rung of its family. Where his CSV prices a
     /// rung, `costs` carries that price verbatim; where it does not, MP climbs across the rungs from
@@ -249,7 +254,8 @@ public static partial class SkillCatalog
                    : n == 1 ? SingleBuffMpLow
                    : SingleBuffMpLow + (SingleBuffMpHigh - SingleBuffMpLow) * i / (n - 1);
             levels[i] = new SkillLevel(MpCost: mp,
-                SpCost: c.Sp > 0 ? c.Sp : BuffSpCosts[Math.Min(i, BuffSpCosts.Length - 1)],
+                SpCost: c.Sp < 0 ? 0 : c.Sp > 0 ? c.Sp : BuffSpCosts[Math.Min(i, BuffSpCosts.Length - 1)],
+                GoldCost: c.Gold,
                 ChildBuffs: new[] { children[i] }, Description: text(children[i]));
         }
         // The def's own MpCost/SpCost are level 1's — a skill with Levels reads them per level, but
@@ -345,6 +351,14 @@ public static partial class SkillCatalog
         list.Add(CcResistRung(FamCcResPhys, "Fortitude", 2, physical: 0.20f));
         list.Add(CcResistRung(FamCcResPhys, "Fortitude", 3, physical: 0.30f));
         list.Add(CcResistRung(FamCcResPhys, "Fortitude", 4, physical: 0.40f));
+        // ---- RUNGS 5-12 are the healer's 4th tier (`healer 4th.csv`, 76-90 every other level): 43%
+        //      climbing to 65%. ⚠ FORTITUDE IS THE ONLY BUFF FAMILY HIS 4th-TIER FILE CONTINUES — every
+        //      other single (Might, Ward, Focus, Resolve …) stops at the 3rd class, which is his file,
+        //      not an omission here. Don't extend the others "for symmetry".
+        foreach (var (rank, pct) in new[]
+                 { (5, 0.43f), (6, 0.47f), (7, 0.50f), (8, 0.54f),
+                   (9, 0.57f), (10, 0.60f), (11, 0.63f), (12, 0.65f) })
+            list.Add(CcResistRung(FamCcResPhys, "Fortitude", rank, physical: pct));
 
         // ═══ RUNGS 1 AND 2 ARE HIS, verbatim (2026-08-20) ═══════════════════════════════════════════
         //   L1, cleric @35:            −7% HP/MP, +5% P/M.Atk, +5% atk/cast speed, +5 move, −5 eva
@@ -465,6 +479,17 @@ public static partial class SkillCatalog
         // whatever levels happened to claim those rungs. Do not smooth one.
         RungCost[] C(params RungCost[] c) => c;
         RungCost R(int total, int sp) => new(total, sp);
+        // A 4th-TIER rung: his price is a function of the LEVEL it is learned at, and it is the same
+        // ladder every 76-90 skill runs on (see SkillCatalog's HealerFourthSp/Gold). Sp −1 = free in SP.
+        RungCost R4(int total, int level)
+        {
+            int[] sp   = { 6_500_000, 11_000_000, 16_000_000, 80_000_000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            int[] gold = { 1_000_000, 1_000_000, 1_000_000, 1_000_000, 5_000_000, 7_500_000, 10_000_000,
+                           15_000_000, 30_000_000, 50_000_000, 75_000_000,
+                           100_000_000, 100_000_000, 100_000_000, 100_000_000 };
+            int i = Math.Clamp(level - 76, 0, sp.Length - 1);
+            return new RungCost(total, sp[i] == 0 ? -1 : sp[i], gold[i]);
+        }
         // The healer's per-LEVEL buff price, so his rows read as the level he wrote them at rather
         // than as two loose numbers. (Serenity @40 is the one row that breaks the table: 80 / 32k.)
         RungCost H40 = R(60, 19000),  H44 = R(72, 22000),  H48 = R(75, 32000),  H52 = R(80, 38000);
@@ -526,8 +551,14 @@ public static partial class SkillCatalog
         // not a magnitude — the wrapper still buffs, it just has no flag that describes it.
         Castable(FamCcResMag, "Clarity", SkillEffect.None, Rungs(FamCcResMag, 4), "a mind harder to bind",
             C(R(26, 3200), H40, H48, H56));
-        Castable(FamCcResPhys, "Fortitude", SkillEffect.None, Rungs(FamCcResPhys, 4), "a body harder to break",
-            C(H40, H52, H64, H72));
+        // ⚠ FORTITUDE RUNS TO TWELVE, alone among the singles: `healer 4th.csv` continues it 76-90 while
+        //    every other family stops at the 3rd class. Rungs 5-12 are that file's own MP ladder (130
+        //    → 200, +10 a rung) and its 4th-tier SP/gold, which is 6.5kk at 76 falling to ZERO SP from
+        //    80 — past 80 a rung is bought with gold, and the gold rides on the level.
+        Castable(FamCcResPhys, "Fortitude", SkillEffect.None, Rungs(FamCcResPhys, 12), "a body harder to break",
+            C(H40, H52, H64, H72,
+              R4(130, 76), R4(140, 78), R4(150, 80), R4(160, 82),
+              R4(170, 84), R4(180, 86), R4(190, 88), R4(200, 90)));
         // The shield pair — LEARNABLE at last (his healer rows at 40-70 and 58-72 respectively). They
         // still double as the children of *Shield Bless and Harden*, the buffer's group at 66, which
         // now names each family's TOP rung.

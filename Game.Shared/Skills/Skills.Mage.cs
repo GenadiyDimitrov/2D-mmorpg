@@ -150,7 +150,7 @@ public static partial class SkillCatalog
                 // Level 7 = the healer's level-40 row (`healer 3rd.csv`, his).
                 new SkillLevel(SpCost: 36000, Passive: new PassiveEffect(MagicDefence: 43, MagicResist: 0.15f),
                     Description: "+43 magic defence and 15% magic resistance."),
-            }.Concat(HealerAntiMagicRungs()).ToArray()),
+            }.Concat(HealerAntiMagicRungs()).Concat(HealerFourthAntiMagicRungs()).ToArray()),
 
         // Vampiric Bolt — magic nuke that heals the caster for 40% of damage dealt. Level 1 is
         // the base-mage skill (@14); the Nuker CONTINUES it at levels 2-5 (@20/25/30/35).

@@ -219,6 +219,16 @@ public record SkillDef(
     // says "Require: Box/Blunt", so it is inert with a bow.
     float ProcChance = 0f,
     int ProcCooldownTicks = 0,
+    // DEFENSIVE trigger (the Sigils, 2026-08-26): roll this proc when the owner TAKES damage instead
+    // of when they deal it. Same chance, same cooldown, same rung payload — only the moment differs,
+    // and the two triggers are mutually exclusive on one passive. His sigils need both shapes in the
+    // same breath ("3% chance on attack …" vs "3% chance on dmg received …"), so it is a flag on the
+    // existing machinery rather than a second one.
+    bool ProcOnDamaged = false,
+    // Narrows a ProcOnDamaged trigger to MAGIC hits only — his Strong Spirit is *"with 20% chance on
+    // magic dmg taken"*, and a passive that fired on a sword swing would be a different skill.
+    // Inert unless ProcOnDamaged is set.
+    bool ProcMagicOnly = false,
     // The buff rungs the proc hands out, INDEXED BY THIS PASSIVE'S LEVEL (rung[level-1]). Two arrays
     // because the caster and the party get DIFFERENT rungs of the SAME family — his design, 2026-08-21:
     // *"half of both goes to the party as buff (u get the 20% and party 10%) -> so something like 6
@@ -327,6 +337,10 @@ public record SkillDef(
     // ResExpPct (0..1) of the exp they lost to the death penalty. The SkillEffect enum is full, so this
     // rides as a flag field.
     bool Resurrect = false, float ResExpPct = 0f,
+    // How full the revived ally stands up — a FRACTION of their max HP and MP. 0 = the game default
+    // (30%), which is what every res before the 4th tier used and what the scroll still uses. His
+    // `healer 4th.csv` is the first thing to move it: *"Revive at 35% HP/MP"* @76, 40% @80.
+    float ResHpPct = 0f,
     // KeepsBuffsOnDeath (Angel's Protection / noblesse): a self-buff that, while up, makes death remove ONLY
     // the protection buff(s) and keep every OTHER buff. Rides as a flag field so a buff with no stat effect
     // can still exist purely as this marker. The SkillEffect enum is full.
@@ -335,6 +349,16 @@ public record SkillDef(
     // of leaving you dead — the future tank self-res / healer target-auto-res. Angel's Protection does NOT
     // set this (it only preserves buffs; you still need a manual res). Groundwork: no shipped skill uses it yet.
     bool AutoResurrect = false,
+    // IMMORTALITY (the Immortality Sigil, owner 2026-08-26): while this buff is up the holder's HP is
+    // FROZEN. His words, verbatim: *"Immortality: HP is unchanged; move and casts are unnafected ->
+    // also healing dont increase HP as DMG dont decrease it"*.
+    //
+    // 🔑 NOT `Entity.Immune`, which makes attacks MISS. A hit still lands here — it still threatens,
+    // still flags PvP, still contests your cast, still applies its debuff — it just moves no HP. And
+    // the freeze cuts BOTH ways, which is the balancing half of it: a healer cannot top you up during
+    // it, so five seconds of immortality is five seconds you do not spend healing.
+    // Rides as a flag field: the SkillEffect enum is full (1L << 62 was the last bit).
+    bool FreezesHp = false,
     // REWARD RATES — what this buff does to the four things a monster pays (exp / sp / gold / drop
     // chance). This is the premium REWARD RUNE family; see RewardRates. A multi-level rune puts its
     // rung here per LEVEL (SkillLevel.Rewards) — read it with RewardsAt(level), never this field
@@ -436,6 +460,16 @@ public record SkillDef(
     //
     // Toggles are excluded by the engine regardless (CountsAgainstBuffCap), as are debuffs and the
     // gear/rune row; this flag is for the collected buffs that remain.
+    // HEAL POWER (caster side) and HEAL RECEIVED (target side) granted by this BUFF. Fractions for the
+    // two Pct fields, a flat number for the first. Ride as fields, like everything else down here,
+    // because the SkillEffect flag enum is FULL. Per-LEVEL twins live on SkillLevel.
+    // "M.Accuracy" this BUFF grants — flat percentage points off the holder's own spell-fail roll. The
+    // mirror of SkillEffect.BuffMagicEvasion, which is a real flag; this rides as a field because the
+    // enum has no bits left. Per-LEVEL twin on SkillLevel.
+    float BuffMagicAccuracy = 0f,
+    int BuffHealPowerFlat = 0,
+    float BuffHealPowerPct = 0f,
+    float BuffHealReceivedPct = 0f,
     bool CountsTowardBuffLimit = true)
 {
     /// <summary>Hash on the ID alone — and this override MUST stay.
@@ -485,6 +519,36 @@ public record SkillDef(
     /// SkillDef's ResExpPct for a single-level res, e.g. the scrolls).</summary>
     public float ResExpPctAt(int level) => Lvl(level)?.ResExpPct ?? ResExpPct;
 
+    /// <summary>How long this level's effect lasts, in ticks. Falls back to the skill's own.</summary>
+    public int DurationTicksAt(int level)
+    {
+        int v = Lvl(level)?.DurationTicks ?? 0;
+        return v > 0 ? v : DurationTicks;
+    }
+
+    /// <summary>How many reagents this level consumes. Falls back to the skill's own.</summary>
+    public int ConsumableAmountAt(int level)
+    {
+        int v = Lvl(level)?.ConsumableAmount ?? 0;
+        return v > 0 ? v : ConsumableAmount;
+    }
+
+    /// <summary>This level's reuse delay in ticks, falling back to the skill's own.</summary>
+    public int CooldownTicksAt(int level)
+    {
+        int v = Lvl(level)?.CooldownTicks ?? 0;
+        return v > 0 ? v : CooldownTicks;
+    }
+
+    /// <summary>How full a revived ally stands up at this level, as a fraction of max HP/MP. Falls
+    /// back through the level, then the def, then the game-wide 30%.</summary>
+    public float ResHpPctAt(int level)
+    {
+        float lvl = Lvl(level)?.ResHpPct ?? 0f;
+        if (lvl > 0f) return lvl;
+        return ResHpPct > 0f ? ResHpPct : GameConstants.DefaultResurrectHpPct;
+    }
+
     /// <summary>Resolve this level's PHYSICAL {Flat, Mod}. The old <c>Power</c> IS the Flat part and Mod
     /// defaults to 1, so an untuned skill is exactly K·(Power + pAtk)/def (no change). To make a skill scale
     /// with pAtk later, just set <c>Mod</c> (e.g. 2.0) — the Power stays as the flat FLOOR automatically;
@@ -531,6 +595,34 @@ public record SkillDef(
     {
         float v = Lvl(level)?.CcResistMagical ?? 0f;
         return v > 0f ? v : CcResistMagical;
+    }
+
+    /// <summary>Heal POWER this level of the buff grants its holder (flat), falling back to the def.</summary>
+    public int HealPowerFlatAt(int level)
+    {
+        int v = Lvl(level)?.HealPowerFlat ?? 0;
+        return v != 0 ? v : BuffHealPowerFlat;
+    }
+
+    /// <summary>Heal POWER as a fraction, same fallback.</summary>
+    public float HealPowerPctAt(int level)
+    {
+        float v = Lvl(level)?.HealPowerPct ?? 0f;
+        return v != 0f ? v : BuffHealPowerPct;
+    }
+
+    /// <summary>Heal RECEIVED (target side) as a fraction, same fallback.</summary>
+    public float HealReceivedPctAt(int level)
+    {
+        float v = Lvl(level)?.HealReceivedPct ?? 0f;
+        return v != 0f ? v : BuffHealReceivedPct;
+    }
+
+    /// <summary>"M.Accuracy" points this level grants, falling back to the def's.</summary>
+    public float MagicAccuracyAt(int level)
+    {
+        float v = Lvl(level)?.MagicAccuracy ?? 0f;
+        return v != 0f ? v : BuffMagicAccuracy;
     }
 
     /// <summary>Per-school control resistance at a LEVEL. See <see cref="CcResistMagicalAt"/>.</summary>
@@ -735,6 +827,8 @@ public record SkillLevel(
     int GoldCost = 0,
     // Resurrect skills: fraction (0..1) of the target's lost exp restored at THIS level.
     float ResExpPct = 0f,
+    // Revive fullness at THIS level (0 = inherit the SkillDef's, which in turn falls back to 30%).
+    float ResHpPct = 0f,
     // IMPROVED (group) buff: the CHILD buff ids this LEVEL applies (see SkillDef.ChildBuffs).
     // A group buff's levels are pure child references — level N simply names a stronger rung of
     // each family's ladder. null = inherit the SkillDef's ChildBuffs.
@@ -780,7 +874,27 @@ public record SkillLevel(
     // DEBUFF SUCCESS MULTIPLIER at THIS level (0 = inherit the SkillDef's). See SkillDef.DebuffLandMod.
     // His ask names the ladder explicitly — *"a sucess multiplier (per skill/lvl)"* — so a hold whose
     // rungs are otherwise identical can still get more reliable as it climbs.
-    float DebuffLandMod = 0f);
+    float DebuffLandMod = 0f,
+    // DURATION at THIS level, in ticks (0 = inherit the SkillDef's DurationTicks). Almost every buff in
+    // the game runs one duration for its whole ladder — the healer's 4th-tier Bind is the exception, and
+    // it is his: *"intentional increasing in duration"*, 31s at 76 climbing to 40s at 90.
+    int DurationTicks = 0,
+    // REAGENT COUNT at THIS level (0 = inherit the SkillDef's ConsumableAmount). His Ultimate Heal costs
+    // ONE Skill Stone at the 3rd tier and TWO at the 4th (the party version, four then five) — the same
+    // skill, a dearer price for the stronger rungs, which is the only thing keeping it off the rotation.
+    int ConsumableAmount = 0,
+    // REUSE DELAY at THIS level, in ticks (0 = inherit the SkillDef's CooldownTicks). His 4th-tier
+    // Resurrection drops from 10s to 5s and Ultimate Party Heal from 5s to 2s — a rung buying a shorter
+    // reuse is a real ladder, and without this the whole skill would have taken the 4th tier's number.
+    int CooldownTicks = 0,
+    // HEAL POWER / HEAL RECEIVED granted by THIS level of a BUFF (0 = inherit the SkillDef's). The
+    // healer's Healer's Power is a five-rung ladder of +1000 … +2000 flat heal power, and the Ork's
+    // Spirit Restoration leaves +30% healing RECEIVED behind it. Both channels existed only as
+    // PASSIVE fields until the 4th tier; these are their buff-side twins.
+    int HealPowerFlat = 0,
+    float HealPowerPct = 0f,
+    float HealReceivedPct = 0f,
+    float MagicAccuracy = 0f);
 
 /// <summary>What a buff does to the four things a MONSTER pays out: experience, skill points, the
 /// gold it drops and the CHANCE its table rolls. The premium rune family (Rune of Experience /
@@ -946,7 +1060,32 @@ public readonly record struct PassiveEffect(
     // BL-08: chance that a DEBUFF cast at you lands on its caster instead — *"u cast on tank he
     // reflects u get the debuff"*. Rolled before the land/fizzle contest; a reflected debuff is
     // not re-rolled and cannot bounce a second time.
-    float DebuffReflectChance = 0f)
+    float DebuffReflectChance = 0f,
+    // ---- 4th TIER (2026-08-26) -------------------------------------------------------------------
+    // CONTROL RESISTANCE, PER SCHOOL, as a PASSIVE. The buff side of this already existed on SkillDef
+    // (the healer's Clarity/Fortitude); his `shared 4th.csv` needs the same two numbers on an always-on
+    // passive — *"Increase resistance to SPT debuffs by 20%"* (Strong Body) and *"…CON debuffs by 10%"*
+    // (Strong Mind), plus the Holy Protection / Fortitude Sigils. Summed with the buff sources and
+    // clamped once, in RecomputeDerived, so a passive and a buff cannot together make you CC-immune.
+    float CcResistMagical = 0f,
+    float CcResistPhysical = 0f,
+    // MP-COST REDUCTION as a passive (fractions; positive = cheaper). His Magic Proficiency's *"decrease
+    // MP consumation with 5%"* and the 78+ rungs of Healer Armor Mastery. Same two channels the buff
+    // side uses (SkillDef.PhysMpCostPct / MagicMpCostPct) and the same clamp, so a mastery, a Mana
+    // Blessing and a Mana Strain all meet in one number.
+    float PhysMpCostPct = 0f,
+    float MagicMpCostPct = 0f,
+    // "M.Evasion" — flat points added to the chance a spell aimed at the HOLDER fails. The buff channel
+    // is SkillEffect.BuffMagicEvasion; this is its passive twin, for the Agility Sigil's
+    // *"Increase P/M.Evasion +3"* (the P half is `Evasion` above).
+    float MagicEvasion = 0f,
+    // "M.Accuracy" — the exact MIRROR of the line above: flat points taken OFF the fail chance of the
+    // holder's OWN spells. His Holy Mark authors +4 and his Blood Mark +3. See StatCalculator.MagicFailChance.
+    float MagicAccuracy = 0f,
+    // PvP DAMAGE TAKEN, as a delta: −0.05 = the Duel Sigil's *"5% PvP Defence"*. Multiplied into
+    // Entity.PvpDamageTaken exactly as the armour-set channel (StatMods.PvpDamageTakenPct) is, so the
+    // two compose. Inert outside player-vs-player.
+    float PvpDamageTakenPct = 0f)
 {
     /// <summary>Hash on a few representative fields instead of all ~60. Same IL2CPP bracket-nesting
     /// reason as <see cref="SkillDef.GetHashCode"/>: this record is the SECOND largest in the
@@ -1002,6 +1141,9 @@ public static partial class SkillCatalog
         list.AddRange(WarchanterKitSkills()); // Skills.Warchanter3rd.Kit.cs (his 40-74 passives/actives/toggles)
         list.AddRange(MobSpellSkills());      // Skills.MobSpells.cs (caster-mob nuke + jab)
         list.AddRange(RewardRuneSkills());    // Skills.RewardRunes.cs (exp/sp/gold/drop runes + Sinister/Sinners)
+        list.AddRange(Lightbringer4thSkills()); // Skills.Lightbringer4th.cs (his `healer 4th.csv` 76-90 kit)
+        list.AddRange(Shared4thSkills());     // Skills.Shared4th.cs (his `shared 4th.csv` ALL-CLASSES passives)
+        list.AddRange(SigilSkills());         // Skills.Sigils.cs (the 4th class's 18 Attack/Defence/Support sigils)
 
         var dict = new Dictionary<string, SkillDef>();
         foreach (var sk in list)

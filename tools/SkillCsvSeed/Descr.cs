@@ -430,12 +430,12 @@ internal static class Descr
         if (scope is null)
         {
             Add("aggro", false, def.TauntPowerAt(level));
-            if (def.ConsumableId.Length > 0) Add("reagent", false, def.ConsumableAmount);
+            if (def.ConsumableId.Length > 0) Add("reagent", false, def.ConsumableAmountAt(level));
             Add("lifesteal", true, def.Lifesteal);
             Add("skilleva", true, def.SkillEvadeChance);
             Add("resexp", true, def.ResExpPctAt(level));
-            Add("ccresist", true, def.CcResistMagical);
-            Add("ccresist", true, def.CcResistPhysical);
+            Add("ccresist", true, def.CcResistMagicalAt(level));
+            Add("ccresist", true, def.CcResistPhysicalAt(level));
             foreach (var childId in def.ChildBuffsAt(level) ?? Array.Empty<string>())
                 if (SkillCatalog.Get(childId) is SkillDef c)
                 {

@@ -7,12 +7,121 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.84.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.85.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-08-26 (latest) — 0.84.0: interrupt is IG's own formula — damage vs your HP pool, Resolve becomes a percent, his debuff ladders plateau, the nuker's two Frost skills get x2 interrupt, and an SP Broker sells SP Bottles you must confirm before drinking
-## 2026-08-26 (latest) — 0.84.0: interrupt is IG's own formula — damage vs your HP pool, and Resolve becomes a percent
+## 2026-08-26 (latest) — 0.85.0: the FOURTH CLASS finally teaches something — the Lightbringer's 76-90 kit, an all-classes shared kit, and eighteen SIGILS on a tab of their own
+
+The 4th class has existed since 0.70.0 and granted **nothing but a name**. The reason was written
+into `Classes.Fourth.cs` at the time: `ClassKey` had no tier, so a 4th kit registered against
+`Discipline.Lightbringer` would have leaked to every level-40 Lightbringer. That tier exists now, and
+with it his three finished 4th-tier files are built.
+
+### The tier
+
+`ClassSkills.ClassKey` gained a `Fourth` flag and `Cumulative` a `fourth` parameter, threaded through
+the learn gate, the SP price, the learn list, the rung-level lookup (which the fizzle and contested
+rolls read) and the client's Learn tab. **Level 76 is not the gate** — the 100kk Rite of Ascension is.
+A level-76 Lightbringer who has not paid is offered exactly what they were offered at 75.
+
+### `healer 4th.csv` — the Lightbringer, 76 to 90
+
+Twenty ladders continue past 74 and eleven families are new.
+
+- **Continued**: Anti-Magic (M.Def 113→149, mRes 30→35%), Spellcaster Weapon Mastery, Healer Armor
+  Mastery (which now also carries an M.Def **percent** and an MP-cost cut), Holy Ray, Great Heal,
+  Party Great Heal, Quick Great Heal, Healer Blessing, Healing Totem, Ultimate Heal and its party
+  twin, Mana Ray, Mana Strain, Weapon Break, Gravity / Bind / Armor Break, Mana Blessing, Fortitude,
+  Resurrection, Resurrection Field, Antidote.
+- **New**: Healer's Shield Mastery, Arcane Resistance, Holy Blessing (the only cure in the game with
+  no rank ceiling), Holy Soul (a toggle), Healer's Power, Healer Party Blessing (Elf), the three
+  **Restorations** (one per race, one-hour reuse) and the three **Marks** (one per race, one shared
+  buff key — an ally wears one Mark, never two).
+- **Rite of Preservation moved tiers.** It arrived in 0.70.0 as one of two skills he named
+  individually, before there was a 4th file to hold it. His CSV now carries it, so the CSV wins: 500
+  MP, a 1s cast, 500kk SP + 100kk gold and **five Holy Stones**, and its learn line moved off the
+  3rd-class table. 🔴 The Bulwark's twin (Undying Will) did NOT move — `tank 4th.csv` is still a
+  placeholder, and re-tiering a skill with no file behind it would put it out of reach with nothing
+  to say when.
+
+### `shared 4th.csv` — every class, same rows
+
+Five passives, registered once rather than fanned across 36 (race, discipline) keys: **Strong Mind**
+and **Strong Body** at 76 (the two halves of debuff resistance, split by the stat that defends them —
+Mind for Spirit, Body for Constitution), and at 83 **Arcane Protection** (+15% M.Def and a magic-only
+defensive proc), **Magic Proficiency** and **Physical Proficiency** (weapon-conditional, with a proc of its own).
+
+### Named on the way past
+
+His `buffer 4th.csv` has a party-wide Mark at 79 that had no name yet; it is **Harmony Mark**. It
+keeps the family's `<Word> Mark` shape rather than flipping to "Mark of Harmony", and HARMONY is the
+buffer's own signature the way Holy / Life / Blood are the three races'. 🔴 Not built — that file is
+still in progress — but when it lands it MUST share the Marks' buff key, or a healer's Mark and a
+buffer's would stack.
+
+### The SIGILS — eighteen passives, three slots, one tab
+
+His file called them *runes*; **RUNE was already a held item** in this game (War Rune / Spell Rune)
+and **MARK** is now the Prophecy-shaped blessings, so he chose **Sigil**. Six class flavours × Attack
+/ Defence / Support, 20kk SP + 10kk gold each, and **any class may take any of them** — his
+"Fighter ideal: …" lines are advice, and he relabelled them *ideal* the moment it was asked.
+
+The exclusion rule is **two** rules, both read straight off his REPLACES column: one per **slot**
+(carried by `ExclusiveGroup`, which the learn path already enforces) and one per **flavour** (its own
+check). So the three you wear always come from three different classes.
+
+- A **SIGILS tab** in the Skills window, laid out as three slots rather than eighteen skills, shaped
+  after the Stat-Swap tab as he asked. It refuses to open before the ascension, and a row you cannot
+  take says *which* of the two rules is stopping you — the server refuses both and a tab that drew
+  them identically would look broken.
+- **Reset at the Mindwright** for 10kk gold **per sigil**, no SP and no gold refunded. Everything
+  else there is still free to forget; that was the deal those were sold under.
+
+### Engine work these needed
+
+- **A defensive PROC trigger.** Half the sigils are "chance on damage *received*", so the on-hit proc
+  machinery grew `ProcOnDamaged` (and `ProcMagicOnly`, for Arcane Protection). A proc payload can now pay
+  out in HP or MP as well as in a buff — the handler dispatches on the rung's own effect flags.
+- **Immortality.** `FreezesHp`: while it is up the holder's HP does not move — damage takes none off
+  and healing puts none back, exactly as he described it. It is **not** `Immune`: the blow lands, it
+  still threatens, still flags PvP, still contests your cast. The freeze cuts both ways, which is the
+  balancing half of it.
+- **Five new per-level fields** — `DurationTicks`, `CooldownTicks`, `ConsumableAmount`, `ResHpPct` and
+  the heal-power pair. Every one is a ladder his 4th tier authors and the 3rd did not: Bind's hold
+  grows 31→40s, Ultimate Heal's reagent goes 1→2, Resurrection stands you up at 35% then 40%.
+- `PassiveEffect` gained the per-school CC resists, an MP-cost cut, magic evasion and PvP damage
+  taken; `StatMods` gained `MpCostPct`.
+- **M.ACCURACY, the mirror of M.Evasion.** He asked what his Marks' `M.Acc` meant and answered it in
+  the asking — *"the mAcc is magic fizzle chance? what does Magic evasion do? so the oposite"*. Yes:
+  `MagicFailBonus` is flat percentage POINTS the DEFENDER adds to your spell's fail roll, and
+  `MagicAccuracy` is now the same points taken back off it by the CASTER. Holy Mark grants +4, Blood
+  Mark +3. ⚠ This does NOT reopen the caster-side accuracy STAT the 2026-08-10 rework deleted — that
+  was something you carried and levelled; this is a flat grant a named skill hands out, on exactly the
+  footing M.Evasion has had since 2026-08-11. Nothing derives it and no gear rolls it.
+
+### The tooling
+
+`SkillCsvSeed --check` now walks `healer 4th.csv` **and** `shared 4th.csv`, and three of its own bugs
+came out in the process: `kk` parsed as thousands (so every 4th-tier price read 6500 instead of
+6,500,000), a passive's CD/DURATION columns were compared against the skill's own zeroes rather than
+against its **proc's**, and anything with an `ExclusiveGroup` was skipped — which would have hidden
+all eighteen sigils. ✅ Green on all eleven files.
+
+### 🔴 Two CSV typos corrected, both flagged
+
+Per the standing monotonic rule, a value that goes backwards is a typo. **Party Great Heal @82** read
+760, below the 770 at 81; it is **775**. **Mana Blessing @90** read an MP cost of **20** against 190
+at 88; it is **200**. Both were changed in the CSV so `--check` stays honest — if either was meant,
+the CSV is the authority and they come back.
+
+⚠ **Protocol 26 → 27, and a new APK is required.** Not a byte of the wire moved — the same shape as
+25 → 26. The client builds its Learn tab from the compiled class tables, so an old APK shows an
+ascended Lightbringer an empty 76-90 ladder and no Sigils tab at all. No `game.db` delete is owed.
+
+
+## 2026-08-26 — 0.84.0: interrupt is IG's own formula — damage vs your HP pool, Resolve becomes a percent, his debuff ladders plateau, the nuker's two Frost skills get x2 interrupt, and an SP Broker sells SP Bottles you must confirm before drinking
+## 2026-08-26 — 0.84.0: interrupt is IG's own formula — damage vs your HP pool, and Resolve becomes a percent
 
 He brought IG's interrupt formula, which is what 0.83.0's model was explicitly parked waiting for.
 It replaces that model whole; almost nothing of it survives.

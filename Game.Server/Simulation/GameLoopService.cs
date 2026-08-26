@@ -1550,7 +1550,7 @@ public class GameLoopService : BackgroundService
         }
 
         // This (skill, level) must be on the class list and the level gate met.
-        int gate = ClassSkills.LearnLevelOf(def.Id, target, player.Race, player.BaseClass, player.Archetype, player.Discipline);
+        int gate = ClassSkills.LearnLevelOf(def.Id, target, player.Race, player.BaseClass, player.Archetype, player.Discipline, player.HasFourthClass);
         if (gate == 0)
         {
             SendSystemToEntity(player, cur == 0
@@ -1587,6 +1587,19 @@ public class GameLoopService : BackgroundService
             }
         }
 
+        // THE SIGILS' SECOND RULE: one per SLOT is the ExclusiveGroup check just above, which every
+        // permanent choice in the game already runs on. This is the other half — ONE PER CLASS FLAVOUR,
+        // straight off his REPLACES column (Holy Protection replaces Healer Attack and Healer Support
+        // as well as every other class's Defence). So the three sigils you end up wearing always come
+        // from three DIFFERENT flavours, and "all three Healer sigils" is not a build.
+        if (cur == 0 && SkillCatalog.SigilFlavourClash(def.Id, player.LearnedSkills) is { } worn)
+        {
+            string wornName = SkillCatalog.Get(worn)?.Name ?? worn;
+            SendSystemToEntity(player,
+                $"You already bear {wornName}. One sigil per discipline — have the Mindwright strike it off first.");
+            return;
+        }
+
         // THE STAT-SWAP LIMITS: at most +5 on any one stat, and 9 rungs in total across every swap.
         // Checked at EVERY level, not just the first — each level is another rung against the budget.
         if (SkillCatalog.StatSwapConflict(def.Id, target, player.LearnedSkills) is { } clash)
@@ -1597,7 +1610,7 @@ public class GameLoopService : BackgroundService
 
         // The class table may override the price (Shield Mastery is one skill the tank buys at 20 for
         // 3200 and the Human Warchanter buys at 40 for 36000) — see ClassSkill.SpCost.
-        int cost = ClassSkills.SpCostOf(def, target, player.Race, player.BaseClass, player.Archetype, player.Discipline);
+        int cost = ClassSkills.SpCostOf(def, target, player.Race, player.BaseClass, player.Archetype, player.Discipline, player.HasFourthClass);
         if (player.SkillPoints < cost)
         {
             SendSystemToEntity(player, $"Not enough skill points ({cost} needed).");
@@ -1775,11 +1788,13 @@ public class GameLoopService : BackgroundService
 
         // Reagent gate: skills with a ConsumableId need that item to cast. Checked up
         // front for feedback; actually consumed when the cast completes (in ExecuteSkill).
+        // ⚠ Per-LEVEL since the 4th tier: Ultimate Heal costs one Skill Stone below 76 and two above.
+        int reagentCount = def.ConsumableAmountAt(Math.Max(1, caster.SkillLevelOf(def.Id)));
         if (!string.IsNullOrEmpty(def.ConsumableId) &&
-            CountItem(caster, def.ConsumableId) < def.ConsumableAmount)
+            CountItem(caster, def.ConsumableId) < reagentCount)
         {
             string itemName = ItemCatalog.Get(def.ConsumableId)?.Name ?? def.ConsumableId;
-            SendSystemToEntity(caster, $"{def.Name} requires {def.ConsumableAmount}x {itemName}.");
+            SendSystemToEntity(caster, $"{def.Name} requires {reagentCount}x {itemName}.");
             return;
         }
 
@@ -3532,7 +3547,7 @@ public class GameLoopService : BackgroundService
 
         // Highest learnable level per skill whose learn-gate is met at the current level.
         var byId = new Dictionary<string, int>();
-        foreach (var cs in ClassSkills.Cumulative(player.Race, player.BaseClass, player.Archetype, player.Discipline))
+        foreach (var cs in ClassSkills.Cumulative(player.Race, player.BaseClass, player.Archetype, player.Discipline, player.HasFourthClass))
         {
             if (cs.LearnLevel > player.Level) continue;
             if (!byId.TryGetValue(cs.SkillId, out var lvl) || cs.SkillLevel > lvl)
@@ -3784,12 +3799,14 @@ public class GameLoopService : BackgroundService
         if (!TryGetPlayer(cmd.ConnectionId, out var player)) return;
         if (player.PendingResFromId is not Guid fromId) return;   // no pending offer
         float pct = player.PendingResExpPct;
+        float hpPct = player.PendingResHpPct;
+        player.PendingResHpPct = 0f;
         player.PendingResFromId = null;
         player.PendingResTicks = 0;
         if (!cmd.Accept || !player.Dead) return;                  // declined, or already revived/respawned
         // The rescuer is only used for a courtesy line; if they've since left, the target still revives.
         var rescuer = _world.Entities.GetValueOrDefault(fromId) ?? player;
-        ResurrectTarget(rescuer, player, pct);
+        ResurrectTarget(rescuer, player, pct, hpPct);
     }
 
     /// <summary>Consume one potion (HP HoT/instant, or a buff potion). Shared by the manual
@@ -5436,7 +5453,7 @@ public class GameLoopService : BackgroundService
             ? p.EffectiveAttackSpeedMultiplier : p.EffectiveCastSpeedMultiplier;
         int castTicks = Math.Max(2,
             (int)(def.CastTicksAt(Math.Max(1, p.SkillLevelOf(def.Id))) * castMult));
-        int reducedCd = def.CooldownTicks;
+        int reducedCd = def.CooldownTicksAt(Math.Max(1, p.SkillLevelOf(def.Id)));
         if (reducedCd > 0 && p.CooldownReduction > 0f)
             reducedCd = Math.Max(1, (int)(reducedCd * (1f - p.CooldownReduction)));
         return castTicks + reducedCd + Math.Max(0, extraDelay);
@@ -8139,7 +8156,7 @@ public class GameLoopService : BackgroundService
     private static int RungLevel(Entity caster, SkillDef def, int lvl)
     {
         int learn = ClassSkills.LearnLevelOf(def.Id, lvl, caster.Race, caster.BaseClass,
-                                             caster.Archetype, caster.Discipline);
+                                             caster.Archetype, caster.Discipline, caster.HasFourthClass);
         // 🔑 THEN THE BASE-CLASS TIER. `Cumulative` returns the CURRENT tier only — the 2nd-class list
         // plus the 3rd-class one — so every skill bought on the base path before level 20 is invisible
         // to it once you have an archetype, and the lookup above returns 0 for it. Without this second
@@ -8460,45 +8477,90 @@ public class GameLoopService : BackgroundService
         return SkillCatalog.Get(rungs[Math.Clamp(level - 1, 0, rungs.Length - 1)]);
     }
 
-    private void TryOnHitProcs(Entity attacker)
+    private void TryOnHitProcs(Entity attacker) => TryProcs(attacker, onDamaged: false, magicHit: false);
+
+    /// <summary>DEFENSIVE PROCS — call once per damaging hit the entity TAKES. The mirror of
+    /// <see cref="TryOnHitProcs"/>, and the reason the Sigils could be built at all: half of them are
+    /// *"3% chance on dmg received to …"* rather than *"on attack"*.
+    ///
+    /// <para><paramref name="magicHit"/> narrows it further for his Strong Spirit, which fires only on
+    /// MAGIC damage taken. Every other defensive proc ignores the distinction.</para>
+    ///
+    /// <para>⚠ The WEAPON requirement is deliberately still honoured here even though a defensive proc
+    /// has no natural weapon clause: nothing authors one today, and a passive that says it needs a bow
+    /// should mean it whichever way it triggers.</para></summary>
+    private void TryOnDamagedProcs(Entity victim, bool magicHit) =>
+        TryProcs(victim, onDamaged: true, magicHit: magicHit);
+
+    private void TryProcs(Entity owner, bool onDamaged, bool magicHit)
     {
-        if (attacker.Kind != EntityKind.Player || attacker.LearnedSkills.Count == 0)
+        if (owner.Kind != EntityKind.Player || owner.LearnedSkills.Count == 0)
             return;
 
-        foreach (var (skillId, level) in attacker.LearnedSkills)
+        foreach (var (skillId, level) in owner.LearnedSkills)
         {
             if (SkillCatalog.Get(skillId) is not SkillDef def || def.ProcChance <= 0f)
                 continue;
-            if (attacker.ProcCooldowns.ContainsKey(skillId))
+            if (def.ProcOnDamaged != onDamaged)      // an offensive proc never fires on being hit
+                continue;
+            if (def.ProcMagicOnly && !magicHit)      // Strong Spirit: magic damage only
+                continue;
+            if (owner.ProcCooldowns.ContainsKey(skillId))
                 continue;
             // "Require: Box/Blunt" — the mask is on the passive, and an empty hand fails it too.
             // Was a hand-rolled `.Base() & mask`, which folded UNCONDITIONALLY and so would have let a
             // two-handed weapon pass a two-hands-only proc. WeaponTypes.Satisfies is the one rule now.
-            if (!attacker.WeaponType.Satisfies(def.RequiredWeapon))
+            if (!owner.WeaponType.Satisfies(def.RequiredWeapon))
                 continue;
             if (_rng.NextDouble() >= def.ProcChance)
                 continue;
 
-            attacker.ProcCooldowns[skillId] = Math.Max(1, def.ProcCooldownTicks);
-            string label = ClassSkills.DisplayName(def.Id, attacker.Race, attacker.BaseClass,
-                                                   attacker.Archetype, attacker.Discipline);
+            owner.ProcCooldowns[skillId] = Math.Max(1, def.ProcCooldownTicks);
+            string label = ClassSkills.DisplayName(def.Id, owner.Race, owner.BaseClass,
+                                                   owner.Archetype, owner.Discipline);
 
-            if (Rung(def.ProcSelfRungs, level) is SkillDef selfBuff)
-            {
-                ApplyBuff(attacker, selfBuff, 1, label, sourceSkillId: def.Id);
-                BroadcastCombat(attacker, attacker, 0, CombatOutcome.Buff, label);
-            }
+            if (Rung(def.ProcSelfRungs, level) is SkillDef selfPayload)
+                PayOutProc(owner, selfPayload, label, def.Id);
             if (Rung(def.ProcPartyRungs, level) is SkillDef partyBuff)
-                foreach (var ally in PlayersInRadius(attacker, partyBuff.AreaRadius))
+                foreach (var ally in PlayersInRadius(owner, partyBuff.AreaRadius))
                 {
                     // The caster already took his own, stronger rung above. Handing him the party rung
                     // too would be harmless (it is weaker, so ApplyBuff refuses it) but it would spend
                     // a floating-text line saying nothing happened.
-                    if (ally.Id == attacker.Id) continue;
+                    if (ally.Id == owner.Id) continue;
                     ApplyBuff(ally, partyBuff, 1, label, sourceSkillId: def.Id);
-                    BroadcastCombat(attacker, ally, 0, CombatOutcome.Buff, label);
+                    BroadcastCombat(owner, ally, 0, CombatOutcome.Buff, label);
                 }
         }
+    }
+
+    /// <summary>Hand out ONE proc payload, dispatching on what the rung skill actually is.
+    ///
+    /// <para>Until the Sigils every proc paid in a BUFF, so this was a bare <c>ApplyBuff</c>. Two of
+    /// them pay in HP or MP instead (Holy Support mends 2% of your bar, Arcane Support recovers 2% of
+    /// your mana), and dispatching on the rung's own effect flags is what lets a proc pay in either
+    /// currency without a second field to say which.</para></summary>
+    private void PayOutProc(Entity owner, SkillDef payload, string label, string sourceSkillId)
+    {
+        bool instant = false;
+        if ((payload.Effect & SkillEffect.Heal) != 0)
+        {
+            // Percent of the owner's OWN max HP, which is the shape all three sigil heals use. The
+            // flat half is Power, so a future rung could mix them.
+            int pct = (int)(owner.MaxHp * payload.MagnitudeOf(SkillEffect.Heal, ModifierMode.Percent, 1));
+            HealOne(owner, owner, payload.Power, pct, label);
+            instant = true;
+        }
+        if ((payload.Effect & SkillEffect.RestoreMp) != 0)
+        {
+            int pct = (int)(owner.MaxMp * payload.MagnitudeOf(SkillEffect.RestoreMp, ModifierMode.Percent, 1));
+            RestoreMpOne(owner, owner, payload.Power + pct, label);
+            instant = true;
+        }
+        if (instant) return;
+
+        ApplyBuff(owner, payload, 1, label, sourceSkillId: sourceSkillId);
+        BroadcastCombat(owner, owner, 0, CombatOutcome.Buff, label);
     }
 
     private void TickSkillCooldowns(Entity entity)
@@ -8822,7 +8884,7 @@ public class GameLoopService : BackgroundService
                 // the flat x3 of the magic channel — never CritDamageBonus, which is the fighters'.
                 float fail = target.Immune ? 1f
                            : StatCalculator.MagicFailChance(dummy.Level, target.Level, target.MagicFailMod,
-                                                            1f, target.MagicFailBonus);
+                                                            1f, target.MagicFailBonus, dummy.MagicAccuracy);
                 if (_rng.NextDouble() < fail)
                 {
                     int dmg = Math.Max(1, 1 / 3);
@@ -9451,10 +9513,11 @@ public class GameLoopService : BackgroundService
         // was traded/dropped mid-cast). Missing = cancel without charging the finish MP.
         if (!string.IsNullOrEmpty(def.ConsumableId))
         {
-            if (!ConsumeItem(caster, def.ConsumableId, def.ConsumableAmount))
+            int need = def.ConsumableAmountAt(lvl);
+            if (!ConsumeItem(caster, def.ConsumableId, need))
             {
                 string itemName = ItemCatalog.Get(def.ConsumableId)?.Name ?? def.ConsumableId;
-                SendSystemToEntity(caster, $"You no longer have {def.ConsumableAmount}x {itemName}.");
+                SendSystemToEntity(caster, $"You no longer have {need}x {itemName}.");
                 CancelCast(caster);
                 return;
             }
@@ -9470,7 +9533,7 @@ public class GameLoopService : BackgroundService
         caster.CastInitialMpPaid = 0;
         // Reuse-delay reduction (Spell Mastery / buffs) shortens the cooldown — unless the skill
         // has a FIXED cooldown (Return, ultimates).
-        int cooldown = def.CooldownTicks;
+        int cooldown = def.CooldownTicksAt(lvl);
         if (cooldown > 0 && !def.FixedCooldown && caster.CooldownReduction > 0f)
             cooldown = Math.Max(1, (int)(cooldown * (1f - caster.CooldownReduction)));
         caster.SkillCooldowns[def.Id] = cooldown;
@@ -9506,14 +9569,14 @@ public class GameLoopService : BackgroundService
                 {
                     if (!CanSupport(caster, corpse)) continue;
                     FlagForSupporting(caster, corpse);
-                    OfferResurrect(caster, corpse, def.ResExpPctAt(lvl));
+                    OfferResurrect(caster, corpse, def.ResExpPctAt(lvl), hpPct: def.ResHpPctAt(lvl));
                     raised++;
                 }
                 if (raised == 0)
                     SendSystemToEntity(caster, "No fallen allies within reach.");
                 return;
             }
-            OfferResurrect(caster, target, def.ResExpPctAt(lvl));
+            OfferResurrect(caster, target, def.ResExpPctAt(lvl), hpPct: def.ResHpPctAt(lvl));
             return;
         }
 
@@ -9740,7 +9803,7 @@ public class GameLoopService : BackgroundService
                        : StatCalculator.MagicFailChance(RungLevel(caster, def, lvl), target.Level,
                              target.MagicFailMod,
                              caster.MagicFailSelfMult,
-                             target.MagicFailBonus);
+                             target.MagicFailBonus, caster.MagicAccuracy);
             // MANA RAY: the identical number, taken off MP instead of HP. Nothing above this line
             // knows or cares — same formula, same M.Def divisor, same mRes, same fizzle, same crit,
             // and the "half vs monsters" is the skill's own PveDamageMult, already applied by
@@ -9749,7 +9812,7 @@ public class GameLoopService : BackgroundService
             if (_rng.NextDouble() < fail)
             {
                 damage = Math.Max(1, damage / 3);
-                ApplyDamage(target, damage, caster, toMp: toMp);
+                ApplyDamage(target, damage, caster, toMp: toMp, magicHit: true);
                 TryInterruptCast(target, magicInterrupt, damage, caster, def.InterruptMult);
                 BroadcastCombat(caster, target, damage, CombatOutcome.Fail, castName);
             }
@@ -9768,7 +9831,7 @@ public class GameLoopService : BackgroundService
                 {
                     BroadcastCombat(caster, target, damage, CombatOutcome.Hit, castName);
                 }
-                ApplyDamage(target, damage, caster, toMp: toMp);
+                ApplyDamage(target, damage, caster, toMp: toMp, magicHit: true);
                 TryInterruptCast(target, magicInterrupt, damage, caster, def.InterruptMult);
             }
 
@@ -9914,7 +9977,7 @@ public class GameLoopService : BackgroundService
                            : StatCalculator.MagicFailChance(RungLevel(caster, def, lvl), target.Level,
                                  target.MagicFailMod,
                                  caster.MagicFailSelfMult,
-                                 target.MagicFailBonus);
+                                 target.MagicFailBonus, caster.MagicAccuracy);
                 // BL-90: the per-skill tier, expressed on the SAME quantity it means on the contested
                 // path — the probability the debuff STICKS. `1 − fail` is that probability here, so
                 // scaling it and inverting keeps one number meaning one thing on both paths. A ×1
@@ -10161,7 +10224,7 @@ public class GameLoopService : BackgroundService
         string shownName = string.IsNullOrEmpty(displayName) ? def.Name : displayName!;
         int eff = maxStacks >= 0 ? maxStacks : def.EffectiveMaxStacks;
         int duration = toggle ? int.MaxValue
-                              : (durationOverride >= 0 ? durationOverride : def.DurationTicks);
+                              : (durationOverride >= 0 ? durationOverride : def.DurationTicksAt(level));
 
         // Stacking effect (MaxStacks > 1): reapplying ADDS a stack (capped) and refreshes,
         // rather than replacing. If the skill has a per-stack table, the status re-snapshots
@@ -10259,6 +10322,7 @@ public class GameLoopService : BackgroundService
             Rewards = def.RewardsAt(level),
             KeepsBuffsOnDeath = def.KeepsBuffsOnDeath,
             AutoResurrect = def.AutoResurrect,
+            FreezesHp = def.FreezesHp,                 // the Immortality Sigil's 5 seconds
             // What the auto-res will hand back (`BL-35`). ResExpPctAt, not the def's bare field, for the
             // same reason Rewards uses RewardsAt just above: if these ever grow levels, the buff must
             // carry the rung that actually landed.
@@ -10266,6 +10330,11 @@ public class GameLoopService : BackgroundService
             // Clarity / Fortitude — per-LEVEL for the same reason as everything else here: the buff has
             // to carry the rung that actually landed, not the skill's first one.
             CcResistMagical = def.CcResistMagicalAt(level),
+            // Heal power / heal received, per-LEVEL: Healer's Power climbs +1000 → +2000 across its five.
+            HealPowerFlat = def.HealPowerFlatAt(level),
+            HealPowerPct = def.HealPowerPctAt(level),
+            HealReceivedPct = def.HealReceivedPctAt(level),
+            MagicAccuracy = def.MagicAccuracyAt(level),
             CcResistPhysical = def.CcResistPhysicalAt(level),
             // Magic crit damage — per-LEVEL for the same reason.
             MagicCritDamage = def.MagicCritDamageAt(level),
@@ -10423,6 +10492,12 @@ public class GameLoopService : BackgroundService
         // Target's HEAL RECEIVED: (flat + HealReceivedFlat)·HealReceivedMod (anti-heal debuffs lower the mod;
         // buffs/passives raise it). The % half (pct) ignores this, as before.
         int amount = (int)Math.Round((flat + target.HealReceivedFlat) * Math.Max(0f, target.HealReceivedMod)) + pct;
+        // IMMORTALITY, the other half: *"healing dont increase HP as DMG dont decrease it"*. The cast
+        // still happened — it still spends MP, still flags the healer for supporting an outlaw, still
+        // shows a number — the HP simply does not move. Zeroing the AMOUNT rather than skipping the
+        // whole method is deliberate: the healer must see a 0 and understand why, or he will keep
+        // pouring casts into a frozen bar.
+        if (target.HpFrozen) amount = 0;
         if (amount > 0)
             target.Hp = Math.Min(target.MaxHp, target.Hp + amount);
         FlagForSupporting(caster, target);
@@ -11049,7 +11124,7 @@ public class GameLoopService : BackgroundService
     /// lethal save has nothing to save from since MP simply floors at 0. One method rather than a
     /// parallel one, so the flagging and threat rules above can never drift apart between them.</param>
     private int ApplyDamage(Entity target, int damage, Entity? attacker = null, bool reflected = false,
-        bool toMp = false)
+        bool toMp = false, bool magicHit = false)
     {
         if (target.GodMode)
             return 0;
@@ -11132,6 +11207,35 @@ public class GameLoopService : BackgroundService
             }
             if (target.Kind == EntityKind.Player) SendStats(target);
             return drained;
+        }
+
+        // ---- DEFENSIVE PROCS (the Sigils' "3% chance on dmg received…"). ABOVE the immortality check
+        //      and above the shields, because the trigger is BEING HIT and not losing HP: a hit that an
+        //      absorb shield ate, or that a frozen bar ignored, still happened. The one thing it is not
+        //      is a MANA hit — that leaves this method further up, and Mana Ray is not "damage received"
+        //      in the sense any of these sigils mean.
+        if (damage > 0)
+            TryOnDamagedProcs(target, magicHit: magicHit);
+
+        // ---- IMMORTALITY (the Immortality Sigil, owner 2026-08-26: *"HP is unchanged; move and casts
+        //      are unnafected -> also healing dont increase HP as DMG dont decrease it"*).
+        //
+        // 🔑 The blow LANDED. Everything above has already happened — the combat timer, the PvP flag,
+        // the hide break, the threat, the damage ledger, the interrupt contest that ran before we got
+        // here. Only the HP move is cancelled, which is exactly what he described and is NOT
+        // `Entity.Immune` (that makes attacks miss outright).
+        //
+        // ⚠ ABOVE the absorb shields on purpose: a frozen bar has nothing to protect, and draining
+        // someone's shield pool during their five seconds would make the sigil actively worse than not
+        // owning it. The heal side of the freeze is in HealOne.
+        if (target.HpFrozen)
+        {
+            if (target.Kind == EntityKind.Player && target.MoveState == MoveState.Sitting)
+            {
+                target.MoveState = MoveState.Running;
+                target.StandUpTicks = MovementTuning.StandUpTicks;
+            }
+            return 0;
         }
 
         // Absorb shields soak damage before HP; a depleted shield is removed.
@@ -11848,12 +11952,14 @@ public class GameLoopService : BackgroundService
     /// <summary>Offer a resurrection to a fallen player: they see a confirm prompt (who revived them + how
     /// much exp comes back) and must ACCEPT before actually reviving — so they don't stand up on top of the
     /// mob that killed them. Generic on caster==target, so a self-res reuses this same pipe.</summary>
-    private void OfferResurrect(Entity caster, Entity target, float expPct, int ticks = ResurrectOfferTicks)
+    private void OfferResurrect(Entity caster, Entity target, float expPct, int ticks = ResurrectOfferTicks,
+        float hpPct = 0f)
     {
         if (target is null || target.Kind != EntityKind.Player || !target.Dead) return;
         expPct = Math.Clamp(expPct, 0f, 1f);
         target.PendingResFromId = caster.Id;
         target.PendingResExpPct = expPct;
+        target.PendingResHpPct = hpPct;
         target.PendingResTicks = ticks;
         long wouldRestore = (long)(target.LostExp * expPct);
         if (_world.EntityToConnection.TryGetValue(target.Id, out var conn))
@@ -11867,7 +11973,7 @@ public class GameLoopService : BackgroundService
     /// lost to the death penalty (0 for the basic scroll, 1.0 for the highest res). No-op on a living target
     /// or a non-player (mobs are removed on death, not resurrected). The next StateUpdate (Dead=false) clears
     /// the client's death overlay.</summary>
-    private void ResurrectTarget(Entity caster, Entity target, float expPct)
+    private void ResurrectTarget(Entity caster, Entity target, float expPct, float hpPct = 0f)
     {
         if (target is null || target.Kind != EntityKind.Player || !target.Dead) return;
         target.PendingResFromId = null;
@@ -11876,8 +11982,11 @@ public class GameLoopService : BackgroundService
         // The death is paid for — stop it sticking, or the next logout would log them back in dead.
         target.DiedWhileAway = false;
         target.RecomputeDerived();
-        target.Hp = Math.Max(1, (int)(target.MaxHp * 0.30f));
-        target.Mp = (int)(target.MaxMp * 0.30f);
+        // How full they stand up. 0 = the game default; his 4th-tier Resurrection raises it to 35% and
+        // then 40%, which is why this is a parameter and no longer a literal.
+        float full = hpPct > 0f ? Math.Clamp(hpPct, 0.01f, 1f) : GameConstants.DefaultResurrectHpPct;
+        target.Hp = Math.Max(1, (int)(target.MaxHp * full));
+        target.Mp = (int)(target.MaxMp * full);
         long restore = (long)(target.LostExp * Math.Clamp(expPct, 0f, 1f));
         target.LostExp = 0;
         if (restore > 0)
@@ -12958,7 +13067,7 @@ public class GameLoopService : BackgroundService
 
         if (startCooldown && SkillCatalog.Get(entity.CastingSkillId) is SkillDef def)
         {
-            entity.SkillCooldowns[def.Id] = def.CooldownTicks;
+            entity.SkillCooldowns[def.Id] = def.CooldownTicksAt(Math.Max(1, entity.SkillLevelOf(def.Id)));
             SendCooldowns(entity);   // ESC pays the reuse — the bar has to show that it did
         }
 
@@ -13350,7 +13459,7 @@ public class GameLoopService : BackgroundService
                 if (def.RangeAt(kv.Value) > 0f) facts.Add($"{def.RangeAt(kv.Value):0} range");
                 if (def.AreaRadiusAt(kv.Value) > 0f) facts.Add($"{def.AreaRadiusAt(kv.Value):0} radius");
                 facts.Add($"{def.CastTicksAt(kv.Value) / 10f:0.#}s cast");
-                facts.Add($"{def.CooldownTicks / 10f:0.#}s reuse");
+                facts.Add($"{def.CooldownTicksAt(kv.Value) / 10f:0.#}s reuse");
                 lines.Add("   " + string.Join(" · ", facts));
 
                 var cost = new List<string>();
@@ -14166,7 +14275,7 @@ public class GameLoopService : BackgroundService
                 return;
             int target = player.SkillLevelOf(def.Id) + rungs;
             int gate = ClassSkills.LearnLevelOf(def.Id, target, player.Race, player.BaseClass,
-                                                player.Archetype, player.Discipline);
+                                                player.Archetype, player.Discipline, player.HasFourthClass);
             if (gate == 0)
             {
                 SendSystemToEntity(player, $"Your class cannot trade {def.Name}.");
@@ -14236,15 +14345,38 @@ public class GameLoopService : BackgroundService
             return;
         }
 
+        // ---- A SIGIL COSTS GOLD TO STRIKE OFF (owner, 2026-08-26): *"then to reset them u go to the
+        //      mindweaver and reset them for 10kk gold (no sp/no gold refund)"*. Everything else here —
+        //      the stat swaps, the old exclusive-group commitments — stays FREE to forget, which is the
+        //      deal those were sold under and is not this ruling's to change.
+        //      ⚠ Read as PER SIGIL: this is the per-skill Forget button, and the fee is exactly what
+        //      re-committing to a different one costs. Charged BEFORE the removal, so a player who
+        //      cannot pay keeps both the gold and the sigil.
+        bool isSigil = SkillCatalog.SigilOf(def.Id) is not null;
+        if (isSigil)
+        {
+            if (player.Gold < SkillCatalog.SigilResetGold)
+            {
+                SendSystemToEntity(player,
+                    $"Striking off {def.Name} costs {SkillCatalog.SigilResetGold:N0} {GameConstants.CurrencyName} "
+                    + $"— you have {player.Gold:N0}.");
+                return;
+            }
+            player.Gold -= SkillCatalog.SigilResetGold;
+        }
+
         player.LearnedSkills.Remove(def.Id);
         player.RecomputeDerived();
         player.Hp = Math.Min(player.Hp, player.MaxHp);   // losing +CON can lower Max HP
         player.Mp = Math.Min(player.Mp, player.MaxMp);
 
-        SendSystemToEntity(player,
-            $"{def.Name} forgotten. You may commit to a different path — the gold is not refunded.");
+        SendSystemToEntity(player, isSigil
+            ? $"{def.Name} struck off for {SkillCatalog.SigilResetGold:N0} {GameConstants.CurrencyName}. "
+              + "The SP and gold you paid for it are gone."
+            : $"{def.Name} forgotten. You may commit to a different path — the gold is not refunded.");
         SendStats(player);
         SendLearned(player);
+        if (isSigil) SendGold(player);
         SendDialog(player, npc);   // refresh the list
         SaveEntity(player);
     }

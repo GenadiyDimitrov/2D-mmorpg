@@ -545,7 +545,7 @@ public static partial class SkillCatalog
                 // the Elf's heal-and-cure gets each rank first and Antidote catches up a rung later, so a
                 // dedicated cure never out-reaches the race that specialises in curing. See
                 // SkillCatalog.HealerAntidoteRungs for his wording and for why his level-64 row went.
-            }.Concat(HealerAntidoteRungs()).ToArray()),
+            }.Concat(HealerAntidoteRungs()).Concat(HealerFourthAntidoteRungs()).ToArray()),
 
         // Resurrection — revive a fallen ally to 30% HP/MP and restore a fraction of the exp they lost to
         // the death penalty. The target must be dead (checked at cast).
@@ -585,6 +585,6 @@ public static partial class SkillCatalog
                 // 🔑 SP IS THE BUFF LADDER, rung for rung — his ruling 2026-08-20: *"Resurrection sp
                 // should match the buffs of the same lvl"*. Not the far dearer COMBAT band ladder an
                 // attack or a heal runs on: a res is priced like a blessing learned at the same level.
-            }.Concat(HealerResurrectionRungs()).ToArray()),
+            }.Concat(HealerResurrectionRungs()).Concat(HealerFourthResurrectionRungs()).ToArray()),
     };
 }

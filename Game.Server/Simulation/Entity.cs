@@ -117,6 +117,18 @@ public class BuffInstance
     public float CcResistMagical { get; init; }
     public float CcResistPhysical { get; init; }
 
+    /// <summary>Heal POWER (caster side) and heal RECEIVED (target side) this buff grants. The
+    /// healer's Healer's Power and the Ork's Spirit Restoration are the only users; the channels
+    /// themselves are the ones the passives already feed. Fields, not flags — the enum is full.</summary>
+    public int HealPowerFlat { get; init; }
+    public float HealPowerPct { get; init; }
+    public float HealReceivedPct { get; init; }
+
+    /// <summary>"M.Accuracy" — flat percentage points this buff takes OFF the fail chance of its
+    /// holder's OWN spells. The mirror of BuffMagicEvasion, which is a flag; this is a field because
+    /// the SkillEffect enum has no bits left.</summary>
+    public float MagicAccuracy { get; init; }
+
     /// <summary>Magic crit DAMAGE this buff grants its holder, as a fraction of the ×2 base
     /// (0.30 = +30% → ×2.6). Rides as fields, like the ones above, because the SkillEffect flag
     /// enum has no bits left. <see cref="MagicCritDamageDebuff"/> is the `(1 − debuffs)` side.</summary>
@@ -139,6 +151,11 @@ public class BuffInstance
     /// <summary>A preservation buff that ALSO auto-revives the owner on death (30% HP/MP, no prompt).
     /// The tank self-res and the healer target-auto-res (`BL-35`) set it; Angel's Protection does not.</summary>
     public bool AutoResurrect { get; init; }
+
+    /// <summary>IMMORTALITY (the Immortality Sigil): while this buff is up the owner's HP does not
+    /// move — damage takes none off and healing puts none back. Everything else about a hit still
+    /// happens. See <c>SkillDef.FreezesHp</c>; read through <c>Entity.HpFrozen</c>.</summary>
+    public bool FreezesHp { get; init; }
 
     /// <summary>How much of the exp lost to the death penalty an <see cref="AutoResurrect"/> gives back
     /// (0..1), taken from the granting skill's <c>ResExpPct</c> (`BL-35`: his Lightbringer skill is
@@ -646,6 +663,11 @@ public class Entity
         set => ActiveSubclass.FourthClass = value;
     }
 
+    /// <summary>Has this character ASCENDED? The gate on the whole 4th-tier kit — his `shared 4th.csv`
+    /// passives, the Sigils and the discipline's own 76-90 ladders. Level 76 alone is NOT enough: the
+    /// Rite of Ascension has to have been paid, which is exactly what this field records.</summary>
+    public bool HasFourthClass => FourthClass != 0;
+
     public Archetype? Archetype =>
         SecondClass > 0 ? ClassCatalog.Get(SecondClass)?.Archetype : null;
 
@@ -863,6 +885,12 @@ public class Entity
     // magic fail chance like 3-4"*). It is NOT an evasion roll: magic never calls the physical avoid
     // resolver. Only source today is the rogue's Evasion Boost (+4 for 30s).
     public float MagicFailBonus { get; set; }
+
+    /// <summary>"M.Accuracy" — flat percentage POINTS taken off the fail chance of spells THIS entity
+    /// casts. The exact mirror of <see cref="MagicFailBonus"/>, which is the defender's side of the
+    /// same roll (owner, 2026-08-26: *"so the oposite"*). Granted only by skills that author it —
+    /// nothing derives it from a stat, which is what keeps the 2026-08-10 ruling intact.</summary>
+    public float MagicAccuracy { get; set; }
     // MAGIC RESISTANCE. Stored the way the CSVs author it ("mRes +5%" = 0.05f) and summed across
     // passives/buffs; MagicDefCoef turns it into the defence DIVISOR, the exact shape of
     // PierceDefCoef/BluntDefCoef/BowDefCoef. 0.25 → coef 1.25 → takes ×0.8 magic damage, which is
@@ -886,6 +914,26 @@ public class Entity
     /// <summary>BL-08 — chance that a DEBUFF aimed at me lands on its caster instead.</summary>
     public float DebuffReflectChance { get; set; }
     public bool Immune { get; set; }             // ultimate total-avoid (future buff); attacks always miss/fail
+
+    /// <summary>IMMORTALITY (the Immortality Sigil) — HP is FROZEN: damage takes none off and healing
+    /// puts none back, while everything else about being hit still happens.
+    ///
+    /// <para>🔑 Read straight off the buff list rather than baked in <see cref="RecomputeDerived"/>,
+    /// unlike every other derived stat here. It has to be: the freeze is checked inside
+    /// <c>ApplyDamage</c> and <c>HealOne</c>, both of which run between recomputes, and a cached flag
+    /// would stay true for the rest of the tick after the buff expired. The list is tiny and this is
+    /// only touched on a hit or a heal.</para>
+    ///
+    /// <para>⚠ NOT <see cref="Immune"/>, which makes attacks MISS. Here the blow lands.</para></summary>
+    public bool HpFrozen
+    {
+        get
+        {
+            for (int i = 0; i < Buffs.Count; i++)
+                if (Buffs[i].FreezesHp) return true;
+            return false;
+        }
+    }
     public float HpRegenBonus { get; set; }     // flat HP/s from gear attributes
     public float MpRegenBonus { get; set; }     // flat MP/s from gear attributes
     public float HpRegenMult { get; set; } = 1f; // HP-regen multiplier (armor mastery)
@@ -1583,6 +1631,12 @@ public class Entity
     /// on top of the mob that killed them. Cleared on accept/decline/expire/respawn/revive. Runtime only.</summary>
     public Guid? PendingResFromId { get; set; }
     public float PendingResExpPct { get; set; }
+
+    /// <summary>How full the PENDING resurrection offer will stand this player up (a fraction of max
+    /// HP/MP). Carried alongside the exp fraction for the same reason: by the time the offer is
+    /// answered the caster may be gone, and the offer is the only surviving record of what it promised.
+    /// 0 = the game default (<see cref="GameConstants.DefaultResurrectHpPct"/>).</summary>
+    public float PendingResHpPct { get; set; }
     public int PendingResTicks { get; set; }
     /// <summary>Tick of the last damage dealt or taken — drives the 30s combat-state decay.</summary>
     public long LastCombatTick { get; set; }
@@ -1932,6 +1986,7 @@ public class Entity
         // whose neutral value is 1, not 0.
         MagicFailMod = 1f;
         MagicFailBonus = 0f;   // "magic evasion" points, buffs only (see the field)
+        MagicAccuracy = 0f;    // …and its mirror, "magic accuracy" points
         EvadeFloor = 0f;
         HitFloor = 0f;
         SkillEvadeChance = 0f;
@@ -2284,6 +2339,9 @@ public class Entity
             CritDamageFlat += m.CritDamageFlat;
             MagicResist += m.MagicResist;
             if (m.PvpDamageTakenPct != 0f) PvpDamageTaken *= 1f + m.PvpDamageTakenPct;
+            // ONE authored number, BOTH channels — see the field's note in StatMods.cs.
+            PhysMpCostReduction += m.MpCostPct;
+            MagicMpCostReduction += m.MpCostPct;
             ActiveArmorSet = set.Name;
 
             // ---- SHIELD-conditional extra: an ADDITIONAL bonus when the set's own shield is also
@@ -2467,6 +2525,10 @@ public class Entity
                 // ×1.6, not +60 points — the same convention as the crit-rate lines above. Masteries
                 // COMPOUND here, which is what lets a set bonus ride on top of the robe mastery.
                 if (sm.RestoreMpPct != 0f) RestoreMpMod *= 1f + sm.RestoreMpPct;
+                // "Decrease Mp Consumption with 8%" — his Healer Armor Mastery, 78 and up. ONE authored
+                // number, BOTH channels; clamped with everything else at the bottom of this method.
+                PhysMpCostReduction += sm.MpCostPct;
+                MagicMpCostReduction += sm.MpCostPct;
             }
 
             // A learned skill can SUPERSEDE another's passive via Replaces[] (e.g. Spell
@@ -2583,6 +2645,18 @@ public class Entity
                     PhysSkillReflectPct = pe.PhysSkillReflectPct;
                 }
                 DebuffReflectChance = Math.Max(DebuffReflectChance, pe.DebuffReflectChance);
+                // ---- 4th TIER (2026-08-26): the `shared 4th.csv` passives and the Sigils. Each of
+                //      these lands in the SAME accumulator its buff-side twin uses, and is clamped
+                //      once at the bottom of this method — so a Sigil, a Clarity and an armour set
+                //      cannot together make you CC-immune, and Magic Proficiency plus Mana Blessing
+                //      cannot make a spell free.
+                CcResistMagical += pe.CcResistMagical;
+                CcResistPhysical += pe.CcResistPhysical;
+                PhysMpCostReduction += pe.PhysMpCostPct;
+                MagicMpCostReduction += pe.MagicMpCostPct;
+                MagicFailBonus += pe.MagicEvasion;          // "M.Evasion" points, the Agility Sigil
+                MagicAccuracy += pe.MagicAccuracy;          // …and its mirror
+                if (pe.PvpDamageTakenPct != 0f) PvpDamageTaken *= 1f + pe.PvpDamageTakenPct;
                 // Heal power (output) + heal received (target). No M.Atk in the heal formula.
                 HealPowerFlat += pe.HealPowerFlat;
                 if (pe.HealPowerPct != 0f) HealPowerMod *= 1f + pe.HealPowerPct;
@@ -2705,6 +2779,7 @@ public class Entity
             if (buff.Has(SkillEffect.BuffBowResist)) BowResist += buff.Flat(SkillEffect.BuffBowResist) + buff.Percent(SkillEffect.BuffBowResist);
             if (buff.Has(SkillEffect.BuffMagicResist)) MagicResist += buff.Flat(SkillEffect.BuffMagicResist) + buff.Percent(SkillEffect.BuffMagicResist);
             if (buff.Has(SkillEffect.BuffMagicEvasion)) MagicFailBonus += buff.Flat(SkillEffect.BuffMagicEvasion);
+            MagicAccuracy += buff.MagicAccuracy;   // the mirror, a FIELD (the flag enum is full)
             if (buff.Has(SkillEffect.BuffMeleeVamp)) MeleeVamp += buff.Flat(SkillEffect.BuffMeleeVamp) + buff.Percent(SkillEffect.BuffMeleeVamp);
             if (buff.Has(SkillEffect.BuffSpellVamp)) SpellVamp += buff.Flat(SkillEffect.BuffSpellVamp) + buff.Percent(SkillEffect.BuffSpellVamp);
             if (buff.Has(SkillEffect.BuffReflect)) MeleeReflect += buff.Flat(SkillEffect.BuffReflect) + buff.Percent(SkillEffect.BuffReflect);
@@ -2717,6 +2792,10 @@ public class Entity
             // Per-school control resistance ADDS (unlike SkillEvadeChance, which is a guarantee and
             // takes the max): these are ordinary stats stacked from gear and blessings, and the sum is
             // clamped below like CcResist is.
+            // Heal power / heal received from BUFFS, into the same accumulators the passives feed.
+            HealPowerFlat += buff.HealPowerFlat;
+            if (buff.HealPowerPct != 0f) HealPowerMod *= 1f + buff.HealPowerPct;
+            if (buff.HealReceivedPct != 0f) HealReceivedMod *= 1f + buff.HealReceivedPct;
             CcResistMagical += buff.CcResistMagical;
             CcResistPhysical += buff.CcResistPhysical;
             // Magic crit damage — the blessings COMPOUND (×1.3 × ×1.3 = ×1.69 on the ×2 base, the

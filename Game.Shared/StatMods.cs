@@ -99,7 +99,13 @@ public readonly record struct StatMods(
     // twin of `CritDamage` above, which is PHYSICAL-only and must stay that way (owner 2026-08-06:
     // a fighter's crit-damage gear must not pay a mage). Added 2026-08-19 with the magic-crit rework
     // so a robe set or a spellcaster mastery CAN carry it; nothing authors it yet.
-    float MagicCritDamage = 0f)
+    float MagicCritDamage = 0f,
+    // MP-COST REDUCTION as a fraction (0.05 = "Decrease Mp Consumption with 5%"). ONE number for BOTH
+    // channels, unlike the buff side's PhysMpCostPct/MagicMpCostPct pair: the things that author this
+    // are armour masteries and armour sets, and neither has ever wanted to make a physical skill cheaper
+    // without also making a spell cheaper. The 78+ rungs of Healer Armor Mastery are the first user.
+    // ⚠ APPENDED, per the note above — Scaled() and StatTotals.Add() build positionally.
+    float MpCostPct = 0f)
 {
     // NOTE: cooldown, interrupt POWER, the PvE/PvP×skill/magic/basic matrix, shield BLOCK CHANCE, bow
     // range and the combat FLOORS are added as the passive/buff sources migrate (docs/design/StatMods.md).
@@ -123,7 +129,7 @@ public readonly record struct StatMods(
         MeleeVamp * f, SpellVamp * f, Reflect * f,
         ShieldDefPct * f,
         CritRateFlat * f, CritDamageFlat * f, MagicResist * f, PvpDamageTakenPct * f,
-        Atk * f, MagicCritDamage * f);
+        Atk * f, MagicCritDamage * f, MpCostPct * f);
 
     /// <summary>Fold a set of source mods into running totals (flats SUM, percents COMPOUND
     /// — see docs/design/StatMods.md: final = (base + Σflat) × ∏(1+pct%)).</summary>
@@ -165,7 +171,8 @@ public readonly record struct StatTotals(
     float CritRateFlat = 0f, float CritDamageFlat = 0f, float MagicResist = 0f,
     float PvpDamageTakenPct = 0f,
     float Atk = 0f,
-    float MagicCritDamage = 0f)
+    float MagicCritDamage = 0f,
+    float MpCostPct = 0f)
 {
     /// <summary>Compound two percents: ∏(1+p)−1, so combining is multiplicative and 0 = inert.</summary>
     private static float Mul(float a, float b) => (1f + a) * (1f + b) - 1f;
@@ -201,7 +208,7 @@ public readonly record struct StatTotals(
         MagicResist + s.MagicResist, PvpDamageTakenPct + s.PvpDamageTakenPct,
         // MagicCritDamage SUMS here like every other flat in this path; Entity.RecomputeDerived
         // turns the total into the ONE multiplier (1 + total) it feeds MagicCritMult.
-        Atk + s.Atk, MagicCritDamage + s.MagicCritDamage);
+        Atk + s.Atk, MagicCritDamage + s.MagicCritDamage, MpCostPct + s.MpCostPct);
 
     /// <summary>Apply a (flat, pct) pair to a base value: `(base + flat) × (1 + pct)`,
     /// floored at 0. The single place the combine convention is defined.</summary>

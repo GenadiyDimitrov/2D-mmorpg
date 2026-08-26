@@ -33,8 +33,15 @@ internal static class Check
         pct ? (v * 100f).ToString("0.##", CultureInfo.InvariantCulture) + "%"
             : v.ToString("0.##", CultureInfo.InvariantCulture);
 
+    /// <param name="Fourth">The 4th tier — pass the ASCENDED kit through Cumulative. Without it a 76-90
+    /// file reports every one of its rows as NOT REGISTERED, because the tier is gated on the Rite of
+    /// Ascension and not on the level.</param>
+    /// <param name="Also">Extra CSV files whose rows belong to the SAME registered set. `shared 4th.csv`
+    /// is the only user: its rows are learned by every ascended class, so they show up in every 4th-tier
+    /// Cumulative and would read as "extra, unauthored" against a discipline file that does not contain
+    /// them. Reading both files into one CSV side is the honest comparison.</param>
     private sealed record Spec(string File, BaseClass Base, Archetype? Archetype, int Min, int Max,
-                               Discipline? Discipline = null);
+                               Discipline? Discipline = null, bool Fourth = false, string[]? Also = null);
 
     // ⚠ The BAND matters. A 2nd-class ladder does not stop where his file stops — `Elemental Bolt` is
     // registered at 20…80 while `nuker 2nd.csv` authors 20-35, and without the band every one of those
@@ -68,6 +75,14 @@ internal static class Check
         // Bulwark, not Vanguard, only because a spec needs ONE discipline and the row is registered to
         // both — check the pair by hand if that ever stops being true.
         new("tank 3rd",    BaseClass.Fighter, Archetype.Tank,    40, 75, Game.Shared.Discipline.Bulwark),
+        // ---- 4th TIER, 76-90. ONE file is authored: `healer 4th.csv`, which he calls finished
+        //      (2026-08-26, 255 rows). `Also` folds in `shared 4th.csv` — the ALL-CLASSES block plus the
+        //      eighteen Sigils — because those rows are in every ascended class's Cumulative and would
+        //      otherwise read as unauthored extras here.
+        //      🔴 `buffer 4th` was still in progress on 2026-08-26 and earns its line the day he finishes
+        //      it; the other eight 4th files are two-line placeholders. Same rule as the 3rd tier.
+        new("healer 4th",  BaseClass.Mage,    Archetype.Healer,  76, 90, Game.Shared.Discipline.Lightbringer,
+            Fourth: true, Also: new[] { "shared 4th" }),
     };
 
     /// <summary>One rung, from either side, reduced to the fields worth comparing.
@@ -97,6 +112,12 @@ internal static class Check
             if (!File.Exists(path)) { Console.WriteLine("  MISSING FILE"); problems++; continue; }
 
             var csv = ReadCsv(path);
+            foreach (var extra in spec.Also ?? Array.Empty<string>())
+            {
+                string extraPath = Path.Combine(dir, extra + ".csv");
+                if (File.Exists(extraPath)) csv.AddRange(ReadCsv(extraPath));
+                else { Console.WriteLine("  MISSING FILE " + extra + ".csv"); problems++; }
+            }
             var code = ReadRegistered(spec);
             problems += Compare(csv, code, spec);
         }
@@ -173,7 +194,7 @@ internal static class Check
         var seen = new HashSet<(string, int, int)>();
         var rows = new List<Rung>();
         foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
-            foreach (var cs in ClassSkills.Cumulative(race, spec.Base, spec.Archetype, spec.Discipline))
+            foreach (var cs in ClassSkills.Cumulative(race, spec.Base, spec.Archetype, spec.Discipline, spec.Fourth))
             {
                 if (cs.LearnLevel < spec.Min || cs.LearnLevel > spec.Max) continue;
                 if (!seen.Add((cs.SkillId, cs.SkillLevel, cs.LearnLevel))) continue;
@@ -182,13 +203,29 @@ internal static class Check
                 // mage table (`Spirit (Power)`, `Insight (Vigour)`, …) and they are bought with GOLD, not
                 // SP. They are the "class balance" his 2026-08-10 purge explicitly spared, so they belong
                 // in no skill file and would report as ten phantom rows on every 3rd-tier check.
-                if (def.ExclusiveGroup.Length > 0) continue;
+                // ⚠ …but NOT everything with an ExclusiveGroup, which is what this line used to say. The
+                // eighteen SIGILS carry one too (it is how "one per slot" is enforced and how the
+                // Mindwright finds them), and they ARE authored — every one is a row in `shared 4th.csv`.
+                // Skipping them made all eighteen report as 🔴 NOT REGISTERED against code that had them.
+                if (SkillCatalog.StatSwapOf(cs.SkillId) is not null) continue;
                 // A TOTEM's "duration" is its LIFE, not a buff duration — `PlacesTotem` skills carry
                 // DurationTicks 0 and TotemLifeTicks 300, while his DURATION column reads 30 (seconds).
                 // Comparing the wrong field made every totem rung a defect.
-                float duration = (def.PlacesTotem ? def.TotemLifeTicks : def.DurationTicks) / 10f;
+                float duration = (def.PlacesTotem ? def.TotemLifeTicks : def.DurationTicksAt(cs.SkillLevel)) / 10f;
+                float cooldown = def.CooldownTicksAt(cs.SkillLevel) / 10f;
+                // A PASSIVE WITH A PROC has no timings of its own, and his CD / DURATION columns on those
+                // rows describe the PROC: *"3% chance on attack to increase attack speed with 30%"* with
+                // CD 20 and DURATION 15 means a 20-second internal cooldown and a 15-second buff. Reading
+                // the skill's own zeroes made every sigil and both 83 proficiencies report two defects.
+                if (def.ProcChance > 0f)
+                {
+                    cooldown = def.ProcCooldownTicks / 10f;
+                    if (def.ProcSelfRungs is { Length: > 0 }
+                        && SkillCatalog.Get(def.ProcSelfRungs[0]) is SkillDef payload)
+                        duration = payload.DurationTicks / 10f;
+                }
                 rows.Add(new Rung(cs.DisplayName ?? def.Name, cs.LearnLevel,
-                    def.RangeAt(cs.SkillLevel), def.CastTicksAt(cs.SkillLevel) / 10f, def.CooldownTicks / 10f,
+                    def.RangeAt(cs.SkillLevel), def.CastTicksAt(cs.SkillLevel) / 10f, cooldown,
                     duration,
                     def.MpCostAt(cs.SkillLevel),
                     cs.SpCostFor(def), Def: def, SkillLevel: cs.SkillLevel));
@@ -400,10 +437,15 @@ internal static class Check
     private static int I(string s)
     {
         s = s.Trim();
-        bool thousands = s.EndsWith('k') || s.EndsWith('K');
-        if (thousands) s = s[..^1].Trim();
+        // ⚠ `kk` IS MILLIONS, and it is not a hypothetical: the whole 4th-tier price ladder is written
+        // that way (`6.5kk`, `500kk`, `100kk`). Counting the k's rather than testing for one is what
+        // stops `6.5kk` reading as 6500 — the shape that produced the same screen of phantom SP defects
+        // the `k` case above was written to kill, one tier later.
+        int k = 0;
+        while (s.Length > 0 && (s[^1] == 'k' || s[^1] == 'K')) { k++; s = s[..^1].TrimEnd(); }
         if (!float.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var v)) return 0;
-        return (int)Math.Round(thousands ? v * 1000f : v);
+        for (int i = 0; i < k; i++) v *= 1000f;
+        return (int)Math.Round(v);
     }
 
     private static float F(string s) =>

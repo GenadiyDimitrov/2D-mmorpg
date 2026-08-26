@@ -296,7 +296,7 @@ namespace Game.Client
             if (d.SkillReset != null && d.SkillReset.Skills != null)
             {
                 anything = true;
-                Header("Unlearn   (free — but the gold you spent is NOT refunded)");
+                Header("Unlearn   (free for most — but the gold you spent is NOT refunded)");
                 foreach (var skill in d.SkillReset.Skills)
                 {
                     string skillId = skill.SkillId;
@@ -304,9 +304,16 @@ namespace Game.Client
                     // reading it as a price is the obvious reading: *"i think it will cost me 25kk to
                     // remove them even though upper say its free"*. A header saying "free" directly above
                     // a row saying "cost" makes the header look like the lie.
-                    DialogRow(skill.Name + (skill.Level > 1 ? "  Lv." + skill.Level : "")
-                              + (skill.GoldSpent > 0 ? "   losing " + skill.GoldSpent.ToString("N0") + " spent" : ""),
-                              "Forget", () => Boot.ForgetSkill(skillId), UiKit.Text);
+                    // ⚠ A SIGIL is the one thing here that costs gold to strike off (10kk, his 4th-class
+                    //    ruling). The header says "free for most" and the row says the price, rather
+                    //    than the header lying about one row in eighteen — the same care `BL-39` took
+                    //    over "losing" vs "cost".
+                    bool sigil = SkillCatalog.SigilOf(skillId) != null;
+                    string tail = sigil
+                        ? "   " + SkillCatalog.SigilResetGold.ToString("N0") + " " + GameConstants.CurrencyName + " to strike off"
+                        : skill.GoldSpent > 0 ? "   losing " + skill.GoldSpent.ToString("N0") + " spent" : "";
+                    DialogRow(skill.Name + (skill.Level > 1 ? "  Lv." + skill.Level : "") + tail,
+                              sigil ? "Strike off" : "Forget", () => Boot.ForgetSkill(skillId), UiKit.Text);
                 }
             }
 

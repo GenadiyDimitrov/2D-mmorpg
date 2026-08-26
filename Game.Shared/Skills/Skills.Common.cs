@@ -887,15 +887,30 @@ public static partial class SkillCatalog
         // level is 40+ authoring, so it waits for his CSVs like everything else; see `BL-75`.
 
         // The LIGHTBRINGER's: cast on an ALLY (or yourself), and it is the ally who stands back up.
+        //
+        // ⚠ RETUNED AND RE-TIERED 2026-08-26. It arrived on 2026-08-14 as one of the two skills he
+        // named individually (`BL-35`, *"two skills, both at level 83"*) at a time when there was no
+        // 4th-class file to put it in. `healer 4th.csv` now carries it, so the CSV's row wins: MP 500
+        // (was 300), a 1-second cast (was 3), 500kk SP + 100kk gold, and **five Holy Stones** — the
+        // reagent is what stops an hour-long death insurance being free. Its LEARN LINE moved with it
+        // from the 3rd-class table to the 4th (see ClassSkillTables.Fourth.cs), so it now costs the
+        // Rite of Ascension as well.
+        //
+        // 🔴 The BULWARK's twin below did NOT move: `tank 4th.csv` is still a two-line placeholder, and
+        // re-tiering a skill whose file does not exist would put it out of reach with nothing to say
+        // when. The pair are deliberately asymmetric until his tank file lands.
         new(RiteOfPreservation, "Rite of Preservation", BaseClass.Mage, SkillEffect.None,
-            MpCost: 300, CastTicks: 30, CooldownTicks: 36000, Range: 600, Power: 0,
-            Category: SkillCategory.Buff, SpCost: 100000,
-            DurationTicks: 36000, BuffKey: "buff_preservation", Rank: 2,  
+            MpCost: 500, CastTicks: 10, CooldownTicks: 36000, Range: 600, Power: 0,
+            Category: SkillCategory.Buff, SpCost: 500_000_000,
+            DurationTicks: 36000, BuffKey: "buff_preservation", Rank: 2,
             KeepsBuffsOnDeath: true, AutoResurrect: true, ResExpPct: 1f,
+            ConsumableId: ItemCatalog.HolyStone, ConsumableAmount: 5,
+            Levels: new[] { new SkillLevel(MpCost: 500, SpCost: 500_000_000, GoldCost: 100_000_000,
+                ResExpPct: 1f) },
             Description: "Blesses an ally (or yourself): they DIE normally, keep their buffs, and are "
                        + "offered a resurrection where they fell at 30% HP and MP, losing NO experience. "
                        + "The offer waits as long as they like. Lasts 60 minutes or until it saves them. "
-                       + "60 minute reuse."),
+                       + "60 minute reuse. Consumes 5 Holy Stones."),
 
         // The BULWARK's: the SELF version. Same effect, no target — a tank's own last stand.
         // SelfOnly is what makes it "the self version" mechanically; Range 0 alone would not, since a

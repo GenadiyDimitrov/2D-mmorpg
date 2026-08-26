@@ -177,9 +177,11 @@ public static partial class ClassSkillTables
     {
         foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
         {
-            // The healer's: cast on an ally, and it is the ALLY who rises.
-            ClassSkills.RegisterThird(race, Discipline.Lightbringer,
-                new ClassSkill(RiteOfPreservation, 83));
+            // 🔴 THE HEALER'S HALF MOVED TO THE 4th TIER, 2026-08-26. `healer 4th.csv` carries Rite of
+            //    Preservation at 83 with its own (much dearer) price and a five-Holy-Stone reagent, so
+            //    its learn line now lives in ClassSkillTables.Fourth.cs and costs the Rite of Ascension
+            //    as well. Do NOT re-add it here — two learn lines for one skill would let a
+            //    non-ascended level-83 buy the 4th-tier version at the 3rd tier's price.
             // The tank's: the self version.
             ClassSkills.RegisterThird(race, Discipline.Bulwark,
                 new ClassSkill(UndyingWill, 83));
