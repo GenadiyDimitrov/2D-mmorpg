@@ -942,6 +942,11 @@ public class Entity
     public float MpRegenBonus { get; set; }     // flat MP/s from gear attributes
     public float HpRegenMult { get; set; } = 1f; // HP-regen multiplier (armor mastery)
     public float MpRegenMult { get; set; } = 1f; // MP-regen multiplier (armor mastery)
+    // ----- Calm Spirit (`BL-92`): per-stance MULTIPLIERS on MovementTuning.RegenMultiplier, MP only.
+    // 1 = the stance is untouched. See PassiveEffect.MpRegenRunMult for why these are not flats.
+    public float MpRegenRunMult { get; set; } = 1f;
+    public float MpRegenWalkMult { get; set; } = 1f;
+    public float MpRegenStandMult { get; set; } = 1f;
     public float CritDamageBonus { get; set; }  // crit-multiplier bonus from gear (e.g. +0.20x)
     // FLAT crit damage (the CSVs' "crit dmg +80", weapon masteries). Joins ATTACK inside the
     // damage ratio on a CRIT only, before the multiplier — never a multiplier itself.
@@ -2081,6 +2086,7 @@ public class Entity
         ShieldCritDefense = 0f;
         HpRegenMult = 1f;
         MpRegenMult = 1f;
+        MpRegenRunMult = MpRegenWalkMult = MpRegenStandMult = 1f;
         ArmorMasteryLabel = "";
         GradeArmorGap = 0;
         GradeWeaponGap = 0;
@@ -2585,6 +2591,10 @@ public class Entity
                 MpRegenBonus += pe.MpRegen;
                 if (pe.HpRegenPct != 0f) HpRegenMult *= 1f + pe.HpRegenPct;
                 if (pe.MpRegenPct != 0f) MpRegenMult *= 1f + pe.MpRegenPct;
+                // Stance-conditional MP regen (Calm Spirit). 0 = not carried, never ×0.
+                if (pe.MpRegenRunMult   != 0f) MpRegenRunMult   *= pe.MpRegenRunMult;
+                if (pe.MpRegenWalkMult  != 0f) MpRegenWalkMult  *= pe.MpRegenWalkMult;
+                if (pe.MpRegenStandMult != 0f) MpRegenStandMult *= pe.MpRegenStandMult;
                 if (pe.AtkSpeedPct != 0f) AttackSpeedMultiplier = Math.Clamp(AttackSpeedMultiplier * (1f - pe.AtkSpeedPct), 0.4f, 2.5f);
                 if (pe.CastSpeedPct != 0f) CastSpeedMultiplier = Math.Clamp(CastSpeedMultiplier * (1f - pe.CastSpeedPct), 0.4f, 2.5f);
                 CastSpeedFlatBonus += pe.CastSpeedFlat;   // spell rune-style flat +cast (added AFTER the multiplicative chain)

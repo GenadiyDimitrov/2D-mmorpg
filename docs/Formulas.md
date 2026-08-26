@@ -125,16 +125,31 @@ more hits. `spiritMod` is flattened from IG's: 20 SPT = ×1.00, 50 SPT = ×0.67.
 ```
 MaxHp        = (classMod * (L*L + 3L)/2 + level1Base) * conModifier(con)
 MaxMp        = (classMod * (L*L + 3L)/2 + level1Base) * sptModifier(spt)
-HpRegen/s    = (3 + L*0.1) * 1.03^(con - 40)
-MpRegen/s    = (2 + L*0.08) * sptModifier(spt) / 1.4733
+
+HpRegen/s    = ((3 + L*0.1) * 1.03^(con - 40) + flats) * stance * safeZone * hpRegenMult * (1+buff%)
+MpRegen/s    =  (2 + L*0.08) * sptRegenModifier(spt)
+                  * stance * calmSpirit * mpRegenMult * (1+buff%)   + flats
+
+sptRegenModifier(spt) = clamp(1 + (spt - 40)*0.02, 0.70, 1.30)
+stance                = running 0.70 | walking 0.85 | STANDING STILL 1.00 | sitting 1.50
 ```
 
 - `conModifier` is a **steep** curve (~3%/point); `sptModifier` is **gentle** (1.16 @20 → 1.65 @50).
-- Multipliers on both regens: **sitting ×1.8, walking ×1.2, running ×1.0**, and **×2** inside a city
-  safe zone with `RegenBoost`. No combat/casting suppression, by ruling.
-- 🔑 The same `sptModifier` drives Max MP, M.Def **and** MP regen — that is the point of SPT.
+- 🔑 **MP regen has its OWN stat curve.** `sptModifier` still drives Max MP and M.Def, but regen left
+  it on 2026-08-26 (`BL-92`) for the wider linear `sptRegenModifier` — so Spirit buys visible sustain
+  (every fighter sits at the 0.70 floor; the ork mage reaches 1.10).
+- 🔑 **THE MP FLATS ARE OUTSIDE, THE HP FLATS ARE INSIDE.** Not a typo: the global "flats after
+  percentages" rule was applied to MP, and the **HP half is deliberately held** pending its own pass.
+  The mage weapon-mastery ladder (`mpReg +1.1 … +3.4`) is one of those MP flats; it was a ×1.1…×3.4
+  MULTIPLIER until that day, which is what let a buffed mage regenerate ~290% of his own spam cost.
+  The armour masteries' `mpReg x1.2` stays a percent.
+- **Standing still** is derived (no move target), not a `MoveState` — that enum is persisted.
+- **×2** inside a city safe zone with `RegenBoost`. No combat/casting suppression, by ruling.
+- **Calm Spirit** (nuker, 6 rungs) multiplies the *stance*: ×0.30→×0.70 running, ×1.03→×1.20 walking,
+  ×1.00→×1.02 standing. At its top rung walking and standing regen are exactly equal.
 
-`StatCalculator.MaxHp/MaxMp/HpRegenPerSecond/MpRegenPerSecond` · `MovementTuning.RegenMultiplier`
+`StatCalculator.MaxHp/MaxMp/HpRegenPerSecond/MpRegenPerSecond/SptRegenModifier` ·
+`MovementTuning.RegenMultiplier` · `GameLoopService.Regenerate` · measured by `BalanceMatrix --mpregen`
 
 ## Speed
 

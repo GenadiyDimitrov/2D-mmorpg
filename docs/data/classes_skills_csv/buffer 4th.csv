@@ -53,21 +53,21 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,G
 89,Armor Mastery,Passive,0,self,0,0,0,"Robe/Light/Heavy: mpReg x1.2,  pDef +107, maxMP +350; mDef +22%;",0,0,100kk
 90,Armor Mastery,Passive,0,self,0,0,0,"Robe/Light/Heavy: mpReg x1.2,  pDef +108, maxMP +400; mDef +25%;",0,0,100kk
 ,,,,,,,,,,,,,,,----------------------Spell Mastery----------------------
-76,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 15%, mAtk +101, pAtk +85, mpReg x3,4,hpReg x2.7, cast speed x1.1",0,36k,[],,
-77,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 15%, mAtk +102, pAtk +90, mpReg x3,4,hpReg x2.7, cast speed x1.1",0,43k,[],,
-78,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +104, pAtk +95, mpReg x3,4,hpReg x2.7, cast speed x1.1",0,64k,[],,
-79,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +105, pAtk +100, mpReg x3,4,hpReg x2.7, cast speed x1.1",0,74k,[],,
-80,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +106, pAtk +105, mpReg x3,4,hpReg x2.7, cast speed x1.1 ",0,81k,[],,
-81,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +108, pAtk +110, mpReg x3,4,hpReg x2.7, cast speed x1.1 ",0,88k,[],,
-82,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +109, pAtk +115, mpReg x3,4,hpReg x2.7, cast speed x1.1 ",0,120k,[],,
-83,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +110, pAtk +120, mpReg x3,4,hpReg x2.7, cast speed x1.1 ",0,170k,[],,
-84,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +112, pAtk +125, mpReg x3,4,hpReg x2.7, cast speed x1.1 ",0,190k,[],,
-85,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +113, pAtk +130, mpReg x3,4,hpReg x2.7, cast speed x1.1 ",0,280k,[],,
-86,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +115, pAtk +135, mpReg x3,4,hpReg x2.7, cast speed x1.1 ",0,320k,[],,
-87,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +116, pAtk +140, mpReg x3,4,hpReg x2.7, cast speed x1.1 ",0,390k,[],,
-88,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +117, pAtk +145, mpReg x3,4,hpReg x2.7, cast speed x1.1 ",0,650k,[],,
-89,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +119, pAtk +150, mpReg x3.4,hpReg x2.7, cast speed x1.1 ",0,880k,[],,
-90,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +120, pAtk +155, mpReg x3.4,hpReg x2.7, cast speed x1.1 ",0,880k,[],,
+76,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 15%, mAtk +101, pAtk +85, mpReg +3.4,hpReg x2.7, cast speed x1.1",0,36k,[],,
+77,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 15%, mAtk +102, pAtk +90, mpReg +3.4,hpReg x2.7, cast speed x1.1",0,43k,[],,
+78,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +104, pAtk +95, mpReg +3.4,hpReg x2.7, cast speed x1.1",0,64k,[],,
+79,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +105, pAtk +100, mpReg +3.4,hpReg x2.7, cast speed x1.1",0,74k,[],,
+80,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +106, pAtk +105, mpReg +3.4,hpReg x2.7, cast speed x1.1 ",0,81k,[],,
+81,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +108, pAtk +110, mpReg +3.4,hpReg x2.7, cast speed x1.1 ",0,88k,[],,
+82,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +109, pAtk +115, mpReg +3.4,hpReg x2.7, cast speed x1.1 ",0,120k,[],,
+83,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +110, pAtk +120, mpReg +3.4,hpReg x2.7, cast speed x1.1 ",0,170k,[],,
+84,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +112, pAtk +125, mpReg +3.4,hpReg x2.7, cast speed x1.1 ",0,190k,[],,
+85,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +113, pAtk +130, mpReg +3.4,hpReg x2.7, cast speed x1.1 ",0,280k,[],,
+86,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +115, pAtk +135, mpReg +3.4,hpReg x2.7, cast speed x1.1 ",0,320k,[],,
+87,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +116, pAtk +140, mpReg +3.4,hpReg x2.7, cast speed x1.1 ",0,390k,[],,
+88,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +117, pAtk +145, mpReg +3.4,hpReg x2.7, cast speed x1.1 ",0,650k,[],,
+89,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +119, pAtk +150, mpReg +3.4,hpReg x2.7, cast speed x1.1 ",0,880k,[],,
+90,Spell Mastery,Passive,0,self,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +120, pAtk +155, mpReg +3.4,hpReg x2.7, cast speed x1.1 ",0,880k,[],,
 ,,,,,,,,,,,,,,,------------------------------Harmony of Protection------------------------------
 76,Harmony of Protection,Magic/Buff,600,self/party,1,120,300,"+30% M.Def, +20% HP Regen, +25% P.Def, +30% Max HP, +20% Mele Reflect, +10% Bow Resistance",464,6.5kk,1kk
 ,,,,,,,,,,,,,,,------------------------------Harmony of the Wizard------------------------------

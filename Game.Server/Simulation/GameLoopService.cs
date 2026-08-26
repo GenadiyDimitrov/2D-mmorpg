@@ -12553,9 +12553,27 @@ public class GameLoopService : BackgroundService
             ? GameConstants.SafeZoneRegen(entity.X, entity.Y)
             : 1f;
 
-        // Movement-state bonus (Walking +20%, Sitting +80%) for players.
+        // ----- STANCE. Owner's ladder, 2026-08-26 (`BL-92`): running 0.70 · walking 0.85 · STANDING
+        // STILL 1.00 · sitting 1.50. Movement is now a COST rather than standing being a bonus, which
+        // is IG's own shape and could not be expressed before, because we had no standing state.
+        //
+        // 🔑 "Standing" is DERIVED, not a MoveState: TargetX is null exactly when the entity has no
+        // destination left. MoveState is persisted and on the wire, so it keeps its three values.
+        bool moving = entity.TargetX is not null;
+        float stance = 1f;
         if (entity.Kind == EntityKind.Player)
-            multiplier *= MovementTuning.RegenMultiplier(entity.MoveState);
+        {
+            stance = MovementTuning.RegenMultiplier(entity.MoveState, moving);
+            multiplier *= stance;
+        }
+
+        // Calm Spirit and anything like it: a per-stance MULTIPLIER, MP ONLY. Applied to the stance
+        // rather than to the flat/percent stacks, because its job is to cancel the movement penalty
+        // exactly — see PassiveEffect.MpRegenRunMult for why a flat pair cannot do that.
+        float mpStanceMult = entity.Kind != EntityKind.Player || entity.MoveState == MoveState.Sitting ? 1f
+            : !moving                              ? entity.MpRegenStandMult
+            : entity.MoveState == MoveState.Walking ? entity.MpRegenWalkMult
+                                                    : entity.MpRegenRunMult;
 
         // Regen buffs (e.g. Warchanter's chant): +% to HP/MP regen.
         //
@@ -12601,6 +12619,13 @@ public class GameLoopService : BackgroundService
 
         if (entity.Hp < entity.MaxHp)
         {
+            // ⚠ HP KEEPS ITS FLATS INSIDE, and that asymmetry with MP below is DELIBERATE — the owner
+            // held the HP half of `BL-92` on 2026-08-26: *"I want to do the same checks for the HP
+            // regen as well .. but let finish with the MP first then check IG formulas on HP regen"*.
+            // His reason it can wait: HP comes from POTIONS, so HP regen only shaves 10-20% off potion
+            // spend, where MP has no equivalent faucet and IS the economy. The new STANCE ladder does
+            // land on HP (one ladder for both bars — standing has to mean the same thing on each);
+            // only the `hpReg x1.1…x3.4` mastery multipliers and this flat placement are waiting.
             float perSecond = player
                 ? StatCalculator.HpRegenPerSecond(entity.Con, entity.Level) + entity.HpRegenBonus + hpRegenFlat
                 : StatCalculator.MobHpRegenPerSecond(entity.MaxHp, engaged);
@@ -12611,12 +12636,29 @@ public class GameLoopService : BackgroundService
 
         if (entity.Mp < entity.MaxMp)
         {
-            float perSecond = player
-                ? StatCalculator.MpRegenPerSecond(entity.EffectiveSpt, entity.Level) + entity.MpRegenBonus + mpRegenFlat
-                : StatCalculator.MobMpRegenPerSecond(entity.MaxMp, engaged);
-            int regen = Math.Max(1,
-                (int)(perSecond * multiplier * entity.MpRegenMult * (1f + mpRegenPct) * period));
-            entity.Mp = Math.Min(entity.MaxMp, entity.Mp + regen);
+            // ⚠ THE FLATS ARE OUTSIDE. Owner, 2026-08-26 (`BL-92`): *"flat is outside as everything
+            // flat in our formulas"* — the same global rule playtest 28 set for `Entity.ModifiedStat`.
+            // IG puts its flat additions INSIDE (before the MEN and percent terms); he compared both
+            // at level 74 (23.5 inside vs ~20 outside) and took ours.
+            //
+            // So the whole MP formula is now, and only here:
+            //     [ (2 + 0.08·L) × SptRegenModifier × MpRegenMult × (1+buff%) × stance × calmSpirit ]
+            //       + MpRegenBonus + flat buffs
+            // where MpRegenBonus carries the weapon-mastery ladder (+1.5…+3.4) that used to be a
+            // ×1.5…×3.4 multiplier and was the entire reason a mage could spam forever.
+            //
+            // ⚠ Meditation's flat +25-40/s is one of those buff flats, so it no longer gains from
+            // sitting. That is a knowing trade, not an oversight: it was inside on purpose before
+            // ("sitting to meditate should pay") and the global flat rule outranks it.
+            float regen;
+            if (player)
+                regen = StatCalculator.MpRegenPerSecond(entity.EffectiveSpt, entity.Level)
+                            * multiplier * mpStanceMult * entity.MpRegenMult * (1f + mpRegenPct)
+                        + entity.MpRegenBonus + mpRegenFlat;
+            else
+                regen = StatCalculator.MobMpRegenPerSecond(entity.MaxMp, engaged) * multiplier;
+
+            entity.Mp = Math.Min(entity.MaxMp, entity.Mp + Math.Max(1, (int)(regen * period)));
         }
 
         if (!player) MobRecoveryCheck(entity);
@@ -13371,10 +13413,21 @@ public class GameLoopService : BackgroundService
         }
         // Read off Regenerate, in the same order, so the two cannot drift apart — INCLUDING the flat
         // per-second buff grant (Meditation), which is added beside the gear/passive flat bonus there.
-        float stance = MovementTuning.RegenMultiplier(p.MoveState)
+        bool moving = p.TargetX is not null;
+        float stance = MovementTuning.RegenMultiplier(p.MoveState, moving)
                      * GameConstants.SafeZoneRegen(p.X, p.Y);
+        float mpStance = p.MoveState == MoveState.Sitting ? 1f
+            : !moving                               ? p.MpRegenStandMult
+            : p.MoveState == MoveState.Walking      ? p.MpRegenWalkMult
+                                                    : p.MpRegenRunMult;
+
         float hp = (StatCalculator.HpRegenPerSecond(p.Con, p.Level) + p.HpRegenBonus + hpFlat) * p.HpRegenMult * (1f + hpPct) * stance;
-        float mp = (StatCalculator.MpRegenPerSecond(p.EffectiveSpt, p.Level) + p.MpRegenBonus + mpFlat) * p.MpRegenMult * (1f + mpPct) * stance;
+        // ⚠ MP flats are OUTSIDE now (`BL-92`), and HP's are still inside. Mirror Regenerate exactly —
+        // the whole point of this helper is that the number the stats window shows is the number the
+        // tick loop pays, and the two halves of it are deliberately no longer symmetrical.
+        float mp = StatCalculator.MpRegenPerSecond(p.EffectiveSpt, p.Level)
+                       * stance * mpStance * p.MpRegenMult * (1f + mpPct)
+                   + p.MpRegenBonus + mpFlat;
         return (hp, mp);
     }
 

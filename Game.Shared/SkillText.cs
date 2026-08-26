@@ -71,10 +71,14 @@ public static class SkillText
         Flat(o, "Crit damage", p.CritDamageFlat);
         Pct(o, "Magic crit", p.MagicCritRate);
 
-        // Regen: the flat fields are PER TICK on the server (10/sec), which is meaningless
-        // to read — state them per second, the unit the player experiences.
-        Flat(o, "HP regen/s", p.HpRegen * GameConstants.TickRate);
-        Flat(o, "MP regen/s", p.MpRegen * GameConstants.TickRate);
+        // Regen: the flat fields are PER SECOND, and the ×TickRate here was a straight display bug —
+        // `PassiveEffect.HpRegen/MpRegen` land in `Entity.HpRegenBonus`/`MpRegenBonus`, which
+        // `Regenerate` adds to a per-SECOND rate and then scales by the tick period. So a passive
+        // carrying 2 pays 2 MP/s and this line was advertising 20. Harmless while the field was only
+        // three Warchanter self-buffs; not harmless now that the whole weapon-mastery ladder
+        // (+1.1 … +3.4) lives in it (`BL-92`).
+        Flat(o, "HP regen/s", p.HpRegen);
+        Flat(o, "MP regen/s", p.MpRegen);
         Pct(o, "HP regen", p.HpRegenPct);
         Pct(o, "MP regen", p.MpRegenPct);
 
@@ -164,9 +168,9 @@ public static class SkillText
         Pct(o, "Atk speed", m.AtkSpeedPct);
         Pct(o, "Cast speed", m.CastSpeedPct);
         Flat(o, "Move speed", m.MoveSpeed);    Pct(o, "Move speed", m.MoveSpeedPct);
-        Flat(o, "HP regen/s", m.HpRegen * GameConstants.TickRate);
+        Flat(o, "HP regen/s", m.HpRegen);
         Pct(o, "HP regen", m.HpRegenPct);
-        Flat(o, "MP regen/s", m.MpRegen * GameConstants.TickRate);
+        Flat(o, "MP regen/s", m.MpRegen);
         Pct(o, "MP regen", m.MpRegenPct);
         Pct(o, "Interrupt resist", m.InterruptResist);
         Pct(o, "Crit dmg resist", m.CritDmgResist);

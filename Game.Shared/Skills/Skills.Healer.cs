@@ -256,9 +256,9 @@ public static partial class SkillCatalog
             WeaponMasteryLevels: new[]
             {
                 CasterMastery(new PassiveEffect(MagAtk: 6,  PhysAtk: 4,  CooldownPct: 0.10f)),
-                CasterMastery(new PassiveEffect(MagAtk: 8,  PhysAtk: 6,  CastSpeedPct: 0.05f, CooldownPct: 0.10f, MpRegenPct: 0.10f)),
-                CasterMastery(new PassiveEffect(MagAtk: 10, PhysAtk: 8,  CastSpeedPct: 0.05f, CooldownPct: 0.10f, MpRegenPct: 0.10f)),
-                CasterMastery(new PassiveEffect(MagAtk: 12, PhysAtk: 10, CastSpeedPct: 0.05f, CooldownPct: 0.10f, MpRegenPct: 0.50f, HpRegenPct: 0.10f)),
+                CasterMastery(new PassiveEffect(MagAtk: 8,  PhysAtk: 6,  CastSpeedPct: 0.05f, CooldownPct: 0.10f, MpRegen: 1.1f)),
+                CasterMastery(new PassiveEffect(MagAtk: 10, PhysAtk: 8,  CastSpeedPct: 0.05f, CooldownPct: 0.10f, MpRegen: 1.1f)),
+                CasterMastery(new PassiveEffect(MagAtk: 12, PhysAtk: 10, CastSpeedPct: 0.05f, CooldownPct: 0.10f, MpRegen: 1.5f, HpRegenPct: 0.10f)),
                 // Level 5 = the level-40 row — THE BUFFER'S since 2026-08-20 (`buffer 3rd.csv`: *"Continue
                 // the line"*). It was authored off `healer 3rd.csv`, but the healer has replaced this
                 // skill with Spellcaster Weapon Mastery, so the P.Atk half now belongs to the class that
@@ -271,20 +271,20 @@ public static partial class SkillCatalog
                 // and a sword buffer is not a thing he authored. So rungs 5-18 use BufferMastery, not
                 // CasterMastery. ⚠ P.Atk here is 15, not the 18 this rung carried before his file was
                 // finished: his row says "mAtk +23, mAtk +15" and the CSV is the authority.
-                BufferMastery(new PassiveEffect(MagAtk: 23, PhysAtk: 15, CastSpeedPct: 0.07f, CooldownPct: 0.15f, MpRegenPct: 0.50f, HpRegenPct: 0.10f)),
-                BufferMastery(new PassiveEffect(MagAtk: 29, PhysAtk: 20, CastSpeedPct: 0.07f, CooldownPct: 0.15f, MpRegenPct: 0.90f, HpRegenPct: 0.60f)),
-                BufferMastery(new PassiveEffect(MagAtk: 45, PhysAtk: 25, CastSpeedPct: 0.07f, CooldownPct: 0.20f, MpRegenPct: 0.90f, HpRegenPct: 0.60f)),
-                BufferMastery(new PassiveEffect(MagAtk: 45, PhysAtk: 30, CastSpeedPct: 0.07f, CooldownPct: 0.20f, MpRegenPct: 1.30f, HpRegenPct: 0.70f)),
-                BufferMastery(new PassiveEffect(MagAtk: 52, PhysAtk: 35, CastSpeedPct: 0.10f, CooldownPct: 0.20f, MpRegenPct: 1.30f, HpRegenPct: 0.70f)),
-                BufferMastery(new PassiveEffect(MagAtk: 57, PhysAtk: 40, CastSpeedPct: 0.10f, CooldownPct: 0.20f, MpRegenPct: 1.30f, HpRegenPct: 1.10f)),
-                BufferMastery(new PassiveEffect(MagAtk: 62, PhysAtk: 45, CastSpeedPct: 0.10f, CooldownPct: 0.20f, MpRegenPct: 1.70f, HpRegenPct: 1.10f)),
-                BufferMastery(new PassiveEffect(MagAtk: 67, PhysAtk: 50, CastSpeedPct: 0.10f, CooldownPct: 0.20f, MpRegenPct: 1.70f, HpRegenPct: 1.10f)),
-                BufferMastery(new PassiveEffect(MagAtk: 72, PhysAtk: 55, CastSpeedPct: 0.10f, CooldownPct: 0.20f, MpRegenPct: 1.70f, HpRegenPct: 1.60f)),
-                BufferMastery(new PassiveEffect(MagAtk: 77, PhysAtk: 60, CastSpeedPct: 0.10f, CooldownPct: 0.20f, MpRegenPct: 1.70f, HpRegenPct: 1.60f)),
-                BufferMastery(new PassiveEffect(MagAtk: 83, PhysAtk: 65, CastSpeedPct: 0.10f, CooldownPct: 0.20f, MpRegenPct: 2.10f, HpRegenPct: 1.60f)),
-                BufferMastery(new PassiveEffect(MagAtk: 88, PhysAtk: 70, CastSpeedPct: 0.10f, CooldownPct: 0.20f, MpRegenPct: 2.10f, HpRegenPct: 1.60f)),
-                BufferMastery(new PassiveEffect(MagAtk: 94, PhysAtk: 75, CastSpeedPct: 0.10f, CooldownPct: 0.20f, MpRegenPct: 2.10f, HpRegenPct: 1.60f)),
-                BufferMastery(new PassiveEffect(MagAtk: 99, PhysAtk: 80, CastSpeedPct: 0.10f, CooldownPct: 0.20f, MpRegenPct: 2.40f, HpRegenPct: 1.70f)),
+                BufferMastery(new PassiveEffect(MagAtk: 23, PhysAtk: 15, CastSpeedPct: 0.07f, CooldownPct: 0.15f, MpRegen: 1.5f, HpRegenPct: 0.10f)),
+                BufferMastery(new PassiveEffect(MagAtk: 29, PhysAtk: 20, CastSpeedPct: 0.07f, CooldownPct: 0.15f, MpRegen: 1.9f, HpRegenPct: 0.60f)),
+                BufferMastery(new PassiveEffect(MagAtk: 45, PhysAtk: 25, CastSpeedPct: 0.07f, CooldownPct: 0.20f, MpRegen: 1.9f, HpRegenPct: 0.60f)),
+                BufferMastery(new PassiveEffect(MagAtk: 45, PhysAtk: 30, CastSpeedPct: 0.07f, CooldownPct: 0.20f, MpRegen: 2.3f, HpRegenPct: 0.70f)),
+                BufferMastery(new PassiveEffect(MagAtk: 52, PhysAtk: 35, CastSpeedPct: 0.10f, CooldownPct: 0.20f, MpRegen: 2.3f, HpRegenPct: 0.70f)),
+                BufferMastery(new PassiveEffect(MagAtk: 57, PhysAtk: 40, CastSpeedPct: 0.10f, CooldownPct: 0.20f, MpRegen: 2.3f, HpRegenPct: 1.10f)),
+                BufferMastery(new PassiveEffect(MagAtk: 62, PhysAtk: 45, CastSpeedPct: 0.10f, CooldownPct: 0.20f, MpRegen: 2.7f, HpRegenPct: 1.10f)),
+                BufferMastery(new PassiveEffect(MagAtk: 67, PhysAtk: 50, CastSpeedPct: 0.10f, CooldownPct: 0.20f, MpRegen: 2.7f, HpRegenPct: 1.10f)),
+                BufferMastery(new PassiveEffect(MagAtk: 72, PhysAtk: 55, CastSpeedPct: 0.10f, CooldownPct: 0.20f, MpRegen: 2.7f, HpRegenPct: 1.60f)),
+                BufferMastery(new PassiveEffect(MagAtk: 77, PhysAtk: 60, CastSpeedPct: 0.10f, CooldownPct: 0.20f, MpRegen: 2.7f, HpRegenPct: 1.60f)),
+                BufferMastery(new PassiveEffect(MagAtk: 83, PhysAtk: 65, CastSpeedPct: 0.10f, CooldownPct: 0.20f, MpRegen: 3.1f, HpRegenPct: 1.60f)),
+                BufferMastery(new PassiveEffect(MagAtk: 88, PhysAtk: 70, CastSpeedPct: 0.10f, CooldownPct: 0.20f, MpRegen: 3.1f, HpRegenPct: 1.60f)),
+                BufferMastery(new PassiveEffect(MagAtk: 94, PhysAtk: 75, CastSpeedPct: 0.10f, CooldownPct: 0.20f, MpRegen: 3.1f, HpRegenPct: 1.60f)),
+                BufferMastery(new PassiveEffect(MagAtk: 99, PhysAtk: 80, CastSpeedPct: 0.10f, CooldownPct: 0.20f, MpRegen: 3.4f, HpRegenPct: 1.70f)),
             },
             Levels: new[]
             {

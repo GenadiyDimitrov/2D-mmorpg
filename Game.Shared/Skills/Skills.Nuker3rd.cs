@@ -28,6 +28,7 @@ public static partial class SkillCatalog
 {
     // ---- New ids. APPEND-ONLY, collision-guarded at startup, and every one of them is a name he
     //      authored in the CSV rather than one we invented.
+    public const string CalmSpirit       = "calm_spirit";        // per-STANCE MP regen (BL-92)
     public const string ElementalBlast   = "elemental_blast";    // replaces Elemental Bolt (the main nuke)
     public const string QuickBlast       = "quick_blast";        // replaces Quick Bolt (short range, fast)
     public const string ElementalWave    = "elemental_wave";     // PBAoE around the caster, 200 radius
@@ -78,8 +79,58 @@ public static partial class SkillCatalog
     private static readonly int[] NukerWavePower =
         { 30, 35, 39, 43, 46, 48, 50, 52, 54, 56, 58, 60, 62, 64 };
 
+    /// <summary>CALM SPIRIT — six rungs at 40/48/56/62/68/74, and the only skill in the game that
+    /// changes how a STANCE pays. Built 2026-08-26 (`BL-92`), after being held since 0.87.0
+    /// (*"w8 on calm spirit"*).
+    ///
+    /// <para>🔑 <b>IT IS A NERF TO RUNNING AND THAT IS THE POINT.</b> A nuker who learns it regenerates
+    /// LESS while running than one who never took it — his run column is ×0.30 rising only to ×0.70 —
+    /// and it buys that back on the walk column. Do not "fix" the direction; his design is *"in pvp
+    /// need to click run (but regen slower)"*.</para>
+    ///
+    /// <para>🔑 <b>WHY THE THIRD COLUMN IS DERIVED, NOT AUTHORED.</b> His CSV carries run and walk. The
+    /// requirement he stated for the STANDING case is an outcome, not a number — *"both walk/still is
+    /// the same mp regen in the end … keep farming while kiting (slowly)"* — so the stand multiplier is
+    /// whatever makes `walk × 0.85 == stand × 1.00`, i.e. `0.85 × walkMult`, floored at 1.0 so the
+    /// passive can never make standing WORSE. It reaches 1.02 only at the top rung: at 74, and nowhere
+    /// before it, a walking mage finally regenerates exactly what a standing one does. That is the
+    /// ladder — six rungs spent buying the right to farm while moving.</para>
+    ///
+    /// <para>⚠ These are MULTIPLIERS, not flats, and that is not an inconsistency with the rest of
+    /// `BL-92` (where the mastery ladder went flat). A flat pair balances walk against stand at exactly
+    /// ONE level — the difference it must cover is `0.15 × base`, and base moves with level, gear and
+    /// buffs. Only a multiplier on the stance cancels it at every rung. See PassiveEffect.MpRegenRunMult.</para>
+    ///
+    /// <para>⚠ MP cost is ZERO on every rung. His CSV carried 35→69 in the MP column; he ruled it a
+    /// copy-paste typo on 2026-08-26 (*"its passive - mp consumtion"*) and the file was corrected.</para></summary>
+    private static SkillLevel[] CalmSpiritRungs()
+    {
+        //                    40     48     56     62     68     74
+        float[] run  = { 0.30f, 0.36f, 0.43f, 0.51f, 0.60f, 0.70f };
+        float[] walk = { 1.03f, 1.04f, 1.04f, 1.05f, 1.10f, 1.20f };
+        int[]   sp   = { 36000, 64000, 81000, 170000, 320000, 880000 };
+
+        return Enumerable.Range(0, 6).Select(i =>
+        {
+            float stand = Math.Max(1f, 0.85f * walk[i]);
+            return new SkillLevel(SpCost: sp[i], MpCost: 0,
+                Passive: new PassiveEffect(
+                    MpRegenRunMult: run[i], MpRegenWalkMult: walk[i], MpRegenStandMult: stand),
+                Description: $"MP regeneration ×{run[i]:0.00} while running, ×{walk[i]:0.00} while "
+                           + $"walking, ×{stand:0.00} while standing still.");
+        }).ToArray();
+    }
+
     private static SkillDef[] Nuker3rdSkills() => new SkillDef[]
     {
+        // ═══ CALM SPIRIT ═════════════════════════════════════════════════════════════════════════
+        new(CalmSpirit, "Calm Spirit", BaseClass.Mage, SkillEffect.None,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+            Category: SkillCategory.Passive, SpCost: 36000,
+            Description: "Passive. Stillness feeds the mind: your mana returns far faster when you "
+                       + "walk or stand than when you run.",
+            Levels: CalmSpiritRungs()),
+
         // ═══ THE TWO REPLACEMENT NUKES ═══════════════════════════════════════════════════════════
         //
         // Elemental Blast and Quick Blast REPLACE Elemental Bolt and Quick Bolt, which is what finally

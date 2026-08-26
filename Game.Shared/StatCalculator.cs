@@ -191,17 +191,36 @@ public static class StatCalculator
     public static float HpRegenPerSecond(int con, int level) =>
         (3f + level * 0.1f) * (float)Math.Pow(ConRegenBase, con - 40);
 
+    /// <summary>SPT → the MP-REGEN multiplier, and ONLY regen — Max MP and M.Def keep riding
+    /// <see cref="SptModifier"/>. Owner's own curve, 2026-08-26 (`BL-92`): *"40 = 1? 25floor = 0.7
+    /// 55ceiling = 1.3"*.
+    ///
+    /// ⚠ He wrote the step as ×0.05; the RIGHT coefficient is 0.02. His three anchors are 15 stat
+    /// points apart across 0.30 of multiplier, so 0.05 would put SPT 25 at 0.25 and SPT 55 at 1.75 —
+    /// nothing like the floor and ceiling he named. He accepted 0.02.
+    ///
+    /// It is deliberately WIDER than the Max-MP curve it replaces (which spans only 0.855→1.066 over
+    /// the real stat range), so Spirit finally buys a visible amount of sustain: the ork mage gains,
+    /// the elf mage loses ~10%, and EVERY fighter (SPT 25-27) sits on or beside the 0.70 floor.</summary>
+    public static float SptRegenModifier(int spt) =>
+        Math.Clamp(1f + (spt - 40) * 0.02f, 0.70f, 1.30f);
+
     /// <summary>MP regen follows SPT, not WIT (owner, 2026-07-20). WIT is cast speed and magic crit;
-    /// it was never meant to be the mana stat. Uses the SAME curve as Max MP and M.Def, so all three
-    /// move together off the one stat — which is the whole point of SPT being a stat.
+    /// it was never meant to be the mana stat.
     ///
     /// The base is 2, NOT the 3 the HP curve uses: both come from the old linear formula's constant
     /// term (<c>1 + stat×0.05</c>), but that has to be read at the stat's REAL range. CON sits at
     /// 36-47, so 40 → 3. WIT only ever sat at 10-23, so the honest midpoint is 20 → 2. Using 3 here
-    /// would have quietly handed every build 19-36% more MP regen. The /1.4733 renormalises the
-    /// curve so a human mage (SPT 39) sits at ×1.00 and the pre-Spirit numbers are preserved.</summary>
+    /// would have quietly handed every build 19-36% more MP regen.
+    ///
+    /// ⚠ 2026-08-26 (`BL-92`): the stat term is <see cref="SptRegenModifier"/>, NOT
+    /// <c>SptModifier(spt)/1.4733</c>. The old expression borrowed the Max-MP curve and renormalised
+    /// it so a human mage read ×1.00; regen now has its own, wider curve and the human mage reads
+    /// 0.98. The BASE was never the problem — measurement (`BalanceMatrix --mpregen`) put a buffed
+    /// mage at 196-320% of his own spell-spam drain, and that came from the mastery MULTIPLIERS,
+    /// which are now flats. Do not "restore" the old curve to make a number look familiar.</summary>
     public static float MpRegenPerSecond(int spt, int level) =>
-        (2f + level * 0.08f) * (SptModifier(spt) / 1.4733f);
+        (2f + level * 0.08f) * SptRegenModifier(spt);
 
     // ----- MOB regen: a % of the mob's own pool, and NOTHING to do with CON --------------------
     //

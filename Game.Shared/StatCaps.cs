@@ -206,12 +206,27 @@ public enum MoveState { Running = 0, Walking = 1, Sitting = 2 }
 /// <summary>Speed + regen tuning for movement states.</summary>
 public static class MovementTuning
 {
-    /// <summary>Regen multiplier per state (Running ×1, Walking +20%, Sitting +80%).</summary>
-    public static float RegenMultiplier(MoveState state) => state switch
+    /// <summary>Regen multiplier per stance — HP and MP alike. Owner's ladder, 2026-08-26 (`BL-92`),
+    /// adapted from IG's own (moving ×0.7, standing ×1, sitting ×1.5):
+    ///
+    ///     running 0.70 · walking 0.85 · STANDING STILL 1.00 · sitting 1.50
+    ///
+    /// 🔑 <b>STANDING IS NEW AND IT IS THE WHOLE POINT.</b> Until now we had no standing state at all
+    /// — a player who stopped moving was still <see cref="MoveState.Running"/> — which is exactly why
+    /// IG's ladder could not be copied and why the old one had to run BACKWARDS (running ×1.0 as the
+    /// baseline, walking a ×1.2 bonus). With a standing rung the baseline sits where IG puts it and
+    /// movement is a COST, so the farm loop becomes a real choice: stand or walk to recover, run to
+    /// fight and pay for it.
+    ///
+    /// ⚠ <paramref name="moving"/> is DERIVED (an entity with no <c>TargetX</c> is standing), NOT a
+    /// new <see cref="MoveState"/> value: that enum is PERSISTED on characters and on the wire —
+    /// Running=0, Walking=1, Sitting=2 — and must never be renumbered. Sitting ignores the flag.</summary>
+    public static float RegenMultiplier(MoveState state, bool moving = true) => state switch
     {
-        MoveState.Walking => 1.2f,
-        MoveState.Sitting => 1.8f,
-        _ => 1.0f
+        MoveState.Sitting => 1.5f,
+        _ when !moving    => 1.0f,          // standing still (incl. casting / trading blows)
+        MoveState.Walking => 0.85f,
+        _                 => 0.70f,         // running
     };
 
     /// <summary>Fraction of run speed used while walking.</summary>

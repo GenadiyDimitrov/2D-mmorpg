@@ -624,13 +624,13 @@ public static partial class SkillCatalog
                        + "more M.Atk, faster casting, shorter reuse and much stronger HP/MP "
                        + "regeneration. A sword grants none of it.",
             WeaponMasteryLevels: HealerWeaponRungs.Concat(HealerFourthWeaponRungs).Select(r =>
-                HealerWeapon(r.MAtk, r.Reuse, r.Cast, r.MpReg, r.HpReg)).ToArray(),
+                HealerWeapon(r.MAtk, r.Reuse, r.Cast, r.MpFlat, r.HpReg)).ToArray(),
             Levels: HealerRungs(0, 14, (i, sp) =>
             {
                 var r = HealerWeaponRungs[i];
                 return new SkillLevel(SpCost: sp,
                     Description: $"With a wand or staff: +{r.MAtk} M.Atk, +{r.Cast * 100:0}% cast, "
-                               + $"−{r.Reuse * 100:0}% reuse, MP regen x{1f + r.MpReg:0.#}, HP regen x{1f + r.HpReg:0.#}.");
+                               + $"−{r.Reuse * 100:0}% reuse, MP regen +{r.MpFlat:0.#}/s, HP regen x{1f + r.HpReg:0.#}.");
             }).Concat(HealerFourthWeaponMasteryRungs()).ToArray()),
 
         // ---- Healer Armor Mastery — replaces Armor Mastery. ROBE ONLY: the Light row is cut, so a
@@ -739,9 +739,17 @@ public static partial class SkillCatalog
             },
             Description: $"+{mpPerSecond} MP/s and −90% P.Def for 30s; ends on any damage taken.");
 
-    /// <summary>One rung of Spellcaster Weapon Mastery, as his row writes it. <paramref name="MpReg"/> and
-    /// <paramref name="HpReg"/> are the BONUS (x2.3 in his file = 1.3 here).</summary>
-    private readonly record struct WeaponRung(int MAtk, float Reuse, float Cast, float MpReg, float HpReg);
+    /// <summary>One rung of Spellcaster Weapon Mastery, as his row writes it.
+    /// <para>⚠ THE TWO REGEN COLUMNS NO LONGER MEAN THE SAME THING, and that asymmetry is the whole of
+    /// `BL-92` in one line. <paramref name="MpFlat"/> is a FLAT MP/s, verbatim from his CSV
+    /// (<c>mpReg +3.4</c> = 3.4f here) — owner, 2026-08-26: *"the other increases are flat increases
+    /// so the 1.9~3.4 is + not x"*. This ladder read as a MULTIPLIER until that day, and measurement
+    /// (`BalanceMatrix --mpregen`) put it at ×4.84 by level 74 — a buffed mage regenerating ~290% of
+    /// what spamming his own main nuke costs. It is the single change that ends free mana.
+    /// <paramref name="HpReg"/> is still the old BONUS form (<c>hpReg x1.7</c> = 0.7f) because he HELD
+    /// the HP half — *"let finish with the MP first"*. When that pass lands this column converts the
+    /// same way and this note goes.</para></summary>
+    private readonly record struct WeaponRung(int MAtk, float Reuse, float Cast, float MpFlat, float HpReg);
 
     /// <summary>His fourteen weapon-mastery rows, 40 → 74. ⚠ M.Atk repeats 45 at 48 and 52, and that is
     /// LEFT ALONE: his "a duplicate description is wrong" rule is about the RUNG, and this rung still
@@ -750,20 +758,20 @@ public static partial class SkillCatalog
     /// two regen multipliers step on their own schedule; mirrored exactly.</summary>
     private static readonly WeaponRung[] HealerWeaponRungs =
     {
-        new(23, 0.15f, 0.07f, 0.5f, 0.1f),   // 40
-        new(29, 0.15f, 0.07f, 0.9f, 0.6f),   // 44
-        new(45, 0.20f, 0.07f, 0.9f, 0.6f),   // 48
-        new(45, 0.20f, 0.07f, 1.3f, 0.7f),   // 52
-        new(52, 0.20f, 0.10f, 1.3f, 0.7f),   // 56
-        new(57, 0.20f, 0.10f, 1.3f, 1.1f),   // 58
-        new(62, 0.20f, 0.10f, 1.7f, 1.1f),   // 60
-        new(67, 0.20f, 0.10f, 1.7f, 1.1f),   // 62
-        new(72, 0.20f, 0.10f, 1.7f, 1.6f),   // 64
-        new(77, 0.20f, 0.10f, 1.7f, 1.6f),   // 66
-        new(83, 0.20f, 0.10f, 2.1f, 1.6f),   // 68
-        new(88, 0.20f, 0.10f, 2.1f, 1.6f),   // 70
-        new(94, 0.20f, 0.10f, 2.1f, 1.6f),   // 72
-        new(99, 0.20f, 0.10f, 2.4f, 1.7f),   // 74
+        new(23, 0.15f, 0.07f, 1.5f, 0.1f),   // 40
+        new(29, 0.15f, 0.07f, 1.9f, 0.6f),   // 44
+        new(45, 0.20f, 0.07f, 1.9f, 0.6f),   // 48
+        new(45, 0.20f, 0.07f, 2.3f, 0.7f),   // 52
+        new(52, 0.20f, 0.10f, 2.3f, 0.7f),   // 56
+        new(57, 0.20f, 0.10f, 2.3f, 1.1f),   // 58
+        new(62, 0.20f, 0.10f, 2.7f, 1.1f),   // 60
+        new(67, 0.20f, 0.10f, 2.7f, 1.1f),   // 62
+        new(72, 0.20f, 0.10f, 2.7f, 1.6f),   // 64
+        new(77, 0.20f, 0.10f, 2.7f, 1.6f),   // 66
+        new(83, 0.20f, 0.10f, 3.1f, 1.6f),   // 68
+        new(88, 0.20f, 0.10f, 3.1f, 1.6f),   // 70
+        new(94, 0.20f, 0.10f, 3.1f, 1.6f),   // 72
+        new(99, 0.20f, 0.10f, 3.4f, 1.7f),   // 74
     };
 
     private readonly record struct RobeRung(int PDef, int MaxMp);
@@ -778,9 +786,9 @@ public static partial class SkillCatalog
     /// <summary>One rung of Spellcaster Weapon Mastery — the BLUNT slot only (wand, staff and mace all fold
     /// to <c>WeaponType.Blunt</c> via <c>Base()</c>, 1H and 2H alike). NO P.Atk at any rung, which is the
     /// whole point of the split; a sword earns nothing here.</summary>
-    private static WeaponMasteryProfile HealerWeapon(int mAtk, float reuse, float cast, float mpReg, float hpReg) =>
+    private static WeaponMasteryProfile HealerWeapon(int mAtk, float reuse, float cast, float mpFlat, float hpReg) =>
         new(Blunt: new PassiveEffect(MagAtk: mAtk, CooldownPct: reuse, CastSpeedPct: cast,
-                                     MpRegenPct: mpReg, HpRegenPct: hpReg));
+                                     MpRegen: mpFlat, HpRegenPct: hpReg));
 
     /// <summary>One rung of Healer Armor Mastery — ROBE only, every other weight left inert so
     /// Spellcaster Mastery's penalty stands uncancelled (his *"Removed the Light Armor bonus"*).</summary>

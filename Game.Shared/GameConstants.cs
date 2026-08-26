@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.87.1";
+    public const string GameVersion = "0.88.0";
 
     // ----- SP BOTTLE (owner, 2026-08-26) -------------------------------------------------------
     // *"u can make an npc to take your 1kkk SP + 100kk gold and give you a tradable/sellabel
@@ -133,7 +133,14 @@ public static class GameConstants
     /// Sigils tab at all, and eighteen skills it has never heard of arriving in its Learned map. It
     /// would not crash; it would simply be blind to the whole feature while the server happily sold it.
     /// That is precisely the case the handshake exists to catch. ⚠ A NEW APK IS REQUIRED.
-    public const int ProtocolVersion = 27;
+    /// 27 → 28 (2026-08-26): the MP-REGEN MODEL (`BL-92`). Third bump running with no wire change, and
+    /// this one for BOTH of the reasons above at once. (1) A new class-table entry — Calm Spirit's six
+    /// rungs on the nuker — and the Learn tab is built locally, so an old APK shows a Magus a ladder
+    /// with a hole in it while the server sells the rungs. (2) Every regen NUMBER moved: the stance
+    /// multipliers, the SPT curve, and the mastery ladder going from ×1.5…×3.4 to +1.5…+3.4. Those live
+    /// in shared code the client compiles for its own tooltips and stat window, so an old client would
+    /// quote the OLD regen at a player the server is paying the new one to. ⚠ A NEW APK IS REQUIRED.
+    public const int ProtocolVersion = 28;
 
     /// <summary>
     /// The oldest protocol this server still speaks. Equal to <see cref="ProtocolVersion"/> means

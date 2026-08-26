@@ -1072,6 +1072,18 @@ public readonly record struct PassiveEffect(
     float CritDamageFlat = 0f,
     float HpRegen = 0f, float MpRegen = 0f,            // FLAT regen per tick
     float HpRegenPct = 0f, float MpRegenPct = 0f,      // regen MULTIPLIER (additive: 0.20 = +20%)
+    // ----- STANCE-CONDITIONAL MP regen (Calm Spirit, `BL-92`). MULTIPLIERS on the stance multiplier
+    // itself, so they compose with MovementTuning.RegenMultiplier rather than with the flat/percent
+    // stacks. 0 = "not carried" (never ×0) — the same convention MagicFailSelfMult uses, so
+    // `default(PassiveEffect)` stays inert.
+    //
+    // 🔑 These are MULTIPLIERS and NOT flats on purpose, even though every other regen addition in
+    // the game just went flat. The owner's requirement is that a WALKING mage and a STANDING one end
+    // on the SAME MP/s (*"keep farming while kiting (slowly)"*), and a flat pair cannot do that: it
+    // needs `walkFlat − standFlat = 0.15 × base`, and `base` moves with level, gear and buffs, so a
+    // fixed pair balances at exactly one level. A multiplier on the stance cancels the 0.85 exactly,
+    // at every rung. Do not "simplify" these into flats.
+    float MpRegenRunMult = 0f, float MpRegenWalkMult = 0f, float MpRegenStandMult = 0f,
     float AtkSpeedPct = 0f, float CastSpeedPct = 0f, float MoveSpeedPct = 0f,
     float CooldownPct = 0f,       // spell reuse-delay reduction (0.10 = -10%)
     // Defensive resists (fractions). MeleeVamp/SpellVamp = lifesteal fractions.

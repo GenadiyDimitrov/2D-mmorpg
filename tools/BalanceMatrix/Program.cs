@@ -295,6 +295,14 @@ if (args.Length > 0 && args[0] == "--warchanter")
 // `--buffs` — the buff census (see BuffCensus at the bottom of this file).
 if (args.Length > 0 && args[0] == "--buffs") { BuffCensus.Run(); return; }
 
+// `--mpregen` — the MP ECONOMY: spell-spam drain against natural and buffed regen, under BOTH the
+// model that ships today and the owner's proposed one (2026-08-26). Nothing here changes the engine.
+if (args.Length > 0 && args[0] == "--mpregen")
+{
+    MpEconomy(args.Skip(1).Select(int.Parse).ToArray());
+    return;
+}
+
 // The four same-level PvP targets a drain is judged against. One list, so every table below
 // measures the same characters.
 //
@@ -4482,6 +4490,224 @@ static Entity BuildWarchanter(Race race, int level, int? atkOverride = null,
     e.RecomputeDerived();
     return e;
 }
+
+// ============================================================================================
+//  `--mpregen` — THE MP ECONOMY. Owner, 2026-08-26, opening `BL-92`.
+//
+//  The question is whether a spamming mage can pay for himself off natural regen. It is answered
+//  by MEASURING three things at the same level and putting them side by side:
+//      DRAIN   — MP/s of spamming a real spell, on the auto-hunt's own cycle
+//                (GameLoopService.AutoCycleTicks: castTicks×castSpeedMult + reduced cooldown).
+//      NATURAL — regen with the character's own passives only (robe mastery + weapon mastery).
+//      BUFFED  — plus the percent MP-regen buffs a real mage actually carries.
+//
+//  ⚠ NOTHING HERE CHANGES THE ENGINE. Two models are printed:
+//      CURRENT  — what ships: every mpReg is a PERCENT and they all MULTIPLY.
+//      PROPOSED — the owner's 2026-08-26 ruling: only the ARMOR mastery's 20% stays a percent;
+//                 the weapon mastery's 1.5…3.4 ladder is a FLAT MP/s, added LAST (the global
+//                 "flats after percentages" rule from playtest 28), and SPT gets its own linear
+//                 regen modifier instead of riding the Max-MP curve.
+// ============================================================================================
+
+static void MpEconomy(int[] argLevels)
+{
+    // The percent MP-regen buffs a mage really carries. Serenity r6 and the Warchanter's Arcane
+    // Serenity are the SAME family — the harmony evicts the single, so it is ONE x1.2, not two.
+    const float BuffPct = 1.20f * 1.20f;    // Serenity-or-harmony x1.2, Mark x1.2
+
+    int[] levels = argLevels.Length > 0 ? argLevels : new[] { 40, 44, 52, 60, 68, 74, 80, 85 };
+
+    // Mirrors GameLoopService.Regenerate's MP branch EXACTLY, including where the flats sit.
+    // If this drifts, the report lies — which is the one thing it exists not to do.
+    static float Mp(Entity e, MoveState st, bool moving, float buffPct)
+    {
+        float stance = MovementTuning.RegenMultiplier(st, moving);
+        float calm = st == MoveState.Sitting ? 1f
+            : !moving                        ? e.MpRegenStandMult
+            : st == MoveState.Walking        ? e.MpRegenWalkMult
+                                             : e.MpRegenRunMult;
+        return StatCalculator.MpRegenPerSecond(e.EffectiveSpt, e.Level)
+                   * stance * calm * e.MpRegenMult * buffPct
+               + e.MpRegenBonus;
+    }
+
+    Console.WriteLine();
+    Console.WriteLine("=== THE MP ECONOMY (BL-92, BUILT 2026-08-26) - spam drain vs regen ===");
+    Console.WriteLine();
+    Console.WriteLine("  MP/s = [ (2 + 0.08*L) x SptRegenModifier x MpRegenMult x (1+buff%) x stance x calmSpirit ]");
+    Console.WriteLine("         + flats     <- the weapon-mastery ladder (+1.1 .. +3.4) lives in the FLAT term now");
+    Console.WriteLine("  SptRegenModifier = clamp(1 + (SPT-40)*0.02, 0.70, 1.30)");
+    Console.WriteLine("  stance: running 0.70 | walking 0.85 | STANDING STILL 1.00 | sitting 1.50");
+    Console.WriteLine($"  'bf' columns model the real buff stack at x{BuffPct:0.00} (Serenity-or-harmony x1.2, Mark x1.2).");
+    Console.WriteLine();
+
+    // ---- 1. THE SPT MODIFIER, per race -------------------------------------------------------
+    Console.WriteLine("--- 1. SPT REGEN MODIFIER PER RACE (the new curve against the Max-MP one it left) ---");
+    Console.WriteLine();
+    Console.WriteLine("  race/class        SPT   old(MaxMP)   new(regen)   change");
+    foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
+        foreach (var cls in new[] { BaseClass.Mage, BaseClass.Fighter })
+        {
+            int spt = StatCalculator.GetBaseStats(race, cls).Spt;
+            float old = StatCalculator.SptModifier(spt) / 1.4733f;
+            float now = StatCalculator.SptRegenModifier(spt);
+            Console.WriteLine($"  {race,-6} {cls,-9} {spt,4}   {old,10:0.000}   {now,10:0.000}   {(now / old - 1f) * 100,6:+0.0;-0.0}%");
+        }
+    Console.WriteLine();
+    Console.WriteLine("  Every FIGHTER (SPT 25-27) sits on or beside the 0.70 floor - deliberate.");
+    Console.WriteLine();
+
+    // ---- 2. THE LADDER -----------------------------------------------------------------------
+    Console.WriteLine("--- 2. HUMAN NUKER: DRAIN vs REGEN, LEVEL BY LEVEL ---");
+    Console.WriteLine();
+    Console.WriteLine("  'main' = the most MP-EFFICIENT spammable damage spell (reuse <= 5s) - the farm rotation.");
+    Console.WriteLine("  'ceil' = the COSTLIEST spammable: the most a mage can burn without a burst skill.");
+    Console.WriteLine("  'sust' = buffed-STANDING regen / main drain. Under 100% = mana is a real constraint.");
+    Console.WriteLine();
+    Console.WriteLine("     L   MaxMP  main spell          MP  cycle  drain/s   ceil/s | flat  nat.stnd nat.run  bf.stnd  bf.run  bf.sit | sust");
+    Console.WriteLine("  ------------------------------------------------------------------------------------------------------------------------");
+
+    foreach (int L in levels)
+    {
+        var e = BuildNuker(Race.Human, L);
+        var (spell, mp, cycle, _, maxDrain) = BestSpam(e);
+        float drain = cycle > 0 ? mp / cycle : 0f;
+
+        float natStand = Mp(e, MoveState.Running, false, 1f);
+        float natRun   = Mp(e, MoveState.Running, true,  1f);
+        float bfStand  = Mp(e, MoveState.Running, false, BuffPct);
+        float bfRun    = Mp(e, MoveState.Running, true,  BuffPct);
+        float bfSit    = Mp(e, MoveState.Sitting, false, BuffPct);
+
+        Console.WriteLine($"  {L,4} {e.MaxMp,7}  {Trim(spell, 18),-18} {mp,4} {cycle,5:0.0}s {drain,7:0.0} {maxDrain,8:0.0} | "
+                        + $"{e.MpRegenBonus,4:0.0} {natStand,8:0.0} {natRun,7:0.0} {bfStand,8:0.0} {bfRun,7:0.0} {bfSit,7:0.0} | "
+                        + $"{(drain > 0 ? bfStand / drain : 0) * 100,4:0}%");
+    }
+    Console.WriteLine();
+
+    // ---- 3. CALM SPIRIT ----------------------------------------------------------------------
+    Console.WriteLine("--- 3. CALM SPIRIT: the walk/stand equality it exists to buy ---");
+    Console.WriteLine();
+    Console.WriteLine("  A nuker at each rung's learn level, buffed, WITHOUT the passive and WITH it.");
+    Console.WriteLine("  The design target is walk == stand at the TOP rung and nowhere before it.");
+    Console.WriteLine();
+    Console.WriteLine("     L  rung |  no CS: run   walk   stand |  with CS: run   walk   stand | walk/stand");
+    Console.WriteLine("  ----------------------------------------------------------------------------------");
+    int[] csLevels = { 40, 48, 56, 62, 68, 74 };
+    for (int i = 0; i < csLevels.Length; i++)
+    {
+        int L = csLevels[i];
+        var bare = BuildNuker(Race.Human, L);
+        bare.LearnedSkills.Remove(SkillCatalog.CalmSpirit);
+        bare.RecomputeDerived();
+
+        var cs = BuildNuker(Race.Human, L);
+        cs.LearnedSkills[SkillCatalog.CalmSpirit] = i + 1;
+        cs.RecomputeDerived();
+
+        float bRun = Mp(bare, MoveState.Running, true, BuffPct);
+        float bWalk = Mp(bare, MoveState.Walking, true, BuffPct);
+        float bStand = Mp(bare, MoveState.Running, false, BuffPct);
+        float cRun = Mp(cs, MoveState.Running, true, BuffPct);
+        float cWalk = Mp(cs, MoveState.Walking, true, BuffPct);
+        float cStand = Mp(cs, MoveState.Running, false, BuffPct);
+
+        Console.WriteLine($"  {L,4} {i + 1,5} | {bRun,11:0.0} {bWalk,6:0.0} {bStand,7:0.0} | {cRun,13:0.0} {cWalk,6:0.0} {cStand,7:0.0} |"
+                        + $" {(cStand > 0 ? cWalk / cStand : 0) * 100,9:0.0}%");
+    }
+    Console.WriteLine();
+    Console.WriteLine("  'walk/stand' reaching 100% is the whole skill: at that rung a kiting mage farms");
+    Console.WriteLine("  exactly as well as a parked one. Running is a real cost at every rung.");
+    Console.WriteLine();
+}
+/// <summary>A NUKER with his real class chain. BuildPlayer stops at the 2nd class, which for this
+/// report is fatal: the whole `mpReg` ladder and every 40+ spell live on the 3rd/4th tables, so a
+/// 2nd-class-only mage measured the level-35 kit at level 85 and reported Vampiric Bolt as his
+/// costliest spell at every level. Mirrors BuildWarchanter's chain, on the Magus discipline.</summary>
+static Entity BuildNuker(Race race, int level)
+{
+    var s = StatCalculator.GetBaseStats(race, BaseClass.Mage);
+    var e = new Entity { Name = "nuker", Kind = EntityKind.Player, Race = race, BaseClass = BaseClass.Mage };
+    e.Level = level;
+    e.Con = s.Con; e.AtkStat = s.Atk; e.Wit = s.Wit; e.Agi = s.Agi; e.Spt = s.Spt;
+
+    if (level >= 20)
+        e.SecondClass = ClassCatalog.Playable.First(c => c.Race == race && c.Archetype == Archetype.Nuker).Id;
+    if (level >= 40)
+        e.ThirdClass = ThirdClassCatalog.Playable.First(c => c.Race == race && c.Discipline == Discipline.Magus).Id;
+
+    foreach (var cs in ClassSkills.ForClass(race, BaseClass.Mage, null, null))
+        if (cs.LearnLevel <= level)
+            e.LearnedSkills[cs.SkillId] = Math.Max(e.SkillLevelOf(cs.SkillId), cs.SkillLevel);
+    foreach (var cs in ClassSkills.Cumulative(race, BaseClass.Mage, e.Archetype, e.Discipline))
+        if (cs.LearnLevel <= level)
+            e.LearnedSkills[cs.SkillId] = Math.Max(e.SkillLevelOf(cs.SkillId), cs.SkillLevel);
+    foreach (var id in e.LearnedSkills.Keys.ToList())
+        if (SkillCatalog.Get(id)?.Replaces is { } replaced)
+            foreach (var r in replaced) e.LearnedSkills.Remove(r);
+    e.LearnedSkills[SkillCatalog.SpellcasterMastery] = 1;
+    GrantFloorPassive(e, level);
+
+    var rune = SkillCatalog.Get(SkillCatalog.SpellRuneBuff);
+    if (rune != null)
+        e.Buffs.Add(new Game.Server.Simulation.BuffInstance
+        {
+            Effect = rune.Effect, Magnitudes = rune.Magnitudes,
+            TicksRemaining = int.MaxValue, Name = rune.Name, Key = rune.BuffKey,
+        });
+
+    int t = GearTier(level);
+    Equip(e, $"staff_t{t}");   // TwoHandedBlunt — WeaponType.Base() maps it to Blunt, so the
+    Equip(e, $"robe_t{t}");    // caster weapon mastery pays.
+    foreach (var acc in new[] { "helm", "gloves", "boots" }) Equip(e, $"{acc}_t{t}");
+    Equip(e, $"necklace_t{t}");
+    Equip(e, $"ring_t{t}"); Equip(e, $"ring_t{t}");
+    Equip(e, $"earring_t{t}"); Equip(e, $"earring_t{t}");
+
+    e.RecomputeDerived();
+    return e;
+}
+
+/// <summary>The MAIN NUKE — the spell a farming mage actually spams — priced on the auto-hunt's own
+/// cycle (GameLoopService.AutoCycleTicks, replicated because it is private). Skills with a long reuse
+/// (the 300s bursts) are excluded: they are not part of a sustained drain.
+///
+/// ⚠ "Main" is the most MP-EFFICIENT spammable at full damage, not the costliest. Ranking by drain
+/// picks Vampiric Bolt at every level from 68 up — twice the price of Elemental Blast for the same
+/// m.Atk, because it also lifesteals — and that overstates a farm rotation by a factor of two. The
+/// costliest is returned alongside it as the CEILING, so both ends of the rotation are visible.</summary>
+static (string Name, int Mp, float Cycle, string MaxName, float MaxDrain) BestSpam(Entity e)
+{
+    string name = "-"; int bestMp = 0; float bestCycle = 0f; float bestEff = -1f;
+    string maxName = "-"; float maxDrain = 0f;
+
+    foreach (var (id, lvl) in e.LearnedSkills)
+    {
+        if (SkillCatalog.Get(id) is not SkillDef d) continue;
+        if (d.Category != SkillCategory.Magic) continue;
+        int mp = d.MpCostAt(lvl);
+        if (mp <= 0) continue;
+        int cd = d.CooldownTicksAt(lvl);
+        if (cd > 50) continue;                       // 5s+ reuse = a burst, not a spam rotation
+        if (cd > 0 && e.CooldownReduction > 0f) cd = Math.Max(1, (int)(cd * (1f - e.CooldownReduction)));
+        int castTicks = Math.Max(2, (int)(d.CastTicksAt(lvl) * e.EffectiveCastSpeedMultiplier));
+        float cycle = (castTicks + cd) / 10f;
+        float drain = mp / cycle;
+
+        if (drain > maxDrain) { maxDrain = drain; maxName = d.Name; }
+
+        // Damage per MP, on the same magic {Flat, Mod} the damage formula reads.
+        var (flat, mod) = d.MagicDamageAt(lvl);
+        float dmg = flat + mod * 40f;                // Mod is a multiplier on M.Atk; 40 = a scale, not a stat
+        if (dmg <= 0f) continue;
+        float eff = dmg / mp;
+        if (eff <= bestEff) continue;
+        bestEff = eff; name = d.Name; bestMp = mp; bestCycle = cycle;
+    }
+    return (name, bestMp, bestCycle, maxName, maxDrain);
+}
+
+static string Trim(string s, int n) => s.Length <= n ? s : s[..n];
 
 // ============================================================================================
 //  `--buffs` — THE BUFF CENSUS (playtest 27: "we need make max buffs limit ... Tell me how much

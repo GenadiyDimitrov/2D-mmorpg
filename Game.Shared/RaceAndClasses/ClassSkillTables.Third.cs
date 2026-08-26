@@ -453,6 +453,12 @@ public static partial class ClassSkillTables
         shared.AddRange(Ladder(HealerWeaponMasterySkill, band14));
         shared.AddRange(Ladder(NukerArmorMastery, band14, startRung: 5));
 
+        // ---- The FOURTH passive. Calm Spirit was authored with the rest of this file and deliberately
+        //      held on 2026-08-26 (*"w8 on calm spirit"*) because the stance model it needs did not
+        //      exist yet — we had no standing state at all. `BL-92` built that, so it lands now. Its
+        //      six rungs are his own irregular levels, not the fourteen-band the rest of the file uses.
+        shared.AddRange(At(CalmSpirit, (40, 1), (48, 2), (56, 3), (62, 4), (68, 5), (74, 6)));
+
         // ---- The two mana tools. Restore Spirit continues from the 2nd class (rung 1 @25), which is
         //      why it starts at rung 2; Phase Shift is a fresh three-rung ladder whose ladder is its
         //      distance.

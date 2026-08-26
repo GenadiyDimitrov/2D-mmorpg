@@ -7,11 +7,71 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.87.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.88.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-08-26 (latest) — 0.87.1: the SP bottle's real price, a scam warning, and one page of formulas
+
+## 2026-08-26 (latest) — 0.88.0: mana stops being free, and standing still becomes a stance
+
+`BL-92`, opened by the owner (*"our MP regen is 10 times faster than IG's"*) and ruled by him in full
+the same day. **Measured first**: a new `BalanceMatrix --mpregen` report priced a real nuker's
+spell-spam drain against his own regen and found a buffed level-74 mage regenerating **288% of what
+spamming his main nuke costs** — 196% at 40, climbing to 320% by 85. The base `2 + 0.08·L` was never
+the problem. **The mastery ladder was**: `mpReg x1.5 … x3.4` compounding to ×4.84 by 74.
+
+**Four rulings, all his:**
+
+- **The mastery `mpReg` column is FLAT, not a multiplier** — *"except armor masteries the 20%
+  increase .. the other increases are flat increases so the 1.9~3.4 is + not x"*. Spell Mastery and
+  Spellcaster Weapon Mastery now grant **+1.1 … +3.4 MP/s**; the armour masteries' `x1.2` stays a
+  percent. 63 CSV cells re-notated from `xN` to `+N` in the same commit.
+- **The flats sit OUTSIDE** — *"flat is outside as everything flat in our formulas"*, the same global
+  rule playtest 28 set for `ModifiedStat`. IG puts them inside; he compared both at level 74 (23.5 vs
+  ~20) and took ours.
+- **SPT gets its own regen curve**: `clamp(1 + (SPT − 40)×0.02, 0.70, 1.30)`, off the Max-MP curve it
+  used to borrow. Wider on purpose — every fighter sits at the 0.70 floor, the ork mage reaches 1.10.
+  ⚠ He wrote the step as ×0.05; his own three anchors make it **0.02**, and he took the correction.
+- **A STANDING STANCE EXISTS.** The ladder is now **running 0.70 · walking 0.85 · standing still 1.00
+  · sitting 1.50** — IG's own shape, which could not be copied before because a player who stopped
+  moving was still `Running`. Movement is a cost instead of standing being a bonus. Standing is
+  DERIVED (no move target); `MoveState` keeps its three persisted values.
+
+**CALM SPIRIT is built** (nuker, six rungs at 40-74), held since 0.87.0 on *"w8 on calm spirit"*
+because the stance model it needed did not exist. It multiplies the *stance*: ×0.30→×0.70 running,
+×1.03→×1.20 walking, ×1.00→×1.02 standing. 🔑 **It is a nerf to running and that is the point** — his
+design is *"in pvp need to click run (but regen slower)"*. The standing column is derived, not
+authored: he specified an outcome, not a number (*"both walk/still is the same mp regen in the end …
+keep farming while kiting (slowly)"*), so stand = `max(1, 0.85 × walk)`, which reaches parity at the
+top rung and nowhere before it — measured at exactly **100.0%** walk/stand at rung 6. ⚠ They are
+multipliers, not flats, because a flat pair balances walk against stand at only ONE level.
+Its MP column (35→69 on a passive) was a copy-paste typo he confirmed; zeroed.
+
+**Measured result**: a buffed mage now sustains **146% → 101%** of his main-nuke drain standing, and
+**44% → 58%** running. The rotation tightens with level, and the heavier spells (the `ceil` column,
+~2× the main nuke) are no longer free at any level.
+
+**🔵 The HP half is deliberately HELD** — *"let finish with the MP first then check IG formulas on HP
+regen"*. HP keeps its flats inside and its `hpReg x1.1…x3.4` multipliers; only the shared stance
+ladder lands on it. His reason it can wait: HP comes from potions, so HP regen only shaves 10-20% off
+potion spend.
+
+Also fixed on the way past: `SkillText` displayed every flat regen grant **×10** (it multiplied a
+per-second field by `TickRate`) — harmless while three Warchanter self-buffs were the only users, not
+harmless now the whole mastery ladder lives there. And `--check` learned Calm Spirit's three stance
+multipliers, so its numbers are verified rather than printing as `UNREAD`.
+
+⚠ **PROTOCOL 27 → 28, NEW APK REQUIRED** — a new class-table entry (the Learn tab is built locally)
+and every regen number moving in shared code the client compiles for its own tooltips. No schema
+change, so no `game.db` delete.
+
+🔴 **Two left for him**: the rogue's Armor Mastery `mpReg x1.8` and the tank's Heavy Armor Mastery
+`mpReg x3.4` are ARMOR masteries carrying weapon-mastery-sized numbers, so his literal ruling leaves
+them as percents — flagged, not changed. And `BalanceMatrix.BuildPlayer` never sets a 3rd class, so
+every OTHER mage table in the tool is still measuring the level-35 kit; `--mpregen` uses its own
+builder and the rest were left alone rather than silently moving every number in the file.
+
+## 2026-08-26 — 0.87.1: the SP bottle's real price, a scam warning, and one page of formulas
 
 Three small things he asked for in one message.
 

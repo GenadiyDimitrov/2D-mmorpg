@@ -586,16 +586,27 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
 
     divide-by-zero. Unmeasured. Everything else in the model is your specification.
 
-- `BL-92` 🔵 **MP REGEN IS SEVERAL TIMES IG'S — you asked to be shown it later.** Your words,
-  2026-08-24: *"ask me later to see the mp regen (ours is several times more than IG)"*. Recorded here so
-  it is not lost; **nothing measured or changed yet**, and nothing should be until you open it.
-  - When you do: the comparison wants the same treatment the mob curve got in 0.73.0 — measure ours
-    against IG's real numbers at several levels and refit, rather than scaling by a guessed factor.
-    ⚠ Mob regen and player regen are deliberately different models (a mob is a flat fraction of its own
-    pool; a player rides the exponential CON/Spirit curve), so they are two separate questions.
-  - ⚠ It interacts with things already ruled: town regen is **×2 city-only** (playtest 27), Meditation is
-    an enormous MP-regen burst, and `mpReg x1.2` sits in every mage's armour mastery. Retuning the base
-    moves all three.
+- `BL-92` ✅ **BUILT 2026-08-26 (0.88.0) — the MP half. The HP half is 🔵 OPEN below.** You opened it,
+  it was measured (`BalanceMatrix --mpregen`), and you ruled every question the same day. A buffed
+  level-74 mage was regenerating **288% of his own spell-spam cost**; he now sits at ~101%. The
+  mastery `mpReg` ladder is FLAT and outside, SPT has its own curve, and **standing still is a stance**.
+  Calm Spirit shipped with it. See 0.88.0 in `CHANGELOG.md`. Delete at the next sweep.
+  - 🔵 **STILL OWED — THE HP SIDE, your explicit hold:** *"I want to do the same checks for the HP regen
+    as well .. to not over inflate it with multipliers .. but let finish with the MP first then check IG
+    formulas on HP regen and ours and compare them"*. HP still has its flats INSIDE the multipliers and
+    still runs `hpReg x1.1 … x3.4` as multipliers. The new stance ladder already lands on it (one ladder
+    for both bars). Your own note on why it is the smaller question: *"the hp regen comes from potions so
+    whatever number it is - its only to save on 10-20% potions not more"*.
+  - 🔴 **TWO ARMOUR ROWS FLAGGED, NOT CHANGED.** Your ruling was *"except armor masteries the 20%
+    increase"*, so armour masteries kept their percents — but `rogue 2nd.csv` @36 carries `mpReg x1.8`
+    and `tank 2nd.csv` @36 carries `mpReg x3.4`, which are weapon-mastery-sized numbers on armour rows.
+    A tank at 36 therefore regenerates ×3.4. One-line change either way, waiting on you.
+  - 🔴 **`BalanceMatrix.BuildPlayer` NEVER SETS A 3rd CLASS**, found while building the report: every
+    other mage table in the tool measures the level-35 kit at any level (no 40+ spells, no 40+ mastery
+    ladder). `--mpregen` uses its own `BuildNuker`; the rest were deliberately left alone rather than
+    silently moving every number the tool prints. Its own pass.
+  - ⚠ Meditation's flat +25-40/s no longer gains from sitting — it was inside the stance multiplier on
+    purpose ("sitting to meditate should pay") and the global flat rule outranks it. Knowingly traded.
 
 - `BL-34` ✅ **BUILT 2026-08-14 (0.66.0)** — **Madness**, a party-cast Frenzy handing out a new **rung 7**
   of the family, at **76 on the Warchanter** so an admin can party-buff with it. Your deliberate

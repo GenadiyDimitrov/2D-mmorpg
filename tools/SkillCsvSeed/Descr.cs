@@ -85,6 +85,14 @@ internal static class Descr
         // Magic MP Cost by 7%" — with only the bare "mp" to match on, every one of those numbers was
         // filed as MP REGENERATION and reported as unreadable. Longest-first, and before mpreg.
         ("mpcost",        new[] { "mp consumption", "mp cost", "mana cost", "mana consumption" }),
+        // ⚠ THE THREE STANCE METRICS MUST COME BEFORE `mpreg`, and they are the reason Calm Spirit is
+        // checkable at all. Its row reads *"Multiplies the MP regen when running x0.3; walking x1.03"* —
+        // three numbers on ONE sentence whose only metric word is the shared "MP regen" at the front.
+        // Without these, all three attach to `mpreg` (or to nothing) and print as UNREAD, which is
+        // precisely the silent gap `--check` exists to close. See PassiveEffect.MpRegenRunMult.
+        ("mpregrun",      new[] { "running", "while running", "run" }),
+        ("mpregwalk",     new[] { "walking", "while walking", "walk" }),
+        ("mpregstand",    new[] { "standing still", "standing", "while standing" }),
         ("mpreg",         new[] { "mp regeneration", "mp regen", "mpreg", "mp reg", "mp" }),
         ("hpreg",         new[] { "hp regeneration", "hp regen", "hpreg", "hp reg" }),
         ("cast",          new[] { "cast speed", "casting speed", "cast" }),
@@ -573,6 +581,13 @@ internal static class Descr
         add("ms", true, p.MoveSpeedPct);      add("reuse", true, p.CooldownPct);
         add("hpreg", false, p.HpRegen);       add("hpreg", true, p.HpRegenPct);
         add("mpreg", false, p.MpRegen);       add("mpreg", true, p.MpRegenPct);
+        // Calm Spirit's three stance multipliers. Offered as PERCENTS and as `mult − 1`, the dialect
+        // the token reader renders every authored "xN" in (`x1.03` → 0.03), so both sides match. A
+        // stance the passive does not carry is 0 here and Add() drops it — which is right: a rung that
+        // says nothing about standing has nothing to check.
+        add("mpregrun", true, p.MpRegenRunMult == 0f ? 0f : p.MpRegenRunMult - 1f);
+        add("mpregwalk", true, p.MpRegenWalkMult == 0f ? 0f : p.MpRegenWalkMult - 1f);
+        add("mpregstand", true, p.MpRegenStandMult is 0f or 1f ? 0f : p.MpRegenStandMult - 1f);
         add("mres", true, p.MagicResist);     add("vamp", true, p.MeleeVamp);
         add("manavamp", true, p.ManaVamp);
         add("interrupt", true, p.InterruptResist);    // a FRACTION
