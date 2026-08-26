@@ -9,19 +9,27 @@ namespace Game.Shared;
 /// "Fighter ideal: Warrior Attack; Tank Defence; Buffer Support" lines are a recommendation, and he
 /// relabelled them "ideal" the moment the question was asked.</para>
 ///
-/// <para><b>THE EXCLUSION RULE IS TWO RULES</b>, both read straight off his REPLACES column, e.g. Holy
-/// Protection: <c>[Healer Attack / Healer Support / Warrior Defence / Mage Defence / Tank Defence /
-/// Buffer Defence / Rogue Defence]</c>:
-/// <list type="number">
-///   <item><b>One per SLOT</b> — every other flavour's Defence sigil is replaced. That half is carried
-///         by <see cref="SkillDef.ExclusiveGroup"/>, which the learn path already enforces and which
-///         is also what makes a sigil show up at the Mindwright's reset list for free.</item>
-///   <item><b>One per FLAVOUR</b> — the SAME class's other two sigils are replaced too. So the three
-///         you end up wearing always come from three DIFFERENT flavours, and "all three Healer sigils"
-///         is not a build. That half needs its own check (see <c>SigilFlavourClash</c>).</item>
-/// </list>
-/// Both are also written into each def's <c>Replaces</c>, so even a sigil that reached a character by
-/// some other route cannot double up in <c>RecomputeDerived</c>.</para>
+/// <para><b>THE EXCLUSION RULE IS ONE RULE: ONE PER SLOT.</b> His REPLACES column, e.g. Holy Protection:
+/// <c>[Warrior / Mage / Tank / Buffer / Rogue Defence]</c> — every OTHER flavour's Defence sigil and
+/// nothing else. It is carried by <see cref="SkillDef.ExclusiveGroup"/>, which the learn path already
+/// enforces and which is also what makes a sigil show up at the Mindwright's reset list for free.</para>
+///
+/// <para>⚠ <b>THERE WAS A SECOND RULE AND HE REMOVED IT</b> (2026-08-26). Until that afternoon a sigil
+/// also replaced the SAME flavour's other two, so your three always came from three different classes;
+/// he relaxed it to *"1-attack, 1-Defence, 1-support from any race/descipline"* after asking whether any
+/// same-flavour trio was overpowered. <b>None is</b>, and the reason is structural rather than lucky:
+/// the eighteen were authored one-per-slot-per-flavour with <b>no intra-flavour synergy</b> — a flavour's
+/// three act on three different channels, so nothing in a trio multiplies another member of it.
+///
+/// The trio worth checking was the TANK's, the only all-mitigation one: +10% max HP, Aegis's +25% to
+/// both defences (a DIVISOR, so −20% damage) at ~40% uptime, and −10 points of crit chance and −10%
+/// crit damage. That is about +26% effective HP — and the OLD rule's best defensive pairing, <b>Aegis
+/// (Tank-Defence) + Immortality (Buffer-Support)</b>, was already worth the same and left the Attack
+/// slot free. The trio is not stronger than what was buildable before, only purer.
+///
+/// 🔴 <b>TO PUT IT BACK</b> if a playtest disagrees: restore the same-flavour arm of
+/// <c>SigilReplaces</c> below (one XOR), and the <c>SigilFlavourClash</c> guard in
+/// <c>GameLoopService.HandleLearnSkill</c> plus its row label in the client's Sigils tab.</para>
 ///
 /// <para><b>WHY "SIGIL" AND NOT "RUNE".</b> His CSV called them runes; RUNE is already taken in this
 /// game by a HELD ITEM — the War Rune / Spell Rune that replaced shots — and MARK is taken by the
@@ -138,22 +146,6 @@ public static partial class SkillCatalog
         SigilSlot.Defence => SigilGroupDefence,
         _                 => SigilGroupSupport,
     };
-
-    /// <summary>The sigil of the same FLAVOUR the character already holds, if learning
-    /// <paramref name="skillId"/> would give them two of one class (rule 2 in the class summary).
-    /// Null = no clash. The SLOT half of the rule is left to <c>ExclusiveGroup</c>, which the learn
-    /// path already enforces, so this deliberately checks only what that one cannot see.</summary>
-    public static string? SigilFlavourClash(string skillId,
-        IEnumerable<KeyValuePair<string, int>> learned)
-    {
-        if (SigilOf(skillId) is not { } want) return null;
-        foreach (var (id, _) in learned)
-        {
-            if (id == skillId) continue;
-            if (SigilOf(id) is { } have && have.Flavour == want.Flavour) return id;
-        }
-        return null;
-    }
 
     // ---- The little payload skills the PROC sigils hand out. Not learnable, never on a bar, never
     //      counted against the buff cap; they exist because a proc's payload is named as a skill id
@@ -362,13 +354,16 @@ public static partial class SkillCatalog
         };
     }
 
-    /// <summary>His REPLACES column, generated: the same flavour's OTHER two slots, plus every other
-    /// flavour's SAME slot. Seven ids, exactly as he wrote each row out by hand.</summary>
+    /// <summary>His REPLACES column, generated: every OTHER flavour's SAME slot. Five ids, exactly as
+    /// he wrote each row out by hand.
+    ///
+    /// <para>⚠ It used to be seven — the same-flavour XOR — until he dropped that half on 2026-08-26.
+    /// See the class summary for the arithmetic that said it was safe to, and for how to restore it.</para></summary>
     private static string[] SigilReplaces(SigilFlavour flavour, SigilSlot slot)
     {
-        var list = new List<string>(7);
+        var list = new List<string>(5);
         foreach (var (id, v) in SigilTable)
-            if ((v.Flavour == flavour) != (v.Slot == slot))   // same flavour XOR same slot
+            if (v.Slot == slot && v.Flavour != flavour)
                 list.Add(id);
         list.Sort(StringComparer.Ordinal);   // stable order so a diff of this file is readable
         return list.ToArray();

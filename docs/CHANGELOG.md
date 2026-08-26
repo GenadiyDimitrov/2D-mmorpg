@@ -7,11 +7,34 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.85.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.85.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-08-26 (latest) — 0.85.0: the FOURTH CLASS finally teaches something — the Lightbringer's 76-90 kit, an all-classes shared kit, and eighteen SIGILS on a tab of their own
+## 2026-08-26 (latest) — 0.85.1: a sigil only excludes its own SLOT now, so all three may come from one class
+
+He relaxed the rule the same afternoon it shipped: *"1-attack, 1-Defence, 1-support from any
+race/descipline"*, and asked first whether any same-flavour trio was overpowered.
+
+**None is, and the reason is structural rather than lucky.** The eighteen were authored
+one-per-slot-per-flavour with no intra-flavour synergy — a flavour's three act on three different
+channels, so nothing in a trio multiplies another member of it. The only trio worth arithmetic was
+the TANK's, the one that is all mitigation: +10% max HP, Aegis's +25% to both defences (a DIVISOR,
+so −20% damage taken) at roughly 40% uptime, and −10 points of crit chance with −10% crit damage.
+That is about **+26% effective HP** — and the OLD rule's best defensive pairing, **Aegis
+(Tank-Defence) + Immortality (Buffer-Support)**, was worth the same and left the Attack slot free.
+The trio is not stronger than what was already buildable, only purer.
+
+🔴 Flagged on the way past, and not a combination: **Immortality's uptime scales with the NUMBER of
+hits taken, not their size** — near its 20% ceiling against many small hits, ~10% against a slow
+boss. It is most reliable when you are safest and least reliable against the burst it exists to
+survive. Aegis and Holy Support have the same shape.
+
+The guard is gone from three places (the catalog's REPLACES generator, the learn path and the Sigils
+tab), each with a note saying what it was and how to restore it. No protocol change.
+
+
+## 2026-08-26 — 0.85.0: the FOURTH CLASS finally teaches something — the Lightbringer's 76-90 kit, an all-classes shared kit, and eighteen SIGILS on a tab of their own
 
 The 4th class has existed since 0.70.0 and granted **nothing but a name**. The reason was written
 into `Classes.Fourth.cs` at the time: `ClassKey` had no tier, so a 4th kit registered against

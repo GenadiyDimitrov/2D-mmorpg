@@ -1587,18 +1587,15 @@ public class GameLoopService : BackgroundService
             }
         }
 
-        // THE SIGILS' SECOND RULE: one per SLOT is the ExclusiveGroup check just above, which every
-        // permanent choice in the game already runs on. This is the other half — ONE PER CLASS FLAVOUR,
-        // straight off his REPLACES column (Holy Protection replaces Healer Attack and Healer Support
-        // as well as every other class's Defence). So the three sigils you end up wearing always come
-        // from three DIFFERENT flavours, and "all three Healer sigils" is not a build.
-        if (cur == 0 && SkillCatalog.SigilFlavourClash(def.Id, player.LearnedSkills) is { } worn)
-        {
-            string wornName = SkillCatalog.Get(worn)?.Name ?? worn;
-            SendSystemToEntity(player,
-                $"You already bear {wornName}. One sigil per discipline — have the Mindwright strike it off first.");
-            return;
-        }
+        // 🔴 A SIGIL FLAVOUR GUARD STOOD HERE until 2026-08-26. A sigil used to replace the same
+        //    flavour's other two as well as every other flavour's same slot, so the three you wore
+        //    always came from three different classes. He dropped that half — *"1-attack, 1-Defence,
+        //    1-support from any race/descipline"* — after every same-flavour trio was checked for an
+        //    overpowered one and none was found (the arithmetic is in Skills.Sigils.cs; the short of
+        //    it is that the trios have no intra-flavour synergy, and the tank's — the only
+        //    all-mitigation one — is worth no more than the cross-flavour Aegis + Immortality that was
+        //    always legal). ONE PER SLOT is the ExclusiveGroup check just above, and it is now the
+        //    whole rule.
 
         // THE STAT-SWAP LIMITS: at most +5 on any one stat, and 9 rungs in total across every swap.
         // Checked at EVERY level, not just the first — each level is another rung against the budget.

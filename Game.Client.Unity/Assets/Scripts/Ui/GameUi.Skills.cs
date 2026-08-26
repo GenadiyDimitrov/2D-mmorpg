@@ -488,8 +488,6 @@ namespace Game.Client
                     if (def == null) continue;
 
                     bool have = Boot.Learned.ContainsKey(id);
-                    // The FLAVOUR rule: this class's sigil in ANOTHER slot blocks this one.
-                    string clash = SkillCatalog.SigilFlavourClash(id, Boot.Learned);
                     bool affordable = Boot.SkillPoints >= SkillCatalog.SigilSpCost
                                    && Boot.Gold >= SkillCatalog.SigilGoldCost;
 
@@ -506,10 +504,6 @@ namespace Game.Client
                     else if (owned != null)
                     {
                         label += "      (slot taken)";
-                    }
-                    else if (clash != null)
-                    {
-                        label += "      (you already wear " + (SkillCatalog.Get(clash)?.Name ?? clash) + ")";
                     }
                     else
                     {
