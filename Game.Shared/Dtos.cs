@@ -298,6 +298,8 @@ public record StatsUpdate(
     // ×N on the enemy's fizzle roll. Neither is a caster-side accuracy stat — there isn't one.
     float MagicResist = 0f, float MagicFailMod = 1f,
     float CritRateResist = 0f, float CritDmgResist = 0f, float BowResist = 0f,
+    // Interrupt resistance as a whole PERCENT (SPT curve x resist buffs, folded). Was flat "points"
+    // against a wit-based pool until IG's interrupt formula landed on 2026-08-26.
     int InterruptResist = 0,
     // DEBUG / IG-reference: the OLD-style internal M.Atk (base·levelMod²·buffs²) the shrunk display hides.
     int MagicAttackInternal = 0,
@@ -397,7 +399,7 @@ public record TargetDetails(
     float MagicCritChance = 0f, float CritDamage = 0f,
     float MeleeVamp = 0f, float SpellVamp = 0f, float CooldownReduction = 0f,
     float HpRegen = 0f, float MpRegen = 0f,
-    int InterruptResist = 0, float CritDmgResist = 0f, float MagicResist = 0f,
+    int InterruptResist = 0, float CritDmgResist = 0f, float MagicResist = 0f,   // InterruptResist: whole PERCENT
     string Rank = "",
     // For a MOB only: its ACTIVE kit, pre-formatted for the client's Skills tab — one title line per
     // skill followed by indented detail lines, the same shape Drops uses. Empty for a plain melee
@@ -1048,7 +1050,22 @@ public record NpcDialog(
     SkillResetInfo? SkillReset = null, // un-learnable skills (null for non-reset NPCs)
     BufferInfo? Buffer = null, // buffer options (null for non-buffers)
     bool Warehouse = false, // true for a Warehouse Keeper — the client shows an "Open Warehouse" button
-    CraftMasterInfo? CraftMaster = null); // crafting master options (null for everyone else)
+    CraftMasterInfo? CraftMaster = null, // crafting master options (null for everyone else)
+    SpExchangeInfo? SpExchange = null); // SP broker (null for everyone else) — APPENDED, old clients ignore it
+
+/// <summary>Server -> client: the SP BROKER's one trade (owner, 2026-08-26) — *"an npc to take your
+/// 1kkk SP + 100kk gold and give you a tradable/sellabel SP bottle"*.
+///
+/// <para>Everything the button needs is here, including what the player currently HAS, so the client
+/// can grey it out and say why without a second round trip. The server re-checks on the command; this
+/// is display, not authority.</para></summary>
+public record SpExchangeInfo(
+    int SpCost,
+    long GoldCost,
+    int SpGranted,
+    int YourSp,
+    long YourGold,
+    bool CanAfford);
 
 /// <summary>Server -> client: what a CRAFTING MASTER offers this character right now (`BL-05`).
 ///

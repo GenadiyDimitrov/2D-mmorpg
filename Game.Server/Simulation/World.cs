@@ -467,6 +467,10 @@ public record SetSkillBarCmd(string ConnectionId, string[] Slots) : IGameCommand
 /// SkillId is set only for "single".</summary>
 public record BufferActionCmd(string ConnectionId, Guid NpcEntityId, string Action, string SkillId) : IGameCommand;
 
+/// <summary>Buy one SP Bottle from an SP-broker NPC (owner, 2026-08-26). No parameters beyond the NPC:
+/// the broker has exactly one trade, and its price lives in GameConstants, not on the wire.</summary>
+public record BuySpBottleCmd(string ConnectionId, Guid NpcEntityId) : IGameCommand;
+
 /// <summary>Client -> server: DELIBERATELY leave the world and go back to character select, keeping
 /// the connection. Distinct from <see cref="LeaveCommand"/>, which is the DISCONNECT path (link-dead
 /// grace / offline farming) — a deliberate exit must actually remove the character from the world.</summary>

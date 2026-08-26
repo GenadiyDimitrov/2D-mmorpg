@@ -216,7 +216,7 @@ public static partial class SkillCatalog
         //      no SkillEffect bits left for an "MP over time" of its own. ----
         int[] hotHp   = { 30, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100 };
         int[] hotMp   = { 0, 0, 0, 0, 0, 0, 0, 0, 5, 5, 5, 5, 5, 10 };
-        int[] hotCost = { 238, 272, 304, 352, 360, 380, 392, 400, 420, 432, 448, 452, 464, 464 };
+        int[] hotCost = { 238, 272, 304, 352, 360, 380, 392, 400, 420, 432, 448, 452, 458, 464 };
         list.Add(new SkillDef(WcHarmonyRestoration, "Harmony of Restoration", BaseClass.Mage,
             SkillEffect.HealOverTime | SkillEffect.RestoreMp,
             MpCost: hotCost[0], CastTicks: 20, CooldownTicks: 100, Range: 600, Power: 0,

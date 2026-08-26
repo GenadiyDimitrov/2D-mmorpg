@@ -1557,6 +1557,17 @@ namespace Game.Client
                 Boot.BagCount(fired.Substring(GameConstants.SkillBarItemPrefix.Length)) <= 0)
                 return;
 
+            // ConfirmOnUse (owner, 2026-08-26): the bar is ONE TAP, which is exactly where an expensive
+            // consumable gets drunk by accident — so the same prompt the details window shows goes here
+            // too. Everything without the flag fires straight through, unchanged.
+            if (!string.IsNullOrEmpty(fired) && GameConstants.IsItemSlot(fired)
+                && ItemCatalog.Get(fired.Substring(GameConstants.SkillBarItemPrefix.Length)) is ItemDef bdef
+                && bdef.ConfirmOnUse)
+            {
+                ConfirmUse(bdef, () => Boot.UseSlot(fired));
+                return;
+            }
+
             Boot.UseSlot(fired);
         }
 

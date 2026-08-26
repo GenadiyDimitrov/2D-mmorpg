@@ -826,9 +826,34 @@ public class Entity
     public WeaponType InnateWeaponType { get; set; } = WeaponType.None;
     public float CritChance { get; set; }       // physical crit rate
     public float MagicCritChance { get; set; }  // magic crit rate (from WIT)
-    public int InterruptResist { get; set; }    // resist casting interruption (from WIT)
-    public int MagicInterruptBonus { get; set; } // OFFENSIVE magic interrupt power (from WIT)
-    public int BasicAttackInterruptPower { get; set; } // interrupt power carried by basic attacks (rogues)
+    /// <summary>Summed interrupt-resistance BUFFS (Resolve), as a fraction — IG's
+    /// <c>(1 - Buffs/EquipMod)</c> term. 0.54 = Resolve's top rung. Clamped by
+    /// <see cref="StatCaps.InterruptResistMax"/> at the point of use, not here.
+    /// <para>🔑 THIS IS A PERCENT SINCE 2026-08-26 (owner: *"Apperanlty resolve is % not flat number
+    /// 54%"*). It used to be flat POINTS against a `wit·2 + level` pool, which is why the buff decayed
+    /// with level — a flat number on a growing pool always does. A percent means +54 at 20 and at 80.</para></summary>
+    public float InterruptResistPct { get; set; }
+
+    /// <summary>The caster's SPT term, <see cref="StatCalculator.SpiritInterruptMod"/> — IG's MEN mod.
+    /// Recomputed with the rest of the derived stats so a SPT buff moves it.</summary>
+    public float InterruptSpiritMod { get; set; } = 1f;
+
+    /// <summary>Everything the caster brings to the interrupt roll, folded: the SPT curve times the
+    /// buff term. Multiply IG's base chance by this.</summary>
+    public float InterruptMitigation =>
+        Math.Max(0f, InterruptSpiritMod)
+        * (1f - Math.Clamp(InterruptResistPct, 0f, StatCaps.InterruptResistMax));
+
+    /// <summary>The single number the character sheet and target-inspect show: how much of an
+    /// incoming interrupt roll this entity removes, in whole percent. 0 = nothing, 64 = a level-39
+    /// human mage under Resolve.</summary>
+    public int InterruptResistPercent => (int)MathF.Round((1f - InterruptMitigation) * 100f);
+
+    /// <summary>OFFENSIVE interrupt bonus in percentage POINTS, added to the final chance
+    /// (BuffInterruptPower "cancel power", passives). 0 for everyone today.</summary>
+    public float InterruptPowerBonus { get; set; }
+    /// <summary>Interrupt power in percentage POINTS carried by BASIC attacks (anti-magic rogue).</summary>
+    public float BasicAttackInterruptPower { get; set; }
     // Defender's MULTIPLIER on the magic-fail formula (StatCalculator.MagicFailChance). 1 = normal,
     // 2 = the tank's Anti-Magic passive. It replaced a flat fizzle FLOOR on 2026-08-10 — see the
     // header comment on MagicFailChance for why a floor was the wrong shape.
@@ -1467,16 +1492,6 @@ public class Entity
     public Guid? CastTargetId { get; set; }
     public int CastTicksRemaining { get; set; }
 
-    /// <summary>`spellDps × castSeconds` for the cast in progress — what this spell is worth over the
-    /// time it takes to cast. The denominator of the interrupt contest (`BL-91`, see
-    /// <see cref="StatCalculator.InterruptChance"/>).
-    ///
-    /// <para>🔑 COMPUTED ONCE AT CAST START, NOT PER HIT. It needs the caster's own stats and the
-    /// rung's damage/heal numbers; doing that inside <c>TryInterruptCast</c> would run it on every
-    /// swing of every attacker hitting the caster. It is runtime-only and never persisted — a cast does
-    /// not survive a logout.</para></summary>
-    public float CastingInterruptReference { get; set; }
-
     /// <summary>MP already charged for the in-progress cast (the initial portion),
     /// so we know what was spent if it's interrupted/cancelled and what remains
     /// to charge on completion.</summary>
@@ -1964,16 +1979,13 @@ public class Entity
         // Magic crit has no weapon step (it is WIT + buffs only), so unlike CritChance it can be
         // seeded here. The mult/flat accumulators above then carry it to the single fold at the end.
         MagicCritChance = StatCalculator.MagicCritBase((int)EffectiveWit);
-        InterruptResist = StatCalculator.InterruptResist(EffectiveWit, Level);
-        // ⚠ SEEDED AT ZERO SINCE `BL-91`, and that is NOT a nerf. This used to start at
-        // MagicInterruptPower(wit) = wit·2, back when it was the attacker's ONLY term. The new contest
-        // reads StatCalculator.InterruptPoints(wit, level) for BOTH sides, so wit·2 is already in the
-        // attacker's number — leaving the seed here would count a caster's WIT twice and quietly break
-        // the "parity is exactly ×1" property the whole model rests on. What remains is what the field
-        // now means: the buff/passive bonus ON TOP of your natural WIT (BuffInterruptPower, "magic
-        // cancel"), which is exactly what its siblings below add into it.
-        MagicInterruptBonus = 0;
-        BasicAttackInterruptPower = 0;   // rogue "cancel on basic" is now a 3rd-class discipline passive (anti-magic rogue), not a base-rogue trait
+        // INTERRUPT (IG's formula, 2026-08-26). The caster's whole defence is two numbers: the SPT
+        // curve — IG's MEN mod, flattened to his 20=x1 / 50=x0.67 — and the summed resist BUFFS, which
+        // are now PERCENTS. WIT is no longer in it on either side; the roll is damage-vs-Max-HP.
+        InterruptSpiritMod = StatCalculator.SpiritInterruptMod(EffectiveSpt);
+        InterruptResistPct = 0f;
+        InterruptPowerBonus = 0f;
+        BasicAttackInterruptPower = 0f;   // rogue "cancel on basic" is a 3rd-class discipline passive (anti-magic rogue), not a base-rogue trait
         BasicAttackRange = GameConstants.MeleeRange;
         // A mob's innate weapon (claws/club/blade/bow) seeds this; an equipped weapon overwrites it
         // below. Players have InnateWeaponType None, so their behaviour is unchanged.
@@ -2444,7 +2456,7 @@ public class Entity
                 MagicDefence += (int)sm.MDef;
                 if (sm.PDefPct != 0f) Defence = (int)(Defence * (1f + sm.PDefPct));
                 if (sm.MDefPct != 0f) MagicDefence = (int)(MagicDefence * (1f + sm.MDefPct));
-                InterruptResist += (int)sm.InterruptResist;
+                InterruptResistPct += sm.InterruptResist;   // a FRACTION since 2026-08-26 (0.10 = 10%)
                 if (sm.CritRate != 0f) CritRateMult *= 1f + sm.CritRate;   // ×1.2, not +20 points
                 if (sm.MagicCritRate != 0f) MagicCritRateMult *= 1f + sm.MagicCritRate;   // ditto, magic channel
                 if (sm.MagicCritDamage != 0f) MagicCritDamageMult *= 1f + sm.MagicCritDamage;   // ×1.3, not +30 points
@@ -2544,8 +2556,8 @@ public class Entity
                         Defence = (int)(Defence * (1f + pe.DefencePctWithShield));
                 }
                 MagicResist += pe.MagicResist;
-                MagicInterruptBonus += pe.InterruptPower;
-                InterruptResist += pe.InterruptResist;
+                InterruptPowerBonus += pe.InterruptPower;   // percentage POINTS on the final roll
+                InterruptResistPct += pe.InterruptResist;   // a FRACTION
                 MeleeVamp += pe.MeleeVamp;
                 ManaVamp += pe.ManaVamp;
                 SpellVamp += pe.SpellVamp;
@@ -2719,8 +2731,9 @@ public class Entity
             if (buff.Has(SkillEffect.BuffPvpMagicDamage)) PvpMagicDamageBonus += buff.Flat(SkillEffect.BuffPvpMagicDamage) + buff.Percent(SkillEffect.BuffPvpMagicDamage);
             if (buff.Has(SkillEffect.BuffPvpBasicDamage)) PvpBasicDamageBonus += buff.Flat(SkillEffect.BuffPvpBasicDamage) + buff.Percent(SkillEffect.BuffPvpBasicDamage);
             if (buff.Has(SkillEffect.BuffCancelResist)) CancelResist += buff.Flat(SkillEffect.BuffCancelResist) + buff.Percent(SkillEffect.BuffCancelResist);
-            if (buff.Has(SkillEffect.BuffInterruptPower)) MagicInterruptBonus += (int)buff.Flat(SkillEffect.BuffInterruptPower);
-            if (buff.Has(SkillEffect.BuffInterruptResist)) InterruptResist += (int)buff.Flat(SkillEffect.BuffInterruptResist);
+            if (buff.Has(SkillEffect.BuffInterruptPower)) InterruptPowerBonus += buff.Flat(SkillEffect.BuffInterruptPower);
+            // Resolve is a PERCENT ladder now (ModifierMode.Percent), so it arrives through Percent(), not Flat().
+            if (buff.Has(SkillEffect.BuffInterruptResist)) InterruptResistPct += buff.Percent(SkillEffect.BuffInterruptResist) + buff.Flat(SkillEffect.BuffInterruptResist) / 100f;
         }
 
         // The reward multipliers, from the best rune held in each channel. A STOP wins outright: it is

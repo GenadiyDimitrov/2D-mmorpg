@@ -121,6 +121,7 @@ public class GameLoopService : BackgroundService
             FollowCmd c => c.ConnectionId,
             AssistCmd c => c.ConnectionId,
             BufferActionCmd c => c.ConnectionId,
+            BuySpBottleCmd c => c.ConnectionId,
             _ => null,
         };
         if (conn is null || !TryGetPlayer(conn, out var p) || !p.Jailed)
@@ -188,6 +189,7 @@ public class GameLoopService : BackgroundService
                 case ForgetSkillCmd c: HandleForgetSkill(c); break;
                 case BuyStatSwapsCmd c: HandleBuyStatSwaps(c); break;
                 case BufferActionCmd c: HandleBufferAction(c); break;
+                case BuySpBottleCmd c: HandleBuySpBottle(c); break;
                 case SetMoveStateCmd c: HandleSetMoveState(c); break;
                 case CancelCastCmd c: HandleCancelCast(c); break;
                 case RemoveBuffCmd c: HandleRemoveBuff(c); break;
@@ -3891,6 +3893,19 @@ public class GameLoopService : BackgroundService
         // potion". Only movement is free.
         BreakHide(player);
 
+        // SP BOTTLE — the whole payload is a number, so it is handled here beside the other one-off
+        // item effects. ⚠ SkillPoints is a 32-bit int; CLAMP rather than wrap, and refuse the drink
+        // outright if it would be wasted, so the bottle is never eaten for nothing.
+        if (skill.GrantsSp > 0)
+        {
+            if (player.SkillPoints >= int.MaxValue - skill.GrantsSp)
+            {
+                SendSystemToEntity(player, "You already hold too much SP to drink that.");
+                return false;
+            }
+            player.SkillPoints += skill.GrantsSp;
+            SendSystemToEntity(player, $"You gain {skill.GrantsSp:N0} SP.");
+        }
         if (skill.TeleportsToTown)
             ReturnToTown(player);
         if ((skill.Effect & SkillEffect.Heal) != 0)
@@ -9319,12 +9334,6 @@ public class GameLoopService : BackgroundService
         caster.CastTicksRemaining = Math.Max(2,
             (int)(def.CastTicksAt(Math.Max(1, caster.SkillLevelOf(def.Id))) * speedMult));
 
-        // BL-91: what this cast is WORTH over its own cast time, the denominator every interrupt roll
-        // against it will divide by. Once, here — never per incoming hit. See the field.
-        caster.CastingInterruptReference =
-            CastInterruptReference(caster, def, Math.Max(1, caster.SkillLevelOf(def.Id)),
-                                   caster.CastTicksRemaining);
-
         // Charge the up-front slice — 20% of the EFFECTIVE total for every skill (the remaining 80%
         // lands with the cast). The gate in HandleCastSkill already proved he can afford all of it, so
         // the Math.Min is only a floor against an MP drain landing between the gate and here.
@@ -9712,9 +9721,10 @@ public class GameLoopService : BackgroundService
             // owner as a consequence of routing one path, not a separate rule.
             damage = FinalizeDamage(caster, target, damage, DamageKind.SkillMagic, def);
 
-            // WIT drives the caster's offensive magic interrupt power on top of the
-            // skill's flat InterruptPower (Disrupt's 99999 still dominates).
-            int magicInterrupt = def.InterruptPower + caster.MagicInterruptBonus;
+            // The striking skill's own InterruptPower, in percentage POINTS. The caster's "cancel power"
+            // bonus is added inside TryInterruptCast; WIT is NOT in the interrupt any more (IG's formula
+            // reads damage-vs-Max-HP and the CASTER'S SPT, and nothing off the attacker's sheet).
+            float magicInterrupt = def.InterruptPower;
 
             // Magic "fail" = reduced damage (not zero). Magic has its OWN formula, not the physical
             // resolver: 1.3^levelGap × the defender's anti-magic modifier × the CASTER'S OWN CHAIN
@@ -12906,7 +12916,7 @@ public class GameLoopService : BackgroundService
             p.MeleeVamp, p.SpellVamp, p.CooldownReduction,
             p.MagicResist, p.MagicFailMod,
             p.CritRateResist, p.CritDmgResist, p.BowResist,
-            p.InterruptResist, (int)p.EffectiveMagicAttack,   // MagicAttackInternal: the cosmic IG-reference value
+            p.InterruptResistPercent, (int)p.EffectiveMagicAttack,   // MagicAttackInternal: the cosmic IG-reference value
             p.HealPowerFlat, p.HealPowerMod, p.HealReceivedFlat, p.HealReceivedMod,
             p.CritDamageFlat, p.EffectiveMagicCritDamage));
     }
@@ -13481,7 +13491,7 @@ public class GameLoopService : BackgroundService
             MagicCritChance: t.MagicCritChance, CritDamage: t.CritDamageBonus,
             MeleeVamp: t.MeleeVamp, SpellVamp: t.SpellVamp, CooldownReduction: t.CooldownReduction,
             HpRegen: hpReg, MpRegen: mpReg,
-            InterruptResist: t.InterruptResist, CritDmgResist: t.CritDmgResist, MagicResist: t.MagicResist,
+            InterruptResist: t.InterruptResistPercent, CritDmgResist: t.CritDmgResist, MagicResist: t.MagicResist,
             Rank: isMob ? t.Rank.ToString() : "",
             Skills: skills,
             // Behaviour (playtest 23). Aggression is read off the SPAWN, not the template: a zone can
@@ -13492,10 +13502,10 @@ public class GameLoopService : BackgroundService
                         ? MobCatalog.Get(mid).Clan : ""));
     }
 
-    /// <summary>Roll to interrupt a cast when the caster is hit. Resist = caster
-    /// stat + the casting skill's InterruptDefense; power = attacker's skill
-    /// InterruptPower (0 for normal hits). Interrupt = cast stops, NO cooldown,
-    /// caster keeps the MP loss and can retry.</summary>
+    /// <summary>Interrupt on a hit taken: chance = (damage / Max HP) x random(1.00-1.20) x the caster's
+    /// SPT curve x (1 - resist buffs - the cast's own InterruptDefense) x the striking skill's
+    /// InterruptMult, + its InterruptPower in percentage points. An interrupt stops the cast with NO
+    /// cooldown: the caster keeps the 20% MP loss and can retry.</summary>
     /// <summary>Resolve crit and block for a physical hit. The shield first
     /// reduces the attacker's crit CHANCE; if it still crits, the crit lands in
     /// full (crits ignore the shield). If it doesn't crit, roll block — on a
@@ -13698,64 +13708,21 @@ public class GameLoopService : BackgroundService
     private static bool IsContestedDebuff(SkillDef def, SkillEffect effect) =>
         (effect & SkillEffect.ContestCc) != 0 || def.DebuffSchool != DebuffSchool.None;
 
-    /// <summary>`spellDps × castSeconds` for a cast about to start — the interrupt contest's
-    /// denominator (`BL-91`). His definition of a spell's DPS is verbatim
-    /// <c>base_dmg / (base_cast + base_reuse)</c>, so this is that, multiplied back up by the cast time.
+    /// <summary>Roll ONE hit against a cast in progress — IG's own formula, adapted (owner, 2026-08-26).
+    /// See <see cref="StatCalculator.InterruptChance"/> for the model and for the two places we
+    /// deliberately depart from IG.
     ///
-    /// <para>🔑 THE SPELL IS PRICED AGAINST THE CASTER'S OWN DEFENCES. The incoming hit it will be
-    /// compared with has already been mitigated by the caster's armour, so measuring the spell against
-    /// a target as tough as the caster puts both numbers on ONE yardstick. Any other reference (a mob's
-    /// defence, none at all) would make the ratio mean something different for every match-up.</para>
-    ///
-    /// <para>⚠ THE BUFF/UTILITY FALLBACK IS INVENTED AND IS HIS TO RULE. A cast with no damage and no
-    /// heal — a buff, a resurrection, a teleport — has no throughput to divide by, and zero would make
-    /// it uninterruptible. It is priced at the caster's <c>EffectiveMagicAttack</c>, which is merely a
-    /// never-zero, level-scaled number. Nothing about it is measured.</para></summary>
-    private static float CastInterruptReference(Entity caster, SkillDef def, int lvl, int castTicks)
-    {
-        if (def.FragileCast) return 0f;   // cancelled by any damage anyway; never rolled
-
-        var effect = def.Effect;   // the UNION for a stacking skill; good enough for a yardstick
-        float value;
-        if ((effect & SkillEffect.MagicDamage) != 0)
-        {
-            var (flat, mod) = def.MagicDamageAt(lvl);
-            value = StatCalculator.MagicDamageFM((int)caster.EffectiveMagicAttack, flat, mod,
-                                                 (int)caster.EffectiveMagicDefence, caster.MagicDefCoef);
-        }
-        else if ((effect & SkillEffect.PhysicalDamage) != 0)
-        {
-            var (flat, mod) = def.PhysDamageAt(lvl);
-            value = StatCalculator.PhysicalDamageFM((int)caster.EffectiveAttack, flat, mod,
-                                                    (int)caster.EffectiveDefence);
-        }
-        else if ((effect & SkillEffect.Heal) != 0 || def.Category == SkillCategory.Heal)
-        {
-            value = def.PowerAt(lvl);   // a heal's throughput IS its power — no mitigation to undo
-        }
-        else
-        {
-            value = caster.EffectiveMagicAttack;   // ⚠ the invented fallback, see the summary
-        }
-        if (value <= 0f) value = Math.Max(1f, caster.EffectiveMagicAttack);
-
-        float castSeconds  = castTicks * GameConstants.TickSeconds;
-        float reuseSeconds = def.CooldownTicks * GameConstants.TickSeconds;
-        float cycle = castSeconds + reuseSeconds;
-        if (cycle <= 0f) return 0f;
-        return value / cycle * castSeconds;   // = spellDps × castSeconds
-    }
-
-    /// <summary>Roll one hit against a cast in progress (`BL-91`). See
-    /// <see cref="StatCalculator.InterruptChance"/> for the model and why it replaced a formula that
-    /// clamped to zero at every level.</summary>
+    /// <para>🔑 IT NEEDS ALMOST NOTHING. Damage taken, the caster's Max HP, the caster's SPT curve and
+    /// the caster's resist buffs. The whole 0.83.0 apparatus — a per-cast DPS reference parked on the
+    /// entity, both sides' WIT and level, the spell's own reuse — is gone, and with it the Thunderstorm
+    /// pathology it created.</para></summary>
     /// <param name="hitDamage">What this hit actually took off the caster.</param>
-    /// <param name="attackerInterruptPower">The striking skill's flat <c>InterruptPower</c> (Disrupt's
-    /// 99999 still guarantees a break) plus, for a magic hit, the attacker's WIT-driven bonus.</param>
-    /// <param name="attacker">Whose points enter the contest. Null falls back to parity, so a source
-    /// with no attacker (a DoT tick, a trap) neither gains nor loses on the stat term.</param>
+    /// <param name="attackerInterruptPower">The striking skill's <c>InterruptPower</c>, now read as
+    /// percentage POINTS on the final chance. Disrupt's 99999 still guarantees the cancel.</param>
+    /// <param name="attacker">Only used for its own <c>InterruptPowerBonus</c> ("cancel power"). Null —
+    /// a DoT tick, a trap — simply contributes none, which is the right answer for a sourceless hit.</param>
     /// <param name="skillMult">The striking skill's <c>InterruptMult</c>.</param>
-    private void TryInterruptCast(Entity target, int attackerInterruptPower,
+    private void TryInterruptCast(Entity target, float attackerInterruptPower,
                                   int hitDamage = 0, Entity? attacker = null, float skillMult = 1f)
     {
         if (target.CastingSkillId is null)
@@ -13764,7 +13731,7 @@ public class GameLoopService : BackgroundService
         if (def is null)
             return;
 
-        // Fragile casts (Return) are cancelled by ANY damage — no interrupt contest.
+        // Fragile casts (Return) are cancelled by ANY damage — no interrupt roll at all.
         float chance;
         if (def.FragileCast)
         {
@@ -13772,13 +13739,13 @@ public class GameLoopService : BackgroundService
         }
         else
         {
-            // Both sides read the SAME formula, which is what makes parity exactly x1.
-            int defenderPoints = target.InterruptResist + def.InterruptDefense;
-            int attackerPoints = attackerInterruptPower
-                + (attacker is null ? defenderPoints
-                   : StatCalculator.InterruptPoints((int)attacker.EffectiveWit, attacker.Level));
-            chance = StatCalculator.InterruptChance(hitDamage, target.CastingInterruptReference,
-                                                    attackerPoints, defenderPoints, skillMult);
+            float roll = StatCalculator.InterruptRollMin
+                       + (float)_rng.NextDouble() * (StatCalculator.InterruptRollMax - StatCalculator.InterruptRollMin);
+            float power = attackerInterruptPower + (attacker?.InterruptPowerBonus ?? 0f);
+            chance = StatCalculator.InterruptChance(hitDamage, target.MaxHp,
+                                                    target.InterruptSpiritMod,
+                                                    target.InterruptResistPct + def.InterruptDefense,
+                                                    roll, skillMult, power);
         }
         if (_rng.NextDouble() < chance)
         {
@@ -14282,6 +14249,56 @@ public class GameLoopService : BackgroundService
         SaveEntity(player);
     }
 
+
+    /// <summary>Buy one SP Bottle at an SP-broker NPC (owner, 2026-08-26): *"an npc to take your
+    /// 1kkk SP + 100kk gold and give you a tradable/sellabel (100kk shop-buy price) SP bottle"*.
+    ///
+    /// <para>🔑 THE ORDER MATTERS. The bottle goes in FIRST and only then is the player charged, so a
+    /// full inventory costs nothing — the reverse would eat a billion SP and hand back an error. Both
+    /// sides are re-checked here regardless of what the dialog's CanAfford said; that flag is a label.</para></summary>
+    private void HandleBuySpBottle(BuySpBottleCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead) return;
+        if (!_world.Entities.TryGetValue(cmd.NpcEntityId, out var npc)
+            || npc.Kind != EntityKind.Npc || npc.NpcRole != NpcRole.SpExchange)
+            return;
+
+        float ndx = npc.X - player.X, ndy = npc.Y - player.Y;
+        if (ndx * ndx + ndy * ndy > GameConstants.TalkRange * GameConstants.TalkRange)
+        {
+            SendSystemToEntity(player, $"{npc.Name} is too far away.");
+            return;
+        }
+
+        if (player.SkillPoints < GameConstants.SpBottleSpCost)
+        {
+            SendSystemToEntity(player,
+                $"You need {GameConstants.SpBottleSpCost:N0} SP — you have {player.SkillPoints:N0}.");
+            return;
+        }
+        if (player.Gold < GameConstants.SpBottleGoldCost)
+        {
+            SendSystemToEntity(player,
+                $"You need {GameConstants.SpBottleGoldCost:N0} gold — you have {player.Gold:N0}.");
+            return;
+        }
+
+        // Inventory first (see the summary): if it will not fit, nothing has been spent.
+        if (!AddItem(player, ItemCatalog.SpBottle))
+        {
+            SendSystemToEntity(player, "Your inventory is full.");
+            return;
+        }
+
+        player.SkillPoints -= GameConstants.SpBottleSpCost;
+        player.Gold -= GameConstants.SpBottleGoldCost;
+
+        SendSystemToEntity(player, $"{npc.Name} seals your SP into a bottle.");
+        SendInventory(player);
+        SendStats(player);
+        SendDialog(player, npc);   // refresh the affordability line
+        SaveEntity(player);
+    }
     private void HandleTeleport(TeleportCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead) return;
@@ -14729,11 +14746,22 @@ public class GameLoopService : BackgroundService
             }
         }
 
+
+        // SP BROKER (owner, 2026-08-26): one trade, priced from GameConstants. The affordability flags
+        // are for the button's label only — HandleBuySpBottle re-checks both sides before it takes a coin.
+        SpExchangeInfo? spExchange = null;
+        if (npc.NpcRole == NpcRole.SpExchange)
+            spExchange = new SpExchangeInfo(
+                GameConstants.SpBottleSpCost, GameConstants.SpBottleGoldCost,
+                GameConstants.SpBottleSpGranted,
+                player.SkillPoints, player.Gold,
+                player.SkillPoints >= GameConstants.SpBottleSpCost
+                    && player.Gold >= GameConstants.SpBottleGoldCost);
         SendTo(player, "Dialog", new NpcDialog(
             npc.Name, npc.NpcRole.ToString(),
             offered, turnable.ToArray(), inProgress.ToArray(), changes.ToArray(), shop, teleport, reset,
             Warehouse: npc.NpcRole == NpcRole.Warehouse,
-            CraftMaster: craft));
+            CraftMaster: craft, SpExchange: spExchange));
 
         // Talking can itself advance a TalkTo step.
         AdvanceTalkStep(player, npcId);

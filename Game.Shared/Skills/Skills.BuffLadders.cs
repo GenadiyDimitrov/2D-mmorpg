@@ -43,7 +43,7 @@ public static partial class SkillCatalog
     //      Rung count is free here (nothing has to line up with a rarity), so it is chosen to
     //      reproduce the values the cleric already casts today. ----
     public const string FamVamp      = "vamp";        // Vampirism — % melee vampirism
-    public const string FamInterrupt = "interrupt";   // Resolve   — flat interrupt resistance
+    public const string FamInterrupt = "interrupt";   // Resolve   — interrupt resistance, a PERCENT
 
     // ---- Scroll-only families: six rungs, and the scrolls sit on rungs 2 / 4 / 6
     //      (Epic / Legendary / Mythic). ----
@@ -295,7 +295,12 @@ public static partial class SkillCatalog
         // for now .. no1 is learning it atm"*. It is parked, not deleted: `BuffIntr8` above is the id it
         // would reclaim, and re-adding 60 here is the whole change. Everything that used to hand out 60
         // — the NPC buffer, `Force and Ward`, the Warchanter's row at 52 — now hands out his 54.
-        list.AddRange(Ladder(FamInterrupt,"Resolve",   SkillEffect.BuffInterruptResist,ModifierMode.Flat,    "interrupt resistance", 18, 25, 36, 40, 42, 48, 54));
+        // ⚠ RESOLVE IS A PERCENT LADDER SINCE 2026-08-26, not a flat one. His IG note: *"Apperanlty
+        // resolve is % not flat number 54%"*. THE NUMBERS DID NOT MOVE — 18/25/36/40/42/48/54 are the
+        // same rungs the CSVs author, and every one of them now reads as a percentage of the incoming
+        // interrupt roll. What changed is that the buff no longer DECAYS: it used to be flat points
+        // against a `wit·2 + level` pool, so +54 cut interrupts by 47% at level 20 and only 30% at 80.
+        list.AddRange(Ladder(FamInterrupt,"Resolve",   SkillEffect.BuffInterruptResist,ModifierMode.Percent, "interrupt resistance", 0.18f, 0.25f, 0.36f, 0.40f, 0.42f, 0.48f, 0.54f));
 
         // ===== Scroll-only families — SIX rungs; the scrolls are rungs 2 / 4 / 6 =====
         list.AddRange(Ladder(FamMaxHp,   "Body",     SkillEffect.BuffHp,           ModifierMode.Percent, "Max HP", 0.10f, 0.15f, 0.20f, 0.25f, 0.30f, 0.35f));

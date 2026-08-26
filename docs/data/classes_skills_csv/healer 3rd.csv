@@ -11,9 +11,9 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,R
 64,Anti magic,Passive,0,self,0,0,0,"magic def +86, mRes +20%",0,190k,[]
 66,Anti magic,Passive,0,self,0,0,0,"magic def +91, mRes +25%",0,280k,[]
 68,Anti magic,Passive,0,self,0,0,0,"magic def +95, mRes +25%",0,320k,[]
-70,Anti magic,Passive,0,self,0,0,0,"magic def +99, mRes +25%",0,390k,[]
-72,Anti magic,Passive,0,self,0,0,0,"magic def +104, mRes +25%",0,650k,[]
-74,Anti magic,Passive,0,self,0,0,0,"magic def +108, mRes +25%",0,880k,[]
+70,Anti magic,Passive,0,self,0,0,0,"magic def +99, mRes +30%",0,390k,[]
+72,Anti magic,Passive,0,self,0,0,0,"magic def +104, mRes +30%",0,650k,[]
+74,Anti magic,Passive,0,self,0,0,0,"magic def +108, mRes +30%",0,880k,[]
 ,,,,,,,,,,,,,----------------------------Spellcaster Weapon Mastery----------------------------
 40,Spellcaster Weapon Mastery,Passive,0,self,0,0,0,"With blunt weapon decreses the reuse delay with 15%, mAtk +23, mpReg x1.5,hpReg x1.1, cast speed x1.07",0,36k,[Spell Mastery],,Removed the P.Atk bonus and made it only for magic weapons
 44,Spellcaster Weapon Mastery,Passive,0,self,0,0,0,"With blunt weapon decreses the reuse delay with 15%, mAtk +29, mpReg x1.9,hpReg x1.6, cast speed x1.07",0,43k,[Spell Mastery]
@@ -222,25 +222,25 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,R
 62,Armor Break,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy P.Def by 24% and MDef by 12% (success chance x1.5),58,170k,[],Ork
 64,Armor Break,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy P.Def by 26% and MDef by 13% (success chance x1.5),60,190k,[],Ork
 66,Armor Break,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy P.Def by 30% and MDef by 15% (success chance x1.5),62,280k,[],Ork
-68,Armor Break,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy P.Def by 32% and MDef by 16% (success chance x1.5),64,320k,[],Ork
-70,Armor Break,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy P.Def by 34% and MDef by 17% (success chance x1.5),65,390k,[],Ork
-72,Armor Break,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy P.Def by 36% and MDef by 18% (success chance x1.5),67,650k,[],Ork
-74,Armor Break,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy P.Def by 38% and MDef by 19% (success chance x1.5),69,880k,[],Ork
+68,Armor Break,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy P.Def by 30% and MDef by 15% (success chance x1.5),64,320k,[],Ork
+70,Armor Break,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy P.Def by 30% and MDef by 15% (success chance x1.5),65,390k,[],Ork
+72,Armor Break,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy P.Def by 30% and MDef by 15% (success chance x1.5),67,650k,[],Ork
+74,Armor Break,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy P.Def by 30% and MDef by 15% (success chance x1.5),69,880k,[],Ork
 ,,,,,,,,,,,,,----------------------------Gravity----------------------------
-40,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed and cast speed by  7%  (success chance x1) (ATK vs SPT),35,36k,[],Human,changed values
-44,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed and cast speed by  9%  (success chance x1),38,43k,[],Human
-48,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed and cast speed by 11%  (success chance x1),44,64k,[],Human
-52,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed and cast speed by 13%  (success chance x1),48,74k,[],Human
-56,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed and cast speed by 15%  (success chance x1),52,81k,[],Human
-58,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed and cast speed by 17%  (success chance x1),54,88k,[],Human
-60,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed and cast speed by 19%  (success chance x1),55,120k,[],Human
-62,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed and cast speed by 21%  (success chance x1),58,170k,[],Human,
-64,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed and cast speed by 23%  (success chance x1),60,190k,[],Human
-66,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed and cast speed by 25%  (success chance x1),62,280k,[],Human
-68,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed and cast speed by 27%  (success chance x1),64,320k,[],Human
-70,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed and cast speed by 29%  (success chance x1),65,390k,[],Human
-72,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed and cast speed by 31%  (success chance x1),67,650k,[],Human
-74,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed and cast speed by 33%  (success chance x1),69,880k,[],Human
+40,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed and cast speed by  7% (success chance x1) (ATK vs SPT),35,36k,[],Human,changed values
+44,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed and cast speed by  9% (success chance x1),38,43k,[],Human
+48,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed and cast speed by 11% (success chance x1),44,64k,[],Human
+52,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed and cast speed by 13% (success chance x1),48,74k,[],Human
+56,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed and cast speed by 15% (success chance x1),52,81k,[],Human
+58,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed and cast speed by 17% (success chance x1),54,88k,[],Human
+60,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed and cast speed by 19% (success chance x1),55,120k,[],Human
+62,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed and cast speed by 21% (success chance x1),58,170k,[],Human,
+64,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed and cast speed by 23% (success chance x1),60,190k,[],Human
+66,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed and cast speed by 23% (success chance x1),62,280k,[],Human
+68,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed and cast speed by 23% (success chance x1),64,320k,[],Human
+70,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed and cast speed by 23% (success chance x1),65,390k,[],Human
+72,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed and cast speed by 23% (success chance x1),67,650k,[],Human
+74,Gravity,Magical Debuff,600,enemy,2.5,5,30,Decrease enemy Atack speed and cast speed by 23% (success chance x1),69,880k,[],Human
 ,,,,,,,,,,,,,----------------------------Urgent Heal----------------------------
 44,Urgent Heal,Magic/Heal,600,self/target,8,30,0,heal for 15%,136,43k,[]
 48,Urgent Heal,Magic/Heal,600,self/target,8,30,0,heal for 20%,152,64k,[]
@@ -295,27 +295,27 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,R
 44,Agility,Magic/Buff,600,self/target,1,1,1200,+3 Evasion.,72,22k,[]
 52,Agility,Magic/Buff,600,self/target,1,1,1200,+4 Evasion.,80,38k,[]
 ,,,,,,,,,,,,,----------------------------Resolve----------------------------
-44,Resolve,Magic/Buff,600,self/target,1,1,1200,+36 interrupt resistance.,72,22k,[]
-52,Resolve,Magic/Buff,600,self/target,1,1,1200,+42 interrupt resistance.,80,38k,[]
-60,Resolve,Magic/Buff,600,self/target,1,1,1200,+48 interrupt resistance.,95,61k,[]
-68,Resolve,Magic/Buff,600,self/target,1,1,1200,+54 interrupt resistance.,115,165k,[]
+44,Resolve,Magic/Buff,600,self/target,1,1,1200,+36% interrupt resistance.,72,22k,[]
+52,Resolve,Magic/Buff,600,self/target,1,1,1200,+42% interrupt resistance.,80,38k,[]
+60,Resolve,Magic/Buff,600,self/target,1,1,1200,+48% interrupt resistance.,95,61k,[]
+68,Resolve,Magic/Buff,600,self/target,1,1,1200,+54% interrupt resistance.,115,165k,[]
 ,,,,,,,,,,,,,----------------------------Vigor----------------------------
 48,Vigor,Magic/Buff,600,self/target,1,1,1200,+15% HP regeneration.,75,32k,[]
 56,Vigor,Magic/Buff,600,self/target,1,1,1200,+20% HP regeneration.,85,42k,[]
 ,,,,,,,,,,,,,----------------------------Alacrity----------------------------
 48,Alacrity,Magic/Buff,600,self/target,1,1,1200,+30% Cast Speed.,75,32k,[]
 ,,,,,,,,,,,,,----------------------------Mana Totem----------------------------
-52,Mana Totem,Magic/Heal,0,ground,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +10/s,352,74k,[],Ork
-56,Mana Totem,Magic/Heal,0,ground,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +11/s,360,81k,[],Ork
-58,Mana Totem,Magic/Heal,0,ground,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +12/s,380,88k,[],Ork
-60,Mana Totem,Magic/Heal,0,ground,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +13/s,392,120k,[],Ork
-62,Mana Totem,Magic/Heal,0,ground,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +14/s,400,170k,[],Ork
-64,Mana Totem,Magic/Heal,0,ground,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +15/s,420,190k,[],Ork
-66,Mana Totem,Magic/Heal,0,ground,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +16/s,432,280k,[],Ork
-68,Mana Totem,Magic/Heal,0,ground,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +17/s,448,320k,[],Ork
-70,Mana Totem,Magic/Heal,0,ground,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +18/s,452,390k,[],Ork
-72,Mana Totem,Magic/Heal,0,ground,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +19/s,464,650k,[],Ork
-74,Mana Totem,Magic/Heal,0,ground,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +20/s,476,880k,[],Ork
+52,Mana Totem,Magic/Heal,0,ground,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +10/s,352,74k,[Restore Mana],Ork
+56,Mana Totem,Magic/Heal,0,ground,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +11/s,360,81k,[Restore Mana],Ork
+58,Mana Totem,Magic/Heal,0,ground,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +12/s,380,88k,[Restore Mana],Ork
+60,Mana Totem,Magic/Heal,0,ground,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +13/s,392,120k,[Restore Mana],Ork
+62,Mana Totem,Magic/Heal,0,ground,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +14/s,400,170k,[Restore Mana],Ork
+64,Mana Totem,Magic/Heal,0,ground,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +15/s,420,190k,[Restore Mana],Ork
+66,Mana Totem,Magic/Heal,0,ground,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +16/s,432,280k,[Restore Mana],Ork
+68,Mana Totem,Magic/Heal,0,ground,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +17/s,448,320k,[Restore Mana],Ork
+70,Mana Totem,Magic/Heal,0,ground,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +18/s,452,390k,[Restore Mana],Ork
+72,Mana Totem,Magic/Heal,0,ground,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +19/s,464,650k,[Restore Mana],Ork
+74,Mana Totem,Magic/Heal,0,ground,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +20/s,476,880k,[Restore Mana],Ork
 ,,,,,,,,,,,,,----------------------------Frenzy----------------------------
 52,Frenzy,Magic/Buff,600,self/target,1,1,1200,"−10% Max HP/MP, +8% offence and speed, +8 move, −8 evasion.",80,38k,[]
 ,,,,,,,,,,,,,----------------------------Mana Strain----------------------------

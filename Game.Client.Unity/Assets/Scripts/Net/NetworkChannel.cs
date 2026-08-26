@@ -441,6 +441,11 @@ namespace Game.Client
         public Task QuitProfessionAsync(Guid npcEntityId) =>
             _connection.SendAsync("QuitProfession", npcEntityId);
 
+        /// <summary>Buy one SP Bottle at an SP broker: 1kkk SP + 100kk gold. The broker has exactly
+        /// one trade, so there is nothing to pass but the NPC.</summary>
+        public Task BuySpBottleAsync(Guid npcEntityId) =>
+            _connection.SendAsync("BuySpBottle", npcEntityId);
+
         // ----- debug (server re-checks admin rights on every one of these) ------------------------
         public Task DebugLevelAsync(int delta) => _connection.SendAsync("DebugLevel", delta);
         public Task DebugLearnAllAsync() => _connection.SendAsync("DebugLearnAll");

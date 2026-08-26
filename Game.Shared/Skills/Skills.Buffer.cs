@@ -29,7 +29,7 @@ public static partial class SkillCatalog
     public const string NpcVampirism = "npc_vampirism";   // % melee vampirism
     public const string NpcAccuracy  = "npc_accuracy";    // flat accuracy
     public const string NpcWard      = "npc_ward";        // % M.Def
-    public const string NpcResolve   = "npc_resolve";     // flat interrupt resistance
+    public const string NpcResolve   = "npc_resolve";     // interrupt resistance, as a PERCENT (IG formula, 2026-08-26)
     public const string NpcFerocity  = "npc_ferocity";    // % crit damage
     public const string NpcInsight   = "npc_insight";     // % magic crit rate
     public const string NpcSoul      = "npc_soul";        // % Max MP
@@ -191,7 +191,7 @@ public static partial class SkillCatalog
         NpcSingle(NpcForce, "Force", BuffMAtk4, SkillEffect.BuffMagAtk, "+32% M.Atk"),
         NpcSingle(NpcWard, "Ward", BuffMDef4, SkillEffect.BuffMagicDef, "+30% M.Def"),
         NpcSingle(NpcResolve, "Resolve", BuffIntr7, SkillEffect.BuffInterruptResist,
-            "+54 interrupt resistance"),
+            "+54% interrupt resistance"),
 
         // ---- The FOCUS family (was a single three-effect "Focus"). ----
         NpcSingle(NpcFocus, "Focus", Rung(FamCritRate, 6), SkillEffect.BuffCritRate, "+30% critical rate"),
@@ -220,7 +220,7 @@ public static partial class SkillCatalog
         NpcBuffGroup(NpcForceGroup, "Force and Ward",
             SkillEffect.BuffMagAtk | SkillEffect.BuffMagicDef | SkillEffect.BuffInterruptResist,
             new[] { BuffMAtk4, BuffMDef4, BuffIntr7 },
-            "+32% M.Atk, +30% M.Def, +54 interrupt resistance"),
+            "+32% M.Atk, +30% M.Def, +54% interrupt resistance"),
         NpcBuffGroup(NpcFocusGroup, "Focus and Ferocity",
             SkillEffect.BuffCritRate | SkillEffect.BuffCritDamage | SkillEffect.BuffMagicCritRate,
             new[] { Rung(FamCritRate, 6), Rung(FamCritDmg, 6), Rung(FamMagCrit, 6) },

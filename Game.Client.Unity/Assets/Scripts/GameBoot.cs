@@ -396,6 +396,15 @@ namespace Game.Client
             catch (Exception ex) { ClientLog.Warn("JoinProfession: " + ex.Message); }
         }
 
+        /// <summary>Buy one SP Bottle at an SP broker. The server re-checks SP, gold and inventory
+        /// space; this only asks.</summary>
+        public async void BuySpBottle()
+        {
+            if (Phase != ClientPhase.InWorld || DialogNpcId == Guid.Empty) return;
+            try { await _net.BuySpBottleAsync(DialogNpcId); }
+            catch (Exception ex) { ClientLog.Warn("BuySpBottle: " + ex.Message); }
+        }
+
         /// <summary>Quit your profession at your own master. Every crafting level is lost.</summary>
         public async void QuitProfession()
         {

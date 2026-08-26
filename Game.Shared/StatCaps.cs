@@ -54,6 +54,13 @@ public static class StatCaps
     /// caps the fighters' flat-crit-damage ladder.</summary>
     public const float MagicCritDamageCap = 5.0f;
 
+    /// <summary>Ceiling on SUMMED interrupt-resistance buffs, as a fraction. Resolve's top rung is
+    /// 54%, so nothing today reaches this — it exists because his IG note names a robe set worth
+    /// another 50% and the product of the two is what he rejected: *"in the end mages become
+    /// [un]interruptable - and i dont want that"*. Any future source stacks INTO this clamp rather
+    /// than multiplying past it. The SPT curve is NOT capped here; it is a separate multiplier.</summary>
+    public const float InterruptResistMax = 0.80f;
+
     // ----- Magic landing (owner ruling 2026-08-10, playtest-20 `57d`) ------------------
     // Magic does NOT go through the physical resolver. Its own formula, in percentage POINTS:
     //     fail% = round( LevelBase^(defenderLvl − attackerLvl) × defenderMod × weaponMod )

@@ -11,9 +11,9 @@ LEARN @ LVL,NAME,TYPE,RANGE,TARGET,CAST s,CD s,DURRATION s,DESCR,MP,SP COST,REPL
 64,Anti magic,Passive,0,self,0,0,0,"magic def +86, mRes +20%",0,190k,[]
 66,Anti magic,Passive,0,self,0,0,0,"magic def +91, mRes +25%",0,280k,[]
 68,Anti magic,Passive,0,self,0,0,0,"magic def +95, mRes +25%",0,320k,[]
-70,Anti magic,Passive,0,self,0,0,0,"magic def +99, mRes +25%",0,390k,[]
-72,Anti magic,Passive,0,self,0,0,0,"magic def +104, mRes +25%",0,650k,[]
-74,Anti magic,Passive,0,self,0,0,0,"magic def +108, mRes +25%",0,880k,[]
+70,Anti magic,Passive,0,self,0,0,0,"magic def +99, mRes +30%",0,390k,[]
+72,Anti magic,Passive,0,self,0,0,0,"magic def +104, mRes +30%",0,650k,[]
+74,Anti magic,Passive,0,self,0,0,0,"magic def +108, mRes +30%",0,880k,[]
 ,,,,,,,,,,,,,-----------------------Mage Armor Mastery-----------------------
 40,Mage Armor Mastery,Passive,0,self,0,0,0,"Robe: mpReg x1.2, pDef +39, maxMP +70; mpWhenRestored +33%",0,36k,[Robe Armor Mastery]
 44,Mage Armor Mastery,Passive,0,self,0,0,0,"Robe: mpReg x1.2, pDef +44, maxMP +70; mpWhenRestored +35%",0,43k,[Robe Armor Mastery]
@@ -118,35 +118,35 @@ LEARN @ LVL,NAME,TYPE,RANGE,TARGET,CAST s,CD s,DURRATION s,DESCR,MP,SP COST,REPL
 72,Elemental Wave,Magic/Dmg,200,enemy,4,4,0,Hit nearby enemies in 200 radius with m.Atk +62;,100,650k,[]
 74,Elemental Wave,Magic/Dmg,200,enemy,4,4,0,Hit nearby enemies in 200 radius with m.Atk +64;,103,880k,[]
 ,,,,,,,,,,,,,-----------------------------Frost Spikes-----------------------------
-40,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +30; Apply 15% Slow effect (success chance x0.7); Higher chance to interrupt enemy casts;,33,36k,[Vampiric Bolt],Elf,does dmg but have a lower success rate for the slow - interrupt unaffected
-44,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +35; Apply 20% Slow effect (success chance x0.7); Higher chance to interrupt enemy casts;,38,43k,[Vampiric Bolt],Elf
-48,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +39; Apply 20% Slow effect (success chance x0.7); Higher chance to interrupt enemy casts;,44,64k,[Vampiric Bolt],Elf
-52,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +43; Apply 25% Slow effect (success chance x0.7); Higher chance to interrupt enemy casts;,48,74k,[Vampiric Bolt],Elf
-56,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +46; Apply 25% Slow effect (success chance x0.7); Higher chance to interrupt enemy casts;,52,81k,[Vampiric Bolt],Elf
-58,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +48; Apply 28% Slow effect (success chance x0.7); Higher chance to interrupt enemy casts;,54,88k,[Vampiric Bolt],Elf
-60,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +50; Apply 28% Slow effect (success chance x0.7); Higher chance to interrupt enemy casts;,55,120k,[Vampiric Bolt],Elf
-62,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +52; Apply 31% Slow effect (success chance x0.7); Higher chance to interrupt enemy casts;,58,170k,[Vampiric Bolt],Elf
-64,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +54; Apply 31% Slow effect (success chance x0.7); Higher chance to interrupt enemy casts;,60,190k,[Vampiric Bolt],Elf
-66,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +56; Apply 34% Slow effect (success chance x0.7); Higher chance to interrupt enemy casts;,62,280k,[Vampiric Bolt],Elf
-68,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +58; Apply 34% Slow effect (success chance x0.7); Higher chance to interrupt enemy casts;,64,320k,[Vampiric Bolt],Elf
-70,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +60; Apply 37% Slow effect (success chance x0.7); Higher chance to interrupt enemy casts;,65,390k,[Vampiric Bolt],Elf
-72,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +62; Apply 37% Slow effect (success chance x0.7); Higher chance to interrupt enemy casts;,67,650k,[Vampiric Bolt],Elf
-74,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +64; Apply 40% Slow effect (success chance x0.7); Higher chance to interrupt enemy casts;,69,880k,[Vampiric Bolt],Elf
+40,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +30; Apply 15% Slow effect (success chance x0.7); Higher chance to interrupt enemy casts (interrupt chance x2);,33,36k,[Vampiric Bolt],Elf,does dmg but have a lower success rate for the slow - interrupt unaffected
+44,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +35; Apply 20% Slow effect (success chance x0.7); Higher chance to interrupt enemy casts (interrupt chance x2);,38,43k,[Vampiric Bolt],Elf
+48,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +39; Apply 20% Slow effect (success chance x0.7); Higher chance to interrupt enemy casts (interrupt chance x2);,44,64k,[Vampiric Bolt],Elf
+52,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +43; Apply 25% Slow effect (success chance x0.7); Higher chance to interrupt enemy casts (interrupt chance x2);,48,74k,[Vampiric Bolt],Elf
+56,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +46; Apply 25% Slow effect (success chance x0.7); Higher chance to interrupt enemy casts (interrupt chance x2);,52,81k,[Vampiric Bolt],Elf
+58,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +48; Apply 28% Slow effect (success chance x0.7); Higher chance to interrupt enemy casts (interrupt chance x2);,54,88k,[Vampiric Bolt],Elf
+60,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +50; Apply 28% Slow effect (success chance x0.7); Higher chance to interrupt enemy casts (interrupt chance x2);,55,120k,[Vampiric Bolt],Elf
+62,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +52; Apply 31% Slow effect (success chance x0.7); Higher chance to interrupt enemy casts (interrupt chance x2);,58,170k,[Vampiric Bolt],Elf
+64,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +54; Apply 31% Slow effect (success chance x0.7); Higher chance to interrupt enemy casts (interrupt chance x2);,60,190k,[Vampiric Bolt],Elf
+66,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +56; Apply 34% Slow effect (success chance x0.7); Higher chance to interrupt enemy casts (interrupt chance x2);,62,280k,[Vampiric Bolt],Elf
+68,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +58; Apply 34% Slow effect (success chance x0.7); Higher chance to interrupt enemy casts (interrupt chance x2);,64,320k,[Vampiric Bolt],Elf
+70,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +60; Apply 37% Slow effect (success chance x0.7); Higher chance to interrupt enemy casts (interrupt chance x2);,65,390k,[Vampiric Bolt],Elf
+72,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +62; Apply 37% Slow effect (success chance x0.7); Higher chance to interrupt enemy casts (interrupt chance x2);,67,650k,[Vampiric Bolt],Elf
+74,Frost Spikes,Magic/Dmg,900,enemy,2.5,1,30,Attack the enemt with m.Atk +64; Apply 40% Slow effect (success chance x0.7); Higher chance to interrupt enemy casts (interrupt chance x2);,69,880k,[Vampiric Bolt],Elf
 ,,,,,,,,,,,,,-----------------------------Frost Pierce-----------------------------
-40,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +30; Applies bleed effect rank 3 (success chance x0.5); Higher chance to interrupt enemy casts;,33,36k,[],Elf,does dmg but have a lower success rate for the bleed - interrupt unaffected
-44,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +35; Applies bleed effect rank 4 (success chance x0.5); Higher chance to interrupt enemy casts;,38,43k,[],Elf
-48,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +39; Applies bleed effect rank 4 (success chance x0.5); Higher chance to interrupt enemy casts;,44,64k,[],Elf
-52,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +43; Applies bleed effect rank 5 (success chance x0.5); Higher chance to interrupt enemy casts;,48,74k,[],Elf
-56,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +46; Applies bleed effect rank 5 (success chance x0.5); Higher chance to interrupt enemy casts;,52,81k,[],Elf
-58,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +48; Applies bleed effect rank 6 (success chance x0.5); Higher chance to interrupt enemy casts;,54,88k,[],Elf
-60,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +50; Applies bleed effect rank 6 (success chance x0.5); Higher chance to interrupt enemy casts;,55,120k,[],Elf
-62,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +52; Applies bleed effect rank 7 (success chance x0.5); Higher chance to interrupt enemy casts;,58,170k,[],Elf
-64,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +54; Applies bleed effect rank 7 (success chance x0.5); Higher chance to interrupt enemy casts;,60,190k,[],Elf
-66,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +56; Applies bleed effect rank 8 (success chance x0.5); Higher chance to interrupt enemy casts;,62,280k,[],Elf
-68,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +58; Applies bleed effect rank 8 (success chance x0.5); Higher chance to interrupt enemy casts;,64,320k,[],Elf
-70,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +60; Applies bleed effect rank 9 (success chance x0.5); Higher chance to interrupt enemy casts;,65,390k,[],Elf
-72,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +62; Applies bleed effect rank 9 (success chance x0.5); Higher chance to interrupt enemy casts;,67,650k,[],Elf
-74,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +64; Applies bleed effect rank 10 (success chance x0.5); Higher chance to interrupt enemy casts;,69,880k,[],Elf
+40,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +30; Applies bleed effect rank 3 (success chance x0.5); Higher chance to interrupt enemy casts (interrupt chance x2);,33,36k,[],Elf,does dmg but have a lower success rate for the bleed - interrupt unaffected
+44,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +35; Applies bleed effect rank 4 (success chance x0.5); Higher chance to interrupt enemy casts (interrupt chance x2);,38,43k,[],Elf
+48,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +39; Applies bleed effect rank 4 (success chance x0.5); Higher chance to interrupt enemy casts (interrupt chance x2);,44,64k,[],Elf
+52,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +43; Applies bleed effect rank 5 (success chance x0.5); Higher chance to interrupt enemy casts (interrupt chance x2);,48,74k,[],Elf
+56,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +46; Applies bleed effect rank 5 (success chance x0.5); Higher chance to interrupt enemy casts (interrupt chance x2);,52,81k,[],Elf
+58,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +48; Applies bleed effect rank 6 (success chance x0.5); Higher chance to interrupt enemy casts (interrupt chance x2);,54,88k,[],Elf
+60,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +50; Applies bleed effect rank 6 (success chance x0.5); Higher chance to interrupt enemy casts (interrupt chance x2);,55,120k,[],Elf
+62,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +52; Applies bleed effect rank 7 (success chance x0.5); Higher chance to interrupt enemy casts (interrupt chance x2);,58,170k,[],Elf
+64,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +54; Applies bleed effect rank 7 (success chance x0.5); Higher chance to interrupt enemy casts (interrupt chance x2);,60,190k,[],Elf
+66,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +56; Applies bleed effect rank 8 (success chance x0.5); Higher chance to interrupt enemy casts (interrupt chance x2);,62,280k,[],Elf
+68,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +58; Applies bleed effect rank 8 (success chance x0.5); Higher chance to interrupt enemy casts (interrupt chance x2);,64,320k,[],Elf
+70,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +60; Applies bleed effect rank 9 (success chance x0.5); Higher chance to interrupt enemy casts (interrupt chance x2);,65,390k,[],Elf
+72,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +62; Applies bleed effect rank 9 (success chance x0.5); Higher chance to interrupt enemy casts (interrupt chance x2);,67,650k,[],Elf
+74,Frost Pierce,Magic/Dmg,900,enemy,2.5,1,15,Attack the enemt with m.Atk +64; Applies bleed effect rank 10 (success chance x0.5); Higher chance to interrupt enemy casts (interrupt chance x2);,69,880k,[],Elf
 ,,,,,,,,,,,,,-----------------------------Arcane Wave-----------------------------
 40,Arcane Wave,Magic/Dmg,900,enemy,4,1,0,Attack the enemt with m.Atk +30 in 400 radius around the target;,53,36k,[],Human
 44,Arcane Wave,Magic/Dmg,900,enemy,4,1,0,Attack the enemt with m.Atk +35 in 400 radius around the target;,59,43k,[],Human

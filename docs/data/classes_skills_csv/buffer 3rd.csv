@@ -14,9 +14,9 @@ LEARN @ LVL,NAME,TYPE,RANGE,TARGET,CAST s,CD s,DURRATION s,DESCR,MP,SP COST,REPL
 64,Anti magic,Passive,0,self,0,0,0,"magic def +86, mRes +20%",0,190k,[],,
 66,Anti magic,Passive,0,self,0,0,0,"magic def +91, mRes +25%",0,280k,[],,
 68,Anti magic,Passive,0,self,0,0,0,"magic def +95, mRes +25%",0,320k,[],,
-70,Anti magic,Passive,0,self,0,0,0,"magic def +99, mRes +25%",0,390k,[],,
-72,Anti magic,Passive,0,self,0,0,0,"magic def +104, mRes +25%",0,650k,[],,
-74,Anti magic,Passive,0,self,0,0,0,"magic def +108, mRes +25%",0,880k,[],,
+70,Anti magic,Passive,0,self,0,0,0,"magic def +99, mRes +30%",0,390k,[],,
+72,Anti magic,Passive,0,self,0,0,0,"magic def +104, mRes +30%",0,650k,[],,
+74,Anti magic,Passive,0,self,0,0,0,"magic def +108, mRes +30%",0,880k,[],,
 ,,,,,,,,,,,,,-----------------------Armor Mastery-----------------------
 40,Armor Mastery,Passive,0,self,0,0,0,"Robe/Light/Heavy: mpReg x1.2, pDef +39, maxMP +70;",0,36k,[],,
 44,Armor Mastery,Passive,0,self,0,0,0,"Robe/Light/Heavy: mpReg x1.2, pDef +44, maxMP +70;",0,43k,[],,
@@ -120,7 +120,7 @@ LEARN @ LVL,NAME,TYPE,RANGE,TARGET,CAST s,CD s,DURRATION s,DESCR,MP,SP COST,REPL
 66,Harmony of Restoration,Magic/Heal,600,self/party,2,10,30,Restores +80 HP/s and +5 MP/s for 30s,432,280k,[Party Heal],,
 68,Harmony of Restoration,Magic/Heal,600,self/party,2,10,30,Restores +85 HP/s and +5 MP/s for 30s,448,320k,[Party Heal],,
 70,Harmony of Restoration,Magic/Heal,600,self/party,2,10,30,Restores +90 HP/s and +5 MP/s for 30s,452,390k,[Party Heal],,
-72,Harmony of Restoration,Magic/Heal,600,self/party,2,10,30,Restores +95 HP/s and +5 MP/s for 30s,464,650k,[Party Heal],,
+72,Harmony of Restoration,Magic/Heal,600,self/party,2,10,30,Restores +95 HP/s and +5 MP/s for 30s,458,650k,[Party Heal],,
 74,Harmony of Restoration,Magic/Heal,600,self/party,2,10,30,Restores +100 HP/s and +10 MP/s for 30s,464,880k,[Party Heal],,
 ,,,,,,,,,,,,,---------------------------------------------------------------------------------------------ACTIVE PHYSICAL-------------------------------------------------------------------------------------------------------------------
 ,,,,,,,,,,,,,---------------------------Twin Arrow----------------------------
@@ -170,7 +170,7 @@ LEARN @ LVL,NAME,TYPE,RANGE,TARGET,CAST s,CD s,DURRATION s,DESCR,MP,SP COST,REPL
 ,,,,,,,,,,,,,---------------------------Bow Expertise----------------------------
 56,Bow Expertise,Physical/Buff,0,self,3,2,1200,"Increase Bow attack speed +12%, Requre: Bow",85,42k,[],Elf,
 ,,,,,,,,,,,,,---------------------------------------------------------------------------------------------ACTIVE TOGGLE-------------------------------------------------------------------------------------------------------------------
-,,,,,,,,,,,,,---------------------------Barrier----------------------------
+,,,,,,,,,,,,,---------------------------Reinforcement----------------------------
 40,Reinforcement,Toggle,0,self,0,0,0,Increase P.Def +240 (Consumes: 12/s),12,36k,[],,
 48,Reinforcement,Toggle,0,self,0,0,0,Increase P.Def +260 (Consumes: 13/s),13,64k,[],,
 52,Reinforcement,Toggle,0,self,0,0,0,Increase P.Def +280 (Consumes: 14/s),14,74k,[],,
@@ -184,8 +184,7 @@ LEARN @ LVL,NAME,TYPE,RANGE,TARGET,CAST s,CD s,DURRATION s,DESCR,MP,SP COST,REPL
 70,Reinforcement,Toggle,0,self,0,0,0,Increase P.Def +520 (Consumes: 26/s),26,390k,[],,
 72,Reinforcement,Toggle,0,self,0,0,0,Increase P.Def +560 (Consumes: 28/s),28,650k,[],,
 74,Reinforcement,Toggle,0,self,0,0,0,Increase P.Def +600 (Consumes: 30/s),30,880k,[],,
-,,,,,,,,,,,,,---------------------------------------------------------------------------------------------ACTIVE TOGGLE-------------------------------------------------------------------------------------------------------------------
-,,,,,,,,,,,,,---------------------------Barrier----------------------------
+,,,,,,,,,,,,,---------------------------Sharpening----------------------------
 40,Sharpening,Toggle,0,self,0,0,0,Increase P.Atk +60 (Consumes: 3/s),3,36k,[],,
 48,Sharpening,Toggle,0,self,0,0,0,Increase P.Atk +80 (Consumes: 4/s),4,64k,[],,
 52,Sharpening,Toggle,0,self,0,0,0,Increase P.Atk +100 (Consumes: 5/s),5,74k,[],,
@@ -276,12 +275,12 @@ LEARN @ LVL,NAME,TYPE,RANGE,TARGET,CAST s,CD s,DURRATION s,DESCR,MP,SP COST,REPL
 48,Serenity,Magic/Buff,600,self/target,1,1,1200,+15% MP regeneration.,75,32k,[],,
 56,Serenity,Magic/Buff,600,self/target,1,1,1200,+20% MP regeneration.,85,42k,[],,
 ,,,,,,,,,,,,,------------------------------Resolve------------------------------
-44,Resolve,Magic/Buff,600,self/target,1,1,1200,+36 interrupt resistance.,72,22k,[],,
-52,Resolve,Magic/Buff,600,self/target,1,1,1200,+42 interrupt resistance.,80,38k,[],,
-60,Resolve,Magic/Buff,600,self/target,1,1,1200,+48 interrupt resistance.,95,61k,[],,
-68,Resolve,Magic/Buff,600,self/target,1,1,1200,+54 interrupt resistance.,115,165k,[],,
+44,Resolve,Magic/Buff,600,self/target,1,1,1200,+36% interrupt resistance.,72,22k,[],,
+52,Resolve,Magic/Buff,600,self/target,1,1,1200,+42% interrupt resistance.,80,38k,[],,
+60,Resolve,Magic/Buff,600,self/target,1,1,1200,+48% interrupt resistance.,95,61k,[],,
+68,Resolve,Magic/Buff,600,self/target,1,1,1200,+54% interrupt resistance.,115,165k,[],,
 ,,,,,,,,,,,,,------------------------------Arcane Serenity------------------------------
-70,Arcane Serenity,Magic/Buff,600,self/party,1,1,1200,"+30% Cast Speed, +54 interrupt resistance, +20% MP regeneration.",395,170k,[Alacrity Resolve Serenity],,
+70,Arcane Serenity,Magic/Buff,600,self/party,1,1,1200,"+30% Cast Speed, +54% interrupt resistance, +20% MP regeneration.",395,170k,[Alacrity Resolve Serenity],,
 ,,,,,,,,,,,,,---------------------------------------------------------------------------------------------Ward & Soul & Mana Blessing-------------------------------------------------------------------------------------------------------------------
 ,,,,,,,,,,,,,-------------------------------Ward-------------------------------
 44,Ward,Magic/Buff,600,self/target,1,1,1200,+23% M.Def.,72,22k,[],,

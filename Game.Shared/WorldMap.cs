@@ -463,6 +463,14 @@ public static class WorldMap
         // quarter's jeweler was bumped to +650 for exactly this gap, and +400 clears the armorsmith
         // (+150) and the jeweler by 250 each — over ValidateNpcLabels' 200 minimum.
         yield return new NpcDef("master_class4", "Archmaster Sevrin", 10800, 15400, NpcRole.ClassChange);
+
+        // The SP BROKER shares Frostmere with the 4th-class master, and for the same reason: SP
+        // bottles are a 76+ concept, and this is the only town whose neighbours reach the ascension.
+        // ⚠ Frostmere's west column is DENSE — Master Smith 14850, armorsmith 15150, Sevrin 15400,
+        // jeweler 15650, Spirit Helper 15900, Apothecary 16200, Scribe 16500 — and ValidateNpcLabels
+        // wants 200 of Y between any two within 1500 of X. 14600 is the first free slot north of the
+        // smith. The boot assert rejected three placements before this one; trust it, not arithmetic.
+        yield return new NpcDef("sp_broker", "Ledgerkeep Mora", 10800, 14600, NpcRole.SpExchange);
     }
 
     /// <summary>A ring town's craft master's display name. The five are one ORDER with a chapter in every
@@ -744,7 +752,8 @@ public record RoadPath(float Width, MapPoint[] Points)
 
 }
 
-public enum NpcRole { QuestGiver = 0, ClassChange = 1, Vendor = 2, Teleporter = 3, Buffer = 4, SkillReset = 5, Warehouse = 6, CraftMaster = 7 }
+// ⚠ APPEND ONLY — the client and the persisted spawn rows both read these by NUMBER.
+public enum NpcRole { QuestGiver = 0, ClassChange = 1, Vendor = 2, Teleporter = 3, Buffer = 4, SkillReset = 5, Warehouse = 6, CraftMaster = 7, SpExchange = 8 }
 
 /// <summary>A placed NPC. Id is referenced by quests + class-change requirements.</summary>
 public record NpcDef(string Id, string Name, float X, float Y, NpcRole Role);

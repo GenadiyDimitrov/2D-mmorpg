@@ -421,9 +421,14 @@ public static partial class SkillCatalog
             Description: "Weighs an enemy down for 30s: slower attacks AND slower casting.",
             // ⚠ ONE NUMBER FOR BOTH CHANNELS since his 2026-08-20 edit (*"changed values"*). It used to
             // be −23% attack / −12% cast at level 1; the whole ladder is now 7% → 23% on both.
-            // ⚠ It USED TO FLATTEN at 64 — 23% repeated for the last six rungs. He ruled that shape a
-            // defect (2026-08-20: *"if the 40 lvl description is the same as 44 one then the description
-            // is wrong"*), so the +2 stride simply continues to 33% at 74. Armor Break took the same fix.
+            // 🔑 IT PLATEAUS AT 23% FROM LEVEL 64 — and that is a DELIBERATE REVERSAL of his 2026-08-20
+            // ruling, made on 2026-08-26: *"u had debuffs percent going up and I wanted it to stop (the
+            // lvling is the spell not to fail)"*. What a higher rung buys past the plateau is the
+            // LANDING CHANCE, not a bigger number — the contested/fizzle rolls read the rung's own learn
+            // level, so the top rungs land more often at the same magnitude. His 08-20 objection
+            // (*"if the 40 lvl description is the same as 44 one then the description is wrong"*) was
+            // about duplicated rungs at the BOTTOM of a ladder; a designed ceiling at the top is not that.
+            // ⚠ Armor Break plateaus the same way, for the same reason. Don't "fix" either back.
             Levels: HealerRungs(0, 14, (i, sp) =>
                 new SkillLevel(MpCost: DebuffMp[i], SpCost: sp,
                     Magnitudes: new EffectMagnitude[]
@@ -514,6 +519,9 @@ public static partial class SkillCatalog
             MpCost: 352, CastTicks: 10, CooldownTicks: 600, Range: 0, Power: 10,
             Category: SkillCategory.Heal,  SpCost: 74000,
             TargetMode: TargetMode.SelfOnly,
+            // ⚠ REPLACES Restore Mana since his 2026-08-26 edit — the totem is the ork healer's upgrade
+            // of the single-target MP restore, not a second skill beside it. His CSV row: [Restore Mana].
+            Replaces: new[] { SkillCatalog.RestoreMana },
             PlacesTotem: true, TotemRadius: 300f, TotemLifeTicks: 300, TotemPulseTicks: 10,
             Description: "Plants a totem where you stand. For 30s it restores MP to you and every "
                        + "nearby party member, every second.",
@@ -541,14 +549,18 @@ public static partial class SkillCatalog
                 new(SkillEffect.DebuffDef, 0.10f), new(SkillEffect.BuffMagicDef, -0.05f),
             },
             Description: "Shatters an enemy's guard for 30s: less P.Def and less M.Def.",
-            // 🔑 M.DEF IS EXACTLY HALF P.DEF AT EVERY RUNG. That identity is what resolved two of his
-            // 2026-08-20 defects: the ladder repeated 30/15 for the last five rungs (fixed by continuing
-            // the +2 stride to 38/19), and the @56 row read 18/10 where the half-rule says 9 — which was
-            // also the duplicate of @58's 10. Keep the ratio if these are ever retuned.
+            // 🔑 M.DEF IS EXACTLY HALF P.DEF AT EVERY RUNG. That identity resolved his 2026-08-20 defect
+            // at @56 (the row read 18/10 where the half-rule says 9, and 10 duplicated @58). Keep the
+            // ratio if these are ever retuned.
+            // 🔑 THE LADDER PLATEAUS AT 30/15 FROM LEVEL 66 — put back deliberately on 2026-08-26:
+            // *"u had debuffs percent going up and I wanted it to stop (the lvling is the spell not to
+            // fail)"*. Past the ceiling a higher rung buys LANDING CHANCE, not magnitude. See the longer
+            // note on Gravity above; the two move together and neither should be "fixed" back to a
+            // climbing stride.
             Levels: HealerRungs(0, 14, (i, sp) =>
             {
-                float[] pDef = { .10f, .12f, .14f, .16f, .18f, .20f, .22f, .24f, .26f, .30f, .32f, .34f, .36f, .38f };
-                float[] mDef = { .05f, .06f, .07f, .08f, .09f, .10f, .11f, .12f, .13f, .15f, .16f, .17f, .18f, .19f };
+                float[] pDef = { .10f, .12f, .14f, .16f, .18f, .20f, .22f, .24f, .26f, .30f, .30f, .30f, .30f, .30f };
+                float[] mDef = { .05f, .06f, .07f, .08f, .09f, .10f, .11f, .12f, .13f, .15f, .15f, .15f, .15f, .15f };
                 return new SkillLevel(MpCost: DebuffMp[i], SpCost: sp,
                     Magnitudes: new EffectMagnitude[]
                     {
@@ -700,7 +712,7 @@ public static partial class SkillCatalog
 
     /// <summary>Gravity's single percentage, both channels. 7% → 23%, then flat for the last six.</summary>
     private static readonly float[] GravityPct =
-        { .07f, .09f, .11f, .13f, .15f, .17f, .19f, .21f, .23f, .25f, .27f, .29f, .31f, .33f };
+        { .07f, .09f, .11f, .13f, .15f, .17f, .19f, .21f, .23f, .23f, .23f, .23f, .23f, .23f };
 
     private static SkillLevel WeaponBreakRung(float pct, int mp, int sp) =>
         new(MpCost: mp, SpCost: sp,
@@ -857,7 +869,7 @@ public static partial class SkillCatalog
         HealerRungs(1, 13, (i, sp) =>
         {
             int[] mDef   = { 49, 56, 63, 70, 74, 78, 82, 86, 91, 95, 99, 104, 108 };
-            float[] mRes = { .15f, .15f, .20f, .20f, .20f, .20f, .20f, .20f, .25f, .25f, .25f, .25f, .25f };
+            float[] mRes = { .15f, .15f, .20f, .20f, .20f, .20f, .20f, .20f, .25f, .25f, .30f, .30f, .30f };
             return new SkillLevel(SpCost: sp,
                 Passive: new PassiveEffect(MagicDefence: mDef[i], MagicResist: mRes[i]),
                 Description: $"+{mDef[i]} magic defence and {mRes[i] * 100:0}% magic resistance.");

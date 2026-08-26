@@ -538,36 +538,50 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
   - ℹ️ Your *"(did the same for buffer)"* was a slip — *"did the same for healer ... my bad"*. Confirmed:
     `healer 3rd` and `nuker 3rd` carry the column, `buffer 3rd` has none and owes none.
 
-- `BL-91` 🟡 **THE INTERRUPT MODEL IS BUILT (0.83.0) — AND THE MEASUREMENT ASKS YOU TWO QUESTIONS.**
-  - 🔴 **WHAT IT REPLACED WAS DEAD.** The old rule was `0.25 + (power − resist)/100` with
-    `resist = wit·2 + LEVEL` and **no level term on the attacker's side**. Measured mage vs mage at parity:
-    **5% / 0% / 0% / 0%** at levels 20/40/60/80. One authored `InterruptPower` in the entire catalog
-    (Disrupt, 99999), zero authored `InterruptDefense`. Nothing has ever interrupted anything.
-  - ✅ **BUILT, your model.** *"chance per spell to interrupt 33% … high atack speed low dmg will interrupt
-    on average same amount as high dmg low … the average should be 33%"*. Making the per-cast total
-    independent of cadence forces the per-hit chance to be that hit's SHARE of the damage, and when you
-    write it out the attacker's DPS cancels:
-    - `p(hit) = 0.33 × hitDamage / (spellDps × castSeconds) × attackerPoints/defenderPoints × InterruptMult`
-    - `spellDps = base_dmg / (base_cast + base_reuse)`, your definition, priced against the **caster's own
-      defences** so the incoming hit and the spell are on one yardstick. Computed once at cast start.
-    - `points = wit·2 + level` on **both** sides, so parity is exactly ×1 and the whole thing reduces to
-      the DPS race. Disrupt's 99999 still always breaks a cast, unchanged.
-    - Verified: three attackers with the same DPS and cadences of 2s / 1s / 0.25s all come out at **28.9%**
-      over one cast. The invariant holds exactly.
-  - ✅ `SkillDef.InterruptMult` is how a skill says *"Higher chance to interrupt enemy casts"* — a
-    multiplier, not more `InterruptPower`, because power rides the stat ratio and so depends on the
-    target's WIT. Frost Spikes / Frost Pierce want ~×2 (66% at parity) when the nuker kit lands.
-  - ❓ **QUESTION 1 — REAL BUILDS COME OUT WELL ABOVE 33%.** The parity in your rule is *DPS* parity, and a
-    geared fighter simply out-DPSes a mage's single nuke: the matrix measures **58-94% per cast** at
-    20/40/60/80. That is the model doing exactly what you specified, but it means a caster under melee
-    cannot finish a cast. Three levers: lower `InterruptPerCast` below 0.33, give casts a baseline
-    `InterruptDefense`, or make Resolve mandatory.
-  - ❓ **QUESTION 2 — RESOLVE'S +54 DECAYS.** The stat term is a straight ratio, so a flat buff shrinks as
-    points grow: +54 cuts interrupts by **47% at level 20 and only 30% at 80**. If you want it to mean the
-    same thing at 40 and at 80 it has to be a PERCENT or a ladder. This is the *"we can balance the buff"*
-    you asked to do last, and the numbers are in `BalanceMatrix` under `=== INTERRUPT ===`.
-  - ⚠ **ONE INVENTED NUMBER, and it is mine not yours:** a cast with no damage and no heal (a buff, a res,
-    a teleport) has no throughput to divide by, so it is priced at the caster's M.Atk purely to avoid a
+- `BL-91` 🟢 **INTERRUPT IS IG'S OWN FORMULA (0.84.0) — BUILT AND FULLY RULED.**
+  - ✅ **BUILT, IG's shape, with your two departures.** `FinalChance = (DmgTaken/MaxHP) × rand(1.00-1.20)
+    × SPT-mod × (1 − resist buffs) × skill.InterruptMult`, + `InterruptPower` in percentage points.
+    Your worked example reproduces exactly: 1000 on a 2000 pool, ×1, Resolve 54% → **23%**.
+  - ✅ **Resolve is a PERCENT.** The ladder numbers did not move (18/25/36/40/42/48/54) and the CSV rows
+    still read them; they are percentages of the incoming roll now. This answers the old QUESTION 2 —
+    a flat buff on a growing pool always decays, a percent never does. ×0.46 at 20 and at 80 alike.
+  - ✅ **The MEN curve, flattened to your numbers.** IG's 20 = ×1.00 / 50 = ×0.23 is ~4.8% per point and
+    prices our level-39 human mage at ×0.395 — your *"a bit low"*. Ours is your alternative,
+    **20 = ×1.00, 50 = ×0.67**, same geometric shape at a third the slope. Ours vs IG's on our bases:
+    human ftr ×0.94/×0.78, elf mage ×0.85/×0.56, human mage ×0.78/×0.39, ork mage ×0.72/×0.29.
+  - ✅ **No robe-set 50% resist** — *"and i dont want that"*. `StatCaps.InterruptResistMax` = 0.80 so any
+    future source stacks into a clamp instead of multiplying past it.
+  - ✅ **THUNDERSTORM IS FIXED BY THE MODEL, not by a patch.** 0.83.0 priced a cast against its own DPS, so
+    a 300s reuse made the biggest nuke in the game the easiest cast to break. Reuse is not an input any
+    more. A long cast is simply a cast that eats more hits.
+  - ✅ Old QUESTION 1 is answered too: the *"58-94% per cast"* number came from DPS parity, which no longer
+    exists. Measured now, a same-level fighter breaking a human mage's cast: **27% / 17% / 11% / 11%** per
+    basic hit at 20/40/60/80, **12% / 8% / 5% / 5%** under Resolve.
+  - ✅ **RULED: THE TWO NUKER INTERRUPT SKILLS ARE ×2** — *"add the nuker the two high interrupt skills a
+    x2 chance. They are fast cast and x2 interrupt chance is good enough"* (2026-08-26). They are exactly
+    the two rows in `nuker 3rd.csv` that say *"Higher chance to interrupt enemy casts"*: **Frost Spikes**
+    and **Frost Pierce**, both `m.Atk +64` on a **2.5s cast / 1s reuse** at the top rung. All 28 rows now
+    also carry **`(interrupt chance x2)`**, and `Descr.cs` reads that token, so it will be verified the
+    day the kit is built. At 74, elf nuker vs a same-level human mage:
+
+    | spell | dmg | % of HP | ×1 | **×2 (ruled)** | ×5 | ×10 |
+    |---|---|---|---|---|---|---|
+    | Frost Spikes | 160 | 12.5% | 10.8% | **21.6%** | 53.9% | 100% |
+    | Frost Pierce | 160 | 12.5% | 10.8% | **21.6%** | 53.9% | 100% |
+    | Elemental Blast | 270 | 21.0% | 18.2% | — | 91.0% | 100% |
+    | Thunderstorm | 541 | 42.2% | 36.5% | — | 100% | 100% |
+
+    Your ×10 guess came from expecting these to be small hits; they are not — a mage has the smallest HP
+    pool in the game, and ×10 on either Frost skill is a guaranteed cancel, i.e. Disrupt rather than a
+    nuke. At ×2 they read 21.6% per hit (9.9% through Resolve) and fire every ~2.5s, so they compound
+    into roughly a third of a 4s cast.
+  - 🔴 **×2 IS NOT IN THE CODE YET, and cannot be:** the `nuker 3rd` kit is unbuilt, so neither skill has
+    a `SkillDef`. The ruling lives in the CSV and here. **When the kit lands: set
+    `SkillDef.InterruptMult = 2f` on both, delete the literal table in `BalanceMatrix`, read the
+    `SkillDef`s instead, and give `nuker 3rd.csv` its `Check.Specs` line.**
+  - ⚠ `SkillDef.InterruptDefense` survives as a float FRACTION — the lever for *"this particular spell is
+    hard to break"* without touching the caster's sheet. Unauthored.
+
     divide-by-zero. Unmeasured. Everything else in the model is your specification.
 
 - `BL-92` 🔵 **MP REGEN IS SEVERAL TIMES IG'S — you asked to be shown it later.** Your words,

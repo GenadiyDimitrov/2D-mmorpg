@@ -43,7 +43,7 @@ public readonly record struct StatMods(
     float MpRegen = 0f, float MpRegenPct = 0f,
     // Flat additive extras (masteries): interrupt resist, defensive resist fractions,
     // and the nuker "mpWhenRestored" bonus. All summed.
-    float InterruptResist = 0f,
+    float InterruptResist = 0f,   // interrupt resistance as a FRACTION (0.10 = 10%) — see StatCalculator.InterruptChance
     float CritDmgResist = 0f, float CritRateResist = 0f, float BowResist = 0f,
     float CcResist = 0f,   // reduces the LAND chance of contested CC (stun/fear/root/slow/DoT) vs you
     // MP RESTORED, as a FRACTION (0.60 = "+60% MP from any restore that lands on you") — the MP twin
@@ -155,7 +155,7 @@ public readonly record struct StatTotals(
     float MoveSpeed = 0f, float MoveSpeedPct = 0f,
     float HpRegen = 0f, float HpRegenPct = 0f,
     float MpRegen = 0f, float MpRegenPct = 0f,
-    float InterruptResist = 0f,
+    float InterruptResist = 0f,   // interrupt resistance as a FRACTION (0.10 = 10%) — see StatCalculator.InterruptChance
     float CritDmgResist = 0f, float CritRateResist = 0f, float BowResist = 0f,
     float CcResist = 0f,
     float RestoreMpPct = 0f,

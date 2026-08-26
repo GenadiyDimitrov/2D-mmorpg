@@ -787,78 +787,80 @@ public static class StatCalculator
     //  ever say "penalised or not", which is exactly what made "the opposite of the bow penalty"
     //  unauthorable. The weaponMod parameter of MagicFailChance is unchanged — only its source is.)
 
-    /// <summary>Offensive MAGIC interrupt power from WIT. Mirrors the WIT scale in
-    /// InterruptResist (wit*2) so a WIT-mage out-interrupts an equal-level ATK-mage
-    /// while the ATK-mage hits harder. Added to a magic skill's flat InterruptPower.</summary>
-    public static int MagicInterruptPower(int wit) => wit * 2;
-
-    // ----- Interruption (caster resist) -----------------------------------
-
-    /// <summary>Base interrupt resistance from WIT + level. Higher = harder to
-    /// interrupt. A skill's InterruptDefense adds to this; an attacker's
-    /// InterruptPower subtracts. Tune the coefficients here.</summary>
-    public static int InterruptResist(int wit, int level) => wit * 2 + level;
-
-    // ----- INTERRUPT: A DPS CONTEST (owner ruling 2026-08-24, `BL-91`) --------------------------
+    // ============================================================================================
+    //  INTERRUPT — IG'S OWN FORMULA (owner, 2026-08-26). This REPLACED the DPS contest of 0.83.0.
+    // ============================================================================================
     //
-    // *"the interrupt is some dmg treashold per skill lvl/dmg-dealer-lvl to interrupt a spell cast ->
-    //  we can make it chance per spell to interrupt 33% (at same lvl spell vs dmgDealer) - We need to
-    //  do some base dps to interrupt if the target does dmg with higher dps (base_dmg/base_cast+
-    //  base_reuse) vs the casted spell DPS - then high atack speed low dmg will interrupt on average
-    //  same amount as high dmg low as... and the average should be 33%"*
+    //     BaseChance  = (DmgTaken / MaxHP) x random(100..120)
+    //     FinalChance = BaseChance x MEN-mod x (1 - Buffs/EquipMod)
     //
-    // 🔑 THE INVARIANT HE IS ASKING FOR IS PER-CAST, NOT PER-HIT. Over one full cast the EXPECTED
-    // number of interrupts must be the same whether it was delivered as one big hit or eight small
-    // ones. That forces the per-hit chance to be proportional to that hit's SHARE of the damage:
+    //     his worked example: 1000 damage on a 2000 HP pool -> 50; x1 x (1 - 0.54 Resolve) = 23%.
     //
-    //     hits during the cast   N = castSeconds / attackerCycle
-    //     wanted total           Σp = InterruptPerCast × attackerDps / spellDps
-    //     therefore              p  = InterruptPerCast × hitDamage / (spellDps × castSeconds)
+    // 🔑 THE YARDSTICK IS THE CASTER'S HP POOL, NOT THE SPELL. Everything the 0.83.0 model needed —
+    // the spell's damage, its cast time, its reuse, the attacker's DPS, both sides' WIT — is gone.
+    // One hit is measured against the one thing that is always defined: how much of the caster it
+    // just took off. That is what makes it work for a buff, a resurrection and a 300s nuke alike,
+    // and it is why `CastInterruptReference` no longer exists. Its 🔴 THUNDERSTORM finding — a
+    // 300s reuse making a spell's own DPS ~0, and so making the game's biggest nuke the easiest
+    // cast in the game to break — dies with it: reuse is not an input any more.
     //
-    // …and the attacker's DPS cancels out of the per-hit formula entirely. What is left is beautifully
-    // literal: **the chance one hit breaks a cast is how big that hit is next to everything the spell
-    // itself would produce in the time it takes to cast.** Fast-and-weak and slow-and-heavy land on the
-    // same total by construction, which is exactly his sentence, and out-DPSing the caster raises the
-    // total in proportion, which is the rest of it.
+    // 🔑 CAST TIME IS STILL IN THERE, but as an EMISSION rather than a term: a longer cast eats more
+    // hits, so it breaks more often, at exactly the rate the hits arrive. His *"they cast fast enough
+    // for a small window to interrupt"* is the whole defence a mage gets by default.
     //
-    // 🔑 PARITY IS EXACTLY 33%. Equal DPS gives Σp = InterruptPerCast, and the stat term below is a
-    // straight RATIO of two identical formulas, so equal WIT and equal level is ×1 with no rounding —
-    // the same "parity is exactly ×1" rule CcLevelBase is built on.
-    //
-    // 🔴 WHAT THIS REPLACED WAS DEAD. The old model was `0.25 + (power − resist)/100` with
-    // `resist = wit·2 + level` and no level term on the attacker's side, so a level-60 caster sat at
-    // resist 100 against an attacker power of 40 and EVERY interrupt in the game clamped to zero. The
-    // only thing that ever interrupted anything was Disrupt's InterruptPower 99999 — which still works
-    // here, unchanged, because 99999 dwarfs any defender's points and the clamp does the rest.
+    // 🔴 TWO DELIBERATE DEPARTURES FROM IG, both his:
+    //   1. NO ROBE-SET INTERRUPT RESIST. IG's robe set carries 50% on top of Resolve's 54% and the
+    //      product makes a mage effectively uninterruptible — *"and i dont want that"*.
+    //   2. THE MEN CURVE IS FLATTENED. IG's is ~4.8%/point (20 MEN = x1.00, 50 = x0.23), which on our
+    //      SPT bases prices a level-39 human mage at x0.395 and a 50%-HP hit at 9% — *"a bit low"*.
+    //      Ours is the curve he named instead: 20 = x1.00, 50 = x0.67, i.e. 33% resist at 50 SPT.
 
-    /// <summary>Interrupt POINTS for one side of the contest — WIT and level, the same formula for the
-    /// attacker and the defender so that parity is exactly ×1. Identical to the old
-    /// <see cref="InterruptResist"/> on purpose: it IS that number, now read from both ends.</summary>
-    public static int InterruptPoints(int wit, int level) => wit * 2 + level;
+    /// <summary>SPT (the retired MEN) → the interrupt multiplier. Geometric, exactly like IG's own
+    /// table, but at his flattened rate: <b>20 SPT = x1.00, 50 SPT = x0.67</b>. Below 20 it is held at
+    /// x1 rather than climbing past it — a low-SPT fighter is not made EASIER to interrupt than the
+    /// scale's floor, because the floor is where the whole curve is anchored.
+    /// <para>Reference points on our own bases: human fighter 25 → x0.94, elf mage 32 → x0.85,
+    /// human mage 39 → x0.78, ork mage 45 → x0.72.</para></summary>
+    public static float SpiritInterruptMod(int spt) =>
+        spt <= InterruptSpiritFloor ? 1f
+        : MathF.Pow(InterruptSpiritAt50, (spt - InterruptSpiritFloor) / 30f);
 
-    /// <summary>Base probability that ONE FULL CAST is interrupted, when the attacker's DPS equals the
-    /// casted spell's DPS and neither side has an interrupt stat edge. His number: *"the average should
-    /// be 33%"*.</summary>
-    public const float InterruptPerCast = 0.33f;
+    /// <summary>The SPT at which the interrupt curve is x1 — IG's "20 MEN = 1".</summary>
+    public const int InterruptSpiritFloor = 20;
 
-    /// <summary>Per-HIT chance to interrupt a cast. See the block above for the derivation.</summary>
-    /// <param name="hitDamage">Damage this single hit actually dealt to the caster.</param>
-    /// <param name="spellCastValue">`spellDps × castSeconds` for the cast in progress — i.e. what the
-    /// spell itself is worth over the time it takes to cast. Computed ONCE at cast start and parked on
-    /// the entity, never per hit. Zero or less disables the interrupt (nothing to measure against).</param>
-    /// <param name="attackerPoints">Attacker's <see cref="InterruptPoints"/> plus the striking skill's
-    /// <c>InterruptPower</c>.</param>
-    /// <param name="defenderPoints">Caster's <see cref="InterruptPoints"/> plus the casting skill's
-    /// <c>InterruptDefense</c> plus any interrupt-resist buff (Resolve).</param>
-    /// <param name="skillMult">The striking skill's <c>InterruptMult</c> — his *"Higher chance to
-    /// interrupt enemy casts"* column. 1 = ordinary.</param>
-    public static float InterruptChance(float hitDamage, float spellCastValue,
-                                        int attackerPoints, int defenderPoints, float skillMult = 1f)
+    /// <summary>The multiplier at SPT 50, which is what sets the curve's steepness. His number:
+    /// *"20=1; 50=33% resist"*. IG's own value here is 0.23.</summary>
+    public const float InterruptSpiritAt50 = 0.67f;
+
+    /// <summary>IG's <c>random(100~120)</c>, as a multiplier. Rolled fresh on every hit.</summary>
+    public const float InterruptRollMin = 1.00f;
+    /// <inheritdoc cref="InterruptRollMin"/>
+    public const float InterruptRollMax = 1.20f;
+    /// <summary>The mean of the roll — what a TABLE should show when it is not simulating.</summary>
+    public const float InterruptRollMean = (InterruptRollMin + InterruptRollMax) / 2f;
+
+    /// <summary>Chance ONE hit breaks a cast in progress. IG's formula; see the block above.</summary>
+    /// <param name="damageTaken">What this single hit actually took off the caster.</param>
+    /// <param name="maxHp">The caster's Max HP — the yardstick.</param>
+    /// <param name="spiritMod">The caster's <see cref="SpiritInterruptMod"/>.</param>
+    /// <param name="resistPct">Summed interrupt-resist buffs (Resolve) as a FRACTION.</param>
+    /// <param name="roll">IG's random term, in [<see cref="InterruptRollMin"/>, <see cref="InterruptRollMax"/>].</param>
+    /// <param name="skillMult">The striking skill's <c>InterruptMult</c> — his *"we can make the two
+    /// lower dmg elf nuker skills have x3 interrupt chance"*. 1 = ordinary.</param>
+    /// <param name="flatBonus">The striking skill's <c>InterruptPower</c> in percentage POINTS, added
+    /// after everything else. Disrupt's 99999 is what still makes it a guaranteed cancel.</param>
+    public static float InterruptChance(float damageTaken, float maxHp, float spiritMod,
+                                        float resistPct, float roll,
+                                        float skillMult = 1f, float flatBonus = 0f)
     {
-        if (spellCastValue <= 0f || hitDamage <= 0f) return 0f;
-        float share = hitDamage / spellCastValue;
-        float stat  = defenderPoints <= 0 ? 1f : attackerPoints / (float)defenderPoints;
-        return Math.Clamp(InterruptPerCast * share * stat * Math.Max(0f, skillMult), 0f, 1f);
+        float flat = Math.Clamp(flatBonus / 100f, 0f, 1f);
+        if (damageTaken <= 0f || maxHp <= 0f) return flat;
+        float chance = damageTaken / maxHp * roll
+                     * Math.Max(0f, spiritMod)
+                     * (1f - Math.Clamp(resistPct, 0f, StatCaps.InterruptResistMax))
+                     * Math.Max(0f, skillMult)
+                     + flat;
+        return Math.Clamp(chance, 0f, 1f);
     }
 
     /// <summary>Chance a contested debuff (slow/stun/root/fear/…) LANDS: the attacker's

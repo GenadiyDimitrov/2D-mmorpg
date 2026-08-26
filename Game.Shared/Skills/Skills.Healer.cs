@@ -299,7 +299,7 @@ public static partial class SkillCatalog
             }.Concat(BandSp14.Select(sp => new SkillLevel(SpCost: sp))).ToArray()),
 
         // Force and Ward — the caster's group. Levels 1-2 are the numbers this buff already cast
-        // (+18 interrupt resist, then +25 with +25% M.Atk); from level 3 it adds M.Def, and at 6
+        // (+18% interrupt resist, then +25 with +25% M.Atk); from level 3 it adds M.Def, and at 6
         // it equals the NPC buffer. M.Atk and M.Def each have a potion AND a scroll, so a Force
         // potion overrides only the M.Atk part. Resolve (interrupt resist) has no consumable at
         // all — a buffer is the only source. See docs/design/BuffLadders.md.
@@ -316,22 +316,22 @@ public static partial class SkillCatalog
             {
                 new SkillLevel(MpCost: 150,  SpCost: 3200,
                     ChildBuffs: new[] { BuffIntr1 },
-                    Description: "+18 interrupt resistance (harder to cancel your casts)."),
+                    Description: "+18% interrupt resistance (harder to cancel your casts)."),
                 new SkillLevel(MpCost: 160,  SpCost: 6400,
                     ChildBuffs: new[] { BuffIntr2, BuffMAtk2 },
-                    Description: "+25 interrupt resistance and +25% M.Atk."),
+                    Description: "+25% interrupt resistance and +25% M.Atk."),
                 new SkillLevel(MpCost: 170,  SpCost: 12800,
                     ChildBuffs: new[] { BuffIntr4, BuffMAtk2, BuffMDef1 },
-                    Description: "+40 interrupt resistance, +25% M.Atk, +10% M.Def."),
+                    Description: "+40% interrupt resistance, +25% M.Atk, +10% M.Def."),
                 new SkillLevel(MpCost: 180,  SpCost: 25000,
                     ChildBuffs: new[] { BuffIntr4, BuffMAtk4, BuffMDef2 },
-                    Description: "+40 interrupt resistance, +32% M.Atk, +20% M.Def."),
+                    Description: "+40% interrupt resistance, +32% M.Atk, +20% M.Def."),
                 new SkillLevel(MpCost: 190,  SpCost: 50000,
                     ChildBuffs: new[] { BuffIntr7, BuffMAtk4, BuffMDef2 },
-                    Description: "+54 interrupt resistance, +32% M.Atk, +20% M.Def."),
+                    Description: "+54% interrupt resistance, +32% M.Atk, +20% M.Def."),
                 new SkillLevel(MpCost: 200,  SpCost: 100000,
                     ChildBuffs: new[] { BuffIntr7, BuffMAtk4, BuffMDef4 },
-                    Description: "+54 interrupt resistance, +32% M.Atk, +30% M.Def."),
+                    Description: "+54% interrupt resistance, +32% M.Atk, +30% M.Def."),
             }),
 
         // Focus and Ferocity — the critical group. Level 1 is the +20% crit rate this buff has

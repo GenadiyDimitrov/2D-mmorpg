@@ -155,7 +155,7 @@ public static partial class SkillCatalog
             new[] { BuffAlacrityR, Rung(FamInterrupt, 7), Rung(FamMpRegen, 6) },
             new[] { CastId(FamCast), CastId(FamInterrupt), CastId(FamMpRegen) },
             mp: 395, sp: 170000,
-            "+30% cast speed, +54 interrupt resistance, +20% MP regeneration."),
+            "+30% cast speed, +54% interrupt resistance, +20% MP regeneration."),
 
         // MP 455 = Ward 80 + Soul 120 + Mana Blessing 125, + 130 at level 74.
         // ⚠ The third child is the HIDDEN mana-blessing rung, not a family — see BuffManaBless3.

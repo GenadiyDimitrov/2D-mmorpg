@@ -104,8 +104,8 @@ public static class SkillText
         Flat(o, "Bow range (with a bow)", p.BowRange);
 
         // Resists + interrupt
-        Flat(o, "Interrupt power", p.InterruptPower);
-        Flat(o, "Interrupt resist", p.InterruptResist);
+        Flat(o, "Interrupt power", p.InterruptPower);   // percentage POINTS on the roll
+        Pct(o, "Interrupt resist", p.InterruptResist);
         Pct(o, "Crit rate resist", p.CritRateResist);
         Pct(o, "Crit dmg resist", p.CritDmgResist);
         Pct(o, "Bow resist", p.BowResist);
@@ -168,7 +168,7 @@ public static class SkillText
         Pct(o, "HP regen", m.HpRegenPct);
         Flat(o, "MP regen/s", m.MpRegen * GameConstants.TickRate);
         Pct(o, "MP regen", m.MpRegenPct);
-        Flat(o, "Interrupt resist", m.InterruptResist);
+        Pct(o, "Interrupt resist", m.InterruptResist);
         Pct(o, "Crit dmg resist", m.CritDmgResist);
         Pct(o, "Crit rate resist", m.CritRateResist);
         Pct(o, "Bow resist", m.BowResist);
@@ -436,7 +436,7 @@ public static class SkillText
         if (def.BlockAccuracy > 0f)
             o.Add($"Bypasses shield blocks {def.BlockAccuracy * 100f:0.#}% of the time");
         if (def.InterruptPower > 0) o.Add($"Interrupt power {def.InterruptPower}");
-        if (def.InterruptDefense > 0) o.Add($"Interrupt resistance while casting +{def.InterruptDefense}");
+        if (def.InterruptDefense > 0f) o.Add($"Interrupt resistance while casting +{def.InterruptDefense * 100f:0.#}%");
         if (def.DebuffSchool != DebuffSchool.None)
             o.Add($"Landing is contested ({def.DebuffSchool.ToString().ToLowerInvariant()})");
 

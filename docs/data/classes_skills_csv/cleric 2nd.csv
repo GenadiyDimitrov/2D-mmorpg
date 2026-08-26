@@ -49,8 +49,8 @@ LEARN @ LVL,NAME,TYPE,RANGE,TARGET,CAST s,CD s,DURRATION s,DESCR,MP,SP COST,REPL
 20,Alacrity,Magic/Buff,600,self/target,1,1,1200,+15% Cast Speed.,20,1700,[]
 35,Alacrity,Magic/Buff,600,self/target,1,1,1200,+23% Cast Speed.,40,12800,[]
 ,,,,,,,,,,,,----------------------------Resolve----------------------------
-20,Resolve,Magic/Buff,600,self/target,1,1,1200,+18 interrupt resistance.,20,1700,[]
-25,Resolve,Magic/Buff,600,self/target,1,1,1200,+25 interrupt resistance.,26,3200,[]
+20,Resolve,Magic/Buff,600,self/target,1,1,1200,+18% interrupt resistance.,20,1700,[]
+25,Resolve,Magic/Buff,600,self/target,1,1,1200,+25% interrupt resistance.,26,3200,[]
 ,,,,,,,,,,,,----------------------------Bulwark----------------------------
 25,Bulwark,Magic/Buff,600,self/target,1,1,1200,+12% P.Def.,26,3200,[]
 ,,,,,,,,,,,,----------------------------Clarity----------------------------

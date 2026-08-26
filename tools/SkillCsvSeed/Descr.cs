@@ -108,6 +108,11 @@ internal static class Descr
         ("magiceva",      new[] { "magic evasion" }),
         ("eva",           new[] { "evasion", "eva" }),
         ("acc",           new[] { "accuracy", "acc" }),
+        // His authored INTERRUPT multiplier, written "(interrupt chance x2)" — the twin of
+        // "(success chance xN)" above, for `SkillDef.InterruptMult`. ⚠ It must out-reach BOTH the bare
+        // "interrupt" alias below and "chance" above it; the table is walked longest-first, and
+        // "interrupt chance" is longer than either, so it claims the number.
+        ("interruptmult", new[] { "interrupt chance" }),
         ("interrupt",     new[] { "interrupt resistance", "interrupt" }),
         // ⚠ MANA vampirism ABOVE plain vampirism, longest-first: they are two different stats one word
         // apart (ManaVamp refills MP, MeleeVamp heals HP) and his Warchanter row says "mana vampirism".
@@ -388,6 +393,13 @@ internal static class Descr
             // "(success chance x1)" tokenises to exactly 0, and his fourteen Gravity rows carry it, so
             // Add() would have printed his most-authored value as UNCHECKED.
             pool[("successchance", true)] = new List<float> { def.DebuffLandModAt(level) - 1f };
+
+            // INTERRUPT MULTIPLIER — his `(interrupt chance x2)`, the twin of the line above and stored
+            // the same way (percent, as `mult − 1`, straight into the pool so an authored x1 is VERIFIED
+            // rather than UNCHECKED). Today only `nuker 3rd`'s Frost Spikes and Frost Pierce carry it,
+            // and that file has no Check.Specs line yet — this exists so the number is checked the day
+            // the nuker kit is built rather than being quietly dropped on the way in.
+            pool[("interruptmult", true)] = new List<float> { def.InterruptMult - 1f };
         }
 
         // ARMOR MASTERY: the row for the named weight, or every row when unscoped.
@@ -529,7 +541,7 @@ internal static class Descr
         add("ms", false, m.MoveSpeed);        add("ms", true, m.MoveSpeedPct);
         add("hpreg", false, m.HpRegen);       add("hpreg", true, m.HpRegenPct);
         add("mpreg", false, m.MpRegen);       add("mpreg", true, m.MpRegenPct);
-        add("interrupt", false, m.InterruptResist);
+        add("interrupt", true, m.InterruptResist);   // a FRACTION since the IG interrupt formula (2026-08-26)
         add("critdmgres", true, m.CritDmgResist);
         add("critrateres", true, m.CritRateResist);
         add("ccresist", true, m.CcResist);
@@ -560,7 +572,7 @@ internal static class Descr
         add("mpreg", false, p.MpRegen);       add("mpreg", true, p.MpRegenPct);
         add("mres", true, p.MagicResist);     add("vamp", true, p.MeleeVamp);
         add("manavamp", true, p.ManaVamp);
-        add("interrupt", false, p.InterruptResist);
+        add("interrupt", true, p.InterruptResist);    // a FRACTION
         add("interrupt", false, p.InterruptPower);
         add("critdmgres", true, p.CritDmgResist);
         add("critrateres", true, p.CritRateResist);

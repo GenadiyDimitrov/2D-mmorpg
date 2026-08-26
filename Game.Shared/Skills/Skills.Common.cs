@@ -193,6 +193,9 @@ public static partial class SkillCatalog
     public const string ScrollResurrectSkill    = "use_scroll_resurrect";     // 10s ally-res, 0% exp back
     public const string ScrollResurrectUltSkill = "use_scroll_resurrect_ult"; // 0.5s ally-res, 100% exp back
     public const string AngelsProtection        = "angels_protection";        // noblesse: keep buffs on death
+    /// <summary>Drinking an SP Bottle. A skill, because every consumable in this game is one —
+    /// it carries no effect, only <see cref="SkillDef.GrantsSp"/> and its own ConsumableId.</summary>
+    public const string SpBottleUse             = "sp_bottle_use";            // grants 1kkk SP, eats the bottle
     // The two level-83 tops of the same family (`BL-35`) — keep buffs on death AND auto-resurrect.
     public const string RiteOfPreservation      = "rite_of_preservation";     // Lightbringer: on an ALLY
     public const string UndyingWill             = "undying_will";             // Bulwark: SELF only
@@ -764,6 +767,20 @@ public static partial class SkillCatalog
             FixedCast: true, FixedCooldown: true, FragileCast: true, TeleportsToTown: true,
             Description: "Channel 30s to return to the nearest town. ANY damage cancels it. 5 min reuse."),
 
+
+        // ----- SP BOTTLE: drinking your banked skill points back (owner, 2026-08-26). Zero cast, zero
+        //       cooldown, no effect flags at all — the whole payload is GrantsSp, and the item is eaten
+        //       by the ordinary ConsumableId path every other consumable uses.
+        new(SpBottleUse, "SP Bottle", BaseClass.Fighter, SkillEffect.None,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+            Category: SkillCategory.Magic, SpCost: 0,
+            TargetMode: TargetMode.SelfOnly,
+            GrantsSp: GameConstants.SpBottleSpGranted,
+            ConsumableId: ItemCatalog.SpBottle, ConsumableAmount: 1,
+            // ⚠ SP ONLY — the gold half of the broker's price is a FEE and never comes back (owner,
+            // 2026-08-26: *"drinking them gives 1kkk SP and 0 gold"*). Said out loud in the description
+            // so nobody expects 100kk back out of a bottle they paid 100kk into.
+            Description: $"Drink to gain {GameConstants.SpBottleSpGranted:N0} SP. No gold is returned."),
         // Bought scroll: 10s fixed cast, 10s reuse. Consumes one Scroll of Return.
         new(ScrollReturnSkill, "Scroll of Return", BaseClass.Fighter, SkillEffect.None,
             MpCost: 0, CastTicks: 100, CooldownTicks: 100, Range: 0, Power: 0,

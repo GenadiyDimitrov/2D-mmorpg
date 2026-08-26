@@ -27,7 +27,24 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.83.0";
+    public const string GameVersion = "0.84.0";
+
+    // ----- SP BOTTLE (owner, 2026-08-26) -------------------------------------------------------
+    // *"u can make an npc to take your 1kkk SP + 100kk gold and give you a tradable/sellabel
+    //  (100kk shop-buy price) SP bottle"*. Three numbers, one place.
+    //
+    // ⚠ HIS `buffer 4th.csv` / `healer 4th.csv` HEADER SAYS "1 SP bottle = 1kkk SP + 100k Gold" —
+    // one hundred THOUSAND. His message says 100kk, one hundred MILLION, and the newest ruling wins.
+    // The CSV line is worth a second look.
+    //
+    // 🔴 `Entity.SkillPoints` IS A 32-BIT INT (max 2.147kkk). One bottle fits, two fit, three do not
+    // — and his own level-85 row costs FIVE bottles. If bottles are ever meant to be DRUNK toward
+    // that rather than SPENT as a currency, SkillPoints has to become a long (Entity + the persisted
+    // record + the StatsUpdate wire field + the client). Flagged, not decided.
+    public const int SpBottleSpCost = 1_000_000_000;    // what the broker takes: 1kkk SP
+    public const int SpBottleGoldCost = 100_000_000;    // ...and 100kk gold
+    public const int SpBottleShopPrice = 100_000_000;   // its shop BUY price (sell = buy/25 = 4kk)
+    public const int SpBottleSpGranted = 1_000_000_000; // what drinking one gives back
 
     /// <summary>
     /// The WIRE contract's version, and the ONLY thing compatibility is decided on.

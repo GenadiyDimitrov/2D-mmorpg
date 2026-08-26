@@ -480,7 +480,10 @@ namespace Game.Client
 
             if (def.Slot == EquipSlot.Consumable)
             {
-                buttons.Add(("Use", () => { Boot.UsePotion(id); CloseAllItemViews(); }));
+                // ConfirmOnUse (owner, 2026-08-26): an expensive, un-undoable consumable gets an
+                // "are you sure?" between the button and the drink. Default false — a healing potion
+                // must stay ONE TAP, which is the whole reason this is a per-item flag and not a rule.
+                buttons.Add(("Use", () => ConfirmUse(def, () => { Boot.UsePotion(id); CloseAllItemViews(); })));
                 // Quick-use bar: put "item:<defId>" on the skill bar (any stack of it satisfies the slot).
                 // Reuses the skill-assign flow — tap a slot next to place it.
                 buttons.Add(("To bar", () =>
@@ -674,6 +677,24 @@ namespace Game.Client
                 else Boot.Enchant(scrollId, targetId);
                 CloseAllItemViews();
             });
+        }
+
+        /// <summary>Run <paramref name="use"/> now, or behind an "are you sure?" if the item's
+        /// <see cref="ItemDef.ConfirmOnUse"/> is set (owner, 2026-08-26). One helper, so the details
+        /// window and the skill bar cannot disagree about which items ask.
+        ///
+        /// <para>🔑 THE PROMPT NAMES WHAT YOU GET, not "are you sure" — same rule as the Mindwriter and
+        /// the disassemble confirmation. For the SP Bottle that is the SP figure, because the number is
+        /// the entire reason you are hesitating.</para></summary>
+        private void ConfirmUse(ItemDef def, Action use)
+        {
+            if (def == null || !def.ConfirmOnUse) { use(); return; }
+
+            string what = SkillCatalog.Get(def.UseSkillId) is SkillDef s && s.GrantsSp > 0
+                ? "You gain " + s.GrantsSp.ToString("N0") + " SP. The bottle is consumed and cannot be "
+                  + "recovered — you can trade or sell it instead."
+                : "It will be consumed.";
+            Ask("Drink " + def.Name + "?\n\n<size=15>" + what + "</size>", "Drink", use);
         }
 
         /// <summary>What a failure costs, coloured. The WORDS come from EnchantRules so the popup and

@@ -7,12 +7,210 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.83.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.84.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
+## 2026-08-26 (latest) — 0.84.0: interrupt is IG's own formula — damage vs your HP pool, Resolve becomes a percent, his debuff ladders plateau, the nuker's two Frost skills get x2 interrupt, and an SP Broker sells SP Bottles you must confirm before drinking
+## 2026-08-26 (latest) — 0.84.0: interrupt is IG's own formula — damage vs your HP pool, and Resolve becomes a percent
 
-## 2026-08-24 (latest) — 0.83.0: a debuff has its own SUCCESS RATE, interrupt becomes a DPS contest, and four skills stop lying about being contested
+He brought IG's interrupt formula, which is what 0.83.0's model was explicitly parked waiting for.
+It replaces that model whole; almost nothing of it survives.
+
+```
+BaseChance  = (DmgTaken / MaxHP) x random(100..120)
+FinalChance = BaseChance x MEN-mod x (1 - Buffs/EquipMod)
+```
+
+His worked example: 1000 damage on a 2000 HP pool is a base of 50; ×1 × (1 − 0.54 Resolve) = **23%**.
+`StatCalculator.InterruptChance` reproduces it exactly.
+
+**1. 🔑 THE YARDSTICK IS THE CASTER'S HP POOL, NOT THE SPELL.** Every input 0.83.0 needed — the spell's
+damage, its cast time, its **reuse**, the attacker's DPS, both sides' WIT and level — is gone. One hit is
+measured against the one quantity that is always defined: how much of the caster it just took off.
+`Entity.CastingInterruptReference` and `GameLoopService.CastInterruptReference` are deleted.
+
+That kills the 🔴 **Thunderstorm finding** outright. 0.83.0 priced a cast against its own DPS, so a 300s
+reuse made the game's biggest nuke the *easiest* cast in the game to break. Reuse is not an input any
+more, and a 5s Thunderstorm is now simply a cast that eats more hits than a 1.5s one — which is the
+behaviour he wanted and the reason he called ours provisional.
+
+**Cast time is still in there, but as an emission rather than a term**: a longer cast takes more hits, so
+it breaks more often, at exactly the rate the hits arrive. His *"they cast fast enough for a small window
+to interrupt"* is the whole default defence a mage gets.
+
+**2. RESOLVE IS A PERCENT.** *"Apperanlty resolve is % not flat number 54%"*. **The numbers did not move** —
+the ladder is still 18 / 25 / 36 / 40 / 42 / 48 / 54 and the CSV rows still say those figures; each one now
+reads as a percentage of the incoming roll. `ModifierMode.Flat` → `Percent`, and the four CSVs that author
+Resolve (`cleric 2nd`, `healer 3rd`, `buffer 3rd`, plus `Arcane Serenity`) grew a `%`.
+
+This is what fixes the decay `BL-91` reported: as flat points against a `wit·2 + level` pool, +54 cut
+interrupts by 47% at level 20 and only 30% at 80. As a percent it is ×0.46 at every level, forever.
+
+**3. THE MEN CURVE, FLATTENED TO HIS NUMBERS.** IG's is geometric at ~4.8%/point (20 MEN = ×1.00,
+50 = ×0.23). On our SPT bases that prices a level-39 human mage at ×0.395 and a 50%-HP hit at 9% —
+*"a bit low"*. `StatCalculator.SpiritInterruptMod` uses the curve he named instead: **20 SPT = ×1.00,
+50 SPT = ×0.67**, same geometric shape, one third the slope. On our own bases:
+
+| | human ftr 25 | elf ftr 26 | ork ftr 27 | elf mage 32 | human mage 39 | ork mage 45 |
+|---|---|---|---|---|---|---|
+| ours | ×0.94 | ×0.92 | ×0.91 | ×0.85 | ×0.78 | ×0.72 |
+| IG's | ×0.78 | ×0.75 | ×0.71 | ×0.56 | ×0.39 | ×0.29 |
+
+**4. 🔴 NO ROBE-SET INTERRUPT RESIST, deliberately.** IG's robe set carries 50% on top of Resolve's 54% and
+the product makes a mage effectively uninterruptible — *"and i dont want that"*. `StatCaps.InterruptResistMax`
+(0.80) exists so any future source stacks into a clamp rather than multiplying past it.
+
+**5. Unit changes that go with it.** `Entity.InterruptResist` (int points) → `InterruptResistPct` (fraction)
++ `InterruptSpiritMod`, folded by `InterruptMitigation`; `SkillDef.InterruptDefense` int → float fraction;
+`PassiveEffect.InterruptResist` and `StatMods.InterruptResist` are fractions; `InterruptPower` and
+`BuffInterruptPower` are percentage POINTS added to the final roll, which is why **Disrupt's 99999 still
+guarantees a cancel**. `MagicInterruptPower`, `InterruptResist(wit, level)`, `InterruptPoints` and
+`InterruptPerCast` are deleted — WIT is not in the interrupt on either side any more.
+
+⚠ The `StatsUpdate`/`TargetInfo` field `InterruptResist` keeps its type but changed meaning: it is now the
+folded resistance as a whole **percent** (a level-74 human mage under Resolve reads 64, not 118). The wire
+did not change, so the protocol stays at **26** — an old client just prints a differently-scaled number
+without its `%`. The Unity target panel appends the sign.
+
+**6. 🔴 BALANCEMATRIX WAS BUILDING EVERY PLAYER AT SPT 0.** Found while measuring this: `BuildPlayer`,
+`BuildStarter` and the buffed farm roster seeded Con/Atk/Wit/Agi and **not Spt**, so `SptModifier` clamped
+to its floor of 1.16 instead of the 1.44-1.57 a real character gets. Every player Max MP and M.Def the tool
+has ever printed was understated by roughly a fifth. Server code was always correct; this is the tool only.
+Three lines.
+
+**7. The two new tables.** `=== INTERRUPT: IG's formula ===` (the SPT curve on our bases against IG's, his
+worked example, a hit-size grid, and real fighter-vs-mage measurements at 20/40/60/80) replaces both
+0.83.0 sections. `=== INTERRUPT: the elf nuker's spells vs a same-level mage ===` answers his last question
+directly — see `BL-91`.
+
+**8. HIS LIVE CSV EDITS, SYNCED — and one of them reverses a ruling on purpose.**
+
+*"I fixed healer 3rd skills u had debuffs percent going up and I wanted it to stop (the lvling is the
+spell not to fail)"*. 🔑 **A DEBUFF'S MAGNITUDE PLATEAUS; WHAT A HIGHER RUNG BUYS PAST THE CEILING IS THE
+LANDING CHANCE.** The engine already works that way — the contested and fizzle rolls read the RUNG's own
+learn level, so the top rungs land more often at the same number.
+
+⚠ This is a **deliberate reversal of his 2026-08-20 ruling**, which called a repeated magnitude a defect
+(*"if the 40 lvl description is the same as 44 one then the description is wrong"*) and made both ladders
+continue their +2 stride. That objection was about duplicated rungs at the BOTTOM of a ladder; a designed
+ceiling at the top is not the same thing. Both comment blocks now say so, so the next pass does not
+"fix" it back.
+
+- **Gravity** plateaus at **23%** from level 64 (was climbing to 33% at 74).
+- **Armor Break** plateaus at **30% P.Def / 15% M.Def** from level 66 (was climbing to 38/19). The
+  M.Def-is-half-P.Def identity is preserved.
+- **Anti-Magic** magic resistance **25% → 30%** at levels 70/72/74 (all three files that carry it).
+- **Harmony of Restoration** rung 13 (@72) MP **464 → 458**, so the top of the ladder reads 452/458/464.
+- **Mana Totem** now **replaces Restore Mana** — his `[Restore Mana]` cell. The ork healer's totem is the
+  upgrade of the single-target MP restore, not a second skill beside it. ⚠ `--check` does not compare the
+  REPLACES column, which is why this one had to be read out of the diff by eye.
+- Cosmetic in his file only: two `buffer 3rd` section headers said "Barrier" over rows that already read
+  Reinforcement and Sharpening.
+
+`SkillCsvSeed --check` is green again: **no discrepancies.**
+
+⚠ **NOT synced, and not small:** `healer 4th.csv` (255 rows, he says finished) and `buffer 4th.csv`
+(150 rows, in progress) are full 4th-class kits in a NEW column layout (`Gold`, `SP Bottles`, `Comment`).
+They need engine primitives that do not exist — **skill stones** (a consumable a cast charges: 2 per
+Ultimate Heal, 4 per Mark, 15 per Undying Will), **SP bottles** and a **gold-per-level cost schedule** for
+76-90, and **runes as mutually-exclusive passives** rather than held items. That is its own build, not a
+CSV sync. `tank 4th`'s Undying Will grew the same "Consume 15 skill stones" clause.
+
+**9. RULED: the two nuker interrupt skills are ×2.** *"add the nuker the two high interrupt skills a x2
+chance. They are fast cast and x2 interrupt chance is good enough"*. They are exactly the two rows in
+`nuker 3rd.csv` that say *"Higher chance to interrupt enemy casts"* — **Frost Spikes** and **Frost
+Pierce**, both `m.Atk +64` on a 2.5s cast with a 1s reuse. All 28 rows now also carry
+**`(interrupt chance x2)`**, and `Descr.cs` learned that token (twin of `(success chance xN)`), so the
+number is verified from the day the kit exists.
+
+At 74 against a same-level human mage they read **21.6% per hit** (9.9% through Resolve) against 10.8% at
+×1 — and firing every ~2.5s they compound into roughly a third of a 4s cast. His original ×10 guess
+assumed these were small hits; a mage has the smallest HP pool in the game, and ×10 makes either one a
+guaranteed cancel, which is Disrupt rather than a nuke.
+
+🔴 **×2 is not in the CODE and cannot be** — the `nuker 3rd` kit is unbuilt, so neither skill has a
+`SkillDef`. It lives in the CSV and in `BL-91`, which carries the three-line instruction for the day the
+kit lands.
+
+⚠ The BalanceMatrix table's numbers for these two were **wrong before this** — an earlier pass invented
+42/1.5s/3s and 55/2.0s/5s where his file says 64/2.5s/1s for both, understating each. Fixed to read his
+rows literally.
+
+**10. ⚠ CORRECTING §8: two of the three "missing primitives" were already built.** His answer:
+*"We have skill stones and elemental stones … we have a gold cost for learning skills … the swap
+skills passives were that kind"*. Both are true and were in the tree the whole time —
+`ItemCatalog.SkillStone` (Angel's Protection burns 5/cast, the Lightbringer's rows 1 and 4),
+`ItemCatalog.ElementalStone` (Elemental Burst, 1/cast), and `SkillLevel.GoldCost` /
+`SkillDef.GoldCostAt`, which the level-40 stat swaps have always used. **Only the runes were really
+missing, and he has deferred those** (*"the rune skills are not ready I'll say so"*). What §8 should
+have said is that the 4th-class kits need TWO new things, not four.
+
+**11. HOLY STONE and PHYSICAL STONE** — *"need holy and physical(for fighters) stones (same as
+elemental)"*. Deliberately identical to the Elemental Stone in grade, rarity, value and 20k shelf
+price; only the school that burns them differs. Both join it on the Apothecary shelf. 🔑 Keep them
+identical: the moment one is cheaper, every skill gets authored against that one.
+
+**12. THE SP BOTTLE AND THE SP BROKER** — *"u can make an npc to take your 1kkk SP + 100kk gold and give
+you a tradable/sellabel(100kk shop-buy price) SP bottle"*. Built end to end:
+
+- **`ItemCatalog.SpBottle`** — S-grade, Epic, tradable, 100kk shop price (so it sells for 4kk under the
+  buy÷25 rule). **Not on any shelf**: the broker is its only source, because its price is SP as well as
+  gold and a shelf cannot charge that.
+- **`NpcRole.SpExchange`** (appended, 8) and **Ledgerkeep Mora** in **Frostmere** — the same town as the
+  4th-class master, for the same reason: it is the only town whose neighbours reach the level-76
+  ascension. ⚠ The boot assert `ValidateNpcLabels` rejected three placements before one stuck; the west
+  column there is seven NPCs deep. Trust the assert, not the arithmetic.
+- **`BuySpBottleCmd`** → `HandleBuySpBottle`. 🔑 **The bottle is added to the inventory FIRST and only
+  then is the player charged**, so a full bag costs nothing — the other order would eat a billion SP and
+  hand back an error. The dialog's `CanAfford` is a button label; the handler re-checks both sides.
+- **`SkillDef.GrantsSp`** — a FIELD, not a `SkillEffect` flag, because the flag enum has no bits left.
+  Drinking a bottle runs `sp_bottle_use`, a 0-cast skill with the bottle as its `ConsumableId`, exactly
+  like every other consumable in this game.
+- Client: one section in the NPC dialog stating **both** costs, because SP is invisible on the HUD and a
+  player who can pay the gold would not otherwise know why the button is dim.
+
+🔴 **TWO THINGS FOR HIM, both about the same 32-bit number:**
+1. **`Entity.SkillPoints` is an `int`, max 2.147kkk.** One bottle fits, two fit, three do not. The drink
+   REFUSES rather than wraps, so nothing is ever lost — but his own level-85 row costs **five bottles**.
+   That works if bottles are SPENT as a currency (which is how his `SP Bottles` column reads) and breaks
+   if they are meant to be drunk toward it. Making SP a `long` is Entity + the persisted record + the
+   `StatsUpdate` wire field + the client, i.e. a protocol bump. **Not decided, not done.**
+2. **His CSV header says `1 SP bottle = 1kkk SP + 100k Gold`** — one hundred THOUSAND — where his message
+   says 100kk. The code follows the message (newest ruling wins). The CSV line is worth a second look.
+
+⚠ `NpcRole` gained a value and `NpcDialog` gained an appended nullable field, so **the protocol stays at
+26**: an old client simply draws no section for the broker. A new APK is wanted to use it.
+
+**13. `ItemDef.ConfirmOnUse` — a per-item "are you sure?"** *"the confirmation message should be a bool
+flag in any consumable (later if we have others) default at false (true for SP bottles for now)"*. One
+bool on `ItemDef`, default **false**, and the client puts an `Ask` between the button and the drink when
+it is set. True today only on the SP Bottle.
+
+🔑 **DEFAULT FALSE IS THE WHOLE POINT — a healing potion must stay ONE TAP.** That is why this is a
+per-item flag rather than a rule about expensive consumables.
+
+🔑 **IT GATES BOTH USE PATHS, not just the details window.** Item details → Use goes through
+`ConfirmUse`, and so does a **skill-bar slot tap** — the bar is one tap with no window in front of it,
+which is precisely where a 100kk bottle gets drunk by accident. One helper, so the two cannot disagree
+about which items ask. The prompt names what you GET rather than saying "are you sure", the same rule the
+Mindwriter and the disassemble confirmation follow.
+
+⚠ **Client-side only, deliberately.** The server has nothing to enforce — drinking is always legal; the
+flag only slows your hand. Nothing changes for any other item.
+
+**14. Drinking a bottle returns SP and NOTHING ELSE** — *"drinking them gives 1kkk SP and 0 gold"*. The
+gold half of the broker's price is a fee. Now said out loud in the skill's own description ("No gold is
+returned"), so nobody expects 100kk back out of a bottle they paid 100kk into.
+
+**15. Over the int ceiling, the drink is REFUSED** — *"Over 2.147kk is lost (or unable to use the
+potion.. whatever is cheaper)"*. Refusing is both cheaper and safer than clamping: the bottle is not
+consumed, nothing is lost, and the player keeps a tradable 100kk item instead of burning it for a
+fraction. `UsePotion` returns false with "You already hold too much SP to drink that." — the ceiling
+question in §12 is unchanged and still his to rule on.
+
+
+## 2026-08-24 — 0.83.0: a debuff has its own SUCCESS RATE, interrupt becomes a DPS contest, and four skills stop lying about being contested
 
 Three asks, then three rulings on the first pass's answers. What follows is the ruled version.
 

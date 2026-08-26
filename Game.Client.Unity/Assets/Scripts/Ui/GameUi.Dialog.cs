@@ -191,6 +191,32 @@ namespace Game.Client
                               UiKit.TextDim);
             }
 
+
+            // ----- SP broker (owner, 2026-08-26) ----------------------------------------------------
+            // One trade, and the server has already worked out whether it is affordable — the client
+            // draws the answer and states BOTH costs in the row, because the SP half is invisible on
+            // the HUD and a player who can pay the gold may not know why the button is dim.
+            if (d.SpExchange != null)
+            {
+                var sx = d.SpExchange;
+                anything = true;
+                Header("SP Bottle");
+                string price = sx.SpCost.ToString("N0") + " SP + " + sx.GoldCost.ToString("N0") + " " + GameConstants.CurrencyName;
+                string have = "You have " + sx.YourSp.ToString("N0") + " SP and " + sx.YourGold.ToString("N0") + " " + GameConstants.CurrencyName + ".";
+                if (sx.CanAfford)
+                    DialogRow("Seal " + sx.SpGranted.ToString("N0") + " SP into a bottle you can trade or sell"
+                              + "\n<size=15>" + price + ". " + have + "</size>",
+                              "Buy",
+                              () => Ask("Trade " + price + " for one SP Bottle?\n\n<size=15>"
+                                      + "The bottle holds " + sx.SpGranted.ToString("N0") + " SP and can be traded "
+                                      + "or sold. Drinking it gives the SP back.</size>",
+                                      "Buy", () => Boot.BuySpBottle()),
+                              UiKit.Text);
+                else
+                    DialogRow("Costs " + price + " — you cannot afford it yet"
+                              + "\n<size=15>" + have + "</size>",
+                              "", null, UiKit.TextDim);
+            }
             // ----- gatekeeper ---------------------------------------------------------------------
             if (d.Teleport != null && d.Teleport.Destinations != null)
             {

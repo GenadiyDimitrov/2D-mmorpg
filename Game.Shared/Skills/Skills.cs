@@ -81,7 +81,12 @@ public record SkillDef(
     string ExclusiveGroup = "",
     TargetMode TargetMode = TargetMode.SelfOrTarget,
     float AreaRadius = 0f,
-    int InterruptDefense = 0,
+    /// <summary>Extra interrupt resistance THIS cast carries, as a FRACTION (0.25 = 25%). Added to the
+    /// caster's own resist buffs inside IG's <c>(1 - Buffs)</c> term. Unauthored today — it is the lever
+    /// for "this particular spell is hard to break" without touching the caster's sheet.</summary>
+    float InterruptDefense = 0f,
+    /// <summary>Interrupt power this skill's hit carries, in percentage POINTS added to the final
+    /// interrupt roll (Disrupt: 99999 = a guaranteed cancel).</summary>
     int InterruptPower = 0,
     /// <summary>This skill's MULTIPLIER on the interrupt chance it rolls when it hits a caster
     /// (`BL-91`). 1 = ordinary. This is his nuker 3rd column *"Higher chance to interrupt enemy
@@ -312,6 +317,12 @@ public record SkillDef(
     bool FixedCooldown = false,
     bool FragileCast = false,
     bool TeleportsToTown = false,
+    /// <summary>SP granted on use, for a consumable that IS skill points — the SP Bottle
+    /// (owner, 2026-08-26). A FIELD and not a `SkillEffect` flag because the flag enum has no bits
+    /// left, and because this is a one-off payload rather than a stat.
+    /// <para>⚠ `Entity.SkillPoints` is a 32-bit int, so the grant CLAMPS at int.MaxValue — see the
+    /// handler in <c>GameLoopService.UsePotion</c>. Two bottles fit; three do not.</para></summary>
+    int GrantsSp = 0,
     // Resurrect: targets a DEAD ally (or self, via a scroll) — revives them to 30% HP/MP and restores
     // ResExpPct (0..1) of the exp they lost to the death penalty. The SkillEffect enum is full, so this
     // rides as a flag field.
@@ -869,7 +880,9 @@ public readonly record struct PassiveEffect(
     // Bow range bonus (Rogue/Archer Weapon Mastery "range +200"): added to basic-attack range
     // while a BOW is equipped. Inert with any other weapon.
     float BowRange = 0f,
-    int InterruptPower = 0, int InterruptResist = 0,
+    // ⚠ UNITS, since IG's interrupt formula landed (2026-08-26): InterruptPower is percentage POINTS
+    // added to the final interrupt roll; InterruptResist is a FRACTION subtracted from it (0.10 = 10%).
+    int InterruptPower = 0, float InterruptResist = 0f,
     float MeleeVamp = 0f, float SpellVamp = 0f,
     // MANA vampirism — a BASIC physical attack returns this fraction of its damage to you as MP.
     // His `buffer 3rd.csv` Mana Vampirism row, and deliberately its own field rather than a reuse of

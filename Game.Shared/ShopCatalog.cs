@@ -102,6 +102,11 @@ public static class ShopCatalog
                 // Reagents: Skill Stone (400g — Angel's Protection etc.) + Elemental Stone (20k — nuker burst).
                 ItemCatalog.SkillStone,
                 ItemCatalog.ElementalStone,
+                // The holy and fighter twins of the Elemental Stone, same 20k shelf price (2026-08-26).
+                // ⚠ The SP BOTTLE is deliberately NOT here: the SP Broker in Frostmere is its only
+                // source, because its price is SP as well as gold and a shelf cannot charge that.
+                ItemCatalog.HolyStone,
+                ItemCatalog.PhysicalStone,
                 // Rune boxes — 1h/2h only (24h/30d are premium/pass, debug-only for now). Fighters buy the
                 // War Rune box, mages the Spell Rune; anyone may buy either (e.g. a buffer for melee).
                 ItemCatalog.BoxWarRune1h,

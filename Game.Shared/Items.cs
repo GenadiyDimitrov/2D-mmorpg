@@ -297,6 +297,14 @@ public record ItemDef(
     // NoAttributes=true: never rolls a random attribute and can't be given one
     // (newbie/starter gear). Enforced in AttributeSystem.Roll.
     bool NoAttributes = false,
+    /// <summary>ASK BEFORE USING IT (owner, 2026-08-26). A consumable with this set makes the client
+    /// put an "are you sure?" between the Use button and the drink — from the details window AND from a
+    /// skill-bar slot, because a one-tap bar is exactly where an expensive mistake happens.
+    /// <para>Default FALSE: a healing potion must stay one tap. True today only for the SP Bottle,
+    /// which is worth 100kk and 1kkk SP and cannot be un-drunk.</para>
+    /// <para>⚠ CLIENT-SIDE ONLY, and deliberately so — it is a courtesy, not a rule. The server has
+    /// nothing to enforce here: drinking is always legal, the confirmation only slows your hand.</para></summary>
+    bool ConfirmOnUse = false,
     // SoulBound=true: this DEF may not be stored ANYWHERE — not the private keeper, not the account
     // one — on top of whatever Tradable says. Authored for the Rune of Sinners: *"Keeper cannot accept
     // this item ... as its bound to your soul for the time it has left."* Untradable alone was not
@@ -587,6 +595,14 @@ public static class ItemCatalog
     //  TRAINING, and nothing else.)
     public const string ElementalStone = "elemental_stone";     // reagent for Elemental Burst
     public const string SkillStone = "skill_stone";             // reagent for skill costs (e.g. Angel's Protection)
+    // ⚠ THREE ELEMENT-FLAVOURED REAGENTS, one shape (owner, 2026-08-26: *"need holy and physical(for
+    // fighters) stones (same as elemental)"*). Same grade, same rarity, same 20k vendor price — a
+    // skill picks the one its school burns. Elemental = the nuker's, Holy = the healer/buffer's,
+    // Physical = the fighters'. Keep them identical: the moment one is cheaper it becomes the
+    // one every skill is authored against.
+    public const string HolyStone = "holy_stone";               // reagent — the holy/divine twin of ElementalStone
+    public const string PhysicalStone = "physical_stone";       // reagent — the fighter twin of ElementalStone
+    public const string SpBottle = "sp_bottle";                 // 1kkk SP, bought from an NPC for SP + gold, tradable
     /// <summary>How much of your ATK power a weapon lets through to the channel it does NOT
     /// exist to serve: a sword's magic, a staff's melee. THE tuning knob for weapon identity.
     /// 0.6 reproduces the gear CSV's second column (a sword's 92 P.Atk × 0.6 ≈ its authored 54
@@ -990,10 +1006,28 @@ public static class ItemCatalog
         list.Add(new ItemDef(ElementalStone, "Elemental Stone", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Rare, Value: 100, BuyPriceOverride: 20000));
 
+        // Holy Stone / Physical Stone — the divine and the fighter twins of the Elemental Stone
+        // (owner, 2026-08-26: *"same as elemental"*). Identical grade, rarity, value and vendor price
+        // on purpose; only the school that burns them differs.
+        list.Add(new ItemDef(HolyStone, "Holy Stone", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Rare, Value: 100, BuyPriceOverride: 20000));
+        list.Add(new ItemDef(PhysicalStone, "Physical Stone", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Rare, Value: 100, BuyPriceOverride: 20000));
+
         // Skill Stone — cheap reagent consumed by skills that cost stones (e.g. Angel's Protection = 5/cast).
         // Not free, not expensive: 400g at the vendor. Stacks; not drinkable.
         list.Add(new ItemDef(SkillStone, "Skill Stone", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Uncommon, Value: 400));
+
+        // SP Bottle — a TRADABLE, SELLABLE store of skill points (owner, 2026-08-26). Bought from the
+        // SP Broker for 1kkk SP + 100kk gold and worth 100kk at a shop, so it is the way a high-level
+        // character banks surplus SP and hands it to someone who needs it. Drinking it grants its SP.
+        // ⚠ It is NOT sold on any vendor shelf — the exchange NPC is the only source (BuyPriceOverride
+        // is the shop's PRICE, which is what makes the sell value real; it is never on a shelf to buy).
+        list.Add(new ItemDef(SpBottle, "SP Bottle", EquipSlot.Consumable,
+            ItemGrade.S, ItemRarity.Epic, Value: GameConstants.SpBottleShopPrice,
+            BuyPriceOverride: GameConstants.SpBottleShopPrice,
+            UseSkillId: SkillCatalog.SpBottleUse, ConfirmOnUse: true));
 
         // ----- Buff potions and scrolls: consume to gain one SINGLE buff off a family's ladder
         //       (docs/design/BuffLadders.md). Rarity IS the rung, so a plain potion supersedes a

@@ -280,7 +280,7 @@ namespace Game.Client
             t.AppendLine();
             t.AppendLine("<b>Defense</b>");
             t.AppendLine(Pair("P.Def", d.PDef.ToString(), "M.Def", d.MDef.ToString()));
-            t.AppendLine(Pair("Evasion", d.Evasion.ToString(), "Interrupt res", d.InterruptResist.ToString()));
+            t.AppendLine(Pair("Evasion", d.Evasion.ToString(), "Interrupt res", d.InterruptResist + "%"));
             t.AppendLine(Pair("Crit res", Pct(d.CritResist), "Crit dmg res", Pct(d.CritDmgResist)));
             t.AppendLine(Pair("Bow res", Pct(d.BowResist), "Magic res", Pct(d.MagicResist)));
 
