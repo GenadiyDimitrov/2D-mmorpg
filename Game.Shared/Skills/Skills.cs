@@ -47,6 +47,17 @@ public record SkillDef(
     EffectMagnitude[]? Magnitudes = null,
     string BuffKey = "",
     int Rank = 0,
+    // 🔑 BL-85: a multi-level buff with NO children used to resolve to this flat Rank at EVERY rung,
+    // so rung 1 and rung 5 competed as equals — and equal rank keeps whichever has the longer time
+    // left, so a level-44 Warchanter's Harmony Lv1 replaced a level-74's Lv5. BuffPlan now carries
+    // the level (`Rank + level - 1`) for a childless multi-level buff, exactly as GroupRank already
+    // does for groups. Set this TRUE to opt out and keep the flat number at every rung.
+    //
+    // ⚠ There is exactly one reason to opt out, and it is the "one or the other, never both" pair:
+    // Great Might and Great Bulwark deliberately SHARE a key at Rank 1 so casting either evicts the
+    // other and the choice stays re-makeable mid-fight. Carrying the level there would let a Lv3
+    // Might lock out a Lv1 Bulwark, which is the opposite of that ruling — see Skills.Lightbringer.cs.
+    bool FlatRank = false,
     string[]? Replaces = null,
     // The single buff(s) this skill hands out — see docs/design/BuffLadders.md. The COUNT decides
     // what it is:
@@ -286,6 +297,12 @@ public record SkillDef(
     // MP upkeep for a TOGGLE, charged once a second while it is up. The toggle drops itself when
     // the caster cannot pay. 0 = no upkeep (every other stance in the game).
     int MpPerSecond = 0,
+    // HP upkeep for a TOGGLE, the twin of MpPerSecond and charged in the same tick. Holy Soul is the
+    // first stance to want one (his row: 30% cheaper skills, 10% slower casts, *50 HP a second*) —
+    // without it that toggle was a free MP discount, which is not what the row says.
+    // ⚠ A stance NEVER kills you: the drain stops and the toggle drops itself while HP still remains,
+    // so the trade is "hold it or heal", not "hold it and die".
+    int HpPerSecond = 0,
     // REVEAL (BL-69): a non-damaging AoE that ends every HIDE within AreaRadius and stamps those it
     // caught with NoHideTicks, during which they cannot hide again. The counter to kind 1 — an
     // archer's answer to a rogue who is simply not there.
@@ -952,6 +969,13 @@ public enum BuffRow { Buff = 0, Debuff = 1, Item = 2, Consumable = 3 }
 /// speed Pct fields make you FASTER (0.10 = 10% faster). Flat ints add directly.
 /// </summary>
 public readonly record struct PassiveEffect(
+    // 🔑 SHIELD-GATED. The whole effect is off while no shield is equipped — his Healer's Shield
+    // Mastery row is *"When Sheild is equiped"*, and until this existed those two numbers rode a
+    // plain passive that a healer kept after dropping the shield for a two-handed staff.
+    // ⚠ ALL-OR-NOTHING, unlike the per-field `BlockChancePct`/`ShieldDefPct` gate further down: those
+    // scale the shield's OWN numbers and are inert without one anyway, while this gates effects
+    // (heal power, MP regen) that would otherwise apply perfectly well bare-handed.
+    bool RequiresShield = false,
     float MaxHpPct = 0f, float MaxMpPct = 0f,
     int MaxHp = 0, int MaxMp = 0,      // flat max HP / MP
     int Defence = 0, int MagicDefence = 0,
@@ -1162,6 +1186,32 @@ public static partial class SkillCatalog
                 foreach (var child in lvl.ChildBuffs ?? Array.Empty<string>())
                     if (!dict.ContainsKey(child))
                         throw new InvalidOperationException($"Skill '{sk.Id}' names unknown child buff '{child}'.");
+        }
+
+        // 🔑 BL-85 GUARD. A childless multi-level buff now carries its LEVEL in its rank
+        // (GameLoopService.BuffPlan), which is only safe while its family key is its own: if a
+        // SECOND def shares that key, the rung ladder silently starts competing with that other
+        // skill too, and a Lv3 of one can lock out a Lv1 of the other. That is exactly the trap
+        // Great Might / Great Bulwark were written to avoid — they share `great_blessing` on
+        // purpose and opt out with FlatRank. Any NEW sharer must make the same decision
+        // deliberately, so fail at startup rather than discovering it in a playtest.
+        var laddered = new Dictionary<string, string>();   // buffKey -> the def that ladders on it
+        foreach (var sk in dict.Values)
+        {
+            if (sk.FlatRank || sk.Levels is not { Length: > 1 }) continue;
+            if (sk.ChildBuffs is { Length: > 0 }) continue;
+            // PASSIVES never reach ApplyBuff — they are folded into RecomputeDerived — so two of
+            // them on one name (the tank's Anti-Magic and the mage's, which is how this guard first
+            // fired) is not the collision this is about.
+            if (sk.Category == SkillCategory.Passive) continue;
+            string key = string.IsNullOrEmpty(sk.BuffKey) ? sk.Name : sk.BuffKey;
+            if (laddered.TryGetValue(key, out var other))
+                throw new InvalidOperationException(
+                    $"Buff key '{key}' is laddered by BOTH '{other}' and '{sk.Id}'. A childless "
+                  + "multi-level buff carries its level in its rank (BL-85), so two of them on one "
+                  + "key make each other's rungs compete. Give one its own BuffKey, or set "
+                  + "FlatRank: true on both if they are meant to be mutually exclusive.");
+            laddered[key] = sk.Id;
         }
         return dict;
     }

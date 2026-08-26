@@ -10123,7 +10123,14 @@ public class GameLoopService : BackgroundService
                     covered.Add(string.IsNullOrEmpty(child.BuffKey) ? child.Name : child.BuffKey);
             return (key, GroupRank(level), covered.ToArray(), def.DurationTicks);
         }
-        return (key, def.Rank, Array.Empty<string>(), def.DurationTicks);
+        // 🔑 BL-85 — a CHILDLESS multi-level buff carries its level in its rank. The single ladders
+        // (Might, Focus, …) are one-child WRAPPERS and resolved above, each rung landing as its own
+        // child def with its own Rank; the harmonies, Great Might/Bulwark and Mana Blessing have no
+        // children and fell through to this flat number, so every rung of them competed as an equal
+        // and "equal rank keeps the longer remaining time" let a Lv1 evict a Lv5. Same shape as
+        // GroupRank. `FlatRank` opts out — see the field's note on SkillDef for the one pair that does.
+        int rank = def.FlatRank || def.Levels is not { Length: > 1 } ? def.Rank : def.Rank + level - 1;
+        return (key, rank, Array.Empty<string>(), def.DurationTicks);
     }
 
     /// <summary>Would this buff land, or be refused by something stronger? Asked BEFORE a channelled
@@ -10707,20 +10714,34 @@ public class GameLoopService : BackgroundService
     /// 1 MP/s). A stance nobody can pay for drops itself rather than running free.</summary>
     private void TickToggleUpkeep(Entity e)
     {
-        List<BuffInstance>? broke = null;
+        List<(BuffInstance Buff, bool HadMp)>? broke = null;
         foreach (var b in e.Buffs)
         {
             if (!b.Toggle || string.IsNullOrEmpty(b.SkillId)) continue;
-            if (SkillCatalog.Get(b.SkillId) is not SkillDef def || def.MpPerSecond <= 0) continue;
-            if (e.Mp >= def.MpPerSecond) e.Mp -= def.MpPerSecond;
-            else (broke ??= new()).Add(b);
+            if (SkillCatalog.Get(b.SkillId) is not SkillDef def) continue;
+            if (def.MpPerSecond <= 0 && def.HpPerSecond <= 0) continue;
+
+            // Both halves are checked BEFORE either is charged, so a stance the caster can only
+            // half-afford takes nothing at all rather than draining one bar and then dropping.
+            bool canPayMp = def.MpPerSecond <= 0 || e.Mp >= def.MpPerSecond;
+            // 🔑 STRICTLY greater: an HP stance stops while HP remains and never lands the killing
+            // blow itself. Dying to your own toggle would be a bug report, not a trade-off.
+            bool canPayHp = def.HpPerSecond <= 0 || e.Hp > def.HpPerSecond;
+            if (canPayMp && canPayHp)
+            {
+                e.Mp -= def.MpPerSecond;
+                e.Hp -= def.HpPerSecond;
+            }
+            else (broke ??= new()).Add((b, canPayMp));
         }
         if (broke is null) return;
 
-        foreach (var b in broke)
+        foreach (var (b, hadMp) in broke)
         {
             e.Buffs.Remove(b);
-            SendSystemToEntity(e, $"{b.Name} ends — not enough MP to hold it.");
+            SendSystemToEntity(e, hadMp
+                ? $"{b.Name} ends — not enough HP to hold it."
+                : $"{b.Name} ends — not enough MP to hold it.");
         }
         e.RecomputeDerived();
         PushBuffs(e);

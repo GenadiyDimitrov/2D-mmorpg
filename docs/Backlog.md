@@ -426,25 +426,6 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
 
 ## Classes & skills
 
-- `BL-85` 🔴 **A HARMONY'S RUNGS ALL SHARE ONE RANK, SO A LOWER ONE OVERWRITES A HIGHER ONE.** Found on
-  the way past while building `/buff` (0.78.0), NOT one of your finds — but it is the same rule you
-  already ruled on for Combo Rush, broken in the place it matters most.
-  - **What happens:** every rung of a Harmony is one `SkillDef` with `Levels[]` and **one** `Rank`
-    (`NpcBuffRank`, 100) for all of them. `GameLoopService.BuffPlan` reads `def.Rank` flat for a buff
-    with no children, so rung 1 and rung 5 are the SAME rank — and equal rank keeps whichever has the
-    longer time left. So a level-44 Warchanter's **Harmony of Protection Lv1 replaces a level-74's Lv5**
-    the moment the Lv5 has under five minutes on it. `/buff harmony of protection 3` on a fully-buffed
-    character does the same thing, which is how it surfaced.
-  - **Why the single ladders are fine:** Might, Focus and the rest are one-child WRAPPERS, so each rung
-    resolves to a different child def carrying its own `Rank`. Harmonies (and Great Might, Great Bulwark
-    and Mana Blessing) have no children and fall through to the flat number.
-  - **The fix is one line** — for a childless multi-level buff, rank should carry the level
-    (`def.Rank + level - 1`), which is what `GroupRank(level)` already does for groups. It is left
-    unbuilt on purpose: `BuffPlan` is the resolver EVERY buff in the game goes through, and moving it in
-    the same batch as two 3rd-class kits would make the playtest unreadable. It wants its own increment.
-  - ⚠ Your Combo Rush ruling is the precedent: *"even if some other buffer procs lvl 3 buff u still get
-    your effect over"*. This is that sentence, for the harmonies.
-
 - `BL-87` ✅ **BUILT 2026-08-23 — THE BUFF CAP IS 20, AND WHAT COUNTS IS A PER-BUFF FLAG.** Playtest 27:
   *"we need make max buffs limit. Now I have 24 buffs as healer ... So if we make it 20 then the buffer
   becomes a must"*, then his rules: *"A self buff that is 20min still counts as a buff while a self 30s

@@ -447,14 +447,13 @@ public static partial class SkillCatalog
             new(HealerShieldMastery, "Healer's Shield Mastery", BaseClass.Mage, SkillEffect.None,
                 MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
                 Category: SkillCategory.Passive, SpCost: sp76,
-                // ⚠ Shield-conditional, so it rides the WEAPON-mastery mechanism's sibling: there is no
-                // "shield mastery profile", so the two numbers go on a plain passive and the SHIELD test
-                // is the player's own — a healer who drops the shield keeps them. Flagged: making them
-                // truly shield-gated needs a `PassiveEffect` field of the DefencePctWithShield shape,
-                // and his row is *"When Sheild is equiped"*, so that is the honest reading.
-                Passive: new PassiveEffect(HealPowerPct: 0.10f, MpRegenPct: 0.10f),
+                // 🔑 TRULY SHIELD-GATED (`PassiveEffect.RequiresShield`), which is what his row says:
+                // *"When Sheild is equiped"*. It used to be a plain passive with the shield test left
+                // to the player's honour, so a healer who swapped to a two-handed staff kept both
+                // numbers — the choice this skill exists to pose was not being posed at all.
+                Passive: new PassiveEffect(RequiresShield: true, HealPowerPct: 0.10f, MpRegenPct: 0.10f),
                 Levels: new[] { new SkillLevel(SpCost: sp76, GoldCost: gold76,
-                    Passive: new PassiveEffect(HealPowerPct: 0.10f, MpRegenPct: 0.10f),
+                    Passive: new PassiveEffect(RequiresShield: true, HealPowerPct: 0.10f, MpRegenPct: 0.10f),
                     Description: "With a shield equipped: healing power +10% and MP regeneration +10%.") },
                 Description: "With a shield equipped: healing power +10% and MP regeneration +10%."),
 
@@ -487,16 +486,16 @@ public static partial class SkillCatalog
             // ---- HOLY SOUL @76 — a TOGGLE, and the only one a healer has. ⚠ Its cast-speed clause is a
             //      PENALTY, which his comment column confirms is deliberate (*"Intentional decrease in
             //      Cast speed"*): you trade throughput for endurance, and pay 50 HP a second for it.
-            //      🔑 HP UPKEEP has no field — MpPerSecond is the only per-second toggle cost the engine
-            //      has — so this is authored with `HpCost` and flagged: the 50 HP/s needs an
-            //      `HpPerSecond` twin to bite. As written the toggle is a straight MP-cost win, which is
-            //      NOT what his row says.
+            //      🔑 The 50 HP/s BITES NOW: `SkillDef.HpPerSecond`, the twin of MpPerSecond, charged by
+            //      the same TickToggleUpkeep. Until it existed this toggle was a straight MP-cost win,
+            //      which is NOT what his row says. The stance drops itself while HP still remains — it
+            //      can never be the thing that kills you.
             new(HolySoul, "Holy Soul", BaseClass.Mage, SkillEffect.BuffCastSpeed,
                 MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
                 BuffKey: "holy_soul", Rank: 1,
                 Category: SkillCategory.Buff, SpCost: sp76,
                 TargetMode: TargetMode.SelfOnly,
-                Toggle: true, CountsTowardBuffLimit: false,
+                Toggle: true, CountsTowardBuffLimit: false, HpPerSecond: 50,
                 PhysMpCostPct: 0.30f, MagicMpCostPct: 0.30f,
                 Magnitudes: new EffectMagnitude[]
                     { new(SkillEffect.BuffCastSpeed, -0.10f, ModifierMode.Percent) },

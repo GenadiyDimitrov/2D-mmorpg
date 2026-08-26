@@ -2544,6 +2544,9 @@ public class Entity
             // the profile entry for the currently-held weapon). An all-zero pe is inert.
             void ApplyPassive(PassiveEffect pe)
             {
+                // Shield-gated passives (Healer's Shield Mastery) contribute NOTHING without one.
+                // Checked first so no field of the effect can leak through.
+                if (pe.RequiresShield && !HasShield) return;
                 MaxHp += pe.MaxHp + (int)(MaxHp * pe.MaxHpPct);
                 MaxMp += pe.MaxMp + (int)(MaxMp * pe.MaxMpPct);
                 Defence += pe.Defence;

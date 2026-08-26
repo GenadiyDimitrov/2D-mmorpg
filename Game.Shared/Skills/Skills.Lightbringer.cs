@@ -345,7 +345,7 @@ public static partial class SkillCatalog
         // TOP of it. A healer's party gets 15% + 10% P.Atk, not 10% instead of 15%.
         new(GreatMight, "Great Might", BaseClass.Mage, SkillEffect.BuffPhysAtk,
             MpCost: 90, CastTicks: 10, CooldownTicks: 10, Range: 600, Power: 0,
-            DurationTicks: 12000, BuffKey: GreatBlessingKey, Rank: 1,
+            DurationTicks: 12000, BuffKey: GreatBlessingKey, Rank: 1, FlatRank: true,
             Category: SkillCategory.Buff, SpCost: 45000,
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffPhysAtk, 0.05f) },
             Description: "A second layer of Physical Attack, on top of Might. Does not stack with "
@@ -359,7 +359,7 @@ public static partial class SkillCatalog
 
         new(GreatBulwark, "Great Bulwark", BaseClass.Mage, SkillEffect.BuffDef,
             MpCost: 90, CastTicks: 10, CooldownTicks: 10, Range: 600, Power: 0,
-            DurationTicks: 12000, BuffKey: GreatBlessingKey, Rank: 1,
+            DurationTicks: 12000, BuffKey: GreatBlessingKey, Rank: 1, FlatRank: true,
             Category: SkillCategory.Buff, SpCost: 45000,
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffDef, 0.05f) },
             Description: "A second layer of Physical Defence, on top of Bulwark. Does not stack with "

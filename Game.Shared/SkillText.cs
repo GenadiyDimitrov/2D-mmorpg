@@ -498,9 +498,15 @@ public static class SkillText
 
         // ---- Toggles + MP economy ----
         if (def.Toggle)
-            o.Add(def.MpPerSecond > 0
-                ? $"Toggle — stays up until switched off, costing {def.MpPerSecond} MP a second"
+        {
+            // A stance's upkeep is the whole reason not to leave it on, so both bars go on the card.
+            var upkeep = new List<string>(2);
+            if (def.MpPerSecond > 0) upkeep.Add($"{def.MpPerSecond} MP");
+            if (def.HpPerSecond > 0) upkeep.Add($"{def.HpPerSecond} HP");
+            o.Add(upkeep.Count > 0
+                ? $"Toggle — stays up until switched off, costing {string.Join(" and ", upkeep)} a second"
                 : "Toggle — stays up until switched off");
+        }
         if (def.PhysMpCostPct > 0f) o.Add($"Physical skills cost {def.PhysMpCostPct * 100f:0.#}% less MP");
         if (def.MagicMpCostPct > 0f) o.Add($"Magic skills cost {def.MagicMpCostPct * 100f:0.#}% less MP");
         // The condition that ends the buff belongs on the card: a Meditation whose downside is only

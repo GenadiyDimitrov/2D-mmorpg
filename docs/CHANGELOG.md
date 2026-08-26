@@ -11,7 +11,59 @@ from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVers
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-08-26 (latest) — 0.85.1: a sigil only excludes its own SLOT now, so all three may come from one class
+## 2026-08-26 (latest) — 0.85.2: a buff rung carries its LEVEL in its rank, and two 0.85.0 flags stop being flags
+
+Three small things that were each written down as known-broken and left. `BL-85` had been deliberately
+deferred (*"it wants its own increment"*); the other two were flagged in 0.85.0's own changelog entry.
+
+### `BL-85` — a Lv1 Harmony no longer evicts a Lv5
+
+Every rung of a Harmony is one `SkillDef` with `Levels[]` and **one** `Rank`, and `BuffPlan` read that
+flat number for a buff with no children. Rung 1 and rung 5 therefore competed as EQUALS, and equal rank
+keeps whichever has the longer time left — so a level-44 Warchanter's Harmony of Protection Lv1
+replaced a level-74's Lv5 the moment the Lv5 dropped under five minutes. `/buff harmony of protection 3`
+on a fully-buffed character did the same, which is how it surfaced.
+
+`BuffPlan` now carries the level for a **childless multi-level** buff — `Rank + level - 1`, the same
+shape `GroupRank` already used for groups. The single ladders (Might, Focus, …) were never affected:
+they are one-child WRAPPERS and resolve to a child def that carries its own Rank.
+
+🔑 **The backlog called this a one-line fix and it is not**, because of a ruling written in the same
+file it touches. **Great Might and Great Bulwark deliberately share `great_blessing` at Rank 1 at every
+level** so that casting either evicts the other and the choice stays re-makeable mid-fight. Carrying
+the level there would let a Lv3 Might lock out a Lv1 Bulwark — the opposite of the ruling. So the rank
+ladder is opt-OUT: **new `SkillDef.FlatRank`**, set on exactly those two.
+
+A **startup guard** now refuses any second def that ladders on a key another def already ladders on,
+naming both and pointing at `FlatRank`. It fired immediately on the tank's Anti-Magic vs the mage's —
+a false positive, since PASSIVES never reach `ApplyBuff`, so the guard skips `SkillCategory.Passive`.
+
+Verified with `BalanceMatrix --buffs`: Harmony of the Warrior Lv6 → rank 105, Protection Lv5 → 104,
+Speed/Wizard Lv2 → 101, Great Might/Bulwark → 1. Mana Blessing gains something too — its hidden Lv3
+rung (`buff_mana_blessing_3`, Rank 3) used to outrank the healer's own Lv3 and every 4th-class rung
+above it.
+
+### Holy Soul's 50 HP/s is real
+
+0.85.0 shipped it inert and said so: *"HP UPKEEP has no field … as written the toggle is a straight
+MP-cost win, which is NOT what his row says."* **New `SkillDef.HpPerSecond`**, the twin of
+`MpPerSecond`, charged by the same `TickToggleUpkeep`. Both halves are tested before either is charged,
+so a stance you can only half-afford takes nothing instead of draining one bar and then dropping.
+
+🔑 **A stance never kills you** — the HP test is strictly greater-than, so the toggle drops itself while
+HP still remains. The skill card names both bars now ("costing 50 HP a second").
+
+### Healer's Shield Mastery is actually shield-gated
+
+Also flagged in 0.85.0: the two numbers rode a plain passive with the shield test left to the player's
+honour, so a healer who swapped to a two-handed staff kept +10% healing and +10% MP regen. **New
+`PassiveEffect.RequiresShield`**, checked at the top of `ApplyPassive` so no field can leak through.
+All-or-nothing, unlike the existing per-field `BlockChancePct`/`ShieldDefPct` gate — those scale the
+shield's own numbers and are inert bare-handed anyway, while heal power is not.
+
+No CSV changed: in all three cases the code was behind his file, not the other way round.
+`SkillCsvSeed --check` green on all eleven. No protocol change.
+## 2026-08-26 — 0.85.1: a sigil only excludes its own SLOT now, so all three may come from one class
 
 He relaxed the rule the same afternoon it shipped: *"1-attack, 1-Defence, 1-support from any
 race/descipline"*, and asked first whether any same-flavour trio was overpowered.
