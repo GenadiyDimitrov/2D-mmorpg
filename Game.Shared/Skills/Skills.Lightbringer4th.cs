@@ -153,7 +153,7 @@ public static partial class SkillCatalog
 
     /// <summary>The robe profile for a 4th-tier rung.</summary>
     internal static ArmorMasteryProfile HealerRobe4(RobeRung4 r) =>
-        new(Robe: new StatMods(MpRegenPct: 0.2f, PDef: r.PDef, MaxMp: r.MaxMp,
+        new(Robe: new StatMods(PDef: r.PDef, MaxMp: r.MaxMp,
                                MDefPct: r.MDefPct, MpCostPct: r.MpCostPct));
 
     /// <summary>Holy Ray rungs 15-29 — his 76-90 rows.</summary>

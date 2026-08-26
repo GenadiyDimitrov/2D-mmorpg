@@ -30,20 +30,20 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,R
 72,Spellcaster Weapon Mastery,Passive,0,self,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +94, mpReg +3.1,hpReg x2.6, cast speed x1.1",0,650k,[Spell Mastery]
 74,Spellcaster Weapon Mastery,Passive,0,self,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +99, mpReg +3.4,hpReg x2.7, cast speed x1.1",0,880k,[Spell Mastery]
 ,,,,,,,,,,,,,----------------------------Healer Armor Mastery----------------------------
-40,Healer Armor Mastery,Passive,0,self,0,0,0,"Robe: mpReg x1.2, pDef +39, maxMP +70;",0,36k,[Armor Mastery],,Removed the Light Armor bonus
-44,Healer Armor Mastery,Passive,0,self,0,0,0,"Robe: mpReg x1.2, pDef +44, maxMP +70;",0,43k,[Armor Mastery],,Removed the Light Armor bonus
-48,Healer Armor Mastery,Passive,0,self,0,0,0,"Robe: mpReg x1.2, pDef +47, maxMP +100;",0,64k,[Armor Mastery]
-52,Healer Armor Mastery,Passive,0,self,0,0,0,"Robe: mpReg x1.2, pDef +50, maxMP +100;",0,74k,[Armor Mastery]
-56,Healer Armor Mastery,Passive,0,self,0,0,0,"Robe: mpReg x1.2, pDef +53, maxMP +140;",0,81k,[Armor Mastery]
-58,Healer Armor Mastery,Passive,0,self,0,0,0,"Robe: mpReg x1.2, pDef +56, maxMP +140;",0,88k,[Armor Mastery]
-60,Healer Armor Mastery,Passive,0,self,0,0,0,"Robe: mpReg x1.2, pDef +58, maxMP +150;",0,120k,[Armor Mastery]
-62,Healer Armor Mastery,Passive,0,self,0,0,0,"Robe: mpReg x1.2, pDef +64, maxMP +150;",0,170k,[Armor Mastery]
-64,Healer Armor Mastery,Passive,0,self,0,0,0,"Robe: mpReg x1.2, pDef +68, maxMP +150;",0,190k,[Armor Mastery]
-66,Healer Armor Mastery,Passive,0,self,0,0,0,"Robe: mpReg x1.2, pDef +72, maxMP +180;",0,280k,[Armor Mastery]
-68,Healer Armor Mastery,Passive,0,self,0,0,0,"Robe: mpReg x1.2, pDef +75, maxMP +180;",0,320k,[Armor Mastery]
-70,Healer Armor Mastery,Passive,0,self,0,0,0,"Robe: mpReg x1.2, pDef +79, maxMP +180;",0,390k,[Armor Mastery]
-72,Healer Armor Mastery,Passive,0,self,0,0,0,"Robe: mpReg x1.2, pDef +83, maxMP +200;",0,650k,[Armor Mastery]
-74,Healer Armor Mastery,Passive,0,self,0,0,0,"Robe: mpReg x1.2, pDef +87, maxMP +200;",0,880k,[Armor Mastery]
+40,Healer Armor Mastery,Passive,0,self,0,0,0,"Robe: pDef +39, maxMP +70;",0,36k,[Armor Mastery],,Removed the Light Armor bonus
+44,Healer Armor Mastery,Passive,0,self,0,0,0,"Robe: pDef +44, maxMP +70;",0,43k,[Armor Mastery],,Removed the Light Armor bonus
+48,Healer Armor Mastery,Passive,0,self,0,0,0,"Robe: pDef +47, maxMP +100;",0,64k,[Armor Mastery]
+52,Healer Armor Mastery,Passive,0,self,0,0,0,"Robe: pDef +50, maxMP +100;",0,74k,[Armor Mastery]
+56,Healer Armor Mastery,Passive,0,self,0,0,0,"Robe: pDef +53, maxMP +140;",0,81k,[Armor Mastery]
+58,Healer Armor Mastery,Passive,0,self,0,0,0,"Robe: pDef +56, maxMP +140;",0,88k,[Armor Mastery]
+60,Healer Armor Mastery,Passive,0,self,0,0,0,"Robe: pDef +58, maxMP +150;",0,120k,[Armor Mastery]
+62,Healer Armor Mastery,Passive,0,self,0,0,0,"Robe: pDef +64, maxMP +150;",0,170k,[Armor Mastery]
+64,Healer Armor Mastery,Passive,0,self,0,0,0,"Robe: pDef +68, maxMP +150;",0,190k,[Armor Mastery]
+66,Healer Armor Mastery,Passive,0,self,0,0,0,"Robe: pDef +72, maxMP +180;",0,280k,[Armor Mastery]
+68,Healer Armor Mastery,Passive,0,self,0,0,0,"Robe: pDef +75, maxMP +180;",0,320k,[Armor Mastery]
+70,Healer Armor Mastery,Passive,0,self,0,0,0,"Robe: pDef +79, maxMP +180;",0,390k,[Armor Mastery]
+72,Healer Armor Mastery,Passive,0,self,0,0,0,"Robe: pDef +83, maxMP +200;",0,650k,[Armor Mastery]
+74,Healer Armor Mastery,Passive,0,self,0,0,0,"Robe: pDef +87, maxMP +200;",0,880k,[Armor Mastery]
 ,,,,,,,,,,,,,----------------------------Holy Ray----------------------------
 40,Holy Ray,Magic/Dmg,600,enemy,2.5,1,0,m.Atk +42,30,36k,[Holy Bolt]
 44,Holy Ray,Magic/Dmg,600,enemy,2.5,1,0,m.Atk +47,38,43k,[Holy Bolt]

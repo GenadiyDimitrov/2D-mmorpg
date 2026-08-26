@@ -1,9 +1,9 @@
 LEARN @ LVL,NAME,TYPE,RANGE,TARGET,CAST s,CD s,DURRATION s,DESCR,MP,SP COST,REPLACES,Comment
 ,,,,,,,,,,,,----------------------------Armor Mastery----------------------------
-20,Armor Mastery,Passive,0,self,0,0,0,"Robe: mpReg x1.2, pDef +20, maxMP +20; Light: mpReg x1.2, pDef +20, cast x1.9, as x2 (composes to cast x0.95 / as x1 after Spellcaster Mastery)",0,3200,[Robe Armor Mastery]
-25,Armor Mastery,Passive,0,self,0,0,0,"Robe: mpReg x1.2, pDef +25, maxMP +20; Light: mpReg x1.2, pDef +25, cast x1.9, as x2 (composes to cast x0.95 / as x1 after Spellcaster Mastery)",0,6400,[Robe Armor Mastery]
-30,Armor Mastery,Passive,0,self,0,0,0,"Robe: mpReg x1.2, pDef +30, maxMP +30; Light: mpReg x1.2, pDef +30, cast x1.9, as x2 (composes to cast x0.95 / as x1 after Spellcaster Mastery)",0,12800,[Robe Armor Mastery]
-35,Armor Mastery,Passive,0,self,0,0,0,"Robe: mpReg x1.2, pDef +35, maxMP +30; Light: mpReg x1.2, pDef +35, cast x1.9, as x2 (composes to cast x0.95 / as x1 after Spellcaster Mastery), evasion +2",0,25000,[Robe Armor Mastery]
+20,Armor Mastery,Passive,0,self,0,0,0,"Robe: pDef +20, maxMP +20; Light: mpReg x1.2, pDef +20, cast x1.9, as x2 (composes to cast x0.95 / as x1 after Spellcaster Mastery)",0,3200,[Robe Armor Mastery]
+25,Armor Mastery,Passive,0,self,0,0,0,"Robe: pDef +25, maxMP +20; Light: mpReg x1.2, pDef +25, cast x1.9, as x2 (composes to cast x0.95 / as x1 after Spellcaster Mastery)",0,6400,[Robe Armor Mastery]
+30,Armor Mastery,Passive,0,self,0,0,0,"Robe: pDef +30, maxMP +30; Light: mpReg x1.2, pDef +30, cast x1.9, as x2 (composes to cast x0.95 / as x1 after Spellcaster Mastery)",0,12800,[Robe Armor Mastery]
+35,Armor Mastery,Passive,0,self,0,0,0,"Robe: pDef +35, maxMP +30; Light: mpReg x1.2, pDef +35, cast x1.9, as x2 (composes to cast x0.95 / as x1 after Spellcaster Mastery), evasion +2",0,25000,[Robe Armor Mastery]
 ,,,,,,,,,,,,----------------------------Anti magic----------------------------
 20,Anti magic,Passive,0,self,0,0,0,"magic def +20, mRes +5%",0,3200,[]
 25,Anti magic,Passive,0,self,0,0,0,"magic def +25, mRes +5%",0,6400,[]

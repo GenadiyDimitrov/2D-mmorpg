@@ -793,7 +793,7 @@ public static partial class SkillCatalog
     /// <summary>One rung of Healer Armor Mastery — ROBE only, every other weight left inert so
     /// Spellcaster Mastery's penalty stands uncancelled (his *"Removed the Light Armor bonus"*).</summary>
     private static ArmorMasteryProfile HealerRobe(int pDef, int maxMp) =>
-        new(Robe: new StatMods(MpRegenPct: 0.2f, PDef: pDef, MaxMp: maxMp));
+        new(Robe: new StatMods(PDef: pDef, MaxMp: maxMp));
 
     /// <summary>Resurrection levels 3-16 — his `healer 3rd.csv` rows, 40 → 74. Levels 1-2 (the cleric's
     /// @20 and @30) stay in Skills.Healer.cs, which concatenates these onto them.

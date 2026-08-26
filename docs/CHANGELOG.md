@@ -7,12 +7,44 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.88.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.88.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-08-26 (latest) — 0.88.0: mana stops being free, and standing still becomes a stance
+## 2026-08-26 (latest) — 0.88.1: one ×1.2 per mage, not two
+
+The last thing 0.88.0 measured rather than changed. **The 20% MP-regen bonus was authored twice** —
+once on the born Spellcaster Mastery's Robe profile and again on every class Armor Mastery's Robe
+profile — so a robed mage from level 40 quietly ran **×1.44**, and every regen number in the game had
+been sized against one of them. His words: *"I forgot the second x1.2 … My calculations were only
+with the 1st spellcasters u are born with … The second is not needed"*.
+
+He considered and rejected cutting both to ×1.1 (*"the starting mp suffers while the higher the 10%
+is not of a difference"*) — a compounding pair is worst exactly where the pool is smallest.
+
+**The rule is now one ×1.2 per mage, from the armour actually worn.** The `Robe` slot of every class
+Armor Mastery lost its `mpReg` — cleric, nuker, Lightbringer 3rd and 4th, and the Warchanter's
+one-line all-weights profile, which had to split. **`Light` (cleric) and `Heavy` (buffer) keep theirs**,
+because Spellcaster Mastery pays those weights nothing: it penalises them. Five code sites and every
+affected CSV row moved together; the only four files that still author `mpReg x1.2` are `mage 1st`
+(the born one), `cleric 2nd` (Light) and `buffer 3rd`/`4th` (Light/Heavy). `--check` green.
+
+**Measured effect** — a buffed human nuker's regen as a % of his own main-nuke spam drain, standing:
+
+| L | 0.88.0 | **0.88.1** |
+|---|---|---|
+| 40 | 146% | 125% |
+| 60 | 117% | 101% |
+| 68 | 101% | **87%** |
+| 74 | 102% | **88%** |
+| 85 | 111% | 95% |
+
+Which is the shape he asked for at the start: a high-level mage who spams **cannot** pay for himself
+and needs a restorer or a rotation, while a levelling one is comfortable. Calm Spirit is unaffected —
+still exactly **100.0%** walk/stand at its top rung.
+
+## 2026-08-26 — 0.88.0: mana stops being free, and standing still becomes a stance
 
 `BL-92`, opened by the owner (*"our MP regen is 10 times faster than IG's"*) and ruled by him in full
 the same day. **Measured first**: a new `BalanceMatrix --mpregen` report priced a real nuker's

@@ -428,6 +428,15 @@ public static partial class SkillCatalog
     /// Entity.RecomputeDerived, and the flag is read at the magic roll itself.)</summary>
     private static readonly ArmorMasteryProfile[] SpellcasterLevels = new[]
     {
+        // 🔑 THIS IS THE ONLY ROBE MP-REGEN BONUS IN THE GAME (owner, 2026-08-26, closing `BL-92`).
+        // Every class Armor Mastery used to carry a SECOND `mpReg x1.2` on its Robe slot, so a robed
+        // mage from level 40 silently ran ×1.44 — and his own sizing was done against one: *"My
+        // calculations were only with the 1st spellcasters u are born with … The second is not
+        // needed"*. He rejected the alternative of cutting both to ×1.1 because *"the starting mp
+        // suffers while the higher the 10% is not of a difference"*.
+        // The rule is now one ×1.2 per mage, from the armour they actually wear: ROBE gets it here,
+        // and the cleric's LIGHT and the buffer's HEAVY keep theirs on their own Armor Mastery
+        // (where this skill grants a penalty instead of a bonus). ⚠ Never re-add mpReg to a Robe slot.
         new ArmorMasteryProfile(
             Robe:  new StatMods(MpRegenPct: 0.2f),
             Light: new StatMods(AtkSpeedPct: -0.5f, CastSpeedPct: -0.5f),

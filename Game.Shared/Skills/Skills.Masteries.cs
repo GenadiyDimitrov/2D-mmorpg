@@ -227,5 +227,5 @@ public static partial class SkillCatalog
     /// him x1.2 mp regen (now stacks with the SpellcasterMastery)"*). Duplicating the penalty here
     /// would have applied it TWICE once masteries began stacking.</summary>
     private static ArmorMasteryProfile NukerRobe(int pDef, int maxMp, float restorePct) => new(
-        Robe: new StatMods(MpRegenPct: 0.2f, PDef: pDef, MaxMp: maxMp, RestoreMpPct: restorePct));
+        Robe: new StatMods(PDef: pDef, MaxMp: maxMp, RestoreMpPct: restorePct));
 }

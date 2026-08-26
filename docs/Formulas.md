@@ -143,6 +143,9 @@ stance                = running 0.70 | walking 0.85 | STANDING STILL 1.00 | sitt
   The mage weapon-mastery ladder (`mpReg +1.1 … +3.4`) is one of those MP flats; it was a ×1.1…×3.4
   MULTIPLIER until that day, which is what let a buffed mage regenerate ~290% of his own spam cost.
   The armour masteries' `mpReg x1.2` stays a percent.
+- 🔑 **A mage gets that ×1.2 exactly ONCE**, from the armour he wears: **robe** from the born
+  Spellcaster Mastery, **light** (cleric) / **heavy** (buffer) from their own Armor Mastery. It used to
+  be granted twice on robe (×1.44). Never re-add `mpReg` to a `Robe:` slot.
 - **Standing still** is derived (no move target), not a `MoveState` — that enum is persisted.
 - **×2** inside a city safe zone with `RegenBoost`. No combat/casting suppression, by ruling.
 - **Calm Spirit** (nuker, 6 rungs) multiplies the *stance*: ×0.30→×0.70 running, ×1.03→×1.20 walking,

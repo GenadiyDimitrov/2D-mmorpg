@@ -43,13 +43,13 @@ public static partial class SkillCatalog
     /// constants. (StatMods pct: >0 = faster/more, so ×1.90 is CastSpeedPct 0.90.)</summary>
     private static readonly ArmorMasteryProfile[] HealerArmorMastery =
     {
-        new(Robe:  new StatMods(MpRegenPct: 0.2f, PDef: 20, MaxMp: 20),
+        new(Robe:  new StatMods(PDef: 20, MaxMp: 20),
             Light: new StatMods(MpRegenPct: 0.2f, PDef: 20, CastSpeedPct: 0.90f, AtkSpeedPct: 1.00f)),
-        new(Robe:  new StatMods(MpRegenPct: 0.2f, PDef: 25, MaxMp: 20),
+        new(Robe:  new StatMods(PDef: 25, MaxMp: 20),
             Light: new StatMods(MpRegenPct: 0.2f, PDef: 25, CastSpeedPct: 0.90f, AtkSpeedPct: 1.00f)),
-        new(Robe:  new StatMods(MpRegenPct: 0.2f, PDef: 30, MaxMp: 30),
+        new(Robe:  new StatMods(PDef: 30, MaxMp: 30),
             Light: new StatMods(MpRegenPct: 0.2f, PDef: 30, CastSpeedPct: 0.90f, AtkSpeedPct: 1.00f)),
-        new(Robe:  new StatMods(MpRegenPct: 0.2f, PDef: 35, MaxMp: 30),
+        new(Robe:  new StatMods(PDef: 35, MaxMp: 30),
             Light: new StatMods(MpRegenPct: 0.2f, PDef: 35, CastSpeedPct: 0.90f, AtkSpeedPct: 1.00f, Evasion: 2)),
         // ---- Rungs 5-18 (@40 to 74) — THE BUFFER'S, not the healer's (`buffer 3rd.csv`, 2026-08-20:
         //      *"Continue the line"*; completed 2026-08-21 when he finished the file). The healer
@@ -70,12 +70,18 @@ public static partial class SkillCatalog
         BufferArmor(83, 200), BufferArmor(87, 200),
     };
 
-    /// <summary>One Warchanter Armor Mastery rung: the same MP regen, flat P.Def and Max MP in EVERY
-    /// armour weight, which is exactly what his one-line "Robe/Light/Heavy:" rows say.</summary>
+    /// <summary>One Warchanter Armor Mastery rung: flat P.Def and Max MP in EVERY armour weight, which
+    /// is what his one-line "Robe/Light/Heavy:" rows say.
+    ///
+    /// <para>⚠ THE MP REGEN IS THE ONE THING THAT IS *NOT* THE SAME IN ALL THREE — Robe is excluded
+    /// (owner, 2026-08-26, closing `BL-92`). A robed mage already has his ×1.2 from the born
+    /// Spellcaster Mastery, and granting it again here is what made every robed mage ×1.44. Light and
+    /// Heavy keep it because Spellcaster Mastery pays them NOTHING (it penalises them), so this is
+    /// their only source. Net effect either way: exactly one ×1.2 per mage, from the armour worn.</para></summary>
     private static ArmorMasteryProfile BufferArmor(int pDef, int maxMp)
     {
         var m = new StatMods(MpRegenPct: 0.2f, PDef: pDef, MaxMp: maxMp);
-        return new ArmorMasteryProfile(Robe: m, Light: m, Heavy: m);
+        return new ArmorMasteryProfile(Robe: m with { MpRegenPct = 0f }, Light: m, Heavy: m);
     }
 
     private static SkillDef[] HealerSkills() => new SkillDef[]
