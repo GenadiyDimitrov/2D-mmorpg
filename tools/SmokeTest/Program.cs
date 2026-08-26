@@ -1260,6 +1260,75 @@ Check("the plain victim entered the world", enteredV.Success, enteredV.Error);
 v.MyId = enteredV.EntityId;
 await v.Settle();
 
+// -------------------------------------------------------------------------------------------
+// 6a. THE CHAT LOG READER (`BL-89`). Exactly the bug class this harness exists for: the WRITE half
+//     shipped in 0.81.0 and looked perfect for weeks, because nothing ever READ it back. A query
+//     that SQLite refuses to translate, a name match that misses on case, a page that comes back
+//     newest-first — every one of those renders as a tidy, plausible, WRONG page in the System tab.
+//
+//     It runs here because it needs two people online: a whisper has to have somebody to arrive at,
+//     and the private channel is the case the whole feature exists for.
+{
+    string gmName = gmChars.Characters[0].Name;
+    string mark = "smk" + DateTime.UtcNow.ToString("HHmmssff");   // unique per run, so no run sees another's lines
+
+    await gm.Hub.SendAsync("Chat", $"local-{mark}", ChatChannel.Local, null);
+    await gm.Hub.SendAsync("Chat", $"whisper-{mark}", ChatChannel.Whisper, victimName);
+    await gm.Settle();
+
+    // NO WAIT FOR THE AUTOSAVE. Lines sit in a pending buffer until the 60-second save, and the
+    // command flushes it before querying — precisely so a moderator acting on a LIVE report
+    // ("he is whispering me right now") does not read an empty page and conclude innocence.
+    // If that flush is ever removed, this check fails within 500 ms instead of passing by luck.
+    gm.SystemChat.Clear();
+    await gm.Hub.SendAsync("AdminCommand", "chatlog", gmName);
+    bool sawBoth = await gm.WaitFor(() =>
+        gm.SystemChat.Any(s => s.Contains($"local-{mark}")) &&
+        gm.SystemChat.Any(s => s.Contains($"whisper-{mark}")));
+    Check("/chatlog <name> returns lines said SECONDS ago (the pending buffer is flushed, not waited on)",
+          sawBoth, string.Join(" | ", gm.SystemChat));
+
+    // Case-insensitivity, the same lesson `/jail` learned: `=` on TEXT is case-SENSITIVE in SQLite,
+    // and an empty page is the most misleading answer this command can give — it reads as "this
+    // player never said anything".
+    gm.SystemChat.Clear();
+    await gm.Hub.SendAsync("AdminCommand", "chatlog", gmName.ToLowerInvariant());
+    Check("a lower-case name still finds the lines",
+          await gm.WaitFor(() => gm.SystemChat.Any(s => s.Contains($"local-{mark}"))),
+          string.Join(" | ", gm.SystemChat));
+
+    // -w is the channel the feature is FOR: it must keep the whisper and drop the public line.
+    gm.SystemChat.Clear();
+    await gm.Hub.SendAsync("AdminCommand", "chatlog", $"{gmName} -w");
+    bool whisperOnly = await gm.WaitFor(() => gm.SystemChat.Any(s => s.Contains($"whisper-{mark}")))
+                       && !gm.SystemChat.Any(s => s.Contains($"local-{mark}"));
+    Check("/chatlog <name> -w keeps the whisper and drops the public line", whisperOnly,
+          string.Join(" | ", gm.SystemChat));
+
+    // A whisper has two ends and a report can name either. Asking about the VICTIM must find what was
+    // said TO them — the reporting player is the one whose name a moderator has.
+    gm.SystemChat.Clear();
+    await gm.Hub.SendAsync("AdminCommand", "chatlog", $"{victimName} -w");
+    Check("a name query finds whispers RECEIVED, not only sent",
+          await gm.WaitFor(() => gm.SystemChat.Any(s => s.Contains($"whisper-{mark}"))),
+          string.Join(" | ", gm.SystemChat));
+
+    // `around <time>`: the relative form, which is what a real report produces ("about ten minutes ago").
+    gm.SystemChat.Clear();
+    await gm.Hub.SendAsync("AdminCommand", "chatlog", "around 1m");
+    Check("/chatlog around 1m reads the window instead of the tail",
+          await gm.WaitFor(() => gm.SystemChat.Any(s => s.Contains($"local-{mark}"))),
+          string.Join(" | ", gm.SystemChat));
+
+    // A page past the end must say so, not fall over or silently repeat page 1.
+    gm.SystemChat.Clear();
+    await gm.Hub.SendAsync("AdminCommand", "chatlog", $"{gmName} -p 99");
+    Check("a page past the end reports empty rather than repeating page 1",
+          await gm.WaitFor(() => gm.SystemChat.Any(s => s.Contains("no lines match")))
+          && !gm.SystemChat.Any(s => s.Contains($"local-{mark}")),
+          string.Join(" | ", gm.SystemChat));
+}
+
 // JAIL the victim live.
 v.MyX = 0; v.MyY = 0;
 await gm.Hub.SendAsync("AdminCommand", "jail", $"{victimName} 60");

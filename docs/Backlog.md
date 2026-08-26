@@ -470,20 +470,26 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
   - **The gear picker, second pass** (`87f`) — *"Make the buttons even smaller. Like the tab buttons in
     height. Also there is no splitter bellow the [S 80] button."*
 
-- `BL-89` 🔴 **A READER FOR THE CHAT LOG — the table exists, nothing opens it in-game.** Playtest 28,
-  your question: *"don't we need a chat log … because now an admin/mod should ban based on som1 is trying
-  to sell u for $ on private chat"*. **The WRITE half is built (0.81.0)** — every delivered line goes to
-  `ChatLogRecord` with time, sender id + name, channel, receiver and text. What is missing is the way a
-  moderator on a phone actually reads it; today it is a SQLite table you open on the machine.
-  - **The command shape it wants:** `/chatlog <name>` (that account's last N lines), `/chatlog <name>
-    -w` (whispers only — the channel this whole feature is FOR), and `/chatlog around <time>` for a
-    reported incident. Output into the System tab, paged, staff-only.
-  - ⚠ **RETENTION IS UNDECIDED AND IS YOURS TO RULE.** The table grows forever right now. A real answer
-    is a purge — 30 or 90 days — but the sensible window depends on how long after the fact a report
-    arrives, which you know and I do not. Say a number and it becomes one line in the autosave path.
-  - ⚠ It is also the first table in the game that holds something a player would call **private**. Worth
-    deciding once, before there is real data in it, whether staff below admin can read whispers.
-
+- `BL-89` 🟢 **BUILT 2026-08-26 (0.86.0) — THE CHAT LOG HAS A READER.** Playtest 28, your question:
+  *"don't we need a chat log … because now an admin/mod should ban based on som1 is trying to sell u for $
+  on private chat"*. The WRITE half shipped in 0.81.0 and nothing ever opened it; `/chatlog` is the way a
+  moderator on a phone reads it, which was always the point.
+  - ✅ **All three shapes you asked for, and they combine:** `/chatlog <name>`, `/chatlog <name> -w`
+    (whispers only), `/chatlog around <time>`, plus `-p <page>` on any of them. Into the System tab,
+    25 lines a page, oldest-first, staff-only.
+  - ✅ `around` takes **`15m` / `2h` / `1d`** first, because that is what a report actually sounds like —
+    *"about ten minutes ago"*. `11:02` = today UTC; `yyyy-MM-dd HH:mm` names the day. Everything is UTC,
+    since that is what the rows hold.
+  - 🔑 **It flushes before it reads.** Lines wait for the 60-second autosave, so a straight query would
+    have been blind to the last minute — and the case this exists for is a LIVE report. Typing `/chatlog`
+    the moment you are told and seeing nothing would read as innocence.
+  - 🔴 **RETENTION IS STILL YOURS TO RULE, AND IT IS NOW ONE NUMBER.**
+    `GameConstants.ChatLogRetentionDays` = **0 = never purge**, which is what ships. The six-hourly sweep
+    is wired and returns immediately at 0. Say 30 or 90 and it starts working — nothing else to build.
+  - 🔴 **THE PRIVACY QUESTION, ANSWERED PROVISIONALLY — reverse it in one line if you disagree.**
+    **Moderator and above read whispers** (they hold the jail and the kick, and the private channel is the
+    case the feature is for). **A Chat Moderator reads PUBLIC channels only** — that rank goes to someone
+    you do *not* fully trust (playtest 26), and a mute needs no private mail to justify it.
 - `BL-90` 🟢 **BUILT 2026-08-24 (0.83.0) — A PER-SKILL DEBUFF SUCCESS MULTIPLIER, AND THE ROUTING BUG IT
   EXPOSED.** Your final shape: *"DebuffLandMod should be floating one value - default 1 … armor/weapon
   break + gravity + Arcane/Fros/Pyro blasts(nuker 3rd) should be 75% at parity (x1.5) and the other should

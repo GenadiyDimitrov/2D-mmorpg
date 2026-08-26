@@ -1289,6 +1289,83 @@ public class PersistenceService
         await db.SaveChangesAsync();
     }
 
+    /// <summary>Read back moderation-log lines for `/chatlog` (BL-89). The WRITE half shipped in
+    /// 0.81.0 and nothing opened it; this is the reader, and it answers the only two questions a
+    /// moderator actually asks — *"what has this account been saying"* and *"what was said around the
+    /// time of this report"*.
+    ///
+    /// <paramref name="senderName"/> null/empty = every speaker (the "around a time" query).
+    /// <paramref name="whispersOnly"/> narrows to the private channel, which is the case the feature
+    /// exists for: someone selling for real money where nobody else can see it.
+    /// <paramref name="around"/> null = the most recent lines; otherwise a window CENTRED on that
+    /// instant, so a report saying "about ten minutes ago" lands in the middle of the page rather
+    /// than at one edge of it.
+    ///
+    /// Returned OLDEST-first, which is how a conversation reads. Paging is `skip`/`take` over the
+    /// same ordering, so page 2 is the block before page 1, not a re-shuffle.
+    ///
+    /// ⚠ Name matching is case-INSENSITIVE for the same reason every lookup above it is: SQLite
+    /// compares TEXT with `=` case-sensitively, and `/chatlog test1` missing the rows for "Test1"
+    /// would read as "this player never said anything" — the most misleading possible answer.</summary>
+    public async Task<List<ChatLogRecord>> ReadChatLogAsync(
+        string? senderName, bool whispersOnly, DateTime? around, TimeSpan window, int skip, int take)
+    {
+        await using var db = await _factory.CreateDbContextAsync();
+        IQueryable<ChatLogRecord> q = db.ChatLog;
+
+        if (!string.IsNullOrWhiteSpace(senderName))
+        {
+            string lower = senderName.ToLower();
+            // A whisper has two ends and a report can name either of them, so a name query matches
+            // the RECEIVER too — asking about the victim finds what was said TO them.
+            q = q.Where(c => c.SenderName.ToLower() == lower || c.ReceiverName.ToLower() == lower);
+        }
+        if (whispersOnly) q = q.Where(c => c.Channel == (int)ChatChannel.Whisper);
+
+        if (around is DateTime at)
+        {
+            DateTime from = at - window, to = at + window;
+            return await q.Where(c => c.AtUtc >= from && c.AtUtc <= to)
+                          .OrderBy(c => c.AtUtc).ThenBy(c => c.Id)
+                          .Skip(skip).Take(take).ToListAsync();
+        }
+
+        // Most-recent page: take from the END, then flip so the block still reads oldest-first.
+        var page = await q.OrderByDescending(c => c.AtUtc).ThenByDescending(c => c.Id)
+                          .Skip(skip).Take(take).ToListAsync();
+        page.Reverse();
+        return page;
+    }
+
+    /// <summary>How many lines the log holds in total, and how far back it goes. Printed as the
+    /// footer of a `/chatlog` page so a moderator finding nothing can tell "this player said nothing"
+    /// apart from "the log does not reach back that far", which are very different conclusions.</summary>
+    public async Task<(int Rows, DateTime? Oldest)> ChatLogExtentAsync()
+    {
+        await using var db = await _factory.CreateDbContextAsync();
+        int rows = await db.ChatLog.CountAsync();
+        if (rows == 0) return (0, null);
+        return (rows, await db.ChatLog.MinAsync(c => c.AtUtc));
+    }
+
+    /// <summary>Delete moderation-log lines older than <paramref name="days"/>. Returns the number
+    /// removed.
+    ///
+    /// 🔴 IT IS WIRED BUT INERT, AND THAT IS DELIBERATE — retention is the owner's ruling
+    /// (BL-89: *"a real answer is a purge — 30 or 90 days — but the sensible window depends on how
+    /// long after the fact a report arrives"*). `GameLoopService.FlushChatLog` calls this every six
+    /// hours, but `GameConstants.ChatLogRetentionDays` is **0 = never purge** until he names a
+    /// number, and 0 returns here immediately. So the machinery is finished and nothing is destroyed
+    /// by a default nobody chose — deleting the evidence a ban would rest on is not a thing to guess
+    /// at, and the day he says "90" it is one number, not a wiring job.</summary>
+    public async Task<int> PurgeChatLogAsync(int days)
+    {
+        if (days <= 0) return 0;
+        await using var db = await _factory.CreateDbContextAsync();
+        DateTime cutoff = DateTime.UtcNow.AddDays(-days);
+        return await db.ChatLog.Where(c => c.AtUtc < cutoff).ExecuteDeleteAsync();
+    }
+
     // ----- Admin moderation (jail / kick / ban) — all target by CHARACTER name so they work even when
     //        the target is offline. Return false only if the name isn't found. -----------------------
     //

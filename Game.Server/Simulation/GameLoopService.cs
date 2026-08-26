@@ -1147,12 +1147,39 @@ public class GameLoopService : BackgroundService
     /// moderation log is worth having, it is not worth an out-of-memory.</summary>
     private const int ChatLogPendingCap = 5000;
 
+    /// <summary>How many lines one `/chatlog` page prints, and how wide the "around a time" window is.
+    /// A page has to fit a phone's System tab without becoming a scroll-hunt, which is what put it at
+    /// 25 rather than the 30 the backlog sketched.</summary>
+    private const int ChatLogPageSize = 25;
+    private static readonly TimeSpan ChatLogAroundWindow = TimeSpan.FromMinutes(10);
+
+    /// <summary>When the retention purge may next run. The purge itself is a no-op until the owner
+    /// names a window (<see cref="GameConstants.ChatLogRetentionDays"/> is 0 = keep forever), so this
+    /// only exists so that the day he DOES name one, it is a number and not a wiring job.</summary>
+    private DateTime _nextChatLogPurgeUtc = DateTime.MinValue;
+
     private void FlushChatLog()
     {
-        if (_chatLogPending.Count == 0) return;
-        var batch = _chatLogPending.ToList();
-        _chatLogPending.Clear();
-        RunSave(() => _db.AppendChatLogAsync(batch));
+        if (_chatLogPending.Count > 0)
+        {
+            var batch = _chatLogPending.ToList();
+            _chatLogPending.Clear();
+            RunSave(() => _db.AppendChatLogAsync(batch));
+        }
+
+        // Retention. Six-hourly rather than per-autosave: a DELETE over a growing table is not
+        // something to run every 60 seconds for the sake of a boundary that moves once a day.
+        if (GameConstants.ChatLogRetentionDays > 0 && DateTime.UtcNow >= _nextChatLogPurgeUtc)
+        {
+            _nextChatLogPurgeUtc = DateTime.UtcNow.AddHours(6);
+            RunSave(async () =>
+            {
+                int gone = await _db.PurgeChatLogAsync(GameConstants.ChatLogRetentionDays);
+                if (gone > 0)
+                    Console.WriteLine($"[chatlog] purged {gone} lines older than "
+                                    + $"{GameConstants.ChatLogRetentionDays} days.");
+            });
+        }
     }
 
     /// <summary>Write back every account allowance that has been spent since the last save. Snapshots
@@ -5851,6 +5878,55 @@ public class GameLoopService : BackgroundService
         return (arg, defaultMinutes);
     }
 
+    /// <summary>Read the `<c>around &lt;time&gt;</c>` argument of `/chatlog` into an instant (UTC).
+    ///
+    /// The RELATIVE forms come first because they are the ones a real report produces: a player says
+    /// *"about ten minutes ago"*, and `15m` is what a moderator can type one-handed without doing
+    /// clock arithmetic on a phone at 2am. `30m` / `2h` / `1d` all work.
+    ///
+    /// The absolute forms are the follow-up, for a report that arrives with a timestamp on it:
+    /// `11:02` means that time TODAY in UTC, and a full `yyyy-MM-dd HH:mm` says which day. Everything
+    /// is UTC because that is what the rows hold — converting to a server-local zone here would print
+    /// times a moderator could not match back to anything.</summary>
+    private static bool TryParseChatLogTime(string text, out DateTime atUtc)
+    {
+        atUtc = default;
+        text = (text ?? "").Trim();
+        if (text.Length == 0) return false;
+
+        char unit = char.ToLowerInvariant(text[^1]);
+        if (unit is 'm' or 'h' or 'd'
+            && double.TryParse(text[..^1], NumberStyles.Number, CultureInfo.InvariantCulture, out double n)
+            && n >= 0)
+        {
+            atUtc = DateTime.UtcNow - unit switch
+            {
+                'm' => TimeSpan.FromMinutes(n),
+                'h' => TimeSpan.FromHours(n),
+                _   => TimeSpan.FromDays(n),
+            };
+            return true;
+        }
+
+        // "11:02" — today, UTC. DateTime.TryParse would resolve it against the LOCAL date, which is
+        // the wrong day for anyone playing either side of midnight UTC, so the date is supplied here.
+        if (TimeSpan.TryParseExact(text, new[] { @"hh\:mm", @"h\:mm", @"hh\:mm\:ss" },
+                                   CultureInfo.InvariantCulture, out TimeSpan tod))
+        {
+            atUtc = DateTime.UtcNow.Date + tod;
+            return true;
+        }
+
+        if (DateTime.TryParse(text, CultureInfo.InvariantCulture,
+                              DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
+                              out DateTime abs))
+        {
+            atUtc = abs;
+            return true;
+        }
+        return false;
+    }
+
     /// <summary>Split a command tail into tokens, keeping a "quoted run" together as ONE token —
     /// `/give` needs it for <c>"Admin Sword"</c>, and an EMPTY pair of quotes has to survive as an empty
     /// token, because that is how the owner spells "keep the default name" in a positional argument
@@ -5942,7 +6018,7 @@ public class GameLoopService : BackgroundService
     /// no god mode, no teleporting, no item or gold creation (owner).</summary>
     private static readonly HashSet<string> ModeratorCommands = new(StringComparer.OrdinalIgnoreCase)
     {
-        "help", "jail", "unjail", "jailed", "kick", "chatban", "unchatban", "where",
+        "help", "jail", "unjail", "jailed", "kick", "chatban", "unchatban", "where", "chatlog",
     };
 
     /// <summary>A CHAT MODERATOR's whole vocabulary — the mute and nothing else (owner, playtest 26).
@@ -5950,10 +6026,14 @@ public class GameLoopService : BackgroundService
     /// 🔑 The omissions are the design, not an oversight. No `kick`/`jail`, because *"the jail and kick
     /// will allow them to farm undisturbed — go to zone .. kick players/jail then start to farm"*; no
     /// `where`, because it *"will allow them to know anywhone on the map where he is so he can take
-    /// revange or bully kill"*. This rank exists to be handed to someone you do NOT fully trust.</summary>
+    /// revange or bully kill"*. This rank exists to be handed to someone you do NOT fully trust.
+    ///
+    /// `chatlog` is the one addition (`BL-89`), and it passes the same test: reading what was said in
+    /// PUBLIC lets them justify the mute they already hold, and gives them no new way to grief anyone.
+    /// The PRIVATE channel is withheld from this rank inside the command itself.</summary>
     private static readonly HashSet<string> ChatModeratorCommands = new(StringComparer.OrdinalIgnoreCase)
     {
-        "help", "chatban", "unchatban",
+        "help", "chatban", "unchatban", "chatlog",
     };
 
     /// <summary>The allow-list for a role, or null for "everything" (Admin and Owner). The one power
@@ -6014,14 +6094,17 @@ public class GameLoopService : BackgroundService
                 SendSystemToEntity(admin, admin.Role switch
                 {
                     AccountRole.ChatModerator =>
-                        "Chat Moderator: /chatban <name> [min], /unchatban <name>",
+                        "Chat Moderator: /chatban <name> [min], /unchatban <name>, "
+                        + "/chatlog [name] [-p <page>] (public channels only)",
                     AccountRole.Moderator =>
                         "Moderator: /jail <name> [min], /unjail <name>, /kick <name> [min], " +
-                        "/chatban <name> [min], /unchatban <name>, /jailed, /where <name>",
+                        "/chatban <name> [min], /unchatban <name>, /jailed, /where <name>, " +
+                        "/chatlog [name] [-w] [around <time>] [-p <page>]",
                     _ =>
                         "Admin: /jail, /unjail, /kick, /ban, /unban, /chatban, /unchatban, /jailed, " +
                         "/role <name> <player|chatmod|moderator|admin>, /tp <name>, /where <name>, " +
-                        "/god, /invis, /spd <m|a|c> <v> (bare /spd resets), /bag <name>, /give <name>, " +
+                        "/god, /invis, /chatlog [name] [-w] [around <time>] [-p <page>], " +
+                        "/spd <m|a|c> <v> (bare /spd resets), /bag <name>, /give <name>, " +
                         "/givegold <name> <amount>, /lvl [name] <level|max>, /sp [name] <amount|max>, " +
                         "/exp [name] <amount|max>, /droprate [group|gear|global|amount|item <id>] [mult], " +
                         "/titleright <name> <on|off>, /buff [name] [level], " +
@@ -6281,6 +6364,162 @@ public class GameLoopService : BackgroundService
                     }
                 });
                 break;
+
+            // THE READER FOR THE MODERATION LOG (`BL-89`). The write half shipped in 0.81.0 and
+            // nothing opened it: until today the only way to see a line was to open game.db on the
+            // machine, which is not available to a moderator holding a phone — and the moderator
+            // holding the phone is the whole point, since his case was *"an admin/mod should ban based
+            // on som1 is trying to sell u for $ on private chat"*.
+            //
+            // Four shapes, freely combined:
+            //   /chatlog                    the last 25 lines anyone said
+            //   /chatlog <name>             what that character said — or was WHISPERED (see below)
+            //   /chatlog <name> -w          whispers only: the channel this feature exists for
+            //   /chatlog around 15m         a window centred 15 minutes back, for a fresh report
+            //   … -p 2                      the page BEFORE, for any of the above
+            case "chatlog":
+            {
+                string? logName = null;
+                bool logWhispers = false;
+                int logPage = 1;
+                DateTime? logAround = null;
+                bool logBadArg = false;
+
+                var ctok = arg.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                for (int i = 0; i < ctok.Length && !logBadArg; i++)
+                {
+                    string t = ctok[i];
+                    if (t.Equals("-w", StringComparison.OrdinalIgnoreCase)
+                        || t.Equals("w", StringComparison.OrdinalIgnoreCase)
+                        || t.Equals("whispers", StringComparison.OrdinalIgnoreCase))
+                        logWhispers = true;
+                    else if (t.Equals("-p", StringComparison.OrdinalIgnoreCase) && i + 1 < ctok.Length
+                             && int.TryParse(ctok[i + 1], out int pg) && pg >= 1)
+                    {
+                        logPage = pg;
+                        i++;                                       // consume the number too
+                    }
+                    else if (t.Equals("around", StringComparison.OrdinalIgnoreCase) && i + 1 < ctok.Length)
+                    {
+                        // The rest of the line is the time — "2026-08-26 11:02" has a space in it.
+                        string when = string.Join(' ', ctok.Skip(i + 1)
+                            .Where(x => !x.Equals("-w", StringComparison.OrdinalIgnoreCase)));
+                        if (TryParseChatLogTime(when, out DateTime at)) { logAround = at; i = ctok.Length; }
+                        else logBadArg = true;
+                    }
+                    else if (logName is null) logName = t;
+                    else logBadArg = true;
+                }
+
+                if (logBadArg)
+                {
+                    SendSystemToEntity(admin,
+                        "Usage: /chatlog [name] [-w] [around <15m|2h|1d|HH:mm|yyyy-MM-dd HH:mm>] [-p <page>]");
+                    break;
+                }
+
+                // 🔴 THE OWNER'S OPEN QUESTION, ANSWERED PROVISIONALLY (`BL-89`: *"worth deciding once …
+                // whether staff below admin can read whispers"*). The split shipped here is:
+                //   • Moderator and above may read whispers. They hold the jail and the kick, the
+                //     feature exists for the private-channel RMT case, and a punishment handed out
+                //     without the evidence it rests on is the thing we were trying to stop.
+                //   • A Chat Moderator may read the PUBLIC channels only. That rank is deliberately
+                //     given to someone you do not fully trust (playtest 26), and a mute needs no
+                //     private mail to justify it — everything a chat mod polices was said out loud.
+                // One line to reverse in either direction if he rules otherwise.
+                if (logWhispers && admin.Role < AccountRole.Moderator)
+                {
+                    SendSystemToEntity(admin, "Chat Moderators can't read whispers — public channels only.");
+                    break;
+                }
+                bool logPublicOnly = admin.Role < AccountRole.Moderator;
+
+                // ⚠ FLUSH FIRST, OR THE READER IS BLIND TO THE LAST MINUTE. Accepted lines sit in
+                // `_chatLogPending` until the 60-second autosave, and the one case this whole feature
+                // exists for is a LIVE report — *"he is whispering me right now"*. A moderator who
+                // types `/chatlog` the moment they are told and sees nothing concludes the player is
+                // innocent. So the batch is detached HERE, on the tick thread that owns it, and
+                // written by the worker below BEFORE the query runs.
+                var logFlush = _chatLogPending.ToList();
+                _chatLogPending.Clear();
+
+                int logSkip = (logPage - 1) * ChatLogPageSize;
+                // Rebuilt rather than echoed: the line he typed may already carry a `-p 2`, and
+                // "/chatlog bob -p 2 -p 3" is a footer that reads like a bug even though the parser
+                // would survive it. This prints the query he MEANT, one page older.
+                string logEcho = string.Join(' ', new[]
+                {
+                    logName,
+                    logWhispers ? "-w" : null,
+                    logAround is DateTime ar ? $"around {ar:yyyy-MM-dd HH:mm}" : null,
+                }.Where(s => !string.IsNullOrEmpty(s)));
+                string? logNameQ = logName;
+                bool logWhispersQ = logWhispers;
+                DateTime? logAroundQ = logAround;
+                _ = Task.Run(async () =>
+                {
+                    if (logFlush.Count > 0) await _db.AppendChatLogAsync(logFlush);
+
+                    var rows = await _db.ReadChatLogAsync(
+                        logNameQ, logWhispersQ, logAroundQ, ChatLogAroundWindow,
+                        logSkip, ChatLogPageSize);
+                    // A chat mod never sees the private channel, whatever the query was.
+                    //
+                    // ⚠ `full` is captured BEFORE the filter, and the footer below is decided on it.
+                    // The filter runs AFTER paging, so a chat mod reading a page that happened to be
+                    // mostly whispers would otherwise be handed a short page and told "end of log" —
+                    // with more pages sitting right behind it. A moderation tool that quietly stops
+                    // early is the one failure mode worse than showing nothing at all.
+                    int full = rows.Count;
+                    if (logPublicOnly) rows = rows.Where(r => r.Channel != (int)ChatChannel.Whisper).ToList();
+
+                    var (total, oldest) = await _db.ChatLogExtentAsync();
+
+                    string what = logNameQ is null ? "everyone" : logNameQ;
+                    string scope = logWhispersQ ? "whispers" : "all channels";
+                    string when = logAroundQ is DateTime at
+                        ? $"±{(int)ChatLogAroundWindow.TotalMinutes}m around {at:yyyy-MM-dd HH:mm} UTC"
+                        : "most recent";
+                    SendSystemToEntity(admin,
+                        $"Chat log — {what}, {scope}, {when}, page {logPage} (times UTC):");
+
+                    // The footer is decided on `full`, the page BEFORE the chat-mod filter — see above.
+                    string logMore = full < ChatLogPageSize
+                        ? $"  — end of log ({total} lines total, back to {oldest:yyyy-MM-dd HH:mm} UTC)"
+                        : $"  — /chatlog {logEcho} -p {logPage + 1} for older ({total} lines total)";
+
+                    if (rows.Count == 0)
+                    {
+                        // THREE different "nothing here" answers, and a moderator must not confuse them:
+                        // an empty log, a query that matched nothing, or — for a chat mod — a page that
+                        // was entirely whispers and got filtered away. The last one has more to read.
+                        if (full > 0)
+                            SendSystemToEntity(admin,
+                                "  (nothing on this page you may read — it is all private)");
+                        else
+                            SendSystemToEntity(admin, total == 0
+                                ? "  (the log is empty — nothing has been said since the table was created)"
+                                : $"  (no lines match; the log holds {total} lines back to "
+                                  + $"{oldest:yyyy-MM-dd HH:mm} UTC)");
+                        SendSystemToEntity(admin, logMore);
+                    }
+                    else
+                    {
+                        foreach (var r in rows)
+                        {
+                            string ch = (ChatChannel)r.Channel switch
+                            {
+                                ChatChannel.World   => "!",                        // shouted — the `!msg` prefix
+                                ChatChannel.Whisper => $"→{r.ReceiverName}",       // private, and to whom
+                                _                   => "",                         // Local: the default, unmarked
+                            };
+                            SendSystemToEntity(admin, $"  [{r.AtUtc:HH:mm:ss}] {r.SenderName}{ch}: {r.Text}");
+                        }
+                        SendSystemToEntity(admin, logMore);
+                    }
+                });
+                break;
+            }
 
             case "tp":
             {

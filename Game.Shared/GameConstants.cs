@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.85.2";
+    public const string GameVersion = "0.86.0";
 
     // ----- SP BOTTLE (owner, 2026-08-26) -------------------------------------------------------
     // *"u can make an npc to take your 1kkk SP + 100kk gold and give you a tradable/sellabel
@@ -763,6 +763,17 @@ public static class GameConstants
     public const float DummyStrikeRange = 150f;
 
     // ----- Admin / jail (Phase 5) ----------------------------------------------
+
+    /// <summary>How many days of chat the moderation log keeps. <b>0 = keep everything, forever</b>,
+    /// and that is the shipped value.
+    ///
+    /// 🔴 **THE NUMBER IS THE OWNER'S TO NAME AND HE HAS NOT NAMED IT** (`BL-89`: *"a real answer is a
+    /// purge — 30 or 90 days — but the sensible window depends on how long after the fact a report
+    /// arrives"*). Everything a purge needs is wired: put 30 or 90 here and the six-hourly sweep in
+    /// <c>FlushChatLog</c> starts deleting. It defaults to never-purge because the rows it would delete
+    /// are the evidence a ban rests on, and destroying those on a default nobody chose is worse than a
+    /// table that grows — chat is small, and 90 days of it is megabytes.</summary>
+    public const int ChatLogRetentionDays = 0;
 
     /// <summary>Jail sits in the NEGATIVE quadrant (owner: dungeons + jail live at minus coordinates,
     /// away from the overworld). It is the CENTRE of the jail yard, not where inmates stand.</summary>

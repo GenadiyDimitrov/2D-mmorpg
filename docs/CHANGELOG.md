@@ -7,11 +7,86 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.85.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.86.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-08-26 (latest) — 0.85.2: a buff rung carries its LEVEL in its rank, and two 0.85.0 flags stop being flags
+## 2026-08-26 (latest) — 0.86.0: `BL-89` — the chat log gets a READER, and it does not wait for the autosave
+
+The write half shipped in 0.81.0 and nothing ever opened it. Every delivered line has been going into
+`ChatLogRecord` for days; the only way to *see* one was to open `game.db` on the machine, which is not
+available to a moderator holding a phone — and the moderator holding the phone is the entire point, since
+the case that opened this was *"an admin/mod should ban based on som1 is trying to sell u for $ on private
+chat"*.
+
+### `/chatlog` — four shapes, freely combined
+
+```
+/chatlog                        the last 25 lines anyone said
+/chatlog <name>                 what that character said — or was whispered
+/chatlog <name> -w              whispers only: the channel this feature exists for
+/chatlog around 15m             a window ±10 min around that instant, for a fresh report
+… -p 2                          the page BEFORE, for any of the above
+```
+
+`around` takes the RELATIVE forms first (`15m`, `2h`, `1d`) because that is what a real report produces —
+a player says *"about ten minutes ago"*, and nobody should do clock arithmetic on a phone to act on it.
+`11:02` means that time **today in UTC**, and a full `yyyy-MM-dd HH:mm` says which day. Everything prints
+UTC because that is what the rows hold; a server-local zone here would print times a moderator could not
+match back to anything.
+
+Pages read **oldest-first**, which is how a conversation reads, and paging walks *backwards* through the
+same ordering — page 2 is the block before page 1, not a re-shuffle. A name matches **case-insensitively**,
+the same lesson `/jail` learned: SQLite compares TEXT with `=` case-sensitively, and `/chatlog test1`
+missing every row for "Test1" would read as *this player never said anything* — the most misleading answer
+this command can give. For the same reason an empty page distinguishes **"nobody said anything"** from
+**"the log does not reach back that far"**, and prints the total and the oldest timestamp either way.
+
+A name query matches the **receiver** too, because a whisper has two ends and a report names whichever one
+the moderator was told about — usually the victim's.
+
+### 🔑 It flushes before it reads
+
+Accepted lines sit in `_chatLogPending` until the 60-second autosave. Reading straight from the table would
+therefore have been **blind to the last minute** — and the one case this feature exists for is a LIVE report:
+*he is whispering me right now*. A moderator who types `/chatlog` the moment they are told, sees nothing, and
+concludes the player is innocent is worse than having no command at all. So the pending batch is detached on
+the tick thread that owns it and written by the worker **before** the query runs.
+
+### The open question, answered provisionally
+
+The backlog flagged that this is the first table holding something a player would call **private**, and that
+it was worth deciding *once* whether staff below admin may read whispers. The split shipped:
+
+- **Moderator and above may read whispers.** They hold the jail and the kick, the feature exists for the
+  private-channel RMT case, and a punishment handed out without the evidence it rests on is the thing this
+  was meant to stop.
+- **A Chat Moderator reads the PUBLIC channels only.** That rank is deliberately handed to someone you do
+  *not* fully trust (playtest 26), and a mute needs no private mail to justify it — everything a chat mod
+  polices was said out loud. `-w` is refused for them, and the whisper rows are filtered out of every page
+  they see regardless of the query.
+
+🔴 **Both halves are one line to reverse** if the owner rules otherwise.
+
+### Retention: wired, and deliberately inert
+
+`GameConstants.ChatLogRetentionDays` is **0 = keep everything, forever**, and that is the shipped value.
+`FlushChatLog` calls the purge every six hours and 0 returns immediately, so the machinery is finished and
+nothing is destroyed by a default nobody chose — the rows a purge would delete are the evidence a ban rests
+on. 🔴 **The number is the owner's to name** (*"30 or 90 days — but the sensible window depends on how long
+after the fact a report arrives"*); the day he says one, it is a number, not a wiring job.
+
+### Covered by the smoke test
+
+Six new checks, and they exist for the usual reason: a query SQLite refuses to translate, a name match that
+misses on case, a page that comes back newest-first — every one of those renders as a tidy, plausible, WRONG
+page in the System tab. The flush is checked by reading back a line said **half a second earlier**, so if that
+ever regresses the test fails immediately instead of passing on the autosave's luck.
+
+**Protocol stays 27** — `/chatlog` prints into the System channel, which every client already draws. **No new
+APK needed**, and no `game.db` delete: the `ChatLog` table has shipped since 0.81.0 and its schema is untouched.
+
+## 2026-08-26 — 0.85.2: a buff rung carries its LEVEL in its rank, and two 0.85.0 flags stop being flags
 
 Three small things that were each written down as known-broken and left. `BL-85` had been deliberately
 deferred (*"it wants its own increment"*); the other two were flagged in 0.85.0's own changelog entry.

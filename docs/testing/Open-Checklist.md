@@ -145,10 +145,13 @@ need the new APK. **Playtest 28 — the twelve below them, eleven built and one 
     an empty body never reaches the table — it was not said to anyone. A whisper to someone who blocked
     you is refused too. A `/block` on Local/World only filters who *hears* it, so that IS logged.
   - **Written off the tick**: the loop buffers a minute of chat and the autosave flushes it in one batch.
-  - 🔴 **What is NOT built is the READER.** There is no `/chatlog` command yet — today it is a table you
-    open with a SQLite browser. Say the word and it becomes an admin command (by name, by time window, by
-    channel). It is also a **schema change**, which the stale-schema check will handle by recreating
-    `game.db` on first boot. ->
+  - 🟢 **THE READER IS BUILT NOW (0.86.0, `BL-89`)** — `/chatlog [name] [-w] [around <time>] [-p <page>]`,
+    into the System tab, 25 lines a page, oldest-first, staff-only. `around` takes `15m`/`2h`/`1d` as well
+    as a clock time, because a report sounds like *"about ten minutes ago"*. It **flushes the pending
+    buffer before it reads**, so a line said seconds ago is already there — a live report was the whole
+    point. 🔴 **Two things are still yours to say:** the RETENTION window (`ChatLogRetentionDays` is 0 =
+    never purge; the sweep is wired and waiting on a number), and whether you agree that a **Moderator**
+    may read whispers while a **Chat Moderator** gets public channels only. ->
 
 - [!] 🟢 **BUILT.** Runes are caunted towards the buff limit ... If I have auto buff pots on -> I buff some buffs fade for over buffing then pots start to buff me and in the end I have semi buff form npc buffer and semi potions
 	- I want buff potions in their details to say Potion of "name" I'm getting buffed "Mig" and don't know if it's my or the potions.
