@@ -260,8 +260,8 @@ Contest     StatCaps.CcRankMult:     Elite x1.33, Boss x2.0   (CON/SPT/ATK, the 
   party's DPS is flat across the game, so a flat multiple made time-to-kill grow with `L²`. This one
   lands every level in the 600-1800s band (12-25 min for a 5-man).
 - Time-to-kill ∝ `HP x defence`, and **boss EXP is derived from that product** — so giving a rank
-  defence doubled its exp with no exp number edited. That ratio is clamped at 400, which now binds at
-  low level and is doing duty as a low-level boss exp cap.
+  defence doubled its exp with no exp number edited. That ratio is clamped at 400, which bites only
+  below level ~37; the lowest boss in the game is at 44 (score 306), so no boss meets the rail.
 - A boss is immune to `SkillEffect.ControlCc` and to knockback; attrition (DoT, stat-down, regen
   suppression) lands normally. God mode resists **everything**, as a resist, never as a refusal.
 

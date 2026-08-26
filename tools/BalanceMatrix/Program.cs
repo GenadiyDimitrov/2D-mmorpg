@@ -2102,8 +2102,11 @@ Console.WriteLine("=== BL-13: BOSS PACE — 10 to 30 minutes, for a REAL party =
 Console.WriteLine("  His band is 600-1800s and *\"the target rises\"*. The party is his own: a tank, a healer");
 Console.WriteLine("  and three DDs (2 champions + 1 nuker), all in best-for-tier gear with runes up.");
 Console.WriteLine("  Rank multipliers come from MobRankScale — the SAME code BuildMob spawns with.");
+Console.WriteLine("  ⚠ THE LEVELS ARE THE ONES THAT EXIST: the lowest boss in the game is the Hollow Crypt's");
+Console.WriteLine("     Grave Lich at 44, then the world boss at 60, Dread Knight 65 and Disciple of the Dawn 90.");
+Console.WriteLine("     20 is kept as a SHAPE check for the curve, not because anything spawns there.");
 Console.WriteLine($"{"Lvl",4} {"rank",6} {"HP x",7} {"boss HP",10} {"P.Def",7} {"party dps",10} {"TTK",8} {"band",14}");
-foreach (int L in new[] { 20, 40, 60, 76, 85 })
+foreach (int L in new[] { 20, 44, 60, 65, 76, 85, 90 })
 {
     var party = BuildBossParty(L);
     foreach (var rank in new[] { MobRank.Elite, MobRank.Boss })
@@ -2139,7 +2142,7 @@ Console.WriteLine("  \"a tank can feel it\" is measured as TIME, not as a share 
 Console.WriteLine("  lives with nobody healing him. Over a minute and the boss is scenery.");
 Console.WriteLine($"{"Lvl",4} {"basic→tank",11} {"%tank",6} {"basic→robe",11} {"%robe",6} {"slam→robe",10} {"%robe",6} "
     + $"{"dps→tank",9} {"unhealed",9} {"heal/s",7} {"verdict",24}");
-foreach (int L in new[] { 20, 40, 60, 76, 85 })
+foreach (int L in new[] { 20, 44, 60, 65, 76, 85, 90 })
 {
     var tank   = BuildPlayer(Race.Human, BaseClass.Fighter, L);                 // Knight: shield + heavy
     var robe   = BuildPlayer(Race.Human, BaseClass.Mage, L);                    // Sorcerer: the squishiest
@@ -2190,7 +2193,9 @@ Console.WriteLine("=== BL-49: WHAT A RANK PAYS — is an hour on bosses worth hi
 Console.WriteLine("  exp = MobExpReward(level) x killTimeRatio x rankEfficiency.  killTimeRatio = HP x P.Def,");
 Console.WriteLine("  measured off the spawned mob; your DPS cancels, so this is character-independent.");
 Console.WriteLine($"{"Lvl",4} {"rank",6} {"trash exp",11} {"rank exp",13} {"exp x",8} {"TTK x",8} {"resp x",7} {"exp/sec x",10} {"was 0.67",11} {"% of level",11} {"/ 9-man",9}");
-foreach (int L in new[] { 20, 40, 60, 76, 85, 89, 90 })
+// ⚠ BOSS ROWS ONLY MEAN SOMETHING AT LEVELS A BOSS EXISTS AT — 44 (Grave Lich), 60 (the world boss),
+// 65 (Dread Knight) and 90 (Disciple of the Dawn). 20 is kept as a shape check for the HP curve.
+foreach (int L in new[] { 20, 44, 60, 65, 76, 85, 90 })
 {
     long trashExp = StatCalculator.MobExpReward(L);
     foreach (var rank in new[] { MobRank.Elite, MobRank.Boss })

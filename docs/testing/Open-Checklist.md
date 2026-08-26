@@ -411,20 +411,22 @@ numbers below assume one.
 
 ### A. A boss is 10 to 30 minutes now — is it?
 
-Measured with a tank + healer + 3 DDs in best-for-tier gear: **12 min at level 20 · 16 at 40 · 23 at
-60 · 25 at 76 · 19 at 85.** The old numbers were 1.6 min at 20 and 25 at 76 — the low end is what moved.
+Measured with a tank + healer + 3 DDs in best-for-tier gear, **at the four levels a boss actually
+spawns at**: **18 min at 44** (Grave Lich, Hollow Crypt) · **23 at 60** (the world boss) · **23 at 65**
+(Dread Knight, Sunless Warrens) · **21 at 90** (Disciple of the Dawn). The 44 is what moved most — it
+was about 6 minutes.
 
-- `92a` [ ] - **A LOW-LEVEL field boss (20-40).** This is the biggest change in the build: its HP went
-  up roughly **5×** at 20 and **1.8×** at 40. Does it now read as a set-piece rather than a fat elite? ->
-- `92b` [ ] - **A high-level field boss (76+).** Should feel about as long as it did, because the top
-  of the game was already inside your band. If it feels *longer*, the defence below is why. ->
+- `92a` [ ] - **The Hollow Crypt boss (Grave Lich, 44).** The biggest change in the build: its HP went
+  up ~3×. Does it now read as a set-piece rather than a fat elite? ->
+- `92b` [ ] - **A high-level boss (65+).** Should feel about as long as it did, because the top of the
+  game was already inside your band. If it feels *longer*, the defence below is why. ->
 - `92c` [ ] - **A boss now has real DEFENCE (×2 P.Def and M.Def) — it had NONE before.** Your hits on it
   should be visibly smaller than on an elite of the same level, which is the thing that was missing
   when a boss read as a sponge. ->
-- `92d` [ ] - 🔴 **EXP FROM A LOW-LEVEL BOSS.** Boss exp is derived from kill time, so a boss that now
-  takes 7× longer pays far more. A **level-20** field boss is worth roughly **two levels each to a
-  nine-man party** — and that is WITH a cap already trimming it (uncapped it would be about five). If
-  that reads as too rich, say so: it is one clamp, and it is yours to move. ->
+- `92d` [ ] - **EXP from a boss went up with the time it takes**, automatically — the Grave Lich now
+  pays about **half a level per head in a nine-man** for a 20-minute fight (it was ~a sixth of that).
+  Nothing is capping it: the sanity rail only bites below level ~37 and nothing spawns there. Too rich,
+  about right, or too thin? ->
 
 ### B. Not one-shotting, but a tank can feel it
 
@@ -789,8 +791,9 @@ Six versions of server work. Nothing here has a client tell; it shows up as numb
   ⚠ Still uncommented and now harmless: `88a`, whether the level-45 Elder Raider felt too soft beside
   the level-40 Raider.
 - ✅ ~~**`BL-49` — the levelling curve**~~ — *"well ofc it's lot slower to llv up 85+ than 20... Leave
-  it."* Closed. ⚠ **Read the `BL-13` note in §92 below before you play a low-level boss**, though: the
-  boss HP curve made one take 7× longer, and boss exp is derived from kill time.
+  it."* Closed. ⚠ One knock-on to look at in play, not in the file (`92d`): `BL-13` made the level-44
+  boss take ~3× longer and boss exp derives from kill time, so it pays ~3× more — about half a level
+  per head in a nine-man.
 
 ### 🔴 Still yours to rule
 

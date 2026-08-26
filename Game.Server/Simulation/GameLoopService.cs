@@ -12215,14 +12215,18 @@ public class GameLoopService : BackgroundService
     /// gave a rank real defence, and nobody had to come back here: a boss's exp doubled by itself on the
     /// day its P.Def did. That is the whole reason the term was written before it was needed.</para>
     ///
-    /// <para>🔴 THE CLAMP IS NOW ALSO A LOW-LEVEL BOSS EXP CAP, and that is deliberate. It was written
-    /// as *"a sanity rail against a corrupt spawn, NOT a balance knob"*, sitting safely above the 100×
-    /// a flat-multiplier field boss carried. BL-13's HP CURVE changed that: a level-20 boss legitimately
-    /// scores 990 (×495 HP × ×2 defence) and a level-85 one 114, so the rail binds at the bottom of the
-    /// level range and nowhere else. Left at 400 on purpose — uncapped, one level-20 field boss pays a
-    /// nine-man party about five levels EACH, and the rail cuts that to roughly two. Both numbers are
-    /// large; the levelling curve underneath them is `BL-49`, which he ruled *"leave it"* on 2026-08-26.
-    /// If a low-level boss reads as too rich in play, THIS is the number to move, and it is his.</para></summary>
+    /// <para>⚠ THE CLAMP AND BL-13's HP CURVE — CHECKED, AND IT STILL DOES NOT BIND. The rail was
+    /// written as *"a sanity rail against a corrupt spawn, NOT a balance knob"*, sitting above the 100×
+    /// a flat-multiplier boss carried; the curve raises the low end enough to be worth re-checking, so:
+    /// it bites only below **level ~37** (`hpMult × 2 > 400`), and **the lowest boss in the game is the
+    /// Grave Lich at 44**, which scores 306. Every boss that exists is under the rail. Measured, not
+    /// assumed — `tools/BalanceMatrix`, the BL-49 table, whose boss rows now run at the levels bosses
+    /// actually spawn at (44 / 60 / 65 / 90) instead of at levels nothing occupies.</para>
+    ///
+    /// <para>What DID change is the payout itself, and by design: a level-44 boss takes ~3× longer to
+    /// kill than it did, so it pays ~3× more — **49% of a level per head in a nine-man**, for a 20-minute
+    /// fight. That is `BL-49`'s curve doing what he ruled *"leave it"* about on 2026-08-26. If a boss
+    /// reads as too rich in play, this clamp is the knob, and it is his.</para></summary>
     private static float MobKillTimeRatio(Entity mob)
     {
         float hpRatio = mob.MaxHp / (float)Math.Max(1, MobBaseStats.Hp(mob.Level));

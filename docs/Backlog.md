@@ -370,11 +370,11 @@ closed · **`BL-93` opened** for the in-game visuals discussion you asked for (*
      number, so the ratio needs one named reference skill per channel or it drifts by class.
 
   ✅ **The boss curve underneath it is no longer unruled** — this used to say *"a flat ×100 swings boss
-  difficulty 11× between level 20 and 76"*, and `BL-13` fixed exactly that in 0.89.0: every level now
-  falls in a 12-25 minute band. So a 50% gem drop no longer makes a level-20 boss the cheapest gem in
-  the game by fight length. ⚠ What is still uneven is the **EXP** it pays (`BL-49`, which you ruled
-  *"leave it"*), so a low-level boss remains the better hour in exp terms — worth knowing when you set
-  the gem %, which are explicitly yours to move.
+  difficulty 11× between level 20 and 76"*, and `BL-13` fixed exactly that in 0.89.0: every boss in the
+  game (44 / 60 / 65 / 90) now takes an 18-23 minute party fight. So a 50% gem drop no longer makes the
+  lowest boss the cheapest gem in the game by fight length. ⚠ What is still uneven is the **EXP** it
+  pays (`BL-49`, which you ruled *"leave it"*), so a lower boss remains the better hour in exp terms —
+  worth knowing when you set the gem %, which are explicitly yours to move.
 
 - `BL-77` ✅ **BUILT 2026-08-16 (0.69.0)** — the PvP flag is the area filter, for every AOE and every
   no-damage skill at once, and it pairs with the reflect fix from the same pass: *the flag follows
@@ -931,8 +931,9 @@ the roadmap for it**, both with the gear direction you just named. Old text in
 **`BL-49` — LEAVE IT.** *"well ofc it's lot slower to llv up 85+ than 20... Leave it."* The 125%-of-a-
 level-at-20 against 0.1%-at-85 spread is the EXP curve doing what you want it to do. Closed; not
 re-proposed. ⚠ One consequence to watch in play rather than in the file: `BL-13`'s boss HP curve made
-a low-level boss take 7× longer, and boss exp is derived from kill time — see the clamp note in the
-0.89.0 entry of `CHANGELOG.md`.
+the level-44 boss take ~3× longer and boss exp is derived from kill time, so it pays ~3× more — about
+half a level per head in a nine-man. Nothing caps it; the sanity rail only bites below level ~37,
+where nothing spawns. See the 0.89.0 entry of `CHANGELOG.md`.
 
 ---
 

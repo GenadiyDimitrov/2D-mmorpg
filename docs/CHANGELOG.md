@@ -32,16 +32,22 @@ So the multiplier is now a **curve**, `43000 / L^1.49`, living in the new
 `Game.Shared/MobRankScale.cs`. Measured against his own party — tank + healer + 3 DDs, best-for-tier
 gear, runes up:
 
-| Lvl | HP × | boss HP | party dps | TTK | |
-|---|---|---|---|---|---|
-| 20 | ×495 | 178,334 | 253 | **704s** | 12 min |
-| 40 | ×176 | 232,794 | 249 | **936s** | 16 min |
-| 60 | ×96 | 281,453 | 205 | **1376s** | 23 min |
-| 76 | ×68 | 315,821 | 208 | **1515s** | 25 min |
-| 85 | ×57 | 333,854 | 292 | **1144s** | 19 min |
+| Lvl | | HP × | boss HP | party dps | TTK | |
+|---|---|---|---|---|---|---|
+| 20 | *(no boss spawns here — shape check)* | ×495 | 178,334 | 253 | **704s** | 12 min |
+| 44 | Grave Lich, Hollow Crypt | ×153 | 242,982 | 225 | **1079s** | 18 min |
+| 60 | the world boss | ×96 | 281,453 | 205 | **1376s** | 23 min |
+| 65 | Dread Knight, Sunless Warrens | ×86 | 292,586 | 209 | **1398s** | 23 min |
+| 76 | | ×68 | 315,821 | 208 | **1515s** | 25 min |
+| 85 | | ×57 | 333,854 | 292 | **1144s** | 19 min |
+| 90 | Disciple of the Dawn | ×53 | 343,474 | 270 | **1274s** | 21 min |
 
 Every level inside the band, and rising — his *"the target rises"*. (85 dips because the party's own
 damage jumps there: S grade lands at 80. That is player gear, not the boss curve.)
+
+⚠ **The tables run at the levels a boss ACTUALLY SPAWNS AT now** — 44, 60, 65, 90. They used to say
+20/40/60/76/85, and the two lowest rows described bosses that do not exist, which is how a measurement
+quietly stops describing the game.
 
 **2. *"Bosses should have stronger defences."*** They had **none**. A rank scaled HP and attack and not
 one point of defence, so a "boss" wore exactly the paper armour of the trash around it with a hundred
@@ -76,11 +82,11 @@ ladder that stopped at level 35. It also stopped keeping a hand-typed copy of th
 multipliers: it reads `MobRankScale`, the same code `BuildMob` spawns with, so the tool and the game
 can no longer disagree without either being edited.
 
-🔴 **One number is yours.** The kill-time ratio that pays a boss's exp is clamped at 400, written as
-*"a sanity rail against a corrupt spawn, NOT a balance knob"*. The HP curve made it bind: a level-20
-boss legitimately scores 990. It is left at 400 on purpose — uncapped, one level-20 field boss pays a
-nine-man party about **five levels each**, and the rail cuts that to roughly two. Both numbers are
-large. If a low-level boss reads as too rich in play, that clamp is the number to move.
+⚠ **What it does to boss EXP, checked rather than assumed.** Boss exp derives from kill time, so a
+boss that takes ~3× longer pays ~3× more: the level-44 Grave Lich is now **49% of a level per head in
+a nine-man**, for a 20-minute fight. The `MobKillTimeRatio` sanity rail (clamped at 400) does **not**
+bind on it — it would only bite below level ~37, and nothing spawns there. If a boss reads as too rich
+in play, that clamp is the knob; the curve under it is `BL-49`, which you ruled *"leave it"*.
 
 ### `BL-81` — god mode is absolute, a boss is not
 
