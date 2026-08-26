@@ -18,7 +18,7 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,G
 ,,,,,,,,,,,,,,,89 - Old-LvlUp -> 100kk Gold 
 ,,,,,,,,,,,,,,,90 - Old-LvlUp -> 100kk Gold 
 ,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,1 SP bottle = 1kkk SP + 100k Gold
+,,,,,,,,,,,,,,,1 SP bottle = 1kkk SP + 100kk Gold (sells back for 100kk; drinking returns the 1kkk SP and no gold)
 ,,,,,,,,,,,,,,,==================================
 ,,,,,,,,,,,,,,,----------------------------Anti magic----------------------------
 76,Anti magic,Passive,0,self,0,0,0,"magic def +113, mRes +30%",0,6.5kk,1kk

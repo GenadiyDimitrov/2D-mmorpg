@@ -346,6 +346,10 @@ public class GameLoopService : BackgroundService
         if (entity.IsStaff)
             SendSystemToEntity(entity,
                 $"{entity.Role} privileges active on this character. Type /help for commands.");
+        // The anti-phishing line, on arrival and unconditionally — it also ARMS the hourly whisper
+        // clock, so the first whisper of the session does not immediately repeat it.
+        entity.LastScamWarningUtc = DateTime.UtcNow;
+        SendSystemToEntity(entity, GameConstants.ScamWarning);
         NotifyFriendsOnline(entity);   // "X is back online" — MUTUAL friends only, see NotifyFriendsPresence
         if (GameConstants.AnnounceWorldEntryExit)
             BroadcastSystem($"{entity.Name} entered the world.");
@@ -1656,6 +1660,31 @@ public class GameLoopService : BackgroundService
             return;
         }
 
+        // THE ITEM PRICE — his 4th-tier `SP Bottles` column. Paid ONCE, here, per level; not the
+        // per-CAST reagent (that is def.ConsumableId, charged in HandleCastSkill).
+        //
+        // 🔑 This is what lets a skill cost more SP than an `int` can hold. A level-85 row priced at
+        // five SP Bottles is 5kkk of SP against a 2.147kkk ceiling — but bottles SPENT never enter
+        // SkillPoints, so the number never has to widen. See SkillDef.LearnConsumableId.
+        string learnItem = def.LearnConsumableId;
+        int learnItemQty = string.IsNullOrEmpty(learnItem) ? 0 : def.LearnConsumableAmountAt(target);
+        if (learnItemQty > 0 && CountItem(player, learnItem) < learnItemQty)
+        {
+            string itemName = ItemCatalog.Get(learnItem)?.Name ?? learnItem;
+            SendSystemToEntity(player,
+                $"{def.Name} (Lv.{target}) also costs {learnItemQty} x {itemName}.");
+            return;
+        }
+
+        // ⚠ EVERY GATE ABOVE PASSED BEFORE ANYTHING IS TAKEN. Consume the item FIRST of the three
+        // charges: it is the only one that can still fail (a stack could be split or gone), and taking
+        // SP and gold for a learn that then refuses is the one outcome with no way back.
+        if (learnItemQty > 0 && !ConsumeItem(player, learnItem, learnItemQty))
+        {
+            SendSystemToEntity(player, $"{def.Name} (Lv.{target}) needs {learnItemQty} more.");
+            return;
+        }
+
         player.SkillPoints -= cost;
         if (gold > 0) player.Gold -= gold;
         player.LearnedSkills[def.Id] = target;
@@ -1672,6 +1701,7 @@ public class GameLoopService : BackgroundService
         SendStats(player);
         SendLearned(player);
         if (gold > 0) SendGold(player);
+        if (learnItemQty > 0) SendInventory(player);   // the bag lost a stack — repaint it
         SaveEntity(player);
     }
 
@@ -8022,6 +8052,23 @@ public class GameLoopService : BackgroundService
     /// never at the point of receipt: everything refused above this — a chat ban, a jail, the world-chat
     /// level floor, a whisper to someone who blocked you — was not said to anybody and does not belong
     /// in a record a ban will be based on.</summary>
+    /// <summary>Show the anti-phishing line to one player, at most once per rolling hour. Called from
+    /// both ends of every whisper; entering the world shows it unconditionally and arms the clock.
+    ///
+    /// <para>⚠ Silent for anyone who is not a live player (a mob, an offline farmer, a link-dead
+    /// character): there is nobody at the keyboard to warn, and stamping the clock anyway would eat
+    /// the one reminder they get when they come back.</para></summary>
+    private void MaybeWarnScam(Entity? player)
+    {
+        if (player is null || player.Kind != EntityKind.Player) return;
+        if (player.IsDisconnected || player.IsOfflineFarming) return;
+        var now = DateTime.UtcNow;
+        if (now - player.LastScamWarningUtc < TimeSpan.FromMinutes(GameConstants.ScamWarningIntervalMinutes))
+            return;
+        player.LastScamWarningUtc = now;
+        SendSystemToEntity(player, GameConstants.ScamWarning);
+    }
+
     private void LogChat(Entity sender, ChatChannel channel, string receiverName, string text)
     {
         if (sender.PersistentId is not int charId || charId <= 0) return;   // no DB row behind it
@@ -8099,8 +8146,16 @@ public class GameLoopService : BackgroundService
             LogChat(sender, ChatChannel.Whisper, target.Name, text);
             _ = _hub.Clients.Client(targetConn).SendAsync("Chat", whisper);
             _ = _hub.Clients.Client(chat.ConnectionId).SendAsync("Chat", whisper);
+            // ...and the anti-phishing reminder, at most hourly, to BOTH sides — each on its own clock,
+            // so it does not matter which of them opened the conversation. AFTER the whisper is
+            // delivered: the warning is context for the message, and a line that arrived first would
+            // read as a verdict on it.
+            MaybeWarnScam(sender);
+            MaybeWarnScam(target);
             return;
         }
+
+        // (MaybeWarnScam lives below, next to the chat helpers.)
 
         // WORLD chat has a level floor (GameConstants.WorldChatMinLevel). It is the one channel that
         // reaches every player at once, so it is the one worth making throwaway accounts for; local and

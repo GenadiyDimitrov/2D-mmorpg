@@ -264,6 +264,23 @@ public record SkillDef(
     // cast COMPLETES; availability is checked up front so the cast isn't started in vain.
     string ConsumableId = "",
     int ConsumableAmount = 1,
+    /// <summary>An item consumed to LEARN this skill, on top of its SP and gold price ("" = none).
+    ///
+    /// <para>🔑 NOT the same thing as <see cref="ConsumableId"/>, which is a reagent burned on every
+    /// CAST (Angel's Protection eats 5 Skill Stones each time you use it). This is paid ONCE, at the
+    /// Mindwright's counter, per level. His 4th-tier files carry an `SP Bottles` column for exactly
+    /// this and there was nowhere to put it — the learn path could charge SP and gold and nothing else.
+    ///
+    /// <para>🔑 IT IS ALSO WHAT KEEPS `Entity.SkillPoints` HONEST. His level-85 row costs FIVE SP
+    /// Bottles, and a bottle is 1kkk SP — five of them is 5kkk against an `int` that stops at 2.147kkk.
+    /// Bottles SPENT as a currency never enter that number, so nothing has to become a `long`. Owner,
+    /// 2026-08-26: *"Skills cost X bottles as consumed-ID (u cannot have 5kkk SP int limit to
+    /// 2.147kkk)"*. Do not "fix" this by widening SkillPoints; the ceiling is the design.</para></summary>
+    string LearnConsumableId = "",
+    /// <summary>How many of <see cref="LearnConsumableId"/> a level costs (0 = none). Per-LEVEL via
+    /// <see cref="SkillLevel.LearnConsumableAmount"/>, because his column is per row — the price climbs
+    /// with the rung, which is the whole reason it is a column and not a skill-wide number.</summary>
+    int LearnConsumableAmount = 0,
     PassiveEffect? Passive = null,
     string Abbrev = "",
     // Optional EMOJI/glyph for the skill square + buff bar. Deliberately a STRING of characters, not an
@@ -629,6 +646,14 @@ public record SkillDef(
         return v != 0f ? v : CcResistMagical;
     }
 
+    /// <summary>How many of <see cref="LearnConsumableId"/> this LEVEL costs to learn (0 = the def's,
+    /// which is 0 for everything that does not charge one).</summary>
+    public int LearnConsumableAmountAt(int level)
+    {
+        int v = Lvl(level)?.LearnConsumableAmount ?? 0;
+        return v > 0 ? v : LearnConsumableAmount;
+    }
+
     /// <summary>How far this LEVEL blinks (0 = the def's BlinkRange). Phase Shift's whole ladder.</summary>
     public float BlinkRangeAt(int level)
     {
@@ -960,7 +985,10 @@ public record SkillLevel(
     int DotPower = 0,
     // HOW FAR THIS RUNG BLINKS (0 = inherit the SkillDef's BlinkRange). The nuker's Phase Shift is the
     // rogue's Lure all over again — 200 / 400 / 600 — where the whole ladder is the distance.
-    float BlinkRange = 0f);
+    float BlinkRange = 0f,
+    // HOW MANY of the skill's LearnConsumableId THIS level costs to learn (0 = the def's). His 4th-tier
+    // `SP Bottles` column, which climbs per row. See SkillDef.LearnConsumableId.
+    int LearnConsumableAmount = 0);
 
 /// <summary>What a buff does to the four things a MONSTER pays out: experience, skill points, the
 /// gold it drops and the CHANCE its table rolls. The premium rune family (Rune of Experience /

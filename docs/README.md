@@ -3,6 +3,10 @@
 Index of everything under `docs/`.
 
 ## Start here
+- [**Formulas.md**](Formulas.md) — 🔑 **every formula in the game on one page**, in the shortest form
+  that is still true: damage, defence, crit, fizzle, debuff landing, interrupt, pools, regen, speed,
+  MP cost, mob curves, drop rates. Read this instead of hunting through a thousand lines of comments.
+  ⚠ **A formula change updates this file in the same commit** — same rule as the skill CSVs.
 - [**Backlog.md**](Backlog.md) — 🔴 **every feature and change still owed, in one flat list.** Bugs are
   not in it (they live in `testing/`). Ids are permanent (`BL-nn`), newest ruling wins, built means
   deleted. **This is the "what do we build next" file.**

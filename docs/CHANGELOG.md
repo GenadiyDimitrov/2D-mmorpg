@@ -7,11 +7,81 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.87.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.87.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-08-26 (latest) — 0.87.0: the NUKER's 3rd class, off a file that had been finished for days
+## 2026-08-26 (latest) — 0.87.1: the SP bottle's real price, a scam warning, and one page of formulas
+
+Three small things he asked for in one message.
+
+### The SP Bottle sells for what it cost
+
+*"bottles cost 1kkk SP + 100kk gold (csv is a typeo) … i think to make the bottle buy/sell(override)
+price 100kk → drinking potions gives 1kkk SP (0 gold) … drinking return 1kkk sp and selling return
+100kk gold .. u cannot do both"*.
+
+`SellPriceOverride` = **100kk**, where the /25 consumable rule was giving 4kk. **That symmetry is the
+item**: the broker takes 1kkk SP *and* 100kk gold, and the bottle hands back exactly one of the two —
+your choice. At a 96% sell loss the choice did not exist. ⚠ Not a gold faucet: no vendor stocks it, so
+the only way to sell one for 100kk is to have paid 100kk plus a billion SP to make it.
+
+The CSV header that read `1 SP bottle = 1kkk SP + 100k Gold` was the typo he named; it now says 100kk
+and spells out the either/or.
+
+### A skill can be priced in ITEMS
+
+`SkillDef.LearnConsumableId` + a per-level `LearnConsumableAmount`, charged in `HandleLearnSkill`
+alongside SP and gold. His 4th-tier files carry an `SP Bottles` column and the learn path had nowhere
+to put it — it could charge SP and gold and nothing else.
+
+🔑 **This is what keeps `Entity.SkillPoints` an `int`.** His level-85 row costs FIVE SP Bottles; a
+bottle is 1kkk SP, so five is 5kkk against a 2.147kkk ceiling. Bottles **spent** never enter that
+number, so nothing has to widen to a `long` and no protocol field changes. Owner: *"Skills cost X
+bottles as consumed-ID (u cannot have 5kkk SP int limit to 2.147kkk)"*. **Do not "fix" this later by
+widening SkillPoints — the ceiling is the design.**
+
+⚠ Order of operations: **the item is consumed FIRST** of the three charges. It is the only one that can
+still fail after its own gate passed (a stack split, an item traded away in the same tick), and taking
+SP and gold for a learn that then refuses is the one outcome with no way back.
+
+Nothing authors a bottle price yet — this is the plumbing his `healer 4th` / `buffer 4th` kits need.
+
+### The anti-phishing line
+
+*"when game start/enter and each first whisper in every hour writes a message"*.
+
+`GameConstants.ScamWarning`, shown on entering the world and again on your **first whisper in any
+rolling hour** — to **both** sides of the conversation, each on its own clock, so it does not matter
+who opened it. Entering the world arms the clock, so the session's first whisper does not repeat it.
+
+🔑 **It rides on the WHISPER and not on a timer** because that is where the scam happens: world chat is
+public and self-policing, local chat is a crowd, and a private message claiming to be staff is the
+shape of the attack. The warning arrives in the same window the attempt does. It is posted AFTER the
+whisper is delivered — a line that arrived first would read as a verdict on the message.
+
+⚠ It promises **no staff member will ever ask**, which the game then has to keep: nothing the server
+sends may ever ask a player for a password. The timestamp is runtime-only and not persisted — entering
+the world shows the line anyway, so a relog costs one extra reminder and saves a column.
+
+### `docs/Formulas.md`
+
+*"do one md file in the docs folder for fast read (update on change) not to look at 1000 comments to
+know which is which .. need it simle Mdmg = baseMagic x whatever / mDef … simpler not over explained"*.
+
+One page: damage, attack/defence inputs, hit/evade/crit/block, fizzle, debuff landing, interrupt, pools
+and regen, speed, MP cost, mob curves, drop rates — each with the source file under it. **Every number
+in it was read off the code in the same pass**, not remembered; the reasoning stays in the code
+comments and here, which is what keeps the page short enough to actually read.
+
+⚠ **It is now a rule in `CLAUDE.md`: a formula change updates that file in the same commit**, the same
+rule the skill CSVs run on and for the same reason — a reference that trails the build is worse than
+no reference.
+
+**Build green · server boots at 0.87.1 · SmokeTest ALL CHECKS PASSED.** Protocol stays 27. No
+`game.db` delete. The APK owed since 0.87.0 still covers all of this.
+
+## 2026-08-26 — 0.87.0: the NUKER's 3rd class, off a file that had been finished for days
 
 The third fully-authored 3rd class. `docs/data/classes_skills_csv/nuker 3rd.csv` — **208 rows, 21
 families, no `NOT DONE` banner** — has been complete since before `healer 3rd.csv` was, and nothing in

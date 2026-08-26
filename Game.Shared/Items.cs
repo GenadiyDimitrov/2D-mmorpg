@@ -1024,9 +1024,18 @@ public static class ItemCatalog
         // character banks surplus SP and hands it to someone who needs it. Drinking it grants its SP.
         // ⚠ It is NOT sold on any vendor shelf — the exchange NPC is the only source (BuyPriceOverride
         // is the shop's PRICE, which is what makes the sell value real; it is never on a shelf to buy).
+        // 🔑 IT SELLS FOR WHAT IT COSTS — 100kk, not the /25 the consumable rule would give (4kk).
+        //    His ruling, 2026-08-26: *"drinking potions gives 1kkk SP (0 gold) … crafting potion takes
+        //    1kkk sp and 100kk gold, but drinking return 1kkk sp and selling return 100kk gold .. u
+        //    cannot do both"*. That symmetry IS the item: the broker takes 1kkk SP **and** 100kk gold,
+        //    and the bottle gives back exactly one of the two, your choice. At the /25 sell price the
+        //    choice did not exist — selling was a 96% loss and nobody would ever do it.
+        //    ⚠ NOT a gold faucet: no vendor STOCKS it (the broker is the only source), so the only way
+        //    to sell one for 100kk is to have paid 100kk plus a billion SP to make it.
         list.Add(new ItemDef(SpBottle, "SP Bottle", EquipSlot.Consumable,
             ItemGrade.S, ItemRarity.Epic, Value: GameConstants.SpBottleShopPrice,
             BuyPriceOverride: GameConstants.SpBottleShopPrice,
+            SellPriceOverride: GameConstants.SpBottleShopPrice,
             UseSkillId: SkillCatalog.SpBottleUse, ConfirmOnUse: true));
 
         // ----- Buff potions and scrolls: consume to gain one SINGLE buff off a family's ladder

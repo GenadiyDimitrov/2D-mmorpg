@@ -1622,6 +1622,11 @@ public class Entity
     /// <summary>Link-dead grace: connection lost while out of combat + not auto-farming. Frozen in
     /// the world (with a "Disconnected" title) for a short window so a reconnect resumes seamlessly.</summary>
     public bool IsDisconnected { get; set; }
+
+    /// <summary>When this player was last shown <see cref="GameConstants.ScamWarning"/> in the whisper
+    /// channel. RUNTIME ONLY and deliberately not persisted: entering the world shows the line anyway,
+    /// so a relog re-arming the hour costs one extra reminder and saves a column.</summary>
+    public DateTime LastScamWarningUtc { get; set; } = DateTime.MinValue;
     /// <summary>Remaining ticks of the disconnect grace before the normal removal chain runs.</summary>
     public int DisconnectGraceTicks { get; set; }
     /// <summary>Set when this character DIED while offline-farming / link-dead. Persisted; makes the next

@@ -27,24 +27,30 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.87.0";
+    public const string GameVersion = "0.87.1";
 
     // ----- SP BOTTLE (owner, 2026-08-26) -------------------------------------------------------
     // *"u can make an npc to take your 1kkk SP + 100kk gold and give you a tradable/sellabel
     //  (100kk shop-buy price) SP bottle"*. Three numbers, one place.
     //
-    // ⚠ HIS `buffer 4th.csv` / `healer 4th.csv` HEADER SAYS "1 SP bottle = 1kkk SP + 100k Gold" —
-    // one hundred THOUSAND. His message says 100kk, one hundred MILLION, and the newest ruling wins.
-    // The CSV line is worth a second look.
+    // ✅ BOTH 2026-08-26 FLAGS ARE CLOSED (same day, by him).
     //
-    // 🔴 `Entity.SkillPoints` IS A 32-BIT INT (max 2.147kkk). One bottle fits, two fit, three do not
-    // — and his own level-85 row costs FIVE bottles. If bottles are ever meant to be DRUNK toward
-    // that rather than SPENT as a currency, SkillPoints has to become a long (Entity + the persisted
-    // record + the StatsUpdate wire field + the client). Flagged, not decided.
+    // 1. The CSV header that read "1kkk SP + 100k Gold" WAS the typo — *"csv is a typeo"*. It says
+    //    100kk now, and spells out the either/or below.
+    // 2. 🔑 `Entity.SkillPoints` STAYS A 32-BIT INT, and his level-85 five-bottle row is fine, because
+    //    bottles are SPENT AS A CURRENCY, not drunk toward the total: *"Skills cost X bottles as
+    //    consumed-ID (u cannot have 5kkk SP int limit to 2.147kkk)"*. That is `SkillDef
+    //    .LearnConsumableId`, charged in HandleLearnSkill. **Do not widen SkillPoints to a long** —
+    //    the ceiling is the design, and the item price is what routes around it.
+    //
+    // 🔑 IT SELLS FOR WHAT IT COST, 100kk — not the /25 consumable rule's 4kk. The broker takes 1kkk
+    // SP **and** 100kk gold; the bottle gives back exactly ONE of the two, and which one is the
+    // player's choice: *"drinking return 1kkk sp and selling return 100kk gold .. u cannot do both"*.
+    // At a 96% sell loss that choice did not exist. Not a faucet — no vendor stocks the bottle.
     public const int SpBottleSpCost = 1_000_000_000;    // what the broker takes: 1kkk SP
     public const int SpBottleGoldCost = 100_000_000;    // ...and 100kk gold
-    public const int SpBottleShopPrice = 100_000_000;   // its shop BUY price (sell = buy/25 = 4kk)
-    public const int SpBottleSpGranted = 1_000_000_000; // what drinking one gives back
+    public const int SpBottleShopPrice = 100_000_000;   // its BUY price — and its SELL price, see above
+    public const int SpBottleSpGranted = 1_000_000_000; // what drinking one gives back (no gold)
 
     /// <summary>
     /// The WIRE contract's version, and the ONLY thing compatibility is decided on.
@@ -557,6 +563,27 @@ public static class GameConstants
     /// mid-playtest. Staff (admin/moderator) are exempt — they have to be able to announce.
     /// </summary>
     public static int WorldChatMinLevel = 10;
+
+    /// <summary>The anti-phishing line, shown on entering the world and again on your first whisper in
+    /// any rolling hour. Owner, 2026-08-26, in the same breath as approving the chat-log whisper split.
+    ///
+    /// <para>🔑 WHY IT RIDES ON THE WHISPER and not on a timer: a whisper is where this scam happens.
+    /// World chat is public and self-policing, local chat is a crowd — a private message from someone
+    /// claiming to be staff is the shape of the attack, so the warning arrives in the same window the
+    /// attempt does. Both sides of the conversation get it, each on their own hourly clock, so it does
+    /// not matter which of you opened the exchange.</para>
+    ///
+    /// <para>⚠ It says NO STAFF MEMBER WILL EVER ASK, which is a promise the game then has to keep:
+    /// nothing the server sends may ever ask a player for a password. If a real feature ever needs to,
+    /// this line is what it has to be argued against.</para></summary>
+    public const string ScamWarning =
+        "No staff member will ask for login details or personal information! "
+        + "Please be aware of scammers!";
+
+    /// <summary>How long between repeats of <see cref="ScamWarning"/> in the whisper channel. His
+    /// *"each first whisper in every hour"* — a rolling hour per player, not a wall-clock one, so a
+    /// player who whispers twice a day sees it twice rather than never.</summary>
+    public const int ScamWarningIntervalMinutes = 60;
 
     // ----- Items / progression / trade (Phase 4) -------------------------------
 

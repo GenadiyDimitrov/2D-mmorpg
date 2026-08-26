@@ -233,6 +233,13 @@ was *sent*, so a bar can be correct on screen and already destroyed on the serve
 corruption on the next login. It has already caught two such bugs. It creates a NEW character each run
 — a test that is not idempotent lies to you.
 
+## `docs/Formulas.md` — every formula on one page, and it MOVES WITH THE CODE
+One page, short form, no reasoning: damage, defence, crit, fizzle, debuff landing, interrupt, pools,
+regen, speed, MP cost, mob curves, drop rates. Read it before going comment-hunting in
+`StatCalculator.cs`. ⚠ **A formula change updates that file in the SAME commit** — the same rule the
+skill CSVs run on, and for the same reason: a reference that trails the build is worse than none.
+Numbers there are read off the code, never remembered; if you cannot verify one, don't write it.
+
 ## Balance work: measure, don't derive
 `tools/BalanceMatrix` (a console app, deliberately NOT in `Game.sln`, so it never affects the
 owner's build) constructs REAL `Entity` objects with REAL best-for-tier gear and runs the actual
