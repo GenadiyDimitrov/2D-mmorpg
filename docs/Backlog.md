@@ -23,8 +23,10 @@ was not re-ruled.
 ⚠ That message covered the eight he was SHOWN, not every 🔴 in the file. Five were still ready to
 build and simply unqueued; he ruled on four of them on **2026-08-14**, and **three shipped as 0.67.0** —
 `BL-43` (target cycling, retaliate-first) and `BL-46` (treat the app as a game; the second icon is
-gone) are **built and deleted**, and `BL-49`'s boss-EXP half is built with the levelling-curve half
-left open on its entry. `BL-45` (the presentation pass) is **his own "separate discussion later on"**.
+gone) are **built and deleted**, and `BL-49`'s boss-EXP half was built while its levelling-curve half
+stayed open — until **2026-08-26, when he closed it with *"leave it"*** (see the bottom of this file).
+`BL-45` (the presentation pass) is **his own "separate discussion later on"**, and its VISUAL half is
+now `BL-93`, which he asked to talk about on the same day.
 
 **⏸ CRAFTING IS PARKED, on his instruction (2026-08-14):** *"leave the salvage/mats etc craft until
 I'm able to test it fully — need to increase the drop rate and exp by 100 so I can make chars
@@ -54,8 +56,13 @@ design), god-mode debuff immunity plus the boss debuff rule beside it, the admin
 and **taunt removed from the auto chain**. It also **answered `BL-13`** — a boss is **10-30 minutes**, so
 the target rises rather than the late bosses coming down — and delivered the verdict on `BL-47` step 2:
 the machinery works and the rune is indistinguishable from the passive, **but the design as it stands
-loses the global curve lever**, which is now the open question on that entry. Every built row in that pass
-came back green; the UI polish it asked for lives in `testing/Open-Checklist.md` §89.
+loses the global curve lever**. Every built row in that pass came back green; the UI polish it asked for
+lived in `testing/Open-Checklist.md` §89 as `BL-88`.
+
+**✅ ALL SIX OF THOSE ARE NOW CLOSED.** `BL-78`'s two halves shipped in 0.73.0; `BL-82` in 0.80.0; and
+**`BL-13`, `BL-81`, `BL-83` and `BL-88` were built together as 0.89.0** on 2026-08-26, the same day he
+answered `BL-47` (*yes — field mobs stay on the curve, player mobs are a hand-placed content tool*).
+What is left of that pass is `BL-79` and `BL-80`, which are the CONTENT his `BL-47` answer unblocks.
 
 ## The rules this file runs on
 
@@ -77,7 +84,15 @@ decision, a CSV, a measurement) · ⏸ you put it on hold.
 
 Three of the original five are **built and deleted** (2026-08-12): `BL-01` the premium reward runes,
 `BL-03` the Stat-Swap tab and `BL-04` the auto buff potion/scroll tab — the last two took `BL-39`
-(the Mindwriter's misleading `(cost …)`) out with them. See `CHANGELOG.md`. Two are left.
+(the Mindwriter's misleading `(cost …)`) out with them. See `CHANGELOG.md`. Two are left, and one is
+brand new.
+
+**🆕 2026-08-26, in one message:** `BL-47` answered **yes** and closed · `BL-49` ruled *"leave it"* and
+closed · **`BL-93` opened** for the in-game visuals discussion you asked for (*"models/terain etc."*)
+· and `BL-13` + `BL-81` + `BL-83` + `BL-88` were built as **0.89.0**, so they are gone from this file.
+
+- `BL-93` 🔵 **In-game visuals — models, terrain, the look of the world.** Your next conversation, by
+  your own instruction. Full entry under **UI & client**, below.
 
 - `BL-02` 🔵 **The 40+ class kits (3rd and 4th tier)** — ✅ **FOUR OF THE AUTHORED FILES ARE DONE.** The
   **Lightbringer (healer) shipped in 0.74.0**, the **whole Warchanter (buffer) in 0.76.0**, the
@@ -99,8 +114,8 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
     with the healer's three or a healer's Mark and a buffer's would stack.
   - 🔵 **Five 3rd files are still two-line placeholders** — `tank` (one real row), `warrior`, `war_aoe`,
     `dual`, `archer` — and **seven 4th files** with them. Same rule: nothing invented in the meantime.
-  - 🔴 **Calm Spirit**, one family of the nuker's file, is built-ready and **held by you** pending the
-    MP-regen question (`BL-92`). See 0.87.0 in `CHANGELOG.md`.
+  - ✅ ~~**Calm Spirit**~~ — SHIPPED with `BL-92` in 0.88.0, the moment the MP-regen question it was
+    held behind was answered. Nothing of the nuker's file is outstanding.
 
 - `BL-05` 🔵 **Crafting — the two pieces you did NOT rule.** The system itself SHIPPED in 0.63.0
   (masters, six levels, the freeze, the grade ladder, the gear roll, the mat costs, quitting). What is
@@ -174,40 +189,6 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
   offset is identical for every class, by grade. Needs your call before anything moves.
   *(playtest-21 `68e`; the 0.60.0 model is in `docs/balance/BalanceMatrix.md` §E.)*
 
-- `BL-13` 🔴 **ANSWERED IN PLAYTEST 25 (2026-08-16/17) — A BOSS IS 10 TO 30 MINUTES, and the target
-  RISES.** Your ruling verbatim: *"not nececerily the 20lvl should take 6mins ..but they can take a lot
-  more ... It's a Boss the bosses should take 10-15 even 30 mins to kill (depending on the gear). It
-  should feel hard but rewarding .. A 3 min boss is not a boss its a stronger elite mob .. Bosses should
-  have stronger defences,more atk (not one shooting but a tank can feel it), A healer,tank and dds in a
-  party are a must ..."*
-  🔑 **This reframes the measurement completely.** The 11× spread I reported is not the defect I called
-  it: **600-1800s is the band you want**, and the measured curve is wrong at the BOTTOM, not the top.
-
-  | Lvl | boss HP | 3-DD dps | measured TTK | vs your 600-1800s |
-  |---|---|---|---|---|
-  | 20 | 36,000 | 448 | **80s** | **7.5× too fast** |
-  | 40 | 132,000 | 446 | **296s** | 2× too fast |
-  | 60 | 292,000 | 427 | 684s | **inside the band** |
-  | 76 | 466,000 | 525 | 888s | **inside the band** |
-  | 85 | 582,000 | 840 | 693s | **inside the band** |
-
-  So the late bosses are already right and **only 20 and 40 need lifting** — the opposite of what the
-  entry asked you. What is left to build is three separate things, and only the first is arithmetic:
-  1. **Raise the low end.** The flat ×100 HP rank has to become a curve that does not collapse below 60.
-     Measure it in `BalanceMatrix`, do not derive it.
-  2. 🔴 **Defence and attack, not only HP** — *"stronger defences, more atk (not one shooting but a tank
-     can feel it)"*. Today `Boss` is **HP ×100 / ATK ×10** with **no defence term at all**
-     (`GameLoopService.cs:14014`), which is exactly why a boss reads as a sponge. A tank must feel the
-     blows and must not be one-shot; that is a damage BAND, not a multiplier.
-  3. 🔴 **Party composition must be mandatory** — *"A healer, tank and dds in a party are a must"*. A
-     3-DD ceiling with no healer is what the current table measures, so the target itself needs
-     re-basing on a real party before the numbers above mean anything.
-  - ⚠ **Your `85j` EXP park now resolves itself**, in part: boss EXP is derived from kill time, so a boss
-    that takes 3-10× longer carries its own increase without a separate ruling.
-  - 🔵 **The world boss still has nowhere to live.** `MobRank` is Normal/Elite/Boss; only the respawn
-    timer separates your 21-hour spawn from a 30-minute one. ~50 DDs for an hour is **~167×** a field
-    boss — a new rank with its own drops/phases/lockout, not a bigger number. Not invented.
-
 - `BL-14` ✅ **BUILT 2026-08-14 (0.65.0)** — two of your three clauses were already true (a mob's
   attack SPEED and CRIT RATE have come off `InnateWeaponType` since 2026-08-10); the third was not.
   `MobWeaponPowerFactor` (`433 / weaponBaseSpeed`) gives a mob the per-hit power a player gets free
@@ -267,37 +248,6 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
   - The remaining 20-30k taunt rungs are levels 6-10 of the same ×1.36 ladder and belong to the
     3rd/4th class kits — blocked on `BL-02`, like every other 40+ number.
   - Not built and not asked for: a client-visible aggro list.
-
-- `BL-81` 🔴 **DEBUFF IMMUNITY — GOD MODE IS ABSOLUTE, A BOSS IS NOT.** Playtest 25, and it is two rules
-  in one message.
-  - **Admin in god mode resists EVERYTHING** — *"cannot be debuffed (immune to all - can be used on him
-    but resisted)"*. 🔑 **Read that clause carefully: the debuff must LAND AND BE RESISTED, not be
-    refused.** A cast that is rejected outright tells you nothing about whether the skill works; a cast
-    that resolves and reports a resist is a usable test of the skill you are debugging, which is the whole
-    point of god mode.
-  - **A boss is immune to CONTROL only** — *"not hold/slow/stun/paralize etc, but bosses can only have
-    their p/mDef, p/mAtk lowered, can be Dot-ed and hp/mp regen limited"*. So the split is **control =
-    immune** (hold, slow, stun, paralyze, and anything else that removes a boss's turn) against
-    **attrition = allowed** (stat-down on the four defence/attack stats, damage over time, regen
-    suppression). That is a per-effect classification, not a flag on the skill.
-  - 🟡 **It lands on `BL-13`.** A boss that must last 10-30 minutes and be felt by a tank is a boss that
-    cannot be perma-held, so this rule and that curve are the same design and should ship together.
-
-- `BL-83` 🔴 **TAUNT MUST NEVER BE AUTOMATABLE — a reversal of the 0.68.0 fix, and he is right.** Playtest
-  25, `85c`: *"I think remove the taunt as being able to be auto. I feel it like an exploit. Get a tank
-  leave it auto he taunts almost impossible to kill you farm with ur other hero. Taunt should be active
-  play only."*
-  ⚠ **This undoes work from three days earlier.** 0.68.0 discovered that no taunt had ever fired from the
-  auto chain (a taunt is neither a contested effect nor a debuff school, so it sorted into the never-cast
-  bucket) and gave taunts their own rung above Attack. The bug diagnosis was correct; the feature it
-  restored is one he does not want.
-  🔑 **Build it as a REMOVAL, not a revert.** The same change shipped a second thing that is good and must
-  survive: **an armed row the chain cannot cast is now reported the moment you save**, instead of being
-  skipped in silence — which was the answer to his *"check the cyclic logic ...I feel there is a
-  problem"*. A taunt should now appear in that report as *deliberately manual*, so an armed Provoke tells
-  him why it never fires rather than looking like the same bug again.
-  🔵 Open: does this cover **every** threat skill (`Lure`, the mob-only rogue pull, and any 40+ taunt from
-  `BL-02`) or only single-target taunts? Assume all threat-generating skills unless he says otherwise.
 
 - `BL-84` 🔴 **RENAME EVERY SKILL ID TO MATCH ITS NAME — UNBLOCKED 2026-08-20: THE HEALER IS DONE.**
   ⏰ This is the reminder you asked for. The trigger you named has fired — `healer 3rd.csv` is built and
@@ -419,11 +369,12 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
   5. **`1:5` of WHOSE skill?** A nuker's and a fighter's top skill at the same level are not the same
      number, so the ratio needs one named reference skill per channel or it drifts by class.
 
-  ⚠ **It lands on top of an unruled boss curve.** `BL-13` says a flat ×100 swings boss difficulty
-  **11×** between level 20 and 76, and `BL-49` says one boss kill is worth **1000× more** at 20 than at
-  85. A 50% gem drop hangs a real reward on that curve, so a level-20 boss becomes the cheapest gem in
-  the game by a wide margin. Build the gems whenever you like — but the drop chances are not meaningful
-  until those two are ruled, which is another reason the % are explicitly yours to move.
+  ✅ **The boss curve underneath it is no longer unruled** — this used to say *"a flat ×100 swings boss
+  difficulty 11× between level 20 and 76"*, and `BL-13` fixed exactly that in 0.89.0: every level now
+  falls in a 12-25 minute band. So a 50% gem drop no longer makes a level-20 boss the cheapest gem in
+  the game by fight length. ⚠ What is still uneven is the **EXP** it pays (`BL-49`, which you ruled
+  *"leave it"*), so a low-level boss remains the better hour in exp terms — worth knowing when you set
+  the gem %, which are explicitly yours to move.
 
 - `BL-77` ✅ **BUILT 2026-08-16 (0.69.0)** — the PvP flag is the area filter, for every AOE and every
   no-damage skill at once, and it pairs with the reflect fix from the same pass: *the flag follows
@@ -472,16 +423,6 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
   - ⚠ `GameLoopService.BuffPlan` was made `public` so the census reads the real resolver rather than a
     copy of it. ⚠ No CSV column changed — `--check` is green on all ten files.
 
-
-- `BL-88` 🔴 **THREE UI CHANGES FROM PLAYTEST 25, STILL WITHOUT AN ID — giving them one so they stop
-  being lost.** They have been carried in `Open-Checklist.md` §89 across three passes with no `BL` number,
-  which is exactly the state this file exists to prevent. Small, client-side, and they ride the next batch.
-  - **The target window's title row** — *"only the name of the target. No lvl no target.title, now the
-    [title + name + lvl] overflows"*; the mob title moves down into the `Mob:` row.
-  - **The chat window's buttons** — *"decreasing the width of the chat leaves the [combat] button floating
-    in the air - make the buttons smaller or like the icons on the top"*.
-  - **The gear picker, second pass** (`87f`) — *"Make the buttons even smaller. Like the tab buttons in
-    height. Also there is no splitter bellow the [S 80] button."*
 
 - `BL-89` 🟢 **BUILT 2026-08-26 (0.86.0) — THE CHAT LOG HAS A READER.** Playtest 28, your question:
   *"don't we need a chat log … because now an admin/mod should ban based on som1 is trying to sell u for $
@@ -707,144 +648,41 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
 - `BL-45` 🔵 **The presentation pass.** Your words, still true: *"no sounds, a bit woody, no good
   visuals."* The loudest remaining gap. **You have reserved it for its own discussion** (2026-08-14:
   *"45 is a separate discussion later on"*) — do not start it piecemeal.
+  ⤷ 🆕 **The VISUAL half of it now has its own id and its own conversation: `BL-93`.** `BL-45` keeps
+  the rest — sound, feel, feedback, polish.
+
+- `BL-93` 🔵 **IN-GAME VISUALS — MODELS, TERRAIN, THE LOOK OF THE WORLD. You asked for the discussion,
+  2026-08-26:** *"after all I want to speak about the in game visuals - models/terain etc."* Opened as
+  a placeholder for that conversation and **deliberately not designed here** — the same treatment
+  `BL-45` got, and for the same reason: it is the one area where starting piecemeal produces work that
+  has to be thrown away when the direction is set.
+
+  What is worth having ready when we do talk, so the conversation starts from facts rather than from
+  scratch:
+  - **What the client draws today.** Capsules and coloured plates on a flat ground plane, with the
+    3D/LoS work (`client-3d-and-los-design`) as the only shape decision ever made. Every creature in
+    the game is the same silhouette at a different scale and tint, so a level-80 field boss and a
+    level-3 wolf read as the same object — which is a presentation problem, not a content one.
+  - **The two ground layers that already exist and could carry a look for free** — the totem and AoE
+    decals (0.79.x) and the zone/region system, which already knows where every camp, town ring, road
+    and dungeon mouth is. Terrain that follows the zones costs nothing in new data.
+  - **The constraint that decides everything: it is a PHONE.** Model budget, draw calls, atlas size and
+    APK size are the real ceiling, and the TMP atlas is already static and full at 250 glyphs
+    (`tmp-font-atlas-is-static`). An art direction that ignores the device is a rebuild.
+  - **The IP rule applies to ART as hard as it does to names** — see `naming-no-trademarks`. Silhouettes
+    and skins that read as another game's creatures are the same problem the town names were.
+
+  🔵 Yours to open. Nothing is invented until you do.
 
 ---
 
 ## World & mobs
-
-- `BL-47` 🔵 **`G3` — mobs built like players. ALL THREE STEPS ARE DONE, AND YOUR VERDICT SPLITS IT IN
-  TWO.** You fought them in playtest 25 and marked all four rows `[x]`, then wrote the real answer beside
-  them: ***"It works"*** — and four objections that stop it becoming the general mob pipeline.
-  - ✅ **THE DECISIVE COMPARISON IS ANSWERED: *"they relatevley feel the same"*.** That is `88b`, the
-    held **War Rune** against the authored **×2.07 attack passive**, and it means **the attack side of a
-    player-built creature can be an item it carries** — no per-band attack table, no drift with level,
-    and a creature that visibly holds the thing that makes it dangerous. This survives everything below;
-    whatever pMobs end up being used for, they get their damage from a rune.
-  - 🔴 **YOUR OBJECTION, and it is the one that matters: pMobs LOSE THE GLOBAL LEVER.** *"I have the
-    feeling that controling the curve and the mobs per lvl will be harder this way ... with current mobs
-    we can say: 'this one will have x2 hp' and whole the mobs on the field are altered.. while with the
-    pMobs we will alter one and it will be good in the lvl range (+-5) not across the board."* This is
-    correct and it is structural: `MobBaseStats` is one function, so one edit moves every creature in the
-    game, while a per-creature loadout has to be re-authored one at a time. **A wholesale migration is
-    therefore off** unless a curve-wide knob comes with it.
-  - 🔴 *"I open now the skills tab and see a passive with much random numbers"* — the authored passives
-    read as noise on the sheet. If passives survive at all they need to be named and rounded, not
-    per-band decimals.
-  - 🆕 **YOU NAMED WHERE THEY SHOULD GO INSTEAD, and both are better fits than the general roster**:
-    **town/field guards** (`BL-79`) and **fortress sieges** (`BL-80`). Both are hand-placed, small in
-    number, and want exactly what this pipeline gives — real gear, a real class, a visible loadout — with
-    none of the curve-control problem, because nobody tunes fifteen guards with one number.
-  - 🔵 **SO THE OPEN QUESTION IS NARROWER THAN IT WAS.** Not *"do we migrate"* — you already answered
-    that in playtest 24 and playtest 25 walked it back to *"where"*. It is: **do ordinary field creatures
-    stay on `MobBaseStats` with the ×2 passives, and pMobs become a hand-placed content tool?** That is
-    the shape everything you wrote points at, and it costs nothing already built — the demo, the fence,
-    the loadout inspector and the rune all serve it unchanged. **Say yes and `BL-79`/`BL-80` become the
-    roadmap; say no and the global-lever problem needs solving first.**
-  - ⚠ **Independent of this, mobs are too easy and too thin — that is `BL-78`**, and it is the same
-    verdict whichever pipeline wins.
-
-  **The record of steps 1 and 2 follows.** Your three ordered steps were *"I want it documented and
-  balance matrix tables … and later we can do 2~5 mobs so I can test."* Both are done — the document is
-  `design/MobsAsPlayers.md`, and **step 2 shipped 2026-08-16 (0.70.0)** as the **Proving Grounds**, a
-  gatekeeper destination south of the training dummies holding five creatures built through the player
-  pipeline, each beside the ordinary creature of its own level.
-  - 🔑 **YOUR ±5 BAND WORKS, EXCEPT ON ATTACK.** The same authored loadout five levels apart holds
-    defence and HP (P.Def x1.04 → x0.95, HP x1.10 → x1.06) and **loses a quarter of its P.Atk**
-    (x0.87 → x0.64), because the mob attack curve is the steep one. So *"prefixed 100+ mobs and give
-    them +-5 lvl ranges"* costs **one number per band, and it is the attack number**. Both goblins are
-    left deliberately bare so you can feel the drift rather than read about it.
-  - 🔑 **A HELD WAR RUNE REPLACES AN AUTHORED ATTACK PASSIVE — measured, your B3.** Bare, the level-80
-    build reads **x0.48** of its curve's P.Atk. An authored per-band passive gets it to x1.00; **the
-    rune gets it to x0.97**. One item against a table that drifts with level. If you like how it
-    fights, the whole attack side of this design collapses into something a creature carries.
-  - ⚠ **One number came out past your ×2 and it is nobody's mistake.** `G3.7` said the level-80 attack
-    passive needed ×1.55; the creature needs **×2.07**. `G3.7` measured against the bare `MobBaseStats`
-    curve — but what actually spawns beside it also carries **BL-14's weapon power factor**. `G3.8` is
-    the section that measures against the game, and it is the one to trust.
-  - **Everything below is step 1's record**, kept because it is what the rulings were made on.
-
-  The document is
-  **[design/MobsAsPlayers.md](design/MobsAsPlayers.md)**; the `BalanceMatrix` `G3` tables it reads from
-  have existed since 2026-08-05. No game code was touched. Three things it found that change the entry:
-  - 🔑 **The inflated ATK/CON you objected to are already inert.** `MobStats` still sets them (level 80 →
-    CON 175 / ATK 168) but `RecomputeDerived` sends a mob to `MobBaseStats` for HP, MP, P.Atk, M.Atk,
-    P.Def and M.Def — **not one of them reads either stat**. Only AGI 30 and WIT 5 do anything. What you
-    actually saw is a DISPLAY: the target sheet printed both numbers. ✅ **Fixed 2026-08-16** — a mob's
-    Attributes block is now AGI and WIT only (SPT went too; `MobStats` says in its own comment that mobs
-    never read it). No simulation change, and it answers *"it looks over inflated"* on its own.
-  - 🔑 **Four of your five passive families already ship** as `MobMasteries`/`MobMod` + 0.65.0's mob
-    weapon types. What is genuinely missing is small: armor weight has **3 rungs and no robe arm** (you
-    asked for ~15 and a caster rung), the weapon type carries ~4 of your 7 axes, and **speed has no
-    track at all**.
-  - 🔴 **§8-B IS ANSWERED — playtest 24 (2026-08-16): MIGRATE.** The doc recommended finishing the
-    passive layer instead; he rejected the premise it rested on. His words: *"u said u cannot manage to
-    balance a player with current mobs curve ... human fighter with S grade Mace enchanted to +60
-    (that's why we van have a mobs weapons) and B grade leather only have the same pDef and twice less
-    p atk g if we make the elite passive x2 p atk and hp boost we can make him the same values ... try
-    to recreate mobs with different races (main stats) with player formulas ... so same weapon type and
-    just enchanted or a mob passives that boost PAtk and or other stats"* — plus, in chat the same day:
-    *"If we have different mob races like litches,angels,goblins etc all will have different main stats
-    (near players one) and just boost with passives and lower gears."*
-    The superseded recommendation is in [BacklogArchive.md](BacklogArchive.md#bl-47).
-  - 🔑 **He named the levers `G3.2` never swept, the sweep was re-run his way as `G3.7`, and HE IS
-    RIGHT.** Two blind spots: the enchant axis stopped at **+16** (a player's practical ceiling — a mob's
-    enchant is just an authored number), and every slot moved **together**, so an over-enchanted weapon
-    over under-grade armour was never constructed. Swept separately, weapon enchant to +60:
-    **12 of 16 archetype-levels land inside his ×2 passive on all four stats at once**, the worst single
-    miss drops **185-221% → 94%**, and the biggest attack passive still needed anywhere is **×1.60**.
-    The optimiser picked his loadout unprompted — lowest-tier armour, weapon at level tier plus enchant.
-    ⚠ **The four failures are one failure: the Nuker's HP** (×2.01 at 20 → ×3.48 at 80). Every P.Def,
-    M.Def and attack figure is inside ×2 at every level. His *"and hp boost"* already allowed for it.
-    🔵 Next lever if the 80 row needs tightening: `G3.7` still dresses all nine slots, and at 80 the
-    binding constraint is **M.Def over-delivering ×1.65** — a creature need not wear jewels at all.
-  - 🔑 **RACE as the main-stat carrier is the better shape and it costs nothing to adopt.** The doc used
-    player *archetypes*, which §5 correctly called invented machinery; races are content the world wants
-    anyway, so the "mob archetype table" stops being scaffolding and becomes the thing being built.
-  - ✅ **He answered the three questions that gated step 2, same day (2026-08-16).**
-    **Race = a flat ±5 stat offset, no level curve** (*"ork have higher con/atk less agi ..while elf have
-    higher agi less atk/con ... Can go +-5 same as the swap passives"*) — ⚠ which makes race **flavour,
-    not the reconciliation**: ±5 on a ~40-point stat is ±12.5% against passive needs of ×1.5-2.0, so a
-    lich differs from a goblin by **kit, gear and passives**. **A demo first, the roster number after.**
-    **A mob may hold an inventory** — *"not a dropped one..but just to hold stuff"* — so **yes to the War
-    Rune**, held and never looted. And **balance against NORMAL mobs**, elite/boss scaling on top: ✅ every
-    `G3` number already does, since rank multipliers are applied at spawn. 🔑 For the record, since he
-    could not remember: **Elite = HP ×4 / ATK ×1.5, Boss = HP ×100 / ATK ×10** (`GameLoopService.cs:14014`).
-  - 🔴 **HIS ROSTER RULING, and it is ~90% already built.** *"we can do a IG logic... Prefixed 100+ mobs
-    and give them +-5 lvl ranges so they can offset a bit ... Not a lvl 1 mob scaled with lvl to 85."*
-    **`MobCatalog` already holds 80 templates, each with its own natural level, ~2 levels apart**, and
-    `GameLoopService.cs:13959` gives a natural level priority over the zone band. What is missing is the
-    **±5 variance** (today ±0) and ~20 more templates. 🔑 **This retires `G3.3` as an objection**: the
-    "frozen loadout rots to 6% of curve at 85" test stretched one template across 65 levels, which this
-    catalogue never does — so a **level→grade function is not mandatory** after all. ⚠ The one place that
-    does stretch a roster is **`zone.ForceZoneLevel`** (the 85-90 field), which is the thing he objects to.
-  - ✅ **Step 2 is BUILT** (see the top of this entry) — both decisive comparisons came back answered.
-    §8 **C/D/E remain open** (armor-weight rungs and the robe arm · whether the weapon type carries
-    `matk`/`cast`/`critdmg` · speed as a passive), and none of them blocked the demo.
-  - ✅ **"Then we do a system number" — playtest 25 answered one of the two.** The rune wins over the
-    passive (they feel the same, and the rune does not drift). ⚠ **The ±5 attack drift was never
-    commented on** — you marked `88a` `[x]` and wrote about the whole demo instead, so whether an Elder
-    Raider feels too soft for its level is **still unanswered**, and it only matters if pMobs end up
-    carrying a band at all. The roster count itself is moot under the narrowed question above: a
-    hand-placed tool has no roster number.
 
 - `BL-48` ⏸ **Instances — you are holding.** Design is written (`design/Instances.md`). One
   load-bearing decision is still open: the daily attempt **GLOBAL vs PER-INSTANCE**. It changes the
   persisted model, so it is answered before anything is built. **Dungeons are the cheap half** —
   a dungeon is just a `SpawnZone` outside the town ring plus a teleport entrance, near-zero risk,
   and they can ship without instances.
-
-- `BL-49` 🔵 **Levelling pace — the boss half is BUILT (0.67.0), two items are left and both need
-  your eye.** The elite/boss EXP multiplier is done and closed: your *"x1.2~2"* is now 1.2 elite /
-  1.5 boss over a measured kill-time ratio, and it fixed a silent 5× underpayment (the old rule was
-  HP-only and clamped at 20× while a boss carries 100× HP). What is still open:
-  - **The absolute value of a boss kill swings 1000× across the game.** One level-**20** field boss
-    is **125% of a level** solo; a level-**85** one is **0.1%**. Both are the same 150 trash kills,
-    so this is the LEVELLING CURVE, not the boss rule — but a low-level boss handing out a level and
-    a quarter per kill is a decision, not an accident, and it is yours. `tools/BalanceMatrix`, the
-    `BL-49` table.
-  - **The 60-85 band and the fighter kill-speed sanity check**, neither ever run. Note the cumulative
-    trash-kill count reaches **631k by level 86** against 21k by level 62 — whatever the old *"60-85
-    runs ~3× faster"* note meant, the measured curve now says the opposite and wants your call.
 
 - `BL-73` 🔵 **Mob social clans go back ON once the world map spreads the camps out** — your own note
   from playtest 23, *"Make a note to turn it on once the world map is in place."* The feature works and
@@ -925,8 +763,10 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
      now 9), so auto-hunt at parity now needs consumables. ✅ The same change put field bosses inside
      your `BL-13` band (17-26 min) without touching a boss.
 
-- `BL-79` 🔴 **TOWN / FIELD GUARDS — the first real use for `BL-47`'s player-built creatures, and it is
-  small.** Your design, playtest 25, verbatim: a **Lv 80 mob in Mythic t80** that is *"only aggressive
+- `BL-79` 🔴 **TOWN / FIELD GUARDS — the first real use for the player-built creatures, and `BL-47`'s
+  ruling of 2026-08-26 makes it THE use.** *"Pk guards with overechsnted gear"* — so the guard's power
+  comes from what it WEARS, hand-placed and few, which is exactly the shape you approved. Your design,
+  playtest 25, verbatim: a **Lv 80 mob in Mythic t80** that is *"only aggressive
   thowards PK (ignores mobs/pvpOrNormal-players)"*, aggro **400 melee / 600 archer**; *"ofc if u hit them
   (pvp-on) they act as passive mobs"*, plus a **PK radar**. *"each towns exit will have two guards - a
   tank and an archer, they dont use skills (only normal attack) but can have rune_war (unlimited)"*, and
@@ -1075,6 +915,26 @@ broken jewels → 9/5/3 · **item tags and the full `/give`**. They live in `CHA
 **The housekeeping batch, later the same day** took out `BL-37` (the test heal, deleted — and the
 retired-skill-id leak it exposed in the save loader) and `BL-58` (`58i`, the inspiration-game name
 purge; the tag is `IG`).
+
+## Closed on 2026-08-26 by your own ruling
+
+**`BL-47` — YES, AND IT SPLITS THE WORK IN TWO.** Your answer, verbatim: *"yes. Player mobs are hand
+crafted and field mobs stay on curve. Player mobs are player stats with equipped real items. Pk guards
+with overechsnted gear and fortress fighting npcs with undergear as we described."* So: ordinary field
+creatures keep the `MobBaseStats` curve with `MobMod` passives — one function moves every creature,
+which is the property you did not want to lose — and player-built creatures become a **hand-placed
+content tool** with real player stats and real worn gear. Everything built in 0.70.0 serves that shape
+unchanged, and **`BL-79` (PK guards, over-enchanted) and `BL-80` (fortress NPCs, under-geared) are now
+the roadmap for it**, both with the gear direction you just named. Old text in
+[BacklogArchive.md](BacklogArchive.md).
+
+**`BL-49` — LEAVE IT.** *"well ofc it's lot slower to llv up 85+ than 20... Leave it."* The 125%-of-a-
+level-at-20 against 0.1%-at-85 spread is the EXP curve doing what you want it to do. Closed; not
+re-proposed. ⚠ One consequence to watch in play rather than in the file: `BL-13`'s boss HP curve made
+a low-level boss take 7× longer, and boss exp is derived from kill time — see the clamp note in the
+0.89.0 entry of `CHANGELOG.md`.
+
+---
 
 ## Closed on 2026-08-14 by your own later ruling
 

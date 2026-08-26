@@ -4683,9 +4683,13 @@ public class GameLoopService : BackgroundService
     /// any form"*, and *"check the cyclic logic ...I feel there is a problem"*). A skill that classifies
     /// as <see cref="AutoSkillKind.Other"/> is skipped in silence — the row sits on the bar with its Auto
     /// mark lit and simply never fires, which from the outside is indistinguishable from a broken cycle.
-    /// Provoke was the case that mattered and it is fixed; what stays in that bucket is the handful of
-    /// skills that genuinely should not autopilot (a hide, a reveal, a trap, a resurrection), and the
-    /// player is now told rather than left to time them.</para></summary>
+    /// What sits in that bucket is the handful of skills that genuinely should not autopilot — a hide, a
+    /// reveal, a trap, a resurrection — and the player is now told rather than left to time them.</para>
+    ///
+    /// <para>🔑 <b>A TAUNT IS BACK IN THAT BUCKET, AND THIS LINE IS WHY THAT IS SAFE.</b> BL-83 took
+    /// threat off the chain again (*"Taunt should be active play only"*), which is where it accidentally
+    /// was before 0.68.0 — the difference is that it now SAYS SO. An armed Provoke tells its owner it is
+    /// his to press instead of sitting there looking like the bug he reported.</para></summary>
     private void WarnUncastableAutoSkills(Entity p)
     {
         var ignored = p.AutoSkills
@@ -5166,7 +5170,8 @@ public class GameLoopService : BackgroundService
     }
 
     // ⚠ AutoChainCursor is sized to this enum — adding a member means widening that array too.
-    private enum AutoSkillKind { Attack, Debuff, Buff, Heal, MpHeal, Taunt, Other }
+    // (The `Taunt` rung was REMOVED by BL-83 — see ClassifyAuto. Threat is manual play, full stop.)
+    private enum AutoSkillKind { Attack, Debuff, Buff, Heal, MpHeal, Other }
 
     private static AutoSkillKind ClassifyAuto(SkillDef def)
     {
@@ -5178,6 +5183,27 @@ public class GameLoopService : BackgroundService
         // WarnUncastableAutoSkills already tells the player it is theirs to press — so this is an
         // exclusion that explains itself instead of one that looks like a bug.
         if (def.NeverAuto) return AutoSkillKind.Other;
+        // 🔴 BL-83 — THREAT IS MANUAL PLAY, and this REVERSES the rung 0.68.0 gave it three days
+        // earlier. Him, playtest 25 (`85c`): *"I think remove the taunt as being able to be auto. I
+        // feel it like an exploit. Get a tank leave it auto he taunts almost impossible to kill you
+        // farm with ur other hero. Taunt should be active play only."* He is right, and it is the
+        // TWO-CHARACTER case that makes it one: an auto-taunting tank parked in a camp is a permanent
+        // aggro sink that costs its owner no attention at all, which is the shape of every exploit.
+        //
+        // 🔑 WHAT 0.68.0 GOT RIGHT AND MUST SURVIVE. Its bug diagnosis was correct — a pure taunt
+        // carries neither ContestCc nor a DebuffSchool, so every branch below missed it and it fell
+        // into `Other` by accident, which is why no taunt had ever fired from the chain. What was
+        // wrong was the fix. So the destination is the same bucket, reached DELIBERATELY: the answer
+        // to his *"check the cyclic logic ... I feel there is a problem"* was the report an armed row
+        // now gets on save (WarnUncastableAutoSkills), and a taunt appears in it as manual BY NAME
+        // rather than looking like the same silent bug all over again.
+        //
+        // ⚠ ASKED BEFORE THE DAMAGE TEST, unlike 0.68.0's rung, which sat after it. Today the only two
+        // threat skills (Provoke, Lure) are pure taunts so the order changes nothing — but a taunt that
+        // also hits would otherwise be claimed by the attack rotation and auto-cast its threat anyway,
+        // which is the exploit wearing a different skill's coat. Every threat-generating skill, his
+        // 40+ kits included: he named no exception, and a tank's kit is where the exceptions would be.
+        if (def.TauntPower > 0 || (e & SkillEffect.Taunt) != 0) return AutoSkillKind.Other;
         // 🔑 A LIFESTEAL attack is a HEAL and NOTHING ELSE (him, 2026-08-13): *"I want it only with a
         // treshold .. if I want it permanent ill do cycle or 100% treshold"*. Checked BEFORE the damage
         // test, which would otherwise claim it for the attack chain. Vampiric Bolt is the only skill in
@@ -5189,15 +5215,6 @@ public class GameLoopService : BackgroundService
         // cannot be reasoned about from the settings screen, which is the whole complaint behind BL-67.
         if (def.Lifesteal > 0f) return AutoSkillKind.Heal;
         if ((e & (SkillEffect.PhysicalDamage | SkillEffect.MagicDamage)) != 0) return AutoSkillKind.Attack;
-        // 🔴 A PURE TAUNT IS ITS OWN RUNG (playtest 23: *"Provoke is not auto used in any form"*). It had
-        // no rung at all and fell through to `Other`, the never-cast bucket — so no taunt in the game had
-        // ever fired from the chain, which makes an auto-farming tank a damage dealer with less damage.
-        // 🔑 Why it landed there: Provoke carries `SkillEffect.Taunt` and `SkillCategory.Debuff`, and the
-        // debuff test below asks for ContestCc or a DebuffSchool. A taunt is neither — it is not contested
-        // and it has no school to resist — so every branch missed it.
-        // Tested AFTER damage on purpose: a taunt that also hits (a Shield Bash shape) belongs in the
-        // attack rotation, where its damage is the reason to press it; its taunt lands either way.
-        if (def.TauntPower > 0) return AutoSkillKind.Taunt;
         if ((e & SkillEffect.Heal) != 0) return AutoSkillKind.Heal;
         // An MP-restore is its OWN priority group (BL-67), sitting directly under Heal: him,
         // *"below the Heal as priority but above all other (need mp to cast/buff)"*. It used to share
@@ -5278,11 +5295,7 @@ public class GameLoopService : BackgroundService
         if (AutoManaWanted(p) && TryAutoChain(p, target, AutoSkillKind.MpHeal)) return true;
         if (TryAutoChain(p, target, AutoSkillKind.Buff)) return true;
         if (TryAutoChain(p, target, AutoSkillKind.Debuff)) return true;
-        // A TAUNT outranks the damage rotation (playtest 23). It has to: the whole point of a taunt is
-        // that it lands BEFORE the party out-damages you, and a tank's attack chain is never idle, so a
-        // rung below Attack would only ever fire on a tick where nothing else could — which for a tank
-        // is no tick at all.
-        if (TryAutoChain(p, target, AutoSkillKind.Taunt)) return true;
+        // (BL-83 removed the Taunt rung that sat here. Threat is manual — ClassifyAuto has the why.)
         return TryAutoChain(p, target, AutoSkillKind.Attack);
     }
 
@@ -5378,14 +5391,7 @@ public class GameLoopService : BackgroundService
                     // key", which let a rank-1 poison block the rank-3 one for its whole duration.
                     if (target is null || AutoBuffCovered(target, def, 0, def.Rank)) continue;
                     tgtId = target.Id; break;
-                case AutoSkillKind.Taunt:
-                    // Mob-only, exactly like a manual Provoke, and pointless on one already locked to
-                    // you by an unexpired taunt — re-taunting inside your own commit window burns the
-                    // reuse and buys no cushion. Anything else (someone else's mob, a mob merely
-                    // attacking you) is fair game: the cushion is what a tank is renewing.
-                    if (target is null || target.Kind != EntityKind.Mob) continue;
-                    if (target.TauntLockTicks > 0 && target.CombatTargetId == p.Id) continue;
-                    tgtId = target.Id; break;
+                // (BL-83 removed the Taunt case that sat here with the rung it served.)
                 case AutoSkillKind.Attack:
                     if (target is null) continue;
                     tgtId = target.Id; break;
@@ -8466,6 +8472,27 @@ public class GameLoopService : BackgroundService
         && (effect & SkillEffect.ControlCc) != 0
         && (effect & SkillEffect.AnyDot) == 0;
 
+    /// <summary>BL-81 — DOES THIS DEBUFF FAIL BEFORE IT IS EVEN ROLLED? Three sources, one gate, so no
+    /// resolution path can pick up two of them and miss the third.
+    ///
+    /// <list type="bullet">
+    /// <item><b>Immune</b> — the total-avoid buff. Unchanged.</item>
+    /// <item><b>God mode</b> — NEW. *"cannot be debuffed (immune to all - can be used on him but
+    /// resisted)"*. 🔑 Read that clause carefully, because it decides the implementation: the cast must
+    /// LAND AND BE RESISTED, not be refused. A cast that is rejected outright tells you nothing about
+    /// whether the skill works; a cast that resolves and reports a resist is a usable test of the very
+    /// skill you turned god mode on to debug. So this returns "the roll fails", never "the cast is
+    /// illegal" — the caster pays the MP, the cooldown starts, and the combat line says Resisted.
+    /// ⚠ It is ALL debuffs, not just control: god mode is absolute, which is the half that separates it
+    /// from the boss rule below.</item>
+    /// <item><b>A boss</b> — CONTROL ONLY. *"not hold/slow/stun/paralize etc, but bosses can only have
+    /// their p/mDef, p/mAtk lowered, can be Dot-ed and hp/mp regen limited"*. That is a per-EFFECT split
+    /// (control immune, attrition allowed) and it is <see cref="SkillEffect.ControlCc"/>, already built
+    /// on 2026-08-19. It is folded in here so the three can never drift apart.</item>
+    /// </list></summary>
+    private static bool ResistsDebuff(Entity target, SkillEffect effect) =>
+        target.Immune || target.GodMode || BossShrugsOff(target, effect);
+
     /// <summary>Advance placed totems: expire the timed-out ones and pulse the rest at the allies
     /// standing inside them. A totem outlives its owner's DEATH on purpose — it is planted ground,
     /// not a channel, and a totem that vanished the moment the healer fell would be worth least at
@@ -8606,7 +8633,7 @@ public class GameLoopService : BackgroundService
         {
             int atkStat = attacker.EffectiveAtk;
             int defStat = def.DebuffSchool == DebuffSchool.Magical ? victim.EffectiveSpt : victim.EffectiveCon;
-            float land = victim.Immune || BossShrugsOff(victim, effect)
+            float land = ResistsDebuff(victim, effect)
                 ? 0f
                 : StatCalculator.DebuffLandChance(atkStat, defStat,
                                                   RungLevel(attacker, def, lvl), victim.Level);
@@ -10224,7 +10251,7 @@ public class GameLoopService : BackgroundService
                 bool agiBased = (effect & (SkillEffect.Bleed | SkillEffect.Venom)) != 0;
                 int atkStat = agiBased ? (int)caster.EffectiveAgi : caster.EffectiveAtk;
                 int defStat = def.DebuffSchool == DebuffSchool.Magical ? target.EffectiveSpt : target.EffectiveCon;
-                float land = target.Immune || BossShrugsOff(target, effect)
+                float land = ResistsDebuff(target, effect)
                     ? 0f
                     : StatCalculator.DebuffLandChance(atkStat, defStat,
                                                       RungLevel(caster, def, lvl), target.Level);
@@ -10263,8 +10290,10 @@ public class GameLoopService : BackgroundService
             {
                 // Rung level, not caster level — the same input the contested branch above uses, so a
                 // level-1 curse cast by a level-80 mage floors exactly like a level-1 hold does.
-                float fail = def.SureHit ? 0f
-                           : target.Immune ? 1f
+                // BL-81: immunity, god mode and the boss rule outrank SureHit — a debuff that cannot be
+                // resisted by anything at all is not a debuff, it is a scripted event.
+                float fail = ResistsDebuff(target, effect) ? 1f
+                           : def.SureHit ? 0f
                            : StatCalculator.MagicFailChance(RungLevel(caster, def, lvl), target.Level,
                                  target.MagicFailMod,
                                  caster.MagicFailSelfMult,
@@ -10326,7 +10355,19 @@ public class GameLoopService : BackgroundService
             if (target != caster) { offensive = true; DoBlink(caster, target, def.BlinkRangeAt(lvl)); }
             else BlinkAwayFromNearest(caster, Math.Max(1f, def.BlinkRangeAt(lvl)));
         }
-        if (effect.HasFlag(SkillEffect.Knockback)) { offensive = true; DoKnockback(caster, target, def.KnockbackRange); }
+        // BL-81 — a knockback is not a debuff (no roll, no buff, nothing to resist), but shoving
+        // someone across the field against his will is exactly what god mode exists to refuse, and a
+        // BOSS being kited around the map by shoves is the same perma-lock the control immunity blocks.
+        // Both are the two lines the immunity already knows about, asked with the Stun flag because
+        // "takes your position away from you" is the same class of thing as "takes your turn".
+        if (effect.HasFlag(SkillEffect.Knockback))
+        {
+            offensive = true;
+            if (target.GodMode || target.Rank == MobRank.Boss)
+                BroadcastCombat(caster, target, 0, CombatOutcome.Fail, castName);
+            else
+                DoKnockback(caster, target, def.KnockbackRange);
+        }
 
         // ---- Beneficial buffs (any of the buff flags, or a pure MARKER buff — Angel's Protection,
         //      the buffer's party stealth — which carries no stat effect at all) ----
@@ -10881,6 +10922,13 @@ public class GameLoopService : BackgroundService
     private void Dispel(Entity caster, Entity target, SkillDef def, bool positive, string skillName, int lvl = 1)
     {
         if (target.Dead) return;
+        // BL-81 — *"immune to all"*. Stripping an admin's buffs is not a debuff, but it is something
+        // done TO him against his will, so god mode resists it the same way and says so.
+        if (target.GodMode && positive)
+        {
+            BroadcastCombat(caster, target, 0, CombatOutcome.Fail, skillName);
+            return;
+        }
         SkillEffect mask = def.DispelMask;
         int maxRank = def.DispelMaxLevelAt(lvl);
         var cands = target.Buffs.Where(b =>
@@ -12161,13 +12209,20 @@ public class GameLoopService : BackgroundService
     /// read off the SPAWNED entity, so a rank multiplier, a MobMod HP passive and a buff a mob is
     /// standing in are all already counted; neither half is re-derived from the template.</para>
     ///
-    /// <para>Today only the HP half actually moves (rank scales HP and P.Atk, not defence), so this
-    /// reduces to the HP ratio — but the defence term is here because the moment a boss is given real
-    /// defence, its EXP must follow without anyone remembering to come back here.</para>
+    /// <para>✅ THE DEFENCE HALF NOW MOVES. This used to read *"today only the HP half actually moves
+    /// (rank scales HP and P.Atk, not defence) … but the defence term is here because the moment a boss
+    /// is given real defence, its EXP must follow without anyone remembering to come back here"*. BL-13
+    /// gave a rank real defence, and nobody had to come back here: a boss's exp doubled by itself on the
+    /// day its P.Def did. That is the whole reason the term was written before it was needed.</para>
     ///
-    /// <para>⚠ The clamp is a sanity rail against a corrupt spawn, NOT a balance knob: it sits above the
-    /// 100x a field boss legitimately carries, which is exactly the mistake the old 20x cap made. The
-    /// floor keeps a deliberately frail mob from paying nothing at all.</para></summary>
+    /// <para>🔴 THE CLAMP IS NOW ALSO A LOW-LEVEL BOSS EXP CAP, and that is deliberate. It was written
+    /// as *"a sanity rail against a corrupt spawn, NOT a balance knob"*, sitting safely above the 100×
+    /// a flat-multiplier field boss carried. BL-13's HP CURVE changed that: a level-20 boss legitimately
+    /// scores 990 (×495 HP × ×2 defence) and a level-85 one 114, so the rail binds at the bottom of the
+    /// level range and nowhere else. Left at 400 on purpose — uncapped, one level-20 field boss pays a
+    /// nine-man party about five levels EACH, and the rail cuts that to roughly two. Both numbers are
+    /// large; the levelling curve underneath them is `BL-49`, which he ruled *"leave it"* on 2026-08-26.
+    /// If a low-level boss reads as too rich in play, THIS is the number to move, and it is his.</para></summary>
     private static float MobKillTimeRatio(Entity mob)
     {
         float hpRatio = mob.MaxHp / (float)Math.Max(1, MobBaseStats.Hp(mob.Level));
@@ -16399,10 +16454,17 @@ public class GameLoopService : BackgroundService
         // x2.5 — there is no x5 anywhere in the boss path. Taking "x20" literally would be an 8x
         // damage jump, not the 4x his own before/after describes, so this applies his RATIO (x4) to
         // the real base: 2.5 -> 10. If he meant a literal x20, this is a one-number change.
-        float hpMul = rank switch { MobRank.Elite => 4f, MobRank.Boss => 100f, _ => 1f };
-        float atkMul = rank switch { MobRank.Elite => 1.5f, MobRank.Boss => 10f, _ => 1f };
+        //
+        // ⚠ BL-13 MOVED ALL FOUR OF THESE OUT OF HERE. They are MobRankScale now — one copy, read by
+        // this method and by tools/BalanceMatrix, which used to carry a hand-typed duplicate set. The
+        // boss HP multiplier is no longer the flat x100 above: it is a CURVE in the level, because a
+        // flat multiple of a quadratic pool against a flat party DPS made a level-20 boss die in 96
+        // seconds and a level-76 one take 25 minutes. See MobRankScale for the measurement.
+        float hpMul = MobRankScale.Hp(rank, level);
+        float atkMul = MobRankScale.Atk(rank);
+        float defMul = MobRankScale.Def(rank);
         // Flat accuracy by rank — a boss must be able to land on a dodge build.
-        int accFlat = rank switch { MobRank.Boss => 20, _ => 0 };
+        int accFlat = MobRankScale.AccFlat(rank);
 
         // The weapon the creature fights with — it must be known BEFORE RecomputeDerived, because
         // that is where WeaponAttackBase is derived from it. Archer role wins (a bow IS the role),
@@ -16492,6 +16554,8 @@ public class GameLoopService : BackgroundService
         mob.MobHpScale = hpMul;
         mob.MobPAtkScale = atkMul;
         mob.MobMAtkScale = atkMul;
+        mob.MobPDefScale = defMul;
+        mob.MobMDefScale = defMul;
         mob.MobAccFlat = accFlat;
 
         // BL-47 — DRESS a player-built creature. This has to happen before the recompute below, because

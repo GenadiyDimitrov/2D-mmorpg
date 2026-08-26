@@ -1,22 +1,27 @@
-# OPEN CHECKLIST — the 0.81.1 pass
+# OPEN CHECKLIST — the 0.89.0 pass
 
-> **Rolling and unversioned.** §90 is everything built between 0.71.0 and 0.77.0 that you have not
-> played yet. §91 is your six free-form finds from 2026-08-22.
+> **Rolling and unversioned.** §92 is the 0.89.0 boss rework and the three UI changes. §90 is everything
+> built between 0.71.0 and 0.77.0 that you have not played yet. §91 is your six free-form finds from
+> 2026-08-22.
 >
-> 🔑 **PLAYTEST 28 (2026-08-23, your twelve new My Finds) IS ANSWERED IN FULL — eleven built, one
-> answered.** Playtest 27 before it is answered in full too (all five finds and every `->` comment in
-> §90 and §91). What is answered rather than built is marked 🟠 and says why.
+> 🔴 **THE APK IS NEW, AND IT IS THE FIRST ONE SINCE 0.81.1.** Seven versions of work had never reached
+> the phone: the dungeon corridors (0.82.0), the debuff success multiplier (0.83.0), IG's interrupt
+> formula (0.84.0), the 4th-class kit and the eighteen Sigils (0.85.0), the chat-log reader (0.86.0),
+> the NUKER's whole 3rd class (0.87.0), the MP/HP regen rework with the standing stance (0.88.x) and
+> now the boss rework. **`ProtocolVersion` is 28 and unchanged in this build** — so an old client still
+> connects and looks perfectly fine while having none of it. **Install BOTH halves.**
+>
+> 🔴 **BEFORE YOU PLAY: delete `Game.Server/game.db`** (and `-shm`/`-wal`) — owed since the 0.71.0
+> schema change, again since `AccountRole` renumbered (§91d), and again for the chat log table. 0.89.0
+> adds no schema of its own. ⚠ It is in `Game.Server/`, not `bin/Debug/`.
 >
 > **Built for playtest 28:** the mana-restore exploit now reads the **KIT, not the skill book** ·
 > **chat is filed per character** and survives a relog and an app kill · a **chat log table** for
-> moderation · **runes off the buff cap** (the exemption was written down and never reached one) ·
-> the buff details say **which potion** they came from · the NPC buffer cut **19 → your 11** and its
-> window moved to **6-90, free to 75** · buff-potion drops down to **Swift / Alacrity / Fury / Dash**,
-> the other six off the loot tables — shop keeps **Common only**, the **CRAFTER** supplies the Uncommon
-> rung (your correction; and yes, potions are tradable, always were) · tapping your own panel **targets
-> you**, [Char] moved into the bag · a **blunt skill accepts a maul** — and every other weapon gate with
-> it · flat buffs apply **after** percentages · the sound skills **retire Holy Bolt** · an **aqua ring**
-> on a live toggle.
+> moderation, and since 0.86.0 a **`/chatlog` reader** for it · **runes off the buff cap** · the buff
+> details say **which potion** they came from · the NPC buffer cut **19 → your 11** and its window moved
+> to **6-90, free to 75** · buff-potion drops down to **Swift / Alacrity / Fury / Dash** · tapping your
+> own panel **targets you** · a **blunt skill accepts a maul** · flat buffs apply **after** percentages ·
+> the sound skills **retire Holy Bolt** · an **aqua ring** on a live toggle.
 >
 > **Built 2026-08-23 (playtest 27):** city regen ×5→×2 and city-only · stat swaps off the Learn tab ·
 > the **max buff cap at 20** with a per-buff flag (`BL-87`) · mana vamp 3/7/10% → **1/1.5/2%** ·
@@ -24,19 +29,7 @@
 > `/tp`, `/where` for everyone · the buff **level in the effects popup** · the god badge and stealth
 > opacity (0.80.0).
 >
-> 🔴 **THE APK IS STILL NOT BUILT.** `ProtocolVersion` is **25** and a big share of the above is
-> client-side — the chat filing, the self-target, the [Char] button, the toggle ring, and the Learn tab
-> losing Holy Bolt. **Say the word and I will build both halves.**
->
-> 🔴 **STILL NOT BUILT, ON PURPOSE:** `BL-85` (a harmony's rungs share one rank) — `91g`'s first half.
-> And §89's three UI changes (`BL-88`), which ride the next client batch. The chat log has **no reader
-> command** yet → **`BL-89`**, which also carries **two questions only you can answer**: how long to keep
-> the log, and whether staff below admin may read whispers.
->
-> 🔴 **BEFORE YOU PLAY: delete `Game.Server/game.db`** (and `-shm`/`-wal`) — owed since the 0.71.0
-> schema change, again since `AccountRole` renumbered (§91d), and again now for the **chat log table**.
-> ⚠ It is in `Game.Server/`, not `bin/Debug/`. The stale-schema check should recreate it for you on
-> first boot; deleting it by hand is the certain version. **Install BOTH halves.**
+> ✅ `BL-85` (a harmony's rungs share one rank) shipped in 0.78.0 — it is no longer outstanding.
 >
 > ✅ **Your marks go in the repo, not an upload** — that has worked six passes running.
 
@@ -410,6 +403,67 @@ under a full buff set, and **relogging with chat on screen**.
 
 ---
 
+## 92. THE 0.89.0 BOSS REWORK — `BL-13`, `BL-81`, `BL-83`
+
+Everything here is measured, not derived (`dotnet run --project tools/BalanceMatrix`), and the whole
+point of the pass is whether the measurement matches what it FEELS like. Take a party if you can; the
+numbers below assume one.
+
+### A. A boss is 10 to 30 minutes now — is it?
+
+Measured with a tank + healer + 3 DDs in best-for-tier gear: **12 min at level 20 · 16 at 40 · 23 at
+60 · 25 at 76 · 19 at 85.** The old numbers were 1.6 min at 20 and 25 at 76 — the low end is what moved.
+
+- `92a` [ ] - **A LOW-LEVEL field boss (20-40).** This is the biggest change in the build: its HP went
+  up roughly **5×** at 20 and **1.8×** at 40. Does it now read as a set-piece rather than a fat elite? ->
+- `92b` [ ] - **A high-level field boss (76+).** Should feel about as long as it did, because the top
+  of the game was already inside your band. If it feels *longer*, the defence below is why. ->
+- `92c` [ ] - **A boss now has real DEFENCE (×2 P.Def and M.Def) — it had NONE before.** Your hits on it
+  should be visibly smaller than on an elite of the same level, which is the thing that was missing
+  when a boss read as a sponge. ->
+- `92d` [ ] - 🔴 **EXP FROM A LOW-LEVEL BOSS.** Boss exp is derived from kill time, so a boss that now
+  takes 7× longer pays far more. A **level-20** field boss is worth roughly **two levels each to a
+  nine-man party** — and that is WITH a cap already trimming it (uncapped it would be about five). If
+  that reads as too rich, say so: it is one clamp, and it is yours to move. ->
+
+### B. Not one-shotting, but a tank can feel it
+
+🔴 **Boss P.Atk came DOWN from ×10 to ×4 and that is a number of yours I moved** — the reasoning is in
+the 0.89.0 entry of `CHANGELOG.md`, and the short version is that at ×10 a boss killed a robe with an
+ordinary swing at every level from 40 up, and put 752 dps through a shielded Knight while the best
+heal in the game sustains 391. **This is the number most likely to be wrong, so it is the one to
+watch.**
+
+- `92e` [ ] - **Tank a boss.** Unhealed you should live **19-33 seconds**. Healed by one Lightbringer
+  you should hold, but not comfortably — he covers 48-83% of the incoming at his best heal's rate. ->
+- `92f` [ ] - **Does it still feel dangerous?** A basic swing is 6-9% of a tank's bar now (it was
+  15-22%). If a boss reads as harmless, the ×4 goes back up and the heal ladder (`BL-16`) is the other
+  half of the answer. ->
+- `92g` [ ] - **Stand a robe in front of one.** It should survive a basic attack (39-80% of its pool)
+  and should still be deleted by the telegraphed **Devastating Slam** if it stands in the 250 radius —
+  that one is a positioning mistake, not a balance failure. ->
+
+### C. Debuff immunity — `BL-81`
+
+- `92h` [ ] - **God mode: everything is RESISTED, nothing is refused.** Turn god mode on, have someone
+  (or a mob) stun/slow/curse you: the cast must go through, cost its MP, start its cooldown and report
+  **Resisted**. That is deliberate — a refused cast tells you nothing about the skill you are debugging. ->
+- `92i` [ ] - **God mode also resists a dispel and a knockback.** ->
+- `92j` [ ] - **A boss: control is refused, attrition still lands.** Stun/root/fear/slow must all
+  resist; **DoTs, stat-downs on p/m Atk and Def, and regen suppression must still work**. A knockback
+  on a boss now resists too. ->
+
+### D. Taunt is manual — `BL-83`
+
+- `92k` [ ] - **Arm a taunt on the auto bar and save.** It must **NOT** fire, and the moment you save
+  you should be told: *"Auto-hunt cannot cast Taunt — it is for you to press yourself."* ->
+- `92l` [ ] - **`Lure` too** (the rogue pull) — same rule, every threat skill. ->
+- `92m` [ ] - **Everything else on the chain still fires** — heals, mana restores, buffs, debuffs and
+  attacks. The taunt rung was removed from the middle of that ladder, so this is the regression to
+  check. ->
+
+---
+
 ## 91. YOUR SIX FINDS OF 2026-08-22 — five built, 0.78.0
 
 🟢 = built and ready to confirm. Every row is **server-side unless it says otherwise**; the three that
@@ -726,24 +780,19 @@ Six versions of server work. Nothing here has a client tell; it shows up as numb
 - ✅ ~~**The buffer file's completeness**~~ — *"Ok i finished the buffer"*, the `NOT DONE` banner came
   off, and the whole file is built. `--check` is **green on all ten files, for the first time ever.**
 
+### ✅ Closed by your ruling of 2026-08-26
+
+- ✅ ~~**`BL-47` — the yes/no on mobs-as-players**~~ — **YES**: *"Player mobs are hand crafted and field
+  mobs stay on curve. Player mobs are player stats with equipped real items. Pk guards with overechsnted
+  gear and fortress fighting npcs with undergear as we described."* The global curve lever is kept, and
+  `BL-79`/`BL-80` are the roadmap for the hand-placed half — with their gear direction now named too.
+  ⚠ Still uncommented and now harmless: `88a`, whether the level-45 Elder Raider felt too soft beside
+  the level-40 Raider.
+- ✅ ~~**`BL-49` — the levelling curve**~~ — *"well ofc it's lot slower to llv up 85+ than 20... Leave
+  it."* Closed. ⚠ **Read the `BL-13` note in §92 below before you play a low-level boss**, though: the
+  boss HP curve made one take 7× longer, and boss exp is derived from kill time.
+
 ### 🔴 Still yours to rule
-
-- 🔴 **`BL-47` — the ONE question left on mobs-as-players, and it is a yes/no.** You marked the demo
-  *"It works"* and then named its real cost: *"with current mobs we can say 'this one will have x2 hp'
-  and whole the mobs on the field are altered.. while with the pMobs we will alter one and it will be
-  good in the lvl range (+-5) not across the board."* **That is correct and structural** — one function
-  moves every creature; a per-creature loadout has to be re-authored one at a time. But you also named
-  where they *should* go: **town guards** and **fortress sieges**, both hand-placed and few. So:
-  **do ordinary field creatures stay on the `MobBaseStats` curve with ×2 passives, and player-built mobs
-  become a hand-placed CONTENT tool instead of the general pipeline?** Everything already built serves
-  that shape unchanged. Say yes and `BL-79`/`BL-80` are the roadmap.
-  ⚠ **One thing from the demo you never commented on**: `88a`, whether the level-45 Elder Raider felt too
-  soft beside the level-40 Raider. It only matters if a pMob carries a ±5 band at all.
-
-- 🔴 **`BL-49` — the levelling curve, not the boss rule.** One **level-20** field boss is **125% of a
-  level** solo while a level-85 one is **0.1%** — the same 150 trash kills either way. §85j moved the
-  boss multiplier where you asked, and that spread survives it untouched, because it is the EXP curve.
-  ⚠ **`BL-13` sits on top of this**: a boss that takes 3-10× longer carries 3-10× the EXP with it.
 
 - 🔴 **The CC ladder is yours to author** — `90v`'s red half. The attacker's level in the debuff contest
   is the rung's learn level, so every CC skill expires out of usefulness; a rung ladder in the CSVs is
@@ -777,19 +826,21 @@ Six versions of server work. Nothing here has a client tell; it shows up as numb
 
 ---
 
-## 89. PLAYTEST 25'S ROUTING — three UI changes are STILL owed
+## 89. PLAYTEST 25'S ROUTING — ✅ ALL OF IT IS NOW BUILT
 
-The eight finds became `BL-13`, `BL-47`, `BL-78` … `BL-83`; that table lives in
-[docs/Backlog.md](../Backlog.md), and only `BL-78`'s two halves have been built since (`90o`).
+The eight finds became `BL-13`, `BL-47`, `BL-78` … `BL-83`. `BL-78`'s two halves shipped in 0.73.0
+(`90o`), `BL-82` in 0.80.0, and **`BL-13` + `BL-81` + `BL-83` + `BL-88` in 0.89.0** — so the only thing
+left from that pass is `BL-79`/`BL-80`, which are content, not fixes.
 
-**The three UI changes are now `BL-88`** (2026-08-23 — three passes without an id was the problem). Still
-not built; small, client-side, and they ride the next batch:
-- **The target window's title row** — *"only the name of the target. No lvl no target.title, now the
-  [title + name + lvl] overflows"*; the mob title moves down into the `Mob:` row.
-- **The chat window's buttons** — *"decreasing the width of the chat leaves the [combat] button floating
-  in the air - make the buttons smaller or like the icons on the top"*.
-- **The gear picker, second pass** (`87f`) — *"Make the buttons even smaller. Like the tab buttons in
-  height. Also there is no splitter bellow the [S 80] button."*
+**The three UI changes (`BL-88`) are BUILT in 0.89.0** after three passes without an id. Confirm them:
+- `89a` [ ] - **The target frame's title bar is now the NAME only.** The worn title moved down beside
+  the level: `Mob: 44, Field Boss, Aggressive`. Nothing should overflow the frame any more, on any
+  target — check a titled NPC and an elite as well as a plain mob. ->
+- `89b` [ ] - **Shrink the chat window to its narrowest.** The six tab buttons (All/Local/World/PM/
+  System/Combat) must all still sit inside the frame — that row is 488px wide now against a 520
+  minimum. ->
+- `89c` [ ] - **Admin → Equip.** The filter chips are shorter again, and there is a **splitter line**
+  under the tier row (the `[S 80]` one) separating the filters from the gear list. ->
 
 ---
 

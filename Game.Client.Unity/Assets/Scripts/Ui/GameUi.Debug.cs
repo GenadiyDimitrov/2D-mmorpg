@@ -199,6 +199,18 @@ namespace Game.Client
             DebugAction(label, () => Boot.Debug(n => n.DebugGiveAsync(defId, quantity), "give"));
         }
 
+        /// <summary>A horizontal rule in the scrolling column — `87f`'s second pass: *"there is no
+        /// splitter bellow the [S 80] button"*. The chip strips and the list that follows them are the
+        /// same colour, the same width and the same rhythm, so with nothing between them the first row
+        /// of gear reads as one more row of chips. This is the line that says "the filters end here".</summary>
+        private void DebugSeparator()
+        {
+            var rule = UiKit.Box(_debugContent, "Rule", UiKit.Border, blocksInput: false);
+            var le = rule.gameObject.AddComponent<LayoutElement>();
+            le.preferredHeight = 1f;   // the LayoutElement is the height; the Box is only the colour
+            le.minHeight = 1f;
+        }
+
         private void DebugNote(string text)
         {
             var label = UiKit.Label(_debugContent, text, 13f, UiKit.Good);
@@ -234,10 +246,13 @@ namespace Game.Client
                 group.childForceExpandHeight = true;
                 group.childControlWidth = true;
                 group.childControlHeight = true;
-                // 28, not 34 (`87f`, playtest 24: *"just make the selection buttons smaller in height"*).
-                // There are three strips of these above the list and the tier row already wraps to two,
-                // so six chip rows were eating the window before a single item appeared.
-                strip.AddComponent<LayoutElement>().minHeight = 28f;
+                // 24, not 28, not the original 34 — `87f` asked twice. Playtest 24: *"just make the
+                // selection buttons smaller in height"*; playtest 25, having seen 28: *"Make the buttons
+                // even smaller. Like the tab buttons in height."* There are three strips of these above
+                // the list and the tier row already wraps to two, so six chip rows were eating the
+                // window before a single item appeared — this is 60px of gear list bought back.
+                const float chipH = 24f;
+                strip.AddComponent<LayoutElement>().minHeight = chipH;
 
                 int end = Math.Min(start + perRow, options.Count);
                 for (int i = start; i < end; i++)
@@ -245,10 +260,10 @@ namespace Game.Client
                     var (value, label) = options[i];
                     bool on = selected(value);
                     var chip = UiKit.TextButton(strip.transform, on ? "[" + label + "]" : label,
-                                                () => pick(value), 13f);
+                                                () => pick(value), 12f);
                     var le = chip.gameObject.AddComponent<LayoutElement>();
                     le.flexibleWidth = 1f;
-                    le.minHeight = 28f;
+                    le.minHeight = chipH;
                     if (enabled != null && !enabled(value)
                         && chip.GetComponentInChildren<TextMeshProUGUI>() is TextMeshProUGUI t)
                         t.color = UiKit.TextDim;
@@ -348,6 +363,10 @@ namespace Game.Client
                 .ToList();
             DebugChips(levels, l => l == _debugEquipLevel,
                        l => { _debugEquipLevel = l; RefreshDebugPanel(); });
+
+            // `87f` — the splitter under the last chip row ("the [S 80] button"). Everything above it
+            // filters; everything below it is gear you can take.
+            DebugSeparator();
 
             if (_debugEquipLevel == 0)
             {

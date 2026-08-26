@@ -244,6 +244,30 @@ Regen = 0.1%/s of its OWN pool engaged, 5%/s idle          no level term
 `Game.Shared/MobBaseStats.cs` · `docs/balance/MobCurveVsIG.md` · CSV dump:
 `dotnet run --project tools/BalanceMatrix -- --dump-mob-csv`
 
+## Rank (elite / boss)
+
+Applied on top of the base curves above, recorded on the entity and re-applied after **every**
+recompute (never multiplied in place).
+
+```
+            HP                       PAtk/MAtk   PDef/MDef   Accuracy
+Elite       x4                       x1.5        x1.33       +0
+Boss        43000 / L^1.49  (min 20) x4          x2.0        +20
+Contest     StatCaps.CcRankMult:     Elite x1.33, Boss x2.0   (CON/SPT/ATK, the debuff roll)
+```
+
+- ⚠ The BOSS HP multiplier is a **curve, not a number**: the base pool is quadratic in L while a
+  party's DPS is flat across the game, so a flat multiple made time-to-kill grow with `L²`. This one
+  lands every level in the 600-1800s band (12-25 min for a 5-man).
+- Time-to-kill ∝ `HP x defence`, and **boss EXP is derived from that product** — so giving a rank
+  defence doubled its exp with no exp number edited. That ratio is clamped at 400, which now binds at
+  low level and is doing duty as a low-level boss exp cap.
+- A boss is immune to `SkillEffect.ControlCc` and to knockback; attrition (DoT, stat-down, regen
+  suppression) lands normally. God mode resists **everything**, as a resist, never as a refusal.
+
+`Game.Shared/MobRankScale.cs` · `GameLoopService.BuildMob` · `Entity.ApplyMobScale` ·
+measured by `dotnet run --project tools/BalanceMatrix` (the two `BL-13` tables)
+
 ## Drop rates
 
 ```
@@ -263,6 +287,7 @@ or the kill roll and the number the player is shown will disagree.
 | every ceiling and tuning constant | `Game.Shared/StatCaps.cs` |
 | the combat maths itself | `Game.Shared/StatCalculator.cs` |
 | mob curves | `Game.Shared/MobBaseStats.cs` |
+| elite / boss rank multipliers | `Game.Shared/MobRankScale.cs` |
 | HP/MP growth per archetype | `Game.Shared/Classes.cs` |
 | exp curve | `Game.Shared/ExpCurve.cs` · `docs/balance/ExpCurve.md` |
 | skill range tiers, the MP split | `SkillMath` in `Game.Shared/Skills/Skills.cs` |

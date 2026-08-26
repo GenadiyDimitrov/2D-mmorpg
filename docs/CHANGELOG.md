@@ -7,12 +7,132 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.88.2**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.89.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-08-26 (latest) — 0.88.2: the HP half of `BL-92`, and the mage stops out-regenerating the tank
+## 2026-08-26 (latest) — 0.89.0: a boss becomes a boss — `BL-13` + `BL-81` + `BL-83` + `BL-88`
+
+Four entries, one build, and the first APK since **0.81.1** — seven versions of server work had never
+reached the phone.
+
+### `BL-13` — 10 to 30 minutes, and a boss that is felt
+
+His playtest-25 ruling was three sentences and every one of them was a separate defect.
+
+**1. *"A 3 min boss is not a boss its a stronger elite mob."*** A boss's HP was a **flat ×100**
+multiple of the level curve. That curve is quadratic (`40 + 0.8·L²`) while a party's DPS is roughly
+**flat** across the game, because gear tracks level — so time-to-kill grew with the SQUARE of the
+level, and it measured exactly that way: **96s at level 20** against **1514s at 76**. The bottom of the
+game was 6× too fast, and no single number could fix that without pushing the top out of his own
+600–1800s band.
+
+So the multiplier is now a **curve**, `43000 / L^1.49`, living in the new
+`Game.Shared/MobRankScale.cs`. Measured against his own party — tank + healer + 3 DDs, best-for-tier
+gear, runes up:
+
+| Lvl | HP × | boss HP | party dps | TTK | |
+|---|---|---|---|---|---|
+| 20 | ×495 | 178,334 | 253 | **704s** | 12 min |
+| 40 | ×176 | 232,794 | 249 | **936s** | 16 min |
+| 60 | ×96 | 281,453 | 205 | **1376s** | 23 min |
+| 76 | ×68 | 315,821 | 208 | **1515s** | 25 min |
+| 85 | ×57 | 333,854 | 292 | **1144s** | 19 min |
+
+Every level inside the band, and rising — his *"the target rises"*. (85 dips because the party's own
+damage jumps there: S grade lands at 80. That is player gear, not the boss curve.)
+
+**2. *"Bosses should have stronger defences."*** They had **none**. A rank scaled HP and attack and not
+one point of defence, so a "boss" wore exactly the paper armour of the trash around it with a hundred
+times the health bar — which is the mechanical reason a boss read as a **sponge** rather than as
+something armoured. A rank now carries a defence multiplier: elite ×1.33, boss ×2.0, deliberately the
+same ladder the control contest already uses, because a creature twice as hard to hold should be twice
+as hard to cut.
+
+⚠ It also paid for itself: boss EXP derives from `HP × defence`, so **doubling a boss's defence doubled
+its exp with nobody editing an exp number**. That term was written a month ago against exactly this day.
+
+**3. *"Not one shooting but a tank can feel it"* + *"a healer, tank and dds in a party are a must"*.**
+🔴 **Boss P.Atk came DOWN, ×10 → ×4, and that is a number of yours I am moving.** Two reasons, and the
+second is the one that settles it:
+
+- The ground moved under it. The ×10 is playtest-20's *"P.Atk from x5 -> x20"*, taken as your ratio off
+  the base of the day — and **0.73.0 refitted the creature attack curve ~×1.65 upward**, so ×10 today
+  is ~×16.5 in the units you ruled in. Your own ratio, in today's units, is about ×6.
+- **Your party clause makes ×10 unpayable.** Measured at 76, a boss put **752 dps through a shielded
+  Knight while a Lightbringer's best heal sustains 391**. The party you prescribe loses its tank in
+  **thirteen seconds** — a 10-to-30-minute fight was not merely hard, it was arithmetically impossible.
+  And a boss's ordinary swing killed a **robe twice over** at every level from 40 up, which is *"one
+  shooting"* in the plainest sense of your words.
+
+At ×4 the boss sits between both walls at every level: an unhealed tank dies in **19–33s**, the healer
+covers the incoming at **48–83%** of his ceiling, and a robe survives one basic hit (39–80% of its
+pool).
+
+**BalanceMatrix measures all of this now** — a real five-man party, the tank's **shield** inside the
+incoming number, and the healer wearing his actual **Lightbringer** kit instead of a 2nd-class heal
+ladder that stopped at level 35. It also stopped keeping a hand-typed copy of the four rank
+multipliers: it reads `MobRankScale`, the same code `BuildMob` spawns with, so the tool and the game
+can no longer disagree without either being edited.
+
+🔴 **One number is yours.** The kill-time ratio that pays a boss's exp is clamped at 400, written as
+*"a sanity rail against a corrupt spawn, NOT a balance knob"*. The HP curve made it bind: a level-20
+boss legitimately scores 990. It is left at 400 on purpose — uncapped, one level-20 field boss pays a
+nine-man party about **five levels each**, and the rail cuts that to roughly two. Both numbers are
+large. If a low-level boss reads as too rich in play, that clamp is the number to move.
+
+### `BL-81` — god mode is absolute, a boss is not
+
+Two rules, one gate (`ResistsDebuff`), so no resolution path can pick up two of them and miss the third.
+
+- **God mode now resists every debuff.** It only blocked *damage* before, so an admin in god mode could
+  still be stunned, slowed, cursed and dispelled. 🔑 Built as a **resist, not a refusal**, which is your
+  clause read literally (*"can be used on him but resisted"*): the cast resolves, the MP is paid, the
+  cooldown starts, and the combat line says Resisted — so the skill you turned god mode on to debug is
+  still testable. Cancel/dispel and knockback are refused the same way.
+- **A boss is immune to CONTROL only.** That half shipped on 2026-08-19 and is folded into the same
+  gate. Attrition still lands, exactly as you wrote it: stat-downs on the four attack/defence stats,
+  DoTs, regen suppression. Knockback joined the control side — a boss shoved around the field is the
+  same perma-lock the immunity exists to prevent.
+
+### `BL-83` — a taunt can never be automated again
+
+*"I think remove the taunt as being able to be auto. I feel it like an exploit. Get a tank leave it
+auto he taunts almost impossible to kill you farm with ur other hero. Taunt should be active play
+only."* This **reverses** the rung 0.68.0 gave taunts three days earlier — but as a **removal**, not a
+revert. 0.68.0's diagnosis was right: a pure taunt carries neither `ContestCc` nor a `DebuffSchool`, so
+every branch missed it and it fell into the never-cast bucket **by accident**. It goes back to that
+bucket **deliberately**, and the good half of 0.68.0 survives — an armed row the chain cannot cast is
+still reported the moment you save, so an armed Provoke now says *it is for you to press yourself*
+instead of looking like the same silent bug you reported.
+
+⚠ Asked **before** the damage test, unlike the old rung, so a taunt that also hits cannot smuggle its
+threat into the attack rotation. It covers `Provoke`, `Lure` and any 40+ taunt your kits add — you
+named no exception, and a tank's kit is where an exception would live.
+
+### `BL-88` — the three UI changes from playtest 25, three passes late
+
+- **The target frame's title bar is the NAME and nothing else** — *"no lvl no target.title, now the
+  [title + name + lvl] overflows"*. The level moved down in playtest 23; the worn **title** now joins it
+  in the detail row, keeping its colour: `Mob: 44, Field Boss, Aggressive`. A phone frame is a fixed
+  width, and one variable-length thing is the only count that cannot be made to overflow it.
+- **The chat tab row fits at the window's minimum width.** It was six 96px buttons on a 100px step —
+  608px of row inside a window you are allowed to shrink to 520, so the `[Combat]` button hung outside
+  the frame with nothing behind it. 76 on an 80 step is 488.
+- **The gear picker, second pass** — chips 28 → **24** high (*"even smaller. Like the tab buttons in
+  height"*) and the **splitter** under the `[S 80]` row that was missing, so the filter chips stop
+  reading as the first rows of the list.
+
+### Also
+- ⚠ **NEW APK — and `ProtocolVersion` is UNCHANGED at 28**, so an old client still connects and looks
+  fine while missing every client-side change from 0.82.0 onward. Install both halves.
+- No schema change in this build; the `game.db` delete owed from the earlier ones still stands.
+- `BL-47` and `BL-49` closed on your rulings of 2026-08-26 — field creatures stay on the
+  `MobBaseStats` curve, player-built ones are a hand-placed content tool, and the levelling curve is
+  left alone. `BL-93` opened for the visual pass you want to talk about.
+
+## 2026-08-26 — 0.88.2: the HP half of `BL-92`, and the mage stops out-regenerating the tank
 
 The half he held two versions ago. He supplied IG's own HP-regen reference — base **1.5–3.0 by race
 and class**, a CON modifier anchored at **CON 30 → 1.00 / CON 43 → 1.32**, and

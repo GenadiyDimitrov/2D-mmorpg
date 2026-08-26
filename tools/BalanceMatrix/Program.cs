@@ -2098,31 +2098,84 @@ Console.WriteLine("  BOW is x1.00 on purpose: MobRole.Archer already pays the sa
 Console.WriteLine("     450 range, less P.Def), and charging his one sentence twice would make archers ~3x per arrow.");
 Console.WriteLine();
 
-Console.WriteLine("=== BL-13: BOSS PACE — does a field boss last his six minutes? ===");
-Console.WriteLine("  rank multipliers are BuildMob's own: Elite HP x4 / P.Atk x1.5; Boss HP x100 / P.Atk x10, Acc +20.");
-Console.WriteLine($"{"Lvl",4} {"rank",6} {"boss HP",10} {"1 DD dps",9} {"3-DD dps",9} {"TTK",9} {"target",8} {"HP x needed",12}");
+Console.WriteLine("=== BL-13: BOSS PACE — 10 to 30 minutes, for a REAL party ===");
+Console.WriteLine("  His band is 600-1800s and *\"the target rises\"*. The party is his own: a tank, a healer");
+Console.WriteLine("  and three DDs (2 champions + 1 nuker), all in best-for-tier gear with runes up.");
+Console.WriteLine("  Rank multipliers come from MobRankScale — the SAME code BuildMob spawns with.");
+Console.WriteLine($"{"Lvl",4} {"rank",6} {"HP x",7} {"boss HP",10} {"P.Def",7} {"party dps",10} {"TTK",8} {"band",14}");
 foreach (int L in new[] { 20, 40, 60, 76, 85 })
 {
-    var dd = BuildPlayer(Race.Human, BaseClass.Fighter, L, warrior: true);
-    foreach (var (rankName, hpMul, atkMul, accFlat) in
-             new[] { ("Elite", 4f, 1.5f, 0), ("Boss", 100f, 10f, 20) })
+    var party = BuildBossParty(L);
+    foreach (var rank in new[] { MobRank.Elite, MobRank.Boss })
     {
-        var boss = BuildMobEntity(L);
-        boss.MobHpScale = hpMul; boss.MobPAtkScale = atkMul; boss.MobMAtkScale = atkMul;
-        boss.MobAccFlat = accFlat;
-        boss.RecomputeDerived();   // the whole point of playtest-20 #7: the scale must survive a recompute
-
-        float one = Dps(dd, boss);
-        float three = one * 3f;
-        float ttk = boss.MaxHp / Math.Max(0.01f, three);
-        // His target applies to the BOSS rank only; an elite is a trash-plus, not a set piece.
-        float bossTarget = rankName == "Boss" ? 360f : 0f;
-        string need = bossTarget > 0f ? "x" + (bossTarget / Math.Max(0.01f, ttk) * hpMul).ToString("0") : "-";
-        Console.WriteLine($"{L,4} {rankName,6} {boss.MaxHp,10} {one,9:F0} {three,9:F0} "
-            + $"{ttk,8:F0}s {(bossTarget > 0 ? bossTarget + "s" : "-"),8} {need,12}");
+        var boss = SpawnRanked(L, rank);
+        float dps = PartyDps(party, boss);
+        float ttk = boss.MaxHp / Math.Max(0.01f, dps);
+        string band = rank != MobRank.Boss ? "-"
+            : ttk < 600f ? "TOO FAST" : ttk > 1800f ? "TOO SLOW" : $"ok ({ttk / 60f:F0} min)";
+        Console.WriteLine($"{L,4} {rank,6} {"x" + MobRankScale.Hp(rank, L).ToString("0"),7} {boss.MaxHp,10} "
+            + $"{(int)boss.EffectiveDefence,7} {dps,10:F0} {ttk,7:F0}s {band,14}");
     }
 }
-Console.WriteLine("  'HP x needed' = the rank HP multiplier that would put a 3-DD party at exactly 360s.");
+Console.WriteLine("  ⚠ Party DPS is a CEILING — no downtime, no deaths, no adds, no phases, no running back in.");
+Console.WriteLine("     A real fight is slower, so a boss measured at the FLOOR of the band plays inside it.");
+Console.WriteLine();
+
+// ---------------------------------------------------------------------------------------------
+// BL-13, the other two clauses. *"stronger defences, more atk (not one shooting but a tank can feel
+// it)"* and *"A healer, tank and dds in a party are a must"*. Neither is a time; both are a BAND, and
+// a band needs two ends measured:
+//
+//   • ONE-SHOT — the boss's biggest single blow as a share of the victim's pool. Over ~90% of a robe
+//     is a delete; under ~15% of a tank is a boss that cannot be felt. Both ends are failures.
+//   • MANDATORY HEALER — the boss must out-damage what a tank sustains ALONE (his own regen), or the
+//     healer is decoration. And the healer must be able to hold him up, or the party cannot win at
+//     all. So the boss's damage on the tank has to sit BETWEEN tank regen and healer throughput.
+// ---------------------------------------------------------------------------------------------
+Console.WriteLine("=== BL-13: IS A PARTY MANDATORY? — the boss's damage against a tank, a robe and a healer ===");
+Console.WriteLine("  The BASIC attack is the unavoidable channel and is what \"one shooting\" means. The SLAM is a");
+Console.WriteLine("  3s telegraphed AoE in 250 — a robe caught in it made a positioning mistake, not a balance one.");
+Console.WriteLine("  \"a tank can feel it\" is measured as TIME, not as a share of one blow: how long the tank");
+Console.WriteLine("  lives with nobody healing him. Over a minute and the boss is scenery.");
+Console.WriteLine($"{"Lvl",4} {"basic→tank",11} {"%tank",6} {"basic→robe",11} {"%robe",6} {"slam→robe",10} {"%robe",6} "
+    + $"{"dps→tank",9} {"unhealed",9} {"heal/s",7} {"verdict",24}");
+foreach (int L in new[] { 20, 40, 60, 76, 85 })
+{
+    var tank   = BuildPlayer(Race.Human, BaseClass.Fighter, L);                 // Knight: shield + heavy
+    var robe   = BuildPlayer(Race.Human, BaseClass.Mage, L);                    // Sorcerer: the squishiest
+    var healer = BuildPlayer(Race.Human, BaseClass.Mage, L, healer: true,
+                             discipline: Discipline.Lightbringer);
+    var boss   = SpawnRanked(L, MobRank.Boss);
+
+    int hitTank = BasicHit(boss, tank);
+    int hitRobe = BasicHit(boss, robe);
+    int slamRobe = BiggestHit(boss, robe);
+    // SUSTAINED damage on the tank, with the SHIELD in it. Neither Dps() nor the rest of this tool
+    // models block — everywhere else it is measuring a player's OUTPUT, where the defender is a mob
+    // and mobs carry no shield. Here the defender is a Knight, and leaving his shield out overstates
+    // what the healer has to cover by the whole block channel.
+    float onTank = Dps(boss, tank) * BlockFactor(boss, tank);
+    // Standing and fighting = the Run stance (x1.0). The flats sit OUTSIDE the multipliers since BL-92.
+    float tankRegen = StatCalculator.HpRegenPerSecond(tank.EffectiveCon, L) * tank.HpRegenMult
+                      + tank.HpRegenBonus;
+    float hps = HealerHps(healer);
+
+    // How long the tank lives with NOBODY healing him — his own regen is all he has.
+    float net = onTank - tankRegen;
+    float unhealed = net <= 0f ? float.PositiveInfinity : tank.MaxHp / net;
+    string verdict =
+        hitRobe >= robe.MaxHp ? "ONE-SHOTS A ROBE"
+        : hitTank * 100f / tank.MaxHp > 50f ? "two-shots the TANK"
+        : unhealed > 60f ? "a tank cannot feel it"
+        : hps < onTank ? "healer alone cannot hold"
+        : "healer needed + enough";
+    Console.WriteLine($"{L,4} {hitTank,11} {hitTank * 100f / tank.MaxHp,5:F0}% {hitRobe,11} "
+        + $"{hitRobe * 100f / robe.MaxHp,5:F0}% {slamRobe,10} {slamRobe * 100f / robe.MaxHp,5:F0}% "
+        + $"{onTank,9:F0} {(float.IsInfinity(unhealed) ? "never" : unhealed.ToString("F0") + "s"),9} "
+        + $"{hps,7:F0} {verdict,24}");
+}
+Console.WriteLine("  'healer hps' is the top heal on its own cycle — NOT MP-limited, so it is also a ceiling.");
+Console.WriteLine("  A boss that a tank out-regens is a boss with no party requirement at all, whatever its HP.");
 Console.WriteLine();
 
 // ---------------------------------------------------------------------------------------------
@@ -2140,12 +2193,15 @@ Console.WriteLine($"{"Lvl",4} {"rank",6} {"trash exp",11} {"rank exp",13} {"exp 
 foreach (int L in new[] { 20, 40, 60, 76, 85, 89, 90 })
 {
     long trashExp = StatCalculator.MobExpReward(L);
-    foreach (var (rankName, rank, hpMul, atkMul) in new[]
-             { ("Elite", MobRank.Elite, 4f, 1.5f), ("Boss", MobRank.Boss, 100f, 10f) })
+    foreach (var rank in new[] { MobRank.Elite, MobRank.Boss })
     {
-        var mob = BuildMobEntity(L);
-        mob.MobHpScale = hpMul; mob.MobPAtkScale = atkMul; mob.MobMAtkScale = atkMul;
-        mob.RecomputeDerived();
+        // BL-13 — the rank's own scales, including the DEFENCE term it gained. That term feeds
+        // straight into the exp below through defRatio, which is the right answer and is also his
+        // `85j` park resolving itself: a boss that takes longer to kill pays more, with no separate
+        // ruling and no authored number anywhere.
+        string rankName = rank.ToString();
+        var mob = SpawnRanked(L, rank);
+        float hpMul = MobRankScale.Hp(rank, L);
 
         // The same two factors the server applies — kept as literals here on purpose: this tool must
         // be able to DISAGREE with the server, or it cannot catch the server drifting.
@@ -4291,8 +4347,13 @@ static int TopPhysSkillPower(Entity e)
 /// (warrior), whose kit is the damage-dealing one.</param>
 /// <param name="healer">Mages default to the SORCERER (nuker) 2nd class; set this for the CLERIC,
 /// who takes the healer kit and — since the 2026-08-20 mastery fork — a WAND, not a staff.</param>
+/// <param name="discipline">BL-13 — take the 3rd class too, where one is authored. Left null by every
+/// existing caller ON PURPOSE: only four discipline kits exist, so making it the default would measure
+/// four classes at 40+ and the other six at their 2nd-class ceiling, which is worse than measuring all
+/// ten at the ceiling. The boss party passes Lightbringer, because a level-40+ healer really is one and
+/// his heal ladder above 35 is the whole difference between "the healer can hold" and "he cannot".</param>
 static Entity BuildPlayer(Race race, BaseClass cls, int level, string? quality = null, bool warrior = false,
-                          bool healer = false)
+                          bool healer = false, Discipline? discipline = null)
 {
     var s = StatCalculator.GetBaseStats(race, cls);
     var e = new Entity { Name = "calc", Kind = EntityKind.Player };
@@ -4305,6 +4366,12 @@ static Entity BuildPlayer(Race race, BaseClass cls, int level, string? quality =
     // 18 = Sorcerer (nuker), 13 = Knight (tank), 14 = Champion (warrior).
     // 17 = Human Cleric (healer).
     if (level >= 20) e.SecondClass = cls == BaseClass.Mage ? (healer ? 17 : 18) : warrior ? 14 : 13;
+    // The 3rd class, when the caller asked for one and the character is old enough to hold it. It must
+    // be set BEFORE the Cumulative loop below: the lookup keys on (race, class, archetype, discipline),
+    // so a discipline assigned afterwards teaches nothing.
+    if (discipline is { } d && level >= ThirdClassCatalog.ChangeLevel
+        && ThirdClassCatalog.Playable.FirstOrDefault(c => c.Race == race && c.Discipline == d) is { } tc)
+        e.ThirdClass = tc.Id;
 
     // Every skill the class table teaches by this level, at the highest level learnable.
     //
@@ -4366,6 +4433,101 @@ static Entity BuildPlayer(Race race, BaseClass cls, int level, string? quality =
 
     e.RecomputeDerived();
     return e;
+}
+
+// ---------------------------------------------------------------------------------------------
+//  BL-13 — the party a boss is measured against, and the boss it is measured on.
+//
+//  🔑 SpawnRanked reads MobRankScale, which is the SAME code GameLoopService.BuildMob spawns with.
+//  This tool used to carry a hand-typed copy of the four rank multipliers in two separate places, so
+//  the measurement and the game could disagree without either being touched. What the tool must NOT
+//  share is the derived arithmetic below it (exp ratios, time-to-kill) — that is what lets it catch
+//  the server drifting.
+// ---------------------------------------------------------------------------------------------
+static Entity SpawnRanked(int level, MobRank rank)
+{
+    var m = BuildMobEntity(level);
+    m.Rank = rank;
+    m.MobHpScale = MobRankScale.Hp(rank, level);
+    m.MobPAtkScale = m.MobMAtkScale = MobRankScale.Atk(rank);
+    m.MobPDefScale = m.MobMDefScale = MobRankScale.Def(rank);
+    m.MobAccFlat = MobRankScale.AccFlat(rank);
+    // A boss fights with its kit, not with its fists — BuildMob teaches every boss the telegraphed
+    // slam when its template has no BossProfile of its own. Leaving it out measured a boss swinging
+    // bare-handed and understated what a tank has to survive.
+    if (rank == MobRank.Boss) m.LearnedSkills[SkillCatalog.BossSlamSkill] = 1;
+    m.RecomputeDerived();   // playtest-20 #7: a rank must survive a recompute
+    return m;
+}
+
+/// <summary>His party, verbatim: *"A healer, tank and dds in a party are a must"*. Tank, healer and
+/// three damage dealers (two champions and a nuker — the mix a real group brings).</summary>
+static Entity[] BuildBossParty(int level) => new[]
+{
+    BuildPlayer(Race.Human, BaseClass.Fighter, level),                  // TANK   (Knight: shield + heavy)
+    BuildPlayer(Race.Human, BaseClass.Mage,    level, healer: true,
+                discipline: Discipline.Lightbringer),                   // HEALER (Cleric → Lightbringer)
+    BuildPlayer(Race.Human, BaseClass.Fighter, level, warrior: true),   // DD
+    BuildPlayer(Race.Human, BaseClass.Fighter, level, warrior: true),   // DD
+    BuildPlayer(Race.Human, BaseClass.Mage,    level),                  // DD     (Sorcerer)
+};
+
+/// <summary>What the party puts INTO the boss. The healer contributes nothing: he is casting heals,
+/// which is the entire reason he is standing there — counting his nukes would measure a party that is
+/// not being healed, which is the party the old 3-DD ceiling already measured.</summary>
+static float PartyDps(Entity[] party, Entity target)
+{
+    float sum = 0f;
+    foreach (var p in party)
+        if (p.SecondClass != 17) sum += Dps(p, target);   // 17 = Human Cleric
+    return sum;
+}
+
+/// <summary>What a SHIELD is worth against this attacker, as a damage multiplier. A crit ignores the
+/// shield entirely (GameLoopService.ResolvePhysical), so only the non-crit share can be blocked, and a
+/// block removes BlockReduction of the blow. Physical only — magic is never blocked, by design.</summary>
+static float BlockFactor(Entity atk, Entity def)
+{
+    if (!def.HasShield) return 1f;
+    float block = Math.Clamp(def.BlockChance, 0f, StatCaps.BlockChance);
+    return 1f - (1f - atk.CritChance) * block * def.BlockReduction;
+}
+
+/// <summary>ONE basic attack, non-crit. The channel nobody can dodge, walk out of or interrupt — so
+/// this, not the telegraphed skill, is what *"not one shooting"* has to be measured on.</summary>
+static int BasicHit(Entity atk, Entity def) =>
+    StatCalculator.PhysicalDamage((int)atk.EffectiveBasicAttack, 0,
+        Math.Max(1, (int)def.EffectiveDefence), atk.Level);
+
+/// <summary>The biggest SINGLE blow this attacker can land — basic or skill. Non-crit on purpose:
+/// a crit is variance on top, and a boss that one-shots only on a crit is a different complaint.</summary>
+static int BiggestHit(Entity atk, Entity def)
+{
+    int pDef = Math.Max(1, (int)def.EffectiveDefence);
+    int mDef = Math.Max(1, (int)def.EffectiveMagicDefence);
+    int best = StatCalculator.PhysicalDamage((int)atk.EffectiveBasicAttack, 0, pDef, atk.Level);
+    var (ps, pl) = TopSkill(atk, SkillEffect.PhysicalDamage);
+    if (ps is not null)
+        best = Math.Max(best, StatCalculator.PhysicalDamage((int)atk.EffectiveAttack, ps.PowerAt(pl), pDef, atk.Level));
+    var (ms, ml) = TopSkill(atk, SkillEffect.MagicDamage);
+    if (ms is not null)
+        best = Math.Max(best, StatCalculator.MagicDamage((int)atk.EffectiveMagicAttack, ms.PowerAt(ml), mDef, atk.Level));
+    return best;
+}
+
+/// <summary>The healer's sustained output: his best flat heal on its own cycle. A CEILING — it ignores
+/// the MP bar, ignores travel and ignores the fact that he also has to move.</summary>
+static float HealerHps(Entity healer)
+{
+    float best = 0f;
+    foreach (var (id, lvl) in healer.LearnedSkills)
+    {
+        var d = SkillCatalog.Get(id);
+        if (d is null || (d.Effect & SkillEffect.Heal) == 0 || d.PlacesTotem) continue;
+        float amount = SkillMath.HealAmount(d.PowerAt(lvl), healer.HealPowerFlat, healer.HealPowerMod);
+        best = Math.Max(best, amount / Math.Max(0.1f, SkillCycleSeconds(healer, d)));
+    }
+    return best;
 }
 
 static void Equip(Entity e, string defId)

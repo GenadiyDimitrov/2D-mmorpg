@@ -1,5 +1,20 @@
 # Mobs built like players — `G3` / `BL-47`
 
+> ## ✅ ANSWERED, 2026-08-26 — and the answer splits the work in two
+>
+> *"yes. Player mobs are hand crafted and field mobs stay on curve. Player mobs are player stats with
+> equipped real items. Pk guards with overechsnted gear and fortress fighting npcs with undergear as
+> we described."*
+>
+> That settles §8-B and the open question §6 was overturned into: **ordinary field creatures keep the
+> `MobBaseStats` curve with `MobMod` passives** — the global lever you did not want to lose is kept —
+> **and player-built creatures become a hand-placed CONTENT tool**, never the general pipeline. There
+> is no migration and there will not be one.
+>
+> The roadmap for the built half is now `BL-79` (town/field PK guards, **over-enchanted**) and `BL-80`
+> (fortress NPCs, **under-geared**), with their gear direction named in the same sentence. Everything
+> measured below stands unchanged; what changes is only where it gets used.
+
 **Status: this is step 1 of three, and step 1 is a DOCUMENT, not code.** Your own order, 2026-08-06
 (playtest-19 `0f`): *"I want it documented and balance matrix tables. So I can make comparisons. And
 later we can do 2~5 mobs so I can test."*
@@ -380,8 +395,12 @@ staff and a mage class curve already make it a caster).
   **War Rune**, which is ×2.00 of the ×4.04 attack gap at level 60 — the cheapest lever in this document.
 - ✅ **B4. Balance against NORMAL mobs; elite and boss scale on top.** *"a elite and bosses will scale with
   passives out of them ... I just made the comparison with one elite mob."* 🔑 **For the record, since you
-  could not remember it: `GameLoopService.cs:14014` — Elite = HP ×4 / ATK ×1.5, Boss = HP ×100 / ATK ×10.**
-  Neither the ×2 nor the ×10 you guessed, and your *"twice less p atk"* reading was against that ×1.5.
+  could not remember it: Elite = HP ×4 / ATK ×1.5, Boss = HP ×100 / ATK ×10.** Neither the ×2 nor the
+  ×10 you guessed, and your *"twice less p atk"* reading was against that ×1.5.
+  ⚠ **THOSE NUMBERS MOVED IN 0.89.0 (`BL-13`)** and they no longer live in `GameLoopService` at all:
+  they are `Game.Shared/MobRankScale.cs` now — boss HP is a **curve** (`43000 / L^1.49`, ×495 at level
+  20 down to ×57 at 85), boss ATK is **×4**, and a rank finally carries **defence** (elite ×1.33, boss
+  ×2.0). Everything below still holds: the comparison is against the NORMAL curve either way.
   ✅ **`G3.1`-`G3.7` already measure against `MobBaseStats`, the NORMAL curve** — rank multipliers are
   applied at spawn — so every number in this document already obeys the instruction.
   ⏳ Your *"scale with passives out of them"* implies those hardcoded rank multipliers should become

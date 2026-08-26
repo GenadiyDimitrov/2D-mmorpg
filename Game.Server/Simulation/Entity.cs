@@ -1628,8 +1628,9 @@ public class Entity
     public bool AutoAssistLeader { get; set; }
     /// <summary>Cyclic cursor per priority group (index into AutoSkills of the LAST one cast, +1).
     /// Indexed by <c>(int)AutoSkillKind</c>; reset whenever the config changes.
-    /// ⚠ Sized to the enum — <c>MpHeal</c> (BL-67) made it 6.</summary>
-    public int[] AutoChainCursor { get; } = new int[7];
+    /// ⚠ Sized to the enum — <c>MpHeal</c> (BL-67) made it 6, and BL-83 removing the Taunt rung
+    /// brought it back to 6 from 7. An index out of range here is a rung nobody widened for.</summary>
+    public int[] AutoChainCursor { get; } = new int[6];   // one slot per AutoSkillKind (BL-83 took one away)
     /// <summary>Disconnected but still auto-hunting in the world (no connection = no UI pushes).</summary>
     public bool IsOfflineFarming { get; set; }
     /// <summary>Link-dead grace: connection lost while out of combat + not auto-farming. Frozen in
@@ -1772,6 +1773,13 @@ public class Entity
     public float MobHpScale { get; set; } = 1f;
     public float MobPAtkScale { get; set; } = 1f;
     public float MobMAtkScale { get; set; } = 1f;
+    /// <summary>BL-13 — the rank's DEFENCE multiplier, the term a rank never had. A boss used to be
+    /// HP and attack only, so it wore the same paper armour as the trash around it: a hundred times
+    /// the health bar and not one point of extra defence, which is the mechanical reason a boss fight
+    /// read as a sponge. Set from <see cref="MobRankScale.Def"/>; a template's own MobMod.PDef/MDef
+    /// still lands on top, exactly like the HP and attack scales above.</summary>
+    public float MobPDefScale { get; set; } = 1f;
+    public float MobMDefScale { get; set; } = 1f;
     /// <summary>Rank accuracy is FLAT and lands after the template's Accuracy multiplier, so a boss
     /// gets its +20 whole rather than scaled by whatever passive the template happens to carry.</summary>
     public int MobAccFlat { get; set; }
@@ -2954,6 +2962,11 @@ public class Entity
         AttackPower = Math.Max(1, (int)(AttackPower * MobPAtkScale));
         MagicAttack = Math.Max(1, (int)(MagicAttack * MobMAtkScale));
         BasicAttackPower = Math.Max(1, (int)(BasicAttackPower * MobPAtkScale));
+        // BL-13 — and the rank's DEFENCES with them, which a rank never had. Applied BEFORE the
+        // template's own MobMod so a hand-tuned armoured brute multiplies the rank rather than
+        // being diluted by it — the same order the attack scales above already run in.
+        Defence = Math.Max(1, (int)(Defence * MobPDefScale));
+        MagicDefence = Math.Max(1, (int)(MagicDefence * MobMDefScale));
 
         var mobType = MobTypeId is { } id ? MobCatalog.Get(id) : null;
 

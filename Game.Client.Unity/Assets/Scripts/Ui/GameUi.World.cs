@@ -863,21 +863,31 @@ namespace Game.Client
             // Tabs. "PM" rather than "Whisper": the row has five buttons across 760px on a phone, and
             // every MMO player already reads PM. The SIXTH, Combat, is not one of them — it opens the
             // combat window (D5) and sits in the row because that is where you would look for it.
+            //
+            // 🔴 BL-88 — THE ROW MUST FIT AT THE WINDOW'S MINIMUM WIDTH. Playtest 25: *"decreasing the
+            // width of the chat leaves the [combat] button floating in the air - make the buttons smaller
+            // or like the icons on the top"*. It was six 96px buttons on a 100px step — 608px of row
+            // inside a window you are allowed to shrink to 520, so the last button hung outside the
+            // frame with nothing behind it. 76 on an 80 step is 488, which fits at the minimum with room
+            // to spare and stops the row being a thing you can break by dragging a corner.
+            // ⚠ The step and the count are what decide this, so a SEVENTH tab is not free: 12 + n·80 + 76
+            // must stay under the MakeAdjustable minimum below.
+            const float tabW = 76f, tabStep = 80f, tabFont = 14f;
             string[] names = { "All", "Local", "World", "PM", "System" };
             _chatTabButtons = new Button[names.Length];
             for (int i = 0; i < names.Length; i++)
             {
                 int value = _chatTabValues[i];
-                var button = UiKit.TextButton(inner, names[i], () => SetChatTab(value), 15f);
+                var button = UiKit.TextButton(inner, names[i], () => SetChatTab(value), tabFont);
                 UiKit.Place(UiKit.Rect(button.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                            new Vector2(12f + i * 100f, -chrome - 4f), new Vector2(96f, 32f));
+                            new Vector2(12f + i * tabStep, -chrome - 4f), new Vector2(tabW, 32f));
                 _chatTabButtons[i] = button;
             }
 
             _combatTabButton = UiKit.TextButton(inner, "Combat",
-                                                () => { ToggleWindow(_combatView.Panel); HighlightChatTabs(); }, 15f);
+                                                () => { ToggleWindow(_combatView.Panel); HighlightChatTabs(); }, tabFont);
             UiKit.Place(UiKit.Rect(_combatTabButton.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(12f + names.Length * 100f, -chrome - 4f), new Vector2(96f, 32f));
+                        new Vector2(12f + names.Length * tabStep, -chrome - 4f), new Vector2(tabW, 32f));
 
             // 🔴 THE FEED NOW REACHES THE BOTTOM OF THE WINDOW (`87e`(c), playtest 24): *"remove the row
             // with 'clear' and 'replay' — it's now an empty space and the text never gets to the
@@ -892,7 +902,8 @@ namespace Game.Client
             // combat windows are the two he named, and they are the right two: they are the only windows
             // that stay open WHILE you play, so they are the only ones whose size is a trade against the
             // view of the world rather than a fit to their own content.
-            // ⚠ The minimum is not arbitrary — below ~520 the six tab buttons stop fitting on one row.
+            // ⚠ The minimum is not arbitrary — it is what the six tab buttons need on one row. They are
+            // 488px wide since BL-88, so 520 now clears them instead of being 88px short of them.
             UiKit.MakeAdjustable(panel, "chat", new Vector2(520f, 200f));
 
             // The two ex-buttons, now icons in the title bar (`87e`(c)) — *"move them up beside L/U,
@@ -1264,17 +1275,18 @@ namespace Game.Client
             _targetPanel.gameObject.SetActive(target != null);
             if (target == null) return;
 
-            // The title rides in front of the name here rather than on its own line: this frame is one
-            // row, and an NPC that now plates as `Elder` over `Marius` must still read as a whole
-            // person in the window you opened to talk to them.
+            // 🔴 BL-88 — THE TITLE BAR IS THE NAME AND NOTHING ELSE. Playtest 25: *"only the name of the
+            // target. No lvl no target.title, now the [title + name + lvl] overflows"*. The level had
+            // already moved to the detail line in playtest 23; the WORN TITLE goes down there with it,
+            // which is the last thing that could make this one row longer than the frame. A phone frame
+            // is a fixed width and three variable-length things could always be made to overflow it —
+            // one is the only count that cannot.
             string worn = string.IsNullOrEmpty(target.Title)
                         ? ""
                         : "<color=#" + (string.IsNullOrEmpty(target.TitleColor)
                                         ? TitleCatalog.DefaultHex : target.TitleColor) + ">"
-                          + target.Title + "</color> ";
-            // 🔴 THE TITLE BAR IS THE NAME (playtest 23). Level moves down to the detail line with the
-            // rest of the facts about the thing, so the bar holds one thing and holds it large.
-            UiKit.SetWindowTitle(_targetPanel, worn + target.Name + (target.Dead ? "   (dead)" : ""));
+                          + target.Title + "</color>";
+            UiKit.SetWindowTitle(_targetPanel, target.Name + (target.Dead ? "   (dead)" : ""));
             bool self = Boot.Entities != null && Boot.TargetId == Boot.Entities.SelfId;
             bool player = target.Kind == EntityKind.Player && !self;
             bool mob = target.Kind == EntityKind.Mob;
@@ -1306,23 +1318,33 @@ namespace Game.Client
             // ⚠ "Vagabond" is not a placeholder waiting on a lookup — there are NO player clans in the
             // game yet, so every player is genuinely clanless and every row reads the same. When clans
             // exist this becomes the rank; nothing else about the line changes.
+            //
+            // 🔑 BL-88 — AND THE WORN TITLE NOW LANDS HERE TOO, first in the list, keeping its colour:
+            // *"the mob title moves down into the Mob: row"*. `Mob: 44, Field Boss, Aggressive` — the
+            // rank word an elite or a boss wears is a FACT about the creature, which is exactly what
+            // this line is for, and it costs the title bar nothing to say it here instead.
             var bits = new List<string>();
+            if (!string.IsNullOrEmpty(worn)) bits.Add(worn);
             if (mob)
             {
+                // ⚠ Counted from HERE, not from zero: a titled mob's list is already non-empty, and
+                // testing the whole list would have silently dropped "Passive" from every elite.
+                int behaviour = bits.Count;
                 if (target.Aggressive) bits.Add("Aggressive");
                 // Social is OFF game-wide right now (`BL-73`) — the server sends "" for every mob while
                 // the switch is down, so this simply prints nothing rather than claiming a camp answers.
                 if (!string.IsNullOrEmpty(target.SocialClan)) bits.Add("Social (" + target.SocialClan + ")");
-                if (bits.Count == 0) bits.Add("Passive");
+                if (bits.Count == behaviour) bits.Add("Passive");
                 _targetDetail.text = "Mob: " + target.Level + ", " + string.Join(", ", bits);
             }
             else if (target.Kind == EntityKind.Npc)
             {
-                _targetDetail.text = "NPC";
+                _targetDetail.text = bits.Count > 0 ? "NPC: " + string.Join(", ", bits) : "NPC";
             }
             else
             {
-                _targetDetail.text = "Player: Vagabond";
+                bits.Insert(0, "Vagabond");
+                _targetDetail.text = "Player: " + string.Join(", ", bits);
             }
 
             // A targeted PLAYER carries NO fast buttons at all (owner, 2026-07-24): attack, follow,
@@ -1351,9 +1373,10 @@ namespace Game.Client
         private void DrawDistantPartyTarget(PartyMemberDto m)
         {
             _targetPanel.gameObject.SetActive(true);
-            // The name goes in the title bar like every other target (playtest 23); a party member's
-            // level is not private, so it can ride along with it here.
-            UiKit.SetWindowTitle(_targetPanel, m.Name + "  Lv " + m.Level);
+            // BL-88 — the name and NOTHING else, the same rule as the live frame above. A party
+            // member's level is not private, so it moves to the detail line rather than disappearing:
+            // this bar has exactly one job on every kind of target, or it can be made to overflow again.
+            UiKit.SetWindowTitle(_targetPanel, m.Name);
 
             UiKit.SetBar(_targetHp, m.Hp, m.MaxHp);
             _targetHpText.text = m.MaxHp > 0
@@ -1367,8 +1390,9 @@ namespace Game.Client
             }
 
             // Say WHY the frame looks different, or an out-of-sight ally reads as a rendering fault.
+            // The level rides here now (BL-88), beside the class, where a mob's level also sits.
             _targetDetail.text = (string.IsNullOrEmpty(m.ClassName) ? "Party" : m.ClassName)
-                               + "   (out of sight)";
+                               + ": " + m.Level + "   (out of sight)";
 
             if (_targetPartyButton != null) _targetPartyButton.gameObject.SetActive(false);
             if (_targetTradeButton != null) _targetTradeButton.gameObject.SetActive(false);
