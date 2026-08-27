@@ -172,18 +172,31 @@ public static partial class SkillCatalog
         // on your TARGET. Elemental Wave is range 200 / radius 200: a mage who casts it is standing in
         // the pack. Arcane Wave is range 900 / radius 400: the same idea thrown from safety, which is
         // why it is the HUMAN's and costs a race slot.
+        // ⚠ RANGE 0, NOT 200 (owner 2026-08-28): *"elemental wave is self/aoe with 0 range so it hits
+        // around the caster with description range"*. Range and RADIUS are two different numbers —
+        // range is how far you may throw the spell, radius is how wide it goes off. This one is not
+        // thrown at all; it erupts where you stand, so its range is 0 and its reach is the 200 radius.
+        // ⚠ TargetMode.EnemiesInRadius is what makes it actually SWEEP. Without it the skill drew its
+        // circle and then hit the single target only, which is his "AOE don't work".
         new(ElementalWave, "Elemental Wave", BaseClass.Mage, SkillEffect.MagicDamage,
-            MpCost: NukerWaveMp[0], CastTicks: 40, CooldownTicks: 40, Range: 200,
+            MpCost: NukerWaveMp[0], CastTicks: 40, CooldownTicks: 40, Range: 0,
             Power: NukerWavePower[0], AreaRadius: 200f,
+            TargetMode: TargetMode.EnemiesInRadius,
             Category: SkillCategory.Magic, SpCost: 36000,
             Description: "Erupts around you, striking every enemy within 200.",
             Levels: HealerRungs(0, 14, (i, sp) =>
                 new SkillLevel(Power: NukerWavePower[i], MpCost: NukerWaveMp[i], SpCost: sp,
                     Description: $"Hits every enemy within 200 for power {NukerWavePower[i]}."))),
 
+        // ⚠ `AreaAtTarget: true` — his whole point: *"the arcane wave should AOE around the mob not
+        // the player like elemental wave … enemy/aoe with 900 range and hit 400 range around the
+        // enemy … Not the caster"*. He also asked to check whether 400/900 were swapped: they were
+        // NOT — 900 range (thrown from safety) and 400 radius (the blast) is what the code already
+        // said and what the design comment above describes. Only the CENTRE was wrong.
         new(ArcaneWave, "Arcane Wave", BaseClass.Mage, SkillEffect.MagicDamage,
             MpCost: NukerWaveMp[0], CastTicks: 40, CooldownTicks: 10, Range: 900,
-            Power: NukerWavePower[0], AreaRadius: 400f,
+            Power: NukerWavePower[0], AreaRadius: 400f, AreaAtTarget: true,
+            TargetMode: TargetMode.EnemiesInRadius,
             Category: SkillCategory.Magic, SpCost: 36000,
             Description: "Detonates arcane force around your target, striking everything within 400 of it.",
             Levels: HealerRungs(0, 14, (i, sp) =>

@@ -1,9 +1,9 @@
-LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,REPLACES,RACE
-,,,,,,,,,,,,----------------------HP Boost----------------------
-43,HP Boost,Passive,0,self/single,0,0,0,"Increase max HP +400",0,42k,[],,
-49,HP Boost,Passive,0,self/single,0,0,0,"Increase max HP +500",0,65k,[],,
-55,HP Boost,Passive,0,self/single,0,0,0,"Increase max HP +600",0,80k,[],,
-62,HP Boost,Passive,0,self/single,0,0,0,"Increase max HP +700",0,170k,[],,
-66,HP Boost,Passive,0,self/single,0,0,0,"Increase max HP +800",0,280k,[],,
-70,HP Boost,Passive,0,self/single,0,0,0,"Increase max HP +900",0,390k,[],,
-74,HP Boost,Passive,0,self/single,0,0,0,"Increase max HP +1000",0,880k,[],,
+LEARN @ LVL, NAME,TYPE,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,REPLACES,RACE
+,,,,,,,,,,,,,----------------------HP Boost----------------------
+43,HP Boost,Passive,0,0,self/single,0,0,0,"Increase max HP +400",0,42k,[],,
+49,HP Boost,Passive,0,0,self/single,0,0,0,"Increase max HP +500",0,65k,[],,
+55,HP Boost,Passive,0,0,self/single,0,0,0,"Increase max HP +600",0,80k,[],,
+62,HP Boost,Passive,0,0,self/single,0,0,0,"Increase max HP +700",0,170k,[],,
+66,HP Boost,Passive,0,0,self/single,0,0,0,"Increase max HP +800",0,280k,[],,
+70,HP Boost,Passive,0,0,self/single,0,0,0,"Increase max HP +900",0,390k,[],,
+74,HP Boost,Passive,0,0,self/single,0,0,0,"Increase max HP +1000",0,880k,[],,

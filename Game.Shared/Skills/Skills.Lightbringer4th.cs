@@ -234,9 +234,12 @@ public static partial class SkillCatalog
         int[] pow = { 1100, 1200, 1300, 1400, 1500, 1600, 1800, 2000 };
         return new SkillLevel(Power: pow[i], MpCost: HealMp4[i * 2] * 2, SpCost: sp, GoldCost: gold,
             ConsumableAmount: 5,
-            // His 4th-tier rows bring the party version into line with the single-target one: a 5s cast
-            // on a 2s reuse, where the 3rd tier was 7s on 5s.
-            CastTicks: 50, CooldownTicks: 20,
+            // ⚠ 7s / 3s, NOT the 5s / 2s his 4th-tier CSV rows originally carried (2026-08-28).
+            // He re-specified every party heal in one message and prefaced it *"Let's redo the party
+            // heals I haven't saw what ig's was so I just estimated"* — so the new line supersedes his
+            // own earlier estimate, at every tier, and the per-rung override has to move with the base
+            // or the 76-90 rungs would silently keep the old numbers while 40-75 took the new ones.
+            CastTicks: 70, CooldownTicks: 30,
             Description: $"Heals you and nearby party members for {pow[i]}. Consumes 5 Skill Stones.");
     });
 
@@ -522,9 +525,12 @@ public static partial class SkillCatalog
             //      eight rungs at 83-90. The other two races have no equivalent; that is his file.
             new(HealerPartyBlessing, "Healer Party Blessing", BaseClass.Mage,
                 SkillEffect.Heal | SkillEffect.Cleanse,
-                MpCost: 272, CastTicks: 30, CooldownTicks: 50, Range: 600, Power: 780,
+                // ⚠ 0 range = castable with NO target (see Party Heal). Owner 2026-08-28: 0/1000,
+                // 3s cast, 9s cd — the long reuse is what keeps a 780-power party heal-plus-cleanse
+                // from replacing the ordinary party heals rather than topping them.
+                MpCost: 272, CastTicks: 30, CooldownTicks: 90, Range: 0, Power: 780,
                 Category: SkillCategory.Heal, SpCost: sp83,
-                TargetMode: TargetMode.AlliesInRadius, AreaRadius: 600f,
+                TargetMode: TargetMode.AlliesInRadius, AreaRadius: 1000f,
                 DispelMask: SkillEffect.Bleed | SkillEffect.Poison | SkillEffect.Venom,
                 DispelMaxLevel: 10,
                 Levels: HealerPartyBlessingRungs(),
@@ -563,9 +569,27 @@ public static partial class SkillCatalog
             //    "friendly" widens past the party — alliances, raids — the ladder is already correct
             //    and nobody has to remember why it said ten.
             new(UrgentGreatHeal, "Urgent Great Heal", BaseClass.Mage, SkillEffect.Heal,
+                // ⚠ Owner 2026-08-28 chose AGAINST IG here and said so: *"ig is: 900/900 target/aoe]
+                // but I want it as 0/1000"*. So it is cast on yourself with no target, like every
+                // other party heal, and reaches 1000 instead of being thrown 900 at someone.
                 MpCost: 500, CastTicks: 30, CooldownTicks: 50, Range: 0, Power: 0,
                 Category: SkillCategory.Heal, SpCost: sp83,
-                TargetMode: TargetMode.FriendlyInRadius, AreaRadius: 900f,
+                // 🔑 `FriendlyInRadius`, NOT `AlliesInRadius`, AND HE RULED IT TWICE. He wrote
+                // "self/AOE" for this row on 2026-08-28, which read like a slip; asked, he settled it
+                // in the other direction and explained the principle: *"Urgent great heal is 11
+                // targets so it's never a party one while healer PARTY blessing implies only party :)
+                // urgent heal is a safe anyone anywhere"*.
+                //
+                // So the ELEVEN is the argument. A party caps at 9, so a skill that reaches 11 cannot
+                // be describing a party — it is describing a crowd, and the two slots past the party
+                // are the point of it. This is exactly why `FriendlyInRadius` was split out from
+                // `AlliesInRadius` in 0.93.2 ("party heal vs totem were the SAME enum").
+                // ⚠ DO NOT "correct" this to AlliesInRadius. Healer Party Blessing beside it IS
+                // party-only, by its name and by his ruling; these two are deliberately different.
+                //
+                // ⚠ It is also the skill that makes BL-98 urgent: "anyone anywhere" is what lets a
+                // high-level healer stand outside a low-level boss fight and carry it.
+                TargetMode: TargetMode.FriendlyInRadius, AreaRadius: 1000f,
                 MaxTargets: 11, TargetFalloff: 0.02f,
                 ConsumableId: ItemCatalog.SkillStone, ConsumableAmount: 5,
                 Replaces: new[] { UrgentHeal },

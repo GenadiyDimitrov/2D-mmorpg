@@ -999,6 +999,14 @@ public class GameLoopService : BackgroundService
     /// autopilot's retaliation and the PvP counter-attack all ask this one question.</summary>
     private bool CanPvpHit(Entity attacker, Entity target)
     {
+        // BL-79 — SWINGING AT THE WATCH IS A DELIBERATE ACT. His "a player attacking them (pvp-on
+        // must be on)": the toggle is the GATE, exactly as it is for a player target, so nobody
+        // clips a guard with a stray AoE and finds himself in a fight he did not choose. This is the
+        // ONE case where a MOB target consults the attacker's PvP flag, which is why it sits above
+        // the player-vs-player early-out rather than inside it.
+        if (attacker.Kind == EntityKind.Player && target.Kind == EntityKind.Mob && IsGuard(target))
+            return attacker.PvpEnabled;
+
         if (attacker.Kind != EntityKind.Player || target.Kind != EntityKind.Player)
             return true;
         if (attacker.Id == target.Id || target.Dead)
@@ -1013,9 +1021,17 @@ public class GameLoopService : BackgroundService
     /// <summary>Why a swing at this player was refused. Split out so the party rule can say so
     /// plainly — "enable PvP" is misleading advice when PvP would not have helped.</summary>
     private string PvpRefusalReason(Entity attacker, Entity target) =>
-        SameParty(attacker, target)
-            ? "You can't attack a member of your own party."
-            : "You can't attack that player here. (Enable PvP; not in towns.)";
+        target.Kind == EntityKind.Mob
+            ? $"{target.Name} is under the town's protection. (Enable PvP to attack it.)"
+            : SameParty(attacker, target)
+                ? "You can't attack a member of your own party."
+                : "You can't attack that player here. (Enable PvP; not in towns.)";
+
+    /// <summary>Is this entity a BL-79 guard? One place, because four separate rules ask it — the
+    /// aggro filter, the attack gate, the kill rewards and the karma shed — and a guard that is a
+    /// guard for three of them is worse than no guard at all.</summary>
+    private static bool IsGuard(Entity e) =>
+        e.Kind == EntityKind.Mob && e.MobTypeId is { } id && MobCatalog.Get(id).Guard;
 
     /// <summary>Award kill consequences for a player killing a player: an INNOCENT victim → PK
     /// (karma + red name, consecutive/level-scaled); a FLAGGED/RED victim → a justified PvP kill.</summary>
@@ -2103,6 +2119,7 @@ public class GameLoopService : BackgroundService
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead)
             return;
+        if (NpcRefusesService(player, "No one will grant you a class")) return;
 
         if (player.SecondClass != 0)
         {
@@ -2549,6 +2566,7 @@ public class GameLoopService : BackgroundService
     private void HandleWarehouseDeposit(WarehouseDepositCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead) return;
+        if (NpcRefusesService(player, "The keeper won't hold your goods")) return;
         if (!WarehouseReachable(player)) return;
 
         var item = player.Inventory.FirstOrDefault(i => i.InstanceId == cmd.InstanceId);
@@ -2611,6 +2629,7 @@ public class GameLoopService : BackgroundService
     private void HandleWarehouseWithdraw(WarehouseWithdrawCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead) return;
+        if (NpcRefusesService(player, "The keeper won't hand anything over")) return;
         if (!WarehouseReachable(player)) return;
 
         var item = player.Warehouse.FirstOrDefault(i => i.InstanceId == cmd.InstanceId);
@@ -3085,6 +3104,7 @@ public class GameLoopService : BackgroundService
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player))
             return;
+        if (NpcRefusesService(player, "No master will take you on")) return;
         if (CraftMasterAt(player, cmd.NpcEntityId) is not Profession prof)
             return;
         if (player.Profession == prof)
@@ -3492,6 +3512,12 @@ public class GameLoopService : BackgroundService
 
         SendStats(player);
         SendLearned(player);   // carries this class's OWN bar with it — see SendLearned
+        // ...and this carries the class's own AUTO marks, which are now per-subclass (2026-08-28).
+        // ⚠ WITHOUT THIS THE FIX IS INVISIBLE. The client keeps a flat mirror of the marks
+        // (GameBoot.AutoSkills) and paints a slot armed from it; the server may hold the right set
+        // and the phone will still show the old class's marks until it is told. The storage fix and
+        // the push are one change — shipping either alone leaves the reported symptom on screen.
+        SendAutoHuntConfig(player);
         PushBuffs(player);
         SendSubclasses(player);
         // Each class carries its OWN level, so swapping changes what quests are on offer — and with
@@ -8726,6 +8752,44 @@ public class GameLoopService : BackgroundService
                 (int)attacker.EffectiveMagicAttack, mFlat, mMod, (int)victim.EffectiveMagicDefence,
                 victim.MagicDefCoef);   // magic resistance, mirroring WeaponDefenceCoef above
             dmg = FinalizeDamage(attacker, victim, dmg, DamageKind.SkillMagic, def);
+
+            // ---- FIZZLE + MAGIC CRIT, for a PLAYER's area nuke (2026-08-28) ----
+            //
+            // This path was written for mob spells and traps, where neither exists. Routing a mage's
+            // AoE through it unchanged would have quietly deleted both halves of the magic channel
+            // from every area spell he owns — no fizzle means an area nuke is strictly more reliable
+            // than the single-target one beside it, and no crit means a WIT build stops paying off
+            // the moment he presses the AoE button. Same formulas as the single-target block, read
+            // through RungLevel so an old rung decays here exactly as it does there.
+            //
+            // ⚠ GATED ON A PLAYER ATTACKER ON PURPOSE. Mob AoE (boss slams) keeps the behaviour it
+            // was measured with in 0.89.0's boss pass; giving creatures fizzle and crit here would
+            // retune every boss as a side effect of a bug fix nobody asked to touch bosses.
+            if (attacker.Kind == EntityKind.Player)
+            {
+                float aoeFail = def.SureHit ? 0f
+                              : victim.Immune ? 1f
+                              : StatCalculator.MagicFailChance(RungLevel(attacker, def, lvl), victim.Level,
+                                    victim.MagicFailMod, attacker.MagicFailSelfMult,
+                                    victim.MagicFailBonus, attacker.MagicAccuracy);
+                if (_rng.NextDouble() < aoeFail)
+                {
+                    dmg = Math.Max(1, dmg / 3);
+                    BroadcastCombat(attacker, victim, dmg, CombatOutcome.Fail, name);
+                    ApplyDamage(victim, dmg, attacker, magicHit: true);
+                    if (victim.Hp <= 0 && !victim.Dead) Kill(victim, attacker);
+                    return;
+                }
+                if (_rng.NextDouble() < attacker.MagicCritChance)
+                {
+                    dmg = (int)(dmg * attacker.EffectiveMagicCritDamage);
+                    BroadcastCombat(attacker, victim, dmg, CombatOutcome.Crit, name);
+                    ApplyDamage(victim, dmg, attacker, magicHit: true);
+                    if (victim.Hp <= 0 && !victim.Dead) Kill(victim, attacker);
+                    return;
+                }
+            }
+
             BroadcastCombat(attacker, victim, dmg, CombatOutcome.Hit, name);
             ApplyDamage(victim, dmg, attacker);
         }
@@ -8819,8 +8883,14 @@ public class GameLoopService : BackgroundService
     /// strictly, and the loose reading re-opens the exploit he reported in the same breath: a flagged
     /// aggressor standing in your mob pile would be clipped by your AoE, and clipping a purple player
     /// flags YOU.</para></summary>
-    private IEnumerable<Entity> EnemiesInRadius(Entity caster, float radius)
+    /// <param name="origin">Where the CIRCLE sits. Defaults to the caster, which is every
+    /// caster-centred AoE. Arcane Wave and anything else `enemy/aoe` passes the TARGET — owner
+    /// 2026-08-28: *"the arcane wave is enemy/aoe with 900 range and hit 400 range around the enemy
+    /// … Not the caster"*. Hostility is still judged from the CASTER (it is his spell and his PvP
+    /// flag); only the distance test moves.</param>
+    private IEnumerable<Entity> EnemiesInRadius(Entity caster, float radius, Entity? origin = null)
     {
+        origin ??= caster;
         float r2 = radius * radius;
         bool mobCaster = caster.Kind == EntityKind.Mob;
         foreach (var e in _world.Grid.Nearby(caster))
@@ -8840,7 +8910,11 @@ public class GameLoopService : BackgroundService
             };
             if (!hostile)
                 continue;
-            float dx = e.X - caster.X, dy = e.Y - caster.Y;
+            // ⚠ Measured from ORIGIN, not from the caster — see the param note. The Nearby() walk is
+            // still seeded off the caster, which is correct while the spell's RANGE keeps the origin
+            // inside his own cell neighbourhood; a much longer-ranged area spell would want the grid
+            // query re-seeded on the origin too.
+            float dx = e.X - origin.X, dy = e.Y - origin.Y;
             if (dx * dx + dy * dy <= r2)
                 yield return e;
         }
@@ -9381,6 +9455,10 @@ public class GameLoopService : BackgroundService
 
         if (mob.Aggressive)
         {
+            // Resolved once, outside the scan: a guard's karma filter and a template's own aggro
+            // radius both need it, and Nearby() can walk a lot of candidates.
+            var mobType = mob.MobTypeId is { } aggroTypeId ? MobCatalog.Get(aggroTypeId) : null;
+
             foreach (var candidate in _world.Grid.Nearby(mob))
             {
                 if (candidate.Kind != EntityKind.Player || candidate.Dead ||
@@ -9388,12 +9466,25 @@ public class GameLoopService : BackgroundService
                     GameConstants.InSafeZone(candidate.X, candidate.Y))
                     continue;
 
+                // BL-79 — A GUARD ONLY EVER ACQUIRES AN OUTLAW. His design, playtest 25: "only
+                // aggressive thowards PK (ignores mobs/pvpOrNormal-players)". Note it is PK
+                // specifically and not "not innocent": a merely FLAGGED player is someone in a
+                // consensual fight, which is not the watch's business. FlagOf is the one predicate
+                // that decides this anywhere in the codebase — do not re-derive it from Karma here.
+                if (mobType?.Guard == true && FlagOf(candidate) != PvpFlag.Pk)
+                    continue;
+
                 // De-taunt: ignore the entity that just shed us, briefly.
                 if (mob.DetauntTicks > 0 && mob.DetauntFromId == candidate.Id)
                     continue;
 
-                if (DistanceSq(mob, candidate) <=
-                    GameConstants.MobAggroRange * GameConstants.MobAggroRange)
+                // A template may carry its own aggro radius (BL-79's 400 melee / 600 archer);
+                // 0 means "take the global", which is every ordinary creature in the game.
+                float aggroRange = mobType is { AggroRange: > 0f }
+                    ? mobType.AggroRange
+                    : GameConstants.MobAggroRange;
+
+                if (DistanceSq(mob, candidate) <= aggroRange * aggroRange)
                 {
                     // A PULL IS WORTH THREAT. It used to be worth nothing: the mob walked over with an
                     // empty table, so the very first point of damage from ANYONE — including someone
@@ -9886,16 +9977,11 @@ public class GameLoopService : BackgroundService
         //      range - resurrection field .. The party heal .. They just flash one time when cast ends
         //      as if the effect is applied"*. ----
         //
-        // ONE call, here, rather than one at each of the seven places an AoE resolves. Every player
-        // area skill in the game is centred on the CASTER — PlayersInRadius, EnemiesInRadius and
-        // DeadPartyInRadius all take him as the origin — so his position IS the circle, and a single
-        // site cannot drift out of step with a skill added later.
+        // ONE call rather than one at each of the places an AoE resolves, so a skill added later
+        // cannot drift out of step with it.
         //
         // Past every gate and past BreakHide, so it marks the moment the skill LANDS. A cast that was
         // interrupted, cancelled, or refused for MP has already returned above and draws nothing.
-        if (def.AreaRadiusAt(lvl) is float areaR && areaR > 0f)
-            BroadcastAreaEffect(caster, areaR, AreaKindOf(def));
-
         bool selfTargeted = caster.CastTargetId == caster.Id;
         Entity? target = selfTargeted ? caster
             : caster.CastTargetId is Guid tid ? _world.Entities.GetValueOrDefault(tid) : null;
@@ -9910,6 +9996,14 @@ public class GameLoopService : BackgroundService
             SendSystemToEntity(caster, def.Resurrect ? "You can only resurrect a fallen ally." : "Target lost.");
             return;
         }
+
+        // ⚠ THE CIRCLE IS DRAWN AFTER THE TARGET IS RESOLVED AND VALIDATED (2026-08-28). It used to
+        // be drawn above, before `target` existed, so it could only ever be centred on the caster —
+        // which is half of his Arcane Wave report. An `AreaAtTarget` skill draws on the thing it
+        // lands on, and the drawing MUST agree with the damage: he read the circle, not the damage
+        // numbers, to tell us AoE was broken, so a pulse in the wrong place is a lie about the hit.
+        if (def.AreaRadiusAt(lvl) is float areaR && areaR > 0f)
+            BroadcastAreaEffect(def.AreaAtTarget ? target : caster, areaR, AreaKindOf(def));
 
         // The consumable that STARTED this cast (a buff scroll): take one unit now that it lands.
         // Gone from the bag mid-cast (traded, dropped, sold) = cancel without charging the finish MP,
@@ -10053,7 +10147,7 @@ public class GameLoopService : BackgroundService
         // ---- REVEAL (BL-69): drag every hidden character in radius back into view and bar them
         //      from hiding again. Deals nothing, so it never raises a mob clan. ----
         if (def.RevealsHidden)
-            RevealHidden(caster, def, castName);
+            RevealHidden(caster, def, lvl, castName);
 
         // ---- HIDE (BL-69, kind 1): vanish from everything. Applied here, AFTER the generic
         //      "a completed cast reveals you" above, so casting the hide does not instantly undo it.
@@ -10081,7 +10175,13 @@ public class GameLoopService : BackgroundService
         //      compact hit path (shared with traps). ----
         if (def.TargetMode == TargetMode.EnemiesInRadius)
         {
-            foreach (var foe in EnemiesInRadius(caster, def.AreaRadius).ToList())
+            // ⚠ `AreaRadiusAt(lvl)`, NOT `def.AreaRadius` — fixed 2026-08-28. A skill that authors its
+            // radius PER RUNG (SkillLevel.AreaRadius) and leaves the SkillDef's own field at 0 got a
+            // sweep of radius ZERO here, while the circle above — which correctly reads AreaRadiusAt —
+            // drew at full size. That is a mechanism for "the red circle pulses but nothing is hit",
+            // and it was live on every such skill.
+            foreach (var foe in EnemiesInRadius(caster, def.AreaRadiusAt(lvl),
+                                                def.AreaAtTarget ? target : caster).ToList())
             {
                 // BL-77: the flag lands on the REACH. Before the hit, so a miss, a zero roll or a
                 // target who dies to the first victim's cleave still costs you the purple name —
@@ -11277,10 +11377,11 @@ public class GameLoopService : BackgroundService
     /// (so: not your own party, not in town) and it FLAGS YOU, once, on the first person it reaches.
     /// That is his *"Act as hit so flags"* — the flare deals no damage, so no damage path can flag
     /// it.</para></summary>
-    private void RevealHidden(Entity caster, SkillDef def, string castName)
+    private void RevealHidden(Entity caster, SkillDef def, int lvl, string castName)
     {
         int caught = 0;
-        foreach (var e in EnemiesInRadius(caster, def.AreaRadius).ToList())
+        // `AreaRadiusAt(lvl)` — same fix as the offensive sweep: a per-rung radius left this at 0.
+        foreach (var e in EnemiesInRadius(caster, def.AreaRadiusAt(lvl)).ToList())
         {
             if (e.Kind != EntityKind.Player) continue;   // creatures do not hide (BL-69 is player-side)
             if (e.HideTicks <= 0 && def.NoHideTicks <= 0) continue;
@@ -11882,7 +11983,17 @@ public class GameLoopService : BackgroundService
             var earner = TopDamager(victim)
                          ?? (killer.Kind == EntityKind.Player ? killer : null);
 
-            if (earner is not null)
+            // BL-79 — KILLING A GUARD PAYS NOTHING AND FORGIVES NOTHING. His "killing a guard dont
+            // give karma nor flags", taken to its logical end: no exp, no drop, no quest credit and —
+            // the one that actually matters — NO KARMA SHED.
+            //
+            // ⚠ THE KARMA LINE IS THE WHOLE POINT, AND IT IS THE ONE THAT WAS ALREADY WRONG. Every
+            // mob kill sheds _karmaLossPerMob so a PK can grind his record clean. A guard is the
+            // creature a PK is most motivated to kill and the one standing nearest to him, so without
+            // this exemption a guard post is a karma LAUNDRY: park at a town gate, farm the watch,
+            // walk in white. That inverts the feature — the guards would be the fastest way to undo
+            // exactly the state they exist to punish.
+            if (earner is not null && !IsGuard(victim))
             {
                 // Open the reward tally so the exp pass and the gold pass land in ONE chat line.
                 _killTally = new Dictionary<Entity, (long Exp, long Sp, long Gold)>();
@@ -14649,6 +14760,29 @@ public class GameLoopService : BackgroundService
         }
     }
 
+    /// <summary>An outlaw gets NO SERVICE — the other half of `BL-79`, and his own scoping of it.
+    ///
+    /// Owner, 2026-08-27: *"pk killing guards only enters town so he can be safe from other players
+    /// the npcs still refuse trade"*. So killing the watch is NOT a way in to the town's SERVICES: it
+    /// buys a PK the safe zone and nothing else. He can stand there and be untouchable; he cannot
+    /// shop, teleport, buff, bank or train while he is red.
+    ///
+    /// 🔑 That is a better rule than "a pk cant use npcs" read literally, and it is why the guards are
+    /// still worth killing to him: the safe ground is real, the town is not. It also means the guards
+    /// never had to be unbeatable to work — the wall is the karma, not the swordsman.
+    ///
+    /// ⚠ ONLY A PK (red). A merely FLAGGED (purple) player is in a consensual fight and keeps every
+    /// service, exactly as the vendor rule already had it.
+    /// ⚠ SELLING IS DELIBERATELY EXEMPT (his earlier ruling, kept): a PK can still offload loot. The
+    /// refusal is meant to make being red expensive, not to strand a player with a full pack.
+    /// </summary>
+    private bool NpcRefusesService(Entity player, string what)
+    {
+        if (FlagOf(player) != PvpFlag.Pk) return false;
+        SendSystemToEntity(player, $"{what} while you are a PK. Clear your karma first.");
+        return true;
+    }
+
     /// <summary>Resolve a vendor NPC the player is standing next to.</summary>
     private bool TryGetVendorNpc(Entity player, Guid npcEntityId, out Entity npc)
     {
@@ -14797,6 +14931,7 @@ public class GameLoopService : BackgroundService
     private void HandleBuyBack(BuyBackCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player)) return;
+        if (NpcRefusesService(player, "Merchants won't buy back")) return;
         if (!TryGetVendorNpc(player, cmd.NpcEntityId, out _)) return;
         if (cmd.Index < 0 || cmd.Index >= player.BuyBack.Count) return;
 
@@ -14880,6 +15015,7 @@ public class GameLoopService : BackgroundService
     private void HandleBuyStatSwaps(BuyStatSwapsCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead) return;
+        if (NpcRefusesService(player, "No one will re-roll your stats")) return;
 
         // Fold duplicate lines: the client sends one per pair, but a malformed basket that named the
         // same pair twice would otherwise be validated as two independent runs and undercount the caps.
@@ -14952,6 +15088,7 @@ public class GameLoopService : BackgroundService
     private void HandleForgetSkill(ForgetSkillCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead) return;
+        if (NpcRefusesService(player, "The mindwriter won't work with you")) return;
         if (!_world.Entities.TryGetValue(cmd.NpcEntityId, out var npc)
             || npc.Kind != EntityKind.Npc || npc.NpcRole != NpcRole.SkillReset)
             return;
@@ -15017,6 +15154,7 @@ public class GameLoopService : BackgroundService
     private void HandleBuySpBottle(BuySpBottleCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead) return;
+        if (NpcRefusesService(player, "The broker won't deal with you")) return;
         if (!_world.Entities.TryGetValue(cmd.NpcEntityId, out var npc)
             || npc.Kind != EntityKind.Npc || npc.NpcRole != NpcRole.SpExchange)
             return;
@@ -15060,6 +15198,7 @@ public class GameLoopService : BackgroundService
     private void HandleTeleport(TeleportCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead) return;
+        if (NpcRefusesService(player, "The gatekeeper won't move you")) return;
         if (!_world.Entities.TryGetValue(cmd.NpcEntityId, out var npc)
             || npc.Kind != EntityKind.Npc || npc.NpcRole != NpcRole.Teleporter)
             return;
@@ -15230,6 +15369,7 @@ public class GameLoopService : BackgroundService
     private void HandleBufferAction(BufferActionCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead) return;
+        if (NpcRefusesService(player, "The buffer won't help you")) return;
         if (!_world.Entities.TryGetValue(cmd.NpcEntityId, out var npc)
             || npc.Kind != EntityKind.Npc || npc.NpcRole != NpcRole.Buffer) return;
 
@@ -16555,7 +16695,7 @@ public class GameLoopService : BackgroundService
         int level = mobType.Level > 0 && !zone.ForceZoneLevel
             ? mobType.Level
             : _rng.Next(zone.MinLevel, zone.MaxLevel + 1);
-        var mob = BuildMob(mobId, level, zone.Rank, x, y, zone.Id);
+        var mob = BuildMob(mobId, level, zone.Rank, x, y, zone.Id, zone.HpScale);
         mob.SpawnerMobId = dedicatedMobId;
         zr.OnSpawned(dedicatedMobId);
     }
@@ -16587,7 +16727,12 @@ public class GameLoopService : BackgroundService
         return zone.AllAggressive || zone.IsAggressiveType(mobId);
     }
 
-    private Entity BuildMob(string mobId, int level, MobRank rank, float x, float y, string zoneId)
+    /// <param name="zoneHpScale">The FIELD's own HP multiplier (BL-78 item 1) — his "the 15k mobs are
+    /// zone placed with x2/x3 hp .. some zones can have x1". Defaults to 1 so every non-zone caller
+    /// (boss adds, tooling) is untouched; it is composed with the rank multiplier in ApplyMobScale,
+    /// not here, so the two knobs stay separately readable.</param>
+    private Entity BuildMob(string mobId, int level, MobRank rank, float x, float y, string zoneId,
+                            float zoneHpScale = 1f)
     {
         var mobType = MobCatalog.Get(mobId);
         // A PLAYER-BUILT creature overwrites these a few lines down, in ApplyMobBuild, with a real
@@ -16723,6 +16868,7 @@ public class GameLoopService : BackgroundService
         // RecomputeDerived; RunSpeed/WalkSpeed it leaves alone (player-only override), so Speed
         // stays the catalog run speed.
         mob.MobHpScale = hpMul;
+        mob.MobZoneHpScale = zoneHpScale;
         mob.MobPAtkScale = atkMul;
         mob.MobMAtkScale = atkMul;
         mob.MobPDefScale = defMul;

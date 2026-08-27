@@ -7,12 +7,295 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.93.2**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.94.3**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-08-27 (latest) — 0.93.2: the TARGET column becomes `[scope]/[breadth]`, and a real Unity guide
+## 2026-08-27 (latest) — 0.94.3: the party heals are cast on yourself, and retuned end to end
+
+> *"The party heals (party heal, great party heal, ultimate party heal) should be cast able without a
+> target.. So 0/x party/AOE. Let's redo the party heals I haven't saw what ig's was so I just estimated
+> ..party heals are 0/1000 1k range around caster"*
+
+🔑 **"CASTABLE WITHOUT A TARGET" NEEDED NO NEW CODE — `Range: 0` ALREADY MEANS THAT.** The support
+branch of the cast resolver only accepts an ally target when `def.Range > 0`; at 0 it falls through to
+the self-cast branch, which is also how a support skill already behaves when you have an ENEMY selected.
+So the mechanic he asked for was one number per skill, and the same number is what the new AOE column
+made legible in the first place.
+
+| skill | range / aoe | target | cast | reuse |
+|---|---|---|---|---|
+| Party Heal | **0 / 1000** | party/aoe | 7s | **6s** |
+| Party Great Heal | **0 / 1000** | party/aoe | 7s | **6s** |
+| Ultimate Party Heal | **0 / 1000** | party/aoe | 7s | **3s** |
+| Healer Party Blessing | **0 / 1000** | party/aoe | 3s | **9s** |
+| Urgent Great Heal | **0 / 1000** | target/aoe | 3s | 5s |
+| Heal / Great Heal | 600 / 0 | target/single | 5s | **3s** |
+| Ultimate Heal | 600 / 0 | target/single | 5s | **1s** |
+| Healer Blessing | 600 / 0 | target/single | 3s | **3s** |
+
+⚠ **HE OVERRODE HIS OWN AUTHORED CSV ROWS AND SAID SO** — *"Let's redo the party heals … I just
+estimated"*. `healer 4th.csv` had Ultimate Party Heal at 5s / 2s for rungs 76-90, carried in code as a
+per-rung `CastTicks/CooldownTicks` override. That override had to move with the base or the top eight
+rungs would have kept the old numbers while 40-75 took the new ones — a split that `--check` would have
+reported as eight CSV defects rather than as one missed edit.
+
+⚠ **`BL-96`'s open question is closed by this.** 0.94.2 flagged that a party heal read `600,600` rather
+than the `0,600` he sketched, because the range gate really did apply to the targeted ally. His answer
+is that the GATE should go, not the column — so the range is 0 and the column is honest either way.
+
+✅ **URGENT GREAT HEAL IS `target/aoe`, CONFIRMED** — the `self/AOE` in his table was a slip and he
+settled it in the other direction, with the principle: *"Urgent great heal is 11 targets so it's never
+a party one while healer PARTY blessing implies only party :) urgent heal is a safe anyone anywhere"*.
+🔑 **The ELEVEN is the argument**: a party caps at 9, so a skill that reaches 11 cannot be describing a
+party — the two slots past it are the point. That is what `FriendlyInRadius` was split out of
+`AlliesInRadius` for in 0.93.2. The code was already right and is now commented so it stays that way.
+
+🔵 **`BL-98` opened from the same message**: *"The only thing need to prevent is outside help of
+high-level healers to a low lvl boss fights .. Mark it so we can deside what to do"*. 🔑 The
+anti-cheese curve for this ALREADY EXISTS on the other side — `RaidLevelGapMult` scales a player's
+DAMAGE to a boss by the level gap and was never mirrored onto SUPPORT, so an over-levelled character
+was stopped from killing a low boss and never from healing the people who do. Four options on the
+entry; the open question is what counts as "in the fight".
+
+## 2026-08-27 — 0.94.2: the AOE column, and a "generated" file that was half hand-maintained
+
+> *"Elemental wave - 200 AOE around caster 0 cast range - maybe enemy/AOE if we have the two range
+> columns then they will be 0,200 and that will work"* · *"remove the rune porting mob it's to op for
+> a normal zone +120% pDef to op"*
+
+### `BL-96` — RANGE and AOE are two columns now
+
+His proposal, and his go-ahead once he saw what it fixes. `LEARN, NAME, TYPE, RANGE, **AOE**, TARGET, …`
+across all 24 files, 1,425 rows, by a new `SkillCsvSeed --aoe-column`.
+
+🔑 **RANGE used to mean two different things** — "how far can I throw this" for a nuke, "how wide does
+this go off" for a party heal — so it could not be compared against any single code field, and the
+**radius was never a checked number**, only prose in DESCR. It is checked now, against
+`SkillDef.AreaRadiusAt`, on every rung.
+
+It also dissolves a contradiction between two of his own rulings: 2026-08-27 said the TARGET column
+deliberately does NOT encode where the circle sits; 2026-08-28 called Elemental Wave `self/aoe`, which
+encodes precisely that. With two columns neither has to carry the other's meaning. Elemental Wave is
+**`0,200,enemy/aoe`** — his own worked example — and Arcane Wave **`900,400,enemy/aoe`**.
+
+⚠ **A party heal reads `600,600`, not his proposed `0,600`.** The range gate really does apply to the
+ally you target (`SkillMath.EffectiveRange`, checked at cast start for any non-self target), so 600 is
+what the game does and the column now says so. Zeroing it is a behaviour change, not a column change —
+left for him.
+
+⚠ **THE MIGRATION FAILED ONCE, INSTRUCTIVELY.** It first copied `--retarget`'s habit of stopping at his
+`NOT DONE` banners. But `--retarget` rewrites the MEANING of a cell, where this inserts a COLUMN — and
+`--check` reads by index, so leaving half a file un-shifted gave it **two schemas** and produced 1,259
+invented discrepancies, every field compared against its neighbour. 🔑 **A SEMANTIC pass may skip rows;
+a STRUCTURAL pass may never. A file has exactly one shape or it has none.** Draft rows past the banner
+now get the column with an empty cell.
+
+Two more traps it walked into and now documents: the lookup must key **name → every rung** (an exact
+name+learn-level key missed 46 rows, because a 4th-tier row re-teaching a 3rd-tier skill does not share
+its learn level), and `ClassSkills.Cumulative` **needs its `fourth` flag** or the entire 4th tier is
+invisible — the same trap `Check.Specs` already documents.
+
+### The Rift Portling is gone — and so is a lie in the mob CSV
+
+*"remove the rune porting mob it's to op for a normal zone +120% pDef to op"* — `rift_portling`, whose
+`MobMod.PDef: 2.2` **is** that +120%. Deleted; nothing referenced it.
+
+🔑 **How a "CHAMPION outlier" ended up in a starter field is the part worth keeping.** Rosters are
+DERIVED from the level band (`MobCatalog.InBand`), so a champion template with a natural level of 40
+is rostered into every generated 40-44 camp automatically. Nothing marked it special, so nothing kept
+it out. **An outlier needs `HandPlaced: true` or it is not an outlier, it is just a very hard normal mob.**
+
+⚠ **And `--dump-mob-csv` could not have told us.** It walked the EXISTING file and refreshed columns
+4-9 in place, so the row LIST was hand-maintained while only the stats were generated: the deleted
+Portling kept its row and the four `BL-79` guards, added the day before, never got one. A reference
+that is "regenerated from the code" but silently keeps whatever roster it already had is 0.93.1's
+hand-copied interrupt table again — **it can never contradict you, because the half that would have
+disagreed is the half nobody regenerates.** It rebuilds from `MobCatalog` now, preserving ids by name.
+
+## 2026-08-27 — 0.94.1: AoE actually hits, and auto-on stops leaking between subclasses
+
+> *"AOE don't work ..it shows the red circle pulse but tont hit the mobs ...also the arcane wave
+> should AOE around the mob not the player like elemental wave"* · *"I'm buffer and have in skill belt
+> the atack as auto on .. Then I change to/add new subclass ..and I put atack on belt it's auto-on
+> from the getgo … if I have never put a skill on bar and haven't never make it auto-on it should
+> never be auto on"* · *"relog in etc never clears the chat ...and it should"*
+
+Server-side except where noted. ⚠ **`game.db` MUST BE DELETED** — new `Subclasses.AutoSkillsJson`
+column, and `EnsureCreated` never adds columns to an existing file.
+
+### AoE WAS NEVER HITTING ANYTHING — two bugs, stacked
+
+🔑 **No player offensive AoE has ever swept.** The sweep runs only for `TargetMode.EnemiesInRadius`
+and **only mob spells ever set it**. Elemental Wave and Arcane Wave — the only two player attack AoEs
+in the game — authored a radius but no mode, so they drew their circle and hit the single target.
+That is the whole of his report, and the circle is the reason it looked cosmetic: the display half was
+the only half that worked.
+
+⚠ **And a second one underneath it that would have re-broken it later**: the sweep read
+`def.AreaRadius` (the SkillDef field) while the circle read `def.AreaRadiusAt(lvl)` (the per-rung
+value). A skill authoring its radius PER RUNG therefore got a **zero-radius sweep under a full-size
+circle** — the identical symptom, lying in wait for the next such skill. Both read `AreaRadiusAt` now.
+
+🔑 **Fizzle and magic crit had to be added to the shared hit path for players.** `DeliverSimpleHit`
+was written for mob spells and traps, where neither exists; routing a mage's AoE through it unchanged
+would have quietly deleted both halves of the magic channel from every area spell he owns — an area
+nuke strictly more reliable than the single-target one beside it, and a WIT build that stops paying
+the moment he presses AoE. **Gated on a player attacker on purpose**: giving creatures fizzle and crit
+here would retune every boss as a side effect of a bug fix that never meant to touch bosses.
+
+### The two waves are different SHAPES again
+
+New `SkillDef.AreaAtTarget` says where the circle sits; `EnemiesInRadius` takes an origin; and the
+circle broadcast moved below the target resolve so the drawing and the damage come from ONE decision —
+it could only ever centre on the caster before, because it ran before `target` existed.
+
+- **Arcane Wave** is `AreaAtTarget: true` — range 900, radius 400, centred on the mob. He asked
+  whether 400/900 were swapped: **they were not**; only the centre was wrong.
+- **Elemental Wave** range **200 → 0** (*"self/aoe with 0 range"*), radius 200, centred on the caster.
+  Its 14 CSV rows moved in the same commit.
+
+🔵 **One conflict left to him, filed as `BL-96`**: he called Elemental Wave `self/aoe`, but on
+2026-08-27 he ruled the TARGET column deliberately does NOT encode where the circle sits. Both cannot
+be true of one column — which is the argument for the `AOE RANGE` column he proposed in the same
+message. The CSV keeps `enemy/aoe` until he rules; the game behaves as he described either way.
+
+### Auto-on marks are PER SUBCLASS now
+
+The skill BAR was class-level and the AUTO marks that arm it were character-level, keyed by skill id
+with no slot and no class — so any subclass whose bar happened to hold that id painted it armed.
+⚠ **Filtering the shared list on swap could not have fixed it**: it is one list, so pruning it for the
+incoming class destroys the outgoing class's marks for good. The marks moved to `Subclass`, with a new
+`SubclassRecord.AutoSkillsJson` column, and `ActivateSubclass` now pushes `SendAutoHuntConfig` —
+without that push the storage fix is invisible, because the client paints from its own flat mirror.
+
+⚠ **Same bug as playtest-17 B1, one level down.** That one leaked marks between CHARACTERS and was
+fixed by clearing them on character change; a subclass swap never leaves the world, so it never went
+through that fix. The split was even documented at the top of `Subclass.cs` — "skill-bar layout"
+class-level, "auto-hunt settings" character-level — one feature straddling the line. That sentence
+was the bug; it now says which half is which.
+
+The rest of the auto-hunt config (enabled, potion thresholds, buff potion ids) stays per character on
+purpose: those are preferences about how you play, not about this class's kit.
+
+### Filed, not built
+
+- **`BL-95`** buff presets — two built-in (fighter / mage) plus custom sets saved from what you are
+  currently wearing; NPC-buffer skills only, ids without rank, per character.
+- **`BL-96`** the `AOE RANGE` column (above).
+- **`BL-97`** one nuker per race — Tempest vs Magus. The factual answer to his question: there is no
+  stat difference at all (a class grants no stats, 2026-08-10); they are two authored KITS of one
+  archetype, both already written across three races in `nuker 3rd.csv`. So "one must go" deletes
+  authored rows and touches the 4th-tier ascension — his call which survives.
+- 🔵 **CHAT ON RELOG IS NOT CHANGED, DELIBERATELY.** He asked for it to clear; the current behaviour is
+  a feature he explicitly asked for in playtest 28 (*"chat again is saved between logins. Don't
+  reset"*), reversing his earlier `C1`. `ClientLog` files the log per character and nothing ages it
+  out, which is exactly why "3h later" still shows it. Three options put to him on the checklist
+  rather than silently reversing a ruling.
+
+## 2026-08-27 — 0.94.0: the watch is posted, and three Kind-gates that hid a whole class of bug
+
+> *"bl-79 -> try make town guards and one archer(overenchanded) in several zones … killing a guard
+> dont give karma nor flags … to match a 80 lvl player S grade equip (no nenchanted) / pieasfull zone
+> guards have everithing s grade +16 and are 90lvl -> town 80lvl S grade +0"* · *"if we treat guards
+> as mobs give them mob passives … If we treat them like a player give them classes so they atleast
+> have the player stats"* · *"Field guard they are like a guard tower … Faster stronger almost 1 shot
+> a pk"* · *"pk killing guards only enters town so he can be safe from other players the npcs still
+> refuse trade"* · *"they should ware a robe not light … don't give them +8 evasion"* · *"respawn time
+> for guards should be 60/90s .. Field guard is 1-2s (if ever killed)"* · *"fix the caster mobs .. the
+> 15k mobs are zone placed with x2/x3 hp .. some zones can have x1"*
+
+Server-side only — no protocol change, so an installed 0.93.x client plays all of it.
+
+### 🔑 THREE `Kind == EntityKind.Player` GATES THAT SHOULD HAVE BEEN `PlayerBuilt` (`Entity.cs`)
+
+The headline, and it is not the guards. `BL-47` added `PlayerBuilt` meaning "take the player side of
+the stat formulas", and the FORMULAS were duly switched to `playerStats`. But the code that **feeds**
+those formulas kept asking `Kind == Player`, because each piece predates the flag and none of it
+looks like a formula. A player-built creature was running player MATHS on mob INPUTS:
+
+- **`:2008` the armour SET bonus** — a creature in a full matched set got none of it, and since the
+  2026-08-19 ruling folds a set's Str/Int into `BonusAtk`, that is the POWER stat.
+- **`:2029` a passive's STAT bonuses** (`BonusAtk`/`BonusCon`/…) — and this one runs BEFORE the attack
+  and pool formulas, so exclusion here excluded the creature from everything they produce.
+- **`:2558` the armour-weight MASTERY block** — a creature could LEARN an armour mastery and this
+  would then decline to read it, so a fully kitted tank stood in untrained numbers.
+
+Every symptom looked like bad tuning rather than a missing branch. **Grep `Kind == EntityKind.Player`
+in `Entity.cs` before trusting any player-built number.**
+
+### `BL-79` — the guards, and they carry NO invented multiplier
+
+His fork — *"treat them as mobs … or treat them like a player"* — resolved to the player route,
+because his calibration target is a player. `MobBuild.LearnsKit` teaches the PASSIVE half of the class
+kit (weapon, armour and shield masteries; the actives are excluded so a guard never casts, per *"they
+dont use skills"*). The town pair's power is now **entirely class kit + gear**:
+
+| level 80, S+0 Epic | HP | P.Atk | P.Def |
+|---|---|---|---|
+| the reference player (tank) | 10,737 | 1,214 | 1,101 |
+| `guard_town_tank` | 9,969 | **1,158** | **1,101** |
+
+A near-exact mirror, which is what *"match a 80 lvl player S grade equip"* asks for. Time-to-kill runs
+**105s / 124s** against an S+0 warrior — his "hands full". The FIELD pair is the *"guard tower …
+almost 1 shot a pk"*: a `GuardTower` passive off the elite rank's own rungs, leaning on attack rather
+than health, killing that warrior in **16-30s** while taking 304-590s to die.
+
+⚠ **THE FIRST ATTEMPT AT THIS SHIPPED A NUMBER TUNED TO A BROKEN MEASUREMENT, AND THAT IS THE LESSON.**
+It gave the guards a hand-picked `WatchTraining` block (P.Atk ×4.2, P.Def ×3.0, …) tuned until the
+table looked right. The table was wrong: `--guards` built its reference player with `BuildPlayer`,
+which **already equips a full best-for-tier set**, then equipped an S+0 Epic set on top — and nothing
+in the tool enforces one item per slot, so the "player" wore 22 equipped pieces at roughly double a
+real one's stats. The guards were always closer to his target than the tool claimed. A multiplier
+fitted to a bad measurement is worse than no multiplier: it is wrong AND it looks deliberate.
+`WatchTraining` is deleted; the reference player's inventory is cleared before dressing.
+
+Also: **respawn is his** — town **75±15s** (his 60/90), field **1.5±0.5s**, *"if ever killed"*. Eight
+posts (five city gates, three quiet fields), karma-keyed aggro (a PK and nobody else), PvP-on as the
+GATE to attack one, and no exp/drop/quest-credit/karma-shed for the kill.
+
+### `BL-79`'s other half — an outlaw gets no SERVICE
+
+*"pk killing guards only enters town so he can be safe from other players the npcs still refuse
+trade"* — a better rule than "a pk cant use npcs" read literally, and it is why killing the watch is
+still worth something to a PK: the safe ground is real, the town is not. One chokepoint
+(`NpcRefusesService`) on **ten** handlers — vendor buy-back, teleport, buffer, SP broker, warehouse in
+and out, class change, profession, mindwriter, stat re-roll. Only buying was gated before.
+**Selling stays exempt** (his earlier ruling): being red is meant to be expensive, not to strand you
+with a full pack. A merely FLAGGED player keeps every service.
+
+### `BL-78` item 1 — the HP multiplier, and it is the ZONE's
+
+⚠ **HIS RULING OVERRODE THE FILED PLAN** (per-template `MobMod.Hp` authoring). The ZONE carries it, so
+the same creature reads ×1 in one field and ×3 in another with no template edited. One derived ladder
+(`WorldPlan.HpScaleFor`): **×1 below 40, ×2 from 40, ×3 from 61**, overridable per field.
+`MobBaseStats.Hp(80)` = 5,160, so ×3 = **15,480** — his *"15k not 5"* exactly. ⚠ A **boss ignores it**
+(0.89.0 measured every boss into the 12-25 min band off a curve bosses derive from); an **elite does
+not**. It multiplies HP and nothing else.
+
+### `BL-78` item 2 — a caster wears a ROBE
+
+🔑 **The backlog was wrong about the cause**: it said a caster "pays twice (low P.Def AND low HP)";
+`MobRole.Mage` never touched HP. The double-dip was DEFENCE — the role's ×0.7 compounding with the
+template's own `MobMod.PDef`, worst at `watcher_eye` (0.5 × 0.7 = **×0.35**, nearly three times less,
+not "a bit"). Role is now **×0.85**, and `watcher_eye`'s own P.Def moved 0.5 → 0.8.
+
+⚠ **AND THE FIRST FIX OVERREACHED — he corrected it.** It also gave the Mage role Archer's **+8
+evasion**, reasoning from IG's `Light Armor Type` tag. His ruling: *"they should ware a robe not light
+… don't give them +8 evasion so they be missed and hit for 300"*. A robe is not light armour, and a
+caster that also DODGES turns a soft target into a coin-flip. Evasion is the archer's trade. Reverted.
+
+### Also
+
+- `MobBuild` can carry a **shield** (one-handed builds only); `MobType` gains **`Guard`** and a
+  per-template **`AggroRange`** (his 400 melee / 600 archer).
+- Guard posts are **exempt from the rogue-spawner boot guard** — a town post stands just outside a
+  city's safe radius, outside every field polygon by construction.
+- `BalanceMatrix --guards` builds both sides through the real paths, including the **held rune buff**
+  the spawn path applies (omitting it handed the player a silent +100% P.Atk).
+
+## 2026-08-27 — 0.93.2: the TARGET column becomes `[scope]/[breadth]`, and a real Unity guide
 
 > *"the logic is [self-onlyMe/target-anyFriendly/party-anyPartyMemeber/enemy]/[single-affectOne/
 > aoe-affectsMany]"* … *"do for all files"* … *"--check should read target after i check them and if

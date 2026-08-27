@@ -392,6 +392,18 @@ public static class RegionMap
         var rogue = new List<string>();
         foreach (var z in WorldMap.SpawnZones)
         {
+            // BL-79 — A GUARD POST IS EXEMPT, and deliberately so. A town post stands just outside a
+            // city's safe radius, which is outside every field polygon by construction: fields
+            // radiate AWAY from a city and none of them covers its doorstep.
+            //
+            // The rule's own reason is what makes this safe rather than a workaround — "a spawner
+            // outside every field would show as a lone circle with no zone identity, no derived band,
+            // and no field to belong to". A guard post has hand-authored identity from end to end: a
+            // named template, its own level, its own roster, its own respawn. Being a lone circle is
+            // the design, not the symptom. Every OTHER spawner still has to be a child of a field.
+            if (z.MobTypes.Length > 0 && Array.TrueForAll(z.MobTypes, id => MobCatalog.Get(id).Guard))
+                continue;
+
             bool inField = false;
             foreach (var f in Fields)
                 if (f.Contains(z.X, z.Y)) { inField = true; break; }

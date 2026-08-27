@@ -133,7 +133,11 @@ public static class WorldMap
         // NATURAL level brings its own and the spawner's Min/Max is then only a label, so each roster is
         // stocked with creatures whose natural level sits in the band it advertises. The rosters moved
         // across to DungeonLayout unchanged.
-    }).Concat(DungeonLayout.SpawnZones).ToArray();
+    }).Concat(DungeonLayout.SpawnZones)
+      // BL-79's guard posts — the town gates and the three guarded fields. Authored in WorldPlan
+      // beside the fields they belong to, because a post's position is DERIVED from a city's radius
+      // and a field's last camp; writing the coordinates out here would be two files agreeing by hand.
+      .Concat(WorldPlan.GuardZones).ToArray();
 
     /// <summary>Safe zones (cities/castles). AUTHORED IN <see cref="Towns"/> — this forwards, so every
     /// existing call site is unchanged. They moved out because <see cref="SpawnZones"/> is generated from
@@ -657,7 +661,28 @@ public record SpawnZone(
     // an empty list = none. See IsAggressiveType.
     string[]? AggressiveTypes = null,
     // Per-template spawners layered ON TOP of the mixed roster above. See DedicatedSpawn.
-    DedicatedSpawn[]? Dedicated = null)
+    DedicatedSpawn[]? Dedicated = null,
+    // ===================================================================================
+    //  HP MULTIPLIER — the ZONE places it, not the template (BL-78 item 1, owner 2026-08-27:
+    //  "the 15k mobs are zone placed with x2/x3 hp .. some zones can have x1").
+    //
+    //  ⚠ THIS OVERRODE THE FILED PLAN. BL-78 item 1 was written as per-template MobMod.Hp
+    //  authoring across the roster — 4 of our 80 templates carry one against IG's 23%. He moved
+    //  the lever to the ZONE instead, which means the same creature reads x1 in one field and x3
+    //  in another, and not one template is edited to get there.
+    //
+    //  His 15k: MobBaseStats.Hp(80) = 40 + 0.8*6400 = 5,160, so x2 = 10,320 and x3 = 15,480 —
+    //  "the 80 mobs should have 15k not 5", exactly.
+    //
+    //  ⚠ IT IS NOT THE SAME RULE AS ForceZoneLevel ABOVE. A template's own LEVEL beats the zone's
+    //  band; this multiplier is the zone's unconditionally, because it is the knob for making a
+    //  FIELD feel heavy rather than for describing a creature.
+    //
+    //  ⚠ BOSS-RANK SPAWNS ARE EXEMPT — see the composition site in Entity.ApplyMobScale. 0.89.0
+    //  measured every boss into his 12-25 minute band off a curve; letting a field's x3 through
+    //  would trip a boss straight out of it, silently, from an edit that never mentions bosses.
+    // ===================================================================================
+    float HpScale = 1f)
 {
     /// <summary>Stable id from coordinates+rank, used to persist boss timers.</summary>
     public string Id => $"{(int)X}_{(int)Y}_{Rank}";

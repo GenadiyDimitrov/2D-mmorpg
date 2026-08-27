@@ -114,7 +114,7 @@ public static partial class SkillCatalog
 
         // ═══ THE HEALS ═══════════════════════════════════════════════════════════════════════════
         new(GreatHeal, "Great Heal", BaseClass.Mage, SkillEffect.Heal,
-            MpCost: 62, CastTicks: 50, CooldownTicks: 20, Range: 600, Power: 400,
+            MpCost: 62, CastTicks: 50, CooldownTicks: 30, Range: 600, Power: 400,
             Category: SkillCategory.Heal,  SpCost: 36000,
             Replaces: new[] { Heal },
             Description: "The healer's workhorse: a big single-target heal on a 5s cast.",
@@ -127,9 +127,10 @@ public static partial class SkillCatalog
             }).Concat(HealerFourthGreatHealRungs()).ToArray()),
 
         new(PartyGreatHeal, "Party Great Heal", BaseClass.Mage, SkillEffect.Heal,
-            MpCost: 124, CastTicks: 70, CooldownTicks: 50, Range: 600, Power: 320,
+            // ⚠ 0 range = castable with NO target (see Party Heal). Owner 2026-08-28: 0/1000, 7s cast, 6s cd.
+            MpCost: 124, CastTicks: 70, CooldownTicks: 60, Range: 0, Power: 320,
             Category: SkillCategory.Heal,  SpCost: 36000,
-            TargetMode: TargetMode.AlliesInRadius, AreaRadius: 600f,
+            TargetMode: TargetMode.AlliesInRadius, AreaRadius: 1000f,
             Replaces: new[] { PartyHeal },
             Description: "Heals you and nearby party members. Exactly twice the MP of Great Heal, at "
                        + "every rung — the party version is priced per head, not discounted.",
@@ -166,7 +167,7 @@ public static partial class SkillCatalog
         //      keeps a strictly-stronger heal from simply retiring Great Heal: it costs the same MP and
         //      hits harder, and you can only cast it as often as you can buy stones.
         new(UltimateHeal, "Ultimate Heal", BaseClass.Mage, SkillEffect.Heal,
-            MpCost: 95, CastTicks: 50, CooldownTicks: 20, Range: 600, Power: 730,
+            MpCost: 95, CastTicks: 50, CooldownTicks: 10, Range: 600, Power: 730,
             Category: SkillCategory.Heal,  SpCost: 88000,
             ConsumableId: ItemCatalog.SkillStone, ConsumableAmount: 1,
             Description: "Great Heal's stronger twin. Consumes one Skill Stone per cast.",
@@ -179,9 +180,11 @@ public static partial class SkillCatalog
             }).Concat(HealerFourthUltimateHealRungs()).ToArray()),
 
         new(UltimatePartyHeal, "Ultimate Party Heal", BaseClass.Mage, SkillEffect.Heal,
-            MpCost: 190, CastTicks: 70, CooldownTicks: 50, Range: 600, Power: 730,
+            // ⚠ 0 range = castable with NO target. Owner 2026-08-28: 0/1000, 7s cast, 3s cd — the
+            // ultimate's edge over Party Great Heal is the REUSE (3s vs 6s), not the cast time.
+            MpCost: 190, CastTicks: 70, CooldownTicks: 30, Range: 0, Power: 730,
             Category: SkillCategory.Heal,  SpCost: 88000,
-            TargetMode: TargetMode.AlliesInRadius, AreaRadius: 600f,
+            TargetMode: TargetMode.AlliesInRadius, AreaRadius: 1000f,
             ConsumableId: ItemCatalog.SkillStone, ConsumableAmount: 4,
             Description: "Party Great Heal's stronger twin — and it heals every ally for the FULL "
                        + "single-target number, not a reduced one. Consumes four Skill Stones.",
@@ -449,7 +452,7 @@ public static partial class SkillCatalog
         // Its heal is BELOW Great Heal's at every rung (360 vs 400 … 800 vs 860) on a 3s cast: the Elf
         // pays for the cure in healing, where the Human pays for speed in MP.
         new(LbElfDawn, "Healer Blessing", BaseClass.Mage, SkillEffect.Heal | SkillEffect.Cleanse,
-            MpCost: 62, CastTicks: 30, CooldownTicks: 10, Range: 600, Power: 360,
+            MpCost: 62, CastTicks: 30, CooldownTicks: 30, Range: 600, Power: 360,
             Category: SkillCategory.Heal,  SpCost: 36000,
             DispelMask: SkillEffect.Bleed | SkillEffect.Poison | SkillEffect.Venom,
             DispelMaxLevel: 3,

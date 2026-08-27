@@ -77,7 +77,11 @@ public static class WorldPlan
         /// specific pair.</summary>
         string[]? Aggressive = null,
         int? AggressiveCount = null,
-        bool ForceZoneLevel = false);
+        bool ForceZoneLevel = false,
+        /// <summary>This camp's HP multiplier, overriding the level-derived ladder in
+        /// <see cref="HpScaleFor"/>. Null = take the ladder, which is what every camp does today.
+        /// Authored only where a specific field should read heavier or lighter than its level says.</summary>
+        float? HpScale = null);
 
     /// <summary>One field: whose city, where around it, and the camps it holds.</summary>
     public sealed record FieldPlan(
@@ -89,8 +93,33 @@ public static class WorldPlan
         int EliteLevel = 0);
 
     private static Band B(int min, int max, string[]? mobs = null, string[]? aggressive = null,
-                          int? aggressiveCount = null, bool force = false) =>
-        new(min, max, mobs, aggressive, aggressiveCount, force);
+                          int? aggressiveCount = null, bool force = false, float? hpScale = null) =>
+        new(min, max, mobs, aggressive, aggressiveCount, force, hpScale);
+
+    // ===================================================================================
+    //  THE FIELD HP LADDER — BL-78 item 1 (owner, 2026-08-27): "the 15k mobs are zone placed with
+    //  x2/x3 hp .. some zones can have x1".
+    //
+    //  ONE rule, derived from the camp's own level, rather than a number typed on each of the
+    //  generated camps — the same way this generator already derives respawn time and the
+    //  aggressive count. A field that wants to disagree sets Band.HpScale and says why.
+    //
+    //  WHY THESE THREE RUNGS:
+    //   - x1 below 40. Levelling is fast down here and our base HP is deliberately ~0.5x IG's below
+    //     20 (he ruled that acceptable). Tripling a newbie field would be felt as a wall, not thrill,
+    //     and it is the one stretch of the game nobody has complained about.
+    //   - x2 from 40. This is where "no thrill in fighting" started in playtest 25 — the rogue almost
+    //     one-blowing things and the mage one/two-shotting them.
+    //   - x3 from 61. Lands his headline number exactly: MobBaseStats.Hp(80) = 5,160, x3 = 15,480,
+    //     against "the 80 mobs should have 15k not 5".
+    //
+    //  ⚠ It multiplies HP and NOTHING else. Damage, defence, EXP and drops are untouched, so a camp
+    //  takes longer to clear but does not hit harder — which is the honest reading of his complaint
+    //  (things die too fast), and it keeps this lever off the 0.73.0 attack refit.
+    //  ⚠ A BOSS IGNORES IT — see Entity.ApplyMobScale. An ELITE does not.
+    // ===================================================================================
+    /// <summary>The HP multiplier a camp gets from its level alone. See the block above.</summary>
+    public static float HpScaleFor(int level) => level >= 61 ? 3f : level >= 40 ? 2f : 1f;
 
     /// <summary>The 84-85 roster, borrowed by the 86-90 camps: there are no creatures authored above 85
     /// yet, and the last five levels still need somewhere to happen (owner). ForceZoneLevel makes them
@@ -238,6 +267,118 @@ public static class WorldPlan
 
     public static IReadOnlyList<Field> Fields => _fields;
 
+    // ===================================================================================
+    //  BL-79 — THE GUARD POSTS. Where the watch actually stands.
+    //
+    //  Owner, 2026-08-27: "try make town guards and one archer(overenchanded) in several zones (like
+    //  piesfull farming zones)", and from playtest 25: "each towns exit will have two guards - a tank
+    //  and an archer".
+    //
+    //  A TOWN POST sits just outside the city's safe radius, on the bearing of that city's first
+    //  hunting field — which is what "the town's exit" means here, since a city has no authored door
+    //  and its fields ARE its roads. Just outside matters twice over: a safe zone keeps mobs out
+    //  entirely, and MobAi skips any candidate standing in one, so a guard placed inside would be
+    //  both illegal and blind.
+    //
+    //  A FIELD POST sits at the far camp of a quiet farming field — his "peaceful farming zones".
+    //  Three of them, spread across the level range rather than clustered, so the feature can be
+    //  tested at more than one level without a taxi ride between them.
+    //
+    //  ⚠ ONE POST PER CITY, NOT ONE PER BEARING. Five cities carry ~25 field plans between them, and
+    //  a guard pair on every one of them would be fifty level-80 creatures standing around the world
+    //  to serve a feature nobody has played yet. Widening this is one line in the loop below once he
+    //  has seen it work.
+    // ===================================================================================
+
+    /// <summary>How far beyond a city's safe radius its guard post stands.</summary>
+    private const float GuardPostOffset = 300f;
+
+    /// <summary>The radius a guard post patrols. Small on purpose — a post is a gate, not a camp,
+    /// and the pair should read as standing TOGETHER at the road.</summary>
+    private const float GuardPostRadius = 220f;
+
+    /// <summary>Respawn for a TOWN guard: 60-90s, his own numbers (2026-08-27). Authored as a centre
+    /// with a variance because that is the shape SpawnZone takes — 75 ± 15 IS 60-90.</summary>
+    private const double TownGuardRespawnSeconds = 75.0;
+    private const double TownGuardRespawnVariance = 15.0;
+
+    /// <summary>Respawn for a FIELD guard: *"1-2s (if ever killed)"*. Effectively immediate — the
+    /// parenthesis is the design statement, not a caveat. A guard tower is not something you clear;
+    /// killing one buys you a second and a half, which is to say nothing at all.</summary>
+    private const double FieldGuardRespawnSeconds = 1.5;
+    private const double FieldGuardRespawnVariance = 0.5;
+
+    /// <summary>The fields that get a field post. Chosen for spread across the level range, and named
+    /// by id so a re-aimed bearing or a renamed field cannot silently move a guard somewhere else.</summary>
+    private static readonly string[] GuardedFieldIds =
+    {
+        "field_stone_barrens",      // Stonewatch, the mid-20s/30s farm
+        "field_marsh_hollow",       // Greymarsh, the 40-60 band
+        "field_frost_expanse",      // Frostmere, the 76-90 band
+    };
+
+    /// <summary>Every guard post in the world (BL-79). Concatenated into WorldMap.SpawnZones.
+    ///
+    /// ⚠ A TOWN POST IS DELIBERATELY OUTSIDE EVERY FIELD POLYGON, which is exactly what
+    /// Regions.ValidateSpawnersInFields exists to reject — see the guard-post exemption there. The
+    /// rule's reason ("a spawner outside every field has no zone identity and no derived band") is
+    /// the one thing a guard post does not suffer from: it is hand-authored identity from end to end.
+    /// </summary>
+    public static SpawnZone[] GuardZones => _guardZones;
+
+    private static readonly SpawnZone[] _guardZones = BuildGuardZones();
+
+    private static SpawnZone[] BuildGuardZones()
+    {
+        var zones = new List<SpawnZone>();
+        string[] townPair = { "guard_town_tank", "guard_town_archer" };
+        string[] fieldPair = { "guard_field_tank", "guard_field_archer" };
+
+        // ---- One post at each city's exit ----
+        foreach (var city in Cities)
+        {
+            var firstPlan = Array.Find(Plans, p => p.CityId == city.Id);
+            if (firstPlan is null) continue;
+
+            double angle = firstPlan.Bearing * Math.PI / 180.0;
+            float dist = city.Radius + GuardPostOffset;
+            zones.Add(GuardZone(city.X + dist * (float)Math.Cos(angle),
+                                city.Y + dist * (float)Math.Sin(angle),
+                                townPair, 80, TownGuardRespawnSeconds, TownGuardRespawnVariance));
+        }
+
+        // ---- One post at the far camp of each guarded field ----
+        foreach (var id in GuardedFieldIds)
+        {
+            var field = _fields.FirstOrDefault(f => f.Plan.Id == id);
+            if (field is null || field.Camps.Length == 0) continue;
+
+            // The LAST normal camp — the deepest part of the field, where somebody farming quietly
+            // would actually be, rather than the entrance everyone walks through.
+            var camp = field.Camps[^1].Zone;
+            zones.Add(GuardZone(camp.X, camp.Y, fieldPair, 90,
+                                FieldGuardRespawnSeconds, FieldGuardRespawnVariance));
+        }
+
+        return zones.ToArray();
+    }
+
+    private static SpawnZone GuardZone(float x, float y, string[] pair, int level,
+                                      double respawn, double variance) =>
+        new(x, y, GuardPostRadius, level, level, pair, pair.Length,
+            respawn, variance, MobRank.Normal, ActiveTime.Always,
+            // The guard templates carry their own natural level, so ForceZoneLevel stays false and
+            // the band above is descriptive — the same convention every named creature runs on.
+            ForceZoneLevel: false,
+            // Both of them "aggressive", which for a guard means only "acquires targets at all";
+            // MobType.Guard is what narrows that to PKs. Naming them explicitly beats the default
+            // (first entry only), which would leave the archer permanently asleep.
+            AggressiveTypes: pair,
+            Dedicated: pair.Select(m => new DedicatedSpawn(m, 1)).ToArray(),
+            // A guard's pool is its own — it is a player-built creature and the field HP ladder is
+            // for the mob curve. x1 keeps "match a level-80 player in S+0" true.
+            HpScale: 1f);
+
     /// <summary>The CITIES — the safe zones that own hunting fields (and so carry the full service set:
     /// buffer, keeper, three vendors, gatekeeper). The training outpost and the dungeon entrance are safe
     /// zones but not cities, which is exactly the distinction "who owns fields" draws.</summary>
@@ -310,10 +451,14 @@ public static class WorldPlan
             ? null
             : band.Aggressive ?? PickAggressive(roster, band.AggressiveCount ?? AggressiveRamp(band.Max));
 
+        // The camp's HP multiplier: its own if authored, otherwise the level ladder. Keyed on Max —
+        // a camp is named by the top of its band, and that is the level a player judges it at.
+        float hpScale = band.HpScale ?? HpScaleFor(band.Max);
+
         return new SpawnZone(x, y, radius, band.Min, band.Max, roster, maxCount,
                              respawn, variance, rank, ActiveTime.Always,
                              band.ForceZoneLevel, aggressive,
-                             DedicatedFor(roster, band, rank));
+                             DedicatedFor(roster, band, rank), hpScale);
     }
 
     /// <summary>How many of a quest target a camp keeps in its OWN spawner, on top of the mixed pool.</summary>

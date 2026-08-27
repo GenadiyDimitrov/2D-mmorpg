@@ -617,6 +617,17 @@ public class PersistenceService
             try { sc.SkillBar = JsonSerializer.Deserialize<string[]>(r.SkillBarJson) ?? Array.Empty<string>(); }
             catch { /* ignore malformed skill-bar json */ }
         }
+        if (!string.IsNullOrEmpty(r.AutoSkillsJson))
+        {
+            // Per-class AUTO marks (2026-08-28). An older row has none, which is the correct
+            // migration: nothing was ever armed on THIS class, so nothing should read as armed.
+            try
+            {
+                var marks = JsonSerializer.Deserialize<List<AutoSkillDto>>(r.AutoSkillsJson);
+                if (marks is not null) sc.AutoSkills.AddRange(marks);
+            }
+            catch { /* ignore malformed auto-mark json */ }
+        }
         return sc;
     }
 
@@ -874,14 +885,15 @@ public class PersistenceService
         int Slot, Race Race, BaseClass BaseClass, int SecondClass, int ThirdClass, int FourthClass,
         int Level, long Exp, int SkillPoints,
         int Con, int Atk, int Wit, int Agi, int Spt,
-        string LearnedSkillsCsv, string SkillBarJson)
+        string LearnedSkillsCsv, string SkillBarJson, string AutoSkillsJson)
     {
         public static SubclassSnapshot From(Subclass s) => new(
             s.Slot, s.Race, s.BaseClass, s.SecondClass, s.ThirdClass, s.FourthClass,
             s.Level, s.Exp, s.SkillPoints,
             s.Con, s.Atk, s.Wit, s.Agi, s.Spt,
             string.Join(',', s.LearnedSkills.Select(kv => $"{kv.Key}:{kv.Value}")),
-            JsonSerializer.Serialize(s.SkillBar));
+            JsonSerializer.Serialize(s.SkillBar),
+            JsonSerializer.Serialize(s.AutoSkills));
     }
 
     /// <summary>The BaseClass / Level / Exp / SkillPoints / Con..Agi / LearnedSkillsCsv fields here are
@@ -1127,6 +1139,7 @@ public class PersistenceService
             Con = s.Con, Atk = s.Atk, Wit = s.Wit, Agi = s.Agi, Spt = s.Spt,
             LearnedSkillsCsv = s.LearnedSkillsCsv,
             SkillBarJson = s.SkillBarJson,
+            AutoSkillsJson = s.AutoSkillsJson,
         }).ToList();
 
         // Rebuild the item set from the snapshot.

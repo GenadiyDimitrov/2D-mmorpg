@@ -27,23 +27,69 @@ if (args.Length > 0 && args[0] == "--dump-mob-csv")
 {
     string path = args.Length > 1 ? args[1] : "docs/data/mobs/mob_base_stats.csv";
     var lines = File.ReadAllLines(path);
-    var outp = new List<string> { lines[0] };
+
+    // ⚠ THE ROSTER IS REBUILT FROM THE CATALOG, NOT JUST THE NUMBERS (fixed 2026-08-28).
+    //
+    // This used to walk the EXISTING FILE and refresh columns 4-9 in place, which meant the row LIST
+    // was hand-maintained while only the stats were generated. So the file quietly disagreed with the
+    // game in both directions at once: `rift_portling`, deleted from MobCatalog on his ruling, kept
+    // its row; the four BL-79 guards, added the day before, never got one. A reference that is
+    // "regenerated from the code" (CLAUDE.md) but silently keeps whatever roster it already had is
+    // the same failure as 0.93.1's hand-copied interrupt table — it can never contradict you, because
+    // the half that would have disagreed is the half nobody regenerates.
+    //
+    // The ID column is a synthetic external-style id with no source in code, so it is PRESERVED by
+    // name for every row that already had one and assigned from the top for anything new. That keeps
+    // existing ids stable (they are cited in docs/balance/MobCurveVsIG.md) without pretending the
+    // code owns them.
+    var oldIdByName = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+    int maxId = 20000;
     for (int i = 1; i < lines.Length; i++)
     {
         if (string.IsNullOrWhiteSpace(lines[i])) continue;
         var c = lines[i].Split(',');
-        int lvl = int.Parse(c[2]);
-        c[4] = MobBaseStats.Hp(lvl).ToString();
-        c[5] = MobBaseStats.Mp(lvl).ToString();
-        c[6] = MobBaseStats.PDef(lvl).ToString();
-        c[7] = MobBaseStats.MDef(lvl).ToString();
-        c[8] = MobBaseStats.PAtk(lvl).ToString();
-        c[9] = MobBaseStats.MAtk(lvl).ToString();
-        outp.Add(string.Join(',', c));
+        if (c.Length < 2) continue;
+        oldIdByName[c[1]] = c[0];
+        if (int.TryParse(c[0], out int id) && id > maxId) maxId = id;
     }
+
+    // HandPlaced creatures are excluded on purpose: the demo five and the BL-79 guards are
+    // PLAYER-BUILT, so MobBaseStats says nothing true about them — printing curve numbers beside a
+    // creature that never reads the curve would be worse than leaving it out. Dummies likewise.
+    var roster = MobCatalog.Templates
+        .Where(m => !m.Dummy && !m.HandPlaced)
+        .OrderBy(m => m.Level).ThenBy(m => m.Name, StringComparer.Ordinal)
+        .ToList();
+
+    var outp = new List<string> { lines[0] };
+    int added = 0, dropped = oldIdByName.Count;
+    foreach (var m in roster)
+    {
+        int lvl = m.Level;
+        string id;
+        if (oldIdByName.TryGetValue(m.Name, out var known)) { id = known; dropped--; }
+        else { id = (++maxId).ToString(); added++; }
+
+        outp.Add(string.Join(',', new[]
+        {
+            id, m.Name, lvl.ToString(), MobCategoryLabel(m.Category),
+            MobBaseStats.Hp(lvl).ToString(), MobBaseStats.Mp(lvl).ToString(),
+            MobBaseStats.PDef(lvl).ToString(), MobBaseStats.MDef(lvl).ToString(),
+            MobBaseStats.PAtk(lvl).ToString(), MobBaseStats.MAtk(lvl).ToString(),
+            ((int)m.RunSpeed).ToString(), "333",
+        }));
+    }
+
     File.WriteAllLines(path, outp);
-    Console.WriteLine($"rewrote {outp.Count - 1} rows in {path} from MobBaseStats");
+    Console.WriteLine($"rewrote {outp.Count - 1} rows in {path} from MobCatalog + MobBaseStats "
+                    + $"({added} added, {dropped} removed)");
     return;
+
+    static string MobCategoryLabel(MobCategory c) => c switch
+    {
+        MobCategory.MagicCreature => "Magic Creature",
+        _ => c.ToString(),
+    };
 }
 
 // `--fizzle [spellLevel] [from] [to]` prints the MAGIC FAIL curve straight out of
@@ -404,6 +450,122 @@ if (args.Length > 0 && args[0] == "--stacks")
 if (args.Length > 0 && args[0] == "--mpcase")
 {
     MpCase();
+    return;
+}
+
+// `--guards` — BL-79: is a guard actually calibrated to the player he is supposed to stop?
+//
+// His target, 2026-08-27: "they should be strong enough so a player attacking them (pvp-on must be
+// on) and when the guard retaliate a player has its hands full .. to match a 80 lvl player S grade
+// equip (no nenchanted)". That is a MEASURABLE claim, so it gets measured rather than asserted —
+// the 0.93.1 lesson, where a hand-copied literal let a tool agree with itself forever.
+//
+// Both sides are built through the REAL paths: the guard by MobBuild/ApplyMobBuild exactly as
+// BuildMob does at spawn, the player by BuildPlayer + the same S-grade Epic pieces. Nothing here
+// restates a number that lives in MobCatalog.
+if (args.Length > 0 && args[0] == "--guards")
+{
+    Console.WriteLine("=== BL-79 GUARDS vs THE REFERENCE PLAYER ===");
+    Console.WriteLine("  His target: \"to match a 80 lvl player S grade equip (no nenchanted)\".");
+    Console.WriteLine("  Reference  = level 80 human, S grade (t80) Epic, +0 — tank and warrior.");
+    Console.WriteLine("  ⚠ Block is NOT modelled by PhysDps, so a SHIELDED side lives longer than shown.");
+    Console.WriteLine();
+
+    static Entity GuardEntity(string mobId)
+    {
+        var t = MobCatalog.Get(mobId);
+        var e = new Entity { Name = t.Name, Kind = EntityKind.Mob, Level = t.Level, MobTypeId = mobId };
+        if (t.Build is MobBuild b) e.ApplyMobBuild(b);
+
+        // ⚠ THE HELD RUNE MUST BE APPLIED HERE OR THE COMPARISON IS A LIE. A creature's rune buff is
+        // put up by GameLoopService at SPAWN (it has no clock and no login, so the buff is applied once
+        // and never expires) — ApplyMobBuild only puts the rune in its inventory. BuildPlayer gives the
+        // reference player exactly this buff, so measuring a runed player against an un-runed guard
+        // hands the player a silent +100% P.Atk and reads as "the guard is half as strong as it is".
+        if (t.Build is MobBuild rb && rb.Held.Length > 0
+            && ItemCatalog.Get(rb.Held) is { RuneBuffSkillId: { Length: > 0 } runeBuffId }
+            && SkillCatalog.Get(runeBuffId) is SkillDef runeSkill)
+            e.Buffs.Add(new Game.Server.Simulation.BuffInstance
+            {
+                Effect = runeSkill.Effect, Magnitudes = runeSkill.Magnitudes,
+                TicksRemaining = int.MaxValue, Name = runeSkill.Name, Key = runeSkill.BuffKey,
+            });
+
+        e.RecomputeDerived();
+        e.Hp = e.MaxHp;
+        return e;
+    }
+
+    static Entity RefPlayer(bool warrior)
+    {
+        var e = BuildPlayer(Race.Human, BaseClass.Fighter, 80, warrior: warrior);
+
+        // ⚠ STRIP WHAT BuildPlayer ALREADY EQUIPPED, OR THE REFERENCE WEARS TWO FULL SETS.
+        // BuildPlayer dresses its character in best-for-tier gear (the MYTHIC base-tier pieces,
+        // `sword1h_t80` etc.), and every piece added afterwards is ALSO flagged Equipped — nothing in
+        // this tool enforces one item per slot. Adding the S+0 Epic set on top therefore produced a
+        // player wearing 22 equipped items whose stats were roughly double a real one's, and it read
+        // exactly like "a guard in identical gear is 5x weaker than a player". It was not: the player
+        // was double-geared. The guards were closer to his target than the first measurement claimed.
+        // The rune BUFF that BuildPlayer applies is deliberately kept — it is not inventory, and the
+        // guards hold one too.
+        e.Inventory.Clear();
+
+        foreach (var (id, ench) in new[]
+                 {
+                     ($"{(warrior ? "sword2h" : "sword1h")}_t80_epic", 0), ("heavy_t80_epic", 0),
+                     ("helm_t80_epic", 0), ("gloves_t80_epic", 0), ("boots_t80_epic", 0),
+                     ("necklace_t80_epic", 0), ("ring_t80_epic", 0), ("ring_t80_epic", 0),
+                     ("earring_t80_epic", 0), ("earring_t80_epic", 0),
+                 })
+            EquipEnchanted(e, id, ench);
+        if (!warrior) EquipEnchanted(e, "shield_t80", 0);
+        e.RecomputeDerived();
+        e.Hp = e.MaxHp;
+        return e;
+    }
+
+    var contenders = new (string Label, Entity E)[]
+    {
+        ("PLAYER tank   (S+0, shield)", RefPlayer(warrior: false)),
+        ("PLAYER warrior (S+0, 2H)",    RefPlayer(warrior: true)),
+        ("guard_town_tank",             GuardEntity("guard_town_tank")),
+        ("guard_town_archer",           GuardEntity("guard_town_archer")),
+        ("guard_field_tank",            GuardEntity("guard_field_tank")),
+        ("guard_field_archer",          GuardEntity("guard_field_archer")),
+    };
+
+    Console.WriteLine($"{"",-30} {"Lv",3} {"HP",8} {"P.Atk",7} {"P.Def",7} {"M.Def",7} {"Eva",5} {"Acc",5}");
+    foreach (var (label, e) in contenders)
+        Console.WriteLine($"{label,-30} {e.Level,3} {e.MaxHp,8} {(int)e.EffectiveAttack,7} "
+                        + $"{(int)e.EffectiveDefence,7} {(int)e.EffectiveMagicDefence,7} "
+                        + $"{(int)e.EffectiveEvasion,5} {(int)e.Accuracy,5}");
+    Console.WriteLine();
+
+    Console.WriteLine("--- TIME TO KILL, both directions (seconds; '-' = cannot hurt it) ---");
+    Console.WriteLine($"{"matchup",-46} {"player kills guard",19} {"guard kills player",19}");
+    foreach (var (pLabel, p) in contenders.Take(2))
+        foreach (var (gLabel, g) in contenders.Skip(2))
+        {
+            float pDps = PhysDps(p, g), gDps = PhysDps(g, p);
+            string pT = pDps > 0.01f ? (g.MaxHp / pDps).ToString("0") + "s" : "-";
+            string gT = gDps > 0.01f ? (p.MaxHp / gDps).ToString("0") + "s" : "-";
+            Console.WriteLine($"{pLabel + "  vs  " + gLabel,-46} {pT,19} {gT,19}");
+        }
+
+    Console.WriteLine();
+    Console.WriteLine("  READ IT LIKE THIS: 'hands full' is the TOWN pair — the player should win, but");
+    Console.WriteLine("  not comfortably, and the two columns should be within sight of each other.");
+    Console.WriteLine("  The FIELD pair (90, +16, War Rune) is meant to be a wall, not a duel: if the");
+    Console.WriteLine("  right column is far shorter than the left, that is the design, not a bug.");
+    Console.WriteLine();
+
+    Console.WriteLine("--- WHERE THE GUARDS STAND ---");
+    foreach (var z in WorldPlan.GuardZones)
+        Console.WriteLine($"  ({z.X,6:0},{z.Y,6:0}) r{z.Radius,-4:0} Lv{z.MinLevel,-3} "
+                        + $"respawn {z.RespawnSeconds,4:0}s · {string.Join(" + ", z.MobTypes)}");
+    Console.WriteLine($"  {WorldPlan.GuardZones.Length} posts, "
+                    + $"{WorldPlan.GuardZones.Sum(z => z.TotalCount)} guards in the world.");
     return;
 }
 

@@ -247,6 +247,13 @@ public class SubclassRecord
 
     /// <summary>This class's skill-bar layout as a JSON string array ("" = an empty slot).</summary>
     public string SkillBarJson { get; set; } = "";
+
+    /// <summary>This class's AUTO marks as JSON (AutoSkillDto[]). PER CLASS since 2026-08-28 — see
+    /// Subclass.AutoSkills. Before that the marks lived in CharacterRecord.AutoHuntJson, one set for
+    /// the whole character, which is what leaked a buffer's armed attack into a new subclass.
+    /// ⚠ NEW COLUMN: EnsureCreated does not add columns to an existing DB. Delete Game.Server/game.db
+    /// (and -shm/-wal) and let it recreate.</summary>
+    public string AutoSkillsJson { get; set; } = "";
 }
 
 public class ItemRecord

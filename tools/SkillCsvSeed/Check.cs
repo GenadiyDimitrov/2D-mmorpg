@@ -110,7 +110,12 @@ internal static class Check
     private sealed record Rung(string Name, int LearnLevel, float Range, float Cast, float Cd,
                                float Duration, int Mp, int Sp,
                                string Descr = "", SkillDef? Def = null, int SkillLevel = 1,
-                               string Target = "");
+                               string Target = "",
+                               // BL-96 — the AOE column: how wide the effect goes off, as against
+                               // Range, which is how far you may throw it. Compared to
+                               // SkillDef.AreaRadiusAt, so the radius is a CHECKED number for the
+                               // first time; before this column it existed only as prose in DESCR.
+                               float Aoe = 0f);
 
     public static int Run(string dir)
     {
@@ -165,9 +170,13 @@ internal static class Check
             // width test — producing a nameless "skill" at level 0 that then NAME-DRIFT-matched itself
             // onto a real one and reported five invented mismatches. A row with no NAME is not a rung.
             if (f[1].Trim().Length == 0) continue;
-            rows.Add(new Rung(f[1].Trim(), I(f[0]), F(f[3]), F(f[5]), F(f[6]), F(f[7]),
-                              I(f[9]), I(f[10]), Descr: f[8].Trim(),
-                              Target: f[4].Trim().ToLowerInvariant()));
+            // ⚠ COLUMN INDICES SHIFTED BY THE BL-96 AOE COLUMN (2026-08-28). AOE was inserted at 4, so
+            // TARGET moved 4 -> 5 and everything after it moved up one. This is the ONLY place the CSV
+            // is read by index, which is what kept that migration a contained change.
+            rows.Add(new Rung(f[1].Trim(), I(f[0]), F(f[3]), F(f[6]), F(f[7]), F(f[8]),
+                              I(f[10]), I(f[11]), Descr: f[9].Trim(),
+                              Target: f[5].Trim().ToLowerInvariant(),
+                              Aoe: F(f[4])));
         }
         return rows;
     }
@@ -242,7 +251,10 @@ internal static class Check
                     duration,
                     def.MpCostAt(cs.SkillLevel),
                     cs.SpCostFor(def), Def: def, SkillLevel: cs.SkillLevel,
-                    Target: Retarget.FromDef(def)));
+                    Target: Retarget.FromDef(def),
+                    // BL-96 — the radius the GAME carries at this rung, so the new AOE column is
+                    // verified against the code like every other number in the row.
+                    Aoe: def.AreaRadiusAt(cs.SkillLevel)));
             }
         return rows;
     }
@@ -326,6 +338,8 @@ internal static class Check
                 var diffs = new List<string>();
                 Cmp(diffs, "learn lvl", a[i].LearnLevel, b[i].LearnLevel);
                 Cmp(diffs, "range",     a[i].Range,      b[i].Range);
+                // BL-96 — the AOE radius, now a checked number rather than prose in DESCR.
+                Cmp(diffs, "aoe",       a[i].Aoe,        b[i].Aoe);
                 Cmp(diffs, "cast s",    a[i].Cast,       b[i].Cast);
                 Cmp(diffs, "cd s",      a[i].Cd,         b[i].Cd);
                 Cmp(diffs, "duration",  a[i].Duration,   b[i].Duration);

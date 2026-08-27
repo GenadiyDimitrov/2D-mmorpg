@@ -1771,6 +1771,12 @@ public class Entity
     /// change re-ran it and erased a rank that had been multiplied in afterwards (playtest-20 #7).
     /// Set them in BuildMob and never multiply a mob's MaxHp/attack/defence in place again.</summary>
     public float MobHpScale { get; set; } = 1f;
+    /// <summary>The FIELD's HP multiplier (BL-78 item 1, owner 2026-08-27: "the 15k mobs are zone
+    /// placed with x2/x3 hp .. some zones can have x1"). Authored on <see cref="SpawnZone.HpScale"/>
+    /// and carried here so the ZONE's knob and the RANK's knob (<see cref="MobHpScale"/>) stay two
+    /// separately readable numbers instead of one pre-multiplied mystery — the same reason the drop
+    /// rates compose in one place rather than at each call site. Composed in ApplyMobScale.</summary>
+    public float MobZoneHpScale { get; set; } = 1f;
     public float MobPAtkScale { get; set; } = 1f;
     public float MobMAtkScale { get; set; } = 1f;
     /// <summary>BL-13 — the rank's DEFENCE multiplier, the term a rank never had. A boss used to be
@@ -1918,6 +1924,59 @@ public class Entity
                 Enchant = ench
             });
         }
+
+        if (build.LearnsKit) LearnClassPassives();
+    }
+
+    /// <summary>Teach a player-built creature the PASSIVE half of its class kit — every weapon
+    /// mastery, armour mastery and discipline passive a real character of this race/class/level would
+    /// have learned by now, at the highest rung it could hold.
+    ///
+    /// 🔑 WHY THIS EXISTS (owner, 2026-08-27): *"If we treat them like a player give them classes so
+    /// they atleast have the player stats"*. A player-built creature was wearing the gear and running
+    /// the player CURVES but had learned nothing, and the difference is enormous — measured with
+    /// IDENTICAL S+0 Epic on both sides, a bare level-80 guard read 520 P.Atk against a real level-80
+    /// player's 2,898 and 703 P.Def against 2,216. That ~5x is entirely the kit. It is BL-47's known
+    /// hole, and it first showed up as a balance failure in BL-79.
+    ///
+    /// 🔑 PASSIVES ONLY, DELIBERATELY. His guards "dont use skills (only normal attack)", so teaching
+    /// the actives would be teaching something that must never fire. Filtering to skills that carry a
+    /// PassiveEffect or a WeaponMasteryProfile gets the player's STATS with none of the player's
+    /// behaviour — which is exactly the creature he described.
+    ///
+    /// ⚠ THIS REPLACED A HAND-PICKED MULTIPLIER BLOCK, and that is the point. The first attempt gave
+    /// the guards an invented "WatchTraining" passive (P.Atk x4.2, P.Def x3.0, …) tuned until the
+    /// measurement looked right. It read fine and it was worthless: a number tuned to match today's
+    /// player kit silently stops matching the moment the kit changes, and nothing would ever say so.
+    /// This derives from the class tables instead, so a guard tracks the player for free, forever.
+    /// </summary>
+    public void LearnClassPassives()
+    {
+        void TeachFrom(IEnumerable<ClassSkill> table)
+        {
+            foreach (var cs in table)
+            {
+                if (cs.LearnLevel > Level) continue;
+                if (SkillCatalog.Get(cs.SkillId) is not SkillDef sd) continue;
+                // Only the stat-bearing half of the kit. A skill carrying none of the three is an
+                // ACTIVE, and a guard must never cast.
+                // ⚠ ALL THREE CARRIERS, and forgetting one is quiet: the first version checked only
+                // PassiveEffect and WeaponMastery, so every ARMOUR mastery was dropped and a tank
+                // guard stood in light-armour numbers while looking fully kitted.
+                if (sd.PassiveAt(cs.SkillLevel) is null
+                    && sd.WeaponMasteryAt(cs.SkillLevel) is null
+                    && sd.ArmorMasteryAt(cs.SkillLevel) is null)
+                    continue;
+                LearnedSkills[cs.SkillId] = Math.Max(SkillLevelOf(cs.SkillId), cs.SkillLevel);
+            }
+        }
+
+        // The BASE-class kit is registered under archetype=null and Cumulative does NOT return it once
+        // an archetype is set, so both calls are needed — the same trap BalanceMatrix.BuildPlayer
+        // documents, where asking as a Tank found only the Tank list and the fighter ended up with no
+        // kit at all.
+        TeachFrom(ClassSkills.ForClass(Race, BaseClass, null, null));
+        TeachFrom(ClassSkills.Cumulative(Race, BaseClass, Archetype, Discipline));
     }
 
     /// <summary>Recomputes everything derived from core stats, level and
@@ -1939,7 +1998,14 @@ public class Entity
         // TWO sources: the active armor set, and the level-40 STAT-SWAP passives. This has to run
         // here, not in the passive loop below, because that loop happens AFTER everything is derived.
         BonusStr = BonusAgi = BonusCon = BonusInt = BonusWit = BonusSpt = BonusAtk = 0;
-        var activeSet = Kind == EntityKind.Player ? DetectActiveSet() : null;
+        // ⚠ `playerStats`, NOT `Kind == Player` — fixed 2026-08-27 (BL-79, and it is really a BL-47 bug).
+        // A player-built creature wears a full matched set and was getting NONE of its set bonus,
+        // because this one line asked what KIND it was while every line around it asks whether it runs
+        // player stats. Since the 2026-08-19 ruling folded a set's Str/Int into BonusAtk, the set bonus
+        // lands on the POWER stat — so the omission was most of why a guard in identical S+0 Epic read
+        // 520 P.Atk against a real player's 1,449. It was invisible because the demo creatures it also
+        // affects are measured against each OTHER, never against a player in the same gear.
+        var activeSet = (Kind == EntityKind.Player || PlayerBuilt) ? DetectActiveSet() : null;
         if (activeSet is not null)
         {
             var pm = activeSet.Mods;
@@ -1960,7 +2026,20 @@ public class Entity
             // change, not a bookkeeping one — see the CHANGELOG for the measured size.
             BonusAtk = (int)(pm.Str + pm.Int + pm.Atk);
         }
-        if (Kind == EntityKind.Player)
+        // ⚠ `|| PlayerBuilt` — the THIRD and largest of the Kind-gates that excluded a player-built
+        // creature from its own kit (2026-08-27, BL-79). This folds a passive's STAT bonuses into
+        // BonusAtk/BonusCon/…, and it runs BEFORE the attack and pool formulas below, so excluding a
+        // creature here excluded it from every number those formulas produce. It is why a fully kitted
+        // guard still read 579 P.Atk against a real player's 1,449 after the other two were fixed.
+        //
+        // 🔑 THE PATTERN, WORTH MORE THAN THE THREE FIXES: `PlayerBuilt` was added (BL-47) as "take the
+        // player side of the stat formulas", and the formulas were duly switched to `playerStats`. But
+        // the code that FEEDS those formulas — set bonuses, passive stat bonuses, armour masteries —
+        // kept asking `Kind == Player`, because each of those predates the flag and none of them looks
+        // like a formula. A creature therefore ran player MATHS on mob INPUTS, and every symptom looked
+        // like bad tuning rather than a missing branch. Grep for `Kind == EntityKind.Player` in this
+        // file before trusting any player-built number.
+        if (Kind == EntityKind.Player || PlayerBuilt)
         {
             foreach (var (skillId, skillLevel) in LearnedSkills)
             {
@@ -2484,7 +2563,12 @@ public class Entity
         // one); the worn body weight selects the row. Pure per-level DATA — no character-level
         // / class formula. A class with no mastery skill learned gets nothing (no bonus, no
         // penalty). See docs/design/StatMods.md. ---
-        if (Kind == EntityKind.Player)
+        // ⚠ `|| PlayerBuilt` added 2026-08-27 (BL-79) — the SECOND of two Kind-gates that quietly
+        // excluded a player-built creature from its own kit. It could LEARN an armour mastery and
+        // this block would then decline to read it, so a fully-kitted tank guard stood in untrained
+        // numbers. Same class of bug as the set-bonus line above: the surrounding code asks whether
+        // the entity runs player stats, and these two asked what kind it was.
+        if (Kind == EntityKind.Player || PlayerBuilt)
         {
             // ⚠ Armor masteries STACK (owner, 2026-08-07). This loop used to take the FIRST match
             // and break, so the winner was decided by dictionary ORDER — a nuker whose base Robe
@@ -2956,7 +3040,20 @@ public class Entity
         if (Kind != EntityKind.Mob) return;
 
         // 1. The ZONE's rank multipliers (champion/elite/boss).
-        MaxHp = Math.Max(1, (int)(MaxHp * MobHpScale));
+        //
+        // The FIELD's own HP multiplier composes here, with the rank's — BL-78 item 1, his "the 15k
+        // mobs are zone placed with x2/x3 hp .. some zones can have x1". Two authored knobs, ONE
+        // composition site, which is the same rule MobCatalog.EffectiveRate runs on: never do this
+        // arithmetic at a call site or the inspect window and the kill roll drift apart.
+        //
+        // ⚠ A BOSS IS EXEMPT, DELIBERATELY. BL-13 (0.89.0) put every boss inside his 12-25 minute
+        // band by giving the rank an HP CURVE, and a boss derives its pool from that curve. Letting
+        // a field's ×3 through would multiply a measured band by three from an edit whose subject is
+        // the trash around the boss — the kind of inheritance the "keep it one smooth function" rule
+        // exists to stop. Elites are NOT exempt: an elite camp is field content and is meant to feel
+        // the field.
+        float zoneHp = Rank == MobRank.Boss ? 1f : MobZoneHpScale;
+        MaxHp = Math.Max(1, (int)(MaxHp * MobHpScale * zoneHp));
         AttackPower = Math.Max(1, (int)(AttackPower * MobPAtkScale));
         MagicAttack = Math.Max(1, (int)(MagicAttack * MobMAtkScale));
         BasicAttackPower = Math.Max(1, (int)(BasicAttackPower * MobPAtkScale));
@@ -3045,11 +3142,32 @@ public class Entity
                 break;
             case MobRole.Mage:
                 // No basic attack — casts the mob spells gated on MP; out of MP it stands helpless.
+                //
+                // ⚠ A CASTER WEARS A ROBE, AND A ROBE IS NOT LIGHT ARMOR (BL-78 item 2; owner
+                // 2026-08-27, correcting the first attempt at this: *"they should ware a robe not
+                // light ... don't give them +8 evasion so they be missed and hit for 300"*).
+                //
+                // The first version of this fix gave the Mage role Archer's whole profile — ×0.85
+                // defence AND +8 evasion — reasoning from IG's `Light Armor Type` tag. He rejected
+                // the evasion half outright, and he is right about his own game: a robed caster that
+                // also DODGES is the worst thing to fight, because it turns a soft target into a
+                // coin-flip and the misses cost you the whole cast cycle. A caster is meant to be
+                // easy to HIT and dangerous to ignore. Evasion is the archer's trade, not the mage's.
+                //
+                // So: a little less defence (his "a bit less pdef", ×0.85 rather than the old ×0.7),
+                // no evasion, and HP untouched — which it always was.
+                //
+                // ⚠ HP IS NOT TOUCHED HERE AND NEVER WAS. The backlog's "a caster pays twice (low
+                // P.Def AND low HP)" was describing template DATA, not this switch.
+                //
+                // ⚠ THIS COMPOUNDS WITH THE TEMPLATE'S OWN MobMod.PDef, which is where the real
+                // double-dip was: watcher_eye's 0.5 × the old 0.7 came to ×0.35 — nearly three times
+                // less defence, not "a bit". Audit that pair before steepening either half.
                 if (roleStats)
                 {
                     MagicAttack = Math.Max(1, (int)(MagicAttack * 1.5f));
                     AttackPower = Math.Max(1, (int)(AttackPower * 0.5f));
-                    Defence = Math.Max(1, (int)(Defence * 0.7f));
+                    Defence = Math.Max(1, (int)(Defence * 0.85f));
                 }
                 BasicAttackPower = 1;
                 BasicAttackRange = 0f;

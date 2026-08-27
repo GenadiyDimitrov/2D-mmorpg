@@ -273,6 +273,30 @@ Regen = 0.1%/s of its OWN pool engaged, 5%/s idle          no level term
 - Mob regen is a fraction of its own pool because the player CON curve is exponential and a mob's
   CON is `15 + 2L` — that curve on a mob is absurd.
 
+### The ZONE's HP multiplier (`BL-78` item 1, 0.94.0)
+
+```
+finalMaxHp = base * rankHpScale * zoneHpScale     zone: x1 below 40, x2 from 40, x3 from 61
+                                                  a BOSS-rank spawn ignores zoneHpScale
+```
+
+- Authored on `SpawnZone.HpScale`, derived by `WorldPlan.HpScaleFor(level)` off the camp's Max level,
+  overridable per field with `Band.HpScale`. The two knobs compose in ONE place, `Entity.ApplyMobScale`.
+- It multiplies **HP and nothing else** — damage, defence, EXP and drops are untouched.
+- ⚠ A boss is exempt: 0.89.0's measured 12-25 min band derives from the same curve, so a field's x3
+  would be inherited and multiplied. An elite is **not** exempt.
+
+### Mob ROLE stat lean (`Entity.ApplyMobScale`, skipped for a player-built creature)
+
+```
+Archer   PAtk x2     BasicAtk x2    PDef x0.85   Eva +8    range 450
+Mage     MAtk x1.5   PAtk x0.5      PDef x0.85   Eva +8    no basic attack
+```
+
+- ⚠ The Mage line was `PDef x0.7` with no evasion until 0.94.0. It is IG's `Light Armor Type` — weak
+  P.Def, strong evasion, **HP never touched by role**. It compounds with the template's own
+  `MobMod.PDef`, which is how `watcher_eye` came to stand in x0.35.
+
 `Game.Shared/MobBaseStats.cs` · `docs/balance/MobCurveVsIG.md` · CSV dump:
 `dotnet run --project tools/BalanceMatrix -- --dump-mob-csv`
 

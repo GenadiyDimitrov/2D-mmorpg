@@ -92,6 +92,21 @@ public record SkillDef(
     string ExclusiveGroup = "",
     TargetMode TargetMode = TargetMode.SelfOrTarget,
     float AreaRadius = 0f,
+    /// <summary>WHERE THE AREA CIRCLE SITS. false (default) = on the CASTER, which is every
+    /// caster-centred AoE — his `self/aoe`, cast at range 0 and erupting around you. true = on the
+    /// TARGET, his `enemy/aoe`: thrown out to <see cref="Range"/> and detonating
+    /// <see cref="AreaRadius"/> around whatever it lands on.
+    ///
+    /// <para>Owner, 2026-08-28: *"the arcane wave should AOE around the mob not the player like
+    /// elemental wave … elemental wave is self/aoe with 0 range so it hits around the caster with
+    /// description range, while the arcane wave is enemy/aoe with 900 range and hit 400 range around
+    /// the enemy … Not the caster"*. So RANGE and RADIUS are two different numbers on the same skill:
+    /// range is how far you can throw it, radius is how wide it goes off. They were being read as one
+    /// thing, which is what made Arcane Wave a 400-radius circle drawn on the caster's feet.</para>
+    ///
+    /// <para>⚠ This is the CODE half of his `[scope]/[breadth]` TARGET column (0.93.2). The column
+    /// says a skill is `enemy/aoe`; this says the circle follows the enemy.</para></summary>
+    bool AreaAtTarget = false,
     /// <summary>How many allies an <see cref="TargetMode.AlliesInRadius"/> effect may reach
     /// (0 = every one of them, which is what every area heal before this did).
     ///

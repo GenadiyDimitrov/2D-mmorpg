@@ -151,7 +151,17 @@ public readonly record struct MobBuild(
     // demo creature on it is what makes the ±5 the ONLY difference between them.
     Race StatBase = Race.Human,
     string Held = "",         // a held, never-looted item (ItemCatalog.WarRune) — "" = none
-    bool Jewels = true)       // a creature need not wear jewels; dropping them is the M.Def lever
+    bool Jewels = true,       // a creature need not wear jewels; dropping them is the M.Def lever
+    // Wears its tier's shield (BL-79's tank guard). ONE-HANDED BUILDS ONLY — a shield beside a 2H
+    // weapon is not a loadout a player could reproduce, and reproducibility is the whole point of a
+    // player-built creature. There is one shield per tier and it is Mythic, so this takes no rarity.
+    bool Shield = false,
+    // Learn the PASSIVE half of the class kit — weapon/armour masteries and discipline passives — so
+    // the creature has a real player's STATS rather than only a real player's gear (owner: "If we
+    // treat them like a player give them classes so they atleast have the player stats").
+    // ⚠ Default FALSE so the five BL-47 demo creatures are untouched: they exist to measure what gear
+    // ALONE does, and teaching them a kit would silently rewrite every G3 reading in the docs.
+    bool LearnsKit = false)
 {
     /// <summary>Item-id quality suffix. The AUTHORED piece is the Mythic one (bare id); every lesser
     /// quality is a generated copy suffixed with its rarity name — see ItemCatalog's DropTiers. This
@@ -177,6 +187,10 @@ public readonly record struct MobBuild(
             yield return ($"earring_t{ArmorTier}{aq}", ArmorEnchant);
             yield return ($"earring_t{ArmorTier}{aq}", ArmorEnchant);
         }
+        // A SHIELD, for the builds that carry one (BL-79's tank guard). The tier ladder authors exactly
+        // one shield per tier and it is Mythic — there is no rarity suffix to apply, which is why this
+        // does not take `aq` the way every line above does. Never pair it with a two-handed weapon.
+        if (Shield) yield return ($"shield_t{ArmorTier}", ArmorEnchant);
         if (Held.Length > 0) yield return (Held, 0);
     }
 
@@ -249,7 +263,33 @@ public record MobType(
     // generated camp by its level band. See MobCatalog.InBand — without it a level-40 demo creature
     // would immediately appear in every generated 40-44 camp in the game, which is the one thing the
     // BL-47 experiment promises not to do.
-    bool HandPlaced = false);
+    bool HandPlaced = false,
+    // ===================================================================================
+    //  GUARD (BL-79) — a creature that polices outlaws instead of hunting players.
+    //
+    //  Owner, 2026-08-27: "try make town guards and one archer(overenchanded) in several zones (like
+    //  piesfull farming zones) killing a guard dont give karma nor flags .. but they should be strong
+    //  enough so a player attacking them (pvp-on must be on) and when the guard retaliate a player has
+    //  its hands full .. to match a 80 lvl player S grade equip (no nenchanted)". Playtest 25, the
+    //  original design: "only aggressive thowards PK (ignores mobs/pvpOrNormal-players)", "ofc if u
+    //  hit them (pvp-on) they act as passive mobs".
+    //
+    //  Setting this changes FOUR things, all of them in GameLoopService:
+    //   1. AGGRO IS KARMA-KEYED. It acquires PK players only — never an innocent, never a merely
+    //      flagged one, never another creature. Everyone else walks past it.
+    //   2. ATTACKING ONE NEEDS PvP ON. The toggle is the GATE (the 0.93.2 rule) — you cannot swing at
+    //      the town watch by accident, and choosing to is a deliberate act.
+    //   3. KILLING ONE PAYS NOTHING AND COSTS NOTHING — no exp, no drop, and critically NO KARMA
+    //      SHED. Without that last one a guard post is a karma laundry: a PK grinding the watch to
+    //      clean his record is the exact opposite of what a guard is for.
+    //   4. IT NEVER FLAGS ITS ATTACKER. Already true (a mob target cannot set a PvP flag), and his
+    //      "dont give karma nor flags" makes it a promise rather than an accident.
+    //
+    //  ⚠ A guard is HandPlaced too — it must never be rostered into a generated camp.
+    bool Guard = false,
+    // Per-template aggro radius, overriding the global GameConstants.MobAggroRange. 0 = the global.
+    // His guard numbers are 400 melee / 600 archer — the archer notices you from where it can shoot.
+    float AggroRange = 0f);
 
 /// <summary>
 /// THE place to manage mobs. Each entry is a creature template with its own drop
@@ -320,6 +360,70 @@ public static class MobCatalog
         new(BaseClass.Mage, 18, "robe", "staff",
             armorTier, armorQ, armorEnch, weaponTier, weaponQ, weaponEnch,
             Con: con, Atk: atk, Wit: wit, Agi: agi, Spt: spt, Held: held);
+
+    // ===================================================================================
+    //  BL-79 — THE GUARDS. His two tiers, and the one number they are calibrated against.
+    //
+    //  Owner, 2026-08-27: "pieasfull zone guards have everithing s grade +16 and are 90lvl -> town
+    //  80lvl S grade +0", and the target: "to match a 80 lvl player S grade equip (no nenchanted)".
+    //
+    //  So the TOWN guard is a mirror of that reference player — same level, same grade, same enchant —
+    //  and is meant to be a real fight he can win. The FIELD guard is the same creature four levels of
+    //  gear further up and is meant to be a wall: "overenchanded", his word.
+    //
+    //  ⚠ S GRADE IS ItemLevel 80 AND IT IS TOP-HALF ONLY (Items.cs: Epic / Legendary / Mythic — the
+    //  cliff his 0.93.1 goldflow measurement found). He named the grade and the enchant but not the
+    //  rarity, so both tiers wear the BASE S rung, Epic, and the only two things that differ between
+    //  a town guard and a field guard are the level and the enchant. Change the rarity and you have
+    //  quietly changed the calibration.
+    //
+    //  ⚠ THEY ARE PLAYER-BUILT, so they run the PLAYER HP/attack/defence curves — which is what makes
+    //  "match a level-80 player" literally true rather than roughly true, and it is also why the mob
+    //  ROLE's stat lean is skipped for them (Entity.ApplyMobScale). Their power is what they WEAR.
+    //
+    //  "they dont use skills (only normal attack) but can have rune_war (unlimited)" — so no kit, and
+    //  the War Rune is authored on the field pair only, where the wall is wanted.
+    // ===================================================================================
+
+    /// <summary>A guard TANK: Knight (id 13), HEAVY armour, one-handed SWORD and the tier's shield —
+    /// his loadout, named exactly ("tank guard; heavy + sword"). It learns the class kit, so its
+    /// heavy-armour and sword masteries are real learned passives, not a multiplier.</summary>
+    private static MobBuild GuardTank(int tier, int ench, string held = "") =>
+        new(BaseClass.Fighter, 13, "heavy", "sword1h",
+            tier, ItemRarity.Epic, ench, tier, ItemRarity.Epic, ench,
+            Held: held, Shield: true, LearnsKit: true);
+
+    /// <summary>A guard ARCHER: Assassin (id 15, the merged bow/dagger rogue), LIGHT armour, BOW —
+    /// again his own words ("archer: bow +light"). No shield; a bow is two-handed in every sense that
+    /// matters here.</summary>
+    private static MobBuild GuardArcher(int tier, int ench, string held = "") =>
+        new(BaseClass.Fighter, 15, "light", "bow",
+            tier, ItemRarity.Epic, ench, tier, ItemRarity.Epic, ench,
+            Held: held, LearnsKit: true);
+
+    /// <summary>A guard template. Never aggressive in the ordinary sense — <see cref="MobType.Guard"/>
+    /// makes its aggro karma-keyed, so `Aggressive: true` here means "acquires targets at all", and the
+    /// only targets it will ever acquire are PKs. Dropless and hand-placed, like every authored
+    /// creature that is content rather than roster.</summary>
+    private static MobType GuardMob(string id, string name, int level, float run, MobBuild build,
+        MobRole role, float aggroRange, MobMod? mod = null) =>
+        new(id, name, run * 0.55f, run, Aggressive: true, Drops: null, Mod: mod, Level: level,
+            Category: MobCategory.Humanoid, Role: role, Title: "Town Watch", Build: build,
+            HandPlaced: true, Guard: true, AggroRange: aggroRange);
+
+    /// <summary>THE GUARD TOWER — what makes a FIELD guard something other than a tougher watchman.
+    ///
+    /// Owner, 2026-08-27: *"Field guard they are like a guard tower ... Faster stronger almost 1 shot
+    /// a pk"*. A town guard is a fair fight and gets NO passive at all — its power is its class kit
+    /// and its gear, exactly like the player it is calibrated against. A field guard is not a fight;
+    /// it is a closed road, and this is the difference.
+    ///
+    /// 🔑 THESE ARE THE ELITE RANK'S OWN RUNGS, NOT NEW NUMBERS — his "elite oassives". MobRankScale
+    /// prices an elite at HP x4 / attack x1.5 / defence x1.33; a tower leans harder on ATTACK than an
+    /// elite does, because "almost 1 shot a pk" is a damage statement, not a health one.
+    /// </summary>
+    private static MobMod GuardTower(string name) =>
+        new(PAtk: 3.0f, MAtk: 3.0f, PDef: 1.33f, MDef: 1.33f, Hp: 2.0f, Name: name);
 
     // ===================================================================================
     //  SOCIAL CLANS (BL-70). Which creatures answer each other's cry for help.
@@ -998,10 +1102,15 @@ public static class MobCatalog
             Mob("cinder_imp", "Cinder Imp", 24, MobCategory.Demon, 142f, true),
             // MAGIC monster: high M.Def / low P.Def — hard for mages, easy for fighters.
             // Also a CASTER (Mage role): no basic attack, nukes from range, sits helpless at 0 MP.
-            // Its own numbers are kept (2.0 / 0.5 — steeper than the shared AntiMagic preset, and
-            // it is the archetype's namesake); BL-11 adds the mRes half it never had.
+            // Its M.Def 2.0 is kept — steeper than the shared AntiMagic preset, and it is the
+            // archetype's namesake; BL-11 added the mRes half it never had.
+            // ⚠ ITS P.DEF WAS 0.5 AND IS NOW 0.8 (BL-78 item 2, 2026-08-27). 0.5 was authored
+            // against a Mage role that ALSO multiplied defence by 0.7, so the creature actually
+            // stood in ×0.35 — the single worst case of his "caster mobs are not weaker than the
+            // other ... a bit less pdef" and the reason the fix is two-sided. At 0.8 it matches the
+            // shared AntiMagic preset, and with the role's new ×0.85 it lands on ×0.68.
             Mob("watcher_eye", "Watcher Eye", 26, MobCategory.MagicCreature, 130f, true,
-                new MobMod(MDef: 2f, PDef: 0.5f, MagicResist: 0.25f, Name: "Magic Monster"), MobRole.Mage),
+                new MobMod(MDef: 2f, PDef: 0.8f, MagicResist: 0.25f, Name: "Magic Monster"), MobRole.Mage),
             Mob("lizardman_warrior", "Lizardman Warrior", 28, MobCategory.Humanoid, 132f, true, clan: ClanLizard),
             Mob("marauder_recruit", "Marauder Recruit", 30, MobCategory.Humanoid, 132f, true, clan: ClanMarauder),
             Mob("mantis_worker", "Mantis Worker", 32, MobCategory.Insect, 140f, true, clan: ClanMantis),
@@ -1011,9 +1120,20 @@ public static class MobCatalog
             Mob("wyrm", "Wyrm", 35, MobCategory.Dragon, 150f, true, clan: ClanDrake),
             Mob("marsh_mantis_soldier", "Marsh Mantis Soldier", 37, MobCategory.Insect, 140f, true, clan: ClanMantis),
             Mob("fen_lizardman_archer", "Fen Lizardman Archer", 39, MobCategory.Humanoid, 132f, true, role: MobRole.Archer, clan: ClanLizard),
-            // CHAMPION outlier: the same L40 curve × a big HP/P.Def passive (≈3.5×/2.2×). Caster.
-            Mob("rift_portling", "Rift Portling", 40, MobCategory.MagicCreature, 110f, true,
-                new MobMod(Hp: 3.56f, PDef: 2.2f, MDef: 1.27f, Name: "Rift Champion"), MobRole.Mage),
+            // ⚠ `rift_portling` (Rift Portling) WAS HERE AND IS DELETED — owner, 2026-08-28: *"remove
+            // the rune porting mob it's to op for a normal zone +120% pDef to op"*. It carried
+            // MobMod(Hp: 3.56, PDef: 2.2, MDef: 1.27) — that P.Def 2.2 IS his +120%.
+            //
+            // 🔑 THE REAL LESSON IS HOW IT GOT INTO A NORMAL ZONE AT ALL. It was authored as a
+            // deliberate "CHAMPION outlier" — a mini-boss shape — but rosters are DERIVED from the
+            // level band (MobCatalog.InBand), so a champion template with a natural level of 40 is
+            // rostered into EVERY generated 40-44 camp automatically. Nothing marked it as special,
+            // so nothing kept it out. An outlier needs `HandPlaced: true` (the fence the BL-47 demo
+            // creatures use) or it is not an outlier, it is just a very hard normal mob.
+            //
+            // Deleted rather than fenced because he said remove; nothing referenced it (no quest, no
+            // authored zone, no drop-table cross-reference), so the 40-44 roster simply loses one
+            // entry. If a champion tier is wanted later, author it HandPlaced and place it.
             Mob("dune_orc_archer", "Dune Orc Archer", 40, MobCategory.Humanoid, 132f, true, role: MobRole.Archer, clan: ClanOrc),
             Mob("ridge_orc_overlord", "Ridge Orc Overlord", 42, MobCategory.Humanoid, 132f, true, clan: ClanOrc),
             Mob("harpy", "Harpy", 42, MobCategory.Humanoid, 138f, true),
@@ -1198,6 +1318,34 @@ public static class MobCatalog
             Curve("demo_curve_45", "Standard Marker", 45, WeaponType.TwoHandedSword),
             Curve("demo_curve_60", "Standard Marker", 60, WeaponType.None, MobRole.Mage),
             Curve("demo_curve_80", "Standard Marker", 80, WeaponType.TwoHandedSword),
+
+            // ===========================================================================
+            //  BL-79 — THE GUARDS. Two posts, two tiers. See the GuardTank/GuardArcher note.
+            //
+            //  Aggro radii are his: "aggro 400 melee / 600 archer" — the archer notices you from
+            //  where it can already shoot, which is what makes walking past one a decision.
+            //  Run speeds sit at the human-ish 130-135 band: a guard must be able to catch a PK
+            //  who picked the fight, but it is leashed to its post like any other creature.
+            // ===========================================================================
+
+            // THE TOWN PAIR — level 80, S grade (t80) Epic, +0. The mirror of his reference player,
+            // and the tier that is meant to be a real fight rather than a wall. No War Rune here:
+            // the rune is what separates the field pair from this one.
+            GuardMob("guard_town_tank", "Town Watchman", 80, 132f,
+                GuardTank(tier: 80, ench: 0, held: ItemCatalog.WarRune), MobRole.Melee, aggroRange: 400f),
+            GuardMob("guard_town_archer", "Town Marksman", 80, 135f,
+                GuardArcher(tier: 80, ench: 0, held: ItemCatalog.WarRune), MobRole.Archer, aggroRange: 600f),
+
+            // THE FIELD PAIR — level 90, S grade Epic, +16, and holding a War Rune. His "pieasfull
+            // zone guards have everithing s grade +16 and are 90lvl", posted in the quiet farming
+            // fields where an outlaw would otherwise hunt undisturbed. Ten levels and sixteen
+            // enchant rungs above the town pair: this one is not a duel, it is a closed road.
+            GuardMob("guard_field_tank", "Field Warden", 90, 132f,
+                GuardTank(tier: 80, ench: 16, held: ItemCatalog.WarRune), MobRole.Melee,
+                aggroRange: 400f, mod: GuardTower("Guard tower")),
+            GuardMob("guard_field_archer", "Field Longbow", 90, 135f,
+                GuardArcher(tier: 80, ench: 16, held: ItemCatalog.WarRune), MobRole.Archer,
+                aggroRange: 600f, mod: GuardTower("Guard tower")),
         };
         var dict = new Dictionary<string, MobType>(StringComparer.OrdinalIgnoreCase);
         foreach (var m in list)

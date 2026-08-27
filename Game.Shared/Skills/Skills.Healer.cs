@@ -121,11 +121,17 @@ public static partial class SkillCatalog
                          "allies leave you alone. Anything already chasing keeps chasing."),
 
         // Party Heal — AoE heal to nearby allies (lower power than single-target).
+        // ⚠ RANGE 0 IS THE MECHANIC, NOT A TIDY-UP (owner, 2026-08-28): *"The party heals (party heal,
+        // great party heal, ultimate party heal) should be cast able without a target .. So 0/x
+        // party/AOE"*. A support cast only takes an ally target when `def.Range > 0` (see the target
+        // resolution in GameLoopService); at 0 it falls through to the self-cast branch, so the skill
+        // fires with nothing selected — or with an ENEMY selected — and the circle lands on the caster.
+        // Radius 1000 is his: *"party heals are 0/1000 1k range around caster"*.
         new(PartyHeal, "Party Heal", BaseClass.Mage, SkillEffect.Heal,
-            MpCost: 60, CastTicks: 70, CooldownTicks: 50, Range: 600, Power: 121,
-            Category: SkillCategory.Heal,  
-            TargetMode: TargetMode.AlliesInRadius, AreaRadius: 800f,
-            Description: "Heals you and nearby allies. Scales with WIT.",
+            MpCost: 60, CastTicks: 70, CooldownTicks: 60, Range: 0, Power: 121,
+            Category: SkillCategory.Heal,
+            TargetMode: TargetMode.AlliesInRadius, AreaRadius: 1000f,
+            Description: "Heals you and nearby allies within 1000. Scales with WIT.",
             Levels: new[]
             {
                 new SkillLevel(Power: 121, MpCost: 60,  SpCost: 3200,  Description: "Party heal power 121."),

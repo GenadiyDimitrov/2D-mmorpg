@@ -52,6 +52,185 @@ a stack of 9 buff scrolls is the friction you wanted or just friction** (§93D).
 
 ---
 
+---
+
+---
+
+## 95. THE 0.94.1 FIXES — your playtest finds of 2026-08-28
+
+### A. AOE ACTUALLY HITS NOW — and it was two bugs stacked
+
+Your report: *"AOE don't work ..it shows the red circle pulse but tont hit the mobs"*. Both halves
+found, and the reason it looked like a display bug is that the display was the only half working.
+
+1. **No player offensive AoE ever swept.** The damage sweep runs only for
+   `TargetMode.EnemiesInRadius`, and **only mob spells ever set it** — Elemental Wave and Arcane Wave
+   (the only two player attack AoEs in the game) set a radius but no mode, so they drew their circle
+   and then hit the single target. Both now carry the mode.
+2. **A latent second one that would have re-broken it**: the sweep read `def.AreaRadius` (the
+   SkillDef field) while the circle read `def.AreaRadiusAt(lvl)` (the per-rung value). Any skill
+   authoring its radius per rung got a **zero-radius sweep under a full-size circle** — the same
+   symptom, waiting for the next skill. Both read `AreaRadiusAt` now.
+
+| # | test | expected |
+|---|---|---|
+| 95a | Pull 3-4 mobs and cast **Elemental Wave**. | Every mob within 200 takes damage. Numbers on all of them, not just the target. |
+| 95b | Same with **Arcane Wave** from max range. | Everything within 400 **of the mob** takes damage. |
+| 95c | Watch the red circle on Arcane Wave. | It draws **on the mob**, not on you — the circle and the damage now come from one decision, so if they ever disagree again it is one bug not two. |
+| 95d | Cast an area nuke repeatedly and watch for **Fail** and **Crit** lines. | Both must still appear. The shared hit path had neither; a player's AoE would have silently lost fizzle and magic crit. Mob/boss AoE deliberately unchanged. |
+
+### B. Arcane Wave vs Elemental Wave — the shapes are right now
+
+*"the arcane wave should AOE around the mob not the player like elemental wave"*. New
+`SkillDef.AreaAtTarget` decides where the circle sits; `EnemiesInRadius` takes an origin.
+
+**You asked whether 400/900 were swapped — they were not.** Arcane is range 900 (thrown from safety)
+and radius 400 (the blast), which is what the code and the design note already said. Only the CENTRE
+was wrong. **Elemental Wave's range moved 200 → 0** on your reading (*"self/aoe with 0 range"*), and
+its 14 CSV rows moved with it.
+
+| # | test | expected |
+|---|---|---|
+| 95e | Cast Elemental Wave with no target selected / standing in a pack. | Range 0 — it erupts where you stand, reach 200. |
+| 95f | Arcane Wave at a mob ~800 away. | Lands. Blast is centred on it, 400 wide. |
+
+🔵 **A conflict I did NOT resolve for you — see `BL-96`.** You called Elemental Wave `self/aoe`, but
+on 2026-08-27 you ruled the TARGET column deliberately does NOT encode where the circle sits. Both
+cannot be true of one column. The CSV keeps `enemy/aoe` (the 0.93.0 rule) until you rule; the GAME
+behaves exactly as you described either way.
+
+### C. Auto-on no longer leaks between subclasses
+
+*"I'm buffer and have in skill belt the atack as auto on .. Then I change to/add new subclass ..and I
+put atack on belt it's auto-on from the getgo"*. The skill BAR was per-subclass but the AUTO marks
+were per-CHARACTER and keyed by skill id alone, so any class whose bar held that id rendered it armed.
+⚠ Filtering the shared list on swap could not have fixed it — one list, so pruning for the incoming
+class destroys the outgoing class's marks. The marks moved to `Subclass`, with a new
+`SubclassRecord.AutoSkillsJson` column, and `ActivateSubclass` now pushes the corrected set.
+
+⚠ **This is the same bug as playtest-17 B1, one level down** — that one leaked marks between
+CHARACTERS. A subclass swap never leaves the world, so it never passed through that fix.
+
+| # | test | expected |
+|---|---|---|
+| 95g | On your buffer, arm attack as auto. Swap to another subclass. Put attack on the bar. | **Not armed.** Never touched on this class = never auto. |
+| 95h | Arm something on the new class, swap back to the buffer. | The buffer's own marks are exactly as you left them — the fix must not have cost you the other class's set. |
+| 95i | Relog and check both. | Both survive; they persist per class now. |
+| 95j | Auto-hunt on/off and the potion thresholds. | Still per CHARACTER — deliberately not moved; those are preferences, not kit. |
+
+### D. 🔵 CHAT ON RELOG — I did NOT change this, because you ruled the opposite in playtest 28
+
+*"relog in etc never clears the chat ...and it should. 3h later I reconnect or enter after a closed
+game chat is on"*.
+
+⚠ **The current behaviour is a feature you explicitly asked for.** `ClientLog.cs` records both sides:
+your `C1` (*"chat must reset on exit"*) and then playtest 28 (*"chat again is saved between logins.
+Don't reset"*). It now files the log per character (`chat_<characterId>.log` in the app's data dir)
+instead of wiping it, and nothing ages it out — which is exactly why 3 hours later it is still there.
+The server replays nothing; this is 100% client-side.
+
+🔵 **Which do you want?** Three options, pick one and it is a small change:
+1. **Back to wiping** on every exit — reverses playtest 28.
+2. **Age it out** — restore the log on a quick reconnect, open clean if it is older than N minutes
+   (my pick: it satisfies both rulings, and "3h later" is the case you actually complained about).
+3. **Keep it** and add a "clear on login" toggle in Options.
+
+### E. `BL-96` — the AOE column, and the Portling is gone
+
+`RANGE, AOE, TARGET` in all 24 skill CSVs. RANGE = how far you throw it; AOE = how wide it goes off.
+The radius is checked against the code now instead of living in the DESCR prose.
+
+| # | test | expected |
+|---|---|---|
+| 95k | Open any skill CSV. | `LEARN, NAME, TYPE, RANGE, AOE, TARGET, …`. Elemental Wave is `0,200,enemy/aoe`; Arcane Wave `900,400,enemy/aoe`. |
+| 95l | Read a **party heal** row. | `600,600` — NOT the `0,600` you sketched. The range gate really does apply to the ally you target, so 600 is what the game does. 🔵 Tell me if you meant the behaviour to change. |
+| 95m | Farm a **level 40-44** camp. | No more **Rift Portling**. It carried `PDef 2.2` = your +120% and was rostered into every 40-44 camp automatically because rosters derive from the level band. |
+
+### F. The party heals are cast on YOURSELF now (0.94.3)
+
+*"The party heals … should be cast able without a target.. So 0/x party/AOE"*, and a full retune:
+**0 range / 1000 radius** on every one of them.
+
+| # | test | expected |
+|---|---|---|
+| 95n | Cast **Party Heal / Party Great Heal / Ultimate Party Heal** with **nothing selected**. | It fires. Circle on you, everyone within 1000 healed. |
+| 95o | Cast one with an **ENEMY** selected. | Also fires, on you — a support skill with 0 range never takes the selected target. |
+| 95p | Reuse timers. | Party Heal + Party Great Heal **6s**, Ultimate Party **3s**, Healer Party Blessing **9s**, Urgent Great Heal **5s**. |
+| 95q | Cast times. | Party heals **7s**, Party Blessing **3s**, Urgent Great Heal **3s**. |
+| 95r | Single-target: Heal / Great Heal **5s cast 3s reuse**, Ultimate Heal **5s cast 1s reuse**, Healer Blessing **3s cast 3s reuse**. | As listed. |
+| 95s | **Ultimate Party Heal at 76+** specifically. | 7s / 3s — your `healer 4th.csv` said 5s / 2s and I overrode it on your *"let's redo … I just estimated"*. Tell me if the 4th tier was meant to keep its own faster numbers. |
+| 95t | Range 1000 vs the old 600/800. | You should be able to stand noticeably further from the party and still land it. |
+
+✅ **URGENT GREAT HEAL IS `target/aoe` AND YOU CONFIRMED IT** (2026-08-28): *"Urgent great heal is 11
+targets so it's never a party one while healer PARTY blessing implies only party :) urgent heal is a
+safe anyone anywhere"*. The ELEVEN is the argument — a party caps at 9, so a skill reaching 11 cannot
+be describing a party. It stays `FriendlyInRadius`; Healer Party Blessing beside it stays party-only.
+
+🔵 **`BL-98` OPENED FROM THIS**: *"prevent outside help of high-level healers to a low lvl boss
+fights"*. Not built — the options are on the entry and the line-drawing is yours. 🔑 The anti-cheese
+curve already exists for DAMAGE to a boss (`RaidLevelGapMult`) and was never mirrored onto support.
+
+## 94. THE 0.94.0 BUILD — the guards, the field HP ladder, the caster fix
+
+**Server-side only.** An installed 0.93.x APK plays every row here; the version strip will read the
+client's own number, not 0.94.0.
+
+### A. `BL-79` — the guards are posted
+
+Eight posts. **Five city gates** — just outside each city's safe radius, on the bearing of that
+city's first hunting field — and **three fields**: Ashen Barrens (Stonewatch), Sunken Hollow
+(Greymarsh), Radiant Expanse (Frostmere). Each post is a **tank + an archer**.
+
+| # | test | expected |
+|---|---|---|
+| 94a | Walk up to a town post as a normal (white) character. | Nothing happens. They ignore you completely — aggro is karma-keyed. |
+| 94b | Try to attack one with **PvP off**. | Refused: *"… is under the town's protection. (Enable PvP to attack it.)"* |
+| 94c | Enable PvP and fight a **town** guard (level 80, S+0). | Near parity — measured 105s/124s against an S+0 warrior. It should feel like fighting a player in your own gear, because it now literally is one. |
+| 94d | Fight a **field** guard (level 90, S+16, War Rune). | It kills you in **16-30s**. A guard tower, not a duel. |
+| 94e | Kill a guard and watch your **karma**. | Unchanged. It must NOT drop — a guard is not a way to work off a PK record. |
+| 94f | Kill a guard and watch exp / drops / quest credit. | Nothing at all. |
+| 94g | Kill a **town** guard, wait. | Back in **60-90s**. A **field** guard is back in **1-2s** — if you manage to kill it. |
+| 94h | Get PK (red), then walk near a post. | NOW it comes for you. Melee at 400, archer at 600. |
+| 94i | Get PK and walk near a post with a **party**. | Only YOU are acquired. A flagged (purple) or white member is not the watch's business. |
+| 94j | **As a PK, walk into town.** | You get in and you are SAFE from other players — that is the design. |
+| 94k | As a PK, try each NPC: vendor buy-back, gatekeeper, buffer, SP broker, warehouse in/out, class change, profession master, mindwriter, stat re-roll. | **All ten refuse you.** |
+| 94l | As a PK, **SELL** to a vendor. | Still works — deliberately exempt, so being red is expensive rather than crippling. |
+
+⚠ 94j-94l are the OTHER half of BL-79, and they are the point of the whole feature: killing the watch
+buys a PK the SAFE ZONE and nothing else. If any of the ten NPCs serves a red character, that is a bug.
+
+### B. `BL-78` item 1 — a field can be made heavy
+
+The **zone** now carries an HP multiplier, on your ruling. **×1 below 40, ×2 from 40, ×3 from 61.**
+
+| # | test | expected |
+|---|---|---|
+| 94m | Kill things in a **level 61+** field and read the HP bar. | ~**15,480** at level 80 — your "15k not 5". |
+| 94n | Kill things in a **level 40-60** field. | ×2. Noticeably longer to clear, hitting you exactly as hard as before. |
+| 94o | Kill things **below 40**. | Unchanged. The newbie stretch is deliberately untouched. |
+| 94p | Fight a **field boss**. | Unchanged — a boss is exempt, so 0.89.0's 12-25 min band still holds. Check one. |
+| 94q | Fight an **elite camp**. | It DOES get the ladder. Tell me if that reads wrong — it was my call, not yours. |
+
+🔴 **THE QUESTION THIS ROW REALLY ASKS:** ×2/×3 the HP for the same reward is ×2/×3 the farm time.
+Nothing was retuned to compensate, on purpose. Does the field feel *heavier* (good) or just *slower*
+(bad)? That is `BL-78` item 4, the bill, and it is still yours to rule.
+
+### C. `BL-78` item 2 — caster mobs
+
+| # | test | expected |
+|---|---|---|
+| 94r | Fight a caster mob (Watcher Eye @26, Aether Wisp @58, Radiant Mage @82). | It should no longer fold to a fighter. P.Def ×0.85 not ×0.7 — and it must NOT dodge more than before: the +8 evasion was reverted on your ruling (a robe is not light armour). |
+| 94s | Watcher Eye specifically. | The worst case: it stood in ×0.35 defence and now stands in ×0.68. |
+
+### D. Carried in from 0.93.1 / 0.93.2 — never given rows
+
+These shipped after the checklist reset and have never been played.
+
+| # | test | expected |
+|---|---|---|
+| 94t | Level an 83 Lightbringer and cast **Urgent Great Heal**. | Triage: 11 slots, ordered by FRACTION of HP missing, ladder ending at 10%. ⚠ A party caps at 9, so the real span is 30→14%. |
+| 94u | Open several skills and read the **TARGET** column in the CSVs against what the skill does. | `[self\|target\|party\|enemy]/[single\|aoe]` on all 1,268 rows. |
+
 ## 93. THE 0.90.0 → 0.93.0 BUILD — none of it has been played
 
 ### A. Your HP is 2-3× bigger — `BL-78` item 3 (0.91.0)

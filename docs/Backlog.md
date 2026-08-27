@@ -417,6 +417,54 @@ closed · **`BL-93` opened** for the in-game visuals discussion you asked for (*
 
 ## Classes & skills
 
+- `BL-95` 🔴 **BUFF PRESETS — two built-in, plus custom ones the player saves.** Your instruction,
+  2026-08-28: *"make a backlog entry to make a 2 buff presses. One fighter one mage, we have a full
+  and players to be able to save custom one … For example a warrior don't need force/alacrity/resolve
+  while nuker don't need fury/might - a buffer won't be needing a force so he can save current buffs
+  (without force) as custom preset"*.
+  - **Three shipped presets**: the existing **Full**, plus **Fighter** (drops the caster-only lines —
+    your example names Force, Alacrity, Resolve) and **Mage** (drops the melee lines — Fury, Might).
+  - **Custom presets are SAVED FROM WHAT YOU ARE WEARING**: your buffer example is "I have exactly
+    the right set up right now, minus Force — keep this". So the save action reads the character's
+    CURRENT buffs, not a tick-list built from scratch.
+  - 🔑 **ONLY buffs the NPC buffer offers are storable.** *"Buffs only available to the npc buffer are
+    stored"* — a preset is a shopping list for that NPC, so a boss buff or a potion effect that
+    happens to be up when you press save must not go in it.
+  - 🔑 **IDS ONLY, NO RANK.** *"npc buffer have the highest grade so only id's not rank"* — the NPC
+    always casts its best rung, so storing a rank would be storing a number that can only be wrong.
+  - 🔑 **PER CHARACTER, NOT PER ACCOUNT.** Your words. ⚠ And decide per SUBCLASS vs per character when
+    you build it: the 2026-08-28 auto-on bug was exactly this question answered wrongly for the skill
+    bar's auto marks, and a preset is the same shape of thing — a buffer's preset is meaningless on
+    his warrior subclass. `Subclass.AutoSkills` is the precedent to copy.
+  - Storage is a new `SubclassRecord`/`CharacterRecord` column; ⚠ needs a `game.db` delete.
+
+- `BL-96` ✅ **THE `AOE` COLUMN — BUILT 0.94.2 on your go-ahead.** `LEARN, NAME, TYPE, RANGE, AOE,
+  TARGET, …` across all 24 files, 1,425 rows, by a new `SkillCsvSeed --aoe-column`. `--check` now
+  verifies the radius against `SkillDef.AreaRadiusAt`, so it is a **CHECKED number for the first
+  time** instead of prose in the DESCR cell. Elemental Wave reads **`0,200,enemy/aoe`** — your worked
+  example — and Arcane Wave **`900,400,enemy/aoe`**. It also settles the contradiction between your
+  2026-08-27 ruling (the TARGET column does NOT encode where the circle sits) and your 2026-08-28
+  description of Elemental Wave as `self/aoe`: with two columns, neither has to carry the other's
+  meaning. `README.md` in the CSV folder documents the three columns.
+  ✅ **AND YOU ANSWERED THE ONE OPEN QUESTION** (2026-08-28): the party heals read `600,600` because
+  the range gate applied to the targeted ally, and you ruled the GATE should go — *"should be cast
+  able without a target .. So 0/x"*. Range is 0 on all of them now (0.94.3), which also means they
+  fire with an ENEMY selected. Nothing left open here.
+
+- `BL-97` 🔵 **ONE NUKER PER RACE — Tempest or Magus has to go, and it is your call which.** You asked
+  2026-08-28: *"what is the difference between tempest/magus - one must go as for other nuker races -
+  only one nuker per race"*.
+  **The factual answer**: mechanically there is no stat difference at all, by your own 2026-08-10
+  ruling — *a class grants NO stats; identity is the skill/passive kit*. Two disciplines of one
+  archetype run identical formulas and differ only in what their skills DO. So Magus and Tempest are
+  two authored KITS of the same nuker archetype, and `nuker 3rd.csv` (0.87.0) authored both across all
+  three races — 208 rows, 21 families.
+  ⚠ **So "one must go" is a decision about which KIT survives, and it deletes authored CSV rows.** It
+  is not a rename and it is not free. It also touches `ThirdClassCatalog` ids, the 4th-tier ascension
+  that derives from them, and every character sitting on the losing discipline — which is another
+  reason to do it while a `game.db` reset is already owed.
+  🔵 **Tell me which one lives** and it is a contained pass.
+
 - `BL-87` ✅ **BUILT 2026-08-23 — THE BUFF CAP IS 20, AND WHAT COUNTS IS A PER-BUFF FLAG.** Playtest 27:
   *"we need make max buffs limit. Now I have 24 buffs as healer ... So if we make it 20 then the buffer
   becomes a must"*, then his rules: *"A self buff that is 20min still counts as a buff while a self 30s
@@ -758,6 +806,35 @@ closed · **`BL-93` opened** for the in-game visuals discussion you asked for (*
 
 ## World & mobs
 
+- `BL-98` 🔵 **OUTSIDE HELP IN A BOSS FIGHT — a high-level healer carrying a low-level raid.** Your
+  own flag, 2026-08-28: *"The only thing need to prevent is outside help of high-level healers to a
+  low lvl boss fights .. Mark it so we can deside what to do"*, raised while ruling that Urgent Great
+  Heal is deliberately *"a safe anyone anywhere"* — which is precisely what makes this reachable.
+  🔑 **THE MACHINERY FOR THIS ALREADY EXISTS ON THE OTHER SIDE, AND WAS NEVER MIRRORED.**
+  `StatCalculator.RaidLevelGapMult` already scales a player's DAMAGE to a boss by the level gap —
+  ×1.0 to gap 5, falling to ×0.70 at 10 and a floor of ×0.10 at 16+ — applied in `FinalizeDamage`,
+  and it is described in code as "anti-cheese". So an over-levelled character was already stopped
+  from *killing* a low boss, and never stopped from *healing* the people who do. The exploit is not
+  a missing idea; it is one half of an idea that was built.
+  **Options, cheapest first:**
+  1. 🔑 **Mirror the same curve onto SUPPORT.** A heal, cleanse or buff cast by someone whose level is
+     far from the BOSS's is scaled by `RaidLevelGapMult`. One measured curve, already tuned, already
+     his; symmetric with damage, so there is nothing new to explain to a player. Lands in `HealOne`
+     and `ApplyBuff`.
+  2. **Refuse it outright** past the gap rather than scaling. Cleaner to read, harsher, and it makes
+     a legitimate mixed-level party feel broken — most parties have a spread.
+  3. **The boss takes an interest.** Anyone who supports a participant joins the threat table. Fits
+     the boss rework (0.89.0) and is the most "alive" answer, but it punishes a passer-by.
+  4. **Registration / instancing** — only enrolled participants may act inside. Correct and the most
+     work; 🟡 gated on instances, which do not exist (`BL-51` / the `BL-80` fortress notes).
+  🔵 **The real question is not which lever but WHAT COUNTS AS "IN THE FIGHT"** — and that is yours:
+  is it "the target is on a boss's threat table", "within N of an engaged boss", or "the boss is
+  engaged and you are in the zone"? Each draws the line somewhere different for a healer standing at
+  the edge, which is the exact case you are describing.
+  ⚠ Whatever is chosen must NOT punish an ordinary mixed-level party doing a level-appropriate boss;
+  the thing being stopped is a level-85 healer at a level-40 raid, not a 78 healing an 84.
+
+
 - `BL-48` ⏸ **Instances — you are holding.** Design is written (`design/Instances.md`). One
   load-bearing decision is still open: the daily attempt **GLOBAL vs PER-INSTANCE**. It changes the
   persisted model, so it is answered before anything is built. **Dungeons are the cheap half** —
@@ -807,59 +884,50 @@ closed · **`BL-93` opened** for the in-game visuals discussion you asked for (*
   ⚠ **Untested against a real camp** — it needs a playtest in an orc/mantis field to say whether 450
   and "the answering mobs don't cry in turn" give the fight the size you pictured.
 
-- `BL-78` 🔴 **MOBS ARE TOO EASY — the DEFENCE and ATTACK halves are BUILT (0.73.0); what is left is
-  authoring, and one bill.** Your playtest-25 words: *"now mobs as general feel easy ... tank get hit fo
-  30 .. others for 100-200 but the rogue almost one blow it .. mage one/two shot it .. and there is no
-  thrill in fighting"*. The research you asked for was done first and is
-  **[balance/MobCurveVsIG.md](balance/MobCurveVsIG.md)** — 2,831 IG creatures, levels 1-83, read with
-  their NPC skill lists off `l2elo.com`. It found `MobBaseStats` had been fitted to an **older chronicle
-  of IG** (the same creature id reads ~3× lower there), that the gap was **defence and attack, not HP**,
-  and that IG authors creatures exactly the way `MobMod`/`MobMasteries` does — its tier words measure
-  ×0.82 / ×1.00 / ×1.21 / ×1.61, which is our own `DefTable` ladder. **Shipped 0.73.0:** P.Def, M.Def,
-  P.Atk and M.Atk refitted to the current chronicle as one smooth `a·(level+shift)^k` each (your
-  bosses/instances constraint — no floor, no band, no kink anywhere), ~×1.9 defence and ~×1.65 attack at
-  the top, level with the old curve at level 1. What is left:
-  1. 🔴 **THE HP MULTIPLIER, AUTHORED ACROSS THE ROSTER — this is your *"the 80 mobs should have 15k not
-     5"*, and it is NOT a curve change.** Measured: 77% of IG creatures are tagged `HP Increase (1x)`,
-     23% carry ×2-×5. Base HP at 76 is 4,298, so ×3 = **12,894** and ×5 = **21,490** — your 15k and your
-     21k, both, and you worked that out yourself. `MobMod.Hp` already exists and already works; we use it
-     on a handful of creatures where IG uses it on a quarter of them. So the job is choosing which
-     creatures read as dangerous, not moving the lever `BL-47` warned about spending. ✅ The base HP
-     shape was left alone on your ruling — it measures 0.87 → 1.08 of IG's from 40 up.
-  2. 🔴 **A CASTER MOB IS NOT A SQUISHY MOB** — *"caster mobs are not weaker than the other, they just use
-     spells (and have a bit less pdef, evasion not twice less)"*. The caster archetype currently pays
-     twice (low P.Def **and** low HP) for a role that should cost it a little P.Def and nothing else.
-     ⚠ **This is IG's own rule, word for word**: its caster tag is `Light Armor Type` — *"Weak P. Def.
-     and strong Evasion"* — which costs defence, buys evasion, and does not touch HP.
-  3. ✅ **THE PLAYER CURVE — BUILT 0.91.0** (2026-08-27). It *was* the player side: *"a healer with 1500 hp
-     getting hit for 300 is abit harsh .. one time less defence cuz of robe the second hinder is the amount
-     of hp"*, and 0.73.0's ~×1.65 creature attack had made it louder. You supplied IG's own per-class HP
-     tables and its CON curve; the pool now rises to meet the attack instead of the attack coming down.
-     Max HP is a growth rate that **steps at every class change**, keyed by **discipline** — which is what
-     finally lets Warchanter and Lightbringer differ. A robe class at 52 survives **21s, not 9s**; your
-     Bloodchanter at 43 goes **516 → 1184**. See `docs/Formulas.md` and `BalanceMatrix --hpcurve`.
-  4. 🔴 **THE BILL FROM 0.73.0, and it is your call.** Doubling creature defence doubles time-to-kill, so
-     a full S-grade character went from **347 to 603 farm hours** and an elite camp fell from 115% of a
-     normal farm to **76%** — `BL-22`'s budget has to be re-solved against the new numbers. An unattended
-     farm at level parity also stopped sustaining itself (level 52: 26 kills before the HP bar empties,
-     now 9), so auto-hunt at parity now needs consumables. ✅ The same change put field bosses inside
-     your `BL-13` band (17-26 min) without touching a boss.
+- `BL-78` 🔵 **MOBS ARE TOO EASY — three of the four items are BUILT; only THE BILL is left, and it
+  is yours to rule.** Your playtest-25 words: *"now mobs as general feel easy ... tank get hit fo 30 ..
+  others for 100-200 but the rogue almost one blow it .. mage one/two shot it .. and there is no
+  thrill in fighting"*. The research you asked for is
+  **[balance/MobCurveVsIG.md](balance/MobCurveVsIG.md)** — 2,831 IG creatures, levels 1-83.
+  1. ✅ **THE HP MULTIPLIER — BUILT 0.94.0, and you moved the lever while ruling it.** This entry used
+     to say "author `MobMod.Hp` across the roster". You ruled instead (2026-08-27): *"the 15k mobs are
+     zone placed with x2/x3 hp .. some zones can have x1"* — so the **ZONE** carries it, the same
+     creature reads ×1 in one field and ×3 in another, and not one template was edited. One derived
+     ladder (`WorldPlan.HpScaleFor`): ×1 below 40, ×2 from 40, ×3 from 61, overridable per field with
+     `Band.HpScale`. `MobBaseStats.Hp(80)` = 5,160, so ×3 = **15,480** — your *"the 80 mobs should
+     have 15k not 5"* on the nose. ⚠ A boss ignores it (0.89.0's measured 12-25 min band derives from
+     the same curve); an elite does not. It multiplies HP and nothing else.
+  2. ✅ **A CASTER MOB IS NOT A SQUISHY MOB — BUILT 0.94.0.** *"caster mobs are not weaker than the
+     other, they just use spells (and have a bit less pdef, evasion not twice less)"*. ⚠ **This entry
+     was wrong about the cause and said so for days**: it claimed a caster paid twice with "low P.Def
+     AND low HP", and `MobRole.Mage` never touched HP at all. The double-dip was on DEFENCE — the
+     role's ×0.7 compounding with a template's own `MobMod.PDef`, worst at `watcher_eye` (0.5 × 0.7 =
+     **×0.35**). The role now reads like Archer, ×0.85 and +8 evasion — IG's `Light Armor Type` word
+     for word.
+  3. ✅ **THE PLAYER CURVE — BUILT 0.91.0.** Max HP is a growth rate that steps at every class change,
+     keyed by discipline. A robe class at 52 survives **21s, not 9s**. See `BalanceMatrix --hpcurve`.
+  4. 🔵 **THE BILL FROM 0.73.0, AND IT IS STILL YOUR CALL — now with a second charge on it.** Doubling
+     creature defence took a full S-grade character from **347 to 603 farm hours** and dropped an elite
+     camp from 115% of a normal farm to **76%**; an unattended farm at parity stopped sustaining itself
+     (level 52: 26 kills before the HP bar empties, now 9). ⚠ **0.94.0's HP ladder adds to this bill,
+     not beside it** — a ×2/×3 field is ×2/×3 the time-to-kill for the same reward, so `BL-22`'s budget
+     and the auto-hunt consumable question both move again. Nothing has been retuned to compensate,
+     deliberately: you asked for the mobs to be heavier, and quietly paying for it out of drop rates
+     would hide whether the change worked. **Measure it with `--goldflow` and `--guards` before ruling.**
 
-- `BL-79` 🔴 **TOWN / FIELD GUARDS — the first real use for the player-built creatures, and `BL-47`'s
-  ruling of 2026-08-26 makes it THE use.** *"Pk guards with overechsnted gear"* — so the guard's power
-  comes from what it WEARS, hand-placed and few, which is exactly the shape you approved. Your design,
-  playtest 25, verbatim: a **Lv 80 mob in Mythic t80** that is *"only aggressive
-  thowards PK (ignores mobs/pvpOrNormal-players)"*, aggro **400 melee / 600 archer**; *"ofc if u hit them
-  (pvp-on) they act as passive mobs"*, plus a **PK radar**. *"each towns exit will have two guards - a
-  tank and an archer, they dont use skills (only normal attack) but can have rune_war (unlimited)"*, and
-  *"they can have a class with passives"*. Last clause: ***"a pk cant use npcs"*** — even if he kills the
-  guards and gets inside.
-  🔑 **Almost every part already exists**: 0.70.0 builds creatures through the player pipeline with real
-  gear and a held War Rune, karma/PK state is tracked, aggro range is per-template, and hand-placement is
-  the `MobType.HandPlaced` fence. What is genuinely new is **a target filter keyed on karma** and **an NPC
-  lockout for a PK**, and neither is large.
-  🔵 Open: does a guard respawn on a timer, and does killing one carry a karma or PvP consequence of its
-  own? Not stated.
+- `BL-79` ✅ **TOWN / FIELD GUARDS — BUILT 0.94.0, both halves, nothing outstanding.** Two tiers
+  (**town = level 80, S grade Epic +0**; **field = level 90, S grade Epic +16, War Rune**), eight posts
+  (five city gates, three quiet farming fields), karma-keyed aggro so only a PK is acquired, PvP-on as
+  the gate to attack one, **no karma / flag / exp / drop** for the kill, aggro 400 melee / 600 archer,
+  respawn **75±15s** town and **1.5±0.5s** field. Your *"the npcs still refuse trade"* shipped with it:
+  `NpcRefusesService` on ten handlers, so killing the watch buys a PK the SAFE ZONE and nothing else.
+  🔑 **Your fork — "treat them as mobs" vs "treat them like a player" — resolved to the player route**,
+  because your calibration target is a player. `MobBuild.LearnsKit` teaches the PASSIVE half of the
+  class kit; the town pair carries **no invented multiplier at all** and mirrors the reference player
+  (P.Atk 1,158 vs 1,214; P.Def 1,101 vs 1,101). Only the FIELD pair has a passive, `GuardTower`, for
+  your *"almost 1 shot a pk"*.
+  ⚠ **Widening past eight posts is one line** (`GuardedFieldIds`, and the one-post-per-city loop),
+  held until you have played them.
 
 - `BL-80` 🔵 **FORTRESS SIEGES — your own design, transcribed whole, and you said it can wait.** *"this
   system can be defered and just have it as idea or can build some base ground for it."* Recorded here so

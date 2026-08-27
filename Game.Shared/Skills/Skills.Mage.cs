@@ -67,8 +67,9 @@ public static partial class SkillCatalog
         // Heal — the HEALER's targeted heal (ally or self); REPLACES Self Heal at level 20.
         // 4 levels @20/25/30/35 (base-mage no longer learns this).
         new(Heal, "Heal", BaseClass.Mage, SkillEffect.Heal,
-            MpCost: 30, CastTicks: 50, CooldownTicks: 20, Range: 600, Power: 151,
-            Category: SkillCategory.Heal,  
+            // Reuse 2s -> 3s (owner, 2026-08-28: *"heal/great heal are 5 cast 3 reuse"*).
+            MpCost: 30, CastTicks: 50, CooldownTicks: 30, Range: 600, Power: 151,
+            Category: SkillCategory.Heal,
             Replaces: new[] { SelfHeal },
             Description: "Restores a friendly target's HP (or your own). Scales with WIT.",
             Levels: new[]

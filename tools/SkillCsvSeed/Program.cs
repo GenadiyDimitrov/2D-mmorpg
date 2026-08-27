@@ -43,6 +43,11 @@ if (args.Contains("--check")) { Check.Verbose = args.Contains("-v") || args.Cont
 // column honest, and a hand edit of his beats anything this would regenerate. See Retarget.cs.
 if (args.Contains("--retarget")) return Retarget.Run(outDir);
 
+// `--aoe-column` — BL-96, his second column: RANGE is how far you throw it, AOE is how wide it goes
+// off. Also a ONE-OFF migration; idempotent and refuses to run on a file that already has the column.
+// See AoeColumn.cs for why two numbers sharing one column was not merely untidy.
+if (args.Contains("--aoe-column")) return AoeColumn.Run(outDir);
+
 // ===== HIS DISCIPLINE MAP (2026-08-17) =============================================================
 // He redrew the 3rd-class split and named the files himself: *"class 2nd => desc1/desc2 3rd =>
 // desc1/desc2 4th"*, with

@@ -100,7 +100,8 @@ internal static class Retarget
                 string name = Field(line, spans, 1).Trim();
                 if (name.Length == 0) continue;              // a `----- Force -----` banner row
                 string type = Field(line, spans, 2).Trim();
-                string old  = Field(line, spans, 4).Trim();
+                // TARGET is field 5 since the BL-96 AOE column was inserted at 4.
+                string old  = Field(line, spans, 5).Trim();
                 if (old.Length == 0) continue;               // nothing authored in the column
 
                 var (neu, how) = Resolve(name, type, old, byName);
