@@ -250,8 +250,12 @@ a same-level creature** (`LOW LEVEL 1-10` in `BalanceMatrix`: nuke 149 → 92 ag
    *"Weak P. Def. and strong Evasion"* — it costs defence and buys evasion, and **does not touch HP**.
    Ours pays `PDef 0.5` *and* a small HP pool. His *"caster mobs are not weaker than the other, they just
    use spells (and have a bit less pdef, evasion not twice less)"* is IG's own rule, word for word.
-3. 🔵 **The player side of the same question** (`BL-78` item 4) — *"a healer with 1500 hp getting hit for
-   300 is abit harsh"*. Creature attack just rose ~1.65×, which makes this louder, not quieter.
+3. ✅ **The player side of the same question** (`BL-78` item 4) — *"a healer with 1500 hp getting hit for
+   300 is abit harsh"*. Creature attack rose ~1.65× here and made it louder. **Answered 2026-08-27 in
+   0.91.0**, on the player side rather than by walking this refit back: player Max HP was refitted to
+   IG's own per-class tables and CON curve, roughly ×1.9 for fighters and ×2.6-3.6 for the mage line.
+   A robe at 52 went from 9s of survival to 21s. So this document's numbers still stand — what changed
+   is the pool they are measured against. See `docs/Formulas.md` and `BalanceMatrix --hpcurve`.
 4. ⚠ **Mob social clans are OFF** (`GameConstants.MobClansEnabled`, `BL-73`). A large share of IG's field
    danger is the pack answering. Any "thrill" judgement made with clans off is measuring a different
    game, and this half is already built.

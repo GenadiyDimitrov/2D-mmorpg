@@ -1978,9 +1978,7 @@ public class Entity
         // what "built like a player" means and it is the only thing PlayerBuilt changes. See the field.
         bool playerStats = Kind == EntityKind.Player || PlayerBuilt;
         MaxHp = playerStats
-            ? StatCalculator.MaxHp(EffectiveCon, Level,
-                StatCalculator.HpClassLevelModifier(BaseClass, Archetype),
-                StatCalculator.Level1BaseHp(Race, BaseClass))
+            ? StatCalculator.MaxHp(EffectiveCon, Level, Race, BaseClass, Archetype, Discipline)
             : MobBaseStats.Hp(Level);
         MaxMp = playerStats
             ? StatCalculator.MaxMp(EffectiveSpt, Level,

@@ -295,6 +295,73 @@ if (args.Length > 0 && args[0] == "--warchanter")
 // `--buffs` — the buff census (see BuffCensus at the bottom of this file).
 if (args.Length > 0 && args[0] == "--buffs") { BuffCensus.Run(); return; }
 
+// `--hpcurve` — the PLAYER HP CURVE against IG's own per-class tables and the three anchors the
+// owner set on 2026-08-27 (tank@40 CON43 = 2380, buffer@40 CON31 = 1180, knight@80 CON43 = 9840).
+// Reads StatCalculator directly, so it measures the SHIPPED curve, not a re-derivation.
+if (args.Length > 0 && args[0] == "--hpcurve")
+{
+    Console.WriteLine("=== PLAYER HP CURVE vs IG (base = pre-CON level term; naked = x ConHpModifier) ===");
+    Console.WriteLine("  Reference sheets: fighters = human CON 43 | nuker/healer = human CON 27 | buffer = ork CON 31");
+    Console.WriteLine();
+
+    // IG's own per-class base tables, as supplied. null = not supplied for that level.
+    var igTank = new Dictionary<int, double> { [1] = 43.8, [10] = 107, [20] = 253.7, [40] = 1184.1, [50] = 1801, [60] = 2607, [70] = 3611.9, [80] = 4895.5 };
+    var igBuff = new Dictionary<int, double> { [1] = 49.2, [10] = 108.5, [20] = 240, [40] = 907.7, [50] = 1438.5, [60] = 2115.4, [70] = 2938.5, [80] = 3938.5 };
+
+    void Track(string name, Race race, BaseClass cls, Archetype? arch, Discipline? disc, int con,
+               Dictionary<int, double>? ig)
+    {
+        Console.WriteLine($"  --- {name}  ({race} {cls}, CON {con}) ---");
+        Console.WriteLine("   lvl      base     naked |    IG base     err");
+        foreach (var L in new[] { 1, 10, 20, 40, 50, 60, 70, 80, 85 })
+        {
+            float b = StatCalculator.HpBase(race, cls, L, arch, disc);
+            int hp = StatCalculator.MaxHp(con, L, race, cls, arch, disc);
+            string igCol = "         -       -";
+            if (ig != null && ig.TryGetValue(L, out var v))
+                igCol = $"{v,10:0} {(b / v - 1),7:+0.0%;-0.0%;0.0%}";
+            Console.WriteLine($"   {L,3} {b,9:0} {hp,9} | {igCol}");
+        }
+        Console.WriteLine();
+    }
+
+    Track("TANK", Race.Human, BaseClass.Fighter, Archetype.Tank, Discipline.Bulwark, 43, igTank);
+    Track("WARRIOR", Race.Human, BaseClass.Fighter, Archetype.Warrior, Discipline.Ravager, 43, null);
+    Track("ROGUE", Race.Human, BaseClass.Fighter, Archetype.Rogue, Discipline.Nullblade, 43, null);
+    Track("BUFFER (Warchanter)", Race.Ork, BaseClass.Mage, Archetype.Healer, Discipline.Warchanter, 31, igBuff);
+    Track("HEALER (Lightbringer)", Race.Human, BaseClass.Mage, Archetype.Healer, Discipline.Lightbringer, 27, null);
+    Track("NUKER", Race.Human, BaseClass.Mage, Archetype.Nuker, Discipline.Magus, 27, null);
+
+    Console.WriteLine("  --- THE OWNER'S THREE ANCHORS ---");
+    int a1 = StatCalculator.MaxHp(43, 40, Race.Human, BaseClass.Fighter, Archetype.Tank, Discipline.Bulwark);
+    int a2 = StatCalculator.MaxHp(31, 40, Race.Ork, BaseClass.Mage, Archetype.Healer, Discipline.Warchanter);
+    int a3 = StatCalculator.MaxHp(43, 80, Race.Human, BaseClass.Fighter, Archetype.Tank, Discipline.Bulwark);
+    Console.WriteLine($"   tank   @40 CON43 = {a1,6}   target 2380   {(a1 / 2380.0 - 1),7:+0.0%;-0.0%;0.0%}");
+    Console.WriteLine($"   buffer @40 CON31 = {a2,6}   target 1180   {(a2 / 1180.0 - 1),7:+0.0%;-0.0%;0.0%}");
+    Console.WriteLine($"   knight @80 CON43 = {a3,6}   target 9840   {(a3 / 9840.0 - 1),7:+0.0%;-0.0%;0.0%}");
+    Console.WriteLine();
+
+    Console.WriteLine("  --- THE CLASS-CHANGE STEP: what taking a discipline at 40 is worth ---");
+    foreach (var L in new[] { 39, 40, 50, 80 })
+    {
+        int pre = StatCalculator.MaxHp(31, L, Race.Ork, BaseClass.Mage, Archetype.Healer, null);
+        int wc = StatCalculator.MaxHp(31, L, Race.Ork, BaseClass.Mage, Archetype.Healer, Discipline.Warchanter);
+        int lb = StatCalculator.MaxHp(31, L, Race.Ork, BaseClass.Mage, Archetype.Healer, Discipline.Lightbringer);
+        Console.WriteLine($"   L{L,-3} no discipline {pre,6} | Warchanter {wc,6} ({(wc / (double)pre - 1),6:+0.0%;-0.0%;0.0%}) | Lightbringer {lb,6}");
+    }
+    Console.WriteLine();
+
+    Console.WriteLine("  --- ORDERING AT 80 (base HP; the owner's rule: nuker=healer < buffer < rogue < warrior < tank) ---");
+    Console.WriteLine($"   nuker {StatCalculator.HpBase(Race.Human, BaseClass.Mage, 80, Archetype.Nuker, Discipline.Magus),6:0}"
+        + $" | healer {StatCalculator.HpBase(Race.Human, BaseClass.Mage, 80, Archetype.Healer, Discipline.Lightbringer),6:0}"
+        + $" | buffer {StatCalculator.HpBase(Race.Human, BaseClass.Mage, 80, Archetype.Healer, Discipline.Warchanter),6:0}"
+        + $" | rogue {StatCalculator.HpBase(Race.Human, BaseClass.Fighter, 80, Archetype.Rogue, Discipline.Nullblade),6:0}"
+        + $" | warrior {StatCalculator.HpBase(Race.Human, BaseClass.Fighter, 80, Archetype.Warrior, Discipline.Ravager),6:0}"
+        + $" | tank {StatCalculator.HpBase(Race.Human, BaseClass.Fighter, 80, Archetype.Tank, Discipline.Bulwark),6:0}");
+    Console.WriteLine();
+    return;
+}
+
 // `--mpregen` — the MP ECONOMY: spell-spam drain against natural and buffed regen, under BOTH the
 // model that ships today and the owner's proposed one (2026-08-26). Nothing here changes the engine.
 // `--hpregen` - the HP ECONOMY: regen against the potion throughput that really replaces HP,
@@ -2480,7 +2547,7 @@ float g3SwingRatio = 1f;   // read by the verdict block below — see the note a
     //     exponential in CON and gated by an archetype modifier mobs do not have.
     Console.WriteLine($"  HP source        Kind=Mob reads MobBaseStats.Hp({L}) = {MobBaseStats.Hp(L)} DIRECT;");
     Console.WriteLine($"                   mob-player runs StatCalculator.MaxHp(CON {newMob.Con}, "
-        + $"classMod {StatCalculator.HpClassLevelModifier(BaseClass.Fighter, Archetype.Warrior):0.00}) = {newMob.MaxHp}");
+        + $"g@40+ {StatCalculator.HpGrowth(BaseClass.Fighter, Archetype.Warrior, null).T3:0.00}) = {newMob.MaxHp}");
     foreach (var arch in g3Archs)
         Console.WriteLine($"                     {arch,-8} = "
             + $"{BuildMobPlayer(L, arch, 1, ItemRarity.Common, 0, kit: false).MaxHp,6}"

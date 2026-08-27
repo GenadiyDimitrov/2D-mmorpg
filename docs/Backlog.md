@@ -772,11 +772,13 @@ closed · **`BL-93` opened** for the in-game visuals discussion you asked for (*
      twice (low P.Def **and** low HP) for a role that should cost it a little P.Def and nothing else.
      ⚠ **This is IG's own rule, word for word**: its caster tag is `Light Armor Type` — *"Weak P. Def.
      and strong Evasion"* — which costs defence, buys evasion, and does not touch HP.
-  3. 🔵 **AND IT MAY BE THE PLAYER CURVE TOO** — *"a healer with 1500 hp getting hit for 300 is abit harsh
-     .. one time less defence cuz of robe the second hinder is the amount of hp"*. A robe class paying
-     for its role twice, on the player side, is the same complaint as (2) pointed the other way. Decide
-     these two together or a healer ends up in the same hole a caster mob just climbed out of.
-     ⚠ **0.73.0 made this louder, not quieter** — creature attack rose ~×1.65.
+  3. ✅ **THE PLAYER CURVE — BUILT 0.91.0** (2026-08-27). It *was* the player side: *"a healer with 1500 hp
+     getting hit for 300 is abit harsh .. one time less defence cuz of robe the second hinder is the amount
+     of hp"*, and 0.73.0's ~×1.65 creature attack had made it louder. You supplied IG's own per-class HP
+     tables and its CON curve; the pool now rises to meet the attack instead of the attack coming down.
+     Max HP is a growth rate that **steps at every class change**, keyed by **discipline** — which is what
+     finally lets Warchanter and Lightbringer differ. A robe class at 52 survives **21s, not 9s**; your
+     Bloodchanter at 43 goes **516 → 1184**. See `docs/Formulas.md` and `BalanceMatrix --hpcurve`.
   4. 🔴 **THE BILL FROM 0.73.0, and it is your call.** Doubling creature defence doubles time-to-kill, so
      a full S-grade character went from **347 to 603 farm hours** and an elite camp fell from 115% of a
      normal farm to **76%** — `BL-22`'s budget has to be re-solved against the new numbers. An unattended

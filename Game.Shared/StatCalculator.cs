@@ -57,46 +57,97 @@ public static class StatCalculator
     // Per design: levels increase hp/mp (max/regen), evasion, accuracy,
     // defence, attack — nothing else. Tanks get more HP, mages more MP.
 
-    // ----- Max HP (authentic IG model) -------------------------------------
-    //  MaxHP = [ ClassLevelMod × (level² + 3·level)/2 + Level1Base ] × ConModifier
-    //  (gear/buff/passive % and flat bonuses stack afterwards in RecomputeDerived).
+    // ----- Max HP (IG's own shape: a growth rate that STEPS AT CLASS CHANGE) ------
+    //  Each level grants  g × (level + 1)  HP, and `g` steps up at every class change.
+    //  That step IS the class-growth bonus IG's per-class HP tables carry — the owner's
+    //  question on 2026-08-27, answered from his own two tables: a knight's rate jumps
+    //  +53% at 2nd class, a mystic's only +13%.
+    //
+    //  Closed form (the sum of g·(L+1) telescopes):
+    //      base(L) = Level1BaseHp + Σ over tiers of  g_tier × ( Q(hi) − Q(lo) ),  Q(L) = (L²+3L)/2
+    //      MaxHP   = base(L) × ConHpModifier(effectiveCon)
+    //  Tier edges are our class-change levels: 1-19 | 20-39 | 40-75 | 76-85.
+    //  Gear/buff % and flats stack AFTER, outside, per the global rule (playtest 28).
+    //
+    //  🔑 The track is a PURE FUNCTION of (race, class, discipline, level) — it is not
+    //  accumulated. So taking a discipline at 40 recomputes the WHOLE curve on the new
+    //  track, and a Warchanter visibly gains ~22% HP the moment he class-changes. That is
+    //  deliberate: it is how IG's table jump is reproduced without a discontinuity in L.
+    //
+    //  Fitted to IG's per-class tables (owner supplied, 2026-08-27). Error vs those tables:
+    //  0% at 1 / 40 / 80, −3% at 10, +7% at 20 (worst), +5% at 50-60. His three anchors —
+    //  tank@40 CON43 = 2380, buffer@40 CON31 = 1180, knight@80 CON43 = 9840 — read
+    //  2414 / 1185 / 9970.
 
-    /// <summary>Per-race+class level-1 base HP (the quadratic's fixed constant).</summary>
+    /// <summary>Per-race+class level-1 base HP (the curve's fixed constant). Read off IG's
+    /// own level-1 row; the per-race spread is IG's (ork &gt; human &gt; elf).</summary>
     public static int Level1BaseHp(Race race, BaseClass cls) => (race, cls) switch
     {
-        (Race.Human, BaseClass.Fighter) => 126,
-        (Race.Human, BaseClass.Mage)    => 88,
-        (Race.Elf,   BaseClass.Fighter) => 113,
-        (Race.Elf,   BaseClass.Mage)    => 79,
-        (Race.Ork,   BaseClass.Fighter) => 137,
-        (Race.Ork,   BaseClass.Mage)    => 131,
-        _ => 100
+        (Race.Human, BaseClass.Fighter) => 44,
+        (Race.Human, BaseClass.Mage)    => 41,
+        (Race.Elf,   BaseClass.Fighter) => 40,
+        (Race.Elf,   BaseClass.Mage)    => 37,
+        (Race.Ork,   BaseClass.Fighter) => 50,
+        (Race.Ork,   BaseClass.Mage)    => 49,
+        _ => 44
     };
 
-    /// <summary>Class HP growth multiplier on the quadratic level term (the IG "tier").
-    /// Tuned so level-75 raw base HP lands on the IG tracks: tank ~2.9k, warrior ~2.5k,
-    /// rogue/archer ~2.0k, nuker ~1.4k, healer ~1.2k. Before 2nd class (no archetype),
-    /// a fighter/mage uses a sensible default.</summary>
-    public static float HpClassLevelModifier(BaseClass cls, Archetype? arch) => arch switch
+    /// <summary>The four per-tier growth rates for a character's HP track (1-19, 20-39,
+    /// 40-75, 76-85). Six tracks, keyed by DISCIPLINE where the character has one and by
+    /// ARCHETYPE before 40 — which is the only way Warchanter (buffer) and Lightbringer
+    /// (healer) can differ, since they share <see cref="Archetype.Healer"/>.
+    ///
+    /// Ordering the owner set (2026-08-27): nuker = healer &lt; buffer &lt; rogue &lt;
+    /// warrior &lt; tank. Base HP at 80 reads 3230 / 3934 / 4085 / 4455 / 4901.</summary>
+    public static (float T1, float T2, float T3, float T4) HpGrowth(
+        BaseClass cls, Archetype? arch, Discipline? disc)
     {
-        Archetype.Tank    => 1.02f,   // L75 raw ≈ 3100 (the IG tank track)
-        Archetype.Warrior => 0.83f,
-        Archetype.Rogue   => 0.66f,
-        Archetype.Archer  => 0.66f,
-        Archetype.Nuker   => 0.45f,
-        Archetype.Healer  => 0.38f,
-        _ => cls == BaseClass.Mage ? 0.42f : 0.80f   // base class, pre-2nd
-    };
+        // A discipline overrides its archetype — this is the whole point of the split.
+        switch (disc)
+        {
+            case Discipline.Warchanter:   return (0.90f, 1.02f, 1.23f, 1.23f);  // buffer: melee, fat
+            case Discipline.Lightbringer: return (0.74f, 0.84f, 1.01f, 1.01f);  // pure healer
+        }
+        return arch switch
+        {
+            Archetype.Tank    => (0.95f, 1.45f, 1.51f, 1.51f),
+            Archetype.Warrior => (0.86f, 1.32f, 1.37f, 1.37f),
+            Archetype.Rogue   => (0.79f, 1.21f, 1.26f, 1.26f),
+            Archetype.Archer  => (0.79f, 1.21f, 1.26f, 1.26f),
+            Archetype.Nuker   => (0.74f, 0.84f, 1.01f, 1.01f),
+            Archetype.Healer  => (0.74f, 0.84f, 1.01f, 1.01f),  // pre-40; Warchanter leaves it above
+            // Before 2nd class there is no archetype: a fighter sits on the middle of the
+            // three fighter tracks, a mage on the shared mystic track.
+            _ => cls == BaseClass.Mage ? (0.74f, 0.84f, 1.01f, 1.01f)
+                                       : (0.86f, 1.32f, 1.37f, 1.37f)
+        };
+    }
 
-    /// <summary>CON → Max-HP multiplier — interpolated from the real IG table (baseline
-    /// 30 = 1.00). The old exponential was ~7% high mid-range (CON 36 → 1.20 vs 1.12);
-    /// the table is accurate at every reference point.</summary>
+    /// <summary>The level term, before CON. Public because BalanceMatrix reads it directly.</summary>
+    public static float HpBase(Race race, BaseClass cls, int level, Archetype? arch, Discipline? disc)
+    {
+        var (t1, t2, t3, t4) = HpGrowth(cls, arch, disc);
+        float b = Level1BaseHp(race, cls);
+        b += t1 * (HpQ(Math.Min(level, 19)) - HpQ(1));
+        if (level > 19) b += t2 * (HpQ(Math.Min(level, 39)) - HpQ(19));
+        if (level > 39) b += t3 * (HpQ(Math.Min(level, 75)) - HpQ(39));
+        if (level > 75) b += t4 * (HpQ(level) - HpQ(75));
+        return b;
+    }
+
+    /// <summary>Σ(i+1) from 2 to L, in closed form — the curve's level term.</summary>
+    private static float HpQ(int level) => (level * level + 3f * level) / 2f;
+
+    /// <summary>CON → Max-HP multiplier, IG's own curve (owner, 2026-08-27): 20 = ×1.00,
+    /// 30 = ×1.25, 40 = ×1.80, 50 = ×2.58. It is far steeper than the table it replaced
+    /// (which read ×1.83 at CON 50) and it is normalised at CON 20, not 30 — both halves
+    /// matter, because the base table above is quoted against THIS curve. Above 50 the
+    /// curve is continued geometrically at IG's own ~3.7%/point so stat swaps stay smooth.</summary>
     public static float ConHpModifier(int con) => InterpolateCurve(ConCurve, con);
 
     private static readonly (int stat, float mod)[] ConCurve =
     {
-        (20, 0.79f), (30, 1.00f), (36, 1.12f), (40, 1.35f),
-        (43, 1.48f), (45, 1.57f), (47, 1.67f), (50, 1.83f), (55, 2.14f),
+        (20, 1.00f), (30, 1.25f), (40, 1.80f), (50, 2.58f), (60, 3.72f),
     };
 
     // ----- SPT (Spirit): a FULL stat, exactly like CON/ATK/AGI/WIT ---------------
@@ -139,11 +190,9 @@ public static class StatCalculator
         return table[^1].mod;
     }
 
-    public static int MaxHp(int con, int level, float classLevelMod, int level1Base)
-    {
-        float rawBase = classLevelMod * (level * level + 3f * level) / 2f + level1Base;
-        return (int)(rawBase * ConHpModifier(con));
-    }
+    public static int MaxHp(int con, int level, Race race, BaseClass cls,
+                            Archetype? arch, Discipline? disc)
+        => (int)(HpBase(race, cls, level, arch, disc) * ConHpModifier(con));
 
     /// <summary>Mob HP — kept on the simple linear curve. The player formula's
     /// exponential CON modifier would explode on mob-scale CON, so mobs use this.</summary>

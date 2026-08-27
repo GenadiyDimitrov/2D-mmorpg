@@ -7,12 +7,86 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.90.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.91.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-08-27 (latest) — 0.90.0: `BL-93` step 1 — the client can draw a body
+## 2026-08-27 (latest) — 0.91.0: player HP rebuilt on IG's curve — `BL-78` item 3
+
+**The pool rose to meet the attack.** `0.73.0` refitted creature attack up ~×1.65 against IG's current
+chronicle and never re-ran the player side; `BL-78` item 3 has carried that debt since. His playtest
+words then were *"a healer with 1500 hp getting hit for 300 is abit harsh"*, and on 2026-08-27 he put it
+plainly again: *"the hp of players seems twice if not trice as low from IG"*. It was — and the fix is on
+the player side, so this changes **no mob number at all**.
+
+### Max HP is now a growth rate that STEPS AT CLASS CHANGE
+
+```
+base(L) = level1Base(race, baseClass) + SUM over tiers of  g(tier) * ( Q(hi) - Q(lo) )
+MaxHp   = base(L) * conHpModifier(effectiveCon)          Q(L) = (L*L + 3L)/2
+tiers   = 1-19 | 20-39 | 40-75 | 76-85     (our class-change levels)
+```
+
+Each level grants `g × (L+1)` HP and **`g` steps up at every class change** — that step *is* the
+class-growth bonus IG's per-class tables carry, and it answers his question directly: a knight's rate
+jumps **+53%** at 2nd class, a mystic's only **+13%**. The old single quadratic (`classMod·(L²+3L)/2`)
+could not express it, which is why it was 2-3× short at the top and 2× fat at level 1.
+
+Fitted to IG's own tables: **0% error at 1 / 40 / 80, −3% at 10, +7% at 20** (worst), +5% at 50-60. The
+three anchors he set read **2414 / 1184 / 9969** against his 2380 / 1180 / 9840.
+
+### The HP track is keyed by DISCIPLINE, and it is a pure function
+
+Keyed by discipline where the character has one, by archetype before 40. That is the **only** way
+Warchanter (buffer) and Lightbringer (healer) can differ, since they share `Archetype.Healer` — his
+ruling: *"buffers are mele and need boost ... in between the nukers and rogues"*.
+
+Nothing is accumulated, so taking a discipline at 40 recomputes the whole curve on the new track and a
+Warchanter **visibly gains +20% HP the moment he class-changes**. That is deliberate: it reproduces IG's
+per-class table jump without a discontinuity in L.
+
+The six tracks, and the ordering he specified (nuker = healer < buffer < rogue < warrior < tank), base
+HP at 80: **3233 / 3233 / 3926 / 4097 / 4454 / 4902**.
+
+### The CON curve is IG's, and it is normalised at 20
+
+`CON 20 → ×1.00, 30 → ×1.25, 40 → ×1.80, 50 → ×2.58` (continued to ×3.72 at 60 so stat swaps stay
+smooth). The table it replaced read ×1.83 at CON 50 and was normalised at 30. ⚠ **Both halves move
+together** — the base table above is quoted *against this curve*, so changing one alone rescales every
+pool in the game.
+
+### What it does
+
+| | @20 | @40 | @60 | @80 |
+|---|---|---|---|---|
+| tank | ×1.03 | ×1.63 | ×1.83 | ×1.92 |
+| warrior | ×1.08 | ×1.77 | ×2.02 | ×2.12 |
+| rogue | ×1.15 | ×1.97 | ×2.29 | ×2.42 |
+| buffer | ×1.51 | ×2.54 | ×3.28 | ×3.61 |
+| healer | ×1.51 | ×2.25 | ×2.78 | ×3.00 |
+| nuker | ×1.38 | ×1.97 | ×2.39 | ×2.56 |
+
+Measured survival against a same-level creature (`BalanceMatrix`, E2), standing still: a **robe at 52
+goes 9s → 21s**, a tank 73s → 132s, a rogue 27s → 58s, a champion 36s → 69s. The early game barely
+moves; the correction lands where he felt it. Levels 1-10 do get *smaller* (`level1Base` 126 → 44, so a
+level-1 tank reads 89 HP not 186) — that is IG's own level-1 row, and creature P.Atk at level 1 is 7.
+
+### Deliberately NOT changed, on his rulings the same day
+
+- **Interrupt** (`damageTaken / casterMaxHp`) keeps its formula. A bigger pool lowers interrupt chance,
+  and that is the point: *"a mage with 500hp getting hit by 100 .. is 20% base interrupt chance"*.
+- **Heals, HoTs and HP potions** keep their numbers. They are throughput, not survivability: *"now u
+  just need more pots to heal to max, they do not touch the survavability factor"*.
+- **HP regen** keeps its formula; the fighter sitting-regen boost arrives as an authored CSV passive.
+- **Flats stay OUTSIDE** the buff multiplier, per the global rule (playtest 28). IG puts them inside;
+  his ruling is that we keep our order and he **doubles the authored `+HP`** when writing the rung.
+- **No mob number moved.** `docs/balance/MobCurveVsIG.md` still stands as measured.
+
+`BalanceMatrix --hpcurve` prints the tracks against IG's tables, the three anchors and the
+class-change step, so this stays checkable.
+
+## 2026-08-27 — 0.90.0: `BL-93` step 1 — the client can draw a body
 
 **⚠ Half a feature on purpose, and it ships in that state.** The engine side of the model pass is
 complete and the world still renders exactly as it did — flat coloured spheres — because there is no

@@ -123,8 +123,22 @@ more hits. `spiritMod` is flattened from IG's: 20 SPT = ×1.00, 50 SPT = ×0.67.
 ## Pools and regen
 
 ```
-MaxHp        = (classMod * (L*L + 3L)/2 + level1Base) * conModifier(effectiveCon)
+MaxHp        = hpBase(race, baseClass, discipline, L) * conHpModifier(effectiveCon)
 MaxMp        = (classMod * (L*L + 3L)/2 + level1Base) * sptModifier(effectiveSpt)
+
+hpBase(L)    = level1Base(race, baseClass)
+                 + SUM over tiers of  g(tier) * ( Q(hi) - Q(lo) )      Q(L) = (L*L + 3L)/2
+               tier edges = the class-change levels:  1-19 | 20-39 | 40-75 | 76-85
+               i.e. each level grants  g * (L+1)  HP, and g STEPS UP at every class change.
+
+g per track    1-19  20-39  40-75  76-85       level1Base   fighter / mage
+  tank         0.95   1.45   1.51   1.51         human          44 / 41
+  warrior      0.86   1.32   1.37   1.37         elf            40 / 37
+  rogue|archer 0.79   1.21   1.26   1.26         ork            50 / 49
+  buffer       0.90   1.02   1.23   1.23
+  healer|nuker 0.74   0.84   1.01   1.01
+
+conHpModifier   CON 20 -> 1.00 , 30 -> 1.25 , 40 -> 1.80 , 50 -> 2.58 , 60 -> 3.72
 
 HpRegen/s    =  (3 + L*0.1) * 1.03^(effectiveCon - 40)
                   * stance * safeZone * hpRegenMult * (1+buff%)     + flats
@@ -160,7 +174,25 @@ Three numbers differ and nothing else: our base is **3.00 for every race and cla
 centres on **CON 40** not 30, our step is **1.03** not 1.0216. At level 1 every fighter lands inside
 IG's band and mages 6-13% above it.
 
-- `conModifier` is a **steep** curve (~3%/point); `sptModifier` is **gentle** (1.16 @20 → 1.65 @50).
+- 🔑 **THE HP TRACK IS KEYED BY DISCIPLINE, AND IT IS A PURE FUNCTION** (0.91.0, owner 2026-08-27).
+  Keyed by discipline where the character has one, by archetype before 40 — which is the only way
+  Warchanter (buffer) and Lightbringer (healer) can differ, since they share `Archetype.Healer`.
+  Nothing is accumulated: taking a discipline at 40 recomputes the **whole** curve on the new track,
+  so a Warchanter visibly gains **+20%** HP the moment he class-changes. That is deliberate — it is
+  how IG's per-class table jump is reproduced without a discontinuity in L.
+- 🔑 **The step in `g` IS the class-growth bonus.** Fitted to IG's own per-class tables: a knight's
+  rate jumps **+53%** at 2nd class, a mystic's only **+13%**. Error vs those tables is 0% at 1/40/80,
+  −3% at 10, **+7% at 20** (worst), +5% at 50-60. The owner's three anchors — tank@40 CON43 = 2380,
+  buffer@40 CON31 = 1180, knight@80 CON43 = 9840 — read **2414 / 1184 / 9969**. Ordering he set and
+  the curve holds: nuker = healer < buffer < rogue < warrior < tank.
+- ⚠ **`conHpModifier` is normalised at CON 20, not 30**, and it is far steeper than the table it
+  replaced (×2.58 at CON 50 against the old ×1.83). Both halves matter together: the base table above
+  is quoted *against this curve*, so changing one without the other rescales every pool. Verified by
+  `BalanceMatrix --hpcurve`, which prints the tracks, the anchors and the class-change step.
+- ⚠ **Flats stay OUTSIDE** for Max HP, per the global rule — so an authored `+HP` passive is worth
+  its face value and nothing more. IG puts them inside; the owner's ruling (2026-08-27) is that we
+  keep our order and **he doubles the authored number** when writing the CSV rung.
+- `sptModifier` is **gentle** (1.16 @20 → 1.65 @50) — MP was not touched by this pass.
 - 🔑 **MP regen has its OWN stat curve.** `sptModifier` still drives Max MP and M.Def, but regen left
   it on 2026-08-26 (`BL-92`) for the wider linear `sptRegenModifier` — so Spirit buys visible sustain
   (every fighter sits at the 0.70 floor; the ork mage reaches 1.10).
