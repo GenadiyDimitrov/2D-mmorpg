@@ -109,6 +109,10 @@ public static partial class ClassSkillTables
         shared.Add(new ClassSkill(HolyBlessing,        78));
         shared.Add(new ClassSkill(HolySoul,            76));
         shared.Add(new ClassSkill(RiteOfPreservation,  83));
+        // Urgent Great Heal @83 — SHARED, not race-split: his row carries no RACE, so all three learn
+        // it. It REPLACES Urgent Heal (the SkillDef says so), which is why the 3rd tier's four rungs
+        // stop at 56 and never gain a fifth.
+        shared.Add(new ClassSkill(UrgentGreatHeal,     83));
         // Healer's Power: five rungs on his own irregular levels.
         shared.AddRange(At(HealersPower, (80, 1), (83, 2), (85, 3), (87, 4), (90, 5)));
 

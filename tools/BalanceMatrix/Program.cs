@@ -407,6 +407,14 @@ if (args.Length > 0 && args[0] == "--mpcase")
     return;
 }
 
+// `--goldflow` - BL-23: what an hour of farming EARNS against what it BURNS in potions and rune
+// upkeep, level band by level band (2026-08-27, his own framing of the coin-curve question).
+if (args.Length > 0 && args[0] == "--goldflow")
+{
+    GoldFlow();
+    return;
+}
+
 // The four same-level PvP targets a drain is judged against. One list, so every table below
 // measures the same characters.
 //
@@ -1288,14 +1296,16 @@ Console.WriteLine();
 
 
 // =====================================================================================================
-//  🔴 HIS OPEN QUESTION: THE ELF NUKER'S LOW-DAMAGE SKILLS. *"we can make the two lower dmg elf nuker
-//  skills have x3 interrupt chance maybe we can balance it - need balance matrix to see interrupt chance
-//  on their dmg and elemental blasts to a mage of same lvl => i would guess is verry low and probably
-//  should make them x10 or something"*.
+//  THE ELF NUKER'S LOW-DAMAGE SKILLS — his question of 2026-08-24 and the ruling that closed it.
+//  *"we can make the two lower dmg elf nuker skills have x3 interrupt chance ... probably should make
+//  them x10 or something"* → ruled **x2** on 2026-08-26: *"They are fast cast and x2 interrupt chance
+//  is good enough"*.
 //
-//  ⚠ NONE OF THESE SPELLS IS IN THE CATALOG — `nuker 3rd` is not built. Powers/casts/reuses below are
-//  read off his CSV's top rungs and modelled; the CASTER and the TARGET are real Entities running the
-//  real damage formula, so only the authored numbers are hand-carried.
+//  🔑 EVERY NUMBER BELOW IS READ OFF THE REAL `SkillDef` — power, cast, reuse AND the multiplier. The
+//  kit shipped in 0.87.0, so the literal four-row table this block used to carry (his CSV's top rungs,
+//  hand-copied while `nuker 3rd` was unbuilt) is gone: retune a rung and this table moves with it
+//  instead of quietly going stale. That staleness is not hypothetical — `BL-91` still read "not in the
+//  code" on 2026-08-27, two days after it was.
 // =====================================================================================================
 Console.WriteLine("=== INTERRUPT: the elf nuker's spells vs a same-level mage (BL-91) ===");
 {
@@ -1308,43 +1318,43 @@ Console.WriteLine("=== INTERRUPT: the elf nuker's spells vs a same-level mage (B
     Console.WriteLine($"  caster: elf mage {L}, M.Atk {(int)caster.EffectiveMagicAttack}. "
                     + $"target: human mage {L}, Max HP {victim.MaxHp}, SPT {victim.EffectiveSpt} (x{vMod:0.00}).");
     Console.WriteLine($"  {"spell",18} {"power",6} {"cast",5} {"reuse",6} {"dmg",7} {"% HP",6} "
-                    + $"| {"x1",7} {"RULED",8} {"x5",7} {"x10",7} | {"ruled +Resolve",15}");
-    foreach (var (name, power, castS, reuseS, ruled) in new (string, int, float, float, float)[]
+                    + $"| {"x1",7} {"BUILT",8} {"x5",7} {"x10",7} | {"built +Resolve",15}");
+    foreach (string id in new[]
     {
-        // ⚠ THE FOUR ROWS ARE HIS CSV'S TOP RUNG (@74), read literally: Frost Spikes and Frost Pierce
-        // are BOTH "m.Atk +64" on a 2.5s cast with a 1s reuse — identical damage, which is why they
-        // take the same multiplier. (An earlier pass of this table invented 42/1.5s/3s and 55/2.0s/5s;
-        // those numbers were mine, not his, and they understated both spells.)
-        ("Frost Spikes",     64, 2.5f,   1f, 2f),   // ← his ruling 2026-08-26: x2
-        ("Frost Pierce",     64, 2.5f,   1f, 2f),   // ← his ruling 2026-08-26: x2
-        ("Elemental Blast", 108, 4.0f,   1f, 1f),
-        ("Thunderstorm",    216, 5.0f, 300f, 1f),
+        SkillCatalog.FrostSpikes, SkillCatalog.FrostPierce,
+        SkillCatalog.ElementalBlast, SkillCatalog.Thunderstorm,
     })
     {
+        if (SkillCatalog.Get(id) is not SkillDef def) { Console.WriteLine($"  {id,18}  🔴 NOT IN CATALOG"); continue; }
+
+        // The TOP rung, because the question was asked about the level-74 kit. Everything here is the
+        // SkillDef's own answer at that rung — no CSV number is repeated in this file any more.
+        int top      = def.MaxLevel;
+        int power    = def.PowerAt(top);
+        float castS  = def.CastTicksAt(top) / 10f;
+        float reuseS = def.CooldownTicksAt(top) / 10f;
+        float mult   = def.InterruptMult;
+
         float dmg = StatCalculator.MagicDamageFM((int)caster.EffectiveMagicAttack, 0, power,
                                                  (int)victim.EffectiveMagicDefence, victim.MagicDefCoef);
         float share = dmg / victim.MaxHp;
-        Console.WriteLine($"  {name,18} {power,6} {castS,5:0.0} {reuseS,6:0} {dmg,7:0} {share,6:P1} | "
+        Console.WriteLine($"  {def.Name,18} {power,6} {castS,5:0.0} {reuseS,6:0} {dmg,7:0} {share,6:P1} | "
             + $"{StatCalculator.InterruptChance(dmg, victim.MaxHp, vMod, 0f, roll, 1f),7:P1} "
-            + $"{StatCalculator.InterruptChance(dmg, victim.MaxHp, vMod, 0f, roll, ruled),8:P1} "
+            + $"{StatCalculator.InterruptChance(dmg, victim.MaxHp, vMod, 0f, roll, mult),8:P1} "
             + $"{StatCalculator.InterruptChance(dmg, victim.MaxHp, vMod, 0f, roll, 5f),7:P1} "
             + $"{StatCalculator.InterruptChance(dmg, victim.MaxHp, vMod, 0f, roll, 10f),7:P1} | "
-            + $"{StatCalculator.InterruptChance(dmg, victim.MaxHp, vMod, 0.54f, roll, ruled),15:P1}");
+            + $"{StatCalculator.InterruptChance(dmg, victim.MaxHp, vMod, 0.54f, roll, mult),15:P1}");
     }
     Console.WriteLine();
-    Console.WriteLine("  ! ✅ RULED 2026-08-26: Frost Spikes and Frost Pierce carry InterruptMult x2 — *\"They are");
-    Console.WriteLine("    fast cast and x2 interrupt chance is good enough\"*. The RULED column is that; x5/x10 are");
-    Console.WriteLine("    kept only to show what was rejected. They are the only two rows in `nuker 3rd.csv` that");
-    Console.WriteLine("    say \"Higher chance to interrupt enemy casts\", and both now also say \"(interrupt chance x2)\".");
+    Console.WriteLine("  ! ✅ BUILT 0.87.0: Frost Spikes and Frost Pierce carry SkillDef.InterruptMult = 2, and the");
+    Console.WriteLine("    BUILT column READS IT — it is whatever the catalog says, not what this file remembers.");
+    Console.WriteLine("    x5/x10 are kept only to show what was rejected. Both rows also say \"(interrupt chance x2)\"");
+    Console.WriteLine("    in `nuker 3rd.csv`, and Descr.cs checks them against the SkillDef on every --check.");
     Console.WriteLine("  ! 🔑 A NUKE ON A MAGE IS *NOT* A SMALL HIT. A mage's HP pool is the smallest in the game,");
     Console.WriteLine("    so even the cheap spells take a real slice of it — which is why x2 lands where x10 was");
     Console.WriteLine("    guessed: x10 on either Frost skill is a guaranteed cancel, i.e. Disrupt, not a nuke.");
     Console.WriteLine("  ! These are PER HIT, and both Frost skills fire every ~2.5s, so a long cast eats several:");
     Console.WriteLine("    the chance a cast is broken AT ALL is 1-(1-p)^n.");
-    Console.WriteLine("  ! 🔴 NOT IN THE CODE. The nuker 3rd kit is not built, so x2 lives ONLY in the CSV and in");
-    Console.WriteLine("    `BL-91` today. When the kit lands, set SkillDef.InterruptMult = 2f on both, delete this");
-    Console.WriteLine("    literal table, read the SkillDefs, and give `nuker 3rd.csv` its Check.Specs line —");
-    Console.WriteLine("    Descr.cs already reads \"(interrupt chance xN)\", so it will be verified from day one.");
 }
 Console.WriteLine();
 Console.WriteLine();
@@ -6163,6 +6173,252 @@ static void Stacks()
         : d.PotionCooldownTicks > 0     ? "HP / MP potion"
         : "buff potion / other";
 }
+// ============================================================================================
+//  `--goldflow` — `BL-23`: WHAT AN HOUR OF FARMING EARNS AGAINST WHAT IT BURNS.
+//
+//  His own re-spec of the coin curve, 2026-08-27: *"i want potion/rune per hour consumation and
+//  golddrop/h .. to compare for few lvl rangees - for now at lvl 43 i have 5kk + gold so it dont
+//  seem like a problem"*.
+//
+//  🔑 THE POINT OF THE REPORT IS THE RATIO, NOT THE COIN. `BL-23` had been an assertion — "gear
+//  value follows the tier ladder while coin stays linear, so the gap drifts to 51x by 76" — and an
+//  assertion is exactly what this tool exists to replace. A drift only matters if it shows up in
+//  what an hour of play can BUY, so that is what is measured: income per hour against the two
+//  standing costs a farming character actually pays.
+//
+//  Everything is read from the live catalogs and the live formulas:
+//    * income  — the real drop tables x the real vendor sell prices (`KillValue`, the same helper
+//                the ECONOMY section runs on) x kills per hour.
+//    * kills/h — TTK from the real damage formulas against the real roster mob of that level,
+//                plus one PullSeconds of walking to the next one. That constant is the ONLY
+//                invented number in the report and it is named, not buried.
+//    * HP burn — the deficit E4 measures per kill (mob DPS x TTK, less regen over the same
+//                seconds), priced at the cheapest potion tier that can SUSTAIN it.
+//    * MP burn — the same, for the rotation.
+//    * rune    — the 1h/2h box straight off the Apothecary shelf, per hour.
+//
+//  ⚠ A POTION TIER HAS A CEILING, NOT JUST A PRICE. Healing Common/Uncommon are 15s on a 10s
+//  cooldown, so they are always up: 20 and 70 HP/s sustained. Rare is 30s on 20s: 150 HP/s. Every
+//  MANA potion is 15s on a 30s cooldown — HALF uptime — so the mana ladder sustains 10/35/75 MP/s
+//  against its 20/70/150 label. Pricing a deficit at a tier that cannot physically deliver it is
+//  the mistake this table is built to not make.
+// ============================================================================================
+
+static void GoldFlow()
+{
+    // The one modelled constant: seconds between kills that are NOT spent fighting — walking to the
+    // next mob, waiting on a respawn, looting. Farm loops here are short-TTK, so this term is a real
+    // share of the hour and moving it moves every row. It is named rather than buried for that reason.
+    const float PullSeconds = 5f;
+
+    Console.WriteLine();
+    Console.WriteLine("=== BL-23: GOLD PER HOUR vs POTION AND RUNE BURN ===");
+    Console.WriteLine();
+    Console.WriteLine($"  live rates: exp x{RateConfig.World.Exp:0.##}  gold x{RateConfig.World.Gold:0.##}"
+                    + $"  dropChance x{RateConfig.World.DropChance:0.##}  dropAmount x{RateConfig.World.DropAmount:0.##}");
+    Console.WriteLine($"  every character is NPC-BUFFED (the way he plays); {PullSeconds:0}s of pull/travel between kills.");
+    Console.WriteLine();
+
+    // ---- The consumable shelf, once, so the per-row arithmetic below is checkable by hand. ----
+    var healTiers = new[]
+    {
+        PotionTier(ItemCatalog.MinorPotion,   SkillCatalog.PotHealMinor,   SkillEffect.HealOverTime),
+        PotionTier(ItemCatalog.HealingPotion, SkillCatalog.PotHeal,        SkillEffect.HealOverTime),
+        PotionTier(ItemCatalog.GreaterPotion, SkillCatalog.PotHealGreater, SkillEffect.HealOverTime),
+    };
+    var manaTiers = new[]
+    {
+        PotionTier(ItemCatalog.MinorManaPotion,   SkillCatalog.PotManaMinor,   SkillEffect.RestoreMp),
+        PotionTier(ItemCatalog.ManaPotion,        SkillCatalog.PotMana,        SkillEffect.RestoreMp),
+        PotionTier(ItemCatalog.GreaterManaPotion, SkillCatalog.PotManaGreater, SkillEffect.RestoreMp),
+    };
+
+    Console.WriteLine("--- THE SHELF: what a point of HP or MP costs, and the ceiling each tier can hold ---");
+    Console.WriteLine();
+    Console.WriteLine($"  {"potion",-24} {"rate",7} {"lasts",6} {"cd",5} {"per drink",10} {"buy",8} {"gold/pt",8} {"sustains",9}");
+    Console.WriteLine("  ---------------------------------------------------------------------------------------------");
+    foreach (var t in healTiers.Concat(manaTiers))
+        Console.WriteLine($"  {t.Name,-24} {t.PerSecond,5:0}/s {t.Seconds,5:0}s {t.CooldownSeconds,4:0}s "
+                        + $"{t.PerDrink,10:N0} {t.Buy,8:N0} {t.GoldPerPoint,8:0.000} {t.Sustained,7:0}/s");
+    Console.WriteLine();
+    Console.WriteLine("  'sustains' = rate x min(1, duration/cooldown) — the most this tier can deliver forever.");
+    Console.WriteLine("  🔑 Every MANA tier is 15s on a 30s drink cooldown, so its ceiling is HALF its label.");
+    Console.WriteLine("  🔑 Mana costs ~2x healing per point because mana potions DO NOT DROP — the price pays for");
+    Console.WriteLine("     the missing faucet (his ruling, 0.92.0), not for potency.");
+    Console.WriteLine();
+
+    // The rune shelf: upkeep is the box price divided by the hours it runs.
+    Console.WriteLine("--- THE SHELF: rune upkeep per hour (Apothecary boxes; 24h/30d are premium, not buyable) ---");
+    Console.WriteLine();
+    foreach (var id in new[] { ItemCatalog.BoxWarRune1h, ItemCatalog.BoxWarRune2h,
+                               ItemCatalog.BoxSpellRune1h, ItemCatalog.BoxSpellRune2h })
+    {
+        if (ItemCatalog.Get(id) is not ItemDef box) continue;
+        float hours = box.GrantsRuneSeconds / 3600f;
+        long buy = ItemCatalog.BuyPrice(box);
+        Console.WriteLine($"  {box.Name,-24} {hours,4:0.#}h  buy {buy,10:N0}  =  {buy / Math.Max(0.01f, hours),10:N0} gold/hour");
+    }
+    Console.WriteLine();
+
+    // ---- The main table: one row per (level, kit). --------------------------------------------
+    int[] bands = { 20, 30, 40, 43, 52, 61, 76, 85 };
+
+    Console.WriteLine("--- AN HOUR OF FARMING, BAND BY BAND ---");
+    Console.WriteLine();
+    Console.WriteLine($"  {"Lvl",3} {"who",-20} {"TTK",6} {"kills/h",8} {"gold/h",11} {"exp/h",13} |"
+                    + $" {"HP def/h",9} {"HP potions",16} {"MP def/h",9} {"MP potions",16} | {"burn/h",11} {"NET/h",11} {"burn%",6}");
+    Console.WriteLine("  ------------------------------------------------------------------------------------------------------------------------------------------------");
+    foreach (int L in bands)
+    {
+        var roster = FarmRosterBuffed(L);
+        var mob = roster[0].E;
+        var near = MobsNear(L);
+        double perKill = near.Select(m => KillValue(m, L)).Average(x => x.Gear + x.Mats + x.Consumables + x.Gold);
+        double mobExp = StatCalculator.MobExpReward(L) * RateConfig.World.Exp;
+
+        foreach (var (name, e) in roster.Skip(1))
+        {
+            float phys = PhysDps(e, mob), magic = MagicDps(e, mob);
+            bool caster = magic > phys;
+            float dps = Math.Max(0.01f, Math.Max(phys, magic));
+            float ttk = mob.MaxHp / dps;
+            float loop = ttk + PullSeconds;
+            float killsPerHour = 3600f / loop;
+
+            // HP: what the mob lands over the FIGHT, less what regenerates over the WHOLE loop — the
+            // pull seconds regenerate too, which is exactly why a short-TTK farm is cheaper to run
+            // than its damage-taken column alone suggests.
+            float hpLost = Dps(mob, e) * ttk;
+            float hpRegen = (StatCalculator.HpRegenPerSecond(e.EffectiveCon, e.Level) + e.HpRegenBonus)
+                            * e.HpRegenMult * loop;
+            float hpDeficitHour = Math.Max(0f, hpLost - hpRegen) * killsPerHour;
+
+            // MP: the rotation's drain over the fight, less regen over the loop.
+            var (skill, sl) = TopSkill(e, caster ? SkillEffect.MagicDamage : SkillEffect.PhysicalDamage);
+            float mpPerKill = 0f;
+            if (skill is not null)
+            {
+                float cycle = Math.Max(0.1f, SkillCycleSeconds(e, skill));
+                mpPerKill = ttk / cycle * skill.MpCostAt(sl);
+            }
+            float mpPct = e.Buffs.Where(b => b.Has(SkillEffect.BuffMpRegen)).Sum(b => b.Percent(SkillEffect.BuffMpRegen));
+            float mpRegen = (StatCalculator.MpRegenPerSecond(e.EffectiveSpt, e.Level) + e.MpRegenBonus)
+                            * e.MpRegenMult * (1f + mpPct) * loop;
+            float mpDeficitHour = Math.Max(0f, mpPerKill - mpRegen) * killsPerHour;
+
+            var hpBuy = CheapestThatSustains(healTiers, hpDeficitHour / 3600f);
+            var mpBuy = CheapestThatSustains(manaTiers, mpDeficitHour / 3600f);
+
+            double goldHour = perKill * killsPerHour;
+            double burn = hpBuy.CostPerHour + mpBuy.CostPerHour;
+
+            Console.WriteLine($"  {L,3} {name,-20} {ttk,5:F1}s {killsPerHour,8:N0} {goldHour,11:N0} {mobExp * killsPerHour,13:N0} | "
+                + $"{hpDeficitHour,9:N0} {hpBuy.Label,16} {mpDeficitHour,9:N0} {mpBuy.Label,16} | "
+                + $"{burn,11:N0} {goldHour - burn,11:N0} {(goldHour > 0 ? burn / goldHour : 0),6:P0}");
+        }
+        Console.WriteLine();
+    }
+
+    Console.WriteLine("  'HP/MP potions' = the cheapest tier whose SUSTAINED rate can actually cover that deficit, and");
+    Console.WriteLine("           how many drinks an hour it takes. '--' means regen already covers it: no potion at all.");
+    Console.WriteLine("  'burn%' is potions ONLY. A rune is a separate, flat decision — add its line from the shelf");
+    Console.WriteLine("           above (150,000/h for a 1h box, 140,000/h for the 2h) to any row you want it on.");
+    Console.WriteLine();
+
+    // ---- The question BL-23 was actually opened about. -----------------------------------------
+    Console.WriteLine("--- WHAT AN HOUR BUYS: the coin curve against the gear ladder (the BL-23 claim itself) ---");
+    Console.WriteLine();
+    Console.WriteLine("  If coin is linear while gear value follows the tier ladder, an hour of farming buys LESS");
+    Console.WriteLine("  gear the higher you go. That is the drift, and this is it in one column.");
+    Console.WriteLine();
+    Console.WriteLine($"  {"Lvl",3} {"gold/h (champ)",15} {"tier",5} {"cheapest body",14} {"rarity",10} {"bodies/h",9} {"rune hours/h",13}");
+    Console.WriteLine("  --------------------------------------------------------------------------------------");
+    foreach (int L in bands)
+    {
+        var roster = FarmRosterBuffed(L);
+        var mob = roster[0].E;
+        var champ = roster.First(r => r.Name.StartsWith("champion")).E;
+        float dps = Math.Max(0.01f, Math.Max(PhysDps(champ, mob), MagicDps(champ, mob)));
+        float killsPerHour = 3600f / (mob.MaxHp / dps + PullSeconds);
+        var near = MobsNear(L);
+        double goldHour = near.Select(m => KillValue(m, L)).Average(x => x.Gear + x.Mats + x.Consumables + x.Gold)
+                          * killsPerHour;
+
+        int tier = GearTier(L);
+        // ⚠ NOT hardwired to "_common": S grade is TOP HALF ONLY (Epic/Legendary/Mythic — a level-80
+        // piece has no Common rung at all, ItemCatalog.IsTopHalfOnly). Asking for one printed a 0 and
+        // read as "free", so the column takes the CHEAPEST body that actually exists at that tier and
+        // names its rarity. The ladder shifting under you is part of what the drift IS.
+        var bodyRungs = new[] { "_common", "_uncommon", "_rare", "_epic", "_legendary", "" }
+            .Select(sfx => ItemCatalog.Get($"heavy_t{tier}{sfx}"))
+            .Where(d => d is not null && ItemCatalog.BuyPrice(d) > 0)
+            .OrderBy(d => ItemCatalog.BuyPrice(d!))
+            .ToList();
+        long bodyPrice = bodyRungs.Count > 0 ? ItemCatalog.BuyPrice(bodyRungs[0]!) : 0;
+        string bodyRarity = bodyRungs.Count > 0 ? bodyRungs[0]!.Rarity.ToString() : "none";
+        long runeHour = ItemCatalog.Get(ItemCatalog.BoxWarRune1h) is ItemDef rb ? ItemCatalog.BuyPrice(rb) : 0;
+
+        Console.WriteLine($"  {L,3} {goldHour,15:N0} {tier,5} {bodyPrice,14:N0} "
+            + $"{bodyRarity,10} {(bodyPrice > 0 ? goldHour / bodyPrice : 0),9:F2} {(runeHour > 0 ? goldHour / runeHour : 0),13:F2}");
+    }
+    Console.WriteLine();
+    Console.WriteLine("  'bodies/h'     = cheapest chest pieces of the tier you would be wearing, per hour of farm.");
+    Console.WriteLine("                   If this column FALLS with level, BL-23's drift is real and measurable.");
+    Console.WriteLine("  'rune hours/h' = how many hours of War Rune one hour of farming pays for. Below 1.00 the");
+    Console.WriteLine("                   rune costs more than the farm it enables, which is the sharper test.");
+    Console.WriteLine();
+    Console.WriteLine("  ⚠ HIS OWN DATA POINT, 2026-08-27: *\"for now at lvl 43 i have 5kk + gold so it dont seem");
+    Console.WriteLine("    like a problem\"*. Read the 43 row against that before touching a rate.");
+    Console.WriteLine();
+}
+
+/// <summary>One rung of a potion ladder, read off the ITEM and the SKILL it names — never retyped.
+/// <para><c>Sustained</c> is the rate it can hold forever: a 15s potion on a 30s drink cooldown
+/// delivers half its label, which is what separates the mana ladder from the healing one.</para></summary>
+static (string Name, float PerSecond, float Seconds, float CooldownSeconds, float PerDrink,
+        long Buy, float GoldPerPoint, float Sustained)
+    PotionTier(string itemId, string skillId, SkillEffect channel)
+{
+    var item = ItemCatalog.Get(itemId);
+    var skill = SkillCatalog.Get(skillId);
+    if (item is null || skill is null) return ("MISSING " + itemId, 0, 0, 0, 0, 0, 0, 0);
+
+    float perSec = skill.Magnitudes is null ? 0f
+                 : skill.Magnitudes.Where(m => m.Effect == channel).Select(m => m.Value).FirstOrDefault();
+    float secs = skill.DurationTicks / 10f;
+    float cd = item.PotionCooldownTicks / 10f;
+    float perDrink = perSec * secs;
+    long buy = ItemCatalog.BuyPrice(item);
+    return (item.Name, perSec, secs, cd, perDrink, buy,
+            perDrink > 0 ? buy / perDrink : 0f,
+            perSec * Math.Min(1f, cd <= 0 ? 1f : secs / cd));
+}
+
+/// <summary>The cheapest rung that can actually SUSTAIN this deficit, and what an hour of it costs.
+/// <para>Cheapest-per-point is not enough on its own: a tier that cannot deliver the RATE is not an
+/// option at any price, which is why the ceiling is checked before the price is.</para></summary>
+static (string Label, double CostPerHour) CheapestThatSustains(
+    (string Name, float PerSecond, float Seconds, float CooldownSeconds, float PerDrink,
+     long Buy, float GoldPerPoint, float Sustained)[] tiers, float pointsPerSecond)
+{
+    if (pointsPerSecond <= 0.01f) return ("--", 0);
+
+    var able = tiers.Where(t => t.Sustained >= pointsPerSecond && t.PerDrink > 0)
+                    .OrderBy(t => t.GoldPerPoint).ToList();
+    if (able.Count == 0)
+    {
+        // Nothing on the shelf can hold this rate. Price the BEST tier anyway and SAY SO — a row that
+        // silently printed 0 would read as "free" when it actually means "cannot be sustained at all".
+        var best = tiers.OrderByDescending(t => t.Sustained).First();
+        double drinksCap = 3600.0 / Math.Max(1f, best.CooldownSeconds);
+        return ("OVER CAP", drinksCap * best.Buy);
+    }
+
+    var pick = able[0];
+    double drinks = pointsPerSecond * 3600.0 / pick.PerDrink;
+    string rarity = pick.Name.Split(' ')[0];   // Common / Uncommon / Rare
+    return ($"{drinks:N0}x {rarity}", drinks * pick.Buy);
+}
 static class BuffCensus
 {
     public static void Run()
@@ -6290,3 +6546,4 @@ static class BuffCensus
 //  cost? That is the number that decides whether a cap is a mechanic or decoration, and it is worth
 //  printing next to the bag size rather than reasoning about.
 // ============================================================================================
+

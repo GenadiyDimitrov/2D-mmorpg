@@ -375,6 +375,7 @@ public static partial class SkillCatalog
     public const string HolyMark             = "holy_mark";
     public const string LifeMark             = "life_mark";
     public const string BloodMark            = "blood_mark";
+    public const string UrgentGreatHeal      = "urgent_great_heal";   // @83 — capped triage area heal
 
     /// <summary>The MARK buffs all share ONE key, which is his *"Do not Stack with Other 'Mark'
     /// Skills"* — the same trick Great Might and Great Bulwark use. An ally wears one Mark, never two,
@@ -533,6 +534,47 @@ public static partial class SkillCatalog
             //      🔑 They are three DIFFERENT skills rather than three rungs of one because their
             //      payloads have nothing in common: the Elf refills mana, the Human refills life, and
             //      the Ork gives up the totality for a 15-second healing-received window on top.
+            // ---- URGENT GREAT HEAL @83 — the last unbuilt row in `healer 4th.csv`, and the one he
+            //      pointed at on 2026-08-27 (*"urgent great heal in healer 4th is placed/authored"*).
+            //      His row, verbatim: *"Heals 10 most injured friendly target around the caster
+            //      (including caster in 900 range) starting with most injured one by 30% and every
+            //      next target is healed -2% less form the one before, Consumes 5 skill stones"*.
+            //
+            // 🔑 IT IS A % HEAL, SO POWER IS 0. Like Urgent Heal (which it Replaces), the size comes
+            //    from the TARGET's own pool and not from the healer's sheet — which is why a level-83
+            //    button is still the right size for a 15k tank and needs no rung after it.
+            //
+            // 🔑 THE ENGINE PIECE IT NEEDED IS `MaxTargets` + `TargetFalloff`, both new. Every area
+            //    heal before this one paid the same amount to everyone it reached, so a cap and a
+            //    per-rank decay had nowhere to live. The triage ORDERING lives with them in
+            //    GameLoopService's heal branch — see the comment there for why it sorts on the
+            //    fraction missing rather than on raw HP.
+            //
+            // 🔑 ELEVEN SLOTS, NOT TEN — HE SETTLED THE TAIL HIMSELF, 2026-08-27: *"so if we make it
+            //    the 10 moost injured around the caster and the caster is 11th that make it 30~10%
+            //    heal"*. Ten allies PLUS the caster is eleven, and `30 - 2 x index` over eleven lands
+            //    exactly on his 30/28/26/…/12/10. At ten it stopped at 12% and the trailing "10%" in
+            //    his row had nowhere to come from; this is where it comes from.
+            //
+            // ⚠ THE ELEVENTH SLOT CANNOT BE REACHED TODAY, and that is worth knowing rather than
+            //    discovering in a raid. `PlayersInRadius` is PARTY-only and a full party is NINE
+            //    (GameConstants' heal comments size every party number on 9), so the real span in play
+            //    is 30% down to 30-2x8 = **14%**. The cap is authored at his number so that the day
+            //    "friendly" widens past the party — alliances, raids — the ladder is already correct
+            //    and nobody has to remember why it said ten.
+            new(UrgentGreatHeal, "Urgent Great Heal", BaseClass.Mage, SkillEffect.Heal,
+                MpCost: 500, CastTicks: 30, CooldownTicks: 50, Range: 0, Power: 0,
+                Category: SkillCategory.Heal, SpCost: sp83,
+                TargetMode: TargetMode.FriendlyInRadius, AreaRadius: 900f,
+                MaxTargets: 11, TargetFalloff: 0.02f,
+                ConsumableId: ItemCatalog.SkillStone, ConsumableAmount: 5,
+                Replaces: new[] { UrgentHeal },
+                Magnitudes: new EffectMagnitude[] { new(SkillEffect.Heal, 0.30f, ModifierMode.Percent) },
+                Levels: new[] { new SkillLevel(MpCost: 500, SpCost: sp83, GoldCost: gold83) },
+                Description: "Finds the ten most badly hurt allies within 900, plus yourself, and heals "
+                           + "them worst-first — 30% of their own maximum HP for the worst, 2% less for "
+                           + "each one after, down to 10%. Consumes 5 Skill Stones."),
+
             Restoration(ElvenRestoration, "Elven Restoration",
                 SkillEffect.RestoreMp | SkillEffect.Heal,
                 new EffectMagnitude[]

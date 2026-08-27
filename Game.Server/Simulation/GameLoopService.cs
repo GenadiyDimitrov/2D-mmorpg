@@ -8585,7 +8585,7 @@ public class GameLoopService : BackgroundService
                 totem.SkillId, owner.Race, owner.BaseClass, owner.Archetype, owner.Discipline);
             bool heals    = totem.Effect.HasFlag(SkillEffect.Heal);
             bool restores = totem.Effect.HasFlag(SkillEffect.RestoreMp);
-            foreach (var ally in AlliesAroundPoint(owner, totem.X, totem.Y, totem.Radius))
+            foreach (var ally in AlliesAroundPoint(owner, totem.X, totem.Y, totem.Radius, friendly: true))
             {
                 if (heals)
                     HealOne(owner, ally, totem.PulseAmount, 0, name);
@@ -8602,7 +8602,8 @@ public class GameLoopService : BackgroundService
     /// <see cref="PlayersInRadius"/> — party members only, never the dead, never someone Hidden
     /// (BL-69) — but centred on a placed object rather than on the caster, because the whole skill of
     /// a totem is where you put it and then walking away from it.</summary>
-    private IEnumerable<Entity> AlliesAroundPoint(Entity owner, float x, float y, float radius)
+    private IEnumerable<Entity> AlliesAroundPoint(Entity owner, float x, float y, float radius,
+                                                  bool friendly = false)
     {
         float r2 = radius * radius;
         bool InRange(Entity e)
@@ -8612,17 +8613,54 @@ public class GameLoopService : BackgroundService
         }
         if (!owner.Dead && InRange(owner))
             yield return owner;
-        if (!_world.Parties.TryGetValue(owner.Id, out var party))
-            yield break;   // solo: the owner alone
+
+        // ---- `friendly` = his `target/aoe` scope (2026-08-27): *"ground is also anyone friendly"*.
+        //      A totem or an Urgent Great Heal reaches NON-party players too; a harmony or a Party
+        //      Heal never does. Same loop, one predicate — see CanAreaSupport for the flag rules.
+        _world.Parties.TryGetValue(owner.Id, out var party);
+        if (party is null && !friendly)
+            yield break;   // solo party-scoped cast: the owner alone
+
         foreach (var e in _world.Grid.Nearby(owner))
         {
-            if (e.Kind != EntityKind.Player || e.Dead || e.Id == owner.Id)
+            if (e.Kind != EntityKind.Player || e.Dead || e.Id == owner.Id || e.Hidden)
                 continue;
-            if (!party.Contains(e.Id) || e.Hidden)
+            bool inParty = party is not null && party.Contains(e.Id);
+            if (!(friendly ? CanAreaSupport(owner, e, inParty) : inParty))
                 continue;
             if (InRange(e))
                 yield return e;
         }
+    }
+
+    /// <summary>May an AREA positive (`target/aoe` — a totem, Urgent Great Heal) land on this player?
+    ///
+    /// <para>His rules, 2026-08-27, and they are IG's Ctrl-key made explicit: *"in ig if i try to help
+    /// flagged player I hold ctrl -> thats allow pvp (our pvp-on) so if i want to heal flagged party
+    /// member i click pvp-on and resurect/heal while i get flagged as well"* and *"everithing flagged
+    /// party works only in party"*. So:</para>
+    /// <list type="bullet">
+    ///   <item>a CLEAN (white) player is reached whether or not they are in your party — that is what
+    ///         "anyone friendly" means, and it is the whole difference from `party/aoe`;</item>
+    ///   <item>a FLAGGED or PK player is reached <b>only from inside their own party</b>, and only
+    ///         while the caster has PvP <b>ON</b>. The toggle is the deliberate act; without it a
+    ///         clean healer simply does not reach his purple party-mate.</item>
+    /// </list>
+    ///
+    /// <para>⚠ THE FLAG IS STILL PAID. Reaching a flagged ally goes on to call
+    /// <see cref="FlagForSupporting"/> exactly as a single-target heal does (`BL-59`) — *"while i get
+    /// flagged as well"*. The toggle is the gate, the flag is the price, and he asked for both.</para>
+    ///
+    /// <para>⚠ Deliberately NOT the same predicate as <see cref="CanSupport"/>. That one governs a cast
+    /// you AIMED at someone and lets a clean caster help a flagged party-mate at the cost of a flag;
+    /// this one governs a splash you did not aim, where the same permission would flag you for standing
+    /// in the wrong place. Requiring the toggle is what stops an area heal from flagging you by
+    /// accident.</para></summary>
+    private bool CanAreaSupport(Entity caster, Entity target, bool inParty)
+    {
+        if (FlagOf(target) == PvpFlag.Innocent)
+            return true;                          // clean: anyone friendly, party or not
+        return inParty && caster.PvpEnabled;      // flagged/PK: own party, and only with PvP ON
     }
 
     /// <summary>The nearest hostile within a trap's radius, or null. A trap triggers on mobs (and,
@@ -10239,8 +10277,37 @@ public class GameLoopService : BackgroundService
             int flat = SkillMath.HealAmount(def.PowerAt(lvl), caster.HealPowerFlat, caster.HealPowerMod);
             float pct = def.MagnitudeOf(SkillEffect.Heal, ModifierMode.Percent, lvl);
             var helped = new HashSet<Guid>();
-            if (def.TargetMode == TargetMode.AlliesInRadius)
-                foreach (var ally in PlayersInRadius(caster, def.AreaRadiusAt(lvl)))
+            if (AreaSupport(def) && def.MaxTargets > 0)
+            {
+                // ---- TRIAGE (Urgent Great Heal, 83) — a CAPPED area heal that picks WHO by how
+                //      badly hurt they are, then pays each successive target less.
+                //
+                // 🔑 THE ORDER IS THE SKILL. His row: *"starting with most injured one by 30% and
+                // every next target is healed -2% less form the one before … order by % hp missing
+                // and heal from top 30-2x(index)%"*. Sorting by the FRACTION missing rather than by
+                // raw HP lost is what makes it work across a party: a 15k tank at 60% is in more
+                // danger than a 3k mage who has lost the same 6,000 points, and raw-HP ordering
+                // would hand every slot to whoever has the biggest bar.
+                //
+                // ⚠ The caster is IN this list (PlayersInRadius yields him first) and is placed by
+                // his own injury like anyone else — his instruction, and it is why a solo healer can
+                // still press it. He is not privileged and not excluded.
+                var triage = PlayersInRadius(caster, def.AreaRadiusAt(lvl), FriendlyScope(def))
+                    .OrderByDescending(a => a.MaxHp > 0 ? 1f - (float)a.Hp / a.MaxHp : 0f)
+                    .Take(def.MaxTargets)
+                    .ToList();
+                for (int i = 0; i < triage.Count; i++)
+                {
+                    var ally = triage[i];
+                    // Clamped at zero so a deep ladder can fade a heal out entirely without ever
+                    // turning the sign over and healing for a negative amount.
+                    float share = Math.Max(0f, pct - def.TargetFalloff * i);
+                    HealOne(caster, ally, flat, (int)(ally.MaxHp * share), castName);
+                    helped.Add(ally.Id);
+                }
+            }
+            else if (AreaSupport(def))
+                foreach (var ally in PlayersInRadius(caster, def.AreaRadiusAt(lvl), FriendlyScope(def)))
                 {
                     HealOne(caster, ally, flat, (int)(ally.MaxHp * pct), castName);
                     helped.Add(ally.Id);
@@ -10266,8 +10333,8 @@ public class GameLoopService : BackgroundService
         {
             int flat = def.PowerAt(lvl);
             float pct = def.MagnitudeOf(SkillEffect.RestoreMp, ModifierMode.Percent, lvl);
-            if (def.TargetMode == TargetMode.AlliesInRadius)
-                foreach (var ally in PlayersInRadius(caster, def.AreaRadiusAt(lvl)))
+            if (AreaSupport(def))
+                foreach (var ally in PlayersInRadius(caster, def.AreaRadiusAt(lvl), FriendlyScope(def)))
                     RestoreMpOne(caster, ally, flat + (int)(ally.MaxMp * pct), castName);
             else
                 RestoreMpOne(caster, target, flat + (int)(target.MaxMp * pct), castName);
@@ -10277,8 +10344,8 @@ public class GameLoopService : BackgroundService
         //      narrows it (e.g. cure-poison = Poison|Venom); empty = all debuffs. ----
         if (effect.HasFlag(SkillEffect.Cleanse))
         {
-            if (def.TargetMode == TargetMode.AlliesInRadius)
-                foreach (var ally in PlayersInRadius(caster, def.AreaRadiusAt(lvl)))
+            if (AreaSupport(def))
+                foreach (var ally in PlayersInRadius(caster, def.AreaRadiusAt(lvl), FriendlyScope(def)))
                     Dispel(caster, ally, def, positive: false, castName, lvl);
             else
                 Dispel(caster, target, def, positive: false, castName, lvl);
@@ -10452,10 +10519,10 @@ public class GameLoopService : BackgroundService
             string shownName = durationDoubled ? buffName + " [Double]" : buffName;
 
             var blessed = new HashSet<Guid>();
-            if (def.TargetMode == TargetMode.AlliesInRadius)
+            if (AreaSupport(def))
             {
                 // Buff the caster + every nearby player character in range.
-                foreach (var ally in PlayersInRadius(caster, def.AreaRadiusAt(lvl)))
+                foreach (var ally in PlayersInRadius(caster, def.AreaRadiusAt(lvl), FriendlyScope(def)))
                 {
                     ApplyBuff(ally, def, lvl, buffName, durationOverride: doubledTicks);
                     BroadcastCombat(caster, ally, 0, CombatOutcome.Buff, shownName);
@@ -13289,31 +13356,55 @@ public class GameLoopService : BackgroundService
 
     private readonly HashSet<Guid> _hadBuffs = new();
 
-    /// <summary>Caster + PARTY members within radius (the AoE ally target set). If the caster is
-    /// not in a party, only the caster is affected — your heals/buffs no longer splash onto random
-    /// strangers. Uses the grid's neighbourhood for efficiency.</summary>
-    private IEnumerable<Entity> PlayersInRadius(Entity caster, float radius)
+    /// <summary>The AoE ally target set: caster + whoever the skill's SCOPE says it reaches.
+    ///
+    /// <para><paramref name="friendly"/> false = `party/aoe`, his harmonies and Party Heal: caster and
+    /// PARTY only, and a solo caster reaches nobody but himself. True = `target/aoe`, his totems and
+    /// Urgent Great Heal: <b>anyone friendly</b>, party or not, gated by
+    /// <see cref="CanAreaSupport"/>.</para>
+    ///
+    /// <para>Uses the grid's neighbourhood for efficiency.</para></summary>
+    private IEnumerable<Entity> PlayersInRadius(Entity caster, float radius, bool friendly = false)
     {
         float r2 = radius * radius;
         yield return caster;
-        if (!_world.Parties.TryGetValue(caster.Id, out var party))
-            yield break;   // solo: self only
+        _world.Parties.TryGetValue(caster.Id, out var party);
+        if (party is null && !friendly)
+            yield break;   // solo party-scoped cast: self only
         foreach (var e in _world.Grid.Nearby(caster))
         {
             if (e.Kind != EntityKind.Player || e.Dead || e.Id == caster.Id)
                 continue;
-            if (!party.Contains(e.Id))
-                continue;   // party members only
-            // A HIDDEN party member is not here (BL-69). His rule is "act as u r not nearby", and a
+            // A HIDDEN player is not here (BL-69). His rule is "act as u r not nearby", and a
             // party heal that silently found someone nobody can see would be exactly the leak that
             // makes a hide worth nothing — you would be locatable by watching a healer's numbers.
             if (e.Hidden)
+                continue;
+            bool inParty = party is not null && party.Contains(e.Id);
+            if (!(friendly ? CanAreaSupport(caster, e, inParty) : inParty))
                 continue;
             float dx = e.X - caster.X, dy = e.Y - caster.Y;
             if (dx * dx + dy * dy <= r2)
                 yield return e;
         }
     }
+
+    /// <summary>Is this an AREA support skill at all — `party/aoe` OR `target/aoe`? The five branches
+    /// in the cast pipeline (heal, MP restore, cleanse, buff, the triage heal) each used to test
+    /// <c>TargetMode.AlliesInRadius</c> by hand; with a second area mode that is five places to forget
+    /// one, so they all read this instead.</summary>
+    private static bool AreaSupport(SkillDef def) =>
+        def.TargetMode is TargetMode.AlliesInRadius or TargetMode.FriendlyInRadius;
+
+    /// <summary>Does this skill reach ANYONE friendly (`target/aoe`) rather than the party alone
+    /// (`party/aoe`)? One helper so those same branches cannot disagree — they read the same bit, and
+    /// a sixth branch cannot invent a different rule.
+    ///
+    /// <para><c>PlacesTotem</c> is folded in because a totem is authored as a heal with a flag rather
+    /// than as its own target mode, and his ruling covers both in one breath: *"urgent great heal and
+    /// totems are target/aoe"*.</para></summary>
+    private static bool FriendlyScope(SkillDef def) =>
+        def.TargetMode == TargetMode.FriendlyInRadius || def.PlacesTotem;
 
     /// <summary>Is this a RESURRECTION FIELD — a res aimed at the ground rather than at one corpse?
     /// Three places have to agree about it (the cast-start target arm, the cast-finish live/dead gate

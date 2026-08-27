@@ -7,12 +7,202 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.93.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.93.2**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-08-27 (latest) — 0.93.0: STACK CAPS — a row has a bottom now
+## 2026-08-27 (latest) — 0.93.2: the TARGET column becomes `[scope]/[breadth]`, and a real Unity guide
+
+> *"the logic is [self-onlyMe/target-anyFriendly/party-anyPartyMemeber/enemy]/[single-affectOne/
+> aoe-affectsMany]"* … *"do for all files"* … *"--check should read target after i check them and if
+> i made a change"*
+
+### THE COLUMN
+
+Every skill CSV's `TARGET` column is rewritten into his two-part scheme. **1,268 rows across 18 files**,
+and the totals now read:
+
+| value | rows | value | rows |
+|---|---|---|---|
+| `self/single` | 433 | `party/aoe` | 153 |
+| `party/single` | 326 | `target/aoe` | 42 |
+| `enemy/single` | 226 | `enemy/aoe` | 28 |
+| `target/single` | 155 | | |
+
+Done by a new **`dotnet run --project tools/SkillCsvSeed -- --retarget`**, not by hand and not by
+find-and-replace, because the old column **cannot answer the question**: `self/target` collapsed both
+`party/single` (a buff) and `target/single` (a heal), and `enemy` collapsed single and AoE. The tool
+asks the **catalog** — `TargetMode`, `AreaRadius`, `PlacesTotem`, the effect flags — so a row can only
+be wrong here if the code is wrong too. It rewrites **field 5 as a character span** on the raw line,
+never re-serialising: line counts and CRLF counts are byte-identical to before on all 18 files.
+
+⚠ It stops at his **`NOT DONE`** banners exactly as `--check` does, so the unfinished halves of
+`buffer 4th` and `nuker 4th` were not touched.
+
+### `--check` NOW COMPARES IT
+
+His instruction, and it is what makes his review checkable: after he edits a row, `--check` says
+whether the engine agrees. It found three real defects **in my own derivation** within a minute of
+being pointed at the files:
+
+- **67 passive rungs** came out `party/single` — a passive sets no `TargetMode`, so it inherited the
+  record default and fell through the friendly branch.
+- **Healing Totem** came out `self/single`: `SelfOnly` is about who you CAST on, not who you REACH, and
+  it was tested before the radius.
+- **Sprint** — a genuine **name collision**. Three skills are called "Sprint" (the rogue's skill and
+  the two buff squares it grants) and the tool took the wrong one. Class-table skills now win the name,
+  which is how `--check` resolves it, so the two tools cannot disagree by construction.
+
+### 🔑 `TargetMode.FriendlyInRadius` — THE SPLIT HIS RULES FORCED
+
+A party heal and a totem were **the same enum value**, so the engine could not express the line he
+draws between them: *"harmonies are party/aoe … (party heals are party heals)"* against *"urgent great
+heal and totems are target/aoe -> anyone friendli in a radius"*. Two skills that reach different people
+cannot share one mode.
+
+- **`AlliesInRadius`** = `party/aoe` — the harmonies, Party Heal, Party Great Heal, Resurrection Field.
+- **`FriendlyInRadius`** = `target/aoe` — Urgent Great Heal and the totems: **anyone friendly, party or
+  not**.
+
+`PlayersInRadius` and `AlliesAroundPoint` take the scope as a flag; `AreaSupport(def)` and
+`FriendlyScope(def)` are the two helpers the five area-support branches read, so a sixth branch cannot
+invent a different rule.
+
+### THE PVP RULES, from IG's Ctrl key
+
+> *"in ig if i try to help flagged playe I hold ctrl -> thats allow pvp (our pvp-on) so if i want to
+> heal faged party member i click pvp-on and resurect/heal while i get flagged as well"* ·
+> *"everithing lfagged party works only in party"*
+
+`CanAreaSupport` — a **clean** player is reached party or not; a **flagged or PK** one only from inside
+their own party **and only with PvP ON**. The flag is still paid afterwards (`FlagForSupporting`,
+`BL-59`): **the toggle is the gate, the flag is the price**, and he asked for both.
+
+⚠ Deliberately NOT the same predicate as `CanSupport`. That governs a cast you AIMED, and lets a clean
+caster help a flagged party-mate at the cost of a flag. This governs a splash you did NOT aim, where
+the same permission would flag you for standing in the wrong place.
+
+⚠ **Two of his four rules were already built** and needed nothing: negative AoE is `BL-77`
+(`EnemiesInRadius`), and single-target positive is `BL-59` (`CanSupport`).
+
+### THE UNITY GUIDE
+
+*"i need step by step guide (for an idiot with unity -> click here -> click here -> click there) ..
+your current explanation is to generic"* — fair. The old §"Dropping in a model" said things like *"drag
+the model into the scene, add an Animator with a controller, drag it back"*, which assumes you already
+know Unity.
+
+Replaced with **twelve numbered steps** (0-11) that name the window, the tab, the dropdown and the
+button for every action — from downloading a `.fbx` off Quaternius to seeing it on the phone — plus a
+**"When it doesn't work"** table mapping each symptom to its step. Every claim was checked against the
+client rather than carried over: the fallback chain against `EntityManager.cs:348-382`, the four
+Animator parameters against `EntityView.cs:568-650` (all four really are driven), and the feet-at-y=0
+rule against `RefreshModelOffset`.
+
+## 2026-08-27 — 0.93.1: the fourteen-ruling backlog pass, and the last healer 4th row
+
+> *"thats everithing in the baklog i can answer for now"*
+
+He answered **fourteen backlog entries in one message**. Nine closed, two were rewritten, and three
+turned out to be **stale rather than open** — the code had shipped days earlier and the file had not
+caught up. Two things were actually built out of it, plus the row he pointed at mid-pass.
+
+### URGENT GREAT HEAL @83 — the last unbuilt row in `healer 4th.csv`
+
+> *"urgent great heal in healer 4th is placed/authored u can look at it as well"* … *"so if we make it
+> the 10 moost injured around the caster and the caster is 11th that make it 30~10% heal"*
+
+`SkillCsvSeed --check` had exactly one 🔴 in the whole repo and this was it. Now built, and the file is
+green end to end.
+
+**It is a TRIAGE heal**, which is a shape the engine did not have. Every area heal before it paid the
+same amount to everyone it reached; this one picks **who** and pays each successive target **less**:
+
+- **`SkillDef.MaxTargets`** (0 = everyone, as before) caps an `AlliesInRadius` effect at **11** here —
+  the ten most injured allies plus the caster, which is where his *"→ 10%"* tail comes from. At ten
+  slots the ladder stopped at 12% and the last rung had no source.
+- **`SkillDef.TargetFalloff`** is the percentage the heal loses per rank, `0.02f` against a `0.30`
+  magnitude: **30 / 28 / 26 / … / 12 / 10**.
+- **The ordering is the skill.** Targets sort by the FRACTION of HP each is missing, worst first —
+  not by raw HP lost. A 15k tank at 60% is in more danger than a 3k mage down the same 6,000 points,
+  and raw-HP ordering would hand every slot to whoever has the biggest bar. The caster is in that
+  ordering like anyone else (*"caster is always healed - just placed based on injury"*), not pinned
+  to a slot.
+- Power 0: it is a pure **% of the target's own pool**, like Urgent Heal, which it `Replaces`. That is
+  why a level-83 button is still the right size for a 15k tank and needs no rung after it. 500 MP,
+  3s cast, 5s reuse, 900 radius, **5 Skill Stones** a cast. Learned by all three races.
+
+⚠ **The eleventh slot cannot be reached today.** `PlayersInRadius` is party-only and a full party is
+**nine**, so the span in actual play is 30% → **14%**. The cap is authored at his number anyway so the
+ladder is already correct the day "friendly" widens past the party.
+
+### `BL-23` — the coin curve, MEASURED instead of asserted: `--goldflow`
+
+> *"i want potion/rune per hour consumation and golddrop/h .. to compare for fewe lvl rangees - for
+> now at lvl 43 i have 5kk + gold so it dont seem like a problem"*
+
+`dotnet run --project tools/BalanceMatrix -- --goldflow`. Real drop tables × real vendor prices × real
+damage formulas; the only invented number is **5s of pull/travel between kills**, and it is named at
+the top of the function rather than buried.
+
+| what it measures | what it found |
+|---|---|
+| **his own data point** | at 43 a farmer nets **740k–1,010k gold/h** — his 5kk is 5-7 hours. The model and his save agree with nothing tuned. |
+| **potion burn** | **0-3% of income** at every band 20→76; 10% in the single worst case (level-85 nuker). There is no potion economy to fix. |
+| **rune upkeep** | a 1h War Rune is 150k flat: **2.4-2.9 hours of rune per hour farmed at 20-30**, 25 at 61, 37 at 85. A **newbie tax that evaporates**. |
+| **the drift `BL-23` claimed** | real, but **5.4×** across 20→76 (1.68 → 0.31 chest pieces per hour), not the **51×** the entry asserted for a fortnight. |
+| **🔴 the finding nobody had** | a **cliff at 80**. S grade is top-half only — no Common rung exists — so the cheapest level-80 body is **126,000,000**: **26 hours a piece** against 3 at 76. |
+
+🔑 A potion tier has a **ceiling, not just a price**, and the report checks it before pricing anything:
+healing Common/Uncommon are 15s on a 10s cooldown (always up: 20 and 70 HP/s), Rare is 30s on 20s
+(150 HP/s), and **every mana potion is 15s on a 30s cooldown — half uptime**, so the mana ladder
+sustains **10/35/75** against its 20/70/150 label. Pricing a deficit at a tier that cannot physically
+deliver it is the mistake the table is built to avoid.
+
+### `BL-91` — the BalanceMatrix interrupt table now READS the catalog
+
+Its four rows were a hand-copied literal, typed in while `nuker 3rd` was unbuilt. They now come off the
+real `SkillDef`s — power, cast, reuse and `InterruptMult` — so a retuned rung moves the table with it.
+
+🔑 **That literal is why the entry could go stale while reading as current.** `InterruptMult = 2f` had
+been in the code since 0.87.0; the report kept printing its own copy of the number and agreeing with
+itself, and the backlog kept saying "not in the code". **A measurement that repeats an authored number
+instead of reading it will never contradict you.**
+
+### The rulings that closed without code
+
+- **`BL-94` (fizzle floor) — his own wording was wrong, not the code.** *"failing a spell is 1/3 dmg -
+  IG is like that not 0 my wording was wrong."* `damage / 3` stays. Second time a verbatim quote turned
+  out to be a phrasing slip; not building it was correct.
+- **`BL-10` (bow-caster floor) — deliberately no floor.** *"casting down with a bow is a choice."*
+  ⚠ `BL-09`, the **wrong-weapon** floor, is a different entry and is still open.
+- **`BL-12` (enchant scaling) — already his answer.** The bonus is flat **per enchant LEVEL**, so +16 is
+  worth sixteen rungs and +3 three — his +16 healer is 5.3× the +3 warrior on the same slot. "The same
+  offset for every CLASS" had been misread as "the same total for every enchant level".
+- **`BL-16` (heal powers) — the 40+ rungs carry it**, the second of the two exits the entry offered.
+  Ultimate Heal 1400→2000, Healer's Power +1000→+2000, and Urgent Heal's 15% % channel are all in his
+  own files. The 20-35 numbers stay. A level-35 cleric is not meant to out-heal a group buff.
+- **`BL-17` (BuffMagAtk) — *"authored . working system"*.** Code and CSVs agree: Force +25% @25,
+  +28% @44, +32% @52.
+- **`BL-24` (enchant scrolls) — *"it build ? why blue ?"*** It is built; the 🔵 was holding a place for a
+  **conversation**, not for work. 🔑 An entry waiting on a chat looks identical to one waiting on code —
+  it should say so in its first line.
+- **`BL-54` / `BL-55` (newbie gear) — both already true.** The tutorial hands the boxes out on its
+  level-10 and level-15 steps, and the newbie light/robe sets **are** the real starter sets.
+- **`BL-86` (shutdown countdown) — the toast is accepted.** *"noticable enoght."* Red text optional.
+- **`BL-15` (precision / anti_magic) — re-specced to LEARNABLE passives**, not auto-granted floors, and
+  now gated on the warrior/rogue CSVs. 🔔 The reminder he asked for lives on the entry.
+- **`BL-90` / `BL-91` / `BL-92`'s ork buffer — stale, not open.** The bursts' `DebuffLandMod`, the ×2
+  and the Warchanter's HP Boost (L1-7 at 40-70, all three races) were all already built. His own
+  message is what caught them.
+
+⚠ 🔑 **The pass's real lesson:** three of fourteen entries described code that already existed, two of
+them since 0.87.0. **When a build closes a dependency, sweep every entry that named it in the same
+commit.** A stale 🔴 costs more than a missing one — it invites work that is already done.
+
+
+## 2026-08-27 — 0.93.0: STACK CAPS — a row has a bottom now
 
 > *"i was wondering if hp/mp pots stack to 99 or 999 and over 100/1000th item creates new row … so u
 > cannot have infinity hp pots for the cost of nothing"* … *"make those so we have the system and not

@@ -38,6 +38,11 @@ Directory.CreateDirectory(outDir);
 // failed to bind to a stat. Defects (🟡) always print. Read it when you want the COVERAGE, not the bugs.
 if (args.Contains("--check")) { Check.Verbose = args.Contains("-v") || args.Contains("--verbose"); return Check.Run(outDir); }
 
+// --retarget rewrites the TARGET column of every file into his `[scope]/[breadth]` scheme (2026-08-27).
+// It is a ONE-OFF migration, not part of the normal flow: after it has run, `--check` is what keeps the
+// column honest, and a hand edit of his beats anything this would regenerate. See Retarget.cs.
+if (args.Contains("--retarget")) return Retarget.Run(outDir);
+
 // ===== HIS DISCIPLINE MAP (2026-08-17) =============================================================
 // He redrew the 3rd-class split and named the files himself: *"class 2nd => desc1/desc2 3rd =>
 // desc1/desc2 4th"*, with

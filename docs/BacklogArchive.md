@@ -221,3 +221,159 @@ player flags *you*. Those are different systems, not a rewording — the old one
 player's ability to act, the new one prices helping an outlaw. Trade also moved: it used to be "PK
 still trade-blocked" alongside a flag block, and is now PK-only, so a purple flag no longer bars a
 trade at all.
+
+---
+
+## Closed on 2026-08-27 — the fourteen-ruling message
+
+He answered fourteen entries in one message and closed nine of them outright. The texts that were
+**deleted** from `Backlog.md` are kept here; the ones that were **rewritten** keep their old version
+below, under the same id, as the rules require.
+
+### `BL-94` — "a fizzled spell should do NOTHING, not a third"
+**Closed 2026-08-27, and it was HIS OWN WORDING that was wrong, not the code.** *"u can remove it ..
+failing a spell is 1/3 dmg - IG is like that not 0 my wording was wrong."* The `damage / 3` payload
+stays exactly as it is. The half of the original question that WAS a bug — the fizzle chance reading
+the caster's level instead of the rung's — shipped in 0.81.2 and is unaffected. The deleted text:
+
+> - `BL-94` 🔵 **THE FIZZLE FLOOR — a fizzled spell should do NOTHING, not a third.** Your ruling of
+>   2026-08-24: *"shouldn't hit at all on the floor"*. … ❓ flat 0 on a fizzle, or 0 only once the fail
+>   chance is at its ceiling (so a small fizzle still chips)?
+
+🔑 Worth keeping: this is the second time a verbatim quote of his turned out to be a *phrasing* slip
+rather than a ruling (the first was *"did the same for buffer"* on `BL-90`). A quote is evidence of
+what he said, not proof of what he meant — when a quote asks for something that contradicts the
+reference game, ask before building it. Not building it was correct here.
+
+### `BL-10` — a floor under the fading bow-caster penalty
+**Closed 2026-08-27 — deliberately no floor.** *"casting down with a bow is a choice .. u cast slower
+if not buffer and if buffer u negate the penalty ... uf iyu want to be a nuker with a bow and kill -10
+or lower enemys ok .. do it .. your choice."* The penalty fading as you punch down is the intended
+shape: it is a build choice with a real cost, and a buffer can buy it back. The deleted text:
+
+> - `BL-10` 🔵 **A floor under the fading bow-caster penalty.** The bow penalty currently vanishes
+>   entirely when you punch down. You were asked whether you want a floor under it and the reply is
+>   still empty. *(playtest-21 `64e`.)*
+
+⚠ `BL-09` — the floor under the **wrong-weapon** magic penalty — is a DIFFERENT entry and is still
+open. It was not covered by this ruling and must not be closed alongside it.
+
+### `BL-12` — "enchant bonus should scale with what you put in"
+**Closed 2026-08-27: the current model already IS his answer, and he had ruled it once before.** *"I
+think i ruled they stay the same .. anyone that put time and effort in their enchanted gear should get
+a bonus .. if a healer +16 spend months enchanting failing ets should be alot stronger than a warrior
+with +3 gear."* Verified against `Game.Shared/Enchant.cs`: the bonus is **flat per enchant LEVEL**, so
++16 is worth sixteen rungs and +3 is worth three — the healer he describes is 5.3× the warrior on the
+same slot. The comment block at `Enchant.cs:55-81` already carries his 2026-08-11 quote making the
+same point. The deleted text:
+
+> - `BL-12` 🔵 **Enchant bonus should scale with what you put in.** Your objection to the flat-offset
+>   ruling, unanswered: *"not a warrior invest +3 and gets the same bonus as cleric +16."* Today the
+>   offset is identical for every class, by grade. Needs your call before anything moves.
+
+🔑 The word that caused the entry: "the same offset for every CLASS" was read as "the same total for
+every ENCHANT LEVEL". It never was — per-class identical, per-level cumulative.
+
+### `BL-16` — heal powers need re-authoring (the 20-35 ladder)
+**Closed 2026-08-27 by the 40+ rungs, which is the second of the two exits the entry offered.** *"we
+have the authored heal powers .. so max lvl heal can heal 1400-2000 and a healing power +2k for 15s ..
+so a 4k heal is a good on a 10-15k hp tank ... then we have % based heal."* All three pieces are in
+his own files and were checked: `healer 4th.csv` authors **Ultimate Heal 1400 → 2000** across 82-90,
+**Healers Power +1000 → +2000 for 15s** across 80-90, and `healer 3rd.csv` authors **Urgent Heal at
+15% of the pool** — so the % channel exists too. The 20-35 numbers stay untouched. Old text:
+
+> - `BL-16` 🔵 **Heal powers need re-authoring — and they are YOUR numbers, so you have to move them.**
+>   They sit at ~151-301 against a scale that has moved to ~1000. … **Landing your ratio needs Quick
+>   Heal ≈ 970 power** … Two ways out and both are yours: send new 20-35 numbers, or let the 40+ rungs
+>   (`BL-02`) carry it, since a ~1500-power quick heal is a 40+ rung by your own sizing.
+
+The **new** half of his message — a group buff carrying a DIMINISHING % heal — is not this entry and
+opened as **`BL-95`**.
+
+### `BL-17` — re-author `BuffMagAtk`, and give magic-only buffs an explicit magic %
+**Closed 2026-08-27: *"authored . working system"*.** The discrepancy the entry was blocked on
+(`Force@25 = x1.55` in an old CSV against a shipped `+25%`) was settled by his own later authoring, in
+explicit percent, and code and CSV agree today: `cleric 2nd.csv` **+25% @25**, `healer 3rd.csv` /
+`buffer 3rd.csv` **+28% @44 and +32% @52**, against `Skills.BuffLadders.cs:287`
+`Ladder(FamMagAtk, "Force", …, 0.15f, 0.25f, 0.28f, 0.32f)`. Old text:
+
+> - `BL-17` 🔵 **Re-author `BuffMagAtk`, and give magic-only buffs an explicit magic %.** ⚠ **Re-marked
+>   🔵 on 2026-08-14** … your CSV's Force@25 is `x1.55` while the shipped `FamMagAtk` rung is **+25%**.
+>   Per your `xN.NN`-is-a-percent convention those may not even be the same claim. Not reconciled by
+>   guessing — say which is right.
+
+### `BL-23` — the coin curve (the ASSERTION version)
+**Rewritten 2026-08-27.** He replaced the claim with a measurement request: *"explain - i want
+potion/rune per hour consumation and golddrop/h .. to compare for fewe lvl rangees - for now at lvl 43
+i have 5kk + gold so it dont seem like a problem."* The new entry is in `Backlog.md`; this is what it
+replaced:
+
+> - `BL-23` 🔵 **The coin curve.** Gear value follows the tier ladder while coin stays linear, so the
+>   gap drifts to **51×** by level 76. The note in the archive is explicit that *"the real fix is the
+>   coin curve, not another multiplier"* — every rate tweak since has been a patch over this.
+
+⚠ **The 51× was never measured.** `--goldflow` (built the same day) measures the drift at **5.4×**
+across 20→76, plus a genuine **cliff at 80** that the old text never mentioned. An assertion that sat
+in the file for a fortnight was wrong by an order of magnitude in one direction and silent about the
+sharper problem in the other — which is the argument for measuring before re-specing, again.
+
+### `BL-24` — the enchant-scroll types
+**Closed 2026-08-27.** *"it build ? why blue ?"* — it IS built (three types × six grades, 0.53-0.60,
+plus the ratified 30× drop cut). The 🔵 was never about code: the entry existed only to hold open a
+**conversation he asked for and never had**. Nothing is owed, so it is closed; if he wants the
+discussion it can be reopened as a fresh id. The deleted text:
+
+> - `BL-24` 🔵 **The enchant-scroll types — you wanted to discuss them.** *"ENCHANTS — you said you
+>   want to DISCUSS them … bring it up when you are ready."* The three types (breaks / −1 / safe) ×
+>   six grades shipped in 0.53-0.60; the conversation you asked for never happened. The 30× drop cut
+>   (`62j`) is ratified and stays.
+
+🔑 The lesson is about the FILE, not the feature: a backlog entry that holds a place for a conversation
+looks identical to one holding an unbuilt feature. A 🔵 that is only waiting on a chat should say so in
+its first line, or it reads as work owed forever.
+
+### `BL-54` — newbie items through quests
+**Closed 2026-08-27: already true.** *"the newbie set is givven from the starter quest."* Verified in
+`Quests.Tutorial.cs`: the armour-choice and weapon boxes are handed out on the level-10 step and the
+jewels + rune-choice boxes on the level-15 step. His original plan said 6/8/10; the tutorial rebuild
+(`267313d`) moved each box onto the step that needs it, which is what the entry's own ⚠ asked to be
+re-checked before building. It was checked; there is nothing left to build. Deleted text:
+
+> - `BL-54` 🔵 **Newbie items through quests** — hand the starter weapon/armor/jewel boxes out at
+>   levels 6/8/10. Your plan, never scheduled. ⚠ Re-check it against the tutorial as it now ships
+>   (`267313d` moved every box onto the step that needs it) before building.
+
+### `BL-55` — two real starter armor SETS
+**Closed 2026-08-27: the placeholders were never placeholders.** *"the two real starter sets are the
+newbie light/robe not a place holders."* The newbie light and robe sets in `ItemCatalog` ARE the
+shipped starter sets — Ferrite Mythic, unsellable, untradable, 30-day timed, per his own 2026-07 rules.
+No numbers are owed. Deleted text:
+
+> - `BL-55` 🔵 **Two real starter armor SETS.** The current newbie light/robe sets are placeholders
+>   waiting on your numbers.
+
+### `BL-86` — the shutdown countdown is text, not a big red banner
+**Closed 2026-08-27: the toast is accepted.** *"this is good enough - can be red text but its ok if
+dont - noticable enoght."* The announcement ladder shipped in 0.78.0 and stays on the existing `Notice`
+toast + System chat — which means it keeps working on clients built before the feature, the reason it
+was done that way. Red text is explicitly optional; if a client batch is going out anyway it can be
+coloured then, but nothing is owed and it is not a reason to cut an APK. Deleted text:
+
+> - `BL-86` 🔵 **THE SHUTDOWN COUNTDOWN IS TEXT, NOT A BIG RED BANNER — your call whether that is
+>   enough.** … Making it a red, large, and (under 60s) persistent overlay is a client-side element and
+>   a new push. **Say if the toast reads well enough**; if not, this is small and rides the next client
+>   batch with §89's three UI changes.
+
+### `BL-15` — `precision` / `anti_magic` floor rungs (the AUTO-GRANT version)
+**Rewritten 2026-08-27.** He answered the "which level" question and changed the delivery mechanism
+with it: *"i would like them to be a learnable passive not a auto learn.. so remind me once i start
+authoring warrior/rogues."* The old text asked only about the LEVEL:
+
+> - `BL-15` 🔵 **`precision` / `anti_magic` floor rungs should follow the CLASS CHANGE, not level 76.**
+>   Implied by your rogue ruling and never carried back into either checklist — recorded in the
+>   changelog as "owed back to him" and then dropped. Confirm and it is a small authoring change.
+
+The load-bearing difference: an auto-granted floor is an **engine** decision made at a level, and a
+learnable passive is a **CSV row** with a learn level, an SP price and a place in a ladder. The second
+cannot be built ahead of his authoring, so the entry moved from "a small authoring change" to a hold
+against the warrior/rogue files.

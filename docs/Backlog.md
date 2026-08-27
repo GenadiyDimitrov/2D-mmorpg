@@ -64,6 +64,18 @@ lived in `testing/Open-Checklist.md` §89 as `BL-88`.
 answered `BL-47` (*yes — field mobs stay on the curve, player mobs are a hand-placed content tool*).
 What is left of that pass is `BL-79` and `BL-80`, which are the CONTENT his `BL-47` answer unblocks.
 
+**🆕 2026-08-27: he ruled on FOURTEEN entries in one message, and NINE of them closed.** Deleted:
+`BL-10` · `BL-12` · `BL-16` · `BL-17` · `BL-24` · `BL-54` · `BL-55` · `BL-86` · `BL-94`. Rewritten:
+`BL-15` (learnable passives, gated on the warrior/rogue CSVs) and `BL-23` (an assertion replaced by a
+measurement — `--goldflow`). Partly closed: `BL-90`, `BL-91` and `BL-92`'s ork-buffer bullet. All the
+replaced text is in [BacklogArchive.md](BacklogArchive.md).
+
+⚠ 🔑 **THREE OF THE FOURTEEN WERE STALE, NOT OPEN** — `BL-90`'s bursts, `BL-91`'s ×2 and `BL-92`'s ork
+buffer were all already in the code, two of them since 0.87.0 three days earlier, and he was the one
+who noticed (*"bl-24 - it build ? why blue ?"*, *"nuker 3rd is build or atelast should be so fix the
+wording"*). **When a build closes a dependency, sweep every entry that named it in the same commit.**
+A stale 🔴 costs more than a missing one: it invites work that is already done.
+
 ## The rules this file runs on
 
 1. **Newest ruling wins, and it is the ONLY one shown.** When you re-spec something, its entry is
@@ -137,21 +149,6 @@ closed · **`BL-93` opened** for the in-game visuals discussion you asked for (*
 
 ## Combat & stats
 
-- `BL-94` 🔵 **THE FIZZLE FLOOR — a fizzled spell should do NOTHING, not a third.** Your ruling of
-  2026-08-24, carried out of the playtest-28 checklist unbuilt: *"shouldn't hit at all on the floor"*.
-  - **Where it stands.** 0.81.2 fixed the fizzle CHANCE — it reads the rung's own learn level now,
-    not the caster's, which is what made a level-14 Vamp Bolt fail against a 37 mob. That was the half
-    of your question that was a bug. This is the other half, and it is a **payload** ruling, not a
-    chance one: a fizzled spell still lands `damage / 3`, so a spell whose fail rate has hit its
-    ceiling still delivers ~37% of its damage rather than 0%.
-  - **Why it was deliberately not built with the rest.** Zeroing the payload makes a ceilinged spell
-    worth *nothing* against an over-level target, which is a real difficulty change at exactly the
-    band where a player fights up. It is one line (`SkillMath`'s fizzle payload), and it is one line
-    that changes how it feels to fight above your level, so it wants your word rather than my reading
-    of it.
-  - ❓ **What I need:** flat 0 on a fizzle, or 0 only once the fail chance is at its ceiling (so a
-    small fizzle still chips)? The second is more forgiving and is what the current third approximates.
-
 - `BL-06` ✅ **BUILT 2026-08-14 (0.65.0)** — a physical skill is no longer subject to the
   accuracy-vs-evasion roll at all; the caster's accuracy, `Precision` and `EvadeFloor` were all
   removed from that branch and now govern basic attacks only. The **only** thing that dodges a skill
@@ -187,10 +184,6 @@ closed · **`BL-93` opened** for the in-game visuals discussion you asked for (*
   Read as: a wrong-weapon caster is capped at 50% success at parity, and the five Mastery rungs walk
   the penalty 0.5 → 0.05. *(playtest-21 `64c`, never answered.)*
 
-- `BL-10` 🔵 **A floor under the fading bow-caster penalty.** The bow penalty currently vanishes
-  entirely when you punch down. You were asked whether you want a floor under it and the reply is
-  still empty. *(playtest-21 `64e`.)*
-
 - `BL-11` ✅ **BUILT 2026-08-14 (0.65.0)** — the mob layer gains an **mRes channel**
   (`MobMod.MagicResist` + a *Magic Resistance* mastery track, the CSV's own "???? Resistance" row
   filled in), and the pair is actually authored: **Warded** (P.Def ×0.8 / M.Def ×1.5 / mRes +20%) on
@@ -198,11 +191,6 @@ closed · **`BL-93` opened** for the in-game visuals discussion you asked for (*
   a real magic WEAKNESS) on Shield Skeleton, Fomor Brute and Dread Knight, plus a Magic Resistance
   rung on Obsidian Knight's Stoneplate. Before this, one mob in the game was anti-magic and none was
   anti-physical. See `CHANGELOG.md`. Delete at the next sweep.
-
-- `BL-12` 🔵 **Enchant bonus should scale with what you put in.** Your objection to the flat-offset
-  ruling, unanswered: *"not a warrior invest +3 and gets the same bonus as cleric +16."* Today the
-  offset is identical for every class, by grade. Needs your call before anything moves.
-  *(playtest-21 `68e`; the 0.60.0 model is in `docs/balance/BalanceMatrix.md` §E.)*
 
 - `BL-14` ✅ **BUILT 2026-08-14 (0.65.0)** — two of your three clauses were already true (a mob's
   attack SPEED and CRIT RATE have come off `InnateWeaponType` since 2026-08-10); the third was not.
@@ -213,29 +201,21 @@ closed · **`BL-93` opened** for the in-game visuals discussion you asked for (*
   that trade explicitly (P.Atk ×2, 450 range), and doubling it would put an archer at ~3× per arrow.
   See `CHANGELOG.md`. Delete at the next sweep.
 
-- `BL-15` 🔵 **`precision` / `anti_magic` floor rungs should follow the CLASS CHANGE, not level 76.**
-  Implied by your rogue ruling and never carried back into either checklist — recorded in the
-  changelog as "owed back to him" and then dropped. Confirm and it is a small authoring change.
-
-- `BL-16` 🔵 **Heal powers need re-authoring — and they are YOUR numbers, so you have to move them.**
-  They sit at ~151-301 against a scale that has moved to ~1000. ⚠ **Re-marked 🔵 on 2026-08-14**: the
-  ladder is authored in `docs/data/classes_skills_csv/cleric 2nd.csv` (two of his renames on 2026-08-17,
-  content untouched: `healer 20-35` → `cleric 20-35` → `cleric 2nd`) — *"heal with power 151 / 195 /
-  245 / 301"* on Heal and Quick Heal at learn levels 20/25/30/35, and 121/156/196/241 on Party Heal.
-  Raising it in code is a CSV retune, which your own rule forbids, so it was left alone (your call,
-  2026-08-14: *leave the CSVs alone*).
-  🔑 **Measured, so the size of the gap is known:** a group buff learned at 35 is `35 × 20 × 9` =
-  **6,300**; Quick Heal L4 is `301 / 2s × 10 × 1` = **1,505**. That is **~4×**, against the ~1.3× you
-  sized `BL-71` for. **Landing your ratio needs Quick Heal ≈ 970 power** — which is exactly the "~1000
-  scale" this entry names. Two ways out and both are yours: send new 20-35 numbers, or let the 40+
-  rungs (`BL-02`) carry it, since a ~1500-power quick heal is a 40+ rung by your own sizing.
-
-- `BL-17` 🔵 **Re-author `BuffMagAtk`, and give magic-only buffs an explicit magic %.** ⚠ **Re-marked
-  🔵 on 2026-08-14**, same reason as `BL-16`: the healer CSV authors `Force` at 25 as **M.Atk x1.55**
-  and Frenzy as **mAtk x1.1**, so this is a retune of your own data.
-  ⚠ **And there is a discrepancy to settle first:** your CSV's Force@25 is `x1.55` while the shipped
-  `FamMagAtk` rung is **+25%**. Per your `xN.NN`-is-a-percent convention those may not even be the same
-  claim. Not reconciled by guessing — say which is right.
+- `BL-15` 🟡 **`precision` / `anti_magic` should be LEARNABLE PASSIVES, not auto-granted floors —
+  and it waits for the warrior/rogue CSVs.** Your ruling, 2026-08-27: *"i would like them to be a
+  learnable passive not a auto learn.. so remind me once i start authoring warrior/rogues."*
+  - **What changes.** Today both are auto-granted floors: they appear at a level with no row, no SP
+    price and no place in a ladder (`--check` reports them as ⚪ AUTO-GRANTED against `warrior 2nd.csv`
+    and `tank 2nd.csv`, which is what an auto-grant looks like on purpose). As learnable passives they
+    become ordinary CSV rows — learn level, SP, rungs — and the Learn tab shows them.
+  - 🟡 **Gated, deliberately.** A learnable passive is a **CSV row**, and inventing one re-specs the
+    file you have not written yet. `warrior 3rd`, `rogue 3rd` and their 4th-tier files are still
+    two-line placeholders (`BL-02`), so this lands the day you author them and not before.
+  - 🔔 **THIS IS THE REMINDER YOU ASKED FOR.** When you open a warrior or rogue file, `precision` and
+    `anti_magic` want rows in it. ⚠ **A class-skill-TABLE change needs a new APK** — the client builds
+    its Learn tab locally — so it rides a client batch, not a server-only push.
+  - ⚠ The level question the old entry asked (class change vs 76) is answered by this: a learn level
+    is whatever the row says, so there is nothing left to rule separately.
 
 - `BL-18` 🔵 **The nuker-vs-champion measurement (`0a`).** The nuker beats the champion by 19% in
   the matrix. You deferred the ruling to play: *"This need to be tested. When I leave the chars to
@@ -253,11 +233,13 @@ closed · **`BL-93` opened** for the in-game visuals discussion you asked for (*
   taken at 70; and both scale with how many the cast reached),
   and the proximity-pull defect is fixed (a pull seeds 5% of the mob's own max HP). See `CHANGELOG.md`.
   Delete at the next sweep.
-  - ⚠ **Your buff:heal ratio does not hold yet, and the buff side is not the reason.** You sized it
-    against "a quick heal with ~1500 power at that lvl"; the cleric's heal ladder actually stops at
-    skill level 4 — learned at 35, power 301 — so a group buff currently out-threatens a heal by ~8×
-    instead of ~1.3×. That is **`BL-16`** (heal powers "sit at ~151-301 against a scale that has moved
-    to ~1000"), and it is the half that has to move.
+  - ⚠ **Your buff:heal ratio holds at the TOP of the game and not at 35 — and you closed that on
+    2026-08-27.** You sized it against "a quick heal with ~1500 power at that lvl". The **2nd-tier**
+    ladder stops at power 301 (learned at 35), so a group buff out-threatens a heal there by ~8×
+    instead of ~1.3×; the **4th-tier** ladder you have since authored reaches Ultimate Heal 1400-2000
+    plus Healer's Power +2000, which lands the ratio where you wanted it. That was `BL-16`, and your
+    ruling was that the 40+ rungs carry it rather than the 20-35 numbers moving. The 20-35 mismatch is
+    therefore **intended**, not owed: a level-35 cleric is not meant to out-heal a group buff.
   - A full party is **9**, not the 7 in your example, so a level-70 group buff tops out at **12,600** —
     which is the intent (*"Full buffing a full party should take the agro from mobs for awhile"*).
   - The remaining 20-30k taunt rungs are levels 6-10 of the same ×1.36 ladder and belong to the
@@ -318,14 +300,32 @@ closed · **`BL-93` opened** for the in-game visuals discussion you asked for (*
     **(2)** let elites drop Legendary gear — opens a gear faucet that competes with crafting;
     **(3)** let a high grade bump the salvaged rarity a rung — contradicts "rarity for rarity".
 
-- `BL-23` 🔵 **The coin curve.** Gear value follows the tier ladder while coin stays linear, so the
-  gap drifts to **51×** by level 76. The note in the archive is explicit that *"the real fix is the
-  coin curve, not another multiplier"* — every rate tweak since has been a patch over this.
-
-- `BL-24` 🔵 **The enchant-scroll types — you wanted to discuss them.** *"ENCHANTS — you said you
-  want to DISCUSS them … bring it up when you are ready."* The three types (breaks / −1 / safe) ×
-  six grades shipped in 0.53-0.60; the conversation you asked for never happened. The 30× drop cut
-  (`62j`) is ratified and stays.
+- `BL-23` 🔵 **The coin curve — MEASURED 2026-08-27, and it is not the problem the old entry claimed.**
+  You replaced the assertion with a measurement request: *"i want potion/rune per hour consumation and
+  golddrop/h .. to compare for fewe lvl rangees - for now at lvl 43 i have 5kk + gold so it dont seem
+  like a problem."* Built as **`dotnet run --project tools/BalanceMatrix -- --goldflow`**, off the real
+  drop tables, the real vendor prices and the real damage formulas. What it says:
+  - ✅ **YOUR 43 READING IS EXACTLY RIGHT.** At 43 a farming character nets **740k-1,010k gold/hour**,
+    so your 5kk is five to seven hours of play. The model and your save agree without tuning either.
+  - ✅ **POTIONS ARE NOT A COST.** Priced at the cheapest tier that can actually SUSTAIN the deficit,
+    potion burn is **0-3% of income at every band from 20 to 76**, and 10% in the single worst case
+    (the level-85 nuker). There is no potion economy to fix; regen covers most kits outright.
+  - 🔴 **THE RUNE IS THE REAL COST, AND ONLY WHEN YOU ARE POOR.** A 1h War Rune box is 150,000 flat.
+    At 20-30 an hour of farm buys **2.4-2.9 hours** of rune (~35-40% of income); by 61 it buys 25, by
+    85 it buys 37. So the rune is a **newbie tax that evaporates** — the opposite shape to a drift.
+  - 🔴 **THE DRIFT IS REAL BUT IT IS 5.4×, NOT 51×.** Hours of farm per chest piece of your own tier:
+    **1.68 at 20 → 0.50 at 40 → 0.46 at 61 → 0.31 at 76.** Monotone downward apart from the expected
+    bump inside a tier (price is flat from 40 to 51 while gold keeps climbing, which is why 43 reads
+    better than 40).
+  - 🔴🔑 **THE SHARP FINDING IS A CLIFF AT 80, WHICH THE OLD ENTRY NEVER MENTIONED.** S grade is
+    **top-half only** — Epic/Legendary/Mythic, no Common rung exists (`ItemCatalog.IsTopHalfOnly`) —
+    so the cheapest level-80 body is **126,000,000** and an hour of farm buys **0.04** of it: about
+    **26 hours per piece**, against 3 hours at 76. That is not the coin curve drifting, it is the
+    gear ladder stepping, and it is where a fix belongs if you want one.
+  - ❓ **What I need from you.** Three separate calls and they are independent: (a) is 26h/piece the
+    intended endgame grind, or does S want a cheaper rung; (b) does the 150k rune want a cheaper
+    low-level box, since it is only ever felt before 40; (c) is a 5.4× drift across 20-76 acceptable
+    as pacing? **Nothing moves until you say** — every rate here is one you have already tuned once.
 
 - `BL-25` 🔵 **The drop-group simplification — half built, half unquotable.** *"In a way I want to
   simplify it"* — the inner roll should pick the drop **directly** rather than picking a rarity first,
@@ -498,13 +498,25 @@ closed · **`BL-93` opened** for the in-game visuals discussion you asked for (*
   - ⚠ **YOUR MESSAGE AND YOUR CSV DISAGREE ON GRAVITY** — the message puts it in the ×1.5 group, all
     fourteen rows in `healer 3rd.csv` say `(success chance x1)`. The CSV won, per the standing rule. Say
     the word and it is one edit in both places.
-  - 🔴 **STILL OPEN — the nuker 3rd values have no code to attach to.** Arcane/Frost/Pyro Burst ×1.5,
-    Frost Spikes ×0.7, Frost Pierce ×0.5, Witches Curse ×0.7, Witches Scarecrow ×0.5, Arcane Void ×0.3 are
-    authored and waiting on the kit. `nuker 3rd.csv` also earns its line in `Check.Specs` that day.
-  - 🔴 **STILL OPEN — Snare Trap and the Warchanter's stun-rider** are hybrids that already exist and are
-    deliberately left at ×1. Retro-taxing a built class is your call; one line each.
-  - 🔴 **STILL OPEN — "buff removeal" has nothing to tag.** Dispel Magic was deleted 2026-08-07. Arcane
-    Void ×0.3 is the cancel you have authored, and it lands with the nuker kit.
+  - ✅ **CLOSED 2026-08-27 — THE BURSTS AND THE WHOLE NUKER LIST SHIPPED IN 0.87.0.** You asked *"what
+    about the 3 bursts ? they should be build as the chance for debuf per skill"* — they were, three days
+    earlier, and **this entry was simply stale**. Verified in `Skills.Nuker3rd.cs`: Arcane / Frost / Pyro
+    Burst all carry `DebuffLandMod: 1.5f`, and beside them Frost Spikes ×0.7, Frost Pierce ×0.5, Witches
+    Curse ×0.7, Witches Scarecrow ×0.5, Arcane Void ×0.3 — every value your CSV authored. `nuker 3rd.csv`
+    took its `Check.Specs` line the same day and `--check` is green on it.
+    ⚠ 🔑 **THE LESSON IS ABOUT THIS FILE, NOT THE FEATURE.** Two entries (`BL-90` and `BL-91`) sat here
+    claiming "not built" for three days after the code landed, because the kit that unblocked them was
+    built under a different heading. **When a build closes a dependency, sweep the entries that named
+    it** — the pass-end checklist rule already says to check the Backlog for stale marks, and this is
+    exactly the failure it is meant to catch.
+  - ⏸ **HELD BY YOU — Snare Trap and the Warchanter's stun-rider stay at ×1 until they are TESTED.**
+    2026-08-27: *"the trap and stun leave them as still open until tested."* Both are hybrids that
+    already exist on shipped classes; retro-taxing them is one line each and it waits for play, not for
+    a decision. Not dropped.
+  - ✅ **CLOSED 2026-08-27 — "buff removeal" needed nothing.** *"buff removal can be deleted .. arcane
+    void is the one we need and later a ork tank probably will have a cancel too but thats still
+    unauthored."* Arcane Void ×0.3 is built and is the cancel. An ork tank's cancel arrives with his
+    authoring like any other unwritten row; it is not owed here.
   - ℹ️ Your *"(did the same for buffer)"* was a slip — *"did the same for healer ... my bad"*. Confirmed:
     `healer 3rd` and `nuker 3rd` carry the column, `buffer 3rd` has none and owes none.
 
@@ -534,21 +546,34 @@ closed · **`BL-93` opened** for the in-game visuals discussion you asked for (*
     also carry **`(interrupt chance x2)`**, and `Descr.cs` reads that token, so it will be verified the
     day the kit is built. At 74, elf nuker vs a same-level human mage:
 
-    | spell | dmg | % of HP | ×1 | **×2 (ruled)** | ×5 | ×10 |
-    |---|---|---|---|---|---|---|
-    | Frost Spikes | 160 | 12.5% | 10.8% | **21.6%** | 53.9% | 100% |
-    | Frost Pierce | 160 | 12.5% | 10.8% | **21.6%** | 53.9% | 100% |
-    | Elemental Blast | 270 | 21.0% | 18.2% | — | 91.0% | 100% |
-    | Thunderstorm | 541 | 42.2% | 36.5% | — | 100% | 100% |
+    ⚠ **RE-MEASURED 2026-08-27 — every number below moved, and not because of this skill.** `BL-78`.3
+    rebuilt the PLAYER HP curve in 0.91.0, so the mage being cast at now has **3,239 HP** where this
+    table's victim had ~1,280. A nuke is therefore a much smaller slice of him and every interrupt
+    chance fell with it. The table is what `--goldflow`'s sibling `BalanceMatrix` prints today:
 
-    Your ×10 guess came from expecting these to be small hits; they are not — a mage has the smallest HP
-    pool in the game, and ×10 on either Frost skill is a guaranteed cancel, i.e. Disrupt rather than a
-    nuke. At ×2 they read 21.6% per hit (9.9% through Resolve) and fire every ~2.5s, so they compound
-    into roughly a third of a 4s cast.
-  - 🔴 **×2 IS NOT IN THE CODE YET, and cannot be:** the `nuker 3rd` kit is unbuilt, so neither skill has
-    a `SkillDef`. The ruling lives in the CSV and here. **When the kit lands: set
-    `SkillDef.InterruptMult = 2f` on both, delete the literal table in `BalanceMatrix`, read the
-    `SkillDef`s instead, and give `nuker 3rd.csv` its `Check.Specs` line.**
+    | spell | dmg | % of HP | ×1 | **×2 (built)** | ×5 | ×10 | ×2 +Resolve |
+    |---|---|---|---|---|---|---|---|
+    | Frost Spikes | 160 | 4.9% | 4.3% | **8.5%** | 21.4% | 42.7% | 3.9% |
+    | Frost Pierce | 160 | 4.9% | 4.3% | **8.5%** | 21.4% | 42.7% | 3.9% |
+    | Elemental Blast | 270 | 8.3% | 7.2% | — | 36.1% | 72.1% | 3.3% |
+    | Thunderstorm | 541 | 16.7% | 14.4% | — | 72.2% | 100% | 6.6% |
+
+    Your ×10 guess came from expecting these to be small hits. Against the OLD pool they were not, which
+    is why ×2 was the right call then. **Against the new pool they genuinely are small** — ×10 on a Frost
+    skill is 42.7%, not the guaranteed cancel it used to be. At ×2 they read 8.5% per hit (3.9% through
+    Resolve) and fire every ~2.5s, so a 4s cast now eats roughly 13% rather than a third.
+    ❓ **Worth re-ruling when you next play a nuker**: ×2 was sized against a mage with a quarter of the
+    HP he has today. Not changed unasked — the ruling stands until you move it.
+  - ✅ **×2 IS IN THE CODE — YOUR WORDING FIX, 2026-08-27.** *"the x2 - nuker 3rd is build or atelast
+    should be so fix the wording."* You were right and this bullet was wrong: the kit shipped in 0.87.0,
+    **`InterruptMult: 2f` is on both Frost Spikes and Frost Pierce** in `Skills.Nuker3rd.cs`, and
+    `nuker 3rd.csv` has had its `Check.Specs` line since the day the kit landed.
+  - ✅ **AND THE ONE THING THAT REALLY WAS OWED IS NOW DONE.** `BalanceMatrix`'s interrupt table carried
+    a hand-copied four-row literal (his CSV's top rungs, typed in while the kit was unbuilt). It now
+    **reads the `SkillDef`s** — power, cast, reuse and the multiplier — so a retuned rung moves the table
+    with it. 🔑 That literal is precisely why this entry was able to go stale while reading as current:
+    a measurement that repeats an authored number instead of reading it will agree with itself forever.
+  - **`BL-91` is CLOSED.** Nothing in it is outstanding; delete at the next sweep.
   - ⚠ `SkillDef.InterruptDefense` survives as a float FRACTION — the lever for *"this particular spell is
     hard to break"* without touching the caster's sheet. Unauthored.
 
@@ -575,8 +600,15 @@ closed · **`BL-93` opened** for the in-game visuals discussion you asked for (*
     have higher regen flat bonuses than mage"* — when the fighter 3rd/4th CSVs land, a fighter's `hpReg`
     flat must exceed a mage's. Today the nuker carries **+2.7**, the warrior **+1.6** (frozen at level
     32), the rogue **+1.2**, and the **tank none at all**; archer and dual have no `hpReg` row either.
-  - 🔴 **THE ORK BUFFER SHOULD CARRY MORE — undecided.** *"buffer ork should have more but yet not
-    desided - note it"*. No number invented; it arrives with his authoring.
+  - ✅ **THE ORK BUFFER — CLOSED 2026-08-27, and it was already built.** *"the ork buffer have the hp
+    boost skill so if its not build build it."* It does: `ClassSkillTables.Third.RegisterHpBoost`
+    registers **HP Boost L1-L7 at 40/44/48/52/56/62/70 for the Warchanter of all three races**, Ork
+    included, on your own 3rd-class SP ladder (36k → 390k, overridden per rung because the SkillDef's
+    prices are the warrior's). So the ork buffer's extra HP comes from the KIT, which is the rule —
+    identity is the skill kit, not a stat bonus — and no `hpReg` number was invented.
+    ⚠ Note the distinction that made this look open: your original *"buffer ork should have more"* was
+    about the **hpReg FLAT**, a regen number; HP Boost is a **max-HP** skill. It answers the intent, not
+    the same field. If you did mean a bigger ork regen flat specifically, that is still unauthored.
   - ⚠ **The ladder stopped being progression**, knowingly: a nuker's six rungs from +1.1 to +2.7 used to
     buy +19 HP/s and now buy **+1.6 across 34 levels**. Same trade the `mpReg` ladder took. If those
     rungs should be felt, the FLAT numbers get re-authored bigger in the CSVs — not an engine change.
@@ -864,12 +896,9 @@ closed · **`BL-93` opened** for the in-game visuals discussion you asked for (*
 
 ## Quests
 
-- `BL-54` 🔵 **Newbie items through quests** — hand the starter weapon/armor/jewel boxes out at
-  levels 6/8/10. Your plan, never scheduled. ⚠ Re-check it against the tutorial as it now ships
-  (`267313d` moved every box onto the step that needs it) before building.
-
-- `BL-55` 🔵 **Two real starter armor SETS.** The current newbie light/robe sets are placeholders
-  waiting on your numbers.
+*(`BL-54` and `BL-55` were closed on 2026-08-27 — both were already true. The tutorial hands the
+newbie boxes out on its level-10 and level-15 steps, and the newbie light/robe sets ARE the two real
+starter sets, not placeholders. See [BacklogArchive.md](BacklogArchive.md).)*
 
 ---
 
@@ -908,15 +937,9 @@ closed · **`BL-93` opened** for the in-game visuals discussion you asked for (*
     cause one: hide ends by expiry, damage, acting, a flare and death, and missing one of those would
     leave a visible character faded. Protocol **24 → 25**; see `CHANGELOG.md`.
 
-- `BL-86` 🔵 **THE SHUTDOWN COUNTDOWN IS TEXT, NOT A BIG RED BANNER — your call whether that is enough.**
-  `/server shutdown|reboot|on` is **BUILT** (0.78.0) with your whole announcement ladder — hours, then
-  10-minute steps, then minutes, then every second for the last 60. What it is NOT yet is your
-  *"onscreen/chat message - red big"* and *"its permanent on the screen 60..59..58"*: every line goes out
-  on the existing `Notice` toast plus System chat, which fades after a few seconds and is drawn in the
-  ordinary toast colour. That was deliberate — the toast needed no protocol change, so the whole feature
-  works on a client built before it. Making it a red, large, and (under 60s) persistent overlay is a
-  client-side element and a new push. **Say if the toast reads well enough**; if not, this is small and
-  rides the next client batch with §89's three UI changes.
+*(`BL-86`, the shutdown countdown, was closed on 2026-08-27 — *"this is good enough … noticable
+enoght"*. The toast is accepted; red text is optional and owed to nobody. See
+[BacklogArchive.md](BacklogArchive.md).)*
 
 - `BL-72` 🔵 **Unbuffed auto-farm is not survivable for either damage kit.** His `0a` note
   (playtest-22): *"they both have hard time to farm without buffs .. when i login in 1-2h after the

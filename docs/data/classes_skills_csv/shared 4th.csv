@@ -1,15 +1,15 @@
 LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,Gold,SP Bottles,REPLACES,RACE,Comment
 ,,,,,,,,,,,,,,,-------------------------------------------------------ALL CLASSES--------------------------------------------------------
 ,,,,,,,,,,,,,,,----------------------------Strong Mind----------------------------
-76,Strong Mind,Passive,0,self,0,0,0,Increase resistance to SPT debuffs by 20%,0,6.5kk,1kk
+76,Strong Mind,Passive,0,self/single,0,0,0,Increase resistance to SPT debuffs by 20%,0,6.5kk,1kk
 ,,,,,,,,,,,,,,,----------------------------Strong Body----------------------------
-76,Strong Body,Passive,0,self,0,0,0,Increase resistance to CON debuffs by 10%,0,6.5kk,1kk
+76,Strong Body,Passive,0,self/single,0,0,0,Increase resistance to CON debuffs by 10%,0,6.5kk,1kk
 ,,,,,,,,,,,,,,,----------------------------Strong Spirit----------------------------
-83,Arcane Protection,Passive,0,self,0,30,10,Increase M.Def +15% and with 20% chance on magic dmg taken to increases MDef +1000,0,500kk,100kk,,,,Flat Increase not mutliplied by buffs
+83,Arcane Protection,Passive,0,self/single,0,30,10,Increase M.Def +15% and with 20% chance on magic dmg taken to increases MDef +1000,0,500kk,100kk,,,,Flat Increase not mutliplied by buffs
 ,,,,,,,,,,,,,,,----------------------------Magic Proficiency----------------------------
-83,Magic Proficiency,Passive,0,self,0,0,0,Increase M.Atk and Casting speed with 5% and decrease MP consumation with 5%,0,500kk,100kk,,,,
+83,Magic Proficiency,Passive,0,self/single,0,0,0,Increase M.Atk and Casting speed with 5% and decrease MP consumation with 5%,0,500kk,100kk,,,,
 ,,,,,,,,,,,,,,,----------------------------Physical Proficiency----------------------------
-83,Physical Proficiency,Passive,0,self,0,30,10,"Blunt/Sword/Dual: Increase P.Atk +100, Atk.Speed +10%; Bow: Acc +8, Range +50; Blunt/Sword/Dual/Bow: WIth 5% chance when attacking to increase P.Crit.Rate and P.Skill.Power with 20%",0,500kk,100kk,,,,
+83,Physical Proficiency,Passive,0,self/single,0,30,10,"Blunt/Sword/Dual: Increase P.Atk +100, Atk.Speed +10%; Bow: Acc +8, Range +50; Blunt/Sword/Dual/Bow: WIth 5% chance when attacking to increase P.Crit.Rate and P.Skill.Power with 20%",0,500kk,100kk,,,,
 ,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,----------------------------Sigils----------------------------
 ,,,,,,,,,,,,,,,A-Attack Replaces B/C/D..Z-Attack
@@ -23,24 +23,24 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,G
 ,,,,,,,,,,,,,,,Reset at the Mindwright: 10kk gold PER SIGIL - no SP and no gold refunded
 ,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,----------------------------Defence Sigil----------------------------
-76,Holy Protection Sigil,Passive,0,self,0,0,0,10% SPT Debuff Resists,0,20kk,10kk,,[Warrior/Mage/Tank/Buffer/Rogue Defence],,Healer_Defence_Sigil
-76,Duel Sigil,Passive,0,self,0,0,0,5% PvP Defence,0,20kk,10kk,,[Healer/Mage/Tank/Buffer/Rogue Defence],,Warrior_Defence_Sigil
-76,Spirit Sigil,Passive,0,self,0,0,0,Increase MP regen with 10%,0,20kk,10kk,,[Warrior/Mage/Tank/Healer/Rogue Defence],,Immortality: HP is unchanged; move and casts are unnafected -> also healing dont increase HP as DMG dont decrease it;  Buffer_Defence_Sigil
-76,Aegis Sigil,Passive,0,self,0,20,15,3% chance on dmg received to increase P/M.Def +25%,0,20kk,10kk,,[Warrior/Mage/Healer/Buffer/Rogue Defence],,Tank_Defence_Sigil
-76,Mage Defence Sigil,Passive,0,self,0,0,0,increase M.Def with 7%,0,20kk,10kk,,[Warrior/Healer/Tank/Buffer/Rogue Defence],,Mage_Defence_Sigil
-76,Agility Sigil,Passive,0,self,0,0,0,Increase P/M.Evasion +3,0,20kk,10kk,,[Warrior/Mage/Tank/Buffer/Healer Defence],,Rogue_Defence_Sigil
+76,Holy Protection Sigil,Passive,0,self/single,0,0,0,10% SPT Debuff Resists,0,20kk,10kk,,[Warrior/Mage/Tank/Buffer/Rogue Defence],,Healer_Defence_Sigil
+76,Duel Sigil,Passive,0,self/single,0,0,0,5% PvP Defence,0,20kk,10kk,,[Healer/Mage/Tank/Buffer/Rogue Defence],,Warrior_Defence_Sigil
+76,Spirit Sigil,Passive,0,self/single,0,0,0,Increase MP regen with 10%,0,20kk,10kk,,[Warrior/Mage/Tank/Healer/Rogue Defence],,Immortality: HP is unchanged; move and casts are unnafected -> also healing dont increase HP as DMG dont decrease it;  Buffer_Defence_Sigil
+76,Aegis Sigil,Passive,0,self/single,0,20,15,3% chance on dmg received to increase P/M.Def +25%,0,20kk,10kk,,[Warrior/Mage/Healer/Buffer/Rogue Defence],,Tank_Defence_Sigil
+76,Mage Defence Sigil,Passive,0,self/single,0,0,0,increase M.Def with 7%,0,20kk,10kk,,[Warrior/Healer/Tank/Buffer/Rogue Defence],,Mage_Defence_Sigil
+76,Agility Sigil,Passive,0,self/single,0,0,0,Increase P/M.Evasion +3,0,20kk,10kk,,[Warrior/Mage/Tank/Buffer/Healer Defence],,Rogue_Defence_Sigil
 ,,,,,,,,,,,,,,,----------------------------Attack Sigil----------------------------
-76,Holy Power Sigil,Passive,0,self,0,0,0,Increase healing power with 5%,0,20kk,10kk,,[Warrior/Mage/Tank/Buffer/Rogue Attack],,Healer_Attack_Sigil
-76,Fury Sigil,Passive,0,self,0,20,15,3% chance on attack to increase attack speed with 30%,0,20kk,10kk,,[Healer/Mage/Tank/Buffer/Rogue Attack],,Warrior_Attack_Sigil
-76,Soul Sigil,Passive,0,self,0,0,0,Increase max MP 10%,0,20kk,10kk,,[Warrior/Mage/Tank/Healer/Rogue Attack],,Buffer_Attack_Sigil
-76,Body Sigil,Passive,0,self,0,0,0,Increase max HP 10%,0,20kk,10kk,,[Warrior/Mage/Healer/Buffer/Rogue Attack],,Tank_Attack_Sigil
-76,Frenzy Sigil,Passive,0,self,0,20,15,3% chance on attack to increase P/M.Atk and P/M.Speed with 8%,0,20kk,10kk,,[Warrior/Healer/Tank/Buffer/Rogue Attack],,Mage_Attack_Sigil
-76,Focus Sigil,Passive,0,self,0,20,15,3% chance on attack to increase P.Crit.Chance + 50,0,20kk,10kk,,[Warrior/Mage/Tank/Buffer/Healer Attack],,Flat 50-> everyone gets flat 5% increase in crit (blunt/duals/etc..);  Rogue_Attack_Sigil
+76,Holy Power Sigil,Passive,0,self/single,0,0,0,Increase healing power with 5%,0,20kk,10kk,,[Warrior/Mage/Tank/Buffer/Rogue Attack],,Healer_Attack_Sigil
+76,Fury Sigil,Passive,0,self/single,0,20,15,3% chance on attack to increase attack speed with 30%,0,20kk,10kk,,[Healer/Mage/Tank/Buffer/Rogue Attack],,Warrior_Attack_Sigil
+76,Soul Sigil,Passive,0,self/single,0,0,0,Increase max MP 10%,0,20kk,10kk,,[Warrior/Mage/Tank/Healer/Rogue Attack],,Buffer_Attack_Sigil
+76,Body Sigil,Passive,0,self/single,0,0,0,Increase max HP 10%,0,20kk,10kk,,[Warrior/Mage/Healer/Buffer/Rogue Attack],,Tank_Attack_Sigil
+76,Frenzy Sigil,Passive,0,self/single,0,20,15,3% chance on attack to increase P/M.Atk and P/M.Speed with 8%,0,20kk,10kk,,[Warrior/Healer/Tank/Buffer/Rogue Attack],,Mage_Attack_Sigil
+76,Focus Sigil,Passive,0,self/single,0,20,15,3% chance on attack to increase P.Crit.Chance + 50,0,20kk,10kk,,[Warrior/Mage/Tank/Buffer/Healer Attack],,Flat 50-> everyone gets flat 5% increase in crit (blunt/duals/etc..);  Rogue_Attack_Sigil
 ,,,,,,,,,,,,,,,----------------------------Support Sigil----------------------------
-76,Holy Support Sigil,Passive,0,self,0,5,0,5% chance on dmg received to heal 2%HP,0,20kk,10kk,,[Warrior/Mage/Tank/Buffer/Rogue Support],,Healer_Support_Sigil
-76,Fortitude Sigil,Passive,0,self,0,0,0,5% CON Debuffs Resists,0,20kk,10kk,,[Healer/Mage/Tank/Buffer/Rogue Support],,Warrior_Support_Sigil
-76,Immortality Sigil,Passive,0,self,0,20,5,3% chance on dmg received to become Immortal,0,20kk,10kk,,[Warrior/Mage/Tank/Healer/Rogue Support],,Buffer_Support_Sigil
-76,Critical Protection Sigil,Passive,0,self,0,0,0,Increase resistance to critical rate/dmg +10%,0,20kk,10kk,,[Warrior/Mage/Healer/Buffer/Rogue Support],,Tank_Support_Sigil
-76,Arcane Support Sigil,Passive,0,self,0,5,0,5% chance on attack to heal 2% MP,0,20kk,10kk,,[Warrior/Healer/Tank/Buffer/Rogue Support],,Mage_Support_Sigil
-76,Aim Sigil,Passive,0,self,0,0,0,Bow: Range +100; Blunt/Sword/Dual: Acc +5,0,20kk,10kk,,[Warrior/Mage/Tank/Buffer/Healer Support],,Rogue_Support_Sigil
+76,Holy Support Sigil,Passive,0,self/single,0,5,0,5% chance on dmg received to heal 2%HP,0,20kk,10kk,,[Warrior/Mage/Tank/Buffer/Rogue Support],,Healer_Support_Sigil
+76,Fortitude Sigil,Passive,0,self/single,0,0,0,5% CON Debuffs Resists,0,20kk,10kk,,[Healer/Mage/Tank/Buffer/Rogue Support],,Warrior_Support_Sigil
+76,Immortality Sigil,Passive,0,self/single,0,20,5,3% chance on dmg received to become Immortal,0,20kk,10kk,,[Warrior/Mage/Tank/Healer/Rogue Support],,Buffer_Support_Sigil
+76,Critical Protection Sigil,Passive,0,self/single,0,0,0,Increase resistance to critical rate/dmg +10%,0,20kk,10kk,,[Warrior/Mage/Healer/Buffer/Rogue Support],,Tank_Support_Sigil
+76,Arcane Support Sigil,Passive,0,self/single,0,5,0,5% chance on attack to heal 2% MP,0,20kk,10kk,,[Warrior/Healer/Tank/Buffer/Rogue Support],,Mage_Support_Sigil
+76,Aim Sigil,Passive,0,self/single,0,0,0,Bow: Range +100; Blunt/Sword/Dual: Acc +5,0,20kk,10kk,,[Warrior/Mage/Tank/Buffer/Healer Support],,Rogue_Support_Sigil
 ,,,,,,,,,,,,,,,

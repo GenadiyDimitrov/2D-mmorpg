@@ -92,6 +92,26 @@ public record SkillDef(
     string ExclusiveGroup = "",
     TargetMode TargetMode = TargetMode.SelfOrTarget,
     float AreaRadius = 0f,
+    /// <summary>How many allies an <see cref="TargetMode.AlliesInRadius"/> effect may reach
+    /// (0 = every one of them, which is what every area heal before this did).
+    ///
+    /// <para>Added 2026-08-27 for the Lightbringer's <b>Urgent Great Heal</b>, authored at 83 in
+    /// <c>healer 4th.csv</c>: *"Heals 10 most injured friendly target around the caster (including
+    /// caster in 900 range) starting with most injured one by 30% and every next target is healed
+    /// -2% less form the one before"*. A cap alone is not enough to make that deterministic —
+    /// WHICH ten matters, so the selection is ordered by the fraction of HP each ally is MISSING,
+    /// worst first. That ordering is the skill's identity: it is a triage button, and a full-health
+    /// tank standing next to a dying one must never take his slot.</para></summary>
+    int MaxTargets = 0,
+    /// <summary>Percentage POINTS the heal loses for each successive target, once they are ordered
+    /// worst-first by <see cref="MaxTargets"/> (0 = every target gets the full magnitude).
+    ///
+    /// <para>His 30 → 28 → 26 … ladder is <c>0.02f</c> here against a 0.30 magnitude. It is
+    /// expressed in the same units as the magnitude it decays — a FRACTION of the target's own max
+    /// HP — so that one number never has to be reconciled with a percent written somewhere else.
+    /// Clamped at zero: a falloff can shrink a heal to nothing but can never invert it into
+    /// damage.</para></summary>
+    float TargetFalloff = 0f,
     /// <summary>Extra interrupt resistance THIS cast carries, as a FRACTION (0.25 = 25%). Added to the
     /// caster's own resist buffs inside IG's <c>(1 - Buffs)</c> term. Unauthored today — it is the lever
     /// for "this particular spell is hard to break" without touching the caster's sheet.</summary>
@@ -1221,10 +1241,37 @@ public readonly record struct PassiveEffect(
         (MaxHpPct, MaxMpPct, Con, Agi, Atk, Wit, Spt).GetHashCode();
 }
 
-/// <summary>Who a skill affects. SelfOnly = caster only; AlliesInRadius = caster + party members
-/// in radius (heals/buffs); EnemiesInRadius = every HOSTILE in radius (an offensive AoE, e.g. a
-/// boss slam — mobs hit players, players hit mobs).</summary>
-public enum TargetMode { SelfOrTarget = 0, SelfOnly = 1, AlliesInRadius = 2, EnemiesInRadius = 3 }
+/// <summary>Who a skill affects, in his `[scope]/[breadth]` scheme (2026-08-27):
+/// *"[self-onlyMe / target-anyFriendly / party-anyPartyMember / enemy] / [single-affectOne /
+/// aoe-affectsMany]"*.
+///
+/// <list type="bullet">
+///   <item><b>SelfOrTarget</b> — `target/single`. One friendly, and friendly means ANYONE: a passing
+///         stranger counts. <see cref="TargetMode.SelfOnly"/>'s opposite.</item>
+///   <item><b>SelfOnly</b> — `self/single`. Never leaves the caster.</item>
+///   <item><b>AlliesInRadius</b> — `party/aoe`. Caster + PARTY inside the radius. The harmonies and
+///         Party Heal.</item>
+///   <item><b>FriendlyInRadius</b> — `target/aoe`. Everyone friendly inside the radius, party or not.
+///         Totems and Urgent Great Heal.</item>
+///   <item><b>EnemiesInRadius</b> — `enemy/aoe`. Every hostile in radius; mobs hit players, players
+///         hit mobs (and, with PvP on, players — `BL-77`).</item>
+/// </list>
+///
+/// <para>🔑 <b>WHY `FriendlyInRadius` HAD TO EXIST.</b> Until 2026-08-27 a party heal and a totem were
+/// the SAME value, so the engine could not express the line he draws between them — *"harmonies are
+/// party/aoe … urgent great heal and totems are target/aoe -> anyone friendli in a radius"*, and
+/// *"(party heals are party heals)"*. Two skills that reach different people cannot share one mode,
+/// and `SkillCsvSeed --check` is what made the collision visible: it derives the column from this enum,
+/// so Party Heal and Healing Totem came out identical when his files say they are not.</para>
+///
+/// <para>⚠ A `party/single` skill (a buff, a recharge) is <b>SelfOrTarget with a party test at the
+/// call site</b>, not a mode of its own — the single-target path already runs every support cast
+/// through <c>CanSupport</c>, which is where scope belongs for a skill that has a real target.</para></summary>
+public enum TargetMode
+{
+    SelfOrTarget = 0, SelfOnly = 1, AlliesInRadius = 2, EnemiesInRadius = 3,
+    FriendlyInRadius = 4,
+}
 
 // ===========================================================================
 //  SKILL CATALOG — partial across this folder. This file owns the assembly.

@@ -263,33 +263,191 @@ billboards for animated 3D models, it's a pure visual upgrade in `EntityManager.
 ## Dropping in a model  (`BL-93` — the Editor half)
 
 The code side is done and shipped; the client draws spheres until a prefab exists. **This is the whole
-of what the Editor session has to do**, and the first one takes about ten minutes.
+of what the Editor session has to do.** The first one takes about fifteen minutes.
 
-### 1. Get a model
-Low-poly, CC0, already rigged: **Quaternius** (`quaternius.com`, RPG characters + monsters) or
-**Kenney** (`kenney.nl`). Animation clips: **Mixamo** (free, and it will auto-rig an unrigged mesh).
+> **Read this once before starting.** You never write code and you never touch a scene that gets saved.
+> You are creating **one file** — `Assets/Resources/Models/humanoid.prefab` — and everything below is
+> how to make that file correctly. If a step's window is not where the guide says, use
+> **Window → Layouts → Default** to put the Editor back to the standard arrangement this guide assumes.
+
+---
+
+### Step 0 — get a model file onto disk
+
+1. Open a browser, go to **`quaternius.com`**.
+2. Click **Free Assets** in the top bar, then pick any **RPG Characters** or **Monsters** pack.
+3. Click **Download**. You get a `.zip` in your Downloads folder.
+4. **Right-click the zip → Extract All… → Extract.** You now have a folder with `.fbx` files inside
+   (often under a `FBX` or `Models` subfolder). An `.fbx` is one model.
+5. Pick ONE `.fbx` to start with. A plain humanoid — a knight, a soldier, a skeleton.
+
 ⚠ **The IP rule applies to art exactly as it does to names** — nothing whose silhouette reads as
 another game's creature.
 
-### 2. Import it — the one setting that matters
-Select the imported `.fbx` → **Rig** tab → **Animation Type: Humanoid** → Apply.
+*Alternative:* **`kenney.nl`** (same idea, also free/CC0). For animations, **`mixamo.com`** is free with
+an Adobe account and will auto-rig an unrigged mesh.
+
+---
+
+### Step 1 — open the project
+
+1. Open **Unity Hub**.
+2. Click the row for the **L2Clone** project (`Game.Client.Unity`). Wait for the Editor to finish
+   loading — the bottom-right corner stops showing a spinner.
+
+---
+
+### Step 2 — make the folder the loader reads
+
+The client looks in exactly one place. If the folder is not spelled exactly right, nothing loads and
+there is no error message.
+
+1. Find the **Project** window (bottom-left by default). It is the file browser.
+2. Click the **`Assets`** folder once to select it.
+3. **Right-click `Assets` → Create → Folder.** A new folder appears with its name highlighted for
+   editing. Type **`Resources`** and press **Enter**.
+   - If `Assets/Resources` already exists, skip this and use it.
+4. **Right-click the `Resources` folder you just made → Create → Folder.** Type **`Models`**, Enter.
+
+You should now have **`Assets/Resources/Models`**. Capital `R`, capital `M`, no space, no `s` on Model.
+
+---
+
+### Step 3 — get the `.fbx` into the project
+
+1. Open **File Explorer** and find the `.fbx` you picked in Step 0.
+2. Put the Explorer window and the Unity window side by side.
+3. **Drag the `.fbx` file from Explorer and drop it onto the `Models` folder** in Unity's Project
+   window.
+4. Unity churns for a few seconds ("Importing…"). When it stops, the model appears in `Models` as an
+   item with a small triangle/arrow on its left.
+
+---
+
+### Step 4 — the ONE import setting that matters
+
+1. In the Project window, **click the `.fbx` once** to select it.
+2. Look at the **Inspector** window (right-hand side). Along its top are tabs:
+   **Model | Rig | Animation | Materials**.
+3. Click the **`Rig`** tab.
+4. Find the dropdown labelled **`Animation Type`**. Click it.
+5. Choose **`Humanoid`**.
+6. Click the **`Apply`** button at the bottom-right of the Inspector. Unity re-imports (a few seconds).
+7. A green tick or the word *"Configure…"* appearing under Avatar Definition means it worked.
 
 🔑 **Humanoid, never Generic.** This is the entire reason the art is swappable later: every Mixamo /
-Quaternius / asset-store humanoid retargets onto the same avatar, so replacing a 500-tri body with a
-15k-tri one keeps every animation clip working with **no code change at all**. Generic locks each clip
-to the one skeleton it was authored against, and re-doing that later is the rebuild this whole design
-exists to avoid. (Creatures that are not bipeds stay Generic — there is nothing to retarget them to.)
+Quaternius / asset-store humanoid retargets onto the same avatar, so replacing a 500-triangle body with
+a 15,000-triangle one keeps every animation clip working with **no code change at all**. Generic locks
+each clip to the one skeleton it was authored against, and redoing that later is the rebuild this whole
+design exists to avoid.
 
-### 3. Make the prefab
-Drag the model into the scene, add an **Animator** with a controller, drag it back into
-`Assets/Resources/Models/`, then delete it from the scene.
+⚠ **Creatures that are not bipeds stay Generic** — a spider or a dragon has nothing to retarget to.
+Only pick Humanoid for something with two arms and two legs.
 
-**Name it `humanoid.prefab`** for the first one. That is the universal last-resort key: every player,
-NPC and humanoid mob in the game picks it up at once, which is exactly what a proof of concept wants
-to see before anyone commissions nine families.
+---
 
-The loader walks from most specific to least and takes the first file it finds, so more specific names
-peel groups off later without touching code:
+### Step 5 — put it in the scene (temporarily)
+
+1. **Drag the `.fbx`** from the Project window into the **Hierarchy** window (top-left, the list of
+   things in the scene). Drop it on empty space in that list.
+2. It appears in the Hierarchy as an item with the model's name, and you should see it in the **Scene**
+   view (the big 3D viewport).
+   - **Can't see it?** Click its name in the Hierarchy, move the mouse over the Scene view, and press
+     **`F`** — that frames the camera on the selected object.
+
+---
+
+### Step 6 — set position and scale
+
+The client seats the model's origin on the ground and multiplies by the entity-size slider, so the
+prefab must be authored standing at the origin with its feet at zero.
+
+1. With the object selected in the Hierarchy, look at the **Inspector**. The top block is
+   **`Transform`**.
+2. Set **Position** to `X 0`, `Y 0`, `Z 0` — click each field, select the number, type `0`, press Tab.
+3. Set **Rotation** to `0, 0, 0` the same way.
+4. Look at the model in the Scene view against the grid. **The soles of its feet should sit on the
+   grid line, not above or below it.**
+   - If it is sunk into the ground or floating, that is the model's own pivot. Fix it in Step 7b.
+5. **Scale:** a character should be roughly **1.7–1.8 units tall**. Most Quaternius models import at
+   about the right size with Scale `1, 1, 1`. If yours is enormous or tiny, change all three Scale
+   fields to the same number until it looks about human height against the 1-unit grid squares.
+
+---
+
+### Step 7 — add the Animator
+
+Even with no animations yet, the component must exist or the client cannot drive it later.
+
+1. Keep the object selected in the Hierarchy.
+2. In the Inspector, scroll to the bottom and click **`Add Component`**.
+3. Type **`Animator`** in the search box and click **`Animator`** in the results.
+4. An **Animator** block appears in the Inspector with an empty **`Controller`** field.
+
+That is enough for a first model. **If you have no animation clips, stop here and go to Step 8** — an
+Animator with an empty Controller is fine and the model will simply stand still.
+
+#### 7b — only if the feet were wrong in Step 6
+
+1. In the Hierarchy, **right-click in empty space → Create Empty**. A `GameObject` appears.
+2. Select it, set its Transform **Position to `0,0,0`**.
+3. **Drag your model in the Hierarchy and drop it ON TOP of that `GameObject`** — it becomes indented
+   underneath it (a "child").
+4. Select the **child** (the model) and change only its **Position Y** until the feet sit on the grid.
+5. From now on, **the parent `GameObject` is the thing you turn into the prefab**, not the model.
+
+---
+
+### Step 8 — turn it into the prefab file
+
+1. Make sure the object you want is selected in the **Hierarchy**.
+2. **Drag it from the Hierarchy into the `Assets/Resources/Models` folder** in the Project window.
+3. A new item appears in `Models` with a **blue cube icon** — that is the prefab. The Hierarchy entry
+   turns blue too.
+
+### Step 9 — name it exactly
+
+1. In the Project window, **click the new blue-cube prefab once**, then press **`F2`** (or right-click
+   → Rename).
+2. Type **`humanoid`** — lower case, no capitals, no spaces — and press **Enter**.
+
+The file is now `Assets/Resources/Models/humanoid.prefab`. **That one name is picked up by every
+player, NPC and humanoid mob in the game at once**, which is exactly what a proof of concept wants to
+see before anyone commissions nine families.
+
+⚠ **Do not type the `.prefab` part.** Unity adds it. If the Project window shows the extension, ignore
+it — you are renaming the part before the dot.
+
+### Step 10 — take it back out of the scene
+
+1. In the **Hierarchy**, right-click your object → **Delete**.
+
+The prefab file stays. **This step matters:** leaving it in the scene puts a second copy in the world
+at coordinates 0,0,0 and it will look like a bug later.
+
+2. Press **Ctrl+S** to save the scene.
+
+---
+
+### Step 11 — see it in the game
+
+1. Build and install the APK the usual way (`pwsh tools/publish.ps1` — see
+   [Publishing.md](Publishing.md)). **A new prefab needs a new APK**: `Resources` is compiled into the
+   build, so nothing in the Editor reaches the phone without one.
+2. On the phone, log in.
+3. Open **Settings** and check **`3D models: ON`** (it is the default).
+
+Every character and humanoid mob is now your model instead of a sphere.
+
+⚠ **Toggling `3D models: OFF` returns to spheres instantly.** That is the low-end quality preset, and
+it is also the fastest way to tell whether models are what is costing you frames.
+
+---
+
+### Naming more models later
+
+The loader walks from **most specific to least** and takes the first file it finds, so you peel groups
+off the universal fallback by adding better-named files. **No code changes, ever.**
 
 | File in `Assets/Resources/Models/` | Who uses it |
 |---|---|
@@ -302,11 +460,15 @@ peel groups off later without touching code:
 | `npc.prefab` | every NPC |
 | `humanoid.prefab` | **anything at all that found nothing above** |
 
-Lower-case, exactly as spelled by the enums (`animal`, `humanoid`, `undead`, `insect`, `demon`,
-`dragon`, `plant`, `magiccreature`, `angel` × `melee`, `archer`, `mage`).
+Lower-case, exactly as spelled by the enums: `animal`, `humanoid`, `undead`, `insect`, `demon`,
+`dragon`, `plant`, `magiccreature`, `angel` × `melee`, `archer`, `mage`.
 
-### 4. Animator parameters — all optional
-Name them exactly, and add only the ones you have clips for. Anything missing is simply not driven:
+🔑 **Budget per FAMILY, not per mob.** Nine `mob_<category>` prefabs cover the entire bestiary.
+
+### Animator parameters — all optional
+
+If you do add animation clips, name the Animator's parameters **exactly** as below. Add only the ones
+you have clips for; anything missing is simply not driven and costs nothing.
 
 | Parameter | Type | Driven by |
 |---|---|---|
@@ -315,14 +477,19 @@ Name them exactly, and add only the ones you have clips for. Anything missing is
 | `Casting` | bool | the cast bar (yours) / `MobCastInfo` (theirs) |
 | `Dead` | bool | the entity's `Dead` flag |
 
-### 5. Scale and pivot
-The prefab's **own** scale is what tunes the size — the client multiplies it by the entity-size slider
-and seats the model's origin on the ground. So author the prefab standing at origin, feet at y=0, and
-size it there.
+To add one: select the Controller asset, open **Window → Animation → Animator**, and use the **`+`** in
+the **Parameters** tab on the left.
 
-### 6. Check it
-`Settings → 3D models: ON` (the default). Toggling it OFF returns to spheres instantly — that is the
-low-end quality preset, and it is also the fastest way to see whether models are what is costing frames.
+### When it doesn't work
+
+| What you see | What it is |
+|---|---|
+| Still spheres | The path or the name is wrong. It must be exactly `Assets/Resources/Models/humanoid.prefab` — check the capital `R` and `M`. |
+| Still spheres, name is right | You didn't build a new APK. `Resources` ships inside the build. |
+| Model is enormous or microscopic | Step 6.5 — the prefab's own Scale is what tunes size. |
+| Model is buried in the ground / floating | Step 7b — the model's pivot is not at its feet. |
+| Model lies on its face | Rotation. Select the prefab, set Rotation X to `-90` or `0` and see which stands it up. |
+| It animates in the Editor but not on the phone | `Animation Type` is Generic, not Humanoid. Redo Step 4. |
 
 ## What's in / what's next
 - **In:** connect + auth + character select/create + enter world; the **delta** feed → billboards

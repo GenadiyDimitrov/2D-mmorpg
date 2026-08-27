@@ -1,25 +1,25 @@
 LEARN @ LVL,NAME,TYPE,RANGE,TARGET,CAST s,CD s,DURRATION s,DESCR,MP,SP COST,REPLACES,Comment
 ,,,,,,,,,,,,----------------------------Magic Bolt----------------------------
-1,Magic Bolt,magic active,600,enemy,4,1,0,magic dmg power 12 - spells fail rather than miss,9,0,[]
-7,Magic Bolt,magic active,600,enemy,4,1,0,magic dmg power 15,10,480,[]
-14,Magic Bolt,magic active,600,enemy,4,1,0,magic dmg power 21,15,2200,[]
+1,Magic Bolt,magic active,600,enemy/single,4,1,0,magic dmg power 12 - spells fail rather than miss,9,0,[]
+7,Magic Bolt,magic active,600,enemy/single,4,1,0,magic dmg power 15,10,480,[]
+14,Magic Bolt,magic active,600,enemy/single,4,1,0,magic dmg power 21,15,2200,[]
 ,,,,,,,,,,,,----------------------------Self Heal----------------------------
-1,Self Heal,heal,0,self,5,2,0,restore own HP power 42 - scales with WIT,7,160,[]
-7,Self Heal,heal,0,ally,5,2,0,restore own HP power 67 - scales with WIT,14,480,[]
-14,Self Heal,heal,0,self,5,2,0,rrestore own HP power 107,22,2200,[]
+1,Self Heal,heal,0,self/single,5,2,0,restore own HP power 42 - scales with WIT,7,160,[]
+7,Self Heal,heal,0,self/single,5,2,0,restore own HP power 67 - scales with WIT,14,480,[]
+14,Self Heal,heal,0,self/single,5,2,0,rrestore own HP power 107,22,2200,[]
 ,,,,,,,,,,,,----------------------------Spellcaster Mastery----------------------------
-1,Spellcaster Mastery,passive,0,self,0,0,0,"ARMOR - Robe: cast x1, mpReg x1.2; Light/Heavy/None: cast x0.5, as x0.5. WEAPON - Sword/Blunt: cast x1, mAtk x1; Bow/Dagger/None: cast x0.5, mAtk x0.5, mAcc x0.5. Auto-granted and NEVER replaced - every mage weapon/weight penalty lives here and nowhere else.",0,0,[Weapon Proficiency]
+1,Spellcaster Mastery,passive,0,self/single,0,0,0,"ARMOR - Robe: cast x1, mpReg x1.2; Light/Heavy/None: cast x0.5, as x0.5. WEAPON - Sword/Blunt: cast x1, mAtk x1; Bow/Dagger/None: cast x0.5, mAtk x0.5, mAcc x0.5. Auto-granted and NEVER replaced - every mage weapon/weight penalty lives here and nowhere else.",0,0,[Weapon Proficiency]
 ,,,,,,,,,,,,----------------------------Might----------------------------
-7,Might,buff,600,ally,1,1,1200,+8% PAttack and 20 min,20,960,[]
+7,Might,buff,600,party/single,1,1,1200,+8% PAttack and 20 min,20,960,[]
 ,,,,,,,,,,,,----------------------------Anti-Magic----------------------------
-7,Anti-Magic,passive,0,self,0,0,0,+12 magic defence,0,480,[]
-14,Anti-Magic,passive,0,self,0,0,0,+16 magic defence and 5% chance for spells to fizzle on you,0,2200,[]
+7,Anti-Magic,passive,0,self/single,0,0,0,+12 magic defence,0,480,[]
+14,Anti-Magic,passive,0,self/single,0,0,0,+16 magic defence and 5% chance for spells to fizzle on you,0,2200,[]
 ,,,,,,,,,,,,----------------------------Robe Armor Mastery----------------------------
-7,Robe Armor Mastery,passive,0,self,0,0,0,Robe: pDef +7 (bonus only - the wrong-weight penalty is Spellcaster Mastery's),0,480,[]
-14,Robe Armor Mastery,passive,0,self,0,0,0,Robe: pDef +9 (bonus only - the wrong-weight penalty is Spellcaster Mastery's),0,2200,[]
+7,Robe Armor Mastery,passive,0,self/single,0,0,0,Robe: pDef +7 (bonus only - the wrong-weight penalty is Spellcaster Mastery's),0,480,[]
+14,Robe Armor Mastery,passive,0,self/single,0,0,0,Robe: pDef +9 (bonus only - the wrong-weight penalty is Spellcaster Mastery's),0,2200,[]
 ,,,,,,,,,,,,----------------------------Vampiric Bolt----------------------------
-14,Vampiric Bolt,magic active,750,enemy,4,1,0,drain power 21 - heals you 40% of damage dealt,28,2200,[]
+14,Vampiric Bolt,magic active,750,enemy/single,4,1,0,drain power 21 - heals you 40% of damage dealt,28,2200,[]
 ,,,,,,,,,,,,----------------------------Bulwark----------------------------
-14,Bulwark,buff,600,ally,1,1,1200,+8% PDef for 20 min,20,960,[]
+14,Bulwark,buff,600,party/single,1,1,1200,+8% PDef for 20 min,20,960,[]
 ,,,,,,,,,,,,----------------------------Weapon Mastery----------------------------
-14,Weapon Mastery,passive,0,self,0,0,0,with sword/blunt: +4 M.Atk and +2 P.Atk (no penalty on other weapons - that is Spellcaster Mastery's),0,2200,[]
+14,Weapon Mastery,passive,0,self/single,0,0,0,with sword/blunt: +4 M.Atk and +2 P.Atk (no penalty on other weapons - that is Spellcaster Mastery's),0,2200,[]

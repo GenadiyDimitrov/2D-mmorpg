@@ -1,3 +1,3 @@
 LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,REPLACES,RACE
-40,Prowl,physical active,0,self,0,2,0,Stance: monsters that haven't already noticed you leave you alone. Anything already chasing you keeps chasing. Costs 1 MP per second.,20,3400,[],
-60,Vanish,physical active,0,self,0,120,30,"Vanish completely for 30s — nobody can see or target you, and every monster loses you. Anything but walking ends it.",30,1,[],
+40,Prowl,physical active,0,self/single,0,2,0,Stance: monsters that haven't already noticed you leave you alone. Anything already chasing you keeps chasing. Costs 1 MP per second.,20,3400,[],
+60,Vanish,physical active,0,self/single,0,120,30,"Vanish completely for 30s — nobody can see or target you, and every monster loses you. Anything but walking ends it.",30,1,[],

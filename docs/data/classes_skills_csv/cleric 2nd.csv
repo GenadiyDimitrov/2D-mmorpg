@@ -1,76 +1,76 @@
 LEARN @ LVL,NAME,TYPE,RANGE,TARGET,CAST s,CD s,DURRATION s,DESCR,MP,SP COST,REPLACES,Comment
 ,,,,,,,,,,,,----------------------------Armor Mastery----------------------------
-20,Armor Mastery,Passive,0,self,0,0,0,"Robe: pDef +20, maxMP +20; Light: mpReg x1.2, pDef +20, cast x1.9, as x2 (composes to cast x0.95 / as x1 after Spellcaster Mastery)",0,3200,[Robe Armor Mastery]
-25,Armor Mastery,Passive,0,self,0,0,0,"Robe: pDef +25, maxMP +20; Light: mpReg x1.2, pDef +25, cast x1.9, as x2 (composes to cast x0.95 / as x1 after Spellcaster Mastery)",0,6400,[Robe Armor Mastery]
-30,Armor Mastery,Passive,0,self,0,0,0,"Robe: pDef +30, maxMP +30; Light: mpReg x1.2, pDef +30, cast x1.9, as x2 (composes to cast x0.95 / as x1 after Spellcaster Mastery)",0,12800,[Robe Armor Mastery]
-35,Armor Mastery,Passive,0,self,0,0,0,"Robe: pDef +35, maxMP +30; Light: mpReg x1.2, pDef +35, cast x1.9, as x2 (composes to cast x0.95 / as x1 after Spellcaster Mastery), evasion +2",0,25000,[Robe Armor Mastery]
+20,Armor Mastery,Passive,0,self/single,0,0,0,"Robe: pDef +20, maxMP +20; Light: mpReg x1.2, pDef +20, cast x1.9, as x2 (composes to cast x0.95 / as x1 after Spellcaster Mastery)",0,3200,[Robe Armor Mastery]
+25,Armor Mastery,Passive,0,self/single,0,0,0,"Robe: pDef +25, maxMP +20; Light: mpReg x1.2, pDef +25, cast x1.9, as x2 (composes to cast x0.95 / as x1 after Spellcaster Mastery)",0,6400,[Robe Armor Mastery]
+30,Armor Mastery,Passive,0,self/single,0,0,0,"Robe: pDef +30, maxMP +30; Light: mpReg x1.2, pDef +30, cast x1.9, as x2 (composes to cast x0.95 / as x1 after Spellcaster Mastery)",0,12800,[Robe Armor Mastery]
+35,Armor Mastery,Passive,0,self/single,0,0,0,"Robe: pDef +35, maxMP +30; Light: mpReg x1.2, pDef +35, cast x1.9, as x2 (composes to cast x0.95 / as x1 after Spellcaster Mastery), evasion +2",0,25000,[Robe Armor Mastery]
 ,,,,,,,,,,,,----------------------------Anti magic----------------------------
-20,Anti magic,Passive,0,self,0,0,0,"magic def +20, mRes +5%",0,3200,[]
-25,Anti magic,Passive,0,self,0,0,0,"magic def +25, mRes +5%",0,6400,[]
-30,Anti magic,Passive,0,self,0,0,0,"magic def +30, mRes +10%",0,12800,[]
-35,Anti magic,Passive,0,self,0,0,0,"magic def +36, mRes +10%",0,25000,[]
+20,Anti magic,Passive,0,self/single,0,0,0,"magic def +20, mRes +5%",0,3200,[]
+25,Anti magic,Passive,0,self/single,0,0,0,"magic def +25, mRes +5%",0,6400,[]
+30,Anti magic,Passive,0,self/single,0,0,0,"magic def +30, mRes +10%",0,12800,[]
+35,Anti magic,Passive,0,self/single,0,0,0,"magic def +36, mRes +10%",0,25000,[]
 ,,,,,,,,,,,,----------------------------Spell Mastery----------------------------
-20,Spell Mastery,Passive,0,self,0,0,0,"with sword/blunt Decreses the reuse delay with 10%, mAtk +6, pAtk +4",0,3200,[Weapon mastery]
-25,Spell Mastery,Passive,0,self,0,0,0,"with sword/blunt Decreses the reuse delay with 10%, mAtk +8, pAtk +6, mpReg +1.1, cast speed x1.05",0,6400,[Weapon mastery]
-30,Spell Mastery,Passive,0,self,0,0,0,"with sword/blunt Decreses the reuse delay with 10%, mAtk +10, pAtk +8, mpReg +1.1, cast speed x1.05",0,12800,[Weapon mastery]
-35,Spell Mastery,Passive,0,self,0,0,0,"with sword/blunt Decreses the reuse delay with 10%, mAtk +12, pAtk +10, mpReg +1.5,hpReg +1.1, cast speed x1.05",0,25000,[Weapon mastery]
+20,Spell Mastery,Passive,0,self/single,0,0,0,"with sword/blunt Decreses the reuse delay with 10%, mAtk +6, pAtk +4",0,3200,[Weapon mastery]
+25,Spell Mastery,Passive,0,self/single,0,0,0,"with sword/blunt Decreses the reuse delay with 10%, mAtk +8, pAtk +6, mpReg +1.1, cast speed x1.05",0,6400,[Weapon mastery]
+30,Spell Mastery,Passive,0,self/single,0,0,0,"with sword/blunt Decreses the reuse delay with 10%, mAtk +10, pAtk +8, mpReg +1.1, cast speed x1.05",0,12800,[Weapon mastery]
+35,Spell Mastery,Passive,0,self/single,0,0,0,"with sword/blunt Decreses the reuse delay with 10%, mAtk +12, pAtk +10, mpReg +1.5,hpReg +1.1, cast speed x1.05",0,25000,[Weapon mastery]
 ,,,,,,,,,,,,----------------------------Holy Bolt----------------------------
-20,Holy Bolt,Magic/Dmg,750,enemy,4,1,0,m.Atk +21,20,3200,[Magic Bolt]
-25,Holy Bolt,Magic/Dmg,750,enemy,4,1,0,m.Atk +25,23,6400,[Magic Bolt]
-30,Holy Bolt,Magic/Dmg,750,enemy,4,1,0,m.Atk +30,26,12800,[Magic Bolt]
-35,Holy Bolt,Magic/Dmg,750,enemy,4,1,0,m.Atk +36,31,25000,[Magic Bolt]
+20,Holy Bolt,Magic/Dmg,750,enemy/single,4,1,0,m.Atk +21,20,3200,[Magic Bolt]
+25,Holy Bolt,Magic/Dmg,750,enemy/single,4,1,0,m.Atk +25,23,6400,[Magic Bolt]
+30,Holy Bolt,Magic/Dmg,750,enemy/single,4,1,0,m.Atk +30,26,12800,[Magic Bolt]
+35,Holy Bolt,Magic/Dmg,750,enemy/single,4,1,0,m.Atk +36,31,25000,[Magic Bolt]
 ,,,,,,,,,,,,----------------------------Heal----------------------------
-20,Heal,Magic/Heal,600,self/target,5,2,0,heal with power 151,30,3200,[Self Heal]
-25,Heal,Magic/Heal,600,self/target,5,2,0,heal with power 195,38,6400,[]
-30,Heal,Magic/Heal,600,self/target,5,2,0,heal with power 245,44,12800,[]
-35,Heal,Magic/Heal,600,self/target,5,2,0,heal with power 301,52,25000,[]
+20,Heal,Magic/Heal,600,target/single,5,2,0,heal with power 151,30,3200,[Self Heal]
+25,Heal,Magic/Heal,600,target/single,5,2,0,heal with power 195,38,6400,[]
+30,Heal,Magic/Heal,600,target/single,5,2,0,heal with power 245,44,12800,[]
+35,Heal,Magic/Heal,600,target/single,5,2,0,heal with power 301,52,25000,[]
 ,,,,,,,,,,,,----------------------------Quick Heal----------------------------
-20,Quick Heal,Magic/Heal,600,self/target,2,1,0,heal with power 151,45,3200,[]
-25,Quick Heal,Magic/Heal,600,self/target,2,1,0,heal with power 195,57,6400,[]
-30,Quick Heal,Magic/Heal,600,self/target,2,1,0,heal with power 245,65,12800,[]
-35,Quick Heal,Magic/Heal,600,self/target,2,1,0,heal with power 301,67,25000,[]
+20,Quick Heal,Magic/Heal,600,target/single,2,1,0,heal with power 151,45,3200,[]
+25,Quick Heal,Magic/Heal,600,target/single,2,1,0,heal with power 195,57,6400,[]
+30,Quick Heal,Magic/Heal,600,target/single,2,1,0,heal with power 245,65,12800,[]
+35,Quick Heal,Magic/Heal,600,target/single,2,1,0,heal with power 301,67,25000,[]
 ,,,,,,,,,,,,----------------------------Party Heal----------------------------
-20,Party Heal,Magic/Heal,600,self/party,7,5,0,heal party with power 121,60,3200,[]
-25,Party Heal,Magic/Heal,600,self/party,7,5,0,heal party with power 156,76,6400,[]
-30,Party Heal,Magic/Heal,600,self/party,7,5,0,heal party with power 196,94,12800,[]
-35,Party Heal,Magic/Heal,600,self/party,7,5,0,heal party with power 241,96,25000,[]
+20,Party Heal,Magic/Heal,600,party/aoe,7,5,0,heal party with power 121,60,3200,[]
+25,Party Heal,Magic/Heal,600,party/aoe,7,5,0,heal party with power 156,76,6400,[]
+30,Party Heal,Magic/Heal,600,party/aoe,7,5,0,heal party with power 196,94,12800,[]
+35,Party Heal,Magic/Heal,600,party/aoe,7,5,0,heal party with power 241,96,25000,[]
 ,,,,,,,,,,,,----------------------------Antidote----------------------------
-20,Antidote,Magic/Heal,600,self/target,0.8,3,0,"Cures poison, venom and bleed of rank 1 or lower from an ally (or self).",16,3200,[]
-35,Antidote,Magic/Heal,600,self/target,0.8,3,0,"Cures poison, venom and bleed of rank 2 or lower from an ally (or self).",20,25000,[]
+20,Antidote,Magic/Heal,600,party/single,0.8,3,0,"Cures poison, venom and bleed of rank 1 or lower from an ally (or self).",16,3200,[]
+35,Antidote,Magic/Heal,600,party/single,0.8,3,0,"Cures poison, venom and bleed of rank 2 or lower from an ally (or self).",20,25000,[]
 ,,,,,,,,,,,,----------------------------Resurrection----------------------------
-20,Resurrection,Magic/Heal,600,dead ally,10,10,0,Revive at 30% HP/MP. Does not give back any lost exp.,60,1700,[]
-30,Resurrection,Magic/Heal,600,dead ally,10,10,0,Revive at 30% HP/MP; restore 20% of lost exp.,90,12800,[]
+20,Resurrection,Magic/Heal,600,target/single,10,10,0,Revive at 30% HP/MP. Does not give back any lost exp.,60,1700,[]
+30,Resurrection,Magic/Heal,600,target/single,10,10,0,Revive at 30% HP/MP; restore 20% of lost exp.,90,12800,[]
 ,,,,,,,,,,,,----------------------------Might----------------------------
-20,Might,Magic/Buff,600,self/target,1,1,1200,+12% P.Atk.,20,1700,[]
+20,Might,Magic/Buff,600,party/single,1,1,1200,+12% P.Atk.,20,1700,[]
 ,,,,,,,,,,,,----------------------------Swift----------------------------
-20,Swift,Magic/Buff,600,self/target,1,1,1200,+20 Move Speed.,20,1700,[]
-30,Swift,Magic/Buff,600,self/target,1,1,1200,+33 Move Speed.,33,6400,[]
+20,Swift,Magic/Buff,600,party/single,1,1,1200,+20 Move Speed.,20,1700,[]
+30,Swift,Magic/Buff,600,party/single,1,1,1200,+33 Move Speed.,33,6400,[]
 ,,,,,,,,,,,,----------------------------Alacrity----------------------------
-20,Alacrity,Magic/Buff,600,self/target,1,1,1200,+15% Cast Speed.,20,1700,[]
-35,Alacrity,Magic/Buff,600,self/target,1,1,1200,+23% Cast Speed.,40,12800,[]
+20,Alacrity,Magic/Buff,600,party/single,1,1,1200,+15% Cast Speed.,20,1700,[]
+35,Alacrity,Magic/Buff,600,party/single,1,1,1200,+23% Cast Speed.,40,12800,[]
 ,,,,,,,,,,,,----------------------------Resolve----------------------------
-20,Resolve,Magic/Buff,600,self/target,1,1,1200,+18% interrupt resistance.,20,1700,[]
-25,Resolve,Magic/Buff,600,self/target,1,1,1200,+25% interrupt resistance.,26,3200,[]
+20,Resolve,Magic/Buff,600,party/single,1,1,1200,+18% interrupt resistance.,20,1700,[]
+25,Resolve,Magic/Buff,600,party/single,1,1,1200,+25% interrupt resistance.,26,3200,[]
 ,,,,,,,,,,,,----------------------------Bulwark----------------------------
-25,Bulwark,Magic/Buff,600,self/target,1,1,1200,+12% P.Def.,26,3200,[]
+25,Bulwark,Magic/Buff,600,party/single,1,1,1200,+12% P.Def.,26,3200,[]
 ,,,,,,,,,,,,----------------------------Clarity----------------------------
-25,Clarity,Magic/Buff,600,self/target,1,1,1200,20% resist to SPT debuffs,26,3200,[]
+25,Clarity,Magic/Buff,600,party/single,1,1,1200,20% resist to SPT debuffs,26,3200,[]
 ,,,,,,,,,,,,----------------------------Force----------------------------
-25,Force,Magic/Buff,600,self/target,1,1,1200,+25% M.Atk.,26,3200,[]
+25,Force,Magic/Buff,600,party/single,1,1,1200,+25% M.Atk.,26,3200,[]
 ,,,,,,,,,,,,----------------------------Focus----------------------------
-25,Focus,Magic/Buff,600,self/target,1,1,1200,+20% critical rate.,26,3200,[]
+25,Focus,Magic/Buff,600,party/single,1,1,1200,+20% critical rate.,26,3200,[]
 ,,,,,,,,,,,,----------------------------Restore Mana----------------------------
-30,Restore Mana,Magic/Heal,600,ally,2,2,0,Transfers 52 MP to an ally (costs 52). Not on yourself or another mana-restorer.,52,12800,[]
-35,Restore Mana,Magic/Heal,600,ally,2,2,0,Transfers 60 MP to an ally (costs 60). Not on yourself or another mana-restorer.,60,25000,[]
+30,Restore Mana,Magic/Heal,600,party/single,2,2,0,Transfers 52 MP to an ally (costs 52). Not on yourself or another mana-restorer.,52,12800,[]
+35,Restore Mana,Magic/Heal,600,party/single,2,2,0,Transfers 60 MP to an ally (costs 60). Not on yourself or another mana-restorer.,60,25000,[]
 ,,,,,,,,,,,,----------------------------Vampirism----------------------------
-30,Vampirism,Magic/Buff,600,self/target,1,1,1200,+6% melee vampirism.,33,6400,[]
+30,Vampirism,Magic/Buff,600,party/single,1,1,1200,+6% melee vampirism.,33,6400,[]
 ,,,,,,,,,,,,----------------------------Agility----------------------------
-30,Agility,Magic/Buff,600,self/target,1,1,1200,+2 Evasion.,33,6400,[]
+30,Agility,Magic/Buff,600,party/single,1,1,1200,+2 Evasion.,33,6400,[]
 ,,,,,,,,,,,,----------------------------Aim----------------------------
-30,Aim,Magic/Buff,600,self/target,1,1,1200,+1 Accuracy.,30,6400,[]
+30,Aim,Magic/Buff,600,party/single,1,1,1200,+1 Accuracy.,30,6400,[]
 ,,,,,,,,,,,,----------------------------Vigor----------------------------
-35,Vigor,Magic/Buff,600,self/target,1,1,1200,+10% HP regeneration.,40,12800,[]
+35,Vigor,Magic/Buff,600,party/single,1,1,1200,+10% HP regeneration.,40,12800,[]
 ,,,,,,,,,,,,----------------------------Ward----------------------------
-35,Ward,Magic/Buff,600,self/target,1,1,1200,+10% M.Def.,40,12800,[]
+35,Ward,Magic/Buff,600,party/single,1,1,1200,+10% M.Def.,40,12800,[]
 ,,,,,,,,,,,,----------------------------Frenzy----------------------------
-35,Frenzy,Magic/Buff,600,self/target,1,1,1200,"−7% Max HP/MP, +5% offence and speed, +5 move, −5 evasion.",40,12800,[]
+35,Frenzy,Magic/Buff,600,party/single,1,1,1200,"−7% Max HP/MP, +5% offence and speed, +5 move, −5 evasion.",40,12800,[]

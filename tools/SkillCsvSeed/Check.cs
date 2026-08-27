@@ -102,9 +102,15 @@ internal static class Check
     /// <see cref="Descr"/>. Empty on the code side, which carries <paramref name="Def"/> instead.</param>
     /// <param name="Def">The registered skill (code side only), so the DESCR pass can resolve what the
     /// game actually carries at <paramref name="SkillLevel"/>.</param>
+    /// <param name="Target">The `TARGET` column in his `[scope]/[breadth]` scheme (2026-08-27) —
+    /// `self|target|party|enemy` / `single|aoe`. Compared like every other cell, on his own
+    /// instruction: *"--check should read target after i check them and if i made a change"*. On the
+    /// code side it is derived from the real `SkillDef` by <see cref="Retarget.FromDef"/>, so the two
+    /// sides can never drift without this saying so.</param>
     private sealed record Rung(string Name, int LearnLevel, float Range, float Cast, float Cd,
                                float Duration, int Mp, int Sp,
-                               string Descr = "", SkillDef? Def = null, int SkillLevel = 1);
+                               string Descr = "", SkillDef? Def = null, int SkillLevel = 1,
+                               string Target = "");
 
     public static int Run(string dir)
     {
@@ -160,7 +166,8 @@ internal static class Check
             // onto a real one and reported five invented mismatches. A row with no NAME is not a rung.
             if (f[1].Trim().Length == 0) continue;
             rows.Add(new Rung(f[1].Trim(), I(f[0]), F(f[3]), F(f[5]), F(f[6]), F(f[7]),
-                              I(f[9]), I(f[10]), Descr: f[8].Trim()));
+                              I(f[9]), I(f[10]), Descr: f[8].Trim(),
+                              Target: f[4].Trim().ToLowerInvariant()));
         }
         return rows;
     }
@@ -234,7 +241,8 @@ internal static class Check
                     def.RangeAt(cs.SkillLevel), def.CastTicksAt(cs.SkillLevel) / 10f, cooldown,
                     duration,
                     def.MpCostAt(cs.SkillLevel),
-                    cs.SpCostFor(def), Def: def, SkillLevel: cs.SkillLevel));
+                    cs.SpCostFor(def), Def: def, SkillLevel: cs.SkillLevel,
+                    Target: Retarget.FromDef(def)));
             }
         return rows;
     }
@@ -323,6 +331,13 @@ internal static class Check
                 Cmp(diffs, "duration",  a[i].Duration,   b[i].Duration);
                 Cmp(diffs, "mp total",  a[i].Mp,         b[i].Mp);
                 Cmp(diffs, "sp",        a[i].Sp,         b[i].Sp);
+                // TARGET, his `[scope]/[breadth]` column. Skipped when the cell is EMPTY — a placeholder
+                // file that never filled it in is not a mismatch, it is an unauthored row — but any
+                // authored value is held to the SkillDef. That is the whole point of the column being
+                // checkable: he edits a row, this says whether the engine agrees.
+                if (a[i].Target.Length > 0 && b[i].Target.Length > 0
+                    && !string.Equals(a[i].Target, b[i].Target, StringComparison.Ordinal))
+                    diffs.Add($"target CSV '{a[i].Target}' vs code '{b[i].Target}'");
                 if (diffs.Count > 0)
                 {
                     Console.WriteLine($"  🟡 {label} rung {i + 1} (CSV lvl {a[i].LearnLevel}): " +
