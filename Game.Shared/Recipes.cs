@@ -411,6 +411,12 @@ public static class RecipeCatalog
         yield return Potion(ItemCatalog.DashPotionE, 4, 3);
         // L5 — Rare HP + Legendary dash.
         yield return Potion(ItemCatalog.GreaterPotion, 5, 5);
+        // The RARE MANA potion sits beside it, on the same rung (owner, 2026-08-27: *"only shop
+        // common/uncommon - rare apothecary crafter"*). Same rarity, same rung, same input rarity —
+        // the mana line's top is the HP line's top, not a new stride. The Common and Uncommon mana
+        // potions are deliberately NOT here: those are the shop's, and mana potions do not drop at
+        // all, so the Potion Master is the only source of the strong one.
+        yield return Potion(ItemCatalog.GreaterManaPotion, 5, 5);
         yield return Potion(ItemCatalog.DashPotionL, 5, 3);
         // L6 — Mythic dash, plus the Instant (panic) potion as the top of the HP line.
         //

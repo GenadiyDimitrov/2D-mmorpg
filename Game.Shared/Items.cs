@@ -459,8 +459,9 @@ public static class ItemCatalog
     // ----- MANA potions (2026-08-27). The same shape as the healing ladder — a per-second restore
     //       over a fixed window, three rarities, each with its OWN drink cooldown — plus one rule
     //       the healing potions do not have: PVE ONLY. His numbers, verbatim: *"20/50/100 15s-up/
-    //       30s-cd"*, and the SOURCES mirror healing too: *"Common in shop / uncommon shop / rare
-    //       drop"*.
+    //       30s-cd"*. His SOURCES, 2026-08-27: *"only shop common/uncommon - rare apothecary
+    //       crafter"* — so unlike the healing ladder these do NOT drop at ALL. Common and Uncommon
+    //       are the Apothecary shelf; the Rare is the Potion Master's L5 recipe (Recipes.cs).
     //
     //       ⚠ THE DURATION IS DELIBERATELY UNDER THE COOLDOWN. The Rare HEALING potion runs 30s on
     //       a 20s reuse, i.e. permanent uptime, so its "150 HP/s" really is 150 HP/s forever. 15s
@@ -906,7 +907,8 @@ public static class ItemCatalog
         //
         //       ⚠ Priced well above the healing ladder per drink, because a drink is worth far more:
         //       the Uncommon returns 750 MP, which at level 43 is HALF a caster's entire bar. The
-        //       Rare stays off the shelf for the same reason the Rare healing potion does.
+        //       Rare stays off the shelf for the same reason the Rare healing potion does — it is the
+        //       Potion Master's L5 recipe, beside the Rare healing potion, and the ONLY way to get one.
         list.Add(new ItemDef(MinorManaPotion, "Common Mana Potion", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Common,
             UseSkillId: SkillCatalog.PotManaMinor, PotionCooldownTicks: 300, PveOnly: true, Value: 100,

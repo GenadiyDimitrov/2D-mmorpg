@@ -21,7 +21,7 @@ uncommon shop / rare drop"*.
 |---|---|---|---|---|---|
 | Common Mana Potion | 20 MP/s | 15s | 30s | **10 MP/s** | Apothecary, 100 gold |
 | Uncommon Mana Potion | 50 MP/s | 15s | 30s | **25 MP/s** | Apothecary, 400 gold |
-| Rare Mana Potion | 100 MP/s | 15s | 30s | **50 MP/s** | drops only |
+| Rare Mana Potion | 100 MP/s | 15s | 30s | **50 MP/s** | Potion Master, craft L5 |
 
 ⚠ **The window is deliberately SHORTER than the reuse, which the healing ladder is not.** The Rare
 Healing Potion runs 30s on a 20s reuse — permanent uptime, so its "150 HP/s" really is 150 HP/s
@@ -59,9 +59,12 @@ the auto-hunt's HP line can no longer drink your mana potions to top up a bar th
 client's MP slider in the auto-hunt Potions tab has been sending `MpPotionPct` all along and starts
 working with no client change.
 
-Drops ride the healing ladder's tier floors (Uncommon not before 40, Rare not before 61) at **half its
-weights** — that group is a deliberately throttled faucet (playtest-17 cut it ~2.5×), and a second
-full ladder would have quietly undone the cut.
+**Mana potions do NOT drop at all**, unlike the healing ladder. Owner, correcting his first answer
+mid-build: *"can u make mp pots not drop sory"*, then *"only shop common/uncommon - rare apothecary
+crafter"*. So there are exactly two sources and no faucet: the **Apothecary shelf** for Common and
+Uncommon, and the **Potion Master's L5 recipe** for the Rare — filed beside the Rare healing potion,
+same rarity, same rung, same input rarity, so the mana line's top is the HP line's top rather than a
+new stride. That also keeps the "always" drop group at the size playtest-17 deliberately cut it to.
 
 ### `BalanceMatrix --mpcase` — the level-43 ork healer, and what it rules out
 

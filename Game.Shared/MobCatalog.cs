@@ -884,17 +884,6 @@ public static class MobCatalog
         string potHigh = level >= 61 ? ItemCatalog.GreaterPotion
                        : level >= 40 ? ItemCatalog.HealingPotion
                        : ItemCatalog.MinorPotion;
-        // MANA potions ride the same tier floors and the same group (owner, 2026-08-27: the Rare tier
-        // is *"rare drop"*, and the two below it drop alongside the healing ladder).
-        //
-        // ⚠ AT HALF THE HEALING WEIGHTS, ON PURPOSE. This group is a deliberately throttled faucet —
-        // playtest-17 cut it ~2.5x because it was handing out 320 healing potions by level 23 — so
-        // adding a second full ladder would quietly undo that cut. Half keeps the group's firing rate
-        // roughly where he tuned it while making mana potions a real drop.
-        string manaLow  = level >= 61 ? ItemCatalog.ManaPotion : ItemCatalog.MinorManaPotion;
-        string manaHigh = level >= 61 ? ItemCatalog.GreaterManaPotion
-                        : level >= 40 ? ItemCatalog.ManaPotion
-                        : ItemCatalog.MinorManaPotion;
         bool topLevel = level >= 75;
         // ⚠ POTIONS ARE A MINORITY OF THIS GROUP (owner, 2026-07-31, playtest-15). The group still fires
         // on EVERY kill — he explicitly liked never having to buy basic potions again (30f passed) — so
@@ -926,16 +915,13 @@ public static class MobCatalog
         if (!topLevel)
         {
             Always(potLow,  0.020f); Always(ItemCatalog.ScrollReturn,    0.025f);
-            Always(manaLow, 0.010f); Always(manaHigh, 0.005f);
             Always(potHigh, 0.010f); Always(ItemCatalog.ScrollResurrect, 0.0025f);
         }
         else
         {
             Always(potLow,  0.015f); Always(ItemCatalog.ScrollReturn,    0.020f);
-            Always(manaLow, 0.0075f); Always(manaHigh, 0.005f);
             Always(potHigh, 0.010f); Always(ItemCatalog.ScrollResurrect, 0.0020f);
             Always(ItemCatalog.GreaterPotion,           0.002f);
-            Always(ItemCatalog.GreaterManaPotion,       0.001f);
             Always(ItemCatalog.ScrollReturnUltimate,    0.0015f);
             Always(ItemCatalog.ScrollResurrectUltimate, 0.00015f);
         }
