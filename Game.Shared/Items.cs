@@ -458,19 +458,24 @@ public static class ItemCatalog
     public const string InstantPotion = "potion_instant";  // Instant %-heal panic potion
     // ----- MANA potions (2026-08-27). The same shape as the healing ladder — a per-second restore
     //       over a fixed window, three rarities, each with its OWN drink cooldown — plus one rule
-    //       the healing potions do not have: PVE ONLY. His numbers, verbatim: *"20/50/100 15s-up/
-    //       30s-cd"*. His SOURCES, 2026-08-27: *"only shop common/uncommon - rare apothecary
-    //       crafter"* — so unlike the healing ladder these do NOT drop at ALL. Common and Uncommon
-    //       are the Apothecary shelf; the Rare is the Potion Master's L5 recipe (Recipes.cs).
+    //       the healing potions do not have: PVE ONLY. His SOURCES, 2026-08-27: *"only shop
+    //       common/uncommon - rare apothecary crafter"* — so unlike the healing ladder these do
+    //       NOT drop at ALL. Common and Uncommon are the Apothecary shelf; the Rare is the Potion
+    //       Master's L5 recipe (Recipes.cs).
     //
-    //       ⚠ THE DURATION IS DELIBERATELY UNDER THE COOLDOWN. The Rare HEALING potion runs 30s on
-    //       a 20s reuse, i.e. permanent uptime, so its "150 HP/s" really is 150 HP/s forever. 15s
-    //       up on a 30s reuse is a 50% duty cycle, so these deliver 10 / 25 / 50 MP/s SUSTAINED —
-    //       which is what the measurement (`BalanceMatrix --mpdrain`) sized them against, not the
-    //       sticker number.
+    //       🔑 THE RATE COLUMN **IS** THE HEALING LADDER'S (owner, 2026-08-27: *"so healing are
+    //       20/70/150 and we match that just 15/30 cycle"*). Read them off PotHealMinor / PotHeal /
+    //       PotHealGreater in Skills.Common.cs — if the healing ladder is ever retuned, this one
+    //       moves with it. ⚠ This SUPERSEDES the shipped-and-replaced 20/50/100 of 0.92.0.
+    //
+    //       ⚠ THE DURATION IS DELIBERATELY UNDER THE COOLDOWN — the ONE thing that differs from the
+    //       healing ladder besides price. The Rare HEALING potion runs 30s on a 20s reuse, i.e.
+    //       permanent uptime, so its "150 HP/s" really is 150 HP/s forever. 15s up on a 30s reuse is
+    //       a 50% duty cycle, so these deliver 10 / 35 / 75 MP/s SUSTAINED — which is what the
+    //       measurement (`BalanceMatrix --mpdrain` / `--mpnpc`) sizes them against, not the sticker.
     public const string MinorManaPotion   = "potion_mana_minor";     // Common,    20 MP/s
-    public const string ManaPotion        = "potion_mana";           // Uncommon,  50 MP/s
-    public const string GreaterManaPotion = "potion_mana_greater";   // Rare,     100 MP/s
+    public const string ManaPotion        = "potion_mana";           // Uncommon,  70 MP/s
+    public const string GreaterManaPotion = "potion_mana_greater";   // Rare,     150 MP/s
     // ---- Buff potions and scrolls. ⚠ REWORKED, playtest-17 E3 (owner, 2026-08-03; built 2026-08-05).
     //      The shape is now: **the potion is what you FIND, the scroll is what you BUY**, and they no
     //      longer mirror each other rung for rung.
@@ -901,33 +906,36 @@ public static class ItemCatalog
             ItemGrade.F, ItemRarity.Rare,
             UseSkillId: SkillCatalog.PotHealInstant, PotionCooldownTicks: 600, Value: 5000));
 
-        // ----- MANA potions. Three rarities, 20/50/100 MP per second for 15s, each on its own 30s
+        // ----- MANA potions. Three rarities, 20/70/150 MP per second for 15s, each on its own 30s
         //       drink cooldown (owner, 2026-08-27). PveOnly: the drink is refused while flagged or
         //       PK; an already-running one is never stripped.
         //
-        //       ⚠ DEARER THAN THE HEALING LADDER AT EVERY RUNG, and that is his ruling, 2026-08-27:
-        //       *"buy prices 500 common , 1500 uncommon in shop .. higher then hp pots"*. Against the
-        //       healing shelf's 60 / 250 that is 8.3x and 6x. It is not arbitrary — a drink is worth
-        //       far more: the Uncommon returns 750 MP, which at level 43 is HALF a caster's entire
-        //       bar, where an Uncommon healing potion returns 1050 HP against a much larger pool.
+        //       🔑 THE LADDER MIRRORS HEALING, THE PRICE IS DOUBLE IT (owner, 2026-08-27: *"so
+        //       healing are 20/70/150 and we match that just 15/30 cycle … and price is double of
+        //       the healing"*). Healing is 60 / 250 / 1500, so mana is 120 / 500 / 3000. ⚠ This
+        //       SUPERSEDES his earlier *"500 common, 1500 uncommon"* — newest ruling wins, and the
+        //       Rare is no longer my invention either: it is 2x the Rare healing potion like the
+        //       other two. His own check on the middle rung: *"60k/hour for uncommon is ok"*
+        //       (500 x 2 drinks/min x 60).
         //
-        //       ⚠ The Rare's 4,500 is MINE, not his — he priced the two SHOP rungs only. It keeps his
-        //       x3 stride (500 → 1500 → 4500); at 2,500 the ladder would have flattened to x1.67 at the
-        //       top. It is craft-only, so the number is only ever a SELL price (buy/25 = 180 gold).
-        //       Rare stays off the shelf for the same reason the Rare healing potion does — it is the
-        //       Potion Master's L5 recipe, beside the Rare healing potion, and the ONLY way to get one.
+        //       🔑 WHY MANA IS DEARER THAN HP AT ALL, given the identical rate: *"common/uncommon
+        //       healing potions are dropped so u dont spend there … u need to buy mp pots"*. Mana
+        //       potions do NOT drop anywhere in the game — the price pays for the missing faucet,
+        //       not for potency. Rare stays off the shelf for the same reason the Rare healing
+        //       potion does — it is the Potion Master's L5 recipe, and the ONLY way to get one;
+        //       *"its raiding support item that is economy player trade only"*.
         list.Add(new ItemDef(MinorManaPotion, "Common Mana Potion", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Common,
-            UseSkillId: SkillCatalog.PotManaMinor, PotionCooldownTicks: 300, PveOnly: true, Value: 500,
+            UseSkillId: SkillCatalog.PotManaMinor, PotionCooldownTicks: 300, PveOnly: true, Value: 120,
             Description: "Restores 20 MP per second for 15s. Cannot be drunk while flagged for PvP."));
         list.Add(new ItemDef(ManaPotion, "Uncommon Mana Potion", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Uncommon,
-            UseSkillId: SkillCatalog.PotMana, PotionCooldownTicks: 300, PveOnly: true, Value: 1500,
-            Description: "Restores 50 MP per second for 15s. Cannot be drunk while flagged for PvP."));
+            UseSkillId: SkillCatalog.PotMana, PotionCooldownTicks: 300, PveOnly: true, Value: 500,
+            Description: "Restores 70 MP per second for 15s. Cannot be drunk while flagged for PvP."));
         list.Add(new ItemDef(GreaterManaPotion, "Rare Mana Potion", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Rare,
-            UseSkillId: SkillCatalog.PotManaGreater, PotionCooldownTicks: 300, PveOnly: true, Value: 4500,
-            Description: "Restores 100 MP per second for 15s. Cannot be drunk while flagged for PvP."));
+            UseSkillId: SkillCatalog.PotManaGreater, PotionCooldownTicks: 300, PveOnly: true, Value: 3000,
+            Description: "Restores 150 MP per second for 15s. Cannot be drunk while flagged for PvP."));
 
         // ----- RUNES + their boxes. The rune is HELD (not equipped/consumed): while it's in the main
         // inventory and unexpired the reconciliation loop keeps its buff up. Tradable:false (can't sell/

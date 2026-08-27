@@ -552,15 +552,15 @@ public static partial class SkillCatalog
         new(PotMana, "Uncommon Mana", BaseClass.Fighter, SkillEffect.RestoreMp,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             DurationTicks: 150, BuffKey: "potion_mana", Rank: 2, CountsTowardBuffLimit: false,
-            Magnitudes: new EffectMagnitude[] { new(SkillEffect.RestoreMp, 50f, ModifierMode.Flat) },
+            Magnitudes: new EffectMagnitude[] { new(SkillEffect.RestoreMp, 70f, ModifierMode.Flat) },
             Category: SkillCategory.Buff, BuffRow: BuffRow.Consumable,
-            Description: "Restores 50 MP per second for 15s."),
+            Description: "Restores 70 MP per second for 15s."),
         new(PotManaGreater, "Rare Mana", BaseClass.Fighter, SkillEffect.RestoreMp,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             DurationTicks: 150, BuffKey: "potion_mana", Rank: 3, CountsTowardBuffLimit: false,
-            Magnitudes: new EffectMagnitude[] { new(SkillEffect.RestoreMp, 100f, ModifierMode.Flat) },
+            Magnitudes: new EffectMagnitude[] { new(SkillEffect.RestoreMp, 150f, ModifierMode.Flat) },
             Category: SkillCategory.Buff, BuffRow: BuffRow.Consumable,
-            Description: "Restores 100 MP per second for 15s."),
+            Description: "Restores 150 MP per second for 15s."),
 
         // ----- RUNE buffs. Applied/kept by the rune reconciliation while a matching rune sits in the
         //       main inventory unexpired; its remaining time is driven by the item's wall-clock expiry, so

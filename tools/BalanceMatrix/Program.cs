@@ -5134,7 +5134,7 @@ static void MpNpc()
     Console.WriteLine("  the pool 35% and the regen 20%, and raises the drain by more than either.");
     Console.WriteLine();
     Console.WriteLine("  🔑 'empties' is unbroken casting from FULL with no potion. Against it, a potion tier's");
-    Console.WriteLine("  SUSTAINED rate (Common 10 / Uncommon 25 / Rare 50 MP/s) is what actually has to cover");
+    Console.WriteLine("  SUSTAINED rate (half the sticker - see the table below) is what actually has to cover");
     Console.WriteLine("  the 'net' column - not its sticker number.");
     Console.WriteLine();
     // ---- WHAT ACTUALLY COVERS IT, AND WHAT THAT COSTS -----------------------------------------
@@ -5142,20 +5142,33 @@ static void MpNpc()
     // The 'net' column is the question a potion has to answer, and a potion answers it at its
     // SUSTAINED rate (15s up on a 30s reuse = half the sticker), not its sticker. The gold column is
     // the other half of the decision: a 30s reuse means TWO drinks a minute, for as long as you farm.
+    //
+    // ⚠ EVERY NUMBER HERE IS READ OFF THE CATALOG, never typed. The table was hard-coded to the
+    // 0.92.0 ladder (20/50/100 at 500/1500/4500) and went stale the day he retuned it; the rate
+    // lives on the potion's SKILL (the RestoreMp Flat magnitude = MP per second) and the price on
+    // the ITEM, so both are looked up.
     Console.WriteLine("--- WHAT COVERS THE NET, AND WHAT IT COSTS TO HOLD ---");
     Console.WriteLine();
     Console.WriteLine("   tier        sticker  sustained   buy   gold/min (2 drinks)   gold/hour");
     Console.WriteLine("  ---------------------------------------------------------------------------");
-    foreach (var (name, sticker, buy) in new[] {
-        ("Common",   20, 500), ("Uncommon", 50, 1500), ("Rare", 100, 4500) })
-        Console.WriteLine($"   {name,-10} {sticker,6} MP/s {sticker / 2,7} MP/s {buy,6} {buy * 2,15:N0} {buy * 120,13:N0}");
+    foreach (var (name, itemId) in new[] {
+        ("Common",   ItemCatalog.MinorManaPotion),
+        ("Uncommon", ItemCatalog.ManaPotion),
+        ("Rare",     ItemCatalog.GreaterManaPotion) })
+    {
+        var item = ItemCatalog.Get(itemId)!;
+        var skill = SkillCatalog.Get(item.UseSkillId!)!;
+        float sticker = skill.Magnitudes.FirstOrDefault(m => m.Effect == SkillEffect.RestoreMp).Value;
+        int buy = item.Value;
+        Console.WriteLine($"   {name,-10} {sticker,6:0} MP/s {sticker / 2f,7:0} MP/s {buy,6} {buy * 2,15:N0} {buy * 120,13:N0}");
+    }
     Console.WriteLine();
     Console.WriteLine("  🔑 A POTION ON COOLDOWN IS NOT ITS SUSTAINED RATE MINUS THE DRAIN — it alternates. Over");
-    Console.WriteLine("  one 30s cycle an ELF HEALER at 74 takes 50x15 = 750 MP from an Uncommon, 12.8x30 = 384");
-    Console.WriteLine("  from regen, and spends 38.33x30 = 1,150: net -16 MP per cycle, i.e. -0.5 MP/s against a");
-    Console.WriteLine("  4,605 bar. He farms for over two hours on one bar and one potion line. The ladder as");
-    Console.WriteLine("  authored already lands where it was aimed: UNCOMMON is the healer's, RARE is the");
-    Console.WriteLine("  buffer's (50 sustained against his -53.5), COMMON is the low-level and the nuker's.");
+    Console.WriteLine("  one 30s cycle an ELF HEALER at 74 takes 70x15 = 1,050 MP from an Uncommon, 12.8x30 = 384");
+    Console.WriteLine("  from regen, and spends 38.33x30 = 1,150: net +284 MP per cycle, i.e. +9.5 MP/s against a");
+    Console.WriteLine("  4,605 bar. He farms indefinitely on one potion line. The ladder as authored lands where");
+    Console.WriteLine("  it was aimed: UNCOMMON is the healer's and the buffer's (35 sustained vs their 25.6 / 32.0),");
+    Console.WriteLine("  COMMON is the low-level and the nuker's, RARE (75) is the raid/economy item.");
     Console.WriteLine();
 }
 

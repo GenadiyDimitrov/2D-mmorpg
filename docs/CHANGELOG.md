@@ -7,12 +7,49 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.92.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.92.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-08-27 (latest) — 0.92.0: MP potions, PvE only
+## 2026-08-27 (latest) — 0.92.1: the mana ladder mirrors the healing ladder
+
+> *"so healing are 20/70/150 and we match that just 15/30 cycle … and price is double of the healing"*
+
+The three mana potions shipped hours earlier at 20/50/100 for 500/1500/4500. He retuned both columns
+to one rule: **the rate IS the healing ladder's, and the price is exactly twice the healing ladder's.**
+
+| item | restores | window | drink reuse | **sustained** | buy | was |
+|---|---|---|---|---|---|---|
+| Common Mana Potion | 20 MP/s | 15s | 30s | **10 MP/s** | **120** (heal 60 ×2) | 20 @ 500 |
+| Uncommon Mana Potion | **70 MP/s** | 15s | 30s | **35 MP/s** | **500** (heal 250 ×2) | 50 @ 1,500 |
+| Rare Mana Potion | **150 MP/s** | 15s | 30s | **75 MP/s** | **3,000** (heal 1,500 ×2) | 100 @ 4,500 |
+
+**Only two things still differ from the healing ladder**: the cycle (15s up on a 30s reuse = a 50%
+duty cycle, where the Rare healing potion's 30s-on-20s is permanent uptime) and the price. His own
+arithmetic on the middle rung, which the build matches: *"uncommon its 1050/15s mp"* and *"60k/hour
+for uncommon is ok"* (500 × 2 drinks/min × 60).
+
+**Why mana costs double when the rate is identical** — it is not potency, it is the missing faucet:
+*"common/uncommon healing potions are dropped so u dont spend there … u need to buy mp pots"*. Mana
+potions do not drop anywhere. **Sources are unchanged**: Common + Uncommon on the Apothecary shelf,
+Rare = the Potion Master's craft L5, nothing on any drop table. The Rare is deliberately a raid item:
+*"its raiding support item that is economy player trade only"*.
+
+**Boss fights stay allowed** and that is a ruling, not an oversight: the PvE gate is the PvP flag, and
+a boss is PvE. *"in a party as alt char helping main char to heal ocasionally its still consider farm
+so its ok"*. The only lockout remains flagged/PK — *"in pvp they need to conserve/strategize"*.
+
+Coverage against `--mpnpc`'s measured deficits at 74 with a full NPC buff pack (healer −25.6 MP/s
+farming, nuker −14.8, buffer toggles −32.0): **Uncommon's 35 sustained covers the healer AND the
+buffer**, Common's 10 covers the nuker and the whole low-level game. `--mpnpc`'s cost table no longer
+hard-codes the ladder — it reads the rate off the potion's skill and the price off the item, so it
+cannot go stale behind a retune again.
+
+Touched: `Skills.Common.cs` (the two `RestoreMp` magnitudes + descriptions), `Items.cs` (three
+`Value`s + descriptions + the price rationale), `tools/BalanceMatrix` (the coverage table).
+
+## 2026-08-27 — 0.92.0: MP potions, PvE only
 
 Three tiers, his numbers verbatim: *"20/50/100 15s-up/30s-cd"*, and his sources: *"Common in shop /
 uncommon shop / rare drop"*.
