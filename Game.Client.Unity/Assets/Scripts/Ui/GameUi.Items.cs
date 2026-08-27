@@ -1018,6 +1018,16 @@ namespace Game.Client
                 Line(def.Description);
             }
 
+            // How deep a row goes (0.93.0). Worth a line because the cap is not one number: the buff
+            // scrolls stack 9 and the mana potions 999, and a player planning a farm trip is doing
+            // exactly the arithmetic this answers. Quest items say nothing — theirs is uncapped, and a
+            // "stacks to 1,000,000" line is noise.
+            if (def.IsStackable && def.MaxStack < StackLimits.Uncapped)
+            {
+                t.AppendLine();
+                Line("Stacks to " + def.MaxStack.ToString("N0") + " per slot.");
+            }
+
             // Every consumable describes itself through the SKILL it grants.
             if (SkillCatalog.Get(def.UseSkillId) is SkillDef useDef)
             {

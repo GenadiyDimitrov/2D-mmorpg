@@ -137,6 +137,21 @@ closed · **`BL-93` opened** for the in-game visuals discussion you asked for (*
 
 ## Combat & stats
 
+- `BL-94` 🔵 **THE FIZZLE FLOOR — a fizzled spell should do NOTHING, not a third.** Your ruling of
+  2026-08-24, carried out of the playtest-28 checklist unbuilt: *"shouldn't hit at all on the floor"*.
+  - **Where it stands.** 0.81.2 fixed the fizzle CHANCE — it reads the rung's own learn level now,
+    not the caster's, which is what made a level-14 Vamp Bolt fail against a 37 mob. That was the half
+    of your question that was a bug. This is the other half, and it is a **payload** ruling, not a
+    chance one: a fizzled spell still lands `damage / 3`, so a spell whose fail rate has hit its
+    ceiling still delivers ~37% of its damage rather than 0%.
+  - **Why it was deliberately not built with the rest.** Zeroing the payload makes a ceilinged spell
+    worth *nothing* against an over-level target, which is a real difficulty change at exactly the
+    band where a player fights up. It is one line (`SkillMath`'s fizzle payload), and it is one line
+    that changes how it feels to fight above your level, so it wants your word rather than my reading
+    of it.
+  - ❓ **What I need:** flat 0 on a fizzle, or 0 only once the fail chance is at its ceiling (so a
+    small fizzle still chips)? The second is more forgiving and is what the current third approximates.
+
 - `BL-06` ✅ **BUILT 2026-08-14 (0.65.0)** — a physical skill is no longer subject to the
   accuracy-vs-evasion roll at all; the caster's accuracy, `Precision` and `EvadeFloor` were all
   removed from that branch and now govern basic attacks only. The **only** thing that dodges a skill

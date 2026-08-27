@@ -393,6 +393,13 @@ if (args.Length > 0 && args[0] == "--mpnpc")
     return;
 }
 
+// `--stacks` - what every item in the catalog stacks to, and what a farm trip costs in ROWS (0.93.0).
+if (args.Length > 0 && args[0] == "--stacks")
+{
+    Stacks();
+    return;
+}
+
 // `--mpcase` - HIS level-43 ork healer, measured as he actually plays it (2026-08-27).
 if (args.Length > 0 && args[0] == "--mpcase")
 {
@@ -6094,6 +6101,68 @@ static (string Name, Entity Entity, string Source)[] HpSubjects(int level) => ne
 //       scroll rungs, self buffs, toggles — so the limit can be set against a real denominator.
 // ============================================================================================
 
+static void Stacks()
+{
+    Console.WriteLine();
+    Console.WriteLine("=== STACK CAPS — every item, by the category that decides it ===");
+    Console.WriteLine();
+    Console.WriteLine($"  bag {GameConstants.InventorySize} rows | private warehouse {GameConstants.WarehouseSize}"
+                      + $" | account warehouse {GameConstants.AccountWarehouseSize}");
+    Console.WriteLine();
+
+    var groups = ItemCatalog.AllItems
+        .GroupBy(d => (d.IsStackable, d.MaxStack, Bucket(d)))
+        .OrderByDescending(g => g.Key.IsStackable).ThenBy(g => g.Key.MaxStack)
+        .ToList();
+
+    Console.WriteLine("   cap        items  category                    examples");
+    Console.WriteLine("  ---------------------------------------------------------------------------------------");
+    foreach (var g in groups)
+    {
+        string cap = !g.Key.IsStackable ? "—" : g.Key.MaxStack >= StackLimits.Uncapped ? "uncapped"
+                                                                                       : g.Key.MaxStack.ToString("N0");
+        string examples = string.Join(", ", g.Take(3).Select(d => d.Name));
+        if (examples.Length > 46) examples = examples.Substring(0, 43) + "...";
+        Console.WriteLine($"   {cap,-9} {g.Count(),6}  {g.Key.Item3,-26}  {examples}");
+    }
+
+    Console.WriteLine();
+    Console.WriteLine("--- WHAT A TRIP COSTS IN ROWS (the argument the caps were settled on) ---");
+    Console.WriteLine();
+    Console.WriteLine("   consumable                 per hour   1h    4h    8h   24h    of the 250-row bag (8h)");
+    Console.WriteLine("  ---------------------------------------------------------------------------------------");
+
+    void Trip(string label, int perHour, int cap)
+    {
+        int Rows(int hours) => (perHour * hours + cap - 1) / cap;
+        Console.WriteLine($"   {label,-26} {perHour,8}  {Rows(1),4}  {Rows(4),4}  {Rows(8),4}  {Rows(24),4}"
+                          + $"    {Rows(8) * 100f / GameConstants.InventorySize,20:0.0}%");
+    }
+
+    // 120 drinks/hour is the 30s reuse run flat out; 17 blessings is one of every family, each 1 hour.
+    Trip("MP potions (120/h)",   120, StackLimits.VitalPotion);
+    Trip("+ HP potions (120/h)", 120, StackLimits.VitalPotion);
+    Trip("buff scrolls (17/h)",   17, StackLimits.BuffScroll);
+
+    Console.WriteLine();
+    Console.WriteLine("  🔑 THIS IS WHY THE TWO CAPS ARE NOT THE SAME NUMBER. Potions drain as loot fills the bag");
+    Console.WriteLine("  behind them, so their row count PEAKS AT HOUR ZERO and falls; even a whole day of drinking");
+    Console.WriteLine("  is a rounding error against 250 rows, which is why 999 is a sanity bound and GOLD is what");
+    Console.WriteLine("  actually prices them. A fully-buffed player's 17 scrolls/hour is FLAT — it does not fall as");
+    Console.WriteLine("  he farms — so at 9 a stack the pile is visible within a session and keeps growing. That is");
+    Console.WriteLine("  the only cap here that a player will ever feel, and it is the one he meant to be felt.");
+    Console.WriteLine();
+
+    static string Bucket(ItemDef d) =>
+        !d.IsStackable                  ? "gear / per-instance"
+        : d.Slot == EquipSlot.QuestItem ? "quest item"
+        : d.Slot == EquipSlot.Material  ? "material"
+        : d.Slot == EquipSlot.Box       ? "box / blueprint"
+        : ItemCatalog.IsBuffScroll(d)   ? "buff scroll"
+        : d.Slot == EquipSlot.Scroll    ? "enchant / attribute scroll"
+        : d.PotionCooldownTicks > 0     ? "HP / MP potion"
+        : "buff potion / other";
+}
 static class BuffCensus
 {
     public static void Run()
@@ -6208,3 +6277,16 @@ static class BuffCensus
     }
 }
 
+
+// ============================================================================================
+//  `--stacks` — WHAT EVERY ITEM STACKS TO, read off the catalog (0.93.0).
+//
+//  It exists because the caps are DERIVED from an item's category, never authored per row, so the
+//  only way to know a def landed in the right bucket is to ask it. A misclassified item is silent
+//  otherwise: nothing errors, the scroll simply stacks to 99 instead of 9 and the mechanic he asked
+//  for quietly does nothing.
+//
+//  The second half answers the question the caps were argued over: how many ROWS does a real trip
+//  cost? That is the number that decides whether a cap is a mechanic or decoration, and it is worth
+//  printing next to the bag size rather than reasoning about.
+// ============================================================================================

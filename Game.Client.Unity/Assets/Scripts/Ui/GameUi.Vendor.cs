@@ -244,8 +244,14 @@ namespace Game.Client
         {
             if (!IsStackable(def)) { ConfirmBuy(defId, name, unit, 1); return; }
 
-            // Max = the most you can AFFORD, clamped to the server's 999 cap — never a refusal.
-            int affordable = unit > 0 ? (int)Math.Min(999, Boot.Gold / unit) : 999;
+            // Max = the most you can AFFORD, clamped to ONE STACK — the server's own rule since 0.93.0
+            // (*"max shop buy = 1 stack"*), so the cap here is the item's, not a hard-coded 999: mana
+            // potions still buy 999 at a time and buff scrolls buy 9. Reading `def.MaxStack` rather
+            // than repeating a number is what keeps the numpad and `HandleBuy` from drifting — the
+            // clamp is never a refusal, so a mismatch would silently truncate an order instead of
+            // erroring.
+            int cap = def.MaxStack;
+            int affordable = unit > 0 ? (int)Math.Min(cap, Boot.Gold / unit) : cap;
             OpenNumpad("Buy " + name, Mathf.Max(1, affordable), "Buy",
                        qty => { Boot.BuyItem(defId, qty); CloseNumpad(); },
                        qty => qty + " x " + unit.ToString("N0") + " = " + (unit * qty).ToString("N0")

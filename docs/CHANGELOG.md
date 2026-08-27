@@ -7,12 +7,78 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.92.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.93.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-08-27 (latest) — 0.92.1: the mana ladder mirrors the healing ladder
+## 2026-08-27 (latest) — 0.93.0: STACK CAPS — a row has a bottom now
+
+> *"i was wondering if hp/mp pots stack to 99 or 999 and over 100/1000th item creates new row … so u
+> cannot have infinity hp pots for the cost of nothing"* … *"make those so we have the system and not
+> need to retink it if we change a number"*
+
+Every stackable item now has a **maximum per row**. The (cap+1)-th item opens a **new row** — nothing
+is ever destroyed, nothing is refused for being over a cap, and a container still refuses only when it
+runs out of **rows**, with the same message it always had.
+
+| category | cap | items |
+|---|---|---|
+| **Buff scrolls** | **9** | 17 |
+| Buff potions, Scroll of Return, misc consumables | **99** | 37 |
+| Enchant + attribute scrolls | **99** | 24 |
+| Boxes + blueprints | **99** | 63 |
+| **HP / MP potions** | **999** | 8 |
+| Materials | **9,999** | 30 |
+| Quest items | **uncapped** | 108 |
+| Gear and anything with per-instance state | does not stack | 793 |
+
+Read that table off `dotnet run --project tools/BalanceMatrix -- --stacks`, which prints it from the
+catalog along with what a farm trip costs in rows. It is not a hand-kept list: **the cap is DERIVED
+from the item's category and authored nowhere**, so retuning one is a single edit to `StackLimits` —
+his condition when he ordered the feature. `ItemDef.MaxStackOverride` exists for the item that has to
+disagree with its whole category, and nothing uses it yet.
+
+**Why the caps are not one number.** A stack cap prices a consumable in bag rows, and a row is only a
+real cost for something you carry a long time without spending. Potions drain at up to 120 drinks an
+hour while loot fills the bag behind them, so their row count peaks at hour zero and falls — a whole
+day of drinking is 3 rows out of 250. What actually prices potions is gold (0.92.1). A fully-buffed
+player burns **17 scrolls an hour and their row count stays flat**, so at 9 a stack the pile is visible
+within a session and keeps growing. That is the one cap here a player will ever feel, and it is the one
+meant to be felt — his own reasoning: *"having 99 of each is indefenetily buffed … while having 10 is
+10h of buffs"*.
+
+**Boxes stack now** (they never did, apart from blueprints). Safe because a box carries no state and
+`HandleOpenBox` already decremented a quantity rather than dropping the row.
+
+**One rule, one implementation.** All of it lives in `Game.Server/Simulation/Stacking.cs`, and every
+container asks it: bag, private warehouse, account warehouse, trade, drops, craft output, quest
+rewards, vendor buy, buy-back and the death-restore list. A cap one container computed its own way
+would not be a cap, it would be the laundering route around one. Three consequences worth knowing:
+
+- **Merging is by IDENTITY, not by DefId.** Two rows merge only when swapping them would be
+  undetectable — same enchant, no expiry, same picks left, same bound/renamed/price overrides. The old
+  test compared DefId alone, which was already wrong for a bound or renamed instance and would have
+  let a fresh Blessing Box absorb one with 4 picks left. Runes and timed items no longer count as
+  stackable at all: one row per acquisition is the only way two clocks stay two clocks.
+- **The trade room-check is now a simulation**, not a count. It used to track "does a stack of this def
+  survive here" as a yes/no, which was exactly right while a def meant at most one row. It builds the
+  bag as it will be and runs the real placement over it, so the check and the move cannot disagree.
+- **The account-warehouse fee follows rows.** 10k buys a slot, and a deposit that needs three slots now
+  costs 30k and says so. Nothing changed about the rule; it simply never had to open more than one.
+
+**Shops sell at most one stack per purchase** (*"max shop buy = 1 stack"*) — the old clamp was a
+hard-coded 999 for everything, and is now the item's own cap, so mana potions still buy 999 at a time
+and buff scrolls buy 9. It also removes the partial-order question entirely: a single stack either fits
+or it does not, so a purchase never half-completes and takes your gold with it.
+
+**Existing characters migrate on login.** Any row saved over its new cap is split into legal ones the
+moment it loads — bag, warehouse and account bank. It only ever splits, so nothing is lost, and a stack
+that has nowhere to spill stays as one oversized row rather than being deleted. No `game.db` reset.
+
+Items tooltips now read "Stacks to 999 per slot" (quest items stay silent).
+
+## 2026-08-27 — 0.92.1: the mana ladder mirrors the healing ladder
 
 > *"so healing are 20/70/150 and we match that just 15/30 cycle … and price is double of the healing"*
 

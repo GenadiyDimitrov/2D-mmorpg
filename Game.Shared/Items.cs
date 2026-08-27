@@ -354,6 +354,11 @@ public record ItemDef(
     // because a rune BOX overrides its rune's default duration at open time; a timed item has no
     // such second source. Used by the bound Newbie loaner kit (30 days). -----
     int LifetimeSeconds = 0,
+    // ----- MAX STACK OVERRIDE (0 = derive it from the CATEGORY, which is what nearly everything does).
+    // Only set this when one item has to disagree with its whole category. See ItemDef.MaxStack and
+    // StackLimits: the numbers live in ONE place so a retune is one edit, never a sweep of authored
+    // rows. -----
+    int MaxStackOverride = 0,
     // ----- Optional blunt flavour/warning text shown in item details ("" = none; consumables fall back to
     // their use-skill's description). Used to spell out e.g. "War Runes boost PHYSICAL damage only". -----
     string Description = "")
@@ -383,9 +388,37 @@ public record ItemDef(
     /// successful item takes several. One row each would bury the bag in the same way a gathering
     /// quest's tokens would. Both consumers already decrement a quantity rather than dropping the row
     /// (<c>HandleLearnRecipe</c>, <c>ConsumeItem</c>), so nothing else has to change.</para></summary>
-    public bool IsStackable => Slot is EquipSlot.Consumable or EquipSlot.Scroll or EquipSlot.Material
-                                    or EquipSlot.QuestItem
-                               || TeachesRecipeId.Length > 0;
+    /// <para>BOXES stack too since 0.93.0 (owner: *"buff and other boxes 99"*). A box carries no
+    /// per-instance state — the rune box stamps its clock on the RUNE at OPEN time, not on itself —
+    /// and <c>HandleOpenBox</c> already decrements a quantity rather than dropping the row, which is
+    /// what makes this safe. Blueprints were the one box that stacked; now the rule is uniform and
+    /// the special case is gone.</para>
+    ///
+    /// <para>⚠ THE ONE THING THAT CAN NEVER STACK IS PER-INSTANCE STATE. Two items only merge when
+    /// they are genuinely interchangeable, so anything carrying its own clock (a rune, a timed
+    /// loaner) is excluded here no matter what slot it sits in — otherwise a merge would hand two
+    /// acquisitions one expiry and silently extend or destroy one of them.</para></summary>
+    public bool IsStackable => (Slot is EquipSlot.Consumable or EquipSlot.Scroll or EquipSlot.Material
+                                     or EquipSlot.QuestItem or EquipSlot.Box
+                                || TeachesRecipeId.Length > 0)
+                               && !IsRune && LifetimeSeconds == 0;
+
+    /// <summary>How many of this item fit in ONE inventory row. The (cap+1)-th opens a new row; it is
+    /// never destroyed and never refused for being over a cap (owner, 0.93.0: *"the 10,100,1000 etc
+    /// item to make new stack"*).
+    ///
+    /// <para>🔑 THE NUMBER IS DERIVED FROM THE CATEGORY, NOT AUTHORED PER ITEM. Every cap in the game
+    /// is one of the constants in <see cref="StackLimits"/>, so changing what a buff scroll stacks to
+    /// is ONE edit — his standing requirement for this feature: *"make those so we have the system and
+    /// not need to retink it if we change a number"*. <see cref="MaxStackOverride"/> exists for the
+    /// item that has to disagree with its category, and nothing uses it yet.</para>
+    ///
+    /// <para>⚠ It applies EVERYWHERE — bag, private warehouse, account warehouse, trade, drops, craft
+    /// output, quest rewards, buy-back and the death-restore list — because a cap that one container
+    /// ignores is a laundering route around it, not a cap.</para></summary>
+    public int MaxStack => !IsStackable ? 1
+                         : MaxStackOverride > 0 ? MaxStackOverride
+                         : StackLimits.For(this);
 
     /// <summary>Unified top-level category (derived from EquipSlot). Weapons are MainHand,
     /// shields OffHand; everything else maps 1:1.</summary>
@@ -444,6 +477,67 @@ public record ItemDef(
     /// <summary>True if this is a two-handed MAIN-HAND weapon — it also claims the
     /// OffHand slot (so a shield can't be worn with it; enforced in HandleEquip).</summary>
     public bool OccupiesOffHand => Slot == EquipSlot.Weapon && WeaponType.IsTwoHanded();
+}
+
+/// <summary>EVERY stack cap in the game, in one table (owner, 0.93.0). <see cref="ItemDef.MaxStack"/>
+/// classifies an item into one of these and nothing else decides a cap, so a retune is a single edit
+/// here — his requirement when he ordered the feature: *"make those so we have the system and not need
+/// to retink it if we change a number"*.
+///
+/// <para>🔑 WHY THE NUMBERS ARE WHAT THEY ARE. A stack cap prices a consumable in BAG ROWS, and a row
+/// is only a real cost for something you carry a long time without spending. That is why they are not
+/// one number:</para>
+/// <list type="bullet">
+///   <item><b>Buff scrolls (9)</b> — the only cap that is a real mechanic. 17 blessings, one hour each,
+///   so a fully-buffed player burns 17 scrolls an hour and their row count stays FLAT while they farm.
+///   At 9 a stack, an hour of full buffs is ~2 rows and a long session is a visible pile; at 99 it
+///   would be 17 rows for four days and would never be felt. He worked this out himself: *"having 99
+///   of each is indefenetily buffed ... while having 10 is 10h of buffs"*.</item>
+///   <item><b>Buff potions, enchant/attribute scrolls, boxes (99)</b> — the middle: carried for a
+///   while, spent in ones. 99 is deep enough never to annoy and shallow enough that a hoard shows.</item>
+///   <item><b>HP/MP potions (999)</b> — deliberately NOT a lever. They drain at up to 120 drinks an
+///   hour while loot fills the bag behind them, so the peak row count is at hour zero and a cap that
+///   bit would have to be tiny. What actually prices them is GOLD (an Uncommon mana potion is 60k an
+///   hour). The cap is here for bounded arithmetic, not balance. ⚠ Its companion rule is his: the
+///   shop sells at most ONE STACK per purchase (<c>HandleBuy</c>).</item>
+///   <item><b>Materials (9,999)</b> — a crafter holds piles by design; taxing that bag is pure friction.</item>
+///   <item><b>Quest items (uncapped)</b> — a gathering contract hands out a token per kill. A cap here
+///   would be a bug wearing a mechanic's clothes.</item>
+/// </list></summary>
+public static class StackLimits
+{
+    /// <summary>Hour-long blessings. The one cap meant to be felt.</summary>
+    public const int BuffScroll = 9;
+    /// <summary>Buff potions, enchant scrolls, attribute scrolls, boxes, blueprints — and the default.</summary>
+    public const int Standard = 99;
+    /// <summary>HP and MP potions: a sanity bound, not a balance lever.</summary>
+    public const int VitalPotion = 999;
+    /// <summary>Crafting materials.</summary>
+    public const int Material = 9999;
+    /// <summary>Quest items. Not <c>int.MaxValue</c>: the cap is multiplied by a row budget when a
+    /// container works out what it can accept, and MaxValue overflows that arithmetic. This is
+    /// "effectively no cap" while staying a real number — a gathering quest would need a million
+    /// kills to reach it.</summary>
+    public const int Uncapped = 1_000_000;
+
+    /// <summary>The cap for a def, by CATEGORY. Order matters: quest items and materials are decided
+    /// by slot, the two scroll kinds have to be separated before the slot answers, and a potion's
+    /// drink cooldown is what tells an HP/MP potion from a blessing.</summary>
+    public static int For(ItemDef def) => def.Slot switch
+    {
+        EquipSlot.QuestItem  => Uncapped,
+        EquipSlot.Material   => Material,
+        EquipSlot.Box        => Standard,
+        // ⚠ EquipSlot.Scroll is the ENCHANT/ATTRIBUTE BENCH, not the blessings — those are Consumables.
+        EquipSlot.Scroll     => Standard,
+        // Three things share EquipSlot.Consumable and they do NOT share a cap. A drink cooldown marks
+        // the HP/MP line (ItemCatalog.IsHealPotion); of what is left, an hour-long wrapper is a
+        // blessing SCROLL and everything else — buff potions, the Scroll of Return — is ordinary.
+        EquipSlot.Consumable => def.PotionCooldownTicks > 0 ? VitalPotion
+                              : ItemCatalog.IsBuffScroll(def) ? BuffScroll
+                              : Standard,
+        _                    => Standard,
+    };
 }
 
 public static class ItemCatalog
@@ -2349,6 +2443,19 @@ public static class ItemCatalog
     public const string FourthClassKey = "qi_ascension_rite";
 
     public static IEnumerable<ItemDef> AllItems => All.Values;
+
+    /// <summary>A BUFF scroll — the hour-long blessing you read.
+    ///
+    /// <para>⚠ IT IS NOT <see cref="EquipSlot.Scroll"/>. That slot is the ENCHANT/ATTRIBUTE bench; a
+    /// blessing scroll is authored as a <see cref="EquipSlot.Consumable"/> exactly like a buff potion,
+    /// and the only thing separating the two is the DURATION its wrapper skill carries — one hour for a
+    /// scroll, twenty minutes for a potion. <see cref="SkillCatalog.ConsumableBuffForm"/> already owns
+    /// that distinction and drives the auto-buff tab with it, so this asks that rather than inventing a
+    /// second test which could disagree with the first.</para></summary>
+    public static bool IsBuffScroll(ItemDef def) =>
+        def.Slot == EquipSlot.Consumable && def.PotionCooldownTicks == 0
+        && SkillCatalog.Get(def.UseSkillId) is { } s
+        && SkillCatalog.ConsumableBuffForm(s) == BuffForm.Scroll;
 
     public static bool IsPotion(ItemDef def) => def.Slot == EquipSlot.Consumable;
     /// <summary>A HEALING potion — the one bound by the shared drink cooldown.</summary>

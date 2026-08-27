@@ -823,6 +823,15 @@ public class PersistenceService
             });
         }
 
+        // 🔑 SPLIT ANY ROW SAVED BEFORE ITS CAP EXISTED (0.93.0). Every character saved before stack
+        // caps landed — and every one saved before a cap is ever RETUNED downwards — carries rows over
+        // the limit: an admin `/give 10000` material, a pre-0.93.0 pile of potions. Without this the
+        // cap is a rule that only applies to new items, which is not a cap; with it a login is the
+        // migration and nothing has to be deleted. It only ever splits, so nothing is lost, and a bag
+        // already legal is untouched.
+        Stacking.Normalize(entity.Inventory, GameConstants.InventorySize);
+        Stacking.Normalize(entity.Warehouse, GameConstants.WarehouseSize);
+
         entity.RecomputeDerived();
         entity.Mp = entity.MaxMp;
         // Logged out DEAD? The death STICKS — log in DEAD (res prompt), not healed. True for ANY death
@@ -1168,6 +1177,9 @@ public class PersistenceService
                 PersistentInstanceId = r.InstanceId,
             });
         }
+        // The account bank obeys the caps like every other container, so it gets the same one-time
+        // split of anything saved before them (see the bag's Normalize call for why).
+        Stacking.Normalize(items, GameConstants.AccountWarehouseSize);
         return items;
     }
 

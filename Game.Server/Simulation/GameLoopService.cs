@@ -2503,15 +2503,18 @@ public class GameLoopService : BackgroundService
             return;
         }
 
-        if (player.Inventory.Count(i => !i.Equipped) >= GameConstants.InventorySize)
+        // Through Stacking like every other producer: a restored stack tops up the rows already in the
+        // bag and spills over the cap rather than coming back as one oversized row.
+        int freeRows = GameConstants.InventorySize - player.Inventory.Count(i => !i.Equipped);
+        if (Stacking.RowsNeeded(player.Inventory, def, entry.Quantity) > freeRows)
         {
             SendSystemToEntity(player, "Inventory full.");
             return;
         }
 
-        player.Inventory.Add(new InventoryItem
+        Stacking.Place(player.Inventory, def, entry.Quantity, freeRows, () => new InventoryItem
         {
-            DefId = entry.DefId, Quantity = entry.Quantity, Enchant = entry.Enchant,
+            DefId = entry.DefId, Enchant = entry.Enchant,
             Attributes = new List<ItemAttribute>(entry.Attributes),
         });
         player.Restorable.RemoveAt(cmd.Index);
@@ -2581,22 +2584,21 @@ public class GameLoopService : BackgroundService
 
         // A stackable merges into the row that's already in the bank instead of taking a new one —
         // otherwise depositing 5 gems and later 6 more left TWO rows of the same material, and a
-        // full warehouse refused a deposit it had room for.
+        // full warehouse refused a deposit it had room for. Since 0.93.0 the merge respects the stack
+        // cap and spills into further rows, and `Stacking` decides all of it: the bank obeys the same
+        // caps as the bag, because a container that ignored them would just be where you hoard.
         var def = ItemCatalog.Get(item.DefId);
-        var mergeInto = def is { IsStackable: true }
-            ? player.Warehouse.FirstOrDefault(i => i.DefId == item.DefId)
-            : null;
+        if (def is null) return;
 
-        if (mergeInto is null && player.Warehouse.Count >= GameConstants.WarehouseSize)
+        int freeRows = GameConstants.WarehouseSize - player.Warehouse.Count;
+        if (Stacking.RowsNeeded(player.Warehouse, def, item.Quantity) > freeRows)
         {
             SendSystemToEntity(player, "Warehouse full.");
             return;
         }
 
         item.Equipped = false;                 // nothing is worn from the bank
-        player.Inventory.Remove(item);
-        if (mergeInto is not null) mergeInto.Quantity += item.Quantity;
-        else player.Warehouse.Add(item);
+        Stacking.Move(player.Inventory, player.Warehouse, item, def, freeRows);
 
         ReconcileTimedItems(player);            // a deposited rune stops applying its buff (no longer in the bag)
         player.RecomputeDerived();             // reflect the un-equip
@@ -2614,21 +2616,19 @@ public class GameLoopService : BackgroundService
         var item = player.Warehouse.FirstOrDefault(i => i.InstanceId == cmd.InstanceId);
         if (item is null) return;
 
-        // Same merge rule coming back out — a withdrawn stack joins the bag row it belongs to.
+        // Same merge rule coming back out — a withdrawn stack joins the bag rows it belongs to, tops
+        // them up to the cap and spills the rest into new ones.
         var def = ItemCatalog.Get(item.DefId);
-        var mergeInto = def is { IsStackable: true }
-            ? player.Inventory.FirstOrDefault(i => i.DefId == item.DefId)
-            : null;
+        if (def is null) return;
 
-        if (mergeInto is null && player.Inventory.Count(i => !i.Equipped) >= GameConstants.InventorySize)
+        int freeRows = GameConstants.InventorySize - player.Inventory.Count(i => !i.Equipped);
+        if (Stacking.RowsNeeded(player.Inventory, def, item.Quantity) > freeRows)
         {
             SendSystemToEntity(player, "Inventory full.");
             return;
         }
 
-        player.Warehouse.Remove(item);
-        if (mergeInto is not null) mergeInto.Quantity += item.Quantity;
-        else player.Inventory.Add(item);
+        Stacking.Move(player.Warehouse, player.Inventory, item, def, freeRows);
 
         ReconcileTimedItems(player);            // a withdrawn rune re-applies its buff (back in the bag)
         player.RecomputeDerived();
@@ -2710,31 +2710,34 @@ public class GameLoopService : BackgroundService
         }
 
         var bank = AccountBankOf(player);
-        var mergeInto = def.IsStackable ? bank.FirstOrDefault(i => i.DefId == item.DefId) : null;
-
-        if (mergeInto is null)
+        int freeRows = GameConstants.AccountWarehouseSize - bank.Count;
+        // 🔑 THE FEE BUYS A SLOT, so with stack caps a big deposit can now need SEVERAL — 1,500 gems
+        // over a 9,999 cap is one row, but 250 buff scrolls over a 9 cap is 28. Charge per row opened,
+        // which is what the rule already said; it just never had to open more than one before.
+        int rowsNeeded = Stacking.RowsNeeded(bank, def, item.Quantity);
+        if (rowsNeeded > freeRows)
         {
-            if (bank.Count >= GameConstants.AccountWarehouseSize)
-            {
-                SendSystemToEntity(player, "Account warehouse full.");
-                return;
-            }
-            if (player.Gold < GameConstants.AccountWarehouseSlotFee)
-            {
-                SendSystemToEntity(player,
-                    $"A new account-warehouse slot costs {GameConstants.AccountWarehouseSlotFee:N0} {GameConstants.CurrencyName}.");
-                return;
-            }
-            player.Gold -= GameConstants.AccountWarehouseSlotFee;
+            SendSystemToEntity(player, "Account warehouse full.");
+            return;
+        }
+
+        long fee = rowsNeeded * (long)GameConstants.AccountWarehouseSlotFee;
+        if (player.Gold < fee)
+        {
             SendSystemToEntity(player,
-                $"Paid {GameConstants.AccountWarehouseSlotFee:N0} {GameConstants.CurrencyName} for an account-warehouse slot.");
+                $"{(rowsNeeded > 1 ? $"{rowsNeeded} new account-warehouse slots cost" : "A new account-warehouse slot costs")} {fee:N0} {GameConstants.CurrencyName}.");
+            return;
+        }
+        if (fee > 0)
+        {
+            player.Gold -= fee;
+            SendSystemToEntity(player,
+                $"Paid {fee:N0} {GameConstants.CurrencyName} for {(rowsNeeded > 1 ? $"{rowsNeeded} account-warehouse slots" : "an account-warehouse slot")}.");
         }
 
         item.Equipped = false;                 // nothing is worn from the bank
-        player.Inventory.Remove(item);
         item.PersistentInstanceId = null;      // it leaves this character's item rows for the account's
-        if (mergeInto is not null) mergeInto.Quantity += item.Quantity;
-        else bank.Add(item);
+        Stacking.Move(player.Inventory, bank, item, def, freeRows);
 
         ReconcileTimedItems(player);            // a deposited rune stops applying its buff
         player.RecomputeDerived();
@@ -2755,20 +2758,17 @@ public class GameLoopService : BackgroundService
         if (item is null) return;
 
         var def = ItemCatalog.Get(item.DefId);
-        var mergeInto = def is { IsStackable: true }
-            ? player.Inventory.FirstOrDefault(i => i.DefId == item.DefId)
-            : null;
+        if (def is null) return;
 
-        if (mergeInto is null && player.Inventory.Count(i => !i.Equipped) >= GameConstants.InventorySize)
+        int freeRows = GameConstants.InventorySize - player.Inventory.Count(i => !i.Equipped);
+        if (Stacking.RowsNeeded(player.Inventory, def, item.Quantity) > freeRows)
         {
             SendSystemToEntity(player, "Inventory full.");
             return;
         }
 
-        bank.Remove(item);
         item.PersistentInstanceId = null;      // it belongs to this character's item rows now
-        if (mergeInto is not null) mergeInto.Quantity += item.Quantity;
-        else player.Inventory.Add(item);
+        Stacking.Move(bank, player.Inventory, item, def, freeRows);
 
         ReconcileTimedItems(player);            // a withdrawn rune re-applies its buff (back in the bag)
         player.RecomputeDerived();
@@ -5833,35 +5833,54 @@ public class GameLoopService : BackgroundService
     }
 
     /// <summary>Will this bag still fit after giving <paramref name="outgoing"/> and receiving
-    /// <paramref name="incoming"/>? A PARTIAL stack frees no slot (the remainder stays), and an
-    /// incoming stackable costs no slot if a stack of it survives here — which is exactly what
-    /// <see cref="TransferPart"/> then does, so the check and the move agree.</summary>
+    /// <paramref name="incoming"/>?
+    ///
+    /// <para>🔑 SIMULATED ON A SHADOW BAG since 0.93.0, not counted. The old version tracked "does a
+    /// stack of this def survive here" as a bool, which was exactly right while a def meant at most one
+    /// row — and became wrong the moment stacks capped: receiving 500 buff scrolls into a bag holding a
+    /// partial row of them costs 55 rows, not zero. So it now builds the bag as it would be after the
+    /// outgoing side leaves and runs the REAL placement over it. The check and the move agree because
+    /// they are the same code (<see cref="Stacking"/>), which is the only way they stay agreed.</para></summary>
     private static bool BagFitsAfterTrade(Entity owner,
                                           List<(InventoryItem Item, int Qty)> outgoing,
                                           List<(InventoryItem Item, int Qty)> incoming)
     {
-        int slots = owner.Inventory.Count(i => !i.Equipped);
-        var stacksHere = new HashSet<string>(owner.Inventory
-            .Where(i => !i.Equipped && ItemCatalog.Get(i.DefId) is { IsStackable: true })
-            .Select(i => i.DefId));
-
-        foreach (var (item, qty) in outgoing)
+        static InventoryItem Shadow(InventoryItem src, int qty) => new()
         {
-            if (qty < item.Quantity) continue;          // partial — the stack stays put
-            slots--;
-            if (!owner.Inventory.Any(i => !i.Equipped && i.DefId == item.DefId && !ReferenceEquals(i, item)))
-                stacksHere.Remove(item.DefId);
+            DefId = src.DefId, Quantity = qty, Enchant = src.Enchant,
+            ExpiresAtUtc = src.ExpiresAtUtc, PicksRemaining = src.PicksRemaining,
+            SellPriceOverride = src.SellPriceOverride, TradableOverride = src.TradableOverride,
+            CustomName = src.CustomName,
+            CanStorePrivate = src.CanStorePrivate, CanStoreAccount = src.CanStoreAccount,
+        };
+
+        // The bag as it will be once the outgoing side has left. A PARTIAL stack frees no row — the
+        // remainder stays — which falls out of the arithmetic instead of being a special case.
+        var bag = new List<InventoryItem>();
+        foreach (var it in owner.Inventory)
+        {
+            if (it.Equipped) continue;
+            int leaving = 0;
+            foreach (var (item, qty) in outgoing)
+                if (ReferenceEquals(item, it)) leaving += qty;
+            int left = it.Quantity - leaving;
+            if (left > 0) bag.Add(Shadow(it, left));
         }
 
-        foreach (var (item, _) in incoming)
+        foreach (var (item, qty) in incoming)
         {
-            bool stackable = ItemCatalog.Get(item.DefId) is { IsStackable: true };
-            if (stackable && stacksHere.Contains(item.DefId)) continue;   // merges into what's here
-            slots++;
-            if (stackable) stacksHere.Add(item.DefId);
+            int freeRows = GameConstants.InventorySize - bag.Count;
+            if (ItemCatalog.Get(item.DefId) is not ItemDef def)
+            {
+                if (freeRows < 1) return false;
+                bag.Add(Shadow(item, qty));
+                continue;
+            }
+            if (Stacking.RowsNeeded(bag, def, qty) > freeRows) return false;
+            Stacking.Place(bag, def, qty, freeRows, () => Shadow(item, 0));
         }
 
-        return slots <= GameConstants.InventorySize;
+        return bag.Count <= GameConstants.InventorySize;
     }
 
     /// <summary>Move <paramref name="qty"/> of an item across. A full stack moves as the same
@@ -7300,15 +7319,24 @@ public class GameLoopService : BackgroundService
                     SendSystemToEntity(admin, $"{giveTarget.Name}'s inventory is full.");
                     break;
                 }
-                int rows = giveDef.IsStackable ? 1 : Math.Min(giveQty, freeSlots);
+                // 0.93.0: a stackable is no longer automatically ONE row — it is as many as the STACK
+                // CAP needs (1,000 mats is still one row at 9,999; 1,000 buff scrolls is 112 at 9).
+                // Still fresh rows, never a merge, for the reason above.
+                int giveCap = giveDef.MaxStack;
+                int rows = giveDef.IsStackable
+                    ? Math.Min((giveQty + giveCap - 1) / giveCap, freeSlots)
+                    : Math.Min(giveQty, freeSlots);
+                int givenSoFar = 0;
 
                 InventoryItem given = null!;
                 for (int n = 0; n < rows; n++)
                 {
+                    int rowQty = giveDef.IsStackable ? Math.Min(giveCap, giveQty - givenSoFar) : 1;
+                    givenSoFar += rowQty;
                     given = new InventoryItem
                     {
                         DefId = giveDef.Id,
-                        Quantity = giveDef.IsStackable ? giveQty : 1,
+                        Quantity = rowQty,
                         Enchant = Math.Max(0, giveEnchant),
                         SellPriceOverride = sellOverride,
                         TradableOverride = tradeOverride,
@@ -7339,7 +7367,7 @@ public class GameLoopService : BackgroundService
                 SendStats(giveTarget);
                 SaveEntity(giveTarget);
 
-                int gaveTotal = giveDef.IsStackable ? giveQty : rows;
+                int gaveTotal = giveDef.IsStackable ? givenSoFar : rows;
                 string tag = ItemTag.Of(given.Sellable(giveDef), given.Tradable(giveDef),
                                         given.ExpiresAtUtc is not null);
                 string label = given.Name(giveDef) + (given.Enchant > 0 ? $" +{given.Enchant}" : "")
@@ -13147,39 +13175,39 @@ public class GameLoopService : BackgroundService
             return false;
 
         bool stackable = def.IsStackable;
-        if (stackable)
+        if (!stackable) quantity = 1;
+
+        // 🔑 STACKS CAP AND SPILL (0.93.0). Fill the rows that are already there, then open as many
+        // new ones as the rest needs — all of it decided in ONE place (Stacking), never here.
+        // Worn gear doesn't occupy a bag slot, so free rows are counted over unequipped items only.
+        int freeRows = GameConstants.InventorySize - player.Inventory.Count(i => !i.Equipped);
+        if (Stacking.RowsNeeded(player.Inventory, def, quantity) > freeRows)
+            return false;   // ATOMIC: a delivery that cannot land whole does not land at all
+
+        Stacking.Place(player.Inventory, def, quantity, freeRows, () =>
         {
-            var existing = player.Inventory.FirstOrDefault(i => i.DefId == defId);
-            if (existing is not null)
-            {
-                existing.Quantity += quantity;
-                return true;
-            }
-        }
+            var newItem = new InventoryItem { DefId = defId };
+            // 0.45.0: nothing drops WITH an attribute any more. A dropped weapon/jewel is bare and
+            // the player decides whether it is worth a scroll (owner: "you won't waste scrolls on
+            // trash when you know the next drop can be better"). Only the god-tier one-offs, which
+            // author their attributes in the catalog, still arrive with any.
+            if (rollAttributes && def.FixedAttributes is { Length: > 0 } fixedAttrs)
+                newItem.Attributes = fixedAttrs.ToList();
 
-        if (player.Inventory.Count(i => !i.Equipped) >= GameConstants.InventorySize)
-            return false;   // worn gear doesn't occupy a bag slot
+            // A RUNE gets its wall-clock expiry stamped the moment it's ACQUIRED (owner: not only boxes
+            // stamp). The default is the rune's own GrantsRuneSeconds; a box that grants it OVERRIDES
+            // this afterwards. So every rune, from any source, always carries an expiry.
+            if (def.IsRune && def.GrantsRuneSeconds > 0)
+                newItem.ExpiresAtUtc = DateTime.UtcNow.AddSeconds(def.GrantsRuneSeconds);
+            // A TIMED item (the 30-day Newbie loaner kit) gets the same treatment from its own
+            // LifetimeSeconds. ⚠ Both of these are why IsStackable now EXCLUDES runes and timed items
+            // outright: one row per acquisition is the only way two clocks stay two clocks, and this
+            // factory would otherwise be asked to stamp a shared one.
+            else if (def.LifetimeSeconds > 0)
+                newItem.ExpiresAtUtc = DateTime.UtcNow.AddSeconds(def.LifetimeSeconds);
 
-        var newItem = new InventoryItem { DefId = defId, Quantity = stackable ? quantity : 1 };
-        // 0.45.0: nothing drops WITH an attribute any more. A dropped weapon/jewel is bare and
-        // the player decides whether it is worth a scroll (owner: "you won't waste scrolls on
-        // trash when you know the next drop can be better"). Only the god-tier one-offs, which
-        // author their attributes in the catalog, still arrive with any.
-        if (rollAttributes && def.FixedAttributes is { Length: > 0 } fixedAttrs)
-            newItem.Attributes = fixedAttrs.ToList();
-
-        // A RUNE gets its wall-clock expiry stamped the moment it's ACQUIRED (owner: not only boxes stamp).
-        // The default is the rune's own GrantsRuneSeconds; a box that grants it OVERRIDES this afterwards
-        // with its own duration. So every rune, from any source, always carries an expiry.
-        if (def.IsRune && def.GrantsRuneSeconds > 0)
-            newItem.ExpiresAtUtc = DateTime.UtcNow.AddSeconds(def.GrantsRuneSeconds);
-        // A TIMED item (the 30-day Newbie loaner kit) gets the same treatment from its own
-        // LifetimeSeconds. Non-stackable by nature — the stack merge above returns before here, so two
-        // acquisitions can never end up sharing one expiry.
-        else if (def.LifetimeSeconds > 0)
-            newItem.ExpiresAtUtc = DateTime.UtcNow.AddSeconds(def.LifetimeSeconds);
-
-        player.Inventory.Add(newItem);
+            return newItem;
+        });
         return true;
     }
 
@@ -13211,23 +13239,24 @@ public class GameLoopService : BackgroundService
         return true;
     }
 
-    /// <summary>Move an item from one player to another, merging stacks of
-    /// consumables/scrolls on the receiving side.</summary>
+    /// <summary>Move an item from one player to another, merging stacks on the receiving side and
+    /// spilling over the cap into further rows like every other container.
+    ///
+    /// <para>⚠ The trade window has already checked that the receiver has room for the whole offer
+    /// (<see cref="BagFitsAfterTrade"/> at accept time), so this cannot land partially. It still asks
+    /// Stacking rather than doing the merge itself — a trade that computed stack caps its own way
+    /// would be the laundering route around them.</para></summary>
     private static void TransferItem(Entity from, Entity to, InventoryItem item)
     {
-        from.Inventory.Remove(item);
-
-        if (ItemCatalog.Get(item.DefId) is { IsStackable: true })
+        if (ItemCatalog.Get(item.DefId) is not ItemDef def)
         {
-            var existing = to.Inventory.FirstOrDefault(i => i.DefId == item.DefId);
-            if (existing is not null)
-            {
-                existing.Quantity += item.Quantity;
-                return;
-            }
+            from.Inventory.Remove(item);
+            to.Inventory.Add(item);
+            return;
         }
 
-        to.Inventory.Add(item);
+        int freeRows = GameConstants.InventorySize - to.Inventory.Count(i => !i.Equipped);
+        Stacking.Move(from.Inventory, to.Inventory, item, def, freeRows);
     }
 
     /// <summary>Consume one from a stack; removes the stack at zero.</summary>
@@ -14575,8 +14604,13 @@ public class GameLoopService : BackgroundService
             return;
         }
 
+        // 🔑 ONE STACK PER PURCHASE (owner, 0.93.0: *"max shop buy = 1 stack"*). The old clamp was a
+        // hard-coded 999 for everything; it is now the item's own cap, so a mana potion still buys 999
+        // at a time and a buff scroll buys 9. This is also what keeps the shop out of the partial-order
+        // question entirely — a single stack either fits or it doesn't, so nothing half-completes and
+        // takes your gold with it.
         bool stackable = def.Slot is EquipSlot.Consumable or EquipSlot.Scroll;
-        int qty = stackable ? Math.Clamp(cmd.Quantity, 1, 999) : 1;
+        int qty = stackable ? Math.Clamp(cmd.Quantity, 1, def.MaxStack) : 1;
         long total = unit * qty;
 
         if (player.Gold < total)
@@ -14689,16 +14723,17 @@ public class GameLoopService : BackgroundService
             SendSystemToEntity(player, $"You need {cost:N0} {GameConstants.CurrencyName} to buy that back.");
             return;
         }
-        if (player.Inventory.Count(i => !i.Equipped) >= GameConstants.InventorySize)
+        int freeRows = GameConstants.InventorySize - player.Inventory.Count(i => !i.Equipped);
+        if (Stacking.RowsNeeded(player.Inventory, def, entry.Quantity) > freeRows)
         {
             SendSystemToEntity(player, "Inventory full.");
             return;
         }
 
         player.Gold -= cost;
-        player.Inventory.Add(new InventoryItem
+        Stacking.Place(player.Inventory, def, entry.Quantity, freeRows, () => new InventoryItem
         {
-            DefId = entry.DefId, Quantity = entry.Quantity, Enchant = entry.Enchant,
+            DefId = entry.DefId, Enchant = entry.Enchant,
             Attributes = new List<ItemAttribute>(entry.Attributes),
         });
         player.BuyBack.RemoveAt(cmd.Index);
