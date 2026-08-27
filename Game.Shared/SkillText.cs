@@ -505,7 +505,8 @@ public static class SkillText
         {
             // A stance's upkeep is the whole reason not to leave it on, so both bars go on the card.
             var upkeep = new List<string>(2);
-            if (def.MpPerSecond > 0) upkeep.Add($"{def.MpPerSecond} MP");
+            int mps = def.MpPerSecondAt(level);
+            if (mps > 0) upkeep.Add($"{mps} MP");
             if (def.HpPerSecond > 0) upkeep.Add($"{def.HpPerSecond} HP");
             o.Add(upkeep.Count > 0
                 ? $"Toggle — stays up until switched off, costing {string.Join(" and ", upkeep)} a second"

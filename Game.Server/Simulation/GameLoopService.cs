@@ -11070,17 +11070,23 @@ public class GameLoopService : BackgroundService
         {
             if (!b.Toggle || string.IsNullOrEmpty(b.SkillId)) continue;
             if (SkillCatalog.Get(b.SkillId) is not SkillDef def) continue;
-            if (def.MpPerSecond <= 0 && def.HpPerSecond <= 0) continue;
+            // 🔑 THE RUNG'S upkeep, not the def's. A stance whose cost is a LADDER (the Warchanter's
+            // Reinforcement, 12 MP/s at rung 1 and 30 at rung 13) was charged rung 1's number at
+            // every rung until 2026-08-27, because SkillDef.MpPerSecond is one field and a def has
+            // one of them. Measured (`BalanceMatrix --mpdrain`), a level-80 buffer paid 15 MP/s for
+            // two stances his CSV prices at 45.
+            int mpPerSec = def.MpPerSecondAt(Math.Max(1, e.SkillLevelOf(b.SkillId)));
+            if (mpPerSec <= 0 && def.HpPerSecond <= 0) continue;
 
             // Both halves are checked BEFORE either is charged, so a stance the caster can only
             // half-afford takes nothing at all rather than draining one bar and then dropping.
-            bool canPayMp = def.MpPerSecond <= 0 || e.Mp >= def.MpPerSecond;
+            bool canPayMp = mpPerSec <= 0 || e.Mp >= mpPerSec;
             // 🔑 STRICTLY greater: an HP stance stops while HP remains and never lands the killing
             // blow itself. Dying to your own toggle would be a bug report, not a trade-off.
             bool canPayHp = def.HpPerSecond <= 0 || e.Hp > def.HpPerSecond;
             if (canPayMp && canPayHp)
             {
-                e.Mp -= def.MpPerSecond;
+                e.Mp -= mpPerSec;
                 e.Hp -= def.HpPerSecond;
             }
             else (broke ??= new()).Add((b, canPayMp));

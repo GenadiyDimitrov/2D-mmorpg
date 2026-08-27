@@ -7,12 +7,51 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.91.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.91.2**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-08-27 (latest) — 0.91.1: HP Boost, Swift back on the NPC buffer, the buffer's ×1.2 moves
+## 2026-08-27 (latest) — 0.91.2: the MP economy measured per race, and a toggle finally charges its rung
+
+No new content — this is the measurement the MP-potion decision rests on, plus the one bug it found.
+
+### `BalanceMatrix --mpdrain` — drain vs regen, flat MP/s, all three races, 20→80
+
+Owner, opening the MP-potion question: *"Just need to measure what is the mp consumption at
+20,30,40,50,60,70,80 (healer-holy bolt, Mage-elemental bolt, buffer with reinforcement and sharpening
+active) vs current mp regen ... but take into an account spt/wit cast speed elf casts faster"*.
+
+`--mpregen` (`BL-92`) already answered a **different** question — "is a mage's regen too big" — for one
+HUMAN nuker on his most MP-EFFICIENT spell. A potion has to be sized off the named spells, every race,
+and the whole ladder, so `--mpdrain` measures that instead. Both sides mirror the engine line for line:
+drain is `EffectiveMpCost / AutoCycleTicks`, regen is `Regenerate`'s MP branch with the flats outside.
+
+Race is the point, and it cuts **twice in the same direction**: WIT drives cast speed (exponential,
+×1.63 per +10) so a faster caster empties the bar sooner, and SPT drives `SptRegenModifier` so he also
+refills it slower. Elf casts ×1.48 on 0.84 regen; ork casts ×1.10 on 1.10. At level 80 an elf healer is
+**14.7 MP/s under water where the ork is 5.6** — the same spell, the same rung.
+
+What it found, in flat numbers: **a caster's deficit is 0-15 MP/s at every level**, and below ~40
+there is no deficit at all (regen outruns the bolt). **The buffer is the real customer** — two stances
+plus his sound skill run 33 MP/s at 40 and **81 at 80**, against 17.6 of regen: a full bar every ~55
+seconds, at every level from 40 up.
+
+### 🔴 A TOGGLE WAS CHARGED RUNG 1's UPKEEP AT EVERY RUNG
+
+Found by the above. `TickToggleUpkeep` read `SkillDef.MpPerSecond` — one field, one number per def —
+so the Warchanter's Reinforcement, authored as a 13-rung ladder from **12 MP/s up to 30**, really took
+**12** at rung 13. Both stances together: **15 MP/s charged against 45 authored, a 3× discount** on the
+one class whose mana is supposed to be a decision.
+
+Fixed the way every other per-rung number in this codebase is fixed — `SkillLevel.MpPerSecond` (0 =
+inherit the def's) and `SkillDef.MpPerSecondAt(level)`, read by the tick loop and by the skill card.
+
+⚠ **Not `MpCostAt`.** Prowl carries a 20 MP one-off cast cost *and* a 1 MP/s burn, so a toggle's two
+prices are genuinely two fields on one skill; folding them would have made every Prowl tick cost 20.
+
+No authored number moved — `SkillCsvSeed --check` is clean — and no wire change, so **no new APK**.
+## 2026-08-27 — 0.91.1: HP Boost, Swift back on the NPC buffer, the buffer's ×1.2 moves
 
 **⚠ NEEDS A NEW APK.** The client builds its Learn tab locally from the compiled `ClassSkills`, so a
 class-skill-TABLE change is invisible to an old build.

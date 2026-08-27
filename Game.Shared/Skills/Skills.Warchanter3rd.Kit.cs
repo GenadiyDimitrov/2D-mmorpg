@@ -359,7 +359,7 @@ public static partial class SkillCatalog
             Magnitudes: new EffectMagnitude[] { new(effect, amounts[0], ModifierMode.Flat) },
             Description: "Toggle. " + desc,
             Levels: Enumerable.Range(0, amounts.Length).Select(i => new SkillLevel(
-                MpCost: mpPerSec[i], SpCost: BandSp13[i],
+                MpCost: mpPerSec[i], MpPerSecond: mpPerSec[i], SpCost: BandSp13[i],
                 Magnitudes: new EffectMagnitude[] { new(effect, amounts[i], ModifierMode.Flat) },
                 Description: $"{name} — +{amounts[i]} while active, {mpPerSec[i]} MP per second."))
                 .ToArray());

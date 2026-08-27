@@ -610,6 +610,12 @@ public record SkillDef(
     /// are pure child references (see SkillDef.ChildBuffs). Null/empty = an ordinary single buff.</summary>
     public string[]? ChildBuffsAt(int level) => Lvl(level)?.ChildBuffs ?? ChildBuffs;
     public int MpCostAt(int level) => Lvl(level)?.MpCost ?? MpCost;
+    /// <summary>A TOGGLE's PER-SECOND upkeep at a level. A rung's 0 falls back to the SkillDef's
+    /// MpPerSecond, so a single-rung stance (Prowl) needs no per-level entry — and a stance whose
+    /// upkeep IS a ladder (the Warchanter's two) is finally charged the rung the player is holding.
+    /// ⚠ NOT MpCostAt: Prowl carries a 20 MP one-off cast cost AND a 1 MP/s burn, so the two numbers
+    /// are genuinely different fields on the same skill.</summary>
+    public int MpPerSecondAt(int level) => Lvl(level)?.MpPerSecond is int v && v > 0 ? v : MpPerSecond;
     /// <summary>HP price at a level (Restore Spirit). A level's -1 falls back to the SkillDef's
     /// HpCost, so a single-level HP skill needs no per-level entry at all.</summary>
     public int HpCostAt(int level)
@@ -988,7 +994,13 @@ public record SkillLevel(
     float BlinkRange = 0f,
     // HOW MANY of the skill's LearnConsumableId THIS level costs to learn (0 = the def's). His 4th-tier
     // `SP Bottles` column, which climbs per row. See SkillDef.LearnConsumableId.
-    int LearnConsumableAmount = 0);
+    int LearnConsumableAmount = 0,
+    // PER-SECOND UPKEEP of a TOGGLE at THIS level (0 = inherit the SkillDef's MpPerSecond). The
+    // Warchanter's two stances are the reason: their upkeep is a 13-rung ladder (Reinforcement
+    // 12→30 MP/s), and without a per-level slot TickToggleUpkeep charged rung 1's number at every
+    // rung — a level-80 Reinforcement authored at 30 MP/s really took 12. Same "unset = inherit"
+    // shape as every other per-rung field above.
+    int MpPerSecond = 0);
 
 /// <summary>What a buff does to the four things a MONSTER pays out: experience, skill points, the
 /// gold it drops and the CHANCE its table rolls. The premium rune family (Rune of Experience /

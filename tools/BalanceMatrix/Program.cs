@@ -378,6 +378,14 @@ if (args.Length > 0 && args[0] == "--mpregen")
     return;
 }
 
+// `--mpdrain` - the MP POTION question (2026-08-27): the NAMED spells' drain against regen, in
+// flat MP/s, for all three races across 20-80. Nothing here changes the engine.
+if (args.Length > 0 && args[0] == "--mpdrain")
+{
+    MpDrain(args.Skip(1).Select(int.Parse).ToArray());
+    return;
+}
+
 // The four same-level PvP targets a drain is judged against. One list, so every table below
 // measures the same characters.
 //
@@ -4950,6 +4958,259 @@ static (string Name, int Mp, float Cycle, string MaxName, float MaxDrain) BestSp
 }
 
 static string Trim(string s, int n) => s.Length <= n ? s : s[..n];
+
+// ============================================================================================
+//  `--mpdrain` — WHAT A CASTER ACTUALLY BURNS, PER SECOND, PER RACE. Owner, 2026-08-27, opening
+//  the MP-potion question: *"Just need to measure what is the mp consumption at 20,30,40,50,60,
+//  70,80 (healer-holy bolt, Mage-elemental bolt, buffer with reinforcement and sharpening active)
+//  vs current mp regen (don't say % I want flat numbers ... 10/s drain vs 5/s regen) but take into
+//  an account spt/wit cast speed elf casts faster so 2.5 cast with higher wit and lower mp regen
+//  is different from 2.5 cast with lower wit and higher spt"*.
+//
+//  `--mpregen` (BL-92) answered "is the mage's regen too big" for ONE human nuker on his most
+//  EFFICIENT spell. This answers a different question, and it is the one a potion is sized off:
+//  the named spell, all three races, the whole level ladder, in FLAT MP/s on both sides.
+//
+//  ⚠ Race is the entire point, so every term race touches is measured, not assumed:
+//      WIT  → cast speed (exponential, x1.63 per +10 WIT) → shorter cycle → HIGHER drain.
+//      SPT  → SptRegenModifier (0.70..1.30)               → regen.
+//  An elf pays for his speed twice: he empties the bar faster AND refills it slower.
+//
+//  ⚠ NOTHING HERE CHANGES THE ENGINE. Drain mirrors GameLoopService.AutoCycleTicks +
+//  EffectiveMpCost; regen mirrors Regenerate's MP branch, flats outside, exactly as 0.88.0 left it.
+// ============================================================================================
+
+static void MpDrain(int[] argLevels)
+{
+    // The real buff stack a farming caster carries, same as `--mpregen` models it: Serenity-or-
+    // harmony x1.2 (ONE family, the harmony evicts the single) and the Mark's x1.2.
+    const float BuffPct = 1.20f * 1.20f;
+
+    int[] levels = argLevels.Length > 0 ? argLevels : new[] { 20, 30, 40, 50, 60, 70, 80 };
+    var races = new[] { Race.Human, Race.Elf, Race.Ork };
+
+    // Mirrors GameLoopService.Regenerate's MP branch EXACTLY (flats OUTSIDE, 0.88.0).
+    static float Mp(Entity e, MoveState st, bool moving, float buffPct)
+    {
+        float stance = MovementTuning.RegenMultiplier(st, moving);
+        float calm = st == MoveState.Sitting ? 1f
+            : !moving                        ? e.MpRegenStandMult
+            : st == MoveState.Walking        ? e.MpRegenWalkMult
+                                             : e.MpRegenRunMult;
+        return StatCalculator.MpRegenPerSecond(e.EffectiveSpt, e.Level)
+                   * stance * calm * e.MpRegenMult * buffPct
+               + e.MpRegenBonus;
+    }
+
+    // GameLoopService.EffectiveMpCost, verbatim: authored total x the caster's MP-cost buffs.
+    static int Cost(Entity e, SkillDef d, int lvl) =>
+        (int)(d.MpCostAt(lvl) * (1f - (d.Category == SkillCategory.Physical
+            ? e.PhysMpCostReduction : e.MagicMpCostReduction)));
+
+    // GameLoopService.AutoCycleTicks, verbatim (it is private): cast x castSpeed + reduced reuse.
+    static (float Cast, float Reuse) Cycle(Entity e, SkillDef d, int lvl)
+    {
+        float castMult = d.Category == SkillCategory.Physical
+            ? e.EffectiveAttackSpeedMultiplier : e.EffectiveCastSpeedMultiplier;
+        int castTicks = Math.Max(2, (int)(d.CastTicksAt(lvl) * castMult));
+        int cd = d.CooldownTicksAt(lvl);
+        if (cd > 0 && e.CooldownReduction > 0f) cd = Math.Max(1, (int)(cd * (1f - e.CooldownReduction)));
+        return (castTicks / 10f, cd / 10f);
+    }
+
+    static string Empty(int pool, float drain, float regen)
+    {
+        float net = drain - regen;
+        return net <= 0.05f ? "  never" : $"{pool / net,5:0}s";
+    }
+
+    Console.WriteLine();
+    Console.WriteLine("=== MP DRAIN vs MP REGEN - FLAT MP/s, ALL THREE RACES (2026-08-27) ===");
+    Console.WriteLine();
+    Console.WriteLine("  drain/s = EffectiveMpCost / (cast x castSpeed + reuse)      <- AutoCycleTicks");
+    Console.WriteLine("  MP/s    = [ (2+0.08L) x SptRegenModifier x MpRegenMult x (1+buff%) x stance ] + flats");
+    Console.WriteLine($"  'bf' = the real buff stack, x{BuffPct:0.00} (Serenity-or-harmony x1.2, Mark x1.2).");
+    Console.WriteLine("  stance: STANDING 1.00, running 0.70. A farming caster stands to cast, so 'bf.st' is the");
+    Console.WriteLine("  honest one; 'bf.run' is what a kiter gets.");
+    Console.WriteLine("  'empty' = seconds of unbroken casting from a FULL bar before it hits zero, at bf.st.");
+    Console.WriteLine();
+
+    // ---- 0. WHAT RACE IS, IN THE TWO TERMS THAT MATTER ---------------------------------------
+    Console.WriteLine("--- 0. THE RACE SPLIT: the two stats this whole report turns on ---");
+    Console.WriteLine();
+    Console.WriteLine("  race    WIT  castSpeed(x)   SPT  SptRegenMod   verdict");
+    foreach (var r in races)
+    {
+        var s = StatCalculator.GetBaseStats(r, BaseClass.Mage);
+        var probe = BuildCasterFor(r, 60, Archetype.Nuker, Discipline.Magus);
+        float cx = probe.EffectiveCastSpeedMultiplier;
+        Console.WriteLine($"  {r,-6} {s.Wit,4}   {1f / cx,10:0.00}x  {s.Spt,4}   {StatCalculator.SptRegenModifier(s.Spt),10:0.000}"
+                        + $"   {(r == Race.Elf ? "casts fastest, regens slowest" : r == Race.Ork ? "casts slowest, regens fastest" : "the middle - the baseline")}");
+    }
+    Console.WriteLine();
+    Console.WriteLine("  (castSpeed measured on a level-60 nuker with real gear - class base x WIT x robe.)");
+    Console.WriteLine();
+
+    // ---- 1 & 2. THE TWO SPAMMERS -------------------------------------------------------------
+    var tables = new (string Title, Archetype Arch, Discipline Disc, string[] Ids)[]
+    {
+        ("1. HEALER - Holy Bolt (Holy Ray REPLACES it at 40: the bolt leaves the bar)",
+            Archetype.Healer, Discipline.Lightbringer,
+            new[] { SkillCatalog.HolyRay, SkillCatalog.HolyStrike }),
+        ("2. NUKER - Elemental Bolt (Elemental Blast REPLACES it at 40)",
+            Archetype.Nuker, Discipline.Magus,
+            new[] { SkillCatalog.ElementalBlast, SkillCatalog.ElementalBolt }),
+    };
+
+    foreach (var (title, arch, disc, ids) in tables)
+    {
+        Console.WriteLine($"--- {title} ---");
+        Console.WriteLine();
+        Console.WriteLine("     L  race    WIT  SPT  spell             rung  cast  reuse  cycle    MP  drain/s |  nat.st   bf.st  bf.run |   net/s    pool   empty");
+        Console.WriteLine("  ------------------------------------------------------------------------------------------------------------------------------------");
+        foreach (int L in levels)
+        {
+            foreach (var race in races)
+            {
+                var e = BuildCasterFor(race, L, arch, disc);
+                SkillDef? d = null; int lvl = 0;
+                foreach (var id in ids)
+                    if (e.LearnedSkills.TryGetValue(id, out int sl) && SkillCatalog.Get(id) is { } got)
+                    { d = got; lvl = sl; break; }
+
+                float natSt = Mp(e, MoveState.Running, false, 1f);
+                float bfSt  = Mp(e, MoveState.Running, false, BuffPct);
+                float bfRun = Mp(e, MoveState.Running, true,  BuffPct);
+
+                if (d is null)
+                {
+                    Console.WriteLine($"  {L,4}  {race,-6} {e.EffectiveWit,4} {e.EffectiveSpt,4}  {"(not learned)",-17} {"-",4} {"-",5}  {"-",5}  {"-",5}  {"-",4} {0f,8:0.0} |"
+                                    + $" {natSt,7:0.0} {bfSt,7:0.0} {bfRun,7:0.0} | {-bfSt,7:+0.0;-0.0} {e.MaxMp,7}   never");
+                    continue;
+                }
+
+                int mp = Cost(e, d, lvl);
+                var (cast, reuse) = Cycle(e, d, lvl);
+                float cycle = cast + reuse;
+                float drain = cycle > 0 ? mp / cycle : 0f;
+
+                Console.WriteLine($"  {L,4}  {race,-6} {e.EffectiveWit,4} {e.EffectiveSpt,4}  {Trim(d.Name, 17),-17} {lvl,4} {cast,5:0.0}s {reuse,5:0.0}s {cycle,5:0.0}s {mp,5} {drain,8:0.0} |"
+                                + $" {natSt,7:0.0} {bfSt,7:0.0} {bfRun,7:0.0} | {drain - bfSt,7:+0.0;-0.0} {e.MaxMp,7} {Empty(e.MaxMp, drain, bfSt)}");
+            }
+        }
+        Console.WriteLine();
+    }
+
+    // ---- 3. THE BUFFER'S TOGGLES -------------------------------------------------------------
+    //
+    // ⚠ A TOGGLE'S UPKEEP IS NOT A LADDER IN THE ENGINE. BuildStance authors mpPerSec[i] into each
+    // SkillLevel's MpCost (the CSV's own convention - *"his MP column carries the same N"*), but
+    // TickToggleUpkeep charged `def.MpPerSecond` - the RUNG-1 number - at EVERY rung until 2026-08-27.
+    // Both are still printed: 'auth' is what the CSV prices the rung at, 'chg' what the tick takes. They
+    // must now MATCH - if they ever diverge again, the ladder has lost its per-rung slot.
+    Console.WriteLine("--- 3. BUFFER (Warchanter) - Reinforcement + Sharpening BOTH RUNNING ---");
+    Console.WriteLine();
+    Console.WriteLine("  A toggle has no cast and no reuse: a FLAT per-second burn for as long as it is lit.");
+    Console.WriteLine("  'auth' = the authored rung cost (CSV).  'chg' = what TickToggleUpkeep charges. They must MATCH.");
+    Console.WriteLine("  'combat' adds his best spammable damage skill on top - the toggles are not the whole bill.");
+    Console.WriteLine();
+    Console.WriteLine("     L  race    SPT  rung  Reinf  Sharp   auth/s   chg/s | dmg skill          drain/s | combat/s |  bf.st |   net/s    pool   empty");
+    Console.WriteLine("  ------------------------------------------------------------------------------------------------------------------------------------");
+    foreach (int L in levels)
+    {
+        foreach (var race in races)
+        {
+            var e = BuildCasterFor(race, L, Archetype.Healer, Discipline.Warchanter);
+            float bfSt = Mp(e, MoveState.Running, false, BuffPct);
+
+            var reinf = SkillCatalog.Get(SkillCatalog.WcReinforcement);
+            var sharp = SkillCatalog.Get(SkillCatalog.WcSharpening);
+            int rr = e.SkillLevelOf(SkillCatalog.WcReinforcement);
+            int sr = e.SkillLevelOf(SkillCatalog.WcSharpening);
+
+            float auth = 0f, chg = 0f;
+            if (reinf != null && rr > 0) { auth += reinf.MpCostAt(rr); chg += reinf.MpPerSecondAt(rr); }
+            if (sharp != null && sr > 0) { auth += sharp.MpCostAt(sr); chg += sharp.MpPerSecondAt(sr); }
+
+            // His best spammable DAMAGE skill, any category (the buffer's are physical Sound skills).
+            string dmgName = "-"; float dmgDrain = 0f;
+            foreach (var (id, sl) in e.LearnedSkills)
+            {
+                if (SkillCatalog.Get(id) is not SkillDef dd) continue;
+                if ((dd.Effect & (SkillEffect.MagicDamage | SkillEffect.PhysicalDamage)) == 0) continue;
+                int c = Cost(e, dd, sl);
+                if (c <= 0) continue;
+                var (ca, re) = Cycle(e, dd, sl);
+                if (re > 5f) continue;                      // a burst, not a rotation
+                float cy = ca + re;
+                if (cy <= 0f) continue;
+                float dr = c / cy;
+                if (dr > dmgDrain) { dmgDrain = dr; dmgName = dd.Name; }
+            }
+
+            float combat = auth + dmgDrain;
+            Console.WriteLine($"  {L,4}  {race,-6} {e.EffectiveSpt,4} {(rr > 0 ? rr.ToString() : "-"),5}"
+                            + $" {(rr > 0 ? reinf!.MpCostAt(rr).ToString() : "-"),6} {(sr > 0 ? sharp!.MpCostAt(sr).ToString() : "-"),6}"
+                            + $" {auth,8:0.0} {chg,7:0.0} | {Trim(dmgName, 17),-17} {dmgDrain,8:0.0} | {combat,8:0.0} | {bfSt,6:0.0} |"
+                            + $" {combat - bfSt,7:+0.0;-0.0} {e.MaxMp,7} {Empty(e.MaxMp, combat, bfSt)}");
+        }
+    }
+    Console.WriteLine();
+}
+
+/// <summary>A caster of a NAMED discipline, with the class chain gated by level the way the game
+/// gates it (2nd at 20, 3rd at 40, the 4th tier's rows arriving by LearnLevel from 76).
+/// BuildWarchanter sets the 3rd class unconditionally, which is fine at 40+ and a lie at 20-30 —
+/// this report starts at 20, so it needs the gate.</summary>
+static Entity BuildCasterFor(Race race, int level, Archetype arch, Discipline disc)
+{
+    var s = StatCalculator.GetBaseStats(race, BaseClass.Mage);
+    var e = new Entity { Name = disc.ToString(), Kind = EntityKind.Player, Race = race, BaseClass = BaseClass.Mage };
+    e.Level = level;
+    e.Con = s.Con; e.AtkStat = s.Atk; e.Wit = s.Wit; e.Agi = s.Agi; e.Spt = s.Spt;
+
+    if (level >= 20)
+        e.SecondClass = ClassCatalog.Playable.First(c => c.Race == race && c.Archetype == arch).Id;
+    if (level >= 40)
+        e.ThirdClass = ThirdClassCatalog.Playable.First(c => c.Race == race && c.Discipline == disc).Id;
+
+    foreach (var cs in ClassSkills.ForClass(race, BaseClass.Mage, null, null))
+        if (cs.LearnLevel <= level)
+            e.LearnedSkills[cs.SkillId] = Math.Max(e.SkillLevelOf(cs.SkillId), cs.SkillLevel);
+    foreach (var cs in ClassSkills.Cumulative(race, BaseClass.Mage, e.Archetype, e.Discipline))
+        if (cs.LearnLevel <= level)
+            e.LearnedSkills[cs.SkillId] = Math.Max(e.SkillLevelOf(cs.SkillId), cs.SkillLevel);
+    foreach (var id in e.LearnedSkills.Keys.ToList())
+        if (SkillCatalog.Get(id)?.Replaces is { } replaced)
+            foreach (var r in replaced) e.LearnedSkills.Remove(r);
+    e.LearnedSkills[SkillCatalog.SpellcasterMastery] = 1;
+    GrantFloorPassive(e, level);
+
+    var rune = SkillCatalog.Get(SkillCatalog.SpellRuneBuff);
+    if (rune != null)
+        e.Buffs.Add(new Game.Server.Simulation.BuffInstance
+        {
+            Effect = rune.Effect, Magnitudes = rune.Magnitudes,
+            TicksRemaining = int.MaxValue, Name = rune.Name, Key = rune.BuffKey,
+        });
+
+    // The Warchanter's race split (his own words); every other caster is staff + robe.
+    int t = GearTier(level);
+    if (disc != Discipline.Warchanter) { Equip(e, $"staff_t{t}"); Equip(e, $"robe_t{t}"); }
+    else switch (race)
+    {
+        case Race.Human: Equip(e, $"blunt1h_t{t}"); Equip(e, $"shield_t{t}"); Equip(e, $"heavy_t{t}"); break;
+        case Race.Ork:   Equip(e, $"blunt2h_t{t}"); Equip(e, $"heavy_t{t}"); break;
+        default:         Equip(e, $"bow_t{t}");     Equip(e, $"light_t{t}"); break;
+    }
+    foreach (var acc in new[] { "helm", "gloves", "boots" }) Equip(e, $"{acc}_t{t}");
+    Equip(e, $"necklace_t{t}");
+    Equip(e, $"ring_t{t}"); Equip(e, $"ring_t{t}");
+    Equip(e, $"earring_t{t}"); Equip(e, $"earring_t{t}");
+
+    e.RecomputeDerived();
+    return e;
+}
 
 // ============================================================================================
 //  `--hpregen` — THE HP ECONOMY. `BL-92` part TWO: the half the owner deliberately HELD on
