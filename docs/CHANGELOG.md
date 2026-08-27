@@ -73,6 +73,53 @@ Uncommon, and the **Potion Master's L5 recipe** for the Rare — filed beside th
 same rarity, same rung, same input rarity, so the mana line's top is the HP line's top rather than a
 new stride. That also keeps the "always" drop group at the size playtest-17 deliberately cut it to.
 
+
+### Calm Spirit: his CSV edit, and the run penalty is gone
+
+He fixed it in `nuker 3rd.csv` the same day it was reported, and the code follows the file. The run
+column is **deleted outright**; what the passive buys is the walk column, ×1.06 → ×1.16, with a ×1.01
+on standing from rung 4.
+
+🔴 **Why it had to change.** The first build gave running ×0.30 climbing to ×0.70 — but that
+MULTIPLIED the 0.70 run *stance*, so learning the passive took a running mage from 7.7 MP/s to **3.3**
+at rung 1 and never caught up: an unremovable passive that made running strictly worse than not having
+it, at every rung including the last. Running is now simply the 0.70 stance, untouched.
+
+His aim is unchanged — *"both walk/still is the same mp regen in the end … keep farming while kiting
+(slowly)"* — but it is bought rather than paid for: walk/stand goes 91.5% → **98.1%** across the six
+rungs instead of a running mage being punished into it. ⚠ **Both columns are AUTHORED now**; the stand
+column used to be DERIVED as `0.85 × walk` and no longer is.
+
+### `--mpcase` pinned to his live client — and the model was wrong
+
+He measured his own character against the report: *"x1.3 cast speed and holy ray l1 (30mp 2.5 cast
+time /1s cd) -> 2.5/1.3 = 1.92cast + 1cd(/1.15 …) = 2.79s for 30mp = 10.75/s cost … thats all only
+holy ray no heals no buffs nothing in between casts"*.
+
+He is right and the table was wrong. A first attempt to reproduce his ×1.30 inflated WIT by 6, which
+he corrected on the spot: *"Ork have 19 wit but u dont take into the acount alacruty/frenzy/passives"*.
+The stat was never the gap — the **buff stack** was. With a real Alacrity (Rare) buff applied and WIT
+left at the racial value, the model lands on his client:
+
+| | cast | cycle | drain | his |
+|---|---|---|---|---|
+| ork healer 43 | ×1.26 | **2.79s** | **10.77 MP/s** | 2.79s, 10.75 MP/s |
+| regen still / walk / run | | | **8.7 / 7.6 / 6.5** | 8.4 / 7.6 / 6.5 |
+
+⚠ **A cast-speed error MULTIPLIES the drain**, because it divides the cycle — which is exactly how
+0.91.2's *"below ~45 nobody has an MP problem"* came to be written. It is withdrawn: **standing still,
+unbuffed, on the cheapest spell he owns, with nothing between casts, a level-43 healer does not pay
+for himself.** And his prediction about the elf holds — casting fastest on the lowest SPT, the elf is
+**−6.2 MP/s** where the ork is −2.1:
+
+| race at 43 | WIT | SPT | cast | drain | regen (still) | net |
+|---|---|---|---|---|---|---|
+| Human | 21 | 39 | ×1.47 | 11.98 | 7.9 | **−4.1** |
+| Elf | 24 | 32 | ×1.70 | 13.21 | 7.0 | **−6.2** |
+| Ork | 20 | 45 | ×1.26 | 10.77 | 8.7 | **−2.1** |
+
+The Common mana potion's 10 MP/s sustained covers all three several times over, which is the right
+shape: the tier that trivialises the problem at 43 should still be the cheap one at 80.
 ### `BalanceMatrix --mpcase` — the level-43 ork healer, and what it rules out
 
 He read 0.91.2's *"below ~45 nobody has an MP problem"* against what he actually plays: *"Ork healer

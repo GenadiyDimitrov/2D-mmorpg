@@ -5048,6 +5048,18 @@ static void MpCase()
         Console.WriteLine($"  WIT {e.EffectiveWit}   SPT {e.EffectiveSpt}   cast x{1f / e.EffectiveCastSpeedMultiplier:0.00}"
                         + $"   MaxMP {e.MaxMp}   MpRegenMult {e.MpRegenMult:0.00}   flats +{e.MpRegenBonus:0.0}");
         Console.WriteLine($"  regen: standing {Mp(e, false, pct):0.0}/s   running {Mp(e, true, pct):0.0}/s");
+        // ---- WHY the cast speed is what it is. He gave a LIVE x1.30 against this model's number, and
+        //      a cast-speed error is the whole report: it divides the cycle, so it multiplies the drain.
+        Console.WriteLine($"    cast chain: classBase {StatCalculator.ClassBaseCastSpeed(e.Race, e.BaseClass)}"
+                        + $" x witMod {StatCalculator.CastWitModifier(e.EffectiveWit):0.000}"
+                        + $" x gearFactor {1f / Math.Max(0.05f, e.CastSpeedMultiplier):0.000}"
+                        + $" (CastSpeedMultiplier {e.CastSpeedMultiplier:0.000})"
+                        + $" x penalty {e.CastSpeedPenaltyMult:0.00} + flat {e.CastSpeedFlatBonus:0.0}");
+        Console.Write("    masteries/passives held:");
+        foreach (var (id, lv) in e.LearnedSkills)
+            if (SkillCatalog.Get(id) is { } sd && (sd.ArmorMasteryAt(lv) is not null || id.Contains("mastery")))
+                Console.Write($" {id}@{lv}");
+        Console.WriteLine();
         if (atk is not null)
         {
             var (c, r) = Cycle(e, atk, atkLvl);
@@ -5089,6 +5101,73 @@ static void MpCase()
         Console.WriteLine();
     }
 
+
+    // 🔑 THE CAST SPEED IS A BUFF STACK, NOT A STAT. First attempt at this section inflated WIT by 6
+    // to reproduce his x1.30, which he corrected on the spot: *"Ork have 19 wit but u dont take into
+    // the acount alacruty/frenzy/passives"*. He is right — WIT stays at the racial 19; what the model
+    // was missing is the buffs a real caster runs. So Alacrity is applied as a REAL buff here, and the
+    // remainder is named rather than hidden inside a fudged stat.
+    //
+    // A cast-speed error is not a detail in this report: it DIVIDES the cycle, so it MULTIPLIES the
+    // drain. It is exactly how "no MP problem below 45" came to be written.
+    var alacrity = SkillCatalog.Get(SkillCatalog.BuffAlacrityR);   // the Rare rung, +30% cast
+
+    Console.WriteLine("--- PINNED TO LIVE: base WIT + a real Alacrity (Rare) buff ---");
+    Console.WriteLine();
+    Console.WriteLine("  Holy Ray L1 only. No heals, nothing between casts - his test exactly. Regen UNBUFFED,");
+    Console.WriteLine("  because his reading is (his buffed pair is 9.4 / 8.2 / 7.0).");
+    Console.WriteLine($"  'his x1.30' recomputes the same character at the cast speed he MEASURED, whatever the");
+    Console.WriteLine("  rest of his stack is (Alacrity alone does not reach it - Combo Rush and passives are the");
+    Console.WriteLine("  balance). Both rows are shown so the gap between model and client stays visible.");
+    Console.WriteLine();
+    Console.WriteLine("   race    WIT  SPT   cast(x)   cast  reuse  cycle    MP  drain/s | regen still  walk   run |   net/s");
+    Console.WriteLine("  --------------------------------------------------------------------------------------------------");
+    foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
+    {
+        var e = BuildHisHealer(43, race: race);
+        if (alacrity != null)
+            e.Buffs.Add(new Game.Server.Simulation.BuffInstance
+            {
+                Effect = alacrity.Effect, Magnitudes = alacrity.Magnitudes,
+                TicksRemaining = int.MaxValue, Name = alacrity.Name, Key = alacrity.BuffKey,
+            });
+        e.RecomputeDerived();
+
+        var (d, l) = Best(e, SkillCatalog.HolyRay, SkillCatalog.HolyStrike);
+        if (d is null) continue;
+        int mp = Cost(e, d, l);
+
+        float still = Mp(e, false, 1f);
+        float walk = StatCalculator.MpRegenPerSecond(e.EffectiveSpt, e.Level)
+                        * MovementTuning.RegenMultiplier(MoveState.Walking, true) * e.MpRegenWalkMult
+                        * e.MpRegenMult + e.MpRegenBonus;
+        float run = Mp(e, true, 1f);
+
+        // Two rows: what the model derives, and the same character at HIS measured cast speed.
+        void Row(string tag, float castX)
+        {
+            float cast = Math.Max(0.2f, d.CastTicksAt(l) / 10f / castX);
+            int cd = d.CooldownTicksAt(l);
+            if (cd > 0 && e.CooldownReduction > 0f) cd = Math.Max(1, (int)(cd * (1f - e.CooldownReduction)));
+            float reuse = cd / 10f;
+            float cycle = cast + reuse;
+            float drain = mp / cycle;
+            Console.WriteLine($"   {tag,-6} {e.EffectiveWit,4} {e.EffectiveSpt,4}    {castX,6:0.00}"
+                            + $" {cast,6:0.00}s {reuse,5:0.00}s {cycle,5:0.00}s {mp,5} {drain,8:0.00} |"
+                            + $" {still,11:0.0} {walk,5:0.0} {run,5:0.0} | {drain - still,7:+0.00;-0.00}");
+        }
+
+        Row(race.ToString(), 1f / e.EffectiveCastSpeedMultiplier);
+        if (race == Race.Ork) Row("  his", 1.30f);
+    }
+    Console.WriteLine();
+    Console.WriteLine("  HIS PREDICTION HOLDS: the elf casts fastest AND regenerates slowest, so he is worst off");
+    Console.WriteLine("  at every level; the ork is best off and is STILL negative. Standing still, unbuffed, on");
+    Console.WriteLine("  the cheapest spell he owns, with nothing between casts, a 43 does not pay for himself.");
+    Console.WriteLine("  That is the case for the potion - and the COMMON tier (10 MP/s sustained) covers this");
+    Console.WriteLine("  deficit several times over, which is the right shape: a potion that trivialises the");
+    Console.WriteLine("  problem at 43 should still be the cheap one at 80.");
+    Console.WriteLine();
     // ---- POOL SENSITIVITY. At 43 the bar is mostly JEWELLERY, so what he is NOT wearing moves it
     // further than his level does — and "how many casts a full bar buys" is the number his minute
     // is really made of, not MP/s. Five accessory slots is the difference between a bar that lasts
@@ -5132,21 +5211,22 @@ static void MpCase()
 /// (ItemCatalog: level ≥ 20 → E, ≥ 40 → D), so at 43 he is a full grade under-tier — which is the
 /// normal way to play, not a mistake, because a grade costs real gold. No rune buff: the report's
 /// whole point is what a soloing 43 actually has.</summary>
-static Entity BuildHisHealer(int level, bool jewels = true, bool weapon = true)
+static Entity BuildHisHealer(int level, bool jewels = true, bool weapon = true,
+                             Race race = Race.Ork, int witBonus = 0)
 {
-    var s = StatCalculator.GetBaseStats(Race.Ork, BaseClass.Mage);
-    var e = new Entity { Name = "his healer", Kind = EntityKind.Player, Race = Race.Ork, BaseClass = BaseClass.Mage };
+    var s = StatCalculator.GetBaseStats(race, BaseClass.Mage);
+    var e = new Entity { Name = "his healer", Kind = EntityKind.Player, Race = race, BaseClass = BaseClass.Mage };
     e.Level = level;
-    e.Con = s.Con; e.AtkStat = s.Atk; e.Wit = s.Wit; e.Agi = s.Agi; e.Spt = s.Spt;
+    e.Con = s.Con; e.AtkStat = s.Atk; e.Wit = s.Wit + witBonus; e.Agi = s.Agi; e.Spt = s.Spt;
 
-    e.SecondClass = ClassCatalog.Playable.First(c => c.Race == Race.Ork && c.Archetype == Archetype.Healer).Id;
+    e.SecondClass = ClassCatalog.Playable.First(c => c.Race == race && c.Archetype == Archetype.Healer).Id;
     if (level >= 40)
-        e.ThirdClass = ThirdClassCatalog.Playable.First(c => c.Race == Race.Ork && c.Discipline == Discipline.Lightbringer).Id;
+        e.ThirdClass = ThirdClassCatalog.Playable.First(c => c.Race == race && c.Discipline == Discipline.Lightbringer).Id;
 
-    foreach (var cs in ClassSkills.ForClass(Race.Ork, BaseClass.Mage, null, null))
+    foreach (var cs in ClassSkills.ForClass(race, BaseClass.Mage, null, null))
         if (cs.LearnLevel <= level)
             e.LearnedSkills[cs.SkillId] = Math.Max(e.SkillLevelOf(cs.SkillId), cs.SkillLevel);
-    foreach (var cs in ClassSkills.Cumulative(Race.Ork, BaseClass.Mage, e.Archetype, e.Discipline))
+    foreach (var cs in ClassSkills.Cumulative(race, BaseClass.Mage, e.Archetype, e.Discipline))
         if (cs.LearnLevel <= level)
             e.LearnedSkills[cs.SkillId] = Math.Max(e.SkillLevelOf(cs.SkillId), cs.SkillLevel);
     foreach (var id in e.LearnedSkills.Keys.ToList())

@@ -45,12 +45,12 @@ LEARN @ LVL,NAME,TYPE,RANGE,TARGET,CAST s,CD s,DURRATION s,DESCR,MP,SP COST,REPL
 72,Spellcaster Weapon Mastery,Passive,0,self,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +94, mpReg +3.1,hpReg +2.6, cast speed x1.1",0,650k,[Spell Mastery]
 74,Spellcaster Weapon Mastery,Passive,0,self,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +99, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,880k,[Spell Mastery]
 ,,,,,,,,,,,,,------------------------------Calm Spirit------------------------------
-40,Calm Spirit,Passive,0,self,0,0,0,Multiplies the MP regen when running x0.3; walking x1.03,0,36k,[]
-48,Calm Spirit,Passive,0,self,0,0,0,Multiplies the MP regen when running x0.36; walking x1.04,0,64k,[]
-56,Calm Spirit,Passive,0,self,0,0,0,Multiplies the MP regen when running x0.43; walking x1.04,0,81k,[]
-62,Calm Spirit,Passive,0,self,0,0,0,Multiplies the MP regen when running x0.51; walking x1.05,0,170k,[]
-68,Calm Spirit,Passive,0,self,0,0,0,Multiplies the MP regen when running x0.6; walking x1.10,0,320k,[]
-74,Calm Spirit,Passive,0,self,0,0,0,Multiplies the MP regen when running x0.7; walking x1.20; standing x1.02,0,880k,[]
+40,Calm Spirit,Passive,0,self,0,0,0,Multiplies the MP regen when walking x1.06,0,36k,[]
+48,Calm Spirit,Passive,0,self,0,0,0,Multiplies the MP regen when walking x1.08,0,64k,[]
+56,Calm Spirit,Passive,0,self,0,0,0,Multiplies the MP regen when walking x1.10,0,81k,[]
+62,Calm Spirit,Passive,0,self,0,0,0,Multiplies the MP regen when walking x1.12 and standing still x1.01,0,170k,[]
+68,Calm Spirit,Passive,0,self,0,0,0,Multiplies the MP regen when walking x1.14 and standing still x1.01,0,320k,[]
+74,Calm Spirit,Passive,0,self,0,0,0,Multiplies the MP regen when walking x1.16 and standing still x1.01,0,880k,[]
 ,,,,,,,,,,,,,------------------------------Restore Spirit------------------------------
 40,Restore Spirit,Magic/MP Regen,0,self,4,5,0,exchanges HP (-100) for MP (+33) - multiplied by mpWhenRestored from Mage Armor Mastery,0,36k,[]
 52,Restore Spirit,Magic/MP Regen,0,self,4,5,0,exchanges HP (-162) for MP (+54) - multiplied by mpWhenRestored from Mage Armor Mastery,0,74k,[]

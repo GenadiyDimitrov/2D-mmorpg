@@ -80,21 +80,22 @@ public static partial class SkillCatalog
         { 30, 35, 39, 43, 46, 48, 50, 52, 54, 56, 58, 60, 62, 64 };
 
     /// <summary>CALM SPIRIT — six rungs at 40/48/56/62/68/74, and the only skill in the game that
-    /// changes how a STANCE pays. Built 2026-08-26 (`BL-92`), after being held since 0.87.0
-    /// (*"w8 on calm spirit"*).
+    /// changes how a STANCE pays. Built 2026-08-26 (`BL-92`); REWRITTEN 2026-08-27 off his own edit
+    /// to `nuker 3rd.csv`.
     ///
-    /// <para>🔑 <b>IT IS A NERF TO RUNNING AND THAT IS THE POINT.</b> A nuker who learns it regenerates
-    /// LESS while running than one who never took it — his run column is ×0.30 rising only to ×0.70 —
-    /// and it buys that back on the walk column. Do not "fix" the direction; his design is *"in pvp
-    /// need to click run (but regen slower)"*.</para>
+    /// <para>🔴 <b>THERE IS NO RUN MULTIPLIER ANY MORE, AND THAT IS THE FIX.</b> The first build gave
+    /// running ×0.30 climbing to ×0.70 — but that MULTIPLIED the 0.70 run stance, so learning the
+    /// passive took a running mage from 7.7 MP/s to 3.3 at rung 1 and never caught back up: an
+    /// unremovable passive that made running strictly worse than not having it, at every rung
+    /// including the last. Measured and reported on 2026-08-27; he fixed it in the CSV the same day
+    /// and the code follows the file, as always. Running is now simply the 0.70 stance, untouched.</para>
     ///
-    /// <para>🔑 <b>WHY THE THIRD COLUMN IS DERIVED, NOT AUTHORED.</b> His CSV carries run and walk. The
-    /// requirement he stated for the STANDING case is an outcome, not a number — *"both walk/still is
-    /// the same mp regen in the end … keep farming while kiting (slowly)"* — so the stand multiplier is
-    /// whatever makes `walk × 0.85 == stand × 1.00`, i.e. `0.85 × walkMult`, floored at 1.0 so the
-    /// passive can never make standing WORSE. It reaches 1.02 only at the top rung: at 74, and nowhere
-    /// before it, a walking mage finally regenerates exactly what a standing one does. That is the
-    /// ladder — six rungs spent buying the right to farm while moving.</para>
+    /// <para>🔑 <b>WHAT IT BUYS IS THE WALK COLUMN</b>, ×1.06 → ×1.16, with a ×1.01 on STANDING from
+    /// rung 4. His aim is unchanged — *"both walk/still is the same mp regen in the end … keep farming
+    /// while kiting (slowly)"* — but it is now bought rather than paid for: 0.85 × 1.16 = 0.986 at the
+    /// top rung, so a walking mage ends level with a standing one instead of a running one being
+    /// punished into it. ⚠ Both columns are now AUTHORED in the CSV; the stand column used to be
+    /// DERIVED as `0.85 × walk` and no longer is. Read them off the file.</para>
     ///
     /// <para>⚠ These are MULTIPLIERS, not flats, and that is not an inconsistency with the rest of
     /// `BL-92` (where the mastery ladder went flat). A flat pair balances walk against stand at exactly
@@ -105,20 +106,21 @@ public static partial class SkillCatalog
     /// copy-paste typo on 2026-08-26 (*"its passive - mp consumtion"*) and the file was corrected.</para></summary>
     private static SkillLevel[] CalmSpiritRungs()
     {
+        // His `nuker 3rd.csv`, 2026-08-27, read straight off the DESCR column. A 0 means the rung does
+        // not touch that stance at all — Entity.RecomputeDerived skips a zero rather than multiplying
+        // by it — which is how "no run multiplier" is expressed without a magic 1.0.
         //                    40     48     56     62     68     74
-        float[] run  = { 0.30f, 0.36f, 0.43f, 0.51f, 0.60f, 0.70f };
-        float[] walk = { 1.03f, 1.04f, 1.04f, 1.05f, 1.10f, 1.20f };
-        int[]   sp   = { 36000, 64000, 81000, 170000, 320000, 880000 };
+        float[] walk  = { 1.06f, 1.08f, 1.10f, 1.12f, 1.14f, 1.16f };
+        float[] stand = {    0f,    0f,    0f, 1.01f, 1.01f, 1.01f };
+        int[]   sp    = { 36000, 64000, 81000, 170000, 320000, 880000 };
 
         return Enumerable.Range(0, 6).Select(i =>
-        {
-            float stand = Math.Max(1f, 0.85f * walk[i]);
-            return new SkillLevel(SpCost: sp[i], MpCost: 0,
+            new SkillLevel(SpCost: sp[i], MpCost: 0,
                 Passive: new PassiveEffect(
-                    MpRegenRunMult: run[i], MpRegenWalkMult: walk[i], MpRegenStandMult: stand),
-                Description: $"MP regeneration ×{run[i]:0.00} while running, ×{walk[i]:0.00} while "
-                           + $"walking, ×{stand:0.00} while standing still.");
-        }).ToArray();
+                    MpRegenWalkMult: walk[i], MpRegenStandMult: stand[i]),
+                Description: stand[i] > 0f
+                    ? $"MP regeneration ×{walk[i]:0.00} while walking, ×{stand[i]:0.00} while standing still."
+                    : $"MP regeneration ×{walk[i]:0.00} while walking.")).ToArray();
     }
 
     private static SkillDef[] Nuker3rdSkills() => new SkillDef[]
