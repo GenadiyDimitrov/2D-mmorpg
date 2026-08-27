@@ -64,6 +64,9 @@ public static partial class ClassSkillTables
                 new ClassSkill(WarriorWeaponMastery, 20, SkillLevel: 1),
                 new ClassSkill(BodyMastery, 20, SkillLevel: 1),
                 new ClassSkill(Smash, 20, SkillLevel: 1),
+                // HP Boost L1-L3 at 20/28/36 (`warrior 2nd.csv`, 2026-08-27). The ladder continues
+                // L4-L10 on the 3rd-class table; the buffer takes L1-L7 from 40. See SkillCatalog.HpBoost.
+                new ClassSkill(HpBoost, 20, SkillLevel: 1),
                 new ClassSkill(WarriorArmorMastery, 24, SkillLevel: 2),
                 new ClassSkill(WarriorWeaponMastery, 24, SkillLevel: 2),
                 new ClassSkill(BodyMastery, 24, SkillLevel: 2),
@@ -73,6 +76,7 @@ public static partial class ClassSkillTables
                 new ClassSkill(BodyMastery, 28, SkillLevel: 3),
                 new ClassSkill(Smash, 28, SkillLevel: 3),
                 new ClassSkill(BattleRegeneration, 28, SkillLevel: 1),
+                new ClassSkill(HpBoost, 28, SkillLevel: 2),
                 new ClassSkill(WarriorArmorMastery, 32, SkillLevel: 4),
                 new ClassSkill(WarriorWeaponMastery, 32, SkillLevel: 4),
                 new ClassSkill(BodyMastery, 32, SkillLevel: 4),
@@ -82,7 +86,8 @@ public static partial class ClassSkillTables
                 new ClassSkill(WarriorWeaponMastery, 36, SkillLevel: 5),
                 new ClassSkill(BodyMastery, 36, SkillLevel: 5),
                 new ClassSkill(Smash, 36, SkillLevel: 5),
-                new ClassSkill(BattleDefence, 36, SkillLevel: 1));
+                new ClassSkill(BattleDefence, 36, SkillLevel: 1),
+                new ClassSkill(HpBoost, 36, SkillLevel: 3));
             // Rogue (CSV rogue 2nd): Rogue Armor/Weapon Mastery, Stab + Shot continue (levels
             // 4-8), Sprint, Bow Expertise.
             ClassSkills.Register(race, BaseClass.Fighter, Archetype.Rogue,

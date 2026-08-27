@@ -78,11 +78,15 @@ public static partial class SkillCatalog
     ///
     /// ⚠ "Fury" is <see cref="NpcHaste"/>: the ATTACK-SPEED family is named Fury on the ladder and its
     /// NPC single kept the older id. Alacrity is CAST speed. Neither is a typo for the other.</summary>
+    /// 🔑 SWIFT CAME BACK, 2026-08-27 — *"add swift in the NPC buffer - i missed it apparently"*. It
+    /// was cut above on the reasoning that Dash and a mount cover move speed; his correction is that
+    /// they do not, at the level this set is for. TWELVE against the cap of twenty, so a real buffer's
+    /// groups still fit beside the full NPC set — which was the other half of why the list was trimmed.
     public static readonly string[] NewbieBuffSet =
         { NpcMight, NpcBulwark, NpcVampirism,
           NpcForce, NpcWard, NpcResolve,
           NpcBody, NpcVigor,
-          NpcAlacrity, NpcHaste,
+          NpcAlacrity, NpcHaste, NpcSwift,
           NpcFrenzy };
     /// <summary>What the ADMIN buff button and `/buff` hand out: EVERYTHING a max-level BUFFER can
     /// give, at that buffer's TOP rung, plus every NPC single. Those top layers are the ones no NPC

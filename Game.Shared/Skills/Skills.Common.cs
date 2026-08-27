@@ -164,7 +164,12 @@ public static partial class SkillCatalog
     // of the two lines put it there, even though they share the family.
     public const string BuffSprint1 = "buff_sprint_1";
     public const string BuffSprint2 = "buff_sprint_2";
-    // (`hp_boost` — deleted 2026-08-07 with the God layer, playtest-19 `0b`.)
+    // ---- HP Boost — REBUILT 2026-08-27 from `warrior 2nd/3rd.csv` and `buffer 3rd.csv`. The old
+    //      `hp_boost` was deleted 2026-08-07 with the God layer (playtest-19 `0b`); this shares
+    //      nothing with it but the name. ONE skill, TEN rungs, learned by different classes at
+    //      different levels — the warrior takes L1-L3 at 20/28/36 and L4-L10 at 43-74, the buffer
+    //      L1-L7 at 40-70. See HpBoostRungs for why the numbers are not halved. ----
+    public const string HpBoost = "hp_boost";
     // ============================ TEST ONLY — DELETE ME ============================
     // (`test_heal` — DELETED 2026-08-12, `BL-37`. It was a power-1000 heal auto-granted to every
     //  character at 76, and it existed only to read the two numbers it was calibrating: HealK (15)
@@ -444,8 +449,34 @@ public static partial class SkillCatalog
             None:  new StatMods(AtkSpeedPct: -0.5f, CastSpeedPct: -0.5f)),
     };
 
+    /// <summary>HP Boost's ten rungs: a flat Max HP grant, +120 climbing to +1000.
+    ///
+    /// <para>🔴 THE NUMBERS ARE ALREADY DOUBLED — DO NOT SCALE THEM AGAIN. Owner, 2026-08-27:
+    /// *"i doubled the hp passive read as is"*. Our flats stack OUTSIDE the buff multiplier (the
+    /// global "flats after percentages" rule, playtest 28) where IG applies them inside, so he
+    /// pre-doubled while authoring the CSV. An unbuffed character therefore reads a little above IG
+    /// and a buffed one lands on it — which is the trade he chose over moving the stacking order.</para>
+    ///
+    /// <para>The SP prices here are the WARRIOR's, because his is the ladder that starts earliest
+    /// (rung 1 at level 20 for 3,400). The buffer buys the same rungs later and pays his own 3rd-class
+    /// prices, which ride as <see cref="ClassSkill.SpCost"/> overrides on his table entries.</para></summary>
+    private static readonly (int Sp, int MaxHp)[] HpBoostRungs =
+    {
+        (3_400, 120), (12_000, 200), (40_000, 300), (42_000, 400), (65_000, 500),
+        (80_000, 600), (170_000, 700), (280_000, 800), (390_000, 900), (880_000, 1000),
+    };
+
     private static SkillDef[] CommonSkills() => new SkillDef[]
     {
+        // ----- HP Boost. Flat Max HP, ten rungs, shared by the warrior and the buffer. -----
+        new(HpBoost, "HP Boost", BaseClass.Fighter, SkillEffect.None,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+            Category: SkillCategory.Passive,
+            Description: "Passive. Raises your maximum HP.",
+            Levels: HpBoostRungs
+                .Select(r => new SkillLevel(SpCost: r.Sp, Passive: new PassiveEffect(MaxHp: r.MaxHp)))
+                .ToArray()),
+
         // ======================== TEST ONLY — DELETE ME ========================
         // (The power-1000 `TestHeal` def stood here until 2026-08-12, `BL-37`. See the note by the
         //  deleted const above.)

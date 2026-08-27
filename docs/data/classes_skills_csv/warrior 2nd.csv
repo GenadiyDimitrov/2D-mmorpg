@@ -31,3 +31,7 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,R
 32,Battle Presence,pfysical buff,0,self,0.5,300,90,increase p.Atk x1.35; acc +2; can be used only when Hp is below 60% (once used even if hp is at 100% it still works only for activation need hp  <= 0.6) and cannot be used with Battle Defence; requres 2h sword/blunt;,20,11000,[]
 ,,,,,,,,,,,,----------------------------Battle Defence----------------------------
 36,Battle Defence,pfysical buff,0,self,0.5,300,90,increase p.Def x2; can be used only when Hp is below 60% (once used even if hp is at 100% it still works only for activation need hp  <= 0.6) and cannot be used with Battle Presence; ,20,20000,[]
+,,,,,,,,,,,,----------------------HP Boost----------------------
+20,HP Boost,Passive,0,self,0,0,0,"Increase max HP +120",0,3400,[],,
+28,HP Boost,Passive,0,self,0,0,0,"Increase max HP +200",0,12000,[],,
+36,HP Boost,Passive,0,self,0,0,0,"Increase max HP +300",0,40000,[],,

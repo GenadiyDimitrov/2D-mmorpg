@@ -83,6 +83,9 @@ public static partial class ClassSkillTables
         // …and a FOURTH: Shield Mastery's rung 4 at 52, the single row he authored into the previously
         // empty `tank 3rd.csv` on 2026-08-21. Same narrow terms — one learn line, nothing around it.
         RegisterTankShieldMastery();
+        // …and a FIFTH: HP Boost above 40 — the warrior's L4-L10 and the buffer's L1-L7, the rows he
+        // added to `warrior 3rd.csv` and `buffer 3rd.csv` on 2026-08-27. Same narrow terms again.
+        RegisterHpBoost();
         // (A FOURTH, `RegisterHealerMasteries()`, existed for one day and is gone: it taught the two
         //  healer masteries and Frenzy L2 while RegisterLightbringer was still commented out. Those
         //  rungs are in the shared ladder now, and keeping both would have registered every one twice.)
@@ -380,6 +383,42 @@ public static partial class ClassSkillTables
             foreach (var disc in new[] { Discipline.Bulwark, Discipline.Vanguard })
                 ClassSkills.RegisterThird(race, disc,
                     new ClassSkill(TankShieldMastery, 52, SkillLevel: 4, SpCost: 74_000));
+    }
+
+    /// <summary>HP BOOST above 40 — the warrior's rungs L4-L10 and the buffer's L1-L7, both authored
+    /// 2026-08-27. <c>warrior 3rd.csv</c> until that day read *"nothing above level 40 exists yet for
+    /// this discipline — start here"*; this is what he started it with.
+    ///
+    /// <para>The warrior continues the L1-L3 he buys at 20/28/36 on the 2nd-class table and finishes at
+    /// +1000 Max HP. The buffer starts at rung 1 twenty levels later and stops at rung 7, +700 —
+    /// *"warrior gets L1~3 of the passive at 20-36 and 40+ L4~10 while buffers start L1~7 40+"*.</para>
+    ///
+    /// <para>⚠ This is the ONLY 3rd-class row a WARRIOR has, and it is deliberately alone. The rest of
+    /// Ravager/Warlord is unauthored and stays that way until he writes it — one authored line is not
+    /// permission to invent a kit around it. Same standing as <see cref="RegisterTankShieldMastery"/>.</para>
+    ///
+    /// <para>⚠ The buffer's SP prices are HIS 3rd-class ladder, so every buffer rung carries an explicit
+    /// <see cref="ClassSkill.SpCost"/>. The SkillDef's own prices are the warrior's — rung 1 is 3,400
+    /// there against the buffer's 36,000, so without the override he would buy it at a tenth of price.
+    /// Both band lists are irregular, and irregular is correct.</para></summary>
+    private static void RegisterHpBoost()
+    {
+        int[] warriorBands = { 43, 49, 55, 62, 66, 70, 74 };
+        int[] bufferBands = { 40, 44, 48, 52, 56, 62, 70 };
+        int[] bufferSp = { 36_000, 43_000, 64_000, 74_000, 81_000, 170_000, 390_000 };
+
+        foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
+        {
+            foreach (var disc in new[] { Discipline.Ravager, Discipline.Warlord })
+                ClassSkills.RegisterThird(race, disc,
+                    warriorBands.Select((lvl, i) => new ClassSkill(HpBoost, lvl, SkillLevel: i + 4))
+                                .ToArray());
+
+            ClassSkills.RegisterThird(race, Discipline.Warchanter,
+                bufferBands.Select((lvl, i) => new ClassSkill(HpBoost, lvl, SkillLevel: i + 1,
+                                                              SpCost: bufferSp[i]))
+                           .ToArray());
+        }
     }
 
     /// <summary>THE LIGHTBRINGER, 40-74 — every row of <c>docs/data/classes_skills_csv/healer 3rd.csv</c>,

@@ -70,18 +70,23 @@ public static partial class SkillCatalog
         BufferArmor(83, 200), BufferArmor(87, 200),
     };
 
-    /// <summary>One Warchanter Armor Mastery rung: flat P.Def and Max MP in EVERY armour weight, which
-    /// is what his one-line "Robe/Light/Heavy:" rows say.
+    /// <summary>One Warchanter Armor Mastery rung: flat P.Def and Max MP in EVERY armour weight, and
+    /// NOTHING ELSE — which is exactly what his one-line "Robe/Light/Heavy: pDef +X, max mp +Y;" rows say.
     ///
-    /// <para>⚠ THE MP REGEN IS THE ONE THING THAT IS *NOT* THE SAME IN ALL THREE — Robe is excluded
-    /// (owner, 2026-08-26, closing `BL-92`). A robed mage already has his ×1.2 from the born
-    /// Spellcaster Mastery, and granting it again here is what made every robed mage ×1.44. Light and
-    /// Heavy keep it because Spellcaster Mastery pays them NOTHING (it penalises them), so this is
-    /// their only source. Net effect either way: exactly one ×1.2 per mage, from the armour worn.</para></summary>
+    /// <para>🔑 THE ×1.2 MP REGEN LEFT THIS SKILL ON 2026-08-27 — *"the mp regen is moved to the
+    /// represented masteries per race (human/ork heavy, elf light)"*. It now rides on
+    /// <c>WcChanterHeavy</c> (Human;Ork) and <c>WcHarmonistLight</c> (Elf) instead, in
+    /// Skills.Warchanter3rd.Kit.cs. Same outcome for a buffer wearing his race's armour, and it makes
+    /// the grant a REWARD FOR WEARING IT: a Human Warchanter in light armour now gets no ×1.2 at all,
+    /// where this skill used to hand it to him regardless.</para>
+    ///
+    /// <para>⚠ The "exactly one ×1.2 per mage" rule (`BL-92`) still holds and still matters — robe gets
+    /// it from the born Spellcaster Mastery, light/heavy from the race mastery. Never re-add
+    /// <c>MpRegenPct</c> here: that is what made every robed mage ×1.44 the first time.</para></summary>
     private static ArmorMasteryProfile BufferArmor(int pDef, int maxMp)
     {
-        var m = new StatMods(MpRegenPct: 0.2f, PDef: pDef, MaxMp: maxMp);
-        return new ArmorMasteryProfile(Robe: m with { MpRegenPct = 0f }, Light: m, Heavy: m);
+        var m = new StatMods(PDef: pDef, MaxMp: maxMp);
+        return new ArmorMasteryProfile(Robe: m, Light: m, Heavy: m);
     }
 
     private static SkillDef[] HealerSkills() => new SkillDef[]

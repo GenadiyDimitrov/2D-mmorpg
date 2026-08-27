@@ -7,12 +7,57 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.91.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.91.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-08-27 (latest) — 0.91.0: player HP rebuilt on IG's curve — `BL-78` item 3
+## 2026-08-27 (latest) — 0.91.1: HP Boost, Swift back on the NPC buffer, the buffer's ×1.2 moves
+
+**⚠ NEEDS A NEW APK.** The client builds its Learn tab locally from the compiled `ClassSkills`, so a
+class-skill-TABLE change is invisible to an old build.
+
+### HP Boost — one skill, ten rungs, two classes, different ladders
+
+Rebuilt from `warrior 2nd/3rd.csv` and `buffer 3rd.csv`. Flat Max HP, **+120 climbing to +1000**.
+The warrior takes L1-L3 at **20 / 28 / 36** and L4-L10 at **43 / 49 / 55 / 62 / 66 / 70 / 74**; the
+buffer starts at rung 1 twenty levels later and stops at rung 7 — **40 / 44 / 48 / 52 / 56 / 62 / 70**,
+ending +700 where the warrior ends +1000.
+
+🔴 **The authored numbers are ALREADY DOUBLED — never scale them again.** Owner: *"i doubled the hp
+passive read as is"*. Our flats stack **outside** the buff multiplier (the global "flats after
+percentages" rule) where IG applies them inside, so he pre-doubled while writing the CSV. Unbuffed
+reads a little above IG, buffed lands on it — the trade he chose over moving the stacking order.
+
+⚠ The buffer's SP prices are his own 3rd-class ladder, so every buffer rung carries an explicit
+`ClassSkill.SpCost`. Rung 1 is 3,400 on the warrior's ladder against the buffer's 36,000; without the
+override he would buy it at a tenth of price.
+
+⚠ `hp_boost` existed once and was deleted 2026-08-07 with the God layer. This shares nothing with it
+but the id. And this is the **only** 3rd-class row a warrior has — Ravager/Warlord stays unauthored
+until he writes it, on the same terms as the tank's lone Shield Mastery rung.
+
+### The buffer's ×1.2 MP regen moves to the race masteries
+
+*"robe/light/heavy: pdef +X, max mp +Y; the mp regen is moved to the represented masteries per race
+(human/ork heavy, elf light)"*. So **Armor Mastery** now grants flat P.Def and Max MP in all three
+weights and **nothing else**, and the `MpRegenPct 0.2` rides on **Chanter Heavy Mastery** (Human;Ork)
+and **Harmonist Light Mastery** (Elf) instead.
+
+Same outcome for a buffer wearing his race's armour — and it turns the grant into a **reward for
+wearing it**: a Human Warchanter in light armour now gets no ×1.2 at all, where Armor Mastery used to
+hand it to him regardless. The `BL-92` rule still holds exactly: **one ×1.2 per mage**, robe from the
+born Spellcaster Mastery, light/heavy from the race mastery.
+
+### Swift is back on the newbie buffer
+
+*"add swift in the NPC buffer - i missed it apparently"* — reversing the playtest-28 cut, which had
+dropped it on the reasoning that Dash and a mount cover move speed. **Twelve** buffs against the cap of
+twenty, so a real buffer's groups still fit beside the full NPC set.
+
+`SkillCsvSeed --check`: no discrepancies across all ten checked files.
+
+## 2026-08-27 — 0.91.0: player HP rebuilt on IG's curve — `BL-78` item 3
 
 **The pool rose to meet the attack.** `0.73.0` refitted creature attack up ~×1.65 against IG's current
 chronicle and never re-ran the player side; `BL-78` item 3 has carried that debt since. His playtest

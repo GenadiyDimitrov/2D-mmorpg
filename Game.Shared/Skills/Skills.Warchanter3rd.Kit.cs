@@ -88,8 +88,13 @@ public static partial class SkillCatalog
             Levels: new[] { new SkillLevel(SpCost: 36_000) },
             ArmorMasteryLevels: new[]
             {
+                // 🔑 MpRegenPct 0.2 (the ×1.2) MOVED HERE from Armor Mastery on 2026-08-27 — *"the mp
+                //    regen is moved to the represented masteries per race"*. Heavy is the Human/Ork
+                //    buffer's own weight, so this is the one place he can earn it; Spellcaster Mastery
+                //    pays heavy nothing. Still exactly one ×1.2 per mage (`BL-92`).
                 new ArmorMasteryProfile(
-                    Heavy: new StatMods(CastSpeedPct: 0.80f, AtkSpeedPct: 1.00f, CritDmgResist: 0.15f)),
+                    Heavy: new StatMods(CastSpeedPct: 0.80f, AtkSpeedPct: 1.00f, CritDmgResist: 0.15f,
+                                        MpRegenPct: 0.2f)),
             }));
 
         // ---- Harmonist Light Mastery (Elf) — the same trade in light armour, and the elf's own
@@ -102,9 +107,11 @@ public static partial class SkillCatalog
             Levels: new[] { new SkillLevel(SpCost: 36_000) },
             ArmorMasteryLevels: new[]
             {
+                // 🔑 MpRegenPct 0.2 moved here from Armor Mastery the same day, same reasoning — light
+                //    is the ELF buffer's represented weight.
                 new ArmorMasteryProfile(
                     Light: new StatMods(CastSpeedPct: 0.80f, AtkSpeedPct: 1.00f,
-                                        Evasion: 6, CritRateResist: 0.15f)),
+                                        Evasion: 6, CritRateResist: 0.15f, MpRegenPct: 0.2f)),
             }));
 
         // ---- Harmonist Bow Proficiency (Elf) — *"Bow: Removed Penalty [cast(x2), mAtk(x2),
