@@ -643,6 +643,35 @@ public class Entity
     /// otherwise (owner: a lighter punishment than jail). Persisted, so it survives a relog.</summary>
     public DateTime? ChatBannedUntil { get; set; }
 
+    // ----- `BL-98` THE BOSS'S JUDGMENT --------------------------------------------------------
+    /// <summary>Which rung of the ladder this character is on, 1-6, or 0 for clean. See
+    /// <see cref="BossJudgment"/> for what each rung is.
+    ///
+    /// <para>🔑🔑 <b>THIS FIELD IS THE TRUTH. THE BUFF IS ONLY ITS FACE.</b> That is what makes his
+    /// *"unremovable..no cleanse no healers whatever nothing"* literally true instead of merely
+    /// intended: four separate paths in this codebase wipe a buff list (death, a subclass swap, and
+    /// two more), and any of them would otherwise have been a way out. Nothing reads the buff, so
+    /// removing it achieves nothing — <c>GameLoopService.TickBossJudgment</c> notices within a second
+    /// and puts it straight back.</para></summary>
+    public int BossJudgmentRung { get; set; }
+
+    /// <summary>When the CURRENT rung runs out. What happens then is
+    /// <see cref="BossJudgment.OnExpiry"/> — a petrifaction hands over to its memory rung, a memory
+    /// rung that survives un-offended ends the ladder. Persisted with the rung, so the ladder keeps
+    /// running while the character is offline: a punishment you can log out of is not one.</summary>
+    public DateTime? BossJudgmentUntil { get; set; }
+
+    /// <summary>The LEVEL of the raid boss this player is currently counted as fighting, and the tick
+    /// that claim expires on. Stamped whenever the player enters a boss's threat table — which covers
+    /// both directions, because a boss that aggroes you puts you in it too — and read when someone
+    /// heals, buffs, cleanses or resurrects this player, to price the helper's own level gap.
+    ///
+    /// <para>🔑 The marker lives on the PLAYER, not on the boss, so the support path costs one field
+    /// read instead of a scan of every boss in the world. Runtime only: it is a 30-second claim, and
+    /// a character who logs out is not fighting anything.</para></summary>
+    public int RaidBossLevel { get; set; }
+    public long RaidEngagedUntilTick { get; set; }
+
     /// <summary>True while the chat ban is still in effect.</summary>
     public bool ChatBanned => ChatBannedUntil is DateTime u && u > DateTime.UtcNow;
 
@@ -941,6 +970,9 @@ public class Entity
     {
         get
         {
+            // `BL-98`: a petrified character takes no damage and receives no healing, and that is
+            // read off the RUNG for the same reason IsStunned reads it — the buff is only the icon.
+            if (Petrified) return true;
             for (int i = 0; i < Buffs.Count; i++)
                 if (Buffs[i].FreezesHp) return true;
             return false;
@@ -1155,11 +1187,17 @@ public class Entity
         }
     }
 
-    /// <summary>Stunned: cannot move, cast or attack while any Stun effect is active.</summary>
+    /// <summary>Stunned: cannot move, cast or attack while any Stun effect is active.
+    ///
+    /// <para>⚠ The boss's judgment (`BL-98`) is checked FIRST and off its RUNG, not off the buff
+    /// list. Its buff is cosmetic — the bar icon and the countdown — so that wiping the buff list
+    /// (death, a subclass swap, a cleanse) cannot leave a petrified character free even for the one
+    /// tick before <c>TickBossJudgment</c> puts the icon back. *"Unremovable ... nothing."*</para></summary>
     public bool IsStunned
     {
         get
         {
+            if (Petrified) return true;
             foreach (var b in Buffs) if (b.Has(SkillEffect.Stun)) return true;
             return false;
         }
@@ -1177,6 +1215,15 @@ public class Entity
 
     /// <summary>Cannot take an action (cast/attack/skill) this tick due to a stun or fear.</summary>
     public bool IsActionLocked => IsStunned || IsFeared;
+
+    /// <summary>`BL-98` — PETRIFIED by the boss's judgment (an ODD rung, L1/L3/L5). Not a state of
+    /// its own: the rung's buff is a <see cref="SkillEffect.Stun"/> that also freezes HP, so the lock
+    /// and the invulnerability both come free from machinery that already existed.
+    ///
+    /// <para>⚠ Read off <see cref="BossJudgmentRung"/>, NOT off the buff list — the rung is the truth
+    /// (see the field). An even rung is not petrified: it carries no effect at all, only the memory
+    /// that escalates the next offence.</para></summary>
+    public bool Petrified => BossJudgment.IsPetrify(BossJudgmentRung);
 
     /// <summary>Slowed: any Slow debuff is active (for conditional-damage skills).</summary>
     public bool IsSlowed

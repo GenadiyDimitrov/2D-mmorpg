@@ -324,6 +324,56 @@ Contest     StatCaps.CcRankMult:     Elite x1.33, Boss x2.0   (CON/SPT/ATK, the 
 `Game.Shared/MobRankScale.cs` · `GameLoopService.BuildMob` · `Entity.ApplyMobScale` ·
 measured by `dotnet run --project tools/BalanceMatrix` (the two `BL-13` tables)
 
+### The raid level gap (both halves)
+
+`gap = |playerLevel - bossLevel|`, symmetric in both rules.
+
+```
+DAMAGE to a boss      gap<=5  x1.0 | 6-10  1.0-0.06*(gap-5) | 11+  max(0.10, 0.70-0.10*(gap-10))
+INTERFERING           gap<=9  free | gap>9  one rung up THE BOSS'S JUDGMENT (`BL-98`)
+```
+
+**The boss's judgment — six rungs, odd = petrified, even = remembered.**
+
+```
+rung  lasts    runs out into   offend while holding it
+L1     3 min   → L2            (cannot act)
+L2     1 h     → clean         → L3
+L3    30 min   → L4            (cannot act)
+L4     1 h     → clean         → L5
+L5     2 h     → L6            (cannot act)
+L6    24 h     → clean         → L5      ← cycles L5<->L6 until 24h pass un-offended
+```
+
+- Fires on **any hostile act aimed at the boss** (a landed hit, or a taunt/cancel/debuff that lands
+  nothing) and on **any act of support aimed at a PARTY MEMBER fighting it** — heal, MP restore, buff,
+  cleanse, resurrect. One AoE reaching two participants costs **one** rung.
+- "Fighting it" = the player is in that boss's threat table, claim valid for **30s**.
+
+**`BL-99` — a raid participant is unhelpable by outsiders.** A second rule, gated on **party
+membership** rather than level; the two divide the world between them.
+
+```
+caster is...        area / party support        aimed single-target support
+in his party        lands (BL-98 band applies)  lands (BL-98 band applies)
+NOT in his party    silently skipped, no cost   REFUSED at cast start + one rung, ANY level
+```
+
+- The splash is skipped and never punished (you chose the ground, not the man on it); the aim is
+  punished, at cast start — **the flag is on the reach, not on the heal** (`BL-77`'s shape).
+- Only three skills can splash onto a non-party player at all: Urgent Great Heal and the two totems
+  (`FriendlyInRadius` / `PlacesTotem`). Everything else is `AlliesInRadius` = party only.
+- ⚠ When an alliance / raid group exists, `RaidLocked` reads "raid group", not "party".
+- Petrified = `SkillEffect.Stun` + `FreezesHp` — cannot move/cast/attack, HP cannot change in either
+  direction, and the character leaves every threat table. An even rung has **no effect at all**.
+- ⚠ **Unremovable, and enforced structurally**: the RUNG is the state (`Entity.BossJudgmentRung`,
+  read directly by `IsStunned`/`HpFrozen`); the buff is only its icon, re-asserted once a second. The
+  clock runs while offline and the expiry walk is exact.
+
+`StatCalculator.RaidLevelGapMult` / `.BossJudges` · `Game.Shared/Skills/Skills.BossJudgment.cs`
+(`BossJudgment` = the ladder as data) · `GameLoopService.AddThreat` · `.TryBossJudgment` ·
+`.OnSupport` · `.TickBossJudgment` · `.WalkBossJudgmentClock`
+
 ## Drop rates
 
 ```

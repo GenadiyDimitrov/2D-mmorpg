@@ -91,6 +91,15 @@ public class CharacterRecord
     /// it spawns in jail on every login and can't chat/whisper/escape. null = free.</summary>
     public DateTime? JailedUntilUtc { get; set; }
 
+    /// <summary>`BL-98` — which rung of the BOSS'S JUDGMENT ladder this character is on (1-6, 0 =
+    /// clean), and when that rung runs out. Two columns of their own because the curse is a DEBUFF and
+    /// debuffs are never written to BuffsJson (see BuffSnapshot.CaptureAll) — and because the buff was
+    /// never the state anyway. The ladder KEEPS RUNNING while the character is offline: waiting it out
+    /// logged off has to cost exactly what waiting it out logged in costs, or logging off is the answer
+    /// to it. See BossJudgment and GameLoopService.WalkBossJudgmentClock.</summary>
+    public int BossJudgmentRung { get; set; }
+    public DateTime? BossJudgmentUntilUtc { get; set; }
+
     /// <summary>Character is KICKED until this UTC time — it can't ENTER the world until it passes, though
     /// the account can still log in and play OTHER characters (owner: kick is per-character + timed).</summary>
     public DateTime? KickedUntilUtc { get; set; }

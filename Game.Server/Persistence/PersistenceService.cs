@@ -863,6 +863,12 @@ public class PersistenceService
         // JAIL survives a relog: load the sentence, and if it's still active, spawn IN jail (so a jailed
         // player can't escape by logging out). An expired sentence is cleared on save.
         entity.JailedUntil = rec.JailedUntilUtc;
+        // `BL-98` — and so does the boss's judgment. Only the RUNG and its clock are loaded here; the
+        // ladder is walked forward for the time he was away, and the buff that shows it is applied, on
+        // entry to the world (RestoreBossJudgment) — ApplyBuff is tick-thread work and this is not the
+        // tick thread.
+        entity.BossJudgmentRung = rec.BossJudgmentRung;
+        entity.BossJudgmentUntil = rec.BossJudgmentUntilUtc;
         if (entity.Jailed)
         {
             // Spread across the yard like any other arrival — see GameConstants.JailArrival. Relogging
@@ -909,7 +915,9 @@ public class PersistenceService
         string BuffsJson,
         int ActiveSubclassSlot, IReadOnlyList<SubclassSnapshot> Subclasses,
         int Karma, int PkCount, int PvpCount, int ConsecutivePk, bool DiedWhileAway,
-        DateTime? JailedUntilUtc, DateTime? ChatBannedUntilUtc, long TotalOnlineSeconds,
+        DateTime? JailedUntilUtc, DateTime? ChatBannedUntilUtc,
+        int BossJudgmentRung, DateTime? BossJudgmentUntilUtc,
+        long TotalOnlineSeconds,
         int Charisma, long CharismaLifetime, int LikesRemainingToday, string LikeBudgetDay,
         string TitleCategory, string CustomTitle, string CustomTitleColor, bool MayWriteTitle,
         int SocialOptions,
@@ -958,7 +966,8 @@ public class PersistenceService
                 JsonSerializer.Serialize(BuffSnapshot.CaptureAll(e)),
                 e.ActiveSubclass.Slot, subs,
                 e.Karma, e.PkCount, e.PvpCount, e.ConsecutivePk, e.DiedWhileAway,
-                e.JailedUntil, e.ChatBannedUntil, e.TotalOnlineSeconds,
+                e.JailedUntil, e.ChatBannedUntil,
+                e.BossJudgmentRung, e.BossJudgmentUntil, e.TotalOnlineSeconds,
                 e.Charisma, e.CharismaLifetime, e.LikesRemainingToday, e.LikeBudgetDay,
                 e.TitleCategory, e.CustomTitle, e.CustomTitleColor, e.MayWriteTitle,
                 (int)e.Social,
@@ -1101,6 +1110,8 @@ public class PersistenceService
         rec.DiedWhileAway = snap.DiedWhileAway;
         rec.JailedUntilUtc = snap.JailedUntilUtc;   // jail persists across a relog
         rec.ChatBannedUntilUtc = snap.ChatBannedUntilUtc;
+        rec.BossJudgmentRung = snap.BossJudgmentRung;         // `BL-98`: and so does the ladder
+        rec.BossJudgmentUntilUtc = snap.BossJudgmentUntilUtc;
         // NOTE: Role is deliberately NOT written back from the snapshot. It is changed only by /role
         // (a direct DB write), so a stale in-memory copy can never demote or promote anyone on autosave.
         rec.X = snap.X;

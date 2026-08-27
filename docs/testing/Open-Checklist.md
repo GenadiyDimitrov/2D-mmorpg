@@ -56,6 +56,94 @@ a stack of 9 buff scrolls is the friction you wanted or just friction** (§93D).
 
 ---
 
+## 96. THE BOSS'S JUDGMENT + THE RAID LOCK — `BL-98` and `BL-99`, built in 0.95.0
+
+Your ladder, built as given. The gap that triggers it is unchanged at **±9**.
+
+```
+rung  lasts    runs out into   offend while holding it
+L1     3 min   → L2            (cannot act)
+L2     1 h     → clean         → L3
+L3    30 min   → L4            (cannot act)
+L4     1 h     → clean         → L5
+L5     2 h     → L6            (cannot act)
+L6    24 h     → clean         → L5      ← cycles L5<->L6 until 24h pass un-offended
+```
+
+🔴 **DELETE `Game.Server/game.db` (and `-shm`/`-wal`) BEFORE THIS PASS** — two new columns
+(`BossJudgmentRung`, `BossJudgmentUntilUtc`), and `EnsureCreated()` will not add them to an existing
+file.
+
+⚠ **The three petrifying rungs are 3 min / 30 min / 2 h. Test L1 and L2→L3 properly; L5 costs you two
+hours of a character.** Everything below L5 is enough to prove the ladder.
+
+| # | test | expected |
+|---|---|---|
+| 98a | 10+ levels above a raid boss, hit it once. | The hit lands, then stone. System line: **THE BOSS'S JUDGMENT — L1. Petrified for 3 minutes.** |
+| 98b | While petrified, let anything swing at you, and have someone heal you. | **Zero damage and zero healing, every time.** HP does not move in either direction. |
+| 98c | While petrified, try to move, attack, cast, sit. | All refused. A cast in flight was broken the instant it landed. Message names the **rung**, not "stunned". |
+| 98d | Wait out the 3 minutes. | You unfreeze and immediately hold **L2** — a bar icon with a 1-hour clock and **no effect at all**. You play normally. |
+| 98e | While holding L2, offend again. | **L3 — 30 minutes.** This is the escalation; it is the row that proves the ladder. |
+| 98f | Take L1, then let the whole hour of L2 run out without offending. | *"The boss's judgment has lifted. You are clean."* The next offence starts at **L1** again. |
+| 98g | 10+ levels above, **heal or buff a PARTY MEMBER fighting a raid** — never touching the boss. | Same ladder. This is the exploit the entry was raised for, and since `BL-99` it is the only way this cause fires. |
+| 98h | Same, but you are **inside the band** (gap ≤ 9) and in the party. | **Nothing.** The band is the whole test for a party member. |
+| 98i | Stand next to a raid boss and let it **aggro you** without acting. | **No judgment.** Being noticed is not an act. |
+| 98j | Cast a **party/AoE heal** that reaches two people fighting the raid at once. | **One rung, not two.** An area heal must not jump you from clean to L3. |
+
+**Now the "unremovable" rows — these are the ones I would actually try to break:**
+
+| # | test | expected |
+|---|---|---|
+| 98k | Cleanse / dispel a petrified player, with everything you have. | Nothing lifts. |
+| 98l | Get petrified, then **log out and back in**. | Still petrified, with the time it had left. |
+| 98m | Take **L2**, log out for **90 minutes**, log back in. | **Clean** — not a fresh hour. The ladder ran while you were away, exactly. |
+| 98n | Take **L1**, log out for 10 minutes, log back in. | On **L2**, with ~50 minutes left. The L1 ended offline and handed over on schedule. |
+| 98o | Take **L2**, then **die**. | Death clears your buff list — and L2 is **still there** a second later. This is the one I most want you to try; death was a real hole. |
+| 98p | Take **L2**, then **change subclass**. | Same: the swap wipes buffs, the rung survives. |
+
+### `BL-99` — a raid participant is unhelpable by outsiders
+
+Your ruling: *"If you are boss engaged nothing can heal you outside your party … the splash never
+reaches the pipe so never punish him … a single/target heal is deliberately trying an exploit and it's
+punishable."* Two rules that divide the world between them — **`BL-99` gates on PARTY, at any level;
+`BL-98` gates on the ±9 BAND, inside the party.**
+
+```
+caster is...        area / party support        aimed single-target support
+in his party        lands (BL-98 band applies)  lands (BL-98 band applies)
+NOT in his party    silently skipped, no cost   REFUSED at cast start + one rung, ANY level
+```
+
+| # | test | expected |
+|---|---|---|
+| 99a | Engage a raid boss. Have a **non-party** healer single-target heal you. | Refused before the cast starts: *"X is locked in a raid battle — only their own party can aid them."* **He takes L1** — at any level, no gap needed. |
+| 99b | Same, but he casts **Urgent Great Heal** or plants a **totem** with you in range. | You are simply **skipped**. He is **not** punished, not even a message. He gets no rung ever from this. |
+| 99c | Same as 99b, but he has a party-mate standing next to you who is also in the raid. | His party-mate **is healed normally** — your *"if heal comes for a party member u take the benifit"*. |
+| 99d | Now **join his party**, still engaged. Every heal, buff and area heal from him. | All land normally. Party membership is the whole gate. |
+| 99e | In the party but **10+ levels from the boss**, heal someone. | The `BL-98` ladder, as before. This is now the ONLY way the "aided the raid" cause fires. |
+| 99f | Non-party **resurrect** on someone who just died in a raid (within 30s). | Refused + a rung. Reviving the raid's tank from outside is the same interference. |
+| 99g | Non-party **buff / MP restore / cleanse** aimed at a raid participant. | Same as the heal — I applied it to all support, not just heals. Tell me if you wanted heals only. |
+| 99h | 🔴 Press a **self-buff** while a locked raider happens to be your selected target. | **Nothing bad happens** — normal self-cast, no refusal, no rung. I broke this while building it and fixed it; worth one press. |
+| 99i | Wait 30s after a raid participant stops fighting, then heal him from outside the party. | Lands normally. The claim expires. |
+
+⚠ **Your *"heal per next -3%"* is moot now** (it was for a party-scoped chain heal) — and it was
+already built at **2%**: `TargetFalloff: 0.02f`, 11 targets, 30%→10%. −3% cannot fit 11 slots.
+
+🔵 **When an alliance / raid group exists, this must read "your raid group", not "your party."** Today
+a party caps at 9 and a boss is tuned for a 5-man, so one party *is* the raid. The day two parties are
+meant to fight one boss together, this is the line that would stop them healing each other.
+
+⚠ **Deliberate boundary, not a miss:** an over-levelled character who only stands there and
+**self**-heals is not judged. Your rule is "help some1", and he is invulnerable to a boss that far
+below him anyway. Say if you want tanking-by-standing caught too. ⚠ Note `BL-99` does not close this
+either — he is in the party, so nothing is locked against him.
+
+🔴 **And the one thing still yours from last time: the band is SYMMETRIC** because you wrote *"9lvl
++-"*. That judges someone 10+ levels **BELOW** the boss too. The exploit you raised this for is only
+the over half — one comparison in `StatCalculator.BossJudges` if the under half reads wrong.
+
+---
+
 ## 95. THE 0.94.1 FIXES — your playtest finds of 2026-08-28
 
 ### A. AOE ACTUALLY HITS NOW — and it was two bugs stacked

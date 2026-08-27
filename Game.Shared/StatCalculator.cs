@@ -1092,6 +1092,25 @@ public static class StatCalculator
         return System.Math.Max(0.1f, 0.7f - (gap - 10) * 0.1f);   // 11→0.60 .. 16+→0.10
     }
 
+    /// <summary>`BL-98` — the BOSS'S JUDGMENT band. Levels away from the boss you may be and still
+    /// take part in its fight; further than this and any hostile act on the boss, or any act of
+    /// support aimed at someone fighting it, walks you up the punishment ladder (see
+    /// <see cref="BossJudgment"/> and <c>SkillCatalog.BossJudgmentSkill</c>).
+    ///
+    /// <para>His number, and the word is his too: *"9lvl +-"* — SYMMETRIC, like
+    /// <see cref="RaidLevelGapMult"/> right above, which has scaled a player's damage to a boss in
+    /// both directions since the ±10 rule was built. The exploit BL-98 was raised for is only the
+    /// over-levelled half (a high healer propping up a low raid); the under-levelled half costs a
+    /// far-below character nothing he could have contributed anyway, and keeping the rule symmetric
+    /// means one number, one sentence to a player, and the same shape as the damage curve.</para></summary>
+    public const int BossJudgmentGap = 9;
+
+    /// <summary>Is this level far enough from the boss's to be judged for interfering?
+    /// Strictly further than <see cref="BossJudgmentGap"/> — *"if he is in 9lvl of the boss it
+    /// doesn't prevent him"*, so a gap of exactly 9 is still inside the fight.</summary>
+    public static bool BossJudges(int actorLevel, int bossLevel) =>
+        System.Math.Abs(actorLevel - bossLevel) > BossJudgmentGap;
+
     /// <summary>Base gold a mob drops, by level (scaled by RateConfig.World.Gold
     /// and a small variance at the drop site).</summary>
     public static int MobGoldReward(int mobLevel) => 25 + mobLevel * 8;

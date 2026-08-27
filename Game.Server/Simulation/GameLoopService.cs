@@ -318,6 +318,7 @@ public class GameLoopService : BackgroundService
 
         AutoLearnCoreSkills(entity);
         RestorePersistedBuffs(entity);   // before SendStats — the buffs change the numbers it sends
+        RestoreBossJudgment(entity);     // `BL-98` — the ladder kept running while he was away
         SendInventory(entity);
         SendRestorable(entity);  // empty on a fresh login, but the window must not show a stale list
         SendWarehouse(entity);   // the bank travels with login so the client can show it without a town trip
@@ -557,6 +558,12 @@ public class GameLoopService : BackgroundService
     // ----- PvP / flag / karma (IG-style). Runtime-tunable via the Debug settings panel; the values
     // here are the code DEFAULTS (move final picks back into these initializers). -----
     private const int PvpFlagTicks = 600;   // 60s purple flag after a pvp action
+
+    /// <summary>`BL-98` — how long after touching (or being touched by) a raid boss a player still
+    /// counts as FIGHTING it, so that healing him is "helping someone who fights a raid boss".
+    /// 30s, the same window the combat timer uses: long enough that a healer topping up between
+    /// pulls is still supporting the raid, short enough that walking away ends the claim.</summary>
+    private const int RaidEngagementTicks = 300;
     private int _karmaBase = 200;              // karma for a 1st, same-level innocent kill
     private double _karmaConsecGrowth = 1.1;   // ×per consecutive PK  (+10% each)
     private double _karmaLevelGrowth = 1.2;    // ×per level the victim is BELOW the killer (+20%)
@@ -1812,10 +1819,16 @@ public class GameLoopService : BackgroundService
             return;
         }
 
-        // Stunned/feared casters can't act.
+        // Stunned/feared casters can't act. The boss's judgment (`BL-98`) IS a stun, so it arrives
+        // here for free — it only needs its own name and its RUNG, or a petrified player is told he
+        // is "stunned" and spends anything from three minutes to two hours not understanding what
+        // he did or why it lasted so much longer this time.
         if (caster.IsActionLocked)
         {
-            SendSystemToEntity(caster, caster.IsStunned ? "You are stunned." : "You are too afraid to act.");
+            SendSystemToEntity(caster,
+                caster.Petrified ? $"You are petrified — the boss's judgment, L{caster.BossJudgmentRung}."
+                : caster.IsStunned ? "You are stunned."
+                : "You are too afraid to act.");
             return;
         }
 
@@ -1893,6 +1906,39 @@ public class GameLoopService : BackgroundService
             | SkillEffect.MagicDamage | SkillEffect.AnyDebuff | SkillEffect.Cancel | SkillEffect.Taunt)) != 0
             || def.Category == SkillCategory.Debuff;
 
+        // ---- `BL-99` — AIMING A SUPPORT SKILL AT SOMEONE ELSE'S RAID. -------------------------
+        // His ruling, 2026-08-28: *"if he tries to heal with a single/target heal he is deliberately
+        // trying an exploit and it's punishable."*
+        //
+        // 🔑 THE FLAG IS ON THE REACH, NOT ON THE HEAL — the same shape `BL-77` gave hostile acts and
+        // the resurrect flag two branches below (*"the flag should happen at the initializing the
+        // resurrect"*). The cast is refused AND judged right here, before a tenth of a second of it
+        // has run, because the punishable thing is the aim: he picked a person the game had already
+        // told him he cannot help.
+        //
+        // ⚠ A REFUSAL, not the usual fall-through to self-cast. Every other unreachable support target
+        // in this method quietly becomes a self-cast — correct there ("act as u r not nearby"), wrong
+        // here: silently healing yourself AND taking a rung for it reads as a broken skill rather than
+        // as a rule. Say what happened.
+        //
+        // ⚠ NO LEVEL CONDITION, unlike `BL-98` — see RaidLocked. An outsider may not help a raid
+        // participant at any level at all.
+        // ⚠ The first arm MIRRORS THE ALLY BRANCH'S OWN CONDITIONS EXACTLY (`TargetMode != SelfOnly`
+        // and `Range > 0`), and it must: without them a SELF-cast buff pressed while a raider happens
+        // to be selected would be refused and judged, for an act aimed at nobody.
+        bool aimedSupport = IsAllyTargetable(def) && !AreaSupport(def)
+                            && def.TargetMode != TargetMode.SelfOnly && def.Range > 0;
+        if ((aimedSupport || def.Resurrect)
+            && requestedTargetId is Guid aimedId
+            && _world.Entities.TryGetValue(aimedId, out var aimed)
+            && RaidLocked(aimed, caster))
+        {
+            SendSystemToEntity(caster,
+                $"{aimed.Name} is locked in a raid battle — only their own party can aid them.");
+            TryBossJudgment(caster, aimed.RaidBossLevel, JudgmentCause.AimedAtALockedRaider);
+            return;
+        }
+
         Guid targetId;
         // A support skill lands on a party member only if IsAllyTargetable says so — see that helper for
         // why the test cannot be Effect-only.
@@ -1946,7 +1992,7 @@ public class GameLoopService : BackgroundService
             // 10 seconds too late. It is a no-op on an innocent target, so a normal res still flags
             // nobody; and it is not refunded if the cast is interrupted, which is correct: you were
             // visibly holding a channel over an outlaw's body.
-            FlagForSupporting(caster, corpse);
+            OnSupport(caster, corpse);
             targetId = rid;
         }
         else if (offensive)
@@ -3939,7 +3985,7 @@ public class GameLoopService : BackgroundService
                 }
                 // Same rule as the cast path: reading a res scroll over an outlaw flags you NOW, for
                 // the duration of the read, not when they stand up (playtest 23).
-                FlagForSupporting(player, corpse);
+                OnSupport(player, corpse);
                 player.QueuedSkillId = skill.Id;
                 player.QueuedTargetId = rid;
                 return true;
@@ -8335,6 +8381,7 @@ public class GameLoopService : BackgroundService
                 // corpse that is still drawn at 0.4 opacity is exactly the stuck fade this guards.
                 PushSelfState(entity);
                 if (_tick % GameConstants.SecondIntervalTicks == 0) TickToggleUpkeep(entity);
+                if (_tick % GameConstants.SecondIntervalTicks == 0) TickBossJudgment(entity);   // `BL-98` ladder clock + buff re-assert
                 TickPotion(entity);
                 TickRegionNotice(entity);
                 TickOnlineTime(entity);
@@ -8684,6 +8731,18 @@ public class GameLoopService : BackgroundService
     /// accident.</para></summary>
     private bool CanAreaSupport(Entity caster, Entity target, bool inParty)
     {
+        // `BL-99` — RAID-LOCKED: *"If you are boss engaged nothing can heal you outside your party."*
+        // 🔑 SILENTLY SKIPPED, NEVER PUNISHED. This is the branch a splash arrives on — you chose the
+        // ground, not the man standing on it — and his objection to punishing it is the whole reason
+        // the rule is shaped this way: *"Game don't punish you with area heal the target is unhelable
+        // by outsiders … it never reach the pipe so never punish him."* Aiming is the punishable act,
+        // and aiming does not come through here. See RaidLocked.
+        //
+        // ⚠ Only THREE skills in the game can even reach this line with inParty false — Urgent Great
+        // Heal and the two totems (`FriendlyInRadius` + `PlacesTotem`). Every party heal, area buff and
+        // resurrection field is `AlliesInRadius`, which never leaves the party in the first place.
+        if (!inParty && target.Id != caster.Id && target.RaidEngagedUntilTick > _tick)
+            return false;
         if (FlagOf(target) == PvpFlag.Innocent)
             return true;                          // clean: anyone friendly, party or not
         return inParty && caster.PvpEnabled;      // flagged/PK: own party, and only with PvP ON
@@ -9140,6 +9199,24 @@ public class GameLoopService : BackgroundService
     ///
     /// Time offline counts: the snapshot stores a wall-clock expiry, so an hour away spends an hour of
     /// a one-hour buff, and anything that ran out while logged out simply never comes back.</summary>
+    /// <summary>`BL-98` — put the boss's judgment back on someone who logged out under it, on
+    /// whatever rung the clock says he is on NOW. The ladder keeps running while he is away (see
+    /// <see cref="WalkBossJudgmentClock"/>), which is the whole point: a punishment you can end by
+    /// pressing "exit" and logging straight back in is not a deterrent, it is a loading screen.
+    ///
+    /// <para>Deliberately NOT routed through the buff snapshot — <c>BuffSnapshot.CaptureAll</c> skips
+    /// every debuff on purpose (nobody should log back in still poisoned), and the buff is not the
+    /// state here anyway. The rung and its clock are two columns of their own.</para></summary>
+    private void RestoreBossJudgment(Entity p)
+    {
+        if (p.BossJudgmentRung <= 0) return;
+        if (WalkBossJudgmentClock(p)) return;   // ran out (or moved on) while he was away
+        RefreshBossJudgmentBuff(p);
+        SendSystemToEntity(p, p.Petrified
+            ? $"You are still petrified — the boss's judgment, L{p.BossJudgmentRung}."
+            : $"The boss's judgment still remembers you — L{p.BossJudgmentRung}.");
+    }
+
     private void RestorePersistedBuffs(Entity p)
     {
         if (p.PendingBuffs.Count == 0) return;
@@ -9490,7 +9567,10 @@ public class GameLoopService : BackgroundService
                     // empty table, so the very first point of damage from ANYONE — including someone
                     // who wandered past afterwards — became the top of the table and owned it. The
                     // person it actually came for was not on the list at all.
-                    AddThreat(mob, candidate, mob.MaxHp * GameConstants.ThreatAggroPullFraction);
+                    // byPlayerAct: false — the PULL is the mob's doing. It still marks the player as
+                    // being in the fight (`BL-98`), but nobody is petrified for being noticed.
+                    AddThreat(mob, candidate, mob.MaxHp * GameConstants.ThreatAggroPullFraction,
+                              byPlayerAct: false);
                     mob.CombatTargetId = candidate.Id;
                     mob.Engaged = true;
                     return;
@@ -10081,7 +10161,7 @@ public class GameLoopService : BackgroundService
                 foreach (var corpse in DeadPartyInRadius(caster, def.AreaRadiusAt(lvl)))
                 {
                     if (!CanSupport(caster, corpse)) continue;
-                    FlagForSupporting(caster, corpse);
+                    OnSupport(caster, corpse);
                     OfferResurrect(caster, corpse, def.ResExpPctAt(lvl), hpPct: def.ResHpPctAt(lvl));
                     raised++;
                 }
@@ -10626,7 +10706,7 @@ public class GameLoopService : BackgroundService
                 {
                     ApplyBuff(ally, def, lvl, buffName, durationOverride: doubledTicks);
                     BroadcastCombat(caster, ally, 0, CombatOutcome.Buff, shownName);
-                    FlagForSupporting(caster, ally);   // `BL-59` — blessing an outlaw flags you
+                    OnSupport(caster, ally);   // `BL-59`/`BL-98` — blessing an outlaw flags you; blessing a raid you tower over petrifies you
                     blessed.Add(ally.Id);
                 }
             }
@@ -10635,7 +10715,7 @@ public class GameLoopService : BackgroundService
                 var buffTarget = def.TargetMode == TargetMode.SelfOnly ? caster : target;
                 ApplyBuff(buffTarget, def, lvl, buffName, durationOverride: doubledTicks);
                 BroadcastCombat(caster, buffTarget, 0, CombatOutcome.Buff, shownName);
-                FlagForSupporting(caster, buffTarget);   // `BL-59`
+                OnSupport(caster, buffTarget);   // `BL-59`/`BL-98`
                 blessed.Add(buffTarget.Id);
             }
 
@@ -11075,7 +11155,7 @@ public class GameLoopService : BackgroundService
         if (target.HpFrozen) amount = 0;
         if (amount > 0)
             target.Hp = Math.Min(target.MaxHp, target.Hp + amount);
-        FlagForSupporting(caster, target);
+        OnSupport(caster, target);
         BroadcastCombat(caster, target, amount, CombatOutcome.Heal, skillName);
     }
 
@@ -11136,7 +11216,7 @@ public class GameLoopService : BackgroundService
             amount = (int)Math.Round(amount * Math.Max(0f, target.RestoreMpMod));
             target.Mp = Math.Min(target.MaxMp, target.Mp + amount);
         }
-        FlagForSupporting(caster, target);   // refuelling an outlaw flags you, same as healing one
+        OnSupport(caster, target);   // refuelling an outlaw flags you (and a raid you tower over petrifies you), same as healing
         BroadcastCombat(caster, target, amount, CombatOutcome.ManaHeal, skillName);
         if (target.Kind == EntityKind.Player)
             SendStats(target);   // MP isn't surfaced via damage broadcasts — refresh the bar
@@ -11458,14 +11538,260 @@ public class GameLoopService : BackgroundService
     }
 
     /// <summary>Add aggro to a mob's threat table and (re)target the highest-threat foe,
-    /// unless a taunt is currently locking it. Only player actions build threat.</summary>
-    private void AddThreat(Entity mob, Entity attacker, float amount)
+    /// unless a taunt is currently locking it. Only player actions build threat.
+    ///
+    /// <para>`BL-98`: this is also THE seam for the boss's judgment's hostile half, and it is the only one
+    /// there needs to be. Every hostile act a player can aim at a creature arrives here — a landed
+    /// hit through <see cref="ApplyDamage"/>, and anything that lands NO damage (a taunt, a cancel, a
+    /// resisted debuff) through <see cref="Retaliate"/>, which <see cref="AfterOffensiveSkill"/>
+    /// always calls. So "hit/debuff" is covered once instead of at every skill branch.</para>
+    ///
+    /// <para>⚠ <paramref name="byPlayerAct"/> is what keeps that honest. One caller — the aggro pull
+    /// in <c>UpdateMob</c> — puts a player in the table for something the MOB did, and petrifying
+    /// someone for being noticed by a boss would be a bug wearing this method's coat. It still MARKS
+    /// him (he is in the fight now, whether he asked or not); it just never judges him.</para></summary>
+    private void AddThreat(Entity mob, Entity attacker, float amount, bool byPlayerAct = true)
     {
         if (attacker.Kind != EntityKind.Player) return;
         mob.Threat[attacker.Id] = mob.Threat.GetValueOrDefault(attacker.Id) + amount;
         mob.Engaged = true;
+
+        // `BL-98` — the boss's judgment. Being in a raid boss's threat table IS the definition of
+        // "fighting a raid boss", both for the man himself and for anyone who later heals him.
+        if (mob.Rank == MobRank.Boss)
+        {
+            attacker.RaidBossLevel = mob.Level;
+            attacker.RaidEngagedUntilTick = _tick + RaidEngagementTicks;
+            if (byPlayerAct) TryBossJudgment(attacker, mob.Level, JudgmentCause.StruckTheBoss);
+        }
+
         if (mob.TauntLockTicks <= 0 || mob.CombatTargetId is null)
             RetargetByThreat(mob);
+    }
+
+    /// <summary>`BL-98` — AN OFFENCE: someone reached into a raid fight from far outside its level
+    /// band. Walk him one rung up the BOSS'S JUDGMENT ladder (his rule, 2026-08-28 — the whole ladder
+    /// is laid out in <see cref="BossJudgment"/>).
+    ///
+    /// <para>⚠ ALREADY PETRIFIED IS A NO-OP, NOT AN ESCALATION. You cannot act while frozen, so this
+    /// can only be reached by a same-tick double charge — one AoE that lands on two participants —
+    /// and turning that into two rungs would make an area heal cost four hours instead of three
+    /// minutes. <see cref="BossJudgment.OnOffence"/> holds the same line as a second guard.</para>
+    ///
+    /// <para>⚠ NO PARTY CONDITION ANYWHERE, deliberately — his second sentence is precisely that:
+    /// *"if he is in 9lvl of the boss it doesn't prevent him from healing outside from party."*
+    /// Inside the band you may help anyone at all, stranger or not; outside it, being in the party
+    /// does not buy you a pass.</para></summary>
+    /// <summary>Why someone is being judged. The cause decides whether the ±9 band is even consulted:
+    /// the first two are LEVEL offences, the third is not.</summary>
+    private enum JudgmentCause
+    {
+        /// <summary>Hit / debuffed a boss far from your own level.</summary>
+        StruckTheBoss,
+        /// <summary>Aided a raid participant from far outside the boss's level band — the original
+        /// `BL-98` exploit. ⚠ Since `BL-99` this can only ever be a PARTY member: an outsider's
+        /// support never reaches a raid participant at all.</summary>
+        AidedTheRaid,
+        /// <summary>`BL-99` — deliberately aimed a single-target support skill at a raid participant
+        /// who is not in your party. ⚠ NO LEVEL CONDITION. His ruling, 2026-08-28: *"if he tries to
+        /// heal with a single/target heal he is deliberately trying an exploit and it's punishable."*
+        /// The target is unhelpable by outsiders at any level; clicking him anyway is the act.</summary>
+        AimedAtALockedRaider,
+    }
+
+    private void TryBossJudgment(Entity actor, int bossLevel, JudgmentCause cause)
+    {
+        if (actor.Kind != EntityKind.Player || actor.Dead) return;
+        if (cause != JudgmentCause.AimedAtALockedRaider
+            && (bossLevel <= 0 || !StatCalculator.BossJudges(actor.Level, bossLevel))) return;
+        if (actor.GodMode || actor.Petrified) return;
+
+        int rung = BossJudgment.OnOffence(actor.BossJudgmentRung);
+        SendSystemToEntity(actor, cause switch
+        {
+            JudgmentCause.StruckTheBoss =>
+                $"You struck a raid boss more than {StatCalculator.BossJudgmentGap} levels from your own.",
+            JudgmentCause.AidedTheRaid =>
+                $"You aided a raid battle more than {StatCalculator.BossJudgmentGap} levels from your own.",
+            _ => "You reached into a raid battle that is not your party's.",
+        });
+        ApplyBossJudgment(actor, rung);
+    }
+
+    /// <summary>`BL-99` — IS THIS PLAYER RAID-LOCKED AGAINST THIS CASTER? His ruling, 2026-08-28:
+    /// *"If you are boss engaged nothing can heal you outside your party … the target is unhelable by
+    /// outsiders. If heal/partyheal/areaheal comes for a party member u take the benifit."*
+    ///
+    /// <para>🔑 THE GATE IS PARTY MEMBERSHIP, NOT LEVEL — a different rule from `BL-98`'s ±9 band, and
+    /// the two now divide the world cleanly between them: an OUTSIDER cannot help a raid participant
+    /// at all (this), and a PARTY MEMBER can, but is judged if he is far outside the boss's level band
+    /// (`BL-98`). Which means the `AidedTheRaid` cause can now only ever fire on a party member.</para>
+    ///
+    /// <para>🔑 It is also what makes an area heal SAFE to cast near a raid, which was his whole
+    /// objection: the splash is filtered out before it lands, so *"it never reach the pipe so never
+    /// punish him"*. Punishment is reserved for the one act that cannot be an accident — aiming.</para>
+    ///
+    /// <para>⚠ WHEN AN ALLIANCE / RAID GROUP EXISTS, THIS READS "your raid group", NOT "your party".
+    /// Today a party caps at 9 and a boss is tuned for a 5-man, so one party is the whole raid and the
+    /// two are the same thing. The day two parties are meant to fight one boss together, this line is
+    /// what stops them healing each other.</para></summary>
+    private bool RaidLocked(Entity target, Entity caster) =>
+        target.Kind == EntityKind.Player
+        && target.Id != caster.Id
+        && target.RaidEngagedUntilTick > _tick
+        && !SameParty(caster, target);
+
+    /// <summary>Put a character on a rung of the ladder — the one place the rung, its clock and its
+    /// buff are set together, used by an offence, by the expiry walk and by the login restore.
+    ///
+    /// <para>The tidy-up below only matters on a PETRIFYING rung: the act that earned it was
+    /// mid-flight, so the cast is broken, the queue and the chain are dropped and the target is
+    /// released. The tick loop's action lock would do most of that a tenth of a second later anyway —
+    /// doing it now is what makes the freeze read as instant rather than as one more skill going off
+    /// first.</para></summary>
+    private void ApplyBossJudgment(Entity actor, int rung, DateTime? until = null)
+    {
+        if (rung <= 0) { ClearBossJudgment(actor); return; }
+
+        actor.BossJudgmentRung = rung;
+        actor.BossJudgmentUntil = until ?? DateTime.UtcNow.AddSeconds(BossJudgment.Seconds(rung));
+        RefreshBossJudgmentBuff(actor);
+
+        if (BossJudgment.IsPetrify(rung))
+        {
+            if (actor.CastingSkillId is not null) CancelCast(actor, startCooldown: false);
+            actor.QueuedSkillId = null;
+            actor.ChainedSkillId = null;
+            actor.ChainedTargetId = null;
+            actor.CombatTargetId = null;
+            actor.AttackCommandTargetId = null;
+            actor.Engaged = false;
+
+            // 🔑 …AND HE LEAVES EVERY THREAT TABLE HE WAS IN. Without this the punishment hands the
+            // raid a BETTER exploit than the one it closes: an over-levelled friend gets himself
+            // petrified on purpose, the boss keeps swinging at a target that cannot be damaged, and
+            // the party fights untouched for three minutes — or, further up this ladder, two hours.
+            // Frozen means out of the fight in BOTH directions.
+            foreach (var mob in _world.Entities.Values)
+            {
+                if (mob.Kind != EntityKind.Mob || !mob.Threat.Remove(actor.Id)) continue;
+                if (mob.CombatTargetId != actor.Id) continue;
+                mob.CombatTargetId = null;
+                RetargetByThreat(mob);             // hand it to the next-highest, if anyone is left
+                if (mob.CombatTargetId is null) mob.Engaged = false;
+            }
+        }
+
+        SendSystemToEntity(actor, BossJudgment.IsPetrify(rung)
+            ? $"THE BOSS'S JUDGMENT — L{rung}. Petrified for {BossJudgment.Spoken(rung)}. Nothing removes this."
+            : $"The boss's judgment — L{rung}. It remembers you for {BossJudgment.Spoken(rung)}: "
+              + $"interfere again before that fades and the next petrifaction is far longer.");
+    }
+
+    /// <summary>The ladder is over — off every rung, back to clean. The next offence starts at L1.</summary>
+    private void ClearBossJudgment(Entity actor)
+    {
+        bool had = actor.BossJudgmentRung > 0;
+        actor.BossJudgmentRung = 0;
+        actor.BossJudgmentUntil = null;
+        if (actor.Buffs.RemoveAll(b => b.Key == SkillCatalog.BossJudgmentKey) > 0)
+        {
+            actor.RecomputeDerived();
+            PushBuffs(actor);
+            SendStats(actor);
+        }
+        if (had) SendSystemToEntity(actor, "The boss's judgment has lifted. You are clean.");
+    }
+
+    /// <summary>Make the buff bar show the rung the character is actually on, for the time it has
+    /// left. Cosmetic by design: nothing in combat reads this buff (see <c>Entity.BossJudgmentRung</c>),
+    /// it exists so a frozen player can see what he did and how long it lasts.</summary>
+    private void RefreshBossJudgmentBuff(Entity actor)
+    {
+        int rung = actor.BossJudgmentRung;
+        if (rung <= 0) return;
+        string id = BossJudgment.IsPetrify(rung)
+            ? SkillCatalog.BossJudgmentSkill : SkillCatalog.BossJudgmentMarkSkill;
+        if (SkillCatalog.Get(id) is not SkillDef def) return;
+
+        double secondsLeft = ((actor.BossJudgmentUntil ?? DateTime.UtcNow) - DateTime.UtcNow).TotalSeconds;
+        if (secondsLeft <= 0) return;
+
+        actor.Buffs.RemoveAll(b => b.Key == SkillCatalog.BossJudgmentKey);
+        ApplyBuff(actor, def, 1, displayName: BossJudgment.Label(rung),
+                  durationOverride: Math.Max(1, (int)(secondsLeft / GameConstants.TickSeconds)));
+    }
+
+    /// <summary>Once a second: run the ladder's clock, and RE-ASSERT the buff.
+    ///
+    /// <para>🔑🔑 The re-assert is what makes his *"unremovable..no cleanse no healers whatever
+    /// nothing"* true rather than merely intended. Four separate paths in this file wipe a buff list
+    /// (death, a subclass swap, and two more); each would have been a way out if the buff were the
+    /// state. It is not — <c>BossJudgmentRung</c> is, the lock and the invulnerability read it
+    /// directly (<c>Entity.IsStunned</c> / <c>HpFrozen</c>), and this simply puts the icon back.</para></summary>
+    private void TickBossJudgment(Entity p)
+    {
+        if (p.BossJudgmentRung <= 0) return;
+
+        if (WalkBossJudgmentClock(p)) return;   // a rung ended; it already applied what follows
+
+        if (!p.Buffs.Any(b => b.Key == SkillCatalog.BossJudgmentKey))
+            RefreshBossJudgmentBuff(p);
+    }
+
+    /// <summary>Advance the ladder for however much time has passed — one rung, or many, since a
+    /// character can be offline across several of them. Returns true if the rung changed.
+    ///
+    /// <para>⚠ The walk is EXACT, not "reset to now": an L1 that ended at T means L2 ran T→T+1h, so a
+    /// player who logs in 90 minutes later is clean rather than starting a fresh hour of being
+    /// remembered. Waiting out the ladder offline has to cost exactly what waiting it out online
+    /// costs, or logging off IS the answer to it.</para>
+    ///
+    /// <para>⚠ No transition here ever TIGHTENS — a petrifaction only ever expires into its memory
+    /// rung, and a memory rung only ever expires into clean. That is why a once-a-second clock is
+    /// accurate enough: the few ticks of slop can only ever be in the player's favour.</para></summary>
+    private bool WalkBossJudgmentClock(Entity p)
+    {
+        if (p.BossJudgmentUntil is not DateTime until) return false;
+        var now = DateTime.UtcNow;
+        if (now < until) return false;
+
+        int rung = p.BossJudgmentRung;
+        while (rung > 0 && now >= until)
+        {
+            rung = BossJudgment.OnExpiry(rung);
+            if (rung == 0) break;
+            until = until.AddSeconds(BossJudgment.Seconds(rung));
+        }
+        if (rung == 0) { ClearBossJudgment(p); return true; }
+        ApplyBossJudgment(p, rung, until);
+        return true;
+    }
+
+    /// <summary>Every consequence of ONE PLAYER SUPPORTING ANOTHER, in one call: the purple flag for
+    /// propping up an outlaw (`BL-59`) and the boss's judgment for reaching into a fight far above or below
+    /// your level (`BL-98`). Heals, MP restores, buffs, cleanses and resurrections all route here.
+    ///
+    /// <para>🔑 ONE seam rather than two calls at each of seven sites, so a support skill written next
+    /// year cannot pick up one rule and quietly miss the other — which is the exact shape of the hole
+    /// BL-98 was raised about: <c>RaidLevelGapMult</c> had priced a player's DAMAGE to a boss by the
+    /// level gap since the ±10 rule was built, and nobody ever mirrored it onto the help.</para>
+    ///
+    /// <para>⚠ Since `BL-99` the raid half of this can only ever fire on a PARTY MEMBER. An outsider's
+    /// support no longer reaches a raid participant at all — an area splash is filtered out in
+    /// <see cref="CanAreaSupport"/> and an aimed cast is refused before it starts. What is left here
+    /// is the original `BL-98` exploit in its pure form: someone who joined the party to carry a raid
+    /// far outside his own level band.</para></summary>
+    private void OnSupport(Entity caster, Entity target)
+    {
+        FlagForSupporting(caster, target);
+
+        if (caster.Kind != EntityKind.Player || target.Kind != EntityKind.Player
+            || caster.Id == target.Id)
+            return;
+        // Is the man you just helped actually in a raid fight right now? The claim expires on its own.
+        if (target.RaidEngagedUntilTick <= _tick) return;
+        TryBossJudgment(caster, target.RaidBossLevel, JudgmentCause.AidedTheRaid);
     }
 
     /// <summary>Bleed an engaged mob's threat table once per second (BL-71).
@@ -12632,7 +12958,7 @@ public class GameLoopService : BackgroundService
         // `BL-59` — standing an outlaw back up is supporting one, and it flags you like a heal does.
         // Placed here rather than at the OFFER so it costs nothing when the offer is declined or
         // expires; and it is a no-op for a self-res or an innocent target (see FlagForSupporting).
-        FlagForSupporting(caster, target);
+        OnSupport(caster, target);
         if (target.Kind == EntityKind.Player) SendStats(target);
     }
 

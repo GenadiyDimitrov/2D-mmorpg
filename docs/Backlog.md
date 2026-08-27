@@ -806,35 +806,6 @@ closed · **`BL-93` opened** for the in-game visuals discussion you asked for (*
 
 ## World & mobs
 
-- `BL-98` 🔵 **OUTSIDE HELP IN A BOSS FIGHT — a high-level healer carrying a low-level raid.** Your
-  own flag, 2026-08-28: *"The only thing need to prevent is outside help of high-level healers to a
-  low lvl boss fights .. Mark it so we can deside what to do"*, raised while ruling that Urgent Great
-  Heal is deliberately *"a safe anyone anywhere"* — which is precisely what makes this reachable.
-  🔑 **THE MACHINERY FOR THIS ALREADY EXISTS ON THE OTHER SIDE, AND WAS NEVER MIRRORED.**
-  `StatCalculator.RaidLevelGapMult` already scales a player's DAMAGE to a boss by the level gap —
-  ×1.0 to gap 5, falling to ×0.70 at 10 and a floor of ×0.10 at 16+ — applied in `FinalizeDamage`,
-  and it is described in code as "anti-cheese". So an over-levelled character was already stopped
-  from *killing* a low boss, and never stopped from *healing* the people who do. The exploit is not
-  a missing idea; it is one half of an idea that was built.
-  **Options, cheapest first:**
-  1. 🔑 **Mirror the same curve onto SUPPORT.** A heal, cleanse or buff cast by someone whose level is
-     far from the BOSS's is scaled by `RaidLevelGapMult`. One measured curve, already tuned, already
-     his; symmetric with damage, so there is nothing new to explain to a player. Lands in `HealOne`
-     and `ApplyBuff`.
-  2. **Refuse it outright** past the gap rather than scaling. Cleaner to read, harsher, and it makes
-     a legitimate mixed-level party feel broken — most parties have a spread.
-  3. **The boss takes an interest.** Anyone who supports a participant joins the threat table. Fits
-     the boss rework (0.89.0) and is the most "alive" answer, but it punishes a passer-by.
-  4. **Registration / instancing** — only enrolled participants may act inside. Correct and the most
-     work; 🟡 gated on instances, which do not exist (`BL-51` / the `BL-80` fortress notes).
-  🔵 **The real question is not which lever but WHAT COUNTS AS "IN THE FIGHT"** — and that is yours:
-  is it "the target is on a boss's threat table", "within N of an engaged boss", or "the boss is
-  engaged and you are in the zone"? Each draws the line somewhere different for a healer standing at
-  the edge, which is the exact case you are describing.
-  ⚠ Whatever is chosen must NOT punish an ordinary mixed-level party doing a level-appropriate boss;
-  the thing being stopped is a level-85 healer at a level-40 raid, not a 78 healing an 84.
-
-
 - `BL-48` ⏸ **Instances — you are holding.** Design is written (`design/Instances.md`). One
   load-bearing decision is still open: the daily attempt **GLOBAL vs PER-INSTANCE**. It changes the
   persisted model, so it is answered before anything is built. **Dungeons are the cheap half** —

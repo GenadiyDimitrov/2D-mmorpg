@@ -7,12 +7,121 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.94.3**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.95.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-08-27 (latest) — 0.94.3: the party heals are cast on yourself, and retuned end to end
+## 2026-08-28 (latest) — 0.95.0: `BL-98` THE BOSS'S JUDGMENT (a six-rung ladder nothing removes) + `BL-99` raid-lock
+
+> *"Rename the petrify as 'bosses judgment' make it 6 lvls. L1 is 3min petrify state, after 3mins end
+> u get 1h L2..if you hit a boss who's lvl is 9 lvl or more different u get L3 a petrified state for
+> 30min … u cycle l5<>L6 until u stop for 24h and the start form l1 … This curse is unremovable..no
+> cleanse no healers whatever nothing .. It's a punishment."*
+
+```
+rung  what it is        lasts    runs out into    offend while holding it
+L1    PETRIFIED          3 min   → L2             (cannot act)
+L2    remembered         1 h     → clean          → L3
+L3    PETRIFIED         30 min   → L4             (cannot act)
+L4    remembered         1 h     → clean          → L5
+L5    PETRIFIED          2 h     → L6             (cannot act)
+L6    remembered        24 h     → clean          → L5   ← the cycle
+```
+
+🔑 **THE RUNGS ALTERNATE: ODD = PETRIFIED, EVEN = REMEMBERED — and that is what makes the ladder
+work.** You cannot act while frozen, so an odd rung needs no "offend again" rule at all; the even
+rungs carry **no effect whatsoever** and exist purely as the window in which a repeat costs more. The
+only way off the top is to let a full 24 hours pass un-offended, which drops you to clean and starts
+the next offence back at L1. The gap that triggers it is unchanged at **±9**.
+
+🔴🔑 **"UNREMOVABLE" IS ENFORCED BY THE ARCHITECTURE, NOT BY A FLAG — and it had to be.** Four
+separate paths in this codebase wipe a buff list: **death**, a **subclass swap**, and two more. Every
+one of them would have been a way out if the buff were the state. It is not: `Entity.BossJudgmentRung`
+is the truth, `IsStunned` and `HpFrozen` read **the rung directly**, and the buff is only the icon and
+the countdown — re-asserted once a second by `TickBossJudgment`. So a cleanse, a death, a swap or a
+bug can all remove the buff and achieve exactly nothing.
+
+🔑 **PETRIFIED STILL NEEDED NO NEW MACHINERY — IT IS `Stun` + `FreezesHp`.** "Cannot act" is exactly
+what a Stun buff already means (gates the cast, breaks one in flight, drops the queued and chained
+skill, zeroes move speed); "doesn't take any dmg" is exactly the Immortality Sigil's HP freeze,
+already checked inside `ApplyDamage` and `HealOne`. That also settled the enum problem before it was
+one: `SkillEffect` has **no free bits left** (`1L << 62` is the last and it is taken), so a `Petrify`
+flag was never on the table.
+
+**The ladder keeps running while you are offline, and the walk is EXACT.** An L1 that ended at T means
+L2 ran T→T+1h, so logging in 90 minutes later leaves you **clean**, not starting a fresh hour of being
+remembered. `WalkBossJudgmentClock` advances as many rungs as the elapsed time bought. Waiting it out
+logged off has to cost precisely what waiting it out logged in costs, or logging off *is* the answer
+to it. ⚠ No transition ever *tightens* on expiry — a petrifaction only ever falls to its memory rung —
+which is why a once-a-second clock is accurate enough.
+
+**Where it fires — two seams, not twenty**
+
+- **Hostile:** `AddThreat`. Every hostile act a player can aim at a creature already arrives there —
+  a landed hit through `ApplyDamage`, and anything that lands *no* damage (a taunt, a cancel, a
+  resisted debuff) through `Retaliate`, which `AfterOffensiveSkill` always calls. ⚠ One caller had to
+  be exempted: the **aggro pull** puts a player in the table for something the *mob* did, so it passes
+  `byPlayerAct: false` — it still marks him as in the fight, it never judges him for being noticed.
+- **Support:** the new `OnSupport`, which replaced all seven `FlagForSupporting` call sites (heal, MP
+  restore, buff ×2, resurrect ×3). 🔑 One seam rather than two calls at each site, **because a
+  one-of-two miss is the exact shape of the hole BL-98 was raised about** — `RaidLevelGapMult` had
+  priced *damage* to a boss by the level gap since the ±10 rule and nobody ever mirrored it onto the
+  help.
+- "Fighting a raid boss" = the helped player is in that boss's **threat table**, a claim valid for 30s.
+  The marker lives on the *player*, so the support path is a field read, not a scan of every boss.
+- ⚠ **An AoE that reaches two participants costs ONE rung, not two.** Already-petrified is a no-op and
+  `BossJudgment.OnOffence` holds the same line as a second guard — otherwise one area heal would have
+  jumped someone from clean to two hours.
+
+🔑 **AND IT LEAVES EVERY THREAT TABLE.** Without that the punishment hands the raid a *better* exploit
+than the one it closes: an over-levelled friend gets himself petrified on purpose and the boss spends
+two hours swinging at a target that cannot be damaged. Frozen means out of the fight in both directions.
+
+⚠ **New columns (`BossJudgmentRung`, `BossJudgmentUntilUtc`) → delete `Game.Server/game.db`.**
+
+### `BL-99` in the same version — a raid participant is unhelpable by outsiders
+
+> *"If you are boss engaged nothing can heal you outside your party… Game don't punish you with area
+> heal the target is unhelable by outsiders. If heal/partyheal/areaheal comes for a party member u
+> take the benifit .. And for the healer ...it never reach the pipe so never punish him. And if he
+> tries to heal with a single/target heal he is deliberately trying an exploit and it's punishable."*
+
+🔑 **TWO RULES THAT DIVIDE THE WORLD CLEANLY BETWEEN THEM.** `BL-99` gates on **party membership**, at
+any level; `BL-98` gates on the **±9 level band**, inside the party. An outsider cannot help a raid
+participant *at all*; a party member can, and is judged if he is far outside the boss's band. Which
+means the "aided the raid" cause can now only ever fire on a party member — the original exploit in
+its pure form, someone who joined the party to carry a raid he towers over.
+
+🔑 **THE SPLASH IS SKIPPED, THE AIM IS PUNISHED** — his distinction, and it is the one that makes the
+whole thing safe to be near. An area heal filters the locked target out before it lands (*"it never
+reach the pipe so never punish him"*), so standing near someone else's raid can never cost you
+anything. Aiming a single-target heal, cleanse, buff or resurrection at a locked raider is refused
+**and** judged, at cast start, before a tenth of a second has run — **the flag is on the reach, not on
+the heal**, exactly the shape `BL-77` gave hostile acts and the resurrect flag already had.
+
+⚠ **A refusal, not the usual fall-through to self-cast.** Every other unreachable support target in
+that method quietly becomes a self-cast, which is right there ("act as u r not nearby") and wrong
+here: silently healing yourself *and* taking a rung for it reads as a broken skill rather than a rule.
+
+🔑 **MEASURED BEFORE BUILT: only THREE skills in the game could splash onto a stranger at all** —
+Urgent Great Heal and the two totems (`FriendlyInRadius` + `PlacesTotem`). Every party heal, area buff
+and resurrection field is `AlliesInRadius`, which never leaves the party. So *"we make it a party
+one"* was already true of everything except the one skill he deliberately ruled twice to keep open,
+and it stays open — it just cannot reach someone else's raid.
+
+⚠ **His *"heal per next -3%"* was for a party-scoped chain heal and is moot now.** The falloff is
+already built at **2%** (`TargetFalloff: 0.02f`, 11 targets, 30%→10%); −3% cannot fit 11 slots.
+
+⚠ **Caught while building:** the aimed-cast gate had to mirror the ally branch's own `TargetMode !=
+SelfOnly && Range > 0` conditions. Without them a **self-buff** pressed while a raider happened to be
+selected would have been refused and judged, for an act aimed at nobody.
+
+🔵 **When an alliance / raid group exists, `RaidLocked` reads "your raid group", not "your party".**
+Today a party caps at 9 and a boss is tuned for a 5-man, so one party is the whole raid; the day two
+parties are meant to fight one boss together, that line is what would stop them healing each other.
+
+## 2026-08-27 — 0.94.3: the party heals are cast on yourself, and retuned end to end
 
 > *"The party heals (party heal, great party heal, ultimate party heal) should be cast able without a
 > target.. So 0/x party/AOE. Let's redo the party heals I haven't saw what ig's was so I just estimated

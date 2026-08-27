@@ -1332,6 +1332,7 @@ public static partial class SkillCatalog
         list.AddRange(Lightbringer4thSkills()); // Skills.Lightbringer4th.cs (his `healer 4th.csv` 76-90 kit)
         list.AddRange(Shared4thSkills());     // Skills.Shared4th.cs (his `shared 4th.csv` ALL-CLASSES passives)
         list.AddRange(SigilSkills());         // Skills.Sigils.cs (the 4th class's 18 Attack/Defence/Support sigils)
+        list.AddRange(BossJudgmentSkills());  // Skills.BossJudgment.cs (`BL-98` the six-rung ladder — engine-applied only)
 
         var dict = new Dictionary<string, SkillDef>();
         foreach (var sk in list)
