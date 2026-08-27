@@ -12,6 +12,7 @@ original file's content, unchanged, under its own marker. The reason for the mer
 
 | pass | date | what it was |
 |---|---|---|
+| [The 0.77.0→0.89.0 pass](#pass-0770-0890) | 2026-08-22/26 | §90's answered rows — the two 3rd-class kits played (Lightbringer + Warchanter), the totem/AoE circles, the ork mage's ATK, and playtest 26's three fixes confirmed gone. What he did NOT reach stayed on the live checklist |
 | [Playtests 27 & 28](#playtest-27-28) | 2026-08-23 | his own finds across two passes, **all built** — twelve in 28 alone. The mana-restore exploit reading the KIT not the book, chat per character, a chat log table, runes off the buff cap, the NPC buffer free to 75, flat buffs applying AFTER percentages, a blunt skill that refused a maul, and the vamp-bolt question that REVERSED a shipped rule (fizzle reads the RUNG's learn level, 0.81.2). Cost 0.79.0-0.82.0 |
 | [Playtest 26 finds](#playtest-26-finds) | 2026-08-22 | his six free-form finds — five built in 0.78.0, one routed to `BL-86` |
 | [Playtest 25 routing](#playtest-25-routing) | 2026-08-16/17 | where each playtest-25 ruling landed. All of it built |
@@ -34,6 +35,145 @@ original file's content, unchanged, under its own marker. The reason for the mer
 Answered checklists that fed these passes (`Open-Checklist-0.45.0/-0.47.0/-0.48.0.md`) were
 transcribed into the playtest files at the time and are in git history.
 
+
+---
+
+<a id="pass-0770-0890"></a>
+
+# ══ The 0.77.0 → 0.89.0 pass — §90's answered rows ══
+
+**Closed 2026-08-27**, at the start of the 0.93.0 pass. These are the rows of `Open-Checklist.md`'s
+**§90 (the 0.77.0 pass)** that he actually played and marked — moved here verbatim so the live
+checklist carries only what is still untested. His own comments are after the `->`; my replies are the
+`⤷` lines.
+
+Two whole 3rd-class kits were the headline of this section: the **Lightbringer** (0.74.0, off his
+finished `healer 3rd.csv`) and the **Warchanter** (0.76.0). What did NOT get played from §90 stayed on
+the list and is §90 in the 0.93.0 checklist — the engine and economy rows, which have never had a
+client tell and only ever been measured.
+
+## The Warchanter's kit — green
+
+- `90b` [x] - **THE WARCHANTER'S BUFF LAYER, 40-74** — nine group buffs split by lane and four Harmony
+  ladders. 🔑 **A harmony does NOT evict your singles**: it carries its own key, so it stacks and the
+  two multiply. That is the design, not a bug — but it is the thing most likely to look wrong from
+  inside the buff list. ->
+
+- `90c` [x] - **THE WARCHANTER'S NON-BUFF HALF** — 16 families, and the race split IS the class, in his
+  own words: **Human** heavy + blunt + shield, Sound Smash · **Elf** light + bow, Sound Burst (two hits,
+  900 range) · **Ork** heavy + blunt, Sound Smash **plus his new Acoustic Shock** (Sound Smash's twin
+  ladder with a contested 5s stun, ork-only). ⚠ **Two defects in his CSV were found and fixed** on the
+  way in, and he should know because both moved a built number: Spell Mastery's second `mAtk +15` is a
+  **P.Atk** (his own `cleric 2nd.csv` writes it that way, and rung 5's P.Atk moved 18 → 15), and Armor
+  Mastery's **Light** row was stripped of its speed clauses from rung 5 up — stacked with Harmonist Light
+  Mastery they drove an elf straight into the cast-speed clamp. **Do not put them back.** ->
+
+- `90d` [x] - **Combo Mastery — the FIRST ON-HIT PROC in the game.** A new engine primitive: a chance on
+  landing a hit to cast a skill at yourself or the party, on its own cooldown. Nothing else in the game
+  works this way, so it is the one most likely to misbehave under fast attack speed. ->
+
+- `90e` [x] - **Harmonist Bow Proficiency — an elf Warchanter with a BOW is a full caster.** It is the
+  first skill in the game that **undoes** the untrained-caster-weapon rule: his `cast x2, mAtk x2,
+  mAcc x0.04` are the exact inverses of Spellcaster Mastery's bow penalty, so the three multipliers
+  cancel to 1. ⚠ It only works with the passive learned — a bow before it is still a ×0.5 / ×0.5 / ×25
+  fizzle punishment. ->
+
+- `90g` [x] - **Shield Mastery, one skill on two classes** — tank at 20/28/36/**52**, Human Warchanter at
+  40/60/70 (no rung 4). 🔑 His CSV percentages are **IG units**; the build multiplies the shield-P.Def
+  column by 5 and leaves everything else literal. The bow resist is back at rungs 3/4 (16% / 24%), and
+  the +10% P.Def is **shield-gated** — no shield, no bonus. Both his rulings. ->
+
+## The kits' cost to everything else
+
+- `90h` [~] - **Quick Heal is back on the Learn list, at SP already paid.** Fallout from the Harmony fix:
+  Harmony used to replace Quick Heal, so buying Harmony stripped it. Nothing replaces it now, so it
+  returns at the cleric's 20/25/30/35 rungs. ⚠ **He will be asked for the SP a second time.** Say if
+  that is unacceptable and it becomes a refund. -> harmony of restoration replace e party heal .. Heal is replaced buy great heal .. We need something that replaces quick heal - what will be good replacement for it or which has the Mos logical to replace it ..harmony of protection ?or any of the 3 passives (shield/2h/bow)?
+  ⤷ 🟠 **MY ANSWER: NOTHING SHOULD, AND NOTHING NEEDS TO — no code changed.** Both candidates he names
+  would re-create the exact bug this row is: Harmony of Protection is a defensive BUFF and the three
+  masteries are weapon passives, and wiring `Replaces` between unrelated skills is what stripped Quick
+  Heal in the first place (a passive called "Harmony" was replacing a heal).
+  - **`Replaces` is for "this is strictly the better version of that", and the ladder is already whole**:
+    Human Lightbringer → **Quick Great Heal** replaces it (Great Heal's power on a 2s cast). Elf
+    Lightbringer → **Healer Blessing** replaces it (heal + cure in one). Ork Lightbringer → keeps it,
+    correctly: his answer is a **Healing Totem**, which is a different tool, not a better Quick Heal.
+  - **The Warchanter keeps it too**, and should: his own heal is a Renew verse — a party heal in a 600
+    radius **centred on himself**. It cannot reach a hurt ally across the field, so it does not supersede
+    a 600-range targeted heal. Take Quick Heal away and the buffer loses a real ability.
+  - **The double SP charge answers itself**: it only existed for a character that had already paid before
+    the strip, and his `game.db` delete is owed twice over anyway. On a fresh DB nobody pays twice.
+  - ⚠ Say the word if he would rather have it gone from the buffer for kit-size reasons — that is a
+    different argument (too many buttons), and then the honest tool is removing the learn rows, not a
+    `Replaces` that lies about why.
+
+- `90i` [x] - **Every group buff now PRINTS ITS NUMBERS on the card.** *"War frenzy have no description"*
+  was really "no numbers": a group buff has no magnitudes of its own — they live one hop down in the
+  rungs it names — so the card printed prose and then said nothing. War Frenzy now reads
+  `Max HP −10% | Max MP −10% | P.Atk +8% | M.Atk +8% | Cast speed +8% | Atk speed +8% | Move speed +8 |
+  Evasion −8`. It affects War Might/Bulwark, Frenzy and **all ten Warchanter groups**. ⚠ It immediately
+  caught a stale line of its own: Frenzy Lv1's prose claimed −30% Max HP/MP over a rung that gives −7%.
+  The prose was wrong, the rung was right, and the prose was corrected to it. ->
+
+## What he could SEE — the client half
+
+- `90j` [x] - **TOTEM FOOTPRINTS AND AN AoE FLASH** — *"I want to see where it stands and the AOE so I can
+  stand inside"*. 🔑 A totem was **never on the wire at all** (it is not an entity), so this is a new
+  channel, not a rendering fix. Green HP, blue mana, both rings if a totem fills both pools; the ring is
+  drawn at the server's real radius. The flash is 0.55s at the true footprint, coloured by what the
+  skill does. ⚠ **Every AoE BUFF flashes too** — that is *"same goes for all AOE skills"* taken
+  literally, and a full group-buff rotation is a lot of yellow in a row. If it reads as noise, say so:
+  muting it is one line. ⚠ **A MOB's AoE does not flash** — deliberate for now, because telegraphing a
+  boss's ground slam is a real balance decision and not a side effect of this. Say if you want it. ->
+
+- `90k` [x] - **THE ORK MAGE'S ATK IS 31 → 47** — his find, and the root cause is worth one line: **IG has
+  two power stats and we have one.** Our mage ATK column was IG's **INT**, copied straight across, which
+  took the half of the spread the ork mystic LOSES and threw away the half he WINS (his STR is 25, the
+  highest of any mystic). 47 = 41 × 25/22, derived from IG's own ratio rather than invented. 🔑 The check
+  that it is right is his own sentence — at 47 the **human mage is the middle value of all five stats**,
+  ork owns CON/SPT/ATK, elf owns WIT/AGI. ⚠ **Base stats are read at character creation: this needs a NEW
+  character.** ⚠ It lands on every ork MAGE, so the ork nuker gains ~+12% M.Atk too. ->
+
+## Playtest 26's three finds — confirmed gone
+
+- `90l` [~] - **Harmony of Restoration can be cast again.** The gate read the `RestoreMp` **flag** — every
+  MP source in the game — and a Warchanter is himself a mana-restorer, so his own party HoT refused
+  itself. It is now the skill id, per his ruling *"only Restore is forbidden"*. **Freed: Harmony of
+  Restoration, Mana Totem, Restore Spirit.** Restore Mana still refuses a restorer, which is its own
+  rule. Auto-hunt carried a copy of the same test and was narrowed with it, so auto and manual refuse
+  exactly the same casts. -> they work just the harmony of restoration the mana part is no different of the healing -bshowbsame green 10 as +100 whilenthebmanantotrem is a blue 20
+  ⤷ 🟢 **DONE — one word.** The MP tick was broadcast as `CombatOutcome.Heal` with the skill named
+  "Mana", so it drew the green heal number; the distinct **`ManaHeal`** outcome already existed (it is
+  what makes the Mana Totem blue) and this one path was written before it and never moved. Harmony of
+  Restoration's mana half now reads **`+20 MP` in blue**, like the totem. ⚠ Server-side, live on restart.
+
+- `90m` [x] - **War Frenzy now removes Frenzy — including on a character that already owns both.**
+  `Replaces` named `cast_frenzy`, an id **no class learns**; everyone is granted `holy_frenzy`, whose
+  display name is plainly "Frenzy". 🔑 The more important half: `Replaces` was enforced **at learn time
+  only**, so a correction reached nobody who had already spent the SP. Superseded ids now **die on
+  load**. His existing Warchanter is fixed by logging in — no new character needed for this one. ->
+
+- `90n` [x] - **Harmony of Restoration replaces PARTY HEAL**, his own correction. Great Heal takes Heal,
+  Harmony takes Party Heal, Quick Heal survives as the fast single-target (see `90h`). All fourteen
+  `buffer 3rd.csv` rows moved with the code. ->
+
+## Engine rows he did read
+
+- `90s` [x] - **`mpWhenRestored` is a PERCENT**, and casts and totem pulses go down one pipe. 🔴 Anchored
+  at 80 it is worth **−25% to −57% below level 60** — that is his own CSV row, flagged rather than
+  silently rescaled. ->
+
+- `90x` [x] - **One caster weapon penalty left, and the healer took his own masteries.** Sword and blunt
+  are ×1/×1, **Divine Focus is deleted**, and the fork is blunt-only / robe-only. 🔑 The gate is the
+  weapon TYPE. 🔑 The fizzle chain is a **product** — a `0` means "not in the chain", never "zero
+  chance". ->
+
+- `90y` [x] - **The magic fizzle curve, written down** (`docs/balance/BalanceMatrix.md`, marked CURRENT,
+  plus `BalanceMatrix --fizzle` and the new SPELL LADDERS table). 🔑 **UPDATED 2026-08-24: it reads the
+  RUNG'S learn level now, not the caster's** — his ruling; the curve itself did not move, only which
+  level you read it at. Casting DOWN is **0%**, up is 5% at +6, 18% at +11, 67% at +16, ceiling from
+  +18. 🔑 M.Def and mRes are **not** in the roll — and a fizzle still lands `dmg/3`. **Read, don't
+  test.** ⚠ The other half of his vamp-bolt ruling — *"shouldn't hit at all on the floor"* — is NOT
+  built and is **`BL-94`** in `docs/Backlog.md`. ->
 
 ---
 

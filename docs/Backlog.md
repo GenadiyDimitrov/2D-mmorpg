@@ -343,9 +343,21 @@ closed · **`BL-93` opened** for the in-game visuals discussion you asked for (*
   — the same fold already shipped on the heavy and light `611` rows. See `CHANGELOG.md`. Delete at the
   next sweep.
 
-- `BL-28` ⏸ **MP potions** — held until the 40+ kits decide the MP economy.
+- `BL-28` ✅ **BUILT 2026-08-27 (0.92.0, retuned 0.92.1) — MP POTIONS, PvE ONLY.** The hold came off the
+  day `--mpdrain` measured the economy the 40+ kits had created (0.91.2). Three tiers mirroring the
+  healing ladder's rates — **20 / 70 / 150 MP/s for 15s on a 30s reuse**, so **10 / 35 / 75 sustained**
+  — at **double** the healing ladder's price: **120 / 500 / 3,000**. 🔴 **They do not drop anywhere**,
+  which is what the double price buys: *"common/uncommon healing potions are dropped so u dont spend
+  there … u need to buy mp pots"*. Two sources only — the Apothecary shelf for Common and Uncommon, the
+  Potion Master's craft L5 for the Rare (*"its raiding support item that is economy player trade
+  only"*). **PvE only, gated on the DRINK not the effect**: a potion already running ticks out its full
+  15s when you flag, and only the next bottle is refused. 🔴 **Boss fights are deliberately allowed** —
+  the gate is the PvP flag and a boss is PvE; that is a ruling, not an oversight.
 
-- `BL-29` ⏸ **SP bottles** — 1e9 SP → one bottle; also what keeps `SkillPoints` an `int` honest.
+- `BL-29` ✅ **BUILT 2026-08-26 (0.87.1) — SP BOTTLES.** An SP Broker takes 1e9 SP + 100kk gold and
+  hands back a tradable bottle, with a confirm step before you drink one. 🔑 The point that outlived the
+  feature: a skill can be priced in ITEMS (`LearnConsumableId`), which is what keeps `SkillPoints` an
+  `int` honest rather than forcing a widening.
 
 - `BL-30` ⏸ **Recipe drops below A grade** — no recipe item exists under A (below 76 they are
   learned by level). Add the same way A+ was added, when there is a reason to.
