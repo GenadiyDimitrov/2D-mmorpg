@@ -905,21 +905,28 @@ public static class ItemCatalog
         //       drink cooldown (owner, 2026-08-27). PveOnly: the drink is refused while flagged or
         //       PK; an already-running one is never stripped.
         //
-        //       ⚠ Priced well above the healing ladder per drink, because a drink is worth far more:
-        //       the Uncommon returns 750 MP, which at level 43 is HALF a caster's entire bar. The
+        //       ⚠ DEARER THAN THE HEALING LADDER AT EVERY RUNG, and that is his ruling, 2026-08-27:
+        //       *"buy prices 500 common , 1500 uncommon in shop .. higher then hp pots"*. Against the
+        //       healing shelf's 60 / 250 that is 8.3x and 6x. It is not arbitrary — a drink is worth
+        //       far more: the Uncommon returns 750 MP, which at level 43 is HALF a caster's entire
+        //       bar, where an Uncommon healing potion returns 1050 HP against a much larger pool.
+        //
+        //       ⚠ The Rare's 4,500 is MINE, not his — he priced the two SHOP rungs only. It keeps his
+        //       x3 stride (500 → 1500 → 4500); at 2,500 the ladder would have flattened to x1.67 at the
+        //       top. It is craft-only, so the number is only ever a SELL price (buy/25 = 180 gold).
         //       Rare stays off the shelf for the same reason the Rare healing potion does — it is the
         //       Potion Master's L5 recipe, beside the Rare healing potion, and the ONLY way to get one.
         list.Add(new ItemDef(MinorManaPotion, "Common Mana Potion", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Common,
-            UseSkillId: SkillCatalog.PotManaMinor, PotionCooldownTicks: 300, PveOnly: true, Value: 100,
+            UseSkillId: SkillCatalog.PotManaMinor, PotionCooldownTicks: 300, PveOnly: true, Value: 500,
             Description: "Restores 20 MP per second for 15s. Cannot be drunk while flagged for PvP."));
         list.Add(new ItemDef(ManaPotion, "Uncommon Mana Potion", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Uncommon,
-            UseSkillId: SkillCatalog.PotMana, PotionCooldownTicks: 300, PveOnly: true, Value: 400,
+            UseSkillId: SkillCatalog.PotMana, PotionCooldownTicks: 300, PveOnly: true, Value: 1500,
             Description: "Restores 50 MP per second for 15s. Cannot be drunk while flagged for PvP."));
         list.Add(new ItemDef(GreaterManaPotion, "Rare Mana Potion", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Rare,
-            UseSkillId: SkillCatalog.PotManaGreater, PotionCooldownTicks: 300, PveOnly: true, Value: 2500,
+            UseSkillId: SkillCatalog.PotManaGreater, PotionCooldownTicks: 300, PveOnly: true, Value: 4500,
             Description: "Restores 100 MP per second for 15s. Cannot be drunk while flagged for PvP."));
 
         // ----- RUNES + their boxes. The rune is HELD (not equipped/consumed): while it's in the main

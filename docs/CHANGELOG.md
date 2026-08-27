@@ -19,8 +19,8 @@ uncommon shop / rare drop"*.
 
 | item | restores | window | drink reuse | **sustained** | source |
 |---|---|---|---|---|---|
-| Common Mana Potion | 20 MP/s | 15s | 30s | **10 MP/s** | Apothecary, 100 gold |
-| Uncommon Mana Potion | 50 MP/s | 15s | 30s | **25 MP/s** | Apothecary, 400 gold |
+| Common Mana Potion | 20 MP/s | 15s | 30s | **10 MP/s** | Apothecary, **500 gold** |
+| Uncommon Mana Potion | 50 MP/s | 15s | 30s | **25 MP/s** | Apothecary, **1,500 gold** |
 | Rare Mana Potion | 100 MP/s | 15s | 30s | **50 MP/s** | Potion Master, craft L5 |
 
 ⚠ **The window is deliberately SHORTER than the reuse, which the healing ladder is not.** The Rare
@@ -29,6 +29,13 @@ forever. 15s on a 30s reuse is a 50% duty cycle, so the sustained column above i
 it is what `--mpdrain`'s measured deficits (0-15 MP/s for a caster, 16-64 for a buffer) were sized
 against. Do not lengthen the window without re-reading that table.
 
+
+**Dearer than the healing ladder at every rung** — his ruling: *"buy prices 500 common , 1500 uncommon
+in shop .. higher then hp pots"*. Against the healing shelf's 60 / 250 that is 8.3× and 6×, and it is
+not arbitrary: an Uncommon mana potion returns 750 MP, which at level 43 is **half a caster's entire
+bar**, where an Uncommon healing potion returns 1,050 HP against a much larger pool. The Rare's 4,500
+is inferred rather than ruled — it keeps his ×3 stride, and being craft-only that number is never a
+buy price, only a sell one (180 gold).
 ### PvE only — the gate is on the DRINK, never on the effect
 
 Owner: *"having mp pot On and then entering pvp it works until stop but the next one is forbidden"*.
