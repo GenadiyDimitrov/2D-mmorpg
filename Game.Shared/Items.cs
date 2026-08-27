@@ -267,6 +267,14 @@ public record ItemDef(
     // a rule about DRINKING, not about the effect — and it's what separates a heal potion (has
     // one) from a buff potion (doesn't). 0 = no shared cooldown.
     int PotionCooldownTicks = 0,
+    // ----- PVE ONLY (owner, 2026-08-27, for the mana potions): *"I want they to be active only
+    //       outside pve. (having mp pot On and then entering pvp it works until stop but the next
+    //       one is forbidden)"*. It gates the DRINK, never the effect — a potion already running
+    //       when a fight starts plays out its full window, and only the NEXT one is refused. So it
+    //       is a rule about pressing the button, exactly like PotionCooldownTicks above, and it
+    //       lives on the ITEM for the same reason: the skill it names may be perfectly castable by
+    //       other means. The gate is FlagOf(player) != Innocent, i.e. the purple flag or PK karma.
+    bool PveOnly = false,
     ScrollKind ScrollKind = ScrollKind.None,
     // ----- Enchant scroll GRADE BAND (None = not an enchant scroll). The second axis: ScrollKind
     //       says what a failure costs, this says WHICH grade of gear the scroll may be spent on.
@@ -448,6 +456,20 @@ public static class ItemCatalog
     public const string HealingPotion = "potion_healing";  // Uncommon HoT
     public const string GreaterPotion = "potion_greater";  // Rare HoT
     public const string InstantPotion = "potion_instant";  // Instant %-heal panic potion
+    // ----- MANA potions (2026-08-27). The same shape as the healing ladder — a per-second restore
+    //       over a fixed window, three rarities, each with its OWN drink cooldown — plus one rule
+    //       the healing potions do not have: PVE ONLY. His numbers, verbatim: *"20/50/100 15s-up/
+    //       30s-cd"*, and the SOURCES mirror healing too: *"Common in shop / uncommon shop / rare
+    //       drop"*.
+    //
+    //       ⚠ THE DURATION IS DELIBERATELY UNDER THE COOLDOWN. The Rare HEALING potion runs 30s on
+    //       a 20s reuse, i.e. permanent uptime, so its "150 HP/s" really is 150 HP/s forever. 15s
+    //       up on a 30s reuse is a 50% duty cycle, so these deliver 10 / 25 / 50 MP/s SUSTAINED —
+    //       which is what the measurement (`BalanceMatrix --mpdrain`) sized them against, not the
+    //       sticker number.
+    public const string MinorManaPotion   = "potion_mana_minor";     // Common,    20 MP/s
+    public const string ManaPotion        = "potion_mana";           // Uncommon,  50 MP/s
+    public const string GreaterManaPotion = "potion_mana_greater";   // Rare,     100 MP/s
     // ---- Buff potions and scrolls. ⚠ REWORKED, playtest-17 E3 (owner, 2026-08-03; built 2026-08-05).
     //      The shape is now: **the potion is what you FIND, the scroll is what you BUY**, and they no
     //      longer mirror each other rung for rung.
@@ -877,6 +899,26 @@ public static class ItemCatalog
         list.Add(new ItemDef(InstantPotion, "Instant Healing Potion", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Rare,
             UseSkillId: SkillCatalog.PotHealInstant, PotionCooldownTicks: 600, Value: 5000));
+
+        // ----- MANA potions. Three rarities, 20/50/100 MP per second for 15s, each on its own 30s
+        //       drink cooldown (owner, 2026-08-27). PveOnly: the drink is refused while flagged or
+        //       PK; an already-running one is never stripped.
+        //
+        //       ⚠ Priced well above the healing ladder per drink, because a drink is worth far more:
+        //       the Uncommon returns 750 MP, which at level 43 is HALF a caster's entire bar. The
+        //       Rare stays off the shelf for the same reason the Rare healing potion does.
+        list.Add(new ItemDef(MinorManaPotion, "Common Mana Potion", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Common,
+            UseSkillId: SkillCatalog.PotManaMinor, PotionCooldownTicks: 300, PveOnly: true, Value: 100,
+            Description: "Restores 20 MP per second for 15s. Cannot be drunk while flagged for PvP."));
+        list.Add(new ItemDef(ManaPotion, "Uncommon Mana Potion", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Uncommon,
+            UseSkillId: SkillCatalog.PotMana, PotionCooldownTicks: 300, PveOnly: true, Value: 400,
+            Description: "Restores 50 MP per second for 15s. Cannot be drunk while flagged for PvP."));
+        list.Add(new ItemDef(GreaterManaPotion, "Rare Mana Potion", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Rare,
+            UseSkillId: SkillCatalog.PotManaGreater, PotionCooldownTicks: 300, PveOnly: true, Value: 2500,
+            Description: "Restores 100 MP per second for 15s. Cannot be drunk while flagged for PvP."));
 
         // ----- RUNES + their boxes. The rune is HELD (not equipped/consumed): while it's in the main
         // inventory and unexpired the reconciliation loop keeps its buff up. Tradable:false (can't sell/
@@ -2295,6 +2337,14 @@ public static class ItemCatalog
     /// <summary>A HEALING potion — the one bound by the shared drink cooldown.</summary>
     public static bool IsHealPotion(ItemDef def) =>
         def.Slot == EquipSlot.Consumable && def.PotionCooldownTicks > 0 && !string.IsNullOrEmpty(def.UseSkillId);
+
+    /// <summary>A MANA potion: a drink-cooldown consumable whose skill restores MP over time. It is
+    /// <see cref="IsHealPotion"/>'s twin and its EXCLUSION — both are "a consumable with its own drink
+    /// timer", so without this the auto-hunt's HP line would happily drink your mana potions to top up
+    /// a health bar they cannot touch.</summary>
+    public static bool IsManaPotion(ItemDef def) =>
+        IsHealPotion(def) && SkillCatalog.Get(def.UseSkillId) is { } s
+        && (s.Effect & SkillEffect.RestoreMp) != 0;
 
     /// <summary>A BUFF potion: grants a lasting effect instantly, free of the heal cooldown.
     /// Excludes inert reagents and the cast-on-use scrolls.

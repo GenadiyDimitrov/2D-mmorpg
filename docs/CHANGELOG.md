@@ -7,12 +7,82 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.91.2**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.92.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-08-27 (latest) — 0.91.2: the MP economy measured per race, and a toggle finally charges its rung
+## 2026-08-27 (latest) — 0.92.0: MP potions, PvE only
+
+Three tiers, his numbers verbatim: *"20/50/100 15s-up/30s-cd"*, and his sources: *"Common in shop /
+uncommon shop / rare drop"*.
+
+| item | restores | window | drink reuse | **sustained** | source |
+|---|---|---|---|---|---|
+| Common Mana Potion | 20 MP/s | 15s | 30s | **10 MP/s** | Apothecary, 100 gold |
+| Uncommon Mana Potion | 50 MP/s | 15s | 30s | **25 MP/s** | Apothecary, 400 gold |
+| Rare Mana Potion | 100 MP/s | 15s | 30s | **50 MP/s** | drops only |
+
+⚠ **The window is deliberately SHORTER than the reuse, which the healing ladder is not.** The Rare
+Healing Potion runs 30s on a 20s reuse — permanent uptime, so its "150 HP/s" really is 150 HP/s
+forever. 15s on a 30s reuse is a 50% duty cycle, so the sustained column above is the real number and
+it is what `--mpdrain`'s measured deficits (0-15 MP/s for a caster, 16-64 for a buffer) were sized
+against. Do not lengthen the window without re-reading that table.
+
+### PvE only — the gate is on the DRINK, never on the effect
+
+Owner: *"having mp pot On and then entering pvp it works until stop but the next one is forbidden"*.
+So a potion already running is never stripped and never shortened; it ticks out its full 15 seconds,
+and only the next bottle is refused. `ItemDef.PveOnly` + `FlagOf(player) != PvpFlag.Innocent` in
+`UsePotion` — the same purple flag the rest of the game already runs on (60s after a PvP action, or
+while PK karma stands).
+
+🔑 **An innocent VICTIM can still drink.** The flag follows what you did, not what was done to you —
+that is the existing rule for who may be freely attacked, and the potions inherit it rather than
+inventing a second definition of "in PvP". Say the word if being *hit* by a player should also close
+the gate.
+
+### No new engine, no new APK
+
+The effect is a lasting `RestoreMp` buff, whose Flat magnitude on a *buff* already means "give this
+much MP each second" — the meaning `TickHealOverTime` implements for Harmony of Restoration's mana
+half. So no new `SkillEffect` bit (there are none left) and no new tick loop.
+
+⚠ `RestoreMp` is **not** in the `AnyBuff` mask and must not be added to it: on a CAST that bit means
+"give MP now" (Restore Mana, the Mana Totem), and widening the mask would push those through
+`ApplyBuff` too. `UsePotion` admits the potions by DURATION instead — a `RestoreMp` that lasts is the
+MP twin of a heal-over-time potion.
+
+`IsManaPotion` splits them from `IsHealPotion` (both are "a consumable with its own drink timer"), so
+the auto-hunt's HP line can no longer drink your mana potions to top up a bar they cannot touch. And
+`BestManaPotion`, a `=> null` stub carrying a *"reserved for when they are"* note, is filled in — the
+client's MP slider in the auto-hunt Potions tab has been sending `MpPotionPct` all along and starts
+working with no client change.
+
+Drops ride the healing ladder's tier floors (Uncommon not before 40, Rare not before 61) at **half its
+weights** — that group is a deliberately throttled faucet (playtest-17 cut it ~2.5×), and a second
+full ladder would have quietly undone the cut.
+
+### `BalanceMatrix --mpcase` — the level-43 ork healer, and what it rules out
+
+He read 0.91.2's *"below ~45 nobody has an MP problem"* against what he actually plays: *"Ork healer
+fight for 1min and mp is depleted ... 43lvl ... E robe + wand/shield"*. So `--mpcase` measures that
+character — E-grade (t20) gear, wand + shield instead of a staff, UNBUFFED — instead of the
+best-geared abstraction, and prints time-to-empty against his own minute.
+
+It ruled out all three suspects. **The heal is not guilty**: Great Heal is 62 MP over a 6.8s cycle
+against Holy Ray's 30 over 3.3s — 9.1 MP/s either way, so the rotation mix barely moves the number.
+**Jewellery is not guilty**: five accessory slots add ZERO Max MP, the pool is pure level + SPT.
+**Regen is not blocked while casting** — there is no cast guard before `Regenerate` in the tick loop.
+
+Which leaves a gap the model cannot close: 60s of Holy Ray costs 545 MP out of a 1462 bar, and regen
+very nearly pays for it. His Max MP on screen and how many Holy Rays a full bar really buys are the
+two numbers that would settle it.
+
+⚠ 0.91.2's `--mpcase` had two bugs of its own, both fixed here: `"UNBUFFED".Contains("BUFFED")` is
+true, so the unbuffed build was measured with the ×1.44 stack; and its footer claimed a heal doubles
+the drain, which the corrected run disproves.
+## 2026-08-27 — 0.91.2: the MP economy measured per race, and a toggle finally charges its rung
 
 No new content — this is the measurement the MP-potion decision rests on, plus the one bug it found.
 

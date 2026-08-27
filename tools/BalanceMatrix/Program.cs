@@ -386,6 +386,13 @@ if (args.Length > 0 && args[0] == "--mpdrain")
     return;
 }
 
+// `--mpcase` - HIS level-43 ork healer, measured as he actually plays it (2026-08-27).
+if (args.Length > 0 && args[0] == "--mpcase")
+{
+    MpCase();
+    return;
+}
+
 // The four same-level PvP targets a drain is judged against. One list, so every table below
 // measures the same characters.
 //
@@ -4958,6 +4965,209 @@ static (string Name, int Mp, float Cycle, string MaxName, float MaxDrain) BestSp
 }
 
 static string Trim(string s, int n) => s.Length <= n ? s : s[..n];
+
+// ============================================================================================
+//  `--mpcase` — THE OWNER'S OWN CHARACTER, not a best-geared abstraction. He read section 2 of
+//  `--mpdrain` ("below ~45 nobody has an MP problem") against what he actually plays and it did
+//  not match: *"Ork healer fight for 1min and mp is depleted ... 43lvl ... E robe + wand/shield"*.
+//
+//  He is right, and the table was measuring a different character. Three assumptions in it are
+//  wrong for a real level-43 healer, and each one costs mana:
+//
+//    1. IT NEVER HEALS. A healer's rotation is not an attack spell. Heal/Great Heal is the most
+//       expensive thing on his bar and the only one he MUST cast, so a bolt-only drain is a floor,
+//       not an estimate.
+//    2. IT IS FULLY BUFFED. `bf.st` assumes Serenity-or-harmony AND the Mark, x1.44. A soloing
+//       43 has neither; the honest column for him is `nat`.
+//    3. IT IS PERFECTLY GEARED. `--mpdrain` equips GearTier(43) = the t40 band. He is in E-grade
+//       (the t20 band) — one whole grade under-tier — and holding a WAND + SHIELD where the table
+//       gives a two-handed staff.
+//
+//  So this measures HIS build, and prints TIME TO EMPTY against his own "1 minute".
+// ============================================================================================
+
+static void MpCase()
+{
+    Console.WriteLine();
+    Console.WriteLine("=== HIS CASE: the level-43 ork healer, measured as he actually plays it ===");
+    Console.WriteLine();
+
+    // Mirrors GameLoopService.Regenerate's MP branch (flats outside, 0.88.0).
+    static float Mp(Entity e, bool moving, float buffPct)
+    {
+        float stance = MovementTuning.RegenMultiplier(MoveState.Running, moving);
+        float calm = moving ? e.MpRegenRunMult : e.MpRegenStandMult;
+        return StatCalculator.MpRegenPerSecond(e.EffectiveSpt, e.Level)
+                   * stance * calm * e.MpRegenMult * buffPct
+               + e.MpRegenBonus;
+    }
+
+    static int Cost(Entity e, SkillDef d, int lvl) =>
+        (int)(d.MpCostAt(lvl) * (1f - (d.Category == SkillCategory.Physical
+            ? e.PhysMpCostReduction : e.MagicMpCostReduction)));
+
+    static (float Cast, float Reuse) Cycle(Entity e, SkillDef d, int lvl)
+    {
+        float castMult = d.Category == SkillCategory.Physical
+            ? e.EffectiveAttackSpeedMultiplier : e.EffectiveCastSpeedMultiplier;
+        int castTicks = Math.Max(2, (int)(d.CastTicksAt(lvl) * castMult));
+        int cd = d.CooldownTicksAt(lvl);
+        if (cd > 0 && e.CooldownReduction > 0f) cd = Math.Max(1, (int)(cd * (1f - e.CooldownReduction)));
+        return (castTicks / 10f, cd / 10f);
+    }
+
+    // The healer's real bar at 43: his attack spell and his single-target heal, each at the rung
+    // he owns. A rotation is N of the first per 1 of the second — casting is serial, so the mix is
+    // (n*bolt + heal) MP over (n*boltCycle + healCycle) seconds. That is the whole model.
+    static (SkillDef? D, int Lvl) Best(Entity e, params string[] ids)
+    {
+        foreach (var id in ids)
+            if (e.LearnedSkills.TryGetValue(id, out int sl) && SkillCatalog.Get(id) is { } d)
+                return (d, sl);
+        return (null, 0);
+    }
+
+    // ---- The two builds, side by side: what the table measured, and what he is holding ---------
+    var builds = new (string Label, bool Buffed, Func<Entity> Make)[]
+    {
+        ("--mpdrain's build: t40 staff + robe, BUFFED x1.44", true,
+            () => BuildCasterFor(Race.Ork, 43, Archetype.Healer, Discipline.Lightbringer)),
+        ("HIS build: E-grade (t20) robe + wand + shield, UNBUFFED", false,
+            () => BuildHisHealer(43)),
+    };
+
+    foreach (var (label, buffed, make) in builds)
+    {
+        var e = make();
+        float pct = buffed ? 1.20f * 1.20f : 1f;
+        var (atk, atkLvl) = Best(e, SkillCatalog.HolyRay, SkillCatalog.HolyStrike);
+        var (heal, healLvl) = Best(e, SkillCatalog.GreatHeal, SkillCatalog.Heal);
+
+        Console.WriteLine($"--- {label} ---");
+        Console.WriteLine();
+        Console.WriteLine($"  WIT {e.EffectiveWit}   SPT {e.EffectiveSpt}   cast x{1f / e.EffectiveCastSpeedMultiplier:0.00}"
+                        + $"   MaxMP {e.MaxMp}   MpRegenMult {e.MpRegenMult:0.00}   flats +{e.MpRegenBonus:0.0}");
+        Console.WriteLine($"  regen: standing {Mp(e, false, pct):0.0}/s   running {Mp(e, true, pct):0.0}/s");
+        if (atk is not null)
+        {
+            var (c, r) = Cycle(e, atk, atkLvl);
+            Console.WriteLine($"  {atk.Name} L{atkLvl}: {Cost(e, atk, atkLvl)} MP, {c:0.0}s cast + {r:0.0}s reuse");
+        }
+        if (heal is not null)
+        {
+            var (c, r) = Cycle(e, heal, healLvl);
+            Console.WriteLine($"  {heal.Name} L{healLvl}: {Cost(e, heal, healLvl)} MP, {c:0.0}s cast + {r:0.0}s reuse");
+        }
+        Console.WriteLine();
+        Console.WriteLine("   rotation                 drain/s   regen/s     net/s   FULL BAR EMPTIES IN");
+        Console.WriteLine("  ------------------------------------------------------------------------------");
+
+        float regen = Mp(e, false, pct);
+        void Row(string name, float mp, float secs)
+        {
+            float drain = secs > 0 ? mp / secs : 0f;
+            float net = drain - regen;
+            string empty = net <= 0.05f ? "never (regen wins)" : $"{e.MaxMp / net,6:0} s";
+            Console.WriteLine($"   {name,-22} {drain,8:0.0} {regen,9:0.0} {net,9:+0.0;-0.0}   {empty}");
+        }
+
+        if (atk is not null)
+        {
+            var (ac, ar) = Cycle(e, atk, atkLvl);
+            int amp = Cost(e, atk, atkLvl);
+            Row("attack spell only", amp, ac + ar);
+
+            if (heal is not null)
+            {
+                var (hc, hr) = Cycle(e, heal, healLvl);
+                int hmp = Cost(e, heal, healLvl);
+                foreach (int n in new[] { 3, 2, 1 })
+                    Row($"{n} attack : 1 heal", n * amp + hmp, n * (ac + ar) + (hc + hr));
+                Row("heal only (party duty)", hmp, hc + hr);
+            }
+        }
+        Console.WriteLine();
+    }
+
+    // ---- POOL SENSITIVITY. At 43 the bar is mostly JEWELLERY, so what he is NOT wearing moves it
+    // further than his level does — and "how many casts a full bar buys" is the number his minute
+    // is really made of, not MP/s. Five accessory slots is the difference between a bar that lasts
+    // and a bar that is gone.
+    Console.WriteLine("--- POOL SENSITIVITY: what the bar is actually made of ---");
+    Console.WriteLine();
+    Console.WriteLine("  build                                        MaxMP   casts a full bar buys   60s of casting costs");
+    Console.WriteLine("  ---------------------------------------------------------------------------------------------------");
+    foreach (var (lbl, jw, wp) in new[] {
+        ("robe + wand/shield + FULL t20 jewels", true,  true),
+        ("robe + wand/shield, NO jewels",        false, true),
+        ("robe only, no weapon, no jewels",      false, false) })
+    {
+        var h = BuildHisHealer(43, jewels: jw, weapon: wp);
+        var (d, l) = Best(h, SkillCatalog.HolyRay, SkillCatalog.HolyStrike);
+        if (d is null) continue;
+        int c = Cost(h, d, l);
+        var (ca, re) = Cycle(h, d, l);
+        float cyc = ca + re;
+        Console.WriteLine($"  {lbl,-42} {h.MaxMp,5}   {(c > 0 ? h.MaxMp / c : 0),13} casts   {(cyc > 0 ? 60f / cyc * c : 0),12:0} MP");
+    }
+    Console.WriteLine();
+    Console.WriteLine("  Read the last column against the first: if 60s of casting costs MORE than the bar holds,");
+    Console.WriteLine("  his minute is real and the model's is the number that is wrong.");
+    Console.WriteLine();
+
+    Console.WriteLine("  🔑 WHAT THIS RULED OUT. The heal was the obvious suspect and it is not guilty: Great Heal");
+    Console.WriteLine("  is 62 MP over a 6.8s cycle against Holy Ray's 30 over 3.3s — 9.1 MP/s either way — so the");
+    Console.WriteLine("  rotation mix barely moves the number. Jewellery is not it either: five accessory slots add");
+    Console.WriteLine("  ZERO Max MP, the pool is pure level + SPT. And regen is NOT blocked while casting (there is");
+    Console.WriteLine("  no cast guard before Regenerate in the tick loop).");
+    Console.WriteLine();
+    Console.WriteLine("  So the model says Holy Ray spam CANNOT empty a 43 in a minute: 60s of casting costs 545 MP");
+    Console.WriteLine("  out of a 1462 bar, and regen very nearly pays for it. Something on the live server differs");
+    Console.WriteLine("  from every input above — the two numbers that would settle it are his ACTUAL Max MP and how");
+    Console.WriteLine("  many Holy Rays a full bar really buys him.");
+    Console.WriteLine();
+}
+
+/// <summary>HIS level-43 ork healer, verbatim: *"E robe + wand/shield"*. E-grade is the t20 band
+/// (ItemCatalog: level ≥ 20 → E, ≥ 40 → D), so at 43 he is a full grade under-tier — which is the
+/// normal way to play, not a mistake, because a grade costs real gold. No rune buff: the report's
+/// whole point is what a soloing 43 actually has.</summary>
+static Entity BuildHisHealer(int level, bool jewels = true, bool weapon = true)
+{
+    var s = StatCalculator.GetBaseStats(Race.Ork, BaseClass.Mage);
+    var e = new Entity { Name = "his healer", Kind = EntityKind.Player, Race = Race.Ork, BaseClass = BaseClass.Mage };
+    e.Level = level;
+    e.Con = s.Con; e.AtkStat = s.Atk; e.Wit = s.Wit; e.Agi = s.Agi; e.Spt = s.Spt;
+
+    e.SecondClass = ClassCatalog.Playable.First(c => c.Race == Race.Ork && c.Archetype == Archetype.Healer).Id;
+    if (level >= 40)
+        e.ThirdClass = ThirdClassCatalog.Playable.First(c => c.Race == Race.Ork && c.Discipline == Discipline.Lightbringer).Id;
+
+    foreach (var cs in ClassSkills.ForClass(Race.Ork, BaseClass.Mage, null, null))
+        if (cs.LearnLevel <= level)
+            e.LearnedSkills[cs.SkillId] = Math.Max(e.SkillLevelOf(cs.SkillId), cs.SkillLevel);
+    foreach (var cs in ClassSkills.Cumulative(Race.Ork, BaseClass.Mage, e.Archetype, e.Discipline))
+        if (cs.LearnLevel <= level)
+            e.LearnedSkills[cs.SkillId] = Math.Max(e.SkillLevelOf(cs.SkillId), cs.SkillLevel);
+    foreach (var id in e.LearnedSkills.Keys.ToList())
+        if (SkillCatalog.Get(id)?.Replaces is { } replaced)
+            foreach (var r in replaced) e.LearnedSkills.Remove(r);
+    e.LearnedSkills[SkillCatalog.SpellcasterMastery] = 1;
+    GrantFloorPassive(e, level);
+
+    // E-grade = the t20 band. Wand + shield, not a staff.
+    if (weapon) { Equip(e, "wand_t20"); Equip(e, "shield_t20"); }
+    Equip(e, "robe_t20");
+    foreach (var acc in new[] { "helm", "gloves", "boots" }) Equip(e, $"{acc}_t20");
+    if (jewels)
+    {
+        Equip(e, "necklace_t20"); Equip(e, "ring_t20"); Equip(e, "ring_t20");
+        Equip(e, "earring_t20"); Equip(e, "earring_t20");
+    }
+
+    e.RecomputeDerived();
+    return e;
+}
 
 // ============================================================================================
 //  `--mpdrain` — WHAT A CASTER ACTUALLY BURNS, PER SECOND, PER RACE. Owner, 2026-08-27, opening

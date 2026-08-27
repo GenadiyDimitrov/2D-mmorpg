@@ -68,6 +68,10 @@ public static partial class SkillCatalog
     public const string PotHeal        = "pot_heal";           // Uncommon HoT tier
     public const string PotHealGreater = "pot_heal_greater";   // Rare HoT tier
     public const string PotHealInstant = "pot_heal_instant";   // Instant %-heal panic potion
+    // The MANA ladder — a lasting RestoreMp buff (MP per SECOND), one family, three ranks.
+    public const string PotManaMinor   = "pot_mana_minor";     // Common   MP-over-time tier
+    public const string PotMana        = "pot_mana";           // Uncommon MP-over-time tier
+    public const string PotManaGreater = "pot_mana_greater";   // Rare     MP-over-time tier
     // ======================================================================================
     //  BUFF LADDERS (docs/design/BuffLadders.md) — the SINGLE buffs of the speed group.
     //
@@ -527,6 +531,36 @@ public static partial class SkillCatalog
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.Heal, 0.30f) },
             Category: SkillCategory.Heal,
             Description: "Instantly restores 30% of max HP."),
+
+        // ----- MANA potions (2026-08-27). A lasting RestoreMp buff: on a BUFF, that effect's Flat
+        //       magnitude means "give this much MP each second" — the meaning TickHealOverTime
+        //       already implements for Harmony of Restoration's mana half, so these needed no new
+        //       SkillEffect bit (there are none left) and no new tick loop.
+        //
+        //       🔑 ONE FAMILY, THREE RANKS, exactly like the healing potions: BuffKey "potion_mana"
+        //       with Rank 1/2/3, so a Common can never overwrite a running Rare and UsePotion refuses
+        //       the weaker drink instead of wasting it.
+        //
+        //       ⚠ CountsTowardBuffLimit: false — a potion must never cost a buff square (the healing
+        //       ladder set this precedent and playtest 27 confirmed the cap is real).
+        new(PotManaMinor, "Common Mana", BaseClass.Fighter, SkillEffect.RestoreMp,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+            DurationTicks: 150, BuffKey: "potion_mana", Rank: 1, CountsTowardBuffLimit: false,
+            Magnitudes: new EffectMagnitude[] { new(SkillEffect.RestoreMp, 20f, ModifierMode.Flat) },
+            Category: SkillCategory.Buff, BuffRow: BuffRow.Consumable,
+            Description: "Restores 20 MP per second for 15s."),
+        new(PotMana, "Uncommon Mana", BaseClass.Fighter, SkillEffect.RestoreMp,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+            DurationTicks: 150, BuffKey: "potion_mana", Rank: 2, CountsTowardBuffLimit: false,
+            Magnitudes: new EffectMagnitude[] { new(SkillEffect.RestoreMp, 50f, ModifierMode.Flat) },
+            Category: SkillCategory.Buff, BuffRow: BuffRow.Consumable,
+            Description: "Restores 50 MP per second for 15s."),
+        new(PotManaGreater, "Rare Mana", BaseClass.Fighter, SkillEffect.RestoreMp,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+            DurationTicks: 150, BuffKey: "potion_mana", Rank: 3, CountsTowardBuffLimit: false,
+            Magnitudes: new EffectMagnitude[] { new(SkillEffect.RestoreMp, 100f, ModifierMode.Flat) },
+            Category: SkillCategory.Buff, BuffRow: BuffRow.Consumable,
+            Description: "Restores 100 MP per second for 15s."),
 
         // ----- RUNE buffs. Applied/kept by the rune reconciliation while a matching rune sits in the
         //       main inventory unexpired; its remaining time is driven by the item's wall-clock expiry, so

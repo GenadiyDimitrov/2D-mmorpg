@@ -66,6 +66,10 @@ public static class ShopCatalog
                 // potion-economy design where the top tier stays out of the shop.
                 ItemCatalog.MinorPotion,
                 ItemCatalog.HealingPotion,
+                // MANA potions, same rule (owner, 2026-08-27: *"Common in shop / uncommon shop /
+                // rare drop"*) — so the Rare Mana Potion is deliberately absent here too.
+                ItemCatalog.MinorManaPotion,
+                ItemCatalog.ManaPotion,
                 // Common buff potions. Individual scrolls are NOT sold — see the Blessing Box below.
                 //
                 // 🔑 COMMON ONLY, AND THAT IS THE WHOLE RULE (owner, playtest 28: *"the shop can supply

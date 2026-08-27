@@ -3932,6 +3932,21 @@ public class GameLoopService : BackgroundService
         // Instant consumable (drink it). Each HEALING potion has its OWN drink cooldown (owner: a potion
         // shares a cooldown only with itself); buff potions are free of it.
         bool healing = ItemCatalog.IsHealPotion(def);
+
+        // ----- PVE ONLY (owner, 2026-08-27, the mana potions): *"having mp pot On and then entering
+        //       pvp it works until stop but the next one is forbidden"*. So the gate is on the DRINK
+        //       and nothing else — a potion already running is never stripped, never shortened, and
+        //       ticks out its full 15 seconds. Only the next bottle is refused.
+        //
+        //       "In PvP" is the purple flag the rest of the game already uses: FlagOf() is Flagged
+        //       for 60s after any PvP action, and Pk while karma stands. An INNOCENT player who is
+        //       merely being attacked can still drink — the flag follows what you did, not what was
+        //       done to you, and that is the same rule that decides who may be freely attacked.
+        if (def.PveOnly && FlagOf(player) != PvpFlag.Innocent)
+        {
+            SendSystemToEntity(player, $"{def.Name} cannot be used while you are flagged for PvP.");
+            return false;
+        }
         if (healing && player.PotionCooldowns.TryGetValue(def.Id, out var pcd) && pcd > 0)
             return false;
 
@@ -3986,7 +4001,13 @@ public class GameLoopService : BackgroundService
             player.Hp = Math.Min(player.MaxHp, player.Hp + amount);
             BroadcastCombat(player, player, amount, CombatOutcome.Heal, skill.Name);
         }
-        if ((skill.Effect & SkillEffect.AnyBuff) != 0)
+        // ⚠ RestoreMp is NOT in the AnyBuff mask, and must not be added to it — on a CAST it means
+        // "give MP now" (Restore Mana, the Mana Totem), and folding it into the mask would push
+        // those through ApplyBuff as well. On a LASTING skill it means "give MP each second", which
+        // is a buff by every other measure, so the mana potions are admitted by duration instead:
+        // a RestoreMp with a DurationTicks is the MP twin of a heal-over-time potion.
+        bool lastingMana = (skill.Effect & SkillEffect.RestoreMp) != 0 && skill.DurationTicks > 0;
+        if ((skill.Effect & SkillEffect.AnyBuff) != 0 || lastingMana)
         {
             // REFUSED on rank (something stronger — or equally strong but longer — is already up):
             // don't eat the item and don't start its reuse. This used to consume it either way,
@@ -5031,7 +5052,7 @@ public class GameLoopService : BackgroundService
                  BestHealPotion(p) is InventoryItem hpPot)
             UsePotion(p, hpPot);
 
-        // MP potions don't exist as items yet — reserved plumbing (BestManaPotion returns null).
+        // The MP line, live since 2026-08-27. UsePotion refuses the drink while flagged (PveOnly).
         if (p.AutoMpPotionPct > 0 && p.MaxMp > 0 &&
             p.Mp * 100 < p.MaxMp * p.AutoMpPotionPct &&
             BestManaPotion(p) is InventoryItem mpPot)
@@ -5118,15 +5139,29 @@ public class GameLoopService : BackgroundService
         foreach (var it in p.Inventory)
         {
             if (ItemCatalog.Get(it.DefId) is not ItemDef d) continue;
-            if (!ItemCatalog.IsHealPotion(d)) continue;
+            if (!ItemCatalog.IsHealPotion(d) || ItemCatalog.IsManaPotion(d)) continue;
             int score = (int)d.Rarity;
             if (score > bestScore) { bestScore = score; best = it; }
         }
         return best;
     }
 
-    /// <summary>Mana potions aren't in the catalog yet — reserved for when they are.</summary>
-    private static InventoryItem? BestManaPotion(Entity p) => null;
+    /// <summary>Highest-rarity MANA potion in the bag, or null. The twin of <see cref="BestHealPotion"/>
+    /// — it was a `=> null` stub with a "reserved for when they exist" note until the potions landed
+    /// on 2026-08-27. UsePotion still owns the PvE-only refusal, so an auto-hunter who flags himself
+    /// simply stops drinking rather than being handed a special case here.</summary>
+    private static InventoryItem? BestManaPotion(Entity p)
+    {
+        InventoryItem? best = null; int bestScore = -1;
+        foreach (var it in p.Inventory)
+        {
+            if (ItemCatalog.Get(it.DefId) is not ItemDef d) continue;
+            if (!ItemCatalog.IsManaPotion(d)) continue;
+            int score = (int)d.Rarity;
+            if (score > bestScore) { bestScore = score; best = it; }
+        }
+        return best;
+    }
 
     /// <summary>The farm-circle centre: the character in roam mode, the fixed start point in static.</summary>
     private static (float X, float Y) FarmCenter(Entity p) =>
