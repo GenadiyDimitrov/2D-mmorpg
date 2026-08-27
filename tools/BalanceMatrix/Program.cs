@@ -386,6 +386,13 @@ if (args.Length > 0 && args[0] == "--mpdrain")
     return;
 }
 
+// `--mpnpc` - the FULLY NPC-BUFFED mage at 74, all three roles (2026-08-27).
+if (args.Length > 0 && args[0] == "--mpnpc")
+{
+    MpNpc();
+    return;
+}
+
 // `--mpcase` - HIS level-43 ork healer, measured as he actually plays it (2026-08-27).
 if (args.Length > 0 && args[0] == "--mpcase")
 {
@@ -4965,6 +4972,192 @@ static (string Name, int Mp, float Cycle, string MaxName, float MaxDrain) BestSp
 }
 
 static string Trim(string s, int n) => s.Length <= n ? s : s[..n];
+
+// ============================================================================================
+//  `--mpnpc` — THE FULLY NPC-BUFFED ELF MAGE AT 74, all three roles. Owner, 2026-08-27:
+//  *"show me npc buffed mage (elf - the worst of the 3) at lvl 74 (healer/nuker/buffer-toggles) ->
+//  what is the drain (reuse passives/cast speed reduction) vs mp regen and mp pool"*.
+//
+//  🔑 THIS IS THE HONEST END OF THE LADDER, and it is the opposite of `--mpcase`'s. There the
+//  question was whether a bare 43 pays for himself; here everything that can be stacked IS stacked,
+//  which cuts BOTH ways and is the whole reason to measure rather than guess:
+//      Soul     +35% Max MP        → a bigger bar to spend
+//      Serenity +20% MP regen      → a faster refill
+//      Alacrity +30% cast speed    → a SHORTER cycle, i.e. MORE drain per second
+//  plus every reuse-reduction passive the class owns, which shortens the cycle again. A buff pack
+//  sold as "sustain" is, for a caster, mostly an accelerator.
+//
+//  ⚠ ELF ON PURPOSE — his pick, and the measurement backs it: fastest cast (highest WIT) on the
+//  lowest SPT, so he empties fastest and refills slowest. Human and ork are printed beside him so
+//  the spread is visible rather than asserted.
+// ============================================================================================
+
+static void MpNpc()
+{
+    // Every `npc_` blessing in the catalog — the full shelf, which is what a player actually walks
+    // away with. A NpcSingle carries no magnitudes of its own: it names ONE child (the family's rung)
+    // and ApplyBuff resolves it, so the child is what has to land here too.
+    static void ApplyNpcBuffs(Entity e)
+    {
+        foreach (var def in SkillCatalog.AllSkills)
+        {
+            if (!def.Id.StartsWith("npc_", StringComparison.Ordinal)) continue;
+            var kids = def.ChildBuffsAt(1);
+            var src = kids is { Length: 1 } && SkillCatalog.Get(kids[0]) is { } kid ? kid : def;
+            e.Buffs.Add(new Game.Server.Simulation.BuffInstance
+            {
+                Effect = src.Effect,
+                // ⚠ A child with no magnitudes (a pure flag buff) leaves this null, and BuffInstance
+                // .Percent walks it unguarded — an empty array, not null.
+                Magnitudes = src.Magnitudes ?? Array.Empty<EffectMagnitude>(),
+                TicksRemaining = int.MaxValue, Name = src.Name, Key = src.BuffKey, Rank = src.Rank,
+            });
+        }
+        e.RecomputeDerived();
+    }
+
+    static float Mp(Entity e, MoveState st, bool moving)
+    {
+        float stance = MovementTuning.RegenMultiplier(st, moving);
+        float calm = st == MoveState.Sitting ? 1f
+            : !moving                        ? e.MpRegenStandMult
+            : st == MoveState.Walking        ? e.MpRegenWalkMult
+                                             : e.MpRegenRunMult;
+        float pct = e.Buffs.Where(b => b.Has(SkillEffect.BuffMpRegen)).Sum(b => b.Percent(SkillEffect.BuffMpRegen));
+        float flat = e.Buffs.Where(b => b.Has(SkillEffect.BuffMpRegen)).Sum(b => b.Flat(SkillEffect.BuffMpRegen));
+        return StatCalculator.MpRegenPerSecond(e.EffectiveSpt, e.Level)
+                   * stance * calm * e.MpRegenMult * (1f + pct)
+               + e.MpRegenBonus + flat;
+    }
+
+    static int Cost(Entity e, SkillDef d, int lvl) =>
+        (int)(d.MpCostAt(lvl) * (1f - (d.Category == SkillCategory.Physical
+            ? e.PhysMpCostReduction : e.MagicMpCostReduction)));
+
+    static (float Cast, float Reuse) Cycle(Entity e, SkillDef d, int lvl)
+    {
+        float castMult = d.Category == SkillCategory.Physical
+            ? e.EffectiveAttackSpeedMultiplier : e.EffectiveCastSpeedMultiplier;
+        int castTicks = Math.Max(2, (int)(d.CastTicksAt(lvl) * castMult));
+        int cd = d.CooldownTicksAt(lvl);
+        if (cd > 0 && e.CooldownReduction > 0f) cd = Math.Max(1, (int)(cd * (1f - e.CooldownReduction)));
+        return (castTicks / 10f, cd / 10f);
+    }
+
+    static (SkillDef? D, int Lvl) Pick(Entity e, params string[] ids)
+    {
+        foreach (var id in ids)
+            if (e.LearnedSkills.TryGetValue(id, out int sl) && SkillCatalog.Get(id) is { } d)
+                return (d, sl);
+        return (null, 0);
+    }
+
+    Console.WriteLine();
+    Console.WriteLine("=== FULLY NPC-BUFFED MAGE AT 74 — drain vs regen vs pool (2026-08-27) ===");
+    Console.WriteLine();
+    Console.WriteLine("  The whole npc_ shelf is applied: Soul +35% Max MP, Serenity +20% MP regen, Alacrity");
+    Console.WriteLine("  +30% cast, Force/Ward/Insight and the rest. Regen is the BUFFED number; 'still' is a");
+    Console.WriteLine("  parked farmer, 'run' a kiter. Reuse is the base cut by the class's reuse passives.");
+    Console.WriteLine();
+
+    foreach (var race in new[] { Race.Elf, Race.Human, Race.Ork })
+    {
+        Console.WriteLine($"--- {race.ToString().ToUpperInvariant()} ---");
+        Console.WriteLine();
+        Console.WriteLine("   role     pool   cast(x)  reuse-  spell              MP   cast  reuse  cycle  drain/s | regen still  run |   net/s   empties");
+        Console.WriteLine("  ----------------------------------------------------------------------------------------------------------------------------");
+
+        void Line(string role, Entity e, SkillDef? d, int lvl, float extraDrain, string extraLabel)
+        {
+            float still = Mp(e, MoveState.Running, false);
+            float run = Mp(e, MoveState.Running, true);
+            float drain = extraDrain;
+            string spell = extraLabel; float cast = 0f, reuse = 0f, cyc = 0f; int mp = 0;
+            if (d is not null)
+            {
+                mp = Cost(e, d, lvl);
+                (cast, reuse) = Cycle(e, d, lvl);
+                cyc = cast + reuse;
+                drain += cyc > 0 ? mp / cyc : 0f;
+                spell = Trim(d.Name, 17);
+            }
+            float net = drain - still;
+            Console.WriteLine($"   {role,-7} {e.MaxMp,6}   {1f / e.EffectiveCastSpeedMultiplier,6:0.00}  {e.CooldownReduction * 100,5:0}%  {spell,-17}"
+                            + $" {mp,4} {cast,5:0.00}s {reuse,5:0.00}s {cyc,5:0.00}s {drain,8:0.00} |"
+                            + $" {still,11:0.0} {run,5:0.0} | {net,7:+0.00;-0.00}   {(net <= 0.05f ? "never" : $"{e.MaxMp / net,0:0}s")}");
+        }
+
+        // ---- HEALER: his attack spell (the farm rotation), then his workhorse heal (party duty).
+        var healer = BuildCasterFor(race, 74, Archetype.Healer, Discipline.Lightbringer);
+        ApplyNpcBuffs(healer);
+        var (hRay, hRayL) = Pick(healer, SkillCatalog.HolyRay, SkillCatalog.HolyStrike);
+        var (hHeal, hHealL) = Pick(healer, SkillCatalog.GreatHeal, SkillCatalog.Heal);
+        Line("healer", healer, hRay, hRayL, 0f, "-");
+        Line("  heal", healer, hHeal, hHealL, 0f, "-");
+
+        // ---- NUKER: the main nuke.
+        var nuker = BuildCasterFor(race, 74, Archetype.Nuker, Discipline.Magus);
+        ApplyNpcBuffs(nuker);
+        var (nuke, nukeL) = Pick(nuker, SkillCatalog.ElementalBlast, SkillCatalog.ElementalBolt);
+        Line("nuker", nuker, nuke, nukeL, 0f, "-");
+
+        // ---- BUFFER: the two toggles alone, then toggles + his sound skill.
+        var buffer = BuildCasterFor(race, 74, Archetype.Healer, Discipline.Warchanter);
+        ApplyNpcBuffs(buffer);
+        var reinf = SkillCatalog.Get(SkillCatalog.WcReinforcement);
+        var sharp = SkillCatalog.Get(SkillCatalog.WcSharpening);
+        int rr = buffer.SkillLevelOf(SkillCatalog.WcReinforcement);
+        int sr = buffer.SkillLevelOf(SkillCatalog.WcSharpening);
+        float toggles = (reinf != null && rr > 0 ? reinf.MpPerSecondAt(rr) : 0)
+                      + (sharp != null && sr > 0 ? sharp.MpPerSecondAt(sr) : 0);
+        Line("toggles", buffer, null, 0, toggles, $"Reinf r{rr} + Sharp r{sr}");
+
+        string bestName = "-"; float bestDrain = 0f; SkillDef? bestDef = null; int bestLvl = 0;
+        foreach (var (id, sl) in buffer.LearnedSkills)
+        {
+            if (SkillCatalog.Get(id) is not SkillDef dd) continue;
+            if ((dd.Effect & (SkillEffect.MagicDamage | SkillEffect.PhysicalDamage)) == 0) continue;
+            int c = Cost(buffer, dd, sl);
+            if (c <= 0) continue;
+            var (ca, re) = Cycle(buffer, dd, sl);
+            if (re > 5f) continue;
+            float cy = ca + re;
+            if (cy <= 0f) continue;
+            if (c / cy > bestDrain) { bestDrain = c / cy; bestName = dd.Name; bestDef = dd; bestLvl = sl; }
+        }
+        Line("+attack", buffer, bestDef, bestLvl, toggles, bestName);
+        Console.WriteLine();
+    }
+
+    Console.WriteLine("  🔑 READ THE 'reuse-' COLUMN. The reuse passives and Alacrity both SHORTEN the cycle, so");
+    Console.WriteLine("  the same spell costs more per SECOND the better buffed you are. A full NPC pack raises");
+    Console.WriteLine("  the pool 35% and the regen 20%, and raises the drain by more than either.");
+    Console.WriteLine();
+    Console.WriteLine("  🔑 'empties' is unbroken casting from FULL with no potion. Against it, a potion tier's");
+    Console.WriteLine("  SUSTAINED rate (Common 10 / Uncommon 25 / Rare 50 MP/s) is what actually has to cover");
+    Console.WriteLine("  the 'net' column - not its sticker number.");
+    Console.WriteLine();
+    // ---- WHAT ACTUALLY COVERS IT, AND WHAT THAT COSTS -----------------------------------------
+    //
+    // The 'net' column is the question a potion has to answer, and a potion answers it at its
+    // SUSTAINED rate (15s up on a 30s reuse = half the sticker), not its sticker. The gold column is
+    // the other half of the decision: a 30s reuse means TWO drinks a minute, for as long as you farm.
+    Console.WriteLine("--- WHAT COVERS THE NET, AND WHAT IT COSTS TO HOLD ---");
+    Console.WriteLine();
+    Console.WriteLine("   tier        sticker  sustained   buy   gold/min (2 drinks)   gold/hour");
+    Console.WriteLine("  ---------------------------------------------------------------------------");
+    foreach (var (name, sticker, buy) in new[] {
+        ("Common",   20, 500), ("Uncommon", 50, 1500), ("Rare", 100, 4500) })
+        Console.WriteLine($"   {name,-10} {sticker,6} MP/s {sticker / 2,7} MP/s {buy,6} {buy * 2,15:N0} {buy * 120,13:N0}");
+    Console.WriteLine();
+    Console.WriteLine("  🔑 A POTION ON COOLDOWN IS NOT ITS SUSTAINED RATE MINUS THE DRAIN — it alternates. Over");
+    Console.WriteLine("  one 30s cycle an ELF HEALER at 74 takes 50x15 = 750 MP from an Uncommon, 12.8x30 = 384");
+    Console.WriteLine("  from regen, and spends 38.33x30 = 1,150: net -16 MP per cycle, i.e. -0.5 MP/s against a");
+    Console.WriteLine("  4,605 bar. He farms for over two hours on one bar and one potion line. The ladder as");
+    Console.WriteLine("  authored already lands where it was aimed: UNCOMMON is the healer's, RARE is the");
+    Console.WriteLine("  buffer's (50 sustained against his -53.5), COMMON is the low-level and the nuker's.");
+    Console.WriteLine();
+}
 
 // ============================================================================================
 //  `--mpcase` — THE OWNER'S OWN CHARACTER, not a best-geared abstraction. He read section 2 of

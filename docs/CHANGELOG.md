@@ -74,6 +74,36 @@ same rarity, same rung, same input rarity, so the mana line's top is the HP line
 new stride. That also keeps the "always" drop group at the size playtest-17 deliberately cut it to.
 
 
+
+### `--mpnpc` — the fully NPC-buffed mage at 74, all three roles
+
+His ask: *"show me npc buffed mage (elf - the worst of the 3) at lvl 74 (healer/nuker/buffer-toggles)
+-> what is the drain (reuse passives/cast speed reduction) vs mp regen and mp pool"*.
+
+The whole `npc_` shelf is applied — Soul +35% Max MP, Serenity +20% MP regen, Alacrity +30% cast, and
+the rest — plus every reuse-reduction passive the class owns. **ELF at 74, buffed, standing still:**
+
+| role | pool | cast | reuse− | spell | cycle | drain/s | regen | net | empties |
+|---|---|---|---|---|---|---|---|---|---|
+| healer, farming | 4,605 | ×2.29 | 20% | Holy Ray | 1.80s | 38.3 | 12.8 | **−25.6** | 180s |
+| healer, healing | 4,605 | ×2.29 | 20% | Great Heal | 3.70s | 32.4 | 12.8 | −19.7 | 234s |
+| nuker | 3,877 | ×2.29 | 20% | Elemental Blast | 2.50s | 27.6 | 12.8 | −14.8 | 263s |
+| buffer, toggles only | 3,740 | | | Reinf r13 + Sharp r13 | — | 45.0 | 13.0 | −32.0 | 117s |
+| buffer, + Sound Burst | 3,740 | | | | 5.60s | 66.4 | 13.0 | **−53.5** | **70s** |
+
+🔑 **A BUFF PACK IS AN ACCELERATOR, NOT SUSTAIN.** It raises the pool 35% and the regen 20%, and
+raises the drain by *more* than either — because Alacrity and the reuse passives both SHORTEN the
+cycle, and the same spell therefore costs more per second the better buffed you are. The elf's cycle
+is 1.80s where the ork's is 2.20s; ork nets −15.7 against elf's −25.6 on the identical spell.
+
+🔑 **The ladder as authored already lands where it was aimed.** Over one 30s cycle a buffed elf healer
+takes 750 MP from an Uncommon, 384 from regen, and spends 1,150 — **net −0.5 MP/s against a 4,605
+bar**, i.e. he farms for over two hours on one potion line. Uncommon is the healer's tier, Rare (50
+sustained against −53.5) is the buffer's, Common is the nuker's and the low levels'.
+
+⚠ **What that costs is the other half.** A 30s reuse means two drinks a minute, forever: Common
+**1,000 gold/min**, Uncommon **3,000/min**, Rare **9,000/min** (60k / 180k / 540k an hour). That, not
+the PvP rule, is the argument for a lower price.
 ### Calm Spirit: his CSV edit, and the run penalty is gone
 
 He fixed it in `nuker 3rd.csv` the same day it was reported, and the code follows the file. The run
