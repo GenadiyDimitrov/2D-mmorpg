@@ -7,12 +7,116 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.99.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.100.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-08-28 (latest) — 0.99.0: `BL-95` buff presets, and [Char] gets its own button
+## 2026-08-28 (latest) — 0.100.0: the base stat table is rebalanced, and 153 becomes a rule
+
+He filled in the empty Stats table in `docs/data/classes_skills_csv/README.md`, then asked two
+questions about his own numbers: *"is the sum right"* and *"i want to fix the 47 demons atk.. is way
+higher than others (even the fighters)"*.
+
+### The 47
+
+The demon **mage** carried ATK 47. That is higher than every FIGHTER in the game (40/36/41), which is
+what he caught — a mystic's power stat sitting above the men who swing swords for a living.
+
+It was deliberate, for one week. On 2026-08-21 it was raised from 41 to 47 — `41 × (25/22)`, the human
+mage's ATK scaled by IG's own mystic STR ratio — to fix his measured complaint that *"2h blunt ork have
+almost the same as 1h mace human (with 1000pdef on top)"*. The reasoning was sound; the side effect was
+not looked at hard enough. It is **42** now, his number.
+
+⚠ **His old complaint does not come back.** Measured, not asserted (`--warchanter 90`):
+
+| demon ATK              | Warchanter P.Atk vs human's mace+shield | Nuker M.Atk vs human |
+| ---------------------- | --------------------------------------- | -------------------- |
+| 47 (the week it stood) | +45.6%                                  | +9.8%                |
+| **42 (now)**           | **+32.9%**                              | **+1.6%**            |
+
++32.9% is still a clean two-hander-versus-shield trade. What the demon MYSTIC pays is the nuker's
+damage edge, which is now ~nil while he still carries the slowest cast and the lowest magic crit — he
+buys pool and body instead (CON 31, SPT 41). That is the deliberate half of this change.
+
+### The sums — and why nothing had noticed
+
+His fighter row was right (153/153/153). His mage row was not: **151 / 151 / 155**. And the LIVE table
+in `StatCalculator.GetBaseStats` was worse than either of them:
+
+|                 | Human   | Elf     | Demon   |
+| --------------- | ------- | ------- | ------- |
+| Fighter, before | 153     | 153     | **150** |
+| Mage, before    | **148** | **141** | **162** |
+
+The **elf mage was 21 points behind the demon mage** — not as a design, but as drift. Six columns had
+been edited a cell at a time over months, each edit locally reasonable, and **nothing had ever added
+them up**.
+
+### 🔑 153 is a rule now, and the server enforces it
+
+His ruling: a race is a **REDISTRIBUTION of the same 153 points, never a bigger pile**. `Program.cs`
+now runs `StatCalculator.BaseStatsNotSummingTo153()` at startup beside the duplicate-class-name check,
+and **refuses to boot** on a column that is off — naming the race, the class and the delta. A one-cell
+edit here is the easiest slip there is and completely invisible in a playtest, which is exactly the
+profile that earns a boot failure rather than a comment.
+
+### The table he authored
+
+| FIGHTERS | Human   | Elf     | Demon   |     | MAGES   | Human   | Elf     | Demon   |
+| -------- | ------- | ------- | ------- | --- | ------- | ------- | ------- | ------- |
+| ATK      | 40      | 36      | 41      |     | ATK     | 41      | 37      | 42      |
+| CON      | 43      | 39      | 47      |     | CON     | 29      | 25      | 31      |
+| AGI      | 30      | **36**  | 28      |     | AGI     | **26**  | **32**  | 20      |
+| SPT      | **26**  | **25**  | 27      |     | SPT     | **37**  | 36      | **41**  |
+| WIT      | **14**  | 17      | 10      |     | WIT     | 20      | 23      | 19      |
+| **Sum**  | **153** | **153** | **153** |     | **Sum** | **153** | **153** | **153** |
+
+It also completes a sentence of his from July — *"Elf have wit/agi - demon have con/spt/int human is in
+between"*. With SPT at 37 the human mage is now literally the middle value of all five of his stats.
+
+### ✅ And the biggest step in the table was raised as a worry, then ruled fine
+
+The elf mage's AGI went **24 → 32**, which puts the **elf MAGE above the human FIGHTER (30)** — +8
+accuracy and +8 evasion on the level-90 elf Warchanter sheet. Flagged, and closed by him the same day:
+
+> *"my idea is the elf is fast and buffer is semi archer .. the human warrior have acc and rogue have
+> evasion+speed so matching in agility stat alone is not OP"*
+
+🔑 That is this project's founding rule aimed at AGI — **a stat is not an identity, the KIT is**. The
+human warrior's identity is *accuracy* and the rogue's is *evasion + speed*, both authored in their
+kits, so a mage who merely ties them on one raw number has matched the seasoning and none of the meal.
+The elf buffer is also a **semi-archer** (bow + light armour), so the race whose theme is *fast* is
+holding the weapon that wants AGI: the 32 is describing the design, not leaking past it.
+
+⚠ The corollary is a rule for later, and it cuts the other way: AGI has no archetype split, so any
+future *"the rogue should be more agile"* must be paid in the ROGUE'S KIT — never by re-splitting this
+table by archetype, which would reinstate the deleted `ClassFlatBonus` idea by the back door. Written
+into `docs/design/CritBlowAndDouble.md` beside its (still unbuilt) `dexMod`.
+
+### ⚠ The stat columns in `game.db` are no longer trusted on load
+
+Base stats are stamped from the table at character CREATION and stored per subclass. Nothing in the
+game invests or mutates them — so a stored value is only ever a stale copy, and every character already
+in a database would have kept the OLD numbers for life, invisibly, with a character sheet that looked
+perfectly normal. `PersistenceService.ToSubclass` now calls `RollBaseStats()` on the way in instead of
+reading the five columns. They are still written; they are simply not believed. **No schema change, so
+no `game.db` delete is needed** — an existing character picks the new table up on its next login.
+
+🔑 If a stat ever becomes investable (dyes, player-spent ±5 swaps), that re-roll must become
+re-roll-then-re-apply, or the investment is what gets thrown away. The note is on the method.
+
+### Also
+
+- The stale sketch at the top of `StatCalculator.cs` — *"Demon Fighter 40/30/10/20"*, wrong for long
+  enough that it had already been annotated as wrong — is deleted rather than re-annotated. The table
+  is the table.
+- The README table now carries the 153 rule and the "this table IS the code" note, the same mirror
+  contract the skill CSVs run on.
+- `docs/design/CritBlowAndDouble.md`'s AGI table was quoting the old values; refreshed and re-sorted.
+
+
+## 2026-08-28 — 0.99.0: `BL-95` buff presets, and [Char] gets its own button
 
 Two asks, one build.
 
@@ -42,12 +146,12 @@ still the optimiser's row.
 
 **Four preset buttons**, each casting a list in one press:
 
-| Button | Count | Contents |
-|---|---|---|
-| **Full buff** | 16 | everything |
-| **Mage** | 10 | Bulwark, Force, Alacrity, Swift, Ward, Body, Soul, Serenity, Resolve, Frenzy |
-| **Fighter** | 10 | Bulwark, Might, Fury, Swift, Ward, Body, Vigor, Vamp, Frenzy, Aim |
-| **Custom** | — | your own, once saved — hidden until then |
+| Button        | Count | Contents                                                                     |
+| ------------- | ----- | ---------------------------------------------------------------------------- |
+| **Full buff** | 16    | everything                                                                   |
+| **Mage**      | 10    | Bulwark, Force, Alacrity, Swift, Ward, Body, Soul, Serenity, Resolve, Frenzy |
+| **Fighter**   | 10    | Bulwark, Might, Fury, Swift, Ward, Body, Vigor, Vamp, Frenzy, Aim            |
+| **Custom**    | —     | your own, once saved — hidden until then                                     |
 
 🔑 **The client never composes a buff list.** It sends a preset KEY and the server expands it, so the
 price on the button and the buffs that land are one decision made in one place — and a client too old
@@ -466,16 +570,16 @@ the self-cast branch, which is also how a support skill already behaves when you
 So the mechanic he asked for was one number per skill, and the same number is what the new AOE column
 made legible in the first place.
 
-| skill | range / aoe | target | cast | reuse |
-|---|---|---|---|---|
-| Party Heal | **0 / 1000** | party/aoe | 7s | **6s** |
-| Party Great Heal | **0 / 1000** | party/aoe | 7s | **6s** |
-| Ultimate Party Heal | **0 / 1000** | party/aoe | 7s | **3s** |
-| Healer Party Blessing | **0 / 1000** | party/aoe | 3s | **9s** |
-| Urgent Great Heal | **0 / 1000** | target/aoe | 3s | 5s |
-| Heal / Great Heal | 600 / 0 | target/single | 5s | **3s** |
-| Ultimate Heal | 600 / 0 | target/single | 5s | **1s** |
-| Healer Blessing | 600 / 0 | target/single | 3s | **3s** |
+| skill                 | range / aoe  | target        | cast | reuse  |
+| --------------------- | ------------ | ------------- | ---- | ------ |
+| Party Heal            | **0 / 1000** | party/aoe     | 7s   | **6s** |
+| Party Great Heal      | **0 / 1000** | party/aoe     | 7s   | **6s** |
+| Ultimate Party Heal   | **0 / 1000** | party/aoe     | 7s   | **3s** |
+| Healer Party Blessing | **0 / 1000** | party/aoe     | 3s   | **9s** |
+| Urgent Great Heal     | **0 / 1000** | target/aoe    | 3s   | 5s     |
+| Heal / Great Heal     | 600 / 0      | target/single | 5s   | **3s** |
+| Ultimate Heal         | 600 / 0      | target/single | 5s   | **1s** |
+| Healer Blessing       | 600 / 0      | target/single | 3s   | **3s** |
 
 ⚠ **HE OVERRODE HIS OWN AUTHORED CSV ROWS AND SAID SO** — *"Let's redo the party heals … I just
 estimated"*. `healer 4th.csv` had Ultimate Party Heal at 5s / 2s for rungs 76-90, carried in code as a
@@ -674,10 +778,10 @@ because his calibration target is a player. `MobBuild.LearnsKit` teaches the PAS
 kit (weapon, armour and shield masteries; the actives are excluded so a guard never casts, per *"they
 dont use skills"*). The town pair's power is now **entirely class kit + gear**:
 
-| level 80, S+0 Epic | HP | P.Atk | P.Def |
-|---|---|---|---|
-| the reference player (tank) | 10,737 | 1,214 | 1,101 |
-| `guard_town_tank` | 9,969 | **1,158** | **1,101** |
+| level 80, S+0 Epic          | HP     | P.Atk     | P.Def     |
+| --------------------------- | ------ | --------- | --------- |
+| the reference player (tank) | 10,737 | 1,214     | 1,101     |
+| `guard_town_tank`           | 9,969  | **1,158** | **1,101** |
 
 A near-exact mirror, which is what *"match a 80 lvl player S grade equip"* asks for. Time-to-kill runs
 **105s / 124s** against an S+0 warrior — his "hands full". The FIELD pair is the *"guard tower …
@@ -748,12 +852,12 @@ caster that also DODGES turns a soft target into a coin-flip. Evasion is the arc
 Every skill CSV's `TARGET` column is rewritten into his two-part scheme. **1,268 rows across 18 files**,
 and the totals now read:
 
-| value | rows | value | rows |
-|---|---|---|---|
-| `self/single` | 433 | `party/aoe` | 153 |
-| `party/single` | 326 | `target/aoe` | 42 |
-| `enemy/single` | 226 | `enemy/aoe` | 28 |
-| `target/single` | 155 | | |
+| value           | rows | value        | rows |
+| --------------- | ---- | ------------ | ---- |
+| `self/single`   | 433  | `party/aoe`  | 153  |
+| `party/single`  | 326  | `target/aoe` | 42   |
+| `enemy/single`  | 226  | `enemy/aoe`  | 28   |
+| `target/single` | 155  |              |      |
 
 Done by a new **`dotnet run --project tools/SkillCsvSeed -- --retarget`**, not by hand and not by
 find-and-replace, because the old column **cannot answer the question**: `self/target` collapsed both
@@ -871,13 +975,13 @@ ladder is already correct the day "friendly" widens past the party.
 damage formulas; the only invented number is **5s of pull/travel between kills**, and it is named at
 the top of the function rather than buried.
 
-| what it measures | what it found |
-|---|---|
-| **his own data point** | at 43 a farmer nets **740k–1,010k gold/h** — his 5kk is 5-7 hours. The model and his save agree with nothing tuned. |
-| **potion burn** | **0-3% of income** at every band 20→76; 10% in the single worst case (level-85 nuker). There is no potion economy to fix. |
-| **rune upkeep** | a 1h War Rune is 150k flat: **2.4-2.9 hours of rune per hour farmed at 20-30**, 25 at 61, 37 at 85. A **newbie tax that evaporates**. |
-| **the drift `BL-23` claimed** | real, but **5.4×** across 20→76 (1.68 → 0.31 chest pieces per hour), not the **51×** the entry asserted for a fortnight. |
-| **🔴 the finding nobody had** | a **cliff at 80**. S grade is top-half only — no Common rung exists — so the cheapest level-80 body is **126,000,000**: **26 hours a piece** against 3 at 76. |
+| what it measures              | what it found                                                                                                                                                 |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **his own data point**        | at 43 a farmer nets **740k–1,010k gold/h** — his 5kk is 5-7 hours. The model and his save agree with nothing tuned.                                           |
+| **potion burn**               | **0-3% of income** at every band 20→76; 10% in the single worst case (level-85 nuker). There is no potion economy to fix.                                     |
+| **rune upkeep**               | a 1h War Rune is 150k flat: **2.4-2.9 hours of rune per hour farmed at 20-30**, 25 at 61, 37 at 85. A **newbie tax that evaporates**.                         |
+| **the drift `BL-23` claimed** | real, but **5.4×** across 20→76 (1.68 → 0.31 chest pieces per hour), not the **51×** the entry asserted for a fortnight.                                      |
+| **🔴 the finding nobody had**  | a **cliff at 80**. S grade is top-half only — no Common rung exists — so the cheapest level-80 body is **126,000,000**: **26 hours a piece** against 3 at 76. |
 
 🔑 A potion tier has a **ceiling, not just a price**, and the report checks it before pricing anything:
 healing Common/Uncommon are 15s on a 10s cooldown (always up: 20 and 70 HP/s), Rare is 30s on 20s
@@ -937,16 +1041,16 @@ Every stackable item now has a **maximum per row**. The (cap+1)-th item opens a 
 is ever destroyed, nothing is refused for being over a cap, and a container still refuses only when it
 runs out of **rows**, with the same message it always had.
 
-| category | cap | items |
-|---|---|---|
-| **Buff scrolls** | **9** | 17 |
-| Buff potions, Scroll of Return, misc consumables | **99** | 37 |
-| Enchant + attribute scrolls | **99** | 24 |
-| Boxes + blueprints | **99** | 63 |
-| **HP / MP potions** | **999** | 8 |
-| Materials | **9,999** | 30 |
-| Quest items | **uncapped** | 108 |
-| Gear and anything with per-instance state | does not stack | 793 |
+| category                                         | cap            | items |
+| ------------------------------------------------ | -------------- | ----- |
+| **Buff scrolls**                                 | **9**          | 17    |
+| Buff potions, Scroll of Return, misc consumables | **99**         | 37    |
+| Enchant + attribute scrolls                      | **99**         | 24    |
+| Boxes + blueprints                               | **99**         | 63    |
+| **HP / MP potions**                              | **999**        | 8     |
+| Materials                                        | **9,999**      | 30    |
+| Quest items                                      | **uncapped**   | 108   |
+| Gear and anything with per-instance state        | does not stack | 793   |
 
 Read that table off `dotnet run --project tools/BalanceMatrix -- --stacks`, which prints it from the
 catalog along with what a farm trip costs in rows. It is not a hand-kept list: **the cap is DERIVED
@@ -1000,11 +1104,11 @@ Items tooltips now read "Stacks to 999 per slot" (quest items stay silent).
 The three mana potions shipped hours earlier at 20/50/100 for 500/1500/4500. He retuned both columns
 to one rule: **the rate IS the healing ladder's, and the price is exactly twice the healing ladder's.**
 
-| item | restores | window | drink reuse | **sustained** | buy | was |
-|---|---|---|---|---|---|---|
-| Common Mana Potion | 20 MP/s | 15s | 30s | **10 MP/s** | **120** (heal 60 ×2) | 20 @ 500 |
-| Uncommon Mana Potion | **70 MP/s** | 15s | 30s | **35 MP/s** | **500** (heal 250 ×2) | 50 @ 1,500 |
-| Rare Mana Potion | **150 MP/s** | 15s | 30s | **75 MP/s** | **3,000** (heal 1,500 ×2) | 100 @ 4,500 |
+| item                 | restores     | window | drink reuse | **sustained** | buy                       | was         |
+| -------------------- | ------------ | ------ | ----------- | ------------- | ------------------------- | ----------- |
+| Common Mana Potion   | 20 MP/s      | 15s    | 30s         | **10 MP/s**   | **120** (heal 60 ×2)      | 20 @ 500    |
+| Uncommon Mana Potion | **70 MP/s**  | 15s    | 30s         | **35 MP/s**   | **500** (heal 250 ×2)     | 50 @ 1,500  |
+| Rare Mana Potion     | **150 MP/s** | 15s    | 30s         | **75 MP/s**   | **3,000** (heal 1,500 ×2) | 100 @ 4,500 |
 
 **Only two things still differ from the healing ladder**: the cycle (15s up on a 30s reuse = a 50%
 duty cycle, where the Rare healing potion's 30s-on-20s is permanent uptime) and the price. His own
@@ -1035,11 +1139,11 @@ Touched: `Skills.Common.cs` (the two `RestoreMp` magnitudes + descriptions), `It
 Three tiers, his numbers verbatim: *"20/50/100 15s-up/30s-cd"*, and his sources: *"Common in shop /
 uncommon shop / rare drop"*.
 
-| item | restores | window | drink reuse | **sustained** | source |
-|---|---|---|---|---|---|
-| Common Mana Potion | 20 MP/s | 15s | 30s | **10 MP/s** | Apothecary, **500 gold** |
-| Uncommon Mana Potion | 50 MP/s | 15s | 30s | **25 MP/s** | Apothecary, **1,500 gold** |
-| Rare Mana Potion | 100 MP/s | 15s | 30s | **50 MP/s** | Potion Master, craft L5 |
+| item                 | restores | window | drink reuse | **sustained** | source                     |
+| -------------------- | -------- | ------ | ----------- | ------------- | -------------------------- |
+| Common Mana Potion   | 20 MP/s  | 15s    | 30s         | **10 MP/s**   | Apothecary, **500 gold**   |
+| Uncommon Mana Potion | 50 MP/s  | 15s    | 30s         | **25 MP/s**   | Apothecary, **1,500 gold** |
+| Rare Mana Potion     | 100 MP/s | 15s    | 30s         | **50 MP/s**   | Potion Master, craft L5    |
 
 ⚠ **The window is deliberately SHORTER than the reuse, which the healing ladder is not.** The Rare
 Healing Potion runs 30s on a 20s reuse — permanent uptime, so its "150 HP/s" really is 150 HP/s
@@ -1101,13 +1205,13 @@ His ask: *"show me npc buffed mage (elf - the worst of the 3) at lvl 74 (healer/
 The whole `npc_` shelf is applied — Soul +35% Max MP, Serenity +20% MP regen, Alacrity +30% cast, and
 the rest — plus every reuse-reduction passive the class owns. **ELF at 74, buffed, standing still:**
 
-| role | pool | cast | reuse− | spell | cycle | drain/s | regen | net | empties |
-|---|---|---|---|---|---|---|---|---|---|
-| healer, farming | 4,605 | ×2.29 | 20% | Holy Ray | 1.80s | 38.3 | 12.8 | **−25.6** | 180s |
-| healer, healing | 4,605 | ×2.29 | 20% | Great Heal | 3.70s | 32.4 | 12.8 | −19.7 | 234s |
-| nuker | 3,877 | ×2.29 | 20% | Elemental Blast | 2.50s | 27.6 | 12.8 | −14.8 | 263s |
-| buffer, toggles only | 3,740 | | | Reinf r13 + Sharp r13 | — | 45.0 | 13.0 | −32.0 | 117s |
-| buffer, + Sound Burst | 3,740 | | | | 5.60s | 66.4 | 13.0 | **−53.5** | **70s** |
+| role                  | pool  | cast  | reuse− | spell                 | cycle | drain/s | regen | net       | empties |
+| --------------------- | ----- | ----- | ------ | --------------------- | ----- | ------- | ----- | --------- | ------- |
+| healer, farming       | 4,605 | ×2.29 | 20%    | Holy Ray              | 1.80s | 38.3    | 12.8  | **−25.6** | 180s    |
+| healer, healing       | 4,605 | ×2.29 | 20%    | Great Heal            | 3.70s | 32.4    | 12.8  | −19.7     | 234s    |
+| nuker                 | 3,877 | ×2.29 | 20%    | Elemental Blast       | 2.50s | 27.6    | 12.8  | −14.8     | 263s    |
+| buffer, toggles only  | 3,740 |       |        | Reinf r13 + Sharp r13 | —     | 45.0    | 13.0  | −32.0     | 117s    |
+| buffer, + Sound Burst | 3,740 |       |        |                       | 5.60s | 66.4    | 13.0  | **−53.5** | **70s** |
 
 🔑 **A BUFF PACK IS AN ACCELERATOR, NOT SUSTAIN.** It raises the pool 35% and the regen 20%, and
 raises the drain by *more* than either — because Alacrity and the reuse passives both SHORTEN the
@@ -1149,10 +1253,10 @@ he corrected on the spot: *"Ork have 19 wit but u dont take into the acount alac
 The stat was never the gap — the **buff stack** was. With a real Alacrity (Rare) buff applied and WIT
 left at the racial value, the model lands on his client:
 
-| | cast | cycle | drain | his |
-|---|---|---|---|---|
-| ork healer 43 | ×1.26 | **2.79s** | **10.77 MP/s** | 2.79s, 10.75 MP/s |
-| regen still / walk / run | | | **8.7 / 7.6 / 6.5** | 8.4 / 7.6 / 6.5 |
+|                          | cast  | cycle     | drain               | his               |
+| ------------------------ | ----- | --------- | ------------------- | ----------------- |
+| ork healer 43            | ×1.26 | **2.79s** | **10.77 MP/s**      | 2.79s, 10.75 MP/s |
+| regen still / walk / run |       |           | **8.7 / 7.6 / 6.5** | 8.4 / 7.6 / 6.5   |
 
 ⚠ **A cast-speed error MULTIPLIES the drain**, because it divides the cycle — which is exactly how
 0.91.2's *"below ~45 nobody has an MP problem"* came to be written. It is withdrawn: **standing still,
@@ -1160,11 +1264,11 @@ unbuffed, on the cheapest spell he owns, with nothing between casts, a level-43 
 for himself.** And his prediction about the elf holds — casting fastest on the lowest SPT, the elf is
 **−6.2 MP/s** where the ork is −2.1:
 
-| race at 43 | WIT | SPT | cast | drain | regen (still) | net |
-|---|---|---|---|---|---|---|
-| Human | 21 | 39 | ×1.47 | 11.98 | 7.9 | **−4.1** |
-| Elf | 24 | 32 | ×1.70 | 13.21 | 7.0 | **−6.2** |
-| Ork | 20 | 45 | ×1.26 | 10.77 | 8.7 | **−2.1** |
+| race at 43 | WIT | SPT | cast  | drain | regen (still) | net      |
+| ---------- | --- | --- | ----- | ----- | ------------- | -------- |
+| Human      | 21  | 39  | ×1.47 | 11.98 | 7.9           | **−4.1** |
+| Elf        | 24  | 32  | ×1.70 | 13.21 | 7.0           | **−6.2** |
+| Ork        | 20  | 45  | ×1.26 | 10.77 | 8.7           | **−2.1** |
 
 The Common mana potion's 10 MP/s sustained covers all three several times over, which is the right
 shape: the tier that trivialises the problem at 43 should still be the cheap one at 80.
@@ -1317,14 +1421,14 @@ pool in the game.
 
 ### What it does
 
-| | @20 | @40 | @60 | @80 |
-|---|---|---|---|---|
-| tank | ×1.03 | ×1.63 | ×1.83 | ×1.92 |
+|         | @20   | @40   | @60   | @80   |
+| ------- | ----- | ----- | ----- | ----- |
+| tank    | ×1.03 | ×1.63 | ×1.83 | ×1.92 |
 | warrior | ×1.08 | ×1.77 | ×2.02 | ×2.12 |
-| rogue | ×1.15 | ×1.97 | ×2.29 | ×2.42 |
-| buffer | ×1.51 | ×2.54 | ×3.28 | ×3.61 |
-| healer | ×1.51 | ×2.25 | ×2.78 | ×3.00 |
-| nuker | ×1.38 | ×1.97 | ×2.39 | ×2.56 |
+| rogue   | ×1.15 | ×1.97 | ×2.29 | ×2.42 |
+| buffer  | ×1.51 | ×2.54 | ×3.28 | ×3.61 |
+| healer  | ×1.51 | ×2.25 | ×2.78 | ×3.00 |
+| nuker   | ×1.38 | ×1.97 | ×2.39 | ×2.56 |
 
 Measured survival against a same-level creature (`BalanceMatrix`, E2), standing still: a **robe at 52
 goes 9s → 21s**, a tank 73s → 132s, a rogue 27s → 58s, a champion 36s → 69s. The early game barely
@@ -1428,15 +1532,15 @@ So the multiplier is now a **curve**, `43000 / L^1.49`, living in the new
 `Game.Shared/MobRankScale.cs`. Measured against his own party — tank + healer + 3 DDs, best-for-tier
 gear, runes up:
 
-| Lvl | | HP × | boss HP | party dps | TTK | |
-|---|---|---|---|---|---|---|
-| 20 | *(no boss spawns here — shape check)* | ×495 | 178,334 | 253 | **704s** | 12 min |
-| 44 | Grave Lich, Hollow Crypt | ×153 | 242,982 | 225 | **1079s** | 18 min |
-| 60 | the world boss | ×96 | 281,453 | 205 | **1376s** | 23 min |
-| 65 | Dread Knight, Sunless Warrens | ×86 | 292,586 | 209 | **1398s** | 23 min |
-| 76 | | ×68 | 315,821 | 208 | **1515s** | 25 min |
-| 85 | | ×57 | 333,854 | 292 | **1144s** | 19 min |
-| 90 | Disciple of the Dawn | ×53 | 343,474 | 270 | **1274s** | 21 min |
+| Lvl |                                       | HP × | boss HP | party dps | TTK       |        |
+| --- | ------------------------------------- | ---- | ------- | --------- | --------- | ------ |
+| 20  | *(no boss spawns here — shape check)* | ×495 | 178,334 | 253       | **704s**  | 12 min |
+| 44  | Grave Lich, Hollow Crypt              | ×153 | 242,982 | 225       | **1079s** | 18 min |
+| 60  | the world boss                        | ×96  | 281,453 | 205       | **1376s** | 23 min |
+| 65  | Dread Knight, Sunless Warrens         | ×86  | 292,586 | 209       | **1398s** | 23 min |
+| 76  |                                       | ×68  | 315,821 | 208       | **1515s** | 25 min |
+| 85  |                                       | ×57  | 333,854 | 292       | **1144s** | 19 min |
+| 90  | Disciple of the Dawn                  | ×53  | 343,474 | 270       | **1274s** | 21 min |
 
 Every level inside the band, and rising — his *"the target rises"*. (85 dips because the party's own
 damage jumps there: S grade lands at 80. That is player gear, not the boss curve.)
@@ -1630,13 +1734,13 @@ affected CSV row moved together; the only four files that still author `mpReg x1
 
 **Measured effect** — a buffed human nuker's regen as a % of his own main-nuke spam drain, standing:
 
-| L | 0.88.0 | **0.88.1** |
-|---|---|---|
-| 40 | 146% | 125% |
-| 60 | 117% | 101% |
-| 68 | 101% | **87%** |
-| 74 | 102% | **88%** |
-| 85 | 111% | 95% |
+| L   | 0.88.0 | **0.88.1** |
+| --- | ------ | ---------- |
+| 40  | 146%   | 125%       |
+| 60  | 117%   | 101%       |
+| 68  | 101%   | **87%**    |
+| 74  | 102%   | **88%**    |
+| 85  | 111%   | 95%        |
 
 Which is the shape he asked for at the start: a high-level mage who spams **cannot** pay for himself
 and needs a restorer or a rotation, while a levelling one is comfortable. Calm Spirit is unaffected —
@@ -1787,12 +1891,12 @@ nobody is locked out of a spell he wrote, and splitting them later is one line p
 Eleven families shared, and the race splits the rest — **four ways for the Human, three for the other
 two**, which is his authoring and not a slip (Arcane Void is utility, not damage):
 
-| | |
-|---|---|
+|        |                                                                                                                                                                                               |
+| ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | shared | Anti-Magic · Spellcaster Weapon Mastery · Mage Armor Mastery · Restore Spirit · Phase Shift · **Elemental Blast** · **Quick Blast** · **Elemental Wave** · Elemental Burst · **Thunderstorm** |
-| Human | **Arcane Wave** · Vampiric Bolt · **Arcane Void** · **Arcane Burst** |
-| Elf | **Frost Spikes** · **Frost Pierce** · **Frost Burst** |
-| Ork | **Witches Curse** · **Witches Scarecrow** · **Pyro Burst** |
+| Human  | **Arcane Wave** · Vampiric Bolt · **Arcane Void** · **Arcane Burst**                                                                                                                          |
+| Elf    | **Frost Spikes** · **Frost Pierce** · **Frost Burst**                                                                                                                                         |
+| Ork    | **Witches Curse** · **Witches Scarecrow** · **Pyro Burst**                                                                                                                                    |
 
 🔑 **THREE OF THE FOUR PASSIVES WERE ALREADY BUILT AND ARE SHARED, NOT COPIED.** Anti-Magic's rungs
 7-20 are the ladder he asked to be shared across all three files. **Spellcaster Weapon Mastery IS the
@@ -2205,10 +2309,10 @@ interrupts by 47% at level 20 and only 30% at 80. As a percent it is ×0.46 at e
 *"a bit low"*. `StatCalculator.SpiritInterruptMod` uses the curve he named instead: **20 SPT = ×1.00,
 50 SPT = ×0.67**, same geometric shape, one third the slope. On our own bases:
 
-| | human ftr 25 | elf ftr 26 | ork ftr 27 | elf mage 32 | human mage 39 | ork mage 45 |
-|---|---|---|---|---|---|---|
-| ours | ×0.94 | ×0.92 | ×0.91 | ×0.85 | ×0.78 | ×0.72 |
-| IG's | ×0.78 | ×0.75 | ×0.71 | ×0.56 | ×0.39 | ×0.29 |
+|      | human ftr 25 | elf ftr 26 | ork ftr 27 | elf mage 32 | human mage 39 | ork mage 45 |
+| ---- | ------------ | ---------- | ---------- | ----------- | ------------- | ----------- |
+| ours | ×0.94        | ×0.92      | ×0.91      | ×0.85       | ×0.78         | ×0.72       |
+| IG's | ×0.78        | ×0.75      | ×0.71      | ×0.56       | ×0.39         | ×0.29       |
 
 **4. 🔴 NO ROBE-SET INTERRUPT RESIST, deliberately.** IG's robe set carries 50% on top of Resolve's 54% and
 the product makes a mage effectively uninterruptible — *"and i dont want that"*. `StatCaps.InterruptResistMax`
@@ -2500,12 +2604,12 @@ be kept agreeing with each other by eye. A corridor with rooms is not a shape an
 
 The measurements, since none of this is visible from the source:
 
-| | |
-|---|---|
-| corridor | 600 wide, mouth inside the entrance circle, ~4950 long to the boss chamber |
-| side rooms | 900 × 750, alternating sides, 1400 pitch — you cannot reach the boss without walking past every door |
-| boss chamber | 1400 × 1400 at the end |
-| **guard → boss clear ground** | **850 units, against a 400 aggro range** |
+|                               |                                                                                                      |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------- |
+| corridor                      | 600 wide, mouth inside the entrance circle, ~4950 long to the boss chamber                           |
+| side rooms                    | 900 × 750, alternating sides, 1400 pitch — you cannot reach the boss without walking past every door |
+| boss chamber                  | 1400 × 1400 at the end                                                                               |
+| **guard → boss clear ground** | **850 units, against a 400 aggro range**                                                             |
 
 That last row IS his rule, and `DungeonLayout.Validate()` asserts it at boot rather than trusting the
 arithmetic to survive the next edit — the symptom of getting it wrong is a boss fight that occasionally
@@ -2600,13 +2704,13 @@ so a base-class buff's threat is now priced at its own learn level too.
 🔴 **What actually stops working, measured per CLASS** (the merged-by-skill first cut was worthless —
 Vampiric Bolt has 14 rungs to @80 on the nuker ladder and exactly ONE, at 14, on the Warchanter's):
 
-| spell | rungs | top @ | 95% by | classes |
-|---|--:|--:|--:|---|
-| Magic Bolt | 2 | 14 | **32** | all four mage disciplines |
-| Vampiric Bolt | 1 | 14 | **32** | Lightbringer, Warchanter |
-| Holy Bolt | 4 | 35 | **53** | Lightbringer, Warchanter |
-| Flamebolt (Annihilate / Chain Lightning) | 1 | 40 | **58** | Magus, Tempest |
-| Glacial Spike | 1 | 44 | **62** | Magus, Tempest |
+| spell                                    | rungs | top @ | 95% by | classes                   |
+| ---------------------------------------- | ----: | ----: | -----: | ------------------------- |
+| Magic Bolt                               |     2 |    14 | **32** | all four mage disciplines |
+| Vampiric Bolt                            |     1 |    14 | **32** | Lightbringer, Warchanter  |
+| Holy Bolt                                |     4 |    35 | **53** | Lightbringer, Warchanter  |
+| Flamebolt (Annihilate / Chain Lightning) |     1 |    40 | **58** | Magus, Tempest            |
+| Glacial Spike                            |     1 |    44 | **62** | Magus, Tempest            |
 
 The first two rows are the ruling doing exactly what he asked — his vamp-bolt case is the second one.
 The last two are the ones to look at: single-rung **40+ placeholders**, the same shape as the five
@@ -3128,11 +3232,11 @@ One validator now, `GameConstants.IsValidCharacterName`, in `Game.Shared` so the
 the client's create screen cannot disagree — the server re-runs it regardless, because the client is not
 trusted with what a legal name is. **His three questions, answered as one narrow rule:**
 
-| | |
-|---|---|
-| **ASCII letters and digits only** | so **no Cyrillic** — his own suggestion, and the reason is that every name-addressed command (`/whisper`, `/ptinv`, `/jail`, the friend list) needs a name **every other player's keyboard can produce** |
-| **No spaces, no symbols** | every name-taking command parses the name as the first token or splits on the last space (`/role <name> <role>`), so a space breaks the parser, not just the eye |
-| **Must start with a letter**, 3-16 characters | an all-digit name collides with every command that takes a number in the same slot; the **3** is mine, not his — a 1-character name is the same problem one step along |
+|                                               |                                                                                                                                                                                                          |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **ASCII letters and digits only**             | so **no Cyrillic** — his own suggestion, and the reason is that every name-addressed command (`/whisper`, `/ptinv`, `/jail`, the friend list) needs a name **every other player's keyboard can produce** |
+| **No spaces, no symbols**                     | every name-taking command parses the name as the first token or splits on the last space (`/role <name> <role>`), so a space breaks the parser, not just the eye                                         |
+| **Must start with a letter**, 3-16 characters | an all-digit name collides with every command that takes a number in the same slot; the **3** is mine, not his — a 1-character name is the same problem one step along                                   |
 
 ⚠ **Case-insensitivity was already there** and was not the bug: `CreateCharacterAsync` has compared
 lower-cased names since it was written, and every slash-command lookup is `OrdinalIgnoreCase`.
@@ -3201,13 +3305,13 @@ His ruling on being asked: **split them.** The enum, every `/role` argument and 
 the plain words; the wearable staff TITLE keeps the flavour. Both layers already existed, so only the
 words are new.
 
-| Rank (messages, `/role`) | Title (over the head) | Can |
-|---|---|---|
-| **Owner** | Supreme Being | everything, **and is the only rank that can grant or revoke Admin** |
-| **Admin** | God | unchanged — every command, and may rank people **below** himself |
-| **Moderator** | Sentinel | jail · kick · chatban · where |
-| **Chat Moderator** | Silencer | **(un)chatban and nothing else** |
-| Player | — | — |
+| Rank (messages, `/role`) | Title (over the head) | Can                                                                 |
+| ------------------------ | --------------------- | ------------------------------------------------------------------- |
+| **Owner**                | Supreme Being         | everything, **and is the only rank that can grant or revoke Admin** |
+| **Admin**                | God                   | unchanged — every command, and may rank people **below** himself    |
+| **Moderator**            | Sentinel              | jail · kick · chatban · where                                       |
+| **Chat Moderator**       | Silencer              | **(un)chatban and nothing else**                                    |
+| Player                   | —                     | —                                                                   |
 
 🔑 **The Chat Moderator's omissions are the design.** No kick or jail, because *"the jail and kick will
 allow them to farm undisturbed - go to zone .. kick players/jail then start to farm"*; no `/where`,
@@ -3332,11 +3436,11 @@ nothing else ever mentioned one. It was not a rendering gap; there was no data.
 
 So it needed a channel of its own, and it got the smallest one that works.
 
-| | |
-|---|---|
-| `TotemDto(Id, X, Y, Radius, Heals, Restores)` | one totem, as the ground needs it |
-| `TotemList` → `"Totems"` | every totem the viewer can see, **whole** |
-| `AreaEffectEvent(X, Y, Radius, Kind)` → `"AreaEffect"` | one shot, fire and forget |
+|                                                        |                                           |
+| ------------------------------------------------------ | ----------------------------------------- |
+| `TotemDto(Id, X, Y, Radius, Heals, Restores)`          | one totem, as the ground needs it         |
+| `TotemList` → `"Totems"`                               | every totem the viewer can see, **whole** |
+| `AreaEffectEvent(X, Y, Radius, Kind)` → `"AreaEffect"` | one shot, fire and forget                 |
 
 **Whole list, not a diff.** There are single-figure totems in a world and the bookkeeping would cost
 more than the payload — and a whole list is *self-healing*: a client that misses a message is
@@ -3450,11 +3554,11 @@ increase it over the human"*.
 
 IG's mystic bases, read off the same source as the mob-curve research:
 
-| mystic | INT | WIT | MEN | **STR** | CON | DEX |
-|---|---|---|---|---|---|---|
-| ork | **31** | 21 | 42 | **25** | 31 | 20 |
-| human | 41 | 20 | 39 | 22 | 27 | 21 |
-| elf | 37 | 23 | 40 | 21 | 25 | 24 |
+| mystic | INT    | WIT | MEN | **STR** | CON | DEX |
+| ------ | ------ | --- | --- | ------- | --- | --- |
+| ork    | **31** | 21  | 42  | **25**  | 31  | 20  |
+| human  | 41     | 20  | 39  | 22      | 27  | 21  |
+| elf    | 37     | 23  | 40  | 21      | 25  | 24  |
 
 Our mage ATK column was 31 / 41 / 37 — IG's INT, copied straight across.
 
@@ -3494,11 +3598,11 @@ two-hander-versus-shield trade instead of a strictly dominated build.
 between"*. At 47 the human mage is the **middle value of all five stats**, and the other two own
 exactly the pairs he named:
 
-| | CON | ATK | WIT | AGI | SPT |
-|---|---|---|---|---|---|
-| ork | **31** | **47** | 19 | 20 | **45** |
-| human | 27 | 41 | 20 | 21 | 39 |
-| elf | 25 | 37 | **23** | **24** | 32 |
+|       | CON    | ATK    | WIT    | AGI    | SPT    |
+| ----- | ------ | ------ | ------ | ------ | ------ |
+| ork   | **31** | **47** | 19     | 20     | **45** |
+| human | 27     | 41     | 20     | 21     | 39     |
+| elf   | 25     | 37     | **23** | **24** | 32     |
 
 ⚠ **ATK is one stat per race+base class, so this lands on every ork MAGE** — the Shaman and the Witch
 too. Measured rather than reasoned about: the ork **nuker** gains **+11.7% M.Atk** over the human's,
@@ -3530,12 +3634,12 @@ Warchanter *is* a mana-restorer — so his own party heal refused itself.
 Now `IsRestoreManaCast(def)` — `def.Id == SkillCatalog.RestoreMana`, all thirteen rungs. What it
 frees, exactly:
 
-| skill | carries `RestoreMp` | blocked before | blocked now |
-|---|---|---|---|
-| Restore Mana | ✔ | ✔ | ✔ — the rule is its own |
-| Harmony of Restoration | ✔ (the @64 MP/s half) | ✔ | — |
-| Mana Totem | ✔ | ✔ | — |
-| Restore Spirit | ✔ | ✔ | — |
+| skill                  | carries `RestoreMp`   | blocked before | blocked now             |
+| ---------------------- | --------------------- | -------------- | ----------------------- |
+| Restore Mana           | ✔                     | ✔              | ✔ — the rule is its own |
+| Harmony of Restoration | ✔ (the @64 MP/s half) | ✔              | —                       |
+| Mana Totem             | ✔                     | ✔              | —                       |
+| Restore Spirit         | ✔                     | ✔              | —                       |
 
 The autopilot's `AutoManaTarget` carried a copy of the same test and was narrowed with it, so auto
 and manual still refuse exactly the same casts.
@@ -3614,13 +3718,13 @@ green on all ten files, for the first time since `buffer 3rd` earned its line.**
 Five primitives, because five of his rows described things nothing in the game did yet. All are
 FIELDS, never new `SkillEffect` flags — there are none left (bit 62 is the last, and it is taken).
 
-| his row | the primitive |
-|---|---|
-| Sound Burst: *"…With Power +1000 **Twice**"* | **`SkillDef.HitCount`** — N independent resolutions of one cast, each rolling its own miss/crit/block. Not a ×2 on power: a 2×1000 volley is worth less than one 2000 against an evasive target and more against a shield. |
-| Mana Vampirism: *"+3% mana vampirism (physical basic atack only)"* | **`PassiveEffect.ManaVamp` → `Entity.ManaVamp`**, drained on a landed BASIC attack. Its own field, not a reuse of `MeleeVamp`: that heals HP, this refills the bar the buffer actually runs out of. |
-| Harmony of Restoration @64+: *"+90 HP/s **and +5 MP/s**"* | **MP-over-time**, riding `RestoreMp`'s Flat magnitude on a lasting buff and ticked in `TickHealOverTime`. ⚠ Deliberately NOT `Regenerate`: natural regen is combat-gated, and a party HoT is the one thing that must keep paying while the party is being hit. |
-| Combo Mastery: *"**Doing Damage** Increases Attack/Cast Speed … With 3% Chance"* | **THE FIRST ON-HIT PROC IN THE GAME** — `ProcChance` / `ProcCooldownTicks` / `ProcSelfRungs` / `ProcPartyRungs` on `SkillDef`, `Entity.ProcCooldowns`, and `GameLoopService.TryOnHitProcs` called from both damage paths. |
-| Harmonist Bow Proficiency: *"Bow: Removed Penalty [cast(x2), mAtk(x2), mAcc(x0.04)]"* | **`PassiveEffect.CastPenaltyMult` / `MagicPenaltyMult`**, on the same "0 = not in the chain, otherwise a PRODUCT" convention `MagicFailSelfMult` already used. |
+| his row                                                                               | the primitive                                                                                                                                                                                                                                                  |
+| ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Sound Burst: *"…With Power +1000 **Twice**"*                                          | **`SkillDef.HitCount`** — N independent resolutions of one cast, each rolling its own miss/crit/block. Not a ×2 on power: a 2×1000 volley is worth less than one 2000 against an evasive target and more against a shield.                                     |
+| Mana Vampirism: *"+3% mana vampirism (physical basic atack only)"*                    | **`PassiveEffect.ManaVamp` → `Entity.ManaVamp`**, drained on a landed BASIC attack. Its own field, not a reuse of `MeleeVamp`: that heals HP, this refills the bar the buffer actually runs out of.                                                            |
+| Harmony of Restoration @64+: *"+90 HP/s **and +5 MP/s**"*                             | **MP-over-time**, riding `RestoreMp`'s Flat magnitude on a lasting buff and ticked in `TickHealOverTime`. ⚠ Deliberately NOT `Regenerate`: natural regen is combat-gated, and a party HoT is the one thing that must keep paying while the party is being hit. |
+| Combo Mastery: *"**Doing Damage** Increases Attack/Cast Speed … With 3% Chance"*      | **THE FIRST ON-HIT PROC IN THE GAME** — `ProcChance` / `ProcCooldownTicks` / `ProcSelfRungs` / `ProcPartyRungs` on `SkillDef`, `Entity.ProcCooldowns`, and `GameLoopService.TryOnHitProcs` called from both damage paths.                                      |
+| Harmonist Bow Proficiency: *"Bow: Removed Penalty [cast(x2), mAtk(x2), mAcc(x0.04)]"* | **`PassiveEffect.CastPenaltyMult` / `MagicPenaltyMult`**, on the same "0 = not in the chain, otherwise a PRODUCT" convention `MagicFailSelfMult` already used.                                                                                                 |
 
 🔑 **That last one is the most interesting thing in the build.** It is the first skill that *undoes*
 the untrained-caster-weapon rule instead of working around it. Spellcaster Mastery charges a bow
@@ -3634,11 +3738,11 @@ multiplier a passive could divide back out.
 His design, verbatim: *"human is tank - 1dmg skill and higher Def, elf is archer - range/evasion 1dmg
 skill, ork is mele fighter so need more than 1dmg skill"*. One discipline, three combat kits:
 
-| | armour | weapon | damage skills | its own line |
-|---|---|---|---|---|
-| **Human** | heavy (Chanter Heavy Mastery) | blunt + **shield** | Sound Smash | Shield Mastery 40/60/70 |
-| **Elf** | light (Harmonist Light Mastery) | **bow** | Sound Burst (hits twice, 900 range) | Bow Proficiency · Bow Mastery ×8 · Bow Expertise |
-| **Ork** | heavy | blunt | Sound Smash **+ Acoustic Shock** | Bloodhanter Blunt Mastery ×8 |
+|           | armour                          | weapon             | damage skills                       | its own line                                     |
+| --------- | ------------------------------- | ------------------ | ----------------------------------- | ------------------------------------------------ |
+| **Human** | heavy (Chanter Heavy Mastery)   | blunt + **shield** | Sound Smash                         | Shield Mastery 40/60/70                          |
+| **Elf**   | light (Harmonist Light Mastery) | **bow**            | Sound Burst (hits twice, 900 range) | Bow Proficiency · Bow Mastery ×8 · Bow Expertise |
+| **Ork**   | heavy                           | blunt              | Sound Smash **+ Acoustic Shock**    | Bloodhanter Blunt Mastery ×8                     |
 
 Shared by all three: Armor Mastery and Spell Mastery (rungs 5-18), Great Heal (11 rungs, 40-68),
 Harmony of Restoration, the Reinforcement and Sharpening stances, Combo Mastery, Mana Vampirism
@@ -3693,14 +3797,14 @@ about, and the answer reshaped the skill: *"Cast speed goes 5->10->15%, atack sp
 and half of both goes to the party as buff (u get the 20% and party 10%) -> so something like 6 levels
 of that passives proc-buff and u get 4,5,6 while party gets 1,2,3"*.
 
-| rung | atk speed | cast | who gets it |
-|---|---|---|---|
-| 1 | 5% | 2.5% | your PARTY, from a Combo Mastery **L1** buffer |
-| 2 | 7.5% | 5% | your PARTY, from an **L2** buffer |
-| 3 | 10% | 7.5% | your PARTY, from an **L3** buffer |
-| 4 | 10% | 5% | **YOU**, at Combo Mastery L1 |
-| 5 | 15% | 10% | **YOU**, at L2 |
-| 6 | 20% | 15% | **YOU**, at L3 |
+| rung | atk speed | cast | who gets it                                    |
+| ---- | --------- | ---- | ---------------------------------------------- |
+| 1    | 5%        | 2.5% | your PARTY, from a Combo Mastery **L1** buffer |
+| 2    | 7.5%      | 5%   | your PARTY, from an **L2** buffer              |
+| 3    | 10%       | 7.5% | your PARTY, from an **L3** buffer              |
+| 4    | 10%       | 5%   | **YOU**, at Combo Mastery L1                   |
+| 5    | 15%       | 10%  | **YOU**, at L2                                 |
+| 6    | 20%       | 15%  | **YOU**, at L3                                 |
 
 🔑 **ONE FAMILY IS THE WHOLE MECHANISM.** All six rungs share the BuffKey `wc_combo` and carry their
 index as `Rank`, so the ordinary `ApplyBuff` rule — same family, higher rank wins, weaker is ignored
@@ -3746,12 +3850,12 @@ are the IG one so fix them in the process"*.
 
 ### The ladder — his percentages, ×5 on one column only
 
-| rung | his DESCR (IG units) | built | tank learns @ | Human Warchanter learns @ |
-|---|---|---|---|---|
-| 1 | Shield P.Def **+30%**, Shield Rate +50% | `ShieldDefPct 1.50`, `BlockChancePct 0.50` | **20** (3200 SP) | **40** (36k SP) |
-| 2 | Shield P.Def **+40%**, Shield Rate +70% | `ShieldDefPct 2.00`, `BlockChancePct 0.70` | **28** (3200 SP) | **60** (120k SP) |
-| 3 | Shield P.Def **+50%**, Rate +85%, +10% P.Def, bow resist 16% | `ShieldDefPct 2.50`, `BlockChancePct 0.85`, `DefencePctWithShield 0.10`, `BowResist 0.16` | **36** (40k SP) | **70** (390k SP) |
-| 4 | Shield P.Def **+60%**, Rate +100%, +10% P.Def, bow resist 24% | `ShieldDefPct 3.00`, `BlockChancePct 1.00`, `DefencePctWithShield 0.10`, `BowResist 0.24` | **52** (74k SP) | *never* |
+| rung | his DESCR (IG units)                                          | built                                                                                     | tank learns @    | Human Warchanter learns @ |
+| ---- | ------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ---------------- | ------------------------- |
+| 1    | Shield P.Def **+30%**, Shield Rate +50%                       | `ShieldDefPct 1.50`, `BlockChancePct 0.50`                                                | **20** (3200 SP) | **40** (36k SP)           |
+| 2    | Shield P.Def **+40%**, Shield Rate +70%                       | `ShieldDefPct 2.00`, `BlockChancePct 0.70`                                                | **28** (3200 SP) | **60** (120k SP)          |
+| 3    | Shield P.Def **+50%**, Rate +85%, +10% P.Def, bow resist 16%  | `ShieldDefPct 2.50`, `BlockChancePct 0.85`, `DefencePctWithShield 0.10`, `BowResist 0.16` | **36** (40k SP)  | **70** (390k SP)          |
+| 4    | Shield P.Def **+60%**, Rate +100%, +10% P.Def, bow resist 24% | `ShieldDefPct 3.00`, `BlockChancePct 1.00`, `DefencePctWithShield 0.10`, `BowResist 0.24` | **52** (74k SP)  | *never*                   |
 
 🔑 **The ×5 is on the shield-P.Def column and nowhere else**, which is not a new decision — it is the
 2026-08-12 ruling still standing: *"sheild_mastery.Shield_PDef will be the only part that will increase
@@ -3797,13 +3901,13 @@ would have duplicated a ladder he authored identically in both files and invited
 
 `tools/BalanceMatrix`, tank in 1H+shield, before → after:
 
-| level | P.Def | survives |
-|---|---|---|
-| 20 | 498 → **498** | 104s → **104s** |
-| 28 | 533 → **533** | 80s → **80s** |
-| 36 | 556 → **617** | 64s → **71s** |
-| 44 | 717 → **796** | 74s → **80s** |
-| 52 | 801 → **892** | 65s → **73s** |
+| level | P.Def         | survives        |
+| ----- | ------------- | --------------- |
+| 20    | 498 → **498** | 104s → **104s** |
+| 28    | 533 → **533** | 80s → **80s**   |
+| 36    | 556 → **617** | 64s → **71s**   |
+| 44    | 717 → **796** | 74s → **80s**   |
+| 52    | 801 → **892** | 65s → **73s**   |
 
 **Nothing regresses.** The old ladder was `1.50 1.50 2.00 2.00` at 20/24/28/32 and the new one is
 `1.50 2.00 2.50 3.00` at 20/28/36/52, and those happen to agree exactly up to 35 — a tank holds 1.50
@@ -3836,28 +3940,28 @@ He opened the session with the complaint: *"i would like to change the grouped b
 with fighters buff .. to be like the haromonies several for fighter several for mage and several
 combined(defences)"*. He was right, and the five old groups show it plainly:
 
-| old group | children | the problem |
-|---|---|---|
-| Swift and Sure | move, **cast speed**, evasion, **attack speed** | fighter and mage in one cast |
-| Focus and Ferocity | crit rate, crit dmg, **magic crit** | ditto |
-| Might and Bulwark | P.Atk, **P.Def**, vamp, accuracy | fighter offence + a shared defence |
-| Force and Ward | M.Atk, **M.Def**, interrupt | mage offence + a shared defence |
-| Body and Soul | Max HP/MP, both regens | genuinely combined — the only clean one |
+| old group          | children                                        | the problem                             |
+| ------------------ | ----------------------------------------------- | --------------------------------------- |
+| Swift and Sure     | move, **cast speed**, evasion, **attack speed** | fighter and mage in one cast            |
+| Focus and Ferocity | crit rate, crit dmg, **magic crit**             | ditto                                   |
+| Might and Bulwark  | P.Atk, **P.Def**, vamp, accuracy                | fighter offence + a shared defence      |
+| Force and Ward     | M.Atk, **M.Def**, interrupt                     | mage offence + a shared defence         |
+| Body and Soul      | Max HP/MP, both regens                          | genuinely combined — the only clean one |
 
 He then authored the replacement himself, and the NAMES carry the lane: **Feral\*** = fighter,
 **Arcane\*** = mage, **Arcane and Feral \*** = both.
 
-| group | lane | children | @ |
-|---|---|---|---|
-| Feral Precision | fighter | crit rate · crit damage · accuracy | 58 |
-| Feral Bloodlust | fighter | P.Atk · attack speed · vampirism | 74 |
-| Arcane Insight | mage | M.Atk · magic crit | 72 |
-| Arcane Serenity | mage | cast speed · interrupt · MP regen | 70 |
-| Soul Reinforcement | mage | Max MP · M.Def · MP cost | 74 |
-| Body Reinforcement | combined | Max HP · P.Def · HP regen | 72 |
-| Shield Reinforcement | tank | shield P.Def · block chance | 74 |
-| Arcane and Feral Protection | combined | both CC resists | 74 |
-| Wind Grace | combined | move speed · evasion | 56 |
+| group                       | lane     | children                           | @   |
+| --------------------------- | -------- | ---------------------------------- | --- |
+| Feral Precision             | fighter  | crit rate · crit damage · accuracy | 58  |
+| Feral Bloodlust             | fighter  | P.Atk · attack speed · vampirism   | 74  |
+| Arcane Insight              | mage     | M.Atk · magic crit                 | 72  |
+| Arcane Serenity             | mage     | cast speed · interrupt · MP regen  | 70  |
+| Soul Reinforcement          | mage     | Max MP · M.Def · MP cost           | 74  |
+| Body Reinforcement          | combined | Max HP · P.Def · HP regen          | 72  |
+| Shield Reinforcement        | tank     | shield P.Def · block chance        | 74  |
+| Arcane and Feral Protection | combined | both CC resists                    | 74  |
+| Wind Grace                  | combined | move speed · evasion               | 56  |
 
 Plus three PARTY ECHOES — `War Frenzy` @56, `War Might` / `War Bulwark` @74 — each handing the whole
 party what its single-target version gives one ally.
@@ -3893,12 +3997,12 @@ the basic layer. That is the whole reason the tier exists.
 **MP is `60 × 1.1^i` per buff inside**, summed: 60 / 66 / 73 / 80 / 88 / 97, so the ladders total
 60 / 126 / 199 / 279 / 367 / 464.
 
-| harmony | rungs | ends |
-|---|---|---|
+| harmony                | rungs                 | ends                                                                         |
+| ---------------------- | --------------------- | ---------------------------------------------------------------------------- |
 | Harmony of the Warrior | 6 @ 40/44/48/56/58/74 | double crit rate, +35% crit dmg, +4 acc, +12% P.Atk, +15% atk speed, 8% vamp |
-| Harmony of Protection | 5 @ 44/52/56/66/74 | +30% M.Def, +20% HP regen, +25% P.Def, +30% Max HP, 20% melee reflect |
-| Harmony of Speed | 2 @ 48/58 | +20 move, +3 evasion — **and it stops** |
-| Harmony of the Wizard | 2 @ 48/52 | +10% M.Atk, +30% cast — **continues in `buffer 4th.csv`** |
+| Harmony of Protection  | 5 @ 44/52/56/66/74    | +30% M.Def, +20% HP regen, +25% P.Def, +30% Max HP, 20% melee reflect        |
+| Harmony of Speed       | 2 @ 48/58             | +20 move, +3 evasion — **and it stops**                                      |
+| Harmony of the Wizard  | 2 @ 48/52             | +10% M.Atk, +30% cast — **continues in `buffer 4th.csv`**                    |
 
 ⚠ **Speed stopping at 58 and the Wizard at 52 is a RULING, not an unfinished ladder** (*"The speed one
 stops - no more buffs for it; Wizard continue in Buffer 4th"*). The Wizard's old +20% MP regen and
@@ -4123,12 +4227,12 @@ and `√mAtk / mDef` is our own magic ratio on top. IG never chose between "a sh
 
 **Measured**, not argued — two new columns in `tools/BalanceMatrix -- --mana-ray`:
 
-| target | pool | D pool share | E' IG shape, renormalised |
-|---|---:|---|---|
-| tank | 696 | 100 · 14% · 7.0× | 96 · 14% · 7.2× |
-| champion | 696 | 100 · 14% · 7.0× | 107 · 15% · 6.5× |
-| nuker | 2662 | 385 · 14% · 6.9× | 378 · 14% · 7.0× |
-| healer | 3158 | 457 · 14% · 6.9× | 449 · 14% · 7.0× |
+| target   | pool | D pool share     | E' IG shape, renormalised |
+| -------- | ---: | ---------------- | ------------------------- |
+| tank     |  696 | 100 · 14% · 7.0× | 96 · 14% · 7.2×           |
+| champion |  696 | 100 · 14% · 7.0× | 107 · 15% · 6.5×          |
+| nuker    | 2662 | 385 · 14% · 6.9× | 378 · 14% · 7.0×          |
+| healer   | 3158 | 457 · 14% · 6.9× | 449 · 14% · 7.0×          |
 
 The fairness invariant survives the IG shape (±8%: "7 casts to zero anyone" becomes 6.5–7.2) because
 M.Def is nearly flat across classes at 74, and it would have bought back a gear axis (×2 M.Atk →
@@ -4177,11 +4281,11 @@ rung ids underneath six families moved (below).
 Three races, one job, and the split happens **exactly twice** — once on the fast heal and once on the
 control debuff. Everything else in the 40-74 kit is shared.
 
-| | Human | Elf | Ork |
-|---|---|---|---|
-| its heal | **Quick Great Heal** — Great Heal's power on a 2s cast for 1.5x the MP | **Healer Blessing** — heals less, and cures bleed/poison up to a rank that climbs 3 → 9 | **Healing Totem** — planted ground, +64 → 150 HP/s for 30s |
-| its debuff | **Gravity** — −7 → −23% attack AND cast speed | **Bind** — a 30s hold at every rung | **Armor Break** — −10 → −30% P.Def, −5 → −15% M.Def |
-| extra | — | — | **Mana Totem** from 52 — +10 → 20 MP/s |
+|            | Human                                                                  | Elf                                                                                     | Ork                                                        |
+| ---------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| its heal   | **Quick Great Heal** — Great Heal's power on a 2s cast for 1.5x the MP | **Healer Blessing** — heals less, and cures bleed/poison up to a rank that climbs 3 → 9 | **Healing Totem** — planted ground, +64 → 150 HP/s for 30s |
+| its debuff | **Gravity** — −7 → −23% attack AND cast speed                          | **Bind** — a 30s hold at every rung                                                     | **Armor Break** — −10 → −30% P.Def, −5 → −15% M.Def        |
+| extra      | —                                                                      | —                                                                                       | **Mana Totem** from 52 — +10 → 20 MP/s                     |
 
 **Twelve new skills**: Urgent Heal (a % of the target's OWN max HP, four rungs and then it stops for
 good — that is why it stays relevant at 74), Ultimate Heal and Ultimate Party Heal (Skill Stones, 1
@@ -4282,24 +4386,24 @@ has **zero MP dips, zero SP dips, and zero repeated descriptions** (machine-chec
 whose M.Atk is flat but whose regen climbs is fine, which is why Healer Weapon Mastery was left alone
 and Healer Armor Mastery (whose 48/52 pair improved in *nothing*) was not.
 
-| | was | now |
-|---|---|---|
-| Gravity 66-74 | flat 23% | the +2 stride continues → **25/27/29/31/33%** |
-| Armor Break 68-74 | flat 30% / 15% | **32/34/36/38%** P.Def, half that M.Def |
-| Armor Break @56 | 18% / **10%** (duplicating @58) | **9%** — M.Def is exactly half P.Def at every other rung |
-| Holy Ray @52 | 52 (duplicating @48) | **57**, continuing +5 and smoothing the +11 jump to 63 |
-| Quick Great Heal @72 | power 820 (duplicating @70) | **840** |
-| Mana Totem 64-72 | 14,15,16,17,18 with a flat pair | **15,16,17,18,19** — a clean +1 line, 10→20 |
-| Healer Armor Mastery @48 | pDef 50 (duplicating @52) | **47**, giving 39/44/47/50/53 |
-| Antidote @74 | MP 42 | **64** |
-| Mana Ray @68 | SP 280k (repeating @66) | **320k**, the band ladder |
-| Restore Mana @44 | DESCR 77 vs MP column 79 | **77** — the column moved to the text, per rule 4. The one lossy transfer in the game is gone |
-| Meditation @68 | MP 52 (repeating @64) | **57** |
-| Great Heal / Healer Blessing @74 | MP 117 | **120** |
-| Party Great Heal 72/74 · Ultimate Party Heal 72/74 | MP 228 | **234 / 240** |
-| Quick Great Heal @74 · Ultimate Heal @74 | MP 175 / 114 | **180 / 120** |
-| Ultimate Heal @72 | MP 114 | **117** |
-| Healing Totem · Mana Totem @74 | MP 464 | **476** |
+|                                                    | was                             | now                                                                                           |
+| -------------------------------------------------- | ------------------------------- | --------------------------------------------------------------------------------------------- |
+| Gravity 66-74                                      | flat 23%                        | the +2 stride continues → **25/27/29/31/33%**                                                 |
+| Armor Break 68-74                                  | flat 30% / 15%                  | **32/34/36/38%** P.Def, half that M.Def                                                       |
+| Armor Break @56                                    | 18% / **10%** (duplicating @58) | **9%** — M.Def is exactly half P.Def at every other rung                                      |
+| Holy Ray @52                                       | 52 (duplicating @48)            | **57**, continuing +5 and smoothing the +11 jump to 63                                        |
+| Quick Great Heal @72                               | power 820 (duplicating @70)     | **840**                                                                                       |
+| Mana Totem 64-72                                   | 14,15,16,17,18 with a flat pair | **15,16,17,18,19** — a clean +1 line, 10→20                                                   |
+| Healer Armor Mastery @48                           | pDef 50 (duplicating @52)       | **47**, giving 39/44/47/50/53                                                                 |
+| Antidote @74                                       | MP 42                           | **64**                                                                                        |
+| Mana Ray @68                                       | SP 280k (repeating @66)         | **320k**, the band ladder                                                                     |
+| Restore Mana @44                                   | DESCR 77 vs MP column 79        | **77** — the column moved to the text, per rule 4. The one lossy transfer in the game is gone |
+| Meditation @68                                     | MP 52 (repeating @64)           | **57**                                                                                        |
+| Great Heal / Healer Blessing @74                   | MP 117                          | **120**                                                                                       |
+| Party Great Heal 72/74 · Ultimate Party Heal 72/74 | MP 228                          | **234 / 240**                                                                                 |
+| Quick Great Heal @74 · Ultimate Heal @74           | MP 175 / 114                    | **180 / 120**                                                                                 |
+| Ultimate Heal @72                                  | MP 114                          | **117**                                                                                       |
+| Healing Totem · Mana Totem @74                     | MP 464                          | **476**                                                                                       |
 
 🔑 **THREE IDENTITIES IN HIS OWN FILE MADE MOST OF THIS DETERMINATE RATHER THAN GUESSWORK**, and they
 are worth knowing before anyone retunes these: **Party Great Heal MP = 2 × Great Heal MP** · **Ultimate
@@ -4344,12 +4448,12 @@ they are sitting targets to your 80% mp"*.
 
 Four models were measured (`tools/BalanceMatrix -- --mana-ray`, added here). Casts-to-zero at power 165:
 
-| model | tank | champion | nuker | healer |
-|---|---|---|---|---|
-| A the magic pipeline (what shipped) | **1.4×** | **1.3×** | 5.8× | 6.9× |
-| B flat ÷ mRes | 5.1× | 5.1× | **21.1×** | **25.1×** |
-| C flat × mRes ("mana punishment") | **3.5×** | **3.5×** | 12.4× | 14.8× |
-| **D share of the target's max MP** ✅ | 6.1× | 6.1× | 6.1× | 6.1× |
+| model                                | tank     | champion | nuker     | healer    |
+| ------------------------------------ | -------- | -------- | --------- | --------- |
+| A the magic pipeline (what shipped)  | **1.4×** | **1.3×** | 5.8×      | 6.9×      |
+| B flat ÷ mRes                        | 5.1×     | 5.1×     | **21.1×** | **25.1×** |
+| C flat × mRes ("mana punishment")    | **3.5×** | **3.5×** | 12.4×     | 14.8×     |
+| **D share of the target's max MP** ✅ | 6.1×     | 6.1×     | 6.1×      | 6.1×      |
 
 🔑 **Magic resistance cannot fix this, and that is measured, not argued.** He proposed hypothetical
 20%/30% resistances to rescue model A; they moved the tank from 1.2 to **1.4** casts. Pushed to
@@ -4435,11 +4539,11 @@ Everything now goes through one helper, `GameLoopService.EffectiveMpCost` = auth
 `MpCostFactor`, and `MpCostFactor` runs **0.2× to 3×** (the reduction is clamped to `[-2, +0.8]`), not
 0.2×-1×. His worked example, which is now literally what happens:
 
-| caster | 100-MP skill costs | can cast at |
-|---|---|---|
-| plain | 100 | 100 MP |
-| −20% MP cost | 80 | 80 MP |
-| ×3 MP debuff | 300 | **300 MP** |
+| caster       | 100-MP skill costs | can cast at |
+| ------------ | ------------------ | ----------- |
+| plain        | 100                | 100 MP      |
+| −20% MP cost | 80                 | 80 MP       |
+| ×3 MP debuff | 300                | **300 MP**  |
 
 The 20% up front is sliced off that effective number, and the finish charge is the **remainder** of it
 (`effective − CastInitialMpPaid`) rather than a second independently-rounded 80% — so the two halves
@@ -4465,11 +4569,11 @@ server-side and lands on the running server immediately.
 His ruling: *"magic weapon only is removed and it become a sword/blunt x1/x1 (no penalty) (bow/duals
 stay)"*. `Spellcaster Mastery` used to have three weapon cases; it has two.
 
-| held | before | now |
-|---|---|---|
-| wand / staff | cast ×1, M.Atk ×1 | unchanged |
-| **sword / mace** | cast ×1, **M.Atk ×0.6** | **cast ×1, M.Atk ×1** |
-| bow / dagger / bare | cast ×0.5, M.Atk ×0.5, ×25 fizzle | unchanged |
+| held                | before                            | now                   |
+| ------------------- | --------------------------------- | --------------------- |
+| wand / staff        | cast ×1, M.Atk ×1                 | unchanged             |
+| **sword / mace**    | cast ×1, **M.Atk ×0.6**           | **cast ×1, M.Atk ×1** |
+| bow / dagger / bare | cast ×0.5, M.Atk ×0.5, ×25 fizzle | unchanged             |
 
 🔑 **Why it was wrong twice over:** the item catalogue ALREADY prices this choice — a sword carries a low
 authored M.Atk and rolls no cast-speed attribute — so the class rule was charging a second time for a
@@ -4492,10 +4596,10 @@ That is the only place the `divine_focus` literal survives.
 
 At 40 the two shared cleric masteries fork. **The healer replaces them; the buffer continues them.**
 
-| | healer (Lightbringer) | buffer (Warchanter) |
-|---|---|---|
+|        | healer (Lightbringer)                                                                      | buffer (Warchanter)                        |
+| ------ | ------------------------------------------------------------------------------------------ | ------------------------------------------ |
 | weapon | **Healer Weapon Mastery** — *"Removed the P.Atk bonus and made it only for magic weapons"* | Spell Mastery rung 5 (keeps the +18 P.Atk) |
-| armor | **Healer Armor Mastery** — *"Removed the Light Armor bonus"*, robe only | Armor Mastery rung 5 (keeps the light row) |
+| armor  | **Healer Armor Mastery** — *"Removed the Light Armor bonus"*, robe only                    | Armor Mastery rung 5 (keeps the light row) |
 
 Both new skills carry his full 9-rung ladder (@40/44/48/52/56/58/60/62/64) and his SP prices
 (36k…190k). A pure healer's kit is now a **wand and a robe**, and that is expressed as a bonus he
@@ -4568,10 +4672,10 @@ says the CSV itself looks wrong — conflating them would break the rule the fil
 
 His numbers, both rungs verbatim:
 
-| rung | learned by | Max HP/MP | P.Atk / M.Atk | atk & cast speed | move | evasion |
-|---|---|---|---|---|---|---|
-| **L1** | cleric @35 | **−7%** | **+5%** | +5% | +5 | −5 |
-| **L2** | healer + buffer @52 | **−10%** | **+8%** | +8% | +8 | −8 |
+| rung   | learned by          | Max HP/MP | P.Atk / M.Atk | atk & cast speed | move | evasion |
+| ------ | ------------------- | --------- | ------------- | ---------------- | ---- | ------- |
+| **L1** | cleric @35          | **−7%**   | **+5%**       | +5%              | +5   | −5      |
+| **L2** | healer + buffer @52 | **−10%**  | **+8%**       | +8%              | +8   | −8      |
 
 🔑 **WHY 8% AND NOT IG'S 16%:** IG's Frenzy reads +16% M.Atk / +8% P.Atk, but IG applies magic buffs
 under a **√** — √1.16 = ×1.077 — so its real effect is ~7.7%. Ours stores the **honest** percent
@@ -4712,24 +4816,24 @@ his ×1.6 on every pulse — his own worked example (10/s → 16/s, ~30/s → 48
 His anchor is the top rung: `120 + 80 = 200` and `125 × 1.6 = 200`, so **+80 flat → +60%**, and 60/80
 = 0.75 applied to the whole ladder keeps its shape ("keep the linear feel"):
 
-| rung @ char | 20 | 25 | 30 | 35 | 40 | 50 | 60 | 70 |
-|---|---|---|---|---|---|---|---|---|
-| was (flat MP) | +25 | +30 | +35 | +40 | +50 | +60 | +70 | +80 |
+| rung @ char   | 20   | 25   | 30   | 35   | 40   | 50   | 60   | 70       |
+| ------------- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | -------- |
+| was (flat MP) | +25  | +30  | +35  | +40  | +50  | +60  | +70  | +80      |
 | now (percent) | +19% | +23% | +26% | +30% | +38% | +45% | +53% | **+60%** |
 
 ### 🔴 MEASURED — the conversion is anchored at 80 and costs a LOT below it
 
 `BalanceMatrix` E3, delivered MP per Restore Spirit cast:
 
-| lvl | base | ×mast | now | flat before | Δ |
-|---|---|---|---|---|---|
-| 25 | 20 | 1.23 | **25** | 50 | **−50%** |
-| 36 | 20 | 1.30 | **26** | 60 | **−57%** |
-| 44 | 45 | 1.38 | **62** | 95 | **−35%** |
-| 52 | 65 | 1.45 | **94** | 125 | **−25%** |
-| 60 | 85 | 1.53 | **130** | 155 | −16% |
-| 70 | 105 | 1.60 | **168** | 185 | −9% |
-| 80 | 120 | 1.60 | **192** | 200 | **−4%** ← his anchor, and *"nothing is lost"* holds here |
+| lvl | base | ×mast | now     | flat before | Δ                                                        |
+| --- | ---- | ----- | ------- | ----------- | -------------------------------------------------------- |
+| 25  | 20   | 1.23  | **25**  | 50          | **−50%**                                                 |
+| 36  | 20   | 1.30  | **26**  | 60          | **−57%**                                                 |
+| 44  | 45   | 1.38  | **62**  | 95          | **−35%**                                                 |
+| 52  | 65   | 1.45  | **94**  | 125         | **−25%**                                                 |
+| 60  | 85   | 1.53  | **130** | 155         | −16%                                                     |
+| 70  | 105  | 1.60  | **168** | 185         | −9%                                                      |
+| 80  | 120  | 1.60  | **192** | 200         | **−4%** ← his anchor, and *"nothing is lost"* holds here |
 
 That is inherent to the change, not a tuning slip: a flat bonus is worth relatively MORE the smaller
 the base, so +25 on a 20 MP restore was more than doubling it and no sane percent can match that.
@@ -4818,11 +4922,11 @@ exactly 20% off Insight alone — he was pinned to the cap, so the 4th-class cri
 authored would have bought him **nothing**, and raising the cap later would have bought him nothing
 either. At 40 (measured, `BalanceMatrix`, and matching all four of his targets):
 
-| WIT | who | bare | ×2 Insight | ×4 (Insight + the 4th-class buff) |
-|---|---|---|---|---|
-| 30 | elf mage + set +2 + swap +5 | **8.0%** | **16.0%** | **32.0%** → capped at 20% |
-| 27 | human, same kit | 6.8% | 13.6% | 27.2% → capped |
-| 26 | ork, same kit | 6.4% | 12.8% | 25.6% → capped |
+| WIT | who                         | bare     | ×2 Insight | ×4 (Insight + the 4th-class buff) |
+| --- | --------------------------- | -------- | ---------- | --------------------------------- |
+| 30  | elf mage + set +2 + swap +5 | **8.0%** | **16.0%**  | **32.0%** → capped at 20%         |
+| 27  | human, same kit             | 6.8%     | 13.6%      | 27.2% → capped                    |
+| 26  | ork, same kit               | 6.4%     | 12.8%      | 25.6% → capped                    |
 
 His asks were "7-8% bare", "15-16% with Insight only", "31% at ×4", and "humans/orks over 20% at ×4".
 All four hold (the ×4 elf figure is 32, not 31 — the rounder base 40 was preferred to a 38.75 that
@@ -4906,8 +5010,8 @@ by moving `CcLevelFloorGap` alone; move the clamp and the curve follows it.
 `MagicFailMax` clamps, so **the level at which your spells stop landing and the level at which your
 control stops landing are now the same level.**
 
-| Δlvl | −18 | −10 | −5 | **0** | +5 | +10 | +13 | **+18** |
-|---|---|---|---|---|---|---|---|---|
+| Δlvl        | −18 | −10   | −5    | **0**   | +5    | +10   | +13   | **+18** |
+| ----------- | --- | ----- | ----- | ------- | ----- | ----- | ----- | ------- |
 | equal stats | 90% | 77.2% | 64.8% | **50%** | 35.2% | 22.8% | 17.0% | **10%** |
 
 ### All THREE contest stats are now flat and authored by ROLE
@@ -4927,21 +5031,21 @@ only fires on a `CanDouble` skill — no mob skill is one today.
 "Normal ranges" is also the domain the rest of the math assumes: `PAtkStatReference` is 40 and
 `PhysicalDoubleChance` caps at 60, so a mob at 168 was outside the reach of its own formulas.
 
-| role | ATK | its stun on a fighter / a mage |
-|---|---|---|
-| Melee, Archer | 40 | 48.2% / 59.7% |
-| Mage | 45 | 51.1% / 62.5% (slow: 64.3% / 53.6%) |
+| role          | ATK    | its stun on a fighter / a mage          |
+| ------------- | ------ | --------------------------------------- |
+| Melee, Archer | 40     | 48.2% / 59.7%                           |
+| Mage          | 45     | 51.1% / 62.5% (slow: 64.3% / 53.6%)     |
 | **BOSS** (×2) | **80** | **65.0% / 74.8%** (slow: 76.2% / 67.2%) |
 
 A boss's Devastating Slam lands at 65% on a fighter — down from the ~80% the runaway curve gave it, and
 restored to a real threat by the rank multiplier rather than by the level term.
 
-| role | CON | SPT | ATK | stun/bleed *on* it | root/hold *on* it |
-|---|---|---|---|---|---|
-| Melee (fighter) | 45 | 38 | 40 | 47.1% | 51.3% |
-| Archer | 43 | 40 | 40 | 48.2% | 50.0% |
-| Mage | 40 | **58** | **45** | 50.0% | 40.8% |
-| tank | **50** | 40 | 40 | 44.4% | 50.0% |
+| role            | CON    | SPT    | ATK    | stun/bleed *on* it | root/hold *on* it |
+| --------------- | ------ | ------ | ------ | ------------------ | ----------------- |
+| Melee (fighter) | 45     | 38     | 40     | 47.1%              | 51.3%             |
+| Archer          | 43     | 40     | 40     | 48.2%              | 50.0%             |
+| Mage            | 40     | **58** | **45** | 50.0%              | 40.8%             |
+| tank            | **50** | 40     | 40     | 44.4%              | 50.0%             |
 
 (vs a level-matched ATK 40 attacker.) The lean is his own defensive rule turned around — a fighter
 shrugs off stuns and eats holds, a caster is the reverse — and the mage leans highest on ATK because a
@@ -4963,10 +5067,10 @@ atk/con/spt stats increase so it will give them more resists/chance .. bosses ca
 *bigger* creature rather than merely a tougher one: it is harder to hold **and** lands its own control
 harder, off one number.
 
-| at parity, ATK 40 vs a melee | normal | elite ×1.33 | boss ×2 |
-|---|---|---|---|
-| your bleed lands | 47.1% | 40.0% | **30.8%** |
-| its stun lands on a fighter | 48.2% | 55.2% | **65.0%** |
+| at parity, ATK 40 vs a melee | normal | elite ×1.33 | boss ×2   |
+| ---------------------------- | ------ | ----------- | --------- |
+| your bleed lands             | 47.1%  | 40.0%       | **30.8%** |
+| its stun lands on a fighter  | 48.2%  | 55.2%       | **65.0%** |
 
 - **Boss** takes the ×2 **and** a hard **zero** for control — stun, root, fear and slow never land, at
   any stat, at any level. The two are not alternatives. Everything else it is merely very resistant to,
@@ -5000,13 +5104,13 @@ own stand in (so a boss's slam still fires at its own level).
 ⚠ **This expires every CC skill in the game today, and he took that knowingly.** All five learnable ones
 are single-rung; the floor is Δ+18, so:
 
-| skill | rungs | learn | its top rung floors at |
-|---|---|---|---|
-| Shield Stun | 1 | 28 | target lvl **46+** |
-| Stay! | 1 | 36 | target lvl **54+** |
-| Frost Bind | 1 | 40 | target lvl **58+** |
-| Entangling Roots | 1 | 40 | target lvl **58+** |
-| Creeping Frost | 1 | 44 | target lvl **62+** |
+| skill            | rungs | learn | its top rung floors at |
+| ---------------- | ----- | ----- | ---------------------- |
+| Shield Stun      | 1     | 28    | target lvl **46+**     |
+| Stay!            | 1     | 36    | target lvl **54+**     |
+| Frost Bind       | 1     | 40    | target lvl **58+**     |
+| Entangling Roots | 1     | 40    | target lvl **58+**     |
+| Creeping Frost   | 1     | 44    | target lvl **62+**     |
 
 He chose this over an auto-switch, because the ladders are the next authoring job. **The fix is a CSV,
 not code**: give a skill more rungs and it stops expiring, with nothing to change here.
@@ -5033,13 +5137,13 @@ than one, so summing needs no per-class branch.
 ⚠ **This is a real damage change, not bookkeeping** — `EffectiveAtk` multiplies the weapon in
 `PhysicalAttackPower` and `MagicAttackStatScaled`. Measured on BalanceMatrix, best-gear, before → after:
 
-| | before | after | |
-|---|---|---|---|
-| tank TTK @52 | 10.4s | **9.7s** | −7% |
-| champion TTK @52 | 8.0s | **7.5s** | −6% |
-| nuker M.Atk @85 | 1690 | **1814** | +7.3% |
-| nuker TTK @85 | 27.7s | **26.0s** | −6% |
-| rogue TTK @52 | 5.8s | **5.9s** | **+2%** |
+|                  | before | after     |         |
+| ---------------- | ------ | --------- | ------- |
+| tank TTK @52     | 10.4s  | **9.7s**  | −7%     |
+| champion TTK @52 | 8.0s   | **7.5s**  | −6%     |
+| nuker M.Atk @85  | 1690   | **1814**  | +7.3%   |
+| nuker TTK @85    | 27.7s  | **26.0s** | −6%     |
+| rogue TTK @52    | 5.8s   | **5.9s**  | **+2%** |
 
 🔑 **The rogue getting *worse* is the sheets working.** `Nightleaf 52` authors `Str: -1` — the light set
 trades a point of power for its AGI — and now that STR lands, the trade is real in both directions. Every
@@ -5063,12 +5167,12 @@ The four authored rungs were **~25-30% above his own sheet** and nothing caught 
 compares learn level, range, cast, cooldown, duration, MP and SP — **not power**, which lives in the
 free-text `DESCR` column. This is the drift that gap was always going to produce.
 
-| skill | his 20/25/30/35 | code carried | continued to (80) | was |
-|---|---|---|---|---|
-| Elemental Bolt | 26/32/38/44 | 37/44/50/57 | **98** | 116 |
-| Vampiric Bolt (+21 @14) | 26/32/38/44 | 37/44/50/57 | **98** | 116 |
-| Quick Bolt | 21/26/30/36 | 30/35/40/46 | **81** | 93 |
-| Magic Bolt @7 / @14 | 15 / 21 | 17 / 24 | — | — |
+| skill                   | his 20/25/30/35 | code carried | continued to (80) | was |
+| ----------------------- | --------------- | ------------ | ----------------- | --- |
+| Elemental Bolt          | 26/32/38/44     | 37/44/50/57  | **98**            | 116 |
+| Vampiric Bolt (+21 @14) | 26/32/38/44     | 37/44/50/57  | **98**            | 116 |
+| Quick Bolt              | 21/26/30/36     | 30/35/40/46  | **81**            | 93  |
+| Magic Bolt @7 / @14     | 15 / 21         | 17 / 24      | —                 | —   |
 
 🔑 **His four points are exactly linear**, so rungs 5-13 are not invented — they are his own line continued:
 Elemental/Vampiric `26 + 1.2 per character level`, Quick Bolt `21 + 1.0`, which holds Quick Bolt at ~81% of
@@ -5177,14 +5281,14 @@ them**: the `Math.Max(44, …)` P.Def floor (a corner at ~level 10) and the 57-n
 M.Atk table (a slope change at every node). Verified off the compiled code across levels 1-95: **zero
 decreasing steps**, and the only second-difference wobble is ±1 from integer truncation.
 
-| lvl | P.Def | M.Def | P.Atk | M.Atk |
-|---|---|---|---|---|
-| 1  | 44 → **38** | 30 → **29** | 4 → **7** | 2 → **3** |
-| 20 | 84 → **101** | 63 → **82** | 48 → **63** | 32 → **29** |
-| 40 | 168 → **214** | 126 → **174** | 171 → **283** | 118 → **146** |
-| 60 | 251 → **385** | 189 → **311** | 529 → **873** | 370 → **486** |
-| 80 | 336 → **624** | 252 → **498** | 1,321 → **2,152** | 929 → **1,277** |
-| 85 | 356 → **695** | 268 → **554** | 1,627 → **2,629** | 1,145 → **1,582** |
+| lvl | P.Def         | M.Def         | P.Atk             | M.Atk             |
+| --- | ------------- | ------------- | ----------------- | ----------------- |
+| 1   | 44 → **38**   | 30 → **29**   | 4 → **7**         | 2 → **3**         |
+| 20  | 84 → **101**  | 63 → **82**   | 48 → **63**       | 32 → **29**       |
+| 40  | 168 → **214** | 126 → **174** | 171 → **283**     | 118 → **146**     |
+| 60  | 251 → **385** | 189 → **311** | 529 → **873**     | 370 → **486**     |
+| 80  | 336 → **624** | 252 → **498** | 1,321 → **2,152** | 929 → **1,277**   |
+| 85  | 356 → **695** | 268 → **554** | 1,627 → **2,629** | 1,145 → **1,582** |
 
 - ✅ **HP is deliberately untouched** — his ruling. Our base HP shape measures 0.87 → 1.08 of IG's from
   40 up. His *"the 80 mobs should have 15k not 5"* is real but it is **not this curve**: 77% of IG
@@ -5198,15 +5302,15 @@ decreasing steps**, and the only second-difference wobble is ±1 from integer tr
 
 ### What it did to the game — `BalanceMatrix`, before and after
 
-| | before | after |
-|---|---|---|
-| Champion TTK on a same-level creature, L60 / L80 | 20.5s / 17.9s | **31.4s / 33.2s** |
-| Creature DPS onto that champion, L60 / L80 | 47 / 71 | **77 / 116** |
-| Tank survives standing still, L20 / L52 | 133s / 109s | **104s / 65s** |
-| Kills before the HP bar empties, L52 champion / nuker | 26 / 6 | **9 / 2** |
-| Field boss TTK, 3 DD, L60 / L76 / L85 | 11.4 / 14.8 / 11.6 min | **17.4 / 26.4 / 22.6 min** |
-| Kills per hour, S band | 75 | **65** |
-| Full S-grade character, farm hours (`M12c`) | 347h | **603h** |
+|                                                       | before                 | after                      |
+| ----------------------------------------------------- | ---------------------- | -------------------------- |
+| Champion TTK on a same-level creature, L60 / L80      | 20.5s / 17.9s          | **31.4s / 33.2s**          |
+| Creature DPS onto that champion, L60 / L80            | 47 / 71                | **77 / 116**               |
+| Tank survives standing still, L20 / L52               | 133s / 109s            | **104s / 65s**             |
+| Kills before the HP bar empties, L52 champion / nuker | 26 / 6                 | **9 / 2**                  |
+| Field boss TTK, 3 DD, L60 / L76 / L85                 | 11.4 / 14.8 / 11.6 min | **17.4 / 26.4 / 22.6 min** |
+| Kills per hour, S band                                | 75                     | **65**                     |
+| Full S-grade character, farm hours (`M12c`)           | 347h                   | **603h**                   |
 
 - ✅ **`BL-13` lands without touching a boss.** His playtest-25 ruling was *10-30 minutes*; field bosses
   now sit inside it at every level, because a boss's defence *is* the base curve (rank multiplies HP and
@@ -5482,13 +5586,13 @@ player-built creature stands north and its **curve twin** — an ordinary `MobBa
 same level, no passives, holding the same weapon — stands directly south. Nothing is aggressive and
 nothing drops loot: you pick the fight and the only thing that changes hands is exp.
 
-| # | Creature | Lv | Race lean (±5) | Loadout | Passive |
-|---|---|---|---|---|---|
-| 1 | Goblin Raider | 40 | +5 CON / +5 ATK / −5 AGI | t40 Rare 2H sword over t1 Uncommon heavy | **none** |
-| 2 | Goblin Elder Raider | 45 | same | **identical to #1** | **none** |
-| 3 | Cairn Lich | 60 | −5 CON / +5 WIT | t52 Common staff +30 over t1 Epic robe | HP ×3.73, P.Def ×1.02, M.Def ×0.78, M.Atk ×0.97 |
-| 4 | Fallen Seraph | 80 | +5 AGI / −5 CON | t80 Epic 2H sword +16 over t52 Common heavy | HP ×1.46, P.Def ×1.05, M.Def ×0.61, **P.Atk ×2.07** |
-| 5 | Fallen Seraph, Runebearer | 80 | same | **identical to #4** + a held War Rune | same, **no attack passive** |
+| #   | Creature                  | Lv  | Race lean (±5)           | Loadout                                     | Passive                                             |
+| --- | ------------------------- | --- | ------------------------ | ------------------------------------------- | --------------------------------------------------- |
+| 1   | Goblin Raider             | 40  | +5 CON / +5 ATK / −5 AGI | t40 Rare 2H sword over t1 Uncommon heavy    | **none**                                            |
+| 2   | Goblin Elder Raider       | 45  | same                     | **identical to #1**                         | **none**                                            |
+| 3   | Cairn Lich                | 60  | −5 CON / +5 WIT          | t52 Common staff +30 over t1 Epic robe      | HP ×3.73, P.Def ×1.02, M.Def ×0.78, M.Atk ×0.97     |
+| 4   | Fallen Seraph             | 80  | +5 AGI / −5 CON          | t80 Epic 2H sword +16 over t52 Common heavy | HP ×1.46, P.Def ×1.05, M.Def ×0.61, **P.Atk ×2.07** |
+| 5   | Fallen Seraph, Runebearer | 80  | same                     | **identical to #4** + a held War Rune       | same, **no attack passive**                         |
 
 **What it already answered** (new `BalanceMatrix` section **`G3.8`**, each creature divided by its twin):
 
@@ -6015,14 +6119,14 @@ tradable materials.
 geared if we add the disassembly this should not go to 20h .. 10~20% decrease in time should be ok"* —
 and **the S row cannot be moved by this feature at all**, at any tuning:
 
-| rung | before | after | change |
-|---|---|---|---|
-| E | 5.7h | 5.5h | −3% |
-| D | 26.3h | 23.8h | **−10%** |
-| C | 20.1h | 16.5h | **−18%** |
-| B | 47.7h | 47.5h | −0% |
-| A | 65.3h | 65.3h | −0% |
-| S | **347h** | **347h** | **−0%** |
+| rung | before   | after    | change   |
+| ---- | -------- | -------- | -------- |
+| E    | 5.7h     | 5.5h     | −3%      |
+| D    | 26.3h    | 23.8h    | **−10%** |
+| C    | 20.1h    | 16.5h    | **−18%** |
+| B    | 47.7h    | 47.5h    | −0%      |
+| A    | 65.3h    | 65.3h    | −0%      |
+| S    | **347h** | **347h** | **−0%**  |
 
 Because *"rarity for mats rarity"* means salvage can only pay the rarity of the gear that **drops**,
 and gear rarity is capped by **rank, not band**: a normal mob stops at Epic and an **elite stops at
@@ -6119,14 +6223,14 @@ commit. Nothing fails loudly when it is missing — the skill just quietly stops
 🔴 He **re-specced this entirely**; the old entry was self-based (*"you cannot res a party member while
 YOU are flagged"*) and is superseded. The new rule is **target-based**:
 
-| situation | rule |
-|---|---|
-| single-target support of a **non-party** player | allowed **if they are not pvp/pk** |
-| target **is** pvp/pk | allowed **only** from inside their party |
-| supporting a still-flagged player | 🔑 **flags you** |
-| party invite to a pvp/pk player | allowed |
-| trade | allowed with **pvp**, **never** with pk |
-| res in the same party | allowed for **both** |
+| situation                                       | rule                                     |
+| ----------------------------------------------- | ---------------------------------------- |
+| single-target support of a **non-party** player | allowed **if they are not pvp/pk**       |
+| target **is** pvp/pk                            | allowed **only** from inside their party |
+| supporting a still-flagged player               | 🔑 **flags you**                          |
+| party invite to a pvp/pk player                 | allowed                                  |
+| trade                                           | allowed with **pvp**, **never** with pk  |
+| res in the same party                           | allowed for **both**                     |
 
 ⚠ This **opens** something that used to be shut: support was party-only, and anything else fell
 through to a self-cast. Helping a passing stranger is legal now, and the flag is what prices it —
@@ -6161,10 +6265,10 @@ makes the anti-physical half mean something rather than just "no resist".
 and no mob in the game was anti-physical. Two shared presets now carry it, so it reads as a pattern
 instead of eight hand-tuned numbers:
 
-| | P.Def | M.Def | mRes | who |
-|---|---|---|---|---|
-| **Warded** (anti-magic) | ×0.8 | ×1.5 | +20% | Grave Lich 44 · Aether Wisp 58 · Spiteful Ghost 66 |
-| **Ironhide** (anti-physical) | ×1.5 | ×0.8 | **−20%** | Shield Skeleton 20 · Fomor Brute 45 · Dread Knight 65 |
+|                              | P.Def | M.Def | mRes     | who                                                   |
+| ---------------------------- | ----- | ----- | -------- | ----------------------------------------------------- |
+| **Warded** (anti-magic)      | ×0.8  | ×1.5  | +20%     | Grave Lich 44 · Aether Wisp 58 · Spiteful Ghost 66    |
+| **Ironhide** (anti-physical) | ×1.5  | ×0.8  | **−20%** | Shield Skeleton 20 · Fomor Brute 45 · Dread Knight 65 |
 
 Watcher Eye (26) keeps its own steeper 2.0/0.5 — it is the archetype's namesake — and gains the mRes
 half. Obsidian Knight (63) takes a Magic Resistance **L5** on its existing Stoneplate mastery, so the
@@ -6190,14 +6294,14 @@ nothing is nerfed, and the mobs that were silently slowed get their lost damage 
 
 Measured at level 40 against a same-level geared champion (`BalanceMatrix`, new section):
 
-| weapon | atk base | pwr × | P.Atk | crit | dps |
-|---|---|---|---|---|---|
-| Dual (claws) | 433 | ×1.00 | 171 | **13.2%** | 16.5 |
-| Sword | 379 | ×1.14 | 195 | 8.8% | 16.4 |
-| Blunt (club) | 379 | ×1.14 | 195 | 4.4% | 15.8 |
-| 2H Sword | 325 | ×1.33 | **227** | 8.8% | 16.0 |
-| Bow | 293 | ×1.00 | 171 | 13.2% | 11.2 |
-| none | 300 | ×1.44 | 246 | 11.0% | 16.3 |
+| weapon       | atk base | pwr × | P.Atk   | crit      | dps  |
+| ------------ | -------- | ----- | ------- | --------- | ---- |
+| Dual (claws) | 433      | ×1.00 | 171     | **13.2%** | 16.5 |
+| Sword        | 379      | ×1.14 | 195     | 8.8%      | 16.4 |
+| Blunt (club) | 379      | ×1.14 | 195     | 4.4%      | 15.8 |
+| 2H Sword     | 325      | ×1.33 | **227** | 8.8%      | 16.0 |
+| Bow          | 293      | ×1.00 | 171     | 13.2%     | 11.2 |
+| none         | 300      | ×1.44 | 246     | 11.0%     | 16.3 |
 
 The DPS column is **flat** — that is what makes it a trade — while hit size and crit rate diverge
 exactly the way he described.
@@ -6216,13 +6320,13 @@ But measuring it against your **six-minute, 3-DD** target found a different prob
 than a multiplier. New `BalanceMatrix` section — three geared champions, no downtime (so these are
 *ceilings*; a real fight is slower):
 
-| Lvl | boss HP | 3-DD dps | TTK | vs your 360s |
-|---|---|---|---|---|
-| 20 | 36,000 | 448 | **80s** | 4.5× too fast |
-| 40 | 132,000 | 446 | 296s | about right |
-| 60 | 292,000 | 427 | **684s** | ~2× too slow |
-| 76 | 466,000 | 525 | **888s** | ~2.5× too slow |
-| 85 | 582,000 | 840 | 693s | ~2× too slow |
+| Lvl | boss HP | 3-DD dps | TTK      | vs your 360s   |
+| --- | ------- | -------- | -------- | -------------- |
+| 20  | 36,000  | 448      | **80s**  | 4.5× too fast  |
+| 40  | 132,000 | 446      | 296s     | about right    |
+| 60  | 292,000 | 427      | **684s** | ~2× too slow   |
+| 76  | 466,000 | 525      | **888s** | ~2.5× too slow |
+| 85  | 582,000 | 840      | 693s     | ~2× too slow   |
 
 **A single flat ×100 cannot hit 360s at every level**, because mob HP grows as `0.8·L²` while a geared
 party's DPS is nearly flat across the game (448 → 525). The boss rank's difficulty therefore swings
@@ -6306,11 +6410,11 @@ is 22000 units of empty map.
 They sit on a **3 × 3 grid** at x ≈ 31000 / 36000 / 41000, each north-south lane keeping the original
 field's shape (low band nearest the city, high band furthest out):
 
-| | x ≈ 31000 | x ≈ 36000 | x ≈ 41000 |
-|---|---|---|---|
-| y ≈ 6500 | Sunward Moor 16-24 | Highstone Ridge 24-32 | Emberdust Barrens 32-40 |
-| y ≈ 12000 | Thornfen Moor 16-24 | Ravencrag Ridge 24-32 | Palewind Barrens 32-40 |
-| y ≈ 17500 | Mistlow Moor 16-24 | Bleakspur Ridge 24-32 | Cinderflat Barrens 32-40 |
+|           | x ≈ 31000           | x ≈ 36000             | x ≈ 41000                |
+| --------- | ------------------- | --------------------- | ------------------------ |
+| y ≈ 6500  | Sunward Moor 16-24  | Highstone Ridge 24-32 | Emberdust Barrens 32-40  |
+| y ≈ 12000 | Thornfen Moor 16-24 | Ravencrag Ridge 24-32 | Palewind Barrens 32-40   |
+| y ≈ 17500 | Mistlow Moor 16-24  | Bleakspur Ridge 24-32 | Cinderflat Barrens 32-40 |
 
 **The city was not moved.** He offered to (*"The whole City can move to the right"*) and it turned out
 not to be needed: the generator places a field by bearing and distance, so more ground is a matter of
@@ -6336,11 +6440,11 @@ label. The crypt's roster was `hollow_one` (58), `grave_robber_fighter` (32) and
 So the fix is the **roster**, not the sign. Every room is now stocked with creatures whose natural
 level sits in its band, and the band written on the gate agrees with what actually spawns:
 
-| Dungeon | Rooms | Boss | Entrance gated to |
-|---|---|---|---|
-| **Hollow Crypt** (unchanged place) | 39-42 | Grave Lich **44** | Greymarsh |
-| **Sunless Warrens** (new) | 58-64 | Dread Knight **65** | Ironreach Keep |
-| **Ashen Sepulchre** (new) | 80-85 | Disciple of the Dawn **90** | Frostmere |
+| Dungeon                            | Rooms | Boss                        | Entrance gated to |
+| ---------------------------------- | ----- | --------------------------- | ----------------- |
+| **Hollow Crypt** (unchanged place) | 39-42 | Grave Lich **44**           | Greymarsh         |
+| **Sunless Warrens** (new)          | 58-64 | Dread Knight **65**         | Ironreach Keep    |
+| **Ashen Sepulchre** (new)          | 80-85 | Disciple of the Dawn **90** | Frostmere         |
 
 His layout exactly. The level-90 boss is the one spawner in the game's three dungeons that forces its
 level — nothing is authored above 85 — which is the same deliberate reuse the 85-90 field already
@@ -6813,14 +6917,14 @@ they were not touched unasked.
 Checked against the code, not the list. Each was fixed in a pass whose commit carried no CHANGELOG
 entry — the exact failure the 0.61.0 note warned about — so they sat in `Backlog.md` as open work:
 
-| Was | Reported | Actually fixed in |
-|---|---|---|
-| `BL-31` a skill card must print the HP price | `55b` | `GameUi.SkillDetail.cs` — prints an `HP` row |
-| `BL-32` an HP-cost skill refused at low HP | `55c` | `GameLoopService` — gated at cast start **and** at finish |
-| `BL-33` Robe Armor Mastery in two learn groups | `57b` | `ClassSkills.cs` — the level-1 yield removed |
-| `BL-53` Elder Marius shows a "!" with no quest | playtest-20 #10 | `OfferedQuests` — one method feeds dialog *and* marker |
-| `BL-63` Frost Bind strips a dummy's HP multiplier | playtest-20 #7 | `Entity.ApplyMobScale` — factors kept on the entity, so the recompute is idempotent |
-| `BL-64` target lost for a physical skill cast | playtest-20 #8 | the manual-play branch of the auto-target push |
+| Was                                               | Reported        | Actually fixed in                                                                   |
+| ------------------------------------------------- | --------------- | ----------------------------------------------------------------------------------- |
+| `BL-31` a skill card must print the HP price      | `55b`           | `GameUi.SkillDetail.cs` — prints an `HP` row                                        |
+| `BL-32` an HP-cost skill refused at low HP        | `55c`           | `GameLoopService` — gated at cast start **and** at finish                           |
+| `BL-33` Robe Armor Mastery in two learn groups    | `57b`           | `ClassSkills.cs` — the level-1 yield removed                                        |
+| `BL-53` Elder Marius shows a "!" with no quest    | playtest-20 #10 | `OfferedQuests` — one method feeds dialog *and* marker                              |
+| `BL-63` Frost Bind strips a dummy's HP multiplier | playtest-20 #7  | `Entity.ApplyMobScale` — factors kept on the entity, so the recompute is idempotent |
+| `BL-64` target lost for a physical skill cast     | playtest-20 #8  | the manual-play branch of the auto-target push                                      |
 
 All six are deleted from `Backlog.md`. **`BL-63` and `BL-64` were never re-tested by him** — they are
 the two that fell off with no fix and no reply, so they go onto the checklist rather than being called
@@ -7156,15 +7260,15 @@ when the ladder grew.
 
 What replaces it, per enchant level:
 
-| slot | per enchant | at +16 |
-|---|---|---|
-| Armour | +3 P.Def, +Max HP by grade (E 0 · D 0 · C 15 · B 20 · A 25 · S 30) | +48 P.Def, +240…480 HP |
-| Shield | **+9** defence (triple), same HP row as armour | +144 defence, +480 HP at S |
-| Jewel | +3 M.Def, +Max MP by grade (E 0 · D 0 · C 1 · B 2 · A 3 · S 5) | +48 M.Def, +16…80 MP |
-| Weapon 1H (sword, blunt, wand, duals) | +6 P.Atk | +96 P.Atk |
-| Weapon 2H (greatsword, maul, staff) | +8 P.Atk | +128 P.Atk |
-| Bow | +P.Atk by grade (E 10 · D 12 · C 14 · B 16 · A 18 · S 20) | +160…320 P.Atk |
-| Any weapon | +6 M.Atk | +96 M.Atk |
+| slot                                  | per enchant                                                        | at +16                     |
+| ------------------------------------- | ------------------------------------------------------------------ | -------------------------- |
+| Armour                                | +3 P.Def, +Max HP by grade (E 0 · D 0 · C 15 · B 20 · A 25 · S 30) | +48 P.Def, +240…480 HP     |
+| Shield                                | **+9** defence (triple), same HP row as armour                     | +144 defence, +480 HP at S |
+| Jewel                                 | +3 M.Def, +Max MP by grade (E 0 · D 0 · C 1 · B 2 · A 3 · S 5)     | +48 M.Def, +16…80 MP       |
+| Weapon 1H (sword, blunt, wand, duals) | +6 P.Atk                                                           | +96 P.Atk                  |
+| Weapon 2H (greatsword, maul, staff)   | +8 P.Atk                                                           | +128 P.Atk                 |
+| Bow                                   | +P.Atk by grade (E 10 · D 12 · C 14 · B 16 · A 18 · S 20)          | +160…320 P.Atk             |
+| Any weapon                            | +6 M.Atk                                                           | +96 M.Atk                  |
 
 Three rulings inside that, so they don't get "fixed" later. **The offset is the same for every class** —
 a full +16 armour set is +1,920 Max HP at S whether a tank or a healer wears it, which is +37% for the
@@ -7278,8 +7382,8 @@ original number. So the speed ruling keeps its price — a 2H is ~14% less DPS t
 sits only ~4% above a one-hander while giving up the shield. That is now a stated outcome rather than
 an accident. BalanceMatrix C1 is back to rogue/warrior 1.05× at 20 and 1.37× at 36.
 
-| grade | F | E | D | C | B | A | S |
-|---|---|---|---|---|---|---|---|
+| grade            | F     | E      | D      | C      | B       | A       | S           |
+| ---------------- | ----- | ------ | ------ | ------ | ------- | ------- | ----------- |
 | 2H P.Atk / M.Atk | 29/17 | 112/54 | 190/83 | 236/99 | 282/114 | 342/132 | **532/192** |
 
 The **S row is authored**, not derived: A × `SGradeOverA` would give 547/211. The generator now skips
@@ -7335,11 +7439,11 @@ Parity with every modifier at 1 is `round(1) = 1` — **same level is 1% fail, 9
 trained caster weapon and **25** with a bow / dual / bare hands. Magic no longer touches
 `ResolveAvoidChance` at all; the physical channel keeps it unchanged.
 
-| Δ lvl (def − atk) | 0 | +3 | +5 | +10 | +14 | +18 |
-|---|---|---|---|---|---|---|
-| wand | 99% | 98% | 96% | 86% | 61% | 5% |
-| wand vs a tank (×2) | 98% | 96% | 93% | 72% | 21% | 5% |
-| **bow** (×25) | **75%** | **45%** | **7%** | 5% | 5% | 5% |
+| Δ lvl (def − atk)   | 0       | +3      | +5     | +10 | +14 | +18 |
+| ------------------- | ------- | ------- | ------ | --- | --- | --- |
+| wand                | 99%     | 98%     | 96%    | 86% | 61% | 5%  |
+| wand vs a tank (×2) | 98%     | 96%     | 93%    | 72% | 21% | 5%  |
+| **bow** (×25)       | **75%** | **45%** | **7%** | 5%  | 5%  | 5%  |
 
 Fail clamps at 95%, not 100% — the playtest-19 `M1` ruling ("nothing is unhittable any more") holds in
 this channel too, and a gap that big already pays zero exp and zero drops.
@@ -7959,10 +8063,10 @@ scroll you found at level 10 was a legitimate tool against endgame gear, and the
 
 The owner's `D1` splits that into **two independent axes**, and both now mean something:
 
-| | |
-|---|---|
-| **TYPE** — what a failure costs | **Scroll of Enchant** destroys the item · **Greater** drops it by 1 · **Safe** (new) keeps the enchant |
-| **GRADE** — what it may be spent on, signalled by RARITY | Common→**E** · Uncommon→**D** · Rare→**C** · Epic→**B** · Legendary→**A** · Mythic→**S** |
+|                                                          |                                                                                                        |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| **TYPE** — what a failure costs                          | **Scroll of Enchant** destroys the item · **Greater** drops it by 1 · **Safe** (new) keeps the enchant |
+| **GRADE** — what it may be spent on, signalled by RARITY | Common→**E** · Uncommon→**D** · Rare→**C** · Epic→**B** · Legendary→**A** · Mythic→**S**               |
 
 Three types × six grades = **18 scrolls**, generated from one table (`ItemCatalog.EnchantScrollBands`
 × `EnchantScrollTypes`) that the catalog, the drop layer and the admin menu all read, so a rung cannot
@@ -8106,9 +8210,9 @@ is a choice rather than unconditional.
 
 **`G5` — Dash and Sprint become ONE speed family.** Ranked by magnitude end to end:
 
-| rank | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
-|---|---|---|---|---|---|---|---|---|
-| | Dash C +15 | Dash U +30 | **Sprint L1 +40** | Dash R +45 | Dash E +50 | Dash L +55 | Dash M +60 | **Sprint L2 +60** |
+| rank | 1          | 2          | 3                 | 4          | 5          | 6          | 7          | 8                 |
+| ---- | ---------- | ---------- | ----------------- | ---------- | ---------- | ---------- | ---------- | ----------------- |
+|      | Dash C +15 | Dash U +30 | **Sprint L1 +40** | Dash R +45 | Dash E +50 | Dash L +55 | Dash M +60 | **Sprint L2 +60** |
 
 which is his spec exactly: Sprint L1 replaces Dash C/U, Sprint L2 replaces everything including Sprint
 L1. Sprint L2 sits above Dash M at the same +60 **on purpose** — a class skill you levelled must not be
@@ -8200,10 +8304,10 @@ until tomorrow", was cleared on the next login.
 So the allowance stopped being an elapsed time compared to a cap and became a **balance that is spent**,
 on the **account**:
 
-| | Free | Premium |
-|---|---|---|
-| Online auto-hunt | **8h / day / account** | 12h |
-| Offline farming | **2h / day / account** | 4h |
+|                  | Free                   | Premium |
+| ---------------- | ---------------------- | ------- |
+| Online auto-hunt | **8h / day / account** | 12h     |
+| Offline farming  | **2h / day / account** | 4h      |
 
 The drain rule is one line and every property anyone wanted falls out of it: **each tick, every one of
 the account's characters that is farming spends one tick of the balance.** One character gets the full
@@ -8276,15 +8380,15 @@ sells for 450 while the shop sells it for 112,500. He agreed, and chose the shar
 alternative: put the cut on the rate and push the price the *other* way, so what you do find is worth
 finding.
 
-| | before | after |
-|---|---|---|
-| gear group multiplier (`RateConfig.DropGroupRates`) | ×1/3 | **×0.025** (13× rarer) |
-| `GameConstants.GearSellDivisor` | 25 | **10** (worth 2.5× more) |
-| gear sales over that farm | 3,619,984 | **678,747** |
-| consumables + mats | 85,688 | **198,542** |
-| coin | 350,000 | 350,000 |
-| **total** | **4,055,588** | **1,227,289** |
-| gear : coin ratio | 10.3× | **1.9×** |
+|                                                     | before        | after                    |
+| --------------------------------------------------- | ------------- | ------------------------ |
+| gear group multiplier (`RateConfig.DropGroupRates`) | ×1/3          | **×0.025** (13× rarer)   |
+| `GameConstants.GearSellDivisor`                     | 25            | **10** (worth 2.5× more) |
+| gear sales over that farm                           | 3,619,984     | **678,747**              |
+| consumables + mats                                  | 85,688        | **198,542**              |
+| coin                                                | 350,000       | 350,000                  |
+| **total**                                           | **4,055,588** | **1,227,289**            |
+| gear : coin ratio                                   | 10.3×         | **1.9×**                 |
 
 "Ten Robes buys one Leathers" replaces the old ÷25 acceptance test.
 
@@ -8318,11 +8422,11 @@ is still the buy price, and player trade is untouched); the enchant scroll's sha
 from 0.5 to **0.15** with its level floors moved from 1/20/45 to **10/30/55**; and the attribute scrolls
 cut ~5× and spread across the band they serve instead of all arriving at 40 (floors now 40/52/61/76/80/84).
 
-| level | enchant | attribute | buff gold/kill |
-|---|---|---|---|
-| 33 | 30 % → **9 %** | — | 155 → **2** |
-| 40 | 30 % → **9 %** | 27 % → **3.6 %** | 155 → **2** |
-| 85 | 35 % → **10.5 %** | 39.9 % → **9.6 %** | 747 → **1** |
+| level | enchant           | attribute          | buff gold/kill |
+| ----- | ----------------- | ------------------ | -------------- |
+| 33    | 30 % → **9 %**    | —                  | 155 → **2**    |
+| 40    | 30 % → **9 %**    | 27 % → **3.6 %**   | 155 → **2**    |
+| 85    | 35 % → **10.5 %** | 39.9 % → **9.6 %** | 747 → **1**    |
 
 BalanceMatrix gained a SCROLLS section that reports per-kill frequency by family, because for these items
 frequency — not gold — is the thing being tuned. The reference farm now totals **1,038,115 (1.04× target)**,
@@ -8402,11 +8506,11 @@ fighter missed **75%** of his swings at a same-level mob, and the mob never miss
 
 Six attribute scrolls, each locked to one grade band and doing exactly one thing:
 
-| Band | Roll a type | Re-roll the value | Re-roll in the top half |
-|---|---|---|---|
-| **D / C / B** | Common | Uncommon | Rare |
-| **A** | Epic *(new)* | — | Legendary |
-| **S** | Mythic *(new)* — always at MAX | — | — |
+| Band          | Roll a type                    | Re-roll the value | Re-roll in the top half |
+| ------------- | ------------------------------ | ----------------- | ----------------------- |
+| **D / C / B** | Common                         | Uncommon          | Rare                    |
+| **A**         | Epic *(new)*                   | —                 | Legendary               |
+| **S**         | Mythic *(new)* — always at MAX | —                 | —                       |
 
 - A "re-roll the value" scroll **cannot create** an attribute — it refuses a bare item and tells you
   which scroll to use first. A refusal never consumes the scroll.
@@ -8756,12 +8860,12 @@ so spreads only ×1.4 across every build in the game. A mob's CON is `15 + 2·le
 compounding ×1.06 *per level*, while `MobBaseStats.Hp` only grows as `40 + 0.8·level²`. Exponential
 against polynomial has exactly one ending:
 
-| mob level | CON | old regen | its whole HP bar | % of bar per second |
-|---|---|---|---|---|
-| 37 | 89 | ~29 HP/s | 1,135 | 2.6% |
-| 75 | 165 | ~420 HP/s | 4,540 | 9.3% |
-| 90 | 195 | ~1,170 HP/s | 6,520 | **18%** — its whole bar every 5.6s |
-| 200 | 415 | ~1,500,000 HP/s | 32,040 | 4,700% |
+| mob level | CON | old regen       | its whole HP bar | % of bar per second                |
+| --------- | --- | --------------- | ---------------- | ---------------------------------- |
+| 37        | 89  | ~29 HP/s        | 1,135            | 2.6%                               |
+| 75        | 165 | ~420 HP/s       | 4,540            | 9.3%                               |
+| 90        | 195 | ~1,170 HP/s     | 6,520            | **18%** — its whole bar every 5.6s |
+| 200       | 415 | ~1,500,000 HP/s | 32,040           | 4,700%                             |
 
 The owner met the mid-level end of it: *"someone hitting a lvl-37 mob for 500 … if I'm not top geared
 and start doing 100–200 the regen will overpower me"*. It was arithmetic, not gear.
@@ -8773,10 +8877,10 @@ for introducing higher lvls"*. Anything with a level term in it has that problem
 
 **Mob regen is now a fraction of the mob's own pool, split by combat**, with no level term anywhere:
 
-| | rate | what it means |
-|---|---|---|
+|         | rate       | what it means                                  |
+| ------- | ---------- | ---------------------------------------------- |
 | engaged | **0.1%/s** | a maximum kill time: finish inside ~16 minutes |
-| idle | **5%/s** | 20 seconds back to full, from any HP |
+| idle    | **5%/s**   | 20 seconds back to full, from any HP           |
 
 Both sentences stay true at level 1, level 200, on a 40-HP rat and on a five-million-HP boss, which is
 why there is no boss special case and nothing here to revisit later. The in-combat figure is
@@ -8876,11 +8980,11 @@ matures. (The replacement is on the *skill*, not the buff — the buffs still re
 
 **The Warchanter's buff kit, 40 → 74:**
 
-| Levels | What |
-|---|---|
-| **40-64** | every single ladder **topped out** — the cleric leaves off mid-ladder (Might L2 of 3, Focus L4 of 6) and never sees Ferocity, Insight, Body, Soul or Serenity at all |
-| **60 / 62 / 64** | the three **Harmony** blessings (was 40/52/62) |
-| **66 / 68 / 70 / 72 / 74** | the five **improved** groups, one per learnable level: Swift and Sure · Might and Bulwark · Force and Ward · Focus and Ferocity · Body and Soul |
+| Levels                     | What                                                                                                                                                                 |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **40-64**                  | every single ladder **topped out** — the cleric leaves off mid-ladder (Might L2 of 3, Focus L4 of 6) and never sees Ferocity, Insight, Body, Soul or Serenity at all |
+| **60 / 62 / 64**           | the three **Harmony** blessings (was 40/52/62)                                                                                                                       |
+| **66 / 68 / 70 / 72 / 74** | the five **improved** groups, one per learnable level: Swift and Sure · Might and Bulwark · Force and Ward · Focus and Ferocity · Body and Soul                      |
 
 Every family reaches its **max rung before** the improved buff that contains it — not enforced
 anywhere, just the logic of the class: you learn the parts, then you learn to cast them in one breath.
@@ -8898,11 +9002,11 @@ can now buy the other. Vendor-stocked at Common, in the drop rungs and the recip
 
 **The cleric learns the INDIVIDUAL buffs.** It used to learn five *groups*. Now:
 
-| | learns | MP |
-|---|---|---|
-| **Base mage** (7) | Might, Bulwark | 30 |
-| **Cleric** (20-35) | Might · Bulwark · Force · Ward · Aim · Vampirism · Resolve · Focus · Vigor · Swift · Alacrity · Agility · Haste · Frenzy | **30-50** |
-| **Warchanter** (74) | Might and Bulwark · Force and Ward · Focus and Ferocity · Body and Soul · Swift and Sure · Frenzy at its top rung | **150-200** |
+|                     | learns                                                                                                                   | MP          |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------ | ----------- |
+| **Base mage** (7)   | Might, Bulwark                                                                                                           | 30          |
+| **Cleric** (20-35)  | Might · Bulwark · Force · Ward · Aim · Vampirism · Resolve · Focus · Vigor · Swift · Alacrity · Agility · Haste · Frenzy | **30-50**   |
+| **Warchanter** (74) | Might and Bulwark · Force and Ward · Focus and Ferocity · Body and Soul · Swift and Sure · Frenzy at its top rung        | **150-200** |
 
 Every rung a cleric gets is the one the corresponding group level used to hand out, so a cleric who
 buffs their whole list lands **exactly where they were** — it just costs more casts. That is the point:
@@ -8932,17 +9036,17 @@ intended."*
 a class buff, the NPC buffer's hour — now applies the *same* single-buff skill, so they compete on the
 family key by rank instead of adding up.
 
-| | Family | Potion | Scroll |
-|---|---|---|---|
-| **Might** | % P.Atk | ✓ | ✓ |
-| **Bulwark** | % P.Def | ✓ | ✓ |
-| **Force** | % M.Atk | ✓ | ✓ |
-| **Ward** | % M.Def | ✓ | ✓ |
-| **Vampirism / Accuracy / Resolve** | melee vamp · accuracy · interrupt resist | — | — |
-| **Body / Soul** | % Max HP · % Max MP | — | ✓ |
-| **Vigor / Serenity** | % HP regen · % MP regen | — | ✓ |
-| **Focus / Ferocity / Insight** | crit rate · crit damage · magic crit | — | ✓ |
-| **Frenzy** | the whole trade-off buff | — | ✓ |
+|                                    | Family                                   | Potion | Scroll |
+| ---------------------------------- | ---------------------------------------- | ------ | ------ |
+| **Might**                          | % P.Atk                                  | ✓      | ✓      |
+| **Bulwark**                        | % P.Def                                  | ✓      | ✓      |
+| **Force**                          | % M.Atk                                  | ✓      | ✓      |
+| **Ward**                           | % M.Def                                  | ✓      | ✓      |
+| **Vampirism / Accuracy / Resolve** | melee vamp · accuracy · interrupt resist | —      | —      |
+| **Body / Soul**                    | % Max HP · % Max MP                      | —      | ✓      |
+| **Vigor / Serenity**               | % HP regen · % MP regen                  | —      | ✓      |
+| **Focus / Ferocity / Insight**     | crit rate · crit damage · magic crit     | —      | ✓      |
+| **Frenzy**                         | the whole trade-off buff                 | —      | ✓      |
 
 - **Potion + scroll families** run Common/Uncommon/Rare and the Rare rung equals the strongest class
   buff. Deliberate: consumables can cover the whole *basic* layer, and what keeps a buffer worth
@@ -9717,10 +9821,10 @@ generated — silently, with no error. The filter now keys on `Mythic`, and the 
 `RecipeBooks`. Worth remembering: several places use a rarity as a *proxy for "the authored piece"*.
 
 **Where level 85 lands, in S gear** (was A gear):
-| | M.Atk / P.Atk | kills a same-level mob in |
-|---|---|---|
-| Mage | 1511 → **2039** | 3.8 → **3.3 casts** |
-| Fighter | 1100 → **1738** | 24.6 → **15.5 hits** |
+|         | M.Atk / P.Atk   | kills a same-level mob in |
+| ------- | --------------- | ------------------------- |
+| Mage    | 1511 → **2039** | 3.8 → **3.3 casts**       |
+| Fighter | 1100 → **1738** | 24.6 → **15.5 hits**      |
 
 S closes some of the fighter's gap, but **24.6 → 15.5 hits vs the mage's 3.3 casts is still a wide
 gulf** — a pre-existing curve problem the ladder inherits rather than causes, and worth its own pass.
@@ -9756,13 +9860,13 @@ The world re-layout from playtest-13. Seven towns in a ring, each with two wide 
 cities** each owning a level range and holding 2-4 **tighter fields** — 6-level bands meant half of
 every band was spent farming grey mobs or being outclassed.
 
-| City | Band | Fields |
-|---|---|---|
-| Brackenford | 1-16 | 2 |
-| Stonewatch | 16-40 | 4 |
-| Greymarsh | 40-60 | 4 |
-| Ironreach | 60-75 | 3 |
-| Frostmere | **76-90** | 3 + three ELITE spawners (80 / 84 / 90) |
+| City        | Band      | Fields                                  |
+| ----------- | --------- | --------------------------------------- |
+| Brackenford | 1-16      | 2                                       |
+| Stonewatch  | 16-40     | 4                                       |
+| Greymarsh   | 40-60     | 4                                       |
+| Ironreach   | 60-75     | 3                                       |
+| Frostmere   | **76-90** | 3 + three ELITE spawners (80 / 84 / 90) |
 
 - **Emberfall and Duskvale are deleted** — towns, NPCs, roads, regions and safe zones. Their rosters
   were redistributed into the bands above; the level ladder is unbroken because the mob roster is a

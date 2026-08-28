@@ -227,20 +227,44 @@ too heavy: *"the dex alters most stats than any other mainStat - as, crt, acc, E
 
 ⚠ **AGI is per RACE + BASE CLASS only — there is no archetype split.** A Human Knight, Champion and
 Assassin all sit at AGI 30; a rogue gets nothing for being a rogue. **The only AGI identity is being an
-ELF.**
+ELF** — and that is *deliberate*, not a gap. See the ruling below the table.
 
 | race + base class | AGI | `dexMod` |
 |---|---|---|
-| **Elf fighter** | **35** | x1.05 |
+| **Elf fighter** | **36** | x1.06 |
+| Elf mage | 32 | x1.02 |
 | **Human fighter** | **30** | x1.00 *(= the mob reference)* |
-| **Demon fighter** | **26** | x0.96 |
-| Elf mage | 24 | x0.94 |
-| Human mage | 21 | x0.91 |
+| **Demon fighter** | **28** | x0.98 |
+| Human mage | 26 | x0.96 |
 | Demon mage | 20 | x0.90 |
 
-So his *"an elf with 36 and +5 maxes it over 40"* is the **Elf fighter at 35**, +5 from gear -> 40 ->
-x1.10. Reachable: the light `Nightleaf` sets carry `Agi +3` and `+1`. ⚠ And the other direction —
-**heavy sets carry `Agi -2` / `-1`**, so a heavy warrior sits BELOW neutral (30 - 2 = 28 -> x0.98).
+So his *"an elf with 36 and +5 maxes it over 40"* is the **Elf fighter, who is now literally at 36**
+(he was 35 until the 153 rebalance of 2026-08-28) -> +5 from gear -> 41 -> x1.11. Reachable: the light
+`Nightleaf` sets carry `Agi +3` and `+1`. ⚠ And the other direction — **heavy sets carry `Agi -2` /
+`-1`**, so a heavy warrior sits BELOW neutral (30 - 2 = 28 -> x0.98).
+
+### ✅ RULED: the elf mage out-AGI-ing the human fighter is FINE (owner, 2026-08-28)
+
+The 153 rebalance took the elf mage from 24 to **32**, which puts the **elf MAGE above the human
+FIGHTER (30)**. That was raised as a worry and he closed it:
+
+> *"my idea is the elf is fast and buffer is semi archer .. the human warrior have acc and rogue have
+> evasion+speed so matching in agility stat alone is not OP"*
+
+🔑 **This is the project's own rule pointed at AGI: a stat is not an identity — the KIT is.** Losing
+the AGI comparison costs the human warrior nothing, because his identity was never the AGI number: it
+is **accuracy**, in his kit. The rogue's is **evasion + speed**, in his. Both are authored where
+identity is supposed to live (`ClassSkills` / passives — see the class note in `CLAUDE.md`), so a mage
+who merely *ties* them on the raw stat has matched the seasoning and none of the meal.
+
+And the elf mage's 32 is not incidental either — **the elf buffer is a semi-archer** (bow + light
+armour, `--warchanter`'s own split), so the race whose theme is *fast* is holding a weapon that wants
+AGI. The number is describing the design rather than leaking past it.
+
+⚠ **The corollary is a rule for future work, and it cuts the other way:** since AGI has no archetype
+split, any future "the rogue should be more agile" instinct must be paid in the ROGUE'S KIT — a
+passive, a stance — and **never** by re-splitting this table by archetype. Doing that would reinstate
+exactly the `ClassFlatBonus` idea the owner deleted.
 
 ✅ **`dexMod` is LINEAR AND UNCAPPED** (his ruling, 2026-08-06):
 > Leave it uncapped - a full dex archer with dex set with stat swap with whatever can reach cap ... And

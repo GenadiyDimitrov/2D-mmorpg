@@ -132,6 +132,16 @@ try
         throw new InvalidOperationException(
             "Duplicate class names in ClassNames.Table:\n  " + string.Join("\n  ", dupes));
 
+    // Every race/class column of GetBaseStats must sum to 153 (owner, 2026-08-28): a race is a
+    // REDISTRIBUTION of the same points, never a bigger pile. This drifted unnoticed for weeks —
+    // the six columns had reached 153/153/150 and 148/141/162, leaving the elf mage 21 points
+    // behind the demon mage — because nothing ever added them up. A one-cell edit here is the
+    // easiest possible slip and the hardest to see in a playtest, so the server refuses to boot.
+    if (Game.Shared.StatCalculator.BaseStatsNotSummingTo153().ToList() is { Count: > 0 } sums)
+        throw new InvalidOperationException(
+            "Base stat columns must each sum to 153 (StatCalculator.GetBaseStats):\n  "
+            + string.Join("\n  ", sums));
+
     app.Logger.LogInformation("L2Clone server v{Version} starting.", Game.Shared.GameConstants.GameVersion);
 
     // Print the LAN address the phone should use. "Now listening on: http://0.0.0.0:5238" is technically

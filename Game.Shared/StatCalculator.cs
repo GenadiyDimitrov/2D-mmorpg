@@ -3,11 +3,8 @@ namespace Game.Shared;
 /// <summary>
 /// Stat formulas live in Shared so the client can *predict* (tooltips,
 /// estimated damage) while the server stays the only authority.
-/// Base stats follow the design doc:
-///   Demon/Demon  Fighter 40/30/10/20  Mage 30/30/20/20   (CON/ATK/WIT/AGI)
-/// (⚠ stale sketch — the live table is GetBaseStats below, and the demon mage ATK is 47.)
-///   Elf/Angel  Fighter 30/20/20/30  Mage 20/20/30/30
-///   Human      Fighter 35/25/15/25  Mage 25/25/25/25
+/// The base stat table is GetBaseStats below — authored by the owner and mirrored in
+/// `docs/data/classes_skills_csv/README.md` § Classes and Races → Stats.
 /// </summary>
 public static class StatCalculator
 {
@@ -16,43 +13,60 @@ public static class StatCalculator
     public static BaseStats GetBaseStats(Race race, BaseClass cls) => (race, cls) switch
     {
         // BaseStats(Con, Atk, Wit, Agi, Spt). Atk = the single power stat: STR for fighters,
-        // INT for mages. Fighter WIT kept low (casts little); mage WIT per the dye-
-        // stand-in design (elf 23 / human 20 / demon 19). Authentic-IG-style bases.
+        // INT for mages. SPT (Spirit) is a FULL stat like the rest — the retired MEN, made
+        // visible and investable.
         //
-        // SPT (Spirit) is a FULL stat like the rest — the retired MEN, made visible and investable.
-        // FIGHTERS keep their original per-race MEN values (demon 27 > elf 26 > human 25) so the demon
-        // fighter stays the sturdiest — a flat fighter value erased that (owner, 2026-07-20).
-        // MAGES take the owner's spread off the human mage: demon +7%, elf −7%. The curve is flat
-        // (~1.6%/point), so those need wide gaps — hence 45 and 32, not 42 and 40.
-        // ⚠ THE ORK MAGE'S ATK IS 47, NOT IG'S 31 — and this is the one deliberate break in the row.
+        // 🔑 EVERY COLUMN SUMS TO 153. That is the one balancing rule this table has, and it is the
+        // owner's (2026-08-28): a race is a REDISTRIBUTION of the same 153 points, never a bigger
+        // pile. Before that ruling the six columns were 153/153/150 and 148/141/162 — the elf mage
+        // was 21 points behind the demon mage for no stated reason. ⚠ If you change one number
+        // here you MUST take it out of another cell in the SAME column, and update
+        // `docs/data/classes_skills_csv/README.md` in the same commit. `BaseStatsSumTo153` in
+        // Game.Server's startup checks refuses to boot otherwise.
         //
-        // IG carries TWO power stats: STR for melee, INT for magic. We collapsed them into ONE ATK
-        // (see the class note in CLAUDE.md), and for mages that one stat was seeded from IG's INT.
-        // That silently threw away the half of IG's spread the demon mystic actually WINS: his STR is
-        // the highest of any mystic (25, against the human's 22 and the elf's 21) while his INT is
-        // the lowest. Copying INT alone therefore gave the demon the magic deficit and none of the
-        // melee edge — which is exactly what the owner measured on 2026-08-21: *"2h blunt ork have
-        // almost the same as 1h mace human (with 1000pdef on top)"*. BalanceMatrix `--warchanter`
-        // reproduced it at +5.1% P.Atk for the two-hander, against a shield worth +56% P.Def.
+        // The shape, in his words: *"Elf have wit/agi - demon have con/spt/int human is in
+        // between"* — and with SPT at 37 the human mage is now literally the middle value of all
+        // five of his stats.
         //
-        // 47 = 41 × (25/22), the human mage's ATK scaled by IG's own mystic STR ratio. His ruling:
-        // *"check IG for ork mage INT and if it's 31 for our game we should increase it over the
-        // human"* — it is 31, verbatim, so it rises. Measured outcome: the ork Warchanter's maul
-        // goes to +45.6% P.Atk over the human's mace, which is a clean two-hander/shield trade, and
-        // the shared-stat side effect on the demon NUKER is +11.7% M.Atk paid for with the game's
-        // slowest cast (x0.87 vs x0.75) and lowest magic crit.
-        //
-        // 🔑 It also completes his sentence *"Elf have wit/agi - ork have con/spt/int human is in
-        // between"*: with ATK at 47 the human mage is the MIDDLE value of all five stats, and each
-        // of the other two owns exactly the pair he named.
-        (Race.Demon, BaseClass.Fighter) => new BaseStats(47, 40, 10, 26, 27),
-        (Race.Demon, BaseClass.Mage)    => new BaseStats(31, 47, 19, 20, 45),
-        (Race.Elf, BaseClass.Fighter) => new BaseStats(36, 36, 20, 35, 26),
-        (Race.Elf, BaseClass.Mage)    => new BaseStats(25, 37, 23, 24, 32),
-        (Race.Human, BaseClass.Fighter) => new BaseStats(43, 40, 15, 30, 25),
-        (Race.Human, BaseClass.Mage)    => new BaseStats(27, 41, 20, 21, 39),
+        // ⚠ THE DEMON MAGE'S ATK IS 42, NOT 47. It was 47 from 2026-08-21 to 2026-08-28: 41 ×
+        // (25/22), the human mage's ATK scaled by IG's own mystic STR ratio, to fix his measured
+        // complaint *"2h blunt ork have almost the same as 1h mace human (with 1000pdef on top)"*.
+        // The 153 rule retired it — 47 put the demon MAGE's power stat above every FIGHTER in the
+        // game (40/36/41), which is what he caught. His old complaint does NOT come back: at 42
+        // the demon Warchanter's maul still measures +32.9% P.Atk over the human's mace-and-shield
+        // (BalanceMatrix `--warchanter 90`), a clean two-hander trade rather than the +45.6% that
+        // 47 bought. The price is paid by the demon NUKER, who shares the stat: his M.Atk edge over
+        // the human drops from +9.8% to +1.6% while he still carries the slowest cast and the
+        // lowest magic crit. That is deliberate — the demon mystic buys pool and body (CON 31,
+        // SPT 41), not damage.
+        (Race.Demon, BaseClass.Fighter) => new BaseStats(47, 41, 10, 28, 27),
+        (Race.Demon, BaseClass.Mage)    => new BaseStats(31, 42, 19, 20, 41),
+        (Race.Elf, BaseClass.Fighter) => new BaseStats(39, 36, 17, 36, 25),
+        (Race.Elf, BaseClass.Mage)    => new BaseStats(25, 37, 23, 32, 36),
+        (Race.Human, BaseClass.Fighter) => new BaseStats(43, 40, 14, 30, 26),
+        (Race.Human, BaseClass.Mage)    => new BaseStats(29, 41, 20, 26, 37),
         _ => new BaseStats(25, 25, 25, 25, 30)
     };
+
+    /// <summary>The 153 rule, checkable. Returns one line per race/class column that does NOT sum to
+    /// 153; empty means the table is sound. Called from the server's startup checks — see the note on
+    /// GetBaseStats. All 3 races x 2 base classes are authored, so this covers the whole table.
+    /// ⚠ If a Race or a BaseClass is ever ADDED, add it to the loop below too — the pairs are listed
+    /// by hand (see the note there), so a new one would otherwise go unchecked.</summary>
+    public static IEnumerable<string> BaseStatsNotSummingTo153()
+    {
+        // Listed explicitly rather than via Enum.GetValues<T>() — Game.Shared also targets
+        // netstandard2.1 for the Unity client, where the generic overload does not exist.
+        foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
+            foreach (var cls in new[] { BaseClass.Fighter, BaseClass.Mage })
+            {
+                var s = GetBaseStats(race, cls);
+                int sum = s.Con + s.Atk + s.Wit + s.Agi + s.Spt;
+                if (sum != 153)
+                    yield return $"{race} {cls}: CON {s.Con} + ATK {s.Atk} + WIT {s.Wit} + "
+                               + $"AGI {s.Agi} + SPT {s.Spt} = {sum} (expected 153, off by {sum - 153:+#;-#;0})";
+            }
+    }
 
     // Per design: levels increase hp/mp (max/regen), evasion, accuracy,
     // defence, attack — nothing else. Tanks get more HP, mages more MP.

@@ -170,15 +170,41 @@ race + role now (`Human Apprentice`), because nothing differs before 40 and a fl
 promising an identity the game does not deliver.
 
 ## Classes and Races
+
 ### Races
-|           | --- Human --- | --- Elf --- | --- Demon --- | --- Human --- | --- Elf --- | --- Demon --- |
-|           | -- Fighter -- | - Fighter - | -- Fighter -- | --- Mage --- | --- Mage --- | --- Mage --- |
-| --------- | ------------- | ----------- | ------------- | ------------ | ------------ | ------------ |
-| -- ATK -- |               |             |               |              |              |              |
-| -- CON -- |               |             |               |              |              |              |
-| -- AGI -- |               |             |               |              |              |              |
-| -- SPT -- |               |             |               |              |              |              |
-| -- WIT -- |               |             |               |              |              |              |
+  1. Humans
+  2. Elves
+  3. Demons
+
+### Stats   
+#### Fighters  
+|       | Human |  Elf  | Demon |
+| :---: | :---: | :---: | :---: |
+|  ATK  |  40   |  36   |  41   |
+|  CON  |  43   |  39   |  46   |
+|  AGI  |  30   |  36   |  29   |
+|  SPT  |  26   |  25   |  27   |
+|  WIT  |  14   |  17   |  10   |
+|  Sum  |  153  |  153  |  153  |
+#### Mages
+|       | Human |  Elf  | Demon |
+| :---: | :---: | :---: | :---: |
+|  ATK  |  41   |  37   |  42   |
+|  CON  |  29   |  28   |  31   |
+|  AGI  |  26   |  29   |  20   |
+|  SPT  |  37   |  36   |  41   |
+|  WIT  |  20   |  23   |  19   |
+|  Sum  |  153  |  153  |  153  |
+
+🔑 **Every column sums to 153** (owner, 2026-08-28). A race is a REDISTRIBUTION of the same points,
+never a bigger pile — so a change to one cell must come out of another cell in the SAME column. This
+drifted unnoticed for weeks before the rule was written down: the live columns had reached 153/153/150
+and 148/141/162, leaving the elf mage 21 points behind the demon mage. The server now refuses to boot
+if any column is off (`StatCalculator.BaseStatsNotSummingTo153`).
+
+⚠ **This table IS the code.** It mirrors `StatCalculator.GetBaseStats` in `Game.Shared`, the same way
+the skill CSVs mirror the catalogs — edit one, edit the other, in the same commit.
+
 ### Classes
 | 1st     | 2nd        | 3rd              | 4th              | Race  | Weapon                      | Armor               | Path         |
 | ------- | ---------- | ---------------- | ---------------- | ----- | --------------------------- | ------------------- | ------------ |

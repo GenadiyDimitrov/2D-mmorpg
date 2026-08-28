@@ -613,7 +613,17 @@ public class PersistenceService
     /// those ids any more, so `ThirdClassCatalog.Get` returns null for them. Left alone, such a
     /// character would show no class name, learn nothing above 40 and never ascend at 76: bricked, not
     /// cosmetic. `Surviving` maps it onto that race's Magus, which held the identical kit anyway, and
-    /// the next autosave writes the corrected id back. Applied on BOTH load paths below.</summary>
+    /// the next autosave writes the corrected id back. Applied on BOTH load paths below.
+    ///
+    /// <para>⚠ BASE STATS ARE RE-ROLLED, NOT READ. The five stat columns are stamped from
+    /// <see cref="StatCalculator.GetBaseStats"/> at CREATION and nothing in the game ever invests or
+    /// mutates them, so a stored value is only ever a stale copy of the table. When the owner rebalanced
+    /// that table on 2026-08-28 (the 153 rule), every character already in a `game.db` would otherwise
+    /// have kept the old numbers for life — invisibly, since the sheet would look perfectly normal. The
+    /// columns stay: they are still WRITTEN, and the pre-subclass fallback path below reconstructs slot 0
+    /// from the character row's mirror. They are simply not TRUSTED on the way in. 🔑 If a stat ever
+    /// becomes investable (dyes, +5 swaps spent by the player), this must change to
+    /// re-roll + re-apply the investment, or the investment is what gets thrown away.</para></summary>
     private static Subclass ToSubclass(SubclassRecord r)
     {
         var sc = new Subclass
@@ -627,8 +637,8 @@ public class PersistenceService
             Level = r.Level,
             Exp = r.Exp,
             SkillPoints = r.SkillPoints,
-            Con = r.Con, Atk = r.Atk, Wit = r.Wit, Agi = r.Agi, Spt = r.Spt,
         };
+        sc.RollBaseStats();   // see the base-stat note above — the stored columns are a stale mirror
         ParseLearnedSkills(r.LearnedSkillsCsv, sc.LearnedSkills);
         if (!string.IsNullOrEmpty(r.SkillBarJson))
         {
@@ -725,8 +735,8 @@ public class PersistenceService
                 Level = rec.Level,
                 Exp = rec.Exp,
                 SkillPoints = rec.SkillPoints,
-                Con = rec.Con, Atk = rec.Atk, Wit = rec.Wit, Agi = rec.Agi, Spt = rec.Spt,
             };
+            main.RollBaseStats();   // see the base-stat note on ToSubclass — the columns are a stale mirror
             ParseLearnedSkills(rec.LearnedSkillsCsv, main.LearnedSkills);
             entity.Subclasses.Add(main);
         }
