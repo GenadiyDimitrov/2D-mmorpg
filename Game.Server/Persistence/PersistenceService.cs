@@ -646,6 +646,23 @@ public class PersistenceService
             }
             catch { /* ignore malformed auto-mark json */ }
         }
+        if (!string.IsNullOrEmpty(r.BuffPresetJson))
+        {
+            // `BL-95` buff preset. RE-FILTERED against the current NewbieBuffSet on the way in, not
+            // trusted: the set has been cut from 19 to 11, grown to 12 and grown again to 16 inside a
+            // month, and a preset saved between two of those would otherwise keep asking for a buff the
+            // NPC no longer sells. Filtering here (rather than at the cast) means the count the player
+            // is shown is the count they will actually get.
+            try
+            {
+                var ids = JsonSerializer.Deserialize<List<string>>(r.BuffPresetJson);
+                if (ids is not null)
+                    foreach (var id in ids)
+                        if (SkillCatalog.NewbieBuffSet.Contains(id) && !sc.BuffPreset.Contains(id))
+                            sc.BuffPreset.Add(id);
+            }
+            catch { /* ignore malformed buff-preset json */ }
+        }
         return sc;
     }
 
@@ -909,7 +926,7 @@ public class PersistenceService
         int Slot, Race Race, BaseClass BaseClass, int SecondClass, int ThirdClass, int FourthClass,
         int Level, long Exp, int SkillPoints,
         int Con, int Atk, int Wit, int Agi, int Spt,
-        string LearnedSkillsCsv, string SkillBarJson, string AutoSkillsJson)
+        string LearnedSkillsCsv, string SkillBarJson, string AutoSkillsJson, string BuffPresetJson)
     {
         public static SubclassSnapshot From(Subclass s) => new(
             s.Slot, s.Race, s.BaseClass, s.SecondClass, s.ThirdClass, s.FourthClass,
@@ -917,7 +934,8 @@ public class PersistenceService
             s.Con, s.Atk, s.Wit, s.Agi, s.Spt,
             string.Join(',', s.LearnedSkills.Select(kv => $"{kv.Key}:{kv.Value}")),
             JsonSerializer.Serialize(s.SkillBar),
-            JsonSerializer.Serialize(s.AutoSkills));
+            JsonSerializer.Serialize(s.AutoSkills),
+            JsonSerializer.Serialize(s.BuffPreset));
     }
 
     /// <summary>The BaseClass / Level / Exp / SkillPoints / Con..Agi / LearnedSkillsCsv fields here are
@@ -1169,6 +1187,7 @@ public class PersistenceService
             LearnedSkillsCsv = s.LearnedSkillsCsv,
             SkillBarJson = s.SkillBarJson,
             AutoSkillsJson = s.AutoSkillsJson,
+            BuffPresetJson = s.BuffPresetJson,
         }).ToList();
 
         // Rebuild the item set from the snapshot.

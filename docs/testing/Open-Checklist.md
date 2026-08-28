@@ -13,16 +13,19 @@
 > What is left below is **only what has never been played**. §93 is this build; §92, §90, §89, §85,
 > §81 and CARRIED FORWARD are rows that survived earlier passes without being reached.
 
-> 🔴 **THE APK IS NEW — the first since 0.89.0**, and seven versions rode in on it: `BL-93`'s model
-> plumbing (0.90.0), **the player HP rebuild** (0.91.0), HP Boost + Swift (0.91.1), the MP measurement
-> and the toggle-upkeep bug (0.91.2), **MP potions** (0.92.0/0.92.1) and **stack caps** (0.93.0).
+> 🔴 **THE APK IS `0.99.0`, built 2026-08-28.** Everything from 0.90.0 on rides in on it — `BL-93`'s
+> model plumbing (0.90.0), **the player HP rebuild** (0.91.0), HP Boost + Swift (0.91.1), the MP
+> measurement and the toggle-upkeep bug (0.91.2), **MP potions** (0.92.0/0.92.1), **stack caps**
+> (0.93.0), the TARGET column (0.93.2), the guards and three Kind-gate bugs (0.94.0), **AoE that
+> actually hits** (0.94.1-3), **the boss's judgment** (0.95.0), **the class renames and the Demon race**
+> (0.96.0-0.98.2), and **buff presets + the [Char] button** (0.99.0 — §97, the newest section).
 > **`ProtocolVersion` is 28 → 29** — but the server still accepts from 8, so an **old client connects
 > and looks perfectly fine while having none of it. Install BOTH halves.**
 >
 > 🔴 **BEFORE YOU PLAY: delete `Game.Server/game.db`** (and `-shm`/`-wal`) — owed since the 0.71.0
-> schema change, again since `AccountRole` renumbered, and again for the chat log table. ⚠ It is in
-> `Game.Server/`, not `bin/Debug/`. **0.93.0 adds no schema of its own** and migrates your stacks on
-> login instead, so that one is not a reason to reset.
+> schema change, again since `AccountRole` renumbered, again for the chat log table, again for the
+> boss-judgment columns (§96) and again for `BuffPresetJson` (§97). ⚠ It is in `Game.Server/`, not
+> `bin/Debug/`. One delete covers all of them.
 >
 > ⚠ **Your HP is 2-3× bigger and no creature number moved** (0.91.0). That is the single largest change
 > in this build and it will colour every other reading you take — §93A first.
@@ -53,6 +56,52 @@ a stack of 9 buff scrolls is the friction you wanted or just friction** (§93D).
 ---
 
 ---
+
+---
+
+## 97. BUFF PRESETS + THE `[CHAR]` BUTTON — `BL-95`, built in 0.99.0
+
+**This is what the new APK is for.** Both halves are client-visible, so an old client shows neither.
+
+🔴 **DELETE `Game.Server/game.db` (and `-shm`/`-wal`) BEFORE THIS PASS** — new column
+`SubclassRecord.BuffPresetJson`, and `EnsureCreated()` will not add it to an existing file. (This is
+the same delete §96 asks for; one delete covers both.)
+
+**The NPC buffer now offers sixteen blessings, not twelve** — Serenity, Soul, Aim and Agility are back,
+your list. Four preset buttons sit above the singles:
+
+```
+Full buff   16 buffs
+Mage        10 buffs   Bulwark Force Alacrity Swift Ward Body Soul Serenity Resolve Frenzy
+Fighter     10 buffs   Bulwark Might Fury Swift Ward Body Vigor Vamp Frenzy Aim
+Custom       n buffs   yours — the button only appears once you have saved one
+```
+
+| # | test | expected |
+|---|---|---|
+| 95a | Talk to a buffer, press **Mage**. | Exactly those 10 land in one press. The row said "10 buffs" before you pressed it. |
+| 95b | Press **Fighter** on a fresh character. | Exactly those 10. Note **Fury** is attack speed and **Aim** is accuracy — both are named for the family, neither is a typo. |
+| 95c | Press **Full buff**. | 16. Against the 20-slot cap that leaves **four** free — the thing I most want your reading on. Too tight? The answer is to take Mage/Fighter, not to trim the set again. |
+| 95d | Above level 75, check the price on each preset row. | Full is the most expensive, Mage and Fighter cost ten singles each. No preset discount, no surcharge. |
+| 95e | Take **Full**, cancel the ones your class doesn't want, press **Save**. | *"Preset saved — n blessings."* A **[Custom]** row appears saying that count. |
+| 95f | Log out, log back in, press **[Custom]**. | Exactly what you saved, in the same order. |
+| 95g | Press **Save** again with a preset already stored. | It **asks** first — *"Replace your saved preset…"*. Your rule: no prompt the first time, a prompt every time after. |
+| 95h | Press **[Delete]**. | It asks; then [Custom] and [Delete] both vanish and only [Save] is left. |
+| 95i | Press **Save** with **no** buffer blessings on you. | Refused — *"You have none of my blessings on you to save."* No empty preset is ever stored. |
+| 95j | 🔑 Take a **potion or scroll** of Might (not the NPC's), then Save. | The potion's Might is **NOT** saved. Only what the NPC itself can cast is storable — your rule. |
+| 95k | 🔑 Get a **group** buff on you (Feral Bloodlust, or admin `/buff`), then Save. | It saves **nothing from the group** — not Might, not Fury, not Vamp. Your worked example. |
+| 95l | Save a preset on your buffer, then **swap subclass** and open a buffer. | **No [Custom] button** on the other class. Presets are per SUBCLASS, like the auto marks. |
+| 95m | Save one on the second subclass too, then swap back and forth. | Each class keeps its own. Neither overwrites the other. |
+| 95n | Look at the accuracy single in the list. | It reads **Aim**, not "Accuracy" — the family's name, matching its potions and scrolls. |
+
+**The `[Char]` button** — your ask, *"[bag][char][skills]"*:
+
+| # | test | expected |
+|---|---|---|
+| 95o | Look at the top-right action bar. | Row two is **[Bag] [Char] [Skills]**, three wide like row one. |
+| 95p | Press **[Char]** from anywhere, including mid-fight. | The character sheet opens in one tap. No bag involved. |
+| 95q | Open the **Bag**. | No [Char] button in it any more; **[Equip]** and **[Del: off]** sit side by side with no gap where it was. |
+| 95r | Tap your own vitals panel. | Still **targets you** — unchanged, that is not the sheet's door any more. |
 
 ---
 

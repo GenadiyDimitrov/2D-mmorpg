@@ -278,8 +278,58 @@ namespace Game.Client
                 }
                 else
                 {
-                    DialogRow("Full buff   " + Cost(d.Buffer.FullBuffCost), "Buff",
-                              () => Boot.BufferAction("full", ""), UiKit.Text);
+                    // PRESETS first (`BL-95`): Full / Mage / Fighter, plus Custom once one is saved.
+                    // The server sends them as a list with the name, the count and the price already
+                    // worked out — the client names a preset and never composes a buff list, so what
+                    // the button says and what the NPC casts are one decision made in one place.
+                    //
+                    // A client older than the server sees Presets == null and falls back to the plain
+                    // Full button below, which is exactly what it had before.
+                    var presets = d.Buffer.Presets;
+                    if (presets != null && presets.Length > 0)
+                    {
+                        foreach (var p in presets)
+                        {
+                            string key = p.Key;
+                            // "16 buffs" on the row because the buff bar caps at 20 and the full set is
+                            // 16 — the count is the thing you are actually choosing between, not the
+                            // price (which is free below 76 anyway).
+                            DialogRow(p.Name + "   " + p.Count + " buffs   " + Cost(p.Cost), "Buff",
+                                      () => Boot.BufferAction(key, ""), UiKit.Text);
+                        }
+
+                        // SAVE — stores the NPC blessings you are wearing right now. Asks first ONLY
+                        // when it would overwrite something, which is his rule: *"if custom is empty
+                        // the save not to prompt -> if u saved once i will ask to override if by
+                        // mistake clicked on buff"*.
+                        bool hasCustom = false;
+                        foreach (var p in presets) if (p.Key == "custom") hasCustom = true;
+
+                        int savable = d.Buffer.SavableNow;
+                        string saveText = savable > 0
+                            ? "Save preset   keeps the " + savable + " blessing" + (savable == 1 ? "" : "s") + " you have on now"
+                            : "Save preset   take some blessings first, then keep what you want";
+                        DialogRow(saveText, "Save",
+                                  savable <= 0 ? (System.Action)null
+                                  : hasCustom
+                                      ? () => Ask("Replace your saved preset with the " + savable +
+                                                  " blessings you have on now?", "Replace",
+                                                  () => Boot.BufferAction("savepreset", ""))
+                                      : () => Boot.BufferAction("savepreset", ""),
+                                  savable > 0 ? UiKit.Text : UiKit.TextDim);
+
+                        if (hasCustom)
+                            DialogRow("Delete preset", "Delete",
+                                      () => Ask("Delete your saved buff preset?", "Delete",
+                                                () => Boot.BufferAction("delpreset", "")),
+                                      UiKit.TextDim);
+                    }
+                    else
+                    {
+                        DialogRow("Full buff   " + Cost(d.Buffer.FullBuffCost), "Buff",
+                                  () => Boot.BufferAction("full", ""), UiKit.Text);
+                    }
+
                     DialogRow("Restore HP/MP   " + Cost(d.Buffer.RestoreCost), "Restore",
                               () => Boot.BufferAction("restore", ""), UiKit.Text);
 

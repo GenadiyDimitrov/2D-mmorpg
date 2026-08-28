@@ -7,12 +7,90 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.98.2**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.99.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-08-28 (latest) — 0.98.2: his class/race table lands in the CSV README
+## 2026-08-28 (latest) — 0.99.0: `BL-95` buff presets, and [Char] gets its own button
+
+Two asks, one build.
+
+### `[Char]` leaves the bag
+
+> *"Take the [Char] button out of the bag and put it between [bag] and [skills] -> [bag][char][skills]
+> -> now its very anoying each time to open -bag open stats"*
+
+The action bar's second row is **[Bag][Char][Skills]** now, three wide like the first. The sheet has
+had three homes in a fortnight — the bar, the vitals panel, and the bag (where it went once tapping
+your own vitals became *target myself*) — and each move bought a tap somewhere else. It is a
+top-level window, so it gets a top-level button, and it sits in the MIDDLE so neither of the two you
+already know the position of moves out from under your thumb. The bag's [Del: off] toggle slides left
+into the gap.
+
+### `BL-95` — buff presets, and the NPC set grows to SIXTEEN
+
+> *"npc to have (bulwark, might, force, alactiry, fury, swift, ward, body, vigor, resolve, frenzy,
+> vamp + serenity, soul, aim, agility) — players to not be so overwelmed by mobs (serenity, soul —
+> longer mage sessions, agility+aim — fighter les misses dagger less hits taken)"*
+
+Four blessings come BACK to the newbie buffer: **Serenity, Soul, Aim, Agility**. That is the playtest-
+28 trim partly reversed, and knowingly — the eight cut then were called "the optimiser's row", but two
+of those axes turn out to decide how long a SESSION is rather than how good a parse is. A mage out of
+MP and a dagger eating every swing both stop playing. Focus, Ferocity and Insight stay out; they are
+still the optimiser's row.
+
+**Four preset buttons**, each casting a list in one press:
+
+| Button | Count | Contents |
+|---|---|---|
+| **Full buff** | 16 | everything |
+| **Mage** | 10 | Bulwark, Force, Alacrity, Swift, Ward, Body, Soul, Serenity, Resolve, Frenzy |
+| **Fighter** | 10 | Bulwark, Might, Fury, Swift, Ward, Body, Vigor, Vamp, Frenzy, Aim |
+| **Custom** | — | your own, once saved — hidden until then |
+
+🔑 **The client never composes a buff list.** It sends a preset KEY and the server expands it, so the
+price on the button and the buffs that land are one decision made in one place — and a client too old
+to know the word "mage" simply doesn't draw the button instead of casting a wrong set. There is no
+preset discount and no surcharge: same shopping, one press. Every row carries the COUNT as well as the
+price, because with a 20-slot bar and a 16-buff set the count is what you are actually choosing.
+
+🔑 **Save reads what you are WEARING** — his workflow, verbatim: *"the idea is to buff fully from npc
+then remove what u dont need as that class and save it"*. Both of his worked examples fell out of ONE
+filter with no special case, because `BuffInstance.SkillId` is the def that literally created the
+buff: a potion or scroll resolves to its FAMILY rung (`buff_might_r`, never `npc_might`), and an
+improved GROUP like Feral Bloodlust is **one** buff under the group's own id, with no children to be
+found. So *"if i have harmony + might it will save only might"* and *"if i have group 'feral
+bloodlust' it will NOT save the might, fury, vamp"* are both just `NewbieBuffSet.Contains(SkillId)`.
+
+The button shape is the second of the two he offered: **[Save] alone until you have a preset, then
+[Custom] [Save] [Delete]**, with Save asking before it overwrites and Delete asking before it deletes.
+Saving with no blessings on you is **refused, not stored** — an empty preset would put a [Custom]
+button on the window that casts nothing, and then he would have to delete it to get rid of it.
+
+🔑 **PER SUBCLASS**, which is the question the Backlog entry flagged and the 0.94.3 auto-marks bug
+already answered: a buffer's preset (no Force — he is his own Force) is meaningless on his warrior
+subclass, and one shared list would hand it over on every swap. `Subclass.BuffPreset`, new
+`SubclassRecord.BuffPresetJson`. It is **re-filtered against the current `NewbieBuffSet` on load**, not
+trusted — that set has been 19, 11, 12 and now 16 inside one month, and a preset saved between two of
+those would otherwise keep asking for a buff the NPC no longer sells.
+
+Ids only, no rank, as he ruled: *"npc buffer have the highest grade so only id's not rank"*.
+
+Fixed on the way past: the NPC's accuracy single displayed as **"Accuracy"** while the ladder buff, all
+three potions and all three scrolls call the family **"Aim"** — the one place a blessing wore the
+stat's name instead of its own. It is `Aim` now; the id is untouched (append-only).
+
+🔴 **New column → delete `Game.Server/game.db` (and `-shm`/`-wal`).**
+
+🔵 One number worth watching in play: 16 against the cap of 20 leaves **four** free slots, not the
+eight the trim to twelve bought. The presets are the answer — ten leaves ten, so the NPC set and a real
+buffer's groups still fit on one bar — but taking the full sixteen is now a deliberate choice to fill
+it.
+
+---
+
+## 2026-08-28 — 0.98.2: his class/race table lands in the CSV README
 
 He wrote a **`## Classes and Races`** table into `docs/data/classes_skills_csv/README.md` — all 24
 third classes with their 1st/2nd tiers, race, **weapon**, **armor** and **path**. Checked row by row

@@ -82,12 +82,50 @@ public static partial class SkillCatalog
     /// was cut above on the reasoning that Dash and a mount cover move speed; his correction is that
     /// they do not, at the level this set is for. TWELVE against the cap of twenty, so a real buffer's
     /// groups still fit beside the full NPC set — which was the other half of why the list was trimmed.
+    ///
+    /// 🔑 AND FOUR MORE, 2026-08-28 (`BL-95`) — SIXTEEN. He listed the set by hand again and added
+    /// *"serenity, soul, aim, agility"*, with the reason attached to each pair: *"players to not be so
+    /// overwhelmed by mobs (serenity, soul — longer mage sessions; agility + aim — fighter less misses,
+    /// dagger less hits taken)"*. That is the trim of playtest 28 partly reversed, and knowingly: the
+    /// eight cut then were called "the optimiser's row", but two of those axes turn out to decide how
+    /// long a SESSION is rather than how good a parse is — a mage out of MP and a dagger eating every
+    /// swing both stop playing. Focus, Ferocity and Insight (the crit block) stay out; they are still
+    /// the optimiser's row.
+    ///
+    /// ⚠ Sixteen against the cap of twenty leaves FOUR free slots, not eight. That is the cost, and it
+    /// is why the two role presets below exist: ten buffs is the shape a class actually wants, and a
+    /// player who takes one keeps ten slots for a real buffer's groups. Taking the full sixteen is now
+    /// a deliberate choice to fill the bar.
     public static readonly string[] NewbieBuffSet =
         { NpcMight, NpcBulwark, NpcVampirism,
           NpcForce, NpcWard, NpcResolve,
-          NpcBody, NpcVigor,
-          NpcAlacrity, NpcHaste, NpcSwift,
+          NpcBody, NpcVigor, NpcSoul, NpcSerenity,
+          NpcAlacrity, NpcHaste, NpcSwift, NpcAgility,
+          NpcAccuracy,
           NpcFrenzy };
+
+    /// <summary>`BL-95` — the MAGE preset the NPC offers as one button. Ten of the sixteen, named by
+    /// the owner 2026-08-28: *"[Mage] -> 10 - Bulwark, force, alacrity, swift, ward, body, soul,
+    /// serenity, resolve, frenzy"*.
+    ///
+    /// 🔑 It is a SHOPPING LIST, not a rule — every buff in it is still available singly, and nothing
+    /// checks your class. A buffer taking the mage set and cancelling Force is exactly the workflow his
+    /// custom preset is for. What the preset buys is the twelve taps.
+    ///
+    /// ⚠ The order here is the order they land in, which is the order they appear on the buff bar.
+    /// Kept as he wrote it.</summary>
+    public static readonly string[] MageBuffSet =
+        { NpcBulwark, NpcForce, NpcAlacrity, NpcSwift, NpcWard,
+          NpcBody, NpcSoul, NpcSerenity, NpcResolve, NpcFrenzy };
+
+    /// <summary>`BL-95` — the FIGHTER preset. His list, 2026-08-28: *"[Fighter] -> 10 - Bulwark, Might,
+    /// Fury, Swift, Ward, Body, Vigor, Vamp, Frenzy, aim"*.
+    ///
+    /// ⚠ "Fury" is <see cref="NpcHaste"/> and "aim" is <see cref="NpcAccuracy"/> — both are named for
+    /// the FAMILY on the buff ladder, and both kept older ids. Neither is a typo.</summary>
+    public static readonly string[] FighterBuffSet =
+        { NpcBulwark, NpcMight, NpcHaste, NpcSwift, NpcWard,
+          NpcBody, NpcVigor, NpcVampirism, NpcFrenzy, NpcAccuracy };
     /// <summary>What the ADMIN buff button and `/buff` hand out: EVERYTHING a max-level BUFFER can
     /// give, at that buffer's TOP rung, plus every NPC single. Those top layers are the ones no NPC
     /// sells and no consumable can reach, so this is the only way to see a fully-buffed character,
@@ -189,7 +227,11 @@ public static partial class SkillCatalog
         NpcSingle(NpcMight, "Might", BuffPAtk3, SkillEffect.BuffPhysAtk, "+15% P.Atk"),
         NpcSingle(NpcBulwark, "Bulwark", BuffPDef3, SkillEffect.BuffDef, "+15% P.Def"),
         NpcSingle(NpcVampirism, "Vampirism", BuffVamp5, SkillEffect.BuffMeleeVamp, "9% melee vampirism"),
-        NpcSingle(NpcAccuracy, "Accuracy", BuffAcc4, SkillEffect.BuffAccuracy, "+4 Accuracy"),
+        // "Aim", not "Accuracy" — the FAMILY is Aim on every other rung (the ladder buff, all three
+        // potions, all three scrolls), and the owner asks for it by that name (`BL-95`). This single
+        // was the one place the stat's name was showing instead of the buff's, which read as a
+        // different blessing on the same bar. Only the display name moved; the id is append-only.
+        NpcSingle(NpcAccuracy, "Aim", BuffAcc4, SkillEffect.BuffAccuracy, "+4 Accuracy"),
 
         // ---- The FORCE family (was a single three-effect "Force"). ----
         NpcSingle(NpcForce, "Force", BuffMAtk4, SkillEffect.BuffMagAtk, "+32% M.Atk"),

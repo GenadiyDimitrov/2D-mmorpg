@@ -170,6 +170,16 @@ race + role now (`Human Apprentice`), because nothing differs before 40 and a fl
 promising an identity the game does not deliver.
 
 ## Classes and Races
+### Races
+|           | --- Human --- | --- Elf --- | --- Demon --- | --- Human --- | --- Elf --- | --- Demon --- |
+|           | -- Fighter -- | - Fighter - | -- Fighter -- | --- Mage --- | --- Mage --- | --- Mage --- |
+| --------- | ------------- | ----------- | ------------- | ------------ | ------------ | ------------ |
+| -- ATK -- |               |             |               |              |              |              |
+| -- CON -- |               |             |               |              |              |              |
+| -- AGI -- |               |             |               |              |              |              |
+| -- SPT -- |               |             |               |              |              |              |
+| -- WIT -- |               |             |               |              |              |              |
+### Classes
 | 1st     | 2nd        | 3rd              | 4th              | Race  | Weapon                      | Armor               | Path         |
 | ------- | ---------- | ---------------- | ---------------- | ----- | --------------------------- | ------------------- | ------------ |
 | Fighter |            |                  |                  |       | Sword/Blunt/Dual/Bow - 1/2h | Robe/Light/Heavy    | -            |
@@ -204,6 +214,8 @@ promising an identity the game does not deliver.
 |         |            | Water Adept      | Ice Master       | Elf   | Wand/Staff                  | Robe [+ Shield]     | Nuke         |
 |         |            | Fire Adept       | Inferno Master   | Demon | Wand/Staff                  | Robe [+ Shield]     | Nuke         |
 
+
+
 ⚠ **The 2nd-class column is the SHORT form.** In game a 2nd class wears its race — `Human Rogue`,
 `Elf Warrior`, `Demon Apprentice` — because that is the whole point of the `BL-100` rename. The Race
 column on the 3rd/4th rows is what tells you which of the three you are reading.
@@ -225,10 +237,10 @@ most useful thing in this table. Two notes on where they stand:
 
 Not a rule the code enforces — a tone, so a new row has somewhere obvious to sit:
 
-| race      | the register                                | the tank line, worked out             |
-| --------- | ------------------------------------------- | ------------------------------------- |
+| race      | the register                                | the tank line, worked out                    |
+| --------- | ------------------------------------------- | -------------------------------------------- |
 | **Human** | martial, ordered, heraldic — rank and oath  | Human Knight → Iron Guard → Knight Commander |
-| **Elf**   | light, wind, growth — precision and grace   | Elf Knight → Templar → Paladin        |
+| **Elf**   | light, wind, growth — precision and grace   | Elf Knight → Templar → Paladin               |
 | **Demon** | dread, blood, the abyss — ruin and appetite | Demon Knight → Dread Knight → Abyssal Knight |
 
 ⚠ **The Demon register changed with the race** (2026-08-28, `BL-101`). It used to be *bone, blood,
@@ -237,10 +249,10 @@ was a shrug. Dread and the abyss give `Dreadcaller`, `Occultist` and `Warlock` s
 
 🔑 **Three sets run ACROSS the races, and a new name should join one of them:**
 
-| the set | Human | Elf | Demon |
-|---|---|---|---|
-| nuker — the element growing up | Mana → Arcane | Water → Ice | Fire → Inferno |
-| war_aoe 3rd — a martial POSITION | Vanguard | Skirmisher | Warborn |
+| the set                          | Human                   | Elf                       | Demon                |
+| -------------------------------- | ----------------------- | ------------------------- | -------------------- |
+| nuker — the element growing up   | Mana → Arcane           | Water → Ice               | Fire → Inferno       |
+| war_aoe 3rd — a martial POSITION | Vanguard                | Skirmisher                | Warborn              |
 | AoE/support 4th — a **War** word | War Master · War Doctor | War Storm · War Harmonist | Warbringer · Warlock |
 
 ## The orphans from the old map — both gone

@@ -1127,8 +1127,26 @@ public record BufferInfo(
     string Message,         // shown when CanBuff is false (too low / too high)
     long FullBuffCost,      // 0 = free
     long RestoreCost,       // cost to restore HP+MP right now (0 = free / already full)
-    BufferBuff[] Buffs);    // single buffs, each with its own cost
+    BufferBuff[] Buffs,     // single buffs, each with its own cost
+    // ----- `BL-95` PRESETS, appended (an old client ignores them and still sees Full + singles) -----
+    // Three buttons that cast a LIST in one press. Full/Mage/Fighter are shipped and identical for
+    // everyone; Custom is this CLASS's own saved list (see Subclass.BuffPreset).
+    //
+    // 🔑 The COUNT travels with each one. The player's question at this window is "how many squares is
+    // this about to cost me" — the cap is 20 and the full set is 16 — and the client must never work
+    // that out by counting a list it built itself, because only the server knows which ids survived
+    // the re-filter on load.
+    BufferPreset[]? Presets = null,
+    // How many NPC blessings the player is wearing RIGHT NOW, i.e. what pressing [Save] would store.
+    // 0 = the Save button is dead, and the client says why rather than saving an empty preset.
+    int SavableNow = 0);
 public record BufferBuff(string SkillId, string Name, long Cost);
+
+/// <summary>Server -> client: one preset button at the NPC buffer (`BL-95`). <see cref="Key"/> is the
+/// action string the client sends back ("full" / "mage" / "fighter" / "custom") — the client never
+/// composes a buff list, it names a preset and the server expands it, so the two can never disagree
+/// about what "Mage" means.</summary>
+public record BufferPreset(string Key, string Name, int Count, long Cost);
 
 // ----- The quest WINDOW's view (0.43.0) ------------------------------------
 //

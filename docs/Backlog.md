@@ -417,26 +417,31 @@ closed · **`BL-93` opened** for the in-game visuals discussion you asked for (*
 
 ## Classes & skills
 
-- `BL-95` 🔴 **BUFF PRESETS — two built-in, plus custom ones the player saves.** Your instruction,
-  2026-08-28: *"make a backlog entry to make a 2 buff presses. One fighter one mage, we have a full
-  and players to be able to save custom one … For example a warrior don't need force/alacrity/resolve
-  while nuker don't need fury/might - a buffer won't be needing a force so he can save current buffs
-  (without force) as custom preset"*.
-  - **Three shipped presets**: the existing **Full**, plus **Fighter** (drops the caster-only lines —
-    your example names Force, Alacrity, Resolve) and **Mage** (drops the melee lines — Fury, Might).
-  - **Custom presets are SAVED FROM WHAT YOU ARE WEARING**: your buffer example is "I have exactly
-    the right set up right now, minus Force — keep this". So the save action reads the character's
-    CURRENT buffs, not a tick-list built from scratch.
-  - 🔑 **ONLY buffs the NPC buffer offers are storable.** *"Buffs only available to the npc buffer are
-    stored"* — a preset is a shopping list for that NPC, so a boss buff or a potion effect that
-    happens to be up when you press save must not go in it.
-  - 🔑 **IDS ONLY, NO RANK.** *"npc buffer have the highest grade so only id's not rank"* — the NPC
-    always casts its best rung, so storing a rank would be storing a number that can only be wrong.
-  - 🔑 **PER CHARACTER, NOT PER ACCOUNT.** Your words. ⚠ And decide per SUBCLASS vs per character when
-    you build it: the 2026-08-28 auto-on bug was exactly this question answered wrongly for the skill
-    bar's auto marks, and a preset is the same shape of thing — a buffer's preset is meaningless on
-    his warrior subclass. `Subclass.AutoSkills` is the precedent to copy.
-  - Storage is a new `SubclassRecord`/`CharacterRecord` column; ⚠ needs a `game.db` delete.
+- `BL-95` ✅ **BUFF PRESETS — BUILT 0.99.0, and the NPC set grew to SIXTEEN.** Your 2026-08-28 list
+  added Serenity, Soul, Aim and Agility to the twelve, *"players to not be so overwhelmed by mobs
+  (serenity, soul — longer mage sessions; agility+aim — fighter less misses, dagger less hits
+  taken)"*, and named the two role presets by hand.
+  - **Four buttons at the NPC now**: **Full** (16), **Mage** (10 — Bulwark, Force, Alacrity, Swift,
+    Ward, Body, Soul, Serenity, Resolve, Frenzy), **Fighter** (10 — Bulwark, Might, Fury, Swift, Ward,
+    Body, Vigor, Vamp, Frenzy, Aim), and **Custom** once you save one. Each row shows the COUNT as
+    well as the price, because the buff bar caps at 20 and the full set is now 16.
+  - **Save reads what you are WEARING**, your workflow exactly — buff fully, cancel what your class
+    doesn't want, press Save. Both worked examples fell out of one filter with no special case: a
+    buff records the def that *created* it, so a potion resolves to its family rung (never
+    `npc_might`) and a group like Feral Bloodlust is ONE buff under the group's own id — so neither
+    can leak into a preset.
+  - **[Save] alone until you have one; then [Custom] [Save] [Delete]**, with Save asking before it
+    overwrites and Delete asking before it deletes. Saving with no blessings on you is refused rather
+    than stored, so a [Custom] button that casts nothing can never appear.
+  - **PER SUBCLASS** — the question you flagged, answered the way the auto-marks bug says to answer
+    it. `Subclass.BuffPreset`, new `SubclassRecord.BuffPresetJson`. ⚠ **game.db delete required.**
+  - Also fixed on the way past: the NPC's accuracy single was displayed as **"Accuracy"** while the
+    ladder, all three potions and all three scrolls call the family **"Aim"** — one blessing wearing
+    the stat's name. It is `Aim` now; the id is unchanged.
+  - 🔵 **The one number worth watching in play**: 16 against the cap of 20 leaves four free slots, not
+    the eight the trim to twelve bought. The presets are the answer (ten leaves ten), but if the full
+    set plus a party buffer feels tight, the fix is to take Mage/Fighter rather than to trim the set
+    again.
 
 - `BL-96` ✅ **THE `AOE` COLUMN — BUILT 0.94.2 on your go-ahead.** `LEARN, NAME, TYPE, RANGE, AOE,
   TARGET, …` across all 24 files, 1,425 rows, by a new `SkillCsvSeed --aoe-column`. `--check` now

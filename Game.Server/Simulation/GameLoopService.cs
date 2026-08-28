@@ -15665,6 +15665,55 @@ public class GameLoopService : BackgroundService
         return (long)(RestoreCostCap * hpMiss + RestoreCostCap * mpMiss);
     }
 
+    // ----- `BL-95`: buff PRESETS ------------------------------------------------------------------
+    //
+    // Three shipped lists (Full / Mage / Fighter) and one the player saves per CLASS. Owner,
+    // 2026-08-28, and his reason is not convenience — it is that sixteen buttons is sixteen taps every
+    // time you die: *"players to not be so overwhelmed by mobs"*.
+    //
+    // 🔑 THE CLIENT NEVER COMPOSES A LIST. It sends a preset KEY and the server expands it. That is
+    //    what keeps the price on the button and the buffs that land as one decision, and it is why a
+    //    client too old to know the word "mage" simply doesn't show the button instead of casting a
+    //    wrong set.
+    //
+    // 🔑 A preset is charged and applied exactly like the full set — the same SingleBuffCost per id,
+    //    the same GrantFullBuffSet. There is no preset DISCOUNT and no preset surcharge: it is the
+    //    same shopping, in one press.
+
+    /// <summary>The ids this player would SAVE right now: the NPC blessings currently on them.
+    ///
+    /// 🔑 The filter is <c>NewbieBuffSet.Contains(b.SkillId)</c> and that one test settles both of his
+    /// worked examples for free. <c>SkillId</c> is the def that literally created the buff, so a
+    /// potion or a scroll resolves to its FAMILY rung (<c>buff_might_r</c>, never <c>npc_might</c>) and
+    /// an improved GROUP is one buff under the group's own id — which is why *"if I have group 'feral
+    /// bloodlust' it will NOT save the might, fury, vamp"* needs no special case: the group's id is not
+    /// in the set, and its children do not exist as separate buffs to be found.
+    ///
+    /// ⚠ Ordered by the SET, not by the buff bar, so a saved preset always lands in the same order it
+    /// would have from the Full button.</summary>
+    private static List<string> SavableBuffIds(Entity player)
+    {
+        var have = new HashSet<string>();
+        foreach (var b in player.Buffs)
+            if (!string.IsNullOrEmpty(b.SkillId)) have.Add(b.SkillId);
+        return SkillCatalog.NewbieBuffSet.Where(have.Contains).ToList();
+    }
+
+    private static BufferPreset PresetOf(Entity player, string key, string name, IReadOnlyList<string> ids) =>
+        new(key, name, ids.Count, ids.Sum(id => SingleBuffCost(player, id)));
+
+    /// <summary>The list a preset key expands to, or null if the key isn't one. Custom returns null
+    /// when nothing is saved — the button is not sent in that state, so reaching here means a stale
+    /// client or a hand-made packet, and casting the full set instead would be a surprise purchase.</summary>
+    private static IReadOnlyList<string>? PresetIds(Entity player, string key) => key switch
+    {
+        "full" => SkillCatalog.NewbieBuffSet,
+        "mage" => SkillCatalog.MageBuffSet,
+        "fighter" => SkillCatalog.FighterBuffSet,
+        "custom" => player.ActiveBuffPreset.Count > 0 ? player.ActiveBuffPreset : null,
+        _ => null,
+    };
+
     private void SendBufferDialog(Entity player, Entity npc)
     {
         bool canBuff = player.Level is >= BufferMinLvl and <= BufferMaxLvl;
@@ -15685,7 +15734,24 @@ public class GameLoopService : BackgroundService
                 .ToArray()
             : Array.Empty<BufferBuff>();
 
-        var info = new BufferInfo(canBuff, message, fullCost, RestoreCost(player), buffs);
+        // ---- `BL-95` presets. Built from the SAME lists the cast path expands, so a price quoted here
+        //      and the buffs that land can never come from two different arrays.
+        var presets = new List<BufferPreset>();
+        if (canBuff)
+        {
+            presets.Add(PresetOf(player, "full", "Full buff", SkillCatalog.NewbieBuffSet));
+            presets.Add(PresetOf(player, "mage", "Mage", SkillCatalog.MageBuffSet));
+            presets.Add(PresetOf(player, "fighter", "Fighter", SkillCatalog.FighterBuffSet));
+            // Custom appears ONLY once saved — his ruling: *"if custom is empty the save not to
+            // prompt … or [Custom] is hidden and shows only [Save]"*. A button that casts nothing is
+            // worse than no button, and hiding it is also what makes [Save] unambiguous: with no
+            // preset there is one thing to press, and it does the one thing you could mean.
+            if (player.ActiveBuffPreset.Count > 0)
+                presets.Add(PresetOf(player, "custom", "Custom", player.ActiveBuffPreset));
+        }
+
+        var info = new BufferInfo(canBuff, message, fullCost, RestoreCost(player), buffs,
+                                  presets.ToArray(), canBuff ? SavableBuffIds(player).Count : 0);
         SendTo(player, "Dialog", new NpcDialog(
             npc.Name, npc.NpcRole.ToString(),
             Array.Empty<QuestSummary>(), Array.Empty<QuestSummary>(), Array.Empty<QuestSummary>(),
@@ -15727,10 +15793,56 @@ public class GameLoopService : BackgroundService
 
         switch (cmd.Action)
         {
+            // "full" is now just the widest PRESET (`BL-95`) — same path as "mage" / "fighter" /
+            // "custom", so the three new buttons can never drift from the one that was already right.
             case "full":
-                if (!Charge(SkillCatalog.NewbieBuffSet.Sum(id => SingleBuffCost(player, id)))) return;
-                GrantFullBuffSet(player);
-                SendSystemToEntity(player, "You are blessed with a buffer's full might!");
+            case "mage":
+            case "fighter":
+            case "custom":
+            {
+                if (PresetIds(player, cmd.Action) is not { Count: > 0 } ids)
+                {
+                    SendSystemToEntity(player, "You have no preset saved.");
+                    return;
+                }
+                if (!Charge(ids.Sum(id => SingleBuffCost(player, id)))) return;
+                GrantFullBuffSet(player, ids);
+                SendSystemToEntity(player, cmd.Action == "full"
+                    ? "You are blessed with a buffer's full might!"
+                    : $"Blessed — {ids.Count} of the buffer's blessings.");
+                break;
+            }
+
+            // ---- SAVE the current blessings as this CLASS's preset. It reads what you are WEARING,
+            //      which is his whole design: *"the idea is to buff fully from npc then remove what u
+            //      don't need as that class and save it"*. A tick-list built from scratch would be a
+            //      different feature — this one is "keep what I have working right now".
+            case "savepreset":
+            {
+                var ids = SavableBuffIds(player);
+                if (ids.Count == 0)
+                {
+                    // Refused, not stored. An empty preset would put a [Custom] button on the window
+                    // that casts nothing, and then he would have to delete it to get rid of it.
+                    SendSystemToEntity(player, "You have none of my blessings on you to save.");
+                    return;
+                }
+                player.ActiveBuffPreset.Clear();
+                player.ActiveBuffPreset.AddRange(ids);
+                SaveEntity(player);
+                SendSystemToEntity(player, $"Preset saved — {ids.Count} blessings.");
+                break;
+            }
+
+            case "delpreset":
+                if (player.ActiveBuffPreset.Count == 0)
+                {
+                    SendSystemToEntity(player, "You have no preset saved.");
+                    return;
+                }
+                player.ActiveBuffPreset.Clear();
+                SaveEntity(player);
+                SendSystemToEntity(player, "Preset deleted.");
                 break;
 
             case "single":

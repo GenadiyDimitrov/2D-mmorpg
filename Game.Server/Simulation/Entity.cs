@@ -446,6 +446,11 @@ public class Entity
         set => ActiveSubclass.SkillBar = value ?? Array.Empty<string>();
     }
 
+    /// <summary>`BL-95` — the active class's saved NPC-buffer preset. PER CLASS, for the same reason
+    /// the bar above is: see <see cref="Subclass.BuffPreset"/>. Proxied here so every caller reads the
+    /// class you are actually playing without ever naming a slot.</summary>
+    public List<string> ActiveBuffPreset => ActiveSubclass.BuffPreset;
+
     /// <summary>Active quests -> progress (step index + counter).</summary>
     public Dictionary<string, CharacterQuestState> ActiveQuests { get; } = new();
 

@@ -96,6 +96,24 @@ public class Subclass
     /// </summary>
     public List<AutoSkillDto> AutoSkills { get; } = new();
 
+    /// <summary>`BL-95` — this class's saved BUFF PRESET: the NPC-buffer skill ids to re-cast when the
+    /// player presses [Custom] at a buffer. Empty = nothing saved yet, and the NPC shows [Save] alone.
+    ///
+    /// 🔑 IDS ONLY, NO RANK — owner: *"npc buffer have the highest grade so only id's not rank"*. The
+    /// NPC casts one strength, so a stored rank could only ever be a number that disagrees with what
+    /// arrives. It is also why a preset survives any future rebalance of those buffs for free.
+    ///
+    /// 🔑 PER CLASS, not per character — his words, and the same call the AUTO marks above got hours
+    /// earlier on 2026-08-28. A buffer's preset (no Force, he is his own Force) is meaningless on his
+    /// warrior subclass, and one shared list would hand it over on every swap. That is not a new
+    /// judgement here; it is the bug directly above, refused a second time.
+    ///
+    /// ⚠ Only ids in <see cref="SkillCatalog.NewbieBuffSet"/> ever go in — the NPC cannot cast anything
+    /// else, so a preset that named a boss buff or a potion effect would be a shopping list with items
+    /// the shop does not sell. The filter lives at the SAVE site (GameLoopService.SaveBuffPreset) and is
+    /// re-applied on the way out, so a set trimmed later cannot leave a dead id in an old save.</summary>
+    public List<string> BuffPreset { get; } = new();
+
     /// <summary>Roll the core stats for this class from its OWN (Race, BaseClass).</summary>
     public void RollBaseStats()
     {

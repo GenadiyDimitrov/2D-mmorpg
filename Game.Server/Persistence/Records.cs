@@ -263,6 +263,13 @@ public class SubclassRecord
     /// ⚠ NEW COLUMN: EnsureCreated does not add columns to an existing DB. Delete Game.Server/game.db
     /// (and -shm/-wal) and let it recreate.</summary>
     public string AutoSkillsJson { get; set; } = "";
+
+    /// <summary>`BL-95` — this class's saved NPC-buffer preset as a JSON string array of skill ids
+    /// (empty = none saved). See Subclass.BuffPreset for why it is per CLASS and why it stores ids
+    /// with no rank.
+    /// ⚠ NEW COLUMN: EnsureCreated does not add columns to an existing DB. Delete Game.Server/game.db
+    /// (and -shm/-wal) and let it recreate.</summary>
+    public string BuffPresetJson { get; set; } = "";
 }
 
 public class ItemRecord

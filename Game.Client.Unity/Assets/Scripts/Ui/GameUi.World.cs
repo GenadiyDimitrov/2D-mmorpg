@@ -314,8 +314,9 @@ namespace Game.Client
             // skills is the difference between a heal landing and a cast being thrown away.
             //
             // This panel is the obvious door: it is your name, it is always on screen, and it is
-            // nowhere near the skill bar. The character sheet moved to a [Char] button in the bag,
-            // beside [Equip] — his call, and the better home for it anyway.
+            // nowhere near the skill bar. The character sheet moved to a [Char] button of its own —
+            // first inside the bag beside [Equip], and since 2026-08-28 on the ACTION BAR between
+            // [Bag] and [Skills], because the bag version cost two taps every time.
             //
             // The button is on the BORDER object, so the whole panel is the target rather than a
             // strip of it.
@@ -689,8 +690,8 @@ namespace Game.Client
         }
 
         /// <summary>
-        /// The action bar: five buttons TOP-RIGHT in two rows, with the rarely-pressed ones behind a
-        /// Menu. Row one is [PvP][Auto][Menu], row two [Bag][Skills].
+        /// The action bar: six buttons TOP-RIGHT in two rows, with the rarely-pressed ones behind a
+        /// Menu. Row one is [PvP][Auto][Menu], row two [Bag][Char][Skills].
         ///
         /// It used to be ten buttons across the whole bottom edge, which is the worst place for them
         /// on a phone: that strip is where the thumbs rest and where the chat and skill bar want to
@@ -698,8 +699,11 @@ namespace Game.Client
         /// (once). Top-right is reachable, out of the way of the thumbs, and the split is by FREQUENCY:
         /// what you press mid-fight stays out, what you press once a session goes in the Menu.
         ///
-        /// Char is not here at all — you open it by tapping your own HP panel, which is both a
-        /// shortcut and where you were already looking.
+        /// Char CAME BACK to this bar on 2026-08-28. It was here originally, moved onto the vitals
+        /// panel, then into the BAG when the vitals tap became "target myself" — and every move bought
+        /// a tap somewhere else. His verdict on the bag version: *"now it's very annoying each time to
+        /// open bag, open stats"*. It is a top-level window like the other two, so it gets a top-level
+        /// button, and it goes in the MIDDLE so neither Bag nor Skills moves out from under the thumb.
         /// </summary>
         private void BuildActionBar()
         {
@@ -723,6 +727,7 @@ namespace Game.Client
                 new()
                 {
                     ("Bag",       () => ToggleWindow(_bagPanel)),
+                    ("Char",      () => ToggleWindow(_statsPanel)),
                     ("Skills",    () => ToggleWindow(_skillsPanel)),
                 },
             };
@@ -1047,20 +1052,16 @@ namespace Game.Client
             UiKit.Place(UiKit.Rect(_bagEquipToggle.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(16f, -chrome - 36f), new Vector2(92f, 32f));
 
-            // CHAR — the character sheet, beside Equip exactly where he asked for it (playtest 28:
-            // *"the details/char info button should be in the inventory next to the [equip] button"*).
-            // It used to be the ONLY way in: tapping your own vitals panel opened the sheet, and that
-            // tap is now how you TARGET yourself, so the sheet needed a door of its own. This is the
-            // right one — the sheet and the paper-doll are the same question asked twice, and you are
-            // already in the bag when you want to know what a piece of gear did to your numbers.
-            var charButton = UiKit.TextButton(inner, "Char", () => ToggleWindow(_statsPanel), 14f);
-            UiKit.Place(UiKit.Rect(charButton.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(112f, -chrome - 36f), new Vector2(92f, 32f));
+            // CHAR IS NO LONGER HERE (owner, 2026-08-28). It sat beside [Equip] for one playtest — the
+            // door the sheet needed once the vitals tap became "target myself" — and his verdict is that
+            // the door was in the wrong wall: *"now it's very annoying each time to open bag, open
+            // stats"*. Two taps and a window to close, for a number you check between pulls. It is on the
+            // ACTION BAR now, between [Bag] and [Skills] (BuildActionBar), one tap from anywhere.
 
             _bagDelToggle = UiKit.TextButton(inner, "Del: off",
                 () => { _bagFastDel = !_bagFastDel; _bagRevision = -1; }, 14f);
             UiKit.Place(UiKit.Rect(_bagDelToggle.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(208f, -chrome - 36f), new Vector2(92f, 32f));
+                        new Vector2(112f, -chrome - 36f), new Vector2(92f, 32f));
 
             _bagTabButtons = BuildCategoryTabs(inner, BagTabs, new Vector2(16f, -chrome - 72f), 80f,
                                                cat => { _bagTab = cat; _bagRevision = -1; });
