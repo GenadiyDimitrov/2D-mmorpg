@@ -3290,8 +3290,41 @@ public class Entity
         }
     }
 
+    /// <summary>
+    /// `BL-93` — THE RACE AND CLASS THIS CHARACTER LOOKS LIKE, which is not the one it is playing.
+    ///
+    /// <para>Owner, 2026-08-28: *"In IG I can be a human fighter (model) and take a sub of a demon mage
+    /// — my model still looks like the human fighter one but the stats and skill kits are the subclass
+    /// one."* That is the IG rule and it is the right one: a subclass is a second CAREER, not a second
+    /// body. Everything else about you changes on a swap — stats, skills, HP curve, bar — and your
+    /// reflection does not.</para>
+    ///
+    /// <para>🔑 <b>Appearance is SLOT 0</b>, the class the character was created as and the one slot
+    /// that can never be removed. Nothing needed inventing: <see cref="HandleDebugReset"/> in the game
+    /// loop rebuilds slot 0 from the chosen race/class, so the admin re-roll changes the body — which
+    /// is the other half of what he asked for — while <c>SwitchSubclass</c> never touches slot 0, so a
+    /// swap cannot. One rule, both behaviours, no special case in either path.</para>
+    ///
+    /// <para>⚠ <b>Why these ride the EXISTING Race/BaseClass wire fields instead of two new ones:</b>
+    /// nothing in the client reads <c>EntityDto.Race</c> or <c>EntityDto.BaseClass</c> except
+    /// <c>ModelLibrary.Keys</c> — they exist to choose a mesh and do nothing else (the character sheet
+    /// and class-select screens read their own DTOs, which still carry the ACTIVE class and are
+    /// untouched). So this needs no protocol bump and no new APK to take effect. The day a target frame
+    /// wants to print a stranger's active class, THAT is when two more fields land and these get their
+    /// own names.</para>
+    ///
+    /// <para>Class is in here as well as race because, with no visible equipment, the class key is our
+    /// only stand-in for "plate or robe". When gear becomes visible this narrows to race + what is
+    /// worn, and the class half of the key retires on its own.</para>
+    /// </summary>
+    private Subclass AppearanceClass =>
+        Subclasses.FirstOrDefault(s => s.Slot == 0) ?? ActiveSubclass;
+
     public EntityDto ToDto() =>
-        new(Id, Name, Kind, Race, BaseClass, X, Y, Speed, Level,
+        new(Id, Name, Kind,
+            Kind == EntityKind.Player ? AppearanceClass.Race : Race,
+            Kind == EntityKind.Player ? AppearanceClass.BaseClass : BaseClass,
+            X, Y, Speed, Level,
             Hp, MaxHp, Mp, MaxMp, SecondClass, ThirdClass, Dead, IsDisconnected, FlagState,
             Kind == EntityKind.Mob && Aggressive, Title, TitleColor, SocialClanShown,
             ModelCategory, ModelRole);

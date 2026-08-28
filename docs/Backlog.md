@@ -853,24 +853,110 @@ closed · **`BL-93` opened** for the in-game visuals discussion you asked for (*
   player, NPC and humanoid mob now has a body; the FBX source packs are committed beside it
   (`Models/Characters/`, `Models/Monsters/`), your call: *"push all ill later remove/update them to
   prefabs - if PoC works"*. APK 43 → **49 MB**.
-  ⤷ 🔵 **NEXT, and it needs no code:** **50 of the 83 mob templates are not humanoid** and wear a human
-  body today. Five prefabs from the pack you already committed fix 36 of them — the copy-and-paste
-  table is in `docs/guides/UnityClient.md`, *"The nine monster names"*. Demon/Angel/Plant have no
-  fitting model yet. ⚠ Monster FBXs stay on rig **Generic**; only bipeds get Humanoid.
-  ⤷ ⏸ **PREFAB AUTOMATION IS DEFERRED, your ruling 2026-08-28:** *"skip automating the prefabs for now
-  .. test do the poc atm .. then ill do 1-2 animals by hand if all holds then ill just give you fbx
-  files and u do it .. but now defered"*. **Do not build the tool or re-raise it** until the PoC is
-  played and you have hand-made an animal or two. The capability is real when you want it — a prefab
-  is plain YAML, and `PrefabUtility.SaveAsPrefabAsset` behind an `-executeMethod` (like
-  `CommandLineBuild`) emits them headless, ~40 lines. What is NOT automatable, and why you kept it:
-  which model suits a family, its scale, its Y offset. ⚠ A brand-new `.cs` in `Assets/Editor/` is not
-  in Unity's generated csproj, so that tool cannot be type-checked by the usual 18s
-  `dotnet build Assembly-CSharp.csproj` before its first headless run.
+  ⤷ 🔵 **NEXT, and it needs no code:** 50 of the 83 mob templates are not humanoid and wore a human
+  body. **20 of them are fixed as of 0.100.2** (animal + insect, below); Undead (9) and Dragon (5) are
+  the next two and their FBXs are already in the repo. The copy-and-paste table is in
+  `docs/guides/UnityClient.md`, *"The nine monster names"*. Demon/Angel/Plant have no fitting model
+  yet. ⚠ Monster FBXs stay on rig **Generic**; only bipeds get Humanoid.
+  ⤷ ✅ **THE DEFERRAL IS REVERSED BY YOU, 2026-08-28 — AND BUILT (0.100.2):** *"can u add 1~2 mobs? U
+  said u can do it alone as I don't have access to the pc. (again as poc)"*. The 2026-08-28 ruling
+  (*"skip automating the prefabs for now .. then ill do 1-2 animals by hand"* — archived) assumed you
+  would hand-make the first ones; you cannot reach the Editor, so the tool exists:
+  **`Assets/Editor/ModelSetup.cs`**, run headless with `-executeMethod`.
+  **`mob_animal` (Rat) and `mob_insect` (Spider) are in** — 20 of the 79 roster templates, and the
+  first creature in the game (Ridgeback Pup, Lv 1) is one of them. 🔑 **They ANIMATE** — the monster
+  FBXs ship Idle/Walk/Run/Attack/Death, which is exactly what `EntityView` has been driving since
+  protocol 29, so the animation path is now proven with no new message and no client code.
+  🔑 **Adding a family is ONE LINE in `ModelSetup.Families`** — `mob_undead` (Skeleton, 9 templates)
+  and `mob_dragon` (Dragon, 5) are the next two and their FBXs are already committed. Say the word.
+  What is still NOT automatable, and is why you held it: which model suits a family, and its height —
+  both are authored per row, because the packs disagree on scale (the Rat imports 2.9 units tall).
+
+  ⤷ 🔴 **THE PLAYER MODEL CANNOT ANIMATE — see `BL-102`. It is a missing FILE, not missing code.**
 
   Still un-started, in the order I'd do them: **terrain generated from the zone circles** (biggest
   perceived change per hour, needs no art) → creature families → **8 skill-FX archetypes** (one enum +
   colour on `SkillDef`; the client reads `SkillCatalog` directly, so no protocol change) → **~25 sound
   clips + 2-3 ambient loops** → skybox/fog/day-night (🔑 `GameClock` is already server-synced).
+
+- `BL-102` 🔴 **THE CHARACTER MODELS HAVE NO ANIMATION CLIPS — I need a file from you, and it is the
+  only thing standing between you and a running character.** You asked, 2026-08-28: *"now if we can add
+  runing animation"*. The wiring is done and proven — the two mob families in 0.100.2 walk, run, swing
+  and die off messages that already existed. The player does not, for one reason:
+
+  **All 21 FBXs in `Models/Characters/` contain zero animation.** Measured, not assumed: mesh,
+  skeleton, bind pose, 65 bones — and `AnimationStack` count **0**. The monster pack ships five takes
+  per creature; the character pack you committed ships none. `humanoid.prefab` is a body with nothing
+  to play, so it slides in its bind pose. No controller can fix that: there is nothing to put in it.
+
+  🔑 **What you did right and what it buys you:** you set the character rig to **Humanoid**. That is
+  the setting that makes clips *retargetable*, so any humanoid animation set drops onto these bodies —
+  and onto the elf and demon bodies you add next week — with no per-model work. This is exactly the
+  swappability argument from the direction talk, arriving early.
+
+  **Two ways to close it, both free, either is fine:**
+  1. **The pack's own animation file.** These packs normally ship a separate animations FBX beside the
+     characters; it was not in what you copied across. If you still have the download, that one file is
+     the whole fix.
+  2. **Mixamo** — upload one character FBX, pick clips, download "without skin". CC0-safe for this use
+     and the standard route for a Humanoid rig.
+
+  **What I need is only the file(s) in `Models/Characters/Animations/`.** Then `ModelSetup` grows a
+  character row and `humanoid.prefab` gets the same treatment the mobs just got — an afternoon, headless,
+  no Editor session from you.
+
+  ⚠ **Clip names matter less than the SET.** Idle / Walk / Run / Attack / Death is the whole
+  requirement — those are the four parameters `EntityView` drives (`Speed`, `Attack`, `Casting`,
+  `Dead`), and a missing one is silently skipped rather than an error. A cast pose would be a fifth and
+  is the one the monsters do not have either.
+
+- `BL-103` 🔵 **VISIBLE WEAPONS — the key shape is settled, the meshes are not. Your design, 2026-08-28:**
+  *"if I make a sword1h.prefab and one sword1h_t20.prefab can that work? a t20 swords to be this one
+  every rarity (we can change hue for example or glow) and if no tier prefab to fallback to default"*.
+  **Yes — and `sword1h_t20` is not an invented name: it is literally an existing item id**
+  (`TieredWeapons` emits `$"{w.Key}_t{L}"`).
+
+  **The eight weapon keys** — `sword1h` · `sword2h` · `blunt1h` · `blunt2h` · `duals` · `bow` · `wand` ·
+  `staff`. **The seven tiers** — 1 / 20 / 40 / 52 / 61 / 76 / 80.
+
+  🔑 **KEY ON THE FAMILY + TIER, NOT ON THE ITEM ID.** The id space also holds `_rare` / `_epic` /
+  `_legendary` copies (`ItemCatalog.QualityId`), `_lo` sets and `_dmg` variants — key on the id and
+  every rarity demands its own prefab, which is exactly what your hue/glow plan avoids. The chain:
+
+  ```
+  Models/weapon_sword1h_t20     your tier prefab
+  Models/weapon_sword1h         your default for that weapon
+  (no file)                     draw no weapon; nothing breaks
+  ```
+
+  **Eight files give every weapon in the game a look**, and each tier prefab peels one rung off with no
+  code change — the same shape that let `mob_animal` peel the animals off `humanoid`.
+  🔑 The derivation is free and invents no taxonomy: **`WeaponType` + `IsMagicWeapon` maps exactly onto
+  those eight keys** (Blunt+magic = wand, TwoHandedBlunt+magic = staff), and `ItemLevel` is the tier.
+
+  **Rarity = a tint on whatever prefab answered** — your call, and correct. Two practical notes:
+  - ⚠ **Prefer GLOW (emission) to hue.** Hue-shifting a textured mesh goes muddy; emission reads at
+    phone size and does not fight the texture. Rarity is a 6-rung ladder and the drop copies populate
+    all of it, so it is a natural intensity ramp.
+  - 🔴 **It must go through a `MaterialPropertyBlock`.** `renderer.material.color` instantiates and
+    mutates the shared asset — every sword in the world changes and batching dies. Same wall
+    `SetOpacity` hit with models (the stealth-fade gap above).
+
+  **Cost:**
+  - ✅ **Free: the hand socket.** `GetBoneTransform(HumanBodyBones.RightHand)` on a Humanoid rig, no
+    per-model setup — the second dividend of the rig choice.
+  - ⚠ **Authoring, not code:** each mesh needs a consistent **grip origin and orientation** — the same
+    class of decision as the family height in `ModelSetup`, and the same thing no script can decide.
+    Duals need two sockets; a bow sits differently.
+  - 🔴 **A protocol bump.** `EntityDto` carries NO equipment today. Four small values on the **spawn**
+    DTO only (`EntityLean` untouched), the same shape `Category`/`Role` took in protocol 29.
+  - ⚠ **Animation is per-weapon in a real MMO** and we have one clip set, so a sword swing will look
+    right and a bow draw will not. Later problem, not a blocker.
+
+  🔵 **TIMING — my recommendation, not a ruling:** there are **zero weapon meshes in the repo**, so like
+  `BL-102` nothing draws until art exists. **Bundle this with the race bodies** — one protocol bump and
+  one APK, instead of a reinstall now for a feature that draws nothing. The key shape above is all you
+  need to start naming files against.
 
 ---
 

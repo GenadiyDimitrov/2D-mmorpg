@@ -485,11 +485,16 @@ Each row is independent: make one, that family is fixed, nothing else changes.
 they are spelled exactly as the `MobCategory` enum, which is why it is `magiccreature` and not
 `magic_creature`.
 
+🆕 **YOU DO NOT HAVE TO MAKE THESE BY HAND ANY MORE — see "Building creature prefabs headlessly"
+below.** `Assets/Editor/ModelSetup.cs` builds a family, its animator controller and its scale from one
+line of table, with the Editor closed. The table here still tells you *which* model belongs to *which*
+family; that judgement is the part no script can make.
+
 | Prefab name to type | Fixes | Creatures in that family | Suggested model from your pack |
 |---|---|---|---|
-| `mob_animal` | 11 | Ridgeback Pup, Ashen Wolf, Grizzly Bear | `Monsters/Rat`, `Bat`, `Frog`, `Snake` |
+| `mob_animal` ✅ **built 0.100.2** | 11 | Ridgeback Pup, Ashen Wolf, Grizzly Bear | `Monsters/Rat`, `Bat`, `Frog`, `Snake` |
 | `mob_undead` | 9 | Skeleton Grunt, Grave Lich, Hall of Mirrors Wraith | `Monsters/Skeleton` |
-| `mob_insect` | 9 | Hook Spider, Mantis Worker, Plunder Beetle | `Monsters/Spider`, `Wasp` |
+| `mob_insect` ✅ **built 0.100.2** | 9 | Hook Spider, Mantis Worker, Plunder Beetle | `Monsters/Spider`, `Wasp` |
 | `mob_dragon` | 5 | Wyrm, Crimson Drake, Emberwyrm | `Monsters/Dragon` |
 | `mob_demon` | 5 | Cinder Imp, Ravener, Revenant Minion | *(no fitting model yet)* |
 | `mob_angel` | 3 | Radiant Scout, Radiant Berserker, Radiant Mage | *(no fitting model yet)* |
@@ -510,6 +515,48 @@ an orc to read as visibly *not* a player.
 ⚠ **Rig type is per FBX, and monsters are not Humanoid.** Your `Adventurer` was set to Humanoid in
 Step 4 because it is a biped; a spider, slime or dragon must stay on the default **Generic**. Forcing
 Humanoid onto a non-biped mangles the skeleton. Leave the monster FBXs' import settings alone.
+
+### Building creature prefabs headlessly  (`ModelSetup`, 0.100.2)
+
+`Assets/Editor/ModelSetup.cs` makes the prefab, its animator controller and its scale, with **the
+Editor closed**. Adding a family is one line:
+
+```csharp
+new Family("mob_undead", ModelsDir + "/Monsters/Skeleton.fbx", 1.7f),
+//          ^ the prefab key           ^ the FBX                ^ height in Unity units
+```
+
+Then run it (from anywhere, Unity must not be open — it locks the project):
+
+```
+"C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Unity.exe" -batchmode -quit -nographics ^
+    -projectPath G:\Work\Repository\L2Clone\Game.Client.Unity ^
+    -executeMethod Game.ClientEditor.ModelSetup.BuildAll -logFile -
+```
+
+It is idempotent — it overwrites its own outputs and touches nothing else, so re-running after
+swapping in a better FBX is the update path.
+
+🔑 **Why a script and not hand-written YAML:** a prefab references an imported model by `fileID` into
+the FBX's *generated* sub-assets. Those ids are produced by the importer and stored nowhere readable,
+so hand-writing the file means guessing them — and a wrong guess does not error. It produces a prefab
+with a missing child that loads fine and draws nothing, which on a phone with no PC to check against
+is an invisible failure.
+
+🔴 **Two things it fixes that the FBXs do not advertise**, both learned the hard way:
+
+- **The monster packs import as `Avatar: None`.** A Generic rig with no Avatar has nothing to play
+  clips *on*, so Unity puts **no `Animator` on the model at all** — the file is full of perfectly good
+  animation that cannot run, and the inspector gives no hint. `PrepareImporter` forces
+  *Create From This Model* for every creature FBX.
+- **Imported takes do not loop.** An unlooped idle plays once and freezes the creature in its final
+  frame, which reads as a broken model rather than a missing checkbox. Idle/walk/run/flying are
+  looped by name.
+
+⚠ **Height is authored per family, not inherited.** The packs disagree with each other and with the
+character pack — the Rat imports ~2.9 Unity units tall. `ModelSetup` normalises each family to the
+height in its row, so the in-game "Entity size" slider is never asked to compensate for an art
+decision. That number and *which model suits a family* are the two things the script cannot decide.
 
 ### Animator parameters — all optional
 

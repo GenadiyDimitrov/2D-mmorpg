@@ -120,6 +120,36 @@ namespace Game.Client
             if (Orthographic) cam.orthographicSize = OrthoSize;
         }
 
+        /// <summary>
+        /// How far back the RIG actually sits, which under orthographic projection is NOT the same
+        /// question as how much you can see.
+        ///
+        /// <para>🔴 <b>The bug this fixes: a growing unrendered band along the BOTTOM of the screen
+        /// as you zoom out in ortho.</b> That band is the NEAR CLIP PLANE eating the ground. An ortho
+        /// camera's clip planes are a SLAB, not a frustum: everything nearer than <c>nearClipPlane</c>
+        /// (0.3, the scene default) is cut, no matter how wide the view is. Tilt the camera and the
+        /// bottom of the screen is the NEAR end of the ground — at pitch θ the ground under the bottom
+        /// edge sits at depth <c>Distance − OrthoSize·cot θ</c>. Zooming out raises OrthoSize while
+        /// Distance stays put, so that depth marches toward the camera, crosses zero, and the ground
+        /// starts being clipped from the bottom up — a band that GROWS with every further zoom.</para>
+        ///
+        /// <para>Why it appeared only now: at Pitch 90 (the shipped top-down default) cot θ = 0 and the
+        /// term vanishes, so this could not happen. It is unreachable until you tilt, and the camera
+        /// angle slider only opened to 45° for the 2.5D look the models are being judged in.</para>
+        ///
+        /// <para>The fix is free because under ortho <b>distance does not zoom</b> — moving the rig
+        /// back changes nothing you can see. So back it off by exactly the term that was eating the
+        /// margin, which pins the bottom-edge ground depth at <see cref="Distance"/> (≥10) at every
+        /// angle and every zoom. Under perspective, distance IS the zoom and nothing is touched.</para>
+        /// </summary>
+        private float RigDistance =>
+            Orthographic
+                ? Distance + OrthoSize / Mathf.Max(0.01f, Mathf.Tan(Pitch * Mathf.Deg2Rad))
+                : Distance;
+
+        private Vector3 _followPoint;
+        private Transform _followTarget;
+
         private void LateUpdate()
         {
             if (Target == null) return;
@@ -127,7 +157,29 @@ namespace Game.Client
             ApplyProjection();
 
             var rot = Quaternion.Euler(Pitch, Yaw, 0f);
-            var desired = Target.position + rot * Vector3.back * Distance;
+
+            // 🔴 THE SMOOTHING BELONGS TO THE FOLLOW, NOT TO THE ORBIT.
+            //
+            // This used to smooth the camera's WORLD POSITION toward `Target.position + orbit`. That
+            // is fine while only the target moves, and wrong the moment YAW moves: rotation is applied
+            // exactly (below) while position lags by the follow time constant, so the camera ends up
+            // aiming with the new yaw from an old place. The target stops being the point the world
+            // turns around and instead swings around a SMALLER, phase-lagged circle — which is exactly
+            // what the rotation slider felt like ("it rotates like a smaller circle in the middle").
+            //
+            // The lag is not subtle: at Follow 12 the time constant is 83ms, so dragging the slider at
+            // ~360°/s throws the character roughly Distance·cos(Pitch)·0.46 off centre — about half the
+            // screen at the settings this was reported at.
+            //
+            // Smoothing the FOLLOW POINT instead keeps the character exactly at the centre of rotation
+            // at every yaw, while the chase-the-player damping it was always there for is unchanged:
+            // the point being smoothed is still the player's position, and the orbit is now rigid
+            // geometry hung off it rather than something the filter can distort.
+            if (_followTarget != Target)
+            {
+                _followTarget = Target;
+                _followPoint = Target.position;    // snap on a new target, never sweep the world
+            }
 
             // FRAME-RATE INDEPENDENT smoothing. This was `Lerp(pos, desired, deltaTime * Follow)` —
             // deltaTime used as a BLEND FACTOR, which is the exact bug that was found and fixed in
@@ -136,12 +188,15 @@ namespace Game.Client
             // camera is what the player actually watches, a wobble here is indistinguishable from the
             // character jittering — the entity can be perfectly smooth in world space and still look
             // wrong on screen.
-            transform.position = Vector3.Lerp(
-                transform.position, desired, 1f - Mathf.Exp(-Follow * Time.deltaTime));
+            _followPoint = Vector3.Lerp(
+                _followPoint, Target.position, 1f - Mathf.Exp(-Follow * Time.deltaTime));
+
+            transform.position = _followPoint + rot * Vector3.back * RigDistance;
 
             // Assign the rotation directly rather than LookAt(Target): at Pitch 90 the view direction
             // is parallel to Vector3.up, which makes LookAt's up-vector degenerate and the image spin
-            // or flip. This is exact by construction — `desired` was derived from the same rotation.
+            // or flip. This is exact by construction — the position above was derived from the same
+            // rotation, so the follow point is dead centre of frame.
             transform.rotation = rot;
         }
     }

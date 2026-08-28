@@ -7,12 +7,109 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.100.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.100.2**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
+## 2026-08-28 (latest) — 0.100.2: two creature families, and the camera stops lying about its centre
 
-## 2026-08-28 (latest) — 0.100.1: `BL-93` gets a body — the first prefab lands
+The first models are on screen, so this is the pass that answers what looking at them found. Three
+things, all from his remote-control notes.
+
+### The mobs got bodies of their own — and they MOVE
+
+`mob_animal` (Rat) and `mob_insect` (Spider) are built and reachable by the loader, covering **20 of
+the 79 roster templates** — including the first creature a new character ever meets (Ridgeback Pup,
+Lv 1), Fox at 4, Ashen Wolf at 10 and Hook Spider at 14. Wildlife stops wearing a human body inside
+the first hour of play, which is the question the proof of concept was asking.
+
+🔑 **They are ANIMATED, and that half cost nothing.** The monster FBXs he committed ship with
+Idle/Walk/Run/Attack/Death takes, which is exactly the parameter set `EntityView` was already
+driving since protocol 29 — `Speed` off the drawn-position delta, `Attack` off `CombatEvent`,
+`Dead` off the snapshot. So the animation pipeline is now proven end to end with **no new message,
+no new field and no new code in the client**. Locomotion is a 1D blend tree on `Speed` (thresholds in
+Unity units/sec — `WorldMapper.Scale` is 0.01, so a mob running at 132 server units arrives as 1.32);
+Death transitions from **Any State**, because a creature can die mid-swing, and back out again
+because `Dead` is a bool and the same view is reused on respawn.
+
+⤷ ⏸ **This reverses the "prefab automation is deferred" ruling of 2026-08-28**, on his own
+instruction the same day: *"can u add 1~2 mobs? U said u can do it alone as I don't have access to
+the pc."* The deferral assumed he would hand-make an animal or two first; he cannot, so the tool got
+built. `Assets/Editor/ModelSetup.cs` + `-executeMethod`, run with the Editor closed. **Adding a
+family is one line in `ModelSetup.Families`.**
+
+🔴 **Two things the FBXs did not advertise, both found by running it:**
+
+- **The monster packs import with `avatarSetup: NoAvatar`.** A Generic rig with no Avatar has nothing
+  to play clips *on*, so Unity does not put an `Animator` on the model at all — the file arrives full
+  of perfectly good animation that cannot run, and nothing in the inspector says why. `PrepareImporter`
+  now forces `CreateFromThisModel` for every creature FBX, so the next one dropped in is not a second
+  afternoon. Imported takes also do not loop by default: an unlooped idle plays once and freezes the
+  creature in its last frame, which reads as a broken model rather than a missing checkbox.
+- **Scale is authored, not inherited.** The packs disagree with each other and with the character
+  pack; the Rat imports ~2.9 units tall. Each family states a height and `ModelSetup` normalises to
+  it, so the "Entity size" slider is never asked to compensate for an art decision.
+
+⚠ **`GetComponent<T>() ?? AddComponent<T>()` is a trap and it cost the first run.** `??` is a plain
+C# null check, and `UnityEngine.Object` overloads `==` to report an absent component as null *without
+being null to the runtime* — so the coalesce keeps the empty handle and the next line throws.
+
+### The camera: two real bugs, both only reachable since the view was tilted
+
+**The rotation slider did not rotate around the character.** His words: *"it doesn't rotate around
+the center but it rotates like a smaller circle in the middle."* Correct, and the cause was that the
+rig **smoothed its own world position** toward `target + orbit` while applying rotation *exactly*.
+Fine while only the target moves; wrong the instant yaw moves, because the camera then aims with the
+new yaw from an old place — the character stops being the point the world turns about and swings
+around a smaller, phase-lagged circle instead. Not subtle either: at `Follow` 12 the time constant is
+83 ms, so dragging the slider at ~360°/s throws him roughly half a screen off centre.
+
+🔑 **The smoothing belongs to the FOLLOW, not to the orbit.** It now damps the *follow point* — still
+the player's position, so chase-the-player feel is unchanged — and hangs the orbit off it as rigid
+geometry the filter cannot distort. Dead centre at every yaw.
+
+**The growing unrendered band along the bottom in ortho** is the **near clip plane** eating the
+ground. An ortho camera's clip planes are a *slab*, not a frustum: anything nearer than 0.3 (the
+scene default) is cut regardless of how wide the view is. Tilt the camera and the bottom of the
+screen is the *near* end of the ground — at pitch θ it sits at depth `Distance − OrthoSize·cot θ`.
+Zooming out raises `OrthoSize` while `Distance` stays put, so that depth marches at the camera,
+crosses zero, and the ground is clipped from the bottom up in a band that grows with every further
+zoom. ⚠ **At Pitch 90 — the shipped default — `cot θ` is 0 and this cannot happen.** It was
+unreachable until the camera-angle slider was pulled to 45° to judge the models.
+
+The fix is free because **under ortho, distance does not zoom**: the rig is backed off by exactly the
+term that was eating the margin, pinning the bottom-edge ground depth at `Distance` (≥10) at every
+angle and every zoom. Perspective is untouched.
+
+### A subclass no longer changes your body
+
+His question: *"in IG I can be a human fighter (model) and take a sub of a demon mage — my model
+still looks like the human fighter one but the stats and skill kits are the subclass one. Can we do
+this?"* We could not: `Entity.Race`/`BaseClass` proxy into the **active** subclass, so a swap to a
+demon mage swapped the model with it.
+
+🔑 **Appearance is SLOT 0** — the class the character was created as, and the one slot that can never
+be removed. Nothing needed inventing, and both behaviours he named fall out of the one rule:
+`SwitchSubclass` never touches slot 0, so a swap cannot change the body; `HandleDebugReset` rebuilds
+slot 0 from the chosen race/class, so **the admin re-roll does** — *"(and admins reset resets the
+model - changing all)"*.
+
+⚠ **No protocol change and no new fields.** Nothing in the client reads `EntityDto.Race` or
+`.BaseClass` except `ModelLibrary.Keys` — they exist to choose a mesh; the character sheet and
+class-select screens read their own DTOs, which still carry the active class and are untouched. The
+day a target frame wants a stranger's active class, *that* is when two more fields land.
+
+### 🔴 The player still cannot run — and it is not a code problem
+
+**Every one of the 21 character FBXs contains zero animation clips.** Measured, not assumed: mesh,
+skeleton, bind pose and 65 bones, `AnimationStack` count **0**. The monster pack ships animated; the
+character pack he committed does not. So `humanoid.prefab` is a body that slides. No amount of
+controller wiring fixes that — there is nothing to play. See **`BL-102`**: it needs a clip source
+(the pack's own animation file, or Mixamo, which retargets onto the Humanoid rig he correctly set).
+The mob work above is the proof that the moment clips exist, this is a one-line addition.
+
+
+## 2026-08-28 — 0.100.1: `BL-93` gets a body — the first prefab lands
 
 The Editor half of `BL-93` is done: `Assets/Resources/Models/humanoid.prefab` exists, so the client
 draws a real model instead of a sphere for **every player, every NPC and every humanoid mob at once**
