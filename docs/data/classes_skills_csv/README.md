@@ -39,15 +39,21 @@ names, for reading old commits: `fighter/mage 01-15` → `1st`, `… 20-35` → 
 
 - **`Vanguard` is gone** (the off-tank). Nothing was lost: the 2026-08-10 purge had already removed
   every Vanguard learn line, so `tank 3rd/4th` seeds from Bulwark alone.
+  ✅ **RETIRED IN CODE 2026-08-28** (0.96.0, `BL-97`). It was an empty class that could still be
+  chosen — a level-40 Knight could pick a discipline that taught nothing. Not any more.
 - **`Magus` and `Tempest` merged into `nuker`.** These two carried the only substantial 40+ kit in
   the game outside the buffer's ladder, and **no seeded file had ever covered them** — `nuker 3rd`
   is 20 rows, and this is the first time you can see them in your own format. Because it is two kits
   folded into one, **two skills appear twice under different names**: `FlameBolt` as *Annihilate*
   (Magus) and *Chain Lightning* (Tempest), `GreaterWeakness` as *Mana Burn* and *Maelstrom*.
   Reconciling those two pairs is yours — they are the same underlying skill.
+  ✅ **DONE IN CODE 2026-08-28** (0.96.0, `BL-97`, *"Tempests must go"*): the nuker is one discipline
+  now, so those duplicate pairs are gone and the file needs no reconciling.
 
-⚠ **The `Discipline` enum in code is NOT collapsed yet.** Its values persist on characters, so the
-merge happens when the authored kits arrive, not because a file was renamed.
+✅ **The `Discipline` enum HAS collapsed — both of them** (2026-08-28). `Tempest` and `Vanguard` keep
+their enum VALUES — characters persisted them, so the numbers can never be reused — but nothing
+mints, names, offers or teaches either any more, and an old save is migrated to the surviving sibling
+on load. **Eight choosable paths per race, 24 third classes** — the roster this map drew.
 
 ## What is actually in the sixteen 40+ files
 
@@ -66,7 +72,7 @@ merge happens when the authored kits arrive, not because a file was renamed.
 
 ### The format
 
-The 2nd-class header **plus a trailing `RACE` column** — `human` / `elf` / `ork`, or blank for all
+The 2nd-class header **plus a trailing `RACE` column** — `human` / `elf` / `demon`, or blank for all
 three. A skill for two races gets two rows. Everything else behaves as in the 2nd-class files,
 `REPLACES` included. A skill with more than one rung is written as one row per rung, named `… L2`,
 `… L3`.
@@ -138,7 +144,7 @@ in `Crafting.cs` puts it back if you'd rather L5/L6 stayed on level alone.
 
 ## The names are PER RACE now (2026-08-17)
 
-The old tree ended on a 🔴 asking whether a Human tank and an Ork tank should read as different
+The old tree ended on a 🔴 asking whether a Human tank and an Demon tank should read as different
 classes. Answer: **yes, at both tiers.** It is what *"the varity will come from race diference"*
 already meant everywhere else — the kit could differ per race (the trailing `RACE` column), but the
 LABEL could not, so the variety was invisible.
@@ -153,101 +159,114 @@ worth knowing before you edit it:
   name*, so two classes sharing one would make two different changes indistinguishable. With 48
   hand-written strings that is the likeliest typo there is, so the server refuses to start.
 
-⚠ **`Warlord` is retired.** It was the war_aoe discipline's name, and it is a class name in IG — the
-same rule that took the old town names and the old currency term. Its three races are **Banneret /
-Galeherald / Skullbreaker** now. (`Sorcerer`, the Human nuker's 2nd class, is the same kind of slip
-and is *not* fixed here — renaming a 2nd class is your call and it is not what you asked for.)
+⚠ **`Warlord` is retired as a NAME.** It was the war_aoe discipline's label, and it is a class name in
+IG — the same rule that took the old town names and the old currency term. (`Discipline.Warlord`
+survives as the internal enum value; nothing shows it.) Its three races are **Vanguard / Skirmisher /
+Warborn** now.
 
-## Human
+✅ **And the 2nd classes were renamed too, 2026-08-28 (`BL-100`)** — the note that used to sit here
+said `Sorcerer` was the same kind of slip and was NOT fixed here. It is fixed: every 2nd class is
+race + role now (`Human Apprentice`), because nothing differs before 40 and a flavour name there was
+promising an identity the game does not deliver.
 
-### Fighter — 1st, 1-19 · `fighter 1st`
+## Classes and Races
+| 1st     | 2nd        | 3rd              | 4th              | Race  | Weapon                      | Armor               | Path         |
+| ------- | ---------- | ---------------- | ---------------- | ----- | --------------------------- | ------------------- | ------------ |
+| Fighter |            |                  |                  |       | Sword/Blunt/Dual/Bow - 1/2h | Robe/Light/Heavy    | -            |
+|         | Rogue      |                  |                  |       | Dual/Bow                    | Light               | -            |
+|         |            | Assassin         | Nullblade        | Human | Dual                        | Light               | Mele Burst   |
+|         |            | Phantom          | Shadowblade      | Elf   | Dual                        | Light               | Mele Burst   |
+|         |            | Stalker          | Venomblade       | Demon | Dual                        | Light               | Mele Burst   |
+|         |            | Sharpshooter     | Deadeye          | Human | Bow                         | Light               | Range Dmg    |
+|         |            | Sentinel         | Trapper          | Elf   | Bow                         | Light               | Range Dmg    |
+|         |            | Soultracker      | Soulhunter       | Demon | Bow                         | Light               | Range Dmg    |
+|         | Warrior    |                  |                  |       | Sword/Blunt - 2h            | Heavy               | -            |
+|         |            | Champion         | Sword Master     | Human | Sword - 2h                  | Heavy               | Mele Dmg     |
+|         |            | Swiftblade       | Sword Saint      | Elf   | Sword - 2h                  | Heavy               | Mele Dmg     |
+|         |            | Ravager          | Berserker        | Demon | Sword - 2h                  | Heavy               | Mele Dmg     |
+|         |            | Vanguard         | War Master       | Human | Blunt - 2h                  | Heavy               | Mele AOE Dmg |
+|         |            | Skirmisher       | War Storm        | Elf   | Blunt - 2h                  | Heavy               | Mele AOE Dmg |
+|         |            | Warborn          | Warbringer       | Demon | Blunt - 2h                  | Heavy               | Mele AOE Dmg |
+|         | Knight     |                  |                  |       | Sword/Blunt - 1h            | Heavy + Shield      | -            |
+|         |            | Iron Guard       | Knight Commander | Human | Sword/Blunt - 1h            | Heavy + Shield      | Defence      |
+|         |            | Templar          | Paladin          | Elf   | Sword/Blunt - 1h            | Heavy + Shield      | Defence      |
+|         |            | Dread Knight     | Abyssal Knight   | Demon | Sword/Blunt - 1h            | Heavy + Shield      | Defence      |
+| Mage    |            |                  |                  |       | Wand/Staff                  | Robe [+ Shield]     | -            |
+|         | Priest     |                  |                  |       | Wand/Staff                  | Robe [+ Shield]     | -            |
+|         |            | Holy Priest      | Holy Messenger   | Human | Wand/Staff                  | Robe [+ Shield]     | Heal         |
+|         |            | Forest Whisperer | Forest Elder     | Elf   | Wand/Staff                  | Robe [+ Shield]     | Heal         |
+|         |            | Dark Healer      | Occultist        | Demon | Wand/Staff                  | Robe [+ Shield]     | Heal         |
+|         |            | Doctor           | War Doctor       | Human | Sword/Blunt/Wand - 1h       | Heavy/Robe + Shield | Buffer       |
+|         |            | Harmonist        | War Harmonist    | Elf   | Bow/Wand/Staff              | Light/Robe          | Buffer       |
+|         |            | Dreadcaller      | Warlock          | Demon | Sword/Blunt - 2h            | Heavy/Robe          | Buffer       |
+|         | Apprentice |                  |                  |       | Wand/Staff                  | Robe [+ Shield]     | -            |
+|         |            | Mana Adept       | Arcane Master    | Human | Wand/Staff                  | Robe [+ Shield]     | Nuke         |
+|         |            | Water Adept      | Ice Master       | Elf   | Wand/Staff                  | Robe [+ Shield]     | Nuke         |
+|         |            | Fire Adept       | Inferno Master   | Demon | Wand/Staff                  | Robe [+ Shield]     | Nuke         |
 
-1. **Assassin** (rogue) 2nd · `rogue 2nd`
-   1. **Nullblade** (dual) 3rd · `dual 3rd` → **Hexbane** 4th · `dual 4th`
-   2. **Sharpshooter** (archer) 3rd · `archer 3rd` → **Deadeye** 4th · `archer 4th`
-2. **Champion** (warrior) 2nd · `warrior 2nd`
-   1. **Bladesworn** (warrior) 3rd · `warrior 3rd` → **Bladelord** 4th · `warrior 4th`
-   2. **Banneret** (war_aoe) 3rd · `war_aoe 3rd` → **Warmarshal** 4th · `war_aoe 4th`
-3. **Knight** (tank) 2nd · `tank 2nd`
-   1. **Bulwark** (tank) 3rd · `tank 3rd` → **Ironcrown** 4th · `tank 4th`
+⚠ **The 2nd-class column is the SHORT form.** In game a 2nd class wears its race — `Human Rogue`,
+`Elf Warrior`, `Demon Apprentice` — because that is the whole point of the `BL-100` rename. The Race
+column on the 3rd/4th rows is what tells you which of the three you are reading.
 
-### Mage — 1st, 1-19 · `mage 1st`
+🔑 **The WEAPON, ARMOR and PATH columns are information the CODE does not hold yet**, and they are the
+most useful thing in this table. Two notes on where they stand:
 
-1. **Sorcerer** (nuker) 2nd · `nuker 2nd`
-   1. **Magus** (nuker) 3rd · `nuker 3rd` → **Runelord** 4th · `nuker 4th`
-2. **Cleric** (cleric) 2nd · `cleric 2nd`
-   1. **Lightbringer** (healer) 3rd · `healer 3rd` → **Lifewarden** 4th · `healer 4th`
-   2. **Warchanter** (buffer) 3rd · `buffer 3rd` → **Oathkeeper** 4th · `buffer 4th`
+- **The three buffer rows are already true** and match the built kit exactly — Human takes Heavy
+  (`Chanter Heavy Mastery`), Elf takes Light + Bow (`Harmonist Bow/Light`), Demon takes 2-handed
+  blunt (`Bloodchanter Two-Hand Mastery`). Nothing to do.
+- 🔵 **The warrior SWORD-vs-BLUNT split is new and nothing enforces it** — `Ravager` 2h sword against
+  `Warlord` 2h blunt. There is no warrior 3rd-class kit at all yet (the 40+ purge took it and its
+  CSVs have not landed), so this reads as a **design ruling for when `warrior 3rd.csv` and
+  `war_aoe 3rd.csv` are written**, not as a description of today. Say if it is meant as a rule and it
+  goes into the weapon masteries when those files land.
 
-## Elf
-
-### Fighter — 1st
-
-1. **Shadowblade** (rogue) 2nd
-   1. **Phantom** (dual) 3rd → **Nightveil** 4th
-   2. **Trapper** (archer) 3rd → **Bramblewarden** 4th
-2. **Sentinel** (warrior) 2nd
-   1. **Thornblade** (warrior) 3rd → **Windreaver** 4th
-   2. **Galeherald** (war_aoe) 3rd → **Stormcrown** 4th
-3. **Templar** (tank) 2nd
-   1. **Aegis** (tank) 3rd → **Dawnshield** 4th
-
-### Mage — 1st
-
-1. **Inquisitor** (nuker) 2nd
-   1. **Starweaver** (nuker) 3rd → **Celestine** 4th
-2. **Priest** (cleric) 2nd
-   1. **Dawnsworn** (healer) 3rd → **Everdawn** 4th
-   2. **Harmonist** (buffer) 3rd → **Gracebinder** 4th
-
-## Ork
-
-### Fighter — 1st
-
-1. **Stalker** (rogue) 2nd
-   1. **Venomweaver** (dual) 3rd → **Plaguefang** 4th
-   2. **Hunter** (archer) 3rd → **Bloodhunter** 4th
-2. **Warrior** (warrior) 2nd
-   1. **Ravager** (warrior) 3rd → **Bloodrager** 4th
-   2. **Skullbreaker** (war_aoe) 3rd → **Bonecrusher** 4th
-3. **Beast** (tank) 2nd
-   1. **Ironhide** (tank) 3rd → **Stonemaw** 4th
-
-### Mage — 1st
-
-1. **Witch** (nuker) 2nd
-   1. **Cinderwitch** (nuker) 3rd → **Pyrelord** 4th
-2. **Shaman** (cleric) 2nd
-   1. **Bonemender** (healer) 3rd → **Spiritbinder** 4th
-   2. **Bloodchanter** (buffer) 3rd → **Totemlord** 4th
-
+---
 ## What each race's three names are trying to say
 
 Not a rule the code enforces — a tone, so a new row has somewhere obvious to sit:
 
-| race      | the register                               | worked example               |
-| --------- | ------------------------------------------ | ---------------------------- |
-| **Human** | martial, ordered, heraldic — rank and oath | Knight → Bulwark → Ironcrown |
-| **Elf**   | light, wind, growth — precision and grace  | Templar → Aegis → Dawnshield |
-| **Ork**   | bone, blood, endurance — outlast and break | Beast → Ironhide → Stonemaw  |
+| race      | the register                                | the tank line, worked out             |
+| --------- | ------------------------------------------- | ------------------------------------- |
+| **Human** | martial, ordered, heraldic — rank and oath  | Human Knight → Iron Guard → Knight Commander |
+| **Elf**   | light, wind, growth — precision and grace   | Elf Knight → Templar → Paladin        |
+| **Demon** | dread, blood, the abyss — ruin and appetite | Demon Knight → Dread Knight → Abyssal Knight |
 
-Two disciplines changed which race owns their old name: **Ravager** moved to the **Ork** (it always
-read as the ork's word) and the Human took **Bladesworn**; **Magus** stayed **Human** and the other
-two races got names of their own. Nothing else was re-pointed.
+⚠ **The Demon register changed with the race** (2026-08-28, `BL-101`). It used to be *bone, blood,
+endurance* — an ork's register — and that is exactly why the mage lines never worked: an ork shaman
+was a shrug. Dread and the abyss give `Dreadcaller`, `Occultist` and `Warlock` somewhere to stand.
 
-## Two orphans from the old map
+🔑 **Three sets run ACROSS the races, and a new name should join one of them:**
 
-`Discipline` still has **`Vanguard`** (the off-tank) and **`Tempest`** (the AoE nuker), which your
-2026-08-17 map drops and merges. They are left in the enum on purpose — the values persist on
-characters — and they hold no learn rows, so no SKILL reaches them.
+| the set | Human | Elf | Demon |
+|---|---|---|---|
+| nuker — the element growing up | Mana → Arcane | Water → Ice | Fire → Inferno |
+| war_aoe 3rd — a martial POSITION | Vanguard | Skirmisher | Warborn |
+| AoE/support 4th — a **War** word | War Master · War Doctor | War Storm · War Harmonist | Warbringer · Warlock |
 
-⚠ But they are still **selectable**: `Disciplines.Of` returns two disciplines for every archetype, so
-a level-40 Knight is still offered `Vanguard` and a level-40 Sorcerer still offered `Tempest` at the
-Grandmaster. Collapsing that is a code change with persisted ids in it, not a rename, which is why
-the file rename did not do it. Until then the two carry **one name for all three races** (Vanguard →
-Doomward, Tempest → Skybreaker) rather than six invented names for two classes on their way out.
+## The orphans from the old map — both gone
 
-The `nuker 3rd.csv` rows carrying *Chain Lightning* and *Maelstrom* are Tempest's, folded in.
+✅ **`Tempest` is RETIRED (2026-08-28, 0.96.0, `BL-97`).** Your ruling: *"Tempests must go .. And elf
+nuker 3rd is starweaver, ork is cinderwitch and human stays magus"*. The nuker archetype now opens
+into **one** discipline and the three identities are the three RACES — exactly the shape of your
+2026-08-17 map (*"1 discipline ... 3 identities"*). The names needed no work: they had read Magus /
+Starweaver / Cinderwitch since the per-race naming pass.
+
+🔑 **It cost no authored content.** `nuker 3rd.csv` has no discipline column, so its 208 rows were
+registered to Magus and Tempest identically; retiring one deleted a duplicate registration. The enum
+VALUE stays (characters persisted it, so 11 can never be reused), nothing offers it, and a character
+saved on a Tempest becomes that race's Magus the next time it loads.
+
+✅ **`Vanguard` (the off-tank) is RETIRED TOO**, hours after the Tempest and on the same ruling:
+*"Remove the vacant tank as well — the 3 tanks must have their name and the other is the same for the
+3 races ... So is the one that must go."* It had held no learn rows since the 2026-08-10 purge, so it
+was an **empty class a level-40 Knight could still pick**. Gone.
+
+🔑 **THE TEST IN THAT SENTENCE IS THE PART TO REMEMBER.** A discipline whose NAME is the same for all
+three races was never three classes — and both retired ones were exactly that (Vanguard → Doomward,
+Tempest → Skybreaker). The naming table had been recording the answer since 2026-08-17.
+
+⚠ **A retired discipline's name is free to reuse.** A name is not an id and nothing persists one —
+which is what lets `Vanguard` come back as the human warrior's AoE class in the 2026-08-28 rename.
 
 ## Columns — and why RANGE and AOE are two of them (`BL-96`, 2026-08-28)
 

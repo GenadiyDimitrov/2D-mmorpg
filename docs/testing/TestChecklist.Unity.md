@@ -60,7 +60,7 @@ connects with no app restart, Register/wrong-password behave, and the version ha
 
 ## 3. ✅ Character select — VERIFIED 2026-07-24
 
-The account's characters list with `Name / Lv / Race / Class` matching WPF; create (Human/Elf/Ork, no
+The account's characters list with `Name / Lv / Race / Class` matching WPF; create (Human/Elf/Demon, no
 God) works; Enter reaches `InWorld`; Logout returns to Sign in, clears cached credentials (no silent
 re-login) and a different account shows its own characters.
 
@@ -1223,7 +1223,7 @@ no archer **Armor Mastery**, no **Dispel Magic**, no **HP Boost**, no **Greater 
 `precision` and `anti_magic` all **STAY** and still grant at 20/40/76.
 
 **54e. The God layer is gone, and the debug rig still works.** Character creation offers Human / Elf /
-Ork only. The debug menu's **Boxes** page no longer has the "Legendary" God's Judgment / God's Robes
+Demon only. The debug menu's **Boxes** page no longer has the "Legendary" God's Judgment / God's Robes
 rows. ⚠ **The replacements are now load-bearing — test them**: `/enchant <value>` and `/speed` must
 still do what they did, because they are the ONLY way to get cosmic stats now.
 
@@ -1259,7 +1259,7 @@ the ×2 Insight buff bought **+3 points**, and the 20% cap needed WIT 200. Now:
 - Target to check: an **elf mage in the full kit** (WIT 23 +2 set +5 swap = 30) → 10%, and ×2 Insight
   puts him at **20%, the cap exactly**. That is his authored endpoint.
 - A **human mage at WIT 20 is the ×1.00 anchor**. Below 20 the slope is gentler (+0.05/pt) than above
-  it (+0.10/pt) *on purpose* — symmetric slopes zero out at WIT 10, and ork fighters and **every mob
+  it (+0.10/pt) *on purpose* — symmetric slopes zero out at WIT 10, and demon fighters and **every mob
   (flat WIT 5)** live down there. A mob should land near **1.25%**: rare, not impossible.
 
 **56b. Magic crit damage is a flat ×3 and takes NO bonus.** It used to share the one

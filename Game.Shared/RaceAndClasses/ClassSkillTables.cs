@@ -23,7 +23,7 @@ public static partial class ClassSkillTables
         // --- Base Fighter --- (CSV fighter 1st, learn cadence 5/10/15). Strike (sword/blunt),
         // Stab (dual BLOW) and Shot (bow) are weapon-gated core actives that keep leveling into
         // the 2nd-class warrior/rogue tables. Everything is SP-learned (no auto-grant).
-        foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
+        foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
             ClassSkills.Register(race, BaseClass.Fighter, null,
                 new ClassSkill(FighterArmorMastery, 5,  SkillLevel: 1),
                 new ClassSkill(FighterWeaponMastery, 5, SkillLevel: 1),
@@ -47,7 +47,7 @@ public static partial class ClassSkillTables
         // ⚠ 2026-08-07: `MasteryRobe` is ROBE ARMOR MASTERY now — a 2-level, bonus-only skill first
         // learned at 7. It is no longer auto-granted at 1 and no longer carries any penalty; the
         // wrong-weight/wrong-weapon rule moved to Spellcaster Mastery (auto-granted, never replaced).
-        foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
+        foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
             ClassSkills.Register(race, BaseClass.Mage, null,
                 new ClassSkill(SelfHeal, 1),                         // Lv1 self heal (power 42)
                 new ClassSkill(MagicBolt, 7, SkillLevel: 2),

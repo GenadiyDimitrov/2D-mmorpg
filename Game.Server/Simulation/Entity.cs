@@ -122,7 +122,7 @@ public class BuffInstance
     public float CcResistPhysical { get; init; }
 
     /// <summary>Heal POWER (caster side) and heal RECEIVED (target side) this buff grants. The
-    /// healer's Healer's Power and the Ork's Spirit Restoration are the only users; the channels
+    /// healer's Healer's Power and the Demon's Spirit Restoration are the only users; the channels
     /// themselves are the ones the passives already feed. Fields, not flags — the enum is full.</summary>
     public int HealPowerFlat { get; init; }
     public float HealPowerPct { get; init; }
@@ -372,9 +372,14 @@ public class Entity
     // ---- CLASS UNIQUENESS ------------------------------------------------------------------
     //
     // A character may not own the same DISCIPLINE twice (owner, 2026-07-15). You learn each 3rd-class
-    // path once — no two Tempests, no two Vanguards. ARCHETYPE (the 2nd class) is NOT restricted: you
-    // may own several Nukers, so long as they branch into DIFFERENT disciplines (Tempest + the other
-    // nuker discipline). That is exactly the "own 4 mages — 2 clerics + 2 nukers" case the owner wants.
+    // path once — no two Bulwarks, no two Warchanters. ARCHETYPE (the 2nd class) is NOT restricted: you
+    // may own several of one archetype, so long as they branch into DIFFERENT disciplines — that is the
+    // "own 4 mages — 2 clerics + 2 nukers" case the owner wants.
+    //
+    // ⚠ SINCE `BL-97` (2026-08-28) THE NUKER HAS ONLY ONE DISCIPLINE, so "2 nukers" is no longer one of
+    // the shapes this rule permits: a second Sorcerer/Inquisitor/Witch would have to walk the Magus a
+    // second time, and this check bars it. That is the ruling working, not a regression — but it does
+    // mean the mage's four slots are now Magus + Lightbringer + Warchanter and then a non-mage.
     //
     // Matched on the DISCIPLINE, not the class id — checking ids would let the same discipline in
     // through a differently-named door (a human vs an elf version of the same path).

@@ -14,7 +14,7 @@ public static partial class ClassSkillTables
     // static ctor; here we provide the body.
     static partial void RegisterSecondClasses()
     {
-        foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
+        foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
         {
             // Fighter archetypes — 2nd-class learn cadence: 20, 24, 28, 32, 36.
             // Tank (CSV tank 2nd): Heavy Armor + Shield Mastery, Tank Anti-Magic, any-weapon
@@ -221,18 +221,18 @@ public static partial class ClassSkillTables
         RegisterHumanMage();
     }
 
-    /// <summary>2nd-class Healer kit (lvls 20/25/30/35), shared by Human/Elf/Ork. Holy
+    /// <summary>2nd-class Healer kit (lvls 20/25/30/35), shared by Human/Elf/Demon. Holy
     /// Bolt is ONE skill with a per-race DISPLAY NAME (Holy/Moonlight/Spirit Bolt). Force,
     /// Focus, Frenzy, Might lvl 4 (vampirism) and the data-driven Armor Mastery arrive in
     /// later increments.</summary>
     private static void RegisterHealers()
     {
-        foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
+        foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
         {
             string holyBolt = race switch
             {
                 Race.Elf => "Moonlight Bolt",
-                Race.Ork => "Spirit Bolt",
+                Race.Demon => "Spirit Bolt",
                 _        => "Holy Bolt",
             };
 

@@ -102,8 +102,8 @@ public static partial class ClassSkillTables
     /// <see cref="ClassSkill"/> makes a skill LEARNABLE at that level for SP; nothing here grants it.</para>
     ///
     /// <para>🔑 "All melee rogues" and "all archers" are three disciplines each, because the archer merge
-    /// (2026-07-29) split the rogue by RACE at 40: melee = Nullblade (human) · Venomweaver (ork) ·
-    /// Phantom (elf); ranged = Sharpshooter (human) · Hunter (ork) · Trapper (elf). Registered for all
+    /// (2026-07-29) split the rogue by RACE at 40: melee = Nullblade (human) · Venomweaver (demon) ·
+    /// Phantom (elf); ranged = Sharpshooter (human) · Hunter (demon) · Trapper (elf). Registered for all
     /// three races on each, matching the file's idiom — <see cref="Disciplines.Of"/> is what actually
     /// gates who can hold the discipline, so the off-race keys are inert.</para>
     ///
@@ -118,7 +118,7 @@ public static partial class ClassSkillTables
         var melee  = new[] { Discipline.Nullblade, Discipline.Venomweaver, Discipline.Phantom };
         var ranged = new[] { Discipline.Sharpshooter, Discipline.Hunter, Discipline.Trapper };
 
-        foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
+        foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
         {
             foreach (var d in melee)
                 ClassSkills.RegisterThird(race, d,
@@ -150,10 +150,10 @@ public static partial class ClassSkillTables
     /// be exactly the mistake the purge was cleaning up.</para>
     ///
     /// <para>Both are shared by all three races: he specified them per DISCIPLINE, and nothing in his
-    /// ruling distinguishes a Human Bulwark from an Ork one.</para></summary>
+    /// ruling distinguishes a Human Bulwark from an Demon one.</para></summary>
     private static void RegisterPreservation()
     {
-        foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
+        foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
         {
             // 🔴 THE HEALER'S HALF MOVED TO THE 4th TIER, 2026-08-26. `healer 4th.csv` carries Rite of
             //    Preservation at 83 with its own (much dearer) price and a five-Holy-Stone reagent, so
@@ -292,7 +292,7 @@ public static partial class ClassSkillTables
         kit.AddRange(At(WcHarmonySpeed,       (48, 1), (58, 2)));
         kit.AddRange(At(NpcHarmonyWizard,     (48, 1), (52, 2)));
 
-        foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
+        foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
             ClassSkills.RegisterThird(race, Discipline.Warchanter, kit.ToArray());
 
         // ═══ THE NON-BUFF HALF — his passives, actives and toggles, 40-74 ═════════════════════════
@@ -343,16 +343,16 @@ public static partial class ClassSkillTables
         // ---- ORK: the melee fighter. Heavy armour, blunt, and TWO damage skills — his ruling,
         //      2026-08-21: *"ork is mele fighter so need more than 1dmg skill"*. Acoustic Shock is
         //      Sound Smash's twin with a stun, and it exists for exactly that reason. -------------
-        var ork = new List<ClassSkill>(kit2);
-        ork.AddRange(Ladder(WcChanterHeavy, new[] { 40 }));
-        ork.AddRange(Ladder(WcManaVampirism, new[] { 40, 60, 70 }));
-        ork.AddRange(Ladder(WcBloodhanterBlunt, band8));
-        ork.AddRange(Ladder(WcSoundSmash, band13));
-        ork.AddRange(Ladder(WcAcousticShock, band13));
+        var demon = new List<ClassSkill>(kit2);
+        demon.AddRange(Ladder(WcChanterHeavy, new[] { 40 }));
+        demon.AddRange(Ladder(WcManaVampirism, new[] { 40, 60, 70 }));
+        demon.AddRange(Ladder(WcBloodhanterBlunt, band8));
+        demon.AddRange(Ladder(WcSoundSmash, band13));
+        demon.AddRange(Ladder(WcAcousticShock, band13));
 
         ClassSkills.RegisterThird(Race.Human, Discipline.Warchanter, human.ToArray());
         ClassSkills.RegisterThird(Race.Elf,   Discipline.Warchanter, elf.ToArray());
-        ClassSkills.RegisterThird(Race.Ork,   Discipline.Warchanter, ork.ToArray());
+        ClassSkills.RegisterThird(Race.Demon,   Discipline.Warchanter, demon.ToArray());
 
         // ---- SHIELD MASTERY — HUMAN ONLY, and the same skill the tank learns. ------------------
         // His `buffer 3rd.csv` rows (RACE column = Human): 40 / 60 / 70, rungs 1-3, and he gives the
@@ -362,7 +362,7 @@ public static partial class ClassSkillTables
         // price is a property of the level you buy it at.
         //
         // 🔑 It is NOT in `kit` above because `kit` is registered for all three races — the Elf gets
-        // the bow line and the Ork the blunt line in its place.
+        // the bow line and the Demon the blunt line in its place.
         ClassSkills.RegisterThird(Race.Human, Discipline.Warchanter,
             new ClassSkill(TankShieldMastery, 40, SkillLevel: 1, SpCost: 36_000),
             new ClassSkill(TankShieldMastery, 60, SkillLevel: 2, SpCost: 120_000),
@@ -379,7 +379,7 @@ public static partial class ClassSkillTables
     /// Last Stand and the others that are still commented out below.</para></summary>
     private static void RegisterTankShieldMastery()
     {
-        foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
+        foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
             foreach (var disc in new[] { Discipline.Bulwark, Discipline.Vanguard })
                 ClassSkills.RegisterThird(race, disc,
                     new ClassSkill(TankShieldMastery, 52, SkillLevel: 4, SpCost: 74_000));
@@ -407,7 +407,7 @@ public static partial class ClassSkillTables
         int[] bufferBands = { 40, 44, 48, 52, 56, 62, 70 };
         int[] bufferSp = { 36_000, 43_000, 64_000, 74_000, 81_000, 170_000, 390_000 };
 
-        foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
+        foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
         {
             foreach (var disc in new[] { Discipline.Ravager, Discipline.Warlord })
                 ClassSkills.RegisterThird(race, disc,
@@ -442,17 +442,17 @@ public static partial class ClassSkillTables
 
     /// <summary>THE NUKER, 40-74 — every row of `docs/data/classes_skills_csv/nuker 3rd.csv`.
     ///
-    /// <para>🔑 <b>REGISTERED TO BOTH MAGUS AND TEMPEST.</b> His file carries no discipline column and
-    /// the nuker archetype has two, so both get the whole kit — the same treatment `tank 3rd` already
-    /// gets for the same reason. That is deliberately the SAFE direction: nobody is locked out of a
-    /// spell he authored, and splitting them later is one line here plus a column in his file. What it
-    /// costs today is that Magus and Tempest are identical, which is the state the tank line is in too.
-    /// (The kit does carry both halves — Elemental Wave and Arcane Wave are the Tempest's shape,
-    /// Elemental Blast and the bursts the Magus's — so a split has material to work with.)</para>
+    /// <para>🔑 <b>ONE DISCIPLINE — THE MAGUS — SINCE 2026-08-28 (`BL-97`).</b> His file carries no
+    /// discipline column, so while the archetype had two branches this kit was registered to BOTH of
+    /// them, identically. He then ruled *"Tempests must go"*, and because the two were holding the very
+    /// same 208 rows the retirement deleted a duplicate registration and not one authored row. What the
+    /// kit's two halves were once read as — Elemental Wave and Arcane Wave the "AoE" shape, Elemental
+    /// Blast and the bursts the single-target one — is now simply what ONE nuker can do. The three
+    /// identities are the RACES below, which is what he asked for: *"1 discipline ... 3 identities"*.</para>
     ///
     /// <para>🔑 <b>THE RACE SPLITS IT, and unlike the Lightbringer's it splits FOUR ways, not two:</b>
     /// Human takes Arcane Wave / Vampiric Bolt / Arcane Void / Arcane Burst, Elf takes Frost Spikes /
-    /// Frost Pierce / Frost Burst, Ork takes Witches Curse / Witches Scarecrow / Pyro Burst. Eleven
+    /// Frost Pierce / Frost Burst, Demon takes Witches Curse / Witches Scarecrow / Pyro Burst. Eleven
     /// families are shared. The Human's four vs the other two's three is his authoring, not a slip —
     /// Arcane Void is a utility cast, not a damage one.</para>
     ///
@@ -529,17 +529,17 @@ public static partial class ClassSkillTables
         elf.AddRange(Ladder(FrostPierce, band14));
         elf.Add(new ClassSkill(FrostBurst, 74));
 
-        var ork = new List<ClassSkill>(shared);
-        ork.AddRange(Ladder(WitchesCurse, band14));
-        ork.AddRange(Ladder(WitchesScarecrow, band14));
-        ork.Add(new ClassSkill(PyroBurst, 74));
+        var demon = new List<ClassSkill>(shared);
+        demon.AddRange(Ladder(WitchesCurse, band14));
+        demon.AddRange(Ladder(WitchesScarecrow, band14));
+        demon.Add(new ClassSkill(PyroBurst, 74));
 
-        foreach (var disc in new[] { Discipline.Magus, Discipline.Tempest })
-        {
-            ClassSkills.RegisterThird(Race.Human, disc, human.ToArray());
-            ClassSkills.RegisterThird(Race.Elf,   disc, elf.ToArray());
-            ClassSkills.RegisterThird(Race.Ork,   disc, ork.ToArray());
-        }
+        // ONE discipline now (`BL-97`, 2026-08-28). This used to loop over Magus AND Tempest, which
+        // is exactly why retiring the Tempest lost nothing: the two were being handed the identical
+        // array. The race is what splits this kit, and it always was.
+        ClassSkills.RegisterThird(Race.Human, Discipline.Magus, human.ToArray());
+        ClassSkills.RegisterThird(Race.Elf,   Discipline.Magus, elf.ToArray());
+        ClassSkills.RegisterThird(Race.Demon,   Discipline.Magus, demon.ToArray());
     }
     private static void RegisterLightbringer()
     {
@@ -651,14 +651,14 @@ public static partial class ClassSkillTables
         shared.AddRange(At(GreatBulwark, (58, 1), (66, 2), (72, 3)));
 
         // ═══ THE RACE SPLIT — it happens TWICE, and only twice ════════════════════════════════════
-        // Once on the fast heal (Human throughput / Elf heal-and-cure / Ork planted totem) and once on
-        // the control debuff (Gravity / Bind / Armor Break). Both are full 14-rung ladders, and the Ork
+        // Once on the fast heal (Human throughput / Elf heal-and-cure / Demon planted totem) and once on
+        // the control debuff (Gravity / Bind / Armor Break). Both are full 14-rung ladders, and the Demon
         // carries a third: the Mana Totem, from 52.
         ClassSkills.RegisterThird(Race.Human, Discipline.Lightbringer,
             shared.Concat(Full(LbHumanMend)).Concat(Full(LbHumanGravity)).ToArray());
         ClassSkills.RegisterThird(Race.Elf, Discipline.Lightbringer,
             shared.Concat(Full(LbElfDawn)).Concat(Full(LbElfBind)).ToArray());
-        ClassSkills.RegisterThird(Race.Ork, Discipline.Lightbringer,
+        ClassSkills.RegisterThird(Race.Demon, Discipline.Lightbringer,
             shared.Concat(Full(LbOrkFont)).Concat(Full(LbOrkArmorBreak))
                   .Concat(Full(ManaTotem, startBand: 3)).ToArray());
     }
@@ -673,7 +673,7 @@ public static partial class ClassSkillTables
         ClassSkills.RegisterThird(Race.Elf, Discipline.Warchanter,
             new ClassSkill(WcElfBolt, 40), new ClassSkill(WcElfChant, 44),
             new ClassSkill(WcElfRenew, 48), new ClassSkill(WcElfPass, 52));
-        ClassSkills.RegisterThird(Race.Ork, Discipline.Warchanter,
+        ClassSkills.RegisterThird(Race.Demon, Discipline.Warchanter,
             new ClassSkill(WcOrkBolt, 40), new ClassSkill(WcOrkChant, 44),
             new ClassSkill(WcOrkRenew, 48), new ClassSkill(WcOrkPass, 52));
     }

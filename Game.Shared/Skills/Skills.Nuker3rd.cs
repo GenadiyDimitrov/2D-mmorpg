@@ -19,7 +19,7 @@ namespace Game.Shared;
 ///
 /// <para>🔑 <b>THE RACE SPLITS THE KIT, NOT THE DISCIPLINE.</b> Same shape as the Lightbringer. Eleven
 /// families are shared; Human takes Arcane Wave / Vampiric Bolt / Arcane Void / Arcane Burst, Elf takes
-/// Frost Spikes / Frost Pierce / Frost Burst, Ork takes Witches Curse / Witches Scarecrow / Pyro Burst.
+/// Frost Spikes / Frost Pierce / Frost Burst, Demon takes Witches Curse / Witches Scarecrow / Pyro Burst.
 /// ⚠ His file carries no DISCIPLINE column, and the nuker archetype has two (Magus and Tempest), so the
 /// table registers this kit to BOTH — the same treatment `tank 3rd` already gets. See the note on
 /// RegisterNuker3rd. Splitting them is a later ruling of his, and a one-line change here.</para>

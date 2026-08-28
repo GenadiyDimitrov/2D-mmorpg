@@ -72,12 +72,14 @@ internal static class Check
         new("buffer 3rd",  BaseClass.Mage,    Archetype.Healer,  40, 75, Game.Shared.Discipline.Warchanter),
         // `tank 3rd` earned its line on 2026-08-21, when he replaced its "start here" placeholder with
         // a real row: Shield Mastery's fourth rung at 52. One row is still a file that has to match.
-        // Bulwark, not Vanguard, only because a spec needs ONE discipline and the row is registered to
-        // both — check the pair by hand if that ever stops being true.
+        // ✅ The "Bulwark, not Vanguard — check the pair by hand" caveat is RETIRED with the Vanguard
+        // itself (`BL-97`, 2026-08-28): Bulwark is the tank's only discipline, so this spec covers the
+        // whole line outright.
         new("tank 3rd",    BaseClass.Fighter, Archetype.Tank,    40, 75, Game.Shared.Discipline.Bulwark),
-        // `nuker 3rd` earned its line on 2026-08-26, the day the kit was built. Magus, not Tempest,
-        // only because a spec needs ONE discipline and the whole kit is registered to both — the same
-        // caveat the tank line above carries. Check the pair by hand if that ever stops being true.
+        // `nuker 3rd` earned its line on 2026-08-26, the day the kit was built. ✅ The "Magus, not
+        // Tempest — check the pair by hand" caveat this line used to carry RETIRED with the Tempest
+        // itself (`BL-97`, 2026-08-28): Magus is the archetype's only discipline now, so this one spec
+        // covers the whole nuker outright, exactly as the tank line above now does.
         // 🔴 CALM SPIRIT will report as NOT REGISTERED until he lifts his *"w8 on calm spirit"* hold;
         // that is the flag doing its job, not a defect. See RegisterNuker3rd.
         new("nuker 3rd",   BaseClass.Mage,    Archetype.Nuker,   40, 75, Game.Shared.Discipline.Magus),
@@ -215,7 +217,7 @@ internal static class Check
     {
         var seen = new HashSet<(string, int, int)>();
         var rows = new List<Rung>();
-        foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
+        foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
             foreach (var cs in ClassSkills.Cumulative(race, spec.Base, spec.Archetype, spec.Discipline, spec.Fourth))
             {
                 if (cs.LearnLevel < spec.Min || cs.LearnLevel > spec.Max) continue;

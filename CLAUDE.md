@@ -202,6 +202,19 @@ which is the same rule as `BL-58` above). Invent original
 generic fantasy names (current towns: Brackenford, Stonewatch, Emberfall, Greymarsh,
 Ironreach, Duskvale, Frostmere). Stat *formulas* are not copyrightable; *names* are.
 
+🔑 **THE TEST IS `word + SAME RACE + SAME ROLE`, not the word** (settled with the owner 2026-08-28
+over the `BL-100` rename). A common noun used descriptively across the genre — `Assassin`, `Paladin`,
+`Berserker`, `Phantom`, `Stalker`, `Warlock` — is about the weakest claim there is. What reads as
+borrowed is a word landing in IG's *exact slot*. Two corollaries he established, both correct:
+- **A compound at a different tier is not the same class.** Theirs is *Temple Knight* / *Eva's
+  Templar*; our bare `Templar` at the 3rd is fine. Same for *Moonlight Sentinel* vs our `Sentinel`.
+- **The ROLE counts too.** Our `Warlock` is a BUFFER; theirs is a summoner. Not the same class.
+
+⚠ **The playable races are Human / Elf / DEMON.** The third was the *Ork* until 2026-08-28 (`BL-101`)
+and `Race.Demon` is still enum value 2 — never move it. The orc MOBS (spelled with a *c*) are
+unrelated and stay; that collision is half of why the race was renamed. `docs/design/ClassRenames.md`
+is the live class roster.
+
 ## Roadmap (not yet built)
 **The live list is `docs/Backlog.md`** — every feature/change still owed, one flat list, permanent
 `BL-nn` ids, newest ruling wins (the replaced one moves to `docs/BacklogArchive.md`), built = deleted.
@@ -210,9 +223,15 @@ version-shaped digest (goes stale between passes); `docs/Roadmap.md` is the full
 archive of past playtest queues. Built since this file's list was first written: the
 gold wallet, NPC vendors, teleport-for-fee, the buff ladder (potions + scrolls), party/grouping with
 loot modes, boss mechanics (±10-level rule, phases, adds, enrage), PvP/karma, auto-hunt, crafting, the
-generated level 1-90 world, the Unity client, and repeatable quests. Still to do: the remaining 3rd/4th class kits — the
-**Lightbringer (healer) is DONE** (0.74.0, 40-74, off `healer 3rd.csv`); the other nine disciplines are
-still blocked on his CSVs; the 3-tab quest window; instances/dungeons; castles + vault
+generated level 1-90 world, the Unity client, and repeatable quests. Still to do: the remaining 3rd/4th class kits — **THREE
+disciplines are DONE**: Lightbringer (0.74.0, `healer 3rd.csv`), Warchanter (0.76.0) and the Magus
+(0.87.0, `nuker 3rd.csv`); the rest are still blocked on his CSVs. ⚠ **The roster is EIGHT choosable
+paths per race and 24 third classes** (12 live `Discipline` values; the rogue's six are one race each)
+— `Tempest` and `Vanguard` were both retired
+2026-08-28 (`BL-97`), so the nuker opens into the Magus alone (Magus / Starweaver / Cinderwitch) and
+the tank into the Bulwark alone (Bulwark / Aegis / Ironhide). 🔑 His test for which of a pair dies:
+*"the 3 tanks must have their name and the other is the same for the 3 races ... So is the one that
+must go"*. Then: the 3-tab quest window; instances/dungeons; castles + vault
 (consumes the `VendorBuyTaxRate` hook); perfect/excellent block; position bonuses; PvP/PvE damage
 multipliers (hooks default 1.0); the presentation pass. **Dropped, don't re-add:** a magic-resist stat
 and per-hit damage consumables — offence comes from the held **War Rune / Spell Rune** instead
@@ -269,6 +288,9 @@ fine. It bit twice before it was understood.
 - **"Commit" means commit AND push.** Only "just commit" / "only push" means one of them.
 - Discuss design before large mechanic changes; deliver focused, validated increments.
 - Cyrillic text from the owner is Bulgarian.
+- 🔑 **Anything he must ACT on goes in the REPO with a `BL-nn`, never only in memory.** He does not
+  read the memory directory — it is crash insurance for the model, not his inbox. A table, a
+  proposal, a list of open questions: `docs/`, plus a Backlog line pointing at it.
 
 ### 🔑 THE CSVs AND THE GAME MOVE TOGETHER — BOTH WAYS (owner, 2026-08-19)
 *"I want the csv-s to represent what is inside the game at all time … I author the skills through the

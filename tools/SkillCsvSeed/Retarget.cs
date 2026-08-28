@@ -63,7 +63,7 @@ internal static class Retarget
         // instead of `self/single` off the real one. `--check` compares against the CLASS TABLE, so
         // this must resolve the same way or the two tools disagree with each other by construction.
         // (It found exactly this, on exactly one row, which is the argument for having built it.)
-        foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
+        foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
             foreach (var bc in new[] { BaseClass.Fighter, BaseClass.Mage })
                 foreach (var cs in AllClassSkills(race, bc))
                     if (SkillCatalog.Get(cs.SkillId) is SkillDef sd)

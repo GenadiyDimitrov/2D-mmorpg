@@ -86,7 +86,7 @@ LEARN @ LVL,NAME,TYPE,RANGE,AOE,TARGET,CAST s,CD s,DURRATION s,DESCR,MP,SP COST,
 ,,,,,,,,,,,,,,-----------------------------Race Bursts (74)-----------------------------
 74,Arcane Burst,Magic/Dmg,900,0,enemy/single,1,300,15,"Arcance Magic spell, power 150. Decrease SPT resistance by 40% (success chance x1.5), Never Fizzle",150,880k,[],Human
 74,Frost Burst,Magic/Dmg,900,0,enemy/single,1,300,15,"Frost Magic spell, power 150. Freeze the enemy: -30% M.def and prevents movement (success chance x1.5), Never Fizzle",150,880k,[],Elf
-74,Pyro Burst,Magic/Dmg,900,0,enemy/single,1,300,15,"Fire Magic spell, power 150. Burns the enemy for -100hp/s and decrease hp/mp received by 70% (success chance x1.5), Never Fizzle",150,880k,[],Ork,new effect like a DOT but its not poision nor bleed nor venom -> burn = true dmg per second no cure and can kill 
+74,Pyro Burst,Magic/Dmg,900,0,enemy/single,1,300,15,"Fire Magic spell, power 150. Burns the enemy for -100hp/s and decrease hp/mp received by 70% (success chance x1.5), Never Fizzle",150,880k,[],Demon,new effect like a DOT but its not poision nor bleed nor venom -> burn = true dmg per second no cure and can kill 
 ,,,,,,,,,,,,,,-----------------------------Quick Blast-----------------------------
 40,Quick Blast,Magic/Dmg,300,0,enemy/single,2,0.5,0,m.Atk +42; Power in PVP x0.5,33,36k,[Quick Bolt]
 44,Quick Blast,Magic/Dmg,300,0,enemy/single,2,0.5,0,m.Atk +47; Power in PVP x0.5,38,43k,[Quick Bolt]
@@ -182,32 +182,32 @@ LEARN @ LVL,NAME,TYPE,RANGE,AOE,TARGET,CAST s,CD s,DURRATION s,DESCR,MP,SP COST,
 62,Arcane Void,Magic/Buff,900,0,enemy/single,4,30,0,Chance to remove 2~3 positive effect of the target (success chance x0.3),116,170k,[],Human,lower success rate
 72,Arcane Void,Magic/Buff,900,0,enemy/single,4,30,0,Chance to remove 2~4 positive effect of the target (success chance x0.3),138,650k,[],Human,lower success rate
 ,,,,,,,,,,,,,,-----------------------------Witches Curse-----------------------------
-40,Witches Curse,Magic/Debuff,900,0,enemy/single,2.5,1,30,m.Atk +42; A chance to curse enemies for -10% M.Def; (success chance x0.7),66,36k,[Vampiric Bolt],Ork,does dmg but have a lower success rate for the curse
-44,Witches Curse,Magic/Debuff,900,0,enemy/single,2.5,1,30,m.Atk +47; A chance to curse enemies for -10% M.Def; (success chance x0.7),76,43k,[Vampiric Bolt],Ork
-48,Witches Curse,Magic/Debuff,900,0,enemy/single,2.5,1,30,m.Atk +52; A chance to curse enemies for -13% M.Def; (success chance x0.7),88,64k,[Vampiric Bolt],Ork
-52,Witches Curse,Magic/Debuff,900,0,enemy/single,2.5,1,30,m.Atk +57; A chance to curse enemies for -13% M.Def; (success chance x0.7),96,74k,[Vampiric Bolt],Ork
-56,Witches Curse,Magic/Debuff,900,0,enemy/single,2.5,1,30,m.Atk +63; A chance to curse enemies for -17% M.Def; (success chance x0.7),104,81k,[Vampiric Bolt],Ork
-58,Witches Curse,Magic/Debuff,900,0,enemy/single,2.5,1,30,m.Atk +66; A chance to curse enemies for -17% M.Def; (success chance x0.7),108,88k,[Vampiric Bolt],Ork
-60,Witches Curse,Magic/Debuff,900,0,enemy/single,2.5,1,30,m.Atk +68; A chance to curse enemies for -20% M.Def; (success chance x0.7),110,120k,[Vampiric Bolt],Ork
-62,Witches Curse,Magic/Debuff,900,0,enemy/single,2.5,1,30,m.Atk +71; A chance to curse enemies for -20% M.Def; (success chance x0.7),116,170k,[Vampiric Bolt],Ork
-64,Witches Curse,Magic/Debuff,900,0,enemy/single,2.5,1,30,m.Atk +74; A chance to curse enemies for -23% M.Def; (success chance x0.7),120,190k,[Vampiric Bolt],Ork
-66,Witches Curse,Magic/Debuff,900,0,enemy/single,2.5,1,30,m.Atk +77; A chance to curse enemies for -23% M.Def; (success chance x0.7),124,280k,[Vampiric Bolt],Ork
-68,Witches Curse,Magic/Debuff,900,0,enemy/single,2.5,1,30,m.Atk +79; A chance to curse enemies for -27% M.Def; (success chance x0.7),128,320k,[Vampiric Bolt],Ork
-70,Witches Curse,Magic/Debuff,900,0,enemy/single,2.5,1,30,m.Atk +82; A chance to curse enemies for -27% M.Def; (success chance x0.7),130,390k,[Vampiric Bolt],Ork
-72,Witches Curse,Magic/Debuff,900,0,enemy/single,2.5,1,30,m.Atk +84; A chance to curse enemies for -30% M.Def; (success chance x0.7),134,650k,[Vampiric Bolt],Ork
-74,Witches Curse,Magic/Debuff,900,0,enemy/single,2.5,1,30,m.Atk +87; A chance to curse enemies for -30% M.Def; (success chance x0.7),138,880k,[Vampiric Bolt],Ork
+40,Witches Curse,Magic/Debuff,900,0,enemy/single,2.5,1,30,m.Atk +42; A chance to curse enemies for -10% M.Def; (success chance x0.7),66,36k,[Vampiric Bolt],Demon,does dmg but have a lower success rate for the curse
+44,Witches Curse,Magic/Debuff,900,0,enemy/single,2.5,1,30,m.Atk +47; A chance to curse enemies for -10% M.Def; (success chance x0.7),76,43k,[Vampiric Bolt],Demon
+48,Witches Curse,Magic/Debuff,900,0,enemy/single,2.5,1,30,m.Atk +52; A chance to curse enemies for -13% M.Def; (success chance x0.7),88,64k,[Vampiric Bolt],Demon
+52,Witches Curse,Magic/Debuff,900,0,enemy/single,2.5,1,30,m.Atk +57; A chance to curse enemies for -13% M.Def; (success chance x0.7),96,74k,[Vampiric Bolt],Demon
+56,Witches Curse,Magic/Debuff,900,0,enemy/single,2.5,1,30,m.Atk +63; A chance to curse enemies for -17% M.Def; (success chance x0.7),104,81k,[Vampiric Bolt],Demon
+58,Witches Curse,Magic/Debuff,900,0,enemy/single,2.5,1,30,m.Atk +66; A chance to curse enemies for -17% M.Def; (success chance x0.7),108,88k,[Vampiric Bolt],Demon
+60,Witches Curse,Magic/Debuff,900,0,enemy/single,2.5,1,30,m.Atk +68; A chance to curse enemies for -20% M.Def; (success chance x0.7),110,120k,[Vampiric Bolt],Demon
+62,Witches Curse,Magic/Debuff,900,0,enemy/single,2.5,1,30,m.Atk +71; A chance to curse enemies for -20% M.Def; (success chance x0.7),116,170k,[Vampiric Bolt],Demon
+64,Witches Curse,Magic/Debuff,900,0,enemy/single,2.5,1,30,m.Atk +74; A chance to curse enemies for -23% M.Def; (success chance x0.7),120,190k,[Vampiric Bolt],Demon
+66,Witches Curse,Magic/Debuff,900,0,enemy/single,2.5,1,30,m.Atk +77; A chance to curse enemies for -23% M.Def; (success chance x0.7),124,280k,[Vampiric Bolt],Demon
+68,Witches Curse,Magic/Debuff,900,0,enemy/single,2.5,1,30,m.Atk +79; A chance to curse enemies for -27% M.Def; (success chance x0.7),128,320k,[Vampiric Bolt],Demon
+70,Witches Curse,Magic/Debuff,900,0,enemy/single,2.5,1,30,m.Atk +82; A chance to curse enemies for -27% M.Def; (success chance x0.7),130,390k,[Vampiric Bolt],Demon
+72,Witches Curse,Magic/Debuff,900,0,enemy/single,2.5,1,30,m.Atk +84; A chance to curse enemies for -30% M.Def; (success chance x0.7),134,650k,[Vampiric Bolt],Demon
+74,Witches Curse,Magic/Debuff,900,0,enemy/single,2.5,1,30,m.Atk +87; A chance to curse enemies for -30% M.Def; (success chance x0.7),138,880k,[Vampiric Bolt],Demon
 ,,,,,,,,,,,,,,-----------------------------Witches Scarecrow-----------------------------
-40,Witches Scarecrow,Magic/Debuff,900,0,enemy/single,2,5,10,Fear the enemy (success chance x0.5);,66,36k,[],Ork,lower success rate
-44,Witches Scarecrow,Magic/Debuff,900,0,enemy/single,2,5,10,Fear the enemy (success chance x0.5);,76,43k,[],Ork
-48,Witches Scarecrow,Magic/Debuff,900,0,enemy/single,2,5,10,Fear the enemy (success chance x0.5);,88,64k,[],Ork
-52,Witches Scarecrow,Magic/Debuff,900,0,enemy/single,2,5,10,Fear the enemy (success chance x0.5);,96,74k,[],Ork
-56,Witches Scarecrow,Magic/Debuff,900,0,enemy/single,2,5,10,Fear the enemy (success chance x0.5);,104,81k,[],Ork
-58,Witches Scarecrow,Magic/Debuff,900,0,enemy/single,2,5,10,Fear the enemy (success chance x0.5);,108,88k,[],Ork
-60,Witches Scarecrow,Magic/Debuff,900,0,enemy/single,2,5,10,Fear the enemy (success chance x0.5);,110,120k,[],Ork
-62,Witches Scarecrow,Magic/Debuff,900,0,enemy/single,2,5,10,Fear the enemy (success chance x0.5);,116,170k,[],Ork
-64,Witches Scarecrow,Magic/Debuff,900,0,enemy/single,2,5,10,Fear the enemy (success chance x0.5);,120,190k,[],Ork
-66,Witches Scarecrow,Magic/Debuff,900,0,enemy/single,2,5,10,Fear the enemy (success chance x0.5);,124,280k,[],Ork
-68,Witches Scarecrow,Magic/Debuff,900,0,enemy/single,2,5,10,Fear the enemy (success chance x0.5);,128,320k,[],Ork
-70,Witches Scarecrow,Magic/Debuff,900,0,enemy/single,2,5,10,Fear the enemy (success chance x0.5);,130,390k,[],Ork
-72,Witches Scarecrow,Magic/Debuff,900,0,enemy/single,2,5,10,Fear the enemy (success chance x0.5);,134,650k,[],Ork
-74,Witches Scarecrow,Magic/Debuff,900,0,enemy/single,2,5,10,Fear the enemy (success chance x0.5);,138,880k,[],Ork
+40,Witches Scarecrow,Magic/Debuff,900,0,enemy/single,2,5,10,Fear the enemy (success chance x0.5);,66,36k,[],Demon,lower success rate
+44,Witches Scarecrow,Magic/Debuff,900,0,enemy/single,2,5,10,Fear the enemy (success chance x0.5);,76,43k,[],Demon
+48,Witches Scarecrow,Magic/Debuff,900,0,enemy/single,2,5,10,Fear the enemy (success chance x0.5);,88,64k,[],Demon
+52,Witches Scarecrow,Magic/Debuff,900,0,enemy/single,2,5,10,Fear the enemy (success chance x0.5);,96,74k,[],Demon
+56,Witches Scarecrow,Magic/Debuff,900,0,enemy/single,2,5,10,Fear the enemy (success chance x0.5);,104,81k,[],Demon
+58,Witches Scarecrow,Magic/Debuff,900,0,enemy/single,2,5,10,Fear the enemy (success chance x0.5);,108,88k,[],Demon
+60,Witches Scarecrow,Magic/Debuff,900,0,enemy/single,2,5,10,Fear the enemy (success chance x0.5);,110,120k,[],Demon
+62,Witches Scarecrow,Magic/Debuff,900,0,enemy/single,2,5,10,Fear the enemy (success chance x0.5);,116,170k,[],Demon
+64,Witches Scarecrow,Magic/Debuff,900,0,enemy/single,2,5,10,Fear the enemy (success chance x0.5);,120,190k,[],Demon
+66,Witches Scarecrow,Magic/Debuff,900,0,enemy/single,2,5,10,Fear the enemy (success chance x0.5);,124,280k,[],Demon
+68,Witches Scarecrow,Magic/Debuff,900,0,enemy/single,2,5,10,Fear the enemy (success chance x0.5);,128,320k,[],Demon
+70,Witches Scarecrow,Magic/Debuff,900,0,enemy/single,2,5,10,Fear the enemy (success chance x0.5);,130,390k,[],Demon
+72,Witches Scarecrow,Magic/Debuff,900,0,enemy/single,2,5,10,Fear the enemy (success chance x0.5);,134,650k,[],Demon
+74,Witches Scarecrow,Magic/Debuff,900,0,enemy/single,2,5,10,Fear the enemy (success chance x0.5);,138,880k,[],Demon

@@ -67,10 +67,10 @@ What is left of that pass is `BL-79` and `BL-80`, which are the CONTENT his `BL-
 **🆕 2026-08-27: he ruled on FOURTEEN entries in one message, and NINE of them closed.** Deleted:
 `BL-10` · `BL-12` · `BL-16` · `BL-17` · `BL-24` · `BL-54` · `BL-55` · `BL-86` · `BL-94`. Rewritten:
 `BL-15` (learnable passives, gated on the warrior/rogue CSVs) and `BL-23` (an assertion replaced by a
-measurement — `--goldflow`). Partly closed: `BL-90`, `BL-91` and `BL-92`'s ork-buffer bullet. All the
+measurement — `--goldflow`). Partly closed: `BL-90`, `BL-91` and `BL-92`'s demon-buffer bullet. All the
 replaced text is in [BacklogArchive.md](BacklogArchive.md).
 
-⚠ 🔑 **THREE OF THE FOURTEEN WERE STALE, NOT OPEN** — `BL-90`'s bursts, `BL-91`'s ×2 and `BL-92`'s ork
+⚠ 🔑 **THREE OF THE FOURTEEN WERE STALE, NOT OPEN** — `BL-90`'s bursts, `BL-91`'s ×2 and `BL-92`'s demon
 buffer were all already in the code, two of them since 0.87.0 three days earlier, and he was the one
 who noticed (*"bl-24 - it build ? why blue ?"*, *"nuker 3rd is build or atelast should be so fix the
 wording"*). **When a build closes a dependency, sweep every entry that named it in the same commit.**
@@ -283,7 +283,7 @@ closed · **`BL-93` opened** for the in-game visuals discussion you asked for (*
 - `BL-21` 🟡 **Per-mob and per-zone drop identity.** *"I would like obe mob to drop let say a sword
   and a 2h sword, the other to drop only main armors, third boots and helmet … to go to a spot and
   know I can get there light armor and 2h-sword."* Then: *"later I'll want a 'ork settlment' where
-  are 5 different ork types and I go there for lvl up, and several different settlements and zones
+  are 5 different demon types and I go there for lvl up, and several different settlements and zones
   with meanings."* You gated this yourself behind the world-map/positions pass (`BL-45`).
 
 - `BL-22` ✅ **BUILT 2026-08-14 (0.66.0)** — a **Break down** button on any unworn tiered piece: rarity
@@ -451,19 +451,70 @@ closed · **`BL-93` opened** for the in-game visuals discussion you asked for (*
   able without a target .. So 0/x"*. Range is 0 on all of them now (0.94.3), which also means they
   fire with an ENEMY selected. Nothing left open here.
 
-- `BL-97` 🔵 **ONE NUKER PER RACE — Tempest or Magus has to go, and it is your call which.** You asked
-  2026-08-28: *"what is the difference between tempest/magus - one must go as for other nuker races -
-  only one nuker per race"*.
-  **The factual answer**: mechanically there is no stat difference at all, by your own 2026-08-10
-  ruling — *a class grants NO stats; identity is the skill/passive kit*. Two disciplines of one
-  archetype run identical formulas and differ only in what their skills DO. So Magus and Tempest are
-  two authored KITS of the same nuker archetype, and `nuker 3rd.csv` (0.87.0) authored both across all
-  three races — 208 rows, 21 families.
-  ⚠ **So "one must go" is a decision about which KIT survives, and it deletes authored CSV rows.** It
-  is not a rename and it is not free. It also touches `ThirdClassCatalog` ids, the 4th-tier ascension
-  that derives from them, and every character sitting on the losing discipline — which is another
-  reason to do it while a `game.db` reset is already owed.
-  🔵 **Tell me which one lives** and it is a contained pass.
+- `BL-100` ✅ **BUILT 2026-08-28 (0.97.0) — EVERY CLASS RENAMED TO YOUR TABLE.** *"now just sound
+  over complicated ... but I want it simpler ... All races are the same until lvl 40 so we can call it
+  elf-A human-A"*. The 2nd class is race+role now, and the six best words we had (`Assassin`,
+  `Sentinel`, `Templar`, `Shadowblade`, `Stalker`, `Champion`) moved onto 3rd classes that earn them.
+  ➡️ **[docs/design/ClassRenames.md](design/ClassRenames.md)** is the live roster and the record.
+  🔑 Cost was zero: nothing persists a name, so no save broke and no `game.db` reset was needed.
+  ⚠ Four built lines differ from your written list, each explained in that file — the biggest being
+  **elf `Swiftblade → Sword Saint`**, because your `Sword Master` at the elf 3rd collides with the
+  human 4th and `DuplicateNames()` has had no exemptions since `BL-97`: a hard startup failure, not
+  just the smell you spotted.
+  ✅ **AND THE LAST FLAG IS CLOSED TOO** (2026-08-28, 0.98.1): `Sword Dancer` — the one 3rd chosen to
+  rhyme with its 4th rather than be its lesser form — is **`Skirmisher → War Storm`**, which puts the
+  war_aoe 3rd tier in one voice: Vanguard / Skirmisher / Warborn. 🔑 Your *"anything aoe is War
+  named"* rule holds across all six AoE/support 4th classes and is written into `ClassNames`.
+  ✅ **ALL THREE OPEN ITEMS CLOSED THE SAME DAY, by you:**
+  1. **`Sentinel` clashed with the MODERATOR's worn title.** You kept the class and rewrote the whole
+     ladder: *"supreme being(owner) -> god(admin) -> demi god(mod) -> warden(chat mod) -> player"*.
+     Two plates changed (Sentinel → **Demi God**, Silencer → **Warden**) and the four now read as one
+     descending order instead of four unrelated words.
+  2. **`Light Bringer` → `Holy Priest`**, which also ends the confusion with the demon healer, and
+     gives the human line a ladder you can hear: Human Priest → Holy Priest → Holy Messenger.
+  3. **The bow order** is `Soultracker → Soulhunter` on the demon, your own demon row's order.
+
+- `BL-101` ✅ **BUILT 2026-08-28 (0.98.0) — THE THIRD RACE IS `DEMON`.** Your idea, and it earned
+  itself twice over: **`Orc Archer` is already a level-12 MOB**, so the player race was sharing its
+  name with common trash — and it killed the last naming exception, because the support line only had
+  to hide behind `Shaman` while "Ork Priest" sounded like nothing. All fifteen 2nd classes are
+  race+role now with no special case.
+  🔑 **`Race.Demon` is still value 2** — a character persists the number, so every save is the same
+  race under a new name. No `game.db` reset.
+  Swept: the enum and all 17 code files (compiler-verified), 162 RACE-column cells across five CSVs,
+  and the prose in the live docs. ⚠ **Owner quotes were left VERBATIM** — 35 lines carrying a `*"…"*`
+  quote still say "ork", deliberately, and so do CHANGELOG / Roadmap / Playtest-Archive, which are
+  historical records.
+  ⚠ Of the three IG names in your demon column: **`Warlock` stays** (yours is a buffer, theirs a
+  summoner — different role), **`Hell Knight` → `Dread Knight`** by your own swap, and `Dreadnought`
+  was only ever an alternative. `Juggernaut` went back to being unused — *"sounds orkish"*.
+
+- `BL-97` ✅ **BUILT 2026-08-28 (0.96.0) — THE TEMPEST AND THE VANGUARD ARE RETIRED. Eight choosable
+  paths per race, 24 third classes.** You ruled: *"Tempests must go .. And elf nuker 3rd is starweaver, ork is
+  cinderwitch and human stays magus"*, then *"Remove the vacant tank as well — the 3 tanks must have
+  their name and the other is the same for the 3 races ... So is the one that must go"*.
+  🔑 **Your test for which of a pair dies is the keeper**: both retired disciplines wore ONE name
+  across all three races (Vanguard/Doomward, Tempest/Skybreaker), because neither was ever really
+  three classes. The Vanguard also taught nothing — the 2026-08-10 purge took its learn lines — so a
+  level-40 Knight could pick an empty class.
+  ⚠ A retired discipline's NAME is free to reuse on a live one (a name is not an id) — which is what
+  your `champion -> sword master` / `vanguard -> war master` rename does with it.
+  🔑 **The three names were ALREADY exactly that** — `ClassNames` has read Magus / Starweaver /
+  Cinderwitch since the per-race naming pass of 2026-08-17 — so the ruling's naming half cost nothing
+  and the whole pass was the retirement.
+  🔑 **And it deleted NO authored row.** My earlier note here warned it would; that was wrong.
+  `nuker 3rd.csv` carries no discipline column, so the 208-row kit was registered to Magus **and**
+  Tempest, identically — the retirement removed a duplicate registration, not content. `--check` is
+  still clean.
+  What actually changed: `Disciplines.Of` returns a NULLABLE second branch and the nuker's is null;
+  third-class ids **112 / 124 / 136** and their ascensions **212 / 224 / 236** are now permanently
+  vacant — as are the tank's **102 / 114 / 126** and **202 / 214 / 226** (the id is computed from the
+  parent, so nothing else moved); the twelve class-proof quest items for those ids are gone with them
+  (1080 → 1068 items); a character saved on a retired discipline is migrated to its surviving sibling
+  on load rather than being left classless; and `ClassNames.DuplicateNames()` has no exemptions left.
+  ⚠ One consequence worth knowing: **"two nukers" is no longer a legal subclass pair.** The one-per-
+  discipline rule stands, so a second Sorcerer/Inquisitor/Witch would have to walk the Magus twice.
+  Delete at the next sweep.
 
 - `BL-87` ✅ **BUILT 2026-08-23 — THE BUFF CAP IS 20, AND WHAT COUNTS IS A PER-BUFF FLAG.** Playtest 27:
   *"we need make max buffs limit. Now I have 24 buffs as healer ... So if we make it 20 then the buffer
@@ -562,7 +613,7 @@ closed · **`BL-93` opened** for the in-game visuals discussion you asked for (*
     already exist on shipped classes; retro-taxing them is one line each and it waits for play, not for
     a decision. Not dropped.
   - ✅ **CLOSED 2026-08-27 — "buff removeal" needed nothing.** *"buff removal can be deleted .. arcane
-    void is the one we need and later a ork tank probably will have a cancel too but thats still
+    void is the one we need and later a demon tank probably will have a cancel too but thats still
     unauthored."* Arcane Void ×0.3 is built and is the cancel. An ork tank's cancel arrives with his
     authoring like any other unwritten row; it is not owed here.
   - ℹ️ Your *"(did the same for buffer)"* was a slip — *"did the same for healer ... my bad"*. Confirmed:
@@ -578,7 +629,7 @@ closed · **`BL-93` opened** for the in-game visuals discussion you asked for (*
   - ✅ **The MEN curve, flattened to your numbers.** IG's 20 = ×1.00 / 50 = ×0.23 is ~4.8% per point and
     prices our level-39 human mage at ×0.395 — your *"a bit low"*. Ours is your alternative,
     **20 = ×1.00, 50 = ×0.67**, same geometric shape at a third the slope. Ours vs IG's on our bases:
-    human ftr ×0.94/×0.78, elf mage ×0.85/×0.56, human mage ×0.78/×0.39, ork mage ×0.72/×0.29.
+    human ftr ×0.94/×0.78, elf mage ×0.85/×0.56, human mage ×0.78/×0.39, demon mage ×0.72/×0.29.
   - ✅ **No robe-set 50% resist** — *"and i dont want that"*. `StatCaps.InterruptResistMax` = 0.80 so any
     future source stacks into a clamp instead of multiplying past it.
   - ✅ **THUNDERSTORM IS FIXED BY THE MODEL, not by a patch.** 0.83.0 priced a cast against its own DPS, so
@@ -650,13 +701,13 @@ closed · **`BL-93` opened** for the in-game visuals discussion you asked for (*
     32), the rogue **+1.2**, and the **tank none at all**; archer and dual have no `hpReg` row either.
   - ✅ **THE ORK BUFFER — CLOSED 2026-08-27, and it was already built.** *"the ork buffer have the hp
     boost skill so if its not build build it."* It does: `ClassSkillTables.Third.RegisterHpBoost`
-    registers **HP Boost L1-L7 at 40/44/48/52/56/62/70 for the Warchanter of all three races**, Ork
+    registers **HP Boost L1-L7 at 40/44/48/52/56/62/70 for the Warchanter of all three races**, Demon
     included, on your own 3rd-class SP ladder (36k → 390k, overridden per rung because the SkillDef's
-    prices are the warrior's). So the ork buffer's extra HP comes from the KIT, which is the rule —
+    prices are the warrior's). So the demon buffer's extra HP comes from the KIT, which is the rule —
     identity is the skill kit, not a stat bonus — and no `hpReg` number was invented.
     ⚠ Note the distinction that made this look open: your original *"buffer ork should have more"* was
     about the **hpReg FLAT**, a regen number; HP Boost is a **max-HP** skill. It answers the intent, not
-    the same field. If you did mean a bigger ork regen flat specifically, that is still unauthored.
+    the same field. If you did mean a bigger demon regen flat specifically, that is still unauthored.
   - ⚠ **The ladder stopped being progression**, knowingly: a nuker's six rungs from +1.1 to +2.7 used to
     buy +19 HP/s and now buy **+1.6 across 34 levels**. Same trade the `mpReg` ladder took. If those
     rungs should be felt, the FLAT numbers get re-authored bigger in the CSVs — not an engine change.
@@ -715,13 +766,13 @@ closed · **`BL-93` opened** for the in-game visuals discussion you asked for (*
 
 ---
 
-- `BL-75` 🔵 **The heal-at-0 skill wants a warrior/ork home.** Playtest 23, on the old Undying Will
+- `BL-75` 🔵 **The heal-at-0 skill wants a warrior/demon home.** Playtest 23, on the old Undying Will
   behaviour: *"That idea for undying skill is good for a warrior ork, when he must die just heal himself
   30%"* — and *"as I said good skill for a warrior"*. 🔑 **It is already built and needs no new mechanic**:
   `LastStand` (`SkillEffect.LethalSave`, revives to 50% of max HP off a fatal blow, buff consumed) has
   been in the catalog the whole time; its learn line went in the 40+ purge. What is missing is only a
   **class + a level + the percentage** — which is 40+ authoring, so it waits on `BL-02` with everything
-  else. Your two words to settle when you get there: is it Ravager/Warlord or race-gated to the ork, and
+  else. Your two words to settle when you get there: is it Ravager/Warlord or race-gated to the demon, and
   is the number your 30% or the skill's existing 50%?
 
 ## UI & client

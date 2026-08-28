@@ -1010,7 +1010,7 @@ public record SkillLevel(
     // reuse is a real ladder, and without this the whole skill would have taken the 4th tier's number.
     int CooldownTicks = 0,
     // HEAL POWER / HEAL RECEIVED granted by THIS level of a BUFF (0 = inherit the SkillDef's). The
-    // healer's Healer's Power is a five-rung ladder of +1000 … +2000 flat heal power, and the Ork's
+    // healer's Healer's Power is a five-rung ladder of +1000 … +2000 flat heal power, and the Demon's
     // Spirit Restoration leaves +30% healing RECEIVED behind it. Both channels existed only as
     // PASSIVE fields until the 4th tier; these are their buff-side twins.
     int HealPowerFlat = 0,

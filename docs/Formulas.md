@@ -134,7 +134,7 @@ hpBase(L)    = level1Base(race, baseClass)
 g per track    1-19  20-39  40-75  76-85       level1Base   fighter / mage
   tank         0.95   1.45   1.51   1.51         human          44 / 41
   warrior      0.86   1.32   1.37   1.37         elf            40 / 37
-  rogue|archer 0.79   1.21   1.26   1.26         ork            50 / 49
+  rogue|archer 0.79   1.21   1.26   1.26         demon            50 / 49
   buffer       0.90   1.02   1.23   1.23
   healer|nuker 0.74   0.84   1.01   1.01
 
@@ -157,8 +157,8 @@ flats                 = the hpReg/mpReg mastery rungs + gear flats + flat regen 
 IG:  HpRegen = ( base * ConMod * LvlMod + flat ) * buffs      <- IG's flat is INSIDE, ours is last
 
      base (no buffs/passives), per RACE+CLASS:
-         fighter Human/Ork  2.5-3.0      elven fighter  2.0-2.5
-         mage    Human/Elf  1.5-2.0      ork mystic     2.0-2.2
+         fighter Human/Demon  2.5-3.0      elven fighter  2.0-2.5
+         mage    Human/Elf  1.5-2.0      demon mystic     2.0-2.2
      ConMod   CON 30 -> 1.00 , CON 43 -> 1.32        == 1.32^((con-30)/13) , i.e. 1.0216/point
      LvlMod   Level/100 + 0.89                       == our damage lvlMod, (level+89)/100
 ```
@@ -195,7 +195,7 @@ IG's band and mages 6-13% above it.
 - `sptModifier` is **gentle** (1.16 @20 → 1.65 @50) — MP was not touched by this pass.
 - 🔑 **MP regen has its OWN stat curve.** `sptModifier` still drives Max MP and M.Def, but regen left
   it on 2026-08-26 (`BL-92`) for the wider linear `sptRegenModifier` — so Spirit buys visible sustain
-  (every fighter sits at the 0.70 floor; the ork mage reaches 1.10).
+  (every fighter sits at the 0.70 floor; the demon mage reaches 1.10).
 - 🔑 **BOTH BARS PUT THEIR FLATS OUTSIDE**, the global "flats after percentages" rule (playtest 28,
   `Entity.ModifiedStat`). MP moved 2026-08-26, HP the same day once measured (`BL-92`).
 - 🔑 **EVERY `hpReg`/`mpReg` MASTERY IS A FLAT PER-SECOND GRANT**, read off the CSV rung **whole**:
@@ -208,7 +208,7 @@ IG's band and mages 6-13% above it.
   1-85, IG's ×1.93). Swapping it was measured and **not** taken — don't close it without a new ruling.
 - 🔴 **Open:** fighter 3rd/4th kits unauthored — when they land, a fighter's `hpReg` flat must exceed a
   mage's (today nuker **+2.7** > warrior **+1.6** > rogue **+1.2** > tank **0**; archer/dual have no
-  row). The **ork buffer** should carry more; how much is undecided.
+  row). The **demon buffer** should carry more; how much is undecided.
 - 🔑 **EVERY primary stat is read EFFECTIVE** (base + armour-set + stat-swap deltas), owner
   2026-08-26: *"Need effective con to count on hp max/regen and whatever con have mod on"*. CON and
   ATK were the last two read BASE — by HP regen and by the character sheet / target panel — so a set's
@@ -232,7 +232,7 @@ and `BalanceMatrix --hpregen` (the latter also prints IG's own numbers beside ou
 timeMultiplier = 333 / speedStat                 lower = faster
 AttackSpeedStat = weaponBase * 1.0105^(agi - 30)          cap 1500
 CastSpeedStat   = classBase  * 1.63^((wit - 20)/10)       cap 1999
-   classBase: fighter 150 · human/elf mage 333 · ork mage 300
+   classBase: fighter 150 · human/elf mage 333 · demon mage 300
 MoveSpeed: per race+class table, buffed cap 250 (per-entity, raisable)
 ```
 

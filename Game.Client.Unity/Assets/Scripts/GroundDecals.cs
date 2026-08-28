@@ -80,7 +80,7 @@ namespace Game.Client
             var seen = new HashSet<System.Guid>();
 
             // 🔑 TOTEMS STACK ON ONE SPOT, and that is the normal case, not an edge one: every totem
-            // is planted WHERE YOU STAND, so an ork who drops his Healing and Mana totems together has
+            // is planted WHERE YOU STAND, so an demon who drops his Healing and Mana totems together has
             // two circles of identical radius at identical coordinates. Drawn naively the second one
             // covers the first completely and he sees one colour — the exact opposite of the point.
             // So co-located totems are NESTED, each ring a little inside the last, and the whole

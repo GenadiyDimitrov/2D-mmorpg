@@ -66,7 +66,7 @@ internal static class AoeColumn
             if (!list.Any(e => e.Learn == learn)) list.Add((learn, r));
         }
 
-        foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
+        foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
             foreach (var bc in new[] { BaseClass.Fighter, BaseClass.Mage })
                 foreach (var cs in AllClassSkills(race, bc))
                 {

@@ -653,13 +653,23 @@ public static class TitleCatalog
     /// <summary>Display text for a granted title id.</summary>
     public static string Text(string id) => id switch
     {
-        // The fantasy half of his split ruling. "Game Master" became "God" and "Moderator" became
-        // "Sentinel" here and NOWHERE else — the RANK is still called Admin and Moderator in every
-        // system message, log line and `/role` argument.
+        // The fantasy half of his split ruling: these four strings are the ONLY place a rank wears a
+        // fantasy word — the RANK is still called Admin and Moderator in every system message, log
+        // line and `/role` argument.
+        //
+        // ⚠ REWRITTEN 2026-08-28 as one descending ladder (owner): *"titles to read: supreme
+        // being(owner) -> god(admin) -> demi god(mod) -> warden(chat mod) -> player"*. Two changed:
+        //   • Moderator was "Sentinel" → **Demi God**, because `BL-100` gave the elf archer 3rd class
+        //     the name Sentinel and a plate whose whole job is "this person is staff" cannot also be
+        //     a class a hundred players wear. He kept the class and moved the title.
+        //   • ChatModerator was "Silencer" → **Warden**, so the four read as one descending order
+        //     rather than four unrelated words.
+        // 🔑 `Demi God` is safe to use even though `Demigod` was a deleted CLASS (id 98, gone
+        // 2026-08-07 with the God layer): nothing resolves a title to a class, and the id stays dead.
         Owner         => "Supreme Being",
         Admin         => "God",
-        Moderator     => "Sentinel",
-        ChatModerator => "Silencer",
+        Moderator     => "Demi God",
+        ChatModerator => "Warden",
         _             => Leaderboards.TopTitle(id ?? ""),
     };
 

@@ -275,20 +275,20 @@ if (args.Length > 0 && args[0] == "--mana-ray")
 if (args.Length > 0 && args[0] == "--warchanter")
 {
     int L = args.Length > 1 ? int.Parse(args[1]) : 90;
-    // Optional ork ATK override sweep: `--warchanter 90 31 38 41 44 47`
+    // Optional demon ATK override sweep: `--warchanter 90 31 38 41 44 47`
     var sweep = args.Skip(2).Select(int.Parse).ToArray();
     if (sweep.Length == 0) sweep = new[] { 31, 38, 41, 44, 47 };
 
     Console.WriteLine();
     Console.WriteLine($"=== THE THREE WARCHANTERS at level {L} — the race split measured, not asserted ===");
     Console.WriteLine("  Each race in the weapon and armour ITS OWN masteries train (his kit split):");
-    Console.WriteLine("    Human  heavy + 1H mace + SHIELD   Ork  heavy + 2H maul   Elf  light + bow");
+    Console.WriteLine("    Human  heavy + 1H mace + SHIELD   Demon  heavy + 2H maul   Elf  light + bow");
     Console.WriteLine("  Best-for-tier gear, every Warchanter skill learnable by this level, War/Spell Rune ON,");
     Console.WriteLine("  NO buffs cast (this is the naked character sheet he compared).");
     Console.WriteLine();
     Console.WriteLine($"  {"race",-7} {"CON",4} {"ATK",4} {"WIT",4} {"AGI",4} {"SPT",4} | " +
                       $"{"P.Atk",7} {"M.Atk",7} {"P.Def",7} {"M.Def",7} {"acc",5} {"eva",5} | {"HP",7} {"MP",7}");
-    foreach (var (race, label) in new[] { (Race.Human, "human"), (Race.Ork, "ork"), (Race.Elf, "elf") })
+    foreach (var (race, label) in new[] { (Race.Human, "human"), (Race.Demon, "demon"), (Race.Elf, "elf") })
     {
         var e = BuildWarchanter(race, L);
         var s = StatCalculator.GetBaseStats(race, BaseClass.Mage);
@@ -300,8 +300,8 @@ if (args.Length > 0 && args[0] == "--warchanter")
 
     Console.WriteLine();
     Console.WriteLine($"=== WHAT AN ORK ATK RAISE ACTUALLY BUYS (level {L}) ===");
-    Console.WriteLine("  The ork's ATK is the ONLY thing changed; his gear, kit and every other stat stand still.");
-    Console.WriteLine("  'vs human' is the ork's P.Atk over the human's — who also carries a SHIELD the ork has not.");
+    Console.WriteLine("  The demon's ATK is the ONLY thing changed; his gear, kit and every other stat stand still.");
+    Console.WriteLine("  'vs human' is the demon's P.Atk over the human's — who also carries a SHIELD the demon has not.");
     Console.WriteLine();
     var human = BuildWarchanter(Race.Human, L);
     var elf = BuildWarchanter(Race.Elf, L);
@@ -309,16 +309,16 @@ if (args.Length > 0 && args[0] == "--warchanter")
     int eP = (int)elf.EffectiveAttack;
     Console.WriteLine($"  reference: human P.Atk {hP} / P.Def {hD}   elf P.Atk {eP} / P.Def {(int)elf.EffectiveDefence}");
     Console.WriteLine();
-    Console.WriteLine($"  {"ork ATK",8} {"P.Atk",7} {"M.Atk",7} | {"vs human",9} {"vs elf",8}");
+    Console.WriteLine($"  {"demon ATK",8} {"P.Atk",7} {"M.Atk",7} | {"vs human",9} {"vs elf",8}");
     foreach (int a in sweep)
     {
-        var e = BuildWarchanter(Race.Ork, L, atkOverride: a);
+        var e = BuildWarchanter(Race.Demon, L, atkOverride: a);
         int p = (int)e.EffectiveAttack;
         Console.WriteLine($"  {a,8} {p,7} {(int)e.EffectiveMagicAttackShown,7} | " +
                           $"{(p - hP) * 100f / hP,8:+0.0;-0.0}% {(p - eP) * 100f / eP,7:+0.0;-0.0}%");
     }
 
-    // ⚠ ATK IS ONE STAT PER RACE+BASECLASS. Raising it for the buffer raises it for every ork MAGE
+    // ⚠ ATK IS ONE STAT PER RACE+BASECLASS. Raising it for the buffer raises it for every demon MAGE
     // — the Shaman and the Witch too. The nuker is the one that could be broken by it, so measure
     // him rather than reasoning about him: same staff, same robe, only the base ATK moves.
     Console.WriteLine();
@@ -328,10 +328,10 @@ if (args.Length > 0 && args[0] == "--warchanter")
     Console.WriteLine($"  reference: human Magus M.Atk {hM}, WIT {StatCalculator.GetBaseStats(Race.Human, BaseClass.Mage).Wit} " +
                       $"(cast x{humanNuke.EffectiveCastSpeedMultiplier:F2}, magic crit {humanNuke.MagicCritChance:P1})");
     Console.WriteLine();
-    Console.WriteLine($"  {"ork ATK",8} {"M.Atk",7} | {"vs human",9} | {"cast",6} {"m.crit",7}");
+    Console.WriteLine($"  {"demon ATK",8} {"M.Atk",7} | {"vs human",9} | {"cast",6} {"m.crit",7}");
     foreach (int a in sweep)
     {
-        var n = BuildWarchanter(Race.Ork, L, atkOverride: a, disc: Discipline.Magus);
+        var n = BuildWarchanter(Race.Demon, L, atkOverride: a, disc: Discipline.Magus);
         int m = (int)n.EffectiveMagicAttackShown;
         Console.WriteLine($"  {a,8} {m,7} | {(m - hM) * 100f / hM,8:+0.0;-0.0}% | " +
                           $"x{n.EffectiveCastSpeedMultiplier,5:F2} {n.MagicCritChance,7:P1}");
@@ -347,7 +347,7 @@ if (args.Length > 0 && args[0] == "--buffs") { BuffCensus.Run(); return; }
 if (args.Length > 0 && args[0] == "--hpcurve")
 {
     Console.WriteLine("=== PLAYER HP CURVE vs IG (base = pre-CON level term; naked = x ConHpModifier) ===");
-    Console.WriteLine("  Reference sheets: fighters = human CON 43 | nuker/healer = human CON 27 | buffer = ork CON 31");
+    Console.WriteLine("  Reference sheets: fighters = human CON 43 | nuker/healer = human CON 27 | buffer = demon CON 31");
     Console.WriteLine();
 
     // IG's own per-class base tables, as supplied. null = not supplied for that level.
@@ -374,13 +374,13 @@ if (args.Length > 0 && args[0] == "--hpcurve")
     Track("TANK", Race.Human, BaseClass.Fighter, Archetype.Tank, Discipline.Bulwark, 43, igTank);
     Track("WARRIOR", Race.Human, BaseClass.Fighter, Archetype.Warrior, Discipline.Ravager, 43, null);
     Track("ROGUE", Race.Human, BaseClass.Fighter, Archetype.Rogue, Discipline.Nullblade, 43, null);
-    Track("BUFFER (Warchanter)", Race.Ork, BaseClass.Mage, Archetype.Healer, Discipline.Warchanter, 31, igBuff);
+    Track("BUFFER (Warchanter)", Race.Demon, BaseClass.Mage, Archetype.Healer, Discipline.Warchanter, 31, igBuff);
     Track("HEALER (Lightbringer)", Race.Human, BaseClass.Mage, Archetype.Healer, Discipline.Lightbringer, 27, null);
     Track("NUKER", Race.Human, BaseClass.Mage, Archetype.Nuker, Discipline.Magus, 27, null);
 
     Console.WriteLine("  --- THE OWNER'S THREE ANCHORS ---");
     int a1 = StatCalculator.MaxHp(43, 40, Race.Human, BaseClass.Fighter, Archetype.Tank, Discipline.Bulwark);
-    int a2 = StatCalculator.MaxHp(31, 40, Race.Ork, BaseClass.Mage, Archetype.Healer, Discipline.Warchanter);
+    int a2 = StatCalculator.MaxHp(31, 40, Race.Demon, BaseClass.Mage, Archetype.Healer, Discipline.Warchanter);
     int a3 = StatCalculator.MaxHp(43, 80, Race.Human, BaseClass.Fighter, Archetype.Tank, Discipline.Bulwark);
     Console.WriteLine($"   tank   @40 CON43 = {a1,6}   target 2380   {(a1 / 2380.0 - 1),7:+0.0%;-0.0%;0.0%}");
     Console.WriteLine($"   buffer @40 CON31 = {a2,6}   target 1180   {(a2 / 1180.0 - 1),7:+0.0%;-0.0%;0.0%}");
@@ -390,9 +390,9 @@ if (args.Length > 0 && args[0] == "--hpcurve")
     Console.WriteLine("  --- THE CLASS-CHANGE STEP: what taking a discipline at 40 is worth ---");
     foreach (var L in new[] { 39, 40, 50, 80 })
     {
-        int pre = StatCalculator.MaxHp(31, L, Race.Ork, BaseClass.Mage, Archetype.Healer, null);
-        int wc = StatCalculator.MaxHp(31, L, Race.Ork, BaseClass.Mage, Archetype.Healer, Discipline.Warchanter);
-        int lb = StatCalculator.MaxHp(31, L, Race.Ork, BaseClass.Mage, Archetype.Healer, Discipline.Lightbringer);
+        int pre = StatCalculator.MaxHp(31, L, Race.Demon, BaseClass.Mage, Archetype.Healer, null);
+        int wc = StatCalculator.MaxHp(31, L, Race.Demon, BaseClass.Mage, Archetype.Healer, Discipline.Warchanter);
+        int lb = StatCalculator.MaxHp(31, L, Race.Demon, BaseClass.Mage, Archetype.Healer, Discipline.Lightbringer);
         Console.WriteLine($"   L{L,-3} no discipline {pre,6} | Warchanter {wc,6} ({(wc / (double)pre - 1),6:+0.0%;-0.0%;0.0%}) | Lightbringer {lb,6}");
     }
     Console.WriteLine();
@@ -446,7 +446,7 @@ if (args.Length > 0 && args[0] == "--stacks")
     return;
 }
 
-// `--mpcase` - HIS level-43 ork healer, measured as he actually plays it (2026-08-27).
+// `--mpcase` - HIS level-43 demon healer, measured as he actually plays it (2026-08-27).
 if (args.Length > 0 && args[0] == "--mpcase")
 {
     MpCase();
@@ -1059,12 +1059,12 @@ Console.WriteLine($"  {"WIT",4} {"witMod",7} {"base",6} {"x1.2 Res",9} {"x2 Insi
 foreach ((int wit, string who) in new[]
 {
     (5,  "every MOB (flat WIT 5 at all levels)"),
-    (10, "ork fighter"),
+    (10, "demon fighter"),
     (15, "human fighter"),
-    (19, "ork mage, bare"),
+    (19, "demon mage, bare"),
     (20, "HUMAN MAGE, bare  <- the x1.00 anchor"),
     (23, "elf mage, bare"),
-    (26, "ork mage + set +2 + swap +5"),
+    (26, "demon mage + set +2 + swap +5"),
     (27, "human mage + set +2 + swap +5"),
     (30, "ELF MAGE + set +2 + swap +5  <- tests the cap"),
 })
@@ -1085,7 +1085,7 @@ Console.WriteLine("  (the x4 column is UNCLAMPED headroom — in game it is capp
 Console.WriteLine();
 Console.WriteLine("  MEASURED off real Entities (level 74, best gear) — the chain, not the formula:");
 Console.WriteLine($"  {"race",6} {"WIT",4} {"unbuffed",9} {"+Insight x2",12}   (no swap/attribute: BuildPlayer has neither)");
-foreach (Race r in new[] { Race.Human, Race.Elf, Race.Ork })
+foreach (Race r in new[] { Race.Human, Race.Elf, Race.Demon })
 {
     var bare = BuildPlayer(r, BaseClass.Mage, 74);
     var buffed = BuildPlayer(r, BaseClass.Mage, 74);
@@ -1140,7 +1140,7 @@ Console.WriteLine("  THE SPELL LADDERS — where each FIZZLING spell's BEST rung
         var baseCls = Disciplines.Parent(d) is Archetype.Healer or Archetype.Nuker
             ? BaseClass.Mage : BaseClass.Fighter;
         var perSkill = new Dictionary<string, (string Name, SortedSet<int> Learn)>();
-        foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
+        foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
             // ⚠ The BASE-class list is walked too. `Cumulative` is the CURRENT tier only, so without
             // this every skill bought before level 20 — Magic Bolt, the base mage's Vampiric Bolt @14 —
             // is missing from the table, which is precisely the set the rung rule bites hardest.
@@ -1260,7 +1260,7 @@ Console.WriteLine("  THE RUNG LADDERS — where each CC skill's BEST rung hits t
     {
         var baseCls = Disciplines.Parent(d) is Archetype.Healer or Archetype.Nuker
             ? BaseClass.Mage : BaseClass.Fighter;
-        foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
+        foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
             foreach (var cs in ClassSkills.Cumulative(race, baseCls, Disciplines.Parent(d), d))
             {
                 if (SkillCatalog.Get(cs.SkillId) is not SkillDef sd) continue;
@@ -1396,10 +1396,10 @@ Console.WriteLine();
     {
         ("human fighter", Race.Human, BaseClass.Fighter),
         ("elf fighter",   Race.Elf,   BaseClass.Fighter),
-        ("ork fighter",   Race.Ork,   BaseClass.Fighter),
+        ("demon fighter",   Race.Demon,   BaseClass.Fighter),
         ("elf mage",      Race.Elf,   BaseClass.Mage),
         ("human mage",    Race.Human, BaseClass.Mage),
-        ("ork mage",      Race.Ork,   BaseClass.Mage),
+        ("demon mage",      Race.Demon,   BaseClass.Mage),
     })
     {
         int spt = StatCalculator.GetBaseStats(race, cls).Spt;
@@ -1418,7 +1418,7 @@ Console.WriteLine();
     Console.WriteLine();
     Console.WriteLine("  THE GRID — chance ONE hit breaks a cast, by how big the hit is:");
     Console.WriteLine($"  {"hit as % of MaxHP",18} | {"no SPT, no buff",16} {"human mage 39",14} "
-                    + $"{"+Resolve 54%",13} {"ork mage 45 +54%",17}");
+                    + $"{"+Resolve 54%",13} {"demon mage 45 +54%",17}");
     foreach (float share in new[] { 0.02f, 0.05f, 0.10f, 0.20f, 0.35f, 0.50f })
     {
         float hm = StatCalculator.SpiritInterruptMod(39), om = StatCalculator.SpiritInterruptMod(45);
@@ -2228,7 +2228,8 @@ Console.WriteLine("=== CLASS UNIQUENESS ACROSS SUBCLASSES ===");
 {
     var c = new Entity { Name = "dual", Kind = EntityKind.Player, Race = Race.Human };
     c.Subclasses.Clear();
-    // Class #0: a Human Mage who became a Sorcerer (Nuker) and then a Tempest.
+    // Class #0: a Human Mage who became a Sorcerer (Nuker) and then a Magus — the ONE nuker discipline
+    // since `BL-97` (2026-08-28). It used to say "and then a Tempest", and the branch it named is gone.
     var nuker = new Subclass { Slot = 0, BaseClass = BaseClass.Mage, SecondClass = 18 };
     nuker.ThirdClass = ThirdClassCatalog.ForParent(18).First().Id;
     c.Subclasses.Add(nuker);
@@ -2243,11 +2244,22 @@ Console.WriteLine("=== CLASS UNIQUENESS ACROSS SUBCLASSES ===");
     foreach (var def in ClassCatalog.OptionsFor(Race.Human, BaseClass.Mage))
         Console.WriteLine($"    OK      {def.Name,-14} ({def.Archetype})");
 
-    Console.WriteLine("  …but its 3rd-class DISCIPLINES bar the one already owned:");
-    foreach (var tc in ThirdClassCatalog.ForParent(18))
+    // ⚠ Walked over ALL THREE nuker 2nd classes, not just the human's, and that is the point the demo
+    // exists to make: the bar is on the DISCIPLINE, so owning a human Magus also bars the elf's
+    // Starweaver and the demon's Cinderwitch — different ids, same path. Before `BL-97` this loop ran
+    // over one parent and showed a Tempest still OK beside a barred Magus; there is no such escape now,
+    // which makes the cross-race half of the rule the only half left to demonstrate.
+    Console.WriteLine("  …but every nuker DISCIPLINE is barred, in all three races (the bar is the path,");
+    Console.WriteLine("     not the class id) — and the healer line beside it is still open:");
+    foreach (var parent in new[] { 18, 12, 6 })                       // Sorcerer / Inquisitor / Witch
+        foreach (var tc in ThirdClassCatalog.ForParent(parent))
+            Console.WriteLine(c.CanTakeThirdClass(tc.Id)
+                ? $"    OK      {tc.Race,-5} {tc.Name,-14} ({tc.Discipline})"
+                : $"    BARRED  {tc.Race,-5} {tc.Name,-14} ({tc.Discipline}) — that discipline is already taken");
+    foreach (var tc in ThirdClassCatalog.ForParent(17))               // the human healer, for contrast
         Console.WriteLine(c.CanTakeThirdClass(tc.Id)
-            ? $"    OK      {tc.Name,-14} ({tc.Discipline})"
-            : $"    BARRED  {tc.Name,-14} ({tc.Discipline}) — that discipline is already taken");
+            ? $"    OK      {tc.Race,-5} {tc.Name,-14} ({tc.Discipline})"
+            : $"    BARRED  {tc.Race,-5} {tc.Name,-14} ({tc.Discipline}) — that discipline is already taken");
 }
 Console.WriteLine();
 
@@ -4922,7 +4934,7 @@ static Entity BuildWarchanter(Race race, int level, int? atkOverride = null,
     else switch (race)
     {
         case Race.Human: Equip(e, $"blunt1h_t{t}"); Equip(e, $"shield_t{t}"); Equip(e, $"heavy_t{t}"); break;
-        case Race.Ork:   Equip(e, $"blunt2h_t{t}"); Equip(e, $"heavy_t{t}"); break;
+        case Race.Demon:   Equip(e, $"blunt2h_t{t}"); Equip(e, $"heavy_t{t}"); break;
         default:         Equip(e, $"bow_t{t}");     Equip(e, $"light_t{t}"); break;
     }
     foreach (var acc in new[] { "helm", "gloves", "boots" }) Equip(e, $"{acc}_t{t}");
@@ -4988,7 +5000,7 @@ static void MpEconomy(int[] argLevels)
     Console.WriteLine("--- 1. SPT REGEN MODIFIER PER RACE (the new curve against the Max-MP one it left) ---");
     Console.WriteLine();
     Console.WriteLine("  race/class        SPT   old(MaxMP)   new(regen)   change");
-    foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
+    foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
         foreach (var cls in new[] { BaseClass.Mage, BaseClass.Fighter })
         {
             int spt = StatCalculator.GetBaseStats(race, cls).Spt;
@@ -5167,7 +5179,7 @@ static string Trim(string s, int n) => s.Length <= n ? s : s[..n];
 //  sold as "sustain" is, for a caster, mostly an accelerator.
 //
 //  ⚠ ELF ON PURPOSE — his pick, and the measurement backs it: fastest cast (highest WIT) on the
-//  lowest SPT, so he empties fastest and refills slowest. Human and ork are printed beside him so
+//  lowest SPT, so he empties fastest and refills slowest. Human and demon are printed beside him so
 //  the spread is visible rather than asserted.
 // ============================================================================================
 
@@ -5239,7 +5251,7 @@ static void MpNpc()
     Console.WriteLine("  parked farmer, 'run' a kiter. Reuse is the base cut by the class's reuse passives.");
     Console.WriteLine();
 
-    foreach (var race in new[] { Race.Elf, Race.Human, Race.Ork })
+    foreach (var race in new[] { Race.Elf, Race.Human, Race.Demon })
     {
         Console.WriteLine($"--- {race.ToString().ToUpperInvariant()} ---");
         Console.WriteLine();
@@ -5374,7 +5386,7 @@ static void MpNpc()
 static void MpCase()
 {
     Console.WriteLine();
-    Console.WriteLine("=== HIS CASE: the level-43 ork healer, measured as he actually plays it ===");
+    Console.WriteLine("=== HIS CASE: the level-43 demon healer, measured as he actually plays it ===");
     Console.WriteLine();
 
     // Mirrors GameLoopService.Regenerate's MP branch (flats outside, 0.88.0).
@@ -5416,7 +5428,7 @@ static void MpCase()
     var builds = new (string Label, bool Buffed, Func<Entity> Make)[]
     {
         ("--mpdrain's build: t40 staff + robe, BUFFED x1.44", true,
-            () => BuildCasterFor(Race.Ork, 43, Archetype.Healer, Discipline.Lightbringer)),
+            () => BuildCasterFor(Race.Demon, 43, Archetype.Healer, Discipline.Lightbringer)),
         ("HIS build: E-grade (t20) robe + wand + shield, UNBUFFED", false,
             () => BuildHisHealer(43)),
     };
@@ -5507,7 +5519,7 @@ static void MpCase()
     Console.WriteLine();
     Console.WriteLine("   race    WIT  SPT   cast(x)   cast  reuse  cycle    MP  drain/s | regen still  walk   run |   net/s");
     Console.WriteLine("  --------------------------------------------------------------------------------------------------");
-    foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
+    foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
     {
         var e = BuildHisHealer(43, race: race);
         if (alacrity != null)
@@ -5543,11 +5555,11 @@ static void MpCase()
         }
 
         Row(race.ToString(), 1f / e.EffectiveCastSpeedMultiplier);
-        if (race == Race.Ork) Row("  his", 1.30f);
+        if (race == Race.Demon) Row("  his", 1.30f);
     }
     Console.WriteLine();
     Console.WriteLine("  HIS PREDICTION HOLDS: the elf casts fastest AND regenerates slowest, so he is worst off");
-    Console.WriteLine("  at every level; the ork is best off and is STILL negative. Standing still, unbuffed, on");
+    Console.WriteLine("  at every level; the demon is best off and is STILL negative. Standing still, unbuffed, on");
     Console.WriteLine("  the cheapest spell he owns, with nothing between casts, a 43 does not pay for himself.");
     Console.WriteLine("  That is the case for the potion - and the COMMON tier (10 MP/s sustained) covers this");
     Console.WriteLine("  deficit several times over, which is the right shape: a potion that trivialises the");
@@ -5597,7 +5609,7 @@ static void MpCase()
 /// normal way to play, not a mistake, because a grade costs real gold. No rune buff: the report's
 /// whole point is what a soloing 43 actually has.</summary>
 static Entity BuildHisHealer(int level, bool jewels = true, bool weapon = true,
-                             Race race = Race.Ork, int witBonus = 0)
+                             Race race = Race.Demon, int witBonus = 0)
 {
     var s = StatCalculator.GetBaseStats(race, BaseClass.Mage);
     var e = new Entity { Name = "his healer", Kind = EntityKind.Player, Race = race, BaseClass = BaseClass.Mage };
@@ -5662,7 +5674,7 @@ static void MpDrain(int[] argLevels)
     const float BuffPct = 1.20f * 1.20f;
 
     int[] levels = argLevels.Length > 0 ? argLevels : new[] { 20, 30, 40, 50, 60, 70, 80 };
-    var races = new[] { Race.Human, Race.Elf, Race.Ork };
+    var races = new[] { Race.Human, Race.Elf, Race.Demon };
 
     // Mirrors GameLoopService.Regenerate's MP branch EXACTLY (flats OUTSIDE, 0.88.0).
     static float Mp(Entity e, MoveState st, bool moving, float buffPct)
@@ -5720,7 +5732,7 @@ static void MpDrain(int[] argLevels)
         var probe = BuildCasterFor(r, 60, Archetype.Nuker, Discipline.Magus);
         float cx = probe.EffectiveCastSpeedMultiplier;
         Console.WriteLine($"  {r,-6} {s.Wit,4}   {1f / cx,10:0.00}x  {s.Spt,4}   {StatCalculator.SptRegenModifier(s.Spt),10:0.000}"
-                        + $"   {(r == Race.Elf ? "casts fastest, regens slowest" : r == Race.Ork ? "casts slowest, regens fastest" : "the middle - the baseline")}");
+                        + $"   {(r == Race.Elf ? "casts fastest, regens slowest" : r == Race.Demon ? "casts slowest, regens fastest" : "the middle - the baseline")}");
     }
     Console.WriteLine();
     Console.WriteLine("  (castSpeed measured on a level-60 nuker with real gear - class base x WIT x robe.)");
@@ -5875,7 +5887,7 @@ static Entity BuildCasterFor(Race race, int level, Archetype arch, Discipline di
     else switch (race)
     {
         case Race.Human: Equip(e, $"blunt1h_t{t}"); Equip(e, $"shield_t{t}"); Equip(e, $"heavy_t{t}"); break;
-        case Race.Ork:   Equip(e, $"blunt2h_t{t}"); Equip(e, $"heavy_t{t}"); break;
+        case Race.Demon:   Equip(e, $"blunt2h_t{t}"); Equip(e, $"heavy_t{t}"); break;
         default:         Equip(e, $"bow_t{t}");     Equip(e, $"light_t{t}"); break;
     }
     foreach (var acc in new[] { "helm", "gloves", "boots" }) Equip(e, $"{acc}_t{t}");
@@ -5949,8 +5961,8 @@ static void HpEconomy(int[] argLevels)
     // His IG reference, given 2026-08-26:
     //     HpRegen = ( base x ConMod x LvlMod + flat ) x buffs
     //     base, without buffs or passives, is PER RACE + CLASS:
-    //         Fighters (Human, Ork, Dwarf) 2.5-3.0 | Elven fighters 2.0-2.5
-    //         Mages (Human, Elf)           1.5-2.0 | Ork Mystics    2.0-2.2
+    //         Fighters (Human, Demon, Dwarf) 2.5-3.0 | Elven fighters 2.0-2.5
+    //         Mages (Human, Elf)           1.5-2.0 | Demon Mystics    2.0-2.2
     //     ConMod anchors: CON 43 -> 1.32, CON 30 -> 1.00.
     //
     // 🔑 OUR formula factors EXACTLY into his shape, which is what makes the comparison honest:
@@ -5963,7 +5975,7 @@ static void HpEconomy(int[] argLevels)
     Console.WriteLine("--- 1. IG vs OURS, IN HP/s (his reference numbers, 2026-08-26) ---");
     Console.WriteLine();
     Console.WriteLine("  IG:    HpRegen = ( base x ConMod x LvlMod + flat ) x buffs");
-    Console.WriteLine("         base is PER RACE+CLASS: fighter 2.5-3.0 | elf fighter 2.0-2.5 | mage 1.5-2.0 | ork mystic 2.0-2.2");
+    Console.WriteLine("         base is PER RACE+CLASS: fighter 2.5-3.0 | elf fighter 2.0-2.5 | mage 1.5-2.0 | demon mystic 2.0-2.2");
     Console.WriteLine($"         ConMod fitted through HIS anchors CON 30 -> 1.00 and CON 43 -> 1.32, i.e. {IgConStep():0.0000}^(CON-30)");
     Console.WriteLine("  OURS:  (3 + 0.1*L) x 1.03^(CON-40)   ==   3.00 x (1 + L/30) x 1.03^(CON-40)");
     Console.WriteLine("                                            base   LvlMod       ConMod      <- the SAME shape");
@@ -6235,17 +6247,17 @@ static float IgConMod(int con) => (float)Math.Pow(1.32, (con - 30) / 13.0);
 static float IgLvlMod(int level) => level / 100f + 0.89f;
 
 /// <summary>IG's base HP/s band, before buffs and passives, per race+class — his four rows. Our
-/// Dwarf/Dark-Elf-less roster maps straight onto them: Ork fighters read with the Human fighters,
-/// and the Ork mage is his "Ork Mystic" row, which is the one mage band that is raised.</summary>
+/// Dwarf/Dark-Elf-less roster maps straight onto them: Demon fighters read with the Human fighters,
+/// and the Demon mage is his "Demon Mystic" row, which is the one mage band that is raised.</summary>
 static (float Lo, float Hi) IgBase(Race race, BaseClass cls) =>
     cls == BaseClass.Fighter
         ? race == Race.Elf ? (2.0f, 2.5f) : (2.5f, 3.0f)
-        : race == Race.Ork ? (2.0f, 2.2f) : (1.5f, 2.0f);
+        : race == Race.Demon ? (2.0f, 2.2f) : (1.5f, 2.0f);
 
 static (Race, BaseClass)[] RaceClassPairs() => new[]
 {
-    (Race.Human, BaseClass.Fighter), (Race.Elf, BaseClass.Fighter), (Race.Ork, BaseClass.Fighter),
-    (Race.Human, BaseClass.Mage),    (Race.Elf, BaseClass.Mage),    (Race.Ork, BaseClass.Mage),
+    (Race.Human, BaseClass.Fighter), (Race.Elf, BaseClass.Fighter), (Race.Demon, BaseClass.Fighter),
+    (Race.Human, BaseClass.Mage),    (Race.Elf, BaseClass.Mage),    (Race.Demon, BaseClass.Mage),
 };
 
 static int[] IgLevels() => new[] { 1, 20, 40, 60, 74, 85 };

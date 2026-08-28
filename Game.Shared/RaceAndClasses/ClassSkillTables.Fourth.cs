@@ -137,7 +137,7 @@ public static partial class ClassSkillTables
                   .Concat(new[] { new ClassSkill(ElvenRestoration, 83), new ClassSkill(HolyMark, 78) })
                   .ToArray());
 
-        ClassSkills.RegisterFourth(Race.Ork, Discipline.Lightbringer,
+        ClassSkills.RegisterFourth(Race.Demon, Discipline.Lightbringer,
             shared.Concat(Ladder(LbOrkFont,       HealerFourthBands, 15))
                   .Concat(Ladder(LbOrkArmorBreak, HealerFourthEven,  15))
                   .Concat(new[] { new ClassSkill(SpiritRestoration, 83), new ClassSkill(BloodMark, 78) })

@@ -4,7 +4,7 @@
 `dotnet run --project tools/ItemIds` after adding or removing an item. Every id below is a real
 id the server will accept today.
 
-**1073 items.** Generated 2026-08-15.
+**1068 items.** Generated 2026-08-28.
 
 ```
 /give <player> <itemId> [sellPrice] [tradable] [timed] ["name"] [enchant] [canStorePrivate] [canStoreAccount] [amount]
@@ -989,7 +989,7 @@ is full (it tells you how many fit).
 | `rune_spell` | Spell Rune | F | Rare | untradable |
 | `rune_war` | War Rune | F | Rare | untradable |
 
-## Consumables (potions)  (56)
+## Consumables (potions)  (62)
 
 | id | name | grade | rarity | notes |
 |---|---|---|---|---|
@@ -1002,6 +1002,7 @@ is full (it tells you how many fit).
 | `potion_pdef_u` | Bulwark Potion | F | Uncommon | stacks |
 | `potion_pdef_c` | Bulwark Potion (Lesser) | F | Common | stacks |
 | `potion_minor` | Common Healing Potion | F | Common | stacks |
+| `potion_mana_minor` | Common Mana Potion | F | Common | stacks |
 | `potion_dash_u` | Dash Potion | F | Uncommon | stacks |
 | `potion_dash_l` | Dash Potion (Grand) | F | Legendary | stacks |
 | `potion_dash_r` | Dash Potion (Greater) | F | Rare | stacks |
@@ -1014,11 +1015,14 @@ is full (it tells you how many fit).
 | `potion_matk_c` | Force Potion (Lesser) | F | Common | stacks |
 | `potion_atk_u` | Fury Potion | F | Uncommon | stacks |
 | `potion_atk_c` | Fury Potion (Lesser) | F | Common | stacks |
+| `holy_stone` | Holy Stone | F | Rare | stacks |
 | `potion_instant` | Instant Healing Potion | F | Rare | stacks |
 | `potion_instant_bound` | Instant Healing Potion (Bound) | F | Rare | untradable, stacks |
 | `potion_patk_u` | Might Potion | F | Uncommon | stacks |
 | `potion_patk_c` | Might Potion (Lesser) | F | Common | stacks |
+| `physical_stone` | Physical Stone | F | Rare | stacks |
 | `potion_greater` | Rare Healing Potion | F | Rare | stacks |
+| `potion_mana_greater` | Rare Mana Potion | F | Rare | stacks |
 | `rune_title_colour` | Rune of Tincture | F | Uncommon | stacks |
 | `scroll_eva_r` | Scroll of Agility | F | Rare | untradable, stacks |
 | `scroll_acc_r` | Scroll of Aim | F | Rare | untradable, stacks |
@@ -1040,6 +1044,7 @@ is full (it tells you how many fit).
 | `scroll_hpreg_m` | Scroll of Vigor | F | Rare | untradable, stacks |
 | `scroll_mdef_r` | Scroll of Ward | F | Rare | untradable, stacks |
 | `skill_stone` | Skill Stone | F | Uncommon | stacks |
+| `sp_bottle` | SP Bottle | S | Epic | stacks |
 | `potion_speed_u` | Swift Potion | F | Uncommon | stacks |
 | `potion_speed_c` | Swift Potion (Lesser) | F | Common | stacks |
 | `scroll_resurrect_ultimate` | Ultimate Scroll of Resurrection | F | Rare | stacks |
@@ -1047,6 +1052,7 @@ is full (it tells you how many fit).
 | `scroll_return_ultimate` | Ultimate Scroll of Return | F | Rare | untradable, stacks |
 | `scroll_return_ultimate_bound` | Ultimate Scroll of Return (Bound) | F | Rare | untradable, stacks |
 | `potion_healing` | Uncommon Healing Potion | F | Uncommon | stacks |
+| `potion_mana` | Uncommon Mana Potion | F | Uncommon | stacks |
 | `potion_mdef_u` | Ward Potion | F | Uncommon | stacks |
 | `potion_mdef_c` | Ward Potion (Lesser) | F | Common | stacks |
 
@@ -1083,9 +1089,9 @@ is full (it tells you how many fit).
 
 | id | name | grade | rarity | notes |
 |---|---|---|---|---|
-| `box_acc_t76` | Adamantine Accessory Box | A | Rare |  |
-| `box_buff_scrolls` | Blessing Box | F | Rare |  |
-| `box_acc_t61` | Bloodsteel Accessory Box | A | Rare |  |
+| `box_acc_t76` | Adamantine Accessory Box | A | Rare | stacks |
+| `box_buff_scrolls` | Blessing Box | F | Rare | stacks |
+| `box_acc_t61` | Bloodsteel Accessory Box | A | Rare | stacks |
 | `recipe_craft_shield_t76` | Blueprint: Adamantine Aegis | A | Epic | stacks |
 | `recipe_craft_ring_t76` | Blueprint: Adamantine Band | A | Epic | stacks |
 | `recipe_craft_staff_t76` | Blueprint: Adamantine Battlestaff | A | Epic | stacks |
@@ -1122,30 +1128,30 @@ is full (it tells you how many fit).
 | `recipe_craft_robe_t80` | Blueprint: Soulcrystal Robe | A | Epic | stacks |
 | `recipe_craft_earring_t80` | Blueprint: Soulcrystal Stud | A | Epic | stacks |
 | `recipe_craft_wand_t80` | Blueprint: Soulcrystal Wand | A | Epic | stacks |
-| `box_acc_t52` | Cobalt Accessory Box | B | Rare |  |
-| `box_acc_t40` | Darksteel Accessory Box | B | Rare |  |
-| `box_acc_t20` | Electrum Accessory Box | E | Rare |  |
-| `box_acc_t1` | Ferrite Accessory Box | F | Rare |  |
-| `box_newbie_armor_choice` | Newbie Armor Set | F | Common | untradable |
-| `box_newbie` | Newbie Box | F | Common | untradable |
-| `box_newbie_jewels` | Newbie Jewels Box | F | Common | untradable |
-| `box_newbie_armor_light` | Newbie Light Armor Box | F | Common | untradable |
-| `box_newbie_armor_robe` | Newbie Robe Armor Box | F | Common | untradable |
-| `box_newbie_rune_choice` | Newbie Rune | F | Common | untradable |
-| `box_newbie_weapons` | Newbie Weapons Box | F | Common | untradable |
-| `box_daily_rune_choice` | Rune Box (1h) — Daily | F | Common | untradable |
-| `box_acc_t80` | Soulcrystal Accessory Box | S | Rare |  |
-| `box_spell_rune_24h` | Spell Rune Box (1d) | F | Rare | untradable |
-| `box_spell_rune_1h` | Spell Rune Box (1h) | F | Rare |  |
-| `box_spell_rune_2h` | Spell Rune Box (2h) | F | Rare |  |
-| `box_spell_rune_30d` | Spell Rune Box (30d) | F | Rare | untradable |
-| `box_training_armor_choice` | Training Armor Box | F | Common | untradable |
-| `box_training_weapons` | Training Weapons Box | F | Common | untradable |
-| `box_treasure` | Treasure Chest | F | Uncommon |  |
-| `box_war_rune_24h` | War Rune Box (1d) | F | Rare | untradable |
-| `box_war_rune_1h` | War Rune Box (1h) | F | Rare |  |
-| `box_war_rune_2h` | War Rune Box (2h) | F | Rare |  |
-| `box_war_rune_30d` | War Rune Box (30d) | F | Rare | untradable |
+| `box_acc_t52` | Cobalt Accessory Box | B | Rare | stacks |
+| `box_acc_t40` | Darksteel Accessory Box | B | Rare | stacks |
+| `box_acc_t20` | Electrum Accessory Box | E | Rare | stacks |
+| `box_acc_t1` | Ferrite Accessory Box | F | Rare | stacks |
+| `box_newbie_armor_choice` | Newbie Armor Set | F | Common | untradable, stacks |
+| `box_newbie` | Newbie Box | F | Common | untradable, stacks |
+| `box_newbie_jewels` | Newbie Jewels Box | F | Common | untradable, stacks |
+| `box_newbie_armor_light` | Newbie Light Armor Box | F | Common | untradable, stacks |
+| `box_newbie_armor_robe` | Newbie Robe Armor Box | F | Common | untradable, stacks |
+| `box_newbie_rune_choice` | Newbie Rune | F | Common | untradable, stacks |
+| `box_newbie_weapons` | Newbie Weapons Box | F | Common | untradable, stacks |
+| `box_daily_rune_choice` | Rune Box (1h) — Daily | F | Common | untradable, stacks |
+| `box_acc_t80` | Soulcrystal Accessory Box | S | Rare | stacks |
+| `box_spell_rune_24h` | Spell Rune Box (1d) | F | Rare | untradable, stacks |
+| `box_spell_rune_1h` | Spell Rune Box (1h) | F | Rare | stacks |
+| `box_spell_rune_2h` | Spell Rune Box (2h) | F | Rare | stacks |
+| `box_spell_rune_30d` | Spell Rune Box (30d) | F | Rare | untradable, stacks |
+| `box_training_armor_choice` | Training Armor Box | F | Common | untradable, stacks |
+| `box_training_weapons` | Training Weapons Box | F | Common | untradable, stacks |
+| `box_treasure` | Treasure Chest | F | Uncommon | stacks |
+| `box_war_rune_24h` | War Rune Box (1d) | F | Rare | untradable, stacks |
+| `box_war_rune_1h` | War Rune Box (1h) | F | Rare | stacks |
+| `box_war_rune_2h` | War Rune Box (2h) | F | Rare | stacks |
+| `box_war_rune_30d` | War Rune Box (30d) | F | Rare | untradable, stacks |
 
 ## Materials  (30)
 
@@ -1182,115 +1188,104 @@ is full (it tells you how many fit).
 | `mat_thread_uncommon` | Uncommon Thread | F | Uncommon | stacks |
 | `mat_wood_uncommon` | Uncommon Wood | F | Uncommon | stacks |
 
-## Quest items  (107)
+## Quest items  (96)
 
 | id | name | grade | rarity | notes |
 |---|---|---|---|---|
 | `quest_token_basilisk_scale` | Amber Scale | F | Common | stacks |
 | `quest_token_ash_orc_insignia` | Ash Orc Insignia | F | Common | stacks |
-| `qi_15_token` | Assassin Trial Token | F | Rare | stacks |
-| `qi_15_proof` | Assassin's Proof | F | Epic | stacks |
+| `qi_129_token` | Assassin Ordeal Mark | F | Epic | stacks |
 | `quest_token_spider_hook` | Barbed Hook | F | Common | stacks |
 | `quest_token_bear_pelt` | Bear Pelt | F | Common | stacks |
-| `qi_1_token` | Beast Trial Token | F | Rare | stacks |
-| `qi_1_proof` | Beast's Proof | F | Epic | stacks |
-| `qi_101_token` | Bulwark Ordeal Mark | F | Epic | stacks |
-| `qi_113_token` | Bulwark Ordeal Mark | F | Epic | stacks |
-| `qi_125_token` | Bulwark Ordeal Mark | F | Epic | stacks |
-| `qi_14_token` | Champion Trial Token | F | Rare | stacks |
-| `qi_14_proof` | Champion's Proof | F | Epic | stacks |
-| `qi_17_token` | Cleric Trial Token | F | Rare | stacks |
+| `qi_127_token` | Champion Ordeal Mark | F | Epic | stacks |
 | `quest_clerics_proof` | Cleric's Proof | F | Epic | stacks |
-| `qi_17_proof` | Cleric's Proof | F | Epic | stacks |
 | `quest_token_cracked_rib` | Cracked Rib | F | Common | stacks |
+| `qi_109_token` | Dark Healer Ordeal Mark | F | Epic | stacks |
+| `qi_6_token` | Demon Apprentice Trial Token | F | Rare | stacks |
+| `qi_6_proof` | Demon Apprentice's Proof | F | Epic | stacks |
+| `qi_1_token` | Demon Knight Trial Token | F | Rare | stacks |
+| `qi_1_proof` | Demon Knight's Proof | F | Epic | stacks |
+| `qi_5_token` | Demon Priest Trial Token | F | Rare | stacks |
+| `qi_5_proof` | Demon Priest's Proof | F | Epic | stacks |
+| `qi_3_token` | Demon Rogue Trial Token | F | Rare | stacks |
+| `qi_3_proof` | Demon Rogue's Proof | F | Epic | stacks |
+| `qi_2_token` | Demon Warrior Trial Token | F | Rare | stacks |
+| `qi_2_proof` | Demon Warrior's Proof | F | Epic | stacks |
+| `qi_134_token` | Doctor Ordeal Mark | F | Epic | stacks |
+| `qi_101_token` | Dread Knight Ordeal Mark | F | Epic | stacks |
 | `quest_token_dread_sigil` | Dread Sigil | F | Common | stacks |
+| `qi_110_token` | Dreadcaller Ordeal Mark | F | Epic | stacks |
+| `qi_12_token` | Elf Apprentice Trial Token | F | Rare | stacks |
+| `qi_12_proof` | Elf Apprentice's Proof | F | Epic | stacks |
+| `qi_7_token` | Elf Knight Trial Token | F | Rare | stacks |
+| `qi_7_proof` | Elf Knight's Proof | F | Epic | stacks |
+| `qi_11_token` | Elf Priest Trial Token | F | Rare | stacks |
+| `qi_11_proof` | Elf Priest's Proof | F | Epic | stacks |
+| `qi_9_token` | Elf Rogue Trial Token | F | Rare | stacks |
+| `qi_9_proof` | Elf Rogue's Proof | F | Epic | stacks |
+| `qi_8_token` | Elf Warrior Trial Token | F | Rare | stacks |
+| `qi_8_proof` | Elf Warrior's Proof | F | Epic | stacks |
 | `quest_token_ember_scale` | Emberwyrm Scale | F | Common | stacks |
+| `qi_111_token` | Fire Adept Ordeal Mark | F | Epic | stacks |
+| `qi_121_token` | Forest Whisperer Ordeal Mark | F | Epic | stacks |
 | `quest_token_fox_pelt` | Fox Pelt | F | Common | stacks |
+| `qi_122_token` | Harmonist Ordeal Mark | F | Epic | stacks |
 | `quest_token_harpy_feather` | Harpy Feather | F | Common | stacks |
-| `qi_106_token` | Hunter Ordeal Mark | F | Epic | stacks |
-| `qi_12_token` | Inquisitor Trial Token | F | Rare | stacks |
-| `qi_12_proof` | Inquisitor's Proof | F | Epic | stacks |
-| `qi_13_token` | Knight Trial Token | F | Rare | stacks |
-| `qi_13_proof` | Knight's Proof | F | Epic | stacks |
-| `qi_109_token` | Lightbringer Ordeal Mark | F | Epic | stacks |
-| `qi_121_token` | Lightbringer Ordeal Mark | F | Epic | stacks |
-| `qi_133_token` | Lightbringer Ordeal Mark | F | Epic | stacks |
-| `qi_111_token` | Magus Ordeal Mark | F | Epic | stacks |
-| `qi_123_token` | Magus Ordeal Mark | F | Epic | stacks |
-| `qi_135_token` | Magus Ordeal Mark | F | Epic | stacks |
+| `qi_133_token` | Holy Priest Ordeal Mark | F | Epic | stacks |
+| `qi_18_token` | Human Apprentice Trial Token | F | Rare | stacks |
+| `qi_18_proof` | Human Apprentice's Proof | F | Epic | stacks |
+| `qi_13_token` | Human Knight Trial Token | F | Rare | stacks |
+| `qi_13_proof` | Human Knight's Proof | F | Epic | stacks |
+| `qi_17_token` | Human Priest Trial Token | F | Rare | stacks |
+| `qi_17_proof` | Human Priest's Proof | F | Epic | stacks |
+| `qi_15_token` | Human Rogue Trial Token | F | Rare | stacks |
+| `qi_15_proof` | Human Rogue's Proof | F | Epic | stacks |
+| `qi_14_token` | Human Warrior Trial Token | F | Rare | stacks |
+| `qi_14_proof` | Human Warrior's Proof | F | Epic | stacks |
+| `qi_125_token` | Iron Guard Ordeal Mark | F | Epic | stacks |
+| `qi_135_token` | Mana Adept Ordeal Mark | F | Epic | stacks |
 | `quest_token_mantis_claw` | Mantis Claw | F | Common | stacks |
 | `quest_mark_of_faith` | Mark of Faith | F | Rare | stacks |
-| `qi_129_token` | Nullblade Ordeal Mark | F | Epic | stacks |
 | `qi_117_token` | Phantom Ordeal Mark | F | Epic | stacks |
-| `qi_11_token` | Priest Trial Token | F | Rare | stacks |
-| `qi_11_proof` | Priest's Proof | F | Epic | stacks |
 | `quest_token_radiant_plume` | Radiant Plume | F | Common | stacks |
 | `qi_103_token` | Ravager Ordeal Mark | F | Epic | stacks |
-| `qi_115_token` | Ravager Ordeal Mark | F | Epic | stacks |
-| `qi_127_token` | Ravager Ordeal Mark | F | Epic | stacks |
 | `quest_token_redhorn_badge` | Redhorn Badge | F | Common | stacks |
+| `qi_ascension_rite` | Rite of Ascension | F | Legendary | untradable, stacks |
 | `quest_token_rusted_shard` | Rusted Shard | F | Common | stacks |
-| `qi_101_proof` | Seal of the Bulwark | F | Legendary | stacks |
-| `qi_113_proof` | Seal of the Bulwark | F | Legendary | stacks |
-| `qi_125_proof` | Seal of the Bulwark | F | Legendary | stacks |
-| `qi_106_proof` | Seal of the Hunter | F | Legendary | stacks |
-| `qi_109_proof` | Seal of the Lightbringer | F | Legendary | stacks |
-| `qi_121_proof` | Seal of the Lightbringer | F | Legendary | stacks |
-| `qi_133_proof` | Seal of the Lightbringer | F | Legendary | stacks |
-| `qi_111_proof` | Seal of the Magus | F | Legendary | stacks |
-| `qi_123_proof` | Seal of the Magus | F | Legendary | stacks |
-| `qi_135_proof` | Seal of the Magus | F | Legendary | stacks |
-| `qi_129_proof` | Seal of the Nullblade | F | Legendary | stacks |
+| `qi_129_proof` | Seal of the Assassin | F | Legendary | stacks |
+| `qi_127_proof` | Seal of the Champion | F | Legendary | stacks |
+| `qi_109_proof` | Seal of the Dark Healer | F | Legendary | stacks |
+| `qi_134_proof` | Seal of the Doctor | F | Legendary | stacks |
+| `qi_101_proof` | Seal of the Dread Knight | F | Legendary | stacks |
+| `qi_110_proof` | Seal of the Dreadcaller | F | Legendary | stacks |
+| `qi_111_proof` | Seal of the Fire Adept | F | Legendary | stacks |
+| `qi_121_proof` | Seal of the Forest Whisperer | F | Legendary | stacks |
+| `qi_122_proof` | Seal of the Harmonist | F | Legendary | stacks |
+| `qi_133_proof` | Seal of the Holy Priest | F | Legendary | stacks |
+| `qi_125_proof` | Seal of the Iron Guard | F | Legendary | stacks |
+| `qi_135_proof` | Seal of the Mana Adept | F | Legendary | stacks |
 | `qi_117_proof` | Seal of the Phantom | F | Legendary | stacks |
 | `qi_103_proof` | Seal of the Ravager | F | Legendary | stacks |
-| `qi_115_proof` | Seal of the Ravager | F | Legendary | stacks |
-| `qi_127_proof` | Seal of the Ravager | F | Legendary | stacks |
+| `qi_118_proof` | Seal of the Sentinel | F | Legendary | stacks |
 | `qi_130_proof` | Seal of the Sharpshooter | F | Legendary | stacks |
-| `qi_112_proof` | Seal of the Tempest | F | Legendary | stacks |
-| `qi_124_proof` | Seal of the Tempest | F | Legendary | stacks |
-| `qi_136_proof` | Seal of the Tempest | F | Legendary | stacks |
-| `qi_118_proof` | Seal of the Trapper | F | Legendary | stacks |
-| `qi_102_proof` | Seal of the Vanguard | F | Legendary | stacks |
-| `qi_114_proof` | Seal of the Vanguard | F | Legendary | stacks |
-| `qi_126_proof` | Seal of the Vanguard | F | Legendary | stacks |
-| `qi_105_proof` | Seal of the Venomweaver | F | Legendary | stacks |
-| `qi_110_proof` | Seal of the Warchanter | F | Legendary | stacks |
-| `qi_122_proof` | Seal of the Warchanter | F | Legendary | stacks |
-| `qi_134_proof` | Seal of the Warchanter | F | Legendary | stacks |
-| `qi_104_proof` | Seal of the Warlord | F | Legendary | stacks |
-| `qi_116_proof` | Seal of the Warlord | F | Legendary | stacks |
-| `qi_128_proof` | Seal of the Warlord | F | Legendary | stacks |
-| `qi_8_token` | Sentinel Trial Token | F | Rare | stacks |
-| `qi_8_proof` | Sentinel's Proof | F | Epic | stacks |
-| `qi_9_token` | Shadowblade Trial Token | F | Rare | stacks |
-| `qi_9_proof` | Shadowblade's Proof | F | Epic | stacks |
-| `qi_5_token` | Shaman Trial Token | F | Rare | stacks |
-| `qi_5_proof` | Shaman's Proof | F | Epic | stacks |
+| `qi_116_proof` | Seal of the Skirmisher | F | Legendary | stacks |
+| `qi_106_proof` | Seal of the Soultracker | F | Legendary | stacks |
+| `qi_105_proof` | Seal of the Stalker | F | Legendary | stacks |
+| `qi_115_proof` | Seal of the Swiftblade | F | Legendary | stacks |
+| `qi_113_proof` | Seal of the Templar | F | Legendary | stacks |
+| `qi_128_proof` | Seal of the Vanguard | F | Legendary | stacks |
+| `qi_104_proof` | Seal of the Warborn | F | Legendary | stacks |
+| `qi_123_proof` | Seal of the Water Adept | F | Legendary | stacks |
+| `qi_118_token` | Sentinel Ordeal Mark | F | Epic | stacks |
 | `qi_130_token` | Sharpshooter Ordeal Mark | F | Epic | stacks |
-| `qi_18_token` | Sorcerer Trial Token | F | Rare | stacks |
-| `qi_18_proof` | Sorcerer's Proof | F | Epic | stacks |
+| `qi_116_token` | Skirmisher Ordeal Mark | F | Epic | stacks |
+| `qi_106_token` | Soultracker Ordeal Mark | F | Epic | stacks |
 | `quest_token_splinter_chitin` | Splinter Chitin | F | Common | stacks |
-| `qi_3_token` | Stalker Trial Token | F | Rare | stacks |
-| `qi_3_proof` | Stalker's Proof | F | Epic | stacks |
-| `qi_112_token` | Tempest Ordeal Mark | F | Epic | stacks |
-| `qi_124_token` | Tempest Ordeal Mark | F | Epic | stacks |
-| `qi_136_token` | Tempest Ordeal Mark | F | Epic | stacks |
-| `qi_7_token` | Templar Trial Token | F | Rare | stacks |
-| `qi_7_proof` | Templar's Proof | F | Epic | stacks |
-| `qi_118_token` | Trapper Ordeal Mark | F | Epic | stacks |
-| `qi_102_token` | Vanguard Ordeal Mark | F | Epic | stacks |
-| `qi_114_token` | Vanguard Ordeal Mark | F | Epic | stacks |
-| `qi_126_token` | Vanguard Ordeal Mark | F | Epic | stacks |
-| `qi_105_token` | Venomweaver Ordeal Mark | F | Epic | stacks |
-| `qi_110_token` | Warchanter Ordeal Mark | F | Epic | stacks |
-| `qi_122_token` | Warchanter Ordeal Mark | F | Epic | stacks |
-| `qi_134_token` | Warchanter Ordeal Mark | F | Epic | stacks |
-| `qi_104_token` | Warlord Ordeal Mark | F | Epic | stacks |
-| `qi_116_token` | Warlord Ordeal Mark | F | Epic | stacks |
-| `qi_128_token` | Warlord Ordeal Mark | F | Epic | stacks |
-| `qi_2_token` | Warrior Trial Token | F | Rare | stacks |
-| `qi_2_proof` | Warrior's Proof | F | Epic | stacks |
+| `qi_105_token` | Stalker Ordeal Mark | F | Epic | stacks |
+| `qi_115_token` | Swiftblade Ordeal Mark | F | Epic | stacks |
+| `qi_113_token` | Templar Ordeal Mark | F | Epic | stacks |
+| `qi_128_token` | Vanguard Ordeal Mark | F | Epic | stacks |
+| `qi_104_token` | Warborn Ordeal Mark | F | Epic | stacks |
+| `qi_123_token` | Water Adept Ordeal Mark | F | Epic | stacks |
 | `quest_token_werewolf_fang` | Werewolf Fang | F | Common | stacks |
-| `qi_6_token` | Witch Trial Token | F | Rare | stacks |
-| `qi_6_proof` | Witch's Proof | F | Epic | stacks |
 

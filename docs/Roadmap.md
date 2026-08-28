@@ -290,8 +290,9 @@ changes and new features that came out of the play session:
   longer "pick Fighter/Mage". You pick a specific **3rd-class discipline** from the whole catalog (all 3
   races), pre-approved so it **skips the 2nd/3rd-class quests**. Rules: **level 76+** only
   (`ThirdClassCatalog.SubclassLevel`); a **discipline is unique across the character, cross-race included**
-  (owning any Tempest bars every Tempest — `Entity.CanAddDiscipline` checks ALL owned classes, the active
-  one too; the old `CanTakeThirdClass` excluded the active slot and was wrong for the add path); the new
+  (owning any Magus bars the Starweaver and the Cinderwitch too — `Entity.CanAddDiscipline` checks ALL
+  owned classes, the active one too; the old `CanTakeThirdClass` excluded the active slot and was wrong
+  for the add path); the new
   class starts at **level 1 with its OWN race**, and every **equipped item is unequipped** (no level-1
   class in level-76 gear). A subclass now carries its own **Race** (`Entity.Race` became a proxy into
   `ActiveSubclass.Race` so ~10k lines of logic keep working); persisted on `SubclassRecord`/snapshot;
@@ -559,8 +560,10 @@ changes and new features that came out of the play session:
 
   **CLASS UNIQUENESS — REVISED 2026-07-15 to DISCIPLINE-ONLY, cross-race.** A character may not walk the
   same **DISCIPLINE** twice, across ALL the classes it owns (active included) — and this spans races,
-  because the same discipline (Tempest) exists as a separate 3rd class for each race. There is **no
-  archetype bar** (owner: you SHOULD be able to own two mages, e.g. a Lightbringer and a Tempest). The
+  because the same discipline (Magus) exists as a separate 3rd class for each race. There is **no
+  archetype bar** (owner: you SHOULD be able to own two mages, e.g. a Lightbringer and a Magus).
+  ⚠ Since `BL-97` retired the Tempest (2026-08-28) the NUKER has only one discipline, so "two nukers"
+  is no longer one of the shapes this permits — the second would have to walk the Magus twice. The
   add-a-subclass path uses `Entity.CanAddDiscipline` (checks every owned class); the older
   `CanTakeThirdClass` (used by the level-40 quest change) deliberately excludes the ACTIVE slot, which was
   wrong for the add path and is why `CanAddDiscipline` exists. Count is capped at `MaxSubclasses` (4) for

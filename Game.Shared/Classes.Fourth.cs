@@ -58,6 +58,15 @@ public static class FourthClassCatalog
 
     public static IEnumerable<FourthClassDef> Playable => All.Values.OrderBy(c => c.Id);
 
+    /// <summary>The 4th-tier sibling of <see cref="ThirdClassCatalog.Surviving"/> — maps a persisted
+    /// 4th-class id whose discipline was RETIRED (`BL-97`: 212/224/236, the Tempest's ascensions) onto
+    /// the one that still exists. Same positional rule, one tier up: a retired B slot sits one above
+    /// its surviving A sibling. Anything else is returned unchanged.</summary>
+    public static int Surviving(int fourthClassId) =>
+        fourthClassId > 0 && !All.ContainsKey(fourthClassId) && All.ContainsKey(fourthClassId - 1)
+            ? fourthClassId - 1
+            : fourthClassId;
+
     /// <summary>The single 4th class a given 3rd class ascends into (null if the id is not a
     /// 3rd class). One-to-one — a 4th class is never a choice, only a threshold.</summary>
     public static FourthClassDef? ForParent(int thirdClassId) =>

@@ -17,7 +17,7 @@ namespace Game.Shared;
 /// not here; this file holds the discipline's OWN spells.</para>
 ///
 /// <para>Three races, one job. The split is deliberately narrow and it happens TWICE — once on the fast
-/// heal (Human throughput / Elf heal-and-cure / Ork planted totem) and once on the control debuff
+/// heal (Human throughput / Elf heal-and-cure / Demon planted totem) and once on the control debuff
 /// (Gravity / Bind / Armor Break). Everything else in the kit is shared.</para>
 ///
 /// <para>(Who learns these, and when, is in RaceAndClasses/ClassSkillTables.Third.cs.)</para></summary>
@@ -58,7 +58,7 @@ public static partial class SkillCatalog
     public const string UltimateHeal = "ultimate_heal";          // costs a Skill Stone
     public const string UltimatePartyHeal = "ultimate_party_heal"; // costs four
     public const string ResurrectionField = "resurrection_field"; // res every fallen ally in radius
-    public const string ManaTotem = "mana_totem";                // the Ork's second planted object
+    public const string ManaTotem = "mana_totem";                // the Demon's second planted object
     public const string ManaRay = "mana_ray";                    // drains a SHARE of the target's MP
     public const string ManaStrain = "mana_strain";              // the enemy's skills cost more
     public const string Meditation = "meditation";               // huge MP regen, no defence, breaks on damage
@@ -505,7 +505,7 @@ public static partial class SkillCatalog
             TargetMode: TargetMode.SelfOnly,
             PlacesTotem: true, TotemRadius: 300f, TotemLifeTicks: 300, TotemPulseTicks: 10,
             Description: "Plants a totem where you stand. For 30s it heals you and every nearby party "
-                       + "member, every second. The Ork Lightbringer heals ground, not people.",
+                       + "member, every second. The Demon healer heals ground, not people.",
             Levels: HealerRungs(0, 14, (i, sp) =>
             {
                 int[] pow = {  64,  74,  82,  86, 102, 108, 110, 112, 120, 125, 130, 135, 140, 150 };
@@ -522,7 +522,7 @@ public static partial class SkillCatalog
             MpCost: 352, CastTicks: 10, CooldownTicks: 600, Range: 0, Power: 10,
             Category: SkillCategory.Heal,  SpCost: 74000,
             TargetMode: TargetMode.SelfOnly,
-            // ⚠ REPLACES Restore Mana since his 2026-08-26 edit — the totem is the ork healer's upgrade
+            // ⚠ REPLACES Restore Mana since his 2026-08-26 edit — the totem is the demon healer's upgrade
             // of the single-target MP restore, not a second skill beside it. His CSV row: [Restore Mana].
             Replaces: new[] { SkillCatalog.RestoreMana },
             PlacesTotem: true, TotemRadius: 300f, TotemLifeTicks: 300, TotemPulseTicks: 10,

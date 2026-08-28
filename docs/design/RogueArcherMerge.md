@@ -11,7 +11,7 @@ The owner's correction: **archer and dagger are the same class until level 40.**
 Fighter  →  Rogue (20-40, learns BOTH Stab and Shot)  →  40: ranged branch / melee branch
 ```
 
-So the three Archer 2nd classes — **Hunter (4, Ork), Warden (10, Elf), Marksman (16, Human)** —
+So the three Archer 2nd classes — **Hunter (4, Demon), Warden (10, Elf), Marksman (16, Human)** —
 are removed, and their players become Rogues (Stalker / Shadowblade / Assassin). The split moves
 to the 3rd class.
 
@@ -57,7 +57,7 @@ rogue line gets its own identity instead of all three sharing the same four opti
 | Race | Melee discipline | Ranged discipline |
 |---|---|---|
 | **Human** | 🆕 **`Nullblade`** — anti-magic dagger | `Sharpshooter` — accuracy / single-target DPS |
-| **Ork** | `Venomweaver` — **venom** DoT dagger | 🆕 **`Hunter`** — ork ranger |
+| **Demon** | `Venomweaver` — **venom** DoT dagger | 🆕 **`Hunter`** — demon ranger |
 | **Elf** | `Phantom` — physical-evasion dagger | `Trapper` — utility ranger |
 
 **This is structurally the CHEAP shape.** Every 2nd class still yields exactly two disciplines,
@@ -80,7 +80,7 @@ race = a flavour axis running through all four disciplines —
 
 - **Human** — anti-magic (raises the enemy's *magic fail* chance), crit rate / crit damage
 - **Elf** — anti-physical (evasion, AS/MS)
-- **Ork** — brute, outlives the target (skill damage, max HP, def)
+- **Demon** — brute, outlives the target (skill damage, max HP, def)
 
 The new race-based assignment picks **one cell per race per row**, and every pick matches the
 flavour that race already had. Nothing has to be invented:
@@ -89,19 +89,19 @@ flavour that race already had. Nothing has to be invented:
 |---|---|---|
 | `Nullblade` (Human melee) | **Phantom-Human** (stealth + anti-magic + crit) merged with **Venomweaver-Human** (bleed + anti-magic) | both authored on paper; the bleed half (`Rupture` / `DetonateWounds`) is **already coded** |
 | `Phantom` (Elf melee) | **Phantom-Elf** (anti-phys stealth) unchanged | authored; `Shadowstep` / `Vanish` coded |
-| `Venomweaver` (Ork melee) | **Venomweaver-Ork** (venom: AGI-vs-CON, −atk/def) unchanged | authored + coded (`Envenom` / `VenomBurst`) |
+| `Venomweaver` (Demon melee) | **Venomweaver-Demon** (venom: AGI-vs-CON, −atk/def) unchanged | authored + coded (`Envenom` / `VenomBurst`) |
 | `Sharpshooter` (Human ranged) | **Sharpshooter-Human** (crit focus) unchanged | authored, placeholder skills only |
-| `Hunter` (Ork ranged) | **Sharpshooter-Ork** (damage focus, party atk / skill-dmg buff) | authored; renamed to its own discipline |
+| `Hunter` (Demon ranged) | **Sharpshooter-Demon** (damage focus, party atk / skill-dmg buff) | authored; renamed to its own discipline |
 | `Trapper` (Elf ranged) | **Trapper-Elf** (root flavour) unchanged | authored; `RepellingShot` / `SnareTrap` coded |
 
 **Orphaned** by the collapse (kept in `Disciplines.md` for reference, not built):
-Phantom-Ork · Venomweaver-Elf (poison — `ToxicSting` / `ToxicBurst`, **already coded**) ·
-Sharpshooter-Elf · Trapper-Human · Trapper-Ork.
+Phantom-Demon · Venomweaver-Elf (poison — `ToxicSting` / `ToxicBurst`, **already coded**) ·
+Sharpshooter-Elf · Trapper-Human · Trapper-Demon.
 
-⚠ The Elf **poison** line is coded and now unused. Owner decided (2026-07-29) that the Ork
+⚠ The Elf **poison** line is coded and now unused. Owner decided (2026-07-29) that the Demon
 **keeps venom as authored** — poison is parked, not reassigned.
 
 ### Naming notes
 - `Nullblade` is a NEW name for an EXISTING kit — the human Phantom. The name *Phantom* moves to
   the Elf, who holds its original stealth/evasion identity.
-- `Hunter` reuses the name freed by deleting the Ork Archer 2nd class (id 4).
+- `Hunter` reuses the name freed by deleting the Demon Archer 2nd class (id 4).

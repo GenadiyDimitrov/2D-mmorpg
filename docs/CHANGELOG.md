@@ -7,12 +7,267 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.95.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.98.2**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-08-28 (latest) — 0.95.0: `BL-98` THE BOSS'S JUDGMENT (a six-rung ladder nothing removes) + `BL-99` raid-lock
+## 2026-08-28 (latest) — 0.98.2: his class/race table lands in the CSV README
+
+He wrote a **`## Classes and Races`** table into `docs/data/classes_skills_csv/README.md` — all 24
+third classes with their 1st/2nd tiers, race, **weapon**, **armor** and **path**. Checked row by row
+against `ClassCatalog` + `ClassNames`: **all 24 pairs match the code.** Four typos fixed (`Raveger`,
+`Knighs Commander`, `Holy Messanger`, `Occulist`) plus two double spaces.
+
+🔑 **HIS SPELLING WINS ON `War Storm`.** He wrote it as two words and the code said `Warstorm`; his
+form is the consistent one by his own pattern — *War Master*, *War Doctor*, *War Harmonist* take the
+space, and only the real English compounds (*Warbringer*, *Warlock*) close up. The code moved.
+
+🔑 **The table carries information the CODE DOES NOT HOLD** — weapon, armor and path per class — which
+makes it the most useful thing in that file. Two findings from checking it:
+
+- ✅ **The three buffer rows are already true.** Human takes Heavy (`Chanter Heavy Mastery`), Elf takes
+  Light + Bow (`Harmonist Bow/Light`), Demon takes 2-handed blunt (`Bloodchanter Two-Hand Mastery`).
+- 🔵 **The warrior SWORD-vs-BLUNT split is new and nothing enforces it** — `Ravager` 2h sword against
+  `Warlord` 2h blunt. There is no warrior 3rd-class kit at all (the 2026-08-10 purge took it, and its
+  CSVs have not landed), so it reads as a **ruling for when `warrior 3rd.csv` / `war_aoe 3rd.csv` are
+  written**, not a description of today. Flagged in the README for him to confirm.
+
+Also repaired the prose around his table, which the rename had left stale: the `Warlord`-is-retired
+note still named *Banneret / Galeherald / Skullbreaker* and still said `Sorcerer` was an unfixed slip,
+and the per-race register table still worked its example through *Knight → Bulwark → Ironcrown*. The
+Demon register is **dread, blood, the abyss** now, not the ork's *bone, blood, endurance* — which is
+exactly why the mage lines never worked before `BL-101`.
+
+---
+
+## 2026-08-28 — 0.98.1: the elf AoE warrior joins the set — `Skirmisher → War Storm`
+
+> *"my general idea is anything aoe is War named ... so war dancer was a call that required sword
+> dancer before that .. and if we change it need to change it to something war related and its lesser
+> part"* → then, on the options: *"Skirmisher → War Storm ... windblade also sounds good but its far
+> from vanguard/warborn so skirmisher wins"*
+
+🔑 **HIS "WAR" PATTERN IS REAL AND IT HOLDS ACROSS ALL SIX** AoE/support 4th classes — War Master ·
+War Storm · Warbringer · War Doctor · War Harmonist · Warlock. It is written into `ClassNames` now,
+with the rule that matters beside it: **the 3rd is that 4th's LESSER FORM, never a word that merely
+rhymes with it.**
+
+`Sword Dancer → War Dancer` was the one row on the whole roster chosen backwards — the 3rd picked to
+rhyme with the 4th. **`Skirmisher → War Storm`** puts the war_aoe 3rd tier in one voice:
+**Vanguard / Skirmisher / Warborn**, three martial POSITION words, the way the nukers are three
+elements. A skirmish is what one fighter does; a warstorm is the whole battle. His own reason for
+picking it over `Windblade`: *"its far from vanguard/warborn"*.
+
+⚠ Two rejected on sight, both worth recording: `Sword Dancer` sat one letter from a wood-elf unit in
+another well-known fantasy game (the naming rule covers that as much as IG), and `Tempest → War Storm`
+is semantically perfect but `Discipline.Tempest` is the enum value retired in `BL-97` — **a live class
+named after a dead discipline is a trap that costs somebody a build later.**
+
+---
+
+## 2026-08-28 — 0.98.0: `BL-101` THE THIRD RACE IS `DEMON` — and the titles become a ladder
+
+> *"ok lets do the ork-> demon transfer (use the demon names)"* · *"sentinel to stay as class and
+> titles to read: supreme being(owner) -> god(admin) -> demi god(mod) -> warden(chat mod) -> player"*
+
+🔑 **THE RACE RENAME EARNED ITSELF TWICE, AND NEITHER REASON WAS SOUNDING.**
+
+1. **`Orc Archer` is already a level-12 MOB.** The player race was sharing its name with common
+   trash, from the second hunting ground on. No amount of class renaming fixes that; only this does.
+2. **It killed the last naming exception.** The support line had to hide behind `Shaman` because, in
+   his words, *"ork priest just dont have the ork sounding"*. `Demon Priest → Dreadcaller → Warlock`
+   is a line with a voice, so all fifteen 2nd classes are race+role now with no special case.
+
+🔑 **`Race.Demon` IS STILL VALUE 2.** A character persists the number, not the name, so every save is
+the same race under a new label — no migration, no `game.db` reset. Only the identifier and the
+display strings moved.
+
+### What the sweep covered, and what it deliberately did not
+
+- **The enum and all 17 code files** — `Race.Ork` → `Race.Demon`, compiler-verified, zero left.
+- **162 RACE-column cells across five CSVs.** Safe because `Ork` was only ever a standalone token
+  there (checked every occurrence's context first); `git diff --numstat` came back a clean N-for-N
+  per file, no reflow. ⚠ The tools never *parsed* that column — `--check` collapses across races — so
+  this was about the CSVs mirroring the game, which is the standing rule.
+- **The prose in the live docs** (Backlog, design/, Formulas, testing/).
+- 🔑 **NOT the owner's own words.** 35 lines carrying a `*"…"*` quote still read "ork", deliberately,
+  and so do CHANGELOG, Roadmap and Playtest-Archive — they are records of what was said and when.
+- **NOT the mobs.** `Orc Archer` and the orc clan are spelled with a *c* and are monsters; they stay.
+
+### The demon names
+
+Tank **Dread Knight → Abyssal Knight** · warrior **Ravager → Berserker** and **Warborn → Warbringer**
+· rogue **Stalker → Venomblade** and **Soultracker → Soulhunter** · healer **Dark Healer → Occultist**
+· buffer **Dreadcaller → Warlock** · nuker **Fire Adept → Inferno Master**.
+
+⚠ Of the three IG names I had flagged in his demon column: **`Warlock` stays, and he was right about
+why** — the test is word + same race + same ROLE, and theirs is a *summoner* against our **buffer**.
+**`Hell Knight` → `Dread Knight`** by his own swap (the safer of his two anyway). `Dreadnought` was
+only ever an alternative. **`Juggernaut` went back to the ork** — *"sounds orkish"* — and is now
+unused.
+
+### The nuker ladder is the ELEMENT growing up
+
+> *"apprentices -> water/fire/?(something smaller than arcane) adept -> ice or blizzard master /
+> inferno master / arcane master"*
+
+**Water → Ice**, **Fire → Inferno**, **Mana → Arcane**. Water hardens, fire swells. 🔑 The human was
+the odd one *and he saw it himself*: `arcane` names a SCHOOL, not a magnitude, so there is no smaller
+word for it the way water is smaller than ice. **`Mana`** is the raw stuff the art is made of and a
+word the player already owns off the blue bar. Took **Ice Master** over his `Blizzard Master` — a very
+well-known game company's name, and ice loses nothing.
+
+### The staff titles are one descending ladder
+
+Supreme Being → God → **Demi God** *(was Sentinel)* → **Warden** *(was Silencer)* → player. This is
+what closed the clash `BL-100` uncovered: `Sentinel` became the elf archer 3rd class, and a plate
+whose whole job is *"this person is staff"* cannot also be a class a hundred players wear. He kept the
+class and moved the title. 🔑 `Demi God` is safe next to the deleted `Demigod` CLASS (id 98) —
+nothing resolves a title to a class, and the id stays dead.
+
+Also: **human healer 3rd `Light Bringer` → `Holy Priest`**, which ends the `Lifebringer` confusion and
+makes the human line a ladder you can hear — Human Priest → Holy Priest → Holy Messenger.
+
+---
+
+## 2026-08-28 — 0.97.0: `BL-100` EVERY CLASS RENAMED — the 2nd tier stops pretending
+
+> *"Also I want to rename the classes (only cosmetics) — now just sound over complicated ... you
+> wrote that everything has a meaning ..but I want it simpler ... All races are the same until lvl 40
+> so we can call it elf-A human-A .. u can say if you think of something better"*
+
+The full roster is **[docs/design/ClassRenames.md](design/ClassRenames.md)**, which is now the live
+reference. Two changes, both his:
+
+1. 🔑 **THE 2ND CLASS (20-39) IS RACE + ROLE NOW** — *Human Rogue*, *Elf Apprentice*, *Ork Knight*.
+   He is right that it was a lie: nothing differs before 40 — same kit, same formulas — so a flavour
+   name there promised an identity the game does not deliver, and it was spending the six best words
+   we owned (`Assassin`, `Sentinel`, `Templar`, `Shadowblade`, `Stalker`, `Champion`) on the one tier
+   with none. **All six moved down onto 3rd classes that earn them.** The ork support line keeps
+   `Shaman` — his one deliberate exception.
+2. **The 3rd/4th say what the class DOES**, in words a player already owns: `Iron Guard`,
+   `Sword Master`, `Fire Adept`, `War Doctor`. The coined compounds are gone — `Bladesworn`,
+   `Galeherald`, `Bramblewarden`, `Gracebinder`, `Skullbreaker`, `Thornblade`, `Celestine`.
+
+🔑 **COST WAS ZERO.** Nothing persists a name — a character stores the numeric class id — so no save
+broke and no `game.db` reset was needed. Quest-item *names* changed (`"{cls.Name} Ordeal Mark"`);
+their ids did not. `docs/guides/ItemIds.md` regenerated.
+
+### Four built lines differ from his written list
+
+- 🔴 **Elf warrior is `Swiftblade → Sword Saint`, not `Sword Master → Sword Saint`.** `Sword Master`
+  is the human's 4th, and since `BL-97` `ClassNames.DuplicateNames()` has **no exemptions left** — so
+  this was a **hard startup failure**, not just the smell he spotted (*"it sounds like the elf warrior
+  3rd is stronger than human warrior 4th"*). His Sword-Saint endpoint survives.
+- **Ork bow is `Tracker → Hunter`.** His own two rows disagreed — the ork row said `hunter →
+  tracker`, the demon row `tracker → hunter`. Took the demon order; *Hunter* is the stronger endpoint.
+- **Ork nuker is `Fire Adept → Fire Master`**, the elemental half of his `fire adept/witch` either/or
+  — it keeps the arcane/ice/fire pattern and stops "witch" being spent twice in one race.
+- **`Adept`, not `Apprentice`, at the 3rd tier** — an apprentice at 40 reads junior, and
+  `Ork Apprentice → Fire Apprentice` repeated the word.
+
+### 🔴 A CLASH THE BUILD FOUND: `Sentinel` is already the MODERATOR's title
+
+`Dtos.Text` gives a Moderator the worn plate **"Sentinel"** — his own split ruling, where the RANK
+stays "Moderator" everywhere and only the title is fantasy. The elf bow 3rd class is now *Sentinel*
+too. A title whose whole job is *"this person is staff"* cannot also be a class a hundred players
+wear. **Not resolved — his call.** My read: move the title (`Arbiter` / `Warden`), keep the class.
+
+### On the IP flags — he was right, twice
+
+He corrected two of my four: theirs is *Temple Knight* / *Eva's Templar* against our bare *Templar*
+at a different tier, and *Moonlight Sentinel* at their 4th against our bare *Sentinel* at the 3rd.
+Compounds at different tiers are not the same class. **Both flags dropped.** `Spirit Elder` became
+*Forest Elder* anyway. **Only `Paladin` stands** as a bare exact match (their human tank 3rd, ours
+the elf tank 4th) — built as he asked, recorded so the decision stays visible.
+🔑 **The rule that came out of it: the test is word + SAME RACE + SAME ROLE, not the word.**
+
+---
+
+## 2026-08-28 — 0.96.0: `BL-97` THE ROSTER COLLAPSES — the Tempest and the Vanguard are retired
+
+> *"Tempests must go .. And elf nuker 3rd is starweaver, ork is cinderwitch and human stays magus"*
+>
+> *"Remove the vacant tank as well — the 3 tanks must have their name and the other is the same for
+> the 3 races ... So is the one that must go"*
+
+The NUKER and the TANK each opened into two disciplines and now open into **one**. Their three
+identities are the three RACES — nuker: Human **Magus**, Elf **Starweaver**, Ork **Cinderwitch**;
+tank: Human **Bulwark**, Elf **Aegis**, Ork **Ironhide** — which is exactly the shape his 2026-08-17
+map asked for: *"same logic as the tank, 1 discipline ... 3 identities"*. **Ten choosable paths per
+race became eight, and 30 third classes became 24** — the roster the map drew.
+
+⚠ **And while counting them I found a number that had been wrong in the code comments for months:**
+`ThirdClassCatalog` described itself as "the 36 third classes", from 18 second classes × 2. Only
+**15** second-class ids are playable (4/10/16 are the retired archers), so it was 30 before this pass
+and is 24 after. Corrected everywhere. 🔑 **Count classes by asking the catalog, never by
+multiplying** — a derived number agrees with itself forever.
+
+🔑 **HIS TEST FOR WHICH OF A PAIR DIES IS THE KEEPER.** *"The 3 tanks must have their name and the
+other is the same for the 3 races."* Both retired disciplines wore **one name across all three
+races** — Vanguard/Doomward and Tempest/Skybreaker — precisely because neither was ever really three
+classes. The naming table had been recording the answer for eleven days.
+
+⚠ **A retired discipline's NAME is free to reuse** — `Vanguard` is a name, not an id, and nothing
+persists a name. Only the enum VALUES must never move.
+
+🔑 **THE THREE NAMES WERE ALREADY EXACTLY THOSE.** `ClassNames` has read Magus / Starweaver /
+Cinderwitch since the per-race naming pass of 2026-08-17, so the naming half of his ruling cost
+nothing and the whole pass was the retirement itself.
+
+🔑 **AND IT DELETED NO AUTHORED ROW — the `BL-97` entry that warned it would was wrong.** `nuker
+3rd.csv` carries no discipline column, so `RegisterNuker3rd` looped over Magus AND Tempest handing
+both the *identical* 208-row array. Retiring one removed a duplicate REGISTRATION, not content.
+`dotnet run --project tools/SkillCsvSeed -- --check` is still clean, and it now covers the whole nuker
+outright instead of checking one of a pair and trusting the other by hand.
+
+### What actually changed
+
+- **`Disciplines.Of` returns a NULLABLE second branch** (`(Discipline A, Discipline? B)`), and both
+  the Nuker's and the Tank's B are `null`. An archetype offering one discipline is now a representable
+  thing rather than a special case — which is why the Vanguard, ruled hours after the Tempest, cost
+  one line.
+- **Ids 102 / 114 / 126 (tank) and 112 / 124 / 136 (nuker) are permanently vacant**, with their
+  ascensions 202/214/226 and 212/224/236. A third-class id is computed from its PARENT's id
+  (`100 + (secondId-1)*2`), never from a running counter, so retiring a discipline left holes and
+  moved nothing else. **24 third classes.** 🔴 Those twelve numbers are dead forever.
+- **`Discipline.Tempest = 11` and `Vanguard = 1` KEEP THEIR VALUES.** Characters persisted them, so
+  the numbers can never be reused; what changed is that nothing mints, names, offers or teaches
+  either. Their `ClassNames` rows are gone, their Grandmaster blurbs are gone, and `RegisterNuker3rd`
+  registers Magus alone.
+- **The Vanguard cost even less than the Tempest.** The 2026-08-10 40+ purge had already taken every
+  Vanguard learn line, so it was an empty class that could still be chosen — a level-40 Knight could
+  pick a discipline that taught nothing.
+- ✅ **`ClassNames.DuplicateNames()` HAS NO EXEMPTIONS LEFT.** Its two were exactly these two
+  disciplines. Every remaining row is a real class and every name must now be unique — which is what
+  makes that startup guard worth having the next time the names are reshuffled.
+- **A saved Tempest is migrated, not orphaned.** `ThirdClassCatalog.Surviving` (and its 4th-tier
+  sibling) maps a retired B slot onto its surviving A sibling, applied on both load paths **and** on
+  the character-SELECT list. Without it such a character would have shown no class name, learned
+  nothing above 40 and never ascended at 76 — bricked, not cosmetic. The rule is positional, not a
+  table of literals, and the next autosave writes the corrected id back.
+- **Twelve quest items went with the six classes** (1080 → 1068): the `_token`/`_proof` class-change
+  proofs are generated FROM `ThirdClassCatalog.Playable`. `docs/guides/ItemIds.md` regenerated.
+- **`tools/SkillCsvSeed` seeds `nuker` from Magus alone**, so the two duplicate names that folding
+  two kits into one file produced — FlameBolt as both *Annihilate* and *Chain Lightning*,
+  GreaterWeakness as both *Mana Burn* and *Maelstrom* — are no longer his to reconcile.
+- **`BalanceMatrix`'s uniqueness demo was rebuilt around what is left to prove.** It used to show a
+  Tempest still OK beside a barred Magus; there is no such escape now, so it walks all three nuker
+  2nd classes and shows the CROSS-RACE bar (a human Magus bars the elf's Starweaver and the ork's
+  Cinderwitch — different ids, same path) with the healer line open beside it for contrast.
+
+⚠ **"Two nukers" is no longer a legal subclass pair.** The one-per-discipline rule is unchanged, but
+with a single nuker discipline a second Sorcerer/Inquisitor/Witch would have to walk the Magus twice,
+and `CanAddDiscipline` bars it. The mage's four slots are Magus + Lightbringer + Warchanter and then
+a non-mage. That is the ruling working, not a regression.
+
+🔴 **A NEW APK IS NEEDED.** The client builds its class-change and Learn lists LOCALLY from the
+compiled `ClassSkills`/`ThirdClassCatalog`, so an old APK would still offer the Tempest.
+
+---
+
+## 2026-08-28 — 0.95.0: `BL-98` THE BOSS'S JUDGMENT (a six-rung ladder nothing removes) + `BL-99` raid-lock
 
 > *"Rename the petrify as 'bosses judgment' make it 6 lvls. L1 is 3min petrify state, after 3mins end
 > u get 1h L2..if you hit a boss who's lvl is 9 lvl or more different u get L3 a petrified state for

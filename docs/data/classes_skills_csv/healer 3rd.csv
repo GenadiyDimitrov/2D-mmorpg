@@ -120,20 +120,20 @@ LEARN @ LVL, NAME,TYPE,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP CO
 72,Healer Blessing,Magic/Heal,600,0,target/single,3,3,0,Cure bleed and potions of rank 9 or lower and heals the target with 760 power,117,650k,[Quick Heal],Elf
 74,Healer Blessing,Magic/Heal,600,0,target/single,3,3,0,Cure bleed and potions of rank 9 or lower and heals the target with 800 power,120,880k,[Quick Heal],Elf
 ,,,,,,,,,,,,,,----------------------------Healing Totem----------------------------
-40,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +64/s,238,36k,[Quick Heal],Ork,Increased power and manacost - to match a heal over time
-44,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +74/s,272,43k,[Quick Heal],Ork
-48,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +82/s,304,64k,[Quick Heal],Ork
-52,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +86/s,352,74k,[Quick Heal],Ork
-56,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +102/s,360,81k,[Quick Heal],Ork
-58,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +108/s,380,88k,[Quick Heal],Ork
-60,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +110/s,392,120k,[Quick Heal],Ork
-62,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +112/s,400,170k,[Quick Heal],Ork
-64,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +120/s,420,190k,[Quick Heal],Ork
-66,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +125/s,432,280k,[Quick Heal],Ork
-68,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +130/s,448,320k,[Quick Heal],Ork
-70,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +135/s,452,390k,[Quick Heal],Ork
-72,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +140/s,464,650k,[Quick Heal],Ork
-74,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +150/s,476,880k,[Quick Heal],Ork
+40,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +64/s,238,36k,[Quick Heal],Demon,Increased power and manacost - to match a heal over time
+44,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +74/s,272,43k,[Quick Heal],Demon
+48,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +82/s,304,64k,[Quick Heal],Demon
+52,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +86/s,352,74k,[Quick Heal],Demon
+56,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +102/s,360,81k,[Quick Heal],Demon
+58,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +108/s,380,88k,[Quick Heal],Demon
+60,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +110/s,392,120k,[Quick Heal],Demon
+62,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +112/s,400,170k,[Quick Heal],Demon
+64,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +120/s,420,190k,[Quick Heal],Demon
+66,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +125/s,432,280k,[Quick Heal],Demon
+68,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +130/s,448,320k,[Quick Heal],Demon
+70,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +135/s,452,390k,[Quick Heal],Demon
+72,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +140/s,464,650k,[Quick Heal],Demon
+74,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +150/s,476,880k,[Quick Heal],Demon
 ,,,,,,,,,,,,,,----------------------------Resurrection----------------------------
 40,Resurrection,Magic/Heal,600,0,target/single,10,10,0,Revive at 30% HP/MP; restore 35% of lost exp.,95,19k,[],,Changed mana cost and SP and Exp restored
 44,Resurrection,Magic/Heal,600,0,target/single,10,10,0,Revive at 30% HP/MP; restore 40% of lost exp.,100,22k,[]
@@ -212,20 +212,20 @@ LEARN @ LVL, NAME,TYPE,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP CO
 72,Bind,Magical Debuff,600,0,enemy/single,2.5,5,30,Hold enemy for 30s (success chance x0.7),67,650k,[],Elf
 74,Bind,Magical Debuff,600,0,enemy/single,2.5,5,30,Hold enemy for 30s (success chance x0.7),69,880k,[],Elf
 ,,,,,,,,,,,,,,----------------------------Armor Break----------------------------
-40,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 10% and MDef by  5% (success chance x1.5) (ATK vs SPT),35,36k,[],Ork
-44,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 12% and MDef by  6% (success chance x1.5),38,43k,[],Ork
-48,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 14% and MDef by  7% (success chance x1.5),44,64k,[],Ork
-52,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 16% and MDef by  8% (success chance x1.5),48,74k,[],Ork
-56,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 18% and MDef by  9% (success chance x1.5),52,81k,[],Ork
-58,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 20% and MDef by 10% (success chance x1.5),54,88k,[],Ork
-60,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 22% and MDef by 11% (success chance x1.5),55,120k,[],Ork
-62,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 24% and MDef by 12% (success chance x1.5),58,170k,[],Ork
-64,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 26% and MDef by 13% (success chance x1.5),60,190k,[],Ork
-66,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 30% and MDef by 15% (success chance x1.5),62,280k,[],Ork
-68,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 30% and MDef by 15% (success chance x1.5),64,320k,[],Ork
-70,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 30% and MDef by 15% (success chance x1.5),65,390k,[],Ork
-72,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 30% and MDef by 15% (success chance x1.5),67,650k,[],Ork
-74,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 30% and MDef by 15% (success chance x1.5),69,880k,[],Ork
+40,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 10% and MDef by  5% (success chance x1.5) (ATK vs SPT),35,36k,[],Demon
+44,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 12% and MDef by  6% (success chance x1.5),38,43k,[],Demon
+48,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 14% and MDef by  7% (success chance x1.5),44,64k,[],Demon
+52,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 16% and MDef by  8% (success chance x1.5),48,74k,[],Demon
+56,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 18% and MDef by  9% (success chance x1.5),52,81k,[],Demon
+58,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 20% and MDef by 10% (success chance x1.5),54,88k,[],Demon
+60,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 22% and MDef by 11% (success chance x1.5),55,120k,[],Demon
+62,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 24% and MDef by 12% (success chance x1.5),58,170k,[],Demon
+64,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 26% and MDef by 13% (success chance x1.5),60,190k,[],Demon
+66,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 30% and MDef by 15% (success chance x1.5),62,280k,[],Demon
+68,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 30% and MDef by 15% (success chance x1.5),64,320k,[],Demon
+70,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 30% and MDef by 15% (success chance x1.5),65,390k,[],Demon
+72,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 30% and MDef by 15% (success chance x1.5),67,650k,[],Demon
+74,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 30% and MDef by 15% (success chance x1.5),69,880k,[],Demon
 ,,,,,,,,,,,,,,----------------------------Gravity----------------------------
 40,Gravity,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by  7% (success chance x1) (ATK vs SPT),35,36k,[],Human,changed values
 44,Gravity,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by  9% (success chance x1),38,43k,[],Human
@@ -305,17 +305,17 @@ LEARN @ LVL, NAME,TYPE,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP CO
 ,,,,,,,,,,,,,,----------------------------Alacrity----------------------------
 48,Alacrity,Magic/Buff,600,0,party/single,1,1,1200,+30% Cast Speed.,75,32k,[]
 ,,,,,,,,,,,,,,----------------------------Mana Totem----------------------------
-52,Mana Totem,Magic/Heal,0,0,target/aoe,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +10/s,352,74k,[Restore Mana],Ork
-56,Mana Totem,Magic/Heal,0,0,target/aoe,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +11/s,360,81k,[Restore Mana],Ork
-58,Mana Totem,Magic/Heal,0,0,target/aoe,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +12/s,380,88k,[Restore Mana],Ork
-60,Mana Totem,Magic/Heal,0,0,target/aoe,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +13/s,392,120k,[Restore Mana],Ork
-62,Mana Totem,Magic/Heal,0,0,target/aoe,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +14/s,400,170k,[Restore Mana],Ork
-64,Mana Totem,Magic/Heal,0,0,target/aoe,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +15/s,420,190k,[Restore Mana],Ork
-66,Mana Totem,Magic/Heal,0,0,target/aoe,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +16/s,432,280k,[Restore Mana],Ork
-68,Mana Totem,Magic/Heal,0,0,target/aoe,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +17/s,448,320k,[Restore Mana],Ork
-70,Mana Totem,Magic/Heal,0,0,target/aoe,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +18/s,452,390k,[Restore Mana],Ork
-72,Mana Totem,Magic/Heal,0,0,target/aoe,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +19/s,464,650k,[Restore Mana],Ork
-74,Mana Totem,Magic/Heal,0,0,target/aoe,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +20/s,476,880k,[Restore Mana],Ork
+52,Mana Totem,Magic/Heal,0,0,target/aoe,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +10/s,352,74k,[Restore Mana],Demon
+56,Mana Totem,Magic/Heal,0,0,target/aoe,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +11/s,360,81k,[Restore Mana],Demon
+58,Mana Totem,Magic/Heal,0,0,target/aoe,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +12/s,380,88k,[Restore Mana],Demon
+60,Mana Totem,Magic/Heal,0,0,target/aoe,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +13/s,392,120k,[Restore Mana],Demon
+62,Mana Totem,Magic/Heal,0,0,target/aoe,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +14/s,400,170k,[Restore Mana],Demon
+64,Mana Totem,Magic/Heal,0,0,target/aoe,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +15/s,420,190k,[Restore Mana],Demon
+66,Mana Totem,Magic/Heal,0,0,target/aoe,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +16/s,432,280k,[Restore Mana],Demon
+68,Mana Totem,Magic/Heal,0,0,target/aoe,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +17/s,448,320k,[Restore Mana],Demon
+70,Mana Totem,Magic/Heal,0,0,target/aoe,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +18/s,452,390k,[Restore Mana],Demon
+72,Mana Totem,Magic/Heal,0,0,target/aoe,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +19/s,464,650k,[Restore Mana],Demon
+74,Mana Totem,Magic/Heal,0,0,target/aoe,1,60,30,places totem on the ground for 30 seconds that restores MP for nearby friendly targets (300 range) for +20/s,476,880k,[Restore Mana],Demon
 ,,,,,,,,,,,,,,----------------------------Frenzy----------------------------
 52,Frenzy,Magic/Buff,600,0,party/single,1,1,1200,"−10% Max HP/MP, +8% offence and speed, +8 move, −8 evasion.",80,38k,[]
 ,,,,,,,,,,,,,,----------------------------Mana Strain----------------------------

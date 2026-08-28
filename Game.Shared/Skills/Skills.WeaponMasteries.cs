@@ -38,7 +38,7 @@ public static partial class SkillCatalog
 
     /// <summary>The WARCHANTER's version of the same thing: BLUNT or BOW, never sword. Every one of his
     /// `buffer 3rd.csv` Spell Mastery rows reads *"With blunt/bow weapon"*, because his buffer's three
-    /// races hold a blunt (Human, Ork) or a bow (Elf) and nothing else. It is a separate helper rather
+    /// races hold a blunt (Human, Demon) or a bow (Elf) and nothing else. It is a separate helper rather
     /// than a parameter so the difference is visible at every call site — a caster mastery that pays on
     /// a BOW is unusual, and it only works at all because Harmonist Bow Proficiency cancels the
     /// untrained-weapon penalty that would otherwise be eating half the same character's magic.</summary>

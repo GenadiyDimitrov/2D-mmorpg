@@ -162,21 +162,21 @@ LEARN @ LVL, NAME,TYPE,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP CO
 89,Healer Party Blessing,Magic/Heal,0,1000,party/aoe,3,9,0,Cure bleed and potions of rank 10 or lower and heals the party with  950 power,296,0,100kk,,,Elf
 90,Healer Party Blessing,Magic/Heal,0,1000,party/aoe,3,9,0,Cure bleed and potions of rank 10 or lower and heals the party with 1000 power,300,0,100kk,,,Elf
 ,,,,,,,,,,,,,,,,----------------------------Healing Totem----------------------------
-76,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +152/s,520,6.5kk,1k,,,Ork
-77,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +153/s,523,11kk,1kk,,,Ork
-78,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +154/s,526,16kk,1kk,,,Ork
-79,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +155/s,529,80kk,1kk,,,Ork
-80,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +156/s,532,0,5kk,,,Ork
-81,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +157/s,535,0,7.5kk,,,Ork
-82,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +159/s,541,0,10kk,,,Ork
-83,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +162/s,550,0,15kk,,,Ork
-84,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +166/s,562,0,30kk,,,Ork
-85,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +170/s,574,0,50kk,,,Ork
-86,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +174/s,586,0,75kk,,,Ork
-87,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +178/s,598,0,100kk,,,Ork
-88,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +182/s,610,0,100kk,,,Ork
-89,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +186/s,622,0,100kk,,,Ork
-90,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +200/s,634,0,100kk,,,Ork
+76,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +152/s,520,6.5kk,1k,,,Demon
+77,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +153/s,523,11kk,1kk,,,Demon
+78,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +154/s,526,16kk,1kk,,,Demon
+79,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +155/s,529,80kk,1kk,,,Demon
+80,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +156/s,532,0,5kk,,,Demon
+81,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +157/s,535,0,7.5kk,,,Demon
+82,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +159/s,541,0,10kk,,,Demon
+83,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +162/s,550,0,15kk,,,Demon
+84,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +166/s,562,0,30kk,,,Demon
+85,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +170/s,574,0,50kk,,,Demon
+86,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +174/s,586,0,75kk,,,Demon
+87,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +178/s,598,0,100kk,,,Demon
+88,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +182/s,610,0,100kk,,,Demon
+89,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +186/s,622,0,100kk,,,Demon
+90,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +200/s,634,0,100kk,,,Demon
 ,,,,,,,,,,,,,,,,----------------------------Resurrection----------------------------
 76,Resurrection,Magic/Heal,600,0,target/single,5,5,0,Revive at 35% HP/MP; restore 100% of lost exp.,205,6.5kk,1kk
 80,Resurrection,Magic/Heal,600,0,target/single,5,5,0,Revive at 40% HP/MP; restore 100% of lost exp.,250,0,5kk
@@ -190,11 +190,11 @@ LEARN @ LVL, NAME,TYPE,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP CO
 ,,,,,,,,,,,,,,,,---------------------------Restoration----------------------------
 83,Elven Restoration,Magic/Heal,900,900,party/aoe,5,3600,0,Fully Restores MP (100%) and Restore HP with 50% to the party,300,500kk,100kk,,,Elf
 83,Life Restoration,Magic/Heal,900,900,party/aoe,5,3600,0,Fully Restores HP (100%) and Restores MP with 50% to the party,300,500kk,100kk,,,Human
-83,Spirit Restoration,Magic/Heal,900,900,party/aoe,5,3600,15,Restore MP/HP +30% and Increase Healing received with 30% to the pary,300,500kk,100kk,,,Ork
+83,Spirit Restoration,Magic/Heal,900,900,party/aoe,5,3600,15,Restore MP/HP +30% and Increase Healing received with 30% to the pary,300,500kk,100kk,,,Demon
 ,,,,,,,,,,,,,,,,---------------------------Mark----------------------------
 78,Holy Mark,Magic/Heal,900,0,party/single,5,5,300,"Increases: Atk +10%, Def +20%, Atk/Cast.Speed +20%, SPT Debuff Resists +10%, M.Acc +4, M.Crit.Rate +20%, Max MP +20%, Consumes 4 skill stones, Do not Stack with Other 'Mark' Skills",300,16kk,1kk,,,Elf,Same Principle as Great Might/Bulwark
 78,Life Mark,Magic/Heal,900,0,party/single,5,5,300,"Increases: Atk +10%, Def +20%, Atk/Cast.Speed +20%, CON Debuff Resists +5%, P.Acc +4, P.Crit.Rate +20%, Max HP +20%, Consumes 4 skill stones, Do not Stack with Other 'Mark' Skills",300,16kk,1kk,,,Human
-78,Blood Mark,Magic/Heal,900,0,party/single,5,5,300,"Increases: Atk +10%, Def +20%, Atk/Cast.Speed +20%, Mele vampirism +3%, Acc +3, Crit.Dmg +20%, Natural Regen +20%, Consumes 4 skill stones, Do not Stack with Other 'Mark' Skills",300,16kk,1kk,,,Ork
+78,Blood Mark,Magic/Heal,900,0,party/single,5,5,300,"Increases: Atk +10%, Def +20%, Atk/Cast.Speed +20%, Mele vampirism +3%, Acc +3, Crit.Dmg +20%, Natural Regen +20%, Consumes 4 skill stones, Do not Stack with Other 'Mark' Skills",300,16kk,1kk,,,Demon
 ,,,,,,,,,,,,,,,,----------------------------Healers Power----------------------------
 80,Healers Power,Magic/Buff,0,0,self/single,1,300,15,"Increase Healing Power +1000",100,150kk,10kk
 83,Healers Power,Magic/Buff,0,0,self/single,1,300,15,"Increase Healing Power +1250",150,0,15kk
@@ -287,13 +287,13 @@ LEARN @ LVL, NAME,TYPE,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP CO
 88,Bind,Magical Debuff,600,0,enemy/single,2.5,5,38,Hold enemy for 38s (success chance x0.8),111,0,100kk,,,Elf
 90,Bind,Magical Debuff,600,0,enemy/single,2.5,5,40,Hold enemy for 40s (success chance x0.8),115,0,100kk,,,Elf
 ,,,,,,,,,,,,,,,,----------------------------Armor Break----------------------------
-76,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 31% and MDef by 15% (success chance x1.5),69,6.5kk,1kk,,,Ork
-78,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 32% and MDef by 16% (success chance x1.5),73,16kk,1kk,,,Ork
-80,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 33% and MDef by 16% (success chance x1.5),79,0,5kk,,,Ork
-82,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 34% and MDef by 17% (success chance x1.5),95,0,10kk,,,Ork
-84,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 35% and MDef by 17% (success chance x1.5),99,0,30kk,,,Ork
-86,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 36% and MDef by 18% (success chance x1.5),105,0,75kk,,,Ork
-88,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 38% and MDef by 19% (success chance x1.5),111,0,100kk,,,Ork
-90,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 40% and MDef by 20% (success chance x1.5),115,0,100kk,,,Ork
+76,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 31% and MDef by 15% (success chance x1.5),69,6.5kk,1kk,,,Demon
+78,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 32% and MDef by 16% (success chance x1.5),73,16kk,1kk,,,Demon
+80,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 33% and MDef by 16% (success chance x1.5),79,0,5kk,,,Demon
+82,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 34% and MDef by 17% (success chance x1.5),95,0,10kk,,,Demon
+84,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 35% and MDef by 17% (success chance x1.5),99,0,30kk,,,Demon
+86,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 36% and MDef by 18% (success chance x1.5),105,0,75kk,,,Demon
+88,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 38% and MDef by 19% (success chance x1.5),111,0,100kk,,,Demon
+90,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 40% and MDef by 20% (success chance x1.5),115,0,100kk,,,Demon
 ,,,,,,,,,,,,,,,,---------------------------Holy Soul----------------------------
 76,Holy Soul,Toggle,0,0,self/single,0,0,0,Decrease MP Consumtion by 30% and Casting speed by 10%; Consume 50 HP/s,0,6.5kk,1kk,,,,Intentional decrease in Cast speed

@@ -233,10 +233,10 @@ ELF.**
 |---|---|---|
 | **Elf fighter** | **35** | x1.05 |
 | **Human fighter** | **30** | x1.00 *(= the mob reference)* |
-| **Ork fighter** | **26** | x0.96 |
+| **Demon fighter** | **26** | x0.96 |
 | Elf mage | 24 | x0.94 |
 | Human mage | 21 | x0.91 |
-| Ork mage | 20 | x0.90 |
+| Demon mage | 20 | x0.90 |
 
 So his *"an elf with 36 and +5 maxes it over 40"* is the **Elf fighter at 35**, +5 from gear -> 40 ->
 x1.10. Reachable: the light `Nightleaf` sets carry `Agi +3` and `+1`. ⚠ And the other direction —
@@ -308,7 +308,7 @@ magicCrit = ( 40 x witMod x passives x buffs  +  flat ) x debuffs      clamp 0 .
 
 with **no weapon term** (rate is WIT + buffs only) and `witMod` **asymmetric** — `+0.10`/point above
 the WIT-20 anchor, `+0.05`/point below, clamped at 0. The lower slope is load-bearing: a symmetric
-0.10 zeroes the stat at WIT 10, and both the ork fighter (10) and every mob (5) live down there.
+0.10 zeroes the stat at WIT 10, and both the demon fighter (10) and every mob (5) live down there.
 
 ⚠ **The head of that chain was 50 until 2026-08-19** and is now **40**. Not a nerf for its own sake: at
 50 the fully-kitted elf (WIT 30) computed *exactly* the 20% cap off Insight alone, so he was pinned to

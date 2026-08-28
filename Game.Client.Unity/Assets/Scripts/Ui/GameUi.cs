@@ -49,7 +49,7 @@ namespace Game.Client
         private TMP_InputField _nameField;
         private Button _raceButton, _classButton;
         private int _raceIndex, _classIndex;
-        private static readonly Race[] Races = { Race.Human, Race.Elf, Race.Ork };   // all of them since 0.53.0
+        private static readonly Race[] Races = { Race.Human, Race.Elf, Race.Demon };   // all of them since 0.53.0
         private static readonly BaseClass[] Classes = { BaseClass.Fighter, BaseClass.Mage };
 
         private float _renderFps;
@@ -552,7 +552,7 @@ namespace Game.Client
         private static string CharacterClassName(CharacterSlot slot)
         {
             // Highest tier first. ⚠ `.Name`, NOT `.Discipline.ToString()` — since 2026-08-17 the
-            // name is per RACE (an Ork tank is an Ironhide, not a Bulwark), and the enum only ever
+            // name is per RACE (an Demon tank is an Ironhide, not a Bulwark), and the enum only ever
             // knew the discipline. The two agreed until they didn't.
             if (slot.FourthClass > 0 && FourthClassCatalog.Get(slot.FourthClass) is { } fourth)
                 return fourth.Name;

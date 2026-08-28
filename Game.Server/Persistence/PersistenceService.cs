@@ -343,12 +343,24 @@ public class PersistenceService
             await db.SaveChangesAsync();
         }
 
-        return await db.Characters
+        var list = await db.Characters
             .Where(c => c.AccountId == accountId)
             .Select(c => new CharacterSummary(
                 c.Id, c.Name, c.Race, c.BaseClass, c.SecondClass, c.Level, c.PendingDeleteAt,
                 c.ThirdClass, c.FourthClass))
             .ToListAsync();
+
+        // Retired-discipline fix-up, AFTER materialising — `Surviving` is a dictionary lookup EF cannot
+        // translate into SQL. Without it the character-SELECT screen would render an old Tempest with
+        // no class name at all while the same character reads correctly the moment it enters the world
+        // (see ToSubclass). Cosmetic, but a blank class on the login screen looks like a lost character.
+        return list
+            .Select(c => c with
+            {
+                ThirdClass = ThirdClassCatalog.Surviving(c.ThirdClass),
+                FourthClass = FourthClassCatalog.Surviving(c.FourthClass),
+            })
+            .ToList();
     }
 
     public record CharacterSummary(
@@ -596,6 +608,12 @@ public class PersistenceService
                 foreach (var r in rep) into.Remove(r);
     }
 
+    /// <summary>⚠ RETIRED-DISCIPLINE MIGRATION. A row written before 2026-08-28 can carry a Tempest
+    /// 3rd/4th-class id (112/124/136, 212/224/236), and `BL-97` retired that discipline — nothing mints
+    /// those ids any more, so `ThirdClassCatalog.Get` returns null for them. Left alone, such a
+    /// character would show no class name, learn nothing above 40 and never ascend at 76: bricked, not
+    /// cosmetic. `Surviving` maps it onto that race's Magus, which held the identical kit anyway, and
+    /// the next autosave writes the corrected id back. Applied on BOTH load paths below.</summary>
     private static Subclass ToSubclass(SubclassRecord r)
     {
         var sc = new Subclass
@@ -604,8 +622,8 @@ public class PersistenceService
             Race = r.Race,
             BaseClass = r.BaseClass,
             SecondClass = r.SecondClass,
-            ThirdClass = r.ThirdClass,
-            FourthClass = r.FourthClass,
+            ThirdClass = ThirdClassCatalog.Surviving(r.ThirdClass),
+            FourthClass = FourthClassCatalog.Surviving(r.FourthClass),
             Level = r.Level,
             Exp = r.Exp,
             SkillPoints = r.SkillPoints,
@@ -685,8 +703,8 @@ public class PersistenceService
                 Race = rec.Race,
                 BaseClass = rec.BaseClass,
                 SecondClass = rec.SecondClass,
-                ThirdClass = rec.ThirdClass,
-                FourthClass = rec.FourthClass,
+                ThirdClass = ThirdClassCatalog.Surviving(rec.ThirdClass),      // see ToSubclass
+                FourthClass = FourthClassCatalog.Surviving(rec.FourthClass),
                 Level = rec.Level,
                 Exp = rec.Exp,
                 SkillPoints = rec.SkillPoints,

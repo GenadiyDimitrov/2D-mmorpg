@@ -8,7 +8,7 @@ namespace Game.Shared;
 /// harmonies it draws on are in Skills.BuffLadders.cs.
 ///
 /// <para>🔑 <b>THE RACE SPLIT IS THE WHOLE DESIGN HERE</b>, and it is his: *"human is tank - 1dmg
-/// skill and higher Def, elf is archer - range/evasion 1dmg skill, ork is mele fighter so need more
+/// skill and higher Def, elf is archer - range/evasion 1dmg skill, demon is mele fighter so need more
 /// than 1dmg skill"*. So one buffer class wears three different combat kits:</para>
 /// <list type="bullet">
 ///   <item>HUMAN — heavy armour, blunt + SHIELD (Shield Mastery, Skills.Fighter.cs), one melee
@@ -35,16 +35,16 @@ public static partial class SkillCatalog
         { "wc_combo_rush_1", "wc_combo_rush_2", "wc_combo_rush_3",
           "wc_combo_rush_4", "wc_combo_rush_5", "wc_combo_rush_6" };
     public const string WcManaVampirism      = "wc_mana_vampirism";
-    public const string WcChanterHeavy       = "wc_chanter_heavy_mastery";      // Human;Ork
+    public const string WcChanterHeavy       = "wc_chanter_heavy_mastery";      // Human;Demon
     public const string WcHarmonistLight     = "wc_harmonist_light_mastery";    // Elf
     public const string WcHarmonistBowProf   = "wc_harmonist_bow_proficiency";  // Elf
     public const string WcHarmonistBowMast   = "wc_harmonist_bow_mastery";      // Elf
-    public const string WcBloodhanterBlunt   = "wc_bloodhanter_blunt_mastery";  // Ork
+    public const string WcBloodhanterBlunt   = "wc_bloodhanter_blunt_mastery";  // Demon
     // ---- ACTIVES ----
     public const string WcHarmonyRestoration = "wc_harmony_restoration";
     public const string WcSoundBurst         = "wc_sound_burst";        // Elf, bow, hits twice
-    public const string WcSoundSmash         = "wc_sound_smash";        // Ork;Human, blunt
-    public const string WcAcousticShock      = "wc_acoustic_shock";     // Ork only, blunt + STUN
+    public const string WcSoundSmash         = "wc_sound_smash";        // Demon;Human, blunt
+    public const string WcAcousticShock      = "wc_acoustic_shock";     // Demon only, blunt + STUN
     public const string WcBowExpertise       = "wc_bow_expertise";      // Elf
     // ---- TOGGLES ----
     public const string WcReinforcement      = "wc_reinforcement";
@@ -75,7 +75,7 @@ public static partial class SkillCatalog
 
         // ===== PASSIVES ==========================================================================
 
-        // ---- Chanter Heavy Mastery (Human + Ork) — the heavy-armour half of the caster penalty,
+        // ---- Chanter Heavy Mastery (Human + Demon) — the heavy-armour half of the caster penalty,
         //      bought back. Spellcaster Mastery charges light/heavy/none cast x0.5 and attack x0.5;
         //      his row restores them to "90%(x1.8)" and "100%(x2)", which is why the numbers look
         //      like over-corrections in isolation: 1.8 x 0.5 = 0.9 and 2.0 x 0.5 = 1.0. Same
@@ -144,7 +144,7 @@ public static partial class SkillCatalog
                 .Select(a => new WeaponMasteryProfile(Bow: new PassiveEffect(PhysAtk: a, BowRange: 400f)))
                 .ToArray()));
 
-        // ---- Bloodhanter Blunt Mastery (Ork) — 8 rungs, the ork's answer to the elf's bow line.
+        // ---- Bloodhanter Blunt Mastery (Demon) — 8 rungs, the demon's answer to the elf's bow line.
         //      Flat P.Atk 30 to 100 and a constant +3 accuracy. ----
         int[] bluntAtk = { 30, 40, 50, 60, 70, 80, 90, 100 };
         list.Add(new SkillDef(WcBloodhanterBlunt, "Bloodhanter Blunt Mastery", BaseClass.Mage, SkillEffect.None,
@@ -250,16 +250,16 @@ public static partial class SkillCatalog
             hits: 2, stunTicks: 0,
             desc: "Looses two arrows on one breath — each resolves on its own."));
 
-        // ---- Sound Smash (Ork + Human) — the melee twin: 40 range, blunt, one hit, faster cast. ----
+        // ---- Sound Smash (Demon + Human) — the melee twin: 40 range, blunt, one hit, faster cast. ----
         list.Add(SoundSkill(WcSoundSmash, "Sound Smash", WeaponType.Blunt, range: 40, castTicks: 10,
             hits: 1, stunTicks: 0,
             desc: "A concussive blow that rings through armour."));
 
         // ---- Acoustic Shock (ORK ONLY) — HIS ADDITION, 2026-08-21: *"Add another skill to the ork
-        //      buffer same as sound smash (name it Acoustic Shock) just with a stun effect ... ork is
+        //      buffer same as sound smash (name it Acoustic Shock) just with a stun effect ... demon is
         //      mele fighter so need more than 1dmg skill"*. Identical ladder to Sound Smash — same
         //      power, MP, SP, range, cast and reuse — with a contested 5s STUN on top. That is the
-        //      ork's second damage skill, and the reason it is worth pressing over Sound Smash.
+        //      demon's second damage skill, and the reason it is worth pressing over Sound Smash.
         //      ⚠ Stun is CONTESTED (ATK vs CON, DebuffSchool.Physical) like every other CC in the
         //      game, so it is not a guaranteed lock and bosses are immune. ----
         list.Add(SoundSkill(WcAcousticShock, "Acoustic Shock", WeaponType.Blunt, range: 40, castTicks: 10,
@@ -383,7 +383,7 @@ public static partial class SkillCatalog
             // that was supposed to have superseded it.
             //
             // ⚠ ALL THREE carry it, not just the first one a race learns. Sound Smash and Acoustic Shock
-            // are both learnable at 40 by an ork, in whichever order he buys them — putting the clause on
+            // are both learnable at 40 by an demon, in whichever order he buys them — putting the clause on
             // one of them would make the retirement depend on the shopping order.
             //
             // ⚠ THE TRADE IS REAL AND IT IS HIS TO ACCEPT: Holy Bolt is a SPELL with no weapon

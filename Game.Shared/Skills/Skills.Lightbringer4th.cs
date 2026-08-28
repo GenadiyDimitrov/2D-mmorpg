@@ -208,7 +208,7 @@ public static partial class SkillCatalog
             Description: $"Heals an ally for {pow[i]} and cures their bleed and poison of rank 10 or lower.");
     });
 
-    /// <summary>Healing Totem (Ork) rungs 15-29.</summary>
+    /// <summary>Healing Totem (Demon) rungs 15-29.</summary>
     internal static SkillLevel[] HealerFourthTotemRungs() => F4Rungs(15, 1, (i, sp, gold) =>
     {
         int[] pow = { 152, 153, 154, 155, 156, 157, 159, 162, 166, 170, 174, 178, 182, 186, 200 };
@@ -301,7 +301,7 @@ public static partial class SkillCatalog
             Description: $"Holds an enemy in place for {dur[i] / 10}s.");
     });
 
-    /// <summary>Armor Break (Ork) rungs 15-22. Like Gravity, the 3rd tier's 30/15 plateau resumes:
+    /// <summary>Armor Break (Demon) rungs 15-22. Like Gravity, the 3rd tier's 30/15 plateau resumes:
     /// P.Def 31 → 40%, M.Def 15 → 20%. ⚠ The exact HALF relationship the 3rd tier kept is broken by
     /// his own numbers here (31/15, 33/16, 35/17) — his rows, left alone.</summary>
     internal static SkillLevel[] HealerFourthArmorBreakRungs() => F4Rungs(8, 2, (i, sp, gold) =>
@@ -539,7 +539,7 @@ public static partial class SkillCatalog
             // ---- THE THREE RESTORATIONS @83. One per race, a full party recovery on a ONE-HOUR reuse.
             //      🔑 They are three DIFFERENT skills rather than three rungs of one because their
             //      payloads have nothing in common: the Elf refills mana, the Human refills life, and
-            //      the Ork gives up the totality for a 15-second healing-received window on top.
+            //      the Demon gives up the totality for a 15-second healing-received window on top.
             // ---- URGENT GREAT HEAL @83 — the last unbuilt row in `healer 4th.csv`, and the one he
             //      pointed at on 2026-08-27 (*"urgent great heal in healer 4th is placed/authored"*).
             //      His row, verbatim: *"Heals 10 most injured friendly target around the caster
@@ -617,7 +617,7 @@ public static partial class SkillCatalog
                 },
                 "Refills your whole party's HP completely and half their MP. Once an hour."),
 
-            // The Ork's is the only one that leaves something behind — 30% of both bars now, and every
+            // The Demon's is the only one that leaves something behind — 30% of both bars now, and every
             // heal that lands on the party for the next 15 seconds is 30% bigger.
             Restoration(SpiritRestoration, "Spirit Restoration",
                 SkillEffect.Heal | SkillEffect.RestoreMp | SkillEffect.BuffHpRegen,
@@ -632,7 +632,7 @@ public static partial class SkillCatalog
 
             // ---- THE THREE MARKS @78. One per race, one buff key: an ally wears ONE Mark.
             // ⚠ HIS 2026-08-26 EDIT added an ACCURACY line to each of the three, and it is not the same
-            //    line on each: the Elf reads "M.Acc +4", the Human "P.Acc +4", the Ork "P/M.Acc +3".
+            //    line on each: the Elf reads "M.Acc +4", the Human "P.Acc +4", the Demon "P/M.Acc +3".
             // 🔑 M.ACC IS THE MIRROR OF M.EVASION, and it is real now. He asked what it was and answered
             //    his own question — *"the mAcc is magic fizzle chance? what does Magic evasion do? so the
             //    oposite"* — so `MagicAccuracy` takes flat percentage POINTS back off the caster's own fail
@@ -661,10 +661,10 @@ public static partial class SkillCatalog
                 },
                 ccPhys: 0.05f),
 
-            // ⚠ The Ork's EVASION line is GONE — his 2026-08-26 edit replaced it with melee vampirism
+            // ⚠ The Demon's EVASION line is GONE — his 2026-08-26 edit replaced it with melee vampirism
             //    and dropped both accuracies from 4 to 3, which he says is deliberate. Do not restore it.
             Mark(BloodMark, "Blood Mark",
-                "The Ork's Mark also grants +3% melee vampirism, +3 accuracy, +20% critical damage of "
+                "The Demon's Mark also grants +3% melee vampirism, +3 accuracy, +20% critical damage of "
                 + "both kinds, and +20% HP and MP regeneration.",
                 new EffectMagnitude[]
                 {

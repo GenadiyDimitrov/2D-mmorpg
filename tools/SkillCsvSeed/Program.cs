@@ -60,15 +60,17 @@ if (args.Contains("--aoe-column")) return AoeColumn.Run(outDir);
 //
 // So EIGHT discipline files, not twelve, and RACE (the trailing column) is what makes three identities
 // out of one file. Two consequences worth knowing:
-//   - `Vanguard` is dropped as a discipline. Nothing is registered for it (the 40+ purge took it), so
-//     the tank file loses nothing by seeding from Bulwark alone.
-//   - `nuker` seeds from BOTH Magus and Tempest, because he is merging them and their two kits are the
-//     only substantial 40+ content in the game outside the Warchanter's buff ladder. FlameBolt lands
-//     twice — once as "Annihilate", once as "Chain Lightning" — which is the honest picture of two kits
-//     being folded into one, and his to reconcile.
+//   - `Vanguard` is dropped as a discipline. ✅ RETIRED IN CODE 2026-08-28 (`BL-97`) — it had held no
+//     learn rows since the 40+ purge, so the tank file lost nothing by seeding from Bulwark alone and
+//     loses nothing now that the discipline itself is gone.
+//   - `nuker` seeded from BOTH Magus and Tempest while the merge was pending. ✅ IT IS DONE — 2026-08-28,
+//     `BL-97`, *"Tempests must go"* — so it seeds from Magus alone now and the duplicate names that
+//     folding two kits together produced (FlameBolt as both "Annihilate" and "Chain Lightning",
+//     GreaterWeakness as both "Mana Burn" and "Maelstrom") are gone with it.
 //
-// ⚠ The enum in Classes.Third.cs is NOT changed by this. Discipline values persist on characters; the
-// collapse happens when the authored CSVs arrive, not because a file was renamed.
+// ⚠ The enum in Classes.Third.cs still HOLDS `Tempest` and `Vanguard` — retiring a discipline never
+// deletes its value, because characters persisted it. What changed on 2026-08-28 is that nothing
+// mints, names, offers or teaches EITHER of them. EIGHT paths per race, 24 third classes.
 var groups = new (string File, Discipline[] Disciplines)[]
 {
     ("tank",    new[] { Discipline.Bulwark }),
@@ -78,7 +80,7 @@ var groups = new (string File, Discipline[] Disciplines)[]
     ("archer",  new[] { Discipline.Sharpshooter, Discipline.Trapper, Discipline.Hunter }),
     ("healer",  new[] { Discipline.Lightbringer }),
     ("buffer",  new[] { Discipline.Warchanter }),
-    ("nuker",   new[] { Discipline.Magus, Discipline.Tempest }),
+    ("nuker",   new[] { Discipline.Magus }),                       // Tempest retired, `BL-97`
 };
 
 // His two tiers. ⚠ The old suffixes were `40-74` / `76-85` and level 75 fell in NEITHER — which silently
@@ -112,7 +114,7 @@ foreach (var (fileName, disciplines) in groups)
         // format's own rule and the shape he reads fastest.
         var rows = new List<(int Lvl, int SkillLvl, string Id, string? Name, int? Sp, Race Race)>();
         foreach (var d in disciplines)
-            foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
+            foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
                 foreach (var cs in ClassSkills.ForClass(race, BaseOf(d), Disciplines.Parent(d), d))
                     if (cs.LearnLevel >= min && cs.LearnLevel <= max)
                         rows.Add((cs.LearnLevel, cs.SkillLevel, cs.SkillId, cs.DisplayName, cs.SpCost, race));

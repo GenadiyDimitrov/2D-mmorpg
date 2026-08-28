@@ -236,10 +236,10 @@ Base dmg lvl-mult = (Level + 89) / 100   [listed, but NOT used in the dmg formul
 |---|---|---|---|---|---|
 | Human Fighter | 1205 | 203 | 134 | 45 | phys ~82–100 |
 | Elf Fighter | 969 | 206 | 134 | 46 | phys ~80–98 |
-| Ork Fighter | 1378 | 209 | 134 | 47 | phys ~82–100 |
+| Demon Fighter | 1378 | 209 | 134 | 47 | phys ~82–100 |
 | Human Mage | 410 | 692 | 109 | 53 | magic ~77–90 |
 | Elf Mage | 378 | 700 | 109 | 54 | magic ~76–88 |
-| Ork Mage | 507 | 715 | 109 | 55 | magic ~74–85 |
+| Demon Mage | 507 | 715 | 109 | 55 | magic ~74–85 |
 
 (mDef now via the real MEN curve — fighters jumped ~32 → ~46, so magic hits them softer.)
 
@@ -262,7 +262,7 @@ Base dmg lvl-mult = (Level + 89) / 100   [listed, but NOT used in the dmg formul
 | Fighter → Mage | ~3 s |
 | Mage → Fighter | ~20 s |
 
-**Read:** the correct MEN curve makes fighters notably **magic-resistant** (mDef ~46), so a mage's plain nuke now does ~90 to a fighter (was ~129) and the stand-still mage→fighter fight stretched to ~20s. This *widens* the melee dominance, which is intended to be offset by the mage's **CC / kite / burst / mDef-debuff** kit (skill layer) — a plain-nuke mage SHOULD lose a stand-up fight. Ork tankiest, elf frailest, human mid. Mages now have ~3.4× the MP of fighters.
+**Read:** the correct MEN curve makes fighters notably **magic-resistant** (mDef ~46), so a mage's plain nuke now does ~90 to a fighter (was ~129) and the stand-still mage→fighter fight stretched to ~20s. This *widens* the melee dominance, which is intended to be offset by the mage's **CC / kite / burst / mDef-debuff** kit (skill layer) — a plain-nuke mage SHOULD lose a stand-up fight. Demon tankiest, elf frailest, human mid. Mages now have ~3.4× the MP of fighters.
 
 ---
 

@@ -50,7 +50,7 @@ public class TrapInstance
     public int LifeTicks { get; set; }
 }
 
-/// <summary>A placed TOTEM (the Ork healer's totem line). Server-only for now, exactly like
+/// <summary>A placed TOTEM (the Demon healer's totem line). Server-only for now, exactly like
 /// <see cref="TrapInstance"/> — a dedicated visual is client work, and until it exists a totem is felt
 /// (allies visibly heal / refill) rather than seen. The mirror image of a trap: a trap waits once for an
 /// ENEMY and dies, a totem pulses repeatedly at ALLIES on a timer until its life runs out.

@@ -429,7 +429,7 @@ public static class MobCatalog
     //  SOCIAL CLANS (BL-70). Which creatures answer each other's cry for help.
     //
     //  Authored on the families that already READ as a warband or a nest — the ones sharing a name
-    //  root, which is the same grouping his "ork settlement" picture describes (BL-21). Everything
+    //  root, which is the same grouping his "demon settlement" picture describes (BL-21). Everything
     //  else is deliberately clanless: a bear, a treant, a wisp and a lone medusa have nobody to call.
     //
     //  A clan name may span levels because a clan is only ever LOCAL — the cry reaches 450 units and

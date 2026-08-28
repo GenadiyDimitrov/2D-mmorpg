@@ -3364,9 +3364,9 @@ public class GameLoopService : BackgroundService
     /// class still has one 4th path, still quested.)
     ///
     /// Rules: character must be level 76+ (stand-in for the future 4th class). Normal accounts cap at
-    /// <see cref="GameConstants.MaxSubclasses"/>; ADMINS are unlimited. NO duplicate DISCIPLINE (a
-    /// Tempest bars every Tempest, across races). Every equipped item is UNEQUIPPED — you don't play a
-    /// level-1 class in level-76 gear.</summary>
+    /// <see cref="GameConstants.MaxSubclasses"/>; ADMINS are unlimited. NO duplicate DISCIPLINE (owning
+    /// the Magus bars the Starweaver and the Cinderwitch too — the bar is the PATH, not the class id).
+    /// Every equipped item is UNEQUIPPED — you don't play a level-1 class in level-76 gear.</summary>
     private void HandleDebugAddSubclass(DebugAddSubclassCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead)
@@ -3403,7 +3403,7 @@ public class GameLoopService : BackgroundService
         // No two of the same discipline (across races) — checked against ALL owned classes, active too.
         if (!player.CanAddDiscipline(cmd.ThirdClassId))
         {
-            // Names the CLASS, not the raw discipline: since names went per-race an Ork's Bulwark
+            // Names the CLASS, not the raw discipline: since names went per-race an Demon's Bulwark
             // is called an Ironhide, and printing the enum would show a word he has never seen.
             SendSystemToEntity(player, $"You already walk that path — {tcd.Name} shares it.");
             return;

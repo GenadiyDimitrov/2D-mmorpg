@@ -255,8 +255,8 @@ public static class SpeedTable
     {
         (Race.Elf,   BaseClass.Fighter) => 165f,
         (Race.Elf,   BaseClass.Mage)    => 145f,
-        (Race.Ork,   BaseClass.Fighter) => 155f,
-        (Race.Ork,   BaseClass.Mage)    => 138f,
+        (Race.Demon,   BaseClass.Fighter) => 155f,
+        (Race.Demon,   BaseClass.Mage)    => 138f,
         (Race.Human, BaseClass.Fighter) => 148f,
         (Race.Human, BaseClass.Mage)    => 130f,
         // (The God debug race's 200 was deleted 2026-08-07 with the layer — `/spd m <v>` replaces it.)

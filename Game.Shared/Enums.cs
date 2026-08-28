@@ -1,10 +1,20 @@
 namespace Game.Shared;
 
+/// <summary>The three playable races.
+///
+/// <para>⚠ <b>`Demon` WAS `Demon` UNTIL 2026-08-28</b> (`BL-101`, his call). The VALUE 2 is unchanged and
+/// must never move — a character persists the number, so every existing save is still the same race
+/// under a new name. Only the identifier and the display strings changed.</para>
+///
+/// <para>🔑 <b>Why it was worth doing:</b> the world already spawns <i>Orc Archer</i> from level 12,
+/// so the player race shared its name with common trash — and "Demon Priest" sounded like nothing,
+/// which is why the support line had to hide behind "Shaman". Demon fixes both: the whole mage line
+/// gets a voice (Demon Priest, Dreadcaller, Occultist) and no monster wears the name.</para></summary>
 public enum Race
 {
     Human = 0,
     Elf = 1,
-    Ork = 2
+    Demon = 2
     // (God = 99, the debug race, was DELETED 2026-08-07 — owner's ruling, playtest-19 `0b`:
     //  *"I want them deleted. Nothing that can't be acquired in game. If I need cosmic stats I can
     //  /enchant 9999999 and do /speed."* The whole layer went with it: the God learn table, the two

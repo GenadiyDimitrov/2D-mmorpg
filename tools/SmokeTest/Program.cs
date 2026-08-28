@@ -1835,16 +1835,16 @@ await gm.DisposeAsync();
     Console.WriteLine();
     Console.WriteLine("--- totem + area-effect pushes ---");
 
-    // ORK, because both totems are the Ork Lightbringer's: the race split puts the planted object on
+    // ORK, because both totems are the Demon Lightbringer's: the race split puts the planted object on
     // his side of the fast heal, and the Mana Totem is his alone.
     // ⚠ `test1`, not a fresh account: ConnectAsync LOGS IN and throws if the account is missing — it
     // does not register — and the seeded accounts are the only ones that exist. An account holds many
-    // characters, so the ork below is simply another of test1's, on its own connection.
+    // characters, so the demon below is simply another of test1's, on its own connection.
     var tt = await ConnectAsync("test1", "test");
     string tname = "Totem" + DateTime.UtcNow.ToString("HHmmssff");
     var terr = await tt.Hub.InvokeAsync<string?>("CreateCharacter",
-        new CreateCharacterRequest(tname, Race.Ork, BaseClass.Mage));
-    Check("created an ork mage for the totem checks", terr is null, terr);
+        new CreateCharacterRequest(tname, Race.Demon, BaseClass.Mage));
+    Check("created an demon mage for the totem checks", terr is null, terr);
 
     if (terr is null)
     {
@@ -1863,13 +1863,13 @@ await gm.DisposeAsync();
         // 1 -> 81, in the +10 steps the debug button allows. Past 52, so the Mana Totem exists too.
         for (int i = 0; i < 8; i++) await tt.Hub.SendAsync("DebugLevel", 10);
         var lb = ThirdClassCatalog.Playable
-            .First(t => t.Race == Race.Ork && t.Discipline == Discipline.Lightbringer);
+            .First(t => t.Race == Race.Demon && t.Discipline == Discipline.Lightbringer);
         await tt.Hub.SendAsync("DebugThirdClass", lb.Id);
         await tt.Hub.SendAsync("DebugLearnAll");
         await tt.Settle();
 
         // 🔑 EVERY WAIT HERE IS GENEROUS, AND THAT IS NOT SLOPPINESS. This character is NAKED and an
-        // ork — WIT 19, the worst in the game, no gear — so `EffectiveCastSpeedMultiplier` is ~4.6x
+        // demon — WIT 19, the worst in the game, no gear — so `EffectiveCastSpeedMultiplier` is ~4.6x
         // and a 1-second totem takes 4.6s to plant. The first cut of this section waited the harness's
         // default 4s and reported eight failures against a feature that worked perfectly; the cast bar
         // was the thing that said so ("Healing Totem 4.6s"). WaitFor returns the instant the condition
@@ -1901,7 +1901,7 @@ await gm.DisposeAsync();
 
         // ---- The set is WHOLE, so walking away must drop it. ⚠ THIS GOES BEFORE THE AoE CHECK, and
         //      the order is load-bearing: a totem lives 30s and the party heal below takes ~33s to
-        //      cast on this naked ork, so run the other way round the totems have already EXPIRED and
+        //      cast on this naked demon, so run the other way round the totems have already EXPIRED and
         //      this check passes against an empty list — a false pass that proves nothing. ----
         // Away from the map EDGE, not just "+6000": a teleport that clamps would leave him inside
         // view range and fail the check for a reason that is not the one being measured.
@@ -1932,7 +1932,7 @@ await gm.DisposeAsync();
         {
             tt.Areas.Clear();
             await tt.Hub.SendAsync("UseSkill", aoeChoice.def.Id, tt.MyId);
-            // ⚠ 45s: see the CastWait note. Party Great Heal is a 7s cast that this naked ork takes
+            // ⚠ 45s: see the CastWait note. Party Great Heal is a 7s cast that this naked demon takes
             //    32.6s to finish, and WaitFor returns the moment it lands.
             bool flashed = await tt.WaitFor(() => tt.Areas.Count > 0, 45000);
             Check($"an AoE skill flashes its footprint when it LANDS ({aoeChoice.def.Id})",

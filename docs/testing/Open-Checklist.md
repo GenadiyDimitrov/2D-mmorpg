@@ -5,7 +5,7 @@
 > Everything you already answered is out of this file:
 > - **Your finds from playtests 27 and 28** (all twelve, plus playtest 27's five) →
 >   [Playtest-Archive.md](Playtest-Archive.md#playtest-27-28).
-> - **§90's rows you played** — the two 3rd-class kits, the circles, the ork mage →
+> - **§90's rows you played** — the two 3rd-class kits, the circles, the demon mage →
 >   [Playtest-Archive.md](Playtest-Archive.md#pass-0770-0890). §91 and §89's routing went with them.
 > - **The one thing still unbuilt** — *"shouldn't hit at all on the floor"* — is now **`BL-94`** in
 >   [docs/Backlog.md](../Backlog.md), where it will not get lost between passes.
@@ -488,7 +488,7 @@ catalog.
 `dotnet run --project tools/BalanceMatrix -- --mpdrain` answers the question you asked in flat MP/s,
 for all three races, 20 → 80. Race cuts **twice in the same direction**: WIT drives cast speed
 (×1.63 per +10) so a faster caster empties the bar sooner, and SPT drives regen so he also refills it
-slower. At 80 an **elf healer is 14.7 MP/s under water where the ork is 5.6** — same spell, same rung.
+slower. At 80 an **elf healer is 14.7 MP/s under water where the demon is 5.6** — same spell, same rung.
 
 - `93v` [ ] - 🔴 **A TOGGLE WAS CHARGING RUNG 1's UPKEEP AT EVERY RUNG, and it is fixed.** The tick loop
   read one number per skill, so the Warchanter's Reinforcement — authored as a 13-rung ladder from
@@ -593,7 +593,7 @@ tell; it shows up as numbers feeling different.
 
 - `90a` [ ] - **THE LIGHTBRINGER, 40-74** (0.74.0, off your finished `healer 3rd.csv`). The first
   authored 3rd-class kit in the project. **Race splits it twice**, once on the heal and once on the
-  debuff: **Human** Quick Great Heal + Gravity · **Elf** Healer Blessing + Bind · **Ork** the Healing
+  debuff: **Human** Quick Great Heal + Gravity · **Elf** Healer Blessing + Bind · **Demon** the Healing
   Totem + Armor Break. Everything in the file is built to **74**; nothing above it exists. 🔑 What is
   worth your attention is not whether the skills fire but whether the kit **plays as a healer** —
   heal-per-cast against a fight's damage, MP against a fight's length. ⚠ Both halves of that question
@@ -721,7 +721,7 @@ have still never been played. Check the flag behaviour in the same sitting.
   and the MP potions could be built the same day.
 - ✅ ~~**"why do you tell me no one has an mp problem"**~~ — **I was wrong and you were right.** The
   model under-read **cast speed** because it carried no buff stack; with Alacrity it matches your live
-  client exactly (2.79s cycle, 10.77 MP/s drain against 8.7 regen on your ork 43 Bloodmender). That
+  client exactly (2.79s cycle, 10.77 MP/s drain against 8.7 regen on your demon 43 Bloodmender). That
   withdrawal is what `--mpdrain` (§93E) and the potions exist because of.
 - ✅ ~~**Max stack counts**~~ — your numbers, built as ruled (§93D). The one thing I would still flag is
   `93o`: buff scrolls at 9 is the only cap a player meets.

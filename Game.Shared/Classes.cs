@@ -46,7 +46,7 @@ public static class ClassCatalog
     // learn both the Stab and the Shot ladders, and the split happens at the 3rd class (see
     // Disciplines.Of, which is race-aware for exactly this).
     //
-    // Ids 4 (Hunter/Ork), 10 (Warden/Elf) and 16 (Marksman/Human) are therefore GONE. They are left
+    // Ids 4 (Hunter/Demon), 10 (Warden/Elf) and 16 (Marksman/Human) are therefore GONE. They are left
     // as gaps, never reused: class ids are persisted on characters, so recycling one would silently
     // turn an old save into a different class. `Archetype.Archer` stays in the enum — the bow range
     // tier and the HP track still refer to it — but no 2nd class carries it any more.
@@ -56,31 +56,41 @@ public static class ClassCatalog
     // were hollow. The Rogue table already taught BOTH weapons, so the merge fixed it by deletion.
     private static readonly Dictionary<int, SecondClassDef> All = new SecondClassDef[]
     {
-        // Ork / Demon
-        new(1,  "Beast",       Race.Ork,   BaseClass.Fighter, Archetype.Tank),
-        new(2,  "Warrior",     Race.Ork,   BaseClass.Fighter, Archetype.Warrior),
-        new(3,  "Stalker",     Race.Ork,   BaseClass.Fighter, Archetype.Rogue),
-        // (id 4 was Hunter, the Ork archer — see the ARCHER MERGE note below. The name now belongs to
-        //  the Ork's ranged 3rd-class discipline.)
-        new(5,  "Shaman",      Race.Ork,   BaseClass.Mage,    Archetype.Healer),
-        new(6,  "Witch",       Race.Ork,   BaseClass.Mage,    Archetype.Nuker),
+        // ===== THE 2ND-CLASS NAMES ARE GENERIC NOW (owner, 2026-08-28, `BL-100`) ================
+        //  *"All races are the same until lvl 40 so we can call it elf-A human-A."* He is right, and
+        //  the old flavour names were worse than useless here: NOTHING differs before 40 — same kit,
+        //  same formulas — so a name promising identity was a lie, and it was spending the best words
+        //  in the game (Assassin, Sentinel, Templar, Shadowblade, Stalker, Champion) on the one tier
+        //  that has none. Every one of those words now sits on a 3rd class that earns it.
+        //  ✅ THE EXCEPTION IS GONE (2026-08-28, `BL-101`). The demon support line had to keep `Shaman`
+        //  because "Demon Priest" sounded like nothing — and that was one of the reasons the race became
+        //  DEMON. `Demon Priest` works, so all fifteen 2nd classes are race+role with no special case.
+        // ==========================================================================================
+        // Demon (was Demon until 2026-08-28 — Race.Demon is still value 2, so no save moved)
+        new(1,  "Demon Knight",  Race.Demon, BaseClass.Fighter, Archetype.Tank),
+        new(2,  "Demon Warrior", Race.Demon, BaseClass.Fighter, Archetype.Warrior),
+        new(3,  "Demon Rogue",   Race.Demon, BaseClass.Fighter, Archetype.Rogue),
+        // (id 4 was Hunter, the Demon archer — see the ARCHER MERGE note below. The name now belongs to
+        //  the Demon's ranged 3rd-class discipline.)
+        new(5,  "Demon Priest",     Race.Demon, BaseClass.Mage,    Archetype.Healer),
+        new(6,  "Demon Apprentice", Race.Demon, BaseClass.Mage,    Archetype.Nuker),
         // Elf / Angel
-        new(7,  "Templar",     Race.Elf,   BaseClass.Fighter, Archetype.Tank),
-        new(8,  "Sentinel",    Race.Elf,   BaseClass.Fighter, Archetype.Warrior),
-        new(9,  "Shadowblade", Race.Elf,   BaseClass.Fighter, Archetype.Rogue),
+        new(7,  "Elf Knight",  Race.Elf,   BaseClass.Fighter, Archetype.Tank),
+        new(8,  "Elf Warrior", Race.Elf,   BaseClass.Fighter, Archetype.Warrior),
+        new(9,  "Elf Rogue",   Race.Elf,   BaseClass.Fighter, Archetype.Rogue),
         // (id 10 was Warden, the Elf archer — merged into Shadowblade; see the ARCHER MERGE note.)
-        new(11, "Priest",      Race.Elf,   BaseClass.Mage,    Archetype.Healer),
-        new(12, "Inquisitor",  Race.Elf,   BaseClass.Mage,    Archetype.Nuker),
+        new(11, "Elf Priest",     Race.Elf,   BaseClass.Mage,    Archetype.Healer),
+        new(12, "Elf Apprentice", Race.Elf,   BaseClass.Mage,    Archetype.Nuker),
         // Human
-        new(13, "Knight",      Race.Human, BaseClass.Fighter, Archetype.Tank),
-        new(14, "Champion",    Race.Human, BaseClass.Fighter, Archetype.Warrior),
-        new(15, "Assassin",    Race.Human, BaseClass.Fighter, Archetype.Rogue),
+        new(13, "Human Knight",  Race.Human, BaseClass.Fighter, Archetype.Tank),
+        new(14, "Human Warrior", Race.Human, BaseClass.Fighter, Archetype.Warrior),
+        new(15, "Human Rogue",   Race.Human, BaseClass.Fighter, Archetype.Rogue),
         // (id 16 was Marksman, the Human archer — merged into Assassin; see the ARCHER MERGE note.)
         // (Cleric was the ONE 2nd class of eighteen carrying a stat bonus — +60 MP/+30 HP/+10 Def,
         //  never mirrored on the other seventeen. Deleted 2026-08-10 with the whole class-bonus
         //  layer; see the ClassFlatBonus note above.)
-        new(17, "Cleric",      Race.Human, BaseClass.Mage,    Archetype.Healer),
-        new(18, "Sorcerer",    Race.Human, BaseClass.Mage,    Archetype.Nuker),
+        new(17, "Human Priest",     Race.Human, BaseClass.Mage,    Archetype.Healer),
+        new(18, "Human Apprentice", Race.Human, BaseClass.Mage,    Archetype.Nuker),
         // (The God race's two classes — 98 Demigod / 99 Ascendant — were deleted 2026-08-07 with the
         //  rest of the God layer, playtest-19 `0b`. Ids 98/99 stay retired; never reuse them.)
     }.ToDictionary(c => c.Id);
