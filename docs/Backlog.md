@@ -849,9 +849,23 @@ closed · **`BL-93` opened** for the in-game visuals discussion you asked for (*
   **Step 1 is BUILT (protocol 29, see the CHANGELOG):** `Category`/`Role` on the wire, the family→prefab
   fallback chain, facing + attack/cast/death animation off messages that already existed, and a
   "3D models: off" quality preset. Everything still renders as spheres until art lands — deliberately.
-  ⤷ 🔴 **OWED: one Unity Editor session** (import, Rig=Humanoid, save as
-  `Assets/Resources/Models/humanoid.prefab`) — the steps are in `docs/guides/UnityClient.md`,
-  *"Dropping in a model"*. **A version bump and a new APK go with it.**
+  ⤷ ✅ **DONE 2026-08-28 (0.100.1) — the Editor session happened and `humanoid.prefab` exists.** Every
+  player, NPC and humanoid mob now has a body; the FBX source packs are committed beside it
+  (`Models/Characters/`, `Models/Monsters/`), your call: *"push all ill later remove/update them to
+  prefabs - if PoC works"*. APK 43 → **49 MB**.
+  ⤷ 🔵 **NEXT, and it needs no code:** **50 of the 83 mob templates are not humanoid** and wear a human
+  body today. Five prefabs from the pack you already committed fix 36 of them — the copy-and-paste
+  table is in `docs/guides/UnityClient.md`, *"The nine monster names"*. Demon/Angel/Plant have no
+  fitting model yet. ⚠ Monster FBXs stay on rig **Generic**; only bipeds get Humanoid.
+  ⤷ ⏸ **PREFAB AUTOMATION IS DEFERRED, your ruling 2026-08-28:** *"skip automating the prefabs for now
+  .. test do the poc atm .. then ill do 1-2 animals by hand if all holds then ill just give you fbx
+  files and u do it .. but now defered"*. **Do not build the tool or re-raise it** until the PoC is
+  played and you have hand-made an animal or two. The capability is real when you want it — a prefab
+  is plain YAML, and `PrefabUtility.SaveAsPrefabAsset` behind an `-executeMethod` (like
+  `CommandLineBuild`) emits them headless, ~40 lines. What is NOT automatable, and why you kept it:
+  which model suits a family, its scale, its Y offset. ⚠ A brand-new `.cs` in `Assets/Editor/` is not
+  in Unity's generated csproj, so that tool cannot be type-checked by the usual 18s
+  `dotnet build Assembly-CSharp.csproj` before its first headless run.
 
   Still un-started, in the order I'd do them: **terrain generated from the zone circles** (biggest
   perceived change per hour, needs no art) → creature families → **8 skill-FX archetypes** (one enum +

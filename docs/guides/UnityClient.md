@@ -425,17 +425,27 @@ it — you are renaming the part before the dot.
 The prefab file stays. **This step matters:** leaving it in the scene puts a second copy in the world
 at coordinates 0,0,0 and it will look like a bug later.
 
-2. Press **Ctrl+S** to save the scene.
+2. **Do not save the scene.** The prefab became a file on disk the moment you dragged it into
+   `Models` — nothing about it lives in the scene any more.
+
+⚠ **If Unity asks you for a file name, you pressed Ctrl+S in an unsaved scene.** That dialog is *Save
+Scene As*, not "save my prefab", and the folder it opens in is Unity's generic `Assets/Scenes` — it has
+nothing to do with your model. Press **Cancel**. If a *"Save changes?"* box appears later when you close
+the Editor or open another scene, choose **Don't Save**. Neither loses your prefab.
 
 ---
 
 ### Step 11 — see it in the game
 
-1. Build and install the APK the usual way (`pwsh tools/publish.ps1` — see
-   [Publishing.md](Publishing.md)). **A new prefab needs a new APK**: `Resources` is compiled into the
-   build, so nothing in the Editor reaches the phone without one.
-2. On the phone, log in.
-3. Open **Settings** and check **`3D models: ON`** (it is the default).
+1. **Close the Unity Editor.** The build is headless and a running `Unity.exe` locks the project —
+   `publish.ps1` refuses to start rather than produce a broken APK. Nothing is lost by closing: the
+   prefab is already a file (Step 10).
+2. Build and install the APK the usual way — **`pwsh tools/publish.ps1 -Apk`**, see
+   [Publishing.md](Publishing.md). ⚠ **The `-Apk` switch is not optional**: without it the script
+   builds the server zip only and no APK is produced. **A new prefab needs a new APK**: `Resources` is
+   compiled into the build, so nothing in the Editor reaches the phone without one.
+3. On the phone, log in.
+4. Open **Settings** and check **`3D models: ON`** (it is the default).
 
 Every character and humanoid mob is now your model instead of a sphere.
 
@@ -451,7 +461,7 @@ off the universal fallback by adding better-named files. **No code changes, ever
 
 | File in `Assets/Resources/Models/` | Who uses it |
 |---|---|
-| `player_<race>_<class>.prefab` | that one race+class, e.g. `player_ork_mage` |
+| `player_<race>_<class>.prefab` | that one race+class, e.g. `player_demon_mage` (races: `human`, `elf`, `demon`; classes: `fighter`, `mage`) |
 | `player_<class>.prefab` | every character of that base class |
 | `player.prefab` | every player character |
 | `mob_<category>_<role>.prefab` | e.g. `mob_animal_archer` — category × role from `MobCatalog` |
@@ -464,6 +474,42 @@ Lower-case, exactly as spelled by the enums: `animal`, `humanoid`, `undead`, `in
 `dragon`, `plant`, `magiccreature`, `angel` × `melee`, `archer`, `mage`.
 
 🔑 **Budget per FAMILY, not per mob.** Nine `mob_<category>` prefabs cover the entire bestiary.
+
+### The nine monster names — copy and paste
+
+`humanoid.prefab` alone dresses **33 of the 83** mob templates correctly (the orcs, bandits and
+guards — they *are* humanoid). The other **50 are wearing a human body** until the file below exists.
+Each row is independent: make one, that family is fixed, nothing else changes.
+
+**Copy the name from the first column. Lower case, one word, no `.prefab` suffix** (Unity adds it) —
+they are spelled exactly as the `MobCategory` enum, which is why it is `magiccreature` and not
+`magic_creature`.
+
+| Prefab name to type | Fixes | Creatures in that family | Suggested model from your pack |
+|---|---|---|---|
+| `mob_animal` | 11 | Ridgeback Pup, Ashen Wolf, Grizzly Bear | `Monsters/Rat`, `Bat`, `Frog`, `Snake` |
+| `mob_undead` | 9 | Skeleton Grunt, Grave Lich, Hall of Mirrors Wraith | `Monsters/Skeleton` |
+| `mob_insect` | 9 | Hook Spider, Mantis Worker, Plunder Beetle | `Monsters/Spider`, `Wasp` |
+| `mob_dragon` | 5 | Wyrm, Crimson Drake, Emberwyrm | `Monsters/Dragon` |
+| `mob_demon` | 5 | Cinder Imp, Ravener, Revenant Minion | *(no fitting model yet)* |
+| `mob_angel` | 3 | Radiant Scout, Radiant Berserker, Radiant Mage | *(no fitting model yet)* |
+| `mob_plant` | 2 | Valley Treant, Bogwood | *(no fitting model yet)* |
+| `mob_magiccreature` | 2 | Watcher Eye, Aether Wisp | `Monsters/Slime` |
+| `mob_humanoid` | 33 | orcs, bandits, guards | only if you want them ≠ players |
+| `mob` | any family with no file above | — | one generic beast |
+| `npc` | town NPCs | vendors, gatekeepers | — |
+
+The five with a suggested model cover **36 of the 50**. Demon, Angel and Plant have nothing suitable
+in the current pack — leave them; they keep falling through to `humanoid.prefab`, which is a body, if
+the wrong one.
+
+⚠ **`mob_humanoid` is the one row you probably do NOT need.** Without it, humanoid mobs land on
+`humanoid.prefab` — the same body your players use, which is usually right. Add it only when you want
+an orc to read as visibly *not* a player.
+
+⚠ **Rig type is per FBX, and monsters are not Humanoid.** Your `Adventurer` was set to Humanoid in
+Step 4 because it is a biped; a spider, slime or dragon must stay on the default **Generic**. Forcing
+Humanoid onto a non-biped mangles the skeleton. Leave the monster FBXs' import settings alone.
 
 ### Animator parameters — all optional
 

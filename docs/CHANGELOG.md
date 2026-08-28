@@ -7,12 +7,40 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.100.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.100.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-08-28 (latest) — 0.100.0: the base stat table is rebalanced, and 153 becomes a rule
+## 2026-08-28 (latest) — 0.100.1: `BL-93` gets a body — the first prefab lands
+
+The Editor half of `BL-93` is done: `Assets/Resources/Models/humanoid.prefab` exists, so the client
+draws a real model instead of a sphere for **every player, every NPC and every humanoid mob at once**
+— the universal last resort at the bottom of `EntityManager.Keys`. No code changed; the loader has
+been waiting for the file since protocol 29.
+
+The FBX source packs are committed alongside it (`Models/Characters/`, `Models/Monsters/` — 31 files,
+16 MB). Owner: *"push all ill later remove/update them to prefabs - if PoC works"*. They are raw
+sources, not yet wired to anything; only `humanoid.prefab` is reachable by the loader today.
+
+⚠ **50 of the 83 mob templates are not humanoid** (11 animal, 9 undead, 9 insect, 5 dragon,
+5 demon, 3 angel, 2 plant, 2 magiccreature) and currently fall through to the human body. Each is
+peeled off by adding `mob_<category>.prefab` — same Editor procedure, different file name, still no
+code.
+
+### Three fixes to `docs/guides/UnityClient.md`, all found by walking the guide with him
+
+- **Step 10 told you to save the scene.** It contradicted the guide's own preamble (*"you never touch
+  a scene that gets saved"*) and, in an unsaved scene, Ctrl+S opens **Save Scene As** pointing at
+  `Assets/Scenes` — which reads as "Unity will not save my prefab" when the prefab was already written
+  to disk the moment it was dragged into `Models`. Now: do not save, press Cancel.
+- **Step 11 said `pwsh tools/publish.ps1`, without `-Apk`.** That builds the server zip and **no APK
+  at all** — you would reinstall the old build and conclude the model had failed.
+- Step 11 never said to **close the Editor first**; the headless build refuses to run while
+  `Unity.exe` holds the project lock.
+- The naming table still said `player_ork_mage`, stale since the `BL-101` race rename → `player_demon_mage`.
+
+## 2026-08-28 — 0.100.0: the base stat table is rebalanced, and 153 becomes a rule
 
 He filled in the empty Stats table in `docs/data/classes_skills_csv/README.md`, then asked two
 questions about his own numbers: *"is the sum right"* and *"i want to fix the 47 demons atk.. is way
