@@ -1,299 +1,299 @@
-LEARN @ LVL, NAME,TYPE,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,Gold,SP Bottles,REPLACES,RACE,Comment
-,,,,,,,,,,,,,,,,==== SP CONSUMATION PER LEVEL ====
-,,,,,,,,,,,,,,,,76 - 6.5kk SP + 1kk Gold
-,,,,,,,,,,,,,,,,77 - 11kk SP + 1kk Gold
-,,,,,,,,,,,,,,,,78 - 16kk SP + 1kk Gold
-,,,,,,,,,,,,,,,,79 - 80kk SP + 1kk Gold
-,,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,,80 - 150kk SP + 10kk gold (New Skills/Ultimates)| Old-LvlUp -> 5kk Gold 
-,,,,,,,,,,,,,,,,81 - 200kk SP + 25kk gold (New Skills/Ultimates)| Old-LvlUp -> 7.5kk Gold 
-,,,,,,,,,,,,,,,,82 - 300kk SP + 50kk gold (New Skills/Ultimates)| Old-LvlUp -> 10kk Gold 
-,,,,,,,,,,,,,,,,83 - 500kk SP + 100kk gold (New Skills/Ultimates)| Old-LvlUp -> 15kk Gold 
-,,,,,,,,,,,,,,,,84 - 100kk gold + 2-SP bottles (New Skills/Ultimates)| Old-LvlUp -> 30kk Gold 
-,,,,,,,,,,,,,,,,85 - 100kk gold + 5-SP bottles (New Skills/Ultimates)| Old-LvlUp -> 50kk Gold 
-,,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,,86 - Old-LvlUp -> 75kk Gold 
-,,,,,,,,,,,,,,,,87 - Old-LvlUp -> 75kk Gold 
-,,,,,,,,,,,,,,,,88 - Old-LvlUp -> 100kk Gold 
-,,,,,,,,,,,,,,,,89 - Old-LvlUp -> 100kk Gold 
-,,,,,,,,,,,,,,,,90 - Old-LvlUp -> 100kk Gold 
-,,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,,1 SP bottle = 1kkk SP + 100kk Gold (sells back for 100kk; drinking returns the 1kkk SP and no gold)
-,,,,,,,,,,,,,,,,==================================
-,,,,,,,,,,,,,,,,----------------------------Anti magic----------------------------
-76,Anti magic,Passive,0,0,self/single,0,0,0,"magic def +113, mRes +30%",0,6.5kk,1kk
-77,Anti magic,Passive,0,0,self/single,0,0,0,"magic def +116, mRes +30%",0,11kk,1kk
-78,Anti magic,Passive,0,0,self/single,0,0,0,"magic def +119, mRes +30%",0,16kk,1kk
-79,Anti magic,Passive,0,0,self/single,0,0,0,"magic def +121, mRes +30%",0,80kk,1kk
-80,Anti magic,Passive,0,0,self/single,0,0,0,"magic def +123, mRes +30%",0,0,5kk
-81,Anti magic,Passive,0,0,self/single,0,0,0,"magic def +125, mRes +30%",0,0,7.5kk
-82,Anti magic,Passive,0,0,self/single,0,0,0,"magic def +127, mRes +30%",0,0,10kk
-83,Anti magic,Passive,0,0,self/single,0,0,0,"magic def +129, mRes +30%",0,0,15kk
-84,Anti magic,Passive,0,0,self/single,0,0,0,"magic def +131, mRes +30%",0,0,30kk
-85,Anti magic,Passive,0,0,self/single,0,0,0,"magic def +133, mRes +30%",0,0,50kk
-86,Anti magic,Passive,0,0,self/single,0,0,0,"magic def +135, mRes +35%",0,0,75kk
-87,Anti magic,Passive,0,0,self/single,0,0,0,"magic def +138, mRes +35%",0,0,100kk
-88,Anti magic,Passive,0,0,self/single,0,0,0,"magic def +140, mRes +35%",0,0,100kk
-89,Anti magic,Passive,0,0,self/single,0,0,0,"magic def +144, mRes +35%",0,0,100kk
-90,Anti magic,Passive,0,0,self/single,0,0,0,"magic def +149, mRes +35%",0,0,100kk
-,,,,,,,,,,,,,,,,----------------------------Spellcaster Weapon Mastery----------------------------
-76,Spellcaster Weapon Mastery,Passive,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +101, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,6.5kk,1kk
-77,Spellcaster Weapon Mastery,Passive,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +102, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,11kk,1kk
-78,Spellcaster Weapon Mastery,Passive,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +104, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,16kk,1kk
-79,Spellcaster Weapon Mastery,Passive,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +105, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,80kk,1kk
-80,Spellcaster Weapon Mastery,Passive,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +106, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,5kk
-81,Spellcaster Weapon Mastery,Passive,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +108, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,7.5kk
-82,Spellcaster Weapon Mastery,Passive,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +109, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,10kk
-83,Spellcaster Weapon Mastery,Passive,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +110, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,15kk
-84,Spellcaster Weapon Mastery,Passive,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +112, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,30kk
-85,Spellcaster Weapon Mastery,Passive,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +113, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,50kk
-86,Spellcaster Weapon Mastery,Passive,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +115, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,75kk
-87,Spellcaster Weapon Mastery,Passive,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +116, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,100kk
-88,Spellcaster Weapon Mastery,Passive,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +117, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,100kk
-89,Spellcaster Weapon Mastery,Passive,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +119, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,100kk
-90,Spellcaster Weapon Mastery,Passive,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +120, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,100kk
-,,,,,,,,,,,,,,,,----------------------------Healer Armor Mastery----------------------------
-76,Healer Armor Mastery,Passive,0,0,self/single,0,0,0,"Robe:  pDef +89, maxMP +220; mDef  +2%",0,6.5kk,1kk
-77,Healer Armor Mastery,Passive,0,0,self/single,0,0,0,"Robe:  pDef +91, maxMP +220; mDef  +4%",0,11kk,1kk
-78,Healer Armor Mastery,Passive,0,0,self/single,0,0,0,"Robe:  pDef +92, maxMP +250; mDef  +5%; Decrease Mp Consumption with 5%",0,16kk,1kk
-79,Healer Armor Mastery,Passive,0,0,self/single,0,0,0,"Robe:  pDef +93, maxMP +250; mDef  +7%; Decrease Mp Consumption with 5%",0,80kk,1kk
-80,Healer Armor Mastery,Passive,0,0,self/single,0,0,0,"Robe:  pDef +95, maxMP +250; mDef  +8%; Decrease Mp Consumption with 5%",0,0,5kk
-81,Healer Armor Mastery,Passive,0,0,self/single,0,0,0,"Robe:  pDef +96, maxMP +290; mDef +10%; Decrease Mp Consumption with 8%",0,0,7.5kk
-82,Healer Armor Mastery,Passive,0,0,self/single,0,0,0,"Robe:  pDef +97, maxMP +290; mDef +11%; Decrease Mp Consumption with 8%",0,0,10kk
-83,Healer Armor Mastery,Passive,0,0,self/single,0,0,0,"Robe:  pDef +99, maxMP +300; mDef +13%; Decrease Mp Consumption with 8%",0,0,15kk
-84,Healer Armor Mastery,Passive,0,0,self/single,0,0,0,"Robe: pDef +100, maxMP +300; mDef +14%; Decrease Mp Consumption with 8%",0,0,30kk
-85,Healer Armor Mastery,Passive,0,0,self/single,0,0,0,"Robe: pDef +101, maxMP +300; mDef +16%; Decrease Mp Consumption with 8%",0,0,50kk
-86,Healer Armor Mastery,Passive,0,0,self/single,0,0,0,"Robe: pDef +103, maxMP +330; mDef +17%; Decrease Mp Consumption with 10%",0,0,75kk
-87,Healer Armor Mastery,Passive,0,0,self/single,0,0,0,"Robe: pDef +104, maxMP +330; mDef +19%; Decrease Mp Consumption with 10%",0,0,100kk
-88,Healer Armor Mastery,Passive,0,0,self/single,0,0,0,"Robe: pDef +105, maxMP +350; mDef +20%; Decrease Mp Consumption with 10%",0,0,100kk
-89,Healer Armor Mastery,Passive,0,0,self/single,0,0,0,"Robe: pDef +107, maxMP +350; mDef +22%; Decrease Mp Consumption with 10%",0,0,100kk
-90,Healer Armor Mastery,Passive,0,0,self/single,0,0,0,"Robe: pDef +108, maxMP +400; mDef +25%; Decrease Mp Consumption with 10%",0,0,100kk
-,,,,,,,,,,,,,,,,----------------------------Healer Shield Mastery----------------------------
-76,Healers Shield Mastery,Passive,0,0,self/single,0,0,0,When Sheild is equiped increase healing power and MP regeneration with 10%,0,6.5kk,1kk
-,,,,,,,,,,,,,,,,----------------------------Great Heal----------------------------
-76,Great Heal,Magic/Heal,600,0,target/single,5,3,0,heal with power  865,122,6.5kk,1k
-77,Great Heal,Magic/Heal,600,0,target/single,5,3,0,heal with power  875,124,11kk,1kk
-78,Great Heal,Magic/Heal,600,0,target/single,5,3,0,heal with power  890,126,16kk,1kk
-79,Great Heal,Magic/Heal,600,0,target/single,5,3,0,heal with power  900,128,80kk,1kk
-80,Great Heal,Magic/Heal,600,0,target/single,5,3,0,heal with power  915,130,0,5kk
-81,Great Heal,Magic/Heal,600,0,target/single,5,3,0,heal with power  920,132,0,7.5kk
-82,Great Heal,Magic/Heal,600,0,target/single,5,3,0,heal with power  955,134,0,10kk
-83,Great Heal,Magic/Heal,600,0,target/single,5,3,0,heal with power  960,136,0,15kk
-84,Great Heal,Magic/Heal,600,0,target/single,5,3,0,heal with power  980,138,0,30kk
-85,Great Heal,Magic/Heal,600,0,target/single,5,3,0,heal with power 1000,140,0,50kk
-86,Great Heal,Magic/Heal,600,0,target/single,5,3,0,heal with power 1050,142,0,75kk
-87,Great Heal,Magic/Heal,600,0,target/single,5,3,0,heal with power 1100,144,0,100kk
-88,Great Heal,Magic/Heal,600,0,target/single,5,3,0,heal with power 1200,146,0,100kk
-89,Great Heal,Magic/Heal,600,0,target/single,5,3,0,heal with power 1300,148,0,100kk
-90,Great Heal,Magic/Heal,600,0,target/single,5,3,0,heal with power 1400,150,0,100kk
-,,,,,,,,,,,,,,,,----------------------------Ultimate Heal----------------------------
-76,Ultimate Heal,Magic/Heal,600,0,target/single,5,1,0,heal with power 1100. Consumes 2 skill stone,122,6.5kk,1k
-78,Ultimate Heal,Magic/Heal,600,0,target/single,5,1,0,heal with power 1200. Consumes 2 skill stone,126,16kk,1kk
-80,Ultimate Heal,Magic/Heal,600,0,target/single,5,1,0,heal with power 1300. Consumes 2 skill stone,130,0,5kk
-82,Ultimate Heal,Magic/Heal,600,0,target/single,5,1,0,heal with power 1400. Consumes 2 skill stone,134,0,10kk
-84,Ultimate Heal,Magic/Heal,600,0,target/single,5,1,0,heal with power 1500. Consumes 2 skill stone,138,0,30kk
-86,Ultimate Heal,Magic/Heal,600,0,target/single,5,1,0,heal with power 1600. Consumes 2 skill stone,142,0,75kk
-88,Ultimate Heal,Magic/Heal,600,0,target/single,5,1,0,heal with power 1800. Consumes 2 skill stone,146,0,100kk
-90,Ultimate Heal,Magic/Heal,600,0,target/single,5,1,0,heal with power 2000. Consumes 2 skill stone,150,0,100kk
-,,,,,,,,,,,,,,,,----------------------------Ultimate party Heal----------------------------
-76,Ultimate party Heal,Magic/Heal,0,1000,party/aoe,7,3,0,heal with power 1100. Consumes 5 skill stone,244,6.5kk,1k
-78,Ultimate party Heal,Magic/Heal,0,1000,party/aoe,7,3,0,heal with power 1200. Consumes 5 skill stone,252,16kk,1kk
-80,Ultimate party Heal,Magic/Heal,0,1000,party/aoe,7,3,0,heal with power 1300. Consumes 5 skill stone,260,0,5kk
-82,Ultimate party Heal,Magic/Heal,0,1000,party/aoe,7,3,0,heal with power 1400. Consumes 5 skill stone,268,0,10kk
-84,Ultimate party Heal,Magic/Heal,0,1000,party/aoe,7,3,0,heal with power 1500. Consumes 5 skill stone,276,0,30kk
-86,Ultimate party Heal,Magic/Heal,0,1000,party/aoe,7,3,0,heal with power 1600. Consumes 5 skill stone,284,0,75kk
-88,Ultimate party Heal,Magic/Heal,0,1000,party/aoe,7,3,0,heal with power 1800. Consumes 5 skill stone,292,0,100kk
-90,Ultimate party Heal,Magic/Heal,0,1000,party/aoe,7,3,0,heal with power 2000. Consumes 5 skill stone,300,0,100kk
-,,,,,,,,,,,,,,,,----------------------------Party Great Heal----------------------------
-76,Party Great Heal,Magic/Heal,0,1000,party/aoe,7,6,0,heal party with power  720,244,6.5kk,1k
-77,Party Great Heal,Magic/Heal,0,1000,party/aoe,7,6,0,heal party with power  730,248,11kk,1kk
-78,Party Great Heal,Magic/Heal,0,1000,party/aoe,7,6,0,heal party with power  740,252,16kk,1kk
-79,Party Great Heal,Magic/Heal,0,1000,party/aoe,7,6,0,heal party with power  750,256,80kk,1kk
-80,Party Great Heal,Magic/Heal,0,1000,party/aoe,7,6,0,heal party with power  760,260,0,5kk
-81,Party Great Heal,Magic/Heal,0,1000,party/aoe,7,6,0,heal party with power  770,264,0,7.5kk
-82,Party Great Heal,Magic/Heal,0,1000,party/aoe,7,6,0,heal party with power  775,268,0,10kk
-83,Party Great Heal,Magic/Heal,0,1000,party/aoe,7,6,0,heal party with power  780,272,0,15kk
-84,Party Great Heal,Magic/Heal,0,1000,party/aoe,7,6,0,heal party with power  790,276,0,30kk
-85,Party Great Heal,Magic/Heal,0,1000,party/aoe,7,6,0,heal party with power  800,280,0,50kk
-86,Party Great Heal,Magic/Heal,0,1000,party/aoe,7,6,0,heal party with power  830,284,0,75kk
-87,Party Great Heal,Magic/Heal,0,1000,party/aoe,7,6,0,heal party with power  860,288,0,100kk
-88,Party Great Heal,Magic/Heal,0,1000,party/aoe,7,6,0,heal party with power  900,292,0,100kk
-89,Party Great Heal,Magic/Heal,0,1000,party/aoe,7,6,0,heal party with power  950,296,0,100kk
-90,Party Great Heal,Magic/Heal,0,1000,party/aoe,7,6,0,heal party with power 1000,300,0,100kk
-,,,,,,,,,,,,,,,,----------------------------Quick Great Heal----------------------------
-76,Quick Great Heal,Magic/Heal,600,0,target/single,2,1,0,heal with power  865,181,6.5kk,1k,,,Human
-77,Quick Great Heal,Magic/Heal,600,0,target/single,2,1,0,heal with power  875,183,11kk,1kk,,,Human
-78,Quick Great Heal,Magic/Heal,600,0,target/single,2,1,0,heal with power  890,185,16kk,1kk,,,Human
-79,Quick Great Heal,Magic/Heal,600,0,target/single,2,1,0,heal with power  900,190,80kk,1kk,,,Human
-80,Quick Great Heal,Magic/Heal,600,0,target/single,2,1,0,heal with power  915,192,0,5kk,,,Human
-81,Quick Great Heal,Magic/Heal,600,0,target/single,2,1,0,heal with power  920,195,0,7.5kk,,,Human
-82,Quick Great Heal,Magic/Heal,600,0,target/single,2,1,0,heal with power  955,200,0,10kk,,,Human
-83,Quick Great Heal,Magic/Heal,600,0,target/single,2,1,0,heal with power  960,202,0,15kk,,,Human
-84,Quick Great Heal,Magic/Heal,600,0,target/single,2,1,0,heal with power  980,204,0,30kk,,,Human
-85,Quick Great Heal,Magic/Heal,600,0,target/single,2,1,0,heal with power 1000,206,0,50kk,,,Human
-86,Quick Great Heal,Magic/Heal,600,0,target/single,2,1,0,heal with power 1050,208,0,75kk,,,Human
-87,Quick Great Heal,Magic/Heal,600,0,target/single,2,1,0,heal with power 1100,210,0,100kk,,,Human
-88,Quick Great Heal,Magic/Heal,600,0,target/single,2,1,0,heal with power 1200,215,0,100kk,,,Human
-89,Quick Great Heal,Magic/Heal,600,0,target/single,2,1,0,heal with power 1300,218,0,100kk,,,Human
-90,Quick Great Heal,Magic/Heal,600,0,target/single,2,1,0,heal with power 1400,220,0,100kk,,,Human
-,,,,,,,,,,,,,,,,---------------------------Healer Blessing----------------------------
-76,Healer Blessing,Magic/Heal,600,0,target/single,3,3,0,Cure bleed and potions of rank 10 or lower and heals the target with  780 power,122,6.5kk,1k,,,Elf
-77,Healer Blessing,Magic/Heal,600,0,target/single,3,3,0,Cure bleed and potions of rank 10 or lower and heals the target with  790 power,124,11kk,1kk,,,Elf
-78,Healer Blessing,Magic/Heal,600,0,target/single,3,3,0,Cure bleed and potions of rank 10 or lower and heals the target with  800 power,126,16kk,1kk,,,Elf
-79,Healer Blessing,Magic/Heal,600,0,target/single,3,3,0,Cure bleed and potions of rank 10 or lower and heals the target with  810 power,128,80kk,1kk,,,Elf
-80,Healer Blessing,Magic/Heal,600,0,target/single,3,3,0,Cure bleed and potions of rank 10 or lower and heals the target with  820 power,130,0,5kk,,,Elf
-81,Healer Blessing,Magic/Heal,600,0,target/single,3,3,0,Cure bleed and potions of rank 10 or lower and heals the target with  830 power,132,0,7.5kk,,,Elf
-82,Healer Blessing,Magic/Heal,600,0,target/single,3,3,0,Cure bleed and potions of rank 10 or lower and heals the target with  850 power,134,0,10kk,,,Elf
-83,Healer Blessing,Magic/Heal,600,0,target/single,3,3,0,Cure bleed and potions of rank 10 or lower and heals the target with  870 power,136,0,15kk,,,Elf
-84,Healer Blessing,Magic/Heal,600,0,target/single,3,3,0,Cure bleed and potions of rank 10 or lower and heals the target with  890 power,138,0,30kk,,,Elf
-85,Healer Blessing,Magic/Heal,600,0,target/single,3,3,0,Cure bleed and potions of rank 10 or lower and heals the target with  910 power,140,0,50kk,,,Elf
-86,Healer Blessing,Magic/Heal,600,0,target/single,3,3,0,Cure bleed and potions of rank 10 or lower and heals the target with  950 power,142,0,75kk,,,Elf
-87,Healer Blessing,Magic/Heal,600,0,target/single,3,3,0,Cure bleed and potions of rank 10 or lower and heals the target with  990 power,144,0,100kk,,,Elf
-88,Healer Blessing,Magic/Heal,600,0,target/single,3,3,0,Cure bleed and potions of rank 10 or lower and heals the target with 1080 power,146,0,100kk,,,Elf
-89,Healer Blessing,Magic/Heal,600,0,target/single,3,3,0,Cure bleed and potions of rank 10 or lower and heals the target with 1170 power,148,0,100kk,,,Elf
-90,Healer Blessing,Magic/Heal,600,0,target/single,3,3,0,Cure bleed and potions of rank 10 or lower and heals the target with 1260 power,150,0,100kk,,,Elf
-,,,,,,,,,,,,,,,,---------------------------Healer Blessing----------------------------
-83,Healer Party Blessing,Magic/Heal,0,1000,party/aoe,3,9,0,Cure bleed and potions of rank 10 or lower and heals the party with  780 power,272,500kk,100kk,,,Elf
-84,Healer Party Blessing,Magic/Heal,0,1000,party/aoe,3,9,0,Cure bleed and potions of rank 10 or lower and heals the party with  790 power,276,0,30kk,,,Elf
-85,Healer Party Blessing,Magic/Heal,0,1000,party/aoe,3,9,0,Cure bleed and potions of rank 10 or lower and heals the party with  800 power,280,0,50kk,,,Elf
-86,Healer Party Blessing,Magic/Heal,0,1000,party/aoe,3,9,0,Cure bleed and potions of rank 10 or lower and heals the party with  830 power,284,0,75kk,,,Elf
-87,Healer Party Blessing,Magic/Heal,0,1000,party/aoe,3,9,0,Cure bleed and potions of rank 10 or lower and heals the party with  860 power,288,0,100kk,,,Elf
-88,Healer Party Blessing,Magic/Heal,0,1000,party/aoe,3,9,0,Cure bleed and potions of rank 10 or lower and heals the party with  900 power,292,0,100kk,,,Elf
-89,Healer Party Blessing,Magic/Heal,0,1000,party/aoe,3,9,0,Cure bleed and potions of rank 10 or lower and heals the party with  950 power,296,0,100kk,,,Elf
-90,Healer Party Blessing,Magic/Heal,0,1000,party/aoe,3,9,0,Cure bleed and potions of rank 10 or lower and heals the party with 1000 power,300,0,100kk,,,Elf
-,,,,,,,,,,,,,,,,----------------------------Healing Totem----------------------------
-76,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +152/s,520,6.5kk,1k,,,Demon
-77,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +153/s,523,11kk,1kk,,,Demon
-78,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +154/s,526,16kk,1kk,,,Demon
-79,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +155/s,529,80kk,1kk,,,Demon
-80,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +156/s,532,0,5kk,,,Demon
-81,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +157/s,535,0,7.5kk,,,Demon
-82,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +159/s,541,0,10kk,,,Demon
-83,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +162/s,550,0,15kk,,,Demon
-84,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +166/s,562,0,30kk,,,Demon
-85,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +170/s,574,0,50kk,,,Demon
-86,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +174/s,586,0,75kk,,,Demon
-87,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +178/s,598,0,100kk,,,Demon
-88,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +182/s,610,0,100kk,,,Demon
-89,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +186/s,622,0,100kk,,,Demon
-90,Healing Totem,Magic/Heal,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +200/s,634,0,100kk,,,Demon
-,,,,,,,,,,,,,,,,----------------------------Resurrection----------------------------
-76,Resurrection,Magic/Heal,600,0,target/single,5,5,0,Revive at 35% HP/MP; restore 100% of lost exp.,205,6.5kk,1kk
-80,Resurrection,Magic/Heal,600,0,target/single,5,5,0,Revive at 40% HP/MP; restore 100% of lost exp.,250,0,5kk
-,,,,,,,,,,,,,,,,----------------------------Resurrection Field----------------------------
-76,Resurrection Field,Magic/Heal,0,900,party/aoe,10,60,0,Revive Dead allies 900 range around the caster at 35% HP/MP; restore 70% of lost exp.,410,6.5kk,1kk
-80,Resurrection Field,Magic/Heal,0,900,party/aoe,5,60,0,Revive Dead allies 900 range around the caster at 40% HP/MP; restore 70% of lost exp.,500,0,5kk
-,,,,,,,,,,,,,,,,----------------------------Rite of Preservation----------------------------
-83,Rite of Preservation,Magic/Buff,600,0,party/single,1,3600,3600,"Blesses an ally (or yourself): they DIE normally, keep their buffs, and are offered a resurrection where they fell at 30% HP and MP, losing NO experience. The offer waits as long as they like. Lasts 60 minutes or until it saves them. 60 minute reuse., Consumes 5 Holy stone",500,500kk,100kk
-,,,,,,,,,,,,,,,,----------------------------Urgent Party Heal----------------------------
-83,Urgent Great Heal,Magic/Heal,0,1000,target/aoe,3,5,0,"Heals 10 most injured friendly target around the caster (900 range) starting with most injured one by 30% and every next target is healed -2% less form the one before, Consumes 5 skill stones",500,500kk,100kk,,[Urgent Heal],,heals everyone in 900 range and each next target is healed with 2% less (caster is always healed - just placed based on injury) -> 30 -> 28 -> 26 -> .. -> 10%; find the 10 injured and include the caster -> order by % hp missing and heal from top 30-2x(index)%
-,,,,,,,,,,,,,,,,---------------------------Restoration----------------------------
-83,Elven Restoration,Magic/Heal,900,900,party/aoe,5,3600,0,Fully Restores MP (100%) and Restore HP with 50% to the party,300,500kk,100kk,,,Elf
-83,Life Restoration,Magic/Heal,900,900,party/aoe,5,3600,0,Fully Restores HP (100%) and Restores MP with 50% to the party,300,500kk,100kk,,,Human
-83,Spirit Restoration,Magic/Heal,900,900,party/aoe,5,3600,15,Restore MP/HP +30% and Increase Healing received with 30% to the pary,300,500kk,100kk,,,Demon
-,,,,,,,,,,,,,,,,---------------------------Mark----------------------------
-78,Holy Mark,Magic/Heal,900,0,party/single,5,5,300,"Increases: Atk +10%, Def +20%, Atk/Cast.Speed +20%, SPT Debuff Resists +10%, M.Acc +4, M.Crit.Rate +20%, Max MP +20%, Consumes 4 skill stones, Do not Stack with Other 'Mark' Skills",300,16kk,1kk,,,Elf,Same Principle as Great Might/Bulwark
-78,Life Mark,Magic/Heal,900,0,party/single,5,5,300,"Increases: Atk +10%, Def +20%, Atk/Cast.Speed +20%, CON Debuff Resists +5%, P.Acc +4, P.Crit.Rate +20%, Max HP +20%, Consumes 4 skill stones, Do not Stack with Other 'Mark' Skills",300,16kk,1kk,,,Human
-78,Blood Mark,Magic/Heal,900,0,party/single,5,5,300,"Increases: Atk +10%, Def +20%, Atk/Cast.Speed +20%, Mele vampirism +3%, Acc +3, Crit.Dmg +20%, Natural Regen +20%, Consumes 4 skill stones, Do not Stack with Other 'Mark' Skills",300,16kk,1kk,,,Demon
-,,,,,,,,,,,,,,,,----------------------------Healers Power----------------------------
-80,Healers Power,Magic/Buff,0,0,self/single,1,300,15,"Increase Healing Power +1000",100,150kk,10kk
-83,Healers Power,Magic/Buff,0,0,self/single,1,300,15,"Increase Healing Power +1250",150,0,15kk
-85,Healers Power,Magic/Buff,0,0,self/single,1,300,15,"Increase Healing Power +1500",200,0,50kk
-87,Healers Power,Magic/Buff,0,0,self/single,1,300,15,"Increase Healing Power +1750",250,0,100kk
-90,Healers Power,Magic/Buff,0,0,self/single,1,300,15,"Increase Healing Power +2000",300,0,100kk
-,,,,,,,,,,,,,,,,----------------------------Mana Blessing----------------------------
-76,Mana Blessing,Magic/Buff,600,0,party/single,1,1,1200,Decrease Physical MP Cost by 21% and Magic MP Cost by 11%,130,6.5kk,1kk
-78,Mana Blessing,Magic/Buff,600,0,party/single,1,1,1200,Decrease Physical MP Cost by 22% and Magic MP Cost by 12%,140,16kk,1kk
-80,Mana Blessing,Magic/Buff,600,0,party/single,1,1,1200,Decrease Physical MP Cost by 23% and Magic MP Cost by 13%,150,0,5kk
-82,Mana Blessing,Magic/Buff,600,0,party/single,1,1,1200,Decrease Physical MP Cost by 24% and Magic MP Cost by 14%,160,0,10kk
-84,Mana Blessing,Magic/Buff,600,0,party/single,1,1,1200,Decrease Physical MP Cost by 25% and Magic MP Cost by 15%,170,0,30kk
-86,Mana Blessing,Magic/Buff,600,0,party/single,1,1,1200,Decrease Physical MP Cost by 26% and Magic MP Cost by 16%,180,0,75kk
-88,Mana Blessing,Magic/Buff,600,0,party/single,1,1,1200,Decrease Physical MP Cost by 28% and Magic MP Cost by 18%,190,0,100kk
-90,Mana Blessing,Magic/Buff,600,0,party/single,1,1,1200,Decrease Physical MP Cost by 30% and Magic MP Cost by 20%,200,0,100kk
-,,,,,,,,,,,,,,,,----------------------------Arcane Resistance----------------------------
-76,Arcane Resistance,Magic/Buff,600,0,party/single,1,1,1200,30% resist to Buff removal,130,6.5kk,1kk
-,,,,,,,,,,,,,,,,----------------------------Fortitude----------------------------
-76,Fortitude,Magic/Buff,600,0,party/single,1,1,1200,43% resist to CON debuffs,130,6.5kk,1kk
-78,Fortitude,Magic/Buff,600,0,party/single,1,1,1200,47% resist to CON debuffs,140,16kk,1kk
-80,Fortitude,Magic/Buff,600,0,party/single,1,1,1200,50% resist to CON debuffs,150,0,5kk
-82,Fortitude,Magic/Buff,600,0,party/single,1,1,1200,54% resist to CON debuffs,160,0,10kk
-84,Fortitude,Magic/Buff,600,0,party/single,1,1,1200,57% resist to CON debuffs,170,0,30kk
-86,Fortitude,Magic/Buff,600,0,party/single,1,1,1200,60% resist to CON debuffs,180,0,75kk
-88,Fortitude,Magic/Buff,600,0,party/single,1,1,1200,63% resist to CON debuffs,190,0,100kk
-90,Fortitude,Magic/Buff,600,0,party/single,1,1,1200,65% resist to CON debuffs,200,0,100kk
-,,,,,,,,,,,,,,,,----------------------------Antidote----------------------------
-76,Antidote,Magic/Heal,600,0,party/single,0.8,3,0,"Cures poison, venom and bleed of rank 10 or lower from an ally (or self).",72,6.5kk,1kk
-,,,,,,,,,,,,,,,,----------------------------Holy Blessing----------------------------
-78,Holy Blessing,Magic/Heal,600,0,party/single,0.8,3,0,"Remove every debuff (burning and venom 11 as well) comsumes 1 holy stones",72,6.5kk,1kk,,,,'Holy Stone' is the same as 'Elemental Stone'
-,,,,,,,,,,,,,,,,----------------------------Holy Ray----------------------------
-76,Holy Ray,Magic/Dmg,600,0,enemy/single,2.5,1,0,m.Atk  +88,69,6.5kk,1kk
-77,Holy Ray,Magic/Dmg,600,0,enemy/single,2.5,1,0,m.Atk  +90,71,11kk,1kk
-78,Holy Ray,Magic/Dmg,600,0,enemy/single,2.5,1,0,m.Atk  +91,73,16kk,1kk
-79,Holy Ray,Magic/Dmg,600,0,enemy/single,2.5,1,0,m.Atk  +93,77,80kk,1kk
-80,Holy Ray,Magic/Dmg,600,0,enemy/single,2.5,1,0,m.Atk  +94,79,0,5kk
-81,Holy Ray,Magic/Dmg,600,0,enemy/single,2.5,1,0,m.Atk  +96,91,0,7.5kk
-82,Holy Ray,Magic/Dmg,600,0,enemy/single,2.5,1,0,m.Atk  +99,95,0,10kk
-83,Holy Ray,Magic/Dmg,600,0,enemy/single,2.5,1,0,m.Atk +100,97,0,15kk
-84,Holy Ray,Magic/Dmg,600,0,enemy/single,2.5,1,0,m.Atk +101,99,0,30kk
-85,Holy Ray,Magic/Dmg,600,0,enemy/single,2.5,1,0,m.Atk +102,103,0,50kk
-86,Holy Ray,Magic/Dmg,600,0,enemy/single,2.5,1,0,m.Atk +103,105,0,75kk
-87,Holy Ray,Magic/Dmg,600,0,enemy/single,2.5,1,0,m.Atk +105,107,0,100kk
-88,Holy Ray,Magic/Dmg,600,0,enemy/single,2.5,1,0,m.Atk +106,111,0,100kk
-89,Holy Ray,Magic/Dmg,600,0,enemy/single,2.5,1,0,m.Atk +108,113,0,100kk
-90,Holy Ray,Magic/Dmg,600,0,enemy/single,2.5,1,0,m.Atk +109,115,0,100kk
-,,,,,,,,,,,,,,,,----------------------------Mana Ray----------------------------
-76,Mana Ray,Magic/Active,600,0,enemy/single,2,2,0,Damages the MP of an enemy with +145 Power (Half effect on monsters),362,6.5kk,1k
-78,Mana Ray,Magic/Active,600,0,enemy/single,2,2,0,Damages the MP of an enemy with +150 Power (Half effect on monsters),370,16kk,1kk
-80,Mana Ray,Magic/Active,600,0,enemy/single,2,2,0,Damages the MP of an enemy with +155 Power (Half effect on monsters),384,0,5kk
-82,Mana Ray,Magic/Active,600,0,enemy/single,2,2,0,Damages the MP of an enemy with +160 Power (Half effect on monsters),400,0,10kk
-84,Mana Ray,Magic/Active,600,0,enemy/single,2,2,0,Damages the MP of an enemy with +165 Power (Half effect on monsters),408,0,30kk
-86,Mana Ray,Magic/Active,600,0,enemy/single,2,2,0,Damages the MP of an enemy with +170 Power (Half effect on monsters),416,0,75kk
-88,Mana Ray,Magic/Active,600,0,enemy/single,2,2,0,Damages the MP of an enemy with +175 Power (Half effect on monsters),430,0,100kk
-90,Mana Ray,Magic/Active,600,0,enemy/single,2,2,0,Damages the MP of an enemy with +180 Power (Half effect on monsters),440,0,100kk
-,,,,,,,,,,,,,,,,----------------------------Mana Strain----------------------------
-76,Mana Strain,Magic/Debuff,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 205% (success chance x0.5),69,6.5kk,1kk
-78,Mana Strain,Magic/Debuff,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 210% (success chance x0.5),73,16kk,1kk
-80,Mana Strain,Magic/Debuff,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 215% (success chance x0.5),79,0,5kk
-82,Mana Strain,Magic/Debuff,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 220% (success chance x0.5),95,0,10kk
-84,Mana Strain,Magic/Debuff,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 225% (success chance x0.5),99,0,30kk
-86,Mana Strain,Magic/Debuff,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 230% (success chance x0.5),105,0,75kk
-88,Mana Strain,Magic/Debuff,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 240% (success chance x0.5),111,0,100kk
-90,Mana Strain,Magic/Debuff,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 250% (success chance x0.5),115,0,100kk
-,,,,,,,,,,,,,,,,----------------------------Weapon Break----------------------------
-76,Weapon Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Atk and M.Atk by 16% (success chance x1.5),69,6.5kk,1kk
-78,Weapon Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Atk and M.Atk by 17% (success chance x1.5),73,16kk,1kk
-80,Weapon Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Atk and M.Atk by 18% (success chance x1.5),79,0,5kk
-82,Weapon Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Atk and M.Atk by 19% (success chance x1.5),95,0,10kk
-84,Weapon Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Atk and M.Atk by 20% (success chance x1.5),99,0,30kk
-86,Weapon Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Atk and M.Atk by 21% (success chance x1.5),105,0,75kk
-88,Weapon Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Atk and M.Atk by 23% (success chance x1.5),111,0,100kk
-90,Weapon Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Atk and M.Atk by 25% (success chance x1.5),115,0,100kk
-,,,,,,,,,,,,,,,,----------------------------Gravity----------------------------
-76,Gravity,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 23%  (success chance x1),69,6.5kk,1kk,,,Human
-78,Gravity,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 24%  (success chance x1),73,16kk,1kk,,,Human
-80,Gravity,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 25%  (success chance x1),79,0,5kk,,,Human
-82,Gravity,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 26%  (success chance x1),95,0,10kk,,,Human
-84,Gravity,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 27%  (success chance x1),99,0,30kk,,,Human
-86,Gravity,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 28%  (success chance x1),105,0,75kk,,,Human
-88,Gravity,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 29%  (success chance x1),111,0,100kk,,,Human
-90,Gravity,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 30%  (success chance x1),115,0,100kk,,,Human
-,,,,,,,,,,,,,,,,----------------------------Bind----------------------------
-76,Bind,Magical Debuff,600,0,enemy/single,2.5,5,31,Hold enemy for 31s (success chance x0.7),69,6.5kk,1kk,,,Elf,intentional increasing in duration
-78,Bind,Magical Debuff,600,0,enemy/single,2.5,5,32,Hold enemy for 32s (success chance x0.7),73,16kk,1kk,,,Elf
-80,Bind,Magical Debuff,600,0,enemy/single,2.5,5,33,Hold enemy for 33s (success chance x0.71),79,0,5kk,,,Elf,Intentionall increasing in chance
-82,Bind,Magical Debuff,600,0,enemy/single,2.5,5,34,Hold enemy for 34s (success chance x0.73),95,0,10kk,,,Elf
-84,Bind,Magical Debuff,600,0,enemy/single,2.5,5,35,Hold enemy for 35s (success chance x0.75),99,0,30kk,,,Elf
-86,Bind,Magical Debuff,600,0,enemy/single,2.5,5,36,Hold enemy for 36s (success chance x0.77),105,0,75kk,,,Elf
-88,Bind,Magical Debuff,600,0,enemy/single,2.5,5,38,Hold enemy for 38s (success chance x0.8),111,0,100kk,,,Elf
-90,Bind,Magical Debuff,600,0,enemy/single,2.5,5,40,Hold enemy for 40s (success chance x0.8),115,0,100kk,,,Elf
-,,,,,,,,,,,,,,,,----------------------------Armor Break----------------------------
-76,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 31% and MDef by 15% (success chance x1.5),69,6.5kk,1kk,,,Demon
-78,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 32% and MDef by 16% (success chance x1.5),73,16kk,1kk,,,Demon
-80,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 33% and MDef by 16% (success chance x1.5),79,0,5kk,,,Demon
-82,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 34% and MDef by 17% (success chance x1.5),95,0,10kk,,,Demon
-84,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 35% and MDef by 17% (success chance x1.5),99,0,30kk,,,Demon
-86,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 36% and MDef by 18% (success chance x1.5),105,0,75kk,,,Demon
-88,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 38% and MDef by 19% (success chance x1.5),111,0,100kk,,,Demon
-90,Armor Break,Magical Debuff,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 40% and MDef by 20% (success chance x1.5),115,0,100kk,,,Demon
-,,,,,,,,,,,,,,,,---------------------------Holy Soul----------------------------
-76,Holy Soul,Toggle,0,0,self/single,0,0,0,Decrease MP Consumtion by 30% and Casting speed by 10%; Consume 50 HP/s,0,6.5kk,1kk,,,,Intentional decrease in Cast speed
+LEARN @ LVL, NAME,TYPE,WEAPON,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,Gold,SP Bottles,REPLACES,RACE,Comment
+,,,,,,,,,,,,,,,,,==== SP CONSUMATION PER LEVEL ====
+,,,,,,,,,,,,,,,,,76 - 6.5kk SP + 1kk Gold
+,,,,,,,,,,,,,,,,,77 - 11kk SP + 1kk Gold
+,,,,,,,,,,,,,,,,,78 - 16kk SP + 1kk Gold
+,,,,,,,,,,,,,,,,,79 - 80kk SP + 1kk Gold
+,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,80 - 150kk SP + 10kk gold (New Skills/Ultimates)| Old-LvlUp -> 5kk Gold 
+,,,,,,,,,,,,,,,,,81 - 200kk SP + 25kk gold (New Skills/Ultimates)| Old-LvlUp -> 7.5kk Gold 
+,,,,,,,,,,,,,,,,,82 - 300kk SP + 50kk gold (New Skills/Ultimates)| Old-LvlUp -> 10kk Gold 
+,,,,,,,,,,,,,,,,,83 - 500kk SP + 100kk gold (New Skills/Ultimates)| Old-LvlUp -> 15kk Gold 
+,,,,,,,,,,,,,,,,,84 - 100kk gold + 2-SP bottles (New Skills/Ultimates)| Old-LvlUp -> 30kk Gold 
+,,,,,,,,,,,,,,,,,85 - 100kk gold + 5-SP bottles (New Skills/Ultimates)| Old-LvlUp -> 50kk Gold 
+,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,86 - Old-LvlUp -> 75kk Gold 
+,,,,,,,,,,,,,,,,,87 - Old-LvlUp -> 75kk Gold 
+,,,,,,,,,,,,,,,,,88 - Old-LvlUp -> 100kk Gold 
+,,,,,,,,,,,,,,,,,89 - Old-LvlUp -> 100kk Gold 
+,,,,,,,,,,,,,,,,,90 - Old-LvlUp -> 100kk Gold 
+,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,1 SP bottle = 1kkk SP + 100kk Gold (sells back for 100kk; drinking returns the 1kkk SP and no gold)
+,,,,,,,,,,,,,,,,,==================================
+,,,,,,,,,,,,,,,,,----------------------------Anti magic----------------------------
+76,Anti magic,Passive,,0,0,self/single,0,0,0,"magic def +113, mRes +30%",0,6.5kk,1kk
+77,Anti magic,Passive,,0,0,self/single,0,0,0,"magic def +116, mRes +30%",0,11kk,1kk
+78,Anti magic,Passive,,0,0,self/single,0,0,0,"magic def +119, mRes +30%",0,16kk,1kk
+79,Anti magic,Passive,,0,0,self/single,0,0,0,"magic def +121, mRes +30%",0,80kk,1kk
+80,Anti magic,Passive,,0,0,self/single,0,0,0,"magic def +123, mRes +30%",0,0,5kk
+81,Anti magic,Passive,,0,0,self/single,0,0,0,"magic def +125, mRes +30%",0,0,7.5kk
+82,Anti magic,Passive,,0,0,self/single,0,0,0,"magic def +127, mRes +30%",0,0,10kk
+83,Anti magic,Passive,,0,0,self/single,0,0,0,"magic def +129, mRes +30%",0,0,15kk
+84,Anti magic,Passive,,0,0,self/single,0,0,0,"magic def +131, mRes +30%",0,0,30kk
+85,Anti magic,Passive,,0,0,self/single,0,0,0,"magic def +133, mRes +30%",0,0,50kk
+86,Anti magic,Passive,,0,0,self/single,0,0,0,"magic def +135, mRes +35%",0,0,75kk
+87,Anti magic,Passive,,0,0,self/single,0,0,0,"magic def +138, mRes +35%",0,0,100kk
+88,Anti magic,Passive,,0,0,self/single,0,0,0,"magic def +140, mRes +35%",0,0,100kk
+89,Anti magic,Passive,,0,0,self/single,0,0,0,"magic def +144, mRes +35%",0,0,100kk
+90,Anti magic,Passive,,0,0,self/single,0,0,0,"magic def +149, mRes +35%",0,0,100kk
+,,,,,,,,,,,,,,,,,----------------------------Spellcaster Weapon Mastery----------------------------
+76,Spellcaster Weapon Mastery,Passive,blunt,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +101, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,6.5kk,1kk
+77,Spellcaster Weapon Mastery,Passive,blunt,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +102, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,11kk,1kk
+78,Spellcaster Weapon Mastery,Passive,blunt,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +104, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,16kk,1kk
+79,Spellcaster Weapon Mastery,Passive,blunt,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +105, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,80kk,1kk
+80,Spellcaster Weapon Mastery,Passive,blunt,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +106, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,5kk
+81,Spellcaster Weapon Mastery,Passive,blunt,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +108, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,7.5kk
+82,Spellcaster Weapon Mastery,Passive,blunt,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +109, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,10kk
+83,Spellcaster Weapon Mastery,Passive,blunt,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +110, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,15kk
+84,Spellcaster Weapon Mastery,Passive,blunt,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +112, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,30kk
+85,Spellcaster Weapon Mastery,Passive,blunt,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +113, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,50kk
+86,Spellcaster Weapon Mastery,Passive,blunt,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +115, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,75kk
+87,Spellcaster Weapon Mastery,Passive,blunt,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +116, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,100kk
+88,Spellcaster Weapon Mastery,Passive,blunt,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +117, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,100kk
+89,Spellcaster Weapon Mastery,Passive,blunt,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +119, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,100kk
+90,Spellcaster Weapon Mastery,Passive,blunt,0,0,self/single,0,0,0,"With blunt weapon decreses the reuse delay with 20%, mAtk +120, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,0,100kk
+,,,,,,,,,,,,,,,,,----------------------------Healer Armor Mastery----------------------------
+76,Healer Armor Mastery,Passive,,0,0,self/single,0,0,0,"Robe:  pDef +89, maxMP +220; mDef  +2%",0,6.5kk,1kk
+77,Healer Armor Mastery,Passive,,0,0,self/single,0,0,0,"Robe:  pDef +91, maxMP +220; mDef  +4%",0,11kk,1kk
+78,Healer Armor Mastery,Passive,,0,0,self/single,0,0,0,"Robe:  pDef +92, maxMP +250; mDef  +5%; Decrease Mp Consumption with 5%",0,16kk,1kk
+79,Healer Armor Mastery,Passive,,0,0,self/single,0,0,0,"Robe:  pDef +93, maxMP +250; mDef  +7%; Decrease Mp Consumption with 5%",0,80kk,1kk
+80,Healer Armor Mastery,Passive,,0,0,self/single,0,0,0,"Robe:  pDef +95, maxMP +250; mDef  +8%; Decrease Mp Consumption with 5%",0,0,5kk
+81,Healer Armor Mastery,Passive,,0,0,self/single,0,0,0,"Robe:  pDef +96, maxMP +290; mDef +10%; Decrease Mp Consumption with 8%",0,0,7.5kk
+82,Healer Armor Mastery,Passive,,0,0,self/single,0,0,0,"Robe:  pDef +97, maxMP +290; mDef +11%; Decrease Mp Consumption with 8%",0,0,10kk
+83,Healer Armor Mastery,Passive,,0,0,self/single,0,0,0,"Robe:  pDef +99, maxMP +300; mDef +13%; Decrease Mp Consumption with 8%",0,0,15kk
+84,Healer Armor Mastery,Passive,,0,0,self/single,0,0,0,"Robe: pDef +100, maxMP +300; mDef +14%; Decrease Mp Consumption with 8%",0,0,30kk
+85,Healer Armor Mastery,Passive,,0,0,self/single,0,0,0,"Robe: pDef +101, maxMP +300; mDef +16%; Decrease Mp Consumption with 8%",0,0,50kk
+86,Healer Armor Mastery,Passive,,0,0,self/single,0,0,0,"Robe: pDef +103, maxMP +330; mDef +17%; Decrease Mp Consumption with 10%",0,0,75kk
+87,Healer Armor Mastery,Passive,,0,0,self/single,0,0,0,"Robe: pDef +104, maxMP +330; mDef +19%; Decrease Mp Consumption with 10%",0,0,100kk
+88,Healer Armor Mastery,Passive,,0,0,self/single,0,0,0,"Robe: pDef +105, maxMP +350; mDef +20%; Decrease Mp Consumption with 10%",0,0,100kk
+89,Healer Armor Mastery,Passive,,0,0,self/single,0,0,0,"Robe: pDef +107, maxMP +350; mDef +22%; Decrease Mp Consumption with 10%",0,0,100kk
+90,Healer Armor Mastery,Passive,,0,0,self/single,0,0,0,"Robe: pDef +108, maxMP +400; mDef +25%; Decrease Mp Consumption with 10%",0,0,100kk
+,,,,,,,,,,,,,,,,,----------------------------Healer Shield Mastery----------------------------
+76,Healers Shield Mastery,Passive,,0,0,self/single,0,0,0,When Sheild is equiped increase healing power and MP regeneration with 10%,0,6.5kk,1kk
+,,,,,,,,,,,,,,,,,----------------------------Great Heal----------------------------
+76,Great Heal,Magic/Heal,,600,0,target/single,5,3,0,heal with power  865,122,6.5kk,1k
+77,Great Heal,Magic/Heal,,600,0,target/single,5,3,0,heal with power  875,124,11kk,1kk
+78,Great Heal,Magic/Heal,,600,0,target/single,5,3,0,heal with power  890,126,16kk,1kk
+79,Great Heal,Magic/Heal,,600,0,target/single,5,3,0,heal with power  900,128,80kk,1kk
+80,Great Heal,Magic/Heal,,600,0,target/single,5,3,0,heal with power  915,130,0,5kk
+81,Great Heal,Magic/Heal,,600,0,target/single,5,3,0,heal with power  920,132,0,7.5kk
+82,Great Heal,Magic/Heal,,600,0,target/single,5,3,0,heal with power  955,134,0,10kk
+83,Great Heal,Magic/Heal,,600,0,target/single,5,3,0,heal with power  960,136,0,15kk
+84,Great Heal,Magic/Heal,,600,0,target/single,5,3,0,heal with power  980,138,0,30kk
+85,Great Heal,Magic/Heal,,600,0,target/single,5,3,0,heal with power 1000,140,0,50kk
+86,Great Heal,Magic/Heal,,600,0,target/single,5,3,0,heal with power 1050,142,0,75kk
+87,Great Heal,Magic/Heal,,600,0,target/single,5,3,0,heal with power 1100,144,0,100kk
+88,Great Heal,Magic/Heal,,600,0,target/single,5,3,0,heal with power 1200,146,0,100kk
+89,Great Heal,Magic/Heal,,600,0,target/single,5,3,0,heal with power 1300,148,0,100kk
+90,Great Heal,Magic/Heal,,600,0,target/single,5,3,0,heal with power 1400,150,0,100kk
+,,,,,,,,,,,,,,,,,----------------------------Ultimate Heal----------------------------
+76,Ultimate Heal,Magic/Heal,,600,0,target/single,5,1,0,heal with power 1100. Consumes 2 skill stone,122,6.5kk,1k
+78,Ultimate Heal,Magic/Heal,,600,0,target/single,5,1,0,heal with power 1200. Consumes 2 skill stone,126,16kk,1kk
+80,Ultimate Heal,Magic/Heal,,600,0,target/single,5,1,0,heal with power 1300. Consumes 2 skill stone,130,0,5kk
+82,Ultimate Heal,Magic/Heal,,600,0,target/single,5,1,0,heal with power 1400. Consumes 2 skill stone,134,0,10kk
+84,Ultimate Heal,Magic/Heal,,600,0,target/single,5,1,0,heal with power 1500. Consumes 2 skill stone,138,0,30kk
+86,Ultimate Heal,Magic/Heal,,600,0,target/single,5,1,0,heal with power 1600. Consumes 2 skill stone,142,0,75kk
+88,Ultimate Heal,Magic/Heal,,600,0,target/single,5,1,0,heal with power 1800. Consumes 2 skill stone,146,0,100kk
+90,Ultimate Heal,Magic/Heal,,600,0,target/single,5,1,0,heal with power 2000. Consumes 2 skill stone,150,0,100kk
+,,,,,,,,,,,,,,,,,----------------------------Ultimate party Heal----------------------------
+76,Ultimate party Heal,Magic/Heal,,0,1000,party/aoe,7,3,0,heal with power 1100. Consumes 5 skill stone,244,6.5kk,1k
+78,Ultimate party Heal,Magic/Heal,,0,1000,party/aoe,7,3,0,heal with power 1200. Consumes 5 skill stone,252,16kk,1kk
+80,Ultimate party Heal,Magic/Heal,,0,1000,party/aoe,7,3,0,heal with power 1300. Consumes 5 skill stone,260,0,5kk
+82,Ultimate party Heal,Magic/Heal,,0,1000,party/aoe,7,3,0,heal with power 1400. Consumes 5 skill stone,268,0,10kk
+84,Ultimate party Heal,Magic/Heal,,0,1000,party/aoe,7,3,0,heal with power 1500. Consumes 5 skill stone,276,0,30kk
+86,Ultimate party Heal,Magic/Heal,,0,1000,party/aoe,7,3,0,heal with power 1600. Consumes 5 skill stone,284,0,75kk
+88,Ultimate party Heal,Magic/Heal,,0,1000,party/aoe,7,3,0,heal with power 1800. Consumes 5 skill stone,292,0,100kk
+90,Ultimate party Heal,Magic/Heal,,0,1000,party/aoe,7,3,0,heal with power 2000. Consumes 5 skill stone,300,0,100kk
+,,,,,,,,,,,,,,,,,----------------------------Party Great Heal----------------------------
+76,Party Great Heal,Magic/Heal,,0,1000,party/aoe,7,6,0,heal party with power  720,244,6.5kk,1k
+77,Party Great Heal,Magic/Heal,,0,1000,party/aoe,7,6,0,heal party with power  730,248,11kk,1kk
+78,Party Great Heal,Magic/Heal,,0,1000,party/aoe,7,6,0,heal party with power  740,252,16kk,1kk
+79,Party Great Heal,Magic/Heal,,0,1000,party/aoe,7,6,0,heal party with power  750,256,80kk,1kk
+80,Party Great Heal,Magic/Heal,,0,1000,party/aoe,7,6,0,heal party with power  760,260,0,5kk
+81,Party Great Heal,Magic/Heal,,0,1000,party/aoe,7,6,0,heal party with power  770,264,0,7.5kk
+82,Party Great Heal,Magic/Heal,,0,1000,party/aoe,7,6,0,heal party with power  775,268,0,10kk
+83,Party Great Heal,Magic/Heal,,0,1000,party/aoe,7,6,0,heal party with power  780,272,0,15kk
+84,Party Great Heal,Magic/Heal,,0,1000,party/aoe,7,6,0,heal party with power  790,276,0,30kk
+85,Party Great Heal,Magic/Heal,,0,1000,party/aoe,7,6,0,heal party with power  800,280,0,50kk
+86,Party Great Heal,Magic/Heal,,0,1000,party/aoe,7,6,0,heal party with power  830,284,0,75kk
+87,Party Great Heal,Magic/Heal,,0,1000,party/aoe,7,6,0,heal party with power  860,288,0,100kk
+88,Party Great Heal,Magic/Heal,,0,1000,party/aoe,7,6,0,heal party with power  900,292,0,100kk
+89,Party Great Heal,Magic/Heal,,0,1000,party/aoe,7,6,0,heal party with power  950,296,0,100kk
+90,Party Great Heal,Magic/Heal,,0,1000,party/aoe,7,6,0,heal party with power 1000,300,0,100kk
+,,,,,,,,,,,,,,,,,----------------------------Quick Great Heal----------------------------
+76,Quick Great Heal,Magic/Heal,,600,0,target/single,2,1,0,heal with power  865,181,6.5kk,1k,,,Human
+77,Quick Great Heal,Magic/Heal,,600,0,target/single,2,1,0,heal with power  875,183,11kk,1kk,,,Human
+78,Quick Great Heal,Magic/Heal,,600,0,target/single,2,1,0,heal with power  890,185,16kk,1kk,,,Human
+79,Quick Great Heal,Magic/Heal,,600,0,target/single,2,1,0,heal with power  900,190,80kk,1kk,,,Human
+80,Quick Great Heal,Magic/Heal,,600,0,target/single,2,1,0,heal with power  915,192,0,5kk,,,Human
+81,Quick Great Heal,Magic/Heal,,600,0,target/single,2,1,0,heal with power  920,195,0,7.5kk,,,Human
+82,Quick Great Heal,Magic/Heal,,600,0,target/single,2,1,0,heal with power  955,200,0,10kk,,,Human
+83,Quick Great Heal,Magic/Heal,,600,0,target/single,2,1,0,heal with power  960,202,0,15kk,,,Human
+84,Quick Great Heal,Magic/Heal,,600,0,target/single,2,1,0,heal with power  980,204,0,30kk,,,Human
+85,Quick Great Heal,Magic/Heal,,600,0,target/single,2,1,0,heal with power 1000,206,0,50kk,,,Human
+86,Quick Great Heal,Magic/Heal,,600,0,target/single,2,1,0,heal with power 1050,208,0,75kk,,,Human
+87,Quick Great Heal,Magic/Heal,,600,0,target/single,2,1,0,heal with power 1100,210,0,100kk,,,Human
+88,Quick Great Heal,Magic/Heal,,600,0,target/single,2,1,0,heal with power 1200,215,0,100kk,,,Human
+89,Quick Great Heal,Magic/Heal,,600,0,target/single,2,1,0,heal with power 1300,218,0,100kk,,,Human
+90,Quick Great Heal,Magic/Heal,,600,0,target/single,2,1,0,heal with power 1400,220,0,100kk,,,Human
+,,,,,,,,,,,,,,,,,---------------------------Healer Blessing----------------------------
+76,Healer Blessing,Magic/Heal,,600,0,target/single,3,3,0,Cure bleed and potions of rank 10 or lower and heals the target with  780 power,122,6.5kk,1k,,,Elf
+77,Healer Blessing,Magic/Heal,,600,0,target/single,3,3,0,Cure bleed and potions of rank 10 or lower and heals the target with  790 power,124,11kk,1kk,,,Elf
+78,Healer Blessing,Magic/Heal,,600,0,target/single,3,3,0,Cure bleed and potions of rank 10 or lower and heals the target with  800 power,126,16kk,1kk,,,Elf
+79,Healer Blessing,Magic/Heal,,600,0,target/single,3,3,0,Cure bleed and potions of rank 10 or lower and heals the target with  810 power,128,80kk,1kk,,,Elf
+80,Healer Blessing,Magic/Heal,,600,0,target/single,3,3,0,Cure bleed and potions of rank 10 or lower and heals the target with  820 power,130,0,5kk,,,Elf
+81,Healer Blessing,Magic/Heal,,600,0,target/single,3,3,0,Cure bleed and potions of rank 10 or lower and heals the target with  830 power,132,0,7.5kk,,,Elf
+82,Healer Blessing,Magic/Heal,,600,0,target/single,3,3,0,Cure bleed and potions of rank 10 or lower and heals the target with  850 power,134,0,10kk,,,Elf
+83,Healer Blessing,Magic/Heal,,600,0,target/single,3,3,0,Cure bleed and potions of rank 10 or lower and heals the target with  870 power,136,0,15kk,,,Elf
+84,Healer Blessing,Magic/Heal,,600,0,target/single,3,3,0,Cure bleed and potions of rank 10 or lower and heals the target with  890 power,138,0,30kk,,,Elf
+85,Healer Blessing,Magic/Heal,,600,0,target/single,3,3,0,Cure bleed and potions of rank 10 or lower and heals the target with  910 power,140,0,50kk,,,Elf
+86,Healer Blessing,Magic/Heal,,600,0,target/single,3,3,0,Cure bleed and potions of rank 10 or lower and heals the target with  950 power,142,0,75kk,,,Elf
+87,Healer Blessing,Magic/Heal,,600,0,target/single,3,3,0,Cure bleed and potions of rank 10 or lower and heals the target with  990 power,144,0,100kk,,,Elf
+88,Healer Blessing,Magic/Heal,,600,0,target/single,3,3,0,Cure bleed and potions of rank 10 or lower and heals the target with 1080 power,146,0,100kk,,,Elf
+89,Healer Blessing,Magic/Heal,,600,0,target/single,3,3,0,Cure bleed and potions of rank 10 or lower and heals the target with 1170 power,148,0,100kk,,,Elf
+90,Healer Blessing,Magic/Heal,,600,0,target/single,3,3,0,Cure bleed and potions of rank 10 or lower and heals the target with 1260 power,150,0,100kk,,,Elf
+,,,,,,,,,,,,,,,,,---------------------------Healer Blessing----------------------------
+83,Healer Party Blessing,Magic/Heal,,0,1000,party/aoe,3,9,0,Cure bleed and potions of rank 10 or lower and heals the party with  780 power,272,500kk,100kk,,,Elf
+84,Healer Party Blessing,Magic/Heal,,0,1000,party/aoe,3,9,0,Cure bleed and potions of rank 10 or lower and heals the party with  790 power,276,0,30kk,,,Elf
+85,Healer Party Blessing,Magic/Heal,,0,1000,party/aoe,3,9,0,Cure bleed and potions of rank 10 or lower and heals the party with  800 power,280,0,50kk,,,Elf
+86,Healer Party Blessing,Magic/Heal,,0,1000,party/aoe,3,9,0,Cure bleed and potions of rank 10 or lower and heals the party with  830 power,284,0,75kk,,,Elf
+87,Healer Party Blessing,Magic/Heal,,0,1000,party/aoe,3,9,0,Cure bleed and potions of rank 10 or lower and heals the party with  860 power,288,0,100kk,,,Elf
+88,Healer Party Blessing,Magic/Heal,,0,1000,party/aoe,3,9,0,Cure bleed and potions of rank 10 or lower and heals the party with  900 power,292,0,100kk,,,Elf
+89,Healer Party Blessing,Magic/Heal,,0,1000,party/aoe,3,9,0,Cure bleed and potions of rank 10 or lower and heals the party with  950 power,296,0,100kk,,,Elf
+90,Healer Party Blessing,Magic/Heal,,0,1000,party/aoe,3,9,0,Cure bleed and potions of rank 10 or lower and heals the party with 1000 power,300,0,100kk,,,Elf
+,,,,,,,,,,,,,,,,,----------------------------Healing Totem----------------------------
+76,Healing Totem,Magic/Heal,,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +152/s,520,6.5kk,1k,,,Demon
+77,Healing Totem,Magic/Heal,,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +153/s,523,11kk,1kk,,,Demon
+78,Healing Totem,Magic/Heal,,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +154/s,526,16kk,1kk,,,Demon
+79,Healing Totem,Magic/Heal,,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +155/s,529,80kk,1kk,,,Demon
+80,Healing Totem,Magic/Heal,,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +156/s,532,0,5kk,,,Demon
+81,Healing Totem,Magic/Heal,,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +157/s,535,0,7.5kk,,,Demon
+82,Healing Totem,Magic/Heal,,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +159/s,541,0,10kk,,,Demon
+83,Healing Totem,Magic/Heal,,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +162/s,550,0,15kk,,,Demon
+84,Healing Totem,Magic/Heal,,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +166/s,562,0,30kk,,,Demon
+85,Healing Totem,Magic/Heal,,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +170/s,574,0,50kk,,,Demon
+86,Healing Totem,Magic/Heal,,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +174/s,586,0,75kk,,,Demon
+87,Healing Totem,Magic/Heal,,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +178/s,598,0,100kk,,,Demon
+88,Healing Totem,Magic/Heal,,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +182/s,610,0,100kk,,,Demon
+89,Healing Totem,Magic/Heal,,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +186/s,622,0,100kk,,,Demon
+90,Healing Totem,Magic/Heal,,0,0,target/aoe,1,25,30,places totem on the ground for 30 seconds that heals nearby friendly targets (300 range) for +200/s,634,0,100kk,,,Demon
+,,,,,,,,,,,,,,,,,----------------------------Resurrection----------------------------
+76,Resurrection,Magic/Heal,,600,0,target/single,5,5,0,Revive at 35% HP/MP; restore 100% of lost exp.,205,6.5kk,1kk
+80,Resurrection,Magic/Heal,,600,0,target/single,5,5,0,Revive at 40% HP/MP; restore 100% of lost exp.,250,0,5kk
+,,,,,,,,,,,,,,,,,----------------------------Resurrection Field----------------------------
+76,Resurrection Field,Magic/Heal,,0,900,party/aoe,10,60,0,Revive Dead allies 900 range around the caster at 35% HP/MP; restore 70% of lost exp.,410,6.5kk,1kk
+80,Resurrection Field,Magic/Heal,,0,900,party/aoe,5,60,0,Revive Dead allies 900 range around the caster at 40% HP/MP; restore 70% of lost exp.,500,0,5kk
+,,,,,,,,,,,,,,,,,----------------------------Rite of Preservation----------------------------
+83,Rite of Preservation,Magic/Buff,,600,0,party/single,1,3600,3600,"Blesses an ally (or yourself): they DIE normally, keep their buffs, and are offered a resurrection where they fell at 30% HP and MP, losing NO experience. The offer waits as long as they like. Lasts 60 minutes or until it saves them. 60 minute reuse., Consumes 5 Holy stone",500,500kk,100kk
+,,,,,,,,,,,,,,,,,----------------------------Urgent Party Heal----------------------------
+83,Urgent Great Heal,Magic/Heal,,0,1000,target/aoe,3,5,0,"Heals 10 most injured friendly target around the caster (900 range) starting with most injured one by 30% and every next target is healed -2% less form the one before, Consumes 5 skill stones",500,500kk,100kk,,[Urgent Heal],,heals everyone in 900 range and each next target is healed with 2% less (caster is always healed - just placed based on injury) -> 30 -> 28 -> 26 -> .. -> 10%; find the 10 injured and include the caster -> order by % hp missing and heal from top 30-2x(index)%
+,,,,,,,,,,,,,,,,,---------------------------Restoration----------------------------
+83,Elven Restoration,Magic/Heal,,900,900,party/aoe,5,3600,0,Fully Restores MP (100%) and Restore HP with 50% to the party,300,500kk,100kk,,,Elf
+83,Life Restoration,Magic/Heal,,900,900,party/aoe,5,3600,0,Fully Restores HP (100%) and Restores MP with 50% to the party,300,500kk,100kk,,,Human
+83,Spirit Restoration,Magic/Heal,,900,900,party/aoe,5,3600,15,Restore MP/HP +30% and Increase Healing received with 30% to the pary,300,500kk,100kk,,,Demon
+,,,,,,,,,,,,,,,,,---------------------------Mark----------------------------
+78,Holy Mark,Magic/Heal,,900,0,party/single,5,5,300,"Increases: Atk +10%, Def +20%, Atk/Cast.Speed +20%, SPT Debuff Resists +10%, M.Acc +4, M.Crit.Rate +20%, Max MP +20%, Consumes 4 skill stones, Do not Stack with Other 'Mark' Skills",300,16kk,1kk,,,Elf,Same Principle as Great Might/Bulwark
+78,Life Mark,Magic/Heal,,900,0,party/single,5,5,300,"Increases: Atk +10%, Def +20%, Atk/Cast.Speed +20%, CON Debuff Resists +5%, P.Acc +4, P.Crit.Rate +20%, Max HP +20%, Consumes 4 skill stones, Do not Stack with Other 'Mark' Skills",300,16kk,1kk,,,Human
+78,Blood Mark,Magic/Heal,,900,0,party/single,5,5,300,"Increases: Atk +10%, Def +20%, Atk/Cast.Speed +20%, Mele vampirism +3%, Acc +3, Crit.Dmg +20%, Natural Regen +20%, Consumes 4 skill stones, Do not Stack with Other 'Mark' Skills",300,16kk,1kk,,,Demon
+,,,,,,,,,,,,,,,,,----------------------------Healers Power----------------------------
+80,Healers Power,Magic/Buff,,0,0,self/single,1,300,15,"Increase Healing Power +1000",100,150kk,10kk
+83,Healers Power,Magic/Buff,,0,0,self/single,1,300,15,"Increase Healing Power +1250",150,0,15kk
+85,Healers Power,Magic/Buff,,0,0,self/single,1,300,15,"Increase Healing Power +1500",200,0,50kk
+87,Healers Power,Magic/Buff,,0,0,self/single,1,300,15,"Increase Healing Power +1750",250,0,100kk
+90,Healers Power,Magic/Buff,,0,0,self/single,1,300,15,"Increase Healing Power +2000",300,0,100kk
+,,,,,,,,,,,,,,,,,----------------------------Mana Blessing----------------------------
+76,Mana Blessing,Magic/Buff,,600,0,party/single,1,1,1200,Decrease Physical MP Cost by 21% and Magic MP Cost by 11%,130,6.5kk,1kk
+78,Mana Blessing,Magic/Buff,,600,0,party/single,1,1,1200,Decrease Physical MP Cost by 22% and Magic MP Cost by 12%,140,16kk,1kk
+80,Mana Blessing,Magic/Buff,,600,0,party/single,1,1,1200,Decrease Physical MP Cost by 23% and Magic MP Cost by 13%,150,0,5kk
+82,Mana Blessing,Magic/Buff,,600,0,party/single,1,1,1200,Decrease Physical MP Cost by 24% and Magic MP Cost by 14%,160,0,10kk
+84,Mana Blessing,Magic/Buff,,600,0,party/single,1,1,1200,Decrease Physical MP Cost by 25% and Magic MP Cost by 15%,170,0,30kk
+86,Mana Blessing,Magic/Buff,,600,0,party/single,1,1,1200,Decrease Physical MP Cost by 26% and Magic MP Cost by 16%,180,0,75kk
+88,Mana Blessing,Magic/Buff,,600,0,party/single,1,1,1200,Decrease Physical MP Cost by 28% and Magic MP Cost by 18%,190,0,100kk
+90,Mana Blessing,Magic/Buff,,600,0,party/single,1,1,1200,Decrease Physical MP Cost by 30% and Magic MP Cost by 20%,200,0,100kk
+,,,,,,,,,,,,,,,,,----------------------------Arcane Resistance----------------------------
+76,Arcane Resistance,Magic/Buff,,600,0,party/single,1,1,1200,30% resist to Buff removal,130,6.5kk,1kk
+,,,,,,,,,,,,,,,,,----------------------------Fortitude----------------------------
+76,Fortitude,Magic/Buff,,600,0,party/single,1,1,1200,43% resist to CON debuffs,130,6.5kk,1kk
+78,Fortitude,Magic/Buff,,600,0,party/single,1,1,1200,47% resist to CON debuffs,140,16kk,1kk
+80,Fortitude,Magic/Buff,,600,0,party/single,1,1,1200,50% resist to CON debuffs,150,0,5kk
+82,Fortitude,Magic/Buff,,600,0,party/single,1,1,1200,54% resist to CON debuffs,160,0,10kk
+84,Fortitude,Magic/Buff,,600,0,party/single,1,1,1200,57% resist to CON debuffs,170,0,30kk
+86,Fortitude,Magic/Buff,,600,0,party/single,1,1,1200,60% resist to CON debuffs,180,0,75kk
+88,Fortitude,Magic/Buff,,600,0,party/single,1,1,1200,63% resist to CON debuffs,190,0,100kk
+90,Fortitude,Magic/Buff,,600,0,party/single,1,1,1200,65% resist to CON debuffs,200,0,100kk
+,,,,,,,,,,,,,,,,,----------------------------Antidote----------------------------
+76,Antidote,Magic/Heal,,600,0,party/single,0.8,3,0,"Cures poison, venom and bleed of rank 10 or lower from an ally (or self).",72,6.5kk,1kk
+,,,,,,,,,,,,,,,,,----------------------------Holy Blessing----------------------------
+78,Holy Blessing,Magic/Heal,,600,0,party/single,0.8,3,0,"Remove every debuff (burning and venom 11 as well) comsumes 1 holy stones",72,6.5kk,1kk,,,,'Holy Stone' is the same as 'Elemental Stone'
+,,,,,,,,,,,,,,,,,----------------------------Holy Ray----------------------------
+76,Holy Ray,Magic/Dmg,,600,0,enemy/single,2.5,1,0,m.Atk  +88,69,6.5kk,1kk
+77,Holy Ray,Magic/Dmg,,600,0,enemy/single,2.5,1,0,m.Atk  +90,71,11kk,1kk
+78,Holy Ray,Magic/Dmg,,600,0,enemy/single,2.5,1,0,m.Atk  +91,73,16kk,1kk
+79,Holy Ray,Magic/Dmg,,600,0,enemy/single,2.5,1,0,m.Atk  +93,77,80kk,1kk
+80,Holy Ray,Magic/Dmg,,600,0,enemy/single,2.5,1,0,m.Atk  +94,79,0,5kk
+81,Holy Ray,Magic/Dmg,,600,0,enemy/single,2.5,1,0,m.Atk  +96,91,0,7.5kk
+82,Holy Ray,Magic/Dmg,,600,0,enemy/single,2.5,1,0,m.Atk  +99,95,0,10kk
+83,Holy Ray,Magic/Dmg,,600,0,enemy/single,2.5,1,0,m.Atk +100,97,0,15kk
+84,Holy Ray,Magic/Dmg,,600,0,enemy/single,2.5,1,0,m.Atk +101,99,0,30kk
+85,Holy Ray,Magic/Dmg,,600,0,enemy/single,2.5,1,0,m.Atk +102,103,0,50kk
+86,Holy Ray,Magic/Dmg,,600,0,enemy/single,2.5,1,0,m.Atk +103,105,0,75kk
+87,Holy Ray,Magic/Dmg,,600,0,enemy/single,2.5,1,0,m.Atk +105,107,0,100kk
+88,Holy Ray,Magic/Dmg,,600,0,enemy/single,2.5,1,0,m.Atk +106,111,0,100kk
+89,Holy Ray,Magic/Dmg,,600,0,enemy/single,2.5,1,0,m.Atk +108,113,0,100kk
+90,Holy Ray,Magic/Dmg,,600,0,enemy/single,2.5,1,0,m.Atk +109,115,0,100kk
+,,,,,,,,,,,,,,,,,----------------------------Mana Ray----------------------------
+76,Mana Ray,Magic/Active,,600,0,enemy/single,2,2,0,Damages the MP of an enemy with +145 Power (Half effect on monsters),362,6.5kk,1k
+78,Mana Ray,Magic/Active,,600,0,enemy/single,2,2,0,Damages the MP of an enemy with +150 Power (Half effect on monsters),370,16kk,1kk
+80,Mana Ray,Magic/Active,,600,0,enemy/single,2,2,0,Damages the MP of an enemy with +155 Power (Half effect on monsters),384,0,5kk
+82,Mana Ray,Magic/Active,,600,0,enemy/single,2,2,0,Damages the MP of an enemy with +160 Power (Half effect on monsters),400,0,10kk
+84,Mana Ray,Magic/Active,,600,0,enemy/single,2,2,0,Damages the MP of an enemy with +165 Power (Half effect on monsters),408,0,30kk
+86,Mana Ray,Magic/Active,,600,0,enemy/single,2,2,0,Damages the MP of an enemy with +170 Power (Half effect on monsters),416,0,75kk
+88,Mana Ray,Magic/Active,,600,0,enemy/single,2,2,0,Damages the MP of an enemy with +175 Power (Half effect on monsters),430,0,100kk
+90,Mana Ray,Magic/Active,,600,0,enemy/single,2,2,0,Damages the MP of an enemy with +180 Power (Half effect on monsters),440,0,100kk
+,,,,,,,,,,,,,,,,,----------------------------Mana Strain----------------------------
+76,Mana Strain,Magic/Debuff,,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 205% (success chance x0.5),69,6.5kk,1kk
+78,Mana Strain,Magic/Debuff,,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 210% (success chance x0.5),73,16kk,1kk
+80,Mana Strain,Magic/Debuff,,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 215% (success chance x0.5),79,0,5kk
+82,Mana Strain,Magic/Debuff,,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 220% (success chance x0.5),95,0,10kk
+84,Mana Strain,Magic/Debuff,,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 225% (success chance x0.5),99,0,30kk
+86,Mana Strain,Magic/Debuff,,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 230% (success chance x0.5),105,0,75kk
+88,Mana Strain,Magic/Debuff,,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 240% (success chance x0.5),111,0,100kk
+90,Mana Strain,Magic/Debuff,,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 250% (success chance x0.5),115,0,100kk
+,,,,,,,,,,,,,,,,,----------------------------Weapon Break----------------------------
+76,Weapon Break,Magical Debuff,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Atk and M.Atk by 16% (success chance x1.5),69,6.5kk,1kk
+78,Weapon Break,Magical Debuff,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Atk and M.Atk by 17% (success chance x1.5),73,16kk,1kk
+80,Weapon Break,Magical Debuff,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Atk and M.Atk by 18% (success chance x1.5),79,0,5kk
+82,Weapon Break,Magical Debuff,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Atk and M.Atk by 19% (success chance x1.5),95,0,10kk
+84,Weapon Break,Magical Debuff,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Atk and M.Atk by 20% (success chance x1.5),99,0,30kk
+86,Weapon Break,Magical Debuff,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Atk and M.Atk by 21% (success chance x1.5),105,0,75kk
+88,Weapon Break,Magical Debuff,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Atk and M.Atk by 23% (success chance x1.5),111,0,100kk
+90,Weapon Break,Magical Debuff,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Atk and M.Atk by 25% (success chance x1.5),115,0,100kk
+,,,,,,,,,,,,,,,,,----------------------------Gravity----------------------------
+76,Gravity,Magical Debuff,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 23%  (success chance x1),69,6.5kk,1kk,,,Human
+78,Gravity,Magical Debuff,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 24%  (success chance x1),73,16kk,1kk,,,Human
+80,Gravity,Magical Debuff,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 25%  (success chance x1),79,0,5kk,,,Human
+82,Gravity,Magical Debuff,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 26%  (success chance x1),95,0,10kk,,,Human
+84,Gravity,Magical Debuff,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 27%  (success chance x1),99,0,30kk,,,Human
+86,Gravity,Magical Debuff,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 28%  (success chance x1),105,0,75kk,,,Human
+88,Gravity,Magical Debuff,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 29%  (success chance x1),111,0,100kk,,,Human
+90,Gravity,Magical Debuff,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 30%  (success chance x1),115,0,100kk,,,Human
+,,,,,,,,,,,,,,,,,----------------------------Bind----------------------------
+76,Bind,Magical Debuff,,600,0,enemy/single,2.5,5,31,Hold enemy for 31s (success chance x0.7),69,6.5kk,1kk,,,Elf,intentional increasing in duration
+78,Bind,Magical Debuff,,600,0,enemy/single,2.5,5,32,Hold enemy for 32s (success chance x0.7),73,16kk,1kk,,,Elf
+80,Bind,Magical Debuff,,600,0,enemy/single,2.5,5,33,Hold enemy for 33s (success chance x0.71),79,0,5kk,,,Elf,Intentionall increasing in chance
+82,Bind,Magical Debuff,,600,0,enemy/single,2.5,5,34,Hold enemy for 34s (success chance x0.73),95,0,10kk,,,Elf
+84,Bind,Magical Debuff,,600,0,enemy/single,2.5,5,35,Hold enemy for 35s (success chance x0.75),99,0,30kk,,,Elf
+86,Bind,Magical Debuff,,600,0,enemy/single,2.5,5,36,Hold enemy for 36s (success chance x0.77),105,0,75kk,,,Elf
+88,Bind,Magical Debuff,,600,0,enemy/single,2.5,5,38,Hold enemy for 38s (success chance x0.8),111,0,100kk,,,Elf
+90,Bind,Magical Debuff,,600,0,enemy/single,2.5,5,40,Hold enemy for 40s (success chance x0.8),115,0,100kk,,,Elf
+,,,,,,,,,,,,,,,,,----------------------------Armor Break----------------------------
+76,Armor Break,Magical Debuff,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 31% and MDef by 15% (success chance x1.5),69,6.5kk,1kk,,,Demon
+78,Armor Break,Magical Debuff,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 32% and MDef by 16% (success chance x1.5),73,16kk,1kk,,,Demon
+80,Armor Break,Magical Debuff,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 33% and MDef by 16% (success chance x1.5),79,0,5kk,,,Demon
+82,Armor Break,Magical Debuff,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 34% and MDef by 17% (success chance x1.5),95,0,10kk,,,Demon
+84,Armor Break,Magical Debuff,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 35% and MDef by 17% (success chance x1.5),99,0,30kk,,,Demon
+86,Armor Break,Magical Debuff,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 36% and MDef by 18% (success chance x1.5),105,0,75kk,,,Demon
+88,Armor Break,Magical Debuff,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 38% and MDef by 19% (success chance x1.5),111,0,100kk,,,Demon
+90,Armor Break,Magical Debuff,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 40% and MDef by 20% (success chance x1.5),115,0,100kk,,,Demon
+,,,,,,,,,,,,,,,,,---------------------------Holy Soul----------------------------
+76,Holy Soul,Toggle,,0,0,self/single,0,0,0,Decrease MP Consumtion by 30% and Casting speed by 10%; Consume 50 HP/s,0,6.5kk,1kk,,,,Intentional decrease in Cast speed

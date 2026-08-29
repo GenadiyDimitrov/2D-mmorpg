@@ -146,14 +146,26 @@ public static partial class SkillCatalog
 
         // ---- Bloodhanter Blunt Mastery (Demon) — 8 rungs, the demon's answer to the elf's bow line.
         //      Flat P.Atk 30 to 100 and a constant +3 accuracy. ----
+        //
+        // 🔑 TWO-HANDED ONLY since 2026-08-29 (owner: *"for demon buffer it's maul/staff (2h blunt)"*).
+        //    His own CSV section header has said "Bloodhanter TWO HAND Mastery" since the file landed;
+        //    the rows read "Blunt:" only because a bare type means any hands and there was no way to
+        //    write the other half. The three buffers now read: Human 1H blunt (mace/wand, and his own
+        //    Shield Mastery is what pushes him there), Elf bow, Demon 2H blunt (maul/staff).
+        // ⚠ The SHARED Spell Mastery stays hands-agnostic blunt-or-bow on purpose — his ruling:
+        //    *"the spell mastery ... they share one so we gate only the type, and their additional
+        //    passives are hands gated"*. Do not push hands up into BufferMastery.
         int[] bluntAtk = { 30, 40, 50, 60, 70, 80, 90, 100 };
         list.Add(new SkillDef(WcBloodhanterBlunt, "Bloodhanter Blunt Mastery", BaseClass.Mage, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive,
-            Description: "Passive. A blunt weapon strikes harder and truer in your hands.",
+            Description: "Passive. A TWO-HANDED blunt weapon — a maul or a staff — strikes harder "
+                       + "and truer in your hands. No effect one-handed.",
             Levels: raceMastSp.Select(sp => new SkillLevel(SpCost: sp)).ToArray(),
             WeaponMasteryLevels: bluntAtk
-                .Select(a => new WeaponMasteryProfile(Blunt: new PassiveEffect(PhysAtk: a, Accuracy: 3)))
+                .Select(a => new WeaponMasteryProfile(Blunt: new PassiveEffect(PhysAtk: a, Accuracy: 3),
+                                                     RequiredWeapon: WeaponType.AnyBlunt,
+                                                     RequiredHands: WeaponHands.Two))
                 .ToArray()));
 
         // ---- Mana Vampirism — 3 rungs @40/60/70. His only mana-return line, and the reason the
@@ -187,21 +199,28 @@ public static partial class SkillCatalog
 
         // ---- Combo Mastery — 3 rungs @52/64/74, and THE FIRST ON-HIT PROC IN THE GAME.
         //      *"Doing Damage Increases Attack/Cast Speed ... With 3% Chance"*, 30s, 60s internal
-        //      cooldown, blunt only. See ComboRushRungs below for the buff it hands out and why the
+        //      cooldown. See ComboRushRungs below for the buff it hands out and why the
         //      caster and the party take different rungs of ONE family. ----
+        //
+        // 🔴 BLUNT **OR BOW** — fixed 2026-08-29. His CSV row says *"Require: Box/Blunt"* (Bow/Blunt)
+        //    and this skill is in the SHARED kit, taught to all three races — but it was gated `Blunt`
+        //    alone, so the ELF Warchanter, whose whole identity is the bow, could never once proc a
+        //    passive he had paid 74k-880k SP for. Nothing in the game said so: a proc that never fires
+        //    looks exactly like a 3% roll that keeps missing. It is the same blunt-or-bow pair the
+        //    shared Spell Mastery uses, and hands-agnostic for the same reason.
         int[] comboSp = { 74_000, 190_000, 880_000 };
         list.Add(new SkillDef(WcComboMastery, "Combo Mastery", BaseClass.Mage, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 600, Range: 0, Power: 0,
             DurationTicks: 300,
             Category: SkillCategory.Passive,
-            RequiredWeapon: WeaponType.Blunt,
+            RequiredWeapon: WeaponType.AnyBlunt | WeaponType.Bow,
             ProcChance: 0.03f, ProcCooldownTicks: 600,
             // Level 1 hands the caster rung 4 and the party rung 1; level 2, rungs 5 and 2; level 3,
             // rungs 6 and 3. His mapping, verbatim: *"u get 4,5,6 while party gets 1,2,3"*.
             ProcSelfRungs:  new[] { WcComboRush[3], WcComboRush[4], WcComboRush[5] },
             ProcPartyRungs: new[] { WcComboRush[0], WcComboRush[1], WcComboRush[2] },
-            Description: "Passive. Landing a blow with a blunt weapon can send a surge through you "
-                       + "and your party — faster attacks and faster casting for 30s.",
+            Description: "Passive. Landing a blow with a blunt weapon or a bow can send a surge "
+                       + "through you and your party — faster attacks and faster casting for 30s.",
             Levels: comboSp.Select((sp, i) => new SkillLevel(SpCost: sp,
                 Description: $"3% chance on hit: +{ComboAs[i + 3] * 100:0.#}% attack and "
                            + $"+{ComboCast[i + 3] * 100:0.#}% cast speed for you, "

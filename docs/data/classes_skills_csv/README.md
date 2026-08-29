@@ -70,6 +70,38 @@ on load. **Eight choosable paths per race, 24 third classes** — the roster thi
 
 **Nine empty files is the honest picture, not an oversight.** It is what the game registers above 40.
 
+### The `WEAPON` column (2026-08-29, `BL-105`)
+
+Which weapon a skill or passive **demands**. Before this it was written only in the free-text DESCR,
+where `--check` could not compare it — which is how the elf's Combo Mastery ran for weeks gated to a
+weapon he never holds. Your grammar:
+
+```
+weaponType1[|weaponType2|weaponType3][/hands]
+```
+
+| cell | means |
+| --- | --- |
+| *(empty)* | no weapon requirement |
+| `sword\|blunt\|bow` | any sword, or any blunt, or a bow |
+| `sword\|blunt\|bow/1` | 1-handed sword, or 1-handed blunt, **or a bow** |
+| `blunt` | any blunt — mace, maul, staff, wand |
+| `blunt/2` | 2-handed blunt — staff or maul |
+| `duals` | daggers only |
+
+🔑 **`/1` and `/2` narrow the TYPES, not the weapon in your hands.** Bow and dual are inherently
+two-handed and have no 1H variant, so the hands token passes straight over them — which is why
+`sword|blunt|bow/1` still includes a bow.
+
+- `duals/1` parses as `duals` and prints a **⚠ typo-warning** — legal, but the token does nothing.
+- Anything but `/1` or `/2` — `/`, `/3`, `/a` — is an **🔴 error**, and the hands become invalid (the
+  types still count, the narrowing is dropped).
+- Order and case do not matter: `blunt|sword/1` == `SWORD | BLUNT/1`.
+
+`--check` verifies every authored cell against the game. The column is generated once by
+`dotnet run --project tools/SkillCsvSeed -- --weapon-column`; after that it is yours, and `--check` is
+what keeps it honest.
+
 ### The format
 
 The 2nd-class header **plus a trailing `RACE` column** — `human` / `elf` / `demon`, or blank for all
@@ -252,11 +284,19 @@ most useful thing in this table. Two notes on where they stand:
 - **The three buffer rows are already true** and match the built kit exactly — Human takes Heavy
   (`Chanter Heavy Mastery`), Elf takes Light + Bow (`Harmonist Bow/Light`), Demon takes 2-handed
   blunt (`Bloodchanter Two-Hand Mastery`). Nothing to do.
-- 🔵 **The warrior SWORD-vs-BLUNT split is new and nothing enforces it** — `Ravager` 2h sword against
-  `Warlord` 2h blunt. There is no warrior 3rd-class kit at all yet (the 40+ purge took it and its
-  CSVs have not landed), so this reads as a **design ruling for when `warrior 3rd.csv` and
-  `war_aoe 3rd.csv` are written**, not as a description of today. Say if it is meant as a rule and it
-  goes into the weapon masteries when those files land.
+- ✅ **The warrior SWORD-vs-BLUNT split IS A RULE — you ruled it 2026-08-29.** *"The aoe warriors to
+  be a 2h blunt while mele warriors to use 2h swords."* It is **not enforced yet and that is correct**:
+  there is still no warrior 3rd-class kit, so there is no passive to gate. It is carried as `BL-104`
+  and applied the day `warrior 3rd.csv` / `war_aoe 3rd.csv` land.
+
+✅ **THE CODE HOLDS THE WEAPON COLUMN NOW — both halves of it** (0.101.0). It used to hold only the
+type, because a requirement could say *"two-handed"* but never *"one-handed"*: a bare `Sword|Blunt`
+means **any hands of it** (playtest 28), so a maul passed a mask meant to read 1H. Hands are their own
+axis now — `WeaponHands` (`Any`/`One`/`Two`) beside the type mask — and your three 2026-08-29 rulings
+are live: **Knight** = 1H sword/blunt (was *"any weapon"*), **Demon buffer** = 2H blunt, **Human
+buffer** = 1H blunt via his own Shield Mastery, no gate needed. The shared Spell Mastery stays
+blunt-or-bow at **any** hands, per *"they share one so we gate only the type"*. Wrong weapon costs you
+the bonus and nothing else — there is no penalty, by your ruling.
 
 ---
 ## What each race's three names are trying to say

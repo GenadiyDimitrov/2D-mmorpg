@@ -4596,7 +4596,13 @@ static (SkillDef? Def, int Level) TopSkill(Entity e, SkillEffect channel)
         // The WEAPON gate the server enforces on every cast (GameLoopService: "you need a …").
         // Without it a sword-and-shield tank was measured on Stab — a DUAL-only blow it can never
         // cast — which the blow resolution (full damage only on a crit) makes badly wrong.
-        if (def.RequiredWeapon != WeaponType.None && (def.RequiredWeapon & e.WeaponType) == 0) continue;
+        // ⚠ Through WeaponTypes.Satisfies — the SAME helper the server casts through. The raw
+        // `(required & equipped) != 0` that stood here until 2026-08-29 predated both the playtest-28
+        // fold and the hands gate, so it disagreed with the game in both directions: it refused a maul
+        // a skill authored `Blunt` (which the server allows) and it allowed a 2H weapon a one-handed
+        // passive (which the server now refuses). A measurement that applies its own rule measures
+        // nothing.
+        if (!e.WeaponType.Satisfies(def.RequiredWeapon, def.RequiredHands)) continue;
         if (best is null || def.PowerAt(lvl) > best.PowerAt(bestLvl)) { best = def; bestLvl = lvl; }
     }
     return (best, bestLvl);

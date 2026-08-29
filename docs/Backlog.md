@@ -958,6 +958,52 @@ closed · **`BL-93` opened** for the in-game visuals discussion you asked for (*
   one APK, instead of a reinstall now for a feature that draws nothing. The key shape above is all you
   need to start naming files against.
 
+- `BL-104` 🔵 **THE WARRIOR'S SWORD-vs-BLUNT SPLIT — RULED BY YOU, NOTHING TO ATTACH IT TO YET.**
+  Your ruling, 2026-08-29: *"the aoe warriors to be a 2h blunt while mele warriors to use 2h swords …
+  we don't want an aoe warrior going with mace+shield and being even more hard to kill"*. This is the
+  answer `classes_skills_csv/README.md` asked for when it flagged the split as *"new and nothing
+  enforces it — say if it is meant as a rule"*. **It is a rule.**
+
+  ✅ **The MECHANISM is built** (0.101.0, `WeaponHands` + `RequiredHands`) and the mace+shield half of
+  your worry was already covered: Two-Hand Mastery has been two-handed-only since it was written, so a
+  warrior who picks up a mace and shield already loses the entire passive.
+
+  🔴 **What is NOT built is the split itself, because there is nothing to gate.** The 2nd-class warrior
+  is ONE class and correctly takes either 2H type; the split lives at 3rd, and **there is no warrior
+  3rd-class kit in the game** — `warrior 3rd.csv` and `war_aoe 3rd.csv` are both empty. So this entry
+  is a **standing instruction for the day those files land**: every melee-warrior discipline passive is
+  authored `AnySword + Hands.Two`, every AoE-warrior one `AnyBlunt + Hands.Two`. One line each, at the
+  `WeaponMasteryProfile`. ⚠ Do not pre-invent the kit to have somewhere to put it (`BL-02`).
+
+- `BL-105` ✅ **BUILT 2026-08-29 (0.101.1) — THE `WEAPON` COLUMN, in your grammar.** You approved it the
+  day it was proposed and wrote the spec yourself:
+  `weaponType1[|weaponType2|weaponType3][/hands]`, with `duals/1` a typo-warning and anything but
+  `/1`/`/2` an error that invalidates the hands. All of it is live: the column is in all 24 files
+  (1,425 rows, 187 with a real requirement), `--check` verifies every cell, and the grammar is
+  documented in `classes_skills_csv/README.md`.
+
+  🔴 **It corrected a semantic shipped hours earlier.** Your `sword|blunt|bow/1` includes a BOW — so
+  hands narrow the **TYPES**, not the equipped weapon, and 0.101.0 had it the other way round. Fixed in
+  `WeaponTypes.Resolve`; it made the code simpler, since the playtest-28 fold now falls out of the
+  expansion instead of being a special case.
+
+  Your authoring rule is recorded with it: *"passives won't ever be a (bow/duals or one handed weapon)
+  … but if authored they should work that way"* — nothing is special-cased or refused.
+
+  ⤷ The original proposal, for the record:
+
+- `BL-105`.old ❓ **A `WEAPON` COLUMN FOR THE SKILL CSVs — my proposal, your call.** A skill's weapon
+  requirement is real, enforced code, and today it is written **only in the free-text DESCR** (*"with
+  2h sword/blunt"*, *"Require: Bow/Blunt"*, *"Blunt:"*). That means `--check` cannot verify it, and it
+  is exactly how the elf's Combo Mastery bug survived: his CSV row said Bow/Blunt, the code said Blunt
+  alone, and nothing in the repo could notice the two disagreed.
+
+  **The proposal:** one more structural column, `WEAPON`, holding `type/hands` — `blunt/2h`,
+  `sword|blunt/1h`, `bow`, `dual`, blank for none. The same move you already approved twice, for `AOE`
+  (`BL-96`) and for `TARGET` (`[scope]/[breadth]`), and the checker gains a real comparison instead of
+  a description it has to parse. ⚠ It touches the header of every file, so it is not something to do
+  quietly on the way past — say yes and it is one increment.
+
 ---
 
 ## World & mobs

@@ -46,9 +46,23 @@ public static partial class SkillCatalog
         new(Blunt: bonus, Bow: bonus);
 
     /// <summary>A two-handed sword/blunt profile carrying the same PassiveEffect for both
-    /// (the warrior 2H mastery doesn't distinguish sword vs blunt), gated to TwoHand.</summary>
+    /// (the warrior 2H mastery doesn't distinguish sword vs blunt), gated to TwoHand.
+    /// ⚠ The sword-vs-blunt split between the two warrior DISCIPLINES (melee = 2H sword,
+    /// AoE = 2H blunt) is a 3rd-class rule and does NOT belong here — at 2nd class the warrior is
+    /// one class and takes either. See `BL-104`.</summary>
     private static WeaponMasteryProfile TwoHand(PassiveEffect pe) =>
-        new(Sword: pe, Blunt: pe, RequiredWeapon: WeaponType.TwoHanded);
+        new(Sword: pe, Blunt: pe,
+            RequiredWeapon: WeaponType.AnySword | WeaponType.AnyBlunt,
+            RequiredHands: WeaponHands.Two);
+
+    /// <summary>A ONE-handed sword/blunt profile — the tank's weapon (owner, 2026-08-29: *"a tank
+    /// for now is mace/blade (1h sword/blunt), the shield is not a requirement, the shield has its
+    /// own passive"*). The mirror image of <see cref="TwoHand"/>, and the first gate in the game that
+    /// could not be written before <see cref="WeaponHands"/> existed.</summary>
+    private static WeaponMasteryProfile OneHand(PassiveEffect pe) =>
+        new(Sword: pe, Blunt: pe,
+            RequiredWeapon: WeaponType.AnySword | WeaponType.AnyBlunt,
+            RequiredHands: WeaponHands.One);
 
     /// <summary>A rogue Weapon Mastery level: shared crit/acc/atk-speed on both dual and bow,
     /// plus each weapon's own flat P.Atk, and +200 range for the bow. <paramref name="critRate"/>
@@ -133,19 +147,39 @@ public static partial class SkillCatalog
         // (Archer "Bow Mastery" DELETED 2026-08-07 with its id — the rogue mastery above carries
         //  the bow profile since the merge.)
 
-        // Tank — Weapon Mastery (CSV tank 2nd): flat + 8.5% attack power with ANY weapon.
-        // 5 levels (@20/24/28/32/36). Replaces the base fighter weapon mastery.
+        // Tank — Weapon Mastery (CSV tank 2nd): flat + 8.5% attack power with a ONE-HANDED sword or
+        // blunt. 5 levels (@20/24/28/32/36). Replaces the base fighter weapon mastery.
+        //
+        // 🔑 IT WAS "ANY WEAPON" UNTIL 2026-08-29 — his ruling: *"a tank for now is mace/blade
+        //    (1h sword/blunt)"*. "Any weapon" let a knight hold a greatsword and keep the whole
+        //    passive, which is the warrior's identity taken for free; and it is the reason the hands
+        //    gate exists at all, since `Sword|Blunt` alone could never exclude a maul.
+        // ⚠ The SHIELD is deliberately NOT part of this gate — *"the shield is not a requirement,
+        //    the shield has its own passive"* (Shield Mastery). A tank who drops the shield for a
+        //    second one-hander keeps this; a tank who picks up a 2H loses it.
+        // ⚠ Moved from Levels[].Passive to WeaponMasteryLevels — the SAME numbers, applied through
+        //    the same RecomputeDerived path, but Levels[].Passive is unconditional by construction
+        //    and so has nowhere to hang a weapon gate. Wrong weapon = no bonus, never a penalty.
         new(TankWeaponMastery, "Weapon Mastery", BaseClass.Fighter, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive, Replaces: new[] { FighterWeaponMastery },
-            Description: "Passive. Increases physical attack power with any weapon equipped.",
+            Description: "Passive. Increases physical attack power while wielding a ONE-HANDED "
+                       + "sword or blunt. No effect with a two-handed weapon, a bow or daggers.",
             Levels: new[]
             {
-                new SkillLevel(SpCost: 3400,  Passive: new PassiveEffect(PhysAtkPct: 0.085f, PhysAtk: 6)),
-                new SkillLevel(SpCost: 6400,  Passive: new PassiveEffect(PhysAtkPct: 0.085f, PhysAtk: 8)),
-                new SkillLevel(SpCost: 12000, Passive: new PassiveEffect(PhysAtkPct: 0.085f, PhysAtk: 10)),
-                new SkillLevel(SpCost: 22000, Passive: new PassiveEffect(PhysAtkPct: 0.085f, PhysAtk: 12)),
-                new SkillLevel(SpCost: 40000, Passive: new PassiveEffect(PhysAtkPct: 0.085f, PhysAtk: 15)),
+                new SkillLevel(SpCost: 3400),
+                new SkillLevel(SpCost: 6400),
+                new SkillLevel(SpCost: 12000),
+                new SkillLevel(SpCost: 22000),
+                new SkillLevel(SpCost: 40000),
+            },
+            WeaponMasteryLevels: new[]
+            {
+                OneHand(new PassiveEffect(PhysAtkPct: 0.085f, PhysAtk: 6)),
+                OneHand(new PassiveEffect(PhysAtkPct: 0.085f, PhysAtk: 8)),
+                OneHand(new PassiveEffect(PhysAtkPct: 0.085f, PhysAtk: 10)),
+                OneHand(new PassiveEffect(PhysAtkPct: 0.085f, PhysAtk: 12)),
+                OneHand(new PassiveEffect(PhysAtkPct: 0.085f, PhysAtk: 15)),
             }),
     };
 }

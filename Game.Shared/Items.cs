@@ -158,6 +158,23 @@ public enum WeaponType
     TwoHanded = TwoHandedSword | TwoHandedBlunt | Bow | Dual,
 }
 
+/// <summary>How many HANDS a skill/passive demands of the equipped weapon — the second, ORTHOGONAL
+/// half of a weapon gate (owner, 2026-08-29: *"a skill/passive gates a type of weapon
+/// (sword/blunt/bow/dual) and gates hands (1h/2h/any)"*).
+///
+/// 🔑 IT HAD TO BE A SEPARATE FIELD. Hands live inside <see cref="WeaponType"/> for an ITEM, but a
+/// REQUIREMENT could only ever say "two-handed" — never "one-handed". A bare type means *any hands of
+/// it* (playtest 28, see <see cref="WeaponTypes.Satisfies"/>), and <c>Sword|Blunt</c> IS that bare
+/// pair, so a maul passed a mask meant to read "1H sword or blunt". There is no spare bit for a
+/// <c>OneHandedSword</c> and renumbering the enum would move every item's type, so hands became their
+/// own axis: the TYPE mask stays hands-agnostic and this says how many hands hold it.
+///
+/// ⚠ Bow and Dual are inherently two-handed, so a bow skill is authored <c>Bow</c> + <c>Any</c> and
+/// never mentions hands — his own note, *"a bow shot requires a bow + any hands (always 2 so hands
+/// are unnecessary)"*. Hands are checked LITERALLY against the equipped weapon, with no special case:
+/// a bow therefore satisfies <c>Two</c> and fails <c>One</c>, which is simply true of a bow.</summary>
+public enum WeaponHands { Any = 0, One = 1, Two = 2 }
+
 /// <summary>Helpers over the merged WeaponType (hands + type in one enum).</summary>
 public static class WeaponTypes
 {
@@ -188,13 +205,170 @@ public static class WeaponTypes
     /// sits inside those masks' opposite. So: if the requirement NAMES a two-handed bit, it is asking
     /// about hands and is matched exactly; if it names only base types, hands are not its business and
     /// the equipped weapon is folded. Both authored shapes keep working with no row edited.</summary>
-    public static bool Satisfies(this WeaponType equipped, WeaponType required)
+    ///
+    /// <paramref name="hands"/> is the ORTHOGONAL second gate (2026-08-29) and is checked FIRST,
+    /// literally, against the equipped weapon — see <see cref="WeaponHands"/> for why it could not be
+    /// another bit in the mask. An EMPTY HAND satisfies neither One nor Two.
+    public static bool Satisfies(this WeaponType equipped, WeaponType required,
+                                 WeaponHands hands = WeaponHands.Any) =>
+        required == WeaponType.None || (Resolve(required, hands) & equipped) != 0;
+
+    /// <summary>Expand a requirement (base TYPES + a HANDS token) into the exact set of equippable
+    /// weapon values that satisfies it. This is the whole gate in one function; <see cref="Satisfies"/>
+    /// is a bitwise-AND against it.
+    ///
+    /// 🔑 HANDS APPLY PER TYPE, NOT TO THE EQUIPPED WEAPON (owner, 2026-08-29). His worked example is
+    /// <c>sword|blunt|bow/1</c> = *"1 handed sword or 1 handed blunt **or bow**"*, and
+    /// <c>duals/1</c> = *"also parse as duals as it don't care for hands"*. So the hands token narrows
+    /// only the types that HAVE two hand counts — sword and blunt — and Bow and Dual, which are
+    /// inherently two-handed and have no 1H variant, pass through it untouched.
+    ///
+    /// ⚠ THIS REPLACED A LITERAL CHECK AGAINST THE EQUIPPED WEAPON (built 2026-08-29, corrected the
+    /// same day by his spec above). Under the old rule a bow FAILED <c>/1</c> — true of a bow, but not
+    /// what an author writing <c>sword|blunt|bow/1</c> means. The rule now lives entirely in the
+    /// requirement, and the equipped weapon is only ever tested for membership.
+    ///
+    /// ⚠ THE REQUIRED MASK MUST NAME BASE TYPES ONLY (Sword/Blunt/Bow/Dual, or the AnySword/AnyBlunt
+    /// convenience pairs). Spelling hands INTO it — <c>TwoHandedBlunt</c>, or the <c>TwoHanded</c>
+    /// mask — no longer means anything: it is folded to its base type and then re-expanded by
+    /// <paramref name="hands"/>, so <c>TwoHandedBlunt</c> + <c>Any</c> would WIDEN to any blunt. Say
+    /// hands in <see cref="WeaponHands"/>, always. Nothing in the catalog does otherwise.</summary>
+    public static WeaponType Resolve(WeaponType required, WeaponHands hands = WeaponHands.Any)
     {
-        if (required == WeaponType.None) return true;
-        if ((required & equipped) != 0) return true;
-        // The requirement talks about HANDS — take it literally, no folding.
-        if ((required & WeaponType.TwoHanded) != 0) return false;
-        return (required & equipped.Base()) != 0;
+        WeaponType r = WeaponType.None;
+        if ((required & WeaponType.AnySword) != 0)
+            r |= hands switch
+            {
+                WeaponHands.One => WeaponType.Sword,
+                WeaponHands.Two => WeaponType.TwoHandedSword,
+                _ => WeaponType.AnySword
+            };
+        if ((required & WeaponType.AnyBlunt) != 0)
+            r |= hands switch
+            {
+                WeaponHands.One => WeaponType.Blunt,
+                WeaponHands.Two => WeaponType.TwoHandedBlunt,
+                _ => WeaponType.AnyBlunt
+            };
+        // Inherently two-handed, no 1H variant to narrow to — the hands token does not touch them.
+        if ((required & WeaponType.Bow) != 0) r |= WeaponType.Bow;
+        if ((required & WeaponType.Dual) != 0) r |= WeaponType.Dual;
+        return r;
+    }
+
+    /// <summary>True when <paramref name="required"/> contains at least one type the hands token can
+    /// actually narrow (sword or blunt). A <c>/1</c> or <c>/2</c> written against bow/dual alone is
+    /// harmless but meaningless — his *"just mark it as typo-warning"*.</summary>
+    public static bool HandsAreMeaningful(WeaponType required) =>
+        (required & (WeaponType.AnySword | WeaponType.AnyBlunt)) != 0;
+
+    /// <summary>Human-readable weapon requirement — "one-handed sword or blunt, or bow" — for the
+    /// cast-refused system message and the skill tooltip, which MUST agree. Replaces a raw
+    /// <c>Enum.ToString()</c> that printed the convenience masks by their internal names
+    /// ("anysword or anyblunt") and had no way to mention hands at all.
+    /// ⚠ Bow and dual are listed AFTER a comma, never under the hands word, because the hands word
+    /// does not apply to them — "one-handed sword or blunt or bow" would be a lie.</summary>
+    public static string Describe(WeaponType required, WeaponHands hands = WeaponHands.Any)
+    {
+        var handed = new List<string>();
+        if ((required & WeaponType.AnySword) != 0) handed.Add("sword");
+        if ((required & WeaponType.AnyBlunt) != 0) handed.Add("blunt");
+        var free = new List<string>();
+        if ((required & WeaponType.Dual) != 0) free.Add("dual");
+        if ((required & WeaponType.Bow) != 0) free.Add("bow");
+
+        if (handed.Count == 0 && free.Count == 0) return "any";
+        string prefix = hands switch
+        {
+            WeaponHands.One => "one-handed ",
+            WeaponHands.Two => "two-handed ",
+            _ => ""
+        };
+        if (handed.Count == 0) return string.Join(" or ", free);
+        string s = prefix + string.Join(" or ", handed);
+        return free.Count == 0 ? s : s + ", or " + string.Join(" or ", free);
+    }
+
+    // -------------------------------------------------------------------------------------------
+    //  THE `WEAPON` CSV COLUMN — his grammar, 2026-08-29 (`BL-105`):
+    //      weaponType1[|weaponType2|weaponType3][/hands]
+    //  `sword|blunt|bow` · `sword|blunt|bow/1` · `duals` · `blunt/2` · empty = any weapon.
+    //  Format and TryParse are inverses and live TOGETHER so the round trip cannot drift.
+    // -------------------------------------------------------------------------------------------
+
+    /// <summary>The canonical CSV cell for a requirement — the exact string
+    /// <see cref="TryParseRequirement"/> reads back. Empty for "no requirement".
+    /// ⚠ The hands suffix is omitted when it would not narrow anything (bow/dual only), so the
+    /// generated column never writes the very typo the checker warns about.</summary>
+    public static string Format(WeaponType required, WeaponHands hands = WeaponHands.Any)
+    {
+        if (required == WeaponType.None) return "";
+        var parts = new List<string>();
+        if ((required & WeaponType.AnySword) != 0) parts.Add("sword");
+        if ((required & WeaponType.AnyBlunt) != 0) parts.Add("blunt");
+        if ((required & WeaponType.Bow) != 0) parts.Add("bow");
+        if ((required & WeaponType.Dual) != 0) parts.Add("duals");
+        if (parts.Count == 0) return "";
+        string s = string.Join("|", parts);
+        if (hands != WeaponHands.Any && HandsAreMeaningful(required))
+            s += hands == WeaponHands.One ? "/1" : "/2";
+        return s;
+    }
+
+    /// <summary>Parse a `WEAPON` cell. Returns false only when the cell cannot be understood at all;
+    /// an INVALID HANDS token is reported through <paramref name="error"/> and the hands are dropped
+    /// to <see cref="WeaponHands.Any"/> — his rule: *"they are marked as errors and make the hands
+    /// invalid"*, i.e. the row still names its types, it just loses the narrowing.</summary>
+    /// <param name="error">Set when the cell is malformed: an unknown type word, or a hands token that
+    /// is anything but `1` or `2` (`/`, `/3`, `/a`).</param>
+    /// <param name="warning">Set for his TYPO-WARNING case — a hands token on a requirement no hand
+    /// count can narrow (`duals/1`). Parsed as if the token were not there.</param>
+    public static bool TryParseRequirement(string cell, out WeaponType required, out WeaponHands hands,
+                                           out string? error, out string? warning)
+    {
+        required = WeaponType.None;
+        hands = WeaponHands.Any;
+        error = null;
+        warning = null;
+
+        string s = (cell ?? "").Trim().ToLowerInvariant();
+        if (s.Length == 0) return true;                 // empty cell = no weapon requirement
+
+        string types = s;
+        int slash = s.IndexOf('/');
+        if (slash >= 0)
+        {
+            types = s[..slash];
+            string h = s[(slash + 1)..].Trim();
+            if (h == "1") hands = WeaponHands.One;
+            else if (h == "2") hands = WeaponHands.Two;
+            else error = $"invalid hands '/{h}' — only /1 or /2 are hands; the hands are ignored";
+        }
+
+        foreach (string raw in types.Split('|'))
+        {
+            string t = raw.Trim();
+            if (t.Length == 0) { error ??= "empty weapon type between '|' separators"; continue; }
+            switch (t)
+            {
+                case "sword":  required |= WeaponType.AnySword; break;
+                case "blunt":  required |= WeaponType.AnyBlunt; break;
+                case "bow":    required |= WeaponType.Bow; break;
+                // His spelling is the plural; the singular is accepted so a hand-typed row still reads.
+                case "duals":
+                case "dual":   required |= WeaponType.Dual; break;
+                default:       error ??= $"unknown weapon type '{t}'"; break;
+            }
+        }
+
+        if (required == WeaponType.None) { error ??= $"no weapon type in '{cell}'"; return false; }
+        if (hands != WeaponHands.Any && !HandsAreMeaningful(required))
+        {
+            warning = $"'{s}' — {Format(required)} has no one/two-handed variants, so the hands token "
+                    + "does nothing; likely a typo";
+            hands = WeaponHands.Any;
+        }
+        return true;
     }
 }
 

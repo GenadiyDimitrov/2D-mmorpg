@@ -7,11 +7,190 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.100.2**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.101.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-08-28 (latest) — 0.100.2: two creature families, and the camera stops lying about its centre
+## 2026-08-29 (latest) — 0.101.1: the `WEAPON` column, and hands stop meaning what I thought
+
+`BL-105`, approved the day it was proposed. The weapon requirement is a real, enforced gate that lived
+**only in free-text DESCR** — so `--check` could not compare it, and that is exactly how the elf's
+Combo Mastery bug survived. It is a column now, in his own grammar.
+
+### His grammar, verbatim
+
+```
+"weapon" -> weaponType1[|weaponType2|weaponType3][/hands]
+  sword|blunt|bow     == any sword or any blunt or bow
+  sword|blunt|bow/1   == 1 handed sword or 1 handed blunt or bow
+  duals               == only duals;  duals/1 also parses as duals — typo-WARNING
+  blunt               == any blunt (mace/maul/staff/wand)
+  blunt/2             == 2h blunt (staff/maul)
+  no /1 or /2         == any hands
+  anything else (/ , /3, /a) == ERROR, and the hands become invalid
+```
+
+### 🔴 This corrected a semantic shipped hours earlier
+
+`sword|blunt|bow/1` includes **a bow**. So the hands token narrows **the TYPES, not the equipped
+weapon** — and 0.101.0 had it the other way round, checking hands literally against what you hold,
+where a bow would have *failed* `/1`. That is true of a bow and useless to an author.
+
+The rule is now one function, `WeaponTypes.Resolve`: expand each named type by the hands token —
+sword → `Sword` or `TwoHandedSword`, blunt likewise — and pass **Bow and Dual through untouched**,
+since neither has a one-handed variant to narrow to. `Satisfies` is a bitwise-AND against that.
+
+🔑 **It made the code simpler, not more complex.** The conditional fold from playtest 28 (*"a bare type
+means any hands of it"*) is gone as a special case — it now falls out of the expansion, because `blunt`
++ `Any` simply resolves to `Blunt|TwoHandedBlunt`. One rule replaces two.
+
+⚠ **A requirement mask must name BASE types only** now (`Sword`/`Blunt`/`Bow`/`Dual`, or the
+`AnySword`/`AnyBlunt` pairs). Spelling hands into the mask no longer means anything — it is folded and
+re-expanded, so `TwoHandedBlunt` + `Any` would *widen* to any blunt. Nothing in the catalog does that,
+and the comment at `WeaponMasteryProfile.RequiredWeapon` says so.
+
+His follow-up, recorded because it is the authoring rule: *"passives won't ever be a (bow/duals or one
+handed weapon) … but if authored they should work that way"*. So no combination is special-cased or
+refused — the grammar is general and the odd ones simply work.
+
+### The column
+
+`--weapon-column` inserts `WEAPON` at index 3, after `TYPE` and ahead of the three targeting columns
+(RANGE / AOE / TARGET) — what a skill *demands* sits with what it *is*, not with where it lands.
+**1,425 rows across 24 files; 187 carry a real requirement.** Every file diffs N/N, so the splice
+touched nothing else.
+
+🔑 **Two different code fields feed one column, deliberately.** An active gates through
+`SkillDef.RequiredWeapon`; a mastery passive carries its requirement on the per-rung
+`WeaponMasteryProfile` instead. To a player they are the same sentence — *"this does nothing unless
+you are holding X"* — so they are one column. ⚠ And a profile with no explicit mask still gates
+through its filled **slots**: `BufferMastery` sets Blunt and Bow and leaves the rest inert, which *is*
+"blunt or bow". Reading the mask alone would have written an empty cell for every one of those.
+
+### 🔴 The generator's first run was wrong, and the output is what caught it
+
+`--aoe-column` keys its lookup on the DISPLAY NAME across every class. **Three different skills are all
+called "Weapon Mastery"** — the fighter's, the tank's, the rogue's — so `rogue 2nd.csv` was handed the
+*tank's* cell, `sword|blunt/1`, for a passive whose own DESCR says bow and dual.
+
+🔑 `--aoe-column` has the same collision **and it has never shown**, because all three carry a radius of
+0: the wrong answer equalled the right one. The lookup is per-file now, scoped by filename the way
+`Check.Specs` is, and a display name carrying two different cells at one learn level is **reported and
+left empty rather than guessed** (5 such, all in `shared 4th.csv`, which genuinely spans every class).
+
+### `--check` reads it, and I proved it fails
+
+Compared as **parsed-and-reformatted requirements, never as raw strings** — `blunt|sword/1`,
+`sword | blunt/1` and `SWORD|BLUNT/1` are one requirement, and a checker that called them three would
+train him to ignore it. Verified by deliberately corrupting five cells:
+
+| authored | result |
+| --- | --- |
+| `sword\|blunt/3` | 🔴 WEAPON ERROR, hands dropped, then the resulting mismatch |
+| `duals/1` | ⚠ WEAPON TYPO — parsed as `duals` |
+| `blunt\|sword/1` | **silent** — normalisation works |
+| `blunt/1` | 🟡 mismatch |
+| `sword\|blunt/` | 🔴 WEAPON ERROR |
+
+Restored; `--check` is clean. **BalanceMatrix output is byte-identical** across the semantic change,
+and the server boots.
+
+⚠ **CSV DESCR text updated in the same commit**: `tank 2nd` *"with any weapon"* → *"with 1h
+sword/blunt"*; `buffer 3rd` *"Blunt:"* → *"2h Blunt:"* and `Box` → `Bow`.
+
+## 2026-08-29 — 0.101.0: a weapon gate that can finally say "one-handed"
+
+His question: *"can we make a hands gate to skills/passives … a skill/passive gates a type of weapon
+(sword/blunt/bow/dual) and gates hands (1h/2h/any)"*. Half of it was already built. The missing half
+turned out to be the important one, and it was hiding a bug.
+
+### The type gate existed; the ONE-HANDED gate was impossible
+
+`WeaponType` is a `[Flags]` enum carrying hands and type together (`Sword=1 … TwoHandedBlunt=32`), and
+`SkillDef.RequiredWeapon` has gated casts on it for months. But since playtest 28 a **bare type means
+any hands of it** — the fix for *"cannot use acoustic shock and sound smash with maul, only work with
+1h"*, where the Warchanter's own maul locked him out of his own damage skills. `Sword|Blunt` **is**
+that bare pair, so:
+
+```
+Satisfies(equipped: TwoHandedBlunt, required: Sword|Blunt)  →  TRUE
+```
+
+A maul passed a mask meant to read *one-handed sword or blunt*. There is no spare bit for a
+`OneHandedSword` and renumbering the enum would move every item's type, so hands became **their own
+axis**: `WeaponHands { Any, One, Two }`, as a `RequiredHands` field on both `SkillDef` and
+`WeaponMasteryProfile`. The type mask stays hands-agnostic; hands are checked literally against the
+equipped weapon, first, with no special case.
+
+🔑 **Bow and Dual need no clause.** His own note — *"a bow shot requires a bow + any hands (always 2
+so hands are unnecessary)"* — is what falls out for free: a bow skill is authored `Bow` + `Any` and
+never mentions hands, and because the check is literal a bow satisfies `Two` and fails `One`, which is
+simply true of a bow. An **empty hand** satisfies neither.
+
+The three authored rows that spelled hands into the mask (`TwoHandedSword|TwoHandedBlunt`) moved to
+`AnySword|AnyBlunt` + `Hands.Two`, so there is exactly one way to say it. The old spelling still works
+and still means what it says — it is kept as a backstop, not as a second style.
+
+### His three rulings, live
+
+| class | gate | was |
+| --- | --- | --- |
+| **Knight** (tank) | 1H sword or blunt | 🔴 **"any weapon"** — a knight could hold a greatsword and keep the whole passive |
+| **Demon buffer** (Bloodhanter Blunt Mastery) | 2H blunt — maul/staff | bare `Blunt`, i.e. any hands |
+| **Human buffer** | 1H blunt, via his own **Shield Mastery** | nothing needed — a shield *is* the 1H gate |
+| **Elf buffer** | bow | unchanged |
+
+⚠ **The SHIELD is deliberately not part of the tank gate** — *"the shield is not a requirement, the
+shield has its own passive"*. A tank who drops the shield for a second one-hander keeps the mastery.
+
+⚠ **The shared Spell Mastery stays hands-agnostic blunt-or-bow**, per *"they share one so we gate only
+the type, and their additional passives are hands gated"*. Do not push hands up into `BufferMastery`.
+
+🔑 **Wrong weapon costs you the bonus and NOTHING else** — his ruling, and already how every weapon
+mastery in the game reads. No penalty was added anywhere.
+
+Tank Weapon Mastery moved from `Levels[].Passive` to `WeaponMasteryLevels` to get there — the same
+five numbers through the same `RecomputeDerived` path, but `Levels[].Passive` is unconditional by
+construction and has nowhere to hang a gate. **`BalanceMatrix` output is byte-identical before and
+after**, because its reference tank already carries 1H + shield: the change bites only a tank who
+chooses a two-hander, which is the entire point.
+
+### 🔴 The elf Warchanter could never proc a passive he had paid up to 880k SP for
+
+`Combo Mastery` is in the **shared** buffer kit, taught to all three races, and it was gated
+`RequiredWeapon: Blunt`. The elf's identity is the bow. So the elf bought a three-rung passive at
+74k/190k/880k SP and it could not fire once. His own CSV row has always said **`Require: Box/Blunt`**
+— Bow/Blunt, with the typo — so the file was right and the code was wrong.
+
+🔑 **Nothing in the game could have shown this.** A proc that never fires is indistinguishable from a
+3% roll that keeps missing. It survived because the weapon requirement lives *only* in the free-text
+`DESCR` column, where `--check` cannot compare it — which is why `BL-105` proposes a structural
+`WEAPON` column, the same move already made for `AOE` and `TARGET`.
+
+### Two smaller things
+
+- **`BalanceMatrix` was applying its own weapon rule** — a raw `(required & equipped) != 0` that
+  predated both the playtest-28 fold and this change, so it refused a maul a skill the server allows
+  and would have allowed a 2H a one-handed passive. It calls `WeaponTypes.Satisfies` now. A
+  measurement that applies its own rule measures nothing.
+- **The requirement text is generated, once, for both readers.** `WeaponTypes.Describe` gives the
+  cast-refused message and the tooltip the same words — "requires a **two-handed sword or blunt**
+  weapon". The raw `Enum.ToString()` it replaces printed the convenience masks by their internal
+  names ("anysword or anyblunt") and could not mention hands at all.
+
+**CSVs updated in the same commit** (`tank 2nd`: *"with any weapon"* → *"with 1h sword/blunt"*;
+`buffer 3rd`: *"Blunt:"* → *"2h Blunt:"* on the eight Bloodhanter rows, and `Box` → `Bow` on the six
+that carried the typo). `--check` passes with no discrepancies.
+
+⚠ **The warrior sword-vs-blunt split is RULED but not built** — `BL-104`. There is no warrior
+3rd-class kit to gate; the mechanism is ready and the rule is recorded for the day his
+`warrior 3rd.csv` / `war_aoe 3rd.csv` land. The mace+shield half of his worry was already covered:
+Two-Hand Mastery has been two-handed-only since it was written.
+
+⚠ **No protocol change (still 29)** — an existing APK connects and the gate works, since it is
+enforced server-side. A rebuild is only wanted for the new tooltip wording.
+
+## 2026-08-28 — 0.100.2: two creature families, and the camera stops lying about its centre
 
 The first models are on screen, so this is the pass that answers what looking at them found. Three
 things, all from his remote-control notes.

@@ -48,6 +48,12 @@ if (args.Contains("--retarget")) return Retarget.Run(outDir);
 // See AoeColumn.cs for why two numbers sharing one column was not merely untidy.
 if (args.Contains("--aoe-column")) return AoeColumn.Run(outDir);
 
+// `--weapon-column` — BL-105, his third column: which weapon a skill or passive DEMANDS, in his own
+// grammar `type1[|type2|type3][/hands]`. Also a ONE-OFF migration; idempotent and refuses to run on a
+// file that already has the column. See WeaponColumn.cs — and note that until it existed the weapon
+// requirement lived only in free-text DESCR, which is why `--check` could never verify it.
+if (args.Contains("--weapon-column")) return WeaponColumn.Run(outDir);
+
 // ===== HIS DISCIPLINE MAP (2026-08-17) =============================================================
 // He redrew the 3rd-class split and named the files himself: *"class 2nd => desc1/desc2 3rd =>
 // desc1/desc2 4th"*, with

@@ -113,6 +113,11 @@ internal static class Check
                                float Duration, int Mp, int Sp,
                                string Descr = "", SkillDef? Def = null, int SkillLevel = 1,
                                string Target = "",
+                               // BL-105 — the WEAPON column, his `type1[|type2][/hands]` grammar. Held as the
+                               // RAW cell on the CSV side (so the parser's errors and typo-warnings can be
+                               // reported against what he actually typed) and as the canonical
+                               // `WeaponTypes.Format` string on the code side.
+                               string Weapon = "",
                                // BL-96 — the AOE column: how wide the effect goes off, as against
                                // Range, which is how far you may throw it. Compared to
                                // SkillDef.AreaRadiusAt, so the radius is a CHECKED number for the
@@ -166,19 +171,21 @@ internal static class Check
             if (line.IndexOf("NOT DONE", StringComparison.OrdinalIgnoreCase) >= 0) break;
             if (line.Length == 0 || line.StartsWith('#') || line.StartsWith("LEARN")) continue;
             var f = SplitCsv(line);
-            if (f.Count < 12) continue;
+            if (f.Count < 13) continue;
             // ⚠ SKIP THE SECTION BANNERS. The 3rd-tier files separate their level blocks with a row of
             // bare commas ending in `----40----`, which has the full column count and sails through the
             // width test — producing a nameless "skill" at level 0 that then NAME-DRIFT-matched itself
             // onto a real one and reported five invented mismatches. A row with no NAME is not a rung.
             if (f[1].Trim().Length == 0) continue;
-            // ⚠ COLUMN INDICES SHIFTED BY THE BL-96 AOE COLUMN (2026-08-28). AOE was inserted at 4, so
-            // TARGET moved 4 -> 5 and everything after it moved up one. This is the ONLY place the CSV
-            // is read by index, which is what kept that migration a contained change.
-            rows.Add(new Rung(f[1].Trim(), I(f[0]), F(f[3]), F(f[6]), F(f[7]), F(f[8]),
-                              I(f[10]), I(f[11]), Descr: f[9].Trim(),
-                              Target: f[5].Trim().ToLowerInvariant(),
-                              Aoe: F(f[4])));
+            // ⚠ COLUMN INDICES SHIFTED TWICE NOW. BL-96 inserted AOE at 4 (2026-08-28); BL-105 inserted
+            // WEAPON at 3 (2026-08-29), so RANGE moved 3 -> 4 and everything after it moved up one
+            // again. This is the ONLY place the CSV is read by index, which is what keeps each such
+            // migration a contained change — and the reason a structural pass must never skip a row.
+            rows.Add(new Rung(f[1].Trim(), I(f[0]), F(f[4]), F(f[7]), F(f[8]), F(f[9]),
+                              I(f[11]), I(f[12]), Descr: f[10].Trim(),
+                              Target: f[6].Trim().ToLowerInvariant(),
+                              Weapon: f[3].Trim(),
+                              Aoe: F(f[5])));
         }
         return rows;
     }
@@ -254,6 +261,8 @@ internal static class Check
                     def.MpCostAt(cs.SkillLevel),
                     cs.SpCostFor(def), Def: def, SkillLevel: cs.SkillLevel,
                     Target: Retarget.FromDef(def),
+                    // BL-105 — what the GAME demands, in his own grammar, so the column is checked.
+                    Weapon: WeaponColumn.CellFor(def, cs.SkillLevel),
                     // BL-96 — the radius the GAME carries at this rung, so the new AOE column is
                     // verified against the code like every other number in the row.
                     Aoe: def.AreaRadiusAt(cs.SkillLevel)));
@@ -354,6 +363,42 @@ internal static class Check
                 if (a[i].Target.Length > 0 && b[i].Target.Length > 0
                     && !string.Equals(a[i].Target, b[i].Target, StringComparison.Ordinal))
                     diffs.Add($"target CSV '{a[i].Target}' vs code '{b[i].Target}'");
+
+                // ---- BL-105 — THE WEAPON COLUMN, his `type1[|type2|type3][/hands]` grammar.
+                //
+                // Three outcomes, and they are deliberately different kinds of message:
+                //   🔴 an ERROR is a cell that cannot be read — an unknown type word, or a hands token
+                //      that is not /1 or /2 (`/`, `/3`, `/a`). His rule: *"marked as errors and make
+                //      the hands invalid"*, so the types still count and the narrowing is dropped.
+                //   ⚠  a TYPO-WARNING is `duals/1` — legal, parsed as `duals`, but the token does
+                //      nothing because bow and dual have no one-handed variant. His own wording.
+                //   🟡 a MISMATCH is a cell that parses cleanly and disagrees with the game.
+                //
+                // ⚠ The comparison is between PARSED requirements re-formatted, never between raw
+                // strings: `blunt|sword`, `sword | blunt` and `SWORD|BLUNT` are the same requirement,
+                // and a checker that called them three different ones would train him to ignore it.
+                // An EMPTY cell is skipped — an unauthored row, exactly as TARGET treats one.
+                if (a[i].Weapon.Length > 0)
+                {
+                    if (!WeaponTypes.TryParseRequirement(a[i].Weapon, out var wt, out var wh,
+                                                         out string? werr, out string? wwarn))
+                        diffs.Add($"weapon CSV '{a[i].Weapon}' UNREADABLE — {werr}");
+                    else
+                    {
+                        if (werr is not null)
+                            Console.WriteLine($"  🔴 WEAPON ERROR    {label} rung {i + 1} " +
+                                              $"(lvl {a[i].LearnLevel}): '{a[i].Weapon}' — {werr}");
+                        if (wwarn is not null)
+                            Console.WriteLine($"  ⚠  WEAPON TYPO     {label} rung {i + 1} " +
+                                              $"(lvl {a[i].LearnLevel}): {wwarn}");
+                        string csvCell = WeaponTypes.Format(wt, wh);
+                        if (!string.Equals(csvCell, b[i].Weapon, StringComparison.Ordinal))
+                            diffs.Add($"weapon CSV '{csvCell}' vs code " +
+                                      $"'{(b[i].Weapon.Length == 0 ? "(any)" : b[i].Weapon)}'");
+                    }
+                }
+                else if (b[i].Weapon.Length > 0)
+                    diffs.Add($"weapon CSV '(any)' vs code '{b[i].Weapon}'");
                 if (diffs.Count > 0)
                 {
                     Console.WriteLine($"  🟡 {label} rung {i + 1} (CSV lvl {a[i].LearnLevel}): " +

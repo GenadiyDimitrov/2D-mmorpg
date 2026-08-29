@@ -1885,9 +1885,9 @@ public class GameLoopService : BackgroundService
         // Stab = dual, Shot = bow) can only be used while a matching weapon is equipped.
         // ⚠ Through WeaponTypes.Satisfies, NOT a raw mask test: a skill authored `Blunt` means any
         // blunt, maul and staff included (playtest 28). See that helper for why the fold is conditional.
-        if (!caster.WeaponType.Satisfies(def.RequiredWeapon))
+        if (!caster.WeaponType.Satisfies(def.RequiredWeapon, def.RequiredHands))
         {
-            string need = def.RequiredWeapon.ToString().ToLowerInvariant().Replace(",", " or");
+            string need = WeaponTypes.Describe(def.RequiredWeapon, def.RequiredHands);
             SendSystemToEntity(caster, $"{def.Name} requires a {need} weapon.");
             return;
         }
@@ -5463,7 +5463,7 @@ public class GameLoopService : BackgroundService
             // and cost, so auto-farm was casting a dual-only blow off a mace. The gate belongs HERE
             // rather than downstream: an unusable entry has to be SKIPPED so the cursor moves on to a
             // skill that can fire, not merely refused and the turn wasted.
-            if (!p.WeaponType.Satisfies(def.RequiredWeapon)) continue;
+            if (!p.WeaponType.Satisfies(def.RequiredWeapon, def.RequiredHands)) continue;
             if (def.RequireHpBelowFraction > 0f && p.Hp > p.MaxHp * def.RequireHpBelowFraction) continue;
 
             int lvl = Math.Max(1, p.SkillLevelOf(def.Id));
@@ -9062,7 +9062,7 @@ public class GameLoopService : BackgroundService
             // "Require: Box/Blunt" — the mask is on the passive, and an empty hand fails it too.
             // Was a hand-rolled `.Base() & mask`, which folded UNCONDITIONALLY and so would have let a
             // two-handed weapon pass a two-hands-only proc. WeaponTypes.Satisfies is the one rule now.
-            if (!owner.WeaponType.Satisfies(def.RequiredWeapon))
+            if (!owner.WeaponType.Satisfies(def.RequiredWeapon, def.RequiredHands))
                 continue;
             if (_rng.NextDouble() >= def.ProcChance)
                 continue;

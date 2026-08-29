@@ -185,8 +185,15 @@ public record SkillDef(
     bool CanCrit = false,
     // Weapon requirement: an ACTIVE skill only casts while the equipped weapon's type is in
     // this [Flags] MASK (e.g. Strike = Sword|Blunt, Stab = Dual, Shot = Bow). Checked at
-    // cast-start with one bitwise-AND. None = usable with any weapon. Passives ignore this.
+    // cast-start through WeaponTypes.Satisfies. None = usable with any weapon.
+    // ⚠ A bare type means ANY HANDS of it — say hands in RequiredHands below, never by naming
+    // TwoHandedSword/TwoHandedBlunt here. Passives gate through WeaponMasteryProfile instead,
+    // with the ONE exception of a proc passive (Combo Mastery), which reads these two.
     WeaponType RequiredWeapon = WeaponType.None,
+    // The ORTHOGONAL hands gate (owner, 2026-08-29). Any = the type mask alone decides; One = a
+    // one-handed weapon only (a shield may be held); Two = a two-handed weapon only. Bow and Dual
+    // are inherently two-handed, so their skills leave this Any. See WeaponHands.
+    WeaponHands RequiredHands = WeaponHands.Any,
     // BLOW skill (dagger Stab): lands for FULL Power only if it CRITS (or, with CanDouble,
     // doubles). A blow that fails to crit deals only BlowFailFraction of its damage — a soft
     // floor, not IG's 0-damage whiff. Only meaningful with a physical-damage effect.
@@ -909,19 +916,25 @@ public readonly record struct WeaponMasteryProfile(
     // Lets a caster mastery penalise "anything but sword/blunt", empty hand included.
     PassiveEffect Other = default,
     // When set, the bonus applies ONLY if the equipped weapon's type is in this [Flags] MASK
-    // (e.g. Warrior trains WeaponType.TwoHanded). None = any. The Sword/Blunt slots serve both
-    // 1H and 2H via WeaponType.Base(); Dual/Bow are inherently 2H.
+    // (e.g. the Warrior trains sword/blunt at RequiredHands.Two). None = any.
+    // ⚠ NAME BASE TYPES ONLY here — Sword/Blunt/Bow/Dual or AnySword/AnyBlunt. Hands go in
+    // RequiredHands below; see WeaponTypes.Resolve for why spelling them into the mask now widens.
     // (A `MagicWeaponOnly` flag — gating on ItemDef.IsMagicWeapon rather than on the type — was added
     //  here on 2026-08-20 for the healer's mastery and removed the same day: he ruled the gate should
     //  be plain `Blunt`, so a mace still works and simply gives less. Nothing else wanted the flag, and
     //  a mastery that can refuse a weapon the type system says is fine is a wall, not a choice.)
-    WeaponType RequiredWeapon = WeaponType.None)
+    WeaponType RequiredWeapon = WeaponType.None,
+    // The HANDS half of the same gate (owner, 2026-08-29) — the tank's mastery is one-handed
+    // sword/blunt, the demon buffer's is a two-handed blunt, and neither could be said before this
+    // existed. Orthogonal to RequiredWeapon: the mask names the TYPE, this names the HANDS.
+    // Wrong weapon costs nothing but the bonus — there is no penalty here, by his ruling.
+    WeaponHands RequiredHands = WeaponHands.Any)
 {
     /// <summary>The effect for the equipped weapon. Named slots for the four base types;
     /// <see cref="Other"/> for empty hand / anything else. Inert outside RequiredWeapon.</summary>
     public PassiveEffect For(WeaponType wt)
     {
-        if (!wt.Satisfies(RequiredWeapon)) return default;
+        if (!wt.Satisfies(RequiredWeapon, RequiredHands)) return default;
         return wt.Base() switch
         {
             WeaponType.Sword => Sword,

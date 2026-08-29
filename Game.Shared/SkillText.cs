@@ -532,8 +532,8 @@ public static class SkillText
         }
 
         // ---- Conditions on USING it ----
-        if (def.RequiredWeapon != WeaponType.None)
-            o.Add("Requires a " + def.RequiredWeapon.ToString().ToLowerInvariant().Replace(",", " or")
+        if (def.RequiredWeapon != WeaponType.None || def.RequiredHands != WeaponHands.Any)
+            o.Add("Requires a " + WeaponTypes.Describe(def.RequiredWeapon, def.RequiredHands)
                 + " weapon");
         if (def.RequireHpBelowFraction > 0f)
             o.Add($"Only usable at or below {def.RequireHpBelowFraction * 100f:0.#}% HP");

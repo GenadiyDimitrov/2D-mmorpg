@@ -164,7 +164,7 @@ public static partial class SkillCatalog
         new(Smash, "Smash", BaseClass.Fighter, SkillEffect.PhysicalDamage,
             MpCost: 20, CastTicks: 10, CooldownTicks: 30, Range: 40, Power: 105,
             Category: SkillCategory.Physical, CanDouble: true,
-            RequiredWeapon: WeaponType.TwoHandedSword | WeaponType.TwoHandedBlunt,
+            RequiredWeapon: WeaponType.AnySword | WeaponType.AnyBlunt, RequiredHands: WeaponHands.Two,
             Replaces: new[] { Strike, Stab, Shot },
             Description: "A crushing sword/blunt blow — the warrior's Strike upgrade. Can strike for DOUBLE.",
             Levels: new[]
@@ -250,7 +250,7 @@ public static partial class SkillCatalog
             MpCost: 20, CastTicks: 5, CooldownTicks: 3000, Range: 0, Power: 0,
             DurationTicks: 900, BuffKey: "battle_stance", Rank: 1, CountsTowardBuffLimit: false,
             Category: SkillCategory.Buff, TargetMode: TargetMode.SelfOnly, SpCost: 11000,
-            RequireHpBelowFraction: 0.60f, RequiredWeapon: WeaponType.TwoHandedSword | WeaponType.TwoHandedBlunt,
+            RequireHpBelowFraction: 0.60f, RequiredWeapon: WeaponType.AnySword | WeaponType.AnyBlunt, RequiredHands: WeaponHands.Two,
             Magnitudes: new EffectMagnitude[]
             {
                 new(SkillEffect.BuffPhysAtk, 0.35f),
