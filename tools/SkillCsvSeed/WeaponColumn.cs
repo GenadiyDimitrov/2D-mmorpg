@@ -308,12 +308,18 @@ internal static class WeaponColumn
     }
 
     /// <summary>Insert one field at <see cref="InsertAt"/> by splicing the raw line.</summary>
-    private static string Splice(string line, string value)
+    private static string Splice(string line, string value) => SpliceAt(line, InsertAt, value);
+
+    /// <summary>The character-span splice every STRUCTURAL column pass shares: insert one field at
+    /// <paramref name="insertAt"/> without re-serialising the line, so quoting, spacing and CRLFs
+    /// survive byte-for-byte. Shared with <see cref="WeightColumn"/> (`BL-107`) rather than copied —
+    /// two divergent copies of the routine that must not corrupt his files is a bad trade.</summary>
+    internal static string SpliceAt(string line, int insertAt, string value)
     {
         var spans = FieldSpans(line);
-        if (spans.Count < InsertAt)
-            return line + new string(',', InsertAt - spans.Count) + "," + value;
-        int at = spans[InsertAt - 1].End;
+        if (spans.Count < insertAt)
+            return line + new string(',', insertAt - spans.Count) + "," + value;
+        int at = spans[insertAt - 1].End;
         return line[..at] + "," + value + line[at..];
     }
 
@@ -333,9 +339,9 @@ internal static class WeaponColumn
         }
     }
 
-    private readonly record struct Span(int Start, int End);
+    internal readonly record struct Span(int Start, int End);
 
-    private static List<Span> FieldSpans(string line)
+    internal static List<Span> FieldSpans(string line)
     {
         var spans = new List<Span>();
         bool q = false;
@@ -355,6 +361,6 @@ internal static class WeaponColumn
         return spans;
     }
 
-    private static string Field(string line, List<Span> spans, int i) =>
+    internal static string Field(string line, List<Span> spans, int i) =>
         i < spans.Count ? line[spans[i].Start..spans[i].End].Trim('"') : "";
 }

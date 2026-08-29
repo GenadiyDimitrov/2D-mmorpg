@@ -47,8 +47,21 @@ public static class SkillText
         return o;
     }
 
+    /// <summary>EVERY passive layer a skill carries at a LEVEL, in order — the ungated one first, then
+    /// each gated extra (`BL-107`), each stating its own condition. ⚠ THE CLIENTS CALL THIS, never
+    /// <c>Passive(def.PassiveAt(level))</c>: reading only the first layer prints Shield Mastery's block
+    /// rate and silently omits the "+10% P.Def in heavy" the same rung pays.</summary>
+    public static List<string> Passives(SkillDef def, int level = 1)
+    {
+        var o = new List<string>();
+        if (def is null) return o;
+        foreach (var p in def.PassivesAt(level)) Passive(p, o);
+        return o;
+    }
+
     public static void Passive(PassiveEffect p, List<string> o)
     {
+        int before = o.Count;
         // Vitals
         Flat(o, "Max HP", p.MaxHp);            Pct(o, "Max HP", p.MaxHpPct);
         Flat(o, "Max MP", p.MaxMp);            Pct(o, "Max MP", p.MaxMpPct);
@@ -104,7 +117,6 @@ public static class SkillText
         // ones stating a bare number with the condition buried in the prose.
         Pct(o, "Block chance (with a shield)", p.BlockChancePct);
         Pct(o, "Shield def (with a shield)", p.ShieldDefPct);
-        Pct(o, "P.Def (with a shield)", p.DefencePctWithShield);
         Flat(o, "Bow range (with a bow)", p.BowRange);
 
         // Resists + interrupt
@@ -145,6 +157,17 @@ public static class SkillText
         // Healing
         Flat(o, "Heal power", p.HealPowerFlat);       Pct(o, "Heal power", p.HealPowerPct);
         Flat(o, "Heal received", p.HealReceivedFlat); Pct(o, "Heal received", p.HealReceivedPct);
+
+        // ---- THE GATE, LAST, and only when there IS one (`BL-107`). A PassiveEffect's gate is
+        // ALL-OR-NOTHING, so every line above it is conditional on this one — which is exactly why it
+        // has to be printed. Before this, a shield-gated passive (the healer's Shield Mastery) listed
+        // its heal power and MP regen as though they were unconditional, and the only hint was the
+        // authored prose. ⚠ It is stated once for the whole effect, not appended to each label: the
+        // "(with a shield)" suffixes above are FIELD-level conditions on a rung that is otherwise
+        // ungated, and the two must not be confused.
+        if (o.Count > before && (p.RequiresShield || p.RequiredArmor != ArmorWeights.None))
+            o.Add("— only with " + ArmorGate.Describe(
+                p.RequiredArmor, p.RequiresShield ? ShieldGate.Required : ShieldGate.Any));
     }
 
     // ----- StatMods (armor mastery profiles, gear/set bonuses) ------------------------------
@@ -535,6 +558,10 @@ public static class SkillText
         if (def.RequiredWeapon != WeaponType.None || def.RequiredHands != WeaponHands.Any)
             o.Add("Requires a " + WeaponTypes.Describe(def.RequiredWeapon, def.RequiredHands)
                 + " weapon");
+        // `BL-107` — the armour twin. The generated block below states WHAT a skill pays and, until
+        // this line, never WHEN: the gate was real, enforced code that the card did not mention.
+        if (def.RequiredArmor != ArmorWeights.None || def.RequiredShield != ShieldGate.Any)
+            o.Add("Requires " + ArmorGate.Describe(def.RequiredArmor, def.RequiredShield));
         if (def.RequireHpBelowFraction > 0f)
             o.Add($"Only usable at or below {def.RequireHpBelowFraction * 100f:0.#}% HP");
         if (def.ConsumableId.Length > 0)

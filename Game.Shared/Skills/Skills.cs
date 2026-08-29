@@ -194,6 +194,14 @@ public record SkillDef(
     // one-handed weapon only (a shield may be held); Two = a two-handed weapon only. Bow and Dual
     // are inherently two-handed, so their skills leave this Any. See WeaponHands.
     WeaponHands RequiredHands = WeaponHands.Any,
+    // THE ARMOUR TWIN OF THE TWO FIELDS ABOVE (`BL-107`, owner 2026-08-29): an ACTIVE skill only casts
+    // while the worn BODY weight is in this mask and the shield axis agrees. His grammar is
+    // `heavy/shield` = heavy AND a shield, `light|heavy` = either — see ArmorGate. None/Any = no gate.
+    // ⚠ PASSIVES DO NOT GATE HERE. An armor mastery is per-weight by construction
+    // (ArmorMasteryProfile); every other passive carries its own gate on PassiveEffect.RequiredArmor,
+    // exactly as a weapon-mastery passive gates on WeaponMasteryProfile rather than on RequiredWeapon.
+    ArmorWeights RequiredArmor = ArmorWeights.None,
+    ShieldGate RequiredShield = ShieldGate.Any,
     // BLOW skill (dagger Stab): lands for FULL Power only if it CRITS (or, with CanDouble,
     // doubles). A blow that fails to crit deals only BlowFailFraction of its damage — a soft
     // floor, not IG's 0-damage whiff. Only meaningful with a physical-damage effect.
@@ -324,6 +332,8 @@ public record SkillDef(
     /// with the rung, which is the whole reason it is a column and not a skill-wide number.</summary>
     int LearnConsumableAmount = 0,
     PassiveEffect? Passive = null,
+    // The skill-wide twin of SkillLevel.ExtraPassives (a level's own list wins outright).
+    PassiveEffect[]? ExtraPassives = null,
     string Abbrev = "",
     // Optional EMOJI/glyph for the skill square + buff bar. Deliberately a STRING of characters, not an
     // image path: the WPF client is a test harness, so a bitmap pipeline here would be thrown away — and
@@ -669,6 +679,19 @@ public record SkillDef(
     /// <summary>GOLD price of a level (0 = not bought with gold).</summary>
     public int GoldCostAt(int level) => Lvl(level)?.GoldCost ?? 0;
     public PassiveEffect? PassiveAt(int level) => Lvl(level)?.Passive ?? Passive;
+
+    /// <summary>EVERY passive layer a learned level contributes — <see cref="PassiveAt"/> first, then
+    /// each entry of <see cref="SkillLevel.ExtraPassives"/> (or the SkillDef's, for a single-level
+    /// skill). ⚠ THIS, not <c>PassiveAt</c>, is what applies a skill's passives: a rung whose halves
+    /// carry different armour/shield gates has more than one, and reading only the first silently
+    /// drops the rest. <c>PassiveAt</c> stays for the "is this skill passive at all" tests.</summary>
+    public IEnumerable<PassiveEffect> PassivesAt(int level)
+    {
+        if (PassiveAt(level) is PassiveEffect p) yield return p;
+        var extra = Lvl(level)?.ExtraPassives ?? ExtraPassives;
+        if (extra is null) yield break;
+        foreach (var e in extra) yield return e;
+    }
     public string DescriptionAt(int level) => Lvl(level)?.Description ?? Description;
     /// <summary>The reward-rate package at a LEVEL — a rune ladder's rung. Falls back to the
     /// SkillDef's own for a single-level reward buff (Sinister / Sinners).</summary>
@@ -896,7 +919,11 @@ public record SkillDef(
 public readonly record struct ArmorMasteryProfile(
     StatMods Robe = default, StatMods Light = default, StatMods Heavy = default,
     // No BODY armor equipped — the "can't dodge the robe requirement by going naked" slot.
-    StatMods None = default);
+    StatMods None = default,
+    // The SHIELD axis (`BL-107`) — the whole profile is inert unless the shield state agrees. The
+    // weights are already this record's own axis, so only the orthogonal half was missing; nothing
+    // in the catalog authors one yet, but "heavy AND a shield" is now sayable on a mastery too.
+    ShieldGate RequiredShield = ShieldGate.Any);
 
 /// <summary>Per-equipped-WEAPON-TYPE stat profile for a weapon-mastery PASSIVE (one entry
 /// per skill level). The held weapon's type selects which <see cref="PassiveEffect"/>
@@ -955,6 +982,13 @@ public record SkillLevel(
     float Mod = 0f,
     EffectMagnitude[]? Magnitudes = null,
     PassiveEffect? Passive = null,
+    // ADDITIONAL passive layers for this rung, each with its OWN gate (`BL-107`). A PassiveEffect's
+    // RequiresShield/RequiredArmor are all-or-nothing, so ONE rung that pays different things under
+    // different gear conditions needs one entry per condition. Shield Mastery is the whole reason it
+    // exists: "shield P.Def + block rate" is shield-only, "+10% P.Def" is shield AND heavy.
+    // ⚠ Applied in order, AFTER Passive, by Entity.RecomputeDerived — so a percent here scales the
+    // flats added above it. Keep an extra layer to the fields its gate is really about.
+    PassiveEffect[]? ExtraPassives = null,
     int MpCost = 0,
     int SpCost = 1,
     string? Description = null,
@@ -1113,6 +1147,19 @@ public readonly record struct PassiveEffect(
     // scale the shield's OWN numbers and are inert without one anyway, while this gates effects
     // (heal power, MP regen) that would otherwise apply perfectly well bare-handed.
     bool RequiresShield = false,
+    // 🔑 ARMOUR-WEIGHT-GATED (`BL-107`, owner 2026-08-29) — the general form of the line above, and
+    // ALL-OR-NOTHING in exactly the same way: the whole effect is off unless the worn BODY weight is
+    // in this mask. His ask was *"make the tank_shield_mastery L4 to work only on heavy|shield and not
+    // give the % defence on any armor except the heavy"*, and until this existed there was NOWHERE to
+    // hang a weight on an ordinary passive — which is why the bespoke `DefencePctWithShield` had to be
+    // invented for one skill in 2026-08-21. None = no requirement.
+    //
+    // ⚠ A RUNG WHOSE HALVES WANT DIFFERENT GATES USES TWO EFFECTS, not one. Because this is
+    // all-or-nothing, Shield Mastery — whose block chance is shield-only but whose +10% P.Def is
+    // shield AND heavy — authors a second entry in SkillLevel.ExtraPassives with its own gate. Do not
+    // widen a rung's gate to cover its strictest field: that silently deletes the other fields for
+    // everyone wearing the wrong weight (a robed Warchanter's shield mastery, for one).
+    ArmorWeights RequiredArmor = ArmorWeights.None,
     float MaxHpPct = 0f, float MaxMpPct = 0f,
     int MaxHp = 0, int MaxMp = 0,      // flat max HP / MP
     int Defence = 0, int MagicDefence = 0,
@@ -1157,13 +1204,11 @@ public readonly record struct PassiveEffect(
     // Shield passive (Tank Shield Mastery): scale the equipped shield's block chance and
     // shield defence (fractions; only matter with a shield equipped). Re-clamped after passives.
     float BlockChancePct = 0f, float ShieldDefPct = 0f,
-    // ⚠ NOT the same stat as ShieldDefPct above. This raises the wearer's WHOLE physical defence —
-    // armour, jewels, everything — but only while a shield is equipped; ShieldDefPct scales the
-    // shield's own contribution. Shield Mastery rungs 3-4 carry "+10% P.Def" and he ruled it
-    // shield-conditional (2026-08-21: *"The 10% pDef (overall pDef not only shieldPDef) is only when
-    // shield is equipped"*). It exists as its own field because plain DefencePct is unconditional and
-    // is used by masteries that must keep paying with a two-hander.
-    float DefencePctWithShield = 0f,
+    // (`DefencePctWithShield` DELETED 2026-08-29, `BL-107`. It existed only because a passive had
+    //  nowhere to hang a condition: Shield Mastery's "+10% P.Def" is the WHOLE physical defence and
+    //  he ruled it shield-conditional (2026-08-21). There is a general gate now — RequiresShield +
+    //  RequiredArmor on a second SkillLevel.ExtraPassives layer — so the rung uses plain DefencePct
+    //  under it, and gained IG's heavy-armour half at the same time. Don't reinstate the field.)
     // Bow range bonus (Rogue/Archer Weapon Mastery "range +200"): added to basic-attack range
     // while a BOW is equipped. Inert with any other weapon.
     float BowRange = 0f,

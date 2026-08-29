@@ -181,7 +181,7 @@ namespace Game.Client
         private static void LearnEffects(System.Text.StringBuilder t, string label, SkillDef def, int level)
         {
             if (level < 1) return;
-            var lines = SkillText.Passive(def.PassiveAt(level) ?? default);
+            var lines = SkillText.Passives(def, level);
             if (def.ArmorMasteryAt(level) is ArmorMasteryProfile armor) lines.AddRange(SkillText.ArmorMastery(armor));
             if (def.WeaponMasteryAt(level) is WeaponMasteryProfile weapon) lines.AddRange(SkillText.WeaponMastery(weapon));
             lines.AddRange(SkillText.Buff(def, level));

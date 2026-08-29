@@ -52,6 +52,12 @@ Conditional sources (armor mastery per worn weight, weapon mastery per weapon ty
 stay as thin wrappers that RESOLVE to a `StatMods` for the current gear, then feed the
 same combine.
 
+⚠ **Since `BL-107` a condition can also ride on the PAYLOAD itself** — `PassiveEffect.RequiredArmor`
++ `RequiresShield`, all-or-nothing — and a rung may carry SEVERAL payloads with different conditions
+(`SkillLevel.ExtraPassives`). Whatever this migration ends up as, that shape has to survive: Shield
+Mastery pays its block rate with a shield and its "+10% P.Def" only with a shield **and** heavy, and a
+single conditional wrapper around one payload cannot express it. See `design/ArmorWeightGate.md`.
+
 ## Migration phases (each builds + is behavior-checked)
 1. **Foundation** — add `StatMods` + `Combine`/`Apply` (this commit). Nothing uses it
    yet; no behavior change. ✅ DONE.

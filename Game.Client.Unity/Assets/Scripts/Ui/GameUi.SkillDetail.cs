@@ -69,7 +69,7 @@ namespace Game.Client
             // The authored Description is prose, and prose was all a passive ever showed: you could
             // read "toughens your hide" and still not know whether it was worth an SP. The numbers
             // were on the def the whole time; SkillText formats them, at THIS level, for both clients.
-            AppendEffects(text, "Effect", SkillText.Passive(def.PassiveAt(level) ?? default));
+            AppendEffects(text, "Effect", SkillText.Passives(def, level));
             if (def.ArmorMasteryAt(level) is ArmorMasteryProfile armor)
                 AppendEffects(text, "Armor", SkillText.ArmorMastery(armor));
             if (def.WeaponMasteryAt(level) is WeaponMasteryProfile weapon)

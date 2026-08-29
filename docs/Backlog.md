@@ -1052,8 +1052,31 @@ closed · **`BL-93` opened** for the in-game visuals discussion you asked for (*
   a description it has to parse. ⚠ It touches the header of every file, so it is not something to do
   quietly on the way past — say yes and it is one increment.
 
-- `BL-107` ❓ **A `WEIGHT` COLUMN — the armour twin of `BL-105`. Your idea, my counter-proposal on the
-  spelling, and one thing you asked for that is already built.** Written up in full:
+- `BL-107` ✅ **BUILT 2026-08-29 (0.102.0) — THE `WEIGHT` COLUMN, in the grammar you approved.** You
+  said yes to all three questions: `heavy/shield` for AND, robe and naked OFF for the warrior (and the
+  rogue), and DESCR keys kept as they are. Live: the column is in all 24 files (1,420 rows, 103 with a
+  real requirement), `--check` verifies every cell, and both the active gate (`SkillDef.RequiredArmor`)
+  and the passive one (`PassiveEffect.RequiredArmor`) are enforced — cast-time, auto-hunt and
+  `RecomputeDerived` all read the one helper, `ArmorGate`.
+
+  🔑 **A rung can now carry MORE THAN ONE passive layer** (`SkillLevel.ExtraPassives`), each with its
+  own gate. That is what made Shield Mastery expressible: block rate needs a shield, "+10% P.Def" needs
+  a shield **and** heavy — one gate could not say both, and widening it would have deleted the block
+  rate for the robed Human Warchanter who learns the same skill. `DefencePctWithShield`, the bespoke
+  field invented in 2026-08-21 because no general gate existed, is **deleted**.
+
+  🔴 **Two things changed for a character, both of them yours:** a warrior or rogue in a ROBE or naked
+  now gets nothing from their Armor Mastery (was: the "with all" half), and Shield Mastery's bow
+  resistance is now really shield-gated — its card always said *"Every part of it needs a shield"* and
+  rungs 3-4 were paying it to a tank holding a greatsword.
+
+  📋 **`DESCR-KEYS.md`** (generated, `--descr-keys`) is the key list you asked for: 46 keys, 141
+  spellings, plus the scope labels. There is no `AllDef` — P.Def and M.Def are separate everywhere.
+
+  ⤷ The original proposal, for the record:
+
+- `BL-107`.old ❓ **A `WEIGHT` COLUMN — the armour twin of `BL-105`. Your idea, my counter-proposal on
+  the spelling, and one thing you asked for that is already built.** Written up in full:
   **[`design/ArmorWeightGate.md`](design/ArmorWeightGate.md)**. Your words, 2026-08-29: *"Add a column a
   required weight … That way I can make the tank_shield_mastery L4 to work only on heavy|shield and not
   give the % defence on any armor except the heavy."*

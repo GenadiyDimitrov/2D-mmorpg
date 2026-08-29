@@ -63,6 +63,16 @@ if (args.Contains("--chain-audit")) return ChainAudit.Run();
 // One-off migration; idempotent. See IdColumn.cs.
 if (args.Contains("--id-column")) return IdColumn.Run(outDir);
 
+// `--weight-column` — BL-107, the armour twin of `--weapon-column`: which body weight (and whether a
+// shield) a skill or passive DEMANDS, in his own `weight[|weight…][/shield]` grammar, where `|` is OR
+// and `/` is AND. One-off migration; idempotent. See WeightColumn.cs.
+if (args.Contains("--weight-column")) return WeightColumn.Run(outDir);
+
+// `--descr-keys` — writes docs/data/classes_skills_csv/DESCR-KEYS.md: every stat word the DESCR reader
+// understands, GENERATED from the alias table so the reference cannot trail the parser. His ask,
+// 2026-08-29: *"I need you to show me each key in a file"*. Read-only apart from that one file.
+if (args.Contains("--descr-keys")) return Descr.WriteKeyReference(outDir);
+
 // ===== HIS DISCIPLINE MAP (2026-08-17) =============================================================
 // He redrew the 3rd-class split and named the files himself: *"class 2nd => desc1/desc2 3rd =>
 // desc1/desc2 4th"*, with

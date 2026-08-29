@@ -136,6 +136,181 @@ public enum ArmorWeight { None = 0, Heavy = 1, Light = 2, Robe = 3 }
 /// Gloves atk/cast speed, Boots move speed/eva). None = not a body-armor piece.</summary>
 public enum ArmorSlot { None = 0, Head = 1, Body = 2, Gloves = 3, Boots = 4 }
 
+/// <summary>The REQUIREMENT side of <see cref="ArmorWeight"/> — a [Flags] MASK of the body weights a
+/// skill or passive accepts, where an ITEM carries exactly one <see cref="ArmorWeight"/> value. The
+/// same shape as <see cref="WeaponType"/>'s item-value-vs-requirement-mask split, and for the same
+/// reason: `light|heavy` is one cell in his `WEIGHT` column and must be one field here.
+///
+/// 🔑 <see cref="Bare"/> IS ITS OWN MEMBER, not the absence of one. <c>ArmorWeight.None</c> means "no
+/// body armour equipped", and that is a state a gate must be able to name — his rule for the warrior
+/// and rogue masteries is *"turn off robe and naked"* (2026-08-29), so `light|heavy` has to exclude a
+/// naked torso as deliberately as it excludes a robe. <see cref="None"/> = no requirement at all.</summary>
+[Flags]
+public enum ArmorWeights
+{
+    None = 0,
+    Bare = 1, Robe = 2, Light = 4, Heavy = 8,
+    Any = Bare | Robe | Light | Heavy,
+}
+
+/// <summary>The SHIELD half of an armour gate — the second, ORTHOGONAL axis, exactly as
+/// <see cref="WeaponHands"/> is to <see cref="WeaponType"/> (owner, 2026-08-29: *"heavy/shield ==
+/// heavy and shield required"*).
+///
+/// 🔑 IT COULD NOT BE ANOTHER WEIGHT. A shield is a different equip SLOT and coexists with every
+/// weight, so folding it into <see cref="ArmorWeights"/> would make `heavy|shield` read as an OR —
+/// paying a robed character with a buckler the very bonus he asked to confine to heavy. `|` cannot
+/// say AND; a second axis after the `/` can. Same lesson, same shape, one day after the hands gate.
+///
+/// ⚠ <see cref="Forbidden"/> (`/noshield`) is the symmetric third value and the engine honours it,
+/// but NOTHING in the catalog authors one yet — it exists so the axis has no hole, not because a
+/// skill wanted it.</summary>
+public enum ShieldGate { Any = 0, Required = 1, Forbidden = 2 }
+
+/// <summary>The armour twin of <see cref="WeaponTypes"/>: one gate, one grammar, one place.
+/// <see cref="Satisfies"/> is the whole rule; <see cref="Format"/> and
+/// <see cref="TryParseRequirement"/> are inverses of each other and live here TOGETHER so the CSV
+/// round trip cannot drift.
+///
+/// His grammar (`BL-107`, 2026-08-29), the `[set]/[axis]` shape `WEAPON` already uses:
+/// <code>
+///   WEIGHT = weight[|weight…][/shield]
+///     (empty)        no requirement — anything, naked included
+///     heavy          heavy body armour; shield irrelevant
+///     light|heavy    light OR heavy; robe and a bare torso get nothing
+///     /shield        a shield equipped, any armour
+///     heavy/shield   heavy AND a shield
+/// </code></summary>
+public static class ArmorGate
+{
+    /// <summary>The one bit an equipped <see cref="ArmorWeight"/> occupies in a requirement mask.</summary>
+    public static ArmorWeights Bit(this ArmorWeight worn) => worn switch
+    {
+        ArmorWeight.Robe  => ArmorWeights.Robe,
+        ArmorWeight.Light => ArmorWeights.Light,
+        ArmorWeight.Heavy => ArmorWeights.Heavy,
+        _ => ArmorWeights.Bare,          // ArmorWeight.None = no body armour worn
+    };
+
+    /// <summary>Does this gear state satisfy a gate? Both axes must pass — the weights are an OR
+    /// among themselves, the shield is an AND against them, which is precisely what his `/` means.
+    /// An empty gate (<see cref="ArmorWeights.None"/> + <see cref="ShieldGate.Any"/>) passes always.</summary>
+    public static bool Satisfies(ArmorWeight worn, bool hasShield,
+                                 ArmorWeights required, ShieldGate shield = ShieldGate.Any)
+    {
+        if (required != ArmorWeights.None && (required & worn.Bit()) == 0) return false;
+        return shield switch
+        {
+            ShieldGate.Required  => hasShield,
+            ShieldGate.Forbidden => !hasShield,
+            _ => true,
+        };
+    }
+
+    /// <summary>Human-readable gate — "heavy armour and a shield" — for the cast-refused system
+    /// message and the skill tooltip, which MUST agree (the same contract
+    /// <see cref="WeaponTypes.Describe"/> carries on the weapon axis).</summary>
+    public static string Describe(ArmorWeights required, ShieldGate shield = ShieldGate.Any)
+    {
+        var parts = new List<string>();
+        if ((required & ArmorWeights.Robe) != 0) parts.Add("robe");
+        if ((required & ArmorWeights.Light) != 0) parts.Add("light");
+        if ((required & ArmorWeights.Heavy) != 0) parts.Add("heavy");
+        bool bare = (required & ArmorWeights.Bare) != 0;
+
+        string armour = parts.Count == 0
+            ? (bare ? "no body armour" : "")
+            : string.Join(" or ", parts) + " armour" + (bare ? ", or none" : "");
+        string sh = shield switch
+        {
+            ShieldGate.Required  => "a shield",
+            ShieldGate.Forbidden => "no shield",
+            _ => "",
+        };
+        if (armour.Length == 0 && sh.Length == 0) return "any";
+        if (armour.Length == 0) return sh;
+        return sh.Length == 0 ? armour : armour + " and " + sh;
+    }
+
+    // -------------------------------------------------------------------------------------------
+    //  THE `WEIGHT` CSV COLUMN — his grammar, 2026-08-29 (`BL-107`), the `WEAPON` shape reused.
+    // -------------------------------------------------------------------------------------------
+
+    /// <summary>The canonical CSV cell for a gate — the exact string
+    /// <see cref="TryParseRequirement"/> reads back. Empty for "no requirement".</summary>
+    public static string Format(ArmorWeights required, ShieldGate shield = ShieldGate.Any)
+    {
+        var parts = new List<string>();
+        // ⚠ FIXED ORDER, heaviest first, so the generated column and a re-parsed hand-typed cell
+        // compare as STRINGS. `--check` does an ordinal comparison; a set that formatted in author
+        // order would report every reordered cell as a mismatch.
+        if ((required & ArmorWeights.Heavy) != 0) parts.Add("heavy");
+        if ((required & ArmorWeights.Light) != 0) parts.Add("light");
+        if ((required & ArmorWeights.Robe) != 0) parts.Add("robe");
+        if ((required & ArmorWeights.Bare) != 0) parts.Add("bare");
+        string s = string.Join("|", parts);
+        if (shield == ShieldGate.Required) s += "/shield";
+        else if (shield == ShieldGate.Forbidden) s += "/noshield";
+        return s;
+    }
+
+    /// <summary>Parse a `WEIGHT` cell. Returns false only when the cell names no weight AND no shield
+    /// token — otherwise the gate is usable and any problem is reported through
+    /// <paramref name="error"/>, the same contract <see cref="WeaponTypes.TryParseRequirement"/>
+    /// keeps: a bad axis token is an error and the axis is DROPPED, the row keeps its weights.</summary>
+    /// <param name="warning">His typo-warning case — a cell that names every weight, which is the
+    /// same as naming none and is almost always a misunderstanding of the empty cell.</param>
+    public static bool TryParseRequirement(string cell, out ArmorWeights required, out ShieldGate shield,
+                                           out string? error, out string? warning)
+    {
+        required = ArmorWeights.None;
+        shield = ShieldGate.Any;
+        error = null;
+        warning = null;
+
+        string s = (cell ?? "").Trim().ToLowerInvariant();
+        if (s.Length == 0) return true;                 // empty cell = no armour requirement
+
+        string weights = s;
+        int slash = s.IndexOf('/');
+        if (slash >= 0)
+        {
+            weights = s[..slash];
+            string a = s[(slash + 1)..].Trim();
+            if (a == "shield") shield = ShieldGate.Required;
+            else if (a == "noshield") shield = ShieldGate.Forbidden;
+            else error = $"invalid axis '/{a}' — only /shield or /noshield; the axis is ignored";
+        }
+
+        foreach (string raw in weights.Split('|'))
+        {
+            string t = raw.Trim();
+            if (t.Length == 0) continue;                // `/shield` alone, or a stray separator
+            switch (t)
+            {
+                case "heavy": required |= ArmorWeights.Heavy; break;
+                case "light": required |= ArmorWeights.Light; break;
+                case "robe":  required |= ArmorWeights.Robe; break;
+                // "naked" is his own word for it (*"turn off robe and naked"*); the CSV is the
+                // authority, so the reader learns his spelling rather than the file learning ours.
+                case "bare":
+                case "none":
+                case "naked": required |= ArmorWeights.Bare; break;
+                default:      error ??= $"unknown armour weight '{t}'"; break;
+            }
+        }
+
+        if (required == ArmorWeights.None && shield == ShieldGate.Any)
+        {
+            error ??= $"no armour weight in '{cell}'";
+            return false;
+        }
+        if (required == ArmorWeights.Any)
+            warning = $"'{s}' names every weight, which is the same as an EMPTY cell; likely a typo";
+        return true;
+    }
+}
+
 /// <summary>Broad weapon category. Drives which skills work and the base
 /// attack range. All classes CAN equip any weapon; skills gate usefulness.</summary>
 // Daggers ARE the Dual type (treated as dual-wield): lower per-hit, very fast,

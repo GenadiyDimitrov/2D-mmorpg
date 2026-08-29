@@ -7,11 +7,72 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.101.5**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.102.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-08-29 (latest) — 0.101.5: Body Mastery was HP Boost twice, so it is gone
+## 2026-08-29 (latest) — 0.102.0: the `WEIGHT` column, and a passive that can finally say "in heavy"
+
+*"I like it to do it same as 'weapon' column. `heavy/shield` == heavy and shield required …
+`heavy|light` == heavy or light required."*
+
+`BL-107`, the armour twin of yesterday's `WEAPON` column. Same `[set]/[axis]` grammar, one axis over:
+`|` is OR among the weights, `/` is AND with the shield slot. The reason it had to be two axes is the
+same as the hands token's — **a shield is not an armour weight**, it is a different slot that coexists
+with every weight, so `heavy|shield` under an OR reading would pay a robed character with a buckler the
++10% P.Def he asked to confine to heavy.
+
+### The gap it closed
+
+A weight gate existed only inside `ArmorMasteryProfile`, so **only an armour mastery could be
+weight-gated**. Any other passive, and every active, could not say "heavy only" at all — which is why
+`PassiveEffect.DefencePctWithShield` had been invented as a bespoke field for one skill in 2026-08-21,
+when his own note read *"IG is shield+heavy but I'm not sure if we can"*.
+
+### What landed
+
+- **`ArmorWeights`** (the [Flags] requirement MASK; an item still carries one `ArmorWeight`) +
+  **`ShieldGate`** (`Any`/`Required`/`Forbidden`) + **`ArmorGate`** — `Satisfies`, `Describe`, `Format`,
+  `TryParseRequirement`. The exact twin of `WeaponTypes`, and the ONE place the rule lives.
+- **`SkillDef.RequiredArmor` / `RequiredShield`** — the ACTIVE cast gate, enforced in `HandleUseSkill`
+  and in the auto-hunt chain (a gate the tap refuses must be SKIPPED there, not attempted).
+- **`PassiveEffect.RequiredArmor`** — the general passive gate, all-or-nothing like `RequiresShield`.
+- **`SkillLevel.ExtraPassives`** — 🔑 extra passive LAYERS per rung, each with its own gate. An
+  all-or-nothing gate cannot describe a rung whose halves differ, and Shield Mastery is exactly that:
+  block rate needs a shield, "+10% P.Def" needs a shield **and** heavy. Widening the rung's gate to the
+  strictest field would have switched the block rate off for the robed Human Warchanter who learns the
+  same skill. **`DefencePctWithShield` is deleted**; the rung carries plain `DefencePct` on layer two.
+- **`ArmorMasteryProfile.RequiredShield`** — the shield axis on a mastery. Nothing authors one yet.
+- **`SkillText`** states the gate for the first time: `Requires heavy armour and a shield` on the skill,
+  `— only with a shield` under a gated passive's numbers. Both clients read the same formatter.
+- **`--weight-column`** wrote the column into all 24 files — 1,420 rows, 103 with a real requirement —
+  and **`--check`** verifies every cell. A `heavy:` clause in DESCR now resolves against the layer a
+  heavy-armoured character actually collects, so a per-weight split is checkable on a NON-mastery row.
+
+### Two behaviour changes, both his
+
+- **A warrior or rogue in a ROBE, or naked, now gets nothing from Armor Mastery.** *"Yes turn off robe
+  and naked from warrior mastery no point in them wearing a robe. And we have nothing that strips you
+  from armor/weapon."* That second sentence is the argument, and it is the right one. It deliberately
+  reverses the 2026-07-01 "with all means every weight" fix. Applied to the rogue as well — the question
+  named both and the reasoning is identical.
+- **Shield Mastery's bow resistance is now really shield-gated.** Its card has always said *"Every part
+  of it needs a shield equipped"*; `ShieldDefPct` and `BlockChancePct` were inert without one by
+  accident, but bow resist is an ordinary stat and rungs 3-4 were paying it to a tank with a greatsword.
+
+### The DESCR keys — his call, kept as they are
+
+He offered to rewrite every cell into snake_case keys (`P.Def` → `p_def`). Declined, and it is the
+easier side for both: the reader already understands 141 spellings across 46 keys, so a rename buys the
+parser nothing and costs 24 files a full rewrite. What he asked for instead is
+**`classes_skills_csv/DESCR-KEYS.md`** — every key, every spelling, every scope label — **generated**
+from the parser's own alias table by `--descr-keys`, so it cannot drift from what `--check` reads.
+(There is no `AllDef`/`alldef%`: P.Def and M.Def are separate stats everywhere in the game.)
+
+`--check` clean on all twelve specs, `git diff --numstat docs/data/` N-for-N on all 24 files, server and
+Unity type-check clean, protocol unchanged (29).
+
+## 2026-08-29 — 0.101.5: Body Mastery was HP Boost twice, so it is gone
 
 *"In warrior 2nd file the body_mastery should be removed (it's hp_boost) … warrior_armor_master should
 replace the fighter_armor_mastery and include the hp-regen part of the removed body_mastery to all

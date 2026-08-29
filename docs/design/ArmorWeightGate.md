@@ -1,6 +1,6 @@
 # The `WEIGHT` column — an armour gate any skill can carry
 
-**Status: PROPOSED, not built. Your call on three questions (§5).** `BL-107`.
+**Status: ✅ BUILT 2026-08-29 (0.102.0). You said yes to all three (§5).** `BL-107`.
 Your message, 2026-08-29:
 
 > *"Can we do the same as we did for weapon? Add a column a required weight : heavy|light|heavy|shield
@@ -132,7 +132,7 @@ numbers, from the same mask the engine checks. That is the whole gap, and it is 
 
 ---
 
-## 5. What I need from you
+## 5. What I asked — and your answers, 2026-08-29
 
 1. **`heavy/shield` instead of `heavy|shield`?** (§2 — `|` cannot say AND, and your Shield Mastery
    example needs AND.)
@@ -143,15 +143,47 @@ numbers, from the same mask the engine checks. That is the whole gap, and it is 
    is a small nerf to a fighter who is wearing the wrong armour on purpose. Fine by me; your call.
 3. **DESCR keys, not a JSON array?** (§3.)
 
-Say yes to all three and it is one increment: the column in all 24 files, `RequiredArmor` on
-`PassiveEffect` and on `SkillDef` (the active gate, twin of `RequiredWeapon`), the shield axis on
-`ArmorMasteryProfile`, `--weight-column` to generate the cells from the code, `--check` to verify them,
-the gate line in `SkillText`, and `DefencePctWithShield` finally becoming what IG does — shield **and**
-heavy.
+**All three: yes.**
+
+1. ✅ *"I like it to do it same as 'weapon' column. `heavy/shield` == heavy and shield required …
+   `heavy|light` == heavy or light required"* — built exactly as §2.
+2. ✅ *"Yes turn off robe and naked from warrior mastery no point in them wearing a robe. And we have
+   nothing that strips you from armor/weapon."* The second sentence is the right argument and it is why
+   this is safe: nothing in the game can disarm you, so a fighter in a robe chose to be there.
+   ⚠ **Applied to the ROGUE's mastery as well** — the question named both and the reasoning is
+   identical. One line each in `Skills.Masteries.cs` if you want the rogue's back.
+3. ✅ *"Descr keys as they are now.. It's easy for me to write them."* Agreed, and it is easier here
+   too — the reader already knows six spellings of each stat, so a rename would cost 24 files a full
+   rewrite and buy the parser nothing. What you asked for instead is
+   **[`DESCR-KEYS.md`](../data/classes_skills_csv/DESCR-KEYS.md)**: every key, every spelling it
+   accepts, and every scope label — **generated** from the parser's own table
+   (`--descr-keys`), so it cannot drift from what `--check` actually reads.
+   ⚠ There is no `AllDef`/`alldef%` in your example: P.Def and M.Def are separate stats everywhere in
+   the game and no skill authors "all defence". Nothing to map.
+
+## 6. What was built
+
+One increment, 0.102.0:
+
+- **`ArmorWeights`** (a [Flags] weight MASK, the requirement side of `ArmorWeight`) + **`ShieldGate`**
+  (`Any` / `Required` / `Forbidden`) + **`ArmorGate`** — `Satisfies` / `Describe` / `Format` /
+  `TryParseRequirement`, the exact twin of `WeaponTypes`, in `Items.cs`.
+- **`SkillDef.RequiredArmor` / `RequiredShield`** — the ACTIVE cast gate, checked in `HandleUseSkill`
+  *and* in the auto-hunt chain (a gate the tap refuses must be SKIPPED by the autopilot, not attempted).
+- **`PassiveEffect.RequiredArmor`** — the general passive gate, all-or-nothing like `RequiresShield`.
+- **`SkillLevel.ExtraPassives`** — extra passive LAYERS per rung, each with its own gate, because an
+  all-or-nothing gate cannot describe a rung whose halves differ. Shield Mastery is the reason.
+- **`ArmorMasteryProfile.RequiredShield`** — the shield axis on a mastery (nothing authors one yet).
+- **`DefencePctWithShield` DELETED.** Shield Mastery's "+10% P.Def" is now plain `DefencePct` on a
+  second layer gated `RequiresShield + Heavy` — IG's own rule, and yours.
+- **`SkillText`** prints the gate: `Requires heavy armour and a shield` on the skill, and
+  `— only with …` under a gated passive's numbers. Both clients read it.
+- **`--weight-column`** wrote the column into all 24 files (1,420 rows, 103 real requirements),
+  **`--check`** verifies it, and a `heavy:` clause in DESCR now resolves against the matching layer.
 
 ---
 
-## 6. Related
+## 7. Related
 
 - `BL-105` / [the `WEAPON` column](../data/classes_skills_csv/README.md) — the grammar this mirrors.
 - [StatMods.md](StatMods.md) — the two payload records (`StatMods` for per-weight profiles,

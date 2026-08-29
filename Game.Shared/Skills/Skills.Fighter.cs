@@ -5,6 +5,13 @@ namespace Game.Shared;
 /// too, since archers are a fighter archetype and have no separate base file.</summary>
 public static partial class SkillCatalog
 {
+    /// <summary>Shield Mastery's second passive LAYER (rungs 3-4): "+10% P.Def" on the whole physical
+    /// defence, gated on a shield AND heavy armour (`BL-107`, his 2026-08-29 ruling — see the skill).
+    /// It is a separate <see cref="PassiveEffect"/> because a gate is all-or-nothing and the rung's
+    /// other half must keep paying a robed Warchanter.</summary>
+    private static readonly PassiveEffect HeavyShieldDefencePct =
+        new(RequiresShield: true, RequiredArmor: ArmorWeights.Heavy, DefencePct: 0.10f);
+
     public const string PowerStrike = "power_strike";
     public const string WarCry = "war_cry";
     public const string GreaterWarCry = "greater_war_cry";
@@ -294,10 +301,17 @@ public static partial class SkillCatalog
         // a fifth of what it was, and he wants them that way.
         //
         // ⚠ The "+10% P.Def" on rungs 3 and 4 is the WHOLE physical defence (armour, jewels, the lot),
-        // and it is SHIELD-GATED — `DefencePctWithShield`, not plain `DefencePct`. His ruling when
-        // asked, 2026-08-21: *"The 10% pDef (overall pDef not only shieldPDef) is only when shield is
-        // equipped (IG is shield+heavy but I'm not sure if we can)"*. We can test the weight too; he
-        // asked for shield-only, so that is what is built. See the note in Entity.ApplyPassive.
+        // and since `BL-107` (2026-08-29) it needs a SHIELD *AND* HEAVY ARMOUR — his own words,
+        // *"make the tank_shield_mastery L4 to work only on heavy|shield and not give the % defence on
+        // any armor except the heavy"*, which is finally IG's rule: when he first asked for it
+        // (2026-08-21) he wrote *"IG is shield+heavy but I'm not sure if we can"* and settled for
+        // shield-only because a passive had no way to name a weight.
+        //
+        // 🔑 IT IS ITS OWN PassiveEffect LAYER, and that is the whole point of `ExtraPassives`. A
+        // PassiveEffect's gate is ALL-OR-NOTHING, so folding heavy into the rung's main effect would
+        // also switch off the shield P.Def and the block rate for anyone not in plate — including the
+        // Human Warchanter, who learns this skill in a ROBE. Two gates, two layers.
+        // ⚠ Bow resistance stays in the shield-only layer: he named the % defence and nothing else.
         new(TankShieldMastery, "Shield Mastery", BaseClass.Fighter, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive,
@@ -308,10 +322,18 @@ public static partial class SkillCatalog
             {
                 // SP here is the TANK's price (his 20/28/36/52 rows). The Human Warchanter's
                 // 36000/120000/390000 comes from the ClassSkill.SpCost override on its own table.
-                new SkillLevel(SpCost: 3200,  Passive: new PassiveEffect(ShieldDefPct: 1.50f, BlockChancePct: 0.50f)),
-                new SkillLevel(SpCost: 3200,  Passive: new PassiveEffect(ShieldDefPct: 2.00f, BlockChancePct: 0.70f)),
-                new SkillLevel(SpCost: 40000, Passive: new PassiveEffect(ShieldDefPct: 2.50f, BlockChancePct: 0.85f, DefencePctWithShield: 0.10f, BowResist: 0.16f)),
-                new SkillLevel(SpCost: 74000, Passive: new PassiveEffect(ShieldDefPct: 3.00f, BlockChancePct: 1.00f, DefencePctWithShield: 0.10f, BowResist: 0.24f)),
+                // ⚠ `RequiresShield: true` ON EVERY RUNG since 2026-08-29 (`BL-107`). The card has
+                // always said *"Every part of it needs a shield equipped"* and for two of the four
+                // fields that was true only by accident — ShieldDefPct and BlockChancePct scale the
+                // shield's OWN numbers and are inert with an empty off-hand — but BOW RESISTANCE is an
+                // ordinary character stat, and rungs 3-4 were paying it to a tank holding a greatsword.
+                // Now the gate is real, and the WEIGHT column can state it (`/shield`).
+                new SkillLevel(SpCost: 3200,  Passive: new PassiveEffect(RequiresShield: true, ShieldDefPct: 1.50f, BlockChancePct: 0.50f)),
+                new SkillLevel(SpCost: 3200,  Passive: new PassiveEffect(RequiresShield: true, ShieldDefPct: 2.00f, BlockChancePct: 0.70f)),
+                new SkillLevel(SpCost: 40000, Passive: new PassiveEffect(RequiresShield: true, ShieldDefPct: 2.50f, BlockChancePct: 0.85f, BowResist: 0.16f),
+                    ExtraPassives: new[] { HeavyShieldDefencePct }),
+                new SkillLevel(SpCost: 74000, Passive: new PassiveEffect(RequiresShield: true, ShieldDefPct: 3.00f, BlockChancePct: 1.00f, BowResist: 0.24f),
+                    ExtraPassives: new[] { HeavyShieldDefencePct }),
             }),
 
         // Tank Anti-Magic — passive flat magic defence (5 levels @20/24/28/32/36).

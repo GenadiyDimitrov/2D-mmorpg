@@ -1107,6 +1107,12 @@ public class Entity
     /// <summary>What the over-grade WEAPON leaves of: P/M crit rate + crit damage, P/M accuracy, P/M attack.</summary>
     public float GradeWeaponPenalty => GradePenalty.FactorForGap(GradeWeaponGap);
 
+    /// <summary>The equipped BODY-slot armour weight (`ArmorWeight.None` = nothing worn), published by
+    /// <see cref="RecomputeDerived"/>. It was a local there for as long as only the armour masteries
+    /// needed it; `BL-107` gave skills an armour GATE, and a cast-time gate has to read the same value
+    /// the passives do rather than re-walk the inventory.</summary>
+    public ArmorWeight BodyArmorWeight { get; set; } = ArmorWeight.None;
+
     // ----- Shield / block (0 if no shield equipped) -----
     public bool HasShield { get; set; }
     public float BlockChance { get; set; }       // chance to block a physical hit
@@ -2242,6 +2248,7 @@ public class Entity
         GradeWeaponGap = 0;
 
         var bodyWeight = ArmorWeight.None;   // equipped BODY-slot armor weight (for masteries)
+        BodyArmorWeight = ArmorWeight.None;  // …and its published twin, reset with everything else
         int weaponAsBase = 0;                // equipped weapon's attack-speed base override (0 = type default)
         float weaponPFactor = 1f;            // equipped weapon's P.Atk / M.Atk channel factors
         float weaponMFactor = 1f;            // (1 = unarmed: no weapon to shape the split)
@@ -2252,7 +2259,7 @@ public class Entity
                 continue;
 
             if (def.Slot == EquipSlot.Armor && def.ArmorSlot == ArmorSlot.Body)
-                bodyWeight = def.Weight;
+                BodyArmorWeight = bodyWeight = def.Weight;   // published for the cast-time gate
 
             // GRADE PENALTY (owner 2026-07-17): no longer a per-item stat scaler. The gap between your
             // grade and the WORST over-grade piece you wear becomes a CHARACTER-wide debuff, applied at
@@ -2652,6 +2659,10 @@ public class Entity
                 if (supersededMasteries.Contains(skillId)) continue;
                 if (SkillCatalog.Get(skillId)?.ArmorMasteryAt(skillLevel) is not ArmorMasteryProfile prof)
                     continue;
+                // `BL-107` — the mastery's own SHIELD axis (weights are already its rows). Nothing
+                // authors one today, so this is normally Any and the profile applies as before.
+                if (!ArmorGate.Satisfies(bodyWeight, HasShield, ArmorWeights.None, prof.RequiredShield))
+                    continue;
                 dataMastery = true;
                 ApplyArmorMastery(bodyWeight switch
                 {
@@ -2727,9 +2738,13 @@ public class Entity
             // the profile entry for the currently-held weapon). An all-zero pe is inert.
             void ApplyPassive(PassiveEffect pe)
             {
-                // Shield-gated passives (Healer's Shield Mastery) contribute NOTHING without one.
-                // Checked first so no field of the effect can leak through.
+                // Shield-gated passives (Healer's Shield Mastery) contribute NOTHING without one, and
+                // since `BL-107` the same is true of an ARMOUR-WEIGHT-gated one (Shield Mastery's
+                // "+10% P.Def in heavy" layer). Checked first so no field of the effect can leak
+                // through. ⚠ ALL-OR-NOTHING: a rung that pays different things under different gear
+                // authors one PassiveEffect per gate — see SkillLevel.ExtraPassives.
                 if (pe.RequiresShield && !HasShield) return;
+                if (!ArmorGate.Satisfies(bodyWeight, HasShield, pe.RequiredArmor)) return;
                 MaxHp += pe.MaxHp + (int)(MaxHp * pe.MaxHpPct);
                 MaxMp += pe.MaxMp + (int)(MaxMp * pe.MaxMpPct);
                 Defence += pe.Defence;
@@ -2799,13 +2814,12 @@ public class Entity
                     // number that will actually be subtracted.
                     if (pe.ShieldDefPct != 0f)
                         ShieldDefense = (int)(ShieldDefense * (1f + pe.ShieldDefPct));
-                    // Shield Mastery rungs 3-4: "+10% P.Def" on the WHOLE physical defence, not just
-                    // the shield's share — but only while the shield is up. His ruling, 2026-08-21.
-                    // ⚠ IG gates this on heavy armour AS WELL ("IG is shield+heavy but I'm not sure if
-                    // we can") — we can, `ArmorWeight` is right here; he asked for shield-only, so that
-                    // is what this is. Adding the weight test is one `&&` if he wants IG parity.
-                    if (pe.DefencePctWithShield != 0f)
-                        Defence = (int)(Defence * (1f + pe.DefencePctWithShield));
+                    // (`DefencePctWithShield` used to live here — Shield Mastery's "+10% P.Def" on the
+                    //  WHOLE physical defence, shield-gated. It was a bespoke field invented in
+                    //  2026-08-21 for one skill because there was no general gate. `BL-107` built one,
+                    //  so the rung now carries a SECOND PassiveEffect with plain DefencePct under
+                    //  `RequiresShield` + `RequiredArmor: Heavy` — IG's own gate, and his
+                    //  *"not give the % defence on any armor except the heavy"*.)
                 }
                 MagicResist += pe.MagicResist;
                 InterruptPowerBonus += pe.InterruptPower;   // percentage POINTS on the final roll
@@ -2862,7 +2876,9 @@ public class Entity
                 if (replacedPassives.Contains(skillId)) continue;
                 var sd = SkillCatalog.Get(skillId);
                 if (sd is null) continue;
-                if (sd.PassiveAt(skillLevel) is PassiveEffect pe) ApplyPassive(pe);
+                // ⚠ PassivesAt, not PassiveAt: a rung may carry EXTRA gated layers (`BL-107`) and
+                // reading only the first silently drops them.
+                foreach (var pe in sd.PassivesAt(skillLevel)) ApplyPassive(pe);
                 if (sd.WeaponMasteryAt(skillLevel) is WeaponMasteryProfile wm)
                     ApplyPassive(wm.For(WeaponType));
             }

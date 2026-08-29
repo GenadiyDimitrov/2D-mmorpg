@@ -123,6 +123,11 @@ internal static class Check
                                // two sides when it is present.
                                string SkillId = "",
                                string Weapon = "",
+                               // BL-107 — the WEIGHT column, his `weight[|weight…][/shield]` grammar
+                               // (`|` = OR, `/` = AND). Same two-sided convention as Weapon above: the
+                               // RAW cell on the CSV side, the canonical `ArmorGate.Format` string on
+                               // the code side.
+                               string Weight = "",
                                // BL-96 — the AOE column: how wide the effect goes off, as against
                                // Range, which is how far you may throw it. Compared to
                                // SkillDef.AreaRadiusAt, so the radius is a CHECKED number for the
@@ -176,20 +181,23 @@ internal static class Check
             if (line.IndexOf("NOT DONE", StringComparison.OrdinalIgnoreCase) >= 0) break;
             if (line.Length == 0 || line.StartsWith('#') || line.StartsWith("LEARN")) continue;
             var f = SplitCsv(line);
-            if (f.Count < 14) continue;
+            if (f.Count < 15) continue;   // 15 columns since WEIGHT (`BL-107`)
             // ⚠ SKIP THE SECTION BANNERS. The 3rd-tier files separate their level blocks with a row of
             // bare commas ending in `----40----`, which has the full column count and sails through the
             // width test — producing a nameless "skill" at level 0 that then NAME-DRIFT-matched itself
             // onto a real one and reported five invented mismatches. A row with no NAME is not a rung.
             if (f[1].Trim().Length == 0) continue;
-            // ⚠ COLUMN INDICES HAVE SHIFTED THREE TIMES. BL-96 inserted AOE at 4 (2026-08-28); BL-105
-            // inserted WEAPON at 3 and then SKILL_ID at 2 (2026-08-29), so RANGE has walked 3 -> 4 -> 5. This is the ONLY place the CSV is read by index, which is what keeps each such
-            // migration a contained change — and the reason a structural pass must never skip a row.
-            rows.Add(new Rung(f[1].Trim(), I(f[0]), F(f[5]), F(f[8]), F(f[9]), F(f[10]),
-                              I(f[12]), I(f[13]), Descr: f[11].Trim(),
-                              Target: f[7].Trim().ToLowerInvariant(),
+            // ⚠ COLUMN INDICES HAVE SHIFTED FOUR TIMES. BL-96 inserted AOE at 4 (2026-08-28); BL-105
+            // inserted WEAPON at 3 and then SKILL_ID at 2 (2026-08-29); BL-107 inserted WEIGHT at 5 the
+            // same day — so RANGE has walked 3 -> 4 -> 5 -> 6. This is the ONLY place the CSV is read by
+            // index, which is what keeps each such migration a contained change — and the reason a
+            // structural pass must never skip a row.
+            rows.Add(new Rung(f[1].Trim(), I(f[0]), F(f[6]), F(f[9]), F(f[10]), F(f[11]),
+                              I(f[13]), I(f[14]), Descr: f[12].Trim(),
+                              Target: f[8].Trim().ToLowerInvariant(),
                               Weapon: f[4].Trim(),
-                              Aoe: F(f[6]),
+                              Weight: f[5].Trim(),
+                              Aoe: F(f[7]),
                               SkillId: f[2].Trim()));
         }
         return rows;
@@ -269,6 +277,8 @@ internal static class Check
                     SkillId: def.Id,
                     // BL-105 — what the GAME demands, in his own grammar, so the column is checked.
                     Weapon: WeaponColumn.CellFor(def, cs.SkillLevel),
+                    // BL-107 — and what it demands of your ARMOUR, in the same grammar.
+                    Weight: WeightColumn.CellFor(def, cs.SkillLevel),
                     // BL-96 — the radius the GAME carries at this rung, so the new AOE column is
                     // verified against the code like every other number in the row.
                     Aoe: def.AreaRadiusAt(cs.SkillLevel)));
@@ -405,6 +415,35 @@ internal static class Check
                 }
                 else if (b[i].Weapon.Length > 0)
                     diffs.Add($"weapon CSV '(any)' vs code '{b[i].Weapon}'");
+
+                // ---- BL-107 — THE WEIGHT COLUMN, his `weight[|weight…][/shield]` grammar. Read
+                // exactly like WEAPON above, for exactly the same reasons; only the axis differs
+                // (`|` OR among weights, `/` AND with the shield slot).
+                // ⚠ WHAT THE CODE SIDE FORMATS IS THE LOOSEST GATE OF THE ROW — see
+                // WeightColumn.CellFor. A rung whose halves carry different gates says here when it
+                // pays ANYTHING, and states the per-weight split in DESCR.
+                if (a[i].Weight.Length > 0)
+                {
+                    if (!ArmorGate.TryParseRequirement(a[i].Weight, out var aw, out var ash,
+                                                       out string? aerr, out string? awarn))
+                        diffs.Add($"weight CSV '{a[i].Weight}' UNREADABLE — {aerr}");
+                    else
+                    {
+                        if (aerr is not null)
+                            Console.WriteLine($"  🔴 WEIGHT ERROR    {label} rung {i + 1} " +
+                                              $"(lvl {a[i].LearnLevel}): '{a[i].Weight}' — {aerr}");
+                        if (awarn is not null)
+                            Console.WriteLine($"  ⚠  WEIGHT TYPO     {label} rung {i + 1} " +
+                                              $"(lvl {a[i].LearnLevel}): {awarn}");
+                        string csvCell = ArmorGate.Format(aw, ash);
+                        if (!string.Equals(csvCell, b[i].Weight, StringComparison.Ordinal))
+                            diffs.Add($"weight CSV '{csvCell}' vs code " +
+                                      $"'{(b[i].Weight.Length == 0 ? "(any)" : b[i].Weight)}'");
+                    }
+                }
+                else if (b[i].Weight.Length > 0)
+                    diffs.Add($"weight CSV '(any)' vs code '{b[i].Weight}'");
+
                 if (diffs.Count > 0)
                 {
                     Console.WriteLine($"  🟡 {label} rung {i + 1} (CSV lvl {a[i].LearnLevel}): " +

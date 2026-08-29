@@ -16,17 +16,22 @@ public static partial class SkillCatalog
     public const string NukerArmorMastery   = "nuker_armor_mastery";
 
     /// <summary>Rogue armor level. The CSV splits in two, exactly like the warrior's:
-    /// <c>with all</c> (MP regen + flat P.Def, and HP regen on the last rung) applies in EVERY
-    /// weight, and <c>with light</c> (evasion, crit-rate resist, speed) only in LIGHT. Off-weights
-    /// keep the "with all" half and simply miss the light half — still no active penalty for a
-    /// fighter (owner ruling 2026-07-01). Everything used to be gated on light, which left a
-    /// rogue in robe/heavy with no MP regen, no HP regen and no P.Def at all.</summary>
+    /// <c>with all</c> (MP regen + flat P.Def, and HP regen on the last rung) applies in LIGHT and
+    /// HEAVY, and <c>with light</c> (evasion, crit-rate resist, speed) only in LIGHT. Heavy keeps the
+    /// "with all" half and simply misses the light half — still no active PENALTY for a fighter
+    /// (owner ruling 2026-07-01); a robe or a bare torso now gets nothing at all (see below).</summary>
     /// ⚠ <paramref name="lightSpeed"/> is FLAT run speed, not a percentage — the CSV reads
     /// "speed +7" and he corrected it explicitly in playtest-20 ("Also speed is +7 flat not
     /// x1.07"). It was authored as MoveSpeedPct 0.06, which is a different number at every base
     /// speed and drifts as the SpeedTable changes.
+    /// 🔴 ROBE AND BARE ARE OFF SINCE 2026-08-29 (`BL-107`), and this REVERSES the 2026-07-01 fix the
+    /// summary above describes. His ruling, asked directly whether `light|heavy` really turns robe off
+    /// for the warrior AND the rogue: *"Yes turn off robe and naked from warrior mastery no point in
+    /// them wearing a robe. And we have nothing that strips you from armor/weapon"* — the second
+    /// sentence is the safety argument, and it is the right one: nothing in the game can disarm you,
+    /// so a fighter in a robe chose to be there. The "with all" half now means all TRAINED weights.
     private static ArmorMasteryProfile RogueArmor(StatMods all, int lightEva, float lightSpeed = 0f) =>
-        new(Robe: all, Heavy: all,
+        new(Robe: default, None: default, Heavy: all,
             Light: all with { Evasion = lightEva, CritRateResist = 0.15f, MoveSpeed = lightSpeed });
 
     /// <summary>Tank Heavy Armor Mastery level: HEAVY armor grants flat P.Def, ×1.07 P.Def,
@@ -47,8 +52,13 @@ public static partial class SkillCatalog
     /// hp-regen part of the removed body_mastery to all weights"*). The skill's max-HP half was the
     /// duplicate — HP Boost already pays it at 20/28/36 — and the regen ladder 0/1.1/1.1/1.6/1.6
     /// is body_mastery's own, copied rung for rung. FLAT HP/s, per `BL-92`; never HpRegenPct.
+    /// 🔴 ROBE AND BARE PAY NOTHING SINCE 2026-08-29 (`BL-107`) — his own words, *"turn off robe and
+    /// naked from warrior mastery no point in them wearing a robe"*. See the note on RogueArmor above;
+    /// the same ruling covers both, and it deliberately reverses the 2026-07-01 "with all means every
+    /// weight" fix. A warrior in a robe now gets no P.Def, no MP regen and no HP regen from this.
     private static ArmorMasteryProfile WarriorArmor(int def, int lightEva, float hpRegen = 0f) => new(
-        Robe:  new StatMods(PDef: def, MpRegenPct: 0.1f, HpRegen: hpRegen),
+        Robe:  default,
+        None:  default,
         Light: new StatMods(PDef: def, MpRegenPct: 0.1f, HpRegen: hpRegen, Evasion: lightEva),
         Heavy: new StatMods(PDef: def, MpRegenPct: 0.1f, HpRegen: hpRegen));
 
@@ -93,8 +103,9 @@ public static partial class SkillCatalog
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive,
             Replaces: new[] { FighterArmorMastery },
-            Description: "Passive. Improves defence, MP regeneration and (from level 2) HP "
-                       + "regeneration with any armor weight; light armor also boosts evasion.",
+            Description: "Passive. In LIGHT or HEAVY armor: improves defence, MP regeneration and "
+                       + "(from level 2) HP regeneration; light armor also boosts evasion. "
+                       + "A robe or a bare torso gets nothing.",
             Levels: new[]
             {
                 new SkillLevel(SpCost: 1700),
@@ -119,9 +130,10 @@ public static partial class SkillCatalog
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive,
             Replaces: new[] { FighterArmorMastery },
-            Description: "Passive. Improves defence and MP regeneration with any armor weight; "
-                       + "in LIGHT armor it also grants greatly increased evasion, resistance to "
-                       + "critical hits and (at higher levels) speed.",
+            Description: "Passive. In LIGHT or HEAVY armor: improves defence and MP regeneration; "
+                       + "in LIGHT it also grants greatly increased evasion, resistance to "
+                       + "critical hits and (at higher levels) speed. A robe or a bare torso "
+                       + "gets nothing.",
             Levels: new[]
             {
                 new SkillLevel(SpCost: 1700),

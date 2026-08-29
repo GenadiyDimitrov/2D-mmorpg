@@ -1892,6 +1892,17 @@ public class GameLoopService : BackgroundService
             return;
         }
 
+        // ARMOUR requirement (`BL-107`) — the twin of the weapon gate above, and read through the same
+        // one helper the passives and the skill card use, so the refusal message and the tooltip can
+        // never disagree about what the skill wants.
+        if (!ArmorGate.Satisfies(caster.BodyArmorWeight, caster.HasShield,
+                                 def.RequiredArmor, def.RequiredShield))
+        {
+            string need = ArmorGate.Describe(def.RequiredArmor, def.RequiredShield);
+            SendSystemToEntity(caster, $"{def.Name} requires {need}.");
+            return;
+        }
+
         // HP-gated activation (warrior Battle Presence/Defence): only usable at low HP.
         if (def.RequireHpBelowFraction > 0f && caster.Hp > caster.MaxHp * def.RequireHpBelowFraction)
         {
@@ -5464,6 +5475,10 @@ public class GameLoopService : BackgroundService
             // rather than downstream: an unusable entry has to be SKIPPED so the cursor moves on to a
             // skill that can fire, not merely refused and the turn wasted.
             if (!p.WeaponType.Satisfies(def.RequiredWeapon, def.RequiredHands)) continue;
+            // …and the ARMOUR gate with it (`BL-107`), for the same reason: a skill the tap would
+            // refuse must be SKIPPED here, not attempted and the turn wasted.
+            if (!ArmorGate.Satisfies(p.BodyArmorWeight, p.HasShield,
+                                     def.RequiredArmor, def.RequiredShield)) continue;
             if (def.RequireHpBelowFraction > 0f && p.Hp > p.MaxHp * def.RequireHpBelowFraction) continue;
 
             int lvl = Math.Max(1, p.SkillLevelOf(def.Id));

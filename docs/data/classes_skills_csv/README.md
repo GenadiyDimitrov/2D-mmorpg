@@ -136,6 +136,50 @@ two-handed and have no 1H variant, so the hands token passes straight over them 
 `dotnet run --project tools/SkillCsvSeed -- --weapon-column`; after that it is yours, and `--check` is
 what keeps it honest.
 
+### The `WEIGHT` column (2026-08-29, `BL-107`)
+
+The armour twin of `WEAPON`, in the same `[set]/[axis]` shape — your instruction: *"I like it to do it
+same as 'weapon' column"*. Which **body armour weight** (and whether a **shield**) a skill or passive
+demands.
+
+```
+weight1[|weight2|weight3][/shield]
+```
+
+| cell | means |
+| --- | --- |
+| *(empty)* | no armour requirement — works in anything, naked included |
+| `heavy` | heavy body armour; the shield does not matter |
+| `light\|heavy` | light **or** heavy — a robe and a bare torso get nothing |
+| `robe` | robe only (every mage armour mastery) |
+| `/shield` | a shield equipped, any armour (Shield Mastery rungs 1-2) |
+| `heavy/shield` | heavy **and** a shield (Shield Mastery's "+10% P.Def") |
+
+🔑 **`|` is OR and `/` is AND**, exactly as you wrote it. A shield is **not** an armour weight — it is a
+different equip slot that coexists with every weight — so it has to live after the `/`. Under an OR
+reading, `heavy|shield` would pay a robed character with a buckler the very bonus you asked to confine
+to heavy. Same lesson as the hands token, one day later.
+
+- Weights: `heavy` · `light` · `robe` · `bare` (also spelled `naked` or `none` — no body armour).
+- Order and case do not matter; the generated cell is always written heaviest-first.
+- Anything but `/shield` or `/noshield` — `/`, `/2`, `/x` — is an **🔴 error**, and the shield axis is
+  dropped (the weights still count). `/noshield` works but nothing in the game authors one.
+- A cell naming **all four** weights prints a **⚠ typo-warning**: it means the same as an empty cell.
+
+⚠ **When a row's halves have different gates, the cell states the LOOSEST one** — when the row pays
+anything at all. Shield Mastery reads `/shield` because its block rate only needs a shield; its
+"+10% P.Def" additionally needs heavy, and that lives in DESCR as a `heavy:` clause. `--check` reads
+both: the cell against the gate, the clause against that weight's own numbers.
+
+Generated once by `dotnet run --project tools/SkillCsvSeed -- --weight-column`; yours afterwards.
+
+### `DESCR` — the words the checker knows
+
+Keep writing DESCR the way you write it. **[DESCR-KEYS.md](DESCR-KEYS.md)** lists every stat word the
+reader understands (46 keys, 141 spellings) and every scope label — it is **generated** from the
+parser's own table by `dotnet run --project tools/SkillCsvSeed -- --descr-keys`, so it cannot go stale.
+If a word is not on that page, the number beside it comes back `UNREAD`: not wrong, just unverified.
+
 ### The format
 
 The 2nd-class header **plus a trailing `RACE` column** — `human` / `elf` / `demon`, or blank for all

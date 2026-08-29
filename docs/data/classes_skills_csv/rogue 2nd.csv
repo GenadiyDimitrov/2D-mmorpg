@@ -1,33 +1,33 @@
-LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,REPLACES,Comment
-,,,,,,,,,,,,,,,----------------------------Armor Mastery----------------------------
-20,Armor Mastery,rogue_armor_mastery,passive,,0,0,self/single,0,0,0,with light:  eva +7 and crit rate resist + 15% ; with all mpReg x1.1 and p.def +16,0,1700,[fighter_armor_mastery]
-24,Armor Mastery,rogue_armor_mastery,passive,,0,0,self/single,0,0,0,with light:  eva +11 and crit rate resist + 15% ; with all mpReg x1.1 and p.def +18,0,3200,[fighter_armor_mastery]
-28,Armor Mastery,rogue_armor_mastery,passive,,0,0,self/single,0,0,0,with light:  eva +13 and crit rate resist + 15% and speed +7; with all mpReg x1.1 and p.def +20,0,6000,[fighter_armor_mastery]
-32,Armor Mastery,rogue_armor_mastery,passive,,0,0,self/single,0,0,0,with light:  eva +13 and crit rate resist + 15% and speed +7; with all mpReg x1.1 and p.def +22,0,11000,[fighter_armor_mastery]
-36,Armor Mastery,rogue_armor_mastery,passive,,0,0,self/single,0,0,0,with light:  eva +13 and crit rate resist + 15% and speed +7; with all mpReg x1.8 and hpReg +1.2 and p.def +25,0,20000,[fighter_armor_mastery]
-,,,,,,,,,,,,,,,----------------------------Weapon Mastery----------------------------
-20,Weapon Mastery,rogue_weapon_mastery,passive,bow|duals,0,0,self/single,0,0,0,with bow: p.Atk +30 and range +200; with dual: p.atk +8 ;With all: p.atk x1.085 and crit dmg +35 and crit rate x1.2;,0,3400,[fighter_weapon_mastery]
-24,Weapon Mastery,rogue_weapon_mastery,passive,bow|duals,0,0,self/single,0,0,0,with bow: p.Atk +42 and range +200; with dual: p.atk +11 ;With all: p.atk x1.085 and crit dmg +64 and acc +3 and crit rate x1.2;,0,6400,[fighter_weapon_mastery]
-28,Weapon Mastery,rogue_weapon_mastery,passive,bow|duals,0,0,self/single,0,0,0,with bow: p.Atk +56 and range +200; with dual: p.atk +14 ;With all: p.atk x1.085 and crit dmg +80 and acc +3 and crit rate x1.2;,0,12000,[fighter_weapon_mastery]
-32,Weapon Mastery,rogue_weapon_mastery,passive,bow|duals,0,0,self/single,0,0,0,with bow: p.Atk +74 and range +200; with dual: p.atk +17 ;With all: p.atk x1.085 and crit dmg +140 and acc +3 and crit rate x1.2;,0,22000,[fighter_weapon_mastery]
-36,Weapon Mastery,rogue_weapon_mastery,passive,bow|duals,0,0,self/single,0,0,0,with bow: p.Atk +96 and range +200; with dual: p.atk +21 ;With all: p.atk x1.085 and crit dmg +165 and acc +3 and crit rate x1.2 and AS x1.05;,0,40000,[fighter_weapon_mastery]
-,,,,,,,,,,,,,,,----------------------------Piercing Stab----------------------------
-20,Piercing Stab,piercing_stab,physical active,duals,40,0,enemy/single,1,3,0,power 314 - only when skill does critical - otherwise 31 - can crit/double - require duals,18,1700,[stab strike]
-24,Piercing Stab,piercing_stab,physical active,duals,40,0,enemy/single,1,3,0,power 427 - only when skill does critical - otherwise 43 - can crit/double - require duals,21,3200,[stab strike]
-28,Piercing Stab,piercing_stab,physical active,duals,40,0,enemy/single,1,3,0,power 571 - only when skill does critical - otherwise 57 - can crit/double - require duals,24,6000,[stab strike]
-32,Piercing Stab,piercing_stab,physical active,duals,40,0,enemy/single,1,3,0,power 752 - only when skill does critical - otherwise 75 - can crit/double - require duals,28,11000,[stab strike]
-36,Piercing Stab,piercing_stab,physical active,duals,40,0,enemy/single,1,3,0,power 977 - only when skill does critical - otherwise 100 - can crit/double - require duals,30,20000,[stab strike]
-,,,,,,,,,,,,,,,----------------------------Precise Shot----------------------------
-20,Precise Shot,precise_shot,physical active,bow,700,0,enemy/single,3,6,0,power 279 -can double - require a bow,40,1700,[shot strike]
-24,Precise Shot,precise_shot,physical active,bow,700,0,enemy/single,3,6,0,power 379 -can double - require a bow,45,3200,[shot strike]
-28,Precise Shot,precise_shot,physical active,bow,700,0,enemy/single,3,6,0,power 507 -can double - require a bow,53,6000,[shot strike]
-32,Precise Shot,precise_shot,physical active,bow,700,0,enemy/single,3,6,0,power 669 -can double - require a bow,34,11000,[shot strike]
-36,Precise Shot,precise_shot,physical active,bow,700,0,enemy/single,3,6,0,power 868 -can double - require a bow,67,20000,[shot strike]
-,,,,,,,,,,,,,,,----------------------------Sprint----------------------------
-20,Sprint,sprint,pfysical buff,,0,0,self/single,0.2,30,15,increase speed +40,10,3400,[]
-,,,,,,,,,,,,,,,----------------------------Evasion Mastery----------------------------
-20,Evasion Mastery,evade_mastery,passive,,0,0,self/single,0,0,0,dodge FLOOR 10% - you evade at least 1 attack in 10 no matter how much accuracy the attacker stacks - grants NO evasion points (the evasion budget is armor mastery + the Agility buff + DEX) - auto-granted at the class change so SP is 0 - lvl2 (20%) at 40 and only for a MELEE discipline - lvl3 (30%) is written but unreachable until the 4th class exists,0,0,[]
-,,,,,,,,,,,,,,,----------------------------Evasion Boost----------------------------
-28,Evasion Boost,evasion_boost,pfysical buff,,0,0,self/single,0.5,900,30,Increase evasion by +20; Increase skill evasion by x1.25; Increase magic evasion by x1.1; buff cancel resist x1.8; ,20,3400,[]
-,,,,,,,,,,,,,,,----------------------------Bow Expertise----------------------------
-36,Bow Expertise,bow_expertise,pfysical buff,bow,0,0,self/single,3,2,1200,increase bow attack speed x1.08; requires a bow,25,22000,[]
+LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,REPLACES,Comment
+,,,,,,,,,,,,,,,,----------------------------Armor Mastery----------------------------
+20,Armor Mastery,rogue_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,with light:  eva +7 and crit rate resist + 15% ; with all mpReg x1.1 and p.def +16,0,1700,[fighter_armor_mastery]
+24,Armor Mastery,rogue_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,with light:  eva +11 and crit rate resist + 15% ; with all mpReg x1.1 and p.def +18,0,3200,[fighter_armor_mastery]
+28,Armor Mastery,rogue_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,with light:  eva +13 and crit rate resist + 15% and speed +7; with all mpReg x1.1 and p.def +20,0,6000,[fighter_armor_mastery]
+32,Armor Mastery,rogue_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,with light:  eva +13 and crit rate resist + 15% and speed +7; with all mpReg x1.1 and p.def +22,0,11000,[fighter_armor_mastery]
+36,Armor Mastery,rogue_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,with light:  eva +13 and crit rate resist + 15% and speed +7; with all mpReg x1.8 and hpReg +1.2 and p.def +25,0,20000,[fighter_armor_mastery]
+,,,,,,,,,,,,,,,,----------------------------Weapon Mastery----------------------------
+20,Weapon Mastery,rogue_weapon_mastery,passive,bow|duals,,0,0,self/single,0,0,0,with bow: p.Atk +30 and range +200; with dual: p.atk +8 ;With all: p.atk x1.085 and crit dmg +35 and crit rate x1.2;,0,3400,[fighter_weapon_mastery]
+24,Weapon Mastery,rogue_weapon_mastery,passive,bow|duals,,0,0,self/single,0,0,0,with bow: p.Atk +42 and range +200; with dual: p.atk +11 ;With all: p.atk x1.085 and crit dmg +64 and acc +3 and crit rate x1.2;,0,6400,[fighter_weapon_mastery]
+28,Weapon Mastery,rogue_weapon_mastery,passive,bow|duals,,0,0,self/single,0,0,0,with bow: p.Atk +56 and range +200; with dual: p.atk +14 ;With all: p.atk x1.085 and crit dmg +80 and acc +3 and crit rate x1.2;,0,12000,[fighter_weapon_mastery]
+32,Weapon Mastery,rogue_weapon_mastery,passive,bow|duals,,0,0,self/single,0,0,0,with bow: p.Atk +74 and range +200; with dual: p.atk +17 ;With all: p.atk x1.085 and crit dmg +140 and acc +3 and crit rate x1.2;,0,22000,[fighter_weapon_mastery]
+36,Weapon Mastery,rogue_weapon_mastery,passive,bow|duals,,0,0,self/single,0,0,0,with bow: p.Atk +96 and range +200; with dual: p.atk +21 ;With all: p.atk x1.085 and crit dmg +165 and acc +3 and crit rate x1.2 and AS x1.05;,0,40000,[fighter_weapon_mastery]
+,,,,,,,,,,,,,,,,----------------------------Piercing Stab----------------------------
+20,Piercing Stab,piercing_stab,physical active,duals,,40,0,enemy/single,1,3,0,power 314 - only when skill does critical - otherwise 31 - can crit/double - require duals,18,1700,[stab strike]
+24,Piercing Stab,piercing_stab,physical active,duals,,40,0,enemy/single,1,3,0,power 427 - only when skill does critical - otherwise 43 - can crit/double - require duals,21,3200,[stab strike]
+28,Piercing Stab,piercing_stab,physical active,duals,,40,0,enemy/single,1,3,0,power 571 - only when skill does critical - otherwise 57 - can crit/double - require duals,24,6000,[stab strike]
+32,Piercing Stab,piercing_stab,physical active,duals,,40,0,enemy/single,1,3,0,power 752 - only when skill does critical - otherwise 75 - can crit/double - require duals,28,11000,[stab strike]
+36,Piercing Stab,piercing_stab,physical active,duals,,40,0,enemy/single,1,3,0,power 977 - only when skill does critical - otherwise 100 - can crit/double - require duals,30,20000,[stab strike]
+,,,,,,,,,,,,,,,,----------------------------Precise Shot----------------------------
+20,Precise Shot,precise_shot,physical active,bow,,700,0,enemy/single,3,6,0,power 279 -can double - require a bow,40,1700,[shot strike]
+24,Precise Shot,precise_shot,physical active,bow,,700,0,enemy/single,3,6,0,power 379 -can double - require a bow,45,3200,[shot strike]
+28,Precise Shot,precise_shot,physical active,bow,,700,0,enemy/single,3,6,0,power 507 -can double - require a bow,53,6000,[shot strike]
+32,Precise Shot,precise_shot,physical active,bow,,700,0,enemy/single,3,6,0,power 669 -can double - require a bow,34,11000,[shot strike]
+36,Precise Shot,precise_shot,physical active,bow,,700,0,enemy/single,3,6,0,power 868 -can double - require a bow,67,20000,[shot strike]
+,,,,,,,,,,,,,,,,----------------------------Sprint----------------------------
+20,Sprint,sprint,pfysical buff,,,0,0,self/single,0.2,30,15,increase speed +40,10,3400,[]
+,,,,,,,,,,,,,,,,----------------------------Evasion Mastery----------------------------
+20,Evasion Mastery,evade_mastery,passive,,,0,0,self/single,0,0,0,dodge FLOOR 10% - you evade at least 1 attack in 10 no matter how much accuracy the attacker stacks - grants NO evasion points (the evasion budget is armor mastery + the Agility buff + DEX) - auto-granted at the class change so SP is 0 - lvl2 (20%) at 40 and only for a MELEE discipline - lvl3 (30%) is written but unreachable until the 4th class exists,0,0,[]
+,,,,,,,,,,,,,,,,----------------------------Evasion Boost----------------------------
+28,Evasion Boost,evasion_boost,pfysical buff,,,0,0,self/single,0.5,900,30,Increase evasion by +20; Increase skill evasion by x1.25; Increase magic evasion by x1.1; buff cancel resist x1.8; ,20,3400,[]
+,,,,,,,,,,,,,,,,----------------------------Bow Expertise----------------------------
+36,Bow Expertise,bow_expertise,pfysical buff,bow,,0,0,self/single,3,2,1200,increase bow attack speed x1.08; requires a bow,25,22000,[]

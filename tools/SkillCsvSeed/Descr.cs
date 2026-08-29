@@ -188,6 +188,9 @@ internal static class Descr
     {
         ("robe", ArmorWeight.Robe), ("light", ArmorWeight.Light),
         ("heavy", ArmorWeight.Heavy), ("none", ArmorWeight.None),
+        // `BL-107` — his own words for the same slot ("turn off robe and naked"). The `WEIGHT` column
+        // accepts all three spellings, so the DESCR reader learns them too: one vocabulary, both cells.
+        ("bare", ArmorWeight.None), ("naked", ArmorWeight.None),
     };
 
     private static readonly (string Word, WeaponType Weapon)[] WeaponWords =
@@ -456,7 +459,18 @@ internal static class Descr
         }
 
         // A PLAIN PASSIVE and the skill's buff MAGNITUDES apply whatever the scope.
-        if (def.PassiveAt(level) is PassiveEffect pe) AddPassive(Add, pe);
+        // 🔑 EVERY LAYER (`BL-107`), and a WEIGHT SCOPE PICKS AMONG THEM. A rung may carry more than one
+        // PassiveEffect, each with its own armour gate (`SkillLevel.ExtraPassives`) — Shield Mastery's
+        // block rate is shield-only, its "+10% P.Def" is shield AND heavy. So an unscoped segment sees
+        // them all, and a segment he labelled `heavy:` sees only the layers a heavy-armoured character
+        // actually collects. That is what makes a per-weight clause on a NON-mastery row checkable;
+        // before this, the labels only meant anything on an ArmorMasteryProfile.
+        foreach (var pe in def.PassivesAt(level))
+        {
+            if (scope?.Weight is ArmorWeight sw
+                && !ArmorGate.Satisfies(sw, true, pe.RequiredArmor)) continue;
+            AddPassive(Add, pe);
+        }
         Add("procchance", true, def.ProcChance);
         AddMagnitudes(Add, def, level);
 
@@ -569,7 +583,9 @@ internal static class Descr
         add("patk", true, p.PhysAtkPct);      add("patk", true, p.AttackPct);
         add("matk", true, p.MagAtkPct);       add("matk", true, p.AttackPct);
         add("pdef", false, p.Defence);        add("pdef", true, p.DefencePct);
-        add("pdef", true, p.DefencePctWithShield);   // Shield Mastery 3-4: whole P.Def, shield-gated
+        // (`DefencePctWithShield` was read here too, until `BL-107` deleted it: Shield Mastery's
+        //  "whole P.Def, shield-gated" is now plain DefencePct on a second, heavy-gated layer, which
+        //  the line above already pools — and which a `heavy:` clause in DESCR can now select.)
         add("mdef", false, p.MagicDefence);   add("mdef", true, p.MagicDefencePct);
         add("maxhp", false, p.MaxHp);         add("maxhp", true, p.MaxHpPct);
         add("maxmp", false, p.MaxMp);         add("maxmp", true, p.MaxMpPct);
@@ -762,4 +778,83 @@ internal static class Descr
     private static string Show(float v, bool pct) =>
         pct ? (v * 100f).ToString("0.##", CultureInfo.InvariantCulture) + "%"
             : v.ToString("0.##", CultureInfo.InvariantCulture);
+
+    // =============================================================================================
+    //  `--descr-keys` — THE REFERENCE FILE, GENERATED FROM THE TABLES ABOVE.
+    //
+    //  His ask, 2026-08-29: *"Descr keys as they are now.. It's easy for me to write them … but I need
+    //  you to show me each key in a file like P.Def = p_def, AllDef = def, alldef% = def_prc"*.
+    //
+    //  🔑 HE KEEPS HIS OWN SPELLINGS AND GETS THE LIST. He offered to rewrite every cell into snake_case
+    //  keys; that trade is a bad one for both of us — the reader ALREADY understands six spellings of
+    //  each stat, so a rename buys the parser nothing and costs 24 files a full rewrite (and the CSVs
+    //  have been corrupted twice by the applications that edit them). What was genuinely missing is
+    //  this: a list of which words the reader recognises, so he never has to guess.
+    //
+    //  ⚠ IT IS GENERATED, NEVER HAND-WRITTEN. A hand-kept list of a parser's vocabulary is stale the
+    //  first time an alias is added, and a stale one is worse than none — he would write a word the
+    //  file says is understood and the number would come back UNREAD. Re-run after touching Aliases.
+    // =============================================================================================
+
+    private const string KeyFile = "DESCR-KEYS.md";
+
+    public static int WriteKeyReference(string csvDir)
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine("# `DESCR` — every word the checker understands");
+        sb.AppendLine();
+        sb.AppendLine("**GENERATED — do not edit by hand.** `dotnet run --project tools/SkillCsvSeed -- --descr-keys`");
+        sb.AppendLine("regenerates it from the alias table in `tools/SkillCsvSeed/Descr.cs`, which is the same table");
+        sb.AppendLine("`--check` reads your rows with. If a word is not on this page, a number next to it comes back");
+        sb.AppendLine("`UNREAD` — not wrong, just unverified.");
+        sb.AppendLine();
+        sb.AppendLine("Keep writing them the way you write them now. Every spelling in the right-hand column is");
+        sb.AppendLine("already understood, case does not matter, and the longest match wins — so `magic crit` reads as");
+        sb.AppendLine("magic crit rate and never as plain crit rate.");
+        sb.AppendLine();
+        sb.AppendLine("## How a value is read");
+        sb.AppendLine();
+        sb.AppendLine("- `+40` / `-2` is a **flat** addend; `+7%` and `x1.07` are both the **percent** form of the same");
+        sb.AppendLine("  thing (`x1.07` → +7%, `x0.5` → −50%). Write whichever reads better.");
+        sb.AppendLine("- A number binds to the **nearest** stat word, before or after it: `p.def +40` and `+40 p.def`");
+        sb.AppendLine("  are the same. Keep the word next to its number and nothing can cross-match.");
+        sb.AppendLine("- `;` starts a new clause. A clause may open with a **scope label** — see below.");
+        sb.AppendLine("- Anything in `(brackets)` is treated as commentary and ignored, with ONE exception:");
+        sb.AppendLine("  `(success chance x1.5)` and `(interrupt chance x2)` are read as data.");
+        sb.AppendLine();
+        sb.AppendLine("## Scope labels — which gear state a clause is about");
+        sb.AppendLine();
+        sb.AppendLine("| Label | Means |");
+        sb.AppendLine("|---|---|");
+        sb.AppendLine("| `robe:` `light:` `heavy:` | that body-armour weight only |");
+        sb.AppendLine("| `bare:` `naked:` `none:` | no body armour |");
+        sb.AppendLine("| `with light` `with heavy` … | the same, in sentence form |");
+        sb.AppendLine("| `with sword` `with blunt` `with bow` `with duals` | that weapon only |");
+        sb.AppendLine("| `with all` / `with any` | everything the `WEIGHT` / `WEAPON` column allows |");
+        sb.AppendLine();
+        sb.AppendLine("The gate itself belongs in the **`WEIGHT`** and **`WEAPON`** columns, not in the prose — those are");
+        sb.AppendLine("what the game enforces and what `--check` compares. A label here only says which half of a");
+        sb.AppendLine("multi-part row a number belongs to.");
+        sb.AppendLine();
+        sb.AppendLine("## The stat words");
+        sb.AppendLine();
+        sb.AppendLine("| Key | Write any of |");
+        sb.AppendLine("|---|---|");
+        foreach (var (metric, words) in Aliases)
+            sb.AppendLine($"| `{metric}` | " + string.Join(", ", words.Select(w => "`" + w + "`")) + " |");
+        sb.AppendLine();
+        sb.AppendLine($"{Aliases.Length} keys, {Aliases.Sum(a => a.Words.Length)} spellings.");
+        sb.AppendLine();
+        sb.AppendLine("## Words that are read but are not stats");
+        sb.AppendLine();
+        sb.AppendLine("Numbers next to these are consumed deliberately so they do not report as `UNREAD`:");
+        sb.AppendLine("durations in `s`/`min`, ranges, `rank N`, `lvl N`, stack counts, and the `otherwise N`");
+        sb.AppendLine("restatement of a non-crit damage. See the ignore rules in `Descr.cs`.");
+
+        string path = Path.Combine(csvDir, KeyFile);
+        File.WriteAllText(path, sb.ToString());
+        Console.WriteLine($"wrote {path}");
+        Console.WriteLine($"{Aliases.Length} keys, {Aliases.Sum(a => a.Words.Length)} spellings.");
+        return 0;
+    }
 }
