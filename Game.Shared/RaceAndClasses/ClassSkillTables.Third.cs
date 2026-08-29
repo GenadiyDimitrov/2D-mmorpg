@@ -328,7 +328,7 @@ public static partial class ClassSkillTables
 
         // ---- HUMAN: the shield tank. Blunt + shield, ONE damage skill. ---------------------------
         var human = new List<ClassSkill>(kit2);
-        human.AddRange(Ladder(WcChanterHeavy, new[] { 40 }));
+        human.AddRange(Ladder(WcBufferHeavy, new[] { 40 }));
         human.AddRange(Ladder(WcManaVampirism, new[] { 40, 60, 70 }));
         human.AddRange(Ladder(WcSoundSmash, band13));
 
@@ -344,9 +344,9 @@ public static partial class ClassSkillTables
         //      2026-08-21: *"ork is mele fighter so need more than 1dmg skill"*. Acoustic Shock is
         //      Sound Smash's twin with a stun, and it exists for exactly that reason. -------------
         var demon = new List<ClassSkill>(kit2);
-        demon.AddRange(Ladder(WcChanterHeavy, new[] { 40 }));
+        demon.AddRange(Ladder(WcBufferHeavy, new[] { 40 }));
         demon.AddRange(Ladder(WcManaVampirism, new[] { 40, 60, 70 }));
-        demon.AddRange(Ladder(WcBloodhanterBlunt, band8));
+        demon.AddRange(Ladder(WcWarlockWeapon, band8));
         demon.AddRange(Ladder(WcSoundSmash, band13));
         demon.AddRange(Ladder(WcAcousticShock, band13));
 

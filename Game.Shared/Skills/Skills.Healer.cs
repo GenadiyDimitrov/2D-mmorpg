@@ -59,7 +59,7 @@ public static partial class SkillCatalog
         // 🔑 THE THREE WEIGHTS ARE IDENTICAL FROM RUNG 5, AND THE SPEED CLAUSES ARE GONE. His rows read
         //    *"Robe/Light/Heavy: mpReg x1.2, pDef +N, maxMP +M"* — one line covering all three weights,
         //    with no cast/attack-speed clause anywhere in them. That is not an omission: from 40 the
-        //    penalty-cancelling belongs to the RACE masteries (Chanter Heavy for Human/Demon, Harmonist
+        //    penalty-cancelling belongs to the RACE masteries (Heavy Armor for Human/Demon, Harmonist
         //    Light for Elf, Skills.Warchanter3rd.Kit.cs), and leaving a copy here would apply it TWICE.
         //    ⚠ Rung 5 used to carry `CastSpeedPct 0.90, AtkSpeedPct 1.00` on its Light row — written
         //    before the race masteries existed. Stacked with Harmonist Light's own x1.8/x2 it drove an
@@ -75,7 +75,7 @@ public static partial class SkillCatalog
     ///
     /// <para>🔑 THE ×1.2 MP REGEN LEFT THIS SKILL ON 2026-08-27 — *"the mp regen is moved to the
     /// represented masteries per race (human/ork heavy, elf light)"*. It now rides on
-    /// <c>WcChanterHeavy</c> (Human;Demon) and <c>WcHarmonistLight</c> (Elf) instead, in
+    /// <c>WcBufferHeavy</c> (Human;Demon) and <c>WcHarmonistLight</c> (Elf) instead, in
     /// Skills.Warchanter3rd.Kit.cs. Same outcome for a buffer wearing his race's armour, and it makes
     /// the grant a REWARD FOR WEARING IT: a Human Warchanter in light armour now gets no ×1.2 at all,
     /// where this skill used to hand it to him regardless.</para>

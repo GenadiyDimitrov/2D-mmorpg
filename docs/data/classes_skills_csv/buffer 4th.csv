@@ -136,15 +136,15 @@ LEARN @ LVL, NAME,TYPE,WEAPON,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,M
 40,Shield Mastery,Passive,,0,,self,0,0,0,"Shield P.Def +30%, Shield Rate +50%;",0,36k,[],Human,
 60,Shield Mastery,Passive,,0,,self,0,0,0,"Shield P.Def +40%, Shield Rate +70%;",0,120k,[],Human,
 70,Shield Mastery,Passive,,0,,self,0,0,0,"Shield P.Def +50%, Shield Rate +85%; +10% P.Def, bow resistance 16%",0,390k,[],Human,
-,,,,,,,,,,,,,,,-----------------------Bloodhanter Two Hand Mastery-----------------------
-40,Bloodhanter Blunt Mastery,Passive,,0,,self,0,0,0,"Blunt: P.Atk 30, Accuracy +3;",0,36k,[],Demon,
-48,Bloodhanter Blunt Mastery,Passive,,0,,self,0,0,0,"Blunt: P.Atk 40, Accuracy +3;",0,64k,[],Demon,
-56,Bloodhanter Blunt Mastery,Passive,,0,,self,0,0,0,"Blunt: P.Atk 50, Accuracy +3;",0,81k,[],Demon,
-60,Bloodhanter Blunt Mastery,Passive,,0,,self,0,0,0,"Blunt: P.Atk 60, Accuracy +3;",0,120k,[],Demon,
-64,Bloodhanter Blunt Mastery,Passive,,0,,self,0,0,0,"Blunt: P.Atk 70, Accuracy +3;",0,190k,[],Demon,
-68,Bloodhanter Blunt Mastery,Passive,,0,,self,0,0,0,"Blunt: P.Atk 80, Accuracy +3;",0,320k,[],Demon,
-70,Bloodhanter Blunt Mastery,Passive,,0,,self,0,0,0,"Blunt: P.Atk 90, Accuracy +3;",0,390k,[],Demon,
-74,Bloodhanter Blunt Mastery,Passive,,0,,self,0,0,0,"Blunt: P.Atk 100, Accuracy +3;",0,880k,[],Demon,
+,,,,,,,,,,,,,,,-----------------------Warlock Weapon Mastery-----------------------
+40,Warlock Weapon Mastery,Passive,,0,,self,0,0,0,"Blunt: P.Atk 30, Accuracy +3;",0,36k,[],Demon,
+48,Warlock Weapon Mastery,Passive,,0,,self,0,0,0,"Blunt: P.Atk 40, Accuracy +3;",0,64k,[],Demon,
+56,Warlock Weapon Mastery,Passive,,0,,self,0,0,0,"Blunt: P.Atk 50, Accuracy +3;",0,81k,[],Demon,
+60,Warlock Weapon Mastery,Passive,,0,,self,0,0,0,"Blunt: P.Atk 60, Accuracy +3;",0,120k,[],Demon,
+64,Warlock Weapon Mastery,Passive,,0,,self,0,0,0,"Blunt: P.Atk 70, Accuracy +3;",0,190k,[],Demon,
+68,Warlock Weapon Mastery,Passive,,0,,self,0,0,0,"Blunt: P.Atk 80, Accuracy +3;",0,320k,[],Demon,
+70,Warlock Weapon Mastery,Passive,,0,,self,0,0,0,"Blunt: P.Atk 90, Accuracy +3;",0,390k,[],Demon,
+74,Warlock Weapon Mastery,Passive,,0,,self,0,0,0,"Blunt: P.Atk 100, Accuracy +3;",0,880k,[],Demon,
 ,,,,,,,,,,,,,,,---------------------------------------------------------------------------------------------ACTIVE SUPPORT-------------------------------------------------------------------------------------------------------------------
 ,,,,,,,,,,,,,,,---------------------------------------------------------------------------------------------ACTIVE PHYSICAL-------------------------------------------------------------------------------------------------------------------
 ,,,,,,,,,,,,,,,---------------------------Twin Arrow----------------------------

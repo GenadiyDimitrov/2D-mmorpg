@@ -282,8 +282,8 @@ column on the 3rd/4th rows is what tells you which of the three you are reading.
 most useful thing in this table. Two notes on where they stand:
 
 - **The three buffer rows are already true** and match the built kit exactly — Human takes Heavy
-  (`Chanter Heavy Mastery`), Elf takes Light + Bow (`Harmonist Bow/Light`), Demon takes 2-handed
-  blunt (`Bloodchanter Two-Hand Mastery`). Nothing to do.
+  (`Heavy Armor Mastery`), Elf takes Light + Bow (`Harmonist Bow/Light`), Demon takes 2-handed
+  blunt (`Warlock Weapon Mastery`). Nothing to do.
 - ✅ **The warrior SWORD-vs-BLUNT split IS A RULE — you ruled it 2026-08-29.** *"The aoe warriors to
   be a 2h blunt while mele warriors to use 2h swords."* It is **not enforced yet and that is correct**:
   there is still no warrior 3rd-class kit, so there is no passive to gate. It is carried as `BL-104`

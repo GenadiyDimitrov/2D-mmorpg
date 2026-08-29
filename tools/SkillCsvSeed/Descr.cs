@@ -659,13 +659,17 @@ internal static class Descr
         // The two Warchanter armour masteries write the RESULT and the code stores the FACTOR that
         // produces it. Both are only meaningful against Spellcaster Mastery's x0.5, which is applied
         // separately — exactly like the cleric's light row (see HealerArmorMastery).
-        [("chanter heavy mastery", "cast")] =
+        // ⚠ The key below was "chanter heavy mastery" until the 2026-08-29 rename. A NAME-KEYED
+        // exception table breaks SILENTLY when a skill is renamed — the exception simply stops
+        // matching and the row starts reporting as a defect — so a rename has to grep here too.
+        // (The TANK also has a "Heavy Armor Mastery" now; it authors no cast speed, so no collision.)
+        [("heavy armor mastery", "cast")] =
             "2026-08-21 — his row is *\"Restored Cast Speed to 90%(x1.8)\"*: 90% is the ANSWER and x1.8 "
           + "is the input. Spellcaster Mastery charges heavy armour x0.50, so the mastery must carry "
           + "0.80 (x1.80) for the product to land on the 90% he wrote. The reader takes the percent it "
           + "can see; the code has to hold the multiplier.",
         [("harmonist light mastery", "cast")] =
-            "2026-08-21 — same as Chanter Heavy Mastery above: \"90%(x1.8)\" is result-then-input, and "
+            "2026-08-21 — same as Heavy Armor Mastery above: \"90%(x1.8)\" is result-then-input, and "
           + "0.80 x Spellcaster's 0.50 is the 90%.",
         [("evasion boost", "magiceva")] =
             "2026-08-11 (`62e`) — magic evasion became FLAT POINTS on the fail roll, his words: \"the "

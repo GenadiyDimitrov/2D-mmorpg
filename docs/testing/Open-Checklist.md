@@ -437,7 +437,7 @@ tables, so an old build simply will not show these rows.
 
 - `93h` [ ] - **Armor Mastery is now P.Def + Max MP and NOTHING ELSE**, and the ×1.2 MP regen moved to
   the race masteries — your words: *"the mp regen is moved to the represented masteries per race
-  (human/ork heavy, elf light)"*. So it rides **Chanter Heavy Mastery** (Human, Ork) and **Harmonist
+  (human/ork heavy, elf light)"*. So it rides **Heavy Armor Mastery** (Human, Demon) and **Harmonist
   Light Mastery** (Elf). 🔑 The consequence worth checking in play: **a Human Warchanter in LIGHT armour
   now gets no ×1.2 at all**, where Armor Mastery used to hand it to him regardless of what he wore. The
   `BL-92` rule still holds exactly — one ×1.2 per mage. ->

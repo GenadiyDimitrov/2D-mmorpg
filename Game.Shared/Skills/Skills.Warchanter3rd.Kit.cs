@@ -15,8 +15,8 @@ namespace Game.Shared;
 ///         damage skill (Sound Smash).</item>
 ///   <item>ELF — light armour, BOW: the penalty-cancelling Bow Proficiency, a Bow Mastery ladder,
 ///         Bow Expertise, and a ranged two-hit damage skill (Sound Burst).</item>
-///   <item>ORK — heavy armour, blunt, no shield: TWO melee damage skills, Sound Smash and the
-///         stunning Acoustic Shock, plus the Bloodhanter Blunt Mastery ladder.</item>
+///   <item>DEMON — heavy armour, blunt, no shield: TWO melee damage skills, Sound Smash and the
+///         stunning Acoustic Shock, plus the Warlock Weapon Mastery ladder.</item>
 /// </list>
 ///
 /// <para>⚠ Four things his file names are NOT defined here because they already exist and are simply
@@ -35,11 +35,17 @@ public static partial class SkillCatalog
         { "wc_combo_rush_1", "wc_combo_rush_2", "wc_combo_rush_3",
           "wc_combo_rush_4", "wc_combo_rush_5", "wc_combo_rush_6" };
     public const string WcManaVampirism      = "wc_mana_vampirism";
-    public const string WcChanterHeavy       = "wc_chanter_heavy_mastery";      // Human;Demon
+    // ⚠ THE ID STRINGS BELOW ARE FROZEN AND NO LONGER MATCH THEIR NAMES, ON PURPOSE. Both skills were
+    // renamed 2026-08-29 when the class names caught up with the Ork→Demon change (`BL-101`), and a
+    // skill id is APPEND-ONLY: characters persist their learned ids, so `wc_chanter_heavy_mastery` and
+    // `wc_bloodhanter_blunt_mastery` can never move without orphaning every save that holds them. The
+    // C# const identifiers were renamed to match the new names — those are compile-checked and cost
+    // nothing — and the id strings stayed. Read the string as a serial number, not as a name.
+    public const string WcBufferHeavy        = "wc_chanter_heavy_mastery";      // Human;Demon
     public const string WcHarmonistLight     = "wc_harmonist_light_mastery";    // Elf
     public const string WcHarmonistBowProf   = "wc_harmonist_bow_proficiency";  // Elf
     public const string WcHarmonistBowMast   = "wc_harmonist_bow_mastery";      // Elf
-    public const string WcBloodhanterBlunt   = "wc_bloodhanter_blunt_mastery";  // Demon
+    public const string WcWarlockWeapon      = "wc_bloodhanter_blunt_mastery";  // Demon
     // ---- ACTIVES ----
     public const string WcHarmonyRestoration = "wc_harmony_restoration";
     public const string WcSoundBurst         = "wc_sound_burst";        // Elf, bow, hits twice
@@ -75,12 +81,18 @@ public static partial class SkillCatalog
 
         // ===== PASSIVES ==========================================================================
 
-        // ---- Chanter Heavy Mastery (Human + Demon) — the heavy-armour half of the caster penalty,
+        // ---- Heavy Armor Mastery (Human + Demon) — the heavy-armour half of the caster penalty,
         //      bought back. Spellcaster Mastery charges light/heavy/none cast x0.5 and attack x0.5;
         //      his row restores them to "90%(x1.8)" and "100%(x2)", which is why the numbers look
         //      like over-corrections in isolation: 1.8 x 0.5 = 0.9 and 2.0 x 0.5 = 1.0. Same
         //      arithmetic as the cleric's light row (see HealerArmorMastery). ----
-        list.Add(new SkillDef(WcChanterHeavy, "Chanter Heavy Mastery", BaseClass.Mage, SkillEffect.None,
+        // ⚠ RENAMED 2026-08-29, his call: *"'chanter heavy mastery' should become 'heavy armor mastery'
+        //   as human and demon are no longer 'chanter' as class name"*. The Human buffer is a Doctor and
+        //   the Demon a Dreadcaller since `BL-100`/`BL-101`; "Chanter" named a class that no longer
+        //   exists. 🔑 The TANK already has a "Heavy Armor Mastery" and that is fine: one is Fighter and
+        //   one is Mage, no character can hold both, and `Abbreviations` de-duplicates names so the two
+        //   simply share a bar label they can never both draw.
+        list.Add(new SkillDef(WcBufferHeavy, "Heavy Armor Mastery", BaseClass.Mage, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive,
             Description: "Passive. Heavy armour stops hindering you — full attack speed, near-full "
@@ -89,7 +101,7 @@ public static partial class SkillCatalog
             ArmorMasteryLevels: new[]
             {
                 // 🔑 MpRegenPct 0.2 (the ×1.2) MOVED HERE from Armor Mastery on 2026-08-27 — *"the mp
-                //    regen is moved to the represented masteries per race"*. Heavy is the Human/Ork
+                //    regen is moved to the represented masteries per race"*. Heavy is the Human/Demon
                 //    buffer's own weight, so this is the one place he can earn it; Spellcaster Mastery
                 //    pays heavy nothing. Still exactly one ×1.2 per mage (`BL-92`).
                 new ArmorMasteryProfile(
@@ -144,8 +156,16 @@ public static partial class SkillCatalog
                 .Select(a => new WeaponMasteryProfile(Bow: new PassiveEffect(PhysAtk: a, BowRange: 400f)))
                 .ToArray()));
 
-        // ---- Bloodhanter Blunt Mastery (Demon) — 8 rungs, the demon's answer to the elf's bow line.
+        // ---- Warlock Weapon Mastery (Demon) — 8 rungs, the demon's answer to the elf's bow line.
         //      Flat P.Atk 30 to 100 and a constant +3 accuracy. ----
+        //
+        // ⚠ RENAMED 2026-08-29. It was "Bloodhanter", which he points out was a TYPO for Bloodchanter —
+        //   and rather than fix the typo he retired the word: *"as we changed the orks to demons and
+        //   changed the classes names -> so rename it to 'warlock weapon mastery' the 4th classes
+        //   name"*. Warlock is the Demon buffer's 4th class (`Classes.Names.cs`). 🔑 The IP test passes
+        //   on his own rule — word + SAME RACE + SAME ROLE: ours is a BUFFER, IG's is a summoner.
+        //   ⚠ "Blunt" left the name too, because the requirement now lives in the WEAPON column
+        //   (`blunt/2`), not in prose.
         //
         // 🔑 TWO-HANDED ONLY since 2026-08-29 (owner: *"for demon buffer it's maul/staff (2h blunt)"*).
         //    His own CSV section header has said "Bloodhanter TWO HAND Mastery" since the file landed;
@@ -156,7 +176,7 @@ public static partial class SkillCatalog
         //    *"the spell mastery ... they share one so we gate only the type, and their additional
         //    passives are hands gated"*. Do not push hands up into BufferMastery.
         int[] bluntAtk = { 30, 40, 50, 60, 70, 80, 90, 100 };
-        list.Add(new SkillDef(WcBloodhanterBlunt, "Bloodhanter Blunt Mastery", BaseClass.Mage, SkillEffect.None,
+        list.Add(new SkillDef(WcWarlockWeapon, "Warlock Weapon Mastery", BaseClass.Mage, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive,
             Description: "Passive. A TWO-HANDED blunt weapon — a maul or a staff — strikes harder "
@@ -180,10 +200,16 @@ public static partial class SkillCatalog
         //      — so this is a feel question, not a numbers one, and the FLAT one won: a sustain line
         //      is the wrong place for variance. You want to know whether you can keep buffing, not
         //      roll for it. The proc version is one ProcChance field away if he wants the spike. ----
+        //
+        // 🔴 BLUNT **OR BOW** — fixed 2026-08-29, his correction: *"the mana vamp works on basic attack
+        //    with required weapon blunt or bow ... not only blunt"*. His CSV row has always said
+        //    `Require: Bow/Blunt`; only the code said blunt. Same shape as the Combo Mastery bug found
+        //    the same day, and the reason the WEAPON column now exists: a requirement written in prose
+        //    cannot be compared to the one the engine enforces.
         list.Add(new SkillDef(WcManaVampirism, "Mana Vampirism", BaseClass.Mage, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive,
-            Description: "Passive. Your basic attacks with a blunt weapon drain mana back to you.",
+            Description: "Passive. Your basic attacks with a blunt weapon or a bow drain mana back to you.",
             Levels: new[]
             {
                 new SkillLevel(SpCost: 36_000),
@@ -192,9 +218,12 @@ public static partial class SkillCatalog
             },
             WeaponMasteryLevels: new[]
             {
-                new WeaponMasteryProfile(Blunt: new PassiveEffect(ManaVamp: 0.010f)),
-                new WeaponMasteryProfile(Blunt: new PassiveEffect(ManaVamp: 0.015f)),
-                new WeaponMasteryProfile(Blunt: new PassiveEffect(ManaVamp: 0.020f)),
+                new WeaponMasteryProfile(Blunt: new PassiveEffect(ManaVamp: 0.010f),
+                                         Bow:   new PassiveEffect(ManaVamp: 0.010f)),
+                new WeaponMasteryProfile(Blunt: new PassiveEffect(ManaVamp: 0.015f),
+                                         Bow:   new PassiveEffect(ManaVamp: 0.015f)),
+                new WeaponMasteryProfile(Blunt: new PassiveEffect(ManaVamp: 0.020f),
+                                         Bow:   new PassiveEffect(ManaVamp: 0.020f)),
             }));
 
         // ---- Combo Mastery — 3 rungs @52/64/74, and THE FIRST ON-HIT PROC IN THE GAME.
@@ -274,7 +303,7 @@ public static partial class SkillCatalog
             hits: 1, stunTicks: 0,
             desc: "A concussive blow that rings through armour."));
 
-        // ---- Acoustic Shock (ORK ONLY) — HIS ADDITION, 2026-08-21: *"Add another skill to the ork
+        // ---- Acoustic Shock (DEMON ONLY) — HIS ADDITION, 2026-08-21: *"Add another skill to the ork
         //      buffer same as sound smash (name it Acoustic Shock) just with a stun effect ... demon is
         //      mele fighter so need more than 1dmg skill"*. Identical ladder to Sound Smash — same
         //      power, MP, SP, range, cast and reuse — with a contested 5s STUN on top. That is the

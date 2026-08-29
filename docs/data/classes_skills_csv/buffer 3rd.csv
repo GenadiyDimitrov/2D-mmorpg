@@ -60,11 +60,11 @@ LEARN @ LVL,NAME,TYPE,WEAPON,RANGE,AOE,TARGET,CAST s,CD s,DURRATION s,DESCR,MP,S
 64,Combo Mastery,Passive,blunt|bow,0,0,self/single,0,60,30,"Doing Damage With 3% Chance: attack speed +15% and cast speed +10% for you, half of both (+7.5%/+5%) to the party. Require: Bow/Blunt",0,190k,[],,
 74,Combo Mastery,Passive,blunt|bow,0,0,self/single,0,60,30,"Doing Damage With 3% Chance: attack speed +20% and cast speed +15% for you, half of both (+10%/+7.5%) to the party. Require: Bow/Blunt",0,880k,[],,
 ,,,,,,,,,,,,,,,-----------------------Mana Restoration-----------------------
-40,Mana Vampirism,Passive,blunt,0,0,self/single,0,0,0,"+1% mana vampirism (physical basic atack only), Require: Bow/Blunt",0,36k,[],,
-60,Mana Vampirism,Passive,blunt,0,0,self/single,0,0,0,"+1.5% mana vampirism (physical basic atack only), Require: Bow/Blunt",0,120k,[],,
-70,Mana Vampirism,Passive,blunt,0,0,self/single,0,0,0,"+2% mana vampirism (physical basic atack only), Require: Bow/Blunt",0,390k,[],,
+40,Mana Vampirism,Passive,blunt|bow,0,0,self/single,0,0,0,"+1% mana vampirism (physical basic atack only), Require: Bow/Blunt",0,36k,[],,
+60,Mana Vampirism,Passive,blunt|bow,0,0,self/single,0,0,0,"+1.5% mana vampirism (physical basic atack only), Require: Bow/Blunt",0,120k,[],,
+70,Mana Vampirism,Passive,blunt|bow,0,0,self/single,0,0,0,"+2% mana vampirism (physical basic atack only), Require: Bow/Blunt",0,390k,[],,
 ,,,,,,,,,,,,,,,-----------------------heavy Armor Mastery-----------------------
-40,Chanter Heavy Mastery,Passive,,0,0,self/single,0,0,0,"Heavy: Restored Cast Speed to 90%(x1.8) and Attack speed to 100%(x2), Critical damage resist +15%, MP Regen x1.2;",0,36k,[],Human;Demon,
+40,Heavy Armor Mastery,Passive,,0,0,self/single,0,0,0,"Heavy: Restored Cast Speed to 90%(x1.8) and Attack speed to 100%(x2), Critical damage resist +15%, MP Regen x1.2;",0,36k,[],Human;Demon,
 ,,,,,,,,,,,,,,,-----------------------Harmonist Armor Mastery-----------------------
 40,Harmonist Light Mastery,Passive,,0,0,self/single,0,0,0,"Light: Restored Cast Speed to 90%(x1.8) and Attack speed to 100%(x2), Evasion +6, Critical rate resist +15%, MP Regen x1.2;",0,36k,[],Elf,
 ,,,,,,,,,,,,,,,-----------------------Harmonist Bow Proficiency-----------------------
@@ -82,15 +82,15 @@ LEARN @ LVL,NAME,TYPE,WEAPON,RANGE,AOE,TARGET,CAST s,CD s,DURRATION s,DESCR,MP,S
 40,Shield Mastery,Passive,,0,0,self/single,0,0,0,"Shield P.Def +30%, Shield Rate +50%;",0,36k,[],Human,
 60,Shield Mastery,Passive,,0,0,self/single,0,0,0,"Shield P.Def +40%, Shield Rate +70%;",0,120k,[],Human,
 70,Shield Mastery,Passive,,0,0,self/single,0,0,0,"Shield P.Def +50%, Shield Rate +85%; +10% P.Def, bow resistance 16%",0,390k,[],Human,
-,,,,,,,,,,,,,,,-----------------------Bloodhanter Two Hand Mastery-----------------------
-40,Bloodhanter Blunt Mastery,Passive,blunt/2,0,0,self/single,0,0,0,"2h Blunt: P.Atk 30, Accuracy +3;",0,36k,[],Demon,
-48,Bloodhanter Blunt Mastery,Passive,blunt/2,0,0,self/single,0,0,0,"2h Blunt: P.Atk 40, Accuracy +3;",0,64k,[],Demon,
-56,Bloodhanter Blunt Mastery,Passive,blunt/2,0,0,self/single,0,0,0,"2h Blunt: P.Atk 50, Accuracy +3;",0,81k,[],Demon,
-60,Bloodhanter Blunt Mastery,Passive,blunt/2,0,0,self/single,0,0,0,"2h Blunt: P.Atk 60, Accuracy +3;",0,120k,[],Demon,
-64,Bloodhanter Blunt Mastery,Passive,blunt/2,0,0,self/single,0,0,0,"2h Blunt: P.Atk 70, Accuracy +3;",0,190k,[],Demon,
-68,Bloodhanter Blunt Mastery,Passive,blunt/2,0,0,self/single,0,0,0,"2h Blunt: P.Atk 80, Accuracy +3;",0,320k,[],Demon,
-70,Bloodhanter Blunt Mastery,Passive,blunt/2,0,0,self/single,0,0,0,"2h Blunt: P.Atk 90, Accuracy +3;",0,390k,[],Demon,
-74,Bloodhanter Blunt Mastery,Passive,blunt/2,0,0,self/single,0,0,0,"2h Blunt: P.Atk 100, Accuracy +3;",0,880k,[],Demon,
+,,,,,,,,,,,,,,,-----------------------Warlock Weapon Mastery-----------------------
+40,Warlock Weapon Mastery,Passive,blunt/2,0,0,self/single,0,0,0,"2h Blunt: P.Atk 30, Accuracy +3;",0,36k,[],Demon,
+48,Warlock Weapon Mastery,Passive,blunt/2,0,0,self/single,0,0,0,"2h Blunt: P.Atk 40, Accuracy +3;",0,64k,[],Demon,
+56,Warlock Weapon Mastery,Passive,blunt/2,0,0,self/single,0,0,0,"2h Blunt: P.Atk 50, Accuracy +3;",0,81k,[],Demon,
+60,Warlock Weapon Mastery,Passive,blunt/2,0,0,self/single,0,0,0,"2h Blunt: P.Atk 60, Accuracy +3;",0,120k,[],Demon,
+64,Warlock Weapon Mastery,Passive,blunt/2,0,0,self/single,0,0,0,"2h Blunt: P.Atk 70, Accuracy +3;",0,190k,[],Demon,
+68,Warlock Weapon Mastery,Passive,blunt/2,0,0,self/single,0,0,0,"2h Blunt: P.Atk 80, Accuracy +3;",0,320k,[],Demon,
+70,Warlock Weapon Mastery,Passive,blunt/2,0,0,self/single,0,0,0,"2h Blunt: P.Atk 90, Accuracy +3;",0,390k,[],Demon,
+74,Warlock Weapon Mastery,Passive,blunt/2,0,0,self/single,0,0,0,"2h Blunt: P.Atk 100, Accuracy +3;",0,880k,[],Demon,
 ,,,,,,,,,,,,,,,---------------------------------------------------------------------------------------------ACTIVE SUPPORT-------------------------------------------------------------------------------------------------------------------
 ,,,,,,,,,,,,,,,----------------------------Great Heal----------------------------
 40,Great Heal,Magic/Heal,,600,0,target/single,5,3,0,heal with power 400,62,36k,[Heal],,

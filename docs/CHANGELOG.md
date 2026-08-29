@@ -7,11 +7,62 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.101.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.101.2**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-08-29 (latest) — 0.101.1: the `WEAPON` column, and hands stop meaning what I thought
+## 2026-08-29 (latest) — 0.101.2: two names the Ork→Demon rename had left behind
+
+Four small things from his read of `buffer 3rd`, and the first one is the same bug for the third time.
+
+### 🔴 Mana Vampirism was blunt-only. It is blunt **or bow**
+
+His correction: *"the mana vamp works on basic attack with required weapon blunt or bow … not only
+blunt"*. His CSV row has always said `Require: Bow/Blunt`; only the code said blunt.
+
+🔑 **That is the THIRD requirement in two days found disagreeing with its own authored row** — Combo
+Mastery, the tank's "any weapon", and now this. All three were invisible for exactly the same reason:
+the requirement lived in free-text DESCR where nothing could compare it. This one was caught by
+`--check` the moment the code changed and the `WEAPON` cell did not — which is the column earning its
+keep on its first day.
+
+### Two renames the class rename had missed
+
+- **`Bloodhanter Blunt Mastery` → `Warlock Weapon Mastery`.** He points out it was a typo for
+  *Bloodchanter* — and rather than fix the typo he retired the word: *"as we changed the orks to
+  demons and changed the classes names -> so rename it to 'warlock weapon mastery' the 4th classes
+  name"*. Warlock is the Demon buffer's 4th class. His own IP test passes — word + SAME RACE + SAME
+  ROLE: ours is a buffer, IG's is a summoner. "Blunt" left the name too, because the requirement lives
+  in the `WEAPON` column now (`blunt/2`), not in prose.
+- **`Chanter Heavy Mastery` → `Heavy Armor Mastery`**: *"human and demon are no longer 'chanter' as
+  class name"*. They are a Doctor and a Dreadcaller since `BL-100`/`BL-101`.
+
+🔑 **The skill IDs did NOT move** — `wc_bloodhanter_blunt_mastery` and `wc_chanter_heavy_mastery` are
+still the ids, and now deliberately do not match their names. Ids are append-only because characters
+persist their learned ids; moving one orphans every save that holds it. The C# const identifiers were
+renamed to match (compile-checked, free), and the strings stayed. Read them as serial numbers.
+
+⚠ **The TANK already has a "Heavy Armor Mastery"** and that is fine: one is Fighter, one is Mage, no
+character can hold both, and `Abbreviations` de-duplicates names before assigning bar labels — the
+startup validator confirms it.
+
+🔴 **A rename broke something silent, and this is the reusable part.** `Descr.cs` carries an exception
+table **keyed on the skill NAME** (`("chanter heavy mastery", "cast")` — the row where 90%(×1.8) is
+result-then-input). A name-keyed table does not error when a name changes; the exception simply stops
+matching and a correct row starts reporting as a defect. **A rename has to grep the tool, not just the
+catalog.** Also swept: the stale `ORK` labels around these two skills, `README.md`, `Open-Checklist.md`
+and the `buffer 4th` seed rows.
+
+### `buffer_auto 3rd.md` deleted
+
+*"remove the buffer_auto file as we are done with it"* — the rejected auto-draft of the buffer's 3rd
+kit. Its two surviving rulings (harmonies do NOT evict singles; race is a combat tint only) are in the
+built kit and in the CHANGELOG.
+
+`--check` clean · server boots v0.101.2 · Unity type-check clean · BalanceMatrix byte-identical ·
+protocol still 29, no db reset.
+
+## 2026-08-29 — 0.101.1: the `WEAPON` column, and hands stop meaning what I thought
 
 `BL-105`, approved the day it was proposed. The weapon requirement is a real, enforced gate that lived
 **only in free-text DESCR** — so `--check` could not compare it, and that is exactly how the elf's
