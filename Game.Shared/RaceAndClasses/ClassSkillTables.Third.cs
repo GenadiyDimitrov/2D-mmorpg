@@ -325,11 +325,19 @@ public static partial class ClassSkillTables
         kit2.AddRange(Ladder(WcReinforcement, band13));
         kit2.AddRange(Ladder(WcSharpening, band13));
         kit2.AddRange(Ladder(WcComboMastery, new[] { 52, 64, 74 }));
+        // 🔑 MANA VAMPIRISM IS ALL THREE RACES since 2026-08-29 — it was Human+Demon, which is why the
+        //    elf's half of its blunt-OR-BOW gate looked pointless. His reason is the class's whole
+        //    economy, not a bonus: *"it's their way of rebuffing every 5 mins with 500mp buffs (mp
+        //    pots now help but not in pvp)"*. A full re-buff costs more than the pool holds, the
+        //    potions are on a cooldown the pull does not wait for, and in PvP they are not an option
+        //    at all — so the mana comes back through the weapon or the buffer stops buffing. The elf
+        //    was the one race that could not do that. ⚠ His CSV row has always had a BLANK race
+        //    column, i.e. all three; the code was the odd one out.
+        kit2.AddRange(Ladder(WcManaVampirism, new[] { 40, 60, 70 }));
 
         // ---- HUMAN: the shield tank. Blunt + shield, ONE damage skill. ---------------------------
         var human = new List<ClassSkill>(kit2);
         human.AddRange(Ladder(WcBufferHeavy, new[] { 40 }));
-        human.AddRange(Ladder(WcManaVampirism, new[] { 40, 60, 70 }));
         human.AddRange(Ladder(WcSoundSmash, band13));
 
         // ---- ELF: the archer. Light armour, bow, ranged damage, no shield and no blunt line. ------
@@ -340,12 +348,11 @@ public static partial class ClassSkillTables
         elf.AddRange(Ladder(WcBowExpertise, new[] { 56 }));
         elf.AddRange(Ladder(WcSoundBurst, band13));
 
-        // ---- ORK: the melee fighter. Heavy armour, blunt, and TWO damage skills — his ruling,
+        // ---- DEMON: the melee fighter. Heavy armour, blunt, and TWO damage skills — his ruling,
         //      2026-08-21: *"ork is mele fighter so need more than 1dmg skill"*. Acoustic Shock is
         //      Sound Smash's twin with a stun, and it exists for exactly that reason. -------------
         var demon = new List<ClassSkill>(kit2);
         demon.AddRange(Ladder(WcBufferHeavy, new[] { 40 }));
-        demon.AddRange(Ladder(WcManaVampirism, new[] { 40, 60, 70 }));
         demon.AddRange(Ladder(WcWarlockWeapon, band8));
         demon.AddRange(Ladder(WcSoundSmash, band13));
         demon.AddRange(Ladder(WcAcousticShock, band13));

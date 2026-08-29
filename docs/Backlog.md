@@ -975,6 +975,54 @@ closed · **`BL-93` opened** for the in-game visuals discussion you asked for (*
   authored `AnySword + Hands.Two`, every AoE-warrior one `AnyBlunt + Hands.Two`. One line each, at the
   `WeaponMasteryProfile`. ⚠ Do not pre-invent the kit to have somewhere to put it (`BL-02`).
 
+- `BL-106` ❓ **YOUR CROSS-CHAIN ID RULE — MEASURED. The masteries already obey it; six ids do not, and
+  all six are the same class. Your call on each.** Your rule, 2026-08-29:
+
+  > *"A chain of classes (fighter/mage) should replace their weaker skills with newer or continuing the
+  > line .. but cross chain should have different id's … `mage_weap_mastery -> spellcaster_weap_mastery
+  > -> buffer_weapon_mastery` and the other is `fight_weap_mastery -> war_weapon_mastery ->
+  > swordmaster_weap_mastery`."*
+
+  ✅ **It is now CHECKABLE**: `dotnet run --project tools/SkillCsvSeed -- --chain-audit`. It walks only
+  the classes that really exist and reports ids learned by both chains, `Replaces` that cross chains,
+  and defs whose declared `Class` disagrees with who is taught them.
+
+  ✅ **THE GOOD NEWS FIRST — the weapon and armor masteries already read exactly as you describe.**
+  Fighter chain: `fighter_weapon_mastery` → `tank_` / `warrior_` / `rogue_weapon_mastery`, with
+  `fighter_armor_mastery` → `tank_` / `warrior_` / `rogue_armor_mastery`. Mage chain is separate
+  throughout. **No mastery id is shared between the chains, and NO `Replaces` crosses a chain (zero).**
+
+  🔵 **1. Two mage ids do not NAME their chain**, which is the half of your rule that is about reading
+  the id rather than about collisions: **`weapon_mastery`** (the Mage's, `Skills.Mage.cs`) and
+  **`armor_mastery`** (the Mage/Healer's). In your scheme they would be `mage_weap_mastery` and
+  `mage_armor_mastery`. Nothing is broken today — the fighter's are prefixed, so they cannot collide —
+  but a bare `weapon_mastery` is the exact ambiguity you are legislating against.
+
+  🔵 **2. Six ids ARE learned by both chains, and every one of them is the WARCHANTER** — which makes
+  sense, since the buffer is the mage that borrows from the fighter:
+
+  | id | also learned by | what it is |
+  | --- | --- | --- |
+  | `tank_shield_mastery` | Tank, Bulwark | the Human buffer's Shield Mastery **is** the tank's skill |
+  | `hp_boost` | Warrior, Ravager, Warlord | shared HP ladder |
+  | `swap_atk_con` · `swap_atk_dex` · `swap_con_atk` · `swap_dex_atk` | most fighter classes | the ATK/CON/DEX stat swaps |
+
+  ⚠ **26 more ids are shared and are NOT violations** — `shared 4th` (your own ALL-CLASSES block) plus
+  the eighteen Sigils, which every ascended class learns on purpose. The audit separates them by a
+  derived test, not a hand list, so a new sharer cannot hide among them.
+
+  🔴 **THE COST, so you can price the decision: a rename here is NOT free like the class renames were.**
+  A skill id is persisted in a character's learned set. Giving the buffer its own
+  `buffer_shield_mastery` means minting a new id AND migrating every save that holds the old one —
+  otherwise the skill silently disappears from those characters. That is why I have not done it.
+  **Three options, pick per row:** (a) leave it — it genuinely IS the same skill, and sharing the id is
+  honest; (b) rename with a load-time migration; (c) rename only the two bare mage ids (1), which is
+  the cheapest and buys most of the readability.
+
+  ⚠ **3. Thirty-seven defs declare the wrong `Class`** — e.g. every Sigil is `BaseClass.Fighter` but
+  taught to both, `magic_proficiency` is Mage but taught to fighters. That field is not persisted, so
+  fixing it is cheap; say the word and it goes in a sweep. It is listed by the same tool.
+
 - `BL-105` ✅ **BUILT 2026-08-29 (0.101.1) — THE `WEAPON` COLUMN, in your grammar.** You approved it the
   day it was proposed and wrote the spec yourself:
   `weaponType1[|weaponType2|weaponType3][/hands]`, with `duals/1` a typo-warning and anything but

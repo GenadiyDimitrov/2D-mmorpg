@@ -7,11 +7,58 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.101.2**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.101.3**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-08-29 (latest) — 0.101.2: two names the Ork→Demon rename had left behind
+## 2026-08-29 (latest) — 0.101.3: mana vamp for all three buffers, and his id rule made checkable
+
+### Mana Vampirism is all three races now
+
+It was Human + Demon, which is why the elf half of its blunt-or-bow gate looked pointless yesterday.
+His reason is the class's whole economy, not a bonus: *"it's their way of rebuffing every 5 mins with
+500mp buffs (mp pots now help but not in pvp)"*. A full re-buff costs more than the pool holds, the
+potions sit on a cooldown the pull does not wait for, and in PvP they are not an option at all — so
+the mana comes back through the weapon or the buffer stops buffing. The elf was the one race that
+could not do that.
+
+⚠ **His CSV row has always had a blank RACE column**, i.e. all three. The code was the odd one out, and
+that is the second time in two days this file has been right where the code was wrong. It moves to the
+shared `kit2` rather than being added to a third race list, so it cannot drift again.
+
+### `--chain-audit` — his id rule, measured
+
+His rule: *"a chain of classes (fighter/mage) should replace their weaker skills with newer or
+continuing the line .. but cross chain should have different id's"* — `mage_weap_mastery →
+spellcaster_weap_mastery → buffer_weapon_mastery` against `fight_weap_mastery → war_weapon_mastery →
+swordmaster_weap_mastery`.
+
+✅ **The masteries already obey it.** Fighter: `fighter_weapon_mastery` → `tank_`/`warrior_`/
+`rogue_weapon_mastery`, same for armor. Mage chain separate throughout. No mastery id is shared, and
+**no `Replaces` crosses a chain at all**.
+
+🔵 What does not obey it is in `BL-106` with the cost of each fix: two mage ids that do not name their
+chain (`weapon_mastery`, `armor_mastery`), and **six ids learned by both chains — every one of them the
+Warchanter**, which is exactly the class that borrows from the fighter (`tank_shield_mastery`,
+`hp_boost`, four stat swaps). 🔴 A rename here is **not** free like the class renames were: a skill id
+is persisted in a character's learned set, so it needs a new id plus a load-time migration. His call,
+not mine.
+
+### 🔴 The audit's first run reported 44 violations. All 44 were invented
+
+It walked `BaseClass × Archetype × Discipline` as a cross product. `ClassSkills.Cumulative` resolves an
+archetype's base class internally and **ignores the one you pass**, so asking for "Mage/Tank" hands
+back the Fighter's tank kit — and the tool then concluded that a Mage learns `tank_weapon_mastery`.
+
+🔑 **That is the same mistake as the display-name lookup in `--weapon-column`, one day apart:**
+enumerate what EXISTS, never a cross product. It now walks `Disciplines.Of` and only real classes.
+It also separates the 26 deliberately-shared ids (`shared 4th` + the Sigils) by a **derived** test —
+"taught to every 4th-tier class in both chains" — rather than a hand-written allowlist that would rot
+and let a new sharer hide inside it.
+
+`--check` clean · server boots v0.101.3 · protocol still 29, no db reset.
+
+## 2026-08-29 — 0.101.2: two names the Ork→Demon rename had left behind
 
 Four small things from his read of `buffer 3rd`, and the first one is the same bug for the third time.
 

@@ -54,6 +54,10 @@ if (args.Contains("--aoe-column")) return AoeColumn.Run(outDir);
 // requirement lived only in free-text DESCR, which is why `--check` could never verify it.
 if (args.Contains("--weapon-column")) return WeaponColumn.Run(outDir);
 
+// `--chain-audit` — his 2026-08-29 id rule: a fighter chain and a mage chain may each replace and
+// continue their own skills, but must never SHARE an id. Read-only; see ChainAudit.cs.
+if (args.Contains("--chain-audit")) return ChainAudit.Run();
+
 // ===== HIS DISCIPLINE MAP (2026-08-17) =============================================================
 // He redrew the 3rd-class split and named the files himself: *"class 2nd => desc1/desc2 3rd =>
 // desc1/desc2 4th"*, with
