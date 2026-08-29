@@ -1052,23 +1052,27 @@ closed · **`BL-93` opened** for the in-game visuals discussion you asked for (*
   a description it has to parse. ⚠ It touches the header of every file, so it is not something to do
   quietly on the way past — say yes and it is one increment.
 
-- `BL-107` ✅ **BUILT 2026-08-29 (0.102.0) — THE `WEIGHT` COLUMN, in the grammar you approved.** You
+- `BL-107` ✅ **BUILT 2026-08-29 (0.102.0-0.102.1) — THE `WEIGHT` COLUMN, in the grammar you approved.** You
   said yes to all three questions: `heavy/shield` for AND, robe and naked OFF for the warrior (and the
   rogue), and DESCR keys kept as they are. Live: the column is in all 24 files (1,420 rows, 103 with a
   real requirement), `--check` verifies every cell, and both the active gate (`SkillDef.RequiredArmor`)
   and the passive one (`PassiveEffect.RequiredArmor`) are enforced — cast-time, auto-hunt and
   `RecomputeDerived` all read the one helper, `ArmorGate`.
 
-  🔑 **A rung can now carry MORE THAN ONE passive layer** (`SkillLevel.ExtraPassives`), each with its
-  own gate. That is what made Shield Mastery expressible: block rate needs a shield, "+10% P.Def" needs
-  a shield **and** heavy — one gate could not say both, and widening it would have deleted the block
-  rate for the robed Human Warchanter who learns the same skill. `DefencePctWithShield`, the bespoke
-  field invented in 2026-08-21 because no general gate existed, is **deleted**.
+  🔑 **A rung CAN carry more than one passive layer** (`SkillLevel.ExtraPassives`), each with its own
+  gate — built for Shield Mastery, whose block rate needs a shield while its "+10% P.Def" needs a
+  shield **and** heavy. ⚠ **Your 0.102.1 ruling collapsed that into one gate**, so the mechanism is
+  live but has no author today; it is the tool if a rung ever needs two gates again.
+  `DefencePctWithShield`, the bespoke field invented in 2026-08-21 because no general gate existed, is
+  **deleted**.
 
-  🔴 **Two things changed for a character, both of them yours:** a warrior or rogue in a ROBE or naked
-  now gets nothing from their Armor Mastery (was: the "with all" half), and Shield Mastery's bow
-  resistance is now really shield-gated — its card always said *"Every part of it needs a shield"* and
-  rungs 3-4 were paying it to a tank holding a greatsword.
+  🔴 **Three things changed for a character, all of them yours:** a warrior or rogue in a ROBE or naked
+  now gets nothing from their Armor Mastery (was: the "with all" half); Shield Mastery's bow resistance
+  is now really shield-gated — its card always said *"Every part of it needs a shield"* and rungs 3-4
+  were paying it to a tank holding a greatsword; and **Shield Mastery is `heavy/shield` on all four
+  rungs** (0.102.1), so the Human Warchanter now CHOOSES — heavy+shield semi-tank, or robe+shield and
+  the same shield story as the elf and demon buffers. *"Giving more pDef and shield rate+Def on a robe
+  pushes one class in front a lot."*
 
   📋 **`DESCR-KEYS.md`** (generated, `--descr-keys`) is the key list you asked for: 46 keys, 141
   spellings, plus the scope labels. There is no `AllDef` — P.Def and M.Def are separate everywhere.

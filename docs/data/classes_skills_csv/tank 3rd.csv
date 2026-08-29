@@ -1,2 +1,2 @@
 LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,REPLACES,RACE
-52,Shield Mastery,tank_shield_mastery,Passive,,/shield,0,0,self/single,0,0,0,"Shield P.Def +60%, Shield Rate +100%; heavy: +10% P.Def; bow resistance 24%",0,74k,[]
+52,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield P.Def +60%, Shield Rate +100%; +10% P.Def, bow resistance 24%",0,74k,[]

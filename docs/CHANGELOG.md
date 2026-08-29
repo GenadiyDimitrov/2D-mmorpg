@@ -7,11 +7,51 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.102.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.102.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-08-29 (latest) — 0.102.0: the `WEIGHT` column, and a passive that can finally say "in heavy"
+## 2026-08-29 (latest) — 0.102.1: Shield Mastery is `heavy/shield` on every rung
+
+He asked for `/shield` on rungs 1-3 and `heavy/shield` on rung 4, then changed his own mind reading the
+result back — and the reason is class balance, not flavour:
+
+*"If we allow the human buffer on a robe+shield … when he become 4th class he have additional bonus on
+the shield when the other 2 buffers wearing any+shield will get only one. So the human buffer chooses
+heavy+shield for becoming semitank and robe+shield works as the other 2 buffers (no shield bonuses
+except the 4th class one) … The demon buffer wearing 2h blunt or staff will get him a bit more
+patk+acc than the other buffers but mage weapon is not so much made for hitting. While giving more
+pDef and shield rate+Def on a robe pushes one class in front a lot."*
+
+`tank_shield_mastery` is learned by the TANK and by the **Human Warchanter** (rungs 1-3 at 40/60/70,
+his own SP). Gated `/shield` alone it was a free edge for one of the three buffers: the elf and demon
+never had the skill, so a Human in robe + buckler collected shield P.Def, block rate and (at rung 3)
++10% P.Def that his brothers could not match at any price.
+
+**The gate turns that into a choice.** Heavy + shield → the Human Warchanter is a semi-tank and earns
+the ladder. Robe + shield → he is the buffer the other two are, and the shield still does its ordinary
+job. Nothing is refused; the skill simply pays nothing outside plate.
+
+### What changed
+
+- All four rungs of `tank_shield_mastery` carry `RequiresShield: true` + `RequiredArmor: Heavy`. The
+  WEIGHT cell is `heavy/shield` in `tank 2nd` (×3), `tank 3rd` (×1) and `buffer 3rd` (×3).
+- **Back to ONE `PassiveEffect` per rung.** 0.102.0 built `SkillLevel.ExtraPassives` for exactly this
+  skill — one rung, two different gates — and this ruling collapses the two gates into one, so the
+  "+10% P.Def" layer folded back into the rung as plain `DefencePct`. ⚠ The mechanism stays; it simply
+  has no author today, and it is the tool if a rung ever needs two gates again.
+- The card now reads *"In HEAVY armor with a shield: … In any other armor it does nothing."*
+
+⚠ **The 4th-class shield passive he is counting on is the HEALER's, and it is unchanged** —
+`healer_shield_mastery` @76 (Lightbringer, +10% heal power and +10% MP regen, plain `/shield`, any
+armour). The **buffer's** 4th tier has no shield row built yet: `buffer 4th.csv` lines 136-138 are the
+three 3rd-tier Shield Mastery rungs at 40/60/70 copied into a 76-90 file with a blank `SKILL_ID`, which
+reads as a paste leftover. His file, still in progress — not touched.
+
+`--check` clean, `git diff --numstat docs/data/` 3/3/1 on the three files, server boots 0.102.1, Unity
+type-check clean, protocol unchanged (29).
+
+## 2026-08-29 — 0.102.0: the `WEIGHT` column, and a passive that can finally say "in heavy"
 
 *"I like it to do it same as 'weapon' column. `heavy/shield` == heavy and shield required …
 `heavy|light` == heavy or light required."*

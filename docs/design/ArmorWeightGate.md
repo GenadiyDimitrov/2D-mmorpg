@@ -174,12 +174,40 @@ One increment, 0.102.0:
 - **`SkillLevel.ExtraPassives`** — extra passive LAYERS per rung, each with its own gate, because an
   all-or-nothing gate cannot describe a rung whose halves differ. Shield Mastery is the reason.
 - **`ArmorMasteryProfile.RequiredShield`** — the shield axis on a mastery (nothing authors one yet).
-- **`DefencePctWithShield` DELETED.** Shield Mastery's "+10% P.Def" is now plain `DefencePct` on a
-  second layer gated `RequiresShield + Heavy` — IG's own rule, and yours.
+- **`DefencePctWithShield` DELETED.** Shield Mastery's "+10% P.Def" is now plain `DefencePct` under a
+  `RequiresShield + Heavy` gate — IG's own rule, and yours.
 - **`SkillText`** prints the gate: `Requires heavy armour and a shield` on the skill, and
   `— only with …` under a gated passive's numbers. Both clients read it.
 - **`--weight-column`** wrote the column into all 24 files (1,420 rows, 103 real requirements),
   **`--check`** verifies it, and a `heavy:` clause in DESCR now resolves against the matching layer.
+
+---
+
+## 6a. Your correction the same day — Shield Mastery is `heavy/shield` on EVERY rung (0.102.1)
+
+You asked for `/shield` on rungs 1-3 and `heavy/shield` on rung 4, then changed it reading the result:
+
+> *"If we allow the human buffer on a robe+shield … when he become 4th class he have additional bonus
+> on the shield when the other 2 buffers wearing any+shield will get only one. So the human buffer
+> chooses heavy+shield for becoming semitank and robe+shield works as the other 2 buffers (no shield
+> bonuses except the 4th class one) … While giving more pDef and shield rate+Def on a robe pushes one
+> class in front a lot."*
+
+Right, and it is the stronger reading. `tank_shield_mastery` is learned by the tank **and by the Human
+Warchanter** (rungs 1-3 at 40/60/70) — so a `/shield` gate handed one of the three buffers a ladder the
+elf and demon cannot buy at any price. Gated `heavy/shield` it becomes a **choice**: heavy + shield =
+semi-tank, robe + shield = the buffer the other two are. The demon's two-handed-blunt lean (a little
+P.Atk and accuracy on a weapon that is not for hitting) is a far smaller edge than that was.
+
+⚠ **This collapsed the only user of `SkillLevel.ExtraPassives`.** With one gate for the whole rung the
+"+10% P.Def" layer folded back in as plain `DefencePct`. The mechanism stays — a rung whose halves
+genuinely differ still needs it — but nothing authors one today. Worth knowing before reaching for it.
+
+⚠ **The 4th-class shield bonus you are counting on exists for the HEALER, not the buffer.**
+`healer_shield_mastery` @76 (+10% heal power, +10% MP regen, plain `/shield`, any armour) is on the
+Lightbringer's table. The Warchanter's 4th tier has no shield row built; `buffer 4th.csv` 136-138 are
+the three 3rd-tier rungs at 40/60/70 pasted into a 76-90 file with a blank `SKILL_ID`. Your file, in
+progress — untouched, but say the word if that is meant to be a real 4th-tier passive.
 
 ---
 
