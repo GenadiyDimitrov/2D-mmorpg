@@ -7,11 +7,64 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.101.3**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.101.4**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-08-29 (latest) — 0.101.3: mana vamp for all three buffers, and his id rule made checkable
+## 2026-08-29 (latest) — 0.101.4: the sheet carries the SKILL ID, and the name becomes a label
+
+*"We can add a column skill_ID and the name to be just the 'display name' … and replace the replaces
+column to be a list of id's not names. U can fill them for now and I'll look at them … Now having only
+names start to take its toll. We can have 10 skills with the same display name but to be actual
+different skills."*
+
+🔑 **He is right, and the evidence is this tool's own last two days.** Twice running, a name-keyed
+lookup produced a wrong answer nobody could see: `--weapon-column` handed `rogue 2nd.csv` the **tank's**
+weapon requirement because three different skills are displayed "Weapon Mastery", and `Descr.cs` keys
+its exception table on the name, so the 0.101.2 rename silently unhooked it. A display name is a label.
+
+### What landed
+
+`SKILL_ID` at index 2, right after NAME. **1,425 rows, 1,354 resolved.** The three Weapon Masteries are
+three skills now — `fighter_`, `tank_`, `rogue_weapon_mastery` — and `--check` **pairs the two sides on
+the id** wherever a row has one, falling back to the name only where it does not. Proved by pointing one
+row at the wrong id: it immediately split into a NOT REGISTERED row plus a rung-count mismatch, where
+before it would have matched happily on the name.
+
+`REPLACES` became ids in the same pass — 328 cells. It had to move with it: the cells were
+space-separated lists of names whose names *also* contain spaces, so `[Shield Harden Shield Bless]` is
+two skills and `[Might Fury Vampirism]` is three, and nothing but a guess could separate them.
+
+### 🔴 The first run had this row replacing itself
+
+Resolving the REPLACES *names* gave `rogue 2nd`'s Weapon Mastery `[rogue_weapon_mastery]` — itself. The
+row means the **fighter's**, and a rogue's kit is cumulative, so it contains both under one display
+name and matched its own entry first.
+
+🔑 **The fix is that the code already knows.** `SkillDef.Replaces` is a list of ids and is unambiguous,
+so that is what gets written; name resolution survives only as a fallback for rows the code does not
+carry, and it excludes self. Third time in three days that a name-keyed lookup has been wrong — which
+is the argument for this whole change, arriving on schedule.
+
+### What was deliberately NOT filled in
+
+⚠ **Nineteen `REPLACES` cells were left exactly as they were, and nine `SKILL_ID`s are empty.** Putting
+invented ids into an authoritative file is the one thing this pipeline must never do:
+
+- **18 sigil cells** read `[Warrior/Mage/Tank/Buffer/Rogue Defence]` — a family shorthand, not names.
+- **`[Shield Harden Shield Bless]`** — neither half is a name the buffer's class knows.
+- **9 rows** in the `buffer 4th` draft (*Harmony of the Soul*, *Harmony of Madness*, *Harmony Mark*):
+  not built, so there is no id yet.
+
+His to fill in; every one is printed by the tool and listed in `classes_skills_csv/README.md`.
+
+🔵 **`--check` does not compare REPLACES yet** — deliberately. He said he will review and re-author
+these; comparing now would report his in-progress edits as defects. It becomes a checked column once
+he says the list is right.
+
+`--check` clean · protocol still 29, no db reset.
+
+## 2026-08-29 — 0.101.3: mana vamp for all three buffers, and his id rule made checkable
 
 ### Mana Vampirism is all three races now
 

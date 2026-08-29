@@ -70,6 +70,40 @@ on load. **Eight choosable paths per race, 24 third classes** — the roster thi
 
 **Nine empty files is the honest picture, not an oversight.** It is what the game registers above 40.
 
+### 🔑 The `SKILL_ID` column (2026-08-29) — the row's real identity
+
+Your call: *"we can add a column skill_ID and the name to be just the 'display name' … now having only
+names start to take its toll. We can have 10 skills with the same display name but to be actual
+different skills."*
+
+**`NAME` is a label; `SKILL_ID` is the identity.** `--check` pairs the two sides on the id wherever a
+row has one, and only falls back to the name where it does not. Three "Weapon Mastery" rows are now
+three different skills and read as such:
+
+| file | NAME | SKILL_ID |
+| --- | --- | --- |
+| `fighter 1st` | Weapon Mastery | `fighter_weapon_mastery` |
+| `tank 2nd` | Weapon Mastery | `tank_weapon_mastery` |
+| `rogue 2nd` | Weapon Mastery | `rogue_weapon_mastery` |
+| `warrior 2nd` | Two-Hand Mastery | `warrior_weapon_mastery` |
+
+**`REPLACES` is a list of ids too** — `[fighter_weapon_mastery]`, not `[Weapon Mastery]`. It had to
+change with it: the cells were space-separated lists of names whose names *also* contain spaces, so
+`[Shield Harden Shield Bless]` is two skills and `[Might Fury Vampirism]` is three, and nothing but a
+guess could tell them apart.
+
+⚠ **The ids were filled FROM THE CODE and are yours to correct** — your words, *"u can fill them for
+now and I'll look at them … and reauthor something to a new id or swap it to the right one"*. Nineteen
+`REPLACES` cells were **left exactly as they were** because they could not be resolved without
+guessing, and nine rows have an empty `SKILL_ID` because the catalog does not know the name:
+
+- **18 sigil cells** read like `[Warrior/Mage/Tank/Buffer/Rogue Defence]` — a family shorthand, not
+  skill names. They mean "the five other Defence sigils"; write the ids you want when you get to them.
+- **`[Shield Harden Shield Bless]`** on Shield Reinforcement — neither half is a name the buffer's
+  class knows.
+- **9 rows** in `buffer 4th`: *Harmony of the Soul*, *Harmony of Madness*, *Harmony Mark*. That file is
+  a draft and those skills are not built, so there is no id to fill in yet.
+
 ### The `WEAPON` column (2026-08-29, `BL-105`)
 
 Which weapon a skill or passive **demands**. Before this it was written only in the free-text DESCR,

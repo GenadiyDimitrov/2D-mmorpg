@@ -1,33 +1,33 @@
-LEARN @ LVL,NAME,TYPE,WEAPON,RANGE,AOE,TARGET,CAST s,CD s,DURRATION s,DESCR,MP,SP COST,REPLACES,Comment
-,,,,,,,,,,,,,,----------------------------Mage Armor Mastery----------------------------
-20,Mage Armor Mastery,Passive,,0,0,self/single,0,0,0,Robe: pDef +20 maxMP +20 mpWhenRestored +10%,0,3200,[Robe Armor Mastery]
-25,Mage Armor Mastery,Passive,,0,0,self/single,0,0,0,Robe: pDef +25 maxMP +20 mpWhenRestored +15%,0,6400,[Robe Armor Mastery]
-30,Mage Armor Mastery,Passive,,0,0,self/single,0,0,0,Robe: pDef +30 maxMP +30 mpWhenRestored +20%,0,12800,[Robe Armor Mastery]
-35,Mage Armor Mastery,Passive,,0,0,self/single,0,0,0,Robe: pDef +35 maxMP +30 mpWhenRestored +25%,0,25000,[Robe Armor Mastery]
-,,,,,,,,,,,,,,----------------------------Anti magic----------------------------
-20,Anti magic,Passive,,0,0,self/single,0,0,0,magic def +20; mRes +5%,0,3200,[]
-25,Anti magic,Passive,,0,0,self/single,0,0,0,magic def +25; mRes +5%,0,6400,[]
-30,Anti magic,Passive,,0,0,self/single,0,0,0,magic def +30; mRes +10%,0,12800,[]
-35,Anti magic,Passive,,0,0,self/single,0,0,0,magic def +36; mRes +10%,0,25000,[]
-,,,,,,,,,,,,,,----------------------------Spell Mastery----------------------------
-20,Spell Mastery,Passive,sword|blunt,0,0,self/single,0,0,0,with sword/blunt Decreses the reuse delay with 10%; mAtk +6; pAtk +4,0,3200,[Weapon mastery]
-25,Spell Mastery,Passive,sword|blunt,0,0,self/single,0,0,0,with sword/blunt Decreses the reuse delay with 10%; mAtk +8; pAtk +6; mpReg +1.1; cast speed x1.05,0,6400,[Weapon mastery]
-30,Spell Mastery,Passive,sword|blunt,0,0,self/single,0,0,0,with sword/blunt Decreses the reuse delay with 10%; mAtk +10; pAtk +8; mpReg +1.1; cast speed x1.05,0,12800,[Weapon mastery]
-35,Spell Mastery,Passive,sword|blunt,0,0,self/single,0,0,0,with sword/blunt Decreses the reuse delay with 10%; mAtk +12; pAtk +10; mpReg +1.5;hpReg +1.1; cast speed x1.05,0,25000,[Weapon mastery]
-,,,,,,,,,,,,,,----------------------------Elemental Bolt----------------------------
-20,Elemental Bolt,Magic/Dmg,,750,0,enemy/single,4,1,0,m.Atk +26,20,3200,[Magic Bolt]
-25,Elemental Bolt,Magic/Dmg,,750,0,enemy/single,4,1,0,m.Atk +32,23,6400,[Magic Bolt]
-30,Elemental Bolt,Magic/Dmg,,750,0,enemy/single,4,1,0,m.Atk +38,26,12800,[Magic Bolt]
-35,Elemental Bolt,Magic/Dmg,,750,0,enemy/single,4,1,0,m.Atk +44,31,25000,[Magic Bolt]
-,,,,,,,,,,,,,,----------------------------Quick Bolt----------------------------
-20,Quick Bolt,Magic/Dmg,,150,0,enemy/single,1.5,1,0,m.Atk +21,20,3200,[]
-25,Quick Bolt,Magic/Dmg,,150,0,enemy/single,1.5,1,0,m.Atk +26,23,6400,[]
-30,Quick Bolt,Magic/Dmg,,150,0,enemy/single,1.5,1,0,m.Atk +30,26,12800,[]
-35,Quick Bolt,Magic/Dmg,,150,0,enemy/single,1.5,1,0,m.Atk +36,31,25000,[]
-,,,,,,,,,,,,,,----------------------------Vampiric Bolt----------------------------
-20,Vampiric Bolt,Magic/Dmg,,750,0,enemy/single,4,1,0,A draining bolt (power 26) that heals you for 40% of the damage dealt.,40,3200,[]
-25,Vampiric Bolt,Magic/Dmg,,750,0,enemy/single,4,1,0,A draining bolt (power 32) that heals you for 40% of the damage dealt.,46,6400,[]
-30,Vampiric Bolt,Magic/Dmg,,750,0,enemy/single,4,1,0,A draining bolt (power 38) that heals you for 40% of the damage dealt.,52,12800,[]
-35,Vampiric Bolt,Magic/Dmg,,750,0,enemy/single,4,1,0,A draining bolt (power 44) that heals you for 40% of the damage dealt.,62,25000,[]
-,,,,,,,,,,,,,,----------------------------Restore Spirit----------------------------
-25,Restore Spirit,Magic/MP Regen,,0,0,self/single,4,5,0,exchanges HP (-66) for MP (+22) - multiplied by mpWhenRestored from Mage Armor Mastery,0,6400,[]
+LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,RANGE,AOE,TARGET,CAST s,CD s,DURRATION s,DESCR,MP,SP COST,REPLACES,Comment
+,,,,,,,,,,,,,,,----------------------------Mage Armor Mastery----------------------------
+20,Mage Armor Mastery,nuker_armor_mastery,Passive,,0,0,self/single,0,0,0,Robe: pDef +20 maxMP +20 mpWhenRestored +10%,0,3200,[mastery_robe]
+25,Mage Armor Mastery,nuker_armor_mastery,Passive,,0,0,self/single,0,0,0,Robe: pDef +25 maxMP +20 mpWhenRestored +15%,0,6400,[mastery_robe]
+30,Mage Armor Mastery,nuker_armor_mastery,Passive,,0,0,self/single,0,0,0,Robe: pDef +30 maxMP +30 mpWhenRestored +20%,0,12800,[mastery_robe]
+35,Mage Armor Mastery,nuker_armor_mastery,Passive,,0,0,self/single,0,0,0,Robe: pDef +35 maxMP +30 mpWhenRestored +25%,0,25000,[mastery_robe]
+,,,,,,,,,,,,,,,----------------------------Anti magic----------------------------
+20,Anti magic,anti_magic_mage,Passive,,0,0,self/single,0,0,0,magic def +20; mRes +5%,0,3200,[]
+25,Anti magic,anti_magic_mage,Passive,,0,0,self/single,0,0,0,magic def +25; mRes +5%,0,6400,[]
+30,Anti magic,anti_magic_mage,Passive,,0,0,self/single,0,0,0,magic def +30; mRes +10%,0,12800,[]
+35,Anti magic,anti_magic_mage,Passive,,0,0,self/single,0,0,0,magic def +36; mRes +10%,0,25000,[]
+,,,,,,,,,,,,,,,----------------------------Spell Mastery----------------------------
+20,Spell Mastery,spell_mastery,Passive,sword|blunt,0,0,self/single,0,0,0,with sword/blunt Decreses the reuse delay with 10%; mAtk +6; pAtk +4,0,3200,[weapon_mastery]
+25,Spell Mastery,spell_mastery,Passive,sword|blunt,0,0,self/single,0,0,0,with sword/blunt Decreses the reuse delay with 10%; mAtk +8; pAtk +6; mpReg +1.1; cast speed x1.05,0,6400,[weapon_mastery]
+30,Spell Mastery,spell_mastery,Passive,sword|blunt,0,0,self/single,0,0,0,with sword/blunt Decreses the reuse delay with 10%; mAtk +10; pAtk +8; mpReg +1.1; cast speed x1.05,0,12800,[weapon_mastery]
+35,Spell Mastery,spell_mastery,Passive,sword|blunt,0,0,self/single,0,0,0,with sword/blunt Decreses the reuse delay with 10%; mAtk +12; pAtk +10; mpReg +1.5;hpReg +1.1; cast speed x1.05,0,25000,[weapon_mastery]
+,,,,,,,,,,,,,,,----------------------------Elemental Bolt----------------------------
+20,Elemental Bolt,elemental_bolt,Magic/Dmg,,750,0,enemy/single,4,1,0,m.Atk +26,20,3200,[magic_bolt]
+25,Elemental Bolt,elemental_bolt,Magic/Dmg,,750,0,enemy/single,4,1,0,m.Atk +32,23,6400,[magic_bolt]
+30,Elemental Bolt,elemental_bolt,Magic/Dmg,,750,0,enemy/single,4,1,0,m.Atk +38,26,12800,[magic_bolt]
+35,Elemental Bolt,elemental_bolt,Magic/Dmg,,750,0,enemy/single,4,1,0,m.Atk +44,31,25000,[magic_bolt]
+,,,,,,,,,,,,,,,----------------------------Quick Bolt----------------------------
+20,Quick Bolt,quick_bolt,Magic/Dmg,,150,0,enemy/single,1.5,1,0,m.Atk +21,20,3200,[]
+25,Quick Bolt,quick_bolt,Magic/Dmg,,150,0,enemy/single,1.5,1,0,m.Atk +26,23,6400,[]
+30,Quick Bolt,quick_bolt,Magic/Dmg,,150,0,enemy/single,1.5,1,0,m.Atk +30,26,12800,[]
+35,Quick Bolt,quick_bolt,Magic/Dmg,,150,0,enemy/single,1.5,1,0,m.Atk +36,31,25000,[]
+,,,,,,,,,,,,,,,----------------------------Vampiric Bolt----------------------------
+20,Vampiric Bolt,vampiric_bolt,Magic/Dmg,,750,0,enemy/single,4,1,0,A draining bolt (power 26) that heals you for 40% of the damage dealt.,40,3200,[]
+25,Vampiric Bolt,vampiric_bolt,Magic/Dmg,,750,0,enemy/single,4,1,0,A draining bolt (power 32) that heals you for 40% of the damage dealt.,46,6400,[]
+30,Vampiric Bolt,vampiric_bolt,Magic/Dmg,,750,0,enemy/single,4,1,0,A draining bolt (power 38) that heals you for 40% of the damage dealt.,52,12800,[]
+35,Vampiric Bolt,vampiric_bolt,Magic/Dmg,,750,0,enemy/single,4,1,0,A draining bolt (power 44) that heals you for 40% of the damage dealt.,62,25000,[]
+,,,,,,,,,,,,,,,----------------------------Restore Spirit----------------------------
+25,Restore Spirit,restore_spirit,Magic/MP Regen,,0,0,self/single,4,5,0,exchanges HP (-66) for MP (+22) - multiplied by mpWhenRestored from Mage Armor Mastery,0,6400,[]

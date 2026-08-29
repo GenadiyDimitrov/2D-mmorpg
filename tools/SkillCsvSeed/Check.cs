@@ -117,6 +117,11 @@ internal static class Check
                                // RAW cell on the CSV side (so the parser's errors and typo-warnings can be
                                // reported against what he actually typed) and as the canonical
                                // `WeaponTypes.Format` string on the code side.
+                               // His 2026-08-29 SKILL_ID column: the row's real identity. NAME is only a display
+                               // label now — *"we can have 10 skills with the same display name but to
+                               // be actual different skills"* — so this, not the name, is what pairs the
+                               // two sides when it is present.
+                               string SkillId = "",
                                string Weapon = "",
                                // BL-96 — the AOE column: how wide the effect goes off, as against
                                // Range, which is how far you may throw it. Compared to
@@ -171,21 +176,21 @@ internal static class Check
             if (line.IndexOf("NOT DONE", StringComparison.OrdinalIgnoreCase) >= 0) break;
             if (line.Length == 0 || line.StartsWith('#') || line.StartsWith("LEARN")) continue;
             var f = SplitCsv(line);
-            if (f.Count < 13) continue;
+            if (f.Count < 14) continue;
             // ⚠ SKIP THE SECTION BANNERS. The 3rd-tier files separate their level blocks with a row of
             // bare commas ending in `----40----`, which has the full column count and sails through the
             // width test — producing a nameless "skill" at level 0 that then NAME-DRIFT-matched itself
             // onto a real one and reported five invented mismatches. A row with no NAME is not a rung.
             if (f[1].Trim().Length == 0) continue;
-            // ⚠ COLUMN INDICES SHIFTED TWICE NOW. BL-96 inserted AOE at 4 (2026-08-28); BL-105 inserted
-            // WEAPON at 3 (2026-08-29), so RANGE moved 3 -> 4 and everything after it moved up one
-            // again. This is the ONLY place the CSV is read by index, which is what keeps each such
+            // ⚠ COLUMN INDICES HAVE SHIFTED THREE TIMES. BL-96 inserted AOE at 4 (2026-08-28); BL-105
+            // inserted WEAPON at 3 and then SKILL_ID at 2 (2026-08-29), so RANGE has walked 3 -> 4 -> 5. This is the ONLY place the CSV is read by index, which is what keeps each such
             // migration a contained change — and the reason a structural pass must never skip a row.
-            rows.Add(new Rung(f[1].Trim(), I(f[0]), F(f[4]), F(f[7]), F(f[8]), F(f[9]),
-                              I(f[11]), I(f[12]), Descr: f[10].Trim(),
-                              Target: f[6].Trim().ToLowerInvariant(),
-                              Weapon: f[3].Trim(),
-                              Aoe: F(f[5])));
+            rows.Add(new Rung(f[1].Trim(), I(f[0]), F(f[5]), F(f[8]), F(f[9]), F(f[10]),
+                              I(f[12]), I(f[13]), Descr: f[11].Trim(),
+                              Target: f[7].Trim().ToLowerInvariant(),
+                              Weapon: f[4].Trim(),
+                              Aoe: F(f[6]),
+                              SkillId: f[2].Trim()));
         }
         return rows;
     }
@@ -261,6 +266,7 @@ internal static class Check
                     def.MpCostAt(cs.SkillLevel),
                     cs.SpCostFor(def), Def: def, SkillLevel: cs.SkillLevel,
                     Target: Retarget.FromDef(def),
+                    SkillId: def.Id,
                     // BL-105 — what the GAME demands, in his own grammar, so the column is checked.
                     Weapon: WeaponColumn.CellFor(def, cs.SkillLevel),
                     // BL-96 — the radius the GAME carries at this rung, so the new AOE column is
@@ -494,8 +500,13 @@ internal static class Check
         return prev[b.Length];
     }
 
+    /// <summary>Pair the two sides up. 🔑 BY SKILL ID WHERE THE ROW HAS ONE (his 2026-08-29 column),
+    /// falling back to the normalised NAME where it does not — an unauthored placeholder row, or a
+    /// file he has not filled in yet. The name key is prefixed so the two key spaces can never collide.
+    /// ⚠ The fuzzy alias pass below only ever sees the NAME-keyed leftovers, which is the point: two
+    /// rows carrying the same id are the same skill and need no guessing at all.</summary>
     private static Dictionary<string, List<Rung>> Group(List<Rung> rows) =>
-        rows.GroupBy(r => Norm(r.Name))
+        rows.GroupBy(r => r.SkillId.Length > 0 ? r.SkillId : "name:" + Norm(r.Name))
             .ToDictionary(g => g.Key, g => g.OrderBy(r => r.LearnLevel).ToList());
 
     /// <summary>`Anti magic` and `Anti-Magic` are the same skill; so are `Weapon mastery` and

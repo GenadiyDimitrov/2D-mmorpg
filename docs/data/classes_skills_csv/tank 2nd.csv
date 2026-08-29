@@ -1,36 +1,36 @@
-LEARN @ LVL, NAME,TYPE,WEAPON,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,REPLACES,Comment
-,,,,,,,,,,,,,,----------------------------Heavy Armor Mastery----------------------------
-20,Heavy Armor Mastery,passive,,0,0,self/single,0,0,0,with heavy: mpReg x1.1 and p.def +40 and p.def x1.07 and crit dmg reduction 15% and eva -2,0,1700,[Armor Mastery]
-24,Heavy Armor Mastery,passive,,0,0,self/single,0,0,0,with heavy: mpReg x1.1 and p.def +47 and p.def x1.07 and crit dmg reduction 15% and eva -2,0,3200,[Armor Mastery]
-28,Heavy Armor Mastery,passive,,0,0,self/single,0,0,0,with heavy: mpReg x1.1 and p.def +54 and p.def x1.07 and crit dmg reduction 15% and eva -2,0,6000,[Armor Mastery]
-32,Heavy Armor Mastery,passive,,0,0,self/single,0,0,0,with heavy: mpReg x1.1 and p.def +61 and p.def x1.07 and crit dmg reduction 15% and eva -2,0,11000,[Armor Mastery]
-36,Heavy Armor Mastery,passive,,0,0,self/single,0,0,0,with heavy: mpReg x3.4 and p.def +70 and p.def x1.07 and crit dmg reduction 15% and eva -2,0,20000,[Armor Mastery]
-,,,,,,,,,,,,,,----------------------------Tank Anti-Magic----------------------------
-20,Tank Anti-Magic,passive,,0,0,self/single,0,0,0,increase m.def +25,0,1700,[]
-24,Tank Anti-Magic,passive,,0,0,self/single,0,0,0,increase m.def +30,0,3200,[]
-28,Tank Anti-Magic,passive,,0,0,self/single,0,0,0,increase m.def +35,0,6000,[]
-32,Tank Anti-Magic,passive,,0,0,self/single,0,0,0,increase m.def +40,0,11000,[]
-36,Tank Anti-Magic,passive,,0,0,self/single,0,0,0,increase m.def +45,0,20000,[]
-,,,,,,,,,,,,,,----------------------------Weapon Mastery----------------------------
-20,Weapon Mastery,passive,sword|blunt/1,0,0,self/single,0,0,0,with 1h sword/blunt: p.Atk x1.085 and p.Atk +6,0,3400,[]
-24,Weapon Mastery,passive,sword|blunt/1,0,0,self/single,0,0,0,with 1h sword/blunt: p.Atk x1.085 and p.Atk +8,0,6400,[Weapon Mastery]
-28,Weapon Mastery,passive,sword|blunt/1,0,0,self/single,0,0,0,with 1h sword/blunt: p.Atk x1.085 and p.Atk +10,0,12000,[Weapon Mastery]
-32,Weapon Mastery,passive,sword|blunt/1,0,0,self/single,0,0,0,with 1h sword/blunt: p.Atk x1.085 and p.Atk +12,0,22000,[Weapon Mastery]
-36,Weapon Mastery,passive,sword|blunt/1,0,0,self/single,0,0,0,with 1h sword/blunt: p.Atk x1.085 and p.Atk +15,0,40000,[Weapon Mastery]
-,,,,,,,,,,,,,,----------------------------Defensive Wall----------------------------
-20,Defensive Wall,pfysical buff,,0,0,self/single,0.5,900,30,increase p.def +1800; p.def x2; m.def +1600; mdef x2; buff cancel resist x1.8; ms x0.5,20,3400,[]
-,,,,,,,,,,,,,,----------------------------Shield Mastery----------------------------
-20,Shield Mastery,Passive,,0,0,self/single,0,0,0,"Shield P.Def +30%, Shield Rate +50%",0,3200,[]
-28,Shield Mastery,Passive,,0,0,self/single,0,0,0,"Shield P.Def +40%, Shield Rate +70%",0,3200,[]
-36,Shield Mastery,Passive,,0,0,self/single,0,0,0,"Shield P.Def +50%, Shield Rate +85%;  +10% P.Def, bow resistance 16%",0,40000,[]
-,,,,,,,,,,,,,,----------------------------Anti-Magic----------------------------
-20,Anti-Magic,passive,,0,0,self/single,0,0,0,magic-fail FLOOR 10% - spells fizzle on you at least 1 cast in 10 no matter the caster - NOT the same skill as Tank Anti-Magic above (that one grants m.def; this one is the floor) - auto-granted at the class change so SP is 0 - lvl2 (15%) at 40 - lvl3 (20%) is written but unreachable until the 4th class exists,0,0,[]
-,,,,,,,,,,,,,,----------------------------Taunt----------------------------
-24,Taunt,physical active,,600,0,enemy/single,0,6,3,Agro enemy (power 4500) - locks it onto you for 3s then leaves you 4500 aggro ahead,15,6400,[]
-28,Taunt,physical active,,600,0,enemy/single,0,6,3,Agro enemy (power 5000) - locks it onto you for 3s then leaves you 5000 aggro ahead,18,12000,[]
-32,Taunt,physical active,,600,0,enemy/single,0,6,3,Agro enemy (power 5500) - locks it onto you for 3s then leaves you 5500 aggro ahead,22,22000,[]
-36,Taunt,physical active,,600,0,enemy/single,0,6,3,Agro enemy (power 6000) - locks it onto you for 3s then leaves you 6000 aggro ahead,26,40000,[]
-,,,,,,,,,,,,,,----------------------------Shield Stun----------------------------
-28,Shield Stun,physical active,,40,0,enemy/single,1,10,9,Stun Enemy for 9s,30,12000,[]
-,,,,,,,,,,,,,,----------------------------Stay!----------------------------
-36,Stay!,physical active,,400,0,enemy/single,0.5,15,15,Hold enemy for 15s,30,40000,[]
+LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,REPLACES,Comment
+,,,,,,,,,,,,,,,----------------------------Heavy Armor Mastery----------------------------
+20,Heavy Armor Mastery,tank_armor_mastery,passive,,0,0,self/single,0,0,0,with heavy: mpReg x1.1 and p.def +40 and p.def x1.07 and crit dmg reduction 15% and eva -2,0,1700,[fighter_armor_mastery]
+24,Heavy Armor Mastery,tank_armor_mastery,passive,,0,0,self/single,0,0,0,with heavy: mpReg x1.1 and p.def +47 and p.def x1.07 and crit dmg reduction 15% and eva -2,0,3200,[fighter_armor_mastery]
+28,Heavy Armor Mastery,tank_armor_mastery,passive,,0,0,self/single,0,0,0,with heavy: mpReg x1.1 and p.def +54 and p.def x1.07 and crit dmg reduction 15% and eva -2,0,6000,[fighter_armor_mastery]
+32,Heavy Armor Mastery,tank_armor_mastery,passive,,0,0,self/single,0,0,0,with heavy: mpReg x1.1 and p.def +61 and p.def x1.07 and crit dmg reduction 15% and eva -2,0,11000,[fighter_armor_mastery]
+36,Heavy Armor Mastery,tank_armor_mastery,passive,,0,0,self/single,0,0,0,with heavy: mpReg x3.4 and p.def +70 and p.def x1.07 and crit dmg reduction 15% and eva -2,0,20000,[fighter_armor_mastery]
+,,,,,,,,,,,,,,,----------------------------Tank Anti-Magic----------------------------
+20,Tank Anti-Magic,tank_anti_magic,passive,,0,0,self/single,0,0,0,increase m.def +25,0,1700,[]
+24,Tank Anti-Magic,tank_anti_magic,passive,,0,0,self/single,0,0,0,increase m.def +30,0,3200,[]
+28,Tank Anti-Magic,tank_anti_magic,passive,,0,0,self/single,0,0,0,increase m.def +35,0,6000,[]
+32,Tank Anti-Magic,tank_anti_magic,passive,,0,0,self/single,0,0,0,increase m.def +40,0,11000,[]
+36,Tank Anti-Magic,tank_anti_magic,passive,,0,0,self/single,0,0,0,increase m.def +45,0,20000,[]
+,,,,,,,,,,,,,,,----------------------------Weapon Mastery----------------------------
+20,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,0,0,self/single,0,0,0,with 1h sword/blunt: p.Atk x1.085 and p.Atk +6,0,3400,[]
+24,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,0,0,self/single,0,0,0,with 1h sword/blunt: p.Atk x1.085 and p.Atk +8,0,6400,[fighter_weapon_mastery]
+28,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,0,0,self/single,0,0,0,with 1h sword/blunt: p.Atk x1.085 and p.Atk +10,0,12000,[fighter_weapon_mastery]
+32,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,0,0,self/single,0,0,0,with 1h sword/blunt: p.Atk x1.085 and p.Atk +12,0,22000,[fighter_weapon_mastery]
+36,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,0,0,self/single,0,0,0,with 1h sword/blunt: p.Atk x1.085 and p.Atk +15,0,40000,[fighter_weapon_mastery]
+,,,,,,,,,,,,,,,----------------------------Defensive Wall----------------------------
+20,Defensive Wall,defensive_wall,pfysical buff,,0,0,self/single,0.5,900,30,increase p.def +1800; p.def x2; m.def +1600; mdef x2; buff cancel resist x1.8; ms x0.5,20,3400,[]
+,,,,,,,,,,,,,,,----------------------------Shield Mastery----------------------------
+20,Shield Mastery,tank_shield_mastery,Passive,,0,0,self/single,0,0,0,"Shield P.Def +30%, Shield Rate +50%",0,3200,[]
+28,Shield Mastery,tank_shield_mastery,Passive,,0,0,self/single,0,0,0,"Shield P.Def +40%, Shield Rate +70%",0,3200,[]
+36,Shield Mastery,tank_shield_mastery,Passive,,0,0,self/single,0,0,0,"Shield P.Def +50%, Shield Rate +85%;  +10% P.Def, bow resistance 16%",0,40000,[]
+,,,,,,,,,,,,,,,----------------------------Anti-Magic----------------------------
+20,Anti-Magic,anti_magic,passive,,0,0,self/single,0,0,0,magic-fail FLOOR 10% - spells fizzle on you at least 1 cast in 10 no matter the caster - NOT the same skill as Tank Anti-Magic above (that one grants m.def; this one is the floor) - auto-granted at the class change so SP is 0 - lvl2 (15%) at 40 - lvl3 (20%) is written but unreachable until the 4th class exists,0,0,[]
+,,,,,,,,,,,,,,,----------------------------Taunt----------------------------
+24,Taunt,provoke,physical active,,600,0,enemy/single,0,6,3,Agro enemy (power 4500) - locks it onto you for 3s then leaves you 4500 aggro ahead,15,6400,[]
+28,Taunt,provoke,physical active,,600,0,enemy/single,0,6,3,Agro enemy (power 5000) - locks it onto you for 3s then leaves you 5000 aggro ahead,18,12000,[]
+32,Taunt,provoke,physical active,,600,0,enemy/single,0,6,3,Agro enemy (power 5500) - locks it onto you for 3s then leaves you 5500 aggro ahead,22,22000,[]
+36,Taunt,provoke,physical active,,600,0,enemy/single,0,6,3,Agro enemy (power 6000) - locks it onto you for 3s then leaves you 6000 aggro ahead,26,40000,[]
+,,,,,,,,,,,,,,,----------------------------Shield Stun----------------------------
+28,Shield Stun,tank_shield_stun,physical active,,40,0,enemy/single,1,10,9,Stun Enemy for 9s,30,12000,[]
+,,,,,,,,,,,,,,,----------------------------Stay!----------------------------
+36,Stay!,tank_stay,physical active,,400,0,enemy/single,0.5,15,15,Hold enemy for 15s,30,40000,[]

@@ -58,6 +58,11 @@ if (args.Contains("--weapon-column")) return WeaponColumn.Run(outDir);
 // continue their own skills, but must never SHARE an id. Read-only; see ChainAudit.cs.
 if (args.Contains("--chain-audit")) return ChainAudit.Run();
 
+// `--id-column` — his 2026-08-29 instruction: the sheet carries the SKILL ID, the NAME is just a
+// display name, and REPLACES becomes a list of ids. *"Now having only names start to take its toll."*
+// One-off migration; idempotent. See IdColumn.cs.
+if (args.Contains("--id-column")) return IdColumn.Run(outDir);
+
 // ===== HIS DISCIPLINE MAP (2026-08-17) =============================================================
 // He redrew the 3rd-class split and named the files himself: *"class 2nd => desc1/desc2 3rd =>
 // desc1/desc2 4th"*, with

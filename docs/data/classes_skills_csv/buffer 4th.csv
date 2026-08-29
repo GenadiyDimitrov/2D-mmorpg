@@ -1,200 +1,200 @@
-LEARN @ LVL, NAME,TYPE,WEAPON,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,Gold,SP Bottles,REPLACES,RACE,Comment
-,,,,,,,,,,,,,,,,,==== SP CONSUMATION PER LEVEL ====
-,,,,,,,,,,,,,,,,,76 - 6.5kk SP + 1kk Gold
-,,,,,,,,,,,,,,,,,77 - 11kk SP + 1kk Gold
-,,,,,,,,,,,,,,,,,78 - 16kk SP + 1kk Gold
-,,,,,,,,,,,,,,,,,79 - 80kk SP + 1kk Gold
-,,,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,,,80 - 150kk SP + 10kk gold (New Skills/Ultimates)| Old-LvlUp -> 5kk Gold 
-,,,,,,,,,,,,,,,,,81 - 200kk SP + 25kk gold (New Skills/Ultimates)| Old-LvlUp -> 7.5kk Gold 
-,,,,,,,,,,,,,,,,,82 - 300kk SP + 50kk gold (New Skills/Ultimates)| Old-LvlUp -> 10kk Gold 
-,,,,,,,,,,,,,,,,,83 - 500kk SP + 100kk gold (New Skills/Ultimates)| Old-LvlUp -> 15kk Gold 
-,,,,,,,,,,,,,,,,,84 - 100kk gold + 2-SP bottles (New Skills/Ultimates)| Old-LvlUp -> 30kk Gold 
-,,,,,,,,,,,,,,,,,85 - 100kk gold + 5-SP bottles (New Skills/Ultimates)| Old-LvlUp -> 50kk Gold 
-,,,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,,,86 - Old-LvlUp -> 75kk Gold 
-,,,,,,,,,,,,,,,,,87 - Old-LvlUp -> 75kk Gold 
-,,,,,,,,,,,,,,,,,88 - Old-LvlUp -> 100kk Gold 
-,,,,,,,,,,,,,,,,,89 - Old-LvlUp -> 100kk Gold 
-,,,,,,,,,,,,,,,,,90 - Old-LvlUp -> 100kk Gold 
-,,,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,,,1 SP bottle = 1kkk SP + 100kk Gold
-,,,,,,,,,,,,,,,,,==================================
-,,,,,,,,,,,,,,,,,----------------------------Anti magic----------------------------
-76,Anti magic,Passive,,0,0,self/single,0,0,0,"magic def +113, mRes +30%",0,6.5kk,1kk
-77,Anti magic,Passive,,0,0,self/single,0,0,0,"magic def +116, mRes +30%",0,11kk,1kk
-78,Anti magic,Passive,,0,0,self/single,0,0,0,"magic def +119, mRes +30%",0,16kk,1kk
-79,Anti magic,Passive,,0,0,self/single,0,0,0,"magic def +121, mRes +30%",0,80kk,1kk
-80,Anti magic,Passive,,0,0,self/single,0,0,0,"magic def +123, mRes +30%",0,0,5kk
-81,Anti magic,Passive,,0,0,self/single,0,0,0,"magic def +125, mRes +30%",0,0,7.5kk
-82,Anti magic,Passive,,0,0,self/single,0,0,0,"magic def +127, mRes +30%",0,0,10kk
-83,Anti magic,Passive,,0,0,self/single,0,0,0,"magic def +129, mRes +30%",0,0,15kk
-84,Anti magic,Passive,,0,0,self/single,0,0,0,"magic def +131, mRes +30%",0,0,30kk
-85,Anti magic,Passive,,0,0,self/single,0,0,0,"magic def +133, mRes +30%",0,0,50kk
-86,Anti magic,Passive,,0,0,self/single,0,0,0,"magic def +135, mRes +35%",0,0,75kk
-87,Anti magic,Passive,,0,0,self/single,0,0,0,"magic def +138, mRes +35%",0,0,100kk
-88,Anti magic,Passive,,0,0,self/single,0,0,0,"magic def +140, mRes +35%",0,0,100kk
-89,Anti magic,Passive,,0,0,self/single,0,0,0,"magic def +144, mRes +35%",0,0,100kk
-90,Anti magic,Passive,,0,0,self/single,0,0,0,"magic def +149, mRes +35%",0,0,100kk
-,,,,,,,,,,,,,,,,,-----------------------Armor Mastery-----------------------
-76,Armor Mastery,Passive,,0,0,self/single,0,0,0,"Light/Heavy/Robe:   pDef +89, maxMP +220; mDef  +2%;",0,6.5kk,1kk
-77,Armor Mastery,Passive,,0,0,self/single,0,0,0,"Light/Heavy/Robe:   pDef +91, maxMP +220; mDef  +4%;",0,11kk,1kk
-78,Armor Mastery,Passive,,0,0,self/single,0,0,0,"Light/Heavy/Robe:   pDef +92, maxMP +250; mDef  +5% Decrease Mp Consumption with 5%;",0,16kk,1kk
-79,Armor Mastery,Passive,,0,0,self/single,0,0,0,"Light/Heavy/Robe:   pDef +93, maxMP +250; mDef  +7% Decrease Mp Consumption with 5%;",0,80kk,1kk
-80,Armor Mastery,Passive,,0,0,self/single,0,0,0,"Light/Heavy/Robe:   pDef +95, maxMP +250; mDef  +8% Decrease Mp Consumption with 5%;",0,0,5kk
-81,Armor Mastery,Passive,,0,0,self/single,0,0,0,"Light/Heavy/Robe:   pDef +96, maxMP +290; mDef +10% Decrease Mp Consumption with 8%;",0,0,7.5kk
-82,Armor Mastery,Passive,,0,0,self/single,0,0,0,"Light/Heavy/Robe:   pDef +97, maxMP +290; mDef +11% Decrease Mp Consumption with 8%;",0,0,10kk
-83,Armor Mastery,Passive,,0,0,self/single,0,0,0,"Light/Heavy/Robe:   pDef +99, maxMP +300; mDef +13% Decrease Mp Consumption with 8%;",0,0,15kk
-84,Armor Mastery,Passive,,0,0,self/single,0,0,0,"Light/Heavy/Robe:  pDef +100, maxMP +300; mDef +14% Decrease Mp Consumption with 8%;",0,0,30kk
-85,Armor Mastery,Passive,,0,0,self/single,0,0,0,"Light/Heavy/Robe:  pDef +101, maxMP +300; mDef +16% Decrease Mp Consumption with 8%;",0,0,50kk
-86,Armor Mastery,Passive,,0,0,self/single,0,0,0,"Light/Heavy/Robe:  pDef +103, maxMP +330; mDef +17% Decrease Mp Consumption with 10%;",0,0,75kk
-87,Armor Mastery,Passive,,0,0,self/single,0,0,0,"Light/Heavy/Robe:  pDef +104, maxMP +330; mDef +19% Decrease Mp Consumption with 10%;",0,0,100kk
-88,Armor Mastery,Passive,,0,0,self/single,0,0,0,"Light/Heavy/Robe:  pDef +105, maxMP +350; mDef +20% Decrease Mp Consumption with 10%;",0,0,100kk
-89,Armor Mastery,Passive,,0,0,self/single,0,0,0,"Light/Heavy/Robe:  pDef +107, maxMP +350; mDef +22% Decrease Mp Consumption with 10%;",0,0,100kk
-90,Armor Mastery,Passive,,0,0,self/single,0,0,0,"Light/Heavy/Robe:  pDef +108, maxMP +400; mDef +25% Decrease Mp Consumption with 10%;",0,0,100kk
-,,,,,,,,,,,,,,,,,----------------------Spell Mastery----------------------
-76,Spell Mastery,Passive,blunt|bow,0,0,self/single,0,0,0,"With blunt/bow weapon decreses the reuse delay with 15%, mAtk +101, pAtk +85, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,36k,[],,
-77,Spell Mastery,Passive,blunt|bow,0,0,self/single,0,0,0,"With blunt/bow weapon decreses the reuse delay with 15%, mAtk +102, pAtk +90, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,43k,[],,
-78,Spell Mastery,Passive,blunt|bow,0,0,self/single,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +104, pAtk +95, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,64k,[],,
-79,Spell Mastery,Passive,blunt|bow,0,0,self/single,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +105, pAtk +100, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,74k,[],,
-80,Spell Mastery,Passive,blunt|bow,0,0,self/single,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +106, pAtk +105, mpReg +3.4,hpReg +2.7, cast speed x1.1 ",0,81k,[],,
-81,Spell Mastery,Passive,blunt|bow,0,0,self/single,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +108, pAtk +110, mpReg +3.4,hpReg +2.7, cast speed x1.1 ",0,88k,[],,
-82,Spell Mastery,Passive,blunt|bow,0,0,self/single,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +109, pAtk +115, mpReg +3.4,hpReg +2.7, cast speed x1.1 ",0,120k,[],,
-83,Spell Mastery,Passive,blunt|bow,0,0,self/single,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +110, pAtk +120, mpReg +3.4,hpReg +2.7, cast speed x1.1 ",0,170k,[],,
-84,Spell Mastery,Passive,blunt|bow,0,0,self/single,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +112, pAtk +125, mpReg +3.4,hpReg +2.7, cast speed x1.1 ",0,190k,[],,
-85,Spell Mastery,Passive,blunt|bow,0,0,self/single,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +113, pAtk +130, mpReg +3.4,hpReg +2.7, cast speed x1.1 ",0,280k,[],,
-86,Spell Mastery,Passive,blunt|bow,0,0,self/single,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +115, pAtk +135, mpReg +3.4,hpReg +2.7, cast speed x1.1 ",0,320k,[],,
-87,Spell Mastery,Passive,blunt|bow,0,0,self/single,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +116, pAtk +140, mpReg +3.4,hpReg +2.7, cast speed x1.1 ",0,390k,[],,
-88,Spell Mastery,Passive,blunt|bow,0,0,self/single,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +117, pAtk +145, mpReg +3.4,hpReg +2.7, cast speed x1.1 ",0,650k,[],,
-89,Spell Mastery,Passive,blunt|bow,0,0,self/single,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +119, pAtk +150, mpReg +3.4,hpReg +2.7, cast speed x1.1 ",0,880k,[],,
-90,Spell Mastery,Passive,blunt|bow,0,0,self/single,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +120, pAtk +155, mpReg +3.4,hpReg +2.7, cast speed x1.1 ",0,880k,[],,
-,,,,,,,,,,,,,,,,,------------------------------Harmony of Protection------------------------------
-76,Harmony of Protection,Magic/Buff,,600,800,party/aoe,1,120,300,"+30% M.Def, +20% HP Regen, +25% P.Def, +30% Max HP, +20% Mele Reflect, +10% Bow Resistance",464,6.5kk,1kk
-,,,,,,,,,,,,,,,,,------------------------------Harmony of the Wizard------------------------------
-77,Harmony of the Wizard,Magic/Buff,,600,800,party/aoe,1,120,300,"+10% M.Atk, 30% cast speed, +20% MP Regen",199,11kk,1kk
-78,Harmony of the Wizard,Magic/Buff,,600,800,party/aoe,1,120,300,"+10% M.Atk, 30% cast speed, +20% MP Regen, +30% magic crit rate",279,16kk,1kk
-78,Harmony of the Wizard,Magic/Buff,,600,800,party/aoe,1,120,300,"+10% M.Atk, 30% cast speed, +20% MP Regen, +30% magic crit rate, +30% magic critical dmg",367,80kk,1kk
-,,,,,,,,,,,,,,,,,------------------------------Harmony of the Soul------------------------------
-77,Harmony of the Soul,Magic/Buff,,600,0,party/aoe,1,120,300,"-10% Magical Reuse, -20% Physical Reuse, -10% Magic MP Consumption, -10% Physical MP Consumption",279,11kk,1kk
-78,Harmony of the Soul,Magic/Buff,,600,0,party/aoe,1,120,300,"-15% Magical Reuse, -25% Physical Reuse, -12% Magic MP Consumption, -15% Physical MP Consumption",279,16kk,1kk
-79,Harmony of the Soul,Magic/Buff,,600,0,party/aoe,1,120,300,"-20% Magical Reuse, -30% Physical Reuse, -15% Magic MP Consumption, -20% Physical MP Consumption",279,80kk,1kk
-80,Harmony of the Soul,Magic/Buff,,600,0,party/aoe,1,120,300,"-20% Magical Reuse, -30% Physical Reuse, -15% Magic MP Consumption, -20% Physical MP Consumption, +5% Healing Received",367,0,5kk
-81,Harmony of the Soul,Magic/Buff,,600,0,party/aoe,1,120,300,"-20% Magical Reuse, -30% Physical Reuse, -15% Magic MP Consumption, -20% Physical MP Consumption, +10% Healing Received",367,0,7.5kk
-82,Harmony of the Soul,Magic/Buff,,600,0,party/aoe,1,120,300,"-20% Magical Reuse, -30% Physical Reuse, -15% Magic MP Consumption, -20% Physical MP Consumption, +15% Healing Received, +20% SPT Debuff Resistance",464,0,10kk
-83,Harmony of the Soul,Magic/Buff,,600,0,party/aoe,1,120,300,"-20% Magical Reuse, -30% Physical Reuse, -15% Magic MP Consumption, -20% Physical MP Consumption, +20% Healing Received, +30% SPT Debuff Resistance",464,0,15kk
-,,,,,,,,,,,,,,,,,------------------------------Harmony of Madness------------------------------
-83,Harmony of Madness,Magic/Buff,,600,0,party/aoe,1,120,300,"−10% Max HP/MP, +8% offence and speed, +8 move, −8 evasion.",367,500kk,100kk
-,,,,,,,,,,,,,,,,,---------------------------Harmony of Restoration----------------------------
-76,Harmony of Restoration,Magic/Heal,,600,800,party/aoe,2,10,30,Restores +110 HP/s and +11 MP/s for 30s,470,6.5kk,1
-77,Harmony of Restoration,Magic/Heal,,600,800,party/aoe,2,10,30,Restores +100 HP/s and +10 MP/s for 30s,476,11kk,1k
-78,Harmony of Restoration,Magic/Heal,,600,800,party/aoe,2,10,30,Restores +120 HP/s and +12 MP/s for 30s,482,16kk,1k
-79,Harmony of Restoration,Magic/Heal,,600,800,party/aoe,2,10,30,Restores +100 HP/s and +10 MP/s for 30s,488,80kk,1k
-80,Harmony of Restoration,Magic/Heal,,600,800,party/aoe,2,10,30,Restores +130 HP/s and +13 MP/s for 30s,454,0,5kk
-81,Harmony of Restoration,Magic/Heal,,600,800,party/aoe,2,10,30,Restores +100 HP/s and +10 MP/s for 30s,460,0,7.5kk
-82,Harmony of Restoration,Magic/Heal,,600,800,party/aoe,2,10,30,Restores +140 HP/s and +14 MP/s for 30s,466,0,10kk
-83,Harmony of Restoration,Magic/Heal,,600,800,party/aoe,2,10,30,Restores +100 HP/s and +10 MP/s for 30s,472,0,15kk
-84,Harmony of Restoration,Magic/Heal,,600,800,party/aoe,2,10,30,Restores +150 HP/s and +15 MP/s for 30s,478,0,30kk
-85,Harmony of Restoration,Magic/Heal,,600,800,party/aoe,2,10,30,Restores +100 HP/s and +10 MP/s for 30s,484,0,50kk
-86,Harmony of Restoration,Magic/Heal,,600,800,party/aoe,2,10,30,Restores +160 HP/s and +16 MP/s for 30s,490,0,75kk
-87,Harmony of Restoration,Magic/Heal,,600,800,party/aoe,2,10,30,Restores +100 HP/s and +10 MP/s for 30s,496,0,100kk
-88,Harmony of Restoration,Magic/Heal,,600,800,party/aoe,2,10,30,Restores +170 HP/s and +17 MP/s for 30s,502,0,100kk
-89,Harmony of Restoration,Magic/Heal,,600,800,party/aoe,2,10,30,Restores +100 HP/s and +10 MP/s for 30s,508,0,100kk
-90,Harmony of Restoration,Magic/Heal,,600,800,party/aoe,2,10,30,Restores +180 HP/s and +18 MP/s for 30s,514,0,100kk
-,,,,,,,,,,,,,,,,,----------------------------Soul Reinforcement----------------------------
-76,Soul Reinforcement,Magic/Buff,,600,800,party/aoe,1,1,1200,"+35% Max MP, +30% M.Def, Decrease Physical MP Cost by 21% and Magic MP Cost by 11%",460,6.5kk,1kk
-78,Soul Reinforcement,Magic/Buff,,600,800,party/aoe,1,1,1200,"+35% Max MP, +30% M.Def, Decrease Physical MP Cost by 22% and Magic MP Cost by 12%",470,16kk,1kk
-80,Soul Reinforcement,Magic/Buff,,600,800,party/aoe,1,1,1200,"+35% Max MP, +30% M.Def, Decrease Physical MP Cost by 23% and Magic MP Cost by 13%",480,0,5kk
-82,Soul Reinforcement,Magic/Buff,,600,800,party/aoe,1,1,1200,"+35% Max MP, +30% M.Def, Decrease Physical MP Cost by 24% and Magic MP Cost by 14%",490,0,10kk
-84,Soul Reinforcement,Magic/Buff,,600,800,party/aoe,1,1,1200,"+35% Max MP, +30% M.Def, Decrease Physical MP Cost by 25% and Magic MP Cost by 15%",500,0,30kk
-86,Soul Reinforcement,Magic/Buff,,600,800,party/aoe,1,1,1200,"+35% Max MP, +30% M.Def, Decrease Physical MP Cost by 26% and Magic MP Cost by 16%",510,0,75kk
-88,Soul Reinforcement,Magic/Buff,,600,800,party/aoe,1,1,1200,"+35% Max MP, +30% M.Def, Decrease Physical MP Cost by 28% and Magic MP Cost by 18%",520,0,100kk
-90,Soul Reinforcement,Magic/Buff,,600,800,party/aoe,1,1,1200,"+35% Max MP, +30% M.Def, Decrease Physical MP Cost by 30% and Magic MP Cost by 20%",530,0,100kk
-,,,,,,,,,,,,,,,,,----------------------------Arcane and Feral Protectio----------------------------
-76,Arcane and Feral Protection,Magic/Buff,,600,800,party/aoe,1,1,1200,"43% resist to CON debuff, 50% resist to SPT debuffs",350,6.5kk,1kk
-78,Arcane and Feral Protection,Magic/Buff,,600,800,party/aoe,1,1,1200,"47% resist to CON debuff, 50% resist to SPT debuffs",360,16kk,1kk
-80,Arcane and Feral Protection,Magic/Buff,,600,800,party/aoe,1,1,1200,"50% resist to CON debuff, 50% resist to SPT debuffs",370,0,5kk
-82,Arcane and Feral Protection,Magic/Buff,,600,800,party/aoe,1,1,1200,"54% resist to CON debuff, 50% resist to SPT debuffs",380,0,10kk
-84,Arcane and Feral Protection,Magic/Buff,,600,800,party/aoe,1,1,1200,"57% resist to CON debuff, 50% resist to SPT debuffs",390,0,30kk
-86,Arcane and Feral Protection,Magic/Buff,,600,800,party/aoe,1,1,1200,"60% resist to CON debuff, 50% resist to SPT debuffs",400,0,75kk
-88,Arcane and Feral Protection,Magic/Buff,,600,800,party/aoe,1,1,1200,"63% resist to CON debuff, 50% resist to SPT debuffs",410,0,100kk
-90,Arcane and Feral Protection,Magic/Buff,,600,800,party/aoe,1,1,1200,"65% resist to CON debuff, 50% resist to SPT debuffs",420,0,100kk
-,,,,,,,,,,,,,,,,,---------------------------Mark----------------------------
-79,Harmony Mark,Magic/Heal,,900,0,party/aoe,5,120,300,"Increases: Atk with 10%; Acc +3; Atk/Cast.Speed, Def, Crit.Rate, Crit.Dmg, Max HP/MP and regen with 20%;  Consumes 10 skill stones; Do not Stack with Other 'Mark' skills",300,80kk,1kk,,,,Same Principle as Great Might/Bulwark
+LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,Gold,SP Bottles,REPLACES,RACE,Comment
+,,,,,,,,,,,,,,,,,,==== SP CONSUMATION PER LEVEL ====
+,,,,,,,,,,,,,,,,,,76 - 6.5kk SP + 1kk Gold
+,,,,,,,,,,,,,,,,,,77 - 11kk SP + 1kk Gold
+,,,,,,,,,,,,,,,,,,78 - 16kk SP + 1kk Gold
+,,,,,,,,,,,,,,,,,,79 - 80kk SP + 1kk Gold
+,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,80 - 150kk SP + 10kk gold (New Skills/Ultimates)| Old-LvlUp -> 5kk Gold 
+,,,,,,,,,,,,,,,,,,81 - 200kk SP + 25kk gold (New Skills/Ultimates)| Old-LvlUp -> 7.5kk Gold 
+,,,,,,,,,,,,,,,,,,82 - 300kk SP + 50kk gold (New Skills/Ultimates)| Old-LvlUp -> 10kk Gold 
+,,,,,,,,,,,,,,,,,,83 - 500kk SP + 100kk gold (New Skills/Ultimates)| Old-LvlUp -> 15kk Gold 
+,,,,,,,,,,,,,,,,,,84 - 100kk gold + 2-SP bottles (New Skills/Ultimates)| Old-LvlUp -> 30kk Gold 
+,,,,,,,,,,,,,,,,,,85 - 100kk gold + 5-SP bottles (New Skills/Ultimates)| Old-LvlUp -> 50kk Gold 
+,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,86 - Old-LvlUp -> 75kk Gold 
+,,,,,,,,,,,,,,,,,,87 - Old-LvlUp -> 75kk Gold 
+,,,,,,,,,,,,,,,,,,88 - Old-LvlUp -> 100kk Gold 
+,,,,,,,,,,,,,,,,,,89 - Old-LvlUp -> 100kk Gold 
+,,,,,,,,,,,,,,,,,,90 - Old-LvlUp -> 100kk Gold 
+,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,1 SP bottle = 1kkk SP + 100kk Gold
+,,,,,,,,,,,,,,,,,,==================================
+,,,,,,,,,,,,,,,,,,----------------------------Anti magic----------------------------
+76,Anti magic,anti_magic_mage,Passive,,0,0,self/single,0,0,0,"magic def +113, mRes +30%",0,6.5kk,1kk
+77,Anti magic,anti_magic_mage,Passive,,0,0,self/single,0,0,0,"magic def +116, mRes +30%",0,11kk,1kk
+78,Anti magic,anti_magic_mage,Passive,,0,0,self/single,0,0,0,"magic def +119, mRes +30%",0,16kk,1kk
+79,Anti magic,anti_magic_mage,Passive,,0,0,self/single,0,0,0,"magic def +121, mRes +30%",0,80kk,1kk
+80,Anti magic,anti_magic_mage,Passive,,0,0,self/single,0,0,0,"magic def +123, mRes +30%",0,0,5kk
+81,Anti magic,anti_magic_mage,Passive,,0,0,self/single,0,0,0,"magic def +125, mRes +30%",0,0,7.5kk
+82,Anti magic,anti_magic_mage,Passive,,0,0,self/single,0,0,0,"magic def +127, mRes +30%",0,0,10kk
+83,Anti magic,anti_magic_mage,Passive,,0,0,self/single,0,0,0,"magic def +129, mRes +30%",0,0,15kk
+84,Anti magic,anti_magic_mage,Passive,,0,0,self/single,0,0,0,"magic def +131, mRes +30%",0,0,30kk
+85,Anti magic,anti_magic_mage,Passive,,0,0,self/single,0,0,0,"magic def +133, mRes +30%",0,0,50kk
+86,Anti magic,anti_magic_mage,Passive,,0,0,self/single,0,0,0,"magic def +135, mRes +35%",0,0,75kk
+87,Anti magic,anti_magic_mage,Passive,,0,0,self/single,0,0,0,"magic def +138, mRes +35%",0,0,100kk
+88,Anti magic,anti_magic_mage,Passive,,0,0,self/single,0,0,0,"magic def +140, mRes +35%",0,0,100kk
+89,Anti magic,anti_magic_mage,Passive,,0,0,self/single,0,0,0,"magic def +144, mRes +35%",0,0,100kk
+90,Anti magic,anti_magic_mage,Passive,,0,0,self/single,0,0,0,"magic def +149, mRes +35%",0,0,100kk
+,,,,,,,,,,,,,,,,,,-----------------------Armor Mastery-----------------------
+76,Armor Mastery,armor_mastery,Passive,,0,0,self/single,0,0,0,"Light/Heavy/Robe:   pDef +89, maxMP +220; mDef  +2%;",0,6.5kk,1kk
+77,Armor Mastery,armor_mastery,Passive,,0,0,self/single,0,0,0,"Light/Heavy/Robe:   pDef +91, maxMP +220; mDef  +4%;",0,11kk,1kk
+78,Armor Mastery,armor_mastery,Passive,,0,0,self/single,0,0,0,"Light/Heavy/Robe:   pDef +92, maxMP +250; mDef  +5% Decrease Mp Consumption with 5%;",0,16kk,1kk
+79,Armor Mastery,armor_mastery,Passive,,0,0,self/single,0,0,0,"Light/Heavy/Robe:   pDef +93, maxMP +250; mDef  +7% Decrease Mp Consumption with 5%;",0,80kk,1kk
+80,Armor Mastery,armor_mastery,Passive,,0,0,self/single,0,0,0,"Light/Heavy/Robe:   pDef +95, maxMP +250; mDef  +8% Decrease Mp Consumption with 5%;",0,0,5kk
+81,Armor Mastery,armor_mastery,Passive,,0,0,self/single,0,0,0,"Light/Heavy/Robe:   pDef +96, maxMP +290; mDef +10% Decrease Mp Consumption with 8%;",0,0,7.5kk
+82,Armor Mastery,armor_mastery,Passive,,0,0,self/single,0,0,0,"Light/Heavy/Robe:   pDef +97, maxMP +290; mDef +11% Decrease Mp Consumption with 8%;",0,0,10kk
+83,Armor Mastery,armor_mastery,Passive,,0,0,self/single,0,0,0,"Light/Heavy/Robe:   pDef +99, maxMP +300; mDef +13% Decrease Mp Consumption with 8%;",0,0,15kk
+84,Armor Mastery,armor_mastery,Passive,,0,0,self/single,0,0,0,"Light/Heavy/Robe:  pDef +100, maxMP +300; mDef +14% Decrease Mp Consumption with 8%;",0,0,30kk
+85,Armor Mastery,armor_mastery,Passive,,0,0,self/single,0,0,0,"Light/Heavy/Robe:  pDef +101, maxMP +300; mDef +16% Decrease Mp Consumption with 8%;",0,0,50kk
+86,Armor Mastery,armor_mastery,Passive,,0,0,self/single,0,0,0,"Light/Heavy/Robe:  pDef +103, maxMP +330; mDef +17% Decrease Mp Consumption with 10%;",0,0,75kk
+87,Armor Mastery,armor_mastery,Passive,,0,0,self/single,0,0,0,"Light/Heavy/Robe:  pDef +104, maxMP +330; mDef +19% Decrease Mp Consumption with 10%;",0,0,100kk
+88,Armor Mastery,armor_mastery,Passive,,0,0,self/single,0,0,0,"Light/Heavy/Robe:  pDef +105, maxMP +350; mDef +20% Decrease Mp Consumption with 10%;",0,0,100kk
+89,Armor Mastery,armor_mastery,Passive,,0,0,self/single,0,0,0,"Light/Heavy/Robe:  pDef +107, maxMP +350; mDef +22% Decrease Mp Consumption with 10%;",0,0,100kk
+90,Armor Mastery,armor_mastery,Passive,,0,0,self/single,0,0,0,"Light/Heavy/Robe:  pDef +108, maxMP +400; mDef +25% Decrease Mp Consumption with 10%;",0,0,100kk
+,,,,,,,,,,,,,,,,,,----------------------Spell Mastery----------------------
+76,Spell Mastery,spell_mastery,Passive,blunt|bow,0,0,self/single,0,0,0,"With blunt/bow weapon decreses the reuse delay with 15%, mAtk +101, pAtk +85, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,36k,[],,
+77,Spell Mastery,spell_mastery,Passive,blunt|bow,0,0,self/single,0,0,0,"With blunt/bow weapon decreses the reuse delay with 15%, mAtk +102, pAtk +90, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,43k,[],,
+78,Spell Mastery,spell_mastery,Passive,blunt|bow,0,0,self/single,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +104, pAtk +95, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,64k,[],,
+79,Spell Mastery,spell_mastery,Passive,blunt|bow,0,0,self/single,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +105, pAtk +100, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,74k,[],,
+80,Spell Mastery,spell_mastery,Passive,blunt|bow,0,0,self/single,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +106, pAtk +105, mpReg +3.4,hpReg +2.7, cast speed x1.1 ",0,81k,[],,
+81,Spell Mastery,spell_mastery,Passive,blunt|bow,0,0,self/single,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +108, pAtk +110, mpReg +3.4,hpReg +2.7, cast speed x1.1 ",0,88k,[],,
+82,Spell Mastery,spell_mastery,Passive,blunt|bow,0,0,self/single,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +109, pAtk +115, mpReg +3.4,hpReg +2.7, cast speed x1.1 ",0,120k,[],,
+83,Spell Mastery,spell_mastery,Passive,blunt|bow,0,0,self/single,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +110, pAtk +120, mpReg +3.4,hpReg +2.7, cast speed x1.1 ",0,170k,[],,
+84,Spell Mastery,spell_mastery,Passive,blunt|bow,0,0,self/single,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +112, pAtk +125, mpReg +3.4,hpReg +2.7, cast speed x1.1 ",0,190k,[],,
+85,Spell Mastery,spell_mastery,Passive,blunt|bow,0,0,self/single,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +113, pAtk +130, mpReg +3.4,hpReg +2.7, cast speed x1.1 ",0,280k,[],,
+86,Spell Mastery,spell_mastery,Passive,blunt|bow,0,0,self/single,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +115, pAtk +135, mpReg +3.4,hpReg +2.7, cast speed x1.1 ",0,320k,[],,
+87,Spell Mastery,spell_mastery,Passive,blunt|bow,0,0,self/single,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +116, pAtk +140, mpReg +3.4,hpReg +2.7, cast speed x1.1 ",0,390k,[],,
+88,Spell Mastery,spell_mastery,Passive,blunt|bow,0,0,self/single,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +117, pAtk +145, mpReg +3.4,hpReg +2.7, cast speed x1.1 ",0,650k,[],,
+89,Spell Mastery,spell_mastery,Passive,blunt|bow,0,0,self/single,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +119, pAtk +150, mpReg +3.4,hpReg +2.7, cast speed x1.1 ",0,880k,[],,
+90,Spell Mastery,spell_mastery,Passive,blunt|bow,0,0,self/single,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +120, pAtk +155, mpReg +3.4,hpReg +2.7, cast speed x1.1 ",0,880k,[],,
+,,,,,,,,,,,,,,,,,,------------------------------Harmony of Protection------------------------------
+76,Harmony of Protection,npc_harmony_protection,Magic/Buff,,600,800,party/aoe,1,120,300,"+30% M.Def, +20% HP Regen, +25% P.Def, +30% Max HP, +20% Mele Reflect, +10% Bow Resistance",464,6.5kk,1kk
+,,,,,,,,,,,,,,,,,,------------------------------Harmony of the Wizard------------------------------
+77,Harmony of the Wizard,npc_harmony_wizard,Magic/Buff,,600,800,party/aoe,1,120,300,"+10% M.Atk, 30% cast speed, +20% MP Regen",199,11kk,1kk
+78,Harmony of the Wizard,npc_harmony_wizard,Magic/Buff,,600,800,party/aoe,1,120,300,"+10% M.Atk, 30% cast speed, +20% MP Regen, +30% magic crit rate",279,16kk,1kk
+78,Harmony of the Wizard,npc_harmony_wizard,Magic/Buff,,600,800,party/aoe,1,120,300,"+10% M.Atk, 30% cast speed, +20% MP Regen, +30% magic crit rate, +30% magic critical dmg",367,80kk,1kk
+,,,,,,,,,,,,,,,,,,------------------------------Harmony of the Soul------------------------------
+77,Harmony of the Soul,,Magic/Buff,,600,0,party/aoe,1,120,300,"-10% Magical Reuse, -20% Physical Reuse, -10% Magic MP Consumption, -10% Physical MP Consumption",279,11kk,1kk
+78,Harmony of the Soul,,Magic/Buff,,600,0,party/aoe,1,120,300,"-15% Magical Reuse, -25% Physical Reuse, -12% Magic MP Consumption, -15% Physical MP Consumption",279,16kk,1kk
+79,Harmony of the Soul,,Magic/Buff,,600,0,party/aoe,1,120,300,"-20% Magical Reuse, -30% Physical Reuse, -15% Magic MP Consumption, -20% Physical MP Consumption",279,80kk,1kk
+80,Harmony of the Soul,,Magic/Buff,,600,0,party/aoe,1,120,300,"-20% Magical Reuse, -30% Physical Reuse, -15% Magic MP Consumption, -20% Physical MP Consumption, +5% Healing Received",367,0,5kk
+81,Harmony of the Soul,,Magic/Buff,,600,0,party/aoe,1,120,300,"-20% Magical Reuse, -30% Physical Reuse, -15% Magic MP Consumption, -20% Physical MP Consumption, +10% Healing Received",367,0,7.5kk
+82,Harmony of the Soul,,Magic/Buff,,600,0,party/aoe,1,120,300,"-20% Magical Reuse, -30% Physical Reuse, -15% Magic MP Consumption, -20% Physical MP Consumption, +15% Healing Received, +20% SPT Debuff Resistance",464,0,10kk
+83,Harmony of the Soul,,Magic/Buff,,600,0,party/aoe,1,120,300,"-20% Magical Reuse, -30% Physical Reuse, -15% Magic MP Consumption, -20% Physical MP Consumption, +20% Healing Received, +30% SPT Debuff Resistance",464,0,15kk
+,,,,,,,,,,,,,,,,,,------------------------------Harmony of Madness------------------------------
+83,Harmony of Madness,,Magic/Buff,,600,0,party/aoe,1,120,300,"−10% Max HP/MP, +8% offence and speed, +8 move, −8 evasion.",367,500kk,100kk
+,,,,,,,,,,,,,,,,,,---------------------------Harmony of Restoration----------------------------
+76,Harmony of Restoration,wc_harmony_restoration,Magic/Heal,,600,800,party/aoe,2,10,30,Restores +110 HP/s and +11 MP/s for 30s,470,6.5kk,1
+77,Harmony of Restoration,wc_harmony_restoration,Magic/Heal,,600,800,party/aoe,2,10,30,Restores +100 HP/s and +10 MP/s for 30s,476,11kk,1k
+78,Harmony of Restoration,wc_harmony_restoration,Magic/Heal,,600,800,party/aoe,2,10,30,Restores +120 HP/s and +12 MP/s for 30s,482,16kk,1k
+79,Harmony of Restoration,wc_harmony_restoration,Magic/Heal,,600,800,party/aoe,2,10,30,Restores +100 HP/s and +10 MP/s for 30s,488,80kk,1k
+80,Harmony of Restoration,wc_harmony_restoration,Magic/Heal,,600,800,party/aoe,2,10,30,Restores +130 HP/s and +13 MP/s for 30s,454,0,5kk
+81,Harmony of Restoration,wc_harmony_restoration,Magic/Heal,,600,800,party/aoe,2,10,30,Restores +100 HP/s and +10 MP/s for 30s,460,0,7.5kk
+82,Harmony of Restoration,wc_harmony_restoration,Magic/Heal,,600,800,party/aoe,2,10,30,Restores +140 HP/s and +14 MP/s for 30s,466,0,10kk
+83,Harmony of Restoration,wc_harmony_restoration,Magic/Heal,,600,800,party/aoe,2,10,30,Restores +100 HP/s and +10 MP/s for 30s,472,0,15kk
+84,Harmony of Restoration,wc_harmony_restoration,Magic/Heal,,600,800,party/aoe,2,10,30,Restores +150 HP/s and +15 MP/s for 30s,478,0,30kk
+85,Harmony of Restoration,wc_harmony_restoration,Magic/Heal,,600,800,party/aoe,2,10,30,Restores +100 HP/s and +10 MP/s for 30s,484,0,50kk
+86,Harmony of Restoration,wc_harmony_restoration,Magic/Heal,,600,800,party/aoe,2,10,30,Restores +160 HP/s and +16 MP/s for 30s,490,0,75kk
+87,Harmony of Restoration,wc_harmony_restoration,Magic/Heal,,600,800,party/aoe,2,10,30,Restores +100 HP/s and +10 MP/s for 30s,496,0,100kk
+88,Harmony of Restoration,wc_harmony_restoration,Magic/Heal,,600,800,party/aoe,2,10,30,Restores +170 HP/s and +17 MP/s for 30s,502,0,100kk
+89,Harmony of Restoration,wc_harmony_restoration,Magic/Heal,,600,800,party/aoe,2,10,30,Restores +100 HP/s and +10 MP/s for 30s,508,0,100kk
+90,Harmony of Restoration,wc_harmony_restoration,Magic/Heal,,600,800,party/aoe,2,10,30,Restores +180 HP/s and +18 MP/s for 30s,514,0,100kk
+,,,,,,,,,,,,,,,,,,----------------------------Soul Reinforcement----------------------------
+76,Soul Reinforcement,wc_soul_reinforcement,Magic/Buff,,600,800,party/aoe,1,1,1200,"+35% Max MP, +30% M.Def, Decrease Physical MP Cost by 21% and Magic MP Cost by 11%",460,6.5kk,1kk
+78,Soul Reinforcement,wc_soul_reinforcement,Magic/Buff,,600,800,party/aoe,1,1,1200,"+35% Max MP, +30% M.Def, Decrease Physical MP Cost by 22% and Magic MP Cost by 12%",470,16kk,1kk
+80,Soul Reinforcement,wc_soul_reinforcement,Magic/Buff,,600,800,party/aoe,1,1,1200,"+35% Max MP, +30% M.Def, Decrease Physical MP Cost by 23% and Magic MP Cost by 13%",480,0,5kk
+82,Soul Reinforcement,wc_soul_reinforcement,Magic/Buff,,600,800,party/aoe,1,1,1200,"+35% Max MP, +30% M.Def, Decrease Physical MP Cost by 24% and Magic MP Cost by 14%",490,0,10kk
+84,Soul Reinforcement,wc_soul_reinforcement,Magic/Buff,,600,800,party/aoe,1,1,1200,"+35% Max MP, +30% M.Def, Decrease Physical MP Cost by 25% and Magic MP Cost by 15%",500,0,30kk
+86,Soul Reinforcement,wc_soul_reinforcement,Magic/Buff,,600,800,party/aoe,1,1,1200,"+35% Max MP, +30% M.Def, Decrease Physical MP Cost by 26% and Magic MP Cost by 16%",510,0,75kk
+88,Soul Reinforcement,wc_soul_reinforcement,Magic/Buff,,600,800,party/aoe,1,1,1200,"+35% Max MP, +30% M.Def, Decrease Physical MP Cost by 28% and Magic MP Cost by 18%",520,0,100kk
+90,Soul Reinforcement,wc_soul_reinforcement,Magic/Buff,,600,800,party/aoe,1,1,1200,"+35% Max MP, +30% M.Def, Decrease Physical MP Cost by 30% and Magic MP Cost by 20%",530,0,100kk
+,,,,,,,,,,,,,,,,,,----------------------------Arcane and Feral Protectio----------------------------
+76,Arcane and Feral Protection,wc_arcane_feral_protection,Magic/Buff,,600,800,party/aoe,1,1,1200,"43% resist to CON debuff, 50% resist to SPT debuffs",350,6.5kk,1kk
+78,Arcane and Feral Protection,wc_arcane_feral_protection,Magic/Buff,,600,800,party/aoe,1,1,1200,"47% resist to CON debuff, 50% resist to SPT debuffs",360,16kk,1kk
+80,Arcane and Feral Protection,wc_arcane_feral_protection,Magic/Buff,,600,800,party/aoe,1,1,1200,"50% resist to CON debuff, 50% resist to SPT debuffs",370,0,5kk
+82,Arcane and Feral Protection,wc_arcane_feral_protection,Magic/Buff,,600,800,party/aoe,1,1,1200,"54% resist to CON debuff, 50% resist to SPT debuffs",380,0,10kk
+84,Arcane and Feral Protection,wc_arcane_feral_protection,Magic/Buff,,600,800,party/aoe,1,1,1200,"57% resist to CON debuff, 50% resist to SPT debuffs",390,0,30kk
+86,Arcane and Feral Protection,wc_arcane_feral_protection,Magic/Buff,,600,800,party/aoe,1,1,1200,"60% resist to CON debuff, 50% resist to SPT debuffs",400,0,75kk
+88,Arcane and Feral Protection,wc_arcane_feral_protection,Magic/Buff,,600,800,party/aoe,1,1,1200,"63% resist to CON debuff, 50% resist to SPT debuffs",410,0,100kk
+90,Arcane and Feral Protection,wc_arcane_feral_protection,Magic/Buff,,600,800,party/aoe,1,1,1200,"65% resist to CON debuff, 50% resist to SPT debuffs",420,0,100kk
+,,,,,,,,,,,,,,,,,,---------------------------Mark----------------------------
+79,Harmony Mark,,Magic/Heal,,900,0,party/aoe,5,120,300,"Increases: Atk with 10%; Acc +3; Atk/Cast.Speed, Def, Crit.Rate, Crit.Dmg, Max HP/MP and regen with 20%;  Consumes 10 skill stones; Do not Stack with Other 'Mark' skills",300,80kk,1kk,,,,Same Principle as Great Might/Bulwark
 
 
-,,,,,,,,,,,,,,,,,--------------------------------------------------------NOT DONE FOR NOW--------------------------------------------------------
-,,,,,,,,,,,,,,,-----------------------Harmonist Bow Mastery-----------------------
-40,Harmonist Bow Mastery,Passive,,0,,self,0,0,0,"Bow: Range +400, P.Atk +100;",0,36k,[],Elf,
-48,Harmonist Bow Mastery,Passive,,0,,self,0,0,0,"Bow: Range +400, P.Atk +200;",0,64k,[],Elf,
-56,Harmonist Bow Mastery,Passive,,0,,self,0,0,0,"Bow: Range +400, P.Atk +300;",0,81k,[],Elf,
-60,Harmonist Bow Mastery,Passive,,0,,self,0,0,0,"Bow: Range +400, P.Atk +400;",0,120k,[],Elf,
-64,Harmonist Bow Mastery,Passive,,0,,self,0,0,0,"Bow: Range +400, P.Atk +500;",0,190k,[],Elf,
-68,Harmonist Bow Mastery,Passive,,0,,self,0,0,0,"Bow: Range +400, P.Atk +540;",0,320k,[],Elf,
-70,Harmonist Bow Mastery,Passive,,0,,self,0,0,0,"Bow: Range +400, P.Atk +560;",0,390k,[],Elf,
-74,Harmonist Bow Mastery,Passive,,0,,self,0,0,0,"Bow: Range +400, P.Atk +600;",0,880k,[],Elf,
-,,,,,,,,,,,,,,,-----------------------Warchanter Blunt Mastery-----------------------
-40,Shield Mastery,Passive,,0,,self,0,0,0,"Shield P.Def +30%, Shield Rate +50%;",0,36k,[],Human,
-60,Shield Mastery,Passive,,0,,self,0,0,0,"Shield P.Def +40%, Shield Rate +70%;",0,120k,[],Human,
-70,Shield Mastery,Passive,,0,,self,0,0,0,"Shield P.Def +50%, Shield Rate +85%; +10% P.Def, bow resistance 16%",0,390k,[],Human,
-,,,,,,,,,,,,,,,-----------------------Warlock Weapon Mastery-----------------------
-40,Warlock Weapon Mastery,Passive,,0,,self,0,0,0,"Blunt: P.Atk 30, Accuracy +3;",0,36k,[],Demon,
-48,Warlock Weapon Mastery,Passive,,0,,self,0,0,0,"Blunt: P.Atk 40, Accuracy +3;",0,64k,[],Demon,
-56,Warlock Weapon Mastery,Passive,,0,,self,0,0,0,"Blunt: P.Atk 50, Accuracy +3;",0,81k,[],Demon,
-60,Warlock Weapon Mastery,Passive,,0,,self,0,0,0,"Blunt: P.Atk 60, Accuracy +3;",0,120k,[],Demon,
-64,Warlock Weapon Mastery,Passive,,0,,self,0,0,0,"Blunt: P.Atk 70, Accuracy +3;",0,190k,[],Demon,
-68,Warlock Weapon Mastery,Passive,,0,,self,0,0,0,"Blunt: P.Atk 80, Accuracy +3;",0,320k,[],Demon,
-70,Warlock Weapon Mastery,Passive,,0,,self,0,0,0,"Blunt: P.Atk 90, Accuracy +3;",0,390k,[],Demon,
-74,Warlock Weapon Mastery,Passive,,0,,self,0,0,0,"Blunt: P.Atk 100, Accuracy +3;",0,880k,[],Demon,
-,,,,,,,,,,,,,,,---------------------------------------------------------------------------------------------ACTIVE SUPPORT-------------------------------------------------------------------------------------------------------------------
-,,,,,,,,,,,,,,,---------------------------------------------------------------------------------------------ACTIVE PHYSICAL-------------------------------------------------------------------------------------------------------------------
-,,,,,,,,,,,,,,,---------------------------Twin Arrow----------------------------
-40,Sound Burst,Physical/Active,,900,,enemy,3,3,0,"Deals Physical Damag With Power +1000 Twice, Requre: Bow;",62,36k,[],Elf,
-48,Sound Burst,Physical/Active,,900,,enemy,3,3,0,"Deals Physical Damag With Power +1200 Twice, Requre: Bow;",76,64k,[],Elf,
-52,Sound Burst,Physical/Active,,900,,enemy,3,3,0,"Deals Physical Damag With Power +1400 Twice, Requre: Bow;",83,74k,[],Elf,
-56,Sound Burst,Physical/Active,,900,,enemy,3,3,0,"Deals Physical Damag With Power +1600 Twice, Requre: Bow;",90,81k,[],Elf,
-58,Sound Burst,Physical/Active,,900,,enemy,3,3,0,"Deals Physical Damag With Power +1800 Twice, Requre: Bow;",95,88k,[],Elf,
-60,Sound Burst,Physical/Active,,900,,enemy,3,3,0,"Deals Physical Damag With Power +2000 Twice, Requre: Bow;",98,120k,[],Elf,
-62,Sound Burst,Physical/Active,,900,,enemy,3,3,0,"Deals Physical Damag With Power +2200 Twice, Requre: Bow;",100,170k,[],Elf,
-64,Sound Burst,Physical/Active,,900,,enemy,3,3,0,"Deals Physical Damag With Power +2400 Twice, Requre: Bow;",105,190k,[],Elf,
-66,Sound Burst,Physical/Active,,900,,enemy,3,3,0,"Deals Physical Damag With Power +2700 Twice, Requre: Bow;",108,280k,[],Elf,
-68,Sound Burst,Physical/Active,,900,,enemy,3,3,0,"Deals Physical Damag With Power +3000 Twice, Requre: Bow;",112,320k,[],Elf,
-70,Sound Burst,Physical/Active,,900,,enemy,3,3,0,"Deals Physical Damag With Power +3300 Twice, Requre: Bow;",114,390k,[],Elf,
-72,Sound Burst,Physical/Active,,900,,enemy,3,3,0,"Deals Physical Damag With Power +3700 Twice, Requre: Bow;",117,650k,[],Elf,
-74,Sound Burst,Physical/Active,,900,,enemy,3,3,0,"Deals Physical Damag With Power +4000 Twice, Requre: Bow;",120,880k,[],Elf,
-,,,,,,,,,,,,,,,---------------------------------------------------------------------------------------------ACTIVE PHYSICAL-------------------------------------------------------------------------------------------------------------------
-,,,,,,,,,,,,,,,---------------------------Sound Smash----------------------------
-40,Sound Smash,Physical/Active,,40,,enemy,1,3,0,"Deals Physical Damag With Power +1000, Requre: Blunt;",62,36k,[],Demon;Human,
-48,Sound Smash,Physical/Active,,40,,enemy,1,3,0,"Deals Physical Damag With Power +1200, Requre: Blunt;",76,64k,[],Demon;Human,
-52,Sound Smash,Physical/Active,,40,,enemy,1,3,0,"Deals Physical Damag With Power +1400, Requre: Blunt;",83,74k,[],Demon;Human,
-56,Sound Smash,Physical/Active,,40,,enemy,1,3,0,"Deals Physical Damag With Power +1600, Requre: Blunt;",90,81k,[],Demon;Human,
-58,Sound Smash,Physical/Active,,40,,enemy,1,3,0,"Deals Physical Damag With Power +1800, Requre: Blunt;",95,88k,[],Demon;Human,
-60,Sound Smash,Physical/Active,,40,,enemy,1,3,0,"Deals Physical Damag With Power +2000, Requre: Blunt;",98,120k,[],Demon;Human,
-62,Sound Smash,Physical/Active,,40,,enemy,1,3,0,"Deals Physical Damag With Power +2200, Requre: Blunt;",100,170k,[],Demon;Human,
-64,Sound Smash,Physical/Active,,40,,enemy,1,3,0,"Deals Physical Damag With Power +2400, Requre: Blunt;",105,190k,[],Demon;Human,
-66,Sound Smash,Physical/Active,,40,,enemy,1,3,0,"Deals Physical Damag With Power +2700, Requre: Blunt;",108,280k,[],Demon;Human,
-68,Sound Smash,Physical/Active,,40,,enemy,1,3,0,"Deals Physical Damag With Power +3000, Requre: Blunt;",112,320k,[],Demon;Human,
-70,Sound Smash,Physical/Active,,40,,enemy,1,3,0,"Deals Physical Damag With Power +3300, Requre: Blunt;",114,390k,[],Demon;Human,
-72,Sound Smash,Physical/Active,,40,,enemy,1,3,0,"Deals Physical Damag With Power +3700, Requre: Blunt;",117,650k,[],Demon;Human,
-74,Sound Smash,Physical/Active,,40,,enemy,1,3,0,"Deals Physical Damag With Power +4000, Requre: Blunt;",120,880k,[],Demon;Human,
-,,,,,,,,,,,,,,,-------------------------Acoustic Shock-------------------------
-40,Acoustic Shock,Physical/Active,,40,,enemy,1,3,5,"Deals Physical Damag With Power +1000 and Stuns for 5s, Requre: Blunt;",62,36k,[],Demon,
-48,Acoustic Shock,Physical/Active,,40,,enemy,1,3,5,"Deals Physical Damag With Power +1200 and Stuns for 5s, Requre: Blunt;",76,64k,[],Demon,
-52,Acoustic Shock,Physical/Active,,40,,enemy,1,3,5,"Deals Physical Damag With Power +1400 and Stuns for 5s, Requre: Blunt;",83,74k,[],Demon,
-56,Acoustic Shock,Physical/Active,,40,,enemy,1,3,5,"Deals Physical Damag With Power +1600 and Stuns for 5s, Requre: Blunt;",90,81k,[],Demon,
-58,Acoustic Shock,Physical/Active,,40,,enemy,1,3,5,"Deals Physical Damag With Power +1800 and Stuns for 5s, Requre: Blunt;",95,88k,[],Demon,
-60,Acoustic Shock,Physical/Active,,40,,enemy,1,3,5,"Deals Physical Damag With Power +2000 and Stuns for 5s, Requre: Blunt;",98,120k,[],Demon,
-62,Acoustic Shock,Physical/Active,,40,,enemy,1,3,5,"Deals Physical Damag With Power +2200 and Stuns for 5s, Requre: Blunt;",100,170k,[],Demon,
-64,Acoustic Shock,Physical/Active,,40,,enemy,1,3,5,"Deals Physical Damag With Power +2400 and Stuns for 5s, Requre: Blunt;",105,190k,[],Demon,
-66,Acoustic Shock,Physical/Active,,40,,enemy,1,3,5,"Deals Physical Damag With Power +2700 and Stuns for 5s, Requre: Blunt;",108,280k,[],Demon,
-68,Acoustic Shock,Physical/Active,,40,,enemy,1,3,5,"Deals Physical Damag With Power +3000 and Stuns for 5s, Requre: Blunt;",112,320k,[],Demon,
-70,Acoustic Shock,Physical/Active,,40,,enemy,1,3,5,"Deals Physical Damag With Power +3300 and Stuns for 5s, Requre: Blunt;",114,390k,[],Demon,
-72,Acoustic Shock,Physical/Active,,40,,enemy,1,3,5,"Deals Physical Damag With Power +3700 and Stuns for 5s, Requre: Blunt;",117,650k,[],Demon,
-74,Acoustic Shock,Physical/Active,,40,,enemy,1,3,5,"Deals Physical Damag With Power +4000 and Stuns for 5s, Requre: Blunt;",120,880k,[],Demon,
+,,,,,,,,,,,,,,,,,,--------------------------------------------------------NOT DONE FOR NOW--------------------------------------------------------
+,,,,,,,,,,,,,,,,-----------------------Harmonist Bow Mastery-----------------------
+40,Harmonist Bow Mastery,,Passive,,0,,self,0,0,0,"Bow: Range +400, P.Atk +100;",0,36k,[],Elf,
+48,Harmonist Bow Mastery,,Passive,,0,,self,0,0,0,"Bow: Range +400, P.Atk +200;",0,64k,[],Elf,
+56,Harmonist Bow Mastery,,Passive,,0,,self,0,0,0,"Bow: Range +400, P.Atk +300;",0,81k,[],Elf,
+60,Harmonist Bow Mastery,,Passive,,0,,self,0,0,0,"Bow: Range +400, P.Atk +400;",0,120k,[],Elf,
+64,Harmonist Bow Mastery,,Passive,,0,,self,0,0,0,"Bow: Range +400, P.Atk +500;",0,190k,[],Elf,
+68,Harmonist Bow Mastery,,Passive,,0,,self,0,0,0,"Bow: Range +400, P.Atk +540;",0,320k,[],Elf,
+70,Harmonist Bow Mastery,,Passive,,0,,self,0,0,0,"Bow: Range +400, P.Atk +560;",0,390k,[],Elf,
+74,Harmonist Bow Mastery,,Passive,,0,,self,0,0,0,"Bow: Range +400, P.Atk +600;",0,880k,[],Elf,
+,,,,,,,,,,,,,,,,-----------------------Warchanter Blunt Mastery-----------------------
+40,Shield Mastery,,Passive,,0,,self,0,0,0,"Shield P.Def +30%, Shield Rate +50%;",0,36k,[],Human,
+60,Shield Mastery,,Passive,,0,,self,0,0,0,"Shield P.Def +40%, Shield Rate +70%;",0,120k,[],Human,
+70,Shield Mastery,,Passive,,0,,self,0,0,0,"Shield P.Def +50%, Shield Rate +85%; +10% P.Def, bow resistance 16%",0,390k,[],Human,
+,,,,,,,,,,,,,,,,-----------------------Warlock Weapon Mastery-----------------------
+40,Warlock Weapon Mastery,,Passive,,0,,self,0,0,0,"Blunt: P.Atk 30, Accuracy +3;",0,36k,[],Demon,
+48,Warlock Weapon Mastery,,Passive,,0,,self,0,0,0,"Blunt: P.Atk 40, Accuracy +3;",0,64k,[],Demon,
+56,Warlock Weapon Mastery,,Passive,,0,,self,0,0,0,"Blunt: P.Atk 50, Accuracy +3;",0,81k,[],Demon,
+60,Warlock Weapon Mastery,,Passive,,0,,self,0,0,0,"Blunt: P.Atk 60, Accuracy +3;",0,120k,[],Demon,
+64,Warlock Weapon Mastery,,Passive,,0,,self,0,0,0,"Blunt: P.Atk 70, Accuracy +3;",0,190k,[],Demon,
+68,Warlock Weapon Mastery,,Passive,,0,,self,0,0,0,"Blunt: P.Atk 80, Accuracy +3;",0,320k,[],Demon,
+70,Warlock Weapon Mastery,,Passive,,0,,self,0,0,0,"Blunt: P.Atk 90, Accuracy +3;",0,390k,[],Demon,
+74,Warlock Weapon Mastery,,Passive,,0,,self,0,0,0,"Blunt: P.Atk 100, Accuracy +3;",0,880k,[],Demon,
+,,,,,,,,,,,,,,,,---------------------------------------------------------------------------------------------ACTIVE SUPPORT-------------------------------------------------------------------------------------------------------------------
+,,,,,,,,,,,,,,,,---------------------------------------------------------------------------------------------ACTIVE PHYSICAL-------------------------------------------------------------------------------------------------------------------
+,,,,,,,,,,,,,,,,---------------------------Twin Arrow----------------------------
+40,Sound Burst,,Physical/Active,,900,,enemy,3,3,0,"Deals Physical Damag With Power +1000 Twice, Requre: Bow;",62,36k,[],Elf,
+48,Sound Burst,,Physical/Active,,900,,enemy,3,3,0,"Deals Physical Damag With Power +1200 Twice, Requre: Bow;",76,64k,[],Elf,
+52,Sound Burst,,Physical/Active,,900,,enemy,3,3,0,"Deals Physical Damag With Power +1400 Twice, Requre: Bow;",83,74k,[],Elf,
+56,Sound Burst,,Physical/Active,,900,,enemy,3,3,0,"Deals Physical Damag With Power +1600 Twice, Requre: Bow;",90,81k,[],Elf,
+58,Sound Burst,,Physical/Active,,900,,enemy,3,3,0,"Deals Physical Damag With Power +1800 Twice, Requre: Bow;",95,88k,[],Elf,
+60,Sound Burst,,Physical/Active,,900,,enemy,3,3,0,"Deals Physical Damag With Power +2000 Twice, Requre: Bow;",98,120k,[],Elf,
+62,Sound Burst,,Physical/Active,,900,,enemy,3,3,0,"Deals Physical Damag With Power +2200 Twice, Requre: Bow;",100,170k,[],Elf,
+64,Sound Burst,,Physical/Active,,900,,enemy,3,3,0,"Deals Physical Damag With Power +2400 Twice, Requre: Bow;",105,190k,[],Elf,
+66,Sound Burst,,Physical/Active,,900,,enemy,3,3,0,"Deals Physical Damag With Power +2700 Twice, Requre: Bow;",108,280k,[],Elf,
+68,Sound Burst,,Physical/Active,,900,,enemy,3,3,0,"Deals Physical Damag With Power +3000 Twice, Requre: Bow;",112,320k,[],Elf,
+70,Sound Burst,,Physical/Active,,900,,enemy,3,3,0,"Deals Physical Damag With Power +3300 Twice, Requre: Bow;",114,390k,[],Elf,
+72,Sound Burst,,Physical/Active,,900,,enemy,3,3,0,"Deals Physical Damag With Power +3700 Twice, Requre: Bow;",117,650k,[],Elf,
+74,Sound Burst,,Physical/Active,,900,,enemy,3,3,0,"Deals Physical Damag With Power +4000 Twice, Requre: Bow;",120,880k,[],Elf,
+,,,,,,,,,,,,,,,,---------------------------------------------------------------------------------------------ACTIVE PHYSICAL-------------------------------------------------------------------------------------------------------------------
+,,,,,,,,,,,,,,,,---------------------------Sound Smash----------------------------
+40,Sound Smash,,Physical/Active,,40,,enemy,1,3,0,"Deals Physical Damag With Power +1000, Requre: Blunt;",62,36k,[],Demon;Human,
+48,Sound Smash,,Physical/Active,,40,,enemy,1,3,0,"Deals Physical Damag With Power +1200, Requre: Blunt;",76,64k,[],Demon;Human,
+52,Sound Smash,,Physical/Active,,40,,enemy,1,3,0,"Deals Physical Damag With Power +1400, Requre: Blunt;",83,74k,[],Demon;Human,
+56,Sound Smash,,Physical/Active,,40,,enemy,1,3,0,"Deals Physical Damag With Power +1600, Requre: Blunt;",90,81k,[],Demon;Human,
+58,Sound Smash,,Physical/Active,,40,,enemy,1,3,0,"Deals Physical Damag With Power +1800, Requre: Blunt;",95,88k,[],Demon;Human,
+60,Sound Smash,,Physical/Active,,40,,enemy,1,3,0,"Deals Physical Damag With Power +2000, Requre: Blunt;",98,120k,[],Demon;Human,
+62,Sound Smash,,Physical/Active,,40,,enemy,1,3,0,"Deals Physical Damag With Power +2200, Requre: Blunt;",100,170k,[],Demon;Human,
+64,Sound Smash,,Physical/Active,,40,,enemy,1,3,0,"Deals Physical Damag With Power +2400, Requre: Blunt;",105,190k,[],Demon;Human,
+66,Sound Smash,,Physical/Active,,40,,enemy,1,3,0,"Deals Physical Damag With Power +2700, Requre: Blunt;",108,280k,[],Demon;Human,
+68,Sound Smash,,Physical/Active,,40,,enemy,1,3,0,"Deals Physical Damag With Power +3000, Requre: Blunt;",112,320k,[],Demon;Human,
+70,Sound Smash,,Physical/Active,,40,,enemy,1,3,0,"Deals Physical Damag With Power +3300, Requre: Blunt;",114,390k,[],Demon;Human,
+72,Sound Smash,,Physical/Active,,40,,enemy,1,3,0,"Deals Physical Damag With Power +3700, Requre: Blunt;",117,650k,[],Demon;Human,
+74,Sound Smash,,Physical/Active,,40,,enemy,1,3,0,"Deals Physical Damag With Power +4000, Requre: Blunt;",120,880k,[],Demon;Human,
+,,,,,,,,,,,,,,,,-------------------------Acoustic Shock-------------------------
+40,Acoustic Shock,,Physical/Active,,40,,enemy,1,3,5,"Deals Physical Damag With Power +1000 and Stuns for 5s, Requre: Blunt;",62,36k,[],Demon,
+48,Acoustic Shock,,Physical/Active,,40,,enemy,1,3,5,"Deals Physical Damag With Power +1200 and Stuns for 5s, Requre: Blunt;",76,64k,[],Demon,
+52,Acoustic Shock,,Physical/Active,,40,,enemy,1,3,5,"Deals Physical Damag With Power +1400 and Stuns for 5s, Requre: Blunt;",83,74k,[],Demon,
+56,Acoustic Shock,,Physical/Active,,40,,enemy,1,3,5,"Deals Physical Damag With Power +1600 and Stuns for 5s, Requre: Blunt;",90,81k,[],Demon,
+58,Acoustic Shock,,Physical/Active,,40,,enemy,1,3,5,"Deals Physical Damag With Power +1800 and Stuns for 5s, Requre: Blunt;",95,88k,[],Demon,
+60,Acoustic Shock,,Physical/Active,,40,,enemy,1,3,5,"Deals Physical Damag With Power +2000 and Stuns for 5s, Requre: Blunt;",98,120k,[],Demon,
+62,Acoustic Shock,,Physical/Active,,40,,enemy,1,3,5,"Deals Physical Damag With Power +2200 and Stuns for 5s, Requre: Blunt;",100,170k,[],Demon,
+64,Acoustic Shock,,Physical/Active,,40,,enemy,1,3,5,"Deals Physical Damag With Power +2400 and Stuns for 5s, Requre: Blunt;",105,190k,[],Demon,
+66,Acoustic Shock,,Physical/Active,,40,,enemy,1,3,5,"Deals Physical Damag With Power +2700 and Stuns for 5s, Requre: Blunt;",108,280k,[],Demon,
+68,Acoustic Shock,,Physical/Active,,40,,enemy,1,3,5,"Deals Physical Damag With Power +3000 and Stuns for 5s, Requre: Blunt;",112,320k,[],Demon,
+70,Acoustic Shock,,Physical/Active,,40,,enemy,1,3,5,"Deals Physical Damag With Power +3300 and Stuns for 5s, Requre: Blunt;",114,390k,[],Demon,
+72,Acoustic Shock,,Physical/Active,,40,,enemy,1,3,5,"Deals Physical Damag With Power +3700 and Stuns for 5s, Requre: Blunt;",117,650k,[],Demon,
+74,Acoustic Shock,,Physical/Active,,40,,enemy,1,3,5,"Deals Physical Damag With Power +4000 and Stuns for 5s, Requre: Blunt;",120,880k,[],Demon,
 
 
 
-,,,,,,,,,,,,,,,,,--------------------------------------------------------NOT IMPLEMENTED FOR NOW--------------------------------------------------------
-,,,,,,,,,,,,,,,,,--------------------------------------------------------NOT IMPLEMENTED FOR NOW - EVERY CLASS --------------------------------------------------------
-76,Strong Body,Passive,,0,,self,0,0,0,Increase resistance to SPT debuffs by 20%,0,6.5kk,1kk
-76,Strong Mind,Passive,,0,,self,0,0,0,Increase resistance to CON debuffs by 10%,0,6.5kk,1kk
-83,Strong Spirit,Passive,,0,,self,0,30,10,Increase M.Def +15% and with 20% chance on magic dmg taken to increases MDef +1000,0,6.500kk,100kk,,,,Flat Increase not mutliplied by buffs
+,,,,,,,,,,,,,,,,,,--------------------------------------------------------NOT IMPLEMENTED FOR NOW--------------------------------------------------------
+,,,,,,,,,,,,,,,,,,--------------------------------------------------------NOT IMPLEMENTED FOR NOW - EVERY CLASS --------------------------------------------------------
+76,Strong Body,,Passive,,0,,self,0,0,0,Increase resistance to SPT debuffs by 20%,0,6.5kk,1kk
+76,Strong Mind,,Passive,,0,,self,0,0,0,Increase resistance to CON debuffs by 10%,0,6.5kk,1kk
+83,Strong Spirit,,Passive,,0,,self,0,30,10,Increase M.Def +15% and with 20% chance on magic dmg taken to increases MDef +1000,0,6.500kk,100kk,,,,Flat Increase not mutliplied by buffs

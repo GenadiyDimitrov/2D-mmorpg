@@ -178,7 +178,7 @@ internal static class WeaponColumn
     /// A null archetype means the base class alone (`fighter 1st` / `mage 1st`); an empty discipline
     /// list means "the archetype without a discipline"; `shared 4th` returns null for "every class",
     /// since its rows genuinely are learned by all of them.</summary>
-    private static (BaseClass Base, Archetype? Arch, Discipline[] Disc, bool Fourth)? Scope(string file)
+    internal static (BaseClass Base, Archetype? Arch, Discipline[] Disc, bool Fourth)? Scope(string file)
     {
         bool fourth = file.EndsWith("4th", StringComparison.OrdinalIgnoreCase);
         var none = Array.Empty<Discipline>();
@@ -319,7 +319,7 @@ internal static class WeaponColumn
 
     /// <summary>Every rung any class of this (race, base) can learn, INCLUDING the 4th tier.
     /// ⚠ The 4th tier needs its own argument — see the same note on AoeColumn.</summary>
-    private static IEnumerable<ClassSkill> AllClassSkills(Race race, BaseClass bc)
+    internal static IEnumerable<ClassSkill> AllClassSkills(Race race, BaseClass bc)
     {
         foreach (var cs in ClassSkills.ForClass(race, bc, null, null)) yield return cs;
         foreach (Archetype a in Enum.GetValues<Archetype>())
