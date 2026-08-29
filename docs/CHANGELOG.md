@@ -7,11 +7,48 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.101.4**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.101.5**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-08-29 (latest) — 0.101.4: the sheet carries the SKILL ID, and the name becomes a label
+## 2026-08-29 (latest) — 0.101.5: Body Mastery was HP Boost twice, so it is gone
+
+*"In warrior 2nd file the body_mastery should be removed (it's hp_boost) … warrior_armor_master should
+replace the fighter_armor_mastery and include the hp-regen part of the removed body_mastery to all
+weights."*
+
+He is right, and the duplication was ours: `HP Boost` landed in `warrior 2nd.csv` on 2026-08-27 at
+20/28/36 (+120/+200/+300 max HP) while `Body Mastery` had been paying the warrior +60→+150 max HP on the
+same rungs since the file was written. Two skills, one stat, no reason for the second.
+
+### What landed
+
+- **`body_mastery` is deleted** — the id, the `SkillDef`, and all five warrior learn rows (20/24/28/32/36).
+  It was warrior-only, so nothing else loses anything. **No save migration:** a retired id dies on load
+  (`PersistenceService.ParseLearnedSkills`), the filter that exists for exactly this.
+- **Its HP-regen half moved into `warrior_armor_mastery`, on every weight** — the ladder copied rung for
+  rung, `0 / 1.1 / 1.1 / 1.6 / 1.6` HP/s, sitting alongside the existing `mpReg x1.1` and flat P.Def in
+  the "with all" clause. Flat HP/s, per `BL-92`; never `HpRegenPct`.
+- **Two `REPLACES` cells filled in** that the code already carried and the sheet did not:
+  `warrior_armor_mastery` → `[fighter_armor_mastery]` (all five rungs), and `tank_weapon_mastery`'s
+  **level-20** row → `[fighter_weapon_mastery]`, which was the only rung of its five left empty.
+
+**Net effect on a level-36 warrior:** −150 flat max HP (the duplicate), HP regen unchanged, everything
+else unchanged. `HP Boost`'s +300 is what the HP now comes from.
+
+### Proved, not assumed
+
+`--check` reads the new number. Injecting `hpReg +9.9` into rung 2 produced both a
+`🟡 VALUE hpreg: CSV 9.9 vs code 1.1` and a `🔵 LADDER DIP` — so the clause is genuinely parsed per
+weight, not skipped. Restored, and the file is clean. Server boots 0.101.5, Unity type-check clean,
+protocol unchanged (29).
+
+### Still open — his armor-WEIGHT column
+
+The same message proposed a `WEIGHT` column, the armour twin of `BL-105`'s `WEAPON`. Written up as
+**`BL-107`** with a recommendation on all three of his questions; not built pending his ruling.
+
+## 2026-08-29 — 0.101.4: the sheet carries the SKILL ID, and the name becomes a label
 
 *"We can add a column skill_ID and the name to be just the 'display name' … and replace the replaces
 column to be a list of id's not names. U can fill them for now and I'll look at them … Now having only

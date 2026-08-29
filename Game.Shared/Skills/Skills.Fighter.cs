@@ -52,7 +52,11 @@ public static partial class SkillCatalog
     public const string PreciseShot = "precise_shot";              // rogue: continues Shot (range 700); replaces Shot/Strike
 
     // --- Warrior 2nd-class (CSV warrior 2nd) ---
-    public const string BodyMastery = "body_mastery";              // +max HP + HP regen
+    // (`body_mastery` — deleted 2026-08-29, his ruling: *"in warrior 2nd file the body_mastery
+    //  should be removed (it's hp_boost)"*. Its max-HP half duplicated HP Boost, which the warrior
+    //  already learns at 20/28/36; its hpReg half moved into `warrior_armor_mastery`, on every
+    //  weight. Retired ids die on load (PersistenceService.ParseLearnedSkills) so no migration.
+    //  Don't re-add it.)
     public const string BattleRegeneration = "battle_regeneration";// self-heal 10% max HP
     public const string BattlePresence = "battle_presence";        // HP<60% stance: +p.Atk
     public const string BattleDefence = "battle_defence";          // HP<60% stance: +p.Def
@@ -215,25 +219,6 @@ public static partial class SkillCatalog
             }),
 
         // ===== Warrior 2nd-class (CSV warrior 2nd) =====
-
-        // Body Mastery — flat max HP + HP-regen multiplier (passive, 5 levels @20/24/28/32/36).
-        new(BodyMastery, "Body Mastery", BaseClass.Fighter, SkillEffect.None,
-            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            Category: SkillCategory.Passive,
-            Description: "Passive. Hardens your body — more maximum HP and faster HP regeneration.",
-            Levels: new[]
-            {
-                // ⚠ `hpReg` is a FLAT HP/s since `BL-92` (2026-08-26), read straight off the CSV rung:
-                // `warrior 2nd.csv` says `hpReg x1.1` and this carries 1.1f — the WHOLE number, not
-                // its excess over 1.0, exactly as the `mpReg` column is read. Never re-enter these as
-                // HpRegenPct: a multiplier here scales the level term and is what put a level-74 mage
-                // above a level-74 tank.
-                new SkillLevel(SpCost: 1700,  Passive: new PassiveEffect(MaxHp: 60)),
-                new SkillLevel(SpCost: 3200,  Passive: new PassiveEffect(MaxHp: 60,  HpRegen: 1.1f)),
-                new SkillLevel(SpCost: 6000,  Passive: new PassiveEffect(MaxHp: 100, HpRegen: 1.1f)),
-                new SkillLevel(SpCost: 11000, Passive: new PassiveEffect(MaxHp: 100, HpRegen: 1.6f)),
-                new SkillLevel(SpCost: 20000, Passive: new PassiveEffect(MaxHp: 150, HpRegen: 1.6f)),
-            }),
 
         // Battle Regeneration — instant self-heal for 10% of max HP (short cast, 90s cooldown).
         new(BattleRegeneration, "Battle Regeneration", BaseClass.Fighter, SkillEffect.Heal,

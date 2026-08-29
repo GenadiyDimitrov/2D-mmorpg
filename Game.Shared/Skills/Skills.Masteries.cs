@@ -39,12 +39,18 @@ public static partial class SkillCatalog
         Heavy: new StatMods(MpRegenPct: mpReg - 1f, PDef: def, PDefPct: 0.07f,
             CritDmgResist: 0.15f, Evasion: -2));
 
-    /// <summary>Warrior armor-mastery level: flat P.Def + ×1.1 MP regen on all weights; light
-    /// armor also adds the given evasion. (CSV warrior "with all mp[Reg] x1.1, p.def +N; light eva +E".)</summary>
-    private static ArmorMasteryProfile WarriorArmor(int def, int lightEva) => new(
-        Robe:  new StatMods(PDef: def, MpRegenPct: 0.1f),
-        Light: new StatMods(PDef: def, MpRegenPct: 0.1f, Evasion: lightEva),
-        Heavy: new StatMods(PDef: def, MpRegenPct: 0.1f));
+    /// <summary>Warrior armor-mastery level: flat P.Def, ×1.1 MP regen and (from rung 2) flat HP
+    /// regen on all weights; light armor also adds the given evasion.
+    /// (CSV warrior "with all mp[Reg] x1.1, p.def +N and hpReg +R; light eva +E".)</summary>
+    /// 🔑 <paramref name="hpRegen"/> IS BODY MASTERY'S HALF, moved here 2026-08-29 on his ruling
+    /// (*"in warrior 2nd file the body_mastery should be removed (it's hp_boost)"* … *"include the
+    /// hp-regen part of the removed body_mastery to all weights"*). The skill's max-HP half was the
+    /// duplicate — HP Boost already pays it at 20/28/36 — and the regen ladder 0/1.1/1.1/1.6/1.6
+    /// is body_mastery's own, copied rung for rung. FLAT HP/s, per `BL-92`; never HpRegenPct.
+    private static ArmorMasteryProfile WarriorArmor(int def, int lightEva, float hpRegen = 0f) => new(
+        Robe:  new StatMods(PDef: def, MpRegenPct: 0.1f, HpRegen: hpRegen),
+        Light: new StatMods(PDef: def, MpRegenPct: 0.1f, HpRegen: hpRegen, Evasion: lightEva),
+        Heavy: new StatMods(PDef: def, MpRegenPct: 0.1f, HpRegen: hpRegen));
 
     private static SkillDef ArmorMasteryPassive(string id, BaseClass cls, ArmorMasteryProfile profile) =>
         new(id, "Armor Mastery", cls, SkillEffect.None,
@@ -87,8 +93,8 @@ public static partial class SkillCatalog
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive,
             Replaces: new[] { FighterArmorMastery },
-            Description: "Passive. Improves defence and maximum MP with any armor weight; "
-                       + "light armor also boosts evasion.",
+            Description: "Passive. Improves defence, MP regeneration and (from level 2) HP "
+                       + "regeneration with any armor weight; light armor also boosts evasion.",
             Levels: new[]
             {
                 new SkillLevel(SpCost: 1700),
@@ -99,8 +105,11 @@ public static partial class SkillCatalog
             },
             ArmorMasteryLevels: new[]
             {
-                WarriorArmor(19, 6), WarriorArmor(21, 8), WarriorArmor(23, 9),
-                WarriorArmor(28, 9), WarriorArmor(32, 9),
+                WarriorArmor(19, 6),
+                WarriorArmor(21, 8, hpRegen: 1.1f),
+                WarriorArmor(23, 9, hpRegen: 1.1f),
+                WarriorArmor(28, 9, hpRegen: 1.6f),
+                WarriorArmor(32, 9, hpRegen: 1.6f),
             }),
 
         // Rogue — Armor Mastery (CSV rogue 2nd): "with all" = ×1.1 MP regen + flat P.Def (at L5

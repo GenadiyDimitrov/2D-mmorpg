@@ -1,16 +1,10 @@
 LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,REPLACES,Comment
 ,,,,,,,,,,,,,,,----------------------------Armor Mastery----------------------------
-20,Armor Mastery,warrior_armor_mastery,passive,,0,0,self/single,0,0,0,with light:  eva +6; with all mp x1.1 and p.def +19,0,1700,[]
-24,Armor Mastery,warrior_armor_mastery,passive,,0,0,self/single,0,0,0,with light:  eva +8; with all mp x1.1 and p.def +21,0,3200,[]
-28,Armor Mastery,warrior_armor_mastery,passive,,0,0,self/single,0,0,0,with light:  eva +9; with all mp x1.1 and p.def +23,0,6000,[]
-32,Armor Mastery,warrior_armor_mastery,passive,,0,0,self/single,0,0,0,with light:  eva +9; with all mp x1.1 and p.def +28,0,11000,[]
-36,Armor Mastery,warrior_armor_mastery,passive,,0,0,self/single,0,0,0,with light:  eva +9; with all mp x1.1 and p.def +32,0,20000,[]
-,,,,,,,,,,,,,,,----------------------------Body Mastery----------------------------
-20,Body Mastery,body_mastery,passive,,0,0,self/single,0,0,0,max hp + 60;,0,1700,[]
-24,Body Mastery,body_mastery,passive,,0,0,self/single,0,0,0,max hp + 60; hpReg +1.1,0,3200,[]
-28,Body Mastery,body_mastery,passive,,0,0,self/single,0,0,0,max hp + 100; hpReg +1.1,0,6000,[]
-32,Body Mastery,body_mastery,passive,,0,0,self/single,0,0,0,max hp + 100; hpReg +1.6,0,11000,[]
-36,Body Mastery,body_mastery,passive,,0,0,self/single,0,0,0,max hp + 150; hpReg +1.6,0,20000,[]
+20,Armor Mastery,warrior_armor_mastery,passive,,0,0,self/single,0,0,0,with light:  eva +6; with all mp x1.1 and p.def +19,0,1700,[fighter_armor_mastery]
+24,Armor Mastery,warrior_armor_mastery,passive,,0,0,self/single,0,0,0,with light:  eva +8; with all mp x1.1 and p.def +21 and hpReg +1.1,0,3200,[fighter_armor_mastery]
+28,Armor Mastery,warrior_armor_mastery,passive,,0,0,self/single,0,0,0,with light:  eva +9; with all mp x1.1 and p.def +23 and hpReg +1.1,0,6000,[fighter_armor_mastery]
+32,Armor Mastery,warrior_armor_mastery,passive,,0,0,self/single,0,0,0,with light:  eva +9; with all mp x1.1 and p.def +28 and hpReg +1.6,0,11000,[fighter_armor_mastery]
+36,Armor Mastery,warrior_armor_mastery,passive,,0,0,self/single,0,0,0,with light:  eva +9; with all mp x1.1 and p.def +32 and hpReg +1.6,0,20000,[fighter_armor_mastery]
 ,,,,,,,,,,,,,,,----------------------------Two-Hand Mastery----------------------------
 20,Two-Hand Mastery,warrior_weapon_mastery,passive,sword|blunt/2,0,0,self/single,0,0,0,with 2h sword/blunt: acc +3 eva -3; crit dmg +35; p.atk x1.3; p.atk +13; p.def x0.9,0,3400,[fighter_weapon_mastery]
 24,Two-Hand Mastery,warrior_weapon_mastery,passive,sword|blunt/2,0,0,self/single,0,0,0,with 2h sword/blunt: acc +6 eva -3; crit dmg +48; p.atk x1.5 p.atk +15;; p.def x0.9,0,6400,[fighter_weapon_mastery]

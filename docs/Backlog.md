@@ -1052,6 +1052,43 @@ closed · **`BL-93` opened** for the in-game visuals discussion you asked for (*
   a description it has to parse. ⚠ It touches the header of every file, so it is not something to do
   quietly on the way past — say yes and it is one increment.
 
+- `BL-107` ❓ **A `WEIGHT` COLUMN — the armour twin of `BL-105`. Your idea, my counter-proposal on the
+  spelling, and one thing you asked for that is already built.** Written up in full:
+  **[`design/ArmorWeightGate.md`](design/ArmorWeightGate.md)**. Your words, 2026-08-29: *"Add a column a
+  required weight … That way I can make the tank_shield_mastery L4 to work only on heavy|shield and not
+  give the % defence on any armor except the heavy."*
+
+  **The gap is real and narrower than it looks.** A weight gate exists today only inside
+  `ArmorMasteryProfile` (its `Robe`/`Light`/`Heavy` slots), so ONLY an armour mastery can be
+  weight-gated. Any other passive, and every active, cannot say "heavy only" at all. The shield half is
+  already half-built — `PassiveEffect.RequiresShield` — and `DefencePctWithShield` exists as a bespoke
+  field precisely BECAUSE there was no general gate; your note then was *"IG is shield+heavy but I'm not
+  sure if we can"*. This is that.
+
+  ⚠ **Where I disagree: `heavy|shield` should be `heavy/shield`.** A shield is not an armour weight, it
+  is a different slot, so under the OR that `|` means everywhere else the cell reads *"heavy armour, or a
+  shield with any armour"* — which pays a robe-wearer with a buckler the +10% P.Def you just said must
+  never leave heavy. **You need AND, and `|` cannot say it.** It is yesterday's lesson exactly: a bare
+  weapon type meant *any hands*, and "one-handed" was unsayable until hands became their own axis after
+  the `/`. Same shape, same fix — `weight[|weight…][/shield]`, one grammar for both columns.
+
+  ⚠ **`["light: x","heavy: y"]` — the split yes, the brackets no.** Your files already carry per-weight
+  clauses in three spellings; a fixed key vocabulary (`robe:` `light:` `heavy:` `bare:` `shield:` `any:`,
+  where `any:` = every state the column lists) normalises what you write instead of rewriting it, and
+  quotes-inside-a-quoted-CSV-cell is the exact corruption vector that reverted two shipped commits once.
+
+  ✅ **Your third idea is already in the game — do not add a Description column.** `SkillText.cs`
+  generates the numbers from the data at the level you are looking at; the skill window already prints
+  `Heavy: P.Def +40, Max MP +30` per rung. A `DESCRIPTION` column would restate that and go stale. The
+  one thing genuinely missing is the *gate* line (`Requires: heavy armour + shield`) — a few lines once
+  the column exists, not a column.
+
+  **Three questions to answer and it is one increment** (§5 of the doc): (1) `/shield` instead of
+  `|shield`? (2) does `light|heavy` really turn ROBE off for the warrior and rogue — it is what you
+  wrote, and it is a small nerf reversing a deliberate 2026-07-01 fix, so say it once; (3) DESCR keys
+  rather than a JSON array?
+
+
 ---
 
 ## World & mobs

@@ -12,7 +12,7 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s
 32,Tank Anti-Magic,tank_anti_magic,passive,,0,0,self/single,0,0,0,increase m.def +40,0,11000,[]
 36,Tank Anti-Magic,tank_anti_magic,passive,,0,0,self/single,0,0,0,increase m.def +45,0,20000,[]
 ,,,,,,,,,,,,,,,----------------------------Weapon Mastery----------------------------
-20,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,0,0,self/single,0,0,0,with 1h sword/blunt: p.Atk x1.085 and p.Atk +6,0,3400,[]
+20,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,0,0,self/single,0,0,0,with 1h sword/blunt: p.Atk x1.085 and p.Atk +6,0,3400,[fighter_weapon_mastery]
 24,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,0,0,self/single,0,0,0,with 1h sword/blunt: p.Atk x1.085 and p.Atk +8,0,6400,[fighter_weapon_mastery]
 28,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,0,0,self/single,0,0,0,with 1h sword/blunt: p.Atk x1.085 and p.Atk +10,0,12000,[fighter_weapon_mastery]
 32,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,0,0,self/single,0,0,0,with 1h sword/blunt: p.Atk x1.085 and p.Atk +12,0,22000,[fighter_weapon_mastery]
