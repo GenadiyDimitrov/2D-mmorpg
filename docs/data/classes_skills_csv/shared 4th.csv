@@ -7,9 +7,9 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 ,,,,,,,,,,,,,,,,,,,----------------------------Strong Spirit----------------------------
 83,Arcane Protection,arcane_protection,Passive,,,0,0,self/single,0,30,10,Increase M.Def +15% and with 20% chance on magic dmg taken to increases MDef +1000,0,500kk,100kk,,,,Flat Increase not mutliplied by buffs
 ,,,,,,,,,,,,,,,,,,,----------------------------Magic Proficiency----------------------------
-83,Magic Proficiency,magic_proficiency,Passive,,,0,0,self/single,0,0,0,Increase M.Atk and Casting speed with 5% and decrease MP consumation with 5%,0,500kk,100kk,,,,
+83,Magic Proficiency,magic_proficiency,Passive,,,0,0,self/single,0,0,0,"Increase M.Atk and Casting speed with 5% and MP consumation with -5%; With 10% chance when using Magic(spells/buffs/debuffs/heals) Increase additionally M.Atk +5%, Casting speed +5%, M.Crit.Rate +5%, M.Crit.Dmg +10%, MP consumation -15%",0,500kk,100kk,,,,
 ,,,,,,,,,,,,,,,,,,,----------------------------Physical Proficiency----------------------------
-83,Physical Proficiency,physical_proficiency,Passive,sword|blunt|bow|duals,,0,0,self/single,0,30,10,"Blunt/Sword/Dual: Increase P.Atk +100, Atk.Speed +10%; Bow: Acc +8, Range +50; Blunt/Sword/Dual/Bow: WIth 5% chance when attacking to increase P.Crit.Rate and P.Skill.Power with 20%",0,500kk,100kk,,,,
+83,Physical Proficiency,physical_proficiency,Passive,sword|blunt|bow|duals,,0,0,self/single,0,30,10,"Blunt/Sword/Dual: Increase P.Atk +100, Atk.Speed +10%; Bow: Acc +8, Range +50; Blunt/Sword/Dual/Bow: WIth 5% chance when attacking with pysical skills or basick attacks to increase P.Crit.Rate and P.Skill.Power with 20%",0,500kk,100kk,,,,
 ,,,,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,,,----------------------------Sigils----------------------------
 ,,,,,,,,,,,,,,,,,,,A-Attack Replaces B/C/D..Z-Attack

@@ -69,7 +69,7 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 89,Healer Armor Mastery,healer_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"Robe: pDef +107, maxMP +350; mDef +22%; Decrease Mp Consumption with 10%",0,0,100kk
 90,Healer Armor Mastery,healer_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"Robe: pDef +108, maxMP +400; mDef +25%; Decrease Mp Consumption with 10%",0,0,100kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Healer Shield Mastery----------------------------
-76,Healers Shield Mastery,healer_shield_mastery,Passive,,/shield,0,0,self/single,0,0,0,When Sheild is equiped increase healing power and MP regeneration with 10%,0,6.5kk,1kk
+76,Healers Shield Mastery,healer_shield_mastery,Passive,,/shield,0,0,self/single,0,0,0,When Shield is equiped increase healing power and MP regeneration with 10%,0,6.5kk,1kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Great Heal----------------------------
 76,Great Heal,great_heal,Magic/Heal,,,600,0,target/single,5,3,0,heal with power  865,122,6.5kk,1k
 77,Great Heal,great_heal,Magic/Heal,,,600,0,target/single,5,3,0,heal with power  875,124,11kk,1kk
@@ -192,9 +192,12 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 83,Life Restoration,life_restoration,Magic/Heal,,,900,900,party/aoe,5,3600,0,Fully Restores HP (100%) and Restores MP with 50% to the party,300,500kk,100kk,,,Human
 83,Spirit Restoration,spirit_restoration,Magic/Heal,,,900,900,party/aoe,5,3600,15,Restore MP/HP +30% and Increase Healing received with 30% to the pary,300,500kk,100kk,,,Demon
 ,,,,,,,,,,,,,,,,,,,---------------------------Mark----------------------------
-78,Holy Mark,holy_mark,Magic/Heal,,,900,0,party/single,5,5,300,"Increases: Atk +10%, Def +20%, Atk/Cast.Speed +20%, SPT Debuff Resists +10%, M.Acc +4, M.Crit.Rate +20%, Max MP +20%, Consumes 4 skill stones, Do not Stack with Other 'Mark' Skills",300,16kk,1kk,,,Elf,Same Principle as Great Might/Bulwark
-78,Life Mark,life_mark,Magic/Heal,,,900,0,party/single,5,5,300,"Increases: Atk +10%, Def +20%, Atk/Cast.Speed +20%, CON Debuff Resists +5%, P.Acc +4, P.Crit.Rate +20%, Max HP +20%, Consumes 4 skill stones, Do not Stack with Other 'Mark' Skills",300,16kk,1kk,,,Human
-78,Blood Mark,blood_mark,Magic/Heal,,,900,0,party/single,5,5,300,"Increases: Atk +10%, Def +20%, Atk/Cast.Speed +20%, Mele vampirism +3%, Acc +3, Crit.Dmg +20%, Natural Regen +20%, Consumes 4 skill stones, Do not Stack with Other 'Mark' Skills",300,16kk,1kk,,,Demon
+78,Holy Mark,holy_mark,Magic/Heal,,,900,0,party/single,5,5,300,"Increases: Atk +10%, Def +20%, Atk/Cast.Speed +20%, SPT Debuff Resists +15%, M.Acc +4, M.Crit.Rate +20%, Max MP +20%, Consumes 4 skill stones, Do not Stack with Other 'Mark' Skills",150,16kk,1kk,,,Elf,Same Principle as Great Might/Bulwark
+83,Holy Mark,holy_mark,Magic/Heal,,,900,0,party/single,5,5,300,"Increases: Atk +10%, Def +20%, Atk/Cast.Speed +20%, SPT Debuff Resists +15%, M.Acc +4, M.Crit.Rate +20%, Max MP +20%, M.Crit.Rate.Received -10% Consumes 4 skill stones, Do not Stack with Other 'Mark' Skills",150,16kk,15kk,,,Elf,
+78,Life Mark,life_mark,Magic/Heal,,,900,0,party/single,5,5,300,"Increases: Atk +10%, Def +20%, Atk/Cast.Speed +20%, CON Debuff Resists +10%, P.Acc +4, P.Crit.Rate +20%, Max HP +20%, Consumes 4 skill stones, Do not Stack with Other 'Mark' Skills",150,16kk,1kk,,,Human
+83,Life Mark,life_mark,Magic/Heal,,,900,0,party/single,5,5,300,"Increases: Atk +10%, Def +20%, Atk/Cast.Speed +20%, CON Debuff Resists +10%, P.Acc +4, P.Crit.Rate +20%, Max HP +20%, P.Crit.Rate.Received -10% Consumes 4 skill stones, Do not Stack with Other 'Mark' Skills",150,16kk,15kk,,,Human
+78,Blood Mark,blood_mark,Magic/Heal,,,900,0,party/single,5,5,300,"Increases: Atk +10%, Def +20%, Atk/Cast.Speed +20%, Mele vampirism +5%, Acc +3, Crit.Dmg +20%, Natural Regen +20%, Consumes 4 skill stones, Do not Stack with Other 'Mark' Skills",150,16kk,1kk,,,Demon
+83,Blood Mark,blood_mark,Magic/Heal,,,900,0,party/single,5,5,300,"Increases: Atk +10%, Def +20%, Atk/Cast.Speed +20%, Mele vampirism +5%, Acc +3, Crit.Dmg +20%, Natural Regen +20%, P.Crit.Dmg.Received -30%, Consumes 4 skill stones, Do not Stack with Other 'Mark' Skills",150,16kk,15kk,,,Demon
 ,,,,,,,,,,,,,,,,,,,----------------------------Healers Power----------------------------
 80,Healers Power,healers_power,Magic/Buff,,,0,0,self/single,1,300,15,"Increase Healing Power +1000",100,150kk,10kk
 83,Healers Power,healers_power,Magic/Buff,,,0,0,self/single,1,300,15,"Increase Healing Power +1250",150,0,15kk

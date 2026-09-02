@@ -53,8 +53,8 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 89,Armor Mastery,armor_mastery,Passive,,heavy|light|robe,0,0,self/single,0,0,0,"Light/Heavy/Robe:  pDef +107, maxMP +350; mDef +22% Decrease Mp Consumption with 10%;",0,0,100kk
 90,Armor Mastery,armor_mastery,Passive,,heavy|light|robe,0,0,self/single,0,0,0,"Light/Heavy/Robe:  pDef +108, maxMP +400; mDef +25% Decrease Mp Consumption with 10%;",0,0,100kk
 ,,,,,,,,,,,,,,,,,,,----------------------Spell Mastery----------------------
-76,Spell Mastery,spell_mastery,Passive,blunt|bow,,0,0,self/single,0,0,0,"With blunt/bow weapon decreses the reuse delay with 15%, mAtk +101, pAtk +85, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,36k,[],,
-77,Spell Mastery,spell_mastery,Passive,blunt|bow,,0,0,self/single,0,0,0,"With blunt/bow weapon decreses the reuse delay with 15%, mAtk +102, pAtk +90, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,43k,[],,
+76,Spell Mastery,spell_mastery,Passive,blunt|bow,,0,0,self/single,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +101, pAtk +85, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,36k,[],,
+77,Spell Mastery,spell_mastery,Passive,blunt|bow,,0,0,self/single,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +102, pAtk +90, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,43k,[],,
 78,Spell Mastery,spell_mastery,Passive,blunt|bow,,0,0,self/single,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +104, pAtk +95, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,64k,[],,
 79,Spell Mastery,spell_mastery,Passive,blunt|bow,,0,0,self/single,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +105, pAtk +100, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,74k,[],,
 80,Spell Mastery,spell_mastery,Passive,blunt|bow,,0,0,self/single,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +106, pAtk +105, mpReg +3.4,hpReg +2.7, cast speed x1.1 ",0,81k,[],,
@@ -68,6 +68,35 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 88,Spell Mastery,spell_mastery,Passive,blunt|bow,,0,0,self/single,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +117, pAtk +145, mpReg +3.4,hpReg +2.7, cast speed x1.1 ",0,650k,[],,
 89,Spell Mastery,spell_mastery,Passive,blunt|bow,,0,0,self/single,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +119, pAtk +150, mpReg +3.4,hpReg +2.7, cast speed x1.1 ",0,880k,[],,
 90,Spell Mastery,spell_mastery,Passive,blunt|bow,,0,0,self/single,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +120, pAtk +155, mpReg +3.4,hpReg +2.7, cast speed x1.1 ",0,880k,[],,
+,,,,,,,,,,,,,,,,,,,---------------------------Mark----------------------------
+76,Buffer Shield Mastery,buffer_shield_mastery,Passive,,robe/shield,0,0,self/single,0,0,0,"When Robe+Shield are equipped increase Max HP/MP and natural regeneration with 10%",0,6.5kk,1kk
+,,,,,,,,,,,,,,,,,,,---------------------------Harmonist Bow Mastery----------------------------
+76,Harmonist Bow Mastery,wc_harmonist_bow_mastery,Passive,,,0,0,self/single,0,0,0,"Bow: Range +400, P.Atk +650;",0,6.5kk,1kk
+78,Harmonist Bow Mastery,wc_harmonist_bow_mastery,Passive,,,0,0,self/single,0,0,0,"Bow: Range +400, P.Atk +700;",0,16kk,1kk
+80,Harmonist Bow Mastery,wc_harmonist_bow_mastery,Passive,,,0,0,self/single,0,0,0,"Bow: Range +400, P.Atk +720;",0,0,5kk
+82,Harmonist Bow Mastery,wc_harmonist_bow_mastery,Passive,,,0,0,self/single,0,0,0,"Bow: Range +400, P.Atk +800;",0,0,10kk
+84,Harmonist Bow Mastery,wc_harmonist_bow_mastery,Passive,,,0,0,self/single,0,0,0,"Bow: Range +400, P.Atk +850;",0,0,30kk
+86,Harmonist Bow Mastery,wc_harmonist_bow_mastery,Passive,,,0,0,self/single,0,0,0,"Bow: Range +400, P.Atk +900;",0,0,75kk
+88,Harmonist Bow Mastery,wc_harmonist_bow_mastery,Passive,,,0,0,self/single,0,0,0,"Bow: Range +400, P.Atk +950;",0,0,100kk
+90,Harmonist Bow Mastery,wc_harmonist_bow_mastery,Passive,,,0,0,self/single,0,0,0,"Bow: Range +400, P.Atk +1000;",0,0,100kk
+,,,,,,,,,,,,,,,,,,,---------------------------Warlock Weapon Mastery----------------------------
+76,Warlock Weapon Mastery,wc_bloodhanter_blunt_mastery,Passive,,,0,,self,0,0,0,"Blunt: P.Atk 110, Accuracy +4;",0,6.5kk,1kk
+78,Warlock Weapon Mastery,wc_bloodhanter_blunt_mastery,Passive,,,0,,self,0,0,0,"Blunt: P.Atk 120, Accuracy +4;",0,16kk,1kk
+80,Warlock Weapon Mastery,wc_bloodhanter_blunt_mastery,Passive,,,0,,self,0,0,0,"Blunt: P.Atk 130, Accuracy +4;",0,0,5kk
+82,Warlock Weapon Mastery,wc_bloodhanter_blunt_mastery,Passive,,,0,,self,0,0,0,"Blunt: P.Atk 140, Accuracy +4;",0,0,10kk
+84,Warlock Weapon Mastery,wc_bloodhanter_blunt_mastery,Passive,,,0,,self,0,0,0,"Blunt: P.Atk 150, Accuracy +4;",0,0,30kk
+86,Warlock Weapon Mastery,wc_bloodhanter_blunt_mastery,Passive,,,0,,self,0,0,0,"Blunt: P.Atk 160, Accuracy +5;",0,0,75kk
+88,Warlock Weapon Mastery,wc_bloodhanter_blunt_mastery,Passive,,,0,,self,0,0,0,"Blunt: P.Atk 180, Accuracy +5;",0,0,100kk
+90,Warlock Weapon Mastery,wc_bloodhanter_blunt_mastery,Passive,,,0,,self,0,0,0,"Blunt: P.Atk 200, Accuracy +5;",0,0,100kk
+,,,,,,,,,,,,,,,,,,,---------------------------Doctor Weapon Mastery----------------------------
+76,Doctor Weapon Mastery,doctor_blunt_mastery,Passive,,,0,,self,0,0,0,"Blunt: P.Atk 110, Accuracy +1;",0,6.5kk,1kk
+78,Doctor Weapon Mastery,doctor_blunt_mastery,Passive,,,0,,self,0,0,0,"Blunt: P.Atk 120, Accuracy +1;",0,16kk,1kk
+80,Doctor Weapon Mastery,doctor_blunt_mastery,Passive,,,0,,self,0,0,0,"Blunt: P.Atk 130, Accuracy +1;",0,0,5kk
+82,Doctor Weapon Mastery,doctor_blunt_mastery,Passive,,,0,,self,0,0,0,"Blunt: P.Atk 140, Accuracy +1;",0,0,10kk
+84,Doctor Weapon Mastery,doctor_blunt_mastery,Passive,,,0,,self,0,0,0,"Blunt: P.Atk 150, Accuracy +1;",0,0,30kk
+86,Doctor Weapon Mastery,doctor_blunt_mastery,Passive,,,0,,self,0,0,0,"Blunt: P.Atk 160, Accuracy +2;",0,0,75kk
+88,Doctor Weapon Mastery,doctor_blunt_mastery,Passive,,,0,,self,0,0,0,"Blunt: P.Atk 180, Accuracy +2;",0,0,100kk
+90,Doctor Weapon Mastery,doctor_blunt_mastery,Passive,,,0,,self,0,0,0,"Blunt: P.Atk 200, Accuracy +2;",0,0,100kk
 ,,,,,,,,,,,,,,,,,,,------------------------------Harmony of Protection------------------------------
 76,Harmony of Protection,npc_harmony_protection,Magic/Buff,,,600,800,party/aoe,1,120,300,"+30% M.Def, +20% HP Regen, +25% P.Def, +30% Max HP, +20% Mele Reflect, +10% Bow Resistance",464,6.5kk,1kk
 ,,,,,,,,,,,,,,,,,,,------------------------------Harmony of the Wizard------------------------------
@@ -120,81 +149,71 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 90,Arcane and Feral Protection,wc_arcane_feral_protection,Magic/Buff,,,600,800,party/aoe,1,1,1200,"65% resist to CON debuff, 50% resist to SPT debuffs",420,0,100kk
 ,,,,,,,,,,,,,,,,,,,---------------------------Mark----------------------------
 79,Harmony Mark,,Magic/Heal,,,900,0,party/aoe,5,120,300,"Increases: Atk with 10%; Acc +3; Atk/Cast.Speed, Def, Crit.Rate, Crit.Dmg, Max HP/MP and regen with 20%;  Consumes 10 skill stones; Do not Stack with Other 'Mark' skills",300,80kk,1kk,,,,Same Principle as Great Might/Bulwark
-
-
-,,,,,,,,,,,,,,,,,,,--------------------------------------------------------NOT DONE FOR NOW--------------------------------------------------------
-,,,,,,,,,,,,,,,,,-----------------------Harmonist Bow Mastery-----------------------
-40,Harmonist Bow Mastery,,Passive,,,0,,self,0,0,0,"Bow: Range +400, P.Atk +100;",0,36k,[],Elf,
-48,Harmonist Bow Mastery,,Passive,,,0,,self,0,0,0,"Bow: Range +400, P.Atk +200;",0,64k,[],Elf,
-56,Harmonist Bow Mastery,,Passive,,,0,,self,0,0,0,"Bow: Range +400, P.Atk +300;",0,81k,[],Elf,
-60,Harmonist Bow Mastery,,Passive,,,0,,self,0,0,0,"Bow: Range +400, P.Atk +400;",0,120k,[],Elf,
-64,Harmonist Bow Mastery,,Passive,,,0,,self,0,0,0,"Bow: Range +400, P.Atk +500;",0,190k,[],Elf,
-68,Harmonist Bow Mastery,,Passive,,,0,,self,0,0,0,"Bow: Range +400, P.Atk +540;",0,320k,[],Elf,
-70,Harmonist Bow Mastery,,Passive,,,0,,self,0,0,0,"Bow: Range +400, P.Atk +560;",0,390k,[],Elf,
-74,Harmonist Bow Mastery,,Passive,,,0,,self,0,0,0,"Bow: Range +400, P.Atk +600;",0,880k,[],Elf,
-,,,,,,,,,,,,,,,,,-----------------------Warchanter Blunt Mastery-----------------------
-40,Shield Mastery,,Passive,,,0,,self,0,0,0,"Shield P.Def +30%, Shield Rate +50%;",0,36k,[],Human,
-60,Shield Mastery,,Passive,,,0,,self,0,0,0,"Shield P.Def +40%, Shield Rate +70%;",0,120k,[],Human,
-70,Shield Mastery,,Passive,,,0,,self,0,0,0,"Shield P.Def +50%, Shield Rate +85%; +10% P.Def, bow resistance 16%",0,390k,[],Human,
-,,,,,,,,,,,,,,,,,-----------------------Warlock Weapon Mastery-----------------------
-40,Warlock Weapon Mastery,,Passive,,,0,,self,0,0,0,"Blunt: P.Atk 30, Accuracy +3;",0,36k,[],Demon,
-48,Warlock Weapon Mastery,,Passive,,,0,,self,0,0,0,"Blunt: P.Atk 40, Accuracy +3;",0,64k,[],Demon,
-56,Warlock Weapon Mastery,,Passive,,,0,,self,0,0,0,"Blunt: P.Atk 50, Accuracy +3;",0,81k,[],Demon,
-60,Warlock Weapon Mastery,,Passive,,,0,,self,0,0,0,"Blunt: P.Atk 60, Accuracy +3;",0,120k,[],Demon,
-64,Warlock Weapon Mastery,,Passive,,,0,,self,0,0,0,"Blunt: P.Atk 70, Accuracy +3;",0,190k,[],Demon,
-68,Warlock Weapon Mastery,,Passive,,,0,,self,0,0,0,"Blunt: P.Atk 80, Accuracy +3;",0,320k,[],Demon,
-70,Warlock Weapon Mastery,,Passive,,,0,,self,0,0,0,"Blunt: P.Atk 90, Accuracy +3;",0,390k,[],Demon,
-74,Warlock Weapon Mastery,,Passive,,,0,,self,0,0,0,"Blunt: P.Atk 100, Accuracy +3;",0,880k,[],Demon,
-,,,,,,,,,,,,,,,,,---------------------------------------------------------------------------------------------ACTIVE SUPPORT-------------------------------------------------------------------------------------------------------------------
-,,,,,,,,,,,,,,,,,---------------------------------------------------------------------------------------------ACTIVE PHYSICAL-------------------------------------------------------------------------------------------------------------------
-,,,,,,,,,,,,,,,,,---------------------------Twin Arrow----------------------------
-40,Sound Burst,,Physical/Active,,,900,,enemy,3,3,0,"Deals Physical Damag With Power +1000 Twice, Requre: Bow;",62,36k,[],Elf,
-48,Sound Burst,,Physical/Active,,,900,,enemy,3,3,0,"Deals Physical Damag With Power +1200 Twice, Requre: Bow;",76,64k,[],Elf,
-52,Sound Burst,,Physical/Active,,,900,,enemy,3,3,0,"Deals Physical Damag With Power +1400 Twice, Requre: Bow;",83,74k,[],Elf,
-56,Sound Burst,,Physical/Active,,,900,,enemy,3,3,0,"Deals Physical Damag With Power +1600 Twice, Requre: Bow;",90,81k,[],Elf,
-58,Sound Burst,,Physical/Active,,,900,,enemy,3,3,0,"Deals Physical Damag With Power +1800 Twice, Requre: Bow;",95,88k,[],Elf,
-60,Sound Burst,,Physical/Active,,,900,,enemy,3,3,0,"Deals Physical Damag With Power +2000 Twice, Requre: Bow;",98,120k,[],Elf,
-62,Sound Burst,,Physical/Active,,,900,,enemy,3,3,0,"Deals Physical Damag With Power +2200 Twice, Requre: Bow;",100,170k,[],Elf,
-64,Sound Burst,,Physical/Active,,,900,,enemy,3,3,0,"Deals Physical Damag With Power +2400 Twice, Requre: Bow;",105,190k,[],Elf,
-66,Sound Burst,,Physical/Active,,,900,,enemy,3,3,0,"Deals Physical Damag With Power +2700 Twice, Requre: Bow;",108,280k,[],Elf,
-68,Sound Burst,,Physical/Active,,,900,,enemy,3,3,0,"Deals Physical Damag With Power +3000 Twice, Requre: Bow;",112,320k,[],Elf,
-70,Sound Burst,,Physical/Active,,,900,,enemy,3,3,0,"Deals Physical Damag With Power +3300 Twice, Requre: Bow;",114,390k,[],Elf,
-72,Sound Burst,,Physical/Active,,,900,,enemy,3,3,0,"Deals Physical Damag With Power +3700 Twice, Requre: Bow;",117,650k,[],Elf,
-74,Sound Burst,,Physical/Active,,,900,,enemy,3,3,0,"Deals Physical Damag With Power +4000 Twice, Requre: Bow;",120,880k,[],Elf,
-,,,,,,,,,,,,,,,,,---------------------------------------------------------------------------------------------ACTIVE PHYSICAL-------------------------------------------------------------------------------------------------------------------
-,,,,,,,,,,,,,,,,,---------------------------Sound Smash----------------------------
-40,Sound Smash,,Physical/Active,,,40,,enemy,1,3,0,"Deals Physical Damag With Power +1000, Requre: Blunt;",62,36k,[],Demon;Human,
-48,Sound Smash,,Physical/Active,,,40,,enemy,1,3,0,"Deals Physical Damag With Power +1200, Requre: Blunt;",76,64k,[],Demon;Human,
-52,Sound Smash,,Physical/Active,,,40,,enemy,1,3,0,"Deals Physical Damag With Power +1400, Requre: Blunt;",83,74k,[],Demon;Human,
-56,Sound Smash,,Physical/Active,,,40,,enemy,1,3,0,"Deals Physical Damag With Power +1600, Requre: Blunt;",90,81k,[],Demon;Human,
-58,Sound Smash,,Physical/Active,,,40,,enemy,1,3,0,"Deals Physical Damag With Power +1800, Requre: Blunt;",95,88k,[],Demon;Human,
-60,Sound Smash,,Physical/Active,,,40,,enemy,1,3,0,"Deals Physical Damag With Power +2000, Requre: Blunt;",98,120k,[],Demon;Human,
-62,Sound Smash,,Physical/Active,,,40,,enemy,1,3,0,"Deals Physical Damag With Power +2200, Requre: Blunt;",100,170k,[],Demon;Human,
-64,Sound Smash,,Physical/Active,,,40,,enemy,1,3,0,"Deals Physical Damag With Power +2400, Requre: Blunt;",105,190k,[],Demon;Human,
-66,Sound Smash,,Physical/Active,,,40,,enemy,1,3,0,"Deals Physical Damag With Power +2700, Requre: Blunt;",108,280k,[],Demon;Human,
-68,Sound Smash,,Physical/Active,,,40,,enemy,1,3,0,"Deals Physical Damag With Power +3000, Requre: Blunt;",112,320k,[],Demon;Human,
-70,Sound Smash,,Physical/Active,,,40,,enemy,1,3,0,"Deals Physical Damag With Power +3300, Requre: Blunt;",114,390k,[],Demon;Human,
-72,Sound Smash,,Physical/Active,,,40,,enemy,1,3,0,"Deals Physical Damag With Power +3700, Requre: Blunt;",117,650k,[],Demon;Human,
-74,Sound Smash,,Physical/Active,,,40,,enemy,1,3,0,"Deals Physical Damag With Power +4000, Requre: Blunt;",120,880k,[],Demon;Human,
-,,,,,,,,,,,,,,,,,-------------------------Acoustic Shock-------------------------
-40,Acoustic Shock,,Physical/Active,,,40,,enemy,1,3,5,"Deals Physical Damag With Power +1000 and Stuns for 5s, Requre: Blunt;",62,36k,[],Demon,
-48,Acoustic Shock,,Physical/Active,,,40,,enemy,1,3,5,"Deals Physical Damag With Power +1200 and Stuns for 5s, Requre: Blunt;",76,64k,[],Demon,
-52,Acoustic Shock,,Physical/Active,,,40,,enemy,1,3,5,"Deals Physical Damag With Power +1400 and Stuns for 5s, Requre: Blunt;",83,74k,[],Demon,
-56,Acoustic Shock,,Physical/Active,,,40,,enemy,1,3,5,"Deals Physical Damag With Power +1600 and Stuns for 5s, Requre: Blunt;",90,81k,[],Demon,
-58,Acoustic Shock,,Physical/Active,,,40,,enemy,1,3,5,"Deals Physical Damag With Power +1800 and Stuns for 5s, Requre: Blunt;",95,88k,[],Demon,
-60,Acoustic Shock,,Physical/Active,,,40,,enemy,1,3,5,"Deals Physical Damag With Power +2000 and Stuns for 5s, Requre: Blunt;",98,120k,[],Demon,
-62,Acoustic Shock,,Physical/Active,,,40,,enemy,1,3,5,"Deals Physical Damag With Power +2200 and Stuns for 5s, Requre: Blunt;",100,170k,[],Demon,
-64,Acoustic Shock,,Physical/Active,,,40,,enemy,1,3,5,"Deals Physical Damag With Power +2400 and Stuns for 5s, Requre: Blunt;",105,190k,[],Demon,
-66,Acoustic Shock,,Physical/Active,,,40,,enemy,1,3,5,"Deals Physical Damag With Power +2700 and Stuns for 5s, Requre: Blunt;",108,280k,[],Demon,
-68,Acoustic Shock,,Physical/Active,,,40,,enemy,1,3,5,"Deals Physical Damag With Power +3000 and Stuns for 5s, Requre: Blunt;",112,320k,[],Demon,
-70,Acoustic Shock,,Physical/Active,,,40,,enemy,1,3,5,"Deals Physical Damag With Power +3300 and Stuns for 5s, Requre: Blunt;",114,390k,[],Demon,
-72,Acoustic Shock,,Physical/Active,,,40,,enemy,1,3,5,"Deals Physical Damag With Power +3700 and Stuns for 5s, Requre: Blunt;",117,650k,[],Demon,
-74,Acoustic Shock,,Physical/Active,,,40,,enemy,1,3,5,"Deals Physical Damag With Power +4000 and Stuns for 5s, Requre: Blunt;",120,880k,[],Demon,
-
-
-
-,,,,,,,,,,,,,,,,,,,--------------------------------------------------------NOT IMPLEMENTED FOR NOW--------------------------------------------------------
-,,,,,,,,,,,,,,,,,,,--------------------------------------------------------NOT IMPLEMENTED FOR NOW - EVERY CLASS --------------------------------------------------------
-76,Strong Body,,Passive,,,0,,self,0,0,0,Increase resistance to SPT debuffs by 20%,0,6.5kk,1kk
-76,Strong Mind,,Passive,,,0,,self,0,0,0,Increase resistance to CON debuffs by 10%,0,6.5kk,1kk
-83,Strong Spirit,,Passive,,,0,,self,0,30,10,Increase M.Def +15% and with 20% chance on magic dmg taken to increases MDef +1000,0,6.500kk,100kk,,,,Flat Increase not mutliplied by buffs
+83,Harmony Mark,,Magic/Heal,,,900,0,party/aoe,5,120,300,"Increases: Atk with 10%; Acc +3; Atk/Cast.Speed, Def, Crit.Rate, Crit.Dmg, Max HP/MP and regen with 20%; Critical.Rate.Received -10%; P.Critical.Dmg.Received -30%;Consumes 15 skill stones; Do not Stack with Other 'Mark' skills",300,0,15kk,,,,both Phisical and magical crit raates have same buffs to increase it 100% + 30% + 20% .. so both cirt rates can be decreased a bit .. (roges have more decreases of crit rates); but crit dmg we have 35% + 35% + 20% for phisical and 30+20% for magical .. thats why the decrease is only the physical (tanks have more decrease of crit dmg) 
+,,,,,,,,,,,,,,,,,,,---------------------------Sound Burst----------------------------
+76,Sound Burst,wc_sound_burst,Physical/Active,bow,,900,0,enemy/single,3,3,0,"Deals Physical Damag With Power +4100 Twice, Requre: Bow;",123,6.5kk,1,,,Elf
+77,Sound Burst,wc_sound_burst,Physical/Active,bow,,900,0,enemy/single,3,3,0,"Deals Physical Damag With Power +4200 Twice, Requre: Bow;",126,11kk,1k,,,Elf
+78,Sound Burst,wc_sound_burst,Physical/Active,bow,,900,0,enemy/single,3,3,0,"Deals Physical Damag With Power +4300 Twice, Requre: Bow;",129,16kk,1k,,,Elf
+79,Sound Burst,wc_sound_burst,Physical/Active,bow,,900,0,enemy/single,3,3,0,"Deals Physical Damag With Power +4400 Twice, Requre: Bow;",132,80kk,1k,,,Elf
+80,Sound Burst,wc_sound_burst,Physical/Active,bow,,900,0,enemy/single,3,3,0,"Deals Physical Damag With Power +4500 Twice, Requre: Bow;",135,0,5kk,,,Elf
+81,Sound Burst,wc_sound_burst,Physical/Active,bow,,900,0,enemy/single,3,3,0,"Deals Physical Damag With Power +4600 Twice, Requre: Bow;",138,0,7.5kk,,,Elf
+82,Sound Burst,wc_sound_burst,Physical/Active,bow,,900,0,enemy/single,3,3,0,"Deals Physical Damag With Power +4700 Twice, Requre: Bow;",141,0,10kk,,,Elf
+83,Sound Burst,wc_sound_burst,Physical/Active,bow,,900,0,enemy/single,3,3,0,"Deals Physical Damag With Power +4800 Twice, Requre: Bow;",144,0,15kk,,,Elf
+84,Sound Burst,wc_sound_burst,Physical/Active,bow,,900,0,enemy/single,3,3,0,"Deals Physical Damag With Power +4900 Twice, Requre: Bow;",147,0,30kk,,,Elf
+85,Sound Burst,wc_sound_burst,Physical/Active,bow,,900,0,enemy/single,3,3,0,"Deals Physical Damag With Power +5000 Twice, Requre: Bow;",150,0,50kk,,,Elf
+86,Sound Burst,wc_sound_burst,Physical/Active,bow,,900,0,enemy/single,3,3,0,"Deals Physical Damag With Power +5300 Twice, Requre: Bow;",159,0,75kk,,,Elf
+87,Sound Burst,wc_sound_burst,Physical/Active,bow,,900,0,enemy/single,3,3,0,"Deals Physical Damag With Power +5600 Twice, Requre: Bow;",168,0,100kk,,,Elf
+88,Sound Burst,wc_sound_burst,Physical/Active,bow,,900,0,enemy/single,3,3,0,"Deals Physical Damag With Power +5900 Twice, Requre: Bow;",177,0,100kk,,,Elf
+89,Sound Burst,wc_sound_burst,Physical/Active,bow,,900,0,enemy/single,3,3,0,"Deals Physical Damag With Power +6200 Twice, Requre: Bow;",186,0,100kk,,,Elf
+90,Sound Burst,wc_sound_burst,Physical/Active,bow,,900,0,enemy/single,3,3,0,"Deals Physical Damag With Power +6500 Twice, Requre: Bow;",195,0,100kk,,,Elf
+,,,,,,,,,,,,,,,,,,,---------------------------Sound Smash----------------------------
+76,Sound Smash,wc_sound_smash,Physical/Active,blunt,,40,0,enemy/single,1,3,0,"Deals Physical Damag With Power +4100, Requre: Blunt;",123,6.5kk,1,,,Human;Demon
+77,Sound Smash,wc_sound_smash,Physical/Active,blunt,,40,0,enemy/single,1,3,0,"Deals Physical Damag With Power +4200, Requre: Blunt;",126,11kk,1k,,,Human;Demon
+78,Sound Smash,wc_sound_smash,Physical/Active,blunt,,40,0,enemy/single,1,3,0,"Deals Physical Damag With Power +4300, Requre: Blunt;",129,16kk,1k,,,Human;Demon
+79,Sound Smash,wc_sound_smash,Physical/Active,blunt,,40,0,enemy/single,1,3,0,"Deals Physical Damag With Power +4400, Requre: Blunt;",132,80kk,1k,,,Human;Demon
+80,Sound Smash,wc_sound_smash,Physical/Active,blunt,,40,0,enemy/single,1,3,0,"Deals Physical Damag With Power +4500, Requre: Blunt;",135,0,5kk,,,Human;Demon
+81,Sound Smash,wc_sound_smash,Physical/Active,blunt,,40,0,enemy/single,1,3,0,"Deals Physical Damag With Power +4600, Requre: Blunt;",138,0,7.5kk,,,Human;Demon
+82,Sound Smash,wc_sound_smash,Physical/Active,blunt,,40,0,enemy/single,1,3,0,"Deals Physical Damag With Power +4700, Requre: Blunt;",141,0,10kk,,,Human;Demon
+83,Sound Smash,wc_sound_smash,Physical/Active,blunt,,40,0,enemy/single,1,3,0,"Deals Physical Damag With Power +4800, Requre: Blunt;",144,0,15kk,,,Human;Demon
+84,Sound Smash,wc_sound_smash,Physical/Active,blunt,,40,0,enemy/single,1,3,0,"Deals Physical Damag With Power +4900, Requre: Blunt;",147,0,30kk,,,Human;Demon
+85,Sound Smash,wc_sound_smash,Physical/Active,blunt,,40,0,enemy/single,1,3,0,"Deals Physical Damag With Power +5000, Requre: Blunt;",150,0,50kk,,,Human;Demon
+86,Sound Smash,wc_sound_smash,Physical/Active,blunt,,40,0,enemy/single,1,3,0,"Deals Physical Damag With Power +5300, Requre: Blunt;",159,0,75kk,,,Human;Demon
+87,Sound Smash,wc_sound_smash,Physical/Active,blunt,,40,0,enemy/single,1,3,0,"Deals Physical Damag With Power +5600, Requre: Blunt;",168,0,100kk,,,Human;Demon
+88,Sound Smash,wc_sound_smash,Physical/Active,blunt,,40,0,enemy/single,1,3,0,"Deals Physical Damag With Power +5900, Requre: Blunt;",177,0,100kk,,,Human;Demon
+89,Sound Smash,wc_sound_smash,Physical/Active,blunt,,40,0,enemy/single,1,3,0,"Deals Physical Damag With Power +6200, Requre: Blunt;",186,0,100kk,,,Human;Demon
+90,Sound Smash,wc_sound_smash,Physical/Active,blunt,,40,0,enemy/single,1,3,0,"Deals Physical Damag With Power +6500, Requre: Blunt;",195,0,100kk,,,Human;Demon
+90,Sound Burst,wc_sound_burst,Physical/Active,bow,,900,0,enemy/single,3,3,0,"Deals Physical Damag With Power +6500 Twice, Requre: Bow;",195,0,100kk,,,Elf
+,,,,,,,,,,,,,,,,,,,---------------------------Acoustic Shock----------------------------
+76,Acoustic Shock,wc_acoustic_shock,Physical/Active,blunt,,40,0,enemy/single,1,3,5,"Deals Physical Damag With Power +4100 and Stuns for 5s, Requre: Blunt;",123,6.5kk,1,,,Demon
+77,Acoustic Shock,wc_acoustic_shock,Physical/Active,blunt,,40,0,enemy/single,1,3,5,"Deals Physical Damag With Power +4200 and Stuns for 5s, Requre: Blunt;",126,11kk,1k,,,Demon
+78,Acoustic Shock,wc_acoustic_shock,Physical/Active,blunt,,40,0,enemy/single,1,3,5,"Deals Physical Damag With Power +4300 and Stuns for 5s, Requre: Blunt;",129,16kk,1k,,,Demon
+79,Acoustic Shock,wc_acoustic_shock,Physical/Active,blunt,,40,0,enemy/single,1,3,5,"Deals Physical Damag With Power +4400 and Stuns for 5s, Requre: Blunt;",132,80kk,1k,,,Demon
+80,Acoustic Shock,wc_acoustic_shock,Physical/Active,blunt,,40,0,enemy/single,1,3,5,"Deals Physical Damag With Power +4500 and Stuns for 5s, Requre: Blunt;",135,0,5kk,,,Demon
+81,Acoustic Shock,wc_acoustic_shock,Physical/Active,blunt,,40,0,enemy/single,1,3,5,"Deals Physical Damag With Power +4600 and Stuns for 5s, Requre: Blunt;",138,0,7.5kk,,,Demon
+82,Acoustic Shock,wc_acoustic_shock,Physical/Active,blunt,,40,0,enemy/single,1,3,5,"Deals Physical Damag With Power +4700 and Stuns for 5s, Requre: Blunt;",141,0,10kk,,,Demon
+83,Acoustic Shock,wc_acoustic_shock,Physical/Active,blunt,,40,0,enemy/single,1,3,5,"Deals Physical Damag With Power +4800 and Stuns for 5s, Requre: Blunt;",144,0,15kk,,,Demon
+84,Acoustic Shock,wc_acoustic_shock,Physical/Active,blunt,,40,0,enemy/single,1,3,5,"Deals Physical Damag With Power +4900 and Stuns for 5s, Requre: Blunt;",147,0,30kk,,,Demon
+85,Acoustic Shock,wc_acoustic_shock,Physical/Active,blunt,,40,0,enemy/single,1,3,5,"Deals Physical Damag With Power +5000 and Stuns for 5s, Requre: Blunt;",150,0,50kk,,,Demon
+86,Acoustic Shock,wc_acoustic_shock,Physical/Active,blunt,,40,0,enemy/single,1,3,5,"Deals Physical Damag With Power +5300 and Stuns for 5s, Requre: Blunt;",159,0,75kk,,,Demon
+87,Acoustic Shock,wc_acoustic_shock,Physical/Active,blunt,,40,0,enemy/single,1,3,5,"Deals Physical Damag With Power +5600 and Stuns for 5s, Requre: Blunt;",168,0,100kk,,,Demon
+88,Acoustic Shock,wc_acoustic_shock,Physical/Active,blunt,,40,0,enemy/single,1,3,5,"Deals Physical Damag With Power +5900 and Stuns for 5s, Requre: Blunt;",177,0,100kk,,,Demon
+89,Acoustic Shock,wc_acoustic_shock,Physical/Active,blunt,,40,0,enemy/single,1,3,5,"Deals Physical Damag With Power +6200 and Stuns for 5s, Requre: Blunt;",186,0,100kk,,,Demon
+90,Acoustic Shock,wc_acoustic_shock,Physical/Active,blunt,,40,0,enemy/single,1,3,5,"Deals Physical Damag With Power +6500 and Stuns for 5s, Requre: Blunt;",195,0,100kk,,,Demon
+,,,,,,,,,,,,,,,,,,,---------------------------Reinforcement----------------------------
+76,Reinforcement,wc_reinforcement,Toggle,,,0,0,self/single,0,0,0,Increase P.Def +620 (Consumes: 30/s),30,6.5kk,1kk
+78,Reinforcement,wc_reinforcement,Toggle,,,0,0,self/single,0,0,0,Increase P.Def +640 (Consumes: 30/s),30,16kk,1kk
+80,Reinforcement,wc_reinforcement,Toggle,,,0,0,self/single,0,0,0,Increase P.Def +660 (Consumes: 30/s),30,0,5kk
+82,Reinforcement,wc_reinforcement,Toggle,,,0,0,self/single,0,0,0,Increase P.Def +680 (Consumes: 30/s),30,0,10kk
+84,Reinforcement,wc_reinforcement,Toggle,,,0,0,self/single,0,0,0,Increase P.Def +700 (Consumes: 30/s),30,0,30kk
+86,Reinforcement,wc_reinforcement,Toggle,,,0,0,self/single,0,0,0,Increase P.Def +725 (Consumes: 30/s),30,0,75kk
+88,Reinforcement,wc_reinforcement,Toggle,,,0,0,self/single,0,0,0,Increase P.Def +750 (Consumes: 30/s),30,0,100kk
+90,Reinforcement,wc_reinforcement,Toggle,,,0,0,self/single,0,0,0,Increase P.Def +800 (Consumes: 30/s),30,0,100kk
+,,,,,,,,,,,,,,,,,,,---------------------------Sharpening----------------------------
+76,Sharpening,wc_sharpening,Toggle,,,0,0,self/single,0,0,0,Increase P.Atk +310 (Consumes: 15/s),15,6.5kk,1kk
+78,Sharpening,wc_sharpening,Toggle,,,0,0,self/single,0,0,0,Increase P.Atk +320 (Consumes: 15/s),15,16kk,1kk
+80,Sharpening,wc_sharpening,Toggle,,,0,0,self/single,0,0,0,Increase P.Atk +330 (Consumes: 15/s),15,0,5kk
+82,Sharpening,wc_sharpening,Toggle,,,0,0,self/single,0,0,0,Increase P.Atk +340 (Consumes: 15/s),15,0,10kk
+84,Sharpening,wc_sharpening,Toggle,,,0,0,self/single,0,0,0,Increase P.Atk +350 (Consumes: 15/s),15,0,30kk
+86,Sharpening,wc_sharpening,Toggle,,,0,0,self/single,0,0,0,Increase P.Atk +360 (Consumes: 15/s),15,0,75kk
+88,Sharpening,wc_sharpening,Toggle,,,0,0,self/single,0,0,0,Increase P.Atk +380 (Consumes: 15/s),15,0,100kk
+90,Sharpening,wc_sharpening,Toggle,,,0,0,self/single,0,0,0,Increase P.Atk +400 (Consumes: 15/s),15,0,100kk

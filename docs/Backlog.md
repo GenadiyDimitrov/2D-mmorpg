@@ -1131,6 +1131,197 @@ closed · **`BL-93` opened** for the in-game visuals discussion you asked for (*
   wrote, and it is a small nerf reversing a deliberate 2026-07-01 fix, so say it once; (3) DESCR keys
   rather than a JSON array?
 
+---
+
+## Playtest 29 — your pass of 2026-09-01. `BL-108` … `BL-121`
+
+Twenty-two finds, written into `testing/Open-Checklist.md` §0. The **bugs** stay there, which is where
+bugs live; the **changes and new systems** are the fourteen entries below. Your two `[?]` questions are
+answered at the bottom of this section rather than as entries — neither asks for a build.
+
+- `BL-108` 🔴 **THE FOUR AUTHORED 40+ FILES — BUILD THEM.** Your words: *"`buffer/healer 3rd/4th` and
+  `shared 4th` are done for now .. build them"*. What actually changed in the files, so nothing is
+  missed:
+
+  | file | what is new |
+  | --- | --- |
+  | `buffer 3rd.csv` | **`doctor_blunt_mastery`** — a whole new eight-rung Human ladder, `blunt/1`, P.Atk 30→100 at 40-74. Plus a mislabelled banner fixed. |
+  | `buffer 4th.csv` | **the whole Warchanter 4th kit**, moved out from under the `NOT DONE` banner and given real ids: `buffer_shield_mastery` (robe/shield), the 76-90 continuations of `wc_harmonist_bow_mastery` / `wc_bloodhanter_blunt_mastery` / `doctor_blunt_mastery`, **Harmony Mark rung 2 @83**, `wc_sound_burst` / `wc_sound_smash` / `wc_acoustic_shock` fifteen rungs each, and the `wc_reinforcement` / `wc_sharpening` toggle ladders. Spell Mastery's reuse went 15%→20% at rungs 76-77 (it was already 20% from 78 — a monotonicity fix). |
+  | `healer 4th.csv` | the three **Marks gain a second rung @83** with a `*.Crit.*.Received` line each, MP 300→**150** on all of them, and the resist numbers moved (SPT +10→+15, CON +5→+10, vamp +3→+5%). |
+  | `shared 4th.csv` | `magic_proficiency` gains a **10% proc** (M.Atk/cast/crit-rate/crit-dmg/MP-cost); `physical_proficiency`'s 5% proc is now explicitly *"with physical skills or basic attacks"*. |
+
+  ⚠ **The order of this against the bugs is settled** — you chose bugs first (`BL-111`…`BL-120`),
+  then this. 🔑 **A class-skill-table change needs a NEW APK**: the client builds its Learn tab locally
+  from the compiled `ClassSkills`.
+
+- `BL-109` 🔵 **WHISPS — A NEW SYSTEM. Your design, and `whisps_skills.csv` is already authored.**
+  IG cubics: a non-targetable support entity that rides the master and fires its own skills.
+
+  **The rules you set, which are the whole spec:**
+  - **Not an `Entity`.** *"it can be part of the character game object no need a real entety"* — like the
+    totem is a heal skill and not an entity. Leashed 100-200 from the master, follows on a short delay,
+    parks at its slot when the master stops.
+  - **Uninfluenced by master gear.** M.Atk, cast speed, landing rate scale on the **whisp's skill level
+    + the master's level** only. Their own P/M.Atk is **1**, so every whisp debuff needs a **base ATK
+    modifier** of its own.
+  - **Slots are a PUSH-DOWN stack, not a set.** `[][][]` →A→ `[A][][]` →B→ `[B][A][]` →C→ `[C][B][A]`
+    →D→ `[D][C][B]` →A→ `[A][D][C]` →D→ `[A][D][C]` (D refreshed). One slot by default; a
+    passive raises it to 2 then 3.
+  - **They behave as BUFFS**: 20 min default, resummon at 5s remaining (`BL-112`'s window), lost on
+    death — *"if its easier we can make them to be saved by angelsProtection"*.
+  - **Conditions, not IG's 8-13s clock**: *"i want our to be just like normal skills with some
+    conditions and cooldown"*. The CSV carries them per skill — master in combat, range, HP band.
+  - **Whisp debuffs do not stack with the player version**: Whisp Armor Break must upgrade-or-fail
+    against a Healer's Armor Break of lower/equal/higher level.
+  - **The three-way separation you drew, worth keeping written down:** totems stand still and cast AoE
+    off the master's pvp-on/off · pets do only what the master orders and use no skills unprompted ·
+    **whisps follow and act on their own**, off the master's pvp-on/off.
+
+  **The PoC you asked for** (`tank 3rd.csv`, already authored): Human = taunt + bind, Elf = charm +
+  heal, Demon = armor-break + weapon-break, all @40, plus `Whisp Mastery` @60 raising the limit to 2.
+  ⚠ That row's `SKILL_ID` is `tank_shield_mastery` — a copy-paste, it needs its own id.
+  Nine whisp skills in `whisps_skills.csv`: provoke, charm, bind, armor/weapon/gravity break, heal,
+  quick-heal, clear. **`whisp_charm` depends on `BL-110`.**
+
+- `BL-110` 🔵 **FEAR AND CHARM — two CC types we do not have.** *"both dont change target like taunt —
+  just act uncontrolably"*.
+  - **Fear** — cannot act; runs at **run speed** to a random point in a 100-200 radius, for the duration.
+  - **Charm** — cannot act; walks at **walk speed** toward the caster, for the duration.
+
+  Both are movement the SERVER drives while input is refused, which is new: today's CC either roots or
+  stuns. `whisp_charm` in `BL-109` is the first consumer.
+
+- `BL-111` 🔴 **FOUR BUFF BARS, not one.** *"I cannot see if I have 20 or less buffs to not over buff me"*:
+  1. **normal** — only what counts against the 20 cap;
+  2. **toggles + consumables** — HP/MP potions, HoTs, the toggles;
+  3. **items** — Runes and other item buffs;
+  4. **others** — everything else.
+
+  🔑 **The rule that decides the split is DURATION-SHAPED, not source-shaped**, and you gave the two
+  worked examples: Bow Expertise is a **20-minute self-buff and belongs in NORMAL**, while the tank's
+  ultimate and the warrior's Battle Defence/Presence are **30-120s and do not count against the limit**,
+  so they go in **others**.
+
+- `BL-112` 🔴 **THE REBUFF WINDOW — 5 SECONDS BEFORE IT WEARS OFF, not after it drops.** *"Now they
+  buff once they drop. They should buff when the time is 5s... All buffs should have 1~5s cast so when
+  the buff have 5s remaining is caunt as able to be rebuffed."*
+  - **The bug this fixes costs mana twice**: Conceal rebuffs at **15s remaining on a 30s buff**, so you
+    pay for it twice over. Condition is `remaining <= 5s AND not on cooldown`.
+  - **Second half, same entry:** *"if I have a buff L1 and I buff myself with it ...then after lvling up
+    I learn L2 ..it should rebuf me ..because it's stronger"* — a higher rung of a buff you already
+    hold is a rebuff trigger, not a wait.
+
+- `BL-113` 🔴 **A SKILL THAT LEAVES A BUFF CANNOT RE-EXECUTE WHILE THAT BUFF IS LIVE — a general rule,
+  raised by Harmony of Restoration.** Your words: *"the logic is for all skills that leave a buff .. the
+  skill cannot be reexecuted even after the cooldown is done while the same skill is already active
+  (same as buffs, don't auto rebuff u till they worn off)"*.
+
+  **The symptom:** HoR is fine below L9; from L9 it costs 400+ MP for +5/s and fires **on cooldown**
+  rather than on threshold, draining you to zero. **Your model:** *"it's a healing buff ..not a skill ..
+  It's like a hp pot — I cannot use another pot while the last is active"*. So: fire when HP ≤ the
+  threshold **and** the previous instance is gone; on cooldown-end, re-check that you still hold the
+  buff before re-firing.
+
+  🔑 **Why the CD is deliberately low, which is the part not to "fix":** *"once we have a debuff that
+  increases cooldown x2, HoR stays permanent instead of falling behind its duration — while a healing
+  totem with cd 25 becomes 50 against a duration of 30"*. The low CD is armour against a future
+  cooldown debuff. Do not raise it.
+
+- `BL-114` 🔴 **THE SELL DIVISOR BECOMES PER-RARITY.** *"the sell prices are to much for the current drop
+  rates ... common sels for 0.225 of the original price so selling 4.(4) items Is like I sold a real
+  item"*. One `GameConstants.GearSellDivisor` (25) today; your ladder:
+
+  | rarity | divisor | was |
+  | --- | --- | --- |
+  | Mythic | **/10** | /25 |
+  | Legendary | **/25** | /25 |
+  | Epic | **/33** | /25 |
+  | Rare | **/50** | /25 |
+  | Uncommon | **/100** | /25 |
+  | Common | **/200** | /25 |
+
+  Monotonic, and it takes a Common from 4.4-per-real-item to 20. ⚠ It must land in **one place**
+  (`ItemCatalog.SellPrice`) — the same rule as `MobCatalog.EffectiveRate`: never at a call site.
+
+- `BL-115` 🔴 **NPCs GET `canDie` AND `retaliate`, AND ATTACKING ANY NPC NEEDS PVP-ON.** *"field
+  guards/watchmen are targetable and hittable even without a pvp-on ...and i can hit them auto in
+  auto-farm ...they shouldn't act as mob"*. Your model, verbatim:
+  - **every NPC** is attackable **only with pvp-on**;
+  - **`canDie: false`** (the default) — normal HP, but it **cannot fall below 1**, a training dummy;
+  - **`retaliate: false`** (the default) — *"don't strike back just sit and take it"*;
+  - **guards are the only pair set true/true** — they can be killed and they do strike back.
+
+  ⚠ **Auto-farm must never target an NPC**, which is the half that bit you.
+
+- `BL-116` 🔴 **THE BOW-KITE EXPLOIT AGAINST MOB CHASE RANGE.** *"I stand just outside the radius and
+  shoot it with a bow .. The mob agros me back then stops and it moves towards/away from me and if I do
+  more than it's 5% regen I can kill it"*. A creature that has given up the chase must not be killable
+  from outside it — the leash needs teeth (full-heal on leash, or damage immunity while returning, or
+  the chase range extends while it is taking hits). Ruling needed on which.
+
+- `BL-117` 🔵 **AN `[ORDER]` BUTTON IN THE BAG AND EVERY VENDOR LIST.** One button, cycling:
+  normal/alphabetical → alphabetical descending → rarity then alphabetical (Mythic first) → rarity
+  descending then alphabetical → **type then rarity then alphabetical** (all weapons by rarity within
+  name, then armor, then jewels, then consumables). *"same for npcs sell/buy/buyback inventories"*.
+
+- `BL-118` 🔵 **AN ADMIN SETTING: CLASS CHANGE WITHOUT THE QUEST.** *"at x100exp doing quest at 20 is
+  kinda annoying ..and I enter with the admin char make the player an admin change class then make him
+  player again"*. A toggle beside the exp rate in the admin menu; while it is on, the class master
+  changes your class on **conversation alone** — no quest items, and no requirement to have done the
+  two quests before it. Applies to non-admin characters, which is the whole point.
+
+- `BL-119` 🔴 **ARMOR MASTERY STACKS WITH THE DISCIPLINE MASTERIES — ×4 CAST SPEED.** *"I'm 40lvl
+  harmonist with 35lvl armor_mastery and wc_harmonist_light_mastery — both remove the light penalty"*.
+  Your own fix, which is the right one: the 40+ rungs become **`buffer_armor_mastery`**, which
+  **replaces** `armor_mastery` rungs 20-35, and **`wc_chanter_heavy_mastery`** and
+  **`wc_harmonist_light_mastery` also replace `armor_mastery`** so no two can be held at once.
+  ⚠ A skill-id rename needs the save migration `BL-106` flagged.
+
+- `BL-120` 🔵 **COMBO MASTERY WORKS WITH A BOW, and its chance is re-tuned.** *"buffers combo mastery
+  should work with a bow ... Also 3% chance with `blunt/1` and 3.45% chance with `bow|blunt/2`"*. Your
+  reason, which is why the two numbers differ: *"2h weapons are slower by ~12/18%, so increasing the
+  chance balances the slower attack speed (bow is faster than 2h blunt as harmonist have bow
+  expertise)"*. ⚠ The CSV row changes with the code — this is the third requirement in a fortnight that
+  lived only in free-text `DESCR` and disagreed with its own row.
+
+- `BL-121` ❓ **`RateConfig.VendorPriceRate` — MY PROPOSAL, YOUR CALL, ANSWERING YOUR SECOND `[?]`.** See
+  the answer below. If you want it: **one field, default 1.0, read only in `ItemCatalog.BuyPrice`**. No
+  authored price changes and it vanishes at 1.0. I would not build it until the ×1 economy is what you
+  are reading.
+
+### Your two `[?]` questions — answered, nothing to build
+
+**"Shouldn't mobs have normal hp? Why did the curve move?" — IT DID NOT MOVE.** `MobBaseStats.Hp` is
+still `40 + 0.8·L²` and its last change was `d93f9ed`, **2026-07-14**. The 0.73.0 `BL-78` refit moved
+P.Def / M.Def / P.Atk / M.Atk and left HP alone deliberately — your ruling. That curve reads **1,320 at
+40 · 5,160 at 80 · 5,820 at 85**; nothing on the roster is 15k off it.
+
+🔑 **What reads ~15k is a GUARD, and guards were never on the mob curve.** They are `PlayerBuilt`, so
+their HP comes from `StatCalculator.MaxHp` — the **player** curve, the one that doubled in **0.91.0
+(2026-08-27)** — and the Field pair is level **90** with a ×2 tower passive on top. Your very next find
+is that guards are hittable, so that is almost certainly what you were swinging at. The only other big
+numbers on the roster are `demo_lich` (×3.73, a deliberate demo) and Elite rank (×4). If it was an
+ordinary creature, name it and it gets measured.
+
+**"Should vendor prices scale with the rates?" — NO, and the distortion you spotted is not uniform.**
+Multiplying income *and* prices by the same N is a no-op with extra digits. But the real asymmetry is
+this: **rates multiply per-KILL income, while consumables are spent per-FIGHT.** At ×100 you get 100×
+the gold per pig and still drink one potion per pig, so potions fall from a cost to free — `--goldflow`
+already measured them at **0-3% of income at ×1**. Gear is the opposite: you also get 100× the *drops*,
+so you buy **less** gear, and raising its price would make the vendor more relevant, not less. One
+global multiplier is therefore the wrong instrument. And ×100 is a **test-server** setting — anything
+tuned against it must be untuned for the ×1 game that ships. If you still want the test server to feel
+honest, `BL-121` is the cheap honest version, and I would set it near **√rate** (×10 at ×100).
+
+### The bugs from this pass stay in the checklist
+
+`testing/Open-Checklist.md` §0 holds the ones that are pure bugs and need no ruling: the ortho
+zoom-out grey clip, the NPC buffer's dead `[Save]`, the harmonist not learning
+serenity/vigor/vamp/force/insight, Bow Expertise surviving a weapon swap, toggles flickering under
+auto-on, the level-1 mage casting with no weapon-proficiency penalty until something forces a
+recompute, Phase Shift not updating your position on the client, and the stale buff bar after a long
+reconnect.
+
 
 ---
 

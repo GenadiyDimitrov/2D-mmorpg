@@ -1,2 +1,13 @@
-LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,REPLACES,RACE
+LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,REPLACES,RACE,COMMENT
+,,,,,,,,,,,,,,,,,----------------------------Shield Mastery----------------------------
 52,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield P.Def +60%, Shield Rate +100%; +10% P.Def, bow resistance 24%",0,74k,[]
+LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,REPLACES,RACE,COMMENT
+,,,,,,,,,,,,,,,,,----------------------------Whisp Mastery----------------------------
+60,Whisp Mastery,tank_shield_mastery,Passive,,,0,0,self/single,0,0,0,"Increase the limit of active whisps to 2",0,120k,[]
+,,,,,,,,,,,,,,,,,----------------------------Great Heal----------------------------
+40,Taunting Whisp,tank_whisp_taunt,Whisp,,,0,0,self/single,1,30,1200,Call a whisp to aid with Tauntin the enemy (Power 6500),50,36k,[],Human,uses whisp_provoke
+40,Binding Whisp,tank_whisp_bind,Whisp,,,0,0,self/single,1,30,1200,Call a whisp to aid with Binding the enemy,50,36k,[],Human,uses whisp_bind
+40,Charming Whisp,tank_whisp_charm,Whisp,,,0,0,self/single,1,30,1200,Call a whisp to aid with Charming the enemy,50,36k,[],Elf,uses whisp_charm
+40,Healing Whisp,tank_whisp_heal,Whisp,,,0,0,self/single,1,30,1200,Call a whisp to heal its master (Power 300),50,36k,[],Elf,uses whisp_heal and whisp_quick_heal
+40,Armor Breaking Whisp,tank_whisp_armor_break,Whisp,,,0,0,self/single,1,30,1200,Call a whisp to break armor of enemy (Deacreases P.Def by 10% and MDef by 5%),50,36k,[],Demon,uses whisp_armor_break
+40,Weaon Breaking Whisp,tank_whisp_armor_break,Whisp,,,0,0,self/single,1,30,1200,Call a whisp to break weapon of enemy (Decreases P/M.Atk 5%),50,36k,[],Demon,uses whisp_weapon_break

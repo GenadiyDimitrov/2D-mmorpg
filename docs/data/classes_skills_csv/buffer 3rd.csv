@@ -78,7 +78,7 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 68,Harmonist Bow Mastery,wc_harmonist_bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"Bow: Range +400, P.Atk +540;",0,320k,[],Elf,
 70,Harmonist Bow Mastery,wc_harmonist_bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"Bow: Range +400, P.Atk +560;",0,390k,[],Elf,
 74,Harmonist Bow Mastery,wc_harmonist_bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"Bow: Range +400, P.Atk +600;",0,880k,[],Elf,
-,,,,,,,,,,,,,,,,,-----------------------Warchanter Blunt Mastery-----------------------
+,,,,,,,,,,,,,,,,,-----------------------Shield Mastery-----------------------
 40,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield P.Def +30%, Shield Rate +50%;",0,36k,[],Human,
 60,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield P.Def +40%, Shield Rate +70%;",0,120k,[],Human,
 70,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield P.Def +50%, Shield Rate +85%; +10% P.Def, bow resistance 16%",0,390k,[],Human,
@@ -91,6 +91,15 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 68,Warlock Weapon Mastery,wc_bloodhanter_blunt_mastery,Passive,blunt/2,,0,0,self/single,0,0,0,"2h Blunt: P.Atk 80, Accuracy +3;",0,320k,[],Demon,
 70,Warlock Weapon Mastery,wc_bloodhanter_blunt_mastery,Passive,blunt/2,,0,0,self/single,0,0,0,"2h Blunt: P.Atk 90, Accuracy +3;",0,390k,[],Demon,
 74,Warlock Weapon Mastery,wc_bloodhanter_blunt_mastery,Passive,blunt/2,,0,0,self/single,0,0,0,"2h Blunt: P.Atk 100, Accuracy +3;",0,880k,[],Demon,
+,,,,,,,,,,,,,,,,,-----------------------Doctor Weapon Mastery-----------------------
+40,Doctor Weapon Mastery,doctor_blunt_mastery,Passive,blunt/1,,0,0,self/single,0,0,0,"2h Blunt: P.Atk 30;",0,36k,[],Human,
+48,Doctor Weapon Mastery,doctor_blunt_mastery,Passive,blunt/1,,0,0,self/single,0,0,0,"2h Blunt: P.Atk 40;",0,64k,[],Human,
+56,Doctor Weapon Mastery,doctor_blunt_mastery,Passive,blunt/1,,0,0,self/single,0,0,0,"2h Blunt: P.Atk 50;",0,81k,[],Human,
+60,Doctor Weapon Mastery,doctor_blunt_mastery,Passive,blunt/1,,0,0,self/single,0,0,0,"2h Blunt: P.Atk 60;",0,120k,[],Human,
+64,Doctor Weapon Mastery,doctor_blunt_mastery,Passive,blunt/1,,0,0,self/single,0,0,0,"2h Blunt: P.Atk 70;",0,190k,[],Human,
+68,Doctor Weapon Mastery,doctor_blunt_mastery,Passive,blunt/1,,0,0,self/single,0,0,0,"2h Blunt: P.Atk 80;",0,320k,[],Human,
+70,Doctor Weapon Mastery,doctor_blunt_mastery,Passive,blunt/1,,0,0,self/single,0,0,0,"2h Blunt: P.Atk 90;",0,390k,[],Human,
+74,Doctor Weapon Mastery,doctor_blunt_mastery,Passive,blunt/1,,0,0,self/single,0,0,0,"2h Blunt: P.Atk 100;",0,880k,[],Human,
 ,,,,,,,,,,,,,,,,,---------------------------------------------------------------------------------------------ACTIVE SUPPORT-------------------------------------------------------------------------------------------------------------------
 ,,,,,,,,,,,,,,,,,----------------------------Great Heal----------------------------
 40,Great Heal,great_heal,Magic/Heal,,,600,0,target/single,5,3,0,heal with power 400,62,36k,[heal],,
