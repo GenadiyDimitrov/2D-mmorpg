@@ -525,6 +525,31 @@ public record SkillDef(
     // whole reason a tank can lean on charm for aggro at all, and it is why the taunt's target lock
     // is the SHORT guarantee — see the charm block in GameLoopService.
     bool Charms = false,
+    // 🔑 "I SHARE A LADDERED BUFF KEY ON PURPOSE, AND I WANT RUNG-VS-RUNG COMPETITION."
+    //
+    // `BL-85`'s startup guard refuses two childless multi-level buffs on one family key, because their
+    // rungs then compete as if they were one ladder — which is a trap for a PAIR THAT MEANT TO BE
+    // MUTUALLY EXCLUSIVE (Great Might / Great Bulwark, which opt out with FlatRank instead).
+    //
+    // But it is exactly right for two versions of the SAME control from different classes: a tank's
+    // Stay and a healer's Bind are both holds, they must never stack, and when they meet the deeper
+    // rung should win. Same for a whisp's Armor Break against a healer's — his rule in as many words:
+    // *"Whisp Armor Break must upgrade-or-fail against a Healer's Armor Break of lower/equal/higher
+    // level"*.
+    //
+    // ⚠ THE DECLARATION IS ON THE NEWCOMER, and it is a decision, not a formality: the guard still
+    // fires for anyone who lands on an occupied key without saying so. What it stops being is a list
+    // of ids kept somewhere else — the reasoning now sits on the skill that made the choice.
+    bool SharesLadderKey = false,
+    // THE TANK'S SHIELD SMASH (his `tank 3rd.csv`) — what the debuff takes off the TARGET's own crit
+    // numbers, as fractions. Fields, not flags: the enum has been full since 1L << 62, and these are
+    // three more channels. See BuffInstance.CritRatePenalty for why they are holder-side rather than
+    // another flavour of the crit RESISTANCE the wearer already has.
+    // ⚠ The magic crit-DAMAGE quarter of this set is `MagicCritDamageDebuff`, which already existed
+    // for the buffer's blessings. Do not add a fourth field for it.
+    float CritRatePenalty = 0f,
+    float CritDamagePenalty = 0f,
+    float MagicCritRatePenalty = 0f,
     // SKILL EVASION (BL-06) — the chance the HOLDER of this buff dodges an incoming physical SKILL.
     // A physical skill is never evaded by the ordinary accuracy-vs-evasion contest any more (owner,
     // playtest-21 `69e`: *"normaly no1 can evade a physical skill … now on then i miss a skill which
@@ -863,6 +888,23 @@ public record SkillDef(
         float v = Lvl(level)?.MagicCritDamageDebuff ?? 0f;
         return v > 0f ? v : MagicCritDamageDebuff;
     }
+    /// <summary>THE TANK'S SHIELD SMASH, per rung (0 = inherit the def's). Both Smashes ladder all
+    /// fifteen rungs, so these are read through here and never off the bare field.</summary>
+    public float CritRatePenaltyAt(int level)
+    {
+        float v = Lvl(level)?.CritRatePenalty ?? 0f;
+        return v > 0f ? v : CritRatePenalty;
+    }
+    public float CritDamagePenaltyAt(int level)
+    {
+        float v = Lvl(level)?.CritDamagePenalty ?? 0f;
+        return v > 0f ? v : CritDamagePenalty;
+    }
+    public float MagicCritRatePenaltyAt(int level)
+    {
+        float v = Lvl(level)?.MagicCritRatePenalty ?? 0f;
+        return v > 0f ? v : MagicCritRatePenalty;
+    }
 
     /// <summary>How much this level takes off an attacker's MAGIC crit CHANCE against the holder
     /// (a fraction: 0.10 = −10%). Same "0 = inherit the def's" shape as its neighbours.
@@ -1114,6 +1156,12 @@ public record SkillLevel(
     // MAGIC CRIT DAMAGE at THIS level (0 = inherit the SkillDef's). See SkillDef.MagicCritDamage.
     float MagicCritDamage = 0f,
     float MagicCritDamageDebuff = 0f,
+    // THE TANK'S SHIELD SMASH per rung (0 = inherit the SkillDef's). Both Smashes ladder every rung
+    // of their fifteen, so a per-level slot is not optional here — without one every rung would apply
+    // rung 1's number, which is the `BL-85` shape of bug all over again.
+    float CritRatePenalty = 0f,
+    float CritDamagePenalty = 0f,
+    float MagicCritRatePenalty = 0f,
     // MAGIC CRIT RATE RECEIVED at THIS level (0 = inherit). See SkillDef.MagicCritRateDebuff.
     float MagicCritRateDebuff = 0f,
     // SKILL MP-COST CHANGE at THIS level (0 = inherit the SkillDef's). Positive = costs LESS (Mana
@@ -1485,6 +1533,7 @@ public static partial class SkillCatalog
         list.AddRange(BossJudgmentSkills());  // Skills.BossJudgment.cs (`BL-98` the six-rung ladder — engine-applied only)
         list.AddRange(WhispSkills());         // Skills.Whisps.cs (`BL-109` the whisp's own nine — cast by the whisp, never learned)
         list.AddRange(WhispSummonSkills());   // Skills.Whisps.cs (his six calls + Whisp Mastery)
+        list.AddRange(Bulwark3rdSkills());    // Skills.Bulwark3rd.cs (his `tank 3rd.csv`, 40-74)
 
         var dict = new Dictionary<string, SkillDef>();
         foreach (var sk in list)
@@ -1522,26 +1571,18 @@ public static partial class SkillCatalog
             // fired) is not the collision this is about.
             if (sk.Category == SkillCategory.Passive) continue;
             string key = string.IsNullOrEmpty(sk.BuffKey) ? sk.Name : sk.BuffKey;
-            // 🔑 THE DELIBERATE SHARERS (`BL-109`). A WHISP's Armor Break and Weapon Break ladder on
-            // the healer's own keys ON PURPOSE — his rule is *"whisp debuffs do not stack with the
-            // player version"*, and *"Whisp Armor Break must upgrade-or-fail against a Healer's Armor
-            // Break of lower/equal/higher level"*. That is a request for exactly the rung-vs-rung
-            // competition this guard warns about, so competing IS the feature here and neither of the
-            // guard's two escapes fits: a separate key would let the two STACK (the thing he ruled
-            // out), and FlatRank would pin the whisp at rank 1 so a healer's rung 1 could never be
-            // improved on by a level-74 whisp.
+            // 🔑 A DELIBERATE SHARER DECLARES ITSELF. See SkillDef.SharesLadderKey — two versions of
+            // the same control from different classes SHOULD compete rung for rung, and that is the
+            // one case this guard would otherwise refuse. Anyone who lands on an occupied key without
+            // saying so still fails here, which is the whole point.
             //
-            // ⚠ WHAT THIS COSTS, stated so nobody rediscovers it as a bug: the two ladders are
-            // different lengths (whisp 8, healer 14) and their magnitudes only line up index-for-index
-            // to rung 5. From rung 6 the whisp's is slightly the stronger number at the same rung, so
-            // an equal-rank tie is broken by remaining duration and the HEALER's 30s beats the whisp's
-            // 15s. The party gets .20 where the whisp offered .22, in that one narrow window. Erring
-            // toward the healer's own spell is the right way round, and the alternative is a per-rung
-            // rank table that would have to be re-derived every time either ladder moved.
-            //
-            // A NEW sharer still fails here, which is the whole point — this list is two entries long
-            // and adding to it is a decision, not a formality.
-            if (sk.Id == WhispArmorBreak || sk.Id == WhispWeaponBreak) continue;
+            // ⚠ WHAT SHARING COSTS, stated so nobody rediscovers it as a bug: two ladders of different
+            // LENGTHS do not line up index-for-index, so "the deeper rung wins" is only approximately
+            // "the bigger number wins" — a whisp's Armor Break at rung 6 is slightly stronger than a
+            // healer's rung 6, ties on rank, and loses the tie-break to the healer's longer duration.
+            // Erring toward the player's own spell is the right way round; the alternative is a
+            // per-rung rank table that would need re-deriving every time either ladder moved.
+            if (sk.SharesLadderKey) continue;
             if (laddered.TryGetValue(key, out var other))
                 throw new InvalidOperationException(
                     $"Buff key '{key}' is laddered by BOTH '{other}' and '{sk.Id}'. A childless "

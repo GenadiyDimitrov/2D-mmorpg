@@ -91,6 +91,11 @@ public static partial class ClassSkillTables
         // every entry above: he asked for the whisp system, its PoC rows are the ones he authored
         // for it, and the rest of that (still open) file waits for the one-pass tank delta.
         RegisterWhisps();
+        // …and the SEVENTH, which is no longer narrow at all: THE WHOLE BULWARK, 40-74. His
+        // `tank 3rd.csv` is finished (*"U can finish the tank 3rd"*, 2026-09-02), so the 40+ purge
+        // that governs this file no longer applies to the tank — a finished CSV is exactly the
+        // condition it was waiting for, and the Lightbringer, Warchanter and Magus went the same way.
+        RegisterBulwark();
         // (A FOURTH, `RegisterHealerMasteries()`, existed for one day and is gone: it taught the two
         //  healer masteries and Frenzy L2 while RegisterLightbringer was still commented out. Those
         //  rungs are in the shared ladder now, and keeping both would have registered every one twice.)
@@ -168,6 +173,76 @@ public static partial class ClassSkillTables
     /// and the taunt, mass-taunt, intimidate, freeze, stay and charm ladders, the anti-magic and
     /// weapon masteries and Defensive Wall all wait for the single tank pass. The whisps are built
     /// alone because the whisp SYSTEM is what he queued, and these are the rows he wrote for it.</para></summary>
+    /// <summary>THE BULWARK, 40-74 — every row of `docs/data/classes_skills_csv/tank 3rd.csv`.
+    /// Built 2026-09-02 when he said the file was finished: *"U can finish the tank 3rd"*.
+    ///
+    /// <para>🔑 <b>RACE DECIDES FOUR OF HIS TOOLS</b>, and this is the first class where it decides
+    /// anything at all beyond flavour. His RACE column: Taunt is Human;Demon and Charm is Elf (and
+    /// Charm REPLACES Taunt, so nobody holds both); Mass Taunt is Human, Intimidate is Demon, Freeze
+    /// is Elf; Shield Smash — Rate is Human;Elf and — Power is Demon. Everything else — four
+    /// masteries, Final Defense, Aggravated State, Stay, Shield Shock, Defensive Wall, Shield
+    /// Reinforcement, Whisp Mastery — is shared by all three.</para>
+    ///
+    /// <para>🔑 <b>THE WHOLE FILE RUNS ON ONE LEVEL LADDER</b> — 40/43/46/49/52/55/58/60/62/64/66/68/
+    /// 70/72/74 — and one SP ladder, so the only thing this table decides is WHICH skills a race gets
+    /// and at which rung each starts. Two skills break the cadence and both are his: Final Defense is
+    /// a single rung at 60, and Aggravated State is three at 52/60/68.</para>
+    ///
+    /// <para>⚠ <b>WHAT IS NOT HERE.</b> His `tank 4th.csv` is still under its own `NOT DONE` banner,
+    /// so nothing above 74 was built — including the Whisp Mastery rung at 80 that would raise the
+    /// limit to three.</para></summary>
+    private static void RegisterBulwark()
+    {
+        int[] lv = { 40, 43, 46, 49, 52, 55, 58, 60, 62, 64, 66, 68, 70, 72, 74 };
+        // The four continued ladders each already own rungs from the 2nd class, so their 3rd-tier
+        // rungs START above those: the masteries at rung 6, Taunt and Charm at rung 5.
+        static IEnumerable<ClassSkill> Ladder(string id, int[] levels, int firstRung) =>
+            levels.Select((l, i) => new ClassSkill(id, l, SkillLevel: firstRung + i));
+
+        foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
+        {
+            var kit = new List<ClassSkill>();
+
+            // ---- The four masteries, continued. Armor / Anti-Magic / Weapon start at rung 6 (five
+            //      exist below 40); Shield Mastery is his two-row exception at 40 and 52.
+            kit.AddRange(Ladder(TankArmorMastery, lv, 6));
+            kit.AddRange(Ladder(TankAntiMagic,    lv, 6));
+            kit.AddRange(Ladder(TankWeaponMastery, lv, 6));
+            kit.Add(new ClassSkill(TankShieldMastery, 40, SkillLevel: 3));
+            kit.Add(new ClassSkill(TankShieldMastery, 52, SkillLevel: 4));
+
+            // ---- The shared actives and the two odd-cadence passives.
+            kit.AddRange(Ladder(TankStay, lv, 1));            // moved here from the 2nd class
+            kit.AddRange(Ladder(TankShieldStun, TankShieldShockLevels, 5));   // Shield Shock, continued from 24-36
+            kit.Add(new ClassSkill(DefensiveWall, 46, SkillLevel: 2));
+            kit.Add(new ClassSkill(TankShieldReinforce, 60, SkillLevel: 1));
+            kit.Add(new ClassSkill(TankFinalDefense, 60, SkillLevel: 1));
+            kit.Add(new ClassSkill(TankAggravatedState, 52, SkillLevel: 1));
+            kit.Add(new ClassSkill(TankAggravatedState, 60, SkillLevel: 2));
+            kit.Add(new ClassSkill(TankAggravatedState, 68, SkillLevel: 3));
+
+            // ---- The race half.
+            if (race == Race.Elf)
+            {
+                kit.AddRange(Ladder(TankCharm, lv, 5));       // continues his 2nd-class 24-36
+                kit.AddRange(Ladder(TankFreeze, lv, 1));
+            }
+            else
+            {
+                kit.AddRange(Ladder(Provoke, lv, 5));         // ditto
+            }
+            if (race == Race.Human)
+                kit.AddRange(Ladder(TankMassProvoke, lv, 1));
+            if (race == Race.Demon)
+                kit.AddRange(Ladder(TankFear, lv, 1));
+
+            // Shield Smash: Human and Elf get the RATE version, the Demon the POWER one.
+            kit.AddRange(Ladder(race == Race.Demon ? TankSmashPower : TankSmashRate, lv, 1));
+
+            ClassSkills.RegisterThird(race, Discipline.Bulwark, kit.ToArray());
+        }
+    }
+
     private static void RegisterWhisps()
     {
         // His two level sets, from the LEARN @ LVL column: the A whisps open at 40, the B whisps at
@@ -432,7 +507,13 @@ public static partial class ClassSkillTables
         foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
             foreach (var disc in new[] { Discipline.Bulwark, Discipline.Vanguard })
                 ClassSkills.RegisterThird(race, disc,
-                    new ClassSkill(TankShieldMastery, 52, SkillLevel: 4, SpCost: 74_000));
+                    // 🔴 BULWARK IS NO LONGER REGISTERED HERE — `RegisterBulwark` owns his whole tank
+                    // file now, rung 3 at 40 and rung 4 at 52 alike. Only the RETIRED Vanguard keeps
+                    // this line, so a character who took that discipline before it was retired
+                    // (`BL-97`) still holds the rung he bought.
+                    disc == Discipline.Vanguard
+                        ? new[] { new ClassSkill(TankShieldMastery, 52, SkillLevel: 4, SpCost: 74_000) }
+                        : System.Array.Empty<ClassSkill>());
     }
 
     /// <summary>HP BOOST above 40 — the warrior's rungs L4-L10 and the buffer's L1-L7, both authored

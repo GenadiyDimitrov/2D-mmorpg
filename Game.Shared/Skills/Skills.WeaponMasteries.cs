@@ -172,7 +172,10 @@ public static partial class SkillCatalog
                 new SkillLevel(SpCost: 12000),
                 new SkillLevel(SpCost: 22000),
                 new SkillLevel(SpCost: 40000),
-            },
+            }.Concat(TankWeaponMasteryThirdRungs()).ToArray(),
+            // ⚠ TWO PARALLEL ARRAYS, and they must stay the same LENGTH: a weapon mastery's payload
+            // rides here (indexed by rung) while its price rides `Levels`. A rung present in one and
+            // missing from the other is a rung you can buy that grants nothing.
             WeaponMasteryLevels: new[]
             {
                 OneHand(new PassiveEffect(PhysAtkPct: 0.085f, PhysAtk: 6)),
@@ -180,6 +183,6 @@ public static partial class SkillCatalog
                 OneHand(new PassiveEffect(PhysAtkPct: 0.085f, PhysAtk: 10)),
                 OneHand(new PassiveEffect(PhysAtkPct: 0.085f, PhysAtk: 12)),
                 OneHand(new PassiveEffect(PhysAtkPct: 0.085f, PhysAtk: 15)),
-            }),
+            }.Concat(TankWeaponMasteryThirdProfiles()).ToArray()),
     };
 }

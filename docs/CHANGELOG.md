@@ -7,12 +7,109 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.104.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.105.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-02 (latest) — 0.104.0: `BL-110` fear and charm, and `BL-109` the whisps
+## 2026-09-02 (latest) — 0.105.0: THE BULWARK, 40-74 — the fourth finished 3rd class
+
+*"U can finish the tank 3rd"*. `tank 3rd.csv` lost its `NOT DONE` banner, so the tank is built —
+and the pass turned out to span **all three tank files**: he retuned `tank 2nd.csv` in the same
+breath, and the 3rd's ladders continue it.
+
+⚠ **NEW APK.** The class table changed, and the client builds its Learn tab from the compiled tables.
+
+### 🔑 Race decides four of the tank's tools, and this is the first class where race decides anything
+
+His RACE column, which is the whole discipline:
+
+| | Human | Elf | Demon |
+|---|---|---|---|
+| aggro | **Taunt** | **Charm** (replaces Taunt) | **Taunt** |
+| control | **Mass Taunt** | **Freeze** (30s, to −50% speed) | **Intimidate** (10s fear) |
+| smash | Shield Smash — **Rate** | Shield Smash — **Rate** | Shield Smash — **Power** |
+| whisps | taunt + bind | charm + heal | armor + weapon break |
+
+So a Human holds a pack, an Elf controls one thing at a time and drags it to him, and a Demon breaks
+what he is fighting. Everything else is shared: the four masteries, Final Defense, Aggravated State,
+Stay, Shield Shock, Defensive Wall, Shield Reinforcement, Whisp Mastery.
+
+### The 2nd class moved too, and three of those changes are structural
+
+- **Taunt: 3s → 1.5s, reach 600 → 400, and its MP cost is now ZERO at every rung.** A taunt that
+  costs mana is a taunt a tank stops spamming, which is the opposite of the threat economy `BL-123`
+  settled — the design is that he has to keep *earning* the top of the table.
+- **Charm arrives at 24, for the Elf, and REPLACES Taunt.** Race splitting a kit at level 24 is
+  earlier than anything else in the game does it.
+- **Shield Stun -> Shield Shock**: a ladder from 24 instead of one rung at 28, reuse 10s -> **3s**,
+  and it lands at x0.7 — a 9-second stun every 3 seconds would be a perma-lock at x1.
+- **Stay! left the 2nd class entirely** and is the 3rd's whole ladder from 40, at 10s not 15.
+- **Defensive Wall lost its two `x2` percent terms** — flat P.Def and M.Def now, on both rungs.
+
+### `BL-123` is finished: the taunt's two halves go different distances
+
+His ruling: *"the aggression ladder is mob only. The actual target change is pvp (+ mob if mobs have
+targets though) and charm/fear work on both."* So `ApplyTaunt` splits them — the **lock** reaches
+players (their target is pinned to the taunter for its 1.5s, refused in `HandleAttack`), the **aggro
+ladder** is paid only into a monster's threat table, because a person has no threat table for it to
+mean anything against.
+
+🔑 **That was the fourth `Kind == Player`-shaped gate of its family, and the first that was HALF
+right** — deleting the test outright would have paid threat into a table nobody reads. The lesson
+generalises: a kind test is usually guarding *one* of the things inside it, and the fix is to ask
+which. ⚠ Its sibling: `TauntLockTicks` only ever counted down in `MobAi`, so the moment the lock
+reached PvP it would have been **permanent**. A counter only one kind of entity decrements is a trap
+the second the other kind can set it.
+
+### Engine work the file needed
+
+- **AoE taunt.** The area path resolved damage and contested CC and knew nothing about a taunt, so
+  Mass Taunt would have swept its radius and done nothing to anything in it.
+- **Three crit-debuff channels** for the two Shield Smashes (`CritRatePenalty`, `CritDamagePenalty`,
+  `MagicCritRatePenalty`; the magic crit-damage quarter already existed for the buffer's blessings).
+  🔑 They are **holder-side penalties on the creature**, not resistances on the tank: he cannot
+  out-tank a crit aimed at his healer, but he can make the monster worse at critting anyone.
+- **Final Defense reads live HP** rather than applying a buff. HP moves every tick and nothing
+  recomputes derived stats when it does, so a buff would have needed watchers on the damage, heal,
+  regen and potion paths — and whichever was forgotten is where the tank silently keeps 30% at full
+  health. A getter cannot be forgotten.
+- **Aggravated State needed nothing at all** — `ProcOnDamaged` with self/party rung arrays already
+  existed for the Sigils, and his row maps onto them exactly.
+- **`SkillDef.SharesLadderKey`** replaces the two-id allowlist added yesterday. `BL-85`'s guard
+  refuses two laddered buffs on one family key; that is right for a pair meant to be mutually
+  exclusive and wrong for two versions of the same control from different classes (a tank's Stay and
+  a healer's Bind must not stack, and the deeper rung should win). The declaration now sits on the
+  skill that made the choice, and the guard still fires for anyone who lands on an occupied key
+  without saying so.
+
+### Six things in his files that `--check` and the monotonic rule caught
+
+All six are corrected in the CSV as well, so file and game still agree:
+
+- 🔴 **A STRAY QUOTE MADE 19 ROWS INVISIBLE.** Every Shield Shock row across both files ended
+  `…x0.7);",15,6400` — a closing quote with no opening one, so the parser swallowed the MP and SP
+  columns into the description, the row fell under the column-count test, and `--check` reported the
+  skill as "the class learns 4 rungs with nothing authored". A quoting slip does not corrupt a row;
+  it *deletes* it.
+- 🔴 **Heavy Armor Mastery's 2nd-class P.Def was 20 points high on every rung** — the code carried
+  40/47/54/61/70 where his file has said 20/27/34/41/60 for as long as `--check` has walked it. A
+  tank was wearing twenty points of defence nobody authored.
+- 🟠 **`robe` in the WEIGHT column of Heavy Armor Mastery and Tank Anti-Magic**, on all thirty rows —
+  pasted from the healer template. Built HEAVY and (for anti-magic) ungated; every DESCR cell says
+  *"with heavy"* and the skill is called Heavy Armor Mastery. This is not the `BL-105` "the column
+  wins" case: that is for a column disagreeing with prose about a real choice, not a pasted cell
+  contradicting the skill's own name.
+- 🔵 **Weapon Mastery dipped at 52** — `+26` between `+31` and `+41`. Straightened to **36**, the
+  midpoint his own neighbours describe. A rung you pay 74,000 SP for cannot make you weaker.
+- 🟡 **Charm's 2nd-class duration read 1.5s** where its own DESCR and its 3rd-tier rows say 3s —
+  Taunt's cell pasted into the Charm block.
+- 🟢 **His SP column declares its own units.** `tank 3rd.csv`'s header says `SP COST (x1000)`, because
+  writing the `k` each time annoyed him. The checker now reads that from the HEADER — never a
+  per-file table in the tool, which would be a second place the truth lives and would silently
+  multiply by a thousand the day he adds the `k`s back.
+
+## 2026-09-02 — 0.104.0: `BL-110` fear and charm, and `BL-109` the whisps
 
 His order after the four CSV files: *"now do 110 then 109 then UI"*. Both are built here, in that
 order, because the second needs the first — a charming whisp cannot exist until charm does.

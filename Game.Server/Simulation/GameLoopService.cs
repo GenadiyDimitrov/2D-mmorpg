@@ -1437,6 +1437,17 @@ public class GameLoopService : BackgroundService
         if (attacker.StandUpTicks > 0 || attacker.MoveState == MoveState.Sitting)
             return;
 
+        // `BL-123` — TAUNTED, so your aim is not yours for a moment. His ruling of 2026-09-02 is that
+        // the taunt's TARGET LOCK reaches players (only its aggro ladder is monsters-only), and this
+        // is the half that makes it mean anything: without it a taunted person simply taps the enemy
+        // he wanted and the lock is a decoration. He keeps his feet and his skills — a taunt is not a
+        // fear — but for its 1.5 seconds he is swinging at the tank who called him.
+        if (attacker.TauntLockTicks > 0 && attack.TargetId != attacker.CombatTargetId)
+        {
+            SendSystemToEntity(attacker, "You cannot look away yet.");
+            return;
+        }
+
         if (attack.TargetId == attacker.Id ||
             !_world.Entities.TryGetValue(attack.TargetId, out var target) ||
             target.Dead ||
@@ -8688,6 +8699,12 @@ public class GameLoopService : BackgroundService
                 TickFollow(entity);  // walk toward a followed player (auto-repath)
             }
 
+            // `BL-123` — the taunt lock runs down for PLAYERS here. It always ran in `MobAi`, which a
+            // player never enters, so the moment the lock reached PvP it would have been PERMANENT:
+            // one taunt and that character could never choose a target again. A counter that only one
+            // kind of entity decrements is a trap the second the other kind can set it.
+            if (entity.TauntLockTicks > 0) entity.TauntLockTicks--;
+
             TickControlledMovement(entity);   // fear/charm write the destination; nothing else may
             UpdateAction(entity);
             MoveTowardTarget(entity);
@@ -10888,6 +10905,12 @@ public class GameLoopService : BackgroundService
                 // you chose to sweep an area with players in it.
                 FlagForPvpAction(caster, foe);
                 DeliverSimpleHit(caster, foe, def, lvl, castName);
+                // MASS TAUNT (`BL-123`, his `tank 3rd.csv`). The area path resolves damage and the
+                // contested CC and knew nothing about a taunt, so an AoE taunt swept its radius and
+                // did precisely nothing to anything in it. Same helper as the single-target one, so
+                // his "aggro ladder is mob only, the lock reaches players" ruling holds in both.
+                if (def.Effect.HasFlag(SkillEffect.Taunt))
+                    ApplyTaunt(caster, foe, def, lvl, castName);
             }
             return;
         }
@@ -11254,44 +11277,11 @@ public class GameLoopService : BackgroundService
         if (effect.HasFlag(SkillEffect.Detaunt))
             Detaunt(caster);
 
-        // ---- Taunt — force a mob's aggro onto the caster. TWO guarantees, deliberately separate
-        //      (BL-71): you go to the TOP of the table and are locked there briefly, and then the
-        //      skill's authored TauntPower is the CUSHION that decides whether you still hold it
-        //      afterwards. The old rule was `top × 1.2 + 100` for every taunt at every level, which
-        //      is not a number anyone can author against — 20% of the top is a rounding error once
-        //      a DD is landing 7-8k a skill, which is exactly the complaint this comes from. ----
-        if (effect.HasFlag(SkillEffect.Taunt) && target.Kind == EntityKind.Mob && !target.TrainingDummy)
+        // ---- Taunt — see ApplyTaunt for the two halves and which of them reaches a PERSON. ----
+        if (effect.HasFlag(SkillEffect.Taunt))
         {
             offensive = true;
-            int power = def.TauntPowerAt(lvl);
-            if (power <= 0) power = 500;   // an unauthored taunt still does something
-
-            // 🔑 A PLAIN ADD. NO JUMP TO THE TOP — owner, 2026-09-02: *"taunt (and charm also adds
-            // aggro points) but they donnt mve you on top for free .. the idea is tank to spam
-            // taunt/charm for mob to keep it agrro on him .. if some1 is doing alot of dmg/heals the
-            // tank will ahve hard time to keep it up so the one must slow down so tank can take 1st
-            // place"*.
-            //
-            // It used to do `Math.Max(mine, top) + power` — top of the table for free, then the power
-            // on top. That made aggro a thing the tank OWNED rather than a thing he has to keep
-            // earning, and it made the whole threat economy (damage 1:1, ThreatHealFactor,
-            // ThreatBuffPerLevel) decorative for as long as a tank had a taunt off cooldown.
-            //
-            // ⚠ HIS LADDER STILL WORKS AS A PLAIN ADD — measured before the jump came out, so nobody
-            // re-derives it: Provoke is 4,500-6,000 on a 6s reuse = 750-1,000 threat/s, against a
-            // level-28-36 attacker's ~250-300 dps (BalanceMatrix E4: 2.6-3.5s TTK on a 667-1,077 HP
-            // mob) and a cleric spamming Quick Heal at ~750/s (301 power / 2s cast × ThreatHealFactor).
-            // So the tank leads on his taunt alone, is level with a flat-out healer, and IS pulled off
-            // by a healer plus a committed nuker — which is the pressure he asked for, not a bug.
-            //
-            // The TARGET LOCK below is untouched and is the taunt's only guarantee.
-            target.Threat[caster.Id] = target.Threat.GetValueOrDefault(caster.Id) + power;
-
-            target.CombatTargetId = caster.Id;
-            target.Engaged = true;
-            target.TauntLockTicks = def.DurationTicks > 0
-                ? def.DurationTicks : GameConstants.TauntLockTicksDefault;
-            BroadcastCombat(caster, target, 0, CombatOutcome.Buff, castName);
+            ApplyTaunt(caster, target, def, lvl, castName);
         }
 
         // ---- CHARM's AGGRO (`BL-110`) — UNCONDITIONAL, and that is the whole point of it being
@@ -11708,6 +11698,10 @@ public class GameLoopService : BackgroundService
             // Magic crit damage — per-LEVEL for the same reason.
             MagicCritDamage = GroupOr(gf.MagicCritDamage, def.MagicCritDamageAt(level)),
             MagicCritDamageDebuff = def.MagicCritDamageDebuffAt(level),
+            // The tank's Shield Smash — per rung, like every other laddered field here.
+            CritRatePenalty = def.CritRatePenaltyAt(level),
+            CritDamagePenalty = def.CritDamagePenaltyAt(level),
+            MagicCritRatePenalty = def.MagicCritRatePenaltyAt(level),
             MagicCritRateDebuff = def.MagicCritRateDebuffAt(level),
             // The bar's tap popup reads the LEVEL's text whenever a level authored one — a group's
             // numbers live there ("Move +33, Cast +30%, Evasion +4, Attack Speed +33%"), and so do a
@@ -12302,6 +12296,55 @@ public class GameLoopService : BackgroundService
     /// in <c>UpdateMob</c> — puts a player in the table for something the MOB did, and petrifying
     /// someone for being noticed by a boss would be a bug wearing this method's coat. It still MARKS
     /// him (he is in the fight now, whether he asked or not); it just never judges him.</para></summary>
+    /// <summary>A TAUNT, and its TWO HALVES GO DIFFERENT DISTANCES — his ruling of 2026-09-02, which
+    /// finished `BL-123`: *"the aggression ladder is mob only. The actual target change is pvp (+ mob
+    /// if mobs have targets though) and charm/fear work on both .. But the actual taunt values ladder
+    /// work only on mobs"*.
+    ///
+    /// <list type="bullet">
+    /// <item><b>THE LOCK — everyone.</b> The victim's target is pointed at the taunter and pinned
+    /// there for the skill's duration. A PERSON can be taunted: it takes his aim away for a second
+    /// and a half, which in PvP is a real and legible thing to do to someone.</item>
+    /// <item><b>THE AGGRO LADDER — monsters only.</b> His 6,500 → 12,000 is a number on a THREAT
+    /// TABLE, and a player has no threat table: there is nothing for the ladder to mean against a
+    /// person, so it is not paid. This is why the two halves had to come apart at all.</item>
+    /// </list>
+    ///
+    /// <para>⚠ THIS IS THE FOURTH `Kind == Player`-SHAPED GATE OF ITS FAMILY (after `BL-79`'s guards
+    /// and the three found in 0.94.0), and it is the first one that turned out to be HALF right: the
+    /// old `target.Kind == EntityKind.Mob` gate wrapped both halves, so the lock never reached PvP —
+    /// but simply deleting the test would have paid threat into a table nobody reads. The lesson is
+    /// the same as the others and worth keeping: a kind test is nearly always guarding ONE of the
+    /// things inside it, and the fix is to ask which.</para>
+    ///
+    /// <para>⚠ A training dummy is exempt from both. It is a metronome, not a fight.</para></summary>
+    private void ApplyTaunt(Entity caster, Entity target, SkillDef def, int lvl, string castName)
+    {
+        if (target.Dead || target.TrainingDummy) return;
+
+        // THE AGGRO LADDER — monsters only, and A PLAIN ADD (`BL-123`, 2026-09-02): *"they donnt mve
+        // you on top for free .. the idea is tank to spam taunt/charm for mob to keep it agrro on him
+        // .. if some1 is doing alot of dmg/heals the tank will ahve hard time to keep it up"*.
+        //
+        // ⚠ HIS LADDER WAS MEASURED AS A PLAIN ADD, so nobody re-derives it: Provoke at 4,500-6,000 on
+        // a 6s reuse is 750-1,000 threat/s, against a level-28-36 attacker's ~250-300 dps and a cleric
+        // spamming Quick Heal at ~750/s. The tank leads on his taunt alone, is level with a flat-out
+        // healer, and IS pulled off by a healer plus a committed nuker — the pressure he asked for.
+        if (target.Kind == EntityKind.Mob)
+        {
+            int power = def.TauntPowerAt(lvl);
+            if (power <= 0) power = 500;   // an unauthored taunt still does something
+            target.Threat[caster.Id] = target.Threat.GetValueOrDefault(caster.Id) + power;
+            target.Engaged = true;
+        }
+
+        // THE LOCK — mobs AND players. On a person it is the whole skill.
+        target.CombatTargetId = caster.Id;
+        target.TauntLockTicks = def.DurationTicksAt(lvl) > 0
+            ? def.DurationTicksAt(lvl) : GameConstants.TauntLockTicksDefault;
+        BroadcastCombat(caster, target, 0, CombatOutcome.Buff, castName);
+    }
+
     private void AddThreat(Entity mob, Entity attacker, float amount, bool byPlayerAct = true)
     {
         if (attacker.Kind != EntityKind.Player) return;
@@ -15626,7 +15669,12 @@ public class GameLoopService : BackgroundService
             // crit-damage term is inside critFlatFactor, so the above-normal part of the
             // crit is (factor × mult − 1): flat first (it is attack), multiplier on top.
             float mult = StatCalculator.PhysicalCritMult(attacker.CritDamageBonus);
-            float extra = (critFlatFactor * mult - 1f) * (1f - target.CritDmgResist);
+            // Two different people trim the same number and both are right: the DEFENDER's
+            // `CritDmgResist` (his own armour) and the ATTACKER's `CritDamagePenalty` (the tank's
+            // Shield Smash — Power, which made the creature worse at critting ANYBODY). Multiplied,
+            // not summed, so a smashed monster hitting an armoured tank takes both bites.
+            float extra = (critFlatFactor * mult - 1f) * (1f - target.CritDmgResist)
+                        * (1f - Math.Clamp(attacker.CritDamagePenalty, 0f, 0.9f));
             int crit = Math.Max(1, (int)(baseDamage * (1f + extra)));
             return (crit, CombatOutcome.Crit);   // crit ignores the shield
         }

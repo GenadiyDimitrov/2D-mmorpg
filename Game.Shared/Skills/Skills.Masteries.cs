@@ -90,11 +90,16 @@ public static partial class SkillCatalog
                 new SkillLevel(SpCost: 6000),
                 new SkillLevel(SpCost: 11000),
                 new SkillLevel(SpCost: 20000),
-            },
+            }.Concat(TankArmorMasteryThirdRungs()).ToArray(),
             ArmorMasteryLevels: new[]
             {
-                TankHeavy(40), TankHeavy(47), TankHeavy(54), TankHeavy(61), TankHeavy(70, mpReg: 3.4f),
-            }),
+                // 🔴 20/27/34/41/60, HIS `tank 2nd.csv` — corrected 2026-09-02 during the tank pass.
+                // The code had carried 40/47/54/61/70 since before the file existed, a flat +20 on
+                // every rung that `--check` had been reporting for as long as it has walked this file.
+                // The CSV is the authority; a tank was simply wearing twenty points of defence nobody
+                // authored.
+                TankHeavy(20), TankHeavy(27), TankHeavy(34), TankHeavy(41), TankHeavy(60, mpReg: 3.4f),
+            }.Concat(TankArmorMasteryThirdProfiles()).ToArray()),
 
         // Warrior — Armor Mastery (CSV warrior 2nd): +P.Def and +max MP with any weight;
         // LIGHT armor additionally boosts evasion. Continues the base fighter mastery (which it

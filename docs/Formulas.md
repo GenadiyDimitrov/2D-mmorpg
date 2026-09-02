@@ -111,8 +111,25 @@ chance = 0.5 + 0.5 * (attackerAtk - def) / (attackerAtk + def)
 
 - **A WHISP contests on a FLAT attack of its own** (`GameConstants.WhispCcAtk` = 40, a plain melee
   creature's) at the **MASTER'S level** — never the master's ATK, never his gear. `BL-109`.
+- **A TAUNT has no roll at all**, and its two halves go different distances (`BL-123`): the target
+  LOCK lands on mobs AND players; the aggro ladder is paid only into a monster's threat table.
 
 `StatCalculator.DebuffLandChance` · `StatCaps.CcLandMin/CcLandMax/CcLevelFloorGap`
+
+## Crit rate and crit damage, taken OFF the attacker (`tank 3rd.csv`, 0.105.0)
+
+```
+critChance = clamp((base*mult + flat) * (1 - Σ CritRatePenalty),  0, cap)     Shield Smash - Rate
+critExtra  = (flatFactor*mult - 1) * (1 - target.CritDmgResist)
+                                   * (1 - attacker.CritDamagePenalty)         Shield Smash - Power
+```
+
+- Both penalties sit on the CREATURE as a debuff, not on the tank as a resistance — so the whole
+  party stops being critted, which is the only reason the skills are worth a slot.
+- Each is clamped to 0.9: a smash can never make something literally incapable of critting.
+- The defender's own `CritDmgResist` and the attacker's penalty MULTIPLY; both bites land.
+
+`Entity.CritRatePenalty/CritDamagePenalty/MagicCritRatePenalty` · `ResolvePhysicalCritAndBlock`
 
 ## Interrupting a cast (IG's own formula)
 

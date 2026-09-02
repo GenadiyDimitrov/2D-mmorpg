@@ -176,6 +176,20 @@ internal static class Check
     private static List<Rung> ReadCsv(string path)
     {
         var rows = new List<Rung>();
+        // 🔑 THE SP COLUMN CAN DECLARE ITS OWN UNITS IN THE HEADER (2026-09-02). `tank 3rd.csv` says
+        // `SP COST (x1000)` and writes 28 for 28,000 — his own convenience: *"I made the Sp column as
+        // x1000 to replace the K. It was annoying for me to write it each time"*.
+        //
+        // ⚠ READ FROM THE HEADER, NEVER HARD-CODED PER FILE. A per-file table in the tool would be a
+        // second place the truth lives, and the day he adds the `k`s back it would silently multiply
+        // everything by a thousand — the failure would look like the code being wrong on 250 rows.
+        // The file that declares the unit is the file that carries it.
+        int spScale = 1;
+        foreach (var line in File.ReadAllLines(path))
+        {
+            if (line.StartsWith("LEARN") && line.IndexOf("(x1000)", StringComparison.OrdinalIgnoreCase) >= 0)
+                spScale = 1000;
+        }
         foreach (var line in File.ReadAllLines(path))
         {
             // ⚠ STOP AT HIS "NOT DONE" BANNER. A 3rd-tier file he is still writing marks the line
@@ -198,7 +212,7 @@ internal static class Check
             // index, which is what keeps each such migration a contained change — and the reason a
             // structural pass must never skip a row.
             rows.Add(new Rung(f[1].Trim(), I(f[0]), F(f[6]), F(f[9]), F(f[10]), F(f[11]),
-                              I(f[13]), I(f[14]), Descr: f[12].Trim(),
+                              I(f[13]), I(f[14]) * spScale, Descr: f[12].Trim(),
                               Target: f[8].Trim().ToLowerInvariant(),
                               Weapon: f[4].Trim(),
                               Weight: f[5].Trim(),

@@ -123,7 +123,7 @@ public partial class SkillCatalog
         //      … but still adds the points"*), which is why this carries a TauntPower as well.
         new(WhispCharm, "Whisp Charm", BaseClass.Mage, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 100, Range: 400, Power: 0,
-            DurationTicks: 30, BuffKey: "charm", Rank: 1, TauntPower: WhispThreat[0],
+            DurationTicks: 30, BuffKey: "charm", Rank: 1, TauntPower: WhispThreat[0], SharesLadderKey: true,
             Charms: true,
             DebuffSchool: DebuffSchool.Magical, Category: SkillCategory.Debuff,
             Description: "The whisp beguiles an enemy: for 3s it walks helplessly toward your master, "
@@ -151,7 +151,7 @@ public partial class SkillCatalog
         new(WhispArmorBreak, "Whisp Armor Break", BaseClass.Mage,
             SkillEffect.DebuffDef | SkillEffect.BuffMagicDef,
             MpCost: 0, CastTicks: 10, CooldownTicks: 100, Range: 400, Power: 0,
-            DurationTicks: 150, BuffKey: "armor_break", Rank: 1,
+            DurationTicks: 150, BuffKey: "armor_break", Rank: 1, SharesLadderKey: true,
             DebuffSchool: DebuffSchool.Magical, Category: SkillCategory.Debuff,
             Magnitudes: new EffectMagnitude[]
             {
@@ -172,7 +172,7 @@ public partial class SkillCatalog
         //      flag that covers both channels, so 5% is one number and not two.
         new(WhispWeaponBreak, "Whisp Weapon Break", BaseClass.Mage, SkillEffect.DebuffAtk,
             MpCost: 0, CastTicks: 10, CooldownTicks: 100, Range: 400, Power: 0,
-            DurationTicks: 150, BuffKey: "weapon_break", Rank: 1,
+            DurationTicks: 150, BuffKey: "weapon_break", Rank: 1, SharesLadderKey: true,
             DebuffSchool: DebuffSchool.Magical, Category: SkillCategory.Debuff,
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.DebuffAtk, WhispWeaponAtk[0]) },
             Description: "The whisp blunts an enemy's weapon and their magic alike for 15s: −5%.",

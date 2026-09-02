@@ -332,7 +332,7 @@ public static partial class SkillCatalog
                 // character stat — rungs 3-4 were paying it to a tank holding a greatsword.
                 new SkillLevel(SpCost: 3200,  Passive: new PassiveEffect(RequiresShield: true, RequiredArmor: ArmorWeights.Heavy, ShieldDefPct: 1.50f, BlockChancePct: 0.50f)),
                 new SkillLevel(SpCost: 3200,  Passive: new PassiveEffect(RequiresShield: true, RequiredArmor: ArmorWeights.Heavy, ShieldDefPct: 2.00f, BlockChancePct: 0.70f)),
-                new SkillLevel(SpCost: 40000, Passive: new PassiveEffect(RequiresShield: true, RequiredArmor: ArmorWeights.Heavy, ShieldDefPct: 2.50f, BlockChancePct: 0.85f, DefencePct: 0.10f, BowResist: 0.16f)),
+                new SkillLevel(SpCost: 28000, Passive: new PassiveEffect(RequiresShield: true, RequiredArmor: ArmorWeights.Heavy, ShieldDefPct: 2.50f, BlockChancePct: 0.85f, DefencePct: 0.10f, BowResist: 0.16f)),   // his `tank 3rd.csv` row at 40 — 28k SP, block rate 85%, bow 16%
                 new SkillLevel(SpCost: 74000, Passive: new PassiveEffect(RequiresShield: true, RequiredArmor: ArmorWeights.Heavy, ShieldDefPct: 3.00f, BlockChancePct: 1.00f, DefencePct: 0.10f, BowResist: 0.24f)),
             }),
 
@@ -348,7 +348,7 @@ public static partial class SkillCatalog
                 new SkillLevel(SpCost: 6000,  Passive: new PassiveEffect(MagicDefence: 35)),
                 new SkillLevel(SpCost: 11000, Passive: new PassiveEffect(MagicDefence: 40)),
                 new SkillLevel(SpCost: 20000, Passive: new PassiveEffect(MagicDefence: 45)),
-            }),
+            }.Concat(TankAntiMagicThirdRungs()).ToArray()),
 
         // Defensive Wall — the tank's panic button: enormous P.Def & M.Def (flat + ×2), high
         // cancel resistance, but move speed halved, for 30s (long reuse). All channels are
@@ -360,31 +360,52 @@ public static partial class SkillCatalog
             MpCost: 20, CastTicks: 5, CooldownTicks: 9000, Range: 0, Power: 0,
             DurationTicks: 300, BuffKey: "defensive_wall", Rank: 1, CountsTowardBuffLimit: false,
             Category: SkillCategory.Buff, TargetMode: TargetMode.SelfOnly, SpCost: 3400,
+            // ⚠ THE TWO `x2` PERCENT TERMS ARE GONE (his tank pass, 2026-09-02). His 2nd-class row now
+            // reads flat only — *"increase p.def +1800; m.def +1600"* — where it used to carry `p.def
+            // x2; mdef x2` on top. A doubling over a four-figure flat was the largest defensive number
+            // in the game; he removed it deliberately. Do not put it back.
             Magnitudes: new EffectMagnitude[]
             {
                 new(SkillEffect.BuffDef, 1800, ModifierMode.Flat),
-                new(SkillEffect.BuffDef, 1.0f, ModifierMode.Percent),
                 new(SkillEffect.BuffMagicDef, 1600, ModifierMode.Flat),
-                new(SkillEffect.BuffMagicDef, 1.0f, ModifierMode.Percent),
                 new(SkillEffect.BuffCancelResist, 0.80f, ModifierMode.Percent),
                 new(SkillEffect.BuffMoveSpeed, -0.50f, ModifierMode.Percent),
             },
-            Description: "Raise an impregnable guard for 30s: massively higher physical & magic "
-                       + "defence and cancel resistance, but your movement is halved."),
+            Description: "Raise an impregnable guard for 30s: +1800 P.Def, +1600 M.Def and high "
+                       + "cancel resistance, but your movement is halved.",
+            Levels: new[]
+            {
+                new SkillLevel(MpCost: 20, SpCost: 3400),
+            }.Concat(TankDefensiveWallThirdRungs()).ToArray()),
 
-        // Shield Stun — contested STUN for 9s (physical, ATK-vs-CON; bosses immune).
-        new(TankShieldStun, "Shield Stun", BaseClass.Fighter, SkillEffect.Stun,
-            MpCost: 30, CastTicks: 10, CooldownTicks: 100, Range: 40, Power: 0,
-            DurationTicks: 90, BuffKey: "stun", Rank: 1,
-            Category: SkillCategory.Debuff, DebuffSchool: DebuffSchool.Physical, SpCost: 12000,
-            Description: "Slams the target with your shield, stunning it for 9s. ATK-vs-CON; bosses immune."),
+        // Shield Shock — contested STUN for 9s (physical, ATK-vs-CON; bosses immune).
+        // ⚠ RENAMED AND RETUNED IN HIS TANK PASS: it was "Shield Stun", a single level-28 skill on a
+        // 10-second reuse. It is now a nineteen-rung ladder from 24, the reuse is THREE seconds, and
+        // it lands at ×0.7 — a 9-second stun every 3 seconds would be a perma-lock at ×1, and the
+        // landing multiplier is what pays for the cadence.
+        new(TankShieldStun, "Shield Shock", BaseClass.Fighter, SkillEffect.Stun,
+            MpCost: 15, CastTicks: 10, CooldownTicks: 30, Range: 40, Power: 0,
+            DurationTicks: 90, BuffKey: "stun", Rank: 1, DebuffLandMod: 0.7f, SharesLadderKey: true,
+            Category: SkillCategory.Debuff, DebuffSchool: DebuffSchool.Physical, SpCost: 6400,
+            Description: "Slams the target with your shield, stunning it for 9s. ATK-vs-CON; bosses immune.",
+            Levels: new[]
+            {
+                new SkillLevel(MpCost: 15, SpCost: 6400),
+                new SkillLevel(MpCost: 18, SpCost: 12000),
+                new SkillLevel(MpCost: 22, SpCost: 22000),
+                new SkillLevel(MpCost: 26, SpCost: 40000),
+            }.Concat(TankShieldShockThirdRungs()).ToArray()),
 
-        // Stay! — contested ROOT for 15s (physical hold; target can still act).
-        new(TankStay, "Stay!", BaseClass.Fighter, SkillEffect.Root,
-            MpCost: 30, CastTicks: 5, CooldownTicks: 150, Range: 400, Power: 0,
-            DurationTicks: 150, BuffKey: "root", Rank: 1,
-            Category: SkillCategory.Debuff, DebuffSchool: DebuffSchool.Physical, SpCost: 40000,
-            Description: "Roots the target in place for 15s (it can still act). ATK-vs-CON; bosses immune."),
+        // Stay — contested ROOT (physical hold; target can still act).
+        // ⚠ IT MOVED TIER in his tank pass: it was the 2nd class's single level-36 skill and is now
+        // the 3rd's whole fifteen-rung ladder from 40. Ten seconds, not the old fifteen, and the
+        // exclamation mark is gone from his name for it.
+        new(TankStay, "Stay", BaseClass.Fighter, SkillEffect.Root,
+            MpCost: 40, CastTicks: 20, CooldownTicks: 40, Range: 400, Power: 0,
+            DurationTicks: 100, BuffKey: "root", Rank: 1, SharesLadderKey: true,
+            Category: SkillCategory.Debuff, DebuffSchool: DebuffSchool.Physical, SpCost: 28000,
+            Description: "Roots the target in place for 10s (it can still act). ATK-vs-CON; bosses immune.",
+            Levels: TankStayThirdRungs()),
 
         // ===== Rogue 2nd-class (CSV rogue 2nd) =====
 
@@ -624,23 +645,28 @@ public static partial class SkillCatalog
         // So in code/comments it is still Provoke; on screen and in the CSV it is Taunt.
         // ⚠ A display-name change needs a NEW APK — the client builds its Learn tab from the compiled
         // ClassSkills, not from a server push.
+        // ⚠ RETUNED THROUGHOUT IN HIS TANK PASS (2026-09-02): the lock is 3s → **1.5s**, the reach
+        // 600 → **400** at the 2nd class, and the MP cost is **0** at every rung. A taunt that costs
+        // mana is a taunt a tank stops spamming, which is the opposite of the threat economy
+        // `BL-123` settled — the whole design is that he has to keep earning the top of the table.
+        // ⚠ HUMAN AND DEMON ONLY from now on: the Elf's is `charm`, which REPLACES it.
         new(Provoke, "Taunt", BaseClass.Fighter, SkillEffect.Taunt,
-            MpCost: 15, CastTicks: 0, CooldownTicks: 60, Range: 600, Power: 0,
-            DurationTicks: 30,   // the hard-commit window: ~3s locked onto the taunter
+            MpCost: 0, CastTicks: 0, CooldownTicks: 60, Range: 400, Power: 0,
+            DurationTicks: 15,   // the hard-commit window: 1.5s locked onto the taunter
             Category: SkillCategory.Debuff, TauntPower: 4500,
             Levels: new SkillLevel[]
             {
                 // SP is his too, and it is the tank's standard 24/28/32/36 price line (Smash's).
-                new(MpCost: 15, SpCost: 6400,  TauntPower: 4500,
-                    Description: "Forces a monster onto you for 3s and adds 4,500 to your aggro on it. It does not put you at the top for free — hold it by keeping the taunt up."),
-                new(MpCost: 18, SpCost: 12000, TauntPower: 5000,
-                    Description: "Forces a monster onto you for 3s and adds 5,000 to your aggro on it. It does not put you at the top for free — hold it by keeping the taunt up."),
-                new(MpCost: 22, SpCost: 22000, TauntPower: 5500,
-                    Description: "Forces a monster onto you for 3s and adds 5,500 to your aggro on it. It does not put you at the top for free — hold it by keeping the taunt up."),
-                new(MpCost: 26, SpCost: 40000, TauntPower: 6000,
-                    Description: "Forces a monster onto you for 3s and adds 6,000 to your aggro on it. It does not put you at the top for free — hold it by keeping the taunt up."),
-            },
-            Description: "Forces a monster onto you briefly and adds to your aggro on it — it does not put you at the top for free."),
+                new(MpCost: 0, SpCost: 6400,  TauntPower: 4500,
+                    Description: "Locks a monster onto you for 1.5s and adds 4,500 to your aggro on it. It does not put you at the top for free — hold it by keeping the taunt up."),
+                new(MpCost: 0, SpCost: 12000, TauntPower: 5000,
+                    Description: "Locks a monster onto you for 1.5s and adds 5,000 to your aggro on it. It does not put you at the top for free — hold it by keeping the taunt up."),
+                new(MpCost: 0, SpCost: 22000, TauntPower: 5500,
+                    Description: "Locks a monster onto you for 1.5s and adds 5,500 to your aggro on it. It does not put you at the top for free — hold it by keeping the taunt up."),
+                new(MpCost: 0, SpCost: 40000, TauntPower: 6000,
+                    Description: "Locks a monster onto you for 1.5s and adds 6,000 to your aggro on it. It does not put you at the top for free — hold it by keeping the taunt up."),
+            }.Concat(TankTauntThirdRungs()).ToArray(),
+            Description: "Locks a monster onto you briefly and adds to your aggro on it — it does not put you at the top for free."),
 
         // Lure — the ROGUE's taunt, and the tactic mob clans exist to make possible (BL-70). His
         // picture: a rogue crossing an elite field, pulling the one creature the party wants and

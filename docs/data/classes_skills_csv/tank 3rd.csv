@@ -3,43 +3,43 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 40,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield P.Def +50%, Shield Rate +85%;  +10% P.Def, bow resistance 16%",0,28,[]
 52,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield P.Def +60%, Shield Rate +100%; +10% P.Def, bow resistance 24%",0,74,[]
 ,,,,,,,,,,,,,,,,,----------------------------Heavy Armor Mastery----------------------------
-40,Heavy Armor Mastery,tank_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"with heavy: mpReg x3.5 and p.def +65 and p.def x1.11 and crit dmg reduction 25% and eva -2;",0,28
-43,Heavy Armor Mastery,tank_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"with heavy: mpReg x3.5 and p.def +70 and p.def x1.11 and crit dmg reduction 25% and eva -2;",0,35
-46,Heavy Armor Mastery,tank_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"with heavy: mpReg x3.9 and p.def +76 and p.def x1.11 and crit dmg reduction 25% and eva -2;",0,40
-49,Heavy Armor Mastery,tank_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"with heavy: mpReg x3.9 and p.def +81 and p.def x1.11 and crit dmg reduction 25% and eva -2;",0,50
-52,Heavy Armor Mastery,tank_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"with heavy: mpReg x3.9 and p.def +94 and p.def x1.11 and crit dmg reduction 25% and eva -2;",0,74
-55,Heavy Armor Mastery,tank_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"with heavy: mpReg x4.3 and p.def +107 and p.def x1.11 and crit dmg reduction 25% and eva -2;",0,80
-58,Heavy Armor Mastery,tank_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"with heavy: mpReg x4.3 and p.def +113 and p.def x1.15 and crit dmg reduction 25% and eva -2;",0,88
-60,Heavy Armor Mastery,tank_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"with heavy: mpReg x4.3 and p.def +120 and p.def x1.15 and crit dmg reduction 35% and eva -2;",0,120
-62,Heavy Armor Mastery,tank_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"with heavy: mpReg x4.3 and p.def +127 and p.def x1.15 and crit dmg reduction 35% and eva -2;",0,170
-64,Heavy Armor Mastery,tank_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"with heavy: mpReg x4.7 and p.def +135 and p.def x1.15 and crit dmg reduction 35% and eva -2;",0,190
-66,Heavy Armor Mastery,tank_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"with heavy: mpReg x4.7 and p.def +142 and p.def x1.15 and crit dmg reduction 35% and eva -2;",0,280
-68,Heavy Armor Mastery,tank_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"with heavy: mpReg x4.7 and p.def +150 and p.def x1.15 and crit dmg reduction 35% and eva -2;",0,320
-70,Heavy Armor Mastery,tank_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"with heavy: mpReg x4.7 and p.def +157 and p.def x1.15 and crit dmg reduction 35% and eva -2;",0,390
-72,Heavy Armor Mastery,tank_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"with heavy: mpReg x5.1 and p.def +165 and p.def x1.15 and crit dmg reduction 35% and eva -2;",0,650
-74,Heavy Armor Mastery,tank_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"with heavy: mpReg x5.1 and p.def +173 and p.def x1.15 and crit dmg reduction 35% and eva -2;",0,880
+40,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x3.5 and p.def +65 and p.def x1.11 and crit dmg reduction 25% and eva -2;",0,28
+43,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x3.5 and p.def +70 and p.def x1.11 and crit dmg reduction 25% and eva -2;",0,35
+46,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x3.9 and p.def +76 and p.def x1.11 and crit dmg reduction 25% and eva -2;",0,40
+49,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x3.9 and p.def +81 and p.def x1.11 and crit dmg reduction 25% and eva -2;",0,50
+52,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x3.9 and p.def +94 and p.def x1.11 and crit dmg reduction 25% and eva -2;",0,74
+55,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x4.3 and p.def +107 and p.def x1.11 and crit dmg reduction 25% and eva -2;",0,80
+58,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x4.3 and p.def +113 and p.def x1.15 and crit dmg reduction 25% and eva -2;",0,88
+60,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x4.3 and p.def +120 and p.def x1.15 and crit dmg reduction 35% and eva -2;",0,120
+62,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x4.3 and p.def +127 and p.def x1.15 and crit dmg reduction 35% and eva -2;",0,170
+64,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x4.7 and p.def +135 and p.def x1.15 and crit dmg reduction 35% and eva -2;",0,190
+66,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x4.7 and p.def +142 and p.def x1.15 and crit dmg reduction 35% and eva -2;",0,280
+68,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x4.7 and p.def +150 and p.def x1.15 and crit dmg reduction 35% and eva -2;",0,320
+70,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x4.7 and p.def +157 and p.def x1.15 and crit dmg reduction 35% and eva -2;",0,390
+72,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x5.1 and p.def +165 and p.def x1.15 and crit dmg reduction 35% and eva -2;",0,650
+74,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x5.1 and p.def +173 and p.def x1.15 and crit dmg reduction 35% and eva -2;",0,880
 ,,,,,,,,,,,,,,,,,----------------------------Tank Anti-Magic----------------------------
-40,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +51 and M.Res +5%;",0,28
-43,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +55 and M.Res +5%;",0,35
-46,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +59 and M.Res +5%;",0,40
-49,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +67 and M.Res +5%;",0,50
-52,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +75 and M.Res +10%;",0,74
-55,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +84 and M.Res +10%;",0,81
-58,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +89 and M.Res +10%;",0,88
-60,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +94 and M.Res +10%;",0,120
-62,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +98 and M.Res +15%;",0,170
-64,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +103 and M.Res +15%;",0,190
-66,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +109 and M.Res +15%;",0,280
-68,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +114 and M.Res +15%;",0,320
-70,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +119 and M.Res +20%;",0,390
-72,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +124 and M.Res +20%;",0,650
-74,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +130 and M.Res +20%;",0,880
+40,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +51 and M.Res +5%;",0,28
+43,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +55 and M.Res +5%;",0,35
+46,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +59 and M.Res +5%;",0,40
+49,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +67 and M.Res +5%;",0,50
+52,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +75 and M.Res +10%;",0,74
+55,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +84 and M.Res +10%;",0,81
+58,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +89 and M.Res +10%;",0,88
+60,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +94 and M.Res +10%;",0,120
+62,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +98 and M.Res +15%;",0,170
+64,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +103 and M.Res +15%;",0,190
+66,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +109 and M.Res +15%;",0,280
+68,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +114 and M.Res +15%;",0,320
+70,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +119 and M.Res +20%;",0,390
+72,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +124 and M.Res +20%;",0,650
+74,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +130 and M.Res +20%;",0,880
 ,,,,,,,,,,,,,,,,----------------------------Weapon Mastery----------------------------
 40,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,,0,0,self/single,0,0,0,"with 1h sword/blunt: p.Atk x1.085 and p.Atk +19;",0,28
 43,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,,0,0,self/single,0,0,0,"with 1h sword/blunt: p.Atk x1.085 and p.Atk +22;",0,35
 46,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,,0,0,self/single,0,0,0,"with 1h sword/blunt: p.Atk x1.085 and p.Atk +26;",0,40
 49,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,,0,0,self/single,0,0,0,"with 1h sword/blunt: p.Atk x1.085 and p.Atk +31;",0,50
-52,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,,0,0,self/single,0,0,0,"with 1h sword/blunt: p.Atk x1.085 and p.Atk +26;",0,74
+52,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,,0,0,self/single,0,0,0,"with 1h sword/blunt: p.Atk x1.085 and p.Atk +36;",0,74
 55,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,,0,0,self/single,0,0,0,"with 1h sword/blunt: p.Atk x1.085 and p.Atk +41;",0,81
 58,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,,0,0,self/single,0,0,0,"with 1h sword/blunt: p.Atk x1.085 and p.Atk +46;",0,88
 60,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,,0,0,self/single,0,0,0,"with 1h sword/blunt: p.Atk x1.085 and p.Atk +50;",0,120
@@ -245,18 +245,18 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 72,Shield Smash - Power,tank_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +3700, Decrease P.Crit.Dmg with 35% and M.Crit.Dmg with 15%; Requre: Shield;",117,650,,Demon
 74,Shield Smash - Power,tank_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +4000, Decrease P.Crit.Dmg with 35% and M.Crit.Dmg with 15%; Requre: Shield;",120,880,,Demon
 ,,,,,,,,,,,,,,,,,----------------------------Shield Shock----------------------------
-40,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,Stun the enemy for the duration (sucsess: x0.7);",62,28
-43,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,Stun the enemy for the duration (sucsess: x0.7);",76,35
-46,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,Stun the enemy for the duration (sucsess: x0.7);",76,40
-49,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,Stun the enemy for the duration (sucsess: x0.7);",76,50
-52,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,Stun the enemy for the duration (sucsess: x0.7);",83,74
-56,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,Stun the enemy for the duration (sucsess: x0.7);",90,81
-58,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,Stun the enemy for the duration (sucsess: x0.7);",95,88
-60,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,Stun the enemy for the duration (sucsess: x0.7);",98,120
-62,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,Stun the enemy for the duration (sucsess: x0.7);",100,170
-64,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,Stun the enemy for the duration (sucsess: x0.7);",105,190
-66,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,Stun the enemy for the duration (sucsess: x0.7);",108,280
-68,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,Stun the enemy for the duration (sucsess: x0.7);",112,320
-70,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,Stun the enemy for the duration (sucsess: x0.7);",114,390
-72,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,Stun the enemy for the duration (sucsess: x0.7);",117,650
-74,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,Stun the enemy for the duration (sucsess: x0.7);",120,880
+40,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7);",62,28
+43,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7);",76,35
+46,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7);",76,40
+49,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7);",76,50
+52,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7);",83,74
+56,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7);",90,81
+58,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7);",95,88
+60,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7);",98,120
+62,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7);",100,170
+64,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7);",105,190
+66,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7);",108,280
+68,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7);",112,320
+70,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7);",114,390
+72,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7);",117,650
+74,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7);",120,880

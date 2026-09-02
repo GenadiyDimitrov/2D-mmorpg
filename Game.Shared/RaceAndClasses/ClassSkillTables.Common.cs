@@ -37,26 +37,52 @@ public static partial class ClassSkillTables
                 // `tank 3rd.csv` at 52 (registered in ClassSkillTables.Third.RegisterTankShieldMastery).
                 // So a tank now holds rung 2 from 28 and rung 3 from 36, not 24 and 28; the gaps at
                 // 24 and 32 are his, exactly like Provoke's missing level-20 row above.
+                // 🔴 HIS TANK PASS OF 2026-09-02 REWROTE THIS BLOCK, and three of the changes are
+                // structural rather than numeric:
+                //   • SHIELD SHOCK (was "Shield Stun") is a LADDER from 24, not one rung at 28.
+                //   • STAY! IS GONE from the 2nd class entirely — it is the 3rd's whole ladder now,
+                //     from 40. A skill can move tier, and its old learn line has to go with it or a
+                //     level-36 tank keeps a rung his file no longer gives him.
+                //   • SHIELD MASTERY's rung 3 left too, to `tank 3rd.csv` at 40. Its 2nd-class file
+                //     now lists only 20 and 28.
                 new ClassSkill(TankArmorMastery, 24, SkillLevel: 2),
                 new ClassSkill(TankAntiMagic, 24, SkillLevel: 2),
                 new ClassSkill(TankWeaponMastery, 24, SkillLevel: 2),
-                new ClassSkill(Provoke, 24, SkillLevel: 1),
+                new ClassSkill(TankShieldStun, 24, SkillLevel: 1),
                 new ClassSkill(TankArmorMastery, 28, SkillLevel: 3),
                 new ClassSkill(TankShieldMastery, 28, SkillLevel: 2),
                 new ClassSkill(TankAntiMagic, 28, SkillLevel: 3),
                 new ClassSkill(TankWeaponMastery, 28, SkillLevel: 3),
-                new ClassSkill(TankShieldStun, 28, SkillLevel: 1),
-                new ClassSkill(Provoke, 28, SkillLevel: 2),
+                new ClassSkill(TankShieldStun, 28, SkillLevel: 2),
                 new ClassSkill(TankArmorMastery, 32, SkillLevel: 4),
                 new ClassSkill(TankAntiMagic, 32, SkillLevel: 4),
                 new ClassSkill(TankWeaponMastery, 32, SkillLevel: 4),
-                new ClassSkill(Provoke, 32, SkillLevel: 3),
+                new ClassSkill(TankShieldStun, 32, SkillLevel: 3),
                 new ClassSkill(TankArmorMastery, 36, SkillLevel: 5),
-                new ClassSkill(TankShieldMastery, 36, SkillLevel: 3),
                 new ClassSkill(TankAntiMagic, 36, SkillLevel: 5),
                 new ClassSkill(TankWeaponMastery, 36, SkillLevel: 5),
-                new ClassSkill(Provoke, 36, SkillLevel: 4),
-                new ClassSkill(TankStay, 36, SkillLevel: 1));
+                new ClassSkill(TankShieldStun, 36, SkillLevel: 4));
+
+            // 🔑 AND THE TAUNT SPLITS BY RACE FROM LEVEL 24, which is the earliest anything in this
+            // game has done so. His `tank 2nd.csv`: Taunt is `Human;Demon`, Charm is `Elf`, and Charm
+            // REPLACES Provoke rather than sitting beside it. The Elf tank drags a body to him where
+            // the other two shout it into place; the aggro they buy is identical rung for rung.
+            ClassSkills.Register(race, BaseClass.Fighter, Archetype.Tank,
+                race == Race.Elf
+                    ? new[]
+                    {
+                        new ClassSkill(TankCharm, 24, SkillLevel: 1),
+                        new ClassSkill(TankCharm, 28, SkillLevel: 2),
+                        new ClassSkill(TankCharm, 32, SkillLevel: 3),
+                        new ClassSkill(TankCharm, 36, SkillLevel: 4),
+                    }
+                    : new[]
+                    {
+                        new ClassSkill(Provoke, 24, SkillLevel: 1),
+                        new ClassSkill(Provoke, 28, SkillLevel: 2),
+                        new ClassSkill(Provoke, 32, SkillLevel: 3),
+                        new ClassSkill(Provoke, 36, SkillLevel: 4),
+                    });
             // Warrior (CSV warrior 2nd): Armor + Two-Hand Mastery (5 levels each), HP Boost L1-L3,
             // Strike continues (levels 4-8), and the low-HP Battle stances.
             ClassSkills.Register(race, BaseClass.Fighter, Archetype.Warrior,

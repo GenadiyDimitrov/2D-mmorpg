@@ -116,6 +116,22 @@ public class BuffInstance
     public float PhysCooldownPct { get; init; }
     public float MagicCooldownPct { get; init; }
 
+    /// <summary>THE TANK'S SHIELD SMASH (his `tank 3rd.csv`) — what this debuff takes off ITS OWN
+    /// HOLDER's crit numbers, as fractions. The two Smashes are the tank's contribution to a party's
+    /// defence: one blunts how OFTEN the thing crits, the other how HARD.
+    ///
+    /// <para>🔑 HOLDER-SIDE, and that is what makes them worth a skill. They are not "I take less crit
+    /// damage" (that already exists as <c>CritRateResist</c>/<c>CritDmgResist</c> and protects only the
+    /// man wearing it) — they are a debuff on the CREATURE, so every member of the party stops being
+    /// critted for as long as it holds. A tank cannot out-tank a crit for someone else; he can make
+    /// the monster worse at critting.</para>
+    ///
+    /// <para>⚠ The MAGIC crit DAMAGE half already existed as <see cref="MagicCritDamageDebuff"/> — it
+    /// is the same idea, written for the buffer's blessings, and Shield Smash simply uses it.</para></summary>
+    public float CritRatePenalty { get; init; }
+    public float CritDamagePenalty { get; init; }
+    public float MagicCritRatePenalty { get; init; }
+
     /// <summary>`BL-110` — CHARM. While this buff is up the owner cannot act and is WALKED toward
     /// whoever cast it (<see cref="SourceId"/>). A field rather than a SkillEffect bit for the usual
     /// reason: the flag enum has been full since <c>1L &lt;&lt; 62</c>. Fear kept its bit (41) only
@@ -1085,6 +1101,14 @@ public class Entity
     public float MagicCritDamageMult { get; set; } = 1f;
     public float MagicCritDamageResist { get; set; }
 
+    /// <summary>The PHYSICAL twin of <see cref="MagicCritDamageResist"/>, for the tank's Shield Smash
+    /// — Power: a fraction taken off the EXTRA damage this entity's own crits deal. Read at the point
+    /// of use in <c>ResolvePhysicalCritAndBlock</c> rather than folded into
+    /// <see cref="CritDamageBonus"/>, because that field is the GEAR's bonus and the stat window
+    /// reports it; a debuff has no business rewriting what the player's equipment says it gives him.
+    /// Summed across buffs and clamped where it is read.</summary>
+    public float CritDamagePenalty { get; set; }
+
     /// <summary>The finished magic crit multiplier — the ONE thing the damage path should read.
     /// (Its physical twin is spread across CritDamageBonus/CritDamageFlat, which are consumed
     /// differently; magic has a single number, so it gets a single getter.)</summary>
@@ -1587,12 +1611,40 @@ public class Entity
 
     /// <summary>Defence including BuffDef (adds) and DebuffDef (subtracts).</summary>
     public float EffectiveDefence =>
-        AdminStat("pdef") ?? ModifiedStat(Defence + ShieldDefense, SkillEffect.BuffDef, SkillEffect.DebuffDef);
+        AdminStat("pdef") ?? ModifiedStat(Defence + ShieldDefense, SkillEffect.BuffDef, SkillEffect.DebuffDef)
+                             * (1f + FinalDefenceBonus(magic: false));
+
+    /// <summary>FINAL DEFENSE (the tank's `tank_final_defense`, level 60) — his three HP bands:
+    /// *"When hp is below 75% increase P.Def with 10%, when HP is below 50% ... 20% and M.Def with
+    /// 5%, when HP is below 25% ... 30% and M.Def with 10%"*. Returns the fraction to add.
+    ///
+    /// <para>🔑 READ LIVE, NOT APPLIED AS A BUFF, and that is the whole design decision here. HP moves
+    /// on every tick of a fight and nothing recomputes derived stats when it does — so a buff would
+    /// have needed its own watcher on the damage path, the heal path, the regen tick and the potion
+    /// path, and whichever one was forgotten is where the tank silently keeps a 30% bonus at full
+    /// health or loses it at 24%. A getter cannot be forgotten.</para>
+    ///
+    /// <para>⚠ The bands are EXCLUSIVE and read strongest-first: at 20% HP he has 30%, not 60%.
+    /// His wording is a ladder of states, not a stack of three bonuses.</para></summary>
+    private float FinalDefenceBonus(bool magic)
+    {
+        if (!HasFinalDefense || MaxHp <= 0) return 0f;
+        float pct = Hp * 100f / MaxHp;
+        if (pct < 25f) return magic ? 0.10f : 0.30f;
+        if (pct < 50f) return magic ? 0.05f : 0.20f;
+        if (pct < 75f) return magic ? 0.00f : 0.10f;
+        return 0f;
+    }
+
+    /// <summary>Does this character know Final Defense? Set in RecomputeDerived, because THAT is the
+    /// part that changes rarely — what changes every tick is the HP the getter above reads.</summary>
+    public bool HasFinalDefense { get; set; }
 
     /// <summary>Magic defence — the divisor for incoming magic damage. Separate
     /// channel from physical defence; sourced from level base + jewels + the Tank
     /// "Anti Magic" passive, plus any BuffMagicDef (e.g. Warchanter's chant).</summary>
-    public float EffectiveMagicDefence => AdminStat("mdef") ?? ModifiedStat(MagicDefence, SkillEffect.BuffMagicDef);
+    public float EffectiveMagicDefence => AdminStat("mdef")
+        ?? ModifiedStat(MagicDefence, SkillEffect.BuffMagicDef) * (1f + FinalDefenceBonus(magic: true));
 
     /// <summary>Evasion including evasion buffs (flat + percent).</summary>
     public float EffectiveEvasion => AdminStat("eva") ?? ModifiedStat(Evasion, SkillEffect.BuffEvasion);
@@ -2387,6 +2439,7 @@ public class Entity
         MagicCritRateFlat = 0f;
         MagicCritDamageMult = 1f;
         MagicCritDamageResist = 0f;
+        CritDamagePenalty = 0f;
         CritDmgResist = 0f;
         BowResist = 0f;
         CcResist = 0f;
@@ -3106,6 +3159,11 @@ public class Entity
                     ApplyPassive(wm.For(WeaponType));
             }
 
+            // FINAL DEFENSE — a flag, not a passive: what it grants depends on CURRENT HP, which
+            // no recompute can see (see Entity.FinalDefenceBonus). All this pass decides is whether
+            // the tank knows the skill at all.
+            HasFinalDefense = HasSkill(SkillCatalog.TankFinalDefense);
+
             // THE ONE REMAINING WEAPON PENALTY (Spellcaster Mastery): an UNTRAINED weapon — bow, dagger
             // or bare hands — halves cast speed and magic, and multiplies the fizzle roll. Sword and
             // blunt (wand/staff ARE blunt) are the caster's trained types and cost nothing at all.
@@ -3234,6 +3292,7 @@ public class Entity
             // owner's own ×3.38), the debuffs SUM. Both ride as buff fields; the flag enum is full.
             if (buff.MagicCritDamage != 0f) MagicCritDamageMult *= 1f + buff.MagicCritDamage;
             MagicCritDamageResist += buff.MagicCritDamageDebuff;
+            CritDamagePenalty += buff.CritDamagePenalty;   // Shield Smash - Power, the physical twin
             // …and the magic crit RATE the holder is hit with. SUMMED, exactly like its physical twin
             // a few lines down, so two Marks could never multiply into immunity.
             MagicCritRateResist += buff.MagicCritRateDebuff;
@@ -3265,8 +3324,21 @@ public class Entity
         // flat source), then the single cap — StatCaps.PhysicalCritRate = his 500 on the 0-1000
         // scale. (The three 0.75 clamps that used to sit along the chain are gone: they clamped
         // intermediate values and contradicted the cap the design has always stated.)
-        CritChance = Math.Clamp(CritChance * CritRateMult + CritRateFlat, 0f, StatCaps.PhysicalCritRate);
-        MagicCritChance = Math.Clamp(MagicCritChance * MagicCritRateMult + MagicCritRateFlat, 0f, StatCaps.MagicCritRate);
+        // The tank's Shield Smash — Rate takes its bite LAST, off the finished number, so "−30% crit
+        // rate" is thirty percent of what the creature actually had rather than of some intermediate
+        // value that gear and buffs then multiply back up. Clamped to 90% so a smash can never make a
+        // creature literally incapable of critting; that is a Stun's job, not a debuff's.
+        float critRateBite = 0f, magicCritRateBite = 0f;
+        foreach (var b in Buffs)
+        {
+            if (b.Suppressed) continue;
+            critRateBite += b.CritRatePenalty;
+            magicCritRateBite += b.MagicCritRatePenalty;
+        }
+        CritChance = Math.Clamp((CritChance * CritRateMult + CritRateFlat)
+                                * (1f - Math.Clamp(critRateBite, 0f, 0.9f)), 0f, StatCaps.PhysicalCritRate);
+        MagicCritChance = Math.Clamp((MagicCritChance * MagicCritRateMult + MagicCritRateFlat)
+                                * (1f - Math.Clamp(magicCritRateBite, 0f, 0.9f)), 0f, StatCaps.MagicCritRate);
         // The magic crit-DAMAGE chain has no cap of its own here: StatCalculator.MagicCritMult
         // applies StatCaps.MagicCritDamageCap at the point of use, so a debuff can still bite a
         // stack that would otherwise be pinned to the ceiling. Only the debuff sum is bounded.

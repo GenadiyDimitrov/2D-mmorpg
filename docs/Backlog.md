@@ -106,7 +106,7 @@ closed · **`BL-93` opened** for the in-game visuals discussion you asked for (*
 - `BL-93` 🔵 **In-game visuals — models, terrain, the look of the world.** Your next conversation, by
   your own instruction. Full entry under **UI & client**, below.
 
-- `BL-02` 🔵 **The 40+ class kits (3rd and 4th tier)** — ✅ **FOUR OF THE AUTHORED FILES ARE DONE.** The
+- `BL-02` 🔵 **The 40+ class kits (3rd and 4th tier)** — ✅ **FIVE OF THE AUTHORED FILES ARE DONE — the BULWARK (tank) landed 2026-09-02 (0.105.0), the fourth finished 3rd class.** Race decides four of its tools, which is the first time race has decided anything about a class here: Human taunt/mass-taunt, Elf charm/freeze, Demon taunt/intimidate, and the two Shield Smashes split Human;Elf vs Demon. ⚠ THE PASS SPANNED ALL THREE TANK FILES — `tank 2nd.csv` was retuned in the same breath (taunt 3s→1.5s at 0 MP, Charm at 24, Shield Shock replacing Shield Stun, Stay! moved to the 3rd, Defensive Wall's ×2 terms deleted). `tank 4th.csv` is still under its own `NOT DONE` banner. Six slips in his files were caught and corrected on BOTH sides — see the CHANGELOG. Older note follows. The
   **Lightbringer (healer) shipped in 0.74.0**, the **whole Warchanter (buffer) in 0.76.0**, the
   **Lightbringer's 4th tier in 0.85.0** (with the shared kit and the eighteen Sigils), and the
   **NUKER's 3rd tier in 0.87.0** — 208 rows, 21 families, Magus and Tempest, all three races, 40 to 74.
@@ -1299,7 +1299,7 @@ answered at the bottom of this section rather than as entries — neither asks f
   it. Fear and charm are server-driven MOVEMENT — the one class of effect you cannot check by reading
   a stat panel — so the tool that could not reach them was the one most needed. `/buff @target charm`.
 
-  ⚠ **STILL OPEN, and it is `BL-123`'s remaining half: TAUNT IS MOB-ONLY.** `effect.HasFlag(Taunt) &&
+  ✅ **CLOSED 2026-09-02 (0.105.0) — see `BL-123`. The old text follows.** ~~STILL OPEN: TAUNT IS MOB-ONLY.~~ `effect.HasFlag(Taunt) &&
   target.Kind == EntityKind.Mob` — the fourth `Kind`-shaped gate of that family — so a taunt does
   nothing in PvP, which your *"mobs/players"* wording asks for. Fear and charm work on both, since
   they were built after the lesson. Not fixed here because a taunt aimed at a PERSON needs a ruling
@@ -1460,7 +1460,9 @@ answered at the bottom of this section rather than as entries — neither asks f
   while a dash potion leaves everyone else at 250. `Entity.MoveSpeedCap` is already per-entity, so
   that is one field on the sprint skill — no rework.
 
-- `BL-123` 🟠 **THE THREE CONTROL STATES — CHARM AND FEAR ARE NOW BUILT (`BL-110`, 0.104.0). ONE
+- `BL-123` ✅ **CLOSED 2026-09-02 (0.105.0). All three control states are built.** Charm and fear landed with `BL-110`; the taunt's last half landed with the tank, on your ruling: *"the aggression ladder is mob only. The actual target change is pvp (+ mob if mobs have targets though) and charm/fear work on both."* So the LOCK reaches players (their target is pinned to the taunter, refused in `HandleAttack`) and the AGGRO LADDER is paid only into a monster's threat table — a person has no threat table for it to mean anything against. 🔑 The fourth `Kind == Player`-shaped gate of that family, and the first that was HALF right: deleting the test outright would have paid threat into a table nobody reads. ⚠ `TauntLockTicks` only ever counted down in `MobAi`, so the lock would have been PERMANENT on a player — a counter only one kind of entity decrements is a trap the second the other kind can set it. Original entry follows.
+
+- `BL-123`.old 🟠 **THE THREE CONTROL STATES — the ruling as written. ONE
   THING IS LEFT: TAUNT IS STILL MOB-ONLY, AND THAT NEEDS YOUR RULING.** See `BL-110` above for what
   landed. The rest of this entry is the original ruling and the state of the code before it.
   Your rulings, 2026-09-02, for mobs AND players alike:
