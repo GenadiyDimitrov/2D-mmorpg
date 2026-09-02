@@ -9695,6 +9695,31 @@ public class GameLoopService : BackgroundService
             return;
         }
 
+        // `BL-116` — RUNNING HOME. Nothing else happens until it gets there: no wander target (which
+        // would otherwise steer it somewhere other than home within 3-12 seconds, because the wander
+        // roll does not know a return is in progress), and no aggro scan, so a player standing on the
+        // path is walked straight past. AddThreat is deaf for the same span, so this really does run
+        // to completion instead of oscillating on the leash boundary.
+        if (mob.ReturningHome)
+        {
+            float hx = mob.X - mob.HomeX;
+            float hy = mob.Y - mob.HomeY;
+            if (hx * hx + hy * hy <= GameConstants.MobHomeArrivalRange * GameConstants.MobHomeArrivalRange)
+            {
+                mob.ReturningHome = false;      // home: it may be pulled again (and it is still wounded)
+                mob.WanderTicks = _rng.Next(30, 120);
+            }
+            else
+            {
+                // Re-assert the destination every tick. A knockback, a Slow or a stray PlaceEntity can
+                // clear TargetX/Y, and a mob that lost its target mid-return would simply stand in the
+                // field un-aggroable forever.
+                mob.TargetX = mob.HomeX;
+                mob.TargetY = mob.HomeY;
+            }
+            return;
+        }
+
         if (--mob.WanderTicks > 0)
             return;
 
@@ -9803,6 +9828,7 @@ public class GameLoopService : BackgroundService
         mob.CriedForHelp = false;   // the pull is over — the camp will answer the next one (BL-70)
         mob.TargetX = mob.HomeX;
         mob.TargetY = mob.HomeY;
+        mob.ReturningHome = true;   // `BL-116` — sprint home, deaf to threat until it arrives
         mob.CombatTicks = 0;
         mob.BossSkillCooldown = 0;
         mob.SkillCooldowns.Clear();   // fresh boss-skill reuse on a leash reset
@@ -11744,6 +11770,17 @@ public class GameLoopService : BackgroundService
     private void AddThreat(Entity mob, Entity attacker, float amount, bool byPlayerAct = true)
     {
         if (attacker.Kind != EntityKind.Player) return;
+
+        // `BL-116` — A CREATURE RUNNING HOME IS DEAF. It has already given up on this fight; hitting it
+        // in the back does not restart one. Damage still lands and still kills it, so the kite is not
+        // made pointless — it is made finite, because the free window is now the sprint and nothing
+        // more. ⚠ THIS EARLY RETURN IS THE FIX, not the sprint speed: leave it in and the sprint is
+        // decoration; take it out and the sprint never survives its first tick, because setting
+        // Engaged below is exactly what dragged the mob back over the leash boundary every time.
+        // It also keeps the creature on the 5%/s IDLE regen for the whole return (the regen tick reads
+        // this same Engaged flag), which is the ramp the owner intended to be racing all along.
+        if (mob.ReturningHome) return;
+
         mob.Threat[attacker.Id] = mob.Threat.GetValueOrDefault(attacker.Id) + amount;
         mob.Engaged = true;
 

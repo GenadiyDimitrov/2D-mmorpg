@@ -1273,11 +1273,49 @@ answered at the bottom of this section rather than as entries — neither asks f
   booleans** — they are mobs with the mob AI, a class kit, real gear and a respawn timer, and they are
   already your true/true pair by construction. Say the word if you want them literally `NpcDef`s.
 
-- `BL-116` 🔴 **THE BOW-KITE EXPLOIT AGAINST MOB CHASE RANGE.** *"I stand just outside the radius and
-  shoot it with a bow .. The mob agros me back then stops and it moves towards/away from me and if I do
-  more than it's 5% regen I can kill it"*. A creature that has given up the chase must not be killable
-  from outside it — the leash needs teeth (full-heal on leash, or damage immunity while returning, or
-  the chase range extends while it is taking hits). Ruling needed on which.
+- `BL-116` ✅ **BUILT 2026-09-02 (0.102.8) — A LEASHED CREATURE SPRINTS HOME AND IS DEAF ON THE WAY.**
+  *"I stand just outside the radius and shoot it with a bow .. The mob agros me back then stops and it
+  moves towards/away from me and if I do more than it's 5% regen I can kill it"*. You rejected all
+  three of my options and were right about every one: **full-heal on leash and damage-immunity both
+  make the 5%/s regen ramp dead code, and an extending chase range has no natural stopping point.**
+  Your fourth is what shipped — *"when a mob reaches the end of leash it start to sprint back to start
+  .. like +100ms then when reached start it reset the ability to chace again"*.
+
+  🔴 **AND THE NUMBER YOU WERE FIGHTING WAS NOT 5%, IT WAS 0.1% — a factor of 50.** `AddThreat` set
+  `Engaged = true` unconditionally, on every hit, and the regen tick picks its rate off that same flag
+  (0.1%/s engaged vs 5%/s idle). So the arrow that re-aggroed the mob also pinned it to the combat
+  regen rate. **That is also the whole of *"it moves towards/away from me"***: the mob turned for home,
+  the next arrow re-engaged it, it stepped back over the 1500 boundary, `ResetMob` fired again — it
+  oscillated on the rim forever, permanently inside bow range, and never once got home.
+
+  🔑 **THE SPRINT IS THE TRIM; THE DEAFNESS IS THE FIX.** `Entity.ReturningHome`, set by `ResetMob`,
+  cleared within 60 units of home. While set the creature runs at `RunSpeed + 100`
+  (`GameConstants.MobLeashSprintBonus`), does not wander, does not scan for aggro, and **takes no
+  threat at all** — damage still lands and still kills it, but nothing re-targets or re-engages it.
+  Without that early return in `AddThreat` the sprint would not survive its first tick.
+
+  ✅ Your HP ruling is exactly what falls out, with no extra code: not being Engaged puts it on the
+  **5%/s idle ramp for the whole return**, it goes on climbing at home, anyone may re-pull it wounded,
+  and when the bar tops out with nobody having re-engaged, `MobRecoveryCheck` closes the pull (ledger,
+  enrage and boss-phase cursor re-armed) — *"their hp keep the 5% untill when reached home and regen
+  until some1 reengages ... when full and no1 reengaged then they reset aggro and etc"*.
+
+  ⚠ Server-only; no new APK needed. ⚠ Kiting itself is **untouched and deliberately so** — your
+  ruling: *"kiting is a way mage/archer with low defence to be able to farm actively ... monster speed
+  is irelevant.. its only how many seconds u have before it cut the 900 range"*. See `BL-122`.
+
+- `BL-122` 🟠 **THE PLAYER BASE-SPEED TABLE GOES TO ~180/210.** Your ruling 2026-09-02: *"speed should
+  be around 180 for slow and 210 for faster classes"*, against today's `SpeedTable.BaseRunSpeed` of
+  130-165. The buff stack is +61 (Swift/Wind Grace +33, Harmony of Speed +20, Frenzy +8), so 180 → 241
+  and 210 → capped, which is your *"now everyone can get 250"*. Rogues reach the cap on their own
+  (+60 from sprint + passives) and the differentiation you want arrives later, when their sprint
+  **raises `MoveSpeedCap` itself to 300** while a dash potion leaves everyone else at 250 —
+  `Entity.MoveSpeedCap` is already per-entity, so that costs one field on the sprint skill.
+
+  ❓ **BLOCKED ON SIX NUMBERS FROM YOU.** `SpeedTable` is keyed `(Race, BaseClass)` and `BaseClass` is
+  only Fighter/Mage — there is no rogue row to make fast, so "slow" and "faster" have to land on race
+  × fighter/mage. My proposal, keeping today's ordering (Elf > Demon > Human, fighter > mage):
+  **Elf 210/190, Demon 200/185, Human 195/180.** Say yes, or give me the six.
 
 - `BL-117` 🔵 **AN `[ORDER]` BUTTON IN THE BAG AND EVERY VENDOR LIST.** One button, cycling:
   normal/alphabetical → alphabetical descending → rarity then alphabetical (Mythic first) → rarity

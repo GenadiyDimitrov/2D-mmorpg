@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.102.7";
+    public const string GameVersion = "0.102.8";
 
     // ----- SP BOTTLE (owner, 2026-08-26) -------------------------------------------------------
     // *"u can make an npc to take your 1kkk SP + 100kk gold and give you a tradable/sellabel
@@ -430,6 +430,26 @@ public static class GameConstants
     /// <summary>A mob chased this far from home resets: returns and heals.
     /// Kept tight to match the short aggro range.</summary>
     public const float MobLeashRange = 1500f;
+
+    /// <summary>`BL-116` — HOW MUCH FASTER A LEASHED MOB RUNS HOME. Added to the creature's own
+    /// RunSpeed for the whole return trip. Owner's ruling on the bow-kite exploit (2026-09-02):
+    /// *"when a mob reaches the end of leash it start to sprint back to start .. not just walk ..
+    /// like +100ms then when reached start it reset the ability to chace again"*.
+    ///
+    /// <para>The three alternatives were rejected BY HIM, for one reason: a full heal on leash, or
+    /// damage immunity while returning, would both make the 5%/s idle regen ramp dead code, and
+    /// extending the chase range has no natural stopping point. A sprint is bounded and leaves the
+    /// regen doing the work — the creature climbs at 5%/s the whole way home and goes on climbing
+    /// there, so catching it wounded is still possible, it just is not free.</para>
+    ///
+    /// <para>⚠ THE SPRINT IS NOT THE HALF THAT CLOSES THE EXPLOIT — <see cref="Entity"/>.ReturningHome
+    /// being deaf to threat is. Without that, the first arrow re-engages the mob before it takes a
+    /// step and it never leaves the leash boundary at all.</para></summary>
+    public const float MobLeashSprintBonus = 100f;
+
+    /// <summary>How close to home ends the leash sprint. One tick at sprint speed is ~21-23 units,
+    /// so arrival cannot be missed by overshooting.</summary>
+    public const float MobHomeArrivalRange = 60f;
 
     /// <summary>Ticks until a dead mob respawns at its home position (10s).</summary>
     public const int MobRespawnTicks = 100;

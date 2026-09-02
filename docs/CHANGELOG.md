@@ -7,11 +7,63 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.102.7**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.102.8**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-02 (latest) — 0.102.7: a grant that never landed, the watch's dead gate, two proc chances
+## 2026-09-02 (latest) — 0.102.8: the creature that gave up now really leaves
+
+`BL-116`, the bow-kite exploit: *"I stand just outside the radius and shoot it with a bow .. The mob
+agros me back then stops and it moves towards/away from me and if I do more than it's 5% regen I can
+kill it"*.
+
+### The number in that sentence was wrong by a factor of fifty
+
+`AddThreat` set `mob.Engaged = true` unconditionally, on every hit. The regen tick reads that **same
+flag** to choose its rate — `MobHpRegenPerSecond(maxHp, engaged)`, **0.1%/s engaged vs 5%/s idle**. So
+the arrow that re-aggroed a leashed creature also pinned it to the combat rate, and the 5% ramp he
+believed he was out-damaging never applied to a kited mob at all.
+
+The same line explains the shape he described. A mob past the 1500 leash calls `ResetMob`, turns for
+home — and the next arrow re-engages it, so it walks back out over the boundary, `ResetMob` fires
+again, and it oscillates on the rim. It is *permanently* inside bow range and never once arrives. That
+is the *"moves towards/away from me"* verbatim, and it is why nothing about the leash distance or the
+return speed could have fixed this on its own.
+
+### His ruling, and which half of it does the work
+
+He rejected all three options offered, correctly and for one reason: a full heal on leash and damage
+immunity while returning **both make the 5%/s regen ramp dead code**, and extending the chase range
+has no natural stopping point. His own fourth: *"when a mob reaches the end of leash it start to
+sprint back to start .. not just walk .. like +100ms then when reached start it reset the ability to
+chace again"*.
+
+`Entity.ReturningHome` — set by `ResetMob`, cleared within `MobHomeArrivalRange` (60) of home. While
+it is set the creature:
+
+- runs at `RunSpeed + GameConstants.MobLeashSprintBonus` (+100), so 210-230 against 110-130 — faster
+  than an unbuffed player and slower than a speed-buffed one. Not clamped to `MoveSpeedCap`: 250 is a
+  ceiling on what a *player* may reach.
+- does not wander (the wander roll would otherwise steer it elsewhere within 3-12s) and does not scan
+  for aggro, so a player standing on the path is walked straight past;
+- 🔑 **takes no threat.** `AddThreat` returns early. Damage still lands and still kills it; nothing
+  re-targets or re-engages it. **This is the fix — the sprint is the trim.** Leave the early return
+  out and the sprint is decoration that dies on its first tick.
+
+Being un-Engaged also puts it on the **5%/s idle ramp for the whole return**, which is his HP ruling
+with no code of its own: *"their hp keep the 5% untill when reached home and regen until some1
+reengages ... when full and no1 reengaged then they reset aggro and etc"*. It climbs on arrival too,
+so a wounded creature can still be re-pulled at its post; `MobRecoveryCheck` closes the pull at the
+top of the bar exactly as before.
+
+⚠ **Kiting is untouched, deliberately.** *"kiting is a way mage/archer with low defence to be able to
+farm actively ... monster speed is irelevant.. its only how many seconds u have before it cut the 900
+range .. so mages get 1~3 free spells"*. What was broken was not that a kite works, but that a
+creature which had already quit could be farmed forever from outside its reach.
+
+Server-only — no new APK. His player base-speed raise (180/210) is `BL-122`, pending six numbers.
+
+## 2026-09-02 — 0.102.7: a grant that never landed, the watch's dead gate, two proc chances
 
 Three more of his playtest-29 findings, all server-side.
 

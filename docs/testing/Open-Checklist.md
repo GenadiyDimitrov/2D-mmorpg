@@ -80,6 +80,15 @@ a stack of 9 buff scrolls is the friction you wanted or just friction** (§93D).
 - [!] npc buffer the save button is inactive  ...I have buffs and it's still inactive
 
 - [!] I can exploit the max chase range of mobs. I stand just outside the radius and shoot it with a bow .. The mog agros me back then stops and it moves tiwards/away from me and if I do more than it's 5% regen I can kill it ...
+  - ✅ **FIXED 0.102.8 (`BL-116`), your fourth option — and the regen number in your report was off by
+    50×.** `AddThreat` set `Engaged = true` on every hit, and the regen tick picks 0.1%/s vs 5%/s off
+    that same flag: you were never racing the 5% ramp. It is also why it *"moves towards/away"* — the
+    next arrow re-engaged the mob, it stepped back over the leash, `ResetMob` fired again, and it
+    oscillated on the boundary inside bow range forever instead of going home.
+    🔑 `Entity.ReturningHome`: sprints at RunSpeed **+100**, no wander, no aggro scan, and **takes no
+    threat** until it is within 60 of home. The deafness is the fix; the sprint alone would have died
+    on its first tick. HP climbs at the idle **5%/s** the whole way and keeps climbing at home, so a
+    wounded creature is still re-pullable — exactly your ruling. **Kiting itself is untouched.**
 
 - [~] I want toggle and potions to be on separate bar ... Now they are inside the buffs bar and I cannot see if I have 20 or less buffs to not over buff me.. There are  
   - "normal" buff bar (the one that is limited and only buffs that count to the mimjt are there), 

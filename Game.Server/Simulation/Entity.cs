@@ -1431,8 +1431,15 @@ public class Entity
 
             if (Kind == EntityKind.Mob)
             {
-                // Mobs walk while wandering, run while aggroed/engaged.
-                float mobBase = Engaged ? RunSpeed : WalkSpeed;
+                // Mobs walk while wandering, run while aggroed/engaged, and SPRINT home off a leash
+                // (`BL-116`). The sprint bonus is added to the run speed, not to whichever of the two
+                // applies: a returning creature is running by definition, and reading WalkSpeed here
+                // would make a slow wanderer crawl home at 160 while a fast one bolts at 230.
+                //
+                // ⚠ NOT clamped to MoveSpeedCap, unlike the player branch below. 250 is the ceiling on
+                // what a PLAYER may reach; the whole point of the sprint is that it outruns an unbuffed
+                // one, and a creature is not competing for that budget.
+                float mobBase = Engaged ? RunSpeed : ReturningHome ? RunSpeed + GameConstants.MobLeashSprintBonus : WalkSpeed;
                 if (mobBase <= 0) mobBase = Speed;
                 return ModifiedStat(mobBase, SkillEffect.BuffMoveSpeed) * (1f - SlowFraction);
             }
@@ -1831,6 +1838,29 @@ public class Entity
 
     public float HomeX { get; set; }
     public float HomeY { get; set; }
+
+    /// <summary>`BL-116` — THIS CREATURE HAS GIVEN UP AND IS RUNNING HOME. Set by ResetMob, cleared
+    /// on arrival (GameConstants.MobHomeArrivalRange). While it is set the mob sprints
+    /// (<see cref="EffectiveSpeed"/>), does not wander, does not scan for aggro, and — the half that
+    /// actually closes the bow-kite exploit — <b>TAKES NO THREAT</b>: damage still lands, but it
+    /// neither re-targets nor re-engages the creature.
+    ///
+    /// <para>🔴 WHY THE DEAFNESS IS THE LOAD-BEARING PART, and the sprint only the trim. AddThreat
+    /// used to set <c>Engaged = true</c> unconditionally, on every hit. So the instant a leashed mob
+    /// turned for home the next arrow re-engaged it, it stepped back over the 1500 boundary, ResetMob
+    /// fired again — and it oscillated on the rim forever, permanently inside bow range and never
+    /// getting home. That is precisely the *"it moves towards/away from me"* in the owner's report,
+    /// and it is why the sprint alone would have changed nothing.</para>
+    ///
+    /// <para>🔴 IT ALSO PUT THE MOB ON THE WRONG REGEN RATE. The regen tick reads the SAME Engaged
+    /// flag (0.1%/s engaged vs 5%/s idle — a factor of 50), so a kited creature was never on the 5%
+    /// ramp the owner believed he was out-damaging. Not being Engaged while returning puts it there
+    /// with no extra code, which is his ruling: *"their hp keep the 5% untill when reached home and
+    /// regen until some1 reengages ... when full and no1 reengaged then they reset aggro"* — the
+    /// climb continues at home and MobRecoveryCheck closes the pull at the top of the bar.</para>
+    ///
+    /// <para>Runtime-only, like every other mob field: mobs are never persisted.</para></summary>
+    public bool ReturningHome { get; set; }
 
     /// <summary>Spawn zone this mob belongs to (for zone-managed respawn).</summary>
     public string? ZoneId { get; set; }
