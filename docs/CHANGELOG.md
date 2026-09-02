@@ -7,11 +7,44 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.102.9**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.102.10**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-02 (latest) — 0.102.9: his six base move speeds, and no DEX term
+## 2026-09-02 (latest) — 0.102.10: a taunt does not put you on top for free
+
+`BL-123`. *"taunt (and charm also adds aggro points) but they donnt mve you on top for free .. the
+idea is tank to spam taunt/charm for mob to keep it agrro on him .. if some1 is doing alot of
+dmg/heals the tank will ahve hard time to keep it up so the one must slow down so tank can take 1st
+place"*.
+
+The taunt did `Math.Max(mine, top) + power` — top of the threat table for free, then the power on top
+of that. It is a **plain add** now. The target LOCK is untouched and is the taunt's only guarantee.
+
+The old shape made aggro something the tank *owned* rather than something he keeps earning, and it
+made the whole threat economy — damage at 1:1, `ThreatHealFactor`, `ThreatBuffPerLevel` — decorative
+for as long as a tank had a taunt off cooldown.
+
+**Measured before the jump came out, so his ladder is not re-tuned by guess.** Provoke is 4,500-6,000
+on a 6s reuse = **750-1,000 threat/s**. Against it: a level-28-36 attacker does **~250-300 dps**
+(BalanceMatrix E4 — 2.6-3.5s TTK against a 667-1,077 HP mob, and threat is damage 1:1), and a cleric
+spamming Quick Heal generates **~750/s** (301 power / 2s cast × `ThreatHealFactor` 10). So the tank
+leads on his taunt alone, is level with a flat-out healer, and is genuinely pulled off by a healer
+plus a committed nuker. That is his *"the one must slow down"*, and his 4,500 start needs no change.
+
+🔑 **His charm rule is the asymmetry that makes this hold together:** *"charm can fail the actual
+debuff (the un-charm-movement) but still adds the points"*. The threat add lands on cast; only the
+walk-toward-caster rolls against the land rate. That is the reverse of every other debuff here, and
+it is also why the taunt's lock can afford to be short — the guaranteed half is the lock.
+
+⚠ **Not chased, deliberately: his tank CSVs are open on his desk** (*"do not touch tanks csvs untill
+im done with them"*). `--check` already reads **duration 1.5 and range 400** out of his in-flight
+`tank 2nd.csv` against the code's 3s / 600 — his *"ill lower it to 1.5s"*, plus a range cut he has not
+mentioned — and `tank 3rd.csv` carries 15 unregistered rungs of Taunt, Mass Taunt, Intimidate and Tank
+Anti-Magic. The whole tank delta goes in as one pass when he says he is done, descriptions included
+(the four Taunt rungs still read "for 3s").
+
+## 2026-09-02 — 0.102.9: his six base move speeds, and no DEX term
 
 `BL-122`. `SpeedTable.BaseRunSpeed` was 130-165, invented. It is now his, verbatim:
 

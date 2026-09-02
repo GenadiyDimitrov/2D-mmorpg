@@ -1352,9 +1352,33 @@ answered at the bottom of this section rather than as entries — neither asks f
     target.Kind == EntityKind.Mob`) — so it does nothing in PvP, which your *"mobs/players"* wording
     asks for. ⚠ **This is a fourth `Kind == Player`-shaped gate**, the same family of bug as `BL-79`'s
     guards and the three found in 0.94.0.
-  - ❓ **One question on taunt's aggro.** You say the value *"adds to the general aggro points"*. Today
-    it does `max(mine, top) + power` — it **jumps to the top of the threat table first, then adds**,
-    deliberately, so a taunt cannot land you second. Keep the jump, or is a plain add what you meant?
+  ✅ **ANSWERED + HALF BUILT 2026-09-02 (0.102.10): A PLAIN ADD. NO JUMP TO THE TOP.** *"taunt (and
+  charm also adds aggro points) but they donnt mve you on top for free .. the idea is tank to spam
+  taunt/charm for mob to keep it agrro on him .. if some1 is doing alot of dmg/heals the tank will
+  ahve hard time to keep it up so the one must slow down so tank can take 1st place"*. The
+  `max(mine, top) + power` jump is gone; the target LOCK is untouched and is the taunt's only
+  guarantee. This makes the threat economy (damage 1:1, `ThreatHealFactor`, `ThreatBuffPerLevel`) load
+  bearing instead of decorative whenever a tank had a taunt off cooldown.
+
+  🟢 **MEASURED FIRST — your 4,500-6,000 ladder still works as a plain add, so don't re-tune it:**
+  Provoke on a 6s reuse is **750-1,000 threat/s**, against a level-28-36 attacker's **~250-300 dps**
+  (BalanceMatrix E4: 2.6-3.5s TTK on a 667-1,077 HP mob) and a cleric spamming Quick Heal at
+  **~750/s** (301 power / 2s cast × `ThreatHealFactor` 10). So the tank leads on the taunt alone, is
+  level with a flat-out healer, and IS pulled off by a healer plus a committed nuker — exactly the
+  pressure you described.
+
+  ⚠ **STILL OWED, waiting on your tank CSVs:** `--check` already reads **duration 1.5 and range 400**
+  out of your in-flight `tank 2nd.csv` against the code's 3s / 600 — your *"ill lower it to 1.5s"*, and
+  a range cut you have not mentioned. I have not chased it, because the same file also carries
+  `tank 3rd.csv`'s 15 unregistered rungs of Taunt, Mass Taunt, Intimidate and Tank Anti-Magic. **Say
+  when you are done and the whole tank delta goes in as one pass** — duration, range, the 40+ ladder,
+  and the four Taunt descriptions (which still say "for 3s").
+
+  🔑 **CHARM'S AGGRO IS UNCONDITIONAL, ITS CONTROL IS NOT.** *"charm can fail the actual debuff (the
+  un-charm-movement) but still adds the points"*. So when charm is built, the threat add happens on
+  CAST and only the walk-toward-caster rolls against the land rate — the reverse of every other debuff
+  here, and the reason a tank can rely on charm for aggro at all. **That asymmetry is why the taunt's
+  lock can be shortened to 1.5s**: the guaranteed half is the lock, so it should be the brief one.
 
 - `BL-117` 🔵 **AN `[ORDER]` BUTTON IN THE BAG AND EVERY VENDOR LIST.** One button, cycling:
   normal/alphabetical → alphabetical descending → rarity then alphabetical (Mythic first) → rarity

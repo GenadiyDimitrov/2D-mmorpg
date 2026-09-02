@@ -632,15 +632,15 @@ public static partial class SkillCatalog
             {
                 // SP is his too, and it is the tank's standard 24/28/32/36 price line (Smash's).
                 new(MpCost: 15, SpCost: 6400,  TauntPower: 4500,
-                    Description: "Forces a monster to attack you: puts you at the top of its aggro and locks it on you for 3s, then leaves you 4,500 aggro ahead."),
+                    Description: "Forces a monster onto you for 3s and adds 4,500 to your aggro on it. It does not put you at the top for free — hold it by keeping the taunt up."),
                 new(MpCost: 18, SpCost: 12000, TauntPower: 5000,
-                    Description: "Forces a monster to attack you: puts you at the top of its aggro and locks it on you for 3s, then leaves you 5,000 aggro ahead."),
+                    Description: "Forces a monster onto you for 3s and adds 5,000 to your aggro on it. It does not put you at the top for free — hold it by keeping the taunt up."),
                 new(MpCost: 22, SpCost: 22000, TauntPower: 5500,
-                    Description: "Forces a monster to attack you: puts you at the top of its aggro and locks it on you for 3s, then leaves you 5,500 aggro ahead."),
+                    Description: "Forces a monster onto you for 3s and adds 5,500 to your aggro on it. It does not put you at the top for free — hold it by keeping the taunt up."),
                 new(MpCost: 26, SpCost: 40000, TauntPower: 6000,
-                    Description: "Forces a monster to attack you: puts you at the top of its aggro and locks it on you for 3s, then leaves you 6,000 aggro ahead."),
+                    Description: "Forces a monster onto you for 3s and adds 6,000 to your aggro on it. It does not put you at the top for free — hold it by keeping the taunt up."),
             },
-            Description: "Forces a monster to attack you — puts you at the top of its aggro list and locks it onto you briefly."),
+            Description: "Forces a monster onto you briefly and adds to your aggro on it — it does not put you at the top for free."),
 
         // Lure — the ROGUE's taunt, and the tactic mob clans exist to make possible (BL-70). His
         // picture: a rogue crossing an elite field, pulling the one creature the party wants and

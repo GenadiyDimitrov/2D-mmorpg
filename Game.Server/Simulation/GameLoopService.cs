@@ -10839,13 +10839,26 @@ public class GameLoopService : BackgroundService
             int power = def.TauntPowerAt(lvl);
             if (power <= 0) power = 500;   // an unauthored taunt still does something
 
-            // Jump to the top of the table FIRST, then add. Without the jump a taunt would only be
-            // "+power" and could land you second; without the add it would be a 3s inconvenience.
-            float top = 0f;
-            foreach (var (id, v) in target.Threat)
-                if (id != caster.Id && v > top) top = v;
-            float mine = target.Threat.GetValueOrDefault(caster.Id);
-            target.Threat[caster.Id] = Math.Max(mine, top) + power;
+            // 🔑 A PLAIN ADD. NO JUMP TO THE TOP — owner, 2026-09-02: *"taunt (and charm also adds
+            // aggro points) but they donnt mve you on top for free .. the idea is tank to spam
+            // taunt/charm for mob to keep it agrro on him .. if some1 is doing alot of dmg/heals the
+            // tank will ahve hard time to keep it up so the one must slow down so tank can take 1st
+            // place"*.
+            //
+            // It used to do `Math.Max(mine, top) + power` — top of the table for free, then the power
+            // on top. That made aggro a thing the tank OWNED rather than a thing he has to keep
+            // earning, and it made the whole threat economy (damage 1:1, ThreatHealFactor,
+            // ThreatBuffPerLevel) decorative for as long as a tank had a taunt off cooldown.
+            //
+            // ⚠ HIS LADDER STILL WORKS AS A PLAIN ADD — measured before the jump came out, so nobody
+            // re-derives it: Provoke is 4,500-6,000 on a 6s reuse = 750-1,000 threat/s, against a
+            // level-28-36 attacker's ~250-300 dps (BalanceMatrix E4: 2.6-3.5s TTK on a 667-1,077 HP
+            // mob) and a cleric spamming Quick Heal at ~750/s (301 power / 2s cast × ThreatHealFactor).
+            // So the tank leads on his taunt alone, is level with a flat-out healer, and IS pulled off
+            // by a healer plus a committed nuker — which is the pressure he asked for, not a bug.
+            //
+            // The TARGET LOCK below is untouched and is the taunt's only guarantee.
+            target.Threat[caster.Id] = target.Threat.GetValueOrDefault(caster.Id) + power;
 
             target.CombatTargetId = caster.Id;
             target.Engaged = true;
