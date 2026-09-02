@@ -61,6 +61,21 @@ a stack of 9 buff scrolls is the friction you wanted or just friction** (§93D).
   - maybe a npc properties: "canDie", "retaliate" - both on false by default and guards both true
     - canDie if false hp can't go below 1
     - retaliate if false don't strike back just sit and take it
+  - ✅ **FIXED 0.102.7, and the guard half was worse than a missing rule.** `BL-79` DID write
+    *"pvp-on must be on"* — into `CanPvpHit`, where it has sat since 0.94.0. Both callers asked
+    it as `target.Kind == Player && !CanPvpHit(…)`, and **a guard is a MOB**, so no caller ever
+    arrived with a target that clause could answer: the rule was stated, commented at length,
+    and unreachable. Both paths delegate unconditionally now; an ordinary mob still answers
+    yes, so PvE is untouched.
+  - 🔑 **The auto-farm half needed a DIFFERENT answer, not the same one.** A guard is excluded
+    from target ACQUISITION outright — the toggle alone would still let a PK's autopilot walk
+    into a guard tower. Attacking the watch is a deliberate act and that is what an autopilot
+    cannot make. Defence is untouched: if the watch is already on you, the autopilot answers.
+  - ✅ **Your two properties are built** — `canDie` / `retaliate`, both false, on every NPC. An
+    NPC is now attackable **with pvp-on**, which REPLACES the flat *"you can't attack that"*
+    from 2026-07-21, and floors at 1 HP. ⚠ **The guards were NOT rebuilt as NPCs** to carry the
+    two booleans: they are mobs with the mob AI, a class kit, real gear and a respawn timer, and
+    they are already your true/true pair by construction. Say the word if you want them literal.
 
 - [!] npc buffer the save button is inactive  ...I have buffs and it's still inactive
 
@@ -121,6 +136,12 @@ a stack of 9 buff scrolls is the friction you wanted or just friction** (§93D).
 - [!] buffers combo mastery a should work with and a bow
   - Also 3% chance with blunt/1 and 3.45% chance with bow|blunt/2
   - 2hbweapkns are slower with ~12/18% so increasing the chance to balance the slower atack speed (bow is blaster than 2h blunt as harmonist have the bow expertise)
+  - ✅ **FIXED 0.102.7.** The bow half was already done on 2026-08-29 (the weapon-gate run — the
+    elf could never once proc it). What landed now is the **second chance**: 3% from a
+    one-handed blunt, **3.45% from a bow or a two-handed blunt**. 🔑 It is a general field
+    (`ProcChanceTwoHanded`, unset on every other proc) rather than a Combo-Mastery special case,
+    because your reason generalises — a proc rolled per LANDED HIT is worth less on a slower
+    weapon, so any future two-hander proc owes the same correction. Both CSV rows moved with it.
 
 - [!] bow expertise should work with only a bow (now if I activate it with a bow and then change to other weapon the 12% stay active)
   - ✅ **FIXED 0.102.4.** `RequiredWeapon` had only ever been a CAST gate, so nothing re-asked the
@@ -134,6 +155,17 @@ a stack of 9 buff scrolls is the friction you wanted or just friction** (§93D).
   - so let's change the coeficent of 0.5 not to apply to all... Rare 0.1(1/10), legend 0.045-> 0.04(1/25), epic 0.035 -> 0.03(1/33), rare 0.035 -> 0.2(1/50), uncomm 0.0275 -> 0.01(1/100), common 0.0225 -> 0.005(1/200) so common whet from 4.4 to 20
 
 - [!] newly created mage (lvl 1) have his first spell cast without penalty of weapon_proficiency .. No cast reduction no nothing ..almost oneshoted a pig being naked (no armor or weapon) casted normally didn't fail ... Then i become lvl 5 (x100 exp) and I did 1dmg with ~11s cast so the passive recalculate the stats. After equipping the training armor then it recalculate and start to work.
+  - ✅ **FIXED 0.102.7 — and it was never only the mage.** `AutoLearnCoreSkills` WRITES your
+    auto-granted skills (Spellcaster Mastery, the class floor passive, the reflect passive,
+    Novice's Grace) and **never recomputed**. On the login path the only `RecomputeDerived` runs
+    BEFORE it, in `PersistenceService`. So a character whose saved row did not already carry those
+    ids — **every brand-new one, of every class** — entered the world with the ids in his skill
+    window and not one of their effects on his numbers. The first level-up or equip fixed it,
+    which is exactly the *"then i become lvl 5"* you measured and why it read as the passive
+    arriving late rather than as the grant never having landed. The recompute is part of the
+    grant now, and login re-fills HP/MP after it — the pools were being topped up against the
+    pre-passive maximum. The mage is simply the class whose loss shows in a single cast.
+
 
 - [~] can we  make a way for non admin chars to change class wirhouth quest - a setting in the admins menu next to the exp .. Because at x100exp doing quest at 20 is kinda annoying ..and I enter with the admin char make the player an admin change class then make him player again. With this setting on the class quests are only speaking with the class master skipping the quest items ..the class master allows me to change quest without the 2quests before it 
 

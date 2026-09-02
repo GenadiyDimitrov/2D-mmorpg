@@ -255,15 +255,24 @@ public static partial class SkillCatalog
             DurationTicks: 300,
             Category: SkillCategory.Passive,
             RequiredWeapon: WeaponType.AnyBlunt | WeaponType.Bow,
-            ProcChance: 0.03f, ProcCooldownTicks: 600,
+            // 🔑 TWO CHANCES, ONE PROC (`BL-120`, owner 2026-09-02): *"3% chance with blunt/1 and 3.45%
+            //    chance with bow|blunt/2"*, because *"2h weapons are slower by ~12/18%, so increasing
+            //    the chance balances the slower attack speed (bow is faster than 2h blunt as harmonist
+            //    have bow expertise)"*. The proc is rolled per LANDED HIT, so the slower weapon rolls
+            //    it less often; 3.45/3.00 = ×1.15 is the middle of his own 12-18%. The gate is
+            //    unchanged — blunt or bow, any hands — this only splits the number once you are past it.
+            ProcChance: 0.03f, ProcChanceTwoHanded: 0.0345f, ProcCooldownTicks: 600,
             // Level 1 hands the caster rung 4 and the party rung 1; level 2, rungs 5 and 2; level 3,
             // rungs 6 and 3. His mapping, verbatim: *"u get 4,5,6 while party gets 1,2,3"*.
             ProcSelfRungs:  new[] { WcComboRush[3], WcComboRush[4], WcComboRush[5] },
             ProcPartyRungs: new[] { WcComboRush[0], WcComboRush[1], WcComboRush[2] },
             Description: "Passive. Landing a blow with a blunt weapon or a bow can send a surge "
-                       + "through you and your party — faster attacks and faster casting for 30s.",
+                       + "through you and your party — faster attacks and faster casting for 30s. "
+                       + "A two-handed weapon or a bow procs it slightly more often, to pay for its "
+                       + "slower swing.",
             Levels: comboSp.Select((sp, i) => new SkillLevel(SpCost: sp,
-                Description: $"3% chance on hit: +{ComboAs[i + 3] * 100:0.#}% attack and "
+                Description: $"3% chance on hit (3.45% with a bow or a two-handed blunt): "
+                           + $"+{ComboAs[i + 3] * 100:0.#}% attack and "
                            + $"+{ComboCast[i + 3] * 100:0.#}% cast speed for you, "
                            + $"+{ComboAs[i] * 100:0.#}%/+{ComboCast[i] * 100:0.#}% for the party, 30s."))
                 .ToArray()));

@@ -7,11 +7,76 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.102.6**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.102.7**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-02 (latest) — 0.102.6: the rung you can actually buy
+## 2026-09-02 (latest) — 0.102.7: a grant that never landed, the watch's dead gate, two proc chances
+
+Three more of his playtest-29 findings, all server-side.
+
+### 1. A NEWLY CREATED CHARACTER HAD NONE OF HIS AUTO-GRANTED PASSIVES
+
+His find: *"newly created mage (lvl 1) have his first spell cast without penalty of
+weapon_proficiency .. No cast reduction no nothing ..almost oneshoted a pig being naked ... Then i
+become lvl 5 (x100 exp) and I did 1dmg with ~11s cast so the passive recalculate the stats."*
+
+`AutoLearnCoreSkills` writes `LearnedSkills` — Spellcaster Mastery, the class floor passive, the
+reflect passive, Novice's Grace, Angel's Protection, the robe-rung clamp — and **never recomputed**.
+On the login path the only `RecomputeDerived` (in `PersistenceService`, right after the bag loads)
+runs **before** it. So a character whose saved row did not already carry those ids — every brand-new
+one — walked into the world with the ids in his skill window and not one of their effects on his
+numbers: no untrained-weapon cast penalty, no ×25 fizzle multiplier, no floor passive. The first
+level-up or equip fixed it, which is why it read as the passive arriving late rather than as the
+grant never having happened.
+
+The recompute is now part of the grant, at the end of `AutoLearnCoreSkills` rather than at its ten
+call sites — every one of them has the same obligation. Login re-fills HP/MP afterwards, because the
+pools `PersistenceService` topped up were measured against the *pre-passive* maximum.
+
+⚠ It was never only the mage. Every class lost its floor passive on a fresh character; the mage was
+merely the one whose loss is visible in a single cast.
+
+### 2. THE WATCH'S PVP GATE WAS WRITTEN AND UNREACHABLE — `BL-115`
+
+His find: *"field guards/watchmen are targetable and hittable even without a pvp-on ...and i can hit
+them auto in auto-farm ...they shouldn't act as mob"*.
+
+`BL-79` put the rule in `CanPvpHit` — *"a player attacking them (pvp-on must be on)"* — and both
+callers asked it as `target.Kind == EntityKind.Player && !CanPvpHit(...)`. A guard is a **mob**, so
+no caller ever arrived with a target the clause could answer. The rule was stated and never enforced.
+Both single-target paths (basic attack, offensive skill) now delegate unconditionally; an ordinary
+mob still answers `true`, so PvE is untouched.
+
+**And the auto-farm half is a separate answer, not the same one.** A guard is now excluded from
+target *acquisition* outright, not merely gated: the PvP toggle alone would still let a PK's
+autopilot walk into a guard tower. Attacking the watch is a deliberate act, and a deliberate act is
+what an autopilot cannot make. Defence is untouched — if the watch is already on you, the autopilot
+may answer it, behind the same toggle.
+
+**NPCs get his two properties.** `NpcDef.CanDie` and `NpcDef.Retaliate`, both **false** by default,
+and false on every NPC the world places today:
+- every NPC is attackable **only with PvP on** — this REPLACES the flat *"you can't attack that"*
+  refusal of 2026-07-21, which was the right shape for the bug it fixed (a client killing a vendor)
+  and the wrong shape for the dummy he wants to practise on;
+- `canDie: false` — *"hp can't go below 1"*, the pool untouched, the bar honest, the floor at one;
+- `retaliate: false` — *"don't strike back just sit and take it"*.
+
+⚠ **The guards are NOT `NpcDef`s and were not rebuilt as any.** `BL-79`'s watch are mobs with the mob
+AI, a real class kit, real gear and a respawn timer, and they are already the true/true pair by
+construction — they die and they hit back. What they were missing is the gate above.
+
+### 3. COMBO MASTERY: TWO CHANCES, ONE PROC — `BL-120`
+
+*"3% chance with `blunt/1` and 3.45% chance with `bow|blunt/2`"*, his reason being the whole design:
+*"2h weapons are slower by ~12/18%, so increasing the chance balances the slower attack speed"*. A
+proc is rolled per **landed hit**, so a slower weapon fires it less often for the same authored
+number. `SkillDef.ProcChanceTwoHanded` (0 = no split, which is every other proc) is what buys it
+back; 3.45/3.00 = ×1.15, the middle of his own 12-18%. Bow and Dual are inherently two-handed, so a
+bow takes the higher branch — which is what he asked for by name. The gate is unchanged: blunt or
+bow, any hands. Both `buffer 3rd.csv` rows moved with it.
+
+## 2026-09-02 — 0.102.6: the rung you can actually buy
 
 His playtest-29 find: *"for some reason 'harmonist' don't learn serenity, vigor, vamp? Why are they in
 the csv... Are there other like that? — force, insight"*.

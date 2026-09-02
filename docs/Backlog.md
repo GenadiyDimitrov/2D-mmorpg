@@ -1250,7 +1250,7 @@ answered at the bottom of this section rather than as entries — neither asks f
   Monotonic, and it takes a Common from 4.4-per-real-item to 20. ⚠ It must land in **one place**
   (`ItemCatalog.SellPrice`) — the same rule as `MobCatalog.EffectiveRate`: never at a call site.
 
-- `BL-115` 🔴 **NPCs GET `canDie` AND `retaliate`, AND ATTACKING ANY NPC NEEDS PVP-ON.** *"field
+- `BL-115` ✅ **BUILT 2026-09-02 (0.102.7) — NPCs GET `canDie` AND `retaliate`, AND ATTACKING ANY NPC NEEDS PVP-ON.** *"field
   guards/watchmen are targetable and hittable even without a pvp-on ...and i can hit them auto in
   auto-farm ...they shouldn't act as mob"*. Your model, verbatim:
   - **every NPC** is attackable **only with pvp-on**;
@@ -1259,6 +1259,19 @@ answered at the bottom of this section rather than as entries — neither asks f
   - **guards are the only pair set true/true** — they can be killed and they do strike back.
 
   ⚠ **Auto-farm must never target an NPC**, which is the half that bit you.
+
+  ✅ **What the guard half actually was, and it is worse than a missing rule:** `BL-79` DID write
+  *"a player attacking them (pvp-on must be on)"* — into `CanPvpHit`, where it has sat since 0.94.0.
+  Both callers asked it as `target.Kind == EntityKind.Player && !CanPvpHit(…)`, and **a guard is a
+  MOB**, so no caller ever arrived with a target that clause could answer. The rule was stated in the
+  code, commented at length, and unreachable. Both single-target paths delegate unconditionally now;
+  an ordinary mob still answers `true`, so PvE is untouched. 🔑 **The auto-farm half needed a
+  DIFFERENT answer, not the same one** — a guard is excluded from *acquisition* outright, because the
+  toggle alone would still let a PK's autopilot walk into a guard tower. Defence is untouched.
+  ✅ The NPC half is `NpcDef.CanDie` / `NpcDef.Retaliate`, both false everywhere, replacing the flat
+  *"you can't attack that"* of 2026-07-21. ⚠ **The guards were NOT rebuilt as NPCs to carry the two
+  booleans** — they are mobs with the mob AI, a class kit, real gear and a respawn timer, and they are
+  already your true/true pair by construction. Say the word if you want them literally `NpcDef`s.
 
 - `BL-116` 🔴 **THE BOW-KITE EXPLOIT AGAINST MOB CHASE RANGE.** *"I stand just outside the radius and
   shoot it with a bow .. The mob agros me back then stops and it moves towards/away from me and if I do
@@ -1289,12 +1302,21 @@ answered at the bottom of this section rather than as entries — neither asks f
   where a delete does not**: `ParseLearnedSkills` carries the level across (rung 5 → 1, rung 18 → 14),
   or a saved Warchanter would have lost the whole ladder invisibly. Both buffer CSVs moved with it.
 
-- `BL-120` 🔵 **COMBO MASTERY WORKS WITH A BOW, and its chance is re-tuned.** *"buffers combo mastery
+- `BL-120` ✅ **BUILT 2026-09-02 (0.102.7) — COMBO MASTERY WORKS WITH A BOW, and its chance is re-tuned.** *"buffers combo mastery
   should work with a bow ... Also 3% chance with `blunt/1` and 3.45% chance with `bow|blunt/2`"*. Your
   reason, which is why the two numbers differ: *"2h weapons are slower by ~12/18%, so increasing the
   chance balances the slower attack speed (bow is faster than 2h blunt as harmonist have bow
   expertise)"*. ⚠ The CSV row changes with the code — this is the third requirement in a fortnight that
   lived only in free-text `DESCR` and disagreed with its own row.
+
+  ✅ **The bow half was already done** — it was fixed on 2026-08-29 as part of the weapon-gate run
+  (the elf Warchanter could never once proc a passive he had paid 880k SP for). What landed today is
+  the **second chance**: `SkillDef.ProcChanceTwoHanded`, unset on every other proc in the game, and
+  read only after the weapon has already satisfied the gate. 🔑 **It is a general field and not a
+  Combo-Mastery special case, because your reason generalises**: a proc rolled per LANDED HIT is worth
+  less on a slower weapon, so any future proc a two-hander can carry owes the same correction.
+  3.45/3.00 = **×1.15**, the middle of your own 12-18%. Bow and Dual are inherently two-handed, so a
+  bow takes the higher branch by construction. Both `buffer 3rd.csv` rows moved with it.
 
 - `BL-121` ❓ **`RateConfig.VendorPriceRate` — MY PROPOSAL, YOUR CALL, ANSWERING YOUR SECOND `[?]`.** See
   the answer below. If you want it: **one field, default 1.0, read only in `ItemCatalog.BuyPrice`**. No

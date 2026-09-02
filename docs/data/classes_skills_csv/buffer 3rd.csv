@@ -56,9 +56,9 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 62,HP Boost,hp_boost,Passive,,,0,0,self/single,0,0,0,"Increase max HP +600",0,170k,[],,
 70,HP Boost,hp_boost,Passive,,,0,0,self/single,0,0,0,"Increase max HP +700",0,390k,[],,
 ,,,,,,,,,,,,,,,,,-----------------------Combo Mastery-----------------------
-52,Combo Mastery,wc_combo_mastery,Passive,blunt|bow,,0,0,self/single,0,60,30,"Doing Damage With 3% Chance: attack speed +10% and cast speed +5% for you, half of both (+5%/+2.5%) to the party. Require: Bow/Blunt",0,74k,[],,
-64,Combo Mastery,wc_combo_mastery,Passive,blunt|bow,,0,0,self/single,0,60,30,"Doing Damage With 3% Chance: attack speed +15% and cast speed +10% for you, half of both (+7.5%/+5%) to the party. Require: Bow/Blunt",0,190k,[],,
-74,Combo Mastery,wc_combo_mastery,Passive,blunt|bow,,0,0,self/single,0,60,30,"Doing Damage With 3% Chance: attack speed +20% and cast speed +15% for you, half of both (+10%/+7.5%) to the party. Require: Bow/Blunt",0,880k,[],,
+52,Combo Mastery,wc_combo_mastery,Passive,blunt|bow,,0,0,self/single,0,60,30,"Doing Damage With 3% Chance (3.45% with bow or blunt/2): attack speed +10% and cast speed +5% for you, half of both (+5%/+2.5%) to the party. Require: Bow/Blunt",0,74k,[],,
+64,Combo Mastery,wc_combo_mastery,Passive,blunt|bow,,0,0,self/single,0,60,30,"Doing Damage With 3% Chance (3.45% with bow or blunt/2): attack speed +15% and cast speed +10% for you, half of both (+7.5%/+5%) to the party. Require: Bow/Blunt",0,190k,[],,
+74,Combo Mastery,wc_combo_mastery,Passive,blunt|bow,,0,0,self/single,0,60,30,"Doing Damage With 3% Chance (3.45% with bow or blunt/2): attack speed +20% and cast speed +15% for you, half of both (+10%/+7.5%) to the party. Require: Bow/Blunt",0,880k,[],,
 ,,,,,,,,,,,,,,,,,-----------------------Mana Restoration-----------------------
 40,Mana Vampirism,wc_mana_vampirism,Passive,blunt|bow,,0,0,self/single,0,0,0,"+1% mana vampirism (physical basic atack only), Require: Bow/Blunt",0,36k,[],,
 60,Mana Vampirism,wc_mana_vampirism,Passive,blunt|bow,,0,0,self/single,0,0,0,"+1.5% mana vampirism (physical basic atack only), Require: Bow/Blunt",0,120k,[],,

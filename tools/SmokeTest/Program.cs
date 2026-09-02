@@ -2030,6 +2030,85 @@ await gm.DisposeAsync();
     await lr.DisposeAsync();
 }
 
+// -------------------------------------------------------------------------------------------
+// 12. A FRESH CHARACTER'S FIRST STATS ARE ALREADY THE RECOMPUTED ONES — his playtest-29 find.
+//
+//     *"newly created mage (lvl 1) have his first spell cast without penalty of weapon_proficiency ..
+//     almost oneshoted a pig being naked ... Then i become lvl 5 and I did 1dmg with ~11s cast so the
+//     passive recalculate the stats."*
+//
+//     `AutoLearnCoreSkills` WRITES the auto-granted skills and never recomputed; on the login path the
+//     only recompute runs BEFORE it. So a brand-new character's numbers were the numbers of a
+//     character with NO passives, and stayed that way until the first level-up or equip.
+//
+//     🔑 THE DISCRIMINATOR IS A RELOG, AND IT IS EXACT. On the FIRST login the saved row has none of
+//     the auto-granted ids, so the grant is what adds them — the failing case. On the SECOND, the row
+//     already carries them, so PersistenceService's own recompute folds them in and the numbers are
+//     necessarily right. Same character, same level, same (empty) gear, nothing done in between: the
+//     two stat pushes must be identical. With the bug they cannot be, because the first is the stats
+//     of a character with no passives and the second is the stats of one with them.
+//
+//     ⚠ Deliberately NOT "sit down to force a recompute" — SetMoveState pushes stats without calling
+//     RecomputeDerived, so that version of this test would have passed with the bug fully present.
+//
+//     🔑 It is also formula-free, which is what makes it survive re-tuning: it never says what a
+//     level-1 mage's cast speed SHOULD be, only that the two logins agree. No future retune of
+//     Spellcaster Mastery can turn it red on its own.
+// -------------------------------------------------------------------------------------------
+{
+    var gr = await ConnectAsync("test1", "test");
+    string gname = "Grant" + DateTime.UtcNow.ToString("HHmmssff");
+    var gerr = await gr.Hub.InvokeAsync<string?>("CreateCharacter",
+        new CreateCharacterRequest(gname, Race.Human, BaseClass.Mage));
+    Check("created a brand-new level-1 mage", gerr is null, gerr);
+
+    if (gerr is null)
+    {
+        var gchars = await gr.Hub.InvokeAsync<CharacterList>("ListCharacters");
+        var gid = gchars.Characters.First(c => c.Name == gname).Id;
+
+        async Task<StatsUpdate?> EnterAndReadStatsAsync()
+        {
+            gr.Stats = null;
+            var res = await gr.Hub.InvokeAsync<LoginResult>("EnterWorld", new EnterWorldRequest(gid));
+            gr.MyId = res.EntityId;
+            await gr.WaitFor(() => gr.Stats is not null, 8000);
+            return gr.Stats;
+        }
+
+        var firstLogin = await EnterAndReadStatsAsync();
+        Check("the fresh mage was sent his stats on his FIRST login", firstLogin is not null);
+
+        // Spellcaster Mastery is auto-granted at level 1 and is the passive his find was about — if
+        // the grant did not even land, everything below is measuring the wrong thing.
+        Check("...and the grant gave him Spellcaster Mastery",
+              gr.Learned?.Skills.Any(s => s.Id == SkillCatalog.SpellcasterMastery) == true);
+
+        var leaveErr = await gr.LeaveWorldAsync();
+        Check("...and he logs out cleanly, saving those granted ids", leaveErr is null, leaveErr);
+
+        var secondLogin = await EnterAndReadStatsAsync();
+        Check("...and he was sent his stats on the SECOND login", secondLogin is not null);
+
+        // The four numbers a missing passive actually moves: the pools, the cast-speed multiplier the
+        // untrained-weapon penalty halves, and magic attack.
+        bool same = firstLogin is not null && secondLogin is not null
+                 && firstLogin.MaxHp == secondLogin.MaxHp
+                 && firstLogin.MaxMp == secondLogin.MaxMp
+                 && Math.Abs(firstLogin.CastSpeedMult - secondLogin.CastSpeedMult) < 0.0001f
+                 && firstLogin.MagicAttack == secondLogin.MagicAttack;
+        Check("...and BOTH logins report the same stats — the grant recomputed, so a brand-new "
+            + "character is not playing without his passives",
+              same,
+              firstLogin is null || secondLogin is null ? "a stats push never arrived" :
+              $"1st: hp {firstLogin.MaxHp} mp {firstLogin.MaxMp} cast x{firstLogin.CastSpeedMult:0.###} mAtk {firstLogin.MagicAttack}"
+            + $" | 2nd: hp {secondLogin.MaxHp} mp {secondLogin.MaxMp} cast x{secondLogin.CastSpeedMult:0.###} mAtk {secondLogin.MagicAttack}");
+    }
+
+    await gr.LeaveWorldAsync();
+    await gr.DisposeAsync();
+}
+
 
 return Finish();
 
@@ -2063,6 +2142,11 @@ sealed class Session : IAsyncDisposable
     /// <summary>The last "Learned" push. The test needs it to lay the bar out ITSELF now that the
     /// server no longer auto-places skills.</summary>
     public LearnedSkills? Learned;
+
+    /// <summary>The last "Stats" push — §12's whole subject. A character's numbers are the only place
+    /// an unapplied passive is visible, and the client is sent them; nothing else on the wire says
+    /// whether a granted skill was ever folded in.</summary>
+    public StatsUpdate? Stats;
 
     // Delta-snapshot capture — the live world push. Accumulated so a test can assert an entity was
     // SPAWNED (full), UPDATED (lean), or DESPAWNED, and reset the tallies between phases.
@@ -2150,6 +2234,7 @@ sealed class Session : IAsyncDisposable
         Hub.On<InventoryUpdate>("Inventory", i => Inv = i);
         Hub.On<WarehouseUpdate>("Warehouse", w => Ware = w);
         Hub.On<LearnedSkills>("Learned", l => Learned = l);
+        Hub.On<StatsUpdate>("Stats", s => Stats = s);
         Hub.On<SubclassListDto>("Subclasses", s => Subclasses = s);
         Hub.On<SnapshotDelta>("SnapshotDelta", d =>
         {

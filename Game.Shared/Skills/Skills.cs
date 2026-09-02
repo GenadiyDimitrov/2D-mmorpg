@@ -287,9 +287,17 @@ public record SkillDef(
     // on success the two named skills' buffs are applied (self / party) at the SAME level as the
     // passive's own, and the passive will not fire again for ProcCooldownTicks. This is his
     // "Doing Damage Increases Attack/Cast Speed ... With 3% Chance" row, and it is the first proc in
-    // the game — hence the fields rather than a bespoke hook. ⚠ RequiredWeapon is honoured: his row
-    // says "Require: Box/Blunt", so it is inert with a bow.
+    // the game — hence the fields rather than a bespoke hook. ⚠ RequiredWeapon/RequiredHands are
+    // honoured: his row says "Require: Bow/Blunt", so a sword or an empty hand never rolls it.
     float ProcChance = 0f,
+    // THE SAME PROC, ROLLED FROM A TWO-HANDED WEAPON (owner, 2026-09-02, `BL-120`). 0 = no split, the
+    // one chance above covers every weapon. His reason is the whole design: *"2h weapons are slower by
+    // ~12/18%, so increasing the chance balances the slower attack speed"* — a proc rolled per LANDED
+    // HIT is worth less on a slower weapon, so the per-hit number has to rise for the per-minute number
+    // to stay put. Bow and Dual are inherently two-handed (WeaponType.TwoHanded), so a bow takes this
+    // branch, which is what he asked for by name: *"3% chance with blunt/1 and 3.45% with bow|blunt/2"*.
+    // ⚠ It is NOT a second gate — the weapon must still satisfy RequiredWeapon/RequiredHands first.
+    float ProcChanceTwoHanded = 0f,
     int ProcCooldownTicks = 0,
     // DEFENSIVE trigger (the Sigils, 2026-08-26): roll this proc when the owner TAKES damage instead
     // of when they deal it. Same chance, same cooldown, same rung payload — only the moment differs,

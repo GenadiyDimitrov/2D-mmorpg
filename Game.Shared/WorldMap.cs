@@ -781,7 +781,19 @@ public record RoadPath(float Width, MapPoint[] Points)
 public enum NpcRole { QuestGiver = 0, ClassChange = 1, Vendor = 2, Teleporter = 3, Buffer = 4, SkillReset = 5, Warehouse = 6, CraftMaster = 7, SpExchange = 8 }
 
 /// <summary>A placed NPC. Id is referenced by quests + class-change requirements.</summary>
-public record NpcDef(string Id, string Name, float X, float Y, NpcRole Role);
+/// <param name="CanDie">`BL-115`, his words: *"canDie if false hp can't go below 1"*. FALSE on every
+/// NPC in the world today — they take the hit, the number floats, and the pool stops at 1: a training
+/// dummy that happens to sell potions. It is a property rather than a blanket rule because he named
+/// the pair that would be true/true (the watch), and because "immortal" and "will not fight back" are
+/// two different statements about an NPC that a single flag would fuse.</param>
+/// <param name="Retaliate">*"retaliate if false don't strike back just sit and take it"*. Also FALSE
+/// everywhere today. ⚠ THE WATCH IS NOT AN NpcDef — the guards `BL-79` built are MOBS
+/// (`MobType.Guard`), with the mob AI, the class kit, the real gear and a respawn timer, and they are
+/// already the true/true pair by construction: they die and they hit back. Rebuilding them as NPCs to
+/// carry these two booleans would throw all of that away to arrive back where they started. What the
+/// guards were actually missing is the PvP gate, which was written but unreachable — see CanPvpHit.</param>
+public record NpcDef(string Id, string Name, float X, float Y, NpcRole Role,
+                     bool CanDie = false, bool Retaliate = false);
 
 /// <summary>A safe zone (city/castle). Id is referenced by teleports later.</summary>
 /// <param name="GatedByCityId">Empty for a city — every gatekeeper offers it, which is what makes the

@@ -317,6 +317,15 @@ public class GameLoopService : BackgroundService
             new LoginResult(true, null, entity.Id, entity.X, entity.Y, GameClock.Epoch, entity.Role));
 
         AutoLearnCoreSkills(entity);
+        // …which now recomputes, so the pools it just moved have to be re-filled. PersistenceService
+        // fills them to the max it knew BEFORE the auto-granted passives existed; a mage whose
+        // Spellcaster Mastery or floor passive raises MaxMp would otherwise log in short of full every
+        // time. Skipped for a character who logged out DEAD — that death still stands (DiedWhileAway).
+        if (!entity.Dead)
+        {
+            entity.Hp = entity.MaxHp;
+            entity.Mp = entity.MaxMp;
+        }
         RestorePersistedBuffs(entity);   // before SendStats — the buffs change the numbers it sends
         RestoreBossJudgment(entity);     // `BL-98` — the ladder kept running while he was away
         SendInventory(entity);
@@ -1014,6 +1023,16 @@ public class GameLoopService : BackgroundService
         if (attacker.Kind == EntityKind.Player && target.Kind == EntityKind.Mob && IsGuard(target))
             return attacker.PvpEnabled;
 
+        // `BL-115` — AND SO IS SWINGING AT ANY NPC. His rule, and it REPLACES the flat refusal that
+        // stood here since 2026-07-21: *"all npc can be attacked only with pvp-on and all npcs
+        // (without guards) are immortal (normal hp) but like dummies hp don't go below 1 and don't
+        // strike back"*. The old "you can't attack that" was the right shape for the bug it fixed (a
+        // client killing a vendor) and the wrong shape for what he wants — a dummy you can practise
+        // on, deliberately, and never by accident. The immortality half is ApplyDamage's floor; this
+        // is only the door.
+        if (attacker.Kind == EntityKind.Player && target.Kind == EntityKind.Npc)
+            return attacker.PvpEnabled;
+
         if (attacker.Kind != EntityKind.Player || target.Kind != EntityKind.Player)
             return true;
         if (attacker.Id == target.Id || target.Dead)
@@ -1030,6 +1049,8 @@ public class GameLoopService : BackgroundService
     private string PvpRefusalReason(Entity attacker, Entity target) =>
         target.Kind == EntityKind.Mob
             ? $"{target.Name} is under the town's protection. (Enable PvP to attack it.)"
+            : target.Kind == EntityKind.Npc
+            ? $"{target.Name} is a townsfolk. (Enable PvP to attack them.)"
             : SameParty(attacker, target)
                 ? "You can't attack a member of your own party."
                 : "You can't attack that player here. (Enable PvP; not in towns.)";
@@ -1404,22 +1425,20 @@ public class GameLoopService : BackgroundService
             DistanceSq(attacker, target) > GameConstants.ViewRange * GameConstants.ViewRange)
             return;
 
-        // NPCs are scenery with a job — vendors, teleporters, quest givers. Nothing stopped a client
-        // from attacking one, and since they carry HP like any entity they could be KILLED (found on
-        // the phone, 2026-07-21: the Unity client targeted an NPC and killed it). The WPF client only
-        // ever avoided it by never sending the command, which is not a rule — this is.
-        if (target.Kind == EntityKind.Npc)
-        {
-            SendSystemToEntity(attacker, "You can't attack " + target.Name + ".");
-            return;
-        }
-
-        // You cannot swing at what you cannot see (BL-69). Silent, unlike the NPC refusal above: the
+        // You cannot swing at what you cannot see (BL-69). Silent, unlike the refusals below: the
         // whole point of a hide is that there is nothing there to be told about.
         if (!CanSee(attacker, target))
             return;
 
-        if (target.Kind == EntityKind.Player && !CanPvpHit(attacker, target))
+        // 🔴 EVERY KIND ASKS THE SAME QUESTION (2026-09-02, `BL-115`). This read
+        // `target.Kind == EntityKind.Player && !CanPvpHit(...)` until today, which made the guard
+        // clause INSIDE CanPvpHit unreachable from the one path that matters: no caller ever arrived
+        // with a mob target, so `BL-79`'s *"a player attacking them (pvp-on must be on)"* was a rule
+        // the code stated and never enforced. His playtest-29 find is exactly that — *"field guards/
+        // watchmen are targetable and hittable even without a pvp-on"*. CanPvpHit already answers
+        // `true` for an ordinary mob, so dropping the prefix costs normal PvE nothing and hands the
+        // whole decision to the one method that is supposed to own it.
+        if (!CanPvpHit(attacker, target))
         {
             SendSystemToEntity(attacker, PvpRefusalReason(attacker, target));
             return;
@@ -1566,6 +1585,25 @@ public class GameLoopService : BackgroundService
                 SendTitles(player);
             }
         }
+
+        // 🔴 THE RECOMPUTE IS PART OF THE GRANT (2026-09-02, his playtest-29 find: *"newly created mage
+        //    (lvl 1) have his first spell cast without penalty of weapon_proficiency … almost
+        //    oneshoted a pig being naked"*).
+        //
+        //    Everything above WRITES LearnedSkills — Spellcaster Mastery, the class floor passive, the
+        //    reflect passive, Novice's Grace, Angel's Protection, and the robe-rung clamp. None of it
+        //    means anything until RecomputeDerived folds it into the stats, and on the LOGIN path the
+        //    only recompute (PersistenceService, right after the bag is loaded) runs BEFORE this
+        //    method. So a character whose saved row did not already carry these ids — every brand-new
+        //    one — entered the world with the ids in his skill window and NOT ONE of their effects on
+        //    his numbers: no untrained-weapon cast penalty, no fizzle multiplier, no floor passive.
+        //    It corrected itself at the first level-up or equip, which is exactly the *"then i become
+        //    lvl 5 … and I did 1dmg with ~11s cast"* he measured, and is why it read as the passive
+        //    arriving late rather than as the grant never having landed.
+        //
+        //    It belongs HERE and not at the ten call sites, because every one of them has the same
+        //    obligation: a grant that does not recompute is a grant that has not happened.
+        player.RecomputeDerived();
     }
 
     /// <summary>True if the player has learned a skill that REPLACES the given id
@@ -2024,15 +2062,10 @@ public class GameLoopService : BackgroundService
                 SendSystemToEntity(caster, $"{def.Name} needs a target.");
                 return;
             }
-            // The SAME rule as a basic attack: NPCs are not valid targets for an offensive skill
-            // either. Guarding only HandleAttack left this route wide open — the owner could still
-            // land nukes on a vendor (they just could not kill him, because damage floors at 1 HP).
-            // Two entry points to "hit that thing" need the same answer at both.
-            if (target.Kind == EntityKind.Npc)
-            {
-                SendSystemToEntity(caster, "You can't attack " + target.Name + ".");
-                return;
-            }
+            // (The flat "NPCs are not valid targets" refusal that stood here moved INTO CanPvpHit
+            //  with `BL-115`, together with the guard clause it sat next to — see below. The rule it
+            //  enforced is not gone, it is now the same PvP-on door a basic attack asks at, which is
+            //  the whole reason both entry points delegate rather than each carrying their own list.)
             // You cannot aim at what you cannot see (BL-69). The snapshot already withholds a hidden
             // character, but a target id the client is still holding from a moment ago would sail
             // straight through — so the server checks rather than trusting the omission.
@@ -2048,7 +2081,10 @@ public class GameLoopService : BackgroundService
                 SendSystemToEntity(caster, $"{def.Name} only works on monsters.");
                 return;
             }
-            if (target.Kind == EntityKind.Player && !CanPvpHit(caster, target))
+            // EVERY KIND, same as HandleAttack (`BL-115`) — the `Kind == Player` prefix that used to
+            // stand here is what made the guard and NPC clauses inside CanPvpHit unreachable. An
+            // ordinary mob still answers `true`, so PvE is untouched.
+            if (!CanPvpHit(caster, target))
             {
                 SendSystemToEntity(caster, PvpRefusalReason(caster, target));
                 return;
@@ -5033,6 +5069,11 @@ public class GameLoopService : BackgroundService
         {
             if (e.Kind != EntityKind.Mob || e.Dead || e.TrainingDummy) continue;
             if (e.CombatTargetId != p.Id) continue;       // only things actually on us
+            // A guard is EXCLUDED FROM ACQUISITION but not from defence (`BL-115`) — if the watch is
+            // already swinging at you the fight exists, and refusing to let the autopilot answer would
+            // just be a worse way to die. CanPvpHit keeps his door on it: swinging back at the watch,
+            // like swinging at it first, wants the toggle on.
+            if (!CanPvpHit(p, e)) continue;
             if (GameConstants.InSafeZone(e.X, e.Y) || !CanAttackRank(p, e)) continue;
             float ecx = e.X - cx, ecy = e.Y - cy;
             if (ecx * ecx + ecy * ecy > margin * margin) continue;
@@ -5262,7 +5303,7 @@ public class GameLoopService : BackgroundService
     private Entity? ValidAutoTarget(Entity p)
     {
         if (p.CombatTargetId is Guid tid && _world.Entities.TryGetValue(tid, out var t) &&
-            t.Kind == EntityKind.Mob && !t.Dead && !t.TrainingDummy &&
+            t.Kind == EntityKind.Mob && !t.Dead && !t.TrainingDummy && !IsGuard(t) &&
             !GameConstants.InSafeZone(t.X, t.Y) && CanAttackRank(p, t))
         {
             var (cx, cy) = FarmCenter(p);
@@ -5285,6 +5326,12 @@ public class GameLoopService : BackgroundService
         foreach (var e in _world.Grid.Nearby(p))
         {
             if (e.Kind != EntityKind.Mob || e.Dead || e.TrainingDummy) continue;
+            // 🔑 THE WATCH IS NEVER FARMED (`BL-115`). Not "not without PvP on" — never. His find was
+            // *"i can hit them auto in auto-farm ... they shouldn't act as mob"*, and the PvP gate
+            // alone would not answer it: a PK with the toggle on would still have his autopilot walk
+            // up to a guard tower and start a fight he never asked for. Attacking the watch is a
+            // deliberate act, and a deliberate act is exactly what an autopilot cannot make.
+            if (IsGuard(e)) continue;
             if (GameConstants.InSafeZone(e.X, e.Y) || !CanAttackRank(p, e)) continue;
             float ecx = e.X - cx, ecy = e.Y - cy;
             if (ecx * ecx + ecy * ecy > rangeSq) continue;   // inside the farm circle only
@@ -9180,7 +9227,14 @@ public class GameLoopService : BackgroundService
             // two-handed weapon pass a two-hands-only proc. WeaponTypes.Satisfies is the one rule now.
             if (!owner.WeaponType.Satisfies(def.RequiredWeapon, def.RequiredHands))
                 continue;
-            if (_rng.NextDouble() >= def.ProcChance)
+            // A TWO-HANDED WEAPON MAY ROLL A DIFFERENT NUMBER (`BL-120`). A proc is rolled per landed
+            // hit, so a weapon that swings ~12-18% slower fires it ~12-18% less often for the same
+            // authored chance; ProcChanceTwoHanded is what buys that back. Unset (0) = one chance for
+            // every weapon, which is every other proc in the game.
+            float chance = def.ProcChanceTwoHanded > 0f && owner.WeaponType.IsTwoHanded()
+                ? def.ProcChanceTwoHanded
+                : def.ProcChance;
+            if (_rng.NextDouble() >= chance)
                 continue;
 
             owner.ProcCooldowns[skillId] = Math.Max(1, def.ProcCooldownTicks);
@@ -11661,6 +11715,17 @@ public class GameLoopService : BackgroundService
         // Training dummies never aggro.
         if (victim.Kind == EntityKind.Mob && !victim.Dead && !victim.TrainingDummy)
             AddThreat(victim, attacker, 1f);
+
+        // `BL-115` — *"retaliate if false don't strike back just sit and take it"*. FALSE on every NPC
+        // placed today, so this branch is inert and deliberately so: it exists because the flag is
+        // half of the pair he asked for, and a flag with no reader is a promise the code does not
+        // keep. An NPC that ever gets `retaliate: true` fights the only way a stationary entity can —
+        // it takes a combat target and swings back at whatever is in reach.
+        if (victim.Kind == EntityKind.Npc && victim.NpcRetaliates && !victim.Dead)
+        {
+            victim.CombatTargetId = attacker.Id;
+            victim.Engaged = true;
+        }
     }
 
     /// <summary>Add aggro to a mob's threat table and (re)target the highest-threat foe,
@@ -12354,7 +12419,11 @@ public class GameLoopService : BackgroundService
         // dealer should be able to bring one down if they really want to, like a small raid boss with
         // no drop and no XP, respawning after ~5 minutes. That will need its own NpcRole rather than
         // an exception here (see docs/Roadmap.md).
-        if ((target.TrainingDummy || target.Kind == EntityKind.Npc) && target.Hp < 1) target.Hp = 1;
+        // `BL-115` — `canDie` is what lifts the floor, and it is FALSE on every NPC placed today:
+        // *"all npcs (without guards) are immortal (normal hp) but like dummies hp don't go below 1"*.
+        // The pool itself is untouched, so the bar drops honestly and simply stops at one.
+        if ((target.TrainingDummy || (target.Kind == EntityKind.Npc && !target.NpcCanDie)) && target.Hp < 1)
+            target.Hp = 1;
 
         // Being hit while sitting breaks the sit and starts the stand-up window:
         // you can't move/cast until it elapses.
@@ -15187,7 +15256,9 @@ public class GameLoopService : BackgroundService
                 Speed = 0,
                 Level = 1,
                 NpcId = npc.Id,
-                NpcRole = npc.Role
+                NpcRole = npc.Role,
+                NpcCanDie = npc.CanDie,          // `BL-115` — false everywhere today
+                NpcRetaliates = npc.Retaliate
             };
             entity.RecomputeDerived();
             _world.Entities[entity.Id] = entity;

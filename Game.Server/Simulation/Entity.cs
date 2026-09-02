@@ -567,6 +567,13 @@ public class Entity
     public string? NpcId { get; set; }
     public NpcRole NpcRole { get; set; }
 
+    /// <summary>`BL-115` — copied off <see cref="NpcDef"/> at spawn, because the two rules that read
+    /// them (the damage floor and the retaliation seam) run on the hot path and must not go back to
+    /// the catalog by string for every hit. Both FALSE on every NPC the world places today: attackable
+    /// only with PvP on, never killable, never strikes back.</summary>
+    public bool NpcCanDie { get; set; }
+    public bool NpcRetaliates { get; set; }
+
     /// <summary>Staff role, held PER CHARACTER (owner) — an admin ACCOUNT can also have plain characters.
     /// Loaded from the character row at EnterWorld.</summary>
     public AccountRole Role { get; set; } = AccountRole.Player;
