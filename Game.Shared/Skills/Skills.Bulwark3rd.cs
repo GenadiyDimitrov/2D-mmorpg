@@ -218,12 +218,18 @@ public partial class SkillCatalog
         // ⚠ The debuffs are HOLDER-SIDE penalties on the creature, not resistances on the tank — see
         // BuffInstance.CritRatePenalty. A tank cannot out-tank a crit aimed at his healer; he can make
         // the monster worse at critting anyone.
+        //
+        // 🔑 BOTH REPLACE `strike` (his ruling, 2026-09-03: *"shield smash to replace strike"*). Strike
+        // is the level-5 sword/blunt bash off `fighter 1st.csv`; a smash is the same beat with a shield
+        // behind it, so the 40 rung retires it the way Holy Ray retires Holy Bolt. It is a WITHIN-chain
+        // replace (fighter → tank), which is what his cross-chain id rule allows.
         new(TankSmashRate, "Shield Smash - Rate", BaseClass.Fighter,
             SkillEffect.PhysicalDamage,
             MpCost: BulwarkSmashMp[0], CastTicks: 10, CooldownTicks: 60, Range: 40, Power: 1000,
             DurationTicks: 300, BuffKey: "smash_rate", Rank: 1,
             Category: SkillCategory.Physical, SpCost: BulwarkSp[0],
             RequiredShield: ShieldGate.Required,
+            Replaces: new[] { Strike },
             CritRatePenalty: 0.30f, MagicCritRatePenalty: 0.05f,
             Description: "Slams an enemy with your shield and leaves it clumsy for 30s: much less "
                        + "likely to land a critical blow, on either channel. Requires a shield.",
@@ -244,6 +250,7 @@ public partial class SkillCatalog
             DurationTicks: 300, BuffKey: "smash_power", Rank: 1,
             Category: SkillCategory.Physical, SpCost: BulwarkSp[0],
             RequiredShield: ShieldGate.Required,
+            Replaces: new[] { Strike },
             CritDamagePenalty: 0.15f, MagicCritDamageDebuff: 0.03f,
             Description: "Slams an enemy with your shield and blunts its critical blows for 30s — "
                        + "when it does crit, it hurts far less. Requires a shield.",

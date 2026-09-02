@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.105.0";
+    public const string GameVersion = "0.106.0";
 
     // ----- SP BOTTLE (owner, 2026-08-26) -------------------------------------------------------
     // *"u can make an npc to take your 1kkk SP + 100kk gold and give you a tradable/sellabel
@@ -157,7 +157,14 @@ public static class GameConstants
     /// threshold could never tell a 200-unit blink from a 200-unit walk. Optional with a default on
     /// both records, so an old client ignores it and behaves exactly as it does today.
     /// ⚠ A NEW APK IS REQUIRED to SEE the change (the server half is harmless on its own).
-    public const int ProtocolVersion = 31;
+    /// 31 → 32 (2026-09-03): `DebugConfigDto` gained `FreeBuffs` (`BL-126`), appended last with a
+    /// default, and the admin panel sends the record POSITIONALLY. An old admin client therefore sends
+    /// one float short: the field arrives as its default 0 and pressing Apply on a stale client would
+    /// silently switch self-buffing OFF. Nothing else is affected, and no ordinary player's client
+    /// touches this record at all — but "an old panel can turn a new setting off without saying so" is
+    /// exactly what a protocol number is for.
+    /// ⚠ A NEW APK IS REQUIRED (the Functions/Class tab rework of `BL-127` rides on the same build).
+    public const int ProtocolVersion = 32;
 
     /// <summary>
     /// The oldest protocol this server still speaks. Equal to <see cref="ProtocolVersion"/> means

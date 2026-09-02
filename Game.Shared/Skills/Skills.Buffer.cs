@@ -154,7 +154,20 @@ public static partial class SkillCatalog
     /// <summary>Buffs a max-level buffer CAN cast that the admin set deliberately skips. War Bulwark
     /// shares one buff key with War Might on purpose (an ally wears one or the other, never both), so
     /// granting both would only show whichever landed last.</summary>
-    private static readonly HashSet<string> AdminBuffSkip = new() { WcWarBulwark };
+    private static readonly HashSet<string> AdminBuffSkip = new()
+    {
+        WcWarBulwark,
+        // 🔑 THE TWO HE DOES NOT WANT IN A FULL BUFF (owner, 2026-09-03): *"don't want a Shrouding
+        //    hymn in the full buff. And bow expertise."* Both are situational rather than wrong, and
+        //    both actively spoil the thing a full buff is FOR — reading a fully-buffed character's
+        //    numbers and then fighting with them. Shrouding Hymn is party STEALTH: unaggroed creatures
+        //    ignore you, so a buffed test character cannot be attacked without picking the fight
+        //    himself. Bow Expertise does nothing at all unless a bow is held, so on every other build
+        //    it is a square on the bar that means nothing. Neither is lost — both are still one
+        //    `/buff <name>` away when a test actually wants them.
+        ShroudingHymn,
+        WcBowExpertise,
+    };
 
     private static string[] BuildAdminBuffSet()
     {

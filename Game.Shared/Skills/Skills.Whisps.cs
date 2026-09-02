@@ -297,6 +297,13 @@ public partial class SkillCatalog
                                            // and what keeps it out of the offensive target checks
             TargetMode: TargetMode.SelfOnly,
             SpCost: sp[0],
+            // 🔑 A SUMMON COSTS 4 SKILL STONES (his ruling, 2026-09-03: *"whisps to take 4 skillstone
+            //    each summon"*). It is a per-CAST reagent, so it is paid again on every resummon —
+            //    including the 5s-before-it-drops renewal of `BL-112`, which is the point: a whisp
+            //    kept up for a whole farm hour is 12 stones an hour per slot, and the mastery's second
+            //    slot doubles that. Charged on LANDING, like every other reagent, so a cancelled cast
+            //    costs nothing but the 20% initial MP.
+            ConsumableId: ItemCatalog.SkillStone, ConsumableAmount: 4,
             SummonsWhisp: ids,
             Description: description,
             Levels: Enumerable.Range(0, WhispMp.Length)

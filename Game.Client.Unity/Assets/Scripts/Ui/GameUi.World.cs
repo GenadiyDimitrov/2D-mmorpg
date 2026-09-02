@@ -1065,10 +1065,19 @@ namespace Game.Client
 
             _bagTabButtons = BuildCategoryTabs(inner, BagTabs, new Vector2(16f, -chrome - 72f), 80f,
                                                cat => { _bagTab = cat; _bagRevision = -1; });
-            // `BL-117` — the [ORDER] cycle, at the end of the tab strip (five tabs at 80+2 each).
-            // `_bagRevision = -1` is how every other control here forces a redraw: the list is only
-            // rebuilt when the revision moves, so re-sorting without it would change nothing on screen.
-            BuildOrderButton(inner, new Vector2(16f + BagTabs.Length * 82f, -chrome - 72f), 86f,
+            // `BL-117` — the [ORDER] cycle. 🔴 IT WAS AT THE END OF THE TAB STRIP AND HUNG OUT OF THE
+            // WINDOW while the bag was collapsed (owner, 2026-09-03: *"when in bag the equip is not
+            // expanded the A-Z button is outside the box"*). The arithmetic: five tabs at 82 from x=16
+            // end at 426, the button is 86 wide, so its right edge sat at 512 against a COLLAPSED width
+            // of 460 — it only fitted once [Equip] widened the panel to 792, which is why it looked
+            // fine whenever the paper-doll was open.
+            //
+            // 🔑 It moves to the CONTROL ROW beside [Equip] and [Del] rather than being nudged left:
+            // the tab strip genuinely fills the collapsed width (426 of 460), so there is no room at
+            // its end at any button size worth reading — and sorting is a view control like the other
+            // two, not a category. `_bagRevision = -1` is how every control here forces a redraw: the
+            // list is only rebuilt when the revision moves, so re-sorting without it changes nothing.
+            BuildOrderButton(inner, new Vector2(208f, -chrome - 36f), 86f,
                              () => _bagRevision = -1);
 
             // The item list is a FIXED-width column, so widening the window for the equip column never

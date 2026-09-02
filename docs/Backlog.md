@@ -1136,8 +1136,16 @@ closed · **`BL-93` opened** for the in-game visuals discussion you asked for (*
 ## Playtest 29 — your pass of 2026-09-01. `BL-108` … `BL-121`
 
 Twenty-two finds, written into `testing/Open-Checklist.md` §0. The **bugs** stay there, which is where
-bugs live; the **changes and new systems** are the fourteen entries below. Your two `[?]` questions are
+bugs live; the **changes and new systems** are the entries below. Your two `[?]` questions are
 answered at the bottom of this section rather than as entries — neither asks for a build.
+
+🔴 **THIS PASS IS NOT CLOSED, and I said it was.** 2026-09-03: *"I don't think playtest 29 is closed
+... where is the npc admin buffer? the free class change is there but the idea about the buffer?"* —
+and also *"the admin menu rework of functions and class tabs?"*. Both are correct: they are
+`BL-126` and `BL-127` below. **Neither was ever written into any file**, so neither was built, and a
+sweep that only reads the written record — which is what I did before answering — reports the pass
+closed and is wrong. Everything with a `BL-nn` from this pass really is built; what is missing is
+what never got one.
 
 - `BL-108` ✅ **BUILT 2026-09-02 (0.103.0) — ALL FOUR FILES.** The Warchanter is the second finished
   4th class in the game. `--check` clean on `buffer 3rd` / `buffer 4th` / `healer 4th` / `shared 4th`
@@ -1564,6 +1572,82 @@ answered at the bottom of this section rather than as entries — neither asks f
   the reason is yours — a faster game is the point of the rates, and re-pricing the shop to claw it
   back is breaking the economy to defend a number nobody asked for. The analysis under it still
   stands and is still worth reading, but it argues for the same conclusion by a different road.
+
+- `BL-126` ✅ **BUILT 2026-09-03 (0.106.0) — `RateConfig.FreeBuffs`: ANY PLAYER MAY `/buff` HIMSELF, and
+  the whole admin set now lasts an hour.** You gave both roads — *"a npc buffer that contains all buff
+  for 1h ...harmonies marks etc ... Or easier with this settings on everyone can use /buff command
+  (just self not others)"* — and named the second one easier. It is, and it lands the same thing: a
+  non-admin character fully buffed without being promoted to admin and demoted again, exactly the
+  workaround `BL-118` deleted for class change. A 0/1 on the Tune tab beside Free class change.
+  - **Self only, enforced on the SERVER.** Under the flag a non-staff `/buff` never parses the target
+    word — no name, no `@t` — so the half of the command that acts *on* someone else stays staff.
+  - **`/buff` now travels from every client**, because whether a player may cast it is a server setting
+    the client is never told (the tuning DTO is admin-only). With the flag off the server says
+    *"Self-buffing is switched off on this server."* 🔑 The old non-staff path returned in SILENCE.
+  - 🔑 **All admin buffs are 1 hour now** (*"make all the admin buffs 1h"*): a class buff's authored
+    duration is 20 minutes or less, the NPC blessings beside them already ran an hour, so **half the
+    bar expired while the other half stayed**. One override on the set the button and `/buff` hand out.
+  - **Shrouding Hymn and Bow Expertise are out of the full buff**, as you asked — both were genuinely
+    in it. Party stealth means a buffed test character cannot be attacked unless he starts the fight;
+    Bow Expertise does nothing without a bow. Both still reachable as `/buff <name>`.
+  - ⚠ **The NPC road is the half NOT built** — no buffer is spawned by the flag. It is now **`BL-128`**
+    below, with the four things I would need from you, because it is the version that could ship to
+    players and the command is not: `/buff` is a staff tool opened by a switch, an NPC is content.
+  - ❓ **One word owed on the two I dropped from the full buff — `BL-129`.**
+
+- `BL-127` ✅ **BUILT 2026-09-03 (0.106.0) — THE FUNCTIONS AND CLASS TABS, exactly your four points.**
+  *"Function menu remove the lvl up buttons. Under full buff add the 4 marks and 2 great bulwark/might
+  (now as mage I get might - I want to be able to swap it) ... The lvl up buttons go to the class tab...
+  Also there the reset classes should be same principal as the subclass -> one button and selection."*
+  - **The four level buttons moved to the Class tab**, and sit first — above everything they unblock (a
+    discipline needs 40, a subclass its own floor, a 4th class 76).
+  - **Six buff buttons under Full Buffs**: Holy / Life / Blood / Harmony Mark, Great Might, Great
+    Bulwark. 🔑 These are precisely the buffs a full buff can only give you ONE of — the four Marks
+    share a buff key, the two greats share theirs — so the set picked one and the others were
+    unreachable. The button IS the swap. They send the skill ID, which `/buff` matches exactly, so a
+    button can never trip the ambiguity rule a name lookup lives with ("Might" is three buffs).
+  - **Reset is one button and a selection**, the same shape as "+ Add a class" beside it.
+
+- `BL-128` ❓ **THE NPC BUFFER ITSELF — the half of `BL-126` I did NOT build, and it is the half that
+  could ship to players.** Your first description, 2026-09-03: *"I want a setting in the menu same as
+  the class without quest one to include a npc buffer that contains all buff for 1h ...harmonies marks
+  etc ... It don't have full buff or partial just a save button. So if this setting is ON it spawns a
+  buffer I don't care if requires a restart of server or not."* You then offered the `/buff` road as
+  the easier one and **that is what shipped** (0.106.0) — it covers the test-server need, so nothing is
+  blocked. What is NOT built is the NPC.
+
+  **Why it is worth keeping as its own entry rather than closing with `BL-126`:** the two are not the
+  same thing wearing different clothes. `/buff` is a staff tool opened to everybody by a switch — it
+  cannot exist in a shipped game. **A buffer NPC is CONTENT**: it has a place in a town, a price (or
+  not), a window, and the `BL-95` preset machinery already behind it. Your *"just a save button"* is a
+  real design statement — the full/partial presets are what you would strip, leaving each player's own
+  saved preset as the only door — and that is a shape the paid NPC buffer could eventually adopt too.
+
+  **What I would need from you before building it**, and none of it is guessable:
+  1. **Where does it stand?** One in every town, or one in a single test town you teleport to?
+  2. **Free, or priced?** The `/buff` road made it free by construction; an NPC could keep the price
+     and just carry the whole set (which is the version that survives into the real game).
+  3. **The set**: the admin set at top rung (groups, Harmonies, and the Marks you asked buttons for),
+     or the existing sixteen NPC blessings? *"all buff for 1h ...harmonies marks etc"* reads as the
+     first, which is a strictly stronger buffer than any player can be.
+  4. **Does the flag spawn it, or does it always exist and the flag only makes it free?** You said a
+     restart is acceptable, which makes the spawn road cheap — but "always there, price waived" needs
+     no restart at all and is one less state to reason about.
+
+- `BL-129` ❓ **ONE WORD OWED: DID YOU MEAN BOW EXPERTISE *OUT* OF THE FULL BUFF, OR AS A BUTTON?**
+  Your line was *"And make all the admin buffs 1h and don't want a Shrouding hymn in the full buff. And
+  bow expertise."* I read the last sentence as attaching to the **don't want**, and built it that way
+  in 0.106.0: both Shrouding Hymn and Bow Expertise are out of the full buff, both still reachable as
+  `/buff <name>`.
+
+  **The reading is defensible but it is a reading.** What made me choose it: both were genuinely in the
+  set, and both spoil the thing a full buff is for — Shrouding Hymn is party stealth, so a buffed test
+  character cannot be attacked unless he starts the fight, and Bow Expertise is inert without a bow, so
+  on every other build it is a square on the bar that means nothing. The other reading is that you
+  wanted it as a **seventh button** beside the Marks and the greats.
+
+  ⚠ Either way it costs one line to change, and **the thing that is NOT reversible by guessing is your
+  intent** — which is why this is written down instead of decided quietly. Say "out" or "button".
 
 ### Your two `[?]` questions — answered, nothing to build
 

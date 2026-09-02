@@ -50,6 +50,24 @@ public static class RateConfig
     /// what gates it.</para></summary>
     public static bool FreeClassChange = false;
 
+    /// <summary>`BL-126` — **ANYONE MAY BUFF THEMSELVES WITH `/buff`.** The twin of
+    /// <see cref="FreeClassChange"/>, and asked for in the same breath: *"I want a setting in the menu
+    /// same as the class without quest one to include a npc buffer that contains all buff for 1h
+    /// ...harmonies marks etc ... Or easier with this settings on everyone can use /buff command (just
+    /// self not others)"* (owner, 2026-09-03). He offered both roads and named this one easier; it is,
+    /// and it lands the same thing — a non-admin character fully buffed for an hour without being
+    /// promoted to admin and demoted again.
+    ///
+    /// <para>🔑 SELF ONLY, and that is enforced server-side rather than by the client hiding a field:
+    /// while this is on, a non-staff `/buff` ignores any target word and buffs the caller. Buffing
+    /// SOMEONE ELSE stays a staff power, because it is the half that can be used ON a person rather
+    /// than by them.</para>
+    ///
+    /// <para>⚠ Staff are unaffected — they already have the whole command, targets included. This flag
+    /// only opens the self-cast half to everyone else, and closing it does not strip buffs already
+    /// handed out: they expire on their own hour.</para></summary>
+    public static bool FreeBuffs = false;
+
     /// <summary>QUEST rewards only, composed ON TOP of <see cref="World"/>. At <see cref="RateSet.One"/>
     /// it changes nothing on its own — but routing quest rewards through it is what finally makes them
     /// obey the server rates at all: quest GOLD and quest SP used to be added raw, so on a x30 server

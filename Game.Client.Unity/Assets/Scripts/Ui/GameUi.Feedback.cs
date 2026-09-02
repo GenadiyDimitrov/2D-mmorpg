@@ -337,6 +337,23 @@ namespace Game.Client
             t.Append(square.IsDebuff ? "(a debuff — it cannot be dismissed)" : "Press and HOLD the icon to cancel.");
             _buffPopupBody.text = t.ToString();
 
+            // 🔴 THE BOX NOW GROWS TO ITS TEXT (owner, 2026-09-03: *"when bow expertise is inactive and
+            // showing details from the buff bar the containing window is smaller than the text"*). It
+            // was a FIXED 360x150 with a 104-tall body, which fits the two or three lines an ordinary
+            // blessing prints — and a suppressed buff prints MORE, because it has to say what is
+            // holding it down as well as what it does, so exactly the buffs that need explaining were
+            // the ones that overflowed.
+            //
+            // 🔑 Measured, not guessed: TMP's own GetPreferredValues at the body's real wrap width is
+            // the only number that knows about the font, the size and where the lines break. Clamped
+            // at both ends — a floor so a one-line buff is not a sliver, and a ceiling so a long
+            // description cannot grow a popup taller than a phone in landscape.
+            const float bodyW = 336f, bodyTop = 38f, bottomPad = 12f;
+            float bodyH = Mathf.Clamp(_buffPopupBody.GetPreferredValues(_buffPopupBody.text, bodyW, 0f).y,
+                                      60f, 380f);
+            UiKit.Rect(_buffPopupBody.gameObject).sizeDelta = new Vector2(bodyW, bodyH);
+            _buffPopup.sizeDelta = new Vector2(360f, bodyTop + bodyH + bottomPad);
+
             _buffPopupBackdrop.gameObject.SetActive(true);
             _buffPopup.gameObject.SetActive(true);
             _buffPopupBackdrop.SetAsLastSibling();   // above the world…

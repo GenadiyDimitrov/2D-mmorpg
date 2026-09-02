@@ -2813,8 +2813,15 @@ namespace Game.Client
                     // coordinates -> to tell friends where to find them -> while /where player-name
                     // should work only for admins+"*), so the ARGUMENT form still lands on the staff
                     // gate server-side and is refused there.
-                    bool playerAllowed = cmd.Equals("where", StringComparison.OrdinalIgnoreCase)
-                                         && arg.Length == 0;
+                    // `BL-126` is the second: `/buff` travels for EVERYONE, because whether an ordinary
+                    // player may cast it is a SERVER setting (RateConfig.FreeBuffs) that this client is
+                    // never told — the tuning DTO is admin-only. So the client stops guessing and the
+                    // server answers, buffing him if the flag is on and saying so plainly if it is not.
+                    // ⚠ The argument form travels too and is ignored server-side: a non-staff `/buff`
+                    // is self-only there, which is a rule worth enforcing where it cannot be edited.
+                    bool playerAllowed = (cmd.Equals("where", StringComparison.OrdinalIgnoreCase)
+                                          && arg.Length == 0)
+                                         || cmd.Equals("buff", StringComparison.OrdinalIgnoreCase);
                     if (!IsAdmin && !playerAllowed) { ClientLog.Warn("Unknown command: " + raw); return; }
                     await _net.AdminCommandAsync(cmd, arg);
                     return;

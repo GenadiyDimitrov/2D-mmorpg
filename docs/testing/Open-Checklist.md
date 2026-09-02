@@ -43,6 +43,40 @@
 
 *Blank page. The previous seventeen are answered and archived.*
 
+- [!] when bow expertise is inactive and showing details from the buff bar the containing window is smaller than the text
+  - ✅ **FIXED 0.106.0 — and the buffs that most needed explaining were the ones that overflowed.**
+    The popup was a FIXED 360×150 with a 104-tall body: enough for the two or three lines an ordinary
+    blessing prints, and never enough for a **suppressed** buff, which has to say what is holding it
+    down *as well as* what it does. Bow Expertise without a bow is exactly that case.
+  - 🔑 It now measures its own text — TMP's `GetPreferredValues` at the body's real wrap width, which
+    is the only number that knows the font, the size and where the lines break — and grows to fit,
+    clamped at both ends (a floor so a one-line buff is not a sliver, a ceiling so a long description
+    cannot grow taller than a phone in landscape).
+
+- [!] when in bag the equip is not expanded the A-Z button is outside the box
+  - ✅ **FIXED 0.106.0. The arithmetic is the whole diagnosis:** five tabs at 82 wide from x=16 end at
+    **426**, the `[ORDER]` button is 86 wide, so its right edge sat at **512 against a COLLAPSED bag
+    width of 460**. It only fitted once `[Equip]` widened the panel to 792 — which is why it looked
+    perfectly fine every time the paper-doll was open, and why it shipped that way.
+  - 🔑 Moved to the CONTROL ROW beside `[Equip]` and `[Del]` rather than nudged left: the tab strip
+    genuinely fills the collapsed width (426 of 460), so there is no room at its end at any button
+    size worth reading — and sorting is a view control like those two, not a category.
+
+- [~] lower the height of equip buttons ...now they are like a 100 .. Make them as height same as text... The filtered equip can stay as is ..Just the actual filter buttons [weapon][armor][F20] etc...
+  - ✅ **FIXED 0.106.0 — and they had been written at 24 TWICE, on your own earlier instructions
+    (playtest 24 *"make the selection buttons smaller in height"*, playtest 25 *"even smaller, like the
+    tab buttons"*), and rendered at 100 both times.**
+  - 🔑 **The 24 was on a `LayoutElement` that nothing in that parent reads.** The scroll content's
+    `VerticalLayoutGroup` runs with `childControlHeight = false`, so it never sets a row's height — a
+    row is laid out at its OWN rect height, and the chip strip is a bare
+    `new GameObject(typeof(RectTransform))`, which starts at Unity's default **100**. Your "like a 100"
+    was the number itself. The buttons under the strips looked right only because they come from
+    `UiKit.TextButton` and carry their own rect.
+  - 🟢 The height now goes where the parent actually looks (the rect), the `LayoutElement` stays for
+    parents that do read it, and `childForceExpandHeight` goes off so a chip can never inherit an
+    oversized strip again. Three strips, one of which wraps to two rows: **~150px of gear list back.**
+  - ⚠ The item rows below the filters are untouched — *"the filtered equip can stay as is"*.
+
 ⚠ **What is worth aiming at first**, because it is where this build changed most and none of it has
 been played: **how long you now live** against a same-level creature (§93A), **a caster's mana over a
 real farm hour** now that potions exist and a buffer's toggles cost triple (§93C, §93E), and **whether

@@ -883,7 +883,8 @@ public class GameLoopService : BackgroundService
         _testSkillPower, _testSkillMod,
         GameConstants.RegenIntervalSeconds, StatCalculator.ConRegenBase,
         StatCalculator.MobHpRegenPctCombat, StatCalculator.MobRegenPctIdle,
-        RateConfig.FreeClassChange ? 1f : 0f);
+        RateConfig.FreeClassChange ? 1f : 0f,
+        RateConfig.FreeBuffs ? 1f : 0f);
 
     private void HandleRequestDebugConfig(RequestDebugConfigCmd cmd)
     {
@@ -938,6 +939,8 @@ public class GameLoopService : BackgroundService
         // `BL-118`. Anything non-zero is ON — the panel sends a 0/1 float and a typed "2" should not
         // mean "off" to somebody who clearly meant "yes".
         RateConfig.FreeClassChange = c.FreeClassChange != 0f;
+        // `BL-126`, the same shape and the same reading of a typed number.
+        RateConfig.FreeBuffs = c.FreeBuffs != 0f;
     }
 
     // Lives NEXT TO THE EXE (Debug/publish output), like an options.ini — NOT a build item, so an
@@ -6426,6 +6429,102 @@ public class GameLoopService : BackgroundService
     /// owner in their own jail.</summary>
     private static bool Outranks(Entity actor, AccountRole targetRole) => targetRole < actor.Role;
 
+    // `/buff [name] [level]` — the typed half of the debug buff button (owner, playtest 26).
+    //   /buff                        the whole ADMIN set, every buff at its own top rung
+    //   /buff harmony of wizard      that one buff, at ITS top rung
+    //   /buff hw 2                   the same buff by acronym, at rung 2
+    // An out-of-range rung is not silently clamped — it says what the range is, which is the
+    // only way to learn a ladder's depth without reading the CSV (*"if effect lvl is out of
+    // range just system msg with the effect lvl"*).
+    /// <summary>`/buff` — the typed half of the debug buff button, and since `BL-126` the one admin
+    /// command an ordinary player can reach. <paramref name="selfOnly"/> is what separates the two
+    /// callers: staff get the whole command (targets included), while a non-staff player running it
+    /// under <see cref="RateConfig.FreeBuffs"/> may only ever buff HIMSELF — the target word is not
+    /// parsed at all, so no name, no `@t`, and no collision between a player's name and a buff's can
+    /// hand him someone else. Buffing another person stays the half that is used ON people.</summary>
+    private void RunBuffCommand(Entity admin, string arg, bool selfOnly)
+    {
+                if (admin.Dead) { SendSystemToEntity(admin, "Not while dead."); return; }
+
+                // ---- WHO gets it (owner, playtest 27) -------------------------------------------
+                // *"the name was a player's name ... /buff @target [buff-name-optional]
+                // [level-optional] ... Now target don't work cannot buff no1 else except me"*.
+                // He was right: this command applied to the caster and nothing else.
+                //
+                // The client substitutes @t/@target and @s/@self into a NAME before sending, so the
+                // server never sees a token — it only has to decide whether the FIRST word is a
+                // person. The rule is "a player wins": if the first token names someone online, it is
+                // the target and the rest is the buff; otherwise the whole argument is the buff name
+                // and the target is you. That keeps `/buff aim 1` working untouched, and it is the
+                // reading he described (`/buff Ivan`, `/buff @s aim 1`).
+                //
+                // ⚠ A player named after a buff would shadow it. Names are 3-16 characters and buffs
+                // are things like "Aim" and "Might", so the collision is possible — and deliberately
+                // resolved toward the PLAYER, because the person is the thing you cannot spell
+                // another way, while the buff can always be reached with `/buff @s <name>`.
+                var (targetWord, buffArg) = SplitFirstWord(arg);
+                Entity buffTarget = admin;
+                if (!selfOnly && targetWord.Length > 0 && FindOnlinePlayer(targetWord) is Entity named)
+                {
+                    buffTarget = named;
+                    arg = buffArg;
+                }
+                if (buffTarget.Dead)
+                {
+                    SendSystemToEntity(admin, $"{buffTarget.Name} is dead.");
+                    return;
+                }
+                string buffWho = ReferenceEquals(buffTarget, admin) ? "you" : buffTarget.Name;
+
+                var (buffName, buffLevel) = SplitTrailingLevel(arg);
+                if (buffName.Length == 0)
+                {
+                    GrantFullBuffSet(buffTarget, SkillCatalog.AdminBuffSet, hourLong: true);
+                    SendSystemToEntity(admin,
+                        $"Full buff on {buffWho}: {SkillCatalog.AdminBuffSet.Count} buffs, "
+                        + "each at its top rung, all for 1 hour.");
+                    return;
+                }
+
+                var matches = MatchBuffsByName(buffName);
+                if (matches.Count == 0)
+                {
+                    SendSystemToEntity(admin, $"No buff matches '{buffName}'.");
+                    return;
+                }
+                if (matches.Count > 1)
+                {
+                    SendSystemToEntity(admin, $"'{buffName}' is ambiguous: "
+                        + string.Join(", ", matches.Take(8).Select(d => d.Name))
+                        + (matches.Count > 8 ? $", +{matches.Count - 8} more" : ""));
+                    return;
+                }
+
+                var buffDef = matches[0];
+                int level = buffLevel ?? buffDef.MaxLevel;
+                if (level < 1 || level > buffDef.MaxLevel)
+                {
+                    SendSystemToEntity(admin,
+                        $"{buffDef.Name} has {buffDef.MaxLevel} level{(buffDef.MaxLevel == 1 ? "" : "s")} "
+                        + $"(1-{buffDef.MaxLevel}); {level} is out of range.");
+                    return;
+                }
+                // `source: admin` — for a CHARM (`BL-110`) that is the whole test: the victim walks
+                // toward whoever cast it, so `/buff @target charm` has to name the admin as the caster
+                // or the charm lands inert with nothing to walk to. Every other buff ignores it.
+                if (!ApplyBuff(buffTarget, buffDef, level, source: admin))
+                {
+                    SendSystemToEntity(admin,
+                        $"{buffDef.Name} Lv{level} was refused — something stronger of that family is "
+                        + $"already on {buffWho}.");
+                    return;
+                }
+                SendSystemToEntity(admin, $"{buffDef.Name} Lv{level} applied to {buffWho}.");
+                if (!ReferenceEquals(buffTarget, admin))
+                    SendSystemToEntity(buffTarget, $"{admin.Name} blessed you with {buffDef.Name} Lv{level}.");
+                return;
+    }
+
     private void HandleAdmin(AdminCmd cmd)
     {
         // ⚠ ONE command on this path is NOT staff-only, and it is handled before the gate: a bare
@@ -6443,11 +6542,33 @@ public class GameLoopService : BackgroundService
             return;
         }
 
+        // `BL-126` — THE SECOND COMMAND THAT IS NOT STAFF-ONLY, and like `/where` it is handled before
+        // the gate. While RateConfig.FreeBuffs is on, ANY player may `/buff` — but only himself: the
+        // target word is never parsed (`selfOnly`), so the half of this command that acts ON another
+        // person stays staff. His ask was *"everyone can use /buff command (just self not others)"*.
+        //
+        // ⚠ Staff fall THROUGH this, deliberately: they own the full command below, targets included,
+        // and catching them here would quietly take that away the moment the flag went on.
+        if (RateConfig.FreeBuffs
+            && cmd.Command.Equals("buff", StringComparison.OrdinalIgnoreCase)
+            && TryGetPlayer(cmd.ConnectionId, out var buffSelf) && !buffSelf.IsStaff)
+        {
+            RunBuffCommand(buffSelf, cmd.Argument.Trim(), selfOnly: true);
+            return;
+        }
+
         // SERVER-AUTHORIZED (owner): every moderation action re-checks the caller's role here, in
         // addition to the hub's session check — these SHIP in release, so authorization can't rely on a
         // compile flag the way the DEBUG cheats do.
         if (!TryGetPlayer(cmd.ConnectionId, out var admin) || !admin.IsStaff)
+        {
+            // ⚠ `/buff` now travels from every client (`BL-126`), so a non-staff one arriving here means
+            // the flag is OFF — and silence is the reply that costs an hour to diagnose. Say it.
+            if (cmd.Command.Equals("buff", StringComparison.OrdinalIgnoreCase)
+                && TryGetPlayer(cmd.ConnectionId, out var denied))
+                SendSystemToEntity(denied, "Self-buffing is switched off on this server.");
             return;
+        }
         var command = cmd.Command.ToLowerInvariant();
         var arg = cmd.Argument.Trim();
 
@@ -7399,94 +7520,12 @@ public class GameLoopService : BackgroundService
                 break;
             }
 
-            // `/buff [name] [level]` — the typed half of the debug buff button (owner, playtest 26).
-            //   /buff                        the whole ADMIN set, every buff at its own top rung
-            //   /buff harmony of wizard      that one buff, at ITS top rung
-            //   /buff hw 2                   the same buff by acronym, at rung 2
-            // An out-of-range rung is not silently clamped — it says what the range is, which is the
-            // only way to learn a ladder's depth without reading the CSV (*"if effect lvl is out of
-            // range just system msg with the effect lvl"*).
+            // `/buff [name] [level]` — see RunBuffCommand. Staff reach it here with the full command;
+            // an ordinary player reaches the SELF-ONLY half through the FreeBuffs gate in HandleAdmin,
+            // above the staff check, which is why the body lives in a method rather than in this case.
             case "buff":
-            {
-                if (admin.Dead) { SendSystemToEntity(admin, "Not while dead."); break; }
-
-                // ---- WHO gets it (owner, playtest 27) -------------------------------------------
-                // *"the name was a player's name ... /buff @target [buff-name-optional]
-                // [level-optional] ... Now target don't work cannot buff no1 else except me"*.
-                // He was right: this command applied to the caster and nothing else.
-                //
-                // The client substitutes @t/@target and @s/@self into a NAME before sending, so the
-                // server never sees a token — it only has to decide whether the FIRST word is a
-                // person. The rule is "a player wins": if the first token names someone online, it is
-                // the target and the rest is the buff; otherwise the whole argument is the buff name
-                // and the target is you. That keeps `/buff aim 1` working untouched, and it is the
-                // reading he described (`/buff Ivan`, `/buff @s aim 1`).
-                //
-                // ⚠ A player named after a buff would shadow it. Names are 3-16 characters and buffs
-                // are things like "Aim" and "Might", so the collision is possible — and deliberately
-                // resolved toward the PLAYER, because the person is the thing you cannot spell
-                // another way, while the buff can always be reached with `/buff @s <name>`.
-                var (targetWord, buffArg) = SplitFirstWord(arg);
-                Entity buffTarget = admin;
-                if (targetWord.Length > 0 && FindOnlinePlayer(targetWord) is Entity named)
-                {
-                    buffTarget = named;
-                    arg = buffArg;
-                }
-                if (buffTarget.Dead)
-                {
-                    SendSystemToEntity(admin, $"{buffTarget.Name} is dead.");
-                    break;
-                }
-                string buffWho = ReferenceEquals(buffTarget, admin) ? "you" : buffTarget.Name;
-
-                var (buffName, buffLevel) = SplitTrailingLevel(arg);
-                if (buffName.Length == 0)
-                {
-                    GrantFullBuffSet(buffTarget, SkillCatalog.AdminBuffSet);
-                    SendSystemToEntity(admin,
-                        $"Full buff on {buffWho}: {SkillCatalog.AdminBuffSet.Count} buffs, each at its top rung.");
-                    break;
-                }
-
-                var matches = MatchBuffsByName(buffName);
-                if (matches.Count == 0)
-                {
-                    SendSystemToEntity(admin, $"No buff matches '{buffName}'.");
-                    break;
-                }
-                if (matches.Count > 1)
-                {
-                    SendSystemToEntity(admin, $"'{buffName}' is ambiguous: "
-                        + string.Join(", ", matches.Take(8).Select(d => d.Name))
-                        + (matches.Count > 8 ? $", +{matches.Count - 8} more" : ""));
-                    break;
-                }
-
-                var buffDef = matches[0];
-                int level = buffLevel ?? buffDef.MaxLevel;
-                if (level < 1 || level > buffDef.MaxLevel)
-                {
-                    SendSystemToEntity(admin,
-                        $"{buffDef.Name} has {buffDef.MaxLevel} level{(buffDef.MaxLevel == 1 ? "" : "s")} "
-                        + $"(1-{buffDef.MaxLevel}); {level} is out of range.");
-                    break;
-                }
-                // `source: admin` — for a CHARM (`BL-110`) that is the whole test: the victim walks
-                // toward whoever cast it, so `/buff @target charm` has to name the admin as the caster
-                // or the charm lands inert with nothing to walk to. Every other buff ignores it.
-                if (!ApplyBuff(buffTarget, buffDef, level, source: admin))
-                {
-                    SendSystemToEntity(admin,
-                        $"{buffDef.Name} Lv{level} was refused — something stronger of that family is "
-                        + $"already on {buffWho}.");
-                    break;
-                }
-                SendSystemToEntity(admin, $"{buffDef.Name} Lv{level} applied to {buffWho}.");
-                if (!ReferenceEquals(buffTarget, admin))
-                    SendSystemToEntity(buffTarget, $"{admin.Name} blessed you with {buffDef.Name} Lv{level}.");
+                RunBuffCommand(admin, arg, selfOnly: false);
                 break;
-            }
 
             case "bag":
             {
@@ -16897,11 +16936,18 @@ public class GameLoopService : BackgroundService
     /// *"if new buff/harmony should be added as well in the fullbuff and max effect - now harmonies are
     /// L1"*. The NPC set is unaffected (those defs are single-level), so this changes the admin button
     /// and nothing a player can buy.</summary>
-    private void GrantFullBuffSet(Entity player, IReadOnlyList<string>? set = null)
+    /// <summary>Hands out a whole set at each buff's top rung. <paramref name="hourLong"/> is the admin
+    /// set's rule (owner, 2026-09-03: *"make all the admin buffs 1h"*): a class buff's authored duration
+    /// is 20 minutes or less, which is right for a buffer playing the class and wrong for a test bar you
+    /// want to still be there after a farm hour — the NPC blessings beside it already run an hour, so
+    /// half the bar used to expire while the other half stayed. One override, applied to the set the
+    /// admin button and `/buff` hand out; nothing a PLAYER casts is touched.</summary>
+    private void GrantFullBuffSet(Entity player, IReadOnlyList<string>? set = null, bool hourLong = false)
     {
         foreach (var id in set ?? SkillCatalog.NewbieBuffSet)
             if (SkillCatalog.Get(id) is SkillDef def)
-                ApplyBuff(player, def, def.MaxLevel, refresh: false);
+                ApplyBuff(player, def, def.MaxLevel, refresh: false,
+                          durationOverride: hourLong ? SkillCatalog.NpcBuffTicks : -1);
         // One refresh after all buffs (instead of per-buff recompute/push).
         player.RecomputeDerived();
         PushBuffs(player);
@@ -16917,7 +16963,7 @@ public class GameLoopService : BackgroundService
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead)
             return;
-        GrantFullBuffSet(player, SkillCatalog.AdminBuffSet);
+        GrantFullBuffSet(player, SkillCatalog.AdminBuffSet, hourLong: true);
         // Silent (owner): the buff bar filling up is the feedback.
     }
 

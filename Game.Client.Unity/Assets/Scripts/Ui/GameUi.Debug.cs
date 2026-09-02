@@ -71,6 +71,11 @@ namespace Game.Client
         private int _debugTpView;          // 0 root, 1 npcs, 2 zones, 3 cities
         private int _debugItemsView;       // 0 root, 1 crafting materials, 2 blueprints
         private bool _debugAddDiscView;
+        // `BL-127` — the re-roll list is now one button and a selection, like "+ Add a class" beside it
+        // (owner: *"the reset classes should be same principal as the subclass -> one button and
+        // selection"*). Six permanent rows for something you press once a month were the loudest thing
+        // on the tab.
+        private bool _debugResetView;
 
         private readonly Dictionary<string, TMP_InputField> _tuneFields = new();
 
@@ -102,6 +107,9 @@ namespace Game.Client
             // `BL-118` — 0/1 rather than a toggle button: the Tune tab is a numeric grid with one
             // round-trip, and a single odd control here would be its own machine to keep in step.
             ("freeClassChange", "Free class change 0/1", true),
+            // `BL-126` — while this is 1, ANY player may `/buff` HIMSELF (never others) and gets the
+            // whole admin set for an hour. Same 0/1 shape and the same reason as the row above.
+            ("freeBuffs", "Free self /buff 0/1", true),
         };
 
         private void BuildDebugPanel()
@@ -145,6 +153,7 @@ namespace Game.Client
             _debugTpView = 0;
             _debugItemsView = 0;
             _debugAddDiscView = false;
+            _debugResetView = false;
             if (tab == 5) Boot.Debug(n => n.RequestDebugConfigAsync(), "tuning");
             RefreshDebugPanel();
         }
@@ -246,7 +255,11 @@ namespace Game.Client
                 var group = strip.AddComponent<HorizontalLayoutGroup>();
                 group.spacing = 4f;
                 group.childForceExpandWidth = false;
-                group.childForceExpandHeight = true;
+                // 🔴 FALSE, not true (owner, 2026-09-03: *"lower the height of equip buttons ...now they
+                //    are like a 100 .. Make them as height same as text"*). With force-expand ON, every
+                //    chip stretched to whatever height the STRIP ended up with — so the moment the strip
+                //    itself came out oversized, all its buttons did too.
+                group.childForceExpandHeight = false;
                 group.childControlWidth = true;
                 group.childControlHeight = true;
                 // 24, not 28, not the original 34 — `87f` asked twice. Playtest 24: *"just make the
@@ -254,8 +267,22 @@ namespace Game.Client
                 // even smaller. Like the tab buttons in height."* There are three strips of these above
                 // the list and the tier row already wraps to two, so six chip rows were eating the
                 // window before a single item appeared — this is 60px of gear list bought back.
+                //
+                // 🔴 AND THE STRIP HAS TO CARRY ITS HEIGHT IN THE RECT, NOT ONLY IN A LayoutElement.
+                //    The scroll content's VerticalLayoutGroup runs with `childControlHeight = false`
+                //    (UiKit.ScrollArea), which means it does NOT set its children's heights — a row is
+                //    laid out at its OWN rect height, and a bare `new GameObject(typeof(RectTransform))`
+                //    starts at Unity's default 100. That is his "like a 100", literally: the 24 below
+                //    was written on a LayoutElement nothing in this parent ever reads. The buttons under
+                //    it look right because they come from UiKit.TextButton and are sized by their own
+                //    rect. So: set the rect, and keep the LayoutElement for any parent that DOES read it.
                 const float chipH = 24f;
-                strip.AddComponent<LayoutElement>().minHeight = chipH;
+                var stripRect = (RectTransform)strip.transform;
+                stripRect.sizeDelta = new Vector2(stripRect.sizeDelta.x, chipH);
+                var stripLe = strip.AddComponent<LayoutElement>();
+                stripLe.minHeight = chipH;
+                stripLe.preferredHeight = chipH;
+                stripLe.flexibleHeight = 0f;
 
                 int end = Math.Min(start + perRow, options.Count);
                 for (int i = start; i < end; i++)
@@ -267,6 +294,10 @@ namespace Game.Client
                     var le = chip.gameObject.AddComponent<LayoutElement>();
                     le.flexibleWidth = 1f;
                     le.minHeight = chipH;
+                    le.preferredHeight = chipH;   // the strip DOES control child height, so this lands
+                    le.flexibleHeight = 0f;
+                    UiKit.Rect(chip.gameObject).sizeDelta =
+                        new Vector2(UiKit.Rect(chip.gameObject).sizeDelta.x, chipH);
                     if (enabled != null && !enabled(value)
                         && chip.GetComponentInChildren<TextMeshProUGUI>() is TextMeshProUGUI t)
                         t.color = UiKit.TextDim;
@@ -590,19 +621,37 @@ namespace Game.Client
             DebugHeader("Full buffer");
             DebugAction("Full Buffs (1h)", () => Boot.Debug(n => n.DebugBuffAsync(), "buff"));
 
+            // `BL-127` — THE SIX BUFFS A FULL BUFF CANNOT GIVE YOU, one button each (owner:
+            // *"Under full buff add the 4 marks and 2 great bulwark/might (now as mage I get might - I
+            // want to be able to swap it)"*). All six are buffs the full set can only hand out ONE of:
+            // the four Marks share a buff key (a character wears one Mark, never two) and War Might and
+            // War Bulwark share theirs, so the set picks one and there was no way to see the others
+            // without unlearning something. A button is the swap — press it and the new one evicts the
+            // old on its own family rule, exactly as it would in a fight.
+            //
+            // ⚠ They send the SKILL ID, not the display name: `/buff` matches ids exactly before it
+            // tries names, so a button can never be caught by the ambiguity rule that a name lookup
+            // has to live with ("Might" is three different buffs).
+            void BuffButton(string label, string id) =>
+                DebugAction(label, () => Boot.Debug(n => n.AdminCommandAsync("buff", id), "buff"));
+
+            BuffButton("Holy Mark",    "holy_mark");
+            BuffButton("Life Mark",    "life_mark");
+            BuffButton("Blood Mark",   "blood_mark");
+            BuffButton("Harmony Mark", "wc_harmony_mark");
+            BuffButton("Great Might (War Might)",     "wc_war_might");
+            BuffButton("Great Bulwark (War Bulwark)", "wc_war_bulwark");
+
             // 10kk, not 100k: the level-40 stat swaps cost 1kk-5kk per level, so a smaller button could
             // not fund a single meaningful purchase to test with.
             DebugHeader("Gold & SP");
             DebugAction("+10,000,000 Gold", () => Boot.Debug(n => n.DebugGoldAsync(10_000_000), "gold"));
             DebugAction("+1,000,000 SP", () => Boot.Debug(n => n.DebugSpAsync(1_000_000), "sp"));
 
-            // One round trip per click. DELEVELLING KEEPS YOUR LEARNED SKILLS — drop to 40, feel it,
-            // climb back, without re-learning the whole kit.
-            DebugHeader("Level");
-            DebugAction("Level +1", () => Boot.Debug(n => n.DebugLevelAsync(1), "level"));
-            DebugAction("Level +10", () => Boot.Debug(n => n.DebugLevelAsync(10), "level"));
-            DebugAction("Level -1", () => Boot.Debug(n => n.DebugLevelAsync(-1), "level"));
-            DebugAction("Level -10", () => Boot.Debug(n => n.DebugLevelAsync(-10), "level"));
+            // ⚠ THE LEVEL BUTTONS MOVED TO THE CLASS TAB (`BL-127`, owner: *"Function menu remove the
+            // lvl up buttons ... The lvl up buttons go to the class tab"*). They belong beside the
+            // class rows that are gated on level — a discipline needs 40, a 4th class 76 — so the
+            // thing that unblocks the row you just failed to press is now on the same screen.
 
             // Karma +/- was dropped at the owner's request; CLEAR stays, because an accidental kill has
             // to be undoable. The server clamps karma to [0, 1M] and clears the PK streak and the red
@@ -665,8 +714,19 @@ namespace Game.Client
         private void BuildDebugClass()
         {
             if (_debugAddDiscView) { BuildDebugAddDiscipline(); return; }
+            if (_debugResetView) { BuildDebugReset(); return; }
 
             _debugTitle.text = "Profession, subclasses and reset";
+
+            // `BL-127` — LEVEL LIVES HERE NOW, and first, because every row below it is level-gated:
+            // a discipline needs 40, a subclass its own floor, the 4th class 76. One round trip per
+            // click. DELEVELLING KEEPS YOUR LEARNED SKILLS — drop to 40, feel it, climb back, without
+            // re-learning the whole kit.
+            DebugHeader("Level");
+            DebugAction("Level +1", () => Boot.Debug(n => n.DebugLevelAsync(1), "level"));
+            DebugAction("Level +10", () => Boot.Debug(n => n.DebugLevelAsync(10), "level"));
+            DebugAction("Level -1", () => Boot.Debug(n => n.DebugLevelAsync(-1), "level"));
+            DebugAction("Level -10", () => Boot.Debug(n => n.DebugLevelAsync(-10), "level"));
 
             DebugHeader("Profession & skills");
             DebugAction("Give all skills (to my level)",
@@ -765,6 +825,18 @@ namespace Game.Client
             DebugAction("+ Add a class (discipline) >", () => { _debugAddDiscView = true; RefreshDebugPanel(); });
 
             DebugHeader("Reset character (re-roll, same char)");
+            DebugAction("Reset -> pick race & class >", () => { _debugResetView = true; RefreshDebugPanel(); });
+        }
+
+        /// <summary>`BL-127` — the re-roll picker, the same shape as "+ Add a class": one button on the
+        /// tab, the list behind it. Six rows that wipe your character do not belong permanently open
+        /// under six rows that merely switch between them.</summary>
+        private void BuildDebugReset()
+        {
+            _debugTitle.text = "Reset character — re-roll this character, same slot";
+            DebugAction("< Back", () => { _debugResetView = false; RefreshDebugPanel(); });
+            DebugNote("Keeps the character and its name; level, skills, class and gear start over.");
+
             // (The Race.God skip is gone — the debug race was deleted 2026-08-07; every race in the
             //  enum is playable now.)
             foreach (var race in Enum.GetValues(typeof(Race)).Cast<Race>())
@@ -772,7 +844,11 @@ namespace Game.Client
                 foreach (var bc in Enum.GetValues(typeof(BaseClass)).Cast<BaseClass>())
                 {
                     Race r = race; BaseClass b = bc;
-                    DebugAction($"Reset -> {r} {b}", () => Boot.Debug(n => n.DebugResetAsync(r, b), "reset"));
+                    DebugAction($"Reset -> {r} {b}", () =>
+                    {
+                        _debugResetView = false;
+                        Boot.Debug(n => n.DebugResetAsync(r, b), "reset");
+                    });
                 }
             }
         }
@@ -866,6 +942,7 @@ namespace Game.Client
             Set("mobRegen", d.MobHpRegenPctCombat.ToString("0.####", CultureInfo.InvariantCulture));
             Set("mobRegenIdle", d.MobRegenPctIdle.ToString("0.####", CultureInfo.InvariantCulture));
             Set("freeClassChange", d.FreeClassChange.ToString("0.####", CultureInfo.InvariantCulture));
+            Set("freeBuffs", d.FreeBuffs.ToString("0.####", CultureInfo.InvariantCulture));
         }
 
         private void ApplyTuning()
@@ -883,7 +960,7 @@ namespace Game.Client
                 I("idleCap"), I("offlineCap"), I("grace"),
                 I("testSkillPower"), F("testSkillMod"),
                 F("regenInterval"), F("conRegen"), F("mobRegen"), F("mobRegenIdle"),
-                F("freeClassChange"));
+                F("freeClassChange"), F("freeBuffs"));
 
             Boot.Debug(n => n.SetDebugConfigAsync(dto), "tuning");
         }

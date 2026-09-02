@@ -7,12 +7,131 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.105.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.106.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-02 (latest) — 0.105.0: THE BULWARK, 40-74 — the fourth finished 3rd class
+## 2026-09-03 (latest) — 0.106.0: `BL-126` free self-buffing, `BL-127` the admin menu rework
+
+Two asks of his that had **never been written into any file** — raised in chat beside `BL-118`, never
+given a `BL-nn`, and so never built. He was right that playtest 29 was not closed. Both are built
+here, with the two UI bugs he found in the same message.
+
+⚠ **NEW APK**, and `ProtocolVersion` 31 → 32: `DebugConfigDto` gained a field and the panel sends
+that record positionally, so a stale admin client would send one float short and silently switch the
+new setting off.
+
+### `BL-126` — anyone may `/buff` themselves, for an hour
+
+*"I want a setting in the menu same as the class without quest one ... Or easier with this settings on
+everyone can use /buff command (just self not others)"*. He offered both roads and named this one
+easier; it is, and it lands the same thing — **a non-admin character fully buffed without being
+promoted to admin and demoted again**, which is the workaround `BL-118` deleted for class change.
+
+`RateConfig.FreeBuffs`, a 0/1 on the Tune tab beside Free class change. While it is on:
+
+- **`/buff` works for every player, and only on himself.** The target word is not parsed at all under
+  `selfOnly` — no name, no `@t` — so the half of the command that acts *on* another person stays
+  staff. Enforced on the server, not by the client hiding a field.
+- **`/buff` now travels from every client**, because whether a player may cast it is a server setting
+  this client is never told (the tuning DTO is admin-only). With the flag off the server answers
+  *"Self-buffing is switched off on this server."* — 🔑 the old path returned in silence, which is the
+  reply that costs an hour to diagnose.
+- Staff fall through untouched and keep the full command, targets included.
+
+### The admin buff set: an hour long, and two buffs lighter
+
+- 🔑 **All admin buffs now last 1 hour** (*"make all the admin buffs 1h"*). A class buff's authored
+  duration is 20 minutes or less — right for a buffer playing the class, wrong for a test bar you want
+  intact after a farm hour — while the NPC blessings beside them already ran an hour, so **half the bar
+  used to expire while the other half stayed**. One `durationOverride` on the set the admin button and
+  `/buff` hand out; nothing a player casts is touched.
+- **Shrouding Hymn and Bow Expertise are out of the full buff** (*"don't want a Shrouding hymn in the
+  full buff. And bow expertise."*). Both were really in it, and both spoil what a full buff is for:
+  Shrouding Hymn is party stealth, so a buffed test character cannot be attacked unless he starts the
+  fight; Bow Expertise does nothing without a bow. Neither is lost — both are one `/buff <name>` away.
+
+### `BL-127` — the Functions and Class tabs
+
+- **The four level buttons leave Functions and open the Class tab**, first, above everything they
+  unblock: a discipline needs 40, a subclass its own floor, a 4th class 76.
+- **Six new buff buttons under Full Buffs** — Holy / Life / Blood / Harmony Mark, Great Might and
+  Great Bulwark. 🔑 These are exactly the buffs a full buff can only give you ONE of: the four Marks
+  share a buff key and the two greats share theirs, so the set picks one and there was no way to see
+  the others. A button is the swap — *"now as mage I get might - I want to be able to swap it"*. They
+  send the skill ID, which `/buff` matches exactly, so a button can never trip the ambiguity rule a
+  name lookup lives with ("Might" is three different buffs).
+- **Reset is one button and a selection**, the same shape as "+ Add a class" beside it. Six permanent
+  rows that wipe your character sat under six that merely switch between them.
+
+### The three UI bugs from the same pass
+
+- 🔴 **The buff detail popup was smaller than its text** (*"when bow expertise is inactive and showing
+  details from the buff bar the containing window is smaller than the text"*). It was a fixed 360×150
+  with a 104-tall body — fine for the two lines an ordinary blessing prints, and **exactly wrong for a
+  suppressed buff, which has to say what is holding it down as well as what it does**. It now measures
+  its own text with TMP's `GetPreferredValues` at the real wrap width and grows, clamped at both ends.
+- 🔴 **The bag's `[ORDER]` button hung outside the window while the bag was collapsed.** The
+  arithmetic is the diagnosis: five tabs at 82 from x=16 end at 426, the button is 86 wide, so its
+  right edge sat at **512 against a collapsed width of 460** — it only fitted once `[Equip]` widened
+  the panel to 792, which is why it looked right whenever the paper-doll was open. It moves to the
+  control row beside `[Equip]` and `[Del]`, where it belongs anyway: sorting is a view control, not a
+  category.
+- 🔴 **The Equip tab's filter chips were 100px tall** (*"lower the height of equip buttons ...now they
+  are like a 100 .. Make them as height same as text ... Just the actual filter buttons
+  [weapon][armor][F20] etc"*). They were written at 24 — twice, on his own earlier instruction — and
+  rendered at 100 anyway. 🔑 **The 24 was on a `LayoutElement` that nothing in that parent reads.**
+  The scroll content's `VerticalLayoutGroup` runs with `childControlHeight = false`, so it never sets a
+  row's height: a row is laid out at its OWN rect height, and a strip built as a bare
+  `new GameObject(typeof(RectTransform))` starts at Unity's default **100**. The buttons beneath it
+  looked right only because they come from `UiKit.TextButton` and carry their own rect. Fixed by
+  putting the height where the parent actually looks — the rect — and keeping the `LayoutElement` for
+  parents that do read it; `childForceExpandHeight` also goes off, so a chip can never inherit an
+  oversized strip again. Three strips × the tier row's two lines: **~150px of gear list bought back**.
+  ⚠ The item rows below the filters are untouched, per *"The filtered equip can stay as is"*.
+
+## 2026-09-03 — 0.105.1: a whisp costs four Skill Stones, and Shield Smash retires Strike
+
+Two rulings of his, one line each, both built on both sides — the code and the CSV row.
+
+⚠ **NEW APK.** Both are visible on the client: the Learn tab is built from the compiled class
+tables (a `Replaces` hides the retired skill), and the reagent line is read off the same `SkillDef`.
+
+### A whisp summon burns 4 Skill Stones
+
+*"I want whisps to take 4 skillstone each summon"*. Every one of the six summon ladders now carries
+`ConsumableId: skill_stone, ConsumableAmount: 4` — one number on the shared `WhispSummon` builder, so
+the six cannot drift apart. It rides the reagent machinery that was already there:
+
+- **Gated up front** (`GameLoopService.cs:1949`) — without four stones the cast never starts and the
+  message names the price, so a whisp is never half-summoned.
+- **Charged on landing** (`GameLoopService.cs:10743`) — an interrupted summon costs the 20% initial MP
+  and no stones.
+- **Paid again on every re-call**, including the 5-seconds-remaining renewal window of `BL-112`. That
+  is the actual price: a whisp lasts 20 minutes, so keeping one up is **3 summons = 12 stones = 4,800g
+  an hour** at the vendor's 400g, and **9,600g** once Whisp Mastery opens the second slot. Against the
+  ~549k/hour a level-34 farm was measured at, that is ~1.7% of income — a real cost, not a wall.
+
+### Shield Smash replaces Strike
+
+*"shield smash to replace strike"*. Both smashes — `tank_smash_rate` (Human;Elf) and
+`tank_smash_power` (Demon) — declare `Replaces: [strike]`, so the level-40 rung retires the level-5
+sword/blunt bash off `fighter 1st.csv` exactly the way Holy Ray retires Holy Bolt. It is a
+**within-chain** replace (fighter → tank), which is what his cross-chain id rule allows —
+`--chain-audit` still reports **0 cross-chain Replaces**.
+
+### Both sides moved, and the checker proves it
+
+`tank 3rd.csv`: 48 whisp rows gained *"Consumes 4 skill stones"*, 30 smash rows gained `[strike]` in
+the REPLACES column. `SkillCsvSeed --check` is green on all thirteen walked files.
+
+🔑 **The reagent count is genuinely compared, not eyeballed** — a deliberate 5-vs-4 mismatch was
+planted in one row first and the tool caught it twice over (`🟡 reagent: CSV 5 vs code 4`, plus a
+`🔵 LADDER DIP` on the way down to rung 2). A guard that has not been run against the broken case is
+not yet a guard.
+
+## 2026-09-02 — 0.105.0: THE BULWARK, 40-74 — the fourth finished 3rd class
 
 *"U can finish the tank 3rd"*. `tank 3rd.csv` lost its `NOT DONE` banner, so the tank is built —
 and the pass turned out to span **all three tank files**: he retuned `tank 2nd.csv` in the same

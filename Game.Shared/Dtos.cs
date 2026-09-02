@@ -972,7 +972,10 @@ public record DebugConfigDto(
     // a bool because the panel's Tune tab is a grid of numeric fields with one round-trip, and a
     // single odd-shaped control there would be its own little machine to keep in step. Appended LAST:
     // the record is POSITIONAL and the client sends it in order.
-    float FreeClassChange = 0f);
+    float FreeClassChange = 0f,
+    // `BL-126` — ANYONE MAY `/buff` THEMSELVES. Same 0/1 shape and the same reason as the field above;
+    // appended LAST because the record is positional and the client sends it in order.
+    float FreeBuffs = 0f);
 
 /// <summary>One member row in the party window. Debuffs = the names of the debuffs currently on this
 /// member, so a healer sees at a glance who to cleanse without selecting each one.</summary>
