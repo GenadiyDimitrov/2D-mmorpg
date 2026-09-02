@@ -590,6 +590,22 @@ public class PersistenceService
                      : int.TryParse(token[(colon + 1)..], out int lvl) ? Math.Max(1, lvl) : 1;
         }
 
+        // ---- `BL-119`: `armor_mastery` RUNGS 5-18 BECAME `buffer_armor_mastery` (2026-09-02). ----
+        //
+        // This is the SPLIT case, which the retired-id filter above does NOT cover: the id survives, it
+        // just got shorter. A Warchanter saved before the split holds `armor_mastery:9` and nothing
+        // else; loaded raw he would be pointing at a rung that no longer exists AND would have silently
+        // lost the whole 40-74 ladder — invisible, because the skill window would still show him an
+        // Armor Mastery. So the level is carried across rather than clamped.
+        //
+        // 🔑 A RENAME NEEDS A MIGRATION AND A DELETE DOES NOT (`BL-106`). Six lines, at the one seam
+        // where stored text becomes runtime state, and the next autosave writes the new pair back.
+        if (into.TryGetValue(SkillCatalog.ArmorMasterySkill, out int am) && am > 4)
+        {
+            into[SkillCatalog.ArmorMasterySkill] = 4;
+            into[SkillCatalog.BufferArmorMastery] = am - 4;   // rung 5 -> 1, rung 18 -> 14
+        }
+
         // ---- SUPERSEDED SKILLS DIE ON LOAD TOO, for the same reason retired ids do. ----
         //
         // `Replaces` used to be enforced at LEARN time only, which is fine exactly once: it assumes the

@@ -1270,12 +1270,17 @@ answered at the bottom of this section rather than as entries — neither asks f
   changes your class on **conversation alone** — no quest items, and no requirement to have done the
   two quests before it. Applies to non-admin characters, which is the whole point.
 
-- `BL-119` 🔴 **ARMOR MASTERY STACKS WITH THE DISCIPLINE MASTERIES — ×4 CAST SPEED.** *"I'm 40lvl
+- `BL-119` ✅ **BUILT 2026-09-02 (0.102.3) — ARMOR MASTERY STACKED WITH THE DISCIPLINE MASTERIES, ×4 CAST SPEED.** *"I'm 40lvl
   harmonist with 35lvl armor_mastery and wc_harmonist_light_mastery — both remove the light penalty"*.
   Your own fix, which is the right one: the 40+ rungs become **`buffer_armor_mastery`**, which
   **replaces** `armor_mastery` rungs 20-35, and **`wc_chanter_heavy_mastery`** and
   **`wc_harmonist_light_mastery` also replace `armor_mastery`** so no two can be held at once.
-  ⚠ A skill-id rename needs the save migration `BL-106` flagged.
+  ✅ Shipped exactly as you wrote it. The 40-74 rungs are `buffer_armor_mastery` now, it replaces
+  `armor_mastery` (and `mastery_robe` beneath it), and **both race masteries replace `armor_mastery`
+  too** — which is the half that closes the window, because the bug only needed a buffer who had NOT
+  yet bought the 40 rung and so still held the cleric's rung 4. 🔑 **A split needs a save migration
+  where a delete does not**: `ParseLearnedSkills` carries the level across (rung 5 → 1, rung 18 → 14),
+  or a saved Warchanter would have lost the whole ladder invisibly. Both buffer CSVs moved with it.
 
 - `BL-120` 🔵 **COMBO MASTERY WORKS WITH A BOW, and its chance is re-tuned.** *"buffers combo mastery
   should work with a bow ... Also 3% chance with `blunt/1` and 3.45% chance with `bow|blunt/2`"*. Your

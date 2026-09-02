@@ -37,21 +37,21 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 89,Anti magic,anti_magic_mage,Passive,,,0,0,self/single,0,0,0,"magic def +144, mRes +35%",0,0,100kk
 90,Anti magic,anti_magic_mage,Passive,,,0,0,self/single,0,0,0,"magic def +149, mRes +35%",0,0,100kk
 ,,,,,,,,,,,,,,,,,,,-----------------------Armor Mastery-----------------------
-76,Armor Mastery,armor_mastery,Passive,,heavy|light|robe,0,0,self/single,0,0,0,"Light/Heavy/Robe:   pDef +89, maxMP +220; mDef  +2%;",0,6.5kk,1kk
-77,Armor Mastery,armor_mastery,Passive,,heavy|light|robe,0,0,self/single,0,0,0,"Light/Heavy/Robe:   pDef +91, maxMP +220; mDef  +4%;",0,11kk,1kk
-78,Armor Mastery,armor_mastery,Passive,,heavy|light|robe,0,0,self/single,0,0,0,"Light/Heavy/Robe:   pDef +92, maxMP +250; mDef  +5% Decrease Mp Consumption with 5%;",0,16kk,1kk
-79,Armor Mastery,armor_mastery,Passive,,heavy|light|robe,0,0,self/single,0,0,0,"Light/Heavy/Robe:   pDef +93, maxMP +250; mDef  +7% Decrease Mp Consumption with 5%;",0,80kk,1kk
-80,Armor Mastery,armor_mastery,Passive,,heavy|light|robe,0,0,self/single,0,0,0,"Light/Heavy/Robe:   pDef +95, maxMP +250; mDef  +8% Decrease Mp Consumption with 5%;",0,0,5kk
-81,Armor Mastery,armor_mastery,Passive,,heavy|light|robe,0,0,self/single,0,0,0,"Light/Heavy/Robe:   pDef +96, maxMP +290; mDef +10% Decrease Mp Consumption with 8%;",0,0,7.5kk
-82,Armor Mastery,armor_mastery,Passive,,heavy|light|robe,0,0,self/single,0,0,0,"Light/Heavy/Robe:   pDef +97, maxMP +290; mDef +11% Decrease Mp Consumption with 8%;",0,0,10kk
-83,Armor Mastery,armor_mastery,Passive,,heavy|light|robe,0,0,self/single,0,0,0,"Light/Heavy/Robe:   pDef +99, maxMP +300; mDef +13% Decrease Mp Consumption with 8%;",0,0,15kk
-84,Armor Mastery,armor_mastery,Passive,,heavy|light|robe,0,0,self/single,0,0,0,"Light/Heavy/Robe:  pDef +100, maxMP +300; mDef +14% Decrease Mp Consumption with 8%;",0,0,30kk
-85,Armor Mastery,armor_mastery,Passive,,heavy|light|robe,0,0,self/single,0,0,0,"Light/Heavy/Robe:  pDef +101, maxMP +300; mDef +16% Decrease Mp Consumption with 8%;",0,0,50kk
-86,Armor Mastery,armor_mastery,Passive,,heavy|light|robe,0,0,self/single,0,0,0,"Light/Heavy/Robe:  pDef +103, maxMP +330; mDef +17% Decrease Mp Consumption with 10%;",0,0,75kk
-87,Armor Mastery,armor_mastery,Passive,,heavy|light|robe,0,0,self/single,0,0,0,"Light/Heavy/Robe:  pDef +104, maxMP +330; mDef +19% Decrease Mp Consumption with 10%;",0,0,100kk
-88,Armor Mastery,armor_mastery,Passive,,heavy|light|robe,0,0,self/single,0,0,0,"Light/Heavy/Robe:  pDef +105, maxMP +350; mDef +20% Decrease Mp Consumption with 10%;",0,0,100kk
-89,Armor Mastery,armor_mastery,Passive,,heavy|light|robe,0,0,self/single,0,0,0,"Light/Heavy/Robe:  pDef +107, maxMP +350; mDef +22% Decrease Mp Consumption with 10%;",0,0,100kk
-90,Armor Mastery,armor_mastery,Passive,,heavy|light|robe,0,0,self/single,0,0,0,"Light/Heavy/Robe:  pDef +108, maxMP +400; mDef +25% Decrease Mp Consumption with 10%;",0,0,100kk
+76,Armor Mastery,buffer_armor_mastery,Passive,,heavy|light|robe,0,0,self/single,0,0,0,"Light/Heavy/Robe:   pDef +89, maxMP +220; mDef  +2%;",0,6.5kk,1kk
+77,Armor Mastery,buffer_armor_mastery,Passive,,heavy|light|robe,0,0,self/single,0,0,0,"Light/Heavy/Robe:   pDef +91, maxMP +220; mDef  +4%;",0,11kk,1kk
+78,Armor Mastery,buffer_armor_mastery,Passive,,heavy|light|robe,0,0,self/single,0,0,0,"Light/Heavy/Robe:   pDef +92, maxMP +250; mDef  +5% Decrease Mp Consumption with 5%;",0,16kk,1kk
+79,Armor Mastery,buffer_armor_mastery,Passive,,heavy|light|robe,0,0,self/single,0,0,0,"Light/Heavy/Robe:   pDef +93, maxMP +250; mDef  +7% Decrease Mp Consumption with 5%;",0,80kk,1kk
+80,Armor Mastery,buffer_armor_mastery,Passive,,heavy|light|robe,0,0,self/single,0,0,0,"Light/Heavy/Robe:   pDef +95, maxMP +250; mDef  +8% Decrease Mp Consumption with 5%;",0,0,5kk
+81,Armor Mastery,buffer_armor_mastery,Passive,,heavy|light|robe,0,0,self/single,0,0,0,"Light/Heavy/Robe:   pDef +96, maxMP +290; mDef +10% Decrease Mp Consumption with 8%;",0,0,7.5kk
+82,Armor Mastery,buffer_armor_mastery,Passive,,heavy|light|robe,0,0,self/single,0,0,0,"Light/Heavy/Robe:   pDef +97, maxMP +290; mDef +11% Decrease Mp Consumption with 8%;",0,0,10kk
+83,Armor Mastery,buffer_armor_mastery,Passive,,heavy|light|robe,0,0,self/single,0,0,0,"Light/Heavy/Robe:   pDef +99, maxMP +300; mDef +13% Decrease Mp Consumption with 8%;",0,0,15kk
+84,Armor Mastery,buffer_armor_mastery,Passive,,heavy|light|robe,0,0,self/single,0,0,0,"Light/Heavy/Robe:  pDef +100, maxMP +300; mDef +14% Decrease Mp Consumption with 8%;",0,0,30kk
+85,Armor Mastery,buffer_armor_mastery,Passive,,heavy|light|robe,0,0,self/single,0,0,0,"Light/Heavy/Robe:  pDef +101, maxMP +300; mDef +16% Decrease Mp Consumption with 8%;",0,0,50kk
+86,Armor Mastery,buffer_armor_mastery,Passive,,heavy|light|robe,0,0,self/single,0,0,0,"Light/Heavy/Robe:  pDef +103, maxMP +330; mDef +17% Decrease Mp Consumption with 10%;",0,0,75kk
+87,Armor Mastery,buffer_armor_mastery,Passive,,heavy|light|robe,0,0,self/single,0,0,0,"Light/Heavy/Robe:  pDef +104, maxMP +330; mDef +19% Decrease Mp Consumption with 10%;",0,0,100kk
+88,Armor Mastery,buffer_armor_mastery,Passive,,heavy|light|robe,0,0,self/single,0,0,0,"Light/Heavy/Robe:  pDef +105, maxMP +350; mDef +20% Decrease Mp Consumption with 10%;",0,0,100kk
+89,Armor Mastery,buffer_armor_mastery,Passive,,heavy|light|robe,0,0,self/single,0,0,0,"Light/Heavy/Robe:  pDef +107, maxMP +350; mDef +22% Decrease Mp Consumption with 10%;",0,0,100kk
+90,Armor Mastery,buffer_armor_mastery,Passive,,heavy|light|robe,0,0,self/single,0,0,0,"Light/Heavy/Robe:  pDef +108, maxMP +400; mDef +25% Decrease Mp Consumption with 10%;",0,0,100kk
 ,,,,,,,,,,,,,,,,,,,----------------------Spell Mastery----------------------
 76,Spell Mastery,spell_mastery,Passive,blunt|bow,,0,0,self/single,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +101, pAtk +85, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,36k,[],,
 77,Spell Mastery,spell_mastery,Passive,blunt|bow,,0,0,self/single,0,0,0,"With blunt/bow weapon decreses the reuse delay with 20%, mAtk +102, pAtk +90, mpReg +3.4,hpReg +2.7, cast speed x1.1",0,43k,[],,

@@ -316,7 +316,9 @@ public static partial class ClassSkillTables
         // Armor Mastery and Spell Mastery CONTINUE the cleric's ladders: rungs 1-4 were bought at
         // 20-35, so the buffer's fourteen rows are rungs 5-18. Getting that offset wrong is the whole
         // difficulty here — a `ClassSkill` names the RUNG, not the row number in his file.
-        kit2.AddRange(Ladder(ArmorMasterySkill, band14, startRung: 5));
+        // 🔴 `buffer_armor_mastery`, NOT rungs 5-18 of `armor_mastery`, since 2026-09-02 (`BL-119`).
+        //    Its own id, so its own rung numbering: fourteen rungs starting at ONE.
+        kit2.AddRange(Ladder(BufferArmorMastery, band14));
         kit2.AddRange(Ladder(SpellMastery, band14, startRung: 5));
         // Great Heal: ELEVEN rungs, 40-68. His file stops there; the healer's own ladder runs to 74,
         // and the extra three rungs are the Lightbringer's alone.

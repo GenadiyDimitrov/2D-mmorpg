@@ -14,6 +14,10 @@ public static partial class SkillCatalog
     public const string SpellMastery = "spell_mastery";
     public const string RestoreMana = "restore_mana";
     public const string ArmorMasterySkill = "armor_mastery";   // data-driven, replaces Robe Mastery
+    /// <summary>The BUFFER's 40+ armour ladder — his own id since 2026-09-02 (`BL-119`). It was rungs
+    /// 5-18 of <see cref="ArmorMasterySkill"/>, and being the same skill is what let the cleric's rung 4
+    /// sit alive underneath the race mastery and cancel the caster penalty TWICE. See the def.</summary>
+    public const string BufferArmorMastery = "buffer_armor_mastery";
     public const string HolyForce = "holy_force";    // "Force" — interrupt resist (+M.Atk @rank 2)
     public const string HolyFocus = "holy_focus";    // "Focus" — physical crit-rate buff
     public const string HolyShield = "holy_shield";  // "Shield Bless and Harden" — the SHIELD group
@@ -51,19 +55,39 @@ public static partial class SkillCatalog
             Light: new StatMods(MpRegenPct: 0.2f, PDef: 30, CastSpeedPct: 0.90f, AtkSpeedPct: 1.00f)),
         new(Robe:  new StatMods(PDef: 35, MaxMp: 30),
             Light: new StatMods(MpRegenPct: 0.2f, PDef: 35, CastSpeedPct: 0.90f, AtkSpeedPct: 1.00f, Evasion: 2)),
-        // ---- Rungs 5-18 (@40 to 74) — THE BUFFER'S, not the healer's (`buffer 3rd.csv`, 2026-08-20:
-        //      *"Continue the line"*; completed 2026-08-21 when he finished the file). The healer
-        //      branches away at 40 onto his own robe-only Healer Armor Mastery (Skills.Lightbringer.cs),
-        //      so from here this ladder belongs to the Warchanter alone.
-        //
-        // 🔑 THE THREE WEIGHTS ARE IDENTICAL FROM RUNG 5, AND THE SPEED CLAUSES ARE GONE. His rows read
-        //    *"Robe/Light/Heavy: mpReg x1.2, pDef +N, maxMP +M"* — one line covering all three weights,
-        //    with no cast/attack-speed clause anywhere in them. That is not an omission: from 40 the
-        //    penalty-cancelling belongs to the RACE masteries (Heavy Armor for Human/Demon, Harmonist
-        //    Light for Elf, Skills.Warchanter3rd.Kit.cs), and leaving a copy here would apply it TWICE.
-        //    ⚠ Rung 5 used to carry `CastSpeedPct 0.90, AtkSpeedPct 1.00` on its Light row — written
-        //    before the race masteries existed. Stacked with Harmonist Light's own x1.8/x2 it drove an
-        //    Elf Warchanter straight into the cast-speed clamp. Do not put them back.
+    };
+
+    /// <summary>THE BUFFER'S OWN ARMOUR LADDER, @40 to 74 — `buffer_armor_mastery`, fourteen rungs
+    /// (`buffer 3rd.csv`, 2026-08-20: *"Continue the line"*; completed 2026-08-21). The healer branches
+    /// away at 40 onto his robe-only Healer Armor Mastery (Skills.Lightbringer.cs), so from here this
+    /// ladder belongs to the Warchanter alone.
+    ///
+    /// <para>🔴 IT BECAME ITS OWN SKILL ID ON 2026-09-02 (`BL-119`), and the reason is a bug he found:
+    /// *"I managed to make x4 cast speed with light armor ...I'm 40lvl harmonist with 35lvl
+    /// armor_mastery and wc_harmonist_light_mastery — both remove the light penalty"*. While these were
+    /// rungs 5-18 of <see cref="ArmorMasterySkill"/>, a level-40 elf who had not yet BOUGHT rung 5 still
+    /// held the cleric's rung 4 — whose Light row cancels the Spellcaster penalty — underneath
+    /// Harmonist Light Mastery, which cancels the very same penalty. Armour masteries stack
+    /// multiplicatively (Entity.ApplyArmorMastery), so the cancel was applied twice.</para>
+    ///
+    /// <para>🔑 SPLITTING THE ID IS WHAT FIXES IT, not deleting a number. His own prescription: the 40+
+    /// rungs become their own skill that REPLACES `armor_mastery`, and both race masteries replace it
+    /// too — so no buffer can ever hold the cleric's speed clause beside his race's. `Replaces` is
+    /// enforced on LOAD as well as at learn time (PersistenceService.ParseLearnedSkills), so this
+    /// reaches characters that already exist.</para>
+    ///
+    /// <para>🔑 THE THREE WEIGHTS ARE IDENTICAL HERE AND THE SPEED CLAUSES ARE ABSENT — his rows read
+    /// *"Robe/Light/Heavy: pDef +N, maxMP +M;"*, one line covering all three, with no cast/attack-speed
+    /// clause anywhere. That is not an omission: from 40 the penalty-cancelling belongs to the RACE
+    /// masteries, and a copy here would apply it twice. Rungs 15-29 (@76-90, `buffer 4th.csv`) belong on
+    /// THIS id when `BL-108` builds them, not back on `armor_mastery`.</para></summary>
+    private static readonly ArmorMasteryProfile[] BufferArmorMasteryLevels =
+    {
+        // ⚠ THE ×1.2 MP REGEN IS NOT HERE EITHER — it moved to the race masteries on 2026-08-27 with
+        //   the speed clauses, and for the same reason. `BL-92`'s "exactly one ×1.2 per mage" holds:
+        //   robe gets it from the born Spellcaster Mastery, light/heavy from the race mastery.
+        // ⚠ An earlier rung 5 carried `CastSpeedPct 0.90, AtkSpeedPct 1.00` on its Light row, written
+        //   before the race masteries existed. Do not put them back — that is the bug above, twice.
         BufferArmor(39, 70), BufferArmor(44, 70), BufferArmor(50, 100), BufferArmor(50, 100),
         BufferArmor(53, 140), BufferArmor(56, 140), BufferArmor(58, 150), BufferArmor(64, 150),
         BufferArmor(68, 150), BufferArmor(72, 180), BufferArmor(75, 180), BufferArmor(79, 180),
@@ -196,9 +220,34 @@ public static partial class SkillCatalog
                 new SkillLevel(SpCost: 6400),
                 new SkillLevel(SpCost: 12800),
                 new SkillLevel(SpCost: 25000),
-            // Rungs 5-18 = the Warchanter's 40-74 band, priced off his own SP column.
-            }.Concat(BandSp14.Select(sp => new SkillLevel(SpCost: sp))).ToArray(),
+            // 🔴 FOUR RUNGS AND IT STOPS. Rungs 5-18 were the Warchanter's 40-74 band and are now
+            // `buffer_armor_mastery` (`BL-119`, below) — see BufferArmorMasteryLevels for why.
+            },
             ArmorMasteryLevels: HealerArmorMastery),
+
+        // Buffer Armor Mastery — the Warchanter's own 40-74 ladder, split off `armor_mastery` on
+        // 2026-09-02 (`BL-119`). Full reasoning on BufferArmorMasteryLevels; the short version is that
+        // sharing an id with the cleric let his rung-4 light row cancel the caster penalty a SECOND
+        // time underneath the race mastery.
+        //
+        // 🔑 IT REPLACES BOTH — `armor_mastery` (so the cleric's rungs cannot sit alive beneath it) and
+        //    `mastery_robe` (which `armor_mastery` itself replaced, and which must not resurface when
+        //    that one is superseded). The two race masteries in Skills.Warchanter3rd.Kit.cs replace
+        //    `armor_mastery` as well, which is the other half of his prescription: a buffer who has not
+        //    yet BOUGHT this rung is protected the moment he takes his race's mastery.
+        //
+        // 🔑 THE NAME IS DELIBERATE. `BL-106`'s cross-chain rule reads the mage side as
+        //    `mage_* -> spellcaster_* -> buffer_*`, so `buffer_armor_mastery` is the id that chain
+        //    already predicted.
+        new(BufferArmorMastery, "Armor Mastery", BaseClass.Mage, SkillEffect.None,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+            Category: SkillCategory.Passive,
+            Replaces: new[] { ArmorMasterySkill, MasteryRobe },
+            Description: "Passive. Adapts your defences to the armor you wear: robe, light or heavy "
+                       + "all gain physical defence and max MP.",
+            // The 40-74 band, priced off his own SP column.
+            Levels: BandSp14.Select(sp => new SkillLevel(SpCost: sp)).ToArray(),
+            ArmorMasteryLevels: BufferArmorMasteryLevels),
 
         // Restore Mana — replenishes an ally's MP (flat power). Later "ultimate" restores
         // will add a % of max MP via a Percent magnitude on the RestoreMp effect.

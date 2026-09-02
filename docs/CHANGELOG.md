@@ -7,11 +7,53 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.102.2**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.102.3**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-08-29 (latest) — 0.102.2: the player-animation path, ready for the file that is missing
+## 2026-09-02 (latest) — 0.102.3: the buffer's armour ladder gets its own id, and the double cancel dies
+
+`BL-119`, his find: *"I managed to make x4 cast speed with light amror ...I'm 40lvl harmonist with
+35lvl armor_mastery and wc_harmonist_light_mastery both remove the light penalty"*.
+
+**He is right, and the mechanism is worth writing down because nothing about it is visible from either
+skill.** The cleric's Armor Mastery rung 4 (bought at 35) carries a LIGHT row authored to *cancel*
+Spellcaster Mastery's ×0.5 caster penalty — `CastSpeedPct 0.90` is ×1.90 against ×0.50, landing on his
+"−5% from a robe". At 40 the Elf Warchanter learns Harmonist Light Mastery, which cancels **the same
+penalty again** (×1.80). Armour masteries stack MULTIPLICATIVELY (`Entity.ApplyArmorMastery` — that is
+deliberate and load-bearing for the cancel arithmetic), so both cancels applied.
+
+**Why it was invisible:** the 40-74 rungs of `armor_mastery` carry no speed clause at all, precisely so
+this cannot happen — the comment on them has said *"leaving a copy here would apply it TWICE"* since
+August. But they were rungs **5-18 of the same skill**, and a level-40 who had not yet SPENT the SP on
+rung 5 still held rung 4. The guard was authored on the rung, and the character was on the rung below.
+
+### The fix is his own, and it is structural
+
+- **`buffer_armor_mastery` is a new skill id** carrying the fourteen 40-74 rungs. `armor_mastery` stops
+  at four — the cleric's, 20-35.
+- **It `Replaces` `armor_mastery`** (and `mastery_robe`, which `armor_mastery` had replaced and which
+  must not resurface underneath it).
+- **Both race masteries `Replaces` `armor_mastery` too** — `wc_chanter_heavy_mastery` and
+  `wc_harmonist_light_mastery`. This is the half that closes the window: the moment a buffer takes his
+  race's mastery, the cleric's speed clause is superseded whether or not he has bought the 40 rung.
+  They do **not** replace `buffer_armor_mastery`, which carries no speed clause and is additive by
+  design.
+- 🔑 **A SPLIT NEEDS A SAVE MIGRATION where a DELETE does not** (`BL-106`). A retired id dies on load
+  because `SkillCatalog.Get` returns null; a *shortened* one does not — a Warchanter holding
+  `armor_mastery:9` would have pointed at a rung that no longer exists and silently lost the whole
+  40-74 ladder, with the skill window still showing him an Armor Mastery. `ParseLearnedSkills` now
+  carries the level across (rung 5 → 1, rung 18 → 14) at the one seam where stored text becomes runtime
+  state, and the next autosave writes the new pair back.
+- 🔑 **The name is the one `BL-106`'s cross-chain rule already predicted**: the mage side reads
+  `mage_* → spellcaster_* → buffer_*`.
+
+**CSVs move with it** — the fourteen Armor Mastery rows in `buffer 3rd.csv` and the fifteen in
+`buffer 4th.csv` now carry `buffer_armor_mastery` in `SKILL_ID`; `cleric 2nd.csv` keeps `armor_mastery`
+for its four. `--check` reads `buffer 3rd.csv` clean apart from his newly-authored Doctor Weapon
+Mastery, which is `BL-108`.
+
+## 2026-08-29 — 0.102.2: the player-animation path, ready for the file that is missing
 
 `BL-102` has been "I need one file from you" since 0.100.2. This builds everything on **this** side of
 that file, so the file is now the only step left: drop clips into a folder, run one command, and the

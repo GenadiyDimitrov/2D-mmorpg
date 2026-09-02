@@ -92,9 +92,18 @@ public static partial class SkillCatalog
         //   exists. 🔑 The TANK already has a "Heavy Armor Mastery" and that is fine: one is Fighter and
         //   one is Mage, no character can hold both, and `Abbreviations` de-duplicates names so the two
         //   simply share a bar label they can never both draw.
+        //
+        // 🔴 IT REPLACES `armor_mastery` SINCE 2026-09-02 (`BL-119`) — his find: *"I managed to make x4
+        //    cast speed with light armor ... both remove the light penalty"*. The cleric's rung 4 also
+        //    cancels the Spellcaster penalty, armour masteries stack multiplicatively, and a buffer who
+        //    had not yet bought the 40 rung still held it. Superseding it here means the cancel can
+        //    only ever be applied once, whichever of the two the character happens to own. The 40+
+        //    ladder is `buffer_armor_mastery` now and is NOT replaced: it carries no speed clause, so
+        //    the two are additive by design, not duplicates.
         list.Add(new SkillDef(WcBufferHeavy, "Heavy Armor Mastery", BaseClass.Mage, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive,
+            Replaces: new[] { ArmorMasterySkill },
             Description: "Passive. Heavy armour stops hindering you — full attack speed, near-full "
                        + "casting speed — and blunts critical damage against you.",
             Levels: new[] { new SkillLevel(SpCost: 36_000) },
@@ -111,9 +120,12 @@ public static partial class SkillCatalog
 
         // ---- Harmonist Light Mastery (Elf) — the same trade in light armour, and the elf's own
         //      evasion / crit-rate lean on top. ----
+        // 🔴 REPLACES `armor_mastery` — see Heavy Armor Mastery above; this is the exact skill his ×4
+        //    cast-speed reading came from, and light is the weight the cleric's rung 4 also covers.
         list.Add(new SkillDef(WcHarmonistLight, "Harmonist Light Mastery", BaseClass.Mage, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive,
+            Replaces: new[] { ArmorMasterySkill },
             Description: "Passive. Light armour stops hindering you — full attack speed, near-full "
                        + "casting speed — and you dodge better and are critted less often.",
             Levels: new[] { new SkillLevel(SpCost: 36_000) },
