@@ -157,6 +157,11 @@ namespace Game.Client
             public int Level;
             public string SkillId = "";
             public BuffRow Row;
+            /// <summary>Held but paying nothing — its skill's weapon gate is shut (Bow Expertise with a
+            /// dagger in hand). Drawn DIMMED with the reason on the detail card, never hidden: it still
+            /// owns a buff slot and is still burning its clock, and the player has to be able to see
+            /// that. A collapsed group is dimmed only if EVERY part of it is.</summary>
+            public bool Suppressed;
             public readonly List<string> Keys = new List<string>();
         }
 
@@ -188,6 +193,7 @@ namespace Game.Client
                     {
                         Name = b.Name, Description = b.Description, Seconds = b.SecondsLeft,
                         IsDebuff = b.IsDebuff, Stacks = b.Stacks, Row = b.Row, Level = b.Level,
+                        Suppressed = b.Suppressed,
                     };
                     single.Keys.Add(b.Key);
                     views.Add(single);
@@ -201,7 +207,7 @@ namespace Game.Client
                         Name = string.IsNullOrEmpty(b.SourceName) ? b.Name : b.SourceName,
                         Description = b.Description,
                         Seconds = b.SecondsLeft, IsDebuff = b.IsDebuff, Row = b.Row, Level = b.Level,
-                        SkillId = b.SourceSkillId,
+                        SkillId = b.SourceSkillId, Suppressed = true,
                     };
                     byGroup[b.SourceSkillId] = view;
                     parts[b.SourceSkillId] = new List<string>();
@@ -211,6 +217,10 @@ namespace Game.Client
                 // A toggle reports -1 (no timer) and must not win the "shortest" comparison.
                 if (b.SecondsLeft >= 0f && (view.Seconds < 0f || b.SecondsLeft < view.Seconds))
                     view.Seconds = b.SecondsLeft;
+                // A group is dim only when EVERY part of it is gated off — one live child means the
+                // blessing is still doing something, and dimming it would be the wrong story. Seeded
+                // true above so the AND has an identity to start from.
+                if (!b.Suppressed) view.Suppressed = false;
                 view.Keys.Add(b.Key);
                 parts[b.SourceSkillId].Add(
                     b.Name + (b.SecondsLeft > 0f ? "  " + ShortTime(b.SecondsLeft) : ""));
@@ -423,6 +433,13 @@ namespace Game.Client
 
                 square.Label.text = Abbreviations.For(buff.Name) + (buff.Stacks > 1 ? " x" + buff.Stacks : "");
                 square.Time.text = ShortTime(buff.Seconds);
+                // The detail card has to SAY it, not just look grey — the whole point is that the
+                // player can tell "on but idle" from "on and working" without doing the arithmetic.
+                square.Description = buff.Suppressed
+                    ? "INACTIVE — your weapon does not meet this skill's requirement, so it is granting "
+                      + "nothing right now. It keeps running; equip the right weapon and it works again."
+                      + (string.IsNullOrWhiteSpace(buff.Description) ? "" : "\n\n" + buff.Description)
+                    : buff.Description;
 
                 var tint = buff.IsDebuff ? new Color(0.45f, 0.18f, 0.18f, 0.95f) : UiKit.PanelLight;
 
@@ -432,7 +449,12 @@ namespace Game.Client
                     && Mathf.Repeat(Time.unscaledTime, 1f) < 0.5f)
                     tint = new Color(0.50f, 0.42f, 0.15f, 0.95f);
 
+                // Gated OFF beats every other tint, including the expiry blink: a buff that is paying
+                // nothing has no expiry worth warning about.
+                if (buff.Suppressed) tint = new Color(0.16f, 0.16f, 0.18f, 0.95f);
+
                 square.Box.color = tint;
+                square.Label.color = buff.Suppressed ? new Color(1f, 1f, 1f, 0.40f) : Color.white;
             }
 
             if (shown == 0) return y;

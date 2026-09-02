@@ -7,11 +7,55 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.102.3**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.102.4**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-02 (latest) — 0.102.3: the buffer's armour ladder gets its own id, and the double cancel dies
+## 2026-09-02 (latest) — 0.102.4: a buff whose weapon gate is shut now pays nothing
+
+His find: *"bow expertise should work with only a bow (now if I activate it with a bow and then change
+to other weapon the 12% stay active)"*.
+
+**`RequiredWeapon` had only ever been a CAST-TIME gate.** `HandleSkill` refuses the cast if you are not
+holding the right weapon, and nothing ever re-asked the question afterwards — so the buff outlived the
+bow and Bow Expertise's own description, *"+12% attack speed while wielding a bow"*, was simply untrue.
+It is not one skill's bug: every `RequiredWeapon` buff in the game had it, and the shared-4th
+proficiencies he just authored would have inherited it.
+
+### Suppressed, not removed
+
+Bow Expertise runs **twenty minutes**. Deleting it because you drew a dagger for one pull would cost
+the whole duration and teach the player never to swap weapons. So a gated-off buff keeps its clock and
+its bar slot and simply stops contributing — put the bow back and it works again, free.
+
+⚠ It still occupies one of the 20 buff slots and still burns its timer. Holding a blessing you have
+switched off is a choice, not a free slot.
+
+### One seam, not a dozen loops
+
+`BuffInstance.Suppressed` gates the three accessors — `Has`, `Percent`, `Flat` — that **every** reader
+of a buff's numbers already goes through: a dozen aggregation loops in `RecomputeDerived` plus the
+`IsStunned`/`IsRooted`/`IsFeared` family. Gating them covers all of it and, more importantly, cannot be
+forgotten by the next buff that needs a gate.
+
+The single writer is `Entity.RefreshBuffSuppression`, called from `RecomputeDerived` immediately after
+the equip loop has resolved `WeaponType` and before the first line in that method that reads a buff
+magnitude. It asks the same `Satisfies(RequiredWeapon, RequiredHands)` the cast gate asks, so the two
+axes can never drift apart. Mobs and player-built creatures go through it too — deliberately: `BL-79`
+was three bugs caused by asking "is this a player?" where the question was "does it run player stats?".
+
+### The bar has to show it
+
+A lit icon granting nothing looks exactly like the bug it fixes, so `BuffDto` gained an optional
+`Suppressed` and the square draws **dimmed** (label at 40% alpha, the dim tint beating even the
+under-a-minute expiry blink — a buff paying nothing has no expiry worth warning about). The detail card
+says it in words. A collapsed GROUP dims only when **every** part of it is gated off.
+
+`ProtocolVersion` 29 → **30**. The field is optional with a default, so an old client deserializes fine
+and simply never dims — which is the state it is in today. **The server-side fix works either way; the
+new APK is what lets you SEE it.**
+
+## 2026-09-02 — 0.102.3: the buffer's armour ladder gets its own id, and the double cancel dies
 
 `BL-119`, his find: *"I managed to make x4 cast speed with light amror ...I'm 40lvl harmonist with
 35lvl armor_mastery and wc_harmonist_light_mastery both remove the light penalty"*.

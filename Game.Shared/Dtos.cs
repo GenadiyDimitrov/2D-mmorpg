@@ -371,7 +371,14 @@ public record BuffDto(string Name, string Description, float SecondsLeft, bool I
     /// along (BuffInstance.Level, kept so a buff can be rebuilt on login) and simply never sent it, so
     /// the one screen where you go to ask "which rung am I actually carrying" could not answer.
     /// MaxLevel is deliberately NOT sent: the client has the whole catalog and can look it up.</summary>
-    int Level = 0);
+    int Level = 0,
+    /// <summary>The buff is HELD but PAYING NOTHING because its skill's weapon gate is shut right now
+    /// (2026-09-02 — Bow Expertise with a dagger in hand). It keeps its clock and its slot, so the bar
+    /// must still draw it; it draws DIMMED, with the reason on the detail card. Without this the fix is
+    /// invisible in the worst way: a lit icon granting nothing looks exactly like the bug it fixed.
+    ///
+    /// <para>Optional with a default, so an older client simply ignores it and behaves as before.</para></summary>
+    bool Suppressed = false);
 
 /// <summary>Server -> client: the character's learned skills (id + current level) + SP.</summary>
 public record LearnedSkills(SkillRef[] Skills, int SkillPoints);

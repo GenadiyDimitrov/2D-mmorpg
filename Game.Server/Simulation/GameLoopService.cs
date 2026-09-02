@@ -13935,6 +13935,9 @@ public class GameLoopService : BackgroundService
 
     private void PushBuffs(Entity player)
     {
+        // ⚠ The bar is pushed from the LIVE buff list, and `Suppressed` is written by RecomputeDerived
+        // — which runs on every equip change — so the dimming follows the weapon with no extra push.
+
         var dtos = player.Buffs.Where(b => !b.Internal).Select(b => new BuffDto(
             b.Name, BuffDescriptionWithSource(b),
             b.Toggle ? -1f : b.TicksRemaining * GameConstants.TickSeconds, b.IsDebuff, b.Key, b.Stacks,
@@ -13943,7 +13946,8 @@ public class GameLoopService : BackgroundService
             IsMultiChildGroup(b.SourceSkillId) ? GroupDisplayName(player, b.SourceSkillId) : "",
             // 0 when the buff has no ladder at all — "Frenzy Lv.1" on a one-level buff is noise, and
             // deciding it HERE keeps the client from needing the parent def to answer the question.
-            SkillCatalog.Get(b.SkillId) is { MaxLevel: > 1 } ? b.Level : 0)).ToList();
+            SkillCatalog.Get(b.SkillId) is { MaxLevel: > 1 } ? b.Level : 0,
+            b.Suppressed)).ToList();
 
         // The GRADE PENALTY rides along as a synthetic, never-expiring DEBUFF row. It is not a real
         // BuffInstance (nothing casts it — it's a property of what you're wearing), but without a row on

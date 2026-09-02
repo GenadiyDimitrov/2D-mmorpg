@@ -97,6 +97,12 @@ a stack of 9 buff scrolls is the friction you wanted or just friction** (§93D).
   - 2hbweapkns are slower with ~12/18% so increasing the chance to balance the slower atack speed (bow is blaster than 2h blunt as harmonist have the bow expertise)
 
 - [!] bow expertise should work with only a bow (now if I activate it with a bow and then change to other weapon the 12% stay active)
+  - ✅ **FIXED 0.102.4.** `RequiredWeapon` had only ever been a CAST gate, so nothing re-asked the
+    question after the swap — and it was every `RequiredWeapon` buff in the game, not just this one.
+    A gated-off buff is now **SUPPRESSED, not removed**: it keeps its 20-minute clock and its bar slot
+    and pays nothing, so putting the bow back is free. The square draws **dimmed** and the detail card
+    says why. ⚠ It still costs you a buff slot while it is off — tell me if you would rather it
+    dropped outright. **Needs the new APK to SEE the dimming**; the fix itself works on any client.
 
 - [!] the sell prices are to much for the current drop rates let say a myth item is sold for (buy price bp*1/10) = 0.1.. A legend have 85% power so it's buy prise is bp*0.85 of the myth buy price but still sell for bp*0.85*1/10 and x0.5 coef = 0.0425 ...etc for all other ..but common sels for 0.225 of the original price so selling 4.(4) items Is like I sold a real item ...and that alot...
   - so let's change the coeficent of 0.5 not to apply to all... Rare 0.1(1/10), legend 0.045-> 0.04(1/25), epic 0.035 -> 0.03(1/33), rare 0.035 -> 0.2(1/50), uncomm 0.0275 -> 0.01(1/100), common 0.0225 -> 0.005(1/200) so common whet from 4.4 to 20

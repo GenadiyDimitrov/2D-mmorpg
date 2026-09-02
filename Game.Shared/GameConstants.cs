@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.102.3";
+    public const string GameVersion = "0.102.4";
 
     // ----- SP BOTTLE (owner, 2026-08-26) -------------------------------------------------------
     // *"u can make an npc to take your 1kkk SP + 100kk gold and give you a tradable/sellabel
@@ -145,7 +145,12 @@ public static class GameConstants
     /// time, not a table-only bump: an old client deserializing the new spawn shape simply ignores
     /// them, but the new client cannot work without them, so the two move together.
     /// ⚠ A NEW APK IS REQUIRED.
-    public const int ProtocolVersion = 29;
+    /// 29 → 30 (2026-09-02): `BuffDto` gained `Suppressed` — a held buff whose weapon gate is shut pays
+    /// nothing, and the bar has to draw it dimmed rather than lit. It is an OPTIONAL field with a
+    /// default, so an old client is not broken by it: it deserializes fine and simply never dims,
+    /// which is exactly the state it is in today. The bump is honest record-keeping, not a wall.
+    /// ⚠ A NEW APK IS REQUIRED to SEE the change (the server-side fix works either way).
+    public const int ProtocolVersion = 30;
 
     /// <summary>
     /// The oldest protocol this server still speaks. Equal to <see cref="ProtocolVersion"/> means

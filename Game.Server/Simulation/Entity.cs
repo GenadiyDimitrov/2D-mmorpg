@@ -170,7 +170,29 @@ public class BuffInstance
     /// since. The buff is the only surviving record of what was promised when it was cast.</para></summary>
     public float AutoResExpPct { get; init; }
 
-    public bool Has(SkillEffect flag) => (Effect & flag) != 0;
+    /// <summary>The buff is HELD but not PAYING OUT, because its granting skill's weapon gate is not
+    /// satisfied right now (`BL-119`'s sibling, 2026-09-02). His find: *"bow expertise should work with
+    /// only a bow (now if I activate it with a bow and then change to other weapon the 12% stay
+    /// active)"* — Bow Expertise's `RequiredWeapon: Bow` was a CAST gate only, so the +12% survived the
+    /// swap and its own description ("while wielding a bow") was simply untrue.
+    ///
+    /// <para>🔑 SUPPRESSED, NOT REMOVED, and that is the deliberate half. Bow Expertise runs TWENTY
+    /// MINUTES; deleting it because you drew a dagger for one pull would cost the whole duration and
+    /// teach the player never to swap. The buff keeps its clock and its bar slot and simply stops
+    /// contributing, so putting the bow back is free.</para>
+    ///
+    /// <para>🔑 ONE SEAM, NOT A DOZEN LOOPS. Every consumer of a buff's numbers goes through
+    /// <see cref="Has"/>, <see cref="Percent"/> or <see cref="Flat"/> — a dozen aggregation loops in
+    /// RecomputeDerived plus the IsStunned/IsRooted family — so gating the three accessors covers all
+    /// of them and cannot be forgotten by the next buff that needs a gate. Set once per recompute in
+    /// <c>Entity.RefreshBuffSuppression</c>; nothing else writes it.</para>
+    ///
+    /// <para>⚠ It does NOT touch expiry, the slot count, or a toggle's MP burn — a suppressed buff is
+    /// still one of your <see cref="GameConstants.MaxBuffSlots"/> and still ticking away. Holding a
+    /// blessing you have switched off is your choice, not a free extra slot.</para></summary>
+    public bool Suppressed { get; set; }
+
+    public bool Has(SkillEffect flag) => !Suppressed && (Effect & flag) != 0;
 
     public bool IsDebuff => (Effect & SkillEffect.AnyDebuff) != 0;
 
@@ -179,6 +201,7 @@ public class BuffInstance
     /// ApplyBuff + SkillDef.StackLevels), so no per-read scaling is needed here.</summary>
     public float Flat(SkillEffect flag)
     {
+        if (Suppressed) return 0f;
         float sum = 0f;
         foreach (var m in Magnitudes)
             if (m.Effect == flag && m.Mode == ModifierMode.Flat) sum += m.Value;
@@ -188,6 +211,7 @@ public class BuffInstance
     /// <summary>Sum of this buff's percent entries for an effect.</summary>
     public float Percent(SkillEffect flag)
     {
+        if (Suppressed) return 0f;
         float sum = 0f;
         foreach (var m in Magnitudes)
             if (m.Effect == flag && m.Mode == ModifierMode.Percent) sum += m.Value;
@@ -2045,6 +2069,40 @@ public class Entity
     /// <summary>Recomputes everything derived from core stats, level and
     /// equipped items. Call on creation, level-up, equip changes and class
     /// change.</summary>
+    /// <summary>Mark every held buff whose granting skill's WEAPON gate is not satisfied by what is in
+    /// the hand right now. See <see cref="BuffInstance.Suppressed"/> for the reasoning; this is its
+    /// only writer.
+    ///
+    /// <para>His find, 2026-09-01: *"bow expertise should work with only a bow (now if I activate it
+    /// with a bow and then change to other weapon the 12% stay active)"*. `RequiredWeapon` had only
+    /// ever been a CAST-TIME gate — <c>HandleSkill</c> refuses the cast — so nothing re-asked the
+    /// question afterwards and a skill whose own description says *"while wielding a bow"* was simply
+    /// lying. It reads BOTH axes (<c>RequiredWeapon</c> and <c>RequiredHands</c>) through the same
+    /// <c>Satisfies</c> the cast gate uses, so the two can never drift apart.</para>
+    ///
+    /// <para>⚠ A buff with NO weapon requirement is never suppressed, which is almost all of them — the
+    /// fast path is one field compare. A buff with no resolvable source skill (the synthetic
+    /// grade-penalty rows) is likewise left alone: no def, no gate.</para>
+    ///
+    /// <para>⚠ MOBS AND PLAYER-BUILT CREATURES GO THROUGH IT TOO, deliberately. A guard is built like a
+    /// player and learns a player's kit (`BL-79`), and the whole point of that entry was that asking
+    /// "is this a player?" is how these gates get missed.</para></summary>
+    private void RefreshBuffSuppression()
+    {
+        for (int i = 0; i < Buffs.Count; i++)
+        {
+            var b = Buffs[i];
+            if (string.IsNullOrEmpty(b.SkillId)) { b.Suppressed = false; continue; }
+            var def = SkillCatalog.Get(b.SkillId);
+            if (def is null || (def.RequiredWeapon == WeaponType.None && def.RequiredHands == WeaponHands.Any))
+            {
+                b.Suppressed = false;
+                continue;
+            }
+            b.Suppressed = !WeaponType.Satisfies(def.RequiredWeapon, def.RequiredHands);
+        }
+    }
+
     public void RecomputeDerived()
     {
         // STEALTH (BL-69, kind 2) is cached here because this method already runs on every buff add,
@@ -2376,6 +2434,12 @@ public class Entity
             int weaponMAtk = (int)(MagicAttack * weaponMFactor);
             MagicAttack = StatCalculator.MagicAttackStatScaled(weaponMAtk, EffectiveAtk);
         }
+
+        // ----- A HELD BUFF WHOSE WEAPON GATE IS SHUT PAYS NOTHING (2026-09-02, his find). This sits
+        //       HERE, immediately after the equip loop resolved `WeaponType` and before the first
+        //       line in this method that reads a buff magnitude — every buff aggregation below, and
+        //       every IsStunned/IsRooted-style getter outside it, reads the flags this sets. -----
+        RefreshBuffSuppression();
 
         // ----- Item attributes (0.45.0: at most one per item, put there by an attribute
         //       scroll — items no longer drop with any. The flat Accuracy/HpRegen/MpRegen
