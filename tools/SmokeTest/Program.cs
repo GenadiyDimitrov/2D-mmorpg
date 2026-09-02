@@ -2109,6 +2109,60 @@ await gm.DisposeAsync();
     await gr.DisposeAsync();
 }
 
+// -------------------------------------------------------------------------------------------
+// 13. THE BUFF BAR IS PUSHED ON ARRIVAL, EVEN WHEN IT IS EMPTY — his playtest-29 find.
+//
+//     *"after long break when reconnect my buff bar stays with the last snapshot.. But the buffs
+//     aren't there ..they don't update as gone"* — and the second half, which is the damaging one:
+//     *"if I'm buffed with group buffs and they are 'fake' it looks like I disabled the group buff
+//     and can overbuff it with singles"*.
+//
+//     `PushBuffs` sends an EMPTY bar only once, when the last row goes away, and `_hadBuffs` records
+//     what the SERVER last sent — not what any particular CLIENT holds. Those two come apart the
+//     moment someone is link-dead or offline-farming: the buffs expire while he is away, the single
+//     empty update goes into a dead socket, the id leaves the set, and on reconnect the rule says
+//     "already told them" and never speaks again.
+//
+//     🔑 A FRESH LOGIN IS THE SAME LINE OF CODE AND IS FAR EASIER TO DRIVE. A brand-new character has
+//     no buffs, so the bar is empty, so the suppression is exactly the branch under test: before the
+//     fix nothing was sent at all and `Buffs` stays null; after it, an empty BuffUpdate arrives. The
+//     reconnect case differs only in what the client happened to be holding, which is not something
+//     the server can see and therefore not something it may reason about.
+//
+//     ⚠ It asserts the push EXISTS and is empty — never how many buffs a character "should" have, so
+//     no future change to the starter kit or the auto-granted passives can turn it red on its own.
+// -------------------------------------------------------------------------------------------
+{
+    var br = await ConnectAsync("test1", "test");
+    string bname = "Bar" + DateTime.UtcNow.ToString("HHmmssff");
+    var berr = await br.Hub.InvokeAsync<string?>("CreateCharacter",
+        new CreateCharacterRequest(bname, Race.Elf, BaseClass.Fighter));
+    Check("created a character to check the arrival buff push", berr is null, berr);
+
+    if (berr is null)
+    {
+        var bchars = await br.Hub.InvokeAsync<CharacterList>("ListCharacters");
+        var bid = bchars.Characters.First(c => c.Name == bname).Id;
+
+        br.Buffs = null;
+        var bres = await br.Hub.InvokeAsync<LoginResult>("EnterWorld", new EnterWorldRequest(bid));
+        br.MyId = bres.EntityId;
+        await br.WaitFor(() => br.Buffs is not null, 8000);
+
+        // The detail line is printed on a PASS too, so it says what HAPPENED, not what went wrong.
+        Check("the buff bar is pushed on ARRIVAL, so a client can never keep a stale one",
+              br.Buffs is not null,
+              br.Buffs is null ? "no \"Buffs\" push in 8s" : "a \"Buffs\" push arrived");
+        Check("...and it is EMPTY for a character carrying nothing",
+              br.Buffs is null || br.Buffs.Buffs.Length == 0,
+              br.Buffs is null ? null : $"{br.Buffs.Buffs.Length} row(s): "
+                  + string.Join(", ", br.Buffs.Buffs.Select(b => b.Name)));
+    }
+
+    await br.LeaveWorldAsync();
+    await br.DisposeAsync();
+}
+
 
 return Finish();
 

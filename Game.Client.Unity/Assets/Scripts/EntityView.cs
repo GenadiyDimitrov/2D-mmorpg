@@ -90,6 +90,11 @@ namespace Game.Client
         private float _serverDist;
         private bool _hasServerDist;
 
+        /// <summary>The last <c>EntityDto.Warp</c> we saw for this entity, and whether we have one at
+        /// all yet. A CHANGE means the server teleported it — see <see cref="SetTarget"/>.</summary>
+        private byte _warp;
+        private bool _hasWarp;
+
         /// <summary>
         /// How far the server may disagree with our prediction before we give up and SNAP to it.
         ///
@@ -255,8 +260,28 @@ namespace Game.Client
         /// picked. An entity that was sent twice in 100ms and one sent twice in 400ms both move at
         /// exactly the speed the server described.
         /// </summary>
-        public void SetTarget(Vector3 groundPos)
+        public void SetTarget(Vector3 groundPos, byte warp)
         {
+            // 🔑 A TELEPORT IS DECLARED, NOT MEASURED (playtest 29: *"phase shift don't visually update
+            // my position"*). The server bumps EntityDto.Warp on every reposition that is not the walk
+            // simulation, so a jump is now a fact on the wire instead of something inferred from how
+            // far the position moved. It has to be: a rung-1 Phase Shift is 200 server units — TWO
+            // Unity units — which fits under the 5-unit teleport test below AND under the 2.5-unit
+            // prediction tolerance above, so the client used to keep drawing the walk it was
+            // predicting while the server (and every mob) had already moved the character 200 away.
+            //
+            // The first sample only records the number: an entity that spawns into view has already
+            // been snapped by Create, and treating its starting value as a change would re-snap
+            // everything on screen the moment it appears.
+            if (_hasWarp && warp != _warp)
+            {
+                _warp = warp;
+                SnapTo(groundPos);
+                return;
+            }
+            _warp = warp;
+            _hasWarp = true;
+
             var next = groundPos + Vector3.up * HalfHeight;
 
             // RECONCILIATION. While predicting, the server's position is a CHECK, not an instruction:

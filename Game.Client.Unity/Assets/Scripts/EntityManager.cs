@@ -152,6 +152,9 @@ namespace Game.Client
                         Dead = lean.Dead,
                         Disconnected = lean.Disconnected,
                         Flag = lean.Flag,
+                        // The teleport counter rides the lean update too — a blink changes nothing
+                        // static, so this is the ONLY packet that ever carries it in flight.
+                        Warp = lean.Warp,
                     });
                 }
 
@@ -231,7 +234,7 @@ namespace Game.Client
             }
 
             view.IsSelf = e.Id == SelfId;
-            view.SetTarget(WorldMapper.ToUnity(e.X, e.Y));
+            view.SetTarget(WorldMapper.ToUnity(e.X, e.Y), e.Warp);
             view.SetColor(ColorFor(e));
             if (view.IsSelf) ApplySelfVisual(view);   // `BL-82` — survives a respawn of the marker
             // Dead entities stay in the world (corpses are lootable/visible) but are dimmed rather

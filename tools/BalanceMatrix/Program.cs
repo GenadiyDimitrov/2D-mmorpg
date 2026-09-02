@@ -1983,6 +1983,30 @@ Console.WriteLine("=== ECONOMY: the playtest-18 three-character experiment (leve
 const int PlaytestLevel = 33;          // a level-34 character killing its own level
 const double CoinObserved = 350_000;   // his mage: gold drops only, sold nothing — the calibration point
 
+// The per-rarity sell ladder (`BL-114`) collapsed to the ONE number the sweep below needs: the flat
+// divisor that would pay out what the ladder actually pays out, on the drops of this level's mobs.
+//
+// ⚠ UNITS. The sweep's rows are divisors on the item's OWN BUY PRICE — that is what `GearSellDivisor`
+// meant for a year — while the owner authored `BL-114` against the MYTHIC rung. The two differ by
+// RarityPriceMul (0.225 at Common), so this measures in the sweep's units, not his: a Common's /200
+// off the Mythic price is /45 off its own. Reading his 200 straight into this column would overstate
+// the cut 4.4x. The weighting is by what actually drops, so an all-Common field reads near /45.
+static double EffectiveGearSellDivisor(int level)
+{
+    double buy = 0, paid = 0;
+    foreach (var mob in MobsNear(level))
+        foreach (var (e, chance) in Marginals(mob.Drops ?? Array.Empty<DropEntry>(), level))
+        {
+            if (!MobCatalog.IsGearGroup(e.GroupId)) continue;
+            if (ItemCatalog.Get(e.ItemId) is not ItemDef def) continue;
+            if (ItemCatalog.TieredGearBasePrice(def) is not int b) continue;
+            double qty = (e.MinQty + e.MaxQty) / 2.0 * RateConfig.World.DropAmount;
+            buy += chance * qty * b * ItemCatalog.RarityPriceMul(def.Rarity);
+            paid += chance * qty * ItemCatalog.SellPrice(def);
+        }
+    return paid <= 0 ? GameConstants.GearSellDivisor : buy / paid;
+}
+
 static (double Gear, double Trash, double Coin) PerKill(int level)
 {
     var v = MobsNear(level).Select(m => KillValue(m, level)).ToArray();
@@ -2008,8 +2032,16 @@ Console.WriteLine($"{"gear x",7} {"sell /",7} | {"gear gold",11} {"trash",8} {"c
 // has to divide them back out. Hardcoding 1/3 and 25 here would silently misreport the moment either
 // knob is retuned, which is exactly the arithmetic this section exists to stop people getting wrong.
 float liveGearMul = RateConfig.DropGroupRate("armor");
-int liveDivisor = GameConstants.GearSellDivisor;
-Console.WriteLine($"  live now: gear groups x{liveGearMul:0.###}, GearSellDivisor {liveDivisor}");
+// ⚠ `BL-114` made the sell divisor PER RARITY, and this sweep's knob is a single number: a row's
+// "sell /" is therefore a FLAT divisor REPLACING the ladder. So the live baseline it scales from can
+// no longer be read off a constant — it is the ladder's drop-WEIGHTED effective divisor, measured on
+// the same drops pk.Gear was measured on. A hardcoded 10 here would misreport the moment a rarity moves.
+double liveDivisor = EffectiveGearSellDivisor(PlaytestLevel);
+Console.WriteLine($"  live now: gear groups x{liveGearMul:0.###}, per-rarity sell ladder "
+    + string.Join(" ", new[] { ItemRarity.Common, ItemRarity.Uncommon, ItemRarity.Rare,
+                               ItemRarity.Epic, ItemRarity.Legendary, ItemRarity.Mythic }
+        .Select(r => $"{r.ToString()[..2]}/{GameConstants.GearSellDivisorFor(r)}"))
+    + $" (off the MYTHIC rung)  => effective /{liveDivisor:0.#} off the OWN buy price here, was /10 flat");
 // ⚠ Every multiplier below was tripled on 2026-08-05, when `DropChanceRate` went 3 → 1 and the x3 was
 // folded into the groups that were taking it. The DELIVERED rates are identical — only the units moved
 // — but a row labelled 0.025 would now mean a third of what it meant when these were first written.

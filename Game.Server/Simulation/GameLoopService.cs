@@ -327,6 +327,11 @@ public class GameLoopService : BackgroundService
             entity.Mp = entity.MaxMp;
         }
         RestorePersistedBuffs(entity);   // before SendStats — the buffs change the numbers it sends
+        // THE BAR, unconditionally, exactly like the empty party roster below and for the same reason:
+        // state the client needs on arrival must be PUSHED on arrival. `RestorePersistedBuffs` only
+        // pushes when it actually restored something, and a RECONNECT restores nothing — the entity
+        // never left the world. Whatever the bar should read now, it reads now. See PushBuffs(force).
+        PushBuffs(entity, force: true);
         RestoreBossJudgment(entity);     // `BL-98` — the ladder kept running while he was away
         SendInventory(entity);
         SendRestorable(entity);  // empty on a fresh login, but the window must not show a stale list
@@ -2206,11 +2211,7 @@ public class GameLoopService : BackgroundService
         // whose gatekeeper doesn't list the field you just died in, leaving you to walk back.
         var town = RegionMap.ManagingCity(entity.X, entity.Y)
                    ?? WorldMap.NearestSafeZone(entity.X, entity.Y);
-        entity.X = town.X + _rng.Next(-250, 250);
-        entity.Y = town.Y + _rng.Next(-250, 250);
-        entity.TargetX = null;
-        entity.TargetY = null;
-        _world.Grid.UpdatePosition(entity);
+        PlaceEntity(entity, town.X + _rng.Next(-250, 250), town.Y + _rng.Next(-250, 250));
     }
 
     // ----- Class change ------------------------------------------------------------
@@ -2901,11 +2902,7 @@ public class GameLoopService : BackgroundService
     private void HandleDebugTeleport(DebugTeleportCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead) return;
-        player.X = Math.Clamp(cmd.X, GameConstants.WorldMinX, GameConstants.ZoneWidth);
-        player.Y = Math.Clamp(cmd.Y, GameConstants.WorldMinY, GameConstants.ZoneHeight);
-        player.TargetX = null;
-        player.TargetY = null;
-        _world.Grid.UpdatePosition(player);
+        PlaceEntity(player, cmd.X, cmd.Y);
         SendSystemToEntity(player, $"Teleported to ({(int)player.X}, {(int)player.Y}).");
     }
 
@@ -8318,11 +8315,7 @@ public class GameLoopService : BackgroundService
     {
         target.JailedUntil = null;
         var town = WorldMap.StartingTown;
-        target.X = town.X + _rng.Next(-250, 250);
-        target.Y = town.Y + _rng.Next(-250, 250);
-        target.TargetX = null;
-        target.TargetY = null;
-        _world.Grid.UpdatePosition(target);
+        PlaceEntity(target, town.X + _rng.Next(-250, 250), town.Y + _rng.Next(-250, 250));
         SendSystemToEntity(target, message);
         SaveEntity(target);
         _ = Task.Run(() => _db.SetJailAsync(target.Name, null));
@@ -11522,6 +11515,13 @@ public class GameLoopService : BackgroundService
         e.Y = Math.Clamp(y, GameConstants.WorldMinY, GameConstants.ZoneHeight);
         e.TargetX = null;
         e.TargetY = null;
+        // 🔑 THE JUMP IS ANNOUNCED, not left for the client to guess at. This method is the one seam
+        // every non-walk reposition passes through, so bumping the counter here covers blink,
+        // knockback, the gatekeeper, respawn and the admin jump in one line — and anything added
+        // later gets it for free. See EntityDto.Warp: a 200-unit blink is smaller than BOTH of the
+        // distance thresholds the client used to infer a teleport from, which is why Phase Shift
+        // moved the player on the server and nowhere on screen.
+        unchecked { e.Warp++; }
         _world.Grid.UpdatePosition(e);
     }
 
@@ -14163,7 +14163,11 @@ public class GameLoopService : BackgroundService
              + (string.IsNullOrWhiteSpace(b.Description) ? "" : "\n\n" + b.Description);
     }
 
-    private void PushBuffs(Entity player)
+    /// <param name="force">Send the bar even when it is EMPTY and the "only once" suppression below
+    /// would otherwise stay silent. Set on ARRIVAL (see <c>HandleEnterWorld</c>): the suppression is
+    /// keyed on what the SERVER last sent, and a client that was not connected when the empty update
+    /// went out never got it.</param>
+    private void PushBuffs(Entity player, bool force = false)
     {
         // ⚠ The bar is pushed from the LIVE buff list, and `Suppressed` is written by RecomputeDerived
         // — which runs on every equip change — so the dimming follows the weapon with no extra push.
@@ -14188,7 +14192,18 @@ public class GameLoopService : BackgroundService
         if (dtos.Count == 0)
         {
             // Only send the empty update once, when the last row just went away.
-            if (_hadBuffs.Remove(player.Id))
+            //
+            // 🔴 …WHICH IS WHY A RECONNECT NEEDS `force` (playtest 29: *"after long break when
+            // reconnect my buff bar stays with the last snapshot .. but the buffs aren't there"*).
+            // `_hadBuffs` records what the SERVER last sent, not what a given client HOLDS, and the
+            // two come apart the moment someone is link-dead or offline-farming: his buffs expired
+            // while he was away, the one empty update was sent into a dead socket, the id left the
+            // set — and on reconnect the rule said "already told them" and stayed quiet forever. The
+            // bar then sat there full of buffs he did not have, which is worse than wrong: the stale
+            // rows read as a live GROUP buff, so he could "overbuff it with singles" against a
+            // blessing that was not there.
+            bool removed = _hadBuffs.Remove(player.Id);
+            if (removed || force)
                 SendTo(player, "Buffs", new BuffUpdate(Array.Empty<BuffDto>()));
             return;
         }
@@ -15835,11 +15850,7 @@ public class GameLoopService : BackgroundService
             (landX, landY) = (destGk.X + 150f, destGk.Y + 150f);
 
         // Small scatter so a party arriving together doesn't stack on one pixel.
-        player.X = Math.Clamp(landX + _rng.Next(-150, 150), GameConstants.WorldMinX, GameConstants.ZoneWidth);
-        player.Y = Math.Clamp(landY + _rng.Next(-150, 150), GameConstants.WorldMinY, GameConstants.ZoneHeight);
-        player.TargetX = null;
-        player.TargetY = null;
-        _world.Grid.UpdatePosition(player);
+        PlaceEntity(player, landX + _rng.Next(-150, 150), landY + _rng.Next(-150, 150));
 
         SendGold(player);
         SendSystemToEntity(player,
@@ -15933,12 +15944,24 @@ public class GameLoopService : BackgroundService
 
     /// <summary>The ids this player would SAVE right now: the NPC blessings currently on them.
     ///
-    /// 🔑 The filter is <c>NewbieBuffSet.Contains(b.SkillId)</c> and that one test settles both of his
-    /// worked examples for free. <c>SkillId</c> is the def that literally created the buff, so a
-    /// potion or a scroll resolves to its FAMILY rung (<c>buff_might_r</c>, never <c>npc_might</c>) and
-    /// an improved GROUP is one buff under the group's own id — which is why *"if I have group 'feral
+    /// 🔑 The filter is <c>NewbieBuffSet.Contains(b.SourceSkillId)</c> and that one test settles both
+    /// of his worked examples for free. <c>SourceSkillId</c> is the def the player actually INVOKED —
+    /// the wrapper — so an NPC blessing reads <c>npc_might</c>, a potion reads its own bottle's id and
+    /// an improved GROUP is one buff under the group's own id. Which is why *"if I have group 'feral
     /// bloodlust' it will NOT save the might, fury, vamp"* needs no special case: the group's id is not
     /// in the set, and its children do not exist as separate buffs to be found.
+    ///
+    /// 🔴 **IT WAS <c>b.SkillId</c> AND THAT COULD NEVER MATCH — playtest 29, *"npc buffer the save
+    /// button is inactive ...I have buffs and it's still inactive"*.** Every blessing is a ONE-CHILD
+    /// WRAPPER (<see cref="SkillDef.ChildBuffs"/>), so <c>ApplyBuff</c> recurses into the child and
+    /// stores <c>SkillId</c> = the FAMILY RUNG (<c>BuffPAtk3</c>), keeping the wrapper only in
+    /// <c>SourceSkillId</c>. <c>NewbieBuffSet</c> holds <c>npc_*</c> ids, so the intersection was
+    /// ALWAYS empty and [Save] has been dead since `BL-95` shipped in 0.99.0. The original comment
+    /// even stated the mechanism correctly (*"resolves to its FAMILY rung, never npc_might"*) — it
+    /// just did not notice that this is true of the NPC's own blessings too, not only of potions.
+    /// 🔑 The lesson is the general one: **when a wrapper and its child both carry an id, name which
+    /// question you are asking.** "What is on me" is the child; "what did the player press" is the
+    /// source, and every preset question is the second one.
     ///
     /// ⚠ Ordered by the SET, not by the buff bar, so a saved preset always lands in the same order it
     /// would have from the Full button.</summary>
@@ -15946,7 +15969,7 @@ public class GameLoopService : BackgroundService
     {
         var have = new HashSet<string>();
         foreach (var b in player.Buffs)
-            if (!string.IsNullOrEmpty(b.SkillId)) have.Add(b.SkillId);
+            if (!string.IsNullOrEmpty(b.SourceSkillId)) have.Add(b.SourceSkillId);
         return SkillCatalog.NewbieBuffSet.Where(have.Contains).ToList();
     }
 
@@ -16056,11 +16079,26 @@ public class GameLoopService : BackgroundService
                     SendSystemToEntity(player, "You have no preset saved.");
                     return;
                 }
-                if (!Charge(ids.Sum(id => SingleBuffCost(player, id)))) return;
-                GrantFullBuffSet(player, ids);
-                SendSystemToEntity(player, cmd.Action == "full"
+                // Charge for what LANDS, not for what was asked for — the same correction as the
+                // "single" case below, and it matters most here because his stated workflow is *"buff
+                // fully from npc then remove what u don't need"*: a real buffer standing at the NPC
+                // with his own stronger Might would otherwise pay full price for a blessing the
+                // family contest throws away. Nothing in the set conflicts with anything else in it,
+                // so the whole list can be tested against the state as it is now.
+                var landing = ids.Where(id => SkillCatalog.Get(id) is SkillDef d
+                                              && BuffWouldLand(player, d, d.MaxLevel)).ToList();
+                if (landing.Count == 0)
+                {
+                    SendSystemToEntity(player, "You already carry everything I could give you.");
+                    return;
+                }
+                if (!Charge(landing.Sum(id => SingleBuffCost(player, id)))) return;
+                GrantFullBuffSet(player, landing);
+                SendSystemToEntity(player, cmd.Action == "full" && landing.Count == ids.Count
                     ? "You are blessed with a buffer's full might!"
-                    : $"Blessed — {ids.Count} of the buffer's blessings.");
+                    : $"Blessed — {landing.Count} of the buffer's blessings."
+                      + (landing.Count < ids.Count
+                         ? $" ({ids.Count - landing.Count} you already carry stronger.)" : ""));
                 break;
             }
 
@@ -16101,6 +16139,15 @@ public class GameLoopService : BackgroundService
                     || !SkillCatalog.NewbieBuffSet.Contains(cmd.SkillId))
                 {
                     SendSystemToEntity(player, "That buff isn't on offer.");
+                    return;
+                }
+                // Ask BEFORE charging. A blessing that loses the family contest to something you
+                // already hold (your own buffer's stronger Might, a Greater potion) simply does not
+                // land, and the old order took the gold anyway. Same resolver the cast path uses, so
+                // the refusal and the outcome cannot disagree.
+                if (!BuffWouldLand(player, def, 1))
+                {
+                    SendSystemToEntity(player, $"You already carry something stronger than {def.Name}.");
                     return;
                 }
                 if (!Charge(SingleBuffCost(player, cmd.SkillId))) return;

@@ -2526,7 +2526,17 @@ public static class ItemCatalog
     /// it is in stats, deliberately. Mythic is a 2.35x jump over Legendary, which is intended: Mythic
     /// is craft-only and meant to be traded between players for absurd sums. Epic and above are NOT
     /// vendor stock; their multipliers exist only so selling one pays sensibly.</summary>
-    private static int? TieredGearPrice(ItemDef def)
+    private static int? TieredGearPrice(ItemDef def) =>
+        TieredGearBasePrice(def) is int mythic
+            ? Math.Max(1, (int)Math.Round(mythic * (double)RarityPriceMul(def.Rarity)))
+            : null;
+
+    /// <summary>The MYTHIC rung of the table above — the row cell BEFORE <see cref="RarityPriceMul"/>
+    /// is applied. Split out of <see cref="TieredGearPrice"/> for one reason: the per-rarity SELL
+    /// divisors (<see cref="GameConstants.GearSellDivisor"/>) are authored by the owner against THIS
+    /// number and not against the item's own buy price, so a Common's 1/200 is 1/200 of the Mythic
+    /// price, not of the Common one. Null for untiered/legacy gear.</summary>
+    public static int? TieredGearBasePrice(ItemDef def)
     {
         int tier = def.ItemLevel switch
         {
@@ -2563,7 +2573,7 @@ public static class ItemCatalog
         };
         if (row is null) return null;
 
-        return Math.Max(1, (int)Math.Round(row[tier] * (double)RarityPriceMul(def.Rarity)));
+        return row[tier];
     }
 
     /// <summary>The owner's F/E/D shop price is the price of a **RARE** item. This lifts it to the
@@ -2626,11 +2636,16 @@ public static class ItemCatalog
     /// <summary>Gold paid to a player who SELLS this item. SellPriceOverride wins
     /// (0 = sells for nothing); otherwise it DERIVES from the buy price.
     ///
-    /// Tiered gear divides its buy price by <see cref="GameConstants.GearSellDivisor"/> (25) instead of
+    /// Tiered gear divides the MYTHIC rung of its price row by
+    /// <see cref="GameConstants.GearSellDivisorFor"/> — a PER-RARITY divisor since `BL-114` — instead of
     /// taking the generic 30 % — that is the playtest-14 faucet fix, and it is deliberately confined to
     /// gear: mats, potions and scrolls are not what made a level-25 character rich, and cutting them
     /// too would quietly nerf crafting income nobody asked to nerf. Everything else keeps
-    /// <see cref="GameConstants.VendorSellFraction"/>.</summary>
+    /// <see cref="GameConstants.VendorSellFraction"/>.
+    ///
+    /// ⚠ It divides <see cref="TieredGearBasePrice"/> and NOT the item's own buy price, because that is
+    /// how the owner authored the ladder — see the table on <c>GearSellDivisorFor</c>. Dividing the own
+    /// price instead would compound the rarity multiplier twice and take a Common to 1/900th.</summary>
     /// USE-CONSUMABLES (buff potions and the cast-on-use scrolls) take the same /25 as gear, added
     /// 2026-07-31 for playtest-15. They are the other half of the same faucet: the Always and Scrolls
     /// drop groups hand one out on essentially every kill, so at the generic 30 % a Lesser buff potion
@@ -2638,9 +2653,13 @@ public static class ItemCatalog
     /// at 60, which is the owner's own number. HEALING potions are deliberately NOT in this branch:
     /// they carry a PotionCooldownTicks and their oversupply is being fixed at the DROP rate instead,
     /// so their price is left alone rather than nerfed twice.
+    /// ⚠ Use-consumables keep the FLAT <see cref="GameConstants.GearSellDivisor"/>. `BL-114` is about
+    /// gear ("a myth item", "common"), and a buff potion has no Mythic rung on the tiered table to be
+    /// a fraction OF — most of them are SellPriceOverride: 0 anyway. Say the word and they follow.
     public static int SellPrice(ItemDef def) =>
         def.SellPriceOverride is int s ? Math.Max(0, s)
-        : TieredGearPrice(def) is int gear ? Math.Max(1, gear / GameConstants.GearSellDivisor)
+        : TieredGearBasePrice(def) is int mythic
+            ? Math.Max(1, mythic / GameConstants.GearSellDivisorFor(def.Rarity))
         : IsUseConsumable(def) && def.Value > 0
             ? Math.Max(1, def.Value / GameConstants.GearSellDivisor)
         : def.Value <= 0 ? 0 : Math.Max(1, (int)(def.Value * GameConstants.VendorSellFraction));

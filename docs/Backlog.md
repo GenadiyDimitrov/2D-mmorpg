@@ -1234,21 +1234,38 @@ answered at the bottom of this section rather than as entries — neither asks f
   totem with cd 25 becomes 50 against a duration of 30"*. The low CD is armour against a future
   cooldown debuff. Do not raise it.
 
-- `BL-114` 🔴 **THE SELL DIVISOR BECOMES PER-RARITY.** *"the sell prices are to much for the current drop
-  rates ... common sels for 0.225 of the original price so selling 4.(4) items Is like I sold a real
-  item"*. One `GameConstants.GearSellDivisor` (25) today; your ladder:
+- `BL-114` ✅ **BUILT 2026-09-02 (0.102.11) — THE SELL DIVISOR IS PER-RARITY.** *"the sell prices are to
+  much for the current drop rates ... common sels for 0.225 of the original price so selling 4.(4) items
+  Is like I sold a real item"*. Your ladder, and it divides the **MYTHIC rung of the price table** —
+  which is the units your own arithmetic is in, not the item's own buy price:
 
-  | rarity | divisor | was |
-  | --- | --- | --- |
-  | Mythic | **/10** | /25 |
-  | Legendary | **/25** | /25 |
-  | Epic | **/33** | /25 |
-  | Rare | **/50** | /25 |
-  | Uncommon | **/100** | /25 |
-  | Common | **/200** | /25 |
+  | rarity | divisor | sell, as a fraction of the Mythic price | was | own-price divisor now |
+  | --- | --- | --- | --- | --- |
+  | Mythic | **/10** | 0.100 | 0.1000 — unchanged | /10 |
+  | Legendary | **/25** | 0.040 | 0.0425 | /10.6 |
+  | Epic | **/33** | 0.030 | 0.0350 | /11.6 |
+  | Rare | **/50** | 0.020 | 0.0350 | /17.5 |
+  | Uncommon | **/100** | 0.010 | 0.0275 | /27.5 |
+  | Common | **/200** | 0.005 | 0.0225 | /45 |
 
-  Monotonic, and it takes a Common from 4.4-per-real-item to 20. ⚠ It must land in **one place**
-  (`ItemCatalog.SellPrice`) — the same rule as `MobCatalog.EffectiveRate`: never at a call site.
+  ⚠ **The entry as first written had the "was" column wrong** — it said a flat /25. The live divisor
+  has been **/10** since playtest-18 (2026-08-05), and /10 off a Common's own price is the 0.0225 you
+  quoted. Both readings are in the table above so neither can be misread again.
+
+  ✅ Shipped in the one place (`ItemCatalog.SellPrice`), off a new `TieredGearBasePrice` — the row cell
+  before `RarityPriceMul`. 🔑 **Only tiered GEAR moves**: use-consumables keep the flat /10, because a
+  buff potion has no Mythic rung to be a fraction of and most carry `SellPriceOverride: 0` anyway.
+  ⚠ It also **separates Epic from Rare**, which sold identically before (they share a buy multiplier of
+  0.35 on purpose); /33 against /50 is your ladder and it is monotonic.
+
+  📊 **Measured, not derived** (`tools/BalanceMatrix`, the playtest-18 farm at level 34): the Common
+  gauntlet goes **buy 112,500 / sell 11,250 → sell 2,500**, so it needs **45 sales to buy its own
+  replacement, up from 10**. The effective divisor on what actually drops at 34 is **/35.5**, was /10.
+  🔴 **The consequence to look at: that farm's total falls from ~1.04M to ~549k** — your playtest-18
+  target for it was ~1kk, so this puts it at **half the number you accepted a month ago**. That is the
+  cut you asked for and it is bigger than the "4.4 → 20" line suggests, because the ladder bites the
+  Common/Uncommon end which is nearly everything that drops. Say the word if you want the gear DROP
+  rate raised back to meet it — that is the other knob and it is one number.
 
 - `BL-115` ✅ **BUILT 2026-09-02 (0.102.7) — NPCs GET `canDie` AND `retaliate`, AND ATTACKING ANY NPC NEEDS PVP-ON.** *"field
   guards/watchmen are targetable and hittable even without a pvp-on ...and i can hit them auto in

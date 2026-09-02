@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.102.10";
+    public const string GameVersion = "0.102.11";
 
     // ----- SP BOTTLE (owner, 2026-08-26) -------------------------------------------------------
     // *"u can make an npc to take your 1kkk SP + 100kk gold and give you a tradable/sellabel
@@ -150,7 +150,14 @@ public static class GameConstants
     /// default, so an old client is not broken by it: it deserializes fine and simply never dims,
     /// which is exactly the state it is in today. The bump is honest record-keeping, not a wall.
     /// ⚠ A NEW APK IS REQUIRED to SEE the change (the server-side fix works either way).
-    public const int ProtocolVersion = 30;
+    /// 30 → 31 (2026-09-02): `EntityDto` and `EntityLean` both gained `Warp`, a one-byte TELEPORT
+    /// COUNTER. The server bumps it on every reposition that is not the walk simulation (blink,
+    /// knockback, gatekeeper, respawn, jail release, admin jump) and the client SNAPS instead of
+    /// interpolating when the number changes — see the comment on `EntityDto.Warp` for why a distance
+    /// threshold could never tell a 200-unit blink from a 200-unit walk. Optional with a default on
+    /// both records, so an old client ignores it and behaves exactly as it does today.
+    /// ⚠ A NEW APK IS REQUIRED to SEE the change (the server half is harmless on its own).
+    public const int ProtocolVersion = 31;
 
     /// <summary>
     /// The oldest protocol this server still speaks. Equal to <see cref="ProtocolVersion"/> means
@@ -905,8 +912,45 @@ public static class GameConstants
     /// would have left the player wading through the same flood of near-worthless drops. So the cut went
     /// on the drop RATE instead (<see cref="RateConfig.DropGroupRates"/>, the four gear groups, 13x
     /// rarer) and this moved the OTHER way — fewer drops, each one worth 2.5x more. Ten Robes buy one
-    /// Leathers now. Measured in tools/BalanceMatrix; change it there and re-run, don't re-derive.</summary>
+    /// Leathers now. Measured in tools/BalanceMatrix; change it there and re-run, don't re-derive.
+    ///
+    /// ⚠ SINCE `BL-114` THIS IS ONLY THE USE-CONSUMABLE DIVISOR. Tiered GEAR takes the per-rarity
+    /// ladder below.</summary>
     public const int GearSellDivisor = 10;
+
+    /// <summary>`BL-114` (owner, playtest 29): the tiered-gear sell divisor is PER RARITY, and the
+    /// number divides the MYTHIC rung of the price table — not the item's own buy price. That is his
+    /// own arithmetic: *"a myth item is sold for (buy price bp*1/10)"* is the rung he is happy with,
+    /// and every cheaper rarity is expressed as the same kind of fraction of that same bp.
+    ///
+    /// | rarity | divisor | sell, as a fraction of the Mythic price | was |
+    /// |---|---|---|---|
+    /// | Mythic | /10 | 0.100 | 0.1000 (unchanged) |
+    /// | Legendary | /25 | 0.040 | 0.0425 |
+    /// | Epic | /33 | 0.030 | 0.0350 |
+    /// | Rare | /50 | 0.020 | 0.0350 |
+    /// | Uncommon | /100 | 0.010 | 0.0275 |
+    /// | Common | /200 | 0.005 | 0.0225 |
+    ///
+    /// 🔑 **The shape is the point, not the magnitude.** Mythic does not move at all and Legendary
+    /// barely does (-6 %); the cut lands almost entirely on the junk end — Common -78 %, Uncommon -64 %,
+    /// Rare -43 %. His complaint was specifically about the flood: *"common sels for 0.225 of the
+    /// original price so selling 4.(4) items Is like I sold a real item ...and that alot"*. A Common
+    /// now needs 45 sales to buy its own replacement, up from 10.
+    ///
+    /// ⚠ It also SEPARATES Epic from Rare, which were identical before: they share a
+    /// <see cref="ItemCatalog.RarityPriceMul"/> of 0.35 (Epic buys the same as Rare on purpose) but
+    /// they no longer sell the same. That is his ladder, /33 against /50, and it is monotonic.</summary>
+    public static int GearSellDivisorFor(ItemRarity rarity) => rarity switch
+    {
+        ItemRarity.Mythic    => 10,
+        ItemRarity.Legendary => 25,
+        ItemRarity.Epic      => 33,
+        ItemRarity.Rare      => 50,
+        ItemRarity.Uncommon  => 100,
+        ItemRarity.Common    => 200,
+        _ => 50,
+    };
 
     /// <summary>Extra fraction added to an item's Value when you BUY from a vendor.
     /// Reserved for the future castle system: a vendor in a castle-owned village

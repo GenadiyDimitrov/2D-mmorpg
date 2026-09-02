@@ -7,11 +7,140 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.102.10**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.102.11**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-02 (latest) — 0.102.10: a taunt does not put you on top for free
+## 2026-09-02 (latest) — 0.102.11: the last five finds of playtest 29
+
+`BL-114` plus the four remaining pure bugs. Three of the five had been broken since the day they
+shipped and could not have been caught by playing more carefully — each is a rule that was *stated*
+somewhere and then asked in the wrong place.
+
+### `BL-114` — the sell divisor is PER RARITY
+
+*"the sell prices are to much for the current drop rates … common sels for 0.225 of the original
+price so selling 4.(4) items Is like I sold a real item"*.
+
+His ladder, and it divides the **MYTHIC rung** of the price table rather than the item's own buy
+price — which is the units his own arithmetic is in, and the only reading that reproduces all six of
+his numbers (Mythic 1/10 is what it already was, which is why he did not ask for it to move):
+
+| rarity | divisor | sell ÷ Mythic price | was | ÷ its OWN buy price |
+| --- | --- | --- | --- | --- |
+| Mythic | /10 | 0.100 | 0.1000 — unchanged | /10 |
+| Legendary | /25 | 0.040 | 0.0425 | /10.6 |
+| Epic | /33 | 0.030 | 0.0350 | /11.6 |
+| Rare | /50 | 0.020 | 0.0350 | /17.5 |
+| Uncommon | /100 | 0.010 | 0.0275 | /27.5 |
+| Common | /200 | 0.005 | 0.0225 | /45 |
+
+One place (`ItemCatalog.SellPrice`), off a new `TieredGearBasePrice` — the row cell before
+`RarityPriceMul`. It also **separates Epic from Rare**, which sold identically before (they share a
+buy multiplier of 0.35 on purpose). Use-consumables keep the flat /10: a buff potion has no Mythic
+rung to be a fraction of.
+
+📊 **Measured, not derived.** The Common gauntlet goes buy 112,500 / sell 11,250 → **2,500**: 45
+sales to buy its own replacement, up from 10. On the playtest-18 level-34 farm the effective divisor
+is **/35.5** against /10 and that farm's total income falls **~1.04M → ~549k**. 🔴 His playtest-18
+target for it was ~1kk, so this lands at **half the number he accepted a month ago** — the cut he
+asked for, but bigger than "4.4 → 20" sounds, because the ladder bites the Common/Uncommon end and
+that is nearly everything that drops. The other knob (the gear DROP rate) is untouched and is one
+number if he wants the total back.
+
+⚠ `BalanceMatrix`'s sweep knob is a single number and the ladder is six, so its live baseline is now
+a drop-WEIGHTED effective divisor, measured on the same drops `pk.Gear` is measured on. Its rows are
+divisors on the item's OWN price — reading his 200 straight into that column would have overstated
+the cut 4.4× — and the `0.075 / 10` row reads 1.04M again, matching the number that section was
+calibrated against.
+
+### The NPC buffer's `[Save]` was never once alive
+
+*"npc buffer the save button is inactive …I have buffs and it's still inactive"*.
+
+🔑 **Every blessing is a ONE-CHILD WRAPPER**, so `ApplyBuff` recurses into the child and stores
+`SkillId` = the FAMILY RUNG (`BuffPAtk3`), keeping the wrapper only in `SourceSkillId`.
+`SavableBuffIds` filtered `NewbieBuffSet.Contains(b.SkillId)` against a set of `npc_*` ids, so the
+intersection was **always empty** and `SavableNow` was always 0 — dead since `BL-95` shipped in
+0.99.0. The original comment even stated the mechanism correctly (*"resolves to its FAMILY rung,
+never npc_might"*); it just did not notice that this is true of the NPC's own blessings too, not only
+of potions. It reads `SourceSkillId` now, and both of his worked examples still fall out for free.
+
+🔑 **The general lesson: when a wrapper and its child both carry an id, name which question you are
+asking.** "What is on me" is the child; "what did the player press" is the source, and every preset
+question is the second one.
+
+⤷ **Found on the way past and fixed with it: you could pay for a blessing that never landed.** A
+single or a preset charged first and applied afterwards, ignoring the result — so a buffer standing
+at the NPC with his own stronger Might paid full price for nothing. Both paths ask `BuffWouldLand`
+first now (the same resolver the cast path uses), a preset is charged **for what lands** and says how
+many it skipped, and a single that cannot land refuses instead of taking the gold.
+
+### Phase Shift moved you on the server and nowhere on screen
+
+*"phase shift don't visually update my position. The mob attacks where I must be server wise but
+client sees the nit updated position."*
+
+🔑 **A JUMP IS A DIFFERENT EVENT FROM A WALK AND THE CLIENT CANNOT INFER WHICH IT GOT.** It guessed by
+DISTANCE: over 5 Unity units (500 server) is a teleport, and a self-prediction in flight tolerates
+2.5 units of server disagreement before it snaps. A rung-1 Phase Shift is **200 server units — two
+Unity units — so it fits under BOTH thresholds**. The server moved him 200, every mob followed, and
+the client went on drawing the walk it was predicting.
+
+`EntityDto`/`EntityLean` carry a one-byte **`Warp` counter** now, bumped by `PlaceEntity` — the
+single seam every non-walk reposition goes through. The client snaps whenever the number changes.
+Four teleports that had hand-rolled `PlaceEntity` inline (respawn, the gatekeeper, jail release, the
+admin jump) were routed through it, so blink, knockback, respawn, teleport and anything added later
+all get it from one line. Protocol **30 → 31**; optional with a default, so an old client is
+unaffected — but a new APK is needed to SEE it.
+
+### The buff bar kept a stale snapshot after a reconnect
+
+*"after long break when reccinect my buff bar stays with the last snapshot.. But the buffs aren't
+there"* — and the damaging half, *"if I'm buffed with group buffs and they are 'fake' it looks like I
+disaseble the group buff and can overbuff it with singles"*.
+
+`PushBuffs` sends an EMPTY bar only once, when the last row goes away, and `_hadBuffs` records what
+the **server** last sent — not what any particular client HOLDS. Those come apart the moment someone
+is link-dead or offline-farming: the buffs expire while he is away, the one empty update goes into a
+dead socket, the id leaves the set, and on reconnect the rule says "already told them" and never
+speaks again.
+
+The bar is pushed **unconditionally on arrival** now — the same rule, and the same one line, as the
+empty party roster sitting ten lines below it: *state the client needs on arrival must be pushed on
+arrival*. 🟢 **SmokeTest §13 guards it, and it was run against the broken code first**: with the push
+removed the section fails with "no Buffs push arrived", which is the only reason to trust it.
+
+### The grey rectangle at full ortho zoom-out is the EDGE OF THE WORLD
+
+*"now in ortho if I zoom out to much it become the gray rectangle clip … now it just covers the whole
+screen if I don't zoomin to much"*.
+
+Not a clip plane this time, and not the same bug as the growing bottom band. The world is 24,000
+server units = **240 Unity units** across. An ortho camera at `MaxOrthoSize` 60 shows `2 · 60 ·
+aspect` horizontally — on a 19.5:9 phone in landscape that is **260**. At the end of the zoom slider
+**the view is wider than the map**, the ground plane genuinely runs out, and every pixel it does not
+cover is the camera's clear colour: Unity's default blue-grey, alpha 0, no skybox assigned.
+Vertically it is `2 · 60 / sin(Pitch)` = 170 of the 240, so standing near an edge puts most of the
+frame outside the world.
+
+🔑 **The previous grey band WAS the near clip plane and that fix still holds** — at the sliders' own
+limits (Pitch 45-90, OrthoSize 6-60, Distance 10-90) the near edge of the ground sits at Distance ≥
+10 against a 0.3 plane and the far edge at ≤ 210 against 1000. Neither plane is reachable any more.
+Two different bugs wearing the same grey; the second only became visible once the first stopped
+hiding it.
+
+The fix is to stop rendering a HOLE: the camera clears to the ground's own colour, so "beyond the
+map" reads as more ground. That also covers standing at the world edge at ANY zoom, which was already
+true before he touched the slider. The grid still stops at the real boundary, so the edge is still
+legible. **The zoom range is deliberately not reduced** — he asked for that zoom.
+
+⚠ **This one is reasoned, not observed.** It is the only find of the five I could not drive myself:
+it needs the device. If a grey rectangle survives the change, it is something else, and the
+arithmetic above is what to rule out next.
+
+## 2026-09-02 — 0.102.10: a taunt does not put you on top for free
+
 
 `BL-123`. *"taunt (and charm also adds aggro points) but they donnt mve you on top for free .. the
 idea is tank to spam taunt/charm for mob to keep it agrro on him .. if some1 is doing alot of

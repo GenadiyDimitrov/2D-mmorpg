@@ -80,7 +80,26 @@ public record EntityDto(
     // model needs. Both are enums with a cheap default, so a client that never reads them is
     // unaffected — this costs two bytes on a SPAWN dto and nothing per tick (see EntityLean).
     MobCategory Category = MobCategory.Humanoid,
-    MobRole Role = MobRole.Melee);
+    MobRole Role = MobRole.Melee,
+    // ---- THE TELEPORT COUNTER (playtest 29: *"phase shift don't visually update my position"*) ----
+    //
+    // 🔑 A JUMP IS A DIFFERENT EVENT FROM A WALK, AND THE CLIENT CANNOT INFER WHICH IT GOT. It used to
+    // guess by DISTANCE — under 5 Unity units (500 server units) is movement, over it is a teleport —
+    // and a 200-unit blink is 2. Worse, a self-prediction in flight tolerates 2.5 units of server
+    // disagreement before it snaps, so a rung-1 Phase Shift fits inside BOTH thresholds: the server
+    // moved him 200 units, the mob followed, and the client went on drawing the walk it was
+    // predicting. A threshold cannot separate "he blinked 200" from "he walked 200"; only the server
+    // knows, so the server says.
+    //
+    // It is a COUNTER and not a bool so it survives a dropped frame and a re-spawn of the entity: the
+    // client stores the last value it saw and snaps whenever the number CHANGES, which is correct from
+    // any starting value. Wrapping at 255 is harmless — two warps 256 apart with no frame between them
+    // is not a thing that happens at 10 ticks/sec.
+    //
+    // Costs one byte on a spawn and one on a lean. An old client ignores it and behaves exactly as it
+    // does today; a new client against an old server reads 0 forever and never snaps, which is also
+    // exactly as today.
+    byte Warp = 0);
 
 /// <summary>What to draw over an NPC's head about quests. Sent per player, because availability is
 /// personal — level, race, class and what you have already done all decide it.</summary>
@@ -109,7 +128,11 @@ public record WorldSnapshot(EntityDto[] Entities);
 /// spawn and never repeated, so this is all the wire needs while an entity is just moving/fighting.</summary>
 public record EntityLean(
     Guid Id, float X, float Y, float Speed,
-    int Hp, int Mp, bool Dead, bool Disconnected, PvpFlag Flag);
+    int Hp, int Mp, bool Dead, bool Disconnected, PvpFlag Flag,
+    // A TELEPORT COUNTER, bumped by every server-side reposition that is NOT the walk simulation:
+    // a blink, a knockback, a gatekeeper ride, a respawn, a leash reset, an admin jump. See
+    // EntityDto.Warp — the two carry the same number and the client reads whichever arrives.
+    byte Warp = 0);
 
 /// <summary>Server -> Client, every tick: a DELTA of the viewer's world.
 ///   Spawns   = entities that just ENTERED view (or whose static data changed) — full DTOs.

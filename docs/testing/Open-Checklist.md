@@ -19,7 +19,8 @@
 > (0.93.0), the TARGET column (0.93.2), the guards and three Kind-gate bugs (0.94.0), **AoE that
 > actually hits** (0.94.1-3), **the boss's judgment** (0.95.0), **the class renames and the Demon race**
 > (0.96.0-0.98.2), and **buff presets + the [Char] button** (0.99.0 — §97, the newest section).
-> **`ProtocolVersion` is 28 → 29** — but the server still accepts from 8, so an **old client connects
+> **`ProtocolVersion` is 28 → 31** (29 for the models, 30 for the dimmed suppressed buff, 31 for the
+> teleport counter) — but the server still accepts from 8, so an **old client connects
 > and looks perfectly fine while having none of it. Install BOTH halves.**
 >
 > 🔴 **BEFORE YOU PLAY: delete `Game.Server/game.db`** (and `-shm`/`-wal`) — owed since the 0.71.0
@@ -52,6 +53,27 @@ a stack of 9 buff scrolls is the friction you wanted or just friction** (§93D).
 - [~] also for PoC I added tank 3rd and few whisps
 
 - [!] now in ortho if I zoom out to much it become the gray rectangle clip ... The 100.1 version had a camera rotation problem and the ortho zoomiut had increasing bottom rectangle u explain it as the down horizon touches the ground and nothing to render ...now it just covers the whole screen if I don't zoomin to much 
+  - ✅ **ADDRESSED 0.102.11 — but this is a DIFFERENT bug from the bottom band, and the grey is the
+    EDGE OF THE WORLD, not a clip plane.**
+  - 🔑 **The arithmetic is the whole diagnosis.** The world is 24,000 server units = **240 Unity
+    units** across. An ortho camera at the slider's top (`OrthoSize` 60) shows `2 · 60 · aspect`
+    horizontally — on your phone in landscape (19.5:9) that is **260**. At the far end of the zoom
+    **the view is wider than the map**: the ground plane genuinely runs out and every pixel it does
+    not cover is the camera's clear colour, which is Unity's default blue-grey with no skybox
+    assigned. Vertically it is `2 · 60 / sin(Pitch)` = 170 of the 240, so standing anywhere near an
+    edge puts most of the frame outside the world at that zoom.
+  - 🔑 **Your earlier band WAS the near clip plane and that fix still holds.** At the sliders' own
+    limits (Pitch 45-90, OrthoSize 6-60, Distance 10-90) the near edge of the ground sits at
+    Distance ≥ 10 against a 0.3 plane and the far edge at ≤ 210 against 1000 — neither plane is
+    reachable any more. Two different bugs wearing the same grey; the second only became visible
+    once the first stopped hiding it.
+  - 🟢 The fix is to stop rendering a HOLE: the camera clears to the **ground's own colour**, so
+    "beyond the map" reads as more ground. That also covers standing at the world edge at ANY zoom,
+    which was already true before you touched the slider. The grid still stops at the real boundary,
+    so the edge is still legible. **The zoom range is deliberately NOT reduced** — you asked for it.
+  - 🔴 **This is the one of the five I could not drive myself — it needs the device.** If a grey
+    rectangle survives the new APK, it is something else and the arithmetic above is what to rule
+    out next; send a screenshot plus your four slider values and it gets measured properly.
 
 - [!] I managed to make x4 cast speed with light amror ...I'm 40lvl harmonist with 35lvl armor_mastery  and wc_harmonist_light_mastery both remove the light penalty ... So I think the 40lvl armor mastery should be buffer_armor_mastery that replace 20~35 armor_mastery and wc_chanter_heavy_mastery and harnonist_light_mastery also replaces the armorm_mastery so they won't stack 
 
@@ -78,6 +100,22 @@ a stack of 9 buff scrolls is the friction you wanted or just friction** (§93D).
     they are already your true/true pair by construction. Say the word if you want them literal.
 
 - [!] npc buffer the save button is inactive  ...I have buffs and it's still inactive
+  - ✅ **FIXED 0.102.11 — it was never once alive.** Not "sometimes wrong": `SavableNow` was
+    **always 0** and [Save] has been dim since `BL-95` shipped in 0.99.0.
+  - 🔑 **Every blessing is a ONE-CHILD WRAPPER.** `npc_might` carries the family rung as its only
+    child, so `ApplyBuff` recurses into the CHILD and stores `SkillId` = `BuffPAtk3`, keeping
+    `npc_might` only in `SourceSkillId`. The save filter asked
+    `NewbieBuffSet.Contains(b.SkillId)` against a set of `npc_*` ids — an intersection that can
+    never be non-empty. It reads `SourceSkillId` now, and your two worked examples (a potion must
+    not be saved; a group must not save its children) still fall out for free.
+  - 🔑 The general lesson: **when a wrapper and its child both carry an id, name which question you
+    are asking.** "What is on me" is the CHILD; "what did the player press" is the SOURCE, and every
+    preset question is the second one. The old comment even described the mechanism correctly and
+    still got the call wrong.
+  - ⤷ **Found on the way past: you could pay for a blessing that never landed.** A single or a
+    preset charged first and applied afterwards, ignoring the answer — so a real buffer standing at
+    the NPC with his own stronger Might paid full price for nothing. Both ask `BuffWouldLand` first
+    now; a preset is charged **for what lands** and tells you how many it skipped.
 
 - [!] I can exploit the max chase range of mobs. I stand just outside the radius and shoot it with a bow .. The mog agros me back then stops and it moves tiwards/away from me and if I do more than it's 5% regen I can kill it ...
   - ✅ **FIXED 0.102.8 (`BL-116`), your fourth option — and the regen number in your report was off by
@@ -162,6 +200,19 @@ a stack of 9 buff scrolls is the friction you wanted or just friction** (§93D).
 
 - [!] the sell prices are to much for the current drop rates let say a myth item is sold for (buy price bp*1/10) = 0.1.. A legend have 85% power so it's buy prise is bp*0.85 of the myth buy price but still sell for bp*0.85*1/10 and x0.5 coef = 0.0425 ...etc for all other ..but common sels for 0.225 of the original price so selling 4.(4) items Is like I sold a real item ...and that alot...
   - so let's change the coeficent of 0.5 not to apply to all... Rare 0.1(1/10), legend 0.045-> 0.04(1/25), epic 0.035 -> 0.03(1/33), rare 0.035 -> 0.2(1/50), uncomm 0.0275 -> 0.01(1/100), common 0.0225 -> 0.005(1/200) so common whet from 4.4 to 20
+  - ✅ **FIXED 0.102.11 (`BL-114`), and the divisor is read the way you wrote it.** Your second
+    number in each pair is a fraction of the **MYTHIC** price, not of the item's own — so /200
+    divides the Mythic rung of the price row, and a Common's divisor **off its own buy price** works
+    out at /45. That is the reading that reproduces every number you gave, Mythic included (it does
+    not move: 1/10 is what it already was).
+    📊 **Measured**: the Common gauntlet goes **buy 112,500 / sell 11,250 → 2,500** — 45 sales to buy
+    its replacement, up from 10. On the playtest-18 level-34 farm the effective divisor is **/35.5**
+    against /10, and the whole farm's income falls **~1.04M → ~549k**.
+    🔴 **Your playtest-18 target for that farm was ~1kk, so this lands at half of it.** That is a
+    bigger cut than "4.4 → 20" sounds like, because the ladder bites the Common/Uncommon end and that
+    is nearly everything that drops. Deliberate and yours — but if you want the total back at 1kk the
+    other knob is the gear DROP rate, one number, and I have not touched it.
+    ⚠ Only tiered GEAR moved. Buff potions and use-scrolls keep the flat /10.
 
 - [!] newly created mage (lvl 1) have his first spell cast without penalty of weapon_proficiency .. No cast reduction no nothing ..almost oneshoted a pig being naked (no armor or weapon) casted normally didn't fail ... Then i become lvl 5 (x100 exp) and I did 1dmg with ~11s cast so the passive recalculate the stats. After equipping the training armor then it recalculate and start to work.
   - ✅ **FIXED 0.102.7 — and it was never only the mage.** `AutoLearnCoreSkills` WRITES your
@@ -182,8 +233,34 @@ a stack of 9 buff scrolls is the friction you wanted or just friction** (§93D).
   - same for npcs sell/buy/buyback inventories
 
 - [!] phase shift don't visually update my position . The mob attacks where I must be server wise but client sees the nit updated position .
+  - ✅ **FIXED 0.102.11 — and it was never only Phase Shift.** 🔑 **A JUMP IS A DIFFERENT EVENT FROM
+    A WALK AND THE CLIENT COULD NOT TELL WHICH IT GOT.** It guessed by DISTANCE: over 5 Unity units
+    (500 server) is a teleport, and a walk it is PREDICTING tolerates 2.5 units of server
+    disagreement before snapping. **A rung-1 Phase Shift is 200 server units — two Unity units — so
+    it fits under BOTH thresholds.** The server moved you 200, every mob followed, and the client
+    went on drawing the walk it had predicted. No threshold can separate "he blinked 200" from "he
+    walked 200"; only the server knows, so the server says.
+  - 🟢 `EntityDto`/`EntityLean` carry a one-byte **`Warp` counter**, bumped by `PlaceEntity` — the
+    one seam every non-walk reposition passes through. The client SNAPS whenever it changes. Four
+    teleports that had hand-rolled the same code inline (respawn, the gatekeeper, jail release, the
+    admin jump) were routed through it, so blink, knockback, respawn and anything added later get it
+    from one line.
+  - ⚠ **NEEDS A NEW APK** (protocol 30 → 31). The field is optional with a default, so an old client
+    is not broken by it — it just keeps guessing.
 
 - [!] after long break when reccinect my buff bar stays with the last snapshot.. But the buffs aren't there ..they don't update as gone it time changes ...once rebuffed the new once appear -> but if I'm buffed with group buffs and they are "fake" it looks like I disaseble the group buff and can overbuff it with singles 
+  - ✅ **FIXED 0.102.11.** `PushBuffs` sends an EMPTY bar **only once**, when the last row goes away
+    — and the set it checks records what the **SERVER last sent**, not what any particular client
+    HOLDS. 🔑 Those two come apart the moment you are link-dead or offline-farming: your buffs
+    expired while you were away, the single empty update went into a dead socket, the id left the
+    set, and on reconnect the rule said *"already told them"* and never spoke again. Nothing
+    re-pushed until a buff actually landed, which is your *"once rebuffed the new ones appear"*.
+  - 🟢 The bar is pushed **unconditionally on arrival** now — the same rule, and the same one line,
+    as the empty party roster sitting ten lines below it in the same method: *state the client needs
+    on arrival must be pushed on arrival.* Works on the CURRENT APK; it is a server fix.
+  - 🟢 **SmokeTest §13 guards it, and it was run against the BROKEN code first** — with the push
+    removed the section fails with "no Buffs push arrived". A fresh login is the same line of code
+    and far easier to drive than a reconnect.
 
 - [?] shouldn't mobs have normal hp ? Why the curve moved ...I have never told u I wanted the 15k hp I told you "if I want it I'll author a zone with x2 hp"..or it moved because of players formula ?
 

@@ -753,6 +753,14 @@ public class Entity
     public float X { get; set; }
     public float Y { get; set; }
 
+    /// <summary>How many times this entity has been TELEPORTED — repositioned by something other than
+    /// the walk simulation. Bumped by <c>GameLoopService.PlaceEntity</c>, which is the single seam
+    /// every jump goes through (blink, knockback, gatekeeper, respawn, leash reset, admin jump), and
+    /// shipped on both <see cref="EntityDto"/> and <see cref="EntityLean"/> so the client can SNAP
+    /// instead of interpolating. See the comment on <c>EntityDto.Warp</c> for why a distance threshold
+    /// could not tell the two apart.</summary>
+    public byte Warp { get; set; }
+
     public float? TargetX { get; set; }
     public float? TargetY { get; set; }
 
@@ -3444,7 +3452,7 @@ public class Entity
             X, Y, Speed, Level,
             Hp, MaxHp, Mp, MaxMp, SecondClass, ThirdClass, Dead, IsDisconnected, FlagState,
             Kind == EntityKind.Mob && Aggressive, Title, TitleColor, SocialClanShown,
-            ModelCategory, ModelRole);
+            ModelCategory, ModelRole, Warp);
 
     /// <summary>`BL-93` — the creature's authored family/role, for the client to pick a MODEL with.
     /// Read from the template rather than stored on the entity: it never changes for the life of a
@@ -3473,7 +3481,7 @@ public class Entity
         // override). Sending raw Speed made the client predict ~150 while the server moved at 1 (or at
         // half while walking, or at all while stunned) — which is exactly the "set speed to 1 and it
         // rubber-bands" report. Now the two run the same number.
-        new(Id, X, Y, EffectiveSpeed, Hp, Mp, Dead, IsDisconnected, FlagState);
+        new(Id, X, Y, EffectiveSpeed, Hp, Mp, Dead, IsDisconnected, FlagState, Warp);
 
     /// <summary>True if the STATIC parts of two DTOs match — i.e. the difference (if any) is purely
     /// dynamic and can go out as an EntityLean. A static change (level-up, class change, name) instead
