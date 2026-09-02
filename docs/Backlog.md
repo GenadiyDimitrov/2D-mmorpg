@@ -1202,7 +1202,7 @@ answered at the bottom of this section rather than as entries — neither asks f
   ultimate and the warrior's Battle Defence/Presence are **30-120s and do not count against the limit**,
   so they go in **others**.
 
-- `BL-112` 🔴 **THE REBUFF WINDOW — 5 SECONDS BEFORE IT WEARS OFF, not after it drops.** *"Now they
+- `BL-112` ✅ **BUILT 2026-09-02 (0.102.5) — THE REBUFF WINDOW — 5 SECONDS BEFORE IT WEARS OFF, not after it drops.** *"Now they
   buff once they drop. They should buff when the time is 5s... All buffs should have 1~5s cast so when
   the buff have 5s remaining is caunt as able to be rebuffed."*
   - **The bug this fixes costs mana twice**: Conceal rebuffs at **15s remaining on a 30s buff**, so you
@@ -1211,7 +1211,7 @@ answered at the bottom of this section rather than as entries — neither asks f
     I learn L2 ..it should rebuf me ..because it's stronger"* — a higher rung of a buff you already
     hold is a rebuff trigger, not a wait.
 
-- `BL-113` 🔴 **A SKILL THAT LEAVES A BUFF CANNOT RE-EXECUTE WHILE THAT BUFF IS LIVE — a general rule,
+- `BL-113` ✅ **BUILT 2026-09-02 (0.102.5) — A SKILL THAT LEAVES A BUFF CANNOT RE-EXECUTE WHILE THAT BUFF IS LIVE — a general rule,
   raised by Harmony of Restoration.** Your words: *"the logic is for all skills that leave a buff .. the
   skill cannot be reexecuted even after the cooldown is done while the same skill is already active
   (same as buffs, don't auto rebuff u till they worn off)"*.
@@ -1221,6 +1221,13 @@ answered at the bottom of this section rather than as entries — neither asks f
   It's like a hp pot — I cannot use another pot while the last is active"*. So: fire when HP ≤ the
   threshold **and** the previous instance is gone; on cooldown-end, re-check that you still hold the
   buff before re-firing.
+
+  ✅ Shipped as `OwnBuffStillRunningOn`, applied to the auto chain's HEAL and MP-HEAL targets. ⚠ The
+  other kinds are excluded because they already have a BETTER test, not because the rule stops at
+  heals: a `Buff` must be able to re-fire inside `BL-112`'s new 5s renewal window, and a `Debuff`
+  already runs this exact rule with a zero window. ⚠ **A MANUAL PRESS IS STILL ALLOWED** — your *"for
+  all skills"* may mean the tap too, but refusing a hand-cast rebuff before a boss pull is a big
+  behaviour change to infer from one sentence. Say the word and it becomes a hard gate.
 
   🔑 **Why the CD is deliberately low, which is the part not to "fix":** *"once we have a debuff that
   increases cooldown x2, HoR stays permanent instead of falling behind its duration — while a healing

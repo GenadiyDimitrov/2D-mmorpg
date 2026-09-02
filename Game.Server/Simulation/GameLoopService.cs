@@ -5360,24 +5360,61 @@ public class GameLoopService : BackgroundService
         return p.Buffs.Any(b => (b.Key == key || b.CoveredKeys.Contains(key)) && b.Rank >= rank);
     }
 
-    /// <summary>How little time may be left on an auto-buff before the chain renews it (owner: "below
-    /// 60s"). Capped at HALF the buff's own duration, because a two-minute buff would otherwise spend
-    /// half its life "about to expire" and a 30s one would never be fresh at all.</summary>
-    private const int AutoBuffRefreshTicks = 600;   // 60s at 10 ticks/s
+    /// <summary>How little time may be left on an auto-buff before the chain renews it.
+    ///
+    /// <para>🔴 FIVE SECONDS SINCE 2026-09-02 (`BL-112`), AND IT REPLACES HIS OWN EARLIER "below 60s".
+    /// Him: *"buffs should rebuff when they are wearing off ... They should buff when the time is 5s...
+    /// All buffs should have 1~5s cast so when the buff have 5s remaining is caunt as able to be
+    /// rebuffed."* Newest ruling wins, and the arithmetic backs him: a 60s window throws away 60s of
+    /// every blessing, which is 5% of a 20-minute buff and - capped at half the duration, as it was -
+    /// <b>50% of a 30-second one</b>. That cap is exactly what he measured: *"now conceal rebuff with
+    /// 15s remaining and thats twice the mana/s consumption .. For a 30s buff"*. Conceal is 30s, the
+    /// cap made the window 15s, and he was paying for two Conceals to get one.</para>
+    ///
+    /// <para>⚠ THE CAST HAS TO FIT INSIDE THE WINDOW or the renewal lands after the gap it was meant to
+    /// close. His own sentence assumes casts are 1-5s, so at exactly 5s a 5s cast is a coin flip -
+    /// hence <see cref="RefreshWindow"/> takes the LONGER of his five seconds and the skill's own cast
+    /// plus a second of slack. For every buff he was talking about the answer is simply 5s.</para></summary>
+    private const int AutoBuffRefreshTicks = 50;   // 5s at 10 ticks/s
+
+    /// <summary>How long the autopilot leaves a TOGGLE alone after MP (or HP) starvation dropped it,
+    /// and how many seconds of upkeep it must be able to cover before arming one at all. Together they
+    /// end his *"toggle on and off indefenetely fast"*: the lockout stops the immediate retry and the
+    /// reserve stops the chain re-arming at the exact MP level the stance dies at. Neither touches a
+    /// hand-pressed toggle.</summary>
+    private const int ToggleStarveLockoutTicks = 100;   // 10s
+    private const int ToggleSustainSeconds = 10;
 
     /// <summary>Does the chain consider this buff already taken care of? Yes when a STRICTLY STRONGER
     /// buff of the family is up (recasting under it would just be refused by ApplyBuff and burn the MP),
-    /// or when our own rank is up with more than the refresh window left.</summary>
-    private static bool AutoBuffCovered(Entity e, SkillDef def, int window, int rank)
+    /// or when our own rank is up with more than the refresh window left.
+    ///
+    /// <para>🔴 A HIGHER RUNG OF THE SAME SKILL IS NOT "already taken care of" (`BL-112`, 2026-09-02).
+    /// Him: *"if I have a buff L1 and I buff myself with it ...then after lvling up I learn L2 ..it
+    /// should rebuf me ..because it's stronger"*. <c>Rank</c> could not see this: it is ONE number per
+    /// <see cref="SkillDef"/>, shared by every rung of a ladder, so rung 1 and rung 6 of Might compare
+    /// EQUAL and the chain called the weaker one covered for its whole duration. The rung lives on
+    /// <see cref="BuffInstance.Level"/>, which was already being kept (so a buff can be rebuilt on
+    /// login) and simply never consulted here.</para>
+    ///
+    /// <para>⚠ THE LEVEL TEST IS RESTRICTED TO THE SAME SKILL ID, deliberately. Levels are only
+    /// comparable within one ladder - a potion's rung 2 and a blessing's rung 2 are not the same
+    /// strength, and a group's level is not on the singles' scale at all. Across different sources the
+    /// rank comparison above is still the only honest one.</para></summary>
+    private static bool AutoBuffCovered(Entity e, SkillDef def, int window, int rank, int level = 0)
     {
         string key = string.IsNullOrEmpty(def.BuffKey) ? def.Name : def.BuffKey;
         foreach (var b in e.Buffs)
         {
-            // A group covering this family counts as covering the single too — recasting the single
+            // A group covering this family counts as covering the single too - recasting the single
             // under an improved buff would just be refused, and the autopilot must not keep trying.
             if (b.Key != key && !b.CoveredKeys.Contains(key)) continue;
             if (b.Rank > rank) return true;                          // something better is running
-            if (b.Rank == rank) return b.Toggle || b.TicksRemaining > window;
+            if (b.Rank != rank) continue;
+            // Same family, same rank, OUR OWN ladder, and we now know a higher rung than the one we
+            // are wearing: that is a renewal, whatever the clock says.
+            if (level > 0 && b.SkillId == def.Id && b.Level < level) return false;
+            return b.Toggle || b.TicksRemaining > window;
         }
         return false;                                                // absent, or only a weaker one
     }
@@ -5394,11 +5431,22 @@ public class GameLoopService : BackgroundService
             return AutoBuffCovered(p, child, RefreshWindow(child), child.Rank);
         // A group lands under its own key at GROUP rank, which is what a renewal has to beat.
         bool isGroup = def.ChildBuffsAt(level) is { Length: > 1 };
-        return AutoBuffCovered(p, def, RefreshWindow(def), isGroup ? GroupRank(level) : def.Rank);
+        // ⚠ The LEVEL is passed for a plain single only. A group's rank already encodes its level
+        // (GroupRank = 100 + level), so handing the same number to both tests would double-count it.
+        return AutoBuffCovered(p, def, RefreshWindow(def),
+                               isGroup ? GroupRank(level) : def.Rank, isGroup ? 0 : level);
     }
 
-    private static int RefreshWindow(SkillDef def) =>
-        def.DurationTicks > 0 ? Math.Min(AutoBuffRefreshTicks, def.DurationTicks / 2) : 0;
+    /// <summary>The renewal window for one buff: his five seconds, widened to the skill's own cast plus
+    /// a second of slack when that is longer (a renewal must LAND before the buff it replaces expires),
+    /// and still capped at half the duration so a very short buff is not permanently "about to expire".
+    /// A buff with no duration (a toggle) has no window.</summary>
+    private static int RefreshWindow(SkillDef def)
+    {
+        if (def.DurationTicks <= 0) return 0;
+        int window = Math.Max(AutoBuffRefreshTicks, def.CastTicks + 10);
+        return Math.Min(window, def.DurationTicks / 2);
+    }
 
     /// <summary>Queue the next auto-skill. Priority is by GROUP (owner, playtest-15):
     /// <b>heals → buffs/debuffs → attacks</b>, and only the first group with something to cast gets to
@@ -5492,6 +5540,14 @@ public class GameLoopService : BackgroundService
             {
                 case AutoSkillKind.Buff:
                     if (AutoBuffUpToDate(p, def, lvl)) continue;
+                    // 🔑 A STANCE IS ONLY ARMED IF IT CAN BE SUSTAINED, not merely afforded for one
+                    // second. His *"If they are off they get toggle on and that's it"* is the whole
+                    // ask: a toggle should behave like a blessing you put up, not like an active the
+                    // autopilot re-presses. The MP gate above passes at one second of upkeep, which is
+                    // precisely the level the stance starves at, so without this the lockout above
+                    // would only slow the flicker down instead of ending it.
+                    if (def.MpPerSecondAt(lvl) > 0
+                        && p.Mp < def.MpPerSecondAt(lvl) * ToggleSustainSeconds) continue;
                     tgtId = p.Id; break;
                 case AutoSkillKind.Heal:
                     // A LIFESTEAL nuke heals by DEALING DAMAGE, so it wants the ENEMY here, not an ally.
@@ -5574,8 +5630,12 @@ public class GameLoopService : BackgroundService
     {
         Entity? best = null;
         float bestPct = float.MaxValue;
+        // `BL-113` — see OwnBuffStillRunningOn. This is the branch his Harmony of Restoration actually
+        // takes once the MP half of it exists: below the threshold stays true for the whole time the
+        // regeneration is working, so without this the skill re-buys itself every reuse.
         bool Wants(Entity e) => e.MaxMp > 0 && e.Mp * 100f / e.MaxMp < p.AutoMpPct
-                             && (!IsRestoreManaCast(def) || !IsManaRestorer(e));
+                             && (!IsRestoreManaCast(def) || !IsManaRestorer(e))
+                             && !OwnBuffStillRunningOn(e, def, Math.Max(1, p.SkillLevelOf(def.Id)));
 
         // The HP price is the caster's, so the caster's own HP gates every target, not just self.
         if (p.AutoMpPct <= 0) return null;
@@ -5603,11 +5663,45 @@ public class GameLoopService : BackgroundService
     /// <summary>Who this heal should land on: the most injured party member under the threshold and in
     /// range, else yourself. A heal that cannot reach anybody who needs it returns null so the chain
     /// falls through to buffs/attacks instead of stalling on it.</summary>
+    /// <summary>`BL-113` — A SKILL THAT LEAVES A BUFF MAY NOT RE-FIRE WHILE ITS OWN BUFF IS STILL ON
+    /// THE TARGET (2026-09-02). His rule, generalised from Harmony of Restoration: *"the logic is for
+    /// all skills that leave a buff .. the skill cannot be reexecuted even after the cooldown is done
+    /// while the same skill is already active. (same as buffs, don't auto rebuff u till they worn off)"*.
+    ///
+    /// <para><b>The symptom.</b> HoR is fine below rung 9; from rung 9 it costs 400+ MP for +5 MP/s and
+    /// fires <b>on cooldown</b> rather than on threshold, draining the bar to zero. His model is the
+    /// right one: *"it's a healing buff ..not a skill .. It's like a hp pot — I cannot use another pot
+    /// while the last is active"*. Nothing was wrong with the threshold; what was missing is that being
+    /// BELOW the threshold stays true for the whole time the regeneration is working, so a short reuse
+    /// re-bought the same buff every cycle.</para>
+    ///
+    /// <para>🔑 WHY THE LOW COOLDOWN IS NOT THE THING TO FIX, in his own words: *"the low cd is made so
+    /// once we have a debuff that increase the cooldown of skills x2 still hor to be permanent .. while
+    /// a healing totem with cd of 25 x2 becomes 50 and duration 30"*. The short reuse is deliberate
+    /// armour against a future cooldown debuff. Raising it would trade a real design for a quick fix.</para>
+    ///
+    /// <para>⚠ HEAL / MP-HEAL ONLY, and the other kinds are excluded because they already have a BETTER
+    /// test, not because the rule stops at heals. A <c>Buff</c> goes through
+    /// <see cref="AutoBuffUpToDate"/>, which must be allowed to re-fire inside the 5-second renewal
+    /// window (`BL-112`) — this guard has no window and would block every renewal. A <c>Debuff</c>
+    /// already calls <see cref="AutoBuffCovered"/> with a zero window, which is this same rule.</para>
+    ///
+    /// <para>⚠ A HIGHER RUNG STILL GETS THROUGH, the `BL-112` half: it is only "already active" if what
+    /// is running came from this skill at the level we would cast <b>or better</b>.</para></summary>
+    private static bool OwnBuffStillRunningOn(Entity target, SkillDef def, int level)
+    {
+        if (def.DurationTicks <= 0) return false;   // leaves nothing behind — not this rule's business
+        foreach (var b in target.Buffs)
+            if (b.SkillId == def.Id && b.Level >= level) return true;
+        return false;
+    }
+
     private Entity? AutoHealTarget(Entity p, SkillDef def)
     {
         Entity? best = null;
         float bestPct = float.MaxValue;
-        bool Wants(Entity e) => e.MaxHp > 0 && (p.AutoHealPct >= 100 || e.Hp * 100f / e.MaxHp < p.AutoHealPct);
+        bool Wants(Entity e) => e.MaxHp > 0 && (p.AutoHealPct >= 100 || e.Hp * 100f / e.MaxHp < p.AutoHealPct)
+                             && !OwnBuffStillRunningOn(e, def, Math.Max(1, p.SkillLevelOf(def.Id)));
 
         if (Wants(p)) { best = p; bestPct = p.Hp * 100f / p.MaxHp; }
 
@@ -11421,6 +11515,16 @@ public class GameLoopService : BackgroundService
         foreach (var (b, hadMp) in broke)
         {
             e.Buffs.Remove(b);
+            // 🔴 A STANCE STARVED OFF IS LOCKED OUT OF THE AUTOPILOT FOR A WHILE (2026-09-02). Him:
+            // *"toggles with auto on toggle on and off indefenetely fast ... Once my mp depleates they
+            // try to be toggled and etc...."*. The loop is exact: the stance drops the tick MP falls
+            // below one second of upkeep, regen puts a few points back inside that same second, the
+            // chain re-lights it, and it starves again - a ~1 Hz flicker that spends a cast each time.
+            // `AutoReadyTick` is the chain's own per-skill gate, so the lockout needs no new state and
+            // no future auto path can forget it. Pressing it BY HAND is untouched: this is the
+            // autopilot's clock, and his complaint is about the autopilot.
+            if (!string.IsNullOrEmpty(b.SkillId))
+                e.AutoReadyTick[b.SkillId] = _tick + ToggleStarveLockoutTicks;
             SendSystemToEntity(e, hadMp
                 ? $"{b.Name} ends — not enough HP to hold it."
                 : $"{b.Name} ends — not enough MP to hold it.");

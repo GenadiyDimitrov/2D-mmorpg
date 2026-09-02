@@ -7,11 +7,78 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.102.4**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.102.5**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-02 (latest) — 0.102.4: a buff whose weapon gate is shut now pays nothing
+## 2026-09-02 (latest) — 0.102.5: the rebuff window is 5s, a stronger rung rebuffs, and stances stop flickering
+
+Three findings, one loop — the auto-buff chain.
+
+### 1. The renewal window: 60s → 5s (`BL-112`)
+
+*"buffs should rebuff when they are wearing off ... They should buff when the time is 5s"*, and
+*"conceal rebuff with 15s remaining and thats twice the mana/s consumption .. For a 30s buff"*.
+
+**This replaces his own earlier "below 60s", and the arithmetic is why.** The window threw away 60s of
+every blessing — 5% of a 20-minute buff, but it was capped at half the duration, which made it
+**15s of a 30-second Conceal**. He was paying for two Conceals to get one, exactly as he measured.
+
+⚠ **The cast has to fit inside the window** or the renewal lands after the gap it was meant to close.
+His sentence assumes casts are 1-5s, so at exactly 5s a 5s cast is a coin flip: `RefreshWindow` takes
+the longer of his five seconds and the skill's own cast plus a second of slack. For every buff he was
+describing the answer is simply 5s.
+
+### 2. A stronger rung is a rebuff trigger (`BL-112`, second half)
+
+*"if I have a buff L1 and I buff myself with it ...then after lvling up I learn L2 ..it should rebuf me
+..because it's stronger"*.
+
+**`Rank` could not see this.** It is ONE number per `SkillDef`, shared by every rung of a ladder — so
+rung 1 and rung 6 of Might compare EQUAL, and the chain called the weaker one "covered" for its whole
+duration. The rung lives on `BuffInstance.Level`, which was already being kept so a buff can be rebuilt
+on login, and was simply never consulted. ⚠ The level test is restricted to the **same skill id**:
+levels are only comparable inside one ladder, and a group's level is not on the singles' scale at all.
+
+### 3. Stances stop flickering (his toggle find)
+
+*"toggles with auto on toggle on and off indefenetely fast ... Once my mp depleates they try to be
+toggled and etc...."*
+
+**The loop is exact.** The stance drops the tick MP falls below **one second** of upkeep; regen puts a
+few points back inside that same second; the chain re-lights it; it starves again. ~1 Hz, and it spends
+a cast every time. Two halves, because either alone only slows it down:
+
+- a starved stance is **locked out of the autopilot for 10s**, stamped onto `AutoReadyTick` — the
+  chain's own per-skill gate, so no new state and no future auto path can forget it;
+- the chain will not arm a stance it cannot **sustain** — it now needs **10 seconds** of upkeep in the
+  bar, not the one second the generic MP gate asks for, which is precisely the level the stance dies at.
+
+**Pressing a toggle by hand is untouched.** This is the autopilot's clock, and his complaint is about
+the autopilot.
+
+### 4. Harmony of Restoration is a healing buff, not a heal (`BL-113`)
+
+*"the logic is for all skills that leave a buff .. the skill cannot be reexecuted even after the
+cooldown is done while the same skill is already active"* — and his model for it: *"it's like a hp pot
+— I cannot use another pot while the last is active"*.
+
+Nothing was wrong with the threshold. What was missing is that **being below the threshold stays true
+for the whole time the regeneration is working**, so a short reuse re-bought the same buff every cycle —
+400+ MP for +5/s, on cooldown, until the bar was empty. `OwnBuffStillRunningOn` now takes a heal or
+MP-heal target out of the running while that skill's own buff is on them.
+
+🔑 **The low cooldown is NOT the thing to fix**, and he said why: *"the low cd is made so once we have a
+debuff that increase the cooldown of skills x2 still hor to be permanent .. while a healing totem with
+cd of 25 x2 becomes 50 and duration 30"*. It is deliberate armour against a future cooldown debuff.
+
+⚠ **Heal and MP-heal only, and the other kinds are excluded because they already have a better test** —
+a `Buff` must be allowed to re-fire inside the new 5-second renewal window, and a `Debuff` already runs
+this exact rule with a zero window. ⚠ **A manual press is still allowed.** His *"for all skills"* may
+well mean the tap too, but refusing a hand-cast rebuff before a boss pull is a big behaviour change to
+infer — say the word and it becomes a hard gate.
+
+## 2026-09-02 — 0.102.4: a buff whose weapon gate is shut now pays nothing
 
 His find: *"bow expertise should work with only a bow (now if I activate it with a bow and then change
 to other weapon the 12% stay active)"*.

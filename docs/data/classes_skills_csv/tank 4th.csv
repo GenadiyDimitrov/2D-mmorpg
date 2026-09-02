@@ -1,2 +1,39 @@
 LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,REPLACES,RACE
 83,Undying Will,undying_will,Magic/Buff,,,0,0,self/single,3,3600,3600,"You DIE normally and keep your buffs, then choose when to rise where you fell at 30% HP and MP, losing NO experience — the offer waits as long as you like. Lasts 60 minutes or until it saves you. 60 minute reuse., Consume 2 physical stones",300,100000,[],
+
+
+
+
+,,,,,,,,,,,,,,,,,----------------------------NOT DONE----------------------------
+,,,,,,,,,,,,,,,,,----------------------------Heavy Armor Mastery----------------------------
+76,Heavy Armor Mastery,tank_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"with heavy: mpReg x3.4 and p.def +175 and p.def x1.16 and crit dmg reduction 36% and eva -2;",0,36k,[],
+77,Heavy Armor Mastery,tank_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"with heavy: mpReg x3.4 and p.def +180 and p.def x1.17 and crit dmg reduction 37% and eva -2;",0,43k,[],,
+78,Heavy Armor Mastery,tank_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"with heavy: mpReg x3.4 and p.def +185 and p.def x1.18 and crit dmg reduction 38% and eva -2;",0,64k,[]
+79,Heavy Armor Mastery,tank_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"with heavy: mpReg x3.4 and p.def +190 and p.def x1.19 and crit dmg reduction 39% and eva -2;",0,74k,[]
+80,Heavy Armor Mastery,tank_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"with heavy: mpReg x3.4 and p.def +195 and p.def x1.20 and crit dmg reduction 40% and eva -2;",0,81k,[]
+81,Heavy Armor Mastery,tank_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"with heavy: mpReg x3.4 and p.def +200 and p.def x1.22 and crit dmg reduction 42% and eva -2;",0,88k,[]
+82,Heavy Armor Mastery,tank_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"with heavy: mpReg x3.4 and p.def +205 and p.def x1.24 and crit dmg reduction 44% and eva -2;",0,120k,[]
+83,Heavy Armor Mastery,tank_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"with heavy: mpReg x3.4 and p.def +210 and p.def x1.26 and crit dmg reduction 46% and eva -2;",0,170k,[]
+84,Heavy Armor Mastery,tank_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"with heavy: mpReg x3.4 and p.def +215 and p.def x1.28 and crit dmg reduction 48% and eva -2;",0,190k,[]
+85,Heavy Armor Mastery,tank_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"with heavy: mpReg x3.4 and p.def +220 and p.def x1.30 and crit dmg reduction 50% and eva -2;",0,280k,[]
+86,Heavy Armor Mastery,tank_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"with heavy: mpReg x3.4 and p.def +225 and p.def x1.30 and crit dmg reduction 50% and eva -2;",0,320k,[]
+87,Heavy Armor Mastery,tank_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"with heavy: mpReg x3.4 and p.def +230 and p.def x1.30 and crit dmg reduction 50% and eva -2;",0,390k,[]
+88,Heavy Armor Mastery,tank_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"with heavy: mpReg x3.4 and p.def +235 and p.def x1.30 and crit dmg reduction 50% and eva -2;",0,390k,[]
+89,Heavy Armor Mastery,tank_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"with heavy: mpReg x3.4 and p.def +240 and p.def x1.30 and crit dmg reduction 50% and eva -2;",0,390k,[]
+90,Heavy Armor Mastery,tank_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"with heavy: mpReg x3.4 and p.def +245 and p.def x1.30 and crit dmg reduction 50% and eva -2;",0,390k,[]
+,,,,,,,,,,,,,,,,----------------------------Tank Anti-Magic----------------------------
+76,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +51 and M.Res +5%;",0,36k,[],
+77,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +51 and M.Res +5%;",0,43k,[],,
+78,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +51 and M.Res +5%;",0,64k,[]
+79,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +51 and M.Res +5%;",0,74k,[]
+80,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +51 and M.Res +5%;",0,81k,[]
+81,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +51 and M.Res +5%;",0,88k,[]
+82,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +51 and M.Res +5%;",0,120k,[]
+83,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +51 and M.Res +5%;",0,170k,[]
+84,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +51 and M.Res +5%;",0,190k,[]
+85,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +51 and M.Res +5%;",0,280k,[]
+86,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +51 and M.Res +5%;",0,320k,[]
+87,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +51 and M.Res +5%;",0,390k,[]
+88,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +51 and M.Res +5%;",0,390k,[]
+89,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +51 and M.Res +5%;",0,390k,[]
+90,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +51 and M.Res +5%;",0,390k,[]

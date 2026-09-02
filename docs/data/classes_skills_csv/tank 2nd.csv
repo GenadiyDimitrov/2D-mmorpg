@@ -1,10 +1,10 @@
 LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,REPLACES,Comment
 ,,,,,,,,,,,,,,,,----------------------------Heavy Armor Mastery----------------------------
-20,Heavy Armor Mastery,tank_armor_mastery,passive,,heavy,0,0,self/single,0,0,0,with heavy: mpReg x1.1 and p.def +40 and p.def x1.07 and crit dmg reduction 15% and eva -2,0,1700,[fighter_armor_mastery]
-24,Heavy Armor Mastery,tank_armor_mastery,passive,,heavy,0,0,self/single,0,0,0,with heavy: mpReg x1.1 and p.def +47 and p.def x1.07 and crit dmg reduction 15% and eva -2,0,3200,[fighter_armor_mastery]
-28,Heavy Armor Mastery,tank_armor_mastery,passive,,heavy,0,0,self/single,0,0,0,with heavy: mpReg x1.1 and p.def +54 and p.def x1.07 and crit dmg reduction 15% and eva -2,0,6000,[fighter_armor_mastery]
-32,Heavy Armor Mastery,tank_armor_mastery,passive,,heavy,0,0,self/single,0,0,0,with heavy: mpReg x1.1 and p.def +61 and p.def x1.07 and crit dmg reduction 15% and eva -2,0,11000,[fighter_armor_mastery]
-36,Heavy Armor Mastery,tank_armor_mastery,passive,,heavy,0,0,self/single,0,0,0,with heavy: mpReg x3.4 and p.def +70 and p.def x1.07 and crit dmg reduction 15% and eva -2,0,20000,[fighter_armor_mastery]
+20,Heavy Armor Mastery,tank_armor_mastery,passive,,heavy,0,0,self/single,0,0,0,with heavy: p.def +20 and p.def x1.07 and crit dmg reduction 15% and eva -2,0,1700,[fighter_armor_mastery]
+24,Heavy Armor Mastery,tank_armor_mastery,passive,,heavy,0,0,self/single,0,0,0,with heavy: p.def +27 and p.def x1.07 and crit dmg reduction 15% and eva -2,0,3200,[fighter_armor_mastery]
+28,Heavy Armor Mastery,tank_armor_mastery,passive,,heavy,0,0,self/single,0,0,0,with heavy: p.def +34 and p.def x1.07 and crit dmg reduction 15% and eva -2,0,6000,[fighter_armor_mastery]
+32,Heavy Armor Mastery,tank_armor_mastery,passive,,heavy,0,0,self/single,0,0,0,with heavy: p.def +41 and p.def x1.07 and crit dmg reduction 15% and eva -2,0,11000,[fighter_armor_mastery]
+36,Heavy Armor Mastery,tank_armor_mastery,passive,,heavy,0,0,self/single,0,0,0,with heavy: mpReg +3.1 and p.def +60 and p.def x1.07 and crit dmg reduction 15% and eva -2,0,20000,[fighter_armor_mastery]
 ,,,,,,,,,,,,,,,,----------------------------Tank Anti-Magic----------------------------
 20,Tank Anti-Magic,tank_anti_magic,passive,,,0,0,self/single,0,0,0,increase m.def +25,0,1700,[]
 24,Tank Anti-Magic,tank_anti_magic,passive,,,0,0,self/single,0,0,0,increase m.def +30,0,3200,[]
@@ -22,7 +22,6 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 ,,,,,,,,,,,,,,,,----------------------------Shield Mastery----------------------------
 20,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield P.Def +30%, Shield Rate +50%",0,3200,[]
 28,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield P.Def +40%, Shield Rate +70%",0,3200,[]
-36,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield P.Def +50%, Shield Rate +85%;  +10% P.Def, bow resistance 16%",0,40000,[]
 ,,,,,,,,,,,,,,,,----------------------------Anti-Magic----------------------------
 20,Anti-Magic,anti_magic,passive,,,0,0,self/single,0,0,0,magic-fail FLOOR 10% - spells fizzle on you at least 1 cast in 10 no matter the caster - NOT the same skill as Tank Anti-Magic above (that one grants m.def; this one is the floor) - auto-granted at the class change so SP is 0 - lvl2 (15%) at 40 - lvl3 (20%) is written but unreachable until the 4th class exists,0,0,[]
 ,,,,,,,,,,,,,,,,----------------------------Taunt----------------------------

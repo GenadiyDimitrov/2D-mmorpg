@@ -74,6 +74,12 @@ a stack of 9 buff scrolls is the friction you wanted or just friction** (§93D).
   - slef buffs that are not temporary for example the bow expertise is a 20 min normal buff should go in the normals buff bar !but skills like tanks ultimate and warriors battle defence/presence are 30-120s buffs that don't count to the limits so they can go in the others bar ..
  
 - [!] toggles with auto on toggle on and off indefenetely fast ... They should act as buffs not like an active skill .. If they are off they get toggle on and that's it.. Once my mp depleates they try to be toggled and etc....
+  - ✅ **FIXED 0.102.5.** The loop was exact: the stance drops the tick MP falls below **one second**
+    of upkeep, regen puts a few points back inside that same second, the chain re-lights it, it
+    starves again. Two halves, because either alone only slows it: a starved stance is **locked out of
+    the autopilot for 10s**, and the chain will not arm a stance unless it can **sustain** it — 10
+    seconds of upkeep in the bar, not the one second the generic MP gate asked for, which was exactly
+    the level it dies at. **Pressing it by hand is untouched.**
 
 - [!] for some reason "harmonist" don't learn serenity,vigor,vamp ? Why they are in the csv... Are there other like that ? - force,insight
 
