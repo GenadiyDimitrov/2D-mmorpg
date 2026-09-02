@@ -341,6 +341,9 @@ public static partial class ClassSkillTables
         var human = new List<ClassSkill>(kit2);
         human.AddRange(Ladder(WcBufferHeavy, new[] { 40 }));
         human.AddRange(Ladder(WcSoundSmash, band13));
+        // The Human's own weapon line, authored 2026-09-02 — the same eight-rung band the Elf's bow
+        // and the Demon's maul run on, so all three buffers finally have one.
+        human.AddRange(Ladder(DoctorBluntMastery, band8));
 
         // ---- ELF: the archer. Light armour, bow, ranged damage, no shield and no blunt line. ------
         var elf = new List<ClassSkill>(kit2);

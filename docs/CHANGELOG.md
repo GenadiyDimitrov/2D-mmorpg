@@ -7,11 +7,94 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.102.11**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.103.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-02 (latest) — 0.102.11: the last five finds of playtest 29
+
+## 2026-09-02 (latest) — 0.103.0: `BL-108`, the four authored 40+ files
+
+His word on the 22 finds of playtest 29 was **bugs first, then the CSVs** — the bugs closed at
+0.102.11, so this is the CSVs. Four files, and the biggest of them is a whole class kit:
+`buffer 4th.csv` is the **second finished 4th-class discipline in the game**, after the healer's.
+
+### The WARCHANTER, 76-90 — his `buffer 4th.csv`
+
+Sixteen families continue past 74 and four are new. `Skills.Warchanter4th.cs` holds the rung
+builders; `ClassSkillTables.Fourth.RegisterWarchanterFourth` holds who learns what and when.
+
+- **Continued**: Anti-Magic (21-35), Armor Mastery (15-29 — and it gains a PERCENT M.Def and an
+  MP-cost reduction at this tier), Spell Mastery (19-33), Harmony of Restoration (15-29), both
+  toggles (14-21), the three Sound skills (14-28), the three per-race weapon masteries (9-16), and
+  the two groups Soul Reinforcement and Arcane and Feral Protection (2-9).
+- **Harmony of Protection** gains a sixth rung (bow resistance); **Harmony of the Wizard** gains
+  three (MP regen, then magic crit rate, then magic crit damage) — its 3rd-class "and it STOPS" was
+  always a statement about the 3rd tier.
+- **New**: `buffer_shield_mastery` (robe **and** shield — only the Human buffer can satisfy it),
+  `wc_harmony_soul`, `wc_harmony_madness` — which is finally the home the retired Madness never had —
+  and `wc_harmony_mark`, the party-wide Mark, on the healer's own buff key so an ally wears one Mark
+  and never two.
+
+### The other three files
+
+- **`buffer 3rd.csv`** — `doctor_blunt_mastery`, a new eight-rung Human ladder at 40-74. The third
+  buffer race finally has a weapon line: Elf bow, Demon two-handed blunt, Human **one-handed** blunt,
+  which is what leaves his shield hand free. ⚠ His DESCR cell says "2h Blunt" on all eight rows and
+  his WEAPON column says `blunt/1`; the column wins, and it is flagged back to him.
+- **`healer 4th.csv`** — the three Marks gain a **second rung at 83**, MP falls 300 → **150** on all
+  of them, and the resist numbers move (SPT +10→+15, CON +5→+10, melee vamp +3→+5%).
+- **`shared 4th.csv`** — Magic Proficiency gains a **10% proc**.
+
+### Three engine additions the rows needed
+
+- **A THIRD PROC TRIGGER.** Magic Proficiency is *"With 10% chance when using Magic(spells/buffs/
+  debuffs/heals)"*, and every proc in the game until now rolled on damage DEALT or damage TAKEN. A
+  party heal and a buff touch neither, so a healer would have owned a 10% proc that could not fire.
+  `SkillDef.ProcOnMagicCast`, rolled once per committed cast past every gate.
+- **MAGIC CRIT RATE RECEIVED.** The Marks' *"M.Crit.Rate.Received -10%"* had no home: the physical
+  half is a SkillEffect bit, the magic half did not exist. It rides as a field, the enum being full.
+- **PER-CHANNEL SKILL REUSE.** Harmony of the Soul is *"−10% Magical Reuse, −20% Physical Reuse"* on
+  ONE buff, which the single `BuffCooldown` number cannot say. The twin of the MP-cost pair.
+
+### 🔴 A group buff was dropping every payload that is not a SkillEffect bit
+
+Found on the way past, and it is not small: `ApplyBuff` folded only the children's `Effect` and
+`Magnitudes` into a group. Half the buff payloads in the game are FIELDS instead — the enum has been
+full since `1L << 62` — so **Arcane and Feral Protection granted nothing at all** (both its children
+are pure CC-resist fields) and **Soul Reinforcement silently lost its whole −20%/−10% MP-cost third**.
+Nothing on screen said so: the buff landed, its icon appeared, and the numbers were zero.
+
+### Four authoring slips, corrected and flagged
+
+Per the standing monotonic rule; the CSVs were edited to match, so the file and the game still agree.
+
+| what | his rows | built as |
+| --- | --- | --- |
+| Harmony of Restoration | 110 / **100** / 120 / **100** / 130 … — every odd rung an untouched copy of the level-74 row | 110 → 180 in fives |
+| Harmony of the Wizard | two rows at level **78** | the second is 79 (its price cells are the 79 band) |
+| Sound Burst | a second, identical level-90 row inside the Sound Smash block | removed |
+| the two blunt masteries | WEAPON column left blank at this tier | `blunt/1` / `blunt/2` carried forward from the 3rd |
+
+Two cells were merely EMPTY and were filled from the row's own siblings: Magic Proficiency's
+reuse/duration pair (0/0 against its two neighbours' 30/10, on a row that is nothing but a proc), and
+the AoE radius of the three new harmonies (blank, where every other harmony says 800).
+
+And two he ruled on in the same session, both now in the files and the build:
+
+- ✅ **Spell Mastery 76-90 is priced on the tier's ladder** (6.5kk / 11kk / 16kk / 80kk, then gold
+  only, 5kk → 100kk). Its fifteen rows had been pasted out of `buffer 3rd.csv` carrying that file's
+  36k … 880k SP and its `[]` in the gold cell — which priced a level-90 rung of the buffer's core
+  caster passive at a 3rd-class **880k SP and no gold at all**.
+- ✅ **`doctor_blunt_mastery`'s eight DESCR cells read "Blunt:"** where they said "2h Blunt:", matching
+  his own 76-90 rows. The hands stay in the WEAPON column (`blunt/1`), which is the `BL-105` rule
+  working: a requirement written in prose cannot be compared to the one the engine enforces, and the
+  two had been saying opposite things.
+
+`--check` clean on all four files (and `buffer 4th` earns its `Check.Specs` line), zero ladder dips,
+`--learn-audit` clean on all 69 class/tier combinations, server boots 0.103.0, Unity type-check clean,
+protocol unchanged. 🔑 **A class-skill-table change needs a NEW APK.**
+
+## 2026-09-02 — 0.102.11: the last five finds of playtest 29
 
 `BL-114` plus the four remaining pure bugs. Three of the five had been broken since the day they
 shipped and could not have been caught by playing more carefully — each is a rule that was *stated*

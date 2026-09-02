@@ -5781,8 +5781,9 @@ public class GameLoopService : BackgroundService
         int castTicks = Math.Max(2,
             (int)(def.CastTicksAt(Math.Max(1, p.SkillLevelOf(def.Id))) * castMult));
         int reducedCd = def.CooldownTicksAt(Math.Max(1, p.SkillLevelOf(def.Id)));
-        if (reducedCd > 0 && p.CooldownReduction > 0f)
-            reducedCd = Math.Max(1, (int)(reducedCd * (1f - p.CooldownReduction)));
+        float cdr = p.CooldownReductionFor(def.Category);
+        if (reducedCd > 0 && cdr > 0f)
+            reducedCd = Math.Max(1, (int)(reducedCd * (1f - cdr)));
         return castTicks + reducedCd + Math.Max(0, extraDelay);
     }
 
@@ -8995,7 +8996,9 @@ public class GameLoopService : BackgroundService
                     if (victim.Hp <= 0 && !victim.Dead) Kill(victim, attacker);
                     return;
                 }
-                if (_rng.NextDouble() < attacker.MagicCritChance)
+                // The AoE half of the same roll — the victim's own magic crit-rate resistance applies
+                // here too, or a Mark would protect against a nuke and not against a storm.
+                if (_rng.NextDouble() < attacker.MagicCritChance * (1f - victim.MagicCritRateResist))
                 {
                     dmg = (int)(dmg * attacker.EffectiveMagicCritDamage);
                     BroadcastCombat(attacker, victim, dmg, CombatOutcome.Crit, name);
@@ -9185,7 +9188,27 @@ public class GameLoopService : BackgroundService
         return SkillCatalog.Get(rungs[Math.Clamp(level - 1, 0, rungs.Length - 1)]);
     }
 
-    private void TryOnHitProcs(Entity attacker) => TryProcs(attacker, onDamaged: false, magicHit: false);
+    /// <summary>The FIELD-based half of a group buff's payload, summed off its children — everything
+    /// that could not be a <see cref="SkillEffect"/> bit because the enum is full. See the fold in
+    /// <c>ApplyBuff</c>: without it a group hands out only what rides on flags.</summary>
+    private sealed class GroupFields
+    {
+        public float CcResistMagical, CcResistPhysical;
+        public float PhysMpCostPct, MagicMpCostPct;
+        public float MagicCritDamage, MagicAccuracy, HealReceivedPct;
+    }
+
+    private void TryOnHitProcs(Entity attacker) => TryProcs(attacker, ProcWhen.Hit, magicHit: false);
+
+    /// <summary>WHEN a proc is being rolled. Three moments, and a passive names exactly one — the
+    /// third arrived with Magic Proficiency (`BL-108`), whose *"when using Magic"* covers buffs and
+    /// heals and so can never reach either damage trigger.</summary>
+    private enum ProcWhen { Hit, Damaged, MagicCast }
+
+    /// <summary>CAST PROCS — call once when a MAGIC skill (spell, buff, debuff or heal) is committed.
+    /// Fires past the MP gate, so a cast that was refused or interrupted never rolls one.</summary>
+    private void TryOnMagicCastProcs(Entity caster) =>
+        TryProcs(caster, ProcWhen.MagicCast, magicHit: false);
 
     /// <summary>DEFENSIVE PROCS — call once per damaging hit the entity TAKES. The mirror of
     /// <see cref="TryOnHitProcs"/>, and the reason the Sigils could be built at all: half of them are
@@ -9198,9 +9221,9 @@ public class GameLoopService : BackgroundService
     /// has no natural weapon clause: nothing authors one today, and a passive that says it needs a bow
     /// should mean it whichever way it triggers.</para></summary>
     private void TryOnDamagedProcs(Entity victim, bool magicHit) =>
-        TryProcs(victim, onDamaged: true, magicHit: magicHit);
+        TryProcs(victim, ProcWhen.Damaged, magicHit: magicHit);
 
-    private void TryProcs(Entity owner, bool onDamaged, bool magicHit)
+    private void TryProcs(Entity owner, ProcWhen when, bool magicHit)
     {
         if (owner.Kind != EntityKind.Player || owner.LearnedSkills.Count == 0)
             return;
@@ -9209,7 +9232,11 @@ public class GameLoopService : BackgroundService
         {
             if (SkillCatalog.Get(skillId) is not SkillDef def || def.ProcChance <= 0f)
                 continue;
-            if (def.ProcOnDamaged != onDamaged)      // an offensive proc never fires on being hit
+            // Each passive names ONE moment; anything else is not its trigger.
+            var mine = def.ProcOnMagicCast ? ProcWhen.MagicCast
+                     : def.ProcOnDamaged   ? ProcWhen.Damaged
+                     : ProcWhen.Hit;
+            if (mine != when)
                 continue;
             if (def.ProcMagicOnly && !magicHit)      // Strong Spirit: magic damage only
                 continue;
@@ -10232,6 +10259,14 @@ public class GameLoopService : BackgroundService
         // interrupted or cancelled is not a skill you used, and past this point the MP is paid.
         AdvanceActionQuests(caster, QuestActions.UseSkill);
 
+        // MAGIC-CAST PROCS (`BL-108`, Magic Proficiency). Here for the same reason the quest beat is:
+        // past every gate, so an interrupted or unaffordable cast never rolls one, and once per cast
+        // rather than once per target an AoE happens to touch. "Magic" is his own list — spells, buffs,
+        // debuffs and heals — which is every category but Physical (Passive never executes).
+        if (def.Category is SkillCategory.Magic or SkillCategory.Buff
+                         or SkillCategory.Debuff or SkillCategory.Heal)
+            TryOnMagicCastProcs(caster);
+
         // A HIDE ends when a skill EXECUTES (BL-69) — not when it is clicked. His rule, and it is
         // the reason a gap-closer works at all: *"i want to click the skill and im not in range to
         // start to move towards the target but still invisible once the skill is executed then i
@@ -10316,8 +10351,11 @@ public class GameLoopService : BackgroundService
         // Reuse-delay reduction (Spell Mastery / buffs) shortens the cooldown — unless the skill
         // has a FIXED cooldown (Return, ultimates).
         int cooldown = def.CooldownTicksAt(lvl);
-        if (cooldown > 0 && !def.FixedCooldown && caster.CooldownReduction > 0f)
-            cooldown = Math.Max(1, (int)(cooldown * (1f - caster.CooldownReduction)));
+        // …and the reduction is now per CHANNEL (`BL-108`): Harmony of the Soul shortens a physical
+        // reuse by more than a magical one, so which number applies depends on the skill's category.
+        float castCdr = caster.CooldownReductionFor(def.Category);
+        if (cooldown > 0 && !def.FixedCooldown && castCdr > 0f)
+            cooldown = Math.Max(1, (int)(cooldown * (1f - castCdr)));
         caster.SkillCooldowns[def.Id] = cooldown;
         SendCooldowns(caster);   // the bar's reuse overlay starts the tick the reuse does
 
@@ -10606,7 +10644,10 @@ public class GameLoopService : BackgroundService
             }
             else
             {
-                if (_rng.NextDouble() < caster.MagicCritChance)
+                // …× (1 − the TARGET's magic crit-rate resistance), the magic twin of what
+                // ResolvePhysicalCritAndBlock has always done with `target.CritRateResist`
+                // (`BL-108`, the 4th-tier Marks). Off by default: nothing carried it before.
+                if (_rng.NextDouble() < caster.MagicCritChance * (1f - target.MagicCritRateResist))
                 {
                     // The MAGIC channel's own multiplier — NOT caster.CritDamageBonus. That field is
                     // Ferocity + the crit-damage item attribute, both authored for fighters; feeding
@@ -11057,6 +11098,16 @@ public class GameLoopService : BackgroundService
         SkillEffect groupEffect = SkillEffect.None;
         EffectMagnitude[]? groupMags = null;
         bool isGroup = kids is { Length: > 1 };
+        // 🔴 A GROUP MUST FOLD ITS CHILDREN'S *FIELDS* AS WELL AS THEIR MAGNITUDES (found 2026-09-02
+        //    while building `BL-108`). Half the buff payloads in the game do not ride SkillEffect bits
+        //    at all — the enum has been full since 1L << 62, so CC resistance, MP-cost reduction, magic
+        //    accuracy, magic crit damage and heal-received are FIELDS. Folding only Effect+Magnitudes
+        //    meant a group silently dropped every one of them, and two Warchanter groups were the
+        //    proof: `Arcane and Feral Protection` (both children are pure CcResist fields) granted
+        //    NOTHING AT ALL, and `Soul Reinforcement` lost its whole −20%/−10% MP-cost third.
+        //    Nothing on screen said so — the buff landed, its icon appeared, and the numbers were zero.
+        //    ⚠ Summed, which is how every one of these composes on the Entity side.
+        var gf = new GroupFields();
         if (isGroup)
         {
             var mags = new List<EffectMagnitude>();
@@ -11065,9 +11116,23 @@ public class GameLoopService : BackgroundService
                 if (SkillCatalog.Get(childId) is not SkillDef child) continue;
                 groupEffect |= child.Effect;
                 mags.AddRange(child.MagnitudesAt(1) ?? Array.Empty<EffectMagnitude>());
+                gf.CcResistMagical  += child.CcResistMagicalAt(1);
+                gf.CcResistPhysical += child.CcResistPhysicalAt(1);
+                gf.PhysMpCostPct    += child.PhysMpCostPctAt(1);
+                gf.MagicMpCostPct   += child.MagicMpCostPctAt(1);
+                gf.MagicCritDamage  += child.MagicCritDamageAt(1);
+                gf.MagicAccuracy    += child.MagicAccuracyAt(1);
+                gf.HealReceivedPct  += child.HealReceivedPctAt(1);
             }
             groupMags = mags.ToArray();
         }
+
+        // A GROUP's field payload, unless the group's OWN rung authors that field — in which case the
+        // rung wins outright. That is what lets a group LADDER a field: Soul Reinforcement's children
+        // give it −20%/−10% MP cost at rung 1, and its 76-90 rungs then state 21/11 … 30/20 directly
+        // rather than having to be expressed as a delta on top of a child.
+        float GroupOr(float fromChildren, float own) =>
+            !isGroup ? own : own != 0f ? own : fromChildren;
 
         // Key / rank / covered families come from the SAME resolver the "would this land?" test uses,
         // so a refusal message can never disagree with what actually happens.
@@ -11170,8 +11235,10 @@ public class GameLoopService : BackgroundService
             // At the LEVEL that landed, for the same reason as `Rewards` below: Mana Blessing climbs
             // 10 → 20% and Mana Strain 100 → 200%, and reading the def's own field would hand out
             // rung 1's number to every rung of both.
-            PhysMpCostPct = def.PhysMpCostPctAt(level),
-            MagicMpCostPct = def.MagicMpCostPctAt(level),
+            PhysMpCostPct = GroupOr(gf.PhysMpCostPct, def.PhysMpCostPctAt(level)),
+            MagicMpCostPct = GroupOr(gf.MagicMpCostPct, def.MagicMpCostPctAt(level)),
+            PhysCooldownPct = def.PhysCooldownPctAt(level),
+            MagicCooldownPct = def.MagicCooldownPctAt(level),
             SkillEvadeChance = def.SkillEvadeChance,   // BL-06, rogue ultimate only
             EndsOnDamageTaken = def.EndsOnDamageTaken, // Meditation: gone the moment anything lands
             // Reward-rune payload, at the LEVEL that landed: a Rune of Experience (20%) is level 3 of
@@ -11186,16 +11253,17 @@ public class GameLoopService : BackgroundService
             AutoResExpPct = def.ResExpPctAt(level),
             // Clarity / Fortitude — per-LEVEL for the same reason as everything else here: the buff has
             // to carry the rung that actually landed, not the skill's first one.
-            CcResistMagical = def.CcResistMagicalAt(level),
+            CcResistMagical = GroupOr(gf.CcResistMagical, def.CcResistMagicalAt(level)),
             // Heal power / heal received, per-LEVEL: Healer's Power climbs +1000 → +2000 across its five.
             HealPowerFlat = def.HealPowerFlatAt(level),
             HealPowerPct = def.HealPowerPctAt(level),
-            HealReceivedPct = def.HealReceivedPctAt(level),
-            MagicAccuracy = def.MagicAccuracyAt(level),
-            CcResistPhysical = def.CcResistPhysicalAt(level),
+            HealReceivedPct = GroupOr(gf.HealReceivedPct, def.HealReceivedPctAt(level)),
+            MagicAccuracy = GroupOr(gf.MagicAccuracy, def.MagicAccuracyAt(level)),
+            CcResistPhysical = GroupOr(gf.CcResistPhysical, def.CcResistPhysicalAt(level)),
             // Magic crit damage — per-LEVEL for the same reason.
-            MagicCritDamage = def.MagicCritDamageAt(level),
+            MagicCritDamage = GroupOr(gf.MagicCritDamage, def.MagicCritDamageAt(level)),
             MagicCritDamageDebuff = def.MagicCritDamageDebuffAt(level),
+            MagicCritRateDebuff = def.MagicCritRateDebuffAt(level),
             // The bar's tap popup reads the LEVEL's text whenever a level authored one — a group's
             // numbers live there ("Move +33, Cast +30%, Evasion +4, Attack Speed +33%"), and so do a
             // reward rune's ("+50% experience"), where the skill's own blurb is only the first rung.

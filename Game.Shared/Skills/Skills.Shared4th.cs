@@ -39,6 +39,7 @@ public static partial class SkillCatalog
     // The two proc payloads. Same rules as the sigils': fixed timings, no buff slot.
     private const string ArcaneProtectionWard = "arcane_protection_ward";
     private const string PhysProwessSurge  = "physical_proficiency_surge";
+    private const string MagicProwessSurge = "magic_proficiency_surge";
 
     private static SkillDef[] Shared4thSkills() => new SkillDef[]
     {
@@ -84,14 +85,27 @@ public static partial class SkillCatalog
         //      path squares it to cancel the √ inside the magic formula (see Entity.RecomputeDerived),
         //      so 0.05 really is +5% magic damage and must not be pre-doubled.
         //      The MP reduction takes BOTH channels — *"decrease MP consumation"* names neither.
+        //      🔑 THE PROC IS HIS 2026-09-02 EDIT (`BL-108`) and it needed a THIRD trigger. Every proc
+        //      in the game until now rolled on damage dealt or damage taken; *"when using
+        //      Magic(spells/buffs/debuffs/heals)"* covers a party heal and a buff, neither of which
+        //      touches either path — a healer would have owned a 10% proc that could not fire.
+        //      See SkillDef.ProcOnMagicCast and GameLoopService.TryOnMagicCastProcs.
         new(MagicProficiency, "Magic Proficiency", BaseClass.Mage, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive, SpCost: Shared4thSp83,
+            ProcChance: 0.10f, ProcOnMagicCast: true, ProcCooldownTicks: 300,
+            ProcSelfRungs: new[] { MagicProwessSurge },
             Levels: new[] { new SkillLevel(SpCost: Shared4thSp83, GoldCost: Shared4thGold83,
                 Passive: new PassiveEffect(MagAtkPct: 0.05f, CastSpeedPct: 0.05f,
                                            PhysMpCostPct: 0.05f, MagicMpCostPct: 0.05f),
-                Description: "M.Atk +5%, casting speed +5%, and every skill costs 5% less MP.") },
-            Description: "M.Atk +5%, casting speed +5%, and every skill costs 5% less MP."),
+                Description: "M.Atk +5%, casting speed +5%, and every skill costs 5% less MP. A 10% "
+                           + "chance, whenever you cast, to gain a further +5% M.Atk, +5% casting "
+                           + "speed, +5% magic critical rate, +10% magic critical damage and −15% MP "
+                           + "cost for 10 seconds.") },
+            Description: "M.Atk +5%, casting speed +5%, and every skill costs 5% less MP. A 10% "
+                       + "chance, whenever you cast, to gain a further +5% M.Atk, +5% casting speed, "
+                       + "+5% magic critical rate, +10% magic critical damage and −15% MP cost for "
+                       + "10 seconds."),
 
         // ---- PHYSICAL PROFICIENCY: weapon-CONDITIONAL, so it rides WeaponMasteryLevels rather than a
         //      plain Passive — a bow gets accuracy and reach, everything else gets power and speed, an
@@ -113,11 +127,13 @@ public static partial class SkillCatalog
             },
             Levels: new[] { new SkillLevel(SpCost: Shared4thSp83, GoldCost: Shared4thGold83,
                 Description: "Blunt / sword / dual: P.Atk +100 and attack speed +10%. Bow: accuracy "
-                           + "+8 and range +50. With any of them, a 5% chance on attack to raise your "
-                           + "critical rate and physical skill damage by 20% for 10 seconds.") },
+                           + "+8 and range +50. With any of them, a 5% chance — on a physical skill "
+                           + "or a basic attack — to raise your critical rate and physical skill "
+                           + "damage by 20% for 10 seconds.") },
             Description: "Blunt / sword / dual: P.Atk +100 and attack speed +10%. Bow: accuracy +8 "
-                       + "and range +50. With any of them, a 5% chance on attack to raise your "
-                       + "critical rate and physical skill damage by 20% for 10 seconds."),
+                       + "and range +50. With any of them, a 5% chance — on a physical skill or a "
+                       + "basic attack — to raise your critical rate and physical skill damage by "
+                       + "20% for 10 seconds."),
 
         // ═══ THE PROC PAYLOADS ═══════════════════════════════════════════════════════════════════
         new(ArcaneProtectionWard, "Arcane Protection", BaseClass.Fighter, SkillEffect.BuffMagicDef,
@@ -127,6 +143,27 @@ public static partial class SkillCatalog
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffMagicDef, 1000f, ModifierMode.Flat) },
             FixedCooldown: true, CountsTowardBuffLimit: false,
             Description: "M.Def +1000."),
+
+        // MAGIC PROFICIENCY's surge. Five lines, all "additionally" — they ride ON TOP of the passive's
+        // own +5/+5/−5%, so while it is up the caster is at +10% M.Atk, +10% cast and −20% MP.
+        // ⚠ MagAtkPct/BuffMagAtk percent is the HONEST effective number on both the passive and the buff
+        //   path (each squares it to cancel the √ inside the magic formula) — do not pre-double it.
+        // ⚠ MagicCritDamage and the two MP-cost fractions are FIELDS, not SkillEffect flags: the flag
+        //   enum has been full since 1L << 62.
+        new(MagicProwessSurge, "Magic Proficiency", BaseClass.Mage,
+            SkillEffect.BuffMagAtk | SkillEffect.BuffCastSpeed | SkillEffect.BuffMagicCritRate,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+            DurationTicks: 100, BuffKey: "magic_proficiency_surge", Rank: 1,
+            MagicCritDamage: 0.10f, PhysMpCostPct: 0.15f, MagicMpCostPct: 0.15f,
+            Magnitudes: new EffectMagnitude[]
+            {
+                new(SkillEffect.BuffMagAtk,        0.05f, ModifierMode.Percent),
+                new(SkillEffect.BuffCastSpeed,     0.05f, ModifierMode.Percent),
+                new(SkillEffect.BuffMagicCritRate, 0.05f, ModifierMode.Percent),
+            },
+            FixedCooldown: true, CountsTowardBuffLimit: false,
+            Description: "M.Atk +5%, casting speed +5%, magic critical rate +5%, magic critical "
+                       + "damage +10% and MP cost −15%."),
 
         // "P.Skill.Power +20%" is the PHYSICAL-SKILL damage channel, both contexts — the 2×3 matrix's
         // PvE and PvP skill cells. Basic attacks are deliberately not in it: he wrote *skill* power.

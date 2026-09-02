@@ -28,9 +28,11 @@ public static partial class ClassSkillTables
     static partial void RegisterFourthClasses()
     {
         RegisterSharedFourth();
-        // ✅ The only discipline with a finished 4th CSV. `buffer 4th.csv` was still in progress on
-        //    2026-08-26; the other eight files are two lines long.
+        // ✅ TWO disciplines have a finished 4th CSV. The Lightbringer since 2026-08-26; the
+        //    WARCHANTER since 2026-09-02, when he called `buffer 4th.csv` done (`BL-108`).
+        //    The other eight files are still two lines long — the 40+ rule stands for them.
         RegisterLightbringerFourth();
+        RegisterWarchanterFourth();
     }
 
     /// <summary>His `shared 4th.csv` ALL-CLASSES block. Five passives, two price bands, no race split
@@ -127,20 +129,101 @@ public static partial class ClassSkillTables
         ClassSkills.RegisterFourth(Race.Human, Discipline.Lightbringer,
             shared.Concat(Ladder(LbHumanMend,    HealerFourthBands, 15))
                   .Concat(Ladder(LbHumanGravity, HealerFourthEven,  15))
-                  .Concat(new[] { new ClassSkill(LifeRestoration, 83), new ClassSkill(LifeMark, 78) })
+                  .Concat(At(LifeMark, (78, 1), (83, 2)))
+                  .Concat(new[] { new ClassSkill(LifeRestoration, 83) })
                   .ToArray());
 
         ClassSkills.RegisterFourth(Race.Elf, Discipline.Lightbringer,
             shared.Concat(Ladder(LbElfDawn, HealerFourthBands, 15))
                   .Concat(Ladder(LbElfBind, HealerFourthEven,  15))
                   .Concat(Ladder(HealerPartyBlessing, new[] { 83, 84, 85, 86, 87, 88, 89, 90 }, 1))
-                  .Concat(new[] { new ClassSkill(ElvenRestoration, 83), new ClassSkill(HolyMark, 78) })
+                  .Concat(At(HolyMark, (78, 1), (83, 2)))
+                  .Concat(new[] { new ClassSkill(ElvenRestoration, 83) })
                   .ToArray());
 
         ClassSkills.RegisterFourth(Race.Demon, Discipline.Lightbringer,
             shared.Concat(Ladder(LbOrkFont,       HealerFourthBands, 15))
                   .Concat(Ladder(LbOrkArmorBreak, HealerFourthEven,  15))
-                  .Concat(new[] { new ClassSkill(SpiritRestoration, 83), new ClassSkill(BloodMark, 78) })
+                  .Concat(At(BloodMark, (78, 1), (83, 2)))
+                  .Concat(new[] { new ClassSkill(SpiritRestoration, 83) })
                   .ToArray());
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════════════════════════
+    //  THE WARCHANTER, 76-90 — `docs/data/classes_skills_csv/buffer 4th.csv` (`BL-108`)
+    // ═════════════════════════════════════════════════════════════════════════════════════════════
+
+    /// <summary>The buffer's 4th tier. Same two band shapes as the healer's — every level for a full
+    /// ladder, every OTHER level for the sparse ones — and the same price ladder, because both files
+    /// carry the identical header.
+    ///
+    /// <para>🔑 <b>THE START RUNGS ARE WHERE THE 3rd-CLASS LADDERS ACTUALLY ENDED</b>, not guesses, and
+    /// getting one wrong is the only real hazard in this table: a <see cref="ClassSkill"/> names the
+    /// RUNG, so an off-by-one sells a level-76 buffer his level-74 numbers for 6.5kk SP. Anti-Magic
+    /// reached 20 (six cleric rungs + the buffer's fourteen), Armor Mastery 14 on its own id, Spell
+    /// Mastery 18 (four cleric rungs + fourteen), Harmony of Restoration 14, the three Sound skills
+    /// and both toggles 13, the three weapon masteries 8, and the two groups exactly 1.</para>
+    ///
+    /// <para>🔑 <b>THE RACE SPLIT IS THE 3rd TIER'S, CONTINUED.</b> Human blunt + shield, Elf bow,
+    /// Demon blunt with two damage skills — and each race's weapon mastery continues its own ladder.
+    /// The two things genuinely new at this tier are <see cref="SkillCatalog.BufferShieldMastery"/>
+    /// (robe AND shield, so only the Human ever benefits) and the three harmonies.</para>
+    ///
+    /// <para>⚠ <b>HARMONY OF SPEED STILL STOPS AT 58</b> and Harmony of the Warrior at 74. Neither has
+    /// a row in his 4th file, and that is his ruling both times — do not invent continuations.</para></summary>
+    private static void RegisterWarchanterFourth()
+    {
+        ClassSkill[] Ladder(string skill, int[] bands, int startLevel) =>
+            bands.Select((lvl, i) => new ClassSkill(skill, lvl, SkillLevel: startLevel + i)).ToArray();
+
+        ClassSkill[] At(string skill, params (int Level, int Rung)[] rows) =>
+            rows.Select(r => new ClassSkill(skill, r.Level, SkillLevel: r.Rung)).ToArray();
+
+        int[] all  = BufferFourthBands;   // 76…90
+        int[] even = BufferFourthEven;    // 76, 78 … 90
+
+        var shared = new List<ClassSkill>();
+
+        // ---- THE CONTINUING LADDERS, every level ----
+        shared.AddRange(Ladder(MageAntiMagic,         all, 21));
+        shared.AddRange(Ladder(BufferArmorMastery,    all, 15));
+        shared.AddRange(Ladder(SpellMastery,          all, 19));
+        shared.AddRange(Ladder(WcHarmonyRestoration,  all, 15));
+        // ---- …and every other level ----
+        shared.AddRange(Ladder(WcReinforcement,       even, 14));
+        shared.AddRange(Ladder(WcSharpening,          even, 14));
+        shared.AddRange(Ladder(WcSoulReinforce,       even, 2));
+        shared.AddRange(Ladder(WcArcaneFeralProt,     even, 2));
+
+        // ---- THE HARMONIES. Protection gains a sixth rung; the Wizard's three continue a ladder his
+        //      3rd-class file deliberately stopped at 52; Soul and Madness are new skills. ----
+        shared.AddRange(At(NpcHarmonyProtection, (76, 6)));
+        shared.AddRange(At(NpcHarmonyWizard,     (77, 3), (78, 4), (79, 5)));
+        shared.AddRange(Ladder(WcHarmonySoul, new[] { 77, 78, 79, 80, 81, 82, 83 }, 1));
+        shared.Add(new ClassSkill(WcHarmonyMadness, 83));
+        // Harmony Mark: 79, then its second rung at 83 — the only two it has.
+        shared.AddRange(At(WcHarmonyMark, (79, 1), (83, 2)));
+
+        // ---- HUMAN: the shield buffer. His own blunt line, and the robe+shield passive nobody else
+        //      can satisfy — the elf holds a bow and the demon a two-handed maul. ----
+        var human = new List<ClassSkill>(shared);
+        human.Add(new ClassSkill(BufferShieldMastery, 76));
+        human.AddRange(Ladder(DoctorBluntMastery, even, 9));
+        human.AddRange(Ladder(WcSoundSmash,       all,  14));
+
+        // ---- ELF: the archer. ----
+        var elf = new List<ClassSkill>(shared);
+        elf.AddRange(Ladder(WcHarmonistBowMast, even, 9));
+        elf.AddRange(Ladder(WcSoundBurst,       all,  14));
+
+        // ---- DEMON: the melee fighter, two damage skills as always. ----
+        var demon = new List<ClassSkill>(shared);
+        demon.AddRange(Ladder(WcWarlockWeapon,  even, 9));
+        demon.AddRange(Ladder(WcSoundSmash,     all,  14));
+        demon.AddRange(Ladder(WcAcousticShock,  all,  14));
+
+        ClassSkills.RegisterFourth(Race.Human, Discipline.Warchanter, human.ToArray());
+        ClassSkills.RegisterFourth(Race.Elf,   Discipline.Warchanter, elf.ToArray());
+        ClassSkills.RegisterFourth(Race.Demon, Discipline.Warchanter, demon.ToArray());
     }
 }

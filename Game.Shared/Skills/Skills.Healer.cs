@@ -245,9 +245,13 @@ public static partial class SkillCatalog
             Replaces: new[] { ArmorMasterySkill, MasteryRobe },
             Description: "Passive. Adapts your defences to the armor you wear: robe, light or heavy "
                        + "all gain physical defence and max MP.",
-            // The 40-74 band, priced off his own SP column.
-            Levels: BandSp14.Select(sp => new SkillLevel(SpCost: sp)).ToArray(),
-            ArmorMasteryLevels: BufferArmorMasteryLevels),
+            // The 40-74 band, priced off his own SP column — then rungs 15-29, his `buffer 4th.csv`
+            // 76-90 rows (`BL-108`). The 4th tier is where this ladder finally gains a PERCENT magic
+            // defence and an MP-cost reduction; see BufferFourthArmorProfiles.
+            Levels: BandSp14.Select(sp => new SkillLevel(SpCost: sp))
+                            .Concat(BufferFourthArmorRungs()).ToArray(),
+            ArmorMasteryLevels: BufferArmorMasteryLevels
+                                .Concat(BufferFourthArmorProfiles()).ToArray()),
 
         // Restore Mana — replenishes an ally's MP (flat power). Later "ultimate" restores
         // will add a % of max MP via a Percent magnitude on the RestoreMp effect.
@@ -351,7 +355,9 @@ public static partial class SkillCatalog
                 BufferMastery(new PassiveEffect(MagAtk: 88, PhysAtk: 70, CastSpeedPct: 0.10f, CooldownPct: 0.20f, MpRegen: 3.1f, HpRegen: 2.6f)),
                 BufferMastery(new PassiveEffect(MagAtk: 94, PhysAtk: 75, CastSpeedPct: 0.10f, CooldownPct: 0.20f, MpRegen: 3.1f, HpRegen: 2.6f)),
                 BufferMastery(new PassiveEffect(MagAtk: 99, PhysAtk: 80, CastSpeedPct: 0.10f, CooldownPct: 0.20f, MpRegen: 3.4f, HpRegen: 2.7f)),
-            },
+                // …and rungs 19-33, his `buffer 4th.csv` 76-90 rows (`BL-108`). Only the two attack
+                // numbers move; cast, reuse and both regen multipliers are already at the tier's value.
+            }.Concat(BufferFourthSpellProfiles()).ToArray(),
             Levels: new[]
             {
                 new SkillLevel(SpCost: 3200,  Description: "With sword/blunt: +6 M.Atk, +4 P.Atk, -10% skill reuse."),
@@ -362,7 +368,8 @@ public static partial class SkillCatalog
                 new SkillLevel(SpCost: 6400, Description: "With sword/blunt: +8 M.Atk, +6 P.Atk, +5% cast, -10% reuse, +10% MP regen."),
                 new SkillLevel(SpCost: 12800, Description: "With sword/blunt: +10 M.Atk, +8 P.Atk, +5% cast, -10% reuse, +10% MP regen."),
                 new SkillLevel(SpCost: 25000, Description: "With sword/blunt: +12 M.Atk, +10 P.Atk, +5% cast, -10% reuse, +50% MP regen, +10% HP regen."),
-            }.Concat(BandSp14.Select(sp => new SkillLevel(SpCost: sp))).ToArray()),
+            }.Concat(BandSp14.Select(sp => new SkillLevel(SpCost: sp)))
+             .Concat(BufferFourthSpellRungs()).ToArray()),
 
         // Force and Ward — the caster's group. Levels 1-2 are the numbers this buff already cast
         // (+18% interrupt resist, then +25 with +25% M.Atk); from level 3 it adds M.Def, and at 6

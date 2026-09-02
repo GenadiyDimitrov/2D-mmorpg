@@ -1139,20 +1139,57 @@ Twenty-two finds, written into `testing/Open-Checklist.md` §0. The **bugs** sta
 bugs live; the **changes and new systems** are the fourteen entries below. Your two `[?]` questions are
 answered at the bottom of this section rather than as entries — neither asks for a build.
 
-- `BL-108` 🔴 **THE FOUR AUTHORED 40+ FILES — BUILD THEM.** Your words: *"`buffer/healer 3rd/4th` and
-  `shared 4th` are done for now .. build them"*. What actually changed in the files, so nothing is
-  missed:
+- `BL-108` ✅ **BUILT 2026-09-02 (0.103.0) — ALL FOUR FILES.** The Warchanter is the second finished
+  4th class in the game. `--check` clean on `buffer 3rd` / `buffer 4th` / `healer 4th` / `shared 4th`
+  (and `buffer 4th` now has its own `Check.Specs` line), zero ladder dips, `--learn-audit` clean.
+  Full detail in the CHANGELOG. 🔑 **YOU NEED A NEW APK** — the client builds its Learn tab locally.
 
-  | file | what is new |
-  | --- | --- |
-  | `buffer 3rd.csv` | **`doctor_blunt_mastery`** — a whole new eight-rung Human ladder, `blunt/1`, P.Atk 30→100 at 40-74. Plus a mislabelled banner fixed. |
-  | `buffer 4th.csv` | **the whole Warchanter 4th kit**, moved out from under the `NOT DONE` banner and given real ids: `buffer_shield_mastery` (robe/shield), the 76-90 continuations of `wc_harmonist_bow_mastery` / `wc_bloodhanter_blunt_mastery` / `doctor_blunt_mastery`, **Harmony Mark rung 2 @83**, `wc_sound_burst` / `wc_sound_smash` / `wc_acoustic_shock` fifteen rungs each, and the `wc_reinforcement` / `wc_sharpening` toggle ladders. Spell Mastery's reuse went 15%→20% at rungs 76-77 (it was already 20% from 78 — a monotonicity fix). |
-  | `healer 4th.csv` | the three **Marks gain a second rung @83** with a `*.Crit.*.Received` line each, MP 300→**150** on all of them, and the resist numbers moved (SPT +10→+15, CON +5→+10, vamp +3→+5%). |
-  | `shared 4th.csv` | `magic_proficiency` gains a **10% proc** (M.Atk/cast/crit-rate/crit-dmg/MP-cost); `physical_proficiency`'s 5% proc is now explicitly *"with physical skills or basic attacks"*. |
+- `BL-124` 🟢 **THE SLIPS `BL-108`'s BUILD TURNED UP — both rulings made, nothing owed.** Kept as a
+  record of where your file disagreed with itself, so the same paste does not happen twice.
 
-  ⚠ **The order of this against the bugs is settled** — you chose bugs first (`BL-111`…`BL-120`),
-  then this. 🔑 **A class-skill-table change needs a NEW APK**: the client builds its Learn tab locally
-  from the compiled `ClassSkills`.
+  **The two you ruled on, 2026-09-02** — *"spell mastery 76-90 to have its coresponding sp/gold cost
+  and fix doctor blunt mastery 40-74 to `Blunt: ....` (same as buffer 4th)"*:
+  - ✅ **Spell Mastery 76-90 now runs on the tier's ladder** (6.5kk / 11kk / 16kk / 80kk, then gold
+    only, 5kk → 100kk). Its fifteen rows had been pasted out of `buffer 3rd.csv` still carrying that
+    file's 36k … 880k SP and its `[]` in the gold cell, so a level-90 rung of your buffer's core
+    caster passive cost **880k SP and no gold**.
+  - ✅ **`doctor_blunt_mastery`'s eight 40-74 DESCR cells read "Blunt:"**, matching your own 76-90
+    rows. The hands stay in the WEAPON column (`blunt/1`) where `--check` can see them. This is the
+    `BL-105` rule doing its job — the prose and the enforced gate were saying opposite things, which
+    is exactly the failure the column was built to end.
+
+  **The four I corrected under the monotonic rule** (a value going backwards is a typo — interpolate
+  or report, never accept). The CSV was edited to match the build, so file and game still agree:
+  - **Harmony of Restoration** read 110 / **100** / 120 / **100** / 130 / **100** … — every ODD rung
+    was an untouched copy of the level-74 row (100 HP/s, 10 MP/s). Buying rung 89 would have made the
+    hymn *worse* than rung 88. Straightened to 110 → 180 in fives, which is what your even rungs
+    describe. ⚠ Your **MP column** on the same ladder is kept verbatim, dip and all — it falls 488 →
+    454 at level 80, which only makes the hymn cheaper, so nothing breaks.
+  - **Harmony of the Wizard** had **two rows at level 78**. The second one's price cells are the 79
+    band (80kk SP + 1kk gold), so it is read as 79.
+  - **Sound Burst** had a second, identical **level-90 row** sitting at the bottom of the Sound Smash
+    block. Removed.
+  - **Doctor / Warlock Weapon Mastery** left the WEAPON column blank at the 4th tier while the 3rd
+    tier gates them `blunt/1` and `blunt/2`. A ladder cannot change hands halfway up, so the gate is
+    carried forward and the column filled in.
+
+  **And two cells that were simply empty**, filled from the row's own siblings: `magic_proficiency`'s
+  reuse/duration pair in `shared 4th.csv` (0/0 against Arcane Protection's and Physical Proficiency's
+  30/10, on a row that is nothing but a proc), and the AoE radius of Harmony of the Soul / Madness /
+  Mark (blank, where every other harmony says 800).
+
+- `BL-125` 🔵 **A GROUP BUFF WAS DROPPING EVERY PAYLOAD THAT IS NOT A `SkillEffect` BIT. Fixed
+  2026-09-02 (0.103.0) — logged because it is worth a playtest look, not because anything is owed.**
+  `ApplyBuff` folded only its children's `Effect` and `Magnitudes` into a group. Half the buff payloads
+  in the game are FIELDS instead (the flag enum has been full since `1L << 62`), so:
+  - **Arcane and Feral Protection granted NOTHING AT ALL** — both its children are pure CC-resist
+    fields, so the group landed with an icon and zero numbers;
+  - **Soul Reinforcement lost its whole −20% / −10% MP-cost third.**
+
+  Nothing on screen said so, which is why it survived: the buff appears on the bar either way. 🔑 The
+  fix also gave a group's own rung the right to STATE a field, which is what lets Soul Reinforcement
+  ladder its MP cost 21/11% → 30/20% across the 4th tier. ⚠ **Verified by reading the fold, not by
+  playing** — worth confirming on a 74+ buffer that Arcane and Feral Protection now really resists.
 
 - `BL-109` 🔵 **WHISPS — A NEW SYSTEM. Your design, and `whisps_skills.csv` is already authored.**
   IG cubics: a non-targetable support entity that rides the master and fires its own skills.

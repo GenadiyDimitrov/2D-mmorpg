@@ -91,6 +91,11 @@ internal static class Check
         //      it; the other eight 4th files are two-line placeholders. Same rule as the 3rd tier.
         new("healer 4th",  BaseClass.Mage,    Archetype.Healer,  76, 90, Game.Shared.Discipline.Lightbringer,
             Fourth: true, Also: new[] { "shared 4th" }),
+        // `buffer 4th` earned its line on 2026-09-02, the day `BL-108` built it — he called the file
+        // done in the same breath as the healer's. Same `Also` for the same reason: the ALL-CLASSES
+        // block and the eighteen Sigils are in every ascended class's Cumulative.
+        new("buffer 4th",  BaseClass.Mage,    Archetype.Healer,  76, 90, Game.Shared.Discipline.Warchanter,
+            Fourth: true, Also: new[] { "shared 4th" }),
     };
 
     /// <summary>One rung, from either side, reduced to the fields worth comparing.

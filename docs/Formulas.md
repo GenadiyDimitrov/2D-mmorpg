@@ -59,6 +59,13 @@ MagicCritRate = base * 1.63^((wit - 20)/10)                           cap 20%
 MagicCritDmg  = 2.0 * mult * (1 - resist)                             cap x5
 ```
 
+Both crit RATES are then reduced by whatever the DEFENDER carries — the two are separate stats:
+
+```
+rolledPhysCrit  = PhysCritRate  * (1 - target.CritRateResist)         resist clamp [0, 1]
+rolledMagicCrit = MagicCritRate * (1 - target.MagicCritRateResist)    resist clamp [0, 1]
+```
+
 **Block** (shields only, physical only):
 1. the shield lowers the attacker's crit **chance**;
 2. if it still crits, the crit **ignores the shield**;
@@ -255,6 +262,21 @@ charged = quoted * MpCostFactor(buffs and debuffs)        clamp x0.2 .. x3
 autohunt's budget. Reading the authored number anywhere else is the bug.
 
 `SkillMath.InitialMpFraction` · `GameLoopService.EffectiveMpCost`
+
+## Skill reuse
+
+```
+reuse = authored * (1 - reduction)                       min 1 tick; skipped when FixedCooldown
+reduction = CooldownReduction                            every skill (Spell Mastery, buffs)
+          + (category == Physical ? CooldownReductionPhysical : CooldownReductionMagic)
+          clamp [0, 0.8]
+```
+
+⚠ "Magic" is spells, buffs, debuffs AND heals — everything but the Physical category. The per-channel
+halves exist because one buff can carry two different numbers (Harmony of the Soul: −20% magic,
+−30% physical).
+
+`Entity.CooldownReductionFor` · `GameLoopService.ExecuteSkill` / `AutoCycleTicks`
 
 ## Mobs
 

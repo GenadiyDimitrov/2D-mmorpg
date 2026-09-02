@@ -305,6 +305,13 @@ public record SkillDef(
     // same breath ("3% chance on attack …" vs "3% chance on dmg received …"), so it is a flag on the
     // existing machinery rather than a second one.
     bool ProcOnDamaged = false,
+    // THE THIRD TRIGGER (owner, 2026-09-02, `BL-108`): roll this proc when the owner CASTS A MAGIC
+    // SKILL. His Magic Proficiency is *"With 10% chance when using Magic(spells/buffs/debuffs/heals)"*,
+    // and none of it deals damage — a buff or a heal never reaches either of the two triggers above, so
+    // a hit-based proc would simply never have fired for a healer. "Magic" is the four non-physical
+    // SkillCategories, exactly as he lists them; a physical skill and a basic attack are not it.
+    // ⚠ Mutually exclusive with the other two: a def picks one moment.
+    bool ProcOnMagicCast = false,
     // Narrows a ProcOnDamaged trigger to MAGIC hits only — his Strong Spirit is *"with 20% chance on
     // magic dmg taken"*, and a passive that fired on a sword swing would be a different skill.
     // Inert unless ProcOnDamaged is set.
@@ -368,6 +375,13 @@ public record SkillDef(
     // is full, so this rides as explicit fields, not a flag.)
     float PhysMpCostPct = 0f,
     float MagicMpCostPct = 0f,
+    // …and the exact twin for REUSE (`BL-108`, Harmony of the Soul). His row is *"−10% Magical Reuse,
+    // −20% Physical Reuse"* on ONE buff, which the existing `BuffCooldown` flag cannot express: it is
+    // one number for every skill. Same convention as the pair above — fractions, 0 = none, physical
+    // means the Physical CATEGORY and "magic" is his own list of spells, buffs, debuffs and heals.
+    // These ADD to whatever BuffCooldown grants; see Entity.CooldownReductionFor.
+    float PhysCooldownPct = 0f,
+    float MagicCooldownPct = 0f,
     // HIDE (BL-69, kind 1 — the rogue's full vanish): a self-cast that makes the caster invisible
     // to EVERYTHING for DurationTicks — unrendered, untargetable, and shed by every mob aggro'd on
     // them. Broken by any action but movement: a hit, a skill, a potion, damage taken.
@@ -508,6 +522,14 @@ public record SkillDef(
     // Rides as fields, not SkillEffect flags — the flag enum is full (1L << 62 was the last bit).
     float MagicCritDamage = 0f,
     float MagicCritDamageDebuff = 0f,
+    // MAGIC CRIT *RATE* RECEIVED (owner 2026-09-02, `BL-108` — the 4th-tier Marks). The mirror of
+    // `BuffCritRateResist` on the magic channel: a FRACTION taken off the chance that a spell cast AT
+    // the holder crits, so 0.10 = his "M.Crit.Rate.Received -10%". Holy Mark's second rung is the first
+    // user and Harmony Mark the second, which asks for BOTH channels at once — the physical half is the
+    // existing SkillEffect bit, this is the half that had no home.
+    // ⚠ There is no positive twin: nothing authors "raise an enemy's crit rate against you".
+    // Rides as a field, not a SkillEffect flag — the flag enum is full (1L << 62 was the last bit).
+    float MagicCritRateDebuff = 0f,
     // MANA DAMAGE (the healer's Mana Ray, his 3rd-class 56/58 rows — *"Like a magic attack but damages
     // MP not HP. Same formula; mRes; can fizzle; etc). In PVE dmg is halved (x0.5)"*). Set it on an
     // ordinary `SkillEffect.MagicDamage` skill and the number the magic pipeline produces is subtracted
@@ -816,6 +838,15 @@ public record SkillDef(
         return v > 0f ? v : MagicCritDamageDebuff;
     }
 
+    /// <summary>How much this level takes off an attacker's MAGIC crit CHANCE against the holder
+    /// (a fraction: 0.10 = −10%). Same "0 = inherit the def's" shape as its neighbours.
+    /// See <see cref="MagicCritRateDebuff"/>.</summary>
+    public float MagicCritRateDebuffAt(int level)
+    {
+        float v = Lvl(level)?.MagicCritRateDebuff ?? 0f;
+        return v > 0f ? v : MagicCritRateDebuff;
+    }
+
     /// <summary>Skill MP-cost change at a LEVEL — positive makes skills CHEAPER (Mana Blessing),
     /// negative DEARER (Mana Strain). ⚠ The "unset = inherit" test is <c>!= 0</c>, not <c>&gt; 0</c> like
     /// its neighbours above: a negative value here is meaningful, and a <c>&gt; 0</c> test would have
@@ -831,6 +862,21 @@ public record SkillDef(
     {
         float v = Lvl(level)?.MagicMpCostPct ?? 0f;
         return v != 0f ? v : MagicMpCostPct;
+    }
+
+    /// <summary>Per-channel REUSE reduction at a LEVEL. Same "0 = inherit" shape as the MP-cost pair
+    /// it mirrors. See <see cref="PhysCooldownPct"/>.</summary>
+    public float PhysCooldownPctAt(int level)
+    {
+        float v = Lvl(level)?.PhysCooldownPct ?? 0f;
+        return v != 0f ? v : PhysCooldownPct;
+    }
+
+    /// <summary>See <see cref="PhysCooldownPctAt"/>.</summary>
+    public float MagicCooldownPctAt(int level)
+    {
+        float v = Lvl(level)?.MagicCooldownPct ?? 0f;
+        return v != 0f ? v : MagicCooldownPct;
     }
 
     /// <summary>The highest ailment Rank this skill can strip at a LEVEL. A level's 0 means "inherit",
@@ -1042,12 +1088,18 @@ public record SkillLevel(
     // MAGIC CRIT DAMAGE at THIS level (0 = inherit the SkillDef's). See SkillDef.MagicCritDamage.
     float MagicCritDamage = 0f,
     float MagicCritDamageDebuff = 0f,
+    // MAGIC CRIT RATE RECEIVED at THIS level (0 = inherit). See SkillDef.MagicCritRateDebuff.
+    float MagicCritRateDebuff = 0f,
     // SKILL MP-COST CHANGE at THIS level (0 = inherit the SkillDef's). Positive = costs LESS (Mana
     // Blessing), negative = costs MORE (Mana Strain). Both of those are LADDERS — 10/15/20% and
     // 100%…200% — and without a per-level slot every rung would have silently applied rung 1's number,
     // because the fields live on the SkillDef and a def has one of each.
     float PhysMpCostPct = 0f,
     float MagicMpCostPct = 0f,
+    // SKILL REUSE CHANGE at THIS level (0 = inherit). See SkillDef.PhysCooldownPct — Harmony of the
+    // Soul climbs −10/−20% to −20/−30% across its seven rungs, so it needs the per-level slot too.
+    float PhysCooldownPct = 0f,
+    float MagicCooldownPct = 0f,
     // DEBUFF SUCCESS MULTIPLIER at THIS level (0 = inherit the SkillDef's). See SkillDef.DebuffLandMod.
     // His ask names the ladder explicitly — *"a sucess multiplier (per skill/lvl)"* — so a hold whose
     // rungs are otherwise identical can still get more reliable as it climbs.
@@ -1396,6 +1448,7 @@ public static partial class SkillCatalog
         list.AddRange(MobSpellSkills());      // Skills.MobSpells.cs (caster-mob nuke + jab)
         list.AddRange(RewardRuneSkills());    // Skills.RewardRunes.cs (exp/sp/gold/drop runes + Sinister/Sinners)
         list.AddRange(Lightbringer4thSkills()); // Skills.Lightbringer4th.cs (his `healer 4th.csv` 76-90 kit)
+        list.AddRange(Warchanter4thSkills());  // Skills.Warchanter4th.cs (his `buffer 4th.csv` 76-90 kit)
         list.AddRange(Shared4thSkills());     // Skills.Shared4th.cs (his `shared 4th.csv` ALL-CLASSES passives)
         list.AddRange(SigilSkills());         // Skills.Sigils.cs (the 4th class's 18 Attack/Defence/Support sigils)
         list.AddRange(BossJudgmentSkills());  // Skills.BossJudgment.cs (`BL-98` the six-rung ladder — engine-applied only)

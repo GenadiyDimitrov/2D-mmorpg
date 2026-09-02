@@ -130,8 +130,19 @@ internal static class Descr
         ("bowrange",      new[] { "range" }),
         ("bowresist",     new[] { "bow resistance", "bow resist", "arrow defence" }),
         ("ccresist",      new[] { "cc resist", "ccresist" }),
-        ("critrateres",   new[] { "crit rate resist", "critical rate resist" }),
-        ("critdmgres",    new[] { "crit dmg reduction", "crit dmg resist", "crit damage reduction",
+        // ⚠ THE `*.Received` SPELLINGS, longest-first as always. His 4th-tier Marks write the two
+        // received-crit reductions as "M.Crit.Rate.Received -10%" / "P.Crit.Dmg.Received -30%", and
+        // Harmony Mark drops the channel letter entirely ("Critical.Rate.Received"). They were UNREAD
+        // until 2026-09-02, which is why the healer's Marks looked verified while their newest line was
+        // not being compared at all. 🔑 ONE KEY PER AXIS, not per channel: the two crit-RATE fields
+        // (physical `CritRateResist`, magic `MagicCritRateDebuff`) are pooled together, because every
+        // row that authors one authors the same number for the other or has only one of them.
+        ("critrateres",   new[] { "m.crit.rate.received", "p.crit.rate.received", "crit.rate.received",
+                                  "critical.rate.received", "rate.received",
+                                  "crit rate resist", "critical rate resist" }),
+        ("critdmgres",    new[] { "p.critical.dmg.received", "p.crit.dmg.received", "crit.dmg.received",
+                                  "critical.dmg.received", "dmg.received",
+                                  "crit dmg reduction", "crit dmg resist", "crit damage reduction",
                                   "critical damage reduction", "critical damage resist" }),
         // A PROC CHANCE. Bare "chance" is safe only because every other use of the word is already
         // claimed by a longer alias above it ("block chance" -> blockrate), and the table is walked
@@ -160,6 +171,15 @@ internal static class Descr
 
     /// <summary>Numbers that are NOT stats — durations, ranks, ranges, counts. Matched against the text
     /// around a leftover number so it can be dismissed instead of printed as unread.</summary>
+    /// <summary>Metrics whose authored MINUS is decoration: a discount or a resistance, which the
+    /// engine always stores as a positive fraction. He writes them both ways — "Decrease Mp
+    /// Consumption with 5%" and "−15% Magic MP Consumption" are the same thing — so the token reader
+    /// keeps the magnitude and drops the sign. See the note at the sign-flip in Tokens().</summary>
+    private static readonly HashSet<string> MagnitudeOnly = new()
+    {
+        "reuse", "mpcost", "critrateres", "critdmgres", "ccresist", "bowresist", "magicresist",
+    };
+
     private static readonly Regex[] NotAStat =
     {
         new(@"\d+\s*(min|minutes|sec|secs|seconds|s\b)", RegexOptions.IgnoreCase),
@@ -336,6 +356,14 @@ internal static class Descr
             if (m.Groups["sign"].Value is "-" or "−" or "–") val = -val;
             // "Decreses the reuse delay with 10%" is a REDUCTION authored as a positive number, and
             // CooldownPct stores reductions positive — so reuse never flips sign. Same for the resists.
+            //
+            // 🔑 …AND HE ALSO WRITES THE SAME REDUCTIONS WITH A MINUS. `buffer 4th.csv` is full of it:
+            // "−20% Physical Reuse", "−15% Magic MP Consumption", "Critical.Rate.Received −10%". Those
+            // mean exactly what the positive spelling means, and the engine stores every one of them as
+            // a POSITIVE fraction (a resist counts what is taken off). So for this handful of metrics
+            // the minus is decoration and the MAGNITUDE is the value. ⚠ It also keeps the ladder check
+            // honest: −20% → −30% is a ladder getting STRONGER, and a signed reading called it a dip.
+            if (MagnitudeOnly.Contains(metric)) val = Math.Abs(val);
             found.Add(new Token(metric, pct, val, raw));
         }
         return found;
@@ -398,6 +426,12 @@ internal static class Descr
         {
             Add("mpcost", true, def.PhysMpCostPctAt(level));
             Add("mpcost", true, def.MagicMpCostPctAt(level));
+            // The REUSE twin of the pair above (`BL-108`, Harmony of the Soul): one buff, a different
+            // number per channel. Pooled under the same `reuse` key the blanket BuffCooldown uses.
+            Add("reuse", true, def.PhysCooldownPctAt(level));
+            Add("reuse", true, def.MagicCooldownPctAt(level));
+            // MAGIC crit rate RECEIVED — pooled with the physical one; see the `critrateres` aliases.
+            Add("critrateres", true, def.MagicCritRateDebuffAt(level));
 
             // DEBUFF SUCCESS MULTIPLIER (`BL-90`) — his `(success chance x1.5)`.
             // ⚠ TWO THINGS ARE DELIBERATE HERE. (1) It is stored as a PERCENT and as `mod − 1`, because

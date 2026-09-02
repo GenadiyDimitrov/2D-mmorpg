@@ -110,6 +110,12 @@ public class BuffInstance
     public float PhysMpCostPct { get; init; }
     public float MagicMpCostPct { get; init; }
 
+    /// <summary>Reuse-delay reduction for ONE channel only — the twin of the MP-cost pair above, and
+    /// a field for the same reason (the SkillEffect enum is full). Harmony of the Soul is the first
+    /// and so far only source. See <c>SkillDef.PhysCooldownPct</c>.</summary>
+    public float PhysCooldownPct { get; init; }
+    public float MagicCooldownPct { get; init; }
+
     /// <summary>BL-06 — chance the owner dodges an incoming PHYSICAL SKILL while this buff is up.
     /// Rides as a field, like the two above, because the SkillEffect flag enum has no bits left.
     /// The rogue's Evasion Boost is the only skill in the game that sets it.</summary>
@@ -138,6 +144,11 @@ public class BuffInstance
     /// enum has no bits left. <see cref="MagicCritDamageDebuff"/> is the `(1 − debuffs)` side.</summary>
     public float MagicCritDamage { get; init; }
     public float MagicCritDamageDebuff { get; init; }
+
+    /// <summary>How much this buff takes off an attacker's MAGIC crit CHANCE against its holder
+    /// (0.10 = −10%). The magic twin of the <c>BuffCritRateResist</c> flag, and a field for the same
+    /// reason as its neighbours. See <c>SkillDef.MagicCritRateDebuff</c>.</summary>
+    public float MagicCritRateDebuff { get; init; }
 
     /// <summary>This buff ends the instant its owner TAKES damage (the healer's Meditation). Carried
     /// on the buff, like <see cref="HidesFromMobs"/>, so it is checked at the one place damage is
@@ -1066,8 +1077,24 @@ public class Entity
     public float EffectiveMagicCritDamage =>
         StatCalculator.MagicCritMult(MagicCritDamageMult, MagicCritDamageResist);
     // ----- Healer buff/effect layer (folded from buffs + passives in RecomputeDerived) -----
-    public float CooldownReduction { get; set; } // spell reuse-delay reduction (0..cap)
+    public float CooldownReduction { get; set; } // reuse-delay reduction for EVERY skill (0..cap)
+    // …and the two CHANNEL-ONLY halves (`BL-108`, Harmony of the Soul). His row is *"−10% Magical
+    // Reuse, −20% Physical Reuse"*: one buff, two different numbers, exactly the shape the MP-cost
+    // pair already has. They ADD to the blanket number above; read CooldownReductionFor, not these.
+    public float CooldownReductionPhysical { get; set; }
+    public float CooldownReductionMagic { get; set; }
+
+    /// <summary>The reuse reduction that applies to a skill of this CATEGORY — the blanket
+    /// <see cref="CooldownReduction"/> plus whichever channel-only half it belongs to. Physical is the
+    /// one category that is not "magic": his list for the magic half is spells, buffs, debuffs and
+    /// heals, which is every other one.</summary>
+    public float CooldownReductionFor(SkillCategory cat) => Math.Clamp(
+        CooldownReduction + (cat == SkillCategory.Physical ? CooldownReductionPhysical : CooldownReductionMagic),
+        0f, 0.8f);
     public float CritRateResist { get; set; }    // reduces an attacker's physical crit CHANCE vs you
+    // …and its MAGIC twin (`BL-108`, the 4th-tier Marks). Separate because the two channels have
+    // shared nothing since 2026-08-06: different stat, different cap, different roll site.
+    public float MagicCritRateResist { get; set; }
     public float CritDmgResist { get; set; }     // reduces incoming physical crit EXTRA damage
     public float BowResist { get; set; }         // reduces damage taken from BOW attacks
     public float CcResist { get; set; }          // reduces the LAND chance of contested CC vs you
@@ -2268,7 +2295,10 @@ public class Entity
         DebuffReflectChance = 0f;
         Immune = false;
         CooldownReduction = 0f;
+        CooldownReductionPhysical = 0f;
+        CooldownReductionMagic = 0f;
         CritRateResist = 0f;
+        MagicCritRateResist = 0f;
         CritRateMult = 1f;
         CritRateFlat = 0f;
         MagicCritRateMult = 1f;
@@ -3120,7 +3150,13 @@ public class Entity
             // owner's own ×3.38), the debuffs SUM. Both ride as buff fields; the flag enum is full.
             if (buff.MagicCritDamage != 0f) MagicCritDamageMult *= 1f + buff.MagicCritDamage;
             MagicCritDamageResist += buff.MagicCritDamageDebuff;
+            // …and the magic crit RATE the holder is hit with. SUMMED, exactly like its physical twin
+            // a few lines down, so two Marks could never multiply into immunity.
+            MagicCritRateResist += buff.MagicCritRateDebuff;
             if (buff.Has(SkillEffect.BuffCooldown)) CooldownReduction += buff.Flat(SkillEffect.BuffCooldown) + buff.Percent(SkillEffect.BuffCooldown);
+            // The two channel-only halves ride as FIELDS (the flag enum is full), like the MP-cost pair.
+            CooldownReductionPhysical += buff.PhysCooldownPct;
+            CooldownReductionMagic += buff.MagicCooldownPct;
             if (buff.Has(SkillEffect.BuffPveSkillDamage)) PveSkillDamageBonus += buff.Flat(SkillEffect.BuffPveSkillDamage) + buff.Percent(SkillEffect.BuffPveSkillDamage);
             if (buff.Has(SkillEffect.BuffPveMagicDamage)) PveMagicDamageBonus += buff.Flat(SkillEffect.BuffPveMagicDamage) + buff.Percent(SkillEffect.BuffPveMagicDamage);
             if (buff.Has(SkillEffect.BuffPveBasicDamage)) PveBasicDamageBonus += buff.Flat(SkillEffect.BuffPveBasicDamage) + buff.Percent(SkillEffect.BuffPveBasicDamage);
@@ -3152,6 +3188,7 @@ public class Entity
         // stack that would otherwise be pinned to the ceiling. Only the debuff sum is bounded.
         MagicCritDamageResist = Math.Clamp(MagicCritDamageResist, 0f, 0.9f);
         CritRateResist = Math.Clamp(CritRateResist, 0f, 1f);
+        MagicCritRateResist = Math.Clamp(MagicCritRateResist, 0f, 1f);
         CritDmgResist = Math.Clamp(CritDmgResist, 0f, 0.9f);
         BowResist = Math.Clamp(BowResist, 0f, 0.9f);
         // (Spellcaster Mastery's untrained-weapon magic penalty is NOT folded in here any more.
@@ -3166,6 +3203,8 @@ public class Entity
         // one that must never help the attacker.
         MagicFailSelfMult = Math.Max(0f, MagicFailSelfMult);
         CooldownReduction = Math.Clamp(CooldownReduction, 0f, 0.8f);
+        CooldownReductionPhysical = Math.Clamp(CooldownReductionPhysical, 0f, 0.8f);
+        CooldownReductionMagic = Math.Clamp(CooldownReductionMagic, 0f, 0.8f);
         MeleeReflect = Math.Clamp(MeleeReflect, 0f, 0.5f);   // never reflect more than half
         // The skill-defence channels. Evade and the two reflect CHANCES stop short of 1 on purpose —
         // "never dodges anything, ever" and "a skill user can never touch this class" are both

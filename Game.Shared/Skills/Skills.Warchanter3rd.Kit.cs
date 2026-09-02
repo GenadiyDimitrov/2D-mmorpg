@@ -46,6 +46,7 @@ public static partial class SkillCatalog
     public const string WcHarmonistBowProf   = "wc_harmonist_bow_proficiency";  // Elf
     public const string WcHarmonistBowMast   = "wc_harmonist_bow_mastery";      // Elf
     public const string WcWarlockWeapon      = "wc_bloodhanter_blunt_mastery";  // Demon
+    public const string DoctorBluntMastery   = "doctor_blunt_mastery";          // Human, 1H blunt
     // ---- ACTIVES ----
     public const string WcHarmonyRestoration = "wc_harmony_restoration";
     public const string WcSoundBurst         = "wc_sound_burst";        // Elf, bow, hits twice
@@ -163,10 +164,13 @@ public static partial class SkillCatalog
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive,
             Description: "Passive. Your bow reaches much further and hits much harder.",
-            Levels: raceMastSp.Select(sp => new SkillLevel(SpCost: sp)).ToArray(),
+            // Rungs 1-8 are his 40-74 band; 9-16 are `buffer 4th.csv`'s 76-90 (`BL-108`), where the
+            // P.Atk jumps 600 → 650 → 1000 and the +400 range stays flat as it always has.
+            Levels: raceMastSp.Select(sp => new SkillLevel(SpCost: sp))
+                .Concat(BufferFourthEvenRungs(i => $"Bow: +{Wc4BowAtk[i]} P.Atk, +400 range.")).ToArray(),
             WeaponMasteryLevels: bowMastAtk
                 .Select(a => new WeaponMasteryProfile(Bow: new PassiveEffect(PhysAtk: a, BowRange: 400f)))
-                .ToArray()));
+                .Concat(BufferFourthBowProfiles()).ToArray()));
 
         // ---- Warlock Weapon Mastery (Demon) — 8 rungs, the demon's answer to the elf's bow line.
         //      Flat P.Atk 30 to 100 and a constant +3 accuracy. ----
@@ -193,12 +197,40 @@ public static partial class SkillCatalog
             Category: SkillCategory.Passive,
             Description: "Passive. A TWO-HANDED blunt weapon — a maul or a staff — strikes harder "
                        + "and truer in your hands. No effect one-handed.",
-            Levels: raceMastSp.Select(sp => new SkillLevel(SpCost: sp)).ToArray(),
+            Levels: raceMastSp.Select(sp => new SkillLevel(SpCost: sp))
+                .Concat(BufferFourthEvenRungs(i =>
+                    $"Two-handed blunt: +{Wc4BluntAtk[i]} P.Atk, +{Wc4WarlockAcc[i]} accuracy.")).ToArray(),
             WeaponMasteryLevels: bluntAtk
                 .Select(a => new WeaponMasteryProfile(Blunt: new PassiveEffect(PhysAtk: a, Accuracy: 3),
                                                      RequiredWeapon: WeaponType.AnyBlunt,
                                                      RequiredHands: WeaponHands.Two))
-                .ToArray()));
+                .Concat(BufferFourthWarlockProfiles()).ToArray()));
+
+        // ---- Doctor Weapon Mastery (HUMAN) — his 2026-09-02 addition to `buffer 3rd.csv`, and the
+        //      row that finally gives the third buffer a weapon line of its own. Eight rungs on the
+        //      same 40/48/56/60/64/68/70/74 band and the same P.Atk 30 → 100 as the Demon's, one axis
+        //      apart: `blunt/1`, ONE-HANDED, because the Human buffer is the shield one (`BL-107` —
+        //      all four Shield Mastery rungs are his) and a maul would cost him the shield. That is
+        //      also why he gets no accuracy where the Demon gets +3: the shield is the compensation.
+        //
+        // ⚠ HIS DESCR CELL READ "2h Blunt:" ON ALL EIGHT ROWS while the WEAPON column read `blunt/1` —
+        //   the prose was a copy of the Warlock block above it. Raised, and he settled it the same day
+        //   (2026-09-02): the cells now read "Blunt:", matching his own 76-90 rows, and the hands stay
+        //   in the WEAPON column where they are checkable. That is the `BL-105` rule working — a
+        //   requirement written in prose cannot be compared to the one the engine enforces.
+        list.Add(new SkillDef(DoctorBluntMastery, "Doctor Weapon Mastery", BaseClass.Mage, SkillEffect.None,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+            Category: SkillCategory.Passive,
+            Description: "Passive. A ONE-HANDED blunt weapon — a mace or a wand, the hand that keeps "
+                       + "your shield — strikes harder in your hands. No effect two-handed.",
+            Levels: raceMastSp.Select(sp => new SkillLevel(SpCost: sp))
+                .Concat(BufferFourthEvenRungs(i =>
+                    $"One-handed blunt: +{Wc4BluntAtk[i]} P.Atk, +{Wc4DoctorAcc[i]} accuracy.")).ToArray(),
+            WeaponMasteryLevels: bluntAtk
+                .Select(a => new WeaponMasteryProfile(Blunt: new PassiveEffect(PhysAtk: a),
+                                                     RequiredWeapon: WeaponType.AnyBlunt,
+                                                     RequiredHands: WeaponHands.One))
+                .Concat(BufferFourthDoctorProfiles()).ToArray()));
 
         // ---- Mana Vampirism — 3 rungs @40/60/70. His only mana-return line, and the reason the
         //      blunt buffer can keep buffing: a slice of a BASIC attack.s damage back as MP.
@@ -311,7 +343,8 @@ public static partial class SkillCatalog
                     : new EffectMagnitude[] { new(SkillEffect.HealOverTime, hotHp[i], ModifierMode.Flat) },
                 Description: hotMp[i] > 0
                     ? $"Restores {hotHp[i]} HP and {hotMp[i]} MP per second to the party for 30s."
-                    : $"Restores {hotHp[i]} HP per second to the party for 30s.")).ToArray()));
+                    : $"Restores {hotHp[i]} HP per second to the party for 30s."))
+                .Concat(BufferFourthRestorationRungs()).ToArray()));
 
         // ---- Sound Burst (Elf) — 900 range, BOW, and it hits TWICE. Two independent resolutions of
         //      the same power, not one hit at double power: see SkillDef.HitCount. ----
@@ -355,13 +388,15 @@ public static partial class SkillCatalog
         int[] reinforceMp  = { 12, 13, 14, 15, 16, 17, 19, 20, 22, 24, 26, 28, 30 };
         list.Add(BuildStance(WcReinforcement, "Reinforcement", SkillEffect.BuffDef, "wc_reinforcement",
             reinforceDef, reinforceMp,
-            "Brace yourself: greater physical defence for as long as you can pay for it."));
+            "Brace yourself: greater physical defence for as long as you can pay for it.",
+            BufferFourthReinforcementRungs()));
 
         int[] sharpenAtk = { 60, 80, 100, 120, 140, 160, 180, 200, 220, 240, 260, 280, 300 };
         int[] sharpenMp  = { 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
         list.Add(BuildStance(WcSharpening, "Sharpening", SkillEffect.BuffPhysAtk, "wc_sharpening",
             sharpenAtk, sharpenMp,
-            "Hone your weapon: greater physical attack for as long as you can pay for it."));
+            "Hone your weapon: greater physical attack for as long as you can pay for it.",
+            BufferFourthSharpeningRungs()));
 
         return list.ToArray();
     }
@@ -418,8 +453,10 @@ public static partial class SkillCatalog
 
     /// <summary>A Warchanter MP-per-second stance (Reinforcement / Sharpening). Thirteen rungs on the
     /// 40/48/52...74 band, one flat stat each, and a per-second MP burn that IS his "(Consumes: N/s)".</summary>
+    /// <param name="fourth">The 76-90 rungs from `buffer 4th.csv` (`BL-108`), appended. Null before
+    /// that file was built; both stances have eight of them.</param>
     private static SkillDef BuildStance(string id, string name, SkillEffect effect, string buffKey,
-        int[] amounts, int[] mpPerSec, string desc) =>
+        int[] amounts, int[] mpPerSec, string desc, SkillLevel[]? fourth = null) =>
         new(id, name, BaseClass.Mage, effect,
             MpCost: mpPerSec[0], CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             DurationTicks: 0, BuffKey: buffKey, Rank: 1,
@@ -431,7 +468,7 @@ public static partial class SkillCatalog
                 MpCost: mpPerSec[i], MpPerSecond: mpPerSec[i], SpCost: BandSp13[i],
                 Magnitudes: new EffectMagnitude[] { new(effect, amounts[i], ModifierMode.Flat) },
                 Description: $"{name} — +{amounts[i]} while active, {mpPerSec[i]} MP per second."))
-                .ToArray());
+                .Concat(fourth ?? Enumerable.Empty<SkillLevel>()).ToArray());
 
     /// <summary>One of the three "Sound" damage skills. They share his power ladder, his MP column and
     /// his SP column verbatim; what differs is the weapon, the range, the cast, how many times a cast
@@ -474,6 +511,7 @@ public static partial class SkillCatalog
                     ? $"Strikes for power {SoundPower[i]} and stuns for {stunTicks / 10f:0.#}s."
                     : hits > 1
                         ? $"Strikes {hits} times for power {SoundPower[i]} each."
-                        : $"Strikes for power {SoundPower[i]}.")).ToArray());
+                        : $"Strikes for power {SoundPower[i]}."))
+                .Concat(BufferFourthSoundRungs(hits, stunTicks)).ToArray());
     }
 }

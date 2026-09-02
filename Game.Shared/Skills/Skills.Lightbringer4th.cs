@@ -401,35 +401,72 @@ public static partial class SkillCatalog
         var (sp78, gold78) = F4New(78);
         var (sp83, gold83) = F4New(83);
 
+        // The universal half of every Mark, shared by both rungs and all three races.
+        var markCore = new EffectMagnitude[]
+        {
+            new(SkillEffect.BuffPhysAtk,   0.10f, ModifierMode.Percent),
+            new(SkillEffect.BuffMagAtk,    0.10f, ModifierMode.Percent),
+            new(SkillEffect.BuffDef,       0.20f, ModifierMode.Percent),
+            new(SkillEffect.BuffMagicDef,  0.20f, ModifierMode.Percent),
+            new(SkillEffect.BuffMoveSpeed, 0.20f, ModifierMode.Percent),
+            new(SkillEffect.BuffAtkSpeed,  0.20f, ModifierMode.Percent),
+            new(SkillEffect.BuffCastSpeed, 0.20f, ModifierMode.Percent),
+        };
+        // The 83 rung is a LEVEL-UP, so its gold is the "Old-LvlUp" column (15kk) rather than the
+        // dearer "New Skills" one. His SP cell repeats the 78 row's 16kk and is taken at its word.
+        var (_, goldUp83) = F4(83 - 76);
+
         // One Mark. Everything they share — 900 range, 5s cast, 5 minutes, 4 skill stones, the three
         // universal +10/+20/+20% lines — stated once; the three per-race extras are the parameter.
+        //
+        // 🔑 TWO RUNGS since 2026-09-02 (`BL-108`). His edit gave every Mark a second rung at 83 whose
+        //    ONLY addition is a RECEIVED-crit reduction — Holy takes 10% off the magic crit RATE cast
+        //    at you, Life 10% off the physical one, Blood 30% off physical crit DAMAGE. His comment
+        //    column is the reasoning and it is worth keeping: both crit RATES are inflated by the same
+        //    +100/+30/+20% buff stack so both can afford a trim, but crit DAMAGE is 35+35+20 physical
+        //    against 30+20 magical — so only the physical half is reduced, and the tanks own the rest.
+        // ⚠ The rung-2 flags must be on the DEF's Effect mask (a BuffInstance takes its Effect from the
+        //    def, only its magnitudes per level), so rung 1 simply authors no magnitude for them.
         SkillDef Mark(string id, string name, string extraText, EffectMagnitude[] extras,
-                      float ccMag = 0f, float ccPhys = 0f, float magicCritDmg = 0f, float magicAcc = 0f) =>
-            new(id, name, BaseClass.Mage,
+                      float ccMag = 0f, float ccPhys = 0f, float magicCritDmg = 0f, float magicAcc = 0f,
+                      EffectMagnitude[]? rung2 = null, float rung2MagicCritRate = 0f,
+                      string rung2Text = "")
+        {
+            var mags1 = markCore.Concat(extras).ToArray();
+            var mags2 = mags1.Concat(rung2 ?? Array.Empty<EffectMagnitude>()).ToArray();
+            string blurb = "P.Atk and M.Atk +10%, both defences +20%, and move, attack and cast "
+                         + "speed +20%, for five minutes. " + extraText
+                         + " Consumes 4 Skill Stones. Only one Mark at a time.";
+            return new(id, name, BaseClass.Mage,
                 SkillEffect.BuffPhysAtk | SkillEffect.BuffMagAtk | SkillEffect.BuffDef
                 | SkillEffect.BuffMagicDef | SkillEffect.BuffMoveSpeed | SkillEffect.BuffAtkSpeed
-                | SkillEffect.BuffCastSpeed | extras.Aggregate(SkillEffect.None, (a, m) => a | m.Effect),
-                MpCost: 300, CastTicks: 50, CooldownTicks: 50, Range: 900, Power: 0,
+                | SkillEffect.BuffCastSpeed | mags2.Aggregate(SkillEffect.None, (a, m) => a | m.Effect),
+                // ⚠ 150 MP, not 300 — his 2026-09-02 edit halved it on all three.
+                MpCost: 150, CastTicks: 50, CooldownTicks: 50, Range: 900, Power: 0,
                 DurationTicks: 3000, BuffKey: MarkKey, Rank: 1,
+                // 🔑 FLAT RANK, the Great Might / Great Bulwark rule (`BL-85`'s guard names it). Three
+                // Marks share one key ON PURPOSE — an ally wears one, never two — so the rung must NOT
+                // ride in the rank: a Lv2 Holy Mark carrying rank 2 would lock out a Human healer's
+                // Lv1 Life Mark, which is the opposite of "whichever got there first". Only became
+                // load-bearing when the second rung landed; with one rung each there was nothing to
+                // carry. Re-casting your own higher rung still replaces, on duration.
+                FlatRank: true,
                 Category: SkillCategory.Buff, SpCost: sp78,
                 TargetMode: TargetMode.SelfOrTarget,
                 ConsumableId: ItemCatalog.SkillStone, ConsumableAmount: 4,
                 CcResistMagical: ccMag, CcResistPhysical: ccPhys, MagicCritDamage: magicCritDmg,
                 BuffMagicAccuracy: magicAcc,
-                Magnitudes: new EffectMagnitude[]
+                Magnitudes: mags1,
+                Levels: new[]
                 {
-                    new(SkillEffect.BuffPhysAtk,   0.10f, ModifierMode.Percent),
-                    new(SkillEffect.BuffMagAtk,    0.10f, ModifierMode.Percent),
-                    new(SkillEffect.BuffDef,       0.20f, ModifierMode.Percent),
-                    new(SkillEffect.BuffMagicDef,  0.20f, ModifierMode.Percent),
-                    new(SkillEffect.BuffMoveSpeed, 0.20f, ModifierMode.Percent),
-                    new(SkillEffect.BuffAtkSpeed,  0.20f, ModifierMode.Percent),
-                    new(SkillEffect.BuffCastSpeed, 0.20f, ModifierMode.Percent),
-                }.Concat(extras).ToArray(),
-                Levels: new[] { new SkillLevel(MpCost: 300, SpCost: sp78, GoldCost: gold78) },
-                Description: "P.Atk and M.Atk +10%, both defences +20%, and move, attack and cast "
-                           + "speed +20%, for five minutes. " + extraText
-                           + " Consumes 4 Skill Stones. Only one Mark at a time.");
+                    new SkillLevel(MpCost: 150, SpCost: sp78, GoldCost: gold78,
+                                   Magnitudes: mags1, Description: blurb),
+                    new SkillLevel(MpCost: 150, SpCost: sp78, GoldCost: goldUp83,
+                                   Magnitudes: mags2, MagicCritRateDebuff: rung2MagicCritRate,
+                                   Description: blurb + " " + rung2Text),
+                },
+                Description: blurb);
+        }
 
         // One Restoration. All three are a 900-range party ultimate on a ONE-HOUR reuse — the button
         // you press once per boss, which is why the reuse is the balance rather than the numbers.
@@ -641,17 +678,19 @@ public static partial class SkillCatalog
             //    something you carried and levelled; this is a flat grant a named skill hands out, on the
             //    same footing M.Evasion has had since 2026-08-11. Nothing derives it and no gear rolls it.
             Mark(HolyMark, "Holy Mark",
-                "The Elf's Mark also grants +10% resistance to Spirit debuffs, +4 magic accuracy, "
+                "The Elf's Mark also grants +15% resistance to Spirit debuffs, +4 magic accuracy, "
                 + "+20% magic critical rate and +20% maximum MP.",
                 new EffectMagnitude[]
                 {
                     new(SkillEffect.BuffMagicCritRate, 0.20f, ModifierMode.Percent),
                     new(SkillEffect.BuffMp,            0.20f, ModifierMode.Percent),
                 },
-                ccMag: 0.10f, magicAcc: 4f),
+                ccMag: 0.15f, magicAcc: 4f,
+                rung2MagicCritRate: 0.10f,
+                rung2Text: "Spells cast at you are 10% less likely to land a critical."),
 
             Mark(LifeMark, "Life Mark",
-                "The Human's Mark also grants +5% resistance to Constitution debuffs, +4 accuracy, "
+                "The Human's Mark also grants +10% resistance to Constitution debuffs, +4 accuracy, "
                 + "+20% physical critical rate and +20% maximum HP.",
                 new EffectMagnitude[]
                 {
@@ -659,22 +698,32 @@ public static partial class SkillCatalog
                     new(SkillEffect.BuffCritRate, 0.20f, ModifierMode.Percent),
                     new(SkillEffect.BuffHp,       0.20f, ModifierMode.Percent),
                 },
-                ccPhys: 0.05f),
+                ccPhys: 0.10f,
+                rung2: new EffectMagnitude[]
+                {
+                    new(SkillEffect.BuffCritRateResist, 0.10f, ModifierMode.Percent),
+                },
+                rung2Text: "Blows aimed at you are 10% less likely to land a critical."),
 
             // ⚠ The Demon's EVASION line is GONE — his 2026-08-26 edit replaced it with melee vampirism
             //    and dropped both accuracies from 4 to 3, which he says is deliberate. Do not restore it.
             Mark(BloodMark, "Blood Mark",
-                "The Demon's Mark also grants +3% melee vampirism, +3 accuracy, +20% critical damage of "
+                "The Demon's Mark also grants +5% melee vampirism, +3 accuracy, +20% critical damage of "
                 + "both kinds, and +20% HP and MP regeneration.",
                 new EffectMagnitude[]
                 {
-                    new(SkillEffect.BuffMeleeVamp,  0.03f, ModifierMode.Percent),
+                    new(SkillEffect.BuffMeleeVamp,  0.05f, ModifierMode.Percent),
                     new(SkillEffect.BuffAccuracy,   3f,    ModifierMode.Flat),
                     new(SkillEffect.BuffCritDamage, 0.20f, ModifierMode.Percent),
                     new(SkillEffect.BuffHpRegen,    0.20f, ModifierMode.Percent),
                     new(SkillEffect.BuffMpRegen,    0.20f, ModifierMode.Percent),
                 },
-                magicCritDmg: 0.20f, magicAcc: 3f),
+                magicCritDmg: 0.20f, magicAcc: 3f,
+                rung2: new EffectMagnitude[]
+                {
+                    new(SkillEffect.BuffCritDmgResist, 0.30f, ModifierMode.Percent),
+                },
+                rung2Text: "Physical criticals that land on you deal 30% less extra damage."),
         };
     }
 

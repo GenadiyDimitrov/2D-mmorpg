@@ -72,8 +72,8 @@ multi-part row a number belongs to.
 | `bowrange` | `range` |
 | `bowresist` | `bow resistance`, `bow resist`, `arrow defence` |
 | `ccresist` | `cc resist`, `ccresist` |
-| `critrateres` | `crit rate resist`, `critical rate resist` |
-| `critdmgres` | `crit dmg reduction`, `crit dmg resist`, `crit damage reduction`, `critical damage reduction`, `critical damage resist` |
+| `critrateres` | `m.crit.rate.received`, `p.crit.rate.received`, `crit.rate.received`, `critical.rate.received`, `rate.received`, `crit rate resist`, `critical rate resist` |
+| `critdmgres` | `p.critical.dmg.received`, `p.crit.dmg.received`, `crit.dmg.received`, `critical.dmg.received`, `dmg.received`, `crit dmg reduction`, `crit dmg resist`, `crit damage reduction`, `critical damage reduction`, `critical damage resist` |
 | `successchance` | `success chance` |
 | `procchance` | `chance` |
 | `ccresist` | `resist to spt`, `resist to con` |
@@ -84,7 +84,7 @@ multi-part row a number belongs to.
 | `lifesteal` | `of the damage dealt`, `of damage dealt`, `heals you` |
 | `offencespeed` | `offence and speed`, `offense and speed` |
 
-46 keys, 141 spellings.
+46 keys, 151 spellings.
 
 ## Words that are read but are not stats
 

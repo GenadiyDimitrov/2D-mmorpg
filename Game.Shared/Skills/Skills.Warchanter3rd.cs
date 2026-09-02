@@ -92,14 +92,23 @@ public static partial class SkillCatalog
     /// child's family at GROUP rank (so it evicts those singles and refuses anything weaker
     /// afterwards) and collapsing them off the learn list via <c>Replaces</c>. 20 minutes, party,
     /// 1s cast / 1s reuse — his columns for every group row.</summary>
+    /// <param name="fourth">His `buffer 4th.csv` 76-90 rungs, if this group has any (`BL-108`). Two
+    /// do — Soul Reinforcement and Arcane and Feral Protection — and both ladder a FIELD (MP cost, CC
+    /// resistance) rather than a child, so rung 1 is written out here as the plain group and every
+    /// rung above it states its own numbers. A level with no <c>ChildBuffs</c> inherits the def's, so
+    /// the +35% Max MP and +30% M.Def keep coming from the same two children at every rung.</param>
     private static SkillDef WcGroup(string id, string name, SkillEffect effect,
-        string[] children, string[] replaces, int mp, int sp, string desc) =>
+        string[] children, string[] replaces, int mp, int sp, string desc,
+        SkillLevel[]? fourth = null) =>
         new(id, name, BaseClass.Mage, effect,
             MpCost: mp, CastTicks: 10, CooldownTicks: 10, Range: 600, Power: 0,
             DurationTicks: 12000, ChildBuffs: children,
             Category: SkillCategory.Buff, SpCost: sp,
             TargetMode: TargetMode.AlliesInRadius, AreaRadius: 800f,
             Replaces: replaces,
+            Levels: fourth is null ? null
+                : new[] { new SkillLevel(MpCost: mp, SpCost: sp, Description: desc) }
+                    .Concat(fourth).ToArray(),
             Description: desc + " Blesses you and nearby allies for 20 minutes.");
 
     /// <summary>A HARMONY rung. Own key, covers nothing, stacks on top of everything — 5 minutes
@@ -164,7 +173,8 @@ public static partial class SkillCatalog
             new[] { Rung(FamMaxMp, 6), Rung(FamMagDef, 4), BuffManaBless3 },
             new[] { CastId(FamMaxMp), CastId(FamMagDef), ManaBlessing },
             mp: 455, sp: 880000,
-            "+35% Max MP, +30% M.Def, and −20% physical / −10% magic skill MP cost."),
+            "+35% Max MP, +30% M.Def, and −20% physical / −10% magic skill MP cost.",
+            BufferFourthSoulRungs()),
 
         // ═══ THE COMBINED LANE ═══════════════════════════════════════════════════════════════
         // MP 402 = Body 120 + Bulwark 72 + Vigor 85, + 125 at level 72. That sum is the ONLY
@@ -193,7 +203,8 @@ public static partial class SkillCatalog
             new[] { Rung(FamCcResMag, 4), Rung(FamCcResPhys, 4) },
             new[] { CastId(FamCcResMag), CastId(FamCcResPhys) },
             mp: 340, sp: 880000,
-            "50% resistance to SPT-defended debuffs and 40% to CON-defended ones."),
+            "50% resistance to SPT-defended debuffs and 40% to CON-defended ones.",
+            BufferFourthArcaneFeralRungs()),
 
         // MP 198 = Swift 33 (the cleric's level-30 rung) + Agility 80, + 85 at level 56. That the
         // sum only closes with the CLERIC's Swift is what identifies the two children: the buffer
@@ -304,7 +315,8 @@ public static partial class SkillCatalog
                       new(SkillEffect.BuffDef, 0.25f), new(SkillEffect.BuffHp, 0.30f),
                       new(SkillEffect.BuffReflect, 0.20f) },
                     "+30% M.Def, +20% HP regeneration, +25% P.Def, +30% Max HP, reflects 20% of melee damage"),
-            },
+            // Rung 6, his `buffer 4th.csv` @76 (`BL-108`) — the same five lines plus bow resistance.
+            }.Concat(BufferFourthProtectionRungs()).ToArray(),
             "Shields you and nearby allies. Stacks on top of every ordinary defensive buff."),
 
         // ── HARMONY OF THE WARRIOR — 6 rungs @40/44/48/56/58/74 ──────────────────────────────
@@ -367,7 +379,10 @@ public static partial class SkillCatalog
                 HarmonyRung(126, 74000, new EffectMagnitude[]
                     { new(SkillEffect.BuffMagAtk, 0.10f), new(SkillEffect.BuffCastSpeed, 0.30f) },
                     "+10% M.Atk, +30% cast speed"),
-            },
+            // 🔴 "IT STOPS" WAS TRUE OF THE 3rd TIER ONLY. The comment above says the MP-regen half is
+            //    on the 4th-class ladder @77, and this is that ladder arriving: rungs 3-5 at 77/78/79
+            //    (`BL-108`), adding MP regen, then magic crit rate, then magic crit damage.
+            }.Concat(BufferFourthWizardRungs()).ToArray(),
             "Sharpens the casters around you. Stacks on top of Force and Alacrity."),
     };
 }
