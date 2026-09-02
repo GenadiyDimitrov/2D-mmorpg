@@ -1,4 +1,4 @@
-namespace Game.Shared;
+﻿namespace Game.Shared;
 
 /// <summary>One skill a class can learn, and the level at which it becomes
 /// learnable. SpCost comes from the SkillDef; level gates visibility in the
@@ -238,6 +238,36 @@ public static class ClassSkills
             if (cs.SkillId == def.Id && cs.SkillLevel == skillLevel && cs.SpCost is int sp)
                 return sp;
         return def.SpCostAt(skillLevel);
+    }
+
+    /// <summary>The next rung of <paramref name="skillId"/> this class may BUY, given the rung it
+    /// already owns: the LOWEST class-table level strictly above <paramref name="owned"/>, or 0 when
+    /// the shelf holds nothing further.
+    ///
+    /// <para>🔑 <b>IT IS NOT <c>owned + 1</c>.</b> That was the rule until 2026-09-02, and it silently
+    /// killed twelve of his authored buff singles across fifteen classes. A class table is a SHELF, not
+    /// a staircase, and it is authored two ways that `+1` cannot read:</para>
+    /// <list type="bullet">
+    ///   <item>It may START above rung 1. The single-buff ladders are shared with the CONSUMABLES —
+    ///     rung 1 of Force/Ward/Aim is the potion, and the cleric's first row is rung 2. Nobody learns
+    ///     rung 1, so `owned + 1` asked for a rung no class table has and got "your class cannot learn
+    ///     this" for a skill sitting right there on his CSV.</item>
+    ///   <item>It may SKIP rungs as it climbs. The Warchanter takes Serenity at 2 → 4 → 6 and Insight
+    ///     at 3 → 6; the rungs between are other classes'. `owned + 1` stalled at the first hole and
+    ///     called the rest "cannot be raised further".</item>
+    /// </list>
+    ///
+    /// <para>⚠ Both halves are DELIBERATE authoring, so this is the engine bending to the data and not
+    /// the other way round. `tools/SkillCsvSeed --learn-audit` walks every real class and asserts every
+    /// authored rung is reachable; `--learn-audit --old` replays the broken rule.</para></summary>
+    public static int NextLearnableLevel(string skillId, int owned, Race race, BaseClass baseClass,
+        Archetype? archetype, Discipline? discipline = null, bool fourth = false)
+    {
+        int next = 0;
+        foreach (var cs in Cumulative(race, baseClass, archetype, discipline, fourth))
+            if (cs.SkillId == skillId && cs.SkillLevel > owned && (next == 0 || cs.SkillLevel < next))
+                next = cs.SkillLevel;
+        return next;
     }
 
     /// <summary>The highest skill-level of a skill this class can ever learn (0 = none).</summary>

@@ -320,8 +320,17 @@ namespace Game.Client
             var all = ClassSkills.LearnableAt(active.Race, active.BaseClass, archetype, int.MaxValue,
                                               discipline, ascended);
 
+            // 🔴 THE ROW YOU MAY BUY IS THE CLASS TABLE'S NEXT RUNG, NOT `owned + 1` (2026-09-02).
+            //    His playtest-29 find — *"the harmonist never learns serenity / vigor / vampiric rage /
+            //    force / insight"* — was this filter. A shelf may start above rung 1 (rung 1 of
+            //    Force/Ward/Aim is the POTION, so the cleric's first row is rung 2) and may skip rungs
+            //    as it climbs (Serenity 2 → 4 → 6); `owned + 1` matched neither, so twelve authored buff
+            //    singles never appeared in the tab at all. The server enforces the same rule through the
+            //    same helper — see ClassSkills.NextLearnableLevel and HandleLearnSkill.
             var groups = all
-                .Where(cs => cs.SkillLevel == Boot.Learned.GetValueOrDefault(cs.SkillId) + 1
+                .Where(cs => cs.SkillLevel == ClassSkills.NextLearnableLevel(
+                                 cs.SkillId, Boot.Learned.GetValueOrDefault(cs.SkillId),
+                                 active.Race, active.BaseClass, archetype, discipline, ascended)
                              && !Superseded(cs.SkillId)
                              // The level-40 stat swaps have their OWN tab (Stats), where they are a
                              // basket you can see before you pay. Listing them here as well put twelve

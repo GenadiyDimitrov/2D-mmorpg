@@ -1587,10 +1587,16 @@ public class GameLoopService : BackgroundService
         if (def is null)
             return;
 
-        // Learning advances to the NEXT level of the skill (level 1 if not yet known).
+        // Learning advances to the next rung THE CLASS TABLE OFFERS — see ClassSkills.NextLearnableLevel.
+        //
+        // 🔴 THIS WAS `cur + 1` UNTIL 2026-09-02, and it was his playtest-29 find *"the harmonist never
+        //    learns serenity / vigor / vampiric rage / force / insight"*. A class shelf may start above
+        //    rung 1 (rung 1 of Force/Ward/Aim is the POTION; the cleric's first row is rung 2) and may
+        //    skip rungs as it climbs (Serenity 2 → 4 → 6). `cur + 1` asked for rungs no table has, so
+        //    the skill answered "your class cannot learn this" while sitting on his CSV. Twelve buff
+        //    singles across fifteen classes were dead. `SkillCsvSeed --learn-audit` is the regression.
         int cur = player.SkillLevelOf(def.Id);
-        int target = cur + 1;
-        if (target > def.MaxLevel)
+        if (cur >= def.MaxLevel)
         {
             SendSystemToEntity(player, $"{def.Name} is already at its highest level.");
             return;
@@ -1603,15 +1609,16 @@ public class GameLoopService : BackgroundService
             return;
         }
 
-        // This (skill, level) must be on the class list and the level gate met.
-        int gate = ClassSkills.LearnLevelOf(def.Id, target, player.Race, player.BaseClass, player.Archetype, player.Discipline, player.HasFourthClass);
-        if (gate == 0)
+        // This skill must be on the class list with a rung above what's owned, and the level gate met.
+        int target = ClassSkills.NextLearnableLevel(def.Id, cur, player.Race, player.BaseClass, player.Archetype, player.Discipline, player.HasFourthClass);
+        if (target == 0 || target > def.MaxLevel)
         {
             SendSystemToEntity(player, cur == 0
                 ? $"Your class cannot learn {def.Name}."
                 : $"{def.Name} cannot be raised further by your class.");
             return;
         }
+        int gate = ClassSkills.LearnLevelOf(def.Id, target, player.Race, player.BaseClass, player.Archetype, player.Discipline, player.HasFourthClass);
         if (player.Level < gate)
         {
             SendSystemToEntity(player, def.MaxLevel > 1

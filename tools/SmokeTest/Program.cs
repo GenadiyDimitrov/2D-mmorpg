@@ -1,4 +1,4 @@
-using Game.Shared;
+﻿using Game.Shared;
 using Microsoft.AspNetCore.SignalR.Client;
 
 // Headless end-to-end smoke test.
@@ -1949,6 +1949,87 @@ await gm.DisposeAsync();
     await tt.LeaveWorldAsync();
     await tt.DisposeAsync();
 }
+
+// -------------------------------------------------------------------------------------------
+// 11. THE RUNG YOU CAN ACTUALLY BUY — his playtest-29 find, over the wire.
+//
+//     *"The harmonist never learns serenity / vigor / vampiric rage / force / insight."* They were on
+//     his CSV, they were on the class table, and `LearnSkill` answered "your class cannot learn this".
+//     The cause was `owned + 1`: a class shelf may START above rung 1 (rung 1 of Force/Ward/Aim is the
+//     POTION, so the cleric's first row is rung 2) and may SKIP rungs as it climbs (Serenity 2 -> 4 -> 6).
+//
+//     🔑 THIS IS EXACTLY THE KIND OF BUG THE SMOKE TEST EXISTS FOR, and the reason it went unseen for so
+//     long is worth stating: `DebugLearnAll` assigns the HIGHEST rung directly and never walks the
+//     ladder, so every admin character in every previous run had all five buffs. Only a character
+//     BUYING them one at a time can see it. `SkillCsvSeed --learn-audit` guards the tables; this guards
+//     the server handler.
+// -------------------------------------------------------------------------------------------
+{
+    var lr = await ConnectAsync("test1", "test");
+    string lname = "Rung" + DateTime.UtcNow.ToString("HHmmssff");
+    var lerr = await lr.Hub.InvokeAsync<string?>("CreateCharacter",
+        new CreateCharacterRequest(lname, Race.Elf, BaseClass.Mage));
+    Check("created an elf mage to buy skill rungs", lerr is null, lerr);
+
+    if (lerr is null)
+    {
+        // Every Debug* command is an IAdminCommand, and `/role` works on an OFFLINE character.
+        await PromoteToAdminAsync(lname);
+
+        var lchars = await lr.Hub.InvokeAsync<CharacterList>("ListCharacters");
+        var lpick = lchars.Characters.First(c => c.Name == lname);
+        var lin = await lr.Hub.InvokeAsync<LoginResult>("EnterWorld", new EnterWorldRequest(lpick.Id));
+        lr.MyId = lin.EntityId;
+
+        // 1 -> 81 in the +10 steps the debug button allows, then the ELF buffer discipline — the
+        // Harmonist is the class he was playing when he found this.
+        for (int i = 0; i < 8; i++) await lr.Hub.SendAsync("DebugLevel", 10);
+        var harmonist = ThirdClassCatalog.Playable
+            .First(t => t.Race == Race.Elf && t.Discipline == Discipline.Warchanter);
+        await lr.Hub.SendAsync("DebugThirdClass", harmonist.Id);
+        await lr.Hub.SendAsync("DebugSp", 100_000_000L);
+        await lr.Hub.SendAsync("DebugGold", 100_000_000L);
+        await lr.Settle();
+
+        int LearnedLevel(string id) =>
+            lr.Learned?.Skills.FirstOrDefault(s => s.Id == id)?.Level ?? 0;
+
+        // ---- Serenity: the shelf starts at rung 2 and then SKIPS — 2, 4, 6. Both halves of the bug
+        //      in one ladder, which is why it is the one asserted rung by rung. ----
+        string serenity = SkillCatalog.CastId(SkillCatalog.FamMpRegen);
+        Check("the buffer starts out NOT knowing Serenity",
+              LearnedLevel(serenity) == 0, $"level {LearnedLevel(serenity)}");
+
+        foreach (int expected in new[] { 2, 4, 6 })
+        {
+            await lr.Hub.SendAsync("LearnSkill", serenity);
+            await lr.WaitFor(() => LearnedLevel(serenity) == expected, 5000);
+            Check($"...and buys Serenity up to rung {expected} (the shelf's next rung, not owned+1)",
+                  LearnedLevel(serenity) == expected, $"level {LearnedLevel(serenity)}");
+        }
+
+        // ---- The other four he named. One purchase each: the point is that the FIRST one lands at
+        //      all, because for every one of them the first rung on the shelf is above 1. ----
+        foreach (var (id, label, first) in new[]
+        {
+            (SkillCatalog.CastId(SkillCatalog.FamHpRegen),  "Vigor",      2),
+            (SkillCatalog.CastId(SkillCatalog.FamVamp),     "Vampirism",  2),
+            (SkillCatalog.CastId(SkillCatalog.FamMagAtk),   "Force",      2),
+            (SkillCatalog.CastId(SkillCatalog.FamMagCrit),  "Insight",    3),
+        })
+        {
+            int before = LearnedLevel(id);
+            await lr.Hub.SendAsync("LearnSkill", id);
+            await lr.WaitFor(() => LearnedLevel(id) > before, 5000);
+            Check($"...and {label} lands on its shelf's first rung ({first}), not on a rung nobody stocks",
+                  LearnedLevel(id) == first, $"level {LearnedLevel(id)} (was {before})");
+        }
+    }
+
+    await lr.LeaveWorldAsync();
+    await lr.DisposeAsync();
+}
+
 
 return Finish();
 

@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Text;
 using Game.Shared;
 
@@ -57,6 +57,16 @@ if (args.Contains("--weapon-column")) return WeaponColumn.Run(outDir);
 // `--chain-audit` — his 2026-08-29 id rule: a fighter chain and a mage chain may each replace and
 // continue their own skills, but must never SHARE an id. Read-only; see ChainAudit.cs.
 if (args.Contains("--chain-audit")) return ChainAudit.Run();
+
+// `--learn-audit` -- playtest 29: the harmonist could not learn five of his authored buffs. A class
+// table may start a ladder above rung 1 (the 3rd class CONTINUES the 2nd's) and may skip rungs as it
+// climbs; the old `owned + 1` purchase rule could reach neither. Read-only; `--old` replays the
+// pre-fix rule so the closed bug can still be shown. See LearnAudit.cs.
+if (args.Contains("--learn-audit"))
+{
+    LearnAudit.UseOldRule = args.Contains("--old");
+    return LearnAudit.Run();
+}
 
 // `--id-column` — his 2026-08-29 instruction: the sheet carries the SKILL ID, the NAME is just a
 // display name, and REPLACES becomes a list of ids. *"Now having only names start to take its toll."*

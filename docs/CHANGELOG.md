@@ -7,11 +7,61 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.102.5**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.102.6**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-02 (latest) — 0.102.5: the rebuff window is 5s, a stronger rung rebuffs, and stances stop flickering
+## 2026-09-02 (latest) — 0.102.6: the rung you can actually buy
+
+His playtest-29 find: *"for some reason 'harmonist' don't learn serenity, vigor, vamp? Why are they in
+the csv... Are there other like that? — force, insight"*.
+
+**There were. Twelve skills, across fifteen classes, and the cause was one `+ 1`.**
+
+### The bug
+
+Both halves of the game computed your next purchase the same way — `GameUi.Skills.BuildLearnTab` on
+the client, `GameLoopService.HandleLearnSkill` on the server — as **the rung you own plus one**, and
+then asked the class table for exactly that rung. A class table is a **shelf**, not a staircase, and it
+is authored two ways that `+ 1` cannot read. Both are deliberate:
+
+- **A ladder may START above rung 1.** The single-buff ladders are shared with the CONSUMABLES: rung 1
+  of Force / Ward / Aim is the **potion**, so the cleric's first authored row is rung 2. `owned + 1`
+  asked for a rung no class stocks, missed, and reported *"your class cannot learn this"* — about a
+  skill sitting on his CSV, on the class table, at a level he had passed.
+- **A ladder may SKIP rungs as it climbs.** The Warchanter takes Serenity **2 → 4 → 6** and Insight
+  **3 → 6**; the rungs between belong to other classes. The old rule stalled at the first hole and
+  called the rest *"cannot be raised further by your class"*.
+
+The twelve: **Serenity, Vigor, Vampirism, Force, Insight** (his five), plus **Ward, Focus, Ferocity,
+Fury, Agility, Swift** and **Resolve**. The healer line lost rungs to it as well, not only the buffer.
+
+🔑 **Nothing in the data was wrong** — no CSV moved. The engine now reads the shelf:
+`ClassSkills.NextLearnableLevel` returns the LOWEST class-table rung strictly above what you own, and
+both the tab and the handler ask it. Everything else about a purchase is unchanged: the level gate, the
+SP and gold price, the exclusive groups, the supersede check.
+
+### Why no playtest ever caught it
+
+**`DebugLearnAll` assigns the highest rung directly** and never walks the ladder — so every admin
+character in every previous run had all five buffs. Only a character *buying* them one at a time could
+see it, which is exactly the shape of bug the smoke test exists for.
+
+### The two regressions that now guard it
+
+- **`dotnet run --project tools/SkillCsvSeed -- --learn-audit`** — walks all **69 real class/tier
+  combinations** (base, 2nd, each discipline that race actually opens into, and its 4th tier) and
+  asserts every authored rung is reachable. `--learn-audit --old` replays the broken rule and prints
+  the twelve. ⚠ It unions the tiers a character CLIMBED THROUGH: `ClassSkills.Cumulative` starts at the
+  2nd-class list, so auditing a discipline against it alone reports every continued ladder as broken —
+  24 classes' worth of Anti-Magic that is in fact perfectly fine.
+- **SmokeTest §11** — a real Elf Harmonist buys Serenity over the wire and lands on **2, then 4, then
+  6**, and the other four land on their shelf's first rung. Every check in the suite passed.
+
+⚠ **This needs a NEW APK.** The Learn tab is built on the client, so the server half alone will not
+make the rows appear. `ProtocolVersion` is unchanged (30) — nothing on the wire moved.
+
+## 2026-09-02 — 0.102.5: the rebuff window is 5s, a stronger rung rebuffs, and stances stop flickering
 
 Three findings, one loop — the auto-buff chain.
 

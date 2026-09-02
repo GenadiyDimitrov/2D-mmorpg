@@ -82,6 +82,26 @@ a stack of 9 buff scrolls is the friction you wanted or just friction** (§93D).
     the level it dies at. **Pressing it by hand is untouched.**
 
 - [!] for some reason "harmonist" don't learn serenity,vigor,vamp ? Why they are in the csv... Are there other like that ? - force,insight
+  - ✅ **FIXED 0.102.6 — and YES, there were others: twelve skills across fifteen classes.**
+    The cause was one `+ 1`. Both the Learn tab and the server computed your next purchase as
+    **`the rung you own + 1`** and then asked the class table for exactly that rung. Your shelves are
+    not built that way, in two separate ways, and both are deliberate:
+    - **A ladder can START above rung 1.** Rung 1 of Force / Ward / Aim is the
+      **POTION**; the cleric's first authored row is rung 2. So `owned + 1` asked for rung 1, no class
+      table stocks it, and the game answered *"your class cannot learn this"* about a skill sitting
+      right there on your CSV.
+    - **A ladder can SKIP rungs.** Your Warchanter takes Serenity **2 → 4 → 6** and Insight **3 → 6**;
+      the rungs between belong to other classes. The old rule stalled at the first hole and called
+      everything above it *"cannot be raised further"*.
+    The full list it was eating — twelve: **Serenity, Vigor, Vampirism, Force, Insight** (the five you
+    named), plus **Ward, Focus, Ferocity, Fury, Agility, Swift** and **Resolve**. The healer lost rungs
+    to it too, not only the buffer. 🔑 **Nothing in the data was wrong**, so no CSV
+    moved; the engine now reads the shelf. `dotnet run --project tools/SkillCsvSeed -- --learn-audit`
+    walks all 69 real class/tier combinations and asserts every authored rung is reachable (`--old`
+    replays the broken rule and prints the twelve).
+    ⚠ **This half needs a NEW APK** — the Learn tab is built on the client.
+    ⚠ Why no playtest ever caught it: **`DebugLearnAll` assigns the highest rung directly** and never
+    walks the ladder, so every admin character always had all five.
 
 - [!] harmony of restoration is not a mana heal once the +mp comes..
   - at levels below L9 it works as normal .. It heals me on a treshold
