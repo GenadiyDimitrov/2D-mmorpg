@@ -113,6 +113,10 @@ namespace Game.Client
 
         private RectTransform _buffBar;
         private Button _buffCollapse;
+        /// <summary>`BL-111` — the "n/20" slot counter beside the collapse button. His whole ask was a
+        /// number he could not see; it is drawn at every collapse stage because the question ("is there
+        /// room for one more blessing?") is asked precisely when the bar is folded away.</summary>
+        private TextMeshProUGUI _buffSlotLabel;
 
         /// <summary>
         /// Hide has THREE stages, not two (owner, 2026-07-22):
@@ -156,6 +160,11 @@ namespace Game.Client
             public int Stacks = 1;
             public int Level;
             public string SkillId = "";
+            /// <summary>`BL-111` — does this occupy one of the 20 buff slots? Sent by the SERVER off
+            /// the same predicate that evicts, never re-derived here: whether a skill counts is
+            /// authored per skill and the client cannot see that field. A collapsed GROUP counts if
+            /// any part of it does, which is the honest reading — a blessing holding a slot holds it.</summary>
+            public bool Counts;
             public BuffRow Row;
             /// <summary>Held but paying nothing — its skill's weapon gate is shut (Bow Expertise with a
             /// dagger in hand). Drawn DIMMED with the reason on the detail card, never hidden: it still
@@ -193,7 +202,7 @@ namespace Game.Client
                     {
                         Name = b.Name, Description = b.Description, Seconds = b.SecondsLeft,
                         IsDebuff = b.IsDebuff, Stacks = b.Stacks, Row = b.Row, Level = b.Level,
-                        Suppressed = b.Suppressed,
+                        Suppressed = b.Suppressed, Counts = b.Counts,
                     };
                     single.Keys.Add(b.Key);
                     views.Add(single);
@@ -207,7 +216,7 @@ namespace Game.Client
                         Name = string.IsNullOrEmpty(b.SourceName) ? b.Name : b.SourceName,
                         Description = b.Description,
                         Seconds = b.SecondsLeft, IsDebuff = b.IsDebuff, Row = b.Row, Level = b.Level,
-                        SkillId = b.SourceSkillId, Suppressed = true,
+                        SkillId = b.SourceSkillId, Suppressed = true, Counts = b.Counts,
                     };
                     byGroup[b.SourceSkillId] = view;
                     parts[b.SourceSkillId] = new List<string>();
@@ -221,6 +230,8 @@ namespace Game.Client
                 // blessing is still doing something, and dimming it would be the wrong story. Seeded
                 // true above so the AND has an identity to start from.
                 if (!b.Suppressed) view.Suppressed = false;
+                // `BL-111`: a group holds a slot if ANY of its parts does — the OR to Suppressed's AND.
+                if (b.Counts) view.Counts = true;
                 view.Keys.Add(b.Key);
                 parts[b.SourceSkillId].Add(
                     b.Name + (b.SecondsLeft > 0f ? "  " + ShortTime(b.SecondsLeft) : ""));
@@ -267,6 +278,15 @@ namespace Game.Client
             _buffCollapse = UiKit.TextButton(_worldRoot, "", () => _buffStage = (_buffStage + 1) % 3, 13f);
             UiKit.Place(UiKit.Rect(_buffCollapse.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(300f, -170f), new Vector2(58f, 24f));
+
+            // `BL-111` — the slot counter, sitting just LEFT of the collapse button so it rides with
+            // the bar at every collapse stage. Anchored to the world root rather than to the buff bar
+            // for the same reason the button is: the bar's height changes every time a buff expires.
+            _buffSlotLabel = UiKit.Label(_worldRoot, "", 12f,
+                                         new Color(0.75f, 0.78f, 0.85f), TextAlignmentOptions.Right);
+            UiKit.Place(UiKit.Rect(_buffSlotLabel.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(240f, -170f), new Vector2(56f, 24f));
+            _buffSlotLabel.gameObject.SetActive(false);
 
             BuildBuffPopup();
         }
@@ -350,21 +370,38 @@ namespace Game.Client
         {
             var all = BuildBuffViews(Boot.Buffs ?? new BuffDto[0]);
 
-            // FOUR groups, from the BuffRow the server has been sending all along — the client was
-            // splitting on IsDebuff alone and lumping everything else together, which is why a health
-            // potion's effect disappeared under the buff Hide button. A potion is not a buff you cast;
-            // hiding one to tidy the other is wrong.
+            // `BL-111` — HIS FOUR BARS, and the split is DURATION-SHAPED, NOT SOURCE-SHAPED. His two
+            // worked examples are the whole specification: Bow Expertise is a 20-minute self-buff and
+            // belongs in NORMAL, while the tank's ultimate and the warrior's Battle Defence/Presence
+            // run 30-120s and do NOT count against the limit, so they go in OTHERS.
+            //
+            // 🔑 "COUNTS AGAINST THE CAP" IS THE FIRST TEST, and it is the SERVER's answer, not a
+            // client guess. That is what makes the top bar mean something: it is exactly the set the
+            // eviction rule will start throwing away at 20, so counting the squares in it answers his
+            // *"I cannot see if I have 20 or less buffs to not over buff me"*.
+            //
+            // ⚠ ORDER MATTERS. Items and consumables are tested BEFORE the counting bar even though a
+            // potion's effect does count: he asked for them in their own bars, and a square can only
+            // be drawn once. The HEADER counts the flag across every bar, so the number stays right
+            // while the grouping follows what he asked to see.
             var debuffs = new List<BuffView>();
             var buffs = new List<BuffView>();
             var items = new List<BuffView>();
             var consumables = new List<BuffView>();
+            var others = new List<BuffView>();
 
+            int slotsUsed = 0;
             foreach (var b in all)
             {
+                if (b.Counts) slotsUsed++;
+
                 if (b.IsDebuff || b.Row == BuffRow.Debuff) debuffs.Add(b);
                 else if (b.Row == BuffRow.Item) items.Add(b);
-                else if (b.Row == BuffRow.Consumable) consumables.Add(b);
-                else buffs.Add(b);
+                // "toggles + consumables — HP/MP potions, HoTs, the toggles". A toggle reports -1
+                // seconds (no timer), which is how one is recognised without a flag of its own.
+                else if (b.Row == BuffRow.Consumable || b.Seconds < 0f) consumables.Add(b);
+                else if (b.Counts) buffs.Add(b);
+                else others.Add(b);
             }
 
             int used = 0;
@@ -377,15 +414,30 @@ namespace Game.Client
             int debuffRows = debuffs.Count == 0 ? 0 : ((debuffs.Count - 1) / BuffsPerRow) + 1;
 
             y = LayoutBuffRow(buffs, ref used, y, collapsible: true);
-            y = LayoutBuffRow(items, ref used, y, collapsible: true);
             y = LayoutBuffRow(consumables, ref used, y, collapsible: true);
+            y = LayoutBuffRow(items, ref used, y, collapsible: true);
+            y = LayoutBuffRow(others, ref used, y, collapsible: true);
 
-            int hideable = buffs.Count + items.Count + consumables.Count;
+            int hideable = buffs.Count + items.Count + consumables.Count + others.Count;
             int visible = _buffStage == 0 ? hideable
                         : _buffStage == 1 ? Mathf.Min(buffs.Count, BuffsPerRow)
-                                          + Mathf.Min(items.Count, BuffsPerRow)
                                           + Mathf.Min(consumables.Count, BuffsPerRow)
+                                          + Mathf.Min(items.Count, BuffsPerRow)
+                                          + Mathf.Min(others.Count, BuffsPerRow)
                         : 0;
+
+            // THE NUMBER HE ASKED FOR. Drawn beside the collapse button so it sits with the bar it
+            // describes, and it stays visible at every collapse stage — the whole point is to know
+            // whether there is room for one more blessing WITHOUT opening anything.
+            // It turns red at the cap, because "20/20" and "19/20" are one glyph apart on a phone.
+            if (_buffSlotLabel != null)
+            {
+                bool full = slotsUsed >= GameConstants.MaxBuffSlots;
+                _buffSlotLabel.gameObject.SetActive(slotsUsed > 0);
+                _buffSlotLabel.text = slotsUsed + "/" + GameConstants.MaxBuffSlots;
+                _buffSlotLabel.color = full ? new Color(1f, 0.45f, 0.40f)
+                                            : new Color(0.75f, 0.78f, 0.85f);
+            }
 
             _buffCollapse.gameObject.SetActive(hideable > 0);
             UiKit.SetButtonText(_buffCollapse,

@@ -1330,6 +1330,7 @@ namespace Game.Client
             // The ground circles. Both go straight to the decal renderer — nothing here decides
             // anything, because the server already decided what is visible and what colour it is.
             _net.TotemsReceived += t => Main(() => Decals?.SetTotems(t));
+            _net.WhispsReceived += w => Main(() => Decals?.SetWhisps(w));   // `BL-109`
             _net.AreaEffectReceived += a => Main(() => Decals?.Flash(a));
             _net.CastReceived += c => Main(() =>
             {
@@ -1376,6 +1377,7 @@ namespace Game.Client
                 ClientLog.Error(StatusMessage);
                 if (Entities != null) Entities.Clear();
                 Decals?.ClearTotems();
+                Decals?.ClearWhisps();
             });
             _net.ForceDisconnected += m => Main(() =>
             {
@@ -1610,6 +1612,7 @@ namespace Game.Client
                 // you never did.
                 if (Entities != null) { Entities.Clear(); Entities.SetSelf(Guid.Empty); }
                 Decals?.ClearTotems();
+                Decals?.ClearWhisps();
                 if (CameraRig != null) CameraRig.Target = null;   // re-acquire on the next frame
                 if (Marker != null) { Marker.Follow = null; Marker.Hide(); }
 
@@ -1740,6 +1743,7 @@ namespace Game.Client
                 {
                     if (Entities != null) Entities.Clear();
                     Decals?.ClearTotems();
+                    Decals?.ClearWhisps();
                     ResetWorldTransients();
                     Characters = fresh;
                     Phase = ClientPhase.CharacterSelect;
@@ -1783,6 +1787,7 @@ namespace Game.Client
                 {
                     if (Entities != null) Entities.Clear();
                     Decals?.ClearTotems();
+                    Decals?.ClearWhisps();
                     ResetWorldTransients();
                     Characters = fresh;
                     Phase = ClientPhase.CharacterSelect;
@@ -1823,6 +1828,7 @@ namespace Game.Client
             {
                 if (Entities != null) { Entities.Clear(); Entities.SetSelf(Guid.Empty); }
                 Decals?.ClearTotems();
+                Decals?.ClearWhisps();
                 if (CameraRig != null) CameraRig.Target = null;
                 if (Marker != null) { Marker.Follow = null; Marker.Hide(); }
                 ResetWorldTransients();

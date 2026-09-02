@@ -69,6 +69,10 @@ namespace Game.Client
             // cost list height for nothing.
             _warehouseTabButtons = BuildCategoryTabs(inner, WarehouseTabs, new Vector2(296f, -chrome - 66f), 80f,
                                                      cat => { _warehouseTab = cat; _warehouseRevision = -1; });
+            // `BL-117` — same button again. The strip starts at 296 here (it shares its row with two
+            // other controls), so the order button follows the four tabs from there.
+            BuildOrderButton(inner, new Vector2(296f + WarehouseTabs.Length * 82f, -chrome - 66f), 86f,
+                             () => _warehouseRevision = -1);
 
             ScrollRect scroll;
             _warehouseList = UiKit.ScrollArea(inner, out scroll, 3f);

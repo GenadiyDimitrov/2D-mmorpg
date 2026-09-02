@@ -2163,6 +2163,311 @@ await gm.DisposeAsync();
     await br.DisposeAsync();
 }
 
+// -------------------------------------------------------------------------------------------
+// 14. FEAR TAKES THE FEET, NOT JUST THE HANDS (`BL-110`, his `BL-123` ruling).
+//
+//     *"both dont change target like taunt — just act uncontrolably"*, and fear specifically:
+//     *"run in place"* — the victim RUNS to random points 100-200 away and cannot steer.
+//
+//     🔑 WHY THIS BELONGS IN THE SMOKE TEST AND NOT IN A PLAYTEST. Server-driven movement is the one
+//     class of effect that a human cannot check by looking: the client draws whatever position it is
+//     sent, so a fear that drives nobody and a fear that drives you both render as "a character who is
+//     where the server says he is". The old Fear (bit 41) was exactly that — it locked the hands and
+//     left the feet entirely free — and it read as working for as long as nobody thought to stand
+//     still and watch. Here the assertion is the whole point: NO MOVE ORDER IS EVER SENT, so any
+//     displacement at all is the server driving the body.
+//
+//     ⚠ RUN THIS AGAINST THE OLD CODE AND IT MUST FAIL. That is the only thing that makes it a guard
+//     rather than a decoration (the lesson from 0.102.7, where the first version of a guard would
+//     have passed against the very bug it was written for). Under the pre-`BL-110` Fear the character
+//     given no orders simply stands there and the displacement is zero.
+//
+//     The second check is the INPUT REFUSAL, and it is deliberately shaped as a "stop" tap: a Move
+//     aimed at where you already are. If HandleMove still accepted input while feared, that tap would
+//     arrive, the destination would be reached the same tick, and the victim would come to a dead
+//     halt — the most visible possible symptom, and one that a tap aimed anywhere ELSE could not
+//     distinguish from an unlucky sequence of random hops.
+// -------------------------------------------------------------------------------------------
+{
+    var fe = await ConnectAsync("test1", "test");
+    string fname = "Fear" + DateTime.UtcNow.ToString("HHmmssff");
+    var ferr = await fe.Hub.InvokeAsync<string?>("CreateCharacter",
+        new CreateCharacterRequest(fname, Race.Elf, BaseClass.Fighter));
+    Check("created a character to be feared", ferr is null, ferr);
+
+    if (ferr is null)
+    {
+        await PromoteToAdminAsync(fname);   // `/buff` is admin-gated
+
+        var fchars = await fe.Hub.InvokeAsync<CharacterList>("ListCharacters");
+        var fid = fchars.Characters.First(c => c.Name == fname).Id;
+        var fres = await fe.Hub.InvokeAsync<LoginResult>("EnterWorld", new EnterWorldRequest(fid));
+        fe.MyId = fres.EntityId;
+        await fe.Settle();
+
+        // CONTROL SAMPLE FIRST. Everything below reads "he moved" as proof of the fear, which is only
+        // evidence if a character with no orders is otherwise motionless. Assert that, or the test
+        // could be passing on nothing more than a spawn drift.
+        double idleX = fe.MyX, idleY = fe.MyY;
+        await Task.Delay(1200);
+        double drift = Math.Sqrt(Math.Pow(fe.MyX - idleX, 2) + Math.Pow(fe.MyY - idleY, 2));
+        Check("a character given no orders stands perfectly still (the control sample)",
+              drift < 1.0, $"drifted {drift:0.0} units in 1.2s");
+
+        // FEAR HIM. Terrifying Roar is a 5s Fear — long enough to sample twice inside, short enough
+        // that the section does not stall. `/buff` reaches it only because `BL-110` gave the command a
+        // third search pool; before that no admin could put a CC on anybody at all.
+        fe.Buffs = null;
+        await fe.Hub.SendAsync("AdminCommand", "buff", "terrifying roar");
+        bool landed = await fe.WaitFor(
+            () => fe.Buffs is not null && fe.Buffs.Buffs.Any(b => b.Name.Contains("Terrifying")), 4000);
+        Check("`/buff` can reach a CONTROL skill, so fear/charm are testable at all",
+              landed, landed ? "Terrifying Roar is on the bar" : "no fear buff arrived in 4s");
+
+        // THE SUBJECT. No Move is sent anywhere in this block.
+        double fx = fe.MyX, fy = fe.MyY;
+        await Task.Delay(1500);
+        double ran = Math.Sqrt(Math.Pow(fe.MyX - fx, 2) + Math.Pow(fe.MyY - fy, 2));
+        Check("FEAR DRIVES A BODY THAT WAS GIVEN NO ORDERS",
+              ran > 30.0, $"moved {ran:0} units in 1.5s with no move command sent");
+
+        // THE REFUSAL. Tap "stop" — a Move to where we already are — repeatedly, and keep watching.
+        // Accepted input would park him instantly; refused input leaves the panic running.
+        double sx = fe.MyX, sy = fe.MyY;
+        for (int i = 0; i < 6; i++)
+        {
+            await fe.Hub.SendAsync("Move", new MoveCommand(fe.MyX, fe.MyY));
+            await Task.Delay(200);
+        }
+        double despite = Math.Sqrt(Math.Pow(fe.MyX - sx, 2) + Math.Pow(fe.MyY - sy, 2));
+        Check("...and a move order is REFUSED while it runs — a 'stop' tap cannot halt a panic",
+              despite > 30.0, $"moved {despite:0} units through 6 stop taps");
+
+        // AND IT HANDS THE BODY BACK. A control effect that never released would be the worse bug of
+        // the two, and it is invisible for exactly as long as nobody waits out the duration.
+        await Task.Delay(3500);          // well past the 5s roar
+        double rx = fe.MyX, ry = fe.MyY;
+        await Task.Delay(1200);
+        double after = Math.Sqrt(Math.Pow(fe.MyX - rx, 2) + Math.Pow(fe.MyY - ry, 2));
+        Check("...and when the fear expires the body stops dead (control handed back)",
+              after < 1.0, $"still moving {after:0.0} units/1.2s after it should have worn off");
+
+        // ---- `BL-111` — THE SLOT FLAG, AND THE BUG THE COUNTER UNCOVERED.
+        //
+        //      His ask was a number: *"I cannot see if I have 20 or less buffs to not over buff me"*.
+        //      The number is only worth having if it is the SAME set the server evicts from, so the
+        //      flag is computed server-side and asserted here rather than re-derived on the client.
+        //
+        //      🔴 AND ASKING FOR IT FOUND A REAL DEFECT. A debuff def carries the default
+        //      `BuffRow.Buff` — the Debuff row is a DISPLAY override on the instance — so the cap
+        //      predicate answered TRUE for one. A poison or a fear landing on a character at 20
+        //      buffs evicted one of his BLESSINGS and then took the slot itself. Nothing said so,
+        //      because nothing displayed the count. This is the check that would have.
+        fe.Buffs = null;
+        await fe.Hub.SendAsync("AdminCommand", "buff", "might");
+        await fe.WaitFor(() => fe.Buffs?.Buffs.Any(b => b.Name.Contains("Might")) == true, 5000);
+        var might = fe.Buffs?.Buffs.FirstOrDefault(b => b.Name.Contains("Might"));
+        Check("a BLESSING reports on the wire that it occupies one of the buff slots",
+              might is not null && might.Counts,
+              might is null ? "no Might buff arrived" : $"Counts={might.Counts}");
+
+        await fe.Hub.SendAsync("AdminCommand", "buff", "terrifying roar");
+        await fe.WaitFor(() => fe.Buffs?.Buffs.Any(b => b.Name.Contains("Terrifying")) == true, 5000);
+        var roar = fe.Buffs?.Buffs.FirstOrDefault(b => b.Name.Contains("Terrifying"));
+        Check("...and a DEBUFF reports that it does NOT — a poison must never evict a blessing",
+              roar is not null && !roar.Counts,
+              roar is null ? "no fear buff arrived" : $"Counts={roar.Counts}");
+    }
+
+    await fe.LeaveWorldAsync();
+    await fe.DisposeAsync();
+}
+
+// -------------------------------------------------------------------------------------------
+// 15. WHISPS — THE PUSH-DOWN STACK, THE LEASH AND THE RE-SUMMON WINDOW (`BL-109`).
+//
+//     A whisp is NOT AN ENTITY, which is the whole reason this section exists: it never appears in
+//     the world delta, so a whisp that was summoned but never reached the wire would be invisible in
+//     a playtest in the most literal sense — the player casts, pays, and sees nothing, with no way to
+//     tell a broken push from a broken summon. The `Whisps` push is the only evidence one exists.
+//
+//     🔑 THE STACK IS THE THING TO GUARD, and it is his own worked example:
+//         [C][B][A] →D→ [D][C][B] →A→ [A][D][C] →D→ [A][D][C] (D refreshed)
+//     A whisp you do NOT have is pushed on the front and the tail falls off; a whisp you DO have is
+//     refreshed where it stands. With the base limit of ONE slot the eviction happens on the very
+//     first extra summon, which makes it cheap to assert here and expensive to notice by playing.
+//
+//     ⚠ AN ELF BULWARK, deliberately — his race split gives the Elf tank charm + heal, which is the
+//     one pair where BOTH whisps exist to push each other off. A Human would do as well; a race with
+//     one whisp would not test the stack at all.
+// -------------------------------------------------------------------------------------------
+{
+    var wh = await ConnectAsync("test1", "test");
+    string wname = "Whsp" + DateTime.UtcNow.ToString("HHmmssff");
+    var werr = await wh.Hub.InvokeAsync<string?>("CreateCharacter",
+        new CreateCharacterRequest(wname, Race.Elf, BaseClass.Fighter));
+    Check("created an elf fighter to raise whisps", werr is null, werr);
+
+    if (werr is null)
+    {
+        await PromoteToAdminAsync(wname);   // every Debug* below is admin-only
+
+        var wchars = await wh.Hub.InvokeAsync<CharacterList>("ListCharacters");
+        var wpick = wchars.Characters.First(c => c.Name == wname);
+        var win = await wh.Hub.InvokeAsync<LoginResult>("EnterWorld", new EnterWorldRequest(wpick.Id));
+        wh.MyId = win.EntityId;
+        wh.MyX = win.X; wh.MyY = win.Y;
+
+        // 🔑 LEVEL 51 — ABOVE BOTH WHISPS AND BELOW THE MASTERY, and the order is the point. Whisp
+        // Mastery is learned at 60, so a level-71 character starts this section with TWO slots and
+        // the eviction never happens — which is exactly how the first cut of this test passed a check
+        // it was not making. The stack is tested at one slot, then the character is levelled INTO the
+        // mastery and it is tested again. ⚠ 51 and not 41: his two level sets open at 40 and 43, so a
+        // level-41 elf can call a Charming Whisp and not yet a Healing one.
+        for (int i = 0; i < 5; i++) await wh.Hub.SendAsync("DebugLevel", 10);
+        var bulwark = ThirdClassCatalog.Playable
+            .First(t => t.Race == Race.Elf && t.Discipline == Discipline.Bulwark);
+        await wh.Hub.SendAsync("DebugThirdClass", bulwark.Id);
+        await wh.Hub.SendAsync("DebugLearnAll");
+        await wh.Settle();
+
+        // Generous, for the same reason section 10 is: this character is naked and a FIGHTER, so his
+        // cast multiplier is poor and a 1-second summon is not a 1-second summon.
+        const int WhispWait = 15000;
+
+        // ---- THE SUMMON REACHES THE WIRE AT ALL. ----
+        wh.Whisps = null;
+        await wh.Hub.SendAsync("UseSkill", SkillCatalog.TankWhispCharm, wh.MyId);
+        bool called = await wh.WaitFor(() => (wh.Whisps?.Whisps.Length ?? 0) > 0, WhispWait);
+        Check("a summoned whisp is PUSHED to the client — the only way one is ever visible",
+              called, $"{wh.Whisps?.Whisps.Length ?? 0} whisps");
+        Check("...and it is the one that was called",
+              wh.Whisps?.Whisps.Any(w => w.SummonSkillId == SkillCatalog.TankWhispCharm) == true,
+              string.Join(", ", wh.Whisps?.Whisps.Select(w => w.SummonSkillId) ?? Enumerable.Empty<string>()));
+        Check("...carrying its owner, so a client knows whose spirit it is",
+              wh.Whisps?.Whisps.All(w => w.OwnerId == wh.MyId) == true);
+        Check("...and a countdown, so it can expire on screen the way a buff does",
+              wh.Whisps?.Whisps.All(w => w.SecondsLeft > 0) == true,
+              $"{wh.Whisps?.Whisps.FirstOrDefault()?.SecondsLeft ?? -1}s left");
+
+        // ---- IT RIDES ITS MASTER. Walk, then check it came along and stayed in his band. His rule
+        //      is *"Leashed 100-200 from the master"*, and the number that matters is the one AFTER
+        //      he has moved — a whisp parked at the spawn point would pass a static check.
+        await wh.Hub.SendAsync("Move", new MoveCommand(win.X + 600, win.Y));
+        await Task.Delay(2500);
+        var rider = wh.Whisps?.Whisps.FirstOrDefault();
+        double gap = rider is null ? -1
+                   : Math.Sqrt(Math.Pow(rider.X - wh.MyX, 2) + Math.Pow(rider.Y - wh.MyY, 2));
+        Check("a whisp FOLLOWS its master and settles inside his leash band",
+              rider is not null && gap >= 0 && gap <= GameConstants.WhispLeashMax + 40,
+              $"{gap:0} units away (band is {GameConstants.WhispLeashMin:0}-{GameConstants.WhispLeashMax:0})");
+
+        // ---- THE PUSH-DOWN STACK, at a limit of one: the second whisp evicts the first. ----
+        await wh.Hub.SendAsync("UseSkill", SkillCatalog.TankWhispHeal, wh.MyId);
+        bool swapped = await wh.WaitFor(
+            () => wh.Whisps?.Whisps.Any(w => w.SummonSkillId == SkillCatalog.TankWhispHeal) == true,
+            WhispWait);
+        Check("a SECOND whisp is summonable and arrives", swapped,
+              string.Join(", ", wh.Whisps?.Whisps.Select(w => w.SummonSkillId) ?? Enumerable.Empty<string>()));
+        Check("...and at ONE slot it PUSHES THE FIRST OFF — a stack, not a growing set",
+              (wh.Whisps?.Whisps.Length ?? 0) == 1
+                  && wh.Whisps?.Whisps.All(w => w.SummonSkillId != SkillCatalog.TankWhispCharm) == true,
+              $"{wh.Whisps?.Whisps.Length ?? 0} whisps: "
+                  + string.Join(", ", wh.Whisps?.Whisps.Select(w => w.SummonSkillId) ?? Enumerable.Empty<string>()));
+
+        // ---- THE RE-SUMMON WINDOW, and it has to be waited for.
+        //
+        //      ⚠ THE 30-SECOND REUSE HIDES IT. Both gates refuse a re-call, so an immediate re-cast
+        //      is answered by the COOLDOWN ("is not ready") and the whisp gate is never reached — the
+        //      first cut of this test asserted the window and was in fact reading the cooldown. From
+        //      30s to 19:55 the whisp gate is the only thing refusing, and that is the window his
+        //      *"resummon at 5s remaining"* actually describes, so the test waits the reuse out and
+        //      then reads the MESSAGE rather than counting whisps.
+        wh.SystemChat.Clear();
+        await Task.Delay(31000);
+        await wh.Hub.SendAsync("UseSkill", SkillCatalog.TankWhispHeal, wh.MyId);
+        bool refused = await wh.WaitFor(
+            () => wh.SystemChat.Any(s => s.Contains("is still with you")), 5000);
+        Check("past the reuse, re-calling a whisp with 20 minutes left is REFUSED BY ITS OWN GATE",
+              refused, refused ? "the whisp gate answered, not the cooldown"
+                               : string.Join(" | ", wh.SystemChat.TakeLast(3)));
+        Check("...and the refusal costs nothing — still exactly one whisp, unchanged",
+              (wh.Whisps?.Whisps.Length ?? 0) == 1,
+              $"{wh.Whisps?.Whisps.Length ?? 0} whisps");
+
+        // ---- WHISP MASTERY BUYS THE SECOND SLOT. Level INTO it now, so the difference between one
+        //      slot and two is the passive and nothing else. If it were inert this is the only check
+        //      in the game that would say so — nothing on a stat panel moves.
+        for (int i = 0; i < 2; i++) await wh.Hub.SendAsync("DebugLevel", 10);
+        await wh.Hub.SendAsync("DebugLearnAll");
+        await wh.Settle();
+        await wh.Hub.SendAsync("UseSkill", SkillCatalog.TankWhispCharm, wh.MyId);
+        bool bothRide = await wh.WaitFor(() => (wh.Whisps?.Whisps.Length ?? 0) >= 2, WhispWait);
+        Check("Whisp Mastery raises the limit to two, and both whisps ride at once",
+              bothRide,
+              $"{wh.Whisps?.Whisps.Length ?? 0} whisps: "
+                  + string.Join(", ", wh.Whisps?.Whisps.Select(w => w.SummonSkillId) ?? Enumerable.Empty<string>()));
+
+        // ---- AND NOW THE HALF THAT MATTERS: DOES A WHISP ACT?
+        //
+        //      🔑 EVERYTHING ABOVE IS BOOKKEEPING. A whisp that is summoned, drawn, stacked and
+        //      expired correctly and never casts anything is a decoration, and it would look
+        //      completely healthy in a playtest — the orb is there, the buff-like timer runs down,
+        //      and the player has no way to tell that the spirit beside him is doing nothing. This is
+        //      the check that says otherwise, and it is the reason this section exists.
+        //
+        //      A TRAINING DUMMY is the target, because it is the one creature in the game that will
+        //      stand still and be attacked without the fight going anywhere. Attacking it is what
+        //      puts the master in combat — his first condition on every whisp row (*"Master must be
+        //      in combat mode (activley fighting)"*) — and the whisp does the rest by itself.
+        var dummyZone = WorldMap.SpawnZones.First(z => z.MobTypes.Contains("dummy_physical"));
+        await wh.Hub.SendAsync("DebugTeleport", dummyZone.X, dummyZone.Y);
+        await wh.Settle();
+        var dummy = wh.EntityNames.FirstOrDefault(kv => kv.Value.StartsWith("Striking Training Dummy"));
+        if (dummy.Key != Guid.Empty)
+        {
+            var at = wh.EntityPos[dummy.Key];
+            await wh.Hub.SendAsync("DebugTeleport", at.X, at.Y);
+            await wh.Settle();
+            wh.Combat.Clear();
+            await wh.Hub.SendAsync("Attack", dummy.Key);
+
+            // Its reuse is 10s and it fires the moment the master is engaged and in range, so a
+            // handful of seconds is plenty — WaitFor returns the instant it lands.
+            bool acted = await wh.WaitFor(
+                () => wh.Combat.Any(c => c.Skill != null && c.Skill.Contains("Whisp")), 12000);
+            Check("A WHISP ACTS ON ITS OWN once its master is fighting — the whole point of one",
+                  acted,
+                  acted ? string.Join(", ", wh.Combat.Where(c => c.Skill != null && c.Skill.Contains("Whisp"))
+                                                     .Select(c => c.Skill).Distinct())
+                        : $"{wh.Combat.Count} combat events, none from a whisp");
+            Check("...aimed at the master's own target, not at one it picked for itself",
+                  !acted || wh.Combat.Any(c => c.Skill != null && c.Skill.Contains("Whisp")
+                                               && c.TargetId == dummy.Key),
+                  "a whisp must never start a fight its owner did not");
+        }
+        else
+        {
+            Check("found a training dummy to fight so the whisps have something to act on",
+                  false, "no 'Striking Training Dummy' in view after teleporting to its zone");
+        }
+
+        // ⚠ NOT ASSERTED HERE: "lost on death". There is no admin command that kills you, and the
+        //   only other route is being beaten to death by a training dummy at 1 damage per tick — an
+        //   hour of test for three lines that sit inside the buff clear in `Kill` and share its
+        //   `keptBuffs` test. Stated rather than skipped silently, so nobody reads this section as
+        //   covering it.
+    }
+
+    // Walk away from the dummy first. A whisp keeps its master ENGAGED for as long as he is swinging,
+    // and LeaveWorld refuses to log out mid-fight — without this the run ends in twenty "You can't
+    // leave while in combat" lines while the harness retries.
+    await wh.Hub.SendAsync("Move", new MoveCommand(wh.MyX + 900, wh.MyY));
+    await Task.Delay(1500);
+    await wh.LeaveWorldAsync();
+    await wh.DisposeAsync();
+}
+
 
 return Finish();
 
@@ -2277,6 +2582,10 @@ sealed class Session : IAsyncDisposable
     /// than a running tally. Null until the server first has something to say.</summary>
     public TotemList? Totems;
 
+    /// <summary>The last "Whisps" push (`BL-109`). A whisp is not an entity, so this is the ONLY
+    /// place one appears on the wire — if this stays null the client has no way to know one exists.</summary>
+    public WhispList? Whisps;
+
     /// <summary>Every area-effect flash seen. A list because they are one-shot events with no state:
     /// missing one is only visible as an absence, which is exactly what these tests check.</summary>
     public readonly List<AreaEffectEvent> Areas = new();
@@ -2307,6 +2616,7 @@ sealed class Session : IAsyncDisposable
         Hub.On<GoldUpdate>("Gold", g => Gold = g.Gold);
         Hub.On<CombatEvent>("Combat", c => Combat.Add(c));
         Hub.On<TotemList>("Totems", t => Totems = t);
+        Hub.On<WhispList>("Whisps", w => Whisps = w);
         Hub.On<AreaEffectEvent>("AreaEffect", a => Areas.Add(a));
         Hub.On<ChatMessage>("Chat", m => { AllChat.Add(m); if (m.Channel == ChatChannel.System) { SystemChat.Add(m.Text); Console.WriteLine($"        [SYSTEM] {m.Text}"); } });
         await Hub.StartAsync();

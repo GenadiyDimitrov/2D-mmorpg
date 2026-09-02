@@ -882,7 +882,8 @@ public class GameLoopService : BackgroundService
         _idleCapSeconds, _offlineCapSeconds, _graceSeconds,
         _testSkillPower, _testSkillMod,
         GameConstants.RegenIntervalSeconds, StatCalculator.ConRegenBase,
-        StatCalculator.MobHpRegenPctCombat, StatCalculator.MobRegenPctIdle);
+        StatCalculator.MobHpRegenPctCombat, StatCalculator.MobRegenPctIdle,
+        RateConfig.FreeClassChange ? 1f : 0f);
 
     private void HandleRequestDebugConfig(RequestDebugConfigCmd cmd)
     {
@@ -933,6 +934,10 @@ public class GameLoopService : BackgroundService
         // that once took a scratch would carry it until something killed it.
         StatCalculator.MobHpRegenPctCombat = Math.Clamp(c.MobHpRegenPctCombat, 0f, 0.1f);
         StatCalculator.MobRegenPctIdle = Math.Clamp(c.MobRegenPctIdle, 0.001f, 1f);
+
+        // `BL-118`. Anything non-zero is ON — the panel sends a 0/1 float and a typed "2" should not
+        // mean "off" to somebody who clearly meant "yes".
+        RateConfig.FreeClassChange = c.FreeClassChange != 0f;
     }
 
     // Lives NEXT TO THE EXE (Debug/publish output), like an options.ini — NOT a build item, so an
@@ -1284,6 +1289,14 @@ public class GameLoopService : BackgroundService
         // Casting roots you — movement is rejected until the cast finishes or you
         // cancel it explicitly (ESC). Moving does NOT cancel the cast.
         if (entity.CastingSkillId is not null)
+            return;
+
+        // `BL-110` — FEAR/CHARM TAKE THE FEET, not just the hands. The server is writing this
+        // player's destination every tick (TickControlledMovement); a tap is simply refused, the same
+        // way a tap during a cast is. It has to be refused HERE rather than overwritten later: the
+        // command queue drains before the tick moves anyone, so a tap that got through would be the
+        // last word for that tick and the victim would twitch toward it once per tap.
+        if (entity.IsControlDriven)
             return;
 
         // A move-tap while sitting does NOTHING (owner) — you must stand up first (sit/stand toggle),
@@ -1960,12 +1973,35 @@ public class GameLoopService : BackgroundService
             return;
         }
 
+        // `BL-109` — A WHISP YOU ALREADY HAVE MAY ONLY BE RE-CALLED IN ITS LAST FIVE SECONDS. His rule
+        // is that whisps *"behave as BUFFS: 20 min default, resummon at 5s remaining"* — the same
+        // renewal window `BL-112` gave the buff bar, and for the same reason: re-calling a spirit that
+        // has nineteen minutes left is a mistake, not a tactic, and refusing it here costs the player
+        // nothing. ⚠ REFUSED AT THE GATE, so no MP is spent and no 30s reuse starts — the difference
+        // between a mis-tap and a punishment.
+        if (def.SummonsWhisp is { Length: > 0 })
+        {
+            foreach (var riding in caster.Whisps)
+            {
+                if (riding.SummonSkillId != def.Id) continue;
+                if (riding.TicksRemaining > GameConstants.WhispResummonWindowTicks)
+                {
+                    SendSystemToEntity(caster,
+                        $"{riding.Name} is still with you ({riding.TicksRemaining / GameConstants.TickRate}s).");
+                    return;
+                }
+                break;
+            }
+        }
+
         // ⚠ `Category == Debuff` is here for the same reason the buff arm in ExecuteSkill grew its
         // Category test: his Mana Strain's entire payload is the MP-cost FIELDS, so its Effect is None
         // and a flags-only test would route a curse aimed at an enemy into the self-cast branch.
+        // ⚠ `def.Charms` joins them for the identical reason (`BL-110`): a charm's payload is a FIELD
+        // too, so a charm authored as anything but Category.Debuff would have read as friendly.
         bool offensive = (def.Effect & (SkillEffect.PhysicalDamage
             | SkillEffect.MagicDamage | SkillEffect.AnyDebuff | SkillEffect.Cancel | SkillEffect.Taunt)) != 0
-            || def.Category == SkillCategory.Debuff;
+            || def.Category == SkillCategory.Debuff || def.Charms;
 
         // ---- `BL-99` — AIMING A SUPPORT SKILL AT SOMEONE ELSE'S RAID. -------------------------
         // His ruling, 2026-08-28: *"if he tries to heal with a single/target heal he is deliberately
@@ -3599,6 +3635,7 @@ public class GameLoopService : BackgroundService
         player.ChainedTargetId = null;
         Disengage(player);
         player.Buffs.Clear();          // buffs belong to the class that was cast on
+        ClearWhisps(player);           // `BL-109` — and so do the whisps: the new class may not even call one
 
         player.SwitchSubclass(slot);
 
@@ -7424,7 +7461,10 @@ public class GameLoopService : BackgroundService
                         + $"(1-{buffDef.MaxLevel}); {level} is out of range.");
                     break;
                 }
-                if (!ApplyBuff(buffTarget, buffDef, level))
+                // `source: admin` — for a CHARM (`BL-110`) that is the whole test: the victim walks
+                // toward whoever cast it, so `/buff @target charm` has to name the admin as the caster
+                // or the charm lands inert with nothing to walk to. Every other buff ignores it.
+                if (!ApplyBuff(buffTarget, buffDef, level, source: admin))
                 {
                     SendSystemToEntity(admin,
                         $"{buffDef.Name} Lv{level} was refused — something stronger of that family is "
@@ -7916,7 +7956,14 @@ public class GameLoopService : BackgroundService
     ///
     /// 🔑 The ADMIN buff set is searched first and the rest of the catalog only if that finds nothing.
     /// Without that, "mana blessing" is ambiguous against the hidden per-rung defs that exist only as a
-    /// group's children — names a buffer never casts and an admin never means.</summary>
+    /// group's children — names a buffer never casts and an admin never means.
+    ///
+    /// <para>🔑 A THIRD AND LAST POOL SINCE 2026-09-02 (`BL-110`): TIMED DEBUFFS. `/buff` could reach
+    /// nothing but <c>Category.Buff</c>, so there was no way — at any level, on any character — to put
+    /// a stun, a fear or a charm on somebody and watch what it does. Fear and charm are movement the
+    /// SERVER drives, which is the one class of effect you cannot check by reading a stat panel, so
+    /// the tool that could not reach them was the tool most needed. `/buff @target charm` now does it.
+    /// It is searched LAST, so no debuff can shadow a blessing anyone was already typing.</para></summary>
     private static List<SkillDef> MatchBuffsByName(string needle)
     {
         string key = NameKey(needle);
@@ -7927,8 +7974,17 @@ public class GameLoopService : BackgroundService
         var fallback = SkillCatalog.AllSkills
             .Where(d => d.Category == SkillCategory.Buff && d.DurationTicks > 0)
             .Where(d => !primary.Contains(d)).ToList();
+        // Anything that lands a TIMED effect on a victim: the Debuff category, plus the CC flags and
+        // the charm FIELD, since a control skill is often authored as an active rather than a debuff
+        // (Terrifying Roar is a Fighter attack that happens to fear).
+        var debuffs = SkillCatalog.AllSkills
+            .Where(d => d.DurationTicks > 0
+                        && (d.Category == SkillCategory.Debuff
+                            || (d.Effect & SkillEffect.ControlCc) != 0
+                            || d.Charms))
+            .Where(d => !primary.Contains(d) && !fallback.Contains(d)).ToList();
 
-        foreach (var pool in new[] { primary, fallback })
+        foreach (var pool in new[] { primary, fallback, debuffs })
         {
             var hits = pool.Where(d => NameKey(d.Name) == key || NameKey(d.Id) == key).ToList();
             if (hits.Count == 0) hits = pool.Where(d => Acronyms(d.Name).Any(a => a == key)).ToList();
@@ -8607,6 +8663,7 @@ public class GameLoopService : BackgroundService
             {
                 if (IsInCombat(entity))
                 {
+                    TickControlledMovement(entity);   // a link-dead body is still feared/charmed
                     UpdateAction(entity);
                     MoveTowardTarget(entity);
                     _world.Grid.UpdatePosition(entity);
@@ -8617,16 +8674,27 @@ public class GameLoopService : BackgroundService
                 continue;
             }
 
-            if (entity.Kind == EntityKind.Player)
+            if (entity.Kind == EntityKind.Player && !entity.IsControlDriven)
             {
+                // `BL-110` — SKIPPED WHOLE while feared or charmed. Auto-hunt and follow both WRITE a
+                // destination, so leaving them running would have them re-aiming the victim at his
+                // prey every tick while TickControlledMovement re-aimed him at the fear point: the
+                // two would alternate and he would vibrate on the spot instead of being controlled.
+                // Auto-potions go with them, which is the right call anyway — quaffing is an ACTION,
+                // and the whole state is "cannot act".
                 AutoPilot(entity);   // auto-potions always; hunt loop if enabled (may queue a skill)
                 if (entity.AutoHuntEnabled || entity.IsOfflineFarming)
                     TickAutoHuntBudget(entity);   // idle/offline runtime caps
                 TickFollow(entity);  // walk toward a followed player (auto-repath)
             }
 
+            TickControlledMovement(entity);   // fear/charm write the destination; nothing else may
             UpdateAction(entity);
             MoveTowardTarget(entity);
+            // `BL-109` — AFTER the master has moved, so a whisp chases where he IS rather than where
+            // he was a tick ago, and its range checks are measured off a position that is current.
+            if (entity.Kind == EntityKind.Player)
+                TickWhisps(entity);
             _world.Grid.UpdatePosition(entity);
 
             if (secondTick)
@@ -8760,9 +8828,13 @@ public class GameLoopService : BackgroundService
         return learn > 0 ? learn : caster.Level;
     }
 
-    private static bool BossShrugsOff(Entity target, SkillEffect effect) =>
+    /// <param name="def">The skill, when the caller has it — needed only so a CHARM counts as control.
+    /// `BL-110`'s charm is a FIELD (<c>SkillDef.Charms</c>), not a <see cref="SkillEffect"/> bit, so a
+    /// mask test alone cannot see it and a raid boss would have been walkable. Null = flags only,
+    /// which is right for every caller that has no def in hand.</param>
+    private static bool BossShrugsOff(Entity target, SkillEffect effect, SkillDef? def = null) =>
         target.Rank == MobRank.Boss
-        && (effect & SkillEffect.ControlCc) != 0
+        && ((effect & SkillEffect.ControlCc) != 0 || def?.Charms == true)
         && (effect & SkillEffect.AnyDot) == 0;
 
     /// <summary>BL-81 — DOES THIS DEBUFF FAIL BEFORE IT IS EVEN ROLLED? Three sources, one gate, so no
@@ -8783,8 +8855,8 @@ public class GameLoopService : BackgroundService
     /// (control immune, attrition allowed) and it is <see cref="SkillEffect.ControlCc"/>, already built
     /// on 2026-08-19. It is folded in here so the three can never drift apart.</item>
     /// </list></summary>
-    private static bool ResistsDebuff(Entity target, SkillEffect effect) =>
-        target.Immune || target.GodMode || BossShrugsOff(target, effect);
+    private static bool ResistsDebuff(Entity target, SkillEffect effect, SkillDef? def = null) =>
+        target.Immune || target.GodMode || BossShrugsOff(target, effect, def);
 
     /// <summary>Advance placed totems: expire the timed-out ones and pulse the rest at the allies
     /// standing inside them. A totem outlives its owner's DEATH on purpose — it is planted ground,
@@ -8826,6 +8898,316 @@ public class GameLoopService : BackgroundService
                     RestoreMpOne(owner, ally, totem.PulseAmount, name);
             }
         }
+    }
+
+    // =========================================================================
+    //  WHISPS (`BL-109`) — summon, ride, act.
+    // =========================================================================
+
+    /// <summary>Call a whisp. The whole payload of a summon skill.
+    ///
+    /// <para>🔑 THE PUSH-DOWN STACK IS HIS, and the two cases are not symmetrical — read his worked
+    /// example carefully before changing anything here:
+    /// <c>[C][B][A]</c> →D→ <c>[D][C][B]</c> →A→ <c>[A][D][C]</c> →D→ <c>[A][D][C]</c> (D refreshed).
+    /// A whisp you do NOT have is pushed on the front and the tail falls off the end; a whisp you
+    /// DO have is refreshed WHERE IT STANDS and does not jump the queue. That asymmetry is the whole
+    /// mechanic: keeping a whisp alive never costs you the others, but adding a new one always
+    /// costs you your oldest.</para>
+    ///
+    /// <para>⚠ The refusal to re-summon early lives at the CAST GATE, not here, so it costs no MP and
+    /// starts no reuse (see the check in the cast path). By the time we are here the call is paid
+    /// for and something must come of it.</para></summary>
+    private void SummonWhisp(Entity master, SkillDef def, int level)
+    {
+        if (def.SummonsWhisp is not { Length: > 0 } ids)
+            return;
+
+        string name = ClassSkills.DisplayName(def.Id, master.Race, master.BaseClass,
+                                              master.Archetype, master.Discipline);
+        int life = def.DurationTicksAt(level);
+        if (life <= 0) life = 12000;   // 20 minutes, his default for every whisp
+
+        // ALREADY RIDING? Refresh in place — do not reorder, do not duplicate.
+        foreach (var existing in master.Whisps)
+        {
+            if (existing.SummonSkillId != def.Id) continue;
+            existing.TicksRemaining = life;
+            SendSystemToEntity(master, $"{name} answers again.");
+            return;
+        }
+
+        var whisp = new WhispInstance
+        {
+            SummonSkillId = def.Id,
+            SkillIds = ids,
+            Name = name,
+            Level = level,
+            TicksRemaining = life,
+            X = master.X,
+            Y = master.Y,
+        };
+        master.Whisps.Insert(0, whisp);   // newest first — the stack grows at the front
+
+        // …and the tail falls off. A LOOP rather than a single removal: the limit can DROP (a Whisp
+        // Mastery lost to a subclass swap), and then one summon has to shed everything over the new
+        // ceiling rather than leaving a character permanently one whisp above his own limit.
+        while (master.Whisps.Count > Math.Max(1, master.WhispLimit))
+        {
+            var dropped = master.Whisps[^1];
+            master.Whisps.RemoveAt(master.Whisps.Count - 1);
+            SendSystemToEntity(master, $"{dropped.Name} fades away.");
+        }
+
+        SendSystemToEntity(master, $"{name} rises beside you.");
+    }
+
+    /// <summary>Advance one master's whisps: expire them, fly them to their slot, and let each act.
+    /// Called once per tick per player, and returns immediately for the overwhelming majority who
+    /// have none.</summary>
+    private void TickWhisps(Entity master)
+    {
+        if (master.Whisps.Count == 0)
+            return;
+
+        for (int i = master.Whisps.Count - 1; i >= 0; i--)
+        {
+            var w = master.Whisps[i];
+            if (--w.TicksRemaining <= 0)
+            {
+                master.Whisps.RemoveAt(i);
+                SendSystemToEntity(master, $"{w.Name} fades away.");
+                continue;
+            }
+
+            // Reuse counters run whatever else is happening — a whisp that spent a fight out of range
+            // should be ready the moment it arrives, not still counting down from when it last fired.
+            foreach (var key in w.Reuse.Keys.ToList())
+                if (--w.Reuse[key] <= 0) w.Reuse.Remove(key);
+
+            MoveWhisp(master, w, master.Whisps.IndexOf(w));
+        }
+
+        // ACTING. Separated from the loop above so a whisp never acts on the tick it expires, and so
+        // the whole set has finished moving before anything checks a range.
+        foreach (var w in master.Whisps)
+            TryWhispAct(master, w);
+    }
+
+    /// <summary>Fly a whisp toward its parking slot beside the master.
+    ///
+    /// <para>🔑 THE "SHORT DELAY" HE ASKED FOR IS NOT SCRIPTED — it falls out of the speed. The whisp
+    /// chases a point that keeps moving, so it trails while he runs and settles when he stops, which
+    /// is exactly *"follows on a short delay, parks at its slot when the master stops"* without a
+    /// timer anywhere to get out of step with the movement.</para>
+    ///
+    /// <para>⚠ A HARD LEASH BEHIND THE SOFT ONE. Teleports, gatekeepers and `/tp` move a master
+    /// instantly and arbitrarily far; a whisp that could only fly would spend the next minute crossing
+    /// the map, visible the whole way. Past <see cref="GameConstants.ViewRange"/> it simply appears at
+    /// its slot — the spirit was never walking, it was riding.</para></summary>
+    private static void MoveWhisp(Entity master, WhispInstance w, int slot)
+    {
+        var (sx, sy) = WhispSlotPoint(master, slot);
+
+        float dx = sx - w.X, dy = sy - w.Y;
+        float dist = MathF.Sqrt(dx * dx + dy * dy);
+        if (dist <= 0.01f) return;
+
+        if (dist > GameConstants.ViewRange)
+        {
+            w.X = sx; w.Y = sy;   // the master left the map — the whisp was with him all along
+            return;
+        }
+
+        float speed = Math.Max(GameConstants.WhispFollowSpeedFloor,
+                               master.EffectiveSpeed * GameConstants.WhispFollowSpeedFactor);
+        // Dragged, not left behind: outside the leash band it catches up at any speed it needs to,
+        // which is what keeps `Leashed 100-200 from the master` true rather than aspirational.
+        if (dist > GameConstants.WhispLeashMax) speed *= 3f;
+
+        float step = speed * GameConstants.TickSeconds;
+        if (step >= dist) { w.X = sx; w.Y = sy; return; }
+        w.X += dx / dist * step;
+        w.Y += dy / dist * step;
+    }
+
+    /// <summary>Where whisp number <paramref name="slot"/> parks. Fanned out BEHIND the master at the
+    /// inner leash distance, so three whisps read as an escort rather than a stack of one sprite, and
+    /// so none of them sits on top of the character the player is trying to look at.</summary>
+    private static (float X, float Y) WhispSlotPoint(Entity master, int slot)
+    {
+        // 140°, 180°, 220° — behind him, spread wide enough to tell apart at a glance. "Behind" is
+        // taken from his FACING when he has one and from due-south otherwise; a whisp does not need
+        // to be precisely placed, only to look like it belongs to him.
+        float[] offsets = { 180f, 140f, 220f };
+        float deg = offsets[Math.Clamp(slot, 0, offsets.Length - 1)];
+        double rad = deg * Math.PI / 180.0;
+        return (master.X + (float)Math.Cos(rad) * GameConstants.WhispLeashMin,
+                master.Y + (float)Math.Sin(rad) * GameConstants.WhispLeashMin);
+    }
+
+    /// <summary>Let one whisp take its turn. Everything a whisp does starts here.
+    ///
+    /// <para>🔑 THE CONDITIONS ARE THE DESIGN, and they are his: *"i want our to be just like normal
+    /// skills with some conditions and cooldown"* — explicitly NOT IG's 8-13 second dice roll. So a
+    /// whisp is deterministic: if the condition holds and the reuse is up, it fires. Each condition
+    /// below is one cell of his `Conditions` column, and nothing else gates a whisp.</para>
+    ///
+    /// <para>⚠ MASTER MUST BE IN COMBAT — the first clause of every row (*"Master must be in combat
+    /// mode (activley fighting)"*), and it is what stops a healing whisp from quietly topping its
+    /// owner up while he stands in town. It is checked once, here, rather than per skill.</para></summary>
+    private void TryWhispAct(Entity master, WhispInstance w)
+    {
+        if (master.Dead || !master.Engaged)
+            return;
+
+        foreach (var skillId in w.SkillIds)
+        {
+            if (w.Reuse.ContainsKey(skillId)) continue;
+            if (SkillCatalog.Get(skillId) is not SkillDef def) continue;
+
+            // ---- THE SUPPORT WHISPS act on the MASTER, and their conditions are about him. ----
+            if (def.Range <= 0f)
+            {
+                if (!WhispSupportWanted(master, def)) continue;
+                FireWhispSupport(master, w, def);
+                w.Reuse[skillId] = Math.Max(1, def.CooldownTicksAt(w.Level));
+                return;   // one action per tick, whatever else is ready
+            }
+
+            // ---- THE OFFENSIVE WHISPS act on whatever the master is fighting. They do NOT pick
+            //      their own target: a whisp that chose its own fights would pull, and pulling is a
+            //      decision that belongs to the player. It helps with the one he already has.
+            if (master.CombatTargetId is not Guid targetId ||
+                !_world.Entities.TryGetValue(targetId, out var target) || target.Dead)
+                continue;
+
+            // *"skill range condition to be met"* — measured from the WHISP, not the master.
+            float dx = target.X - w.X, dy = target.Y - w.Y;
+            float range = def.RangeAt(w.Level);
+            if (dx * dx + dy * dy > range * range) continue;
+
+            // *"If target is player - Pvp-On must be enabled and enemy must be flagged"*. Asked
+            // through the master's own gate, which is the whole of his "off the master's pvp-on/off":
+            // a whisp can never start a fight its owner could not have started himself.
+            if (target.Kind == EntityKind.Player && !CanPvpHit(master, target)) continue;
+            if (target.Kind == EntityKind.Mob && GameConstants.InSafeZone(target.X, target.Y)) continue;
+
+            FireWhispOffensive(master, w, def, target);
+            w.Reuse[skillId] = Math.Max(1, def.CooldownTicksAt(w.Level));
+            return;
+        }
+    }
+
+    /// <summary>His HP-band and debuff conditions for the support whisps, in one place. The healing
+    /// whisp's two gears are split here and nowhere else: *"Heal master whose hp is higher than 50%"*
+    /// on the slow one, *"lower than 50%"* on the fast one.</summary>
+    private static bool WhispSupportWanted(Entity master, SkillDef def)
+    {
+        if (def.Id == SkillCatalog.WhispHeal)
+            return master.MaxHp > 0 && master.Hp < master.MaxHp && master.Hp * 2 >= master.MaxHp;
+        if (def.Id == SkillCatalog.WhispQuickHeal)
+            return master.MaxHp > 0 && master.Hp * 2 < master.MaxHp;
+        if (def.Id == SkillCatalog.WhispClear)
+            return master.Buffs.Any(b => b.IsDebuff && b.Cancellable && !b.Internal);
+        return true;
+    }
+
+    /// <summary>A support whisp acts on its master: heal, or scour debuffs off him.</summary>
+    private void FireWhispSupport(Entity master, WhispInstance w, SkillDef def)
+    {
+        if ((def.Effect & SkillEffect.Heal) != 0)
+        {
+            // FLAT, and read off the whisp's own rung — his *"power depends on whisp lvl"*. It does
+            // NOT go through the master's heal-power passives: a whisp is *"uninfluenced by master
+            // gear"*, and a tank's healing whisp must not get better because he put on a jewel.
+            HealOne(master, master, def.PowerAt(w.Level), 0, w.Name);
+            return;
+        }
+
+        if ((def.Effect & SkillEffect.Cleanse) != 0)
+            Dispel(master, master, def, positive: false, w.Name, w.Level);
+    }
+
+    /// <summary>A whisp's offensive skill lands on the master's target.
+    ///
+    /// <para>🔑 A SMALL RESOLVER OF ITS OWN, NOT <c>ExecuteSkill</c>, and deliberately — the same
+    /// choice <c>TickTotems</c> made when it called <c>HealOne</c> directly. ExecuteSkill is the
+    /// PLAYER's path: it charges MP, starts reuse on the caster's bar, reads his gear for the contest
+    /// and attributes everything to him. A whisp pays no MP, keeps its own reuse, must not read a
+    /// single one of his stats, and yet must credit HIM with the threat. Routing it through the
+    /// player path would have meant a flag on every one of those steps.</para>
+    ///
+    /// <para>🔑 THE CONTEST IS THE WHISP'S: a flat <see cref="GameConstants.WhispCcAtk"/> against the
+    /// target's own defence, at the MASTER'S LEVEL. That is his rule made arithmetic — *"M.Atk, cast
+    /// speed, landing rate scale on the whisp's skill level + the master's level only"* — and it is
+    /// why a level-74 tank's whisp still lands on level-74 monsters while a level-40 one does not.</para>
+    ///
+    /// <para>⚠ THREAT AND CREDIT GO TO THE MASTER, always. A whisp is not a thing that can hold aggro
+    /// (it cannot be targeted, so a monster that chose it would stand there doing nothing), and the
+    /// taunting whisp's entire purpose is to put the MASTER at the top of the table.</para></summary>
+    private void FireWhispOffensive(Entity master, WhispInstance w, SkillDef def, Entity target)
+    {
+        // ---- TAUNT / CHARM AGGRO — unconditional, exactly as on the player path (`BL-123`). ----
+        int threat = def.TauntPowerAt(w.Level);
+        if (threat > 0 && target.Kind == EntityKind.Mob && !target.TrainingDummy)
+        {
+            if ((def.Effect & SkillEffect.Taunt) != 0)
+            {
+                // A taunt's LOCK is its guarantee and its power is a plain add — the same two halves,
+                // and the same ruling, as the tank's own Provoke. See the taunt block in ExecuteSkill.
+                target.Threat[master.Id] = target.Threat.GetValueOrDefault(master.Id) + threat;
+                target.CombatTargetId = master.Id;
+                target.Engaged = true;
+                target.TauntLockTicks = def.DurationTicksAt(w.Level) > 0
+                    ? def.DurationTicksAt(w.Level) : GameConstants.TauntLockTicksDefault;
+            }
+            else
+            {
+                // A charm only puts points on the table and lets them speak (`BL-110`).
+                AddThreat(target, master, threat);
+            }
+        }
+
+        // ---- THE CONTROL / DEBUFF PAYLOAD, if it has one. ----
+        bool contested = def.Charms || (def.Effect & SkillEffect.ContestCc) != 0
+                         || def.DebuffSchool != DebuffSchool.None;
+        if (contested)
+        {
+            int defStat = def.DebuffSchool == DebuffSchool.Magical
+                ? (int)target.EffectiveSpt : (int)target.EffectiveCon;
+            float land = ResistsDebuff(target, def.Effect, def)
+                ? 0f
+                : StatCalculator.DebuffLandChance(GameConstants.WhispCcAtk, defStat,
+                                                  master.Level, target.Level);
+            land = ApplyDebuffLandMod(land, def, w.Level);
+            land *= 1f - target.CcResist;
+            land *= 1f - SchoolCcResist(target, def.DebuffSchool);
+
+            if (_rng.NextDouble() < land)
+            {
+                // `source: master` — a whisp's charm walks its victim to the MASTER. The whisp has no
+                // position anything else in the game can walk to, and being lured to a spirit that
+                // cannot be hit would be a lure to nowhere.
+                ApplyBuff(target, def, w.Level, w.Name, source: master);
+                BroadcastCombat(master, target, 0, CombatOutcome.Buff, w.Name);
+            }
+            else
+            {
+                BroadcastCombat(master, target, 0, CombatOutcome.Fail, w.Name);
+            }
+            return;
+        }
+
+        // A pure taunt has no roll — it has already done its work above.
+        BroadcastCombat(master, target, 0, CombatOutcome.Buff, w.Name);
+    }
+
+    /// <summary>Drop every whisp riding this character, for the reasons a whisp is lost.</summary>
+    private void ClearWhisps(Entity e, string? tell = null)
+    {
+        if (e.Whisps.Count == 0) return;
+        e.Whisps.Clear();
+        if (tell is not null) SendSystemToEntity(e, tell);
     }
 
     /// <summary>The owner and their party-mates standing within `radius` of a POINT. The same rules as
@@ -9016,7 +9398,7 @@ public class GameLoopService : BackgroundService
         {
             int atkStat = attacker.EffectiveAtk;
             int defStat = def.DebuffSchool == DebuffSchool.Magical ? victim.EffectiveSpt : victim.EffectiveCon;
-            float land = ResistsDebuff(victim, effect)
+            float land = ResistsDebuff(victim, effect, def)
                 ? 0f
                 : StatCalculator.DebuffLandChance(atkStat, defStat,
                                                   RungLevel(attacker, def, lvl), victim.Level);
@@ -9025,7 +9407,7 @@ public class GameLoopService : BackgroundService
             land *= 1f - SchoolCcResist(victim, def.DebuffSchool);
             if (_rng.NextDouble() < land)
             {
-                ApplyBuff(victim, def, lvl);
+                ApplyBuff(victim, def, lvl, source: attacker);   // `BL-110`: a charm must know who cast it
                 BroadcastCombat(attacker, victim, 0, CombatOutcome.Buff, name);
             }
         }
@@ -9691,6 +10073,17 @@ public class GameLoopService : BackgroundService
         if (mob.DetauntTicks > 0) mob.DetauntTicks--;
         if (mob.TauntLockTicks > 0) mob.TauntLockTicks--;
         if (mob.Engaged && _tick % GameConstants.SecondIntervalTicks == 0) DecayThreat(mob);
+
+        // `BL-110` — A FEARED OR CHARMED CREATURE HAS NO AI THIS TICK. Deliberately AFTER the timers
+        // and the threat decay above (a fear should not freeze the clocks; it should take the wheel),
+        // and before everything below, all three arms of which write a destination or a target:
+        // the engaged arm's LEASH RESET (which would drag a feared mob home mid-panic and end the
+        // fear's movement outright), the ReturningHome re-assert, and the wander/aggro scan.
+        //
+        // 🔑 Its THREAT TABLE is untouched, and so is CombatTargetId — *"dont change target like
+        // taunt"*. The moment the fear expires it resumes the fight it was already in.
+        if (mob.IsControlDriven)
+            return;
 
         if (mob.Engaged)
         {
@@ -10791,7 +11184,7 @@ public class GameLoopService : BackgroundService
                 bool agiBased = (effect & (SkillEffect.Bleed | SkillEffect.Venom)) != 0;
                 int atkStat = agiBased ? (int)caster.EffectiveAgi : caster.EffectiveAtk;
                 int defStat = def.DebuffSchool == DebuffSchool.Magical ? target.EffectiveSpt : target.EffectiveCon;
-                float land = ResistsDebuff(target, effect)
+                float land = ResistsDebuff(target, effect, def)
                     ? 0f
                     : StatCalculator.DebuffLandChance(atkStat, defStat,
                                                       RungLevel(caster, def, lvl), target.Level);
@@ -10804,7 +11197,7 @@ public class GameLoopService : BackgroundService
                     if ((effect & SkillEffect.AnyDot) != 0)
                         ApplyDotStack(caster, target, def, lvl);   // stacking DoT (refresh on reapply)
                     else
-                        ApplyBuff(target, def, lvl, durationOverride: doubledTicks);   // single CC buff
+                        ApplyBuff(target, def, lvl, durationOverride: doubledTicks, source: caster);   // single CC buff
                     BroadcastCombat(caster, target, 0, CombatOutcome.Buff,
                         durationDoubled ? castName + " [Double]" : castName);
                 }
@@ -10832,7 +11225,7 @@ public class GameLoopService : BackgroundService
                 // level-1 curse cast by a level-80 mage floors exactly like a level-1 hold does.
                 // BL-81: immunity, god mode and the boss rule outrank SureHit — a debuff that cannot be
                 // resisted by anything at all is not a debuff, it is a scripted event.
-                float fail = ResistsDebuff(target, effect) ? 1f
+                float fail = ResistsDebuff(target, effect, def) ? 1f
                            : def.SureHit ? 0f
                            : StatCalculator.MagicFailChance(RungLevel(caster, def, lvl), target.Level,
                                  target.MagicFailMod,
@@ -10850,7 +11243,7 @@ public class GameLoopService : BackgroundService
                 }
                 else
                 {
-                    ApplyBuff(target, def, lvl, durationOverride: doubledTicks);
+                    ApplyBuff(target, def, lvl, durationOverride: doubledTicks, source: caster);
                     BroadcastCombat(caster, target, 0, CombatOutcome.Buff,
                         durationDoubled ? castName + " [Double]" : castName);
                 }
@@ -10901,6 +11294,32 @@ public class GameLoopService : BackgroundService
             BroadcastCombat(caster, target, 0, CombatOutcome.Buff, castName);
         }
 
+        // ---- CHARM's AGGRO (`BL-110`) — UNCONDITIONAL, and that is the whole point of it being
+        //      here rather than inside the contest above. His rule, 2026-09-02: *"charm can fail the
+        //      actual debuff (the un-charm-movement) but still adds the points"*. So the walk rolls
+        //      like any other contested debuff and may be resisted; the THREAT is paid either way.
+        //
+        //      🔑 That asymmetry is why a tank can lean on charm for aggro at all — a control skill
+        //      whose aggro was as unreliable as its control would be worth nothing to hold a mob
+        //      with — and it is the reason the TAUNT's guaranteed half (the target lock) is allowed
+        //      to be the brief one.
+        //
+        //      ⚠ Through AddThreat, not a direct write to the table, unlike the taunt above. That is
+        //      deliberate: AddThreat is the one hostile seam, so the charm inherits the leash
+        //      deafness (`BL-116`), the raid-engagement stamp and the boss judgment for free — and,
+        //      crucially, it retargets ONLY by the ordinary threat rules. A charm must not force a
+        //      target change (*"dont change target like taunt"*); it just puts points on the table
+        //      and lets them speak. A taunt LOCK already in force still wins, as it should.
+        if (def.Charms && target.Kind == EntityKind.Mob && !target.TrainingDummy)
+        {
+            offensive = true;
+            int charmThreat = def.TauntPowerAt(lvl);
+            // No default here, unlike the taunt's 500 fallback: a taunt with no power is a mistake,
+            // but a charm with no power is an ordinary control skill that simply is not an aggro tool.
+            if (charmThreat > 0)
+                AddThreat(target, caster, charmThreat);
+        }
+
         // ---- Movement: blink (move the caster) / knockback (shove the target). A blink with
         //      no target (self-cast escape) jumps away from the nearest hostile instead. ----
         if (effect.HasFlag(SkillEffect.Blink))
@@ -10931,7 +11350,17 @@ public class GameLoopService : BackgroundService
         // enum is full), so `Effect` is None, so this gate refused them and the cast landed, charged the
         // MP, announced itself and applied nothing. Nobody could learn them until his healer file, which
         // is the only reason it never showed. Every future field-only buff gets the fix for free.
-        if ((effect & SkillEffect.AnyBuff) != 0 || def.Category == SkillCategory.Buff
+        // ---- A WHISP SUMMON (`BL-109`) IS NOT A BUFF, and is handled before the buff arm rather than
+        //      by it. It is `Category.Buff` because it is a self-cast that leaves something which
+        //      expires — that is what keeps it out of every offensive target check — but its payload
+        //      is a row on the master, not a BuffInstance. Falling through to the arm below would have
+        //      left a second, empty marker buff beside the whisp: two records of one thing, which is
+        //      the shape of bug this codebase keeps paying for.
+        if (def.SummonsWhisp is { Length: > 0 })
+        {
+            SummonWhisp(caster, def, lvl);
+        }
+        else if ((effect & SkillEffect.AnyBuff) != 0 || def.Category == SkillCategory.Buff
             || def.KeepsBuffsOnDeath || def.GrantsMobStealth)
         {
             // The display name is the CASTER's class label for this skill, so a
@@ -11069,9 +11498,14 @@ public class GameLoopService : BackgroundService
     /// <param name="rowOverride">Which buff-bar row the effect lands in, overriding the skill's own
     /// (null = its own). A wrapper's child lands in the WRAPPER's row, so a potion's buff still
     /// shows as "from your bag" rather than in the buffer's row.</param>
+    /// <param name="source">WHO applied it, when that matters to the buff itself. Only a charm
+    /// (`BL-110`) needs it today — it has to walk the victim toward a caster who may be anywhere by
+    /// the time it ticks — so everything else leaves it null and the buff records no source. DoTs set
+    /// <c>SourceId</c> on their own path (ApplyDotStack), for kill credit rather than for geometry.</param>
     private bool ApplyBuff(Entity target, SkillDef def, int level = 1, string? displayName = null,
         bool refresh = true, bool toggle = false, int maxStacks = -1,
-        int durationOverride = -1, string? sourceSkillId = null, BuffRow? rowOverride = null)
+        int durationOverride = -1, string? sourceSkillId = null, BuffRow? rowOverride = null,
+        Entity? source = null)
     {
         // ---- ONE-CHILD WRAPPER (a potion, a scroll, a buffer class's single blessing): it owns the
         //      duration and the bar row, but the buff that lands is the CHILD — the family's rung,
@@ -11082,7 +11516,8 @@ public class GameLoopService : BackgroundService
             return ApplyBuff(target, onlyChild, 1, refresh: refresh, toggle: toggle,
                              durationOverride: durationOverride >= 0 ? durationOverride : def.DurationTicks,
                              sourceSkillId: string.IsNullOrEmpty(sourceSkillId) ? def.Id : sourceSkillId,
-                             rowOverride: rowOverride ?? def.BuffRow);
+                             rowOverride: rowOverride ?? def.BuffRow,
+                             source: source);   // a charm through a wrapper still knows who cast it
 
         // ---- IMPROVED (group) buff — MORE than one child. It is ONE buff carrying every child's
         //      numbers, on the group's own key, at GROUP rank, declaring the families it COVERS.
@@ -11188,7 +11623,12 @@ public class GameLoopService : BackgroundService
         // Rule 3 — the SLOT CAP. Run last, after the two rules above have freed whatever they were
         // going to free, so a buff that merely replaces another never evicts a third by accident.
         BuffRow landingRow = rowOverride ?? def.BuffRow;
-        if (CountsAgainstBuffCap(landingRow, toggle, def.CountsTowardBuffLimit))
+        // 🔴 The `isDebuff` argument is what stops a poison from evicting a blessing (see the
+        // predicate). Computed the same way `BuffInstance.IsDebuff` computes it — the flags, plus the
+        // charm FIELD, since a charm carries no debuff bit at all (`BL-110`).
+        bool landingIsDebuff = ((isGroup ? groupEffect : (def.StackLevelAt(1)?.Effect ?? def.Effect))
+                                & SkillEffect.AnyDebuff) != 0 || def.Charms;
+        if (CountsAgainstBuffCap(landingRow, toggle, def.CountsTowardBuffLimit, landingIsDebuff))
             EvictOldestBuffIfFull(target);
 
         // A leveled-stack effect starts at stack 1's entry; otherwise the skill's own effect.
@@ -11239,6 +11679,11 @@ public class GameLoopService : BackgroundService
             MagicMpCostPct = GroupOr(gf.MagicMpCostPct, def.MagicMpCostPctAt(level)),
             PhysCooldownPct = def.PhysCooldownPctAt(level),
             MagicCooldownPct = def.MagicCooldownPctAt(level),
+            // `BL-110` — CHARM, and the one buff that needs to remember WHO cast it: TickControlledMovement
+            // walks the victim toward this id every tick. A charm with no source is inert by design
+            // (nothing to walk toward) rather than crashing or walking to the origin.
+            Charms = def.Charms,
+            SourceId = source?.Id ?? Guid.Empty,
             SkillEvadeChance = def.SkillEvadeChance,   // BL-06, rogue ultimate only
             EndsOnDamageTaken = def.EndsOnDamageTaken, // Meditation: gone the moment anything lands
             // Reward-rune payload, at the LEVEL that landed: a Rune of Experience (20%) is level 3 of
@@ -11309,8 +11754,17 @@ public class GameLoopService : BackgroundService
     ///     answer belongs: it is a property of the buff, not of which row it draws in.
     ///   • TOGGLES — *"toggle don't"*. You switched it on and only you switch it off; one that
     ///     silently died because you drank a potion would look like a bug.</summary>
-    private static bool CountsAgainstBuffCap(BuffRow row, bool toggle, bool authored) =>
-        authored && !toggle && row is BuffRow.Buff or BuffRow.Consumable;
+    ///   • 🔴 <b>DEBUFFS — added 2026-09-02, and it was a REAL BUG, not tidying.</b> A debuff carries
+    ///     the default <c>BuffRow.Buff</c> on its own def (the row is overridden to Debuff only for
+    ///     DISPLAY, on <c>BuffInstance.Row</c>), so this predicate answered TRUE for one. A poison, a
+    ///     stun or a fear landing on a character at the cap therefore <b>evicted one of his
+    ///     blessings</b> — "Might faded — you can only hold 20 buffs at once", in the middle of the
+    ///     fight that applied the poison — and then sat in the slot itself. It was invisible for as
+    ///     long as nobody could see the count, which is exactly what `BL-111` set out to fix; the
+    ///     counter he asked for could not have been made truthful without this.
+    private static bool CountsAgainstBuffCap(BuffRow row, bool toggle, bool authored,
+                                             bool isDebuff = false) =>
+        authored && !toggle && !isDebuff && row is BuffRow.Buff or BuffRow.Consumable;
 
     /// <summary>Make room for one more collected buff, dropping the OLDEST if the target is already at
     /// the cap (owner's rule: drop the oldest, never refuse the new one — a refusal arrives mid-fight
@@ -11320,7 +11774,7 @@ public class GameLoopService : BackgroundService
     {
         while (true)
         {
-            var counted = target.Buffs.Where(b => CountsAgainstBuffCap(b.SourceRow, b.Toggle, b.CountsTowardBuffLimit)).ToList();
+            var counted = target.Buffs.Where(b => CountsAgainstBuffCap(b.SourceRow, b.Toggle, b.CountsTowardBuffLimit, b.IsDebuff)).ToList();
             if (counted.Count < GameConstants.MaxBuffSlots) return;
 
             // Oldest by application, and among equals the one expiring soonest — on login every
@@ -12602,6 +13056,13 @@ public class GameLoopService : BackgroundService
             victim.Buffs.RemoveAll(b => b.KeepsBuffsOnDeath);
         else
             victim.Buffs.Clear();
+        // `BL-109` — THE WHISPS GO WHEREVER THE BUFFS GO, by the same test and in the same place. His
+        // own suggestion, taken literally: *"lost on death — if its easier we can make them to be
+        // saved by angelsProtection"*. It IS easier, and it is also the better rule — one thing to
+        // remember about death rather than two, and a preservation buff that saved your blessings but
+        // not your spirits would be a distinction nobody could guess.
+        if (!keptBuffs)
+            victim.Whisps.Clear();
         // Refresh the survivor's HUD when buffs were KEPT (their stats/bar must reflect what's still up).
         if (keptBuffs && victim.Kind == EntityKind.Player)
         {
@@ -13689,6 +14150,84 @@ public class GameLoopService : BackgroundService
 
     // ----- Movement --------------------------------------------------------------
 
+    /// <summary>`BL-110` — FEAR AND CHARM: the two states where the SERVER writes the destination and
+    /// the owner does not. Runs once per tick, immediately before <see cref="MoveTowardTarget"/>,
+    /// which then does the walking exactly as it does for anyone else.
+    ///
+    /// <para>His spec, in his words: fear = *"run in place"*, *"runs uncontrollably"* inside a 100-200
+    /// radius; charm = *"walk"* toward the caster. Both *"dont change target like taunt — just act
+    /// uncontrolably"*, which is why nothing here touches <c>CombatTargetId</c>: the victim keeps
+    /// staring at whoever he was fighting the whole time his feet betray him.</para>
+    ///
+    /// <para>🔑 WRITING <c>TargetX/Y</c> IS THE WHOLE MECHANISM, and it is deliberately the same field
+    /// a move tap writes. Everything downstream — the stepper, the safe-zone refusal, the grid update,
+    /// the client's "is it moving" test, the animation — already understands a destination. A second,
+    /// parallel "driven position" would have had to re-teach every one of them.</para>
+    ///
+    /// <para>⚠ It is the INPUT that is refused elsewhere (HandleMove, AutoPilot, TickFollow, MobAi),
+    /// not the movement. If any of those still wrote a destination it would simply fight this one
+    /// tick-by-tick and the victim would shudder in place.</para></summary>
+    private void TickControlledMovement(Entity e)
+    {
+        if (e.Dead || !e.IsControlDriven)
+            return;
+
+        // ---- CHARM: re-aim at the caster every tick (he may be moving), and STOP on arrival rather
+        //      than trying to stand inside him. Charm outranks fear if a victim somehow has both —
+        //      being drawn to someone is the more specific instruction, and EffectiveSpeed makes the
+        //      same choice (it reads IsCharmed first), so the pace and the destination cannot disagree.
+        if (e.IsCharmed)
+        {
+            // A charmer who died, logged out or left the world ends the pull but NOT the lock: the
+            // buff still runs its duration, so the victim stands there unable to act. That is the
+            // honest reading of "cannot act for N seconds" and it costs the charmer nothing to die.
+            if (e.CharmerId is not Guid charmerId ||
+                !_world.Entities.TryGetValue(charmerId, out var charmer) || charmer.Dead)
+            {
+                e.TargetX = null;
+                e.TargetY = null;
+                return;
+            }
+
+            if (DistanceSq(e, charmer) <= GameConstants.CharmArrivalRange * GameConstants.CharmArrivalRange)
+            {
+                e.TargetX = null;
+                e.TargetY = null;
+                return;
+            }
+
+            e.TargetX = charmer.X;
+            e.TargetY = charmer.Y;
+            return;
+        }
+
+        // ---- FEAR: one random hop at a time. A new point is chosen only when the last one has been
+        //      REACHED (the stepper nulls the destination on arrival), so the victim runs in legible
+        //      straight dashes instead of jittering along a fresh vector every 100ms.
+        if (e.TargetX is not null)
+            return;
+
+        double angle = _rng.NextDouble() * Math.PI * 2;
+        float hop = GameConstants.FearHopMinRange +
+                    (float)_rng.NextDouble() * (GameConstants.FearHopMaxRange - GameConstants.FearHopMinRange);
+        float fx = e.X + (float)Math.Cos(angle) * hop;
+        float fy = e.Y + (float)Math.Sin(angle) * hop;
+
+        // THE SAME WALLS A MOVE TAP OBEYS. A fear must not scare anyone through a dungeon wall, out of
+        // the jail, or off the edge of the world — being panicked is not a teleport exploit, and the
+        // ward that catches players loose in the negative quadrant would otherwise start firing on it.
+        fx = Math.Clamp(fx, GameConstants.WorldMinX, GameConstants.ZoneWidth);
+        fy = Math.Clamp(fy, GameConstants.WorldMinY, GameConstants.ZoneHeight);
+        if (e.Kind == EntityKind.Player)
+        {
+            (fx, fy) = ConfineToDomain(e, fx, fy);
+            if (e.Jailed) (fx, fy) = ClampToJail(fx, fy);
+        }
+
+        e.TargetX = fx;
+        e.TargetY = fy;
+    }
+
     private static void MoveTowardTarget(Entity e)
     {
         if (e.TargetX is not float tx || e.TargetY is not float ty)
@@ -13822,6 +14361,7 @@ public class GameLoopService : BackgroundService
             // is not an entity, so a world where nobody moves still has to be able to report one
             // appearing. Silent unless the viewer's visible SET changed.
             SendTotemsIfChanged(player, connectionId, sends);
+            SendWhispsIfChanged(player, connectionId, sends);   // `BL-109` — whisps are not entities
 
             // Nothing changed for this viewer — stay silent, UNLESS they are due a heartbeat. Silence
             // and a dead server are indistinguishable to a client, so a calm world still has to say
@@ -13851,6 +14391,7 @@ public class GameLoopService : BackgroundService
                 _lastSentByConn.Remove(conn);
                 _lastSentAtByConn.Remove(conn);   // or the heartbeat clock leaks a row per logout
                 _lastTotemsByConn.Remove(conn);   // ...and so would the totem set
+                _hadWhispsByConn.Remove(conn);    // ...and the whisp-visibility flag
             }
         }
 
@@ -13905,6 +14446,53 @@ public class GameLoopService : BackgroundService
 
         sends.Add(_hub.Clients.Client(connectionId)
             .SendAsync("Totems", new TotemList(visible?.ToArray() ?? Array.Empty<TotemDto>())));
+    }
+
+    /// <summary>Whether each connection was last sent a NON-EMPTY whisp list, so the push can fall
+    /// silent for the overwhelming majority of viewers who never see one.</summary>
+    private readonly HashSet<string> _hadWhispsByConn = new();
+
+    /// <summary>Send this viewer the whisps in view (`BL-109`). A whisp is not an entity, so it never
+    /// appears in the world delta — this is the ONLY way a client learns one exists.
+    ///
+    /// <para>⚠ UNLIKE THE TOTEM PUSH BESIDE IT, THIS ONE IS NOT SET-DIFFED, and it cannot be: a totem
+    /// is planted and never moves, so its id settles everything, while a whisp is flying somewhere new
+    /// every tick and the POSITION is the whole message. So it is sent every tick that anything is
+    /// visible — a handful of floats for the few viewers who can see one, and complete silence (one
+    /// closing empty list, then nothing) for everybody else.</para></summary>
+    private void SendWhispsIfChanged(Entity player, string connectionId, List<Task> sends)
+    {
+        List<WhispDto>? visible = null;
+        const float rangeSq = GameConstants.ViewRange * GameConstants.ViewRange;
+        foreach (var other in _world.Grid.Nearby(player))
+        {
+            if (other.Whisps.Count == 0 || other.Id == player.Id) continue;   // self is added below
+            float dx = other.X - player.X, dy = other.Y - player.Y;
+            if (dx * dx + dy * dy > rangeSq) continue;
+            foreach (var w in other.Whisps)
+                (visible ??= new()).Add(new WhispDto(
+                    w.SummonSkillId, other.Id, w.Name, w.X, w.Y,
+                    Math.Max(0, w.TicksRemaining / GameConstants.TickRate)));
+        }
+        // THE OWNER'S OWN, ADDED UNCONDITIONALLY. `Nearby` does include the viewer himself, so this
+        // could have ridden the loop above — but only while he is in his own grid cell and inside his
+        // own view range, which are true today and are not things this push should depend on. His own
+        // whisps are the ones he most needs to see; they are not left to a spatial query.
+        foreach (var w in player.Whisps)
+            (visible ??= new()).Add(new WhispDto(
+                w.SummonSkillId, player.Id, w.Name, w.X, w.Y,
+                Math.Max(0, w.TicksRemaining / GameConstants.TickRate)));
+
+        if (visible is null)
+        {
+            if (!_hadWhispsByConn.Remove(connectionId)) return;   // already silent — say nothing
+            sends.Add(_hub.Clients.Client(connectionId)
+                .SendAsync("Whisps", new WhispList(Array.Empty<WhispDto>())));
+            return;
+        }
+
+        _hadWhispsByConn.Add(connectionId);
+        sends.Add(_hub.Clients.Client(connectionId).SendAsync("Whisps", new WhispList(visible.ToArray())));
     }
 
     /// <summary>Flash the footprint of an area skill for everyone who can see where it landed. One
@@ -14249,7 +14837,10 @@ public class GameLoopService : BackgroundService
             // 0 when the buff has no ladder at all — "Frenzy Lv.1" on a one-level buff is noise, and
             // deciding it HERE keeps the client from needing the parent def to answer the question.
             SkillCatalog.Get(b.SkillId) is { MaxLevel: > 1 } ? b.Level : 0,
-            b.Suppressed)).ToList();
+            b.Suppressed,
+            // `BL-111` — off the SAME predicate the eviction uses, so the counter on his bar and the
+            // rule that throws a buff away can never disagree.
+            CountsAgainstBuffCap(b.SourceRow, b.Toggle, b.CountsTowardBuffLimit, b.IsDebuff))).ToList();
 
         // The GRADE PENALTY rides along as a synthetic, never-expiring DEBUFF row. It is not a real
         // BuffInstance (nothing casts it — it's a property of what you're wearing), but without a row on
@@ -15202,9 +15793,14 @@ public class GameLoopService : BackgroundService
     /// could not exist without this fix.</para>
     ///
     /// <para>⚠ The two are OR'd, never overlapping in effect: a skill with both a ContestCc flag and a
-    /// school resolves once, here. The `else if` on the fizzle branch is what guarantees that.</para></summary>
+    /// school resolves once, here. The `else if` on the fizzle branch is what guarantees that.</para>
+    ///
+    /// <para>⚠ A THIRD WAY IN SINCE 2026-09-02 (`BL-110`): <c>def.Charms</c>. Charm is control, and
+    /// control has always landed on the contest, never on the ~99% fizzle roll — but its payload is a
+    /// FIELD, so neither of the two tests above can see it. Without this line a charm authored with
+    /// no <see cref="DebuffSchool"/> would have landed nearly every time it was cast.</para></summary>
     private static bool IsContestedDebuff(SkillDef def, SkillEffect effect) =>
-        (effect & SkillEffect.ContestCc) != 0 || def.DebuffSchool != DebuffSchool.None;
+        (effect & SkillEffect.ContestCc) != 0 || def.DebuffSchool != DebuffSchool.None || def.Charms;
 
     /// <summary>Roll ONE hit against a cast in progress — IG's own formula, adapted (owner, 2026-08-26).
     /// See <see cref="StatCalculator.InterruptChance"/> for the model and for the two places we
@@ -16345,8 +16941,12 @@ public class GameLoopService : BackgroundService
 
                 var names = req.RequiredItemIds
                     .Select(id => ItemCatalog.Get(id)?.Name ?? id).ToArray();
+                // `BL-118` — while the admin setting is on, the NPC window must SAY the items are not
+                // wanted, or the option renders greyed-out and unclickable and the setting looks
+                // broken. The dialog and the handler read the same flag, so they cannot disagree.
                 var has = req.RequiredItemIds
-                    .Select(id => player.Inventory.Any(i => i.DefId == id)).ToArray();
+                    .Select(id => RateConfig.FreeClassChange || player.Inventory.Any(i => i.DefId == id))
+                    .ToArray();
                 bool meets = player.Level >= req.MinLevel && has.All(h => h);
                 // "What this class does" blurb so the (irreversible) choice is informed:
                 // 2nd class = its archetype blurb; 3rd AND 4th = the discipline blurb (a 4th class
@@ -16880,18 +17480,26 @@ public class GameLoopService : BackgroundService
         }
         if (player.Level < req.MinLevel) { SendSystemToEntity(player, $"Requires level {req.MinLevel}."); return; }
 
-        // Must hold all required quest items.
-        foreach (var itemId in req.RequiredItemIds)
-            if (CountItem(player, itemId) < 1)
-            {
-                SendSystemToEntity(player, "You don't have the required items.");
-                return;
-            }
+        // `BL-118` — THE ADMIN SETTING WAIVES THE ITEMS, AND NOTHING ELSE. The level check above and
+        // `ClassChangeAvailable` before it still run: what he asked to skip is the QUEST, which at
+        // ×100 exp is a ×1-paced chain standing in front of a character who reached 20 in minutes.
+        // Race, base class, tier and the never-the-same-discipline rule are what a class change MEANS
+        // and are not the gate he was working around.
+        if (!RateConfig.FreeClassChange)
+        {
+            // Must hold all required quest items.
+            foreach (var itemId in req.RequiredItemIds)
+                if (CountItem(player, itemId) < 1)
+                {
+                    SendSystemToEntity(player, "You don't have the required items.");
+                    return;
+                }
 
-        // Consume ONE of each, by quantity — quest items stack now (the gathering contracts need it),
-        // so removing the ROW would take the whole stack.
-        foreach (var itemId in req.RequiredItemIds)
-            ConsumeItem(player, itemId, 1);
+            // Consume ONE of each, by quantity — quest items stack now (the gathering contracts need
+            // it), so removing the ROW would take the whole stack.
+            foreach (var itemId in req.RequiredItemIds)
+                ConsumeItem(player, itemId, 1);
+        }
 
         if (req.Tier == 4) player.FourthClass = classId;
         else if (req.Tier == 3) player.ThirdClass = classId;

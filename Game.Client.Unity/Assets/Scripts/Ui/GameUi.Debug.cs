@@ -99,6 +99,9 @@ namespace Game.Client
             ("conRegen", "CON regen x/point", true),
             ("mobRegen", "Mob regen in combat (frac/s)", true),
             ("mobRegenIdle", "Mob regen idle (frac/s)", true),
+            // `BL-118` — 0/1 rather than a toggle button: the Tune tab is a numeric grid with one
+            // round-trip, and a single odd control here would be its own machine to keep in step.
+            ("freeClassChange", "Free class change 0/1", true),
         };
 
         private void BuildDebugPanel()
@@ -862,6 +865,7 @@ namespace Game.Client
             Set("conRegen", S(d.ConRegenBase));
             Set("mobRegen", d.MobHpRegenPctCombat.ToString("0.####", CultureInfo.InvariantCulture));
             Set("mobRegenIdle", d.MobRegenPctIdle.ToString("0.####", CultureInfo.InvariantCulture));
+            Set("freeClassChange", d.FreeClassChange.ToString("0.####", CultureInfo.InvariantCulture));
         }
 
         private void ApplyTuning()
@@ -878,7 +882,8 @@ namespace Game.Client
                 I("karmaBase"), F("karmaConsec"), F("karmaLevel"), I("karmaDeath"), I("karmaMob"),
                 I("idleCap"), I("offlineCap"), I("grace"),
                 I("testSkillPower"), F("testSkillMod"),
-                F("regenInterval"), F("conRegen"), F("mobRegen"), F("mobRegenIdle"));
+                F("regenInterval"), F("conRegen"), F("mobRegen"), F("mobRegenIdle"),
+                F("freeClassChange"));
 
             Boot.Debug(n => n.SetDebugConfigAsync(dto), "tuning");
         }

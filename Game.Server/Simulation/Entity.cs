@@ -116,6 +116,15 @@ public class BuffInstance
     public float PhysCooldownPct { get; init; }
     public float MagicCooldownPct { get; init; }
 
+    /// <summary>`BL-110` — CHARM. While this buff is up the owner cannot act and is WALKED toward
+    /// whoever cast it (<see cref="SourceId"/>). A field rather than a SkillEffect bit for the usual
+    /// reason: the flag enum has been full since <c>1L &lt;&lt; 62</c>. Fear kept its bit (41) only
+    /// because it already had one.
+    ///
+    /// <para>⚠ It is the reason <see cref="SourceId"/> is set for a plain (non-DoT) buff at all: the
+    /// charm has to remember WHO to walk to, and by the time it ticks, the caster may be anywhere.</para></summary>
+    public bool Charms { get; init; }
+
     /// <summary>BL-06 — chance the owner dodges an incoming PHYSICAL SKILL while this buff is up.
     /// Rides as a field, like the two above, because the SkillEffect flag enum has no bits left.
     /// The rogue's Evasion Boost is the only skill in the game that sets it.</summary>
@@ -205,7 +214,12 @@ public class BuffInstance
 
     public bool Has(SkillEffect flag) => !Suppressed && (Effect & flag) != 0;
 
-    public bool IsDebuff => (Effect & SkillEffect.AnyDebuff) != 0;
+    /// <summary>⚠ <see cref="Charms"/> is OR'd in because a charm's whole payload is that field — it
+    /// carries no <c>AnyDebuff</c> bit to be recognised by, and without this it would render in the
+    /// BUFF row and be strippable by a "cancel positive buffs" rather than by a cleanse. The same
+    /// lesson Clarity and Fortitude taught on the buff side (see the `Category == Buff` arm in
+    /// ApplyBuff): when a payload is a field, every flag test in its path has to learn about it.</summary>
+    public bool IsDebuff => (Effect & SkillEffect.AnyDebuff) != 0 || Charms;
 
     /// <summary>Sum of this buff's flat entries for an effect. For a stacking effect the
     /// Magnitudes are re-snapshotted to the current stack LEVEL on each stack (see
@@ -1254,6 +1268,21 @@ public class Entity
 
     public List<BuffInstance> Buffs { get; } = new();
 
+    /// <summary>`BL-109` — THE WHISPS RIDING THIS CHARACTER, newest FIRST. A push-down stack, capped
+    /// at <see cref="WhispLimit"/>: a new whisp goes on the front and the tail falls off, while one
+    /// you already have is refreshed where it stands. His own worked example is in
+    /// <see cref="WhispInstance"/>.
+    ///
+    /// <para>⚠ Not persisted, like every other runtime thing a character carries into a fight. They
+    /// are also lost on death unless an Angel's-Protection-style buff is up, which is his own
+    /// suggestion (*"if its easier we can make them to be saved by angelsProtection"*) taken
+    /// literally: the whisps go wherever the buffs go, by the same test, in the same place.</para></summary>
+    public List<WhispInstance> Whisps { get; } = new();
+
+    /// <summary>How many whisps may ride at once — <see cref="GameConstants.WhispSlotsBase"/> plus
+    /// whatever Whisp Mastery adds. Recomputed with everything else in RecomputeDerived.</summary>
+    public int WhispLimit { get; set; } = GameConstants.WhispSlotsBase;
+
     /// <summary>Buffs loaded from the DB but not yet re-applied. The loader cannot apply them itself —
     /// ApplyBuff recomputes derived stats and pushes to the client, which is tick-thread work — so it
     /// parks them here and the game loop drains the list on entry to the world.</summary>
@@ -1285,7 +1314,8 @@ public class Entity
         }
     }
 
-    /// <summary>Feared: cannot cast or attack (but may still move) while any Fear is active.</summary>
+    /// <summary>FEARED (`BL-110`): cannot act, and the server RUNS the body to random points nearby.
+    /// The victim keeps his target; he simply cannot use it or steer.</summary>
     public bool IsFeared
     {
         get
@@ -1295,8 +1325,44 @@ public class Entity
         }
     }
 
-    /// <summary>Cannot take an action (cast/attack/skill) this tick due to a stun or fear.</summary>
-    public bool IsActionLocked => IsStunned || IsFeared;
+    /// <summary>CHARMED (`BL-110`): cannot act, and the server WALKS the body toward the caster.
+    /// Reads the <see cref="BuffInstance.Charms"/> FIELD, not a flag — the enum is full.</summary>
+    public bool IsCharmed
+    {
+        get
+        {
+            foreach (var b in Buffs) if (b.Charms && !b.Suppressed) return true;
+            return false;
+        }
+    }
+
+    /// <summary>WHO the charm is walking this entity toward — the caster of the charm buff, or null
+    /// when nothing is charming it. The FIRST live charm wins if two land, which is arbitrary but
+    /// stable; two charms on one victim is not a case anything in the game authors today.</summary>
+    public Guid? CharmerId
+    {
+        get
+        {
+            foreach (var b in Buffs)
+                if (b.Charms && !b.Suppressed && b.SourceId != Guid.Empty) return b.SourceId;
+            return null;
+        }
+    }
+
+    /// <summary>Cannot take an action (cast/attack/skill) this tick — stun, fear or charm.
+    /// ⚠ Charm joined this list on 2026-09-02 (`BL-110`): *"both dont change target like taunt — just
+    /// act uncontrolably"*, and "uncontrollably" is both halves — the hands AND the feet.</summary>
+    public bool IsActionLocked => IsStunned || IsFeared || IsCharmed;
+
+    /// <summary>THE SERVER IS DRIVING THIS BODY (`BL-110`) — fear or charm. While it is true the
+    /// entity's own destination is not its own: player move taps are refused, follow and auto-hunt
+    /// stand down, and a mob's AI does not wander or scan. Movement itself is written each tick by
+    /// <c>GameLoopService.TickControlledMovement</c>.
+    ///
+    /// <para>🔑 A STUN IS NOT IN HERE, and that is deliberate. A stun already stops movement dead by
+    /// zeroing <see cref="EffectiveSpeed"/>; it has no destination to drive. Rolling the two together
+    /// would mean a stun had to start writing destinations to say "stay put".</para></summary>
+    public bool IsControlDriven => IsFeared || IsCharmed;
 
     /// <summary>`BL-98` — PETRIFIED by the boss's judgment (an ODD rung, L1/L3/L5). Not a state of
     /// its own: the rung's buff is a <see cref="SkillEffect.Stun"/> that also freezes HP, so the lock
@@ -1463,6 +1529,21 @@ public class Entity
             if (IsRooted || IsStunned) return 0f;   // held in place by Root or Stun
 
             if (AdminMoveSpeed is float adminSpeed) return adminSpeed;   // /spd m: uncapped
+
+            // `BL-110` — WHILE THE SERVER IS DRIVING, IT ALSO PICKS THE GEAR. His two words are the
+            // spec: fear *"run"*s, charm *"walk"*s. Read BEFORE both branches below because the pace
+            // must not depend on what the victim happened to be doing: a charmed player who was
+            // sprinting still walks to you, and a charmed mob walks even though it is Engaged (which
+            // is the mob branch's own test for "run"). Buffs, slows and the cap all still apply — a
+            // Swift-buffed victim panics faster, which is correct and is also why this is a BASE
+            // swap and not a `return`.
+            if (IsControlDriven)
+            {
+                float drivenBase = IsCharmed ? WalkSpeed : RunSpeed;
+                if (drivenBase <= 0) drivenBase = Speed;
+                float driven = ModifiedStat(drivenBase, SkillEffect.BuffMoveSpeed) * (1f - SlowFraction);
+                return Kind == EntityKind.Mob ? driven : Math.Min(driven, MoveSpeedCap);
+            }
 
             if (Kind == EntityKind.Mob)
             {
@@ -2295,6 +2376,7 @@ public class Entity
         DebuffReflectChance = 0f;
         Immune = false;
         CooldownReduction = 0f;
+        WhispLimit = GameConstants.WhispSlotsBase;   // `BL-109` — raised by Whisp Mastery below
         CooldownReductionPhysical = 0f;
         CooldownReductionMagic = 0f;
         CritRateResist = 0f;
@@ -2932,6 +3014,8 @@ public class Entity
                 if (pe.MagicPenaltyMult != 0f) CasterMagicPenaltyCancel *= pe.MagicPenaltyMult;
                 if (pe.MoveSpeedPct != 0f) { RunSpeed *= 1f + pe.MoveSpeedPct; WalkSpeed = RunSpeed * MovementTuning.WalkSpeedFactor; Speed = RunSpeed; }
                 CooldownReduction += pe.CooldownPct;
+                // `BL-109` — extra whisp slots. SUMMED, so a second mastery rung adds a third slot.
+                WhispLimit += pe.WhispSlots;
                 CritRateResist += pe.CritRateResist;
                 CritDmgResist += pe.CritDmgResist;
                 BowResist += pe.BowResist;

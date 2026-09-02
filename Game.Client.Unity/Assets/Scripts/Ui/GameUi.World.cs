@@ -1065,6 +1065,11 @@ namespace Game.Client
 
             _bagTabButtons = BuildCategoryTabs(inner, BagTabs, new Vector2(16f, -chrome - 72f), 80f,
                                                cat => { _bagTab = cat; _bagRevision = -1; });
+            // `BL-117` — the [ORDER] cycle, at the end of the tab strip (five tabs at 80+2 each).
+            // `_bagRevision = -1` is how every other control here forces a redraw: the list is only
+            // rebuilt when the revision moves, so re-sorting without it would change nothing on screen.
+            BuildOrderButton(inner, new Vector2(16f + BagTabs.Length * 82f, -chrome - 72f), 86f,
+                             () => _bagRevision = -1);
 
             // The item list is a FIXED-width column, so widening the window for the equip column never
             // stretches it — it just slides.

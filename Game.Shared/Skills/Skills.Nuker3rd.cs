@@ -279,7 +279,7 @@ public static partial class SkillCatalog
             DurationTicks: 100, BuffKey: "fear", Rank: 1,
             DebuffSchool: DebuffSchool.Magical, Category: SkillCategory.Debuff, SpCost: 36000,
             DebuffLandMod: 0.5f,   // his CSV: "(success chance x0.5)" = 25% at parity
-            Description: "Terrifies the target for 10s — it can still run, but it cannot attack or cast.",
+            Description: "Terrifies the target for 10s — it cannot act, and runs uncontrollably away from where it stood.",
             // Like Bind, NOTHING but the price moves: a fear is a fear, and what the ladder buys is the
             // level contest (DebuffLandChance reads the RUNG's learn level).
             Levels: HealerRungs(0, 14, (i, sp) =>

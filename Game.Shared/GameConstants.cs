@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.103.0";
+    public const string GameVersion = "0.104.0";
 
     // ----- SP BOTTLE (owner, 2026-08-26) -------------------------------------------------------
     // *"u can make an npc to take your 1kkk SP + 100kk gold and give you a tradable/sellabel
@@ -568,6 +568,58 @@ public static class GameConstants
     /// someone out-threats them — the taunt's guarantee, distinct from its POWER, which is what
     /// decides whether it still holds afterwards.</summary>
     public const int TauntLockTicksDefault = 30;   // ~3s
+
+    /// <summary>FEAR's uncontrolled run (`BL-110`) — the victim bolts to a random point this far from
+    /// wherever he is standing, and picks a new one the moment he arrives, until the fear expires.
+    /// His own numbers: *"run in place ... inside a 100-200 radius"*.
+    ///
+    /// <para>🔑 Measured from the CURRENT position each hop, not from where the fear landed. That is
+    /// what makes it a panicked scramble rather than a tidy orbit of one anchor, and it is also why
+    /// the total drift is bounded in practice: the hops are random directions, so they cancel.</para></summary>
+    public const float FearHopMinRange = 100f;
+    public const float FearHopMaxRange = 200f;
+
+    /// <summary>CHARM's stopping distance — how close the victim walks before he stands still in front
+    /// of the caster. Short enough to read as "he came to you", far enough that he does not stand
+    /// inside the model and jitter between two ticks of rounding.</summary>
+    public const float CharmArrivalRange = 40f;
+
+    // ----- WHISPS (`BL-109`) -------------------------------------------------------------------
+
+    /// <summary>How many whisps anyone may hold before a passive says otherwise. His ladder is
+    /// *"one slot by default; a passive raises it to 2 then 3"*, and the tank's Whisp Mastery at 60
+    /// is the +1.</summary>
+    public const int WhispSlotsBase = 1;
+
+    /// <summary>The band a whisp rides its master in — his *"Leashed 100-200 from the master"*. It
+    /// parks at <see cref="WhispLeashMin"/> when he stands still and is dragged along at
+    /// <see cref="WhispLeashMax"/> at the very worst, which is what produces the trailing-on-a-delay
+    /// look without a scripted delay anywhere.</summary>
+    public const float WhispLeashMin = 100f;
+    public const float WhispLeashMax = 200f;
+
+    /// <summary>A whisp's flying speed as a MULTIPLE of its master's current move speed, so it can
+    /// always close the gap he opens — and a floor for the case where he is standing still and it is
+    /// still catching up from a teleport.</summary>
+    public const float WhispFollowSpeedFactor = 1.6f;
+    public const float WhispFollowSpeedFloor = 200f;
+
+    /// <summary>A WHISP'S ATTACK for the debuff contest. FLAT, and the same shape a monster's is
+    /// (StatCalculator.MobCcAtk = 40/45) — because his rule is that a whisp is *"uninfluenced by
+    /// master gear"*: its own P/M.Atk is 1, so it needs an attack of its own to contest with, and
+    /// what scales with the master is the LEVEL fed to the contest, never this number.
+    ///
+    /// <para>⚠ AUTHORED BY ME, NOT BY HIM. `whisps_skills.csv` has no attack column, so there was no
+    /// number to read; 40 is a plain melee creature's, which makes a whisp debuff land at roughly the
+    /// coin-flip a level-matched mob's does before the skill's own modifier. It is the one figure in
+    /// the whisp build that is an invention, and it is the one to move if whisps land too often or
+    /// too rarely.</para></summary>
+    public const int WhispCcAtk = 40;
+
+    /// <summary>How late a whisp may be re-summoned — the tail of its life, mirroring the buff
+    /// renewal window (`BL-112`). *"They behave as BUFFS: 20 min default, resummon at 5s remaining"*.
+    /// Outside it the call is refused rather than wasting the MP and the 30s reuse.</summary>
+    public const int WhispResummonWindowTicks = 50;   // 5s
 
     /// <summary>The once-per-SECOND housekeeping cadence: damage-over-time, heal-over-time, the buff
     /// push and the party-roster refresh. These are authored "per second" and must stay at 1s no matter

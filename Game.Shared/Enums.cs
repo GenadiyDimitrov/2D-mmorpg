@@ -127,7 +127,11 @@ public enum SkillEffect : long
     // debuff contest (StatCalculator.DebuffLandChance), NOT the spell-fizzle model. -----
     Slow               = 1L << 39,  // reduces target move speed by a % (magnitude on Slow)
     Stun               = 1L << 40,  // cannot move, cast or attack for the duration
-    Fear               = 1L << 41,  // cannot cast or attack (can still move) for the duration
+    // FEAR — reshaped 2026-09-02 (`BL-110`, his `BL-123` ruling). Cannot act, AND THE SERVER DRIVES
+    // THE BODY: the victim RUNS uncontrollably to random points 100-200 away for the duration. It
+    // used to mean "cannot cast or attack, keeps full control of his feet", which is not a fear, it
+    // is a silence. 🔑 It does NOT re-point the victim's TARGET — only taunt does that.
+    Fear               = 1L << 41,
     // Damage-OUT channels: a 2×3 matrix of context (PvE/PvP) × source (skill=physical
     // skill / magic skill / basic attack). All default off. An "all damage" effect sets
     // all six; a "PvE only" effect sets the three PvE ones; a "PvE skill" effect sets one.

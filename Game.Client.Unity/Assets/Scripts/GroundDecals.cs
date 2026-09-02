@@ -131,6 +131,110 @@ namespace Game.Client
             }
         }
 
+        // ---------------------------------------------------------------------------------------
+        //  WHISPS (`BL-109`) — the server sends the whole visible set EVERY TICK, because unlike a
+        //  totem a whisp is flying and the position is the message.
+        // ---------------------------------------------------------------------------------------
+
+        [Tooltip("Radius of a whisp orb, in SERVER units (scaled like everything else).")]
+        public float WhispRadius = 22f;
+        [Tooltip("How high a whisp floats above the ground, in Unity units.")]
+        public float WhispHeight = 0.75f;
+        [Tooltip("How fast a whisp orb chases the position the server last reported (per second).")]
+        public float WhispChase = 12f;
+
+        private sealed class Orb
+        {
+            public Transform T;
+            public Vector3 Target;
+        }
+
+        private readonly Dictionary<string, Orb> _whisps = new();
+
+        /// <summary>Draw the whisps the server says are in view.
+        ///
+        /// <para>🔑 KEYED BY (owner, summon skill), not by an id — because that pair IS a whisp's
+        /// identity on the server: one whisp per summon skill per master, and re-summoning refreshes
+        /// the one you have rather than making a second. Keying on anything else would make a
+        /// refreshed whisp look like a new orb and leave the old one behind for a frame.</para>
+        ///
+        /// <para>⚠ The orb CHASES rather than teleports. The push is 10/s and the frame rate is not,
+        /// so snapping to each new position is visibly steppy on something this small and this fast —
+        /// the same reason entity views interpolate.</para></summary>
+        public void SetWhisps(WhispList list)
+        {
+            var all = list?.Whisps ?? System.Array.Empty<WhispDto>();
+            var seen = new HashSet<string>();
+
+            foreach (var w in all)
+            {
+                string key = w.OwnerId.ToString() + "/" + w.SummonSkillId;
+                seen.Add(key);
+
+                var centre = WorldMapper.ToUnity(w.X, w.Y);
+                var target = new Vector3(centre.x, WhispHeight, centre.z);
+
+                if (!_whisps.TryGetValue(key, out var orb))
+                {
+                    var go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                    go.name = "Whisp";
+                    go.transform.SetParent(transform, false);
+                    var collider = go.GetComponent<Collider>();
+                    if (collider != null) Destroy(collider);   // never eat a tap meant for the ground
+
+                    float r = WhispRadius * WorldMapper.Scale;
+                    go.transform.localScale = new Vector3(r * 2f, r * 2f, r * 2f);
+                    go.transform.position = target;   // a NEW orb appears where it is, it does not fly in
+
+                    var renderer = go.GetComponent<Renderer>();
+                    var material = UnlitMaterials.CreateTransparent(WhispColour(w.SummonSkillId));
+                    if (material != null) renderer.material = material;
+                    renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                    renderer.receiveShadows = false;
+
+                    _whisps[key] = orb = new Orb { T = go.transform };
+                }
+                orb.Target = target;
+            }
+
+            foreach (var key in new List<string>(_whisps.Keys))
+            {
+                if (seen.Contains(key)) continue;
+                if (_whisps[key].T != null) Destroy(_whisps[key].T.gameObject);
+                _whisps.Remove(key);
+            }
+        }
+
+        /// <summary>A whisp's colour, from its summon skill. Deterministic and local — the server does
+        /// not send one, and it should not have to: what a spirit looks like is presentation.
+        ///
+        /// <para>⚠ A PLACEHOLDER, and deliberately a legible one. These are six unlit orbs; the real
+        /// article is art, and it belongs with `BL-93`/`BL-103` rather than here. What this owes the
+        /// player today is only that his two whisps are told apart at a glance and that their POSITION
+        /// is honest, because the position is the thing the server is simulating.</para></summary>
+        private static Color WhispColour(string summonSkillId)
+        {
+            switch (summonSkillId)
+            {
+                case "tank_whisp_taunt":        return new Color(0.95f, 0.45f, 0.25f);   // angry orange
+                case "tank_whisp_charm":        return new Color(0.90f, 0.45f, 0.85f);   // lure violet
+                case "tank_whisp_bind":         return new Color(0.45f, 0.75f, 0.95f);   // holding ice
+                case "tank_whisp_heal":         return new Color(0.35f, 0.90f, 0.45f);   // the heal green
+                case "tank_whisp_armor_break":  return new Color(0.85f, 0.80f, 0.40f);   // dulled gold
+                case "tank_whisp_weapon_break": return new Color(0.75f, 0.35f, 0.35f);   // blunted red
+                default:                        return new Color(0.85f, 0.85f, 0.95f);   // an unknown spirit
+            }
+        }
+
+        /// <summary>Drop every whisp orb — the twin of <see cref="ClearTotems"/>, called from the same
+        /// places for the same reason.</summary>
+        public void ClearWhisps()
+        {
+            foreach (var orb in _whisps.Values)
+                if (orb.T != null) Destroy(orb.T.gameObject);
+            _whisps.Clear();
+        }
+
         /// <summary>Drop every totem circle — on logout, or on any resync where the old set is no
         /// longer known to be true.</summary>
         public void ClearTotems()
@@ -199,6 +303,17 @@ namespace Game.Client
 
         private void Update()
         {
+            // `BL-109` — whisp orbs chase the last position the server reported. Exponential, not
+            // linear, so a whisp that has just been dragged across a teleport catches up fast and one
+            // that is only trailing its master glides.
+            if (_whisps.Count > 0)
+            {
+                float t = 1f - Mathf.Exp(-WhispChase * Time.deltaTime);
+                foreach (var orb in _whisps.Values)
+                    if (orb.T != null)
+                        orb.T.position = Vector3.Lerp(orb.T.position, orb.Target, t);
+            }
+
             // Totems breathe. Purely cosmetic and on the client's own clock — the server's pulse
             // interval is not on the wire, and tying a visual to it would put a timer on every totem
             // message for no gain. His words: *"if it can pulse semy transperant good"*.

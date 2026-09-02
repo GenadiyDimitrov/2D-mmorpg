@@ -160,6 +160,19 @@ public record TotemDto(Guid Id, float X, float Y, float Radius, bool Heals, bool
 /// world with no totems in it is silent.</summary>
 public record TotemList(TotemDto[] Totems);
 
+/// <summary>`BL-109` — one WHISP, for drawing. A whisp is not an entity (see <c>WhispInstance</c>), so
+/// it never appears in the world delta and this is the only way a client learns one exists.
+///
+/// <para><paramref name="OwnerId"/> is the master's entity id — the whisp belongs to a character, and
+/// a client that cannot see that character has no business drawing his spirits.
+/// <paramref name="SecondsLeft"/> is what lets the UI show a whisp expiring the way a buff does.</para></summary>
+public record WhispDto(string SummonSkillId, Guid OwnerId, string Name, float X, float Y, int SecondsLeft);
+
+/// <summary>Server -&gt; Client: every whisp this viewer can see. Sent whole for the same reason
+/// <see cref="TotemList"/> is — there are at most three per character and the list is silent while
+/// nobody in view has one.</summary>
+public record WhispList(WhispDto[] Whisps);
+
 /// <summary>What an area effect DID, so the client can colour the flash without knowing any skill
 /// ids. Heal and Mana match the totem colours on purpose — the same green and blue mean the same
 /// thing whether they linger or flash.</summary>
@@ -401,7 +414,22 @@ public record BuffDto(string Name, string Description, float SecondsLeft, bool I
     /// invisible in the worst way: a lit icon granting nothing looks exactly like the bug it fixed.
     ///
     /// <para>Optional with a default, so an older client simply ignores it and behaves as before.</para></summary>
-    bool Suppressed = false);
+    bool Suppressed = false,
+    /// <summary>`BL-111` — DOES THIS BUFF OCCUPY ONE OF THE <see cref="GameConstants.MaxBuffSlots"/>?
+    /// His whole complaint is a number he cannot see: *"I cannot see if I have 20 or less buffs to not
+    /// over buff me"*.
+    ///
+    /// <para>🔑 IT IS COMPUTED BY THE SERVER, FROM THE SAME PREDICATE THAT EVICTS
+    /// (<c>CountsAgainstBuffCap</c>) — not re-derived on the client from row and toggle. The client
+    /// cannot see <c>CountsTowardBuffLimit</c>, which is authored per skill, so any client-side guess
+    /// would be a second copy of the rule that drifts the first time one skill opts out. A counter
+    /// that is nearly right is worse than none: he would stop trusting it and be back where he
+    /// started.</para>
+    ///
+    /// <para>⚠ Which BAR a buff is drawn in and whether it COUNTS are two different questions, and
+    /// they do not always agree — a potion's effect counts but has its own bar. The header counts
+    /// this flag across every bar, so the number stays true whatever the grouping does.</para></summary>
+    bool Counts = false);
 
 /// <summary>Server -> client: the character's learned skills (id + current level) + SP.</summary>
 public record LearnedSkills(SkillRef[] Skills, int SkillPoints);
@@ -939,7 +967,12 @@ public record DebugConfigDto(
     // StatCalculator.MobHpRegenPerSecond). No level term, so neither number ever needs revisiting
     // when the level range grows. IN COMBAT reads as a maximum kill time (0.001 = you must finish
     // inside ~16 minutes); IDLE reads as time-to-full (0.05 = 20 seconds).
-    float MobHpRegenPctCombat = 0.001f, float MobRegenPctIdle = 0.05f);
+    float MobHpRegenPctCombat = 0.001f, float MobRegenPctIdle = 0.05f,
+    // `BL-118` — CLASS CHANGE WITHOUT THE QUEST. 0 = off, anything else = on. A 0/1 float rather than
+    // a bool because the panel's Tune tab is a grid of numeric fields with one round-trip, and a
+    // single odd-shaped control there would be its own little machine to keep in step. Appended LAST:
+    // the record is POSITIONAL and the client sends it in order.
+    float FreeClassChange = 0f);
 
 /// <summary>One member row in the party window. Debuffs = the names of the debuffs currently on this
 /// member, so a healer sees at a glance who to cleanse without selecting each one.</summary>

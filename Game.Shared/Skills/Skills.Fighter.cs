@@ -491,7 +491,7 @@ public static partial class SkillCatalog
             MpCost: 25, CastTicks: 5, CooldownTicks: 200, Range: 0, Power: 0,
             DurationTicks: 50, BuffKey: "fear", Rank: 1,
             Category: SkillCategory.Debuff, DebuffSchool: DebuffSchool.Physical,
-            Description: "A fearsome roar — the target cannot cast or attack for 5s (can still move). ATK-vs-CON; bosses immune."),
+            Description: "A fearsome roar — the target panics for 5s: it cannot act, and bolts at a run wherever its feet take it. ATK-vs-CON; bosses immune."),
 
         // Hamstring — contested PHYSICAL Slow (the physical counterpart to the mage's Frost
         // Bind): ATK-vs-CON, −60% move speed for 8s. Shows slow can be physical OR magical.

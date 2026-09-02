@@ -86,6 +86,11 @@ public static partial class ClassSkillTables
         // …and a FIFTH: HP Boost above 40 — the warrior's L4-L10 and the buffer's L1-L7, the rows he
         // added to `warrior 3rd.csv` and `buffer 3rd.csv` on 2026-08-27. Same narrow terms again.
         RegisterHpBoost();
+        // …and a SIXTH: the WHISPS (`BL-109`) — the six calls and Whisp Mastery, which are the
+        // `Whisps` block of `tank 3rd.csv` and nothing else from that file. Same narrow terms as
+        // every entry above: he asked for the whisp system, its PoC rows are the ones he authored
+        // for it, and the rest of that (still open) file waits for the one-pass tank delta.
+        RegisterWhisps();
         // (A FOURTH, `RegisterHealerMasteries()`, existed for one day and is gone: it taught the two
         //  healer masteries and Frenzy L2 while RegisterLightbringer was still commented out. Those
         //  rungs are in the shared ladder now, and keeping both would have registered every one twice.)
@@ -151,6 +156,39 @@ public static partial class ClassSkillTables
     ///
     /// <para>Both are shared by all three races: he specified them per DISCIPLINE, and nothing in his
     /// ruling distinguishes a Human Bulwark from an Demon one.</para></summary>
+    /// <summary>`BL-109` — THE WHISPS, off the `Whisps` block of `tank 3rd.csv`. Six calls at 40,
+    /// split by RACE exactly as his column splits them, and Whisp Mastery at 60 for everybody.
+    ///
+    /// <para>🔑 THE RACE SPLIT IS THE POINT. Human = taunt + bind, Elf = charm + heal, Demon = the two
+    /// breaks — and with ONE slot until level 60, a tank picks one of his two. That is the largest
+    /// thing race has ever decided about a class in this game, and it is his design, not an
+    /// interpretation: the rows carry the races in their own column.</para>
+    ///
+    /// <para>⚠ NOTHING ELSE FROM THAT FILE. It is still open — his `NOT DONE` banner is at line 228 —
+    /// and the taunt, mass-taunt, intimidate, freeze, stay and charm ladders, the anti-magic and
+    /// weapon masteries and Defensive Wall all wait for the single tank pass. The whisps are built
+    /// alone because the whisp SYSTEM is what he queued, and these are the rows he wrote for it.</para></summary>
+    private static void RegisterWhisps()
+    {
+        // His two level sets, from the LEARN @ LVL column: the A whisps open at 40, the B whisps at
+        // 43, and both top out at 74. Eight rungs each, so eight learn rows each.
+        int[] a = { 40, 46, 52, 58, 62, 66, 70, 74 };
+        int[] b = { 43, 49, 55, 60, 64, 68, 72, 74 };
+        static IEnumerable<ClassSkill> Ladder(string id, int[] levels) =>
+            levels.Select((lvl, i) => new ClassSkill(id, lvl, SkillLevel: i + 1));
+
+        ClassSkills.RegisterThird(Race.Human, Discipline.Bulwark,
+            Ladder(TankWhispTaunt, a).Concat(Ladder(TankWhispBind, b)).ToArray());
+        ClassSkills.RegisterThird(Race.Elf, Discipline.Bulwark,
+            Ladder(TankWhispCharm, a).Concat(Ladder(TankWhispHeal, b)).ToArray());
+        ClassSkills.RegisterThird(Race.Demon, Discipline.Bulwark,
+            Ladder(TankWhispArmorBreak, a).Concat(Ladder(TankWhispWeaponBreak, b)).ToArray());
+
+        // The mastery carries no race in his row, so all three learn it.
+        foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
+            ClassSkills.RegisterThird(race, Discipline.Bulwark, new ClassSkill(TankWhispMastery, 60));
+    }
+
     private static void RegisterPreservation()
     {
         foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })

@@ -98,6 +98,12 @@ namespace Game.Client
 
             _vendorTabButtons = BuildCategoryTabs(inner, VendorTabs, new Vector2(18f, -chrome - 66f), 88f,
                                                   cat => { _vendorTab = cat; _vendorRevision = -1; });
+            // `BL-117` — same button, same shared order, at the end of this window's four tabs.
+            BuildOrderButton(inner, new Vector2(18f + VendorTabs.Length * 90f, -chrome - 66f), 86f,
+                             // Both lists this window owns: the sell shelf AND the buyback shelf,
+                             // which is its own panel with its own revision and would otherwise keep
+                             // the previous order until the next sale moved its hash.
+                             () => { _vendorRevision = -1; _buyBackRevision = -1; });
 
             ScrollRect scroll;
             _vendorList = UiKit.ScrollArea(inner, out scroll, 3f);
@@ -178,7 +184,7 @@ namespace Game.Client
             }
 
             bool anyInTab = false;
-            foreach (var ware in shop.Items)
+            foreach (var ware in ByOrder(shop.Items))   // `BL-117`: the same cycle as the bag's
             {
                 var def = ItemCatalog.Get(ware.DefId);
                 if (def == null || !InCategory(_vendorTab, def)) continue;

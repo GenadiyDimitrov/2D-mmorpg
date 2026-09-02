@@ -109,6 +109,9 @@ chance = 0.5 + 0.5 * (attackerAtk - def) / (attackerAtk + def)
   ×0.7 = 35%, ×0.5 = 25%, ×0.3 = 15%. A ×0.5 skill may go under the floor; nothing may pass 0.90.
 - ⚠ Attacker level here is also the **RUNG's** learn level.
 
+- **A WHISP contests on a FLAT attack of its own** (`GameConstants.WhispCcAtk` = 40, a plain melee
+  creature's) at the **MASTER'S level** — never the master's ATK, never his gear. `BL-109`.
+
 `StatCalculator.DebuffLandChance` · `StatCaps.CcLandMin/CcLandMax/CcLevelFloorGap`
 
 ## Interrupting a cast (IG's own formula)
@@ -243,7 +246,13 @@ CastSpeedStat   = classBase  * 1.63^((wit - 20)/10)       cap 1999
 MoveSpeed: base per race+class, NO dex term, buffed cap 250 (per-entity, raisable)
    fighter: elf 143 · human 115 · demon 112      walk = run * 0.5
    mage:    elf 114 · demon 113 · human 109      mob: walk wandering, run engaged, +100 leashed home
+   ROOT/STUN = 0 · FEAR = run speed, driven · CHARM = walk speed, driven   (`BL-110`)
+   WHISP: max(masterSpeed * 1.6, 200), x3 outside the 100-200 leash band   (`BL-109`)
 ```
+
+- **Fear and charm swap the BASE and keep everything else** — buffs, slows and the cap all still
+  apply, so a Swift-buffed victim panics faster. Read before the mob/player branches, so a charmed
+  mob walks even while Engaged and a charmed player walks even while running.
 
 `StatCalculator.SpeedBaseline`, `AttackAgiModifier`, `CastWitModifier`, `ClassBaseCastSpeed` ·
 `Entity.EffectiveCastSpeedMultiplier` / `EffectiveAttackSpeedMultiplier` / `EffectiveSpeed` ·

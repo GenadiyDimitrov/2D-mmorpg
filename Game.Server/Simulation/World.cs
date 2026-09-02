@@ -85,6 +85,54 @@ public class TotemInstance
     public int LifeTicks { get; set; }
 }
 
+/// <summary>`BL-109` — A WHISP. A support spirit that rides its master, follows him about and fires
+/// its own skills on its own judgement, off his pvp-on/off.
+///
+/// <para>⚠ NOT AN ENTITY, and not in <c>World.Entities</c> — his instruction (*"it can be part of the
+/// character game object no need a real entety"*), and the same reasoning that kept the totem out:
+/// a new <c>EntityKind</c> has to be audited through every "is this a mob / not a player" test on the
+/// server, and whichever one is missed is where a whisp quietly becomes a legal aggro, damage or loot
+/// target. A whisp is a row in <c>Entity.Whisps</c>, owned by the master and gone with him.</para>
+///
+/// <para>🔑 IT IS NOT A BUFF EITHER, though it BEHAVES like one (20 minutes, re-summonable in the last
+/// five seconds, lost on death). It has to be its own thing because a buff has no position, no reuse
+/// timers of its own and no ability to act — and all three are the whisp.</para>
+///
+/// <para>🔑 THE LIST IS A PUSH-DOWN STACK, not a set — his own worked example, and the reason the
+/// order matters: <c>[C][B][A]</c> →D→ <c>[D][C][B]</c> →A→ <c>[A][D][C]</c> →D→ <c>[A][D][C]</c>
+/// (D refreshed in place). A whisp you already have is REFRESHED where it stands; a new one is pushed
+/// on the FRONT and the tail falls off the end. See <c>GameLoopService.SummonWhisp</c>.</para></summary>
+public class WhispInstance
+{
+    /// <summary>The SUMMON skill that called it (`tank_whisp_taunt`), which is its identity: one
+    /// whisp per summon skill, and re-summoning the same one refreshes rather than stacks.</summary>
+    public required string SummonSkillId { get; init; }
+
+    /// <summary>Its own skills, from <c>SkillDef.SummonsWhisp</c> — the ids of `whisps_skills.csv`
+    /// rows. Usually one; the healing whisp carries two and chooses by the master's HP band.</summary>
+    public required string[] SkillIds { get; init; }
+
+    /// <summary>What the bar and the client call it ("Taunting Whisp").</summary>
+    public required string Name { get; init; }
+
+    /// <summary>THE WHISP'S LEVEL = the rung of the summon skill it was called with. Everything the
+    /// whisp's own skills read is read AT THIS LEVEL (*"Power depends on whisp lvl"*), so laddering a
+    /// whisp later is a matter of adding rungs to the whisp def and nothing else.</summary>
+    public int Level { get; init; } = 1;
+
+    /// <summary>Ticks left of its 20 minutes.</summary>
+    public int TicksRemaining { get; set; }
+
+    /// <summary>Per-skill reuse, in ticks. Keyed by whisp-skill id, so the healing whisp's two gears
+    /// hold their 20s and 10s independently — which is what makes Quick Heal the reactive one.</summary>
+    public Dictionary<string, int> Reuse { get; } = new();
+
+    /// <summary>Where it is drawn. Server-derived: it flies toward its slot beside the master and
+    /// parks there when he stops. Not a destination anything else may write.</summary>
+    public float X { get; set; }
+    public float Y { get; set; }
+}
+
 /// <summary>A live adventuring party. Owned by the loop thread. The leader can invite/kick;
 /// members share XP (split among those in range) and are the targets of AoE ally heals/buffs.</summary>
 public class Party

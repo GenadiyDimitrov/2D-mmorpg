@@ -33,6 +33,23 @@ public static class RateConfig
     /// <para>Live-editable from the admin tuning panel and, for drops, <c>/droprate global|amount</c>.</para></summary>
     public static RateSet World = RateSet.One;
 
+    /// <summary>`BL-118` — CLASS CHANGE ON CONVERSATION ALONE, no quest and no quest items. An admin
+    /// setting, off by default, live from the tuning panel beside the exp rate.
+    ///
+    /// <para>His reason is the rates, and it is a good one: *"at x100exp doing quest at 20 is kinda
+    /// annoying ..and I enter with the admin char make the player an admin change class then make him
+    /// player again"*. A server running at ×100 reaches 20 in minutes and then stops dead at a quest
+    /// chain written for a ×1 pace — so the workaround was three admin round-trips per character.</para>
+    ///
+    /// <para>🔑 IT APPLIES TO EVERYONE ON THE SERVER, NOT TO ADMINS — which is the whole point. The
+    /// thing he was working around is that the character who needs the class change is an ORDINARY
+    /// player; a rule that only exempted admins would leave him doing exactly what he described.</para>
+    ///
+    /// <para>⚠ It waives the ITEMS and the quest, never the LEVEL, the race/class fit or the
+    /// "never the same discipline twice" rule. Those are what a class change MEANS; the quest is only
+    /// what gates it.</para></summary>
+    public static bool FreeClassChange = false;
+
     /// <summary>QUEST rewards only, composed ON TOP of <see cref="World"/>. At <see cref="RateSet.One"/>
     /// it changes nothing on its own — but routing quest rewards through it is what finally makes them
     /// obey the server rates at all: quest GOLD and quest SP used to be added raw, so on a x30 server

@@ -82,22 +82,159 @@ namespace Game.Client
             return tab == ItemCategory.All ? c != ItemCategory.Quest : c == tab;
         }
 
-        /// <summary>The C8 ordering: by NAME, with a stable tie-break so two rows of the same piece at
-        /// different enchants never swap places between refreshes.</summary>
-        private static List<InventoryItemDto> ByName(IEnumerable<InventoryItemDto> items)
+        // ----- `BL-117`: THE [ORDER] BUTTON ------------------------------------------------------
+        //
+        //  His cycle, in his words: *"normal/alphabetical → alphabetical descending → rarity then
+        //  alphabetical (Mythic first) → rarity descending then alphabetical → type then rarity then
+        //  alphabetical"*, and *"same for npcs sell/buy/buyback inventories"*.
+        //
+        //  🔑 ONE FIELD FOR EVERY LIST IN THE GAME, deliberately. The bag, the vendor's sell list, his
+        //  buy list, the buyback shelf and the warehouse all read this — so setting the order once in
+        //  the bag is still the order you see when you walk to a shop. Five per-window settings would
+        //  mean re-picking it in each, which is the opposite of what a sort button is for.
+        //
+        //  ⚠ NOT PERSISTED. It is a view preference and there is no settings message to carry it; it
+        //  resets to alphabetical on login, which is the order everything had before this existed.
+
+        internal enum ItemOrder
+        {
+            Name = 0,        // A→Z, the order everything had before this button
+            NameDesc = 1,    // Z→A
+            Rarity = 2,      // Mythic first, then name
+            RarityAsc = 3,   // Common first, then name
+            Type = 4,        // weapons → armor → jewels → consumables, rarity then name inside each
+        }
+
+        private ItemOrder _itemOrder = ItemOrder.Name;
+
+        private static string OrderLabel(ItemOrder o) => o switch
+        {
+            ItemOrder.Name => "A-Z",
+            ItemOrder.NameDesc => "Z-A",
+            ItemOrder.Rarity => "Rarity",
+            ItemOrder.RarityAsc => "Rarity ^",
+            _ => "Type",
+        };
+
+        /// <summary>His type order: *"all weapons ... then armor, then jewels, then consumables"*.
+        /// Everything he did not name (materials, quest tokens) sorts after them rather than being
+        /// hidden or interleaved — a bag holds more kinds of thing than a sentence lists.</summary>
+        private static int TypeRank(ItemDef def) => def == null ? 9 : def.Slot switch
+        {
+            EquipSlot.Weapon => 0,
+            EquipSlot.Armor or EquipSlot.Shield => 1,
+            EquipSlot.Jewel or EquipSlot.Rune => 2,
+            EquipSlot.Consumable or EquipSlot.Scroll or EquipSlot.Box => 3,
+            EquipSlot.QuestItem => 5,
+            _ => 4,
+        };
+
+        /// <summary>Compare two items under the CURRENT order. Shared by every list so they cannot
+        /// drift apart, and written against (name, rarity, slot) rather than a DTO so the vendor's buy
+        /// list — which is a different record entirely — can use the same rules.</summary>
+        private int CompareByOrder(string nameA, ItemDef defA, string nameB, ItemDef defB)
+        {
+            int byName = string.Compare(nameA, nameB, StringComparison.OrdinalIgnoreCase);
+            switch (_itemOrder)
+            {
+                case ItemOrder.NameDesc:
+                    return -byName;
+                case ItemOrder.Rarity:
+                {
+                    // Mythic FIRST — his "(Mythic first)". The enum climbs Common→Mythic, so descending.
+                    int c = (defB != null ? (int)defB.Rarity : -1).CompareTo(defA != null ? (int)defA.Rarity : -1);
+                    return c != 0 ? c : byName;
+                }
+                case ItemOrder.RarityAsc:
+                {
+                    int c = (defA != null ? (int)defA.Rarity : -1).CompareTo(defB != null ? (int)defB.Rarity : -1);
+                    return c != 0 ? c : byName;
+                }
+                case ItemOrder.Type:
+                {
+                    int c = TypeRank(defA).CompareTo(TypeRank(defB));
+                    if (c != 0) return c;
+                    c = (defB != null ? (int)defB.Rarity : -1).CompareTo(defA != null ? (int)defA.Rarity : -1);
+                    return c != 0 ? c : byName;
+                }
+                default:
+                    return byName;
+            }
+        }
+
+        /// <summary>The list ordering (`BL-117`; was `ByName`, the C8 rule). A stable tie-break on
+        /// enchant then instance id keeps two rows of the same piece from swapping places between
+        /// refreshes — which was the whole point of the original and survives every new order.</summary>
+        private List<InventoryItemDto> ByName(IEnumerable<InventoryItemDto> items)
         {
             var list = new List<InventoryItemDto>(items);
             list.Sort((a, b) =>
             {
                 var da = ItemCatalog.Get(a.DefId);
                 var db = ItemCatalog.Get(b.DefId);
-                int c = string.Compare(da != null ? da.Name : a.DefId,
-                                       db != null ? db.Name : b.DefId, StringComparison.OrdinalIgnoreCase);
+                int c = CompareByOrder(da != null ? da.Name : a.DefId, da,
+                                       db != null ? db.Name : b.DefId, db);
                 if (c != 0) return c;
                 c = b.Enchant.CompareTo(a.Enchant);            // stronger first
                 return c != 0 ? c : a.InstanceId.CompareTo(b.InstanceId);
             });
             return list;
+        }
+
+        /// <summary>The vendor's BUY list under the same order — *"same for npcs sell/buy/buyback
+        /// inventories"*. Its own record, so it cannot share <see cref="ByName"/>, but it shares the
+        /// comparison: a shop sorted by one rule and a bag by another is worse than no button.
+        /// The id is the tie-break — a shop never lists the same ware twice, so it is only there to
+        /// keep the order from wobbling between frames.</summary>
+        private List<ShopItemDto> ByOrder(IEnumerable<ShopItemDto> wares)
+        {
+            var list = new List<ShopItemDto>(wares);
+            list.Sort((a, b) =>
+            {
+                var da = ItemCatalog.Get(a.DefId);
+                var db = ItemCatalog.Get(b.DefId);
+                int c = CompareByOrder(da != null ? da.Name : a.Name, da,
+                                       db != null ? db.Name : b.Name, db);
+                return c != 0 ? c : string.CompareOrdinal(a.DefId, b.DefId);
+            });
+            return list;
+        }
+
+        /// <summary>The BUYBACK shelf under the same order — the third of the three lists he named.
+        /// ⚠ The tie-break is the INDEX, and it must be: the index is the shelf slot the server buys
+        /// back by, so two identical rows have to keep a stable, distinguishable order or a re-buy
+        /// could land on the wrong one after a re-sort.</summary>
+        private List<BuyBackEntryDto> ByOrder(IEnumerable<BuyBackEntryDto> entries)
+        {
+            var list = new List<BuyBackEntryDto>(entries);
+            list.Sort((a, b) =>
+            {
+                var da = ItemCatalog.Get(a.DefId);
+                var db = ItemCatalog.Get(b.DefId);
+                int c = CompareByOrder(da != null ? da.Name : a.Name, da,
+                                       db != null ? db.Name : b.Name, db);
+                if (c != 0) return c;
+                c = b.Enchant.CompareTo(a.Enchant);            // stronger first, like the bag
+                return c != 0 ? c : a.Index.CompareTo(b.Index);
+            });
+            return list;
+        }
+
+        /// <summary>Build the `[ORDER]` button. Every window that lists items places one of these and
+        /// hands it the refresh that redraws its own list — the cycle and the comparison are shared,
+        /// only the redraw differs.</summary>
+        private Button BuildOrderButton(Transform parent, Vector2 topLeft, float width, Action refresh)
+        {
+            Button button = null;
+            button = UiKit.TextButton(parent, OrderLabel(_itemOrder), () =>
+            {
+                _itemOrder = (ItemOrder)(((int)_itemOrder + 1) % 5);
+                UiKit.SetButtonText(button, OrderLabel(_itemOrder));
+                refresh?.Invoke();
+            }, 14f);
+            UiKit.Place(UiKit.Rect(button.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        topLeft, new Vector2(width, 32f));
+            return button;
         }
 
         /// <summary>Lay out a row of category tabs and hand back the buttons, so the bag, the vendor and

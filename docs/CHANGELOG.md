@@ -7,12 +7,147 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.103.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.104.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-02 (latest) — 0.103.0: `BL-108`, the four authored 40+ files
+## 2026-09-02 (latest) — 0.104.0: `BL-110` fear and charm, and `BL-109` the whisps
+
+His order after the four CSV files: *"now do 110 then 109 then UI"*. Both are built here, in that
+order, because the second needs the first — a charming whisp cannot exist until charm does.
+
+⚠ **NEW APK.** The whisps ride their own protocol message (`Whisps`), and a client that does not
+listen for it will never draw one. The class table changed too, which needs a new build on its own.
+
+### `BL-110` — FEAR AND CHARM: the two states where the server drives your body
+
+His ruling, from `BL-123`: *"both dont change target like taunt — just act uncontrolably"*. Fear
+**runs** you to random points 100-200 away; charm **walks** you toward the caster. Neither re-points
+your target — they move the body and lock the hands.
+
+- **Fear kept its bit (41) and changed shape.** It used to mean *"cannot cast or attack, can still
+  move"*, which is not a fear, it is a silence — the victim kept full control of his feet. It now
+  drives him. Two skills carry it, Terrifying Roar and Witches Scarecrow, and both descriptions were
+  corrected; his `nuker 3rd.csv` row says only *"Fear the enemy"*, so no CSV cell was made untrue.
+- **Charm is a FIELD, `SkillDef.Charms`** — the `SkillEffect` flag enum has been full since
+  `1L << 62`, the same reason CC resistance and MP-cost reduction ride fields. Everything that tests
+  a flag on the way to a debuff had to learn about it: `IsDebuff` (or a charm would render in the
+  BUFF row and be strippable by a *cancel*), `IsContestedDebuff` (or a charm with no school would
+  land on the ~99% fizzle roll instead of the contest), `BossShrugsOff` (or a raid boss would be
+  walkable), and the `offensive` test at the cast gate.
+- **`Entity.IsControlDriven`** is the new seam. While it holds, the server writes the destination and
+  nothing else may: move taps are refused, follow and auto-hunt stand down, and a mob's AI does not
+  run at all. That last one matters most — the engaged branch of `MobAi` does the LEASH RESET, which
+  would have dragged a feared creature home mid-panic and ended the fear's movement outright.
+- **Charm's aggro is unconditional, its control is not** — *"charm can fail the actual debuff (the
+  un-charm-movement) but still adds the points"*. The threat is paid on cast, before the contest;
+  only the walk rolls. It goes through `AddThreat`, so a charm never FORCES a target change the way
+  a taunt does — it puts points on the table and lets them speak.
+- **`/buff` can reach a control skill now.** It matched `Category.Buff` only, so there was no way, on
+  any character, to put a stun, a fear or a charm on somebody and watch what it does. A third search
+  pool (timed debuffs, the CC flags, the charm field) was the only route to testing this at all;
+  `/buff @target charm` names the admin as the caster, which is what a charm walks toward.
+
+**Verified by SmokeTest §14, and the guard was run against the broken code first**: with the drive
+reverted, "FEAR DRIVES A BODY THAT WAS GIVEN NO ORDERS" reports 0 units moved and fails, which is
+what makes it a guard rather than a decoration.
+
+### `BL-109` — WHISPS: a support spirit that rides you and acts on its own
+
+His design, and `whisps_skills.csv` was already authored — nine skills, built row for row.
+
+- **NOT an entity**, on his instruction (*"it can be part of the character game object"*): the same
+  reasoning that kept the totem out of `EntityKind`. A whisp is a row in `Entity.Whisps`, so it can
+  never be aggroed, hit or looted by a call site somebody forgot to audit.
+- **The push-down stack is his**, and its two cases are deliberately not symmetrical: a whisp you do
+  not have is pushed on the FRONT and the tail falls off; a whisp you DO have is refreshed WHERE IT
+  STANDS. So keeping a whisp never costs you the others, and adding one always costs you your oldest.
+- **One slot, raised to two by Whisp Mastery at 60** (`PassiveEffect.WhispSlots`, summed).
+- **Twenty minutes, re-summonable only in the last five seconds** — the buff renewal window from
+  `BL-112`, refused at the CAST GATE so a mis-tap costs neither MP nor the 30-second reuse.
+- **Uninfluenced by master gear**, his rule taken literally: the debuffs contest on a flat
+  `WhispCcAtk` at the MASTER'S LEVEL, and the heals are flat powers that skip his heal-power
+  passives. A fully-geared tank and a naked one have the same whisp. ⚠ `WhispCcAtk = 40` is the one
+  invented number in the build — `whisps_skills.csv` has no attack column — and it is a plain melee
+  creature's. It is the figure to move if whisps land too often or too rarely.
+- **Their debuffs share the player family's `BuffKey`** — *"whisp debuffs do not stack with the
+  player version"* — so the ordinary rank rules resolve them and a whisp can never overwrite a
+  healer's work.
+- **Conditions, not IG's 8-13s clock** (*"just like normal skills with some conditions and
+  cooldown"*): master in combat, the whisp's own 400 range measured from the WHISP, the master's own
+  PvP gate, and for the support pair his HP bands — Whisp Heal covers 50-99% on a 20s reuse, Quick
+  Heal covers below 50% on a 10s reuse. That is why one whisp carries two skill ids.
+- **A whisp never picks its own target.** It helps with the fight its master is already in; pulling
+  is a decision that belongs to the player.
+- **Lost on death, with the buffs and by the same test** — his own *"if its easier we can make them
+  to be saved by angelsProtection"*, taken literally: one rule about death, not two.
+- **The six summons and Whisp Mastery** are the `Whisps` block of `tank 3rd.csv`, split by race —
+  Human taunt + bind, Elf charm + heal, Demon the two breaks. With one slot until 60 that is the
+  largest thing race has ever decided about a class here.
+- **He laddered that block from one rung to EIGHT while this was being built**, and the build follows
+  it: MP 50 → 100, the taunt/charm aggro 6500 → 12000 (the two whisps share a ladder cell for cell),
+  the heal 250 → 740, armor break 10/5% → 30/15%, weapon break 5% → 15%, and two level sets
+  (40/46/52/58/62/66/70/74 and 43/49/55/60/64/68/72/74). `--check` is clean on all of it.
+  🔴 **Three cells in his file need a word from him and are flagged on `BL-109`**: the race column now
+  reads Human on all four of taunt/bind/armor/weapon (built as **Demon** for the breaks, his original
+  split, under the typo rule); Charming Whisp's last four comment cells say `uses whisp_provoke`; and
+  that file's SP column has no `k`, so `--check` shows 28 yellow SP lines until he adds them —
+  deliberately left showing rather than taught away in the tool.
+- ⚠ **A STARTUP GUARD MADE ONE DECISION EXPLICIT.** The whisp breaks ladder on the HEALER's buff keys,
+  which is `BL-85`'s "two childless multi-level buffs on one key" trap — except here the competition
+  IS the feature (*"upgrade-or-fail against a Healer's Armor Break of lower/equal/higher level"*), and
+  both of the guard's escapes break his rule: a separate key lets them stack, `FlatRank` pins the
+  whisp at rank 1 forever. The guard now carries a two-entry allowance with the cost written into it.
+  ⚠ **Nothing else from that file.** It is still open (his `NOT DONE` banner at line 228), and the
+  taunt / mass-taunt / intimidate / freeze / stay / charm ladders, the masteries and Defensive Wall
+  all wait for the single tank pass.
+- **The client draws them as coloured orbs** (`GroundDecals.SetWhisps`), one colour per summon,
+  chasing the server's position. A deliberate placeholder: the position is honest and two whisps are
+  told apart at a glance, and the art belongs with `BL-93`/`BL-103`.
+
+**Verified by SmokeTest §15** — the push reaches the wire at all (a whisp is invisible without it),
+the leash, the re-summon refusal *by its own gate* (the first cut of that check was in fact reading
+the 30s cooldown), the one-slot eviction, the mastery's second slot, and the half that actually
+matters: **a whisp acts on its own** once its master is fighting, at his target.
+
+### Then the UI, the third thing he asked for — `BL-111`, `BL-117`, `BL-118`
+
+- **`BL-111` — FOUR BUFF BARS, and a number.** *"I cannot see if I have 20 or less buffs to not over
+  buff me"*. The split is **duration-shaped, not source-shaped**, and his two worked examples are the
+  whole spec: Bow Expertise is a 20-minute self-buff and belongs in NORMAL; the tank's ultimate and
+  the warrior's Battle Defence/Presence are 30-120s, do not count against the limit, and go in
+  OTHERS. So the first test is "does this occupy one of the 20 slots", and the answer comes from the
+  SERVER — off the same predicate that evicts, never re-derived on the client, because whether a
+  skill counts is authored per skill and a nearly-right counter is worse than none. Debuffs keep
+  their own bar above all four, unhidable, as before. The count is drawn as **`n/20` beside the
+  collapse button** and stays visible at every collapse stage, since "is there room for one more
+  blessing" is asked precisely when the bar is folded away.
+
+  🔴 **AND ASKING FOR THE NUMBER FOUND A REAL BUG.** A debuff def carries the default
+  `BuffRow.Buff` — the Debuff row is a DISPLAY override on the instance — so the cap predicate
+  answered TRUE for one. **A poison, a stun or a fear landing on a character at 20 buffs evicted one
+  of his blessings** ("Might faded — you can only hold 20 buffs at once", mid-fight) and then took
+  the slot itself. Invisible for exactly as long as nobody could see the count. Fixed, and guarded in
+  SmokeTest §14: a blessing reports `Counts=true`, a fear reports `Counts=false`.
+
+- **`BL-117` — the `[ORDER]` button**, cycling his five: A-Z → Z-A → rarity (Mythic first) → rarity
+  ascending → type (weapons → armor → jewels → consumables, rarity then name inside each). 🔑 **ONE
+  setting for every list in the game** — the bag, the vendor's sell list, his buy list, the buyback
+  shelf and the warehouse all read it, so the order you pick in your bag is still the order you see
+  at the shop. Not persisted: it is a view preference, and it resets to A-Z, which is what every list
+  did before the button existed.
+
+- **`BL-118` — class change without the quest**, an admin setting beside the exp rate
+  (`RateConfig.FreeClassChange`, a 0/1 field on the tuning panel). *"at x100exp doing quest at 20 is
+  kinda annoying"* — a ×1-paced quest chain standing in front of a character who reached 20 in
+  minutes, worked around with three admin round-trips per character. 🔑 **It applies to everyone on
+  the server, not to admins**, which is the whole point: the character who needs it is an ordinary
+  player. ⚠ It waives the ITEMS and the quest, never the level, the race/class fit, or the
+  never-the-same-discipline rule — those are what a class change means; the quest is only its gate.
+  The NPC window reads the same flag, so the option is offered rather than greyed out.
+
+## 2026-09-02 — 0.103.0: `BL-108`, the four authored 40+ files
 
 His word on the 22 finds of playtest 29 was **bugs first, then the CSVs** — the bugs closed at
 0.102.11, so this is the CSVs. Four files, and the biggest of them is a whole class kit:

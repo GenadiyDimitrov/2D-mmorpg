@@ -499,6 +499,32 @@ public record SkillDef(
     // meaningless — but without an explicit refusal it would look like a working PvP skill that
     // silently does nothing, which is worse than a skill that says no.
     bool MobTargetOnly = false,
+    // `BL-109` — THIS SKILL SUMMONS A WHISP, and these are the whisp's OWN skills (the ids of the
+    // `whisps_skills.csv` rows). His comment column on `tank 3rd.csv` says it in as many words:
+    // *"uses whisp_provoke"*, *"uses whisp_heal and whisp_quick_heal"* — which is why this is an
+    // ARRAY: the healing whisp carries two, and picks between them by the master's HP band.
+    //
+    // 🔑 A WHISP IS NOT AN ENTITY (his rule: *"it can be part of the character game object no need a
+    // real entety"*) — it is a row on its master, exactly as a totem is a placed object rather than a
+    // creature. So this field is the whole of the summon: no spawn, no aggro table, no loot.
+    //
+    // ⚠ The whisp's LEVEL is this skill's rung, and its numbers are read off the WHISP skill at that
+    // rung (*"Power depends on whisp lvl"*). Laddering a whisp later means adding rungs to the whisp
+    // def, never restating its power here.
+    string[]? SummonsWhisp = null,
+    // CHARM (`BL-110`, his `BL-123` ruling of 2026-09-02) — the victim CANNOT ACT and WALKS toward
+    // the caster for the duration. Fear's twin: fear runs him nowhere, charm walks him to you.
+    // 🔑 Like fear, it does NOT re-point his TARGET; it moves the body and locks the hands.
+    //
+    // Rides as a FIELD, not a SkillEffect flag, for the usual reason — the flag enum has been full
+    // since 1L << 62. Fear kept its bit (41) because it already had one; charm never had.
+    //
+    // 🔑 ITS AGGRO IS UNCONDITIONAL, ITS CONTROL IS NOT — *"charm can fail the actual debuff (the
+    // un-charm-movement) but still adds the points"*. So a charm's `TauntPower` is added to the
+    // caster's threat ON CAST, before the contest, and only the walk rolls. That asymmetry is the
+    // whole reason a tank can lean on charm for aggro at all, and it is why the taunt's target lock
+    // is the SHORT guarantee — see the charm block in GameLoopService.
+    bool Charms = false,
     // SKILL EVASION (BL-06) — the chance the HOLDER of this buff dodges an incoming physical SKILL.
     // A physical skill is never evaded by the ordinary accuracy-vs-evasion contest any more (owner,
     // playtest-21 `69e`: *"normaly no1 can evade a physical skill … now on then i miss a skill which
@@ -1363,7 +1389,12 @@ public readonly record struct PassiveEffect(
     // PvP DAMAGE TAKEN, as a delta: −0.05 = the Duel Sigil's *"5% PvP Defence"*. Multiplied into
     // Entity.PvpDamageTaken exactly as the armour-set channel (StatMods.PvpDamageTakenPct) is, so the
     // two compose. Inert outside player-vs-player.
-    float PvpDamageTakenPct = 0f)
+    float PvpDamageTakenPct = 0f,
+    // `BL-109` — EXTRA WHISP SLOTS. The tank's Whisp Mastery is *"Increase the limit of active whisps
+    // to 2"*, so it carries 1 here and the base is 1 (see GameConstants.WhispSlotsBase). SUMMED across
+    // passives, unlike the "guarantee" fields above that take a MAX: a second mastery rung should add
+    // a third slot, which is his own ladder — one by default, *"a passive raises it to 2 then 3"*.
+    int WhispSlots = 0)
 {
     /// <summary>Hash on a few representative fields instead of all ~60. Same IL2CPP bracket-nesting
     /// reason as <see cref="SkillDef.GetHashCode"/>: this record is the SECOND largest in the
@@ -1452,6 +1483,8 @@ public static partial class SkillCatalog
         list.AddRange(Shared4thSkills());     // Skills.Shared4th.cs (his `shared 4th.csv` ALL-CLASSES passives)
         list.AddRange(SigilSkills());         // Skills.Sigils.cs (the 4th class's 18 Attack/Defence/Support sigils)
         list.AddRange(BossJudgmentSkills());  // Skills.BossJudgment.cs (`BL-98` the six-rung ladder — engine-applied only)
+        list.AddRange(WhispSkills());         // Skills.Whisps.cs (`BL-109` the whisp's own nine — cast by the whisp, never learned)
+        list.AddRange(WhispSummonSkills());   // Skills.Whisps.cs (his six calls + Whisp Mastery)
 
         var dict = new Dictionary<string, SkillDef>();
         foreach (var sk in list)
@@ -1489,6 +1522,26 @@ public static partial class SkillCatalog
             // fired) is not the collision this is about.
             if (sk.Category == SkillCategory.Passive) continue;
             string key = string.IsNullOrEmpty(sk.BuffKey) ? sk.Name : sk.BuffKey;
+            // 🔑 THE DELIBERATE SHARERS (`BL-109`). A WHISP's Armor Break and Weapon Break ladder on
+            // the healer's own keys ON PURPOSE — his rule is *"whisp debuffs do not stack with the
+            // player version"*, and *"Whisp Armor Break must upgrade-or-fail against a Healer's Armor
+            // Break of lower/equal/higher level"*. That is a request for exactly the rung-vs-rung
+            // competition this guard warns about, so competing IS the feature here and neither of the
+            // guard's two escapes fits: a separate key would let the two STACK (the thing he ruled
+            // out), and FlatRank would pin the whisp at rank 1 so a healer's rung 1 could never be
+            // improved on by a level-74 whisp.
+            //
+            // ⚠ WHAT THIS COSTS, stated so nobody rediscovers it as a bug: the two ladders are
+            // different lengths (whisp 8, healer 14) and their magnitudes only line up index-for-index
+            // to rung 5. From rung 6 the whisp's is slightly the stronger number at the same rung, so
+            // an equal-rank tie is broken by remaining duration and the HEALER's 30s beats the whisp's
+            // 15s. The party gets .20 where the whisp offered .22, in that one narrow window. Erring
+            // toward the healer's own spell is the right way round, and the alternative is a per-rung
+            // rank table that would have to be re-derived every time either ladder moved.
+            //
+            // A NEW sharer still fails here, which is the whole point — this list is two entries long
+            // and adding to it is a decision, not a formality.
+            if (sk.Id == WhispArmorBreak || sk.Id == WhispWeaponBreak) continue;
             if (laddered.TryGetValue(key, out var other))
                 throw new InvalidOperationException(
                     $"Buff key '{key}' is laddered by BOTH '{other}' and '{sk.Id}'. A childless "

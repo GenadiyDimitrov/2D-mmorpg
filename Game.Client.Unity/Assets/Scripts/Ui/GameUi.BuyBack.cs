@@ -65,7 +65,7 @@ namespace Game.Client
                 return;
             }
 
-            foreach (var e in list)
+            foreach (var e in ByOrder(list))   // `BL-117`: the same cycle as the bag and the vendor
             {
                 long cost = e.UnitPrice * e.Quantity;
                 bool afford = Boot.Gold >= cost;

@@ -1191,8 +1191,67 @@ answered at the bottom of this section rather than as entries — neither asks f
   ladder its MP cost 21/11% → 30/20% across the 4th tier. ⚠ **Verified by reading the fold, not by
   playing** — worth confirming on a 74+ buffer that Arcane and Feral Protection now really resists.
 
-- `BL-109` 🔵 **WHISPS — A NEW SYSTEM. Your design, and `whisps_skills.csv` is already authored.**
-  IG cubics: a non-targetable support entity that rides the master and fires its own skills.
+- `BL-109` ✅ **BUILT 2026-09-02 (0.104.0) — THE WHISPS, all nine skills and the six-summon PoC.**
+  Every rule below is implemented as written; what follows is kept as the record of the design.
+
+  **What the build added on top of your spec, and why:**
+  - **`WhispCcAtk = 40` is the one invented number.** Your rule is that a whisp is uninfluenced by
+    master gear and its own P/M.Atk is 1, so its debuffs need an attack of their own — and
+    `whisps_skills.csv` has no attack column to read one from. 40 is a plain melee creature's
+    (`StatCalculator.MobCcAtk`), contested at the MASTER'S level, so a whisp lands about as often as
+    a level-matched monster's control before the skill's own modifier. **This is the figure to move
+    if whisps land too often or too rarely.**
+  - **A whisp never picks its own target** — it helps with the fight its master is already in.
+    Pulling is a decision that belongs to the player, and a spirit that chose its own fights would
+    be making it for him.
+  - **The client draws them as coloured orbs**, one colour per summon, chasing the server's position.
+    A deliberate placeholder: the position is honest and two whisps are told apart at a glance. The
+    art is `BL-93`/`BL-103` work, not this.
+
+  ⚠ **`whisp_gravity` and `whisp_clear` are BUILT BUT UNSUMMONABLE.** They are rows in your file, so
+  they exist; your `tank 3rd.csv` PoC calls six whisps and neither is one of them. The day a class
+  table names them they work. Nothing was invented to give them a home.
+
+  ⚠ **ONLY THE `Whisps` BLOCK OF `tank 3rd.csv` WAS BUILT.** That file is still open — your `NOT
+  DONE` banner is at line 228 — and the taunt, mass-taunt, intimidate, freeze, stay and charm
+  ladders, the anti-magic and weapon masteries and Defensive Wall all wait for the one-pass tank
+  delta. The whisp rows went in because the whisp SYSTEM is what you queued and those are the rows
+  you wrote for it.
+
+  🔴 **THREE THINGS IN YOUR FILE NEED ONE WORD EACH FROM YOU.** You laddered the whisp block from
+  one rung to EIGHT while this was being built, and the build follows your ladders exactly — MP
+  50→100, the taunt/charm aggro 6500→12000, the heal 250→740, armor break 10/5% → 30/15%, weapon
+  break 5% → 15%, and the two level sets (40/46/52/58/62/66/70/74 and 43/49/55/60/64/68/72/74).
+  `--check` is clean on every one of those numbers. These three it cannot settle:
+
+  1. 🔴 **THE RACE COLUMN NOW GIVES THE HUMAN FOUR WHISPS AND THE DEMON NONE.** Your earlier rows
+     read Human / Elf / **Demon**; the laddered block reads Human for taunt, bind, armor break AND
+     weapon break. Taken literally a Demon Bulwark has no whisps at all, which is not a design — it
+     is the tail of the Human block copied. **Built as Demon**, your original split, under the same
+     typo rule the monotonic one runs on: strong evidence, corrected, and reported rather than
+     silently accepted. One word puts it back if you meant it.
+  2. 🟠 **Charming Whisp's last four rows say `uses whisp_provoke`** in the comment column where the
+     first four say `whisp_charm`. Read as charm throughout — the skill is called Charming Whisp and
+     its DESCR says *"Charming the enemy"*. Comment column only; nothing else read it.
+  3. 🟡 **YOUR SP COLUMN IN THAT FILE HAS NO `k`.** Every other file writes `36k` / `880k`; this one
+     writes `28` / `880`. Read as THOUSANDS — your level-74 rows say `880` where the healer template
+     you pasted into the SAME file says `880k` at 74. ⚠ **Until you add the `k`s, `--check` reports
+     28 yellow SP lines on this file** (`sp CSV 28 vs code 28000`). That is the report, deliberately
+     left showing rather than taught away in the tool. It is wrong on every row of the file if it is
+     wrong at all, not just these.
+
+  ⚠ **ONE ENGINE DECISION THE BUILD HAD TO MAKE, because a startup guard demanded it be deliberate:**
+  a whisp's Armor Break and Weapon Break ladder on the HEALER's buff keys, so the two compete rung
+  for rung — which is your *"upgrade-or-fail against a Healer's Armor Break of lower/equal/higher
+  level"*. The guard's two escapes both break your rule (a separate key lets them STACK; `FlatRank`
+  pins the whisp at rank 1 forever), so the guard now carries a two-entry allowance with the reasoning
+  written into it. The cost, stated: from rung 6 the whisp's number is slightly the stronger at the
+  same rung, so an equal-rank tie goes to the healer's longer duration and the party gets .20 where
+  the whisp offered .22 — in that one window only, and erring toward the healer's own spell.
+
+  ---
+  **Your original design, unchanged:** IG cubics — a non-targetable support entity that rides the
+  master and fires its own skills.
 
   **The rules you set, which are the whole spec:**
   - **Not an `Entity`.** *"it can be part of the character game object no need a real entety"* — like the
@@ -1220,15 +1279,36 @@ answered at the bottom of this section rather than as entries — neither asks f
   Nine whisp skills in `whisps_skills.csv`: provoke, charm, bind, armor/weapon/gravity break, heal,
   quick-heal, clear. **`whisp_charm` depends on `BL-110`.**
 
-- `BL-110` 🔵 **FEAR AND CHARM — two CC types we do not have.** *"both dont change target like taunt —
-  just act uncontrolably"*.
-  - **Fear** — cannot act; runs at **run speed** to a random point in a 100-200 radius, for the duration.
-  - **Charm** — cannot act; walks at **walk speed** toward the caster, for the duration.
+- `BL-110` ✅ **BUILT 2026-09-02 (0.104.0) — FEAR AND CHARM, the two states where the SERVER drives
+  your body.** *"both dont change target like taunt — just act uncontrolably"*.
+  - **Fear** — cannot act; **runs** to a random point 100-200 away, picking a new one on arrival.
+  - **Charm** — cannot act; **walks** toward the caster, re-aimed every tick.
 
-  Both are movement the SERVER drives while input is refused, which is new: today's CC either roots or
-  stuns. `whisp_charm` in `BL-109` is the first consumer.
+  Neither re-points the victim's TARGET, which is the thread running through your whole `BL-123`
+  ruling: charm and fear move the body and lock the hands, taunt alone moves the eyes.
 
-- `BL-111` 🔴 **FOUR BUFF BARS, not one.** *"I cannot see if I have 20 or less buffs to not over buff me"*:
+  🔑 **Fear kept its bit and changed its meaning.** It used to be *"cannot cast or attack, can still
+  move"* — a silence, not a fear, and the victim kept full control of his feet. **Charm is a FIELD**
+  (`SkillDef.Charms`); the flag enum has been full since `1L << 62`, and every flag test on the way
+  to a debuff had to be taught about it — the buff-row test, the contested-vs-fizzle test, the boss
+  control immunity and the "is this hostile" test at the cast gate. Any one of them missed is a
+  silent wrong answer, which is the standing cost of the enum being full.
+
+  🔑 **`/buff` can reach a control skill now, and could not before.** It matched `Category.Buff`
+  only, so there was no way on any character to put a stun, a fear or a charm on somebody and watch
+  it. Fear and charm are server-driven MOVEMENT — the one class of effect you cannot check by reading
+  a stat panel — so the tool that could not reach them was the one most needed. `/buff @target charm`.
+
+  ⚠ **STILL OPEN, and it is `BL-123`'s remaining half: TAUNT IS MOB-ONLY.** `effect.HasFlag(Taunt) &&
+  target.Kind == EntityKind.Mob` — the fourth `Kind`-shaped gate of that family — so a taunt does
+  nothing in PvP, which your *"mobs/players"* wording asks for. Fear and charm work on both, since
+  they were built after the lesson. Not fixed here because a taunt aimed at a PERSON needs a ruling
+  you have not given: it locks his TARGET, and locking a player's target is a stronger thing to do
+  to someone than moving his feet. **Say the word and it is a one-line change.**
+
+- `BL-111` ✅ **BUILT 2026-09-02 (0.104.0) — FOUR BUFF BARS, AND THE `n/20` COUNT.** The split is the duration-shaped one you gave, and the counter comes from the SERVER off the same predicate that evicts, so the number and the rule cannot disagree. 🔴 **Asking for that number found a real bug: a DEBUFF occupied a buff slot** — a debuff def carries the default `BuffRow.Buff` (the Debuff row is a display override), so a poison landing on you at 20 buffs EVICTED ONE OF YOUR BLESSINGS and took the slot itself. Fixed, and guarded in SmokeTest §14. Original ask below.
+
+- `BL-111`.old 🔵 **FOUR BUFF BARS, not one.** *"I cannot see if I have 20 or less buffs to not over buff me"*:
   1. **normal** — only what counts against the 20 cap;
   2. **toggles + consumables** — HP/MP potions, HoTs, the toggles;
   3. **items** — Runes and other item buffs;
@@ -1380,7 +1460,9 @@ answered at the bottom of this section rather than as entries — neither asks f
   while a dash potion leaves everyone else at 250. `Entity.MoveSpeedCap` is already per-entity, so
   that is one field on the sprint skill — no rework.
 
-- `BL-123` 🟠 **THE THREE CONTROL STATES, DEFINED. CHARM AND FEAR ARE NOT BUILT; TAUNT IS HALF-BUILT.**
+- `BL-123` 🟠 **THE THREE CONTROL STATES — CHARM AND FEAR ARE NOW BUILT (`BL-110`, 0.104.0). ONE
+  THING IS LEFT: TAUNT IS STILL MOB-ONLY, AND THAT NEEDS YOUR RULING.** See `BL-110` above for what
+  landed. The rest of this entry is the original ruling and the state of the code before it.
   Your rulings, 2026-09-02, for mobs AND players alike:
 
   1. **Charm** — the target *"walk"* (**walking speed**, so `MoveState.Walking`) **toward the caster**
@@ -1434,12 +1516,12 @@ answered at the bottom of this section rather than as entries — neither asks f
   here, and the reason a tank can rely on charm for aggro at all. **That asymmetry is why the taunt's
   lock can be shortened to 1.5s**: the guaranteed half is the lock, so it should be the brief one.
 
-- `BL-117` 🔵 **AN `[ORDER]` BUTTON IN THE BAG AND EVERY VENDOR LIST.** One button, cycling:
+- `BL-117` ✅ **BUILT 2026-09-02 (0.104.0) — THE `[ORDER]` BUTTON, your five orders.** 🔑 ONE setting for every list in the game (bag, vendor sell, vendor buy, buyback, warehouse), so the order you pick in your bag is the order you see at the shop. Not persisted — a view preference, resetting to A-Z, which is what every list did before. Your ask: One button, cycling:
   normal/alphabetical → alphabetical descending → rarity then alphabetical (Mythic first) → rarity
   descending then alphabetical → **type then rarity then alphabetical** (all weapons by rarity within
   name, then armor, then jewels, then consumables). *"same for npcs sell/buy/buyback inventories"*.
 
-- `BL-118` 🔵 **AN ADMIN SETTING: CLASS CHANGE WITHOUT THE QUEST.** *"at x100exp doing quest at 20 is
+- `BL-118` ✅ **BUILT 2026-09-02 (0.104.0) — `RateConfig.FreeClassChange`, on the tuning panel beside the exp rate (0/1).** 🔑 It applies to EVERYONE on the server, not to admins — the character who needs it is an ordinary player, which is the whole thing you were working around. ⚠ It waives the items and the quest, never the level, the race/class fit or the never-the-same-discipline rule. The NPC window reads the same flag, so the option is offered rather than greyed out. Your ask: *"at x100exp doing quest at 20 is
   kinda annoying ..and I enter with the admin char make the player an admin change class then make him
   player again"*. A toggle beside the exp rate in the admin menu; while it is on, the class master
   changes your class on **conversation alone** — no quest items, and no requirement to have done the
@@ -1473,10 +1555,13 @@ answered at the bottom of this section rather than as entries — neither asks f
   3.45/3.00 = **×1.15**, the middle of your own 12-18%. Bow and Dual are inherently two-handed, so a
   bow takes the higher branch by construction. Both `buffer 3rd.csv` rows moved with it.
 
-- `BL-121` ❓ **`RateConfig.VendorPriceRate` — MY PROPOSAL, YOUR CALL, ANSWERING YOUR SECOND `[?]`.** See
-  the answer below. If you want it: **one field, default 1.0, read only in `ItemCatalog.BuyPrice`**. No
-  authored price changes and it vanishes at 1.0. I would not build it until the ×1 economy is what you
-  are reading.
+- `BL-121` ❌ **DECLINED BY YOU, 2026-09-02 — NOTHING TO BUILD, AND NOTHING LEFT OPEN.** *"121 i dont
+  want ... the game progresses faster no need to break the economy ... with vendor prices ..."*.
+  My proposal was a `RateConfig.VendorPriceRate` knob; you ruled the knob itself out, not just its
+  value. Kept as a record so it is not re-proposed: **vendor prices do not scale with rates**, and
+  the reason is yours — a faster game is the point of the rates, and re-pricing the shop to claw it
+  back is breaking the economy to defend a number nobody asked for. The analysis under it still
+  stands and is still worth reading, but it argues for the same conclusion by a different road.
 
 ### Your two `[?]` questions — answered, nothing to build
 
