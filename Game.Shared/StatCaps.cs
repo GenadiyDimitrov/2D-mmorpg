@@ -245,21 +245,43 @@ public static class MovementTuning
 }
 
 /// <summary>
-/// Base run speeds per race + base class. 250 is the buffed CAP; these bases sit
-/// below it so gear/buffs/passives climb toward it. Elf fastest, Human slowest;
-/// within a race, fighters (esp. rogues) beat mages. Walk speed is derived.
+/// `BL-122` — BASE RUN SPEEDS PER RACE + BASE CLASS, AUTHORED BY THE OWNER 2026-09-02. Six numbers,
+/// given verbatim; 250 is the buffed CAP (per-entity, see <see cref="Entity"/>.MoveSpeedCap) and
+/// these sit far below it so buffs and passives climb toward it. Walk speed is derived
+/// (<see cref="MovementTuning.WalkSpeedFactor"/>).
+///
+/// <para>🔑 <b>THE TARGET IS THE BUFFED FIGURE, NOT THE BASE.</b> His *"speed should be around 180
+/// for slow and 210 for faster classes"* describes where a party-buffed player LANDS, not what this
+/// table holds — I read it as the base first and proposed 180-210 here, which would have been ~65
+/// points too fast. The buff stack is <b>+61</b> (Swift / Wind Grace +33, Harmony of Speed +20,
+/// Frenzy +8), so the table below produces 170-204: Human fighter 115+61 = 176 ≈ his "180 for slow",
+/// Elf fighter 143+61 = 204 ≈ his "210 for faster classes". A rogue's own +60 from sprint + passives
+/// then puts him over 250, which is his *"they usually max it out"*.</para>
+///
+/// <para>⚠ <b>NO DEX TERM, DELIBERATELY.</b> *"IG is base class+race speed x dex mod but i dont want
+/// dex to affect speed (rogues have enough passives so their ms to rise even more)"*. Nothing in the
+/// codebase has ever multiplied speed by DEX, so this is a rule to KEEP, not a change to make — do
+/// not "restore" the IG modifier when porting a formula from a reference table that carries it.</para>
+///
+/// <para>⚠ The old ordering comment is gone with the old numbers: <b>fighter no longer beats mage in
+/// every race.</b> The Demon's two are 112 fighter / 113 mage — the mage is a point FASTER — and the
+/// Elf fighter's 143 is a 28-point outlier over every other row rather than the top of a smooth
+/// ladder. That is his table as given, and none of it is a typo to interpolate away
+/// (cf. the monotonic-ladder rule, which is about a LADDER of rungs, not across race rows).</para>
 /// </summary>
 public static class SpeedTable
 {
     public static float BaseRunSpeed(Race race, BaseClass cls) => (race, cls) switch
     {
-        (Race.Elf,   BaseClass.Fighter) => 165f,
-        (Race.Elf,   BaseClass.Mage)    => 145f,
-        (Race.Demon,   BaseClass.Fighter) => 155f,
-        (Race.Demon,   BaseClass.Mage)    => 138f,
-        (Race.Human, BaseClass.Fighter) => 148f,
-        (Race.Human, BaseClass.Mage)    => 130f,
+        (Race.Elf,     BaseClass.Fighter) => 143f,
+        (Race.Elf,     BaseClass.Mage)    => 114f,
+        (Race.Demon,   BaseClass.Fighter) => 112f,
+        (Race.Demon,   BaseClass.Mage)    => 113f,
+        (Race.Human,   BaseClass.Fighter) => 115f,
+        (Race.Human,   BaseClass.Mage)    => 109f,
         // (The God debug race's 200 was deleted 2026-08-07 with the layer — `/spd m <v>` replaces it.)
-        _ => 140f
+        // Unreachable — all six combinations are covered — but kept as the human fighter, not as an
+        // invented number that would silently become the fastest row if a race were ever added.
+        _ => 115f
     };
 }

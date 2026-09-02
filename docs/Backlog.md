@@ -1304,18 +1304,57 @@ answered at the bottom of this section rather than as entries — neither asks f
   ruling: *"kiting is a way mage/archer with low defence to be able to farm actively ... monster speed
   is irelevant.. its only how many seconds u have before it cut the 900 range"*. See `BL-122`.
 
-- `BL-122` 🟠 **THE PLAYER BASE-SPEED TABLE GOES TO ~180/210.** Your ruling 2026-09-02: *"speed should
-  be around 180 for slow and 210 for faster classes"*, against today's `SpeedTable.BaseRunSpeed` of
-  130-165. The buff stack is +61 (Swift/Wind Grace +33, Harmony of Speed +20, Frenzy +8), so 180 → 241
-  and 210 → capped, which is your *"now everyone can get 250"*. Rogues reach the cap on their own
-  (+60 from sprint + passives) and the differentiation you want arrives later, when their sprint
-  **raises `MoveSpeedCap` itself to 300** while a dash potion leaves everyone else at 250 —
-  `Entity.MoveSpeedCap` is already per-entity, so that costs one field on the sprint skill.
+- `BL-122` ✅ **BUILT 2026-09-02 (0.102.9) — YOUR SIX BASE MOVE SPEEDS, AND NO DEX TERM.** Authored by
+  you verbatim: **Elf 143/114, Human 115/109, Demon 112/113** (fighter/mage), replacing 130-165.
 
-  ❓ **BLOCKED ON SIX NUMBERS FROM YOU.** `SpeedTable` is keyed `(Race, BaseClass)` and `BaseClass` is
-  only Fighter/Mage — there is no rogue row to make fast, so "slow" and "faster" have to land on race
-  × fighter/mage. My proposal, keeping today's ordering (Elf > Demon > Human, fighter > mage):
-  **Elf 210/190, Demon 200/185, Human 195/180.** Say yes, or give me the six.
+  🔑 **I had read your *"speed should be around 180 for slow and 210 for faster classes"* as the BASE
+  table and proposed 180-210 here — wrong by ~65 points.** It describes where a party-buffed player
+  LANDS. The buff stack is **+61** (Swift/Wind Grace +33, Harmony of Speed +20, Frenzy +8), so your
+  table gives Human fighter 115+61 = **176** ≈ "180 for slow" and Elf fighter 143+61 = **204** ≈ "210
+  for faster classes". A rogue's own +60 then clears 250 — your *"they usually max it out"*.
+
+  ✅ **The no-DEX rule was already true** — *"IG is base class+race speed x dex mod but i dont want dex
+  to affect speed"*. Nothing in the codebase has ever multiplied move speed by DEX, so there was
+  nothing to remove. It is written into `SpeedTable` as a rule to KEEP, so nobody re-introduces the IG
+  modifier while porting a formula from a reference table that carries it.
+
+  ⚠ Two things in your table are deliberate and are NOT typos to interpolate away: the **Demon mage
+  (113) is one point faster than the Demon fighter (112)**, and the **Elf fighter's 143 is a 28-point
+  outlier** over every other row. Noted in the code so a later pass does not "fix" them.
+
+  ⚠ **Still to come, when you author the rogue:** the sprint raises `MoveSpeedCap` itself to **300**
+  while a dash potion leaves everyone else at 250. `Entity.MoveSpeedCap` is already per-entity, so
+  that is one field on the sprint skill — no rework.
+
+- `BL-123` 🟠 **THE THREE CONTROL STATES, DEFINED. CHARM AND FEAR ARE NOT BUILT; TAUNT IS HALF-BUILT.**
+  Your rulings, 2026-09-02, for mobs AND players alike:
+
+  1. **Charm** — the target *"walk"* (**walking speed**, so `MoveState.Walking`) **toward the caster**
+     for the duration. If the charm carries an aggro value it **adds to the caster's general aggro
+     points**. 🔑 **Do NOT force a target change**, but the victim **cannot act**.
+  2. **Fear** — the target *"run in place"*: **runs uncontrollably** inside a **100-200 radius**.
+     🔑 **Do NOT force a target change**, but the victim **cannot act**.
+  3. **Taunt** — the victim **may act and move freely; only its TARGET is locked to the caster.** If
+     the taunt carries an aggro value it **adds to the caster's general aggro points**.
+
+  🔑 **The common thread across all three: none of them changes who the victim is TARGETING except
+  taunt, which changes only that.** Charm and fear move the body and lock the hands; they do not
+  re-point the eyes.
+
+  **Where the code stands today:**
+  - **Charm does not exist** — no `SkillEffect` bit, no state. ⚠ `SkillEffect` has **zero bits left**
+    (long-standing), so this needs the fields route, like `SkillLevel.ExtraPassives` before it.
+  - **Fear exists but is the wrong shape.** `SkillEffect.Fear` (bit 41) today means only *"cannot cast
+    or attack, can still move"* — the player keeps **full control** of his movement. Your version
+    takes control away and drives him. `Entity.IsFeared` / `IsActionLocked` already give the
+    can't-act half; the uncontrolled run is the missing half.
+  - **Taunt is built for MOBS ONLY** (`GameLoopService`, `effect.HasFlag(SkillEffect.Taunt) &&
+    target.Kind == EntityKind.Mob`) — so it does nothing in PvP, which your *"mobs/players"* wording
+    asks for. ⚠ **This is a fourth `Kind == Player`-shaped gate**, the same family of bug as `BL-79`'s
+    guards and the three found in 0.94.0.
+  - ❓ **One question on taunt's aggro.** You say the value *"adds to the general aggro points"*. Today
+    it does `max(mine, top) + power` — it **jumps to the top of the threat table first, then adds**,
+    deliberately, so a taunt cannot land you second. Keep the jump, or is a plain add what you meant?
 
 - `BL-117` 🔵 **AN `[ORDER]` BUTTON IN THE BAG AND EVERY VENDOR LIST.** One button, cycling:
   normal/alphabetical → alphabetical descending → rarity then alphabetical (Mythic first) → rarity

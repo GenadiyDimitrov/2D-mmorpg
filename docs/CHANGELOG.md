@@ -7,11 +7,50 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.102.8**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.102.9**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-02 (latest) — 0.102.8: the creature that gave up now really leaves
+## 2026-09-02 (latest) — 0.102.9: his six base move speeds, and no DEX term
+
+`BL-122`. `SpeedTable.BaseRunSpeed` was 130-165, invented. It is now his, verbatim:
+
+| | fighter | mage |
+|---|---|---|
+| **Elf** | 143 | 114 |
+| **Human** | 115 | 109 |
+| **Demon** | 112 | 113 |
+
+🔑 **I had read his *"speed should be around 180 for slow and 210 for faster classes"* as the base
+table and proposed 180-210 — wrong by ~65 points.** It describes where a party-buffed player *lands*.
+The buff stack is **+61** (Swift / Wind Grace +33, Harmony of Speed +20, Frenzy +8), so his table
+gives Human fighter 115+61 = **176** ≈ "180 for slow", Elf fighter 143+61 = **204** ≈ "210 for faster
+classes". A rogue's own +60 from sprint and passives then clears the 250 cap — his *"they usually max
+it out"*. The lesson is the general one: **a target figure he quotes is the figure at the table, not
+the number in the table.**
+
+**No DEX term, and there never was one.** *"IG is base class+race speed x dex mod but i dont want dex
+to affect speed (rogues have enough passives so their ms to rise even more)"*. Nothing in the codebase
+has ever multiplied move speed by DEX, so this is a rule to keep rather than a change to make — it is
+now written into `SpeedTable` so nobody restores the IG modifier while porting a formula from a
+reference table that carries it.
+
+Two shapes in his table are deliberate and are commented as such, so a later pass does not "fix" them:
+the **Demon mage (113) is a point faster than the Demon fighter (112)**, and the **Elf fighter's 143
+is a 28-point outlier** rather than the top of a smooth ladder. (The monotonic-ladder rule is about a
+ladder of rungs, not about race rows.)
+
+⚠ **CONSEQUENCE, FLAGGED NOT FIXED: unbuffed, the player is now slower than the average creature.**
+Mob run speeds are 90-155 with the mode at **132** and a long tail at 140-155. Against the old
+130-165 table most classes could walk away from most things; against this one only the Elf fighter
+(143) beats a median mob, and nothing beats the fastest. Fully buffed (170-204) everyone clears the
+field again. So kiting — which he ruled is deliberately how a low-defence mage or archer farms — is
+now **buff-dependent** rather than free. That interaction is his call, not a bug; `BL-122` records it.
+
+Server-only, no new APK: move speed reaches the client as `EffectiveSpeed` on the wire, not as a
+compiled-in constant.
+
+## 2026-09-02 — 0.102.8: the creature that gave up now really leaves
 
 `BL-116`, the bow-kite exploit: *"I stand just outside the radius and shoot it with a bow .. The mob
 agros me back then stops and it moves towards/away from me and if I do more than it's 5% regen I can

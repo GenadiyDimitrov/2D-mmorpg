@@ -233,11 +233,14 @@ timeMultiplier = 333 / speedStat                 lower = faster
 AttackSpeedStat = weaponBase * 1.0105^(agi - 30)          cap 1500
 CastSpeedStat   = classBase  * 1.63^((wit - 20)/10)       cap 1999
    classBase: fighter 150 · human/elf mage 333 · demon mage 300
-MoveSpeed: per race+class table, buffed cap 250 (per-entity, raisable)
+MoveSpeed: base per race+class, NO dex term, buffed cap 250 (per-entity, raisable)
+   fighter: elf 143 · human 115 · demon 112      walk = run * 0.5
+   mage:    elf 114 · demon 113 · human 109      mob: walk wandering, run engaged, +100 leashed home
 ```
 
 `StatCalculator.SpeedBaseline`, `AttackAgiModifier`, `CastWitModifier`, `ClassBaseCastSpeed` ·
-`Entity.EffectiveCastSpeedMultiplier` / `EffectiveAttackSpeedMultiplier` · `StatCaps.MoveSpeed/AttackSpeed/CastSpeed`
+`Entity.EffectiveCastSpeedMultiplier` / `EffectiveAttackSpeedMultiplier` / `EffectiveSpeed` ·
+`StatCaps.MoveSpeed/AttackSpeed/CastSpeed`, `SpeedTable.BaseRunSpeed` · `GameConstants.MobLeashSprintBonus`
 
 ## Skill MP cost
 
