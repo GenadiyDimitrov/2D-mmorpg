@@ -1,0 +1,3 @@
+Drop character animation FBXs here — idle / walk / run / attack / death / cast.
+See docs/guides/UnityClient.md and Assets/Editor/ModelSetup.cs (BL-102).
+Unity ignores dot-files, so this one is not imported and costs the build nothing.

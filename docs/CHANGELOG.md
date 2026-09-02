@@ -7,11 +7,57 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.102.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.102.2**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-08-29 (latest) — 0.102.1: Shield Mastery is `heavy/shield` on every rung
+## 2026-08-29 (latest) — 0.102.2: the player-animation path, ready for the file that is missing
+
+`BL-102` has been "I need one file from you" since 0.100.2. This builds everything on **this** side of
+that file, so the file is now the only step left: drop clips into a folder, run one command, and the
+character animates.
+
+**The finding it answers, restated because it is not obvious:** all 21 FBXs under `Models/Characters/`
+have mesh, skeleton, bind pose and 65 bones — and `AnimationStack` count **0**. The monster pack ships
+five takes per creature (which is why the rats and spiders already walk, swing and die); the character
+pack ships none. `humanoid.prefab` is a body with nothing to play.
+
+### What changed
+
+- **`ModelSetup` grew its character half.** `BuildAll` now builds creatures *and* characters; the new
+  `Bodies` table is one row per player body (today just `humanoid` ← `Man/Adventurer.fbx`) and the new
+  `BuildCharacters` menu item / `-executeMethod` target does the character half alone.
+- **`Assets/Resources/Models/Characters/Animations/`** — the drop folder, created and empty. Everything
+  importable in it is read: one multi-take FBX, or one file per action, or both.
+- **Clips retarget, they are not bound to a body.** The sources import as `Human` +
+  `CreateFromThisModel`, so the same six files animate every one of the 21 bodies — and the elf and
+  demon bodies added later — with no per-model work. That is the payoff of the Humanoid rule from
+  `BL-93`, arriving early.
+- **A single-take file is renamed to its own file name.** Every Mixamo download calls its take
+  `mixamo.com`; six downloads would be six clips with one name, and the last one loaded would silently
+  win every lookup. Multi-take files keep their authored names, which are real.
+- **Loop, and lock root travel, on the looping clips only** (`loopTime`, `loopPose`,
+  `lockRootPositionXZ`). An unlooped idle freezes the body in its final frame; an unlocked walk slides
+  the mesh out of the position the server put it at, because root motion is off by design.
+- **`Casting` joined the generated controller** as a bool (never a trigger — the cast has a duration the
+  server owns, and it ends on interrupt as well as on landing). The monsters have no cast clip, so their
+  controllers are unchanged: a parameter with no clip behind it is not declared and the client does not
+  ask for it.
+- **The clip matcher is now three passes** — exact name, then the monster packs' `Rat_idle` suffix, then
+  a plain substring — shared by both halves. The substring pass is what lets a raw download work
+  unrenamed: `Walking`, `Run_Fwd` and `Standing Melee Attack Downward` all land.
+- **An empty folder is a SKIP, not a failure.** The existing hand-made `humanoid.prefab` is the best
+  thing that exists until art lands and must not be overwritten with a clipless regeneration — and a
+  headless build must not go red over an art file nobody has downloaded yet.
+
+### For him
+
+`docs/guides/UnityClient.md` gained **"Adding move / idle / attack animations to the PLAYER"** — the
+Mixamo route step by step (format, skin, in-place), the six file names, the one command, and a
+symptom → cause table for when it does not move. Only `idle.fbx` is required; `walk` falls back to
+`idle` and `run` to `walk`, so two files are enough to see it working.
+
+## 2026-08-29 — 0.102.1: Shield Mastery is `heavy/shield` on every rung
 
 He asked for `/shield` on rungs 1-3 and `heavy/shield` on rung 4, then changed his own mind reading the
 result back — and the reason is class balance, not flavour:

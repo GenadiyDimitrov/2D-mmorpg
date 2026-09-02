@@ -901,14 +901,30 @@ closed · **`BL-93` opened** for the in-game visuals discussion you asked for (*
   2. **Mixamo** — upload one character FBX, pick clips, download "without skin". CC0-safe for this use
      and the standard route for a Humanoid rig.
 
-  **What I need is only the file(s) in `Models/Characters/Animations/`.** Then `ModelSetup` grows a
-  character row and `humanoid.prefab` gets the same treatment the mobs just got — an afternoon, headless,
-  no Editor session from you.
+  ⤷ ✅ **MY HALF IS BUILT (0.102.2) — WHAT IS LEFT IS THE FILE, AND NOTHING ELSE.** `ModelSetup` now
+  has a character half: `BuildAll` builds the bodies as well as the creatures, the clip sources are
+  imported as retargetable Humanoid motion, single-take files are renamed to their own file name (every
+  Mixamo take is called `mixamo.com`), locomotion is looped and root-locked, `Casting` joined the
+  generated controller, and `humanoid.prefab` is rebuilt with a wired `Animator`. **An empty folder is a
+  skip, not a failure** — running it today changes nothing and overwrites nothing.
 
-  ⚠ **Clip names matter less than the SET.** Idle / Walk / Run / Attack / Death is the whole
-  requirement — those are the four parameters `EntityView` drives (`Speed`, `Attack`, `Casting`,
-  `Dead`), and a missing one is silently skipped rather than an error. A cast pose would be a fifth and
-  is the one the monsters do not have either.
+  **THE THREE STEPS THAT ARE YOURS:**
+  1. Put animation files in **`Game.Client.Unity/Assets/Resources/Models/Characters/Animations/`**
+     (the folder exists and is empty). Named `idle.fbx` · `walk.fbx` · `run.fbx` · `attack.fbx` ·
+     `death.fbx` · `cast.fbx`. **Only `idle` is required** — `walk` falls back to `idle`, `run` to
+     `walk`, so *two* files already give you a character that stands and runs. Mixamo: **FBX Binary**,
+     **Without Skin**, tick *In Place*. Names are a substring match, so `Walking.fbx` works unrenamed.
+  2. Run it with the Editor closed:
+     `Unity.exe -batchmode -quit -nographics -projectPath …\Game.Client.Unity -executeMethod
+     Game.ClientEditor.ModelSetup.BuildAll -logFile -`
+  3. `pwsh tools/publish.ps1 -Apk` — `Resources` ships inside the build, so a new APK is not optional.
+
+  📖 **Step by step, with the download settings and a symptom→cause table:**
+  `docs/guides/UnityClient.md` → *"Adding move / idle / attack animations to the PLAYER"*.
+
+  🔑 **You buy this once for every body you will ever have.** The clips retarget through the Humanoid
+  avatar, so the same files animate all 21 characters and the elf and demon bodies you add later, with
+  no per-model work and no second download.
 
 - `BL-103` 🔵 **VISIBLE WEAPONS — the key shape is settled, the meshes are not. Your design, 2026-08-28:**
   *"if I make a sword1h.prefab and one sword1h_t20.prefab can that work? a t20 swords to be this one

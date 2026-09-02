@@ -459,21 +459,23 @@ it is also the fastest way to tell whether models are what is costing you frames
 The loader walks from **most specific to least** and takes the first file it finds, so you peel groups
 off the universal fallback by adding better-named files. **No code changes, ever.**
 
-| File in `Assets/Resources/Models/` | Who uses it |
-|---|---|
-| `player_<race>_<class>.prefab` | that one race+class, e.g. `player_demon_mage` (races: `human`, `elf`, `demon`; classes: `fighter`, `mage`) |
-| `player_<class>.prefab` | every character of that base class |
-| `player.prefab` | every player character |
-| `mob_<category>_<role>.prefab` | e.g. `mob_animal_archer` — category × role from `MobCatalog` |
-| `mob_<category>.prefab` | e.g. `mob_undead` — the nine `MobCategory` values |
-| `mob.prefab` | every mob |
-| `npc.prefab` | every NPC |
-| `humanoid.prefab` | **anything at all that found nothing above** |
+| File in `Assets/Resources/Models/` | Who uses it                                                                                                |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `player_<race>_<class>.prefab`     | that one race+class, e.g. `player_demon_mage` (races: `human`, `elf`, `demon`; classes: `fighter`, `mage`) |
+| `player_<class>.prefab`            | every character of that base class                                                                         |
+| `player.prefab`                    | every player character                                                                                     |
+| `mob_<category>_<role>.prefab`     | e.g. `mob_animal_archer` — category × role from `MobCatalog`                                               |
+| `mob_<category>.prefab`            | e.g. `mob_undead` — the nine `MobCategory` values                                                          |
+| `mob.prefab`                       | every mob                                                                                                  |
+| `npc.prefab`                       | every NPC                                                                                                  |
+| `humanoid.prefab`                  | **anything at all that found nothing above**                                                               |
 
 Lower-case, exactly as spelled by the enums: `animal`, `humanoid`, `undead`, `insect`, `demon`,
 `dragon`, `plant`, `magiccreature`, `angel` × `melee`, `archer`, `mage`.
 
 🔑 **Budget per FAMILY, not per mob.** Nine `mob_<category>` prefabs cover the entire bestiary.
+
+---
 
 ### The nine monster names — copy and paste
 
@@ -490,19 +492,19 @@ below.** `Assets/Editor/ModelSetup.cs` builds a family, its animator controller 
 line of table, with the Editor closed. The table here still tells you *which* model belongs to *which*
 family; that judgement is the part no script can make.
 
-| Prefab name to type | Fixes | Creatures in that family | Suggested model from your pack |
-|---|---|---|---|
-| `mob_animal` ✅ **built 0.100.2** | 11 | Ridgeback Pup, Ashen Wolf, Grizzly Bear | `Monsters/Rat`, `Bat`, `Frog`, `Snake` |
-| `mob_undead` | 9 | Skeleton Grunt, Grave Lich, Hall of Mirrors Wraith | `Monsters/Skeleton` |
-| `mob_insect` ✅ **built 0.100.2** | 9 | Hook Spider, Mantis Worker, Plunder Beetle | `Monsters/Spider`, `Wasp` |
-| `mob_dragon` | 5 | Wyrm, Crimson Drake, Emberwyrm | `Monsters/Dragon` |
-| `mob_demon` | 5 | Cinder Imp, Ravener, Revenant Minion | *(no fitting model yet)* |
-| `mob_angel` | 3 | Radiant Scout, Radiant Berserker, Radiant Mage | *(no fitting model yet)* |
-| `mob_plant` | 2 | Valley Treant, Bogwood | *(no fitting model yet)* |
-| `mob_magiccreature` | 2 | Watcher Eye, Aether Wisp | `Monsters/Slime` |
-| `mob_humanoid` | 33 | orcs, bandits, guards | only if you want them ≠ players |
-| `mob` | any family with no file above | — | one generic beast |
-| `npc` | town NPCs | vendors, gatekeepers | — |
+| Prefab name to type              | Fixes                         | Creatures in that family                           | Suggested model from your pack         |
+| -------------------------------- | ----------------------------- | -------------------------------------------------- | -------------------------------------- |
+| `mob_animal` ✅ **built 0.100.2** | 11                            | Ridgeback Pup, Ashen Wolf, Grizzly Bear            | `Monsters/Rat`, `Bat`, `Frog`, `Snake` |
+| `mob_undead`                     | 9                             | Skeleton Grunt, Grave Lich, Hall of Mirrors Wraith | `Monsters/Skeleton`                    |
+| `mob_insect` ✅ **built 0.100.2** | 9                             | Hook Spider, Mantis Worker, Plunder Beetle         | `Monsters/Spider`, `Wasp`              |
+| `mob_dragon`                     | 5                             | Wyrm, Crimson Drake, Emberwyrm                     | `Monsters/Dragon`                      |
+| `mob_demon`                      | 5                             | Cinder Imp, Ravener, Revenant Minion               | *(no fitting model yet)*               |
+| `mob_angel`                      | 3                             | Radiant Scout, Radiant Berserker, Radiant Mage     | *(no fitting model yet)*               |
+| `mob_plant`                      | 2                             | Valley Treant, Bogwood                             | *(no fitting model yet)*               |
+| `mob_magiccreature`              | 2                             | Watcher Eye, Aether Wisp                           | `Monsters/Slime`                       |
+| `mob_humanoid`                   | 33                            | orcs, bandits, guards                              | only if you want them ≠ players        |
+| `mob`                            | any family with no file above | —                                                  | one generic beast                      |
+| `npc`                            | town NPCs                     | vendors, gatekeepers                               | —                                      |
 
 The five with a suggested model cover **36 of the 50**. Demon, Angel and Plant have nothing suitable
 in the current pack — leave them; they keep falling through to `humanoid.prefab`, which is a body, if
@@ -558,31 +560,130 @@ character pack — the Rat imports ~2.9 Unity units tall. `ModelSetup` normalise
 height in its row, so the in-game "Entity size" slider is never asked to compensate for an art
 decision. That number and *which model suits a family* are the two things the script cannot decide.
 
+---
+
+### Adding move / idle / attack animations to the PLAYER  (`BL-102`, tool shipped 0.102.2)
+
+🔴 **The character models have no animation in them.** Measured, not assumed: all 21 FBXs under
+`Models/Characters/` have mesh, skeleton, bind pose and 65 bones, and an `AnimationStack` count of
+**0**. The *monster* pack ships five takes per creature — which is why the rats and spiders already
+walk, swing and die — and the *character* pack ships none. **No controller can fix that: there is
+nothing to put in it.** What is missing is a file, and this is how you supply it.
+
+#### What you are creating
+
+One folder of clips, already made for you and empty:
+
+```
+Game.Client.Unity/Assets/Resources/Models/Characters/Animations/
+```
+
+| Drop this file in | Becomes           | Loops | Needed?                                    |
+| ----------------- | ----------------- | ----- | ------------------------------------------ |
+| `idle.fbx`        | the standing pose | ✅     | **required** — nothing is built without it |
+| `walk.fbx`        | walking           | ✅     | falls back to idle                         |
+| `run.fbx`         | running           | ✅     | falls back to walk                         |
+| `attack.fbx`      | the swing         | ✖     | optional                                   |
+| `death.fbx`       | the corpse        | ✖     | optional                                   |
+| `cast.fbx`        | the casting pose  | ✅     | optional                                   |
+
+**Start with `idle` and `run` if you want to see it work in ten minutes.** Everything else can arrive
+later — a parameter with no clip behind it is simply never declared, and the client silently skips
+whatever the controller does not have.
+
+⚠ **The names are a *substring* match, lower-cased, so you usually do not have to rename anything.**
+`Walking.fbx`, `Standing Melee Attack Downward.fbx` and `Run_Fwd.fbx` all land on their own.
+
+#### Step A — get the clips
+
+**Route 1 — Mixamo (free, ~10 minutes, this is the one I'd use).**
+
+1. `mixamo.com`, sign in with a free Adobe account.
+2. **Upload Character** → pick `Assets/Resources/Models/Characters/Man/Adventurer.fbx`. This is only
+   so you can preview; the clips you download work on **every** body regardless of what you uploaded.
+3. Search and pick: **Idle**, **Walking**, **Running**, **Sword And Shield Slash** (or any
+   *Standing Melee Attack*), **Dying**, **Standing 2H Magic Attack 01**.
+4. For each: **Download** → Format **FBX Binary (.fbx)** → **Skin: Without Skin** → FPS 30 →
+   Keyframe Reduction **none**. Tick **In Place** where the animation offers it.
+5. Rename the six downloads to `idle.fbx`, `walk.fbx`, `run.fbx`, `attack.fbx`, `death.fbx`,
+   `cast.fbx` and drop them in the folder above.
+
+**Route 2 — the pack's own animation file.** Quaternius/asset-store character packs normally ship a
+separate animations FBX beside the characters; it was not in what was copied across. If you still have
+the download, that one file dropped into the folder is the whole fix — a multi-take FBX keeps its
+authored take names and the matcher reads them.
+
+#### Step B — run the builder (Editor closed)
+
+```
+"C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Unity.exe" -batchmode -quit -nographics ^
+    -projectPath G:\Work\Repository\L2Clone\Game.Client.Unity ^
+    -executeMethod Game.ClientEditor.ModelSetup.BuildAll -logFile -
+```
+
+That is the same command as the creatures — `BuildAll` now does both halves. Then
+**`pwsh tools/publish.ps1 -Apk`**, because `Resources` ships inside the build.
+
+#### What the builder does so you don't have to click it
+
+- Sets each clip file to **Rig → Humanoid, Avatar → Create From This Model** — without an avatar the
+  clips cannot retarget, and Unity gives no hint that anything is wrong.
+- **Renames a single-take file to its own file name.** Every Mixamo download calls its take
+  `mixamo.com`; six of them would be six clips with one name, and the last one loaded would silently
+  win every lookup.
+- **Loops** idle/walk/run/cast and **not** attack/death — a looping death re-kills the corpse forever.
+- **Locks root XZ travel** on the looping clips, so a walk exported with travel does not slide the mesh
+  out of the position the server put it at.
+- Builds the controller: a **1-D blend tree on `Speed`** (idle → walk at 0.7 → run at 1.4 Unity
+  units/sec), `Attack` as a trigger, `Casting` as a bool, `Dead` from **AnyState** and back again.
+- Rebuilds `humanoid.prefab` with a correctly wired `Animator` on it.
+
+🔑 **Why one folder serves every body, forever.** The characters import as **Humanoid**, so the clips
+retarget through the avatar instead of being bound to one skeleton. That means these six files also
+animate the elf and demon bodies you add later, and a 15,000-triangle replacement for any of them,
+with **no per-model work and no second download**. That is the whole payoff of the Humanoid setting,
+arriving early.
+
+⚠ **Nothing is overwritten while the folder is empty.** The builder logs a warning and skips the
+character half, leaving the existing prefab exactly as it is — so running it today changes nothing.
+
+#### If it still doesn't move
+
+| What you see                                  | What it is                                                                                                          |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Log says `No animation files in …/Animations` | The folder is empty, or the FBXs went in one level deeper than you thought.                                         |
+| Log says `not one animation clip in them`     | The export dropped the take. On Mixamo that is downloading the wrong format — use **FBX Binary**, **Without Skin**. |
+| Log says `could not build a Humanoid avatar`  | That file's skeleton is not a biped. Replace the file; nothing else is wrong.                                       |
+| Builds fine, body still slides in a T-pose    | You did not build a new APK. `Resources` is compiled into the build.                                                |
+| Body folds into a heap when it plays          | The **body's** rig is not Humanoid. Its Rig tab must say Humanoid + Create From This Model.                         |
+
 ### Animator parameters — all optional
 
-If you do add animation clips, name the Animator's parameters **exactly** as below. Add only the ones
-you have clips for; anything missing is simply not driven and costs nothing.
+🆕 **`ModelSetup` declares these for you** — for creatures and, since 0.102.2, for the player body too.
+This table is what you need only if you wire a controller **by hand**. Name the Animator's parameters
+**exactly** as below, and add only the ones you have clips for; anything missing is simply not driven
+and costs nothing.
 
-| Parameter | Type | Driven by |
-|---|---|---|
-| `Speed` | float | drawn movement, units/sec — 0 when standing |
-| `Attack` | trigger | every `CombatEvent` where this entity is the attacker |
-| `Casting` | bool | the cast bar (yours) / `MobCastInfo` (theirs) |
-| `Dead` | bool | the entity's `Dead` flag |
+| Parameter | Type    | Driven by                                             |
+| --------- | ------- | ----------------------------------------------------- |
+| `Speed`   | float   | drawn movement, units/sec — 0 when standing           |
+| `Attack`  | trigger | every `CombatEvent` where this entity is the attacker |
+| `Casting` | bool    | the cast bar (yours) / `MobCastInfo` (theirs)         |
+| `Dead`    | bool    | the entity's `Dead` flag                              |
 
 To add one: select the Controller asset, open **Window → Animation → Animator**, and use the **`+`** in
 the **Parameters** tab on the left.
 
 ### When it doesn't work
 
-| What you see | What it is |
-|---|---|
-| Still spheres | The path or the name is wrong. It must be exactly `Assets/Resources/Models/humanoid.prefab` — check the capital `R` and `M`. |
-| Still spheres, name is right | You didn't build a new APK. `Resources` ships inside the build. |
-| Model is enormous or microscopic | Step 6.5 — the prefab's own Scale is what tunes size. |
-| Model is buried in the ground / floating | Step 7b — the model's pivot is not at its feet. |
-| Model lies on its face | Rotation. Select the prefab, set Rotation X to `-90` or `0` and see which stands it up. |
-| It animates in the Editor but not on the phone | `Animation Type` is Generic, not Humanoid. Redo Step 4. |
+| What you see                                   | What it is                                                                                                                   |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Still spheres                                  | The path or the name is wrong. It must be exactly `Assets/Resources/Models/humanoid.prefab` — check the capital `R` and `M`. |
+| Still spheres, name is right                   | You didn't build a new APK. `Resources` ships inside the build.                                                              |
+| Model is enormous or microscopic               | Step 6.5 — the prefab's own Scale is what tunes size.                                                                        |
+| Model is buried in the ground / floating       | Step 7b — the model's pivot is not at its feet.                                                                              |
+| Model lies on its face                         | Rotation. Select the prefab, set Rotation X to `-90` or `0` and see which stands it up.                                      |
+| It animates in the Editor but not on the phone | `Animation Type` is Generic, not Humanoid. Redo Step 4.                                                                      |
 
 ## What's in / what's next
 - **In:** connect + auth + character select/create + enter world; the **delta** feed → billboards
