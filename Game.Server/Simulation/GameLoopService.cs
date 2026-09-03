@@ -16478,25 +16478,21 @@ public class GameLoopService : BackgroundService
         }
         _log.LogInformation("Spawned {Count} NPCs", WorldMap.Npcs.Length);
 
-        // Report what each region actually CONTAINS. Region membership is geometric, so a polygon
-        // authored slightly wrong contains no spawners and fails silently — it would still draw, still
-        // teleport, and simply never show a level band. Printing the counts at startup makes a bad
-        // outline obvious on the first run instead of during a playtest.
-        foreach (var region in RegionMap.All)
-        {
-            var band = RegionMap.LevelBand(region.Id);
-            // The managing city and the gate names are printed too: both are AUTHORED-ONCE, DERIVED-EVERYWHERE
-            // (the city decides where you respawn, the gates are the gatekeeper's whole menu), and both are
-            // invisible until you die in the wrong place or open a gatekeeper on a phone.
-            _log.LogInformation("Region {Name}: {Spawners} spawner(s), {Band}{City}",
-                region.Name,
-                RegionMap.SpawnersIn(region.Id).Length,
-                band is null ? "peaceful" : $"Lv {band.Value.Min}-{band.Value.Max}",
-                region.CityId.Length == 0 ? "" : $", managed by {Towns.ById(region.CityId)?.Name ?? region.CityId}");
-            foreach (var gate in region.Gates)
-                if (region.Kind == RegionKind.Field)
-                    _log.LogInformation("    gate '{Gate}' — {Desc}", gate.Name, gate.Description);
-        }
+        // Region membership is geometric, so a polygon authored slightly wrong contains no spawners and
+        // fails silently — it would still draw, still teleport, and simply never show a level band.
+        // ⚠ This used to print a line PER REGION plus one per gate, which is a wall of text on every boot
+        // for a world that works. The failure it guards against is a region with NOTHING in it, so only
+        // that is worth saying out loud: one summary line, then a warning naming the empty fields.
+        var fields = RegionMap.All.Where(r => r.Kind == RegionKind.Field).ToArray();
+        var empty = fields.Where(r => RegionMap.SpawnersIn(r.Id).Length == 0).Select(r => r.Name).ToArray();
+        _log.LogInformation("World: {Fields} field(s), {Towns} town(s), {Spawners} spawner(s), {Gates} gate(s)",
+            fields.Length,
+            RegionMap.All.Count(r => r.Kind != RegionKind.Field),
+            RegionMap.All.Sum(r => RegionMap.SpawnersIn(r.Id).Length),
+            fields.Sum(r => r.Gates.Length));
+        if (empty.Length > 0)
+            _log.LogWarning("Field region(s) with no spawners — check the outline: {Regions}",
+                string.Join(", ", empty));
     }
 
     /// <summary>An outlaw gets NO SERVICE — the other half of `BL-79`, and his own scoping of it.

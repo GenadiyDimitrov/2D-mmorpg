@@ -25,7 +25,6 @@ try
     urls = urls?.Length > 0
             ? urls
             : "http://0.0.0.0:5238";
-    Console.WriteLine($"URLS:{urls}");
     builder.WebHost.UseUrls(urls);
 
     // Keep the console READABLE. EF Core logs every command it executes at Information, and this server
@@ -53,7 +52,6 @@ try
 
     var app = builder.Build();
 
-    Console.WriteLine($"App Build!");
     // Create the database/schema on first run.
     using (var scope = app.Services.CreateScope())
     {
@@ -144,20 +142,10 @@ try
 
     app.Logger.LogInformation("L2Clone server v{Version} starting.", Game.Shared.GameConstants.GameVersion);
 
-    // Print the LAN address the phone should use. "Now listening on: http://0.0.0.0:5238" is technically
-    // correct and completely useless when you're standing there with a phone — 0.0.0.0 is not something you
-    // can type into the client. This resolves the actual address instead of sending you to ipconfig.
-    foreach (var ip in System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces()
-                 .Where(n => n.OperationalStatus == System.Net.NetworkInformation.OperationalStatus.Up)
-                 .Where(n => n.NetworkInterfaceType is System.Net.NetworkInformation.NetworkInterfaceType.Ethernet
-                                                    or System.Net.NetworkInformation.NetworkInterfaceType.Wireless80211)
-                 .SelectMany(n => n.GetIPProperties().UnicastAddresses)
-                 .Select(a => a.Address)
-                 .Where(a => a.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork
-                             && !System.Net.IPAddress.IsLoopback(a)))
-    {
-        app.Logger.LogInformation("  Unity/phone clients on this LAN: http://{Ip}:5238/game", ip);
-    }
+    // (There used to be a LAN-address printout here for the phone. It enumerated every NIC that was up,
+    // so on this machine it printed the two virtual-adapter addresses a phone can never reach alongside
+    // the real one — three lines of guesswork. Removed with the rest of the boot noise, owner 2026-09-03;
+    // `ipconfig` answers the same question without lying about it.)
 
     app.Run();
 }

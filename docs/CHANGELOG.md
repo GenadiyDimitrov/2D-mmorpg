@@ -12,7 +12,26 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-03 (latest) — 0.110.0: the pull, the two silences, and CON/SPT shortening what they failed to stop
+## 2026-09-03 (latest) — the boot console says what went wrong, not what went right
+
+Owner: *"remove the server console info flood in the start with every city/zone creation ...it's a
+system that works now and only flood the console"*. Startup printed a line **per region** plus one per
+**gate** — ~89 log lines (twice that on screen, the default formatter puts the category on its own
+line) describing a world that has been correct for versions.
+
+- `GameLoopService.SpawnNpcs` — the per-region/per-gate loop is now **one summary line**
+  (`World: 28 field(s), 9 town(s), 82 spawner(s), 52 gate(s)`). 🔑 The loop was not decoration: its
+  comment says a mis-authored polygon contains **no spawners** and fails *silently*. So that check is
+  kept and inverted — a `LogWarning` **naming** any field region with zero spawners, silent when the
+  world is fine. Printing 37 healthy regions to catch one broken one is the wrong way round.
+- `Program.cs` — dropped `URLS:{urls}` and `App Build!` (raw `Console.WriteLine` debug leftovers), and
+  the LAN-address printout: it walked every NIC that was **up**, so it advertised two virtual-adapter
+  addresses a phone can never reach next to the real one. `Start!` is kept, at his instruction.
+
+Boot is now **16 lines**, of which ours are three: the version, the NPC count, the world summary.
+No behaviour changed; nothing on the wire changed, so **no new APK and no protocol bump**.
+
+## 2026-09-03 — 0.110.0: the pull, the two silences, and CON/SPT shortening what they failed to stop
 
 Three systems he specced in one message and ruled over the two that followed (`BL-154`, `BL-155`,
 `BL-156`). Two of them are engine work with placeholder rows on a file he has not written yet — his own
