@@ -195,9 +195,16 @@ public static partial class SkillCatalog
     public static readonly string[] FighterBuffSet =
         { NpcMight, NpcBulwark, NpcVampirism, NpcHaste, NpcSwift };
     /// <summary>What the ADMIN buff button and `/buff` hand out: EVERYTHING a max-level BUFFER can
-    /// give, at that buffer's TOP rung, plus every NPC single. Those top layers are the ones no NPC
-    /// sells and no consumable can reach, so this is the only way to see a fully-buffed character,
-    /// which is the state the balance numbers are read at.
+    /// give, at that buffer's TOP rung — the groups, the harmonies, Great Might and the Harmony Mark.
+    /// Those top layers are the ones no NPC sells and no consumable can reach, so this is the only way
+    /// to see a fully-buffed character, which is the state the balance numbers are read at.
+    ///
+    /// 🔑🔑 <b>THIS AND THE SPIRIT HELPER'S SHELF ARE TWO SEPARATE THINGS</b> (owner, 2026-09-03):
+    /// *"The npc buffer that is the spirit helper gives the singles we decided … the admin-full and
+    /// /buff gives the real full buffs. Both are separate. Altering the one should not break the
+    /// other."* <see cref="NewbieBuffSet"/> is HIS shelf and answers to `BL-150`; this is the buffer
+    /// CLASS's own kit and answers to the CSVs. Neither list may be built out of the other — see the
+    /// note at the bottom of <c>BuildAdminBuffSet</c> for the version where one was, and what it cost.
     ///
     /// 🔑 It is DERIVED from the Warchanter's own class tables, not hand-listed (owner, playtest 26:
     /// *"admin fullbuff should give the new buffs and should fallow buffers buf changes.. Meaning if
@@ -212,6 +219,11 @@ public static partial class SkillCatalog
     /// + the Harmonies + War Frenzy — which is the point of the improved tier. The order is kept
     /// deliberate anyway: reversed, the singles would land first and then be evicted, which is the
     /// same picture through twice the work.
+    ///
+    /// 🔴 THAT SENTENCE IS A CONTRACT WITH <c>GrantFullBuffSet</c>, and 0.107.0 broke it for two
+    /// versions: "refused when it arrives after" is only true while the singles are applied WITHOUT
+    /// `force`. See the note there before changing either side. Measure the result with
+    /// <c>dotnet run --project tools/BalanceMatrix -- --buffs</c>, which models the same rule.
     ///
     /// ⚠ It is LAZY (a property, not a field). It reads <see cref="Get"/> and <c>ClassSkills</c>, both
     /// of which have to be built first; a static field initialiser here would run inside the catalog's
@@ -246,7 +258,15 @@ public static partial class SkillCatalog
         {
             if (third.Discipline != Discipline.Warchanter) continue;
             if (ClassCatalog.Get(third.ParentSecondClassId) is not SecondClassDef parent) continue;
-            foreach (var cs in ClassSkills.Cumulative(third.Race, parent.Base, parent.Archetype, third.Discipline))
+            // 🔴 `fourth: true` — WITHOUT IT THIS SET STOPPED AT THE 3RD CLASS, and the summary above
+            //    ("everything a MAX-LEVEL buffer can give") was simply false (found 2026-09-03, his
+            //    playtest: the full buff owes *"group buffs + harmonies + harmony mark + great might"*
+            //    and Harmony Mark was never in it). `Cumulative` defaults the flag to FALSE because for
+            //    a real character it means "has paid the 100kk Rite"; the admin set is not a character
+            //    and wants the whole kit. Everything the 4th tier adds beyond buffs — the sigils, the
+            //    shared passives — is dropped by the IsGrantableBuff test below, as the 3rd tier's is.
+            foreach (var cs in ClassSkills.Cumulative(third.Race, parent.Base, parent.Archetype,
+                                                      third.Discipline, fourth: true))
                 learnable.Add(cs.SkillId);
         }
 
@@ -261,9 +281,19 @@ public static partial class SkillCatalog
 
         var classBuffs = learnable.Where(IsGrantableBuff).Distinct().ToList();
 
+        // 🔑🔑 THE NPC BUFFER'S LIST IS **NOT** APPENDED HERE — owner, 2026-09-03: *"The npc buffer that
+        //     is the spirit helper gives the singles we decided … the admin-full and /buff gives the real
+        //     full buffs — groups + harmonies + great might + harmony mark. Both are separate. Altering
+        //     the one should not break the other."* This set used to end `.Concat(NewbieBuffSet)` "for
+        //     anything uncovered", and that one line WAS the coupling: `BL-150` grew his shelf from 16
+        //     singles to 19 and all three walked straight into the admin bar, where (once `BL-131` forced
+        //     the set) they evicted the very groups this command exists to show. Nothing was ever gained
+        //     by it either — all 19 were refused as covered, every version it shipped in.
+        // ⚠ So the safety it was pretending to provide is now MEASURED instead of assumed: `--buffs`
+        //     prints any NPC family the buffer's own kit fails to cover. If that list is ever non-empty,
+        //     the answer is a missing buff in the CLASS kit, not a re-import of the NPC's shelf.
         return classBuffs.Where(IsGroup)           // groups first — they cover and evict the singles
             .Concat(classBuffs.Where(id => !IsGroup(id)))
-            .Concat(NewbieBuffSet)                 // then the NPC hour-long singles, for anything uncovered
             .Distinct()
             .ToArray();
     }

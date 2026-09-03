@@ -7,12 +7,92 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.109.2**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.109.3**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-03 (latest) — 0.109.2: a debuff that borrowed a buff flag was cast on the caster
+## 2026-09-03 (latest) — 0.109.3: the full buff was handing out singles
+
+His report: *"Why buff and full buf from admin menu give me now singles ?.. I several time write that
+full admin buff and /buff gives -> group buffs + harmonies + harmony mark + great might"*.
+
+Three faults, all in the same command. Together they turned the one route that shows a
+**fully-buffed character** — the state every balance number is signed off at — into the weakest set in
+the game.
+
+### 1. `force` was applied INSIDE the set, so the set ate itself (regression, 0.107.0)
+
+`BL-131` gave both admin routes `force: true` to fix *"now im full buff and cannot put war bulwark
+because of 'something stronger'"*. On the single-buff route that was right. On the **set** route it was
+catastrophic, and silently so.
+
+The admin set is **ordered** — groups first, then the class singles, then the 19 NPC blessings — and
+that order works only because everything arriving after a group is **refused** by the family/rank rule.
+Forcing turns each of those **45 refusals into an eviction**:
+
+- every NPC single tore out the group covering its family (Might evicted `Feral Bloodlust`, Body
+  evicted `Body Reinforcement`, …), and
+- the extra bodies then blew past `MaxBuffSlots` (20), whose FIFO drops the **oldest** — which is
+  exactly the groups, the harmonies and Great Might, applied first.
+
+**The rule now:** force against what the player was **already wearing**, never against what the same
+call just laid down. A family claimed by a buff that landed in this call falls back to the normal rank
+contest, which is what makes *"groups come first and they simply win"* true again. `BL-131`'s own case
+is untouched — `/buff <name>` is still forced.
+
+🔑 **A duration/priority override that is correct for one buff is not automatically correct for a set
+of them.** The set's whole design was an ordering argument, and `force` deleted the ordering.
+
+### 2. The set stopped at the 3rd class, so Harmony Mark was never in it
+
+`BuildAdminBuffSet` called `ClassSkills.Cumulative(...)` and let `fourth` default to **false** — the
+flag means *"has paid the 100kk Rite"* for a real character. So a set documented as *"everything a
+max-level buffer can give"* contained **no 4th-tier buff at all**: Harmony Mark, Harmony of the Soul
+and Harmony of Madness were missing from the game's only way to see them. Now `fourth: true`; the
+sigils and shared passives it also pulls in are dropped by the existing "is this a timed buff" test.
+
+### 3. The two lists are now SEPARATE — that was the coupling
+
+His ruling on reading the fix: *"The npc buffer that is the spirit helper gives the singles we decided
+… the admin-full and /buff gives the real full buffs — groups + harmonies + great might + harmony mark.
+**Both are separate. Altering the one should not break the other.**"*
+
+They were not separate. `BuildAdminBuffSet` ended `.Concat(NewbieBuffSet)` — the admin set physically
+**contained** the Spirit Helper's shelf, "for anything uncovered". So `BL-150` growing his shelf from
+16 singles to 19 put three more singles into the admin bar the same day, and once fault 1 made them
+force their way in, they were three more groups evicted. That line is gone: the admin set is now the
+buffer CLASS's kit and nothing else.
+
+It cost nothing to remove — **all 19 NPC singles were refused as already-covered, in every version it
+ever shipped in**. The safety it pretended to provide is now measured rather than assumed: `--buffs`
+prints any NPC family the buffer's own kit fails to cover (today: none, 19 checked). If that line is
+ever non-empty the answer is a missing buff in the class kit, not a re-import of the NPC's shelf.
+
+🔑 **Two lists that must move independently may not be built out of one another** — sooner or later
+one grows and silently rewrites the other.
+
+### Measured, not asserted
+
+`dotnet run --project tools/BalanceMatrix -- --buffs` models the same rank rule the engine applies:
+
+| | before | after |
+|---|---|---|
+| squares on the bar | 15 | **18** (2 free of 20) |
+| harmonies | 4 | **7** — incl. Harmony Mark |
+| groups | 9 | 9 |
+| class singles | Frenzy, Great Might | Frenzy, Great Might |
+
+…and that is the intended picture in both versions — the census never modelled `force`, which is why
+it went on printing a healthy bar for two versions while the game handed out singles. The census now
+also **prints every refusal by name** (45 before the split, 26 after), a list its own header had promised since it was written: with
+only a count, a buff that was *never in the set* and one that was *out-ranked* look identical, which is
+how fault 2 hid behind fault 1.
+
+⚠ **NO NEW APK, and `ProtocolVersion` stays 33.** All three fixes are server-side (`GrantFullBuffSet`, and
+`AdminBuffSet`, which nothing on the client reads). The **server zip** carries this.
+
+## 2026-09-03 — 0.109.2: a debuff that borrowed a buff flag was cast on the caster
 
 His report, hunting as a healer: *"when im with healer and doing armor break why do i get the debuff ?"*
 and then the line that located it — *"on auto-on i get the debuff not the mob"*.
@@ -56,7 +136,7 @@ gets back:
 of ignoring them. Watch Armor Break's uptime in the next pass; ×1.5 is 75% at parity, so it should
 still stick most casts.
 
-⚠ **NO NEW APK, and `ProtocolVersion` stays 33.** Both fixes are server-side; `ClassifyAuto` has three
+⚠ **NO NEW APK, and `ProtocolVersion` stays 33.** All three fixes are server-side; `ClassifyAuto` has three
 call sites and all three are in `GameLoopService`. The **server zip** is what carries this.
 
 📌 Noticed while verifying, NOT changed: `SureHit` is honoured on the fizzle path and on the

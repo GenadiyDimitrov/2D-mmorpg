@@ -6751,8 +6751,28 @@ static class BuffCensus
         Console.WriteLine();
         int slots = bar.Count(b => b.Slot);
         Console.WriteLine($"  >>> SQUARES ON THE BAR: {bar.Count}   (refused/evicted along the way: {evicted.Count})");
+        // The header has promised this list since the census was written and never printed it, which is
+        // how a 4th-tier buff could be MISSING FROM THE SET ENTIRELY and read here as "refused" —
+        // absent and out-ranked look identical in a count. Printed now: what is not on either list was
+        // never handed to the engine at all.
+        foreach (var e in evicted) Console.WriteLine($"      refused: {e}");
+
+        // The admin set and the Spirit Helper's shelf are SEPARATE LISTS by the owner's ruling
+        // (2026-09-03) — the admin set no longer ends `.Concat(NewbieBuffSet)`. This is the safety that
+        // line was pretending to give, measured instead of assumed: every family the NPC sells should
+        // already be inside a group the buffer's own kit casts. A name here is a hole in the CLASS kit.
+        var uncovered = new List<string>();
+        foreach (var id in SkillCatalog.NewbieBuffSet)
+        {
+            if (SkillCatalog.Get(id) is not SkillDef npc) continue;
+            var (k, _, cov, _) = GameLoopService.BuffPlan(npc, npc.MaxLevel);
+            if (!bar.Any(b => Conflicts(b.Key, b.Covered, k, cov))) uncovered.Add($"{npc.Name} ({k})");
+        }
         Console.WriteLine($"  >>> OF WHICH COUNT AGAINST THE CAP: {slots} / {GameConstants.MaxBuffSlots}" +
                           $"   — {GameConstants.MaxBuffSlots - slots} free");
+        Console.WriteLine(uncovered.Count == 0
+            ? $"  >>> NPC FAMILIES NOT COVERED BY THE ADMIN SET: none ({SkillCatalog.NewbieBuffSet.Length} checked)"
+            : $"  >>> ⚠ NPC FAMILIES THE BUFFER'S KIT DOES NOT COVER: {string.Join(", ", uncovered)}");
         Console.WriteLine();
         foreach (var kindGroup in bar.GroupBy(b => b.Kind).OrderBy(g => Order(g.Key)))
             Console.WriteLine($"      {kindGroup.Key,-22} {kindGroup.Count(),3}");

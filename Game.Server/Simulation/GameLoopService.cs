@@ -17151,10 +17151,34 @@ public class GameLoopService : BackgroundService
     private void GrantFullBuffSet(Entity player, IReadOnlyList<string>? set = null,
                                   int durationTicks = -1, bool force = false)
     {
+        // 🔴 `force` CLEARS THE WAY FOR THE SET — IT MUST NEVER APPLY *INSIDE* IT (found 2026-09-03,
+        //    playtest: *"why buff and full buf from admin menu give me now singles"*). `BL-131` (0.107.0)
+        //    put `force: true` on both admin routes at once, and on the SET route it was silently
+        //    catastrophic. The admin set is ORDERED — groups first, then class singles, then the 19 NPC
+        //    blessings — and that order only works because the singles arriving afterwards are REFUSED
+        //    by the family/rank rule (see BuildAdminBuffSet). Forcing turns every one of those 45
+        //    refusals into an EVICTION: each NPC single tore out the group covering its family, and the
+        //    extra bodies then blew through MaxBuffSlots, whose FIFO dropped the OLDEST — the groups,
+        //    the harmonies and Great Might, i.e. precisely the top layers the command exists to show.
+        //    A full buff came out as a bar of singles, which is the weakest set in the game.
+        // 🔑 The rule that fixes it without giving `BL-131` back its bug: force against what the player
+        //    was ALREADY wearing, never against what this same call just laid down. Families claimed by
+        //    a buff that landed here fall back to the normal rank contest, which is what makes "groups
+        //    first and they simply win" true again.
+        var claimed = new HashSet<string>(StringComparer.Ordinal);
         foreach (var id in set ?? SkillCatalog.NewbieBuffSet)
-            if (SkillCatalog.Get(id) is SkillDef def)
-                ApplyBuff(player, def, def.MaxLevel, refresh: false,
-                          durationOverride: durationTicks, force: force);
+        {
+            if (SkillCatalog.Get(id) is not SkillDef def) continue;
+            // BuffPlan, not the def's own fields: a one-child wrapper (every NPC blessing is one)
+            // competes under its CHILD's family, and claiming the wrapper's name would protect nothing.
+            var (key, _, covered, _) = BuffPlan(def, def.MaxLevel);
+            bool oursAlready = claimed.Contains(key) || Array.Exists(covered, claimed.Contains);
+            if (!ApplyBuff(player, def, def.MaxLevel, refresh: false,
+                           durationOverride: durationTicks, force: force && !oursAlready))
+                continue;
+            claimed.Add(key);
+            foreach (var c in covered) claimed.Add(c);
+        }
         // One refresh after all buffs (instead of per-buff recompute/push).
         player.RecomputeDerived();
         PushBuffs(player);
