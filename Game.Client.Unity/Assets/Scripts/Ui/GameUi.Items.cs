@@ -93,8 +93,11 @@ namespace Game.Client
         //  the bag is still the order you see when you walk to a shop. Five per-window settings would
         //  mean re-picking it in each, which is the opposite of what a sort button is for.
         //
-        //  ⚠ NOT PERSISTED. It is a view preference and there is no settings message to carry it; it
-        //  resets to alphabetical on login, which is the order everything had before this existed.
+        //  ✅ PERSISTED SINCE `BL-142` (owner, 2026-09-03: *"can the order of bag and/or vendors be made
+        //  persistent for the client"*). It shipped unpersisted because there is no settings message to
+        //  carry it — and there does not need to be one: this is a CLIENT preference like the camera
+        //  distance and the models toggle, so it lives in PlayerPrefs, never reaches the server and is
+        //  not part of the character. One key, because it is one setting for every list.
 
         internal enum ItemOrder
         {
@@ -105,7 +108,23 @@ namespace Game.Client
             Type = 4,        // weapons → armor → jewels → consumables, rarity then name inside each
         }
 
+        private const string OrderPref = "l2c.itemOrder";
+
         private ItemOrder _itemOrder = ItemOrder.Name;
+
+        /// <summary>Every `[ORDER]` button on screen. They share ONE setting but each painted its own
+        /// caption when it was built, so changing the order in the bag left the vendor's button reading
+        /// the old word until that window happened to be rebuilt (`BL-142`). Holding them lets one press
+        /// relabel all of them. Nulls are skipped — a window that has been destroyed leaves one behind.</summary>
+        private readonly List<Button> _orderButtons = new List<Button>();
+
+        /// <summary>Read the saved order once, at UI build. A value outside the enum (an older or newer
+        /// build, a hand-edited prefs file) falls back to A-Z rather than throwing.</summary>
+        private void LoadItemOrder()
+        {
+            int saved = PlayerPrefs.GetInt(OrderPref, (int)ItemOrder.Name);
+            _itemOrder = saved >= 0 && saved <= (int)ItemOrder.Type ? (ItemOrder)saved : ItemOrder.Name;
+        }
 
         private static string OrderLabel(ItemOrder o) => o switch
         {
@@ -229,9 +248,19 @@ namespace Game.Client
             button = UiKit.TextButton(parent, OrderLabel(_itemOrder), () =>
             {
                 _itemOrder = (ItemOrder)(((int)_itemOrder + 1) % 5);
-                UiKit.SetButtonText(button, OrderLabel(_itemOrder));
+                // `BL-142` — remembered across sessions, and written on the press rather than on quit:
+                // a phone app is killed, not closed, so "save at shutdown" is a save that never happens.
+                PlayerPrefs.SetInt(OrderPref, (int)_itemOrder);
+                PlayerPrefs.Save();
+                // …and EVERY button relabels, not just the one pressed — they share one setting.
+                for (int i = _orderButtons.Count - 1; i >= 0; i--)
+                {
+                    if (_orderButtons[i] == null) { _orderButtons.RemoveAt(i); continue; }
+                    UiKit.SetButtonText(_orderButtons[i], OrderLabel(_itemOrder));
+                }
                 refresh?.Invoke();
             }, 14f);
+            _orderButtons.Add(button);
             UiKit.Place(UiKit.Rect(button.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                         topLeft, new Vector2(width, 32f));
             return button;
@@ -571,8 +600,52 @@ namespace Game.Client
         public void OpenItemDetails(InventoryItemDto item)
         {
             SetItemCompare(false);
+            _openItemInstance = item.InstanceId;
+            _openItemStamp = 0;                    // force the first RefreshItemDetails to draw
             ShowItem(_itemView, item, actions: true);
             OpenWindow(_itemPanel);
+        }
+
+        /// <summary>Which item the details window is showing, and a stamp of what was drawn (`BL-141`).
+        /// Empty = nothing open.</summary>
+        private Guid _openItemInstance;
+        private int _openItemStamp;
+
+        /// <summary>`BL-141` — REDRAW THE OPEN ITEM FROM EVERY INVENTORY PUSH, and close it when the
+        /// item is gone.
+        ///
+        /// <para>Owner, playtest 2026-09-03: *"attri scrlls dont update the weapon details after added
+        /// -&gt; i add attribute and the only way to see what have been added is to open the attribute
+        /// weapon selection again"*. The window drew ONCE from the DTO it was handed and kept that copy
+        /// for as long as it stayed open, so an enchant, an attribute roll or an equip changed the item
+        /// on the server and on the row behind it while the panel in front went on showing the old
+        /// numbers.</para>
+        ///
+        /// <para>🔑 Keyed on the INSTANCE, not on the row: the bag re-sorts, the DTO is replaced whole
+        /// on every push, and the only stable identity is the instance id. That is also what makes the
+        /// "it was binned / sold / broken down" case correct — the id simply stops being in the bag and
+        /// the window closes itself instead of showing a ghost.</para>
+        ///
+        /// <para>⚠ THE STAMP INCLUDES THE ATTRIBUTES, which is the whole point: a re-roll changes
+        /// nothing else about the item — same instance, same enchant, same quantity — so a stamp built
+        /// the way the bag's is would have been identical and this would still not redraw.</para></summary>
+        private void RefreshItemDetails()
+        {
+            if (_openItemInstance == Guid.Empty || !IsOpen(_itemPanel)) return;
+
+            InventoryItemDto shown = null;
+            foreach (var it in Boot.Inventory ?? Array.Empty<InventoryItemDto>())
+                if (it.InstanceId == _openItemInstance) { shown = it; break; }
+
+            if (shown == null) { CloseAllItemViews(); return; }
+
+            int stamp = shown.Quantity * 31 + shown.Enchant * 7 + (shown.Equipped ? 1 : 0);
+            if (shown.Attributes != null)
+                foreach (var a in shown.Attributes) stamp = stamp * 131 + (int)a.Type * 17 + a.Value;
+            if (stamp == _openItemStamp) return;
+            _openItemStamp = stamp;
+
+            ShowItem(_itemView, shown, actions: true);
         }
 
         /// <summary>Force the body's layout to reflect the text just assigned, and scroll to the top.
@@ -644,6 +717,25 @@ namespace Game.Client
                         if (_itemCompareOpen) ShowItem(_cmpView, worn, actions: false);
                         ShowItem(v, item, actions: true);   // relabel Compare/Hide
                     }));
+
+                // `BL-140` — THE SCROLL FLOW, RUN THE OTHER WAY. Owner, 2026-09-03: *"can we make
+                // enchant button on the actual equipment details .. i open details of a weapon and click
+                // Enchant it ask me which scroll if i have any and enchant .. now the reverse is a bit
+                // harsh -> find scroll click _. click use -> find weapon from 250 equipments -> click"*.
+                //
+                // 🔑 HE IS RIGHT ABOUT WHICH END IS LONG: you hold a few scrolls and a couple of hundred
+                // items, so choosing the scroll first makes the SECOND list your whole bag. Choosing the
+                // item first makes it the two or three scrolls that can legally touch this piece.
+                //
+                // ⚠ BOTH DIRECTIONS STAY. Scroll-first is right when you have just looted one and want
+                // to know what it is for, and it is the Use button every other consumable has.
+                // ⚠ Offered only when a scroll that WOULD be accepted is actually in the bag — a button
+                // that opens an empty list is worse than no button. The test is ScrollCanTarget read
+                // backwards, so the two directions can never disagree about what is legal.
+                if (HoldsScrollFor(item, def, attribute: false))
+                    buttons.Add(("Enchant", () => BeginItemScroll(item, def, attribute: false)));
+                if (HoldsScrollFor(item, def, attribute: true))
+                    buttons.Add(("Attribute", () => BeginItemScroll(item, def, attribute: true)));
             }
             else if (def.Slot == EquipSlot.Box)
             {
@@ -718,6 +810,82 @@ namespace Game.Client
 
             ShowSelection(scrollDef.Name, options.ToArray());
         }
+
+        // ----- `BL-140`: the same flow, item first ------------------------------------------------
+
+        /// <summary>Does the bag hold at least one scroll of this kind that this item would accept?
+        /// Decides whether the button is offered at all.</summary>
+        private bool HoldsScrollFor(InventoryItemDto item, ItemDef def, bool attribute)
+        {
+            foreach (var it in Boot.Inventory ?? Array.Empty<InventoryItemDto>())
+            {
+                var sd = ItemCatalog.Get(it.DefId);
+                if (sd == null) continue;
+                if (attribute ? !ItemCatalog.IsAttributeScroll(sd) : !ItemCatalog.IsEnchantScroll(sd)) continue;
+                if (ScrollCanTarget(sd, def, item, attribute)) return true;
+            }
+            return false;
+        }
+
+        /// <summary>Tapping Enchant / Attribute on a WEARABLE: offer the scrolls that can be spent on
+        /// it. The mirror of <see cref="BeginScrollUse"/>, and it lands in the same
+        /// <see cref="ConfirmScrollUse"/> — one confirmation, one command, whichever end you started
+        /// from.</summary>
+        private void BeginItemScroll(InventoryItemDto item, ItemDef def, bool attribute)
+        {
+            var options = new List<(string Label, Action OnPick)>();
+
+            foreach (var it in Boot.Inventory ?? Array.Empty<InventoryItemDto>())
+            {
+                var sd = ItemCatalog.Get(it.DefId);
+                if (sd == null) continue;
+                if (attribute ? !ItemCatalog.IsAttributeScroll(sd) : !ItemCatalog.IsEnchantScroll(sd)) continue;
+                if (!ScrollCanTarget(sd, def, item, attribute)) continue;
+
+                var scroll = it;
+                var scrollDef = sd;
+                options.Add((ScrollOptionLabel(scrollDef, scroll, item, attribute),
+                             () => ConfirmScrollUse(scroll, scrollDef, item, def, attribute)));
+            }
+
+            if (options.Count == 0)
+            {
+                // Only reachable if the bag changed between the button being drawn and being pressed.
+                ClientLog.Info("No " + (attribute ? "attribute" : "enchant") + " scroll in your bag fits "
+                             + def.Name + ".");
+                return;
+            }
+            ShowSelection((attribute ? "Attribute " : "Enchant ") + ItemTag.Name(def, item), options.ToArray());
+        }
+
+        /// <summary>A SCROLL row in the item-first list: the scroll, how many you have, and the one
+        /// number that decides whether to spend it — the odds for an enchant, what it does for an
+        /// attribute. The mirror of <see cref="ScrollTargetLabel"/>, which says the same things about
+        /// the other half of the pair.</summary>
+        private static string ScrollOptionLabel(ItemDef scrollDef, InventoryItemDto scroll,
+                                                InventoryItemDto target, bool attribute)
+        {
+            string name = Coloured(scrollDef.Name, scrollDef.Rarity)
+                        + (scroll.Quantity > 1 ? "  x" + scroll.Quantity : "");
+            if (attribute)
+                return name + "\n<size=13>" + AttrActionWord(scrollDef.AttrScroll) + "</size>";
+
+            int pct = Mathf.RoundToInt(EnchantRules.SuccessChance(target.Enchant) * 100f);
+            return name + "\n<size=13>+" + (target.Enchant + 1) + " at " + pct + "%  —  on failure: "
+                 + EnchantRules.FailureText(scrollDef.ScrollKind) + "</size>";
+        }
+
+        /// <summary>What an attribute scroll DOES, in one phrase — the number a player weighs when
+        /// choosing between two of them. Read from <c>AttributeSystem.ActionOf</c>, the same mapping the
+        /// server rolls with, so the row cannot promise a behaviour the roll does not have.</summary>
+        private static string AttrActionWord(AttrScrollKind kind) =>
+            AttributeSystem.ActionOf(kind) switch
+            {
+                AttrScrollAction.RerollValue => "re-rolls the VALUE, keeps the type",
+                AttrScrollAction.RerollValueHigh => "re-rolls the VALUE in the top half, keeps the type",
+                AttrScrollAction.RollTypeMax => "NEW random attribute, always at MAXIMUM value",
+                _ => "NEW random attribute (replaces the current one)",
+            };
 
         /// <summary>ADMIN `/enchant &lt;value&gt;` (D2): pick a piece of gear and set it to that enchant
         /// outright. Unlike the scroll flow this offers EVERY equippable item — no grade band, no max —
@@ -812,7 +980,12 @@ namespace Game.Client
             {
                 if (attribute) Boot.RerollAttributes(scrollId, targetId);
                 else Boot.Enchant(scrollId, targetId);
-                CloseAllItemViews();
+                // ⚠ NO CloseAllItemViews HERE ANY MORE (`BL-141`). It used to shut the window, which is
+                // why *"the only way to see what have been added is to open the attribute weapon
+                // selection again"*. RefreshItemDetails now handles both endings on its own: the panel
+                // redraws if the item it is showing survives (the new attribute, the new +N, a smaller
+                // scroll stack) and closes itself if that instance has left the bag — a spent last
+                // scroll, or a piece a Common scroll just shattered.
             });
         }
 
@@ -886,6 +1059,7 @@ namespace Game.Client
         private void CloseAllItemViews()
         {
             SetItemCompare(false);
+            _openItemInstance = Guid.Empty;   // `BL-141` — nothing is being tracked once it is shut
             CloseWindow(_itemPanel);
         }
 

@@ -147,6 +147,23 @@ public record SkillDef(
     // For contested crowd-control (Slow, later Stun/Root/Fear): which stat the LAND
     // chance contests against — Physical = ATK vs CON, Magical = ATK vs WIT.
     DebuffSchool DebuffSchool = DebuffSchool.None,
+    /// <summary>`BL-132` (owner, 2026-09-03) — THIS SKILL IS A PHYSICAL ACT, so its CAST TIME is paced
+    /// by ATTACK speed instead of cast speed. Only needed for skills that carry no other physical
+    /// marker: a <see cref="SkillCategory.Physical"/> damage skill and a
+    /// <see cref="DebuffSchool.Physical"/> debuff are already recognised (see
+    /// <see cref="SkillMath.PacedByAttackSpeed"/>) — what is left is the physical BUFFS.
+    ///
+    /// <para>🔑 WHY A THIRD FIELD AND NOT A WIDER `Category`: <see cref="SkillCategory"/> is a ROLE tag
+    /// (Physical / Magic / Buff / Debuff / Heal), not the physical-vs-magical axis. A physical stun is
+    /// authored `Debuff` and a physical self-buff is authored `Buff`, so asking `Category == Physical`
+    /// answered "is this a physical DAMAGE skill", and every other physical skill in the game was paced
+    /// by the mage's stat. His measurement: Shield Shock, a 1s cast, took ~2s at attack speed 580 and
+    /// cast speed 182 — 1s × (333/182) = 1.83s, exactly the cast branch.</para>
+    ///
+    /// <para>⚠ THE AUTHORITY IS THE CSV's `TYPE` COLUMN, which has always carried the word: the eight
+    /// rows reading `pfysical buff` / `Physical/Buff` are the eight skills that set this. Everything
+    /// tagged `Magic/*` leaves it false and keeps casting on WIT.</para></summary>
+    bool PhysicalCast = false,
     /// <summary>PER-SKILL DEBUFF SUCCESS MULTIPLIER (`BL-90`, owner 2026-08-24). Multiplies the
     /// probability this skill's DEBUFF sticks — and nothing else. 1.0 = the stock chance.
     ///
@@ -1602,6 +1619,31 @@ public static partial class SkillCatalog
 /// <summary>Combat math + range/cast helpers.</summary>
 public static class SkillMath
 {
+    /// <summary>`BL-132` — DOES THIS SKILL'S CAST TIME RUN ON ATTACK SPEED? True for everything
+    /// PHYSICAL; false for magic, which keeps the WIT-driven cast stat.
+    ///
+    /// <para>Owner, 2026-09-03: *"physical buffs/debuffs/spells should speed up by attack speed not
+    /// cast ... physical skills seem to work but the buffs dont"*. He was exactly right, and the reason
+    /// is that the test used to be `Category == SkillCategory.Physical` alone. <b>`Category` is a ROLE
+    /// tag, not the physical/magical axis</b> — a physical stun is `Debuff`, a physical self-buff is
+    /// `Buff` — so the old test really asked "is this a physical DAMAGE skill", and every other
+    /// physical skill in the game was paced by a fighter's (poor) cast speed. His worked example:
+    /// Shield Shock, base cast 1s, took ~2s at attack speed 580 / cast speed 182, because 333/182 =
+    /// ×1.83.</para>
+    ///
+    /// <para>🔑 THREE MARKERS, ONE QUESTION. A skill is physical if it deals physical damage
+    /// (<see cref="SkillCategory.Physical"/>), lands a physical contest
+    /// (<see cref="DebuffSchool.Physical"/>) or says so outright
+    /// (<see cref="SkillDef.PhysicalCast"/>, which is what the physical BUFFS carry). All three come
+    /// from the same word in his CSVs' `TYPE` column, which is why this lives in one place: the speed
+    /// model, the auto-hunt cycle estimate and anything added later must not each grow their own
+    /// version of the test.</para></summary>
+    public static bool PacedByAttackSpeed(SkillDef def) =>
+        def.Category == SkillCategory.Physical
+        || def.DebuffSchool == DebuffSchool.Physical
+        || def.PhysicalCast;
+
+
     // ===== THE MP SPLIT ==============================================================================
     //  A skill has ONE price. The player is quoted that one number and the cast gate demands all of it
     //  up front; the two-stage payment below is an ENGINE detail, not an authoring one.

@@ -186,11 +186,27 @@ namespace Game.Client
 
         private static bool IsOpen(RectTransform panel) => panel != null && panel.gameObject.activeSelf;
 
+        /// <summary>`BL-136` — panels that are HUD, not windows: they never join the back-button stack.
+        /// Owner, 2026-09-03: *"can chat and combat window not to count as opened windows for the back
+        /// button"*. Both are logs you leave open while you play, so registering them meant every back
+        /// press spent itself closing the chat instead of the thing you actually wanted closed.
+        ///
+        /// <para>🔑 A LIST OF PANELS, tested at OpenWindow, rather than a second "open me but don't
+        /// track me" entry point — every caller keeps using ToggleWindow/OpenWindow, and the decision
+        /// about what the back button owns lives in exactly one place. They still open, close and draw
+        /// on top exactly as before; the only thing they lose is a line on the stack.</para></summary>
+        private bool ExemptFromBackStack(RectTransform panel) =>
+            (_chatView != null && panel == _chatView.Panel)
+            || (_combatView != null && panel == _combatView.Panel);
+
         private void OpenWindow(RectTransform panel)
         {
             if (panel == null) return;
-            _windows.Remove(panel);        // re-opening moves it back to the top of the stack
-            _windows.Add(panel);
+            if (!ExemptFromBackStack(panel))
+            {
+                _windows.Remove(panel);    // re-opening moves it back to the top of the stack
+                _windows.Add(panel);
+            }
             panel.gameObject.SetActive(true);
             panel.SetAsLastSibling();      // and draws above the ones opened before it
 
@@ -1168,6 +1184,7 @@ namespace Game.Client
             RefreshConsole();
             RefreshTitlesTab();
             RefreshBag();
+            RefreshItemDetails();    // `BL-141` — the open item redraws from the push, like every window here
             RefreshSkillsWindow();
             RefreshStatsWindow();
             RefreshTargetWindow();

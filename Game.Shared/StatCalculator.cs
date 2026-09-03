@@ -998,13 +998,33 @@ public static class StatCalculator
 
     /// <summary>Class base casting speed, before WIT/gear/buffs. This is the ROBED (correct)
     /// value: a mage sits at the 333 baseline = 1.0× cast time. Demon mages are the slow
-    /// casters at 300; fighters cast at 150.
+    /// casters at 300; every non-mage casts at 300.
     /// It used to be 166 for mages, which silently made EVERY mage cast take ~2× its
     /// nominal time (166 vs the 333 baseline) — a healer's 4s bolt really took ~6.5s.
     /// The "wrong armor" penalty is NOT applied here: Robe Mastery's light/heavy/none
-    /// profiles already carry CastSpeedPct −0.5, which halves 333 back down to 166.</summary>
+    /// profiles already carry CastSpeedPct −0.5, which halves 333 back down to 166.
+    ///
+    /// <para>🔑 THE NON-MAGE BASE WAS 150 UNTIL `BL-133` (owner, 2026-09-03): *"why fighters have so
+    /// low cast speed ? shouldnt it all have about the 300~400 cast in the begining and only mages have
+    /// the spellcaster_mastery ... now my elf figter have 130 base and 182 buffed .. and i think he
+    /// must have 260 (or whatever base x wit mod) and ~365 buffed"*. His two numbers were the code's
+    /// exactly: an elf fighter's WIT is 17, so 150 × <see cref="CastWitModifier"/>(17) = 150 × 0.864 =
+    /// <b>130</b>, and ×1.4 from a cast-speed buff = <b>182</b>. At 300 the same character reads
+    /// <b>259</b> and <b>363</b> — his 260 and ~365.</para>
+    ///
+    /// <para>🔑 THE MODEL HE DESCRIBED IS ALREADY THE MODEL, and only this number disagreed with it.
+    /// A caster's advantage is meant to come from WIT and from the mastery PENALTIES for the wrong
+    /// armour/weapon (the robe/light/heavy profiles' `CastSpeedPct −0.5`, i.e. his *"386 → 193 without
+    /// robe → 96 without wand"*), not from a class base twice as large. ⚠ One correction to his
+    /// reading: the elf mage's 386 is NOT Spellcaster Mastery — it is 333 × the WIT modifier of a
+    /// 23-WIT elf.</para>
+    ///
+    /// <para>⚠ WHAT THIS ACTUALLY MOVES IS SMALL, because `BL-132` took every PHYSICAL skill off cast
+    /// speed in the same pass: a fighter's cast bar now holds only his MAGICAL debuffs, which is the
+    /// point of the change. The class that gains broadly is the Warchanter — a `BaseClass.Fighter`
+    /// whose whole kit is songs.</para></summary>
     public static int ClassBaseCastSpeed(Race race, BaseClass cls) =>
-        cls != BaseClass.Mage ? 150
+        cls != BaseClass.Mage ? 300
         : race == Race.Demon ? 300
         : 333;
 

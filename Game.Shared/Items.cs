@@ -863,6 +863,19 @@ public static class StackLimits
     public const int VitalPotion = 999;
     /// <summary>Crafting materials.</summary>
     public const int Material = 9999;
+    /// <summary>`BL-144` (owner, 2026-09-03) — THE SKILL STONE, and only it: *"skill stones to stack to
+    /// 9999 while the element type stones to stay at 99 -&gt; skill stones are used for fast reuse casts
+    /// like heals etc .. and 99 are not near enough to have"*.
+    /// <para>🔑 THE DISTINCTION IS SPEND RATE, not what the item is. A Skill Stone is the reagent of
+    /// ordinary, repeated casts — Ultimate Heal takes one or two per cast and a whisp four per call, so
+    /// a raid burns hundreds in an evening and 99 is under an hour of play. The elemental / holy /
+    /// physical stones are the reagent of a handful of SET-PIECE casts, spent in ones, and they keep the
+    /// <see cref="Standard"/> 99 he named.</para>
+    /// <para>⚠ Delivered through <see cref="ItemDef.MaxStackOverride"/> — the FIRST user of that field,
+    /// which exists precisely for "one item disagrees with its category". Everything sharing this item's
+    /// category (a plain Consumable that is not a potion and not a blessing) is still 99, which is what
+    /// keeps the elemental stones where he wants them without a second table.</para></summary>
+    public const int Reagent = 9999;
     /// <summary>Quest items. Not <c>int.MaxValue</c>: the cap is multiplied by a row budget when a
     /// container works out what it can accept, and MaxValue overflows that arithmetic. This is
     /// "effectively no cap" while staying a real number — a gathering quest would need a million
@@ -1518,8 +1531,12 @@ public static class ItemCatalog
 
         // Skill Stone — cheap reagent consumed by skills that cost stones (e.g. Angel's Protection = 5/cast).
         // Not free, not expensive: 400g at the vendor. Stacks; not drinkable.
+        // ⚠ 9,999 A ROW, ALONE AMONG THE STONES (`BL-144`) — see StackLimits.Reagent for why: it is the
+        // reagent of ORDINARY repeated casts (a heal, a whisp at four a call), while the elemental/holy/
+        // physical stones are spent on set-pieces and stay at 99.
         list.Add(new ItemDef(SkillStone, "Skill Stone", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Uncommon, Value: 400));
+            ItemGrade.F, ItemRarity.Uncommon, Value: 400,
+            MaxStackOverride: StackLimits.Reagent));
 
         // SP Bottle — a TRADABLE, SELLABLE store of skill points (owner, 2026-08-26). Bought from the
         // SP Broker for 1kkk SP + 100kk gold and worth 100kk at a shop, so it is the way a high-level

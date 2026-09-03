@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.106.0";
+    public const string GameVersion = "0.107.0";
 
     // ----- SP BOTTLE (owner, 2026-08-26) -------------------------------------------------------
     // *"u can make an npc to take your 1kkk SP + 100kk gold and give you a tradable/sellabel
@@ -623,9 +623,12 @@ public static class GameConstants
     /// too rarely.</para></summary>
     public const int WhispCcAtk = 40;
 
-    /// <summary>How late a whisp may be re-summoned — the tail of its life, mirroring the buff
-    /// renewal window (`BL-112`). *"They behave as BUFFS: 20 min default, resummon at 5s remaining"*.
-    /// Outside it the call is refused rather than wasting the MP and the 30s reuse.</summary>
+    /// <summary>🔴 UNUSED SINCE `BL-130` (2026-09-03) — kept only so the number is not re-invented if
+    /// the rule ever comes back. It was the tail of a whisp's life, the only window in which one you
+    /// already carried could be re-called, mirroring `BL-112`'s buff renewal window. The owner
+    /// reversed it: *"charming whisp (and i guess all whisps) resummon on cd not when whisps
+    /// disapear"* — the skill's own 30s reuse is the limiter, and the 4-Skill-Stone price is what
+    /// makes spamming a call expensive. See the cast gate in GameLoopService for the reasoning.</summary>
     public const int WhispResummonWindowTicks = 50;   // 5s
 
     /// <summary>The once-per-SECOND housekeeping cadence: damage-over-time, heal-over-time, the buff

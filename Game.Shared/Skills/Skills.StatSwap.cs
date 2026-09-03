@@ -35,7 +35,7 @@ namespace Game.Shared;
 /// rung depends on the character, not on which pair it belongs to.
 ///
 /// <b>WHO MAY BUY WHAT</b> (his lists): a class only trades among the stats it uses.
-///   • FIGHTER: ATK↔AGI, ATK↔CON, AGI↔CON, and +SPT −ATK.
+///   • FIGHTER: ATK↔AGI, ATK↔CON, AGI↔CON, and the two one-way doors +SPT −ATK and +WIT −SPT (`BL-134`).
 ///   • MAGE and CLERIC: ATK↔WIT, ATK↔SPT, WIT↔SPT, AGI↔CON.
 ///   • The BUFFER (Warchanter) keeps everything, as before.
 ///
@@ -346,7 +346,8 @@ public static partial class SkillCatalog
     /// trades among the stats it actually uses, and "X↔Y" means both directions are on the shelf.
     ///   • FIGHTER: ATK↔AGI, ATK↔CON, AGI↔CON, plus <b>+SPT −ATK</b> — the one-way door that lets a
     ///     fighter buy MP/M.Def with power. There is no +ATK −SPT for him: a fighter selling Spirit
-    ///     for power is the mage's trade, and he named it only for the mage.
+    ///     for power is the mage's trade, and he named it only for the mage. <b>And since `BL-134`
+    ///     (2026-09-03) +WIT −SPT</b>, also one-way — the lever behind *"the elf is a magic knight"*.
     ///   • MAGE: ATK↔WIT, ATK↔SPT, WIT↔SPT, AGI↔CON.
     ///   • CLERIC = MAGE, at his instruction — a passive already balances their M.Atk with a melee
     ///     weapon, so they are casters for this purpose whatever they are holding.
@@ -367,6 +368,14 @@ public static partial class SkillCatalog
             Offer(SwapAtkCon); Offer(SwapConAtk);
             Offer(SwapAtkAgi); Offer(SwapAgiAtk);
             Offer(SwapMenAtk);                       // +SPT −ATK, one way
+            // `BL-134` (owner, 2026-09-03): *"please add the +wit-spt in the skill swap for fighters as
+            // well"*. It arrived with the elf tank's magic debuffs — charm and freeze contest against
+            // the target's SPT and are cast on the caster's WIT, and until now a fighter could not buy
+            // a single point of WIT at any price, which made *"the elf is a magic knight"* a direction
+            // with no lever behind it.
+            // ⚠ ONE WAY, like `+SPT −ATK` above and for the same reason: he named one direction. A
+            // fighter who wants his Spirit back forgets the rung at the Mindwriter, which is free.
+            Offer(SwapWitMen);                       // +WIT −SPT, one way
         }
 
         if (buffer || baseClass == BaseClass.Mage)

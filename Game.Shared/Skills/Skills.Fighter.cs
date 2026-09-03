@@ -223,7 +223,7 @@ public static partial class SkillCatalog
         // Battle Regeneration — instant self-heal for 10% of max HP (short cast, 90s cooldown).
         new(BattleRegeneration, "Battle Regeneration", BaseClass.Fighter, SkillEffect.Heal,
             MpCost: 25, CastTicks: 5, CooldownTicks: 900, Range: 0, Power: 0,
-            Category: SkillCategory.Heal, TargetMode: TargetMode.SelfOnly, SpCost: 6000,
+            Category: SkillCategory.Heal, PhysicalCast: true, TargetMode: TargetMode.SelfOnly, SpCost: 6000,
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.Heal, 0.10f, ModifierMode.Percent) },
             Description: "Restores 10% of your maximum HP instantly (90s reuse)."),
 
@@ -234,7 +234,7 @@ public static partial class SkillCatalog
             SkillEffect.BuffPhysAtk | SkillEffect.BuffAccuracy,
             MpCost: 20, CastTicks: 5, CooldownTicks: 3000, Range: 0, Power: 0,
             DurationTicks: 900, BuffKey: "battle_stance", Rank: 1, CountsTowardBuffLimit: false,
-            Category: SkillCategory.Buff, TargetMode: TargetMode.SelfOnly, SpCost: 11000,
+            Category: SkillCategory.Buff, PhysicalCast: true, TargetMode: TargetMode.SelfOnly, SpCost: 11000,
             RequireHpBelowFraction: 0.60f, RequiredWeapon: WeaponType.AnySword | WeaponType.AnyBlunt, RequiredHands: WeaponHands.Two,
             Magnitudes: new EffectMagnitude[]
             {
@@ -249,7 +249,7 @@ public static partial class SkillCatalog
         new(BattleDefence, "Battle Defence", BaseClass.Fighter, SkillEffect.BuffDef,
             MpCost: 20, CastTicks: 5, CooldownTicks: 3000, Range: 0, Power: 0,
             DurationTicks: 900, BuffKey: "battle_stance", Rank: 1, CountsTowardBuffLimit: false,
-            Category: SkillCategory.Buff, TargetMode: TargetMode.SelfOnly, SpCost: 20000,
+            Category: SkillCategory.Buff, PhysicalCast: true, TargetMode: TargetMode.SelfOnly, SpCost: 20000,
             RequireHpBelowFraction: 0.60f,
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffDef, 1.0f, ModifierMode.Percent) },
             Description: "A desperate defence: DOUBLES your P.Def for 90s. Usable only at ≤60% HP. "
@@ -359,7 +359,7 @@ public static partial class SkillCatalog
             SkillEffect.BuffDef | SkillEffect.BuffMagicDef | SkillEffect.BuffCancelResist | SkillEffect.BuffMoveSpeed,
             MpCost: 20, CastTicks: 5, CooldownTicks: 9000, Range: 0, Power: 0,
             DurationTicks: 300, BuffKey: "defensive_wall", Rank: 1, CountsTowardBuffLimit: false,
-            Category: SkillCategory.Buff, TargetMode: TargetMode.SelfOnly, SpCost: 3400,
+            Category: SkillCategory.Buff, PhysicalCast: true, TargetMode: TargetMode.SelfOnly, SpCost: 3400,
             // ⚠ THE TWO `x2` PERCENT TERMS ARE GONE (his tank pass, 2026-09-02). His 2nd-class row now
             // reads flat only — *"increase p.def +1800; m.def +1600"* — where it used to carry `p.def
             // x2; mdef x2` on top. A doubling over a four-figure flat was the largest defensive number
@@ -423,7 +423,7 @@ public static partial class SkillCatalog
             MpCost: 10, CastTicks: 2, CooldownTicks: 300, Range: 0, Power: 0,
             DurationTicks: 150,
             ChildBuffs: new[] { SkillCatalog.BuffSprint1 },
-            Category: SkillCategory.Buff, TargetMode: TargetMode.SelfOnly, SpCost: 3400,
+            Category: SkillCategory.Buff, PhysicalCast: true, TargetMode: TargetMode.SelfOnly, SpCost: 3400,
             Description: "A burst of speed: +40 move speed for 15s.",
             Levels: new SkillLevel[]
             {
@@ -465,7 +465,7 @@ public static partial class SkillCatalog
             SkillEffect.BuffEvasion | SkillEffect.BuffCancelResist | SkillEffect.BuffMagicEvasion,
             MpCost: 20, CastTicks: 5, CooldownTicks: 9000, Range: 0, Power: 0,
             DurationTicks: 300, BuffKey: "evasion_boost", Rank: 1, CountsTowardBuffLimit: false,
-            Category: SkillCategory.Buff, TargetMode: TargetMode.SelfOnly, SpCost: 3400,
+            Category: SkillCategory.Buff, PhysicalCast: true, TargetMode: TargetMode.SelfOnly, SpCost: 3400,
             SkillEvadeChance: 0.25f,
             Magnitudes: new EffectMagnitude[]
             {
@@ -481,7 +481,7 @@ public static partial class SkillCatalog
         new(BowExpertise, "Bow Expertise", BaseClass.Fighter, SkillEffect.BuffAtkSpeed,
             MpCost: 25, CastTicks: 30, CooldownTicks: 20, Range: 0, Power: 0,
             DurationTicks: 12000, BuffKey: "bow_expertise", Rank: 1,  
-            Category: SkillCategory.Buff, TargetMode: TargetMode.SelfOnly, SpCost: 22000,
+            Category: SkillCategory.Buff, PhysicalCast: true, TargetMode: TargetMode.SelfOnly, SpCost: 22000,
             RequiredWeapon: WeaponType.Bow,
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffAtkSpeed, 0.08f) },
             Description: "Steadies your aim: +8% attack speed while wielding a bow, for 20 minutes."),
@@ -653,7 +653,9 @@ public static partial class SkillCatalog
         new(Provoke, "Taunt", BaseClass.Fighter, SkillEffect.Taunt,
             MpCost: 0, CastTicks: 0, CooldownTicks: 60, Range: 400, Power: 0,
             DurationTicks: 15,   // the hard-commit window: 1.5s locked onto the taunter
-            Category: SkillCategory.Debuff, TauntPower: 4500,
+            // `BL-132` — PhysicalCast because his TYPE cell reads `physical active`: a taunt is a roar
+            // and a shield-bang, not a spell, so what paces it is attack speed.
+            Category: SkillCategory.Debuff, PhysicalCast: true, TauntPower: 4500,
             Levels: new SkillLevel[]
             {
                 // SP is his too, and it is the tank's standard 24/28/32/36 price line (Smash's).

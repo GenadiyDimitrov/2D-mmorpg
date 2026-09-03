@@ -374,7 +374,7 @@ public static partial class SkillCatalog
         list.Add(new SkillDef(WcBowExpertise, "Bow Expertise", BaseClass.Mage, SkillEffect.BuffAtkSpeed,
             MpCost: 85, CastTicks: 30, CooldownTicks: 20, Range: 0, Power: 0,
             DurationTicks: 12000, BuffKey: "bow_expertise", Rank: 2,
-            Category: SkillCategory.Buff, TargetMode: TargetMode.SelfOnly, SpCost: 42_000,
+            Category: SkillCategory.Buff, PhysicalCast: true, TargetMode: TargetMode.SelfOnly, SpCost: 42_000,
             RequiredWeapon: WeaponType.Bow,
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffAtkSpeed, 0.12f) },
             Description: "Steadies your aim: +12% attack speed while wielding a bow, for 20 minutes."));

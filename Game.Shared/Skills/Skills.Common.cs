@@ -402,17 +402,33 @@ public static partial class SkillCatalog
     /// NOT a contradiction of the "76 is only a level, not a class change" rule that keeps Evasion
     /// Mastery Lv3 unreachable — he wrote "@76" for Deflection and never did for the floors.
     ///
-    /// ⚠ The TANK's rung (Backlash) has no authored level. 40 is mine; see the def.</summary>
+    /// ✅ `BL-143` (owner, 2026-09-03) — THE TANK'S RUNG IS 76, AND IT IS HIS NOW, NOT MINE. It was
+    /// granted at 40 on my invention, and he dated it while playtesting: *"can you move backlash from
+    /// the tank 3rd to tank 4th in the csv ... its not authored and not seeing it in the csv but in the
+    /// game is a class mismatch"*. A skill that appears at a class change no file mentions is exactly
+    /// the mismatch he names, so it moves to the 4th and gets its row in `tank 4th.csv`.
+    /// <para>⚠ Below the gate this returns null and <see cref="ReflectIdFor"/> is what the grant uses
+    /// to TAKE IT BACK — a plain assignment into LearnedSkills is permanent otherwise, and every
+    /// 40-75 tank alive already carries a Backlash the new rule says he cannot have.</para></summary>
     public static (string Id, int Level)? ReflectPassiveFor(Archetype? archetype, int level)
     {
         if (level < 40) return null;
         return archetype switch
         {
             Archetype.Warrior => (Deflection, level >= 76 ? 2 : 1),
-            Archetype.Tank    => (Backlash, 1),
+            Archetype.Tank    => level >= 76 ? (Backlash, 1) : ((string, int)?)null,
             _ => null
         };
     }
+
+    /// <summary>The reflect passive an archetype would EVER be granted, whatever the level — so the
+    /// grant can remove it below its gate (`BL-143`). Null for an archetype that has none.</summary>
+    public static string? ReflectIdFor(Archetype? archetype) => archetype switch
+    {
+        Archetype.Warrior => Deflection,
+        Archetype.Tank    => Backlash,
+        _ => null
+    };
 
     // ⚠ RESTRUCTURED 2026-08-07 (owner). The old Robe Mastery did TWO jobs at once — it granted the
     // robe's P.Def AND carried the wrong-weight casting penalty — which is why every 2nd-class mage
@@ -821,9 +837,12 @@ public static partial class SkillCatalog
             new PassiveEffect(PhysSkillReflectChance: 0.30f, PhysSkillReflectPct: 1.0f)),
         // BACKLASH (tank, BL-08): *"tanks get 30% chance to reflect a debuff -> u cast on tank he
         // reflects u get the debuff"*. One number, one rung — he gave no ladder, so none is invented.
-        // ⚠ THE LEVEL IS MINE, NOT HIS: he never said when a tank gets it. It is granted at the 3rd
-        // class change (40) to sit beside Deflection, which he DID date. If he wants it at the 2nd
-        // class change instead, that is one line in ReflectPassiveFor.
+        // ✅ THE LEVEL IS NOW HIS: 76, the 4th class change (`BL-143`, 2026-09-03), with a row in
+        // `tank 4th.csv` at SP 0. It used to be 40 on my own invention — the comment here said so for
+        // three months — and what he caught in play is the consequence: a skill that turns up at a
+        // class change no file mentions. 🔑 The general rule it re-proves: an invented number goes in
+        // the code WITH the words "this is mine", so that the day he rules on it the change is one line
+        // and the reasoning is not re-derived from scratch.
         LeveledPassive(Backlash, "Backlash", BaseClass.Fighter,
             "Passive. 30% chance that a debuff cast at you lands on its caster instead.",
             new PassiveEffect(DebuffReflectChance: 0.30f)),

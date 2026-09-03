@@ -78,6 +78,10 @@ namespace Game.Client
             // Saved look settings first: the canvas reads the reference resolution when it is created,
             // so loading afterwards would build at the default size and only take effect next launch.
             LoadLookPrefs();
+            // `BL-142` — before BuildWorld, because every `[ORDER]` button paints its caption from this
+            // value as it is created. Loading after would build five buttons reading "A-Z" over a list
+            // sorted by rarity.
+            LoadItemOrder();
 
             _canvas = UiKit.CreateCanvas("GameUi");
             _canvas.transform.SetParent(transform, false);

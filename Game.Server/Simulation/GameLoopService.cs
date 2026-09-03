@@ -1477,7 +1477,15 @@ public class GameLoopService : BackgroundService
         }
 
         attacker.QueuedSkillId = null;
-        CancelCast(attacker);
+        // `BL-135` — AN ATTACK ORDER IS A *PLAYER'S* CANCEL, SO IT PAYS THE REUSE. This was a bare
+        // CancelCast(attacker), and `startCooldown` defaults to false — so tapping the bar's Attack
+        // aborted any cast for free while the cast bar's X and ESC both charged it (owner: *"click on
+        // attack that is on the skill bar it cancels the cast of the skill and dont enter it in
+        // cooldown .. while if i cast and cancel it trough same button X ... it start to cooldown"*).
+        // 🔑 THE RULE, stated once so the next caller can be judged against it: a cancel the PLAYER
+        // CHOSE starts the cooldown; only an enemy interrupt or a forced stop (stun, death, petrify)
+        // leaves the skill ready to retry. Every `startCooldown: false` in this file is one of those.
+        CancelCast(attacker, startCooldown: true);
         attacker.FollowTargetId = null;   // attacking breaks a follow
         attacker.CombatTargetId = target.Id;
         attacker.Engaged = true;
@@ -1551,8 +1559,14 @@ public class GameLoopService : BackgroundService
         // The SECOND identity passive — the skill-defence channels (BL-07 warrior Deflection /
         // BL-08 tank Backlash). Its own ladder because it starts at the 3rd class change, not the
         // 2nd. Plain assignment like the floor above, so a rung is never stuck once granted.
+        // ⚠ AND IT IS TAKEN BACK BELOW ITS GATE (`BL-143`). A plain assignment is permanent, and the
+        // tank's Backlash moved from 40 to 76 on his 2026-09-03 ruling — so every 40-75 tank on an
+        // existing save is carrying one the rule no longer grants. Nothing else in this method has
+        // ever had to un-grant, which is why the removal is spelled out rather than assumed.
         if (SkillCatalog.ReflectPassiveFor(player.Archetype, player.Level) is { } reflect)
             player.LearnedSkills[reflect.Id] = reflect.Level;
+        else if (SkillCatalog.ReflectIdFor(player.Archetype) is string reflectId)
+            player.LearnedSkills.Remove(reflectId);
 
         // Class Balance passive — the per-class tuning hook. ⚠ COMMENTED OUT 2026-08-07 on the
         // owner's ruling (*"class_balance should be commented for now"*, playtest-19 `0a`): the defs
@@ -1987,26 +2001,20 @@ public class GameLoopService : BackgroundService
             return;
         }
 
-        // `BL-109` — A WHISP YOU ALREADY HAVE MAY ONLY BE RE-CALLED IN ITS LAST FIVE SECONDS. His rule
-        // is that whisps *"behave as BUFFS: 20 min default, resummon at 5s remaining"* — the same
-        // renewal window `BL-112` gave the buff bar, and for the same reason: re-calling a spirit that
-        // has nineteen minutes left is a mistake, not a tactic, and refusing it here costs the player
-        // nothing. ⚠ REFUSED AT THE GATE, so no MP is spent and no 30s reuse starts — the difference
-        // between a mis-tap and a punishment.
-        if (def.SummonsWhisp is { Length: > 0 })
-        {
-            foreach (var riding in caster.Whisps)
-            {
-                if (riding.SummonSkillId != def.Id) continue;
-                if (riding.TicksRemaining > GameConstants.WhispResummonWindowTicks)
-                {
-                    SendSystemToEntity(caster,
-                        $"{riding.Name} is still with you ({riding.TicksRemaining / GameConstants.TickRate}s).");
-                    return;
-                }
-                break;
-            }
-        }
+        // `BL-130` — A WHISP IS RE-CALLABLE ON ITS REUSE, AND ON NOTHING ELSE. Owner, 2026-09-03:
+        // *"charming whisp (and i guess all whisps) resummon on cd not when whisps disapear"*.
+        //
+        // 🔴 THIS IS WHERE `BL-109`'s FIVE-SECOND WINDOW USED TO BE, and removing it is the whole
+        // change. `BL-112` gave the buff bar a "renew in the last 5 seconds" rule and whisps inherited
+        // it because they *"behave as BUFFS"* — but the consequence he hit is that the ONLY moment you
+        // may re-call a whisp is the moment it is about to leave anyway, which is the opposite of a
+        // renewal window: it is a ban with a five-second hole in it. A whisp is a summon you place, not
+        // a blessing that ticks down on you, and the 30s reuse is already the limiter.
+        //
+        // ⚠ IT STILL COSTS 4 SKILL STONES EVERY CALL (the reagent gate above, unchanged) — so spamming
+        // it is expensive rather than impossible, which is the shape he asked for. `SummonWhisp` keeps
+        // refreshing an existing whisp IN PLACE without reordering the stack, so a re-call never costs
+        // you the other whisps you are carrying.
 
         // ⚠ `Category == Debuff` is here for the same reason the buff arm in ExecuteSkill grew its
         // Category test: his Mana Strain's entire payload is the MP-cost FIELDS, so its Effect is None
@@ -5827,7 +5835,9 @@ public class GameLoopService : BackgroundService
     /// user's extra delay. Used both to gate the auto-recast and to price MP/s.</summary>
     private int AutoCycleTicks(Entity p, SkillDef def, int extraDelay)
     {
-        float castMult = def.Category == SkillCategory.Physical
+        // Same one test the real cast uses (`BL-132`) — an estimate that priced a physical stun on the
+        // cast stat would quote an MP/s the fight never charges.
+        float castMult = SkillMath.PacedByAttackSpeed(def)
             ? p.EffectiveAttackSpeedMultiplier : p.EffectiveCastSpeedMultiplier;
         int castTicks = Math.Max(2,
             (int)(def.CastTicksAt(Math.Max(1, p.SkillLevelOf(def.Id))) * castMult));
@@ -6429,10 +6439,16 @@ public class GameLoopService : BackgroundService
     /// owner in their own jail.</summary>
     private static bool Outranks(Entity actor, AccountRole targetRole) => targetRole < actor.Role;
 
-    // `/buff [name] [level]` — the typed half of the debug buff button (owner, playtest 26).
-    //   /buff                        the whole ADMIN set, every buff at its own top rung
-    //   /buff harmony of wizard      that one buff, at ITS top rung
+    // `/buff [target] [name] [duration] [level]` — the typed half of the debug buff button (owner,
+    // playtest 26; the duration is `BL-131`, 2026-09-03).
+    //   /buff                        the whole ADMIN set, every buff at its own top rung, for 1 hour
+    //   /buff harmony of wizard      that one buff, at ITS top rung, for 1 hour
     //   /buff hw 2                   the same buff by acronym, at rung 2
+    //   /buff wc_harmony_mark 1h 2   his own example: that mark, rung 2, for an hour
+    //   /buff Ivan aim 30m           on another player (staff only), for thirty minutes
+    // 🔑 EVERYTHING DEFAULTS TO ONE HOUR — *"or if we cannot put duration in the command atleast make
+    // it 1h from /buff and admin buttons"*. `BL-126` already did that for the SET; this extends it to
+    // the single-buff form, which was still handing out a class buff's authored 20 minutes.
     // An out-of-range rung is not silently clamped — it says what the range is, which is the
     // only way to learn a ladder's depth without reading the CSV (*"if effect lvl is out of
     // range just system msg with the effect lvl"*).
@@ -6476,13 +6492,22 @@ public class GameLoopService : BackgroundService
                 }
                 string buffWho = ReferenceEquals(buffTarget, admin) ? "you" : buffTarget.Name;
 
+                // `BL-131` — THE DURATION WORD, pulled out before the level. *"/buff command must have
+                // duration => /buff [target]<name>[duration][lvl] ... /buff wc_harmony_mark 1h"*.
+                // ⚠ Order matters: the duration is stripped FIRST so that `<name> 1h 2` still leaves a
+                // bare trailing `2` for SplitTrailingLevel to read as the rung.
+                var (durArg, durTicks) = SplitDurationWord(arg);
+                arg = durArg;
+                int buffTicks = durTicks ?? SkillCatalog.NpcBuffTicks;   // his fallback: 1 hour by default
+                string durWord = FormatDuration(buffTicks);
+
                 var (buffName, buffLevel) = SplitTrailingLevel(arg);
                 if (buffName.Length == 0)
                 {
-                    GrantFullBuffSet(buffTarget, SkillCatalog.AdminBuffSet, hourLong: true);
+                    GrantFullBuffSet(buffTarget, SkillCatalog.AdminBuffSet, durationTicks: buffTicks, force: true);
                     SendSystemToEntity(admin,
                         $"Full buff on {buffWho}: {SkillCatalog.AdminBuffSet.Count} buffs, "
-                        + "each at its top rung, all for 1 hour.");
+                        + $"each at its top rung, all for {durWord}.");
                     return;
                 }
 
@@ -6512,14 +6537,23 @@ public class GameLoopService : BackgroundService
                 // `source: admin` — for a CHARM (`BL-110`) that is the whole test: the victim walks
                 // toward whoever cast it, so `/buff @target charm` has to name the admin as the caster
                 // or the charm lands inert with nothing to walk to. Every other buff ignores it.
-                if (!ApplyBuff(buffTarget, buffDef, level, source: admin))
+                //
+                // 🔴 `force: true` — `BL-131`. *"now im full buff and cannot put war bulwark because of
+                // 'something stronger'"*. War Might and War Bulwark share a family at the SAME rank, and
+                // ApplyBuff's equal-rank rule keeps whichever runs LONGER — so the moment `BL-126` made
+                // the full buff hand its half out at an hour, the 20-minute one from a button could
+                // never win, and `BL-127`'s six swap buttons quietly stopped swapping. Forcing is the
+                // right fix rather than matching durations: this is the STAFF path, its whole purpose is
+                // to put a named buff on someone, and a command that silently does nothing is worse than
+                // one that overrides. The stacking rules are untouched for every skill actually cast.
+                if (!ApplyBuff(buffTarget, buffDef, level, source: admin,
+                               durationOverride: buffTicks, force: true))
                 {
                     SendSystemToEntity(admin,
-                        $"{buffDef.Name} Lv{level} was refused — something stronger of that family is "
-                        + $"already on {buffWho}.");
+                        $"{buffDef.Name} Lv{level} could not be applied to {buffWho}.");
                     return;
                 }
-                SendSystemToEntity(admin, $"{buffDef.Name} Lv{level} applied to {buffWho}.");
+                SendSystemToEntity(admin, $"{buffDef.Name} Lv{level} applied to {buffWho} for {durWord}.");
                 if (!ReferenceEquals(buffTarget, admin))
                     SendSystemToEntity(buffTarget, $"{admin.Name} blessed you with {buffDef.Name} Lv{level}.");
                 return;
@@ -7950,6 +7984,49 @@ public class GameLoopService : BackgroundService
         // A bare number on its own is a level with no name — treat it as a name so the caller reports
         // "no buff matches", rather than silently full-buffing.
         return (text, null);
+    }
+
+    /// <summary>`BL-131` — pull a DURATION word off the argument: `90s`, `30m`, `1h`. Returns the rest
+    /// of the argument and the duration in TICKS, or null when there was none.
+    ///
+    /// <para>🔑 It scans every word rather than only the last, because his grammar puts the duration in
+    /// the MIDDLE — *"/buff [target]&lt;name&gt;[duration][lvl]"*, e.g. `/buff wc_harmony_mark 1h 2`.
+    /// A bare number stays the LEVEL (that is <see cref="SplitTrailingLevel"/>'s job); only a number
+    /// with a unit letter glued to it is a duration, so nothing that worked before changes meaning.</para>
+    ///
+    /// <para>⚠ A skill NAME is never eaten by this: names are words, and a word only qualifies when it
+    /// is digits followed by exactly one of s/m/h. The one theoretical collision would be a buff called
+    /// something like "5m", and there is none.</para></summary>
+    private static (string Remaining, int? Ticks) SplitDurationWord(string arg)
+    {
+        var words = (arg ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        for (int i = 0; i < words.Length; i++)
+        {
+            string w = words[i];
+            if (w.Length < 2) continue;
+            char unit = char.ToLowerInvariant(w[^1]);
+            if (unit is not ('s' or 'm' or 'h')) continue;
+            if (!int.TryParse(w[..^1], out int n) || n <= 0) continue;
+            int seconds = unit switch { 'h' => n * 3600, 'm' => n * 60, _ => n };
+            // Clamped to a day: the field is an int of ticks and a typo like `9999h` would otherwise
+            // overflow into a negative duration, which reads as "already expired".
+            seconds = Math.Min(seconds, 24 * 3600);
+            return (string.Join(' ', words.Where((_, j) => j != i)), seconds * GameConstants.TickRate);
+        }
+        return (arg ?? "", null);
+    }
+
+    /// <summary>A tick count as the shortest human phrase — "1 hour", "30 minutes", "45s". Only used
+    /// to say back what `/buff` just did, so the exact wording matters less than that it reads like the
+    /// word he typed.</summary>
+    private static string FormatDuration(int ticks)
+    {
+        int seconds = Math.Max(0, ticks) / GameConstants.TickRate;
+        if (seconds >= 3600 && seconds % 3600 == 0)
+            return seconds == 3600 ? "1 hour" : $"{seconds / 3600} hours";
+        if (seconds >= 60 && seconds % 60 == 0)
+            return seconds == 60 ? "1 minute" : $"{seconds / 60} minutes";
+        return $"{seconds}s";
     }
 
     /// <summary>Everything only letters and digits, lower-cased — so "Harmony of Wizard",
@@ -10643,8 +10720,11 @@ public class GameLoopService : BackgroundService
         // physical skills feel sluggish. Magic/buff/heal skills still use cast speed.
         // Mobs cast at the skill's AUTHORED time (their low-WIT cast multiplier would otherwise
         // distort the tuned 1.5s/4s mob-spell timings); players use the speed model.
+        // ⚠ `SkillMath.PacedByAttackSpeed`, not a bare `Category == Physical` (`BL-132`): Category is a
+        // ROLE tag, so that test only ever caught physical DAMAGE and left every physical stun, root
+        // and self-buff on the mage's stat. See that helper.
         float speedMult = def.FixedCast || caster.Kind == EntityKind.Mob ? 1f
-            : def.Category == SkillCategory.Physical
+            : SkillMath.PacedByAttackSpeed(def)
                 ? caster.EffectiveAttackSpeedMultiplier
                 : caster.EffectiveCastSpeedMultiplier;
         // ⚠ CastTicksAt, not CastTicks: a rung may shorten the base cast (his Resurrection, 10s → 5s).
@@ -11534,7 +11614,7 @@ public class GameLoopService : BackgroundService
     private bool ApplyBuff(Entity target, SkillDef def, int level = 1, string? displayName = null,
         bool refresh = true, bool toggle = false, int maxStacks = -1,
         int durationOverride = -1, string? sourceSkillId = null, BuffRow? rowOverride = null,
-        Entity? source = null)
+        Entity? source = null, bool force = false)
     {
         // ---- ONE-CHILD WRAPPER (a potion, a scroll, a buffer class's single blessing): it owns the
         //      duration and the bar row, but the buff that lands is the CHILD — the family's rung,
@@ -11546,7 +11626,8 @@ public class GameLoopService : BackgroundService
                              durationOverride: durationOverride >= 0 ? durationOverride : def.DurationTicks,
                              sourceSkillId: string.IsNullOrEmpty(sourceSkillId) ? def.Id : sourceSkillId,
                              rowOverride: rowOverride ?? def.BuffRow,
-                             source: source);   // a charm through a wrapper still knows who cast it
+                             source: source,    // a charm through a wrapper still knows who cast it
+                             force: force);     // …and a forced admin buff stays forced through the wrapper
 
         // ---- IMPROVED (group) buff — MORE than one child. It is ONE buff carrying every child's
         //      numbers, on the group's own key, at GROUP rank, declaring the families it COVERS.
@@ -11631,8 +11712,18 @@ public class GameLoopService : BackgroundService
         // Rule 1 — CONFLICT BY FAMILY, then rank. Two buffs conflict when their family sets overlap:
         // the same single twice, a single against a group that covers its family, or two groups that
         // share one. Disjoint groups (Might and Bulwark vs Swift and Sure) never see each other.
+        //
+        // 🔴 `force` SKIPS BOTH REFUSALS AND NOTHING ELSE (`BL-131`, 2026-09-03) — the staff `/buff`
+        // path only. His find: *"now im full buff and cannot put war bulwark because of 'something
+        // stronger'"*. War Might and War Bulwark share a family at the SAME rank, so the second test
+        // decided it, and since `BL-126` gave the full buff a 1-HOUR clock the 20-minute one from a
+        // button could never run longer — `BL-127`'s six swap buttons stopped swapping the day the
+        // hour landed. 🔑 The general shape worth remembering: **a duration override changes who wins a
+        // stacking contest**; two rules that were independent stopped being independent the moment one
+        // side's clock was extended. Forcing removes the conflicts below exactly as an upgrade would,
+        // so the evicted buff leaves properly rather than coexisting.
         var conflicts = target.Buffs.Where(b => BuffsConflict(b, key, covered)).ToList();
-        foreach (var c in conflicts)
+        if (!force) foreach (var c in conflicts)
         {
             if (rank < c.Rank)
                 return false;                   // weaker: do nothing (no refresh)
@@ -16942,12 +17033,22 @@ public class GameLoopService : BackgroundService
     /// want to still be there after a farm hour — the NPC blessings beside it already run an hour, so
     /// half the bar used to expire while the other half stayed. One override, applied to the set the
     /// admin button and `/buff` hand out; nothing a PLAYER casts is touched.</summary>
-    private void GrantFullBuffSet(Entity player, IReadOnlyList<string>? set = null, bool hourLong = false)
+    /// <param name="durationTicks">`BL-131` — how long every buff in the set should last, or -1 for
+    /// each skill's own authored duration. The NPC buffer passes -1 (its blessings already author an
+    /// hour); the admin routes pass a real number, which since `BL-126` defaults to one hour and since
+    /// `BL-131` is whatever the `/buff` duration word said.
+    /// </param>
+    /// <param name="force">Skip the family/rank refusal (`BL-131`). TRUE on the admin routes, where the
+    /// point of the command is to put this set on someone; FALSE at the NPC buffer, which already
+    /// pre-filters with <c>BuffWouldLand</c> so that nobody is charged for a blessing the contest would
+    /// throw away — forcing there would quietly overwrite a player's own stronger buff with a bought one.</param>
+    private void GrantFullBuffSet(Entity player, IReadOnlyList<string>? set = null,
+                                  int durationTicks = -1, bool force = false)
     {
         foreach (var id in set ?? SkillCatalog.NewbieBuffSet)
             if (SkillCatalog.Get(id) is SkillDef def)
                 ApplyBuff(player, def, def.MaxLevel, refresh: false,
-                          durationOverride: hourLong ? SkillCatalog.NpcBuffTicks : -1);
+                          durationOverride: durationTicks, force: force);
         // One refresh after all buffs (instead of per-buff recompute/push).
         player.RecomputeDerived();
         PushBuffs(player);
@@ -16963,7 +17064,8 @@ public class GameLoopService : BackgroundService
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead)
             return;
-        GrantFullBuffSet(player, SkillCatalog.AdminBuffSet, hourLong: true);
+        GrantFullBuffSet(player, SkillCatalog.AdminBuffSet,
+                         durationTicks: SkillCatalog.NpcBuffTicks, force: true);
         // Silent (owner): the buff bar filling up is the feedback.
     }
 

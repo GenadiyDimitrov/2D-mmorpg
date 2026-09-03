@@ -259,13 +259,21 @@ and `BalanceMatrix --hpregen` (the latter also prints IG's own numbers beside ou
 timeMultiplier = 333 / speedStat                 lower = faster
 AttackSpeedStat = weaponBase * 1.0105^(agi - 30)          cap 1500
 CastSpeedStat   = classBase  * 1.63^((wit - 20)/10)       cap 1999
-   classBase: fighter 150 · human/elf mage 333 · demon mage 300
+   classBase: NON-MAGE 300 · human/elf mage 333 · demon mage 300      (`BL-133`, was 150)
 MoveSpeed: base per race+class, NO dex term, buffed cap 250 (per-entity, raisable)
    fighter: elf 143 · human 115 · demon 112      walk = run * 0.5
    mage:    elf 114 · demon 113 · human 109      mob: walk wandering, run engaged, +100 leashed home
    ROOT/STUN = 0 · FEAR = run speed, driven · CHARM = walk speed, driven   (`BL-110`)
    WHISP: max(masterSpeed * 1.6, 200), x3 outside the 100-200 leash band   (`BL-109`)
 ```
+
+- 🔑 **WHICH STAT PACES A CAST IS THE SKILL'S PHYSICAL/MAGICAL AXIS, NOT its `Category`** (`BL-132`).
+  `SkillMath.PacedByAttackSpeed` = `Category.Physical` **or** `DebuffSchool.Physical` **or** the
+  `PhysicalCast` flag (the physical BUFFS). Physical → ATTACK speed, everything else → cast speed.
+  It used to ask `Category == Physical` alone, which is a ROLE tag — so a physical stun (`Debuff`)
+  and a physical self-buff (`Buff`) were both paced by the mage's stat. The authority is his CSVs'
+  `TYPE` column, and `SkillCsvSeed --check` now compares that word.
+- A MOB and a `FixedCast` skill use the authored time flat (multiplier 1).
 
 - **Fear and charm swap the BASE and keep everything else** — buffs, slows and the cap all still
   apply, so a Swift-buffed victim panics faster. Read before the mob/player branches, so a charmed

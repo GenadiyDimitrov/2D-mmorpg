@@ -1593,7 +1593,7 @@ what never got one.
   - ⚠ **The NPC road is the half NOT built** — no buffer is spawned by the flag. It is now **`BL-128`**
     below, with the four things I would need from you, because it is the version that could ship to
     players and the command is not: `/buff` is a staff tool opened by a switch, an NPC is content.
-  - ❓ **One word owed on the two I dropped from the full buff — `BL-129`.**
+  - ✅ **The two I dropped from the full buff were the two you wanted dropped — `BL-129`, answered.**
 
 - `BL-127` ✅ **BUILT 2026-09-03 (0.106.0) — THE FUNCTIONS AND CLASS TABS, exactly your four points.**
   *"Function menu remove the lvl up buttons. Under full buff add the 4 marks and 2 great bulwark/might
@@ -1608,7 +1608,12 @@ what never got one.
     button can never trip the ambiguity rule a name lookup lives with ("Might" is three buffs).
   - **Reset is one button and a selection**, the same shape as "+ Add a class" beside it.
 
-- `BL-128` ❓ **THE NPC BUFFER ITSELF — the half of `BL-126` I did NOT build, and it is the half that
+- `BL-128` ❌ **DROPPED BY YOU, 2026-09-03 — NOTHING OWED.** *"Skip the npc buffer (bl128)"*. The
+  `/buff` road (`BL-126`, 0.106.0) covers the need, and it is the road you called the easier one when
+  you gave both. If a buffer NPC is ever wanted as **content** rather than as a staff tool, the four
+  questions in the old entry are the ones that have to be answered first — kept for that day only.
+
+- `BL-128`.old ❓ **THE NPC BUFFER ITSELF — the half of `BL-126` I did NOT build, and it is the half that
   could ship to players.** Your first description, 2026-09-03: *"I want a setting in the menu same as
   the class without quest one to include a npc buffer that contains all buff for 1h ...harmonies marks
   etc ... It don't have full buff or partial just a save button. So if this setting is ON it spawns a
@@ -1634,7 +1639,18 @@ what never got one.
      restart is acceptable, which makes the spawn road cheap — but "always there, price waived" needs
      no restart at all and is one less state to reason about.
 
-- `BL-129` ❓ **ONE WORD OWED: DID YOU MEAN BOW EXPERTISE *OUT* OF THE FULL BUFF, OR AS A BUTTON?**
+- `BL-129` ✅ **ANSWERED 2026-09-03 — *OUT*, AND THE 0.106.0 BUILD WAS ALREADY RIGHT. NO CODE CHANGED.**
+  *"Nor the shrouding nor the expertise I want as a button or included in admin fullbuff (or /buff)."*
+  The reading I built on was the right one: both sit in `SkillCatalog.AdminBuffSkip`
+  (`Skills.Buffer.cs`), out of the admin set, and neither became a seventh button.
+  🔑 **Verified while closing this that neither id is in `NewbieBuffSet` either** — that list is
+  `Concat`ed onto the admin set *after* the skip filter runs, so a name sitting in both places would
+  have walked straight back in past its own skip. Neither does.
+  ⚠ **The one thing still true:** each remains castable ALONE by exact name (`/buff shrouding hymn`,
+  `/buff bow expertise`) — the skip list governs what the SET hands out, not what the command may
+  target. Say the word if you want the command to refuse them outright; it is one line.
+
+- `BL-129`.old ❓ **ONE WORD OWED: DID YOU MEAN BOW EXPERTISE *OUT* OF THE FULL BUFF, OR AS A BUTTON?**
   Your line was *"And make all the admin buffs 1h and don't want a Shrouding hymn in the full buff. And
   bow expertise."* I read the last sentence as attaching to the **don't want**, and built it that way
   in 0.106.0: both Shrouding Hymn and Bow Expertise are out of the full buff, both still reachable as
@@ -1681,6 +1697,249 @@ serenity/vigor/vamp/force/insight, Bow Expertise surviving a weapon swap, toggle
 auto-on, the level-1 mage casting with no weapon-proficiency penalty until something forces a
 recompute, Phase Shift not updating your position on the client, and the stale buff bar after a long
 reconnect.
+
+---
+
+## Your pass of 2026-09-03 (in chat, not a playtest). `BL-130` … `BL-138`
+
+Nine items, from one message plus three follow-ups. **Your order is the order below** — the things
+that are wrong first, then the two design changes (cast speed, the fighter's WIT swap), then the UI
+asks, and the mob-HP measurement last because it needs nothing built.
+
+- `BL-130` ✅ **BUILT 2026-09-03 (0.107.0) — WHISPS RE-SUMMON ON THEIR REUSE, NOT IN THE LAST FIVE SECONDS.** *"charming whisp (and
+  i guess all whisps) resummon on cd not when whisps disapear"*. What is there today is `BL-112`'s
+  renewal window applied to whisps: the cast gate refuses a whisp you already carry unless it has
+  ≤5s left (`GameConstants.WhispResummonWindowTicks`), so in practice the only moment you may re-call
+  one is the moment it is about to leave on its own. You are asking for the plain rule instead — **the
+  skill's own 30s reuse is the only limiter**, and a re-call refreshes the whisp in place whenever the
+  bar says it is ready.
+  ⚠ **It costs 4 Skill Stones every time**, and that does not change. At a 30s reuse a player who
+  spams it burns 480 stones an hour per slot instead of 12; that is a choice the price already
+  punishes, not something the gate needs to prevent. Say so if you want a floor on it.
+  🔑 The refusal lived at the **cast gate**, so removing it costs nothing that was paid — no MP was
+  spent and no reuse was started by a refused call.
+
+- `BL-131` ✅ **BUILT 2026-09-03 (0.107.0) — `/buff` GETS A DURATION, AND AN ADMIN BUFF MUST BE ABLE TO REPLACE THE ONE THE FULL
+  BUFF GAVE YOU.** Two things in one ask:
+  *"/buff command must have duration => /buff [target]<name>[duration][lvl] … /buff wc_harmony_mark 1h
+  -> should buff me with buffer 4th mark lvl 2 for 1h … or if we cannot put duration in the command
+  atleast make it 1h from /buff and admin buttons"*, and
+  *"now im full buff and cannot put war bulwark because of 'something stronger'"*.
+  1. **Duration token.** `/buff [target] <name> [duration] [lvl]`, where a duration is `90s` / `30m` /
+     `1h`. **The default is 1 hour** for every route — the typed command, the six buttons, the full
+     set — which is your fallback ask, and it makes the whole admin buff layer one number.
+  2. 🔴 **THE REFUSAL IS A CONSEQUENCE OF `BL-126`, and it is the interesting half.** War Might and War
+     Bulwark share a family at the SAME rank, and `ApplyBuff`'s rule for equal rank is *keep whichever
+     runs longer*. Since 0.106.0 the full buff hands out its half at **1 hour**, so the button's
+     20-minute War Bulwark could never win the comparison — the swap the six buttons exist for
+     (`BL-127`) stopped working the day the hour landed. The four Marks are the same shape.
+     🔑 **The general lesson: a duration override changes who wins a stacking contest.** Two rules that
+     were independent stopped being independent the moment one side's clock was extended.
+     **The fix is a FORCE flag on the admin path** — `/buff` and its buttons apply unconditionally,
+     evicting whatever shares the family — rather than a duration tweak that would only move the
+     problem. A staff command that silently does nothing is worse than one that overrides.
+
+- `BL-132` ✅ **BUILT 2026-09-03 (0.107.0) — A PHYSICAL SKILL'S CAST TIME MUST READ ATTACK SPEED — AND ONLY *DAMAGE* SKILLS DID.**
+  *"physical buffs/debuffs/spells should speed up by attack speed not cast … now i cast shield shock
+  for ~2s .. when its default cast is 1s and my as is 580 (x1.74) and my cast is 182 (x0.55) …
+  physical skills seem to work but the buffs dont"*.
+  Your measurement is exactly right and the arithmetic confirms it: Shield Shock's 1s × the CAST
+  multiplier 1.83 = **1.83s**, which is the ~2s you saw.
+  🔑 **The test in the code was `Category == SkillCategory.Physical`, and `Category` is not the
+  physical/magical axis** — it is a five-way role tag (Physical / Magic / Buff / Debuff / Heal). A
+  physical STUN is authored `Category.Debuff` and a physical self-buff is `Category.Buff`, so both
+  fell to the mage's stat. Only a physical *damage* skill ever took the right branch, which is
+  precisely the split you described.
+  🔑 **The axis already exists in your CSVs** — the `TYPE` column has said `Physical/Active`,
+  `physical debuff`, `pfysical buff` and `Magic/*` all along, and `SkillDef.DebuffSchool` already
+  carries the physical/magical word for contested debuffs. What was missing was (a) reading
+  `DebuffSchool` in the speed decision and (b) any equivalent for BUFFS. Both land here; the eight
+  physical buffs in the files (`sprint`, `evasion_boost`, `bow_expertise`, `wc_bow_expertise`,
+  `defensive_wall`, `battle_regeneration`, `battle_presence`, `battle_defence`) get an explicit flag.
+  🟢 **`--check` NOW COMPARES THE `TYPE` COLUMN — it never has.** That is exactly how `Charm` could
+  disagree with your own file for a whole version without anything going yellow. Only the
+  physical/magical WORD is compared (blanks, `Passive`, `Toggle` and `Whisp` are skipped, and every
+  spelling of it is accepted — the column has never had a grammar). ⚠ It earned its keep on the first
+  run: **Taunt and Mass Taunt** are authored `physical active` and were casting on the mage stat too.
+  The check was then proved by planting the Charm break back and watching it report 19 rungs.
+
+- `BL-133` ✅ **BUILT 2026-09-03 (0.107.0) — FIGHTER BASE CAST SPEED 150 → 300, AND THE ELF TANK'S CHARM BECOMES MAGICAL.**
+  *"why fighters have so low cast speed ? shouldnt it all have about the 300~400 cast in the begining
+  and only mages have the spellcaster_mastery … now my elf figter have 130 base and 182 buffed .. and
+  i think he must have 260 (or whatever base x wit mod) and ~365 buffed"*.
+  **Your two numbers are exact.** `ClassBaseCastSpeed` is 150 for every non-mage; the elf fighter's
+  WIT is 17, so 150 × 0.864 = **130**, and ×1.4 from the buff = **182**. Raising the base to **300**
+  gives **259** and **363** — your 260 and ~365, with nothing else touched. Full table:
+
+  | class | WIT | base now | ×witMod = now | cast TIME now | base 300 → | buffed ×1.4 | cast TIME |
+  |---|---|---|---|---|---|---|---|
+  | Demon Fighter | 10 | 150 | **92** | ×3.62 | **184** | 258 | ×1.81 |
+  | Human Fighter | 14 | 150 | **112** | ×2.98 | **224** | 313 | ×1.49 |
+  | Elf Fighter | 17 | 150 | **130** | ×2.57 | **259** | 363 | ×1.29 |
+  | Demon Mage | 19 | 300 | 286 | ×1.17 | 286 | 400 | ×1.17 |
+  | Human Mage | 20 | 333 | 333 | ×1.00 | 333 | 466 | ×1.00 |
+  | Elf Mage | 23 | 333 | **386** | ×0.86 | 386 | 540 | ×0.86 |
+
+  🔑 **One correction to your model, and it makes your case stronger:** the elf mage's 386 is NOT
+  Spellcaster Mastery — it is 333 × the WIT modifier of a 23-WIT elf. The masteries carry the *wrong*
+  -armour and *wrong*-weapon PENALTIES (robe/light/heavy profiles, `CastSpeedPct −0.5`), which is your
+  "193 without robe → 96 without wand". So base × witMod is already the model you described; the only
+  wrong number in it was the fighter's 150.
+  ⚠ **What this actually changes is small**, because `BL-132` moves every physical skill off cast
+  speed in the same pass: what is left on a fighter's cast bar is his MAGICAL debuffs — which is the
+  whole point of the ask. The one class that gains broadly is the **Warchanter**, a `BaseClass.Fighter`
+  whose songs are magic; his casts roughly halve in time. Flag it if that is not wanted.
+  - **THE ELF IS A MAGIC KNIGHT — your direction, recorded:** *"the idea is the elf is a magic knight
+    and have magic debuffs while the other two rely on phisical - later the elf will have self cure and
+    heals he then can invest in wit if he likes"*.
+  - **DEBUFF SCHOOLS, per your ruling:** *"charm is a magic taunt not phisical -> charm is saved by
+    SPT, Freeze as well, Stay and Shield Shock are the only physical debuffs atm and are saved by CON
+    -> the tank 3rd is fixed (2nd charm is still physical active)"*. Freeze is already `Magical` in
+    code. **Charm is `Physical` and must become `Magical`** — your `tank 3rd.csv` already says
+    `Magical Debuff`, the code and `tank 2nd.csv` did not. Stay and Shield Shock stay `Physical`.
+    ❓ **Intimidate (the Demon's fear) is `Physical` today and you did not name it.** "Stay and Shield
+    Shock are the ONLY physical debuffs" reads as *fear is magical too*, but a Demon fear is a roar,
+    not a spell — and the Demon has no WIT to cast it with. **Left PHYSICAL, flagged here**; one word
+    changes it.
+
+- `BL-134` ✅ **BUILT 2026-09-03 (0.107.0) — THE FIGHTER GETS `+WIT −SPT` ON THE MINDWRITER'S SHELF.** *"please add the +wit-spt in
+  the skill swap for fighters as well"*. Today `StatSwapsFor` gives a fighter ATK↔AGI, ATK↔CON,
+  AGI↔CON and the one-way `+SPT −ATK`; WIT is not on his shelf at all, which is what makes an elf tank
+  unable to buy into his own magic debuffs. Added as `swap_wit_men` (+WIT −SPT).
+  ⚠ **The reverse (`+SPT −WIT`) is NOT added** — you named one direction, and the fighter's other WIT
+  door is already one-way by your own 2026-08-10 ruling. Reset at the Mindwriter is free, so nothing
+  is trapped by leaving it one-way. Say the word and it is one line.
+
+- `BL-135` ✅ **FIXED 2026-09-03 (0.107.0) — CANCELLING A CAST BY PRESSING ATTACK IS FREE — THE COOLDOWN NEVER STARTS.** *"starting
+  to cast a skill … and click on attack that is on the skill bar it cancels the cast of the skill and
+  dont enter it in cooldown .. while if i cast and cancel it trough same button 'X' and it start to
+  cooldown"*. Confirmed in the code: `HandleAttack` calls `CancelCast(attacker)` and the parameter
+  `startCooldown` defaults to **false**, so an attack order is a free cancel while the cast bar's X and
+  ESC both pay the reuse. That is an exploit shape, not only an inconsistency — any long cast can be
+  aborted at no cost by tapping Attack. **One rule: a cancel the PLAYER chose starts the cooldown; only
+  an enemy interrupt or a forced stop does not.**
+
+- `BL-136` ✅ **BUILT 2026-09-03 (0.107.0) — CHAT AND COMBAT DO NOT COUNT AS OPEN WINDOWS FOR THE BACK BUTTON.** *"also can chat and
+  combat window not to count as opened windows for the back button"*. Both go through `ToggleWindow` →
+  `OpenWindow`, which is what registers a panel on the back stack, so leaving the chat log open means
+  every back press closes it instead of what you actually wanted closed. They are **persistent HUD**,
+  not modal windows. Exempted by name; everything else on the stack is unchanged.
+
+- `BL-137` 🟢 **YOUR LEVEL-72 MOB SETTLES THE 15k QUESTION — AND IT VALIDATES OUR CURVE EXACTLY.**
+  *"also about the 15k on mobs .. a lvl 72 redhorn footman have 12561"*.
+  Our base curve is `MobBaseStats.Hp(L) = 40 + 0.8·L²`, so **Hp(72) = 4,187**. And 4,187 **× 3 =
+  12,561** — your number to the unit.
+  🔑 **That is not a coincidence and it is not a curve error: it is an IG `HP Increase (x3)` tag.**
+  `balance/MobCurveVsIG.md` measured this across 2,831 creatures — 77% are ×1 and 23% carry ×2-×5 —
+  and it is why `BL-78`'s HP half was ruled *"stays as is"*: **our base equals their base, and the big
+  numbers are bought by the multiplier layer** (`MobMod.Hp`), which exists, works, and is *unauthored*
+  on the field roster. So the thing still owed is **authoring ×2-×5 onto the creatures that should
+  carry it**, not moving the curve. A ×3 on our level-72 roster produces 12,561, the same as theirs.
+  ⚠ This supersedes nothing and reverses nothing — it is the first outside data point that confirms
+  the base, which is worth more than the ruling it agrees with.
+
+  🔴 **YOU THEN WENT LOOKING FOR IT AND FOUND NOTHING — and that IS the answer, not a second bug:**
+  *"about the mob healt .. i dont see in skills x3 hp on mobs passive ... its somewhere invisible"*.
+  **The display works and the layer is real; the ROSTER is empty.** `MobMod.Hp != 1` already prints
+  `Max HP ×3` in the target-inspect passive list (`MobMod.Describe`, beside "Wields:" and the resist
+  lines), and **exactly four templates in the whole game carry an HP multiplier**: the guard tower
+  (×2) and three deliberate demo/boss creatures (×3.73, ×1.46, ×1.46). **Not one ordinary field
+  creature has one.** So nothing is hidden — there is nothing to see.
+  🔑 **That makes the owed work concrete and small.** It is AUTHORING, one `MobMod.Hp` per template;
+  the machinery to apply it, roll drops against it and show it on the plate is built and tested.
+  Say the word and it becomes its own entry with the roster laid out — which creatures stay ×1 and
+  which take ×2-×5 — for you to rule on. IG runs 77% at ×1, so most of the bestiary would not move.
+
+- `BL-138` ✅ **BUILT 2026-09-03 (0.107.0) — THE LEARN TAB: THE ROW *IS* THE LEARN BUTTON, AND THE CONFIRM MOVES INSIDE.** *"clicking
+  on the row in skills to learn tab not to open the details but the learn details now if i missclick it
+  opens the details and is annoying .. u can remove the learn button and the actual row click is the
+  learn click and inside the learn details to be a confirm button that is grayed out when unable to
+  learn"*. Three changes to one window: the row's tap opens the **learn** view rather than the skill
+  card, the separate [Learn] button on the row goes away, and the learn view carries the confirm —
+  **greyed out, not hidden, when the skill cannot be learned**, so the reason is visible instead of the
+  button being missing.
+
+### The second half of the same pass — `BL-139` … `BL-144`
+
+- `BL-139` ✅ **FIXED 2026-09-03 (0.107.0) — SHIELD REINFORCEMENT IS NOT A TOGGLE — IT WAS NEVER DECLARED AS ONE.** *"tanks Shield
+  Reinforcement dont work .. dont activate - it not act as a toggle at all .. it casts something but
+  doesnt do nothing (seems to act as a buff of instacast/0 duration) - for a split second i see my pdef
+  rises"*. Your diagnosis is the bug, exactly: it is `Category: SkillCategory.Buff` with
+  `MpPerSecond: 15` and **no `Toggle: true`**, so `ApplyBuff` reads its `DurationTicks` of 0 and the
+  buff lands and expires on the same tick. The +300 P.Def you glimpsed was real, for one tick.
+  🔑 **Your `tank 3rd.csv` row says `Toggle` in the TYPE column and always has** — this is the second
+  disagreement in one day between that column and the code, after `Charm`. So the check that landed
+  this morning for `BL-132` grows the other half: **`--check` now also compares the word `Toggle`**,
+  and a stance that forgets the flag is a yellow line instead of a skill that quietly does nothing.
+
+- `BL-140` ✅ **BUILT 2026-09-03 (0.107.0) — ENCHANT AND ATTRIBUTE FROM THE ITEM'S OWN DETAILS — the flow runs the wrong way round.**
+  *"can we make enchant button on the actual equipment details .. i open details of a weapon and click
+  Enchant it ask me which scroll if i have any and enchant .. now the reverse is a bit harsh -> find
+  scroll click _. click use -> find weapon from 250 equipments -> click"* … *"also attribute scrolls
+  the same way"*.
+  You are right about which end is the long one: **you have few scrolls and many items.** Picking the
+  scroll first means the second list is your whole bag; picking the item first means the second list is
+  the two or three scrolls that can legally touch it.
+  🔑 **BOTH DIRECTIONS STAY.** The scroll-first flow is the right one when you have just looted a
+  scroll and want to know what it is for, and deleting it would break the Bin/Use shape every other
+  consumable has. The new buttons are on the WEARABLE's detail panel, offered only when you actually
+  hold a scroll that would be accepted — a button that opens an empty list is worse than no button.
+  ⚠ The eligibility test is the same `ScrollCanTarget` the existing flow uses, read backwards, so the
+  two directions can never disagree about what is legal — and the server stays the authority.
+
+- `BL-141` ✅ **FIXED 2026-09-03 (0.107.0) — AN ATTRIBUTE LANDS AND THE ITEM'S DETAILS NEVER REDRAW.** *"attri scrlls dont update the
+  weapon details after added -> i add attribute and the only way to see what have been added is to open
+  the attribute weapon selection again"*.
+  Two causes, both fixed: the detail window **closes itself** after a scroll (so there is nothing left
+  to update), and nothing re-rendered it on a bag push anyway — the panel drew once from the DTO it was
+  opened with and kept that copy forever.
+  🔑 It now remembers WHICH INSTANCE it is showing and re-renders it from every inventory push, closing
+  only if that item has actually left your bag. So an enchant, an attribute, an equip, a stack change —
+  anything the server sends — is on screen the moment it lands. That is also what makes `BL-140` worth
+  having: you enchant from the item's own page and watch the number move on it.
+  ⚠ The detail panel keeps its OWN change-stamp and that stamp includes the ATTRIBUTES, which is the
+  whole trick: a re-roll changes nothing else about an item — same instance, same enchant, same
+  quantity — so a stamp built the way the BAG's is would have been identical and it still would not
+  have redrawn. (The bag's own stamp is left alone deliberately: its rows do not print attributes, so
+  it has nothing to redraw.)
+
+- `BL-142` ✅ **BUILT 2026-09-03 (0.107.0) — THE `[ORDER]` SETTING PERSISTS ON THE PHONE.** *"can the order of bag and/or vendors be
+  made persistent for the client (same as the chat windows)"*. `BL-117` shipped it deliberately
+  unpersisted — *"a view preference, resetting to A-Z"* — because there was no settings message to
+  carry it. There does not need to be one: it is a CLIENT preference, so it goes in `PlayerPrefs`
+  beside the camera distance and the models toggle, and never touches the server or the character.
+  ⚠ One thing fixed along the way: the five `[ORDER]` buttons (bag, vendor sell, vendor buy, buyback,
+  warehouse) share one setting but each painted its own label at build time, so changing the order in
+  the bag left the vendor's button reading the old word until that window was rebuilt. They now all
+  relabel together.
+
+- `BL-143` ✅ **BUILT 2026-09-03 (0.107.0) — BACKLASH MOVES TO THE 4TH CLASS (76) AND GETS ITS CSV ROW.** *"can you move backlash from
+  the tank 3rd to tank 4th in the csv not that matters now but its not authored and not seeing it in the
+  csv but in the game is a class mismatch"*.
+  🔑 **It was never in the tank 3rd file — it was never in ANY file**, which is the whole defect: it is
+  auto-granted from `SkillCatalog.ReflectPassiveFor`, and the level was **mine, not yours**. The code
+  comment has said so since `BL-08`: *"⚠ THE LEVEL IS MINE, NOT HIS: he never said when a tank gets it.
+  It is granted at the 3rd class change (40) to sit beside Deflection, which he DID date."* You have now
+  dated it, so the invention is retired: **76**, and a row in `tank 4th.csv` at SP 0, which is what
+  auto-granted looks like to `--check`.
+  ⚠ **A tank already carrying it keeps it unless it is stripped**, because the grant is a plain
+  assignment into `LearnedSkills` and nothing has ever taken one back. Any 40-75 tank on your `game.db`
+  would have walked around with a skill the new rule says he cannot have, so the grant now also REMOVES
+  the archetype's reflect passive below its gate — the same shape as the `class_balance` cleanup beside it.
+  ⚠ The warrior's **Deflection** is untouched: you dated that one yourself (*"default warrior @40 -> 0.15
+  chance x1 reflected; @76 -> 0.3"*), so it keeps Lv1 at 40 and Lv2 at 76.
+
+- `BL-144` ✅ **BUILT 2026-09-03 (0.107.0) — SKILL STONES STACK TO 9,999; THE ELEMENTAL/HOLY/PHYSICAL STONES STAY AT 99.** *"skill
+  stones to stack to 9999 while the element type stones to stay at 99 -> skill stones are used for fast
+  reuse casts like heals etc .. and 99 are not near enough to have"*.
+  🔑 **The line you drew is SPEND RATE, not what the item is**, and it is the right one: a Skill Stone is
+  the reagent of ordinary, repeated casts — Ultimate Heal takes one or two per cast, a whisp four per
+  call — so a raid evening burns hundreds and 99 is under an hour. The other three are set-piece
+  reagents spent in ones, and they keep the 99.
+  ⚠ It is the **first user of `ItemDef.MaxStackOverride`**, a field written for exactly this in 0.93.0
+  and unused until today (*"only set this when one item has to disagree with its whole category"*). The
+  number still lives in `StackLimits` as a named constant, so a retune is one edit — your own standing
+  requirement for the stack system. Nothing else in the Consumable category moves.
 
 
 ---

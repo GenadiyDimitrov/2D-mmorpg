@@ -48,3 +48,5 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 86,Defensive Wall,defensive_wall,pfysical buff,,,0,0,self/single,0.5,360,50,increase p.def +4800; m.def +4300; buff cancel resist x1.8; ms x0.23,20,3400,[]
 88,Defensive Wall,defensive_wall,pfysical buff,,,0,0,self/single,0.5,330,55,increase p.def +4900; m.def +4400; buff cancel resist x1.8; ms x0.22,20,3400,[]
 90,Defensive Wall,defensive_wall,pfysical buff,,,0,0,self/single,0.5,300,60,increase p.def +5000; m.def +4500; buff cancel resist x1.8; ms x0.20,20,3400,[]
+,,,,,,,,,,,,,,,,,----------------------------Backlash----------------------------
+76,Backlash,backlash,Passive,,,0,0,self/single,0,0,0,"30% chance that a debuff cast at you lands on its caster instead - auto-granted at the 4th class change so SP is 0",0,0,[]

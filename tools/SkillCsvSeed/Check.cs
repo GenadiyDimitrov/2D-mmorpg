@@ -137,7 +137,31 @@ internal static class Check
                                // Range, which is how far you may throw it. Compared to
                                // SkillDef.AreaRadiusAt, so the radius is a CHECKED number for the
                                // first time; before this column it existed only as prose in DESCR.
-                               float Aoe = 0f);
+                               float Aoe = 0f,
+                               // `BL-132` — the TYPE column, the OLDEST column in the files and the last
+                               // one nothing compared. It has always carried the physical/magical word
+                               // (`Physical/Active`, `physical debuff`, `pfysical buff`, `Magic/Heal`,
+                               // `Magical Debuff`), and that word decides which speed stat paces the
+                               // cast. Held raw on the CSV side; the code side leaves it empty and the
+                               // comparison asks the SkillDef instead — see PhysicalWord below.
+                               string Type = "");
+
+    /// <summary>`BL-132` — the physical/magical word in a TYPE cell, or null when the cell does not
+    /// state one (`Passive`, `Toggle`, `Whisp`, a blank, a stray number).
+    ///
+    /// <para>🔑 Deliberately forgiving about everything EXCEPT the word. The column has never had a
+    /// grammar — his cells read `Physical/Active`, `physical active`, `physical debuff` and `pfysical
+    /// buff` for the same idea — so demanding a canonical spelling would report thirty rows he has no
+    /// reason to change. What is checkable is the one bit that the engine actually reads.</para></summary>
+    private static bool? PhysicalWord(string cell)
+    {
+        string t = cell.Trim().ToLowerInvariant();
+        if (t.Length == 0) return null;
+        // "pfysical" is his own long-standing spelling and appears in four files; it means physical.
+        if (t.Contains("physical") || t.Contains("pfysical")) return true;
+        if (t.Contains("magic")) return false;   // covers "magic/…" and "magical …"
+        return null;
+    }
 
     public static int Run(string dir)
     {
@@ -217,7 +241,8 @@ internal static class Check
                               Weapon: f[4].Trim(),
                               Weight: f[5].Trim(),
                               Aoe: F(f[7]),
-                              SkillId: f[2].Trim()));
+                              SkillId: f[2].Trim(),
+                              Type: f[3].Trim()));
         }
         return rows;
     }
@@ -398,6 +423,45 @@ internal static class Check
                 if (a[i].Target.Length > 0 && b[i].Target.Length > 0
                     && !string.Equals(a[i].Target, b[i].Target, StringComparison.Ordinal))
                     diffs.Add($"target CSV '{a[i].Target}' vs code '{b[i].Target}'");
+
+                // ---- `BL-132` — THE TYPE COLUMN'S PHYSICAL/MAGICAL WORD, checked at last.
+                //
+                // 🔴 THIS COLUMN WAS NEVER COMPARED, and that is exactly how `Charm` sat in the code as
+                // `DebuffSchool.Physical` while his own `tank 3rd.csv` said `Magical Debuff` — for a
+                // whole version, with nothing to notice it. The word is not decoration: it decides
+                // which stat the target saves with (CON vs SPT) and, since `BL-132`, whether the cast
+                // is paced by ATTACK speed or by cast speed.
+                //
+                // ⚠ ONLY THE WORD IS CHECKED. Cells with no physical/magical word (`Passive`, `Toggle`,
+                // `Whisp`, blanks) are skipped, and so is every spelling question — `Physical/Active`,
+                // `physical active` and `pfysical buff` all read as "physical". Demanding a canonical
+                // cell would report thirty rows he has no reason to touch and train him to ignore this.
+                if (b[i].Def is SkillDef typeDef && PhysicalWord(a[i].Type) is bool wantPhysical
+                    && typeDef.Category != SkillCategory.Passive
+                    && SkillMath.PacedByAttackSpeed(typeDef) != wantPhysical)
+                    diffs.Add($"type CSV says {(wantPhysical ? "PHYSICAL" : "MAGICAL")} "
+                            + $"('{a[i].Type}') but the code casts it on "
+                            + (wantPhysical ? "cast speed" : "attack speed")
+                            + $" (Category {typeDef.Category}, DebuffSchool {typeDef.DebuffSchool}"
+                            + (typeDef.PhysicalCast ? ", PhysicalCast" : "") + ")");
+
+                // ---- `BL-139` — THE OTHER WORD IN THE SAME COLUMN: `Toggle`.
+                //
+                // 🔴 Shield Reinforcement was authored `Toggle` and built as an ordinary Buff with no
+                // `Toggle: true`, so it landed with `DurationTicks: 0` and expired on the tick it was
+                // cast — a stance that did nothing at all, for a version. That is the SECOND
+                // disagreement between this column and the code found in one day (`Charm` was the
+                // first), which is what a column nothing compares is worth.
+                //
+                // ⚠ One-directional on purpose: a CSV `Toggle` demands the flag, but a def that is a
+                // toggle without the word is not reported. His files call the same idea `Toggle` in
+                // some places and describe it in DESCR in others, and the harm is entirely one way —
+                // a missing flag is a dead skill, a missing WORD is a spelling.
+                if (b[i].Def is SkillDef toggleDef
+                    && a[i].Type.IndexOf("toggle", StringComparison.OrdinalIgnoreCase) >= 0
+                    && !toggleDef.Toggle)
+                    diffs.Add("type CSV says TOGGLE but the code has no `Toggle: true` — it will land "
+                            + $"for {b[i].Duration:0.##}s and expire (Category {toggleDef.Category})");
 
                 // ---- BL-105 — THE WEAPON COLUMN, his `type1[|type2|type3][/hands]` grammar.
                 //

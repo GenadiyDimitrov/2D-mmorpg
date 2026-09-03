@@ -88,7 +88,14 @@ public partial class SkillCatalog
             MpCost: 0, CastTicks: 0, CooldownTicks: 60, Range: 400, Power: 0,
             DurationTicks: 30, BuffKey: "charm", Rank: 1, TauntPower: 4500,   // 3s of walking — his 3rd file's DURR column, and what both files' DESCR cells say
             Charms: true, DebuffLandMod: 0.7f,
-            DebuffSchool: DebuffSchool.Physical, Category: SkillCategory.Debuff,
+            // 🔑 MAGICAL, so the save is SPT — his ruling, 2026-09-03 (`BL-133`): *"charm is a magic
+            // taunt not phisical -> charm is saved by SPT, Freeze as well, Stay and Shield Shock are
+            // the only physical debuffs atm and are saved by CON"*. It was Physical here while his own
+            // `tank 3rd.csv` already read `Magical Debuff` in the TYPE column — the disagreement was
+            // invisible because `--check` never compared that column. This is also what makes the elf
+            // the MAGIC KNIGHT of the three tanks: his control is resisted by a different stat than
+            // the human's and the demon's, and it is the reason he now has a WIT swap (`BL-134`).
+            DebuffSchool: DebuffSchool.Magical, Category: SkillCategory.Debuff,
             Replaces: new[] { "taunt_lock" },
             SpCost: 6400,
             Description: "Lures an enemy: it walks helplessly toward you, and remembers who called it.",
@@ -100,7 +107,8 @@ public partial class SkillCatalog
         new(TankMassProvoke, "Mass Taunt", BaseClass.Fighter, SkillEffect.Taunt,
             MpCost: BulwarkControlMp[0], CastTicks: 5, CooldownTicks: 300, Range: 0, Power: 0,
             DurationTicks: 30, AreaRadius: 400f, TauntPower: 4000,
-            Category: SkillCategory.Debuff, TargetMode: TargetMode.EnemiesInRadius,
+            // `BL-132` — physical, like the single-target Taunt it scales out from; his TYPE cell says so.
+            Category: SkillCategory.Debuff, PhysicalCast: true, TargetMode: TargetMode.EnemiesInRadius,
             SpCost: BulwarkSp[0],
             Description: "Roars at everything around you: each of them turns on you for 3s and "
                        + "carries the grudge afterwards.",
@@ -197,7 +205,14 @@ public partial class SkillCatalog
             SkillEffect.BuffDef | SkillEffect.BuffBlockChance,
             MpCost: 15, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             BuffKey: "shield_reinforcement", Rank: 1, MpPerSecond: 15,
-            Category: SkillCategory.Buff, TargetMode: TargetMode.SelfOnly, SpCost: 120_000,
+            // 🔴 `Toggle: true` WAS MISSING AND THE SKILL DID NOTHING (`BL-139`, playtest 2026-09-03:
+            // *"it not act as a toggle at all .. it casts something but doesnt do nothing ... for a
+            // split second i see my pdef rises"*). A stance carries `DurationTicks: 0`, which is only
+            // meaningful WITH the flag — `ApplyBuff` gives a toggle `int.MaxValue` and everything else
+            // the authored duration, so without it the +300 P.Def landed and expired on the same tick.
+            // ⚠ His CSV row has said `Toggle` in the TYPE column since the file was written; `--check`
+            // now compares that word, so the next stance that forgets the flag is a yellow line.
+            Category: SkillCategory.Buff, Toggle: true, TargetMode: TargetMode.SelfOnly, SpCost: 120_000,
             RequiredArmor: ArmorWeights.Heavy, RequiredShield: ShieldGate.Required,
             CountsTowardBuffLimit: false,
             Magnitudes: new EffectMagnitude[]

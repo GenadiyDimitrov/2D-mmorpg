@@ -4608,7 +4608,7 @@ static float AutoAttackSeconds(Entity e) =>
 /// uses) plus its reuse. This is SkillReuseTicks' arithmetic.</summary>
 static float SkillCycleSeconds(Entity e, SkillDef def)
 {
-    float speedMult = def.Category == SkillCategory.Physical
+    float speedMult = SkillMath.PacedByAttackSpeed(def)
         ? e.EffectiveAttackSpeedMultiplier : e.EffectiveCastSpeedMultiplier;
     int castTicks = Math.Max(2, (int)(def.CastTicks * speedMult));
     int cd = def.CooldownTicks;
@@ -5265,7 +5265,7 @@ static void MpNpc()
 
     static (float Cast, float Reuse) Cycle(Entity e, SkillDef d, int lvl)
     {
-        float castMult = d.Category == SkillCategory.Physical
+        float castMult = SkillMath.PacedByAttackSpeed(d)
             ? e.EffectiveAttackSpeedMultiplier : e.EffectiveCastSpeedMultiplier;
         int castTicks = Math.Max(2, (int)(d.CastTicksAt(lvl) * castMult));
         int cd = d.CooldownTicksAt(lvl);
@@ -5443,7 +5443,7 @@ static void MpCase()
 
     static (float Cast, float Reuse) Cycle(Entity e, SkillDef d, int lvl)
     {
-        float castMult = d.Category == SkillCategory.Physical
+        float castMult = SkillMath.PacedByAttackSpeed(d)
             ? e.EffectiveAttackSpeedMultiplier : e.EffectiveCastSpeedMultiplier;
         int castTicks = Math.Max(2, (int)(d.CastTicksAt(lvl) * castMult));
         int cd = d.CooldownTicksAt(lvl);
@@ -5735,7 +5735,7 @@ static void MpDrain(int[] argLevels)
     // GameLoopService.AutoCycleTicks, verbatim (it is private): cast x castSpeed + reduced reuse.
     static (float Cast, float Reuse) Cycle(Entity e, SkillDef d, int lvl)
     {
-        float castMult = d.Category == SkillCategory.Physical
+        float castMult = SkillMath.PacedByAttackSpeed(d)
             ? e.EffectiveAttackSpeedMultiplier : e.EffectiveCastSpeedMultiplier;
         int castTicks = Math.Max(2, (int)(d.CastTicksAt(lvl) * castMult));
         int cd = d.CooldownTicksAt(lvl);

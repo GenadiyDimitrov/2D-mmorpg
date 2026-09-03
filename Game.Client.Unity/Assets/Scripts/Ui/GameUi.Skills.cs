@@ -88,6 +88,10 @@ namespace Game.Client
         private RectTransform _learnPanel;
         private TextMeshProUGUI _learnTitle, _learnBody;
         private System.Action _learnAction;
+        /// <summary>`BL-138` — kept so the confirm can be GREYED rather than the window refusing to
+        /// open. A skill you cannot afford still opens its page; the button below it is dim and the
+        /// body says why.</summary>
+        private Button _learnConfirmButton;
 
         private void BuildLearnConfirm()
         {
@@ -111,13 +115,13 @@ namespace Game.Client
             UiKit.Place(UiKit.Rect(cancel.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
                         new Vector2(18f, 14f), new Vector2(230f, 46f));
 
-            var confirm = UiKit.TextButton(inner, "Confirm", () =>
+            _learnConfirmButton = UiKit.TextButton(inner, "Confirm", () =>
             {
                 var act = _learnAction;
                 CloseWindow(_learnPanel);
                 act?.Invoke();
             }, 16f);
-            UiKit.Place(UiKit.Rect(confirm.gameObject), new Vector2(1f, 0f), new Vector2(1f, 0f),
+            UiKit.Place(UiKit.Rect(_learnConfirmButton.gameObject), new Vector2(1f, 0f), new Vector2(1f, 0f),
                         new Vector2(-18f, 14f), new Vector2(230f, 46f));
 
             _learnPanel.gameObject.SetActive(false);
@@ -139,8 +143,16 @@ namespace Game.Client
 
         /// <summary>The owner's §7: never spend SP blind. Show what the purchase changes — for an
         /// UPGRADE the before→after of the numbers that move (power, MP), for a brand-new skill what it
-        /// does — plus the cost, behind a Confirm.</summary>
-        private void ConfirmLearn(SkillDef def, int newLevel, int sp, long gold)
+        /// does — plus the cost, behind a Confirm.
+        ///
+        /// <para>`BL-138` (owner, 2026-09-03) — THIS IS NOW WHAT A ROW TAP OPENS, so it must also open
+        /// for a skill you CANNOT buy: *"the actual row click is the learn click and inside the learn
+        /// details to be a confirm button that is grayed out when unable to learn"*. Pass
+        /// <paramref name="blockedReason"/> and the page still shows everything the purchase would do,
+        /// with the reason at the bottom and a dim Confirm. 🔑 GREYED, NOT HIDDEN: a missing button
+        /// reads as a broken window, which is the same complaint that made the Learn button always
+        /// wired in the first place.</para></summary>
+        private void ConfirmLearn(SkillDef def, int newLevel, int sp, long gold, string blockedReason = null)
         {
             _learnTitle.text = def.Name + (def.MaxLevel > 1 ? "   Lv." + newLevel : "");
 
@@ -170,9 +182,14 @@ namespace Game.Client
             t.AppendLine(gold > 0 ? "Cost:  " + gold.ToString("N0") + " " + GameConstants.CurrencyName
                                   : "Cost:  " + sp + " SP");
 
+            if (!string.IsNullOrEmpty(blockedReason))
+                t.AppendLine().AppendLine(blockedReason);
+
             _learnBody.text = t.ToString().TrimEnd();
             string id = def.Id;
-            _learnAction = () => { Boot.LearnSkill(id); _skillsRevision = -1; };
+            bool canBuy = string.IsNullOrEmpty(blockedReason);
+            _learnAction = canBuy ? () => { Boot.LearnSkill(id); _skillsRevision = -1; } : (System.Action)null;
+            if (_learnConfirmButton != null) _learnConfirmButton.interactable = canBuy;
             OpenWindow(_learnPanel);
         }
 
@@ -379,19 +396,25 @@ namespace Game.Client
                     var learnDef = def;
                     int learnLevel = cs.SkillLevel;
 
-                    // The button is ALWAYS wired. It used to be `canLearn ? action : null`, which made an
-                    // unaffordable row a dead button: tapping Learn did nothing at all, with no message,
-                    // which is indistinguishable from the feature being broken (and was reported as
-                    // exactly that). When you can't buy it yet, say WHY.
+                    // `BL-138` — THE ROW *IS* THE LEARN BUTTON. Owner, 2026-09-03: *"clicking on the row
+                    // in skills to learn tab not to open the details but the learn details now if i
+                    // missclick it opens the details and is annoying .. u can remove the learn button
+                    // and the actual row click is the learn click and inside the learn details to be a
+                    // confirm button that is grayed out when unable to learn"*.
+                    //
+                    // 🔑 Two targets on one row is what made a mis-tap possible: the row body opened the
+                    // skill CARD and a 104px button opened the purchase, so most of the row was the
+                    // wrong action. Now there is one target and one destination, and the purchase page
+                    // already contains everything the card showed.
+                    // ⚠ `detailSkill: null` is what removes the card — passing an id is what wired the
+                    // row body to ShowSkillDetail.
                     int lvlGate = group.Key;
-                    System.Action act = canLearn
-                        ? () => ConfirmLearn(learnDef, learnLevel, sp, gold)
-                        : () => ClientLog.Warn(LearnBlockedReason(learnDef, lvlGate, levelMet, sp, gold));
+                    string blocked = canLearn ? null : LearnBlockedReason(learnDef, lvlGate, levelMet, sp, gold);
 
                     Row(SkillLetters(def) + "  " + def.Name + levelTag + "   " + price,
-                        "Learn", act,
+                        null, null,
                         canLearn ? UiKit.Text : UiKit.TextDim,
-                        def.Id, cs.SkillLevel);
+                        onRowClick: () => ConfirmLearn(learnDef, learnLevel, sp, gold, blocked));
                 }
             }
 
@@ -768,19 +791,28 @@ namespace Game.Client
         /// <param name="detailSkill">Skill id whose details the ROW opens when tapped, or null for a
         /// row with nothing to explain (an action). The row itself is the target rather than a small
         /// "?" button — the name is what someone reaches for when they want to know more.</param>
+        /// <param name="onRowClick">`BL-138` — what tapping the row BODY does, when it is not "open the
+        /// skill card". The Learn tab passes the purchase page here and no <paramref name="detailSkill"/>,
+        /// which is how a row ends up with exactly one target instead of two.</param>
         private void Row(string text, string buttonText, System.Action onClick, Color colour,
-                         string detailSkill = null, int detailLevel = 1)
+                         string detailSkill = null, int detailLevel = 1,
+                         System.Action onRowClick = null)
         {
             var row = UiKit.Box(_skillsContent, "Row", UiKit.PanelLight);
             row.gameObject.AddComponent<LayoutElement>().minHeight = 44f;
 
-            if (detailSkill != null)
+            if (onRowClick != null || detailSkill != null)
             {
                 var open = row.gameObject.AddComponent<Button>();
                 open.targetGraphic = row;
                 string id = detailSkill;
                 int level = detailLevel;
-                open.onClick.AddListener(() => ShowSkillDetail(id, level));
+                var rowAction = onRowClick;
+                open.onClick.AddListener(() =>
+                {
+                    if (rowAction != null) rowAction();
+                    else ShowSkillDetail(id, level);
+                });
             }
 
             var label = UiKit.Label(row.transform, text, 16f, colour, TextAlignmentOptions.Left);
