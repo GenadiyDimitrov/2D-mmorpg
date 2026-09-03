@@ -7,12 +7,74 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.109.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.109.2**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-03 (latest) — 0.109.0: `BL-149`…`BL-153`, the buffer economy
+## 2026-09-03 (latest) — 0.109.2: a debuff that borrowed a buff flag was cast on the caster
+
+His report, hunting as a healer: *"when im with healer and doing armor break why do i get the debuff ?"*
+and then the line that located it — *"on auto-on i get the debuff not the mob"*.
+
+**Root cause, one sentence:** Armor Break's M.Def half is authored as a **negative magnitude on
+`BuffMagicDef`**, because there is no `DebuffMagicDef` flag and the `SkillEffect` enum is full — and
+`BuffMagicDef` is in the `AnyBuff` mask, so two different places in the engine read the skill as
+*beneficial*.
+
+### Where it went wrong — two bugs, one cause
+
+**1. Auto-hunt cast it on the player (`ClassifyAuto`).** The classifier asked *"is this a buff?"*
+before *"is this a debuff?"*, so Armor Break was bucketed `AutoSkillKind.Buff`, and the Buff arm of
+the auto chain targets `p.Id` — the caster. He was farming with **−30% P.Def and −15% M.Def on
+himself** and the monster untouched. The two questions are now asked in the other order.
+
+🔑 **A skill is not beneficial because it carries a buff flag — it is beneficial because it carries no
+harmful one.** Measured over the real catalog rather than argued: **2 of 581 skills change bucket**
+(`lb_ork_armor_break`, `whisp_armor_break`, both Buff → Debuff) and **no** beneficial skill is caught
+by the harmful test. The enum being full guarantees more debuffs will borrow a buff flag; asked in
+this order they are all handled in advance.
+
+**2. The same fall-through made four debuffs UNRESISTABLE.** The debuff arms of the cast resolution
+had already applied the whole def — one `BuffInstance`, both magnitudes — and then the Buff arm
+applied it a **second time with no roll at all**. So a *resisted* Armor Break landed anyway: the
+contest, the target's `CcResist` and the per-school blessing were decoration. Worse, cursing a monster
+paid **support threat** — the same aggro a heal or a blessing pays — because that arm ends in
+`AddSupportThreat` over everything it "blessed".
+
+The Buff arm now refuses a harmful payload outright. The four skills this corrects, and what each
+gets back:
+
+| Skill | Was | Now |
+|---|---|---|
+| `lb_ork_armor_break` Armor Break | always landed | its authored `DebuffLandMod` **×1.5** applies |
+| `witches_curse` Witches Curse | always landed | its CSV's *"(success chance x0.7)"* finally means something |
+| `frost_burst` Frost Burst | M.Def cut landed even when the root was resisted | the cut rides **with** the root — its own note asks for exactly this: *"one buff, so a cure that lifts the hold lifts both"* |
+| `whisp_armor_break` Whisp Armor Break | always landed | contested like every other whisp debuff |
+
+⚠ **This makes those four weaker, on purpose** — they are landing on the numbers you authored instead
+of ignoring them. Watch Armor Break's uptime in the next pass; ×1.5 is 75% at parity, so it should
+still stick most casts.
+
+⚠ **NO NEW APK, and `ProtocolVersion` stays 33.** Both fixes are server-side; `ClassifyAuto` has three
+call sites and all three are in `GameLoopService`. The **server zip** is what carries this.
+
+📌 Noticed while verifying, NOT changed: `SureHit` is honoured on the fizzle path and on the
+*uncontested* debuff branch, but not on the **contested** one — so Frost Burst's root has always been
+resistable despite the flag. Left alone as a separate question rather than folded into a bug fix.
+
+## 2026-09-03 — 0.109.1: every rune is Mythic
+
+`BL-153` widened, and the version constant it was owed. The ruling and its reasoning are written up
+under `BL-153` in the 0.109.0 section below — this entry exists because the label shipped without one:
+`27d9501` carried the commit message `fix(0.109.1)` but never moved `GameConstants.GameVersion`, so
+the next build would have stamped 0.109.0 a second time. Corrected here.
+
+⚠ **NEW APK.** The client colours item names from its own compiled `ItemCatalog`, not from the server,
+so the 55 laddered reward runes only turn Mythic on the phone with a fresh install. `ProtocolVersion`
+stays **33** — no wire change.
+
+## 2026-09-03 — 0.109.0: `BL-149`…`BL-153`, the buffer economy
 
 Five rulings from the chat pass that followed `BL-147`'s generated page. He started from *"limit the
 buffer free to <60, 60~75 paid and 75 no buff only box"* and landed somewhere better: **the free/paid

@@ -5450,8 +5450,22 @@ public class GameLoopService : BackgroundService
         // threshold armed two different resources — the reason Restore Spirit looked dead at a 100%
         // heal threshold. Before THAT it fell through to Other, the never-auto-cast bucket.
         if (IsManaRestore(def)) return AutoSkillKind.MpHeal;
-        if (def.Category == SkillCategory.Buff || (e & SkillEffect.AnyBuff) != 0) return AutoSkillKind.Buff;
+        // 🔴 THE DEBUFF QUESTION IS ASKED BEFORE THE BUFF ONE, AND THE ORDER IS THE WHOLE FIX.
+        // Reversed on 2026-09-03 from his report: *"on auto-on i get the debuff not the mob"*, casting
+        // Armor Break as a healer. Armor Break's M.Def half has no flag of its own — the SkillEffect
+        // enum is full, so an M.Def cut is authored as a NEGATIVE magnitude on `BuffMagicDef` (the note
+        // on the skill def spells this out). `BuffMagicDef` is in the AnyBuff mask, so the buff test
+        // below claimed it first, and the Buff arm of the auto chain casts on `p.Id` — the player. He
+        // was hunting with −30% P.Def and −15% M.Def on himself and the mob untouched.
+        //
+        // 🔑 A SKILL IS NOT BENEFICIAL BECAUSE IT CARRIES A BUFF FLAG — it is beneficial because it
+        // carries NO harmful one. Asked in this order, the two tests keep that meaning no matter how
+        // many more debuffs have to borrow a buff flag to be expressed, and the enum being full
+        // guarantees there will be more. Nothing else moves: no beneficial skill in the catalog
+        // carries a DebuffSchool or a ContestCc effect, so the only skills this re-routes are the ones
+        // that were being self-cast by mistake.
         if ((e & SkillEffect.ContestCc) != 0 || def.DebuffSchool != DebuffSchool.None) return AutoSkillKind.Debuff;
+        if (def.Category == SkillCategory.Buff || (e & SkillEffect.AnyBuff) != 0) return AutoSkillKind.Buff;
         return AutoSkillKind.Other;
     }
 
@@ -11465,12 +11479,28 @@ public class GameLoopService : BackgroundService
         //      is a row on the master, not a BuffInstance. Falling through to the arm below would have
         //      left a second, empty marker buff beside the whisp: two records of one thing, which is
         //      the shape of bug this codebase keeps paying for.
+        // 🔴 …AND A HARMFUL SKILL NEVER REACHES THE BUFF ARM, for the same reason ClassifyAuto now asks
+        // the debuff question first (2026-09-03). Armor Break and Frost Burst express their M.Def cut as
+        // a NEGATIVE `BuffMagicDef` magnitude because the SkillEffect enum is full — which put them in
+        // the AnyBuff mask and made this arm fire on top of the debuff arm that had already resolved
+        // them. Two bugs came out of that one fall-through, and neither was visible as a wrong number:
+        //   • The debuff was applied a SECOND time, with no roll — so a "resisted" Armor Break landed
+        //     anyway. The contest, the target's CcResist and the per-school blessing were all decoration.
+        //   • Cursing a monster paid SUPPORT THREAT, the same aggro a heal or a blessing pays, because
+        //     this arm ends in AddSupportThreat over everything it "blessed".
+        // The debuff arms above already apply the whole def — both magnitudes, one BuffInstance, which
+        // is what Frost Burst's *"one buff, so a cure that lifts the hold lifts both"* asks for — so
+        // there is nothing here for a debuff to come and collect.
+        bool harmfulPayload = IsContestedDebuff(def, effect)
+            || (effect & SkillEffect.AnyDebuff) != 0
+            || def.Category == SkillCategory.Debuff;
         if (def.SummonsWhisp is { Length: > 0 })
         {
             SummonWhisp(caster, def, lvl);
         }
-        else if ((effect & SkillEffect.AnyBuff) != 0 || def.Category == SkillCategory.Buff
-            || def.KeepsBuffsOnDeath || def.GrantsMobStealth)
+        else if (!harmfulPayload
+            && ((effect & SkillEffect.AnyBuff) != 0 || def.Category == SkillCategory.Buff
+                || def.KeepsBuffsOnDeath || def.GrantsMobStealth))
         {
             // The display name is the CASTER's class label for this skill, so a
             // cleric's Wind Walk shows as "Holy Speed" wherever it lands.
