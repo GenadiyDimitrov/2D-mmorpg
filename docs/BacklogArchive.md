@@ -104,6 +104,41 @@ passive still needed anywhere is **×1.60**. The optimiser also picked his loado
 armour, weapon at level tier plus enchant. The four failures are all one failure, **the Nuker's HP**
 (×2.01 → ×3.48), which his own *"and hp boost"* had already allowed for.
 
+### `BL-155` — "Disarm — the weapon stops paying, without leaving the hand"
+**DECLINED and replaced 2026-09-03**, the day after it was written, by your own reading of it: *"If we
+leave the weapon bonuses it's not a disarm. Let's don't do a disarm .. But I like your silence idea"*.
+You were right, and the entry below is why: the one question it hung on — does a disarmed character
+also fail the skills that REQUIRE a weapon — had only two answers, and both were bad. **Yes** made it a
+silence wearing a stat debuff's name; **no** (my recommendation) made it a damage debuff nobody would
+call a disarm. `BL-155` now holds the SILENCE family that replaced it. Original text:
+
+> Your spec, 2026-09-03: *"another system for fighters a disarm - 'u are disarmed' no weapon bonuses
+> apply for duration con saves (later visual can look like no weapon is equiped but without actually
+> unequiping it because it will be nuecense to look for it in inventory)"*.
+>
+> Same contest as the pull (ATK vs CON), and the "don't actually unequip it" instinct is right — the
+> item never moves, a flag on the character makes `Entity.RecomputeDerived` skip the weapon's
+> contributions and the client draws an empty hand.
+>
+> 🔑 **One question decides whether this is a damage debuff or a stun with extra steps, and it is
+> yours:** does a disarm also fail the skills that REQUIRE a weapon? Every fighter skill carries
+> `RequiredWeapon` / `RequiredHands`, and if a disarmed character counts as empty-handed, most of a
+> fighter's kit refuses to fire for the duration. That is enormously stronger than "no weapon bonuses" —
+> it is a silence. **My recommendation: NO.** Keep the gates satisfied by the item that is still
+> equipped, and let disarm do exactly what it says — remove the numbers. If you want the stronger
+> version it should be a different, rarer skill with its own name.
+>
+> **And "no weapon bonuses" needs a boundary.** The weapon feeds six things; my read of your sentence is
+> that the first four go and the last two stay:
+>
+> - ❌ its P.Atk / M.Atk contribution and the `MAtkBonus` split
+> - ❌ its attack-speed base
+> - ❌ its crit contribution
+> - ❌ the matching Weapon Mastery passive (it is the weapon's bonus by another name)
+> - ✅ **attack RANGE** — dropping a bow user from 400 to melee is a teleport-sized effect hidden inside
+>   a stat debuff. Unless you want exactly that, in which case say so.
+> - ✅ the skill gates, per above
+
 ---
 
 ## Superseded designs — built, then replaced

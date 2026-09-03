@@ -32,13 +32,15 @@ different professions to farm to see who can craft what — and it's a single pl
 So **`BL-05`** and **`BL-50`** are not to be worked on or re-raised until you open that playtest.
 Nothing about them is blocked or broken; they wait on a test only you can run.
 
-★ **The ones you named most recently:** `BL-154` / `BL-155` / `BL-156` (pull, disarm, stat-scaled debuff
-duration — all three need numbers from you) · `BL-93` (the visuals conversation, yours to start) ·
-`BL-102` (blocked on one file from you) · `BL-02` (the 40+ kits, blocked on your CSVs).
+★ **The ones you named most recently:** `BL-154` (pull — RULED, all seven, the engine is buildable
+now) · `BL-155` (the disarm DECLINED, replaced by the SILENCE family — ruled) · `BL-156` (debuff
+duration — **fully ruled, nothing owed by you, ready to build**) · `BL-157` (the worm, a seed) ·
+`BL-93` (the visuals conversation, yours to start) · `BL-102` (blocked on one file from you) ·
+`BL-02` (the 40+ kits, blocked on your CSVs).
 
 ---
 
-## Index — 37 open entries
+## Index — 38 open entries
 
 | id | | what it is | area |
 |---|---|---|---|
@@ -76,9 +78,10 @@ duration — all three need numbers from you) · `BL-93` (the visuals conversati
 | `BL-103` | 🔵 | Visible weapons — the shape is settled, the meshes are not | UI |
 | `BL-104` | 🔵 | The warrior's sword-vs-blunt split — ruled, nothing to attach it to yet | classes |
 | `BL-106` | ❓ | Your cross-chain id rule — six ids disobey it; three answers wanted | classes |
-| `BL-154` | 🔵 | Tank PULL — drags a target to the caster at 300/s, CON saves; six questions open | combat |
-| `BL-155` | 🔵 | Fighter DISARM — the weapon stops paying without leaving the hand; one big question | combat |
-| `BL-156` | 🔵 | CON/SPT shorten a debuff, not just resist it — needs a curve, a floor and a direction | combat |
+| `BL-154` | 🟡 | Tank PULL — ruled in full: dragged at 300/s, rooted, melee stop, 1s stun tail, two AoE shapes | combat |
+| `BL-155` | 🟡 | SILENCE — physical / magical / boss-full; the disarm is declined | combat |
+| `BL-156` | 🔴 | CON/SPT shorten a debuff — fully ruled (`×1.00 → ×0.70`, mobs included); ready to build | combat |
+| `BL-157` | 🔵 | The worm — a polymorph debuffer/nuker class, a seed only | classes |
 
 ---
 
@@ -649,7 +652,7 @@ duration — all three need numbers from you) · `BL-93` (the visuals conversati
 
 ---
 
-### `BL-154` 🔵 Pull — the tank drags a target to itself, and it must LOOK like a drag
+### `BL-154` 🟡 Pull — the tank drags a target to itself, and it must LOOK like a drag
 
 Your spec, 2026-09-03: *"tanks will have pull -> target or aoe around.. con saves and if succeed pulls
 the target to the caster, hope its not instant but 300 range per second .. to look like a pull not
@@ -658,82 +661,167 @@ phase shift"*.
 **The contest is already built.** "CON saves" is exactly `DebuffSchool.Physical` — the caster's ATK
 against the target's CON, through `StatCalculator.DebuffLandChance`, with the level term reading the
 RUNG's learn level. A pull needs no new resist rule; it is an ordinary contested debuff whose payload
-happens to be movement.
+happens to be movement. ✅ Your *"the chance is low like 0.4~0.5"* is what that formula already
+returns at parity — equal ATK vs CON is 0.5 exactly, with the `[0.10, 0.90]` clamp at the edges.
 
 🔴 **What does NOT exist is gradual forced movement, and that is the whole build.** The one thing in
 the game that moves a body against its will is `GameLoopService.DoKnockback`, and it is a single
 `PlaceEntity` call — an instant teleport, precisely the "phase shift" you do not want. So this needs a
-new per-entity pull state (a destination, a speed, a source) advanced 30 units per tick at your 300/s,
-with the mover clamped by the same collision and zone rules a normal step uses.
+new per-entity pull state (a destination, a speed, a source) advanced a step per tick, with the mover
+clamped by the same collision and zone rules a normal step uses.
 
-**Six things I cannot decide for you.** My recommendation is on each; overrule freely.
+🔑 **THE DRAG IS TIMED, NOT PACED — your 300/s and your 1-1.5s are two different rules and the second
+one wins** (2026-09-03: *"I like the whole pull to be a 1s~1.5s pull. And 1~2s stun. The pull idea is
+shorten the distance + enemy interrupt rather than control"*). A fixed 300 units/second makes the
+lockdown scale with the range you author — a 900 pull would take 3 seconds. A fixed **duration** does
+not: the drag runs 1-1.5s from any distance and the speed is derived, `distance / duration`, floored at
+300/s so a short pull finishes early instead of crawling. At a 600-range skill that is 400-600/s, which
+still reads as a drag rather than a blink. ✅ **This retires the range warning that used to sit here** —
+range no longer buys lockdown, so you can author 900 if you want the reach.
 
-| | question | my recommendation |
+**✅ RULED 2026-09-03 — all seven, your answers:**
+
+| | question | ruling |
 |---|---|---|
-| 1 | Can the target ACT while being dragged? | **No — the drag roots it** (it can still cast if already casting? see 2). A pull that lets the victim walk back is 3 seconds of nothing. |
-| 2 | Does the drag INTERRUPT a cast? | **Yes.** Being yanked 900 units mid-cast and keeping the cast reads as a bug. This makes the pull a soft interrupt, which is most of its PvP value. |
-| 3 | Where does it stop? | **At melee range, not at your feet** — bodies ending up inside each other looks broken and the tank wants to hit it, not wear it. |
-| 4 | The AoE version — how many? | **A cap (4-6) and a radius**, or a tank pulls a whole camp and it is either a wipe or the best farm skill in the game. |
-| 5 | Bosses? Players? | **Boss = immune** (it is control, and the boss control-immunity rule is absolute today). **Players = yes**, it is a PvP tool. |
-| 6 | Does it build threat? | **Yes, like a taunt** — a tank pulling something it does not then hold is a gift to the healer. |
+| 1 | Act while dragged? | **No — rooted, "like charmed while dragging"**. |
+| 2 | Interrupts? | **Nobody is interrupted by the drag.** The pull is a short PHYSICAL active, so interrupting the tank is not a concern; and the drag deals no damage, so it never enters the victim's interrupt contest either — which is already how the engine works (interrupt fires on damage). The **stun tail is the only thing in the chain that breaks a cast**, and that is the point of it. |
+| 3 | Stops where? | **Melee range.** |
+| 4 | The AoE shape | **TWO skills.** (a) ranged: pulls the TARGET plus 2-4 around *it* — 2-5 bodies; (b) self-centred: 2-5 enemies around the CASTER. Cap 5 on both. Radius is yours at CSV time. |
+| 5 | Bosses / players | **Boss immune. Players yes** — *"is a tanks chance to close the gap with everyone else"*. |
+| 6 | Threat | **Yes — below the real taunt, above most damage skills.** |
+| 7 | A stun tail | **Yes, 1-2s — and ONE CON contest covers the pull AND the stun** (your simplification, 2026-09-03). **Single target only; the two AoE versions pull and nothing else** — five bodies yanked in and stunned together is a PvP wipe opener and the best farm skill in the game. |
+| 8 | What is it FOR? | *"shorten the distance + enemy interrupt rather than control"* — so the whole chain is **1-1.5s drag + 1-2s stun = 2-3.5s**, and it is deliberately NOT a lockdown tool. |
 
-⚠ **The SKILL waits on your tank 4th CSV; the ENGINE does not.** The forced-movement tick, the stop
-rule and the AoE cap can all be built and measured before a single row exists, and then your CSV names
-the rungs, range, cooldown and MP. Say the word and I will build the engine half while you write.
+🔑 **THE INTERRUPT IS ALREADY BUILT — the stun does it, for free, with the right retry rule.** A landed
+stun sets `IsActionLocked`, and `GameLoopService.UpdateAction` (line ~10470) cancels the victim's cast
+the same tick with `startCooldown: false` — which is exactly the existing enemy-interrupt contract: the
+victim loses the 20% initial MP and may retry immediately, no cooldown burned. So "shorten the distance
++ enemy interrupt" needs no interrupt code of its own; the stun tail *is* the interrupt, and that is
+also why the AoE versions, which have no stun, interrupt nobody.
 
-### `BL-155` 🔵 Disarm — the weapon stops paying, without leaving the hand
+⚠ One contest means a landed pull always stuns, so the chain fires at the full ~45-50%, not at the
+~20% two rolls would have given. That is the trade you took for the simpler rule.
 
-Your spec, 2026-09-03: *"another system for fighters a disarm - 'u are disarmed' no weapon bonuses
-apply for duration con saves (later visual can look like no weapon is equiped but without actually
-unequiping it because it will be nuecense to look for it in inventory)"*.
+⚠ **The SKILL waits on your tank 4th CSV; the ENGINE does not.** The forced-movement tick, the melee
+stop, the 5-cap and the stun tail can all be built and measured before a single row exists, and then
+your CSV names the rungs, range, cooldown, MP and radius.
 
-Same contest as the pull (ATK vs CON), and the "don't actually unequip it" instinct is right — the
-item never moves, a flag on the character makes `Entity.RecomputeDerived` skip the weapon's
-contributions and the client draws an empty hand.
+### `BL-155` 🟡 Silence — physical, magical, and the boss's full silence
 
-🔑 **One question decides whether this is a damage debuff or a stun with extra steps, and it is
-yours:** does a disarm also fail the skills that REQUIRE a weapon? Every fighter skill carries
-`RequiredWeapon` / `RequiredHands`, and if a disarmed character counts as empty-handed, most of a
-fighter's kit refuses to fire for the duration. That is enormously stronger than "no weapon bonuses" —
-it is a silence. **My recommendation: NO.** Keep the gates satisfied by the item that is still
-equipped, and let disarm do exactly what it says — remove the numbers. If you want the stronger
-version it should be a different, rarer skill with its own name.
+🔴 **The DISARM is DECLINED, by you, 2026-09-03** — and for the right reason: *"If we leave the weapon
+bonuses it's not a disarm. Let's don't do a disarm .. But I like your silence idea"*. The old entry
+(the flag, the six weapon contributions, where the boundary sat) is in
+[BacklogArchive.md](BacklogArchive.md) — nothing of it is owed.
 
-**And "no weapon bonuses" needs a boundary.** The weapon feeds six things; my read of your sentence is
-that the first four go and the last two stay:
+**What replaces it, your spec:**
 
-- ❌ its P.Atk / M.Atk contribution and the `MAtkBonus` split
-- ❌ its attack-speed base
-- ❌ its crit contribution
-- ❌ the matching Weapon Mastery passive (it is the weapon's bonus by another name)
-- ✅ **attack RANGE** — dropping a bow user from 400 to melee is a teleport-sized effect hidden inside
-  a stat debuff. Unless you want exactly that, in which case say so.
-- ✅ the skill gates, per above
+- **Physical silence** — physical skills refuse to fire, **basic attack still works**. Human + Demon tank.
+- **Magical silence** — magical skills refuse to fire. Elf tank.
+- **Both at once = a full silence.** They are two INDEPENDENT debuffs, not a third skill: land both and
+  the target is fully silenced. Nothing extra to build.
+- **A single-skill full silence is a BOSS tool** *("The full silence can be a Boss skill I like that")*.
+- 🔵 And later, possibly, the **worm** — see `BL-157`.
 
-### `BL-156` 🔵 CON and SPT shorten a debuff as well as resisting it
+**It completes the disable map**, which is worth having written down once:
+
+| disable | what it takes away | state today |
+|---|---|---|
+| charm / fear | **everything** | built (`BL-110`) |
+| hold / bind | **movement** | built |
+| physical silence | **physical skills** (basic attack survives) | this entry |
+| magical silence | **magical skills** | this entry |
+| both / boss / worm | **everything but movement** | this entry |
+
+🔑 **The physical-vs-magical axis is ALREADY BUILT and must not be re-invented.**
+`SkillMath.PacedByAttackSpeed` (`Game.Shared/Skills/Skills.cs:1659`) is the three-marker test from the
+`BL-133` cast-speed pass — a skill is physical if it deals physical damage (`SkillCategory.Physical`),
+lands a physical contest (`DebuffSchool.Physical`) **or** says so outright (`SkillDef.PhysicalCast`,
+which is what the physical BUFFS carry) — and its own doc-comment says the speed model, the auto-hunt
+estimate *"and anything added later must not each grow their own version of the test"*. Silence is that
+"anything added later". It reads the same function, and the function gets renamed `IsPhysical` with the
+speed call sitting on top of it, so a skill can never be physical for cast speed and magical for
+silence. ⚠ `Category` alone is NOT the axis — a physical stun is authored `Debuff`.
+
+⚠ **`SkillEffect` has ZERO bits left, so the payload is a FIELD** (a `SilenceKind` on `SkillDef`, ticks
+on the entity) — and the `BL-110` charm lesson applies in full: *when a payload is a field, every flag
+test on its path must be taught about it.* Charm needed four. The cast gate, auto-hunt's skill picker,
+the client's skill card and the buff bar are the four to check here.
+
+**The engine can be built now; the tank rows wait on your tank 3rd/4th CSVs, the boss skill does not.**
+
+### `BL-156` 🔴 CON and SPT shorten a debuff as well as resisting it
 
 Your spec, 2026-09-03: *"if we can make con and spt to decrease duration of coresponding debuffs -> it
 saves with a % and if it lands on a high stat it stays less (investing have benifits)"*.
 
 Today CON and SPT do **one** job: they contest whether a debuff LANDS (`DebuffLandChance`, then the
 `CcResist` and school-resist multipliers). Once it lands, the authored `DurationTicks` applies whole,
-at any stat. You are asking for a second axis on the same two stats, and the hook is one line — right
-after the roll succeeds, scale the duration by the same defending stat that just lost the contest.
+at any stat. This adds a second axis on the same two stats, right after the roll succeeds.
 
-🔴 **The thing to be careful about is that this DOUBLE-DIPS, and the two axes compound.** A high-CON
-tank already resists landing near the 10% floor; give the same stat a duration cut and control stops
-existing against him rather than getting harder. That is not an argument against it — *"investing have
-benefits"* is the point — but it means the design needs **a floor** (a debuff never falls below, say,
-30-40% of its authored duration however high the stat) or the two together silently become immunity.
+**✅ THE CURVE IS RULED, 2026-09-03** — *"only 20~30% decrease no more. Like a 50 con/spt is 30%
+decrease and 30(the base what was) x1 so 30~50 == x1~0.7"*, plus *"it cuts only 1~0.7 not 1.3~0.7 so
+never increases duration .. Only decrease"*:
 
-**Three numbers I need from you:**
+```
+factor = clamp( 1 − 0.3 × (stat − 30) / 20 ,  0.70 , 1.00 )
+```
 
-1. **The curve.** Same ratio shape as the landing contest (attacker ATK vs defender CON, so equal
-   stats = full duration), or a flat "X% per point of CON above the level's average"?
-2. **The floor** — the shortest a debuff may ever be cut to.
-3. **Does it cut BOTH ways?** A mob's CON shortening the debuffs *players* cast is the same rule
-   applied fairly, and it would make high-CON mob types genuinely harder to control. Cheap to include,
-   easy to forget, and it changes farming.
+CON for a `DebuffSchool.Physical` debuff, SPT for a `Magical` one — the same stat that just lost the
+landing contest. Below 30 it clamps to ×1.00 (a low stat never LENGTHENS a debuff); at 50 and above it
+sits on the 0.70 floor. It reads the **raw stat**, not the post-`CcResist` land chance: the gear
+channels are the flat version of this idea and letting them cut duration too would be a third dip on
+one defence.
+
+🔑 **Your 30 and 50 land almost exactly on the real player spread — checked, not assumed.** Base CON
+runs 25-47 and base SPT 25-41 (`StatCalculator.GetBaseStats`), armor sets move CON by ±3, and
+**nothing in the game buffs CON or SPT at all**, so a character lives inside the window for life:
+
+| | CON → physical debuffs | SPT → magical debuffs |
+|---|---|---|
+| Demon fighter | 47 → **×0.75** | 27 → ×1.00 |
+| Human fighter | 43 → ×0.81 | 26 → ×1.00 |
+| Elf fighter | 39 → ×0.87 | 25 → ×1.00 |
+| Demon mage | 31 → ×0.99 | 41 → **×0.84** |
+| Human mage | 29 → ×1.00 | 37 → ×0.90 |
+| Elf mage | 25 → ×1.00 | 36 → ×0.91 |
+
+That is your own *"the stat you give up"* rule falling out of the table: a fighter shrugs off stuns and
+eats holds, a mage is the reverse, and nobody gets both.
+
+**✅ AND IT CUTS MOBS TOO, ruled 2026-09-03** — *"If con/spt does anything for mobs it's not just a
+decorative stat ok let's shorten it as well ... But else mobs x1"*. One rule, both sides, no special
+case: a creature's authored CON/SPT runs through the same clamp, and anything sitting below 30 lands on
+×1.00 by the formula rather than by an exception. Mob CON/SPT are flat by ROLE
+(`StatCalculator.MobCcCon` / `MobCcSpt`), so this is what it buys them:
+
+| creature | CON → your stuns/bleeds | SPT → your roots/holds |
+|---|---|---|
+| Melee | 45 → **×0.78** | 38 → ×0.88 |
+| Archer | 43 → ×0.81 | 40 → ×0.85 |
+| Mage | 40 → ×0.85 | 58 → **×0.70** (past the floor) |
+| Tank (`MobMod`) | 50 → **×0.70** | 40 → ×0.85 |
+
+⚠ **This is a farming change and it was made with eyes open.** Player CC against normal creatures is
+cut 12-30% on top of the land roll it already loses, and against a MAGE mob it compounds hardest — a
+40.8% land chance and then ×0.70 duration, which is that creature keeping the identity the CC table was
+authored to give it (*"the one creature that is genuinely hard to hold"*). If holds stop being worth
+casting in play, the lever is `MobCcSpt`, not this curve.
 
 ⚠ Related and worth deciding together: `BL-19` (combat depth) and the existing `CcResistPhysical` /
 `CcResistMagical` gear channels, which are the *flat* version of this same idea.
+
+### `BL-157` 🔵 The worm — a debuffer/nuker class whose identity is polymorph
+
+Your aside, 2026-09-03, while ruling the silences: *"We can later author a debhffer nuke class that
+fight with making the enemy a worm ... So it can have a full silence as well."*
+
+A seed, recorded so it is not lost — **nothing is being built and nothing is invented around it.** What
+it says on its own: a caster whose kit is *transformation* rather than damage, carrying a single-skill
+**full silence** (`BL-155`) as one of its tools. It would be the first polymorph in the game; the
+nearest thing built is charm (`BL-110`), which already owns "the target is not yours to control any
+more" and would be the engine to extend.
+
+⚠ **It is a CLASS, so it is `BL-02` territory and blocked by the same thing** — the roster is EIGHT
+choosable paths per race and 24 third classes, and both `Tempest` and `Vanguard` were retired to keep it
+that size (`BL-97`). A new discipline either takes a free slot or replaces one, and that is your call,
+not a design detail. Say where it sits before anything is drawn.
