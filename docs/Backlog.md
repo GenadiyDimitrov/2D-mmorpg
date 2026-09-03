@@ -32,12 +32,13 @@ different professions to farm to see who can craft what — and it's a single pl
 So **`BL-05`** and **`BL-50`** are not to be worked on or re-raised until you open that playtest.
 Nothing about them is blocked or broken; they wait on a test only you can run.
 
-★ **The ones you named most recently:** `BL-93` (the visuals conversation, yours to start) ·
+★ **The ones you named most recently:** `BL-154` / `BL-155` / `BL-156` (pull, disarm, stat-scaled debuff
+duration — all three need numbers from you) · `BL-93` (the visuals conversation, yours to start) ·
 `BL-102` (blocked on one file from you) · `BL-02` (the 40+ kits, blocked on your CSVs).
 
 ---
 
-## Index — 34 open entries
+## Index — 37 open entries
 
 | id | | what it is | area |
 |---|---|---|---|
@@ -75,6 +76,9 @@ Nothing about them is blocked or broken; they wait on a test only you can run.
 | `BL-103` | 🔵 | Visible weapons — the shape is settled, the meshes are not | UI |
 | `BL-104` | 🔵 | The warrior's sword-vs-blunt split — ruled, nothing to attach it to yet | classes |
 | `BL-106` | ❓ | Your cross-chain id rule — six ids disobey it; three answers wanted | classes |
+| `BL-154` | 🔵 | Tank PULL — drags a target to the caster at 300/s, CON saves; six questions open | combat |
+| `BL-155` | 🔵 | Fighter DISARM — the weapon stops paying without leaving the hand; one big question | combat |
+| `BL-156` | 🔵 | CON/SPT shorten a debuff, not just resist it — needs a curve, a floor and a direction | combat |
 
 ---
 
@@ -642,3 +646,94 @@ Nothing about them is blocked or broken; they wait on a test only you can run.
   taught to both, `magic_proficiency` is Mage but taught to fighters. That field is not persisted, so
   fixing it is cheap; say the word and it goes in a sweep. It is listed by the same tool.
 
+
+---
+
+### `BL-154` 🔵 Pull — the tank drags a target to itself, and it must LOOK like a drag
+
+Your spec, 2026-09-03: *"tanks will have pull -> target or aoe around.. con saves and if succeed pulls
+the target to the caster, hope its not instant but 300 range per second .. to look like a pull not
+phase shift"*.
+
+**The contest is already built.** "CON saves" is exactly `DebuffSchool.Physical` — the caster's ATK
+against the target's CON, through `StatCalculator.DebuffLandChance`, with the level term reading the
+RUNG's learn level. A pull needs no new resist rule; it is an ordinary contested debuff whose payload
+happens to be movement.
+
+🔴 **What does NOT exist is gradual forced movement, and that is the whole build.** The one thing in
+the game that moves a body against its will is `GameLoopService.DoKnockback`, and it is a single
+`PlaceEntity` call — an instant teleport, precisely the "phase shift" you do not want. So this needs a
+new per-entity pull state (a destination, a speed, a source) advanced 30 units per tick at your 300/s,
+with the mover clamped by the same collision and zone rules a normal step uses.
+
+**Six things I cannot decide for you.** My recommendation is on each; overrule freely.
+
+| | question | my recommendation |
+|---|---|---|
+| 1 | Can the target ACT while being dragged? | **No — the drag roots it** (it can still cast if already casting? see 2). A pull that lets the victim walk back is 3 seconds of nothing. |
+| 2 | Does the drag INTERRUPT a cast? | **Yes.** Being yanked 900 units mid-cast and keeping the cast reads as a bug. This makes the pull a soft interrupt, which is most of its PvP value. |
+| 3 | Where does it stop? | **At melee range, not at your feet** — bodies ending up inside each other looks broken and the tank wants to hit it, not wear it. |
+| 4 | The AoE version — how many? | **A cap (4-6) and a radius**, or a tank pulls a whole camp and it is either a wipe or the best farm skill in the game. |
+| 5 | Bosses? Players? | **Boss = immune** (it is control, and the boss control-immunity rule is absolute today). **Players = yes**, it is a PvP tool. |
+| 6 | Does it build threat? | **Yes, like a taunt** — a tank pulling something it does not then hold is a gift to the healer. |
+
+⚠ **The SKILL waits on your tank 4th CSV; the ENGINE does not.** The forced-movement tick, the stop
+rule and the AoE cap can all be built and measured before a single row exists, and then your CSV names
+the rungs, range, cooldown and MP. Say the word and I will build the engine half while you write.
+
+### `BL-155` 🔵 Disarm — the weapon stops paying, without leaving the hand
+
+Your spec, 2026-09-03: *"another system for fighters a disarm - 'u are disarmed' no weapon bonuses
+apply for duration con saves (later visual can look like no weapon is equiped but without actually
+unequiping it because it will be nuecense to look for it in inventory)"*.
+
+Same contest as the pull (ATK vs CON), and the "don't actually unequip it" instinct is right — the
+item never moves, a flag on the character makes `Entity.RecomputeDerived` skip the weapon's
+contributions and the client draws an empty hand.
+
+🔑 **One question decides whether this is a damage debuff or a stun with extra steps, and it is
+yours:** does a disarm also fail the skills that REQUIRE a weapon? Every fighter skill carries
+`RequiredWeapon` / `RequiredHands`, and if a disarmed character counts as empty-handed, most of a
+fighter's kit refuses to fire for the duration. That is enormously stronger than "no weapon bonuses" —
+it is a silence. **My recommendation: NO.** Keep the gates satisfied by the item that is still
+equipped, and let disarm do exactly what it says — remove the numbers. If you want the stronger
+version it should be a different, rarer skill with its own name.
+
+**And "no weapon bonuses" needs a boundary.** The weapon feeds six things; my read of your sentence is
+that the first four go and the last two stay:
+
+- ❌ its P.Atk / M.Atk contribution and the `MAtkBonus` split
+- ❌ its attack-speed base
+- ❌ its crit contribution
+- ❌ the matching Weapon Mastery passive (it is the weapon's bonus by another name)
+- ✅ **attack RANGE** — dropping a bow user from 400 to melee is a teleport-sized effect hidden inside
+  a stat debuff. Unless you want exactly that, in which case say so.
+- ✅ the skill gates, per above
+
+### `BL-156` 🔵 CON and SPT shorten a debuff as well as resisting it
+
+Your spec, 2026-09-03: *"if we can make con and spt to decrease duration of coresponding debuffs -> it
+saves with a % and if it lands on a high stat it stays less (investing have benifits)"*.
+
+Today CON and SPT do **one** job: they contest whether a debuff LANDS (`DebuffLandChance`, then the
+`CcResist` and school-resist multipliers). Once it lands, the authored `DurationTicks` applies whole,
+at any stat. You are asking for a second axis on the same two stats, and the hook is one line — right
+after the roll succeeds, scale the duration by the same defending stat that just lost the contest.
+
+🔴 **The thing to be careful about is that this DOUBLE-DIPS, and the two axes compound.** A high-CON
+tank already resists landing near the 10% floor; give the same stat a duration cut and control stops
+existing against him rather than getting harder. That is not an argument against it — *"investing have
+benefits"* is the point — but it means the design needs **a floor** (a debuff never falls below, say,
+30-40% of its authored duration however high the stat) or the two together silently become immunity.
+
+**Three numbers I need from you:**
+
+1. **The curve.** Same ratio shape as the landing contest (attacker ATK vs defender CON, so equal
+   stats = full duration), or a flat "X% per point of CON above the level's average"?
+2. **The floor** — the shortest a debuff may ever be cut to.
+3. **Does it cut BOTH ways?** A mob's CON shortening the debuffs *players* cast is the same rule
+   applied fairly, and it would make high-CON mob types genuinely harder to control. Cheap to include,
+   easy to forget, and it changes farming.
+
+⚠ Related and worth deciding together: `BL-19` (combat depth) and the existing `CcResistPhysical` /
+`CcResistMagical` gear channels, which are the *flat* version of this same idea.
