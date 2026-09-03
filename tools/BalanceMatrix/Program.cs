@@ -341,9 +341,89 @@ if (args.Length > 0 && args[0] == "--warchanter")
 // `--buffs` — the buff census (see BuffCensus at the bottom of this file).
 if (args.Length > 0 && args[0] == "--buffs") { BuffCensus.Run(); return; }
 
+// `--buff-consumables` — `BL-147`. Writes docs/data/BuffConsumables.md: which buffs exist as a potion,
+// which as a scroll, where each comes from, whether the NPC buffer gives the same thing, and — the half
+// he actually asked for — which single buffs have NO consumable at all. Generated for the same reason
+// the mob CSV is: an "absence" column typed by hand is wrong the day someone adds the missing bottle.
+if (args.Length > 0 && args[0] == "--buff-consumables")
+{
+    ConsumableBuffPage.Run(args.Skip(1).ToArray());
+    return;
+}
+
 // `--hpcurve` — the PLAYER HP CURVE against IG's own per-class tables and the three anchors the
 // owner set on 2026-08-27 (tank@40 CON43 = 2380, buffer@40 CON31 = 1180, knight@80 CON43 = 9840).
 // Reads StatCalculator directly, so it measures the SHIPPED curve, not a re-derivation.
+// `--zonehp` — `BL-148`. THE ZONE HP LADDER, MEASURED, so his revision is chosen off numbers rather
+// than guessed. Prints, per level: the base curve, what each candidate ladder makes of it, and the
+// TIME TO KILL that produces for the buffed farm roster — plus the ELITE, where the zone ladder and
+// the rank multiplier compose and produce the ~68k he found.
+if (args.Length > 0 && args[0] == "--zonehp")
+{
+    int[] zoneLevels = { 20, 30, 40, 50, 61, 72, 75, 76, 80, 83, 84, 85 };
+
+    Console.WriteLine();
+    Console.WriteLine("=== BL-148: THE ZONE HP LADDER — what the multipliers actually cost in seconds ===");
+    Console.WriteLine();
+    Console.WriteLine("  LIVE (WorldPlan.HpScaleFor, his 2026-09-03 ruling): x1 <40 | x1.5 40-75 | x2 76-83 | x3 84+");
+    Console.WriteLine("  and the ELITE column of the same ruling — x4 / x6 / x8 / x12 — is that ladder times the");
+    Console.WriteLine("  rank's own x4, which stays flat: \"elits still have their x4 everywhere\".");
+    Console.WriteLine("  Base pool is MobBaseStats.Hp(L) = 40 + 0.8*L^2. A BOSS ignores the zone ladder; an elite");
+    Console.WriteLine("  does not, and MobRankScale.Hp(Elite) = x4 MULTIPLIES on top.");
+    Console.WriteLine();
+
+    // TTK against the roster the offline farm actually fields (E4's clock), so no single class
+    // decides the answer. Same helper the band table uses — one copy of "how long does a mob live".
+    static float RosterDps(int level)
+    {
+        var r = FarmRosterBuffed(level);
+        var mob = r[0].E;
+        return (float)r.Skip(1).Average(x => Dps(x.E, mob));
+    }
+
+    Console.WriteLine("  --- FIELD MOB: base pool, the LIVE ladder, then every rung for comparison ---");
+    Console.WriteLine("   lvl      base   dps |  x    live  ttk |      x1  ttk |    x1.5  ttk |      x2  ttk |      x3  ttk");
+    foreach (var L in zoneLevels)
+    {
+        float b = MobBaseStats.Hp(L);
+        float dps = RosterDps(L);
+        float live = WorldPlan.HpScaleFor(L);
+        Console.Write($"   {L,3} {b,9:0} {dps,5:0} | {live,3:0.#} {b * live,7:0} {b * live / dps,4:0}s");
+        foreach (var s in new[] { 1f, 1.5f, 2f, 3f })
+            Console.Write($" | {b * s,7:0} {b * s / dps,4:0}s");
+        Console.WriteLine();
+    }
+    Console.WriteLine();
+
+    Console.WriteLine("  --- ELITE: base x ZONE x RANK. The two knobs compose, and the product IS his second");
+    Console.WriteLine("      list (x4 / x6 / x8 / x12). This is where the 68,208 he found comes from ---");
+    Console.WriteLine("   lvl      base   dps | zone rank  combined       pool   ttk");
+    foreach (var L in zoneLevels)
+    {
+        float b = MobBaseStats.Hp(L);
+        float dps = RosterDps(L);
+        float zone = WorldPlan.HpScaleFor(L);
+        float rank = MobRankScale.Hp(MobRank.Elite, L);
+        float pool = b * zone * rank;
+        Console.WriteLine($"   {L,3} {b,9:0} {dps,5:0} | {zone,4:0.#} {rank,4:0} {("x" + (zone * rank).ToString("0.#")),9}"
+                          + $" {pool,10:0} {pool / dps,5:0}s");
+    }
+    Console.WriteLine();
+
+    Console.WriteLine("  --- HIS TWO MEASURED CREATURES, before and after the ruling ---");
+    Console.WriteLine("      (both are OURS, from MobCatalog — the x3 he could not find was never IG's)");
+    foreach (var (id, lvl, was) in new[] { ("cursed_blade", 61, 9048f), ("redhorn_footman", 72, 12561f) })
+    {
+        var t = MobCatalog.Get(id);
+        float b = MobBaseStats.Hp(lvl);
+        float s = WorldPlan.HpScaleFor(lvl);
+        Console.WriteLine($"   {t?.Name ?? id,-20} lvl {lvl}  base {b,7:0}   he measured {was,7:0}"
+                          + $"   ->  x{s:0.#} = {b * s,7:0}");
+    }
+    Console.WriteLine();
+    return;
+}
+
 if (args.Length > 0 && args[0] == "--hpcurve")
 {
     Console.WriteLine("=== PLAYER HP CURVE vs IG (base = pre-CON level term; naked = x ConHpModifier) ===");

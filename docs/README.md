@@ -67,6 +67,9 @@ Index of everything under `docs/`.
 - [classes_skills_csv/](data/classes_skills_csv) — per-class skill kits.
 - [gear/](data/gear) — tiered gear sets.
 - [mobs/](data/mobs) — mob base stats and passives.
+- [BuffConsumables.md](data/BuffConsumables.md) — 🤖 **generated** (`BalanceMatrix --buff-consumables`):
+  which buffs come as a potion, which as a scroll, where each is bought/crafted/looted, whether the NPC
+  buffer gives the same, and the ladder families with **no consumable at all**. `BL-147`.
 
 ---
 

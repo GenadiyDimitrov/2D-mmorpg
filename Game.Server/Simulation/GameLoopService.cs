@@ -15587,6 +15587,26 @@ public class GameLoopService : BackgroundService
         // is what keeps the demo free of a protocol change and therefore of a new APK.
         if (template?.Build is MobBuild built) passiveLines.AddRange(built.Describe());
         if (template?.Mod is MobMod mod) passiveLines.AddRange(mod.Describe());
+        // `BL-148` — THE HP MULTIPLIERS SAY SO ON THE PLATE. His find, 2026-09-03: *"in its info panel
+        // there is nowhere x3 and no passive in skills tab"*, about a level-72 creature carrying 12,561
+        // where the base curve says 4,187. He was right and the plate was lying by omission: the two
+        // biggest terms in a creature's pool are NOT MobMod passives. The ZONE's ladder
+        // (`WorldPlan.HpScaleFor` → `SpawnZone.HpScale` → `Entity.MobZoneHpScale`) and the RANK's own
+        // (`MobRankScale.Hp` → `Entity.MobHpScale`) are entity FIELDS, so `MobMod.Describe` could never
+        // see them and nothing else printed them — which is why searching the plate for the ×3 found
+        // nothing and why searching the code for a MobMod found only four templates, none of them his.
+        //
+        // 🔑 TWO LINES, NEVER PRE-MULTIPLIED, for the same reason they are two fields: "×12" tells you
+        // nothing about which knob to turn, and these are exactly the two knobs a retune moves. A BOSS
+        // is exempt from the zone ladder (see ApplyMobScale), so its zone line is not drawn — printing
+        // a multiplier that is not being applied is the same bug in reverse.
+        if (isMob)
+        {
+            if (t.Rank != MobRank.Boss && t.MobZoneHpScale > 1.001f)
+                passiveLines.Add($"Zone HP ×{t.MobZoneHpScale:0.#} (this field multiplies its creatures' HP)");
+            if (t.MobHpScale > 1.001f)
+                passiveLines.Add($"{t.Rank} HP ×{t.MobHpScale:0.#} (the rank's own multiplier)");
+        }
         string[] passives = passiveLines.ToArray();
 
         // A mob's ACTIVE kit — the Skills tab (playtest-20: "a new tab for the mob's skills, actives

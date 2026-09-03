@@ -377,3 +377,41 @@ The load-bearing difference: an auto-granted floor is an **engine** decision mad
 learnable passive is a **CSV row** with a learn level, an SP price and a place in a ladder. The second
 cannot be built ahead of his authoring, so the entry moved from "a small authoring change" to a hold
 against the warrior/rogue files.
+
+---
+
+## `BL-145` — the original entry, replaced 2026-09-03 (0.108.0)
+
+Half of it was **wrong**, and it is archived rather than deleted precisely for that: the claim below
+that consumable buffs "ride free of the cap" and that the War Rune bar is `BuffRow.Item` was never
+true. Scroll and potion buffs have always counted, and every rune buff in the game is authored
+`BuffRow.Consumable`. The real defect was the client's grouping ORDER. Second bad reading in two days
+after `BL-137` — both times the fix was one command away.
+
+> `BL-145` 🔵 **SCROLL AND POTION BUFFS MUST COUNT TOWARD THE 20 — AND SWIFT WITH THEM.** *"scroll/potion
+> buffs and swift should count towards the buff limit.. now i have 2 scrolls 16npc buffs + focus
+> ferocity scrolls and the 2 scrolls are in the warrune bar"*. Two separate things in one sentence and
+> both are real: consumable buffs are riding free of the cap (`CountsTowardBuffLimit`), and the ones you
+> are carrying are landing in the **wrong ROW** — the War Rune bar, which is the `BuffRow.Item` shelf
+> for persistent gear effects, not for something you drank. A scroll belongs in the Consumable row and
+> in the count.
+
+## `BL-148` — the open questions, answered 2026-09-03 (0.108.0)
+
+He answered both in one line (*"Zone laddre x1<40, x1.5<76, x2<83, x3 84+, elits still have their x4
+everywhere"*), so the two options this entry was holding open are closed: 41-83 became **×1.5 to 75 and
+×2 from 76**, a rung finer than either candidate offered, and the **elite ×4 stays**.
+
+> `BL-148` 🟠 **THE ZONE HP LADDER IS WRONG AND INVISIBLE — YOUR REVISION, AND MY BUG.** *"the only mobs
+> that should have x3 hp are zones 84+ and elits x2 mmay be .. now elits have 68k hp"*.
+> Two halves:
+> 1. **THE LADDER.** Today `WorldPlan.HpScaleFor` is **×1 <40, ×2 ≥40, ×3 ≥61** (0.94.0, from your
+>    playtest-25 ruling *"the 15k mobs are zone placed with x2/x3 hp"*). You are now moving the ×3 up to
+>    **84+**. What that leaves open, and what I will bring you numbers on rather than guess: **what
+>    41-83 becomes** — all ×2, or ×1 until some level and ×2 after — and whether the **elite ×4**
+>    (`MobRankScale`) drops to ×2. ⚠ The two multiply: an elite at 84 is base × zone × rank, which is
+>    what produces the 68,208 you saw. Halving the rank alone still leaves 34k; ×2 rank with a ×3 zone
+>    is 34k, ×2 rank with a ×2 zone is 22.7k.
+> 2. **THE PLATE MUST SAY SO.** Whatever the numbers become, a creature with tripled HP has to show it
+>    where you looked for it — beside the `MobMod` passives on the inspect panel. **Not a MobMod**: it
+>    is a field property, so it needs its own line rather than being faked as a fake passive.

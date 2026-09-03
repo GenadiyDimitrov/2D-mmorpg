@@ -332,18 +332,28 @@ Regen = 0.1%/s of its OWN pool engaged, 5%/s idle          no level term
 - Mob regen is a fraction of its own pool because the player CON curve is exponential and a mob's
   CON is `15 + 2L` — that curve on a mob is absurd.
 
-### The ZONE's HP multiplier (`BL-78` item 1, 0.94.0)
+### The ZONE's HP multiplier (`BL-78` item 1, 0.94.0 — **re-ruled `BL-148`, 0.108.0**)
 
 ```
-finalMaxHp = base * rankHpScale * zoneHpScale     zone: x1 below 40, x2 from 40, x3 from 61
-                                                  a BOSS-rank spawn ignores zoneHpScale
+finalMaxHp = base * rankHpScale * zoneHpScale     a BOSS-rank spawn ignores zoneHpScale
+
+level     zone      elite (zone x rank x4)
+ < 40     x1        x4
+40-75     x1.5      x6
+76-83     x2        x8
+  84+     x3        x12
 ```
 
 - Authored on `SpawnZone.HpScale`, derived by `WorldPlan.HpScaleFor(level)` off the camp's Max level,
   overridable per field with `Band.HpScale`. The two knobs compose in ONE place, `Entity.ApplyMobScale`.
-- It multiplies **HP and nothing else** — damage, defence, EXP and drops are untouched.
+- The **elite column is the product, not a second knob**: `MobRankScale.Hp(Elite)` is x4 flat at every
+  level and was not touched (owner: *"elits still have their x4 everywhere"*).
+- It multiplies **HP and nothing else** — damage, defence, EXP and drops are untouched. The corollary:
+  lowering a rung raises farm rate, since the same EXP now comes out in less time.
 - ⚠ A boss is exempt: 0.89.0's measured 12-25 min band derives from the same curve, so a field's x3
   would be inherited and multiplied. An elite is **not** exempt.
+- ⚠ Level **83** is filed under x2 — his bands read `x2<83` and `x3 84+`, which leaves 83 unnamed.
+- Measure, never derive: `dotnet run --project tools/BalanceMatrix -- --zonehp`.
 
 ### Mob ROLE stat lean (`Entity.ApplyMobScale`, skipped for a player-built creature)
 

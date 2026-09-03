@@ -104,22 +104,48 @@ public static class WorldPlan
     //  generated camps — the same way this generator already derives respawn time and the
     //  aggressive count. A field that wants to disagree sets Band.HpScale and says why.
     //
-    //  WHY THESE THREE RUNGS:
-    //   - x1 below 40. Levelling is fast down here and our base HP is deliberately ~0.5x IG's below
-    //     20 (he ruled that acceptable). Tripling a newbie field would be felt as a wall, not thrill,
-    //     and it is the one stretch of the game nobody has complained about.
-    //   - x2 from 40. This is where "no thrill in fighting" started in playtest 25 — the rogue almost
-    //     one-blowing things and the mage one/two-shotting them.
-    //   - x3 from 61. Lands his headline number exactly: MobBaseStats.Hp(80) = 5,160, x3 = 15,480,
-    //     against "the 80 mobs should have 15k not 5".
+    //  🔑 RE-RULED 2026-09-03 (`BL-148`), and this is the LIVE ladder — four rungs, not three:
+    //  *"Zone laddre x1<40, x1.5<76, x2<83, x3 84+, elits still have their x4 everywhere so x4<40,
+    //  x6<76, x8<83, x12 84+ (futer tests will alter it probably..)"*
+    //
+    //      < 40   x1        elite x4
+    //     40-75   x1.5      elite x6
+    //     76-83   x2        elite x8
+    //     84+     x3        elite x12
+    //
+    //  His second list is the COMPOSED number, not a second knob: x1.5 x 4 = x6, x2 x 4 = x8,
+    //  x3 x 4 = x12. `MobRankScale.Hp(Elite)` stays x4 flat and is not touched by this — the elite
+    //  column exists here only so the two knobs can be read together, which is the whole reason
+    //  the plate now prints them as two lines (`BL-148` half two).
+    //
+    //  ⚠ LEVEL 83 IS MINE, NOT HIS. His bands read "x2<83" and "x3 84+", which leaves 83 unnamed;
+    //  it is filed under x2 so that "x3 84+" is literally true. One line to move if he meant 83.
+    //
+    //  WHAT CHANGED AND WHY (the old three-rung ladder was x1 / x2 from 40 / x3 from 61):
+    //   - x1 below 40 is UNCHANGED. Levelling is fast down here and our base HP is deliberately
+    //     ~0.5x IG's below 20 (he ruled that acceptable). Tripling a newbie field would be felt as a
+    //     wall, not thrill, and it is the one stretch of the game nobody has complained about.
+    //   - THE x3 MOVED FROM 61 TO 84. It was set on his playtest-25 headline (*"the 80 mobs should
+    //     have 15k not 5"*) and it delivered that — MobBaseStats.Hp(80) = 5,160, x3 = 15,480 — but a
+    //     whole game of levels 61-83 came with it, and measured (tools/BalanceMatrix --zonehp) that
+    //     is a 39-66 second kill for a solo buffed farmer at every level from 61 to 83. His own find:
+    //     *"a lvl 72 redhorn footman have 12561"*. It is now 4,187 x 1.5 = 6,281.
+    //   - x1.5 IS A NEW RUNG and the reason the ladder is four deep: the middle of the game needed
+    //     something between "dies instantly" and "triple", and a half step is expressible because
+    //     this has always been a float all the way down (SpawnZone.HpScale -> MobZoneHpScale).
     //
     //  ⚠ It multiplies HP and NOTHING else. Damage, defence, EXP and drops are untouched, so a camp
     //  takes longer to clear but does not hit harder — which is the honest reading of his complaint
-    //  (things die too fast), and it keeps this lever off the 0.73.0 attack refit.
+    //  (things die too fast), and it keeps this lever off the 0.73.0 attack refit. The corollary is
+    //  that LOWERING it raises farm rate: the same EXP and the same drops now come out in half the
+    //  time from 61 to 83.
     //  ⚠ A BOSS IGNORES IT — see Entity.ApplyMobScale. An ELITE does not.
+    //  ⚠ Re-measure with `dotnet run --project tools/BalanceMatrix -- --zonehp` after ANY change here
+    //  or to MobBaseStats: the numbers above are read off that tool, never derived by hand.
     // ===================================================================================
     /// <summary>The HP multiplier a camp gets from its level alone. See the block above.</summary>
-    public static float HpScaleFor(int level) => level >= 61 ? 3f : level >= 40 ? 2f : 1f;
+    public static float HpScaleFor(int level) =>
+        level >= 84 ? 3f : level >= 76 ? 2f : level >= 40 ? 1.5f : 1f;
 
     /// <summary>The 84-85 roster, borrowed by the 86-90 camps: there are no creatures authored above 85
     /// yet, and the last five levels still need somewhere to happen (owner). ForceZoneLevel makes them

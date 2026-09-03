@@ -182,6 +182,11 @@ public static class ShopCatalog
         return dict;
     }
 
+    /// <summary>Every shop. For the tools that have to ask "is this item on a shelf ANYWHERE" rather
+    /// than "does this one NPC sell it" — `BL-147`'s generated consumable-buff page is the first, and
+    /// the question only has an honest answer if it can see all the shelves at once.</summary>
+    public static IEnumerable<ShopDef> AllShops => Shops.Values;
+
     public static ShopDef? Get(string? npcId) =>
         npcId is null ? null : Shops.GetValueOrDefault(npcId);
 

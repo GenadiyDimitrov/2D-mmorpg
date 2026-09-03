@@ -205,6 +205,10 @@ public static class BoxCatalog
             });
     }
 
+    /// <summary>Every box, for the same reason <see cref="ShopCatalog.AllShops"/> exists: "which box
+    /// can this item come out of" is a question about ALL of them (`BL-147`).</summary>
+    public static IEnumerable<BoxDef> AllBoxes => All.Values;
+
     public static BoxDef? Get(string boxItemId) =>
         boxItemId is null ? null : All.GetValueOrDefault(boxItemId);
 }

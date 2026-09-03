@@ -7,12 +7,118 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.107.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.108.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-03 (latest) — 0.107.0: `BL-130`…`BL-144`, the cast-speed pass
+## 2026-09-03 (latest) — 0.108.0: `BL-145`…`BL-148`, the buff bar and the zone HP ladder
+
+The second half of the same playtest pass. Four items: two on the buff bar, one generated reference
+page, and his revision of the HP multiplier that `BL-137` had spent a whole entry misattributing to IG.
+
+⚠ **NEW APK.** `ProtocolVersion` stays **32** — nothing on the wire moved. Both buff-bar items are
+pure client layout, reading fields the server has been sending since `BL-111`.
+
+### `BL-145` — an hour-long scroll was hiding in the rune row
+
+*"scroll/potion buffs and swift should count towards the buff limit.. now i have 2 scrolls 16npc buffs
++ focus ferocity scrolls and the 2 scrolls are in the warrune bar"*.
+
+🔑 **Half of this was already true and the entry said otherwise — my error, recorded so it is not
+re-derived.** Scroll and potion buffs, Swift among them, have ALWAYS counted against the twenty: a
+`ConsumableBuff` wrapper hands out the family's rung, the rung carries `CountsTowardBuffLimit: true`,
+and the wrapper's row is `BuffRow.Consumable`, which `CountsAgainstBuffCap` counts. The generated page
+from `BL-147` below now proves it in a column — Swift, Focus and Ferocity all read **Slot: yes**. The
+Backlog entry's claim that the War Rune bar is `BuffRow.Item` was simply wrong; every rune buff in the
+game is authored `Consumable` (and exempted by its own flag), which is why a scroll landed beside one.
+
+🔴 **What WAS broken is the ROW, and it contradicted the code's own doc comment.** That comment has
+read *"COUNTS AGAINST THE CAP IS THE FIRST TEST … that is what makes the top bar mean something"*
+since `BL-111`, and the code underneath it tested `Item` and `Consumable` **first**. So the top bar was
+not the counted set: an hour-long Scroll of Focus, which spends one of his twenty, drew in the
+consumable row beside a War Rune, which spends nothing.
+
+The grouping is now the server's predicate exactly — everything costing a slot is in the top bar, and
+`Item`/`Consumable` hold only the free riders (the runes, healing and mana potions, Dash, the toggles).
+A potion of healing still has its own bar, which is what he asked for in playtest 27; a blessing that
+came out of a scroll no longer hides in it.
+
+### `BL-146` — the count moves onto the hide button, and every bar gets its own
+
+*"the x/20 text is invisible make the hid button show count (if possible over 15 yellow over 18 red)
+also i want each buff bar to have its own hide button"*.
+
+`BL-111` drew the counter as a bare 12pt label on the world layer with nothing behind it. The button
+beside it is a filled box big enough to read on a phone, so the number moved onto it. His thresholds,
+verbatim: **>15 yellow, >18 red** (red also covers the cap itself, where "20/20" and "19/20" are one
+glyph apart).
+
+Four buttons now, one per collapsible row (buffs / consumables / items / others), each with its own
+three-stage collapse — shown, one row, hidden. Debuffs still have none and are never hidden. A hidden
+group keeps the one line its button sits on: four buttons stacked on the same y would be unclickable,
+and each has to stay in front of the bar it belongs to.
+
+### `BL-147` — the consumable-buff inventory, GENERATED
+
+*"can u show me what buffs we have as scrolls and what on potions (which are bought which are crafted
+and which are same as npc buffer) and which we dont have that are single buffs"*.
+
+**[`docs/data/BuffConsumables.md`](data/BuffConsumables.md)**, written by
+`dotnet run --project tools/BalanceMatrix -- --buff-consumables`. 20 families with a consumable, 52
+without, 48 items.
+
+🔑 **It is generated because the interesting half is an ABSENCE.** "Which buffs have no potion" is
+defined by what is *missing*, so a typed table is wrong the day someone adds the missing bottle and
+nobody remembers the page exists. Every column is a query: `UseSkillId` for what a bottle does,
+`ConsumableBuffForm` for potion vs scroll, `ShopCatalog` / `RecipeCatalog` / `BoxCatalog` / the mob
+drop tables for where it comes from, `NewbieBuffSet` for what the buffer NPC gives, and the server's
+own `CountsAgainstBuffCap` for the slot column.
+
+**The answer to the last question — ladder families with no potion and no scroll:** Clarity,
+Fortitude, Resolve, Shield Blessing, Shield Hardening and Vampirism. Buffer-or-nothing.
+
+⚠ Two classification traps the first draft fell into, both fixed and both worth knowing: **a
+consumable buff has TWO shapes** (a Might Potion is a one-child wrapper; a healing potion IS the buff,
+no children), and filtering on the first alone listed `potion_heal` under "has no consumable" — the
+exact opposite of the truth. And **a toggle is not a ladder rung** even though it has no duration, no
+MP and no cast time, which filed Holy Soul as an unbuyable family nothing grants.
+
+### `BL-148` — the zone HP ladder, re-ruled, and the plate now says so
+
+**His ruling:** *"Zone laddre x1<40, x1.5<76, x2<83, x3 84+, elits still have their x4 everywhere so
+x4<40, x6<76, x8<83, x12 84+ (futer tests will alter it probably..)"*
+
+| level | zone | elite (zone × rank ×4) | a field mob's TTK, was → is |
+|---|---|---|---|
+| < 40 | ×1 | ×4 | unchanged |
+| 40-75 | **×1.5** | ×6 | 61: 39s → **19s** · 72: 66s → **33s** |
+| 76-83 | ×2 | ×8 | 80: 46s → **31s** (unchanged in value, the rung moved under it) |
+| 84+ | ×3 | ×12 | 55s, unchanged |
+
+His second list is the **composed** number, not a second knob: ×1.5 × 4 = ×6, ×2 × 4 = ×8, ×3 × 4 = ×12.
+`MobRankScale.Hp(Elite)` stays ×4 flat and was not touched. The 84+ elite therefore **keeps its
+68,208** — that is deliberate, and it is the number he opened the entry complaining about.
+
+⚠ **Level 83 is mine, not his.** His bands read `x2<83` and `x3 84+`, which leaves 83 unnamed; it is
+filed under ×2 so that "x3 84+" is literally true. One line to move if he meant otherwise.
+
+Measured, not derived: **`dotnet run --project tools/BalanceMatrix -- --zonehp`**, new today. It prints
+the base curve, every rung's pool, and the time-to-kill each produces for the buffed farm roster — the
+same five sheets the band table uses, so no single class decides the answer.
+
+🔴 **And the plate now prints the multipliers, which is the half of his complaint that was plainly a
+bug**: *"in its info panel there is nowhere x3 and no passive in skills tab"*. Correct — the two
+biggest terms in a creature's pool are entity FIELDS (`MobZoneHpScale`, `MobHpScale`), not `MobMod`
+passives, so `MobMod.Describe` could never see them and nothing else printed them. That is why
+searching the plate for the ×3 found nothing and why searching the code for a `MobMod.Hp` found four
+templates, none of them his. They are drawn as **two lines, never pre-multiplied** — "×12" tells you
+nothing about which knob to turn, and these are exactly the two knobs a retune moves. A boss is exempt
+from the zone ladder, so its zone line is not drawn: printing a multiplier that is not being applied is
+the same bug in reverse.
+
+
+## 2026-09-03 — 0.107.0: `BL-130`…`BL-144`, the cast-speed pass
 
 Fifteen items across one long chat pass while he playtested 0.106.0. The heart of it is one wrong test: **which
 speed stat paces a cast** was asking `Category == SkillCategory.Physical`, and `Category` is a ROLE

@@ -112,20 +112,31 @@ namespace Game.Client
         // ----- buff bar ---------------------------------------------------------------------------
 
         private RectTransform _buffBar;
-        private Button _buffCollapse;
-        /// <summary>`BL-111` — the "n/20" slot counter beside the collapse button. His whole ask was a
-        /// number he could not see; it is drawn at every collapse stage because the question ("is there
-        /// room for one more blessing?") is asked precisely when the bar is folded away.</summary>
-        private TextMeshProUGUI _buffSlotLabel;
+
+        // `BL-146` — ONE HIDE BUTTON PER BAR (owner, 2026-09-03: *"i want each buff bar to have its own
+        // hide button"*). One button for all four rows meant folding the consumables away to read the
+        // blessings underneath was impossible: the only control there was collapsed everything at once.
+        private const int GrpBuff = 0, GrpConsumable = 1, GrpItem = 2, GrpOther = 3, GrpCount = 4;
+
+        private readonly Button[] _buffCollapse = new Button[GrpCount];
+
+        /// <summary>`BL-111` — the "n/20" slot counter. It began as a LABEL beside the collapse button
+        /// and that is exactly what failed: *"the x/20 text is invisible"*. On a phone a bare 12pt label
+        /// on the world layer has nothing behind it, while the button next to it is a filled box big
+        /// enough to read — so `BL-146` moved the number ONTO the counting bar's own button. This is the
+        /// label inside that button, kept so the number can be TINTED (his thresholds: >15 yellow, >18
+        /// red) without reaching through GetComponentInChildren on every frame.</summary>
+        private TextMeshProUGUI _buffCountLabel;
 
         /// <summary>
         /// Hide has THREE stages, not two (owner, 2026-07-22):
-        ///   0 Shown     — every group, every row.
-        ///   1 OneRow    — one row per group, the rest counted on the button ("+3").
-        ///   2 Hidden    — no squares at all, just the total ("9+").
-        /// Debuffs are exempt from ALL of it and always draw in full.
+        ///   0 Shown     — every row of the group.
+        ///   1 OneRow    — one row, the rest counted on the button ("+3").
+        ///   2 Hidden    — no squares at all, just the button.
+        /// PER GROUP since `BL-146`, indexed by the four Grp* constants above. Debuffs are exempt from
+        /// ALL of it, always draw in full, and therefore have no button and no entry here.
         /// </summary>
-        private int _buffStage;
+        private readonly int[] _buffStages = new int[GrpCount];
 
         private class BuffSquare
         {
@@ -265,6 +276,10 @@ namespace Game.Client
 
         private const int BuffsPerRow = 6;
         private const float BuffSize = 44f, BuffStep = 47f, BuffRowStep = 50f;
+        /// <summary>The world-root y the buff bar's first row is drawn at. The layout below works in
+        /// bar-local y (0 = the top row) while the collapse buttons are anchored to the world root, so
+        /// this is the one place the two coordinate spaces meet.</summary>
+        private const float BuffBarTop = -170f;
 
         private void BuildBuffBar()
         {
@@ -275,18 +290,20 @@ namespace Game.Client
             UiKit.Place(_buffBar, new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(12f, -170f), new Vector2(360f, 220f));
 
-            _buffCollapse = UiKit.TextButton(_worldRoot, "", () => _buffStage = (_buffStage + 1) % 3, 13f);
-            UiKit.Place(UiKit.Rect(_buffCollapse.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(300f, -170f), new Vector2(58f, 24f));
-
-            // `BL-111` — the slot counter, sitting just LEFT of the collapse button so it rides with
-            // the bar at every collapse stage. Anchored to the world root rather than to the buff bar
-            // for the same reason the button is: the bar's height changes every time a buff expires.
-            _buffSlotLabel = UiKit.Label(_worldRoot, "", 12f,
-                                         new Color(0.75f, 0.78f, 0.85f), TextAlignmentOptions.Right);
-            UiKit.Place(UiKit.Rect(_buffSlotLabel.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(240f, -170f), new Vector2(56f, 24f));
-            _buffSlotLabel.gameObject.SetActive(false);
+            // The four collapse buttons. Anchored to the WORLD ROOT rather than to the bar, exactly as
+            // the single one was: the bar's height changes every time a buff expires, and a button that
+            // chases it moves under the thumb. RefreshBuffBar places each one at the end of its own
+            // group's first row.
+            for (int g = 0; g < GrpCount; g++)
+            {
+                int grp = g;   // captured per button, not the loop variable
+                _buffCollapse[g] = UiKit.TextButton(_worldRoot, "",
+                    () => _buffStages[grp] = (_buffStages[grp] + 1) % 3, 13f);
+                UiKit.Place(UiKit.Rect(_buffCollapse[g].gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                            new Vector2(300f, -170f), new Vector2(58f, 24f));
+                _buffCollapse[g].gameObject.SetActive(false);
+            }
+            _buffCountLabel = _buffCollapse[GrpBuff].GetComponentInChildren<TextMeshProUGUI>();
 
             BuildBuffPopup();
         }
@@ -397,10 +414,20 @@ namespace Game.Client
             // eviction rule will start throwing away at 20, so counting the squares in it answers his
             // *"I cannot see if I have 20 or less buffs to not over buff me"*.
             //
-            // ⚠ ORDER MATTERS. Items and consumables are tested BEFORE the counting bar even though a
-            // potion's effect does count: he asked for them in their own bars, and a square can only
-            // be drawn once. The HEADER counts the flag across every bar, so the number stays right
-            // while the grouping follows what he asked to see.
+            // ⚠ ORDER MATTERS, AND IT WAS WRONG UNTIL `BL-145` (2026-09-03). Items and consumables used
+            // to be tested BEFORE the counting bar, which contradicted the paragraph above and produced
+            // his find: *"now i have 2 scrolls 16npc buffs + focus ferocity scrolls and the 2 scrolls
+            // are in the warrune bar"*. An hour-long Scroll of Focus DOES occupy one of the twenty —
+            // it always has, server-side — but it drew down in the consumable row beside the War Rune,
+            // which occupies nothing. So the top bar was not the counted set, and the one row he reads
+            // as "my buffs" was quietly missing squares that were spending his budget.
+            //
+            // 🔑 THE SPLIT IS NOW EXACTLY THE SERVER'S PREDICATE: everything that costs a slot is in the
+            // top bar, and Item / Consumable hold only the free riders — the runes, the healing and mana
+            // potions, Dash, the toggles. That is the whole point of `b.Counts` and it is why the row is
+            // now decided by it rather than by which shelf a def happens to name. A potion of healing
+            // still has its own bar, which is what he asked for; a blessing that came out of a scroll no
+            // longer hides in it.
             var debuffs = new List<BuffView>();
             var buffs = new List<BuffView>();
             var items = new List<BuffView>();
@@ -413,11 +440,11 @@ namespace Game.Client
                 if (b.Counts) slotsUsed++;
 
                 if (b.IsDebuff || b.Row == BuffRow.Debuff) debuffs.Add(b);
+                else if (b.Counts) buffs.Add(b);
                 else if (b.Row == BuffRow.Item) items.Add(b);
                 // "toggles + consumables — HP/MP potions, HoTs, the toggles". A toggle reports -1
                 // seconds (no timer), which is how one is recognised without a flag of its own.
                 else if (b.Row == BuffRow.Consumable || b.Seconds < 0f) consumables.Add(b);
-                else if (b.Counts) buffs.Add(b);
                 else others.Add(b);
             }
 
@@ -427,62 +454,76 @@ namespace Game.Client
             // Debuffs FIRST and never hidden. First because they then hold the same place whether the
             // groups below are open or shut; never hidden because a debuff you cannot see is a fight
             // you lose without knowing why.
-            y = LayoutBuffRow(debuffs, ref used, y, collapsible: false);
-            int debuffRows = debuffs.Count == 0 ? 0 : ((debuffs.Count - 1) / BuffsPerRow) + 1;
+            y = LayoutBuffRow(debuffs, ref used, y, debuffs.Count);
 
-            y = LayoutBuffRow(buffs, ref used, y, collapsible: true);
-            y = LayoutBuffRow(consumables, ref used, y, collapsible: true);
-            y = LayoutBuffRow(items, ref used, y, collapsible: true);
-            y = LayoutBuffRow(others, ref used, y, collapsible: true);
+            // THE NUMBER HE ASKED FOR, now ON the counting bar's own button (`BL-146`). It rides the
+            // buff group at every collapse stage, because the question it answers — "is there room for
+            // one more blessing?" — is asked precisely when the bar is folded away.
+            // ⚠ It counts `slotsUsed` across EVERY group, not the squares in the top bar: since
+            // `BL-145` those two are the same set, but the flag is still the authority and a future
+            // grouping change must not be able to make the number lie.
+            string countText = slotsUsed + "/" + GameConstants.MaxBuffSlots;
+            if (_buffCountLabel != null)
+                // His thresholds, verbatim: *"over 15 yellow over 18 red"*. 19 is where red begins, so
+                // it also covers the cap itself — "20/20" and "19/20" are one glyph apart on a phone.
+                _buffCountLabel.color = slotsUsed > 18 ? new Color(1f, 0.45f, 0.40f)
+                                      : slotsUsed > 15 ? new Color(1f, 0.83f, 0.36f)
+                                                       : new Color(0.88f, 0.90f, 0.94f);
 
-            int hideable = buffs.Count + items.Count + consumables.Count + others.Count;
-            int visible = _buffStage == 0 ? hideable
-                        : _buffStage == 1 ? Mathf.Min(buffs.Count, BuffsPerRow)
-                                          + Mathf.Min(consumables.Count, BuffsPerRow)
-                                          + Mathf.Min(items.Count, BuffsPerRow)
-                                          + Mathf.Min(others.Count, BuffsPerRow)
-                        : 0;
-
-            // THE NUMBER HE ASKED FOR. Drawn beside the collapse button so it sits with the bar it
-            // describes, and it stays visible at every collapse stage — the whole point is to know
-            // whether there is room for one more blessing WITHOUT opening anything.
-            // It turns red at the cap, because "20/20" and "19/20" are one glyph apart on a phone.
-            if (_buffSlotLabel != null)
-            {
-                bool full = slotsUsed >= GameConstants.MaxBuffSlots;
-                _buffSlotLabel.gameObject.SetActive(slotsUsed > 0);
-                _buffSlotLabel.text = slotsUsed + "/" + GameConstants.MaxBuffSlots;
-                _buffSlotLabel.color = full ? new Color(1f, 0.45f, 0.40f)
-                                            : new Color(0.75f, 0.78f, 0.85f);
-            }
-
-            _buffCollapse.gameObject.SetActive(hideable > 0);
-            UiKit.SetButtonText(_buffCollapse,
-                _buffStage == 0 ? "hide" : "+" + (hideable - visible));
-
-            // WHERE the button sits (owner, 2026-07-22): normally at the END of the first buff row,
-            // where it started — it belongs to the thing it hides, and chasing the bottom of a list
-            // that changes height meant it moved every time a buff expired. When EVERYTHING is hidden
-            // there is no row to sit at the end of, so it takes the FIRST buff's place instead: the
-            // squares are gone, and the button is exactly where you last saw them.
-            float firstBuffRowY = -170f - debuffRows * BuffRowStep;
-            UiKit.Rect(_buffCollapse.gameObject).anchoredPosition = _buffStage == 2
-                ? new Vector2(12f, firstBuffRowY)
-                : new Vector2(12f + BuffsPerRow * BuffStep, firstBuffRowY);
+            y = LayoutBuffGroup(buffs, ref used, y, GrpBuff, countText);
+            y = LayoutBuffGroup(consumables, ref used, y, GrpConsumable, null);
+            y = LayoutBuffGroup(items, ref used, y, GrpItem, null);
+            y = LayoutBuffGroup(others, ref used, y, GrpOther, null);
 
             for (int i = used; i < _buffSquares.Count; i++)
                 _buffSquares[i].Root.gameObject.SetActive(false);
         }
 
-        /// <summary>Lay one group out six-per-row from <paramref name="y"/> downward, and return the y
-        /// the next group starts at.</summary>
-        private float LayoutBuffRow(List<BuffView> group, ref int used, float y, bool collapsible)
+        /// <summary>Lay one COLLAPSIBLE group out and place its own hide button (`BL-146`), returning the
+        /// y the next group starts at.
+        ///
+        /// <para>WHERE the button sits (owner, 2026-07-22, and unchanged): at the END of its group's
+        /// first row — it belongs to the thing it hides, and chasing the bottom of a list that changes
+        /// height meant it moved every time a buff expired. When the group is fully hidden there is no
+        /// row to sit at the end of, so it takes the FIRST square's place instead, and the group still
+        /// consumes one line of height: four buttons stacked on top of each other would be unclickable,
+        /// and each one has to stay in front of the bar it belongs to.</para>
+        ///
+        /// <para><paramref name="fixedLabel"/> = a label the group always shows whatever its stage (the
+        /// buff bar's "n/20"). Null = the ordinary "hide" / "+k".</para></summary>
+        private float LayoutBuffGroup(List<BuffView> group, ref int used, float y, int grp, string fixedLabel)
         {
-            int shown = !collapsible ? group.Count
-                      : _buffStage == 0 ? group.Count
-                      : _buffStage == 1 ? Mathf.Min(group.Count, BuffsPerRow)
-                                        : 0;
+            var button = _buffCollapse[grp];
+            if (group.Count == 0)
+            {
+                if (button != null) button.gameObject.SetActive(false);
+                return y;
+            }
 
+            int stage = _buffStages[grp];
+            int shown = stage == 0 ? group.Count
+                      : stage == 1 ? Mathf.Min(group.Count, BuffsPerRow)
+                                   : 0;
+
+            float next = LayoutBuffRow(group, ref used, y, shown);
+
+            if (button != null)
+            {
+                button.gameObject.SetActive(true);
+                UiKit.SetButtonText(button,
+                    fixedLabel ?? (stage == 0 ? "hide" : "+" + (group.Count - shown)));
+                UiKit.Rect(button.gameObject).anchoredPosition = new Vector2(
+                    stage == 2 ? 12f : 12f + BuffsPerRow * BuffStep, BuffBarTop + y);
+            }
+
+            // A hidden group still owns the line its button sits on.
+            return stage == 2 ? y - BuffRowStep : next;
+        }
+
+        /// <summary>Lay <paramref name="shown"/> of a group out six-per-row from <paramref name="y"/>
+        /// downward, and return the y the next group starts at.</summary>
+        private float LayoutBuffRow(List<BuffView> group, ref int used, float y, int shown)
+        {
             for (int i = 0; i < shown; i++)
             {
                 var square = SquareAt(used++);

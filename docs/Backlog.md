@@ -1953,7 +1953,8 @@ asks, and the mob-HP measurement last because it needs nothing built.
   `cursed_blade` you measured next. You were telling me what OUR game does, and I answered as though
   you were quoting theirs.
   🔑 **THE ×3 IS THE ZONE LADDER, and it has been there since 0.94.0 — I built it, on your own ruling.**
-  `WorldPlan.HpScaleFor(level)`: **×1 below 40, ×2 from 40, ×3 from 61**, applied through
+  `WorldPlan.HpScaleFor(level)`: **×1 below 40, ×2 from 40, ×3 from 61** *(the ladder AS IT WAS THAT
+  MORNING — you re-ruled it the same day, see `BL-148`)*, applied through
   `SpawnZone.HpScale` → `Entity.MobZoneHpScale`. It came from `BL-78` item 1, your words of
   2026-08-27: *"the 15k mobs are zone placed with x2/x3 hp .. some zones can have x1"*. So the
   arithmetic that "confirmed our curve against IG" was our own multiplier agreeing with itself.
@@ -1973,42 +1974,74 @@ asks, and the mob-HP measurement last because it needs nothing built.
   game it measures decides everything that follows. **Ask, or check the id, before building an
   argument on it** — `grep MobCatalog` would have cost one command and saved a wrong ruling.
 
-- `BL-145` 🔵 **SCROLL AND POTION BUFFS MUST COUNT TOWARD THE 20 — AND SWIFT WITH THEM.** *"scroll/potion
-  buffs and swift should count towards the buff limit.. now i have 2 scrolls 16npc buffs + focus
-  ferocity scrolls and the 2 scrolls are in the warrune bar"*. Two separate things in one sentence and
-  both are real: consumable buffs are riding free of the cap (`CountsTowardBuffLimit`), and the ones you
-  are carrying are landing in the **wrong ROW** — the War Rune bar, which is the `BuffRow.Item` shelf
-  for persistent gear effects, not for something you drank. A scroll belongs in the Consumable row and
-  in the count.
+- `BL-145` ✅ **FIXED 2026-09-03 (0.108.0) — AN HOUR-LONG SCROLL WAS HIDING IN THE RUNE ROW. IT WAS ALWAYS
+  IN THE COUNT.** *"scroll/potion buffs and swift should count towards the buff limit.. now i have 2
+  scrolls 16npc buffs + focus ferocity scrolls and the 2 scrolls are in the warrune bar"*.
+  🔴 **HALF OF THIS ENTRY WAS WRONG WHEN I WROTE IT — my error, and it is the second in two days after
+  `BL-137`.** Scroll and potion buffs, Swift among them, have ALWAYS counted against the twenty: the
+  wrapper hands out the family's rung, the rung carries `CountsTowardBuffLimit: true`, and the wrapper's
+  row is `BuffRow.Consumable`, which `CountsAgainstBuffCap` counts. `BL-147`'s generated page now proves
+  it in a column — Swift, Focus and Ferocity all read **Slot: yes**. The claim above that the War Rune
+  bar is `BuffRow.Item` was simply false: **every rune buff in the game is authored `Consumable`** (and
+  exempted by its own flag), which is exactly why a scroll landed beside one. 🔑 **The lesson is the
+  same one `BL-137` cost: a number or a field you did not READ is a guess.**
+  🟢 **What WAS broken is the ROW, and the code contradicted its own doc comment.** That comment has said
+  *"COUNTS AGAINST THE CAP IS THE FIRST TEST"* since `BL-111`; the code underneath tested `Item` and
+  `Consumable` first, so the top bar was not the counted set. Now it is: everything spending a slot is in
+  the top bar, and `Item`/`Consumable` hold only the free riders — runes, healing and mana potions, Dash,
+  the toggles. A potion of healing still has its own bar (your playtest-27 ask); a blessing that came out
+  of a scroll no longer hides in it.
 
-- `BL-146` 🔵 **THE `n/20` COUNT MOVES ONTO THE HIDE BUTTON, AND EVERY BAR GETS ITS OWN.** *"the x/20 text
-  is invisible make the hid button show count (if possible over 15 yellow over 18 red) also i want each
-  buff bar to have its own hide button"*. `BL-111` put the counter next to the bars and it is not
-  readable on the phone; the button is the one thing up there that is already big enough to read, so the
-  number goes on it. Thresholds are yours: **>15 yellow, >18 red**. And one hide button per bar (buffs /
-  debuffs / items / consumables) rather than one for all four.
+- `BL-146` ✅ **BUILT 2026-09-03 (0.108.0) — THE `n/20` COUNT MOVES ONTO THE HIDE BUTTON, AND EVERY BAR
+  GETS ITS OWN.** *"the x/20 text is invisible make the hid button show count (if possible over 15 yellow
+  over 18 red) also i want each buff bar to have its own hide button"*. `BL-111` drew it as a bare 12pt
+  label on the world layer with nothing behind it; the button beside it is a filled box big enough to
+  read on a phone, so the number moved onto it. Your thresholds verbatim: **>15 yellow, >18 red** (red
+  also covers the cap, where "20/20" and "19/20" are one glyph apart). Four buttons now, one per
+  collapsible row, each with its own three-stage collapse. Debuffs still have none and are never hidden.
+  ⚠ A hidden group keeps the one line its button sits on — four buttons stacked on the same y would be
+  unclickable, and each has to stay in front of the bar it belongs to.
 
-- `BL-147` ❓ **THE CONSUMABLE-BUFF INVENTORY — a table you asked for, not a build.** *"can u show me what
-  buffs we have as scrolls and what on potions (which are bought which are crafted and which are same as
-  npc buffer) and which we dont have that are single buffs"*. Four columns: **scroll / potion / how you
-  get it (vendor, craft, drop) / does the NPC buffer give the same family** — plus the list that matters
-  most, **the single buffs with NO consumable at all**. It goes in `docs/` as its own page with a
-  Backlog line pointing at it, generated from `ItemCatalog` + `SkillCatalog` rather than written by
-  hand, so it cannot go stale the way a typed table would.
+- `BL-147` ✅ **BUILT 2026-09-03 (0.108.0) — THE CONSUMABLE-BUFF INVENTORY, GENERATED →
+  [`data/BuffConsumables.md`](data/BuffConsumables.md).** *"can u show me what buffs we have as scrolls
+  and what on potions (which are bought which are crafted and which are same as npc buffer) and which we
+  dont have that are single buffs"*. Written by
+  `dotnet run --project tools/BalanceMatrix -- --buff-consumables`: **20 families with a consumable, 52
+  without, 48 items.**
+  🔑 **THE ANSWER TO YOUR LAST QUESTION — ladder families with no potion and no scroll: Clarity,
+  Fortitude, Resolve, Shield Blessing, Shield Hardening, Vampirism.** Buffer-or-nothing.
+  🔑 Generated because the interesting half is an **absence**: "which buffs have no potion" is wrong the
+  day someone adds the missing bottle, and nobody re-reads a typed page. Every column is a query,
+  including the slot column, which is the server's own `CountsAgainstBuffCap`.
+  ⚠ Two traps the first draft fell into, both worth keeping: **a consumable buff has TWO shapes** (a
+  Might Potion is a one-child wrapper; a healing potion IS the buff), and testing only the first listed
+  `potion_heal` under "has no consumable" — the exact opposite of the truth. And **a toggle is not a
+  ladder rung** despite having no duration, no MP and no cast, which filed Holy Soul as unreachable.
 
-- `BL-148` 🟠 **THE ZONE HP LADDER IS WRONG AND INVISIBLE — YOUR REVISION, AND MY BUG.** *"the only mobs
-  that should have x3 hp are zones 84+ and elits x2 mmay be .. now elits have 68k hp"*.
-  Two halves:
-  1. **THE LADDER.** Today `WorldPlan.HpScaleFor` is **×1 <40, ×2 ≥40, ×3 ≥61** (0.94.0, from your
-     playtest-25 ruling *"the 15k mobs are zone placed with x2/x3 hp"*). You are now moving the ×3 up to
-     **84+**. What that leaves open, and what I will bring you numbers on rather than guess: **what
-     41-83 becomes** — all ×2, or ×1 until some level and ×2 after — and whether the **elite ×4**
-     (`MobRankScale`) drops to ×2. ⚠ The two multiply: an elite at 84 is base × zone × rank, which is
-     what produces the 68,208 you saw. Halving the rank alone still leaves 34k; ×2 rank with a ×3 zone
-     is 34k, ×2 rank with a ×2 zone is 22.7k.
-  2. **THE PLATE MUST SAY SO.** Whatever the numbers become, a creature with tripled HP has to show it
-     where you looked for it — beside the `MobMod` passives on the inspect panel. **Not a MobMod**: it
-     is a field property, so it needs its own line rather than being faked as a fake passive.
+- `BL-148` ✅ **BUILT 2026-09-03 (0.108.0) — THE ZONE HP LADDER, RE-RULED, AND THE PLATE NOW SAYS SO.**
+  Your ruling: *"Zone laddre x1<40, x1.5<76, x2<83, x3 84+, elits still have their x4 everywhere so
+  x4<40, x6<76, x8<83, x12 84+ (futer tests will alter it probably..)"*
+
+  | level | zone | elite (zone × rank ×4) | a field mob's TTK, was → is |
+  |---|---|---|---|
+  | < 40 | ×1 | ×4 | unchanged |
+  | 40-75 | **×1.5** | ×6 | 61: 39s → **19s** · 72: 66s → **33s** |
+  | 76-83 | ×2 | ×8 | 80: 46s → **31s** |
+  | 84+ | ×3 | ×12 | 55s, unchanged |
+
+  🔑 Your second list is the **composed** number, not a second knob: ×1.5 × 4 = ×6, ×2 × 4 = ×8,
+  ×3 × 4 = ×12. `MobRankScale.Hp(Elite)` stays ×4 flat and was not touched, so **the 84+ elite keeps its
+  68,208** — deliberate, and it is the number you opened the entry complaining about.
+  ⚠ **LEVEL 83 IS MINE, NOT YOURS.** Your bands read `x2<83` and `x3 84+`, which leaves 83 unnamed; it is
+  filed under ×2 so `x3 84+` is literally true. One line to move if you meant otherwise.
+  ⚠ It multiplies HP and nothing else, so **lowering a rung raises farm rate**: the same EXP and drops
+  now come out of levels 40-75 in half the time. Flagged, not absorbed.
+  🟢 **And the plate prints them** — *"in its info panel there is nowhere x3 and no passive in skills
+  tab"*. Correct, and plainly a bug: the two biggest terms in a creature's pool are entity FIELDS
+  (`MobZoneHpScale`, `MobHpScale`), not `MobMod` passives, so `MobMod.Describe` could never see them.
+  Two lines, **never pre-multiplied** — "×12" tells you nothing about which knob to turn. A boss is
+  exempt from the zone ladder, so its zone line is not drawn.
+  📐 Measured, not derived: **`dotnet run --project tools/BalanceMatrix -- --zonehp`**, new today.
 
 ---
 
@@ -2072,10 +2105,12 @@ asks, and the mob-HP measurement last because it needs nothing built.
      to say "author `MobMod.Hp` across the roster". You ruled instead (2026-08-27): *"the 15k mobs are
      zone placed with x2/x3 hp .. some zones can have x1"* — so the **ZONE** carries it, the same
      creature reads ×1 in one field and ×3 in another, and not one template was edited. One derived
-     ladder (`WorldPlan.HpScaleFor`): ×1 below 40, ×2 from 40, ×3 from 61, overridable per field with
-     `Band.HpScale`. `MobBaseStats.Hp(80)` = 5,160, so ×3 = **15,480** — your *"the 80 mobs should
-     have 15k not 5"* on the nose. ⚠ A boss ignores it (0.89.0's measured 12-25 min band derives from
-     the same curve); an elite does not. It multiplies HP and nothing else.
+     ladder (`WorldPlan.HpScaleFor`), overridable per field with `Band.HpScale`. `MobBaseStats.Hp(80)`
+     = 5,160, so ×3 = **15,480** — your *"the 80 mobs should have 15k not 5"* on the nose. ⚠ A boss
+     ignores it (0.89.0's measured 12-25 min band derives from the same curve); an elite does not. It
+     multiplies HP and nothing else. 🔴 **THE RUNGS ARE NOT THE ONES BUILT HERE ANY MORE — you re-ruled
+     them 2026-09-03 as `BL-148` (×1 <40, ×1.5 40-75, ×2 76-83, ×3 84+).** Read that entry, or
+     `WorldPlan.HpScaleFor` itself, never this line.
   2. ✅ **A CASTER MOB IS NOT A SQUISHY MOB — BUILT 0.94.0.** *"caster mobs are not weaker than the
      other, they just use spells (and have a bit less pdef, evasion not twice less)"*. ⚠ **This entry
      was wrong about the cause and said so for days**: it claimed a caster paid twice with "low P.Def
