@@ -93,39 +93,107 @@ public static partial class SkillCatalog
     /// the optimiser's row.
     ///
     /// ⚠ Sixteen against the cap of twenty leaves FOUR free slots, not eight. That is the cost, and it
-    /// is why the two role presets below exist: ten buffs is the shape a class actually wants, and a
-    /// player who takes one keeps ten slots for a real buffer's groups. Taking the full sixteen is now
-    /// a deliberate choice to fill the bar.
+    /// is why the two role presets below exist.
+    ///
+    /// ═══ EVERYTHING ABOVE THIS LINE IS HISTORY, NOT THE CURRENT RULE ═══
+    /// It is kept because the REASONING still decides things (which axes a levelling character feels,
+    /// why the crit block was once called "the optimiser's row"), but every COUNT in it — eleven,
+    /// twelve, sixteen — and the cap arithmetic that goes with it were superseded on 2026-09-03. Read
+    /// the `BL-150` block below as the spec.
+    /// 🔑 NINETEEN, and split into TWO TIERS — 2026-09-03, `BL-150`. He re-ruled the whole shape:
+    /// *"i would like npc to give fury/alacrity/force/mght/bulwark/swift/vamp/resolve from 6+,
+    /// body,soul,vigor,serenity,agility,aim,ward,frenzy 40+"*, and separately *"add and the
+    /// focus,ferocity,insight to the npc 40+ as well"*.
+    ///
+    /// <para>🔑 <b>THE FREE/PAID LINE IS THE BUFF, NOT THE PLAYER'S LEVEL.</b> That is the whole
+    /// reversal, and it is easy to read the other way round: the old rule was "everyone is free below
+    /// 75, everyone pays above". The new one is *"6~75 (starting ones bulwark/might etc) buffs be
+    /// free, and 40~75 (the 40+ buffs aim/agi etc) be paid"* — so a level 80... a level 74 character
+    /// still pays nothing for Might and 15,000 for Aim, and the two answers never depend on who is
+    /// asking. See <see cref="FreeNpcBuffSet"/>.</para>
+    ///
+    /// <para>⚠ NINETEEN AGAINST A BUFF CAP OF TWENTY, which is exactly the state playtest 28 trimmed
+    /// the set from nineteen down to eleven to escape. It is deliberate this time and the reasoning
+    /// has changed: a real buffer's GROUPS evict the singles they cover (18 of these 19 collapse into
+    /// 5 group squares), so the squeeze is only ever felt by a player buffing SOLO — who has nothing
+    /// else to put in those slots anyway, except their own class self-buffs. Taking all nineteen is a
+    /// choice to fill your own bar. Raised with him on the day; if it bites, the cap moves, not this
+    /// list.</para></summary>
     public static readonly string[] NewbieBuffSet =
         { NpcMight, NpcBulwark, NpcVampirism,
           NpcForce, NpcWard, NpcResolve,
           NpcBody, NpcVigor, NpcSoul, NpcSerenity,
           NpcAlacrity, NpcHaste, NpcSwift, NpcAgility,
           NpcAccuracy,
-          NpcFrenzy };
+          NpcFrenzy,
+          // `BL-150` — the crit block comes BACK. Cut in playtest 28 as "the optimiser's row" and
+          // restored by name here; the 40-level gate is what playtest 28's trim was really reaching
+          // for, so the buff can exist without landing on a character too young to want it.
+          NpcFocus, NpcFerocity, NpcInsight };
 
-    /// <summary>`BL-95` — the MAGE preset the NPC offers as one button. Ten of the sixteen, named by
-    /// the owner 2026-08-28: *"[Mage] -> 10 - Bulwark, force, alacrity, swift, ward, body, soul,
-    /// serenity, resolve, frenzy"*.
+    /// <summary>`BL-150` — the EIGHT blessings that are free, and available from level 6. His list, in
+    /// his order: *"fury/alacrity/force/mght/bulwark/swift/vamp/resolve from 6+"*.
+    ///
+    /// <para>🔑 The shape is one buff per axis a LEVELLING character feels — attack and cast speed,
+    /// magic and physical attack, physical defence, movement, sustain, and not being interrupted. The
+    /// eleven that wait until 40 are the ones that only matter once you are optimising or once your
+    /// pools are big enough for a percentage of them to be worth anything.</para>
+    ///
+    /// <para>⚠ Membership of THIS set is the entire price rule. A buff in it is free at every level;
+    /// a buff outside it costs the full <c>BuffCostPerLevel × 5</c> at every level. There is no
+    /// third case and no per-player discount — see <c>GameLoopService.SingleBuffCost</c>.</para></summary>
+    public static readonly string[] FreeNpcBuffSet =
+        { NpcHaste, NpcAlacrity, NpcForce, NpcMight, NpcBulwark, NpcSwift, NpcVampirism, NpcResolve };
+
+    private static readonly HashSet<string> _freeNpcBuffs = new(FreeNpcBuffSet);
+
+    /// <summary>The level this NPC blessing unlocks at: 6 for the free eight, 40 for the other eleven.
+    ///
+    /// <para>🔑 This is what makes his saved-preset rule work with no extra machinery: *"if some1 buff
+    /// me with body or soul and i save it and im &lt;40lvl they will not activate .. they will activate
+    /// after 40+ from npc buffer"*. A preset is a SHOPPING LIST, so the gate is applied when the list
+    /// is expanded, not when it is saved — the ids stay in the preset and start landing the day you
+    /// reach 40, with nothing to re-save.</para></summary>
+    public static int NpcBuffMinLevel(string skillId) => _freeNpcBuffs.Contains(skillId) ? 6 : 40;
+
+    /// <summary>Is this blessing one of the free eight? See <see cref="FreeNpcBuffSet"/>.</summary>
+    public static bool IsFreeNpcBuff(string skillId) => _freeNpcBuffs.Contains(skillId);
+
+    /// <summary>`BL-95` — the MAGE preset the NPC offers as one button.
     ///
     /// 🔑 It is a SHOPPING LIST, not a rule — every buff in it is still available singly, and nothing
     /// checks your class. A buffer taking the mage set and cancelling Force is exactly the workflow his
-    /// custom preset is for. What the preset buys is the twelve taps.
+    /// custom preset is for. What the preset buys is the taps.
     ///
     /// ⚠ The order here is the order they land in, which is the order they appear on the buff bar.
-    /// Kept as he wrote it.</summary>
-    public static readonly string[] MageBuffSet =
-        { NpcBulwark, NpcForce, NpcAlacrity, NpcSwift, NpcWard,
-          NpcBody, NpcSoul, NpcSerenity, NpcResolve, NpcFrenzy };
-
-    /// <summary>`BL-95` — the FIGHTER preset. His list, 2026-08-28: *"[Fighter] -> 10 - Bulwark, Might,
-    /// Fury, Swift, Ward, Body, Vigor, Vamp, Frenzy, aim"*.
+    /// Kept as he wrote it.
     ///
-    /// ⚠ "Fury" is <see cref="NpcHaste"/> and "aim" is <see cref="NpcAccuracy"/> — both are named for
-    /// the FAMILY on the buff ladder, and both kept older ids. Neither is a typo.</summary>
+    /// 🔑 RE-RULED 2026-09-03, `BL-150` — FOUR, and they are *"the two fighter and mage sets that i
+    /// give you and they do not change"*: *"magic buffs -> alacrity,force,bulwark,resolve"*.
+    ///
+    /// <para>🔑 <b>THE TWO PRESETS ARE EXACTLY THE FREE EIGHT, PARTITIONED.</b> Fighter ∪ Mage =
+    /// might, bulwark, vamp, fury, swift, alacrity, force, resolve — precisely
+    /// <see cref="FreeNpcBuffSet"/>, with Bulwark the one buff both roles want. That is not a
+    /// coincidence to be preserved by hand; it is what makes his instruction for building a full set
+    /// work: *"if you want 'full buff' you buff fighter+mage sets and buy all 40+ then save your own"*.
+    /// Pressing both buttons costs nothing and lands all eight free blessings.</para>
+    ///
+    /// <para>⚠ THE [FULL BUFF] BUTTON IS GONE (same ruling). There is no longer a one-press way to
+    /// take all nineteen: the shipped buttons hand out the free tier, the paid eleven are bought one
+    /// at a time, and a player who wants the lot saves a CUSTOM preset once and presses that. Which is
+    /// also what stops "fill all twenty squares" from being the default action at this window.</para></summary>
+    public static readonly string[] MageBuffSet =
+        { NpcAlacrity, NpcForce, NpcBulwark, NpcResolve };
+
+    /// <summary>`BL-95` — the FIGHTER preset the NPC offers as one button.
+    ///
+    /// 🔑 RE-RULED 2026-09-03, `BL-150` — FIVE: *"fighter buffs -> might,bulwark,vamp,fury,swift"*.
+    /// See <see cref="MageBuffSet"/> for why these two lists are the free tier split in half.
+    ///
+    /// ⚠ "Fury" is <see cref="NpcHaste"/> — named for the FAMILY on the buff ladder, keeping an older
+    /// id. Not a typo, and not Alacrity (which is CAST speed and belongs to the mage's four).</summary>
     public static readonly string[] FighterBuffSet =
-        { NpcBulwark, NpcMight, NpcHaste, NpcSwift, NpcWard,
-          NpcBody, NpcVigor, NpcVampirism, NpcFrenzy, NpcAccuracy };
+        { NpcMight, NpcBulwark, NpcVampirism, NpcHaste, NpcSwift };
     /// <summary>What the ADMIN buff button and `/buff` hand out: EVERYTHING a max-level BUFFER can
     /// give, at that buffer's TOP rung, plus every NPC single. Those top layers are the ones no NPC
     /// sells and no consumable can reach, so this is the only way to see a fully-buffed character,

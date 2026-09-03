@@ -136,6 +136,11 @@ public static class BoxCatalog
                 new BoxEntry(ItemCatalog.FerocityScrollM, 1.0f),
                 new BoxEntry(ItemCatalog.InsightScrollM, 1.0f),
                 new BoxEntry(ItemCatalog.FrenzyScrollM, 1.0f),
+                // `BL-149` — the two that had no consumable at all. NINETEEN options, still PICK 10:
+                // the box got wider, not more generous, which is what keeps 300k ÷ 10 = 30k the price
+                // of one blessing-hour (`BL-151`).
+                new BoxEntry(ItemCatalog.VampScrollM, 1.0f),
+                new BoxEntry(ItemCatalog.ResolveScrollM, 1.0f),
             }, PickCount: 10),
 
             // Newbie jewels box — 2 earrings, 2 rings, 1 necklace (100% each).

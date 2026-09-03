@@ -26,16 +26,18 @@ rather than wasted. **Slot** = does it occupy one of the 20 buff squares (the se
 | **Common Healing** | `potion_heal` | burst: rung 1 / rung 2 / rung 3 | — | box (Newbie Box), box (Treasure Chest), craft, drop, vendor (Apothecary) | no | no |
 | **Common Mana** | `potion_mana` | burst: rung 1 / rung 2 / rung 3 | — | craft, vendor (Apothecary) | no | no |
 | **Dash** | `dash` | burst: rung 1 / rung 2 / rung 4 / rung 5 / rung 6 / rung 7 / rung 7 | — | craft, drop | no | no |
-| **Ferocity** | `crit_dmg` | — | rung 6 | box (Blessing Box), craft | no | **yes** |
-| **Focus** | `crit_rate` | — | rung 6 | box (Blessing Box), craft | no | **yes** |
+| **Ferocity** | `crit_dmg` | — | rung 6 | box (Blessing Box), craft | yes — identical rung | **yes** |
+| **Focus** | `crit_rate` | — | rung 6 | box (Blessing Box), craft | yes — identical rung | **yes** |
 | **Force** | `atk_mag` | rung 1 / rung 2 | rung 4 | box (Blessing Box), craft, vendor (Apothecary) | yes — identical rung | **yes** |
 | **Frenzy** | `frenzy` | — | rung 6 | box (Blessing Box), craft | yes — identical rung | **yes** |
 | **Fury** | `spd_as` | rung 1 / rung 2 | rung 3 | box (Blessing Box), craft, drop, vendor (Apothecary) | yes — identical rung | **yes** |
-| **Insight** | `mcrit_rate` | — | rung 6 | box (Blessing Box), craft | no | **yes** |
+| **Insight** | `mcrit_rate` | — | rung 6 | box (Blessing Box), craft | yes — identical rung | **yes** |
 | **Might** | `atk_phys` | rung 1 / rung 2 | rung 3 | box (Blessing Box), craft, vendor (Apothecary) | yes — identical rung | **yes** |
+| **Resolve** | `interrupt` | — | rung 7 | box (Blessing Box), craft | yes — identical rung | **yes** |
 | **Serenity** | `mp_regen` | — | rung 6 | box (Blessing Box), craft | yes — identical rung | **yes** |
 | **Soul** | `mp_max` | — | rung 6 | box (Blessing Box), craft | yes — identical rung | **yes** |
 | **Swift** | `spd_move` | rung 1 / rung 2 | rung 3 | box (Blessing Box), craft, drop, vendor (Apothecary) | yes — identical rung | **yes** |
+| **Vampirism** | `vamp` | — | rung 5 | box (Blessing Box), craft | yes — identical rung | **yes** |
 | **Vigor** | `hp_regen` | — | rung 6 | box (Blessing Box), craft | yes — identical rung | **yes** |
 | **Ward** | `def_mag` | rung 1 / rung 2 | rung 4 | box (Blessing Box), craft, vendor (Apothecary) | yes — identical rung | **yes** |
 
@@ -50,10 +52,8 @@ solo player without a buffer cannot have them at all.
 |---|---|---|---|---|---|
 | **Clarity** | `cc_res_mag` | 4 | +50% resistance to magical (SPT) debuffs | Clarity, Arcane and Feral Protection (group) | no |
 | **Fortitude** | `cc_res_phys` | 12 | +65% resistance to physical (CON) debuffs | Fortitude, Arcane and Feral Protection (group) | no |
-| **Resolve** | `interrupt` | 7 | +54% interrupt resistance | Force and Ward, Resolve, Arcane Serenity (group), Force and Ward (group) | yes |
 | **Shield Blessing** | `shield_block` | 6 | +30% block chance | Shield Blessing, Shield Bless and Harden (group), Shield Reinforcement (group) | no |
 | **Shield Hardening** | `shield_def` | 3 | +50% shield P.Def | Shield Hardening, Shield Bless and Harden (group), Shield Reinforcement (group) | no |
-| **Vampirism** | `vamp` | 5 | +9% melee vampirism | Vampirism, Feral Bloodlust (group), Might and Bulwark (group) | yes |
 
 ## 3. Class and self buffs — not part of the single-buff ladder at all
 
@@ -135,9 +135,9 @@ not apply the way it does to the table above.
 | Rare Mana Potion | Rare | None | Common Mana — Restores 150 MP per second for 15s | 3 | 15s | craft | Consumable | no |
 | Dash Potion (Lesser) | Common | None | Dash — +15 Move Speed | 1 | 15s | craft, drop | Consumable | no |
 | Dash Potion | Uncommon | None | Dash — +30 Move Speed | 2 | 15s | craft, drop | Consumable | no |
-| Dash Potion (Greater) | Rare | None | Dash — +45 Move Speed | 4 | 15s | craft, drop | Consumable | no |
-| Dash Potion (Superior) | Epic | None | Dash — +50 Move Speed | 5 | 15s | craft, drop | Consumable | no |
-| Dash Potion (Grand) | Legendary | None | Dash — +55 Move Speed | 6 | 15s | craft, drop | Consumable | no |
+| Dash Potion (Greater) | Rare | None | Dash — +45 Move Speed | 4 | 15s | craft | Consumable | no |
+| Dash Potion (Superior) | Epic | None | Dash — +50 Move Speed | 5 | 15s | craft | Consumable | no |
+| Dash Potion (Grand) | Legendary | None | Dash — +55 Move Speed | 6 | 15s | craft | Consumable | no |
 | Dash Potion (Supreme) | Mythic | None | Dash — +60 Move Speed | 7 | 15s | craft | Consumable | no |
 | Dash Potion (Supreme) (Bound) | Mythic | None | Dash — +60 Move Speed | 7 | 15s | **nothing grants it** | Consumable | no |
 | Scroll of Ferocity | Rare | Scroll | Ferocity — +35% critical damage | 6 | 60 min | craft, box (Blessing Box) | Consumable | yes |
@@ -153,11 +153,13 @@ not apply the way it does to the table above.
 | Might Potion (Lesser) | Common | Potion | Might — +8% P.Atk | 1 | 20 min | vendor (Apothecary), vendor (Apothecary), vendor (Apothecary), vendor (Apothecary), vendor (Apothecary), craft | Consumable | yes |
 | Might Potion | Uncommon | Potion | Might — +12% P.Atk | 2 | 20 min | craft | Consumable | yes |
 | Scroll of Might | Rare | Scroll | Might — +15% P.Atk | 3 | 60 min | craft, box (Blessing Box) | Consumable | yes |
+| Scroll of Resolve | Rare | Scroll | Resolve — +54% interrupt resistance | 7 | 60 min | craft, box (Blessing Box) | Consumable | yes |
 | Scroll of Serenity | Rare | Scroll | Serenity — +20% MP regeneration | 6 | 60 min | craft, box (Blessing Box) | Consumable | yes |
 | Scroll of Soul | Rare | Scroll | Soul — +35% Max MP | 6 | 60 min | craft, box (Blessing Box) | Consumable | yes |
 | Swift Potion (Lesser) | Common | Potion | Swift — +15 Move Speed | 1 | 20 min | vendor (Apothecary), vendor (Apothecary), vendor (Apothecary), vendor (Apothecary), vendor (Apothecary), craft, drop | Consumable | yes |
 | Swift Potion | Uncommon | Potion | Swift — +20 Move Speed | 2 | 20 min | craft, drop | Consumable | yes |
 | Scroll of Swift | Rare | Scroll | Swift — +33 Move Speed | 3 | 60 min | craft, box (Blessing Box) | Consumable | yes |
+| Scroll of Vampirism | Rare | Scroll | Vampirism — +9% melee vampirism | 5 | 60 min | craft, box (Blessing Box) | Consumable | yes |
 | Scroll of Vigor | Rare | Scroll | Vigor — +20% HP regeneration | 6 | 60 min | craft, box (Blessing Box) | Consumable | yes |
 | Ward Potion (Lesser) | Common | Potion | Ward — +10% M.Def | 1 | 20 min | vendor (Apothecary), vendor (Apothecary), vendor (Apothecary), vendor (Apothecary), vendor (Apothecary), craft | Consumable | yes |
 | Ward Potion | Uncommon | Potion | Ward — +20% M.Def | 2 | 20 min | craft | Consumable | yes |

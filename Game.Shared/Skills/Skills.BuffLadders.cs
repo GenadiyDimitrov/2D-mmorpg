@@ -132,6 +132,10 @@ public static partial class SkillCatalog
     public const string ScrFerocityE = "scr_critdmg_e", ScrFerocityL = "scr_critdmg_l", ScrFerocityM = "scr_critdmg_m";
     public const string ScrInsightE = "scr_mcrit_e", ScrInsightL = "scr_mcrit_l", ScrInsightM = "scr_mcrit_m";
     public const string ScrFrenzyE = "scr_frenzy_e", ScrFrenzyL = "scr_frenzy_l", ScrFrenzyM = "scr_frenzy_m";
+    // `BL-149` — the two families that had no consumable at all. Top rung only (5 and 7, not 6):
+    // there is no Superior/Grand of either, because the box is the only thing that hands them out.
+    public const string ScrVampM = "scr_vamp_m";
+    public const string ScrResolveM = "scr_interrupt_m";
 
     // ---------------------------------------------------------------------------------------
     //  The ladders themselves. One line per family; the array IS the number line.
@@ -454,6 +458,29 @@ public static partial class SkillCatalog
             SkillEffect.BuffPhysAtk, "−18% Max HP/MP but +7% offence and speed"));
         list.Add(Scroll(ScrFrenzyM, "Scroll of Frenzy (Supreme)", Rung(FamFrenzy, 6),
             SkillEffect.BuffPhysAtk, "−10% Max HP/MP but +8% offence and speed"));
+
+        // ----- VAMPIRISM and RESOLVE get a scroll, `BL-149` (owner, 2026-09-03: *"vamp and resolve
+        //       can be made as scrolls as well and add to boxes"*). -----
+        //
+        // 🔑 THEY WERE THE ONLY TWO NPC BLESSINGS WITH NO CONSUMABLE ANYWHERE, which is why the NPC
+        // buffer ending at 75 (`BL-150`) would otherwise have deleted them from the game above 75 for
+        // anyone without a Warchanter. His reason for being comfortable adding them: *"Buffers/healers
+        // have resists, shield, great might/bulwark buffs"* — the buffer class keeps Clarity,
+        // Fortitude, Shield Blessing, Shield Hardening and the Great Might/Bulwark layer, none of
+        // which a scroll will ever reach. So this closes a hole without costing the class anything.
+        //
+        // ⚠ ONE SCROLL EACH, NOT A TRIO. Every other scroll-only family has Superior/Grand/Supreme in
+        // this layer because it was authored as a ladder; these two are authored for the BOX, and the
+        // box only ever holds the family's top rung. Inventing a Superior and a Grand would create two
+        // items nothing in the world grants — the "unbuyable family" shape `BL-147` exists to detect.
+        //
+        // ⚠ The rungs are 5 and 7, not 6. A scroll takes its family's TOP rung, and these two ladders
+        // are not six deep (Vampirism has 5, Resolve has 7). Reading "M = rung 6" off the trios above
+        // and applying it here would silently hand out the wrong strength for both.
+        list.Add(Scroll(ScrVampM, "Scroll of Vampirism (Supreme)", Rung(FamVamp, 5),
+            SkillEffect.BuffMeleeVamp, "+9% melee vampirism"));
+        list.Add(Scroll(ScrResolveM, "Scroll of Resolve (Supreme)", Rung(FamInterrupt, 7),
+            SkillEffect.BuffInterruptResist, "+54% interrupt resistance"));
 
         // ===== What a buffer CLASS casts: one skill per family, one level per rung =====
         // The level descriptions are the rungs' own, read back out of what we just built, so a

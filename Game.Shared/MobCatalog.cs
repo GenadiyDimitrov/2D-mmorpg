@@ -964,16 +964,21 @@ public static class MobCatalog
                 new[] { ItemCatalog.SpeedPotionU, ItemCatalog.CastPotionU, ItemCatalog.AtkPotionU,
                         ItemCatalog.DashPotionU });
         }
-        // Rung 3 and up are DASH ONLY now: the Rare buff potion was deleted (it duplicated the scroll's
-        // rung) and the scroll-only families never had a potion at any rarity. So from 45 up this group
-        // is the enchant scroll plus the Dash line — the top of every buff ladder is bought, not found.
-        // Dash keeps its own old per-item rate exactly; it is the one consumable he asked to leave alone.
-        if (level >= 45)
-        {
-            BuffRung(0.0026f, new[] { ItemCatalog.DashPotionR });
-        }
-        if (level >= 60) BuffRung(0.0033f, new[] { ItemCatalog.DashPotionE });
-        if (level >= 76) BuffRung(0.0022f, new[] { ItemCatalog.DashPotionL });
+        // 🔑 `BL-152` — DASH NOW STOPS AT UNCOMMON, like every other potion line (owner, 2026-09-03:
+        // *"dash pots to drop to uncommon ... all else from crafters"*). Greater, Superior and Grand
+        // left the faucet; Supreme was already craft-only. So the two rungs above are gone and rungs
+        // 3+ of this group are now the ENCHANT SCROLL alone.
+        //
+        // 🔑 This finishes the rule the two passes above started. Playtest-17 `E3` took the scrolls
+        // out and playtest 28 cut the stat potions to three speed families, each time on the same
+        // principle — **the top of a ladder is bought, not found** — and each time Dash was written
+        // down as the deliberate exception (*"the one consumable he asked to leave alone"*). It is no
+        // longer an exception, so the sentence is now true without a footnote.
+        //
+        // ⚠ Unlike those two passes, this one DOES narrow the faucet rather than concentrate it.
+        // There is nothing left at rungs 3-5 to redistribute the weight onto: the three removed ids
+        // were the whole of their rungs, so a level 45+ mob simply rolls this group less often now.
+        // That is the intended shape — from 45 up, a Dash above Uncommon comes from a crafter.
 
         // ---- ALWAYS (§4): the consumable group — a healing potion, a return scroll or a resurrection
         //      scroll. The name is now historical: it fired on EVERY kill until playtest-17 cut the

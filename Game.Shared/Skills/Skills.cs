@@ -1608,6 +1608,23 @@ public static partial class SkillCatalog
                   + "FlatRank: true on both if they are meant to be mutually exclusive.");
             laddered[key] = sk.Id;
         }
+
+        // ----- `BL-150`: the free tier must be a SUBSET of what the buffer actually offers. -----
+        // The price rule is "membership of FreeNpcBuffSet", and the offer list is NewbieBuffSet. They
+        // are two hand-written arrays of the same ids, so a typo in either is invisible: a free id
+        // that is not offered simply never appears, and nothing would ever say so. Worse in the other
+        // direction — mistyping an id here does not make it free, it makes it cost 15,000 with no
+        // warning at all, which is the shape of bug that reaches a playtest rather than a build.
+        foreach (var id in FreeNpcBuffSet)
+        {
+            if (!dict.ContainsKey(id))
+                throw new InvalidOperationException(
+                    $"FreeNpcBuffSet names '{id}', which is not a registered skill (BL-150).");
+            if (Array.IndexOf(NewbieBuffSet, id) < 0)
+                throw new InvalidOperationException(
+                    $"FreeNpcBuffSet names '{id}', which the buffer does not offer (BL-150). The free "
+                  + "tier must be a subset of NewbieBuffSet, or the blessing is free and unreachable.");
+        }
         return dict;
     }
 

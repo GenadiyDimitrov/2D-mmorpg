@@ -984,6 +984,9 @@ public static class ItemCatalog
     public const string FerocityScrollM = "scroll_critdmg_m";
     public const string InsightScrollM = "scroll_mcrit_m";
     public const string FrenzyScrollM = "scroll_frenzy_m";
+    // `BL-149` — Vampirism and Resolve, the two NPC blessings that had no potion and no scroll.
+    public const string VampScrollM = "scroll_vamp_m";
+    public const string ResolveScrollM = "scroll_interrupt_m";
     // Dash — the short sprint burst, six rarities, no scroll.
     public const string DashPotionC = "potion_dash_c";
     public const string DashPotionU = "potion_dash_u";
@@ -1400,11 +1403,17 @@ public static class ItemCatalog
         // GrantsRuneSeconds on the RUNE is its DEFAULT lifespan, stamped at ACQUIRE time (AddItem) for any
         // source — a drop, a direct give, a quest — not just a box. A box that grants the rune OVERRIDES
         // this with its own duration. So a rune always has a wall-clock expiry the moment you get it.
-        list.Add(new ItemDef(WarRune, "War Rune", EquipSlot.Rune, ItemGrade.F, ItemRarity.Rare,
+        // ⚠ MYTHIC, `BL-153` (owner, 2026-09-03: *"make war/spell runes mythic grade (all others as
+        // well if they have no Levels but still SP rune 10 is different from SP rune 100)"*). His rule
+        // is a TEST, not a list: **a rune with no ladder is Mythic; a rune that has rungs is graded by
+        // its rung.** War and Spell have one strength each and no rung above them, so they are the top
+        // of their own line and read Mythic. The 55 reward runes DO ladder (5, 10, 20 … 100 — his own
+        // "SP rune 10 is different from SP rune 100"), so they are deliberately NOT swept in here.
+        list.Add(new ItemDef(WarRune, "War Rune", EquipSlot.Rune, ItemGrade.F, ItemRarity.Mythic,
             IsRune: true, RuneBuffSkillId: SkillCatalog.WarRuneBuff, GrantsRuneSeconds: 3600,
             Tradable: false, Value: 0,
             Description: "Held rune: +100% P.Atk while in your bag. Boosts PHYSICAL damage only (melee/bow) — useless for spells. Move it to the warehouse to switch it off; it can't be deleted."));
-        list.Add(new ItemDef(SpellRune, "Spell Rune", EquipSlot.Rune, ItemGrade.F, ItemRarity.Rare,
+        list.Add(new ItemDef(SpellRune, "Spell Rune", EquipSlot.Rune, ItemGrade.F, ItemRarity.Mythic,
             IsRune: true, RuneBuffSkillId: SkillCatalog.SpellRuneBuff, GrantsRuneSeconds: 3600,
             Tradable: false, Value: 0,
             Description: "Held rune: +magic damage & cast speed while in your bag. Boosts MAGIC (spells) only — useless for melee/bow. Move it to the warehouse to switch it off; it can't be deleted."));
@@ -1433,9 +1442,13 @@ public static class ItemCatalog
         // Not buyable and not tradable: these are the premium/shop currency of the future store, and
         // until that exists `/give` is how they reach a player. Unsellable too (SellPriceOverride 0),
         // so a rune can never be laundered into gold.
+        // ⚠ The RARITY is a parameter because of `BL-153`'s test: a LADDERED rune keeps Epic (the rung
+        // is what tells a +10% apart from a +100%, so rarity has nothing left to say), while a rune
+        // with NO rungs is the top of its own line and reads Mythic. Only Sinister and Sinners are
+        // the second kind here — they are one-of-a-kind punishments, not a rung of anything.
         void RewardRune(string id, string name, string skillId, int buffLevel, string desc,
-                        bool soulBound = false) =>
-            list.Add(new ItemDef(id, name, EquipSlot.Rune, ItemGrade.F, ItemRarity.Epic,
+                        bool soulBound = false, ItemRarity rarity = ItemRarity.Epic) =>
+            list.Add(new ItemDef(id, name, EquipSlot.Rune, ItemGrade.F, rarity,
                 IsRune: true, RuneBuffSkillId: skillId, RuneBuffLevel: buffLevel,
                 GrantsRuneSeconds: RewardRunes.DefaultSeconds,
                 Tradable: false, BuyPriceOverride: -1, SellPriceOverride: 0, Value: 0,
@@ -1448,13 +1461,14 @@ public static class ItemCatalog
                 RewardRune(ch.ItemId(pct), ch.NameAt(pct), ch.SkillId, rung + 1, ch.Line(pct));
             }
         RewardRune(RewardRunes.SinisterId, RewardRunes.SinisterName,
-            RewardRunes.SinisterId, 1, RewardRunes.SinisterLine);
+            RewardRunes.SinisterId, 1, RewardRunes.SinisterLine, rarity: ItemRarity.Mythic);
         // Sinners is BOUND on the DEF as well as by whatever `/give` writes on the instance: an
         // authored punishment must not depend on the admin remembering the right flags. The per-
         // instance overrides (`58d`) are what let him hand out a HARSHER one — a shorter clock, a
         // custom name — not what makes this one bound.
         RewardRune(RewardRunes.SinnersId, RewardRunes.SinnersName,
-            RewardRunes.SinnersId, 1, RewardRunes.SinnersLine, soulBound: true);
+            RewardRunes.SinnersId, 1, RewardRunes.SinnersLine, soulBound: true,
+            rarity: ItemRarity.Mythic);
 
         // Newbie CHOICE selection-boxes (untradable): armor set (fighter vs mage) and a 1-day rune
         // (soul vs spirit). Each is a PickCount:1 box whose OPTIONS are other boxes — pick one, open it.
@@ -1647,6 +1661,12 @@ public static class ItemCatalog
         BuffScroll(FerocityScrollM, "Scroll of Ferocity", SkillCatalog.ScrFerocityM);
         BuffScroll(InsightScrollM,  "Scroll of Insight",  SkillCatalog.ScrInsightM);
         BuffScroll(FrenzyScrollM,   "Scroll of Frenzy",   SkillCatalog.ScrFrenzyM);
+        // `BL-149` — NINETEEN now. Vampirism and Resolve were the only two blessings the NPC buffer
+        // gave that nothing else in the game could, which `BL-150`'s cut-off at 75 would have turned
+        // into "gone above 75 unless you know a Warchanter". Both take their family's TOP rung like
+        // every other scroll here — rung 5 and rung 7, because those ladders are not six deep.
+        BuffScroll(VampScrollM,     "Scroll of Vampirism", SkillCatalog.ScrVampM);
+        BuffScroll(ResolveScrollM,  "Scroll of Resolve",   SkillCatalog.ScrResolveM);
 
         // Dash — 15 seconds of sprint on a 1-minute reuse, six rarities, no scroll. Priced at half
         // a buff potion of the same rarity: it is a burst, not a blessing.
@@ -1804,9 +1824,16 @@ public static class ItemCatalog
         // an hour of a real buffer has to stay the better deal, and this is the offline substitute.
         // ⚠ The BOX is tradable and sells at Value ÷ 25 (his number, not the gear divisor); the scrolls
         // that come out of it are bound. So the market that exists is in boxes, not in blessings.
+        // `BL-151` — 250k → 300k, and the price is DERIVED, not picked (owner, 2026-09-03: *"Buff box
+        // price 250-> 300k twice as the cost per buff from npc but it gives you outside town buffs"*).
+        // 300,000 ÷ 10 picks = 30,000 a blessing-hour, exactly twice the NPC buffer's 15,000
+        // (`BL-150`). What the double buys is the thing the NPC cannot do: a scroll works in the field,
+        // so you re-buff where you are standing instead of walking back to a town.
+        // ⚠ The divisor is PickCount, not the number of options. `BL-149` widened the box to 19
+        // scrolls and left the picks at 10, so this arithmetic is untouched by that.
         list.Add(new ItemDef(BoxBuffScrolls, "Blessing Box", EquipSlot.Box, ItemGrade.F, ItemRarity.Rare,
-            Value: 250000, SellPriceOverride: 10000, NoAttributes: true,
-            Description: "Choose any 10 of the 17 buff scrolls. Scrolls taken from the box are bound to you."));
+            Value: 300000, SellPriceOverride: 10000, NoAttributes: true,
+            Description: "Choose any 10 of the 19 buff scrolls. Scrolls taken from the box are bound to you."));
         list.Add(new ItemDef(BoxNewbieArmorLight, "Newbie Light Armor Box", EquipSlot.Box, ItemGrade.F, ItemRarity.Common,
             Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
         list.Add(new ItemDef(BoxNewbieArmorRobe, "Newbie Robe Armor Box", EquipSlot.Box, ItemGrade.F, ItemRarity.Common,

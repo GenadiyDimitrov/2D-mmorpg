@@ -392,7 +392,8 @@ namespace Game.Client
         public Task QuestActionAsync(string action, string id, Guid npcEntityId) =>
             _connection.SendAsync("QuestAction", action, id, npcEntityId);
 
-        /// <summary>action is "full" / "restore" / "single" (skillId only used by "single").</summary>
+        /// <summary>action is "mage" / "fighter" / "custom" / "savepreset" / "delpreset" / "restore" /
+        /// "single" (skillId only used by "single"). ⚠ "full" was removed by `BL-150`.</summary>
         public Task BufferActionAsync(Guid npcEntityId, string action, string skillId) =>
             _connection.SendAsync("BufferAction", npcEntityId, action, skillId);
 

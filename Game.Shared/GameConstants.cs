@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.108.0";
+    public const string GameVersion = "0.109.0";
 
     // ----- SP BOTTLE (owner, 2026-08-26) -------------------------------------------------------
     // *"u can make an npc to take your 1kkk SP + 100kk gold and give you a tradable/sellabel
@@ -164,7 +164,15 @@ public static class GameConstants
     /// touches this record at all — but "an old panel can turn a new setting off without saying so" is
     /// exactly what a protocol number is for.
     /// ⚠ A NEW APK IS REQUIRED (the Functions/Class tab rework of `BL-127` rides on the same build).
-    public const int ProtocolVersion = 32;
+    /// 32 → 33 (2026-09-03): the NPC buffer rework, `BL-150`. `BufferBuff` gained `MinLevel` (appended
+    /// with a default, so the wire shape is additive), but the BEHAVIOUR behind the window changed in
+    /// ways an old client would render as lies rather than as missing polish: the [Full buff] button
+    /// no longer exists server-side, the Mage and Fighter presets are different lists, and eleven of
+    /// the nineteen blessings are now refused below level 40. An old client would draw a Full button
+    /// that does nothing and offer buffs the server will not cast — which is precisely the "looks fine,
+    /// behaves wrong" case this number exists to prevent.
+    /// ⚠ A NEW APK IS REQUIRED.
+    public const int ProtocolVersion = 33;
 
     /// <summary>
     /// The oldest protocol this server still speaks. Equal to <see cref="ProtocolVersion"/> means

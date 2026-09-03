@@ -1186,12 +1186,15 @@ public record CraftMasterInfo(
 public record SkillResetInfo(ResettableSkill[] Skills);
 public record ResettableSkill(string SkillId, string Name, int Level, int GoldSpent);
 
-/// <summary>Server -> client: what the NPC BUFFER offers. Three options: full-buff (all at once),
-/// a single buff from the list, and HP/MP restore. Free at ≤40, priced above (see the costs).</summary>
+/// <summary>Server -> client: what the NPC BUFFER offers — a preset, a single blessing from the list,
+/// or an HP/MP restore. `BL-150`: the window is 6-75 and the free/paid line is the BUFF, not the
+/// player's level (eight free from 6, eleven at 15,000 from 40).</summary>
 public record BufferInfo(
     bool CanBuff,           // level within the buffer's 6-75 window
     string Message,         // shown when CanBuff is false (too low / too high)
-    long FullBuffCost,      // 0 = free
+    // ⚠ DEAD SINCE `BL-150` — always 0. The [Full buff] button was removed on his ruling; the field
+    // stays only because this record is positional and the two presets below carry their own costs.
+    long FullBuffCost,
     long RestoreCost,       // cost to restore HP+MP right now (0 = free / already full)
     BufferBuff[] Buffs,     // single buffs, each with its own cost
     // ----- `BL-95` PRESETS, appended (an old client ignores them and still sees Full + singles) -----
@@ -1206,7 +1209,10 @@ public record BufferInfo(
     // How many NPC blessings the player is wearing RIGHT NOW, i.e. what pressing [Save] would store.
     // 0 = the Save button is dead, and the client says why rather than saving an empty preset.
     int SavableNow = 0);
-public record BufferBuff(string SkillId, string Name, long Cost);
+/// <summary>One blessing on the buffer's list. <see cref="MinLevel"/> is `BL-150`: 6 for the free
+/// eight, 40 for the paid eleven. The client greys out what the player cannot buy yet rather than
+/// hiding it — seeing what waits at 40 is the point of showing the whole list.</summary>
+public record BufferBuff(string SkillId, string Name, long Cost, int MinLevel = 0);
 
 /// <summary>Server -> client: one preset button at the NPC buffer (`BL-95`). <see cref="Key"/> is the
 /// action string the client sends back ("full" / "mage" / "fighter" / "custom") — the client never

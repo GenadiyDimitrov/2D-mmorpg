@@ -2043,6 +2043,86 @@ asks, and the mob-HP measurement last because it needs nothing built.
   exempt from the zone ladder, so its zone line is not drawn.
   📐 Measured, not derived: **`dotnet run --project tools/BalanceMatrix -- --zonehp`**, new today.
 
+### The buffer economy — `BL-149` … `BL-153` (0.109.0, 2026-09-03)
+
+Your rulings from the same chat pass, after reading `BL-147`'s generated page. The shape you were
+building toward: *"those questions will build my idea to limit the buffer free to <60, 60~75 paid and
+75 no buff only box"* — which you then refined into something better, where **the free/paid line is
+the BUFF, not the player's level**.
+
+- `BL-149` ✅ **BUILT — VAMPIRISM AND RESOLVE GET A SCROLL, AND THE BOX GOES 17 → 19.** *"vamp and
+  resolve can be made as scrolls as well and add to boxes. Buffers/healers have resists, shield, great
+  might/bulwark buffs"*.
+  🔑 **They were the only two NPC blessings with no consumable anywhere in the game** — `BL-147`'s page
+  is what surfaced it, and it mattered because `BL-150` stops the buffer at 75: without this, both
+  would simply have vanished above 75 for anyone without a Warchanter.
+  🔑 Your reason for being comfortable with it is the right one and it is now written into the code:
+  the buffer class keeps **Clarity, Fortitude, Shield Blessing, Shield Hardening** and the Great
+  Might/Bulwark layer — after this change those are the **only four families left with no consumable**,
+  which the regenerated page proves in its own section 2.
+  ⚠ **One scroll each, not a trio**, and at rungs **5 and 7, not 6** — a scroll takes its family's TOP
+  rung, and those two ladders are not six deep. Craftable at Scribe L5 like the other scroll-only
+  families; still **pick 10**, so the box got wider, not more generous.
+
+- `BL-150` ✅ **BUILT — THE NPC BUFFER REWORKED: TWO TIERS, 19 BLESSINGS, NO [FULL BUFF], ENDS AT 75.**
+  *"i would like npc to give fury/alacrity/force/mght/bulwark/swift/vamp/resolve from 6+,
+  body,soul,vigor,serenity,agility,aim,ward,frenzy 40+"*, *"add and the focus,ferocity,insight to the
+  npc 40+ as well"*, *"remove [full buff] from buffer ... only the two fighter and mage sets that i
+  give you and they do not change"*.
+
+  | tier | when | cost each | what |
+  |---|---|---|---|
+  | **free eight** | from **6** | **0** | Fury, Alacrity, Force, Might, Bulwark, Swift, Vampirism, Resolve |
+  | **paid eleven** | from **40** | **15,000** | Body, Soul, Vigor, Serenity, Agility, Aim, Ward, Frenzy, Focus, Ferocity, Insight |
+  | *above 75* | — | — | the buffer refuses; the Blessing Box, a Scribe or a real buffer takes over |
+
+  🔑 **THE FREE/PAID LINE IS THE BUFF, NOT THE PLAYER.** That is the reversal, and it is the opposite
+  of the old rule ("everyone free below 75, everyone pays above"). A level-74 character still pays
+  nothing for Might and 15,000 for Aim; neither answer depends on who is asking.
+  🔑 **Your two presets ARE the free eight, partitioned** — Fighter (might, bulwark, vamp, fury, swift)
+  ∪ Mage (alacrity, force, bulwark, resolve) = exactly the eight, with Bulwark the buff both roles
+  want. So *"you buff fighter+mage sets and buy all 40+ then save your own"* works: two free presses
+  fill a levelling bar, and there is no longer one press that takes all nineteen.
+  🔑 **The level gate is applied when a preset is EXPANDED**, which is what makes your saved-preset rule
+  need no new state: *"if some1 buff me with body or soul and i save it and im <40lvl they will not
+  activate .. they will activate after 40+"*. The id stays saved and starts landing on its own at 40.
+  ⚠ **Price doubled 7,500 → 15,000** (`BuffCostPerLevel` 1,500 → 3,000), your arithmetic. But **a full
+  set is now 165,000, not the 120,000 you calculated** — that sum was 8 paid, and you added Focus,
+  Ferocity and Insight to the paid tier in the same message. Flagged, not absorbed.
+  ⚠ **NINETEEN AGAINST A CAP OF TWENTY** — the exact state playtest 28 trimmed the set from 19 down to
+  11 to escape. Deliberate this time: a real buffer's groups evict 18 of the 19 into 5 squares, so the
+  squeeze is only felt buffing SOLO, where the only competition is your own class self-buffs. **If it
+  bites, the cap moves, not the list.**
+  ⚠ **THE RESTORE PRICE IS MINE, NOT YOURS.** You priced the buffs and said nothing about HP/MP
+  restore; its old threshold was "free at or below 75", which the new 75 ceiling would have made free
+  forever. Aligned to the paid tier instead: free below 40, priced 40-75. One constant to move.
+
+- `BL-151` ✅ **BUILT — THE BLESSING BOX IS 300k.** *"Buff box price 250-> 300k twice as the cost per
+  buff from npc but it gives you outside town buffs"*. 300,000 ÷ 10 picks = **30,000 a blessing-hour,
+  exactly twice** the NPC's 15,000, and the price is now derived from those two numbers in a comment
+  rather than picked — so a change to either is visibly a change to both. ⚠ The divisor is `PickCount`,
+  which `BL-149` deliberately left at 10 while widening the box to 19 options.
+
+- `BL-152` ✅ **BUILT — DASH POTIONS DROP ONLY TO UNCOMMON.** *"dash pots to drop to uncommon ... all
+  else from crafters"*. Greater, Superior and Grand left the drop tables (Supreme was already
+  craft-only); all six rungs remain craftable, so nothing became unobtainable.
+  🔑 It finishes a rule two earlier passes started — playtest-17 `E3` removed the scrolls, playtest 28
+  cut the stat potions to three speed families, and **both times Dash was written down as the
+  deliberate exception**. "The top of a ladder is bought, not found" is now true without a footnote.
+  ⚠ Unlike those two, this one **narrows** the faucet rather than concentrating it: the three removed
+  ids were the whole of rungs 3-5, so there is nothing to redistribute their weight onto.
+
+- `BL-153` ✅ **BUILT — WAR, SPELL, SINISTER AND SINNERS RUNES ARE MYTHIC.** *"make war/spell runes
+  mythic grade (all others as well if they have no Levels but still SP rune 10 is different from SP
+  rune 100)"*.
+  🔑 Read as a **test, not a list**: a rune with no ladder is the top of its own line and reads Mythic;
+  a rune with rungs is told apart by its rung, so rarity has nothing left to say. War and Spell (Rare →
+  Mythic) and the two punishments Sinister and Sinners (Epic → Mythic) are the level-less ones.
+  ⚠ **The 55 reward runes are deliberately NOT swept in** — they ladder 5, 10, 20 … 100, which is your
+  own "SP rune 10 is different from SP rune 100". They stay Epic. ❓ **Open, and the only thing here I
+  did not decide for you: do you want that ladder to CLIMB rarities** (say Rare → Mythic across the
+  eleven rungs) rather than sitting flat at Epic? One line if so.
+
 ---
 
 ## World & mobs

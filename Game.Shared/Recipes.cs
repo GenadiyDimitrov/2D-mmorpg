@@ -503,6 +503,9 @@ public static class RecipeCatalog
             ItemCatalog.BodyScrollM, ItemCatalog.SoulScrollM, ItemCatalog.VigorScrollM,
             ItemCatalog.SerenityScrollM, ItemCatalog.FocusScrollM, ItemCatalog.FerocityScrollM,
             ItemCatalog.InsightScrollM, ItemCatalog.FrenzyScrollM,
+            // `BL-149` — Vampirism and Resolve join the L5 half: they are scroll-only families, which
+            // is exactly the test that put the other eight here rather than at L3.
+            ItemCatalog.VampScrollM, ItemCatalog.ResolveScrollM,
         }) yield return Scroll(id, 5, 3);
 
         // L6 — *"ultimate escape + ultimate resurect"*. Both are untradable Rare consumables that had

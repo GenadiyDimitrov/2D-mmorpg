@@ -278,22 +278,22 @@ namespace Game.Client
                 }
                 else
                 {
-                    // PRESETS first (`BL-95`): Full / Mage / Fighter, plus Custom once one is saved.
+                    // PRESETS first (`BL-95`): Mage / Fighter, plus Custom once one is saved.
                     // The server sends them as a list with the name, the count and the price already
                     // worked out — the client names a preset and never composes a buff list, so what
                     // the button says and what the NPC casts are one decision made in one place.
                     //
-                    // A client older than the server sees Presets == null and falls back to the plain
-                    // Full button below, which is exactly what it had before.
+                    // ⚠ [Full buff] IS GONE (`BL-150`) — the server no longer sends it and no longer
+                    // answers the key. Mage and Fighter between them are the eight free blessings, so
+                    // pressing both is the new "buff me up" and costs nothing.
                     var presets = d.Buffer.Presets;
                     if (presets != null && presets.Length > 0)
                     {
                         foreach (var p in presets)
                         {
                             string key = p.Key;
-                            // "16 buffs" on the row because the buff bar caps at 20 and the full set is
-                            // 16 — the count is the thing you are actually choosing between, not the
-                            // price (which is free below 76 anyway).
+                            // The COUNT is on the row because the buff bar caps at 20 — it is the thing
+                            // you are choosing between, more than the price (both shipped sets are free).
                             DialogRow(p.Name + "   " + p.Count + " buffs   " + Cost(p.Cost), "Buff",
                                       () => Boot.BufferAction(key, ""), UiKit.Text);
                         }
@@ -324,20 +324,22 @@ namespace Game.Client
                                                 () => Boot.BufferAction("delpreset", "")),
                                       UiKit.TextDim);
                     }
-                    else
-                    {
-                        DialogRow("Full buff   " + Cost(d.Buffer.FullBuffCost), "Buff",
-                                  () => Boot.BufferAction("full", ""), UiKit.Text);
-                    }
-
                     DialogRow("Restore HP/MP   " + Cost(d.Buffer.RestoreCost), "Restore",
                               () => Boot.BufferAction("restore", ""), UiKit.Text);
 
+                    // `BL-150` — the eleven paid blessings unlock at 40. A locked row is SHOWN, dimmed,
+                    // and says when it opens, rather than being hidden: the list is also how you learn
+                    // what is coming, and a buff that silently appears at 40 is a buff nobody looks for.
+                    // The server refuses these independently — this is the courtesy, not the rule.
+                    int myLevel = Boot.ActiveClass?.Level ?? 0;
                     foreach (var buff in d.Buffer.Buffs ?? new BufferBuff[0])
                     {
                         string skillId = buff.SkillId;
-                        DialogRow(buff.Name + "   " + Cost(buff.Cost), "Cast",
-                                  () => Boot.BufferAction("single", skillId), UiKit.Text);
+                        bool locked = myLevel < buff.MinLevel;
+                        DialogRow(buff.Name + "   " + (locked ? "from level " + buff.MinLevel : Cost(buff.Cost)),
+                                  locked ? "Locked" : "Cast",
+                                  locked ? (System.Action)null : () => Boot.BufferAction("single", skillId),
+                                  locked ? UiKit.TextDim : UiKit.Text);
                     }
                 }
             }

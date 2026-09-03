@@ -7,12 +7,97 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.108.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.109.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-03 (latest) — 0.108.0: `BL-145`…`BL-148`, the buff bar and the zone HP ladder
+## 2026-09-03 (latest) — 0.109.0: `BL-149`…`BL-153`, the buffer economy
+
+Five rulings from the chat pass that followed `BL-147`'s generated page. He started from *"limit the
+buffer free to <60, 60~75 paid and 75 no buff only box"* and landed somewhere better: **the free/paid
+line is the BUFF, not the player's level.**
+
+⚠ **NEW APK, and `ProtocolVersion` moves 32 → 33.** `BufferBuff` gained `MinLevel`, but the reason for
+the bump is behavioural: [Full buff] no longer exists server-side, the Mage and Fighter presets are
+different lists, and eleven blessings are refused below 40. An old client would draw a button that
+does nothing and offer buffs the server will not cast.
+
+### `BL-149` — Vampirism and Resolve become scrolls; the box goes 17 → 19
+
+*"vamp and resolve can be made as scrolls as well and add to boxes. Buffers/healers have resists,
+shield, great might/bulwark buffs"*.
+
+They were **the only two NPC blessings with no consumable anywhere** — the gap `BL-147`'s page was
+built to expose, and it mattered because `BL-150` stops the buffer at 75: without a scroll, both would
+have vanished above 75 for anyone without a Warchanter. His reason for being comfortable is now in the
+code: the buffer class keeps Clarity, Fortitude, Shield Blessing, Shield Hardening and the Great
+Might/Bulwark tier, and after this change **those are the only four families left with no consumable
+at all** — which the regenerated page proves in its own section 2 rather than asserting.
+
+⚠ One scroll each, not a trio, at rungs **5 and 7, not 6**: a scroll takes its family's top rung and
+those two ladders are not six deep. Craftable at Scribe L5; the box stays **pick 10**, so it got wider,
+not more generous.
+
+### `BL-150` — the NPC buffer: two tiers, nineteen blessings, no [Full buff], and it ends at 75
+
+| tier | from | each | what |
+|---|---|---|---|
+| **free eight** | **6** | **free** | Fury, Alacrity, Force, Might, Bulwark, Swift, Vampirism, Resolve |
+| **paid eleven** | **40** | **15,000** | Body, Soul, Vigor, Serenity, Agility, Aim, Ward, Frenzy, Focus, Ferocity, Insight |
+| *above 75* | — | — | the buffer refuses and names the replacement |
+
+🔑 **The free/paid line is the buff, not the player.** The old rule was "everyone free below 75,
+everyone pays above"; a level-74 character now still pays nothing for Might and 15,000 for Aim, and
+neither answer depends on who is asking. `BufferFreeUnderLvl` was deleted rather than retuned.
+
+🔑 **The two presets are the free eight, partitioned.** Fighter (might, bulwark, vamp, fury, swift) ∪
+Mage (alacrity, force, bulwark, resolve) is exactly the eight, Bulwark being the buff both roles want.
+That is what makes his instruction work — *"if you want 'full buff' you buff fighter+mage sets and buy
+all 40+ then save your own"*: two free presses fill a levelling bar, and no single press takes all
+nineteen any more.
+
+🔑 **The level gate is applied when a preset is EXPANDED**, which is why his saved-preset rule needed no
+new state: *"if some1 buff me with body or soul and i save it and im <40lvl they will not activate ..
+they will activate after 40+"*. The id stays in the preset and starts landing on its own at 40.
+
+⚠ The price doubled 7,500 → 15,000 (the constant moved, not the formula, so the "scales when buffs
+become multi-level" TODO survives). But **a full set is 165,000, not the 120,000 he calculated** — that
+sum was eight paid blessings, and Focus, Ferocity and Insight joined the paid tier in the same message.
+⚠ And **nineteen against a buff cap of twenty** is the state playtest 28 trimmed 19 → 11 to escape.
+Deliberate here: a real buffer's groups evict 18 of the 19 into 5 squares, so the squeeze is only felt
+buffing solo. If it bites, the cap moves, not the list.
+⚠ The **restore price is ours, not his** — he priced the buffs only, and the old "free at or below 75"
+would have become free forever under the new ceiling. Aligned to the paid tier: free below 40.
+
+### `BL-151` — the Blessing Box is 300k
+
+*"Buff box price 250-> 300k twice as the cost per buff from npc but it gives you outside town buffs"*.
+300,000 ÷ 10 picks = **30,000 a blessing-hour, exactly twice** the NPC's 15,000. The price is derived
+from those two numbers in the comment rather than picked, so changing either is visibly changing both.
+What the double buys is the thing the NPC cannot do: a scroll re-buffs you in the field.
+
+### `BL-152` — Dash potions drop only to Uncommon
+
+*"dash pots to drop to uncommon ... all else from crafters"*. Greater, Superior and Grand left the drop
+tables; Supreme was already craft-only, and all six rungs stay craftable. This finishes a rule two
+earlier passes started — playtest-17 `E3` pulled the scrolls, playtest 28 cut the stat potions to three
+speed families, and **both times Dash was written down as the deliberate exception**. "The top of a
+ladder is bought, not found" is now true without a footnote. ⚠ Unlike those passes this one *narrows*
+the faucet instead of concentrating it: the three removed ids were the whole of rungs 3-5.
+
+### `BL-153` — the level-less runes are Mythic
+
+*"make war/spell runes mythic grade (all others as well if they have no Levels but still SP rune 10 is
+different from SP rune 100)"*. Read as a **test, not a list**: a rune with no ladder is the top of its
+own line and reads Mythic; a rune with rungs is told apart by the rung, so rarity has nothing left to
+say. War and Spell (Rare → Mythic) and the two punishments, Sinister and Sinners (Epic → Mythic).
+⚠ The 55 reward runes are deliberately untouched — they ladder 5, 10, 20 … 100, which is his own "SP
+rune 10 is different from SP rune 100". **Open question left on the Backlog:** should that ladder climb
+rarities rather than sitting flat at Epic?
+
+
+## 2026-09-03 — 0.108.0: `BL-145`…`BL-148`, the buff bar and the zone HP ladder
 
 The second half of the same playtest pass. Four items: two on the buff bar, one generated reference
 page, and his revision of the HP multiplier that `BL-137` had spent a whole entry misattributing to IG.

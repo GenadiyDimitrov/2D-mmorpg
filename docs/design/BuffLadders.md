@@ -68,16 +68,23 @@ that the item names still echoed.
 | | before | now |
 |---|---|---|
 | **Buff potions** | 3 rungs (C/U/R) × 9 families = 27 | **2 rungs (C/U)** × 9 = 18. The Rare potion is deleted. |
-| **Buff scrolls** | 48 — every rung of every family | **17 — one per buff**, at the family's MAX rung, all **Rare** |
+| **Buff scrolls** | 48 — every rung of every family | **19 — one per buff**, at the family's MAX rung, all **Rare** |
 | **Where a scroll comes from** | drops (C/U/R rungs, E/L from 60/76) + craft | **the Blessing Box and nothing else.** No drop, no boss, no craft, no shelf |
 | **Trading a scroll** | free | **bound.** The BOX is the tradable thing (sells at Value ÷ 25) |
 | **Rungs 3-6 of a ladder** | potion *and* scroll | **scroll only** — the top of a ladder is bought |
 
 The reasoning, which is worth keeping because it decides future items too: if the top rung of every
 family drops for free, then the paid layer has nothing left to sell and a buffer has nothing left to
-be better than. So the free layer stops one rung short. A full boxed set = 250k per 10 scrolls,
-500k for all 17, deliberately about an hour's farming — *a live buffer still has to be the better
-deal*, which is the same thing Harmony does at the class level.
+be better than. So the free layer stops one rung short.
+
+**Prices, as re-ruled 2026-09-03 (`BL-149`…`BL-151`):** the box is **300k for any 10 of 19 scrolls**,
+i.e. **30,000 a blessing-hour** — deliberately **twice** the NPC buffer's 15,000, because *"it gives
+you outside town buffs"*: a scroll re-buffs you where you are standing, the NPC does not. Two of the
+nineteen, **Vampirism and Resolve, are new** — they were the only NPC blessings with no consumable
+anywhere, which mattered the moment the buffer stopped serving above 75 (`BL-150`). *A live buffer
+still has to be the better deal*, which is the same thing Harmony does at the class level, and what
+keeps that true is the layer no scroll reaches: Clarity, Fortitude, Shield Blessing, Shield Hardening
+and the Great Might/Bulwark tier — the only four families left with no consumable at all.
 
 ⚠ **The `Ladder(...)` skills did not change** — every rung still exists as a `SkillDef`, including the
 wrappers for potions and scrolls that no longer have an item. They are generated in bulk, they cost
