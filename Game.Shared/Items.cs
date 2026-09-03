@@ -1403,12 +1403,22 @@ public static class ItemCatalog
         // GrantsRuneSeconds on the RUNE is its DEFAULT lifespan, stamped at ACQUIRE time (AddItem) for any
         // source — a drop, a direct give, a quest — not just a box. A box that grants the rune OVERRIDES
         // this with its own duration. So a rune always has a wall-clock expiry the moment you get it.
-        // ⚠ MYTHIC, `BL-153` (owner, 2026-09-03: *"make war/spell runes mythic grade (all others as
-        // well if they have no Levels but still SP rune 10 is different from SP rune 100)"*). His rule
-        // is a TEST, not a list: **a rune with no ladder is Mythic; a rune that has rungs is graded by
-        // its rung.** War and Spell have one strength each and no rung above them, so they are the top
-        // of their own line and read Mythic. The 55 reward runes DO ladder (5, 10, 20 … 100 — his own
-        // "SP rune 10 is different from SP rune 100"), so they are deliberately NOT swept in here.
+        // ⚠ EVERY RUNE IS MYTHIC — `BL-153`, WIDENED THE SAME DAY. The first ruling read as a test
+        // (*"make war/spell runes mythic grade (all others as well if they have no Levels but still SP
+        // rune 10 is different from SP rune 100)"*) and this file implemented it as one: Mythic for a
+        // rune with no ladder, the rung's own grade for a rune that ladders. He then said plainly
+        // *"all runes if they can be same rarity at mythic and SP/EXP/etc runes just be same rarity at
+        // mythic"* — so the ladder does NOT split the rarity after all. **`EquipSlot.Rune` ⇒
+        // `ItemRarity.Mythic`, with no exception**, and `RewardRune` no longer takes a rarity.
+        // What tells a +10% SP rune from a +100% one is its NAME and its rung, which is what he meant
+        // by "different" — not the colour of the line in the bag.
+        // ⚠ Safe to sweep: rarity feeds crafting recipes, salvage and the shop ladder, but all three
+        // gate on `ItemLevel > 0` and a GEAR slot first (`Recipes.FinishedItemRecipes`,
+        // `Crafting.Disassemble`, `ShopCatalog`), and a rune has ItemLevel 0. Pricing is pinned by
+        // `BuyPriceOverride: -1` / `SellPriceOverride: 0` / `Value: 0`, so `RarityPriceMul` never runs
+        // on one. The change is display and sort order only. ⚠ The **Rune of Tincture** is NOT swept:
+        // it is `EquipSlot.Consumable` with a real 40 000 `Value`, so raising it would move its vendor
+        // price — it carries the word "Rune" but is not one.
         list.Add(new ItemDef(WarRune, "War Rune", EquipSlot.Rune, ItemGrade.F, ItemRarity.Mythic,
             IsRune: true, RuneBuffSkillId: SkillCatalog.WarRuneBuff, GrantsRuneSeconds: 3600,
             Tradable: false, Value: 0,
@@ -1442,13 +1452,13 @@ public static class ItemCatalog
         // Not buyable and not tradable: these are the premium/shop currency of the future store, and
         // until that exists `/give` is how they reach a player. Unsellable too (SellPriceOverride 0),
         // so a rune can never be laundered into gold.
-        // ⚠ The RARITY is a parameter because of `BL-153`'s test: a LADDERED rune keeps Epic (the rung
-        // is what tells a +10% apart from a +100%, so rarity has nothing left to say), while a rune
-        // with NO rungs is the top of its own line and reads Mythic. Only Sinister and Sinners are
-        // the second kind here — they are one-of-a-kind punishments, not a rung of anything.
+        // ⚠ MYTHIC LIKE EVERY OTHER RUNE (`BL-153` as widened — see the note above the War Rune). The
+        // rarity used to be a parameter, Epic for the 55 laddered runes and Mythic for the two
+        // punishments; he then ruled the ladder does not split the rarity, so the parameter is gone
+        // rather than defaulted — a rune's rung and name carry the difference, not its colour.
         void RewardRune(string id, string name, string skillId, int buffLevel, string desc,
-                        bool soulBound = false, ItemRarity rarity = ItemRarity.Epic) =>
-            list.Add(new ItemDef(id, name, EquipSlot.Rune, ItemGrade.F, rarity,
+                        bool soulBound = false) =>
+            list.Add(new ItemDef(id, name, EquipSlot.Rune, ItemGrade.F, ItemRarity.Mythic,
                 IsRune: true, RuneBuffSkillId: skillId, RuneBuffLevel: buffLevel,
                 GrantsRuneSeconds: RewardRunes.DefaultSeconds,
                 Tradable: false, BuyPriceOverride: -1, SellPriceOverride: 0, Value: 0,
@@ -1461,14 +1471,13 @@ public static class ItemCatalog
                 RewardRune(ch.ItemId(pct), ch.NameAt(pct), ch.SkillId, rung + 1, ch.Line(pct));
             }
         RewardRune(RewardRunes.SinisterId, RewardRunes.SinisterName,
-            RewardRunes.SinisterId, 1, RewardRunes.SinisterLine, rarity: ItemRarity.Mythic);
+            RewardRunes.SinisterId, 1, RewardRunes.SinisterLine);
         // Sinners is BOUND on the DEF as well as by whatever `/give` writes on the instance: an
         // authored punishment must not depend on the admin remembering the right flags. The per-
         // instance overrides (`58d`) are what let him hand out a HARSHER one — a shorter clock, a
         // custom name — not what makes this one bound.
         RewardRune(RewardRunes.SinnersId, RewardRunes.SinnersName,
-            RewardRunes.SinnersId, 1, RewardRunes.SinnersLine, soulBound: true,
-            rarity: ItemRarity.Mythic);
+            RewardRunes.SinnersId, 1, RewardRunes.SinnersLine, soulBound: true);
 
         // Newbie CHOICE selection-boxes (untradable): armor set (fighter vs mage) and a 1-day rune
         // (soul vs spirit). Each is a PickCount:1 box whose OPTIONS are other boxes — pick one, open it.
@@ -2811,6 +2820,11 @@ public static class ItemCatalog
             if (def.RuneBuffLevel < 1 || def.RuneBuffLevel > skill.MaxLevel)
                 bad.Add($"{def.Id}: RuneBuffLevel {def.RuneBuffLevel} is outside "
                       + $"'{skill.Id}' (levels 1..{skill.MaxLevel}).");
+            // `BL-153` as widened: EVERY rune is Mythic, laddered or not. Guarded here because the
+            // rule is one word and the next rune added will be authored by copying a neighbour — this
+            // is what makes "all runes" survive that copy.
+            if (def.Rarity != ItemRarity.Mythic)
+                bad.Add($"{def.Id}: rarity {def.Rarity} — every rune is Mythic (`BL-153`).");
         }
 
         // Every rung of every reward channel must exist as an item AND as a level of its skill.

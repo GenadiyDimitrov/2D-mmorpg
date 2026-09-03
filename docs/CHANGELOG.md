@@ -86,15 +86,31 @@ speed families, and **both times Dash was written down as the deliberate excepti
 ladder is bought, not found" is now true without a footnote. ⚠ Unlike those passes this one *narrows*
 the faucet instead of concentrating it: the three removed ids were the whole of rungs 3-5.
 
-### `BL-153` — the level-less runes are Mythic
+### `BL-153` — every rune is Mythic
 
 *"make war/spell runes mythic grade (all others as well if they have no Levels but still SP rune 10 is
-different from SP rune 100)"*. Read as a **test, not a list**: a rune with no ladder is the top of its
-own line and reads Mythic; a rune with rungs is told apart by the rung, so rarity has nothing left to
-say. War and Spell (Rare → Mythic) and the two punishments, Sinister and Sinners (Epic → Mythic).
-⚠ The 55 reward runes are deliberately untouched — they ladder 5, 10, 20 … 100, which is his own "SP
-rune 10 is different from SP rune 100". **Open question left on the Backlog:** should that ladder climb
-rarities rather than sitting flat at Epic?
+different from SP rune 100)"*, and then, the same day, closing the open question this entry had left:
+*"all runes if they can be same rarity at mythic and SP/EXP/etc runes just be same rarity at mythic"*.
+
+🔑 **The first pass read the ruling as a test and the test was wrong.** It took "SP rune 10 is
+different from SP rune 100" to mean rarity is what tells the rungs apart, so it swept only the
+level-less runes — War, Spell (Rare → Mythic) and the two punishments Sinister and Sinners (Epic →
+Mythic) — and left the 55 laddered reward runes on Epic. His answer is that the rung and the NAME carry
+that difference, not the colour of the line in the bag. So the rule is now flat and has no test in it:
+**`EquipSlot.Rune` ⇒ `ItemRarity.Mythic`, no exception**, all 59. `RewardRune` no longer takes a rarity
+parameter, and `ItemCatalog.ValidateRunes` refuses to boot on a rune that is not Mythic — the rule is
+one word, and the next rune will be authored by copying a neighbour, so the guard is what makes "all
+runes" survive that copy.
+
+⚠ **Display and sort order only, verified rather than assumed.** Rarity feeds three real systems —
+`Recipes.FinishedItemRecipes`, `Crafting.Disassemble` and the `ShopCatalog` ladder — and all three gate
+on `ItemLevel > 0` **and** a gear slot before they ever look at it, while a rune has ItemLevel 0. Rune
+pricing is pinned by `BuyPriceOverride: -1` / `SellPriceOverride: 0` / `Value: 0`, so `RarityPriceMul`
+never runs on one. Nothing in the economy moved.
+
+⚠ The **Rune of Tincture** is not swept: it is `EquipSlot.Consumable` with a real `Value: 40000`, so
+raising it would move its vendor price. It carries the word "Rune" but is not one. Flagged on the
+Backlog as a one-line change if he meant it too.
 
 
 ## 2026-09-03 — 0.108.0: `BL-145`…`BL-148`, the buff bar and the zone HP ladder

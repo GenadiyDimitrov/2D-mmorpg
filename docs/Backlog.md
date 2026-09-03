@@ -2112,16 +2112,25 @@ the BUFF, not the player's level**.
   ⚠ Unlike those two, this one **narrows** the faucet rather than concentrating it: the three removed
   ids were the whole of rungs 3-5, so there is nothing to redistribute their weight onto.
 
-- `BL-153` ✅ **BUILT — WAR, SPELL, SINISTER AND SINNERS RUNES ARE MYTHIC.** *"make war/spell runes
-  mythic grade (all others as well if they have no Levels but still SP rune 10 is different from SP
-  rune 100)"*.
-  🔑 Read as a **test, not a list**: a rune with no ladder is the top of its own line and reads Mythic;
-  a rune with rungs is told apart by its rung, so rarity has nothing left to say. War and Spell (Rare →
-  Mythic) and the two punishments Sinister and Sinners (Epic → Mythic) are the level-less ones.
-  ⚠ **The 55 reward runes are deliberately NOT swept in** — they ladder 5, 10, 20 … 100, which is your
-  own "SP rune 10 is different from SP rune 100". They stay Epic. ❓ **Open, and the only thing here I
-  did not decide for you: do you want that ladder to CLIMB rarities** (say Rare → Mythic across the
-  eleven rungs) rather than sitting flat at Epic? One line if so.
+- `BL-153` ✅ **BUILT — EVERY RUNE IS MYTHIC.** *"make war/spell runes mythic grade (all others as well
+  if they have no Levels but still SP rune 10 is different from SP rune 100)"*, then, the same day,
+  answering the open question below: *"all runes if they can be same rarity at mythic and SP/EXP/etc
+  runes just be same rarity at mythic"*.
+  🔑 **First reading was a test, and the test was wrong.** The first pass took "SP rune 10 is different
+  from SP rune 100" to mean *rarity* tells the rungs apart, so it made only the level-less runes Mythic
+  (War, Spell, Sinister, Sinners) and left the 55 laddered reward runes on Epic. Your answer says the
+  rung and the NAME carry that difference, not the colour of the line. So: **`EquipSlot.Rune` ⇒
+  `ItemRarity.Mythic`, no exception** — all 59 of them. `RewardRune` no longer takes a rarity at all,
+  and `ItemCatalog.ValidateRunes` now refuses to boot on a rune that is not Mythic, so the next rune
+  authored by copying a neighbour cannot quietly break the rule.
+  ⚠ **Display and sort only.** Rarity does feed crafting recipes, salvage and the shop ladder, but all
+  three gate on `ItemLevel > 0` and a gear slot first, and a rune has ItemLevel 0; rune prices are
+  pinned by `BuyPriceOverride: -1` / `SellPriceOverride: 0` / `Value: 0`, so `RarityPriceMul` never
+  runs on one. Nothing in the economy moved.
+  ❓ **One item deliberately left alone — say the word and it changes.** The **Rune of Tincture** (the
+  title-colour item) is `EquipSlot.Consumable`, not a rune, and carries a real `Value: 40000` — making
+  it Mythic would raise its vendor price, which is an economy change you did not ask for. It keeps
+  Uncommon. Your "all runes" may well have meant it too; it is a one-line change either way.
 
 ---
 
