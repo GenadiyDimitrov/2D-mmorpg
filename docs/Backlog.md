@@ -677,11 +677,12 @@ seconds); a fixed duration does not. `PullSeconds` is the whole journey from any
 is derived, floored at your 300/s so a short pull arrives early instead of crawling. **Range now buys
 reach and never buys lockdown** — author 900 if you want the reach.
 
-⚠ **ONE CORRECTION TO WHAT THIS ENTRY SAID BEFORE: the DRAG interrupts too.** It follows from your
-*"like charmed while dragging - no act"* — being dragged is an action lock, and `UpdateAction` cancels
-the cast of anything action-locked, exactly as charm and fear have always done. So the chain interrupts
-twice over and an AoE pull, which has no stun, still interrupts what it drags. Say if you want the drag
-carved out; it is a real behaviour change, not a detail.
+✅ **THE DRAG INTERRUPTS, AND YOU RULED THAT IT SHOULD** (2026-09-03, after it was flagged as a
+correction to what this entry first claimed): *"I like the actual pull interrupt - it's the logical
+way ... U don't see a mage being dragged and still casts."* So the chain interrupts twice over, and an
+AoE pull — which carries no stun — still interrupts what it drags. It falls out of your *"like charmed
+while dragging - no act"* for free: being dragged is an action lock, and `UpdateAction` has always
+cancelled the cast of anything action-locked.
 
 **What is still owed, and it is yours:**
 
@@ -727,8 +728,13 @@ brutal by design and the first number to move if a boss becomes unkillable.
 - 🔵 **Two placeholder rows on `tank 4th.csv`** — `Numbing Strike` (Human + Demon, CON-defended) and
   `Silencing Ward` (Elf, SPT-defended), one rung each at 76, 8s, 30s reuse, 70 MP. The race split
   continues the one `tank 3rd.csv` already draws; every other number is mine and yours to overwrite.
-- ❓ **Bosses are immune to silence** — my call, on the same reasoning as the pull: a boss that can be
-  silenced has no mechanics left. Say if a tank should be able to silence one.
+- ✅ **Bosses ARE immune to silence, and you ruled the whole boundary** (2026-09-03): *"bosses are
+  mostly immune .. Only decreasing skills - like armor/weapon breaks tyoe and dot effects."* Checked
+  against the code rather than assumed, and **it is already exactly that rule**: `BossShrugsOff` fires
+  on `ControlCc` (= `Slow | Stun | Fear | Root`), charm, pull and the two silences, and explicitly
+  exempts `AnyDot`. Armor Break and Weapon Break carry `DebuffPDef` / `DebuffAtk`, which is none of
+  those — so the stat-strippers and the DoTs land on a boss today and always have. Nothing to build;
+  the ruling is recorded so the next control payload knows which side of the line it goes on.
 - 🔵 **The worm's own full silence** waits on `BL-157`.
 
 ### `BL-157` 🔵 The worm — a debuffer/nuker class whose identity is polymorph

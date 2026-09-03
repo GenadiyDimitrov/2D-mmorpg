@@ -9012,6 +9012,14 @@ public class GameLoopService : BackgroundService
     /// `BL-110`'s charm is a FIELD (<c>SkillDef.Charms</c>), not a <see cref="SkillEffect"/> bit, so a
     /// mask test alone cannot see it and a raid boss would have been walkable. Null = flags only,
     /// which is right for every caller that has no def in hand.</param>
+    /// <para>🔑 THE WHOLE BOUNDARY, in his words (2026-09-03): *"bosses are mostly immune .. Only
+    /// decreasing skills - like armor/weapon breaks tyoe and dot effects."* That is precisely what this
+    /// method already says: it fires on <see cref="SkillEffect.ControlCc"/> (Slow|Stun|Fear|Root) plus
+    /// the three field payloads, and exempts <see cref="SkillEffect.AnyDot"/>. Armor Break and Weapon
+    /// Break carry <c>DebuffPDef</c>/<c>DebuffAtk</c>, which is none of those, so the stat-strippers
+    /// land on a boss and always have. A NEW control payload belongs in the list below; a new
+    /// stat-stripper does not.</para>
+    ///
     /// <para>⚠ `BL-154` PULL and `BL-155` SILENCE join charm in the field-payload list, and both are
     /// deliberate: a boss dragged around the field is the same perma-kite the position rule already
     /// refuses (see the Knockback arm), and a boss that can be silenced has no mechanics left. The

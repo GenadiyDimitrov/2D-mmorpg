@@ -92,10 +92,11 @@ two windows and the chain would be `max(drag, stun)` instead of his *"1s~1.5s pu
 🔑 **THE INTERRUPT HE WANTED IS FREE.** *"The pull idea is shorten the distance + enemy interrupt rather
 than control"* — a landed stun sets `IsActionLocked` and `UpdateAction` cancels the cast with
 `startCooldown: false`, the existing enemy-interrupt contract (the victim loses the 20% initial MP and
-may retry at once). ⚠ **And the DRAG interrupts too**, which follows from *"Yes like charmed while
-dragging - no act"*: being dragged is an action lock, and charm and fear have always cancelled a cast.
-So an AoE pull, which carries no stun, still interrupts what it drags. That is a correction to what
-`BL-154` said when it was written.
+may retry at once). ✅ **And the DRAG interrupts too** — it follows from *"Yes like charmed while
+dragging - no act"* (being dragged is an action lock, and charm and fear have always cancelled a cast),
+it corrected what `BL-154` claimed when it was written, and he **ruled it correct** the same day:
+*"I like the actual pull interrupt - it's the logical way ... U don't see a mage being dragged and
+still casts."* So an AoE pull, which carries no stun, still interrupts what it drags.
 
 Also ruled and built: the drag stops at **melee range**; **bosses are immune** (a boss dragged around
 the field is the same perma-kite the knockback rule already refuses); **players are not**
