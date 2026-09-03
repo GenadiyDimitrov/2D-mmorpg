@@ -1825,7 +1825,11 @@ asks, and the mob-HP measurement last because it needs nothing built.
   every back press closes it instead of what you actually wanted closed. They are **persistent HUD**,
   not modal windows. Exempted by name; everything else on the stack is unchanged.
 
-- `BL-137` 🟢 **YOUR LEVEL-72 MOB SETTLES THE 15k QUESTION — AND IT VALIDATES OUR CURVE EXACTLY.**
+- `BL-137`.old 🔴 **WRONG — SUPERSEDED THE SAME DAY BY THE CORRECTED `BL-137` FURTHER DOWN. Do not act on anything in this entry.** The premise is false: the creature is OURS, not IG's, and the x3 is our own zone ladder.
+
+  The original text follows, kept only as the record of the mistake.
+
+- `BL-137`.old (the wrong text) 🟢 ~~YOUR LEVEL-72 MOB SETTLES THE 15k QUESTION — AND IT VALIDATES OUR CURVE EXACTLY.~~
   *"also about the 15k on mobs .. a lvl 72 redhorn footman have 12561"*.
   Our base curve is `MobBaseStats.Hp(L) = 40 + 0.8·L²`, so **Hp(72) = 4,187**. And 4,187 **× 3 =
   12,561** — your number to the unit.
@@ -1859,7 +1863,7 @@ asks, and the mob-HP measurement last because it needs nothing built.
   **greyed out, not hidden, when the skill cannot be learned**, so the reason is visible instead of the
   button being missing.
 
-### The second half of the same pass — `BL-139` … `BL-144`
+### The second half of the same pass — `BL-139` … `BL-148`
 
 - `BL-139` ✅ **FIXED 2026-09-03 (0.107.0) — SHIELD REINFORCEMENT IS NOT A TOGGLE — IT WAS NEVER DECLARED AS ONE.** *"tanks Shield
   Reinforcement dont work .. dont activate - it not act as a toggle at all .. it casts something but
@@ -1941,6 +1945,70 @@ asks, and the mob-HP measurement last because it needs nothing built.
   number still lives in `StackLimits` as a named constant, so a retune is one edit — your own standing
   requirement for the stack system. Nothing else in the Consumable category moves.
 
+
+- `BL-137` 🔴🔴 **CORRECTED 2026-09-03, SAME DAY — I WAS WRONG, AND THE WHOLE ENTRY ABOVE IS BUILT ON A
+  FALSE PREMISE. READ THIS INSTEAD.**
+  You wrote *"a lvl 72 redhorn footman have 12561"* and **I read it as an IG creature.** It is not.
+  **`redhorn_footman` is OURS** — `MobCatalog.cs`, "Redhorn Footman", level 72 — and so is the
+  `cursed_blade` you measured next. You were telling me what OUR game does, and I answered as though
+  you were quoting theirs.
+  🔑 **THE ×3 IS THE ZONE LADDER, and it has been there since 0.94.0 — I built it, on your own ruling.**
+  `WorldPlan.HpScaleFor(level)`: **×1 below 40, ×2 from 40, ×3 from 61**, applied through
+  `SpawnZone.HpScale` → `Entity.MobZoneHpScale`. It came from `BL-78` item 1, your words of
+  2026-08-27: *"the 15k mobs are zone placed with x2/x3 hp .. some zones can have x1"*. So the
+  arithmetic that "confirmed our curve against IG" was our own multiplier agreeing with itself.
+
+  | mob | level | base `40+0.8·L²` | zone | shown |
+  |---|---|---|---|---|
+  | Cursed Blade | 61 | 3,016 | ×3 | **9,048** — your number exactly |
+  | Redhorn Footman | 72 | 4,187 | ×3 | **12,561** — your number exactly |
+  | an ELITE at 84 | 84 | 5,684 | ×3 **× rank ×4** | **68,208** — your ~68k |
+
+  ⚠ **AND IT IS INVISIBLE, which is the fair half of your complaint:** *"in its info panel there is
+  nowhere x3 and no passive in skills tab"*. Correct — the inspect plate lists `MobMod` passives
+  (`MobMod.Describe`), and the zone multiplier is **not a MobMod**; it is a field property that no
+  panel prints. A creature carrying triple HP with nothing on it saying so is a plate that lies by
+  omission. **That is a bug and it is `BL-148` below**, together with your revision of the ladder.
+  🔑 **The lesson, and it is mine:** *"a lvl 72 X has N"* is a measurement of SOMETHING, and which
+  game it measures decides everything that follows. **Ask, or check the id, before building an
+  argument on it** — `grep MobCatalog` would have cost one command and saved a wrong ruling.
+
+- `BL-145` 🔵 **SCROLL AND POTION BUFFS MUST COUNT TOWARD THE 20 — AND SWIFT WITH THEM.** *"scroll/potion
+  buffs and swift should count towards the buff limit.. now i have 2 scrolls 16npc buffs + focus
+  ferocity scrolls and the 2 scrolls are in the warrune bar"*. Two separate things in one sentence and
+  both are real: consumable buffs are riding free of the cap (`CountsTowardBuffLimit`), and the ones you
+  are carrying are landing in the **wrong ROW** — the War Rune bar, which is the `BuffRow.Item` shelf
+  for persistent gear effects, not for something you drank. A scroll belongs in the Consumable row and
+  in the count.
+
+- `BL-146` 🔵 **THE `n/20` COUNT MOVES ONTO THE HIDE BUTTON, AND EVERY BAR GETS ITS OWN.** *"the x/20 text
+  is invisible make the hid button show count (if possible over 15 yellow over 18 red) also i want each
+  buff bar to have its own hide button"*. `BL-111` put the counter next to the bars and it is not
+  readable on the phone; the button is the one thing up there that is already big enough to read, so the
+  number goes on it. Thresholds are yours: **>15 yellow, >18 red**. And one hide button per bar (buffs /
+  debuffs / items / consumables) rather than one for all four.
+
+- `BL-147` ❓ **THE CONSUMABLE-BUFF INVENTORY — a table you asked for, not a build.** *"can u show me what
+  buffs we have as scrolls and what on potions (which are bought which are crafted and which are same as
+  npc buffer) and which we dont have that are single buffs"*. Four columns: **scroll / potion / how you
+  get it (vendor, craft, drop) / does the NPC buffer give the same family** — plus the list that matters
+  most, **the single buffs with NO consumable at all**. It goes in `docs/` as its own page with a
+  Backlog line pointing at it, generated from `ItemCatalog` + `SkillCatalog` rather than written by
+  hand, so it cannot go stale the way a typed table would.
+
+- `BL-148` 🟠 **THE ZONE HP LADDER IS WRONG AND INVISIBLE — YOUR REVISION, AND MY BUG.** *"the only mobs
+  that should have x3 hp are zones 84+ and elits x2 mmay be .. now elits have 68k hp"*.
+  Two halves:
+  1. **THE LADDER.** Today `WorldPlan.HpScaleFor` is **×1 <40, ×2 ≥40, ×3 ≥61** (0.94.0, from your
+     playtest-25 ruling *"the 15k mobs are zone placed with x2/x3 hp"*). You are now moving the ×3 up to
+     **84+**. What that leaves open, and what I will bring you numbers on rather than guess: **what
+     41-83 becomes** — all ×2, or ×1 until some level and ×2 after — and whether the **elite ×4**
+     (`MobRankScale`) drops to ×2. ⚠ The two multiply: an elite at 84 is base × zone × rank, which is
+     what produces the 68,208 you saw. Halving the rank alone still leaves 34k; ×2 rank with a ×3 zone
+     is 34k, ×2 rank with a ×2 zone is 22.7k.
+  2. **THE PLATE MUST SAY SO.** Whatever the numbers become, a creature with tripled HP has to show it
+     where you looked for it — beside the `MobMod` passives on the inspect panel. **Not a MobMod**: it
+     is a field property, so it needs its own line rather than being faked as a fake passive.
 
 ---
 
