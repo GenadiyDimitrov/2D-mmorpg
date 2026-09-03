@@ -7,12 +7,165 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.109.3**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.109.4**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-03 (latest) — 0.109.3: the full buff was handing out singles
+## 2026-09-03 (latest) — 0.109.4: whole-number set bonuses, STR is ATK, a sigil admits its cooldown, and the potion faucets are banded
+
+His report, on the Epic copy of the heavy A set: *"Heavy A grade epic test have Str +1.4 stat .. when
+lowering stats of rarity make them integers ... 1.4 is 1 .... The other % based stat can be left as is
+.. Now just STR should become ATK as ours stat and 2 should not become 1.4 but 1"*.
+
+Two faults on one line of one item card, a third he found on the sigil card in the same breath, and a
+fourth that is not a fault at all — two drop-table rulings he gave when he asked whether an earlier one
+had ever been written down. The first three all sit in generated or derived text that nobody authors by
+hand, which is why none had ever been read — they describe the game wrongly rather than behaving
+wrongly. **Only §1 and §4 change what the game does.**
+
+### 1. `StatMods.Scaled` never rounded, so a primary stat came back in tenths
+
+An armour set is authored ONCE, at Mythic, and the Epic/Legendary copies are that bundle × 0.70 /
+× 0.85 (`ArmorSetCatalog.QualityVariants`). Ironforge A authors `MaxHp: 455, Str: 2, Con: 2, Agi: -2`,
+so its Epic copy was **STR +1.4, CON +1.4, AGI −1.4, Max HP +318.5** — and a primary stat is a COUNT of
+points. There is no such thing as four tenths of one.
+
+Every countable flat is now rounded inside `Scaled`, at the one place a derived quality is built:
+pools, defences, attack, accuracy/evasion, move speed, the six primary stats, ATK and flat crit damage.
+The item PIECES already did this (`ScaledDropItems.S()` has always returned an int) and
+`ClassFlatBonus.Scaled` has always rounded its own fields — it was only the `StatMods` half of a set
+bonus that leaked fractions, so the two halves of one set disagreed.
+
+🔑 **What is deliberately NOT rounded is the bigger half of the record.** Every `*Pct`, the
+multiplier-shaped `CritRate`/`CritDamage`/`MagicCritRate`, the resist fractions, vamp, reflect,
+`MagicResist`, `MagicCritDamage`, `MpCostPct` and `CritRateFlat` all carry their percentage **as a
+fraction** (0.02 = 2%). Rounding one of those would not shave it — it would **delete** it. Regen is a
+per-tick rate and legitimately fractional, so it stays too. This is his own rule: *"The other % based
+stat can be left as is"*.
+
+Measured, Ironforge A: Epic now reads `Max HP +318 · CC resist +28% · ATK +1 · AGI −1 · CON +1`,
+Legendary `Max HP +387 · ATK +2 · AGI −2 · CON +2`, Mythic `Max HP +455 · ATK +2`. ⚠ On a 2-point
+stat, 85% rounds back to 2 — Legendary and Mythic tie. That is inherent in whole numbers at this
+scale, and it is what he asked for.
+
+### 2. The card printed "STR" and "INT", two stats this game does not have
+
+The five primary stats are **CON / ATK / WIT / AGI / SPT** (`StatCalculator.BaseStats`). STR and INT
+are not among them: they are the two names the gear CSVs write **ATK** with, fighter and mage, and
+`StatMods.Str`, `.Int` and `.Atk` all fold into the same slot in `RecomputeDerived`'s primary-stat
+pre-pass. `SkillText.Mods` printed them under their CSV names, inventing two stats the character sheet
+cannot show — so a set's "STR +2" could not be found on the character it was raising. They are summed
+into one **ATK** line now (a set never authors more than one of them).
+
+That also closed the file's own standing warning: `Atk`, `MagicCritDamage` and `MpCostPct` were
+appended to `StatMods` for the 2026-08-19 rework and never given a formatter line, so any set carrying
+one described itself with the number silently missing — the same omission as the four S-grade channels
+in 0.59.1. All three have a line now (`MpCostPct` prints as a reduction, which is how it is authored).
+
+### 3. Sigils read "instant cast, instant reuse" — and yes, it was only visual
+
+His question: *"Also sigils should have cooldown ...now says instant cast and instant reuse ...is it
+only visual?"*. It was. Nothing about a sigil was broken underneath; the card was describing a
+mechanism sigils do not have and hiding the one they do.
+
+**A sigil is never cast**, so its `CastTicks`/`CooldownTicks` are 0 and always were. The card's guard
+for "is this a passive, hide the casting rows" tested `def.Passive == null` — but the `passive` bool it
+had computed two lines earlier tests **both** marks, a `PassiveEffect` payload OR `Category.Passive`.
+**Twelve** skills in the game carry no `PassiveEffect` at all because their entire payload is a PROC —
+the six proc sigils (Fury, Frenzy, Focus, Aegis, Immortality, Holy Support / Arcane Support), plus
+`arcane_protection`, `magic_proficiency`, `physical_proficiency`, `tank_aggravated_state` and
+`wc_combo_mastery`. All twelve fell through the guard and printed `Cast instant / Cooldown instant /
+Target Self`. The guard is `!passive` now.
+
+**The cooldown they DO have was printed nowhere.** A proc's `ProcCooldownTicks` is a real lockout,
+rolled and ticked server-side (`GameLoopService.TryProcs` → `Entity.ProcCooldowns`): Fury/Frenzy/Focus/
+Aegis/Immortality **20s**, Holy Support and Arcane Support **5s**, Combo Mastery 60s, the three
+proficiencies 25-30s. Nothing formatted it, so the only thing a player could read was whatever the
+author had written into the prose — and the lockout was in none of it. A 3%-on-hit sigil looked like it
+could fire every swing.
+
+`SkillText.Mechanics` now opens with the proc block, so both clients get it:
+
+```
+Fury Sigil
+  Fires by itself — a 3% chance each time you land a hit
+  Once it fires it cannot fire again for 20s
+  Grants you Fury for 15s
+
+Combo Mastery
+  Fires by itself — a 3% (two-handed: 3.45%) chance each time you land a hit
+  Once it fires it cannot fire again for 60s
+  Grants you Combo Rush for 30s
+  Grants your party Combo Rush for 30s
+```
+
+It reads the trigger from the flags (`on hit` / `on damage taken` / `on finishing a spell`, narrowed by
+`ProcMagicOnly`), states `BL-120`'s two-handed chance when the def carries one, and names the payload
+rung **at the level being shown**, resolved exactly the way the proc handler resolves it.
+
+🔑 **The same authoring rule as `Mods` and the four S-grade channels, for the third time now:** the
+proc fields went into `SkillDef` on 2026-08-21 and grew two more triggers since, and no formatter line
+ever followed them. A field with no line in `SkillText` is a mechanic the game will not admit to.
+
+### 4. Both potion faucets are LEVEL-BANDED now, and one of them closes at 61
+
+Two rulings in one message, after he asked whether the drop rule had ever been written down.
+
+**It had — this morning.** *"Did I said the only dash potions dropped from monsters are common and
+uncommon"*: yes, as `BL-152` in 0.109.0 (*"dash pots to drop to uncommon ... all else from crafters"*),
+and it was built. Greater, Superior and Grand left every drop table then; Supreme was already
+craft-only. What was **never** said is where each surviving rung lives, and that is what this is —
+`BL-152` ruled which RARITIES drop, not at which LEVELS.
+
+His two bands, verbatim, and they are different ladders:
+
+> *"Common drop from mobs to 52 after 52~60 start to mix with uncommon and after 60 is only uncommon"* (dash)
+> *"Buff potions below 40 drop common at 40~52 start to mix at 52~60 drom uncommon and 61+ stop"*
+
+| mob level | Dash Lesser | Dash Plain | Swift / Alacrity / Fury Common | …Uncommon |
+|---|---|---|---|---|
+| 1–39   | ✅ | — | ✅ | — |
+| 40–51  | ✅ | — | ✅ | ✅ |
+| 52–60  | ✅ | ✅ | — | ✅ |
+| 61+    | — | ✅ | — | — |
+
+Every boundary moved, in both directions:
+
+- **Dash Plain** opened at level **20** and now opens at 52 — the whole 20-51 stretch was paying out
+  the +30 rung he places at a level-52 farm.
+- **Dash Lesser** dropped forever with no ceiling; a level-85 kill could still hand out a +15 bottle.
+  It stops at 60.
+- **The three speed potions' Uncommon** rung also opened at **20**, and now opens at 40.
+- **Their Common rung** dropped forever too, and now stops at 51.
+
+Dash is banded on its own because his sentence is about the dash line — and because it is the one
+potion ladder that collides with a class skill (see the `FamDash` ordering, where the rogue's Sprint
+interleaves with these exact rungs).
+
+🔑 **`61+ stop` is the part with no precedent, and it is only safe because these three are not
+drop-only.** From 61 a normal kill pays no buff potion at all, so the scrolls group above 60 is the
+enchant rungs alone. That strands nobody: the Apothecary sells the **Common** rung of all nine families
+for gold at any level, and a player Potion Master crafts Common at L2 and **Uncommon at L4**. So the
+band moves an endgame consumable from loot to the player economy — the same trade playtest 28 made when
+the six stat potions left the tables. ⚠ Check that a faucet has a second source before closing it.
+
+**On the magnitudes, he ruled: leave them.** His *"legend pots with 55 speed increase ...and rogues +60
+sprint is useless ... rogues sprint is class identity"* was the reasoning for the drop rule, not a
+request to retune the ladder — asked directly, the answer was *"Drops alone for dash potions"*. So Dash
+stays 15/30/45/50/55/60 and Sprint stays +40 / +60. Worth recording why that holds: Dash and Sprint
+share ONE family, so they never stack and the higher rank always wins — **Sprint L2 outranks even
+Supreme at the same +60**, and Sprint runs 15s on a 30s reuse against the potion's 15s on 60s, so it
+keeps double the uptime. From Greater up, a potion is now a crafted purchase rather than something a
+mob hands you.
+
+⚠ **NEW APK, and most of this is client-side.** All three cards — the set bonus, the sigil, every proc
+passive — are rendered CLIENT-side from the compiled `Game.Shared`, so none of that text appears until
+the APK is rebuilt. The two things that are NOT client-side are the stat ROUNDING and the potion drop
+bands: both are server-authoritative and live on the next server start. `ProtocolVersion` stays **33**;
+nothing on the wire moved.
+
+## 2026-09-03 — 0.109.3: the full buff was handing out singles
 
 His report: *"Why buff and full buf from admin menu give me now singles ?.. I several time write that
 full admin buff and /buff gives -> group buffs + harmonies + harmony mark + great might"*.

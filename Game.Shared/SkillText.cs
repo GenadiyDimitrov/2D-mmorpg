@@ -201,10 +201,17 @@ public static class SkillText
         Pct(o, "Bow resist", m.BowResist);
         Pct(o, "CC resist", m.CcResist);
         Pct(o, "MP restored", m.RestoreMpPct);   // a PERCENT since 2026-08-19, not a flat +N MP
-        Flat(o, "STR", m.Str);
+        // 🔑 ATK, NOT "STR" / "INT" (owner, 2026-09-03: *"just STR should become ATK as ours stat"*).
+        // THE GAME HAS FIVE PRIMARY STATS — CON / ATK / WIT / AGI / SPT (StatCalculator.BaseStats) —
+        // and STR and INT are not among them: they are the two names the gear CSVs write ATK with,
+        // fighter and mage, and all three fields fold into the SAME slot in RecomputeDerived's
+        // primary-stat pre-pass (see the note on StatMods.Atk). Printing them under their CSV names
+        // invented two stats the stat sheet does not have, so a set's "STR +2" could not be found on
+        // the character it was raising. Summed rather than listed three times: they are one stat, and
+        // a set never authors more than one of them anyway.
+        Flat(o, "ATK", m.Str + m.Int + m.Atk);
         Flat(o, "AGI", m.Agi);
         Flat(o, "CON", m.Con);
-        Flat(o, "INT", m.Int);
         Flat(o, "WIT", m.Wit);
         Flat(o, "SPT", m.Spt);
         Pct(o, "Melee vamp", m.MeleeVamp);
@@ -226,6 +233,12 @@ public static class SkillText
         Flat(o, "Crit dmg flat", m.CritDamageFlat);
         Pct(o, "Magic resist", m.MagicResist);
         Pct(o, "PvP damage taken", m.PvpDamageTakenPct);
+        // The same omission, one rung later: `Atk`, `MagicCritDamage` and `MpCostPct` were appended
+        // for the 2026-08-19 debuff/magic-crit rework and never given a line either. `Atk` is now
+        // printed with STR/INT above (it is the same stat); these two are the remaining pair. The
+        // Healer Armor Mastery's 78+ rungs author MpCostPct, so one of them is live today.
+        Pct(o, "Magic crit damage", m.MagicCritDamage);
+        Pct(o, "MP cost", -m.MpCostPct);   // authored as a REDUCTION (0.05 = 5% cheaper)
         return o;
     }
 
@@ -415,6 +428,43 @@ public static class SkillText
         var o = new List<string>();
         if (def is null) return o;
 
+        // ---- PROC — first, because for TWELVE skills it is the whole mechanic ------------------
+        // 🔑 A PROC'S COOLDOWN IS THE ONLY COOLDOWN IT HAS, and it lived nowhere on the card (owner,
+        // 2026-09-03: *"Also sigils should have cooldown ...now says instant cast and instant reuse
+        // ...is it only visual?"*). It is: the six proc sigils, `arcane_protection`,
+        // `magic_proficiency`, `physical_proficiency`, `tank_aggravated_state` and `wc_combo_mastery`
+        // are all `Category.Passive` with NO `Passive` payload — their entire effect is this block —
+        // and the internal cooldown (`ProcCooldownTicks`, enforced in GameLoopService.TryProcs via
+        // Entity.ProcCooldowns) is a real, ticking 5-60s lockout that nothing ever printed. The only
+        // thing a player could read was whatever the author happened to write into the prose, and the
+        // lockout was in none of it — so a 3%-on-hit sigil looked like it could fire every swing.
+        //
+        // ⚠ The card's Cast/Cooldown rows are NOT this. They are the CASTING timings, which a passive
+        // does not have, and showing them is what made a sigil read "instant / instant".
+        if (def.ProcChance > 0f)
+        {
+            string when = def.ProcOnMagicCast ? "you finish a spell"
+                        : def.ProcOnDamaged   ? (def.ProcMagicOnly ? "magic damage hits you"
+                                                                   : "you are hit")
+                                              : "you land a hit";
+            // BL-120: a two-handed weapon may roll a different number, and the difference is the
+            // whole point of the field — a card printing one of the two would be wrong half the time.
+            string chance = def.ProcChanceTwoHanded > 0f && def.ProcChanceTwoHanded != def.ProcChance
+                ? $"{def.ProcChance * 100f:0.##}% (two-handed: {def.ProcChanceTwoHanded * 100f:0.##}%)"
+                : $"{def.ProcChance * 100f:0.##}%";
+            o.Add($"Fires by itself — a {chance} chance each time {when}");
+            if (def.ProcCooldownTicks > 0)
+                o.Add($"Once it fires it cannot fire again for {Secs(def.ProcCooldownTicks)}");
+            if (ProcRung(def.ProcSelfRungs, level) is SkillDef self)
+                o.Add(self.DurationTicks > 0
+                    ? $"Grants you {self.Name} for {Secs(self.DurationTicks)}"
+                    : $"Grants you {self.Name}");
+            if (ProcRung(def.ProcPartyRungs, level) is SkillDef party)
+                o.Add(party.DurationTicks > 0
+                    ? $"Grants your party {party.Name} for {Secs(party.DurationTicks)}"
+                    : $"Grants your party {party.Name}");
+        }
+
         // ---- Resurrection / death ----
         if (def.Resurrect)
         {
@@ -578,4 +628,13 @@ public static class SkillText
 
     private static string Secs(int ticks) =>
         (ticks / (float)GameConstants.TickRate).ToString("0.#") + "s";
+
+    /// <summary>The payload rung a proc hands out AT THIS LEVEL — `rung[level-1]`, clamped. The same
+    /// resolution <c>GameLoopService.Rung</c> does when the proc actually fires; kept identical on
+    /// purpose, because a card that named a different rung than the one you get is worse than silence.
+    /// </summary>
+    private static SkillDef? ProcRung(string[]? rungs, int level) =>
+        rungs is not { Length: > 0 }
+            ? null
+            : SkillCatalog.Get(rungs[Math.Clamp(level - 1, 0, rungs.Length - 1)]);
 }

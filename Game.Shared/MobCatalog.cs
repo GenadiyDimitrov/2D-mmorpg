@@ -955,15 +955,63 @@ public static class MobCatalog
         // just as often and is two and a half times more likely to be one of the three you can only
         // get this way. That is the point — a speed potion is a levelling consumable you burn, the
         // stat potions are a shopping decision.
-        BuffRung(0.0105f,
-            new[] { ItemCatalog.SpeedPotionC, ItemCatalog.CastPotionC, ItemCatalog.AtkPotionC,
-                    ItemCatalog.DashPotionC });
-        if (level >= 20)
-        {
+        // ---- SWIFT / ALACRITY / FURY ARE BANDED TOO, on their OWN ladder (owner, 2026-09-03) -------
+        // 🔑 HIS BAND, verbatim: *"Buff potions below 40 drop common at 40~52 start to mix at 52~60
+        // drom uncommon and 61+ stop"*. Same SHAPE as the dash band below, shifted down a tier and with
+        // a hard stop at the end:
+        //
+        //      level < 40     Common only
+        //      level 40-51    Common + Uncommon    (the mix)
+        //      level 52-60    Uncommon only
+        //      level 61+      NOTHING — the buff-potion faucet closes
+        //
+        // ⚠ Both ends move. The Uncommon rung used to open at **20** and now opens at 40; the Common
+        // rung used to drop forever and now stops at 51. And 61+ is the part with no precedent in this
+        // group: from there a normal kill pays no buff potion at all, so the scrolls group above 60 is
+        // the enchant rungs alone (C to 76, B to 80) and, past 80, nothing.
+        //
+        // 🔑 THAT IS NOT A DEAD END, which is the only reason a hard stop is safe here: these three
+        // have two sources that do not care about level — the Apothecary sells the COMMON rung of all
+        // nine families for gold forever, and a player Potion Master crafts Common at L2 and UNCOMMON
+        // at L4. So closing the faucet at 61 moves an endgame consumable from loot to the economy,
+        // which is the same trade playtest 28 made when the six stat potions left the tables. It does
+        // NOT make anything unobtainable — check that again before narrowing any other faucet.
+        if (level <= 51)
+            BuffRung(0.0105f,
+                new[] { ItemCatalog.SpeedPotionC, ItemCatalog.CastPotionC, ItemCatalog.AtkPotionC });
+        if (level is >= 40 and <= 60)
             BuffRung(0.0053f,
-                new[] { ItemCatalog.SpeedPotionU, ItemCatalog.CastPotionU, ItemCatalog.AtkPotionU,
-                        ItemCatalog.DashPotionU });
-        }
+                new[] { ItemCatalog.SpeedPotionU, ItemCatalog.CastPotionU, ItemCatalog.AtkPotionU });
+
+        // ---- DASH IS BANDED, and it is the ONLY one of the four that is (owner, 2026-09-03) --------
+        // 🔑 HIS BAND, verbatim: *"Common drop from mobs to 52 after 52~60 start to mix with uncommon
+        // and after 60 is only uncommon"*. So the Lesser rung has a CEILING and the plain one has a
+        // floor, and they overlap for the nine levels between:
+        //
+        //      level < 52     Lesser only          (+15 move)
+        //      level 52-60    Lesser + plain       (the mix)
+        //      level 61+      plain only           (+30 move)
+        //
+        // ⚠ This is NOT the shape `BL-152` left three hours earlier, and both halves move:
+        //   • the plain Dash used to drop from level **20**, and now starts at 52 — the whole 20-51
+        //     stretch was handing out the +30 rung he says belongs to a level-52 farm; and
+        //   • the Lesser used to drop FOREVER, with no ceiling, so a level-85 kill could still pay a
+        //     +15 bottle. It stops at 60.
+        // Neither was wrong before — he had simply never given the bands, and `BL-152` only ruled on
+        // WHICH RARITIES drop, not on where. This is that second half.
+        //
+        // 🔑 WHY DASH ALONE. Swift / Alacrity / Fury stay on the shared rungs above, unbanded, because
+        // his sentence is about the dash line and nothing else. It is also the only one of the four
+        // whose ladder COLLIDES WITH A CLASS SKILL — see the FamDash ordering in Skills.Common.cs,
+        // where the rogue's Sprint interleaves with these very rungs. A stat potion has no such twin.
+        //
+        // The per-item weights are the ones the two rungs already carried, so where a rung is live the
+        // faucet is exactly what it was; what changed is only WHERE each is live. (It nets out slightly
+        // narrower: a mob under 52 no longer pays the plain rung at all.)
+        if (level <= 60)
+            drops.Add(new(ItemCatalog.DashPotionC, 0.0105f, GroupId: GroupScrolls));
+        if (level >= 52)
+            drops.Add(new(ItemCatalog.DashPotionU, 0.0053f, GroupId: GroupScrolls));
         // 🔑 `BL-152` — DASH NOW STOPS AT UNCOMMON, like every other potion line (owner, 2026-09-03:
         // *"dash pots to drop to uncommon ... all else from crafters"*). Greater, Superior and Grand
         // left the faucet; Supreme was already craft-only. So the two rungs above are gone and rungs

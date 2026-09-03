@@ -85,7 +85,17 @@ namespace Game.Client
             foreach (var mech in SkillText.Mechanics(def, level))
                 text.AppendLine(Line("", mech));
 
-            if (def.Passive == null)
+            // 🔑 `!passive`, NOT `def.Passive == null` (owner, 2026-09-03: *"Also sigils should have
+            // cooldown ...now says instant cast and instant reuse ...is it only visual?"*). It was
+            // visual, and this line is why. The `passive` bool two blocks up already tests BOTH marks
+            // — a `Passive` payload OR `Category.Passive` — and this guard tested only the first, so
+            // the TWELVE skills whose whole payload is a PROC (the six proc sigils, arcane_protection,
+            // magic_proficiency, physical_proficiency, tank_aggravated_state, wc_combo_mastery) carry
+            // no PassiveEffect, fell through, and printed the casting rows of a skill that is never
+            // cast: "Cast instant / Cooldown instant / Target Self". Nothing was broken underneath —
+            // their real lockout is ProcCooldownTicks, which SkillText.Mechanics now prints — but the
+            // card was stating, in the game's own words, that a sigil had no reuse at all.
+            if (!passive)
             {
                 // Ticks are the server's unit (10/sec); seconds are the player's. Convert here rather
                 // than showing "CastTicks 20", which means nothing to anyone reading it.

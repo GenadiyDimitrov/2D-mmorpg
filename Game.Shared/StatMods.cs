@@ -113,23 +113,44 @@ public readonly record struct StatMods(
     /// <summary>Every field multiplied by <paramref name="f"/>. Used to derive a set bonus for a lower
     /// QUALITY of the same gear: the authored numbers are the MYTHIC set, and Epic/Legendary get the
     /// same shape at 70% / 85%. Scaling uniformly is deliberate — choosing which fields shrink would be
-    /// a per-set design decision, and this keeps one authored set as the single source of truth.</summary>
-    public StatMods Scaled(float f) => new(
-        MaxHp * f, MaxHpPct * f, MaxMp * f, MaxMpPct * f,
-        PDef * f, PDefPct * f, MDef * f, MDefPct * f,
-        PAtk * f, PAtkPct * f, MAtk * f, MAtkPct * f,
-        Accuracy * f, AccuracyPct * f, Evasion * f, EvasionPct * f,
-        CritRate * f, CritRatePct * f, CritDamage * f, CritDamagePct * f, MagicCritRate * f,
-        AtkSpeedPct * f, CastSpeedPct * f, MoveSpeed * f, MoveSpeedPct * f,
-        HpRegen * f, HpRegenPct * f, MpRegen * f, MpRegenPct * f,
-        InterruptResist * f,
-        CritDmgResist * f, CritRateResist * f, BowResist * f,
-        CcResist * f, RestoreMpPct * f,
-        Str * f, Agi * f, Con * f, Int * f, Wit * f, Spt * f,
-        MeleeVamp * f, SpellVamp * f, Reflect * f,
-        ShieldDefPct * f,
-        CritRateFlat * f, CritDamageFlat * f, MagicResist * f, PvpDamageTakenPct * f,
-        Atk * f, MagicCritDamage * f, MpCostPct * f);
+    /// a per-set design decision, and this keeps one authored set as the single source of truth.
+    ///
+    /// ⚠ A COUNTABLE FLAT COMES BACK AS A WHOLE NUMBER (owner, 2026-09-03: *"when lowering stats of
+    /// rarity make them integers ... 1.4 is 1 ... The other % based stat can be left as is"*). He was
+    /// reading the EPIC copy of the heavy A set, whose authored `Str: 2` printed as **ATK +1.4** — a
+    /// primary stat is a COUNT of points and there is no such thing as four tenths of one. So every
+    /// field below that is a countable magnitude (pools, defences, attack, accuracy/evasion, move
+    /// speed, the six primary stats, ATK, flat crit damage) is rounded HERE, at the one place a
+    /// derived quality is built. <see cref="ClassFlatBonus.Scaled"/> has rounded its own int fields
+    /// all along; this makes the two halves of one set bonus agree.
+    ///
+    /// 🔑 EVERYTHING FRACTIONAL BY NATURE IS LEFT ALONE, and that is not a detail: those fields carry
+    /// their percent as a FRACTION (0.02 = 2%), so rounding one would not shave it — it would DELETE
+    /// it. That is every `*Pct`, the multiplier-shaped `CritRate` / `CritDamage` / `MagicCritRate`,
+    /// the resist fractions, vamp/reflect, `MagicResist`, `MagicCritDamage`, `MpCostPct`, and
+    /// `CritRateFlat` (authored as 0.10 despite its name). Regen is a per-tick RATE and legitimately
+    /// fractional, so it stays too. ⚠ A field appended to this record must be sorted into one half or
+    /// the other — the default (no rounding) is the safe one.</summary>
+    public StatMods Scaled(float f)
+    {
+        float R(float v) => MathF.Round(v * f);   // countable flats only — see the note above
+        return new(
+            R(MaxHp), MaxHpPct * f, R(MaxMp), MaxMpPct * f,
+            R(PDef), PDefPct * f, R(MDef), MDefPct * f,
+            R(PAtk), PAtkPct * f, R(MAtk), MAtkPct * f,
+            R(Accuracy), AccuracyPct * f, R(Evasion), EvasionPct * f,
+            CritRate * f, CritRatePct * f, CritDamage * f, CritDamagePct * f, MagicCritRate * f,
+            AtkSpeedPct * f, CastSpeedPct * f, R(MoveSpeed), MoveSpeedPct * f,
+            HpRegen * f, HpRegenPct * f, MpRegen * f, MpRegenPct * f,
+            InterruptResist * f,
+            CritDmgResist * f, CritRateResist * f, BowResist * f,
+            CcResist * f, RestoreMpPct * f,
+            R(Str), R(Agi), R(Con), R(Int), R(Wit), R(Spt),
+            MeleeVamp * f, SpellVamp * f, Reflect * f,
+            ShieldDefPct * f,
+            CritRateFlat * f, R(CritDamageFlat), MagicResist * f, PvpDamageTakenPct * f,
+            R(Atk), MagicCritDamage * f, MpCostPct * f);
+    }
 
     /// <summary>Fold a set of source mods into running totals (flats SUM, percents COMPOUND
     /// — see docs/design/StatMods.md: final = (base + Σflat) × ∏(1+pct%)).</summary>
