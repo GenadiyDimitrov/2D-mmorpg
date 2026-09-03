@@ -329,6 +329,25 @@ a stack of 9 buff scrolls is the friction you wanted or just friction** (§93D).
 
 
 
+## 98. ONE VERIFICATION CARRIED OUT OF THE BACKLOG — `BL-125`, fixed in 0.103.0
+
+The backlog was cut down to open entries only on 2026-09-03 (*"leave only active"*), and `BL-125` was
+the one closed entry that still asked for something from **you**, so it lands here instead of dying in
+[BacklogArchive.md](../BacklogArchive.md).
+
+A group buff was folding only its children's `Effect` and `Magnitudes`, and **half the buff payloads in
+this game are FIELDS**, so **Arcane and Feral Protection granted nothing at all** (both its children are
+pure CC-resist fields) and **Soul Reinforcement lost its whole −20%/−10% MP-cost third**. Nothing on
+screen said so — the buff appears on the bar either way — which is why it survived. ⚠ **Fixed by reading
+the fold, never played.**
+
+- [ ] On a **74+ buffer**: cast **Arcane and Feral Protection** and confirm it really resists CC now
+  (before the fix it was an icon with zero numbers behind it). -> 
+- [ ] On the same character: **Soul Reinforcement** should cut MP cost, and its rung should ladder
+  21/11% → 30/20% across the 4th tier. -> 
+
+---
+
 ## 97. BUFF PRESETS + THE `[CHAR]` BUTTON — `BL-95`, built in 0.99.0
 
 **This is what the new APK is for.** Both halves are client-visible, so an old client shows neither.

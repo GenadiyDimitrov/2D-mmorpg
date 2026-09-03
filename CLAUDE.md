@@ -216,8 +216,11 @@ unrelated and stay; that collision is half of why the race was renamed. `docs/de
 is the live class roster.
 
 ## Roadmap (not yet built)
-**The live list is `docs/Backlog.md`** — every feature/change still owed, one flat list, permanent
-`BL-nn` ids, newest ruling wins (the replaced one moves to `docs/BacklogArchive.md`), built = deleted.
+**The live list is `docs/Backlog.md`** — every feature/change still owed, one flat list **sorted by
+id** with an index table at the top, permanent `BL-nn` ids, newest ruling wins. 🔑 **It holds OPEN
+entries only** (2026-09-03, his instruction: *"leave only active"*): the moment something is built,
+declined, or answered with nothing owed, its entry is **cut to `docs/BacklogArchive.md`** — verbatim,
+dated, under the same id — and so is the old text of any rewrite. Never let a done-pile grow here again.
 **Bugs never go in it** — those live in `docs/testing/`. `docs/RoadmapNext.md` is the older
 version-shaped digest (goes stale between passes); `docs/Roadmap.md` is the full detail and the
 archive of past playtest queues. Built since this file's list was first written: the
