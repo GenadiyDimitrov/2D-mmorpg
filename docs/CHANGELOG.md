@@ -7,12 +7,170 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.109.4**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.110.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-03 (latest) — 0.109.4: whole-number set bonuses, STR is ATK, a sigil admits its cooldown, and the potion faucets are banded
+## 2026-09-03 (latest) — 0.110.0: the pull, the two silences, and CON/SPT shortening what they failed to stop
+
+Three systems he specced in one message and ruled over the two that followed (`BL-154`, `BL-155`,
+`BL-156`). Two of them are engine work with placeholder rows on a file he has not written yet — his own
+instruction, *"so when I author it to remember to fix ranges/duration etc"* — and one is a global rule
+that needed no CSV at all.
+
+### 1. `BL-156` — CON and SPT now SHORTEN a debuff as well as resisting it
+
+*"if we can make con and spt to decrease duration of coresponding debuffs -> it saves with a % and if
+it lands on a high stat it stays less (investing have benifits)"*, then the numbers: *"only 20~30%
+decrease no more. Like a 50 con/spt is 30% decrease and 30(the base what was) x1 so 30~50 == x1~0.7"*,
+and finally *"it cuts only 1~0.7 not 1.3~0.7 so never increases duration .. Only decrease"*.
+
+```
+factor = clamp( 1 - 0.3 * (defenderStat - 30) / 20 ,  0.70 , 1.00 )
+```
+
+CON for a physical debuff, SPT for a magical one — the same stat that just lost the landing contest.
+
+🔑 **It reads the RAW STAT, not the land chance.** Scaling by the chance would fold in `CcResist`, the
+per-school blessings and the skill's own `DebuffLandMod` — three channels that already paid for
+themselves on the roll — and turn one defence into three dips.
+
+🔑 **It lives in `ApplyBuff`, not at the call sites**, because every road to a landed debuff comes
+through there: the contested branch, the fizzle branch (Armor Break, Mana Strain), a reflected debuff,
+a whisp's cast, a boss's own skills. Putting it on the contested branch alone would have left the
+fizzle-path curses full length for no stated reason. The gate is `DebuffSchool != None` — the field
+that already names which stat defends the skill, so "corresponding debuffs" needed no second
+classification. It composes with **[Double]** by multiplication (2 × 0.7).
+
+🔑 **His 30 and 50 land almost exactly on the real spread — checked, not assumed.** Base CON runs 25-47
+and base SPT 25-41, armour sets move CON by ±3, and **nothing in the game buffs CON or SPT**, so a
+character lives inside the window for life:
+
+| | CON → physical | SPT → magical |
+|---|---|---|
+| Demon fighter | 47 → **×0.75** | 27 → ×1.00 |
+| Human fighter | 43 → ×0.81 | 26 → ×1.00 |
+| Elf fighter | 39 → ×0.87 | 25 → ×1.00 |
+| Demon mage | 31 → ×0.99 | 41 → **×0.84** |
+| Human mage | 29 → ×1.00 | 37 → ×0.90 |
+| Elf mage | 25 → ×1.00 | 36 → ×0.91 |
+
+⚠ **AND IT CUTS MOBS TOO** — *"If con/spt does anything for mobs it's not just a decorative stat ok
+let's shorten it as well"*. Mob CON/SPT are flat by role, and they sit high: melee CON 45 → ×0.78, a
+tank `MobMod` 50 → ×0.70, and a **mage mob's SPT 58 is already past the floor → ×0.70**. **Player CC
+now runs 12-30% short of its authored duration against everything**, on top of the land roll it already
+loses. That is a farming change, made with eyes open; if holds stop being worth casting the lever is
+`MobCcSpt`, not this curve.
+
+⚠ A DoT's internal stack COUNTER now runs for the duration the damage buff actually got, not the
+authored one — otherwise a shortened bleed would leave a stale stack alive behind it.
+
+### 2. `BL-154` — PULL: a body dragged across the ground, not teleported
+
+*"tanks will have pull -> target or aoe around.. con saves and if succeed pulls the target to the
+caster, hope its not instant but 300 range per second .. to look like a pull not phase shift"*.
+
+The contest already existed — a pull is an ordinary contested physical debuff (ATK vs CON) whose
+payload happens to be movement, and his expected *"0.4~0.5"* is what `DebuffLandChance` gives at
+parity. What did **not** exist was gradual forced movement: the only thing in the game that moved a
+body against its will was `DoKnockback`, a single `PlaceEntity` — an instant teleport, precisely the
+phase shift he did not want.
+
+🔑 **THE DRAG IS TIMED, NOT PACED, and his two numbers are two different rules.** *"I like the whole
+pull to be a 1s~1.5s pull"* wins over the 300/s, because a fixed SPEED makes the lockdown scale with
+whatever range the skill authors (a 900 pull would take three seconds) while a fixed DURATION does not.
+`SkillDef.PullSeconds` is the whole journey from any distance; the speed is derived, floored at
+`GameConstants.PullMinSpeed` = his 300/s so a short pull arrives early instead of crawling. **Range now
+buys reach and never buys lockdown.**
+
+🔑 **ONE CONTEST, TWO PAYLOADS, IN SEQUENCE.** His simplification — *"also one con contest for pull
++stun"* — means a landed pull always stuns, so the chain fires at the full ~45-50%. The stun is held on
+the victim and applied by `FinishPull` **on arrival**, because applying it on landing would overlap the
+two windows and the chain would be `max(drag, stun)` instead of his *"1s~1.5s pull. And 1~2s stun"*.
+
+🔑 **THE INTERRUPT HE WANTED IS FREE.** *"The pull idea is shorten the distance + enemy interrupt rather
+than control"* — a landed stun sets `IsActionLocked` and `UpdateAction` cancels the cast with
+`startCooldown: false`, the existing enemy-interrupt contract (the victim loses the 20% initial MP and
+may retry at once). ⚠ **And the DRAG interrupts too**, which follows from *"Yes like charmed while
+dragging - no act"*: being dragged is an action lock, and charm and fear have always cancelled a cast.
+So an AoE pull, which carries no stun, still interrupts what it drags. That is a correction to what
+`BL-154` said when it was written.
+
+Also ruled and built: the drag stops at **melee range**; **bosses are immune** (a boss dragged around
+the field is the same perma-kite the knockback rule already refuses); **players are not**
+(*"is a tanks chance to close the gap with everyone else"*); threat sits **above a damage skill and
+below the real taunt** (3000, against the Taunt ladder's 4,500 → 12,000).
+
+⚠ **The area sweep learned a CAP.** `EnemiesInRadius` was uncapped; `SkillDef.MaxTargets`, when a skill
+authors one, now takes the **nearest** N. His rule for the AoE pull is *"2~5 enemies"*, and an uncapped
+one is either a wipe opener or the best farm skill in the game. Every skill that shipped before this
+authors 0, so nothing already in the game narrows.
+
+🔵 **The two AoE pull shapes are NOT authored** — he named one pull, not three. The engine serves both
+(`AreaAtTarget` picks the centre, `MaxTargets` is the cap, `DeliverSimpleHit` grew the pull arm), so
+they need rows and nothing else.
+
+### 3. `BL-155` — the DISARM is declined; SILENCE replaces it
+
+*"If we leave the weapon bonuses it's not a disarm. Let's don't do a disarm .. But I like your silence
+idea"*. He was right, and the old entry is why: the one question it hung on — does a disarmed character
+also fail the skills that REQUIRE a weapon — had only two answers, and both were bad.
+
+What ships instead: **physical silence** (physical skills fail, the **basic attack still works** —
+his *"(only basic attack)"*), **magical silence**, and **both at once = a full silence**. Two
+independent debuffs, so the "full" version needs no third skill; a single skill may set both, and the
+boss's does.
+
+🔑 **THE PHYSICAL/MAGICAL AXIS WAS ALREADY BUILT AND WAS NOT RE-INVENTED.** `SkillMath
+.PacedByAttackSpeed` — `Category.Physical` **or** `DebuffSchool.Physical` **or** `PhysicalCast` — is
+the three-marker test from the `BL-133` cast-speed pass, and its own note said nothing later may grow a
+second version of it. Silence is that "anything later", so the method was **renamed `IsPhysical`** (the
+name of the question it actually answers) with `PacedByAttackSpeed` kept as a one-line alias at the
+speed call sites. A skill can never be physical for cast speed and magical for silence.
+
+⚠ `SkillEffect` has had **zero bits left since `1L << 62`**, so both halves ride as FIELDS — and the
+`BL-110` charm lesson applies in full: *when a payload is a field, every flag test on its path has to
+learn about it.* `IsContestedDebuff`, `BossShrugsOff`, the harmful/beneficial test in `HandleUseSkill`,
+`BuffInstance.IsDebuff` and `SkillText` were all taught. Bosses are immune to silence, on the same
+reasoning as the pull: a boss that can be silenced has no mechanics left.
+
+### 4. Three rows on a file he has not written
+
+His instruction: *"put pull for the three tanks 4th, one m.silence skill for elf tank 4th and one
+p.silence for human/demon tank 4th in the csv so when I author it to remember to fix ranges/duration
+etc"*. So `tank 4th.csv` gains three rows and `Skills.Bulwark4th.cs` the three defs — **Grapple**
+(all three races), **Numbing Strike** (Human + Demon) and **Silencing Ward** (Elf), one rung each at 76.
+
+⚠ **Every number behind them is a placeholder except the ones he ruled**, and both sides say so. The
+race split continues the one `tank 3rd.csv` already draws (`BL-133`): the Human and Demon tank hold
+with physical tools, the Elf with magical ones.
+
+### 5. The dungeon bosses get a full silence
+
+*"U can add dungeon bosses a full silence aoe skill for 15s duration and 45s cd (mp cost u deside)"* —
+150 ticks and 450 ticks exactly. **Word of Unmaking**, 500 radius (wider than the slam's 250, so it
+reaches the healer standing behind and not only the melee ring), SPT-defended, **MP 0** like every other
+boss skill because a rotation must never stall on mana. It goes to the three bosses at the end of a
+dungeon corridor: `grave_lich` (44), `dread_knight` (65), `disciple_of_the_dawn` (90).
+
+⚠ Each profile lists the **slam as well**. A template with no profile falls back to the generic
+Devastating Slam; the moment it has one, the profile is the whole rotation — leaving the slam out would
+have traded each boss's only attack for a silence.
+
+🔵 **Watch it in play.** 15s on a 45s reuse is 33% uptime with no heals, which is brutal by design and
+the first number to move if a boss becomes unkillable.
+
+### Verification
+
+`dotnet build` green · server **boots** clean with no startup-guard complaint ·
+`SkillCsvSeed --check` reports **no discrepancies** across all twelve walked files.
+
+⚠ **NEW APK.** The class-skill TABLE changed (three learn rows on the Bulwark's 4th tier) and the
+client builds its Learn tab locally from the compiled `ClassSkills`.
+
+
+## 2026-09-03 — 0.109.4: whole-number set bonuses, STR is ATK, a sigil admits its cooldown, and the potion faucets are banded
 
 His report, on the Epic copy of the heavy A set: *"Heavy A grade epic test have Str +1.4 stat .. when
 lowering stats of rarity make them integers ... 1.4 is 1 .... The other % based stat can be left as is

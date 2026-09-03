@@ -541,6 +541,27 @@ public static class SkillText
         else if ((def.Effect & SkillEffect.Blink) != 0) o.Add("Teleports you behind the target");
         if (def.KnockbackRange > 0f) o.Add($"Knocks the target back {(int)def.KnockbackRange}");
         if (def.TeleportsToTown) o.Add("Teleports you to the nearest town");
+        // `BL-154` — PULL. The card states the drag and, separately, the stun that follows it: one
+        // contest buys both, and a player reading "1.2s" needs to know that is the TRAVEL and not the
+        // whole lockdown. An AoE pull has no Stun effect and so prints only the first line.
+        if (def.Pulls)
+        {
+            o.Add($"Drags the target to you over {def.PullSeconds:0.#}s — it cannot act or steer on the way");
+            if ((def.Effect & SkillEffect.Stun) != 0 && def.DurationTicksAt(level) > 0)
+                o.Add($"…and is stunned for {Secs(def.DurationTicksAt(level))} once it arrives");
+        }
+        // `BL-155` — SILENCE. Both halves named, because which one you are wearing decides what you
+        // can still do, and a basic attack is never silenced.
+        if (def.SilencePhysical && def.SilenceMagical)
+            o.Add("SILENCES the target completely — no skills of any kind (basic attacks still work)");
+        else if (def.SilencePhysical)
+            o.Add("Silences the target's PHYSICAL skills (basic attacks still work)");
+        else if (def.SilenceMagical)
+            o.Add("Silences the target's MAGICAL skills");
+        // `BL-110` — CHARM had no line at all until 2026-09-03. Its whole payload is a field, which is
+        // precisely the class of thing that goes uncarded: there is no flag for the card to notice.
+        if (def.Charms)
+            o.Add("Charms the target — it cannot act and is walked toward you");
 
         // ---- Stealth (BL-69) ----
         if (def.GrantsHide)

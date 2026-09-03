@@ -116,6 +116,51 @@ chance = 0.5 + 0.5 * (attackerAtk - def) / (attackerAtk + def)
 
 `StatCalculator.DebuffLandChance` · `StatCaps.CcLandMin/CcLandMax/CcLevelFloorGap`
 
+## How LONG a landed debuff runs (`BL-156`, 0.110.0)
+
+```
+factor   = clamp( 1 - 0.3 * (defenderStat - 30) / 20 ,  0.70 , 1.00 )
+duration = round( authoredTicks * factor )        min 1 tick
+```
+
+- Same `defenderStat` as the landing contest above — **CON** physical, **SPT** magical — and the
+  **raw stat**, never the land chance (that would fold in `CcResist`, the school blessings and
+  `DebuffLandMod`, all of which already paid on the roll).
+- Below 30 → ×1.00. A low stat never *lengthens* a debuff.
+- **Players:** demon fighter CON 47 → ×0.75 · human 43 → ×0.81 · elf 39 → ×0.87 · every mage ×1.00.
+  SPT: demon mage 41 → ×0.84 · human 37 → ×0.90 · elf 36 → ×0.91 · every fighter ×1.00.
+  Nothing in the game buffs CON or SPT; armor sets move CON by ±3.
+- **Mobs too.** Melee CON 45 → ×0.78 · Archer 43 → ×0.81 · Mage CON 40 → ×0.85 · tank `MobMod` 50 →
+  ×0.70 · **mage SPT 58 → ×0.70** (past the floor). Player CC runs 12-30% short of its authored time.
+- Applied in **`ApplyBuff`**, so every road reaches it: the contest, the fizzle path, a reflected
+  debuff, a whisp, a boss. Composes with **[Double]** by multiplication (2 × 0.7).
+
+`StatCalculator.DebuffDurationFactor` · `StatCaps.DebuffDurationStatBase/StatFull/Floor`
+
+## Pull (`BL-154`, 0.110.0)
+
+```
+travel   = distance(caster, target) - 80          (MeleeRange; <=0 -> stun at once)
+ticks    = round(PullSeconds / 0.1)
+perTick  = max(travel / ticks, 300 * 0.1)         (PullMinSpeed floor, so short pulls arrive early)
+```
+
+Timed, not paced: the drag takes `PullSeconds` from **any** distance, so range buys reach and never
+lockdown. Direction is re-aimed each tick at the puller. One contest (ATK vs CON) covers the drag and
+the stun; the stun is applied **on arrival**, so drag and stun run in sequence. Being dragged is an
+action lock, so it cancels a cast the same way charm and fear do.
+
+`GameLoopService.StartPull/TickPull/FinishPull` · `SkillDef.Pulls/PullSeconds` · `GameConstants.PullMinSpeed`
+
+## Silence (`BL-155`, 0.110.0)
+
+Two independent debuffs. A skill refuses to fire when `SkillMath.IsPhysical(def)` matches the half you
+are wearing — physical silence stops physical skills, magical silence stops magical ones, both at once
+is a full silence. **A basic attack is never silenced** (it is not a skill). Bosses are immune to
+both; the boss's own `boss_full_silence` sets both fields.
+
+`Entity.IsSilencedPhysical/IsSilencedMagical` · `SkillDef.SilencePhysical/SilenceMagical`
+
 ## Crit rate and crit damage, taken OFF the attacker (`tank 3rd.csv`, 0.105.0)
 
 ```
@@ -268,8 +313,11 @@ MoveSpeed: base per race+class, NO dex term, buffed cap 250 (per-entity, raisabl
 ```
 
 - 🔑 **WHICH STAT PACES A CAST IS THE SKILL'S PHYSICAL/MAGICAL AXIS, NOT its `Category`** (`BL-132`).
-  `SkillMath.PacedByAttackSpeed` = `Category.Physical` **or** `DebuffSchool.Physical` **or** the
+  `SkillMath.IsPhysical` = `Category.Physical` **or** `DebuffSchool.Physical` **or** the
   `PhysicalCast` flag (the physical BUFFS). Physical → ATTACK speed, everything else → cast speed.
+  ⚠ Renamed from `PacedByAttackSpeed` in 0.110.0 when `BL-155`'s SILENCE became its second caller —
+  the same test now answers "which speed paces this?" and "which silence stops this?". The old name
+  survives as a one-line alias at the speed call sites, where that is what the question means.
   It used to ask `Category == Physical` alone, which is a ROLE tag — so a physical stun (`Debuff`)
   and a physical self-buff (`Buff`) were both paced by the mage's stat. The authority is his CSVs'
   `TYPE` column, and `SkillCsvSeed --check` now compares that word.

@@ -50,3 +50,7 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 90,Defensive Wall,defensive_wall,pfysical buff,,,0,0,self/single,0.5,300,60,increase p.def +5000; m.def +4500; buff cancel resist x1.8; ms x0.20,20,3400,[]
 ,,,,,,,,,,,,,,,,,----------------------------Backlash----------------------------
 76,Backlash,backlash,Passive,,,0,0,self/single,0,0,0,"30% chance that a debuff cast at you lands on its caster instead - auto-granted at the 4th class change so SP is 0",0,0,[]
+,,,,,,,,,,,,,,,,,----------------------------Pull + Silence (BL-154 / BL-155) — PLACEHOLDER NUMBERS, YOURS TO FIX----------------------------
+76,Grapple,tank_pull,Physical/Debuff,,,600,0,enemy/single,0.5,15,1,"Drags the target to you over 1.2s (it cannot act or steer on the way) and stuns it for 1s on arrival. ONE CON contest covers both. Threat 3000 (below Taunt, above a damage skill). Boss immune; works on players.",80,100k,[],
+76,Numbing Strike,tank_silence_physical,Physical/Debuff,,,400,0,enemy/single,0.5,30,8,"PHYSICAL SILENCE: the target's physical skills fail for the duration. Its BASIC ATTACK still works. Contested ATK vs CON.",70,100k,[],Human;Demon
+76,Silencing Ward,tank_silence_magical,Magical/Debuff,,,600,0,enemy/single,1.5,30,8,"MAGICAL SILENCE: the target's magical skills fail for the duration. Land this AND a physical silence and the target is FULLY silenced. Contested ATK vs SPT.",70,100k,[],Elf

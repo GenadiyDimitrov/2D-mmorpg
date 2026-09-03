@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.109.4";
+    public const string GameVersion = "0.110.0";
 
     // ----- SP BOTTLE (owner, 2026-08-26) -------------------------------------------------------
     // *"u can make an npc to take your 1kkk SP + 100kk gold and give you a tradable/sellabel
@@ -438,6 +438,13 @@ public static class GameConstants
     /// <summary>Base melee range. Design doc: base attack range is 40;
     /// we use 80 for a forgiving feel until weapons define ranges.</summary>
     public const float MeleeRange = 80f;
+
+    /// <summary>`BL-154` — the FLOOR under a pull's drag speed, in units per second. The drag is
+    /// timed, not paced (<see cref="SkillDef.PullSeconds"/>), so the speed is normally
+    /// distance ÷ duration; this stops a pull from a few steps away from crawling for a second and a
+    /// half. It is the owner's own *"300 range per second .. to look like a pull not phase shift"*,
+    /// kept as the minimum it always was rather than as the rate.</summary>
+    public const float PullMinSpeed = 300f;
 
     /// <summary>Ticks between player basic attacks (1.5s). Attack-speed
     /// stats/buffs will modify this in a later phase.</summary>

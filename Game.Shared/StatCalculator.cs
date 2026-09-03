@@ -984,6 +984,23 @@ public static class StatCalculator
         return Math.Clamp(chance, StatCaps.CcLandMin, StatCaps.CcLandMax);
     }
 
+    /// <summary>`BL-156` — how much of a contested debuff's AUTHORED duration survives, given the
+    /// stat that just lost the landing contest (CON for a physical debuff, SPT for a magical one).
+    /// One rule for players and creatures alike.
+    ///
+    /// <para>Linear from <see cref="StatCaps.DebuffDurationStatBase"/> (×1.00) to
+    /// <see cref="StatCaps.DebuffDurationStatFull"/> (the floor), clamped at both ends — so a low stat
+    /// never lengthens a debuff and a very high one never removes it. See the note in StatCaps for why
+    /// it reads the raw stat rather than the land chance.</para></summary>
+    public static float DebuffDurationFactor(int defenderStat)
+    {
+        float span = StatCaps.DebuffDurationStatFull - StatCaps.DebuffDurationStatBase;
+        if (span <= 0f) return 1f;
+        float t = (defenderStat - StatCaps.DebuffDurationStatBase) / span;
+        float factor = 1f - (1f - StatCaps.DebuffDurationFloor) * t;
+        return Math.Clamp(factor, StatCaps.DebuffDurationFloor, 1f);
+    }
+
     // ----- Cast & attack speed (authentic IG model) ------------------------
     //
     // IG: actual cast/attack time = baseTime × 333 / speedStat, where the speed stat

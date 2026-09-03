@@ -542,6 +542,49 @@ public record SkillDef(
     // whole reason a tank can lean on charm for aggro at all, and it is why the taunt's target lock
     // is the SHORT guarantee — see the charm block in GameLoopService.
     bool Charms = false,
+    // ===== PULL (`BL-154`, owner 2026-09-03) ========================================================
+    // *"tanks will have pull -> target or aoe around.. con saves and if succeed pulls the target to
+    //  the caster, hope its not instant but 300 range per second .. to look like a pull not phase
+    //  shift"*, then *"I like the whole pull to be a 1s~1.5s pull. And 1~2s stun. The pull idea is
+    //  shorten the distance + enemy interrupt rather than control"*.
+    //
+    // The victim is DRAGGED to melee range of the caster, rooted and unable to act while it travels.
+    // A field, not a flag — the SkillEffect enum has been full since 1L << 62, same as Charms above.
+    //
+    // 🔑 THE DRAG IS TIMED, NOT PACED, and his two numbers are two different rules. A fixed 300
+    // units/second makes the lockdown scale with whatever range the skill authors — a 900 pull would
+    // take three seconds. A fixed DURATION does not: <see cref="PullSeconds"/> is the whole journey
+    // from any distance, and the speed is derived (distance / duration), floored at
+    // GameConstants.PullMinSpeed so a short pull finishes early instead of crawling. Range therefore
+    // buys reach and never buys lockdown.
+    //
+    // 🔑 ONE CONTEST COVERS THE PULL AND ITS STUN (his simplification). The skill is an ordinary
+    // contested physical debuff — DebuffSchool.Physical, ATK vs CON — and its Stun effect, if it has
+    // one, is applied WHEN THE DRAG ARRIVES rather than when the cast lands, so the durations run
+    // 1-1.5s of drag THEN 1-2s of stun instead of overlapping. See GameLoopService.StartPull.
+    //
+    // ⚠ THE STUN IS THE INTERRUPT. The drag itself deals no damage and so never enters the victim's
+    // interrupt contest; the stun that follows sets IsActionLocked, and UpdateAction cancels the cast
+    // with startCooldown:false — the existing enemy-interrupt contract. An AoE pull authored with no
+    // Stun therefore interrupts nobody, which is what keeps it a repositioning tool.
+    bool Pulls = false,
+    /// <summary>How long the whole drag takes, in seconds (`BL-154`). His 1-1.5s.</summary>
+    float PullSeconds = 1.2f,
+    // ===== SILENCE (`BL-155`, owner 2026-09-03) =====================================================
+    // *"have physical skill silence (only basic attack) … magical skill silence … and both at once a
+    //  full silence"*. Two INDEPENDENT debuffs: land both and the target is fully silenced, which is
+    //  why this is two bools rather than one three-valued enum. A single skill may set both — that is
+    //  the boss's full silence.
+    //
+    // 🔑 WHICH SKILLS EACH ONE STOPS IS NOT A NEW CLASSIFICATION. <see cref="SkillMath.IsPhysical"/>
+    // is the three-marker test the `BL-133` cast-speed pass already built, and its own note says
+    // nothing later may grow a second version of it. A silenced character can always BASIC ATTACK —
+    // his *"(only basic attack)"* — because a basic attack is not a skill at all.
+    //
+    // Fields, not flags: the enum is full.
+    bool SilencePhysical = false,
+    /// <inheritdoc cref="SilencePhysical"/>
+    bool SilenceMagical = false,
     // 🔑 "I SHARE A LADDERED BUFF KEY ON PURPOSE, AND I WANT RUNG-VS-RUNG COMPETITION."
     //
     // `BL-85`'s startup guard refuses two childless multi-level buffs on one family key, because their
@@ -1551,6 +1594,7 @@ public static partial class SkillCatalog
         list.AddRange(WhispSkills());         // Skills.Whisps.cs (`BL-109` the whisp's own nine — cast by the whisp, never learned)
         list.AddRange(WhispSummonSkills());   // Skills.Whisps.cs (his six calls + Whisp Mastery)
         list.AddRange(Bulwark3rdSkills());    // Skills.Bulwark3rd.cs (his `tank 3rd.csv`, 40-74)
+        list.AddRange(Bulwark4thSkills());    // Skills.Bulwark4th.cs (`BL-154`/`BL-155` — the pull and the two silences)
 
         var dict = new Dictionary<string, SkillDef>();
         foreach (var sk in list)
@@ -1655,10 +1699,20 @@ public static class SkillMath
     /// from the same word in his CSVs' `TYPE` column, which is why this lives in one place: the speed
     /// model, the auto-hunt cycle estimate and anything added later must not each grow their own
     /// version of the test.</para></summary>
-    public static bool PacedByAttackSpeed(SkillDef def) =>
+    /// <para>🔑 RENAMED FROM `PacedByAttackSpeed` on 2026-09-03, when `BL-155`'s silence became its
+    /// SECOND caller. The old name described the first use, not the question — and the note above had
+    /// already said the test must not be duplicated, so the honest fix was to give it the name of what
+    /// it actually answers and leave the speed model calling it. A physical silence stops exactly the
+    /// skills this returns true for; a magical one stops the rest.</para></summary>
+    public static bool IsPhysical(SkillDef def) =>
         def.Category == SkillCategory.Physical
         || def.DebuffSchool == DebuffSchool.Physical
         || def.PhysicalCast;
+
+    /// <summary>The cast/attack-speed model's name for <see cref="IsPhysical"/> — a physical skill is
+    /// paced by attack speed, a magical one by cast speed. Kept as the name at the speed call sites
+    /// because that is what the question means THERE.</summary>
+    public static bool PacedByAttackSpeed(SkillDef def) => IsPhysical(def);
 
 
     // ===== THE MP SPLIT ==============================================================================

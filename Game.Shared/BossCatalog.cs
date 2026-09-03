@@ -54,5 +54,44 @@ public static class BossCatalog
                     Enrage: true, AddTemplateId: "bogwood", AddCount: 2, AddLevelOffset: -8),
                 new BossPhase(0.25f, "The Valley Treant Lord unleashes a storm of thorns!"),
             }),
+
+        // ═══ THE THREE DUNGEON BOSSES — `BL-155`'s full silence ══════════════════════════════════
+        //
+        // His ask, 2026-09-03: *"U can add dungeon bosses a full silence aoe skill for 15s duration
+        // and 45s cd"*. The three bosses at the end of a dungeon corridor are named in
+        // DungeonLayout.Dungeons — the Hollow Crypt's lich (44), the Sunless Warrens' knight (65) and
+        // the Ashen Sepulchre's disciple (90). They are the only bosses in the game that are reached
+        // through a door, which is what makes them "dungeon bosses".
+        //
+        // ⚠ THE SLAM HAS TO BE LISTED. A template with NO profile falls back to the generic
+        // Devastating Slam; the moment it has one, the profile is the whole rotation. Leaving the slam
+        // out would have traded each boss's only attack for a silence — a fight where nothing ever
+        // hits you and you can never cast.
+        //
+        // ⚠ SILENCE FIRST, and that is what the ordering means here (earlier entries win ties): it is
+        // the mechanic, the slam is the filler. Its own 45s cooldown is what stops it dominating.
+        ["grave_lich"] = new BossProfile(
+            Skills: new[]
+            {
+                new BossSkillEntry(SkillCatalog.BossFullSilenceSkill),
+                new BossSkillEntry(SkillCatalog.BossSlamSkill),
+            },
+            Phases: System.Array.Empty<BossPhase>()),
+
+        ["dread_knight"] = new BossProfile(
+            Skills: new[]
+            {
+                new BossSkillEntry(SkillCatalog.BossFullSilenceSkill),
+                new BossSkillEntry(SkillCatalog.BossSlamSkill),
+            },
+            Phases: System.Array.Empty<BossPhase>()),
+
+        ["disciple_of_the_dawn"] = new BossProfile(
+            Skills: new[]
+            {
+                new BossSkillEntry(SkillCatalog.BossFullSilenceSkill),
+                new BossSkillEntry(SkillCatalog.BossSlamSkill),
+            },
+            Phases: System.Array.Empty<BossPhase>()),
     };
 }

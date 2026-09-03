@@ -141,6 +141,37 @@ call a disarm. `BL-155` now holds the SILENCE family that replaced it. Original 
 
 ---
 
+## Closed on 2026-09-03 — built in 0.110.0
+
+### `BL-156` — CON and SPT shorten a debuff as well as resisting it ✅ BUILT
+
+**Shipped whole in 0.110.0, with nothing left owed by you.** Your spec: *"if we can make con and spt to
+decrease duration of coresponding debuffs -> it saves with a % and if it lands on a high stat it stays
+less (investing have benifits)"*. Your numbers: *"only 20~30% decrease no more. Like a 50 con/spt is
+30% decrease and 30(the base what was) x1 so 30~50 == x1~0.7"*, and *"it cuts only 1~0.7 not 1.3~0.7 so
+never increases duration .. Only decrease"*. And the mob half: *"If con/spt does anything for mobs it's
+not just a decorative stat ok let's shorten it as well"*.
+
+```
+factor = clamp( 1 - 0.3 * (defenderStat - 30) / 20 ,  0.70 , 1.00 )
+```
+
+CON for a physical debuff, SPT for a magical one — the same stat that lost the landing contest, read
+**raw** rather than through the land chance (which would have folded in `CcResist`, the school
+blessings and `DebuffLandMod`, three channels that already paid on the roll). It lives in `ApplyBuff`,
+so the contested branch, the fizzle branch, a reflected debuff, a whisp and a boss all obey one rule.
+
+Your 30 and 50 landed almost exactly on the real spread: base CON 25-47, base SPT 25-41, armour ±3,
+nothing buffs either stat — so a demon fighter sits at ×0.75 on stuns and ×1.00 on holds, a demon mage
+the reverse at ×0.84, and every mage is untouched by the CON half. Mobs took it too: melee CON 45 →
+×0.78, tank `MobMod` 50 → ×0.70, mage SPT 58 → ×0.70. **Player CC runs 12-30% short of its authored
+duration against everything** — a farming change made with eyes open, whose lever if it bites is
+`MobCcSpt`, not this curve.
+
+The formula is in [Formulas.md](Formulas.md); the reasoning is in `StatCaps` beside the three constants.
+
+---
+
 ## Superseded designs — built, then replaced
 
 ### § Shields: "don't add shield P.Def to the pool" and "cut it 5×" → **option 3**

@@ -141,6 +141,18 @@ public class BuffInstance
     /// charm has to remember WHO to walk to, and by the time it ticks, the caster may be anywhere.</para></summary>
     public bool Charms { get; init; }
 
+    /// <summary>`BL-155` — SILENCE. While this buff is up the owner's PHYSICAL (resp. MAGICAL) skills
+    /// refuse to fire; a basic attack is never silenced, because it is not a skill. Two independent
+    /// fields rather than one three-valued state, because that is exactly the owner's rule: the tank
+    /// silences are separate debuffs and *"both at once a full silence"* is what happens when they
+    /// meet. A single skill may set both — the dungeon boss's does.
+    ///
+    /// <para>Fields rather than <see cref="SkillEffect"/> bits for the usual reason: the flag enum has
+    /// been full since <c>1L &lt;&lt; 62</c>.</para></summary>
+    public bool SilencesPhysical { get; init; }
+    /// <inheritdoc cref="SilencesPhysical"/>
+    public bool SilencesMagical { get; init; }
+
     /// <summary>BL-06 — chance the owner dodges an incoming PHYSICAL SKILL while this buff is up.
     /// Rides as a field, like the two above, because the SkillEffect flag enum has no bits left.
     /// The rogue's Evasion Boost is the only skill in the game that sets it.</summary>
@@ -235,7 +247,8 @@ public class BuffInstance
     /// BUFF row and be strippable by a "cancel positive buffs" rather than by a cleanse. The same
     /// lesson Clarity and Fortitude taught on the buff side (see the `Category == Buff` arm in
     /// ApplyBuff): when a payload is a field, every flag test in its path has to learn about it.</summary>
-    public bool IsDebuff => (Effect & SkillEffect.AnyDebuff) != 0 || Charms;
+    public bool IsDebuff => (Effect & SkillEffect.AnyDebuff) != 0 || Charms
+                         || SilencesPhysical || SilencesMagical;
 
     /// <summary>Sum of this buff's flat entries for an effect. For a stacking effect the
     /// Magnitudes are re-snapshotted to the current stack LEVEL on each stack (see
@@ -1373,10 +1386,65 @@ public class Entity
         }
     }
 
-    /// <summary>Cannot take an action (cast/attack/skill) this tick — stun, fear or charm.
+    /// <summary>`BL-155` — SILENCED against PHYSICAL skills. Reads the <see cref="BuffInstance
+    /// .SilencesPhysical"/> FIELD, not a flag; the enum is full.
+    ///
+    /// <para>⚠ It does NOT stop a basic attack, and that is the owner's own boundary
+    /// (*"physical skill silence (only basic attack)"*). What it stops is every skill
+    /// <see cref="SkillMath.IsPhysical"/> is true for — the gate lives in HandleUseSkill, not
+    /// here.</para></summary>
+    public bool IsSilencedPhysical
+    {
+        get
+        {
+            foreach (var b in Buffs) if (b.SilencesPhysical && !b.Suppressed) return true;
+            return false;
+        }
+    }
+
+    /// <summary>`BL-155` — SILENCED against MAGICAL skills. The elf tank's half; both at once is a
+    /// full silence, which is why they are two independent states and not one enum.</summary>
+    public bool IsSilencedMagical
+    {
+        get
+        {
+            foreach (var b in Buffs) if (b.SilencesMagical && !b.Suppressed) return true;
+            return false;
+        }
+    }
+
+    // ===== PULL (`BL-154`) ==========================================================================
+    // The victim of a pull is dragged to the caster over a fixed number of ticks. Runtime-only state,
+    // like every other thing a body carries into a fight: not persisted, and cleared on death.
+
+    /// <summary>Ticks left in the drag. &gt;0 means the body's position is being written by
+    /// <c>GameLoopService.TickPull</c> and is not its own.</summary>
+    public int PullTicksRemaining { get; set; }
+    /// <summary>How far the drag moves this body each tick — a DISTANCE, not a vector, because the
+    /// direction is recomputed every tick toward the puller's CURRENT position (the same thing charm
+    /// does, and for the same reason: a caster who steps aside must not be dragged past). Derived once
+    /// at the start from distance ÷ duration, never below <see cref="GameConstants.PullMinSpeed"/>
+    /// per second.</summary>
+    public float PullStep { get; set; }
+    /// <summary>WHO is pulling. The drag ends at melee range of this body.
+    /// <see cref="Guid.Empty"/> when nothing is pulling.</summary>
+    public Guid PullSourceId { get; set; }
+    /// <summary>The skill whose STUN is owed when the drag arrives, and the rung it was cast at
+    /// (`BL-154`: one contest, but the stun starts where the drag stops, so 1-1.5s of travel and
+    /// 1-2s of stun run one after the other rather than overlapping). Null = a pull with no tail,
+    /// which is what the two AoE versions are.</summary>
+    public string? PullStunSkillId { get; set; }
+    /// <inheritdoc cref="PullStunSkillId"/>
+    public int PullStunLevel { get; set; }
+
+    /// <summary>Being dragged by a pull — cannot act and cannot steer.</summary>
+    public bool IsBeingPulled => PullTicksRemaining > 0;
+
+    /// <summary>Cannot take an action (cast/attack/skill) this tick — stun, fear, charm or a pull.
     /// ⚠ Charm joined this list on 2026-09-02 (`BL-110`): *"both dont change target like taunt — just
-    /// act uncontrolably"*, and "uncontrollably" is both halves — the hands AND the feet.</summary>
-    public bool IsActionLocked => IsStunned || IsFeared || IsCharmed;
+    /// act uncontrolably"*, and "uncontrollably" is both halves — the hands AND the feet.
+    /// ⚠ A PULL joined it on 2026-09-03 (`BL-154`): *"Yes like charmed while dragging - no act"*.</summary>
+    public bool IsActionLocked => IsStunned || IsFeared || IsCharmed || IsBeingPulled;
 
     /// <summary>THE SERVER IS DRIVING THIS BODY (`BL-110`) — fear or charm. While it is true the
     /// entity's own destination is not its own: player move taps are refused, follow and auto-hunt
@@ -1550,7 +1618,9 @@ public class Entity
     {
         get
         {
-            if (IsRooted || IsStunned) return 0f;   // held in place by Root or Stun
+            // Held in place by Root or Stun — or being dragged, in which case the body's position is
+            // written by TickPull and its own legs must not fight the drag (`BL-154`).
+            if (IsRooted || IsStunned || IsBeingPulled) return 0f;
 
             if (AdminMoveSpeed is float adminSpeed) return adminSpeed;   // /spd m: uncapped
 

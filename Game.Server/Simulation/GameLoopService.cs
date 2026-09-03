@@ -1919,8 +1919,34 @@ public class GameLoopService : BackgroundService
             SendSystemToEntity(caster,
                 caster.Petrified ? $"You are petrified — the boss's judgment, L{caster.BossJudgmentRung}."
                 : caster.IsStunned ? "You are stunned."
+                : caster.IsBeingPulled ? "You are being dragged."
                 : "You are too afraid to act.");
             return;
+        }
+
+        // ---- `BL-155` — SILENCE. Two independent halves, and which one bites is decided by
+        //      SkillMath.IsPhysical — the SAME three-marker test the cast-speed model uses, never a
+        //      second classification of its own (see the note on that method).
+        //
+        //      🔑 A BASIC ATTACK IS NEVER SILENCED. It does not come through here at all, which is
+        //      exactly his boundary: *"physical skill silence (only basic attack)"*. A physically
+        //      silenced fighter can still swing; he simply has no kit.
+        //
+        //      ⚠ It gates the SKILL, not the caster: a magically silenced tank keeps every physical
+        //      tool, and a physically silenced healer keeps every heal. Landing both — two tank
+        //      debuffs, or the dungeon boss's one — is what makes it a full silence.
+        bool silencePhysical = caster.IsSilencedPhysical;
+        bool silenceMagical = caster.IsSilencedMagical;
+        if (silencePhysical || silenceMagical)
+        {
+            bool physical = SkillMath.IsPhysical(def);
+            if (physical ? silencePhysical : silenceMagical)
+            {
+                SendSystemToEntity(caster, physical
+                    ? "Your body will not obey — you are silenced."
+                    : "Your voice will not carry — you are silenced.");
+                return;
+            }
         }
 
         // Toggle skills (stances) flip instantly: on -> apply self-buff, off -> remove it.
@@ -2023,7 +2049,11 @@ public class GameLoopService : BackgroundService
         // too, so a charm authored as anything but Category.Debuff would have read as friendly.
         bool offensive = (def.Effect & (SkillEffect.PhysicalDamage
             | SkillEffect.MagicDamage | SkillEffect.AnyDebuff | SkillEffect.Cancel | SkillEffect.Taunt)) != 0
-            || def.Category == SkillCategory.Debuff || def.Charms;
+            || def.Category == SkillCategory.Debuff || def.Charms
+            // ⚠ `BL-154` / `BL-155` — the same lesson a third and fourth time: a pull and a silence are
+            // payload FIELDS, so a pull authored as anything but Category.Debuff would have read as a
+            // friendly cast and been allowed on a party member.
+            || def.Pulls || def.SilencePhysical || def.SilenceMagical;
 
         // ---- `BL-99` — AIMING A SUPPORT SKILL AT SOMEONE ELSE'S RAID. -------------------------
         // His ruling, 2026-08-28: *"if he tries to heal with a single/target heal he is deliberately
@@ -8804,6 +8834,7 @@ public class GameLoopService : BackgroundService
             {
                 if (IsInCombat(entity))
                 {
+                    TickPull(entity);                 // …and still being dragged (`BL-154`)
                     TickControlledMovement(entity);   // a link-dead body is still feared/charmed
                     UpdateAction(entity);
                     MoveTowardTarget(entity);
@@ -8815,7 +8846,7 @@ public class GameLoopService : BackgroundService
                 continue;
             }
 
-            if (entity.Kind == EntityKind.Player && !entity.IsControlDriven)
+            if (entity.Kind == EntityKind.Player && !entity.IsControlDriven && !entity.IsBeingPulled)
             {
                 // `BL-110` — SKIPPED WHOLE while feared or charmed. Auto-hunt and follow both WRITE a
                 // destination, so leaving them running would have them re-aiming the victim at his
@@ -8835,6 +8866,8 @@ public class GameLoopService : BackgroundService
             // kind of entity decrements is a trap the second the other kind can set it.
             if (entity.TauntLockTicks > 0) entity.TauntLockTicks--;
 
+            // `BL-154` — the drag writes POSITION directly, before anything writes a destination.
+            TickPull(entity);
             TickControlledMovement(entity);   // fear/charm write the destination; nothing else may
             UpdateAction(entity);
             MoveTowardTarget(entity);
@@ -8979,9 +9012,14 @@ public class GameLoopService : BackgroundService
     /// `BL-110`'s charm is a FIELD (<c>SkillDef.Charms</c>), not a <see cref="SkillEffect"/> bit, so a
     /// mask test alone cannot see it and a raid boss would have been walkable. Null = flags only,
     /// which is right for every caller that has no def in hand.</param>
+    /// <para>⚠ `BL-154` PULL and `BL-155` SILENCE join charm in the field-payload list, and both are
+    /// deliberate: a boss dragged around the field is the same perma-kite the position rule already
+    /// refuses (see the Knockback arm), and a boss that can be silenced has no mechanics left. The
+    /// boss's OWN full silence is unaffected — it is cast BY the boss, on players.</para></summary>
     private static bool BossShrugsOff(Entity target, SkillEffect effect, SkillDef? def = null) =>
         target.Rank == MobRank.Boss
-        && ((effect & SkillEffect.ControlCc) != 0 || def?.Charms == true)
+        && ((effect & SkillEffect.ControlCc) != 0 || def?.Charms == true
+            || def?.Pulls == true || def?.SilencePhysical == true || def?.SilenceMagical == true)
         && (effect & SkillEffect.AnyDot) == 0;
 
     /// <summary>BL-81 — DOES THIS DEBUFF FAIL BEFORE IT IS EVEN ROLLED? Three sources, one gate, so no
@@ -9554,7 +9592,12 @@ public class GameLoopService : BackgroundService
             land *= 1f - SchoolCcResist(victim, def.DebuffSchool);
             if (_rng.NextDouble() < land)
             {
-                ApplyBuff(victim, def, lvl, source: attacker);   // `BL-110`: a charm must know who cast it
+                // `BL-154` — the AREA path needs the pull arm too. This method is where an
+                // `EnemiesInRadius` skill resolves each body it swept, so without this line an AoE
+                // pull would roll its contest, announce itself and drag nobody — the same shape of
+                // silent nothing that Mass Taunt had here until `BL-123`.
+                if (def.Pulls) StartPull(attacker, victim, def, lvl);
+                else ApplyBuff(victim, def, lvl, source: attacker);   // `BL-110`: a charm must know who cast it
                 BroadcastCombat(attacker, victim, 0, CombatOutcome.Buff, name);
             }
         }
@@ -10229,7 +10272,7 @@ public class GameLoopService : BackgroundService
         //
         // 🔑 Its THREAT TABLE is untouched, and so is CombatTargetId — *"dont change target like
         // taunt"*. The moment the fear expires it resumes the fight it was already in.
-        if (mob.IsControlDriven)
+        if (mob.IsControlDriven || mob.IsBeingPulled)
             return;
 
         if (mob.Engaged)
@@ -10698,6 +10741,23 @@ public class GameLoopService : BackgroundService
             return;
         }
 
+        // ---- `BL-155` — SILENCE, THE SECOND DOOR. A MOB never comes through BeginSkill: MobCasterAi
+        //      and BossTick queue a skill id and it starts HERE. So the gate in BeginSkill covers
+        //      players and nothing else, and without this line the tank's silence would have been
+        //      inert against exactly the thing it is for — a casting monster.
+        //
+        //      🔑 The `BL-110` charm lesson, one more time: when a payload is a FIELD, every path has
+        //      to be taught about it, and the paths are never the one you were looking at.
+        //
+        //      ⚠ Silently, with no message: the queued skill is simply dropped. A mob has nobody to
+        //      tell, and a PLAYER's queued skill was already refused at BeginSkill with a reason, so
+        //      nothing reaching here needs a second line of text.
+        if ((SkillMath.IsPhysical(def) ? caster.IsSilencedPhysical : caster.IsSilencedMagical))
+        {
+            caster.QueuedSkillId = null;
+            return;
+        }
+
         bool selfTargeted = targetId == caster.Id;
         Entity? target = selfTargeted ? caster
             : _world.Entities.GetValueOrDefault(targetId);
@@ -11030,8 +11090,19 @@ public class GameLoopService : BackgroundService
             // sweep of radius ZERO here, while the circle above — which correctly reads AreaRadiusAt —
             // drew at full size. That is a mechanism for "the red circle pulses but nothing is hit",
             // and it was live on every such skill.
-            foreach (var foe in EnemiesInRadius(caster, def.AreaRadiusAt(lvl),
-                                                def.AreaAtTarget ? target : caster).ToList())
+            // `BL-154` — A CAP, WHEN THE SKILL AUTHORS ONE. His rule for the AoE pull is *"2~5
+            // enemies"*, and an uncapped one is either a wipe or the best farm skill in the game. The
+            // sweep is otherwise unchanged: `MaxTargets` is 0 on every skill that existed before this,
+            // so nothing already shipped narrows. NEAREST FIRST, because the bodies a tank means to
+            // gather are the ones closest to the centre he chose.
+            var swept = EnemiesInRadius(caster, def.AreaRadiusAt(lvl),
+                                        def.AreaAtTarget ? target : caster).ToList();
+            if (def.MaxTargets > 0 && swept.Count > def.MaxTargets)
+            {
+                Entity centre = def.AreaAtTarget ? target : caster;
+                swept = swept.OrderBy(f => DistanceSq(centre, f)).Take(def.MaxTargets).ToList();
+            }
+            foreach (var foe in swept)
             {
                 // BL-77: the flag lands on the REACH. Before the hit, so a miss, a zero roll or a
                 // target who dies to the first victim's cleave still costs you the purple name —
@@ -11350,7 +11421,14 @@ public class GameLoopService : BackgroundService
                 land *= 1f - SchoolCcResist(target, def.DebuffSchool);   // …and the per-school blessing
                 if (_rng.NextDouble() < land)
                 {
-                    if ((effect & SkillEffect.AnyDot) != 0)
+                    if (def.Pulls)
+                        // `BL-154` — ONE CONTEST, TWO PAYLOADS. The drag starts now; the skill's own
+                        // stun, if it has one, is applied by FinishPull when the body arrives, so the
+                        // 1-1.5s of travel and the 1-2s of stun run one after the other. That is why
+                        // this arm does not also call ApplyBuff: it would land the stun immediately
+                        // and the two windows would overlap into one.
+                        StartPull(caster, target, def, lvl);
+                    else if ((effect & SkillEffect.AnyDot) != 0)
                         ApplyDotStack(caster, target, def, lvl);   // stacking DoT (refresh on reapply)
                     else
                         ApplyBuff(target, def, lvl, durationOverride: doubledTicks, source: caster);   // single CC buff
@@ -11717,6 +11795,32 @@ public class GameLoopService : BackgroundService
         int duration = toggle ? int.MaxValue
                               : (durationOverride >= 0 ? durationOverride : def.DurationTicksAt(level));
 
+        // ---- `BL-156`: CON / SPT SHORTEN WHAT THEY FAILED TO STOP -------------------------------
+        //      The same stat that just lost the landing contest now decides how much of the authored
+        //      duration survives — CON for a physical debuff, SPT for a magical one, one curve for
+        //      players and creatures alike (StatCalculator.DebuffDurationFactor).
+        //
+        //      🔑 HERE, not at the call sites. Every road to a landed debuff comes through ApplyBuff —
+        //      the contested branch, the fizzle branch, a reflected debuff, a whisp's cast, the boss's
+        //      own skills — and the one rule the owner asked for has to hold on all of them. Putting it
+        //      on the contested branch alone would have left the fizzle-path curses (Armor Break, Mana
+        //      Strain) full length for no stated reason.
+        //
+        //      ⚠ `DebuffSchool` is the gate, and it is the RIGHT one: it is the field that already
+        //      names WHICH stat defends this skill, so "corresponding debuffs" needs no second
+        //      classification. A buff has no school and is never touched. It composes with [Double]
+        //      by simple multiplication — a doubled stun on a high-CON tank is 2 × 0.7.
+        //
+        //      ⚠ The restore path (RestorePersistedBuffs) overwrites TicksRemaining with the time the
+        //      buff had left, so a relog cannot charge this cut a second time.
+        if (!toggle && duration > 0 && def.DebuffSchool != DebuffSchool.None)
+        {
+            int defStat = def.DebuffSchool == DebuffSchool.Magical
+                ? target.EffectiveSpt : target.EffectiveCon;
+            float factor = StatCalculator.DebuffDurationFactor(defStat);
+            if (factor < 1f) duration = Math.Max(1, (int)MathF.Round(duration * factor));
+        }
+
         // Stacking effect (MaxStacks > 1): reapplying ADDS a stack (capped) and refreshes,
         // rather than replacing. If the skill has a per-stack table, the status re-snapshots
         // that level's Effect + Magnitudes (so a slow can grow, or become a freeze at stack N).
@@ -11833,6 +11937,11 @@ public class GameLoopService : BackgroundService
             // walks the victim toward this id every tick. A charm with no source is inert by design
             // (nothing to walk toward) rather than crashing or walking to the origin.
             Charms = def.Charms,
+            // `BL-155` — SILENCE, the same field-payload shape as the charm above it. A skill may set
+            // both, which is the dungeon boss's full silence; two separate skills setting one each is
+            // the tank pair, and landing both is the same full silence by the other road.
+            SilencesPhysical = def.SilencePhysical,
+            SilencesMagical = def.SilenceMagical,
             SourceId = source?.Id ?? Guid.Empty,
             SkillEvadeChance = def.SkillEvadeChance,   // BL-06, rogue ultimate only
             EndsOnDamageTaken = def.EndsOnDamageTaken, // Meditation: gone the moment anything lands
@@ -11955,8 +12064,15 @@ public class GameLoopService : BackgroundService
         // skill's MaxStacks, which governs the counter, doesn't stack the damage effect).
         ApplyBuff(target, def, level, refresh: false, maxStacks: 1);
         string dmgKey = string.IsNullOrEmpty(def.BuffKey) ? def.Name : def.BuffKey;
+        // ⚠ `BL-156` — the counter must run for as long as the DAMAGE buff actually got, not for the
+        // skill's authored duration: CON now shortens the bleed itself, and a counter that outlived it
+        // would keep a stale stack alive for a target the DoT had already left.
+        int dotTicks = def.DurationTicks;
         if (target.Buffs.FirstOrDefault(b => b.Key == dmgKey) is BuffInstance dmg)
+        {
             dmg.SourceId = caster.Id;   // credit DoT kills to the applier
+            if (dmg.TicksRemaining > 0) dotTicks = dmg.TicksRemaining;
+        }
 
         // (2) The stack counter — separate, internal, per StackKey; max = the skill's MaxStacks.
         int cap = Math.Max(1, def.MaxStacks);
@@ -11967,7 +12083,7 @@ public class GameLoopService : BackgroundService
             {
                 ctr.Stacks = Math.Min(cap, ctr.Stacks + 1);
                 ctr.MaxStacks = cap;
-                ctr.TicksRemaining = def.DurationTicks;   // refresh
+                ctr.TicksRemaining = dotTicks;   // refresh
                 ctr.SourceId = caster.Id;
             }
             else
@@ -11976,7 +12092,7 @@ public class GameLoopService : BackgroundService
                 {
                     Effect = SkillEffect.None,           // no stats: a pure counter
                     Magnitudes = Array.Empty<EffectMagnitude>(),
-                    TicksRemaining = def.DurationTicks,
+                    TicksRemaining = dotTicks,
                     Stacks = 1,
                     MaxStacks = cap,
                     Internal = true,
@@ -12239,6 +12355,126 @@ public class GameLoopService : BackgroundService
         float nx = dist < 0.01f ? 1f : dx / dist;
         float ny = dist < 0.01f ? 0f : dy / dist;
         PlaceEntity(target, target.X + nx * range, target.Y + ny * range);
+    }
+
+    // ===== PULL (`BL-154`) ==============================================================
+    //
+    // The one thing that already moved a body against its will was DoKnockback above — a single
+    // PlaceEntity, i.e. a teleport, and precisely the *"phase shift"* the owner did not want. A pull
+    // is the opposite: a body dragged across the ground over a fixed number of ticks, rooted and
+    // unable to act the whole way, arriving at melee range.
+    //
+    // 🔑 TIMED, NOT PACED. SkillDef.PullSeconds is the whole journey from any distance and the speed
+    // is derived from it, floored at GameConstants.PullMinSpeed. That is what stops the authored RANGE
+    // from buying lockdown: a 900-range pull and a 300-range one both take PullSeconds.
+    //
+    // 🔑 THE STUN TAIL STARTS WHERE THE DRAG STOPS. One contest covers both (his simplification), but
+    // applying the stun on landing would have the two durations OVERLAP and the whole chain would be
+    // max(drag, stun) instead of his *"1s~1.5s pull. And 1~2s stun"*. So the skill's stun is remembered
+    // on the victim and applied on arrival.
+    //
+    // ⚠ THE DRAG DOES INTERRUPT, and that follows from his *"Yes like charmed while dragging - no
+    // act"* rather than contradicting his *"cannot be interrupted"*: being dragged is an ACTION LOCK,
+    // and UpdateAction cancels the cast of anything action-locked (with startCooldown:false, the
+    // ordinary enemy-interrupt contract — the victim keeps the cooldown and loses only the 20% initial
+    // MP). Charm and fear have always worked this way. It means an AoE pull, which carries no stun,
+    // still interrupts what it drags; the stun tail's job is the SECOND, longer window after arrival.
+
+    /// <summary>Begin dragging <paramref name="target"/> to <paramref name="caster"/>. The contest has
+    /// already been won by the time we get here — this is the payload, not the roll.</summary>
+    private void StartPull(Entity caster, Entity target, SkillDef def, int level)
+    {
+        // The stun is owed whether or not there is any travel to do, so resolve it first.
+        string? stunId = (def.Effect & SkillEffect.Stun) != 0 && def.DurationTicksAt(level) > 0
+            ? def.Id : null;
+
+        float dx = caster.X - target.X, dy = caster.Y - target.Y;
+        float dist = MathF.Sqrt(dx * dx + dy * dy);
+        float travel = dist - GameConstants.MeleeRange;
+
+        // Already close enough: nothing to drag, so the tail lands at once. A pull used on something
+        // stood next to you is a stun, which is the honest outcome rather than a wasted cast.
+        if (travel <= 0f)
+        {
+            ClearPull(target);
+            if (stunId is not null) ApplyBuff(target, def, level, source: caster);
+            return;
+        }
+
+        int ticks = Math.Max(1, (int)MathF.Round(def.PullSeconds / GameConstants.TickSeconds));
+        // The floor is on the SPEED, so it shortens the journey rather than slowing it: a short pull
+        // arrives early and the stun starts early, which is the readable behaviour.
+        float perTick = travel / ticks;
+        float minPerTick = GameConstants.PullMinSpeed * GameConstants.TickSeconds;
+        if (perTick < minPerTick)
+        {
+            perTick = minPerTick;
+            ticks = Math.Max(1, (int)MathF.Ceiling(travel / perTick));
+        }
+
+        target.PullTicksRemaining = ticks;
+        target.PullStep = perTick;
+        target.PullSourceId = caster.Id;
+        target.PullStunSkillId = stunId;
+        target.PullStunLevel = level;
+
+        // Its own destination is not its own any more. Left standing, a mob's walk order would be
+        // re-asserted the moment the drag ended and it would stroll straight back.
+        target.TargetX = null;
+        target.TargetY = null;
+    }
+
+    /// <summary>Advance one tick of a drag. Direction is recomputed every tick, so a pull still lands
+    /// correctly on a caster who is moving.</summary>
+    private void TickPull(Entity e)
+    {
+        if (e.PullTicksRemaining <= 0) return;
+        if (e.Dead) { ClearPull(e); return; }
+
+        // A puller who died, logged out or left the world ends the DRAG. The tail is still owed — the
+        // contest was won before he fell, and a stun that evaporates because its caster died a tick
+        // later would make the skill unreliable in exactly the fight it is for.
+        if (!_world.Entities.TryGetValue(e.PullSourceId, out var puller) || puller.Dead)
+        {
+            FinishPull(e);
+            return;
+        }
+
+        float dx = puller.X - e.X, dy = puller.Y - e.Y;
+        float dist = MathF.Sqrt(dx * dx + dy * dy);
+        float remaining = dist - GameConstants.MeleeRange;
+        if (remaining <= 0f || dist < 0.01f) { FinishPull(e); return; }
+
+        float step = MathF.Min(e.PullStep, remaining);
+        PlaceEntity(e, e.X + dx / dist * step, e.Y + dy / dist * step);
+
+        if (--e.PullTicksRemaining <= 0 || remaining - step <= 0.01f)
+            FinishPull(e);
+    }
+
+    /// <summary>The drag is over: pay the stun tail, if this pull had one.</summary>
+    private void FinishPull(Entity e)
+    {
+        string? stunId = e.PullStunSkillId;
+        int level = e.PullStunLevel;
+        Guid sourceId = e.PullSourceId;
+        ClearPull(e);   // BEFORE the stun: the tail must not land on a body still flagged as dragged
+
+        if (stunId is null || SkillCatalog.Get(stunId) is not SkillDef def) return;
+        _world.Entities.TryGetValue(sourceId, out var source);
+        ApplyBuff(e, def, level, source: source);
+        if (e.Kind == EntityKind.Player) SendSystemToEntity(e, "You have been pulled off balance.");
+    }
+
+    /// <summary>Forget any drag on this body. Called on death, on a cleanse of the whole state, and by
+    /// the two paths above.</summary>
+    private static void ClearPull(Entity e)
+    {
+        e.PullTicksRemaining = 0;
+        e.PullStep = 0f;
+        e.PullSourceId = Guid.Empty;
+        e.PullStunSkillId = null;
+        e.PullStunLevel = 0;
     }
 
     // ===== INVISIBILITY (BL-69) =========================================================
@@ -13218,6 +13454,10 @@ public class GameLoopService : BackgroundService
         // should be no way u die In a hidden state"* holds by construction — this is the belt to that
         // brace, and it is what keeps a CORPSE findable and resurrectable by the party.
         victim.HideTicks = 0;
+        // `BL-154` — a corpse is not dragged, and the stun tail it was owed dies with it. TickPull
+        // would clear this on its next tick anyway; doing it here means a body cannot spend even one
+        // tick both dead and action-locked, which is what a resurrect lands into.
+        ClearPull(victim);
         victim.Engaged = false;
         victim.CombatTargetId = null;
         victim.AttackCommandTargetId = null;
@@ -16027,8 +16267,15 @@ public class GameLoopService : BackgroundService
     /// control has always landed on the contest, never on the ~99% fizzle roll — but its payload is a
     /// FIELD, so neither of the two tests above can see it. Without this line a charm authored with
     /// no <see cref="DebuffSchool"/> would have landed nearly every time it was cast.</para></summary>
+    /// <para>⚠ AND A FOURTH AND FIFTH SINCE 2026-09-03: <c>def.Pulls</c> (`BL-154`) and the two
+    /// SILENCE fields (`BL-155`). Both are payload FIELDS for the same reason charm is — the flag enum
+    /// is full — and both are control, so both belong on the contest. In practice every one of them is
+    /// authored with a DebuffSchool as well and would route here anyway; they are listed because the
+    /// NEXT field-payload author will copy whichever skill he finds, and a control skill that quietly
+    /// lands 99% of the time is the exact bug this method exists to remember.</para></summary>
     private static bool IsContestedDebuff(SkillDef def, SkillEffect effect) =>
-        (effect & SkillEffect.ContestCc) != 0 || def.DebuffSchool != DebuffSchool.None || def.Charms;
+        (effect & SkillEffect.ContestCc) != 0 || def.DebuffSchool != DebuffSchool.None || def.Charms
+        || def.Pulls || def.SilencePhysical || def.SilenceMagical;
 
     /// <summary>Roll ONE hit against a cast in progress — IG's own formula, adapted (owner, 2026-08-26).
     /// See <see cref="StatCalculator.InterruptChance"/> for the model and for the two places we

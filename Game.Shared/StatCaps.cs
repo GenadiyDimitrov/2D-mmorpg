@@ -125,6 +125,42 @@ public static class StatCaps
     public static readonly float CcLevelBase =
         MathF.Pow((1f - CcLandMin) / CcLandMin, 1f / CcLevelFloorGap);
 
+    // ----- CON / SPT ALSO SHORTEN A DEBUFF (`BL-156`, owner ruling 2026-09-03) -----------------
+    //
+    // *"if we can make con and spt to decrease duration of coresponding debuffs -> it saves with a %
+    //  and if it lands on a high stat it stays less (investing have benifits)"*, then the numbers:
+    // *"only 20~30% decrease no more. Like a 50 con/spt is 30% decrease and 30(the base what was) x1
+    //  so 30~50 == x1~0.7"*, and finally *"it cuts only 1~0.7 not 1.3~0.7 so never increases
+    //  duration .. Only decrease"*.
+    //
+    // 🔑 A SECOND AXIS ON THE SAME TWO STATS, AND IT IS DELIBERATELY SHALLOW. CON and SPT already
+    // contest whether a debuff LANDS; this makes them also shorten the one that got through. The two
+    // compound, which is the whole point of *"investing have benefits"* — but a 30% floor is what
+    // stops the pair from silently becoming immunity on a high-CON tank.
+    //
+    // ⚠ IT READS THE RAW STAT, not the land chance the contest just produced. Scaling by the chance
+    // would fold in CcResist, the per-school blessings and the skill's own DebuffLandMod — three
+    // channels that already paid for themselves on the landing roll — and turn one defence into three
+    // dips. The stat, and only the stat.
+    //
+    // ⚠ IT APPLIES TO MOBS TOO (*"If con/spt does anything for mobs it's not just a decorative stat
+    // ok let's shorten it as well"*). Mob CON/SPT are flat by role (StatCalculator.MobCcCon/MobCcSpt)
+    // and sit high in the window, so player control against a normal creature is 12-30% shorter than
+    // its authored duration: melee CON 45 = x0.78, a tank mob's 50 = x0.70, and a MAGE mob's SPT 58 is
+    // already past the floor at x0.70. That is a farming change, made with eyes open — if holds stop
+    // being worth casting the lever is MobCcSpt, not this curve.
+
+    /// <summary>The stat at which a debuff still runs its full authored duration. Below it the factor
+    /// clamps to 1.0 — a low stat never LENGTHENS a debuff (*"it cuts only 1~0.7 not 1.3~0.7"*).</summary>
+    public const float DebuffDurationStatBase = 30f;
+
+    /// <summary>The stat at which the cut reaches its maximum. His *"a 50 con/spt is 30% decrease"*.</summary>
+    public const float DebuffDurationStatFull = 50f;
+
+    /// <summary>The shortest a debuff may ever be cut to, however high the defending stat —
+    /// his *"20~30% decrease no more"*.</summary>
+    public const float DebuffDurationFloor = 0.70f;
+
     // ----- THE DEBUFF SUCCESS MULTIPLIER (owner ruling 2026-08-24, `BL-90`) --------------------
     //
     // *"DebuffLandMod should be floating one value - default 1 … armor/weapon break + gravity +

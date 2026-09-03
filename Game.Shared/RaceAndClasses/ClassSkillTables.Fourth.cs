@@ -33,6 +33,40 @@ public static partial class ClassSkillTables
         //    The other eight files are still two lines long — the 40+ rule stands for them.
         RegisterLightbringerFourth();
         RegisterWarchanterFourth();
+        // ⚠ NOT a third finished file. `tank 4th.csv` is still under its own NOT DONE banner; this
+        //   registers exactly THREE skills he asked for by name on 2026-09-03 so that the pull and the
+        //   silences exist to be tested and so his file carries the rows to retune. See
+        //   RegisterBulwarkFourth and Skills.Bulwark4th.cs.
+        RegisterBulwarkFourth();
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════════════════════════
+    //  THE BULWARK, 76-90 — THREE ROWS ONLY (`BL-154` pull, `BL-155` silences)
+    // ═════════════════════════════════════════════════════════════════════════════════════════════
+
+    /// <summary>The pull and the two silences, and nothing else. His instruction, 2026-09-03:
+    /// *"put pull for the three tanks 4th, one m.silence skill for elf tank 4th and one p.silence for
+    /// human/demon tank 4th in the csv so when I author it to remember to fix ranges/duration etc"*.
+    ///
+    /// <para>🔑 THE RACE SPLIT IS HIS, and it continues the one `tank 3rd.csv` already draws: the
+    /// Human and the Demon hold with PHYSICAL tools, the Elf with magical ones. The pull is shared
+    /// because he said *"for the three tanks"*.</para>
+    ///
+    /// <para>⚠ Learn level 76 is a PLACEHOLDER — the first rung of the tier — as are every range,
+    /// cast, cooldown, MP and SP number behind these ids. They exist so there is something to correct
+    /// when he writes the file, which is the whole reason he asked for them.</para></summary>
+    private static void RegisterBulwarkFourth()
+    {
+        const int Learn = 76;
+        ClassSkills.RegisterFourth(Race.Human, Discipline.Bulwark,
+            new ClassSkill(TankPull, Learn),
+            new ClassSkill(TankSilencePhysical, Learn));
+        ClassSkills.RegisterFourth(Race.Demon, Discipline.Bulwark,
+            new ClassSkill(TankPull, Learn),
+            new ClassSkill(TankSilencePhysical, Learn));
+        ClassSkills.RegisterFourth(Race.Elf, Discipline.Bulwark,
+            new ClassSkill(TankPull, Learn),
+            new ClassSkill(TankSilenceMagical, Learn));
     }
 
     /// <summary>His `shared 4th.csv` ALL-CLASSES block. Five passives, two price bands, no race split
