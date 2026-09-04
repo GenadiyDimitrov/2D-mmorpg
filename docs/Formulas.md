@@ -309,8 +309,9 @@ IG's band and mages 6-13% above it.
   **Never re-enter one as a percent.** ⚠ **THE TANK'S HEAVY ARMOR MASTERY JOINED THEM 2026-09-04** on
   his ruling (*"the mp regen of tank is also additive, not multiplicative"*): its `x3.1 … x5.1` was the
   same leftover `BL-92` fixed for the mage and never fixed here, so a level-74 tank multiplied his
-  whole chain by 5.1 instead of adding 5.1/s. One ladder across three tiers now — **3.1 / 3.5 / 3.9 /
-  4.3 / 4.7 / 5.1 MP per second**. What is left of the carve-out is the generic `mpReg x1.1/x1.2` the
+  whole chain by 5.1 instead of adding 5.1/s. One ladder across three tiers now — **nothing below level 36, then
+  3.1 / 3.5 / 3.9 / 4.3 / 4.7 / 5.1 MP per second** (the four rungs below 36 carried an invented ×1.1
+  that he removed the same day). What is left of the carve-out is the generic `mpReg x1.1/x1.2` the
   warrior/rogue/mage armour masteries grant on every weight, which is still a percent.
 - ⚠ **HP regen sits at ~1.6-2.0× IG — known and accepted**, owner 2026-08-26: *"we will have x2 more
   than IG … Playtest will decide if it stays"*. The whole gap is the **level term** (ours ×3.71 across

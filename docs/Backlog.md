@@ -38,7 +38,7 @@ of `tank 4th.csv`, which closes `BL-154` (pull), `BL-155` (silence) — both in 
 Wall, the Perfect Whisp, a race-split three-rung Backlash, Whisp Mastery's third slot, Silencing Shock).
 `SkillCsvSeed --check` is green on all fifteen walked files. **⚠ NEW APK — the client builds its Learn
 tab locally**, and 🔴 **a `game.db` delete** (Backlash stopped being auto-granted). 🔵 **What it leaves
-you is `BL-165`** — the two AoE pull shapes, one clamp, and one unauthored ×1.1 MP regen.
+you is `BL-165`** — the two AoE pull shapes (yours to do later) and one clamp.
 · ✅ `BL-158`…`BL-162` — the NPC BUFFER pass is BUILT (0.111.0) and is in the archive: the shelf levels up
 with you, the 75 ceiling is gone, eight single harmonies and the three Marks are on sale, and Swift
 joined the Mage preset. See it with `dotnet run --project tools/BalanceMatrix -- --npcshelf`
@@ -93,7 +93,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-157` | 🔵 | The worm — a polymorph debuffer/nuker class, a seed only | classes |
 | `BL-163` | 🔴 | The buffer shelf as an EXTERNAL table — no wrappers, editable without a build | classes |
 | `BL-164` | 🔵 | The three Marks share one Rank, so the weaker rung can out-hold the stronger | classes |
-| `BL-165` | 🔵 | What the tank's 4th tier LEFT OPEN — the two AoE pulls, one clamp, one unauthored ×1.1 | combat |
+| `BL-165` | 🔵 | What the tank's 4th tier LEFT OPEN — the two AoE pulls (yours), and one clamp | combat |
 
 ---
 
@@ -751,10 +751,10 @@ Three ways out, and it is your call which:
 Nothing is blocked on this; it only bites a level-83+ character who bought a Mark and then joined a
 party with a 4th-class Lightbringer.
 
-### `BL-165` 🔵 What the tank's 4th tier left open — the two AoE pulls, one clamp, one unauthored ×1.1
+### `BL-165` 🔵 What the tank's 4th tier left open — the two AoE pulls, and one clamp
 
-Everything in `tank 4th.csv` is built (0.112.0-0.112.1, 2026-09-04). What is left is **three things**
-— two you have already said you will do later — kept together so they are one read rather than three.
+Everything in `tank 4th.csv` is built (0.112.0-0.112.1, 2026-09-04). What is left is **two things**, both
+of which you have said are yours — kept together so they are one read rather than two.
 **Nothing here is blocked and nothing is broken**; the tank is complete and playable as it stands.
 
 **1. ✅ CLOSED — Shield Smash - Power's ladder.** Its crit-damage column restarted at 15% against 35%
@@ -768,13 +768,9 @@ then corrected further: the tank's MP regen is **additive**, not multiplicative,
 **2. ✅ CLOSED — the three whisp ladders end at 90.** They read 91 for one commit; you named it a typo
 (*"the intelisence of vsCode … make it go by 2 from 89lvl and I missed it"*) and both sides now say 90.
 
-**2b. 🔵 THE FOUR LOWEST HEAVY ARMOR MASTERY RUNGS GRANT ×1.1 MP REGEN THAT NOTHING AUTHORS.** Found
-while making the tank's MP regen additive: no `tank 2nd.csv` row mentions MP regen before level 36,
-where you write `+3.1`. The ×1.1 on rungs 1-4 (levels 20/24/28/32) is MINE, it has shipped since the
-2nd class was written, and it is invisible to `--check` (the tool compares what your cells SAY, and
-they say nothing). Left alone rather than swept, because removing it changes levels 20-32 and you have
-not asked for that. One word if you want it gone (`TankHeavy`'s `mpReg` default in Skills.Masteries.cs).
-
+**2b. ✅ CLOSED — the unauthored ×1.1 MP regen is gone.** The four rungs below level 36 granted an MP
+regen no `tank 2nd.csv` row mentions; you ruled it out the same day (*"remove the x1.1 mp regen from
+tank 20~32, at 36 he jumps to +3.1 directly"*). The tank's MP-regen column is now entirely yours.
 **3. 🔵 THE TWO AoE PULL SHAPES ARE STILL NOT AUTHORED.** `BL-154` rule 4 gave the pull two more shapes
 — a ranged one taking the target plus 2-4 around IT, and a self-centred one taking 2-5 around the
 CASTER — and the **engine serves both today**: `TargetMode.EnemiesInRadius` with `AreaAtTarget` picking

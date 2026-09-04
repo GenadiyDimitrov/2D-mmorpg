@@ -7,12 +7,43 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.112.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.112.2**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-04 (latest) — 0.112.1: the tank's WEAPON MASTERY, and the last two CSV corrections
+## 2026-09-04 (latest) — 0.112.2: the tank's MP-regen column is entirely his
+
+One ruling and one build. *"Remove the x1.1 mp regen from tank 20~32, at 36 he jumps to +3.1
+directly."* Done — and with it the tank's MP-regen column has no invented number left in it anywhere:
+
+| level | Heavy Armor Mastery MP regen |
+|---|---|
+| 20 / 24 / 28 / 32 | **nothing** (was an invented ×1.1) |
+| 36 | **+3.1/s** (his `tank 2nd.csv` cell; the code had 3.4, and as a multiplier) |
+| 40-74 | **+3.5 → +5.1/s** (was ×3.5 → ×5.1 on the whole regen chain) |
+| 76-90 | **+5.1/s** (his cells first read x3.4 — the mage's number) |
+
+🔑 **`--check` could never have found the ×1.1**, and that is worth keeping in view: the tool compares
+what your CELLS say against the code, so a value the code grants and no cell mentions appears in no
+comparison at all. It was found by reading the rungs while converting the column, and it survived
+because nothing was looking for it. **An unauthored value is invisible to a CSV checker by
+construction** — the only defence is reading the code beside the file.
+
+### ⚠ AND THEY WERE NOT SERVER-ONLY, SO BOTH ARE REBUILT
+
+You asked me to build the server *if* these changes only affect it. They do not, so **both artifacts are
+fresh**: `builds/Game.Server-0.112.2.zip` and `builds/L2Clone-0.112.2.apk`.
+
+The *behaviour* is server-authoritative — regen is computed server-side and so is what you may learn —
+but all three changes live in **Game.Shared**, which the Unity client compiles into the APK and reads
+LOCALLY for two things: the **Learn tab** (built from `ClassSkills`) and the **skill cards** (built from
+`SkillText`). A server-only build would have left the phone showing the three whisp rungs at **91** and
+Heavy Armor Mastery promising **×5.1 MP regen**, while the server quietly did the right thing — a
+display that disagrees with the game, which is the failure mode the local-build rule exists to catch.
+
+🔴 **`game.db` delete still owed** (Backlash stopped being auto-granted in 0.112.0).
+## 2026-09-04 — 0.112.1: the tank's WEAPON MASTERY, and the last two CSV corrections
 
 Your read of the pass, the same day, and both halves of it are in this build.
 

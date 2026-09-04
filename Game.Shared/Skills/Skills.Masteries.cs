@@ -35,21 +35,24 @@ public static partial class SkillCatalog
             Light: all with { Evasion = lightEva, CritRateResist = 0.15f, MoveSpeed = lightSpeed });
 
     /// <summary>Tank Heavy Armor Mastery level: HEAVY armor grants flat P.Def, ×1.07 P.Def,
-    /// 15% crit-damage reduction, ×mpReg MP regen and −2 evasion. Off-weights are inert (tank is
-    /// immune to armor penalties). (CSV tank "heavy: mpReg x1.1, p.def +N, p.def x1.07, crit dmg
-    /// reduction 15%, eva -2"; the @36 level is mpReg ×3.4.)</summary>
+    /// 15% crit-damage reduction and −2 evasion — plus, at level 36 ONLY, a flat MP regen. Off-weights
+    /// are inert (the tank is immune to armor penalties). (CSV tank "heavy: p.def +N, p.def x1.07,
+    /// crit dmg reduction 15%, eva -2"; the @36 row adds "mpReg +3.1".)</summary>
     /// <param name="mpRegFlat">MP regen as a <b>FLAT PER-SECOND</b> grant — his `mpReg +3.1` at level
     /// 36, and 0 on the four rungs below it, whose rows author no MP regen at all. It is flat and not
     /// a multiplier on his 2026-09-04 ruling (*"the mp regen of tank is also additive, not
     /// multiplicative"*), which makes this rung the bottom of one continuous column running 3.1 → 5.1
     /// through the 3rd and 4th tiers. See <c>TankArmorMpReg</c> in Skills.Bulwark3rd.cs.
-    /// ⚠ The ×1.1 the four lower rungs still carry is MINE, not his — no `tank 2nd.csv` row mentions
-    /// MP regen before level 36. Left alone rather than swept: it has shipped since the 2nd class was
-    /// written and removing it is a balance change he has not asked for. Flagged on `BL-165`.</param>
-    private static ArmorMasteryProfile TankHeavy(int def, float mpReg = 1.1f, float mpRegFlat = 0f) => new(
+    /// ✅ <b>AND THE FOUR RUNGS BELOW 36 GRANT NO MP REGEN AT ALL</b>, 2026-09-04. They carried an
+    /// invented ×1.1 that no `tank 2nd.csv` row mentions — flagged rather than swept, then ruled on:
+    /// *"Remove the x1.1 mp regen from tank 20~32, at 36 he jumps to +3.1 directly"*. So the tank's
+    /// whole MP-regen column is his now, from nothing at 20 to +5.1/s at 90, and the `mpReg` percent
+    /// parameter is gone with it. ⚠ `--check` could never have caught this: the tool compares what his
+    /// cells SAY, and an unauthored value in the code appears in no cell.</param>
+    private static ArmorMasteryProfile TankHeavy(int def, float mpRegFlat = 0f) => new(
         Robe:  default,
         Light: default,
-        Heavy: new StatMods(MpRegenPct: mpReg - 1f, MpRegen: mpRegFlat, PDef: def, PDefPct: 0.07f,
+        Heavy: new StatMods(MpRegen: mpRegFlat, PDef: def, PDefPct: 0.07f,
             CritDmgResist: 0.15f, Evasion: -2));
 
     /// <summary>Warrior armor-mastery level: flat P.Def, ×1.1 MP regen and (from rung 2) flat HP
