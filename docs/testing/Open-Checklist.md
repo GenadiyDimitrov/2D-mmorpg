@@ -161,6 +161,37 @@ a stack of 9 buff scrolls is the friction you wanted or just friction** (§93D).
     contest are untouched. CSV row updated with it. ⚠ **Needs the new APK** (the skill card is built
     from the compiled def).
 
+- [!] current grapple when successfull it drag the monster but its like lagging not liek a continues clean drag - its not of a problem because mob is near me after it ends .. it seems real time .. but if you find the problem without breaking the working one - i remember even IG had not a perfect drag animation
+  - ✅ **FOUND AND FIXED 0.110.2, and it is one line.** 🔑 **`EntityDto.Warp` is not a "position
+    changed" flag — it is an instruction to the client to `SnapTo` and RETURN, skipping interpolation
+    entirely.** The drag moves the body through `PlaceEntity`, and `PlaceEntity` bumps that counter on
+    every call **by design**: it is the one seam every non-walk reposition passes through, so blink,
+    knockback, the gatekeeper and respawn all declare themselves there for free (that is your Phase
+    Shift fix — a 200-unit blink is smaller than both distance thresholds the client used to guess a
+    teleport from, so it moved you on the server and nowhere on screen).
+  - 🔴 **A pull calls that seam every tick.** So the client hard-snapped the mob **ten times a second
+    with no interpolation between any two of them** — a 10 Hz staircase that still lands in exactly
+    the right place, which is why you read it as real-time but lagging. Your description was precise.
+  - 🟢 `PlaceEntity` gained `announce` (default **true**, so every other caller is byte-for-byte
+    unchanged — nothing that was working could move); `TickPull` passes `false`. 🔑 **The line is
+    CONTINUITY, not "did something else move it":** a blink or a knockback is discontinuous and
+    interpolating across it is a lie; a drag is a body crossing the ground at a defined speed over a
+    known number of ticks, which is exactly what the interpolator draws correctly.
+  - ⚠ The step stays far inside the client's own 5-unit teleport guard — **0.43 Unity units** per tick
+    at Grapple's 600 range, 0.68 even at 900. It now interpolates like a walking mob.
+  - 🟢 **The animation comes free.** Facing and animator speed are read from the position already
+    DRAWN, so under the snaps the model saw one huge frame delta and then zeros. It will now turn to
+    face the pull and play its run.
+  - ⚠ **Server-side only — this one needs no new APK.** (The camera and the skill card from 0.110.1
+    still do.)
+  - 🔵 **One residual, and it is yours to call.** The interpolator's segment length is the measured gap
+    between the last two updates, and the server sends only what CHANGED — so a mob that stood still
+    for ten seconds and is then grappled has a ten-second first segment, and the drag's opening ~100ms
+    draws almost frozen before the second sample corrects it. One clamp fixes it (and every mob's
+    first step out of an idle), but it is inside `EntityView.Update`, which has been rewritten three
+    times to kill the rubber-band — so it is not going in beside a one-line server fix without you
+    saying so. You also said IG's own drag was not perfect; this is roughly where that lives.
+
 
 - [!] I managed to make x4 cast speed with light amror ...I'm 40lvl harmonist with 35lvl armor_mastery  and wc_harmonist_light_mastery both remove the light penalty ... So I think the 40lvl armor mastery should be buffer_armor_mastery that replace 20~35 armor_mastery and wc_chanter_heavy_mastery and harnonist_light_mastery also replaces the armorm_mastery so they won't stack 
 

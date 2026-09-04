@@ -7,12 +7,54 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.110.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.110.2**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-04 (latest) — 0.110.1: the whisp that never stopped resummoning, Grapple off the taunt rung, and the ortho camera losing the world
+## 2026-09-04 (latest) — 0.110.2: the drag was announcing itself as a teleport ten times a second
+
+Him, on Grapple: *"when successful it drags the monster but it's like lagging, not like a continuous
+clean drag — it's not really a problem because the mob is near me after it ends, it seems real time ..
+but if you find the problem without breaking the working one — I remember even IG had not a perfect
+drag animation"*.
+
+Found, and it is one line. **`EntityDto.Warp` is not a "position changed" flag — it is an instruction
+to the client to `SnapTo` and RETURN, skipping interpolation entirely** (`EntityView.SetTarget`, first
+branch). `TickPull` moves the body through `PlaceEntity`, and `PlaceEntity` bumps that counter on
+every call, by design: it is the one seam every non-walk reposition passes through, so blink,
+knockback, the gatekeeper, respawn and the admin jump all declare themselves there for free
+(`BL-102` — a 200-unit Phase Shift is smaller than both distance thresholds the client used to infer a
+teleport from, so it moved the player on the server and nowhere on screen).
+
+A pull calls that seam **every tick**. So the counter moved every tick and the client hard-snapped the
+mob **ten times a second with no interpolation between any two of them** — a 10 Hz staircase that
+nevertheless lands in exactly the right place, which is why he read it as real-time but lagging.
+
+- `GameLoopService.PlaceEntity` — gained `announce` (default **true**, so every existing caller is
+  byte-for-byte unchanged). `TickPull` passes `false`.
+- 🔑 **THE LINE IS CONTINUITY, NOT "DID SOMETHING ELSE MOVE IT".** A blink, a knockback, a gatekeeper
+  and a respawn are DISCONTINUOUS — there is no path between the two points and interpolating across
+  it is a lie. A drag is a body crossing the ground at a defined speed over a known number of ticks: it
+  is movement, and the snapshot interpolator is the thing that draws it correctly.
+- ⚠ The step stays far inside the client's own 5-unit teleport guard: **0.43 Unity units** per tick for
+  Grapple's 600 range, 0.68 even for a 900-range pull. It interpolates like a walking mob.
+- 🟢 **The animation comes along for free.** `EntityView.DriveModel` reads facing and animator speed
+  from the position it ALREADY DREW — so under the snaps it saw one huge frame delta and then zeros,
+  and now it sees continuous motion. The dragged body will turn to face the pull and play its run.
+
+⚠ **SERVER-SIDE ONLY — this one needs no new APK.** (The camera fix and Grapple's card from 0.110.1
+still do.) No wire change; protocol stays 33.
+
+🔵 **One residual, his to call, because it is in netcode with a long bug history and it is not what he
+reported.** The interpolator's segment duration is the measured gap between the last two updates, and
+the server sends only what changed — so a mob that stood still for ten seconds and is then grappled
+has a ten-second first segment, and the drag's opening ~100ms is drawn almost frozen before the second
+sample corrects it. One clamp on that span fixes it (and every mob's first step out of an idle), but
+it touches `EntityView.Update`, which has been rewritten three times, so it is not going in beside a
+one-line server fix.
+
+## 2026-09-04 — 0.110.1: the whisp that never stopped resummoning, Grapple off the taunt rung, and the ortho camera losing the world
 
 Three of his finds against 0.110.0, and two of them are the same shape: **a payload that lives in a
 FIELD reaching a test that only knows about the old container.**

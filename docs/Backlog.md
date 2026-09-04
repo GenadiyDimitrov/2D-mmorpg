@@ -696,6 +696,17 @@ rotation at all. **Fixed in 0.110.1: the 3000 MOVED to `Power`, it did not doubl
 deals, and it lands in the **Attack** rung of the auto chain. The drag, the stun tail and the one CON
 contest are untouched.
 
+🔴 **AND THE DRAG WAS DECLARING ITSELF A TELEPORT TEN TIMES A SECOND — fixed 0.110.2.** Your report:
+*"it drags the monster but it's like lagging, not like a continuous clean drag ... it seems real time"*.
+`EntityDto.Warp` is not a "position changed" flag — it is an instruction to the client to **`SnapTo`
+and RETURN**, skipping interpolation. `TickPull` moves the body through `PlaceEntity`, which bumps that
+counter on every call **by design** (it is the one seam blink, knockback, the gatekeeper and respawn
+all pass through, which is what made the Phase Shift fix free). A pull calls it every tick, so the
+client hard-snapped the mob ten times a second with nothing drawn between the snaps — a 10 Hz
+staircase landing in exactly the right place. `PlaceEntity` now takes `announce` (default **true**, so
+every other caller is unchanged) and `TickPull` passes `false`. 🔑 **The line is CONTINUITY, not "did
+something else move it".** Server-side only; no APK needed for this one.
+
 **What is still owed, and it is yours:**
 
 - 🔵 **`tank 4th.csv` has ONE placeholder row** (`Grapple`, 76, range 600, 1.2s drag, 1s stun, 15s

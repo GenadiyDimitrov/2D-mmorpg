@@ -12349,7 +12349,10 @@ public class GameLoopService : BackgroundService
 
     /// <summary>Move an entity to a point: clamp to the world, stop its current move, update
     /// the interest grid. Used by blink (caster) and knockback (target).</summary>
-    private void PlaceEntity(Entity e, float x, float y)
+    /// <param name="announce">Whether this reposition is a TELEPORT and must be declared to the client
+    /// as one (the default). Pass <c>false</c> ONLY for a move that is genuinely continuous — see the
+    /// note below.</param>
+    private void PlaceEntity(Entity e, float x, float y, bool announce = true)
     {
         e.X = Math.Clamp(x, GameConstants.WorldMinX, GameConstants.ZoneWidth);
         e.Y = Math.Clamp(y, GameConstants.WorldMinY, GameConstants.ZoneHeight);
@@ -12361,7 +12364,22 @@ public class GameLoopService : BackgroundService
         // later gets it for free. See EntityDto.Warp: a 200-unit blink is smaller than BOTH of the
         // distance thresholds the client used to infer a teleport from, which is why Phase Shift
         // moved the player on the server and nowhere on screen.
-        unchecked { e.Warp++; }
+        //
+        // 🔴 …WHICH IS WHY A DRAG MUST NOT USE IT. Owner, 2026-09-04, on Grapple: *"when successful it
+        // drags the monster, but it's like lagging, not like a continuous clean drag"*. `Warp` is not a
+        // "position changed" flag — it is an instruction to the client to **SnapTo and return**,
+        // skipping interpolation entirely (EntityView.SetTarget, first branch). A pull calls this every
+        // tick, so the counter moved every tick, and the client hard-snapped the body **ten times a
+        // second with no interpolation between any two of them**: a 10 Hz staircase that arrives in
+        // exactly the right place, which is why he read it as real-time but lagging.
+        //
+        // 🔑 THE LINE IS CONTINUITY, NOT "DID SOMETHING ELSE MOVE IT". A blink, a knockback, a
+        // gatekeeper and a respawn are DISCONTINUOUS — there is no path between the two points and any
+        // interpolation across it is a lie. A drag is a body crossing the ground at a defined speed
+        // over a known number of ticks; it is movement, and the snapshot interpolator is exactly the
+        // thing that draws it correctly. Everything else keeps the announcement, so `BL-102`'s Phase
+        // Shift fix is untouched.
+        if (announce) unchecked { e.Warp++; }
         _world.Grid.UpdatePosition(e);
     }
 
@@ -12494,7 +12512,12 @@ public class GameLoopService : BackgroundService
         if (remaining <= 0f || dist < 0.01f) { FinishPull(e); return; }
 
         float step = MathF.Min(e.PullStep, remaining);
-        PlaceEntity(e, e.X + dx / dist * step, e.Y + dy / dist * step);
+        // ⚠ `announce: false` — a drag is MOVEMENT, not a teleport. See PlaceEntity: the warp counter
+        // tells the client to snap instead of interpolate, and bumping it every tick turned the drag
+        // into a 10 Hz staircase. The step is at most ~0.7 Unity units even for a 900-range pull, so it
+        // stays well under the client's own 5-unit "that was a teleport" guard and interpolates
+        // normally, the same way a walking mob does.
+        PlaceEntity(e, e.X + dx / dist * step, e.Y + dy / dist * step, announce: false);
 
         if (--e.PullTicksRemaining <= 0 || remaining - step <= 0.01f)
             FinishPull(e);
