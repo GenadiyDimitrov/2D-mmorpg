@@ -108,6 +108,59 @@ a stack of 9 buff scrolls is the friction you wanted or just friction** (§93D).
   - 🔴 **This is the one of the five I could not drive myself — it needs the device.** If a grey
     rectangle survives the new APK, it is something else and the arithmetic above is what to rule
     out next; send a screenshot plus your four slider values and it gets measured properly.
+  - 🔴🔑 **FOUND AND FIXED 0.110.1 — AND IT WAS A THIRD, DIFFERENT BUG. Your "over 9" is the whole
+    diagnosis, and it is arithmetic, not geometry.** `Mathf.Tan(90f * Mathf.Deg2Rad)` comes back
+    **NEGATIVE**: Unity's `Deg2Rad` is built from the float PI, which rounds UP, so `90 * Deg2Rad`
+    lands a hair past π/2 and the tangent is about **−2·10⁷** instead of +∞. The near-clip correction
+    added in 0.102.x divides by `Mathf.Max(0.01f, tan)` — which with a negative tangent picks
+    **0.01**, not the huge number — so the rig was pushed back by `OrthoSize × 100`. At the default
+    camera height 38 that is **938 units at ortho zoom 9 and 1038 at zoom 10, past the camera's 1000
+    far clip plane**: the entire world falls out of the slab and the screen is nothing but the clear
+    colour, which since 0.102.11 is the ground's own grey. That is your grey rectangle covering the
+    whole screen, and the threshold you measured is exactly where the arithmetic says it starts.
+  - 🔑 **Pitch 90 is the only angle that trips it, and it is the shipped default.** At 89° the tangent
+    is a healthy 57.3 and the correction is under one unit — which is why it never showed while you
+    were judging the 2.5D models at 45-55°, and why it looked like "the same bug back again".
+  - 🟢 The correction is now written as `cos/sin` (cot θ — a clean −4·10⁻⁸ at 90° instead of a sign
+    flip) and floored at **zero**, not at a divisor, plus a hard ceiling on the rig distance: nothing
+    may ever push the camera far enough to lose the world, because losing the world looks exactly
+    like a rendering bug. **The world-edge fix from 0.102.11 stays** — it was a real second bug, and
+    this one was hiding underneath it. ⚠ **Needs the new APK.**
+
+- [!] whisps are still auto used every cooldown (30s) they should be used every 20 min or when they are not present ... if i have 1 slot and i put 2 whisps on auto they will be used on cd yes .. because one will remove the other ... but when i have space for both they will be not used untill i make space (worn off of i die and respawn with them gone)
+  - ✅ **FIXED 0.110.1.** 🔑 **The payload is a FIELD again.** A summon is authored `Category.Buff` on
+    purpose (it keeps it out of the offensive target checks), so it reaches the Buff arm of the auto
+    chain — which then asks `AutoBuffUpToDate`, and that walks `Entity.Buffs`. **A whisp rides in
+    `Entity.Whisps`,** so the walk found nothing, every summon read as MISSING, and the chain re-called
+    it the moment its 30s reuse was up: six re-summons a minute at **4 skill stones each**, against a
+    whisp that lasts twenty minutes and was already floating beside you.
+  - 🟢 The test now asks the whisp stack: present at this rung or better = up to date. So a summon
+    fires **on expiry (your 20 minutes) or on absence** — death and respawn, a class change, evicted
+    by another whisp — **and at no other time**. No 5-second renewal window: `BL-130` settled that a
+    whisp is *"a summon you place, not a blessing that ticks down"*.
+  - 🔑 **Your one-slot case needs no special code — it is this same rule working.** Two summons against
+    one slot each evict the other, so each is genuinely absent when its turn comes and both fire on
+    cooldown, exactly as you predicted. Whisp Mastery's second slot is what stops it.
+  - ⚠ **The auto-hunt MP/s readout moved with it**: a whisp is now priced on its 20 minutes, not on its
+    30-second reuse (it was quoting ~1.6 MP/s per whisp for something that costs 50 MP an hour-third).
+  - 🔵 **The same gap exists for every long BUFF on the auto bar** — renewed on expiry, still priced on
+    its cooldown, so the total MP/s is overstated for anyone running blessings. Left alone: that is a
+    number you have been reading for a while and whether it moves is your call.
+
+- [!] does grapple work in auto or its taunt skill .. if its taunt skill i want it to not be and be a normal dmg skill with 3k power (his standart dmg skill is 4k so letaer it will gro as well when authoring)
+  - **It was a taunt skill, so no — it could not be auto-cast.** `BL-83` sends every threat skill to
+    the never-auto bucket (*"get a tank, leave it auto, he taunts — almost impossible to kill"*), and
+    `TauntPower > 0` is the first test in that routing. It shipped in 0.110.0 with `TauntPower 3000`
+    and **no damage at all**, which was the honest reading of your *"lower power than the actual taunt
+    skill but still higher than most dmg ones"* — you were describing where the number sits; you have
+    now said which column it belongs in.
+  - ✅ **CHANGED 0.110.1: the 3000 MOVED to `Power`, it did not double.** Grapple is now
+    `PhysicalDamage | Stun` with **Power 3000** and no `TauntPower` — an ordinary damage skill that
+    builds threat the way every damage skill does, through the damage it deals. It is auto-castable
+    and lands in the **Attack** rung of the chain. The drag, the 1s stun tail and the single CON
+    contest are untouched. CSV row updated with it. ⚠ **Needs the new APK** (the skill card is built
+    from the compiled def).
+
 
 - [!] I managed to make x4 cast speed with light amror ...I'm 40lvl harmonist with 35lvl armor_mastery  and wc_harmonist_light_mastery both remove the light penalty ... So I think the 40lvl armor mastery should be buffer_armor_mastery that replace 20~35 armor_mastery and wc_chanter_heavy_mastery and harnonist_light_mastery also replaces the armorm_mastery so they won't stack 
 

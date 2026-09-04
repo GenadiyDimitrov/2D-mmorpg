@@ -46,21 +46,33 @@ public partial class SkillCatalog
         // back until the body arrives so the two windows run in sequence — 1.2s of travel, then 1s of
         // stun — instead of overlapping into one.
         //
-        // ⚠ TauntPower 3000 is the *"lower power than the actual taunt skill but still higher than
-        // most dmg onse"* he asked for: the Bulwark's own Taunt ladder runs 4,500 → 12,000, so this
-        // sits under its first rung and well over anything a damage skill puts on the table.
+        // 🔴 IT IS A DAMAGE SKILL, NOT A THREAT SKILL — reversed 2026-09-04 at his word: *"does grapple
+        // work in auto or is it a taunt skill .. if it's a taunt skill I want it to not be, and be a
+        // normal dmg skill with 3k power"*. It shipped in 0.110.0 carrying `TauntPower: 3000` and no
+        // damage at all, and `TauntPower > 0` is the FIRST test in ClassifyAuto: `BL-83` sends every
+        // threat skill to the never-auto-cast bucket, so a tank's new signature move could not appear
+        // in a rotation. That was the honest reading of his *"lower power than the actual taunt skill
+        // but still higher than most dmg ones"* at the time — but he was describing where the number
+        // sits, and has now said which COLUMN it belongs in.
+        //
+        // ⚠ SO THE 3000 MOVED, IT DID NOT DOUBLE. `Power` replaces `TauntPower`; the skill is not both.
+        // It still builds threat, by the only route a damage skill ever does — the damage it deals
+        // through AddThreat. His scale: *"his standard dmg skill is 4k so later it will grow as well
+        // when authoring"*, and the Bulwark's own Shield Smash opens at 1,000, so this is a 4th-tier
+        // number deliberately set one notch under his own standard, and a placeholder like every other
+        // number in this file.
         //
         // ⚠ RANGE IS FREE TO GROW. The drag is TIMED, so 600 and 900 both take PullSeconds and the
         // lockdown does not scale with reach — see the note on SkillDef.Pulls.
-        new(TankPull, "Grapple", BaseClass.Fighter, SkillEffect.Stun,
-            MpCost: 80, CastTicks: 5, CooldownTicks: 150, Range: 600, Power: 0,
+        new(TankPull, "Grapple", BaseClass.Fighter, SkillEffect.PhysicalDamage | SkillEffect.Stun,
+            MpCost: 80, CastTicks: 5, CooldownTicks: 150, Range: 600, Power: 3000,
             DurationTicks: 10,                       // the STUN tail: his 1-2s, placed at 1s
             Pulls: true, PullSeconds: 1.2f,          // his 1-1.5s drag
-            TauntPower: 3000,
             DebuffSchool: DebuffSchool.Physical, Category: SkillCategory.Debuff,
             BuffKey: "tank_pull_stun", Rank: 1,
             SpCost: 100_000,
-            Description: "Hauls an enemy across the ground to your side and leaves it reeling."),
+            Description: "Hauls an enemy across the ground to your side, striking it on arrival and "
+                       + "leaving it reeling."),
 
         // ═══ NUMBING STRIKE — the PHYSICAL silence (`BL-155`), Human + Demon ══════════════════════
         //

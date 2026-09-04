@@ -141,11 +141,43 @@ namespace Game.Client
         /// back changes nothing you can see. So back it off by exactly the term that was eating the
         /// margin, which pins the bottom-edge ground depth at <see cref="Distance"/> (≥10) at every
         /// angle and every zoom. Under perspective, distance IS the zoom and nothing is touched.</para>
+        ///
+        /// <para>🔴 <b>AND THE SECOND BUG, WHICH THIS CORRECTION ITSELF CAUSED: the world vanished
+        /// above ortho zoom ≈ 9.</b> (Owner, 2026-09-04: *"ortho zoom-out is still broken over 9
+        /// zoom"* — the same grey, a third time, and this one is arithmetic, not geometry.)</para>
+        ///
+        /// <para>🔑 <c>Mathf.Tan(90f * Mathf.Deg2Rad)</c> IS NEGATIVE. Unity's <c>Deg2Rad</c> is
+        /// <c>(float)PI * 2 / 360</c>, and float PI rounds UP, so <c>90 * Deg2Rad</c> lands a hair PAST
+        /// π/2 and the tangent comes back around −2·10⁷ instead of +∞. <c>Mathf.Max(0.01f, tan)</c> then
+        /// chose <b>0.01</b>, not the huge number, and the correction became <c>OrthoSize · 100</c>:
+        /// at the default <c>Distance</c> 38 the rig sat 938 units back at OrthoSize 9 and <b>1038 at
+        /// OrthoSize 10 — past the camera's 1000 far clip plane</b>. The entire world fell out of the
+        /// slab and the screen became the clear colour, which since 0.102.11 is the ground's own grey.
+        /// Pitch 90 is the shipped default, and it is the ONLY angle that trips it: at 89° the tangent
+        /// is a healthy 57.3 and the term is under a unit.</para>
+        ///
+        /// <para>So the correction is written as <c>cos/sin</c> — cot θ directly, which is a clean
+        /// −4·10⁻⁸ at 90° instead of a sign flip — and floored at ZERO rather than at a divisor. The
+        /// clamp is the belt to that braces: nothing here may ever push the rig far enough to lose the
+        /// world, because losing the world looks exactly like a rendering bug and reads as one.</para>
         /// </summary>
-        private float RigDistance =>
-            Orthographic
-                ? Distance + OrthoSize / Mathf.Max(0.01f, Mathf.Tan(Pitch * Mathf.Deg2Rad))
-                : Distance;
+        private float RigDistance
+        {
+            get
+            {
+                if (!Orthographic) return Distance;
+                float rad = Pitch * Mathf.Deg2Rad;
+                // cot θ: 1 at 45°, 0 at 90°. Never a division by a value that can flip sign.
+                float cot = Mathf.Cos(rad) / Mathf.Max(0.001f, Mathf.Sin(rad));
+                float back = Distance + OrthoSize * Mathf.Max(0f, cot);
+                return Mathf.Min(back, MaxRigDistance);
+            }
+        }
+
+        /// <summary>The hard ceiling on how far back the ortho rig may sit. Well inside the camera's
+        /// 1000 far plane and far beyond anything the sliders can legitimately ask for (Distance 90 +
+        /// OrthoSize 60 × cot 45° = 150), so it only ever catches a bug.</summary>
+        private const float MaxRigDistance = 400f;
 
         private Vector3 _followPoint;
         private Transform _followTarget;

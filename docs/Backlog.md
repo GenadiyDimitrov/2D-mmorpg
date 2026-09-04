@@ -668,7 +668,7 @@ shorten the distance + enemy interrupt rather than control"* and *"also one con 
 | 3 | Stops at melee range | `GameConstants.MeleeRange`, re-aimed each tick at the puller |
 | 4 | Two AoE shapes, 2-5 bodies | 🔵 **the ENGINE is there, the SKILLS are not** — see below |
 | 5 | Boss immune, players yes | `BossShrugsOff` learned `def.Pulls` |
-| 6 | Threat below the taunt | `TauntPower: 3000` against the Taunt ladder's 4,500 → 12,000 |
+| 6 | ~~Threat below the taunt~~ — **REVERSED by you, 2026-09-04** | 🔴 It is a **DAMAGE skill**, not a threat skill: `Power: 3000`, no `TauntPower`. See below |
 | 7 | 1s stun on the SAME contest | Held on the victim and applied by `FinishPull` **on arrival**, so drag and stun run in sequence rather than overlapping |
 
 🔑 **THE DRAG IS TIMED, NOT PACED — your 300/s and your 1-1.5s are two different rules and the second
@@ -683,6 +683,18 @@ way ... U don't see a mage being dragged and still casts."* So the chain interru
 AoE pull — which carries no stun — still interrupts what it drags. It falls out of your *"like charmed
 while dragging - no act"* for free: being dragged is an action lock, and `UpdateAction` has always
 cancelled the cast of anything action-locked.
+
+🔴 **GRAPPLE IS A DAMAGE SKILL, NOT A THREAT SKILL — you reversed row 6 on 2026-09-04:** *"does grapple
+work in auto or is it a taunt skill .. if it's a taunt skill I want it to not be, and be a normal dmg
+skill with 3k power (my standard dmg skill is 4k so later it will grow as well when authoring)"*.
+
+It shipped in 0.110.0 as `TauntPower: 3000` with **no damage at all**, and that had a consequence you
+found before I did: `BL-83` routes every threat skill to the **never-auto-cast** bucket, and
+`TauntPower > 0` is the first test it applies — so a tank's new signature move could not appear in a
+rotation at all. **Fixed in 0.110.1: the 3000 MOVED to `Power`, it did not double.** Grapple is now
+`PhysicalDamage | Stun`, Power 3000, no `TauntPower`; it builds threat only through the damage it
+deals, and it lands in the **Attack** rung of the auto chain. The drag, the stun tail and the one CON
+contest are untouched.
 
 **What is still owed, and it is yours:**
 

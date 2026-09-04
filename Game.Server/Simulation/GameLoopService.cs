@@ -5579,6 +5579,35 @@ public class GameLoopService : BackgroundService
     /// a bottle a minute early is a different (and more expensive) proposition than recasting a skill.</summary>
     private static bool AutoBuffUpToDate(Entity p, SkillDef def, int level)
     {
+        // 🔴 A WHISP SUMMON IS UP WHEN THE WHISP IS RIDING — AND IT LEAVES NOTHING IN `Buffs` TO ASK.
+        // Owner, 2026-09-04: *"whisps are still auto used every cooldown (30s); they should be used
+        // every 20 min or when they are not present"*.
+        //
+        // 🔑 THE PAYLOAD IS A FIELD AGAIN (`SkillDef.SummonsWhisp`), and the lesson is the one `BL-110`
+        // and `BL-154` already cost us twice: a summon is authored `Category.Buff` — deliberately, so
+        // it stays out of the offensive target checks — so it reaches the Buff arm of the chain and is
+        // then handed to a test that walks `Entity.Buffs`. A whisp rides in `Entity.Whisps`, so the
+        // walk found nothing, every summon read as MISSING, and the autopilot re-called it the instant
+        // its 30s reuse was up: six re-summons a minute at 4 SKILL STONES each, against a whisp that
+        // lasts twenty minutes and was already floating beside him.
+        //
+        // ⚠ NO RENEWAL WINDOW, unlike a blessing. `BL-130` settled what a whisp is — *"a summon you
+        // place, not a blessing that ticks down"* — so this asks the flat question he asked for: is it
+        // present? A whisp therefore re-summons when it EXPIRES (his 20 minutes) or when it is gone
+        // for any other reason (death and respawn, a class change, evicted by another whisp), and at
+        // no other time. The ~1s gap while the replacement casts is the honest cost of that rule.
+        //
+        // ⚠ AND THE ONE-SLOT CASE IS NOT A BUG — it is this rule working, and he said so first: *"if I
+        // have 1 slot and I put 2 whisps on auto they will be used on cd, yes, because one will remove
+        // the other"*. Two armed summons against a single slot each evict the other, so each is
+        // genuinely absent every time its turn comes round. Whisp Mastery's second slot is the fix,
+        // and arming one summon is the free one.
+        //
+        // ⚠ THE LEVEL TEST IS `BL-112`'s, kept: a whisp called at a lower rung than the one we now know
+        // is NOT up to date, so learning a stronger rung re-calls it once and then leaves it alone.
+        if (def.SummonsWhisp is { Length: > 0 })
+            return p.Whisps.Any(w => w.SummonSkillId == def.Id && w.Level >= level);
+
         // One child = the wrapper hands out that family's rung; ask about the CHILD.
         if (def.ChildBuffsAt(level) is { Length: 1 } one
             && SkillCatalog.Get(one[0]) is SkillDef child)
@@ -5904,7 +5933,18 @@ public class GameLoopService : BackgroundService
             if (SkillCatalog.Get(entry.SkillId) is not SkillDef def || !p.HasSkill(def.Id)) continue;
             int lvl = Math.Max(1, p.SkillLevelOf(def.Id));
             float mp = def.MpCostAt(lvl) * MpCostFactor(p, def);
-            float reuseSec = Math.Max(0.1f, AutoCycleTicks(p, def, entry.ExtraDelayTicks) * GameConstants.TickSeconds);
+            // ⚠ A WHISP IS PRICED ON ITS TWENTY MINUTES, NOT ON ITS THIRTY-SECOND REUSE. The chain
+            // re-summons on ABSENCE (see AutoBuffUpToDate), so its reuse is not its cycle and quoting
+            // it would tell him a whisp drains ~1.6 MP/s when it really costs 50 MP every 20 minutes —
+            // a HUD that contradicts the rule it is reporting on. Floored at the true reuse, which is
+            // what the one-slot case (two summons evicting each other) actually costs.
+            // 🔵 The same gap exists for every long BUFF on the bar — it is renewed on expiry too, and
+            // still priced on its cooldown. Not touched here: that is a number he has been reading for
+            // a while and it is his call whether it moves.
+            int cycleTicks = AutoCycleTicks(p, def, entry.ExtraDelayTicks);
+            if (def.SummonsWhisp is { Length: > 0 })
+                cycleTicks = Math.Max(cycleTicks, def.DurationTicksAt(lvl));
+            float reuseSec = Math.Max(0.1f, cycleTicks * GameConstants.TickSeconds);
             float mps = mp / reuseSec;
             totalMps += mps;
             string name = ClassSkills.DisplayName(def.Id, p.Race, p.BaseClass, p.Archetype, p.Discipline);

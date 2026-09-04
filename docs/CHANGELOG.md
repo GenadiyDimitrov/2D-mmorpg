@@ -7,12 +7,99 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.110.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.110.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-03 (latest) — the boot console says what went wrong, not what went right
+## 2026-09-04 (latest) — 0.110.1: the whisp that never stopped resummoning, Grapple off the taunt rung, and the ortho camera losing the world
+
+Three of his finds against 0.110.0, and two of them are the same shape: **a payload that lives in a
+FIELD reaching a test that only knows about the old container.**
+
+---
+
+### 1. A whisp was re-summoned every 30 seconds instead of every 20 minutes
+
+Him: *"whisps are still auto used every cooldown (30s); they should be used every 20 min or when they
+are not present ... if I have 1 slot and I put 2 whisps on auto they will be used on cd yes, because
+one will remove the other ... but when I have space for both they will not be used until I make space
+(worn off, or I die and respawn with them gone)"*.
+
+🔑 **A summon is authored `Category.Buff` on purpose** — it is cast at yourself and leaves something
+that expires, and the category is what keeps it out of the offensive target checks. So it reaches the
+**Buff arm** of the auto chain, which asks `AutoBuffUpToDate`, which walks `Entity.Buffs`. **A whisp
+rides in `Entity.Whisps`.** The walk found nothing, every summon read as MISSING, and the chain
+re-called it the instant its 30s reuse was up: six re-summons a minute at **4 skill stones each**,
+against a whisp that lasts twenty minutes and was already floating beside him.
+
+- `GameLoopService.AutoBuffUpToDate` — a `SummonsWhisp` skill now asks the **whisp stack**: present
+  under this summon's id at this rung or better = up to date. The rung test is `BL-112`'s, kept, so
+  learning a stronger rung re-calls it once and then leaves it alone.
+- ⚠ **No renewal window, unlike a blessing.** `BL-130` already settled what a whisp is — *"a summon you
+  place, not a blessing that ticks down"* — so this asks the flat question he asked for: is it there?
+  A summon therefore fires **on expiry (his 20 minutes) or on absence** (death and respawn, a class
+  change, evicted by another whisp) and at no other time. The ~1s gap while the replacement casts is
+  the honest cost of that rule.
+- 🔑 **His one-slot case needed no code — it is this rule working, and he said so first.** Two summons
+  against one slot each evict the other, so each is genuinely absent when its turn comes and both fire
+  on cooldown. Whisp Mastery's second slot is what stops it.
+- `SendAutoHuntStatus` — a whisp is now **priced on its duration, not its reuse**. It was quoting
+  ~1.6 MP/s for something that costs 50 MP every twenty minutes: a HUD that contradicts the rule it is
+  reporting on. 🔵 The same gap exists for every long **buff** on the auto bar (renewed on expiry,
+  priced on cooldown) and is deliberately left alone — that number is his to move.
+
+### 2. Grapple was a threat skill, so it could never be auto-cast
+
+Him: *"does grapple work in auto or is it a taunt skill .. if it's a taunt skill I want it to not be,
+and be a normal dmg skill with 3k power (my standard dmg skill is 4k so later it will grow as well
+when authoring)"*.
+
+It shipped yesterday as `TauntPower: 3000` with **no damage at all** — the honest reading of his
+*"lower power than the actual taunt skill but still higher than most dmg ones"* at the time. He was
+describing where the number sits; he has now said which **column** it belongs in. And the consequence
+he found before I did: `BL-83` sends every threat skill to the never-auto bucket (*"get a tank, leave
+it auto, he taunts — almost impossible to kill"*), and `TauntPower > 0` is the **first** test in
+`ClassifyAuto`. A tank's new signature move could not appear in a rotation at all.
+
+- `Skills.Bulwark4th.cs` — **the 3000 MOVED, it did not double.** `SkillEffect.PhysicalDamage | Stun`,
+  `Power: 3000`, `TauntPower` gone. It builds threat by the only route a damage skill ever does — the
+  damage it deals through `AddThreat` — and lands in the **Attack** rung of the chain. The drag, the
+  1s stun tail and the single CON contest are untouched, as is its `DebuffSchool.Physical` (which is
+  what already paces it on attack speed, per `BL-132`).
+- `tank 4th.csv` — the Grapple row moved with it, same commit. Still a placeholder ladder of one rung.
+
+### 3. 🔴 The ortho camera lost the entire world above zoom 9
+
+Him: *"ortho zoom-out is still broken over 9 zoom"* — the third grey rectangle, and the first one that
+is **arithmetic rather than geometry**. His threshold is the whole diagnosis.
+
+🔑 **`Mathf.Tan(90f * Mathf.Deg2Rad)` is NEGATIVE.** Unity's `Deg2Rad` is built from the float `PI`,
+which rounds UP, so `90 * Deg2Rad` lands a hair past π/2 and the tangent comes back around **−2·10⁷**
+instead of +∞. The near-clip correction added in 0.102.x divides by `Mathf.Max(0.01f, tan)` — which
+with a negative tangent picks **0.01**, not the huge number — so the rig was pushed back by
+`OrthoSize × 100`. At the default camera height 38 that is **938 units at ortho zoom 9 and 1038 at
+zoom 10, past the camera's 1000 far clip plane**. The entire world falls out of the ortho slab and the
+screen becomes nothing but the clear colour — which since 0.102.11 is the ground's own grey. His
+"over 9" is exactly where the arithmetic says it starts.
+
+🔑 **Pitch 90 is the only angle that trips it, and it is the shipped default.** At 89° the tangent is a
+healthy 57.3 and the correction is under one unit — which is why it never showed while he was judging
+the 2.5D models at 45-55°, and why it read as "the same bug back again".
+
+- `CameraRig.RigDistance` — the correction is now written as `cos/sin` (cot θ, a clean −4·10⁻⁸ at 90°
+  instead of a sign flip) and floored at **zero**, not at a divisor, plus a hard ceiling on the rig
+  distance. Nothing may push the camera far enough to lose the world, because losing the world looks
+  exactly like a rendering bug and reads as one.
+- ⚠ **The world-edge fix from 0.102.11 stays.** It was a real second bug (the view is genuinely wider
+  than the 240-unit map at the top of the slider); this third one was hiding underneath it.
+
+---
+
+⚠ **NEW APK.** The camera fix and Grapple's skill card are both client-side. No wire change, so
+**protocol stays 33**.
+
+## 2026-09-03 — the boot console says what went wrong, not what went right
 
 Owner: *"remove the server console info flood in the start with every city/zone creation ...it's a
 system that works now and only flood the console"*. Startup printed a line **per region** plus one per
