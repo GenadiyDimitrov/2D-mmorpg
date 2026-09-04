@@ -80,7 +80,7 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 74,Harmonist Bow Mastery,wc_harmonist_bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"Bow: Range +400, P.Atk +600;",0,880k,[],Elf,
 ,,,,,,,,,,,,,,,,,-----------------------Shield Mastery-----------------------
 40,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield P.Def +30%, Shield Rate +50%;",0,36k,[],Human,
-60,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield P.Def +40%, Shield Rate +70%;",0,120k,[],Human,
+60,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield P.Def +40%, Shield Rate +70%; bow resistance 16%",0,120k,[],Human,
 70,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield P.Def +50%, Shield Rate +85%; +10% P.Def, bow resistance 16%",0,390k,[],Human,
 ,,,,,,,,,,,,,,,,,-----------------------Warlock Weapon Mastery-----------------------
 40,Warlock Weapon Mastery,wc_bloodhanter_blunt_mastery,Passive,blunt/2,,0,0,self/single,0,0,0,"2h Blunt: P.Atk 30, Accuracy +3;",0,36k,[],Demon,

@@ -20,8 +20,8 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 ,,,,,,,,,,,,,,,,----------------------------Defensive Wall----------------------------
 20,Defensive Wall,defensive_wall,pfysical buff,,,0,0,self/single,0.5,900,30,increase p.def +1800; m.def +1600; buff cancel resist x1.8; ms x0.5,20,3400,[]
 ,,,,,,,,,,,,,,,,----------------------------Shield Mastery----------------------------
-20,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield P.Def +30%, Shield Rate +50%",0,3200,[]
-28,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield P.Def +40%, Shield Rate +70%",0,3200,[]
+20,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield P.Def +30%, Shield Rate +50%;",0,3200,[]
+28,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield P.Def +40%, Shield Rate +70%; bow resistance 16%",0,3200,[]
 ,,,,,,,,,,,,,,,,----------------------------Anti-Magic----------------------------
 20,Anti-Magic,anti_magic,passive,,,0,0,self/single,0,0,0,magic-fail FLOOR 10% - spells fizzle on you at least 1 cast in 10 no matter the caster - NOT the same skill as Tank Anti-Magic above (that one grants m.def; this one is the floor) - auto-granted at the class change so SP is 0 - lvl2 (15%) at 40 - lvl3 (20%) is written but unreachable until the 4th class exists,0,0,[]
 ,,,,,,,,,,,,,,,,----------------------------Taunt----------------------------
