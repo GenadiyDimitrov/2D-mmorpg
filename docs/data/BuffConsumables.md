@@ -29,7 +29,7 @@ rather than wasted. **Slot** = does it occupy one of the 20 buff squares (the se
 | **Ferocity** | `crit_dmg` | — | rung 6 | box (Blessing Box), craft | yes — identical rung | **yes** |
 | **Focus** | `crit_rate` | — | rung 6 | box (Blessing Box), craft | yes — identical rung | **yes** |
 | **Force** | `atk_mag` | rung 1 / rung 2 | rung 4 | box (Blessing Box), craft, vendor (Apothecary) | yes — identical rung | **yes** |
-| **Frenzy** | `frenzy` | — | rung 6 | box (Blessing Box), craft | yes — identical rung | **yes** |
+| **Frenzy** | `frenzy` | — | rung 2 | box (Blessing Box), craft | yes — identical rung | **yes** |
 | **Fury** | `spd_as` | rung 1 / rung 2 | rung 3 | box (Blessing Box), craft, drop, vendor (Apothecary) | yes — identical rung | **yes** |
 | **Insight** | `mcrit_rate` | — | rung 6 | box (Blessing Box), craft | yes — identical rung | **yes** |
 | **Might** | `atk_phys` | rung 1 / rung 2 | rung 3 | box (Blessing Box), craft, vendor (Apothecary) | yes — identical rung | **yes** |
@@ -79,12 +79,20 @@ not apply the way it does to the table above.
 | **Fortify** | `fortify` | 1 | Tank stance: +50% Defence for 25s | Fortify | no |
 | **Grand Anthem** | `wc_chant` | 3 | Party: +35% max HP/MP, +30% magic def & cast/attack speed, +15% atk/def, +move & regen | Grand Anthem, Sylvan Anthem, War Anthem | no |
 | **Great Might** | `great_blessing` | 4 | +15% P.Def for the whole party, on top of Bulwark, for 20 minutes. Does not stack with War Might or Great Might — an ally carries one, never both | Great Bulwark, Great Might, War Bulwark, War Might | no |
+| **Harmony of Alacrity** | `npc_h_alacrity` | 1 | +30% Cast Speed (buffer's harmony, 1 hour) | Harmony of Alacrity | no |
+| **Harmony of Body** | `npc_h_body` | 1 | +30% Max HP (buffer's harmony, 1 hour) | Harmony of Body | no |
+| **Harmony of Bulwark** | `npc_h_bulwark` | 1 | +25% P.Def (buffer's harmony, 1 hour) | Harmony of Bulwark | no |
+| **Harmony of Force** | `npc_h_force` | 1 | +10% M.Atk (buffer's harmony, 1 hour) | Harmony of Force | no |
 | **Harmony of Madness** | `harmony_madness` | 1 | A hymn that trades the party's guard for its edge: less life and mana, more of everything that ends a fight | Harmony of Madness | no |
 | **Harmony of Protection** | `harmony_protection` | 1 | Shields you and nearby allies. Stacks on top of every ordinary defensive buff | Harmony of Protection | no |
 | **Harmony of Speed** | `harmony_speed` | 1 | Quickens you and nearby allies. Stacks on top of Swift and Agility | Harmony of Speed | no |
+| **Harmony of Swift** | `npc_h_swift` | 1 | +20 Move Speed (buffer's harmony, 1 hour) | Harmony of Swift | no |
+| **Harmony of the Fury** | `npc_h_fury` | 1 | +15% Attack Speed (buffer's harmony, 1 hour) | Harmony of the Fury | no |
+| **Harmony of the Might** | `npc_h_might` | 1 | +12% P.Atk (buffer's harmony, 1 hour) | Harmony of the Might | no |
 | **Harmony of the Soul** | `harmony_soul` | 1 | Quickens the party's hands and spares their mana: shorter reuse and cheaper skills, and at the top healing lands harder and the mind holds | Harmony of the Soul | no |
 | **Harmony of the Warrior** | `harmony_warrior` | 1 | Drives you and nearby allies into a fighting song. Stacks on top of Focus and Ferocity | Harmony of the Warrior | no |
 | **Harmony of the Wizard** | `harmony_wizard` | 1 | Sharpens the casters around you. Stacks on top of Force and Alacrity | Harmony of the Wizard | no |
+| **Harmony of Ward** | `npc_h_ward` | 1 | +30% M.Def (buffer's harmony, 1 hour) | Harmony of Ward | no |
 | **Healer's Power** | `healers_power` | 1 | For 15 seconds every heal you cast lands for far more | Healer's Power | no |
 | **Holy Mark** | `healer_mark` | 4 | The party's own Mark. Does not stack with a healer's | Blood Mark, Harmony Mark, Holy Mark, Life Mark | no |
 | **Holy Soul** | `holy_soul` | 1 | Stance. Every skill costs 30% less MP, but you cast 10% slower and burn 50 HP a second | Holy Soul | no |

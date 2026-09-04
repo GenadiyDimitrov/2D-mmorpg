@@ -242,13 +242,20 @@ internal static class ConsumableBuffPage
         // The buffer's rung for a family, read back out of what it actually hands out.
         int NpcRank(string family, HashSet<string> _)
         {
+            // ⚠ EVERY TIER, not `def.ChildBuffs`. Since `BL-158` a blessing is a LADDER and the def's
+            // own `ChildBuffs` is the fallback — the LOWEST rung. Reading it alone would report the
+            // buffer's ceiling as Ward +10% when it sells +30%, i.e. understate the NPC everywhere this
+            // page compares it against a potion. The top tier is the honest answer to "what can the NPC
+            // give me for this family".
             int best = 0;
             foreach (var id in SkillCatalog.NewbieBuffSet)
             {
-                if (SkillCatalog.Get(id) is not SkillDef def || def.ChildBuffs is null) continue;
-                foreach (var kid in def.ChildBuffs)
-                    if (SkillCatalog.Get(kid) is { } c && c.BuffKey == family && c.Rank > best)
-                        best = c.Rank;
+                if (SkillCatalog.Get(id) is not SkillDef def) continue;
+                int tiers = SkillCatalog.NpcBuffTiers.TryGetValue(id, out var t) ? t.Length : 1;
+                for (int tier = 1; tier <= tiers; tier++)
+                    foreach (var kid in def.ChildBuffsAt(tier) ?? Array.Empty<string>())
+                        if (SkillCatalog.Get(kid) is { } c && c.BuffKey == family && c.Rank > best)
+                            best = c.Rank;
             }
             return best;
         }

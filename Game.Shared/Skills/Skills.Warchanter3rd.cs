@@ -119,14 +119,25 @@ public static partial class SkillCatalog
         new(MpCost: mp, SpCost: sp, Magnitudes: mags, Description: desc + " (5 minutes).",
             PhysMpCostPct: physMpCost, MagicMpCostPct: magicMpCost);
 
+    /// <param name="replaces">`BL-160` — the NPC buffer's SINGLE harmonies this one contains. A
+    /// harmony carries `Magnitudes`, not `ChildBuffs`, so it is not a "group" in the engine's sense and
+    /// cannot cover a family automatically; `Replaces` is what makes the owner's rule true —
+    /// *"his acts as a group one so replaces them"*. Casting Harmony of Protection tears out the
+    /// player's bought Harmony of Ward / Bulwark / Body and takes ONE bar slot instead of three, which
+    /// is exactly his argument: *"at 56 mine is already 1 space 2 buffs .. its strategy"*.
+    ///
+    /// ⚠ It removes them; it does not BLOCK them. Buy a single harmony after a Warchanter has already
+    /// blessed you and it still lands, redundantly, for 50k. That is the player's mistake to make and
+    /// the same shape as buying a potion over a group.</param>
     private static SkillDef WcHarmony(string id, string name, string buffKey,
-        SkillEffect effect, SkillLevel[] levels, string desc) =>
+        SkillEffect effect, SkillLevel[] levels, string desc, string[]? replaces = null) =>
         new(id, name, BaseClass.Mage, effect,
             MpCost: levels[0].MpCost, CastTicks: 10, CooldownTicks: 1200, Range: 600, Power: 0,
             DurationTicks: 3000, BuffKey: buffKey, Rank: NpcBuffRank,
             Category: SkillCategory.Buff, SpCost: levels[0].SpCost,
             Magnitudes: levels[0].Magnitudes,
             TargetMode: TargetMode.AlliesInRadius, AreaRadius: 800f,
+            Replaces: replaces,
             Levels: levels,
             Description: desc);
 
@@ -285,7 +296,8 @@ public static partial class SkillCatalog
                     },
                     "+20 Move Speed and +3 Evasion for you and nearby allies"),
             },
-            "Quickens you and nearby allies. Stacks on top of Swift and Agility."),
+            "Quickens you and nearby allies. Stacks on top of Swift and Agility.",
+             replaces: new[] { NpcHSwift }),
 
         // ── HARMONY OF PROTECTION — 5 rungs @44/52/56/66/74 ──────────────────────────────────
         // The defensive harmony, and the only one that reaches its final effect at 74. Reflect is
@@ -317,7 +329,8 @@ public static partial class SkillCatalog
                     "+30% M.Def, +20% HP regeneration, +25% P.Def, +30% Max HP, reflects 20% of melee damage"),
             // Rung 6, his `buffer 4th.csv` @76 (`BL-108`) — the same five lines plus bow resistance.
             }.Concat(BufferFourthProtectionRungs()).ToArray(),
-            "Shields you and nearby allies. Stacks on top of every ordinary defensive buff."),
+            "Shields you and nearby allies. Stacks on top of every ordinary defensive buff.",
+             replaces: new[] { NpcHWard, NpcHBulwark, NpcHBody }),
 
         // ── HARMONY OF THE WARRIOR — 6 rungs @40/44/48/56/58/74 ──────────────────────────────
         //
@@ -363,7 +376,8 @@ public static partial class SkillCatalog
                     "double critical rate, +35% critical damage, +4 accuracy, +12% P.Atk, "
                     + "+15% attack speed, 8% melee vampirism"),
             },
-            "Drives you and nearby allies into a fighting song. Stacks on top of Focus and Ferocity."),
+            "Drives you and nearby allies into a fighting song. Stacks on top of Focus and Ferocity.",
+            replaces: new[] { NpcHMight, NpcHFury }),
 
         // ── HARMONY OF THE WIZARD — 2 rungs @48/52, and it STOPS ─────────────────────────────
         // ⚠ The old def also carried +20% MP regen and a −30% magic-skill MP cost. Both are GONE
@@ -383,6 +397,7 @@ public static partial class SkillCatalog
             //    on the 4th-class ladder @77, and this is that ladder arriving: rungs 3-5 at 77/78/79
             //    (`BL-108`), adding MP regen, then magic crit rate, then magic crit damage.
             }.Concat(BufferFourthWizardRungs()).ToArray(),
-            "Sharpens the casters around you. Stacks on top of Force and Alacrity."),
+            "Sharpens the casters around you. Stacks on top of Force and Alacrity.",
+            replaces: new[] { NpcHForce, NpcHAlacrity }),
     };
 }

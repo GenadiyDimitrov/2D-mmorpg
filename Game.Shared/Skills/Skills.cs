@@ -1669,6 +1669,45 @@ public static partial class SkillCatalog
                     $"FreeNpcBuffSet names '{id}', which the buffer does not offer (BL-150). The free "
                   + "tier must be a subset of NewbieBuffSet, or the blessing is free and unreachable.");
         }
+
+        // ----- `BL-158`: THE TIER TABLE IS THE SHELF, SO IT MUST COVER THE SHELF EXACTLY. -----
+        // Three ways this can silently rot, all of them caught here rather than in a playtest:
+        //   1. A blessing on the shelf with NO tier row would price at 0 and unlock at 6 — a free
+        //      max-rung Mark at level 6, and nothing would say a word.
+        //   2. A tier row whose LENGTH disagrees with the def's `Levels` is the real trap: tier index
+        //      IS the SkillLevel index, so a 3-tier table over a 2-level def hands out level 3 of a
+        //      def that has two, and `ChildBuffsAt` quietly falls back to the def's own child — i.e.
+        //      the TOP rung, which is exactly the bug this whole feature exists to remove.
+        //   3. Non-monotonic levels would let a higher tier unlock EARLIER than a lower one, so the
+        //      "highest tier at or below your level" scan would skip it. His ladders are always
+        //      monotonic; this makes a bulk edit that breaks one loud.
+        foreach (var id in NewbieBuffSet)
+        {
+            if (!NpcBuffTiers.TryGetValue(id, out var tiers) || tiers.Length == 0)
+                throw new InvalidOperationException(
+                    $"The buffer offers '{id}' but NpcBuffTiers has no row for it (BL-158). Every "
+                  + "blessing on the shelf needs its level/price ladder, or it is free at level 6.");
+            if (!dict.TryGetValue(id, out var bdef))
+                throw new InvalidOperationException(
+                    $"NewbieBuffSet names '{id}', which is not a registered skill (BL-158).");
+            int levels = bdef.Levels?.Length ?? 1;
+            // ⚠ A PREFIX IS LEGITIMATE, so this is `>`, not `!=`. The three Marks are the case that
+            // proves it: the Lightbringer learns rung 1 at 78 and rung 2 at 83, and the NPC sells rung
+            // 1 ONLY — one tier over a two-level def, which is precisely his "the NPC is always one
+            // rung behind the class". Selling a PREFIX of a def's levels is the design. (This guard
+            // caught that on its first run written as `!=`, which is why it says so here.)
+            if (tiers.Length > levels)
+                throw new InvalidOperationException(
+                    $"'{id}' has {tiers.Length} NPC tier(s) but only {levels} skill level(s) (BL-158). "
+                  + "The tier index IS the SkillLevel index, so the extra tiers ask for a level the def "
+                  + "does not have — and ChildBuffsAt falls back to the def's own child, i.e. the TOP "
+                  + "rung, which is the exact bug this feature exists to remove.");
+            for (int i = 1; i < tiers.Length; i++)
+                if (tiers[i].MinLevel <= tiers[i - 1].MinLevel)
+                    throw new InvalidOperationException(
+                        $"'{id}' tier {i + 1} unlocks at {tiers[i].MinLevel}, not after tier {i}'s "
+                      + $"{tiers[i - 1].MinLevel} (BL-158). Ladders are monotonic — always.");
+        }
         return dict;
     }
 

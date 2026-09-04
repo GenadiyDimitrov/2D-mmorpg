@@ -17114,44 +17114,50 @@ public class GameLoopService : BackgroundService
     // buffer class. That is what the box's 30k-a-blessing price is measured against, and it is why
     // `BL-149` had to give Vampirism and Resolve a scroll first: they were NPC-only, so this line
     // would otherwise have deleted them from the game for anyone above 75 without a Warchanter.
+    // ✅ `BL-159`, 2026-09-04 — THE CEILING IS GONE. His ruling: *"My idea is to remove the max cap ..
+    // the scrolls are helping only so much and they are just not to return to town but u get weaker -
+    // or if you are rich to have full single buffs at max lvl form early on ... but still they have +
+    // and - .. so leave them be - NPC buffer no top cap .. and if you want to farm semi buffed u return
+    // and rebuff or weaker with boxes"*.
+    //
+    // 🔑 That REVERSES the second half of `BL-150` (*"75 no buff only box"*), and knowingly. What
+    // squeezes the NPC now is not a wall but the SHELF ITSELF: `BL-158` makes it hand out the rung a
+    // same-level buffer would have, so at 80 you are still getting a buffer's rungs and never a
+    // Warchanter's groups, harmonies-above-the-eight, or Great Might.
+    //
+    // ⚠ THE BLESSING BOX (`BL-151`) IS NOT CUT — *"so leave them be"*. Its role changes from "the only
+    // endgame buff layer" to "the weaker option you take rather than walk back to town", which is a
+    // real role and does not need its 30k price re-derived.
     private const int BufferMinLvl = 6;
-    private const int BufferMaxLvl = 75;
-    // The level the ELEVEN paid blessings unlock at. Named here because the refusal message quotes it;
-    // the gate itself is `SkillCatalog.NpcBuffMinLevel`, which is what both the dialog and the cast
-    // path read, so a greyed-out button and a refused cast can never disagree.
+    // The level RESTORE starts charging at. It used to be the gate the eleven paid blessings shared,
+    // and `BL-158` retired that role: every blessing now carries its OWN unlock level in
+    // `SkillCatalog.NpcBuffTiers`, so there is no single "paid tier" number any more (Insight waits
+    // until 62, a Mark until 78). Only restore still wants one threshold, and this is it.
     private const int BufferPaidTierLvl = 40;
-    // Halved when the buffer's five bundled blessings were split into singles (0.40.0): the set
-    // went from 9 buttons to 19, and per-buff pricing would have doubled the full-set bill on an
-    // economy the owner had just signed off. 19 x 1500 x 5 ~= the old 9 x 3000 x 5.
-    // 🔑 DOUBLED to 3,000 on 2026-09-03 (`BL-150`): *"As we have half free now the buffs need to be
-    // not 7500 but 15k per buff"*. 3,000 × the nominal level 5 = **15,000 a blessing**. The CONSTANT
-    // moved rather than the formula, so the "scales when buffs become multi-level" TODO below still
-    // holds. His reasoning for the doubling, and it is exact: eight of the nineteen became free, so
-    // doubling the other eleven keeps a fully-bought set near the old full-set bill while making the
-    // set a shopping decision — *"full buff costs the same, but if you want u can save on buffs and
-    // be a bit weaker"*.
-    // ⚠ It is no longer *quite* the same bill: his arithmetic was 8 free + 8 paid = 120,000, matching
-    // the old 16 × 7,500. Then he added Focus, Ferocity and Insight to the paid tier in the same
-    // message, so the eleven paid blessings total **165,000**. Flagged with him, not absorbed.
-    private const long BuffCostPerLevel = 3_000;   // per buff, per buff-LEVEL — a paid blessing = 15k
     private const long RestoreCostCap = 10_000;    // per pool (HP, MP); a full restore of both = 20k
 
-    // The NPC buffs are single-level defs today but they are the MAX-STRENGTH set, so we price each as
-    // "level 5" (the owner's own example: 10 buffs × lvl 5 × 3k = 150k). Calibrated against mob gold:
-    // MobGoldReward = 25 + lvl·8 ≈ 345/mob at lvl 40, dropped on EVERY kill, so ~120-170k gold/hour of
-    // farming — a full set (9 buffs × 5 × 3k = 135k) ≈ ~1h of farming, which is the intent. When buffs
-    // become multi-level, swap this nominal 5 for the real per-buff level and the cost tracks it.
-    private const int BufferBuffNominalLevel = 5;
+    // ⚠ `BuffCostPerLevel` (3,000) and `BufferBuffNominalLevel` (5) WERE DELETED HERE by `BL-158`.
+    // Together they were the old price: a constant times a nominal "level 5", which stood in for a real
+    // rung because every blessing was welded to its top one. His `buffs.csv` now authors the real
+    // number per rung — 5k / 10k / 15k as a blessing climbs, 50k a harmony, 300k a Mark — and
+    // `SkillCatalog.NpcBuffPrice` reads that table. **Do not reintroduce a computed price**: the CSV is
+    // authoritative, and a formula here would silently outvote a number he wrote.
 
     /// <summary>Cost to cast one blessing: **0 for the free eight, 15,000 for the other eleven**, at
     /// every level (`BL-150`). The player's own level is not an input any more — see the block above
     /// <c>BufferMinLvl</c> for why that reversal is the point rather than a simplification.</summary>
-    private static long SingleBuffCost(Entity player, string skillId)
-    {
-        if (SkillCatalog.IsFreeNpcBuff(skillId)) return 0;
-        int lvl = player.SkillLevelOf(skillId) is var l && l > 0 ? l : BufferBuffNominalLevel;
-        return BuffCostPerLevel * lvl;
-    }
+    /// ✅ REWRITTEN FOR `BL-158`, 2026-09-04 — the price is the TIER's price, and the tier is the
+    /// player's level. It no longer multiplies a constant by a nominal 5: his `buffs.csv` authors a
+    /// real number per rung (5k / 10k / 15k as the blessing climbs, 50k a harmony, 300k a Mark), and
+    /// `SkillCatalog.NpcBuffPrice` reads that one table. The free eight are a row of zeroes in it, so
+    /// even the free/paid split is no longer a separate rule — but `IsFreeNpcBuff` stays as the
+    /// FASTER, more explicit answer for the `BL-150` question "is this one of his eight".
+    ///
+    /// 🔑 A blessing the player cannot reach yet costs 0 here. That is not a free lunch: the level gate
+    /// refuses the cast before any charge, and the dialog greys the button out. Quoting 0 for something
+    /// unbuyable is better than quoting a price the player would then be refused at.
+    private static long SingleBuffCost(Entity player, string skillId) =>
+        SkillCatalog.NpcBuffPrice(skillId, player.Level);
 
     /// <summary>Cost to restore missing HP + MP: cap·(1−hp/max) + cap·(1−mp/max). Free below 40.
     ///
@@ -17235,14 +17241,9 @@ public class GameLoopService : BackgroundService
 
     private void SendBufferDialog(Entity player, Entity npc)
     {
-        bool canBuff = player.Level is >= BufferMinLvl and <= BufferMaxLvl;
-        string message = player.Level < BufferMinLvl
-            ? $"Come back at level {BufferMinLvl} and I'll bless you."
-            : player.Level > BufferMaxLvl
-                // `BL-150` — above 75 the NPC is done, and the message SAYS WHERE TO GO. A refusal
-                // that doesn't name the replacement reads as a bug, and the replacement is the point.
-                ? "You are beyond my blessings now — seek the Apothecary's Blessing Box, or a real buffer."
-                : "";
+        // ✅ `BL-159` — ONE GATE NOW, the floor. There is no level at which the buffer stops serving.
+        bool canBuff = player.Level >= BufferMinLvl;
+        string message = canBuff ? "" : $"Come back at level {BufferMinLvl} and I'll bless you.";
 
         // `BL-150` — every blessing carries the level it unlocks at, so the client can grey out the
         // eleven a young character cannot buy yet instead of offering them and refusing the tap. The
@@ -17294,7 +17295,7 @@ public class GameLoopService : BackgroundService
             SendSystemToEntity(player, $"{npc.Name} is too far away.");
             return;
         }
-        if (player.Level is < BufferMinLvl or > BufferMaxLvl)
+        if (player.Level < BufferMinLvl)
         {
             SendSystemToEntity(player, "That buffer can't help you at your level.");
             return;
@@ -17336,22 +17337,29 @@ public class GameLoopService : BackgroundService
                 // body or soul and i save it and im <40lvl they will not activate .. they will
                 // activate after 40+ from npc buffer"*. The id stays in the preset; it simply does not
                 // land yet, and starts landing on its own the day the character reaches 40.
+                // ✅ `BL-158` — the same TIER rule as the single case: each id is tested and granted at
+                // the rung this character's level buys, not at the def's top.
                 int tooYoung = ids.Count(id => player.Level < SkillCatalog.NpcBuffMinLevel(id));
                 var landing = ids.Where(id => player.Level >= SkillCatalog.NpcBuffMinLevel(id)
                                               && SkillCatalog.Get(id) is SkillDef d
-                                              && BuffWouldLand(player, d, d.MaxLevel)).ToList();
+                                              && BuffWouldLand(player, d, SkillCatalog.NpcBuffTierFor(id, player.Level)))
+                                 .ToList();
                 if (landing.Count == 0)
                 {
+                    // ⚠ The message names the SOONEST id in the set rather than a constant. `BL-158`
+                    // ended the one-gate-for-eleven era — Insight waits until 62 and a Mark until 78 —
+                    // so quoting a fixed 40 here would have been wrong for most of the shelf.
+                    int soonest = ids.Count == 0 ? 0 : ids.Min(SkillCatalog.NpcBuffMinLevel);
                     SendSystemToEntity(player, tooYoung == ids.Count
-                        ? $"Nothing in that set is yours until level {BufferPaidTierLvl}."
+                        ? $"Nothing in that set is yours until level {soonest}."
                         : "You already carry everything I could give you.");
                     return;
                 }
                 if (!Charge(landing.Sum(id => SingleBuffCost(player, id)))) return;
-                GrantFullBuffSet(player, landing);
+                GrantFullBuffSet(player, landing, durationTicks: SkillCatalog.NpcBuffTicks, npcTiers: true);
                 SendSystemToEntity(player,
                     $"Blessed — {landing.Count} of the buffer's blessings."
-                    + (tooYoung > 0 ? $" ({tooYoung} await level {BufferPaidTierLvl}.)" : "")
+                    + (tooYoung > 0 ? $" ({tooYoung} not yet yours.)" : "")
                     + (landing.Count + tooYoung < ids.Count
                        ? $" ({ids.Count - landing.Count - tooYoung} you already carry stronger.)" : ""));
                 break;
@@ -17408,13 +17416,24 @@ public class GameLoopService : BackgroundService
                 // already hold (your own buffer's stronger Might, a Greater potion) simply does not
                 // land, and the old order took the gold anyway. Same resolver the cast path uses, so
                 // the refusal and the outcome cannot disagree.
-                if (!BuffWouldLand(player, def, 1))
+                // ✅ `BL-158` — THE TIER, NOT LEVEL 1. The wrapper's SkillLevel n carries the family rung
+                // a same-level buffer would cast, so this is the one line that makes the whole feature
+                // real. Both the "would it land" question and the grant must use it: asking at level 1
+                // and granting at tier 3 would refuse a blessing that actually beats what you wear.
+                int tier = SkillCatalog.NpcBuffTierFor(cmd.SkillId, player.Level);
+                if (!BuffWouldLand(player, def, tier))
                 {
                     SendSystemToEntity(player, $"You already carry something stronger than {def.Name}.");
                     return;
                 }
                 if (!Charge(SingleBuffCost(player, cmd.SkillId))) return;
-                ApplyBuff(player, def, refresh: false);
+                // ⚠ DURATION IS FORCED TO THE BUFFER'S HOUR, and it has to be stated rather than
+                // inherited. Nineteen of the thirty shelf ids are `npc_*` wrappers that already carry
+                // 36,000 ticks, so for them this is a no-op — but `BL-161` put the three MARKS on the
+                // shelf, and those are the Lightbringer's own 5-minute class skills. Granted as they
+                // are, the NPC would have sold a five-minute buff for 300,000 gold. His CSV is explicit:
+                // *"NPC marks default duration 1 h"*.
+                ApplyBuff(player, def, tier, refresh: false, durationOverride: SkillCatalog.NpcBuffTicks);
                 player.RecomputeDerived();
                 PushBuffs(player);
                 SendStats(player);
@@ -17463,8 +17482,13 @@ public class GameLoopService : BackgroundService
     /// point of the command is to put this set on someone; FALSE at the NPC buffer, which already
     /// pre-filters with <c>BuffWouldLand</c> so that nobody is charged for a blessing the contest would
     /// throw away — forcing there would quietly overwrite a player's own stronger buff with a bought one.</param>
+    /// <param name="npcTiers">`BL-158` — read each id's level from <c>NpcBuffTierFor</c> (the rung a
+    /// same-level buffer would cast) instead of <c>def.MaxLevel</c>. TRUE only on the buffer NPC's own
+    /// routes; the admin set and `/buff` deliberately stay at MaxLevel, because their whole job is to
+    /// show the game's ceiling. 🔑 The two shelves are separate and neither may be built out of the
+    /// other (his rule, 2026-09-03) — this parameter is the seam.</param>
     private void GrantFullBuffSet(Entity player, IReadOnlyList<string>? set = null,
-                                  int durationTicks = -1, bool force = false)
+                                  int durationTicks = -1, bool force = false, bool npcTiers = false)
     {
         // 🔴 `force` CLEARS THE WAY FOR THE SET — IT MUST NEVER APPLY *INSIDE* IT (found 2026-09-03,
         //    playtest: *"why buff and full buf from admin menu give me now singles"*). `BL-131` (0.107.0)
@@ -17484,11 +17508,13 @@ public class GameLoopService : BackgroundService
         foreach (var id in set ?? SkillCatalog.NewbieBuffSet)
         {
             if (SkillCatalog.Get(id) is not SkillDef def) continue;
+            int lvl = npcTiers ? SkillCatalog.NpcBuffTierFor(id, player.Level) : def.MaxLevel;
+            if (lvl <= 0) continue;   // out of this character's reach — the caller already filtered, belt and braces
             // BuffPlan, not the def's own fields: a one-child wrapper (every NPC blessing is one)
             // competes under its CHILD's family, and claiming the wrapper's name would protect nothing.
-            var (key, _, covered, _) = BuffPlan(def, def.MaxLevel);
+            var (key, _, covered, _) = BuffPlan(def, lvl);
             bool oursAlready = claimed.Contains(key) || Array.Exists(covered, claimed.Contains);
-            if (!ApplyBuff(player, def, def.MaxLevel, refresh: false,
+            if (!ApplyBuff(player, def, lvl, refresh: false,
                            durationOverride: durationTicks, force: force && !oursAlready))
                 continue;
             claimed.Add(key);

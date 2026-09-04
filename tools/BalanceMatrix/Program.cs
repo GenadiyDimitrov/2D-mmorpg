@@ -340,6 +340,8 @@ if (args.Length > 0 && args[0] == "--warchanter")
 }
 // `--buffs` — the buff census (see BuffCensus at the bottom of this file).
 if (args.Length > 0 && args[0] == "--buffs") { BuffCensus.Run(); return; }
+// `BL-158` — what the buffer actually sells a character of each level, READ OFF the real shelf.
+if (args.Length > 0 && args[0] == "--npcshelf") { NpcShelfDump(); return; }
 
 // `--buff-consumables` — `BL-147`. Writes docs/data/BuffConsumables.md: which buffs exist as a potion,
 // which as a scroll, where each comes from, whether the NPC buffer gives the same thing, and — the half
@@ -4595,6 +4597,56 @@ static int TopNukePower(Entity e)
 /// buffer NPC and the debug button use, so "buffed" here means exactly what it means in game.
 ///
 /// This matters because the owner signs off on BUFFED numbers: an unbuffed matrix was measuring a
+
+/// <summary>`BL-158` — THE BUFFER'S SHELF, AT EVERY LEVEL THAT CHANGES IT.
+///
+/// 🔑 Every number here is READ from `SkillCatalog.NpcBuffTiers` + `NpcBuffTierFor` + `NpcBuffPrice`
+/// and the rung the wrapper's `ChildBuffsAt` actually names — the same calls `GameLoopService` makes
+/// when it charges you and applies the buff. It does NOT restate his CSV. That is the whole point: a
+/// dump that repeats an authored number can never contradict you.</summary>
+static void NpcShelfDump()
+{
+    var shelf = SkillCatalog.NewbieBuffSet;
+    var breakpoints = shelf.SelectMany(id => SkillCatalog.NpcBuffTiers[id].Select(t => t.MinLevel))
+                           .Distinct().OrderBy(x => x).ToArray();
+
+    Console.WriteLine("=== THE NPC BUFFER'S SHELF (BL-158/160/161) ===");
+    Console.WriteLine($"{shelf.Length} blessings; the shelf changes at levels {string.Join(", ", breakpoints)}.");
+    Console.WriteLine();
+
+    foreach (int lvl in breakpoints)
+    {
+        var open = shelf.Where(id => SkillCatalog.NpcBuffTierFor(id, lvl) > 0).ToArray();
+        long bill = open.Sum(id => SkillCatalog.NpcBuffPrice(id, lvl));
+        // ⚠ "All of it" over-counts once the Marks open: they DO NOT STACK (his ruling, and their own
+        // text), so nobody ever buys more than one. The realistic bill drops the other two — the
+        // distinction is 600,000 gold at 78, which is most of what the endgame set looks like it costs.
+        long marks = SkillCatalog.NpcMarkSet.Where(id => SkillCatalog.NpcBuffTierFor(id, lvl) > 0)
+                                            .Select(id => SkillCatalog.NpcBuffPrice(id, lvl)).ToArray() is { Length: > 0 } m
+                     ? m.Sum() - m.Max() : 0;
+        Console.WriteLine($"--- LEVEL {lvl}: {open.Length} available, all of it = {bill:N0} gold"
+                        + (marks > 0 ? $"   (realistic, ONE Mark: {bill - marks:N0})" : "") + " ---");
+        foreach (var id in open)
+        {
+            int tier = SkillCatalog.NpcBuffTierFor(id, lvl);
+            var def  = SkillCatalog.Get(id)!;
+            var kid  = def.ChildBuffsAt(tier)?.FirstOrDefault();
+            // The rung's OWN description is what lands, so print that rather than the wrapper's.
+            string what = kid is not null && SkillCatalog.Get(kid) is { } c
+                ? c.Description : def.DescriptionAt(tier);
+            long price = SkillCatalog.NpcBuffPrice(id, lvl);
+            int tiers = SkillCatalog.NpcBuffTiers[id].Length;
+            Console.WriteLine($"    {def.Name,-24} t{tier}/{tiers}  {price,8:N0}g   {Trim(what)}");
+        }
+        Console.WriteLine();
+    }
+
+    static string Trim(string s)
+    {
+        s = (s ?? "").Replace(" (buffer's blessing, 1 hour).", "").Replace(" (buffer's harmony, 1 hour).", "");
+        return s.Length > 86 ? s[..86] + "…" : s;
+    }
+}
 /// state almost nobody plays in.</summary>
 static void ApplyNpcBuffs(Entity e)
 {
@@ -4604,26 +4656,37 @@ static void ApplyNpcBuffs(Entity e)
     // nothing, and the whole matrix silently reports UNBUFFED numbers under a "buffed" heading.
     // That is exactly the kind of wrong number this tool exists to prevent, so follow the children.
     // (This was already true of the four speed singles from 0.36.0 on.)
-    void Add(SkillDef def)
+    // 🔑🔑 `BL-158`, 2026-09-04 — THE LEVEL IS THE ENTITY'S TIER, NOT 1. The shelf now hands out the
+    // rung a same-level buffer would cast, so a hardcoded 1 would have measured every character —
+    // including a level 80 — wearing the WEAKEST rung of everything, under a "buffed" heading. That is
+    // the precise failure this tool exists to prevent, and it is the third time the census has had to
+    // be taught a rule the engine had already learned (the child-wrapper unwrap below was the first,
+    // `force` was the second). **If the buffer's rules change, change this in the same commit.**
+    void Add(SkillDef def, int level)
     {
-        var kids = def.ChildBuffsAt(1);
+        var kids = def.ChildBuffsAt(level);
         if (kids is { Length: > 0 })
         {
+            // A rung def is single-level, so children are always read at 1 — only the WRAPPER has tiers.
             foreach (var kid in kids)
-                if (SkillCatalog.Get(kid) is SkillDef child) Add(child);
+                if (SkillCatalog.Get(kid) is SkillDef child) Add(child, 1);
             return;
         }
         e.Buffs.Add(new Game.Server.Simulation.BuffInstance
         {
             Effect = def.Effect,
-            Magnitudes = def.MagnitudesAt(1) ?? Array.Empty<EffectMagnitude>(),
-            TicksRemaining = int.MaxValue, Name = def.Name, Key = def.BuffKey, Level = 1,
+            Magnitudes = def.MagnitudesAt(level) ?? Array.Empty<EffectMagnitude>(),
+            TicksRemaining = int.MaxValue, Name = def.Name, Key = def.BuffKey, Level = level,
         });
     }
 
     foreach (var id in SkillCatalog.NewbieBuffSet)
-        if (SkillCatalog.Get(id) is SkillDef def)
-            Add(def);
+    {
+        // Out of this character's reach — the NPC would refuse, so the matrix must not wear it.
+        int tier = SkillCatalog.NpcBuffTierFor(id, e.Level);
+        if (tier <= 0) continue;
+        if (SkillCatalog.Get(id) is SkillDef def) Add(def, tier);
+    }
     e.RecomputeDerived();
 }
 
@@ -6761,8 +6824,15 @@ static class BuffCensus
         // (2026-09-03) — the admin set no longer ends `.Concat(NewbieBuffSet)`. This is the safety that
         // line was pretending to give, measured instead of assumed: every family the NPC sells should
         // already be inside a group the buffer's own kit casts. A name here is a hole in the CLASS kit.
+        // ⚠ THE HARMONIES AND MARKS ARE EXCLUDED, and must be. `BL-160`/`BL-161` put eleven more ids on
+        // the shelf whose whole design is to sit on their OWN keys and be covered by nothing — the
+        // buffer's groups cover BASIC families, and a harmony stacks on top of the basic layer by
+        // definition. Left in, they would print as eleven "holes in the CLASS kit" that are not holes,
+        // and a warning that cries wolf is worse than no warning.
+        var basicShelf = SkillCatalog.NewbieBuffSet
+            .Except(SkillCatalog.NpcSingleHarmonySet).Except(SkillCatalog.NpcMarkSet).ToArray();
         var uncovered = new List<string>();
-        foreach (var id in SkillCatalog.NewbieBuffSet)
+        foreach (var id in basicShelf)
         {
             if (SkillCatalog.Get(id) is not SkillDef npc) continue;
             var (k, _, cov, _) = GameLoopService.BuffPlan(npc, npc.MaxLevel);
@@ -6771,7 +6841,7 @@ static class BuffCensus
         Console.WriteLine($"  >>> OF WHICH COUNT AGAINST THE CAP: {slots} / {GameConstants.MaxBuffSlots}" +
                           $"   — {GameConstants.MaxBuffSlots - slots} free");
         Console.WriteLine(uncovered.Count == 0
-            ? $"  >>> NPC FAMILIES NOT COVERED BY THE ADMIN SET: none ({SkillCatalog.NewbieBuffSet.Length} checked)"
+            ? $"  >>> NPC FAMILIES NOT COVERED BY THE ADMIN SET: none ({basicShelf.Length} basic blessings checked; harmonies + Marks excluded by design)"
             : $"  >>> ⚠ NPC FAMILIES THE BUFFER'S KIT DOES NOT COVER: {string.Join(", ", uncovered)}");
         Console.WriteLine();
         foreach (var kindGroup in bar.GroupBy(b => b.Kind).OrderBy(g => Order(g.Key)))

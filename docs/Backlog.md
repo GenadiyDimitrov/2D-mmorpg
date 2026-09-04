@@ -32,14 +32,13 @@ different professions to farm to see who can craft what — and it's a single pl
 So **`BL-05`** and **`BL-50`** are not to be worked on or re-raised until you open that playtest.
 Nothing about them is blocked or broken; they wait on a test only you can run.
 
-★ **The ones you named most recently:** **`BL-158`…`BL-162` — the NPC BUFFER pass (2026-09-04)**, your
-idea to *"help single players that dont want to spend time in party and or lvl up a buffer"*: the shelf
-levels up with you, the 75 ceiling goes, eight new single harmonies, the Marks at 78, and Swift joins
-the Mage preset. **All five are 🔴 ready to build** — your data is
-`docs/data/classes_skills_csv/buffs.csv`, and both `BL-161` questions are answered. **Queued directly
-behind them: the TANK pass** — you finished `tank 2nd`/`3rd`/`4th` on 2026-09-04 (*"im done with tank
-2/3/4 so its ready to build after the npc buffer"*), which unblocks the rest of `BL-154` (pull) and
-`BL-155` (silence) and closes the last `NOT DONE` file in `BL-02` · `BL-156` (debuff
+★ **The ones you named most recently:** ✅ **`BL-158`…`BL-162` — the NPC BUFFER pass is BUILT (0.111.0,
+2026-09-04) and is in the archive.** The shelf levels up with you, the 75 ceiling is gone, eight single
+harmonies and the three Marks are on sale, and Swift joined the Mage preset. See it with
+`dotnet run --project tools/BalanceMatrix -- --npcshelf`. **⚠ NO new APK — the wire did not move
+(protocol stays 33).** · 🔴 **NEXT: the TANK pass** — you finished `tank 2nd`/`3rd`/`4th` on 2026-09-04
+(*"im done with tank 2/3/4 so its ready to build after the npc buffer"*), which unblocks the rest of
+`BL-154` (pull) and `BL-155` (silence) and closes the last `NOT DONE` file in `BL-02` · `BL-156` (debuff
 duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed) ·
 `BL-93` (the visuals conversation, yours to start) · `BL-102` (blocked on one file from you) ·
 `BL-02` (the 40+ kits, blocked on your CSVs).
@@ -87,11 +86,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-154` | 🔴 | Tank PULL — ENGINE BUILT (0.110.0-0.110.2); ✅ **his `tank 4th.csv` numbers LANDED 2026-09-04**; the two AoE shapes + the drag-smoothing clamp remain | combat |
 | `BL-155` | 🔴 | SILENCE — BUILT (0.110.0); ✅ **the tank rows are no longer placeholders — Numbing Shock is authored 76→90** | combat |
 | `BL-157` | 🔵 | The worm — a polymorph debuffer/nuker class, a seed only | classes |
-| `BL-158` | 🔴 | The NPC buffer LEVELS UP with you — rung *and* price ladder, from your `buffs.csv` | classes |
-| `BL-159` | 🔴 | The NPC buffer loses its level-75 ceiling — reverses half of `BL-150` | classes |
-| `BL-160` | 🔴 | Eight NPC single harmonies, 50k each — the floor a real Warchanter evicts | classes |
-| `BL-161` | 🔴 | The three Marks on the NPC shelf, 78 / 300k — no stones, one Mark at a time | classes |
-| `BL-162` | 🔴 | Swift joins the Mage preset — the free eight split 3 / 3 / 2 | classes |
 
 ---
 
@@ -798,199 +792,3 @@ choosable paths per race and 24 third classes, and both `Tempest` and `Vanguard`
 that size (`BL-97`). A new discipline either takes a free slot or replaces one, and that is your call,
 not a design detail. Say where it sits before anything is drawn.
 
-### `BL-158` 🔴 The NPC buffer LEVELS UP with you — the rung *and* the price
-
-Your idea, 2026-09-04: *"my idea is ... NPC Buffer will 'LVL UP' with the character .. if a player asks
-the npc for buffs he will receive only buffs available to the same lvl bugger/healer - the npc no
-longer will provide @40 buff that is learned at 74 (except the 8 free)"*. Its purpose is stated too:
-*"help single players that dont want to spend time in party and or lvl up a buffer"*.
-
-**Why it matters.** Every `npc_*` blessing today is **one def welded to the TOP rung** —
-`NpcSingle(NpcBody, "Body", Rung(FamMaxHp, 6), …)` — so a level-40 character wears the level-74 buff.
-The NPC has nowhere to grow, and it flattens the levelling curve it is supposed to support.
-
-**The data is already authored:** `docs/data/classes_skills_csv/buffs.csv`, columns `NPC LVL` and
-`NPC Price`. The **free eight** are marked at their TOP rung, level 6, price 0, and do **not** ladder —
-your stated exception, and it is exactly what the code does today, so those eight need no change at
-all. The **paid eleven** ladder:
-
-| buff | rung 1 | rung 2 | rung 3 |
-|---|---|---|---|
-| Focus | 40 · +20% crit rate · 5k | 44 · +25% · 10k | 52 · +30% · 15k |
-| Agility | 40 · +2 Eva · 5k | 44 · +3 · 10k | 52 · +4 · 15k |
-| Ward | 40 · +10% M.Def · 5k | 44 · +23% · 10k | 52 · +30% · 15k |
-| Vigor | 40 · +10% HP reg · 5k | 48 · +15% · 10k | 56 · +20% · 15k |
-| Serenity | 40 · +10% MP reg · 5k | 48 · +15% · 10k | 56 · +20% · 15k |
-| Ferocity | 40 · +25% crit dmg · 5k | 48 · +30% · 10k | 56 · +35% · 15k |
-| Aim | 40 · +2 Acc · 5k | 48 · +3 · 10k | 56 · +4 · 15k |
-| Frenzy | 40 · −7%/+5% · 10k | 52 · −10%/+8% · 15k | — |
-| Soul | 44 · +10% Max MP · 5k | 56 · +25% · 10k | 70 · +35% · 15k |
-| Body | 44 · +10% Max HP · 5k | 56 · +25% · 10k | 70 · +35% · 15k |
-| Insight | 62 · +50% M.crit · 10k | 70 · +100% · 15k | — |
-
-🔑 **The NPC deliberately SKIPS rungs.** Body and Soul take rungs 1, 4 and 6 of six; Aim skips its
-first. Those gaps are what a real buffer fills — the mechanism, not an oversight.
-
-🔑 **The price is the RUNG's price, not the buff's.** The paid tier becomes *cheaper* below 52 than
-today's flat 15,000 and only reaches 15,000 at full strength. `SingleBuffCost` already computes
-`BuffCostPerLevel × level` and is merely fed a hard-coded nominal 5; feed it the real rung and pricing
-follows with no second edit. The deferred TODO above `BufferMinLvl` in `GameLoopService.cs` predicted
-this feature by name.
-
-**How it gets built — you asked directly, so the answer is recorded here.** *"does npc buffer gives
-cast_atk_phys or give npc_might ? -> if it gives own id .. can we make it just to give the real buff
-like the /buff comand with rung and duration ?"*
-
-- It gives `npc_might` — but that is a **one-child wrapper**. What actually LANDS on the player is
-  already the real buff: `buff_atk_phys_3`, the identical rung def a cleric's Might hands out. The
-  wrapper survives only in `SourceSkillId`, as a receipt.
-- `cast_atk_phys` **is not an engine id at all.** It is the CSV's name for the cleric's cast. The real
-  ladder is `buff_<family>_<rank>` (`SkillCatalog.Rung`), one def per rung, and **the rung index IS the
-  rank**.
-- The engine already supports the whole request: `ApplyBuff(target, def, LEVEL, …, durationOverride,
-  sourceSkillId, …)` plus **`def.ChildBuffsAt(level)`**, which lets one wrapper declare a *different
-  child per rung*. `/buff` is that same call with `def.MaxLevel`.
-
-🔑 **So the wrappers STAY and gain a per-level child table — they are not deleted.** Deleting them
-would re-point `NewbieBuffSet`, `FreeNpcBuffSet` and both role presets at rung ids, orphan every saved
-custom preset (they store `npc_*` ids) and force a save migration, all for no gain. Keeping them means
-**[Save] is untouched**, which is what you asked for, and the rung still lands as the real family def
-so eviction by a Warchanter's group works unchanged.
-
-The feature reduces to one table — id → [(your level, rung, price)] — read straight off the CSV.
-
-✅ **ALL 30 RUNG VALUES VERIFIED TO EXIST, 2026-09-04 — there is nothing to author.** Every number in
-the eleven ladders above is already a rung in `Skills.BuffLadders.cs`, at the index his level implies:
-Focus 5/10/15/**20/25/30** · Agility (mirrors Aim) 1/**2/3/4** · Ward 10/20/**23**/**30** · Vigor
-5/**10**/12/**15**/17/**20** · Serenity same · Ferocity 10/15/20/**25/30/35** · Aim 1/**2/3/4** ·
-Insight 20/35/**50**/65/80/**100** · Soul **10**/15/20/**25**/30/**35** · Body same · Frenzy
-**r1 = −7%/+5%/+5 move/−5 eva**, **r2 = −10%/+8%/+8/−8**. 🔑 **So his CSV is DESCRIBING the shipped
-ladders, not proposing new ones** — the whole of `BL-158` is choosing *which* existing rung to hand out
-and what to charge. No magnitudes, no renumbering, no new defs.
-
-⚠ `buffs.csv` is in **no `Check.Specs`**, so `SkillCsvSeed --check` does not verify a line of this. It
-earns its entry the day the ladder is code.
-
----
-
-### `BL-159` 🔴 The NPC buffer loses its level-75 ceiling
-
-Your ruling, 2026-09-04: *"My idea is to remove the max cap .. the scrolls are helping only so much and
-they are just not to return to town but u get weaker - or if you are rich to have full single buffs at
-max lvl form early on ... but still they have + and - .. so leave them be - NPC buffer no top cap .. and
-if you want to farm semi buffed u return and rebuff or weaker with boxes"*.
-
-This **reverses the half of `BL-150`** that read *"75 no buff only box"*. `BufferMaxLvl = 75` goes, and
-with it the refusal message that sends you to the Blessing Box.
-
-⚠ **The Blessing Box (`BL-151`) is NOT cut** — *"so leave them be"*. Its role changes from *the only
-endgame buff layer* to *the weaker option you take rather than walk back to town*. That is a real role
-and its 30k-a-blessing price does not need re-deriving.
-
-⚠ **One constant to check while the ceiling comes out:** `RestoreCost` is free below 40 and charged
-40-75. With no ceiling it becomes "free below 40, charged above", which is coherent — but **the 40 in
-it was mine, not yours** (`BL-150` priced the buffs and said nothing about restore). One line to move
-if you meant restore to stay free throughout.
-
----
-
-### `BL-160` 🔴 Eight NPC single harmonies — the floor a real Warchanter evicts
-
-Your ruling, 2026-09-04: *"the single harmonies should not exist atm .. we must create them and give
-them to NPC buffer - they will be available as the actual harmony will be learned from the warchanters
-so it will always be replaced if player buffs"*.
-
-**Eight new single-rung AoE buffs, 50,000 gold each**, authored in `buffs.csv`. Each lifts ONE effect
-out of a Warchanter harmony and unlocks at **the exact level the Warchanter gains that effect**. All
-eight verified against `buffer 3rd.csv`:
-
-| NPC single harmony | lvl | Warchanter rung that first grants it |
-|---|---|---|
-| Harmony of Ward · +30% M.Def | 44 | Harmony of Protection @**44** ✅ |
-| Harmony of Force · +10% M.Atk | 48 | Harmony of the Wizard @**48** ✅ |
-| Harmony of Swift · +20 move | 48 | Harmony of Speed @**48** ✅ |
-| Harmony of Alacrity · +30% cast | 52 | Harmony of the Wizard @**52** ✅ |
-| Harmony of Bulwark · +25% P.Def | 56 | Harmony of Protection @**56** ✅ |
-| Harmony of the Might · +12% P.Atk | 56 | Harmony of the Warrior @**56** ✅ |
-| Harmony of the Fury · +15% atk speed | 58 | Harmony of the Warrior @**58** ✅ |
-| Harmony of Body · +30% Max HP | 66 | Harmony of Protection @**66** ✅ |
-
-🔑 **Eight for eight. This is why they do not undercut the Warchanter** — your own argument: *"i wont
-buff harmony of protection at 44 lvl because harmony of protection and harmony of ward give the same
-effect at that lvl, but at 56 mine is already 1 space 2 buffs .. its strategy"*. The NPC single is the
-floor; the class harmony is the same effect *plus* everything above it, in one bar slot. It is exactly
-one slot behind, forever.
-
-Mechanically this needs nothing new: a group harmony carries `GroupRank = 100 + level` and declares
-`CoveredKeys`, so it **already** evicts a single of a family it covers.
-
-✅ **The ids are clean — you fixed them in the CSV on 2026-09-04, mid-conversation.** Recorded because
-the trap is real and will recur: the first draft reused `npc_harmony_warrior` for two different NPC
-singles, and that id is **already the Warchanter's own multi-rung class harmony** (append-only,
-`AdminBuffSet` names it) — building it would have overwritten a class skill. Also fixed: `wc_harmony_swift`
-(did not exist; the Warchanter's is `wc_harmony_speed`) and `npc_harmony_Ward`'s stray capital in a
-case-sensitive id. The eight now read `npc_harmony_ward` / `_bulwark` / `_body` / `_force` / `_alacrity`
-/ `_swift` / `_might` / `_fury`, and **none collides** with the three that exist
-(`npc_harmony_protection`, `_warrior`, `_wizard`). Build them as authored.
-
-⚠ **One mechanical consequence, because eviction is permanent and not suspension.** The NPC harmony
-runs 1 hour; the Warchanter's runs 5 minutes. If you buy the single and are *then* buffed by a
-Warchanter, the group evicts your 1h buff and you are bare after five minutes — worse off than if you
-had never been buffed. It only bites in that order, and your strategy argument says a player who has a
-Warchanter would not buy the single anyway. Recorded, not treated as a defect.
-
-❓ **Duration unconfirmed.** `buffs.csv` says *"NPC harmonies default duration 1 h"*. Assumed 1 hour.
-
----
-
-### `BL-161` 🔵 The three Marks on the NPC shelf — level 78, 300k each
-
-`buffs.csv` puts Holy Mark, Life Mark and Blood Mark on the NPC buffer at **78 / 300,000 gold**. They
-are reachable only because `BL-159` removes the 75 ceiling, so this is gated on that.
-
-The three already exist — they are **Lightbringer 4th-class skills** (`Skills.Lightbringer4th.cs`),
-learned at **78 (rung 1)** and 83 (rung 2). Your CSV marks **rung 1 only**, at 78. Same pattern as the
-harmonies in `BL-160`: the NPC gets the rung the class has just learned and never the one above it. No
-new skills to author — this is a shelf entry and a price.
-
-✅ **Both questions answered, 2026-09-04.**
-
-1. **NO skill stones from the NPC** — *"no point for npc buffer to require from you skillstones to use
-   marks it costs u 300k alreay"*. The 300,000 gold replaces the Lightbringer's 4-stone cost outright;
-   it does not charge both. (A Lightbringer casting her own Mark still pays stones — that is her skill,
-   not this shelf entry.)
-2. **They do not stack, and that is the whole price model** — *"the marks dont stack .. if you deside to
-   rebuff with other it will cost you new 300k .. and its learned at 78 so before that no mark at all"*.
-   Their own text already says *"Do not Stack with Other 'Mark' Skills"*, so one Mark at a time,
-   and switching is a fresh 300,000.
-
-🔴 **That kills my pricing objection and the number behind it was wrong.** I costed a "full set" as all
-THREE Marks — 900,000, which I called ~60% of a ~1.47M hour of buffs. You only ever wear ONE, so the
-real endgame bill is 165k (eleven blessings) + 400k (eight harmonies) + 300k (one Mark) ≈ **865,000**,
-and the Mark is about a third of it rather than two thirds. 🔑 **The lesson is the ordinary one: I
-priced a set without reading the stacking rule printed in the same CSV cell.** The `--goldflow`
-measurement I offered is no longer worth blocking on; say the word if you want it anyway.
-
----
-
-### `BL-162` 🔴 Swift joins the Mage preset — the free eight split 3 / 3 / 2
-
-Your correction, 2026-09-04: *"mage - swift, alacrity, resolve, bulwark, force - 5 out of 8 / fight-
-swift, might, bulwark, vamp, fury - 5 out og 8 / the 8 buffs are 3-fighter(might,vamp,fury),
-3-mage(force,resolv,alac), 2-shared(swift,bulwark)"*.
-
-`FighterBuffSet` is already those five. **`MageBuffSet` has only four — Swift is missing.** One id to
-add, and the split becomes exact: fighter-only 3, mage-only 3, shared 2, union = all eight, and
-5 + 5 = 8 + 2 overlaps.
-
-⚠ **A written contract moves with it.** The doc comment on `MageBuffSet` states the invariant *"Fighter
-∪ Mage = FreeNpcBuffSet, with Bulwark **the one buff** both roles want"*. It becomes "Bulwark **and
-Swift**". Update it in the same edit — a stated rule that quietly stops being true is how three of
-these went wrong in two days.
-
-**Nothing else about the presets changes.** You raised a second custom slot and then withdrew it: *"no
-no .. the second preset was if the 1st wasnt per subclass... but as u stated that it is, no need for
-second save"*. 🔑 **Custom presets are ALREADY per-subclass and always have been** —
-`Entity.ActiveBuffPreset => ActiveSubclass.BuffPreset`, persisted per subclass via `BuffPresetJson` on
-the subclass record, exactly like the skill bar. Change subclass, get that subclass's own preset; go
-back to your main and it is untouched. No work owed, and no schema change.

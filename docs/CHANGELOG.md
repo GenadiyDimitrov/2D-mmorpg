@@ -7,12 +7,71 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.110.3**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.111.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-04 (latest) — the NPC-buffer design pass, and the Frenzy ladder cut to two rungs
+## 2026-09-04 (latest) — 0.111.0: `BL-158`…`BL-162`, the NPC buffer LEVELS UP with you
+
+His idea, and its purpose in his own words: *"help single players that dont want to spend time in party
+and or lvl up a buffer"*. All five entries written and built the same day.
+
+⚠ **NO NEW APK.** `ProtocolVersion` stays **33** and `BufferBuff`/`BufferInfo` are unchanged; the client
+holds no local knowledge of the shelf, so an existing build renders all thirty rows with the right
+names, prices and lock levels. Only the build label moved (0.110.3 → 0.111.0).
+
+**`BL-158` — the shelf hands out the rung a same-level buffer would have.** Every `npc_*` blessing was
+one def welded to its TOP rung, so a level-40 character wore the level-74 buff. Each is now a LADDER:
+one wrapper whose SkillLevel *n* names the family rung for tier *n*, driven by a single table
+(`SkillCatalog.NpcBuffTiers`) read straight off his `buffs.csv`. The same table answers all four
+questions — unlock level, rung, price, greyed-out button — so they cannot drift apart.
+- 🔑 **The wrappers were KEPT, not deleted.** The player still receives `npc_might`, so `SourceSkillId`
+  is unchanged and [Save], both role presets and every saved row keep working with **no migration**.
+- 🔑 `cast_atk_phys` is not an engine id; the real ladder is `buff_<family>_<rank>`, and the wrapper
+  already delivered the real rung. The engine needed nothing new — `ApplyBuff` already took level,
+  duration and source overrides, and `SkillDef.ChildBuffsAt(level)` already gave a wrapper per-rung
+  children. **All 30 of his authored values already existed**, so the CSV described the shipped ladders.
+- The price is the RUNG's price now (5k/10k/15k as it climbs), so the paid tier is *cheaper* below 52
+  than the old flat 15,000. `BuffCostPerLevel` and `BufferBuffNominalLevel` are deleted.
+
+**`BL-159` — the level-75 ceiling is gone**, reversing half of `BL-150` on his ruling (*"NPC buffer no
+top cap"*). What limits the NPC now is the shelf itself, not a wall. The Blessing Box stays (*"leave
+them be"*), its role changed to the weaker option that saves the walk back to town.
+
+**`BL-160` — eight new single harmonies, 50k each.** Each lifts ONE effect out of a Warchanter harmony
+at the exact level she gains it (verified 8/8 against `buffer 3rd.csv`). Own BuffKeys, so all eight
+stack; the four class harmonies now name them in `Replaces`, which is his rule — *"his acts as a group
+one so replaces them"*. Single-target, unlike the class harmony they come from.
+
+**`BL-161` — the three Marks at 78 / 300,000.** The Lightbringer's own 4th-class skills at rung 1 (she
+learns rung 2 at 83, which the NPC never sells). **No skill stones** — the reagent gate lives in
+`HandleCastSkill` and the NPC grants through `ApplyBuff`, so it is free of them by construction. They
+share one BuffKey and so do not stack, which is why one Mark, not three, is what an endgame set costs.
+⚠ The buffer path now forces the 1-hour duration: a Mark is a 5-minute class skill, and granted as-is
+the NPC would have sold five minutes for 300,000.
+
+**`BL-162` — Swift joined the Mage preset**, making both role presets five and the free eight split
+3 fighter / 3 mage / 2 shared. The `MageBuffSet` invariant comment moved with it.
+
+**Guards and measurements added, because a shelf this size rots silently:**
+- Startup now asserts every shelf id has a tier row, that tiers never exceed the def's levels, and that
+  a ladder is monotonic. ⚠ **It caught a real case on its first run** — written as `!=` it rejected the
+  Marks, which legitimately sell a one-tier PREFIX of a two-level def. Now `>`.
+- `tools/BalanceMatrix --npcshelf` prints the shelf at every level that changes it, **read off the live
+  catalog rather than his CSV** — a dump that restates an authored number can never contradict you.
+- Three places in BalanceMatrix that assumed the old shape were corrected: `ApplyNpcBuffs` hardcoded
+  level 1 (which would have measured every character, including a level 80, wearing the WEAKEST rung of
+  everything under a "buffed" heading); `NpcRank` read `def.ChildBuffs`, now the *lowest* rung; and the
+  admin-coverage census now excludes the harmonies and Marks, which are designed to be covered by
+  nothing and would have printed as eleven false "holes in the CLASS kit".
+
+`dotnet build` clean, server boots, `SkillCsvSeed --check` reports no discrepancies.
+
+⚠ **Still owed and not done here:** `buffs.csv` is in no `Check.Specs`, so none of this is CSV-verified.
+Its shape (a catalogue with no `LEARN @ LVL`) does not fit the existing checker.
+
+## 2026-09-04 — the NPC-buffer design pass, and the Frenzy ladder cut to two rungs
 
 **No version bump: the wire protocol did not move and nothing a player can obtain changed**, so no new
 APK is owed for this entry.
