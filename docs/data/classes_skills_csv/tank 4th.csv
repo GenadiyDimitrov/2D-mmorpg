@@ -150,41 +150,41 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 88,Shield Smash - Power,tank_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +6800, Decrease P.Crit.Dmg with 35% and M.Crit.Dmg with 15%; Requre: Shield;",159,0,100kk,Demon
 90,Shield Smash - Power,tank_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +7200, Decrease P.Crit.Dmg with 35% and M.Crit.Dmg with 15%; Requre: Shield;",165,0,100kk,Demon
 ,,,,,,,,,,,,,,,,,----------------------------Shield Shock----------------------------
-76,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7);",123,6.5kk,1kk
-78,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7);",129,16kk,1kk
-80,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7);",135,0,5kk
-82,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7);",141,0,10kk
-84,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7);",147,0,30kk
-86,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7);",153,0,75kk
-88,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7);",159,0,100kk
-90,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7);",165,0,100kk
+76,Shield Shock,tank_shield_stun,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",123,6.5kk,1kk
+78,Shield Shock,tank_shield_stun,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",129,16kk,1kk
+80,Shield Shock,tank_shield_stun,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",135,0,5kk
+82,Shield Shock,tank_shield_stun,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",141,0,10kk
+84,Shield Shock,tank_shield_stun,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",147,0,30kk
+86,Shield Shock,tank_shield_stun,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",153,0,75kk
+88,Shield Shock,tank_shield_stun,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",159,0,100kk
+90,Shield Shock,tank_shield_stun,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",165,0,100kk
 ,,,,,,,,,,,,,,,,,----------------------------Numbing Shock----------------------------
-76,Numbing Shock,tank_silence_physical,Physical/Debuff,,,40,0,enemy/single,2,6,5,"PHYSICAL SILENCE: the target's physical skills fail for the duration. (sucsess: x0.5);",123,6.5kk,1kk,Human;Demon,,Its BASIC ATTACK still works. Contested ATK vs CON.
-78,Numbing Shock,tank_silence_physical,Physical/Debuff,,,40,0,enemy/single,2,6,5,"PHYSICAL SILENCE: the target's physical skills fail for the duration. (sucsess: x0.5);",129,16kk,1kk,Human;Demon
-80,Numbing Shock,tank_silence_physical,Physical/Debuff,,,40,0,enemy/single,2,6,5,"PHYSICAL SILENCE: the target's physical skills fail for the duration. (sucsess: x0.5);",135,0,5kk,Human;Demon
-82,Numbing Shock,tank_silence_physical,Physical/Debuff,,,40,0,enemy/single,2,6,5,"PHYSICAL SILENCE: the target's physical skills fail for the duration. (sucsess: x0.5);",141,0,10kk,Human;Demon
-84,Numbing Shock,tank_silence_physical,Physical/Debuff,,,40,0,enemy/single,2,6,5,"PHYSICAL SILENCE: the target's physical skills fail for the duration. (sucsess: x0.5);",147,0,30kk,Human;Demon
-86,Numbing Shock,tank_silence_physical,Physical/Debuff,,,40,0,enemy/single,2,6,5,"PHYSICAL SILENCE: the target's physical skills fail for the duration. (sucsess: x0.5);",153,0,75kk,Human;Demon
-88,Numbing Shock,tank_silence_physical,Physical/Debuff,,,40,0,enemy/single,2,6,5,"PHYSICAL SILENCE: the target's physical skills fail for the duration. (sucsess: x0.5);",159,0,100kk,Human;Demon
-90,Numbing Shock,tank_silence_physical,Physical/Debuff,,,40,0,enemy/single,2,6,5,"PHYSICAL SILENCE: the target's physical skills fail for the duration. (sucsess: x0.5);",165,0,100kk,Human;Demon
+76,Numbing Shock,tank_silence_physical,Physical/Debuff,,/shield,40,0,enemy/single,2,6,5,"PHYSICAL SILENCE: the target's physical skills fail for the duration. (sucsess: x0.5); Requre: Shield;",123,6.5kk,1kk,Human;Demon,,Its BASIC ATTACK still works. Contested ATK vs CON.
+78,Numbing Shock,tank_silence_physical,Physical/Debuff,,/shield,40,0,enemy/single,2,6,5,"PHYSICAL SILENCE: the target's physical skills fail for the duration. (sucsess: x0.5); Requre: Shield;",129,16kk,1kk,Human;Demon
+80,Numbing Shock,tank_silence_physical,Physical/Debuff,,/shield,40,0,enemy/single,2,6,5,"PHYSICAL SILENCE: the target's physical skills fail for the duration. (sucsess: x0.5); Requre: Shield;",135,0,5kk,Human;Demon
+82,Numbing Shock,tank_silence_physical,Physical/Debuff,,/shield,40,0,enemy/single,2,6,5,"PHYSICAL SILENCE: the target's physical skills fail for the duration. (sucsess: x0.5); Requre: Shield;",141,0,10kk,Human;Demon
+84,Numbing Shock,tank_silence_physical,Physical/Debuff,,/shield,40,0,enemy/single,2,6,5,"PHYSICAL SILENCE: the target's physical skills fail for the duration. (sucsess: x0.5); Requre: Shield;",147,0,30kk,Human;Demon
+86,Numbing Shock,tank_silence_physical,Physical/Debuff,,/shield,40,0,enemy/single,2,6,5,"PHYSICAL SILENCE: the target's physical skills fail for the duration. (sucsess: x0.5); Requre: Shield;",153,0,75kk,Human;Demon
+88,Numbing Shock,tank_silence_physical,Physical/Debuff,,/shield,40,0,enemy/single,2,6,5,"PHYSICAL SILENCE: the target's physical skills fail for the duration. (sucsess: x0.5); Requre: Shield;",159,0,100kk,Human;Demon
+90,Numbing Shock,tank_silence_physical,Physical/Debuff,,/shield,40,0,enemy/single,2,6,5,"PHYSICAL SILENCE: the target's physical skills fail for the duration. (sucsess: x0.5); Requre: Shield;",165,0,100kk,Human;Demon
 ,,,,,,,,,,,,,,,,,----------------------------Silencing Shock----------------------------
-76,Silencing Shock,tank_silence_magical,Magical/Debuff,,,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7);",123,6.5kk,1kk,Elf,, Land this AND a physical silence and the target is FULLY silenced. Contested ATK vs SPT.
-78,Silencing Shock,tank_silence_magical,Magical/Debuff,,,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7);",129,16kk,1kk,Elf
-80,Silencing Shock,tank_silence_magical,Magical/Debuff,,,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7);",135,0,5kk,Elf
-82,Silencing Shock,tank_silence_magical,Magical/Debuff,,,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7);",141,0,10kk,Elf
-84,Silencing Shock,tank_silence_magical,Magical/Debuff,,,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7);",147,0,30kk,Elf
-86,Silencing Shock,tank_silence_magical,Magical/Debuff,,,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7);",153,0,75kk,Elf
-88,Silencing Shock,tank_silence_magical,Magical/Debuff,,,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7);",159,0,100kk,Elf
-90,Silencing Shock,tank_silence_magical,Magical/Debuff,,,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7);",165,0,100kk,Elf
+76,Silencing Shock,tank_silence_magical,Magical/Debuff,,/shield,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7); Requre: Shield;",123,6.5kk,1kk,Elf,, Land this AND a physical silence and the target is FULLY silenced. Contested ATK vs SPT.
+78,Silencing Shock,tank_silence_magical,Magical/Debuff,,/shield,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7); Requre: Shield;",129,16kk,1kk,Elf
+80,Silencing Shock,tank_silence_magical,Magical/Debuff,,/shield,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7); Requre: Shield;",135,0,5kk,Elf
+82,Silencing Shock,tank_silence_magical,Magical/Debuff,,/shield,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7); Requre: Shield;",141,0,10kk,Elf
+84,Silencing Shock,tank_silence_magical,Magical/Debuff,,/shield,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7); Requre: Shield;",147,0,30kk,Elf
+86,Silencing Shock,tank_silence_magical,Magical/Debuff,,/shield,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7); Requre: Shield;",153,0,75kk,Elf
+88,Silencing Shock,tank_silence_magical,Magical/Debuff,,/shield,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7); Requre: Shield;",159,0,100kk,Elf
+90,Silencing Shock,tank_silence_magical,Magical/Debuff,,/shield,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7); Requre: Shield;",165,0,100kk,Elf
 ,,,,,,,,,,,,,,,,,----------------------------Grapple----------------------------
-76,Grapple,tank_pull,Physical/Debuff,,,600,0,enemy/single,0.5,15,1,"Power 2100. Drags the target to you over 1.2s, hits it and stuns it for 1s on arrival.;",123,6.5kk,1kk,,,"it cannot act or steer on the way, ONE CON contest covers the drag and the stun. A NORMAL damage skill — it builds threat only through the damage it deals, so it is auto-castable. Boss immune; works on players."
-78,Grapple,tank_pull,Physical/Debuff,,,600,0,enemy/single,0.5,15,1,"Power 2300. Drags the target to you over 1.2s, hits it and stuns it for 1s on arrival.;",129,16kk,1kk
-80,Grapple,tank_pull,Physical/Debuff,,,600,0,enemy/single,0.5,15,1,"Power 2500. Drags the target to you over 1.2s, hits it and stuns it for 1s on arrival.;",135,0,5kk
-82,Grapple,tank_pull,Physical/Debuff,,,600,0,enemy/single,0.5,15,1,"Power 2700. Drags the target to you over 1.2s, hits it and stuns it for 1s on arrival.;",141,0,10kk
-84,Grapple,tank_pull,Physical/Debuff,,,600,0,enemy/single,0.5,15,1,"Power 2900. Drags the target to you over 1.2s, hits it and stuns it for 1s on arrival.;",147,0,30kk
-86,Grapple,tank_pull,Physical/Debuff,,,600,0,enemy/single,0.5,15,1,"Power 3100. Drags the target to you over 1.2s, hits it and stuns it for 1s on arrival.;",153,0,75kk
-88,Grapple,tank_pull,Physical/Debuff,,,600,0,enemy/single,0.5,15,1,"Power 3300. Drags the target to you over 1.2s, hits it and stuns it for 1s on arrival.;",159,0,100kk
-90,Grapple,tank_pull,Physical/Debuff,,,600,0,enemy/single,0.5,15,1,"Power 3500. Drags the target to you over 1.2s, hits it and stuns it for 1s on arrival.;",165,0,100kk
+76,Grapple,tank_pull,Physical/Debuff,sword|blunt,,600,0,enemy/single,0.5,15,1,"Power 2100. Drags the target to you over 1.2s, hits it and stuns it for 1s on arrival. Requre: Sword/Blunt;",123,6.5kk,1kk,,,"it cannot act or steer on the way, ONE CON contest covers the drag and the stun. A NORMAL damage skill — it builds threat only through the damage it deals, so it is auto-castable. Boss immune; works on players."
+78,Grapple,tank_pull,Physical/Debuff,sword|blunt,,600,0,enemy/single,0.5,15,1,"Power 2300. Drags the target to you over 1.2s, hits it and stuns it for 1s on arrival. Requre: Sword/Blunt;",129,16kk,1kk
+80,Grapple,tank_pull,Physical/Debuff,sword|blunt,,600,0,enemy/single,0.5,15,1,"Power 2500. Drags the target to you over 1.2s, hits it and stuns it for 1s on arrival. Requre: Sword/Blunt;",135,0,5kk
+82,Grapple,tank_pull,Physical/Debuff,sword|blunt,,600,0,enemy/single,0.5,15,1,"Power 2700. Drags the target to you over 1.2s, hits it and stuns it for 1s on arrival. Requre: Sword/Blunt;",141,0,10kk
+84,Grapple,tank_pull,Physical/Debuff,sword|blunt,,600,0,enemy/single,0.5,15,1,"Power 2900. Drags the target to you over 1.2s, hits it and stuns it for 1s on arrival. Requre: Sword/Blunt;",147,0,30kk
+86,Grapple,tank_pull,Physical/Debuff,sword|blunt,,600,0,enemy/single,0.5,15,1,"Power 3100. Drags the target to you over 1.2s, hits it and stuns it for 1s on arrival. Requre: Sword/Blunt;",153,0,75kk
+88,Grapple,tank_pull,Physical/Debuff,sword|blunt,,600,0,enemy/single,0.5,15,1,"Power 3300. Drags the target to you over 1.2s, hits it and stuns it for 1s on arrival. Requre: Sword/Blunt;",159,0,100kk
+90,Grapple,tank_pull,Physical/Debuff,sword|blunt,,600,0,enemy/single,0.5,15,1,"Power 3500. Drags the target to you over 1.2s, hits it and stuns it for 1s on arrival. Requre: Sword/Blunt;",165,0,100kk
 ,,,,,,,,,,,,,,,,,----------------------------Undying Will----------------------------
 83,Undying Will,undying_will,Magic/Buff,,,0,0,self/single,1,3600,3600,"You DIE normally and keep your buffs, then choose when to rise where you fell at 30% HP and MP, losing NO experience — the offer waits as long as you like. Lasts 60 minutes or until it saves you. 60 minute reuse., Consume 2 physical stones",300,500kk,100kk,
 ,,,,,,,,,,,,,,,,,----------------------------Taunting Whisp----------------------------

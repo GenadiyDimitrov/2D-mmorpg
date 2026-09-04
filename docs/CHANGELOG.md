@@ -7,12 +7,77 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.112.2**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.112.3**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-04 (latest) — 0.112.2: the tank's MP-regen column is entirely his
+## 2026-09-04 (latest) — 0.112.3: three shields, one weapon, and a message that fired 10×/s
+
+Three playtest finds off 0.112.2, all three real, all three fixed. Two are missing **gates** on the
+tank's kit and one is a **flood**.
+
+### The three Shocks are shield bashes again
+
+*"I can use shield shock and silencing shock without a shield .. (numbing shock I guess is the same)"* —
+and it was. `Shield Shock`, `Numbing Shock` and `Silencing Shock` now carry
+`RequiredShield: ShieldGate.Required`, which is the **same field both Shield Smashes have carried since
+the Bulwark was built** in 0.105.0. Nothing bespoke was needed and nothing new was invented: the general
+armour gate already refuses the cast in `BeginSkill` and `SkillText` already prints a "Requires a shield"
+line off the field, so setting it does the whole job on both sides.
+
+🔑 **It was an omission, not a decision.** The Smashes were authored with the gate because his CSV row
+said `/shield` in the WEIGHT column; the Shock rows' WEIGHT cell was **empty**, so there was nothing for
+`--check` to disagree with. That is the same shape as 0.112.2's invented ×1.1 MP regen, in reverse — a
+checker that compares cells cannot see a gate that **neither** side asserts.
+
+| skill | rungs | file |
+|---|---|---|
+| Shield Shock | 4 + 15 + 8 = **27** | `tank 2nd.csv`, `tank 3rd.csv`, `tank 4th.csv` |
+| Numbing Shock (Human, Demon) | **8** | `tank 4th.csv` |
+| Silencing Shock (Elf) | **8** | `tank 4th.csv` |
+
+Every one of those rows now reads `/shield` in WEIGHT and carries `Requre: Shield;` in DESCR, his own
+phrasing off the Smash rows — so `--check` compares the gate from here on, in both directions.
+
+### Grapple wants a sword or a blunt
+
+*"Also grapple need sword/blunt"* — `RequiredWeapon: Sword | Blunt`, a **bare type pair**, which in this
+engine means *any hands of it* (playtest 28's ruling). A two-handed sword still grapples; a bow and a
+pair of daggers do not. WEAPON cell `sword|blunt` on all eight rungs, the same cell `strike` has carried
+since `fighter 1st.csv` was written.
+
+⚠ **Deliberately NOT shield-gated.** The three Shocks are shield bashes; Grapple is a reach-and-haul at
+600 range, and he named a weapon and not a shield. One word and it gets one.
+
+### The potion refusal that fired ten times a second
+
+*"Drinking hp pot let say uncommon then my hp staying below I get system msg flood 'a stronger effect
+(uncommon healing) is already active'"*.
+
+🔑 **The message was right and the messenger was wrong.** The Potions tab is a **fallback ladder** by
+construction — common@80 / uncommon@70 / rare@50 — so while the uncommon HoT is running, every weaker
+armed line is *correctly* refused on rank. The bug is that `AutoPotions` re-walks the whole ladder on
+**every tick**: one refusal is information, 600 a minute is a wall of text over the fight.
+
+`UsePotion` grew a `quiet` parameter and **the autopilot always passes it**; the manual command keeps
+every line, because a player who taps a bottle is owed an answer.
+
+⚠ **It silences ALL the refusals, not just the rank one**, and that is the point rather than a
+side-effect — the same per-tick loop would equally flood `"{skill} is on cooldown"`, and an armed MP
+potion drunk while PvP-flagged would flood *"cannot be used while you are flagged for PvP"* for the
+whole sixty seconds of the flag. Both were live and neither had been reached yet.
+
+### Build
+
+`--check` is green on all 15 files, `Game.sln` and `Assembly-CSharp.csproj` both build clean.
+
+⚠ **NEW APK.** The gate itself is server-authoritative — an old client is refused at the cast either
+way — but `SkillDef` and `SkillText` live in `Game.Shared`, which the client compiles in and reads
+LOCALLY for the skill cards, so without a fresh APK the cards keep promising a shieldless Shock.
+`ProtocolVersion` is unchanged.
+
+## 2026-09-04 — 0.112.2: the tank's MP-regen column is entirely his
 
 One ruling and one build. *"Remove the x1.1 mp regen from tank 20~32, at 36 he jumps to +3.1
 directly."* Done — and with it the tank's MP-regen column has no invented number left in it anywhere:

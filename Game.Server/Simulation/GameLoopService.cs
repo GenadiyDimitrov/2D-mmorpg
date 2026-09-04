@@ -4090,8 +4090,20 @@ public class GameLoopService : BackgroundService
 
     /// <summary>Consume one potion (HP HoT/instant, or a buff potion). Shared by the manual
     /// UsePotion command and the auto-hunt auto-potion path. Returns true if something was drunk
-    /// (false = not a potion, or on cooldown). Buff potions ignore the shared heal cooldown.</summary>
-    private bool UsePotion(Entity player, InventoryItem item, Guid? targetId = null)
+    /// (false = not a potion, or on cooldown). Buff potions ignore the shared heal cooldown.
+    ///
+    /// <para>🔑 <paramref name="quiet"/> SILENCES EVERY REFUSAL LINE, and the AUTOPILOT ALWAYS PASSES IT
+    /// (owner, playtest of 0.112.2: *"Drinking hp pot let say uncommon then my hp staying below I get
+    /// system msg flood 'a stronger effect (uncommon healing) is already active'"*). The Potions tab is
+    /// a FALLBACK LADDER by construction — common@80 / uncommon@70 / rare@50 — so while the uncommon
+    /// HoT runs, every weaker armed line is refused on rank, and `AutoPotions` re-walks the whole ladder
+    /// TEN TIMES A SECOND. One refusal is information; 600 a minute is a wall of text over the fight.
+    /// The manual command keeps every line: a player who taps a bottle is owed an answer.</para>
+    ///
+    /// <para>⚠ It is ALL the refusals, not just the rank one — the same tick loop would equally flood
+    /// "on cooldown", and an armed MP potion drunk while PvP-flagged floods "cannot be used while you
+    /// are flagged" for the whole sixty seconds of the flag.</para></summary>
+    private bool UsePotion(Entity player, InventoryItem item, Guid? targetId = null, bool quiet = false)
     {
         if (player.Dead || ItemCatalog.Get(item.DefId) is not ItemDef def || !ItemCatalog.IsPotion(def))
             return false;
@@ -4101,7 +4113,7 @@ public class GameLoopService : BackgroundService
         // JAILED players can't ESCAPE — Return scrolls (and any teleport-to-town item) are blocked (owner).
         if (player.Jailed && skill.TeleportsToTown)
         {
-            SendSystemToEntity(player, "You can't escape while jailed.");
+            if (!quiet) SendSystemToEntity(player, "You can't escape while jailed.");
             return false;
         }
 
@@ -4114,14 +4126,14 @@ public class GameLoopService : BackgroundService
                 return false;
             if (player.SkillCooldowns.TryGetValue(skill.Id, out int cd) && cd > 0)
             {
-                SendSystemToEntity(player, $"{skill.Name} is on cooldown.");
+                if (!quiet) SendSystemToEntity(player, $"{skill.Name} is on cooldown.");
                 return false;
             }
             // A buff scroll is charged for when the cast LANDS, so a read that would be refused on
             // rank has to be stopped here — otherwise the scroll is spent on nothing at all.
             if ((skill.Effect & SkillEffect.AnyBuff) != 0 && !BuffWouldLand(player, skill, 1))
             {
-                SendSystemToEntity(player, $"{skill.Name} would have no effect — a stronger blessing is already active.");
+                if (!quiet) SendSystemToEntity(player, $"{skill.Name} would have no effect — a stronger blessing is already active.");
                 return false;
             }
             // A resurrection scroll targets a DEAD ALLY (like the healer's res), not the user. Validate the
@@ -4133,7 +4145,7 @@ public class GameLoopService : BackgroundService
                     corpse.Kind != EntityKind.Player || !corpse.Dead ||
                     DistanceSq(player, corpse) > GameConstants.ViewRange * GameConstants.ViewRange)
                 {
-                    SendSystemToEntity(player, $"{skill.Name} needs a fallen ally as its target.");
+                    if (!quiet) SendSystemToEntity(player, $"{skill.Name} needs a fallen ally as its target.");
                     return false;
                 }
                 // Same rule as the cast path: reading a res scroll over an outlaw flags you NOW, for
@@ -4169,7 +4181,7 @@ public class GameLoopService : BackgroundService
         //       done to you, and that is the same rule that decides who may be freely attacked.
         if (def.PveOnly && FlagOf(player) != PvpFlag.Innocent)
         {
-            SendSystemToEntity(player, $"{def.Name} cannot be used while you are flagged for PvP.");
+            if (!quiet) SendSystemToEntity(player, $"{def.Name} cannot be used while you are flagged for PvP.");
             return false;
         }
         if (healing && player.PotionCooldowns.TryGetValue(def.Id, out var pcd) && pcd > 0)
@@ -4182,7 +4194,7 @@ public class GameLoopService : BackgroundService
             foreach (var active in player.Buffs)
                 if (active.Key == skill.BuffKey && active.Rank > skill.Rank)
                 {
-                    SendSystemToEntity(player, $"A stronger effect ({active.Name}) is already active.");
+                    if (!quiet) SendSystemToEntity(player, $"A stronger effect ({active.Name}) is already active.");
                     return false;
                 }
 
@@ -4190,7 +4202,7 @@ public class GameLoopService : BackgroundService
         // it, so without this an instant scroll would have no cooldown at all.
         if (player.SkillCooldowns.TryGetValue(skill.Id, out int icd) && icd > 0)
         {
-            SendSystemToEntity(player, $"{skill.Name} is on cooldown.");
+            if (!quiet) SendSystemToEntity(player, $"{skill.Name} is on cooldown.");
             return false;
         }
         // The SKILL decides what happens — we only deliver it. An instant Heal restores a % of max
@@ -4211,7 +4223,7 @@ public class GameLoopService : BackgroundService
         {
             if (player.SkillPoints >= int.MaxValue - skill.GrantsSp)
             {
-                SendSystemToEntity(player, "You already hold too much SP to drink that.");
+                if (!quiet) SendSystemToEntity(player, "You already hold too much SP to drink that.");
                 return false;
             }
             player.SkillPoints += skill.GrantsSp;
@@ -4239,7 +4251,7 @@ public class GameLoopService : BackgroundService
             // which was rare before improved buffs became ladders and is common now.
             if (!ApplyBuff(player, skill))
             {
-                SendSystemToEntity(player, $"{skill.Name} had no effect — a stronger blessing is already active.");
+                if (!quiet) SendSystemToEntity(player, $"{skill.Name} had no effect — a stronger blessing is already active.");
                 return false;
             }
             PushBuffs(player);
@@ -5263,6 +5275,10 @@ public class GameLoopService : BackgroundService
     private void AutoPotions(Entity p)
     {
         // Per-potion cooldowns are enforced inside UsePotion now, so no shared pre-gate here.
+        //
+        // ⚠ EVERY CALL BELOW PASSES `quiet: true`. This method runs TEN TIMES A SECOND and a refused
+        // drink is the NORMAL case here — a fallback ladder spends most of a fight with its weaker
+        // rungs suppressed by the stronger one that is running. See UsePotion for the flood this fixed.
         if (p.MaxHp > 0 && p.AutoHealPotions.Count > 0)
         {
             // Potions-tab mode: try each ARMED potion from the highest threshold down. The first one
@@ -5273,20 +5289,20 @@ public class GameLoopService : BackgroundService
             {
                 if (hpPctNow >= line.ThresholdPct) continue;
                 if (p.Inventory.FirstOrDefault(i => i.DefId == line.ItemId && !i.Equipped) is InventoryItem pot
-                    && UsePotion(p, pot))
+                    && UsePotion(p, pot, quiet: true))
                     break;
             }
         }
         else if (p.AutoHpPotionPct > 0 && p.MaxHp > 0 &&
                  p.Hp * 100 < p.MaxHp * p.AutoHpPotionPct &&
                  BestHealPotion(p) is InventoryItem hpPot)
-            UsePotion(p, hpPot);
+            UsePotion(p, hpPot, quiet: true);
 
         // The MP line, live since 2026-08-27. UsePotion refuses the drink while flagged (PveOnly).
         if (p.AutoMpPotionPct > 0 && p.MaxMp > 0 &&
             p.Mp * 100 < p.MaxMp * p.AutoMpPotionPct &&
             BestManaPotion(p) is InventoryItem mpPot)
-            UsePotion(p, mpPot);
+            UsePotion(p, mpPot, quiet: true);
 
         // The BUFFS tab (BL-04) takes over the moment it has been configured. It is per-FAMILY, which
         // the old per-ITEM list could not be, so it is a replacement rather than a filter on top.
@@ -5319,7 +5335,7 @@ public class GameLoopService : BackgroundService
                 // stronger blessing already covers that family, the potion would be refused anyway.
                 if (BuffAlreadyUp(p, bd, 1))
                     continue;
-                UsePotion(p, item);
+                UsePotion(p, item, quiet: true);
             }
         }
     }
@@ -5356,7 +5372,7 @@ public class GameLoopService : BackgroundService
                 if (BuffAlreadyUp(p, wrapper, 1)) break;
 
                 if (p.Inventory.FirstOrDefault(i => i.DefId == candidate.ItemId && !i.Equipped)
-                        is InventoryItem item && UsePotion(p, item))
+                        is InventoryItem item && UsePotion(p, item, quiet: true))
                     break;
             }
         }

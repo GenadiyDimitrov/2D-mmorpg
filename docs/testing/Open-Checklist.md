@@ -432,6 +432,30 @@ a stack of 9 buff scrolls is the friction you wanted or just friction** (§93D).
 
 
 
+- [!] **0.112.2 — I can use Shield Shock and Silencing Shock without a shield (Numbing Shock I guess is
+  the same)** — ✅ **FIXED 0.112.3, and you were right about the third one.** All three Shocks now carry
+  `RequiredShield: ShieldGate.Required`, the same field both Shield Smashes have carried since the
+  Bulwark was built. It was an omission, not a design: a Shock is a shield bash by name and animation,
+  and the gate already existed generically — the cast is refused in `BeginSkill` and the skill card
+  grows its own "Requires a shield" line with nothing written per skill. The `/shield` cell is now in
+  the WEIGHT column of all 27 Shield Shock rungs (`tank 2nd/3rd/4th.csv`) and both silences' 8 rungs,
+  so `--check` compares it from here on.
+- [!] **0.112.2 — Grapple needs sword/blunt** — ✅ **FIXED 0.112.3.** `RequiredWeapon: Sword | Blunt`,
+  a bare type pair, which means *any hands of it* — the same shape `strike` carries — so a two-handed
+  sword still grapples and a bow or duals do not. WEAPON cell `sword|blunt` on all 8 rungs.
+  ⚠ Deliberately **not** shield-gated: the three Shocks are shield bashes, Grapple is a reach-and-haul.
+  Say the word if you want a shield on it too.
+- [!] **0.112.2 — drinking an uncommon HP potion, then staying below the threshold, floods
+  `a stronger effect (uncommon healing) is already active`** — ✅ **FIXED 0.112.3.** The message was
+  right and the messenger was wrong: your Potions tab is a **fallback ladder** (common@80 /
+  uncommon@70 / rare@50), so while the uncommon HoT runs every weaker armed line is *correctly*
+  refused on rank — and `AutoPotions` re-walks the whole ladder **ten times a second**. One refusal is
+  information; 600 a minute is a wall. `UsePotion` took a `quiet` flag and the autopilot always passes
+  it; the manual command keeps every line, because a player who taps a bottle is owed an answer.
+  ⚠ It is **all** the refusals, not just that one — the same loop would equally flood "on cooldown",
+  and an armed MP potion drunk while PvP-flagged floods "cannot be used while flagged" for the whole
+  sixty seconds of the flag.
+
 ## 98. ONE VERIFICATION CARRIED OUT OF THE BACKLOG — `BL-125`, fixed in 0.103.0
 
 The backlog was cut down to open entries only on 2026-09-03 (*"leave only active"*), and `BL-125` was

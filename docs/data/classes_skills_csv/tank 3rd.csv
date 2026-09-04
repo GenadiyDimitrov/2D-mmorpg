@@ -248,18 +248,18 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 72,Shield Smash - Power,tank_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +3700, Decrease P.Crit.Dmg with 35% and M.Crit.Dmg with 15%; Requre: Shield;",117,650,[strike],Demon
 74,Shield Smash - Power,tank_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +4000, Decrease P.Crit.Dmg with 35% and M.Crit.Dmg with 15%; Requre: Shield;",120,880,[strike],Demon
 ,,,,,,,,,,,,,,,,,----------------------------Shield Shock----------------------------
-40,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7);",62,28
-43,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7);",65,35
-46,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7);",71,40
-49,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7);",76,50
-52,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7);",83,74
-56,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7);",90,81
-58,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7);",95,88
-60,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7);",98,120
-62,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7);",100,170
-64,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7);",105,190
-66,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7);",108,280
-68,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7);",112,320
-70,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7);",114,390
-72,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7);",117,650
-74,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7);",120,880
+40,Shield Shock,tank_shield_stun,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",62,28
+43,Shield Shock,tank_shield_stun,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",65,35
+46,Shield Shock,tank_shield_stun,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",71,40
+49,Shield Shock,tank_shield_stun,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",76,50
+52,Shield Shock,tank_shield_stun,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",83,74
+56,Shield Shock,tank_shield_stun,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",90,81
+58,Shield Shock,tank_shield_stun,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",95,88
+60,Shield Shock,tank_shield_stun,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",98,120
+62,Shield Shock,tank_shield_stun,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",100,170
+64,Shield Shock,tank_shield_stun,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",105,190
+66,Shield Shock,tank_shield_stun,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",108,280
+68,Shield Shock,tank_shield_stun,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",112,320
+70,Shield Shock,tank_shield_stun,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",114,390
+72,Shield Shock,tank_shield_stun,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",117,650
+74,Shield Shock,tank_shield_stun,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",120,880

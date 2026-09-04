@@ -35,7 +35,7 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 32,Charm,charm,Magical Debuff,,,400,0,enemy/single,0,6,3,"Charm the enemy - start to walk towards you for 3s then leaves you  5500 aggro ahead (sucsess: x0.7);",0,22000,[],Elf
 36,Charm,charm,Magical Debuff,,,400,0,enemy/single,0,6,3,"Charm the enemy - start to walk towards you for 3s then leaves you  6000 aggro ahead (sucsess: x0.7);",0,40000,[],Elf
 ,,,,,,,,,,,,,,,,----------------------------Shield Stun----------------------------
-24,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7);",15,6400
-28,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7);",18,12000
-32,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7);",22,22000
-36,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7);",26,40000
+24,Shield Shock,tank_shield_stun,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",15,6400
+28,Shield Shock,tank_shield_stun,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",18,12000
+32,Shield Shock,tank_shield_stun,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",22,22000
+36,Shield Shock,tank_shield_stun,physical active,,/shield,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7); Requre: Shield;",26,40000

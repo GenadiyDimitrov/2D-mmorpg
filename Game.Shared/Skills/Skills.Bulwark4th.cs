@@ -449,9 +449,14 @@ public partial class SkillCatalog
             Pulls: true, PullSeconds: 1.2f,          // his 1.2s drag
             DebuffSchool: DebuffSchool.Physical, Category: SkillCategory.Debuff,
             BuffKey: "tank_pull_stun", Rank: 1,
+            // 🔑 SWORD OR BLUNT (owner, playtest of 0.112.2: *"Also grapple need sword/blunt"*). A bare
+            // type pair means ANY HANDS of it — the same shape `strike` carries — so a two-handed sword
+            // still grapples and a bow or a pair of daggers does not. Deliberately NOT shield-gated:
+            // the three Shocks are shield bashes, this is a reach-and-haul.
+            RequiredWeapon: WeaponType.Sword | WeaponType.Blunt,
             SpCost: 6_500_000,
             Description: "Hauls an enemy across the ground to your side, striking it on arrival and "
-                       + "leaving it reeling.",
+                       + "leaving it reeling. Requires a sword or a blunt.",
             Levels: T4Rungs(8, 2, (i, sp, gold) => new SkillLevel(
                 MpCost: TankFourthBashMp[i], SpCost: sp, GoldCost: gold, Power: 2100 + i * 200,
                 Description: $"Power {2100 + i * 200:N0}. Drags the target to you over 1.2s, hits it "
@@ -474,9 +479,10 @@ public partial class SkillCatalog
             SilencePhysical: true, DebuffLandMod: 0.5f,
             DebuffSchool: DebuffSchool.Physical, Category: SkillCategory.Debuff,
             BuffKey: "silence_physical", Rank: 1, SharesLadderKey: true,
+            RequiredShield: ShieldGate.Required,   // a Shock is a shield bash — see Shield Shock
             SpCost: 6_500_000,
             Description: "A blow to the nerve: the target's body will not perform a skill for 5s, "
-                       + "though it can still swing.",
+                       + "though it can still swing. Requires a shield.",
             Levels: T4Rungs(8, 2, (i, sp, gold) => new SkillLevel(
                 MpCost: TankFourthBashMp[i], SpCost: sp, GoldCost: gold))),
 
@@ -496,9 +502,10 @@ public partial class SkillCatalog
             SilenceMagical: true, DebuffLandMod: 0.7f,
             DebuffSchool: DebuffSchool.Magical, Category: SkillCategory.Debuff,
             BuffKey: "silence_magical", Rank: 1, SharesLadderKey: true,
+            RequiredShield: ShieldGate.Required,   // a Shock is a shield bash — see Shield Shock
             SpCost: 6_500_000,
             Description: "Smothers the words of a spell before they are spoken: the target's magical "
-                       + "skills fail for 10s.",
+                       + "skills fail for 10s. Requires a shield.",
             Levels: T4Rungs(8, 2, (i, sp, gold) => new SkillLevel(
                 MpCost: TankFourthBashMp[i], SpCost: sp, GoldCost: gold))),
 

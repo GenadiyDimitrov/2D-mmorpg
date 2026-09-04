@@ -401,7 +401,14 @@ public static partial class SkillCatalog
             MpCost: 15, CastTicks: 10, CooldownTicks: 30, Range: 40, Power: 0,
             DurationTicks: 90, BuffKey: "stun", Rank: 1, DebuffLandMod: 0.7f, SharesLadderKey: true,
             Category: SkillCategory.Debuff, DebuffSchool: DebuffSchool.Physical, SpCost: 6400,
-            Description: "Slams the target with your shield, stunning it for 9s. ATK-vs-CON; bosses immune.",
+            // 🔑 SHIELD-GATED (owner, playtest of 0.112.2: *"I can use shield shock and silencing shock
+            // without a shield .. (numbing shock I guess is the same)"*). It is a shield bash by name and
+            // by animation, and both Shield Smashes have carried `ShieldGate.Required` since the Bulwark
+            // was built — this ladder and the two 4th-tier Shocks were simply missed. Nothing bespoke is
+            // needed: the general gate refuses the cast in BeginSkill and SkillText grows the card line.
+            RequiredShield: ShieldGate.Required,
+            Description: "Slams the target with your shield, stunning it for 9s. ATK-vs-CON; bosses "
+                       + "immune. Requires a shield.",
             Levels: new[]
             {
                 new SkillLevel(MpCost: 15, SpCost: 6400),
