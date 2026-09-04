@@ -1,36 +1,36 @@
 LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,GOLD,RACE,REPLACES,COMMENT
 ,,,,,,,,,,,,,,,,,----------------------------Heavy Armor Mastery----------------------------
-76,Heavy Armor Mastery,tank_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"with heavy: mpReg x3.4 and p.def +175 and p.def x1.20 and crit dmg reduction 35% and eva -3;",0,6.5kk,1kk
-77,Heavy Armor Mastery,tank_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"with heavy: mpReg x3.4 and p.def +180 and p.def x1.20 and crit dmg reduction 35% and eva -3;",0,11kk,1kk
-78,Heavy Armor Mastery,tank_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"with heavy: mpReg x3.4 and p.def +185 and p.def x1.20 and crit dmg reduction 35% and eva -3;",0,16kk,1kk
-79,Heavy Armor Mastery,tank_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"with heavy: mpReg x3.4 and p.def +190 and p.def x1.20 and crit dmg reduction 40% and eva -4;",0,80kk,1kk
-80,Heavy Armor Mastery,tank_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"with heavy: mpReg x3.4 and p.def +195 and p.def x1.25 and crit dmg reduction 40% and eva -4;",0,0,5kk
-81,Heavy Armor Mastery,tank_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"with heavy: mpReg x3.4 and p.def +200 and p.def x1.25 and crit dmg reduction 40% and eva -4;",0,0,7.5kk
-82,Heavy Armor Mastery,tank_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"with heavy: mpReg x3.4 and p.def +205 and p.def x1.25 and crit dmg reduction 45% and eva -5;",0,0,10kk
-83,Heavy Armor Mastery,tank_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"with heavy: mpReg x3.4 and p.def +210 and p.def x1.25 and crit dmg reduction 45% and eva -5;",0,0,15kk
-84,Heavy Armor Mastery,tank_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"with heavy: mpReg x3.4 and p.def +215 and p.def x1.25 and crit dmg reduction 45% and eva -5;",0,0,30kk
-85,Heavy Armor Mastery,tank_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"with heavy: mpReg x3.4 and p.def +220 and p.def x1.30 and crit dmg reduction 50% and eva -6;",0,0,50kk
-86,Heavy Armor Mastery,tank_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"with heavy: mpReg x3.4 and p.def +225 and p.def x1.30 and crit dmg reduction 50% and eva -6;",0,0,75kk
-87,Heavy Armor Mastery,tank_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"with heavy: mpReg x3.4 and p.def +230 and p.def x1.30 and crit dmg reduction 50% and eva -6;",0,0,100kk
-88,Heavy Armor Mastery,tank_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"with heavy: mpReg x3.4 and p.def +235 and p.def x1.30 and crit dmg reduction 50% and eva -6;",0,0,100kk
-89,Heavy Armor Mastery,tank_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"with heavy: mpReg x3.4 and p.def +240 and p.def x1.30 and crit dmg reduction 50% and eva -6;",0,0,100kk
-90,Heavy Armor Mastery,tank_armor_mastery,Passive,,robe,0,0,self/single,0,0,0,"with heavy: mpReg x3.4 and p.def +245 and p.def x1.30 and crit dmg reduction 50% and eva -6;",0,0,100kk
+76,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x5.1 and p.def +175 and p.def x1.20 and crit dmg reduction 35% and eva -3;",0,6.5kk,1kk
+77,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x5.1 and p.def +180 and p.def x1.20 and crit dmg reduction 35% and eva -3;",0,11kk,1kk
+78,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x5.1 and p.def +185 and p.def x1.20 and crit dmg reduction 35% and eva -3;",0,16kk,1kk
+79,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x5.1 and p.def +190 and p.def x1.20 and crit dmg reduction 40% and eva -4;",0,80kk,1kk
+80,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x5.1 and p.def +195 and p.def x1.25 and crit dmg reduction 40% and eva -4;",0,0,5kk
+81,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x5.1 and p.def +200 and p.def x1.25 and crit dmg reduction 40% and eva -4;",0,0,7.5kk
+82,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x5.1 and p.def +205 and p.def x1.25 and crit dmg reduction 45% and eva -5;",0,0,10kk
+83,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x5.1 and p.def +210 and p.def x1.25 and crit dmg reduction 45% and eva -5;",0,0,15kk
+84,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x5.1 and p.def +215 and p.def x1.25 and crit dmg reduction 45% and eva -5;",0,0,30kk
+85,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x5.1 and p.def +220 and p.def x1.30 and crit dmg reduction 50% and eva -6;",0,0,50kk
+86,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x5.1 and p.def +225 and p.def x1.30 and crit dmg reduction 50% and eva -6;",0,0,75kk
+87,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x5.1 and p.def +230 and p.def x1.30 and crit dmg reduction 50% and eva -6;",0,0,100kk
+88,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x5.1 and p.def +235 and p.def x1.30 and crit dmg reduction 50% and eva -6;",0,0,100kk
+89,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x5.1 and p.def +240 and p.def x1.30 and crit dmg reduction 50% and eva -6;",0,0,100kk
+90,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x5.1 and p.def +245 and p.def x1.30 and crit dmg reduction 50% and eva -6;",0,0,100kk
 ,,,,,,,,,,,,,,,,,----------------------------Tank Anti-Magic----------------------------
-76,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +132 and M.Res +20%;",0,6.5kk,1kk
-77,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +134 and M.Res +20%;",0,11kk,1kk
-78,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +136 and M.Res +20%;",0,16kk,1kk
-79,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +138 and M.Res +20%;",0,80kk,1kk
-80,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +140 and M.Res +20%; Twice more chance magic to fail against you",0,0,5kk
-81,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +142 and M.Res +20%; Twice more chance magic to fail against you",0,0,7.5kk
-82,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +144 and M.Res +20%; Twice more chance magic to fail against you",0,0,10kk
-83,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +146 and M.Res +20%; Twice more chance magic to fail against you",0,0,15kk
-84,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +148 and M.Res +20%; Twice more chance magic to fail against you",0,0,30kk
-85,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +150 and M.Res +20%; Twice more chance magic to fail against you",0,0,50kk
-86,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +152 and M.Res +20%; Twice more chance magic to fail against you",0,0,75kk
-87,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +154 and M.Res +20%; Twice more chance magic to fail against you",0,0,100kk
-88,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +156 and M.Res +20%; Twice more chance magic to fail against you",0,0,100kk
-89,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +158 and M.Res +20%; Twice more chance magic to fail against you",0,0,100kk
-90,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +160 and M.Res +20%; Twice more chance magic to fail against you",0,0,100kk
+76,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +132 and M.Res +20%;",0,6.5kk,1kk
+77,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +134 and M.Res +20%;",0,11kk,1kk
+78,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +136 and M.Res +20%;",0,16kk,1kk
+79,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +138 and M.Res +20%;",0,80kk,1kk
+80,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +140 and M.Res +20%; Twice more chance magic to fail against you",0,0,5kk
+81,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +142 and M.Res +20%; Twice more chance magic to fail against you",0,0,7.5kk
+82,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +144 and M.Res +20%; Twice more chance magic to fail against you",0,0,10kk
+83,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +146 and M.Res +20%; Twice more chance magic to fail against you",0,0,15kk
+84,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +148 and M.Res +20%; Twice more chance magic to fail against you",0,0,30kk
+85,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +150 and M.Res +20%; Twice more chance magic to fail against you",0,0,50kk
+86,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +152 and M.Res +20%; Twice more chance magic to fail against you",0,0,75kk
+87,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +154 and M.Res +20%; Twice more chance magic to fail against you",0,0,100kk
+88,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +156 and M.Res +20%; Twice more chance magic to fail against you",0,0,100kk
+89,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +158 and M.Res +20%; Twice more chance magic to fail against you",0,0,100kk
+90,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +160 and M.Res +20%; Twice more chance magic to fail against you",0,0,100kk
 ,,,,,,,,,,,,,,,,,----------------------------Whisp Mastery----------------------------
 83,Whisp Mastery,tank_whisp_mastery,Passive,,,0,0,self/single,0,0,0,"Increase the limit of active whisps to 3",0,0,15kk
 ,,,,,,,,,,,,,,,,,----------------------------Backlash----------------------------
@@ -42,7 +42,7 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 80,Magical Backlash,backlash,Passive,,,0,0,self/single,0,0,0,"20% chance that a SPT debuff and 10% chance for CON debuff cast at you lands on its caster instead",0,150kk,10kk,Elf
 83,Magical Backlash,backlash,Passive,,,0,0,self/single,0,0,0,"30% chance that a SPT debuff and 15% chance for CON debuff cast at you lands on its caster instead",0,500kk,100kk,Elf
 ,,,,,,,,,,,,,,,,,----------------------------Tauting Wall----------------------------
-80,Tauting Wall,tauting_wall,physical buff,,,800,0,enemy/aoe,0.5,600,30,"Agro enemies around - locks them onto you for 3s then leaves you 11400 aggro ahead; and then increasing your: p.def +5000; m.def +4500; buff cancel resist x1.8; ms x0.20",200,150kk,10kk
+80,Tauting Wall,tauting_wall,physical buff,,,800,800,enemy/aoe,0.5,600,30,"Agro enemies around - locks them onto you for 3s then leaves you 11400 aggro ahead; and then increasing your: p.def +5000; m.def +4500; buff cancel resist x1.8; ms x0.20",200,150kk,10kk
 ,,,,,,,,,,,,,,,,,----------------------------Defensive Wall----------------------------
 76,Defensive Wall,defensive_wall,physical buff,,,0,0,self/single,0.5,810,33,increase p.def +3900; m.def +3400; buff cancel resist x1.8; ms x0.45,50,6.5kk,1k
 78,Defensive Wall,defensive_wall,physical buff,,,0,0,self/single,0.5,720,36,increase p.def +4100; m.def +3600; buff cancel resist x1.8; ms x0.40,50,16kk,1kk
@@ -152,14 +152,14 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 88,Numbing Shock,tank_silence_physical,Physical/Debuff,,,40,0,enemy/single,2,6,5,"PHYSICAL SILENCE: the target's physical skills fail for the duration. (sucsess: x0.5);",159,0,100kk,Human;Demon
 90,Numbing Shock,tank_silence_physical,Physical/Debuff,,,40,0,enemy/single,2,6,5,"PHYSICAL SILENCE: the target's physical skills fail for the duration. (sucsess: x0.5);",165,0,100kk,Human;Demon
 ,,,,,,,,,,,,,,,,,----------------------------Silencing Shock----------------------------
-76,Silencing Shock,tank_shield_stun,Magical/Debuff,,,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7);",123,6.5kk,1kk,Elf,, Land this AND a physical silence and the target is FULLY silenced. Contested ATK vs SPT.
-78,Silencing Shock,tank_shield_stun,Magical/Debuff,,,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7);",129,16kk,1kk,Elf
-80,Silencing Shock,tank_shield_stun,Magical/Debuff,,,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7);",135,0,5kk,Elf
-82,Silencing Shock,tank_shield_stun,Magical/Debuff,,,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7);",141,0,10kk,Elf
-84,Silencing Shock,tank_shield_stun,Magical/Debuff,,,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7);",147,0,30kk,Elf
-86,Silencing Shock,tank_shield_stun,Magical/Debuff,,,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7);",153,0,75kk,Elf
-88,Silencing Shock,tank_shield_stun,Magical/Debuff,,,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7);",159,0,100kk,Elf
-90,Silencing Shock,tank_shield_stun,Magical/Debuff,,,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7);",165,0,100kk,Elf
+76,Silencing Shock,tank_silence_magical,Magical/Debuff,,,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7);",123,6.5kk,1kk,Elf,, Land this AND a physical silence and the target is FULLY silenced. Contested ATK vs SPT.
+78,Silencing Shock,tank_silence_magical,Magical/Debuff,,,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7);",129,16kk,1kk,Elf
+80,Silencing Shock,tank_silence_magical,Magical/Debuff,,,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7);",135,0,5kk,Elf
+82,Silencing Shock,tank_silence_magical,Magical/Debuff,,,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7);",141,0,10kk,Elf
+84,Silencing Shock,tank_silence_magical,Magical/Debuff,,,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7);",147,0,30kk,Elf
+86,Silencing Shock,tank_silence_magical,Magical/Debuff,,,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7);",153,0,75kk,Elf
+88,Silencing Shock,tank_silence_magical,Magical/Debuff,,,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7);",159,0,100kk,Elf
+90,Silencing Shock,tank_silence_magical,Magical/Debuff,,,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7);",165,0,100kk,Elf
 ,,,,,,,,,,,,,,,,,----------------------------Grapple----------------------------
 76,Grapple,tank_pull,Physical/Debuff,,,600,0,enemy/single,0.5,15,1,"Power 2100. Drags the target to you over 1.2s, hits it and stuns it for 1s on arrival.;",123,6.5kk,1kk,,,"it cannot act or steer on the way, ONE CON contest covers the drag and the stun. A NORMAL damage skill — it builds threat only through the damage it deals, so it is auto-castable. Boss immune; works on players."
 78,Grapple,tank_pull,Physical/Debuff,,,600,0,enemy/single,0.5,15,1,"Power 2300. Drags the target to you over 1.2s, hits it and stuns it for 1s on arrival.;",129,16kk,1kk
@@ -226,7 +226,7 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 89,Weapon Breaking Whisp,tank_whisp_weapon_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 23%); Consumes 4 skill stones;",180,0,100kk,Demon
 91,Weapon Breaking Whisp,tank_whisp_weapon_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 25%); Consumes 4 skill stones;",200,0,100kk,Demon
 ,,,,,,,,,,,,,,,,,----------------------------Perfect Whisp----------------------------
-80,Perfect Whisp,tank_whisp_help,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to help remove bad effects, heal its master (Power 900), restore mp of its master (Power 100), break armor of enemy (Deacreases P.Def by 30% and MDef by 15%), break weapon of enemy (Decreases P/M.Atk 15%), Decrease enemy Atack speed and cast speed by 23%; Consumes 4 skill stones;",130,150кк,10kk,,,uses whisp_clear; whisp_heal; whisp_quick_heal; whisp_armor_break; whisp_weapon_break; whisp_gravity;
+80,Perfect Whisp,tank_whisp_help,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to help remove bad effects, heal its master (Power 900), restore mp of its master (Power 100), break armor of enemy (Deacreases P.Def by 30% and MDef by 15%), break weapon of enemy (Decreases P/M.Atk 15%), Decrease enemy Atack speed and cast speed by 23%; Consumes 4 skill stones;",130,150kk,10kk,,,uses whisp_clear; whisp_heal; whisp_quick_heal; whisp_armor_break; whisp_weapon_break; whisp_gravity;
 82,Perfect Whisp,tank_whisp_help,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to help remove bad effects, heal its master (Power 920), restore mp of its master (Power 120), break armor of enemy (Deacreases P.Def by 30% and MDef by 15%), break weapon of enemy (Decreases P/M.Atk 15%), Decrease enemy Atack speed and cast speed by 23%; Consumes 4 skill stones;",140,0,10kk
 84,Perfect Whisp,tank_whisp_help,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to help remove bad effects, heal its master (Power 940), restore mp of its master (Power 140), break armor of enemy (Deacreases P.Def by 30% and MDef by 15%), break weapon of enemy (Decreases P/M.Atk 15%), Decrease enemy Atack speed and cast speed by 23%; Consumes 4 skill stones;",150,0,30kk
 86,Perfect Whisp,tank_whisp_help,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to help remove bad effects, heal its master (Power 960), restore mp of its master (Power 160), break armor of enemy (Deacreases P.Def by 30% and MDef by 15%), break weapon of enemy (Decreases P/M.Atk 15%), Decrease enemy Atack speed and cast speed by 23%; Consumes 4 skill stones;",160,0,75kk

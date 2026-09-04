@@ -7,12 +7,148 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.111.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.112.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-04 (latest) — 0.111.0: `BL-158`…`BL-162`, the NPC buffer LEVELS UP with you
+## 2026-09-04 (latest) — 0.112.0: THE TANK'S 4th TIER — `tank 4th.csv` built whole (`BL-02`, `BL-154`, `BL-155`)
+
+His word, the same day: *"im done with tank 2/3/4 so its ready to build after the npc buffer"*. The
+`NOT DONE` banner is gone, the file is **205 authored rows**, and this builds every one of them. It
+closes the last unbuilt file in `BL-02`, and it closes `BL-154` (pull) and `BL-155` (silence) — both of
+which had been *engine built, rows placeholder* since 0.110.0.
+
+⚠ **NEW APK.** `ProtocolVersion` stays **33** (no wire field moved), but the client builds its Learn tab
+and its skill cards LOCALLY from the compiled `ClassSkills` and `SkillCatalog` — and this pass rewrites
+the tank's tables from top to bottom. An old build shows the old kit.
+
+🔴 **AND IT WANTS A `game.db` DELETE**, for the same reason 0.110.3 did and one more: Backlash stops being
+auto-granted and becomes a six-rung LEARNED ladder whose rung index carries the race (1-3 physical,
+4-6 magical), and a saved `id:level` row never reconciles at login.
+
+### What landed
+
+**`tank 4th` earned its line in `Check.Specs`** — the rule from the nuker's file (*a finished file that
+no spec walks is invisible*), applied the same day. `dotnet run --project tools/SkillCsvSeed -- --check`
+is **green on all fifteen walked files**, tank 4th included.
+
+**Fourteen ladders CONTINUED** past 74, on his two band shapes (every level for the two masteries, every
+other level for the rest): Heavy Armor Mastery and Tank Anti-Magic (rungs 21-35), Taunt / Charm /
+Shield Shock (20-27), Mass Taunt / Intimidate / Freeze / Stay / both Shield Smashes (16-23), Defensive
+Wall (3-10), and the six whisp calls with the whisp skills they carry (9-16). The price ladder is the
+healer's and the buffer's — SP up to 79, **gold only** from 80.
+
+**Six things are NEW at the tier:**
+- **MAGIC WALL** (76→90) — Defensive Wall's M.Def half (+4,000 → +6,000) with no movement price. Its
+  own buff key, so the two walls stack: spend both cooldowns and you are immovable and enormous.
+- **TAUNTING WALL** (80) — one cast that mass-taunts everything within 800 for 11,400 threat **and**
+  plants a Defensive Wall on you. Both halves are the top of their own ladders ten levels early, which
+  is what a 10-minute reuse buys. Not race-split: it is the Elf's and the Demon's only AoE aggro tool.
+- **PERFECT WHISP** (80→90) — one whisp with six gears: cleanse, heal (900→1,000), MP restore
+  (100→200), armor break (30%/15%), weapon break (15%) and gravity (23%). Weaker than the single
+  whisps it stands in for, and it costs the same slot — breadth against depth.
+- **BACKLASH**, rebuilt. It was one auto-granted 30% number; his file makes it **three bought rungs at
+  77/80/83, race-split**: Physical Backlash (Human + Demon) 10/20/30% against CON debuffs and 5/10/15%
+  against SPT, Magical Backlash (Elf) the mirror.
+- **WHISP MASTERY rung 2** (83) — the third slot, exactly where the 3rd-tier note said it would be, and
+  what makes the Perfect Whisp a choice rather than an ultimatum.
+- **SILENCING SHOCK** — the Elf's magical silence, laddered 76→90 beside the Human/Demon's **Numbing
+  Shock**. `BL-155`'s engine has served both since 0.110.0; these are the authored rows.
+
+**GRAPPLE is his now** (`BL-154`): 8 rungs, Power **2,100 → 3,500**, 600 reach, 0.5s cast, 15s reuse,
+1.2s drag, 1s stun. The 3,000 the placeholder carried sat mid-ladder.
+
+**UNDYING WILL moves tier**, exactly as the healer's Rite of Preservation did: his row prices it at
+500kk SP + 100kk gold and **two Physical Stones**, which is a 4th-tier price. Its learn line left the
+3rd-class table so a non-ascended level-83 tank cannot buy it at the old placeholder 100k.
+
+### Engine
+
+- **`PassiveEffect.DebuffReflectPhysChance` / `DebuffReflectMagicChance`** — Backlash reflects the two
+  schools at different rates, which one blanket number could not carry. `TryReflectDebuff` picks the
+  channel off the skill's own `DebuffSchool`; the old school-agnostic field still means "either" and
+  feeds both. Both are on the skill card.
+- **`SkillDef.SelfBuff`** — a buff a skill also lays on its caster, named by a payload def. It exists
+  for one shape the engine could not express: `TargetMode.EnemiesInRadius` **returns** from
+  `ExecuteSkill` after its sweep, so Tauting Wall's wall half would never have run. The card recurses
+  into the payload so half the skill is not invisible.
+- **A whisp can restore MP.** `FireWhispSupport` learned `RestoreMp` (flat, off the whisp's own rung,
+  never through the master's stats) and `WhispSupportWanted` gained its condition — and the Perfect
+  Whisp's heal needed one too, because `TryWhispAct` fires ONE skill per tick and a heal that says yes
+  at full health starves everything behind it.
+- **`--check` learned two things.** A `SelfBuff` skill's DURATION column describes the BUFF, not the
+  taunt lock (the same special case totems and procs already have). And **a PENALTY ladder is not a
+  dip**: Defensive Wall's movement (×0.45 → ×0.20) and Heavy Armor Mastery's evasion (−3 → −6) deepen
+  as the rung rises, and a "bigger is better" test reported all ten steps. Both values negative on
+  both sides is the test; a real dip still has a positive `was`.
+
+### 🔴 AND THE SMOKE TEST HAD BEEN RED SINCE 2026-09-03 — 12 failures, none of them the tank
+
+Running `tools/SmokeTest` after the pass reported **12 CHECK(S) FAILED**. None was caused by this work,
+and two were real:
+
+- **Eleven were one line.** `Healing Whisp requires 4x Skill Stone.` The 4-stone reagent went onto
+  every whisp call on 2026-09-03 (*"whisps to take 4 skillstone each summon"*); the whisp checks were
+  written on 2026-09-02, and nothing ever stocked the test character. One `DebugGive` fixes it. 🔑 **A
+  REAGENT ADDED TO A SKILL OWES EVERY TEST THAT CASTS IT A STOCK LINE** — the same shape as "a new
+  `SkillDef` field owes `SkillText` a line", and the reason it went unnoticed for a day is that a red
+  harness looks the same whether one thing is wrong or eleven.
+- **One check was asserting a rule you had REVERSED.** It demanded that re-calling a live whisp be
+  refused (*"is still with you"*) — `BL-109`'s five-second re-summon window, which `BL-130` deleted the
+  next day on your ruling (*"charming whisp … resummon on cd not when whisps disapear"*). That string
+  no longer exists in the server, so the check could only ever fail. It now asserts what the game
+  actually does: past the reuse a re-call is allowed and **refreshes the whisp in place**. 🔑 A ruling
+  that reverses a mechanic owes its test an edit, exactly as it owes `SkillText` a line.
+- **The twelfth was a THIRD stale assertion, and a sharper one:** *"…and when the fear expires the body
+  stops dead"* had been failing because the fear **was still running**. `BL-131` gave `/buff` a duration
+  word and a **one-hour default**, and this line calls it without one — so what the harness put on the
+  victim was a sixty-minute Terrifying Roar, not the skill's five seconds. Now `buff terrifying roar 5s`.
+  🔑 **A command that gains a DEFAULT changes every caller that omits the argument**, and a test is a
+  caller like any other.
+- 🔴 **…and chasing that turned up a real bug, now fixed: control did not clear its destination when it
+  ended.** `TickControlledMovement` writes a random hop up to 200 units away and is the only thing that
+  clears it (on arrival), so a fear that expired mid-hop left the destination behind and the ordinary
+  stepper walked the victim the rest of the way — a body still "running" after the panic was over. It
+  now clears on the EDGE where control ends (`Entity.WasControlDriven`, runtime only, never persisted).
+  It bit charm identically, and it is the tank's own **Intimidate** that casts most of the fears in the
+  game.
+
+`tools/SmokeTest` is green apart from the documented `You can't leave while in combat` tail, which is
+correct behaviour being observed.
+### Five corrections to `tank 4th.csv`, and one refusal — ALL YOURS TO REVERSE
+
+Corrected in the file **and** in the code, per the standing "the CSVs and the game move together" rule:
+
+1. 🔴 **Eight `Silencing Shock` rows carried SKILL_ID `tank_shield_stun`** — Shield Shock's id — while
+   being a different name, a different TYPE, a different range, cast, reuse, duration, and the only
+   rows in that block with a RACE. Two skills cannot share one id: the engine keys cooldowns, saved
+   bars and buff families on it. Set to `tank_silence_magical`.
+2. **Tauting Wall's AOE cell read 0 and its RANGE cell 800.** Your own Mass Taunt row is rng 0 / aoe
+   400, so the radius belongs in AOE — an `enemy/aoe` with a radius of zero taunts nothing at all.
+   AOE set to 800.
+3. **`robe` in the WEIGHT column on all 15 Heavy Armor Mastery rows** (every DESCR cell says *"with
+   heavy"* and the skill is called Heavy Armor Mastery) → `heavy`; and on all 15 Tank Anti-Magic rows,
+   where not one DESCR cell mentions armour at all → blank.
+4. **Perfect Whisp's SP read `150кк` with a CYRILLIC к**, so every reader scored it 0 → `150kk`.
+5. **Heavy Armor Mastery's `mpReg` read `x3.4` on all fifteen rows**, against **x5.1** at your last
+   3rd-tier rung — and x3.4 is exactly the number your level-36 row carries. A single value pasted
+   fifteen times, and a real regression at the class change (+410% MP regen down to +240%). Set to
+   **x5.1** on both sides. One edit reverses it.
+
+**Refused in the code and LEFT in the file** (a ladder you wrote, not a paste, so the cells stand):
+
+6. 🔵 **SHIELD SMASH - POWER's crit-damage ladder restarts** — `15%` at 76 against `35%` at 74, then
+   re-treads 19/24/28/33 back to 35. Its twin, Shield Smash - Rate, is FLAT at its own ceiling
+   (50%/25%) for all eight 4th-tier rungs, so the symmetric reading is that this one is flat at
+   35%/15% too — **and that is what is built**. Say the word and your ladder goes in verbatim.
+
+**Flagged, not touched:** three whisp calls (Binding, Healing, Weapon Breaking) ladder **77, 79 … 91**
+— eight rungs from an odd start overshoot the 90 the world is built to. `ExpCurve.MaxLevel` is 100, so
+the rung is reachable rather than dead, and `Check.Specs` carries the band 76-**91** for this file so
+it stays compared. Compressing it would invent a shape you did not author.
+
+## 2026-09-04 — 0.111.0: `BL-158`…`BL-162`, the NPC buffer LEVELS UP with you
 
 His idea, and its purpose in his own words: *"help single players that dont want to spend time in party
 and or lvl up a buffer"*. All five entries written and built the same day.

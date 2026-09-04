@@ -174,6 +174,26 @@ both; the boss's own `boss_full_silence` sets both fields.
 
 `Entity.IsSilencedPhysical/IsSilencedMagical` · `SkillDef.SilencePhysical/SilenceMagical`
 
+## Reflecting a debuff back at its caster (`BL-08`; per-school since `tank 4th.csv`, 0.112.0)
+
+```
+chance = DebuffSchool.Physical -> DebuffReflectPhys
+         DebuffSchool.Magical  -> DebuffReflectMagic
+         DebuffSchool.None     -> max(the two)
+```
+
+- Rolled **before** the land/fizzle contest. On a hit the effect is applied to the CASTER and the
+  intended target takes nothing; the bounced copy gets no resist roll and **cannot bounce again**.
+- Each channel is the **MAX** across passives (a guarantee, never a sum), clamped to 0.95. A blanket
+  `PassiveEffect.DebuffReflectChance` means *either school* and feeds both accumulators.
+- Self-casts never bounce. A reflected DoT carries no `SourceId`, so the reflector is never PvP-flagged
+  by its ticks — do not "fix" that by stamping him as the source.
+- Today's only source is the tank's **Backlash**, 77/80/83: the matching school 10/20/30%, the
+  opposite one 5/10/15%. Physical Backlash (Human + Demon) reads CON as the matching school, Magical
+  Backlash (Elf) reads SPT.
+
+`GameLoopService.TryReflectDebuff` · `PassiveEffect.DebuffReflectPhysChance/DebuffReflectMagicChance`
+
 ## Crit rate and crit damage, taken OFF the attacker (`tank 3rd.csv`, 0.105.0)
 
 ```

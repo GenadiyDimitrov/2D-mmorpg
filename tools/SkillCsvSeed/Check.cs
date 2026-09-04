@@ -96,6 +96,14 @@ internal static class Check
         // block and the eighteen Sigils are in every ascended class's Cumulative.
         new("buffer 4th",  BaseClass.Mage,    Archetype.Healer,  76, 90, Game.Shared.Discipline.Warchanter,
             Fourth: true, Also: new[] { "shared 4th" }),
+        // `tank 4th` earned its line on 2026-09-04, the day he called the tank finished: *"im done with
+        // tank 2/3/4 so its ready to build after the npc buffer"*. Same `Also` for the same reason as the
+        // two above.
+        // ⚠ THE BAND IS 76-91, not 76-90: his three B-set whisp calls ladder 77, 79 … 91 (eight rungs
+        // from an odd start), and a band that stopped at 90 would drop the code side of that last rung
+        // and report a rung-count defect on three skills. `ExpCurve.MaxLevel` is 100, so 91 is real.
+        new("tank 4th",    BaseClass.Fighter, Archetype.Tank,    76, 91, Game.Shared.Discipline.Bulwark,
+            Fourth: true, Also: new[] { "shared 4th" }),
     };
 
     /// <summary>One rung, from either side, reduced to the fields worth comparing.
@@ -312,6 +320,15 @@ internal static class Check
                         && SkillCatalog.Get(def.ProcSelfRungs[0]) is SkillDef payload)
                         duration = payload.DurationTicks / 10f;
                 }
+                // A SKILL WITH A `SelfBuff` HAS TWO DURATIONS and his column describes the BUFF, not
+                // the offensive half. Tauting Wall is the only one: `DurationTicks` on the parent is
+                // the 3-second taunt LOCK (what ApplyTaunt reads), while his DURRATION cell says 30
+                // — the thirty seconds the wall stands, which lives on the payload def. Same shape,
+                // and the same reason, as the two special cases above: reading the wrong field made
+                // every such row a phantom defect.
+                if (def.SelfBuff is string selfBuffId
+                    && SkillCatalog.Get(selfBuffId) is SkillDef selfBuff)
+                    duration = selfBuff.DurationTicksAt(cs.SkillLevel) / 10f;
                 rows.Add(new Rung(cs.DisplayName ?? def.Name, cs.LearnLevel,
                     def.RangeAt(cs.SkillLevel), def.CastTicksAt(cs.SkillLevel) / 10f, cooldown,
                     duration,
@@ -561,6 +578,15 @@ internal static class Check
                 foreach (var (key, now) in hi)
                 {
                     if (!lo.TryGetValue(key, out float was) || now >= was - 0.0001f) continue;
+                    // 🔑 A PENALTY LADDER GOES THE OTHER WAY, and that is not a dip (2026-09-04, the
+                    // tank's 4th tier). Two of his ladders are things the rung COSTS you rather than
+                    // buys you — Defensive Wall's movement (×0.45 → ×0.20 as the wall gets stronger)
+                    // and Heavy Armor Mastery's evasion (−3 → −6 as the plate gets heavier) — and a
+                    // "bigger is better" test reports every step of both. Both values are NEGATIVE on
+                    // both sides of the comparison, which is the whole test: a real dip crosses from
+                    // a bonus down toward zero, a penalty deepens from zero downward. It cannot hide
+                    // a genuine mistake, because a bonus that falls still has a positive `was`.
+                    if (was <= 0f && now <= 0f) continue;
                     var parts = key.Split('|');
                     string scope = parts[2].Length == 0 ? "" : $" [{parts[2]}]";
                     Console.WriteLine($"  🔵 LADDER DIP      {label}{scope} {parts[0]}: " +

@@ -2524,3 +2524,133 @@ second save"*. 🔑 **Custom presets are ALREADY per-subclass and always have be
 `Entity.ActiveBuffPreset => ActiveSubclass.BuffPreset`, persisted per subclass via `BuffPresetJson` on
 the subclass record, exactly like the skill bar. Change subclass, get that subclass's own preset; go
 back to your main and it is untouched. No work owed, and no schema change.
+
+---
+
+## 2026-09-04 — `BL-154` and `BL-155`: the tank's 4th tier closes them both (BUILT, 0.112.0)
+
+Both had been *engine built, rows placeholder* since 0.110.0, and both were waiting on the same thing:
+`tank 4th.csv`. He finished it on 2026-09-04 (*"im done with tank 2/3/4 so its ready to build after the
+npc buffer"*) and 0.112.0 built all 205 rows, which answers every `🔵` line in the two entries below —
+Grapple's numbers, the two silences' numbers, and the Elf/Human+Demon split. What did NOT come with the
+file is recorded as `BL-165`: the two AoE pull shapes he never asked for a second time, and the
+drag-smoothing clamp still awaiting his eyes. The text of both entries follows verbatim.
+### `BL-154` 🔵 Pull — BUILT (0.110.0-0.110.2); left: your CSV, the two AoE shapes, and one clamp awaiting your eyes
+
+Your spec, 2026-09-03: *"tanks will have pull -> target or aoe around.. con saves and if succeed pulls
+the target to the caster, hope its not instant but 300 range per second .. to look like a pull not
+phase shift"*, then *"I like the whole pull to be a 1s~1.5s pull. And 1~2s stun. The pull idea is
+shorten the distance + enemy interrupt rather than control"* and *"also one con contest for pull
++stun"*.
+
+**✅ THE ENGINE SHIPPED IN 0.110.0**, with all seven of your rulings in it:
+
+| | ruling | how it landed |
+|---|---|---|
+| 1 | Rooted, no actions | `IsActionLocked` grew a pull arm, beside charm and fear |
+| 2 | The pull itself is not interruptible | It is a short PHYSICAL active; the drag deals no damage, so nothing rolls against it |
+| 3 | Stops at melee range | `GameConstants.MeleeRange`, re-aimed each tick at the puller |
+| 4 | Two AoE shapes, 2-5 bodies | 🔵 **the ENGINE is there, the SKILLS are not** — see below |
+| 5 | Boss immune, players yes | `BossShrugsOff` learned `def.Pulls` |
+| 6 | ~~Threat below the taunt~~ — **REVERSED by you, 2026-09-04** | 🔴 It is a **DAMAGE skill**, not a threat skill: `Power: 3000`, no `TauntPower`. See below |
+| 7 | 1s stun on the SAME contest | Held on the victim and applied by `FinishPull` **on arrival**, so drag and stun run in sequence rather than overlapping |
+
+🔑 **THE DRAG IS TIMED, NOT PACED — your 300/s and your 1-1.5s are two different rules and the second
+one won.** A fixed speed makes the lockdown scale with the range you author (a 900 pull would take 3
+seconds); a fixed duration does not. `PullSeconds` is the whole journey from any distance and the speed
+is derived, floored at your 300/s so a short pull arrives early instead of crawling. **Range now buys
+reach and never buys lockdown** — author 900 if you want the reach.
+
+✅ **THE DRAG INTERRUPTS, AND YOU RULED THAT IT SHOULD** (2026-09-03, after it was flagged as a
+correction to what this entry first claimed): *"I like the actual pull interrupt - it's the logical
+way ... U don't see a mage being dragged and still casts."* So the chain interrupts twice over, and an
+AoE pull — which carries no stun — still interrupts what it drags. It falls out of your *"like charmed
+while dragging - no act"* for free: being dragged is an action lock, and `UpdateAction` has always
+cancelled the cast of anything action-locked.
+
+🔴 **GRAPPLE IS A DAMAGE SKILL, NOT A THREAT SKILL — you reversed row 6 on 2026-09-04:** *"does grapple
+work in auto or is it a taunt skill .. if it's a taunt skill I want it to not be, and be a normal dmg
+skill with 3k power (my standard dmg skill is 4k so later it will grow as well when authoring)"*.
+
+It shipped in 0.110.0 as `TauntPower: 3000` with **no damage at all**, and that had a consequence you
+found before I did: `BL-83` routes every threat skill to the **never-auto-cast** bucket, and
+`TauntPower > 0` is the first test it applies — so a tank's new signature move could not appear in a
+rotation at all. **Fixed in 0.110.1: the 3000 MOVED to `Power`, it did not double.** Grapple is now
+`PhysicalDamage | Stun`, Power 3000, no `TauntPower`; it builds threat only through the damage it
+deals, and it lands in the **Attack** rung of the auto chain. The drag, the stun tail and the one CON
+contest are untouched.
+
+🔴 **AND THE DRAG WAS DECLARING ITSELF A TELEPORT TEN TIMES A SECOND — fixed 0.110.2.** Your report:
+*"it drags the monster but it's like lagging, not like a continuous clean drag ... it seems real time"*.
+`EntityDto.Warp` is not a "position changed" flag — it is an instruction to the client to **`SnapTo`
+and RETURN**, skipping interpolation. `TickPull` moves the body through `PlaceEntity`, which bumps that
+counter on every call **by design** (it is the one seam blink, knockback, the gatekeeper and respawn
+all pass through, which is what made the Phase Shift fix free). A pull calls it every tick, so the
+client hard-snapped the mob ten times a second with nothing drawn between the snaps — a 10 Hz
+staircase landing in exactly the right place. `PlaceEntity` now takes `announce` (default **true**, so
+every other caller is unchanged) and `TickPull` passes `false`. 🔑 **The line is CONTINUITY, not "did
+something else move it".** Server-side only; no APK needed for this one.
+
+🟡 **AND ONE THING IS WAITING ON YOUR EYES — NOT BUILT, NOT TESTED.** Your instruction, 2026-09-04:
+*"mark the one clamp / EntityView.Update as untested and I'll see it in game first then decide"*. The
+client's interpolator sizes each segment by the measured gap between the last two updates, and the
+server sends only what CHANGED — so a mob that stood still for ten seconds and is then grappled has a
+**ten-second first segment**, and the drag's opening ~100ms draws almost frozen before the second
+sample corrects it. It self-corrects after one sample: a hitch at the START of a drag, not a stutter
+through it. A clamp on that span (~0.2s) fixes it, and every mob's first step out of an idle with it —
+but `EntityView.Update` has been rewritten three times to kill the rubber-band, and this is not what
+you reported. **The test is to grapple something that has been standing STILL**; if the body hangs for
+a blink before it slides, that is this, and if you cannot see it, it does not need fixing.
+
+**What is still owed, and it is yours:**
+
+- 🔵 **`tank 4th.csv` has ONE placeholder row** (`Grapple`, 76, range 600, 1.2s drag, 1s stun, 15s
+  reuse, 80 MP). Every number in it is mine except the ones you ruled. Fix them when you write the file.
+- 🔵 **The two AoE shapes are not authored** — you named one pull, not three, and a skill nobody asked
+  for is a skill nobody can retune. The engine serves both already: `TargetMode.EnemiesInRadius` with
+  `AreaAtTarget` picking the centre (the target for the ranged one, the caster for the self-centred
+  one) and **`MaxTargets` as your cap of five**, which the area sweep learned in the same pass. They
+  need rows and nothing else.
+
+### `BL-155` 🔵 Silence — BUILT (0.110.0); the boss skill is live, the tank rows are placeholders
+
+🔴 **The DISARM is DECLINED, by you, 2026-09-03** — *"If we leave the weapon bonuses it's not a disarm.
+Let's don't do a disarm .. But I like your silence idea"*. Old text in
+[BacklogArchive.md](BacklogArchive.md); nothing of it is owed.
+
+**✅ SHIPPED IN 0.110.0.** Physical silence (physical skills fail, **the basic attack still works**),
+magical silence, and both at once = a full silence — two independent debuffs, so the "full" version
+needs no third skill. It completes the disable map:
+
+| disable | what it takes away | state |
+|---|---|---|
+| charm / fear | **everything** | built (`BL-110`) |
+| hold / bind | **movement** | built |
+| physical silence | **physical skills** (basic attack survives) | ✅ 0.110.0 |
+| magical silence | **magical skills** | ✅ 0.110.0 |
+| both / boss | **every skill** | ✅ 0.110.0 |
+
+🔑 **The physical-vs-magical axis was already built and was not re-invented.** `SkillMath
+.PacedByAttackSpeed` — the three-marker test from your `BL-133` cast-speed pass — was **renamed
+`IsPhysical`**, the name of the question it actually answers, with the old name kept as a one-line
+alias at the speed call sites. A skill can never be physical for cast speed and magical for silence.
+
+✅ **The dungeon bosses have theirs** — *"a full silence aoe skill for 15s duration and 45s cd (mp cost
+u deside)"*. **Word of Unmaking**: 150 ticks, 450 ticks, 500 radius, SPT-defended, **MP 0** like every
+other boss skill (a rotation must never stall on mana), on `grave_lich` (44), `dread_knight` (65) and
+`disciple_of_the_dawn` (90). 🔵 **Watch it in play: 15s on 45s is 33% uptime with no heals**, which is
+brutal by design and the first number to move if a boss becomes unkillable.
+
+**What is still owed, and it is yours:**
+
+- 🔵 **Two placeholder rows on `tank 4th.csv`** — `Numbing Strike` (Human + Demon, CON-defended) and
+  `Silencing Ward` (Elf, SPT-defended), one rung each at 76, 8s, 30s reuse, 70 MP. The race split
+  continues the one `tank 3rd.csv` already draws; every other number is mine and yours to overwrite.
+- ✅ **Bosses ARE immune to silence, and you ruled the whole boundary** (2026-09-03): *"bosses are
+  mostly immune .. Only decreasing skills - like armor/weapon breaks tyoe and dot effects."* Checked
+  against the code rather than assumed, and **it is already exactly that rule**: `BossShrugsOff` fires
+  on `ControlCc` (= `Slow | Stun | Fear | Root`), charm, pull and the two silences, and explicitly
+  exempts `AnyDot`. Armor Break and Weapon Break carry `DebuffPDef` / `DebuffAtk`, which is none of
+  those — so the stat-strippers and the DoTs land on a boss today and always have. Nothing to build;
+  the ruling is recorded so the next control payload knows which side of the line it goes on.
+- 🔵 **The worm's own full silence** waits on `BL-157`.

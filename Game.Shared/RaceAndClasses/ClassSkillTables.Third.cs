@@ -277,9 +277,13 @@ public static partial class ClassSkillTables
             //    its learn line now lives in ClassSkillTables.Fourth.cs and costs the Rite of Ascension
             //    as well. Do NOT re-add it here — two learn lines for one skill would let a
             //    non-ascended level-83 buy the 4th-tier version at the 3rd tier's price.
-            // The tank's: the self version.
-            ClassSkills.RegisterThird(race, Discipline.Bulwark,
-                new ClassSkill(UndyingWill, 83));
+            // 🔴 THE TANK'S HALF MOVED TOO, 2026-09-04, for exactly the same reason and to the same
+            //    place. `tank 4th.csv` carries Undying Will at 83 with a 500kk SP + 100kk gold price
+            //    and a two-Physical-Stone reagent; it sat here at a placeholder 100k. Its learn line
+            //    is in ClassSkillTables.Fourth.cs now and costs the Rite of Ascension as well.
+            //    (Nothing else in this method registers anything any more — the loop is kept so the
+            //    healer's note above stays where the next reader will look for it.)
+            _ = race;
         }
     }
 

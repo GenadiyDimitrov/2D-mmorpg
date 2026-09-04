@@ -33,40 +33,116 @@ public static partial class ClassSkillTables
         //    The other eight files are still two lines long — the 40+ rule stands for them.
         RegisterLightbringerFourth();
         RegisterWarchanterFourth();
-        // ⚠ NOT a third finished file. `tank 4th.csv` is still under its own NOT DONE banner; this
-        //   registers exactly THREE skills he asked for by name on 2026-09-03 so that the pull and the
-        //   silences exist to be tested and so his file carries the rows to retune. See
-        //   RegisterBulwarkFourth and Skills.Bulwark4th.cs.
+        // ✅ THE THIRD FINISHED FILE, 2026-09-04 — `tank 4th.csv`, 205 rows, his *"im done with tank
+        //   2/3/4"*. It was three placeholder rows until this pass. See RegisterBulwarkFourth and
+        //   Skills.Bulwark4th.cs.
         RegisterBulwarkFourth();
     }
 
     // ═════════════════════════════════════════════════════════════════════════════════════════════
-    //  THE BULWARK, 76-90 — THREE ROWS ONLY (`BL-154` pull, `BL-155` silences)
+    //  THE BULWARK, 76-90 — `docs/data/classes_skills_csv/tank 4th.csv` (`BL-154`, `BL-155`, `BL-02`)
     // ═════════════════════════════════════════════════════════════════════════════════════════════
 
-    /// <summary>The pull and the two silences, and nothing else. His instruction, 2026-09-03:
-    /// *"put pull for the three tanks 4th, one m.silence skill for elf tank 4th and one p.silence for
-    /// human/demon tank 4th in the csv so when I author it to remember to fix ranges/duration etc"*.
+    /// <summary>The tank's 4th tier. The third discipline to get one, and the last `NOT DONE` file in
+    /// `BL-02` to close.
     ///
-    /// <para>🔑 THE RACE SPLIT IS HIS, and it continues the one `tank 3rd.csv` already draws: the
-    /// Human and the Demon hold with PHYSICAL tools, the Elf with magical ones. The pull is shared
-    /// because he said *"for the three tanks"*.</para>
+    /// <para>🔑 <b>THE START RUNGS ARE WHERE THE 3rd-CLASS LADDERS ACTUALLY ENDED</b>, and getting one
+    /// wrong is the only real hazard in this table — a <see cref="ClassSkill"/> names the RUNG, so an
+    /// off-by-one sells a level-76 tank his level-74 numbers. Counted, not guessed: Taunt, Charm and
+    /// Shield Shock reached <b>19</b> (four 2nd-class rungs + fifteen 3rd-class ones), the two
+    /// masteries <b>20</b> (five + fifteen), Mass Taunt / Intimidate / Freeze / Stay / both Shield
+    /// Smashes <b>15</b>, Defensive Wall exactly <b>2</b> (one at 20, one at 46), the six whisp calls
+    /// <b>8</b>, and Whisp Mastery <b>1</b>.</para>
     ///
-    /// <para>⚠ Learn level 76 is a PLACEHOLDER — the first rung of the tier — as are every range,
-    /// cast, cooldown, MP and SP number behind these ids. They exist so there is something to correct
-    /// when he writes the file, which is the whole reason he asked for them.</para></summary>
+    /// <para>🔑 <b>THE RACE SPLIT IS THE 3rd TIER'S, CONTINUED</b> — Human taunt + mass taunt, Elf
+    /// charm + freeze, Demon taunt + intimidate; Shield Smash Rate for Human and Elf, Power for the
+    /// Demon; the whisps in the same three pairs. What the 4th tier ADDS to it is the silence pair
+    /// (`BL-155`: Numbing Shock for Human and Demon, Silencing Shock for the Elf) and Backlash, whose
+    /// two halves are rungs 1-3 and 4-6 of one id.</para>
+    ///
+    /// <para>⚠ <b>WHAT IS DELIBERATELY NOT HERE.</b> Tank Weapon Mastery, Shield Mastery, Final
+    /// Defense, Aggravated State and Shield Reinforcement have NO row in his 4th file, so their
+    /// ladders stop where the 3rd tier left them. Do not invent continuations — the same ruling
+    /// Harmony of Speed got at the buffer's 4th tier.</para></summary>
     private static void RegisterBulwarkFourth()
     {
-        const int Learn = 76;
-        ClassSkills.RegisterFourth(Race.Human, Discipline.Bulwark,
-            new ClassSkill(TankPull, Learn),
-            new ClassSkill(TankSilencePhysical, Learn));
-        ClassSkills.RegisterFourth(Race.Demon, Discipline.Bulwark,
-            new ClassSkill(TankPull, Learn),
-            new ClassSkill(TankSilencePhysical, Learn));
-        ClassSkills.RegisterFourth(Race.Elf, Discipline.Bulwark,
-            new ClassSkill(TankPull, Learn),
-            new ClassSkill(TankSilenceMagical, Learn));
+        ClassSkill[] Ladder(string skill, int[] bands, int startRung) =>
+            bands.Select((lvl, i) => new ClassSkill(skill, lvl, SkillLevel: startRung + i)).ToArray();
+
+        ClassSkill[] At(string skill, params (int Level, int Rung)[] rows) =>
+            rows.Select(r => new ClassSkill(skill, r.Level, SkillLevel: r.Rung)).ToArray();
+
+        int[] all  = TankFourthAll;    // 76…90
+        int[] even = TankFourthEven;   // 76, 78 … 90
+        int[] odd  = TankFourthOdd;    // 77, 79 … 91 — the B whisps only
+
+        var shared = new List<ClassSkill>();
+
+        // ---- THE TWO EVERY-LEVEL PASSIVES ----
+        shared.AddRange(Ladder(TankArmorMastery, all, 21));
+        shared.AddRange(Ladder(TankAntiMagic,    all, 21));
+
+        // ---- THE SHARED ACTIVES, every other level ----
+        shared.AddRange(Ladder(TankStay,        even, 16));
+        shared.AddRange(Ladder(TankShieldStun,  even, 20));
+        shared.AddRange(Ladder(DefensiveWall,   even, 3));
+        shared.AddRange(Ladder(TankMagicWall,   even, 1));
+        shared.AddRange(Ladder(TankPull,        even, 1));
+
+        // ---- NEW AT THE 4th TIER, on their own levels ----
+        shared.Add(new ClassSkill(TankTauntingWall, 80));
+        // The Perfect Whisp: six rungs, 80 → 90, and no race — the only whisp all three tanks share.
+        shared.AddRange(Ladder(TankWhispHelp, new[] { 80, 82, 84, 86, 88, 90 }, 1));
+        // Whisp Mastery's third slot, at 83.
+        shared.AddRange(At(TankWhispMastery, (83, 2)));
+        // 🔴 UNDYING WILL MOVES TIER, exactly as the healer's Rite of Preservation did. It was
+        //    registered at 83 on the THIRD-class table with a placeholder 100k SP; his `tank 4th.csv`
+        //    prices it at 500kk + 100kk gold and two Physical Stones, which is a 4th-tier price. Two
+        //    learn lines for one skill would let a non-ascended level-83 tank buy it at the old one.
+        shared.Add(new ClassSkill(UndyingWill, 83));
+
+        // ---- BACKLASH. ONE ID, SIX RUNGS, and the rung index is what carries the race: 1-3 are
+        //      Physical Backlash, 4-6 Magical Backlash. The DisplayName override is what makes each
+        //      race see his own name for it — the same mechanism the per-class flavour names use.
+        var physicalBacklash = At(Backlash, (77, 1), (80, 2), (83, 3))
+            .Select(cs => cs with { DisplayName = "Physical Backlash" }).ToArray();
+        var magicalBacklash = At(Backlash, (77, 4), (80, 5), (83, 6))
+            .Select(cs => cs with { DisplayName = "Magical Backlash" }).ToArray();
+
+        // ---- HUMAN: taunt, mass taunt, the rate smash, the physical silence, taunt+bind whisps. ----
+        var human = new List<ClassSkill>(shared);
+        human.AddRange(Ladder(Provoke,             even, 20));
+        human.AddRange(Ladder(TankMassProvoke,     even, 16));
+        human.AddRange(Ladder(TankSmashRate,       even, 16));
+        human.AddRange(Ladder(TankSilencePhysical, even, 1));
+        human.AddRange(Ladder(TankWhispTaunt,      even, 9));
+        human.AddRange(Ladder(TankWhispBind,       odd,  9));
+        human.AddRange(physicalBacklash);
+
+        // ---- ELF: charm (which replaces taunt), freeze, the rate smash, the MAGICAL silence,
+        //      charm+heal whisps. ----
+        var elf = new List<ClassSkill>(shared);
+        elf.AddRange(Ladder(TankCharm,            even, 20));
+        elf.AddRange(Ladder(TankFreeze,           even, 16));
+        elf.AddRange(Ladder(TankSmashRate,        even, 16));
+        elf.AddRange(Ladder(TankSilenceMagical,   even, 1));
+        elf.AddRange(Ladder(TankWhispCharm,       even, 9));
+        elf.AddRange(Ladder(TankWhispHeal,        odd,  9));
+        elf.AddRange(magicalBacklash);
+
+        // ---- DEMON: taunt, intimidate, the POWER smash, the physical silence, the two break whisps.
+        var demon = new List<ClassSkill>(shared);
+        demon.AddRange(Ladder(Provoke,             even, 20));
+        demon.AddRange(Ladder(TankFear,            even, 16));
+        demon.AddRange(Ladder(TankSmashPower,      even, 16));
+        demon.AddRange(Ladder(TankSilencePhysical, even, 1));
+        demon.AddRange(Ladder(TankWhispArmorBreak, even, 9));
+        demon.AddRange(Ladder(TankWhispWeaponBreak, odd, 9));
+        demon.AddRange(physicalBacklash);
+
+        ClassSkills.RegisterFourth(Race.Human, Discipline.Bulwark, human.ToArray());
+        ClassSkills.RegisterFourth(Race.Elf,   Discipline.Bulwark, elf.ToArray());
+        ClassSkills.RegisterFourth(Race.Demon, Discipline.Bulwark, demon.ToArray());
     }
 
     /// <summary>His `shared 4th.csv` ALL-CLASSES block. Five passives, two price bands, no race split

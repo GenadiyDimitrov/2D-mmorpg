@@ -115,7 +115,8 @@ public partial class SkillCatalog
             // The rungs of the WHISP, not of the summon: a whisp reads everything it does at the level
             // of the call that raised it (*"Power depends on whisp lvl"*), so laddering it is done here
             // and the summon carries only the price.
-            Levels: WhispThreat.Select(t => new SkillLevel(TauntPower: t)).ToArray()),
+            Levels: WhispThreat.Select(t => new SkillLevel(TauntPower: t))
+                .Concat(WhispFourthThreatRungs()).ToArray()),
 
         // ---- WHISP CHARM. `BL-110`'s charm, and the first thing in the game to author one. His own
         //      pairing of the two halves applies here exactly as it does to the tank's Charm: the
@@ -131,7 +132,8 @@ public partial class SkillCatalog
             // The SAME eight numbers as the taunting whisp's — his two blocks share a ladder cell for
             // cell, which is the arithmetic behind his *"charm also adds aggro points"*: the two whisps
             // are worth the same to a tank, and only their control differs.
-            Levels: WhispThreat.Select(t => new SkillLevel(TauntPower: t)).ToArray()),
+            Levels: WhispThreat.Select(t => new SkillLevel(TauntPower: t))
+                .Concat(WhispFourthThreatRungs()).ToArray()),
 
         // ---- WHISP BIND. *"Hold enemy for 5s"* — a plain Root, sharing the player family's key so a
         //      real Hold is never downgraded by a whisp's.
@@ -166,7 +168,7 @@ public partial class SkillCatalog
                     new(SkillEffect.BuffMagicDef, -WhispArmorMDef[i]),
                 },
                 Description: $"−{WhispArmorPDef[i] * 100:0}% P.Def and −{WhispArmorMDef[i] * 100:0}% M.Def for 15s."
-            )).ToArray()),
+            )).Concat(WhispFourthArmorBreakRungs()).ToArray()),
 
         // ---- WHISP WEAPON BREAK. His summon row: *"Decreases P/M.Atk 5%"*. `DebuffAtk` is the one
         //      flag that covers both channels, so 5% is one number and not two.
@@ -179,7 +181,7 @@ public partial class SkillCatalog
             Levels: WhispWeaponAtk.Select(v => new SkillLevel(
                 Magnitudes: new EffectMagnitude[] { new(SkillEffect.DebuffAtk, v) },
                 Description: $"−{v * 100:0}% P.Atk and M.Atk for 15s."
-            )).ToArray()),
+            )).Concat(WhispFourthWeaponBreakRungs()).ToArray()),
 
         // ---- WHISP GRAVITY. *"Decrease enemy Atack speed and cast speed"*. NO SUMMON CALLS IT YET —
         //      his `tank 3rd.csv` PoC is six whisps and this is not one of them. It is authored
@@ -206,7 +208,8 @@ public partial class SkillCatalog
             MpCost: 0, CastTicks: 10, CooldownTicks: 200, Range: 0, Power: WhispHealPower[0],
             Category: SkillCategory.Heal,
             Description: "The whisp mends its master while he is still on his feet.",
-            Levels: WhispHealPower.Select(p => new SkillLevel(Power: p)).ToArray()),
+            Levels: WhispHealPower.Select(p => new SkillLevel(Power: p))
+                .Concat(WhispFourthHealRungs()).ToArray()),
 
         // ⚠ THE SAME POWER LADDER AS ITS SLOW HALF, deliberately. His summon row states ONE power per
         // rung and names both ids, so the difference between the two gears is the CONDITION and the
@@ -216,7 +219,8 @@ public partial class SkillCatalog
             MpCost: 0, CastTicks: 0, CooldownTicks: 100, Range: 0, Power: WhispHealPower[0],
             Category: SkillCategory.Heal,
             Description: "The whisp throws its master a fast heal when he is badly hurt.",
-            Levels: WhispHealPower.Select(p => new SkillLevel(Power: p)).ToArray()),
+            Levels: WhispHealPower.Select(p => new SkillLevel(Power: p))
+                .Concat(WhispFourthHealRungs()).ToArray()),
 
         // ---- WHISP CLEAR. *"Removes up to 2 debuffs from master"*, and its condition is that he has
         //      one. Like Gravity, no summon calls it yet.
@@ -272,31 +276,49 @@ public partial class SkillCatalog
         WhispSummon(TankWhispHeal,        "Healing Whisp",         WhispHeal,        WhispSpB,
             "Calls a whisp that tends its master's wounds.", second: WhispQuickHeal),
 
-        // ---- WHISP MASTERY. *"Increase the limit of active whisps to 2"*. One rung today; the base
-        //      is 1 and this adds 1. His design has a third slot behind a later rung — when it is
-        //      authored it is a second SkillLevel carrying WhispSlots: 2, and nothing else changes.
+        // ---- WHISP MASTERY. *"Increase the limit of active whisps to 2"* at 60 and *"to 3"* at 83
+        //      (`tank 4th.csv`) — exactly the second rung the 3rd-tier note here predicted, and the
+        //      thing that makes the Perfect Whisp a choice rather than an ultimatum: with three slots
+        //      a tank can carry it AND the two his race gives him.
+        //      ⚠ The base is 1 and the passive ADDS, so rung 1 carries 1 and rung 2 carries 2.
         new(TankWhispMastery, "Whisp Mastery", BaseClass.Fighter, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive, SpCost: 120_000,
             Passive: new PassiveEffect(WhispSlots: 1),
-            Description: "You may keep two whisps at once."),
+            Description: "You may keep two whisps at once.",
+            Levels: new[]
+            {
+                new SkillLevel(SpCost: 120_000, Passive: new PassiveEffect(WhispSlots: 1),
+                    Description: "You may keep two whisps at once."),
+                TankFourthWhispMasteryRung(),
+            }),
     };
 
     /// <summary>One summon LADDER — eight rungs, and the only thing that differs between the six is
     /// which whisp it calls and which of the two SP columns it is priced on. The cast, the reuse, the
     /// duration and the MP ladder are shared, which is exactly how he wrote them.</summary>
-    private static SkillDef WhispSummon(string id, string name, string whispSkill, int[] sp,
-                                        string description, string? second = null)
+    /// <param name="extra">Further whisp skills this call's spirit carries, beyond
+    /// <paramref name="whispSkill"/> and <paramref name="second"/>. Only the PERFECT WHISP uses it —
+    /// six gears in one call (`tank 4th.csv`, level 80).</param>
+    /// <param name="levels">The whole rung array, when a call does not run the shared MP/SP ladder.
+    /// Null = the 3rd tier's eight rungs concatenated with the 4th's eight, which is every other
+    /// summon; the Perfect Whisp is six rungs starting at 80 and passes its own.</param>
+    private static SkillDef WhispSummon(string id, string name, string whispSkill, int[]? sp,
+                                        string description, string? second = null,
+                                        string[]? extra = null, SkillLevel[]? levels = null)
     {
-        var ids = second is null ? new[] { whispSkill } : new[] { whispSkill, second };
+        var ids = new List<string> { whispSkill };
+        if (second is not null) ids.Add(second);
+        if (extra is not null) ids.AddRange(extra);
         return new(id, name, BaseClass.Fighter, SkillEffect.None,
-            MpCost: WhispMp[0], CastTicks: 10, CooldownTicks: 300, Range: 0, Power: 0,
+            MpCost: levels is null ? WhispMp[0] : levels[0].MpCost,
+            CastTicks: 10, CooldownTicks: 300, Range: 0, Power: 0,
             DurationTicks: 12000,          // 1200s = the 20 minutes a whisp lasts
             Category: SkillCategory.Buff,  // it is not a buff, but it is cast at yourself and leaves
                                            // something that expires — the closest existing category,
                                            // and what keeps it out of the offensive target checks
             TargetMode: TargetMode.SelfOnly,
-            SpCost: sp[0],
+            SpCost: levels is null ? sp![0] : levels[0].SpCost,
             // 🔑 A SUMMON COSTS 4 SKILL STONES (his ruling, 2026-09-03: *"whisps to take 4 skillstone
             //    each summon"*). It is a per-CAST reagent, so it is paid again on every resummon —
             //    including the 5s-before-it-drops renewal of `BL-112`, which is the point: a whisp
@@ -304,10 +326,13 @@ public partial class SkillCatalog
             //    slot doubles that. Charged on LANDING, like every other reagent, so a cancelled cast
             //    costs nothing but the 20% initial MP.
             ConsumableId: ItemCatalog.SkillStone, ConsumableAmount: 4,
-            SummonsWhisp: ids,
+            SummonsWhisp: ids.ToArray(),
             Description: description,
-            Levels: Enumerable.Range(0, WhispMp.Length)
-                .Select(i => new SkillLevel(MpCost: WhispMp[i], SpCost: sp[i]))
+            // The 3rd tier's eight rungs, then the 4th's eight (`tank 4th.csv`) — one continuous
+            // ladder, rungs 1-16, exactly as every other continued skill in the tank's kit.
+            Levels: levels ?? Enumerable.Range(0, WhispMp.Length)
+                .Select(i => new SkillLevel(MpCost: WhispMp[i], SpCost: sp![i]))
+                .Concat(TankFourthWhispSummonRungs())
                 .ToArray());
     }
 }

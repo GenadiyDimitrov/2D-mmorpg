@@ -416,7 +416,14 @@ public static partial class SkillCatalog
         return archetype switch
         {
             Archetype.Warrior => (Deflection, level >= 76 ? 2 : 1),
-            Archetype.Tank    => level >= 76 ? (Backlash, 1) : ((string, int)?)null,
+            // 🔴 THE TANK'S ARM IS GONE, 2026-09-04 — Backlash is BOUGHT now, not granted. His
+            // finished `tank 4th.csv` gives it three rungs at 77/80/83 with real SP and gold prices
+            // AND a race split (Physical Backlash for Human+Demon, Magical Backlash for the Elf), and
+            // an auto-grant cannot express either: it has no price and no way to know the race. The
+            // learn rows are in ClassSkillTables.Fourth.cs like every other bought skill.
+            // ⚠ `ReflectIdFor` no longer names the tank either, so this method's caller no longer
+            // strips a tank's Backlash — it would strip a LEARNED one. AutoLearnCoreSkills removes
+            // the legacy auto-granted rung below 77 instead; see the note there.
             _ => null
         };
     }
@@ -426,7 +433,7 @@ public static partial class SkillCatalog
     public static string? ReflectIdFor(Archetype? archetype) => archetype switch
     {
         Archetype.Warrior => Deflection,
-        Archetype.Tank    => Backlash,
+        // (The tank was here until 2026-09-04. Backlash is a learned skill now — see above.)
         _ => null
     };
 
@@ -836,16 +843,28 @@ public static partial class SkillCatalog
             new PassiveEffect(PhysSkillReflectChance: 0.15f, PhysSkillReflectPct: 1.0f),
             new PassiveEffect(PhysSkillReflectChance: 0.30f, PhysSkillReflectPct: 1.0f)),
         // BACKLASH (tank, BL-08): *"tanks get 30% chance to reflect a debuff -> u cast on tank he
-        // reflects u get the debuff"*. One number, one rung — he gave no ladder, so none is invented.
-        // ✅ THE LEVEL IS NOW HIS: 76, the 4th class change (`BL-143`, 2026-09-03), with a row in
-        // `tank 4th.csv` at SP 0. It used to be 40 on my own invention — the comment here said so for
-        // three months — and what he caught in play is the consequence: a skill that turns up at a
-        // class change no file mentions. 🔑 The general rule it re-proves: an invented number goes in
-        // the code WITH the words "this is mine", so that the day he rules on it the change is one line
-        // and the reasoning is not re-derived from scratch.
-        LeveledPassive(Backlash, "Backlash", BaseClass.Fighter,
-            "Passive. 30% chance that a debuff cast at you lands on its caster instead.",
-            new PassiveEffect(DebuffReflectChance: 0.30f)),
+        // reflects u get the debuff"*.
+        //
+        // ✅ HIS FILE FINISHED IT, 2026-09-04 — and it is a different skill from the one-number
+        // placeholder that stood here. `tank 4th.csv` gives it THREE rungs at 77/80/83, a real price
+        // (6.5kk → 500kk SP), and a RACE SPLIT with two display names on this one id:
+        //
+        //     Physical Backlash (Human + Demon)   10/20/30% vs CON debuffs, 5/10/15% vs SPT
+        //     Magical Backlash  (Elf)             10/20/30% vs SPT debuffs, 5/10/15% vs CON
+        //
+        // 🔑 SIX RUNGS ON ONE ID, NOT TWO IDS — his SKILL_ID column says `backlash` on all six rows,
+        // and that column is the identity (his 2026-08-29 ruling). Rungs 1-3 are the physical half and
+        // 4-6 the magical one; the class table hands each race its three and overrides the NAME. That
+        // is also what keeps `--check` honest: it groups by display name, so the two ladders are
+        // compared as the two skills his file describes.
+        //
+        // ⚠ IT IS NO LONGER AUTO-GRANTED. `ReflectPassiveFor` dropped the tank in the same pass — a
+        // grant has no price and no race, and this now needs both. See the note there.
+        new(Backlash, "Backlash", BaseClass.Fighter, SkillEffect.None,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+            Category: SkillCategory.Passive, SpCost: 6_500_000,
+            Description: "Passive. A debuff cast at you may land on its caster instead.",
+            Levels: SkillCatalog.BacklashRungs()),
 
         // (Wind Walk / Mass Wind Walk DELETED 2026-07-31 — the buff-ladder pass. They were a second,
         //  unranked source of move speed sitting outside every family; the improved Speed buff and
@@ -1008,14 +1027,21 @@ public static partial class SkillCatalog
         // The BULWARK's: the SELF version. Same effect, no target — a tank's own last stand.
         // SelfOnly is what makes it "the self version" mechanically; Range 0 alone would not, since a
         // targetable buff with no range still resolves onto a selected ally.
+        // ✅ ITS ROW IS HIS NOW (`tank 4th.csv`, 2026-09-04): 1s cast (was 3), 500kk SP + 100kk gold
+        //    (was a placeholder 100k and no gold), and a reagent — *"Consume 2 physical stones"* —
+        //    which is the fighter twin of the Rite of Preservation's five Holy Stones. MP 300, the
+        //    hour of duration and the hour of reuse were already his and are unchanged.
         new(UndyingWill, "Undying Will", BaseClass.Fighter, SkillEffect.None,
-            MpCost: 300, CastTicks: 30, CooldownTicks: 36000, Range: 0, Power: 0,
-            Category: SkillCategory.Buff, SpCost: 100000,
-            DurationTicks: 36000, BuffKey: "buff_preservation", Rank: 3,  
+            MpCost: 300, CastTicks: 10, CooldownTicks: 36000, Range: 0, Power: 0,
+            Category: SkillCategory.Buff, SpCost: 500_000_000,
+            DurationTicks: 36000, BuffKey: "buff_preservation", Rank: 3,
             TargetMode: TargetMode.SelfOnly,
             KeepsBuffsOnDeath: true, AutoResurrect: true, ResExpPct: 1f,
+            ConsumableId: ItemCatalog.PhysicalStone, ConsumableAmount: 2,
+            Levels: new[] { new SkillLevel(MpCost: 300, SpCost: 500_000_000, GoldCost: 100_000_000,
+                ResExpPct: 1f) },
             Description: "You DIE normally and keep your buffs, then choose when to rise where you fell "
                        + "at 30% HP and MP, losing NO experience — the offer waits as long as you like. "
-                       + "Lasts 60 minutes or until it saves you. 60 minute reuse."),
+                       + "Lasts 60 minutes or until it saves you. 60 minute reuse. Consumes 2 Physical Stones."),
     };
 }

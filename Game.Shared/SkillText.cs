@@ -153,6 +153,10 @@ public static class SkillText
             o.Add($"Reflect physical skills {p.PhysSkillReflectChance * 100f:0.#}% "
                 + $"of the time, for {p.PhysSkillReflectPct * 100f:0.#}% damage");
         Pct(o, "Reflect debuffs", p.DebuffReflectChance);
+        // …and the per-school pair (the tank's two Backlashes). Named by the STAT that saves against
+        // each school, because that is how his own rows read: *"a CON debuff … a SPT debuff"*.
+        Pct(o, "Reflect CON debuffs", p.DebuffReflectPhysChance);
+        Pct(o, "Reflect SPT debuffs", p.DebuffReflectMagicChance);
 
         // Healing
         Flat(o, "Heal power", p.HealPowerFlat);       Pct(o, "Heal power", p.HealPowerPct);
@@ -609,6 +613,15 @@ public static class SkillText
                     ? def.DurationTicksAt(level) : GameConstants.TauntLockTicksDefault;
                 o.Add($"Locks it onto you for {Secs(lockTicks)}");
             }
+        }
+
+        // ---- THE CASTER'S OWN HALF, when the skill has one (`SkillDef.SelfBuff`). Tauting Wall is an
+        //      AoE taunt AND a Defensive Wall in one cast, and half of what it does would be invisible
+        //      on the card without this — the payload is a def of its own, so its magnitudes are read
+        //      by recursing into the SAME builder rather than restating them here.
+        if (def.SelfBuff is string selfBuffId && SkillCatalog.Get(selfBuffId) is SkillDef selfBuff)
+        {
+            foreach (var line in Buff(selfBuff, level)) o.Add("On yourself: " + line);
         }
 
         // ---- Toggles + MP economy ----

@@ -122,7 +122,7 @@ public partial class SkillCatalog
                 return new SkillLevel(MpCost: BulwarkControlMp[i], SpCost: BulwarkSp[i],
                     AreaRadius: 400f, TauntPower: power,
                     Description: $"Taunts everything within 400 for 3s and adds {power:N0} to your aggro on each.");
-            })),
+            }).Concat(TankFourthMassTauntRungs()).ToArray()),
 
         // ═══ INTIMIDATE — the Demon's FEAR (`BL-110`) ════════════════════════════════════════════
         // *"Intimidate the enemy to run in place"* — his own words, and the exact shape `BL-110` gave
@@ -139,7 +139,8 @@ public partial class SkillCatalog
             // NOTHING BUT THE PRICE AND THE REACH MOVES, and that is his file: a fear is a fear, and
             // what a rung buys is the level contest (DebuffLandChance reads the RUNG's learn level).
             Levels: BulwarkRungs(i => new SkillLevel(
-                MpCost: BulwarkControlMp[i], SpCost: BulwarkSp[i], Range: BulwarkRange(i)))),
+                MpCost: BulwarkControlMp[i], SpCost: BulwarkSp[i], Range: BulwarkRange(i)))
+                .Concat(TankFourthFearRungs()).ToArray()),
 
         // ═══ FREEZE — the Elf's slow, 30 seconds of it ═══════════════════════════════════════════
         // 30% → 50%, and it PLATEAUS at 50 from rung 10. Deliberate, and the same shape the healer's
@@ -158,7 +159,7 @@ public partial class SkillCatalog
                     Range: BulwarkRange(i),
                     Magnitudes: new EffectMagnitude[] { new(SkillEffect.Slow, slow[i]) },
                     Description: $"Cuts an enemy's movement by {slow[i] * 100:0}% for 30s.");
-            })),
+            }).Concat(TankFourthFreezeRungs()).ToArray()),
 
         // ═══ FINAL DEFENSE — the passive that reads your own HP bar ══════════════════════════════
         // One rung at 60. Its numbers live in `Entity.FinalDefenceBonus`, not here, because they are
@@ -260,7 +261,7 @@ public partial class SkillCatalog
                     CritRatePenalty: pRate[i], MagicCritRatePenalty: mRate[i],
                     Description: $"Power {power[i]:N0}; −{pRate[i] * 100:0}% P.Crit rate and "
                                + $"−{mRate[i] * 100:0}% M.Crit rate for 30s.");
-            })),
+            }).Concat(TankFourthSmashRateRungs()).ToArray()),
 
         new(TankSmashPower, "Shield Smash - Power", BaseClass.Fighter,
             SkillEffect.PhysicalDamage,
@@ -281,7 +282,7 @@ public partial class SkillCatalog
                     CritDamagePenalty: pDmg[i], MagicCritDamageDebuff: mDmg[i],
                     Description: $"Power {power[i]:N0}; −{pDmg[i] * 100:0}% P.Crit damage and "
                                + $"−{mDmg[i] * 100:0}% M.Crit damage for 30s.");
-            })),
+            }).Concat(TankFourthSmashPowerRungs()).ToArray()),
     };
 
     /// <summary>One rung of Aggravated State's payload. The self and party versions differ only in
@@ -322,6 +323,8 @@ public partial class SkillCatalog
         rungs.AddRange(Enumerable.Range(0, BulwarkLevels.Length).Select(i => new SkillLevel(
             MpCost: 0, SpCost: BulwarkSp[i], Range: BulwarkRange(i), TauntPower: third[i],
             Description: $"Lures an enemy toward you for 3s and adds {third[i]:N0} to your aggro on it.")));
+        // …and the 4th tier's eight, rungs 20-27 (`tank 4th.csv`): 12,400 → 18,000, Taunt's numbers again.
+        rungs.AddRange(TankFourthCharmRungs());
         return rungs.ToArray();
     }
 

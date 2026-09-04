@@ -12,7 +12,7 @@ only active"*. Ninety-one closed entries — built, declined, and the old texts 
 
 ## The rules this file runs on
 
-1. **Open only, and sorted by id.** `BL-02` first, `BL-106` last, no categories to hunt through — the
+1. **Open only, and sorted by id.** `BL-02` first, `BL-165` last, no categories to hunt through — the
    **Area** column of the index is how you browse by subject. The moment an entry is built, declined
    or answered with nothing owed, it is **cut to [BacklogArchive.md](BacklogArchive.md)**, dated,
    under the same id. This file should never again grow a done-pile.
@@ -32,13 +32,17 @@ different professions to farm to see who can craft what — and it's a single pl
 So **`BL-05`** and **`BL-50`** are not to be worked on or re-raised until you open that playtest.
 Nothing about them is blocked or broken; they wait on a test only you can run.
 
-★ **The ones you named most recently:** ✅ **`BL-158`…`BL-162` — the NPC BUFFER pass is BUILT (0.111.0,
-2026-09-04) and is in the archive.** The shelf levels up with you, the 75 ceiling is gone, eight single
-harmonies and the three Marks are on sale, and Swift joined the Mage preset. See it with
-`dotnet run --project tools/BalanceMatrix -- --npcshelf`. **⚠ NO new APK — the wire did not move
-(protocol stays 33).** · 🔴 **NEXT: the TANK pass** — you finished `tank 2nd`/`3rd`/`4th` on 2026-09-04
-(*"im done with tank 2/3/4 so its ready to build after the npc buffer"*), which unblocks the rest of
-`BL-154` (pull) and `BL-155` (silence) and closes the last `NOT DONE` file in `BL-02` · **`BL-163`** (your
+★ **The ones you named most recently:** ✅ **THE TANK PASS IS BUILT (0.112.0, 2026-09-04).** All 205 rows
+of `tank 4th.csv`, which closes `BL-154` (pull), `BL-155` (silence) — both in the archive — and the last
+`NOT DONE` file in `BL-02`. Fourteen ladders continue past 74; six things are new (Magic Wall, Tauting
+Wall, the Perfect Whisp, a race-split three-rung Backlash, Whisp Mastery's third slot, Silencing Shock).
+`SkillCsvSeed --check` is green on all fifteen walked files. **⚠ NEW APK — the client builds its Learn
+tab locally**, and 🔴 **a `game.db` delete** (Backlash stopped being auto-granted). 🔵 **What it leaves
+you is `BL-165`** — one refused ladder, three whisp rungs at level 91, and the two AoE pull shapes.
+· ✅ `BL-158`…`BL-162` — the NPC BUFFER pass is BUILT (0.111.0) and is in the archive: the shelf levels up
+with you, the 75 ceiling is gone, eight single harmonies and the three Marks are on sale, and Swift
+joined the Mage preset. See it with `dotnet run --project tools/BalanceMatrix -- --npcshelf`
+· **`BL-163`** (your
 shape for the buffer shelf: an external `(shelfId, minLvl, rungId, price)` file so *"a pvp server won't
 require new npc just change of id's"* — a refactor for editability, nothing is broken) · **`BL-164`**
 (the Marks' rank tie, found while building `BL-161` — your call between three fixes) · `BL-156` (debuff
@@ -48,7 +52,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 
 ---
 
-## Index — 37 open entries
+## Index — 36 open entries
 
 | id | | what it is | area |
 |---|---|---|---|
@@ -86,17 +90,16 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-103` | 🔵 | Visible weapons — the shape is settled, the meshes are not | UI |
 | `BL-104` | 🔵 | The warrior's sword-vs-blunt split — ruled, nothing to attach it to yet | classes |
 | `BL-106` | ❓ | Your cross-chain id rule — six ids disobey it; three answers wanted | classes |
-| `BL-154` | 🔴 | Tank PULL — ENGINE BUILT (0.110.0-0.110.2); ✅ **his `tank 4th.csv` numbers LANDED 2026-09-04**; the two AoE shapes + the drag-smoothing clamp remain | combat |
-| `BL-155` | 🔴 | SILENCE — BUILT (0.110.0); ✅ **the tank rows are no longer placeholders — Numbing Shock is authored 76→90** | combat |
 | `BL-157` | 🔵 | The worm — a polymorph debuffer/nuker class, a seed only | classes |
 | `BL-163` | 🔴 | The buffer shelf as an EXTERNAL table — no wrappers, editable without a build | classes |
 | `BL-164` | 🔵 | The three Marks share one Rank, so the weaker rung can out-hold the stronger | classes |
+| `BL-165` | 🔵 | What the tank's 4th tier LEFT OPEN — one refused ladder, three rungs at level 91, the two AoE pulls | combat |
 
 ---
 
 ## The entries
 
-- `BL-02` 🔵 **The 40+ class kits (3rd and 4th tier)** — ✅ **FIVE OF THE AUTHORED FILES ARE DONE — the BULWARK (tank) landed 2026-09-02 (0.105.0), the fourth finished 3rd class.** Race decides four of its tools, which is the first time race has decided anything about a class here: Human taunt/mass-taunt, Elf charm/freeze, Demon taunt/intimidate, and the two Shield Smashes split Human;Elf vs Demon. ⚠ THE PASS SPANNED ALL THREE TANK FILES — `tank 2nd.csv` was retuned in the same breath (taunt 3s→1.5s at 0 MP, Charm at 24, Shield Shock replacing Shield Stun, Stay! moved to the 3rd, Defensive Wall's ×2 terms deleted). ✅ **`tank 2nd`/`3rd`/`4th` are ALL FINISHED — he said so 2026-09-04 (*"im done with tank 2/3/4 so its ready to build after the npc buffer"*) and it is verified: the `NOT DONE` banner is gone, 205 authored rows, and Grapple + Numbing Shock are laddered 76→90 with real numbers. THE TANK PASS IS THE NEXT BUILD AFTER `BL-158`…`BL-162`.** Six slips in his files were caught and corrected on BOTH sides — see the CHANGELOG. Older note follows. The
+- `BL-02` 🔵 **The 40+ class kits (3rd and 4th tier)** — ✅ **FIVE OF THE AUTHORED FILES ARE DONE — the BULWARK (tank) landed 2026-09-02 (0.105.0), the fourth finished 3rd class.** Race decides four of its tools, which is the first time race has decided anything about a class here: Human taunt/mass-taunt, Elf charm/freeze, Demon taunt/intimidate, and the two Shield Smashes split Human;Elf vs Demon. ⚠ THE PASS SPANNED ALL THREE TANK FILES — `tank 2nd.csv` was retuned in the same breath (taunt 3s→1.5s at 0 MP, Charm at 24, Shield Shock replacing Shield Stun, Stay! moved to the 3rd, Defensive Wall's ×2 terms deleted). ✅ **`tank 2nd`/`3rd`/`4th` are ALL FINISHED — he said so 2026-09-04 (*"im done with tank 2/3/4 so its ready to build after the npc buffer"*) and it is verified: the `NOT DONE` banner is gone, 205 authored rows, and Grapple + Numbing Shock are laddered 76→90 with real numbers. ✅✅ **AND IT IS BUILT — 0.112.0, 2026-09-04. `tank 4th.csv` is the SIXTH authored file done and the LAST `NOT DONE` file in this entry; `tank 4th` earned its `Check.Specs` line the same day and all fifteen walked files are green.** What it left open is `BL-165`, not this entry. Eleven slips across his tank files have now been caught and corrected on BOTH sides — six in the 3rd-tier pass, five in the 4th — see the CHANGELOG. Older note follows. The
   **Lightbringer (healer) shipped in 0.74.0**, the **whole Warchanter (buffer) in 0.76.0**, the
   **Lightbringer's 4th tier in 0.85.0** (with the shared kit and the eighteen Sigils), and the
   **NUKER's 3rd tier in 0.87.0** — 208 rows, 21 families, Magus and Tempest, all three races, 40 to 74.
@@ -108,14 +111,14 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
   that would have shouted about it never opened the file. **A finished file that no spec walks is
   invisible.** When you finish a file, say so, and its `Check.Specs` line goes in the same day.
 
-  What is left, and it is now a short list:
-  - 🔵 **`buffer 4th.csv` — you are authoring it.** Rows through the Mark block are done; line 125 is
-    your `NOT DONE FOR NOW` banner and the bow/blunt/2H masteries, Twin Arrow, Sound Smash and Acoustic
-    Shock sit below it. Not started, on your instruction (2026-08-26: *"dont do buffer 4th as im
-    authoring it"*). When it lands, Harmony Mark's id is `harmony_mark` and it **must share `MarkKey`**
-    with the healer's three or a healer's Mark and a buffer's would stack.
-  - 🔵 **Five 3rd files are still two-line placeholders** — `tank` (one real row), `warrior`, `war_aoe`,
-    `dual`, `archer` — and **seven 4th files** with them. Same rule: nothing invented in the meantime.
+  What is left, and it is now a short list — **the six authored files are ALL built:** healer 3rd + 4th,
+  buffer 3rd + 4th, nuker 3rd, and tank 2nd/3rd/4th. What is missing is what you have not written:
+  - 🔵 **FOUR 3rd files are still two-line placeholders** — `warrior` (9 lines, a header block only),
+    `war_aoe`, `dual`, `archer` — and **FIVE 4th files** with them (the same four, plus `nuker 4th`).
+    Same rule: nothing invented in the meantime, and each earns its `Check.Specs` line the day you
+    finish it.
+  - ✅ ~~`buffer 4th.csv`~~ — DONE, built by `BL-108` in 0.103.0. Harmony Mark shares `MarkKey` with the
+    healer's three, so a healer's Mark and a buffer's can never stack.
   - ✅ ~~**Calm Spirit**~~ — SHIPPED with `BL-92` in 0.88.0, the moment the MP-regen question it was
     held behind was answered. Nothing of the nuker's file is outstanding.
 
@@ -661,126 +664,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 
 ---
 
-### `BL-154` 🔵 Pull — BUILT (0.110.0-0.110.2); left: your CSV, the two AoE shapes, and one clamp awaiting your eyes
-
-Your spec, 2026-09-03: *"tanks will have pull -> target or aoe around.. con saves and if succeed pulls
-the target to the caster, hope its not instant but 300 range per second .. to look like a pull not
-phase shift"*, then *"I like the whole pull to be a 1s~1.5s pull. And 1~2s stun. The pull idea is
-shorten the distance + enemy interrupt rather than control"* and *"also one con contest for pull
-+stun"*.
-
-**✅ THE ENGINE SHIPPED IN 0.110.0**, with all seven of your rulings in it:
-
-| | ruling | how it landed |
-|---|---|---|
-| 1 | Rooted, no actions | `IsActionLocked` grew a pull arm, beside charm and fear |
-| 2 | The pull itself is not interruptible | It is a short PHYSICAL active; the drag deals no damage, so nothing rolls against it |
-| 3 | Stops at melee range | `GameConstants.MeleeRange`, re-aimed each tick at the puller |
-| 4 | Two AoE shapes, 2-5 bodies | 🔵 **the ENGINE is there, the SKILLS are not** — see below |
-| 5 | Boss immune, players yes | `BossShrugsOff` learned `def.Pulls` |
-| 6 | ~~Threat below the taunt~~ — **REVERSED by you, 2026-09-04** | 🔴 It is a **DAMAGE skill**, not a threat skill: `Power: 3000`, no `TauntPower`. See below |
-| 7 | 1s stun on the SAME contest | Held on the victim and applied by `FinishPull` **on arrival**, so drag and stun run in sequence rather than overlapping |
-
-🔑 **THE DRAG IS TIMED, NOT PACED — your 300/s and your 1-1.5s are two different rules and the second
-one won.** A fixed speed makes the lockdown scale with the range you author (a 900 pull would take 3
-seconds); a fixed duration does not. `PullSeconds` is the whole journey from any distance and the speed
-is derived, floored at your 300/s so a short pull arrives early instead of crawling. **Range now buys
-reach and never buys lockdown** — author 900 if you want the reach.
-
-✅ **THE DRAG INTERRUPTS, AND YOU RULED THAT IT SHOULD** (2026-09-03, after it was flagged as a
-correction to what this entry first claimed): *"I like the actual pull interrupt - it's the logical
-way ... U don't see a mage being dragged and still casts."* So the chain interrupts twice over, and an
-AoE pull — which carries no stun — still interrupts what it drags. It falls out of your *"like charmed
-while dragging - no act"* for free: being dragged is an action lock, and `UpdateAction` has always
-cancelled the cast of anything action-locked.
-
-🔴 **GRAPPLE IS A DAMAGE SKILL, NOT A THREAT SKILL — you reversed row 6 on 2026-09-04:** *"does grapple
-work in auto or is it a taunt skill .. if it's a taunt skill I want it to not be, and be a normal dmg
-skill with 3k power (my standard dmg skill is 4k so later it will grow as well when authoring)"*.
-
-It shipped in 0.110.0 as `TauntPower: 3000` with **no damage at all**, and that had a consequence you
-found before I did: `BL-83` routes every threat skill to the **never-auto-cast** bucket, and
-`TauntPower > 0` is the first test it applies — so a tank's new signature move could not appear in a
-rotation at all. **Fixed in 0.110.1: the 3000 MOVED to `Power`, it did not double.** Grapple is now
-`PhysicalDamage | Stun`, Power 3000, no `TauntPower`; it builds threat only through the damage it
-deals, and it lands in the **Attack** rung of the auto chain. The drag, the stun tail and the one CON
-contest are untouched.
-
-🔴 **AND THE DRAG WAS DECLARING ITSELF A TELEPORT TEN TIMES A SECOND — fixed 0.110.2.** Your report:
-*"it drags the monster but it's like lagging, not like a continuous clean drag ... it seems real time"*.
-`EntityDto.Warp` is not a "position changed" flag — it is an instruction to the client to **`SnapTo`
-and RETURN**, skipping interpolation. `TickPull` moves the body through `PlaceEntity`, which bumps that
-counter on every call **by design** (it is the one seam blink, knockback, the gatekeeper and respawn
-all pass through, which is what made the Phase Shift fix free). A pull calls it every tick, so the
-client hard-snapped the mob ten times a second with nothing drawn between the snaps — a 10 Hz
-staircase landing in exactly the right place. `PlaceEntity` now takes `announce` (default **true**, so
-every other caller is unchanged) and `TickPull` passes `false`. 🔑 **The line is CONTINUITY, not "did
-something else move it".** Server-side only; no APK needed for this one.
-
-🟡 **AND ONE THING IS WAITING ON YOUR EYES — NOT BUILT, NOT TESTED.** Your instruction, 2026-09-04:
-*"mark the one clamp / EntityView.Update as untested and I'll see it in game first then decide"*. The
-client's interpolator sizes each segment by the measured gap between the last two updates, and the
-server sends only what CHANGED — so a mob that stood still for ten seconds and is then grappled has a
-**ten-second first segment**, and the drag's opening ~100ms draws almost frozen before the second
-sample corrects it. It self-corrects after one sample: a hitch at the START of a drag, not a stutter
-through it. A clamp on that span (~0.2s) fixes it, and every mob's first step out of an idle with it —
-but `EntityView.Update` has been rewritten three times to kill the rubber-band, and this is not what
-you reported. **The test is to grapple something that has been standing STILL**; if the body hangs for
-a blink before it slides, that is this, and if you cannot see it, it does not need fixing.
-
-**What is still owed, and it is yours:**
-
-- 🔵 **`tank 4th.csv` has ONE placeholder row** (`Grapple`, 76, range 600, 1.2s drag, 1s stun, 15s
-  reuse, 80 MP). Every number in it is mine except the ones you ruled. Fix them when you write the file.
-- 🔵 **The two AoE shapes are not authored** — you named one pull, not three, and a skill nobody asked
-  for is a skill nobody can retune. The engine serves both already: `TargetMode.EnemiesInRadius` with
-  `AreaAtTarget` picking the centre (the target for the ranged one, the caster for the self-centred
-  one) and **`MaxTargets` as your cap of five**, which the area sweep learned in the same pass. They
-  need rows and nothing else.
-
-### `BL-155` 🔵 Silence — BUILT (0.110.0); the boss skill is live, the tank rows are placeholders
-
-🔴 **The DISARM is DECLINED, by you, 2026-09-03** — *"If we leave the weapon bonuses it's not a disarm.
-Let's don't do a disarm .. But I like your silence idea"*. Old text in
-[BacklogArchive.md](BacklogArchive.md); nothing of it is owed.
-
-**✅ SHIPPED IN 0.110.0.** Physical silence (physical skills fail, **the basic attack still works**),
-magical silence, and both at once = a full silence — two independent debuffs, so the "full" version
-needs no third skill. It completes the disable map:
-
-| disable | what it takes away | state |
-|---|---|---|
-| charm / fear | **everything** | built (`BL-110`) |
-| hold / bind | **movement** | built |
-| physical silence | **physical skills** (basic attack survives) | ✅ 0.110.0 |
-| magical silence | **magical skills** | ✅ 0.110.0 |
-| both / boss | **every skill** | ✅ 0.110.0 |
-
-🔑 **The physical-vs-magical axis was already built and was not re-invented.** `SkillMath
-.PacedByAttackSpeed` — the three-marker test from your `BL-133` cast-speed pass — was **renamed
-`IsPhysical`**, the name of the question it actually answers, with the old name kept as a one-line
-alias at the speed call sites. A skill can never be physical for cast speed and magical for silence.
-
-✅ **The dungeon bosses have theirs** — *"a full silence aoe skill for 15s duration and 45s cd (mp cost
-u deside)"*. **Word of Unmaking**: 150 ticks, 450 ticks, 500 radius, SPT-defended, **MP 0** like every
-other boss skill (a rotation must never stall on mana), on `grave_lich` (44), `dread_knight` (65) and
-`disciple_of_the_dawn` (90). 🔵 **Watch it in play: 15s on 45s is 33% uptime with no heals**, which is
-brutal by design and the first number to move if a boss becomes unkillable.
-
-**What is still owed, and it is yours:**
-
-- 🔵 **Two placeholder rows on `tank 4th.csv`** — `Numbing Strike` (Human + Demon, CON-defended) and
-  `Silencing Ward` (Elf, SPT-defended), one rung each at 76, 8s, 30s reuse, 70 MP. The race split
-  continues the one `tank 3rd.csv` already draws; every other number is mine and yours to overwrite.
-- ✅ **Bosses ARE immune to silence, and you ruled the whole boundary** (2026-09-03): *"bosses are
-  mostly immune .. Only decreasing skills - like armor/weapon breaks tyoe and dot effects."* Checked
-  against the code rather than assumed, and **it is already exactly that rule**: `BossShrugsOff` fires
-  on `ControlCc` (= `Slow | Stun | Fear | Root`), charm, pull and the two silences, and explicitly
-  exempts `AnyDot`. Armor Break and Weapon Break carry `DebuffPDef` / `DebuffAtk`, which is none of
-  those — so the stat-strippers and the DoTs land on a boss today and always have. Nothing to build;
-  the ruling is recorded so the next control payload knows which side of the line it goes on.
-- 🔵 **The worm's own full silence** waits on `BL-157`.
-
 ### `BL-157` 🔵 The worm — a debuffer/nuker class whose identity is polymorph
 
 Your aside, 2026-09-03, while ruling the silences: *"We can later author a debhffer nuke class that
@@ -867,3 +750,47 @@ Three ways out, and it is your call which:
 
 Nothing is blocked on this; it only bites a level-83+ character who bought a Mark and then joined a
 party with a 4th-class Lightbringer.
+
+### `BL-165` 🔵 What the tank's 4th tier left open — one refused ladder, three rungs at 91, and the two AoE pulls
+
+Everything in `tank 4th.csv` is built (0.112.0, 2026-09-04). These are the four things that could not
+be answered out of the file, kept together so they are one read rather than four. **Nothing here is
+blocked and nothing is broken** — the tank is complete and playable as it stands.
+
+**1. 🔵 SHIELD SMASH - POWER's crit-damage ladder restarts, and the code refused it.** Your rows read
+15 / 19 / 24 / 28 / 33 / 35 / 35 / 35 % at 76-90, against **35%** at the last 3rd-tier rung (level 74).
+A level-76 Bulwark's smash would blunt crits worse than his level-74 one did, which is the exact shape
+the monotonic rule exists to catch (*"the stats should go up not down - if they got down i made a
+mistake or swaped two levels"*).
+
+What settles it, and it is your own file: its twin, **Shield Smash - Rate**, is FLAT at its own ceiling
+(50% P.Crit rate / 25% M.Crit rate) for all eight 4th-tier rungs — only the damage climbs. Read
+together, the Power version being flat at **35% / 15%** is the symmetric reading, and that is what
+shipped. **Your cells were left alone**, so if you meant the ladder, say so and it goes in verbatim
+(`TankFourthSmashPowerRungs` in `Skills.Bulwark4th.cs`, one array).
+
+**2. 🔵 THREE WHISP CALLS LADDER TO LEVEL 91.** Binding, Healing and Weapon Breaking Whisp open at 77
+and step by two, so their eighth rung lands at **91** — one past the 90 the world is built to. It is
+not dead (`ExpCurve.MaxLevel` is 100), and it was built exactly as written rather than compressed,
+because compressing it would invent a shape you did not author. `Check.Specs` carries the band 76-**91**
+for this file so the rung stays compared. **If you want them to end at 89 or to start at 76, it is one
+line** (`TankFourthOdd`).
+
+**3. 🔵 THE TWO AoE PULL SHAPES ARE STILL NOT AUTHORED.** `BL-154` rule 4 gave the pull two more shapes
+— a ranged one taking the target plus 2-4 around IT, and a self-centred one taking 2-5 around the
+CASTER — and the **engine serves both today**: `TargetMode.EnemiesInRadius` with `AreaAtTarget` picking
+the centre and `MaxTargets` as your cap of five. Your finished file authors ONE pull, so one pull is
+what exists. They need rows and nothing else.
+
+**4. 🟡 THE DRAG-SMOOTHING CLAMP IS STILL UNTESTED AND UNBUILT** — your instruction, 2026-09-04: *"mark
+the one clamp / EntityView.Update as untested and I'll see it in game first then decide"*. The client
+sizes each interpolation segment by the measured gap between the last two updates, so a mob that stood
+still for ten seconds and is then grappled has a ten-second first segment and its opening ~100ms draw
+almost frozen. **The test is to grapple something that has been standing STILL**; if the body hangs for
+a blink before it slides, that is this, and if you cannot see it, it does not need fixing.
+
+⚠ **And five things were corrected in `tank 4th.csv` itself** — an id paste on eight rows, an AOE cell,
+a WEIGHT paste on thirty rows, a Cyrillic `к` in an SP cell, and a pasted `mpReg` column. Each is
+listed with its reasoning in the 0.112.0 [CHANGELOG](CHANGELOG.md) entry, and each is one edit to
+reverse. They are corrections, not retunes: none of them changes a number you chose.
+

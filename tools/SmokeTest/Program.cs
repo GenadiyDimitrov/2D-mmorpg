@@ -2217,8 +2217,15 @@ await gm.DisposeAsync();
         // FEAR HIM. Terrifying Roar is a 5s Fear — long enough to sample twice inside, short enough
         // that the section does not stall. `/buff` reaches it only because `BL-110` gave the command a
         // third search pool; before that no admin could put a CC on anybody at all.
+        //
+        // 🔴 `5s` IS NOT DECORATION — WITHOUT IT THE FEAR LASTS AN HOUR. `BL-131` gave `/buff` a
+        // duration word and a **one-hour default** (`SkillCatalog.NpcBuffTicks`), so this command
+        // stopped granting the SKILL's own 5 seconds the day that landed — and the "…and when the fear
+        // expires the body stops dead" check below could not pass, because the fear was still running.
+        // It read as a control effect that never releases; it was the harness asking for an hour.
+        // 🔑 A COMMAND THAT GAINS A DEFAULT CHANGES EVERY CALLER THAT OMITS THE ARGUMENT.
         fe.Buffs = null;
-        await fe.Hub.SendAsync("AdminCommand", "buff", "terrifying roar");
+        await fe.Hub.SendAsync("AdminCommand", "buff", "terrifying roar 5s");
         bool landed = await fe.WaitFor(
             () => fe.Buffs is not null && fe.Buffs.Buffs.Any(b => b.Name.Contains("Terrifying")), 4000);
         Check("`/buff` can reach a CONTROL skill, so fear/charm are testable at all",
@@ -2329,6 +2336,14 @@ await gm.DisposeAsync();
             .First(t => t.Race == Race.Elf && t.Discipline == Discipline.Bulwark);
         await wh.Hub.SendAsync("DebugThirdClass", bulwark.Id);
         await wh.Hub.SendAsync("DebugLearnAll");
+        // 🔴 STONES, OR NOTHING BELOW THIS LINE HAPPENS. A summon has cost **4 Skill Stones** since
+        //    2026-09-03 (*"whisps to take 4 skillstone each summon"*), and this section was written the
+        //    day before — so every check from here down had been failing on `Healing Whisp requires 4x
+        //    Skill Stone` ever since, and the run said "12 CHECK(S) FAILED" with nothing in the game
+        //    actually wrong. 🔑 THE LESSON IS THE HARNESS'S OWN: a REAGENT added to a skill owes every
+        //    test that casts it a stock line, exactly as a new SkillDef field owes SkillText one.
+        //    Sixty is generous on purpose — this section calls a whisp at least five times.
+        await wh.Hub.SendAsync("DebugGive", ItemCatalog.SkillStone, 60);
         await wh.Settle();
 
         // Generous, for the same reason section 10 is: this character is naked and a FIGHTER, so his
@@ -2375,25 +2390,35 @@ await gm.DisposeAsync();
               $"{wh.Whisps?.Whisps.Length ?? 0} whisps: "
                   + string.Join(", ", wh.Whisps?.Whisps.Select(w => w.SummonSkillId) ?? Enumerable.Empty<string>()));
 
-        // ---- THE RE-SUMMON WINDOW, and it has to be waited for.
+        // ---- RE-CALLING A WHISP YOU ALREADY HAVE. It has to be waited for: the 30-second REUSE
+        //      answers first ("is not ready"), so an immediate re-cast tests the cooldown and nothing
+        //      else — which is what the first cut of this test was in fact reading.
         //
-        //      ⚠ THE 30-SECOND REUSE HIDES IT. Both gates refuse a re-call, so an immediate re-cast
-        //      is answered by the COOLDOWN ("is not ready") and the whisp gate is never reached — the
-        //      first cut of this test asserted the window and was in fact reading the cooldown. From
-        //      30s to 19:55 the whisp gate is the only thing refusing, and that is the window his
-        //      *"resummon at 5s remaining"* actually describes, so the test waits the reuse out and
-        //      then reads the MESSAGE rather than counting whisps.
+        //      🔴 WHAT IS ASSERTED HERE WAS REVERSED BY HIM AND THE TEST DID NOT FOLLOW. It used to
+        //      demand a REFUSAL ("is still with you"), which was `BL-109`'s five-second re-summon
+        //      window — and `BL-130` deleted that window the next day on his ruling: *"charming whisp
+        //      (and i guess all whisps) resummon on cd not when whisps disapear"*. The message it
+        //      waited for no longer exists anywhere in the server, so the check could only ever fail;
+        //      it was invisible because the reagent gate above was failing first (see the Skill Stone
+        //      note). 🔑 A RULING THAT REVERSES A MECHANIC OWES ITS TEST AN EDIT, exactly as it owes
+        //      `SkillText` a line.
+        //
+        //      So the rule now is: past the reuse a re-call is ALLOWED, and `SummonWhisp` refreshes
+        //      the whisp IN PLACE — no duplicate, no reordering of the stack, and the 4 Skill Stones
+        //      paid again. That is what is checked.
         wh.SystemChat.Clear();
         await Task.Delay(31000);
         await wh.Hub.SendAsync("UseSkill", SkillCatalog.TankWhispHeal, wh.MyId);
-        bool refused = await wh.WaitFor(
-            () => wh.SystemChat.Any(s => s.Contains("is still with you")), 5000);
-        Check("past the reuse, re-calling a whisp with 20 minutes left is REFUSED BY ITS OWN GATE",
-              refused, refused ? "the whisp gate answered, not the cooldown"
+        bool renewed = await wh.WaitFor(
+            () => wh.SystemChat.Any(s => s.Contains("answers again")), 5000);
+        Check("past the reuse, re-calling a whisp you already have RENEWS it (`BL-130`)",
+              renewed, renewed ? "refreshed in place, not re-stacked"
                                : string.Join(" | ", wh.SystemChat.TakeLast(3)));
-        Check("...and the refusal costs nothing — still exactly one whisp, unchanged",
-              (wh.Whisps?.Whisps.Length ?? 0) == 1,
-              $"{wh.Whisps?.Whisps.Length ?? 0} whisps");
+        Check("...and it is a refresh, not a second whisp — still exactly one, and the same one",
+              (wh.Whisps?.Whisps.Length ?? 0) == 1
+                  && wh.Whisps?.Whisps[0].SummonSkillId == SkillCatalog.TankWhispHeal,
+              $"{wh.Whisps?.Whisps.Length ?? 0} whisps: "
+                  + string.Join(", ", wh.Whisps?.Whisps.Select(w => w.SummonSkillId) ?? Enumerable.Empty<string>()));
 
         // ---- WHISP MASTERY BUYS THE SECOND SLOT. Level INTO it now, so the difference between one
         //      slot and two is the passive and nothing else. If it were inert this is the only check

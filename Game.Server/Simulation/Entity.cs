@@ -1055,8 +1055,12 @@ public class Entity
     /// channel; spells reflect nothing.</summary>
     public float PhysSkillReflectChance { get; set; }
     public float PhysSkillReflectPct { get; set; }
-    /// <summary>BL-08 — chance that a DEBUFF aimed at me lands on its caster instead.</summary>
-    public float DebuffReflectChance { get; set; }
+    /// <summary>BL-08 — chance that a DEBUFF aimed at me lands on its caster instead, PER SCHOOL.
+    /// A blanket <c>PassiveEffect.DebuffReflectChance</c> feeds both; the tank's two Backlashes feed
+    /// one strongly and the other weakly (`tank 4th.csv`). <see cref="GameLoopService"/>'s
+    /// TryReflectDebuff picks the channel off the skill's own <c>DebuffSchool</c>.</summary>
+    public float DebuffReflectPhys { get; set; }
+    public float DebuffReflectMagic { get; set; }
     public bool Immune { get; set; }             // ultimate total-avoid (future buff); attacks always miss/fail
 
     /// <summary>IMMORTALITY (the Immortality Sigil) — HP is FROZEN: damage takes none off and healing
@@ -1455,6 +1459,12 @@ public class Entity
     /// zeroing <see cref="EffectiveSpeed"/>; it has no destination to drive. Rolling the two together
     /// would mean a stun had to start writing destinations to say "stay put".</para></summary>
     public bool IsControlDriven => IsFeared || IsCharmed;
+
+    /// <summary>Was <see cref="IsControlDriven"/> true on the previous tick? Runtime only, never
+    /// persisted. It exists so <c>TickControlledMovement</c> can act on the EDGE where control ENDS
+    /// and clear the destination fear or charm left behind — without that, an expiring fear left its
+    /// last random hop in <see cref="TargetX"/> and the ordinary stepper finished the run for it.</summary>
+    public bool WasControlDriven { get; set; }
 
     /// <summary>`BL-98` — PETRIFIED by the boss's judgment (an ODD rung, L1/L3/L5). Not a state of
     /// its own: the rung's buff is a <see cref="SkillEffect.Stun"/> that also freezes HP, so the lock
@@ -2495,7 +2505,8 @@ public class Entity
         SkillEvadeChance = 0f;
         PhysSkillReflectChance = 0f;
         PhysSkillReflectPct = 0f;
-        DebuffReflectChance = 0f;
+        DebuffReflectPhys = 0f;
+        DebuffReflectMagic = 0f;
         Immune = false;
         CooldownReduction = 0f;
         WhispLimit = GameConstants.WhispSlotsBase;   // `BL-109` — raised by Whisp Mastery below
@@ -3194,7 +3205,11 @@ public class Entity
                     PhysSkillReflectChance = pe.PhysSkillReflectChance;
                     PhysSkillReflectPct = pe.PhysSkillReflectPct;
                 }
-                DebuffReflectChance = Math.Max(DebuffReflectChance, pe.DebuffReflectChance);
+                // The blanket field feeds BOTH channels; the per-school ones feed their own.
+                DebuffReflectPhys  = Math.Max(DebuffReflectPhys,
+                                              Math.Max(pe.DebuffReflectChance, pe.DebuffReflectPhysChance));
+                DebuffReflectMagic = Math.Max(DebuffReflectMagic,
+                                              Math.Max(pe.DebuffReflectChance, pe.DebuffReflectMagicChance));
                 // ---- 4th TIER (2026-08-26): the `shared 4th.csv` passives and the Sigils. Each of
                 //      these lands in the SAME accumulator its buff-side twin uses, and is clamped
                 //      once at the bottom of this method — so a Sigil, a Clarity and an armour set
@@ -3439,7 +3454,8 @@ public class Entity
         SkillEvadeChance = Math.Clamp(SkillEvadeChance, 0f, 0.95f);
         PhysSkillReflectChance = Math.Clamp(PhysSkillReflectChance, 0f, 0.95f);
         PhysSkillReflectPct = Math.Clamp(PhysSkillReflectPct, 0f, 1f);
-        DebuffReflectChance = Math.Clamp(DebuffReflectChance, 0f, 0.95f);
+        DebuffReflectPhys  = Math.Clamp(DebuffReflectPhys,  0f, 0.95f);
+        DebuffReflectMagic = Math.Clamp(DebuffReflectMagic, 0f, 0.95f);
         CcResist = Math.Clamp(CcResist, 0f, 0.8f);           // never fully CC-immune from gear
         // Each school's own resistance is capped the same way, and because the two multiply with the
         // blanket one at the roll, the floor on a landing debuff is still the contest's own 10%.

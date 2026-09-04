@@ -1568,6 +1568,19 @@ public class GameLoopService : BackgroundService
         else if (SkillCatalog.ReflectIdFor(player.Archetype) is string reflectId)
             player.LearnedSkills.Remove(reflectId);
 
+        // 🔴 …AND THE TANK'S BACKLASH IS NO LONGER EITHER OF THOSE, 2026-09-04. His finished
+        // `tank 4th.csv` prices it (77/80/83, 6.5kk → 500kk SP) and splits it by race, so it is a
+        // BOUGHT skill and neither branch above names the tank any more. What is left is the legacy:
+        // every tank on an existing save was auto-granted rung 1 at 76 by the code that just went
+        // away, and a plain assignment is permanent. Strip it below the first rung HIS file offers.
+        // ⚠ Deliberately `< 77` and not unconditional: above 77 the id may be a rung he genuinely
+        // paid for, and there is nothing on a LearnedSkills row that says which it was. A 77+ tank
+        // who never bought it keeps a free rung 1 until the `game.db` reset that this pass owes
+        // anyway (the Backlash ladder is race-split by RUNG — 1-3 physical, 4-6 magical — which is
+        // itself a reason no old row should survive).
+        if (player.Archetype == Archetype.Tank && player.Level < 77)
+            player.LearnedSkills.Remove(SkillCatalog.Backlash);
+
         // Class Balance passive — the per-class tuning hook. ⚠ COMMENTED OUT 2026-08-07 on the
         // owner's ruling (*"class_balance should be commented for now"*, playtest-19 `0a`): the defs
         // and this grant come out of the live path but stay in the file, ready to come back. They
@@ -9340,8 +9353,20 @@ public class GameLoopService : BackgroundService
             return master.MaxHp > 0 && master.Hp < master.MaxHp && master.Hp * 2 >= master.MaxHp;
         if (def.Id == SkillCatalog.WhispQuickHeal)
             return master.MaxHp > 0 && master.Hp * 2 < master.MaxHp;
+        // The PERFECT WHISP's heal has no HP BAND — his row authors ONE heal where the healing whisp
+        // authors two gears — but it still needs the "is he hurt at all" test, and for a reason
+        // stronger than waste: `TryWhispAct` fires ONE skill per tick and returns, so a heal that says
+        // yes at full health would starve the cleanse, the mana and all three debuffs behind it.
+        if (def.Id == SkillCatalog.WhispGreatHeal)
+            return master.MaxHp > 0 && master.Hp < master.MaxHp;
         if (def.Id == SkillCatalog.WhispClear)
             return master.Buffs.Any(b => b.IsDebuff && b.Cancellable && !b.Internal);
+        // MANA — the Perfect Whisp's own gear (`tank 4th.csv`, *"restore mp of its master"*). Same
+        // shape as the heal above and the same reason it needs a condition at all: without one it
+        // would burn its 30s reuse on a full bar and be down when the bar actually empties. No band,
+        // because there is only one mana gear — any missing MP is worth topping up.
+        if (def.Id == SkillCatalog.WhispMana)
+            return master.MaxMp > 0 && master.Mp < master.MaxMp;
         return true;
     }
 
@@ -9354,6 +9379,16 @@ public class GameLoopService : BackgroundService
             // NOT go through the master's heal-power passives: a whisp is *"uninfluenced by master
             // gear"*, and a tank's healing whisp must not get better because he put on a jewel.
             HealOne(master, master, def.PowerAt(w.Level), 0, w.Name);
+            return;
+        }
+
+        // MANA — the same rule as the heal a line above: FLAT, off the whisp's own rung, never
+        // through the master's stats. It does go through RestoreMpOne, so the TARGET's own
+        // "MP restore received" multiplier still applies — that is a property of the bar being
+        // refilled, not of the spirit doing the refilling.
+        if ((def.Effect & SkillEffect.RestoreMp) != 0)
+        {
+            RestoreMpOne(master, master, def.PowerAt(w.Level), w.Name);
             return;
         }
 
@@ -9693,8 +9728,19 @@ public class GameLoopService : BackgroundService
     private bool TryReflectDebuff(Entity caster, Entity target, SkillDef def, int lvl,
         int durationOverride, string castName)
     {
-        if (caster == target || target.DebuffReflectChance <= 0f) return false;
-        if (_rng.NextDouble() >= target.DebuffReflectChance) return false;
+        // 🔑 THE CHANNEL IS THE SKILL'S OWN SCHOOL (`tank 4th.csv`, 2026-09-04). His two Backlashes
+        // reflect CON and SPT debuffs at different rates — the physical one 10/20/30% against CON and
+        // 5/10/15% against SPT, the magical one the mirror — so one blanket number could no longer
+        // answer. A debuff with NO school (DebuffSchool.None: an uncontested strip like Armor Break)
+        // takes the better of the two, which is the honest reading of "a debuff cast at you".
+        float chance = def.DebuffSchool switch
+        {
+            DebuffSchool.Physical => target.DebuffReflectPhys,
+            DebuffSchool.Magical  => target.DebuffReflectMagic,
+            _ => Math.Max(target.DebuffReflectPhys, target.DebuffReflectMagic),
+        };
+        if (caster == target || chance <= 0f) return false;
+        if (_rng.NextDouble() >= chance) return false;
         ApplyBuff(caster, def, lvl, durationOverride: durationOverride);
         BroadcastCombat(target, caster, 0, CombatOutcome.Buff, castName + " [Reflect]");
         return true;
@@ -11165,6 +11211,14 @@ public class GameLoopService : BackgroundService
                 if (def.Effect.HasFlag(SkillEffect.Taunt))
                     ApplyTaunt(caster, foe, def, lvl, castName);
             }
+            // ---- THE CASTER'S OWN HALF, if the skill has one (`SkillDef.SelfBuff`). Tauting Wall is
+            //      an AoE taunt AND a Defensive Wall in one row of his file, and this branch RETURNS
+            //      — the ordinary buff arm below never sees it. Applied after the sweep so the buff
+            //      cannot influence the contest that just resolved, and UNCONDITIONALLY: a wall you
+            //      raise around yourself does not care whether anything was standing in it.
+            if (def.SelfBuff is string selfBuffId
+                && SkillCatalog.Get(selfBuffId) is SkillDef selfBuff)
+                ApplyBuff(caster, selfBuff, lvl, castName);
             return;
         }
 
@@ -14685,7 +14739,26 @@ public class GameLoopService : BackgroundService
     private void TickControlledMovement(Entity e)
     {
         if (e.Dead || !e.IsControlDriven)
+        {
+            // 🔴 CONTROL JUST ENDED — DROP THE DESTINATION IT LEFT BEHIND. Fear writes a random hop up
+            // to `FearHopMaxRange` away and this method is the ONLY thing that clears it (on arrival);
+            // when the buff expired mid-hop the destination simply stayed, and the ordinary stepper
+            // walked the victim the rest of the way — up to two hundred units of "running" AFTER the
+            // panic was over. `tools/SmokeTest` has been calling it for what it is (*"…and when the
+            // fear expires the body stops dead (control handed back)"*, `still moving 140.9 units/1.2s`)
+            // and it was masked by eleven earlier failures in the same run.
+            // 🔑 THE LATCH IS THE POINT: this runs for every entity every tick, so the clear has to
+            // fire on the EDGE and not unconditionally, or it would delete an ordinary move order
+            // from anyone who has never been feared in his life.
+            if (e.WasControlDriven)
+            {
+                e.WasControlDriven = false;
+                e.TargetX = null;
+                e.TargetY = null;
+            }
             return;
+        }
+        e.WasControlDriven = true;
 
         // ---- CHARM: re-aim at the caster every tick (he may be moving), and STOP on arrival rather
         //      than trying to stand inside him. Charm outranks fear if a victim somehow has both —

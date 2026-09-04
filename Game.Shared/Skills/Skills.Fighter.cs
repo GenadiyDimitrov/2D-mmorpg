@@ -362,7 +362,7 @@ public static partial class SkillCatalog
                 new SkillLevel(SpCost: 6000,  Passive: new PassiveEffect(MagicDefence: 35)),
                 new SkillLevel(SpCost: 11000, Passive: new PassiveEffect(MagicDefence: 40)),
                 new SkillLevel(SpCost: 20000, Passive: new PassiveEffect(MagicDefence: 45)),
-            }.Concat(TankAntiMagicThirdRungs()).ToArray()),
+            }.Concat(TankAntiMagicThirdRungs()).Concat(TankFourthAntiMagicRungs()).ToArray()),
 
         // Defensive Wall — the tank's panic button: enormous P.Def & M.Def (flat + ×2), high
         // cancel resistance, but move speed halved, for 30s (long reuse). All channels are
@@ -390,7 +390,7 @@ public static partial class SkillCatalog
             Levels: new[]
             {
                 new SkillLevel(MpCost: 20, SpCost: 3400),
-            }.Concat(TankDefensiveWallThirdRungs()).ToArray()),
+            }.Concat(TankDefensiveWallThirdRungs()).Concat(TankFourthDefensiveWallRungs()).ToArray()),
 
         // Shield Shock — contested STUN for 9s (physical, ATK-vs-CON; bosses immune).
         // ⚠ RENAMED AND RETUNED IN HIS TANK PASS: it was "Shield Stun", a single level-28 skill on a
@@ -408,7 +408,7 @@ public static partial class SkillCatalog
                 new SkillLevel(MpCost: 18, SpCost: 12000),
                 new SkillLevel(MpCost: 22, SpCost: 22000),
                 new SkillLevel(MpCost: 26, SpCost: 40000),
-            }.Concat(TankShieldShockThirdRungs()).ToArray()),
+            }.Concat(TankShieldShockThirdRungs()).Concat(TankFourthShieldShockRungs()).ToArray()),
 
         // Stay — contested ROOT (physical hold; target can still act).
         // ⚠ IT MOVED TIER in his tank pass: it was the 2nd class's single level-36 skill and is now
@@ -419,7 +419,7 @@ public static partial class SkillCatalog
             DurationTicks: 100, BuffKey: "root", Rank: 1, SharesLadderKey: true,
             Category: SkillCategory.Debuff, DebuffSchool: DebuffSchool.Physical, SpCost: 28000,
             Description: "Roots the target in place for 10s (it can still act). ATK-vs-CON; bosses immune.",
-            Levels: TankStayThirdRungs()),
+            Levels: TankStayThirdRungs().Concat(TankFourthStayRungs()).ToArray()),
 
         // ===== Rogue 2nd-class (CSV rogue 2nd) =====
 
@@ -681,7 +681,7 @@ public static partial class SkillCatalog
                     Description: "Locks a monster onto you for 1.5s and adds 5,500 to your aggro on it. It does not put you at the top for free — hold it by keeping the taunt up."),
                 new(MpCost: 0, SpCost: 40000, TauntPower: 6000,
                     Description: "Locks a monster onto you for 1.5s and adds 6,000 to your aggro on it. It does not put you at the top for free — hold it by keeping the taunt up."),
-            }.Concat(TankTauntThirdRungs()).ToArray(),
+            }.Concat(TankTauntThirdRungs()).Concat(TankFourthTauntRungs()).ToArray(),
             Description: "Locks a monster onto you briefly and adds to your aggro on it — it does not put you at the top for free."),
 
         // Lure — the ROGUE's taunt, and the tactic mob clans exist to make possible (BL-70). His

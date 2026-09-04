@@ -118,6 +118,22 @@ public record SkillDef(
     /// worst first. That ordering is the skill's identity: it is a triage button, and a full-health
     /// tank standing next to a dying one must never take his slot.</para></summary>
     int MaxTargets = 0,
+    /// <summary>A buff this skill ALSO lays on its own caster, named by the id of an ordinary
+    /// <see cref="SkillDef"/> that carries the magnitudes — the same "payload def" shape Aggravated
+    /// State's proc rungs use, and for the same reason: a buff is a bundle of magnitudes, and a
+    /// bundle needs a def to live in.
+    ///
+    /// <para>🔑 IT EXISTS FOR ONE SHAPE THE ENGINE COULD NOT EXPRESS: <b>an offensive AoE that also
+    /// buffs you</b>. His `tank 4th.csv` Tauting Wall is *"Agro enemies around … and then increasing
+    /// your: p.def +5000; m.def +4500; buff cancel resist x1.8; ms x0.20"* — one skill, two halves,
+    /// and <c>TargetMode.EnemiesInRadius</c> RETURNS from ExecuteSkill after its sweep, so the buff
+    /// arm eighty lines below it never runs. Rather than teach that branch to fall through (which
+    /// would give every boss slam a buff arm to skip), the caster's half is named here and applied
+    /// inside the sweep.</para>
+    ///
+    /// <para>⚠ The payload is applied at the SAME rung index as the parent, so a laddered self-buff
+    /// needs the same number of <see cref="SkillLevel"/>s. Today's one user has a single rung.</para></summary>
+    string? SelfBuff = null,
     /// <summary>Percentage POINTS the heal loses for each successive target, once they are ordered
     /// worst-first by <see cref="MaxTargets"/> (0 = every target gets the full magnitude).
     ///
@@ -1473,6 +1489,14 @@ public readonly record struct PassiveEffect(
     // reflects u get the debuff"*. Rolled before the land/fizzle contest; a reflected debuff is
     // not re-rolled and cannot bounce a second time.
     float DebuffReflectChance = 0f,
+    // …AND THE SAME THING PER SCHOOL (`tank 4th.csv`, 2026-09-04). His Backlash split in two at the
+    // 4th tier and each half now reflects the two schools at DIFFERENT rates — Physical Backlash is
+    // *"10% chance that a CON debuff and 5% chance for SPT debuff cast at you lands on its caster
+    // instead"*, Magical Backlash is the mirror. One number could not carry that.
+    // ⚠ THE BLANKET FIELD ABOVE STILL MEANS "EITHER SCHOOL" and is folded into BOTH accumulators, so
+    // a piece of gear or a future passive that reflects everything needs no per-school authoring.
+    // Each channel takes the MAX across passives, like every other guarantee in this record.
+    float DebuffReflectPhysChance = 0f, float DebuffReflectMagicChance = 0f,
     // ---- 4th TIER (2026-08-26) -------------------------------------------------------------------
     // CONTROL RESISTANCE, PER SCHOOL, as a PASSIVE. The buff side of this already existed on SkillDef
     // (the healer's Clarity/Fortitude); his `shared 4th.csv` needs the same two numbers on an always-on
