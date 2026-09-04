@@ -474,18 +474,15 @@ public static partial class SkillCatalog
                 new SkillLevel(MpCost: 80,  SpCost: 38000,
                     ChildBuffs: new[] { Rung(FamFrenzy, 2) },
                     Description: "−10% Max HP/MP, +8% offence and speed, +8 move, −8 evasion."),
-                new SkillLevel(MpCost: 145,  SpCost: 50000,
-                    ChildBuffs: new[] { Rung(FamFrenzy, 3) },
-                    Description: "−22% Max HP/MP, +6% offence and speed, +6 move, −8 evasion."),
-                new SkillLevel(MpCost: 155,  SpCost: 50000,
-                    ChildBuffs: new[] { Rung(FamFrenzy, 4) },
-                    Description: "−18% Max HP/MP, +7% offence and speed, +7 move, −8 evasion."),
-                new SkillLevel(MpCost: 165,  SpCost: 100000,
-                    ChildBuffs: new[] { Rung(FamFrenzy, 5) },
-                    Description: "−14% Max HP/MP, +7% offence and speed, +7 move, −8 evasion."),
-                new SkillLevel(MpCost: 175,  SpCost: 100000,
-                    ChildBuffs: new[] { Rung(FamFrenzy, 6) },
-                    Description: "−10% Max HP/MP, +8% offence and speed, +8 move, −8 evasion."),
+                // 🔑🔑 LEVELS 3-6 WERE DELETED HERE on 2026-09-04 — his ruling, *"frenzy have only 2
+                // rungs … just remove the weird frenzy ladder and fix it"*. They pointed at ladder
+                // rungs 3-6, which were OURS and not his: rung 3 was strictly WORSE than rung 2 (+6%
+                // for −22% Max HP/MP against +8% for −10%) yet outranked it, and rung 6 was rung 2's
+                // numbers again under a higher index.
+                // ⚠ NOTHING COULD REACH THEM: the only two class-table entries are cleric @35 (level 1)
+                // and healer + buffer @52 (level 2), which are exactly his `cleric 2nd.csv` and
+                // `healer 3rd.csv` rows. The four levels below level 3 were unlearnable content that
+                // existed only to be quoted wrongly by the skill card.
             }),
 
         // ===== SHIELD BLESS AND HARDEN — the shield group (`buffer 3rd.csv` @66, owner 2026-08-19) ==

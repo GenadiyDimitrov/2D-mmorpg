@@ -402,7 +402,9 @@ public static partial class SkillCatalog
         // Frenzy — a reckless trade-off buff, and the one family whose rung is a whole buff rather
         // than one stat. INCLUDED in the full set (it's a FULL buffer); a player who doesn't want
         // the -10% Max HP/MP can just cancel this one buff.
-        NpcSingle(NpcFrenzy, "Frenzy", Rung(FamFrenzy, 6), SkillEffect.BuffPhysAtk,
+        // ⚠ RUNG 2, NOT 6 (2026-09-04). The family was cut to two rungs on his ruling and rung 6 was
+        // byte-for-byte identical to rung 2, so this hands out exactly the numbers it always did.
+        NpcSingle(NpcFrenzy, "Frenzy", Rung(FamFrenzy, 2), SkillEffect.BuffPhysAtk,
             "-10% Max HP/MP but +8% P.Atk / +8% M.Atk / +8% atk & cast speed / +8 move / -8 evasion"),
 
         // ----- The three original "Harmony" blessings MOVED OUT on 2026-08-21 -----

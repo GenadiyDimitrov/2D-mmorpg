@@ -145,7 +145,7 @@ not apply the way it does to the table above.
 | Force Potion (Lesser) | Common | Potion | Force — +15% M.Atk | 1 | 20 min | vendor (Apothecary), vendor (Apothecary), vendor (Apothecary), vendor (Apothecary), vendor (Apothecary), craft | Consumable | yes |
 | Force Potion | Uncommon | Potion | Force — +25% M.Atk | 2 | 20 min | craft | Consumable | yes |
 | Scroll of Force | Rare | Scroll | Force — +32% M.Atk | 4 | 60 min | craft, box (Blessing Box) | Consumable | yes |
-| Scroll of Frenzy | Rare | Scroll | Frenzy — −10% Max HP/MP, +8% P.Atk / M.Atk / attack & cast speed, +8 Move Speed, −8 Evasion | 6 | 60 min | craft, box (Blessing Box) | Consumable | yes |
+| Scroll of Frenzy | Rare | Scroll | Frenzy — −10% Max HP/MP, +8% P.Atk / M.Atk / attack & cast speed, +8 Move Speed, −8 Evasion | 2 | 60 min | craft, box (Blessing Box) | Consumable | yes |
 | Fury Potion (Lesser) | Common | Potion | Fury — +15% Attack Speed | 1 | 20 min | vendor (Apothecary), vendor (Apothecary), vendor (Apothecary), vendor (Apothecary), vendor (Apothecary), craft, drop | Consumable | yes |
 | Fury Potion | Uncommon | Potion | Fury — +23% Attack Speed | 2 | 20 min | craft, drop | Consumable | yes |
 | Scroll of Fury | Rare | Scroll | Fury — +33% Attack Speed | 3 | 60 min | craft, box (Blessing Box) | Consumable | yes |

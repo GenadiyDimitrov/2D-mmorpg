@@ -131,6 +131,9 @@ public static partial class SkillCatalog
     public const string ScrFocusE = "scr_crit_e", ScrFocusL = "scr_crit_l", ScrFocusM = "scr_crit_m";
     public const string ScrFerocityE = "scr_critdmg_e", ScrFerocityL = "scr_critdmg_l", ScrFerocityM = "scr_critdmg_m";
     public const string ScrInsightE = "scr_mcrit_e", ScrInsightL = "scr_mcrit_l", ScrInsightM = "scr_mcrit_m";
+    // ⚠ `ScrFrenzyL` IS RETIRED (2026-09-04) — the Frenzy family is two rungs, so there is no middle
+    // scroll to point at. The const stays because ids are append-only and it must never be reused for
+    // something else; nothing registers a def for it and no item names it. See the scroll block below.
     public const string ScrFrenzyE = "scr_frenzy_e", ScrFrenzyL = "scr_frenzy_l", ScrFrenzyM = "scr_frenzy_m";
     // `BL-149` — the two families that had no consumable at all. Top rung only (5 and 7, not 6):
     // there is no Superior/Grand of either, because the box is the only thing that hands them out.
@@ -376,35 +379,24 @@ public static partial class SkillCatalog
         // the frenzy"*. ⚠ Copying an IG percentage straight into a magic buff DOUBLES it. Force was
         // converted; Frenzy was missed, and rung 1 sat at −30% Max HP/MP for a +5% return.
         //
-        // ⚠ RUNGS 3-7 BELOW ARE OURS and are now OUT OF LINE with these two — rung 3 gives +6% for −22%
-        // Max HP/MP, which is strictly worse than rung 2's +8% for −10%. That is not academic: a buffer
-        // learns rung 3 at 62, and ApplyBuff replaces on rank ≥ rank, so the weaker buff EVICTS the
-        // stronger one he had at 52. Left as-is rather than invented over (they are also the three
-        // Frenzy SCROLLS, ranks 2/4/6) — see the note in the CHANGELOG. His call.
+        // 🔑🔑 THE LADDER IS TWO RUNGS AND STOPS — his ruling, 2026-09-04: *"frenzy have only 2 rungs …
+        // just remove the weird frenzy ladder and fix it"*. Rungs 3-7 USED TO SIT HERE and were OURS,
+        // not his: rung 3 gave +6% for −22% Max HP/MP, strictly worse than rung 2's +8% for −10%, and
+        // rung 6 was byte-for-byte IDENTICAL to rung 2. Since `ApplyBuff` replaces on rank ≥ rank, a
+        // buffer reaching rung 3 would have had the WEAKER buff evict the stronger one he already wore.
+        //
+        // 🔑 They were also unreachable, which is what made the cut safe: NO class table grants
+        // `holy_frenzy` above level 2 (cleric @35 = rung 1, healer + buffer @52 = rung 2), only ONE
+        // Frenzy scroll ITEM exists (it now points at rung 2, whose numbers are what rung 6 gave, so
+        // nothing a player can see changed), and War Frenzy already handed out rung 2.
+        //
+        // ⚠ DO NOT REINVENT A LADDER HERE FOR THE SCRIBE. He ruled that too, in the same breath:
+        // *"I see no point in scribe having buffs that don't exist … He make scrolls at lvl that
+        // buffers have or sooner"*. A scroll may only hand out a rung a BUFFER can cast. If crafting
+        // ever wants more Frenzy steps, the buffer's ladder grows first and the scrolls follow it —
+        // never the other way round.
         list.Add(FrenzyRung(1, 0.07f, 0.05f, 5, eva: 5));
         list.Add(FrenzyRung(2, 0.10f, 0.08f, 8, eva: 8));
-        list.Add(FrenzyRung(3, 0.22f, 0.06f, 6));
-        list.Add(FrenzyRung(4, 0.18f, 0.07f, 7));
-        list.Add(FrenzyRung(5, 0.14f, 0.07f, 7));
-        list.Add(FrenzyRung(6, 0.10f, 0.08f, 8));
-        // Rung 7 — the TOP of the family. ⚠ NOTHING HANDS IT OUT ANY MORE: it was invented for `Madness`
-        // at level 76, and on 2026-08-21 that skill became `War Frenzy` at 56 handing out RUNG 2 (his
-        // row). A ladder may carry a rung no CSV names — Resolve does too — but do not read this as
-        // live content. Nothing
-        // else in the game reaches it: no potion, no scroll, no NPC buffer, and no single-target
-        // Frenzy. It is the party cast's whole reward for being a level-76 skill.
-        //
-        // ⚠ ONE number here is mine and it is flagged so he can move it in one line. The penalty
-        // stride is HIS and is perfectly regular (−0.04 a rung: .30 .26 .22 .18 .14 .10), so 0.06
-        // is simply the next one. The GAIN is where his ladder is ambiguous — it steps +0.01 on the
-        // EVEN rungs (2→.06, 4→.07, 6→.08), which would leave rung 7 at .08 and make the top rung
-        // differ from the one below it by the penalty alone. For a skill gated at 76 that reads as
-        // no reward at all, so the step is taken here: +9% and +9 move. If he wants the strict even-
-        // rung reading, this line becomes FrenzyRung(7, 0.06f, 0.08f, 8).
-        //
-        // The −8 evasion does NOT move, on his own rule: it is the buff's identity (recklessness),
-        // not a number you buy your way out of.
-        list.Add(FrenzyRung(7, 0.06f, 0.09f, 9));
 
         // ===== The consumables =====
         // Potion + scroll pairs. Same rung, same buff; the scroll just lasts an hour instead of
@@ -452,11 +444,20 @@ public static partial class SkillCatalog
         ScrollTrio(ScrInsightE, ScrInsightL, ScrInsightM, "Insight", FamMagCrit, SkillEffect.BuffMagicCritRate, "magic critical rate", 0.35f, 0.65f, 1.00f);
 
         // Frenzy's scroll can't use ScrollTrio — its rung is a whole buff, not one number.
-        list.Add(Scroll(ScrFrenzyE, "Scroll of Frenzy (Superior)", Rung(FamFrenzy, 2),
-            SkillEffect.BuffPhysAtk, "−26% Max HP/MP but +6% offence and speed"));
-        list.Add(Scroll(ScrFrenzyL, "Scroll of Frenzy (Grand)", Rung(FamFrenzy, 4),
-            SkillEffect.BuffPhysAtk, "−18% Max HP/MP but +7% offence and speed"));
-        list.Add(Scroll(ScrFrenzyM, "Scroll of Frenzy (Supreme)", Rung(FamFrenzy, 6),
+        //
+        // 🔑 TWO SCROLLS, NOT THREE, since 2026-09-04 — the family is two rungs (see the ladder above)
+        // and his rule is that a scroll may only carry a buff that EXISTS: *"I see no point in scribe
+        // having buffs that don't exist … He make scrolls at lvl that buffers have or sooner"*. So the
+        // scrolls mirror the buffer's two rungs exactly and there is no middle step to invent.
+        // ⚠ Their DESCRIPTIONS were both stale before this: the "Superior" text said −26%/+6% while
+        // pointing at rung 2 (−10%/+8%), and "Supreme" pointed at rung 6, which was rung 2's numbers
+        // under another index. Read the rung, never the sentence.
+        // ⚠ `ScrFrenzyM` KEEPS ITS ID because it is the one with an ITEM (`ItemCatalog.FrenzyScrollM`,
+        // "Scroll of Frenzy"), and it keeps handing out the family's TOP rung — which is what it did
+        // before, at identical numbers. Nothing a player can obtain changed.
+        list.Add(Scroll(ScrFrenzyE, "Scroll of Frenzy (Lesser)", Rung(FamFrenzy, 1),
+            SkillEffect.BuffPhysAtk, "−7% Max HP/MP but +5% offence and speed"));
+        list.Add(Scroll(ScrFrenzyM, "Scroll of Frenzy", Rung(FamFrenzy, 2),
             SkillEffect.BuffPhysAtk, "−10% Max HP/MP but +8% offence and speed"));
 
         // ----- VAMPIRISM and RESOLVE get a scroll, `BL-149` (owner, 2026-09-03: *"vamp and resolve

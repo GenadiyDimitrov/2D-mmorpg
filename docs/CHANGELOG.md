@@ -12,7 +12,58 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-04 (latest) — 0.110.3: his tank Shield Mastery / MP delta, and the bow-resist ladder
+## 2026-09-04 (latest) — the NPC-buffer design pass, and the Frenzy ladder cut to two rungs
+
+**No version bump: the wire protocol did not move and nothing a player can obtain changed**, so no new
+APK is owed for this entry.
+
+### The Frenzy ladder is two rungs (his ruling)
+
+*"frenzy have only 2 rungs .. If u want a ladder for scribe make 35 frenzy L1 and 52 frenzy L6 and do
+ladder between ... But I see no point in scribe having buffs that don't exist ... He make scrolls at lvl
+that buffers have or sooner ... But the crafting is not yet finished so just remove the weird frenzy
+ladder and fix it. The box gives max so.."*
+
+Found while verifying his `buffs.csv` rung values for `BL-158`. `FamFrenzy` carried **seven** rungs, of
+which only the first two were ever his (`cleric 2nd.csv` @35 = rung 1, `healer 3rd.csv` @52 = rung 2).
+Rungs 3-7 were ours and were incoherent: **rung 3 gave +6% offence for −22% Max HP/MP — strictly worse
+than rung 2's +8% for −10% — yet outranked it**, so `ApplyBuff`'s replace-on-rank-≥-rank would have let
+the weaker buff evict the stronger. **Rung 6 was byte-for-byte identical to rung 2.** The three Frenzy
+scrolls sat on rungs 2/4/6, which made the *Grand* scroll worse than the *Superior* one and the
+*Supreme* equal to it.
+
+🔑 **The cut was safe because none of it was reachable.** No class table grants `holy_frenzy` above
+level 2; only ONE Frenzy scroll ITEM exists (`scroll_frenzy_m`); War Frenzy already handed out rung 2.
+
+- `Skills.BuffLadders.cs` — rungs 3-7 deleted. Two rungs remain, both his, verbatim.
+- `Skills.Healer.cs` — `holy_frenzy` levels 3-6 deleted (they pointed at the dead rungs and existed
+  only to be quoted wrongly by the skill card).
+- `Skills.Buffer.cs` — the NPC's Frenzy now names rung **2** instead of rung 6. **Identical numbers.**
+- The scrolls are **two, not three**, mirroring the buffer's two rungs on his rule that a scroll may
+  only carry a buff that exists. `ScrFrenzyM` keeps its id and its item ("Scroll of Frenzy") and still
+  hands out the family's top rung, at the numbers it always gave. `ScrFrenzyE` becomes the Lesser
+  scroll at rung 1; `ScrFrenzyL` is retired, its const kept because ids are append-only.
+  ⚠ Both scroll DESCRIPTIONS were already stale — "Superior" claimed −26%/+6% while pointing at rung 2.
+- `docs/data/BuffConsumables.md` — the Scroll of Frenzy's rung column corrected 6 → 2.
+
+`dotnet build` clean; `SkillCsvSeed --check` reports **no discrepancies**.
+
+### `BL-158`…`BL-162` — the NPC buffer levels up with you (DESIGNED, not built)
+
+His idea, to *"help single players that dont want to spend time in party and or lvl up a buffer"*, is
+written up in [Backlog.md](Backlog.md) against his new `docs/data/classes_skills_csv/buffs.csv`: the
+shelf hands out the rung a same-level buffer would have (`BL-158`), the level-75 ceiling goes
+(`BL-159`, reversing half of `BL-150`), eight new NPC single harmonies at 50k (`BL-160`), the three
+Marks at 78/300k (`BL-161`), and Swift joins the Mage preset (`BL-162`). All five are ready to build.
+
+Three findings that shrank the work, recorded in `BL-158` because they will be needed again:
+`npc_might` is a **one-child wrapper** and the real family rung already lands (`cast_atk_phys` is not an
+engine id at all); `ApplyBuff` already takes level + duration + source overrides and
+`def.ChildBuffsAt(level)` lets one wrapper carry a different child per rung; and **all 30 of his
+authored rung values already exist** in `Skills.BuffLadders.cs`, so the CSV describes the shipped
+ladders rather than proposing new ones.
+
+## 2026-09-04 — 0.110.3: his tank Shield Mastery / MP delta, and the bow-resist ladder
 
 His ask: *"fix the tank 2nd and 3rd mp and sheield mastery rungs .. and create a bow resistance"*.
 The sheets had been committed the same morning (`dc0020e`) as a restore point with the code

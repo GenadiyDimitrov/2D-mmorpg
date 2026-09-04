@@ -20,28 +20,47 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 77,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +134 and M.Res +20%;",0,11kk,1kk
 78,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +136 and M.Res +20%;",0,16kk,1kk
 79,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +138 and M.Res +20%;",0,80kk,1kk
-80,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +140 and M.Res +20%;",0,0,5kk
-81,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +142 and M.Res +20%;",0,0,7.5kk
-82,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +144 and M.Res +20%;",0,0,10kk
-83,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +146 and M.Res +20%;",0,0,15kk
-84,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +148 and M.Res +20%;",0,0,30kk
-85,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +150 and M.Res +20%;",0,0,50kk
-86,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +152 and M.Res +20%;",0,0,75kk
-87,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +154 and M.Res +20%;",0,0,100kk
-88,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +156 and M.Res +20%;",0,0,100kk
-89,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +158 and M.Res +20%;",0,0,100kk
-90,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +160 and M.Res +20%;",0,0,100kk
+80,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +140 and M.Res +20%; Twice more chance magic to fail against you",0,0,5kk
+81,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +142 and M.Res +20%; Twice more chance magic to fail against you",0,0,7.5kk
+82,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +144 and M.Res +20%; Twice more chance magic to fail against you",0,0,10kk
+83,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +146 and M.Res +20%; Twice more chance magic to fail against you",0,0,15kk
+84,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +148 and M.Res +20%; Twice more chance magic to fail against you",0,0,30kk
+85,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +150 and M.Res +20%; Twice more chance magic to fail against you",0,0,50kk
+86,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +152 and M.Res +20%; Twice more chance magic to fail against you",0,0,75kk
+87,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +154 and M.Res +20%; Twice more chance magic to fail against you",0,0,100kk
+88,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +156 and M.Res +20%; Twice more chance magic to fail against you",0,0,100kk
+89,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +158 and M.Res +20%; Twice more chance magic to fail against you",0,0,100kk
+90,Tank Anti-Magic,tank_anti_magic,Passive,,robe,0,0,self/single,0,0,0,"increase m.def +160 and M.Res +20%; Twice more chance magic to fail against you",0,0,100kk
 ,,,,,,,,,,,,,,,,,----------------------------Whisp Mastery----------------------------
 83,Whisp Mastery,tank_whisp_mastery,Passive,,,0,0,self/single,0,0,0,"Increase the limit of active whisps to 3",0,0,15kk
+,,,,,,,,,,,,,,,,,----------------------------Backlash----------------------------
+77,Physical Backlash,backlash,Passive,,,0,0,self/single,0,0,0,"10% chance that a CON debuff and 5% chance for SPT debuff cast at you lands on its caster instead",0,6.5kk,1k,Human;Demon
+80,Physical Backlash,backlash,Passive,,,0,0,self/single,0,0,0,"20% chance that a CON debuff and 10% chance for SPT debuff cast at you lands on its caster instead",0,150kk,10kk,Human;Demon
+83,Physical Backlash,backlash,Passive,,,0,0,self/single,0,0,0,"30% chance that a CON debuff and 15% chance for SPT debuff cast at you lands on its caster instead",0,500kk,100kk,Human;Demon
+,,,,,,,,,,,,,,,,,----------------------------Backlash----------------------------
+77,Magical Backlash,backlash,Passive,,,0,0,self/single,0,0,0,"10% chance that a SPT debuff and 5% chance for CON debuff cast at you lands on its caster instead",0,6.5kk,1k,Elf
+80,Magical Backlash,backlash,Passive,,,0,0,self/single,0,0,0,"20% chance that a SPT debuff and 10% chance for CON debuff cast at you lands on its caster instead",0,150kk,10kk,Elf
+83,Magical Backlash,backlash,Passive,,,0,0,self/single,0,0,0,"30% chance that a SPT debuff and 15% chance for CON debuff cast at you lands on its caster instead",0,500kk,100kk,Elf
+,,,,,,,,,,,,,,,,,----------------------------Tauting Wall----------------------------
+80,Tauting Wall,tauting_wall,physical buff,,,800,0,enemy/aoe,0.5,600,30,"Agro enemies around - locks them onto you for 3s then leaves you 11400 aggro ahead; and then increasing your: p.def +5000; m.def +4500; buff cancel resist x1.8; ms x0.20",200,150kk,10kk
 ,,,,,,,,,,,,,,,,,----------------------------Defensive Wall----------------------------
-76,Defensive Wall,defensive_wall,pfysical buff,,,0,0,self/single,0.5,810,33,increase p.def +3900; m.def +3400; buff cancel resist x1.8; ms x0.45,50,6.5kk,1k
-78,Defensive Wall,defensive_wall,pfysical buff,,,0,0,self/single,0.5,720,36,increase p.def +4100; m.def +3600; buff cancel resist x1.8; ms x0.40,50,16kk,1kk
-80,Defensive Wall,defensive_wall,pfysical buff,,,0,0,self/single,0.5,630,39,increase p.def +4300; m.def +3800; buff cancel resist x1.8; ms x0.35,50,0,5kk
-82,Defensive Wall,defensive_wall,pfysical buff,,,0,0,self/single,0.5,540,42,increase p.def +4500; m.def +4000; buff cancel resist x1.8; ms x0.30,50,0,10kk
-84,Defensive Wall,defensive_wall,pfysical buff,,,0,0,self/single,0.5,450,45,increase p.def +4700; m.def +4200; buff cancel resist x1.8; ms x0.25,50,0,30kk
-86,Defensive Wall,defensive_wall,pfysical buff,,,0,0,self/single,0.5,360,50,increase p.def +4800; m.def +4300; buff cancel resist x1.8; ms x0.23,50,0,75kk
-88,Defensive Wall,defensive_wall,pfysical buff,,,0,0,self/single,0.5,330,55,increase p.def +4900; m.def +4400; buff cancel resist x1.8; ms x0.22,50,0,100kk
-90,Defensive Wall,defensive_wall,pfysical buff,,,0,0,self/single,0.5,300,60,increase p.def +5000; m.def +4500; buff cancel resist x1.8; ms x0.20,50,0,100kk
+76,Defensive Wall,defensive_wall,physical buff,,,0,0,self/single,0.5,810,33,increase p.def +3900; m.def +3400; buff cancel resist x1.8; ms x0.45,50,6.5kk,1k
+78,Defensive Wall,defensive_wall,physical buff,,,0,0,self/single,0.5,720,36,increase p.def +4100; m.def +3600; buff cancel resist x1.8; ms x0.40,50,16kk,1kk
+80,Defensive Wall,defensive_wall,physical buff,,,0,0,self/single,0.5,630,39,increase p.def +4300; m.def +3800; buff cancel resist x1.8; ms x0.35,50,0,5kk
+82,Defensive Wall,defensive_wall,physical buff,,,0,0,self/single,0.5,540,42,increase p.def +4500; m.def +4000; buff cancel resist x1.8; ms x0.30,50,0,10kk
+84,Defensive Wall,defensive_wall,physical buff,,,0,0,self/single,0.5,450,45,increase p.def +4700; m.def +4200; buff cancel resist x1.8; ms x0.25,50,0,30kk
+86,Defensive Wall,defensive_wall,physical buff,,,0,0,self/single,0.5,360,50,increase p.def +4800; m.def +4300; buff cancel resist x1.8; ms x0.23,50,0,75kk
+88,Defensive Wall,defensive_wall,physical buff,,,0,0,self/single,0.5,330,55,increase p.def +4900; m.def +4400; buff cancel resist x1.8; ms x0.22,50,0,100kk
+90,Defensive Wall,defensive_wall,physical buff,,,0,0,self/single,0.5,300,60,increase p.def +5000; m.def +4500; buff cancel resist x1.8; ms x0.20,50,0,100kk
+,,,,,,,,,,,,,,,,,----------------------------Magic Wall----------------------------
+76,Magic Wall,magic_wall,physical buff,,,0,0,self/single,0.5,600,30,increase m.def +4000;,50,6.5kk,1k
+78,Magic Wall,magic_wall,physical buff,,,0,0,self/single,0.5,600,30,increase m.def +4200;,50,16kk,1kk
+80,Magic Wall,magic_wall,physical buff,,,0,0,self/single,0.5,600,30,increase m.def +4400;,50,0,5kk
+82,Magic Wall,magic_wall,physical buff,,,0,0,self/single,0.5,600,30,increase m.def +4600;,50,0,10kk
+84,Magic Wall,magic_wall,physical buff,,,0,0,self/single,0.5,600,30,increase m.def +4800;,50,0,30kk
+86,Magic Wall,magic_wall,physical buff,,,0,0,self/single,0.5,600,30,increase m.def +5000;,50,0,75kk
+88,Magic Wall,magic_wall,physical buff,,,0,0,self/single,0.5,600,30,increase m.def +5500;,50,0,100kk
+90,Magic Wall,magic_wall,physical buff,,,0,0,self/single,0.5,600,30,increase m.def +6000;,50,0,100kk
 ,,,,,,,,,,,,,,,,,----------------------------Taunt----------------------------
 76,Taunt,provoke,physical active,,,800,0,enemy/single,0,6,1.5,"Agro enemy - locks it onto you for 1.5s then leaves you 12400 aggro ahead;",0,6.5kk,1kk,Human;Demon
 78,Taunt,provoke,physical active,,,800,0,enemy/single,0,6,1.5,"Agro enemy - locks it onto you for 1.5s then leaves you 13200 aggro ahead;",0,16kk,1kk,Human;Demon
@@ -123,74 +142,93 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 86,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7);",153,0,75kk
 88,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7);",159,0,100kk
 90,Shield Shock,tank_shield_stun,physical active,,,40,0,enemy/single,1,3,9,"Stun the enemy for the duration (sucsess: x0.7);",165,0,100kk
+,,,,,,,,,,,,,,,,,----------------------------Numbing Shock----------------------------
+76,Numbing Shock,tank_silence_physical,Physical/Debuff,,,40,0,enemy/single,2,6,5,"PHYSICAL SILENCE: the target's physical skills fail for the duration. (sucsess: x0.5);",123,6.5kk,1kk,Human;Demon,,Its BASIC ATTACK still works. Contested ATK vs CON.
+78,Numbing Shock,tank_silence_physical,Physical/Debuff,,,40,0,enemy/single,2,6,5,"PHYSICAL SILENCE: the target's physical skills fail for the duration. (sucsess: x0.5);",129,16kk,1kk,Human;Demon
+80,Numbing Shock,tank_silence_physical,Physical/Debuff,,,40,0,enemy/single,2,6,5,"PHYSICAL SILENCE: the target's physical skills fail for the duration. (sucsess: x0.5);",135,0,5kk,Human;Demon
+82,Numbing Shock,tank_silence_physical,Physical/Debuff,,,40,0,enemy/single,2,6,5,"PHYSICAL SILENCE: the target's physical skills fail for the duration. (sucsess: x0.5);",141,0,10kk,Human;Demon
+84,Numbing Shock,tank_silence_physical,Physical/Debuff,,,40,0,enemy/single,2,6,5,"PHYSICAL SILENCE: the target's physical skills fail for the duration. (sucsess: x0.5);",147,0,30kk,Human;Demon
+86,Numbing Shock,tank_silence_physical,Physical/Debuff,,,40,0,enemy/single,2,6,5,"PHYSICAL SILENCE: the target's physical skills fail for the duration. (sucsess: x0.5);",153,0,75kk,Human;Demon
+88,Numbing Shock,tank_silence_physical,Physical/Debuff,,,40,0,enemy/single,2,6,5,"PHYSICAL SILENCE: the target's physical skills fail for the duration. (sucsess: x0.5);",159,0,100kk,Human;Demon
+90,Numbing Shock,tank_silence_physical,Physical/Debuff,,,40,0,enemy/single,2,6,5,"PHYSICAL SILENCE: the target's physical skills fail for the duration. (sucsess: x0.5);",165,0,100kk,Human;Demon
+,,,,,,,,,,,,,,,,,----------------------------Silencing Shock----------------------------
+76,Silencing Shock,tank_shield_stun,Magical/Debuff,,,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7);",123,6.5kk,1kk,Elf,, Land this AND a physical silence and the target is FULLY silenced. Contested ATK vs SPT.
+78,Silencing Shock,tank_shield_stun,Magical/Debuff,,,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7);",129,16kk,1kk,Elf
+80,Silencing Shock,tank_shield_stun,Magical/Debuff,,,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7);",135,0,5kk,Elf
+82,Silencing Shock,tank_shield_stun,Magical/Debuff,,,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7);",141,0,10kk,Elf
+84,Silencing Shock,tank_shield_stun,Magical/Debuff,,,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7);",147,0,30kk,Elf
+86,Silencing Shock,tank_shield_stun,Magical/Debuff,,,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7);",153,0,75kk,Elf
+88,Silencing Shock,tank_shield_stun,Magical/Debuff,,,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7);",159,0,100kk,Elf
+90,Silencing Shock,tank_shield_stun,Magical/Debuff,,,150,0,enemy/single,1.5,6,10,"MAGICAL SILENCE: the target's magical skills fail for the duration. (sucsess: x0.7);",165,0,100kk,Elf
+,,,,,,,,,,,,,,,,,----------------------------Grapple----------------------------
+76,Grapple,tank_pull,Physical/Debuff,,,600,0,enemy/single,0.5,15,1,"Power 2100. Drags the target to you over 1.2s, hits it and stuns it for 1s on arrival.;",123,6.5kk,1kk,,,"it cannot act or steer on the way, ONE CON contest covers the drag and the stun. A NORMAL damage skill — it builds threat only through the damage it deals, so it is auto-castable. Boss immune; works on players."
+78,Grapple,tank_pull,Physical/Debuff,,,600,0,enemy/single,0.5,15,1,"Power 2300. Drags the target to you over 1.2s, hits it and stuns it for 1s on arrival.;",129,16kk,1kk
+80,Grapple,tank_pull,Physical/Debuff,,,600,0,enemy/single,0.5,15,1,"Power 2500. Drags the target to you over 1.2s, hits it and stuns it for 1s on arrival.;",135,0,5kk
+82,Grapple,tank_pull,Physical/Debuff,,,600,0,enemy/single,0.5,15,1,"Power 2700. Drags the target to you over 1.2s, hits it and stuns it for 1s on arrival.;",141,0,10kk
+84,Grapple,tank_pull,Physical/Debuff,,,600,0,enemy/single,0.5,15,1,"Power 2900. Drags the target to you over 1.2s, hits it and stuns it for 1s on arrival.;",147,0,30kk
+86,Grapple,tank_pull,Physical/Debuff,,,600,0,enemy/single,0.5,15,1,"Power 3100. Drags the target to you over 1.2s, hits it and stuns it for 1s on arrival.;",153,0,75kk
+88,Grapple,tank_pull,Physical/Debuff,,,600,0,enemy/single,0.5,15,1,"Power 3300. Drags the target to you over 1.2s, hits it and stuns it for 1s on arrival.;",159,0,100kk
+90,Grapple,tank_pull,Physical/Debuff,,,600,0,enemy/single,0.5,15,1,"Power 3500. Drags the target to you over 1.2s, hits it and stuns it for 1s on arrival.;",165,0,100kk
 ,,,,,,,,,,,,,,,,,----------------------------Undying Will----------------------------
 83,Undying Will,undying_will,Magic/Buff,,,0,0,self/single,1,3600,3600,"You DIE normally and keep your buffs, then choose when to rise where you fell at 30% HP and MP, losing NO experience — the offer waits as long as you like. Lasts 60 minutes or until it saves you. 60 minute reuse., Consume 2 physical stones",300,500kk,100kk,
-
-
-
-
-,,,,,,,,,,,,,,,,,----------------------------NOT DONE----------------------------
-,,,,,,,,,,,,,,,,,----------------------------Backlash----------------------------
-76,Backlash,backlash,Passive,,,0,0,self/single,0,0,0,"30% chance that a debuff cast at you lands on its caster instead - auto-granted at the 4th class change so SP is 0",0,0,[]
-,,,,,,,,,,,,,,,,,----------------------------Pull + Silence (BL-154 / BL-155) — PLACEHOLDER NUMBERS, YOURS TO FIX----------------------------
-76,Grapple,tank_pull,Physical/Debuff,,,600,0,enemy/single,0.5,15,1,"Power 3000. Drags the target to you over 1.2s (it cannot act or steer on the way), hits it and stuns it for 1s on arrival. ONE CON contest covers the drag and the stun. A NORMAL damage skill — it builds threat only through the damage it deals, so it is auto-castable. Boss immune; works on players.",80,100k,[],
-76,Numbing Strike,tank_silence_physical,Physical/Debuff,,,400,0,enemy/single,0.5,30,8,"PHYSICAL SILENCE: the target's physical skills fail for the duration. Its BASIC ATTACK still works. Contested ATK vs CON.",70,100k,[],Human;Demon
-76,Silencing Ward,tank_silence_magical,Magical/Debuff,,,600,0,enemy/single,1.5,30,8,"MAGICAL SILENCE: the target's magical skills fail for the duration. Land this AND a physical silence and the target is FULLY silenced. Contested ATK vs SPT.",70,100k,[],Elf
-
-
-
-
-,,,,,,,,,,,,,,,,,----------------------------Taunting Whisps----------------------------
-40,Taunting Whisp,tank_whisp_taunt,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 12400), Consumes 4 skill stones",50,28,,Human,uses whisp_provoke
-46,Taunting Whisp,tank_whisp_taunt,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 13200); Consumes 4 skill stones",54,40,,Human,uses whisp_provoke
-52,Taunting Whisp,tank_whisp_taunt,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 14000); Consumes 4 skill stones",58,74,,Human,uses whisp_provoke
-58,Taunting Whisp,tank_whisp_taunt,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 14800); Consumes 4 skill stones",66,88,,Human,uses whisp_provoke
-62,Taunting Whisp,tank_whisp_taunt,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 15600); Consumes 4 skill stones",76,170,,Human,uses whisp_provoke
-66,Taunting Whisp,tank_whisp_taunt,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 16400); Consumes 4 skill stones",84,280,,Human,uses whisp_provoke
-70,Taunting Whisp,tank_whisp_taunt,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 17200); Consumes 4 skill stones",92,390,,Human,uses whisp_provoke
-74,Taunting Whisp,tank_whisp_taunt,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 18000); Consumes 4 skill stones",100,880,,Human,uses whisp_provoke
-,,,,,,,,,,,,,,,,,----------------------------Binding Whisps----------------------------
-43,Binding Whisp,tank_whisp_bind,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones",50,35,,Human,uses whisp_bind
-49,Binding Whisp,tank_whisp_bind,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones",54,50,,Human,uses whisp_bind
-55,Binding Whisp,tank_whisp_bind,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones",58,81,,Human,uses whisp_bind
-60,Binding Whisp,tank_whisp_bind,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones",66,120,,Human,uses whisp_bind
-64,Binding Whisp,tank_whisp_bind,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones",76,190,,Human,uses whisp_bind
-68,Binding Whisp,tank_whisp_bind,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones",84,320,,Human,uses whisp_bind
-72,Binding Whisp,tank_whisp_bind,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones",92,650,,Human,uses whisp_bind
-74,Binding Whisp,tank_whisp_bind,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones",100,880,,Human,uses whisp_bind
-,,,,,,,,,,,,,,,,,----------------------------Charming Whisps----------------------------
-40,Charming Whisp,tank_whisp_charm,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 6500), Consumes 4 skill stones",50,28,,Elf,uses whisp_charm
-46,Charming Whisp,tank_whisp_charm,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 7500); Consumes 4 skill stones",54,40,,Elf,uses whisp_charm
-52,Charming Whisp,tank_whisp_charm,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 8500); Consumes 4 skill stones",58,74,,Elf,uses whisp_charm
-58,Charming Whisp,tank_whisp_charm,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 9500); Consumes 4 skill stones",66,88,,Elf,uses whisp_charm
-62,Charming Whisp,tank_whisp_charm,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 10500); Consumes 4 skill stones",76,170,,Elf,uses whisp_provoke
-66,Charming Whisp,tank_whisp_charm,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 11200); Consumes 4 skill stones",84,280,,Elf,uses whisp_provoke
-70,Charming Whisp,tank_whisp_charm,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 11600); Consumes 4 skill stones",92,390,,Elf,uses whisp_provoke
-74,Charming Whisp,tank_whisp_charm,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 12000); Consumes 4 skill stones",100,880,,Elf,uses whisp_provoke
-,,,,,,,,,,,,,,,,,----------------------------Healing Whisps----------------------------
-43,Healing Whisp,tank_whisp_heal,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 250); Consumes 4 skill stones",50,35,,Elf,uses whisp_heal and whisp_quick_heal
-49,Healing Whisp,tank_whisp_heal,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 320); Consumes 4 skill stones",54,50,,Elf,uses whisp_heal and whisp_quick_heal
-55,Healing Whisp,tank_whisp_heal,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 390); Consumes 4 skill stones",58,81,,Elf,uses whisp_heal and whisp_quick_heal
-60,Healing Whisp,tank_whisp_heal,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 460); Consumes 4 skill stones",66,120,,Elf,uses whisp_heal and whisp_quick_heal
-64,Healing Whisp,tank_whisp_heal,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 530); Consumes 4 skill stones",76,190,,Elf,uses whisp_heal and whisp_quick_heal
-68,Healing Whisp,tank_whisp_heal,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 600); Consumes 4 skill stones",84,320,,Elf,uses whisp_heal and whisp_quick_heal
-72,Healing Whisp,tank_whisp_heal,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 670); Consumes 4 skill stones",92,650,,Elf,uses whisp_heal and whisp_quick_heal
-74,Healing Whisp,tank_whisp_heal,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 740); Consumes 4 skill stones",100,880,,Elf,uses whisp_heal and whisp_quick_heal
-,,,,,,,,,,,,,,,,,----------------------------Armor Breaking Whisps----------------------------
-40,Armor Breaking Whisp,tank_whisp_armor_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 10% and MDef by 5%); Consumes 4 skill stones", 50, 28,,Human,uses whisp_armor_break
-46,Armor Breaking Whisp,tank_whisp_armor_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 12% and MDef by 6%); Consumes 4 skill stones", 54, 40,,Human,uses whisp_armor_break
-52,Armor Breaking Whisp,tank_whisp_armor_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 14% and MDef by 7%); Consumes 4 skill stones", 58, 74,,Human,uses whisp_armor_break
-58,Armor Breaking Whisp,tank_whisp_armor_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 16% and MDef by 8%); Consumes 4 skill stones", 66, 88,,Human,uses whisp_armor_break
-62,Armor Breaking Whisp,tank_whisp_armor_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 18% and MDef by 9%); Consumes 4 skill stones", 76,170,,Human,uses whisp_armor_break
-66,Armor Breaking Whisp,tank_whisp_armor_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 22% and MDef by 11%); Consumes 4 skill stones", 84,280,,Human,uses whisp_armor_break
-70,Armor Breaking Whisp,tank_whisp_armor_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 26% and MDef by 13%); Consumes 4 skill stones", 92,390,,Human,uses whisp_armor_break
-74,Armor Breaking Whisp,tank_whisp_armor_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 30% and MDef by 15%); Consumes 4 skill stones",100,880,,Human,uses whisp_armor_break
-,,,,,,,,,,,,,,,,,----------------------------Weapon Breaking Whisps----------------------------
-43,Weapon Breaking Whisp,tank_whisp_weapon_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 5%); Consumes 4 skill stones",50,35,,Human,uses whisp_weapon_break
-49,Weapon Breaking Whisp,tank_whisp_weapon_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 6%); Consumes 4 skill stones",54,50,,Human,uses whisp_weapon_break
-55,Weapon Breaking Whisp,tank_whisp_weapon_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 7%); Consumes 4 skill stones",58,81,,Human,uses whisp_weapon_break
-60,Weapon Breaking Whisp,tank_whisp_weapon_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 8%); Consumes 4 skill stones",66,120,,Human,uses whisp_weapon_break
-64,Weapon Breaking Whisp,tank_whisp_weapon_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 9%); Consumes 4 skill stones",76,190,,Human,uses whisp_weapon_break
-68,Weapon Breaking Whisp,tank_whisp_weapon_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 11%); Consumes 4 skill stones",84,320,,Human,uses whisp_weapon_break
-72,Weapon Breaking Whisp,tank_whisp_weapon_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 13%); Consumes 4 skill stones",92,650,,Human,uses whisp_weapon_break
-74,Weapon Breaking Whisp,tank_whisp_weapon_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 15%); Consumes 4 skill stones",100,880,,Human,uses whisp_weapon_break
+,,,,,,,,,,,,,,,,,----------------------------Taunting Whisp----------------------------
+76,Taunting Whisp,tank_whisp_taunt,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 12400), Consumes 4 skill stones;",110,6.5kk,1kk,Human
+78,Taunting Whisp,tank_whisp_taunt,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 13200), Consumes 4 skill stones;",120,16kk,1kk,Human
+80,Taunting Whisp,tank_whisp_taunt,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 14000), Consumes 4 skill stones;",130,0,5kk,Human
+82,Taunting Whisp,tank_whisp_taunt,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 14800), Consumes 4 skill stones;",140,0,10kk,Human
+84,Taunting Whisp,tank_whisp_taunt,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 15600), Consumes 4 skill stones;",150,0,30kk,Human
+86,Taunting Whisp,tank_whisp_taunt,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 16400), Consumes 4 skill stones;",160,0,75kk,Human
+88,Taunting Whisp,tank_whisp_taunt,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 17200), Consumes 4 skill stones;",180,0,100kk,Human
+90,Taunting Whisp,tank_whisp_taunt,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 18000), Consumes 4 skill stones;",200,0,100kk,Human
+,,,,,,,,,,,,,,,,,----------------------------Binding Whisp----------------------------
+77,Binding Whisp,tank_whisp_bind,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones;",110,6.5kk,1kk,Human
+79,Binding Whisp,tank_whisp_bind,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones;",120,16kk,1kk,Human
+81,Binding Whisp,tank_whisp_bind,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones;",130,0,5kk,Human
+83,Binding Whisp,tank_whisp_bind,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones;",140,0,10kk,Human
+85,Binding Whisp,tank_whisp_bind,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones;",150,0,30kk,Human
+87,Binding Whisp,tank_whisp_bind,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones;",160,0,75kk,Human
+89,Binding Whisp,tank_whisp_bind,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones;",180,0,100kk,Human
+91,Binding Whisp,tank_whisp_bind,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones;",200,0,100kk,Human
+,,,,,,,,,,,,,,,,,----------------------------Charming Whisp----------------------------
+76,Charming Whisp,tank_whisp_charm,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 12400), Consumes 4 skill stones;",110,6.5kk,1kk,Elf
+78,Charming Whisp,tank_whisp_charm,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 13200), Consumes 4 skill stones;",120,16kk,1kk,Elf
+80,Charming Whisp,tank_whisp_charm,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 14000), Consumes 4 skill stones;",130,0,5kk,Elf
+82,Charming Whisp,tank_whisp_charm,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 14800), Consumes 4 skill stones;",140,0,10kk,Elf
+84,Charming Whisp,tank_whisp_charm,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 15600), Consumes 4 skill stones;",150,0,30kk,Elf
+86,Charming Whisp,tank_whisp_charm,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 16400), Consumes 4 skill stones;",160,0,75kk,Elf
+88,Charming Whisp,tank_whisp_charm,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 17200), Consumes 4 skill stones;",180,0,100kk,Elf
+90,Charming Whisp,tank_whisp_charm,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 18000), Consumes 4 skill stones;",200,0,100kk,Elf
+,,,,,,,,,,,,,,,,,----------------------------Healing Whisp----------------------------
+77,Healing Whisp,tank_whisp_heal,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 850); Consumes 4 skill stones;",110,6.5kk,1kk,Elf
+79,Healing Whisp,tank_whisp_heal,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 900); Consumes 4 skill stones;",120,16kk,1kk,Elf
+81,Healing Whisp,tank_whisp_heal,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 950); Consumes 4 skill stones;",130,0,5kk,Elf
+83,Healing Whisp,tank_whisp_heal,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 1000); Consumes 4 skill stones;",140,0,10kk,Elf
+85,Healing Whisp,tank_whisp_heal,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 1050); Consumes 4 skill stones;",150,0,30kk,Elf
+87,Healing Whisp,tank_whisp_heal,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 1100); Consumes 4 skill stones;",160,0,75kk,Elf
+89,Healing Whisp,tank_whisp_heal,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 1150); Consumes 4 skill stones;",180,0,100kk,Elf
+91,Healing Whisp,tank_whisp_heal,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 1200); Consumes 4 skill stones;",200,0,100kk,Elf
+,,,,,,,,,,,,,,,,,----------------------------Armor Breaking Whisp----------------------------
+76,Armor Breaking Whisp,tank_whisp_armor_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 31% and MDef by 15%); Consumes 4 skill stones;",110,6.5kk,1kk,Demon
+78,Armor Breaking Whisp,tank_whisp_armor_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 32% and MDef by 16%); Consumes 4 skill stones;",120,16kk,1kk,Demon
+80,Armor Breaking Whisp,tank_whisp_armor_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 33% and MDef by 16%); Consumes 4 skill stones;",130,0,5kk,Demon
+82,Armor Breaking Whisp,tank_whisp_armor_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 34% and MDef by 17%); Consumes 4 skill stones;",140,0,10kk,Demon
+84,Armor Breaking Whisp,tank_whisp_armor_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 35% and MDef by 17%); Consumes 4 skill stones;",150,0,30kk,Demon
+86,Armor Breaking Whisp,tank_whisp_armor_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 36% and MDef by 18%); Consumes 4 skill stones;",160,0,75kk,Demon
+88,Armor Breaking Whisp,tank_whisp_armor_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 38% and MDef by 19%); Consumes 4 skill stones;",180,0,100kk,Demon
+90,Armor Breaking Whisp,tank_whisp_armor_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 40% and MDef by 20%); Consumes 4 skill stones;",200,0,100kk,Demon
+,,,,,,,,,,,,,,,,,----------------------------Weapon Breaking Whisp----------------------------
+77,Weapon Breaking Whisp,tank_whisp_weapon_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 16%); Consumes 4 skill stones",110,6.5kk,1kk,Demon
+79,Weapon Breaking Whisp,tank_whisp_weapon_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 17%); Consumes 4 skill stones",120,16kk,1kk,Demon
+81,Weapon Breaking Whisp,tank_whisp_weapon_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 18%); Consumes 4 skill stones",130,0,5kk,Demon
+83,Weapon Breaking Whisp,tank_whisp_weapon_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 19%); Consumes 4 skill stones;",140,0,10kk,Demon
+85,Weapon Breaking Whisp,tank_whisp_weapon_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 20%); Consumes 4 skill stones;",150,0,30kk,Demon
+87,Weapon Breaking Whisp,tank_whisp_weapon_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 21%); Consumes 4 skill stones;",160,0,75kk,Demon
+89,Weapon Breaking Whisp,tank_whisp_weapon_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 23%); Consumes 4 skill stones;",180,0,100kk,Demon
+91,Weapon Breaking Whisp,tank_whisp_weapon_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 25%); Consumes 4 skill stones;",200,0,100kk,Demon
+,,,,,,,,,,,,,,,,,----------------------------Perfect Whisp----------------------------
+80,Perfect Whisp,tank_whisp_help,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to help remove bad effects, heal its master (Power 900), restore mp of its master (Power 100), break armor of enemy (Deacreases P.Def by 30% and MDef by 15%), break weapon of enemy (Decreases P/M.Atk 15%), Decrease enemy Atack speed and cast speed by 23%; Consumes 4 skill stones;",130,150кк,10kk,,,uses whisp_clear; whisp_heal; whisp_quick_heal; whisp_armor_break; whisp_weapon_break; whisp_gravity;
+82,Perfect Whisp,tank_whisp_help,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to help remove bad effects, heal its master (Power 920), restore mp of its master (Power 120), break armor of enemy (Deacreases P.Def by 30% and MDef by 15%), break weapon of enemy (Decreases P/M.Atk 15%), Decrease enemy Atack speed and cast speed by 23%; Consumes 4 skill stones;",140,0,10kk
+84,Perfect Whisp,tank_whisp_help,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to help remove bad effects, heal its master (Power 940), restore mp of its master (Power 140), break armor of enemy (Deacreases P.Def by 30% and MDef by 15%), break weapon of enemy (Decreases P/M.Atk 15%), Decrease enemy Atack speed and cast speed by 23%; Consumes 4 skill stones;",150,0,30kk
+86,Perfect Whisp,tank_whisp_help,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to help remove bad effects, heal its master (Power 960), restore mp of its master (Power 160), break armor of enemy (Deacreases P.Def by 30% and MDef by 15%), break weapon of enemy (Decreases P/M.Atk 15%), Decrease enemy Atack speed and cast speed by 23%; Consumes 4 skill stones;",160,0,75kk
+88,Perfect Whisp,tank_whisp_help,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to help remove bad effects, heal its master (Power 980), restore mp of its master (Power 180), break armor of enemy (Deacreases P.Def by 30% and MDef by 15%), break weapon of enemy (Decreases P/M.Atk 15%), Decrease enemy Atack speed and cast speed by 23%; Consumes 4 skill stones;",180,0,100kk
+90,Perfect Whisp,tank_whisp_help,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to help remove bad effects, heal its master (Power 1000), restore mp of its master (Power 200), break armor of enemy (Deacreases P.Def by 30% and MDef by 15%), break weapon of enemy (Decreases P/M.Atk 15%), Decrease enemy Atack speed and cast speed by 23%; Consumes 4 skill stones;",200,0,100kk

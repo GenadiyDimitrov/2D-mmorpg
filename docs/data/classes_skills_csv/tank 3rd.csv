@@ -98,23 +98,23 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 72,Healing Whisp,tank_whisp_heal,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 670); Consumes 4 skill stones",92,650,,Elf,uses whisp_heal and whisp_quick_heal
 74,Healing Whisp,tank_whisp_heal,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 740); Consumes 4 skill stones",100,880,,Elf,uses whisp_heal and whisp_quick_heal
 ,,,,,,,,,,,,,,,,,----------------------------Armor Breaking Whisps----------------------------
-40,Armor Breaking Whisp,tank_whisp_armor_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 10% and MDef by 5%); Consumes 4 skill stones", 50, 28,,Human,uses whisp_armor_break
-46,Armor Breaking Whisp,tank_whisp_armor_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 12% and MDef by 6%); Consumes 4 skill stones", 54, 40,,Human,uses whisp_armor_break
-52,Armor Breaking Whisp,tank_whisp_armor_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 14% and MDef by 7%); Consumes 4 skill stones", 58, 74,,Human,uses whisp_armor_break
-58,Armor Breaking Whisp,tank_whisp_armor_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 16% and MDef by 8%); Consumes 4 skill stones", 66, 88,,Human,uses whisp_armor_break
-62,Armor Breaking Whisp,tank_whisp_armor_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 18% and MDef by 9%); Consumes 4 skill stones", 76,170,,Human,uses whisp_armor_break
-66,Armor Breaking Whisp,tank_whisp_armor_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 22% and MDef by 11%); Consumes 4 skill stones", 84,280,,Human,uses whisp_armor_break
-70,Armor Breaking Whisp,tank_whisp_armor_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 26% and MDef by 13%); Consumes 4 skill stones", 92,390,,Human,uses whisp_armor_break
-74,Armor Breaking Whisp,tank_whisp_armor_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 30% and MDef by 15%); Consumes 4 skill stones",100,880,,Human,uses whisp_armor_break
+40,Armor Breaking Whisp,tank_whisp_armor_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 10% and MDef by 5%); Consumes 4 skill stones", 50, 28,,Demon,uses whisp_armor_break
+46,Armor Breaking Whisp,tank_whisp_armor_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 12% and MDef by 6%); Consumes 4 skill stones", 54, 40,,Demon,uses whisp_armor_break
+52,Armor Breaking Whisp,tank_whisp_armor_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 14% and MDef by 7%); Consumes 4 skill stones", 58, 74,,Demon,uses whisp_armor_break
+58,Armor Breaking Whisp,tank_whisp_armor_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 16% and MDef by 8%); Consumes 4 skill stones", 66, 88,,Demon,uses whisp_armor_break
+62,Armor Breaking Whisp,tank_whisp_armor_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 18% and MDef by 9%); Consumes 4 skill stones", 76,170,,Demon,uses whisp_armor_break
+66,Armor Breaking Whisp,tank_whisp_armor_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 22% and MDef by 11%); Consumes 4 skill stones", 84,280,,Demon,uses whisp_armor_break
+70,Armor Breaking Whisp,tank_whisp_armor_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 26% and MDef by 13%); Consumes 4 skill stones", 92,390,,Demon,uses whisp_armor_break
+74,Armor Breaking Whisp,tank_whisp_armor_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 30% and MDef by 15%); Consumes 4 skill stones",100,880,,Demon,uses whisp_armor_break
 ,,,,,,,,,,,,,,,,,----------------------------Weapon Breaking Whisps----------------------------
-43,Weapon Breaking Whisp,tank_whisp_weapon_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 5%); Consumes 4 skill stones",50,35,,Human,uses whisp_weapon_break
-49,Weapon Breaking Whisp,tank_whisp_weapon_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 6%); Consumes 4 skill stones",54,50,,Human,uses whisp_weapon_break
-55,Weapon Breaking Whisp,tank_whisp_weapon_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 7%); Consumes 4 skill stones",58,81,,Human,uses whisp_weapon_break
-60,Weapon Breaking Whisp,tank_whisp_weapon_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 8%); Consumes 4 skill stones",66,120,,Human,uses whisp_weapon_break
-64,Weapon Breaking Whisp,tank_whisp_weapon_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 9%); Consumes 4 skill stones",76,190,,Human,uses whisp_weapon_break
-68,Weapon Breaking Whisp,tank_whisp_weapon_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 11%); Consumes 4 skill stones",84,320,,Human,uses whisp_weapon_break
-72,Weapon Breaking Whisp,tank_whisp_weapon_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 13%); Consumes 4 skill stones",92,650,,Human,uses whisp_weapon_break
-74,Weapon Breaking Whisp,tank_whisp_weapon_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 15%); Consumes 4 skill stones",100,880,,Human,uses whisp_weapon_break
+43,Weapon Breaking Whisp,tank_whisp_weapon_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 5%); Consumes 4 skill stones",50,35,,Demon,uses whisp_weapon_break
+49,Weapon Breaking Whisp,tank_whisp_weapon_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 6%); Consumes 4 skill stones",54,50,,Demon,uses whisp_weapon_break
+55,Weapon Breaking Whisp,tank_whisp_weapon_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 7%); Consumes 4 skill stones",58,81,,Demon,uses whisp_weapon_break
+60,Weapon Breaking Whisp,tank_whisp_weapon_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 8%); Consumes 4 skill stones",66,120,,Demon,uses whisp_weapon_break
+64,Weapon Breaking Whisp,tank_whisp_weapon_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 9%); Consumes 4 skill stones",76,190,,Demon,uses whisp_weapon_break
+68,Weapon Breaking Whisp,tank_whisp_weapon_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 11%); Consumes 4 skill stones",84,320,,Demon,uses whisp_weapon_break
+72,Weapon Breaking Whisp,tank_whisp_weapon_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 13%); Consumes 4 skill stones",92,650,,Demon,uses whisp_weapon_break
+74,Weapon Breaking Whisp,tank_whisp_weapon_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 15%); Consumes 4 skill stones",100,880,,Demon,uses whisp_weapon_break
 ,,,,,,,,,,,,,,,,,----------------------------Defensive Wall----------------------------
 46,Defensive Wall,defensive_wall,pfysical buff,,,0,0,self/single,0.5,900,30,increase p.def +3700; m.def +3300; buff cancel resist x1.8; ms x0.5,20,40,[]
 ,,,,,,,,,,,,,,,,,---------------------------Reinforcement----------------------------
