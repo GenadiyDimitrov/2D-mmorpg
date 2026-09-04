@@ -1,0 +1,161 @@
+NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRATION s,DESCR,Comment
+,,,,,,,,,,,,==========================SINGLE===========================
+,,,,,,,,,,,,--------------------------Might----------------------------
+Might,cast_atk_phys,Magic/Buff,,,600,0,party/single,1,1,1200,+12% P.Atk.
+Might,cast_atk_phys,Magic/Buff,,,600,0,party/single,1,1,1200,+15% P.Atk.
+,,,,,,,,,,,,--------------------------Swift----------------------------
+Swift,cast_spd_move,Magic/Buff,,,600,0,party/single,1,1,1200,+20 Move Speed.
+Swift,cast_spd_move,Magic/Buff,,,600,0,party/single,1,1,1200,+33 Move Speed.
+,,,,,,,,,,,,--------------------------Alacrity----------------------------
+Alacrity,cast_spd_cast,Magic/Buff,,,600,0,party/single,1,1,1200,+15% Cast Speed.
+Alacrity,cast_spd_cast,Magic/Buff,,,600,0,party/single,1,1,1200,+23% Cast Speed.
+,,,,,,,,,,,,--------------------------Resolve----------------------------
+Resolve,cast_interrupt,Magic/Buff,,,600,0,party/single,1,1,1200,+18% interrupt resistance.
+Resolve,cast_interrupt,Magic/Buff,,,600,0,party/single,1,1,1200,+25% interrupt resistance.
+,,,,,,,,,,,,--------------------------Bulwark----------------------------
+Bulwark,cast_def_phys,Magic/Buff,,,600,0,party/single,1,1,1200,+12% P.Def.
+,,,,,,,,,,,,--------------------------Clarity----------------------------
+Clarity,cast_cc_res_mag,Magic/Buff,,,600,0,party/single,1,1,1200,20% resist to SPT debuffs
+,,,,,,,,,,,,--------------------------Force----------------------------
+Force,cast_atk_mag,Magic/Buff,,,600,0,party/single,1,1,1200,+25% M.Atk.
+,,,,,,,,,,,,--------------------------Focus----------------------------
+Focus,cast_crit_rate,Magic/Buff,,,600,0,party/single,1,1,1200,+20% critical rate.
+Focus,cast_crit_rate,Magic/Buff,,,600,0,party/single,1,1,1200,+25% critical rate.
+Focus,cast_crit_rate,Magic/Buff,,,600,0,party/single,1,1,1200,+30% critical rate.
+,,,,,,,,,,,,--------------------------Vampirism----------------------------
+Vampirism,cast_vamp,Magic/Buff,,,600,0,party/single,1,1,1200,+6% melee vampirism.
+Vampirism,cast_vamp,Magic/Buff,,,600,0,party/single,1,1,1200,+7% melee vampirism.
+Vampirism,cast_vamp,Magic/Buff,,,600,0,party/single,1,1,1200,+8% melee vampirism.
+Vampirism,cast_vamp,Magic/Buff,,,600,0,party/single,1,1,1200,+9% melee vampirism.
+,,,,,,,,,,,,--------------------------Agility----------------------------
+Agility,cast_spd_eva,Magic/Buff,,,600,0,party/single,1,1,1200,+2 Evasion.
+Agility,cast_spd_eva,Magic/Buff,,,600,0,party/single,1,1,1200,+3 Evasion.
+Agility,cast_spd_eva,Magic/Buff,,,600,0,party/single,1,1,1200,+4 Evasion.
+,,,,,,,,,,,,--------------------------Aim----------------------------
+Aim,cast_accuracy,Magic/Buff,,,600,0,party/single,1,1,1200,+1 Accuracy.
+Aim,cast_accuracy,Magic/Buff,,,600,0,party/single,1,1,1200,+2 Accuracy.
+Aim,cast_accuracy,Magic/Buff,,,600,0,party/single,1,1,1200,+3 Accuracy.
+Aim,cast_accuracy,Magic/Buff,,,600,0,party/single,1,1,1200,+4 Accuracy.
+,,,,,,,,,,,,--------------------------Vigor----------------------------
+Vigor,cast_hp_regen,Magic/Buff,,,600,0,party/single,1,1,1200,+10% HP regeneration.
+,,,,,,,,,,,,--------------------------Ward----------------------------
+Ward,cast_def_mag,Magic/Buff,,,600,0,party/single,1,1,1200,+10% M.Def.
+,,,,,,,,,,,,--------------------------Frenzy----------------------------
+Frenzy,holy_frenzy,Magic/Buff,,,600,0,party/single,1,1,1200,"−7% Max HP/MP, +5% offence and speed, +5 move, −5 evasion."
+Frenzy,holy_frenzy,Magic/Buff,,,600,0,party/single,1,1,1200,"-10% Max HP/MP, +8% offence and speed, +8 move, -8 evasion."
+,,,,,,,,,,,,--------------------------Great Bulwark--------------------------
+Great Bulwark,great_bulwark,Magic/Buff,,,600,0,party/single,1,1,1200,+5% P.Def. Does not stack with Other Great Might|Bulwark effects.
+Great Bulwark,great_bulwark,Magic/Buff,,,600,0,party/single,1,1,1200,+10% P.Def. Does not stack with Other Great Might|Bulwark effects.
+Great Bulwark,great_bulwark,Magic/Buff,,,600,0,party/single,1,1,1200,+15% P.Def. Does not stack with Other Great Might|Bulwark effects.
+,,,,,,,,,,,,----------------------------Great Might----------------------------
+Great Might,great_might,Magic/Buff,,,600,0,party/single,1,1,1200,+5% P.Atk. Does not stack with Other Great Might|Bulwark effects.
+Great Might,great_might,Magic/Buff,,,600,0,party/single,1,1,1200,+7% P.Atk. Does not stack with Other Great Might|Bulwark effects.
+Great Might,great_might,Magic/Buff,,,600,0,party/single,1,1,1200,+10% P.Atk. Does not stack with Other Great Might|Bulwark effects.
+,,,,,,,,,,,,---------------------------Shield Blessing---------------------------
+Shield Blessing,cast_shield_block,Magic/Buff,,,600,0,party/single,1,1,1200,Increases Shield Rate with 5% 
+Shield Blessing,cast_shield_block,Magic/Buff,,,600,0,party/single,1,1,1200,Increases Shield Rate with 10%
+Shield Blessing,cast_shield_block,Magic/Buff,,,600,0,party/single,1,1,1200,Increases Shield Rate with 15%
+Shield Blessing,cast_shield_block,Magic/Buff,,,600,0,party/single,1,1,1200,Increases Shield Rate with 20%
+Shield Blessing,cast_shield_block,Magic/Buff,,,600,0,party/single,1,1,1200,Increases Shield Rate with 25%
+Shield Blessing,cast_shield_block,Magic/Buff,,,600,0,party/single,1,1,1200,Increases Shield Rate with 30%
+,,,,,,,,,,,,---------------------------Shield Harden--------------------------
+Shield Hardening,cast_shield_def,Magic/Buff,,,600,0,party/single,1,1,1200,Increases Shield PDef with 30%
+Shield Hardening,cast_shield_def,Magic/Buff,,,600,0,party/single,1,1,1200,Increases Shield PDef with 40%
+Shield Hardening,cast_shield_def,Magic/Buff,,,600,0,party/single,1,1,1200,Increases Shield PDef with 50%
+,,,,,,,,,,,,---------------------------Ferocity-----------------------------
+Ferocity,cast_crit_dmg,Magic/Buff,,,600,0,party/single,1,1,1200,+25% critical damage.
+Ferocity,cast_crit_dmg,Magic/Buff,,,600,0,party/single,1,1,1200,+30% critical damage.
+Ferocity,cast_crit_dmg,Magic/Buff,,,600,0,party/single,1,1,1200,+35% critical damage.
+,,,,,,,,,,,,---------------------------Fury------------------------------
+Fury,cast_spd_as,Magic/Buff,,,600,0,party/single,1,1,1200,+15% Attack Speed.
+Fury,cast_spd_as,Magic/Buff,,,600,0,party/single,1,1,1200,+33% Attack Speed.
+,,,,,,,,,,,,---------------------------Force------------------------------
+Force,cast_atk_mag,Magic/Buff,,,600,0,party/single,1,1,1200,+28% M.Atk.
+Force,cast_atk_mag,Magic/Buff,,,600,0,party/single,1,1,1200,+32% M.Atk.
+,,,,,,,,,,,,---------------------------Insight------------------------------
+Insight,cast_mcrit_rate,Magic/Buff,,,600,0,party/single,1,1,1200,+50% magic critical rate.
+Insight,cast_mcrit_rate,Magic/Buff,,,600,0,party/single,1,1,1200,+100% magic critical rate.
+,,,,,,,,,,,,---------------------------Alacrity--------------------------
+Alacrity,cast_spd_cast,Magic/Buff,,,600,0,party/single,1,1,1200,+30% Cast Speed.
+,,,,,,,,,,,,---------------------------Serenity-----------------------------
+Serenity,cast_mp_regen,Magic/Buff,,,600,0,party/single,1,1,1200,+10% MP regeneration.
+Serenity,cast_mp_regen,Magic/Buff,,,600,0,party/single,1,1,1200,+15% MP regeneration.
+Serenity,cast_mp_regen,Magic/Buff,,,600,0,party/single,1,1,1200,+20% MP regeneration.
+,,,,,,,,,,,,---------------------------Resolve------------------------------
+Resolve,cast_interrupt,Magic/Buff,,,600,0,party/single,1,1,1200,+36% interrupt resistance.
+Resolve,cast_interrupt,Magic/Buff,,,600,0,party/single,1,1,1200,+42% interrupt resistance.
+Resolve,cast_interrupt,Magic/Buff,,,600,0,party/single,1,1,1200,+48% interrupt resistance.
+Resolve,cast_interrupt,Magic/Buff,,,600,0,party/single,1,1,1200,+54% interrupt resistance.
+,,,,,,,,,,,,---------------------------Ward-------------------------------
+Ward,cast_def_mag,Magic/Buff,,,600,0,party/single,1,1,1200,+23% M.Def.
+Ward,cast_def_mag,Magic/Buff,,,600,0,party/single,1,1,1200,+30% M.Def.
+,,,,,,,,,,,,---------------------------Soul-------------------------------
+Soul,cast_mp_max,Magic/Buff,,,600,0,party/single,1,1,1200,+10% Max MP.
+Soul,cast_mp_max,Magic/Buff,,,600,0,party/single,1,1,1200,+15% Max MP.
+Soul,cast_mp_max,Magic/Buff,,,600,0,party/single,1,1,1200,+20% Max MP.
+Soul,cast_mp_max,Magic/Buff,,,600,0,party/single,1,1,1200,+25% Max MP.
+Soul,cast_mp_max,Magic/Buff,,,600,0,party/single,1,1,1200,+30% Max MP.
+Soul,cast_mp_max,Magic/Buff,,,600,0,party/single,1,1,1200,+35% Max MP.
+,,,,,,,,,,,,---------------------------Mana Blessing--------------------------
+5Mana Blessing,mana_blessing,Magic/Buff,,,600,0,party/single,1,1,1200,Decrease Physical MP Cost by 10% and Magic MP Cost by 5%
+6Mana Blessing,mana_blessing,Magic/Buff,,,600,0,party/single,1,1,1200,Decrease Physical MP Cost by 15% and Magic MP Cost by 7%
+7Mana Blessing,mana_blessing,Magic/Buff,,,600,0,party/single,1,1,1200,Decrease Physical MP Cost by 20% and Magic MP Cost by 10%
+,,,,,,,,,,,,---------------------------Bulwark------------------------------
+Bulwark,cast_def_phys,Magic/Buff,,,600,0,party/single,1,1,1200,+15% P.Def.
+,,,,,,,,,,,,---------------------------Vigor------------------------------
+Vigor,cast_hp_regen,Magic/Buff,,,600,0,party/single,1,1,1200,+15% HP regeneration.
+Vigor,cast_hp_regen,Magic/Buff,,,600,0,party/single,1,1,1200,+20% HP regeneration.
+,,,,,,,,,,,,---------------------------Body-------------------------------
+Body,cast_hp_max,Magic/Buff,,,600,0,party/single,1,1,1200,+10% Max HP.
+Body,cast_hp_max,Magic/Buff,,,600,0,party/single,1,1,1200,+15% Max HP.
+Body,cast_hp_max,Magic/Buff,,,600,0,party/single,1,1,1200,+20% Max HP.
+Body,cast_hp_max,Magic/Buff,,,600,0,party/single,1,1,1200,+25% Max HP.
+Body,cast_hp_max,Magic/Buff,,,600,0,party/single,1,1,1200,+30% Max HP.
+Body,cast_hp_max,Magic/Buff,,,600,0,party/single,1,1,1200,+35% Max HP.
+,,,,,,,,,,,,---------------------------Body Blessing------------------------------
+,,,,,,,,,,,,---------------------------Clarity------------------------------
+Clarity,cast_cc_res_mag,Magic/Buff,,,600,0,party/single,1,1,1200,30% resist to SPT debuffs
+Clarity,cast_cc_res_mag,Magic/Buff,,,600,0,party/single,1,1,1200,40% resist to SPT debuffs
+Clarity,cast_cc_res_mag,Magic/Buff,,,600,0,party/single,1,1,1200,50% resist to SPT debuffs
+,,,,,,,,,,,,---------------------------Fortitude----------------------------
+Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,15% resist to CON debuffs
+Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,20% resist to CON debuffs
+Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,30% resist to CON debuffs
+Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,40% resist to CON debuffs
+
+
+,,,,,,,,,,,,==========================Harmonies===========================
+,,,,,,,,,,,,---------------------------Harmony of Protection------------------------------
+Harmony of Protection,npc_harmony_protection,Magic/Buff,,,600,800,party/aoe,1,120,300,+30% M.Def,60,43k,[],,
+Harmony of Protection,npc_harmony_protection,Magic/Buff,,,600,800,party/aoe,1,120,300,"+30% M.Def, +20% HP Regen",126,74k,[],,
+Harmony of Protection,npc_harmony_protection,Magic/Buff,,,600,800,party/aoe,1,120,300,"+30% M.Def, +20% HP Regen, +25% P.Def",199,81k,[],,
+Harmony of Protection,npc_harmony_protection,Magic/Buff,,,600,800,party/aoe,1,120,300,"+30% M.Def, +20% HP Regen, +25% P.Def, +30% Max HP",279,280k,[],,
+Harmony of Protection,npc_harmony_protection,Magic/Buff,,,600,800,party/aoe,1,120,300,"+30% M.Def, +20% HP Regen, +25% P.Def, +30% Max HP, +20% Mele Reflect",367,880k,[],,
+,,,,,,,,,,,,---------------------------Harmony of Speed------------------------------
+Harmony of Speed,wc_harmony_speed,Magic/Buff,,,600,800,party/aoe,1,120,300,+20 move speed,60,64k,[],,
+Harmony of Speed,wc_harmony_speed,Magic/Buff,,,600,800,party/aoe,1,120,300,"+20 move speed, +3 Evasion",126,88k,[],,
+,,,,,,,,,,,,---------------------------Harmony of the Warrior------------------------------
+Harmony of the Warrior,npc_harmony_warrior,Magic/Buff,,,600,800,party/aoe,1,120,300,+100% crit rate,60,36k,[],,
+Harmony of the Warrior,npc_harmony_warrior,Magic/Buff,,,600,800,party/aoe,1,120,300,"+100% crit rate, +35% crit damage",126,43k,[],,
+Harmony of the Warrior,npc_harmony_warrior,Magic/Buff,,,600,800,party/aoe,1,120,300,"+100% crit rate, +35% crit damage, +4 accuracy",199,64k,[],,
+Harmony of the Warrior,npc_harmony_warrior,Magic/Buff,,,600,800,party/aoe,1,120,300,"+100% crit rate, +35% crit damage, +4 accuracy, +12% P.Atk",279,81k,[],,
+Harmony of the Warrior,npc_harmony_warrior,Magic/Buff,,,600,800,party/aoe,1,120,300,"+100% crit rate, +35% crit damage, +4 accuracy, +12% P.Atk, +15% attack speed",367,88k,[],,
+Harmony of the Warrior,npc_harmony_warrior,Magic/Buff,,,600,800,party/aoe,1,120,300,"+100% crit rate, +35% crit damage, +4 accuracy, +12% P.Atk, +15% attack speed, +8% mele vampirism",464,880k,[],,
+,,,,,,,,,,,,---------------------------Harmony of the Wizard------------------------------
+Harmony of the Wizard,npc_harmony_wizard,Magic/Buff,,,600,800,party/aoe,1,120,300,+10% M.Atk,60,64k,[],,
+Harmony of the Wizard,npc_harmony_wizard,Magic/Buff,,,600,800,party/aoe,1,120,300,"+10% M.Atk, 30% cast speed",126,74k,[],,
+
+,,,,,,,,,,,,---------------------------------------------------------------------------------------------Groups-------------------------------------------------
+
+War Frenzy,madness,Magic/Buff,,,600,800,party/aoe,1,1,1200,"-10% Max HP/MP, +8% offence and speed, +8 move, -8 evasion."
+War Bulwark,wc_war_bulwark,Magic/Buff,,,600,800,party/aoe,1,1,1200,+15% P.Def. Does not stack with Other Great Might|Bulwark effects.
+War Might,wc_war_might,Magic/Buff,,,600,800,party/aoe,1,1,1200,+10% P.Atk. Does not stack with Other Great Might|Bulwark effects.
+Shield Reinforcement,wc_shield_reinforcement,Magic/Buff,,,600,800,party/aoe,1,1,1200,"Increases Shield P.Def with 50%, and Rate with 30%",
+Feral Precision,wc_feral_precision,Magic/Buff,,,600,800,party/aoe,1,1,1200,"+30% critical rate, +35% critical damage, +4 accuracy"
+Feral Bloodlust,wc_feral_bloodlust,Magic/Buff,,,600,800,party/aoe,1,1,1200,"+15% P.Atk, Attack Speed +33%, 9% melee vampirism."
+Arcane Insight,wc_arcane_insight,Magic/Buff,,,600,800,party/aoe,1,1,1200,"+32% M.Atk, +100% magic critical rate."
+Arcane Serenity,wc_arcane_serenity,Magic/Buff,,,600,800,party/aoe,1,1,1200,"+30% Cast Speed, +54% interrupt resistance, +20% MP regeneration."
+Soul Reinforcement,wc_soul_reinforcement,Magic/Buff,,,600,800,party/aoe,1,1,1200,"+35% Max MP, +30% M.Def, Decrease Physical MP Cost by 20% and Magic MP Cost by 10%."
+Body Reinforcement,wc_body_reinforcement,Magic/Buff,,,600,800,party/aoe,1,1,1200,"+35% Max HP, +15% P.Def +20% HP regeneration."
+Arcane and Feral Protection,wc_arcane_feral_protection,Magic/Buff,,,600,800,party/aoe,1,1,1200,"40% resist to CON debuffs, 50% resist to SPT debuffs"
+Wind Grace,wc_wind_grace,Magic/Buff,,,600,800,party/aoe,1,1,1200,"+33 Move Speed, +4 Evasion."

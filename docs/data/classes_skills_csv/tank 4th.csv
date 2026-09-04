@@ -43,23 +43,23 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 88,Defensive Wall,defensive_wall,pfysical buff,,,0,0,self/single,0.5,330,55,increase p.def +4900; m.def +4400; buff cancel resist x1.8; ms x0.22,50,0,100kk
 90,Defensive Wall,defensive_wall,pfysical buff,,,0,0,self/single,0.5,300,60,increase p.def +5000; m.def +4500; buff cancel resist x1.8; ms x0.20,50,0,100kk
 ,,,,,,,,,,,,,,,,,----------------------------Taunt----------------------------
-76,Taunt,provoke,physical active,,,800,0,enemy/single,0,6,1.5,"Agro enemy - locks it onto you for 1.5s then leaves you 11680 aggro ahead;",0,6.5kk,1kk,Human;Demon
-78,Taunt,provoke,physical active,,,800,0,enemy/single,0,6,1.5,"Agro enemy - locks it onto you for 1.5s then leaves you 12640 aggro ahead;",0,16kk,1kk,Human;Demon
-80,Taunt,provoke,physical active,,,800,0,enemy/single,0,6,1.5,"Agro enemy - locks it onto you for 1.5s then leaves you 13600 aggro ahead;",0,0,5kk,Human;Demon
-82,Taunt,provoke,physical active,,,800,0,enemy/single,0,6,1.5,"Agro enemy - locks it onto you for 1.5s then leaves you 14560 aggro ahead;",0,0,10kk,Human;Demon
-84,Taunt,provoke,physical active,,,800,0,enemy/single,0,6,1.5,"Agro enemy - locks it onto you for 1.5s then leaves you 15520 aggro ahead;",0,0,30kk,Human;Demon
-86,Taunt,provoke,physical active,,,800,0,enemy/single,0,6,1.5,"Agro enemy - locks it onto you for 1.5s then leaves you 16480 aggro ahead;",0,0,75kk,Human;Demon
-88,Taunt,provoke,physical active,,,800,0,enemy/single,0,6,1.5,"Agro enemy - locks it onto you for 1.5s then leaves you 17440 aggro ahead;",0,0,100kk,Human;Demon
-90,Taunt,provoke,physical active,,,800,0,enemy/single,0,6,1.5,"Agro enemy - locks it onto you for 1.5s then leaves you 18400 aggro ahead;",0,0,100kk,Human;Demon
+76,Taunt,provoke,physical active,,,800,0,enemy/single,0,6,1.5,"Agro enemy - locks it onto you for 1.5s then leaves you 12400 aggro ahead;",0,6.5kk,1kk,Human;Demon
+78,Taunt,provoke,physical active,,,800,0,enemy/single,0,6,1.5,"Agro enemy - locks it onto you for 1.5s then leaves you 13200 aggro ahead;",0,16kk,1kk,Human;Demon
+80,Taunt,provoke,physical active,,,800,0,enemy/single,0,6,1.5,"Agro enemy - locks it onto you for 1.5s then leaves you 14000 aggro ahead;",0,0,5kk,Human;Demon
+82,Taunt,provoke,physical active,,,800,0,enemy/single,0,6,1.5,"Agro enemy - locks it onto you for 1.5s then leaves you 14800 aggro ahead;",0,0,10kk,Human;Demon
+84,Taunt,provoke,physical active,,,800,0,enemy/single,0,6,1.5,"Agro enemy - locks it onto you for 1.5s then leaves you 15600 aggro ahead;",0,0,30kk,Human;Demon
+86,Taunt,provoke,physical active,,,800,0,enemy/single,0,6,1.5,"Agro enemy - locks it onto you for 1.5s then leaves you 16400 aggro ahead;",0,0,75kk,Human;Demon
+88,Taunt,provoke,physical active,,,800,0,enemy/single,0,6,1.5,"Agro enemy - locks it onto you for 1.5s then leaves you 17200 aggro ahead;",0,0,100kk,Human;Demon
+90,Taunt,provoke,physical active,,,800,0,enemy/single,0,6,1.5,"Agro enemy - locks it onto you for 1.5s then leaves you 18000 aggro ahead;",0,0,100kk,Human;Demon
 ,,,,,,,,,,,,,,,,,----------------------------Taunt----------------------------  
-76,Charm,charm,Magical Debuff,,,800,0,enemy/single,0,6,3,"Charm the enemy - start to walk towards you for 3s then leaves you 11680 aggro ahead (sucsess: x0.7);",0,6.5kk,1kk,Elf
-78,Charm,charm,Magical Debuff,,,800,0,enemy/single,0,6,3,"Charm the enemy - start to walk towards you for 3s then leaves you 12640 aggro ahead (sucsess: x0.7);",0,16kk,1kk,Elf
-80,Charm,charm,Magical Debuff,,,800,0,enemy/single,0,6,3,"Charm the enemy - start to walk towards you for 3s then leaves you 13600 aggro ahead (sucsess: x0.7);",0,0,5kk,Elf
-82,Charm,charm,Magical Debuff,,,800,0,enemy/single,0,6,3,"Charm the enemy - start to walk towards you for 3s then leaves you 14560 aggro ahead (sucsess: x0.7);",0,0,10kk,Elf
-84,Charm,charm,Magical Debuff,,,800,0,enemy/single,0,6,3,"Charm the enemy - start to walk towards you for 3s then leaves you 15520 aggro ahead (sucsess: x0.7);",0,0,30kk,Elf
-86,Charm,charm,Magical Debuff,,,800,0,enemy/single,0,6,3,"Charm the enemy - start to walk towards you for 3s then leaves you 16480 aggro ahead (sucsess: x0.7);",0,0,75kk,Elf
-88,Charm,charm,Magical Debuff,,,800,0,enemy/single,0,6,3,"Charm the enemy - start to walk towards you for 3s then leaves you 17440 aggro ahead (sucsess: x0.7);",0,0,100kk,Elf
-90,Charm,charm,Magical Debuff,,,800,0,enemy/single,0,6,3,"Charm the enemy - start to walk towards you for 3s then leaves you 18400 aggro ahead (sucsess: x0.7);",0,0,100kk,Elf
+76,Charm,charm,Magical Debuff,,,800,0,enemy/single,0,6,3,"Charm the enemy - start to walk towards you for 3s then leaves you 12400 aggro ahead (sucsess: x0.7);",0,6.5kk,1kk,Elf
+78,Charm,charm,Magical Debuff,,,800,0,enemy/single,0,6,3,"Charm the enemy - start to walk towards you for 3s then leaves you 13200 aggro ahead (sucsess: x0.7);",0,16kk,1kk,Elf
+80,Charm,charm,Magical Debuff,,,800,0,enemy/single,0,6,3,"Charm the enemy - start to walk towards you for 3s then leaves you 14000 aggro ahead (sucsess: x0.7);",0,0,5kk,Elf
+82,Charm,charm,Magical Debuff,,,800,0,enemy/single,0,6,3,"Charm the enemy - start to walk towards you for 3s then leaves you 14800 aggro ahead (sucsess: x0.7);",0,0,10kk,Elf
+84,Charm,charm,Magical Debuff,,,800,0,enemy/single,0,6,3,"Charm the enemy - start to walk towards you for 3s then leaves you 15600 aggro ahead (sucsess: x0.7);",0,0,30kk,Elf
+86,Charm,charm,Magical Debuff,,,800,0,enemy/single,0,6,3,"Charm the enemy - start to walk towards you for 3s then leaves you 16400 aggro ahead (sucsess: x0.7);",0,0,75kk,Elf
+88,Charm,charm,Magical Debuff,,,800,0,enemy/single,0,6,3,"Charm the enemy - start to walk towards you for 3s then leaves you 17200 aggro ahead (sucsess: x0.7);",0,0,100kk,Elf
+90,Charm,charm,Magical Debuff,,,800,0,enemy/single,0,6,3,"Charm the enemy - start to walk towards you for 3s then leaves you 18000 aggro ahead (sucsess: x0.7);",0,0,100kk,Elf
 ,,,,,,,,,,,,,,,,,----------------------------Mass Taunt---------------------------
 76,Mass Taunt,mass_provoke,physical active,,,0,400,enemy/aoe,0.5,30,3,"Agro enemies around - locks them onto you for 3s then leaves you  7480 aggro ahead;",115,6.5kk,1kk,Human
 78,Mass Taunt,mass_provoke,physical active,,,0,400,enemy/aoe,0.5,30,3,"Agro enemies around - locks them onto you for 3s then leaves you  8040 aggro ahead;",125,16kk,1kk,Human
@@ -141,14 +141,14 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 
 
 ,,,,,,,,,,,,,,,,,----------------------------Taunting Whisps----------------------------
-40,Taunting Whisp,tank_whisp_taunt,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 6500), Consumes 4 skill stones",50,28,,Human,uses whisp_provoke
-46,Taunting Whisp,tank_whisp_taunt,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 7500); Consumes 4 skill stones",54,40,,Human,uses whisp_provoke
-52,Taunting Whisp,tank_whisp_taunt,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 8500); Consumes 4 skill stones",58,74,,Human,uses whisp_provoke
-58,Taunting Whisp,tank_whisp_taunt,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 9500); Consumes 4 skill stones",66,88,,Human,uses whisp_provoke
-62,Taunting Whisp,tank_whisp_taunt,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 10500); Consumes 4 skill stones",76,170,,Human,uses whisp_provoke
-66,Taunting Whisp,tank_whisp_taunt,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 11200); Consumes 4 skill stones",84,280,,Human,uses whisp_provoke
-70,Taunting Whisp,tank_whisp_taunt,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 11600); Consumes 4 skill stones",92,390,,Human,uses whisp_provoke
-74,Taunting Whisp,tank_whisp_taunt,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 12000); Consumes 4 skill stones",100,880,,Human,uses whisp_provoke
+40,Taunting Whisp,tank_whisp_taunt,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 12400), Consumes 4 skill stones",50,28,,Human,uses whisp_provoke
+46,Taunting Whisp,tank_whisp_taunt,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 13200); Consumes 4 skill stones",54,40,,Human,uses whisp_provoke
+52,Taunting Whisp,tank_whisp_taunt,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 14000); Consumes 4 skill stones",58,74,,Human,uses whisp_provoke
+58,Taunting Whisp,tank_whisp_taunt,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 14800); Consumes 4 skill stones",66,88,,Human,uses whisp_provoke
+62,Taunting Whisp,tank_whisp_taunt,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 15600); Consumes 4 skill stones",76,170,,Human,uses whisp_provoke
+66,Taunting Whisp,tank_whisp_taunt,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 16400); Consumes 4 skill stones",84,280,,Human,uses whisp_provoke
+70,Taunting Whisp,tank_whisp_taunt,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 17200); Consumes 4 skill stones",92,390,,Human,uses whisp_provoke
+74,Taunting Whisp,tank_whisp_taunt,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Tauntin the enemy (Power 18000); Consumes 4 skill stones",100,880,,Human,uses whisp_provoke
 ,,,,,,,,,,,,,,,,,----------------------------Binding Whisps----------------------------
 43,Binding Whisp,tank_whisp_bind,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones",50,35,,Human,uses whisp_bind
 49,Binding Whisp,tank_whisp_bind,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones",54,50,,Human,uses whisp_bind
