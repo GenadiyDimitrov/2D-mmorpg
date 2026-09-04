@@ -7,12 +7,49 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.112.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.112.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-04 (latest) — 0.112.0: THE TANK'S 4th TIER — `tank 4th.csv` built whole (`BL-02`, `BL-154`, `BL-155`)
+## 2026-09-04 (latest) — 0.112.1: the tank's WEAPON MASTERY, and the last two CSV corrections
+
+Your read of the pass, the same day, and both halves of it are in this build.
+
+**1. THE `mpReg` MYSTERY IS SOLVED, AND YOU WERE RIGHT ABOUT WHERE IT CAME FROM.** Your words:
+*"The x3.4 and x5.1 mp regen is + … the mages one we did, it stayed from there"*. Checked rather than
+assumed: **`healer 4th.csv` carries `mpReg +3.4`** — a plus, not a multiplier — on all fifteen of its
+own armour-mastery rows, and nothing else in the folder has a 3.4. So the tank's `x3.4` was the
+mage's number sitting in the tank's file, exactly as you said. The tank's own column is the `x` ladder
+that ends at **x5.1**, which is what 0.112.0 held it at and what the cells now say.
+
+**2. `Shield Smash - Power`'s cells are corrected too**, on your *"fix all the csv to match what you
+told me needed fixing"*. Its crit-damage column restarted at 15% and re-trod 19/24/28/33 back to 35;
+the code has shipped it flat at **35% / 15%** since 0.112.0 (its Rate twin is flat at 50%/25% across
+the same eight rungs) and the eight DESCR cells now agree. That was the last of the six — **all of
+them are now fixed on both sides**, and `BL-165` is down to the three things that are genuinely yours.
+
+### 🔑 AND THE WEAPON MASTERY YOU FORGOT — fifteen rungs, 76-90
+
+*"Make the 15 rungs of it in the csv, going from p.atk +90@76 to +200@90, keeps the x1.085 patk as
+well and adds 1% @76 to 79, 3% @80 to 84 and +5% @85+ atack speed"*. Written into `tank 4th.csv` in
+your own grammar (`sword|blunt/1`, *"with 1h sword/blunt: p.Atk x1.085 and p.Atk +N and attack speed
++M%"*) and built as rungs 21-35, on the every-level band and the standard price ladder.
+
+- 🔑 **ATTACK SPEED IS NEW TO THIS PASSIVE.** Its 2nd and 3rd tiers are flat P.Atk plus ×1.085 and
+  nothing else — the 4th is where a Bulwark's sword-and-board finally starts swinging faster. Three
+  flat BANDS rather than a per-rung ladder, which is your shape: inside a band a rung buys only the
+  flat P.Atk.
+- ⚠ **The flat ladder is the straight line between your two endpoints, rounded** — you named 90 and
+  200 and nothing between, and 110 over fourteen steps is 7.857 a rung: 90 / 98 / 106 / 114 / 121 /
+  129 / 137 / 145 / 153 / 161 / 169 / 176 / 184 / 192 / 200. Monotonic at every step. If you want a
+  shape rather than a line it is one array.
+- ✅ **The checker really reads the new cell** — proved by breaking it on purpose (1% → 2% in the code)
+  and watching `--check` report four rungs, then reverting. A checker's silence is not evidence.
+
+⚠ **NEW APK, and it is the one to install** — 0.112.0's tables shipped without this ladder, so a client
+built from that one shows a Weapon Mastery that stops at level 74.
+## 2026-09-04 — 0.112.0: THE TANK'S 4th TIER — `tank 4th.csv` built whole (`BL-02`, `BL-154`, `BL-155`)
 
 His word, the same day: *"im done with tank 2/3/4 so its ready to build after the npc buffer"*. The
 `NOT DONE` banner is gone, the file is **205 authored rows**, and this builds every one of them. It

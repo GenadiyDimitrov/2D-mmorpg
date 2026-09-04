@@ -38,7 +38,7 @@ of `tank 4th.csv`, which closes `BL-154` (pull), `BL-155` (silence) — both in 
 Wall, the Perfect Whisp, a race-split three-rung Backlash, Whisp Mastery's third slot, Silencing Shock).
 `SkillCsvSeed --check` is green on all fifteen walked files. **⚠ NEW APK — the client builds its Learn
 tab locally**, and 🔴 **a `game.db` delete** (Backlash stopped being auto-granted). 🔵 **What it leaves
-you is `BL-165`** — one refused ladder, three whisp rungs at level 91, and the two AoE pull shapes.
+you is `BL-165`** — three whisp rungs at level 91, the two AoE pull shapes, and one clamp.
 · ✅ `BL-158`…`BL-162` — the NPC BUFFER pass is BUILT (0.111.0) and is in the archive: the shelf levels up
 with you, the 75 ceiling is gone, eight single harmonies and the three Marks are on sale, and Swift
 joined the Mage preset. See it with `dotnet run --project tools/BalanceMatrix -- --npcshelf`
@@ -93,7 +93,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-157` | 🔵 | The worm — a polymorph debuffer/nuker class, a seed only | classes |
 | `BL-163` | 🔴 | The buffer shelf as an EXTERNAL table — no wrappers, editable without a build | classes |
 | `BL-164` | 🔵 | The three Marks share one Rank, so the weaker rung can out-hold the stronger | classes |
-| `BL-165` | 🔵 | What the tank's 4th tier LEFT OPEN — one refused ladder, three rungs at level 91, the two AoE pulls | combat |
+| `BL-165` | 🔵 | What the tank's 4th tier LEFT OPEN — three whisp rungs at level 91, the two AoE pulls, one clamp | combat |
 
 ---
 
@@ -751,23 +751,18 @@ Three ways out, and it is your call which:
 Nothing is blocked on this; it only bites a level-83+ character who bought a Mark and then joined a
 party with a 4th-class Lightbringer.
 
-### `BL-165` 🔵 What the tank's 4th tier left open — one refused ladder, three rungs at 91, and the two AoE pulls
+### `BL-165` 🔵 What the tank's 4th tier left open — three rungs at 91, the two AoE pulls, and one clamp
 
 Everything in `tank 4th.csv` is built (0.112.0, 2026-09-04). These are the four things that could not
 be answered out of the file, kept together so they are one read rather than four. **Nothing here is
 blocked and nothing is broken** — the tank is complete and playable as it stands.
 
-**1. 🔵 SHIELD SMASH - POWER's crit-damage ladder restarts, and the code refused it.** Your rows read
-15 / 19 / 24 / 28 / 33 / 35 / 35 / 35 % at 76-90, against **35%** at the last 3rd-tier rung (level 74).
-A level-76 Bulwark's smash would blunt crits worse than his level-74 one did, which is the exact shape
-the monotonic rule exists to catch (*"the stats should go up not down - if they got down i made a
-mistake or swaped two levels"*).
-
-What settles it, and it is your own file: its twin, **Shield Smash - Rate**, is FLAT at its own ceiling
-(50% P.Crit rate / 25% M.Crit rate) for all eight 4th-tier rungs — only the damage climbs. Read
-together, the Power version being flat at **35% / 15%** is the symmetric reading, and that is what
-shipped. **Your cells were left alone**, so if you meant the ladder, say so and it goes in verbatim
-(`TankFourthSmashPowerRungs` in `Skills.Bulwark4th.cs`, one array).
+**1. ✅ CLOSED — Shield Smash - Power's ladder.** Its crit-damage column restarted at 15% against 35%
+at level 74; the code refused it and shipped flat at **35% / 15%**, matching its Rate twin. You ruled
+on it the same day (*"fix all the csv to match what you told me needed fixing"*), so the eight cells
+now agree and there is nothing left to decide. ✅ **So are the other five** — the id paste, the AOE
+cell, the WEIGHT paste, the Cyrillic `к` and the `mpReg` column, whose origin you named yourself
+(`healer 4th.csv` carries `mpReg +3.4`; the mage's number stayed in the tank's file).
 
 **2. 🔵 THREE WHISP CALLS LADDER TO LEVEL 91.** Binding, Healing and Weapon Breaking Whisp open at 77
 and step by two, so their eighth rung lands at **91** — one past the 90 the world is built to. It is
@@ -789,8 +784,14 @@ still for ten seconds and is then grappled has a ten-second first segment and it
 almost frozen. **The test is to grapple something that has been standing STILL**; if the body hangs for
 a blink before it slides, that is this, and if you cannot see it, it does not need fixing.
 
-⚠ **And five things were corrected in `tank 4th.csv` itself** — an id paste on eight rows, an AOE cell,
-a WEIGHT paste on thirty rows, a Cyrillic `к` in an SP cell, and a pasted `mpReg` column. Each is
-listed with its reasoning in the 0.112.0 [CHANGELOG](CHANGELOG.md) entry, and each is one edit to
-reverse. They are corrections, not retunes: none of them changes a number you chose.
+✅ **AND THE WEAPON MASTERY IS IN** — you spotted its absence the same day (*"I have forgotten the
+weapon mastery"*) and its fifteen rungs shipped in 0.112.1: P.Atk +90→+200, ×1.085 kept, and attack
+speed +1% / +3% / +5% in your three bands. ⚠ Its FLAT ladder is the straight line between your two
+endpoints, rounded (7.857 a rung) — one array if you want a shape instead.
+
+⚠ **And six things were corrected in `tank 4th.csv` itself** — an id paste on eight rows, an AOE cell,
+a WEIGHT paste on thirty rows, a Cyrillic `к` in an SP cell, a pasted `mpReg` column, and Shield Smash
+- Power's restarting crit-damage ladder. Each is listed with its reasoning in the 0.112.0 and 0.112.1
+[CHANGELOG](CHANGELOG.md) entries, and each is one edit to reverse. They are corrections, not retunes:
+none of them changes a number you chose.
 

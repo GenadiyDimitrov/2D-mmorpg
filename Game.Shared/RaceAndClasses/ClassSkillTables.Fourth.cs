@@ -60,10 +60,12 @@ public static partial class ClassSkillTables
     /// (`BL-155`: Numbing Shock for Human and Demon, Silencing Shock for the Elf) and Backlash, whose
     /// two halves are rungs 1-3 and 4-6 of one id.</para>
     ///
-    /// <para>⚠ <b>WHAT IS DELIBERATELY NOT HERE.</b> Tank Weapon Mastery, Shield Mastery, Final
-    /// Defense, Aggravated State and Shield Reinforcement have NO row in his 4th file, so their
-    /// ladders stop where the 3rd tier left them. Do not invent continuations — the same ruling
-    /// Harmony of Speed got at the buffer's 4th tier.</para></summary>
+    /// <para>⚠ <b>WHAT IS DELIBERATELY NOT HERE.</b> Shield Mastery, Final Defense, Aggravated State
+    /// and Shield Reinforcement have NO row in his 4th file, so their ladders stop where the 3rd tier
+    /// left them. Do not invent continuations — the same ruling Harmony of Speed got at the buffer's
+    /// 4th tier. (Tank <b>Weapon</b> Mastery was on this list for one commit; he had simply forgotten
+    /// it and wrote its fifteen rows the same day. Which is the argument for the rule: the answer to
+    /// a missing ladder is to ASK, never to invent one.)</para></summary>
     private static void RegisterBulwarkFourth()
     {
         ClassSkill[] Ladder(string skill, int[] bands, int startRung) =>
@@ -79,8 +81,12 @@ public static partial class ClassSkillTables
         var shared = new List<ClassSkill>();
 
         // ---- THE TWO EVERY-LEVEL PASSIVES ----
-        shared.AddRange(Ladder(TankArmorMastery, all, 21));
-        shared.AddRange(Ladder(TankAntiMagic,    all, 21));
+        shared.AddRange(Ladder(TankArmorMastery,  all, 21));
+        shared.AddRange(Ladder(TankAntiMagic,     all, 21));
+        // ✅ WEAPON MASTERY JOINED THEM 2026-09-04 — he had forgotten it and added its fifteen rows to
+        //    the file after the first build (*"and I have forgotten the weapon mastery"*). Same rung
+        //    arithmetic as the other two: five 2nd-class rungs + fifteen 3rd-class ones ended at 20.
+        shared.AddRange(Ladder(TankWeaponMastery, all, 21));
 
         // ---- THE SHARED ACTIVES, every other level ----
         shared.AddRange(Ladder(TankStay,        even, 16));

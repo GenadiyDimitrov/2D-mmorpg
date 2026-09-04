@@ -18,7 +18,11 @@ namespace Game.Shared;
 //        Up to 79 a rung costs SP and a token gold; from 80 it costs NO SP at all and gold that
 //        climbs 5kk → 100kk. That is why so many rungs below read `SpCost: 0`.
 //
-//  🔑 WHAT IS NEW AT THIS TIER (six things, and nothing else was invented):
+//  🔑 WHAT IS NEW AT THIS TIER (seven things, and nothing else was invented):
+//      · WEAPON MASTERY  — fifteen rungs, and it gains ATTACK SPEED for the first time. ⚠ HE HAD
+//        FORGOTTEN IT and wrote the rows the same day, after the first build shipped without them
+//        (*"and I have forgotten the weapon mastery"*). The 40+ rule earned its keep here: the answer
+//        to a ladder his file does not carry is to ASK, never to invent one.
 //      · MAGIC WALL      — the M.Def half of Defensive Wall with no movement price, 76 → 90.
 //      · TAUNTING WALL   — one rung at 80: a mass taunt AND a Defensive Wall, in one cast.
 //      · PERFECT WHISP   — one whisp that does what six do, 80 → 90.
@@ -27,16 +31,16 @@ namespace Game.Shared;
 //      · SILENCING SHOCK — the Elf's magical silence, laddered beside the Human/Demon's Numbing
 //        Shock. `BL-155`'s engine has served both since 0.110.0; these are the authored rows.
 //
-//  🔴 TWO LADDER DIPS WERE REFUSED, per the standing monotonic rule (a value that goes backwards is
-//  a typo — hold or interpolate, never accept). Both are flagged to him; if either is deliberate the
-//  CSV is the authority and it comes straight back:
-//      1. HEAVY ARMOR MASTERY's `mpReg` reads **x3.4 on all fifteen rows**, against **x5.1** at the
-//         last 3rd-tier rung (level 74) — and x3.4 is exactly the number his level-36 row carries,
-//         so it looks like a paste from the 2nd class. Held at **5.1** across the tier.
-//      2. SHIELD SMASH - POWER's crit-damage ladder RESTARTS: `15%` at 76 against `35%` at 74, then
-//         re-treads 19/24/28/33 back up to 35. Its twin, Shield Smash - Rate, is FLAT at its own
-//         ceiling (50%/25%) for all eight 4th-tier rungs — so the symmetric reading is that this one
-//         is flat at 35%/15% too, and that is what is built.
+//  ✅ TWO LADDER DIPS WERE REFUSED AND HE THEN RATIFIED BOTH (2026-09-04, *"fix all the csv to match
+//  what you told me needed fixing"*). Recorded because the reasoning is the standing monotonic rule
+//  doing its job, and because the first one's ORIGIN is now known:
+//      1. HEAVY ARMOR MASTERY's `mpReg` read **x3.4 on all fifteen rows**, against **x5.1** at the
+//         last 3rd-tier rung. 🔑 IT IS THE MAGE'S NUMBER: `healer 4th.csv` carries `mpReg +3.4` on all
+//         fifteen of ITS armour-mastery rows, and his own words were *"the mage's one we did, it
+//         stayed from there"*. Held at **5.1** and the cells corrected.
+//      2. SHIELD SMASH - POWER's crit-damage ladder RESTARTED at `15%` against `35%` at 74, then
+//         re-trod 19/24/28/33 back up. Its twin, Shield Smash - Rate, is FLAT at its own ceiling
+//         (50%/25%) for all eight 4th-tier rungs, so this one is flat at 35%/15% — on both sides now.
 //
 //  ⚠ ONE ID IN HIS FILE WAS A PASTE AND IS CORRECTED ON BOTH SIDES: the eight `Silencing Shock` rows
 //  carried SKILL_ID `tank_shield_stun` — Shield Shock's id — while being a different name, a
@@ -174,6 +178,43 @@ public partial class SkillCatalog
                        + (fizzle ? " Hostile spells are twice as likely to fizzle on you." : ""));
     });
 
+    /// <summary>TANK WEAPON MASTERY rungs 21-35 — <b>the ladder he forgot and added on 2026-09-04</b>:
+    /// *"Make the 15 rungs of it in the csv, going from p.atk +90@76 to +200@90, keeps the x1.085 patk
+    /// as well and adds 1% @76 to 79, 3% @80 to 84 and +5% @85+ atack speed"*.
+    ///
+    /// <para>🔑 ATTACK SPEED IS NEW TO THIS PASSIVE. Its 2nd and 3rd tiers are flat P.Atk plus ×1.085
+    /// and nothing else; the 4th is where a Bulwark's plain sword-and-board finally starts swinging
+    /// faster. Three flat bands, not a per-rung ladder — his own shape, so a rung inside a band buys
+    /// only the flat P.Atk.</para>
+    ///
+    /// <para>⚠ THE FLAT LADDER IS THE STRAIGHT LINE BETWEEN HIS TWO ENDPOINTS, rounded — he named 90
+    /// and 200 and nothing in between, so 110 spread over fourteen steps is 7.857 a rung. It is
+    /// monotonic at every step, which is the only property the rule cares about; if he wants a shape
+    /// rather than a line it is one array.</para></summary>
+    private static readonly int[] TankFourthWeaponFlatAtk =
+        { 90, 98, 106, 114, 121, 129, 137, 145, 153, 161, 169, 176, 184, 192, 200 };
+
+    /// <summary>His three attack-speed bands: +1% at 76-79, +3% at 80-84, +5% from 85.</summary>
+    private static float TankFourthWeaponAtkSpeed(int i) =>
+        TankFourthAll[i] <= 79 ? 0.01f : TankFourthAll[i] <= 84 ? 0.03f : 0.05f;
+
+    internal static SkillLevel[] TankFourthWeaponMasteryRungs() => T4Rungs(15, 1, (i, sp, gold) =>
+        new SkillLevel(SpCost: sp, GoldCost: gold,
+            Description: $"With a one-handed sword or blunt: ×1.085 P.Atk, "
+                       + $"+{TankFourthWeaponFlatAtk[i]} P.Atk and "
+                       + $"+{TankFourthWeaponAtkSpeed(i) * 100:0}% attack speed."));
+
+    /// <summary>The weapon PROFILES for those fifteen rungs — the parallel array, because a weapon
+    /// mastery's payload rides <c>SkillDef.WeaponMasteryLevels</c> and not the SkillLevel. ⚠ It must
+    /// stay the same LENGTH as the rungs above: a rung in one and not the other is a rung you can buy
+    /// that grants nothing.</summary>
+    internal static WeaponMasteryProfile[] TankFourthWeaponMasteryProfiles() =>
+        Enumerable.Range(0, TankFourthAll.Length)
+            .Select(i => OneHand(new PassiveEffect(
+                PhysAtkPct: 0.085f, PhysAtk: TankFourthWeaponFlatAtk[i],
+                AtkSpeedPct: TankFourthWeaponAtkSpeed(i))))
+            .ToArray();
+
     /// <summary>The AGGRO ladder Taunt and Charm share at the 4th tier, rungs 20-27: 12,400 → 18,000,
     /// +800 a rung. His two blocks carry identical numbers, exactly as they did at the 3rd tier —
     /// an Elf tank holds a monster as well as a Human one, which is the whole point of Charm
@@ -245,10 +286,12 @@ public partial class SkillCatalog
             Power: TankFourthSmashPower[i], CritRatePenalty: 0.50f, MagicCritRatePenalty: 0.25f,
             Description: $"Power {TankFourthSmashPower[i]:N0}; −50% P.Crit rate and −25% M.Crit rate for 30s."));
 
-    /// <summary>SHIELD SMASH - POWER rungs 16-23.
-    /// <para>🔴 HIS CRIT-DAMAGE COLUMN RESTARTS AT 15% and climbs back to 35% — see the dip note at
-    /// the top of this file. Held FLAT at the 3rd tier's ceiling (35% / 15%), which is exactly the
-    /// shape his own Rate twin takes across the same eight rungs.</para></summary>
+    /// <summary>SHIELD SMASH - POWER rungs 16-23. FLAT at the 3rd tier's ceiling — 35% P.Crit damage,
+    /// 15% M.Crit damage — for all eight rungs, exactly as its Rate twin is flat at 50%/25%.
+    /// <para>✅ His column originally restarted at 15% and re-trod 19/24/28/33 back to 35, which would
+    /// have made a level-76 Bulwark's smash worse than his level-74 one. Held flat here and reported;
+    /// he then told me to *"fix all the csv to match what you told me needed fixing"*, so the eight
+    /// cells now say 35% too and the two sides agree.</para></summary>
     internal static SkillLevel[] TankFourthSmashPowerRungs() => T4Rungs(8, 2, (i, sp, gold) =>
         new SkillLevel(MpCost: TankFourthBashMp[i], SpCost: sp, GoldCost: gold,
             Power: TankFourthSmashPower[i], CritDamagePenalty: 0.35f, MagicCritDamageDebuff: 0.15f,

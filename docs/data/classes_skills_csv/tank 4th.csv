@@ -31,6 +31,22 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 88,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +156 and M.Res +20%; Twice more chance magic to fail against you",0,0,100kk
 89,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +158 and M.Res +20%; Twice more chance magic to fail against you",0,0,100kk
 90,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +160 and M.Res +20%; Twice more chance magic to fail against you",0,0,100kk
+,,,,,,,,,,,,,,,,,----------------------------Weapon Mastery----------------------------
+76,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,,0,0,self/single,0,0,0,"with 1h sword/blunt: p.Atk x1.085 and p.Atk +90 and attack speed +1%;",0,6.5kk,1kk
+77,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,,0,0,self/single,0,0,0,"with 1h sword/blunt: p.Atk x1.085 and p.Atk +98 and attack speed +1%;",0,11kk,1kk
+78,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,,0,0,self/single,0,0,0,"with 1h sword/blunt: p.Atk x1.085 and p.Atk +106 and attack speed +1%;",0,16kk,1kk
+79,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,,0,0,self/single,0,0,0,"with 1h sword/blunt: p.Atk x1.085 and p.Atk +114 and attack speed +1%;",0,80kk,1kk
+80,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,,0,0,self/single,0,0,0,"with 1h sword/blunt: p.Atk x1.085 and p.Atk +121 and attack speed +3%;",0,0,5kk
+81,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,,0,0,self/single,0,0,0,"with 1h sword/blunt: p.Atk x1.085 and p.Atk +129 and attack speed +3%;",0,0,7.5kk
+82,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,,0,0,self/single,0,0,0,"with 1h sword/blunt: p.Atk x1.085 and p.Atk +137 and attack speed +3%;",0,0,10kk
+83,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,,0,0,self/single,0,0,0,"with 1h sword/blunt: p.Atk x1.085 and p.Atk +145 and attack speed +3%;",0,0,15kk
+84,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,,0,0,self/single,0,0,0,"with 1h sword/blunt: p.Atk x1.085 and p.Atk +153 and attack speed +3%;",0,0,30kk
+85,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,,0,0,self/single,0,0,0,"with 1h sword/blunt: p.Atk x1.085 and p.Atk +161 and attack speed +5%;",0,0,50kk
+86,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,,0,0,self/single,0,0,0,"with 1h sword/blunt: p.Atk x1.085 and p.Atk +169 and attack speed +5%;",0,0,75kk
+87,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,,0,0,self/single,0,0,0,"with 1h sword/blunt: p.Atk x1.085 and p.Atk +176 and attack speed +5%;",0,0,100kk
+88,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,,0,0,self/single,0,0,0,"with 1h sword/blunt: p.Atk x1.085 and p.Atk +184 and attack speed +5%;",0,0,100kk
+89,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,,0,0,self/single,0,0,0,"with 1h sword/blunt: p.Atk x1.085 and p.Atk +192 and attack speed +5%;",0,0,100kk
+90,Weapon Mastery,tank_weapon_mastery,passive,sword|blunt/1,,0,0,self/single,0,0,0,"with 1h sword/blunt: p.Atk x1.085 and p.Atk +200 and attack speed +5%;",0,0,100kk
 ,,,,,,,,,,,,,,,,,----------------------------Whisp Mastery----------------------------
 83,Whisp Mastery,tank_whisp_mastery,Passive,,,0,0,self/single,0,0,0,"Increase the limit of active whisps to 3",0,0,15kk
 ,,,,,,,,,,,,,,,,,----------------------------Backlash----------------------------
@@ -125,11 +141,11 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 88,Shield Smash - Rate,tank_smash_rate,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +6800, Decrease P.Crit.Rate with 50% and M.Crit.Rate with 25%; Requre: Shield;",159,0,100kk,Human;Elf
 90,Shield Smash - Rate,tank_smash_rate,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +7200, Decrease P.Crit.Rate with 50% and M.Crit.Rate with 25%; Requre: Shield;",165,0,100kk,Human;Elf
 ,,,,,,,,,,,,,,,,,----------------------------Shield Smash - Dmg----------------------------
-76,Shield Smash - Power,tank_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +4200, Decrease P.Crit.Dmg with 15% and M.Crit.Dmg with 15%; Requre: Shield;",123,6.5kk,1kk,Demon
-78,Shield Smash - Power,tank_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +4600, Decrease P.Crit.Dmg with 19% and M.Crit.Dmg with 15%; Requre: Shield;",129,16kk,1kk,Demon
-80,Shield Smash - Power,tank_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +5000, Decrease P.Crit.Dmg with 24% and M.Crit.Dmg with 15%; Requre: Shield;",135,0,5kk,Demon
-82,Shield Smash - Power,tank_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +5400, Decrease P.Crit.Dmg with 28% and M.Crit.Dmg with 15%; Requre: Shield;",141,0,10kk,Demon
-84,Shield Smash - Power,tank_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +5800, Decrease P.Crit.Dmg with 33% and M.Crit.Dmg with 15%; Requre: Shield;",147,0,30kk,Demon
+76,Shield Smash - Power,tank_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +4200, Decrease P.Crit.Dmg with 35% and M.Crit.Dmg with 15%; Requre: Shield;",123,6.5kk,1kk,Demon
+78,Shield Smash - Power,tank_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +4600, Decrease P.Crit.Dmg with 35% and M.Crit.Dmg with 15%; Requre: Shield;",129,16kk,1kk,Demon
+80,Shield Smash - Power,tank_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +5000, Decrease P.Crit.Dmg with 35% and M.Crit.Dmg with 15%; Requre: Shield;",135,0,5kk,Demon
+82,Shield Smash - Power,tank_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +5400, Decrease P.Crit.Dmg with 35% and M.Crit.Dmg with 15%; Requre: Shield;",141,0,10kk,Demon
+84,Shield Smash - Power,tank_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +5800, Decrease P.Crit.Dmg with 35% and M.Crit.Dmg with 15%; Requre: Shield;",147,0,30kk,Demon
 86,Shield Smash - Power,tank_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +6400, Decrease P.Crit.Dmg with 35% and M.Crit.Dmg with 15%; Requre: Shield;",153,0,75kk,Demon
 88,Shield Smash - Power,tank_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +6800, Decrease P.Crit.Dmg with 35% and M.Crit.Dmg with 15%; Requre: Shield;",159,0,100kk,Demon
 90,Shield Smash - Power,tank_smash_power,Physical/Active,,/shield,40,0,enemy/single,1,6,30,"Deals Physical Damag With Power +7200, Decrease P.Crit.Dmg with 35% and M.Crit.Dmg with 15%; Requre: Shield;",165,0,100kk,Demon
