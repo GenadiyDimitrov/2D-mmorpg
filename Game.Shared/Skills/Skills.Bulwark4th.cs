@@ -13,7 +13,7 @@ namespace Game.Shared;
 //  🔑 THE SHAPE OF THE TIER, and it is the healer's and the buffer's shape exactly:
 //      · TWO BAND SHAPES — every level 76-90 for the two masteries (fifteen rungs), every OTHER
 //        level for everything else (eight rungs). The six whisp CALLS split into the same A/B sets
-//        the 3rd tier uses: the A whisps ladder 76, 78 … 90 and the B whisps 77, 79 … 91.
+//        the 3rd tier uses: the A whisps ladder 76, 78 … 90 and the B whisps 77, 79 … 89 then 90.
 //      · ONE PRICE LADDER — `F4` for raising a skill you own, `F4New` for one first learned here.
 //        Up to 79 a rung costs SP and a token gold; from 80 it costs NO SP at all and gold that
 //        climbs 5kk → 100kk. That is why so many rungs below read `SpCost: 0`.
@@ -95,12 +95,15 @@ public partial class SkillCatalog
 
     /// <summary>Every other level from 77 — the B whisps (Binding / Healing / Weapon Breaking), which
     /// open one level later at every tier.
-    /// ⚠ <b>ITS LAST RUNG IS 91, AND THAT IS HIS.</b> Eight rungs from an odd start overshoot the 90
-    /// the world is built to; <c>ExpCurve.MaxLevel</c> is 100, so the rung is reachable rather than
-    /// dead. Flagged, not straightened — the alternative is to invent a compression he did not
-    /// author, and `Check.Specs` carries the band 76-<b>91</b> for this file so it stays compared.</summary>
+    /// <para>✅ <b>ITS LAST RUNG IS 90, NOT 91.</b> Eight rungs from an odd start land on 91, and it
+    /// shipped that way for one commit because the level was in his file and <c>ExpCurve.MaxLevel</c>
+    /// is 100, so it was reachable rather than dead — flagged rather than straightened, since
+    /// compressing a ladder he authored would have been an invention. It was a TYPO and he said so:
+    /// *"The whisps that are 91 should be lvl 90. The intelisence of vsCode or whatever with tab key
+    /// make it go by 2 from 89lvl and I missed it"*. 🔑 <b>An editor's autofill is a source of typos
+    /// like any other</b> — the last rung of an odd-start ladder is where to look for one.</para></summary>
     internal static readonly int[] TankFourthOdd =
-        { 77, 79, 81, 83, 85, 87, 89, 91 };
+        { 77, 79, 81, 83, 85, 87, 89, 90 };
 
     // ═════════════════════════════════════════════════════════════════════════════════════════════
     //  HIS MP LADDERS. Four of them, shared across the file exactly as he wrote them.
@@ -140,13 +143,20 @@ public partial class SkillCatalog
         { .35f, .35f, .35f, .40f, .40f, .40f, .45f, .45f, .45f, .50f, .50f, .50f, .50f, .50f, .50f };
     private static readonly int[] TankFourthArmorEva =
         { -3, -3, -3, -4, -4, -4, -5, -5, -5, -6, -6, -6, -6, -6, -6 };
-    /// <summary>🔴 HIS 3.4 REFUSED — see the file header. 5.1 is the 3rd tier's last authored value.</summary>
+    /// <summary>MP regen, and it is a <b>FLAT PER-SECOND GRANT</b> — <c>PassiveEffect.MpRegen</c>, not
+    /// <c>MpRegenPct</c>. His ruling, 2026-09-04: *"the mp regen of tank is also additive, not
+    /// multiplicative … it should be +5.1 and build that way"*, and the `x` in his 3rd- and 4th-tier
+    /// cells was a notation slip — his own `tank 2nd.csv` writes `mpReg +3.1` at level 36. Read that
+    /// way the whole column is ONE continuous ladder across three tiers, 3.1 → 3.5 → 3.9 → 4.3 → 4.7
+    /// → 5.1, in the same units the mage's armour mastery has always used (`healer 4th.csv`: `+3.4`).
+    /// <para>⚠ 5.1 (not the 3.4 his 4th-tier cells first carried) is the 3rd tier's last authored
+    /// value, held there by the monotonic rule and then ratified by him — see the file header.</para></summary>
     private const float TankFourthArmorMpReg = 5.1f;
 
     internal static SkillLevel[] TankFourthArmorMasteryRungs() => T4Rungs(15, 1, (i, sp, gold) =>
         new SkillLevel(SpCost: sp, GoldCost: gold,
             Description: $"With heavy armor: +{TankFourthArmorPDef[i]} P.Def, "
-                       + $"×{1f + TankFourthArmorPDefPct[i]:0.00} P.Def, ×{TankFourthArmorMpReg:0.0} MP regen, "
+                       + $"×{1f + TankFourthArmorPDefPct[i]:0.00} P.Def, +{TankFourthArmorMpReg:0.0} MP regen/s, "
                        + $"{TankFourthArmorCritRed[i] * 100:0}% less crit damage taken, "
                        + $"{TankFourthArmorEva[i]} evasion."));
 
@@ -156,7 +166,7 @@ public partial class SkillCatalog
         Enumerable.Range(0, TankFourthAll.Length).Select(i => new ArmorMasteryProfile(
             Robe: default, Light: default,
             Heavy: new StatMods(
-                MpRegenPct: TankFourthArmorMpReg - 1f,   // "mpReg x5.1" is a MULTIPLIER on the stack
+                MpRegen: TankFourthArmorMpReg,   // "mpReg +5.1" is a FLAT grant per second
                 PDef: TankFourthArmorPDef[i], PDefPct: TankFourthArmorPDefPct[i],
                 CritDmgResist: TankFourthArmorCritRed[i], Evasion: TankFourthArmorEva[i]))).ToArray();
 

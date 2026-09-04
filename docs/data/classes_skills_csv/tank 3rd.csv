@@ -6,21 +6,21 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 49,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield P.Def +50%, Shield Rate +85%; +10% P.Def, bow resistance 40%",0,50,[]
 52,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield P.Def +60%, Shield Rate +100%; +10% P.Def, bow resistance 40%",0,74,[]
 ,,,,,,,,,,,,,,,,,----------------------------Heavy Armor Mastery----------------------------
-40,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x3.5 and p.def +65 and p.def x1.11 and crit dmg reduction 25% and eva -2;",0,28
-43,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x3.5 and p.def +70 and p.def x1.11 and crit dmg reduction 25% and eva -2;",0,35
-46,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x3.9 and p.def +76 and p.def x1.11 and crit dmg reduction 25% and eva -2;",0,40
-49,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x3.9 and p.def +81 and p.def x1.11 and crit dmg reduction 25% and eva -2;",0,50
-52,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x3.9 and p.def +94 and p.def x1.11 and crit dmg reduction 25% and eva -2;",0,74
-55,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x4.3 and p.def +107 and p.def x1.11 and crit dmg reduction 25% and eva -2;",0,80
-58,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x4.3 and p.def +113 and p.def x1.15 and crit dmg reduction 25% and eva -2;",0,88
-60,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x4.3 and p.def +120 and p.def x1.15 and crit dmg reduction 35% and eva -2;",0,120
-62,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x4.3 and p.def +127 and p.def x1.15 and crit dmg reduction 35% and eva -2;",0,170
-64,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x4.7 and p.def +135 and p.def x1.15 and crit dmg reduction 35% and eva -2;",0,190
-66,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x4.7 and p.def +142 and p.def x1.15 and crit dmg reduction 35% and eva -2;",0,280
-68,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x4.7 and p.def +150 and p.def x1.15 and crit dmg reduction 35% and eva -2;",0,320
-70,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x4.7 and p.def +157 and p.def x1.15 and crit dmg reduction 35% and eva -2;",0,390
-72,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x5.1 and p.def +165 and p.def x1.15 and crit dmg reduction 35% and eva -2;",0,650
-74,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x5.1 and p.def +173 and p.def x1.15 and crit dmg reduction 35% and eva -2;",0,880
+40,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg +3.5 and p.def +65 and p.def x1.11 and crit dmg reduction 25% and eva -2;",0,28
+43,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg +3.5 and p.def +70 and p.def x1.11 and crit dmg reduction 25% and eva -2;",0,35
+46,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg +3.9 and p.def +76 and p.def x1.11 and crit dmg reduction 25% and eva -2;",0,40
+49,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg +3.9 and p.def +81 and p.def x1.11 and crit dmg reduction 25% and eva -2;",0,50
+52,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg +3.9 and p.def +94 and p.def x1.11 and crit dmg reduction 25% and eva -2;",0,74
+55,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg +4.3 and p.def +107 and p.def x1.11 and crit dmg reduction 25% and eva -2;",0,80
+58,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg +4.3 and p.def +113 and p.def x1.15 and crit dmg reduction 25% and eva -2;",0,88
+60,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg +4.3 and p.def +120 and p.def x1.15 and crit dmg reduction 35% and eva -2;",0,120
+62,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg +4.3 and p.def +127 and p.def x1.15 and crit dmg reduction 35% and eva -2;",0,170
+64,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg +4.7 and p.def +135 and p.def x1.15 and crit dmg reduction 35% and eva -2;",0,190
+66,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg +4.7 and p.def +142 and p.def x1.15 and crit dmg reduction 35% and eva -2;",0,280
+68,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg +4.7 and p.def +150 and p.def x1.15 and crit dmg reduction 35% and eva -2;",0,320
+70,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg +4.7 and p.def +157 and p.def x1.15 and crit dmg reduction 35% and eva -2;",0,390
+72,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg +5.1 and p.def +165 and p.def x1.15 and crit dmg reduction 35% and eva -2;",0,650
+74,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg +5.1 and p.def +173 and p.def x1.15 and crit dmg reduction 35% and eva -2;",0,880
 ,,,,,,,,,,,,,,,,,----------------------------Tank Anti-Magic----------------------------
 40,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +51 and M.Res +5%;",0,28
 43,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +55 and M.Res +5%;",0,35

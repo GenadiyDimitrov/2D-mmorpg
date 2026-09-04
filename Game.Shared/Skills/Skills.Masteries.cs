@@ -38,10 +38,18 @@ public static partial class SkillCatalog
     /// 15% crit-damage reduction, ×mpReg MP regen and −2 evasion. Off-weights are inert (tank is
     /// immune to armor penalties). (CSV tank "heavy: mpReg x1.1, p.def +N, p.def x1.07, crit dmg
     /// reduction 15%, eva -2"; the @36 level is mpReg ×3.4.)</summary>
-    private static ArmorMasteryProfile TankHeavy(int def, float mpReg = 1.1f) => new(
+    /// <param name="mpRegFlat">MP regen as a <b>FLAT PER-SECOND</b> grant — his `mpReg +3.1` at level
+    /// 36, and 0 on the four rungs below it, whose rows author no MP regen at all. It is flat and not
+    /// a multiplier on his 2026-09-04 ruling (*"the mp regen of tank is also additive, not
+    /// multiplicative"*), which makes this rung the bottom of one continuous column running 3.1 → 5.1
+    /// through the 3rd and 4th tiers. See <c>TankArmorMpReg</c> in Skills.Bulwark3rd.cs.
+    /// ⚠ The ×1.1 the four lower rungs still carry is MINE, not his — no `tank 2nd.csv` row mentions
+    /// MP regen before level 36. Left alone rather than swept: it has shipped since the 2nd class was
+    /// written and removing it is a balance change he has not asked for. Flagged on `BL-165`.</param>
+    private static ArmorMasteryProfile TankHeavy(int def, float mpReg = 1.1f, float mpRegFlat = 0f) => new(
         Robe:  default,
         Light: default,
-        Heavy: new StatMods(MpRegenPct: mpReg - 1f, PDef: def, PDefPct: 0.07f,
+        Heavy: new StatMods(MpRegenPct: mpReg - 1f, MpRegen: mpRegFlat, PDef: def, PDefPct: 0.07f,
             CritDmgResist: 0.15f, Evasion: -2));
 
     /// <summary>Warrior armor-mastery level: flat P.Def, ×1.1 MP regen and (from rung 2) flat HP
@@ -98,7 +106,7 @@ public static partial class SkillCatalog
                 // every rung that `--check` had been reporting for as long as it has walked this file.
                 // The CSV is the authority; a tank was simply wearing twenty points of defence nobody
                 // authored.
-                TankHeavy(20), TankHeavy(27), TankHeavy(34), TankHeavy(41), TankHeavy(60, mpReg: 3.4f),
+                TankHeavy(20), TankHeavy(27), TankHeavy(34), TankHeavy(41), TankHeavy(60, mpRegFlat: 3.1f),
             }.Concat(TankArmorMasteryThirdProfiles()).Concat(TankFourthArmorMasteryProfiles()).ToArray()),
 
         // Warrior — Armor Mastery (CSV warrior 2nd): +P.Def and +max MP with any weight;

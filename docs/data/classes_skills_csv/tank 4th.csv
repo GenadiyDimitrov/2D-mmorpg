@@ -1,20 +1,20 @@
 LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,GOLD,RACE,REPLACES,COMMENT
 ,,,,,,,,,,,,,,,,,----------------------------Heavy Armor Mastery----------------------------
-76,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x5.1 and p.def +175 and p.def x1.20 and crit dmg reduction 35% and eva -3;",0,6.5kk,1kk
-77,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x5.1 and p.def +180 and p.def x1.20 and crit dmg reduction 35% and eva -3;",0,11kk,1kk
-78,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x5.1 and p.def +185 and p.def x1.20 and crit dmg reduction 35% and eva -3;",0,16kk,1kk
-79,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x5.1 and p.def +190 and p.def x1.20 and crit dmg reduction 40% and eva -4;",0,80kk,1kk
-80,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x5.1 and p.def +195 and p.def x1.25 and crit dmg reduction 40% and eva -4;",0,0,5kk
-81,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x5.1 and p.def +200 and p.def x1.25 and crit dmg reduction 40% and eva -4;",0,0,7.5kk
-82,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x5.1 and p.def +205 and p.def x1.25 and crit dmg reduction 45% and eva -5;",0,0,10kk
-83,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x5.1 and p.def +210 and p.def x1.25 and crit dmg reduction 45% and eva -5;",0,0,15kk
-84,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x5.1 and p.def +215 and p.def x1.25 and crit dmg reduction 45% and eva -5;",0,0,30kk
-85,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x5.1 and p.def +220 and p.def x1.30 and crit dmg reduction 50% and eva -6;",0,0,50kk
-86,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x5.1 and p.def +225 and p.def x1.30 and crit dmg reduction 50% and eva -6;",0,0,75kk
-87,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x5.1 and p.def +230 and p.def x1.30 and crit dmg reduction 50% and eva -6;",0,0,100kk
-88,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x5.1 and p.def +235 and p.def x1.30 and crit dmg reduction 50% and eva -6;",0,0,100kk
-89,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x5.1 and p.def +240 and p.def x1.30 and crit dmg reduction 50% and eva -6;",0,0,100kk
-90,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg x5.1 and p.def +245 and p.def x1.30 and crit dmg reduction 50% and eva -6;",0,0,100kk
+76,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg +5.1 and p.def +175 and p.def x1.20 and crit dmg reduction 35% and eva -3;",0,6.5kk,1kk
+77,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg +5.1 and p.def +180 and p.def x1.20 and crit dmg reduction 35% and eva -3;",0,11kk,1kk
+78,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg +5.1 and p.def +185 and p.def x1.20 and crit dmg reduction 35% and eva -3;",0,16kk,1kk
+79,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg +5.1 and p.def +190 and p.def x1.20 and crit dmg reduction 40% and eva -4;",0,80kk,1kk
+80,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg +5.1 and p.def +195 and p.def x1.25 and crit dmg reduction 40% and eva -4;",0,0,5kk
+81,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg +5.1 and p.def +200 and p.def x1.25 and crit dmg reduction 40% and eva -4;",0,0,7.5kk
+82,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg +5.1 and p.def +205 and p.def x1.25 and crit dmg reduction 45% and eva -5;",0,0,10kk
+83,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg +5.1 and p.def +210 and p.def x1.25 and crit dmg reduction 45% and eva -5;",0,0,15kk
+84,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg +5.1 and p.def +215 and p.def x1.25 and crit dmg reduction 45% and eva -5;",0,0,30kk
+85,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg +5.1 and p.def +220 and p.def x1.30 and crit dmg reduction 50% and eva -6;",0,0,50kk
+86,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg +5.1 and p.def +225 and p.def x1.30 and crit dmg reduction 50% and eva -6;",0,0,75kk
+87,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg +5.1 and p.def +230 and p.def x1.30 and crit dmg reduction 50% and eva -6;",0,0,100kk
+88,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg +5.1 and p.def +235 and p.def x1.30 and crit dmg reduction 50% and eva -6;",0,0,100kk
+89,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg +5.1 and p.def +240 and p.def x1.30 and crit dmg reduction 50% and eva -6;",0,0,100kk
+90,Heavy Armor Mastery,tank_armor_mastery,Passive,,heavy,0,0,self/single,0,0,0,"with heavy: mpReg +5.1 and p.def +245 and p.def x1.30 and crit dmg reduction 50% and eva -6;",0,0,100kk
 ,,,,,,,,,,,,,,,,,----------------------------Tank Anti-Magic----------------------------
 76,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +132 and M.Res +20%;",0,6.5kk,1kk
 77,Tank Anti-Magic,tank_anti_magic,Passive,,,0,0,self/single,0,0,0,"increase m.def +134 and M.Res +20%;",0,11kk,1kk
@@ -204,7 +204,7 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 85,Binding Whisp,tank_whisp_bind,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones;",150,0,30kk,Human
 87,Binding Whisp,tank_whisp_bind,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones;",160,0,75kk,Human
 89,Binding Whisp,tank_whisp_bind,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones;",180,0,100kk,Human
-91,Binding Whisp,tank_whisp_bind,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones;",200,0,100kk,Human
+90,Binding Whisp,tank_whisp_bind,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Binding the enemy; Consumes 4 skill stones;",200,0,100kk,Human
 ,,,,,,,,,,,,,,,,,----------------------------Charming Whisp----------------------------
 76,Charming Whisp,tank_whisp_charm,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 12400), Consumes 4 skill stones;",110,6.5kk,1kk,Elf
 78,Charming Whisp,tank_whisp_charm,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to aid with Charming the enemy (Power 13200), Consumes 4 skill stones;",120,16kk,1kk,Elf
@@ -222,7 +222,7 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 85,Healing Whisp,tank_whisp_heal,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 1050); Consumes 4 skill stones;",150,0,30kk,Elf
 87,Healing Whisp,tank_whisp_heal,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 1100); Consumes 4 skill stones;",160,0,75kk,Elf
 89,Healing Whisp,tank_whisp_heal,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 1150); Consumes 4 skill stones;",180,0,100kk,Elf
-91,Healing Whisp,tank_whisp_heal,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 1200); Consumes 4 skill stones;",200,0,100kk,Elf
+90,Healing Whisp,tank_whisp_heal,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to heal its master (Power 1200); Consumes 4 skill stones;",200,0,100kk,Elf
 ,,,,,,,,,,,,,,,,,----------------------------Armor Breaking Whisp----------------------------
 76,Armor Breaking Whisp,tank_whisp_armor_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 31% and MDef by 15%); Consumes 4 skill stones;",110,6.5kk,1kk,Demon
 78,Armor Breaking Whisp,tank_whisp_armor_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break armor of enemy (Deacreases P.Def by 32% and MDef by 16%); Consumes 4 skill stones;",120,16kk,1kk,Demon
@@ -240,7 +240,7 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 85,Weapon Breaking Whisp,tank_whisp_weapon_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 20%); Consumes 4 skill stones;",150,0,30kk,Demon
 87,Weapon Breaking Whisp,tank_whisp_weapon_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 21%); Consumes 4 skill stones;",160,0,75kk,Demon
 89,Weapon Breaking Whisp,tank_whisp_weapon_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 23%); Consumes 4 skill stones;",180,0,100kk,Demon
-91,Weapon Breaking Whisp,tank_whisp_weapon_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 25%); Consumes 4 skill stones;",200,0,100kk,Demon
+90,Weapon Breaking Whisp,tank_whisp_weapon_break,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to break weapon of enemy (Decreases P/M.Atk 25%); Consumes 4 skill stones;",200,0,100kk,Demon
 ,,,,,,,,,,,,,,,,,----------------------------Perfect Whisp----------------------------
 80,Perfect Whisp,tank_whisp_help,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to help remove bad effects, heal its master (Power 900), restore mp of its master (Power 100), break armor of enemy (Deacreases P.Def by 30% and MDef by 15%), break weapon of enemy (Decreases P/M.Atk 15%), Decrease enemy Atack speed and cast speed by 23%; Consumes 4 skill stones;",130,150kk,10kk,,,uses whisp_clear; whisp_heal; whisp_quick_heal; whisp_armor_break; whisp_weapon_break; whisp_gravity;
 82,Perfect Whisp,tank_whisp_help,Whisp,,,0,0,self/single,1,30,1200,"Call a whisp to help remove bad effects, heal its master (Power 920), restore mp of its master (Power 120), break armor of enemy (Deacreases P.Def by 30% and MDef by 15%), break weapon of enemy (Decreases P/M.Atk 15%), Decrease enemy Atack speed and cast speed by 23%; Consumes 4 skill stones;",140,0,10kk

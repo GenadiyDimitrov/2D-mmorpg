@@ -29,6 +29,46 @@ the code has shipped it flat at **35% / 15%** since 0.112.0 (its Rate twin is fl
 the same eight rungs) and the eight DESCR cells now agree. That was the last of the six — **all of
 them are now fixed on both sides**, and `BL-165` is down to the three things that are genuinely yours.
 
+### 🔴 …AND THEN TWO MORE, AFTER THE BUILD WAS PUBLISHED
+
+⚠ **`builds/Game.Server-0.112.1.zip` and `builds/L2Clone-0.112.1.apk` were made BEFORE these two and
+do not contain them.** You said no new server/APK is needed for it, so nothing was rebuilt — but if
+you want the MP change live, or the last whisp rung to read 90 in the Learn tab, say the word and it
+is one command.
+
+**1. 🔴 THE TANK'S MP REGEN IS ADDITIVE, AND IT NEVER WAS.** Your ruling: *"The mp regen of tank is
+also additive, not multiplicative … Armor mastery of tank 4th still says x5.1, it should be +5.1 and
+build that way"*. Correct on every count, and the evidence is your own files:
+
+- `tank 2nd.csv` already writes `mpReg +3.1` at level 36 — a **plus**, where you got it right. Only
+  the 3rd and 4th tiers switched to `x`, and that was the notation slip.
+- Read additively the whole thing is **ONE ladder across three tiers: 3.1 → 3.5 → 3.9 → 4.3 → 4.7 →
+  5.1**, in exactly the units the mage's armour mastery has used since `BL-92` — and the comment on
+  the MP formula says so in as many words: `MpRegenBonus` *"carries the weapon-mastery ladder
+  (+1.5…+3.4) that used to be a ×1.5…×3.4 multiplier and was the entire reason a mage could spam
+  forever"*. **The mage was converted that day and the tank's column was not.** That is your *"the
+  mages one we did, it stayed from there"*, and it was two separate leftovers from the same pass.
+- So it is <c>PassiveEffect.MpRegen</c> (flat MP/s, outside the multiplier chain) on all three tiers
+  now, not `MpRegenPct`. **It is a real nerf and an intended one** — a level-74 tank was multiplying
+  his whole regen chain by 5.1 and now adds 5.1/s, which is the same correction the mage took.
+- ⚠ **I went past the 4th tier to do it**, because stopping there would have put a cliff at level 40
+  (×410% → +3.5/s). The 3rd- and 4th-tier cells now read `+`, and the level-36 rung is your `+3.1`
+  rather than the `3.4` the code had invented. If you only wanted the 4th, it is one array.
+- 🔵 **One thing left alone and flagged** (`BL-165`): the four rungs below level 36 still grant ×1.1 MP
+  regen, which **no `tank 2nd.csv` row authors** — it is mine, it has shipped since the 2nd class was
+  written, and removing it is a balance change you have not asked for.
+
+**2. ✅ THE THREE WHISP LADDERS END AT 90, NOT 91.** *"The intelisence of vsCode or whatever with tab
+key make it go by 2 from 89lvl and I missed it"*. Binding, Healing and Weapon Breaking Whisp now read
+77 / 79 / 81 / 83 / 85 / 87 / 89 / **90**, and `Check.Specs` is back to the plain 76-90 band. 🔑 **An
+editor's autofill is a source of typos like any other** — the last rung of an odd-start ladder is
+where to look for one. It shipped as 91 because the level was in your file and level 91 is genuinely
+reachable (`ExpCurve.MaxLevel` is 100), so it was flagged rather than straightened; that was the right
+call for the wrong number, and this is why it gets flagged rather than silently "fixed".
+
+`--check` is green on all fifteen files, and both changes were proved rather than trusted: the mpReg
+field was broken on purpose (5.1 → 6.0, and a 3rd-tier rung → 9.9) to watch the checker report them,
+then reverted.
 ### 🔑 AND THE WEAPON MASTERY YOU FORGOT — fifteen rungs, 76-90
 
 *"Make the 15 rungs of it in the csv, going from p.atk +90@76 to +200@90, keeps the x1.085 patk as

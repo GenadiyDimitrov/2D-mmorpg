@@ -99,10 +99,7 @@ internal static class Check
         // `tank 4th` earned its line on 2026-09-04, the day he called the tank finished: *"im done with
         // tank 2/3/4 so its ready to build after the npc buffer"*. Same `Also` for the same reason as the
         // two above.
-        // ⚠ THE BAND IS 76-91, not 76-90: his three B-set whisp calls ladder 77, 79 … 91 (eight rungs
-        // from an odd start), and a band that stopped at 90 would drop the code side of that last rung
-        // and report a rung-count defect on three skills. `ExpCurve.MaxLevel` is 100, so 91 is real.
-        new("tank 4th",    BaseClass.Fighter, Archetype.Tank,    76, 91, Game.Shared.Discipline.Bulwark,
+        new("tank 4th",    BaseClass.Fighter, Archetype.Tank,    76, 90, Game.Shared.Discipline.Bulwark,
             Fourth: true, Also: new[] { "shared 4th" }),
     };
 

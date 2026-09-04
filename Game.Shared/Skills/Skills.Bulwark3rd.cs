@@ -374,6 +374,14 @@ public partial class SkillCatalog
     /// contradicts the skill's own name.</summary>
     private static readonly int[] TankArmorPDef =
         { 65, 70, 76, 81, 94, 107, 113, 120, 127, 135, 142, 150, 157, 165, 173 };
+    /// <summary>MP regen per rung, and it is a <b>FLAT PER-SECOND GRANT</b> (<c>PassiveEffect.MpRegen</c>),
+    /// not a multiplier. His ruling, 2026-09-04: *"the mp regen of tank is also additive, not
+    /// multiplicative"* — the `x` his 3rd- and 4th-tier cells carried was a notation slip, and his own
+    /// `tank 2nd.csv` writes `mpReg +3.1` at level 36 where he got it right. Read that way the whole
+    /// column is ONE ladder across three tiers — 3.1 → 3.5 → 3.9 → 4.3 → 4.7 → 5.1 — in the same units
+    /// the mage's armour mastery has always used (`healer 4th.csv`: `mpReg +3.4` → <c>MpRegen: 3.4f</c>).
+    /// ⚠ It was built as `MpRegenPct: v - 1f` until then, which paid a level-74 tank <b>+410% MP
+    /// regen</b> instead of +5.1/s. The cells in `tank 3rd.csv` and `tank 4th.csv` now read `+`.</summary>
     private static readonly float[] TankArmorMpReg =
         { 3.5f, 3.5f, 3.9f, 3.9f, 3.9f, 4.3f, 4.3f, 4.3f, 4.3f, 4.7f, 4.7f, 4.7f, 4.7f, 5.1f, 5.1f };
     private static readonly float[] TankArmorPDefPct =
@@ -390,7 +398,7 @@ public partial class SkillCatalog
     private static SkillLevel[] TankArmorMasteryThirdRungs() =>
         BulwarkRungs(i => new SkillLevel(SpCost: TankArmorMasterySp(i),
             Description: $"With heavy armor: +{TankArmorPDef[i]} P.Def, "
-                       + $"×{1f + TankArmorPDefPct[i]:0.00} P.Def, ×{TankArmorMpReg[i]:0.0} MP regen, "
+                       + $"×{1f + TankArmorPDefPct[i]:0.00} P.Def, +{TankArmorMpReg[i]:0.0} MP regen/s, "
                        + $"{TankArmorCritRed[i] * 100:0}% less crit damage taken, −2 evasion."));
 
     /// <summary>The armour PROFILES for those rungs — a parallel array, like the weapon mastery's,
@@ -401,7 +409,7 @@ public partial class SkillCatalog
         Enumerable.Range(0, BulwarkLevels.Length).Select(i => new ArmorMasteryProfile(
             Robe: default, Light: default,
             Heavy: new StatMods(
-                MpRegenPct: TankArmorMpReg[i] - 1f,   // "mpReg x3.5" is a MULTIPLIER on the stack
+                MpRegen: TankArmorMpReg[i],   // "mpReg +3.5" is a FLAT grant per second — see below
                 PDef: TankArmorPDef[i], PDefPct: TankArmorPDefPct[i],
                 CritDmgResist: TankArmorCritRed[i], Evasion: -2))).ToArray();
 
