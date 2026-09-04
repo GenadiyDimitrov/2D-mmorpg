@@ -78,7 +78,7 @@ what is left is your `tank 4th.csv` numbers and the two AoE pull shapes) · `BL-
 | `BL-103` | 🔵 | Visible weapons — the shape is settled, the meshes are not | UI |
 | `BL-104` | 🔵 | The warrior's sword-vs-blunt split — ruled, nothing to attach it to yet | classes |
 | `BL-106` | ❓ | Your cross-chain id rule — six ids disobey it; three answers wanted | classes |
-| `BL-154` | 🔵 | Tank PULL — ENGINE BUILT (0.110.0); your CSV numbers and the two AoE shapes are left | combat |
+| `BL-154` | 🔵 | Tank PULL — ENGINE BUILT (0.110.0-0.110.2); your CSV numbers, the two AoE shapes, and **one drag-smoothing clamp you asked to eyeball first** are left | combat |
 | `BL-155` | 🔵 | SILENCE — BUILT (0.110.0); the boss skill is live, the tank rows are placeholders | combat |
 | `BL-157` | 🔵 | The worm — a polymorph debuffer/nuker class, a seed only | classes |
 
@@ -651,7 +651,7 @@ what is left is your `tank 4th.csv` numbers and the two AoE pull shapes) · `BL-
 
 ---
 
-### `BL-154` 🔵 Pull — BUILT (0.110.0); what is left is your CSV and the two AoE shapes
+### `BL-154` 🔵 Pull — BUILT (0.110.0-0.110.2); left: your CSV, the two AoE shapes, and one clamp awaiting your eyes
 
 Your spec, 2026-09-03: *"tanks will have pull -> target or aoe around.. con saves and if succeed pulls
 the target to the caster, hope its not instant but 300 range per second .. to look like a pull not
@@ -706,6 +706,17 @@ client hard-snapped the mob ten times a second with nothing drawn between the sn
 staircase landing in exactly the right place. `PlaceEntity` now takes `announce` (default **true**, so
 every other caller is unchanged) and `TickPull` passes `false`. 🔑 **The line is CONTINUITY, not "did
 something else move it".** Server-side only; no APK needed for this one.
+
+🟡 **AND ONE THING IS WAITING ON YOUR EYES — NOT BUILT, NOT TESTED.** Your instruction, 2026-09-04:
+*"mark the one clamp / EntityView.Update as untested and I'll see it in game first then decide"*. The
+client's interpolator sizes each segment by the measured gap between the last two updates, and the
+server sends only what CHANGED — so a mob that stood still for ten seconds and is then grappled has a
+**ten-second first segment**, and the drag's opening ~100ms draws almost frozen before the second
+sample corrects it. It self-corrects after one sample: a hitch at the START of a drag, not a stutter
+through it. A clamp on that span (~0.2s) fixes it, and every mob's first step out of an idle with it —
+but `EntityView.Update` has been rewritten three times to kill the rubber-band, and this is not what
+you reported. **The test is to grapple something that has been standing STILL**; if the body hangs for
+a blink before it slides, that is this, and if you cannot see it, it does not need fixing.
 
 **What is still owed, and it is yours:**
 

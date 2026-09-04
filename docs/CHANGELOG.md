@@ -46,13 +46,16 @@ nevertheless lands in exactly the right place, which is why he read it as real-t
 ⚠ **SERVER-SIDE ONLY — this one needs no new APK.** (The camera fix and Grapple's card from 0.110.1
 still do.) No wire change; protocol stays 33.
 
-🔵 **One residual, his to call, because it is in netcode with a long bug history and it is not what he
-reported.** The interpolator's segment duration is the measured gap between the last two updates, and
-the server sends only what changed — so a mob that stood still for ten seconds and is then grappled
-has a ten-second first segment, and the drag's opening ~100ms is drawn almost frozen before the second
-sample corrects it. One clamp on that span fixes it (and every mob's first step out of an idle), but
-it touches `EntityView.Update`, which has been rewritten three times, so it is not going in beside a
-one-line server fix.
+🟡 **One residual — NOT BUILT AND NOT TESTED, and that is his instruction:** *"mark the one clamp /
+EntityView.Update as untested and I'll see it in game first then decide"*. The interpolator's segment
+duration is the measured gap between the last two updates, and the server sends only what changed —
+so a mob that stood still for ten seconds and is then grappled has a **ten-second first segment**, and
+the drag's opening ~100ms is drawn almost frozen before the second sample corrects it. It self-corrects
+after one sample, so it is a hitch at the START of a drag, not a stutter through it. One clamp on that
+span (~0.2s) would fix it, and every mob's first step out of an idle with it — but it touches
+`EntityView.Update`, which has been rewritten three times to kill the rubber-band, and it is not what
+he reported. **It waits on his eyes.** The test: grapple something that has been standing STILL. Full
+diagnosis and what to look for is in `docs/testing/Open-Checklist.md`.
 
 ## 2026-09-04 — 0.110.1: the whisp that never stopped resummoning, Grapple off the taunt rung, and the ortho camera losing the world
 

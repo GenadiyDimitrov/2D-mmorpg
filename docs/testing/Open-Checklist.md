@@ -184,13 +184,24 @@ a stack of 9 buff scrolls is the friction you wanted or just friction** (§93D).
     face the pull and play its run.
   - ⚠ **Server-side only — this one needs no new APK.** (The camera and the skill card from 0.110.1
     still do.)
-  - 🔵 **One residual, and it is yours to call.** The interpolator's segment length is the measured gap
-    between the last two updates, and the server sends only what CHANGED — so a mob that stood still
-    for ten seconds and is then grappled has a ten-second first segment, and the drag's opening ~100ms
-    draws almost frozen before the second sample corrects it. One clamp fixes it (and every mob's
-    first step out of an idle), but it is inside `EntityView.Update`, which has been rewritten three
-    times to kill the rubber-band — so it is not going in beside a one-line server fix without you
-    saying so. You also said IG's own drag was not perfect; this is roughly where that lives.
+  - 🟡 **NOT BUILT, NOT TESTED — YOU PLAY IT FIRST AND THEN DECIDE** (your instruction, 2026-09-04:
+    *"mark the one clamp / EntityView.Update as untested and I'll see it in game first then decide"*).
+    Nothing below has been written; it is a diagnosis and a proposed one-liner, sitting here so it is
+    not lost and so nobody "fixes" it without you having looked.
+    - **The residual:** the interpolator's segment length is the measured gap between the last two
+      updates, and the server sends only what CHANGED — so a mob that stood still for ten seconds and
+      is then grappled has a **ten-second first segment**, and the drag's opening ~100ms draws almost
+      frozen before the second sample corrects it. It self-corrects after one sample, so it is a hitch
+      at the START of a drag, not a stutter through it.
+    - **The proposed fix:** clamp that span in `EntityView.Update` to a sane maximum (~0.2s). It would
+      also smooth **every mob's first step out of an idle**, which is why it is worth doing at all —
+      and equally why it is not a free change.
+    - 🔴 **Why it is not in already:** `EntityView.Update` has been rewritten three times to kill the
+      rubber-band, and this is not what you reported. You also said IG's own drag was never perfect,
+      which is roughly where this lives.
+    - **What to look for on the phone:** grapple something that has been standing STILL (not a mob
+      already walking at you). If the body hangs for a blink before it slides, that is this. If you
+      cannot see it, it does not need fixing.
 
 
 - [!] I managed to make x4 cast speed with light amror ...I'm 40lvl harmonist with 35lvl armor_mastery  and wc_harmonist_light_mastery both remove the light penalty ... So I think the 40lvl armor mastery should be buffer_armor_mastery that replace 20~35 armor_mastery and wc_chanter_heavy_mastery and harnonist_light_mastery also replaces the armorm_mastery so they won't stack 
