@@ -73,6 +73,19 @@ rolledMagicCrit = MagicCritRate * (1 - target.MagicCritRateResist)    resist cla
 
 ⚠ **DEX/AGI does NOT affect block** — flat shield values and passives only. **Magic is never blocked.**
 
+**Bow resistance** — applied FIRST, before crit and block, and only when the attacker's weapon is a
+bow (basic attacks and physical skills alike):
+
+```
+baseDamage = max(1, baseDamage * (1 - target.BowResist))    BowResist clamp [0, 0.9]
+```
+
+Sums across passives, buffs (`SkillEffect.BuffBowResist`) and mob mastery profiles, then clamps.
+Its only source in the player kit is **Shield Mastery** (16% at rung 2 → 40% at rungs 6-7), so it is
+worn by tanks and by the Human Warchanter in heavy armour, and by nobody else.
+
+`Entity.BowResist` · `GameLoopService.ResolvePhysicalCritAndBlock` / `ResolvePhysicalDouble`
+
 `StatCalculator.cs` — `ResolveAvoidChance`, `PhysicalCritBase`, `MagicCritBase`, `PhysicalCritMult`,
 `MagicCritMult` · block in `GameLoopService.ApplyDamage`
 

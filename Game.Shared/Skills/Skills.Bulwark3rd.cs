@@ -61,9 +61,12 @@ public partial class SkillCatalog
     private static readonly int[] BulwarkControlMp =
         { 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105, 110 };
 
-    /// <summary>The MP ladder both Shield Smashes and Shield Shock share.</summary>
+    /// <summary>The MP ladder both Shield Smashes and Shield Shock share.
+    /// ⚠ Rungs 2 and 3 (levels 43 and 46) were BOTH 76 until 2026-09-04 — the head of this ladder
+    /// read 62/76/76/76 and was the one place in his file where three rungs in a row cost the same.
+    /// He filled the step in himself (65 and 71), so it is a ladder now from end to end.</summary>
     private static readonly int[] BulwarkSmashMp =
-        { 62, 76, 76, 76, 83, 90, 95, 98, 100, 105, 108, 112, 114, 117, 120 };
+        { 62, 65, 71, 76, 83, 90, 95, 98, 100, 105, 108, 112, 114, 117, 120 };
 
     /// <summary>His RANGE column: 600 to level 58, then 800. (Stay is 400 → 600, and the smashes are
     /// a flat 40 — they are shield bashes.) Written once because six skills step together.</summary>

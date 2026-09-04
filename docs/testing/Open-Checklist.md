@@ -28,6 +28,14 @@
 > boss-judgment columns (§96) and again for `BuffPresetJson` (§97). ⚠ It is in `Game.Server/`, not
 > `bin/Debug/`. One delete covers all of them.
 >
+> ⚠ **And one more reason, 0.110.3 — a saved TANK AT 52+ only.** Shield Mastery grew from four rungs
+> to seven (your 40/43/46/49/52 band), so the level-52 rung is now **rung 7, not rung 4**. Learned
+> skills persist as `id:level` and nothing re-reconciles them at login, so an old save holding
+> `tank_shield_mastery:4` resolves to the new **level-43** payload — 250% shield P.Def and +85% block
+> instead of 300% and +100%. It cannot be migrated in code (after this build a rung-4 tank at 43 is
+> perfectly legal, and there is no save version to tell them apart). The delete fixes it. Your admin
+> account is a **Warchanter** and its three rungs did not move, so it is unaffected.
+>
 > ⚠ **Your HP is 2-3× bigger and no creature number moved** (0.91.0). That is the single largest change
 > in this build and it will colour every other reading you take — §93A first.
 >

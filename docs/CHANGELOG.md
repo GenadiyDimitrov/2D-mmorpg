@@ -7,12 +7,84 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.110.2**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.110.3**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-04 (latest) — the taunt card still promised the top of the table
+## 2026-09-04 (latest) — 0.110.3: his tank Shield Mastery / MP delta, and the bow-resist ladder
+
+His ask: *"fix the tank 2nd and 3rd mp and sheield mastery rungs .. and create a bow resistance"*.
+The sheets had been committed the same morning (`dc0020e`) as a restore point with the code
+deliberately left behind; `--check` was reporting **9 discrepancies against `tank 3rd.csv`**, every
+one of them this delta. It reports **none** now.
+
+**Bow resistance did not need creating — it needed AUTHORS.** The whole path already existed and has
+since 2026-08-21: `PassiveEffect.BowResist` → `Entity.BowResist` (summed from passives, buffs and
+mastery profiles, clamped 0-90%) → `ResolvePhysicalCritAndBlock`/`ResolvePhysicalDouble`, which trim
+`baseDamage` by it whenever the attacker's `WeaponType` is `Bow` — hit, crit and block alike, before
+any of the other resolution. `SkillText` prints it, the target window prints it, and
+`tools/SkillCsvSeed/Descr.cs` has read *"bow resistance"* / *"bow resist"* / *"arrow defence"* out of
+the free-text DESCR column all along. What was missing was that only **two** rungs in the game carried
+any, and his three files now author **seven**. So this entry adds no field and no formula; every
+number below is data catching up with him.
+
+**Shield Mastery is SEVEN rungs, was four.** The 3rd-class band grew 40/52 → 40/43/46/49/52, and the
+shape of that growth is the thing to notice: **the three new rungs differ from the level-40 one in
+NOTHING BUT BOW RESISTANCE.**
+
+| rung | level | shield P.Def | block rate | P.Def | bow resist | SP |
+|---|---|---|---|---|---|---|
+| 1 | 20 (tank) / 40 (Warchanter) | 150% | +50% | — | — | 3.2k / 36k |
+| 2 | 28 / 60 | 200% | +70% | — | **16%** ← new | 3.2k / 120k |
+| 3 | 40 / 70 | 250% | +85% | +10% | 16% | 28k / 390k |
+| 4 | 43 | 250% | +85% | +10% | **24%** | 35k |
+| 5 | 46 | 250% | +85% | +10% | **32%** | 40k |
+| 6 | 49 | 250% | +85% | +10% | **40%** | 50k |
+| 7 | 52 | 300% | +100% | +10% | 40% (was 24%) | 74k |
+
+(The shield-P.Def column is his IG percentage ×5, the standing 2026-08-12 pairing with the ×5 cut to
+every shield's flat defence in `Items.cs`. `--check` still prints those five as ⚪ RULED.)
+
+So rungs 4-6 are a **bow-resistance ladder wearing a Shield Mastery name** — nine SP-thousand a step
+to climb 16% → 40% against archers, and the shield's own numbers do not move again until 52. That
+flatness is his and it is deliberate; do not "fill in" the middle columns to make the ladder look
+normal. It also means a Bulwark reaches **40% bow reduction at 49**, three levels earlier than the top
+rung, which is the first time a tank has had a real answer to a ranged attacker mid-band.
+
+**And bow resistance moved DOWN a rung.** `tank 2nd.csv`'s level-28 row and `buffer 3rd.csv`'s
+level-60 row both gained *"bow resistance 16%"* — the same rung 2 in both files, so it is one change,
+not two. The 2026-08-21 note in `Skills.Fighter.cs` that it "starts at rung 3" is now history. A tank
+gets it twelve levels earlier than before, and the **Human Warchanter** — the only buffer who learns
+this skill, and only in heavy armour — gets it at 60 instead of 70.
+
+**The MP ladder his three shield actives share is a ladder again.** `BulwarkSmashMp` opened
+`62, 76, 76, 76, 83, …` — three identical rungs, the one place in his whole tank file where a column
+stood still for three levels. He filled the step in himself: **65 at 43 and 71 at 46**. One array, so
+**Shield Shock**, **Shield Smash — Rate** and **Shield Smash — Power** all moved together (that is
+what `--check` was reporting as six separate defects). Nothing else on those three skills changed.
+
+**One renumbering worth knowing about.** The retired Vanguard's legacy level-52 line — kept since
+`BL-97` so a character who bought that discipline still holds the rung he paid for — asked for
+`SkillLevel: 4`. Rung 4 is now the level-43 payload, so the line says `SkillLevel: 7`. The level and
+the price did not change; only the index into a longer ladder did.
+
+⚠ **NEW APK.** The client builds its Learn tab **locally** from the compiled `ClassSkills`, so an old
+client shows a tank the two old rungs and none of 43/46/49. `GameVersion` is bumped to **0.110.3** and
+the login handshake refuses a mismatch, which is exactly the enforcement wanted here — but it means
+server and APK deploy **together**. `ProtocolVersion` is untouched: no DTO, hub method or push name
+changed.
+
+⚠ **A SAVED TANK AT 52+ IS AFFECTED, and the fix is the `game.db` delete you already owe.** Learned
+skills persist as `id:level` and nothing reconciles them against the class tables at login, so a
+character holding `tank_shield_mastery:4` from before today now resolves to the **level-43** payload —
+shield P.Def 250% instead of 300%, block +85% instead of +100%. It cannot be migrated safely in code:
+after today a level-4 rung is a legitimate thing for a level-43 tank to hold, and there is no schema
+version to tell the two apart. The delete banner at the top of `docs/testing/Open-Checklist.md` now
+names this too. Your admin account is a Warchanter, whose rungs 1-3 did not move — only a **tank at
+52 or above** is exposed.
+
+## 2026-09-04 — the taunt card still promised the top of the table
 
 Him: *"look at taunt description and it say it puts me on the top ... but it shouldnt put me to the
 top it just add aggro value .. the csvs no longer say put me to the top .. and we should have removed

@@ -320,20 +320,34 @@ public static partial class SkillCatalog
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive,
             Description: "Passive. In HEAVY armor with a shield: greatly improves your shield's "
-                       + "block chance and defence and, from level 3, your whole P.Def and your "
-                       + "resistance to bows. In any other armor it does nothing.",
+                       + "block chance and defence, your resistance to bows from level 2, and your "
+                       + "whole P.Def from level 3. In any other armor it does nothing.",
             Levels: new[]
             {
-                // SP here is the TANK's price (his 20/28/36/52 rows). The Human Warchanter's
-                // 36000/120000/390000 comes from the ClassSkill.SpCost override on its own table.
+                // SP here is the TANK's price (his 20/28 rows plus the 40/43/46/49/52 band of
+                // `tank 3rd.csv`). The Human Warchanter's 36000/120000/390000 comes from the
+                // ClassSkill.SpCost override on its own table, which buys rungs 1-3 at 40/60/70.
                 // ⚠ THE GATE IS REAL ON EVERY FIELD since 2026-08-29 (`BL-107`), and two of them only
                 // LOOKED gated before: ShieldDefPct and BlockChancePct scale the shield's OWN numbers
                 // and are inert with an empty off-hand by accident, but BOW RESISTANCE is an ordinary
                 // character stat — rungs 3-4 were paying it to a tank holding a greatsword.
+                //
+                // 🔑 SEVEN RUNGS SINCE 2026-09-04, was four. His tank pass grew the 3rd-class band
+                // from 40/52 to 40/43/46/49/52, and the THREE NEW RUNGS differ from the level-40 one
+                // in NOTHING BUT BOW RESISTANCE (16 → 24 → 32 → 40%): shield P.Def, block rate and
+                // the +10% P.Def all hold flat until 52. It is a bow-resistance ladder wearing a
+                // Shield Mastery name, so do not "fill in" the shield columns to make it look like a
+                // normal ladder — the flatness is his.
+                // ⚠ AND BOW RESISTANCE MOVED DOWN A RUNG at the same time, to rung 2 — `tank 2nd.csv`
+                // (level 28) and `buffer 3rd.csv` (level 60) both gained "bow resistance 16%". The
+                // 2026-08-21 note that it "starts at rung 3" is now history.
                 new SkillLevel(SpCost: 3200,  Passive: new PassiveEffect(RequiresShield: true, RequiredArmor: ArmorWeights.Heavy, ShieldDefPct: 1.50f, BlockChancePct: 0.50f)),
-                new SkillLevel(SpCost: 3200,  Passive: new PassiveEffect(RequiresShield: true, RequiredArmor: ArmorWeights.Heavy, ShieldDefPct: 2.00f, BlockChancePct: 0.70f)),
+                new SkillLevel(SpCost: 3200,  Passive: new PassiveEffect(RequiresShield: true, RequiredArmor: ArmorWeights.Heavy, ShieldDefPct: 2.00f, BlockChancePct: 0.70f, BowResist: 0.16f)),   // tank 28 / Warchanter 60 — bow resistance starts on THIS rung since 2026-09-04
                 new SkillLevel(SpCost: 28000, Passive: new PassiveEffect(RequiresShield: true, RequiredArmor: ArmorWeights.Heavy, ShieldDefPct: 2.50f, BlockChancePct: 0.85f, DefencePct: 0.10f, BowResist: 0.16f)),   // his `tank 3rd.csv` row at 40 — 28k SP, block rate 85%, bow 16%
-                new SkillLevel(SpCost: 74000, Passive: new PassiveEffect(RequiresShield: true, RequiredArmor: ArmorWeights.Heavy, ShieldDefPct: 3.00f, BlockChancePct: 1.00f, DefencePct: 0.10f, BowResist: 0.24f)),
+                new SkillLevel(SpCost: 35000, Passive: new PassiveEffect(RequiresShield: true, RequiredArmor: ArmorWeights.Heavy, ShieldDefPct: 2.50f, BlockChancePct: 0.85f, DefencePct: 0.10f, BowResist: 0.24f)),   // 43 — shield numbers HOLD; only the bow ladder moves
+                new SkillLevel(SpCost: 40000, Passive: new PassiveEffect(RequiresShield: true, RequiredArmor: ArmorWeights.Heavy, ShieldDefPct: 2.50f, BlockChancePct: 0.85f, DefencePct: 0.10f, BowResist: 0.32f)),   // 46
+                new SkillLevel(SpCost: 50000, Passive: new PassiveEffect(RequiresShield: true, RequiredArmor: ArmorWeights.Heavy, ShieldDefPct: 2.50f, BlockChancePct: 0.85f, DefencePct: 0.10f, BowResist: 0.40f)),   // 49
+                new SkillLevel(SpCost: 74000, Passive: new PassiveEffect(RequiresShield: true, RequiredArmor: ArmorWeights.Heavy, ShieldDefPct: 3.00f, BlockChancePct: 1.00f, DefencePct: 0.10f, BowResist: 0.40f)),   // 52 — the only rung above 40 that moves the shield's own numbers again
             }),
 
         // Tank Anti-Magic — passive flat magic defence (5 levels @20/24/28/32/36).

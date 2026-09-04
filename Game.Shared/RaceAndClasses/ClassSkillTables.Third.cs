@@ -204,12 +204,16 @@ public static partial class ClassSkillTables
             var kit = new List<ClassSkill>();
 
             // ---- The four masteries, continued. Armor / Anti-Magic / Weapon start at rung 6 (five
-            //      exist below 40); Shield Mastery is his two-row exception at 40 and 52.
+            //      exist below 40); Shield Mastery starts at rung 3 (two exist below 40) and STOPS at
+            //      52 — it is the one mastery that does not run the file's full fifteen rungs.
             kit.AddRange(Ladder(TankArmorMastery, lv, 6));
             kit.AddRange(Ladder(TankAntiMagic,    lv, 6));
             kit.AddRange(Ladder(TankWeaponMastery, lv, 6));
-            kit.Add(new ClassSkill(TankShieldMastery, 40, SkillLevel: 3));
-            kit.Add(new ClassSkill(TankShieldMastery, 52, SkillLevel: 4));
+            // 🔑 FIVE ROWS SINCE 2026-09-04, was two (40 and 52). His tank pass filled the gap with
+            // 43/46/49, and those three rungs buy bow resistance ALONE — see the ladder in
+            // Skills.Fighter.cs. `lv.Take(5)` rather than a hand-written list so it cannot drift off
+            // his one level ladder; the rung numbers continue the 2nd class's 1-2 at 20/28.
+            kit.AddRange(Ladder(TankShieldMastery, lv.Take(5).ToArray(), 3));
 
             // ---- The shared actives and the two odd-cadence passives.
             kit.AddRange(Ladder(TankStay, lv, 1));            // moved here from the 2nd class
@@ -494,25 +498,28 @@ public static partial class ClassSkillTables
             new ClassSkill(TankShieldMastery, 70, SkillLevel: 3, SpCost: 390_000));
     }
 
-    /// <summary>Shield Mastery's FOURTH rung, at 52 — his one authored row in
-    /// <c>docs/data/classes_skills_csv/tank 3rd.csv</c> (2026-08-21), which until then was an empty
-    /// placeholder. Both tank disciplines get it: the file has a RACE column and he left it blank, and
-    /// nothing in the row distinguishes a Bulwark from a Vanguard.
+    /// <summary>Shield Mastery's TOP rung, at 52 — the row that in 2026-08-21 was the only authored
+    /// line in <c>docs/data/classes_skills_csv/tank 3rd.csv</c>, back when the rest of the file was an
+    /// empty placeholder. That is history now: the file is finished, `RegisterBulwark` owns all of it,
+    /// and the only thing left here is the RETIRED Vanguard's copy of this one line.
     ///
-    /// <para>⚠ This is the ONLY 3rd-class row a tank has. The purge of 2026-08-10 still stands for the
-    /// rest of the kit — do not read one authored line as permission to restore Shield Bash, Aegis,
-    /// Last Stand and the others that are still commented out below.</para></summary>
+    /// <para>⚠ It was rung 4 and is rung 7 since 2026-09-04 — 43/46/49 now sit between it and 40. The
+    /// LEVEL and the PRICE are unchanged; only the index into the ladder moved.</para></summary>
     private static void RegisterTankShieldMastery()
     {
         foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
             foreach (var disc in new[] { Discipline.Bulwark, Discipline.Vanguard })
                 ClassSkills.RegisterThird(race, disc,
                     // 🔴 BULWARK IS NO LONGER REGISTERED HERE — `RegisterBulwark` owns his whole tank
-                    // file now, rung 3 at 40 and rung 4 at 52 alike. Only the RETIRED Vanguard keeps
-                    // this line, so a character who took that discipline before it was retired
-                    // (`BL-97`) still holds the rung he bought.
+                    // file now, the whole 40-52 band alike. Only the RETIRED Vanguard keeps this
+                    // line, so a character who took that discipline before it was retired (`BL-97`)
+                    // still holds the rung he bought.
+                    // ⚠ THE RUNG NUMBER MOVED 4 → 7 on 2026-09-04 and the LEVEL and PRICE did not:
+                    // the level-52 row is still the top of Shield Mastery, it is simply the seventh
+                    // rung now that 43/46/49 exist between it and 40. A stale `SkillLevel: 4` would
+                    // silently demote a retired Vanguard to the level-43 payload.
                     disc == Discipline.Vanguard
-                        ? new[] { new ClassSkill(TankShieldMastery, 52, SkillLevel: 4, SpCost: 74_000) }
+                        ? new[] { new ClassSkill(TankShieldMastery, 52, SkillLevel: 7, SpCost: 74_000) }
                         : System.Array.Empty<ClassSkill>());
     }
 

@@ -32,11 +32,13 @@ public static partial class ClassSkillTables
                 // level-20 row himself, so a tank has no taunt for his first four levels. That gap is
                 // DELIBERATE and was confirmed when queried ("delibered is taunt at 24") — it is not a
                 // transcription slip, so do not helpfully restore a rung at 20.
-                // ⚠ SHIELD MASTERY IS NO LONGER ON THE 20/24/28/32 CADENCE. He re-authored it
-                // 2026-08-21 onto 20 / 28 / 36 — and its FOURTH rung left this file entirely for
-                // `tank 3rd.csv` at 52 (registered in ClassSkillTables.Third.RegisterTankShieldMastery).
-                // So a tank now holds rung 2 from 28 and rung 3 from 36, not 24 and 28; the gaps at
-                // 24 and 32 are his, exactly like Provoke's missing level-20 row above.
+                // ⚠ SHIELD MASTERY IS NO LONGER ON THE 20/24/28/32 CADENCE. This file keeps only its
+                // first TWO rungs, at 20 and 28 — everything from rung 3 up is `tank 3rd.csv`, which
+                // buys 3-7 at 40/43/46/49/52 (registered in ClassSkillTables.Third.RegisterBulwark).
+                // The gap between 28 and 40 is his, exactly like Provoke's missing level-20 row above.
+                // 🔑 RUNG 2 CARRIES BOW RESISTANCE since 2026-09-04 — he added *"bow resistance 16%"*
+                // to this file's level-28 row and to `buffer 3rd.csv`'s level-60 one on the same day.
+                // The learn line here did not move; only the payload behind it did.
                 // 🔴 HIS TANK PASS OF 2026-09-02 REWROTE THIS BLOCK, and three of the changes are
                 // structural rather than numeric:
                 //   • SHIELD SHOCK (was "Shield Stun") is a LADDER from 24, not one rung at 28.
