@@ -9377,7 +9377,8 @@ public class GameLoopService : BackgroundService
     ///
     /// <para>⚠ THREAT AND CREDIT GO TO THE MASTER, always. A whisp is not a thing that can hold aggro
     /// (it cannot be targeted, so a monster that chose it would stand there doing nothing), and the
-    /// taunting whisp's entire purpose is to put the MASTER at the top of the table.</para></summary>
+    /// taunting whisp's entire purpose is to pay threat into the MASTER'S row of the table. (Its row,
+    /// not the top of it — since `BL-123` no taunt in the game jumps anyone to the top.)</para></summary>
     private void FireWhispOffensive(Entity master, WhispInstance w, SkillDef def, Entity target)
     {
         // ---- TAUNT / CHARM AGGRO — unconditional, exactly as on the player path (`BL-123`). ----

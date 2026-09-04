@@ -591,8 +591,25 @@ public static class SkillText
                 + $"lasts {Secs(def.TrapLifeTicks)}");
 
         // ---- Threat (BL-71) ----
+        // ⚠ A PLAIN ADD, NEVER A JUMP TO THE TOP. This line went on promising the top of the table
+        // after `BL-123` (2026-09-02) took that away from the engine: *"they donnt mve you on top for
+        // free .. the idea is tank to spam taunt/charm for mob to keep it agrro on him"*. A card that
+        // describes a mechanic the code no longer has teaches the player the wrong model of his own
+        // class, which is worse than saying nothing — so when a threat ruling moves, this string moves
+        // with it. The two halves are separate on purpose: the LOCK is the taunt's guarantee, the
+        // POINTS are all a charm buys, and a charm must not force a target change
+        // (*"dont change target like taunt"*), so only a real `Taunt` prints the second line.
         int taunt = def.TauntPowerAt(level);
-        if (taunt > 0) o.Add($"Threat {taunt:N0}, on top of jumping you to the top of the table");
+        if (taunt > 0)
+        {
+            o.Add($"Adds {taunt:N0} threat");
+            if ((def.Effect & SkillEffect.Taunt) != 0)
+            {
+                int lockTicks = def.DurationTicksAt(level) > 0
+                    ? def.DurationTicksAt(level) : GameConstants.TauntLockTicksDefault;
+                o.Add($"Locks it onto you for {Secs(lockTicks)}");
+            }
+        }
 
         // ---- Toggles + MP economy ----
         if (def.Toggle)

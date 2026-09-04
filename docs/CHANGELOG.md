@@ -12,7 +12,39 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-04 (latest) — 0.110.2: the drag was announcing itself as a teleport ten times a second
+## 2026-09-04 (latest) — the taunt card still promised the top of the table
+
+Him: *"look at taunt description and it say it puts me on the top ... but it shouldnt put me to the
+top it just add aggro value .. the csvs no longer say put me to the top .. and we should have removed
+that"*.
+
+He is right, and the engine has been right since `BL-123` (2026-09-02, 0.107.x) — `ApplyTaunt`,
+`FireWhispOffensive` and the charm path all do a **plain add** to the caster's row and nothing else.
+What never moved was the sentence the skill card prints. `SkillText.Mechanics` had one line for
+threat, written back at `BL-71`:
+
+> `Threat 4,500, on top of jumping you to the top of the table`
+
+So for two days every Taunt, Lure, Mass Taunt, Charm and Taunting Whisp described a mechanic the
+code no longer has. That is the worst shape a stale string can take: it does not merely omit, it
+teaches the player the wrong model of his own class — a tank reading that card would reasonably
+conclude he need not spam, which is the exact opposite of the ruling (*"the idea is tank to spam
+taunt/charm for mob to keep it agrro on him"*).
+
+**Now two lines, and the second is conditional.** The card reads `Adds 4,500 threat`, and — only for
+a real `SkillEffect.Taunt` — `Locks it onto you for 1.5s`, which is the taunt lock the card had never
+mentioned at all despite it being the skill's actual guarantee. A **charm does not print the lock**:
+it pays points through `AddThreat` and deliberately does not force a target change (*"dont change
+target like taunt"*), so claiming a lock there would be the same class of lie in the other direction.
+The whisp path's doc comment, which still called the taunting whisp's purpose "put the MASTER at the
+top of the table", was corrected with it.
+
+⚠ **This needs a NEW APK.** `SkillText` lives in `Game.Shared`, and the client builds the card
+**locally** from its bundled copy — the server never sends this text. Nothing else changed: no
+`SkillDef`, no `ClassSkill`, no CSV row (his files say "leaves you N aggro ahead", which is the plain
+add, correctly authored all along), and `--check` is clean. No protocol change, so no version bump.
+
+## 2026-09-04 — 0.110.2: the drag was announcing itself as a teleport ten times a second
 
 Him, on Grapple: *"when successful it drags the monster but it's like lagging, not like a continuous
 clean drag — it's not really a problem because the mob is near me after it ends, it seems real time ..
