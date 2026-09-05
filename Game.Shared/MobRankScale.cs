@@ -73,9 +73,32 @@ public static class MobRankScale
     //  costs him 2.1% of his pool per swing today and 1.1% at mythic S — the endgame tank is TWICE as
     //  immune as the mid-tier one, which is the ratchet these two knobs exist to break. At x4 a solo
     //  boss takes 8.6% / 4.2% a swing, and the enrage ladder in GameLoopService carries it from there.
-    private const float BossHpMult   = 10f;   // his x10, on every boss
-    private const float BossRuneAtk  = 2f;    // his x2 attack, on every boss (the War/Spell Rune)
-    private const float BossSoloMult = 2f;    // a boss with NO escort: x2 more on attack AND HP
+    //  ═══ AND A THIRD RUNG ABOVE THEM: THE WORLD BOSS (2026-09-05, same day) ═════════════════════
+    //
+    //  🔑 A WORLD BOSS IS A KIND OF ENCOUNTER, NOT A RARE SPAWN. His correction, after 0.113.0 had put
+    //  the Valley Treant on the world ladder because it respawns every 21 hours: *"The treat is field
+    //  boss (same as dungeon one) world boss is a clan/party of clans mass pvp massacre where the boss
+    //  is the target ... and that boss will have about x2~3 aditional stats and x10 additional hp ...
+    //  So now if boss have 28k p atk/6kk hp a world one will have 50~60k p atk and 120kk~180kk
+    //  hp(6kk x2~3 x10) so several parties can fight it while fighting others for the best loot in the
+    //  game"*.
+    //
+    //  His arithmetic is relative to a SOLO boss — 6kk is what a level-90 solo boss carries after the
+    //  x20 above — so that is the base these two multiply, and his parenthesis "(6kk x2~3 x10)" is the
+    //  HP rung exactly: x2~3 AND x10, i.e. x20-x30 on a solo boss.
+    //
+    //  ⚠ 2.5 IS THE MIDPOINT OF A RANGE HE LEFT OPEN ("about x2~3"), not a fitted number, and it is ONE
+    //  constant to move if he wants a different point in it. At level 90 it gives a world boss
+    //  ~172M HP against the 120-180kk he quoted, and ~128k P.Atk. ⚠ His P.Atk example ("28k -> 50~60k")
+    //  reads as x2 off an ESCORTED boss rather than a solo one, which would be ~51k and is what our
+    //  SOLO boss already carries; the HP half of his own sentence is unambiguous, so the solo base is
+    //  what both rungs use here. If he wants world P.Atk near 60k instead of 128k, that is this
+    //  constant at 1.0 — worth asking before a world boss is ever authored.
+    private const float BossHpMult    = 10f;   // his x10, on every boss
+    private const float BossRuneAtk   = 2f;    // his x2 attack, on every boss (the War/Spell Rune)
+    private const float BossSoloMult  = 2f;    // a boss with NO escort: x2 more on attack AND HP
+    private const float WorldStatMult = 2.5f;  // world boss: his "x2~3 additional stats", over SOLO
+    private const float WorldHpMult   = 10f;   // world boss: his "x10 additional hp", on top of that
 
     /// <summary>The rank's HP multiplier at this level. Elite is flat (an elite is trash-plus, and his
     /// complaint was never about elites); a BOSS decays — see the block above — and then takes his
@@ -86,11 +109,16 @@ public static class MobRankScale
     ///
     /// <para><paramref name="solo"/> comes from <see cref="BossCatalog.IsSolo"/> — a boss with no
     /// escort. It is meaningless on any other rank and is ignored there.</para></summary>
-    public static float Hp(MobRank rank, int level, bool solo = false) => rank switch
+    public static float Hp(MobRank rank, int level, bool solo = false, bool world = false) => rank switch
     {
         MobRank.Elite => 4f,
+        // ⚠ A WORLD boss is measured off the SOLO number whatever its own `Solo` flag says — his
+        // "(6kk x2~3 x10)" starts from the solo pool, and a world boss is by definition the one thing
+        // several parties converge on, so "does it have an escort" is not a question about it.
         MobRank.Boss  => MathF.Max(20f, BossHpA / MathF.Pow(MathF.Max(1, level), BossHpK))
-                         * BossHpMult * (solo ? BossSoloMult : 1f),
+                         * BossHpMult
+                         * (solo || world ? BossSoloMult : 1f)
+                         * (world ? WorldStatMult * WorldHpMult : 1f),
         _             => 1f,
     };
 
@@ -124,10 +152,12 @@ public static class MobRankScale
     /// against the straw party `BL-169` retired, and re-measured against the party people actually
     /// play, a boss at ×4 cost the owner's own tank 2.1% of his bar per swing and could not kill him in
     /// five minutes of standing still unhealed.</para></summary>
-    public static float Atk(MobRank rank, bool solo = false) => rank switch
+    public static float Atk(MobRank rank, bool solo = false, bool world = false) => rank switch
     {
         MobRank.Elite => 1.5f,
-        MobRank.Boss  => 4f * BossRuneAtk * (solo ? BossSoloMult : 1f),
+        MobRank.Boss  => 4f * BossRuneAtk
+                         * (solo || world ? BossSoloMult : 1f)
+                         * (world ? WorldStatMult : 1f),
         _             => 1f,
     };
 
@@ -146,10 +176,14 @@ public static class MobRankScale
     /// <para>⚠ It costs time-to-kill roughly ×2 on a boss, which is why the HP curve above is fitted
     /// AFTER it and not before: defence buys the difficulty, HP buys the length, and the two must be
     /// measured together or you pay for the same minutes twice.</para></summary>
-    public static float Def(MobRank rank) => rank switch
+    /// <para>🔑 A WORLD boss takes his ×2~3 here too — *"about x2~3 aditional stats"* is every stat, not
+    /// the attack columns alone, and a mass-PvP objective that several parties are meant to grind on
+    /// while fighting each other needs the defence as much as the pool. The `solo` ×2 does NOT reach
+    /// defence for anyone: his solo rule was explicitly *"x2 on both (atk/hp)"*.</para></summary>
+    public static float Def(MobRank rank, bool world = false) => rank switch
     {
         MobRank.Elite => 1.33f,
-        MobRank.Boss  => 2.0f,
+        MobRank.Boss  => 2.0f * (world ? WorldStatMult : 1f),
         _             => 1f,
     };
 

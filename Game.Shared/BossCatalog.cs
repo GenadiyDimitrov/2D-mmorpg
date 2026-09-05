@@ -43,20 +43,45 @@ public record BossPhase(
 /// <param name="MAtkMult">Per-boss M.Atk lean. 1 = the rank's number.</param>
 /// <param name="PDefMult">Per-boss P.Def lean. 1 = the rank's number.</param>
 /// <param name="MDefMult">Per-boss M.Def lean. 1 = the rank's number.</param>
+/// <param name="World">🔑 THE TOP TIER, and it is a KIND OF ENCOUNTER rather than a rare spawn — his
+/// correction, 2026-09-05: *"The treat is field boss (same as dungeon one) world boss is a clan/party
+/// of clans mass pvp massacre where the boss is the target … so several parties can fight it while
+/// fighting others for the best loot in the game"*. It takes his ×2~3 on every stat and ×2~3 × ×10 on
+/// HP over a solo boss (<see cref="MobRankScale"/>), and the 2h/3h enrage ladder.
+///
+/// <para>⚠ It is a FLAG, not a fourth <see cref="MobRank"/>, and deliberately. Fourteen places in
+/// GameLoopService/Entity/StatCaps test <c>Rank == MobRank.Boss</c> — control immunity, the zone-HP
+/// exemption, `AutoAttackBoss`, the raid-level lock, boss judgment, the exp rank, the plate title. A
+/// world boss wants ALL of that behaviour and only different NUMBERS, so a new rank would have meant
+/// fourteen edits with a silent bug waiting at any one of them. `BL-13`'s old note asking for "a rank
+/// of its own" was written before the profile existed; this is the same thing, cheaper.</para>
+///
+/// <para>⚠ NOTHING IS AUTHORED WITH THIS YET. There is no world boss in the game — the encounter needs
+/// a zone, the mass-PvP rules and the loot table, which is `BL-171`. This is the stat rung only.</para></param>
 /// <param name="EnrageSeconds">Seconds of ENGAGED combat before the first enrage (×2 attack), and
 /// before the second (×4 total). His ladder, 2026-09-05: *"if battle becomes longer than 20 min he
 /// gets a buff that additionally doubles p/m atk and after 40 mins it's gives another x2"*, with the
-/// second rung moved to 30 minutes the same day. World bosses run 2h/3h — *"only field/dungeon bosses,
-/// world once the it times will be 2h and 3h"*.</param>
+/// second rung moved to 30 minutes the same day. A `World` boss defaults to 2h/3h instead — *"world
+/// once the it times will be 2h and 3h"*.</param>
 public record BossProfile(
     BossSkillEntry[] Skills,
     BossPhase[] Phases,
     bool Solo = false,
+    bool World = false,
     float HpMult = 1f,
     float PAtkMult = 1f, float MAtkMult = 1f,
     float PDefMult = 1f, float MDefMult = 1f,
-    int EnrageSeconds = BossCatalog.FieldEnrage1Seconds,
-    int EnrageSeconds2 = BossCatalog.FieldEnrage2Seconds);
+    int EnrageSeconds = 0,
+    int EnrageSeconds2 = 0)
+{
+    /// <summary>The first enrage rung in seconds: the profile's own if it set one, else the ladder its
+    /// KIND implies — 20 minutes for a field/dungeon boss, 2 hours for a world boss.</summary>
+    public int Enrage1 => EnrageSeconds > 0 ? EnrageSeconds
+        : World ? BossCatalog.WorldEnrage1Seconds : BossCatalog.FieldEnrage1Seconds;
+    /// <summary>The second rung: 30 minutes for a field/dungeon boss, 3 hours for a world boss.</summary>
+    public int Enrage2 => EnrageSeconds2 > 0 ? EnrageSeconds2
+        : World ? BossCatalog.WorldEnrage2Seconds : BossCatalog.FieldEnrage2Seconds;
+}
 
 /// <summary>THE place to author per-boss mechanics. Add an entry keyed by the boss's mob-template
 /// id; leave a boss out to keep the plain slam. Numbers/skills retune-later.</summary>
@@ -84,6 +109,12 @@ public static class BossCatalog
     public static bool IsSolo(string? mobTypeId) =>
         mobTypeId is not null && All.TryGetValue(mobTypeId, out var p) && p.Solo;
 
+    /// <summary>Is this template a WORLD boss — the mass-PvP encounter at the top of the ladder? Drives
+    /// his ×2~3 stats / ×2~3 × ×10 HP over a solo boss, and the 2h/3h enrage. Nothing is authored with
+    /// it yet; see <see cref="BossProfile.World"/>.</summary>
+    public static bool IsWorld(string? mobTypeId) =>
+        mobTypeId is not null && All.TryGetValue(mobTypeId, out var p) && p.World;
+
     private static Dictionary<string, BossProfile> Build() => new()
     {
         // Demo: the Valley Treant Lord (valley_treant, the L60 boss zone). Slams from the start;
@@ -104,10 +135,15 @@ public static class BossCatalog
             },
             // ESCORTED, and it is the clearest case in the game: it calls two bogwood adds at 50%, so
             // the escort is written into its own phase script. No `solo boss` ×2.
-            // ⚠ It is also the WORLD boss (WorldMap, 21-hour respawn), so its enrage runs on the 2h/3h
-            // ladder rather than the field one — his *"world once the it times will be 2h and 3h"*.
-            EnrageSeconds:  WorldEnrage1Seconds,
-            EnrageSeconds2: WorldEnrage2Seconds),
+            //
+            // 🔴 IT IS A FIELD BOSS, NOT A WORLD BOSS — corrected 2026-09-05, hours after 0.113.0 put it
+            // on the 2h/3h ladder. Its 21-hour respawn made it *look* like the world boss and I read the
+            // respawn as the classification. His correction: *"The treat is field boss (same as dungeon
+            // one) world boss is a clan/party of clans mass pvp massacre where the boss is the target"*.
+            // A world boss is defined by the ENCOUNTER, not by how rarely it spawns, and there is no
+            // world boss in the game yet. So it takes the ordinary field ladder (20/30 min), which is
+            // the default and is therefore not written out here.
+            Solo: false),
 
         // ═══ THE THREE DUNGEON BOSSES — `BL-155`'s full silence ══════════════════════════════════
         //

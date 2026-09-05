@@ -380,3 +380,58 @@ rather than about bosses. Three ways out, and it is your call:
 3. **Leave it** — the low-level bosses are the three dungeon bosses at 44 and 65 and the world boss at
    60. If nobody is fighting them right now, this can wait until the bot party exists and the whole
    band gets re-measured at once.
+
+---
+
+## 7. CORRECTION — the treant is a FIELD boss, and a world boss is a tier above (0.113.1)
+
+Your correction, hours after 0.113.0: *"The treat is field boss (same as dungeon one) world boss is a
+clan/party of clans mass pvp massacre where the boss is the target ..and that boss will have about
+x2~3 aditional stats and x10 additional hp .. So now if boss have 28k p atk/6kk hp a world one will
+have 50~60k p atk and 120kk~180kk hp(6kk x2~3 x10) so several parties can fight it while fighting
+others for the best loot in the game"*.
+
+🔴 **I mis-filed the Valley Treant.** 0.113.0 put it on the 2h/3h ladder because it respawns every 21
+hours — **I read the respawn as the classification.** A world boss is a kind of *encounter*, not a rare
+spawn. It is back on the field ladder, and there is now no world boss in the game at all.
+
+**The stat rung is built**: `BossProfile.World` = ×2.5 every stat, ×25 HP, both over the SOLO boss
+(which is what your own "6kk × 2~3 × 10" starts from). At 90:
+
+```
+  90       Boss    x527      3434746    1544        1752    1960s TOO SLOW (33m)
+  90  Boss/solo   x1054      6869493    1544        1752    3920s TOO SLOW (65m)
+  90 Boss/WORLD  x26340    171737328    3860         694  247403s      clan raid
+```
+
+**171.7 kk, inside your 120-180kk.** ✅
+
+### Two things it leaves for you
+
+**1. 172 kk is a very large pool for our damage model.** One 5-man does 694 dps against its 3,860 P.Def:
+
+| raid | time to kill |
+|---|---|
+| 1 party (5) | 69 h |
+| 9 parties (45) | **7.6 h** |
+| 34 parties (172) | 2 h |
+
+Even allowing that most of a mass-PvP fight is spent on *people* rather than the boss, 7.6 hours for
+nine full parties is a long evening. Either the pool comes down or a world boss is deliberately an
+all-server, all-day event. One constant either way.
+
+**2. Your two examples disagree, and I followed the HP one.** *"28k p atk → 50~60k"* is ×2 off an
+**escorted** boss; *"6kk × 2~3 × 10"* is off a **solo** one. I used the solo base for both, so P.Atk
+lands at **~128k** rather than 50-60k. On your mythic-S tank:
+
+| | per swing after block | share of your 20k pool |
+|---|---|---|
+| ×2.5 (built) | 1,857 | **9.3%** |
+| your 50-60k | 873 | 4.4% |
+
+4.4% is *softer than a solo boss already hits you* (4.2%), so I think 128k is the right game and the
+50-60k is the arithmetic slip — but it is your number and one constant, so say which.
+
+**3. And the encounter does not exist.** It needs a place (an open field — the PvP is the point), the
+mass-PvP rules (does the zone force-flag? does karma apply? how do several clans contest a kill?) and
+the loot. That is `BL-171`, and it is a design pass rather than a number.

@@ -10700,8 +10700,10 @@ public class GameLoopService : BackgroundService
 
         // Enrage LADDER: ×2 at his first time, ×4 at his second. A while-loop, so a boss that somehow
         // crossed both thresholds between ticks arrives at the right rung rather than the first one.
-        int at1 = (profile?.EnrageSeconds  ?? BossCatalog.FieldEnrage1Seconds) * 10;
-        int at2 = (profile?.EnrageSeconds2 ?? BossCatalog.FieldEnrage2Seconds) * 10;
+        // Enrage1/Enrage2 resolve the profile's own seconds, or the ladder its KIND implies — 20/30
+        // minutes for a field or dungeon boss, 2h/3h for a world one.
+        int at1 = (profile?.Enrage1 ?? BossCatalog.FieldEnrage1Seconds) * 10;
+        int at2 = (profile?.Enrage2 ?? BossCatalog.FieldEnrage2Seconds) * 10;
         while (boss.EnrageStage < 2 &&
                boss.CombatTicks >= (boss.EnrageStage == 0 ? at1 : at2))
             EnrageBoss(boss, boss.EnrageStage == 0 ? "flies into a rage!" : "is consumed by fury!");
@@ -18980,11 +18982,15 @@ public class GameLoopService : BackgroundService
         // rune and ×10 HP every boss now gets. The flag is the PROFILE's (BossCatalog.IsSolo), so it is
         // authored beside the boss's kit rather than guessed from the spawner; a template with no
         // profile is escorted, which is the conservative default.
-        bool bossSolo = rank == MobRank.Boss && BossCatalog.IsSolo(mobId);
+        // ⚠ `World` is the third rung and is measured off the SOLO numbers — his mass-PvP objective,
+        // *"x2~3 aditional stats and x10 additional hp"* over a solo boss. Nothing is authored with it
+        // yet; the encounter itself is `BL-171`.
         var bossProfile = rank == MobRank.Boss ? BossCatalog.Get(mobId) : null;
-        float hpMul = MobRankScale.Hp(rank, level, bossSolo) * (bossProfile?.HpMult ?? 1f);
-        float atkMul = MobRankScale.Atk(rank, bossSolo);
-        float defMul = MobRankScale.Def(rank);
+        bool bossSolo = rank == MobRank.Boss && (bossProfile?.Solo ?? false);
+        bool bossWorld = rank == MobRank.Boss && (bossProfile?.World ?? false);
+        float hpMul = MobRankScale.Hp(rank, level, bossSolo, bossWorld) * (bossProfile?.HpMult ?? 1f);
+        float atkMul = MobRankScale.Atk(rank, bossSolo, bossWorld);
+        float defMul = MobRankScale.Def(rank, bossWorld);
         // Flat accuracy by rank — a boss must be able to land on a dodge build.
         int accFlat = MobRankScale.AccFlat(rank);
 

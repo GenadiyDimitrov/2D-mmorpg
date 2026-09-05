@@ -2499,26 +2499,31 @@ Console.WriteLine("  Rank multipliers come from MobRankScale — the SAME code B
 Console.WriteLine("  ⚠ THE LEVELS ARE THE ONES THAT EXIST: the lowest boss in the game is the Hollow Crypt's");
 Console.WriteLine("     Grave Lich at 44, then the world boss at 60, Dread Knight 65 and Disciple of the Dawn 90.");
 Console.WriteLine("     20 is kept as a SHAPE check for the curve, not because anything spawns there.");
-Console.WriteLine($"{"Lvl",4} {"rank",9} {"HP x",7} {"boss HP",10} {"P.Def",7} {"party dps",10} {"TTK",8} {"band",14}");
+Console.WriteLine($"{"Lvl",4} {"rank",10} {"HP x",7} {"boss HP",12} {"P.Def",7} {"party dps",10} {"TTK",8} {"band",14}");
 foreach (int L in new[] { 20, 44, 60, 65, 76, 85, 90 })
 {
     var party = BuildBossParty(L);
     // `BL-167` — a boss now comes in TWO shapes and they are a factor of two apart on both axes, so
     // one row could only ever be half the answer. ESCORTED is the default (his x2 atk / x10 HP);
     // SOLO takes the extra x2 on each (x4 / x20).
-    foreach (var (rank, solo, label) in new[]
+    // ⚠ The WORLD row is here to be READ, not to be judged by the band: it is his mass-PvP objective
+    // for *"a clan/party of clans"*, so a 5-man TTK against it is a number with no meaning. It is
+    // printed so the pool and the damage can be sanity-checked against his own "120kk~180kk".
+    foreach (var (rank, solo, world, label) in new[]
     {
-        (MobRank.Elite, false, "Elite"),
-        (MobRank.Boss,  false, "Boss"),
-        (MobRank.Boss,  true,  "Boss/solo"),
+        (MobRank.Elite, false, false, "Elite"),
+        (MobRank.Boss,  false, false, "Boss"),
+        (MobRank.Boss,  true,  false, "Boss/solo"),
+        (MobRank.Boss,  false, true,  "Boss/WORLD"),
     })
     {
-        var boss = SpawnRanked(L, rank, solo);
+        var boss = SpawnRanked(L, rank, solo, world);
         float dps = PartyDps(party, boss);
         float ttk = boss.MaxHp / Math.Max(0.01f, dps);
         string band = rank != MobRank.Boss ? "-"
+            : world ? "clan raid"
             : ttk < 600f ? "TOO FAST" : ttk > 1800f ? $"TOO SLOW ({ttk / 60f:F0}m)" : $"ok ({ttk / 60f:F0} min)";
-        Console.WriteLine($"{L,4} {label,9} {"x" + MobRankScale.Hp(rank, L, solo).ToString("0"),7} {boss.MaxHp,10} "
+        Console.WriteLine($"{L,4} {label,10} {"x" + MobRankScale.Hp(rank, L, solo, world).ToString("0"),7} {boss.MaxHp,12} "
             + $"{(int)boss.EffectiveDefence,7} {dps,10:F0} {ttk,7:F0}s {band,14}");
     }
 }
@@ -5010,13 +5015,13 @@ static Entity BuildPlayer(Race race, BaseClass cls, int level, string? quality =
 /// <param name="solo">`BL-167` — a boss with NO escort takes his `solo boss` x2 on attack AND HP.
 /// False here is the ESCORTED boss, which is the same default BuildMob uses for a template with no
 /// BossProfile, so the two agree without either being told about the other.</param>
-static Entity SpawnRanked(int level, MobRank rank, bool solo = false)
+static Entity SpawnRanked(int level, MobRank rank, bool solo = false, bool world = false)
 {
     var m = BuildMobEntity(level);
     m.Rank = rank;
-    m.MobHpScale = MobRankScale.Hp(rank, level, solo);
-    m.MobPAtkScale = m.MobMAtkScale = MobRankScale.Atk(rank, solo);
-    m.MobPDefScale = m.MobMDefScale = MobRankScale.Def(rank);
+    m.MobHpScale = MobRankScale.Hp(rank, level, solo, world);
+    m.MobPAtkScale = m.MobMAtkScale = MobRankScale.Atk(rank, solo, world);
+    m.MobPDefScale = m.MobMDefScale = MobRankScale.Def(rank, world);
     m.MobAccFlat = MobRankScale.AccFlat(rank);
     // A boss fights with its kit, not with its fists — BuildMob teaches every boss the telegraphed
     // slam when its template has no BossProfile of its own. Leaving it out measured a boss swinging

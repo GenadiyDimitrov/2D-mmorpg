@@ -12,7 +12,7 @@ only active"*. Ninety-one closed entries — built, declined, and the old texts 
 
 ## The rules this file runs on
 
-1. **Open only, and sorted by id.** `BL-02` first, `BL-170` last, no categories to hunt through — the
+1. **Open only, and sorted by id.** `BL-02` first, `BL-171` last, no categories to hunt through — the
    **Area** column of the index is how you browse by subject. The moment an entry is built, declined
    or answered with nothing owed, it is **cut to [BacklogArchive.md](BacklogArchive.md)**, dated,
    under the same id. This file should never again grow a done-pile.
@@ -95,6 +95,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-164` | 🔵 | The three Marks share one Rank, so the weaker rung can out-hold the stronger | classes |
 | `BL-165` | 🔵 | What the tank's 4th tier LEFT OPEN — the two AoE pulls (yours), and one clamp | combat |
 | `BL-170` | 🔵 | THE CLIFF AT 80 — party dps triples across the S-grade flip; three ways out, your pick | combat |
+| `BL-171` | 🔵 | THE WORLD BOSS — stats built; the encounter, mass-PvP rules and loot are owed | combat |
 
 ---
 
@@ -838,3 +839,52 @@ single basic hit takes **91-95% of a robe's pool at levels 20-44**, against 22-2
 🔑 **Do not re-derive this one.** `BL-13`'s original band and `BL-169`'s correction were both cases of a
 number being reasoned to instead of measured, and both were wrong. Whatever is picked here gets read off
 `tools/BalanceMatrix` before and after.
+
+---
+
+### `BL-171` 🔵 THE WORLD BOSS — the encounter, the mass-PvP rules and the loot (the stats are built)
+
+Your definition, 2026-09-05, correcting my reading of the Valley Treant: *"The treat is field boss (same
+as dungeon one) world boss is a clan/party of clans mass pvp massacre where the boss is the target ..and
+that boss will have about x2~3 aditional stats and x10 additional hp .. So now if boss have 28k p atk/6kk
+hp a world one will have 50~60k p atk and 120kk~180kk hp(6kk x2~3 x10) so several parties can fight it
+while fighting others for the best loot in the game"*.
+
+✅ **The STAT rung is built (0.113.1)** — `BossProfile.World`, ×2.5 on every stat and ×25 on HP over a
+solo boss. At level 90 that is **171.7 kk HP**, inside your 120-180kk, with **3,860 P.Def**.
+🔑 It is a FLAG on the profile, not a fourth `MobRank`: fourteen places test `Rank == MobRank.Boss` for
+behaviour a world boss wants unchanged (control immunity, the zone-HP exemption, `AutoAttackBoss`, the
+raid-level lock, boss judgment, the exp rank, the plate title), so a new rank meant fourteen edits with
+a silent bug waiting at any one of them.
+
+🔴 **NOTHING IS AUTHORED WITH IT, and three things have to be decided before anything can be:**
+
+**1. How many parties is "several"? Measured, 172 kk is a very large pool for our damage model.**
+One 5-man does **694 dps** against its 3,860 P.Def. So:
+
+| raid | time to kill |
+|---|---|
+| 1 party (5) | 69 hours |
+| 9 parties (45) | **7.6 hours** |
+| 34 parties (172) | 2 hours |
+
+Even read generously — much of a mass-PvP fight is spent fighting *people*, not the boss — 7.6 hours
+for nine full parties is a long evening. Either the pool comes down, or a world boss is explicitly an
+all-server event that runs for most of a day. **Your call, and it is one number.**
+
+**2. Your P.Atk example does not match your HP example, and I used the HP one.** *"28k p atk → 50~60k"*
+is ×2 off an **escorted** boss; *"6kk × 2~3 × 10"* is off a **solo** one. I took the solo base for both,
+which gives **~128k P.Atk** rather than your 50-60k. On your mythic-S tank that is **9.3% of your pool
+per swing** — a real raid number; at your 60k it would be 4.4%, which is *softer than a solo boss
+already hits*. I think 128k is the right game and 60k is the arithmetic slip, but say which — it is the
+`WorldStatMult` constant and nothing else.
+
+**3. The encounter itself does not exist.** A world boss needs a place (an open field, not a dungeon —
+the PvP is the point), the mass-PvP rules around it (does the zone force-flag? does karma apply? how do
+several clans contest a kill?), and the loot — *"the best loot in the game"* — which touches `BL-76`'s
+boss skill gems and the party loot rules. That is a design pass, not a number.
+
+⚠ **The Valley Treant was mis-filed as the world boss in 0.113.0 and is corrected here.** Its 21-hour
+respawn made it *look* like one and I read the respawn as the classification; it is a FIELD boss and is
+back on the 20/30-minute enrage ladder. There is now no world boss in the game at all, which is honest —
+the tier exists and nothing wears it yet.

@@ -7,12 +7,57 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.113.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.113.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-05 (latest) — 0.113.0: bosses get his ×2/×10, a `solo boss` doubles both, and the enrage timer finally means twenty minutes
+## 2026-09-05 (latest) — 0.113.1: the treant is a FIELD boss, and the world boss is a tier of its own
+
+Two corrections to 0.113.0, both his, hours after it shipped.
+
+### 🔴 The Valley Treant was mis-filed as the world boss
+
+0.113.0 put it on the 2h/3h enrage ladder because it respawns every 21 hours — **I read the respawn as
+the classification**. His correction: *"The treat is field boss (same as dungeon one) world boss is a
+clan/party of clans mass pvp massacre where the boss is the target"*. **A world boss is a kind of
+ENCOUNTER, not a rare spawn.** The treant is back on the ordinary 20/30-minute field ladder, and there
+is now no world boss in the game at all — which is the honest state: the tier exists and nothing wears
+it yet.
+
+### `BL-171` — the world-boss stat rung
+
+*"that boss will have about x2~3 aditional stats and x10 additional hp .. So now if boss have 28k p atk/
+6kk hp a world one will have 50~60k p atk and 120kk~180kk hp(6kk x2~3 x10) so several parties can fight
+it while fighting others for the best loot in the game"*.
+
+`BossProfile.World` takes **×2.5 on every stat** (attack *and* defence — *"x2~3 aditional stats"* is not
+the attack columns alone) and **×25 on HP** (his ×2~3 × ×10), both measured off the SOLO boss, which is
+what his own "(6kk × 2~3 × 10)" starts from. At level 90 that is **171.7 kk HP** — inside his
+120-180kk — with 3,860 P.Def. Its enrage ladder is 2h/3h.
+
+🔑 **It is a FLAG on the profile, not a fourth `MobRank`.** Fourteen places in
+GameLoopService/Entity/StatCaps test `Rank == MobRank.Boss` for behaviour a world boss wants *unchanged*
+— control immunity, the zone-HP exemption, `AutoAttackBoss`, the raid-level lock, boss judgment, the exp
+rank, the plate title. A new rank meant fourteen edits with a silent bug waiting at any one of them, for
+numbers the profile can carry. `BossProfile.Enrage1`/`Enrage2` now resolve the ladder a boss's KIND
+implies, so a profile only writes a time when it wants an unusual one.
+
+### What it measures, and the two things it leaves open
+
+One 5-man party does **694 dps** against a level-90 world boss, so 9 full parties need **7.6 hours** and
+2 hours would take 34 parties. Either the pool comes down or a world boss is explicitly an all-server
+event — his call, and it is one constant.
+
+⚠ And his two examples disagree: *"28k p atk → 50~60k"* is ×2 off an **escorted** boss while
+*"6kk × 2~3 × 10"* is off a **solo** one. The solo base is used for both, giving ~128k P.Atk rather than
+50-60k — **9.3% of his mythic-S tank's pool per swing**, against 4.4% at his number, which would be
+softer than a solo boss already hits. Flagged in `BL-171` rather than guessed at.
+
+Nothing is authored with the flag: the encounter needs a place, the mass-PvP rules and the loot, which
+is `BL-171`. No protocol change, no schema change, no new APK.
+
+## 2026-09-05 — 0.113.0: bosses get his ×2/×10, a `solo boss` doubles both, and the enrage timer finally means twenty minutes
 
 His ruling, after soloing the level-90 boss on a tank in epic A gear and finding it could not kill
 him: *"bosses as we desided get x2 atk and x10hp, if boss is solo gets another x2 on both (atk/hp) …
