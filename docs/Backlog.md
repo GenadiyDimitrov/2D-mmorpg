@@ -12,7 +12,7 @@ only active"*. Ninety-one closed entries — built, declined, and the old texts 
 
 ## The rules this file runs on
 
-1. **Open only, and sorted by id.** `BL-02` first, `BL-169` last, no categories to hunt through — the
+1. **Open only, and sorted by id.** `BL-02` first, `BL-170` last, no categories to hunt through — the
    **Area** column of the index is how you browse by subject. The moment an entry is built, declined
    or answered with nothing owed, it is **cut to [BacklogArchive.md](BacklogArchive.md)**, dated,
    under the same id. This file should never again grow a done-pile.
@@ -94,10 +94,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-163` | 🔴 | The buffer shelf as an EXTERNAL table — no wrappers, editable without a build | classes |
 | `BL-164` | 🔵 | The three Marks share one Rank, so the weaker rung can out-hold the stronger | classes |
 | `BL-165` | 🔵 | What the tank's 4th tier LEFT OPEN — the two AoE pulls (yours), and one clamp | combat |
-| `BL-166` | ❓ | Bosses get their OWN stat block beside their kit — `BossCatalog`, not the shared rank | combat |
-| `BL-167` | ❓ | The boss attack ladders — `solo boss` ×2, the War/Spell Rune ×2, and a REAL enrage timer | combat |
-| `BL-168` | ❓ | A WORLD-BOSS rank — 3-6kk HP for a raid, so the 5-man band survives | combat |
-| `BL-169` | ✅ | BalanceMatrix measured an UNBUFFED 2nd-class tank — FIXED, and it broke `BL-13` open | combat |
+| `BL-170` | 🔵 | THE CLIFF AT 80 — party dps triples across the S-grade flip; three ways out, your pick | combat |
 
 ---
 
@@ -799,199 +796,45 @@ a WEIGHT paste on thirty rows, a Cyrillic `к` in an SP cell, a pasted `mpReg` c
 [CHANGELOG](CHANGELOG.md) entries, and each is one edit to reverse. They are corrections, not retunes:
 none of them changes a number you chose.
 
-
-### `BL-166` ❓ Bosses get their OWN stat block, beside their kit
-
-Your question, 2026-09-05: *"the bosses don't fallow the curve persay but have different edits per
-boss. Some have fighters and given decrease in stats the others are solo and given increase. The curve
-is the base and every boss edit is making the boss unique — are bosses separate from the mobs file (in
-code .cs - not folder file)? they need their own to be edited/added - stat and skills as well"*
-
-**The answer is HALF, and the half you already have is the skills.** `Game.Shared/BossCatalog.cs`
-holds a `BossProfile` per mob-template id — its skill rotation (each entry with an HP window) and its
-phase script (announce / enrage / add wave). That file is exactly the thing you are asking for, and it
-is where `BL-155`'s dungeon full-silence went.
-
-**What is NOT per-boss is the stat block.** A boss's numbers are the ordinary creature curve
-(`MobBaseStats`) × its template's optional `MobMod` × **`MobRankScale`, which is ONE set of numbers
-every boss in the game shares** (×4 attack, ×2 defence, one HP curve). `MobMod` *could* carry a lean
-— it has P.Atk / M.Atk / P.Def / M.Def / HP / attack speed / four resists / CC overrides — but **three
-of the four boss templates carry no `MobMod` at all**: `valley_treant`, `dread_knight` and
-`disciple_of_the_dawn` are the bare curve × the shared rank. Only `grave_lich` has one.
-
-**So: give `BossProfile` a stat block**, so one entry in one file is the whole boss — HP multiple,
-attack lean, defence lean, rotation, phases, adds. `MobRankScale` stops being *the* boss stats and
-becomes the **default** a profile overrides. That is your *"the curve is the base and every boss edit
-makes the boss unique"*, said in code, and it costs one record field plus a read in `BuildMob`.
-
-📄 **Full write-up, with the measured numbers: [design/BossRework.md](design/BossRework.md).**
-❓ **Open on you: §5 questions 3, 4 and 7** — is a boss's escort a hand-authored roster on the profile
-or the generated trash already standing there; how much is the "decrease in stats" for an escorted
-boss; and were the fighters that nearly killed you the `GuardTank`/`GuardArcher` pair (if so they are
-already the template for what a boss's fighters should be).
-
 ---
 
-### `BL-167` ❓ The boss attack ladders — `solo boss` ×2, the rune ×2, and a REAL enrage timer
+### `BL-170` 🔵 THE CLIFF AT 80 — party dps triples across the S-grade flip, and every endgame number rides on it
 
-Your rulings, 2026-09-05, after the level-90 boss failed to threaten your tank: a **`solo boss`
-passive** worth ×2 P/M.Atk for a boss with no escort; **every boss holds a War/Spell Rune**, worth
-another ×2; **overpowered single/AoE skills** doing 1200/1500 to a 2.5k-def tank; and an **enrage
-ladder** — *"if battle becomes longer than 20 min he gets a buff that additionally doubles p/m atk and
-after 40 mins it's gives another x2 (only field/dungeon bosses, world once the it times will be 2h and
-3h)"*.
+Found while building `BL-167`, and it is the one thing that pass left open. Measured with `BL-169`'s
+honest party (buffed Bulwark tank, buffed Lightbringer, three buffed DDs):
 
-**Your diagnosis is right, and measured it is worse than you said.** At 90 the boss's basic attack on
-a Knight is **728 — five percent of his ~14.5k pool** — and he survives **33 seconds with nobody
-healing him at all**. You quoted 300; either number is scenery.
+```
+ Lvl  gear   party dps
+  44   t40         370
+  60   t52         558
+  65   t61         525
+  76   t76         534      <- flat from 44 to 76
+  85   t80       1 884      <- x3.5 in one step
+  90   t80       1 752
+```
 
-🔴 **AND THE ENRAGE TIMER IS AT NINETY SECONDS, WHICH I DOUBT YOU KNEW.**
-`GameLoopService.BossEnrageTicks = 900` and the loop runs at **10 ticks/sec** — so it is 900 ticks =
-**90 seconds** of engaged combat, not 900 seconds and nowhere near your 20 minutes. It fires **once**,
-for **×1.5**, and never again. Today every boss in the game enrages a minute and a half in, by half.
-Your ladder replaces it outright.
+**Party damage is flat at ~370-560 for thirty-two levels and then triples in one gear tier.** That is
+not a boss problem and it cannot be fixed on the boss side: your ×10 HP lands the endgame exactly where
+you want it (3.43 kk at 90, 30-33 minutes escorted) and simultaneously puts a **level-44 dungeon boss at
+109 minutes** for a full party, 219 solo. No smooth boss-HP curve can reconcile those, because the thing
+that is not smooth is the PARTY.
 
-**The two ×2s are cheap.** `solo boss` is a profile field, not a mechanic. The rune already has a
-precedent to copy: `demo_seraph_rune` and the four `BL-79` guards hold `ItemCatalog.WarRune` through
-`MobBuild.Held` and it measures ×2.00 P.Atk. **I would give a boss the real held item** rather than
-folding ×2 into the rank — a player who inspects a boss should see *why* it hits that hard.
+⚠ It also crosses your own *"not one shooting"* line at the bottom: with the new ×2 boss attack, a
+single basic hit takes **91-95% of a robe's pool at levels 20-44**, against 22-23% at 85-90.
 
-⚠ **But the ladder has a ceiling and you should see the arithmetic before I build it.** ×2 solo × ×2
-rune on today's ×4 rank = **×16**: the 90 boss's basic goes 728 → **2,912 (20% of the tank's pool)**
-and its sustained damage on the tank goes 442 → **1,768**, against a healer ceiling of **391**. That is
-a **4.5× deficit** — the tank dies in about ten seconds however well he is healed. For a **raid** with
-four or five healers that is the fight you are describing and it is fine. **For the 5-man party of
-`BL-13` it is not payable**, so on a field/dungeon boss these ladders get measured against the healer
-the way `BL-13` measured the original ×4. Your *"not one shooting but a tank can feel it"* is still
-the test. See `BL-168` — the split is what makes both numbers true at once.
+**Three ways out, and it is yours to pick** (fuller version in
+[design/BossRework.md](design/BossRework.md) §6):
 
-📄 [design/BossRework.md](design/BossRework.md) §3. ❓ **Open on you: §5 question 5** — are the
-1200/1500 against the same 2.5k-def tank, and is 1200 the single and 1500 the AoE? (An AoE hitting
-harder than the single is the reverse of the usual, so I want it confirmed rather than assumed.)
+1. **Taper the ×10 by level** — ~×3 below 76 rising to ×10 at 85+. One knob, keeps the endgame, fixes
+   the bottom. ⚠ It bakes the cliff into the boss curve, so a future gear change inherits it.
+2. **Fix the cliff itself.** The S-grade jump is the real outlier and it distorts every endgame number
+   in the game — exp pacing, drop value, elite camps — not just bosses. Widest benefit, and it moves
+   numbers you have already signed off.
+3. **Leave it for now.** The bosses below 80 are the Hollow Crypt lich (44), the world boss (60) and
+   the Dread Knight (65). If nobody is fighting those this week it can wait for the bot party you
+   want — *"one day we will make a party of bots to help me fight a Boss to see really what happens"* —
+   and the whole band gets re-measured at once, honestly, instead of tapered by hand twice.
 
----
-
-### `BL-168` ❓ A WORLD-BOSS rank — 3-6kk HP for a raid, so the 5-man band survives
-
-Your reading, 2026-09-05: *"looking in IG I'm seeing bosses 85 with 3~6kk hp not like out 350k"*, and
-*"there are bosses with 3kk hp with fighters boss being a mage with less patk more m atk less Def, and
-there are solo bosses with 6kk hp with high p atk and Def"*.
-
-🔴 **THE HP NUMBER COLLIDES WITH A RULING OF YOURS, AND I AM NOT BUILDING IT QUIETLY.** `BL-13`
-(playtest 25) is *"the bosses should take 10-15 even 30 mins to kill"*, and `MobRankScale.Hp` was
-fitted **by measurement** to land every boss inside 600-1800s **for the 5-man party you prescribed**
-(tank, healer, 2 champions, 1 nuker). At 90 it measures **343,474 HP → 1,274s, 21 minutes** — dead
-centre of your own band. **×10 the HP and that party needs three and a half hours**, and that is the
-*ceiling* estimate with no downtime, no deaths, no adds and no running back in. `BL-167`'s attack
-ladder then makes it longer still, because more healing needed means fewer DDs.
-
-**The two are not in conflict in IG, because a 3-6kk boss there is a RAID boss** — several parties,
-not one. Our number is small because it was fitted to the party you named. And your own message
-already draws the line: *"(only field/dungeon bosses, world once the it times will be 2h and 3h)"*.
-`BL-13`'s own note says the same thing from the other side: *"a world boss has no rank of its own …
-`BL-13` still says it wants a rank of its own"*.
-
-**So: split the rank.** `MobRank` is `Normal / Elite / Boss`; add `WorldBoss`.
-
-| | **Field / dungeon boss** (`Boss`) | **World boss** (`WorldBoss`, new) |
-|---|---|---|
-| Fought by | the 5-man party of `BL-13` | a **raid** — several parties |
-| HP | today's curve (~343k at 90) — unchanged, it measures right | **3-6 kk**, authored per boss |
-| Enrage ladder | 20 min ×2 → 40 min ×4 | 2h ×2 → 3h ×4 |
-| Rune ×2 / `solo boss` ×2 | yes / yes | yes / yes |
-
-That gives you **every number in your message with nothing overruled**: the 3-6kk lands on the world
-boss where IG puts it, and the field/dungeon boss keeps the 10-30 minutes you ruled for it while still
-gaining the attack ladders, the real enrage timer and the per-boss kit — which is what actually fixes
-*"cannot kill my tank"*.
-
-📄 [design/BossRework.md](design/BossRework.md) §4.
-❓ **Open on you, and everything above turns on it: §5 questions 1 and 2** — **is a field/dungeon boss
-still a 5-man fight and a world boss a raid?** If you want *every* boss at 3-6kk, then bosses are raid
-content across the board, `BL-13`'s 10-30 min band is withdrawn, and I refit to the raid instead — say
-so and it is one measurement, not an argument. And **how big is a raid** (two parties? nine?) — it
-sets the HP fit and nothing else.
-
----
-
-### `BL-169` 🔴 BalanceMatrix measures an UNBUFFED 2nd-class tank — every tank verdict it has printed is too weak
-
-Found 2026-09-05, by checking your own reading against the tool. You gave your real character: *"my
-paladin tank 90lvl with epic 76 gera have 1300pdef unbuffed and 2300+300 reinforcement to 3200 with
-aegis sigil buffed from npc (mark/harmony) and the boss with 14.5k p atk does 400"*.
-
-**Your 400 reproduces exactly** — `PhysicalDamage` is `77 × pAtk / def`, and 77 × 14,500 / 2,600 =
-**429**. The damage model is fine. **The measuring rig is not.**
-
-🔴 `BalanceMatrix.BuildBossParty` builds its tank as `BuildPlayer(Human, Fighter, level)`, and that
-function:
-1. **passes no discipline**, so at level 90 it is still a **2nd-class Knight** (`SecondClass = 13`) —
-   no Bulwark, no Aegis, none of the 3rd/4th-tier kit that is most of a modern tank's defence;
-2. **applies exactly one buff, the War Rune.** There is **no NPC buffer in the rig at all** — no mark,
-   no harmony, no Shield Blessing, no reinforcement — even though the buffer has been in the game since
-   `BL-149`…`BL-162` and every real player walks out of town with it up.
-
-Back-computed from the tool's own output (77 × 14,500 / 728), its tank sits at **~1,533 P.Def** against
-your real **2,600** — it understates a played tank by about **70%**, and has done since the buffer was
-built. Gear is right (`GearTier` epic = your "epic 76"); it is the KIT and the BUFFS that are missing.
-
-**Why this matters beyond bosses.** The `BL-13` *"IS A PARTY MANDATORY?"* table is the thing every boss
-number in the game is tuned against — `MobRankScale.Atk`'s ×4 was chosen off it, in your own words
-*"the largest multiplier that leaves the healer headroom"*. If the tank in that table is 70% under-
-defended, then **`BL-13`'s attack band was fitted against a straw tank and is probably too gentle** —
-which is exactly the complaint you opened with. It also means my first answer to you on `BL-167`
-(*"×16 is a 4.5× deficit, not payable for a 5-man"*) was computed on that same straw tank and was
-**too strong**; corrected in [design/BossRework.md](design/BossRework.md) §4.
-
-**The fix** is small and entirely in the tool: give `BuildPlayer` the discipline the character would
-have at its level, and apply the NPC buffer's standard shelf the way it applies the rune today. Then
-re-run and re-read `BL-13`, `BL-167` and `BL-168` off honest numbers.
-
-⚠ **Nothing in the GAME is broken by this** — `MobRankScale`, the shields and the buffs all behave as
-authored. What is broken is the instrument, and it is the instrument every future balance ruling is
-read from. That is why it is 🔴 and why it goes before `BL-167`'s numbers, not after.
-
-🔑 **The rule this is the third instance of: check the RIG before the subject.** A measurement that
-models a weaker character than the one being complained about will always agree that nothing is wrong.
-
-✅ **`BL-169` IS BUILT (2026-09-05, tool only).** `BuildPlayer` gained `npcBuffed`, the existing
-`ApplyNpcBuffs` gained `fullShelf` (the eight single harmonies of `BL-160` + one Mark of `BL-161` — it
-had only ever offered `NewbieBuffSet`, the levelling shelf), and the boss party now takes
-`Discipline.Bulwark` on the tank and the full shelf on all five. The "party mandatory" table gained
-`bare` / `tankPDef` / `tankHP` / `blocked` / `avg-swing` columns so it can be checked against a real
-screen instead of trusted. **At gear tier 76 it now reads 1,795 bare / 2,962 buffed / 18,755 HP against
-his 1,300 / 2,600 / 17,000 — within ~14%, against ~70% understated before.** Nothing in the game moved.
-
-🔴 **What it revealed, and it is large:** party dps at 90 went **270 → 1,752 (×6.5)** and boss
-time-to-kill went **1,274s → 196s**. Every level from 60 up now prints **TOO FAST**, and the tank
-verdict from 60 up is **"a tank cannot feel it"** — at 90 a boss swing costs 1% of his pool and he
-survives **327 seconds unhealed**. `BL-13`'s band and its ×4 attack multiplier were BOTH fitted against
-the straw tank, which is exactly the complaint that opened this. See
-[design/BossRework.md](design/BossRework.md) §2c. ⚠ Two things now want his eye: the **cliff at 80**
-(party dps 534 → 1,884 across the S-grade flip, so the HP curve must climb steeply there rather than
-take a flat multiplier), and the rig's S-grade tank reading **5,679 P.Def / 29k HP** where he estimated
-**3,300 / 19k**.
-
-⚠ **`BL-169`, second pass (same day) — two more rig defects, and a table that can be proven wrong.**
-(1) The first "within 14%" claim compared his **level-90** tank against the rig's **level-76 row** —
-fourteen levels of HP curve apart, so the agreement was partly luck. (2) 🔴 **`quality: "epic"` in
-`BuildPlayer` silently meant MYTHIC**: it mapped `null or "epic"` to the bare id on a stale comment
-(*"the bare id IS the Epic"*), while `ItemCatalog.QualityId` is explicit that **Mythic is the authored
-item and carries no suffix**. So every default caller has been measuring a full mythic loadout, and his
-"epic 76" was irreproducible. ⚠ `_mythic` is not an id — asking for it prints "missing item" and
-dresses a NAKED character. Both fixed; no other caller passes a quality, so nothing else moved.
-
-✅ **New table `BL-169`: DOES THE RIG MATCH HIS SCREEN** — one level-90 tank, his two gear sets, his own
-readings hardcoded as the expected values. 🔑 It is the **only falsifiable table in the tool**: every
-other one prints whatever the formulas say and cannot disagree with anything, which is precisely how a
-straw tank survived for as long as the NPC buffer has existed. Result: **bare P.Def within +9%** (the
-gear + passive model is right), **buffed P.Def +32/33%** consistently (the buff layer — the rig buys all
-twenty-nine shelf items, his stack multiplies ×2.0 against the rig's ×2.45), and **Max HP +45/62%**,
-which does NOT track the P.Def gap and is therefore a separate cause (`npc_body`, the `NpcHBody`
-harmony's +30% Max HP, or the Mark). ❓ **Open on him: which blessings does he actually run?**
-
-🔑 **The tank side no longer needs the rig** — he has given ground truth at both gear tiers
-(epic A 2,600 P.Def / 17k HP; mythic S 4,300 / 20k), so the boss gets tuned against HIS numbers. On
-them, a level-90 boss costs him **2.1% of his pool per swing at epic A and 1.1% at mythic S** — the
-endgame tank is twice as immune as the mid-tier one, which is the ratchet this whole rework exists to
-break. See [design/BossRework.md](design/BossRework.md) §2c-2d.
+🔑 **Do not re-derive this one.** `BL-13`'s original band and `BL-169`'s correction were both cases of a
+number being reasoned to instead of measured, and both were wrong. Whatever is picked here gets read off
+`tools/BalanceMatrix` before and after.

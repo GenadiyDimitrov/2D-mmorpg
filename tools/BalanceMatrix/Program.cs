@@ -2499,18 +2499,26 @@ Console.WriteLine("  Rank multipliers come from MobRankScale — the SAME code B
 Console.WriteLine("  ⚠ THE LEVELS ARE THE ONES THAT EXIST: the lowest boss in the game is the Hollow Crypt's");
 Console.WriteLine("     Grave Lich at 44, then the world boss at 60, Dread Knight 65 and Disciple of the Dawn 90.");
 Console.WriteLine("     20 is kept as a SHAPE check for the curve, not because anything spawns there.");
-Console.WriteLine($"{"Lvl",4} {"rank",6} {"HP x",7} {"boss HP",10} {"P.Def",7} {"party dps",10} {"TTK",8} {"band",14}");
+Console.WriteLine($"{"Lvl",4} {"rank",9} {"HP x",7} {"boss HP",10} {"P.Def",7} {"party dps",10} {"TTK",8} {"band",14}");
 foreach (int L in new[] { 20, 44, 60, 65, 76, 85, 90 })
 {
     var party = BuildBossParty(L);
-    foreach (var rank in new[] { MobRank.Elite, MobRank.Boss })
+    // `BL-167` — a boss now comes in TWO shapes and they are a factor of two apart on both axes, so
+    // one row could only ever be half the answer. ESCORTED is the default (his x2 atk / x10 HP);
+    // SOLO takes the extra x2 on each (x4 / x20).
+    foreach (var (rank, solo, label) in new[]
     {
-        var boss = SpawnRanked(L, rank);
+        (MobRank.Elite, false, "Elite"),
+        (MobRank.Boss,  false, "Boss"),
+        (MobRank.Boss,  true,  "Boss/solo"),
+    })
+    {
+        var boss = SpawnRanked(L, rank, solo);
         float dps = PartyDps(party, boss);
         float ttk = boss.MaxHp / Math.Max(0.01f, dps);
         string band = rank != MobRank.Boss ? "-"
-            : ttk < 600f ? "TOO FAST" : ttk > 1800f ? "TOO SLOW" : $"ok ({ttk / 60f:F0} min)";
-        Console.WriteLine($"{L,4} {rank,6} {"x" + MobRankScale.Hp(rank, L).ToString("0"),7} {boss.MaxHp,10} "
+            : ttk < 600f ? "TOO FAST" : ttk > 1800f ? $"TOO SLOW ({ttk / 60f:F0}m)" : $"ok ({ttk / 60f:F0} min)";
+        Console.WriteLine($"{L,4} {label,9} {"x" + MobRankScale.Hp(rank, L, solo).ToString("0"),7} {boss.MaxHp,10} "
             + $"{(int)boss.EffectiveDefence,7} {dps,10:F0} {ttk,7:F0}s {band,14}");
     }
 }
@@ -2591,7 +2599,10 @@ foreach (int L in new[] { 20, 44, 60, 65, 76, 85, 90 })
     var robe   = BuildPlayer(Race.Human, BaseClass.Mage, L, npcBuffed: true);   // Sorcerer: the squishiest
     var healer = BuildPlayer(Race.Human, BaseClass.Mage, L, healer: true,
                              discipline: Discipline.Lightbringer, npcBuffed: true);
-    var boss   = SpawnRanked(L, MobRank.Boss);
+    // `BL-167` — measured on the SOLO boss, because that is the one his ruling is about: *"I just want
+    // to feel it and going solo vs boss to be nearly impossible"*. An escorted boss hits for half this
+    // and brings 2-5 fighters instead, which is a different question (their damage, not the boss's).
+    var boss   = SpawnRanked(L, MobRank.Boss, solo: true);
 
     int hitTank = BasicHit(boss, tank);
     int hitRobe = BasicHit(boss, robe);
@@ -4996,12 +5007,15 @@ static Entity BuildPlayer(Race race, BaseClass cls, int level, string? quality =
 //  share is the derived arithmetic below it (exp ratios, time-to-kill) — that is what lets it catch
 //  the server drifting.
 // ---------------------------------------------------------------------------------------------
-static Entity SpawnRanked(int level, MobRank rank)
+/// <param name="solo">`BL-167` — a boss with NO escort takes his `solo boss` x2 on attack AND HP.
+/// False here is the ESCORTED boss, which is the same default BuildMob uses for a template with no
+/// BossProfile, so the two agree without either being told about the other.</param>
+static Entity SpawnRanked(int level, MobRank rank, bool solo = false)
 {
     var m = BuildMobEntity(level);
     m.Rank = rank;
-    m.MobHpScale = MobRankScale.Hp(rank, level);
-    m.MobPAtkScale = m.MobMAtkScale = MobRankScale.Atk(rank);
+    m.MobHpScale = MobRankScale.Hp(rank, level, solo);
+    m.MobPAtkScale = m.MobMAtkScale = MobRankScale.Atk(rank, solo);
     m.MobPDefScale = m.MobMDefScale = MobRankScale.Def(rank);
     m.MobAccFlat = MobRankScale.AccFlat(rank);
     // A boss fights with its kit, not with its fists — BuildMob teaches every boss the telegraphed

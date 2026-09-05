@@ -2186,6 +2186,13 @@ public class Entity
     /// BossSkillTicks is the reuse counter for its special skill. Reset when the boss resets.</summary>
     public int CombatTicks { get; set; }
     public bool Enraged { get; set; }
+    /// <summary>`BL-167` — how many rungs of the enrage LADDER have fired (0, 1 or 2). His ladder is
+    /// ×2 attack at 20 minutes of engaged combat and ×4 at 30 (a world boss: 2h and 3h), where the old
+    /// enrage was a single ×1.5 at ninety seconds. A phase-script enrage counts as rung 1.</summary>
+    public int EnrageStage { get; set; }
+    /// <summary>The enrage's attack multiplier, re-applied every recompute by ApplyMobScale — NOT
+    /// multiplied into the attack fields in place, which a recompute would erase. 1 = not enraged.</summary>
+    public float MobEnrageScale { get; set; } = 1f;
     public int BossSkillCooldown { get; set; }
     /// <summary>How many BossProfile phases have already fired (HP-threshold script cursor).</summary>
     public int BossPhaseIndex { get; set; }
@@ -3525,6 +3532,21 @@ public class Entity
         // being diluted by it — the same order the attack scales above already run in.
         Defence = Math.Max(1, (int)(Defence * MobPDefScale));
         MagicDefence = Math.Max(1, (int)(MagicDefence * MobMDefScale));
+
+        // 1b. `BL-167` — THE ENRAGE LADDER, and it belongs HERE for the same reason the rank does.
+        //
+        // 🔴 It used to be multiplied into AttackPower/MagicAttack/BasicAttackPower IN PLACE by
+        // EnrageBoss, which is precisely the mistake the comment on MobHpScale warns about: a recompute
+        // rebuilds a mob's stats from the level curve, so ANY buff, debuff or mod change landing on an
+        // enraged boss silently un-enraged it. (Same shape as playtest-20 #7, which is why that note is
+        // there.) As a scale it survives every recompute, and the undo on a leash is "set it back to 1"
+        // rather than dividing by a magic number that has to stay in step with the one above.
+        if (MobEnrageScale > 1f)
+        {
+            AttackPower = Math.Max(1, (int)(AttackPower * MobEnrageScale));
+            MagicAttack = Math.Max(1, (int)(MagicAttack * MobEnrageScale));
+            BasicAttackPower = Math.Max(1, (int)(BasicAttackPower * MobEnrageScale));
+        }
 
         var mobType = MobTypeId is { } id ? MobCatalog.Get(id) : null;
 

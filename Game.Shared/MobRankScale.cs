@@ -45,15 +45,52 @@ public static class MobRankScale
     private const float BossHpA = 43_000f;   // scale
     private const float BossHpK = 1.49f;     // decay exponent
 
+    // ═══ `BL-167` / `BL-168` — THE OWNER'S TWO LADDERS, 2026-09-05 ═══════════════════════════════
+    //
+    //  His ruling, verbatim: *"bosses as we desided get x2 atk and x10hp, if boss is solo gets another
+    //  x2 on both (atk/hp)"*. So there are exactly two knobs and they multiply the numbers already
+    //  fitted below rather than replacing them:
+    //
+    //      EVERY boss ....... x2 attack, x10 HP    (BossRuneAtk / BossHpMult — "all bosses use our
+    //                                               war/spell Runes ug-SS which doubles their p/m.atk")
+    //      a SOLO boss ...... x2 more on BOTH      (BossSoloMult — the "solo boss" passive, for a
+    //                                               boss with no escort of 2-5 fighters beside it)
+    //
+    //  🔑 WHY x10 HP IS NOT A CONTRADICTION OF `BL-13` ABOVE, even though the block above fitted this
+    //  curve to 600-1800s. `BL-169` (2026-09-05) found that the party those seconds were measured with
+    //  was a STRAW PARTY — an unbuffed 2nd-class Knight tank and four unbuffed DDs, because the census
+    //  had never been taught about the NPC buffer. Re-measured with the party people actually play,
+    //  party dps at 90 is 1,752 rather than 270 and a boss died in 196 SECONDS, not 21 minutes. So the
+    //  curve below was never wrong; the stopwatch was. x10 puts a level-90 boss at 3.4M HP / ~33 min
+    //  and a solo one at 6.9M / ~65 min — which is also, exactly, what he read off IG in the first
+    //  place (*"bosses 85 with 3~6kk hp not like out 350k"*). The x20 end sits above his 10-30 minute
+    //  band on paper; he ruled it anyway and said why: *"I just want to feel it and going solo vs boss
+    //  to be nearly impossible"*. ⚠ RE-MEASURE THE BAND, don't re-derive it, once there is a real party
+    //  to measure with — his *"one day we will make a party of bots to help me fight a Boss"*.
+    //
+    //  ⚠ THE ATTACK LADDER IS MEASURED ON HIS OWN CHARACTER, not on the rig: a level-90 boss against
+    //  his Paladin (2,600 P.Def / 17k HP at epic A, 4,300 / 20k at mythic S, blocking 75% of the time)
+    //  costs him 2.1% of his pool per swing today and 1.1% at mythic S — the endgame tank is TWICE as
+    //  immune as the mid-tier one, which is the ratchet these two knobs exist to break. At x4 a solo
+    //  boss takes 8.6% / 4.2% a swing, and the enrage ladder in GameLoopService carries it from there.
+    private const float BossHpMult   = 10f;   // his x10, on every boss
+    private const float BossRuneAtk  = 2f;    // his x2 attack, on every boss (the War/Spell Rune)
+    private const float BossSoloMult = 2f;    // a boss with NO escort: x2 more on attack AND HP
+
     /// <summary>The rank's HP multiplier at this level. Elite is flat (an elite is trash-plus, and his
-    /// complaint was never about elites); a BOSS decays — see the block above.
+    /// complaint was never about elites); a BOSS decays — see the block above — and then takes his
+    /// ×10, and ×2 again when <paramref name="solo"/>.
     ///
-    /// <para>⚠ It is floored at ×20 so the shape can never invert at the very top of a future 90+
-    /// world: a boss must always be a boss. Today the floor is never reached (×27 at 85).</para></summary>
-    public static float Hp(MobRank rank, int level) => rank switch
+    /// <para>⚠ It is floored at ×20 (before his multipliers) so the shape can never invert at the very
+    /// top of a future 90+ world: a boss must always be a boss. Today the floor is never reached.</para>
+    ///
+    /// <para><paramref name="solo"/> comes from <see cref="BossCatalog.IsSolo"/> — a boss with no
+    /// escort. It is meaningless on any other rank and is ignored there.</para></summary>
+    public static float Hp(MobRank rank, int level, bool solo = false) => rank switch
     {
         MobRank.Elite => 4f,
-        MobRank.Boss  => MathF.Max(20f, BossHpA / MathF.Pow(MathF.Max(1, level), BossHpK)),
+        MobRank.Boss  => MathF.Max(20f, BossHpA / MathF.Pow(MathF.Max(1, level), BossHpK))
+                         * BossHpMult * (solo ? BossSoloMult : 1f),
         _             => 1f,
     };
 
@@ -80,10 +117,17 @@ public static class MobRankScale
     /// <para>⚠ Re-measure this the moment heal powers move (BL-16 is still owed) or the robe pool
     /// changes (BL-78's third clause, which is his to rule): both ends of this band are somebody
     /// else's number, and this one exists to sit between them.</para></summary>
-    public static float Atk(MobRank rank) => rank switch
+    /// <para>🔑 <b>AND IT IS ×2 AGAIN SINCE 2026-09-05, ×2 MORE FOR A SOLO BOSS</b> (`BL-167`). The ×4
+    /// below is still the fitted base and is deliberately left as its own number; what multiplies it is
+    /// <see cref="BossRuneAtk"/> (every boss carries a War/Spell Rune) and <see cref="BossSoloMult"/>
+    /// (no escort). The paragraph above says ×4 leaves the healer headroom — that measurement was made
+    /// against the straw party `BL-169` retired, and re-measured against the party people actually
+    /// play, a boss at ×4 cost the owner's own tank 2.1% of his bar per swing and could not kill him in
+    /// five minutes of standing still unhealed.</para></summary>
+    public static float Atk(MobRank rank, bool solo = false) => rank switch
     {
         MobRank.Elite => 1.5f,
-        MobRank.Boss  => 4f,
+        MobRank.Boss  => 4f * BossRuneAtk * (solo ? BossSoloMult : 1f),
         _             => 1f,
     };
 

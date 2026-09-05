@@ -7,12 +7,69 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.112.3**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.113.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-05 (latest) — `BL-169`: the balance rig was measuring a tank nobody plays
+## 2026-09-05 (latest) — 0.113.0: bosses get his ×2/×10, a `solo boss` doubles both, and the enrage timer finally means twenty minutes
+
+His ruling, after soloing the level-90 boss on a tank in epic A gear and finding it could not kill
+him: *"bosses as we desided get x2 atk and x10hp, if boss is solo gets another x2 on both (atk/hp) …
+Now I just want to feel it and going solo vs boss to be nearly impossible"*.
+
+### `BL-166` — a boss finally has a STAT block beside its kit
+
+His question was *"are bosses separate from the mobs file (in code .cs)? they need their own to be
+edited/added - stat and skills as well"*, and the answer was **half**. `BossCatalog.cs` has held a
+per-boss `BossProfile` — skill rotation with HP windows, phase script, add waves — since bosses were
+built. The STATS were not there at all: a boss was the creature curve × `MobRankScale`, which is **one
+set of numbers every boss in the game shares**, and three of the four boss templates carried no
+`MobMod` either. `BossProfile` now carries `Solo`, `HpMult`, `PAtkMult`, `MAtkMult`, `PDefMult`,
+`MDefMult` and its own two enrage times, so **one entry in one file is the whole boss** and the rank is
+the DEFAULT a profile overrides — his *"the curve is the base and every boss edit is making the boss
+unique"*.
+
+### `BL-167` — the two ladders, and the timer that was lying
+
+`MobRankScale` now applies **×2 attack and ×10 HP to every boss** (the War/Spell Rune every boss
+carries), and **×2 more on both when the profile says `Solo`** — a boss with no escort of 2-5 fighters.
+The three dungeon bosses are `Solo: true`; the Valley Treant is not, because it calls two adds in its
+own phase script.
+
+🔴 **And the enrage timer was ninety seconds.** `BossEnrageTicks = 900` at 10 ticks/sec — it read as
+"~90s" in its own comment and everyone including the owner believed it was on a twenty-minute clock. It
+fired **once**, for **×1.5**, forever. It is now his ladder: **×2 at 20 minutes of engaged combat, ×4 at
+30** for a field or dungeon boss, **2h and 3h** for a world boss, carried per-profile.
+
+🔑 **The enrage moved out of the attack fields and onto a SCALE** (`Entity.MobEnrageScale`, applied in
+`ApplyMobScale`). It used to be multiplied into `AttackPower`/`MagicAttack`/`BasicAttackPower` in
+place — which is exactly what the comment on `MobHpScale` warns against, because a recompute rebuilds a
+mob's stats from the level curve. **Any buff, debuff or mod change landing on an enraged boss silently
+un-enraged it.** That is a real bug fixed on the way past, and the leash undo is now "set it to 1 and
+recompute" instead of dividing by a magic number that had to stay in step.
+
+### What it measures at (`BL-169`'s honest party)
+
+**His numbers land exactly where he read them off IG.** At level 90 a boss is **3.43 kk HP escorted and
+6.87 kk solo** against his *"bosses 85 with 3~6kk hp not like out 350k"*, and the top of the game is in
+or near his band — 85 escorted is **30 minutes**, 90 escorted **33**, 90 solo **65**.
+
+🔴 **But below 80 the same flat multipliers are far too much, and this is not a small miss.** A level-44
+dungeon boss now takes a full party **109 minutes** escorted and **219 solo**; 60 and 76 are 84 and 99.
+The cause is not the boss curve — it is that **party dps is flat at ~370-560 from 44 to 76 and then
+triples to 1,884 at 85** when the gear tier flips to S. A flat ×10 lands the top correctly and
+overshoots the bottom by 3-7×. Related: at levels 20-44 one basic attack now takes **91-95% of a robe's
+pool**, which is against his own *"not one shooting"* line.
+
+⚠ **Left as ruled, and reported rather than quietly tapered** — the numbers are his and the endgame,
+where he is playing, is right. The fix is a decision about the **cliff at 80**, not about bosses. See
+[design/BossRework.md](design/BossRework.md).
+
+No protocol change and no schema change: `EnrageStage` and `MobEnrageScale` are runtime-only fields on
+a mob, and mobs are not persisted. **No new APK** — a boss's stats are computed server-side.
+
+## 2026-09-05 — `BL-169`: the balance rig was measuring a tank nobody plays
 
 No game code changed. This is `tools/BalanceMatrix` and two design documents — but it invalidates a
 number the whole boss design rests on, so it is worth a full entry.

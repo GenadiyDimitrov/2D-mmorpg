@@ -10577,11 +10577,14 @@ public class GameLoopService : BackgroundService
         mob.BossPhaseIndex = 0;
         if (mob.Enraged)
         {
-            mob.AttackPower = (int)(mob.AttackPower / 1.5f);
-            mob.MagicAttack = (int)(mob.MagicAttack / 1.5f);
-            mob.BasicAttackPower = (int)(mob.BasicAttackPower / 1.5f);
+            // `BL-167` — the undo is "set the scale back to 1 and recompute", not a division by a magic
+            // number that has to stay in step with the one EnrageBoss multiplied by. With a two-rung
+            // ladder the old shape would have had to know WHICH rung it was undoing.
+            mob.MobEnrageScale = 1f;
             mob.AttackSpeedMultiplier /= 0.7f;
             mob.Enraged = false;
+            mob.EnrageStage = 0;
+            mob.RecomputeDerived();
         }
     }
 
@@ -10663,8 +10666,25 @@ public class GameLoopService : BackgroundService
         }
     }
 
-    // Boss combat tuning: enrage after ~90s of a dragged-out fight (independent of phase enrages).
-    private const int BossEnrageTicks = 900;
+    // ═══ `BL-167` — THE ENRAGE LADDER ════════════════════════════════════════════════════════════
+    //
+    // 🔴 WHAT THIS REPLACES, because the old number did not mean what it looked like. It was
+    // `BossEnrageTicks = 900`, described as "~90s" — and it really was 90 SECONDS, because the loop
+    // runs at 10 ticks/sec. So every boss in the game enraged a minute and a half into the fight, once,
+    // by ×1.5, and never again. The owner believed it was on a twenty-minute timer.
+    //
+    // His ladder, 2026-09-05: *"if battle becomes longer than 20 min he gets a buff that additionally
+    // doubles p/m atk and after 40 mins it's gives another x2"*, with the second rung moved to 30
+    // minutes later the same day — *"enrage x2 after 20 and x4 after 30m"*. World bosses run 2h/3h.
+    // The times are PER BOSS (BossProfile.EnrageSeconds/EnrageSeconds2) so a world boss carries its own.
+    //
+    // 🔑 IT IS A LADDER, NOT TWO FLAGS: rung 2 is ×4 TOTAL, not ×4 on top of rung 1. EnrageScaleAt is
+    // the whole definition, and the scale is absolute (Entity.MobEnrageScale) rather than something
+    // multiplied in each time — so firing a rung twice, or skipping straight to rung 2, both land on
+    // the right number instead of compounding.
+    private const float EnrageRung1 = 2f;
+    private const float EnrageRung2 = 4f;
+    private static float EnrageScaleAt(int stage) => stage >= 2 ? EnrageRung2 : stage == 1 ? EnrageRung1 : 1f;
 
     // The kit a boss with no BossCatalog profile uses: just the generic slam.
     private static readonly BossSkillEntry[] DefaultBossKit = { new(SkillCatalog.BossSlamSkill) };
@@ -10678,9 +10698,13 @@ public class GameLoopService : BackgroundService
         boss.CombatTicks++;
         var profile = BossCatalog.Get(boss.MobTypeId ?? "");
 
-        // Enrage timer: a one-time rage if the fight drags on.
-        if (!boss.Enraged && boss.CombatTicks >= BossEnrageTicks)
-            EnrageBoss(boss, "flies into a rage!");
+        // Enrage LADDER: ×2 at his first time, ×4 at his second. A while-loop, so a boss that somehow
+        // crossed both thresholds between ticks arrives at the right rung rather than the first one.
+        int at1 = (profile?.EnrageSeconds  ?? BossCatalog.FieldEnrage1Seconds) * 10;
+        int at2 = (profile?.EnrageSeconds2 ?? BossCatalog.FieldEnrage2Seconds) * 10;
+        while (boss.EnrageStage < 2 &&
+               boss.CombatTicks >= (boss.EnrageStage == 0 ? at1 : at2))
+            EnrageBoss(boss, boss.EnrageStage == 0 ? "flies into a rage!" : "is consumed by fury!");
 
         // Phase script: fire every phase whose HP threshold we've now crossed.
         if (profile is not null)
@@ -10697,16 +10721,24 @@ public class GameLoopService : BackgroundService
         return false;
     }
 
-    /// <summary>Latch the one-time rage buff: +50% P/M/basic atk, faster swings. Idempotent (a
-    /// phase-enrage and the timer-enrage can't double up). Undone by ResetMob on a leash.</summary>
+    /// <summary>Advance the boss ONE rung up the enrage ladder (`BL-167`): ×2 P/M/basic attack at rung
+    /// 1, ×4 at rung 2, plus faster swings the first time. Caps at rung 2, so a phase-script enrage and
+    /// the timer cannot push past the top. Undone by MobRecoveryCheck on a leash.
+    ///
+    /// <para>🔑 The multiplier is written to <see cref="Entity.MobEnrageScale"/> and applied by
+    /// <c>ApplyMobScale</c> on the recompute below — it is NOT multiplied into the attack fields here.
+    /// Doing that in place is what the old code did, and a recompute (any buff, debuff or mod change
+    /// landing on the boss mid-fight) rebuilt its stats from the level curve and silently threw the
+    /// enrage away.</para></summary>
     private void EnrageBoss(Entity boss, string shout)
     {
-        if (boss.Enraged) return;
+        if (boss.EnrageStage >= 2) return;
+        boss.EnrageStage++;
         boss.Enraged = true;
-        boss.AttackPower = (int)(boss.AttackPower * 1.5f);
-        boss.MagicAttack = (int)(boss.MagicAttack * 1.5f);
-        boss.BasicAttackPower = (int)(boss.BasicAttackPower * 1.5f);
-        boss.AttackSpeedMultiplier *= 0.7f;   // lower multiplier = faster swings
+        boss.MobEnrageScale = EnrageScaleAt(boss.EnrageStage);
+        // The swing-rate bonus is the FIRST rung's only, not a ladder — his ladder is attack power.
+        if (boss.EnrageStage == 1) boss.AttackSpeedMultiplier *= 0.7f;   // lower = faster swings
+        boss.RecomputeDerived();
         BroadcastCombat(boss, boss, 0, CombatOutcome.Buff, "Enrage");
         BroadcastSystem($"{boss.Name} {shout}");
     }
@@ -18944,8 +18976,14 @@ public class GameLoopService : BackgroundService
         // boss HP multiplier is no longer the flat x100 above: it is a CURVE in the level, because a
         // flat multiple of a quadratic pool against a flat party DPS made a level-20 boss die in 96
         // seconds and a level-76 one take 25 minutes. See MobRankScale for the measurement.
-        float hpMul = MobRankScale.Hp(rank, level);
-        float atkMul = MobRankScale.Atk(rank);
+        // `BL-167` — a boss with NO escort takes his `solo boss` ×2 on attack AND HP, on top of the ×2
+        // rune and ×10 HP every boss now gets. The flag is the PROFILE's (BossCatalog.IsSolo), so it is
+        // authored beside the boss's kit rather than guessed from the spawner; a template with no
+        // profile is escorted, which is the conservative default.
+        bool bossSolo = rank == MobRank.Boss && BossCatalog.IsSolo(mobId);
+        var bossProfile = rank == MobRank.Boss ? BossCatalog.Get(mobId) : null;
+        float hpMul = MobRankScale.Hp(rank, level, bossSolo) * (bossProfile?.HpMult ?? 1f);
+        float atkMul = MobRankScale.Atk(rank, bossSolo);
         float defMul = MobRankScale.Def(rank);
         // Flat accuracy by rank — a boss must be able to land on a dodge build.
         int accFlat = MobRankScale.AccFlat(rank);
@@ -19037,10 +19075,13 @@ public class GameLoopService : BackgroundService
         // stays the catalog run speed.
         mob.MobHpScale = hpMul;
         mob.MobZoneHpScale = zoneHpScale;
-        mob.MobPAtkScale = atkMul;
-        mob.MobMAtkScale = atkMul;
-        mob.MobPDefScale = defMul;
-        mob.MobMDefScale = defMul;
+        // `BL-166` — the profile's per-boss LEAN lands on top of the rank, which is what makes his
+        // "a mage boss with less patk more m atk less Def" and "a solo bruiser with high p atk and Def"
+        // two entries in one file rather than two forks in this method. 1 = take the rank's number.
+        mob.MobPAtkScale = atkMul * (bossProfile?.PAtkMult ?? 1f);
+        mob.MobMAtkScale = atkMul * (bossProfile?.MAtkMult ?? 1f);
+        mob.MobPDefScale = defMul * (bossProfile?.PDefMult ?? 1f);
+        mob.MobMDefScale = defMul * (bossProfile?.MDefMult ?? 1f);
         mob.MobAccFlat = accFlat;
 
         // BL-47 — DRESS a player-built creature. This has to happen before the recompute below, because

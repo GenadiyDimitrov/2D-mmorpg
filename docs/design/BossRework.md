@@ -328,3 +328,55 @@ shooting but a tank can feel it"* is still the test.
    (so a blocked hit still lands 80%), which is what `BlockReduction` means in the code and is exactly
    the A-grade shield's authored 0.20. If you meant a blocked hit deals only 20%, the mitigation is
    60% rather than 15% and §2b's bottom line moves a long way.
+
+---
+
+## 6. BUILT — 0.113.0, 2026-09-05
+
+Your ruling: *"bosses as we desided get x2 atk and x10hp, if boss is solo gets another x2 on both
+(atk/hp) … Now I just want to feel it and going solo vs boss to be nearly impossible"*. Built as
+`BL-166` (the stat block) + `BL-167` (the ladders + the real enrage timer). `BL-168` is closed by it.
+
+| | escorted | solo |
+|---|---|---|
+| attack | ×2 | ×4 |
+| HP | ×10 | ×20 |
+| enrage | ×2 at 20 min, ×4 at 30 (world boss: 2h / 3h) | same |
+
+**Your HP numbers land exactly.** At level 90 a boss is now **3.43 kk escorted / 6.87 kk solo** —
+against your *"bosses 85 with 3~6kk hp"*. Nothing was fitted to get there; your two ×2s produced it.
+
+```
+ Lvl      rank    boss HP   party dps      TTK           band
+  44      Boss    2429821         370    6562s TOO SLOW (109m)
+  44 Boss/solo    4859643         370   13125s TOO SLOW (219m)
+  60      Boss    2814530         558    5047s TOO SLOW (84m)
+  76      Boss    3158218         534    5911s TOO SLOW (99m)
+  85      Boss    3338544        1884    1772s    ok (30 min)
+  90      Boss    3434746        1752    1960s TOO SLOW (33m)
+  90 Boss/solo    6869493        1752    3920s TOO SLOW (65m)
+```
+
+✅ **The endgame is right** — 30 to 33 minutes escorted at 85-90, 65 solo, which is your band plus the
+"nearly impossible alone" you asked for.
+
+🔴 **Below 80 it is not, and by a lot.** A level-44 dungeon boss now takes a full party **109 minutes**
+escorted and **219 solo**. And the attack half crosses your own red line down there: at 20-44 a single
+basic attack takes **91-95% of a robe's pool**, which is *"one shooting"* in the plainest sense.
+
+**The cause is not the boss curve — it is the CLIFF AT 80.** Party dps is flat at ~370-560 from 44 all
+the way to 76, then **triples to 1,884 at 85** when the gear tier flips to S. So a flat ×10 lands the
+top correctly and overshoots the bottom by three to seven times; no smooth boss-HP curve can fix that,
+because the thing that is not smooth is the party.
+
+⚠ **I left your numbers exactly as ruled and am reporting this rather than quietly tapering them** —
+the endgame, where you are playing, is right, and the low end is a decision about the gear ladder
+rather than about bosses. Three ways out, and it is your call:
+
+1. **Taper the ×10 by level** — ~×3 below 76 rising to ×10 at 85+. One knob, keeps the endgame, fixes
+   the bottom, but bakes the cliff into the boss curve where a future gear change would inherit it.
+2. **Fix the cliff itself** — the S-grade jump is the real outlier and it distorts every endgame number
+   in the game, not just bosses. Biggest fix, widest benefit, and it moves numbers you have signed off.
+3. **Leave it** — the low-level bosses are the three dungeon bosses at 44 and 65 and the world boss at
+   60. If nobody is fighting them right now, this can wait until the bot party exists and the whole
+   band gets re-measured at once.
