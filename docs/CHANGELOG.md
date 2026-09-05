@@ -12,7 +12,61 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-04 (latest) — 0.112.3: three shields, one weapon, and a message that fired 10×/s
+## 2026-09-05 (latest) — `BL-169`: the balance rig was measuring a tank nobody plays
+
+No game code changed. This is `tools/BalanceMatrix` and two design documents — but it invalidates a
+number the whole boss design rests on, so it is worth a full entry.
+
+### What was wrong
+
+`BalanceMatrix.BuildBossParty` built its tank as `BuildPlayer(Human, Fighter, level)`, and that
+function took **no discipline** (so at level 90 it was still a 2nd-class Knight) and applied **exactly
+one buff, the War Rune** — no NPC buffer at all, though the buffer has been in the game since
+`BL-149`…`BL-162` and every real player walks out of town with it up. Back-computed from its own
+output, the level-90 tank in that table sat at **~1,533 P.Def** against the owner's real **2,600**.
+
+Two more defects surfaced while validating the fix:
+
+* **`ApplyNpcBuffs` only ever offered `NewbieBuffSet`** — the *levelling* shelf. `BL-160` put eight
+  single harmonies on the NPC and `BL-161` put the three Marks on it, and the census was never told.
+* 🔴 **`quality: "epic"` silently meant MYTHIC.** `BuildPlayer` mapped `null or "epic"` to the bare
+  item id on a stale comment (*"the bare id IS the Epic"*), while `ItemCatalog.QualityId` is explicit
+  that **Mythic is the authored item and carries no suffix**. So every default caller has been
+  measuring a full mythic loadout. ⚠ `_mythic` is not an id: asking for it prints "missing item" and
+  dresses a naked character.
+
+### What changed
+
+`BuildPlayer` gained `npcBuffed` and `gearTier`; `ApplyNpcBuffs` gained `fullShelf` (harmonies + one
+Mark). The boss party now takes `Discipline.Bulwark` on the tank and the full shelf on all five. Both
+new options are **opt-in**, because the other tables in the tool were read and signed off unbuffed and
+moving all of them silently would make the diff unreadable.
+
+The "is a party mandatory" table gained `gear` / `bare` / `tankPDef` / `tankHP` / `blocked` /
+`avg-swing` columns, and there is a new table — **`BL-169`: DOES THE RIG MATCH HIS SCREEN** — that
+prints one level-90 tank in the owner's two gear sets with **his own readings hardcoded as the expected
+values**. 🔑 It is the only falsifiable table in the tool: every other one prints whatever the formulas
+say and cannot disagree with anything, which is exactly how a straw tank survived this long.
+
+### What it revealed
+
+Party dps at 90 went **270 → 1,752 (×6.5)** and boss time-to-kill went **1,274s → 196s**. Every level
+from 60 up now prints **TOO FAST**, and the tank verdict from 60 up is **"a tank cannot feel it"** — at
+90 a boss swing costs 1% of his pool and he stands there **327 seconds unhealed**. `BL-13`'s 10-30
+minute band *and* its ×4 attack multiplier were both fitted against the straw tank, which is precisely
+the complaint that opened this pass: *"our 90 boss cannot kill my 90 tank with epic A gear"*.
+
+Validation against his screen: **bare P.Def within +9%** (the gear + passive model is right), buffed
+P.Def **+32%** consistently (the buff layer — the rig buys all twenty-nine shelf items where he buys
+some), and Max HP **+45/62%**, which does not track the P.Def gap and is therefore a separate cause.
+
+Full write-up, including his rulings and what is still open:
+[design/BossRework.md](design/BossRework.md). New backlog entries `BL-166` (a per-boss stat block
+beside the per-boss kit `BossCatalog` already holds), `BL-167` (the attack ladders and a real enrage
+timer — the current one is **90 seconds**, not the 20 minutes it looks like: `BossEnrageTicks = 900` at
+10 ticks/sec), `BL-168` (boss HP), `BL-169` (this).
+
+## 2026-09-04 — 0.112.3: three shields, one weapon, and a message that fired 10×/s
 
 Three playtest finds off 0.112.2, all three real, all three fixed. Two are missing **gates** on the
 tank's kit and one is a **flood**.

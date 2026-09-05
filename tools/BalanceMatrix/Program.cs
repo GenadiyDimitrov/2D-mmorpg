@@ -2529,19 +2529,68 @@ Console.WriteLine();
 //     healer is decoration. And the healer must be able to hold him up, or the party cannot win at
 //     all. So the boss's damage on the tank has to sit BETWEEN tank regen and healer throughput.
 // ---------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------
+//  `BL-169` VALIDATION — the rig against the owner's actual screen.
+//
+//  🔑 THIS TABLE EXISTS SO THE RIG CAN BE FALSIFIED. It is the only measurement in this tool with a
+//  known right answer: he read these numbers off his own level-90 Paladin and told them to me, so a
+//  row that disagrees means the RIG is wrong, not the game. Every other table here is unfalsifiable
+//  by construction — it prints whatever the formulas say — which is exactly how a straw tank went
+//  unnoticed for as long as the NPC buffer has existed.
+//
+//  ⚠ AND IT IS A LEVEL-90 CHARACTER IN BOTH ROWS. The first comparison I drew put his level-90
+//  epic-76 tank beside the rig's level-SEVENTY-SIX row and called it a 14% match: those differ by
+//  fourteen levels of HP curve as well as by gear, so the agreement was partly luck. Same level,
+//  different gear, is the only comparison that isolates what he actually changed.
+//
+//  HIS READINGS (2026-09-05), both at level 90:
+//    epic A, tier 76, buffed + reinforcement ....... 2,600 P.Def / 17,000 HP  (1,300 P.Def bare)
+//    MYTHIC S heavy set, fully buffed + great bulwark
+//      + shield reinforcement ....................... 4,300 P.Def / 20,000 HP
+// ---------------------------------------------------------------------------------------------
+Console.WriteLine("=== BL-169: DOES THE RIG MATCH HIS SCREEN? — one level-90 tank, his two gear sets ===");
+Console.WriteLine("  The only falsifiable table in this tool: he read these numbers off his own Paladin.");
+Console.WriteLine($"{"set",22} {"barePDef",9} {"PDef",7} {"his",7} {"delta",7} {"MaxHp",7} {"his",7} {"delta",7}");
+foreach (var (label, tier, quality, hisDef, hisHp) in new (string, int, string?, int, int)[]
+{
+    ("epic A (tier 76)",       76, "epic",   2600, 17000),
+    ("MYTHIC S (tier 80)",     80, null,     4300, 20000),
+    ("epic S (tier 80)",       80, "epic",      0,     0),   // for reference: one rarity rung below
+})
+{
+    var bare = BuildPlayer(Race.Human, BaseClass.Fighter, 90, quality: quality,
+                           discipline: Discipline.Bulwark, gearTier: tier);
+    var full = BuildPlayer(Race.Human, BaseClass.Fighter, 90, quality: quality,
+                           discipline: Discipline.Bulwark, npcBuffed: true, gearTier: tier);
+    string dDef = hisDef > 0 ? $"{(full.EffectiveDefence - hisDef) * 100f / hisDef,6:+0;-0}%" : "     -";
+    string dHp  = hisHp  > 0 ? $"{(full.MaxHp - hisHp) * 100f / hisHp,6:+0;-0}%" : "     -";
+    Console.WriteLine($"{label,22} {bare.EffectiveDefence,9:F0} {full.EffectiveDefence,7:F0} "
+        + $"{(hisDef > 0 ? hisDef.ToString() : "-"),7} {dDef,7} {full.MaxHp,7} "
+        + $"{(hisHp > 0 ? hisHp.ToString() : "-"),7} {dHp,7}");
+}
+Console.WriteLine("  A delta inside ~15% is the rig buying every blessing on the shelf where he bought some.");
+Console.WriteLine("  Anything larger is a real disagreement and the ENDGAME gets tuned on these numbers.");
+Console.WriteLine();
+
 Console.WriteLine("=== BL-13: IS A PARTY MANDATORY? — the boss's damage against a tank, a robe and a healer ===");
 Console.WriteLine("  The BASIC attack is the unavoidable channel and is what \"one shooting\" means. The SLAM is a");
 Console.WriteLine("  3s telegraphed AoE in 250 — a robe caught in it made a positioning mistake, not a balance one.");
 Console.WriteLine("  \"a tank can feel it\" is measured as TIME, not as a share of one blow: how long the tank");
 Console.WriteLine("  lives with nobody healing him. Over a minute and the boss is scenery.");
-Console.WriteLine($"{"Lvl",4} {"basic→tank",11} {"%tank",6} {"basic→robe",11} {"%robe",6} {"slam→robe",10} {"%robe",6} "
+Console.WriteLine("  `BL-169`: the tank is a BUFFED Bulwark now, not a bare Knight. His own level-90 Paladin");
+Console.WriteLine("  reads 2,600 P.Def / 17,000 HP on epic-76 gear — the two columns to check this against.");
+Console.WriteLine($"{"Lvl",4} {"gear",5} {"bare",6} {"tankPDef",9} {"tankHP",7} {"basic→tank",11} {"%tank",6} {"blocked",8} {"avg/swing",10} {"basic→robe",11} {"%robe",6} "
     + $"{"dps→tank",9} {"unhealed",9} {"heal/s",7} {"verdict",24}");
 foreach (int L in new[] { 20, 44, 60, 65, 76, 85, 90 })
 {
-    var tank   = BuildPlayer(Race.Human, BaseClass.Fighter, L);                 // Knight: shield + heavy
-    var robe   = BuildPlayer(Race.Human, BaseClass.Mage, L);                    // Sorcerer: the squishiest
+    // `BL-169` — all three are NPC-BUFFED and the tank has his discipline. His level-90 Paladin reads
+    // 2,600 P.Def / 17k HP buffed; an unbuffed 2nd-class Knight read ~1,533, and every verdict in this
+    // table was drawn from that.
+    var tank   = BuildPlayer(Race.Human, BaseClass.Fighter, L,
+                             discipline: Discipline.Bulwark, npcBuffed: true);  // Knight → Bulwark
+    var robe   = BuildPlayer(Race.Human, BaseClass.Mage, L, npcBuffed: true);   // Sorcerer: the squishiest
     var healer = BuildPlayer(Race.Human, BaseClass.Mage, L, healer: true,
-                             discipline: Discipline.Lightbringer);
+                             discipline: Discipline.Lightbringer, npcBuffed: true);
     var boss   = SpawnRanked(L, MobRank.Boss);
 
     int hitTank = BasicHit(boss, tank);
@@ -2566,8 +2615,16 @@ foreach (int L in new[] { 20, 44, 60, 65, 76, 85, 90 })
         : unhealed > 60f ? "a tank cannot feel it"
         : hps < onTank ? "healer alone cannot hold"
         : "healer needed + enough";
-    Console.WriteLine($"{L,4} {hitTank,11} {hitTank * 100f / tank.MaxHp,5:F0}% {hitRobe,11} "
-        + $"{hitRobe * 100f / robe.MaxHp,5:F0}% {slamRobe,10} {slamRobe * 100f / robe.MaxHp,5:F0}% "
+    // His own reading is "~400 not blocked and ~320 blocked 75% of the time", so print the same three
+    // numbers he quotes: the raw hit, the blocked hit, and the average a swing actually costs him.
+    int blockedHit = (int)MathF.Round(hitTank * (1f - tank.BlockReduction));
+    float avgSwing = hitTank * BlockFactor(boss, tank);
+    // The UNBUFFED tank beside the buffed one, so his own reading ("1300pdef unbuffed … 2300 buffed")
+    // can be checked against this table rather than taken on trust. Same build, no shelf.
+    var bareTank = BuildPlayer(Race.Human, BaseClass.Fighter, L, discipline: Discipline.Bulwark);
+    Console.WriteLine($"{L,4} {"t" + GearTier(L),5} {bareTank.EffectiveDefence,6:F0} {tank.EffectiveDefence,9:F0} {tank.MaxHp,7} {hitTank,11} "
+        + $"{hitTank * 100f / tank.MaxHp,5:F0}% {blockedHit,8} {avgSwing,10:F0} {hitRobe,11} "
+        + $"{hitRobe * 100f / robe.MaxHp,5:F0}% "
         + $"{onTank,9:F0} {(float.IsInfinity(unhealed) ? "never" : unhealed.ToString("F0") + "s"),9} "
         + $"{hps,7:F0} {verdict,24}");
 }
@@ -4648,7 +4705,15 @@ static void NpcShelfDump()
     }
 }
 /// state almost nobody plays in.</summary>
-static void ApplyNpcBuffs(Entity e)
+/// 🔑🔑 `BL-169`, 2026-09-05 — <paramref name="fullShelf"/> ADDS THE HARMONIES AND A MARK, and it is
+/// the fourth time this census has had to be taught something the shelf already sells. `BL-160` put
+/// the eight single harmonies on the NPC and `BL-161` put the three Marks on it, and this function
+/// went on offering `NewbieBuffSet` alone — so a level-90 character measured here wore the blessings
+/// of a levelling character and nothing else. The owner's own Paladin reads **2,600 P.Def / 17,000 HP**
+/// buffed *"from npc (mark/harmony)"*; the rig read ~1,533. Opt-in rather than default ONLY because
+/// the tables that already call this were read and signed off without it — the boss tables, which are
+/// about endgame characters, pass true.
+static void ApplyNpcBuffs(Entity e, bool fullShelf = false)
 {
     // ⚠ The buffer's blessings are CHILD WRAPPERS now (docs/design/BuffLadders.md): the wrapper owns
     // the duration and names a single-buff skill, and carries NO magnitudes of its own. Reading
@@ -4680,7 +4745,15 @@ static void ApplyNpcBuffs(Entity e)
         });
     }
 
-    foreach (var id in SkillCatalog.NewbieBuffSet)
+    // The eight single harmonies (`BL-160`) and ONE Mark (`BL-161`, they do not stack with each other)
+    // are on the same shelf and bought the same way — their own level gates in NpcBuffTiers refuse a
+    // character too young, so nothing here needs a second age test.
+    var shelf = fullShelf
+        ? SkillCatalog.NewbieBuffSet
+            .Concat(SkillCatalog.NpcSingleHarmonySet)
+            .Concat(SkillCatalog.NpcMarkSet.Take(1))
+        : SkillCatalog.NewbieBuffSet.AsEnumerable();
+    foreach (var id in shelf)
     {
         // Out of this character's reach — the NPC would refuse, so the matrix must not wear it.
         int tier = SkillCatalog.NpcBuffTierFor(id, e.Level);
@@ -4819,7 +4892,8 @@ static int TopPhysSkillPower(Entity e)
 /// ten at the ceiling. The boss party passes Lightbringer, because a level-40+ healer really is one and
 /// his heal ladder above 35 is the whole difference between "the healer can hold" and "he cannot".</param>
 static Entity BuildPlayer(Race race, BaseClass cls, int level, string? quality = null, bool warrior = false,
-                          bool healer = false, Discipline? discipline = null)
+                          bool healer = false, Discipline? discipline = null, bool npcBuffed = false,
+                          int gearTier = 0)
 {
     var s = StatCalculator.GetBaseStats(race, cls);
     var e = new Entity { Name = "calc", Kind = EntityKind.Player };
@@ -4883,12 +4957,19 @@ static Entity BuildPlayer(Race race, BaseClass cls, int level, string? quality =
     if (cls == BaseClass.Mage)
         e.LearnedSkills[SkillCatalog.SpellcasterMastery] = 1;
 
-    // QUALITY suffix. The tiered tables are authored as the EPIC piece, and the six-quality ladder
-    // (0.29.1) derives everything else from it — so the bare id IS the Epic, and "_mythic" is the new
-    // 100% ceiling at 1/0.7 ≈ +43%. Passing a quality here is what lets the matrix MEASURE that raise
-    // instead of asserting it.
-    int t = GearTier(level);
-    string q = quality is null or "epic" ? "" : "_" + quality;
+    // QUALITY suffix.
+    // 🔴 THE COMMENT THAT USED TO SIT HERE WAS STALE AND IT MATTERED (fixed 2026-09-05, `BL-169`). It
+    // said *"the bare id IS the Epic, and `_mythic` is the ceiling"*. That has not been true since the
+    // rarity ladder was reworked: `ItemCatalog.QualityId` is explicit that **MYTHIC is the authored
+    // item and carries NO suffix**, every other rung being `{id}_{rarity}`. So the old mapping
+    //     quality is null or "epic"  ->  ""   (the bare id)
+    // silently handed "epic" the MYTHIC piece, and every default caller — which is all of them — has
+    // been measuring a full MYTHIC loadout. That is not itself wrong (the `--gear` census says
+    // "Full loadout at Mythic quality" out loud), but it made the owner's "epic 76" irreproducible:
+    // asking for epic got mythic, ~+40% of P.Def, and the rig looked 73% richer than his screen.
+    // ⚠ `_mythic` is NOT a real id. Asking for it prints "missing item" and dresses a NAKED character.
+    int t = gearTier > 0 ? gearTier : GearTier(level);   // BL-169: an explicit tier lets his own gear be reproduced
+    string q = quality is null or "mythic" ? "" : "_" + quality;
     Equip(e, (cls == BaseClass.Mage ? (healer ? $"wand_t{t}" : $"staff_t{t}") : $"sword1h_t{t}") + q);
     Equip(e, (cls == BaseClass.Mage ? $"robe_t{t}" : $"heavy_t{t}") + q);
     if (cls == BaseClass.Fighter) Equip(e, $"shield_t{t}{q}");
@@ -4896,6 +4977,11 @@ static Entity BuildPlayer(Race race, BaseClass cls, int level, string? quality =
     Equip(e, $"necklace_t{t}{q}");
     Equip(e, $"ring_t{t}{q}"); Equip(e, $"ring_t{t}{q}");
     Equip(e, $"earring_t{t}{q}"); Equip(e, $"earring_t{t}{q}");
+
+    // `BL-169` — the NPC buffer's shelf, opt-in. It is NOT the default: most tables in this tool were
+    // read and signed off unbuffed, and silently moving all of them in the same change would make the
+    // diff unreadable. The BOSS tables opt in, because a boss is fought by buffed characters.
+    if (npcBuffed) ApplyNpcBuffs(e, fullShelf: true);
 
     e.RecomputeDerived();
     return e;
@@ -4928,14 +5014,18 @@ static Entity SpawnRanked(int level, MobRank rank)
 
 /// <summary>His party, verbatim: *"A healer, tank and dds in a party are a must"*. Tank, healer and
 /// three damage dealers (two champions and a nuker — the mix a real group brings).</summary>
+/// ⚠ `BL-169`: the tank takes <see cref="Discipline.Bulwark"/> and the whole party is NPC-BUFFED.
+/// Until 2026-09-05 the tank here was a bare 2nd-class Knight with no buff but the rune, which is not
+/// a character anybody has played since the buffer was built — see <see cref="ApplyNpcBuffs"/>.
 static Entity[] BuildBossParty(int level) => new[]
 {
-    BuildPlayer(Race.Human, BaseClass.Fighter, level),                  // TANK   (Knight: shield + heavy)
+    BuildPlayer(Race.Human, BaseClass.Fighter, level,
+                discipline: Discipline.Bulwark, npcBuffed: true),        // TANK   (Knight → Bulwark)
     BuildPlayer(Race.Human, BaseClass.Mage,    level, healer: true,
-                discipline: Discipline.Lightbringer),                   // HEALER (Cleric → Lightbringer)
-    BuildPlayer(Race.Human, BaseClass.Fighter, level, warrior: true),   // DD
-    BuildPlayer(Race.Human, BaseClass.Fighter, level, warrior: true),   // DD
-    BuildPlayer(Race.Human, BaseClass.Mage,    level),                  // DD     (Sorcerer)
+                discipline: Discipline.Lightbringer, npcBuffed: true),   // HEALER (Cleric → Lightbringer)
+    BuildPlayer(Race.Human, BaseClass.Fighter, level, warrior: true, npcBuffed: true),   // DD
+    BuildPlayer(Race.Human, BaseClass.Fighter, level, warrior: true, npcBuffed: true),   // DD
+    BuildPlayer(Race.Human, BaseClass.Mage,    level, npcBuffed: true),                  // DD (Sorcerer)
 };
 
 /// <summary>What the party puts INTO the boss. The healer contributes nothing: he is casting heals,
