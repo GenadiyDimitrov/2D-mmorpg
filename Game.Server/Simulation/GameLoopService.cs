@@ -13834,6 +13834,11 @@ public class GameLoopService : BackgroundService
             // The enchant-scroll layer ADDS rather than replaces (0.49.0 D1): an elite still rolls the
             // ordinary scrolls group, and the Greater/Safe types exist nowhere else.
             applicable.AddRange(MobCatalog.EnchantScrollDrops(mob.Level, mob.Rank));
+            // Same shape, same reason, for the RETURN and RESURRECTION scrolls (`BL-174`): they left
+            // every ordinary creature's always-group and are now authored once against the rank that
+            // earns them. ⚠ These carry GroupAlways, so they JOIN that group rather than adding a new
+            // one — which is what keeps their authored chance an absolute per-kill chance.
+            applicable.AddRange(MobCatalog.UtilityScrollDrops(mob.Level, mob.Rank));
             // Same shape, same reason, for the TOP crafting mats (`BL-05`): Epic/Legendary/Mythic
             // materials have no normal-mob faucet at all, so B, A and S gear is only craftable because
             // elites pay them. See MobCatalog.EliteMatDrops.
@@ -16134,6 +16139,7 @@ public class GameLoopService : BackgroundService
                 rows.RemoveAll(d => MobCatalog.IsGearGroup(d.GroupId));
                 rows.AddRange(MobCatalog.GearDrops(t.Level, t.Rank));
                 rows.AddRange(MobCatalog.EnchantScrollDrops(t.Level, t.Rank));
+                rows.AddRange(MobCatalog.UtilityScrollDrops(t.Level, t.Rank));
                 rows.AddRange(MobCatalog.EliteMatDrops(
                     t.Level, t.Rank, MobCatalog.Get(t.MobTypeId).Category));
             }

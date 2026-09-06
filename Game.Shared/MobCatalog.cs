@@ -318,7 +318,7 @@ public static class MobCatalog
         float run, bool aggressive, MobMod? mod = null, MobRole role = MobRole.Melee,
         string clan = "") =>
         new(id, name, run * 0.55f, run, Aggressive: aggressive,
-            Drops: StandardDrops(level, cat), Mod: mod, Level: level, Category: cat, Role: role,
+            Drops: StandardDrops(level, cat, id), Mod: mod, Level: level, Category: cat, Role: role,
             Clan: clan);
 
     // ----- BL-47 step 2 authoring helpers. See the demo block at the bottom of Build(). -----
@@ -739,6 +739,51 @@ public static class MobCatalog
                                    0.0015f);                                                     // 0.45%
     }
 
+    /// <summary>THE RETURN AND RESURRECTION SCROLLS, off ELITES and BOSSES only (`BL-174`, owner
+    /// 2026-09-05: *"remove scroll of return and resurrection from all mobs can leave them only on
+    /// elits"*). They used to sit in every creature's ALWAYS group; see the note at that group in
+    /// <see cref="StandardDrops"/> for what left and why, and for the starter trio's one exception.
+    ///
+    /// 🔑 THE NUMBERS ARE THE OLD ONES, UNCHANGED — the cut is entirely in WHO pays them. An elite is a
+    /// camp you go to rather than a thing you walk past, so the same 2.5% per kill against a much
+    /// smaller population of kills is already the reduction he asked for; re-tuning the chance on top of
+    /// that would be cutting the same faucet twice and would leave no scroll anywhere in the world.
+    ///
+    /// A BOSS pays double, which is this file's standing rule for a boss row (see
+    /// <see cref="EnchantScrollDrops"/>, where a boss pays roughly triple an elite and two bands at
+    /// once) — and a boss you can only kill once every ~10.75 h can gate a one-off, never a supply.
+    ///
+    /// ⚠ GroupAlways, NOT an independent roll. These are ABSOLUTE per-kill chances the way they always
+    /// were: a guaranteed group's member weight is its marginal chance, so the authored 0.025 stays
+    /// 0.025 no matter what else is in the group. Emitting them as GroupId 0 would have quietly put them
+    /// through the global drop rate and the "other" group's ×3 instead.</summary>
+    public static IEnumerable<DropEntry> UtilityScrollDrops(int level, MobRank rank)
+    {
+        if (rank == MobRank.Normal)
+            yield break;
+
+        float mult = rank == MobRank.Boss ? 2f : 1f;
+        DropEntry Scroll(string id, float chance) =>
+            new(id, chance * mult, 1, 1, GroupId: GroupAlways);
+
+        // The 75+ split is the ALWAYS group's own, kept exactly: past 75 the ordinary pair thins a
+        // little and the ULTIMATE pair appears beside it. ⚠ The Ultimates are not vendor-stocked
+        // anywhere, so this layer is their ONLY source in play — which is why they move here with the
+        // rest rather than being left behind on ordinary creatures.
+        if (level < 75)
+        {
+            yield return Scroll(ItemCatalog.ScrollReturn,    0.025f);
+            yield return Scroll(ItemCatalog.ScrollResurrect, 0.0025f);
+        }
+        else
+        {
+            yield return Scroll(ItemCatalog.ScrollReturn,    0.020f);
+            yield return Scroll(ItemCatalog.ScrollResurrect, 0.0020f);
+            yield return Scroll(ItemCatalog.ScrollReturnUltimate,    0.0015f);
+            yield return Scroll(ItemCatalog.ScrollResurrectUltimate, 0.00015f);
+        }
+    }
+
     /// <summary>The TOP-RUNG material faucet: Epic, Legendary and Mythic crafting mats off ELITES and
     /// BOSSES, banded by the creature's own grade (`BL-05`, 2026-08-13).
     ///
@@ -840,7 +885,21 @@ public static class MobCatalog
     /// (amount rises with level; rarity gates at 30/60/76 = uncommon/rare/epic), family-flavored mat
     /// types, plus potions/scrolls and a LOW chance at a finished tiered piece (the "usable now" drop).
     /// Bosses layer more via zone rank. Retune via chances or the global RateConfig.</summary>
-    private static DropEntry[] StandardDrops(int level, MobCategory cat)
+    /// <summary>THE THREE STARTER CREATURES that keep a return-scroll drop after `BL-174` (owner,
+    /// 2026-09-05: *"the starting 3 mobs can keep droping return scrolls and no resurrection
+    /// (pig/fox/goblin)"* — his "pig" is the Ridgeback Pup). They are levels 1, 4 and 8, so the
+    /// exception covers exactly the stretch before a player has money for a vendor scroll.
+    /// ⚠ Matched by ID and not by level: a level-1 creature elsewhere in the world is not a starter mob,
+    /// and this is the one place in the drop tables where identity, rather than a band, is the rule.
+    ///
+    /// ⚠ A METHOD, NOT A STATIC SET — see the note at <see cref="StandardDrops"/>'s mat rungs: static
+    /// fields initialise in declaration order, and <c>All = Build()</c> is declared at the top of this
+    /// class, so ANY collection field here is still null by the time Build() reaches StandardDrops. It
+    /// threw on the first run for exactly that reason.</summary>
+    private static bool KeepsStarterReturnScroll(string id) =>
+        id is "ridgeback_pup" or "fox" or "goblin_scout";
+
+    private static DropEntry[] StandardDrops(int level, MobCategory cat, string id)
     {
         // Family-flavored primary mat types (+ Gem is universal). The mats keep their category flavor —
         // only the GEAR families were randomised (owner, §4); what a wolf is made of is not a slot roll.
@@ -1067,21 +1126,41 @@ public static class MobCatalog
         // to resurrect you buy — if you're lucky you get the drop"*. It is the one consumable whose
         // absence is supposed to hurt, so it is the rarest thing in the group rather than, as it was,
         // the most common. The ratio is deliberate and holds for the Ultimate pair too.
+        //
+        // 🔑 `BL-174` — AND THE RETURN/RESURRECTION SCROLLS HAVE LEFT THIS GROUP ENTIRELY (owner,
+        // 2026-09-05: *"remove scroll of return and resurrection from all mobs can leave them only on
+        // elits, and the starting 3 mobs can keep droping return scrolls and no resurrection"*). This
+        // group was cut for the scrolls twice already — playtest 15, then playtest 17 `E1`, where 550
+        // return scrolls by level 23 was the finding — and this is the cut that finishes it: an ordinary
+        // creature pays none at any level. They are authored ONCE against the rank that earns them, in
+        // <see cref="UtilityScrollDrops"/>, which the kill roll layers on for elites and bosses — the
+        // same shape <see cref="EnchantScrollDrops"/> already uses, and the reason this is a move rather
+        // than a subtraction from a table every creature shares.
+        //
+        // ⚠ THE POTIONS ARE UNTOUCHED, and that is arithmetic, not luck: a member's authored weight IS
+        // its marginal per-kill chance (the group fires at the SUM and then picks weighted), so removing
+        // members changes how often the group fires and not what the survivors pay. potLow stays 2%.
+        //
+        // ⚠ IT CUTS A FAUCET WITH NOTHING REPLACING IT, on purpose: from level 9 up a return scroll
+        // comes off an elite or off a vendor. Stated here so the next playtest does not read it as a bug.
         void Always(string item, float weight) =>
             drops.Add(new(item, weight, 1, 1, GroupId: GroupAlways));
         if (!topLevel)
         {
-            Always(potLow,  0.020f); Always(ItemCatalog.ScrollReturn,    0.025f);
-            Always(potHigh, 0.010f); Always(ItemCatalog.ScrollResurrect, 0.0025f);
+            Always(potLow,  0.020f);
+            Always(potHigh, 0.010f);
         }
         else
         {
-            Always(potLow,  0.015f); Always(ItemCatalog.ScrollReturn,    0.020f);
-            Always(potHigh, 0.010f); Always(ItemCatalog.ScrollResurrect, 0.0020f);
-            Always(ItemCatalog.GreaterPotion,           0.002f);
-            Always(ItemCatalog.ScrollReturnUltimate,    0.0015f);
-            Always(ItemCatalog.ScrollResurrectUltimate, 0.00015f);
+            Always(potLow,  0.015f);
+            Always(potHigh, 0.010f);
+            Always(ItemCatalog.GreaterPotion, 0.002f);
         }
+        // The starter trio's exception, at the rate the whole world used to pay — the point is that the
+        // first eight levels are unchanged, not that they are generous. No resurrection scroll: he named
+        // that omission explicitly, and a level-4 player has nothing to resurrect for yet.
+        if (KeepsStarterReturnScroll(id))
+            Always(ItemCatalog.ScrollReturn, 0.025f);
 
         // ---- GEAR (§2/§3/§4): the four grade-locked, slot-randomised groups. The BROKEN jewels that
         //      used to be the level 1-5 accessory line are gone from here — §1 makes the F Common jewels

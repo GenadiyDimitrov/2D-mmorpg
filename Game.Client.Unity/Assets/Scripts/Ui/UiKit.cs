@@ -402,8 +402,13 @@ namespace Game.Client
             return height;
         }
 
+        /// <param name="nativeMobileInput">`BL-178` — opt OUT of the hidden-input trick below, for the
+        /// ONE field that wants Android's own copy / cut / select-all / paste menu. Default false
+        /// (= keep hiding the native input), because the switch cuts both ways and the fields this
+        /// defaults for are the ones the 0.47.0 caret bug was actually about.</param>
         public static TMP_InputField InputField(Transform parent, string placeholder,
-                                                bool password = false, float size = 18f)
+                                                bool password = false, float size = 18f,
+                                                bool nativeMobileInput = false)
         {
             var image = Box(parent, "Input", new Color(0.06f, 0.07f, 0.09f, 1f));
             var field = image.gameObject.AddComponent<TMP_InputField>();
@@ -444,7 +449,17 @@ namespace Game.Client
             //    inside the field positions it. (If a device ever refuses to open a keyboard for a
             //    hidden input, THIS is the line to flip back — the symptom would be "no keyboard at
             //    all", never "the caret is stuck".)
-            field.shouldHideMobileInput = true;
+            //
+            // 🔑 `BL-178` — AND THAT SAME LINE IS WHY ANDROID'S COPY/PASTE MENU NEVER APPEARS (owner,
+            // 2026-09-05: *"the context menu after selection that shows 'copy/cut/select all' is not
+            // there ... I do not want new inner copy/paste system if we can make the normal work"*).
+            // The clipboard menu belongs to the native EditText we are hiding, so with the text buffer
+            // handed to TMP there is nothing for the OS to offer a menu ON. The native caret and the
+            // native menu are one switch pointing opposite ways, so it is now PER FIELD rather than
+            // global: `false` for the chat entry box, where you type fresh text and the caret bug has
+            // nothing to bite on, `true` for the URL / password / gold / tune fields, which are the
+            // pre-filled values 0.47.0 was about.
+            field.shouldHideMobileInput = !nativeMobileInput;
             field.gameObject.AddComponent<CaretToEnd>();
 
             field.text = "";

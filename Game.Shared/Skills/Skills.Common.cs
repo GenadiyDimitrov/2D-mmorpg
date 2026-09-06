@@ -196,7 +196,7 @@ public static partial class SkillCatalog
     public const string BalanceMage    = "class_balance_mage";      // base class, pre-2nd
     // ---- Universal "Return" line: teleport to the nearest town. All auto-granted; the scroll
     //      variants require (and consume) their scroll item. Fixed cast + fixed cooldown. ----
-    public const string ReturnSkill          = "return_town";        // 30s cast, 5min cd, fragile
+    public const string ReturnSkill          = "return_town";        // 60s cast, 10s cd, fragile (`BL-173`)
     public const string ScrollReturnSkill    = "use_scroll_return";  // 10s cast, needs a scroll
     public const string ScrollReturnUltSkill = "use_scroll_return_ult"; // ~0.4s, needs an ult scroll
     public const string ScrollResurrectSkill    = "use_scroll_resurrect";     // 10s ally-res, 0% exp back
@@ -871,13 +871,22 @@ public static partial class SkillCatalog
         //  the Swift line replace them. Don't re-home them.)
 
         // ---- Return line (universal escape / recall to the nearest town) ----
-        // The FREE fallback: a long 30s channel that ANY damage cancels (FragileCast), 5-min reuse.
+        // The FREE fallback: a long 60s channel that ANY damage cancels (FragileCast), 10s reuse.
         // Fixed cast + fixed cooldown = no haste/CD buffs speed it up. For when you forgot scrolls.
+        //
+        // `BL-173`, owner 2026-09-05: *"Like a normal return just 60s/10s not 30s/5m like now"*. Both
+        // numbers moved and NOTHING ELSE DID — he was shown `FragileCast` and ruled it stays, which is
+        // the better call: fragile + a 10s reuse is a FREE OUT-OF-COMBAT return, retryable the moment
+        // you disengage, and it takes nothing from either scroll (the plain scroll still buys 10s
+        // instead of 60s, the Ultimate still buys the escape from a fight you are losing). Dropping
+        // fragile would have made this a slow Ultimate scroll and devalued both.
+        // ⚠ The 5-minute reuse was the only thing making the skill feel like a resource; with it gone
+        // the 60s channel IS the price. Don't "balance" it back with a cooldown.
         new(ReturnSkill, "Return", BaseClass.Fighter, SkillEffect.None,
-            MpCost: 0, CastTicks: 300, CooldownTicks: 3000, Range: 0, Power: 0,
+            MpCost: 0, CastTicks: 600, CooldownTicks: 100, Range: 0, Power: 0,
             Category: SkillCategory.Magic, SpCost: 0, TargetMode: TargetMode.SelfOnly,
             FixedCast: true, FixedCooldown: true, FragileCast: true, TeleportsToTown: true,
-            Description: "Channel 30s to return to the nearest town. ANY damage cancels it. 5 min reuse."),
+            Description: "Channel 60s to return to the nearest town. ANY damage cancels it. 10s reuse."),
 
 
         // ----- SP BOTTLE: drinking your banked skill points back (owner, 2026-08-26). Zero cast, zero

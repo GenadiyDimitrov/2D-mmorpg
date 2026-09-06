@@ -2744,6 +2744,15 @@ namespace Game.Client
                 if (raw.Equals("/offline", StringComparison.OrdinalIgnoreCase))
                 { StartOfflineFarm(); return; }
 
+                // `BL-173` — the typed twin of the Return skill (owner: *"an active skill or /return
+                // command that returns you to town"*). It casts `return_town`, which every character is
+                // granted, so this is an ALIAS and not a second mechanism: the same 60s fragile channel,
+                // the same 10s reuse, the same refusals. Like `/offline` above it must sit ABOVE the
+                // admin passthrough — everything that reaches that branch is refused for a non-staff
+                // character, and this one is for everybody.
+                if (raw.Equals("/return", StringComparison.OrdinalIgnoreCase))
+                { UseSkill(SkillCatalog.ReturnSkill); return; }
+
                 // Write your own title, if you have been granted the right. Player commands, so they
                 // must sit ABOVE the admin passthrough or a non-staff character would be told
                 // "unknown command" for the one thing the grant exists to let them do.

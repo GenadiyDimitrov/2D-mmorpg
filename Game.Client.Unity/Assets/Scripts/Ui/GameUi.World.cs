@@ -631,7 +631,14 @@ namespace Game.Client
             // flush against it is where a phone's own gesture bar lives.
             const float bottom = 14f;
 
-            _commandField = UiKit.InputField(_worldRoot, "say  /  !world  /  /w name msg");
+            // `BL-178` — THE ONE FIELD IN THE CLIENT THAT KEEPS ANDROID'S NATIVE INPUT, and therefore
+            // the only one with a copy / cut / select-all / paste menu. Chat is where you type fresh
+            // text rather than edit a pre-filled value, so the 0.47.0 caret bug that `shouldHideMobile
+            // Input = true` was added to fix has nothing to bite on here. See UiKit.InputField.
+            // ⚠ With this on, Android draws its OWN input strip above the keyboard and that is what is
+            // being edited while the keyboard is up — our box below is not.
+            _commandField = UiKit.InputField(_worldRoot, "say  /  !world  /  /w name msg",
+                                             nativeMobileInput: true);
             UiKit.Place(UiKit.Rect(_commandField.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
                         new Vector2(12f, bottom), new Vector2(620f, 46f));
             // Submit on the keyboard's enter/done key — the mobile keyboard has no Send button of ours.

@@ -539,6 +539,15 @@ Guaranteed groups (mats / always / scrolls) **ignore the global** — they are a
 ⚠ Composed in **one** place, `MobCatalog.EffectiveRate`; never redo this arithmetic at a call site,
 or the kill roll and the number the player is shown will disagree.
 
+⚠ A template's `Drops` is **not the whole table**. RANK is a property of the spawn, not the template,
+so three layers are added at kill time (`GameLoopService.RollDrop`, mirrored by target-inspect):
+`GearDrops` *replaces* the gear groups, and `EnchantScrollDrops`, `UtilityScrollDrops` (return /
+resurrection, `BL-174`) and `EliteMatDrops` *add* for elites and bosses.
+
+In a GROUP the member's authored chance **is** its marginal per-kill chance: the group fires once at
+the members' SUM and then picks one weighted, so adding or removing members changes how often the
+group fires, never what the other members pay.
+
 ---
 
 ## Where to look when this page is not enough

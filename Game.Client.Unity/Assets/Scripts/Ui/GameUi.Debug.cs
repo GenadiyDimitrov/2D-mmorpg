@@ -68,8 +68,13 @@ namespace Game.Client
             (ItemRarity.Common, "Common"), (ItemRarity.Uncommon, "Uncommon"), (ItemRarity.Rare, "Rare"),
             (ItemRarity.Epic, "Epic"), (ItemRarity.Legendary, "Legendary"), (ItemRarity.Mythic, "Mythic")
         };
-        private int _debugTpView;          // 0 root, 1 npcs, 2 zones, 3 cities
-        private int _debugItemsView;       // 0 root, 1 crafting materials, 2 blueprints
+        private int _debugTpView;          // 0 root, 1 npcs, 2 zones, 3 cities, 4 bosses (`BL-175`)
+        // 0 root, 1 crafting materials, 2 blueprints, and `BL-176`'s four:
+        // 3 enchant GRADE picker, 4 the three types of _debugEnchantGrade, 5 attribute, 6 potions, 7 stones.
+        private int _debugItemsView;
+        /// <summary>Which grade the enchant-scroll page is drilled into (`BL-176`). Only meaningful while
+        /// <see cref="_debugItemsView"/> is 4; the picker at view 3 sets it.</summary>
+        private EnchantGrade _debugEnchantGrade;
         private bool _debugAddDiscView;
         // `BL-127` — the re-roll list is now one button and a selection, like "+ Add a class" beside it
         // (owner: *"the reset classes should be same principal as the subclass -> one button and
@@ -480,6 +485,11 @@ namespace Game.Client
         {
             if (_debugItemsView == 1) { BuildDebugMaterials(); return; }
             if (_debugItemsView == 2) { BuildDebugBlueprints(); return; }
+            if (_debugItemsView == 3) { BuildDebugEnchantGrades(); return; }
+            if (_debugItemsView == 4) { BuildDebugEnchantScrolls(); return; }
+            if (_debugItemsView == 5) { BuildDebugAttributeScrolls(); return; }
+            if (_debugItemsView == 6) { BuildDebugPotions(); return; }
+            if (_debugItemsView == 7) { BuildDebugStones(); return; }
 
             _debugTitle.text = "Scrolls, potions and reagents";
 
@@ -489,26 +499,17 @@ namespace Game.Client
             DebugAction("Crafting materials >", () => { _debugItemsView = 1; RefreshDebugPanel(); });
             DebugAction("Blueprints (A/S recipes) >", () => { _debugItemsView = 2; RefreshDebugPanel(); });
 
-            // Every one of the 18 (D2: "every scroll in the admin menu"). Generated from the same table
-            // the catalog is built from, so a scroll can never be authored and left unreachable here.
-            // One header per grade — 18 flat rows would be an unreadable wall on a phone.
-            foreach (var (grade, _, _, level, _) in ItemCatalog.EnchantScrollBands)
-            {
-                DebugHeader($"Enchant scrolls — {EnchantRules.GradeName(grade)} grade (item level {level}+)");
-                foreach (var (kind, prefix, _) in ItemCatalog.EnchantScrollTypes)
-                {
-                    string id = ItemCatalog.EnchantScrollKey(kind, grade);
-                    DebugGive(id, prefix + " x10", 10);
-                }
-            }
-
-            DebugHeader("Attribute scrolls (x10)");
-            DebugGive(ItemCatalog.AttrScrollCommon, "Attr Scroll (Common) x10", 10);
-            DebugGive(ItemCatalog.AttrScrollUncommon, "Attr Scroll (Uncommon) x10", 10);
-            DebugGive(ItemCatalog.AttrScrollRare, "Attr Scroll (Rare) x10", 10);
-            DebugGive(ItemCatalog.AttrScrollEpic, "Attr Scroll (Epic) x10", 10);
-            DebugGive(ItemCatalog.AttrScrollLegendary, "Attr Scroll (Legendary) x10", 10);
-            DebugGive(ItemCatalog.AttrScrollMythic, "Attr Scroll (Mythic) x10", 10);
+            // `BL-176` — FOUR WALLS BECOME FOUR BUTTONS (owner: *"ecnahnt scrolls to be one button and
+            // then selection per grade"*, *"group of attribute scrolls -> click attri scroll and opens
+            // all of them like a selection"*, *"buttons with potions/stones"*). This page used to print
+            // 18 enchant rows under 6 headers plus 6 attribute rows plus the potions scattered across
+            // three headers — one screen, no grouping, on a phone. The drill-down pattern was already
+            // here twice (materials, blueprints); this is it applied four more times.
+            DebugHeader("Scrolls, potions and stones");
+            DebugAction("Enchant scrolls >", () => { _debugItemsView = 3; RefreshDebugPanel(); });
+            DebugAction("Attribute scrolls >", () => { _debugItemsView = 5; RefreshDebugPanel(); });
+            DebugAction("Potions (HP & MP) >", () => { _debugItemsView = 6; RefreshDebugPanel(); });
+            DebugAction("Stones >", () => { _debugItemsView = 7; RefreshDebugPanel(); });
 
             DebugHeader("Buff potions & scrolls (x5)");
             DebugGive(ItemCatalog.SpeedPotionC, "Swift Potion (Lesser) x5", 5);
@@ -523,14 +524,8 @@ namespace Game.Client
             // that has to be reachable to test the pick-10 chooser at all.
             DebugGive(ItemCatalog.BoxBuffScrolls, "Blessing Box x2", 2);
 
-            DebugHeader("Potions (x10)");
-            DebugGive(ItemCatalog.MinorPotion, "Minor Potion x10", 10);
-            DebugGive(ItemCatalog.HealingPotion, "Healing Potion x10", 10);
-            DebugGive(ItemCatalog.GreaterPotion, "Greater Potion x10", 10);
-
-            DebugHeader("Reagents");
-            DebugGive(ItemCatalog.ElementalStone, "Elemental Stone x10", 10);
-            DebugGive(ItemCatalog.SkillStone, "Skill Stone x10", 10);
+            // ⚠ The HP/MP potions and the four stones USED TO BE two flat headers here; they are the
+            // `Potions >` and `Stones >` pages above now. Do not re-add them in both places.
 
             // The ULTIMATE scrolls are deliberately not vendor-stocked, so debug is the only way to get
             // hold of them — and therefore the only way to test them.
@@ -539,6 +534,116 @@ namespace Game.Client
             DebugGive(ItemCatalog.ScrollReturnUltimate, "ULT Scroll of Return x5", 5);
             DebugGive(ItemCatalog.ScrollResurrect, "Scroll of Resurrection x5", 5);
             DebugGive(ItemCatalog.ScrollResurrectUltimate, "ULT Scroll of Resurrection x5", 5);
+        }
+
+        // ---- `BL-176`: enchant / attribute / potions / stones --------------------------------------
+
+        /// <summary>Step one of `Enchant scrolls >` — pick a GRADE. ⚠ STILL GENERATED from
+        /// <see cref="ItemCatalog.EnchantScrollBands"/>, exactly as the flat wall it replaces was: the
+        /// whole reason the old list was generated is that a scroll must not be authorable and then
+        /// unreachable here, and a hand-written F…S list would lose that the first time a grade is
+        /// added. Two levels of drill-down, zero hardcoded grades.</summary>
+        private void BuildDebugEnchantGrades()
+        {
+            _debugTitle.text = "Enchant scrolls — pick a grade";
+            DebugAction("< Back", () => { _debugItemsView = 0; RefreshDebugPanel(); });
+
+            foreach (var (grade, _, _, level, _) in ItemCatalog.EnchantScrollBands)
+            {
+                var g = grade;
+                DebugAction($"{EnchantRules.GradeName(grade)} grade  (item level {level}+) >",
+                            () => { _debugEnchantGrade = g; _debugItemsView = 4; RefreshDebugPanel(); });
+            }
+        }
+
+        /// <summary>Step two — the three TYPES (Normal / Greater / Safe) of the picked grade, generated
+        /// from <see cref="ItemCatalog.EnchantScrollTypes"/> for the same reason as the grade list.</summary>
+        private void BuildDebugEnchantScrolls()
+        {
+            string gradeName = EnchantRules.GradeName(_debugEnchantGrade);
+            _debugTitle.text = $"Enchant scrolls — {gradeName} grade (x10)";
+            DebugAction("< Back", () => { _debugItemsView = 3; RefreshDebugPanel(); });
+
+            foreach (var (kind, prefix, _) in ItemCatalog.EnchantScrollTypes)
+            {
+                string id = ItemCatalog.EnchantScrollKey(kind, _debugEnchantGrade);
+                DebugGive(id, $"{prefix} ({gradeName}) x10", 10);
+            }
+        }
+
+        /// <summary>All six attribute scrolls. Read off the catalog by <see cref="ItemDef.AttrScroll"/>
+        /// rather than listed by constant — the six were six hand-written rows here, which is the shape
+        /// that goes stale.</summary>
+        private void BuildDebugAttributeScrolls()
+        {
+            _debugTitle.text = "Attribute scrolls (x10)";
+            DebugAction("< Back", () => { _debugItemsView = 0; RefreshDebugPanel(); });
+
+            var scrolls = ItemCatalog.AllItems
+                .Where(d => d.AttrScroll != AttrScrollKind.None)
+                .OrderBy(d => d.AttrScroll)
+                .ToList();
+            if (scrolls.Count == 0) { DebugNote("No attribute scrolls in the catalog."); return; }
+
+            foreach (var d in scrolls)
+                DebugGive(d.Id, d.Name + " x10", 10);
+        }
+
+        /// <summary>Every HP and MP potion rung — his *"potions have all healing/mp potions"*. The BUFF
+        /// potions stay on the root page under their own header: they are a different thing you reach
+        /// for (a ladder you drink before a fight, not the two bars you keep alive with), and he named
+        /// healing and mana specifically.</summary>
+        private void BuildDebugPotions()
+        {
+            _debugTitle.text = "Healing and mana potions (x10)";
+            DebugAction("< Back", () => { _debugItemsView = 0; RefreshDebugPanel(); });
+
+            DebugHeader("HP");
+            DebugGive(ItemCatalog.MinorPotion, "Minor Potion x10", 10);
+            DebugGive(ItemCatalog.HealingPotion, "Healing Potion x10", 10);
+            DebugGive(ItemCatalog.GreaterPotion, "Greater Potion x10", 10);
+            // The panic potion — an INSTANT %-heal rather than a heal-over-time, and the only one of
+            // these that was never reachable from this menu at all.
+            DebugGive(ItemCatalog.InstantPotion, "Instant Healing Potion x10", 10);
+
+            DebugHeader("MP");
+            DebugGive(ItemCatalog.MinorManaPotion, "Common Mana Potion x10", 10);
+            DebugGive(ItemCatalog.ManaPotion, "Mana Potion x10", 10);
+            DebugGive(ItemCatalog.GreaterManaPotion, "Greater Mana Potion x10", 10);
+        }
+
+        /// <summary>Every stone reagent — his *"stones to have all stones skills and holy/etc"*. ⚠ That
+        /// "holy/etc" was a real gap, not a tidy-up: the flat `Reagents` header this replaces listed only
+        /// the Elemental and Skill stones, so the HOLY and PHYSICAL stones — the divine and fighter twins
+        /// that skills burn exactly the same way — could not be obtained from the admin menu at all.
+        ///
+        /// Swept out of the catalog by id suffix rather than listed by constant, so the next twin appears
+        /// here the day it is authored. The suffix IS the convention (`elemental_stone`, `holy_stone`,
+        /// `physical_stone`, `skill_stone`); there is no structural flag on ItemDef that marks one.</summary>
+        private void BuildDebugStones()
+        {
+            _debugTitle.text = "Stones — the skill reagents (x10)";
+            DebugAction("< Back", () => { _debugItemsView = 0; RefreshDebugPanel(); });
+
+            var stones = ItemCatalog.AllItems
+                .Where(d => d.Id.EndsWith("_stone", StringComparison.Ordinal))
+                .OrderBy(d => d.Name, StringComparer.Ordinal)
+                .ToList();
+            if (stones.Count == 0) { DebugNote("No stones in the catalog."); return; }
+
+            // 50, not 10, for the one that is spent per CAST: Angel's Protection burns 5 a cast and a
+            // whisp call four at a time, so ten of these is two presses of the skill being tested.
+            DebugAction("* GIVE ALL — every stone x50", () =>
+            {
+                foreach (var s in stones)
+                {
+                    string id = s.Id;
+                    Boot.Debug(n => n.DebugGiveAsync(id, 50), "give");
+                }
+            });
+
+            foreach (var s in stones)
+                DebugGive(s.Id, s.Name + " x10", 10);
         }
 
         // ---- Crafting materials + blueprints -------------------------------------------------------
@@ -644,9 +749,12 @@ namespace Game.Client
 
             // 10kk, not 100k: the level-40 stat swaps cost 1kk-5kk per level, so a smaller button could
             // not fund a single meaningful purchase to test with.
+            // `BL-177` — and SP is now 10kk for the SAME reason (owner: *"admin menu function SP button
+            // to give 10kk not 1kk"*): a 3rd/4th-class skill ladder costs far more than 1kk to walk, so
+            // the old button meant ten taps before the thing you wanted to test was learnable.
             DebugHeader("Gold & SP");
             DebugAction("+10,000,000 Gold", () => Boot.Debug(n => n.DebugGoldAsync(10_000_000), "gold"));
-            DebugAction("+1,000,000 SP", () => Boot.Debug(n => n.DebugSpAsync(1_000_000), "sp"));
+            DebugAction("+10,000,000 SP", () => Boot.Debug(n => n.DebugSpAsync(10_000_000), "sp"));
 
             // ⚠ THE LEVEL BUTTONS MOVED TO THE CLASS TAB (`BL-127`, owner: *"Function menu remove the
             // lvl up buttons ... The lvl up buttons go to the class tab"*). They belong beside the
@@ -662,6 +770,26 @@ namespace Game.Client
 
         // ---- Teleport ----------------------------------------------------------------------------
 
+        /// <summary>Does this zone belong on the `Spawn zones` list at all? (`BL-175`, owner: *"from
+        /// 'zones' all the training dummies, all the watchmen and the bosses to be removed"*.)
+        ///
+        /// 🔑 Every one of the three is asked of the DATA, never of an id list: a zone is boss-ranked,
+        /// or its roster is <see cref="MobType.Dummy"/>, or it is <see cref="MobType.Guard"/>. The six
+        /// dummy grounds and both towers of every town's guard post are generated (`WorldPlan`), so a
+        /// hand-written exclusion list would go stale the first time a town is added — which is the same
+        /// reason the gear and class lists here are read out of the catalogs.</summary>
+        private static bool IsHuntingZone(SpawnZone z)
+        {
+            if (z.Rank == MobRank.Boss) return false;
+            foreach (string id in z.MobTypes)
+            {
+                var t = MobCatalog.Get(id);
+                if (t is null) continue;
+                if (t.Dummy || t.Guard) return false;
+            }
+            return true;
+        }
+
         private void BuildDebugTeleport()
         {
             if (_debugTpView == 0)
@@ -669,6 +797,7 @@ namespace Game.Client
                 _debugTitle.text = "Teleport to...";
                 DebugAction("NPCs >", () => { _debugTpView = 1; RefreshDebugPanel(); });
                 DebugAction("Spawn zones >", () => { _debugTpView = 2; RefreshDebugPanel(); });
+                DebugAction("Bosses >", () => { _debugTpView = 4; RefreshDebugPanel(); });
                 DebugAction("Cities >", () => { _debugTpView = 3; RefreshDebugPanel(); });
                 return;
             }
@@ -689,13 +818,42 @@ namespace Game.Client
                 // Land ~400 units OUTSIDE the spawn ring so you arrive NEXT to the mobs, not on top of
                 // a pack of them at whatever level the zone is.
                 _debugTitle.text = "Spawn zones (level range)";
-                foreach (var z in WorldMap.SpawnZones.OrderBy(z => z.MinLevel))
+                foreach (var z in WorldMap.SpawnZones.Where(IsHuntingZone).OrderBy(z => z.MinLevel))
                 {
                     string mob = z.MobTypes.Length > 0
                         ? (MobCatalog.Get(z.MobTypes[0])?.Name ?? z.MobTypes[0]) : "";
                     float tx = z.X + z.Radius + 400f, ty = z.Y;
                     DebugAction($"Lv {z.MinLevel}-{z.MaxLevel}  {mob}",
                                 () => Boot.Debug(n => n.DebugTeleportAsync(tx, ty), "teleport"));
+                }
+            }
+            else if (_debugTpView == 4)
+            {
+                // `BL-175` — the page the bosses left `Spawn zones` FOR. Same rule as everything else on
+                // this tab: the roster is the boss-ranked zones themselves (field and dungeon alike), so
+                // a boss placed anywhere in the world appears here the day it is placed.
+                //
+                // ⚠ The landing spot is the zone CENTRE, unlike a hunting zone's "+400 outside the ring".
+                // A boss ring is small and there is exactly one creature in it — arriving at the edge of
+                // a 250-unit circle means walking in anyway, and arriving IN it is the point of the trip.
+                _debugTitle.text = "Bosses";
+                var bosses = WorldMap.SpawnZones.Where(z => z.Rank == MobRank.Boss)
+                                                .OrderBy(z => z.MinLevel).ToList();
+                if (bosses.Count == 0) { DebugNote("No boss zones placed."); return; }
+
+                foreach (var z in bosses)
+                {
+                    string id = z.MobTypes.Length > 0 ? z.MobTypes[0] : "";
+                    var type = MobCatalog.Get(id);
+                    string name = type?.Name ?? id;
+                    // A boss template normally carries its own level and the zone's band is then only a
+                    // label — except where the zone forces it (see SpawnZone.ForceZoneLevel).
+                    int level = !z.ForceZoneLevel && type is { Level: > 0 } ? type.Level : z.MinLevel;
+                    string kind = BossCatalog.IsWorld(id) ? "  [world]"
+                                : BossCatalog.IsSolo(id) ? "  [solo]" : "";
+                    float bx = z.X, by = z.Y;
+                    DebugAction($"Lv {level}  {name}{kind}",
+                                () => Boot.Debug(n => n.DebugTeleportAsync(bx, by), "teleport"));
                 }
             }
             else

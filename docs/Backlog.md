@@ -32,16 +32,17 @@ different professions to farm to see who can craft what — and it's a single pl
 So **`BL-05`** and **`BL-50`** are not to be worked on or re-raised until you open that playtest.
 Nothing about them is blocked or broken; they wait on a test only you can run.
 
-★ **The ones you named most recently (2026-09-05):** nine asks across two messages, now
-**`BL-172`…`BL-179`** — `/unstuck`, `/return`, the scroll faucet off ordinary mobs, four admin-menu
-tidies, the chat clipboard, and the two test skills. **Seven of the eight are 🔴 ready to build**; only
-`BL-179` is 🔵, and it is waiting on one choice of yours, not on work. Both questions I raised are
-answered and written in: `BL-172` is a **rooted 180s channel cast in town** (not a background timer,
-not an escape) and `BL-173` **keeps `FragileCast`** — two numbers and nothing else. 🔑 **Read `BL-178`
-and `BL-179` first — both turned out to be something we did on purpose that nobody had looked at
-since:** the missing copy/paste menu is `shouldHideMobileInput`, set globally to fix your own 0.47.0
-caret bug, and the two `test_phys`/`test_magic` skills are granted to **every character in the game**
-from a block labelled `TEST ONLY — DELETE ME`.
+★ **The ones you named most recently (2026-09-05):** nine asks across two messages, filed as
+**`BL-172`…`BL-179`**. ✅ **SIX ARE BUILT (0.114.0, 2026-09-06)** and are in the archive — `BL-173`
+(`/return` at 60s/10s, plus the chat alias), `BL-174` (the return/resurrection faucet off ordinary
+mobs), `BL-175` (the `[Bosses]` teleport page and three kinds of clutter out of `Spawn zones`),
+`BL-176` (enchant / attribute / potions / stones as sub-pages — which turned up the Holy and Physical
+stones being unreachable from the admin menu at all), `BL-177` (SP 10kk) and `BL-178` (the chat box
+alone keeps Android's native input, so its copy/paste menu is back). ⚠ **NEW APK.**
+**Two are left, and you asked for both to wait:** **`BL-172`** 🔴 `/unstuck` — ready, a **rooted 180s
+channel cast in town** (not a background timer, not an escape), and **`BL-179`** 🔵, which needs one
+choice of yours: `test_phys`/`test_magic` are granted to **every character in the game** from a block
+labelled `TEST ONLY — DELETE ME`.
 · ✅ **THE TANK PASS IS BUILT (0.112.0, 2026-09-04).** All 205 rows
 of `tank 4th.csv`, which closes `BL-154` (pull), `BL-155` (silence) — both in the archive — and the last
 `NOT DONE` file in `BL-02`. Fourteen ladders continue past 74; six things are new (Magic Wall, Tauting
@@ -107,12 +108,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-170` | 🔵 | THE CLIFF AT 80 — party dps triples across the S-grade flip; three ways out, your pick | combat |
 | `BL-171` | 🔵 | THE WORLD BOSS — stats built; the encounter, mass-PvP rules and loot are owed | combat |
 | `BL-172` | 🔴 | `/unstuck <name>` — 180s rooted channel, cast in town, on another char of the same account | systems |
-| `BL-173` | 🔴 | `/return` — the skill ALREADY EXISTS; it wants 60s cast / 10s reuse, fragile kept | systems |
-| `BL-174` | 🔴 | Return + Resurrection scrolls off ordinary mobs — elites and the starter trio only | items |
-| `BL-175` | 🔴 | Admin Teleport menu — a `[Bosses]` page; dummies, watchmen and bosses out of `Spawn zones` | UI |
-| `BL-176` | 🔴 | Admin Items tab — enchant / attribute / potions / stones become sub-pages | UI |
-| `BL-177` | 🔴 | The admin SP button gives 10kk, not 1kk | UI |
-| `BL-178` | 🔴 | Android's selection menu is missing because `shouldHideMobileInput` is on — flip it for chat only | UI |
 | `BL-179` | 🔵 | The two TEST skills are granted to EVERY character — three ways to gate them, your pick | systems |
 
 ---
@@ -945,166 +940,6 @@ still checked explicitly, because the account ban can be lifted while a characte
 ⚠ **One thing your ruling makes free that would not have been otherwise:** because the caster is
 rooted in town for three minutes, this cannot be used as an escape, a fast travel, or a way to strip a
 character mid-fight — which is exactly why no other abuse gate is needed on it.
-
----
-
-### `BL-173` 🔴 `/return` — IT ALREADY EXISTS AS A SKILL, and it wants two numbers
-
-Your spec: *"an active skill ot /return command that returns you to town... Works like the scroll of
-return just have 60s fixed cast time (if you forgot to buy) reuse can stay 10s fixed"*, and on being
-shown that the skill exists: *"Like a normal rerun just 60s/10s not 30s/5m like now (I noticed each
-time I put skills to bar but somehow ignore as I haven't noticed :))"*.
-
-🔑 **This is built.** `SkillCatalog.ReturnSkill` (`return_town`, "Return") is granted to **every**
-character by `AutoLearnCoreSkills` and has been on your bar the whole time. It is `TeleportsToTown`,
-fixed cast, fixed cooldown, no MP, no item.
-
-| | today | ruled |
-|---|---|---|
-| cast | 30s (`CastTicks: 300`) | **60s** (`600`) |
-| reuse | 5 min (`CooldownTicks: 3000`) | **10s** (`100`) |
-| any damage cancels it (`FragileCast`) | yes | **yes — KEPT** |
-
-✅ **`FragileCast` stays.** I recommended dropping it; you ruled *"like a normal return"*, which means
-the behaviour is untouched and only the two numbers move. That is the better call and it is worth
-writing down why: fragile + 10s reuse is a **free out-of-combat return**, retryable the moment you
-disengage, and it takes nothing away from either scroll — the plain scroll still buys you 10s instead
-of 60s, and the Ultimate still buys you the escape from a fight you are losing. Dropping fragile would
-have made the 60s version a slow Ultimate scroll and devalued both.
-
-A `/return` chat alias for the same skill is a few lines on top and costs nothing.
-
----
-
-### `BL-174` 🔴 Return and Resurrection scrolls come off ordinary mobs — elites and the starter trio only
-
-Your spec: *"remove scroll of return and resurrection from all mobs can leave them only on elits, and
-the starting 3 mobs can keep droping return scrolls and no resurrection (pig/fox/goblin)"*.
-
-Today both scrolls sit in the **ALWAYS** group in `MobCatalog.StandardDrops`, which every creature in
-the game carries — 0.025 return / 0.0025 resurrection per kill below 75, plus the Ultimate pair at 75+.
-That group was already cut twice for exactly this reason (playtest 15 and playtest 17 `E1`, where 550
-return scrolls by level 23 was the finding); this is the third cut and the one that finishes it. The
-potions stay where they are — you only named the scrolls.
-
-**The shape it wants** is the one `MobCatalog.EnchantScrollDrops(level, rank)` already uses: a
-rank-gated layer, so a scroll is authored **once** against the rank that earns it rather than being
-subtracted from a table everything shares. ⚠ `StandardDrops(level, cat)` does not currently take a
-rank, so it gains one — the only structural part of this.
-
-The starter exception is three ids: **`ridgeback_pup` (1), `fox` (4), `goblin_scout` (8)** — return
-scroll kept, resurrection gone. (Your "pig" is the Ridgeback Pup.)
-
-**Free to build, pure data.** ⚠ It cuts a faucet with nothing replacing it: from level 9 up, a return
-scroll comes off an elite or off a vendor. That is the stated intent, noted here so the next playtest
-does not read it as a bug. 🔑 It also raises the value of `BL-173` — the free 60s Return becomes the
-thing you fall back on when you have no scroll, which is precisely the *"if you forgot to buy"* in
-your own spec.
-
----
-
-### `BL-175` 🔴 The admin Teleport menu — a `[Bosses]` page, and three kinds of clutter out of `Spawn zones`
-
-Your spec: *"admin tp menu to have [bosses] whit all the bosses inside and from 'zones' all the
-training dummies, all the watchmen and the bosses to be remived"*.
-
-The menu is `GameUi.Debug.BuildDebugTeleport` — three pages today (NPCs / Spawn zones / Cities), and
-the zone page walks **every** `WorldMap.SpawnZones` entry. That is why it is unusable: the six training
-dummies, both towers of every town guard post (generated per city in `WorldPlan`), and the boss zones
-are all in the same list as the actual hunting grounds.
-
-Everything needed to sort them is already on the data:
-- **bosses** — the zone carries `Rank: MobRank.Boss`, and `BossCatalog` is the authoritative roster.
-- **dummies** — the `training_dummy` / `dummy_magic` / `dummy_physical` mob ids.
-- **watchmen** — the guard posts are generated by `WorldPlan` with the guard mob ids.
-
-So: a fourth page `Bosses >` built from the boss-ranked zones, and the other three classes filtered out
-of `Spawn zones`. **Free to build, client-only.** ⚠ **NEW APK** — the menu is built on the phone.
-
----
-
-### `BL-176` 🔴 The admin Items tab — three flat walls become sub-pages
-
-Three of your asks, merged into one entry because they are the same change to the same page and one
-commit; say so and they split back into three ids:
-
-- *"admin menu items to have group of attribute scrolls -> click attri scroll and opens all of them
-  like a selection"*
-- *"admin menu items ecnahnt scrolls to be one button and then selection per grade"*
-- *"admin menu items to have buttons with potions/stones -> potions have all healing/mp potions,
-  stones to have all stones skills and holy/etc."*
-
-All three are the same complaint and it is a fair one: `BuildDebugItems` prints **eighteen** enchant
-scroll rows under six grade headers, six attribute scroll rows, and scatters the potions across three
-headers — one screen, no grouping, on a phone. The page already knows how to do sub-pages (`Crafting
-materials >` and `Blueprints >` are exactly this, via `_debugItemsView`), so the pattern is in the file
-and this is applying it four more times:
-
-| button | opens |
-|---|---|
-| `Enchant scrolls >` | a grade picker (F…S), then that grade's three types |
-| `Attribute scrolls >` | all six rarities |
-| `Potions >` | every healing **and MP** potion rung |
-| `Stones >` | Skill Stone, Elemental Stone and the rest of the reagent line |
-
-⚠ **One thing to check while building, not to assume:** the enchant scroll rows are generated from
-`ItemCatalog.EnchantScrollBands` × `EnchantScrollTypes` precisely so a scroll cannot be authored and
-left unreachable in the menu. The new picker must stay generated the same way — a hand-written grade
-list would lose that guarantee the first time you add a grade.
-
-**Free to build, client-only.** ⚠ **NEW APK.**
-
----
-
-### `BL-177` 🔴 The admin SP button gives 10kk, not 1kk
-
-Your spec: *"admin menu function SP button to give 10kk not 1kk"*. It is one number in
-`GameUi.Debug` — the Gold button beside it already gives 10,000,000, and its comment gives the reason
-("a smaller button could not fund a single meaningful purchase to test with"), which now applies to SP
-just as much: a 4th-class skill ladder costs far more than 1kk to walk. **Free, one number.**
-⚠ **NEW APK** (it rides with `BL-176`).
-
----
-
-### `BL-178` 🔴 THE ANDROID SELECTION MENU IS MISSING BECAUSE WE TURNED IT OFF — and it was to fix a bug of yours
-
-Your note, 2026-09-05, sharpened on the second pass: *"I can paste from the keyboard copy clipboard
-(SwiftKey keyboard) but the context menu after selection that shows 'copy/cut/select all' is not there
-or the one that 'paste' if something is pending. and not shown on the keyboard as well. I do not want
-new inner copy/paste system if we can make the normal work"*.
-
-🔑🔑 **Found it, and it is one line we set deliberately.** `UiKit.InputField` sets
-**`field.shouldHideMobileInput = true`** on every text field in the client. With that on, Android's
-real `EditText` is off-screen and the soft keyboard only delivers keystrokes; TMP owns the buffer and
-draws its own caret and its own selection highlight. **The copy / cut / select-all / paste context
-menu belongs to that hidden native view**, so it can never appear — which is exactly your symptom:
-selection works (that is TMP's), the clipboard menu does not, and paste only works when the *keyboard*
-sends it as keystrokes (your SwiftKey clipboard), because that is the one path that still goes through.
-
-⚠ **And the line is there because of you.** 0.47.0, your report: *"if there is a 1 I cannot make it 10
-— it becomes 01"*, plus a saved password that could not be edited at all. On Android the soft keyboard
-owned the text buffer, so tapping inside a field could not move the caret and there was no way to
-reach the character you wanted to delete. `shouldHideMobileInput = true` is what fixed that. **So the
-native context menu and the working caret are the same switch, pointing opposite ways.**
-
-**The way to have both, and it is your "make the normal work":** flip the switch **per field**, not
-globally — `false` for the **chat entry box alone**, `true` everywhere else. Chat is the one field
-where you type fresh text rather than edit a pre-filled value, so the 0.47.0 caret bug has almost
-nothing to bite on there, while the URL / password / gold-amount / tune fields — the ones that bug was
-actually about — keep the behaviour that fixed them. It is an optional argument on
-`UiKit.InputField` and one call site.
-
-⚠ **What changes visually, and why it needs a look on the device before it ships:** with
-`shouldHideMobileInput = false`, Android puts its **own** input strip above the keyboard and that is
-where you type and where the context menu appears — our on-screen box is no longer the thing being
-edited while the keyboard is up. That may also make the keyboard-lift offset on the chat row
-(`GameUi.World`, the code that clears the punch-hole) pointless for that one field. Neither is a
-blocker; both are things to see rather than reason about.
-
-🔵 **Separately, and NOT covered by this:** copying a name *out of the chat log* is still impossible —
-the log is a plain `TextMeshProUGUI` inside a `LogView` with no selection support at all. If you want
-that too, say so: the usual trick is a read-only `TMP_InputField`, which is a different (small) change
-to a different widget.
 
 ---
 
