@@ -6742,7 +6742,8 @@ public class GameLoopService : BackgroundService
                     _ =>
                         "Admin: /jail, /unjail, /kick, /ban, /unban, /chatban, /unchatban, /jailed, " +
                         "/role <name> <player|chatmod|moderator|admin>, /tp <name>, /where <name>, " +
-                        "/god, /invis, /chatlog [name] [-w] [around <time>] [-p <page>], " +
+                        "/god, /invis (both survive a relog), /heal [name], " +
+                        "/chatlog [name] [-w] [around <time>] [-p <page>], " +
                         "/spd <m|a|c> <v> (bare /spd resets), /bag <name>, /give <name>, " +
                         "/givegold <name> <amount>, /lvl [name] <level|max>, /sp [name] <amount|max>, " +
                         "/exp [name] <amount|max>, /droprate [group|gear|global|amount|item <id>] [mult], " +
@@ -6757,7 +6758,48 @@ public class GameLoopService : BackgroundService
                 admin.GodMode = !admin.GodMode;
                 SendSystemToEntity(admin, $"God mode {(admin.GodMode ? "ON" : "OFF")}.");
                 PushSelfState(admin);   // persistent on-screen indicator, not just this one line
+                // `BL-182` — the flag survives a relog now, so the toggle has to reach the DB. An
+                // autosave would get there eventually; a crash or a kill -9 in between is exactly the
+                // case this entry exists for.
+                SaveEntity(admin);
                 break;
+
+            // `BL-181` — `/heal [name]`: both pools to full, instantly, IN COMBAT. Owner, 2026-09-06:
+            // *"FullHeal -> heals instantly mp/hp in combat or no"*.
+            //
+            // 🔑 It is a SET, not a heal. Going through the healing path would drag in everything that
+            // makes a heal interesting and useless here — the healing-received modifiers, the potion
+            // cooldown, the in-combat refusal, the aggro a heal generates — and the point of the button
+            // is a known starting state mid-fight. Nothing here is a game rule being sidestepped by
+            // accident; all of it is the request.
+            //
+            // ⚠ NOT a resurrection. Death has its own path (the return-to-town flow, `BL-173`), and a
+            // command that silently did both would make "did that kill me?" unanswerable in a test.
+            case "heal":
+            {
+                Entity healTarget = admin;
+                if (arg.Length > 0)
+                {
+                    if (FindOnlinePlayer(arg) is not Entity found)
+                    {
+                        SendSystemToEntity(admin, $"'{arg}' is not online.");
+                        break;
+                    }
+                    healTarget = found;
+                }
+                if (healTarget.Dead)
+                {
+                    SendSystemToEntity(admin, $"{(ReferenceEquals(healTarget, admin) ? "You are" : healTarget.Name + " is")} dead — a full heal is not a resurrection.");
+                    break;
+                }
+                healTarget.Hp = healTarget.MaxHp;
+                healTarget.Mp = healTarget.MaxMp;
+                SendStats(healTarget);
+                SendSystemToEntity(healTarget, "Fully restored.");
+                if (!ReferenceEquals(healTarget, admin))
+                    SendSystemToEntity(admin, $"{healTarget.Name} fully restored.");
+                break;
+            }
 
             // ADMIN INVISIBILITY (BL-69, kind 3) — the absolute one. Nothing in the simulation ends
             // it: not acting, not an AoE, not the archer's flare, not another staff member. It goes
@@ -6772,6 +6814,7 @@ public class GameLoopService : BackgroundService
                     ? "Invisible. Nobody can see or target you (you are still hittable — /god for that)."
                     : "Visible again.");
                 PushSelfState(admin);   // the badge and the 0.4 fade (`BL-82`), not just this one line
+                SaveEntity(admin);      // `BL-182` — it survives a relog, so write it now, not at autosave
                 break;
 
             case "titleright":
@@ -8208,6 +8251,20 @@ public class GameLoopService : BackgroundService
     {
         string key = NameKey(needle);
         if (key.Length == 0) return new List<SkillDef>();
+
+        // 🔑 AN EXACT SKILL ID WINS OUTRIGHT, before any pool is consulted (`BL-180`). Ids are unique,
+        // so this can never be ambiguous — and every button in the admin Buffs menu sends one. Without
+        // it a button's id was resolved by the same fuzzy ladder a typed word goes through, and a new
+        // buff whose id happened to prefix-match a stronger buff's NAME would quietly hand out the
+        // wrong thing. Fifty-eight buttons is too many to leave on that.
+        // ⚠ Restricted to the same union the three pools cover — anything that lands a TIMED effect.
+        // An exact id match on an ATTACK skill is not a buff request, and answering one with "could
+        // not be applied" would be a worse reply than the fuzzy name search this falls through to.
+        if (SkillCatalog.AllSkills.FirstOrDefault(d =>
+                NameKey(d.Id) == key && d.DurationTicks > 0
+                && (d.Category is SkillCategory.Buff or SkillCategory.Debuff
+                    || (d.Effect & SkillEffect.ControlCc) != 0 || d.Charms)) is SkillDef byId)
+            return new List<SkillDef> { byId };
 
         var primary = SkillCatalog.AdminBuffSet
             .Select(SkillCatalog.Get).OfType<SkillDef>().ToList();

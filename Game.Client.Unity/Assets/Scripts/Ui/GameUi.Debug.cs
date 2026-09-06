@@ -82,6 +82,11 @@ namespace Game.Client
         // on the tab.
         private bool _debugResetView;
 
+        // `BL-180` — the Functions tab's `[Buffs]` drill-down. Two fields, because it is two levels
+        // deep: the root page (the four drawers) and one drawer's list.
+        private bool _debugBuffsView;
+        private SkillCatalog.AdminBuffDrawer? _debugBuffDrawer;
+
         private readonly Dictionary<string, TMP_InputField> _tuneFields = new();
 
         // key, label, isFloat — the order matches the DebugConfigDto round-trip.
@@ -159,6 +164,8 @@ namespace Game.Client
             _debugItemsView = 0;
             _debugAddDiscView = false;
             _debugResetView = false;
+            _debugBuffsView = false;
+            _debugBuffDrawer = null;
             if (tab == 5) Boot.Debug(n => n.RequestDebugConfigAsync(), "tuning");
             RefreshDebugPanel();
         }
@@ -719,6 +726,8 @@ namespace Game.Client
 
         private void BuildDebugFunctions()
         {
+            if (_debugBuffsView) { BuildDebugBuffs(); return; }
+
             _debugTitle.text = "The frequently-used levers";
 
             // The buffer NPC refuses above 75 (a game rule), so this is the only way to be buffed past
@@ -726,26 +735,30 @@ namespace Game.Client
             DebugHeader("Full buffer");
             DebugAction("Full Buffs (1h)", () => Boot.Debug(n => n.DebugBuffAsync(), "buff"));
 
-            // `BL-127` — THE SIX BUFFS A FULL BUFF CANNOT GIVE YOU, one button each (owner:
+            // `BL-127` — THE TWO BUFFS A FULL BUFF CANNOT GIVE YOU, one button each (owner:
             // *"Under full buff add the 4 marks and 2 great bulwark/might (now as mage I get might - I
-            // want to be able to swap it)"*). All six are buffs the full set can only hand out ONE of:
-            // the four Marks share a buff key (a character wears one Mark, never two) and War Might and
-            // War Bulwark share theirs, so the set picks one and there was no way to see the others
-            // without unlearning something. A button is the swap — press it and the new one evicts the
-            // old on its own family rule, exactly as it would in a fight.
+            // want to be able to swap it)"*). Both are buffs the full set can only hand out ONE of:
+            // War Might and War Bulwark share a buff key, so the set picks one and there was no way to
+            // see the other without unlearning something. A button is the swap — press it and the new
+            // one evicts the old on its own family rule, exactly as it would in a fight.
             //
-            // ⚠ They send the SKILL ID, not the display name: `/buff` matches ids exactly before it
-            // tries names, so a button can never be caught by the ambiguity rule that a name lookup
-            // has to live with ("Might" is three different buffs).
-            void BuffButton(string label, string id) =>
-                DebugAction(label, () => Boot.Debug(n => n.AdminCommandAsync("buff", id), "buff"));
-
-            BuffButton("Holy Mark",    "holy_mark");
-            BuffButton("Life Mark",    "life_mark");
-            BuffButton("Blood Mark",   "blood_mark");
-            BuffButton("Harmony Mark", "wc_harmony_mark");
+            // ⚠ THE FOUR MARK BUTTONS THAT STOOD HERE MOVED INTO `[Buffs] > Marks` (`BL-180`, owner:
+            // *"Can remove the 4 harmonies as they will be inside their colection and fullbuff gives
+            // harmony mark anyways"*). They are one tap further away and lost nothing: the full buff
+            // already lands a Mark, and swapping to another is what the Marks drawer is for.
             BuffButton("Great Might (War Might)",     "wc_war_might");
             BuffButton("Great Bulwark (War Bulwark)", "wc_war_bulwark");
+
+            // `BL-180` — every OTHER buff in the game, four drawers deep. See BuildDebugBuffs.
+            DebugAction("Buffs >", () => { _debugBuffsView = true; _debugBuffDrawer = null; RefreshDebugPanel(); });
+
+            // `BL-180` — *"FullHeal -> heals instantly mp/hp in combat or no"*. Deliberately NOT a
+            // heal SKILL and not a potion: it is a set, so it ignores the healing-received modifiers,
+            // the potion cooldown and the in-combat refusal, and it works while a fight is running,
+            // which is the whole request. Death is still death — see the server's `/heal`.
+            DebugHeader("Restore");
+            DebugAction("FULL HEAL (HP + MP, instant, in combat)",
+                        () => Boot.Debug(n => n.AdminCommandAsync("heal", ""), "heal"));
 
             // 10kk, not 100k: the level-40 stat swaps cost 1kk-5kk per level, so a smaller button could
             // not fund a single meaningful purchase to test with.
@@ -767,6 +780,63 @@ namespace Game.Client
             DebugHeader("Karma");
             DebugAction("Karma CLEAR (all)", () => Boot.Debug(n => n.DebugKarmaAsync(-1_000_000), "karma"));
         }
+
+        /// <summary>One buff button. ⚠ It sends the SKILL ID, never the display name: `/buff` matches
+        /// ids exactly before it tries names, so a button can never be caught by the ambiguity rule
+        /// that a name lookup has to live with ("Might" is three different buffs).</summary>
+        private void BuffButton(string label, string id) =>
+            DebugAction(label, () => Boot.Debug(n => n.AdminCommandAsync("buff", id), "buff"));
+
+        /// <summary>`BL-180` — `Functions > [Buffs]`, and its four drawers. Owner, 2026-09-06: *"add
+        /// [buffs] -&gt; sub menu to open with 4 more submenues -&gt; single, group, harmonies, marks"*.
+        ///
+        /// <para>🔑 THE LISTS ARE NOT WRITTEN HERE. <see cref="SkillCatalog.AdminBuffMenu"/> derives all
+        /// four from the buffer's class kit and the NPC shelf, so a harmony added to a CSV appears on
+        /// this page the day it lands — the same rule the gear, town, zone and class lists on this
+        /// window already run on, and for the same reason: a hand-typed list goes stale and whole tiers
+        /// silently vanish from it.</para>
+        ///
+        /// <para>Every button is `/buff &lt;id&gt;`, which means the buff's TOP rung for a full hour —
+        /// the same thing the Full Buffs button hands out, and the state the balance numbers are read
+        /// at. A buff that a family rule refuses is forced on by the server, so pressing Great Bulwark
+        /// over Great Might really does swap them.</para></summary>
+        private void BuildDebugBuffs()
+        {
+            if (_debugBuffDrawer is not SkillCatalog.AdminBuffDrawer drawer)
+            {
+                _debugTitle.text = "Buffs — every one in the game, at its top rung, 1h";
+                DebugAction("< Back", () => { _debugBuffsView = false; RefreshDebugPanel(); });
+
+                foreach (var d in new[]
+                {
+                    SkillCatalog.AdminBuffDrawer.Single, SkillCatalog.AdminBuffDrawer.Group,
+                    SkillCatalog.AdminBuffDrawer.Harmony, SkillCatalog.AdminBuffDrawer.Mark,
+                })
+                {
+                    var page = d;
+                    int count = SkillCatalog.AdminBuffMenu(page).Count;
+                    DebugAction($"{DrawerName(page)} ({count}) >",
+                                () => { _debugBuffDrawer = page; RefreshDebugPanel(); });
+                }
+                return;
+            }
+
+            _debugTitle.text = DrawerName(drawer);
+            DebugAction("< Back", () => { _debugBuffDrawer = null; RefreshDebugPanel(); });
+
+            var rows = SkillCatalog.AdminBuffMenu(drawer);
+            if (rows.Count == 0) { DebugNote("Nothing authored in this group yet."); return; }
+            foreach (var row in rows)
+                BuffButton(row.Name, row.SkillId);
+        }
+
+        private static string DrawerName(SkillCatalog.AdminBuffDrawer d) => d switch
+        {
+            SkillCatalog.AdminBuffDrawer.Group   => "Groups",
+            SkillCatalog.AdminBuffDrawer.Harmony => "Harmonies",
+            SkillCatalog.AdminBuffDrawer.Mark    => "Marks",
+            _                                    => "Singles",
+        };
 
         // ---- Teleport ----------------------------------------------------------------------------
 

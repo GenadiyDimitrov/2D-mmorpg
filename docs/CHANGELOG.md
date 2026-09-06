@@ -7,12 +7,100 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.114.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.115.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-06 (latest) — 0.114.0: six of his nine asks — four admin-menu tidies, the chat clipboard, `/return`, and the scroll faucet
+## 2026-09-06 (latest) — 0.115.0: the admin buff drawers, FullHeal, and staff flags that survive a relog
+
+`BL-180`…`BL-182`, three asks from one message, all built. ⚠ **NEW APK**, and 🔴 **delete
+`Game.Server/game.db`** — `BL-182` adds two columns and `EnsureCreated()` never adds one to an
+existing file.
+
+### `BL-180` — `Functions > [Buffs]`, four drawers over every buff in the game
+
+*"add [buffs] -> sub menu to open with 4 more submenues -> single, group, harmonies, marks"*, and
+*"Can remove the 4 harmonies as they will be insoide their colection and fullbuff gives harmony mark
+anyways"*.
+
+The Functions tab had six hand-written buff buttons on it; every other buff in the game was reachable
+only by typing `/buff <name>` on a phone keyboard. It now has **`Buffs >`** and four drawers behind it —
+**Singles (31) · Groups (9) · Harmonies (14) · Marks (4)**, fifty-eight buttons. Each sends
+`/buff <id>`: that buff's **top rung for one hour**, the same thing the Full Buffs button hands out.
+The four Mark buttons moved into the Marks drawer; `[Full Buffs]`, `[War Might]` and `[War Bulwark]`
+stayed, because those two share one buff key and the button is how you swap them.
+
+🔑 **The lists are DERIVED** (`SkillCatalog.AdminBuffMenu`, new `Skills.AdminMenu.cs`) — the rule the
+gear, town, zone and class lists in that window already run on, and for the reason the hand-listed WPF
+menu proved: a typed list goes stale and whole tiers silently vanish from it. Add a harmony to
+`buffer 3rd.csv` and its button appears with no second edit.
+
+The universe is the game's **two shelves, unioned**: what a max-level buffer CLASS can cast
+(`AdminBuffSet` + the three a full buff deliberately withholds — Shrouding Hymn, Bow Expertise, War
+Bulwark) and what the Spirit Helper SELLS (`NewbieBuffSet`, incl. the eight single harmonies and the
+three Marks). It reads both and writes to neither — the only relationship those two separate shelves
+are allowed to have.
+
+**Which drawer is asked of the data, and the order of the tests is the design:**
+
+| drawer | decided by | why not something else |
+|---|---|---|
+| Mark | the shared buff **KEY** (`healer_mark`) | so the *Harmony Mark* files as a Mark, where he listed it |
+| Harmony | the **NAME** | the 4 class harmonies carry `Magnitudes`, the 8 NPC ones are one-child wrappers — no structural test sees both |
+| Group | **STRUCTURE** (>1 child) | the same test that puts groups first in a full buff |
+| Single | everything else | |
+
+⚠ **One name, one button.** "Might" is the Warchanter's own ladder AND the NPC's hour-long single, so
+the union is deduplicated by display name, strongest first — exactly what `MatchBuffsByName` already
+does when you type it, so the button and the command land the same buff. Nineteen NPC duplicates are
+shadowed that way and the dump names them.
+
+📐 `dotnet run --project tools/BalanceMatrix -- --buffmenu` prints all four drawers plus anything
+grantable the menu fails to reach. Discovering a mis-filed harmony on a phone is how one survives
+three versions.
+
+⚠ Server side: **an exact skill id now wins outright** in `/buff`'s match, ahead of the fuzzy ladder
+(acronym → words-in-order → prefix → substring). Ids are unique so it can never be ambiguous, and
+fifty-eight buttons is too many to leave riding on a fuzzy search. Restricted to skills that land a
+timed effect, so an exact id on an attack skill still falls through to the name search.
+
+### `BL-181` — `FullHeal`: both pools to full, instantly, in combat
+
+*"Functions -> FullHeal -> heals instantly mp/hp in combat or no"*. A button, and `/heal [name]`
+behind it.
+
+🔑 **It is a SET, not a heal.** The healing path would drag in everything that makes a heal interesting
+and useless here — healing-received modifiers, the potion cooldown, the in-combat refusal, the aggro a
+heal generates — and the point of the button is a known starting state *mid-fight*.
+
+⚠ **Not a resurrection.** Death has its own path; a command that silently did both would make "did
+that kill me?" unanswerable in a test. On a dead character it says so.
+
+### `BL-182` — `/god` and `/invis` survive a relog
+
+*"after a DC(long stay in background) the char that is incis+god is visible and mortal .. whatever i
+left my admin/owner with he stais again in the next login/reconnect"*.
+
+🔑 **Why it looked intermittent.** A short disconnect re-attaches to the LIVE entity and always kept
+both flags; a long one evicts the character to the database, and neither flag was ever stored — so the
+state was lost at exactly the moment he noticed it.
+
+Two columns on `CharacterRecord`, written the instant either command is typed rather than at the next
+autosave (a crash in between is the case this entry is about).
+
+🔑 **Re-applied only if the character is still an ADMIN**, and the load does it *after* the role.
+`IsAdmin`, not `IsStaff`: both commands are on the admin side of the allow-list, so a Moderator could
+never have set either. `/role` clears god mode on a *live* demotion, but a character demoted while
+OFFLINE would otherwise log back in immortal and unseeable off a row nobody could reach. The stored
+bits are not wiped by that refusal — a re-promotion restores exactly the state he left.
+
+⚠ Nothing new pushes the badge or the 0.4 fade: the tick loop's own change-test (`PushSelfState`)
+sends it on the first tick after entering the world, which is the same mechanism that covers hide and
+stealth.
+
+
+## 2026-09-06 — 0.114.0: six of his nine asks — four admin-menu tidies, the chat clipboard, `/return`, and the scroll faucet
 
 `BL-173`…`BL-178`. Six of the eight entries filed from his 2026-09-05 messages; `BL-172` (`/unstuck`)
 and `BL-179` (the two TEST skills) were explicitly held back for a later pass.

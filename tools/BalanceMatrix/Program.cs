@@ -343,6 +343,12 @@ if (args.Length > 0 && args[0] == "--buffs") { BuffCensus.Run(); return; }
 // `BL-158` — what the buffer actually sells a character of each level, READ OFF the real shelf.
 if (args.Length > 0 && args[0] == "--npcshelf") { NpcShelfDump(); return; }
 
+// `BL-180` — THE ADMIN BUFF MENU'S FOUR DRAWERS, read off SkillCatalog.AdminBuffMenu. The menu is
+// DERIVED (see Skills.AdminMenu.cs), so the only way to see what it will actually offer — and to
+// notice a new buff landing in the wrong drawer — is to print it. Discovering a mis-filed harmony on
+// a phone is how one survives three versions.
+if (args.Length > 0 && args[0] == "--buffmenu") { BuffMenuDump(); return; }
+
 // `--buff-consumables` — `BL-147`. Writes docs/data/BuffConsumables.md: which buffs exist as a potion,
 // which as a scroll, where each comes from, whether the NPC buffer gives the same thing, and — the half
 // he actually asked for — which single buffs have NO consumable at all. Generated for the same reason
@@ -4677,6 +4683,49 @@ static int TopNukePower(Entity e)
 /// and the rung the wrapper's `ChildBuffsAt` actually names — the same calls `GameLoopService` makes
 /// when it charges you and applies the buff. It does NOT restate his CSV. That is the whole point: a
 /// dump that repeats an authored number can never contradict you.</summary>
+/// <summary>`BL-180` — print the four drawers of the admin Buffs menu exactly as the client builds
+/// them, plus anything grantable the menu does NOT reach.</summary>
+static void BuffMenuDump()
+{
+    Console.WriteLine("=== THE ADMIN BUFF MENU (BL-180) ===");
+    Console.WriteLine("Universe = the buffer CLASS kit (AdminBuffSet + the 3 withheld) + the NPC shelf,");
+    Console.WriteLine("deduplicated by display name, strongest first. One name = one button.");
+    Console.WriteLine();
+
+    int total = 0;
+    var shown = new HashSet<string>(StringComparer.Ordinal);
+    foreach (SkillCatalog.AdminBuffDrawer drawer in Enum.GetValues<SkillCatalog.AdminBuffDrawer>())
+    {
+        var rows = SkillCatalog.AdminBuffMenu(drawer);
+        total += rows.Count;
+        Console.WriteLine($"--- {drawer.ToString().ToUpperInvariant()} ({rows.Count}) ---");
+        foreach (var row in rows)
+        {
+            var def = SkillCatalog.Get(row.SkillId)!;
+            shown.Add(row.SkillId);
+            Console.WriteLine($"  {row.Name,-32} {row.SkillId,-28} "
+                            + $"rungs {def.MaxLevel,2}  key '{def.BuffKey}'");
+        }
+        Console.WriteLine();
+    }
+    Console.WriteLine($"{total} buttons.");
+
+    // The honesty check: what is on either shelf, is a timed buff, and yet has no button. A non-empty
+    // list here means a DUPLICATE DISPLAY NAME lost the dedupe, not a hole in the menu.
+    var missing = SkillCatalog.AdminBuffSet
+        .Concat(SkillCatalog.NewbieBuffSet).Distinct()
+        .Select(SkillCatalog.Get).OfType<SkillDef>()
+        .Where(d => d.Category == SkillCategory.Buff && d.DurationTicks > 0)
+        .Where(d => !shown.Contains(d.Id)).ToList();
+    if (missing.Count > 0)
+    {
+        Console.WriteLine();
+        Console.WriteLine($"NOT ON THE MENU — {missing.Count} shadowed by a same-named buff:");
+        foreach (var d in missing)
+            Console.WriteLine($"  {d.Name,-32} {d.Id}");
+    }
+}
+
 static void NpcShelfDump()
 {
     var shelf = SkillCatalog.NewbieBuffSet;

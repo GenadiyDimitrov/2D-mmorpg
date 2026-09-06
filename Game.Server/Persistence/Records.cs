@@ -157,6 +157,17 @@ public class CharacterRecord
     /// (Schema change 0.55.0 — delete game.db to recreate.)</summary>
     public bool MayWriteTitle { get; set; }
 
+    /// <summary>`BL-182` — is `/god` on? Owner, 2026-09-06: *"can /invis and /god be persistant …
+    /// whatever i left my admin/owner with he stais again in the next login/reconnect"*. Stored per
+    /// CHARACTER, like the staff role itself, and re-applied on load ONLY if the character is still
+    /// staff — a demotion must not leave an immortal player behind.
+    /// (Schema change 0.115.0 — delete game.db to recreate.)</summary>
+    public bool GodMode { get; set; }
+
+    /// <summary>`BL-182` — is `/invis` on? See <see cref="GodMode"/>.
+    /// (Schema change 0.115.0 — delete game.db to recreate.)</summary>
+    public bool AdminInvisible { get; set; }
+
     /// <summary>Active quests as JSON list of CharacterQuestState.</summary>
     public string ActiveQuestsJson { get; set; } = "";
 

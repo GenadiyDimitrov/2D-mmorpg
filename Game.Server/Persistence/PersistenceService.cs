@@ -940,6 +940,28 @@ public class PersistenceService
         // Staff role is per CHARACTER, not per account (owner) — and owner.txt overrides the stored row
         // for the one character it names, every load, so the Owner cannot be demoted by any command.
         entity.Role = Game.Server.Simulation.ServerControl.EffectiveRole(rec.Name, rec.Role);
+
+        // `BL-182` — `/god` and `/invis` survive a relog. His ask, 2026-09-06: *"after a DC (long stay
+        // in background) the char that is invis+god is visible and mortal … whatever i left my
+        // admin/owner with he stais again in the next login/reconnect"*.
+        //
+        // 🔑 IT IS RE-APPLIED ONLY IF THE CHARACTER IS STILL AN ADMIN, and that is why these two lines
+        // sit AFTER the role. `IsAdmin`, not `IsStaff`: both commands are on the admin side of the
+        // allow-list, so a Moderator could never have set either, and restoring one to them would be
+        // granting a power the command itself refuses. `/role` clears GodMode on a live demotion, but a
+        // character demoted while OFFLINE would otherwise log back in immortal and unseeable off a row
+        // nobody could reach. The stored bits are not wiped by the refusal — a re-promotion restores
+        // exactly the state he left, which is what he asked for.
+        //
+        // ⚠ Nothing is pushed to the client here: this is a DB load, and PushSelfState is tick-thread
+        // work. The loop's own change-test (see PushSelfState) sends the badge and the 0.4 fade on the
+        // first tick after entering the world — which is the same mechanism that covers hide and
+        // stealth, so there is no second path to keep in step.
+        if (entity.IsAdmin)
+        {
+            entity.GodMode = rec.GodMode;
+            entity.AdminInvisible = rec.AdminInvisible;
+        }
         return entity;
     }
 
@@ -982,6 +1004,7 @@ public class PersistenceService
         long TotalOnlineSeconds,
         int Charisma, long CharismaLifetime, int LikesRemainingToday, string LikeBudgetDay,
         string TitleCategory, string CustomTitle, string CustomTitleColor, bool MayWriteTitle,
+        bool GodMode, bool AdminInvisible,   // `BL-182` — the two staff toggles survive a relog
         int SocialOptions,
         IReadOnlyList<ItemSnapshot> Items)
     {
@@ -1032,6 +1055,7 @@ public class PersistenceService
                 e.BossJudgmentRung, e.BossJudgmentUntil, e.TotalOnlineSeconds,
                 e.Charisma, e.CharismaLifetime, e.LikesRemainingToday, e.LikeBudgetDay,
                 e.TitleCategory, e.CustomTitle, e.CustomTitleColor, e.MayWriteTitle,
+                e.GodMode, e.AdminInvisible,
                 (int)e.Social,
                 items);
         }
@@ -1161,6 +1185,8 @@ public class PersistenceService
         rec.CustomTitle = snap.CustomTitle;
         rec.CustomTitleColor = snap.CustomTitleColor;
         rec.MayWriteTitle = snap.MayWriteTitle;
+        rec.GodMode = snap.GodMode;                 // `BL-182`
+        rec.AdminInvisible = snap.AdminInvisible;
         rec.AutoHuntJson = snap.AutoHuntJson;
         rec.EquipPresetsJson = snap.EquipPresetsJson;
         rec.BuffsJson = snap.BuffsJson;

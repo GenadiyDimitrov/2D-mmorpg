@@ -32,7 +32,14 @@ different professions to farm to see who can craft what — and it's a single pl
 So **`BL-05`** and **`BL-50`** are not to be worked on or re-raised until you open that playtest.
 Nothing about them is blocked or broken; they wait on a test only you can run.
 
-★ **The ones you named most recently (2026-09-05):** nine asks across two messages, filed as
+★ **The ones you named most recently (2026-09-06):** three asks in one message, filed as
+**`BL-180`…`BL-182`** and **all three BUILT (0.115.0)** — they are in the archive. `BL-180` the admin
+`Functions > [Buffs]` drill-down (four derived drawers — 31 singles, 9 groups, 14 harmonies, 4 marks —
+and the four Mark buttons off the Functions tab, as you asked); `BL-181` `FullHeal` / `/heal`, both
+pools to full instantly and in combat; `BL-182` `/god` and `/invis` surviving a relog. ⚠ **NEW APK**,
+and 🔴 **a `game.db` delete** — `BL-182` adds two columns.
+
+★ **The ones before those (2026-09-05):** nine asks across two messages, filed as
 **`BL-172`…`BL-179`**. ✅ **SIX ARE BUILT (0.114.0, 2026-09-06)** and are in the archive — `BL-173`
 (`/return` at 60s/10s, plus the chat alias), `BL-174` (the return/resurrection faucet off ordinary
 mobs), `BL-175` (the `[Bosses]` teleport page and three kinds of clutter out of `Spawn zones`),

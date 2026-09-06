@@ -3024,3 +3024,101 @@ that too, say so: the usual trick is a read-only `TMP_InputField`, which is a di
 to a different widget.
 
 ---
+
+## `BL-180` … `BL-182` — the admin buff drawers, FullHeal, and staff flags that survive a relog (cut 2026-09-06, built in 0.115.0)
+
+Three asks from one message, 2026-09-06, all built in the same pass.
+
+---
+
+### `BL-180` 🔴 `Functions > [Buffs]` — four drawers over every buff in the game
+
+Your spec: *"can you make in functions under the buffsbuttons - add [buffs] -> sub menu to open with 4
+more submenues -> single, group, harmonies, marks … Functions -> Buffs -> marks ->
+[life][blood][holy][harmony] · Functions -> Buffs -> Harmonies -> [Warrior][Wizard] …. [Fury][Focus]…
+· Functions -> Buffs -> Single -> [Might][Bulwark]….[Frenzy]…. · Functions -> Buffs -> Groups ->
+[Arcane Insight]…[War frenzy]…."*, and on the six buttons that were already there: *"Functions ->
+[Full buff][War might][War bulwark] - Can remove the 4 harmonies as they will be insoide their
+colection and fullbuff gives harmony mark anyways"*.
+
+**What it was:** six hand-written buff buttons on the Functions tab, and every other buff in the game
+reachable only by typing `/buff <name>` on a phone keyboard.
+
+**What it is now:** `Buffs >` opens the four drawers — **Singles (31) · Groups (9) · Harmonies (14) ·
+Marks (4)**, fifty-eight buttons. Each is `/buff <id>`, which is that buff's **top rung for one hour**,
+the same thing the Full Buffs button hands out and the state the balance numbers are read at. The four
+Mark buttons left the Functions tab as you asked; `[Full Buffs]`, `[War Might]` and `[War Bulwark]`
+stayed, because those two still share one buff key and the button is how you swap them.
+
+🔑 **The four lists are DERIVED, not typed** (`SkillCatalog.AdminBuffMenu`). Same rule the gear, town,
+zone and class lists on that window already run on, and for the same reason the hand-listed WPF menu
+proved: a typed list goes stale and whole tiers silently vanish from it. Add a harmony to `buffer
+3rd.csv` or a Mark to `buffer 4th.csv` and its button appears with no second edit.
+
+- **the universe** = the two shelves the game has, unioned: what a max-level buffer CLASS can cast
+  (`AdminBuffSet`, plus the three a full buff deliberately withholds — Shrouding Hymn, Bow Expertise,
+  War Bulwark) and what the Spirit Helper SELLS (`NewbieBuffSet`, which carries the eight single
+  harmonies and the three Marks since `BL-160`/`BL-161`). It READS both and writes to neither, which
+  is the only relationship those two separate shelves are allowed to have.
+- **which drawer** is asked of the data, and the order of the tests is the design: a **Mark** by its
+  shared buff KEY (so the Harmony Mark files as a Mark, where you listed it, and not as a harmony); a
+  **harmony** by its NAME, because that is the only thing the twelve share — the four class harmonies
+  carry `Magnitudes` and the eight NPC ones are one-child wrappers, so no structural test sees both;
+  a **group** by STRUCTURE (more than one child), the same test that puts groups first in a full buff.
+- **one name, one button.** "Might" is the Warchanter's own ladder AND the NPC's hour-long single, so
+  the union is deduplicated by display name, strongest first — exactly what typing the name already
+  does, so button and command land the same buff. Nineteen NPC duplicates are shadowed that way.
+
+📐 `dotnet run --project tools/BalanceMatrix -- --buffmenu` prints all four drawers and names anything
+grantable the menu fails to reach. Finding a mis-filed harmony on a phone is how one survives three
+versions.
+
+⚠ One server change went with it: an **exact skill id now wins outright** in `/buff`'s name match,
+before the fuzzy ladder of acronym / words-in-order / prefix / substring. Ids are unique so it can
+never be ambiguous, and fifty-eight buttons was too many to leave riding on a fuzzy search.
+
+---
+
+### `BL-181` 🔴 `FullHeal` — both pools to full, instantly, in combat
+
+Your spec: *"Functions -> FullHeal -> heals instantly mp/hp in combat or no"*.
+
+A button on the Functions tab and `/heal [name]` behind it.
+
+🔑 **It is a SET, not a heal.** Going through the healing path would drag in everything that makes a
+heal interesting and useless here — the healing-received modifiers, the potion cooldown, the in-combat
+refusal, the aggro a heal generates — and the point of the button is a known starting state *mid-fight*.
+None of that is a game rule being sidestepped by accident; all of it is the request.
+
+⚠ **It is not a resurrection.** Death has its own path (`BL-173`'s return flow), and a command that
+silently did both would make "did that kill me?" unanswerable in a test. On a dead character it says so.
+
+---
+
+### `BL-182` 🔴 `/god` and `/invis` survive a relog
+
+Your report: *"also can /invis and /god be persistant … after a DC(long stay in background) the char
+that is incis+god is visible and mortal .. whatever i left my admin/owner with he stais again in the
+next login/reconnect"*.
+
+**Why it happened.** A short disconnect re-attaches to the LIVE entity and always kept both flags; a
+long one evicts the character to the database, and neither flag was ever stored — so the state was
+lost at exactly the moment you noticed it, which is why it looked intermittent.
+
+Two new columns on `CharacterRecord`, written the instant either command is typed rather than at the
+next autosave (a crash between the two is the case this entry is about).
+
+🔑 **They are re-applied only if the character is still an ADMIN**, and the load does it *after* the
+role. `IsAdmin`, not `IsStaff`: both commands sit on the admin side of the allow-list, so a Moderator
+could never have set either. `/role` clears god mode on a *live* demotion, but a character demoted
+while offline would otherwise log back in immortal and unseeable off a row nobody could reach. The
+stored bits are not wiped by that refusal — a re-promotion restores exactly the state you left.
+
+⚠ Nothing new pushes the badge or the 0.4 fade: the tick loop's own change-test (`PushSelfState`)
+sends it on the first tick after you enter the world, which is the same mechanism that covers hide and
+stealth. No second path to keep in step.
+
+🔴 **A schema change — `game.db` must be deleted.** `EnsureCreated()` only creates a database that is
+absent; it never adds a column.
+
+---
