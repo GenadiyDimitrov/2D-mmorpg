@@ -343,6 +343,313 @@ if (args.Length > 0 && args[0] == "--buffs") { BuffCensus.Run(); return; }
 // `BL-158` — what the buffer actually sells a character of each level, READ OFF the real shelf.
 if (args.Length > 0 && args[0] == "--npcshelf") { NpcShelfDump(); return; }
 
+// `--dmgmatrix` — THE WHOLE DAMAGE BOARD: every attacker archetype against every target archetype,
+// hit and crit, beside the numbers the OWNER says each cell should read (2026-09-06).
+//
+// 🔑 THE ASK IS NOT "MORE DAMAGE", IT IS SPREAD. His complaint is that one attacker does roughly the
+// same number to everybody — *"A mage same gear same lvl should do to the tank 300 dmg .. not to every
+// one"*. So the column that matters is not `hit`, it is the RATIO between a row's three targets. A fix
+// that raises every cell equally changes nothing he asked for.
+//
+// ⚠ THE ARCHER IS A ROGUE. The Archer 2nd class was retired (ids 4/10/16) and the Rogue absorbed the
+// bow to 40, so "archer" = the rogue's RANGED discipline — and those are RACE-SPECIFIC
+// (`Disciplines.Of`): Human Sharpshooter / Demon Hunter / Elf Trapper, each paired with a dagger
+// branch. Asking for the wrong race's discipline silently yields NO third class at all, which is
+// exactly what a first pass at this table did. The resolved class name is printed on every row for
+// that reason — this rig has already been wrong twice by measuring a character nobody can roll.
+if (args.Length > 0 && args[0] == "--dmgmatrix")
+{
+    int L = args.Length > 1 ? int.Parse(args[1]) : 90;
+    string q = args.Length > 2 ? args[2] : "mythic";
+    bool buffed = args.Contains("--buffed");
+    int t = GearTier(L);
+
+    Console.WriteLine();
+    Console.WriteLine($"=== DAMAGE MATRIX — level {L}, {q} gear, {(buffed ? "NPC-BUFFED" : "unbuffed")} ===");
+    Console.WriteLine("  hit/crit are the RAW resolved numbers: the real ratio formula, the real crit");
+    Console.WriteLine("  multiplier, the target's own CritDmgResist / BowResist / mRes. No variance, no");
+    Console.WriteLine("  miss, no block roll (block is shown separately as the average it removes).");
+
+    Entity Make(string kind) => kind switch
+    {
+        // Human rogue -> Sharpshooter is the BOW branch (Nullblade is its dagger twin).
+        "archer"    => Dress(BuildPlayer(Race.Human, BaseClass.Fighter, L, quality: q,
+                            discipline: Discipline.Sharpshooter, secondClass: 15, fourth: true,
+                            npcBuffed: buffed), $"bow_t{t}", q),
+        "harmonist" => Dress(BuildPlayer(Race.Elf, BaseClass.Mage, L, quality: q, healer: true,
+                            discipline: Discipline.Warchanter, secondClass: 11, fourth: true,
+                            npcBuffed: buffed), $"bow_t{t}", q),
+        "mage"      => BuildPlayer(Race.Human, BaseClass.Mage, L, quality: q,
+                            discipline: Discipline.Magus, fourth: true, npcBuffed: buffed),
+        "warrior"   => Dress(BuildPlayer(Race.Human, BaseClass.Fighter, L, quality: q, warrior: true,
+                            discipline: Discipline.Ravager, secondClass: 14, fourth: true,
+                            npcBuffed: buffed), $"sword2h_t{t}", q),
+        // The DEMON buffer — "Warlock" (Human = War Doctor, Elf = War Harmonist). He benchmarks the
+        // warrior at +20% over this one, exactly as the archer is benchmarked over the elf buffer.
+        "warlock"   => Dress(BuildPlayer(Race.Demon, BaseClass.Mage, L, quality: q, healer: true,
+                            discipline: Discipline.Warchanter, secondClass: 5, fourth: true,
+                            npcBuffed: buffed), $"sword1h_t{t}", q),
+        // Human rogue -> Nullblade is the DAGGER branch. Daggers are WeaponType.Dual here.
+        "rogue"     => Dress(BuildPlayer(Race.Human, BaseClass.Fighter, L, quality: q,
+                            discipline: Discipline.Nullblade, secondClass: 15, fourth: true,
+                            npcBuffed: buffed), $"duals_t{t}", q),
+        "tank"      => BuildPlayer(Race.Human, BaseClass.Fighter, L, quality: q,
+                            discipline: Discipline.Bulwark, fourth: true, npcBuffed: buffed),
+        _           => throw new ArgumentException(kind),
+    };
+
+    // Swap the weapon BuildPlayer chose for the one this archetype actually fights with.
+    static Entity Dress(Entity e, string weaponId, string quality)
+    {
+        string id = weaponId + (quality == "mythic" ? "" : "_" + quality);
+        if (ItemCatalog.Get(id) is null) { Console.Error.WriteLine($"  !! missing {id}"); return e; }
+        e.Inventory.RemoveAll(i => ItemCatalog.Get(i.DefId)?.Slot == EquipSlot.Weapon);
+        Equip(e, id);
+        e.RecomputeDerived();
+        return e;
+    }
+
+    string ClassLabel(Entity e) =>
+        (e.FourthClass > 0 ? FourthClassCatalog.Get(e.FourthClass)?.Name
+         : e.ThirdClass > 0 ? ThirdClassCatalog.Get(e.ThirdClass)?.Name : null) ?? "(no 3rd class)";
+
+    // The best REPEATABLE damaging skill of a channel — the rotation slot, not a 5-minute ultimate.
+    (int Flat, float Mod, string Name, bool Magic) BestSkill(Entity e, bool magic)
+    {
+        int bestP = 0; (int, float, string, bool) best = (0, 1f, "basic attack", magic);
+        foreach (var (id, lvl) in e.LearnedSkills)
+        {
+            var d = SkillCatalog.Get(id);
+            if (d is null || d.CooldownTicks > 150 || !string.IsNullOrEmpty(d.ConsumableId)) continue;
+            if (d.DamageToMp || d.BlowOnCrit) continue;      // drains and blows resolve differently
+            var need = magic ? SkillEffect.MagicDamage : SkillEffect.PhysicalDamage;
+            if ((d.Effect & need) == 0) continue;
+            if (d.PowerAt(lvl) <= bestP) continue;
+            bestP = d.PowerAt(lvl);
+            var (f, m) = magic ? d.MagicDamageAt(lvl) : (d.PhysDamageAt(lvl).Flat, d.PhysDamageAt(lvl).Mod);
+            best = (f, m, $"{d.Name} L{lvl}", magic);
+        }
+        return best;
+    }
+
+    // `--his` — the OWNER'S authored powers instead of the catalogue's (2026-09-06). He gave the
+    // reference kit directly: the nuke is ~200 power at 90 / ~150 at 85 on a 4s cast + 1s reuse, and
+    // the rogue's Stab is 7k-11k power at 85, 10k-15k at 90. Those are the numbers the matrix has to
+    // be judged against, not whatever the placeholder catalogue currently holds.
+    bool his = args.Contains("--his");
+    int NukePower(int lvl) => lvl >= 90 ? 200 : 150;
+    int StabPower(int lvl) => lvl >= 90 ? 15000 : 11000;   // the TOP of each band he named
+
+    var attackers = his
+        ? new[] { "archer", "harmonist", "warrior", "warlock", "rogue", "mage" }
+        : new[] { "archer", "harmonist", "mage", "warrior" };
+    var targets   = new[] { "tank", "warrior", "mage" };
+
+    foreach (var an in attackers)
+    {
+        var a = Make(an);
+        bool magic = an == "mage";
+        var sk = BestSkill(a, magic);
+        // 🔑 A STAB IS A BLOW: its damage is (pAtk + power) with the power dwarfing the pAtk, and it
+        // only pays out ON A CRIT. So it belongs in the crit column and nowhere else — reporting a
+        // blow's non-crit number as its damage is reporting its BlowFailFraction floor.
+        if (his && an == "rogue") sk = (StabPower(L), 1f, $"Stab (power {StabPower(L)})", false);
+        if (his && magic)         sk = (0, NukePower(L), $"nuke (power {NukePower(L)}, 4s cast)", true);
+        Console.WriteLine();
+        Console.WriteLine($"-- {an.ToUpperInvariant()}  [{ClassLabel(a)}]  "
+            + (magic ? $"M.Atk {a.EffectiveMagicAttack:0} (shown {a.EffectiveMagicAttackShown:0})"
+                     : $"P.Atk {a.EffectiveAttack:0}")
+            + $"  crit {(magic ? a.MagicCritChance : a.CritChance):P1}   skill: {sk.Name}");
+        Console.WriteLine("   target     [class]                    def   MaxHP | basic  bCrit |  skill  sCrit  crit%  | skillHits");
+        foreach (var tn in targets)
+        {
+            var d = Make(tn);
+
+            // BOTH rows, because the owner reads his damage off a BASIC ATTACK as often as off a skill,
+            // and the two differ by 3-5x. A complaint quoted against one and answered with the other is
+            // how a balance conversation goes wrong.
+            (int hit, float crit) Resolve(int flat, float mod)
+            {
+                if (magic)
+                {
+                    int h = StatCalculator.MagicDamageFM((int)a.EffectiveMagicAttack, flat, mod,
+                                                         (int)d.EffectiveMagicDefence, d.MagicDefCoef);
+                    return (h, h * a.EffectiveMagicCritDamage);
+                }
+                int pAtk = (int)a.EffectiveAttack;
+                float coef = StatCalculator.WeaponDefenceCoef(a.WeaponType, d.PierceDefCoef, d.BluntDefCoef, d.BowDefCoef);
+                int hp = StatCalculator.PhysicalDamageFM(pAtk, flat, mod, (int)d.EffectiveDefence, coef);
+                if (a.WeaponType == WeaponType.Bow && d.BowResist > 0f)
+                    hp = Math.Max(1, (int)(hp * (1f - d.BowResist)));
+                // The engine's own crit arithmetic (ResolvePhysicalCritAndBlock): flat crit damage rides
+                // INSIDE the ratio, the multiplier on top, and the defender trims only the EXTRA.
+                float cff = StatCalculator.CritFlatFactor(pAtk, a.CritDamageFlat, flat, mod);
+                float mult = StatCalculator.PhysicalCritMult(a.CritDamageBonus);
+                return (hp, hp * (1f + (cff * mult - 1f) * (1f - d.CritDmgResist)));
+            }
+
+            var (bHit, bCrit) = Resolve(0, 1f);            // basic attack = (Flat 0, Mod 1)
+            var (sHit, sCrit) = Resolve(sk.Flat, sk.Mod);
+            float rate = magic ? a.MagicCritChance * (1f - d.MagicCritRateResist)
+                               : Math.Clamp((a.CritChance - (d.HasShield ? d.ShieldCritDefense : 0f))
+                                            * (1f - d.CritRateResist), 0f, 1f);
+            Console.WriteLine($"   {tn,-10} [{ClassLabel(d),-22}] {(magic ? d.EffectiveMagicDefence : d.EffectiveDefence),6:0}"
+                            + $" {d.MaxHp,7} | {bHit,5} {bCrit,6:0} | {sHit,6} {sCrit,6:0} {rate,6:P0}  | {(float)d.MaxHp / sHit,9:0.0}");
+        }
+    }
+
+    Console.WriteLine();
+    Console.WriteLine("=== WHAT HE SAYS EACH CELL SHOULD READ (2026-09-06) — tank/fighter 20k HP, mage 8k ===");
+    Console.WriteLine("   attacker   -> tank            -> fighter          -> mage");
+    Console.WriteLine("   archer        ~700-800 crit      1000 crit          1500 crit");
+    Console.WriteLine("   mage           300-400 hit,      3000-4000 crit     -");
+    Console.WriteLine("                  1000-1200 crit");
+    Console.WriteLine("   fighter        -                 -                  700-1500 (with a stun)");
+    Console.WriteLine("   ⚠ 'archer -> tank' is the one line I could not read unambiguously — see the note.");
+    return;
+}
+
+// `--magicdef` — WHAT A NUKE ACTUALLY DOES TO A REAL DEFENCE SHEET, across the jewel ladder.
+//
+// 🔑 It exists because the mage's damage against a PLAYER goes DOWN with level, and no single-number
+// table shows it: the `=== MAGE ===` block measures one target, and the jewel tables measure gear with
+// nobody wearing it. This crosses the two — three sheets that really differ in M.Def (a Bulwark tank,
+// an Elf Harmonist buffer, and a Warrior who has no anti-magic at all), at four levels, at every jewel
+// rarity their tier offers, against the SAME-LEVEL nuker's real M.Atk and his real top nuke.
+//
+// ⚠ The number printed is the RAW ratio hit — no fizzle, no crit, no variance. At parity fizzle is 1%
+// and magic crit adds ~+10% expected, so the sustained figure is within a few percent of this either
+// way; it is the ratio that is being examined, and the ratio is what the rolls multiply.
+// The `x2 M.Def` columns are his "fully buffed" case: buffs on this channel are large and mostly
+// multiplicative, so doubling the sheet is the honest shorthand until the 4th-class buff set is real.
+if (args.Length > 0 && args[0] == "--magicdef")
+{
+    Console.WriteLine();
+    Console.WriteLine("=== MAGIC DAMAGE vs REAL DEFENCE SHEETS, across the jewel ladder ===");
+    Console.WriteLine("  attacker: same-level Human nuker, best gear for tier at MYTHIC, spell rune on.");
+    Console.WriteLine("  dmg = the raw 91*power*sqrt(mAtk)/(mDef*mRes) hit — no fizzle, no crit, no variance.");
+    Console.WriteLine("  'casts' = MaxHP / dmg, i.e. how many of his best nukes the sheet eats.");
+    Console.WriteLine();
+
+    var qualities = new[] { "rare", "epic", "legendary", "mythic" };
+
+    foreach (int L in new[] { 40, 60, 76, 90 })
+    {
+        // ⚠ THE DISCIPLINE IS NOT OPTIONAL HERE. Without it the nuker learns only the placeholder
+        // catalogue kit and casts Vampiric Bolt (power 44) at level 90 — the Magus 3rd-class kit has
+        // been real since 0.87.0, and measuring the mage's ceiling on a placeholder understates every
+        // row in the table. This is the "check the RIG before the subject" rule, again.
+        var mage = BuildPlayer(Race.Human, BaseClass.Mage, L, discipline: Discipline.Magus);
+        int mAtk = (int)mage.EffectiveMagicAttack;
+
+        // 🔑 TopNukePower ranks by POWER ALONE, and at 76+ that is Arcane Burst — CooldownTicks 3000,
+        // i.e. a FIVE-MINUTE reuse. It is an ultimate, not a rotation, so a table built on it measures
+        // a number the mage sees once per fight. Take the best REPEATABLE nuke as well (reuse <= 15s)
+        // and print both: the ultimate is the ceiling, the repeatable one is the actual fight.
+        int power = TopNukePower(mage);
+        int spam = 0; string spamName = "-";
+        foreach (var (id, lvl) in mage.LearnedSkills)
+        {
+            var d = SkillCatalog.Get(id);
+            if (d is null || (d.Effect & SkillEffect.MagicDamage) == 0) continue;
+            if (!string.IsNullOrEmpty(d.ConsumableId) || d.DamageToMp) continue;
+            if (d.CooldownTicks > 150) continue;            // > 15s is not a rotation slot
+            if (d.PowerAt(lvl) > spam) { spam = d.PowerAt(lvl); spamName = $"{d.Name} L{lvl}"; }
+        }
+
+        // The same nuker holding a +16 staff. Damage is linear in sqrt(mAtk), so this one ratio scales
+        // every row below it — which is the point: a +16 weapon buys the SQUARE ROOT of what it adds.
+        var mage16 = BuildPlayer(Race.Human, BaseClass.Mage, L, discipline: Discipline.Magus);
+        mage16.Inventory.RemoveAll(i => ItemCatalog.Get(i.DefId)?.Slot == EquipSlot.Weapon);
+        EquipEnchanted(mage16, $"staff_t{GearTier(L)}", 16);
+        mage16.RecomputeDerived();
+        int mAtk16 = (int)mage16.EffectiveMagicAttack;
+
+        Console.WriteLine($"-- LEVEL {L}  (gear tier t{GearTier(L)}) " + new string('-', 46));
+        Console.WriteLine($"   nuker M.Atk internal {mAtk}  (shown {mage.EffectiveMagicAttackShown:0})"
+                        + $"   top nuke power {power}");
+        Console.WriteLine($"   with a +16 staff: internal {mAtk16} (x{(float)mAtk16 / Math.Max(1, mAtk):0.00})"
+                        + $" -> damage x{MathF.Sqrt((float)mAtk16 / Math.Max(1, mAtk)):0.00}  <- the sqrt eats it");
+        Console.WriteLine($"   repeatable nuke: {spamName} (power {spam}) — the rotation slot, not the ultimate");
+        Console.WriteLine();
+        Console.WriteLine("   target            rarity        MaxHP   M.Def     dmg  casts | spam  casts |  M.Defx2    dmg  casts | spam  casts");
+
+        var targets = new (string Name, Func<string, Entity> Make)[]
+        {
+            // `fourth: true` — a 76+ character measured here has ascended, which is the whole point of
+            // the table. The warrior has no discipline, so the flag is inert on him by construction.
+            ("tank (Bulwark)",   q => BuildPlayer(Race.Human, BaseClass.Fighter, L, quality: q,
+                                                  discipline: Discipline.Bulwark, fourth: true)),
+            // The HUMAN buffer — "War Doctor" (the Elf is the Harmonist, the Demon the Warlock). Human
+            // because that is the sheet the owner reads off his own screen.
+            ("war doctor (buf)", q => BuildPlayer(Race.Human, BaseClass.Mage, L, quality: q, healer: true,
+                                                  discipline: Discipline.Warchanter, secondClass: 17,
+                                                  fourth: true)),
+            ("warrior (no A-M)", q => BuildPlayer(Race.Human, BaseClass.Fighter, L, quality: q, warrior: true)),
+        };
+
+        foreach (var (name, make) in targets)
+        {
+            foreach (var q in qualities)
+            {
+                // S grade is top-half only — there is no Rare rung at t80, and asking for one would
+                // dress a NAKED character and print a defence sheet made of nothing.
+                if (GearTier(L) >= ItemCatalog.SGradeLevel && q == "rare") continue;
+                var t = make(q);
+                int mDef = (int)t.EffectiveMagicDefence;
+                int dmg  = StatCalculator.MagicDamageFM(mAtk, 0, power, mDef, t.MagicDefCoef);
+                int dmg2 = StatCalculator.MagicDamageFM(mAtk, 0, power, mDef * 2, t.MagicDefCoef);
+                int sp1  = StatCalculator.MagicDamageFM(mAtk, 0, spam, mDef, t.MagicDefCoef);
+                int sp2  = StatCalculator.MagicDamageFM(mAtk, 0, spam, mDef * 2, t.MagicDefCoef);
+                Console.WriteLine($"   {name,-17} {q,-11} {t.MaxHp,7} {mDef,7} {dmg,7} {(float)t.MaxHp / dmg,6:0.0}"
+                                + $" | {sp1,4} {(float)t.MaxHp / sp1,6:0.0}"
+                                + $" | {mDef * 2,8} {dmg2,6} {(float)t.MaxHp / dmg2,6:0.0}"
+                                + $" | {sp2,4} {(float)t.MaxHp / sp2,6:0.0}");
+            }
+            Console.WriteLine();
+        }
+    }
+
+    // ---- HIS SHEET, LAYER BY LAYER -------------------------------------------------------------
+    // Owner, 2026-09-06: *"human war doctor with S grade full jewels and -10(swap+set) spt have
+    // 4250 m Def"*. That is ~2.4x what the plain gear-only build reads, so SOMETHING is supplying a
+    // multiplier this tool was not modelling. Print the stack one layer at a time — the layer where
+    // the number jumps IS the answer, and guessing at it is exactly how the 3rd-class rig error above
+    // survived four levels of tables.
+    Console.WriteLine();
+    Console.WriteLine("=== HIS SHEET: level 90 HUMAN WAR DOCTOR, S jewels — where does 4250 M.Def come from? ===");
+    Console.WriteLine("   layer                                          SPT   M.Def");
+    void Layer(string what, Entity e) =>
+        Console.WriteLine($"   {what,-44} {e.EffectiveSpt,5:0} {e.EffectiveMagicDefence,7:0}");
+
+    Entity Doc(bool fourth, string q, int ench, bool buffed)
+    {
+        var e = BuildPlayer(Race.Human, BaseClass.Mage, 90, quality: q, healer: true,
+                            discipline: Discipline.Warchanter, secondClass: 17,
+                            npcBuffed: buffed, fourth: fourth);
+        if (ench > 0)
+        {
+            e.Inventory.RemoveAll(i => ItemCatalog.Get(i.DefId)?.Slot == EquipSlot.Jewel);
+            string s = q == "mythic" ? "" : "_" + q;
+            EquipEnchanted(e, $"necklace_t80{s}", ench);
+            EquipEnchanted(e, $"ring_t80{s}", ench);    EquipEnchanted(e, $"ring_t80{s}", ench);
+            EquipEnchanted(e, $"earring_t80{s}", ench); EquipEnchanted(e, $"earring_t80{s}", ench);
+            e.RecomputeDerived();
+        }
+        return e;
+    }
+
+    Layer("3rd class only, mythic jewels +0", Doc(false, "mythic", 0, false));
+    Layer("+ 4TH CLASS KIT", Doc(true, "mythic", 0, false));
+    Layer("+ jewels +8", Doc(true, "mythic", 8, false));
+    Layer("+ jewels +16", Doc(true, "mythic", 16, false));
+    Layer("+ NPC BUFF SHELF (jewels +0)", Doc(true, "mythic", 0, true));
+    Layer("+ NPC BUFF SHELF + jewels +16", Doc(true, "mythic", 16, true));
+    Layer("epic jewels +16, buffed", Doc(true, "epic", 16, true));
+    Layer("legendary jewels +16, buffed", Doc(true, "legendary", 16, true));
+    return;
+}
+
 // `BL-180` — THE ADMIN BUFF MENU'S FOUR DRAWERS, read off SkillCatalog.AdminBuffMenu. The menu is
 // DERIVED (see Skills.AdminMenu.cs), so the only way to see what it will actually offer — and to
 // notice a new buff landing in the wrong drawer — is to print it. Discovering a mis-filed harmony on
@@ -4958,7 +5265,7 @@ static int TopPhysSkillPower(Entity e)
 /// his heal ladder above 35 is the whole difference between "the healer can hold" and "he cannot".</param>
 static Entity BuildPlayer(Race race, BaseClass cls, int level, string? quality = null, bool warrior = false,
                           bool healer = false, Discipline? discipline = null, bool npcBuffed = false,
-                          int gearTier = 0)
+                          int gearTier = 0, int secondClass = 0, bool fourth = false)
 {
     var s = StatCalculator.GetBaseStats(race, cls);
     var e = new Entity { Name = "calc", Kind = EntityKind.Player };
@@ -4970,13 +5277,30 @@ static Entity BuildPlayer(Race race, BaseClass cls, int level, string? quality =
     // Second class at 20 (Human Sorcerer / Human Knight) so the archetype kits apply.
     // 18 = Sorcerer (nuker), 13 = Knight (tank), 14 = Champion (warrior).
     // 17 = Human Cleric (healer).
-    if (level >= 20) e.SecondClass = cls == BaseClass.Mage ? (healer ? 17 : 18) : warrior ? 14 : 13;
+    // ⚠ `secondClass` overrides the hardwired ids below, which are all HUMAN. The skill lookup keys on
+    // the ARCHETYPE (derived from this id) and on the RACE, so an Elf healer left on 17 measures as a
+    // Human Priest. A non-human caller — the Harmonist is the Elf Warchanter — must pass its own id.
+    if (level >= 20)
+        e.SecondClass = secondClass > 0 ? secondClass
+            : cls == BaseClass.Mage ? (healer ? 17 : 18) : warrior ? 14 : 13;
     // The 3rd class, when the caller asked for one and the character is old enough to hold it. It must
     // be set BEFORE the Cumulative loop below: the lookup keys on (race, class, archetype, discipline),
     // so a discipline assigned afterwards teaches nothing.
     if (discipline is { } d && level >= ThirdClassCatalog.ChangeLevel
         && ThirdClassCatalog.Playable.FirstOrDefault(c => c.Race == race && c.Discipline == d) is { } tc)
         e.ThirdClass = tc.Id;
+
+    // 🔴🔑 THE FOURTH TIER, WHICH THIS BUILDER SIMPLY DID NOT HAVE (2026-09-06). `Cumulative` gates the
+    // whole 4th kit behind its `fourth` flag, and nothing here ever passed it — so EVERY level-76+ row
+    // this tool has ever printed was a 3rd-class character wearing endgame gear. That understates the
+    // endgame sheets badly: the buffer's 4th robe mastery alone is +25% M.Def, and the Bulwark's carries
+    // FLAT M.Def in the thousands.
+    // ⚠ It is OPT-IN all the same, for the reason `npcBuffed` is: turning it on by default silently
+    // moves every 76+ row in every signed-off table, and it makes `BL-169` — the one falsifiable table
+    // here, checked against his own level-90 Paladin — go from +33% to +60% over his screen. That is a
+    // finding to report, not a default to bury. Ask for it explicitly and print both rungs.
+    if (fourth && e.ThirdClass > 0 && level >= FourthClassCatalog.ChangeLevel)
+        e.FourthClass = e.ThirdClass + FourthClassCatalog.IdOffset;
 
     // Every skill the class table teaches by this level, at the highest level learnable.
     //
@@ -4991,7 +5315,7 @@ static Entity BuildPlayer(Race race, BaseClass cls, int level, string? quality =
         if (cs.LearnLevel > level) continue;
         e.LearnedSkills[cs.SkillId] = Math.Max(e.SkillLevelOf(cs.SkillId), cs.SkillLevel);
     }
-    foreach (var cs in ClassSkills.Cumulative(race, cls, e.Archetype, e.Discipline))
+    foreach (var cs in ClassSkills.Cumulative(race, cls, e.Archetype, e.Discipline, e.HasFourthClass))
     {
         if (cs.LearnLevel > level) continue;
         e.LearnedSkills[cs.SkillId] = Math.Max(e.SkillLevelOf(cs.SkillId), cs.SkillLevel);

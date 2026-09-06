@@ -128,6 +128,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-171` | 🔵 | THE WORLD BOSS — stats built; the encounter, mass-PvP rules and loot are owed | combat |
 | `BL-172` | 🔴 | `/unstuck <name>` — 180s rooted channel, cast in town, on another char of the same account | systems |
 | `BL-179` | 🔵 | The two TEST skills are granted to EVERY character — three ways to gate them, your pick | systems |
+| `BL-185` | 🔵 | THE DAMAGE REWORK — his IG matrix fitted: K is RIGHT, skill power is 10x short, magic is 9x short | combat |
 
 ---
 
@@ -992,3 +993,54 @@ all keep working, which the item route would complicate for no gain.
 (`GameLoopService` reads `def.Id == TestPhysSkill` / `TestMagicSkill` when computing the hit) and they
 are how the `{Flat, Mod}` curve gets read live — the thing that has settled several balance arguments
 here. This entry is about who can reach them, not about removing them.
+
+---
+
+## `BL-185` 🔵 THE DAMAGE REWORK — measured against your own IG matrix
+
+**2026-09-06.** You said the damage was *"laughable"* — *"a mage with a weapon t80m +16 does to
+someone with ~2k Def a 200-400 dmg"*, *"harmonist elf that have 5100 p.atk does to an S grade robe
+user 400 with a crit"*, *"We need to fix the dmg ...as general"*, *"The fight should be scary not
+potions to overheal the dmg"* — and then supplied a full IG damage matrix **with the stats behind
+it** (4 attackers × 4 defenders × 4 gear grades, P.Atk / M.Atk / skill power / P.Def / M.Def /
+normal / crit / DPS).
+
+**The full fit is [balance/DamageVsIG.md](balance/DamageVsIG.md); his table is preserved verbatim
+there and as [balance/IG-reference.csv](balance/IG-reference.csv). Read it before touching a
+constant.** The short version:
+
+🔴 **`PhysicalK = 77` and `MagicK = 91` ARE CORRECT — do not raise them.** An earlier proposal this
+same session was 180 / 270; his table kills it. Fitting `77·(pAtk+power)/pDef` to his archer and tank
+rows, the K each row demands is **flat across all four defenders at every level** (at 85: 86.7 / 87.0
+/ 87.0 / 86.0). Our ratio model and our defence divisor already reproduce his spread. The only drift
+is a mild rise with level, 58 → 70 → 76 → 87 across 40/52/76/85 — a **level modifier we don't have**.
+
+**Six changes, in the order they should land** — revised 2026-09-06 after your answers:
+
+| # | change | why, measured |
+|---|---|---|
+| 1 | **Build the ARCHER and WARRIOR damage kits from the HARMONIST kits, +20%** — archer = elf harmonist skills + bow passives ×1.2; fighter = demon harmonist skills + 2H passives ×1.2 (your recipe) | 🔑 **My original "physical skill power is 10x short" was wrong as a global claim.** Our elf harmonist Sound Burst already hits a buffed mage for **495**; our archer Precise Shot for **235** — the harmonist kits are close to right and the archer/warrior kits are the ones that do not exist. 495 × 1.2 = 594 against IG's 870 @85: inside ~1.5x, not 10x. IG's ladder for reference: archer 1200/2400/6200/10200, fighter 1800/3200/7500/12500, tank 800/1400/3100/5200 at 40/52/76/85. Carries your **+20% on the passives** too. |
+| 2 | **Raise base light/robe P.Def toward IG's** | Naked-to-naked (IG @85 vs ours @90): tank 3200 vs **2682 ✅**, but fighter 2400 vs **944** and mage 1600 vs **715** — 2.2-2.5x LOW. **IG's robe→plate spread is 2.0x; ours is 3.75x.** That is the structural cause of the archer's 1:9.2 across tank/fighter/mage, and it lives in the BASE SHEETS, not the shelf. Alone it would REDUCE damage to squishies — it only lands correctly beside #1, whose numerator term is far larger (IG gets 870 on a mage from `5800+10200`; we get 236 from `4494+870`). |
+| 3 | **Take the √ off the BASE M.Atk and refit `MagicK`** | 🔴🔑 **CORRECTION — magic PERCENTAGE buffs are ALREADY outside the √.** `Entity.EffectiveMagicAttack` squares them deliberately (`magFactor * magFactor`, *Owner 2026-07-16*) so +32% yields +32%. What is still under the √ is `MagicAttack + magFlat`: the INT base, **the weapon's M.Atk and its enchant**, and flat buffs. **That is the +16 complaint exactly** (+16 staff = internal ×1.27 = damage **×1.13**), and it is the worse half because the base is the only part that GROWS. Naked, the magic attack term (`dmg·mDef/power`) grows **×8.8 for IG across 40→85 and ×2.6 for us across 40→90**. Fitting his 16 mage rows: linear M.Atk needs K to drift only **×1.40** across the grades, where √ needs **×5.1** — and physical drifts ×1.49, so **linear magic and physical want ONE shared level modifier**. Confirming: his table puts mage M.Atk 6500 beside archer P.Atk 5800; under a √ an M.Atk of 6500 contributes 80. |
+| 4 | **The shelf's COMPOUNDING (the HP legs) — NOT its M.Def legs** | 🔑 **Your correction:** the IG figures are GEARED, NO BUFFS — and naked our M.Def matches IG on all three classes (1633/1700, 2032/2000, 2261/1850). **"Cut Ward / Harmony of Ward" is WITHDRAWN.** What stands, measured inside our own game and citing nothing external: buffing BOTH sides drops every damage cell 25-40%, because HP (×2.05) and defence (×2.45) MULTIPLY while attack has one multiplier (×1.44) — ~3x survivability against ~1.5x offence. That is compounding, and the HP legs (Body +35%, Harmony of Body +30%) are the cheapest half to remove. |
+| 5 | **Crit: multipliers UNCHANGED** — ×1.35 Ferocity, ×1.35 harmony, ×1.2 Mark | Your ruling: *"The crit dmg should be as is now"*. The two missing pieces are the **archer's 700 flat crit damage** and the **+20% passives** (which ride with #1). ⚠ Today's top rung is `RogueWM` critDmg **165**, so 700 is ×4.2 — but know its size: flat crit damage joins pAtk INSIDE the ratio (`StatCalculator.CritFlatFactor`), so at P.Atk 4494 the 700 is **+15.6% on a basic crit**, and once #1 gives the archer's skills a real flat power it falls to about **+5%**. A real lever, not a fix. |
+| 6 | *last* — **the level modifier**, if still needed | Your call: *"This depends on the outcome of all others"*. The physical K his rows demand drifts 58 → 70 → 76 → 87 across 40/52/76/85 (×1.49); linear magic drifts ×1.40. One shared modifier would cover both — but only measure it after 1-5. |
+
+🔴 **Your boss worry is right, and it is ASYMMETRIC** — *"I just hope if we fix the formulas the dmg
+of bosses that we fixed not to skyrocket"*. Raising PLAYER skill power raises player→boss damage but
+**not** boss→player, because bosses mostly basic-attack: bosses get easier without getting more
+dangerous. **Every step of this re-runs the `BL-13` boss-pace section in the same pass as
+`--dmgmatrix`, and both get reported.** If TTK falls out of your 10-30 minute band, the compensation
+goes on the BOSS (its HP, or its own skill powers) — never on the formula.
+
+⚠ **`StatCalculator.MagicDamage` is shared with HEALS and with mob casters.** #3 refits all three or none.
+⚠ **The squaring in `EffectiveMagicAttack` exists ONLY to cancel the √.** Take the √ out without
+taking the squaring out and every magic buff pays 1.725² = **×2.98**. Same edit, both.
+
+**Not part of this entry, but it will move when these land:** the S-grade craft budget. A measured
+global, so re-measure `--dmgmatrix` and the M-sections together before assuming it holds.
+
+⚠ **Nothing here is built.** Constants were patched, measured and reverted in the session; the working
+tree is clean of them. `dotnet run --project tools/BalanceMatrix -- --dmgmatrix 90 mythic --his
+--buffed` is the board this is judged on, and 🔑 **the CSVs move with the code** — #1 and #5 are skill
+data, so every rung touched owes its row in `docs/data/classes_skills_csv/` in the same commit.
