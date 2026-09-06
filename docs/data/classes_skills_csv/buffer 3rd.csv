@@ -352,15 +352,18 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 74,Shrouding Hymn,shrouding_hymn,Magic/Buff,,,600,800,party/aoe,2,30,60,For 1 minute monsters that have not already noticed you and nearby allies leave you alone.,300,880k,[],,
 ,,,,,,,,,,,,,,,,,---------------------------------------------------------------------------------------------Harmonies-------------------------------------------------MP for each buff inside 60/66/73/80/88/97 = 464 at 6 buffs -- [60x1.1^buffIndex per buff]
 ,,,,,,,,,,,,,,,,,------------------------------Harmony of Protection------------------------------
+,,,,,,,,,,,,,,,,,BL-183: the rung granting +30% M.Def (44) replaces NPC Harmony of Ward; +25% P.Def (56) adds Harmony of Bulwark; +30% Max HP (66) adds Harmony of Body. Rung by rung - never a rung that has not yet gained that effect.
 44,Harmony of Protection,npc_harmony_protection,Magic/Buff,,,600,800,party/aoe,1,120,300,+30% M.Def,60,43k,[],,
 52,Harmony of Protection,npc_harmony_protection,Magic/Buff,,,600,800,party/aoe,1,120,300,"+30% M.Def, +20% HP Regen",126,74k,[],,
 56,Harmony of Protection,npc_harmony_protection,Magic/Buff,,,600,800,party/aoe,1,120,300,"+30% M.Def, +20% HP Regen, +25% P.Def",199,81k,[],,
 66,Harmony of Protection,npc_harmony_protection,Magic/Buff,,,600,800,party/aoe,1,120,300,"+30% M.Def, +20% HP Regen, +25% P.Def, +30% Max HP",279,280k,[],,
 74,Harmony of Protection,npc_harmony_protection,Magic/Buff,,,600,800,party/aoe,1,120,300,"+30% M.Def, +20% HP Regen, +25% P.Def, +30% Max HP, +20% Mele Reflect",367,880k,[],,
 ,,,,,,,,,,,,,,,,,------------------------------Harmony of Speed------------------------------
+,,,,,,,,,,,,,,,,,BL-183: the rung granting +20 move speed (48) replaces NPC Harmony of Swift - the two never stack.
 48,Harmony of Speed,wc_harmony_speed,Magic/Buff,,,600,800,party/aoe,1,120,300,+20 move speed,60,64k,[],,
 58,Harmony of Speed,wc_harmony_speed,Magic/Buff,,,600,800,party/aoe,1,120,300,"+20 move speed, +3 Evasion",126,88k,[],,
 ,,,,,,,,,,,,,,,,,------------------------------Harmony of the Warrior------------------------------
+,,,,,,,,,,,,,,,,,BL-183: the rung granting +12% P.Atk (56) replaces NPC Harmony of the Might; the rung granting +15% attack speed (58) also replaces NPC Harmony of the Fury. Rungs 1-3 replace nothing.
 40,Harmony of the Warrior,npc_harmony_warrior,Magic/Buff,,,600,800,party/aoe,1,120,300,+100% crit rate,60,36k,[],,
 44,Harmony of the Warrior,npc_harmony_warrior,Magic/Buff,,,600,800,party/aoe,1,120,300,"+100% crit rate, +35% crit damage",126,43k,[],,
 48,Harmony of the Warrior,npc_harmony_warrior,Magic/Buff,,,600,800,party/aoe,1,120,300,"+100% crit rate, +35% crit damage, +4 accuracy",199,64k,[],,
@@ -368,5 +371,6 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 58,Harmony of the Warrior,npc_harmony_warrior,Magic/Buff,,,600,800,party/aoe,1,120,300,"+100% crit rate, +35% crit damage, +4 accuracy, +12% P.Atk, +15% attack speed",367,88k,[],,
 74,Harmony of the Warrior,npc_harmony_warrior,Magic/Buff,,,600,800,party/aoe,1,120,300,"+100% crit rate, +35% crit damage, +4 accuracy, +12% P.Atk, +15% attack speed, +8% mele vampirism",464,880k,[],,
 ,,,,,,,,,,,,,,,,,------------------------------Harmony of the Wizard------------------------------
+,,,,,,,,,,,,,,,,,BL-183: the rung granting +10% M.Atk (48) replaces NPC Harmony of Force; the rung granting +30% cast speed (52) also replaces NPC Harmony of Alacrity.
 48,Harmony of the Wizard,npc_harmony_wizard,Magic/Buff,,,600,800,party/aoe,1,120,300,+10% M.Atk,60,64k,[],,
 52,Harmony of the Wizard,npc_harmony_wizard,Magic/Buff,,,600,800,party/aoe,1,120,300,"+10% M.Atk, 30% cast speed",126,74k,[],,

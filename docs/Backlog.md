@@ -39,6 +39,18 @@ and the four Mark buttons off the Functions tab, as you asked); `BL-181` `FullHe
 pools to full instantly and in combat; `BL-182` `/god` and `/invis` surviving a relog. ⚠ **NEW APK**,
 and 🔴 **a `game.db` delete** — `BL-182` adds two columns.
 
+★ **And one more the same day, `BL-183`, BUILT (0.115.1)** — also in the archive. Your ruling that a
+class harmony is the GROUP over the Spirit Helper's eight single harmonies and replaces them. It was
+already written that way and had never worked once: the rule was expressed with a field the engine
+matches by buff KEY while it held skill IDs, so the two tiers had been stacking in silence since
+`BL-160` shipped. Both directions hold now, rung by rung, and the covering ladder is printed by
+`--buffs` so it can never go quietly dead again. No schema change, no new APK.
+
+★ **And `BL-184`, BUILT (0.115.1)** — the Clear All you asked for, in both places: `Functions > CLEAR
+ALL BUFFS` and a free `Clear all blessings` row at the Spirit Helper (it asks first — it is the one row
+there that destroys blessings you may have paid 50k each for). Debuffs, DoT stack counters and rune
+buffs survive; toggles do not. `/clearbuffs [name]` is the command behind both. ⚠ **NEW APK.**
+
 ★ **The ones before those (2026-09-05):** nine asks across two messages, filed as
 **`BL-172`…`BL-179`**. ✅ **SIX ARE BUILT (0.114.0, 2026-09-06)** and are in the archive — `BL-173`
 (`/return` at 60s/10s, plus the chat alias), `BL-174` (the return/resurrection faucet off ordinary

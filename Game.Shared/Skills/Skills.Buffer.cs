@@ -63,10 +63,40 @@ public static partial class SkillCatalog
     public const string NpcHFury     = "npc_harmony_fury";       // 58 — Warrior r5:    +15% attack speed
     public const string NpcHBody     = "npc_harmony_body";       // 66 — Protection r4: +30% Max HP
 
-    /// <summary>`BL-160` — the eight, in shelf order (cheapest level first). Their BuffKeys are their
-    /// own, so all eight stack; the Warchanter harmony that contains one names it in `Replaces`.</summary>
+    // ---- Their BUFF KEYS. Separate strings from the ids above and deliberately so: the id is what a
+    //      table grants, the key is what the bar competes on. They are consts rather than literals at
+    //      the def site because the four CLASS harmonies have to name them (`CoveredKeys`), and a key
+    //      spelled twice by hand is exactly how `BL-183`'s dead rule survived review — it *looked*
+    //      right at both ends. `SkillCatalog` validates at startup that each is really in use.
+    public const string KeyHWard     = "npc_h_ward";
+    public const string KeyHForce    = "npc_h_force";
+    public const string KeyHSwift    = "npc_h_swift";
+    public const string KeyHAlacrity = "npc_h_alacrity";
+    public const string KeyHBulwark  = "npc_h_bulwark";
+    public const string KeyHMight    = "npc_h_might";
+    public const string KeyHFury     = "npc_h_fury";
+    public const string KeyHBody     = "npc_h_body";
+
+    /// <summary>`BL-160` — the eight, in shelf order (cheapest level first). Each has its OWN BuffKey,
+    /// so all eight can sit on the bar together — but every one of them is contained in a Warchanter
+    /// CLASS harmony, which since `BL-183` covers it: the class version evicts the single it contains
+    /// and refuses it afterwards, exactly as an improved group does to its singles. Owner, 2026-09-06:
+    /// *"Think of them as single harmonies and group harmonies -> group buffs replaces singles."*</summary>
     public static readonly string[] NpcSingleHarmonySet =
         { NpcHWard, NpcHForce, NpcHSwift, NpcHAlacrity, NpcHBulwark, NpcHMight, NpcHFury, NpcHBody };
+
+    /// <summary>The rank a CLASS harmony competes at, one above <see cref="NpcBuffRank"/>.
+    ///
+    /// <para>🔑 `BL-183` — this number is what makes covering actually bite. Both shelves used to sit
+    /// at <see cref="NpcBuffRank"/>, and at EQUAL rank <c>ApplyBuff</c> keeps whichever has the longer
+    /// time left: an NPC single harmony runs an HOUR, a class harmony five minutes, so declaring the
+    /// covering alone would have inverted the rule and let the bought single refuse the Warchanter's
+    /// own. One above, and the class version wins by rank at every rung, both directions.</para>
+    ///
+    /// <para>⚠ Every rung shifts together (<c>BuffPlan</c> adds <c>level - 1</c> to a childless
+    /// multi-level buff), so this does not change how a harmony competes with ITSELF — only with the
+    /// eight singles it now covers, which is the whole point.</para></summary>
+    public const int HarmonyRank = NpcBuffRank + 1;
 
     /// <summary>`BL-161` — the three Marks, sold at 78 for 300,000 each. They are the Lightbringer's own
     /// 4th-class skills at RUNG 1 (she learns rung 1 at 78 and rung 2 at 83, which the NPC never sells),
@@ -491,20 +521,37 @@ public static partial class SkillCatalog
 
     /// <summary>`BL-160` — one of the eight NPC single harmonies. Its own BuffKey, so all eight can sit
     /// on the bar at once (his fighter list wants six of them together); rank <see cref="NpcBuffRank"/>,
-    /// so a potion cannot touch it. What removes it is the Warchanter's own harmony, which names it in
-    /// `Replaces` — *"his acts as a group one so replaces them"*.
+    /// so a potion cannot touch it.
     ///
-    /// ⚠ SINGLE-TARGET, unlike the class harmony it is lifted from. His CSV's `party/aoe` describes the
-    /// Warchanter's skill shape, which the row was copied from; the NPC hands every other blessing to
-    /// the one player who asked and paid, and an AoE here would let one player buy for a whole party at
-    /// 50k. Flagged rather than assumed.</summary>
+    /// <para>🔑 `BL-183` — WHAT REMOVES IT IS THE WARCHANTER'S OWN HARMONY, which covers it
+    /// (<c>SkillDef.CoveredKeys</c>) at <see cref="HarmonyRank"/>, one rank above this. Owner,
+    /// 2026-09-06: *"Harmony of swift should not stack with harmony of speed … Think of them as single
+    /// harmonies and group harmonies -&gt; group buffs replaces singles."* Both directions hold: the
+    /// class harmony tears this off when it lands, and the Spirit Helper refuses to sell it — before
+    /// charging, <c>BuffWouldLand</c> is asked — while the class one is up.</para>
+    ///
+    /// <para>🔴 That was the INTENT from day one and it did not work for three versions. The rule was
+    /// authored as <c>Replaces</c>, which <c>ApplyBuff</c> matches against buff KEYS while the entries
+    /// were skill IDs (`npc_harmony_swift` vs `npc_h_swift`), so it matched nothing and the two tiers
+    /// stacked in silence. The lesson is the one that keeps recurring here: <b>when a wrapper and its
+    /// buff both carry a string, name which of the two a list is holding</b> — and if a rule cannot be
+    /// measured, it is not a rule. This one is measured now, by
+    /// <c>dotnet run --project tools/BalanceMatrix -- --buffs</c>.</para>
+    ///
+    /// <para>⚠ SINGLE-TARGET, unlike the class harmony it is lifted from. His CSV's `party/aoe` describes
+    /// the Warchanter's skill shape, which the row was copied from; the NPC hands every other blessing
+    /// to the one player who asked and paid, and an AoE here would let one player buy for a whole party
+    /// at 50k. Flagged rather than assumed.</para></summary>
     private static SkillDef NpcHarmonySingle(string id, string name, string buffKey,
         SkillEffect effect, EffectMagnitude[] mags, string desc) =>
         new(id, name, BaseClass.Mage, effect,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             DurationTicks: NpcBuffTicks, BuffKey: buffKey, Rank: NpcBuffRank,
             Category: SkillCategory.Buff, Magnitudes: mags,
-            Description: desc + " (buffer's harmony, 1 hour).");
+            // ⚠ The second sentence is not decoration — this is a 50,000-gold button, and a player who
+            // already has the class harmony has to be able to see why it greys out.
+            Description: desc + " (buffer's harmony, 1 hour). Replaced by the buffer class's own "
+                       + "harmony that contains it — the two never stack.");
 
     private static SkillDef[] BufferSkills() => new SkillDef[]
     {
@@ -626,21 +673,21 @@ public static partial class SkillCatalog
         // Each carries the SAME payload as the Warchanter rung it is lifted from, at the level she
         // learns it. Verified 8/8 against `buffer 3rd.csv`, which is what makes the NPC exactly one
         // rung behind the class rather than a cheaper substitute for it.
-        NpcHarmonySingle(NpcHWard, "Harmony of Ward", "npc_h_ward", SkillEffect.BuffMagicDef,
+        NpcHarmonySingle(NpcHWard, "Harmony of Ward", KeyHWard, SkillEffect.BuffMagicDef,
             new EffectMagnitude[] { new(SkillEffect.BuffMagicDef, 0.30f) }, "+30% M.Def"),
-        NpcHarmonySingle(NpcHForce, "Harmony of Force", "npc_h_force", SkillEffect.BuffMagAtk,
+        NpcHarmonySingle(NpcHForce, "Harmony of Force", KeyHForce, SkillEffect.BuffMagAtk,
             new EffectMagnitude[] { new(SkillEffect.BuffMagAtk, 0.10f) }, "+10% M.Atk"),
-        NpcHarmonySingle(NpcHSwift, "Harmony of Swift", "npc_h_swift", SkillEffect.BuffMoveSpeed,
+        NpcHarmonySingle(NpcHSwift, "Harmony of Swift", KeyHSwift, SkillEffect.BuffMoveSpeed,
             new EffectMagnitude[] { new(SkillEffect.BuffMoveSpeed, 20, ModifierMode.Flat) }, "+20 Move Speed"),
-        NpcHarmonySingle(NpcHAlacrity, "Harmony of Alacrity", "npc_h_alacrity", SkillEffect.BuffCastSpeed,
+        NpcHarmonySingle(NpcHAlacrity, "Harmony of Alacrity", KeyHAlacrity, SkillEffect.BuffCastSpeed,
             new EffectMagnitude[] { new(SkillEffect.BuffCastSpeed, 0.30f) }, "+30% Cast Speed"),
-        NpcHarmonySingle(NpcHBulwark, "Harmony of Bulwark", "npc_h_bulwark", SkillEffect.BuffDef,
+        NpcHarmonySingle(NpcHBulwark, "Harmony of Bulwark", KeyHBulwark, SkillEffect.BuffDef,
             new EffectMagnitude[] { new(SkillEffect.BuffDef, 0.25f) }, "+25% P.Def"),
-        NpcHarmonySingle(NpcHMight, "Harmony of the Might", "npc_h_might", SkillEffect.BuffPhysAtk,
+        NpcHarmonySingle(NpcHMight, "Harmony of the Might", KeyHMight, SkillEffect.BuffPhysAtk,
             new EffectMagnitude[] { new(SkillEffect.BuffPhysAtk, 0.12f) }, "+12% P.Atk"),
-        NpcHarmonySingle(NpcHFury, "Harmony of the Fury", "npc_h_fury", SkillEffect.BuffAtkSpeed,
+        NpcHarmonySingle(NpcHFury, "Harmony of the Fury", KeyHFury, SkillEffect.BuffAtkSpeed,
             new EffectMagnitude[] { new(SkillEffect.BuffAtkSpeed, 0.15f) }, "+15% Attack Speed"),
-        NpcHarmonySingle(NpcHBody, "Harmony of Body", "npc_h_body", SkillEffect.BuffHp,
+        NpcHarmonySingle(NpcHBody, "Harmony of Body", KeyHBody, SkillEffect.BuffHp,
             new EffectMagnitude[] { new(SkillEffect.BuffHp, 0.30f) }, "+30% Max HP"),
 
         // ----- The three original "Harmony" blessings MOVED OUT on 2026-08-21 -----

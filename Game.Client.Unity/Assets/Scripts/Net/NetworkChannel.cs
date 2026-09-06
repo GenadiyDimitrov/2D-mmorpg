@@ -393,7 +393,8 @@ namespace Game.Client
             _connection.SendAsync("QuestAction", action, id, npcEntityId);
 
         /// <summary>action is "mage" / "fighter" / "custom" / "savepreset" / "delpreset" / "restore" /
-        /// "single" (skillId only used by "single"). ⚠ "full" was removed by `BL-150`.</summary>
+        /// "clear" / "single" (skillId only used by "single"). ⚠ "full" was removed by `BL-150`;
+        /// "clear" (`BL-184`) strips every beneficial effect and is free.</summary>
         public Task BufferActionAsync(Guid npcEntityId, string action, string skillId) =>
             _connection.SendAsync("BufferAction", npcEntityId, action, skillId);
 

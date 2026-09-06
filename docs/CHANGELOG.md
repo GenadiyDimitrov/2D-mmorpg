@@ -7,12 +7,122 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.115.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.115.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-06 (latest) — 0.115.0: the admin buff drawers, FullHeal, and staff flags that survive a relog
+## 2026-09-06 (latest) — 0.115.1: harmonies stop stacking, and a Clear All (`BL-183`, `BL-184`)
+
+⚠ **NEW APK** — `BL-184` adds two buttons. 🟢 **No `game.db` delete.** `BL-183` is entirely
+server-side; an old client gets that fix without updating.
+
+## `BL-183` — a harmony is a GROUP over the eight single harmonies
+
+Your ruling: *"Harmony of swift should not stack with harmony of speed. Harmony of warrior replaces
+harmony of fury, harmony of might. Same goes hor harmony of (body,ward,bulwark) == harmony of
+protection. Think of the as single harmonies and group harmonies -> group buffs replaces singles."*
+
+### It was already written that way, and it had never once worked
+
+`BL-160` (0.109.x) put the eight **single harmonies** on the Spirit Helper's shelf — Ward, Force,
+Swift, Alacrity, Bulwark, Might, Fury, Body, 50,000 gold each — and the four **class harmonies** were
+authored to tear them off, with your words in the comment: *"his acts as a group one so replaces
+them"*. The rule was expressed as `SkillDef.Replaces`.
+
+🔴 **`ApplyBuff` matches `Replaces` against buff KEYS. Every author in the catalog writes skill IDs
+into it.** Those are almost never the same string — a ladder rung's id is `buff_<family>_<rank>` and
+its key is `<family>`; the single harmonies are `npc_harmony_swift` keyed `npc_h_swift`. So the list
+matched nothing, removed nothing, and the two tiers stacked in silence for three versions. Nothing on
+screen said so; the ids looked right at both ends of the file.
+
+🔑 The reason ids got written is that `Replaces` has a **second job** — collapsing a superseded skill
+off the learn list — and all five of *those* call sites are id-based. One field, two meanings, and the
+buff half lost. **The general lesson, and it is the third time this exact shape has cost a version:
+when a wrapper and its buff both carry a string, name which of the two a list is holding.**
+
+### What replaces it
+
+**`SkillDef.CoveredKeys` / `SkillLevel.CoveredKeys`** — a childless buff can now declare the families
+it contains. Covering is the engine's only "these two occupy the same slot" relationship: a GROUP gets
+it free from its `ChildBuffs`, and a harmony (which carries magnitudes, not children) had no way to say
+it at all. Declared, the ordinary family contest does **both halves** of your sentence — the class
+harmony **evicts** the single when it lands, and the Spirit Helper **refuses to sell** it, without
+charging, while the class one stands.
+
+🔑 **Rank had to move with it.** Both tiers sat at rank 100, and at equal rank the engine keeps
+whichever has longer left — the bought single runs an **hour**, a class harmony **five minutes**. The
+covering alone would have resolved backwards and let a 50k single refuse a Warchanter's own harmony.
+Class harmonies now sit one rank above the shelf they cover (`SkillCatalog.HarmonyRank`).
+
+🔑 **It is per RUNG.** A harmony's payload is cumulative and every single goes on sale at exactly the
+level the harmony gains that effect, so:
+
+| rung | Harmony of Protection gains | and claims |
+|---|---|---|
+| 1 @44 | +30% M.Def | Harmony of Ward (sold @44) |
+| 2 @52 | +20% HP regen | — |
+| 3 @56 | +25% P.Def | + Harmony of Bulwark (sold @56) |
+| 4 @66 | +30% Max HP | + Harmony of Body (sold @66) |
+
+Warrior claims Might at rung 4 (@56) and Fury at rung 5 (@58), its first three rungs claim nothing;
+Wizard claims Force at rung 1 (@48) and Alacrity at rung 2 (@52); Speed claims Swift at rung 1 (@48).
+Covering the whole list from rung 1 would let a level-44 Warchanter strip a level-56 player's
+50,000-gold Harmony of Bulwark and hand back nothing — a downgrade the player cannot refuse. Rung by
+rung the swap is exactly even: the harmony's number at that rung **is** the single's number.
+
+⚠ **`Replaces` was removed from the four harmonies rather than repaired** — even fixed it is
+unconditional and per-skill, so it would have broken the rung rule above. Its id→key resolution was
+fixed in the engine as well (it now accepts both), so any other author who wrote ids there gets what
+they meant.
+
+### So it cannot go quietly dead again
+
+- **Startup throws** on a `CoveredKeys` entry that names no real buff key — the def's own list and
+  every rung's.
+- 📐 **`dotnet run --project tools/BalanceMatrix -- --buffs`** prints the covering ladder rung by rung
+  against the level each single sells at, and warns if any of the eight is covered by nothing. The
+  census's "NPC families not covered" check now includes the eight harmonies, which had been excluded
+  on the reasoning that a harmony is covered by nothing — true of a harmony over the *basic* layer, and
+  false of these.
+- The rule is written into `docs/design/BuffLadders.md` and both CSVs (`buffs.csv` banner, the four
+  harmony ladders in `buffer 3rd.csv`).
+
+## `BL-184` — Clear All: every blessing off, ailments left alone
+
+Your ask: *"Add a clear all in the functions menu and in the npc buffer (free) to remove all active
+effects (no debuffs)"*. Both, and the NPC one is free.
+
+- **`Functions > CLEAR ALL BUFFS (debuffs stay)`** — the way back from the button directly above it.
+  Every other lever on that page puts something ON; the only routes off were waiting an hour or
+  relogging, and a relog **restores** your buffs, so that one never worked at all. Both the buffed and
+  the unbuffed state are things a balance read needs and only one of them had a button.
+- **Spirit Helper > `Clear all blessings   free`** — the missing half of your own preset workflow
+  (*"buff fully from npc then remove what u don't need as that class and save it"*). Removing one
+  square at a time was already possible; starting over was not, and with a twenty-slot bar the usual
+  reason to start over is that you filled it with the wrong set. It **asks first** — it is the one row
+  on that window that destroys blessings you may have paid 50,000 gold each for, and it sits directly
+  under a row you came there to press.
+- **`/clearbuffs [name]`** is the command behind both, so it also works from an old client and can be
+  aimed at someone else.
+
+**What survives, and why** — the filter is `BuffInstance.IsDebuff`, the same one every cure and cancel
+path in the game already uses. 🔑 That is deliberately *"carries no harmful flag"* rather than
+*"carries a buff flag"*: half the payloads in this game are fields rather than flags (CC resistance,
+MP cost, heal-received), so asking "is this a buff?" would quietly skip them.
+
+| kept | why |
+|---|---|
+| **debuffs** | your parenthesis. A free button that also cured poison would make every curse in the game a walk back to town. |
+| **internal effects** | the DoT stack counters — bookkeeping, never drawn on the bar, consumed by their own burst skill. |
+| **`Cancellable: false`** | the existing "cannot be cured or cancelled" flag (Burn, the boss judgment). All harmful today, so this line is belt-and-braces. |
+| **rune buffs / the Item row** | a rune's buff is the item in your bag being worn, not something you were given. `ReconcileTimedItems` re-applies it within the second, so clearing it would flicker the bar and inflate the count with something that never left. |
+
+⚠ **Toggles DO go.** A stance is an active effect and you said all of them. Removing the buff *is* how
+a toggle is turned off — the same thing the skill button and the bar's double-click do — so nothing is
+left behind claiming it is still on. One tap to put back.
+
+## 2026-09-06 — 0.115.0: the admin buff drawers, FullHeal, and staff flags that survive a relog
 
 `BL-180`…`BL-182`, three asks from one message, all built. ⚠ **NEW APK**, and 🔴 **delete
 `Game.Server/game.db`** — `BL-182` adds two columns and `EnsureCreated()` never adds one to an

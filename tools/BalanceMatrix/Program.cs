@@ -6982,13 +6982,15 @@ static class BuffCensus
         // (2026-09-03) — the admin set no longer ends `.Concat(NewbieBuffSet)`. This is the safety that
         // line was pretending to give, measured instead of assumed: every family the NPC sells should
         // already be inside a group the buffer's own kit casts. A name here is a hole in the CLASS kit.
-        // ⚠ THE HARMONIES AND MARKS ARE EXCLUDED, and must be. `BL-160`/`BL-161` put eleven more ids on
-        // the shelf whose whole design is to sit on their OWN keys and be covered by nothing — the
-        // buffer's groups cover BASIC families, and a harmony stacks on top of the basic layer by
-        // definition. Left in, they would print as eleven "holes in the CLASS kit" that are not holes,
-        // and a warning that cries wolf is worse than no warning.
-        var basicShelf = SkillCatalog.NewbieBuffSet
-            .Except(SkillCatalog.NpcSingleHarmonySet).Except(SkillCatalog.NpcMarkSet).ToArray();
+        // ⚠ ONLY THE MARKS ARE EXCLUDED NOW. `BL-161`'s three sit on their own shared key and no group
+        // in the buffer's kit is meant to contain one, so they would print as holes that are not holes.
+        // 🔑 THE EIGHT SINGLE HARMONIES CAME BACK INTO THE CHECK (`BL-183`). They were excluded on the
+        // reasoning that a harmony "sits on its OWN key and is covered by nothing" — true of a harmony
+        // over the BASIC layer, and false of these: each is one effect lifted out of a class harmony,
+        // and the owner's ruling (2026-09-06) is that the class version is the GROUP over them. So they
+        // are now covered, and the whole point of measuring is that this line fails the day a ninth
+        // single harmony is added to the shelf without being named in a class harmony's CoveredKeys.
+        var basicShelf = SkillCatalog.NewbieBuffSet.Except(SkillCatalog.NpcMarkSet).ToArray();
         var uncovered = new List<string>();
         foreach (var id in basicShelf)
         {
@@ -6999,11 +7001,13 @@ static class BuffCensus
         Console.WriteLine($"  >>> OF WHICH COUNT AGAINST THE CAP: {slots} / {GameConstants.MaxBuffSlots}" +
                           $"   — {GameConstants.MaxBuffSlots - slots} free");
         Console.WriteLine(uncovered.Count == 0
-            ? $"  >>> NPC FAMILIES NOT COVERED BY THE ADMIN SET: none ({basicShelf.Length} basic blessings checked; harmonies + Marks excluded by design)"
+            ? $"  >>> NPC FAMILIES NOT COVERED BY THE ADMIN SET: none ({basicShelf.Length} basic blessings checked; Marks excluded by design)"
             : $"  >>> ⚠ NPC FAMILIES THE BUFFER'S KIT DOES NOT COVER: {string.Join(", ", uncovered)}");
         Console.WriteLine();
         foreach (var kindGroup in bar.GroupBy(b => b.Kind).OrderBy(g => Order(g.Key)))
             Console.WriteLine($"      {kindGroup.Key,-22} {kindGroup.Count(),3}");
+
+        PrintHarmonyCovering();
 
         Console.WriteLine();
         Console.WriteLine("=== 2. THE CATALOG — every timed buff that exists, by what it is ===");
@@ -7048,6 +7052,51 @@ static class BuffCensus
 
     private static int DistinctFamilies(IEnumerable<SkillDef> defs) =>
         defs.Select(d => GameLoopService.BuffPlan(d, d.MaxLevel).Key).Distinct().Count();
+
+    /// <summary>`BL-183` — the covering ladder, rung by rung, read off the real
+    /// <c>GameLoopService.BuffPlan</c>. The owner's rule is *"single harmonies and group harmonies -&gt;
+    /// group buffs replaces singles"*, and the whole difficulty of it is WHEN: a harmony's payload is
+    /// cumulative, so Harmony of Protection may only claim Harmony of Bulwark from the rung that
+    /// actually grants +25% P.Def. This prints that alignment so it can be checked against his CSV
+    /// instead of argued about — and so the day a ninth single appears, the hole is visible.</summary>
+    private static void PrintHarmonyCovering()
+    {
+        Console.WriteLine();
+        Console.WriteLine("  ── HARMONY COVERING LADDER (BL-183): which NPC single each class rung absorbs ──");
+        Console.WriteLine("     A single is evicted on landing and refused afterwards, exactly as a group does.");
+        Console.WriteLine();
+
+        // Where each single sits, so the rung that claims it can be checked against the level it sells at.
+        var soldAt = SkillCatalog.NpcSingleHarmonySet
+            .ToDictionary(id => GameLoopService.BuffPlan(SkillCatalog.Get(id)!, 1).Key,
+                          id => (Name: SkillCatalog.Get(id)!.Name, Lvl: SkillCatalog.NpcBuffMinLevel(id)));
+
+        var claimed = new HashSet<string>(StringComparer.Ordinal);
+        foreach (string id in new[] { SkillCatalog.NpcHarmonyWarrior, SkillCatalog.NpcHarmonyProtection,
+                                      SkillCatalog.NpcHarmonyWizard,  SkillCatalog.WcHarmonySpeed })
+        {
+            if (SkillCatalog.Get(id) is not SkillDef def) continue;
+            Console.WriteLine($"     {def.Name}   (rank {GameLoopService.BuffPlan(def, 1).Rank} at rung 1, "
+                            + $"NPC singles sit at {SkillCatalog.NpcBuffRank})");
+            for (int lvl = 1; lvl <= def.MaxLevel; lvl++)
+            {
+                var cov = GameLoopService.BuffPlan(def, lvl).Covered;
+                foreach (var k in cov) claimed.Add(k);
+                string names = cov.Length == 0 ? "—"
+                    : string.Join(", ", cov.Select(k => soldAt.TryGetValue(k, out var s)
+                                                        ? $"{s.Name} (sold @{s.Lvl})" : k));
+                Console.WriteLine($"         rung {lvl}  rank {GameLoopService.BuffPlan(def, lvl).Rank}   covers: {names}");
+            }
+            Console.WriteLine();
+        }
+
+        // The guard the section exists for: eight singles, every one of them inside a class harmony.
+        var orphans = soldAt.Where(kv => !claimed.Contains(kv.Key)).Select(kv => kv.Value.Name).ToList();
+        Console.WriteLine(orphans.Count == 0
+            ? $"     >>> ALL {soldAt.Count} SINGLE HARMONIES ARE COVERED by a class harmony rung."
+            : $"     >>> ⚠ SINGLE HARMONIES NO CLASS HARMONY COVERS: {string.Join(", ", orphans)}"
+            + " — each of these can stack with the class tier, which the owner ruled out on 2026-09-06.");
+    }
 
     private static bool Conflicts(string keyA, string[] covA, string keyB, string[] covB) =>
         keyA == keyB || covA.Contains(keyB) || covB.Contains(keyA) || covA.Intersect(covB).Any();

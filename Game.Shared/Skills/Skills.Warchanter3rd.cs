@@ -26,9 +26,16 @@ namespace Game.Shared;
 /// all survived proof-reading; the arithmetic did not). <b>If you ever retune a single's top rung,
 /// re-derive every group that contains it</b> — the check is only as good as the sum.</para>
 ///
-/// <para>🔑 <b>A HARMONY IS NOT A GROUP.</b> It keeps its own <c>BuffKey</c>, covers no family and
-/// evicts nothing — harmonies MULTIPLY on top of the basic layer, which is the whole reason the
-/// tier exists (see docs/design/BuffLadders.md and the rejected `buffer_auto 3rd.md` draft). What
+/// <para>🔑 <b>A HARMONY IS NOT A GROUP — OVER THE BASIC LAYER.</b> It keeps its own <c>BuffKey</c>,
+/// covers no BASIC family and evicts nothing there: harmonies MULTIPLY on top of Might, Focus and the
+/// rest, which is the whole reason the tier exists (see docs/design/BuffLadders.md and the rejected
+/// `buffer_auto 3rd.md` draft).
+/// ⚠ <b>It IS a group over the eight SINGLE harmonies the Spirit Helper sells</b> (`BL-183`, owner
+/// 2026-09-06: *"Think of them as single harmonies and group harmonies -&gt; group buffs replaces
+/// singles"*). Those are the same tier, lifted one effect at a time out of these very ladders, so
+/// Harmony of the Warrior covers Harmony of the Might and of the Fury and the two can never sit
+/// together. That is <c>CoveredKeys</c> on the factory below, and it is the ONLY covering a harmony
+/// does — a harmony over a basic single is still a multiply. What
 /// changed on 2026-08-21 is their SHAPE: they are now <b>5-minute buffs on a 2-minute reuse</b>,
 /// not 20-minute ones. His reasoning, verbatim: *"its not a buffs they are additional support …
 /// The idea is the buffer is a must .. not enter party buffs get kicked for 20 mins ... need to
@@ -111,33 +118,57 @@ public static partial class SkillCatalog
                     .Concat(fourth).ToArray(),
             Description: desc + " Blesses you and nearby allies for 20 minutes.");
 
-    /// <summary>A HARMONY rung. Own key, covers nothing, stacks on top of everything — 5 minutes
-    /// on a 2-minute reuse (owner 2026-08-21). <paramref name="mags"/> is the CUMULATIVE payload
-    /// at this rung: a harmony level does not add to the one below it, it replaces it.</summary>
-    private static SkillLevel HarmonyRung(int mp, int sp, EffectMagnitude[] mags, string desc,
-        float physMpCost = 0f, float magicMpCost = 0f) =>
-        new(MpCost: mp, SpCost: sp, Magnitudes: mags, Description: desc + " (5 minutes).",
-            PhysMpCostPct: physMpCost, MagicMpCostPct: magicMpCost);
-
-    /// <param name="replaces">`BL-160` — the NPC buffer's SINGLE harmonies this one contains. A
-    /// harmony carries `Magnitudes`, not `ChildBuffs`, so it is not a "group" in the engine's sense and
-    /// cannot cover a family automatically; `Replaces` is what makes the owner's rule true —
-    /// *"his acts as a group one so replaces them"*. Casting Harmony of Protection tears out the
-    /// player's bought Harmony of Ward / Bulwark / Body and takes ONE bar slot instead of three, which
-    /// is exactly his argument: *"at 56 mine is already 1 space 2 buffs .. its strategy"*.
+    /// <summary>A HARMONY rung. Own key, stacks on top of the whole basic layer — 5 minutes on a
+    /// 2-minute reuse (owner 2026-08-21). <paramref name="mags"/> is the CUMULATIVE payload at this
+    /// rung: a harmony level does not add to the one below it, it replaces it.</summary>
+    /// <param name="covers">`BL-183` — the NPC single harmonies THIS rung has already absorbed, as
+    /// buff keys. Null inherits the def's full list, which is what every rung from the last new effect
+    /// upward wants; an EMPTY array covers nothing, which is what the rungs below the first one want.
     ///
-    /// ⚠ It removes them; it does not BLOCK them. Buy a single harmony after a Warchanter has already
-    /// blessed you and it still lands, redundantly, for 50k. That is the player's mistake to make and
-    /// the same shape as buying a potion over a group.</param>
+    /// 🔑 It is per-rung for one reason and it is worth stating plainly: the payload is cumulative and
+    /// each single goes on sale at exactly the level the harmony gains that effect. Harmony of
+    /// Protection is +30% M.Def at 44 and does not gain +25% P.Def until 56 — so covering
+    /// `npc_h_bulwark` from rung 1 would let a level-44 Warchanter tear a level-56 player's 50,000-gold
+    /// Harmony of Bulwark off and hand back nothing. Rung by rung the swap is exactly even: the
+    /// harmony's number at that rung and the single's number are the same number.</param>
+    private static SkillLevel HarmonyRung(int mp, int sp, EffectMagnitude[] mags, string desc,
+        float physMpCost = 0f, float magicMpCost = 0f, string[]? covers = null) =>
+        new(MpCost: mp, SpCost: sp, Magnitudes: mags, Description: desc + " (5 minutes).",
+            PhysMpCostPct: physMpCost, MagicMpCostPct: magicMpCost, CoveredKeys: covers);
+
+    /// <param name="covers">`BL-183` — the NPC buffer's SINGLE harmonies this one contains, as BUFF
+    /// KEYS, and the def-level FULL list: every rung from the last new effect upward inherits it (see
+    /// <see cref="HarmonyRung"/>'s own `covers`, which states the partial lists below that).
+    ///
+    /// <para>A harmony carries `Magnitudes`, not `ChildBuffs`, so it is not a "group" in the engine's
+    /// structural sense and cannot cover a family automatically. This is how it says so anyway, and it
+    /// makes the owner's rule true in BOTH directions: the single is evicted when the harmony lands
+    /// and refused while it stands. *"at 56 mine is already 1 space 2 buffs .. its strategy"*.</para>
+    ///
+    /// <para>🔴 THIS WAS `Replaces` UNTIL 2026-09-06 AND IT NEVER WORKED. `ApplyBuff` matches
+    /// `Replaces` against buff KEYS; the entries were skill IDs (`npc_harmony_swift` vs `npc_h_swift`),
+    /// so nothing was ever torn out and the two tiers stacked in silence for three versions. Owner:
+    /// *"Harmony of swift should not stack with harmony of speed. Harmony of warrior replaces harmony
+    /// of fury, harmony of might … Think of them as single harmonies and group harmonies -&gt; group
+    /// buffs replaces singles."* The `replaces:` argument is GONE rather than fixed, and deliberately:
+    /// `Replaces` is unconditional and def-level, so at rung 1 it would have stripped singles the
+    /// harmony does not yet contain — the covering above is per-rung and rank-arbitrated, which is the
+    /// behaviour the ladder actually needs.</para>
+    ///
+    /// <para>⚠ Keys, not ids, and the two spellings differ on purpose. Startup asserts every key here
+    /// is real, so the pair cannot drift apart again the way it just did.</para></param>
     private static SkillDef WcHarmony(string id, string name, string buffKey,
-        SkillEffect effect, SkillLevel[] levels, string desc, string[]? replaces = null) =>
+        SkillEffect effect, SkillLevel[] levels, string desc, string[]? covers = null) =>
         new(id, name, BaseClass.Mage, effect,
             MpCost: levels[0].MpCost, CastTicks: 10, CooldownTicks: 1200, Range: 600, Power: 0,
-            DurationTicks: 3000, BuffKey: buffKey, Rank: NpcBuffRank,
+            // ⚠ HarmonyRank, not NpcBuffRank — one above the shelf it covers. At equal rank ApplyBuff
+            // keeps the LONGER buff, and the NPC's single harmonies run an hour against this one's five
+            // minutes, so the covering would have resolved the wrong way round. See the const's note.
+            DurationTicks: 3000, BuffKey: buffKey, Rank: HarmonyRank,
             Category: SkillCategory.Buff, SpCost: levels[0].SpCost,
             Magnitudes: levels[0].Magnitudes,
             TargetMode: TargetMode.AlliesInRadius, AreaRadius: 800f,
-            Replaces: replaces,
+            CoveredKeys: covers,
             Levels: levels,
             Description: desc);
 
@@ -297,7 +328,7 @@ public static partial class SkillCatalog
                     "+20 Move Speed and +3 Evasion for you and nearby allies"),
             },
             "Quickens you and nearby allies. Stacks on top of Swift and Agility.",
-             replaces: new[] { NpcHSwift }),
+             covers: new[] { KeyHSwift }),
 
         // ── HARMONY OF PROTECTION — 5 rungs @44/52/56/66/74 ──────────────────────────────────
         // The defensive harmony, and the only one that reaches its final effect at 74. Reflect is
@@ -308,16 +339,20 @@ public static partial class SkillCatalog
             | SkillEffect.BuffHp | SkillEffect.BuffReflect,
             new[]
             {
+                // 🔑 `BL-183`, the covering ladder alongside the payload ladder — @44 this is Harmony
+                //    of Ward and nothing more, so it covers Ward and nothing more. @56 it absorbs
+                //    Bulwark, @66 Body, and from there the def's full list is inherited (null).
                 HarmonyRung(60, 43000, new EffectMagnitude[]
                     { new(SkillEffect.BuffMagicDef, 0.30f) },
-                    "+30% M.Def"),
+                    "+30% M.Def", covers: new[] { KeyHWard }),
                 HarmonyRung(126, 74000, new EffectMagnitude[]
                     { new(SkillEffect.BuffMagicDef, 0.30f), new(SkillEffect.BuffHpRegen, 0.20f) },
-                    "+30% M.Def, +20% HP regeneration"),
+                    "+30% M.Def, +20% HP regeneration", covers: new[] { KeyHWard }),
                 HarmonyRung(199, 81000, new EffectMagnitude[]
                     { new(SkillEffect.BuffMagicDef, 0.30f), new(SkillEffect.BuffHpRegen, 0.20f),
                       new(SkillEffect.BuffDef, 0.25f) },
-                    "+30% M.Def, +20% HP regeneration, +25% P.Def"),
+                    "+30% M.Def, +20% HP regeneration, +25% P.Def",
+                    covers: new[] { KeyHWard, KeyHBulwark }),
                 HarmonyRung(279, 280000, new EffectMagnitude[]
                     { new(SkillEffect.BuffMagicDef, 0.30f), new(SkillEffect.BuffHpRegen, 0.20f),
                       new(SkillEffect.BuffDef, 0.25f), new(SkillEffect.BuffHp, 0.30f) },
@@ -330,7 +365,7 @@ public static partial class SkillCatalog
             // Rung 6, his `buffer 4th.csv` @76 (`BL-108`) — the same five lines plus bow resistance.
             }.Concat(BufferFourthProtectionRungs()).ToArray(),
             "Shields you and nearby allies. Stacks on top of every ordinary defensive buff.",
-             replaces: new[] { NpcHWard, NpcHBulwark, NpcHBody }),
+             covers:   new[] { KeyHWard, KeyHBulwark, KeyHBody }),
 
         // ── HARMONY OF THE WARRIOR — 6 rungs @40/44/48/56/58/74 ──────────────────────────────
         //
@@ -348,21 +383,27 @@ public static partial class SkillCatalog
             | SkillEffect.BuffPhysAtk | SkillEffect.BuffAtkSpeed | SkillEffect.BuffMeleeVamp,
             new[]
             {
+                // 🔑 `BL-183` — the first three rungs (crit rate, crit damage, accuracy) have no NPC
+                //    single behind them at all, so they cover NOTHING: an empty array, not null, which
+                //    would inherit the def's full list. P.Atk arrives at 56 and attack speed at 58,
+                //    the exact levels Harmony of the Might and of the Fury go on sale.
                 HarmonyRung(60, 36000, new EffectMagnitude[]
                     { new(SkillEffect.BuffCritRate, 1.00f) },
-                    "double critical rate"),
+                    "double critical rate", covers: Array.Empty<string>()),
                 HarmonyRung(126, 43000, new EffectMagnitude[]
                     { new(SkillEffect.BuffCritRate, 1.00f), new(SkillEffect.BuffCritDamage, 0.35f) },
-                    "double critical rate, +35% critical damage"),
+                    "double critical rate, +35% critical damage", covers: Array.Empty<string>()),
                 HarmonyRung(199, 64000, new EffectMagnitude[]
                     { new(SkillEffect.BuffCritRate, 1.00f), new(SkillEffect.BuffCritDamage, 0.35f),
                       new(SkillEffect.BuffAccuracy, 4, ModifierMode.Flat) },
-                    "double critical rate, +35% critical damage, +4 accuracy"),
+                    "double critical rate, +35% critical damage, +4 accuracy",
+                    covers: Array.Empty<string>()),
                 HarmonyRung(279, 81000, new EffectMagnitude[]
                     { new(SkillEffect.BuffCritRate, 1.00f), new(SkillEffect.BuffCritDamage, 0.35f),
                       new(SkillEffect.BuffAccuracy, 4, ModifierMode.Flat),
                       new(SkillEffect.BuffPhysAtk, 0.12f) },
-                    "double critical rate, +35% critical damage, +4 accuracy, +12% P.Atk"),
+                    "double critical rate, +35% critical damage, +4 accuracy, +12% P.Atk",
+                    covers: new[] { KeyHMight }),
                 HarmonyRung(367, 88000, new EffectMagnitude[]
                     { new(SkillEffect.BuffCritRate, 1.00f), new(SkillEffect.BuffCritDamage, 0.35f),
                       new(SkillEffect.BuffAccuracy, 4, ModifierMode.Flat),
@@ -377,7 +418,7 @@ public static partial class SkillCatalog
                     + "+15% attack speed, 8% melee vampirism"),
             },
             "Drives you and nearby allies into a fighting song. Stacks on top of Focus and Ferocity.",
-            replaces: new[] { NpcHMight, NpcHFury }),
+            covers:   new[] { KeyHMight, KeyHFury }),
 
         // ── HARMONY OF THE WIZARD — 2 rungs @48/52, and it STOPS ─────────────────────────────
         // ⚠ The old def also carried +20% MP regen and a −30% magic-skill MP cost. Both are GONE
@@ -387,9 +428,10 @@ public static partial class SkillCatalog
             SkillEffect.BuffMagAtk | SkillEffect.BuffCastSpeed,
             new[]
             {
+                // `BL-183` — M.Atk @48 is Harmony of Force; cast speed (Harmony of Alacrity) is @52.
                 HarmonyRung(60, 64000, new EffectMagnitude[]
                     { new(SkillEffect.BuffMagAtk, 0.10f) },
-                    "+10% M.Atk"),
+                    "+10% M.Atk", covers: new[] { KeyHForce }),
                 HarmonyRung(126, 74000, new EffectMagnitude[]
                     { new(SkillEffect.BuffMagAtk, 0.10f), new(SkillEffect.BuffCastSpeed, 0.30f) },
                     "+10% M.Atk, +30% cast speed"),
@@ -398,6 +440,6 @@ public static partial class SkillCatalog
             //    (`BL-108`), adding MP regen, then magic crit rate, then magic crit damage.
             }.Concat(BufferFourthWizardRungs()).ToArray(),
             "Sharpens the casters around you. Stacks on top of Force and Alacrity.",
-            replaces: new[] { NpcHForce, NpcHAlacrity }),
+            covers:   new[] { KeyHForce, KeyHAlacrity }),
     };
 }

@@ -327,6 +327,20 @@ namespace Game.Client
                     DialogRow("Restore HP/MP   " + Cost(d.Buffer.RestoreCost), "Restore",
                               () => Boot.BufferAction("restore", ""), UiKit.Text);
 
+                    // `BL-184` — CLEAR ALL, free. Owner: *"Add a clear all in the functions menu and in
+                    // the npc buffer (free) to remove all active effects (no debuffs)"*. It is the
+                    // missing half of the preset workflow — *"buff fully from npc then remove what u
+                    // don't need"* — because removing one square at a time was possible and starting
+                    // over was not.
+                    // ⚠ It ASKS first. Everything else on this window adds something and is undoable by
+                    // pressing it again; this is the one row that destroys an hour of blessings you may
+                    // have paid 50,000 gold each for, and it sits directly under a row you came here to
+                    // press. Free to run, expensive to run by accident.
+                    DialogRow("Clear all blessings   free", "Clear",
+                              () => Ask("Remove every blessing you are carrying? Ailments and curses stay.",
+                                        "Clear", () => Boot.BufferAction("clear", "")),
+                              UiKit.TextDim);
+
                     // `BL-150` — the eleven paid blessings unlock at 40. A locked row is SHOWN, dimmed,
                     // and says when it opens, rather than being hidden: the list is also how you learn
                     // what is coming, and a buff that silently appears at 40 is a buff nobody looks for.

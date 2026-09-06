@@ -301,6 +301,47 @@ no potion or scroll analogue at all.
   other today, so they may stay monolithic at first; split them into children only when a second
   Harmony-tier source exists.
 
+### ⚠ 2026-09-06, `BL-183` — the second Harmony-tier source arrived, and it is covered
+
+The bullet above ends *"split them into children only when a second Harmony-tier source exists"*.
+`BL-160` created one: the Spirit Helper now sells **eight SINGLE harmonies** (`npc_harmony_ward`,
+`_force`, `_swift`, `_alacrity`, `_bulwark`, `_might`, `_fury`, `_body`), each lifting exactly one
+effect out of a class harmony at exactly the level the Warchanter gains it. They were not split into
+children — a harmony carries `Magnitudes`, and rebuilding four ladders as child references would have
+been a large change for a small rule — so the relationship is declared instead.
+
+**The rule (owner, 2026-09-06):** *"Harmony of swift should not stack with harmony of speed. Harmony
+of warrior replaces harmony of fury, harmony of might. Same goes for harmony of (body, ward, bulwark)
+== harmony of protection. Think of them as single harmonies and group harmonies -> group buffs
+replaces singles."*
+
+**How it is expressed** — `SkillDef.CoveredKeys` / `SkillLevel.CoveredKeys`, a list of buff KEYS a
+childless buff covers. `BuffPlan` returns them as the buff's covered families, so the ordinary Rule 1
+family contest does the rest: the class harmony evicts the single on landing and refuses it while it
+stands. Two things make it work and both are easy to get wrong:
+
+1. **Rank.** Class harmonies sit at `SkillCatalog.HarmonyRank` = `NpcBuffRank + 1`. Both tiers used to
+   sit at 100, and at equal rank `ApplyBuff` keeps whichever has **longer left** — the NPC single runs
+   an hour, a class harmony five minutes, so the covering would have resolved backwards.
+2. **Per rung.** A harmony's payload is cumulative and each single sells at the level the harmony
+   gains that effect, so covering is per-rung. Harmony of Protection rung 1 (@44) is +30% M.Def and
+   covers **Ward only**; Bulwark joins at rung 3 (@56), Body at rung 4 (@66). Covering the full list
+   from rung 1 would let a level-44 Warchanter strip a level-56 player's 50,000-gold Harmony of
+   Bulwark and hand back nothing.
+
+**Do not express this with `Replaces`.** It was, from `BL-160` until this entry, and it never once
+fired: `ApplyBuff` matches `Replaces` against buff **keys**, and every author in the catalog writes
+skill **ids** into it (that is what its other five call sites — the learn-list collapse — need). The
+harmony rows held `npc_harmony_swift` while the buff on the bar was keyed `npc_h_swift`, so the two
+tiers stacked in silence for three versions. `Replaces` is also unconditional and def-level, so even
+fixed it would break the per-rung rule above. Both halves were addressed: the `replaces:` arguments on
+the four harmonies are gone, and `ApplyBuff`'s Rule 2 now resolves ids to keys as well as accepting
+literal keys, so any other author who wrote ids there gets what they meant.
+
+**Measured, not asserted:** `dotnet run --project tools/BalanceMatrix -- --buffs` prints the covering
+ladder rung by rung with the level each single sells at, and warns if any of the eight is covered by
+nothing. Startup throws on a `CoveredKeys` entry that is not a real buff key.
+
 ## Auto-hunt changes that ship with this
 
 - **`ChildBuffs`-aware "already up"** — see *Three code changes* #3. Mandatory, not optional.

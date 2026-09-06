@@ -3122,3 +3122,88 @@ stealth. No second path to keep in step.
 absent; it never adds a column.
 
 ---
+
+## `BL-183` — a harmony is a GROUP over the eight single harmonies (cut 2026-09-06, built in 0.115.1)
+
+Your ruling, 2026-09-06: *"Harmony of swift should not stack with harmony of speed. Harmony of warrior
+replaces harmony of fury, harmony of might. Same goes hor harmony of (body,ward,bulwark) == harmony of
+protection. Think of the as single harmonies and group harmonies -> group buffs replaces singles."*
+
+**That was already the intent, and it had never once worked.** `BL-160` gave the Spirit Helper the
+eight single harmonies and the four class harmonies were written to tear them off — the note in the
+code even quoted you: *"his acts as a group one so replaces them"*. It was expressed as
+`SkillDef.Replaces`, and `ApplyBuff` matches that list against buff **keys** while every author in the
+catalog writes skill **ids** into it (its five other call sites — collapsing a superseded skill off the
+learn list — need ids). The rows held `npc_harmony_swift`; the buff on the bar was keyed `npc_h_swift`.
+Nothing matched, nothing was removed, and the two tiers stacked in silence for three versions.
+
+**What it is now.** A new field, `CoveredKeys`, lets a childless buff declare the families it contains
+— the thing a GROUP gets for free from its children and a harmony could never say, because a harmony
+carries magnitudes rather than children. With it declared, the ordinary family contest does both
+halves of your sentence: the class harmony **evicts** the single when it lands, and the Spirit Helper
+**refuses to sell** it (and does not charge) while the class one stands.
+
+🔑 **Rank had to move too.** Both tiers sat at rank 100, and at equal rank the engine keeps whichever
+has longer left — the bought single runs an **hour**, a class harmony **five minutes**, so the rule
+would have resolved backwards and the 50k single would have refused the Warchanter. Class harmonies
+now sit one rank above the shelf they cover.
+
+🔑 **It is per RUNG, not per skill.** A harmony's payload is cumulative and each single goes on sale at
+exactly the level the harmony gains that effect, so Harmony of Protection claims Harmony of Ward from
+rung 1 (@44), Bulwark only from rung 3 (@56) and Body only from rung 4 (@66). Covering all three from
+rung 1 would let a level-44 Warchanter strip a level-56 player's 50,000-gold Harmony of Bulwark and
+hand back nothing — a downgrade the player cannot refuse. Rung by rung the swap is exactly even: the
+harmony's number at that rung and the single's number are the same number.
+
+⚠ **`Replaces` was removed from the four harmonies rather than repaired.** Even fixed it is
+unconditional and per-SKILL, so it would have broken the rung rule above. Its id→key resolution *was*
+fixed in the engine as well, so any other author who wrote ids there now gets what they meant.
+
+📐 **Measured, not asserted** — `dotnet run --project tools/BalanceMatrix -- --buffs` prints the
+covering ladder rung by rung against the level each single sells at, and warns if any of the eight is
+covered by nothing. Startup throws on a covered key that names no real buff.
+
+No schema change; no new APK (the rule is entirely server-side).
+
+---
+
+## `BL-184` — a Clear All in Functions and at the Spirit Helper, free (cut 2026-09-06, built in 0.115.1)
+
+Your ask: *"Add a clear all in the functions menu and in the npc buffer (free) to remove all active
+effects (no debuffs)"*. Both places, and the NPC one is free.
+
+**Functions** now has `CLEAR ALL BUFFS (debuffs stay)` directly under the buff buttons — the way back
+from them. Everything else on that page puts something ON, and the only routes off were waiting an
+hour or relogging, which **restores** buffs and therefore never worked. Both the buffed and the
+unbuffed state are things a balance read needs; only one of them had a button.
+
+**The Spirit Helper** gets `Clear all blessings   free`, under Restore. It is the missing half of your
+own preset workflow (`BL-95`: *"the idea is to buff fully from npc then remove what u don't need as
+that class and save it"*) — removing one square at a time was possible, starting over was not, and
+with a twenty-slot bar the usual reason to start over is that you filled it with the wrong set.
+
+⚠ It **asks before it fires**. Everything else on that window adds something and is undone by pressing
+it again; this is the one row that destroys blessings you may have paid 50,000 gold each for, and it
+sits directly under a row you came there to press. Free to run, expensive to run by accident.
+
+⚠ It **stays free**, and that is a rule rather than a price point: the value of the button is that
+pressing it is never a decision. Charge for it and "clear and rebuy" becomes strictly worse than
+logging out, which is the behaviour it exists to remove.
+
+`/clearbuffs [name]` is the command behind both, so it works from an old client and can be aimed at
+someone else.
+
+🔑 **What survives.** The filter is `BuffInstance.IsDebuff` — the same one every cure and cancel path
+already uses, and deliberately *"carries no harmful flag"* rather than *"carries a buff flag"*: half
+the payloads in this game are fields rather than flags, so the second reading would quietly skip them.
+Also kept: **internal** effects (DoT stack counters — bookkeeping, never on the bar), anything flagged
+**not cancellable** (Burn, the boss judgment), and **rune buffs**, which are the item in your bag being
+worn rather than something you were given — the reconciliation loop re-applies one within the second,
+so clearing it would only flicker the bar and inflate the count.
+
+⚠ **Toggles DO go** — a stance is an active effect and you said all of them. Removing the buff is
+exactly how a toggle is turned off already, so nothing is left behind claiming it is still on.
+
+⚠ **NEW APK** (two buttons). No schema change.
+
+---

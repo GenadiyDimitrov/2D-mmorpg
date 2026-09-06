@@ -6747,7 +6747,7 @@ public class GameLoopService : BackgroundService
                         "/spd <m|a|c> <v> (bare /spd resets), /bag <name>, /give <name>, " +
                         "/givegold <name> <amount>, /lvl [name] <level|max>, /sp [name] <amount|max>, " +
                         "/exp [name] <amount|max>, /droprate [group|gear|global|amount|item <id>] [mult], " +
-                        "/titleright <name> <on|off>, /buff [name] [level], " +
+                        "/titleright <name> <on|off>, /buff [name] [level], /clearbuffs [name], " +
                         "/server <shutdown|reboot|on> [min] [adminOnly]" +
                         (admin.Role == AccountRole.Owner
                             ? "  —  Owner: only you may /role … admin." : ""),
@@ -6798,6 +6798,40 @@ public class GameLoopService : BackgroundService
                 SendSystemToEntity(healTarget, "Fully restored.");
                 if (!ReferenceEquals(healTarget, admin))
                     SendSystemToEntity(admin, $"{healTarget.Name} fully restored.");
+                break;
+            }
+
+            // `BL-184` — `/clearbuffs [name]`: every beneficial effect off, debuffs left alone. Owner,
+            // 2026-09-06: *"Add a clear all in the functions menu and in the npc buffer (free) to remove
+            // all active effects (no debuffs)"*. The staff half of the same button.
+            //
+            // 🔑 It is the exact counterpart of the Full Buffs button beside it: that one is how you get
+            // to the fully-buffed state the balance numbers are read at, and until now there was no way
+            // back to the UNBUFFED one except waiting an hour or relogging (which restores them). Both
+            // states are things a test needs, and only one of them had a button.
+            //
+            // ⚠ Debuffs survive — his parenthesis. `/cure` is the other command, and keeping them
+            // separate is what lets a test clear its buffs *while* a curse is running, which is a state
+            // worth being able to reach on purpose.
+            case "clearbuffs":
+            {
+                Entity clearTarget = admin;
+                if (arg.Length > 0)
+                {
+                    if (FindOnlinePlayer(arg) is not Entity found)
+                    {
+                        SendSystemToEntity(admin, $"'{arg}' is not online.");
+                        break;
+                    }
+                    clearTarget = found;
+                }
+                string clearWho = ReferenceEquals(clearTarget, admin) ? "You" : clearTarget.Name;
+                int cleared = ClearBeneficialBuffs(clearTarget);
+                SendSystemToEntity(admin, cleared == 0
+                    ? $"{clearWho} had no beneficial effects to clear."
+                    : $"{clearWho} cleared: {cleared} effect{(cleared == 1 ? "" : "s")} removed (debuffs left alone).");
+                if (cleared > 0 && !ReferenceEquals(clearTarget, admin))
+                    SendSystemToEntity(clearTarget, $"{admin.Name} removed your blessings.");
                 break;
             }
 
@@ -11855,16 +11889,28 @@ public class GameLoopService : BackgroundService
         var kids = def.ChildBuffsAt(level);
         if (kids is { Length: 1 } && SkillCatalog.Get(kids[0]) is SkillDef only)
         {
+            // ⚠ The wrapper's own CoveredKeys is deliberately NOT merged: the CHILD is the buff that
+            // lands, so covering declared out here would describe a buff nobody is wearing. SkillDef's
+            // note on the field says so; put it on the child.
             var inner = BuffPlan(only, 1);
             return (inner.Key, inner.Rank, inner.Covered, def.DurationTicks);
         }
         string key = string.IsNullOrEmpty(def.BuffKey) ? def.Name : def.BuffKey;
+        // `BL-183` — declared covering, on top of whatever the children imply. This is how a HARMONY
+        // says "I am the group version of these singles": it carries Magnitudes rather than ChildBuffs,
+        // so the structural test below never sees it and it has no other way to say it.
+        // ⚠ PER RUNG (`CoveredKeysAt`), because a harmony's payload is cumulative and each of its
+        // effects arrives at the level the matching NPC single goes on sale. Rung 1 of Harmony of
+        // Protection is +30% M.Def and covers Harmony of Ward — and nothing else, or a level-44
+        // Warchanter would strip a level-56 player's Harmony of Bulwark and give nothing back.
+        var declared = def.CoveredKeysAt(level) ?? Array.Empty<string>();
         if (kids is { Length: > 1 })
         {
-            var covered = new List<string>(kids.Length);
+            var covered = new List<string>(kids.Length + declared.Length);
             foreach (var childId in kids)
                 if (SkillCatalog.Get(childId) is SkillDef child)
                     covered.Add(string.IsNullOrEmpty(child.BuffKey) ? child.Name : child.BuffKey);
+            covered.AddRange(declared);
             return (key, GroupRank(level), covered.ToArray(), def.DurationTicks);
         }
         // 🔑 BL-85 — a CHILDLESS multi-level buff carries its level in its rank. The single ladders
@@ -11874,7 +11920,7 @@ public class GameLoopService : BackgroundService
         // and "equal rank keeps the longer remaining time" let a Lv1 evict a Lv5. Same shape as
         // GroupRank. `FlatRank` opts out — see the field's note on SkillDef for the one pair that does.
         int rank = def.FlatRank || def.Levels is not { Length: > 1 } ? def.Rank : def.Rank + level - 1;
-        return (key, rank, Array.Empty<string>(), def.DurationTicks);
+        return (key, rank, declared, def.DurationTicks);
     }
 
     /// <summary>Would this buff land, or be refused by something stronger? Asked BEFORE a channelled
@@ -12081,8 +12127,23 @@ public class GameLoopService : BackgroundService
             target.Buffs.Remove(c);             // equal/stronger: full replace
 
         // Rule 2 — explicit Replaces list (unconditional).
+        //
+        // 🔴 IT MATCHES BUFF KEYS, AND EVERY AUTHOR IN THE CATALOG WRITES SKILL IDS INTO `Replaces`
+        //    (`BL-183`, 2026-09-06). The field's other job — collapsing a superseded skill off the
+        //    learn list — is id-based in all six of its call sites, so ids is what got written, and
+        //    this line then compared them against keys and matched nothing. A buff key is only ever
+        //    equal to a skill id by accident: a ladder rung's id is `buff_<family>_<rank>` and its key
+        //    is `<family>`; the eight NPC single harmonies are `npc_harmony_swift` keyed `npc_h_swift`.
+        //    So the owner's harmony rule ("Harmony of the Warrior replaces Harmony of the Fury and of
+        //    the Might") was authored, reviewed, documented — and dead.
+        // 🔑 Accepts BOTH now: an entry is used as a key AND resolved through the catalog to the key
+        //    the named skill actually lands under. Nothing that worked before can stop working, and the
+        //    id spellings start doing what their authors meant. See `SkillDef.CoveredKeys` for the half
+        //    of this that also BLOCKS the single from coming back afterwards.
         if (def.Replaces is { Length: > 0 })
-            target.Buffs.RemoveAll(b => def.Replaces.Contains(b.Key));
+            target.Buffs.RemoveAll(b => def.Replaces.Contains(b.Key)
+                                        || def.Replaces.Any(r => SkillCatalog.Get(r) is SkillDef rd
+                                                                 && BuffPlan(rd, 1).Key == b.Key));
 
         // Rule 3 — the SLOT CAP. Run last, after the two rules above have freed whatever they were
         // going to free, so a buff that merely replaces another never evicts a third by accident.
@@ -16098,6 +16159,50 @@ public class GameLoopService : BackgroundService
         SendStats(player);
     }
 
+    /// <summary>`BL-184` — STRIP EVERY BENEFICIAL EFFECT, keeping the harmful ones. Owner, 2026-09-06:
+    /// *"Add a clear all in the functions menu and in the npc buffer (free) to remove all active
+    /// effects (no debuffs)"*. Returns how many left, so the caller can say nothing happened rather
+    /// than claim a clear it did not perform.
+    ///
+    /// <para>🔑 <b>THE TEST IS <c>IsDebuff</c>, NOT "carries a buff flag"</b> — the rule found the hard
+    /// way in 0.109.x: an effect is beneficial when it carries no HARMFUL flag, and half the payloads
+    /// in this game are fields rather than flags, so asking "is this a buff?" quietly skips them.
+    /// <c>BuffInstance.IsDebuff</c> is the one answer every other cure/cancel path already uses.</para>
+    ///
+    /// <para>⚠ FOUR THINGS SURVIVE, and each for a reason worth stating, because "clear all" reads as
+    /// though nothing should:</para>
+    /// <list type="bullet">
+    /// <item><b>Debuffs</b> — his parenthesis, and the whole point. A free button that also cured
+    /// poison would make every curse in the game a walk back to town.</item>
+    /// <item><b>Internal</b> effects — the DoT stack counters, which are bookkeeping rather than
+    /// buffs, are not drawn on the bar, and are consumed by their own burst skill.</item>
+    /// <item><b>Non-<see cref="BuffInstance.Cancellable"/></b> — the existing "cannot be cured or
+    /// cancelled" flag (Burn, the boss judgment). Those are harmful anyway today, so this line is
+    /// belt-and-braces; it costs nothing and it is the flag's stated meaning.</item>
+    /// <item><b>RUNE buffs and the <c>Item</c> row</b> — a rune's buff is not something you were
+    /// given, it is the item in your bag being worn. <c>ReconcileTimedItems</c> re-applies it within
+    /// the second, so removing it would flicker the bar, recompute stats twice and inflate the count
+    /// with something that never actually left.</item>
+    /// </list>
+    ///
+    /// <para>⚠ <b>TOGGLES DO GO.</b> A stance is an active effect and he said all of them; removing the
+    /// <c>BuffInstance</c> IS how a toggle is turned off (the same thing <c>HandleToggle</c> and the
+    /// buff bar's double-click do), so there is no second piece of state left saying it is still on and
+    /// nothing to desync. It costs the player one tap to put back.</para></summary>
+    private int ClearBeneficialBuffs(Entity target)
+    {
+        int removed = target.Buffs.RemoveAll(b =>
+            !b.IsDebuff
+            && !b.Internal
+            && b.Cancellable
+            && b.SourceRow != BuffRow.Item
+            && !SkillCatalog.IsRuneBuff(b.Key));
+        if (removed == 0) return 0;
+        target.RecomputeDerived();
+        if (target.Kind == EntityKind.Player) { PushBuffs(target); SendStats(target); }
+        return removed;
+    }
+
     /// <summary>Build the expanded target window: the target's detailed stats and,
     /// for a mob, its passive modifier lines (from the MobCatalog template).</summary>
     private void HandleInspectTarget(InspectTargetCmd cmd)
@@ -17638,6 +17743,30 @@ public class GameLoopService : BackgroundService
                 SendStats(player);
                 SendSystemToEntity(player, "Restored to full health and mana.");
                 break;
+
+            // `BL-184` — CLEAR ALL, and it is FREE. Owner, 2026-09-06: *"Add a clear all in the
+            // functions menu and in the npc buffer (free) to remove all active effects (no debuffs)"*.
+            //
+            // 🔑 It is the missing half of his own stated workflow: *"the idea is to buff fully from npc
+            // then remove what u don't need as that class and save it"* (`BL-95`). Removing what you
+            // don't need was already possible one square at a time; starting over was not, and with a
+            // twenty-slot bar the usual reason to start over is that you filled it with the wrong set.
+            //
+            // ⚠ FREE, and it must stay free: the whole value of the button is that pressing it is never
+            // a decision. A price would make "clear and rebuy" strictly worse than "log out", which is
+            // the behaviour it exists to remove.
+            //
+            // ⚠ No `Charge` call and therefore no refusal path — but it still falls through to
+            // `SendBufferDialog` below, which is what re-enables [Save preset] (it counts the NPC
+            // blessings you are wearing, and you are now wearing none).
+            case "clear":
+            {
+                int cleared = ClearBeneficialBuffs(player);
+                SendSystemToEntity(player, cleared == 0
+                    ? "You carry no blessings for me to remove."
+                    : $"Cleared — {cleared} effect{(cleared == 1 ? "" : "s")} removed. Your ailments are not mine to lift.");
+                break;
+            }
 
             default:
                 return;

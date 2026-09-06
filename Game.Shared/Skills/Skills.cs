@@ -724,7 +724,29 @@ public record SkillDef(
     int BuffHealPowerFlat = 0,
     float BuffHealPowerPct = 0f,
     float BuffHealReceivedPct = 0f,
-    bool CountsTowardBuffLimit = true)
+    bool CountsTowardBuffLimit = true,
+    /// <summary>Extra buff KEYS this buff covers, on top of whatever <see cref="ChildBuffs"/> already
+    /// covers. Covering is the engine's only "these two occupy the same slot" relationship: a covered
+    /// family is evicted when this lands and refused afterwards unless it outranks this
+    /// (<c>GameLoopService.BuffPlan</c> / <c>BuffsConflict</c>).
+    ///
+    /// <para>🔑 <b>KEYS, NOT SKILL IDS</b> — the opposite of <see cref="Replaces"/>, which is a list of
+    /// ids. That difference is why this field has to exist: a GROUP says "I contain these singles"
+    /// through <see cref="ChildBuffs"/> and gets covering for free, but a HARMONY carries
+    /// <c>Magnitudes</c> and no children, so it had no way to say it. The four class harmonies said it
+    /// through <c>Replaces</c> instead — and <c>Replaces</c> was matched against buff KEYS while every
+    /// author in the catalog writes skill IDs into it, so the owner's rule (*"his acts as a group one
+    /// so replaces them"*) silently did nothing from the day `BL-160` shipped. Both halves are fixed:
+    /// this field does the covering, and <c>ApplyBuff</c>'s Replaces rule now resolves ids to keys too.</para>
+    ///
+    /// <para>⚠ A covering buff must OUTRANK what it covers, or the equal-rank "longer time wins" rule
+    /// hands the slot back to the single — see <see cref="SkillCatalog.HarmonyRank"/>. Startup
+    /// validates that every key named here is a real buff key, so a typo is a boot failure rather than
+    /// another quietly dead rule.</para>
+    ///
+    /// <para>⚠ Ignored on a ONE-CHILD WRAPPER: the CHILD is the buff that lands, so the wrapper's own
+    /// covering would never be consulted. Put it on the child.</para></summary>
+    string[]? CoveredKeys = null)
 {
     /// <summary>Hash on the ID alone — and this override MUST stay.
     ///
@@ -818,6 +840,9 @@ public record SkillDef(
     /// <summary>The CHILD buff ids this (group) buff applies at a level — an improved buff's levels
     /// are pure child references (see SkillDef.ChildBuffs). Null/empty = an ordinary single buff.</summary>
     public string[]? ChildBuffsAt(int level) => Lvl(level)?.ChildBuffs ?? ChildBuffs;
+    /// <summary>The buff keys this RUNG covers — the rung's own list, else the def's. `BL-183`; the
+    /// harmonies are the only user and the reason it is per-rung. See SkillLevel.CoveredKeys.</summary>
+    public string[]? CoveredKeysAt(int level) => Lvl(level)?.CoveredKeys ?? CoveredKeys;
     public int MpCostAt(int level) => Lvl(level)?.MpCost ?? MpCost;
     /// <summary>A TOGGLE's PER-SECOND upkeep at a level. A rung's 0 falls back to the SkillDef's
     /// MpPerSecond, so a single-rung stance (Prowl) needs no per-level entry — and a stance whose
@@ -1292,7 +1317,18 @@ public record SkillLevel(
     // 12→30 MP/s), and without a per-level slot TickToggleUpkeep charged rung 1's number at every
     // rung — a level-80 Reinforcement authored at 30 MP/s really took 12. Same "unset = inherit"
     // shape as every other per-rung field above.
-    int MpPerSecond = 0);
+    int MpPerSecond = 0,
+    // BUFF KEYS THIS RUNG COVERS (null = inherit the SkillDef's CoveredKeys). See SkillDef.CoveredKeys
+    // for what covering is; this is the per-rung slot, and the harmonies are why it has to exist.
+    //
+    // 🔑 A harmony ladder is CUMULATIVE — Harmony of Protection is +30% M.Def at 44, gains +25% P.Def
+    // at 56 and +30% Max HP at 66 — and each of those effects is exactly one NPC single harmony, sold
+    // at exactly that level. Covering the whole list at every rung would mean a level-44 Warchanter's
+    // rung 1 tearing a level-56 player's bought Harmony of Bulwark off for nothing: a downgrade the
+    // player cannot refuse, which is the authoring hazard SkillDef.ChildBuffs already warns about for
+    // groups. Rung by rung, the trade is exactly even at every level — the harmony's number and the
+    // single's number are the same number.
+    string[]? CoveredKeys = null);
 
 /// <summary>What a buff does to the four things a MONSTER pays out: experience, skill points, the
 /// gold it drops and the CHANCE its table rolls. The premium rune family (Rune of Experience /
@@ -1637,6 +1673,33 @@ public static partial class SkillCatalog
                 foreach (var child in lvl.ChildBuffs ?? Array.Empty<string>())
                     if (!dict.ContainsKey(child))
                         throw new InvalidOperationException($"Skill '{sk.Id}' names unknown child buff '{child}'.");
+        }
+
+        // `BL-183` COVERED-KEY GUARD, and it is the same lesson as the child-id guard above one level
+        // up. `CoveredKeys` is a list of buff KEYS written by hand, and a key that matches nothing is
+        // not a compile error, not a runtime error and not visible on any screen — it is a stacking
+        // rule that quietly does not exist. That is not hypothetical: the four class harmonies spent
+        // the whole of `BL-160` declaring their singles through `Replaces`, which was matched against
+        // keys while they held ids, and nobody could see it. So: every key named here must be a key
+        // some other def actually lands under.
+        // ⚠ Compared against the def's OWN BuffKey (or Name, the fallback ApplyBuff uses), NOT against
+        // ids — the whole bug being guarded against is the two being confused.
+        var liveKeys = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var sk in dict.Values)
+            liveKeys.Add(string.IsNullOrEmpty(sk.BuffKey) ? sk.Name : sk.BuffKey);
+        foreach (var sk in dict.Values)
+        {
+            // The def's own list AND every rung's — covering is per-rung for the harmonies, so a typo
+            // on rung 3 has to fail exactly as loudly as one on the def.
+            var lists = new[] { sk.CoveredKeys }
+                .Concat((sk.Levels ?? Array.Empty<SkillLevel>()).Select(l => l.CoveredKeys));
+            foreach (var k in lists.SelectMany(l => l ?? Array.Empty<string>()))
+                if (!liveKeys.Contains(k))
+                    throw new InvalidOperationException(
+                        $"Skill '{sk.Id}' covers unknown buff key '{k}'. CoveredKeys holds BUFF KEYS, "
+                      + "not skill ids — a ladder rung's id is 'buff_<family>_<rank>' and its key is "
+                      + "'<family>'; the NPC single harmonies are 'npc_harmony_swift' keyed "
+                      + "'npc_h_swift'. Name the key the covered buff lands under.");
         }
 
         // 🔑 BL-85 GUARD. A childless multi-level buff now carries its LEVEL in its rank

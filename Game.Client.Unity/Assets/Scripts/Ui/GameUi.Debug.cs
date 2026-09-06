@@ -752,6 +752,16 @@ namespace Game.Client
             // `BL-180` — every OTHER buff in the game, four drawers deep. See BuildDebugBuffs.
             DebugAction("Buffs >", () => { _debugBuffsView = true; _debugBuffDrawer = null; RefreshDebugPanel(); });
 
+            // `BL-184` — the way BACK. Owner, 2026-09-06: *"Add a clear all in the functions menu and in
+            // the npc buffer (free) to remove all active effects (no debuffs)"*. Every button above this
+            // one puts something ON; until now the only routes off were waiting an hour or relogging —
+            // and a relog RESTORES buffs, so that one never worked. Both the buffed and the unbuffed
+            // state are things a balance read needs, and only one of them had a button.
+            // ⚠ Debuffs survive on purpose (his parenthesis), so this can be pressed while a curse is
+            // running without ending the thing under test.
+            DebugAction("CLEAR ALL BUFFS (debuffs stay)",
+                        () => Boot.Debug(n => n.AdminCommandAsync("clearbuffs", ""), "clearbuffs"));
+
             // `BL-180` — *"FullHeal -> heals instantly mp/hp in combat or no"*. Deliberately NOT a
             // heal SKILL and not a potion: it is a set, so it ignores the healing-received modifiers,
             // the potion cooldown and the in-combat refusal, and it works while a fight is running,

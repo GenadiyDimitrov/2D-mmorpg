@@ -8,6 +8,7 @@ NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,DESCR,NPC LVL,NPC Price
 ,,,,,,,,,,,,========================== NPC - FREE 8 General Buffs 6+ ==========================
 ,,,,,,,,,,,,========================== NPC - 5~15k gold per 11 Stronger Buffs ==========================
 ,,,,,,,,,,,,========================== NPC - 50k gold per 8 Single Harmony Buffs ==========================
+,,,,,,,,,,,,========================== Each of the 8 is REPLACED by the buffer class harmony that contains it - they never stack (BL-183) ==========================
 ,,,,,,,,,,,,========================== NPC - 300k gold per 3 mark Buffs ==========================
 ,,,,,,,,,,,,========================== SINGLE===========================
 ,,,,,,,,,,,,--------------------------Might----------------------------
