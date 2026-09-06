@@ -12,7 +12,7 @@ only active"*. Ninety-one closed entries — built, declined, and the old texts 
 
 ## The rules this file runs on
 
-1. **Open only, and sorted by id.** `BL-02` first, `BL-171` last, no categories to hunt through — the
+1. **Open only, and sorted by id.** `BL-02` first, `BL-179` last, no categories to hunt through — the
    **Area** column of the index is how you browse by subject. The moment an entry is built, declined
    or answered with nothing owed, it is **cut to [BacklogArchive.md](BacklogArchive.md)**, dated,
    under the same id. This file should never again grow a done-pile.
@@ -32,7 +32,17 @@ different professions to farm to see who can craft what — and it's a single pl
 So **`BL-05`** and **`BL-50`** are not to be worked on or re-raised until you open that playtest.
 Nothing about them is blocked or broken; they wait on a test only you can run.
 
-★ **The ones you named most recently:** ✅ **THE TANK PASS IS BUILT (0.112.0, 2026-09-04).** All 205 rows
+★ **The ones you named most recently (2026-09-05):** nine asks across two messages, now
+**`BL-172`…`BL-179`** — `/unstuck`, `/return`, the scroll faucet off ordinary mobs, four admin-menu
+tidies, the chat clipboard, and the two test skills. **Seven of the eight are 🔴 ready to build**; only
+`BL-179` is 🔵, and it is waiting on one choice of yours, not on work. Both questions I raised are
+answered and written in: `BL-172` is a **rooted 180s channel cast in town** (not a background timer,
+not an escape) and `BL-173` **keeps `FragileCast`** — two numbers and nothing else. 🔑 **Read `BL-178`
+and `BL-179` first — both turned out to be something we did on purpose that nobody had looked at
+since:** the missing copy/paste menu is `shouldHideMobileInput`, set globally to fix your own 0.47.0
+caret bug, and the two `test_phys`/`test_magic` skills are granted to **every character in the game**
+from a block labelled `TEST ONLY — DELETE ME`.
+· ✅ **THE TANK PASS IS BUILT (0.112.0, 2026-09-04).** All 205 rows
 of `tank 4th.csv`, which closes `BL-154` (pull), `BL-155` (silence) — both in the archive — and the last
 `NOT DONE` file in `BL-02`. Fourteen ladders continue past 74; six things are new (Magic Wall, Tauting
 Wall, the Perfect Whisp, a race-split three-rung Backlash, Whisp Mastery's third slot, Silencing Shock).
@@ -52,7 +62,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 
 ---
 
-## Index — 36 open entries
+## Index — 48 open entries
 
 | id | | what it is | area |
 |---|---|---|---|
@@ -96,6 +106,14 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-165` | 🔵 | What the tank's 4th tier LEFT OPEN — the two AoE pulls (yours), and one clamp | combat |
 | `BL-170` | 🔵 | THE CLIFF AT 80 — party dps triples across the S-grade flip; three ways out, your pick | combat |
 | `BL-171` | 🔵 | THE WORLD BOSS — stats built; the encounter, mass-PvP rules and loot are owed | combat |
+| `BL-172` | 🔴 | `/unstuck <name>` — 180s rooted channel, cast in town, on another char of the same account | systems |
+| `BL-173` | 🔴 | `/return` — the skill ALREADY EXISTS; it wants 60s cast / 10s reuse, fragile kept | systems |
+| `BL-174` | 🔴 | Return + Resurrection scrolls off ordinary mobs — elites and the starter trio only | items |
+| `BL-175` | 🔴 | Admin Teleport menu — a `[Bosses]` page; dummies, watchmen and bosses out of `Spawn zones` | UI |
+| `BL-176` | 🔴 | Admin Items tab — enchant / attribute / potions / stones become sub-pages | UI |
+| `BL-177` | 🔴 | The admin SP button gives 10kk, not 1kk | UI |
+| `BL-178` | 🔴 | Android's selection menu is missing because `shouldHideMobileInput` is on — flip it for chat only | UI |
+| `BL-179` | 🔵 | The two TEST skills are granted to EVERY character — three ways to gate them, your pick | systems |
 
 ---
 
@@ -888,3 +906,235 @@ boss skill gems and the party loot rules. That is a design pass, not a number.
 respawn made it *look* like one and I read the respawn as the classification; it is a FIELD boss and is
 back on the 20/30-minute enrage ladder. There is now no world boss in the game at all, which is honest —
 the tier exists and nothing wears it yet.
+
+---
+
+### `BL-172` 🔴 `/unstuck <name>` — a 180-second rooted channel, cast IN TOWN, on another character of the same account
+
+Your spec, 2026-09-05: *"'/unstuck <name>' command that have 180s cast time and is available from the
+same acc to other chars (Char1 -> /unstuck Char2) and after 180s Char2 is teleported to starting town
+all his equipment is unequiped all his buffs/debuffs are cleared -> don't work on baned/kicked/jailed
+char"* — and your ruling on the fork I raised, same day: *"Works only in town and roots unable to act
+until cast ends or canceled. It's a unstuck command not a escape mechanism -> ur char1 stuck/bug/etc
+.. u create char2 and use /unstuck char1"*.
+
+**So the shape is settled, and it is the tighter one:**
+- the **caster** must be standing in a town (safe zone) — refused anywhere else;
+- the **caster is rooted** for the full 180s, unable to act, exactly like a channel. Anything that
+  cancels a cast cancels this;
+- the **target** is another character on the same account, and the ordinary case is a character that
+  is **logged out**, because you make Char2 precisely in order to rescue Char1.
+
+That last line is the whole of the engineering. 🔑 **The target is normally NOT a live `Entity`** —
+there are three states and the command has to cover all of them:
+1. **Fully logged out** — no entity. The unequip / clear / teleport has to be written to the
+   **persisted record**, which today is only ever written out from a live entity on logout or autosave.
+2. **Still in the world** — a logged-out character keeps playing as an offline farmer
+   (`IsOfflineFarming`) or sits in the link-dead grace (`IsDisconnected`). Here there IS an entity.
+3. **Logged in right now** — only reachable if the server ever allows two sessions on one account.
+
+**The design:** force states 2 and 3 down to state 1 first — evict the entity exactly as a logout
+does, so nothing is lost — then apply the effect to the record. One code path, and it cannot race the
+tick loop.
+
+**The gates are already on the data.** A jail sentence is `CharacterRecord.JailedUntilUtc` (per
+character); a ban is `AccountRecord.BannedUntilUtc` (per **account**), so half your "not on a banned
+char" rule enforces itself — a banned account cannot log Char1 in to type the command at all. Both are
+still checked explicitly, because the account ban can be lifted while a character's jail runs on.
+
+⚠ **One thing your ruling makes free that would not have been otherwise:** because the caster is
+rooted in town for three minutes, this cannot be used as an escape, a fast travel, or a way to strip a
+character mid-fight — which is exactly why no other abuse gate is needed on it.
+
+---
+
+### `BL-173` 🔴 `/return` — IT ALREADY EXISTS AS A SKILL, and it wants two numbers
+
+Your spec: *"an active skill ot /return command that returns you to town... Works like the scroll of
+return just have 60s fixed cast time (if you forgot to buy) reuse can stay 10s fixed"*, and on being
+shown that the skill exists: *"Like a normal rerun just 60s/10s not 30s/5m like now (I noticed each
+time I put skills to bar but somehow ignore as I haven't noticed :))"*.
+
+🔑 **This is built.** `SkillCatalog.ReturnSkill` (`return_town`, "Return") is granted to **every**
+character by `AutoLearnCoreSkills` and has been on your bar the whole time. It is `TeleportsToTown`,
+fixed cast, fixed cooldown, no MP, no item.
+
+| | today | ruled |
+|---|---|---|
+| cast | 30s (`CastTicks: 300`) | **60s** (`600`) |
+| reuse | 5 min (`CooldownTicks: 3000`) | **10s** (`100`) |
+| any damage cancels it (`FragileCast`) | yes | **yes — KEPT** |
+
+✅ **`FragileCast` stays.** I recommended dropping it; you ruled *"like a normal return"*, which means
+the behaviour is untouched and only the two numbers move. That is the better call and it is worth
+writing down why: fragile + 10s reuse is a **free out-of-combat return**, retryable the moment you
+disengage, and it takes nothing away from either scroll — the plain scroll still buys you 10s instead
+of 60s, and the Ultimate still buys you the escape from a fight you are losing. Dropping fragile would
+have made the 60s version a slow Ultimate scroll and devalued both.
+
+A `/return` chat alias for the same skill is a few lines on top and costs nothing.
+
+---
+
+### `BL-174` 🔴 Return and Resurrection scrolls come off ordinary mobs — elites and the starter trio only
+
+Your spec: *"remove scroll of return and resurrection from all mobs can leave them only on elits, and
+the starting 3 mobs can keep droping return scrolls and no resurrection (pig/fox/goblin)"*.
+
+Today both scrolls sit in the **ALWAYS** group in `MobCatalog.StandardDrops`, which every creature in
+the game carries — 0.025 return / 0.0025 resurrection per kill below 75, plus the Ultimate pair at 75+.
+That group was already cut twice for exactly this reason (playtest 15 and playtest 17 `E1`, where 550
+return scrolls by level 23 was the finding); this is the third cut and the one that finishes it. The
+potions stay where they are — you only named the scrolls.
+
+**The shape it wants** is the one `MobCatalog.EnchantScrollDrops(level, rank)` already uses: a
+rank-gated layer, so a scroll is authored **once** against the rank that earns it rather than being
+subtracted from a table everything shares. ⚠ `StandardDrops(level, cat)` does not currently take a
+rank, so it gains one — the only structural part of this.
+
+The starter exception is three ids: **`ridgeback_pup` (1), `fox` (4), `goblin_scout` (8)** — return
+scroll kept, resurrection gone. (Your "pig" is the Ridgeback Pup.)
+
+**Free to build, pure data.** ⚠ It cuts a faucet with nothing replacing it: from level 9 up, a return
+scroll comes off an elite or off a vendor. That is the stated intent, noted here so the next playtest
+does not read it as a bug. 🔑 It also raises the value of `BL-173` — the free 60s Return becomes the
+thing you fall back on when you have no scroll, which is precisely the *"if you forgot to buy"* in
+your own spec.
+
+---
+
+### `BL-175` 🔴 The admin Teleport menu — a `[Bosses]` page, and three kinds of clutter out of `Spawn zones`
+
+Your spec: *"admin tp menu to have [bosses] whit all the bosses inside and from 'zones' all the
+training dummies, all the watchmen and the bosses to be remived"*.
+
+The menu is `GameUi.Debug.BuildDebugTeleport` — three pages today (NPCs / Spawn zones / Cities), and
+the zone page walks **every** `WorldMap.SpawnZones` entry. That is why it is unusable: the six training
+dummies, both towers of every town guard post (generated per city in `WorldPlan`), and the boss zones
+are all in the same list as the actual hunting grounds.
+
+Everything needed to sort them is already on the data:
+- **bosses** — the zone carries `Rank: MobRank.Boss`, and `BossCatalog` is the authoritative roster.
+- **dummies** — the `training_dummy` / `dummy_magic` / `dummy_physical` mob ids.
+- **watchmen** — the guard posts are generated by `WorldPlan` with the guard mob ids.
+
+So: a fourth page `Bosses >` built from the boss-ranked zones, and the other three classes filtered out
+of `Spawn zones`. **Free to build, client-only.** ⚠ **NEW APK** — the menu is built on the phone.
+
+---
+
+### `BL-176` 🔴 The admin Items tab — three flat walls become sub-pages
+
+Three of your asks, merged into one entry because they are the same change to the same page and one
+commit; say so and they split back into three ids:
+
+- *"admin menu items to have group of attribute scrolls -> click attri scroll and opens all of them
+  like a selection"*
+- *"admin menu items ecnahnt scrolls to be one button and then selection per grade"*
+- *"admin menu items to have buttons with potions/stones -> potions have all healing/mp potions,
+  stones to have all stones skills and holy/etc."*
+
+All three are the same complaint and it is a fair one: `BuildDebugItems` prints **eighteen** enchant
+scroll rows under six grade headers, six attribute scroll rows, and scatters the potions across three
+headers — one screen, no grouping, on a phone. The page already knows how to do sub-pages (`Crafting
+materials >` and `Blueprints >` are exactly this, via `_debugItemsView`), so the pattern is in the file
+and this is applying it four more times:
+
+| button | opens |
+|---|---|
+| `Enchant scrolls >` | a grade picker (F…S), then that grade's three types |
+| `Attribute scrolls >` | all six rarities |
+| `Potions >` | every healing **and MP** potion rung |
+| `Stones >` | Skill Stone, Elemental Stone and the rest of the reagent line |
+
+⚠ **One thing to check while building, not to assume:** the enchant scroll rows are generated from
+`ItemCatalog.EnchantScrollBands` × `EnchantScrollTypes` precisely so a scroll cannot be authored and
+left unreachable in the menu. The new picker must stay generated the same way — a hand-written grade
+list would lose that guarantee the first time you add a grade.
+
+**Free to build, client-only.** ⚠ **NEW APK.**
+
+---
+
+### `BL-177` 🔴 The admin SP button gives 10kk, not 1kk
+
+Your spec: *"admin menu function SP button to give 10kk not 1kk"*. It is one number in
+`GameUi.Debug` — the Gold button beside it already gives 10,000,000, and its comment gives the reason
+("a smaller button could not fund a single meaningful purchase to test with"), which now applies to SP
+just as much: a 4th-class skill ladder costs far more than 1kk to walk. **Free, one number.**
+⚠ **NEW APK** (it rides with `BL-176`).
+
+---
+
+### `BL-178` 🔴 THE ANDROID SELECTION MENU IS MISSING BECAUSE WE TURNED IT OFF — and it was to fix a bug of yours
+
+Your note, 2026-09-05, sharpened on the second pass: *"I can paste from the keyboard copy clipboard
+(SwiftKey keyboard) but the context menu after selection that shows 'copy/cut/select all' is not there
+or the one that 'paste' if something is pending. and not shown on the keyboard as well. I do not want
+new inner copy/paste system if we can make the normal work"*.
+
+🔑🔑 **Found it, and it is one line we set deliberately.** `UiKit.InputField` sets
+**`field.shouldHideMobileInput = true`** on every text field in the client. With that on, Android's
+real `EditText` is off-screen and the soft keyboard only delivers keystrokes; TMP owns the buffer and
+draws its own caret and its own selection highlight. **The copy / cut / select-all / paste context
+menu belongs to that hidden native view**, so it can never appear — which is exactly your symptom:
+selection works (that is TMP's), the clipboard menu does not, and paste only works when the *keyboard*
+sends it as keystrokes (your SwiftKey clipboard), because that is the one path that still goes through.
+
+⚠ **And the line is there because of you.** 0.47.0, your report: *"if there is a 1 I cannot make it 10
+— it becomes 01"*, plus a saved password that could not be edited at all. On Android the soft keyboard
+owned the text buffer, so tapping inside a field could not move the caret and there was no way to
+reach the character you wanted to delete. `shouldHideMobileInput = true` is what fixed that. **So the
+native context menu and the working caret are the same switch, pointing opposite ways.**
+
+**The way to have both, and it is your "make the normal work":** flip the switch **per field**, not
+globally — `false` for the **chat entry box alone**, `true` everywhere else. Chat is the one field
+where you type fresh text rather than edit a pre-filled value, so the 0.47.0 caret bug has almost
+nothing to bite on there, while the URL / password / gold-amount / tune fields — the ones that bug was
+actually about — keep the behaviour that fixed them. It is an optional argument on
+`UiKit.InputField` and one call site.
+
+⚠ **What changes visually, and why it needs a look on the device before it ships:** with
+`shouldHideMobileInput = false`, Android puts its **own** input strip above the keyboard and that is
+where you type and where the context menu appears — our on-screen box is no longer the thing being
+edited while the keyboard is up. That may also make the keyboard-lift offset on the chat row
+(`GameUi.World`, the code that clears the punch-hole) pointless for that one field. Neither is a
+blocker; both are things to see rather than reason about.
+
+🔵 **Separately, and NOT covered by this:** copying a name *out of the chat log* is still impossible —
+the log is a plain `TextMeshProUGUI` inside a `LogView` with no selection support at all. If you want
+that too, say so: the usual trick is a read-only `TMP_InputField`, which is a different (small) change
+to a different widget.
+
+---
+
+### `BL-179` 🔵 The two TEST skills are granted to EVERY character in the game
+
+Your question, 2026-09-05: *"also test skills can they be only owners or added from the admin menu.. Or
+they be moved to item that uses them and given from admin menu only?"*
+
+**They are worse than you thought.** `test_phys` and `test_magic` (`SkillCatalog.TestPhysSkill` /
+`TestMagicSkill`) are handed to **every character, at any level, unconditionally**, by
+`AutoLearnCoreSkills` — inside a block whose own banner reads `==== TEST ONLY — DELETE ME ====`. They
+are not owner-gated in any way. They read their damage from the Debug panel's `TestSkillPower` /
+`TestSkillMod`, which are **server-global** fields, so on a live server an ordinary player would hold
+two castable skills whose power is whatever the owner last typed into a tuning box.
+
+**Three ways you named, and what each really costs:**
+
+| | what it is | verdict |
+|---|---|---|
+| **owner-only** | `Entity.Role` already exists (`AccountRole`), so the grant becomes one `if` and a `Remove` for everyone else | ~2 lines, server-only, **no APK** |
+| **from the admin menu** | a button in the Debug tab that adds/removes the two ids on demand | the above, plus one command + one button |
+| **an item that casts it** | the Scroll of Return pattern — the item's skill is invoked on use and never learned | most work, and a test skill you want to spam at a dummy is the worst fit for a consumable |
+
+🔴 **My pick: the middle one — role-gate the grant to nothing by default, and put a `Test skills
+ON/OFF` toggle in the admin Function tab.** It clears the two rows off every character's list
+*including yours*, costs one tap when you actually want them, needs no new item id and no stack to
+keep topped up, and leaves the skills fully functional — target, cooldown and the live Flat/Mod tuning
+all keep working, which the item route would complicate for no gain.
+
+⚠ **Do not simply delete them.** Both are still wired into the damage path
+(`GameLoopService` reads `def.Id == TestPhysSkill` / `TestMagicSkill` when computing the hit) and they
+are how the `{Flat, Mod}` curve gets read live — the thing that has settled several balance arguments
+here. This entry is about who can reach them, not about removing them.
