@@ -414,9 +414,14 @@ if (args.Length > 0 && args[0] == "--dmgmatrix")
          : e.ThirdClass > 0 ? ThirdClassCatalog.Get(e.ThirdClass)?.Name : null) ?? "(no 3rd class)";
 
     // The best REPEATABLE damaging skill of a channel — the rotation slot, not a 5-minute ultimate.
-    (int Flat, float Mod, string Name, bool Magic) BestSkill(Entity e, bool magic)
+    // 🔴🔑 HITS IS PART OF THE ANSWER, NOT A FOOTNOTE. Sound Burst and Split Volley carry
+    // SkillDef.HitCount 2 — TWO independent resolutions of the full power, each rolling its own
+    // crit — so a table that prints one resolution understates those two rows by exactly half. It
+    // did, for the first run of the new archer kit, and the row looked like a clean hit on his
+    // target number when it was double it. Per-hit AND per-use are both printed now.
+    (int Flat, float Mod, string Name, bool Magic, int Hits) BestSkill(Entity e, bool magic)
     {
-        int bestP = 0; (int, float, string, bool) best = (0, 1f, "basic attack", magic);
+        int bestP = 0; (int, float, string, bool, int) best = (0, 1f, "basic attack", magic, 1);
         foreach (var (id, lvl) in e.LearnedSkills)
         {
             var d = SkillCatalog.Get(id);
@@ -427,7 +432,7 @@ if (args.Length > 0 && args[0] == "--dmgmatrix")
             if (d.PowerAt(lvl) <= bestP) continue;
             bestP = d.PowerAt(lvl);
             var (f, m) = magic ? d.MagicDamageAt(lvl) : (d.PhysDamageAt(lvl).Flat, d.PhysDamageAt(lvl).Mod);
-            best = (f, m, $"{d.Name} L{lvl}", magic);
+            best = (f, m, $"{d.Name} L{lvl}", magic, Math.Max(1, d.HitCount));
         }
         return best;
     }
@@ -437,6 +442,8 @@ if (args.Length > 0 && args[0] == "--dmgmatrix")
     // the rogue's Stab is 7k-11k power at 85, 10k-15k at 90. Those are the numbers the matrix has to
     // be judged against, not whatever the placeholder catalogue currently holds.
     bool his = args.Contains("--his");
+    string RogueStabName(int lvl) => $"Stab (power {StabPower(lvl)})";
+    string NukeName(int lvl) => $"nuke (power {NukePower(lvl)}, 4s cast)";
     int NukePower(int lvl) => lvl >= 90 ? 200 : 150;
     int StabPower(int lvl) => lvl >= 90 ? 15000 : 11000;   // the TOP of each band he named
 
@@ -453,14 +460,15 @@ if (args.Length > 0 && args[0] == "--dmgmatrix")
         // 🔑 A STAB IS A BLOW: its damage is (pAtk + power) with the power dwarfing the pAtk, and it
         // only pays out ON A CRIT. So it belongs in the crit column and nowhere else — reporting a
         // blow's non-crit number as its damage is reporting its BlowFailFraction floor.
-        if (his && an == "rogue") sk = (StabPower(L), 1f, $"Stab (power {StabPower(L)})", false);
-        if (his && magic)         sk = (0, NukePower(L), $"nuke (power {NukePower(L)}, 4s cast)", true);
+        if (his && an == "rogue") sk = (StabPower(L), 1f, RogueStabName(L), false, 1);
+        if (his && magic)         sk = (0, NukePower(L), NukeName(L), true, 1);
         Console.WriteLine();
         Console.WriteLine($"-- {an.ToUpperInvariant()}  [{ClassLabel(a)}]  "
             + (magic ? $"M.Atk {a.EffectiveMagicAttack:0} (shown {a.EffectiveMagicAttackShown:0})"
                      : $"P.Atk {a.EffectiveAttack:0}")
-            + $"  crit {(magic ? a.MagicCritChance : a.CritChance):P1}   skill: {sk.Name}");
-        Console.WriteLine("   target     [class]                    def   MaxHP | basic  bCrit |  skill  sCrit  crit%  | skillHits");
+            + $"  crit {(magic ? a.MagicCritChance : a.CritChance):P1}   skill: {sk.Name}"
+            + (sk.Hits > 1 ? $"  [x{sk.Hits} HITS]" : ""));
+        Console.WriteLine("   target     [class]                    def   MaxHP | basic  bCrit |  skill  sCrit  crit%  |  PER USE  hits");
         foreach (var tn in targets)
         {
             var d = Make(tn);
@@ -494,7 +502,8 @@ if (args.Length > 0 && args[0] == "--dmgmatrix")
                                : Math.Clamp((a.CritChance - (d.HasShield ? d.ShieldCritDefense : 0f))
                                             * (1f - d.CritRateResist), 0f, 1f);
             Console.WriteLine($"   {tn,-10} [{ClassLabel(d),-22}] {(magic ? d.EffectiveMagicDefence : d.EffectiveDefence),6:0}"
-                            + $" {d.MaxHp,7} | {bHit,5} {bCrit,6:0} | {sHit,6} {sCrit,6:0} {rate,6:P0}  | {(float)d.MaxHp / sHit,9:0.0}");
+                            + $" {d.MaxHp,7} | {bHit,5} {bCrit,6:0} | {sHit,6} {sCrit,6:0} {rate,6:P0}"
+                            + $"  | {sHit * sk.Hits,6} {sCrit * sk.Hits,6:0} {(float)d.MaxHp / (sHit * sk.Hits),6:0.0}");
         }
     }
 
@@ -5244,6 +5253,13 @@ static int TopPhysSkillPower(Entity e)
         if (def is null) continue;
         if ((def.Effect & SkillEffect.PhysicalDamage) == 0) continue;
         if (!string.IsNullOrEmpty(def.ConsumableId)) continue;   // reagent ultimates aren't the baseline
+        // 🔴🔑 THE WEAPON GATE, added 2026-09-06 (`BL-185`). This loop used to pick the highest-power
+        // skill the character had LEARNED, with no regard for what he was HOLDING — so it could
+        // report the damage of a skill he cannot cast. Harmless for years because almost nothing
+        // physical was weapon-gated at the top of a ladder; not harmless the moment the warrior's
+        // 2H-SWORD Sundering Blow and the archer's BOW Split Volley existed. A rig that reports an
+        // uncastable skill is the "check the RIG before the subject" rule waiting to happen.
+        if (!e.WeaponType.Satisfies(def.RequiredWeapon, def.RequiredHands)) continue;
         if (def.PowerAt(lvl) > best) { best = def.PowerAt(lvl); bestName = $"{def.Name} L{lvl}"; }
     }
     Console.Error.WriteLine($"   [lvl {e.Level}] top phys skill = {bestName} ({best})");
@@ -5415,9 +5431,20 @@ static Entity[] BuildBossParty(int level) => new[]
                 discipline: Discipline.Bulwark, npcBuffed: true),        // TANK   (Knight → Bulwark)
     BuildPlayer(Race.Human, BaseClass.Mage,    level, healer: true,
                 discipline: Discipline.Lightbringer, npcBuffed: true),   // HEALER (Cleric → Lightbringer)
-    BuildPlayer(Race.Human, BaseClass.Fighter, level, warrior: true, npcBuffed: true),   // DD
-    BuildPlayer(Race.Human, BaseClass.Fighter, level, warrior: true, npcBuffed: true),   // DD
-    BuildPlayer(Race.Human, BaseClass.Mage,    level, npcBuffed: true),                  // DD (Sorcerer)
+    // 🔴🔑 THE THREE DDs CARRY THEIR 3rd CLASS TOO, since 2026-09-06 (`BL-185`). `BL-169` gave the
+    // TANK and the HEALER their disciplines and stopped there, so this party fought every boss with
+    // two 2nd-class Champions and a 2nd-class Sorcerer holding endgame gear — the exact error
+    // `BL-169` was raised to fix, left half-corrected. It surfaced the moment the warrior's damage
+    // kit landed and this table did not move by a single second: the rig could not see the kit,
+    // because nobody in it had a 3rd class to learn it with.
+    // ⚠ This MOVES the BL-13 boss-pace numbers. That is the point — they were measuring a party
+    //   nobody fields — but the old column is not comparable to the new one.
+    BuildPlayer(Race.Human, BaseClass.Fighter, level, warrior: true,
+                discipline: Discipline.Ravager, npcBuffed: true),        // DD (Champion → Ravager)
+    BuildPlayer(Race.Human, BaseClass.Fighter, level, warrior: true,
+                discipline: Discipline.Ravager, npcBuffed: true),        // DD
+    BuildPlayer(Race.Human, BaseClass.Mage,    level,
+                discipline: Discipline.Magus,   npcBuffed: true),        // DD (Sorcerer → Magus)
 };
 
 /// <summary>What the party puts INTO the boss. The healer contributes nothing: he is casting heals,

@@ -1653,6 +1653,7 @@ public static partial class SkillCatalog
         list.AddRange(BossJudgmentSkills());  // Skills.BossJudgment.cs (`BL-98` the six-rung ladder — engine-applied only)
         list.AddRange(WhispSkills());         // Skills.Whisps.cs (`BL-109` the whisp's own nine — cast by the whisp, never learned)
         list.AddRange(WhispSummonSkills());   // Skills.Whisps.cs (his six calls + Whisp Mastery)
+        list.AddRange(FighterKits3rdSkills()); // Skills.FighterKits3rd.cs (`BL-185` warrior + archer damage kits)
         list.AddRange(Bulwark3rdSkills());    // Skills.Bulwark3rd.cs (his `tank 3rd.csv`, 40-74)
         list.AddRange(Bulwark4thSkills());    // Skills.Bulwark4th.cs (`BL-154`/`BL-155` — the pull and the two silences)
 

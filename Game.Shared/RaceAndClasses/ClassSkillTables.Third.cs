@@ -96,6 +96,12 @@ public static partial class ClassSkillTables
         // that governs this file no longer applies to the tank — a finished CSV is exactly the
         // condition it was waiting for, and the Lightbringer, Warchanter and Magus went the same way.
         RegisterBulwark();
+        // …and an EIGHTH, `BL-185`: the WARRIOR'S and the ARCHER'S damage kits, 40-74. These are the
+        // one entry here whose numbers came from a RECIPE rather than a file — he gave the derivation
+        // in chat (*"take the elf harmonist skills and bow passives ... increase them with ~20%"*)
+        // while saying *"I'll try next week to finish the csvs"*. Same standing as every narrow entry
+        // above: he asked for it by name. See Skills.FighterKits3rd.cs and `BL-185`.
+        RegisterWarriorAndArcherKits();
         // (A FOURTH, `RegisterHealerMasteries()`, existed for one day and is gone: it taught the two
         //  healer masteries and Frenzy L2 while RegisterLightbringer was still commented out. Those
         //  rungs are in the shared ladder now, and keeping both would have registered every one twice.)
@@ -818,5 +824,68 @@ public static partial class ClassSkillTables
         ClassSkills.RegisterThird(Race.Demon, Discipline.Warchanter,
             new ClassSkill(WcOrkBolt, 40), new ClassSkill(WcOrkChant, 44),
             new ClassSkill(WcOrkRenew, 48), new ClassSkill(WcOrkPass, 52));
+    }
+
+    /// <summary>`BL-185` — THE WARRIOR'S AND THE ARCHER'S 3rd-CLASS DAMAGE KITS, 40-74.
+    ///
+    /// <para>⚠ The 40+ purge at the top of this file still stands. This is an entry under the same
+    /// narrow terms as <see cref="RegisterHideKit"/> and <see cref="RegisterHpBoost"/> — he named the
+    /// skills himself — with one difference worth stating plainly: he gave a DERIVATION, not a file.
+    /// *"For archer take the elf harmonist skills and bow passives ... Increase them with ~20% and
+    /// you'll get the dmg part of the archer kit"* / *"For fighter kit take demon harmonist skills and
+    /// 2h wepon passives increase them by ~20%"*, 2026-09-06, said in the same breath as *"I'll try
+    /// next week to finish the csvs"*. So these rows are explicitly PROVISIONAL: when
+    /// `warrior 3rd.csv` and the archer's file arrive they overwrite every number here.</para>
+    ///
+    /// <para>🔑 WHY IT COULD NOT WAIT FOR THE FILES. `--dmgmatrix` measured our archer hitting a
+    /// buffed level-90 mage for 235 where the ELF HARMONIST — a BUFFER — hit the same target for 495.
+    /// Both damage kits were empty: the three ranged disciplines had ONE 3rd-class skill between them
+    /// (Signal Flare) and the warrior had only HP Boost. See docs/balance/DamageVsIG.md.</para>
+    ///
+    /// <para>🔑 THE ARMOUR LINES ARE RUNGS 6-20 OF THE 2nd-CLASS MASTERY, not new skills — the tank's
+    /// idiom. That is why they carry <c>startRung: 6</c> and why the archer's rungs are registered on
+    /// the RANGED disciplines only: a melee rogue shares the skill id and simply never learns past
+    /// rung 5. See the header of Skills.FighterKits3rd.cs for why a separate skill would have either
+    /// double-granted crit-rate resistance or deleted the light branch.</para>
+    ///
+    /// <para>⚠ HP Boost is NOT here and owes nothing: <see cref="RegisterHpBoost"/> already gives the
+    /// warrior rungs 4-10, i.e. up to +1000 max HP, which is exactly what he asked for.</para></summary>
+    private static void RegisterWarriorAndArcherKits()
+    {
+        // The tank's fifteen-rung spine (SkillCatalog.BulwarkLevels), written out because it is
+        // private to the catalog. Both armour ladders ride it, so both stay in step with the tank's.
+        int[] armour15 = { 40, 43, 46, 49, 52, 55, 58, 60, 62, 64, 66, 68, 70, 72, 74 };
+        // The Warchanter's own two bands, so a derived ladder learns on the same levels as its source.
+        int[] band13 = { 40, 48, 52, 56, 58, 60, 62, 64, 66, 68, 70, 72, 74 };
+        int[] band8  = { 40, 48, 56, 60, 64, 68, 70, 74 };
+
+        static IEnumerable<ClassSkill> Ladder(string id, int[] levels, int startRung = 1) =>
+            levels.Select((lv, i) => new ClassSkill(id, lv, SkillLevel: startRung + i));
+
+        var warrior = new List<ClassSkill>();
+        warrior.AddRange(Ladder(WarriorArmorMastery, armour15, startRung: 6));
+        warrior.AddRange(Ladder(WarSwordMastery, band8));
+        warrior.AddRange(Ladder(WarSunderingBlow, band13));
+
+        var archer = new List<ClassSkill>();
+        archer.AddRange(Ladder(RogueArmorMastery, armour15, startRung: 6));
+        archer.AddRange(Ladder(ArcherBowMastery, band8));
+        archer.AddRange(Ladder(ArcherSplitVolley, band13));
+        // 56 is the Elf Harmonist's own level for Bow Expertise — the same rung, so the same level.
+        archer.Add(new ClassSkill(ArcherBowExpertise, 56));
+        // ⚠ 60 IS MINE, not his: he gave Killing Focus one pair of numbers and no level. 60 is the
+        //   middle of the band and prices at band13's rung-6 SP (120,000), which is the level the
+        //   SkillDef charges. If his file puts it elsewhere, his file wins.
+        archer.Add(new ClassSkill(ArcherCritFocus, 60));
+
+        foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
+        {
+            foreach (var d in new[] { Discipline.Ravager, Discipline.Warlord })
+                ClassSkills.RegisterThird(race, d, warrior.ToArray());
+            // 🔑 RANGED ONLY. The melee rogue disciplines (Nullblade / Venomweaver / Phantom) get
+            //    none of this — they are the DAGGER branch and their kit is his `dual 3rd.csv`.
+            foreach (var d in new[] { Discipline.Sharpshooter, Discipline.Hunter, Discipline.Trapper })
+                ClassSkills.RegisterThird(race, d, archer.ToArray());
+        }
     }
 }

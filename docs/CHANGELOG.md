@@ -7,12 +7,74 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.115.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.116.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-06 (latest) — 0.115.1: harmonies stop stacking, and a Clear All (`BL-183`, `BL-184`)
+
+## 2026-09-06 (latest) — 0.116.0: the warrior and archer damage kits, and the IG damage fit (`BL-185`)
+
+⚠ **NEW APK** — this changes `ClassSkills`, and the client builds its Learn tab locally from the
+compiled tables. 🟢 **No `game.db` delete** — no schema change.
+
+### The measurement that started it
+
+You said the damage was *"laughable"* and then supplied a full IG damage matrix **with the stats
+behind it** — 64 rows, four attackers × four defenders × four gear grades. Fitting our own formulas
+to it killed the first proposal outright: `PhysicalK = 77` is already correct, because the K your
+archer and tank rows demand is **flat across all four defenders at every level** (85: 86.7 / 87.0 /
+87.0 / 86.0). One free scalar will fit almost any small set of target cells; the inputs are what
+tell you whether the formula is wrong. The full fit is [balance/DamageVsIG.md](balance/DamageVsIG.md)
+and your table is preserved as [balance/IG-reference.csv](balance/IG-reference.csv).
+
+What it actually found: our ELF HARMONIST — a buffer — hit a buffed level-90 mage for **495** where
+our ARCHER hit the same target for **235**. The three ranged rogue disciplines had exactly one
+3rd-class skill between them (Signal Flare) and the warrior had only HP Boost. **Both damage kits
+were simply never authored.**
+
+### The kits, built from your recipe
+
+*"For archer take the elf harmonist skills and bow passives ... Increase them with ~20%"* /
+*"For fighter kit take demon harmonist skills and 2h wepon passives increase them by ~20%"*. Built at
+**×1.25**, the midpoint — every number is a source ladder times that factor, and each one names its
+source in `Skills.FighterKits3rd.cs`.
+
+- **Warrior** — *Two-Handed Sword Mastery* (the Warlock's ladder, sword, P.Atk 38→125) · *Sundering
+  Blow* (Sound Smash's 13 rungs, power 1250→5000, 2H sword) · rungs 6-20 of his own Armor Mastery =
+  the tank's heavy ladder **minus the crit-damage reduction**, as you specified.
+- **Archer** — *Archer Bow Mastery* (P.Atk 125→750, +400 range) · *Split Volley* (Sound Burst's
+  ladder, 900 range, two arrows) · *Bow Expertise* (+12%, the harmonist's rung) · *Killing Focus*
+  (+20% crit damage, +700 flat) · rungs 6-20 of the rogue's Armor Mastery = **half the tank's P.Def
+  ladder**, your pick when asked.
+
+Archer P.Atk **4494 → 6647**; his skill crit on a buffed mage **618 → 1513 per arrow**. ⚠ Split
+Volley fires twice, so per press that is **3025** against the 1500 you named — your recipe applied
+exactly (the harmonist's own per-use crit is 2525). Warrior skill crit on a mage **524 → 1088**,
+inside your 700-1500.
+
+**Your HP-boost item was already built** and nothing here touches it: `RegisterHpBoost` has given the
+warrior rungs 4-10, up to **+1000 max HP**, since it was written.
+
+### Two rig bugs it exposed, both fixed
+
+- **The boss party's three DDs had no 3rd class.** `BL-169` gave the tank and the healer their
+  disciplines and stopped there, so `BL-13` had been measuring every boss against two 2nd-class
+  Champions and a 2nd-class Sorcerer in endgame gear. It surfaced because the warrior kit landed and
+  the boss table did not move by one second. Boss pace with a real party: 60 **84m→69m**, 65
+  **93m→70m**, 76 99m→119m, 85 30m→32m.
+- **`TopPhysSkillPower` ignored the weapon gate**, picking the highest-power skill *learned* rather
+  than the highest castable. Harmless until a 2H-sword skill and a bow skill sat at the top of two
+  ladders.
+
+`--dmgmatrix` now prints **per-use** damage beside per-hit, because a two-hit skill read as a clean
+hit on your target number when it was double it.
+
+🔴 **New open finding:** party DPS **dips at 76** (679 at 60, 698 at 65, **444 at 76**, 1746 at 85).
+A ladder going backwards is a defect by your own monotonic rule. Not caused by the kits — it appears
+the moment the DDs get any 3rd class — and it is `BL-170`'s neighbourhood. Filed under `BL-185`.
+
+## 2026-09-06 — 0.115.1: harmonies stop stacking, and a Clear All (`BL-183`, `BL-184`)
 
 ⚠ **NEW APK** — `BL-184` adds two buttons. 🟢 **No `game.db` delete.** `BL-183` is entirely
 server-side; an old client gets that fix without updating.

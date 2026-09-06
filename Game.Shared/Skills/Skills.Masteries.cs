@@ -129,7 +129,7 @@ public static partial class SkillCatalog
                 new SkillLevel(SpCost: 6000),
                 new SkillLevel(SpCost: 11000),
                 new SkillLevel(SpCost: 20000),
-            },
+            }.Concat(WarriorArmorMasteryThirdRungs()).ToArray(),
             ArmorMasteryLevels: new[]
             {
                 WarriorArmor(19, 6),
@@ -137,7 +137,7 @@ public static partial class SkillCatalog
                 WarriorArmor(23, 9, hpRegen: 1.1f),
                 WarriorArmor(28, 9, hpRegen: 1.6f),
                 WarriorArmor(32, 9, hpRegen: 1.6f),
-            }),
+            }.Concat(WarriorArmorMasteryThirdProfiles()).ToArray()),
 
         // Rogue — Armor Mastery (CSV rogue 2nd): "with all" = ×1.1 MP regen + flat P.Def (at L5
         // ×1.8 MP regen and ×1.2 HP regen); "with light" adds big evasion, +15% crit-rate resist
@@ -157,7 +157,7 @@ public static partial class SkillCatalog
                 new SkillLevel(SpCost: 6000),
                 new SkillLevel(SpCost: 11000),
                 new SkillLevel(SpCost: 20000),
-            },
+            }.Concat(RogueArmorMasteryThirdRungs()).ToArray(),
             ArmorMasteryLevels: new[]
             {
                 RogueArmor(new StatMods(MpRegenPct: 0.1f, PDef: 16), lightEva: 7),
@@ -170,7 +170,7 @@ public static partial class SkillCatalog
                 // masteries (*"except armor masteries the 20% increase"*) — and that x1.8 is still on
                 // the open list as a weapon-mastery-sized number sitting in an armour row.
                 RogueArmor(new StatMods(MpRegenPct: 0.8f, HpRegen: 1.2f, PDef: 25), lightEva: 13, lightSpeed: 7f),
-            }),
+            }.Concat(RogueArmorMasteryThirdProfiles()).ToArray()),
 
         // (Archer Armor Mastery DELETED 2026-08-07 with its id — the rogue light mastery above is
         //  what a bow character wears since the merge.)

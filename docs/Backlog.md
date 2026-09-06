@@ -128,7 +128,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-171` | 🔵 | THE WORLD BOSS — stats built; the encounter, mass-PvP rules and loot are owed | combat |
 | `BL-172` | 🔴 | `/unstuck <name>` — 180s rooted channel, cast in town, on another char of the same account | systems |
 | `BL-179` | 🔵 | The two TEST skills are granted to EVERY character — three ways to gate them, your pick | systems |
-| `BL-185` | 🔵 | THE DAMAGE REWORK — his IG matrix fitted: K is RIGHT, skill power is 10x short, magic is 9x short | combat |
+| `BL-185` | 🔵 | THE DAMAGE REWORK — step 1 (warrior + archer kits) BUILT; steps 2-6 open | combat |
 
 ---
 
@@ -1040,7 +1040,62 @@ taking the squaring out and every magic buff pays 1.725² = **×2.98**. Same edi
 **Not part of this entry, but it will move when these land:** the S-grade craft budget. A measured
 global, so re-measure `--dmgmatrix` and the M-sections together before assuming it holds.
 
-⚠ **Nothing here is built.** Constants were patched, measured and reverted in the session; the working
+### ✅ STEP 1 IS BUILT (2026-09-06) — the rest is still open
+
+Your recipe, verbatim: *"For archer take the elf harmonist skills and bow passives ... Increase them
+with ~20%"* / *"For fighter kit take demon harmonist skills and 2h wepon passives increase them by
+~20%"*. Built at **×1.25**, the midpoint of your 20~30%, in `Skills.FighterKits3rd.cs` — every number
+is a source ladder times that factor, nothing is invented, and each one names its source.
+
+| | warrior (Ravager / Warlord) | archer (Sharpshooter / Hunter / Trapper) |
+|---|---|---|
+| weapon line | **Two-Handed Sword Mastery** — Warlock Weapon Mastery ×1.25 (P.Atk 38→125, +3 acc), 2H SWORD | **Archer Bow Mastery** — Harmonist Bow Mastery ×1.25 (P.Atk 125→750), +400 range unscaled |
+| damage skill | **Sundering Blow** — Sound Smash's 13 rungs ×1.25 (power 1250→5000), 2H sword | **Split Volley** — Sound Burst's 13 rungs ×1.25, 900 range, **2 hits** |
+| armour | rungs 6-20 of the warrior's own Armor Mastery = the tank's heavy ladder **minus the crit-damage reduction**, exactly as you said | rungs 6-20 of the rogue's own Armor Mastery = **half the tank's P.Def ladder** (32→86 flat, ×1.055→×1.075), your pick |
+| extras | — | **Bow Expertise** (+12%, the harmonist's rung, cloned to Fighter) · **Killing Focus** (+20% crit damage, +700 flat) |
+
+**Measured, level 90, mythic, both sides buffed** — archer P.Atk **4494 → 6647**, warrior **4256 → 4615**:
+
+| | before | after | your target |
+|---|---|---|---|
+| archer skill crit on a mage, **per arrow** | 618 | **1513** | 1500 |
+| archer skill crit on a mage, **per use (2 arrows)** | 618 | **3025** | 1500 ⚠ |
+| archer skill crit on a fighter, per use | 468 | 1778 | 1000 |
+| warrior skill crit on a mage | 524 | **1088** | 700-1500 ✅ |
+
+🔴 **THE ARCHER LANDS AT DOUBLE YOUR NUMBER, and it is your recipe doing it, not a slip.** Sound Burst
+carries `HitCount: 2` — two independent resolutions, each rolling its own crit — so Split Volley
+inherits it. Per arrow it is 1513 against your 1500; per press it is 3025. Your ×1.2 over the
+harmonist is applied exactly (harmonist per use 2525 → archer 3025). **Your call:** keep it (the
+archer is then genuinely the top physical DD, which is what an archer is), or halve `KitFactor` for
+the volley alone. One constant either way.
+
+⚠ **NEW APK REQUIRED.** This changes `ClassSkills`, and the client builds its Learn tab locally from
+the compiled tables. No schema change, so no `game.db` delete.
+
+**Not owed:** the HP-boost item. `RegisterHpBoost` already gives the warrior rungs 4-10 — up to
+**+1000 max HP** at 43/49/55/62/66/70/74 — where the buffer stops at +700. Your ask was already met.
+**No CSV rows owed either:** `warrior 3rd.csv` and the archer's file do not exist yet, and when they
+land they overwrite every number above. `SkillCsvSeed --check` is clean.
+
+### 🔴 TWO RIG BUGS THIS TURNED UP, both fixed, both of which move signed-off tables
+
+1. **The boss party's three DDs had no 3rd class.** `BL-169` gave the TANK and the HEALER their
+   disciplines and stopped there, so `BL-13` has been measuring every boss against two 2nd-class
+   Champions and a 2nd-class Sorcerer in endgame gear. It surfaced because the warrior kit landed and
+   the boss table **did not move by one second** — the rig could not see the kit. Fixed; the numbers
+   moved: 60 84m→**69m**, 65 93m→**70m**, 44 109m→104m, but 76 99m→**119m** and 85 30m→32m.
+2. **`TopPhysSkillPower` ignored the weapon gate** — it picked the highest-power skill LEARNED, not
+   the highest the character could actually cast. Harmless while almost nothing physical was
+   weapon-gated at the top of a ladder; not harmless now that Sundering Blow needs a 2H sword and
+   Split Volley a bow. Fixed.
+
+🔴 **AND A NEW OPEN FINDING: party DPS DIPS AT 76.** With a real 3rd-class party it reads 679 at 60,
+698 at 65, then **444 at 76** before recovering to 1746 at 85. A ladder going backwards is a defect by
+your own monotonic rule. It is NOT caused by the new kits — it appears the moment the DDs are given
+any 3rd class — and it is the same neighbourhood as `BL-170`'s cliff at 80. Not chased yet.
+
+⚠ **The rest of `BL-185` (steps 2-6) is untouched.** Constants were patched, measured and reverted;
 tree is clean of them. `dotnet run --project tools/BalanceMatrix -- --dmgmatrix 90 mythic --his
 --buffed` is the board this is judged on, and 🔑 **the CSVs move with the code** — #1 and #5 are skill
 data, so every rung touched owes its row in `docs/data/classes_skills_csv/` in the same commit.
