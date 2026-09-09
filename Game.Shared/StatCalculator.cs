@@ -515,12 +515,33 @@ public static class StatCalculator
     //  (armor/jewel/passive/mastery/MEN/buff stacking happens in Entity.RecomputeDerived;
     //   these provide the naked baseline + level modifier. Mobs use MobDefence.)
 
-    /// <summary>Player base physical defence: naked baseline + level²/100. No CON.</summary>
-    public static int PhysicalDefenceBase(int level) => 68 + level * level / 100;
+    /// <summary>Player base physical defence — the EMPTY-SLOT default, flat, with no level term.
+    ///
+    /// <para>🔑 REBUILT 2026-09-09 (`BL-185`). It was <c>68 + level²/100</c>, an ADDITIVE level term we
+    /// invented. IG has nothing like it: its "base" defence is the set of values a slot contributes
+    /// while it is EMPTY — chest 31, legs 18, head 12, gloves 8, feet 7, underwear 3 = <b>79-80</b> —
+    /// and equipping a piece REPLACES that slot's default rather than adding to it. So a
+    /// fully-geared IG character carries none of it, and its level growth comes from the
+    /// multiplicative <see cref="LevelMod"/> applied to the finished pool instead.</para>
+    ///
+    /// <para>The owner's own five in-game rows agree: his level-76 mage reads 703 P.Def against a 372
+    /// gear sheet, i.e. <c>372 × 1.65 (levelMod) × 1.145 (mastery/set)</c>. Adding an 80-point base
+    /// first would demand a mastery multiplier BELOW 1, which no mastery is.</para>
+    ///
+    /// <para>⚠ Kept as a flat 80 rather than deleted because our engine has no empty-slot mechanic —
+    /// it adds this once, always. On a geared character it is now noise (3% of a robe's total at 76)
+    /// instead of 36%; on a naked one it still keeps defence off the floor, which is what IG's
+    /// empty-slot defaults are for. <paramref name="level"/> is unused and kept for the call sites.</para>
+    /// No CON term — IG's P.Def has no stat modifier at all (M.Def has MEN; P.Def has nothing).</summary>
+    public static int PhysicalDefenceBase(int level) => 80;
 
-    /// <summary>Player base magic defence: naked baseline + level²/100. Jewels and the
-    /// MEN modifier apply on top in RecomputeDerived. (No base-stat term here.)</summary>
-    public static int MagicDefenceBase(int level) => 20 + level * level / 100;
+    /// <summary>Player base magic defence — the EMPTY-SLOT default, flat, no level term. The magic
+    /// twin of <see cref="PhysicalDefenceBase"/> and rebuilt with it: IG's jewel slots contribute
+    /// rear 9 + lear 9 + neck 13 + rfinger 5 + lfinger 5 = <b>41</b> while EMPTY, replaced the moment
+    /// a jewel goes in. It was <c>20 + level²/100</c>, which is why our M.Def read ×1.34 his at a
+    /// matched level 76. Jewels and the SPT (his MEN) modifier apply on top in RecomputeDerived.
+    /// <paramref name="level"/> is unused and kept for the call sites.</summary>
+    public static int MagicDefenceBase(int level) => 41;
 
     /// <summary>Mob defence — kept on the old simple curve (mobs have no armor/jewels;
     /// the player naked baseline would make low-level mobs too tanky).</summary>
@@ -574,6 +595,12 @@ public static class StatCalculator
 
     /// <summary>M.Def level scaling: levelMod (NOT squared — the counterpart to the above).</summary>
     public static float MagicDefenceLevelMod(int level) => LevelMod(level);
+
+    /// <summary>P.Def level scaling: levelMod — the SAME term M.Def has always used, added to the
+    /// physical channel 2026-09-09 (`BL-185`). Until then physical defence had no multiplicative level
+    /// term at all while <see cref="PhysicalAttackFromWeapon"/> did, so attack outran defence as level
+    /// rose. IG carries levelMod on BOTH sides, where they largely cancel.</summary>
+    public static float PhysicalDefenceLevelMod(int level) => LevelMod(level);
 
     // Damage balance constants — the authentic IG constants, unmodified.
     //  Physical: 77·(pAtk + power)/pDef

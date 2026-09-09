@@ -595,22 +595,33 @@ public static partial class SkillCatalog
         // <c>Consumable</c>, which counts. Evicting one is pointless as well as unfair — the
         // reconciliation pass puts it straight back on the next tick, so the cap would spend a slot,
         // drop a real blessing to free it, and end the second with the rune still on the bar. -----
-        new(WarRuneBuff, "War Rune", BaseClass.Fighter, SkillEffect.BuffPhysAtk,
+        // 🔑 THE TWO RUNES ARE THE IG "SHOT", AND SINCE 2026-09-09 THEY MULTIPLY THE FINISHED DAMAGE
+        // rather than the attack stat (owner: *"change the runes to not directly increase the stat
+        // (p/m atk) but to double the dmg (as the IG shots do)"*). Both are ×2, which is IG's BLESSED
+        // shot exactly: its magic form is M.Atk ×4 under the damage formula's √, i.e. ×2 damage,
+        // measured at ×2.35 off his own five in-game rows (`docs/balance/DamageVsIG.md`).
+        //
+        // ⚠ THE OLD FORM WAS NOT EQUIVALENT, WHICH IS WHY THIS CHANGED. `BuffPhysAtk 1.00` fed an
+        // ADDITIVE formula — `77·(pAtk + power)/pDef` — so it moved a 7635-power skill by ×1.29 while
+        // reading "+100%". The magic side did deliver ×1.414, but only via a stored-pre-√ magnitude
+        // that three separate layers had to cancel. Neither number said what it did.
+        new(WarRuneBuff, "War Rune", BaseClass.Fighter, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             DurationTicks: 36000, BuffKey: "rune_war", Rank: 1,
-            Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffPhysAtk, 1.00f) },
+            PhysDamageMult: 2.0f,
             Category: SkillCategory.Buff, BuffRow: BuffRow.Consumable, CountsTowardBuffLimit: false,
-            Description: "War Rune: +100% P.Atk (physical damage) while the rune is held."),
-        new(SpellRuneBuff, "Spell Rune", BaseClass.Mage, SkillEffect.BuffMagAtk | SkillEffect.BuffCastSpeed,
+            Description: "War Rune: increases the final PHYSICAL damage ×2 while the rune is held."),
+        new(SpellRuneBuff, "Spell Rune", BaseClass.Mage, SkillEffect.BuffCastSpeed,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             DurationTicks: 36000, BuffKey: "rune_spell", Rank: 1,
+            MagicDamageMult: 2.0f,
             Magnitudes: new EffectMagnitude[]
             {
-                new(SkillEffect.BuffMagAtk, 0.414f),                       // +41% EFFECTIVE M.Atk = ×1.414 magic
+                // The cast-speed half is UNCHANGED and stays a stat buff — it is not part of the shot.
                 new(SkillEffect.BuffCastSpeed, 40, ModifierMode.Flat),     // flat +40 cast stat (not %, per the old passive)
             },
             Category: SkillCategory.Buff, BuffRow: BuffRow.Consumable, CountsTowardBuffLimit: false,
-            Description: "Spell Rune: +magic damage and cast speed while the rune is held."),
+            Description: "Spell Rune: increases the final MAGICAL damage ×2, and cast speed, while the rune is held."),
 
         // ================== BUFF LADDERS — the single buffs and their consumables ==================
         //  See docs/design/BuffLadders.md. Four families, three rungs each; the improved "Speed"

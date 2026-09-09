@@ -7,13 +7,90 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.116.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.117.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
 
-## 2026-09-06 (latest) — 0.116.0: the warrior and archer damage kits, and the IG damage fit (`BL-185`)
+## 2026-09-09 (latest) — 0.117.0: the runes become the SHOT, and defence gets its level term (`BL-185`)
+
+⚠ **NEW APK** — the rune buff descriptions and the buff-tooltip text come from `Game.Shared`, and the
+defence change moves every P.Def number the client displays.
+
+### The runes are the IG shot now — ×2 on the FINISHED damage, not on the attack stat
+
+Your ruling: *"change the runes to not directly increase the stat (p/m atk) but to double the dmg (as
+the IG shots do) … like the opposite of mReduction: it doesn't directly increase the mDef but just
+decreases the dmg"*. Both runes now carry `PhysDamageMult` / `MagicDamageMult = 2.0`, applied in
+`GameLoopService.FinalizeDamage` — the one seam every hit already passes.
+
+🔑 **THE OLD FORM WAS NOT EQUIVALENT, AND THE PHYSICAL ONE WAS NEARLY A NO-OP.** `BuffPhysAtk 1.00`
+read "+100% P.Atk", but physical damage is `77·(pAtk + power)/pDef` — **additive** — so on a
+high-power skill it delivered ×1.29, not ×2. Measured at level 90 mythic, the switch changes:
+
+| | before | after | |
+|---|---|---|---|
+| archer BASIC → mage | 498 | 498 | **unchanged** — +100% P.Atk on a power-0 hit already *was* ×2 |
+| archer SKILL → mage | 1037 | 1574 | **×1.52** — the additive-formula loss, returned |
+| warrior SKILL → mage | 884 | 1422 | **×1.61** |
+| mage SKILL → tank | 206 | 290 | **×1.414** — plain spiritshot → blessed |
+
+The magic side went from ×1.414 to ×2.00, which is IG's **blessed** shot exactly (M.Atk ×4 under the
+damage formula's `√`). Measured against your own five in-game rows the real shot is ×2.35, so this
+closes ×2.00 of it; the remaining ×1.17 is a separate open question (`MagicK` 91 vs ~107).
+The Spell Rune's flat +40 cast speed is unchanged — that half was never part of the shot.
+
+`BL-187` filed for the third rune combining both channels, as you asked. The engine already supports
+it (the two fields are independent); what is owed is the economy, not code.
+
+### 🔴 P.Def now scales with `levelMod`, and both defence bases became IG's empty-slot defaults
+
+P.Def was `68 + level²/100 + gear`, with **no multiplicative level term at all**, while P.Atk has
+carried `levelMod` since the IG-shape rebuild — so attack outran defence as level rose, the opposite
+of IG where both sides carry it and largely cancel. M.Def already had it. Now both do.
+
+The two bases were also ours alone. IG's "base" defence is what a slot pays while **EMPTY** — chest
+31 + legs 18 + head 12 + gloves 8 + feet 7 + underwear 3 = **79-80** P.Def, and rear 9 + lear 9 +
+neck 13 + rfinger 5 + lfinger 5 = **41** M.Def — and equipping a piece REPLACES that slot rather than
+adding to it, so a geared IG character carries none of it. They are now flat 80 / 41 with no level
+term. (Your own rows prove the level² term was wrong: your 76 mage reads 911 M.Def against a 333
+jewel sheet, which is `333 × 1.64 × 1.65` to within 1% — with **no** additive base.)
+
+🔑 **THE RESULT VALIDATES THE SHAPE.** At level 76 against your measured sheet (P.Def 703 / M.Def 911):
+
+| our tier @76 | P.Def | M.Def |
+|---|---|---|
+| **rare** | **688 (×0.98 yours)** | **900 (×0.99 yours)** |
+| epic | 688 | 892 |
+| legendary | 775 | 1009 |
+| mythic | 867 | 1134 |
+
+Before the change our mythic read 571 P.Def — **below** your 703 — and rare read 462. Now our rare
+tier reproduces your S-grade sheet on **both** channels to within 2%, with epic/legendary/mythic
+sitting above it exactly as four rarities over one grade should.
+
+⚠ **WHAT THIS COSTS: mobs hit players ~`1/levelMod` softer** — about −8% at level 20, −29% at 52,
+−44% at 90. That is a real PvE softening and it is deliberate: our mob P.Atk curve was refitted off
+IG's own creatures, which already assume an IG player defence that carries `levelMod`. It still wants
+your eye before it is called finished.
+
+⚠ **The tank:mage P.Def spread barely moved** — 3.25× → 3.09× at 76, 3.75× → 3.56× at 90, against
+IG's 1.47×. `levelMod` is a common factor, so it cannot narrow a ratio. This confirms the diagnosis:
+the spread is the **heavy Armor Mastery `PDefPct` ladder** (+11%→+15% at the 3rd tier, +20%→+30% at
+the 4th, compounding), which is your *"if we have weight based modifiers we should remove them"*.
+Those numbers live in `tank 3rd.csv` / `tank 4th.csv`, so they are yours to cut — not retuned here.
+
+### The measurement rig had to move with it, and nearly lied
+
+`tools/BalanceMatrix` computes damage by calling `StatCalculator` directly. While the runes rode on
+P.Atk/M.Atk it picked them up for free; now it must apply them itself, so all **37** damage sites are
+wrapped in a new `Shot(entity, magic, dmg)` helper. 🔑 **And the first run after that was still wrong**
+— the rig hand-builds its rune buff and copied only `Effect` + `Magnitudes`, which is the FLAG half of
+the payload; the new fields never arrived and every table quietly *lost* the rune. Ten hand-built buff
+constructors now carry the field half too. Same trap as the group-buff bug in 0.102.
+
+## 2026-09-06 — 0.116.0: the warrior and archer damage kits, and the IG damage fit (`BL-185`)
 
 ⚠ **NEW APK** — this changes `ClassSkills`, and the client builds its Learn tab locally from the
 compiled tables. 🟢 **No `game.db` delete** — no schema change.

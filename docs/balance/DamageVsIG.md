@@ -15,7 +15,7 @@ arithmetic shown, where our damage actually differs from IG's.
 ⚠ Source 3 is why this page has been rewritten twice. **A table that reproduces our own formulas to
 0.1% was generated with them and confirms nothing.** Fit only to sources 1 and 2.
 
-## The verdict, in six lines
+## The verdict, in seven lines
 
 1. ✅ **The formula and both constants are correct and confirmed.** `77·(pAtk+power)/pDef` and
    `91·power·√mAtk/mDef`, `PhysicalK = 77`, `MagicK = 91`. Nothing here proposes changing them.
@@ -27,9 +27,12 @@ arithmetic shown, where our damage actually differs from IG's.
 4. ✅ **His authored archer matches IG's real ladder** — Twin Arrows 1000→5000 across 40→74, two
    arrows per use, against IG's real two-arrow skill at 1110→4870. **The `HitCount: 2` question from
    `BL-185` is answered: the double hit is correct and intended.**
-5. 🔴 **THE GAP IS THE PER-CAST SHOT, AND IT MEASURES ×2.35.** See below. It is the single largest
-   factor and it is the one mechanic we deliberately removed.
-6. 🔴 **Our M.Def is roughly 2x his**, and our armour P.Def spread is far wider than IG's.
+5. 🔴 **THE GAP IS THE PER-CAST SHOT, AND IT MEASURES ×2.35 — which decomposes into ×2.00 for the
+   BLESSED shot and a ×1.17 residual.** IG has two shot grades; our rune replicates the CHEAP one.
+6. ✅ **M.Def: at MATCHED level it is ×1.34, not the ×2 this page first claimed** — that compared his
+   76 to our 90. What IS ours-only is an ADDITIVE base term IG does not have.
+7. 🔴 **The armour P.Def spread is the one real defence divergence** — and it is the PLATE end alone;
+   our robe P.Def is if anything BELOW his.
 
 ## 🔴 The shot — measured five times off his own rows
 
@@ -47,9 +50,37 @@ what he actually observed. The column he recorded is labelled *"buffed with SS d
 **A flat ×2.35 across five rows and 56 levels.** That is not drift and not a formula error — it is one
 multiplicative term our engine does not have.
 
-⚠ **The 52 row only lands on 2.37 if its spell power is 72, not the 52 written in the cell** — 72 is
-the real value of that rung at level 52, and 52 is the level number. Worth confirming; it is the one
-cell in the file that looks like a transcription slip.
+### 🔑 IT DECOMPOSES: ×2.00 IS THE **BLESSED** SHOT, ×1.17 IS SOMETHING ELSE
+
+IG has **two grades** of shot, and both apply to M.Atk **inside the √**:
+
+| | M.Atk | damage |
+|---|---|---|
+| Spiritshot | ×2 | √2 = **×1.414** |
+| **Blessed** Spiritshot | ×4 | √4 = **×2.00** |
+
+Our Spell Rune stores `BuffMagAtk 0.414`; the factor is squared in `Entity.cs:1573`, so internal
+M.Atk goes ×2 and damage ×1.414. **That IS the plain spiritshot, exactly.** His rows were measured
+with the blessed one. So:
+
+```
+2.35  =  2.00 (blessed shot, M.Atk x4 under the sqrt)  x  1.17 (residual)
+```
+
+Residual per row after crediting the blessed shot: **1.20 / 1.12 / 1.18 / 1.12 / 1.26** (mean 1.17).
+Less flat than the 2.35 was, so probably not one clean term. Candidates, in order:
+
+1. **`MagicK` may not be 91 in his chronicle** — 91 × 1.17 = **107**. The 91 was read off L2J source,
+   never measured. These five rows are the only measurement in the building and they ask for ~107.
+2. **His observed cells are RANGES** (`1527~1671`, `958~1054`, `1640~1764`) and the table above uses
+   the **lower** bound, so 1.17 is a floor. If those are damage variance around a mean, it is ~1.25.
+3. A magic bonus not present in his M.Atk column (set / passive / target-type).
+
+🔑 **This shrinks the decision.** The gap is not a whole missing mechanic — it is **one rune grade**.
+`BuffMagAtk 0.414 → 1.00` is a *Blessed* Spell Rune at a real IG value and closes ×2.00 of the ×2.35.
+
+✅ **The 52 row's spell power was a transcription slip (52 = the level number) and he CORRECTED it to
+72 on 2026-09-09** — which is the real value of that rung. The table above already uses 72.
 
 🔑 **His algebra objection was right and is not what caused this.** `√(a·b) = √a·√b`, so a ×2 M.Atk
 shot is worth ×1.414 damage, and our `BuffMagAtk` magnitudes are stored **already square-rooted**
@@ -57,9 +88,12 @@ shot is worth ×1.414 damage, and our `BuffMagAtk` magnitudes are stored **alrea
 *is* a ×2 M.Atk shot, exactly as he said. **The finding is not that the rune is mis-converted — it is
 that the real shot is worth ×2.35, not ×1.414.** Our stand-in is 40% of the thing it replaced.
 
-For reference, our War Rune gives `BuffPhysAtk 1.00` = +100% P.Atk, which in the *additive* physical
-formula is ×2 on a basic attack but far less on a big-power skill. The two runes are not comparable
-by their stored numbers; only by the damage multiplier they actually deliver.
+⚠ **The physical side is NOT settled and must not be guessed.** Our War Rune gives `BuffPhysAtk 1.00`
+= +100% P.Atk, which mirrors a shot only if IG's soulshot doubles the **P.Atk term**. But our formula
+is `77·(pAtk + power)/pDef` — *additive* — so doubling P.Atk on a 7635-power skill is worth almost
+nothing, which contradicts how soulshots actually behave in IG. That points at IG multiplying the
+**finished damage** instead. 🔵 **One measurement settles it: one physical hit with and without a
+shot, at a stated P.Atk / P.Def / skill power.** Until then, do not touch the War Rune.
 
 ## What his buff stack is worth (measured, not assumed)
 
@@ -89,13 +123,61 @@ At level 76, against his stated 960 M.Def with the same 108-power rung:
 | his mage, buffed, **with shot** | 4050 | **1640** (observed) |
 
 **Unbuffed we are 1.19x ABOVE him.** Every part of the model is right; the entire felt difference is
-the shot, plus our M.Def being about twice his on the receiving end.
+the shot — and, on the receiving end, an M.Def ×1.34 his (see the matched-level table below; the
+"about twice" this page first printed was a level-gap artefact).
 
 ⚠ **Display note, not a damage bug:** our internal M.Atk at 76 is 1811 but the character sheet shows
 **851** (`EffectiveMagicAttackShown = min(internal, 20·√internal)`). IG shows the real number, 1267.
 So our mage *reads* 33% weaker than his while computing 43% stronger. Any eyeball comparison of the
 two character sheets will mislead. This shrink is a deliberate 2026-07-16 decision — flagging it as a
 communication problem, not proposing a change.
+
+## 🔑 Defence, measured at MATCHED level — and IG's M.Def formula, derived from his own rows
+
+The first version of this page said *"our M.Def is roughly 2x his"*. **It compared his level 76 to our
+level 90.** Run `--dmgmatrix 76 mythic` and the gap mostly disappears:
+
+| | his mage @76 | our mage @76 mythic | |
+|---|---|---|---|
+| M.Def (unbuffed) | 911 | **1219** | ×1.34 |
+| P.Def (unbuffed) | 703 | **571** | **×0.81 — we are LOWER** |
+| HP | 3008 | 3566 | ×1.19 |
+| M.Atk (internal) | 1267 | 1811 | ×1.43 |
+
+### IG's M.Def formula, proved off his five rows alone
+
+Divide his total M.Def by his gear M.Def, then by `levelMod = (level+89)/100`:
+
+| level | gear M.Def | total M.Def | ratio | levelMod | **ratio ÷ levelMod** |
+|---|---|---|---|---|---|
+| 20 | 157 | 275 | 1.752 | 1.09 | **1.607** |
+| 40 | 218 | 463 | 2.124 | 1.29 | **1.646** |
+| 52 | 252 | 593 | 2.353 | 1.41 | **1.669** |
+| 61 | 295 | 725 | 2.458 | 1.50 | **1.638** |
+| 76 | 333 | 911 | 2.736 | 1.65 | **1.658** |
+
+Constant to ±2% across 56 levels. So:
+
+```
+IG M.Def = SUM(jewel M.Def) x MENbonus (his ~1.64) x (level+89)/100
+```
+
+🔑 **IG's M.Def DOES rise with level, by the exact `levelMod` we already use.** The level scaling is
+not a divergence — it is shared. (His P.Def divides out the same way, less cleanly: `gear × ~1.19 ×
+levelMod`, the 1.19 being his mastery and set bonuses.)
+
+### 🔴 What IS ours-only: an ADDITIVE base term IG has no equivalent for
+
+`StatCalculator.MagicDefenceBase(level) = 20 + level²/100` and
+`PhysicalDefenceBase(level) = 68 + level²/100`. IG's defences are **gear × modifiers × levelMod** with
+no naked additive term at all. At level 76 ours contribute, after `levelMod`:
+
+- **M.Def +128** — i.e. ~42% of the entire 308-point M.Def difference above.
+- **P.Def +207** — which is **36% of our mage's whole 571 P.Def**.
+
+⚠ It is not free to delete: the term is a bigger share of a robe's total than of plate's, so removing
+it **widens** the tank:mage spread that the armour section below wants narrowed. The two must be
+decided together.
 
 ## IG's real skill power, by level (source 2)
 
@@ -124,22 +206,77 @@ Full-set P.Def from IG's own item data:
 | A | 464 | — | 300 | 1.55x |
 | S | 526 | 442 | 359 | **1.47x** |
 
-Our finished totals at level 90 mythic are tank 2682 / warrior 1215 / mage 715 — a **3.75x** spread.
-IG's armour is nowhere near that wide; the difference is in our per-class Armor Mastery ladders
-multiplying it, not in the base sheets. This is the one physical-side finding from the 2026-09-06
-page that survives, and the real target is **tighter** than the 2.44x that page proposed.
+Ours, measured at two levels (absolute numbers are not comparable to IG's — different base terms,
+different `levelMod` points — but the **ratio** is):
+
+| | ours @76 mythic | ours @90 mythic | IG S-grade full set |
+|---|---|---|---|
+| tank | 1859 | 2682 | heavy **526** |
+| warrior | 959 | 1215 | light **442** |
+| mage | 571 | 715 | robe **359** |
+| **tank : mage** | **3.25x** | **3.75x** | **1.47x** |
+
+🔑 **It is the PLATE end alone.** Our robe P.Def is if anything *below* IG's (571 at 76 against his
+703), so raising the mage is the wrong fix — it is the per-class **Armor Mastery** ladders on heavy
+that run away, not the base sheets. This is the one physical-side finding from the 2026-09-06 page
+that survives, and the real target is **tighter** than the 2.44x that page proposed.
+
+## ✅ BUILT 0.117.0 — the shot, and the defence shape
+
+Two of the items below were built on 2026-09-09. What changed, and what it proved:
+
+**1. The runes became the shot.** ×2 on the FINISHED damage per channel (`PhysDamageMult` /
+`MagicDamageMult`, applied in `GameLoopService.FinalizeDamage`), replacing `BuffPhysAtk`/`BuffMagAtk`.
+Magic went ×1.414 → ×2.00, which is IG's **blessed** shot exactly. The physical rune was the bigger
+find: `+100% P.Atk` in an ADDITIVE formula delivered only ×1.29 on a 7635-power skill, so physical
+SKILL damage rose 52-61% while BASIC attacks did not move at all (a power-0 hit was already ×2).
+
+**2. Both defences got IG's shape.** P.Def is now `(80 + gear + mastery) × levelMod` and M.Def
+`(41 + jewels) × sptMod × levelMod`. The `level²/100` additive terms are gone; 80 and 41 are IG's
+**empty-slot defaults** (chest 31 + legs 18 + head 12 + gloves 8 + feet 7 + underwear 3; rear 9 +
+lear 9 + neck 13 + rfinger 5 + lfinger 5), which IG REPLACES on equip rather than adding, so a geared
+character carries none of them.
+
+🔑 **THE FIT IS THE VALIDATION.** Against his level-76 sheet (P.Def 703 / M.Def 911):
+
+| our tier @76 | P.Def | M.Def |
+|---|---|---|
+| **rare** | **688 (×0.98)** | **900 (×0.99)** |
+| epic | 688 | 892 |
+| legendary | 775 | 1009 |
+| mythic | 867 | 1134 |
+
+Before, our *mythic* read 571 P.Def — below his 703 — and rare read 462. Our rare tier now reproduces
+his S-grade sheet on **both** channels to within 2%, with our three higher rarities above it, which is
+what four rarities over one grade should look like.
+
+⚠ **Cost: mobs hit players ~`1/levelMod` softer** (−8% at 20, −29% at 52, −44% at 90). Deliberate —
+our mob P.Atk curve was refitted off IG's own creatures, which assume a player defence carrying
+`levelMod` — but it is a real PvE softening and wants his eye.
+
+⚠ **The tank:mage spread barely moved** (3.25× → 3.09× at 76; 3.75× → 3.56× at 90, vs IG's 1.47×).
+`levelMod` is a common factor and cannot narrow a ratio. **Confirmed: the spread is the heavy Armor
+Mastery `PDefPct` ladder**, +11%→+15% (3rd tier) and +20%→+30% (4th), compounding on flat `PDef`
++175→+245. Those live in `tank 3rd.csv` / `tank 4th.csv` and are his to cut.
 
 ## What is owed
 
-Nothing here is built. In order:
-
-1. 🔵 **Decide the shot.** The measured value is ×2.35 magic damage per cast. Options: raise the
-   Spell Rune to deliver it (`BuffMagAtk 0.414 → 1.35`), or reinstate a consumable. ⚠ *"no shot"* was
-   his own ruling, so this is his call, not a defect to quietly fix. The same question applies to the
-   physical side, which his file does not yet cover.
-2. 🔵 **M.Def ~2x his** — his mage reads 911 at 76 where ours reads 2032 at 90. Needs a matched-level
-   measurement before any number is moved.
-3. 🔵 **Armour P.Def spread 3.75x vs IG's 1.47x** — lives in the Armor Mastery ladders.
-4. ✅ **Archer `HitCount: 2` — answered, keep it.**
-5. ⏸ **Nothing to do on:** the formula, both K constants, weapon/jewel catalogues, the nuke power
-   ladder, the buff shelf. All confirmed correct against real data.
+1. ✅ **The shot — BUILT 0.117.0 as ×2 on both channels.** Closes ×2.00 of the measured ×2.35.
+   `BL-187` filed for the third rune combining both channels.
+2. 🔵 **The ×1.17 residual.** Most likely `MagicK` being ~107 rather than 91 in his chronicle, but his
+   observed cells are ranges and the table used their lower bound, so it may be as high as ~1.25.
+   **Do not move `MagicK` on this alone** — it wants one measurement with a single, exact observed
+   number rather than a range.
+3. 🔵 **The physical shot is UNMEASURED.** His file is a mage only. Needs one physical hit with and
+   without a shot at a stated P.Atk / P.Def / skill power, to confirm ×2 is right there too.
+4. ✅ **The additive defence bases — DELETED 0.117.0**, replaced by IG's flat empty-slot defaults, and
+   P.Def gained the `levelMod` it never had. Our rare tier now matches his sheet to within 2%.
+5. 🔵 **Armour P.Def spread — 3.09× at 76 / 3.56× at 90 vs IG's 1.47×.** The one remaining defence
+   item, and the fix is the heavy `PDefPct` mastery ladder in his own tank CSVs. Needs his target
+   ratio, and his go-ahead to edit those rows.
+6. 🔵 **Does the PvE softening stand?** −44% mob physical damage at level 90 is the price of the
+   correct defence shape. Right by IG's construction; still his call whether to re-tune mobs.
+7. ✅ **Archer `HitCount: 2` — answered, keep it.**
+8. ✅ **M.Def at matched level was ×1.34, not ×2** — and after the shape fix it is ×0.99 at rare.
+9. ⏸ **Nothing to do on:** the formula shape, `PhysicalK = 77`, the weapon/jewel catalogues, the nuke
+   power ladder, the buff shelf, and the `sptModifier` curve (ours is BELOW IG's MEN bonus already).

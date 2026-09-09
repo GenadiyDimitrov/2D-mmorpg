@@ -259,6 +259,25 @@ public record SkillDef(
     // Applied in the central damage pipeline once PvP exists; neutral today.
     float PveDamageMult = 1f,
     float PvpDamageMult = 1f,
+    // ===== FINAL-DAMAGE MULTIPLIERS the BUFF grants its HOLDER (1.0 = unchanged) =====
+    // The IG "shot" channel (owner, 2026-09-09): *"change the runes to not directly increase the stat
+    // (p/m atk) but to double the dmg (as the IG shots do)"*. A shot is NOT a stat buff — it is a
+    // multiplier on the FINISHED number, the mirror image of `MagicResist`, which cuts damage without
+    // touching M.Def. Applied in `GameLoopService.FinalizeDamage`, the one seam every hit passes.
+    //
+    // 🔑 WHY THIS IS NOT `BuffPhysAtk` / `BuffMagAtk`, which is what the runes used until today:
+    //  • PHYSICAL was nearly a no-op. Damage is `77·(pAtk + power)/pDef` — ADDITIVE — so the War Rune's
+    //    "+100% P.Atk" moved a 7635-power skill by ×1.29, not ×2. As a damage multiplier it is ×2 on
+    //    everything, which is what a shot is supposed to be.
+    //  • MAGIC worked, but only through three layers of cancellation: the magnitude was stored
+    //    ALREADY square-rooted, `Entity.EffectiveMagicAttack` squared the factor, and the `√` in the
+    //    damage formula un-squared it. Correct, and unreadable. This says the number it means.
+    //
+    // ⚠ These are FIELDS, not `SkillEffect` bits — the flag enum has none left (see MagicAccuracy and
+    // friends on `Entity.Buff`). ⚠ They multiply DAMAGE ONLY, never heals: the owner's own wording for
+    // the item text is *"Increases the final physical/magical dmg"*.
+    float PhysDamageMult = 1f,
+    float MagicDamageMult = 1f,
     // Conditional damage: +ConditionalDamagePct when the TARGET is in any ConditionalOn
     // state (e.g. +50% vs slowed/rooted). None/0 = no conditional bonus.
     TargetCondition ConditionalOn = TargetCondition.None,

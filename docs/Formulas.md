@@ -26,6 +26,13 @@ ManaDrain      = targetMaxMp * power / 1000                  power is PER MILLE
   than they read: doubling M.Atk is ×1.41 damage, doubling P.Atk is ×2.
 - Magic currently divides by **physical** defence in some paths — magic-resist is a `%` reduction
   (`BuffMagicResist`), not a separate defence stat.
+- 🔑 **THE SHOT — the War / Spell Runes multiply the FINISHED damage, ×2, per channel** (2026-09-09,
+  `BL-185`). `FinalDamage = raw x (1+pve/pvp bonus) x conditional x skillMult x raidMult x takenMult
+  x runeMult`, in `GameLoopService.FinalizeDamage`. They are NOT stat buffs any more: `BuffPhysAtk
+  1.00` fed an ADDITIVE formula and moved a 7635-power skill by only ×1.29 while reading "+100%", and
+  the magic side reached ×1.414 only through a magnitude stored pre-`sqrt`. ×2 is IG's **blessed**
+  shot exactly (its magic form is M.Atk ×4 under the `sqrt`, i.e. ×2 damage). ⚠ A rig that calls
+  `StatCalculator` directly must apply `Entity.PhysDamageDealtMult`/`MagicDamageDealtMult` itself.
 
 `Game.Shared/StatCalculator.cs` — `PhysicalDamage`, `MagicDamage`, `ManaDrain`, `PhysicalK`, `MagicK`
 
@@ -37,10 +44,20 @@ PhysicalAttack   = weaponPAtk scaled by  atk/40
 MagicAttack      = weaponMAtk scaled by  atk/40          (weapon MAtkBonus decides the split)
 Accuracy         = agi + L
 Evasion          = agi + L
-PhysicalDefBase  = 68 + L*L/100                          (+ gear)
-MagicDefBase     = 20 + L*L/100                          (+ gear, + spt)
+PhysicalDefBase  = 80                                    (flat, empty-slot default)
+MagicDefBase     = 41                                    (flat, empty-slot default)
+P.Def            = (80 + gear + set + mastery%) * LevelMod
+M.Def            = (41 + jewels + passives) * sptModifier * LevelMod
 LevelMod         = (L + 89) / 100
 ```
+
+🔑 **BOTH defences are `(base + gear) x LevelMod`, and NEITHER has a stat term on the physical side**
+(2026-09-09, `BL-185`). P.Def had no multiplicative level term at all until then — it carried an
+additive `68 + L*L/100` instead, while P.Atk has always carried `LevelMod`, so attack outran defence
+as level rose. The two bases are IG's **empty-slot defaults** (chest 31 + legs 18 + head 12 + gloves 8
++ feet 7 + underwear 3 = 79-80; rear 9 + lear 9 + neck 13 + rfinger 5 + lfinger 5 = 41), which in IG
+are REPLACED by whatever you equip rather than added to it — so on a geared character they are noise.
+M.Def keeps its stat term (`sptModifier`, IG's MEN); **P.Def has none — IG's has no stat modifier.**
 
 🔑 **ONE power stat (ATK) feeds both channels.** The *weapon* decides the split via `MAtkBonus` —
 staff high, sword low. **WIT is not power**: it is cast speed + magic crit rate.

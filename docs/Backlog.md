@@ -128,7 +128,9 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-171` | 🔵 | THE WORLD BOSS — stats built; the encounter, mass-PvP rules and loot are owed | combat |
 | `BL-172` | 🔴 | `/unstuck <name>` — 180s rooted channel, cast in town, on another char of the same account | systems |
 | `BL-179` | 🔵 | The two TEST skills are granted to EVERY character — three ways to gate them, your pick | systems |
-| `BL-185` | 🔵 | THE DAMAGE REWORK — REFITTED to real data 2026-09-09; only the SHOT, M.Def and armour spread still open | combat |
+| `BL-185` | 🔵 | THE DAMAGE REWORK — ✅ the SHOT (runes x2) and the DEFENCE SHAPE built 0.117.0; the armour spread + the x1.17 residual are open | combat |
+| `BL-186` | ❓ | THE MAX LEVEL CAP — can it be removed? Parked until `BL-185` closes, on your order | systems |
+| `BL-187` | 🔵 | A THIRD RUNE combining both damage channels — engine done, the economy and stacking shape are yours | items |
 
 ---
 
@@ -1150,3 +1152,47 @@ any 3rd class — and it is the same neighbourhood as `BL-170`'s cliff at 80. No
 tree is clean of them. `dotnet run --project tools/BalanceMatrix -- --dmgmatrix 90 mythic --his
 --buffed` is the board this is judged on, and 🔑 **the CSVs move with the code** — #1 and #5 are skill
 data, so every rung touched owes its row in `docs/data/classes_skills_csv/` in the same commit.
+
+---
+
+## `BL-186` ❓ THE MAX LEVEL CAP — can it be removed?
+
+**Filed 2026-09-09, on your instruction:** *"make a note to ask you about max lvl cap and if we can
+remove it (but 1st to finish the dmg/def discussion)"*.
+
+⏸ **Deliberately not investigated yet** — you asked to close the damage/defence discussion
+(`BL-185`) first. This entry exists only so the question is not lost.
+
+When it opens, the things that will need answering are roughly: what actually enforces the cap today
+and in how many places; what the EXP curve does past it; whether the mob roster, the zone ladder and
+the gear tiers have anything to give above the cap; and what an uncapped level does to `levelMod =
+(level+89)/100`, which multiplies every attack and defence number in the game.
+
+---
+
+## `BL-187` 🔵 A THIRD RUNE THAT COMBINES BOTH CHANNELS
+
+**Filed 2026-09-09, on your instruction** while the runes were rebuilt as damage multipliers
+(`BL-185` step 1): *"add a note to make 3rd rune that combines both"*.
+
+The engine side is already done and this is now a **catalogue entry, not a mechanic**: `SkillDef`
+carries `PhysDamageMult` and `MagicDamageMult` independently, `Entity` compounds each channel
+separately, and `GameLoopService.FinalizeDamage` picks the channel per hit. A combined rune is one
+`SkillDef` setting **both** fields plus one `ItemDef`.
+
+**What is still owed is yours to decide, because all of it is economy, not code:**
+
+1. **The multiplier.** Same ×2 on both channels, or less on each (e.g. ×1.7/×1.7) so the combined
+   rune is convenience rather than a strict upgrade? A flat ×2/×2 strictly dominates both singles for
+   any hybrid, and equals them for a pure class.
+2. **Who it is for.** Only a hybrid actually uses both channels. A pure nuker gains nothing over a
+   Spell Rune, so priced equal to a single it is a trap, and priced above it is a tax on hybrids.
+3. **Price and duration ladder.** The singles run 1h/2h vendor-bought (150 000 / 280 000 gold,
+   tradable sealed) and 24h/30d premium (not buyable, not tradable). Same four rungs, or fewer?
+4. **The name**, which must pass the `word + SAME RACE + SAME ROLE` test.
+
+⚠ **Stacking is already decided by the existing rules and needs no new mechanic** — but check it
+reads the way you want: the two singles have distinct `BuffKey`s (`rune_war` / `rune_spell`), so a
+combined rune either takes a third key (and then all three stack, which is almost certainly wrong) or
+declares `CoveredKeys` over both and outranks them by `GroupRank`, exactly as a group buff covers its
+singles (`BL-183`). **The second is the right shape**; it just has to be authored.

@@ -150,8 +150,8 @@ if (args.Length > 0 && args[0] == "--mana-ray")
 
     foreach (var (who, t) in Targets(L, fRes, cRes))
     {
-        int hit = StatCalculator.MagicDamageFM(hAtk, 0, power,
-            (int)t.EffectiveMagicDefence, t.MagicDefCoef);
+        int hit = Shot(healer, true, StatCalculator.MagicDamageFM(hAtk, 0, power,
+            (int)t.EffectiveMagicDefence, t.MagicDefCoef));
         int crit = (int)(hit * StatCaps.MagicCritDamageBase);
         int fizzle = Math.Max(1, hit / 3);
         float pct = hit / (float)Math.Max(1, t.MaxMp);
@@ -167,7 +167,7 @@ if (args.Length > 0 && args[0] == "--mana-ray")
     Console.WriteLine($"  {"target",-14} {"regen/s",8} {"sec to undo one hit",20}");
     foreach (var (who, t) in Targets(L, fRes, cRes).Where(x => x.Item1 is "tank" or "nuker"))
     {
-        int hit = StatCalculator.MagicDamageFM(hAtk, 0, power, (int)t.EffectiveMagicDefence, t.MagicDefCoef);
+        int hit = Shot(healer, true, StatCalculator.MagicDamageFM(hAtk, 0, power, (int)t.EffectiveMagicDefence, t.MagicDefCoef));
         float rg = StatCalculator.MpRegenPerSecond((int)t.EffectiveSpt, L);
         Console.WriteLine($"  {who,-14} {rg,8:F1} {Math.Min(hit, t.MaxMp) / rg,20:F0}");
     }
@@ -178,7 +178,7 @@ if (args.Length > 0 && args[0] == "--mana-ray")
     Console.WriteLine($"  vs MOBS (x0.5 PveDamageMult): {"lvl",4} {"M.Def",6} {"MP",6} {"hit",6} {"%pool",6}");
     foreach (int ml in new[] { L - 5, L, L + 5 })
     {
-        int hit = (int)(StatCalculator.MagicDamageFM(hAtk, 0, power, MobBaseStats.MDef(ml), 1f) * 0.5f);
+        int hit = (int)(Shot(healer, true, StatCalculator.MagicDamageFM(hAtk, 0, power, MobBaseStats.MDef(ml), 1f)) * 0.5f);
         Console.WriteLine($"  {"",28} {ml,4} {MobBaseStats.MDef(ml),6} {MobBaseStats.Mp(ml),6} {hit,6} " +
                           $"{hit / (float)Math.Max(1, MobBaseStats.Mp(ml)),6:P0}");
     }
@@ -190,7 +190,7 @@ if (args.Length > 0 && args[0] == "--mana-ray")
     Console.WriteLine($"  {"target",-14} {"5%",7} {"10%",7} {"15%",7} {"20%",7} {"25%",7}");
     foreach (var (who, t) in Targets(L, fRes, cRes))
     {
-        int at1 = StatCalculator.MagicDamageFM(hAtk, 0, 100f, (int)t.EffectiveMagicDefence, t.MagicDefCoef);
+        int at1 = Shot(healer, true, StatCalculator.MagicDamageFM(hAtk, 0, 100f, (int)t.EffectiveMagicDefence, t.MagicDefCoef));
         string Row(float share) => $"{share * t.MaxMp / (at1 / 100f),7:F0}";
         Console.WriteLine($"  {who,-14} {Row(0.05f)} {Row(0.10f)} {Row(0.15f)} {Row(0.20f)} {Row(0.25f)}");
     }
@@ -224,7 +224,7 @@ if (args.Length > 0 && args[0] == "--mana-ray")
                       $"{"C flat x mRes",-19} {"D pool share",-19} {"E IG raw",-19} {"E' IG renormalised",-19}");
     foreach (var (who, t) in Targets(L, fRes, cRes))
     {
-        int a = StatCalculator.MagicDamageFM(hAtk, 0, power, (int)t.EffectiveMagicDefence, t.MagicDefCoef);
+        int a = Shot(healer, true, StatCalculator.MagicDamageFM(hAtk, 0, power, (int)t.EffectiveMagicDefence, t.MagicDefCoef));
         int b = (int)(power / t.MagicDefCoef);
         int c = (int)(power * t.MagicDefCoef);
         int d = StatCalculator.ManaDrain(t.MaxMp, power);   // the SHIPPED formula, not a copy of it
@@ -256,7 +256,7 @@ if (args.Length > 0 && args[0] == "--mana-ray")
     Console.WriteLine("  ---- COST OF A FULL DRAIN (share of the healer's OWN bar to zero the target) ----");
     foreach (var (model, drain) in new (string, Func<Entity, int>)[]
     {
-        ("A pipeline", t => StatCalculator.MagicDamageFM(hAtk, 0, power, (int)t.EffectiveMagicDefence, t.MagicDefCoef)),
+        ("A pipeline", t => Shot(healer, true, StatCalculator.MagicDamageFM(hAtk, 0, power, (int)t.EffectiveMagicDefence, t.MagicDefCoef))),
         ("B flat    ", t => (int)(power / t.MagicDefCoef)),
         ("D share   ", t => StatCalculator.ManaDrain(t.MaxMp, power)),
     })
@@ -480,13 +480,13 @@ if (args.Length > 0 && args[0] == "--dmgmatrix")
             {
                 if (magic)
                 {
-                    int h = StatCalculator.MagicDamageFM((int)a.EffectiveMagicAttack, flat, mod,
-                                                         (int)d.EffectiveMagicDefence, d.MagicDefCoef);
+                    int h = Shot(a, true, StatCalculator.MagicDamageFM((int)a.EffectiveMagicAttack, flat, mod,
+                                                         (int)d.EffectiveMagicDefence, d.MagicDefCoef));
                     return (h, h * a.EffectiveMagicCritDamage);
                 }
                 int pAtk = (int)a.EffectiveAttack;
                 float coef = StatCalculator.WeaponDefenceCoef(a.WeaponType, d.PierceDefCoef, d.BluntDefCoef, d.BowDefCoef);
-                int hp = StatCalculator.PhysicalDamageFM(pAtk, flat, mod, (int)d.EffectiveDefence, coef);
+                int hp = Shot(a, false, StatCalculator.PhysicalDamageFM(pAtk, flat, mod, (int)d.EffectiveDefence, coef));
                 if (a.WeaponType == WeaponType.Bow && d.BowResist > 0f)
                     hp = Math.Max(1, (int)(hp * (1f - d.BowResist)));
                 // The engine's own crit arithmetic (ResolvePhysicalCritAndBlock): flat crit damage rides
@@ -606,10 +606,10 @@ if (args.Length > 0 && args[0] == "--magicdef")
                 if (GearTier(L) >= ItemCatalog.SGradeLevel && q == "rare") continue;
                 var t = make(q);
                 int mDef = (int)t.EffectiveMagicDefence;
-                int dmg  = StatCalculator.MagicDamageFM(mAtk, 0, power, mDef, t.MagicDefCoef);
-                int dmg2 = StatCalculator.MagicDamageFM(mAtk, 0, power, mDef * 2, t.MagicDefCoef);
-                int sp1  = StatCalculator.MagicDamageFM(mAtk, 0, spam, mDef, t.MagicDefCoef);
-                int sp2  = StatCalculator.MagicDamageFM(mAtk, 0, spam, mDef * 2, t.MagicDefCoef);
+                int dmg  = Shot(mage, true, StatCalculator.MagicDamageFM(mAtk, 0, power, mDef, t.MagicDefCoef));
+                int dmg2 = Shot(mage, true, StatCalculator.MagicDamageFM(mAtk, 0, power, mDef * 2, t.MagicDefCoef));
+                int sp1  = Shot(mage, true, StatCalculator.MagicDamageFM(mAtk, 0, spam, mDef, t.MagicDefCoef));
+                int sp2  = Shot(mage, true, StatCalculator.MagicDamageFM(mAtk, 0, spam, mDef * 2, t.MagicDefCoef));
                 Console.WriteLine($"   {name,-17} {q,-11} {t.MaxHp,7} {mDef,7} {dmg,7} {(float)t.MaxHp / dmg,6:0.0}"
                                 + $" | {sp1,4} {(float)t.MaxHp / sp1,6:0.0}"
                                 + $" | {mDef * 2,8} {dmg2,6} {(float)t.MaxHp / dmg2,6:0.0}"
@@ -892,6 +892,9 @@ if (args.Length > 0 && args[0] == "--guards")
             e.Buffs.Add(new Game.Server.Simulation.BuffInstance
             {
                 Effect = runeSkill.Effect, Magnitudes = runeSkill.Magnitudes,
+                // The FIELD half of the payload — the shot channel. Copying Effect+Magnitudes alone
+                // carries only what rides on FLAGS, and the runes stopped riding on flags 2026-09-09.
+                PhysDamageMult = runeSkill.PhysDamageMult, MagicDamageMult = runeSkill.MagicDamageMult,
                 TicksRemaining = int.MaxValue, Name = runeSkill.Name, Key = runeSkill.BuffKey,
             });
 
@@ -1444,10 +1447,10 @@ foreach (int L in levels)
 
     int mobMDef = MobBaseStats.MDef(L);
     int mobHp = MobBaseStats.Hp(L);
-    int dmgMob = StatCalculator.MagicDamage(mAtk, power, mobMDef, L);
+    int dmgMob = Shot(mage, true, StatCalculator.MagicDamage(mAtk, power, mobMDef, L));
     float casts = dmgMob > 0 ? mobHp / (float)dmgMob : 0;
 
-    int dmgTank = StatCalculator.MagicDamage(mAtk, power, (int)tank.EffectiveMagicDefence, L);
+    int dmgTank = Shot(mage, true, StatCalculator.MagicDamage(mAtk, power, (int)tank.EffectiveMagicDefence, L));
 
     Console.WriteLine($"{L,4} {GearTier(L),5} {mAtk,7} {mage.MaxHp,7} {(int)mage.EffectiveMagicDefence,7} | " +
                       $"{power,5} {dmgMob,7} {mobHp,7} {casts,6:F1} | {dmgTank,8}");
@@ -1842,9 +1845,9 @@ Console.WriteLine();
     {
         var mage = BuildPlayer(Race.Human, BaseClass.Mage, L);
         var ftr  = BuildPlayer(Race.Human, BaseClass.Fighter, L);
-        int basic = StatCalculator.PhysicalDamage((int)ftr.EffectiveBasicAttack, 0, (int)mage.EffectiveDefence, L);
-        int skill = StatCalculator.PhysicalDamage((int)ftr.EffectiveAttack, TopPhysSkillPower(ftr),
-                                                  (int)mage.EffectiveDefence, L);
+        int basic = Shot(ftr, false, StatCalculator.PhysicalDamage((int)ftr.EffectiveBasicAttack, 0, (int)mage.EffectiveDefence, L));
+        int skill = Shot(ftr, false, StatCalculator.PhysicalDamage((int)ftr.EffectiveAttack, TopPhysSkillPower(ftr),
+                                                  (int)mage.EffectiveDefence, L));
         float mod = mage.InterruptSpiritMod;
         Console.WriteLine($"  {L,4} {mage.MaxHp,8} {basic,10} {skill,10} {mage.EffectiveSpt,4} {mod,6:0.00} | "
             + $"{StatCalculator.InterruptChance(basic, mage.MaxHp, mod, 0f, roll),8:P1} "
@@ -1901,8 +1904,8 @@ Console.WriteLine("=== INTERRUPT: the elf nuker's spells vs a same-level mage (B
         float reuseS = def.CooldownTicksAt(top) / 10f;
         float mult   = def.InterruptMult;
 
-        float dmg = StatCalculator.MagicDamageFM((int)caster.EffectiveMagicAttack, 0, power,
-                                                 (int)victim.EffectiveMagicDefence, victim.MagicDefCoef);
+        float dmg = Shot(caster, true, StatCalculator.MagicDamageFM((int)caster.EffectiveMagicAttack, 0, power,
+                                                 (int)victim.EffectiveMagicDefence, victim.MagicDefCoef));
         float share = dmg / victim.MaxHp;
         Console.WriteLine($"  {def.Name,18} {power,6} {castS,5:0.0} {reuseS,6:0} {dmg,7:0} {share,6:P1} | "
             + $"{StatCalculator.InterruptChance(dmg, victim.MaxHp, vMod, 0f, roll, 1f),7:P1} "
@@ -1935,8 +1938,8 @@ foreach (int L in levels)
     int pAtk = (int)f.EffectiveAttack;
     int mobPDef = MobBaseStats.PDef(L);
     int mobHp = MobBaseStats.Hp(L);
-    int hit = StatCalculator.PhysicalDamage(pAtk, 0, mobPDef, L);
-    int skillHit = StatCalculator.PhysicalDamage(pAtk, TopPhysSkillPower(f), mobPDef, L);
+    int hit = Shot(f, false, StatCalculator.PhysicalDamage(pAtk, 0, mobPDef, L));
+    int skillHit = Shot(f, false, StatCalculator.PhysicalDamage(pAtk, TopPhysSkillPower(f), mobPDef, L));
     float hits = skillHit > 0 ? mobHp / (float)skillHit : 0;
 
     Console.WriteLine($"{L,4} {pAtk,7} {f.MaxHp,7} {(int)f.EffectiveDefence,7} {(int)f.EffectiveMagicDefence,7} | " +
@@ -1977,7 +1980,7 @@ Console.WriteLine();
         * StatCalculator.CritFlatFactor(champ.EffectiveAttack, champ.CritDamageFlat, refPower));
     float dblF  = CritFactor(StatCalculator.PhysicalDoubleChance(champ.AtkStat), 2f);
 
-    int crushHit = StatCalculator.PhysicalDamage(cAtk, refPower, mobPDef, refLevel);
+    int crushHit = Shot(champ, false, StatCalculator.PhysicalDamage(cAtk, refPower, mobPDef, refLevel));
     // A PHYSICAL skill's cast time is shortened by ATTACK speed, exactly as a spell's is by cast speed
     // (SkillReuseTicks picks the multiplier by SkillCategory). Leaving Crush at a flat 1.8s while the
     // nuke's 4s shrank to 2.6s quietly taxed the Champion for being buffed — its attack speed nearly
@@ -1986,7 +1989,7 @@ Console.WriteLine();
     float crushCycle = (crushCastTicks + refReuseTicks) * GameConstants.TickSeconds;
     float crushDps = crushHit * critF * dblF / crushCycle;
 
-    int autoHit = StatCalculator.PhysicalDamage(cAtk, 0, mobPDef, refLevel);
+    int autoHit = Shot(champ, false, StatCalculator.PhysicalDamage(cAtk, 0, mobPDef, refLevel));
     float autoEvery = AutoAttackSeconds(champ);
     // Autoattacks only fill the time the cast is NOT occupying.
     float autoShare = (crushCycle - crushCastTicks * GameConstants.TickSeconds) / crushCycle;
@@ -2019,7 +2022,7 @@ Console.WriteLine();
     int mAtk = (int)nuker.EffectiveMagicAttack;
     float mCritF = CritFactor(nuker.MagicCritChance, nuker.EffectiveMagicCritDamage);
 
-    int nukeHit = StatCalculator.MagicDamage(mAtk, nukePower, mobMDef, refLevel);
+    int nukeHit = Shot(nuker, true, StatCalculator.MagicDamage(mAtk, nukePower, mobMDef, refLevel));
     // Cast time scales with CAST speed exactly as SkillReuseTicks does; reuse does not.
     float nukeCycle = (Math.Max(2, (int)(nukeCastTicks * nuker.EffectiveCastSpeedMultiplier)) + nukeReuseTicks)
                       * GameConstants.TickSeconds;
@@ -2068,7 +2071,7 @@ Console.WriteLine();
         if (def is null || (def.Effect & SkillEffect.MagicDamage) == 0) continue;
         if (!string.IsNullOrEmpty(def.ConsumableId)) continue;
         int power = def.PowerAt(lvl);
-        int hit = StatCalculator.MagicDamage(mAtk, power, mobMDef, refLevel);
+        int hit = Shot(nuker, true, StatCalculator.MagicDamage(mAtk, power, mobMDef, refLevel));
         float cycle = SkillCycleSeconds(nuker, def);
         nukes.Add(($"{def.Name} L{lvl}", power, hit * mCritF / cycle));
     }
@@ -2091,7 +2094,7 @@ foreach (int L in new[] { 1, 4, 8, 20 })
         int pAtk = (int)e.EffectiveAttack;
         int mobPDef = MobBaseStats.PDef(L);
         int mobHp = MobBaseStats.Hp(L);
-        int hit = StatCalculator.PhysicalDamage(pAtk, 0, mobPDef, L);
+        int hit = Shot(e, false, StatCalculator.PhysicalDamage(pAtk, 0, mobPDef, L));
         Console.WriteLine($"{L,4} {label,8} {pAtk,7} | {hit,7} {mobHp,7} {(hit > 0 ? mobHp / (float)hit : 0),6:F1}");
     }
 }
@@ -2113,8 +2116,8 @@ foreach (int L in new[] { 1, 2, 3, 4, 5, 6, 8, 10 })
     int mAtk = (int)mage.EffectiveMagicAttack;
     int power = TopNukePower(mage);
     int mobMDef = MobBaseStats.MDef(L), mobPDef = MobBaseStats.PDef(L), mobHp = MobBaseStats.Hp(L);
-    int nuke = StatCalculator.MagicDamage(mAtk, power, mobMDef, L);
-    int basic = StatCalculator.PhysicalDamage((int)ftr.EffectiveAttack, 0, mobPDef, L);
+    int nuke = Shot(mage, true, StatCalculator.MagicDamage(mAtk, power, mobMDef, L));
+    int basic = Shot(ftr, false, StatCalculator.PhysicalDamage((int)ftr.EffectiveAttack, 0, mobPDef, L));
     Console.WriteLine($"{L,4} | {mAtk,10} {power,5} {nuke,6} {mobHp,6} {(nuke >= mobHp ? "YES" : "no"),6} | " +
                       $"{(int)ftr.EffectiveAttack,9} {basic,6} {(basic >= mobHp ? "YES" : "no"),6}");
 }
@@ -2130,6 +2133,18 @@ Console.WriteLine();
 Console.WriteLine("=== M.ATK DISPLAY: flat-20 (now) vs min(internal, 20·√internal) (new) — best gear ===");
 Console.WriteLine("  new = show raw internal until it passes 20·√internal (crossover at internal=400), then shrink.");
 Console.WriteLine($"{"Lvl",4} | {"FTR int",8} {"now",6} {"new",6} | {"MAGE int",9} {"now",6} {"new",6}");
+/// <summary>THE SHOT — the War / Spell Rune, as the SERVER applies it since 2026-09-09: a multiplier
+/// on the FINISHED damage, per channel (see <c>GameLoopService.FinalizeDamage</c>).
+///
+/// <para>⚠ THIS RIG HAS TO APPLY IT ITSELF, and that is the whole reason this helper exists. Until
+/// 2026-09-09 the runes rode on <c>BuffPhysAtk</c>/<c>BuffMagAtk</c>, so they were inside
+/// <c>EffectiveAttack</c>/<c>EffectiveMagicAttack</c> and every bare <c>StatCalculator</c> call here
+/// picked them up for free. They no longer are. Without this wrapper every table that says "War/Spell
+/// Rune ON" would quietly drop a ×2 and we would be measuring a rig, not the game — which is exactly
+/// how three wrong diagnoses got written in three days.</para></summary>
+static int Shot(Entity a, bool magic, int dmg) =>
+    Math.Max(1, (int)(dmg * (magic ? a.MagicDamageDealtMult : a.PhysDamageDealtMult)));
+
 static float ShownNow(Entity e) => 20 * MathF.Sqrt(e.EffectiveMagicAttack);
 static float ShownNew(Entity e) => MathF.Min(e.EffectiveMagicAttack, 20 * MathF.Sqrt(e.EffectiveMagicAttack));
 foreach (int L in new[] { 1, 5, 10, 20, 30, 40, 52, 61, 76, 85 })
@@ -3296,6 +3311,9 @@ float g3SwingRatio = 1f;   // read by the verdict block below — see the note a
         runed.Buffs.Add(new Game.Server.Simulation.BuffInstance
         {
             Effect = rune.Effect, Magnitudes = rune.Magnitudes,
+            // The FIELD half of the payload — the shot channel. Copying Effect+Magnitudes alone
+            // carries only what rides on FLAGS, and the runes stopped riding on flags 2026-09-09.
+            PhysDamageMult = rune.PhysDamageMult, MagicDamageMult = rune.MagicDamageMult,
             TicksRemaining = int.MaxValue, Name = rune.Name, Key = rune.BuffKey,
         });
         runed.RecomputeDerived();
@@ -3554,7 +3572,7 @@ Console.WriteLine("=== C1: ROGUE — the five crit-damage rungs (duals + light, 
         float csvFlat = r.CritDamageFlat;                       // = the CSV's "+N" for this rung
         float oldMult = 2f + csvFlat / 100f;                    // what the code used to do with it
 
-        int basicHit = StatCalculator.PhysicalDamage((int)r.EffectiveBasicAttack, 0, pDef, lvl);
+        int basicHit = Shot(r, false, StatCalculator.PhysicalDamage((int)r.EffectiveBasicAttack, 0, pDef, lvl));
         float basicNew = CritFactor(r.CritChance, 2f *
             StatCalculator.CritFlatFactor(r.EffectiveBasicAttack, csvFlat));
         float basicOld = CritFactor(r.CritChance, oldMult);
@@ -3564,7 +3582,7 @@ Console.WriteLine("=== C1: ROGUE — the five crit-damage rungs (duals + light, 
         if (blow is not null)
         {
             int power = blow.PowerAt(blvl);
-            blowHit = StatCalculator.PhysicalDamage((int)r.EffectiveAttack, power, pDef, lvl);
+            blowHit = Shot(r, false, StatCalculator.PhysicalDamage((int)r.EffectiveAttack, power, pDef, lvl));
             blowNew = SkillHitFactor(r, blow, power, 2f);
             // OLD: a landed blow returned base damage untouched, then doubled off max(AGI,ATK).
             float oldDbl = Math.Clamp(Math.Max(r.EffectiveAgi, r.AtkStat) * 0.001f, 0f, 0.30f);
@@ -3598,7 +3616,7 @@ Console.WriteLine("=== C1: WARRIOR 2H — same rungs (crit dmg +35/+48/+64/+84/+
         float csvFlat = w.CritDamageFlat;
         float oldMult = 2f + csvFlat / 100f;
 
-        int basicHit = StatCalculator.PhysicalDamage((int)w.EffectiveBasicAttack, 0, pDef, lvl);
+        int basicHit = Shot(w, false, StatCalculator.PhysicalDamage((int)w.EffectiveBasicAttack, 0, pDef, lvl));
         float basicNew = CritFactor(w.CritChance, 2f *
             StatCalculator.CritFlatFactor(w.EffectiveBasicAttack, csvFlat));
         float basicOld = CritFactor(w.CritChance, oldMult);
@@ -3608,7 +3626,7 @@ Console.WriteLine("=== C1: WARRIOR 2H — same rungs (crit dmg +35/+48/+64/+84/+
         if (sk is not null)
         {
             int power = sk.PowerAt(sl);
-            skHit = StatCalculator.PhysicalDamage((int)w.EffectiveAttack, power, pDef, lvl);
+            skHit = Shot(w, false, StatCalculator.PhysicalDamage((int)w.EffectiveAttack, power, pDef, lvl));
             skNew = SkillHitFactor(w, sk, power, 2f);
             skOld = sk.CanDouble
                 ? CritFactor(Math.Clamp(Math.Max(w.EffectiveAgi, w.AtkStat) * 0.001f, 0f, 0.30f), 2f)
@@ -3674,6 +3692,9 @@ Console.WriteLine("=== C2: CRIT RATE — his IG model, decomposed (docs/design/C
                 e.Buffs.Add(new Game.Server.Simulation.BuffInstance
                 {
                     Effect = def.Effect, Magnitudes = def.Magnitudes,
+                    // The FIELD half of the payload — the shot channel. Copying Effect+Magnitudes alone
+                    // carries only what rides on FLAGS, and the runes stopped riding on flags 2026-09-09.
+                    PhysDamageMult = def.PhysDamageMult, MagicDamageMult = def.MagicDamageMult,
                     TicksRemaining = int.MaxValue, Name = def.Name, Key = def.BuffKey,
                 });
         e.RecomputeDerived();
@@ -4678,6 +4699,9 @@ static Entity BuildRogue(int level)
         e.Buffs.Add(new Game.Server.Simulation.BuffInstance
         {
             Effect = rune.Effect, Magnitudes = rune.Magnitudes,
+            // The FIELD half of the payload — the shot channel. Copying Effect+Magnitudes alone
+            // carries only what rides on FLAGS, and the runes stopped riding on flags 2026-09-09.
+            PhysDamageMult = rune.PhysDamageMult, MagicDamageMult = rune.MagicDamageMult,
             TicksRemaining = int.MaxValue, Name = rune.Name, Key = rune.BuffKey,
         });
 
@@ -4739,6 +4763,9 @@ static Entity SpawnTemplate(string mobId)
         e.Buffs.Add(new Game.Server.Simulation.BuffInstance
         {
             Effect = runeSkill.Effect, Magnitudes = runeSkill.Magnitudes,
+            // The FIELD half of the payload — the shot channel. Copying Effect+Magnitudes alone
+            // carries only what rides on FLAGS, and the runes stopped riding on flags 2026-09-09.
+            PhysDamageMult = runeSkill.PhysDamageMult, MagicDamageMult = runeSkill.MagicDamageMult,
             TicksRemaining = int.MaxValue, Name = runeSkill.Name, Key = runeSkill.BuffKey,
         });
     }
@@ -4913,7 +4940,7 @@ static float PhysDps(Entity atk, Entity def)
     float critF = CritFactor(atk.CritChance,
         critMult * StatCalculator.CritFlatFactor(atk.EffectiveBasicAttack, atk.CritDamageFlat));
 
-    int autoHit = StatCalculator.PhysicalDamage((int)atk.EffectiveBasicAttack, 0, pDef, atk.Level);
+    int autoHit = Shot(atk, false, StatCalculator.PhysicalDamage((int)atk.EffectiveBasicAttack, 0, pDef, atk.Level));
     int baseInterval = atk.Kind == EntityKind.Player
         ? GameConstants.PlayerAttackIntervalTicks : GameConstants.MobAttackIntervalTicks;
     float autoEvery = Math.Max(2, (int)(baseInterval * atk.EffectiveAttackSpeedMultiplier))
@@ -4926,7 +4953,7 @@ static float PhysDps(Entity atk, Entity def)
     float cycle = SkillCycleSeconds(atk, skill);
     float castSecs = Math.Max(2, (int)(skill.CastTicks * atk.EffectiveAttackSpeedMultiplier))
                      * GameConstants.TickSeconds;
-    int skillHit = StatCalculator.PhysicalDamage((int)atk.EffectiveAttack, skill.PowerAt(lvl), pDef, atk.Level);
+    int skillHit = Shot(atk, false, StatCalculator.PhysicalDamage((int)atk.EffectiveAttack, skill.PowerAt(lvl), pDef, atk.Level));
     float skillF = SkillHitFactor(atk, skill, skill.PowerAt(lvl), critMult);
     float autoShare = Math.Max(0f, (cycle - castSecs) / cycle);
     return skillHit * skillF * hit / cycle + autoDps * autoShare;
@@ -4939,8 +4966,8 @@ static float MagicDps(Entity atk, Entity def)
     var (skill, lvl) = TopSkill(atk, SkillEffect.MagicDamage);
     if (skill is null) return 0f;
     float critF = CritFactor(atk.MagicCritChance, atk.EffectiveMagicCritDamage);
-    int hitDmg = StatCalculator.MagicDamage((int)atk.EffectiveMagicAttack, skill.PowerAt(lvl),
-        Math.Max(1, (int)def.EffectiveMagicDefence), atk.Level);
+    int hitDmg = Shot(atk, true, StatCalculator.MagicDamage((int)atk.EffectiveMagicAttack, skill.PowerAt(lvl),
+        Math.Max(1, (int)def.EffectiveMagicDefence), atk.Level));
     return hitDmg * critF / SkillCycleSeconds(atk, skill);
 }
 
@@ -5352,6 +5379,9 @@ static Entity BuildPlayer(Race race, BaseClass cls, int level, string? quality =
         e.Buffs.Add(new Game.Server.Simulation.BuffInstance
         {
             Effect = shot.Effect, Magnitudes = shot.Magnitudes,
+            // The FIELD half of the payload — the shot channel. Copying Effect+Magnitudes alone
+            // carries only what rides on FLAGS, and the runes stopped riding on flags 2026-09-09.
+            PhysDamageMult = shot.PhysDamageMult, MagicDamageMult = shot.MagicDamageMult,
             TicksRemaining = int.MaxValue, Name = shot.Name, Key = shot.BuffKey,
         });
     // Mirror AutoLearnCoreSkills: SPELLCASTER MASTERY is the auto-granted one (2026-08-07 restructure)
@@ -5471,8 +5501,8 @@ static float BlockFactor(Entity atk, Entity def)
 /// <summary>ONE basic attack, non-crit. The channel nobody can dodge, walk out of or interrupt — so
 /// this, not the telegraphed skill, is what *"not one shooting"* has to be measured on.</summary>
 static int BasicHit(Entity atk, Entity def) =>
-    StatCalculator.PhysicalDamage((int)atk.EffectiveBasicAttack, 0,
-        Math.Max(1, (int)def.EffectiveDefence), atk.Level);
+    Shot(atk, false, StatCalculator.PhysicalDamage((int)atk.EffectiveBasicAttack, 0,
+        Math.Max(1, (int)def.EffectiveDefence), atk.Level));
 
 /// <summary>The biggest SINGLE blow this attacker can land — basic or skill. Non-crit on purpose:
 /// a crit is variance on top, and a boss that one-shots only on a crit is a different complaint.</summary>
@@ -5480,13 +5510,13 @@ static int BiggestHit(Entity atk, Entity def)
 {
     int pDef = Math.Max(1, (int)def.EffectiveDefence);
     int mDef = Math.Max(1, (int)def.EffectiveMagicDefence);
-    int best = StatCalculator.PhysicalDamage((int)atk.EffectiveBasicAttack, 0, pDef, atk.Level);
+    int best = Shot(atk, false, StatCalculator.PhysicalDamage((int)atk.EffectiveBasicAttack, 0, pDef, atk.Level));
     var (ps, pl) = TopSkill(atk, SkillEffect.PhysicalDamage);
     if (ps is not null)
-        best = Math.Max(best, StatCalculator.PhysicalDamage((int)atk.EffectiveAttack, ps.PowerAt(pl), pDef, atk.Level));
+        best = Math.Max(best, Shot(atk, false, StatCalculator.PhysicalDamage((int)atk.EffectiveAttack, ps.PowerAt(pl), pDef, atk.Level)));
     var (ms, ml) = TopSkill(atk, SkillEffect.MagicDamage);
     if (ms is not null)
-        best = Math.Max(best, StatCalculator.MagicDamage((int)atk.EffectiveMagicAttack, ms.PowerAt(ml), mDef, atk.Level));
+        best = Math.Max(best, Shot(atk, true, StatCalculator.MagicDamage((int)atk.EffectiveMagicAttack, ms.PowerAt(ml), mDef, atk.Level)));
     return best;
 }
 
@@ -5614,6 +5644,9 @@ static Entity BuildWarchanter(Race race, int level, int? atkOverride = null,
         e.Buffs.Add(new Game.Server.Simulation.BuffInstance
         {
             Effect = rune.Effect, Magnitudes = rune.Magnitudes,
+            // The FIELD half of the payload — the shot channel. Copying Effect+Magnitudes alone
+            // carries only what rides on FLAGS, and the runes stopped riding on flags 2026-09-09.
+            PhysDamageMult = rune.PhysDamageMult, MagicDamageMult = rune.MagicDamageMult,
             TicksRemaining = int.MaxValue, Name = rune.Name, Key = rune.BuffKey,
         });
 
@@ -5798,6 +5831,9 @@ static Entity BuildNuker(Race race, int level)
         e.Buffs.Add(new Game.Server.Simulation.BuffInstance
         {
             Effect = rune.Effect, Magnitudes = rune.Magnitudes,
+            // The FIELD half of the payload — the shot channel. Copying Effect+Magnitudes alone
+            // carries only what rides on FLAGS, and the runes stopped riding on flags 2026-09-09.
+            PhysDamageMult = rune.PhysDamageMult, MagicDamageMult = rune.MagicDamageMult,
             TicksRemaining = int.MaxValue, Name = rune.Name, Key = rune.BuffKey,
         });
 
@@ -6216,6 +6252,9 @@ static void MpCase()
             e.Buffs.Add(new Game.Server.Simulation.BuffInstance
             {
                 Effect = alacrity.Effect, Magnitudes = alacrity.Magnitudes,
+                // The FIELD half of the payload — the shot channel. Copying Effect+Magnitudes alone
+                // carries only what rides on FLAGS, and the runes stopped riding on flags 2026-09-09.
+                PhysDamageMult = alacrity.PhysDamageMult, MagicDamageMult = alacrity.MagicDamageMult,
                 TicksRemaining = int.MaxValue, Name = alacrity.Name, Key = alacrity.BuffKey,
             });
         e.RecomputeDerived();
@@ -6568,6 +6607,9 @@ static Entity BuildCasterFor(Race race, int level, Archetype arch, Discipline di
         e.Buffs.Add(new Game.Server.Simulation.BuffInstance
         {
             Effect = rune.Effect, Magnitudes = rune.Magnitudes,
+            // The FIELD half of the payload — the shot channel. Copying Effect+Magnitudes alone
+            // carries only what rides on FLAGS, and the runes stopped riding on flags 2026-09-09.
+            PhysDamageMult = rune.PhysDamageMult, MagicDamageMult = rune.MagicDamageMult,
             TicksRemaining = int.MaxValue, Name = rune.Name, Key = rune.BuffKey,
         });
 

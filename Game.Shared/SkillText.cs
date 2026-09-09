@@ -511,6 +511,9 @@ public static class SkillText
         }
         if (def.PveDamageMult != 1f) o.Add($"Damage vs monsters x{def.PveDamageMult:0.##}");
         if (def.PvpDamageMult != 1f) o.Add($"Damage vs players x{def.PvpDamageMult:0.##}");
+        // The shot channel (the runes) — a multiplier on the FINISHED damage, not on the attack stat.
+        if (def.PhysDamageMult != 1f) o.Add($"Increases the final PHYSICAL damage x{def.PhysDamageMult:0.##}");
+        if (def.MagicDamageMult != 1f) o.Add($"Increases the final MAGICAL damage x{def.MagicDamageMult:0.##}");
 
         // ---- Hit resolution ----
         if (def.SureHit) o.Add("Never misses");

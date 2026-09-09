@@ -182,6 +182,15 @@ public class BuffInstance
     public float MagicCritDamage { get; init; }
     public float MagicCritDamageDebuff { get; init; }
 
+    /// <summary>The IG "shot" channel — a multiplier on the FINISHED damage this buff's holder deals,
+    /// physical and magic kept apart (1 = unchanged). The runes ride here since 2026-09-09; before
+    /// that they were `BuffPhysAtk`/`BuffMagAtk`, which made the physical one nearly a no-op on a
+    /// high-power skill (the formula is additive) and the magic one unreadable (stored pre-√). Fields,
+    /// not flags — the `SkillEffect` enum is full. Applied in <c>GameLoopService.FinalizeDamage</c>.
+    /// ⚠ DAMAGE ONLY — never heals. See <c>SkillDef.PhysDamageMult</c>.</summary>
+    public float PhysDamageMult { get; init; } = 1f;
+    public float MagicDamageMult { get; init; } = 1f;
+
     /// <summary>How much this buff takes off an attacker's MAGIC crit CHANCE against its holder
     /// (0.10 = −10%). The magic twin of the <c>BuffCritRateResist</c> flag, and a field for the same
     /// reason as its neighbours. See <c>SkillDef.MagicCritRateDebuff</c>.</summary>
@@ -1194,6 +1203,14 @@ public class Entity
     /// bonuses needed it (him, gear_sets.csv 2026-08-11). Applied in FinalizeDamage, the one place the
     /// PvP/PvE matrix is read, and never on a mob's hit — this is player-vs-player only.</summary>
     public float PvpDamageTaken { get; set; } = 1f;
+
+    /// <summary>OUTGOING final-damage multipliers, compounded from every buff carrying the shot
+    /// channel (today: the War / Spell Runes). 1 = unchanged. Read in
+    /// <c>GameLoopService.FinalizeDamage</c>, which is the single seam every hit passes through.
+    /// ⚠ A measurement rig that computes damage by calling <c>StatCalculator</c> directly must apply
+    /// these itself — they are deliberately NOT inside the attack stat any more.</summary>
+    public float PhysDamageDealtMult { get; set; } = 1f;
+    public float MagicDamageDealtMult { get; set; } = 1f;
     public float CancelResist { get; set; }          // chance each buff resists an enemy cancel
 
     // ----- REWARD RATES: what a MONSTER pays THIS character, as MULTIPLIERS (1 = untouched). Fed by
@@ -2552,6 +2569,8 @@ public class Entity
         PvpMagicDamageBonus = 0f;
         PvpBasicDamageBonus = 0f;
         PvpDamageTaken = 1f;
+        PhysDamageDealtMult = 1f;
+        MagicDamageDealtMult = 1f;
         CancelResist = 0f;
         Accuracy = StatCalculator.Accuracy(EffectiveAgi, Level);
         Evasion = StatCalculator.Evasion(EffectiveAgi, Level);
@@ -3313,6 +3332,13 @@ public class Entity
             MagicDefence = (int)(MagicDefence
                 * StatCalculator.SptModifier(EffectiveSpt)
                 * StatCalculator.MagicDefenceLevelMod(Level));
+            // …and its PHYSICAL twin, added 2026-09-09 (`BL-185`). P.Def had no multiplicative level
+            // term at all — only the additive level²/100 that used to sit in PhysicalDefenceBase —
+            // while P.Atk has carried levelMod since the IG-shape rebuild. Attack therefore outran
+            // defence as level rose, which is the opposite of IG, where both sides carry it and
+            // largely cancel. No stat modifier here: IG's P.Def has none (M.Def has MEN, P.Def has
+            // nothing), which the owner's own five in-game rows confirm.
+            Defence = (int)(Defence * StatCalculator.PhysicalDefenceLevelMod(Level));
         }
 
         // ----- Timed-buff contributions to BAKED stats (the stats computed once here;
@@ -3383,6 +3409,10 @@ public class Entity
             // Magic crit damage — the blessings COMPOUND (×1.3 × ×1.3 = ×1.69 on the ×2 base, the
             // owner's own ×3.38), the debuffs SUM. Both ride as buff fields; the flag enum is full.
             if (buff.MagicCritDamage != 0f) MagicCritDamageMult *= 1f + buff.MagicCritDamage;
+            // The shot channel — COMPOUNDS, like every other damage multiplier here, so a future
+            // combined rune plus a skill-granted shot multiply rather than overwrite.
+            if (buff.PhysDamageMult != 1f) PhysDamageDealtMult *= buff.PhysDamageMult;
+            if (buff.MagicDamageMult != 1f) MagicDamageDealtMult *= buff.MagicDamageMult;
             MagicCritDamageResist += buff.MagicCritDamageDebuff;
             CritDamagePenalty += buff.CritDamagePenalty;   // Shield Smash - Power, the physical twin
             // …and the magic crit RATE the holder is hit with. SUMMED, exactly like its physical twin

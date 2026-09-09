@@ -1422,11 +1422,11 @@ public static class ItemCatalog
         list.Add(new ItemDef(WarRune, "War Rune", EquipSlot.Rune, ItemGrade.F, ItemRarity.Mythic,
             IsRune: true, RuneBuffSkillId: SkillCatalog.WarRuneBuff, GrantsRuneSeconds: 3600,
             Tradable: false, Value: 0,
-            Description: "Held rune: +100% P.Atk while in your bag. Boosts PHYSICAL damage only (melee/bow) — useless for spells. Move it to the warehouse to switch it off; it can't be deleted."));
+            Description: "Held rune: increases your final PHYSICAL damage ×2 while in your bag. Boosts PHYSICAL damage only (melee/bow) — useless for spells. Move it to the warehouse to switch it off; it can't be deleted."));
         list.Add(new ItemDef(SpellRune, "Spell Rune", EquipSlot.Rune, ItemGrade.F, ItemRarity.Mythic,
             IsRune: true, RuneBuffSkillId: SkillCatalog.SpellRuneBuff, GrantsRuneSeconds: 3600,
             Tradable: false, Value: 0,
-            Description: "Held rune: +magic damage & cast speed while in your bag. Boosts MAGIC (spells) only — useless for melee/bow. Move it to the warehouse to switch it off; it can't be deleted."));
+            Description: "Held rune: increases your final MAGICAL damage ×2, and cast speed, while in your bag. Boosts MAGIC (spells) only — useless for melee/bow. Move it to the warehouse to switch it off; it can't be deleted."));
 
         // Sealed rune boxes. 1h/2h are vendor-stocked (Apothecary, real gold price) and TRADABLE (giftable
         // sealed — the RUNE inside is still bound). 24h/30d are premium/pass items: not buyable (BuyPrice
@@ -1436,14 +1436,14 @@ public static class ItemCatalog
             list.Add(new ItemDef(id, name, EquipSlot.Box, ItemGrade.F, ItemRarity.Rare,
                 GrantsRuneSeconds: seconds, Tradable: tradable, BuyPriceOverride: buyPrice, SellPriceOverride: 0,
                 Description: desc));
-        RuneBox(BoxWarRune1h,  "War Rune Box (1h)",  1 * H, 150000, true,  "Opens to a War Rune lasting 1 hour. War Runes boost PHYSICAL damage only (melee/bow) — useless for spells.");
-        RuneBox(BoxWarRune2h,  "War Rune Box (2h)",  2 * H, 280000, true,  "Opens to a War Rune lasting 2 hours. War Runes boost PHYSICAL damage only (melee/bow) — useless for spells.");
-        RuneBox(BoxWarRune24h, "War Rune Box (1d)",  1 * D, -1,  false,  "Opens to a War Rune lasting 24 hours. War Runes boost PHYSICAL damage only (melee/bow) — useless for spells.");
-        RuneBox(BoxWarRune30d, "War Rune Box (30d)", 30 * D, -1, false,  "Opens to a War Rune lasting 30 days. War Runes boost PHYSICAL damage only (melee/bow) — useless for spells.");
-        RuneBox(BoxSpellRune1h,  "Spell Rune Box (1h)",  1 * H, 150000, true,  "Opens to a Spell Rune lasting 1 hour. Spell Runes boost MAGIC (spells) only — useless for melee/bow.");
-        RuneBox(BoxSpellRune2h,  "Spell Rune Box (2h)",  2 * H, 280000, true,  "Opens to a Spell Rune lasting 2 hours. Spell Runes boost MAGIC (spells) only — useless for melee/bow.");
-        RuneBox(BoxSpellRune24h, "Spell Rune Box (1d)",  1 * D, -1,  false,  "Opens to a Spell Rune lasting 24 hours. Spell Runes boost MAGIC (spells) only — useless for melee/bow.");
-        RuneBox(BoxSpellRune30d, "Spell Rune Box (30d)", 30 * D, -1, false,  "Opens to a Spell Rune lasting 30 days. Spell Runes boost MAGIC (spells) only — useless for melee/bow.");
+        RuneBox(BoxWarRune1h,  "War Rune Box (1h)",  1 * H, 150000, true,  "Opens to a War Rune lasting 1 hour. War Runes multiply your final PHYSICAL damage ×2 (melee/bow) — useless for spells.");
+        RuneBox(BoxWarRune2h,  "War Rune Box (2h)",  2 * H, 280000, true,  "Opens to a War Rune lasting 2 hours. War Runes multiply your final PHYSICAL damage ×2 (melee/bow) — useless for spells.");
+        RuneBox(BoxWarRune24h, "War Rune Box (1d)",  1 * D, -1,  false,  "Opens to a War Rune lasting 24 hours. War Runes multiply your final PHYSICAL damage ×2 (melee/bow) — useless for spells.");
+        RuneBox(BoxWarRune30d, "War Rune Box (30d)", 30 * D, -1, false,  "Opens to a War Rune lasting 30 days. War Runes multiply your final PHYSICAL damage ×2 (melee/bow) — useless for spells.");
+        RuneBox(BoxSpellRune1h,  "Spell Rune Box (1h)",  1 * H, 150000, true,  "Opens to a Spell Rune lasting 1 hour. Spell Runes multiply your final MAGICAL damage ×2 (spells) — useless for melee/bow.");
+        RuneBox(BoxSpellRune2h,  "Spell Rune Box (2h)",  2 * H, 280000, true,  "Opens to a Spell Rune lasting 2 hours. Spell Runes multiply your final MAGICAL damage ×2 (spells) — useless for melee/bow.");
+        RuneBox(BoxSpellRune24h, "Spell Rune Box (1d)",  1 * D, -1,  false,  "Opens to a Spell Rune lasting 24 hours. Spell Runes multiply your final MAGICAL damage ×2 (spells) — useless for melee/bow.");
+        RuneBox(BoxSpellRune30d, "Spell Rune Box (30d)", 30 * D, -1, false,  "Opens to a Spell Rune lasting 30 days. Spell Runes multiply your final MAGICAL damage ×2 (spells) — useless for melee/bow.");
 
         // ----- PREMIUM REWARD RUNES: one item per channel per rung (5 × 11), plus Sinister and
         // Sinners. Same held-rune machinery as the War/Spell runes above — the difference is entirely

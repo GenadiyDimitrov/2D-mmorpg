@@ -12238,6 +12238,9 @@ public class GameLoopService : BackgroundService
             // Magic crit damage — per-LEVEL for the same reason.
             MagicCritDamage = GroupOr(gf.MagicCritDamage, def.MagicCritDamageAt(level)),
             MagicCritDamageDebuff = def.MagicCritDamageDebuffAt(level),
+            // The shot channel (the runes). Not per-level: a rune has one rung and always will.
+            PhysDamageMult = def.PhysDamageMult,
+            MagicDamageMult = def.MagicDamageMult,
             // The tank's Shield Smash — per rung, like every other laddered field here.
             CritRatePenalty = def.CritRatePenaltyAt(level),
             CritDamagePenalty = def.CritDamagePenaltyAt(level),
@@ -16581,7 +16584,14 @@ public class GameLoopService : BackgroundService
         // player (the S heavy/light sets' "PVP Dmg Received x0.95"). PvP only — `pvp` already means
         // player-hits-player, so a mob's swing is never reduced by it. Defaults to 1.
         float takenMult = pvp ? target.PvpDamageTaken : 1f;
-        float result = dmg * (1f + bonus) * (1f + condBonus) * skillMult * raidMult * takenMult;
+        // THE SHOT (the War / Spell Runes) — a multiplier on the FINISHED number, per channel. This is
+        // the owner's 2026-09-09 ruling: a shot is not a stat buff, it is the mirror of `MagicResist`,
+        // which cuts damage without touching M.Def. Basic attacks take the PHYSICAL rune too — a shot
+        // in IG is spent on the swing as much as on the skill.
+        float runeMult = kind == DamageKind.SkillMagic
+            ? attacker.MagicDamageDealtMult
+            : attacker.PhysDamageDealtMult;
+        float result = dmg * (1f + bonus) * (1f + condBonus) * skillMult * raidMult * takenMult * runeMult;
         // A skill explicitly multiplied to 0 in this context deals 0 (e.g. a mob-only nuke
         // vs a player); otherwise a real hit is at least 1.
         return skillMult <= 0f ? 0 : Math.Max(1, (int)result);
