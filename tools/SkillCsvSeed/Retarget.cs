@@ -243,8 +243,13 @@ internal static class Retarget
         // moment it was pointed at his files: 67 mastery and Anti-Magic rungs, every one of them a
         // defect in THIS method rather than in his column. It never leaves the caster; there is nothing
         // to target.
+        // ⚠ …UNLESS IT BUFFS THE PARTY. A passive that PROCS a party buff reaches past its owner, and
+        //   his ruling of 2026-09-09 is that the cell describes the EFFECT: *"the trigger skills that
+        //   say something to party give buff to party in a aoe range … they are passive with an aoe
+        //   buff for party"*. Nine rows across three files were normalised to `party/aoe` with it.
         if (d.Category == SkillCategory.Passive)
-            return "self/single";
+            return d.ProcChance > 0f && d.ProcPartyRungs is { Length: > 0 }
+                ? "party/aoe" : "self/single";
 
         // ⚠ SelfOnly is about who you CAST it on, not who it REACHES, and the two differ for a totem:
         // a Healing Totem is cast on yourself (SelfOnly) and then heals a circle. Testing SelfOnly

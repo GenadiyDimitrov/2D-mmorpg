@@ -490,14 +490,10 @@ internal static class Check
             for (int i = 0; i < Math.Min(a.Count, b.Count); i++)
             {
                 var diffs = new List<string>();
-                // A PARTY PROC is exempt from the two REACH columns — his own files disagree about
-                // whether they describe the trigger or the effect. See the note at the target compare.
-                bool partyProc = b[i].Def is { ProcChance: > 0f } pd0
-                                 && pd0.ProcPartyRungs is { Length: > 0 };
                 Cmp(diffs, "learn lvl", a[i].LearnLevel, b[i].LearnLevel);
                 Cmp(diffs, "range",     a[i].Range,      b[i].Range);
                 // BL-96 — the AOE radius, now a checked number rather than prose in DESCR.
-                if (!partyProc) Cmp(diffs, "aoe", a[i].Aoe, b[i].Aoe);
+                Cmp(diffs, "aoe",       a[i].Aoe,        b[i].Aoe);
                 Cmp(diffs, "cast s",    a[i].Cast,       b[i].Cast);
                 Cmp(diffs, "cd s",      a[i].Cd,         b[i].Cd);
                 Cmp(diffs, "duration",  a[i].Duration,   b[i].Duration);
@@ -518,15 +514,13 @@ internal static class Check
                 // it is about the friendly side: a healer's curse authored `party/single` (2026-08-27)
                 // was caught by `party` ≠ `enemy`, and that comparison is untouched.
                 //
-                // ⚠ AND A PARTY PROC IS ACCEPTED EITHER WAY, because HIS OWN FILES DISAGREE. A passive
-                // that rolls a buff for the whole party is authored `self/single` in `buffer 3rd.csv`
-                // (Combo Mastery) and `tank 3rd.csv` (Aggravated State) and `self/party` in
-                // `archer 4th.csv` (the three level-76 masteries) — the first pair describing the
-                // TRIGGER, the second the EFFECT. Both readings are defensible and the code cannot be
-                // both, so this compares neither rather than reporting six good rows or three.
-                // 🔵 One for him to settle; the AOE cell below is skipped for the same reason.
-                if (!partyProc
-                    && a[i].Target.Length > 0 && b[i].Target.Length > 0
+                // ✅ A PARTY PROC IS `party/aoe`, SETTLED 2026-09-09: *"they are passive with an aoe buff
+                // for party"*. His three files had said it three ways — `self/single` in `buffer 3rd`
+                // (Combo Mastery) and `tank 3rd` (Aggravated State), `self/party` in `archer 4th`, the
+                // first describing the TRIGGER and the second not even a legal breadth. All nine rows
+                // now read `party/aoe` with the payload's radius in the AOE cell, and both columns are
+                // compared again like every other.
+                if (a[i].Target.Length > 0 && b[i].Target.Length > 0
                     && !string.Equals(a[i].Target, b[i].Target, StringComparison.Ordinal)
                     && !string.Equals(a[i].Target.Replace("target/", "enemy/"), b[i].Target, StringComparison.Ordinal))
                     diffs.Add($"target CSV '{a[i].Target}' vs code '{b[i].Target}'");

@@ -56,9 +56,9 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 ,,,,,,,,,,,,,,,,,----------------------------Final Defense----------------------------
 60,Final Defense,tank_final_defense,Passive,,,0,0,self/single,0,0,0,"When hp is below 75% increase P.Def with 10%, when HP is below 50% increase P.Def with 20% and M.Def with 5%, when HP is below 25% increase P.Def with 30% and M.Def with 10%",0,120
 ,,,,,,,,,,,,,,,,,----------------------------Aggravated State----------------------------
-52,Aggravated State,tank_aggravated_state,Passive,,,0,0,self/single,0,25,30,"When dmg is received with 15% chance increase P.Atk and Attack speed of party memebrs with 2% and owner with 3% and P.Skill.Power with 10%",0,120
-60,Aggravated State,tank_aggravated_state,Passive,,,0,0,self/single,0,25,30,"When dmg is received with 15% chance increase P.Atk and Attack speed of party memebrs with 3% and owner with 5% and P.Skill.Power with 15%",0,120
-68,Aggravated State,tank_aggravated_state,Passive,,,0,0,self/single,0,25,30,"When dmg is received with 15% chance increase P.Atk and Attack speed of party memebrs with 5% and owner with 7% and P.Skill.Power with 20%",0,120
+52,Aggravated State,tank_aggravated_state,Passive,,,0,900,party/aoe,0,25,30,"When dmg is received with 15% chance increase P.Atk and Attack speed of party memebrs with 2% and owner with 3% and P.Skill.Power with 10%",0,120
+60,Aggravated State,tank_aggravated_state,Passive,,,0,900,party/aoe,0,25,30,"When dmg is received with 15% chance increase P.Atk and Attack speed of party memebrs with 3% and owner with 5% and P.Skill.Power with 15%",0,120
+68,Aggravated State,tank_aggravated_state,Passive,,,0,900,party/aoe,0,25,30,"When dmg is received with 15% chance increase P.Atk and Attack speed of party memebrs with 5% and owner with 7% and P.Skill.Power with 20%",0,120
 ,,,,,,,,,,,,,,,,,----------------------------Whisp Mastery----------------------------
 60,Whisp Mastery,tank_whisp_mastery,Passive,,,0,0,self/single,0,0,0,"Increase the limit of active whisps to 2",0,120
 ,,,,,,,,,,,,,,,,,----------------------------Taunting Whisps----------------------------
