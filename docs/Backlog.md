@@ -128,7 +128,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-171` | 🔵 | THE WORLD BOSS — stats built; the encounter, mass-PvP rules and loot are owed | combat |
 | `BL-172` | 🔴 | `/unstuck <name>` — 180s rooted channel, cast in town, on another char of the same account | systems |
 | `BL-179` | 🔵 | The two TEST skills are granted to EVERY character — three ways to gate them, your pick | systems |
-| `BL-185` | 🔵 | THE DAMAGE REWORK — step 1 (warrior + archer kits) BUILT; steps 2-6 open | combat |
+| `BL-185` | 🔵 | THE DAMAGE REWORK — REFITTED to real data 2026-09-09; only the SHOT, M.Def and armour spread still open | combat |
 
 ---
 
@@ -997,6 +997,57 @@ here. This entry is about who can reach them, not about removing them.
 ---
 
 ## `BL-185` 🔵 THE DAMAGE REWORK — measured against your own IG matrix
+
+### 🔴 REWRITTEN 2026-09-09 — REFITTED TO REAL DATA. Everything below this block is superseded.
+
+You rejected the generated matrices — *"I'm not sure the table is perfectly edited. It's gemini way
+of research"* — and told me to build the reference myself. Two real sources replaced them: **your own
+in-game measurements** (`balance/ig-reference-authored-realgame.csv`) and **IG's own skill/item
+database**. The full refit is [balance/DamageVsIG.md](balance/DamageVsIG.md), rewritten wholesale.
+
+⚠ **Do not fit anything to `IG-reference.csv` again.** Both generated tables were wrong in opposite
+directions, and each produced a confident, wrong proposal from me.
+
+**What the real data says:**
+
+| | verdict |
+|---|---|
+| formula + `PhysicalK 77` + `MagicK 91` | ✅ correct, confirmed twice over. Not to be touched. |
+| weapon catalogue | ✅ **is IG's, verbatim** — bow 323/84, 400/99, 581/132; staff 226/167, 274/193; 2H 282/114. Our level-80 row is ~10% hot; that is the only drift. |
+| jewel M.Def | ✅ **is IG's, verbatim** — 95 / 71 / 48. |
+| nuke power ladder | ✅ **is IG's, verbatim** — 52/58/65/72/78/82/85/89/92/96… **Magic spell power was never short.** |
+| our mage, unbuffed | ✅ **436 vs his 365 at level 76 — we are 1.19x ABOVE.** |
+| ~~take the √ off M.Atk~~ | 🔴 **WITHDRAWN.** It rested on a units error of mine: the old page compared IG's *internal* M.Atk to our *shown* one (`min(internal, 20·√internal)`) and invented a 3x gap. |
+| ~~cut the M.Def buff legs~~ | 🔴 **WITHDRAWN (2nd time).** Your buff stack moves magic damage ×1.79; ours ×1.71. They already match. |
+| ~~rescale the archer/warrior kits~~ | 🔴 **WITHDRAWN.** Your authored `archer 3rd.csv` (Twin Arrows 1000→5000, two arrows) matches IG's real ladder (1110→4870). 0.116.0 was right. |
+
+**🔴 THE ONE REAL GAP — THE PER-CAST SHOT, MEASURED ×2.35.** Taking your five in-game rows, running
+your buffed M.Atk / stated M.Def / stated power through our formula and comparing to what you
+actually observed: **2.40 / 2.23 / 2.37 / 2.24 / 2.52** at levels 20/40/52/61/76. Flat across 56
+levels — one multiplicative term we do not have.
+
+🔑 **Your algebra was right and mine was wrong.** `√(a·b) = √a·√b`, and our `BuffMagAtk` magnitudes
+are stored *already square-rooted*, so the Spell Rune's `0.414` really is a ×2 M.Atk shot exactly as
+you said. The finding is not that we converted it wrongly — it is that **the real shot is worth
+×2.35, so our rune delivers 40% of what it replaced.**
+
+**✅ ANSWERED — the archer's double hit.** Your `archer 3rd.csv` authors Twin Arrows as *"two arrows
+each dealing +X power"*, and IG's real archer skill is a two-arrow skill too. **Keep `HitCount: 2`.**
+
+**🔵 WHAT IS STILL OWED, and all three are your call:**
+
+1. **The shot.** ×2.35 per cast is the measured value. Either raise the Spell Rune to deliver it
+   (`BuffMagAtk 0.414 → 1.35`) or reinstate a consumable. ⚠ *"no shot"* was your own ruling, so this
+   is a decision, not a bug to fix quietly. The physical side is not covered by your file yet.
+2. **M.Def ~2x yours** — your mage reads 911 at 76; ours reads 2032 at 90. Wants a matched-level
+   measurement before any number moves.
+3. **Armour P.Def spread** — ours 3.75x heavy:robe, **IG's 1.47x**. It lives in the Armor Mastery
+   ladders, not the base sheets. The only 2026-09-06 finding that survived.
+
+⏸ **Nothing to do on:** the formula, both K constants, the weapon/jewel catalogues, the nuke ladder,
+the buff shelf, or the archer kit. All confirmed correct against real data.
+
+---
 
 **2026-09-06.** You said the damage was *"laughable"* — *"a mage with a weapon t80m +16 does to
 someone with ~2k Def a 200-400 dmg"*, *"harmonist elf that have 5100 p.atk does to an S grade robe

@@ -1,0 +1,11 @@
+class,level,gear-Pdef/Mdef/Patk/Matk,Patk-unbuff/buff,MAtk-unbuff/buff,Pdef-unbuff/buff,Mdef-unbuff/buff,PCritRate-unbuff/buff,PCritDmg-unbuff/buff,MCritRate-unbuff/buff,MCritDmg-unbuff/buff,HP-un/b,buffed with SS damage -> to def (power),COMMENT
+,,,,,,,,,,,,,===== MAGE BUFFS -> pATK x1.15x1.1x1.08x1.08; Matk x1.75x1.2x1.2x1.16x1.16; pDEF x1.15x1.15x1.2x1.25x0.92x0.92; mDEF x1.3x1.3x1.2x0.84x0.84; pcritRate x1.2; mCritRate x2x2; mCritDmg x1.2; HP x1.35x1.2x1.3;
+,,,,,,,,,,,,,===== Char Shows stats and only if they change based on set bonus
+Mage 2nd(44INT/19WIT/37MEN/26CON/25STR),20,179/157/74/72,81/118,169/561,217/356,275/385,(blunt1h)41/49,x2/x2,95/max20,x2.5/x3,424/894,1359->99 mDef (26 spell power)
+Mage 3rd,40,202/218/111/101,151/228,344/1115,312/507,463/644,(sword1h)82/98,x2/x2,95/max20,x2.5/x3,1063/2239,1527~1671->231 mDef (52 spell power)
+Mage 3rd,52,271/252/155/132,243/343,546/1749,457/742,593/822,(sword1h)82/98,x2/x2,95/max20,x2.5/x3,1659/3494,2268(7444 crit)->286 mDef (72 spell power)
+Mage 3rd(21WIT/35MEN),61,300(set +8%)/295/186/152,316/443,717/2284,553/889,725/1004,(sword1h)82/98,x2/x2,95/max20,x2.5/x3,2140/4507,958~1054(3663 crit)->865 mDef (85 spell power),set +8% p.def; wit +2; -2 men; 
+Mage 4th(45INT/20WIT/35MEN),76,372/333/225/175,434/603,1267/4050(set +17%/passive +4%),703/1137,911/1257,(sword1h)82/98,x2/x2,95/max20,x2.5/x3,3008/6336,1640~1764(6221 crit)->960 mDef (108 spell power), set +17% m.Atk; wit +1; int +1; -2 men;
+,,,,,,,,,,,,,====================
+,,,,,,,,,,,,,===== NOT DONE =====
+Mage 4th(44INT/21WIT/35MEN),80,433/409/290/217,434/603,1267/4050(set +8.11%/passive +4%),703/1137,911/1257,(sword1h)82/98,x2/x2,95/max20,x2.5/x3,3008/6336,1640~1764(6221 crit)->960 mDef (108 spell power),set +8.11% m.Atk; wit +2; -2 men; 

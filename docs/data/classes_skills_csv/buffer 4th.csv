@@ -151,21 +151,21 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 79,Harmony Mark,wc_harmony_mark,Magic/Heal,,,900,800,party/aoe,5,120,300,"Increases: Atk with 10%; Acc +3; Atk/Cast.Speed, Def, Crit.Rate, Crit.Dmg, Max HP/MP and regen with 20%;  Consumes 10 skill stones; Do not Stack with Other 'Mark' skills",300,80kk,1kk,,,,Same Principle as Great Might/Bulwark
 83,Harmony Mark,wc_harmony_mark,Magic/Heal,,,900,800,party/aoe,5,120,300,"Increases: Atk with 10%; Acc +3; Atk/Cast.Speed, Def, Crit.Rate, Crit.Dmg, Max HP/MP and regen with 20%; Critical.Rate.Received -10%; P.Critical.Dmg.Received -30%;Consumes 15 skill stones; Do not Stack with Other 'Mark' skills",300,0,15kk,,,,both Phisical and magical crit raates have same buffs to increase it 100% + 30% + 20% .. so both cirt rates can be decreased a bit .. (roges have more decreases of crit rates); but crit dmg we have 35% + 35% + 20% for phisical and 30+20% for magical .. thats why the decrease is only the physical (tanks have more decrease of crit dmg) 
 ,,,,,,,,,,,,,,,,,,,---------------------------Sound Burst----------------------------
-76,Sound Burst,wc_sound_burst,Physical/Active,bow,,900,0,enemy/single,3,3,0,"Deals Physical Damag With Power +4100 Twice, Requre: Bow;",123,6.5kk,1,,,Elf
-77,Sound Burst,wc_sound_burst,Physical/Active,bow,,900,0,enemy/single,3,3,0,"Deals Physical Damag With Power +4200 Twice, Requre: Bow;",126,11kk,1k,,,Elf
-78,Sound Burst,wc_sound_burst,Physical/Active,bow,,900,0,enemy/single,3,3,0,"Deals Physical Damag With Power +4300 Twice, Requre: Bow;",129,16kk,1k,,,Elf
-79,Sound Burst,wc_sound_burst,Physical/Active,bow,,900,0,enemy/single,3,3,0,"Deals Physical Damag With Power +4400 Twice, Requre: Bow;",132,80kk,1k,,,Elf
-80,Sound Burst,wc_sound_burst,Physical/Active,bow,,900,0,enemy/single,3,3,0,"Deals Physical Damag With Power +4500 Twice, Requre: Bow;",135,0,5kk,,,Elf
-81,Sound Burst,wc_sound_burst,Physical/Active,bow,,900,0,enemy/single,3,3,0,"Deals Physical Damag With Power +4600 Twice, Requre: Bow;",138,0,7.5kk,,,Elf
-82,Sound Burst,wc_sound_burst,Physical/Active,bow,,900,0,enemy/single,3,3,0,"Deals Physical Damag With Power +4700 Twice, Requre: Bow;",141,0,10kk,,,Elf
-83,Sound Burst,wc_sound_burst,Physical/Active,bow,,900,0,enemy/single,3,3,0,"Deals Physical Damag With Power +4800 Twice, Requre: Bow;",144,0,15kk,,,Elf
-84,Sound Burst,wc_sound_burst,Physical/Active,bow,,900,0,enemy/single,3,3,0,"Deals Physical Damag With Power +4900 Twice, Requre: Bow;",147,0,30kk,,,Elf
-85,Sound Burst,wc_sound_burst,Physical/Active,bow,,900,0,enemy/single,3,3,0,"Deals Physical Damag With Power +5000 Twice, Requre: Bow;",150,0,50kk,,,Elf
-86,Sound Burst,wc_sound_burst,Physical/Active,bow,,900,0,enemy/single,3,3,0,"Deals Physical Damag With Power +5300 Twice, Requre: Bow;",159,0,75kk,,,Elf
-87,Sound Burst,wc_sound_burst,Physical/Active,bow,,900,0,enemy/single,3,3,0,"Deals Physical Damag With Power +5600 Twice, Requre: Bow;",168,0,100kk,,,Elf
-88,Sound Burst,wc_sound_burst,Physical/Active,bow,,900,0,enemy/single,3,3,0,"Deals Physical Damag With Power +5900 Twice, Requre: Bow;",177,0,100kk,,,Elf
-89,Sound Burst,wc_sound_burst,Physical/Active,bow,,900,0,enemy/single,3,3,0,"Deals Physical Damag With Power +6200 Twice, Requre: Bow;",186,0,100kk,,,Elf
-90,Sound Burst,wc_sound_burst,Physical/Active,bow,,900,0,enemy/single,3,3,0,"Deals Physical Damag With Power +6500 Twice, Requre: Bow;",195,0,100kk,,,Elf
+76,Sound Burst,wc_sound_burst,Physical/Active,bow,,900,0,enemy/single,3,5,0,"Deals Physical Damag With Power +4100 Twice, Requre: Bow;",123,6.5kk,1,,,Elf
+77,Sound Burst,wc_sound_burst,Physical/Active,bow,,900,0,enemy/single,3,5,0,"Deals Physical Damag With Power +4200 Twice, Requre: Bow;",126,11kk,1k,,,Elf
+78,Sound Burst,wc_sound_burst,Physical/Active,bow,,900,0,enemy/single,3,5,0,"Deals Physical Damag With Power +4300 Twice, Requre: Bow;",129,16kk,1k,,,Elf
+79,Sound Burst,wc_sound_burst,Physical/Active,bow,,900,0,enemy/single,3,5,0,"Deals Physical Damag With Power +4400 Twice, Requre: Bow;",132,80kk,1k,,,Elf
+80,Sound Burst,wc_sound_burst,Physical/Active,bow,,900,0,enemy/single,3,5,0,"Deals Physical Damag With Power +4500 Twice, Requre: Bow;",135,0,5kk,,,Elf
+81,Sound Burst,wc_sound_burst,Physical/Active,bow,,900,0,enemy/single,3,5,0,"Deals Physical Damag With Power +4600 Twice, Requre: Bow;",138,0,7.5kk,,,Elf
+82,Sound Burst,wc_sound_burst,Physical/Active,bow,,900,0,enemy/single,3,5,0,"Deals Physical Damag With Power +4700 Twice, Requre: Bow;",141,0,10kk,,,Elf
+83,Sound Burst,wc_sound_burst,Physical/Active,bow,,900,0,enemy/single,3,5,0,"Deals Physical Damag With Power +4800 Twice, Requre: Bow;",144,0,15kk,,,Elf
+84,Sound Burst,wc_sound_burst,Physical/Active,bow,,900,0,enemy/single,3,5,0,"Deals Physical Damag With Power +4900 Twice, Requre: Bow;",147,0,30kk,,,Elf
+85,Sound Burst,wc_sound_burst,Physical/Active,bow,,900,0,enemy/single,3,5,0,"Deals Physical Damag With Power +5000 Twice, Requre: Bow;",150,0,50kk,,,Elf
+86,Sound Burst,wc_sound_burst,Physical/Active,bow,,900,0,enemy/single,3,5,0,"Deals Physical Damag With Power +5300 Twice, Requre: Bow;",159,0,75kk,,,Elf
+87,Sound Burst,wc_sound_burst,Physical/Active,bow,,900,0,enemy/single,3,5,0,"Deals Physical Damag With Power +5600 Twice, Requre: Bow;",168,0,100kk,,,Elf
+88,Sound Burst,wc_sound_burst,Physical/Active,bow,,900,0,enemy/single,3,5,0,"Deals Physical Damag With Power +5900 Twice, Requre: Bow;",177,0,100kk,,,Elf
+89,Sound Burst,wc_sound_burst,Physical/Active,bow,,900,0,enemy/single,3,5,0,"Deals Physical Damag With Power +6200 Twice, Requre: Bow;",186,0,100kk,,,Elf
+90,Sound Burst,wc_sound_burst,Physical/Active,bow,,900,0,enemy/single,3,5,0,"Deals Physical Damag With Power +6500 Twice, Requre: Bow;",195,0,100kk,,,Elf
 ,,,,,,,,,,,,,,,,,,,---------------------------Sound Smash----------------------------
 76,Sound Smash,wc_sound_smash,Physical/Active,blunt,,40,0,enemy/single,1,3,0,"Deals Physical Damag With Power +4100, Requre: Blunt;",123,6.5kk,1,,,Human;Demon
 77,Sound Smash,wc_sound_smash,Physical/Active,blunt,,40,0,enemy/single,1,3,0,"Deals Physical Damag With Power +4200, Requre: Blunt;",126,11kk,1k,,,Human;Demon

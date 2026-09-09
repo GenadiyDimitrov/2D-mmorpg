@@ -119,6 +119,13 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 46,Defensive Wall,defensive_wall,pfysical buff,,,0,0,self/single,0.5,900,30,increase p.def +3700; m.def +3300; buff cancel resist x1.8; ms x0.5,20,40,[]
 ,,,,,,,,,,,,,,,,,---------------------------Reinforcement----------------------------
 60,Shield Reinforcement,tank_shield_reinforcement,Toggle,,heavy/shield,0,0,self/single,0,0,0,Increase P.Def +300 and Shield.Rate with 50% (Consumes: 15/s),15,120
+,,,,,,,,,,,,,,,,,----------------------------Elf Antidote----------------------------
+52,Antidote,elf_antidote,Magic/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 4 or lower from self.",42,74,[],Elf
+58,Antidote,elf_antidote,Magic/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 5 or lower from self.",50,88,[],Elf
+62,Antidote,elf_antidote,Magic/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 6 or lower from self.",53,170,[],Elf
+66,Antidote,elf_antidote,Magic/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 7 or lower from self.",57,280,[],Elf
+70,Antidote,elf_antidote,Magic/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 8 or lower from self.",60,390,[],Elf
+74,Antidote,elf_antidote,Magic/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 9 or lower from self.",64,880,[],Elf
 ,,,,,,,,,,,,,,,,,----------------------------Taunt----------------------------
 40,Taunt,provoke,physical active,,,600,0,enemy/single,0,6,1.5,"Agro enemy - locks it onto you for 1.5s then leaves you 6500 aggro ahead;",0,28,,Human;Demon
 43,Taunt,provoke,physical active,,,600,0,enemy/single,0,6,1.5,"Agro enemy - locks it onto you for 1.5s then leaves you 7000 aggro ahead;",0,35,,Human;Demon

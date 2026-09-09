@@ -1264,3 +1264,19 @@ have still never been played. Check the flag behaviour in the same sitting.
   also what `BL-78`'s mob-HP half is parked behind.
 - **Two playtest-20 bugs closed on a reading of the code, never re-tested**: Frost Bind stripping a
   dummy's/elite's HP multiplier (`BL-63`) and the target lost during a physical cast (`BL-64`).
+
+## §98 — FOUND WHILE READING YOUR NEW CSVs (2026-09-09, not played)
+
+- 🔴 **`dual 3rd.csv` — all 15 `Dual Mastery` rungs are gated `WEAPON=bow`.** Copy-paste from the
+  archer file: the DESCR opens *"Dual: p.Atk +20…"* and every stat in the ladder is a dual-wield
+  stat, while `Killing Stab` on the same page correctly says `duals`. **A weapon gate is
+  ALL-OR-NOTHING**, so as authored the rogue's entire weapon mastery pays nothing while holding
+  daggers and pays everything while holding a bow. One column, 15 rows. Not built yet — the fix is in
+  the CSV, before the kit is coded.
+- ⚠ **Same rows carry `CD 8` / `DURATION 5` on a `passive`.** Plausibly the 3%-proc's cooldown and
+  its 5s window (the DESCR does say *"for 5 sec"*), so this may be deliberate — but no other passive
+  in the authored files carries either, so confirm the intent before it is coded.
+- ⚠ **`ig-reference-authored-realgame.csv`, the level-52 row** — its spell power reads `52`, which is
+  the level number; the real value of that rung at 52 is `72`. With 72 the row's shot multiplier lands
+  at ×2.37, in line with the other four (×2.23–×2.52); with 52 it reads ×3.28 and is the only outlier
+  in the file. Almost certainly a transcription slip, but it is your measurement, so your call.

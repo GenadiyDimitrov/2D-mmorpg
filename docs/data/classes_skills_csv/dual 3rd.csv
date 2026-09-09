@@ -1,3 +1,56 @@
-LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,REPLACES,RACE
+LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST (x1000),REPLACES,RACE,COMMENT
+,,,,,,,,,,,,,,,,,----------------------------NOT DONE----------------------------
+,,,,,,,,,,,,,,,,,----------------------------Armor Mastery----------------------------
+40,Armor Mastery,rogue_armor_mastery,passive,,light,0,0,self/single,0,0,0,"eva +12; crit rate resist + 25%; speed  +7; mpReg +1.8; hpReg +2.5; p.def +28;",0,28
+43,Armor Mastery,rogue_armor_mastery,passive,,light,0,0,self/single,0,0,0,"eva +12; crit rate resist + 25%; speed +11; mpReg +1.9; hpReg +3.0; p.def +31",0,35
+46,Armor Mastery,rogue_armor_mastery,passive,,light,0,0,self/single,0,0,0,"eva +13; crit rate resist + 25%; speed +11; mpReg +2.0; hpReg +3.5; p.def +34",0,40
+49,Armor Mastery,rogue_armor_mastery,passive,,light,0,0,self/single,0,0,0,"eva +13; crit rate resist + 25%; speed +11; mpReg +2.1; hpReg +4.0; p.def +37",0,50
+52,Armor Mastery,rogue_armor_mastery,passive,,light,0,0,self/single,0,0,0,"eva +13; crit rate resist + 25%; speed +11; mpReg +2.2; hpReg +4.5; p.def +40",0,74
+55,Armor Mastery,rogue_armor_mastery,passive,,light,0,0,self/single,0,0,0,"eva +13; crit rate resist + 25%; speed +11; mpReg +2.2; hpReg +4.5; p.def +43;",0,80
+58,Armor Mastery,rogue_armor_mastery,passive,,light,0,0,self/single,0,0,0,"eva +14; crit rate resist + 25%; speed +11; mpReg +2.2; hpReg +4.5; p.def +46;",0,88
+60,Armor Mastery,rogue_armor_mastery,passive,,light,0,0,self/single,0,0,0,"eva +14; crit rate resist + 35%; speed +11; mpReg +2.2; hpReg +4.5; p.def +49;",0,120
+62,Armor Mastery,rogue_armor_mastery,passive,,light,0,0,self/single,0,0,0,"eva +14; crit rate resist + 35%; speed +11; mpReg +2.3; hpReg +5.0; p.def +52;",0,170
+64,Armor Mastery,rogue_armor_mastery,passive,,light,0,0,self/single,0,0,0,"eva +14; crit rate resist + 35%; speed +11; mpReg +2.3; hpReg +5.0; p.def +55;",0,190
+66,Armor Mastery,rogue_armor_mastery,passive,,light,0,0,self/single,0,0,0,"eva +14; crit rate resist + 35%; speed +11; mpReg +2.3; hpReg +5.0; p.def +58;",0,280
+68,Armor Mastery,rogue_armor_mastery,passive,,light,0,0,self/single,0,0,0,"eva +14; crit rate resist + 35%; speed +11; mpReg +2.4; hpReg +5.5; p.def +61;",0,320
+70,Armor Mastery,rogue_armor_mastery,passive,,light,0,0,self/single,0,0,0,"eva +14; crit rate resist + 35%; speed +11; mpReg +2.4; hpReg +5.5; p.def +64;",0,390
+72,Armor Mastery,rogue_armor_mastery,passive,,light,0,0,self/single,0,0,0,"eva +14; crit rate resist + 35%; speed +11; mpReg +2.4; hpReg +5.5; p.def +67;",0,650
+74,Armor Mastery,rogue_armor_mastery,passive,,light,0,0,self/single,0,0,0,"eva +14; crit rate resist + 35%; speed +11; mpReg +2.5; hpReg +6.0; p.def +70;",0,880
+,,,,,,,,,,,,,,,,,----------------------------Armor Mastery----------------------------
+40,Dual Mastery,dual_weapon_mastery,passive,duals,,0,0,self/single,0,8,5,"Dual: p.Atk +20; p.atk x1.085 and crit dmg +232 and acc +3 and crit rate x1.3 and AS x1.05; With 3% chance to decrease skill mp consumption with 60% and increase crit.dmg with 10% fot 5 sec",0,28,[rogue_weapon_mastery]
+43,Dual Mastery,dual_weapon_mastery,passive,duals,,0,0,self/single,0,8,5,"Dual: p.Atk +23; p.atk x1.085 and crit dmg +259 and acc +3 and crit rate x1.3 and AS x1.05; With 3% chance to decrease skill mp consumption with 60% and increase crit.dmg with 10% fot 5 sec",0,35,[rogue_weapon_mastery]
+46,Dual Mastery,dual_weapon_mastery,passive,duals,,0,0,self/single,0,8,5,"Dual: p.Atk +26; p.atk x1.085 and crit dmg +282 and acc +3 and crit rate x1.3 and AS x1.07; With 3% chance to decrease skill mp consumption with 60% and increase crit.dmg with 10% fot 5 sec",0,40,[rogue_weapon_mastery]
+49,Dual Mastery,dual_weapon_mastery,passive,duals,,0,0,self/single,0,8,5,"Dual: p.Atk +30; p.atk x1.085 and crit dmg +322 and acc +3 and crit rate x1.3 and AS x1.07; With 3% chance to decrease skill mp consumption with 60% and increase crit.dmg with 10% fot 5 sec",0,50,[rogue_weapon_mastery]
+52,Dual Mastery,dual_weapon_mastery,passive,duals,,0,0,self/single,0,8,5,"Dual: p.Atk +35; p.atk x1.085 and crit dmg +443 and acc +3 and crit rate x1.4 and AS x1.07; With 3% chance to decrease skill mp consumption with 60% and increase crit.dmg with 10% fot 5 sec",0,74,[rogue_weapon_mastery]
+55,Dual Mastery,dual_weapon_mastery,passive,duals,,0,0,self/single,0,8,5,"Dual: p.Atk +40; p.atk x1.085 and crit dmg +481 and acc +3 and crit rate x1.4 and AS x1.07; With 3% chance to decrease skill mp consumption with 60% and increase crit.dmg with 10% fot 5 sec",0,80,[rogue_weapon_mastery]
+58,Dual Mastery,dual_weapon_mastery,passive,duals,,0,0,self/single,0,8,5,"Dual: p.Atk +45; p.atk x1.085 and crit dmg +526 and acc +3 and crit rate x1.4 and AS x1.1; With 3% chance to decrease skill mp consumption with 60% and increase crit.dmg with 10% fot 5 sec",0,88,[rogue_weapon_mastery]
+60,Dual Mastery,dual_weapon_mastery,passive,duals,,0,0,self/single,0,8,5,"Dual: p.Atk +50; p.atk x1.085 and crit dmg +556 and acc +3 and crit rate x1.4 and AS x1.1; With 3% chance to decrease skill mp consumption with 60% and increase crit.dmg with 10% fot 5 sec",0,120,[rogue_weapon_mastery]
+62,Dual Mastery,dual_weapon_mastery,passive,duals,,0,0,self/single,0,8,5,"Dual: p.Atk +53; p.atk x1.085 and crit dmg +587 and acc +3 and crit rate x1.4 and AS x1.1; With 3% chance to decrease skill mp consumption with 60% and increase crit.dmg with 10% fot 5 sec",0,170,[rogue_weapon_mastery]
+64,Dual Mastery,dual_weapon_mastery,passive,duals,,0,0,self/single,0,8,5,"Dual: p.Atk +56; p.atk x1.085 and crit dmg +738 and acc +3 and crit rate x1.4 and AS x1.1; With 3% chance to decrease skill mp consumption with 60% and increase crit.dmg with 10% fot 5 sec",0,190,[rogue_weapon_mastery]
+66,Dual Mastery,dual_weapon_mastery,passive,duals,,0,0,self/single,0,8,5,"Dual: p.Atk +60; p.atk x1.085 and crit dmg +769 and acc +3 and crit rate x1.4 and AS x1.1; With 3% chance to decrease skill mp consumption with 60% and increase crit.dmg with 10% fot 5 sec",0,280,[rogue_weapon_mastery]
+68,Dual Mastery,dual_weapon_mastery,passive,duals,,0,0,self/single,0,8,5,"Dual: p.Atk +65; p.atk x1.085 and crit dmg +803 and acc +3 and crit rate x1.4 and AS x1.1; With 3% chance to decrease skill mp consumption with 60% and increase crit.dmg with 10% fot 5 sec",0,320,[rogue_weapon_mastery]
+70,Dual Mastery,dual_weapon_mastery,passive,duals,,0,0,self/single,0,8,5,"Dual: p.Atk +70; p.atk x1.085 and crit dmg +836 and acc +3 and crit rate x1.5 and AS x1.1; With 3% chance to decrease skill mp consumption with 60% and increase crit.dmg with 10% fot 5 sec",0,390,[rogue_weapon_mastery]
+72,Dual Mastery,dual_weapon_mastery,passive,duals,,0,0,self/single,0,8,5,"Dual: p.Atk +75; p.atk x1.085 and crit dmg +960 and acc +3 and crit rate x1.5 and AS x1.1; With 3% chance to decrease skill mp consumption with 60% and increase crit.dmg with 10% fot 5 sec",0,650,[rogue_weapon_mastery]
+74,Dual Mastery,dual_weapon_mastery,passive,duals,,0,0,self/single,0,8,5,"Dual: p.Atk +80; p.atk x1.085 and crit dmg +1015 and acc +3 and crit rate x1.5 and AS x1.1; With 3% chance to decrease skill mp consumption with 60% and increase crit.dmg with 10% fot 5 sec",0,880,[rogue_weapon_mastery]
+,,,,,,,,,,,,,,,,,----------------------------Prowl----------------------------
 40,Prowl,prowl,physical active,,,0,0,self/single,0,2,0,Stance: monsters that haven't already noticed you leave you alone. Anything already chasing you keeps chasing. Costs 1 MP per second.,20,3400,[],
+,,,,,,,,,,,,,,,,,----------------------------Vanish----------------------------
 60,Vanish,vanish,physical active,,,0,0,self/single,0,120,30,"Vanish completely for 30s — nobody can see or target you, and every monster loses you. Anything but walking ends it.",30,1,[],
+,,,,,,,,,,,,,,,,,---------------------------Sprint----------------------------
+46,Sprint,sprint,pfysical buff,,,0,0,self/single,0.2,30,15,"increase speed +60",0,40
+,,,,,,,,,,,,,,,,,----------------------------Killing Stab----------------------------
+40,Killing Stab,killing_stab,physical active,duals,,40,0,enemy/single,1,3,0,"power 1250 - only when skill does critical - otherwise 31 - can crit/double - require duals;",0,28,[precise_shot]
+43,Killing Stab,killing_stab,physical active,duals,,40,0,enemy/single,1,3,0,"power 1500 - only when skill does critical - otherwise 31 - can crit/double - require duals;",0,35,[precise_shot]
+46,Killing Stab,killing_stab,physical active,duals,,40,0,enemy/single,1,3,0,"power 1750 - only when skill does critical - otherwise 31 - can crit/double - require duals;",0,40,[precise_shot]
+49,Killing Stab,killing_stab,physical active,duals,,40,0,enemy/single,1,3,0,"power 2000 - only when skill does critical - otherwise 31 - can crit/double - require duals;",0,50,[precise_shot]
+52,Killing Stab,killing_stab,physical active,duals,,40,0,enemy/single,1,3,0,"power 2400 - only when skill does critical - otherwise 31 - can crit/double - require duals;",0,74,[precise_shot]
+55,Killing Stab,killing_stab,physical active,duals,,40,0,enemy/single,1,3,0,"power 2800 - only when skill does critical - otherwise 31 - can crit/double - require duals;",0,80,[precise_shot]
+58,Killing Stab,killing_stab,physical active,duals,,40,0,enemy/single,1,3,0,"power 3200 - only when skill does critical - otherwise 31 - can crit/double - require duals;",0,88,[precise_shot]
+60,Killing Stab,killing_stab,physical active,duals,,40,0,enemy/single,1,3,0,"power 3600 - only when skill does critical - otherwise 31 - can crit/double - require duals;",0,120,[precise_shot]
+62,Killing Stab,killing_stab,physical active,duals,,40,0,enemy/single,1,3,0,"power 4000 - only when skill does critical - otherwise 31 - can crit/double - require duals;",0,170,[precise_shot]
+64,Killing Stab,killing_stab,physical active,duals,,40,0,enemy/single,1,3,0,"power 4400 - only when skill does critical - otherwise 31 - can crit/double - require duals;",0,190,[precise_shot]
+66,Killing Stab,killing_stab,physical active,duals,,40,0,enemy/single,1,3,0,"power 4800 - only when skill does critical - otherwise 31 - can crit/double - require duals;",0,280,[precise_shot]
+68,Killing Stab,killing_stab,physical active,duals,,40,0,enemy/single,1,3,0,"power 5200 - only when skill does critical - otherwise 31 - can crit/double - require duals;",0,320,[precise_shot]
+70,Killing Stab,killing_stab,physical active,duals,,40,0,enemy/single,1,3,0,"power 5600 - only when skill does critical - otherwise 31 - can crit/double - require duals;",0,390,[precise_shot]
+72,Killing Stab,killing_stab,physical active,duals,,40,0,enemy/single,1,3,0,"power 6000 - only when skill does critical - otherwise 31 - can crit/double - require duals;",0,650,[precise_shot]
+74,Killing Stab,killing_stab,physical active,duals,,40,0,enemy/single,1,3,0,"power 6400 - only when skill does critical - otherwise 31 - can crit/double - require duals;",0,880,[precise_shot]
