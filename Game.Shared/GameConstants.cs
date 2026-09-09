@@ -172,7 +172,15 @@ public static class GameConstants
     /// that does nothing and offer buffs the server will not cast — which is precisely the "looks fine,
     /// behaves wrong" case this number exists to prevent.
     /// ⚠ A NEW APK IS REQUIRED.
-    public const int ProtocolVersion = 33;
+    /// 33 → 34 (2026-09-09, `BL-185`): `StatsUpdate` LOST its `ShieldDefense` field — the shield no
+    /// longer has a defence of its own. It is a POSITIONAL record, so every field after it shifted by
+    /// one: an old client would read `EffectiveMagicDefence` into `ShieldDefense`, `ActiveArmorSet`
+    /// into the M.Def slot, and so on down the whole tail of the stats window. This is the same shape
+    /// as `17 → 18` and the reason that precedent is written down. `MinAcceptedProtocol` is still 8,
+    /// so an old client is let in and would silently render a garbled sheet — which is exactly why the
+    /// number has to move.
+    /// ⚠ A NEW APK IS REQUIRED.
+    public const int ProtocolVersion = 34;
 
     /// <summary>
     /// The oldest protocol this server still speaks. Equal to <see cref="ProtocolVersion"/> means

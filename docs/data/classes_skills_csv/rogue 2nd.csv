@@ -24,8 +24,8 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 32,Precise Shot,precise_shot,physical active,bow,,700,0,enemy/single,3,6,0,power 669 -can double - require a bow,59,11000,[shot strike]
 36,Precise Shot,precise_shot,physical active,bow,,700,0,enemy/single,3,6,0,power 868 -can double - require a bow,66,20000,[shot strike]
 ,,,,,,,,,,,,,,,,----------------------------Sprint----------------------------
-20,Sprint,sprint,pfysical buff,,,0,0,self/single,0.2,30,15,increase speed +40,10,3400,[]
+20,Sprint,sprint,physical buff,,,0,0,self/single,0.2,30,15,increase speed +40,10,3400,[]
 ,,,,,,,,,,,,,,,,----------------------------Evasion Boost----------------------------
-28,Evasion Boost,evasion_boost,pfysical buff,,,0,0,self/single,0.5,900,30,Increase evasion by +20; Increase skill evasion by x1.25; Increase magic evasion by x1.1; buff cancel resist x1.8; ,20,3400,[]
+28,Evasion Boost,evasion_boost,physical buff,,,0,0,self/single,0.5,900,30,Increase evasion by +15; Increase skill evasion by x1.15; Increase magic evasion by x1.1; buff cancel resist x1.8; ,20,3400,[]
 ,,,,,,,,,,,,,,,,----------------------------Bow Expertise----------------------------
-36,Bow Expertise,bow_expertise,pfysical buff,bow,,0,0,self/single,3,2,1200,increase bow attack speed x1.08; requires a bow,25,22000,[]
+36,Bow Expertise,bow_expertise,physical buff,bow,,0,0,self/single,3,2,1200,increase bow attack speed x1.08; requires a bow,25,22000,[]
