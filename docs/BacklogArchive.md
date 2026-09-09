@@ -3342,3 +3342,172 @@ case is `BL-189`.
 ---
 
 </details>
+
+---
+
+## `BL-190` ✅ CLOSED 2026-09-10 (0.123.0) — `[Double]` IS PASSIVE-GATED, AND IT BROUGHT TWO SIBLINGS
+
+**Built the day the last three questions were answered.** Your ruling, in your own words:
+
+> *"I want several passives .. One that resets cooldown of skills, one that doubles duration of bad
+> and good buffs, and one that allow double dmg ... All will calculate the same just the base is
+> based on the passive."*
+
+and, on where the rate comes from and who has it: **the passive carries the base, ATK is only a band
+around it**, and **nobody has one until you author it** — the entry's three ❓ answered in that order.
+
+What shipped (0.123.0, see the CHANGELOG for the numbers):
+
+```
+MasteryAtkMod = 1 + 0.03 × (clamp(EffectiveAtk, 30, 50) − 40)      ×0.70 … ×1.30
+rate          = 0                                                   when no passive grants it
+              = clamp(passiveBase × MasteryAtkMod, 0, 25%)
+```
+
+Three channels, identical math, one cap: `Entity.DoubleDamageRate` (a `CanDouble` skill deals ×2),
+`DoubleDurationRate` (a buff or debuff you cast lasts twice as long, one roll per cast) and
+`CooldownResetRate` (the skill just cast comes straight off reuse; never on a `FixedCooldown` skill).
+`PassiveEffect` grew the three matching fields and they SUM.
+
+Answers to the four things the entry said were owed:
+
+1. ✅ **The ATK curve does NOT survive as the rate** — the passive carries it, ATK is the ±30% band.
+   The blow ladder's proven shape, as the entry predicted it would be.
+2. ✅ **`CanDouble` stays as "eligible"** and no per-skill `RequiresDoublePassive` was added: the
+   character-level rate is the gate, so *"not all"* is expressed by which passives a kit grants.
+3. ✅ **Duration doubling is its OWN passive and its own number.** It was the same roll as damage,
+   which is what made it the thing most likely to be missed; splitting it was done FIRST, before
+   either rate was touched.
+4. ✅ **The `AtkStat` → `EffectiveAtk` slip is fixed** — the band reads the effective stat, so the
+   level-40 +5 swap, the armour sets and every `+ATK` passive finally count for something here.
+
+🔴 **What this deliberately leaves behind is `BL-191`: nothing in the CSVs authors a mastery passive,
+so every character in the game reads 0% / 0% / 0% and no skill doubles.** That is your ruling
+("Nobody — dead until you author it") and not a regression to be quietly patched with a default.
+
+<details><summary>The original entry, as filed 2026-09-09</summary>
+
+## `BL-190` 🔴 SKILL `[Double]` — IT MUST BE GATED BY A PASSIVE, NOT BY THE ATK CURVE
+
+**Split out of `BL-188` on 2026-09-09**, on your instruction, when the blow half of that entry was
+built and the Double half deliberately was not: *"Move the double to bl entry - I will want to be a
+passive to allow skills to double .. Not all based on atk stat (only if passive is active)"*.
+
+### Your ruling, as far as it goes
+
+A skill may `[Double]` **only while a PASSIVE that grants it is active**. `CanDouble` on the def stops
+being sufficient on its own and becomes "this skill is *eligible* to double"; whether it actually can
+is a question about the CHARACTER. The ATK curve is not the gate any more — you did not say whether it
+survives as the *rate*, which is the first open question below.
+
+### What is there today, measured (not derived)
+
+```
+Double% = clamp(2.5% + 0.75 × max(0, ATK − 30), 2.5%, 25%)      StatCalculator.PhysicalDoubleChance
+```
+
+Three facts about it, all confirmed in the code on 2026-09-09:
+
+1. **It is a per-race CONSTANT that nothing in the game can raise.** Base fighter ATK is Elf 36 /
+   Human 40 / Demon 41 (`StatCalculator.GetBaseStats`) → **7.0% / 10.0% / 10.75%**. The 25% cap needs
+   ATK 60 and is unreachable by anyone.
+2. 🔴 **The call passes the RAW stat, not the effective one** — `PhysicalDoubleChance(caster.AtkStat)`,
+   while its crit twin uses `PhysicalCritBase(EffectiveAgi, …)`. `EffectiveAtk = AtkStat + BonusAtk`,
+   and `BonusAtk` is where the level-40 `+5 ATK` swap, the armour sets and every `+ATK` passive land.
+   **None of them buy any Double chance.** The doc comment defends the raw read ("a better weapon must
+   not buy Double chance, only the build does") — but `EffectiveAtk` is not p.Atk, it IS the build.
+   This reads as a slip rather than a design, and it is a one-word fix.
+3. ⚠ **The same function drives DOUBLE BUFF/DEBUFF DURATION** (`GameLoopService.cs:11742`, IG's
+   level-76 Skill Mastery — an area blessing doubles for everyone or for no one, rolled once per cast,
+   players only). **Anything done to that curve moves buff durations too**, and that is the thing most
+   likely to be missed.
+
+`[Double]` is flagged on most physical actives today (`Skills.Fighter.cs`, `Skills.Dual3rd.cs`). On a
+BLOW it is a live SECOND roll after the blow lands, for a further ×2 — that part works and `BL-188`
+left it alone.
+
+### What is owed before it can be built
+
+1. ❓ **Does the ATK curve survive as the RATE, with the passive only as a gate — or does the passive
+   carry its own rate the way the blow ladder does?** The blow rework did the latter and it worked
+   cleanly (base × buffs × passives × stat mod, capped), so the shape exists and is proven.
+2. ❓ **One passive for everything, or one per weapon/class?** *"Not all"* says some skills stop
+   doubling; a single global passive cannot express that, but a per-skill `RequiresDoublePassive` flag
+   plus one passive can.
+3. ❓ **Does the buff/debuff DURATION double follow the same gate?** It is the same roll today. If it
+   does not, it needs its own number and stops being free.
+4. 🔵 **The `AtkStat` → `EffectiveAtk` slip can be fixed on its own, before any of this** — it is a bug
+   in either design. Re-measure after: it moves duration-doubling too.
+
+**Do not retune skill powers to compensate** — the powers are authored, the roll rate is not.
+
+</details>
+
+---
+
+## `BL-191` — its original text, superseded 2026-09-10 the same day it was filed
+
+He authored all four passives within the hour, so the "nothing grants them" entry never described a
+state that survived a build. Its replacement in `Backlog.md` holds only what is still open. The
+original follows.
+
+<details><summary>As filed 2026-09-10</summary>
+
+## `BL-191` 🔴 THE THREE SKILL MASTERIES EXIST AND NOTHING GRANTS THEM — the passives are yours to author
+
+**Filed 2026-09-10, the moment `BL-190` shipped**, and it is the one thing that entry deliberately
+left open. The engine is finished; the CSV rows are not written, and by your own ruling they are not
+mine to invent.
+
+### What is built and working
+
+Three passive channels, one piece of math, one cap (`StatCaps.SkillMasteryRateMax` = 25%):
+
+```
+MasteryAtkMod = 1 + 0.03 × (clamp(EffectiveAtk, 30, 50) − 40)      ×0.70 … ×1.30
+rate          = 0                                                   when no passive grants it
+              = clamp(passiveBase × MasteryAtkMod, 0, 25%)
+```
+
+| Channel | What a hit of it does | When it rolls |
+|---|---|---|
+| `DoubleDamageRate` | a physical skill flagged `[Double]` deals **×2** | per hit; on a BLOW it is the second roll, after the blow lands |
+| `DoubleDurationRate` | a buff or debuff **you cast** lasts **twice as long** | once per cast (an area blessing doubles for everyone or no one), player casts only |
+| `CooldownResetRate` | the skill just cast comes **straight off reuse** | once per cast, after the reuse reduction; never on a `FixedCooldown` skill (Return, the ultimates) |
+
+Authoring one is a single field on a `PassiveEffect` — `DoubleDamageRate: 0.10` is "10% before the
+ATK band". They SUM across passives, so a rung ladder works the normal way (each rung replaces the
+one below through the skill-level machinery) and two *different* masteries add.
+
+### 🔴 What is NOT built, and why the game is quieter than it was
+
+**No CSV authors any of the three, so every character reads 0% / 0% / 0%.** Concretely, as of
+0.123.0 **nothing in the game doubles**: the ~14 `[Double]` skills in `Skills.Fighter.cs` and
+`Skills.Dual3rd.cs` (Strike, Smash, Shot, Precise Shot, Cleaving Strike, the bleed/poison detonators,
+Killing / Venom / Swift Stab's second roll…) all land flat, and buff durations no longer double for
+anyone. That is your ruling — *"Nobody — dead until you author it"* — and it is written down here so
+it is never mistaken for a bug and patched with a default.
+
+The retired ATK curve paid Elf **7.0%** / Human **10.0%** / Demon **10.75%** flat, to everyone, for
+free. If you want the shipping state to feel like the old one, a base of **0.10** at the first rung
+lands within a point of it for a human.
+
+### What is owed from you
+
+1. ❓ **Which classes get which mastery, and at what rung.** *"Not all"* skills doubling is expressed
+   by which KITS carry the damage mastery — a warrior with it and a mage without it is the whole
+   mechanism, since no mage skill is `[Double]` anyway.
+2. ❓ **The base rates per rung.** Nothing is invented: `BalanceMatrix` §C1 prints what any base pays
+   at every ATK, so pick a number off that table rather than a feel.
+3. ❓ **Whether the cooldown-reset one is a fighter tool, a caster tool, or both.** It is the only
+   genuinely NEW mechanic of the three and it has no precedent in our kit to lean on. IG puts its
+   reuse-reset on casters; nothing forces us to.
+4. 🔵 **Whether a BUFF should be able to scale a mastery** (a "Mastery Chant" that multiplies the
+   base for a party). The accumulator is already the right shape for it; no buff channel was added
+   because nothing authored needs one, and adding an unused field is how the last three dead knobs
+   got there.
+
+⚠ It costs a **new APK** to show the numbers (the stats window has a `Buff x2 dur` / `Reuse reset`
+line now), but not to make them work — the rates are server-side and the rolls are server-side.
+
+</details>

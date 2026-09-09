@@ -122,6 +122,11 @@ public class BuffInstance
     /// See <c>SkillDef.BlowRatePct</c>.</summary>
     public float BlowRatePct { get; init; }
 
+    /// <summary>`BL-191` — what this buff MULTIPLIES its holder's double-damage mastery BASE by
+    /// (0 = not carried, never ×0). The warrior's Blood Rage toggle carries 2 and is its only author.
+    /// See <c>SkillDef.DoubleDamageMult</c>.</summary>
+    public float DoubleDamageMult { get; init; }
+
     /// <summary>THE TANK'S SHIELD SMASH (his `tank 3rd.csv`) — what this debuff takes off ITS OWN
     /// HOLDER's crit numbers, as fractions. The two Smashes are the tank's contribution to a party's
     /// defence: one blunts how OFTEN the thing crits, the other how HARD.
@@ -1143,6 +1148,31 @@ public class Entity
     /// the DEFENDER's <see cref="BlowResist"/> is applied on top of it at the point of use, never
     /// here — that ordering is his ("~80% × 0.7 = ~56%") and is what makes the cap mean something.</summary>
     public float BlowRate { get; set; }
+
+    // ----- THE THREE SKILL MASTERIES (`BL-190`, owner ruling 2026-09-10) -----
+    // Each pair is (accumulator → folded rate). The accumulator is SUMMED from the mastery passives
+    // and then multiplied by any buff that scales it; the fold happens ONCE, at the end of
+    // RecomputeDerived, through StatCalculator.SkillMasteryRate — which applies the ATK band and the
+    // single cap. ⚠ READ the folded rate, never the accumulator.
+    //
+    // 🔑 These start at ZERO and there is no floor. No mastery passive = no roll, which is the
+    // ruling itself and not an oversight: nothing in the CSVs authors one yet, so today every
+    // character in the game has all three at 0 and no skill doubles. See `BL-191`.
+    public float DoubleDamageAcc { get; set; }
+    public float DoubleDurationAcc { get; set; }
+    public float CooldownResetAcc { get; set; }
+
+    /// <summary>Chance a physical skill flagged <c>CanDouble</c> deals ×2. Capped and finished.</summary>
+    public float DoubleDamageRate { get; set; }
+
+    /// <summary>Chance a buff or debuff this character casts lasts twice as long — IG's level-76
+    /// Skill Mastery, rolled ONCE per cast so an area blessing doubles for everyone or for no one.
+    /// Until `BL-190` this shared the damage roll; it is its own number now, and its own passive.</summary>
+    public float DoubleDurationRate { get; set; }
+
+    /// <summary>Chance the skill just cast comes straight off reuse. Rolled after the reuse
+    /// REDUCTION and never on a <c>FixedCooldown</c> skill.</summary>
+    public float CooldownResetRate { get; set; }
 
     /// <summary>How much of an attacker's blow rate this defender takes away (0.30 = the tank's
     /// Vital Organ Protection). The ONLY blow defence in the game: a blow is not a crit any more, so
@@ -2609,6 +2639,10 @@ public class Entity
         MagicCritRateFlat = 0f;
         BlowRateMult = 1f;      // `BL-188` — folded into BlowRate at the end of this method
         BlowResist = 0f;
+        // `BL-190` — the three masteries. ZERO, not 1: these are base RATES, and zero is the gate.
+        DoubleDamageAcc = 0f;
+        DoubleDurationAcc = 0f;
+        CooldownResetAcc = 0f;
         MagicCritDamageMult = 1f;
         MagicCritDamageResist = 0f;
         CritDamagePenalty = 0f;
@@ -3218,6 +3252,12 @@ public class Entity
                 // the attacker's side; the defender's resist SUMS, like every other resist.
                 if (pe.BlowRate != 0f) BlowRateMult *= 1f + pe.BlowRate;   // ×1.2, not +20 points
                 BlowResist += pe.BlowResist;
+                // `BL-190` — the three masteries SUM, because a passive supplies the base rate here
+                // rather than multiplying one (there is nothing under it to multiply — see the
+                // PassiveEffect comment). 0.10 = ten points of chance, not ×1.10.
+                DoubleDamageAcc += pe.DoubleDamageRate;
+                DoubleDurationAcc += pe.DoubleDurationRate;
+                CooldownResetAcc += pe.CooldownResetRate;
                 // Magic crit is MULTIPLICATIVE too now (owner ruling 2026-08-06). The old comment
                 // here said it stayed additive because "a mage's base is a 4% WIT figure where a
                 // ×1.05 is nothing" — that base is exactly what the rework fixed, and an additive
@@ -3458,6 +3498,9 @@ public class Entity
             // read unconditionally (no `Has`): the carrying buffs declare BuffCritRate purely to be
             // a buff at all, and it is this number, not that flag, that says how much they give.
             if (buff.BlowRatePct != 0f) BlowRateMult *= 1f + buff.BlowRatePct;   // ×1.4, not +40 points
+            // `BL-191` — a buff SCALES the mastery base the passives summed above. ×2, not +2 points,
+            // and inert at 0: Blood Rage doubling a warrior who never learned Overpower doubles zero.
+            if (buff.DoubleDamageMult != 0f) DoubleDamageAcc *= buff.DoubleDamageMult;
             if (buff.Has(SkillEffect.BuffCritRateResist)) CritRateResist += buff.Flat(SkillEffect.BuffCritRateResist) + buff.Percent(SkillEffect.BuffCritRateResist);
             if (buff.Has(SkillEffect.BuffCritDmgResist)) CritDmgResist += buff.Flat(SkillEffect.BuffCritDmgResist) + buff.Percent(SkillEffect.BuffCritDmgResist);
             if (buff.Has(SkillEffect.BuffBowResist)) BowResist += buff.Flat(SkillEffect.BuffBowResist) + buff.Percent(SkillEffect.BuffBowResist);
@@ -3550,6 +3593,12 @@ public class Entity
         // here — it multiplies what survives this clamp, in ResolveBlow.
         BlowRate = StatCalculator.BlowRate(BlowRateMult, (int)EffectiveAgi);
         BlowResist = Math.Clamp(BlowResist, 0f, StatCaps.BlowResist);
+        // `BL-190` — the three masteries, folded and capped exactly like the blow rate above, and on
+        // EFFECTIVE ATK: the +5 swap at 40, the armour sets and every +ATK passive count here, which
+        // the retired ATK curve never let them do. A zero accumulator stays a zero rate.
+        DoubleDamageRate = StatCalculator.SkillMasteryRate(DoubleDamageAcc, (int)EffectiveAtk);
+        DoubleDurationRate = StatCalculator.SkillMasteryRate(DoubleDurationAcc, (int)EffectiveAtk);
+        CooldownResetRate = StatCalculator.SkillMasteryRate(CooldownResetAcc, (int)EffectiveAtk);
         // The magic crit-DAMAGE chain has no cap of its own here: StatCalculator.MagicCritMult
         // applies StatCaps.MagicCritDamageCap at the point of use, so a debuff can still bite a
         // stack that would otherwise be pinned to the ceiling. Only the debuff sum is bounded.

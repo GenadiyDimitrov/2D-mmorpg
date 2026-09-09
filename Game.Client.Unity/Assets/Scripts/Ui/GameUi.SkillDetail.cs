@@ -163,7 +163,10 @@ namespace Game.Client
             if (def.BlowOnCrit)
                 return "Blow — full power only on a crit, otherwise "
                        + Mathf.RoundToInt(def.BlowFailFraction * 100f) + "%" + rate;
-            if (def.CanDouble) return "Can Double — x2 when it doubles" + rate;
+            // `BL-190` — CanDouble says the skill is ELIGIBLE; whether it can actually double is a
+            // question about the CHARACTER (the Double Damage mastery passive), so the line says so
+            // rather than promising a ×2 that a rogue with no mastery will never see.
+            if (def.CanDouble) return "Can Double — x2 with a Double Damage mastery" + rate;
             if (def.CanCrit) return "Can Crit" + rate;
             if (magic) return "Magic crit";
             return "Lands flat — no crit, no double";

@@ -320,7 +320,7 @@ public static partial class SkillCatalog
             DebuffSchool: DebuffSchool.Physical,
             StackKey: "venom_venom", MaxStacks: 10, StacksPerCast: 1,
             Category: SkillCategory.Physical, SpCost: RogueSp[0],
-            CanDouble: true, BlowOnCrit: true, BlowFailFraction: ThirdTierBlowFloor,
+            BlowOnCrit: true, BlowFailFraction: ThirdTierBlowFloor,
             // `BL-188` - the unauthored x2.0 on the crit rate is gone; a blow rolls Entity.BlowRate now.
             RequiredWeapon: WeaponType.Dual,
             Replaces: new[] { PreciseShot },
@@ -361,7 +361,7 @@ public static partial class SkillCatalog
             DebuffSchool: DebuffSchool.Physical,
             StackKey: "venom_venom", ConsumeStackKey: "venom_venom", MaxStacks: 10,
             Category: SkillCategory.Physical, SpCost: RogueSp[0],
-            CanDouble: true, RequiredWeapon: WeaponType.Dual,
+            RequiredWeapon: WeaponType.Dual,
             Replaces: new[] { PreciseShot },
             Magnitudes: new EffectMagnitude[]
             {
@@ -524,7 +524,7 @@ public static partial class SkillCatalog
         => new(id, name, BaseClass.Fighter, SkillEffect.PhysicalDamage,
             MpCost: StabMp[0], CastTicks: castTicks, CooldownTicks: 30, Range: 40, Power: power[0],
             Category: SkillCategory.Physical, SpCost: RogueSp[0],
-            CanDouble: true, BlowOnCrit: true, BlowFailFraction: ThirdTierBlowFloor,
+            BlowOnCrit: true, BlowFailFraction: ThirdTierBlowFloor,
             // `BL-188` - see Killing Stab: the blow gate left the crit chain on 2026-09-09.
             HitCount: hitCount, SelfBuff: selfBuff,
             RequiredWeapon: WeaponType.Dual,

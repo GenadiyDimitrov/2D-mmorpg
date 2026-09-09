@@ -2206,11 +2206,13 @@ Console.WriteLine();
     var champ = BuildPlayer(Race.Human, BaseClass.Fighter, refLevel, warrior: true);
     ApplyNpcBuffs(champ);
     int cAtk = (int)champ.EffectiveAttack;
-    // Crit folds in the FLAT crit damage (it joins P.Atk inside the ratio on a crit); [Double] is the
-    // ATK curve and is a flat x2 that never touches crit damage. docs/design/CritBlowAndDouble.md.
+    // Crit folds in the FLAT crit damage (it joins P.Atk inside the ratio on a crit); [Double] is a
+    // flat x2 that never touches crit damage. docs/design/CritBlowAndDouble.md.
     float critF = CritFactor(champ.CritChance, StatCalculator.PhysicalCritMult(champ.CritDamageBonus)
         * StatCalculator.CritFlatFactor(champ.EffectiveAttack, champ.CritDamageFlat, refPower));
-    float dblF  = CritFactor(StatCalculator.PhysicalDoubleChance(champ.AtkStat), 2f);
+    // `BL-190` — the Double Damage MASTERY, read off the built entity. It is 0 until a CSV authors a
+    // mastery passive, so this factor is 1.0 today and this rig will SHOW that rather than hide it.
+    float dblF  = CritFactor(champ.DoubleDamageRate, 2f);
 
     int crushHit = Shot(champ, false, StatCalculator.PhysicalDamage(cAtk, refPower, mobPDef, refLevel));
     // A PHYSICAL skill's cast time is shortened by ATTACK speed, exactly as a spell's is by cast speed
@@ -3775,21 +3777,64 @@ Console.WriteLine();
 //    * crit damage "+80" in the CSVs is FLAT ATTACK added inside the ratio on a crit, not "x2.8";
 //    * a landed BLOW is now computed WITH the crit-damage values (it used to return base damage,
 //      so a dagger's whole crit-damage ladder did nothing at all);
-//    * [Double] chance is a pure ATK curve capped 25%, not max(AGI,ATK)/1000 capped 30%.
+//    * [Double] is no longer any ATK curve at all (`BL-190`): a PASSIVE grants the base rate and
+//      ATK is only a +-30% band around it, so a character with no mastery passive never doubles.
 //  OLD columns re-create the previous arithmetic here so the magnitude of the swing is visible.
 // =====================================================================================================
-Console.WriteLine("=== C1: [Double] chance — ATK curve (new) vs max(AGI,ATK)/1000 cap 30% (old) ===");
+Console.WriteLine("=== C1: the SKILL MASTERIES — what an authored base pays, by ATK (`BL-190`) ===");
 {
-    int[] atks = { 30, 35, 40, 45, 50, 55, 60, 70 };
-    Console.Write("  ATK stat ");   foreach (int a in atks) Console.Write($"{a,8}");
+    int[] atks = { 30, 33, 36, 40, 41, 45, 50, 55 };
+    Console.Write("  ATK stat  ");  foreach (int a in atks) Console.Write($"{a,8}");
     Console.WriteLine();
-    Console.Write("  new      ");
-    foreach (int a in atks) Console.Write($"{StatCalculator.PhysicalDoubleChance(a) * 100,7:F1}%");
+    Console.Write("  band      ");
+    foreach (int a in atks) Console.Write($"{"x" + StatCalculator.MasteryAtkMod(a).ToString("0.00"),8}");
     Console.WriteLine();
-    Console.Write("  old      ");
-    foreach (int a in atks) Console.Write($"{Math.Clamp(a * 0.001f, 0f, 0.30f) * 100,7:F1}%");
-    Console.WriteLine("     (old ALSO read AGI, so a rogue sat far higher than this row)");
-    Console.WriteLine("  his anchors: 30 -> 2.5%, 40 -> 10%, 60+ -> 25% (he wrote 50 -> 15%; the formula gives 17.5%)");
+    foreach (float b in new[] { 0.05f, 0.10f, 0.20f, 0.30f })
+    {
+        Console.Write($"  base {b * 100,3:F0}%  ");
+        foreach (int a in atks) Console.Write($"{StatCalculator.SkillMasteryRate(b, a) * 100,7:F1}%");
+        Console.WriteLine();
+    }
+    Console.WriteLine($"  cap {StatCaps.SkillMasteryRateMax * 100:F0}% (shared by all three), band clamped to ATK "
+                      + $"{StatCalculator.MasteryAtkFloor}-{StatCalculator.MasteryAtkCeil}, anchor 40.");
+    Console.WriteLine("  base fighter ATK: Elf 36 (x0.88), Human 40 (x1.00), Demon 41 (x1.03).");
+    Console.WriteLine();
+    // `BL-191` — WHO ACTUALLY HAS ONE, read off REAL entities rather than off the ladder above. This
+    // is the line that catches a mastery registered against the wrong discipline or the wrong rung:
+    // a warrior who never picked a discipline stops at Overpower rung 1, and every character with no
+    // mastery at all must read a flat 0.0%.
+    Console.WriteLine("  --- what a REAL level-90 character carries (dmg / buff-duration / reuse-reset) ---");
+    void Mastery(string label, Entity e)
+    {
+        Console.WriteLine($"  {label,-26} {e.DoubleDamageRate * 100,6:F1}% {e.DoubleDurationRate * 100,7:F1}%"
+                          + $" {e.CooldownResetRate * 100,7:F1}%");
+    }
+    Mastery("Ravager (4th)",   BuildPlayer(Race.Human, BaseClass.Fighter, 90, warrior: true,
+                                   discipline: Discipline.Ravager, secondClass: 14, fourth: true));
+    Mastery("Warlord (4th)",   BuildPlayer(Race.Human, BaseClass.Fighter, 90, warrior: true,
+                                   discipline: Discipline.Warlord, secondClass: 14, fourth: true));
+    Mastery("Warchanter (4th)", BuildPlayer(Race.Elf, BaseClass.Mage, 90, healer: true,
+                                   discipline: Discipline.Warchanter, secondClass: 11, fourth: true));
+    Mastery("Lightbringer (4th)", BuildPlayer(Race.Human, BaseClass.Mage, 90, healer: true,
+                                   discipline: Discipline.Lightbringer, fourth: true));
+    Mastery("Magus (4th)",     BuildPlayer(Race.Human, BaseClass.Mage, 90,
+                                   discipline: Discipline.Magus, fourth: true));
+    Mastery("Bulwark (4th)",   BuildPlayer(Race.Human, BaseClass.Fighter, 90, secondClass: 13,
+                                   discipline: Discipline.Bulwark, fourth: true));
+    Mastery("warrior, NO discipline", BuildPlayer(Race.Human, BaseClass.Fighter, 90, warrior: true));
+    // BLOOD RAGE — the toggle multiplies the ACCUMULATOR, so it must roughly double the row above it
+    // and then meet the shared 25% cap. If this prints the same number as the plain Ravager, the buff
+    // FIELD is not reaching Entity.RecomputeDerived and the stance is doing nothing.
+    var rager = BuildPlayer(Race.Human, BaseClass.Fighter, 90, warrior: true,
+                            discipline: Discipline.Ravager, secondClass: 14, fourth: true);
+    ApplyOneBuff(rager, SkillCatalog.BloodRage);
+    Mastery("Ravager + BLOOD RAGE", rager);
+    Console.WriteLine("  ⚠ the tank and every rogue read 0/0/0 on purpose — he named four groups and");
+    Console.WriteLine("    they were not among them (`BL-191`).");
+    Console.WriteLine("  RETIRED: the old rate was min(25, 2.5 + 0.75*(ATK-30)) off the RAW stat — a per-race");
+    Console.WriteLine("           constant of Elf 7.0% / Human 10.0% / Demon 10.75% that nothing could raise,");
+    Console.WriteLine("           and it drove buff DURATION doubling too. Both are passive-fed now.");
+    Console.WriteLine("  ⚠ `BL-191` authored four of them on 2026-09-10. Anyone NOT in the table above still reads 0%.");
 }
 Console.WriteLine();
 
@@ -5381,6 +5426,14 @@ static void ApplyNpcBuffs(Entity e, bool fullShelf = false)
         {
             Effect = def.Effect,
             Magnitudes = def.MagnitudesAt(level) ?? Array.Empty<EffectMagnitude>(),
+            // 🔑 THE FIELD CHANNELS. Half of what a buff carries is NOT Effect+Magnitudes — the
+            // SkillEffect enum ran out of bits years ago, so blow rate, MP cost and the mastery
+            // multiplier all ride as plain FIELDS. A BuffInstance built without them applies and
+            // does NOTHING, and the matrix reports the unbuffed number under a "buffed" heading.
+            BlowRatePct = def.BlowRatePctAt(level),
+            DoubleDamageMult = def.DoubleDamageMult,
+            PhysMpCostPct = def.PhysMpCostPctAt(level),
+            MagicMpCostPct = def.MagicMpCostPctAt(level),
             TicksRemaining = int.MaxValue, Name = def.Name, Key = def.BuffKey, Level = level,
         });
     }
@@ -5420,6 +5473,11 @@ static void ApplyOneBuff(Entity e, string skillId)
         {
             Effect = def.Effect,
             Magnitudes = def.MagnitudesAt(1) ?? Array.Empty<EffectMagnitude>(),
+            // Same FIELD channels as ApplyNpcBuffs above, and for the same reason.
+            BlowRatePct = def.BlowRatePctAt(1),
+            DoubleDamageMult = def.DoubleDamageMult,
+            PhysMpCostPct = def.PhysMpCostPctAt(1),
+            MagicMpCostPct = def.MagicMpCostPctAt(1),
             TicksRemaining = int.MaxValue, Name = def.Name, Key = def.BuffKey, Level = 1,
         });
     }
@@ -5439,7 +5497,8 @@ static float CritFactor(float chance, float mult) => 1f + chance * (mult - 1f);
 static float SkillHitFactor(Entity atk, SkillDef skill, int power, float critMult)
 {
     float flatF = StatCalculator.CritFlatFactor(atk.EffectiveAttack, atk.CritDamageFlat, power);
-    float dbl = StatCalculator.PhysicalDoubleChance(atk.AtkStat);
+    // `BL-190` — the character's OWN Double Damage mastery rate, not a curve off his ATK stat.
+    float dbl = atk.DoubleDamageRate;
 
     // A skill's crit roll is the character's rate times the SKILL's own modifier (CritRateMod).
     float skillCrit = Math.Clamp(atk.CritChance * skill.CritRateMod, 0f, 1f);

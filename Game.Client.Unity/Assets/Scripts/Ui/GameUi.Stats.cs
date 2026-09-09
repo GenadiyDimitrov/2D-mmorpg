@@ -90,9 +90,15 @@ namespace Game.Client
             t.AppendLine(Row2("Accuracy", s.Accuracy.ToString(), "Crit", Pct(s.CritChance)));
             t.AppendLine(Row2("Magic crit", Pct(s.MagicCritChance), "Crit dmg", "+" + Pct(s.CritDamage)));
             // Flat crit damage is ATTACK added inside a crit (weapon masteries), so it reads as a
-            // number, not a percent. [Double] is a pure ATK curve — the client can derive it itself.
+            // number, not a percent. [Double] is the Double Damage MASTERY and is SENT (`BL-190`):
+            // the client cannot derive it any more, because the rate comes from whichever passives
+            // the character holds. It reads 0% until a mastery passive is authored.
             t.AppendLine(Row2("Crit dmg flat", "+" + s.CritDamageFlat.ToString("0"),
-                              "[Double]", Pct(StatCalculator.PhysicalDoubleChance(s.Atk))));
+                              "[Double]", Pct(s.DoubleDamageRate)));
+            // The other two masteries, on their own line — they are not crit stats and pretending
+            // otherwise is how the duration one stayed invisible for as long as it did.
+            t.AppendLine(Row2("Buff x2 dur", Pct(s.DoubleDurationRate),
+                              "Reuse reset", Pct(s.CooldownResetRate)));
             // The MAGIC crit multiplier is its own number (x2 base, x2.6 / x3.38 blessed) and shares
             // nothing with the two crit-damage lines above, which are the physical channel.
             t.AppendLine(Row2("Magic crit dmg", "x" + s.MagicCritDamage.ToString("0.##"), "", ""));

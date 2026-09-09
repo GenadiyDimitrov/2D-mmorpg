@@ -46,6 +46,53 @@ public static partial class ClassSkillTables
         //   on 2026-09-09 and asked to be built with the rest of it. Everything else the discipline
         //   will own waits on his file, exactly as before. See RegisterDual4th / Skills.Dual4th.cs.
         RegisterDual4th();
+        // ✅ `BL-191` (2026-09-10) — the four SKILL MASTERIES he authored the day `BL-190` shipped.
+        //    Like RegisterDual4th above it, this is a PARTIAL that crosses unfinished files: the
+        //    warrior's two 4th CSVs are still placeholders and the nuker's is being written right
+        //    now. What is registered here is exactly what he ruled and nothing around it.
+        RegisterSkillMasteriesFourth();
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════════════════════════
+    //  THE SKILL MASTERIES, 76 — `BL-191`. See Skills.SkillMasteries.cs for the numbers.
+    // ═════════════════════════════════════════════════════════════════════════════════════════════
+
+    /// <summary>The 76 rungs of the four mastery passives, per his 2026-09-10 ruling.
+    ///
+    /// <para>🔑 <b>FOUR ARCHETYPES, FOUR DIFFERENT ANSWERS</b>, and the split is the design:
+    /// <list type="bullet">
+    ///   <item><b>Ravager + Warlord</b> — Overpower rung 3 (10%) AND the Blood Rage toggle. The only
+    ///         line in the game that can double a skill's damage, and the only tool that doubles the
+    ///         doubler.</item>
+    ///   <item><b>Lightbringer + Warchanter</b> — Lasting Enchantment (10%): the buff/debuff duration
+    ///         double, which until `BL-190` was free and universal.</item>
+    ///   <item><b>Magus</b> — Arcane Momentum (5%): the reuse reset. *"Mages"* is the NUKER in his
+    ///         vocabulary; the healer and buffer got a different passive in the line above it.</item>
+    /// </list></para>
+    ///
+    /// <para>⚠ <b>THE ROGUE, THE ARCHER AND THE TANK GET NOTHING HERE</b>, and that is not an
+    /// oversight to be tidied up later — he named four groups and they were not among them. A rogue's
+    /// blows already have their own landing stat (`BL-188`); handing him a double mastery as well
+    /// would stack two rolls on one hit.</para>
+    ///
+    /// <para>⚠ Blood Rage's LEVEL is the one assumption in this table — see Skills.SkillMasteries.cs.
+    /// Everything else is a number he wrote.</para></summary>
+    private static void RegisterSkillMasteriesFourth()
+    {
+        foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
+        {
+            foreach (var d in new[] { Discipline.Ravager, Discipline.Warlord })
+                ClassSkills.RegisterFourth(race, d,
+                    new ClassSkill(Overpower, 76, SkillLevel: 3),
+                    new ClassSkill(BloodRage, 76, SkillLevel: 1));
+
+            foreach (var d in new[] { Discipline.Lightbringer, Discipline.Warchanter })
+                ClassSkills.RegisterFourth(race, d,
+                    new ClassSkill(LastingEnchantment, 76, SkillLevel: 1));
+
+            ClassSkills.RegisterFourth(race, Discipline.Magus,
+                new ClassSkill(ArcaneMomentum, 76, SkillLevel: 1));
+        }
     }
 
     // ═════════════════════════════════════════════════════════════════════════════════════════════

@@ -21,22 +21,48 @@ A `[Double]` never touches crit-damage values. You hit for 1000; when it doubles
 damage went — the confusion in IG comes from blows applying crit-damage values *and then* critting
 for a further ×2.
 
-### Chance — pure ATK, floor 2.5%, ceiling 25%
+### 🔴 Chance — REPLACED 2026-09-10 by `BL-190`: a PASSIVE grants it
+
+**The ATK curve below is dead.** Owner ruling, 2026-09-10: *"I will want to be a passive to allow
+skills to double .. Not all based on atk stat (only if passive is active)"*, then *"I want several
+passives .. One that resets cooldown of skills, one that doubles duration of bad and good buffs, and
+one that allow double dmg ... All will calculate the same just the base is based on the passive."*
 
 ```
-ATK_Diff = max(0, 0.75 × (ATK − 30))
-Double%  = min(25, 2.5 + ATK_Diff)
+MasteryAtkMod = 1 + 0.03 × (clamp(EffectiveAtk, 30, 50) − 40)          ×0.70 … ×1.30
+Double%       = 0                                                       when no passive grants it
+              = clamp(passiveBase × MasteryAtkMod, 0, 25%)
 ```
 
-| ATK | 30 | 40 | 50 | 60+ |
-|---|---|---|---|---|
-| Double% | 2.5 | 10 | 17.5 | 25 (capped) |
+`CanDouble` on a `SkillDef` now means the skill is **eligible** to double. Whether it *can* is a
+question about the CHARACTER, and the answer is no until a mastery passive says otherwise. His
+follow-up the same day settles which skills are eligible: *"Fighters skills can double only if the
+skill say so (not all)"* — and **no dagger skill says so any more**. Every `can crit/double` was
+struck from `fighter 1st` / `rogue 2nd` / `dual 3rd` / `dual 4th` on his instruction (*"if the daggers
+skills say can crit/double u can remote that part of them"*), because a blow already has its own
+landing roll (§2) and stacking a second one on it was never the design.
 
-**`ATK` is the STAT** (the 30-60 band), never `EffectiveAtk` / p.Atk, which gear and buffs push into
-the hundreds. A better weapon must not buy Double chance — only the build does (base stat, dyes,
-stat buffs).
+The passive that grants it is **Overpower**, and only the warrior line has it — see
+`docs/Formulas.md` for the table.
+⚠ It reads **`EffectiveAtk`**, not the raw stat — the level-40 +5 swap, the armour sets and every
+`+ATK` passive count, which under the retired curve they never did.
 
-This **replaces** the previous `max(AGI, ATK)` input and the previous 30% cap.
+The two siblings compute identically and differ only in the base their own passive hands them:
+**duration doubling** (§4) and **cooldown reset** (a skill comes straight off reuse; never fires on
+a `FixedCooldown` skill). `StatCaps.SkillMasteryRateMax` = 25% is shared by all three.
+
+<details><summary>The retired curve, for the record</summary>
+
+```
+ATK_Diff = max(0, 0.75 × (ATK − 30))          # RAW AtkStat, not EffectiveAtk
+Double%  = min(25, 2.5 + ATK_Diff)            # 30 → 2.5, 40 → 10, 50 → 17.5, 60+ → 25
+```
+
+It was a per-race CONSTANT nothing in the game could raise — base fighter ATK is Elf 36 / Human 40 /
+Demon 41, so Elf 7.0% / Human 10.0% / Demon 10.75%, with a 25% cap at ATK 60 that no character can
+reach. It also **replaced** an earlier `max(AGI, ATK)` input and 30% cap.
+
+</details>
 
 ### `Can Crit` and `Can Double` are EXCLUSIVE, OPT-IN flags (owner ruling, playtest-19 M8)
 
@@ -101,8 +127,14 @@ does nothing.
 
 ## 4. `[Double]` on buffs and debuffs = double duration
 
-The same roll, applied to a buff or debuff instead of damage, makes it last twice as long. (IG's
-level-76 Skill Mastery: fighters STR, mages INT.) Additive to the above; build it last.
+A buff or debuff you cast lasts twice as long. (IG's level-76 Skill Mastery: fighters STR, mages INT.)
+Rolled ONCE per cast — an area blessing doubles for everyone or for no one — and on PLAYER casts
+only: potions, scrolls and the NPC buffer come through other paths and never roll.
+
+🔑 **`BL-190` (2026-09-10) gave it its OWN passive and its own number** (`Entity.DoubleDurationRate`).
+Until then it was literally the same ATK roll the damage side used, which meant anything done to the
+damage curve silently moved every buff duration in the game with it — the trap most likely to be
+missed, and the reason the two were split before either was touched.
 
 ## Consequence to watch
 
@@ -119,13 +151,16 @@ bonus on top. Mistune those five numbers and the class is mistuned with nothing 
 3. ✅ Crit damage `+N` is flat attack inside the crit — `PassiveEffect.CritDamageFlat` →
    `Entity.CritDamageFlat` → `StatCalculator.CritFlatFactor`, on rogue, warrior and archer masteries.
    It rides as a FACTOR on the finished hit, which is exact: everything after the ratio is linear.
-4. ✅ Blows apply the crit-damage values (`ResolveBlow`); `[Double]` is the ATK curve capped at
-   `StatCaps.PhysicalDoubleRate` = 25%, and never reads AGI any more.
+4. ✅ Blows apply the crit-damage values (`ResolveBlow`). ⚠ The blow's own LANDING roll left the crit
+   chain entirely in `BL-188` (2026-09-09) — it is `Entity.BlowRate` now, see §2.
+   `[Double]` was the ATK curve capped at 25%; ⚠ **`BL-190` (2026-09-10) replaced that with a
+   passive-fed rate** — see §1.
 5. ✅ `[Double]` doubles buff/debuff duration — one roll per cast in the skill-cast path, PLAYER
    casts only (potions, scrolls and the NPC buffer come through other paths and never roll), shown
-   as `Name [Double]` on the floating text.
+   as `Name [Double]` on the floating text. ⚠ **Its own passive since `BL-190`** — see §4.
 
-Measured, not derived: `tools/BalanceMatrix` §C1 prints the Double curve old-vs-new, both mastery
+Measured, not derived: `tools/BalanceMatrix` §C1 prints the mastery band and what an authored base
+pays at each ATK (it printed the retired Double curve old-vs-new before `BL-190`), both mastery
 ladders as OLD (multiplier) vs NEW (flat) expected damage, and rogue-vs-warrior sustained DPS.
 The headline numbers at the five rungs (20/24/28/32/36):
 

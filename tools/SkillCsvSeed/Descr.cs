@@ -116,6 +116,14 @@ internal static class Descr
         // contains a key above it - "blow rate" is not "crit rate".
         ("blowrate",      new[] { "blow landing rate", "blow rate", "blowrate" }),
         ("blowres",       new[] { "blow resist", "blow resistance" }),
+        // `BL-191` - the three SKILL MASTERIES. All three aliases are multi-word for the same reason
+        // the blow pair above them is: none of them can match inside another word, and none of them
+        // contains a key declared earlier ("double rate" is not "crit rate", "reuse reset" is not
+        // "reuse"). ⚠ `reuse reset` MUST out-reach the bare `reuse` key, so it is declared here,
+        // above it - the table is scanned in order and the first hit wins.
+        ("doublerate",    new[] { "double damage rate", "double rate", "doublerate" }),
+        ("durationrate",  new[] { "double duration rate", "duration double rate", "durationrate" }),
+        ("reusereset",    new[] { "reuse reset rate", "reuse reset", "cooldown reset" }),
         ("critrate",      new[] { "critical rate", "crit rate", "critrate", "critical" }),
         ("magiccritrate", new[] { "magic critical", "magic crit" }),
         // ⚠ THREE evasion channels, and his rogue row names all three in one cell: plain "evasion +20",
@@ -662,6 +670,13 @@ internal static class Descr
         add("acc", false, p.Accuracy);        add("eva", false, p.Evasion);
         add("critrate", true, p.CritRate);    add("critdmg", true, p.CritDamage);
         add("blowrate", true, p.BlowRate);   add("blowres", true, p.BlowResist);   // `BL-188`
+        // `BL-191` - the three mastery BASES. Offered as PERCENTS, which is how he authors them
+        // ("base 3%"), and they are bases and not finished rates: the ATK band and the 25% cap are
+        // applied at read time by StatCalculator.SkillMasteryRate, so what a CSV row states and what
+        // this passive carries are the same number only here, before either.
+        add("doublerate", true, p.DoubleDamageRate);
+        add("durationrate", true, p.DoubleDurationRate);
+        add("reusereset", true, p.CooldownResetRate);
         add("critdmg", false, p.CritDamageFlat);
         add("magiccritrate", true, p.MagicCritRate);
         add("as", true, p.AtkSpeedPct);       add("cast", true, p.CastSpeedPct);

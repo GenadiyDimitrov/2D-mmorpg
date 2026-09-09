@@ -792,15 +792,56 @@ public static class StatCalculator
     /// (Entity.RecomputeDerived), or a mid-chain clamp silently eats the buffs.</summary>
     public static float MagicCritBase(int wit) => MagicCharacterCritBase * CritWitMod(wit);
 
-    /// <summary>Physical SKILL "[Double]" chance (×2 damage) — a pure ATK curve
-    /// (owner ruling 2026-08-05, docs/design/CritBlowAndDouble.md §1):
-    /// <code>Double% = min(25, 2.5 + max(0, 0.75·(ATK − 30)))</code>
-    /// so ATK 30 → 2.5%, 40 → 10%, 50 → 17.5%, 60+ → 25% (capped).
-    /// <paramref name="atkStat"/> is the ATK **stat** (the 30-60 band), never EffectiveAtk /
-    /// p.Atk: a better weapon must not buy Double chance, only the build does. AGI makes a blow
-    /// LAND; ATK makes it double. Only skills flagged [Double] roll this.</summary>
-    public static float PhysicalDoubleChance(int atkStat) =>
-        Math.Clamp(0.025f + 0.0075f * Math.Max(0, atkStat - 30), 0.025f, StatCaps.PhysicalDoubleRate);
+    // ===== THE THREE SKILL MASTERIES (`BL-190`, owner ruling 2026-09-10) =====================
+    //
+    // 🔴 `PhysicalDoubleChance` — the pure ATK curve `min(25, 2.5 + 0.75·(ATK−30))` that was the
+    // [Double] rate from 2026-08-05 — IS GONE, deliberately and with no replacement door. It was a
+    // per-race CONSTANT nothing in the game could raise (Elf 7% / Human 10% / Demon 10.75%, a 25%
+    // cap at ATK 60 that no character can reach), and it silently drove buff/debuff DURATION
+    // doubling as well as damage. His ruling replaces it with three passive-fed rates that compute
+    // identically and differ only in the base their passive hands them:
+    //
+    //     DoubleDamageRate    a physical [Double] skill deals ×2
+    //     DoubleDurationRate  a buff or debuff this character casts lasts twice as long
+    //     CooldownResetRate   the skill just cast comes off reuse immediately
+    //
+    // ⚠ If you find yourself wanting a "default" or "floor" for any of them, re-read the ruling:
+    // **no passive means no roll.** Nothing in the CSVs authors one yet, so today all three are 0
+    // for everybody, and that is the intended shipping state — see `BL-191`.
+
+    /// <summary>The ATK band the mastery mod reads, outside which it is flat. The same 20-point
+    /// span <see cref="BlowAgiMod"/> uses, moved onto ATK's anchor
+    /// (<see cref="PAtkStatReference"/> = 40).</summary>
+    public const int MasteryAtkFloor = 30, MasteryAtkCeil = 50;
+
+    /// <summary>ATK's contribution to all three mastery rates — a multiplier anchored on 40, at
+    /// ±3 percentage points of itself per point, clamped to the 30-50 band:
+    /// <code>30 ATK → ×0.70    36 → ×0.88    40 → ×1.00    45 → ×1.15    50 → ×1.30</code>
+    ///
+    /// <para>🔑 Deliberately the SAME SHAPE as <see cref="BlowAgiMod"/> — his instruction was that
+    /// the three masteries "calculate the same", and the blow ladder is the proven precedent for a
+    /// passive-fed base with a stat band on top. Base fighter ATK is Elf 36 / Human 40 / Demon 41,
+    /// so an unswapped human sits at exactly ×1.00 and the race spread is ±12%: real, but nothing
+    /// like the 7%-vs-10.75% *rate* gap the retired curve handed out for free.</para>
+    ///
+    /// <para>⚠ It reads <b>EffectiveAtk</b>, not the raw stat. The old curve read the raw one and
+    /// the doc comment defended it ("a better weapon must not buy Double chance, only the build
+    /// does") — but EffectiveAtk is not p.Atk, it IS the build: the level-40 +5 ATK swap, the armour
+    /// sets and every +ATK passive land in it, and none of them bought a point of Double.</para>
+    /// </summary>
+    public static float MasteryAtkMod(int atk) =>
+        1f + 0.03f * (Math.Clamp(atk, MasteryAtkFloor, MasteryAtkCeil) - PAtkStatReference);
+
+    /// <summary>One mastery rate, finished and capped:
+    /// <code>rate = 0                                         when base ≤ 0
+    /// rate = clamp(base × MasteryAtkMod(ATK), 0, SkillMasteryRateMax)</code>
+    /// <paramref name="baseRate"/> is what the character's mastery PASSIVES grant, already summed
+    /// and already scaled by any buff that multiplies them (Entity.RecomputeDerived does both).
+    /// The <c>≤ 0</c> short-circuit is the gate itself and must not become a floor.</summary>
+    public static float SkillMasteryRate(float baseRate, int atk) =>
+        baseRate <= 0f
+            ? 0f
+            : Math.Clamp(baseRate * MasteryAtkMod(atk), 0f, StatCaps.SkillMasteryRateMax);
 
     // ===== THE BLOW LANDING RATE (`BL-188`, owner ruling 2026-09-09) =========================
 
@@ -1274,15 +1315,15 @@ public static class StatCalculator
     /// ratio, i.e. the 90% ceiling, i.e. a permanent stun. The same reasoning that flattened CON and
     /// SPT applies here and harder: the level difference is the level term's job now, so this stat says
     /// only how hard the creature LEANS on control. "Normal ranges" is the player band, which every
-    /// other formula in this file already assumes — <see cref="PAtkStatReference"/> is 40 and
-    /// <see cref="PhysicalDoubleChance"/> caps at 60, so a mob at 168 was outside the domain of its own
+    /// other formula in this file already assumes — <see cref="PAtkStatReference"/> is 40 and the
+    /// retired [Double] curve saturated at 60, so a mob at 168 was outside the domain of its own
     /// math. The MAGE leans highest: a caster is the creature that debuffs.</para>
     ///
     /// <para>⚠ A mob's P.Atk and M.Atk do NOT come from here — they are MobBaseStats.PAtk/MAtk(level),
     /// and Entity.RecomputeDerived only feeds EffectiveAtk into attack power on the PLAYER branch. So
-    /// this does not weaken a creature's damage. The one real side effect is
-    /// <see cref="PhysicalDoubleChance"/>, which mobs were pinning at its 25% cap and now sit at
-    /// 10-13% on — and that only bites on a skill flagged CanDouble, which no mob skill is today.</para>
+    /// this does not weaken a creature's damage. Its one real side effect used to be the [Double]
+    /// rate, which mobs pinned at its 25% cap and then sat at 10-13% on; since `BL-190` that rate is
+    /// passive-fed, a mob holds no mastery passive, and so a creature's is flatly 0 either way.</para>
     ///
     /// <para>⚠ RANK DOES NOT MULTIPLY THIS. An elite gets ×1.5 on its DEFENSIVE pair and nothing here,
     /// and a boss gets neither (it is flatly control-immune instead). That asymmetry is deliberate but

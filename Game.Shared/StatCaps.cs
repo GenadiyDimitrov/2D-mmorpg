@@ -35,9 +35,27 @@ public static class StatCaps
     /// no mage to be short on crit"). Raising this number now genuinely pays a mage.</summary>
     public const float MagicCritRate = 0.20f;
 
-    /// <summary>Physical SKILL "[Double]" RATE ceiling (25%, from the ATK stat — owner
-    /// ruling 2026-08-05, docs/design/CritBlowAndDouble.md §1; was 30% off max(AGI,ATK)).</summary>
-    public const float PhysicalDoubleRate = 0.25f;
+    // ===== THE THREE SKILL MASTERIES (`BL-190`, owner ruling 2026-09-10) =====================
+    //
+    // *"I want several passives .. One that resets cooldown of skills, one that doubles duration of
+    // bad and good buffs, and one that allow double dmg ... All will calculate the same just the
+    // base is based on the passive."*
+    //
+    //     rate = 0                                                   ← nothing grants it
+    //     rate = clamp(base × buffs × MasteryAtkMod(ATK), 0, SkillMasteryRateMax)
+    //
+    // 🔑 The BASE comes from a PASSIVE and from nowhere else — that is the whole ruling. The ATK
+    // curve that used to BE the rate is now only the band around it, so a character with no mastery
+    // passive has a rate of exactly zero and a [Double] skill on his bar simply never doubles. See
+    // StatCalculator.SkillMasteryRate and Entity.DoubleDamageRate / DoubleDurationRate /
+    // CooldownResetRate.
+
+    /// <summary>Ceiling shared by all three masteries (25%) — the number the retired ATK-curve
+    /// `PhysicalDoubleRate` capped at, kept so an authored ladder has the headroom it had.
+    /// ONE constant on purpose: the three rates compute identically and differ only in the base
+    /// their passive hands them, so a divergent cap would be a second, silent difference. Split it
+    /// in three the day one of them is ruled to have its own ceiling, not before.</summary>
+    public const float SkillMasteryRateMax = 0.25f;
 
     // ===== THE BLOW LANDING RATE (`BL-188`, owner ruling 2026-09-09) =========================
     //

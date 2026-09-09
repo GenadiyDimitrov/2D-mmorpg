@@ -132,7 +132,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-186` | ❓ | THE MAX LEVEL CAP — can it be removed? Parked until `BL-185` closes, on your order | systems |
 | `BL-187` | 🔵 | A THIRD RUNE combining both damage channels — engine done, the economy and stacking shape are yours | items |
 | `BL-189` | 🔵 | Weapon-type protection — `BowResist` generalised to every weapon type | combat |
-| `BL-190` | 🔴 | SKILL `[Double]` must be gated by a PASSIVE, not the ATK curve — 4 things owed | combat |
+| `BL-191` | 🟡 | The SKILL MASTERIES — four authored and built; Blood Rage's level, and who else gets one, are open | classes |
 
 ---
 
@@ -1226,56 +1226,47 @@ Nothing is built. Filed so the ask is in the repo rather than only in a chat lin
 
 ---
 
-## `BL-190` 🔴 SKILL `[Double]` — IT MUST BE GATED BY A PASSIVE, NOT BY THE ATK CURVE
+## `BL-191` 🟡 THE SKILL MASTERIES — four are authored and built; the rest of the roster is open
 
-**Split out of `BL-188` on 2026-09-09**, on your instruction, when the blow half of that entry was
-built and the Double half deliberately was not: *"Move the double to bl entry - I will want to be a
-passive to allow skills to double .. Not all based on atk stat (only if passive is active)"*.
+**Filed 2026-09-10 when `BL-190` shipped the engine, and mostly CLOSED the same day** when you
+authored the passives that switch it on. What is left is a short list of choices, not a build.
 
-### Your ruling, as far as it goes
+### ✅ What is done (0.124.0)
 
-A skill may `[Double]` **only while a PASSIVE that grants it is active**. `CanDouble` on the def stops
-being sufficient on its own and becomes "this skill is *eligible* to double"; whether it actually can
-is a question about the CHARACTER. The ATK curve is not the gate any more — you did not say whether it
-survives as the *rate*, which is the first open question below.
+| Skill | Who | Learn | Base |
+|---|---|---|---|
+| **Overpower** | Warrior → Ravager + Warlord | 20 / 40 / 76 | 3% / 7% / 10% double damage |
+| **Blood Rage** (Toggle) | Ravager + Warlord | 76 | ×2 on Overpower's base; 50 HP/s, +25% MP on physical skills |
+| **Lasting Enchantment** | Lightbringer + Warchanter | 76 | 10% buff/debuff duration double |
+| **Arcane Momentum** | Magus | 76 | 5% reuse reset |
 
-### What is there today, measured (not derived)
+Measured at 90 in mythic gear (`BalanceMatrix` §C1): Ravager **9.4%** damage, **18.8%** under Blood
+Rage; Warchanter 9.7% / Lightbringer 10.9% duration; Magus 5.5% reuse. Every CSV row is verified by
+`--check`, which learned the three metrics.
 
-```
-Double% = clamp(2.5% + 0.75 × max(0, ATK − 30), 2.5%, 25%)      StatCalculator.PhysicalDoubleChance
-```
+### ❓ What is still yours
 
-Three facts about it, all confirmed in the code on 2026-09-09:
+1. 🟡 **BLOOD RAGE'S LEVEL IS AN ASSUMPTION — the only one in the build.** You gave the toggle its
+   effects but no learn level, in a sub-bullet under the 20/40/76 ladder. It is at **76**, because
+   Holy Soul (the only other 50 HP/s toggle in the game) is a 76 skill and because 50 HP/s at level
+   20 kills a warrior in under a minute. **Say the word and it moves to 40** — it is one line in
+   `ClassSkillTables.Fourth.cs` and two CSV rows.
+2. ❓ **Does the ROGUE, the ARCHER or the TANK ever get one?** You named four groups and none of them
+   was among them, so all three read 0 / 0 / 0 today. That is built as ruled and it is defensible —
+   a blow already has its own landing roll (`BL-188`), so a rogue with a double mastery would be
+   rolling twice on one hit. But the tank and the archer have no such argument, and right now the
+   reuse-reset and duration masteries are mage-only tools by omission rather than by decision.
+3. ❓ **Does anything BUY a mastery rate besides the passive?** The engine has a buff channel
+   (`SkillDef.DoubleDamageMult`) and Blood Rage is its only author. A party "Mastery Chant", a
+   consumable, a rune — all one line each. Nothing is invented until you ask.
+4. 🔵 **The ladders stop where you stopped them.** Overpower has three rungs because you named three;
+   Lasting Enchantment, Arcane Momentum and Blood Rage have one each. `warrior 4th.csv` and
+   `war_aoe 4th.csv` now carry the 4th-tier header and those two rows with a banner saying the rest
+   is yours — neither earns a `Check.Specs` line until you finish the file.
 
-1. **It is a per-race CONSTANT that nothing in the game can raise.** Base fighter ATK is Elf 36 /
-   Human 40 / Demon 41 (`StatCalculator.GetBaseStats`) → **7.0% / 10.0% / 10.75%**. The 25% cap needs
-   ATK 60 and is unreachable by anyone.
-2. 🔴 **The call passes the RAW stat, not the effective one** — `PhysicalDoubleChance(caster.AtkStat)`,
-   while its crit twin uses `PhysicalCritBase(EffectiveAgi, …)`. `EffectiveAtk = AtkStat + BonusAtk`,
-   and `BonusAtk` is where the level-40 `+5 ATK` swap, the armour sets and every `+ATK` passive land.
-   **None of them buy any Double chance.** The doc comment defends the raw read ("a better weapon must
-   not buy Double chance, only the build does") — but `EffectiveAtk` is not p.Atk, it IS the build.
-   This reads as a slip rather than a design, and it is a one-word fix.
-3. ⚠ **The same function drives DOUBLE BUFF/DEBUFF DURATION** (`GameLoopService.cs:11742`, IG's
-   level-76 Skill Mastery — an area blessing doubles for everyone or for no one, rolled once per cast,
-   players only). **Anything done to that curve moves buff durations too**, and that is the thing most
-   likely to be missed.
+### ⚠ One thing to know before you retune any of it
 
-`[Double]` is flagged on most physical actives today (`Skills.Fighter.cs`, `Skills.Dual3rd.cs`). On a
-BLOW it is a live SECOND roll after the blow lands, for a further ×2 — that part works and `BL-188`
-left it alone.
-
-### What is owed before it can be built
-
-1. ❓ **Does the ATK curve survive as the RATE, with the passive only as a gate — or does the passive
-   carry its own rate the way the blow ladder does?** The blow rework did the latter and it worked
-   cleanly (base × buffs × passives × stat mod, capped), so the shape exists and is proven.
-2. ❓ **One passive for everything, or one per weapon/class?** *"Not all"* says some skills stop
-   doubling; a single global passive cannot express that, but a per-skill `RequiresDoublePassive` flag
-   plus one passive can.
-3. ❓ **Does the buff/debuff DURATION double follow the same gate?** It is the same roll today. If it
-   does not, it needs its own number and stops being free.
-4. 🔵 **The `AtkStat` → `EffectiveAtk` slip can be fixed on its own, before any of this** — it is a bug
-   in either design. Re-measure after: it moves duration-doubling too.
-
-**Do not retune skill powers to compensate** — the powers are authored, the roll rate is not.
+The base is **not** the rate. `rate = clamp(base × buffs × MasteryAtkMod(EffectiveAtk), 0, 25%)`, and
+the band runs ×0.70 at ATK 30 to ×1.30 at ATK 50. So a 20% base is already at the cap for anyone with
+ATK 45+, and **a 30% base is at the cap for everybody** — raising it past ~19% buys nothing without
+raising `StatCaps.SkillMasteryRateMax` too. `BalanceMatrix` §C1 prints the whole surface.

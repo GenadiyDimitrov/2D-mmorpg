@@ -7,11 +7,202 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.122.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.124.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-10 (latest) — 0.122.0: every class wears its own weight, and the melee rogue exists above 76
+## 2026-09-10 (latest) — 0.124.0: four passives turn `[Double]` back on (`BL-191`)
+
+🔴 **NEW APK REQUIRED** — the class-skill tables changed (four new learnable skills), and the client
+builds its Learn tab locally from the compiled `ClassSkills`.
+
+0.123.0 built the three mastery channels and shipped them switched off, because nothing authored one.
+He authored them the same day. His words, in full:
+
+> - buffers and healers get the duration passive with base 10% @76
+> - Mages get cooldown passive with base 5% @76
+> - warriors/aoe-warriors get the double dmg passive with base 3,7,10% @20,40,76
+>   - and warriors/aoe-war get another toggle skill that doubles the effect of the double passive
+>     drain 50hp/s and increases the p.mp.consumtion with 25%
+> - Fighters skills can double only if the skill say so (not all)
+
+### The four skills
+
+| Skill | Who | Learn | What it grants |
+|---|---|---|---|
+| **Overpower** | Warrior → Ravager + Warlord | 20 / 40 / 76 | double-damage base 3% / 7% / 10% |
+| **Blood Rage** (Toggle) | Ravager + Warlord | 76 | ×2 on Overpower's base; **50 HP/s**, **+25% MP** on physical skills |
+| **Lasting Enchantment** | Lightbringer + Warchanter | 76 | buff/debuff duration-double base 10% |
+| **Arcane Momentum** | Magus | 76 | reuse-reset base 5% |
+
+All four live in one file, `Skills.SkillMasteries.cs` — they are not a discipline's kit, they are the
+four authors of one engine feature, and the numbers only read correctly together.
+
+🔑 **"Mages" is the NUKER.** His own vocabulary throughout `shared 4th.csv` separates Mage / Healer /
+Buffer / Warrior / Tank / Rogue, and the line above gives the healer and buffer a *different*
+passive. Per his PS, only the reuse passive was built into the nuker today — the rest of
+`nuker 4th.csv` is still being written and waits for tomorrow.
+
+🔑 **Blood Rage multiplies the BASE, not the finished rate.** `SkillDef.DoubleDamageMult` folds into
+`Entity.DoubleDamageAcc` *before* the ATK band and *before* the shared 25% cap, so the stance can
+never step over the ceiling. And it is worth exactly nothing without Overpower: ×2 of a zero base is
+zero, which is `BL-190`'s gate working rather than a case to special-case.
+
+⚠ **`PhysMpCostPct` is NEGATIVE on it (−0.25).** The field is a *reduction* everywhere else in the
+game; `Entity.PhysMpCostReduction` clamps to [−2, 0.8] precisely so a penalty can ride the same
+channel. His "p.mp" is the physical side, and the magic channel is left alone on purpose.
+
+### Measured, not derived — `BalanceMatrix` §C1 now reads real characters
+
+```
+  --- what a REAL level-90 character carries (dmg / buff-duration / reuse-reset) ---
+  Ravager (4th)                 9.4%     0.0%     0.0%
+  Warlord (4th)                 9.4%     0.0%     0.0%
+  Warchanter (4th)              0.0%     9.7%     0.0%
+  Lightbringer (4th)            0.0%    10.9%     0.0%
+  Magus (4th)                   0.0%     0.0%     5.5%
+  Bulwark (4th)                 0.0%     0.0%     0.0%
+  warrior, NO discipline        3.3%     0.0%     0.0%
+  Ravager + BLOOD RAGE         18.8%     0.0%     0.0%
+```
+
+The last row is the one worth having: it is the only proof the toggle's field actually reaches
+`RecomputeDerived`. 🔴 **And getting it required fixing the rig first** — both of its buff builders
+constructed a `BuffInstance` from `Effect` + `Magnitudes` only, so every FIELD channel (blow rate, MP
+cost, and now the mastery multiplier) was silently dropped. Blood Rage measured as doing nothing at
+all until they were taught to copy them. Same trap, third time: *half of what a buff carries is not a
+`SkillEffect` bit, because that enum ran out of bits years ago.*
+
+### The daggers lose `[Double]`
+
+*"if the daggers skills say can crit/double u can remove that part of them"*. 128 CSV rows across
+`fighter 1st`, `rogue 2nd`, `dual 3rd` and `dual 4th` lost the phrase, and the five defs behind them
+lost `CanDouble: true` — Stab, Piercing Stab, the whole `StabSkill` family (Killing / Swift / Heavy),
+Venom Stab and Venom Burst. A blow already has its own landing roll since `BL-188`; a second one on
+top of it was never the design, and no rogue has Overpower anyway. Bow and sword skills that say
+"can double" in his CSVs keep it.
+
+### Also
+
+- `SkillCsvSeed --check` learned three metrics — `double rate`, `double duration rate`,
+  `reuse reset` — so every number in the five new rows is **verified, not UNREAD**. All fifteen
+  walked files stay green.
+- The two warrior 4th CSVs stop being two-line placeholders: they get the 4th-tier column header and
+  the two rows he authored, plus a banner saying the rest is still his. Neither earns a
+  `Check.Specs` line yet — same standing as `warrior 3rd`, which has had HP Boost rows for weeks.
+- ⚠ **Blood Rage's LEVEL is the one assumption in this build.** He gave the toggle its effects but no
+  learn level, in a sub-bullet under the 20/40/76 ladder. 76 is the defensible read — Holy Soul, the
+  only other 50 HP/s toggle in the game, is a 76 skill, and at level 20 this would kill a warrior in
+  under a minute. One line to move if he meant 40.
+
+### Files
+
+`Skills.SkillMasteries.cs` (new) · `Skills.cs` (`SkillDef.DoubleDamageMult`, the `CanDouble` comment,
+one `AddRange`) · `Entity.cs` (`BuffInstance.DoubleDamageMult` + its fold) · `GameLoopService.cs` (one
+line wiring the buff field) · `ClassSkillTables.Common/Third/Fourth.cs` · `Skills.Fighter.cs`,
+`Skills.Dual3rd.cs` (five `CanDouble` removals) · `SkillCsvSeed/Descr.cs` · `BalanceMatrix` §C1 and
+both buff builders · nine CSVs · `docs/Formulas.md`, `docs/design/CritBlowAndDouble.md`.
+
+## 2026-09-10 — 0.123.0: `[Double]` stops being a birthright (`BL-190`)
+
+⚠ **NEW APK wanted** (an old one still plays) — the stats window gained a `Buff x2 dur` /
+`Reuse reset` line, and the `[Double]` figure it used to derive locally is now sent by the server.
+`ProtocolVersion` 34 → 35, a pure addition at the end of `StatsUpdate`; `MinAcceptedProtocol` stays 8.
+
+🔴 **Read this first: nothing in the game doubles any more, and that is the point.** See the last
+section. ⚠ **That state lasted one version** — he authored the four passives the same day and
+**0.124.0** turns them back on. Everything below is still the model; only "nobody has one" expired.
+
+### What he ruled
+
+`BL-190` had three ❓ owed. He answered all three and widened the last one into a family:
+
+> *"I want several passives .. One that resets cooldown of skills, one that doubles duration of bad
+> and good buffs, and one that allow double dmg ... All will calculate the same just the base is
+> based on the passive."*
+
+plus, on the rate: **the passive carries the base, ATK is only a band around it**; and on who has
+one today: **nobody, until he authors it**.
+
+### The math — one function, three channels
+
+```
+MasteryAtkMod = 1 + 0.03 × (clamp(EffectiveAtk, 30, 50) − 40)      ×0.70 … ×1.30
+rate          = 0                                                   when no passive grants it
+              = clamp(passiveBase × MasteryAtkMod, 0, 25%)
+```
+
+Deliberately the same shape as `BL-188`'s blow rate — a passive-fed base with a stat band on top —
+because that one is proven and because he asked for the three to "calculate the same". The band is
+`BlowAgiMod` moved onto ATK's anchor of 40, so a human fighter (ATK 40) sits at exactly ×1.00 and
+the race spread is ±12% instead of the 7%-vs-10.75% *rate* gap the old curve handed out.
+
+| Channel | What it does | Rolled |
+|---|---|---|
+| `Entity.DoubleDamageRate` | a physical skill flagged `[Double]` deals ×2 | per hit; on a BLOW it is the second roll, after the blow lands |
+| `Entity.DoubleDurationRate` | a buff or debuff you cast lasts twice as long | once per cast (area = everyone or no one), player casts only |
+| `Entity.CooldownResetRate` | the skill just cast comes straight off reuse | once per cast, after the reuse reduction; never on a `FixedCooldown` skill |
+
+`PassiveEffect` gained the three matching fields and they **SUM** (a rung ladder replaces itself
+through the normal skill-level machinery, so a sum only ever adds genuinely different passives — and
+a sum is the only thing that can start from zero). `StatCaps.SkillMasteryRateMax` = 25%, shared.
+
+The rig prints the whole surface (`BalanceMatrix` §C1):
+
+```
+  ATK stat        30      33      36      40      41      45      50      55
+  band         x0.70   x0.79   x0.88   x1.00   x1.03   x1.15   x1.30   x1.30
+  base  10%      7.0%    7.9%    8.8%   10.0%   10.3%   11.5%   13.0%   13.0%
+  base  20%     14.0%   15.8%   17.6%   20.0%   20.6%   23.0%   25.0%   25.0%
+```
+
+### The cooldown reset is the one genuinely new mechanic
+
+`ExecuteSkill` rolls it **after** the reuse reduction, so the two never fight over the same number,
+and never on a `FixedCooldown` skill (Return, the ultimates) — the same exemption the reduction
+already has, for the same reason: those cooldowns *are* the balance. On a hit the cooldown key is
+**removed** rather than set to 0, so the tick loop and the bar's reuse overlay both see a skill that
+is simply ready rather than one counting down from nothing, and the caster is told:
+`Killing Stab is ready again!`.
+
+### Two things this fixed on the way past
+
+- 🔴 **Duration doubling was literally the same roll as damage doubling.** IG's level-76 Skill
+  Mastery shared `PhysicalDoubleChance(caster.AtkStat)` with the damage side, which meant any change
+  to the damage curve silently moved every buff duration in the game. Splitting them was done FIRST,
+  before either rate was touched — it is the entry's own "thing most likely to be missed".
+- 🔴 **The rate read the RAW `AtkStat`, not `EffectiveAtk`.** Its doc comment defended this ("a
+  better weapon must not buy Double chance, only the build does") — but `EffectiveAtk` is not p.Atk,
+  it IS the build: the level-40 `+5 ATK` swap, the armour sets and every `+ATK` passive land in it,
+  and not one of them bought a point of Double. The band reads the effective stat now.
+
+### 🔴 What this deliberately breaks, and why it is not a bug
+
+**`StatCalculator.PhysicalDoubleChance` is deleted with no replacement door**, and nothing in the
+CSVs authors a mastery passive. So as of this build **every character in the game reads 0% / 0% / 0%
+and no skill doubles** — the ~14 `[Double]` skills (Strike, Smash, Shot, Precise Shot, Cleaving
+Strike, the bleed/poison detonators, and the second roll on Killing / Venom / Swift Stab) all land
+flat, and buff durations no longer double for anyone.
+
+That is his ruling verbatim — *"Nobody — dead until you author it"* — chosen over an auto-granted
+tier ladder he was offered. The rig reports it honestly rather than hiding it: the Champion line now
+reads `double x1.00` where it read `x1.10`, i.e. about 9% off a warrior's expected skill damage.
+
+📌 **`BL-191`** is filed with the four things owed from him: which kits get which mastery and at what
+rung, the base rates, whether the reuse-reset is a fighter or caster tool, and whether a BUFF should
+be able to scale a mastery. For reference when picking numbers: the retired curve paid **10.0%** to a
+human, and a base of `0.10` reproduces that to the decimal.
+
+### Files
+
+`StatCalculator.cs` (`MasteryAtkMod`, `SkillMasteryRate`; `PhysicalDoubleChance` deleted) ·
+`StatCaps.cs` (`SkillMasteryRateMax` replaces `PhysicalDoubleRate`) · `Skills.cs`
+(`PassiveEffect` ×3 fields, the `CanDouble` comment) · `Entity.cs` (three accumulators, three folded
+rates) · `GameLoopService.cs` (the three roll sites + the new reuse-reset roll) · `Dtos.cs` +
+`GameConstants.cs` (protocol 35) · `GameUi.Stats.cs`, `GameUi.SkillDetail.cs` ·
+`BalanceMatrix` §C1 · `docs/Formulas.md`, `docs/design/CritBlowAndDouble.md` §1 and §4.
+
+## 2026-09-10 — 0.122.0: every class wears its own weight, and the melee rogue exists above 76
 
 ⚠ **NEW APK** — the class-skill tables changed (the melee rogue's 4th class is 105 learn rows now,
 not three).

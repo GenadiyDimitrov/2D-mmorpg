@@ -216,3 +216,5 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 86,Sharpening,wc_sharpening,Toggle,,,0,0,self/single,0,0,0,Increase P.Atk +360 (Consumes: 15/s),15,0,75kk
 88,Sharpening,wc_sharpening,Toggle,,,0,0,self/single,0,0,0,Increase P.Atk +380 (Consumes: 15/s),15,0,100kk
 90,Sharpening,wc_sharpening,Toggle,,,0,0,self/single,0,0,0,Increase P.Atk +400 (Consumes: 15/s),15,0,100kk
+,,,,,,,,,,,,,,,,,,,----------------------------Lasting Enchantment----------------------------
+76,Lasting Enchantment,lasting_enchantment,Passive,,,0,0,self/single,0,0,0,double duration rate 10% - buffs and debuffs you cast have that chance to last TWICE as long - one roll per cast so an area blessing doubles for everyone or no one - scales with ATK,0,6.5kk,1kk

@@ -367,7 +367,12 @@ public record StatsUpdate(
     float CritDamageFlat = 0f,
     // The FINISHED magic crit multiplier (2 = base, 2.6 = one blessing, 3.38 = both). Its own line
     // because CritDamage above is the PHYSICAL channel and the two share nothing.
-    float MagicCritDamage = 2f);
+    float MagicCritDamage = 2f,
+    // `BL-190` — the three SKILL MASTERIES, already folded, banded by ATK and capped. They are sent
+    // rather than derived because the client CANNOT derive them any more: the rate now comes from
+    // whichever passives the character happens to hold, which is server knowledge. Expect 0/0/0 on
+    // every character until a CSV authors a mastery passive (`BL-191`).
+    float DoubleDamageRate = 0f, float DoubleDurationRate = 0f, float CooldownResetRate = 0f);
 
 /// <summary>Server -> owning client: a potion cooldown started (seconds),
 /// or an active potion effect changed. Cooldown 0 = ready.</summary>

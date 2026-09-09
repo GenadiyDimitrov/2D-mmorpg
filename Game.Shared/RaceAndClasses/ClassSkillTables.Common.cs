@@ -94,6 +94,11 @@ public static partial class ClassSkillTables
                 // HP Boost L1-L3 at 20/28/36 (`warrior 2nd.csv`, 2026-08-27). The ladder continues
                 // L4-L10 on the 3rd-class table; the buffer takes L1-L7 from 40. See SkillCatalog.HpBoost.
                 new ClassSkill(HpBoost, 20, SkillLevel: 1),
+                // `BL-191` — OVERPOWER rung 1 (3%). The first of a three-tier ladder: rung 2 at 40
+                // on the Ravager/Warlord table, rung 3 at 76 on their 4th. Without it a warrior's
+                // [Double] skills never double at all (`BL-190`), so this row is the whole mechanic
+                // arriving with the 2nd class change.
+                new ClassSkill(Overpower, 20, SkillLevel: 1),
                 new ClassSkill(WarriorArmorMastery, 24, SkillLevel: 2),
                 new ClassSkill(WarriorWeaponMastery, 24, SkillLevel: 2),
                 new ClassSkill(Smash, 24, SkillLevel: 2),

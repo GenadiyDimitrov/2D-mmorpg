@@ -883,6 +883,11 @@ public static partial class ClassSkillTables
         warrior.AddRange(Ladder(WarriorArmorMastery, armour15, startRung: 6));
         warrior.AddRange(Ladder(WarSwordMastery, band8));
         warrior.AddRange(Ladder(WarSunderingBlow, band13));
+        // `BL-191` — OVERPOWER rung 2 (7%) at 40, his *"3,7,10% @20,40,76"*. ⚠ This is AUTHORED, not
+        // derived, and so is the only row in this list that is: the three ladders above it are the
+        // derived warrior kit that stands in until `warrior 3rd.csv` is written, while this one is
+        // his own ruling of 2026-09-10. Rung 1 is on the 2nd-class table, rung 3 on the 4th.
+        warrior.Add(new ClassSkill(Overpower, 40, SkillLevel: 2));
 
         // 🔴 THE ARCHER'S HALF IS GONE, 2026-09-09 — `archer 3rd.csv` landed and RegisterArcher3rd()
         //    below teaches his rows instead. The four derived skills it used to register are orphaned

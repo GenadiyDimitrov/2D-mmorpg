@@ -29,3 +29,5 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 20,HP Boost,hp_boost,Passive,,,0,0,self/single,0,0,0,"Increase max HP +120",0,3400,[],,
 28,HP Boost,hp_boost,Passive,,,0,0,self/single,0,0,0,"Increase max HP +200",0,12000,[],,
 36,HP Boost,hp_boost,Passive,,,0,0,self/single,0,0,0,"Increase max HP +300",0,40000,[],,
+,,,,,,,,,,,,,,,,----------------------------Overpower----------------------------
+20,Overpower,overpower,passive,,,0,0,self/single,0,0,0,double rate 3% - skills marked [Double] strike for DOUBLE damage that often - scales with ATK - without this passive NO skill can double,0,3400,[]

@@ -75,7 +75,6 @@ AvoidChance = 0.05 + (defenderEvasion - attackerAccuracy) * 0.01      clamp [0.0
               then clamped again by the level gap, then by both sides' floors
 PhysCritRate  = base(weapon) * (1 + (agi - 30)*0.01)                  cap 50%
 PhysCritDmg   = 2.0 + bonus                                           cap x10
-DoubleChance  = 0.025 + 0.0075 * (atk - 30)                           cap 25%
 MagicCritRate = base * 1.63^((wit - 20)/10)                           cap 20%
 MagicCritDmg  = 2.0 * mult * (1 - resist)                             cap x5
 ```
@@ -124,6 +123,46 @@ worn by tanks and by the Human Warchanter in heavy armour, and by nobody else.
 
 `StatCalculator.cs` — `ResolveAvoidChance`, `PhysicalCritBase`, `MagicCritBase`, `PhysicalCritMult`,
 `MagicCritMult` · block in `GameLoopService.ApplyDamage`
+
+## The three skill masteries (`BL-190`)
+
+Three passives, one piece of math. Each grants the BASE RATE of its own roll; ATK is only a band
+around it, and **nothing else grants any of them** — no passive, no roll.
+
+```
+MasteryAtkMod = 1 + 0.03 * (clamp(atk, 30, 50) - 40)                  x0.70 … x1.30
+rate          = 0                                                     when base <= 0
+              = clamp(base * MasteryAtkMod, 0, 0.25)                  cap shared by all three
+```
+
+| Mastery | What it does | Rolled |
+|---|---|---|
+| `DoubleDamageRate` | a physical skill flagged `[Double]` deals ×2 | per hit, after the blow roll on a blow |
+| `DoubleDurationRate` | a buff or debuff you cast lasts twice as long | once per cast, player casts only |
+| `CooldownResetRate` | the skill just cast comes straight off reuse | once per cast, never on a `FixedCooldown` skill |
+
+⚠ `atk` is **EffectiveAtk** — the +5 swap at 40, the armour sets and every `+ATK` passive count.
+
+**Who grants one** (`BL-191`, authored 2026-09-10 — nobody else has any of the three):
+
+| Passive | Who | Learn | Base |
+|---|---|---|---|
+| **Overpower** | Warrior, then Ravager + Warlord | 20 / 40 / 76 | 3% / 7% / 10% |
+| **Blood Rage** (toggle) | Ravager + Warlord | 76 | ×2 on Overpower's base; 50 HP/s, +25% MP on physical skills |
+| **Lasting Enchantment** | Lightbringer + Warchanter | 76 | 10% |
+| **Arcane Momentum** | Magus | 76 | 5% |
+
+Measured at level 90, mythic gear (`BalanceMatrix` §C1): Ravager 9.4% damage (18.8% under Blood
+Rage), Warchanter 9.7% / Lightbringer 10.9% duration, Magus 5.5% reuse. The tank, both rogue branches
+and the archer read 0/0/0 — deliberately.
+
+Retired with this: `StatCalculator.PhysicalDoubleChance`, `min(25, 2.5 + 0.75·(ATK−30))` off the RAW
+stat — a per-race constant (Elf 7.0% / Human 10.0% / Demon 10.75%) that nothing could raise, and
+which drove buff/debuff duration doubling off the *damage* number.
+
+`Entity.DoubleDamageRate` / `DoubleDurationRate` / `CooldownResetRate` ·
+`StatCalculator.MasteryAtkMod` / `SkillMasteryRate` · `StatCaps.SkillMasteryRateMax` ·
+`PassiveEffect.DoubleDamageRate` / `DoubleDurationRate` / `CooldownResetRate`
 
 ## Landing a spell (fizzle)
 

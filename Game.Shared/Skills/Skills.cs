@@ -207,8 +207,12 @@ public record SkillDef(
     /// ask was explicitly *"a sucess multiplier (per skill/lvl)"* — a ladder can buy reliability as it
     /// climbs.</para></summary>
     float DebuffLandMod = 1f,
-    // "[Double]" physical skills: a flat ×2 on the caster's ATK curve (2.5-25%). Ordinary
+    // "[Double]" physical skills: a flat ×2 on the caster's Double Damage MASTERY. Ordinary
     // physical skills never double. Magic skills use magic crit.
+    // 🔑 `BL-190` (2026-09-10) — this flag says the skill is ELIGIBLE, not that it doubles. The RATE
+    // is `Entity.DoubleDamageRate`, which a PASSIVE grants and which is 0 for every character until
+    // a CSV authors one, so a flagged skill on an unmastered character simply lands flat. Do not
+    // "restore" a default rate here: no passive means no roll is the ruling.
     bool CanDouble = false,
     // "Can Crit" — a physical skill may roll the caster's CRIT rate. Owner ruling (playtest-19
     // M8): "if a skill is not described as Can Crit or Can Double it doesn't do it." These two
@@ -468,6 +472,20 @@ public record SkillDef(
     // is full, so this rides as explicit fields, not a flag.)
     float PhysMpCostPct = 0f,
     float MagicMpCostPct = 0f,
+    /// <summary>What this BUFF multiplies the holder's DOUBLE-DAMAGE MASTERY BASE by (`BL-191`).
+    /// <c>0 = not carried</c>, never ×0 — the same "inert by default" convention
+    /// <c>MagicFailSelfMult</c> uses, so <c>default(SkillDef)</c> stays neutral.
+    ///
+    /// <para>The warrior's Blood Rage toggle is its only author and carries <b>2</b>: *"another toggle
+    /// skill that doubles the effect of the double passive"*. It multiplies the ACCUMULATOR, not the
+    /// finished rate, so the ATK band and the shared 25% cap still apply afterwards — a level-76
+    /// warrior on 10% base reads 20% before the band, and the cap is what stops the stance from
+    /// running away once he authors higher rungs.</para>
+    ///
+    /// <para>⚠ It multiplies a base that is ZERO without the passive, so the toggle is worth exactly
+    /// nothing to anyone who has not learned Overpower. That is deliberate and is the whole `BL-190`
+    /// gate: doubling nothing is nothing.</para></summary>
+    float DoubleDamageMult = 0f,
     /// <summary>BOW RANGE this BUFF grants its holder, in world units (0 = none). The buff-side twin of
     /// <see cref="PassiveEffect.BowRange"/>, which is passive-only and always has been.
     /// <para>His Bow Stance is the first thing to want it — *"Range +200"* for sixty seconds — and it
@@ -1697,7 +1715,27 @@ public readonly record struct PassiveEffect(
     // to 2"*, so it carries 1 here and the base is 1 (see GameConstants.WhispSlotsBase). SUMMED across
     // passives, unlike the "guarantee" fields above that take a MAX: a second mastery rung should add
     // a third slot, which is his own ladder — one by default, *"a passive raises it to 2 then 3"*.
-    int WhispSlots = 0)
+    int WhispSlots = 0,
+    // ----- THE THREE SKILL MASTERIES (`BL-190`, owner ruling 2026-09-10) ------------------------
+    // *"One that resets cooldown of skills, one that doubles duration of bad and good buffs, and one
+    // that allow double dmg ... All will calculate the same just the base is based on the passive."*
+    //
+    // Each is a FRACTION and each is the BASE RATE of its own roll — 0.10 = "a 10% chance before the
+    // ATK band", NOT ×1.10 on something. That is the one convention difference from `BlowRate` and
+    // `CritRate` above, and it is forced by the ruling: there is nothing underneath to multiply,
+    // because a character with no mastery passive has a rate of zero (StatCaps.SkillMasteryRateMax).
+    //
+    // SUMMED across passives, like `BlowResist` and unlike `CritRate` — a second rung of the same
+    // mastery replaces the first through the normal skill-level machinery, so a sum only ever adds
+    // genuinely different passives together, and a sum is the only thing that can start from 0.
+    //
+    //   DoubleDamageRate   — a physical skill flagged CanDouble deals ×2. GameLoopService's
+    //                        ResolvePhysicalDouble and the second roll inside ResolveBlow.
+    //   DoubleDurationRate — a buff or debuff THIS character casts lasts twice as long, rolled once
+    //                        per cast (an area blessing doubles for everyone or no one).
+    //   CooldownResetRate  — the skill just cast comes straight off reuse. Never fires on a
+    //                        FixedCooldown skill (Return, the ultimates).
+    float DoubleDamageRate = 0f, float DoubleDurationRate = 0f, float CooldownResetRate = 0f)
 {
     /// <summary>Hash on a few representative fields instead of all ~60. Same IL2CPP bracket-nesting
     /// reason as <see cref="SkillDef.GetHashCode"/>: this record is the SECOND largest in the
@@ -1796,6 +1834,7 @@ public static partial class SkillCatalog
         list.AddRange(ArcherKitRetiredSkills()); // Skills.ArcherKitRetired.cs (the 3-day derived archer kit, orphaned but kept)
         list.AddRange(Bulwark3rdSkills());    // Skills.Bulwark3rd.cs (his `tank 3rd.csv`, 40-74)
         list.AddRange(Bulwark4thSkills());    // Skills.Bulwark4th.cs (`BL-154`/`BL-155` — the pull and the two silences)
+        list.AddRange(SkillMasterySkills());  // Skills.SkillMasteries.cs (`BL-191` — the four passives that turn `BL-190` on)
 
         var dict = new Dictionary<string, SkillDef>();
         foreach (var sk in list)

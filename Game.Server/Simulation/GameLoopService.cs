@@ -11280,7 +11280,21 @@ public class GameLoopService : BackgroundService
         float castCdr = caster.CooldownReductionFor(def.Category);
         if (cooldown > 0 && !def.FixedCooldown && castCdr > 0f)
             cooldown = Math.Max(1, (int)(cooldown * (1f - castCdr)));
-        caster.SkillCooldowns[def.Id] = cooldown;
+        // `BL-190` — THE COOLDOWN RESET MASTERY. His third passive: *"one that resets cooldown of
+        // skills"*. Rolled AFTER the reuse reduction, so the two never fight over the same number,
+        // and never on a FixedCooldown skill (Return, the ultimates) — the same exemption the
+        // reduction already has, and for the same reason: those cooldowns are the balance.
+        // The key is REMOVED rather than set to 0 so the tick loop and the bar's overlay both see a
+        // skill that is simply ready, not one counting down from nothing.
+        if (cooldown > 0 && !def.FixedCooldown && caster.CooldownResetRate > 0f
+            && _rng.NextDouble() < caster.CooldownResetRate)
+        {
+            caster.SkillCooldowns.Remove(def.Id);
+            SendSystemToEntity(caster, ClassSkills.DisplayName(
+                def.Id, caster.Race, caster.BaseClass, caster.Archetype, caster.Discipline)
+                + " is ready again!");
+        }
+        else caster.SkillCooldowns[def.Id] = cooldown;
         SendCooldowns(caster);   // the bar's reuse overlay starts the tick the reuse does
 
         // ---- Return: teleport the caster to the nearest safe town, then finish (the whole effect).
@@ -11517,7 +11531,9 @@ public class GameLoopService : BackgroundService
 
                 // BLOW skills (dagger Stab) land full damage only on a crit, and a landed one is
                 // computed with the crit-damage values, else a soft 10% floor. "[Double]" skills
-                // roll a flat ×2 off the caster's ATK (2.5-25%). Everything else lands FLAT:
+                // roll a flat ×2 off the caster's Double Damage MASTERY (`BL-190`: a passive grants
+                // the rate, the ATK band scales it, and no passive means no roll at all — the flag
+                // says the skill is ELIGIBLE, the character says whether it can). Everything else lands FLAT:
                 // Can Crit and Can Double are exclusive OPT-IN flags (playtest-19 M8 — "if a skill
                 // is not described as Can Crit or Can Double it doesn't do it"), which is why a
                 // crit-less skill still goes through ResolvePhysicalCritAndBlock but with a zero
@@ -11526,7 +11542,7 @@ public class GameLoopService : BackgroundService
                     ? ResolveBlow(caster, target, damage, def, critFlat)
                     : def.CanDouble
                         ? ResolvePhysicalDouble(caster, target, damage,
-                            StatCalculator.PhysicalDoubleChance(caster.AtkStat),
+                            caster.DoubleDamageRate,
                             def.BlockAccuracy)
                         : ResolvePhysicalCritAndBlock(
                             caster, target, damage, def.CanCrit ? caster.CritChance * def.CritRateMod : 0f,
@@ -11734,12 +11750,15 @@ public class GameLoopService : BackgroundService
         //      contest (docs/design/Disciplines.md), NOT the fizzle model. Bosses are immune. The
         //      attacker stat is AGI for bleed/venom, ATK otherwise; defender CON (phys) / WIT (magic). ----
         // ---- [Double] on a BUFF or DEBUFF = DOUBLE DURATION (docs/design/CritBlowAndDouble.md §4,
-        //      IG's level-76 Skill Mastery). The SAME ATK roll the damage side uses, rolled ONCE per
-        //      cast — an area blessing doubles for everyone or for no one — and only for a PLAYER's
-        //      own cast: potions, scrolls and the NPC buffer come through other paths and never roll.
-        //      -1 = no override, i.e. the skill's authored duration. ----
+        //      IG's level-76 Skill Mastery). Rolled ONCE per cast — an area blessing doubles for
+        //      everyone or for no one — and only for a PLAYER's own cast: potions, scrolls and the
+        //      NPC buffer come through other paths and never roll.
+        //      -1 = no override, i.e. the skill's authored duration.
+        //      🔑 `BL-190` — this is its OWN passive and its OWN rate now (`DoubleDurationRate`). It
+        //      used to be the exact same ATK roll the damage side used, which meant anything done to
+        //      the damage curve moved every buff duration in the game with it. ----
         bool durationDoubled = def.DurationTicks > 0 && caster.Kind == EntityKind.Player
-            && _rng.NextDouble() < StatCalculator.PhysicalDoubleChance(caster.AtkStat);
+            && _rng.NextDouble() < caster.DoubleDurationRate;
         int doubledTicks = durationDoubled ? def.DurationTicks * 2 : -1;
 
         if (IsContestedDebuff(def, effect))
@@ -12317,6 +12336,7 @@ public class GameLoopService : BackgroundService
             // race buffs climb 10 → 15 → 20% across three rungs, and reading the def's own field
             // would hand rung 1's number to all three.
             BlowRatePct = def.BlowRatePctAt(level),
+            DoubleDamageMult = def.DoubleDamageMult,   // `BL-191` — Blood Rage's ×2 on the mastery base
             // `BL-110` — CHARM, and the one buff that needs to remember WHO cast it: TickControlledMovement
             // walks the victim toward this id every tick. A charm with no source is inert by design
             // (nothing to walk toward) rather than crashing or walking to the origin.
@@ -15875,7 +15895,9 @@ public class GameLoopService : BackgroundService
             p.CritRateResist, p.CritDmgResist, p.BowResist,
             p.InterruptResistPercent, (int)p.EffectiveMagicAttack,   // MagicAttackInternal: the cosmic IG-reference value
             p.HealPowerFlat, p.HealPowerMod, p.HealReceivedFlat, p.HealReceivedMod,
-            p.CritDamageFlat, p.EffectiveMagicCritDamage));
+            p.CritDamageFlat, p.EffectiveMagicCritDamage,
+            // `BL-190` — the three masteries, finished. 0/0/0 until a CSV authors a passive.
+            p.DoubleDamageRate, p.DoubleDurationRate, p.CooldownResetRate));
     }
 
     /// <summary>The player's HP/MP regen per second AS IT IS ACTUALLY PAID right now — base + flat
@@ -16634,10 +16656,12 @@ public class GameLoopService : BackgroundService
 
     /// <summary>Resolution for a "[Double]" physical SKILL — our name for IG's physical skill
     /// crit: a flat ×2 and NOTHING else (it never touches crit-damage values, which is the whole
-    /// point of the name). Chance is the caster's ATK curve (2.5-25%, StatCalculator.
-    /// PhysicalDoubleChance), lowered by shield/crit-rate resist and ignoring the block on a
-    /// double (like a crit); otherwise a normal block roll. Skills without the [Double] flag
-    /// never reach here (they use the basic crit path, unchanged).</summary>
+    /// point of the name). Chance is the caster's <see cref="Entity.DoubleDamageRate"/> — the Double
+    /// Damage MASTERY (`BL-190`), which is ZERO unless a passive grants it — lowered by
+    /// shield/crit-rate resist and ignoring the block on a double (like a crit); otherwise a normal
+    /// block roll. Skills without the [Double] flag never reach here (they use the basic crit path,
+    /// unchanged), and a flagged skill on a character with no mastery passive falls straight through
+    /// to the block roll below, which is the intended shipping behaviour.</summary>
     private (int damage, CombatOutcome outcome) ResolvePhysicalDouble(
         Entity attacker, Entity target, int baseDamage, float doubleChance, float blockAccuracy)
     {
@@ -16703,11 +16727,12 @@ public class GameLoopService : BackgroundService
         float extra = (critFlatFactor * mult - 1f) * (1f - target.CritDmgResist);
         int damage = Math.Max(1, (int)(baseDamage * (1f + extra)));
 
-        // THEN roll a separate double on top (ATK, never AGI — AGI already bought the crit above).
+        // THEN roll a separate double on top — the Double Damage MASTERY (`BL-190`), never AGI:
+        // AGI already bought the blow above, and a rogue with no mastery passive gets no second roll.
         if (def.CanDouble)
         {
             float dbl = Math.Clamp(
-                (StatCalculator.PhysicalDoubleChance(attacker.AtkStat)
+                (attacker.DoubleDamageRate
                  - (target.HasShield ? target.ShieldCritDefense : 0f))
                 * (1f - target.CritRateResist), 0f, 1f);
             if (_rng.NextDouble() < dbl)
@@ -19424,8 +19449,10 @@ public class GameLoopService : BackgroundService
             Level = level,
             Con = ccCon,           // physical-debuff resistance and NOTHING else (HP is MobBaseStats)
             // ⚠ This comment used to read "eva/acc/crit only" and that was simply wrong: AtkStat feeds
-            // NEITHER evasion, accuracy nor crit (those are AGI). It feeds the contested-debuff roll and
-            // StatCalculator.PhysicalDoubleChance, and nothing else — mob P/M.Atk come from the base curve.
+            // NEITHER evasion, accuracy nor crit (those are AGI). Since `BL-190` it feeds the contested-
+            // debuff roll and NOTHING else: the mastery band (StatCalculator.MasteryAtkMod) reads it too,
+            // but a mob has no mastery passive, so all three of its mastery rates are 0 regardless.
+            // Mob P/M.Atk come from the base curve, not from here.
             AtkStat = ccAtk,       // how hard this creature lands CONTROL on you (flat, by role × rank)
             Wit = stats.Wit,
             Agi = stats.Agi,

@@ -300,3 +300,5 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 90,Armor Break,lb_ork_armor_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 40% and MDef by 20% (success chance x1.5),115,0,100kk,,,Demon
 ,,,,,,,,,,,,,,,,,,,---------------------------Holy Soul----------------------------
 76,Holy Soul,holy_soul,Toggle,,,0,0,self/single,0,0,0,Decrease MP Consumtion by 30% and Casting speed by 10%; Consume 50 HP/s,0,6.5kk,1kk,,,,Intentional decrease in Cast speed
+,,,,,,,,,,,,,,,,,,,----------------------------Lasting Enchantment----------------------------
+76,Lasting Enchantment,lasting_enchantment,Passive,,,0,0,self/single,0,0,0,double duration rate 10% - buffs and debuffs you cast have that chance to last TWICE as long - one roll per cast so an area blessing doubles for everyone or no one - scales with ATK,0,6.5kk,1kk
