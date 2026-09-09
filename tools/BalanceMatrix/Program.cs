@@ -604,6 +604,9 @@ if (args.Length > 0 && args[0] == "--defbreak")
         string what = shield ? "shield + Majesty% + tank mastery flats + set"
                              : name.StartsWith("mage") ? "robe mastery + set" : "heavy mastery + set";
         Console.WriteLine($"  {name,-16} {e.EffectiveDefence,7:F0} {items,6} {expected,20:F0} {leftover,11:0.00}  {what}");
+        if (shield)
+            Console.WriteLine($"  {"",-16} {"",7}   of which ShieldDefense = {e.ShieldDefense} "
+                            + $"(added OUTSIDE levelMod, at Entity.cs:1711) and body P.Def = {e.EffectiveDefence - e.ShieldDefense:F0}");
     }
     Console.WriteLine();
     var tankE = sheets[0].E; var mageE = sheets[2].E; var warE = sheets[1].E;
@@ -629,6 +632,34 @@ if (args.Length > 0 && args[0] == "--defbreak")
         Console.WriteLine($"  {name,-16} {bare,9:F0} {withAll,9:F0} {withAll - bare,12:F0} "
                         + $"{withAll / Math.Max(1f, bare),7:0.00}");
     }
+    // ---- WHICH passives. Brute force and therefore exact about the big ones: rebuild the tank
+    //      once per learned skill with that ONE skill removed, and take the difference. Percentages
+    //      interact so the deltas do not sum to the total, but nothing large can hide from this.
+    Console.WriteLine();
+    Console.WriteLine("  ---- THE TANK'S P.DEF, ATTRIBUTED PER SKILL (rebuild-without-one) ----");
+    {
+        var full = BuildPlayer(Race.Human, BaseClass.Fighter, L, quality: q,
+                               discipline: Discipline.Bulwark, fourth: true);
+        float total = full.EffectiveDefence;
+        var rows = new List<(string Name, string Id, int Lvl, float Delta)>();
+        foreach (var (id, lvl) in full.LearnedSkills.Select(k => (k.Key, k.Value)).ToList())
+        {
+            var probe = BuildPlayer(Race.Human, BaseClass.Fighter, L, quality: q,
+                                    discipline: Discipline.Bulwark, fourth: true);
+            probe.LearnedSkills.Remove(id);
+            probe.RecomputeDerived();
+            float d = total - probe.EffectiveDefence;
+            if (Math.Abs(d) >= 1f)
+                rows.Add((SkillCatalog.Get(id)?.Name ?? id, id, lvl, d));
+        }
+        Console.WriteLine($"  {"skill",-30} {"id",-28} {"rung",4} {"P.Def",8}");
+        foreach (var r in rows.OrderByDescending(r => r.Delta))
+            Console.WriteLine($"  {r.Name,-30} {r.Id,-28} {r.Lvl,4} {r.Delta,8:F0}");
+        Console.WriteLine($"  {"",-30} {"",-28} {"",4} {"--------",8}");
+        Console.WriteLine($"  {"(sum of singles; percents overlap)",-30} {"",-28} {"",4} {rows.Sum(r => r.Delta),8:F0}");
+        Console.WriteLine($"  {"FINISHED P.Def",-30} {"",-28} {"",4} {total,8:F0}");
+    }
+
     Console.WriteLine();
     Console.WriteLine("  🔑 Compare 'passives add' against the ITEM sum on the same row. Where the passive");
     Console.WriteLine("     stack grants MORE P.Def than the whole armour set does, the set has stopped");
@@ -5525,6 +5556,15 @@ static Entity BuildPlayer(Race race, BaseClass cls, int level, string? quality =
     if (npcBuffed) ApplyNpcBuffs(e, fullShelf: true);
 
     e.RecomputeDerived();
+    // 🔴🔑 FILL THE POOLS. A fresh Entity has Hp = 0, and RecomputeDerived sets MaxHp but not Hp — so
+    // every character this builder has ever produced was measured at 0% HP. That is not cosmetic: the
+    // Bulwark's FINAL DEFENSE reads the live HP bar (`Entity.FinalDefenceBonus`) and pays +30% P.Def /
+    // +10% M.Def below 25%, so EVERY tank row this tool has printed carried its bottom-of-the-bar
+    // emergency rung as if it were a permanent passive. At level 76 mythic that was P.Def 2682 where
+    // the healthy number is 2063 — and it is why the tank:mage ratio read 3.09 instead of 2.38.
+    // Anything else that reads current HP (regen shares, HP-gated skills) was wrong the same way.
+    e.Hp = e.MaxHp;
+    e.Mp = e.MaxMp;
     return e;
 }
 
