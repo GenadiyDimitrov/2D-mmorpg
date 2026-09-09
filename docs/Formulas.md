@@ -94,6 +94,21 @@ rolledMagicCrit = MagicCritRate * (1 - target.MagicCritRateResist)    resist cla
 
 ⚠ **DEX/AGI does NOT affect block** — flat shield values and passives only. **Magic is never blocked.**
 
+**Blow landing rate** (dagger Stabs, `BlowOnCrit`) — **its own stat since `BL-188`, 0.121.0. It is
+NOT the crit rate**, and neither `CritRateResist` nor a shield's `ShieldCritDefense` touches it:
+
+```
+BlowAgiMod = 1 + 0.03 * (clamp(agi, 20, 40) - 30)                     x0.70 … x1.30
+BlowRate   = clamp(0.30 * Π(buffs, passives) * BlowAgiMod, 0.20, 0.80)
+rolledBlow = BlowRate * (1 - target.BlowResist)                       BlowResist clamp [0, 0.9]
+```
+
+⚠ **The cap is applied to the attacker's own rate BEFORE the defender's resist**, so the tank's Vital
+Organ Protection (30%, the only blow defence in the game) takes a maxed 80% rogue to 56%.
+A blow that lands is then computed with the CRIT-DAMAGE values and may roll a `[Double]` on top;
+a blow that misses deals a flat `BlowFailFraction` (1% at the 3rd tier, 10% at the 2nd).
+`Entity.BlowRate` / `BlowResist` · `StatCalculator.BlowAgiMod` / `BlowRate` · `GameLoopService.ResolveBlow`
+
 **Bow resistance** — applied FIRST, before crit and block, and only when the attacker's weapon is a
 bow (basic attacks and physical skills alike):
 

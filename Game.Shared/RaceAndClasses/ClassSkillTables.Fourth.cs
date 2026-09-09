@@ -39,9 +39,13 @@ public static partial class ClassSkillTables
         RegisterBulwarkFourth();
         // ✅ THE FOURTH FINISHED FILE, 2026-09-09 — `archer 4th.csv`, his *"archer 4th done as well"*
         //   plus the Twin Arrows dip he fixed the moment it was reported. See RegisterArcherFourth
-        //   and Skills.Archer4th.cs. ⚠ THE DUAL BRANCH IS NOT HERE: `dual 4th.csv` is still the
-        //   two-line placeholder, so the melee rogue stops at 74.
+        //   and Skills.Archer4th.cs.
         RegisterArcherFourth();
+        // 🔴 THE MELEE ROGUE IS A PARTIAL: `dual 4th.csv` is STILL the two-line placeholder, and this
+        //   registers THREE skills only — the top of `BL-188`'s blow ladder, which he ruled outright
+        //   on 2026-09-09 and asked to be built with the rest of it. Everything else the discipline
+        //   will own waits on his file, exactly as before. See RegisterDual4th / Skills.Dual4th.cs.
+        RegisterDual4th();
     }
 
     // ═════════════════════════════════════════════════════════════════════════════════════════════
@@ -94,6 +98,10 @@ public static partial class ClassSkillTables
         shared.AddRange(Ladder(TankWeaponMastery, all, 21));
 
         // ---- THE SHARED ACTIVES, every other level ----
+        // `BL-188` — Vital Organ Protection, ONE rung at 80, all three races. Not in `tank 4th.csv`
+        // when he called that file finished; it was ruled on 2026-09-09 with the blow rework and its
+        // row was written into the file in the same commit.
+        shared.Add(new ClassSkill(TankVitalOrganProtection, 80));
         shared.AddRange(Ladder(TankStay,        even, 16));
         shared.AddRange(Ladder(TankShieldStun,  even, 20));
         shared.AddRange(Ladder(DefensiveWall,   even, 3));
@@ -406,5 +414,32 @@ public static partial class ClassSkillTables
         ClassSkills.RegisterFourth(Race.Human, Discipline.Sharpshooter, human.ToArray());
         ClassSkills.RegisterFourth(Race.Elf,   Discipline.Trapper,      elf.ToArray());
         ClassSkills.RegisterFourth(Race.Demon, Discipline.Hunter,       demon.ToArray());
+    }
+
+    /// <summary>THE MELEE ROGUE'S 4th CLASS — Nullblade (Human) / Shadowblade (Elf) / Venomblade
+    /// (Demon) — and it is THREE SKILLS, not a kit.
+    ///
+    /// <para>🔴 `dual 4th.csv` is still the two-line placeholder and the 40+ rule stands for the rest
+    /// of it. What is here is only the top of the blow ladder, which he ruled outright on 2026-09-09
+    /// while settling `BL-188` and asked to be built in the same breath. The three rows are in the
+    /// CSV; the file has NOT earned a `Check.Specs` line, because the checker walks whole files.</para>
+    ///
+    /// <para>🔑 No race split — all three disciplines learn the same three. The race split in this
+    /// class lives entirely on the 3rd tier's Lethal Focus / Precision / Frenzy, which is where it
+    /// does its balancing work.</para></summary>
+    private static void RegisterDual4th()
+    {
+        var kit = new[]
+        {
+            new ClassSkill(AssassinationInstinct, 76),
+            // The @80 CHOICE. Both are offered and both are learnable — they are mutually exclusive
+            // in the BUFF BAR (one shared key), never in the learn tab.
+            new ClassSkill(PerfectStrike, 80),
+            new ClassSkill(BrutalStrike,  80),
+        };
+
+        ClassSkills.RegisterFourth(Race.Human, Discipline.Nullblade,   kit);
+        ClassSkills.RegisterFourth(Race.Elf,   Discipline.Phantom,     kit);
+        ClassSkills.RegisterFourth(Race.Demon, Discipline.Venomweaver, kit);
     }
 }

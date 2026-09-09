@@ -821,6 +821,112 @@ if (args.Length > 0 && args[0] == "--buff-consumables")
 // than guessed. Prints, per level: the base curve, what each candidate ladder makes of it, and the
 // TIME TO KILL that produces for the buffed farm roster — plus the ELITE, where the zone ladder and
 // the rank multiplier compose and produce the ~68k he found.
+if (args.Length > 0 && args[0] == "--blowrate")
+{
+    // `BL-188` — THE BLOW LANDING RATE, measured, not derived. Prints the whole product he
+    // specified: 0.30 base × the buff/passive stack × BlowAgiMod(AGI), clamped [20%, 80%], and then
+    // what a tank with Vital Organ Protection leaves of it.
+    int L = args.Length > 1 ? int.Parse(args[1]) : 85;
+    string q = args.Length > 2 ? args[2] : "mythic";
+    int t = GearTier(L);
+
+    Console.WriteLine();
+    Console.WriteLine($"=== BLOW LANDING RATE — level {L}, {q} duals  (`BL-188`, his ruling 2026-09-09) ===");
+    Console.WriteLine($"    base {StatCaps.BlowRateBase:P0}   ×buffs/passives   ×BlowAgiMod(AGI)   "
+                    + $"clamp [{StatCaps.BlowRateMin:P0}, {StatCaps.BlowRateMax:P0}]");
+    Console.WriteLine();
+
+    // Cast one of the melee rogue's OWN self-buffs onto him. ⚠ It must copy `BlowRatePct` as well as
+    // the flag half — a hand-built BuffInstance that copies only Effect+Magnitudes silently drops
+    // every FIELD payload, which is exactly how the rune vanished from every table in 0.117.0.
+    static void SelfBuff(Entity e, string id, int level)
+    {
+        if (SkillCatalog.Get(id) is not { } def) { Console.Error.WriteLine($"  !! missing {id}"); return; }
+        e.Buffs.Add(new Game.Server.Simulation.BuffInstance
+        {
+            Effect = def.Effect,
+            Magnitudes = def.MagnitudesAt(level) ?? Array.Empty<EffectMagnitude>(),
+            TicksRemaining = int.MaxValue, Name = def.Name, Key = def.BuffKey, Rank = def.Rank,
+            Level = level,
+            BlowRatePct = def.BlowRatePctAt(level),
+        });
+        e.RecomputeDerived();
+    }
+
+    var rows = new (string Label, Race Race, Discipline D, string Focus)[]
+    {
+        ("Human  (Nullblade)",   Race.Human, Discipline.Nullblade,   SkillCatalog.LethalFocus),
+        ("Elf    (Shadowblade)", Race.Elf,   Discipline.Phantom,     SkillCatalog.LethalPrecision),
+        ("Demon  (Venomblade)",  Race.Demon, Discipline.Venomweaver, SkillCatalog.LethalFrenzy),
+    };
+
+    Console.WriteLine("  race                  AGI  agiMod | passives only |  + race buff  | + Perfect Strike | vs a tank");
+    foreach (var (label, race, disc, focusId) in rows)
+    {
+        Entity Make()
+        {
+            var e = BuildPlayer(race, BaseClass.Fighter, L, quality: q, discipline: disc,
+                                secondClass: 15, fourth: true);
+            // 🔴 THE RIG DRESSES EVERY FIGHTER IN HEAVY PLATE AND A SHIELD (BuildPlayer, unchanged
+            // here). The melee rogue wears LIGHT — his own Armor Mastery is `light` — and the heavy
+            // sets carry `Agi: -2` while the light ones carry +1..+3, so measuring a rogue in plate
+            // understates the one stat this whole table is about. Swapped for THIS probe only;
+            // fixing it for every table is a wider change than `BL-188` and is flagged, not done.
+            e.Inventory.RemoveAll(i => ItemCatalog.Get(i.DefId) is { } d2
+                && (d2.Slot == EquipSlot.Weapon || d2.Slot == EquipSlot.Armor || d2.Slot == EquipSlot.Shield));
+            Equip(e, $"light_t{t}" + (q == "mythic" ? "" : "_" + q));
+            Equip(e, $"duals_t{t}" + (q == "mythic" ? "" : "_" + q));
+            e.RecomputeDerived();
+            return e;
+        }
+
+        var bare = Make();
+        int agi = (int)bare.EffectiveAgi;
+
+        var withFocus = Make();
+        SelfBuff(withFocus, focusId, 3);            // the 70 rung of his race buff
+
+        var full = Make();
+        SelfBuff(full, focusId, 3);
+        SelfBuff(full, SkillCatalog.PerfectStrike, 1);   // the @80 rate half of the exclusive pair
+
+        // The tank's answer: Vital Organ Protection, 30% off whatever survived the cap.
+        var tank = BuildPlayer(Race.Human, BaseClass.Fighter, L, quality: q,
+                               discipline: Discipline.Bulwark, fourth: true);
+
+        Console.WriteLine($"  {label,-20} {agi,4} ×{StatCalculator.BlowAgiMod(agi),4:0.00} |"
+                        + $"    {bare.BlowRate,8:P1}   |  {withFocus.BlowRate,8:P1}   |"
+                        + $"     {full.BlowRate,8:P1}     | {full.BlowRate * (1f - tank.BlowResist),7:P1}");
+    }
+
+    Console.WriteLine();
+    // What the whole ladder is worth as a pure multiplier, so the AGI term can be varied on its own.
+    // Demon top rung: race buff ×1.20 · Vital Points ×1.20 · Assassination Instinct ×1.05 · Perfect
+    // Strike ×1.40. The other two races trade part of the first factor for crit damage.
+    Console.WriteLine("  THE SAME LADDER AT EVERY AGI (the Demon's all-rate split, so the biggest one):");
+    Console.Write("   AGI     ");
+    for (int a = 26; a <= 40; a += 2) Console.Write($"{a,7}");
+    Console.WriteLine();
+    foreach (var (name, mult) in new[]
+             { ("damage branch", 1.20f * 1.20f * 1.05f), ("rate branch  ", 1.20f * 1.20f * 1.05f * 1.40f) })
+    {
+        Console.Write($"   {name} ");
+        for (int a = 26; a <= 40; a += 2)
+            Console.Write($"{StatCalculator.BlowRate(mult, a),7:P1}");
+        Console.WriteLine();
+    }
+    Console.WriteLine();
+    Console.WriteLine("  ✅ HIS TARGET — \"~60% rate and a lot of dmg or 80% rate and less dmg\" — IS THE");
+    Console.WriteLine("     AGI-40 COLUMN, on the nose: 59.0% and 80.0% (the cap, exactly). The ladder is");
+    Console.WriteLine("     built to reach his numbers at a MAXED AGI build, not at a race's base — which");
+    Console.WriteLine("     is the AGI class having to buy AGI. At base AGI it reads 45% / 64% (human).");
+    Console.WriteLine("     ⚠ Only the ELF gets there cheaply (36 + the 5-point swap is already past 40).");
+    Console.WriteLine("     Human 30 and Demon 28 need the swap AND light-set AGI on top.");
+    Console.WriteLine($"  Tank blow resist: {BuildPlayer(Race.Human, BaseClass.Fighter, L, quality: q, discipline: Discipline.Bulwark, fourth: true).BlowResist:P0}"
+                    + "  (applied after the cap, so a maxed 80% rogue lands 56%)");
+    return;
+}
+
 if (args.Length > 0 && args[0] == "--zonehp")
 {
     int[] zoneLevels = { 20, 30, 40, 50, 61, 72, 75, 76, 80, 83, 84, 85 };

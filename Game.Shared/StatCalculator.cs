@@ -802,6 +802,37 @@ public static class StatCalculator
     public static float PhysicalDoubleChance(int atkStat) =>
         Math.Clamp(0.025f + 0.0075f * Math.Max(0, atkStat - 30), 0.025f, StatCaps.PhysicalDoubleRate);
 
+    // ===== THE BLOW LANDING RATE (`BL-188`, owner ruling 2026-09-09) =========================
+
+    /// <summary>The AGI band the blow mod reads, outside which it is flat. His words: *"cap at
+    /// 20~40 ±30%"*.</summary>
+    public const int BlowAgiFloor = 20, BlowAgiCeil = 40;
+
+    /// <summary>AGI's contribution to the BLOW landing rate — a multiplier anchored on 30, at
+    /// ±3 percentage points of itself per point, clamped to the 20-40 band:
+    /// <code>25 AGI → ×0.85    30 → ×1.00    35 → ×1.15    40 → ×1.30</code>
+    ///
+    /// <para>🔑 It is <see cref="CritAgiMod"/> AT 3× THE SLOPE, on the same anchor
+    /// (<see cref="MobAgiReference"/> is that same 30), and the HUMAN fighter's base AGI is 30 on
+    /// the nose — so an unswapped human is exactly ×1.00 and every point of spread comes from
+    /// race, gear and the level-40 swap, where it is earned.</para>
+    ///
+    /// <para>⚠ This makes AGI's blow job by far its BIGGEST — one point is +1.8pp of landing on a
+    /// rotation that is one roll, against +0.13pp of a dagger's crit. That is deliberate and was
+    /// ruled with the numbers in front of him; it does NOT license inflating
+    /// <see cref="CritAgiMod"/>, whose guardrail still stands.</para></summary>
+    public static float BlowAgiMod(int agi) =>
+        1f + 0.03f * (Math.Clamp(agi, BlowAgiFloor, BlowAgiCeil) - MobAgiReference);
+
+    /// <summary>The attacker's own BLOW landing rate, before any defender term:
+    /// <code>clamp(BlowRateBase × mult × BlowAgiMod(AGI), BlowRateMin, BlowRateMax)</code>
+    /// <paramref name="mult"/> is the product of every blow-rate buff and passive
+    /// (<c>Entity.BlowRateMult</c>). The defender's <c>BlowResist</c> is applied AFTER this clamp,
+    /// at the point of use — see GameLoopService.ResolveBlow.</summary>
+    public static float BlowRate(float mult, int agi) =>
+        Math.Clamp(StatCaps.BlowRateBase * mult * BlowAgiMod(agi),
+                   StatCaps.BlowRateMin, StatCaps.BlowRateMax);
+
     /// <summary>Physical crit DAMAGE multiplier, capped x10.</summary>
     public static float PhysicalCritMult(float bonus = 0f) =>
         Math.Min(2.0f + bonus, StatCaps.PhysicalCritDamage);

@@ -116,6 +116,12 @@ public class BuffInstance
     public float PhysCooldownPct { get; init; }
     public float MagicCooldownPct { get; init; }
 
+    /// <summary>`BL-188` — how much this buff raises its holder's BLOW landing rate, as a fraction
+    /// (0.40 = ×1.40). A field for the same reason as the four above it: the SkillEffect enum is
+    /// full. Authored by the three dagger race buffs (40/60/70) and the 4th tier's Perfect Strike.
+    /// See <c>SkillDef.BlowRatePct</c>.</summary>
+    public float BlowRatePct { get; init; }
+
     /// <summary>THE TANK'S SHIELD SMASH (his `tank 3rd.csv`) — what this debuff takes off ITS OWN
     /// HOLDER's crit numbers, as fractions. The two Smashes are the tank's contribution to a party's
     /// defence: one blunts how OFTEN the thing crits, the other how HARD.
@@ -1124,6 +1130,26 @@ public class Entity
     // damage (a flat x3, not CritDamageBonus). Fold into MagicCritChance, read that.
     public float MagicCritRateMult { get; set; } = 1f;
     public float MagicCritRateFlat { get; set; }
+    // ----- The BLOW landing rate (`BL-188`, owner ruling 2026-09-09) -----
+    // Its OWN stat now, no longer the crit chain doubled by a per-skill CritRateMod. Every blow-rate
+    // buff and passive MULTIPLIES this accumulator (×1.10, ×1.40); it is folded ONCE, at the end of
+    // RecomputeDerived, into BlowRate. There is deliberately no FLAT channel — nothing authored needs
+    // one, and a flat term would break the "base × buffs × passives" shape he specified.
+    // ⚠ READ BlowRate, never this.
+    public float BlowRateMult { get; set; } = 1f;
+
+    /// <summary>THE BLOW LANDING RATE — what fraction of this attacker's dagger Stabs land for full
+    /// power. Already clamped to [<see cref="StatCaps.BlowRateMin"/>, <see cref="StatCaps.BlowRateMax"/>];
+    /// the DEFENDER's <see cref="BlowResist"/> is applied on top of it at the point of use, never
+    /// here — that ordering is his ("~80% × 0.7 = ~56%") and is what makes the cap mean something.</summary>
+    public float BlowRate { get; set; }
+
+    /// <summary>How much of an attacker's blow rate this defender takes away (0.30 = the tank's
+    /// Vital Organ Protection). The ONLY blow defence in the game: a blow is not a crit any more, so
+    /// <see cref="CritRateResist"/> and a shield's <see cref="ShieldCritDefense"/> deliberately do
+    /// not touch it — the rogue's own Armor Mastery carries 25-35% crit-rate resist and must not
+    /// start protecting against stabs by accident.</summary>
+    public float BlowResist { get; set; }
     // ----- Magic crit DAMAGE (owner ruling 2026-08-19) -----
     // `base ×2 × multipliers × (1 − debuffs)` — his formula, and the reason the flat ×3 became a
     // base with a knob: the 4th-class buffer/healer blessings are +30% each and COMPOUND (×3.38
@@ -2581,6 +2607,8 @@ public class Entity
         CritRateFlat = 0f;
         MagicCritRateMult = 1f;
         MagicCritRateFlat = 0f;
+        BlowRateMult = 1f;      // `BL-188` — folded into BlowRate at the end of this method
+        BlowResist = 0f;
         MagicCritDamageMult = 1f;
         MagicCritDamageResist = 0f;
         CritDamagePenalty = 0f;
@@ -3186,6 +3214,10 @@ public class Entity
                 if (pe.CritRate != 0f) CritRateMult *= 1f + pe.CritRate;   // ×1.2, not +20 points
                 CritDamageBonus += pe.CritDamage;
                 CritDamageFlat += pe.CritDamageFlat;
+                // `BL-188` — the two blow halves. Same ×(1+x) convention as CritRate above it for
+                // the attacker's side; the defender's resist SUMS, like every other resist.
+                if (pe.BlowRate != 0f) BlowRateMult *= 1f + pe.BlowRate;   // ×1.2, not +20 points
+                BlowResist += pe.BlowResist;
                 // Magic crit is MULTIPLICATIVE too now (owner ruling 2026-08-06). The old comment
                 // here said it stayed additive because "a mage's base is a 4% WIT figure where a
                 // ×1.05 is nothing" — that base is exactly what the rework fixed, and an additive
@@ -3422,6 +3454,10 @@ public class Entity
             }
             if (buff.Has(SkillEffect.BuffCritDamage))
                 CritDamageBonus += buff.Flat(SkillEffect.BuffCritDamage) + buff.Percent(SkillEffect.BuffCritDamage);
+            // `BL-188` — the blow-rate half of a buff, a FIELD because the flag enum is full. It is
+            // read unconditionally (no `Has`): the carrying buffs declare BuffCritRate purely to be
+            // a buff at all, and it is this number, not that flag, that says how much they give.
+            if (buff.BlowRatePct != 0f) BlowRateMult *= 1f + buff.BlowRatePct;   // ×1.4, not +40 points
             if (buff.Has(SkillEffect.BuffCritRateResist)) CritRateResist += buff.Flat(SkillEffect.BuffCritRateResist) + buff.Percent(SkillEffect.BuffCritRateResist);
             if (buff.Has(SkillEffect.BuffCritDmgResist)) CritDmgResist += buff.Flat(SkillEffect.BuffCritDmgResist) + buff.Percent(SkillEffect.BuffCritDmgResist);
             if (buff.Has(SkillEffect.BuffBowResist)) BowResist += buff.Flat(SkillEffect.BuffBowResist) + buff.Percent(SkillEffect.BuffBowResist);
@@ -3508,6 +3544,12 @@ public class Entity
                                 * (1f - Math.Clamp(critRateBite, 0f, 0.9f)), 0f, StatCaps.PhysicalCritRate);
         MagicCritChance = Math.Clamp((MagicCritChance * MagicCritRateMult + MagicCritRateFlat)
                                 * (1f - Math.Clamp(magicCritRateBite, 0f, 0.9f)), 0f, StatCaps.MagicCritRate);
+        // `BL-188` — the BLOW rate, folded and clamped once, exactly like the two above it. AGI is a
+        // multiplier on the base (StatCalculator.BlowAgiMod), not a term in the buff stack, so a
+        // buffless rogue still reads his race's AGI honestly. The DEFENDER's BlowResist is NOT applied
+        // here — it multiplies what survives this clamp, in ResolveBlow.
+        BlowRate = StatCalculator.BlowRate(BlowRateMult, (int)EffectiveAgi);
+        BlowResist = Math.Clamp(BlowResist, 0f, StatCaps.BlowResist);
         // The magic crit-DAMAGE chain has no cap of its own here: StatCalculator.MagicCritMult
         // applies StatCaps.MagicCritDamageCap at the point of use, so a debuff can still bite a
         // stack that would otherwise be pinned to the ceiling. Only the debuff sum is bounded.

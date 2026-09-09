@@ -80,6 +80,7 @@ public static class SkillText
         Flat(o, "Evasion", p.Evasion);
 
         Pct(o, "Crit rate", p.CritRate);
+        Pct(o, "Blow rate", p.BlowRate);           // `BL-188` — the ATTACKER half, ×(1+v)
         Pct(o, "Crit damage", p.CritDamage);
         Flat(o, "Crit damage", p.CritDamageFlat);
         Pct(o, "Magic crit", p.MagicCritRate);
@@ -125,6 +126,7 @@ public static class SkillText
         Pct(o, "Crit rate resist", p.CritRateResist);
         Pct(o, "Crit dmg resist", p.CritDmgResist);
         Pct(o, "Bow resist", p.BowResist);
+        Pct(o, "Blow resist", p.BlowResist);       // `BL-188` — the tank's Vital Organ Protection
         Pct(o, "Magic resist", p.MagicResist);
         Pct(o, "Cancel resist", p.CancelResistPct);
 
@@ -673,6 +675,11 @@ public static class SkillText
         }
         if (def.PhysMpCostPct > 0f) o.Add($"Physical skills cost {def.PhysMpCostPct * 100f:0.#}% less MP");
         if (def.MagicMpCostPct > 0f) o.Add($"Magic skills cost {def.MagicMpCostPct * 100f:0.#}% less MP");
+        // `BL-188` — the blow-rate buffs. A FIELD, so the flag-driven block above cannot show it, and
+        // the flag it actually carries (BuffCritRate, purely so it IS a buff) would describe it as
+        // crit rate, which is the one thing it is not.
+        float blowPct = def.BlowRatePctAt(level);
+        if (blowPct != 0f) o.Add($"Blow landing rate ×{1f + blowPct:0.00}");
         // The condition that ends the buff belongs on the card: a Meditation whose downside is only
         // discoverable by being hit is a skill the player learns twice.
         if (def.EndsOnDamageTaken) o.Add("Ends the moment you take damage");

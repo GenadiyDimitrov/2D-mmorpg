@@ -111,6 +111,11 @@ internal static class Descr
         ("mres",          new[] { "mres", "magic resist", "magic resistance",
                                   "chance for spells to fizzle", "spells to fizzle" }),
         ("critdmg",       new[] { "critical damage", "crit damage", "crit dmg", "critdmg" }),
+        // `BL-188` - the BLOW landing rate and its one defence. Both are two-word aliases, so
+        // neither can be matched inside another word (the "as" lesson of 0.119.0), and neither
+        // contains a key above it - "blow rate" is not "crit rate".
+        ("blowrate",      new[] { "blow landing rate", "blow rate", "blowrate" }),
+        ("blowres",       new[] { "blow resist", "blow resistance" }),
         ("critrate",      new[] { "critical rate", "crit rate", "critrate", "critical" }),
         ("magiccritrate", new[] { "magic critical", "magic crit" }),
         // ⚠ THREE evasion channels, and his rogue row names all three in one cell: plain "evasion +20",
@@ -458,6 +463,9 @@ internal static class Descr
             // number per channel. Pooled under the same `reuse` key the blanket BuffCooldown uses.
             Add("reuse", true, def.PhysCooldownPctAt(level));
             Add("reuse", true, def.MagicCooldownPctAt(level));
+            // `BL-188` - the BLOW-RATE buffs. Same shape as the two pairs above: a FIELD on the
+            // SkillDef because the SkillEffect enum is full, authored as "blow rate x1.4".
+            Add("blowrate", true, def.BlowRatePctAt(level));
             // MAGIC crit rate RECEIVED — pooled with the physical one; see the `critrateres` aliases.
             Add("critrateres", true, def.MagicCritRateDebuffAt(level));
 
@@ -653,6 +661,7 @@ internal static class Descr
         add("maxmp", false, p.MaxMp);         add("maxmp", true, p.MaxMpPct);
         add("acc", false, p.Accuracy);        add("eva", false, p.Evasion);
         add("critrate", true, p.CritRate);    add("critdmg", true, p.CritDamage);
+        add("blowrate", true, p.BlowRate);   add("blowres", true, p.BlowResist);   // `BL-188`
         add("critdmg", false, p.CritDamageFlat);
         add("magiccritrate", true, p.MagicCritRate);
         add("as", true, p.AtkSpeedPct);       add("cast", true, p.CastSpeedPct);

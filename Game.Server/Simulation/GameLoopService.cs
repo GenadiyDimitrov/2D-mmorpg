@@ -12313,6 +12313,10 @@ public class GameLoopService : BackgroundService
             MagicMpCostPct = GroupOr(gf.MagicMpCostPct, def.MagicMpCostPctAt(level)),
             PhysCooldownPct = def.PhysCooldownPctAt(level),
             MagicCooldownPct = def.MagicCooldownPctAt(level),
+            // `BL-188` — PER RUNG, for the same reason as everything else on this list: the dagger
+            // race buffs climb 10 → 15 → 20% across three rungs, and reading the def's own field
+            // would hand rung 1's number to all three.
+            BlowRatePct = def.BlowRatePctAt(level),
             // `BL-110` — CHARM, and the one buff that needs to remember WHO cast it: TickControlledMovement
             // walks the victim toward this id every tick. A charm with no source is inert by design
             // (nothing to walk toward) rather than crashing or walking to the origin.
@@ -16661,8 +16665,10 @@ public class GameLoopService : BackgroundService
     }
 
     /// <summary>Resolution for a BLOW skill (dagger Stab) — docs/design/CritBlowAndDouble.md §2.
-    /// CRIT is the gate: the blow deals its full damage only if it crits (dagger crit chance,
-    /// lowered by shield/crit resist). A landed blow is then computed WITH THE CRIT-DAMAGE VALUES
+    /// THE BLOW ROLL is the gate: the blow deals its full damage only if it LANDS, and since
+    /// `BL-188` (2026-09-09) that roll is its own stat — <see cref="Entity.BlowRate"/>, cut by the
+    /// defender's <see cref="Entity.BlowResist"/> — NOT the character's crit rate.
+    /// A landed blow is then computed WITH THE CRIT-DAMAGE VALUES
     /// — the flat crit-damage add (critFlatFactor) and the crit multiplier — because a blow scales
     /// off crit damage, not off p.Atk (7-11k of skill power against under 1k of p.Atk). ONLY after
     /// that does it roll a DOUBLE (the caster's ATK curve) for a further ×2. A blow that FAILS to
@@ -16671,11 +16677,21 @@ public class GameLoopService : BackgroundService
     private (int damage, CombatOutcome outcome) ResolveBlow(
         Entity attacker, Entity target, int baseDamage, SkillDef def, float critFlatFactor = 1f)
     {
-        // The blow's OWN crit modifier rides on the character's rate (IG: a blow never landed on
-        // the raw crit rate). It is what pays for crit going multiplicative — see CritRateMod.
-        float effCrit = Math.Clamp(
-            (attacker.CritChance * def.CritRateMod - (target.HasShield ? target.ShieldCritDefense : 0f))
-            * (1f - target.CritRateResist), 0f, 1f);
+        // `BL-188` (owner ruling 2026-09-09) — THE BLOW ROLL IS ITS OWN STAT, not the crit chain.
+        //
+        //     blowRate = clamp(0.30 × buffs × passives × BlowAgiMod(AGI), 20%, 80%) × (1 − BlowResist)
+        //
+        // The attacker's side is already computed and CLAMPED in RecomputeDerived; only the
+        // defender's term belongs here, and it lands OUTSIDE the cap on purpose — his own worked
+        // example is "~80% × 0.7 = ~56%", which only reads that way if the cap comes first.
+        //
+        // 🔑 What used to be here was `attacker.CritChance × def.CritRateMod` clamped to [0,1] — an
+        // unauthored ×2.0 on an already-50%-capped rate, i.e. EVERY stab landing at the crit cap.
+        // Three things deliberately no longer touch this roll: `CritRateMod` (the field survives for
+        // the CanCrit path), the shield's `ShieldCritDefense`, and `CritRateResist` — the last
+        // matters most, because the rogue's own Armor Mastery carries 25-35% of it and would
+        // otherwise have made rogues the best anti-rogue armour in the game.
+        float effCrit = Math.Clamp(attacker.BlowRate * (1f - target.BlowResist), 0f, 1f);
 
         if (_rng.NextDouble() >= effCrit)
             // Missed the crit: soft floor only — cannot crit or double.

@@ -67,6 +67,9 @@ public partial class SkillCatalog
     /// points at.</summary>
     public const string TankTauntingWallGuard = "tauting_wall_guard";
     public const string TankWhispHelp       = "tank_whisp_help";
+    /// <summary>`BL-188` (2026-09-09) — the 80 passive that cuts an attacker's BLOW landing rate by
+    /// 30%. The tank's answer to the melee rogue, and the only blow defence anywhere.</summary>
+    public const string TankVitalOrganProtection = "vital_organ_protection";
 
     // ---- The Perfect Whisp's own kit. Its gears are the SAME SIX BEHAVIOURS the six single whisps
     //      have, at their own numbers — so they need their own ids: a whisp reads every skill it
@@ -681,5 +684,31 @@ public partial class SkillCatalog
                 new(SkillEffect.DebuffAtkSpeed, 0.23f), new(SkillEffect.DebuffCastSpeed, 0.23f),
             },
             Description: "The whisp weighs an enemy down for 15s: −23% attack and cast speed."),
+
+        // ═══ VITAL ORGAN PROTECTION — 80, and the ONLY defence against a blow in the game ════════
+        //
+        // `BL-188`, his ruling of 2026-09-09: *"Tanks 4th @80 gets a vital organ protection passive
+        // that increases blow land rate on him with 30% ... so ~80% x 0.7 = ~56%"*. (The word is
+        // "increases" but the arithmetic and the name are both a REDUCTION, and his own worked
+        // example settles it.)
+        //
+        // 🔑 THE ORDER IS THE DESIGN. This lands OUTSIDE the attacker's [20%, 80%] clamp, so a rogue
+        //    who has maxed the whole blow ladder is still taken from 80% to 56% — a cap the tank can
+        //    reach past is what makes the tank's answer worth a skill at all.
+        // ⚠ It is `BlowResist`, deliberately NOT `CritRateResist`: a blow left the crit chain in the
+        //    same ruling, and the ROGUE's own Armor Mastery carries 25-35% crit-rate resist, which
+        //    would have quietly made rogues the best anti-rogue armour in the game.
+        new(TankVitalOrganProtection, "Vital Organ Protection", BaseClass.Fighter, SkillEffect.None,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+            Category: SkillCategory.Passive, SpCost: 150_000_000,
+            Passive: new PassiveEffect(BlowResist: 0.30f),
+            Description: "Passive. You have learned where you are soft, and you no longer stand that "
+                       + "way: assassins' blows find their mark 30% less often against you.",
+            Levels: new[]
+            {
+                new SkillLevel(SpCost: 150_000_000, GoldCost: 10_000_000,
+                    Passive: new PassiveEffect(BlowResist: 0.30f),
+                    Description: "Blows land on you 30% less often."),
+            }),
     };
 }

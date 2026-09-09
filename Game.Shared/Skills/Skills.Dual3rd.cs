@@ -59,6 +59,13 @@ public static partial class SkillCatalog
     /// (`dual 3rd`, `archer 3rd`, `tank 3rd`). Not the healer's <see cref="Antidote"/>, which is
     /// targeted and on a different ladder — see the note on the def.</summary>
     public const string ElfAntidote       = "elf_antidote";
+    // ---- `BL-188`, THE BLOW LADDER (2026-09-09). One buff family, three race variants — the same
+    //      shape Phantom Jump already uses, and for the same reason: the PAYLOADS differ, and two
+    //      skills cannot share one id. Vital Points is shared by all three.
+    public const string LethalFocus       = "lethal_focus";       // Human — half rate, half crit damage
+    public const string LethalPrecision   = "lethal_precision";   // Elf   — all crit damage
+    public const string LethalFrenzy      = "lethal_frenzy";      // Demon — all blow rate
+    public const string VitalPoints       = "vital_points";       // 52/64/74 passive, +10/15/20% rate
 
     // ---- HIS LADDERS ----------------------------------------------------------------------------
 
@@ -311,7 +318,8 @@ public static partial class SkillCatalog
             StackKey: "venom_venom", MaxStacks: 10, StacksPerCast: 1,
             Category: SkillCategory.Physical, SpCost: RogueSp[0],
             CanDouble: true, BlowOnCrit: true, BlowFailFraction: ThirdTierBlowFloor,
-            CritRateMod: 2.0f, RequiredWeapon: WeaponType.Dual,
+            // `BL-188` - the unauthored x2.0 on the crit rate is gone; a blow rolls Entity.BlowRate now.
+            RequiredWeapon: WeaponType.Dual,
             Replaces: new[] { PreciseShot },
             Magnitudes: new EffectMagnitude[]
             {
@@ -417,6 +425,83 @@ public static partial class SkillCatalog
                 new(MpCost: 64, SpCost: 880_000, DispelMaxLevel: 9, Description: "Cures poison, venom and bleed of rank 9 or lower from yourself."),
             }));
 
+        // ═══════════════════════════════════════════════════════════════════════════════════════
+        //  `BL-188` — THE BLOW LADDER (owner ruling 2026-09-09)
+        // ═══════════════════════════════════════════════════════════════════════════════════════
+        //
+        // A blow's landing rate stopped being the crit chain that day and became its own stat:
+        // `0.30 × buffs × passives × BlowAgiMod(AGI)`, capped at 80%. These are the 3rd tier's two
+        // contributions to that product — a race-split BUFF at 40/60/70 and a PASSIVE at 52/64/74.
+        //
+        // 🔑 THE RACE SPLIT IS THE BALANCE, and it is his: *"the race based buffs balance the blow
+        //    rate and lack of dex and atk"*. Each rung carries a budget (10 / 15 / 20%) and the race
+        //    decides how it is SPENT — the Elf, who already leads on AGI (36 vs 30 vs 28) and so on
+        //    `BlowAgiMod`, spends all of it on crit DAMAGE; the Demon, who trails on AGI, spends all
+        //    of it on rate; the Human splits it. The three end within four points of each other with
+        //    the whole ladder up, which is the point of doing it this way rather than with one buff.
+        //
+        //        rung (level)        Human            Elf              Demon
+        //        1  (40)     +5% rate, +5% dmg    +10% crit dmg    +10% rate
+        //        2  (60)   +7.5% rate, +7.5% dmg  +15% crit dmg    +15% rate
+        //        3  (70)    +10% rate, +10% dmg   +20% crit dmg    +20% rate
+        //
+        // ⚠ The BUFF flag on all three is `BuffCritRate` and it carries NO magnitude. A buff must
+        //   declare something in `SkillEffect.AnyBuff` to land at all and the enum has been full
+        //   since `1L << 62`, so the rate rides in the `BlowRatePct` FIELD and the crit-damage half
+        //   in a real `BuffCritDamage` magnitude. SkillText reads the field directly, so the card
+        //   never advertises the carrier.
+        float[] focusBudget = { 0.10f, 0.15f, 0.20f };
+        int[]   focusMp     = { 100, 125, 150 };
+        // "(sp for lvl)" — his own instruction: the price is whatever the file's ladder charges at
+        // that level. 40 / 60 / 70 are rungs 1, 8 and 13 of `RogueSp`.
+        int[]   focusSp     = { RogueSp[0], RogueSp[7], RogueSp[12] };
+
+        SkillDef Focus(string id, string name, Func<int, float> rate, Func<int, float> critDmg,
+                       string blurb, Func<int, string> rung) =>
+            new(id, name, BaseClass.Fighter, SkillEffect.BuffCritRate,
+                MpCost: focusMp[0], CastTicks: 0, CooldownTicks: 900, Range: 0, Power: 0,
+                DurationTicks: 3000, BuffKey: id, Rank: 1,
+                Category: SkillCategory.Buff, PhysicalCast: true, TargetMode: TargetMode.SelfOnly,
+                RequiredWeapon: WeaponType.Dual, SpCost: focusSp[0],
+                BlowRatePct: rate(0), Description: blurb,
+                Magnitudes: critDmg(0) > 0f
+                    ? new EffectMagnitude[] { new(SkillEffect.BuffCritDamage, critDmg(0)) }
+                    : Array.Empty<EffectMagnitude>(),
+                Levels: Enumerable.Range(0, 3).Select(i => new SkillLevel(
+                    MpCost: focusMp[i], SpCost: focusSp[i], BlowRatePct: rate(i),
+                    Magnitudes: critDmg(i) > 0f
+                        ? new EffectMagnitude[] { new(SkillEffect.BuffCritDamage, critDmg(i)) }
+                        : Array.Empty<EffectMagnitude>(),
+                    Description: rung(i))).ToArray());
+
+        list.Add(Focus(LethalFocus, "Lethal Focus",
+            i => focusBudget[i] / 2f, i => focusBudget[i] / 2f,
+            "Five minutes of cold attention: your blows land more often AND bite deeper. Requires duals.",
+            i => $"5 min: blow landing rate ×{1f + focusBudget[i] / 2f:0.00} and +{focusBudget[i] / 2f * 100f:0.#} crit damage."));
+
+        list.Add(Focus(LethalPrecision, "Lethal Precision",
+            _ => 0f, i => focusBudget[i],
+            "Five minutes of elven exactness: when a blow lands it lands ruinously. Requires duals.",
+            i => $"5 min: +{focusBudget[i] * 100f:0.#} crit damage."));
+
+        list.Add(Focus(LethalFrenzy, "Lethal Frenzy",
+            i => focusBudget[i], _ => 0f,
+            "Five minutes of red haste: far more of your blows find the gap. Requires duals.",
+            i => $"5 min: blow landing rate ×{1f + focusBudget[i]:0.00}."));
+
+        // ═══ VITAL POINTS — the shared 52/64/74 passive, +10 / 15 / 20% blow rate ════════════════
+        // No race split: all three melee disciplines learn the same three rungs.
+        float[] vitalPoints = { 0.10f, 0.15f, 0.20f };
+        int[]   vitalSp     = { RogueSp[4], RogueSp[9], RogueSp[14] };
+        list.Add(new SkillDef(VitalPoints, "Vital Points", BaseClass.Fighter, SkillEffect.None,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+            Category: SkillCategory.Passive, SpCost: vitalSp[0],
+            Passive: new PassiveEffect(BlowRate: vitalPoints[0]),
+            Description: "Passive. You know where the seams in armour are, and you find them oftener.",
+            Levels: Enumerable.Range(0, 3).Select(i => new SkillLevel(
+                SpCost: vitalSp[i], Passive: new PassiveEffect(BlowRate: vitalPoints[i]),
+                Description: $"Blow landing rate ×{1f + vitalPoints[i]:0.00}.")).ToArray()));
+
         return list.ToArray();
     }
 
@@ -434,7 +519,8 @@ public static partial class SkillCatalog
             MpCost: StabMp[0], CastTicks: castTicks, CooldownTicks: 30, Range: 40, Power: power[0],
             Category: SkillCategory.Physical, SpCost: RogueSp[0],
             CanDouble: true, BlowOnCrit: true, BlowFailFraction: ThirdTierBlowFloor,
-            CritRateMod: 2.0f, HitCount: hitCount, SelfBuff: selfBuff,
+            // `BL-188` - see Killing Stab: the blow gate left the crit chain on 2026-09-09.
+            HitCount: hitCount, SelfBuff: selfBuff,
             RequiredWeapon: WeaponType.Dual,
             Replaces: new[] { PreciseShot },
             Description: blurb,

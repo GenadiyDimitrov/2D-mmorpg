@@ -908,6 +908,7 @@ public static partial class ClassSkillTables
         int[] band15 = { 40, 43, 46, 49, 52, 55, 58, 60, 62, 64, 66, 68, 70, 72, 74 };
         int[] jump3  = { 52, 60, 74 };
         int[] cure6  = { 52, 58, 62, 66, 70, 74 };
+        int[] focus3 = { 40, 60, 70 };   // `BL-188` — the race-split blow buff
 
         static IEnumerable<ClassSkill> Ladder(string id, int[] levels, int startRung = 1) =>
             levels.Select((lv, i) => new ClassSkill(id, lv, SkillLevel: startRung + i));
@@ -920,16 +921,21 @@ public static partial class ClassSkillTables
         shared.AddRange(Ladder(DualWeaponMastery, band15));
         shared.Add(new ClassSkill(Sprint, 46, SkillLevel: 2));
         shared.Add(new ClassSkill(EvasionBoost, 60, SkillLevel: 2));
+        // `BL-188` — Vital Points, the shared blow-rate passive. THREE rungs at 52/64/74, and the
+        // one part of the blow ladder that is NOT race-split.
+        shared.AddRange(Ladder(VitalPoints, new[] { 52, 64, 74 }));
 
         var human = new List<ClassSkill>(shared);
         human.AddRange(Ladder(KillingStab, band15));
         human.AddRange(Ladder(HeavyStab, band15));
         human.AddRange(Ladder(PhantomJumpHuman, jump3));
+        human.AddRange(Ladder(LethalFocus, focus3));       // `BL-188` — half rate, half crit damage
 
         var elf = new List<ClassSkill>(shared);
         elf.AddRange(Ladder(KillingStab, band15));
         elf.AddRange(Ladder(SwiftStab, band15));
         elf.AddRange(Ladder(PhantomJumpElf, jump3));
+        elf.AddRange(Ladder(LethalPrecision, focus3));     // `BL-188` — all crit damage (the Elf already leads on AGI)
         elf.AddRange(Ladder(ElfAntidote, cure6));
 
         // ⚠ THE DEMON GETS NO KILLING STAB. His RACE cell on it is `Human;Elf`, and Venom Stab +
@@ -939,6 +945,7 @@ public static partial class ClassSkillTables
         demon.AddRange(Ladder(VenomStab, band15));
         demon.AddRange(Ladder(VenomBurst, band15));
         demon.AddRange(Ladder(PhantomJumpDemon, jump3));
+        demon.AddRange(Ladder(LethalFrenzy, focus3));      // `BL-188` — all rate (the Demon trails on AGI)
 
         ClassSkills.RegisterThird(Race.Human, Discipline.Nullblade,   human.ToArray());
         ClassSkills.RegisterThird(Race.Elf,   Discipline.Phantom,     elf.ToArray());

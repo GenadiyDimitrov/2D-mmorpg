@@ -142,3 +142,17 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 66,Antidote,elf_antidote,Magic/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 7 or lower from an self.",57,280,[],Elf
 70,Antidote,elf_antidote,Magic/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 8 or lower from an self.",60,390,[],Elf
 74,Antidote,elf_antidote,Magic/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 9 or lower from an self.",64,880,[],Elf
+,,,,,,,,,,,,,,,,,----------------------------Lethal Focus / Precision / Frenzy (BL-188)----------------------------
+40,Lethal Focus,lethal_focus,physical buff,duals,,0,0,self/single,0,90,300,"blow rate x1.05; crit dmg +5%;",100,28,[],Human
+60,Lethal Focus,lethal_focus,physical buff,duals,,0,0,self/single,0,90,300,"blow rate x1.075; crit dmg +7.5%;",125,120,[],Human
+70,Lethal Focus,lethal_focus,physical buff,duals,,0,0,self/single,0,90,300,"blow rate x1.1; crit dmg +10%;",150,390,[],Human
+40,Lethal Precision,lethal_precision,physical buff,duals,,0,0,self/single,0,90,300,"crit dmg +10%;",100,28,[],Elf
+60,Lethal Precision,lethal_precision,physical buff,duals,,0,0,self/single,0,90,300,"crit dmg +15%;",125,120,[],Elf
+70,Lethal Precision,lethal_precision,physical buff,duals,,0,0,self/single,0,90,300,"crit dmg +20%;",150,390,[],Elf
+40,Lethal Frenzy,lethal_frenzy,physical buff,duals,,0,0,self/single,0,90,300,"blow rate x1.1;",100,28,[],Demon
+60,Lethal Frenzy,lethal_frenzy,physical buff,duals,,0,0,self/single,0,90,300,"blow rate x1.15;",125,120,[],Demon
+70,Lethal Frenzy,lethal_frenzy,physical buff,duals,,0,0,self/single,0,90,300,"blow rate x1.2;",150,390,[],Demon
+,,,,,,,,,,,,,,,,,----------------------------Vital Points (BL-188)----------------------------
+52,Vital Points,vital_points,passive,,,0,0,self/single,0,0,0,"blow rate x1.1;",0,74,[]
+64,Vital Points,vital_points,passive,,,0,0,self/single,0,0,0,"blow rate x1.15;",0,190,[]
+74,Vital Points,vital_points,passive,,,0,0,self/single,0,0,0,"blow rate x1.2;",0,880,[]

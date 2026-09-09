@@ -131,7 +131,8 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-185` | 🔵 | THE DAMAGE REWORK — ✅ the SHOT (runes x2) and the DEFENCE SHAPE built 0.117.0; the armour spread + the x1.17 residual are open | combat |
 | `BL-186` | ❓ | THE MAX LEVEL CAP — can it be removed? Parked until `BL-185` closes, on your order | systems |
 | `BL-187` | 🔵 | A THIRD RUNE combining both damage channels — engine done, the economy and stacking shape are yours | items |
-| `BL-188` | 🔴 | SKILL [Double] and BLOW crit chance are wrong — the two roll-rate paths need a pass | combat |
+| `BL-189` | 🔵 | Weapon-type protection — `BowResist` generalised to every weapon type | combat |
+| `BL-190` | 🔴 | SKILL `[Double]` must be gated by a PASSIVE, not the ATK curve — 4 things owed | combat |
 
 ---
 
@@ -1200,53 +1201,81 @@ singles (`BL-183`). **The second is the right shape**; it just has to be authore
 
 ---
 
-## `BL-188` 🔴 SKILL `[Double]` AND BLOW CRIT CHANCE ARE WRONG — the two roll-rate paths need a pass
+## `BL-189` 🔵 WEAPON-TYPE PROTECTION — `BowResist` generalised to every weapon type
 
-**Filed 2026-09-09, on your instruction**, while the melee-rogue and archer 3rd kits were built:
-*"also make a note to fix the skill double and blow crit chance"*.
+**Your ask, 2026-09-09**, alongside the blow ruling: *"make a note later I want to do a wepon type
+protection ... Like the bow resist but for other"*.
 
-No diagnosis is recorded yet — this entry exists so the ask is in the repo rather than only in a
-chat line. **What follows is where the two numbers actually come from**, so whoever picks it up is
-not hunting.
+Today exactly one weapon type has a defence against it. `Entity.BowResist` (`Entity.cs:1167`) cuts
+the damage a BOW attack deals, is clamped `[0, 0.9]`, and is fed from three places — armour-set
+`StatMods`, passives, and the `SkillEffect.BuffBowResist` buff flag. Nothing equivalent exists for
+sword, blunt, dual, spear or fist.
 
-### The two paths, and what they read today
+The generalisation is mechanical — one `float[]` indexed by `WeaponType.Base()` instead of one
+field, with the same three feeds and the same clamp — but it is not free, so it wants your shape
+before anyone writes it:
 
-| | rolled off | formula | cap | where |
-|---|---|---|---|---|
-| `[Double]` (×2 damage) | the **ATK stat**, 30-60 band | `min(25%, 2.5% + 0.75·(ATK − 30))` | **25%** (`StatCaps.PhysicalDoubleRate`) | `StatCalculator.PhysicalDoubleChance` |
-| a **BLOW** landing (`BlowOnCrit`) | the character's **crit rate**, × the skill's `CritRateMod` | the ordinary physical crit chain | **50%** (`StatCaps.PhysicalCritRate`) | `ResolvePhysicalCritAndBlock`, `StatCalculator.CritChance` |
+- **Damage or chance?** `BowResist` cuts DAMAGE. The tank's stab protection you ruled in `BL-188`
+  cuts a ROLL. If weapon-type protection is one system it has to pick one, or carry both.
+- **Who carries it?** Armour sets are the natural home (a heavy set resisting blunt is the genre
+  convention) — but every set that gains one becomes a rock-paper-scissors statement about PvP.
+- **Does the wire change?** `BowResist` rides the stats payload the client shows; six of them is a
+  DTO change, and a positional DTO change is a `ProtocolVersion` bump (`BL-185` learned that).
 
-Both flags are OPT-IN and mutually exclusive (playtest-19 M8: *"if a skill is not described as Can
-Crit or Can Double it doesn't do it"*), and a blow does **not** set `CanCrit` — the crit roll IS its
-landing gate.
+Nothing is built. Filed so the ask is in the repo rather than only in a chat line.
 
-### Why it is worth a pass now, and what looks suspect
+---
 
-**Every 3rd-tier dagger skill is a blow with a 1% floor.** `dual 3rd.csv` authors Killing Stab, Swift
-Stab, Heavy Stab and Venom Stab as *"power N — only when skill does critical — otherwise N/100"*,
-where the 2nd class's Piercing Stab reads N/10. So the melee rogue's entire damage output is now
-decided by ONE roll, and the difference between landing and not is a hundredfold rather than tenfold.
-Whatever is off about that roll used to cost 10% of a hit; from 40 it costs the whole rotation.
+## `BL-190` 🔴 SKILL `[Double]` — IT MUST BE GATED BY A PASSIVE, NOT BY THE ATK CURVE
 
-Three specific things to look at:
+**Split out of `BL-188` on 2026-09-09**, on your instruction, when the blow half of that entry was
+built and the Double half deliberately was not: *"Move the double to bl entry - I will want to be a
+passive to allow skills to double .. Not all based on atk stat (only if passive is active)"*.
 
-1. **`CritRateMod: 2.0` is doing a lot of work and is not authored anywhere.** Piercing Stab carries
-   it, and all four 3rd-tier stabs were given the same 2.0 by inheritance when they were built. It
-   doubles the blow's landing chance against the same 50% cap — so a rogue at 25% crit lands blows
-   at 50% and one at 30% also lands at 50%. **Above 25% base crit the stat stops buying anything**,
-   which is exactly the "each blow lands with the 64+% chance" complaint that got the crit-rate
-   rework (playtest-19 M9) — arrived at from the other direction.
-2. **`[Double]` caps at 25% off a stat that stops at 60.** `PhysicalDoubleChance` saturates at ATK
-   60, and the 3rd-tier kits push ATK well past that, so the last 30 points of the stat buy nothing.
-   Same shape of dead zone as (1).
-3. **A blow and a double are exclusive, but `CanDouble: true` is set on every stab anyway** — the
-   engine resolves the blow first, so the double flag is at best a second chance and at worst dead
-   code on those skills. Worth confirming which it is before tuning either number.
+### Your ruling, as far as it goes
 
-### What is owed
+A skill may `[Double]` **only while a PASSIVE that grants it is active**. `CanDouble` on the def stops
+being sufficient on its own and becomes "this skill is *eligible* to double"; whether it actually can
+is a question about the CHARACTER. The ATK curve is not the gate any more — you did not say whether it
+survives as the *rate*, which is the first open question below.
 
-A measurement first (`tools/BalanceMatrix`, `--dmgmatrix`), not a hand-derived fix: what fraction of
-a level-74 Nullblade's Killing Stabs actually land at full power, buffed and unbuffed, and the same
-for an archer's `[Double]`. Then your ruling on the two curves and their caps. **Do not retune the
-CSV powers to compensate** — the powers are authored, the roll rate is not.
+### What is there today, measured (not derived)
 
+```
+Double% = clamp(2.5% + 0.75 × max(0, ATK − 30), 2.5%, 25%)      StatCalculator.PhysicalDoubleChance
+```
+
+Three facts about it, all confirmed in the code on 2026-09-09:
+
+1. **It is a per-race CONSTANT that nothing in the game can raise.** Base fighter ATK is Elf 36 /
+   Human 40 / Demon 41 (`StatCalculator.GetBaseStats`) → **7.0% / 10.0% / 10.75%**. The 25% cap needs
+   ATK 60 and is unreachable by anyone.
+2. 🔴 **The call passes the RAW stat, not the effective one** — `PhysicalDoubleChance(caster.AtkStat)`,
+   while its crit twin uses `PhysicalCritBase(EffectiveAgi, …)`. `EffectiveAtk = AtkStat + BonusAtk`,
+   and `BonusAtk` is where the level-40 `+5 ATK` swap, the armour sets and every `+ATK` passive land.
+   **None of them buy any Double chance.** The doc comment defends the raw read ("a better weapon must
+   not buy Double chance, only the build does") — but `EffectiveAtk` is not p.Atk, it IS the build.
+   This reads as a slip rather than a design, and it is a one-word fix.
+3. ⚠ **The same function drives DOUBLE BUFF/DEBUFF DURATION** (`GameLoopService.cs:11742`, IG's
+   level-76 Skill Mastery — an area blessing doubles for everyone or for no one, rolled once per cast,
+   players only). **Anything done to that curve moves buff durations too**, and that is the thing most
+   likely to be missed.
+
+`[Double]` is flagged on most physical actives today (`Skills.Fighter.cs`, `Skills.Dual3rd.cs`). On a
+BLOW it is a live SECOND roll after the blow lands, for a further ×2 — that part works and `BL-188`
+left it alone.
+
+### What is owed before it can be built
+
+1. ❓ **Does the ATK curve survive as the RATE, with the passive only as a gate — or does the passive
+   carry its own rate the way the blow ladder does?** The blow rework did the latter and it worked
+   cleanly (base × buffs × passives × stat mod, capped), so the shape exists and is proven.
+2. ❓ **One passive for everything, or one per weapon/class?** *"Not all"* says some skills stop
+   doubling; a single global passive cannot express that, but a per-skill `RequiresDoublePassive` flag
+   plus one passive can.
+3. ❓ **Does the buff/debuff DURATION double follow the same gate?** It is the same roll today. If it
+   does not, it needs its own number and stops being free.
+4. 🔵 **The `AtkStat` → `EffectiveAtk` slip can be fixed on its own, before any of this** — it is a bug
+   in either design. Re-measure after: it moves duration-doubling too.
+
+**Do not retune skill powers to compensate** — the powers are authored, the roll rate is not.

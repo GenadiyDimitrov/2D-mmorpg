@@ -1,2 +1,6 @@
 LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,REPLACES,RACE
-# nothing above level 76 exists yet for this discipline — start here.
+# BL-188 (2026-09-09) added the three blow-ladder rows below on his ruling. EVERYTHING ELSE above 76 is still unauthored — start here.
+,,,,,,,,,,,,,,,,---------------------------- BL-188: the top of the blow ladder. HIS RULING 2026-09-09; the rest of this file is still yours to author. ----------------------------
+76,Assassination Instinct,assassination_instinct,passive,,,0,0,self/single,0,0,0,"blow rate x1.05;",0,6500,[]
+80,Perfect Strike,perfect_strike,physical buff,duals,,0,0,self/single,0,300,300,"blow rate x1.4; does not stack with Brutal Strike;",200,150000,[brutal_strike]
+80,Brutal Strike,brutal_strike,physical buff,duals,,0,0,self/single,0,300,300,"crit dmg +30%; does not stack with Perfect Strike;",200,150000,[perfect_strike]

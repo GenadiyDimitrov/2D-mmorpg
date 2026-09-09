@@ -7,12 +7,125 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.120.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.121.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
+## 2026-09-09 (latest) — 0.121.0: `BL-188` — THE BLOW LANDING RATE BECOMES ITS OWN STAT
 
-## 2026-09-09 (latest) — 0.120.0: the archer's 4th class, and the first CHANNEL in the game
+⚠ **NEW APK** — the class-skill tables changed (five new skills across the melee rogue's 3rd and 4th
+tiers, one on the tank's 4th).
+
+His ruling, after the old `BL-188` entry was rewritten with what the code actually does: a dagger
+BLOW no longer lands off the character's crit rate. It has its own stat, its own ladder and its own
+defence.
+
+### What was wrong (measured, not derived)
+
+The entry filed on 2026-09-09 was wrong in **both** halves, and the corrections are the reason this
+was worth doing at all:
+
+- **The blow roll had no 50% cap — it ran to 100%.** `ResolveBlow` clamped
+  `attacker.CritChance × def.CritRateMod` to `[0, 1]`, not to `StatCaps.PhysicalCritRate`. `CritChance`
+  is *already* clamped at 50% and was then multiplied by an unauthored `CritRateMod: 2.0`, so a
+  Nullblade landed blows at **38.8% unbuffed at 74, 60.6% buffed at 78 and 80.6% buffed at 85** — and
+  at the crit cap, **every stab**. That is playtest-19 M9's *"each blow lands with the 64+% chance"*
+  arriving again from the other direction.
+- **`[Double]` is a per-race CONSTANT nothing can raise.** Player fighter ATK is Elf 36 / Human 40 /
+  Demon 41 → 7.0 / 10.0 / 10.75%, and the 25% cap needs ATK 60. Worse, the call passes the **raw
+  `AtkStat`** while its crit twin uses `EffectiveAgi` — so the level-40 `+5 ATK` swap, the armour sets
+  and every `+ATK` passive buy **zero** double chance. Left alone here on his instruction and moved to
+  its own entry: he wants a PASSIVE to gate which skills may double, not the ATK curve.
+
+### The new model
+
+```
+blowRate = clamp(0.30 × buffs × passives × BlowAgiMod(AGI), 20%, 80%) × (1 − BlowResist)
+BlowAgiMod(AGI) = 1 + 0.03 × (clamp(AGI, 20, 40) − 30)      →  ×0.70 … ×1.30
+```
+
+🔑 **The AGI anchor already existed.** `StatCalculator.MobAgiReference` is that same 30, and
+`CritAgiMod` is `1 + 0.01·(AGI−30)` — so `BlowAgiMod` is literally that function **at 3× the slope**,
+and the Human fighter's base AGI is 30 on the nose, so an unswapped human is exactly ×1.00.
+⚠ It hands AGI a **fifth job, now its biggest** (+1.8pp of landing per point against +0.13pp of a
+dagger's crit). That is deliberate and does not license inflating `CritAgiMod`, whose guardrail stands.
+
+🔑 **The cap comes BEFORE the defender's resist**, which is his own worked example (`~80% × 0.7 =
+~56%`) and is what makes an 80% ceiling something a tank can still reach past.
+
+⚠ **Three things deliberately no longer touch the blow roll**: `CritRateMod` (the field survives for
+the `CanCrit` path), a shield's `ShieldCritDefense`, and `CritRateResist` — the last matters most,
+because the rogue's *own* Armor Mastery carries 25-35% crit-rate resist and would otherwise have made
+rogues the best anti-rogue armour in the game.
+
+### The ladder (all five skills authored into the CSVs in this commit)
+
+`dual 3rd.csv` — **the race split is the balance**, and it is his: *"the race based buffs balance the
+blow rate and lack of dex and atk"*. One budget per rung (10 / 15 / 20%), and the race decides how it
+is spent. The Elf already leads on AGI (36 vs 30 vs 28) so spends it all on crit damage; the Demon
+trails so spends it all on rate; the Human splits it.
+
+| | 40 | 60 | 70 | MP | reuse / duration |
+|---|---|---|---|---|---|
+| **Lethal Focus** (Human) | +5% rate, +5% dmg | +7.5% / +7.5% | +10% / +10% | 100 / 125 / 150 | 90s / 5 min |
+| **Lethal Precision** (Elf) | +10% crit dmg | +15% | +20% | ″ | ″ |
+| **Lethal Frenzy** (Demon) | +10% rate | +15% | +20% | ″ | ″ |
+
+- **Vital Points** — a passive at 52 / 64 / 74, +10 / 15 / 20% rate, shared by all three disciplines.
+- **Assassination Instinct** (76) — his name, his number: a passive, +5%.
+- **Perfect Strike / Brutal Strike** (80) — 200 MP, five minutes up and five minutes down, and a
+  CHOICE: +40% blow rate or +30% crit damage, never both. They take Great Might / Great Bulwark's
+  exact recipe — one shared `BuffKey` at `Rank 1` with `FlatRank` — so casting either evicts the other
+  and the pick stays re-makeable.
+- **Vital Organ Protection** (`tank 4th.csv`, 80) — the tank's answer and the only blow defence in the
+  game: −30% off an attacker's already-capped rate.
+
+### Measured — `dotnet run --project tools/BalanceMatrix -- --blowrate 85`
+
+```
+  race                  AGI  agiMod | passives only |  + race buff  | + Perfect Strike | vs a tank
+  Human  (Nullblade)     30 ×1.00 |       37.8%   |     41.6%   |        58.2%     |   40.7%
+  Elf    (Shadowblade)   36 ×1.18 |       44.6%   |     44.6%   |        62.4%     |   43.7%
+  Demon  (Venomblade)    28 ×0.94 |       35.5%   |     42.6%   |        59.7%     |   41.8%
+```
+
+✅ **His target — *"~60% rate and a lot of dmg or 80% rate and less dmg"* — is the AGI-40 column, on
+the nose: 59.0% and 80.0% (the cap, exactly).** The ladder is built to reach his numbers at a MAXED
+AGI build rather than at a race's base, which is the AGI class having to buy AGI. ⚠ Only the ELF gets
+there cheaply (36 + the five-point swap is already past 40); Human 30 and Demon 28 need the swap AND
+light-set AGI on top.
+
+🔴 **A RIG DEFECT FOUND ON THE WAY, NOT FIXED HERE:** `BalanceMatrix.BuildPlayer` dresses **every**
+Fighter in HEAVY plate and a shield — the melee rogue and the archer included, though both wear LIGHT
+by their own Armor Mastery. The heavy sets carry `Agi: -2` and the light ones `+1…+3`, so a rogue
+measured in plate reads 2 AGI light. `--blowrate` swaps it for its own probe only; fixing it for every
+table moves signed-off numbers and is a wider change than this one.
+
+### Engine
+
+- `StatCaps.BlowRateBase/Min/Max/BlowResist`, `StatCalculator.BlowAgiMod/BlowRate`.
+- `Entity.BlowRateMult` (accumulator) → `Entity.BlowRate` (folded and clamped once, with the two crit
+  chains), and `Entity.BlowResist`.
+- `SkillDef.BlowRatePct` + `SkillLevel.BlowRatePct` + `BlowRatePctAt(level)`, and
+  `PassiveEffect.BlowRate` / `BlowResist`. ⚠ Fields, not a `SkillEffect` bit — the flag enum has been
+  full since `1L << 62` — so a blow-rate buff still declares `BuffCritRate` purely to BE a buff, and
+  `SkillText` reads the field directly so a card never advertises the carrier.
+- `BuffInstance.BlowRatePct`, copied **per rung** in `ApplyBuff`.
+- `SkillCsvSeed/Descr.cs` learned `blow rate` and `blow resist`, so all fourteen new authored numbers
+  are verified rather than `UNREAD`.
+
+### ⚠ Still open, reported not fixed
+
+- **28 pre-existing `--check` discrepancies**, all one thing: **Sound Burst's reuse reads 5s in
+  `buffer 3rd.csv` and `buffer 4th.csv` and 3s in the code**, on every one of its 28 rungs. It is on
+  HEAD, predates this commit and is a Warchanter balance number — flagged rather than folded into a
+  rogue commit.
+- **`dual 4th.csv` is STILL the two-line placeholder** plus these three rows, so it has NOT earned a
+  `Check.Specs` line (the checker walks whole files). The melee rogue's 4th class is three skills, not
+  a kit; the rest waits on his file, as before.
+
+
+## 2026-09-09 — 0.120.0: the archer's 4th class, and the first CHANNEL in the game
 
 ⚠ **NEW APK** — the class-skill tables changed again (three disciplines gain a 76-90 kit).
 

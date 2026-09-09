@@ -482,6 +482,13 @@ public record SkillDef(
     // These ADD to whatever BuffCooldown grants; see Entity.CooldownReductionFor.
     float PhysCooldownPct = 0f,
     float MagicCooldownPct = 0f,
+    // BLOW LANDING RATE granted by a BUFF (`BL-188`, 2026-09-09), as a FRACTION: 0.20 = x1.20 on
+    // Entity.BlowRateMult, never +20 percentage points. A FIELD and not a SkillEffect bit for the
+    // usual reason - the flag enum has been full since `1L << 62` - so a blow-rate buff still has to
+    // declare some AnyBuff flag to land at all; the dagger buffs use BuffCritRate, which is the
+    // closest thing it is (how often you land) and carries no magnitude of its own.
+    // The PASSIVE half is PassiveEffect.BlowRate; the DEFENDER half is PassiveEffect.BlowResist.
+    float BlowRatePct = 0f,
     // HIDE (BL-69, kind 1 — the rogue's full vanish): a self-cast that makes the caster invisible
     // to EVERYTHING for DurationTicks — unrendered, untargetable, and shed by every mob aggro'd on
     // them. Broken by any action but movement: a hit, a skill, a potion, damage taken.
@@ -1128,6 +1135,14 @@ public record SkillDef(
         return v != 0f ? v : PhysCooldownPct;
     }
 
+    /// <summary>BLOW-RATE bonus at a LEVEL (`BL-188`). Same "0 = inherit" shape as the reuse pair
+    /// above. A fraction: 0.20 means ×1.20 on <c>Entity.BlowRateMult</c>.</summary>
+    public float BlowRatePctAt(int level)
+    {
+        float v = Lvl(level)?.BlowRatePct ?? 0f;
+        return v != 0f ? v : BlowRatePct;
+    }
+
     /// <summary>See <see cref="PhysCooldownPctAt"/>.</summary>
     public float MagicCooldownPctAt(int level)
     {
@@ -1362,6 +1377,10 @@ public record SkillLevel(
     // Soul climbs −10/−20% to −20/−30% across its seven rungs, so it needs the per-level slot too.
     float PhysCooldownPct = 0f,
     float MagicCooldownPct = 0f,
+    // BLOW LANDING RATE at THIS level (0 = inherit). See SkillDef.BlowRatePct — every blow-rate buff
+    // in the game is a LADDER (the dagger race buffs climb 10/15/20%), so it needs the per-level slot
+    // for the same reason the two pairs above it do.
+    float BlowRatePct = 0f,
     // DEBUFF SUCCESS MULTIPLIER at THIS level (0 = inherit the SkillDef's). See SkillDef.DebuffLandMod.
     // His ask names the ladder explicitly — *"a sucess multiplier (per skill/lvl)"* — so a hold whose
     // rungs are otherwise identical can still get more reliable as it climbs.
@@ -1528,6 +1547,17 @@ public readonly record struct PassiveEffect(
     // inside the damage ratio on a crit only, K·((atk + flat)·… )/def, then the crit multiplier
     // scales the result. Off a crit it does nothing. See docs/design/CritBlowAndDouble.md §3.
     float CritDamageFlat = 0f,
+    // ----- THE BLOW LANDING RATE, both sides (`BL-188`, owner ruling 2026-09-09) -----------------
+    // BlowRate  — the ATTACKER's half: a fraction, 0.20 = ×1.20 on Entity.BlowRateMult, exactly the
+    //             convention `CritRate` above it uses. The dagger's Vital Points (52/64/74) and
+    //             Assassination Instinct (76) are its only authors today.
+    // BlowResist— the DEFENDER's half, and the ONLY thing in the game that resists a blow now that
+    //             the roll has left the crit chain: a fraction cut off the attacker's ALREADY-CAPPED
+    //             rate, so the tank's 0.30 takes a maxed 80% rogue to ~56%. His number, his example.
+    //             ⚠ Deliberately NOT `CritRateResist` — a blow is no longer a crit, and the rogue's
+    //             own Armor Mastery carries 25-35% crit-rate resist that must NOT protect against
+    //             stabs by accident. Tank 4th's Vital Organ Protection is its only author.
+    float BlowRate = 0f, float BlowResist = 0f,
     float HpRegen = 0f, float MpRegen = 0f,            // FLAT regen per tick
     float HpRegenPct = 0f, float MpRegenPct = 0f,      // regen MULTIPLIER (additive: 0.20 = +20%)
     // ----- STANCE-CONDITIONAL MP regen (Calm Spirit, `BL-92`). MULTIPLIERS on the stance multiplier
@@ -1760,6 +1790,7 @@ public static partial class SkillCatalog
         list.AddRange(WhispSummonSkills());   // Skills.Whisps.cs (his six calls + Whisp Mastery)
         list.AddRange(FighterKits3rdSkills()); // Skills.FighterKits3rd.cs (`BL-185` the warrior's derived damage kit)
         list.AddRange(Dual3rdSkills());       // Skills.Dual3rd.cs (his `dual 3rd.csv`, 40-74)
+        list.AddRange(Dual4thSkills());       // Skills.Dual4th.cs (`BL-188` — the top of the blow ladder ONLY)
         list.AddRange(Archer3rdSkills());     // Skills.Archer3rd.cs (his `archer 3rd.csv`, 40-74)
         list.AddRange(Archer4thSkills());     // Skills.Archer4th.cs (his `archer 4th.csv`, 76-90)
         list.AddRange(ArcherKitRetiredSkills()); // Skills.ArcherKitRetired.cs (the 3-day derived archer kit, orphaned but kept)

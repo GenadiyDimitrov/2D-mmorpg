@@ -3207,3 +3207,138 @@ exactly how a toggle is turned off already, so nothing is left behind claiming i
 ⚠ **NEW APK** (two buttons). No schema change.
 
 ---
+
+---
+
+## `BL-188` ✅ CLOSED 2026-09-09 (0.121.0) — THE BLOW LANDING RATE BECAME ITS OWN STAT
+
+**Built the same day it was ruled.** The blow half shipped in 0.121.0 — see the CHANGELOG entry for
+the model, the ladder and the measurements. The `[Double]` half was NOT built and moved to `BL-190`
+on his instruction: *"Move the double to bl entry - I will want to be a passive to allow skills to
+double .. Not all based on atk stat (only if passive is active)"*.
+
+What shipped: `blowRate = clamp(0.30 × buffs × passives × BlowAgiMod(AGI), 20%, 80%) × (1 − BlowResist)`,
+five new skills (Lethal Focus / Precision / Frenzy at 40/60/70, Vital Points at 52/64/74,
+Assassination Instinct at 76, the Perfect/Brutal Strike choice at 80) and the tank's Vital Organ
+Protection at 80. All fourteen authored numbers are read by `--check`. Measured with
+`BalanceMatrix --blowrate`.
+
+🔑 **The lesson worth keeping is that THE FIRST VERSION OF THIS ENTRY WAS WRONG IN BOTH HALVES**, and
+it was wrong because it was written from the CSVs without reading the engine. It claimed the blow roll
+hit a 50% cap (it clamped to **100%**) and that the 3rd-tier kits push ATK past `[Double]`'s 60-point
+saturation (no player exceeds **41**). Its full original text is below.
+
+<details><summary>The original entry, as filed and then rewritten on 2026-09-09</summary>
+
+## `BL-188` 🔴 THE BLOW LANDING RATE BECOMES ITS OWN STAT — and `[Double]` is frozen at ~10%
+
+**Filed 2026-09-09, on your instruction**, while the melee-rogue and archer 3rd kits were built:
+*"also make a note to fix the skill double and blow crit chance"*. **Rewritten the same day** once
+the code was actually read and measured, and once you ruled the blow model — the first draft's
+diagnosis was wrong in both halves and is archived under this id.
+
+### What the two paths read TODAY
+
+| | rolled off | formula | clamp | where |
+|---|---|---|---|---|
+| `[Double]` (×2 damage) | the **raw `AtkStat`** | `min(25%, 2.5% + 0.75·(ATK − 30))` | 25% at ATK 60 | `StatCalculator.PhysicalDoubleChance` |
+| a **BLOW** landing (`BlowOnCrit`) | the character's **crit rate** × the skill's `CritRateMod` (an unauthored 2.0) | the ordinary physical crit chain, doubled | **100%** — `Math.Clamp(…, 0f, 1f)` | `GameLoopService.ResolveBlow` |
+
+Both flags are OPT-IN and mutually exclusive on the *gate* (playtest-19 M8: *"if a skill is not
+described as Can Crit or Can Double it doesn't do it"*), and a blow does not set `CanCrit` — the
+crit roll IS its landing gate. On a blow the double is a live SECOND roll after the crit lands, for
+a further ×2; that part works and is not in scope here.
+
+### The two real defects (measured, `--dmgmatrix … --his`, mythic gear)
+
+**1. The blow roll has no 50% cap — it runs to 100%.** `ResolveBlow` clamps to `0f, 1f`, not to
+`StatCaps.PhysicalCritRate`. `CritChance` is already clamped to 50% and then multiplied by 2.0 on
+top:
+
+| Nullblade | crit rate | blow lands |
+|---|---|---|
+| 74 unbuffed | 19.4% | **38.8%** |
+| 74 buffed | 25.2% | **50.4%** |
+| 78 buffed | 30.3% | **60.6%** |
+| 85 / 90 buffed | 40.3% | **80.6%** |
+
+At the 50% crit cap it is **100% — every stab lands**. That is playtest-19 M9's *"each blow lands
+with the 64+% chance"* arriving again from the other direction. `CritRateMod: 2.0` is authored
+nowhere: the stab rows say only *"can crit/double"*, and the `crit rate x1.3 / x1.4` on Dual Mastery
+is the different knob (`CritRateMult`, folded into `CritChance`).
+
+**2. `[Double]` is a per-race constant that nothing in the game can raise.** Two independent causes:
+
+- **No player is near ATK 60.** Base fighter ATK is Elf 36 / Human 40 / Demon 41
+  (`StatCalculator.GetBaseStats`) → 7.0% / 10.0% / 10.75%. The 25% cap is unreachable.
+- **The call passes the raw stat, not the effective one** — `PhysicalDoubleChance(caster.AtkStat)`,
+  while its crit twin uses `PhysicalCritBase(EffectiveAgi, …)`. `EffectiveAtk = AtkStat + BonusAtk`,
+  and `BonusAtk` is where the level-40 `+5 ATK` stat swap, the armour sets and every `+ATK` passive
+  land. **None of them buy any Double chance.** The doc comment defends the raw read (*"a better
+  weapon must not buy Double chance, only the build does"*) — but `EffectiveAtk` is not p.Atk, it IS
+  the build. This reads as a slip, not a design.
+
+⚠ **Before touching that curve:** the same function also drives **double buff/debuff DURATION**
+(`GameLoopService.cs:11742`, IG's level-76 Skill Mastery). Fixing the stat feed raises that too.
+
+### ✅ YOUR RULING on the blow — 2026-09-09
+
+**The blow landing rate becomes its OWN stat, divorced from crit rate.**
+
+```
+blowRate = 0.40 × (blow-rate buffs/passives) × dexMod        clamped to [20%, 80%]
+dexMod   = 1 + 0.03 × (AGI − 30)        AGI clamped to [20, 40]  →  ×0.70 … ×1.30
+```
+
+The ladder you named, and it reproduces exactly:
+
+| source | factor |
+|---|---|
+| base | 0.40 |
+| *"a few of the skills I authored"* — retro-fitted rows | ×1.20 |
+| one **buff** | ×1.20 |
+| a **level-80 passive** | ×1.05 |
+| **every rogue ends at** | **60.5%** |
+| ELF, additional | ×1.10 |
+| your worked example, AGI 40, all buffs | `0.4×1.2×1.2×1.05×1.3` = **78.6%** |
+
+✅ **The anchor already exists in the code.** `StatCalculator.MobAgiReference = 30` is the same 30,
+and `CritAgiMod` is `1 + 0.01·(AGI−30)`. Your `dexMod` is literally that mod **at 3× the slope**
+with a ±30% clamp — one new constant, no new anchor, and the human fighter's base AGI is 30 on the
+nose, so an unswapped human is exactly ×1.00.
+
+⚠ **AGI gains a FIFTH job, and it is now its biggest.** `CritAgiMod` carries a standing guardrail —
+*"deliberately the SMALLEST of AGI's four jobs … +0.13pp of a dagger's crit … Do not inflate it"*.
+The blow mod does not violate that comment (it is a different function), but one AGI point now buys
++1.8pp of landing on a rotation that is one roll. For the dagger rogue AGI becomes decisively THE
+stat. That is probably what you want for the AGI class; it should be a decision, not a discovery.
+
+**Also ruled:** the **tank gets stab protection** — a *decreasing chance* of blows landing on him.
+Note this is a different shape from `BowResist`, which cuts DAMAGE taken, not a roll. The general
+case is `BL-189`.
+
+### What is still owed before this can be built
+
+1. 🔴 **The blow-rate sources do not exist in any CSV.** Nothing anywhere authors a blow rate today —
+   every `crit rate x1.2 / x1.3 / x1.4` in `rogue 2nd`, `dual 3rd` and `archer 3rd` is crit rate
+   proper. **The ×1.2 skill rows, the ×1.2 buff and the ELF ×1.1 are yours to author**, and the
+   level-80 ×1.05 passive's home — `dual 4th.csv` — is still the two-line placeholder.
+2. ❓ **The ELF ×1.1 double-counts with `dexMod`.** The elf fighter's base AGI is 36 → `dexMod`
+   already ×1.18 against the human's ×1.00. Adding a racial ×1.1 puts the elf at ~78.5% where the
+   human is 60.5%, and with a `+5 AGI` swap the elf is clamped by the 80% ceiling while the human
+   sits at 69.6% and the demon (AGI 28) at ~57%. Is the ×1.1 meant to sit ON TOP of that, or is it
+   the AGI lead expressed a second way?
+3. ❓ **Clamp order against the tank's stab protection.** If `[20%, 80%]` is applied AFTER the
+   defender's protection, a tank can never push a rogue below 20%. If BEFORE, he can. Which?
+4. ❓ **Does a landed blow still use the crit-DAMAGE values?** Today it does — the flat crit-damage
+   add plus `PhysicalCritMult`, which is what makes a stab scale off crit damage rather than p.Atk.
+   The ruling divorces the GATE from crit rate; it says nothing about the damage model.
+5. ❓ **`[Double]` is unruled.** The `AtkStat` → `EffectiveAtk` feed is a plain bug and can be fixed
+   on its own (re-measure after — it moves buff-duration doubling too). Whether the 30-60 band and
+   the 25% cap are right for a stat that lives at 36-41 is a separate question for you.
+
+**Do not retune the CSV powers to compensate** — the powers are authored, the roll rate is not.
+
+---
+
+</details>

@@ -39,6 +39,37 @@ public static class StatCaps
     /// ruling 2026-08-05, docs/design/CritBlowAndDouble.md §1; was 30% off max(AGI,ATK)).</summary>
     public const float PhysicalDoubleRate = 0.25f;
 
+    // ===== THE BLOW LANDING RATE (`BL-188`, owner ruling 2026-09-09) =========================
+    //
+    // A BLOW (the dagger Stabs) lands for full power on its own roll, and that roll is now ITS
+    // OWN STAT — it is no longer the character's crit rate doubled by a per-skill `CritRateMod`.
+    //
+    //     blowRate = BlowRateBase × (blow-rate buffs/passives) × BlowAgiMod(AGI)
+    //                clamped to [BlowRateMin, BlowRateMax]
+    //
+    // and only THEN does the defender's `Entity.BlowResist` cut it — his own worked example is
+    // "~80% × 0.7 = ~56%", so the clamp belongs to the ATTACKER's rate and the resist multiplies
+    // what survives it. See StatCalculator.BlowAgiMod / BlowRate and GameLoopService.ResolveBlow.
+
+    /// <summary>The BASE blow landing rate every dagger starts from: 30%.
+    /// ⚠ It was 40% for a few hours on 2026-09-09 and he lowered it himself — *"to easy to hit
+    /// cap"*. The whole ladder (three race buffs, two passives, the two exclusive 4th-tier buffs)
+    /// is authored against THIS number, so moving it moves every rogue at once.</summary>
+    public const float BlowRateBase = 0.30f;
+
+    /// <summary>Blow landing FLOOR — a rogue stripped of every buff and at AGI 20 still lands
+    /// one stab in five.</summary>
+    public const float BlowRateMin = 0.20f;
+
+    /// <summary>Blow landing CEILING. Applied to the attacker's own rate BEFORE the defender's
+    /// <see cref="Entity.BlowResist"/>, which is what lets the tank's Vital Organ Protection take
+    /// a capped 80% rogue down to ~56%.</summary>
+    public const float BlowRateMax = 0.80f;
+
+    /// <summary>Ceiling on the DEFENDER's blow resistance (the tank's Vital Organ Protection is
+    /// 30%). Shares the 90% ceiling every other resist in the game uses.</summary>
+    public const float BlowResist = 0.90f;
+
     /// <summary>Physical crit DAMAGE ceiling (x10).</summary>
     public const float PhysicalCritDamage = 10.0f;
 
