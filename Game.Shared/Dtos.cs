@@ -344,7 +344,7 @@ public record StatsUpdate(
     int SecondClass, float MoveSpeed, float CastModifier,
     float CastSpeedMult, float AttackSpeedMult, int SkillPoints, MoveState MoveState,
     int MagicAttack, float MagicCritChance,
-    bool HasShield, float BlockChance, float BlockReduction, int ShieldDefense,
+    bool HasShield, float BlockChance, float BlockReduction,
     int MagicDefence, string ActiveSet, string ArmorMastery,
     // Extended debug stats (regens per second + the buff/effect layer).
     float HpRegen = 0f, float MpRegen = 0f, float CritDamage = 0f,

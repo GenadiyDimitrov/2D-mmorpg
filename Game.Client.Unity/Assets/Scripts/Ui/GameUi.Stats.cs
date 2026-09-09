@@ -107,7 +107,8 @@ namespace Game.Client
             // `Shield def:` row in stats"). A shield's flat defence is folded into the P.Def above and
             // pays on every hit, so printing it separately invited exactly the double-dip he found —
             // reading it as a second, block-time pool. Block chance and reduction ARE conditional, so
-            // they stay. StatsUpdate still carries ShieldDefense; only the display is gone.
+            // they stay. (StatsUpdate carried a ShieldDefense field until 2026-09-09; the shield has
+            // no defence pool any more, so the field is gone from the DTO as well as from the display.)
             if (s.HasShield)
                 t.AppendLine(Row2("Block", Pct(s.BlockChance), "Block red.", Pct(s.BlockReduction)));
             t.AppendLine();

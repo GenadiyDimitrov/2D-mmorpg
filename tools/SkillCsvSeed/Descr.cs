@@ -69,7 +69,12 @@ internal static class Descr
         // CSV is the authority: the reader learns it rather than the file being corrected to suit it.)
         ("blockrate",     new[] { "shield defence rate", "shield defense rate", "shield rate",
                                   "block rate", "block chance" }),
-        ("shielddef",     new[] { "shield.p.def", "shiled defence", "shield defence", "shield def",
+        // The shield stopped having a DEFENCE on 2026-09-09 (the owner: *"the shield only will
+        // provide dmg reduction based on actual block"*), so this metric now reads the block-reduction
+        // column. The old "shield p.def" spellings are kept as synonyms on purpose: a CSV row that still
+        // says it should be MATCHED and reported, not silently skipped as an unknown metric.
+        ("blockreduction", new[] { "shield dmg reduction", "shield damage reduction",
+                                  "shield.p.def", "shiled defence", "shield defence", "shield def",
                                   "shield pdef", "shield p.def" }),
         ("mdef",          new[] { "magic defence", "magic defense", "magic def", "m.def", "mdef" }),
         ("matk",          new[] { "magic attack", "m.atk", "matk", "mattack" }),
@@ -606,7 +611,7 @@ internal static class Descr
         add("ccresist", true, m.CcResist);
         add("restoremp", true, m.RestoreMpPct);
         add("vamp", true, m.MeleeVamp);
-        add("shielddef", true, m.ShieldDefPct);
+        add("blockreduction", true, m.BlockReductionPct);
     }
 
     private static void AddPassive(Action<string, bool, float> add, PassiveEffect p)
@@ -645,7 +650,7 @@ internal static class Descr
         add("critdmgres", true, p.CritDmgResist);
         add("critrateres", true, p.CritRateResist);
         add("blockrate", true, p.BlockChancePct);
-        add("shielddef", true, p.ShieldDefPct);
+        add("blockreduction", true, p.BlockReductionPct);
         add("bowresist", true, p.BowResist);
         add("bowrange", false, p.BowRange);
         add("cancelresist", true, p.CancelResistPct);
@@ -674,7 +679,7 @@ internal static class Descr
         SkillEffect.BuffMeleeVamp => "vamp",
         SkillEffect.BuffMagicResist => "mres",
         SkillEffect.BuffBlockChance => "blockrate",
-        SkillEffect.BuffShieldDef => "shielddef",
+        SkillEffect.BuffShieldDef => "blockreduction",
         SkillEffect.BuffCritRateResist => "critrateres",
         SkillEffect.BuffCritDmgResist => "critdmgres",
         SkillEffect.BuffCooldown => "reuse",
@@ -697,15 +702,13 @@ internal static class Descr
     /// nobody has looked at. The whole value of this pass is that an unexplained difference is loud.</summary>
     private static readonly Dictionary<(string Skill, string Metric), string> Ruled = new()
     {
-        [("shield mastery", "shielddef")] =
-            "2026-08-12, reaffirmed 2026-08-21 — ShieldDefPct is the authored percentage x5, the other "
-          + "half of cutting every shield's flat defence 5x in Items.cs. His words then: \"40% tanks to "
-          + "become 200%\". THE CSV COLUMN IS DELIBERATELY IN IG UNITS: when he re-authored the whole "
-          + "ladder on 2026-08-21 (30/40/50/60% at tank 20/28/36/52 and Human Warchanter 40/60/70) he "
-          + "said \"the % of the shield mastery are the IG one so fix them in the process\" — so the "
-          + "file keeps IG's number and the build carries 150/200/250/300%. ⚠ The x5 stops here: block "
-          + "CHANCE (\"Shield Rate\") and the +10% P.Def are copied verbatim, per the same 2026-08-12 "
-          + "ruling that only the mastery's shield-P.Def half ever scaled.",
+        // (The ("shield mastery","shielddef") x5 exemption lived here. It is GONE, and its going is
+        // the point: the x5 existed because the CSV wrote an IG percentage of the shield's flat defence
+        // while the build stored 150/200/250/300%. On 2026-09-09 the shield lost its defence entirely and
+        // the ladder became a BLOCK-REDUCTION multiplier at HALF the authored number (30/40/50/60% ->
+        // 15/20/25/30%), which the CSV now states in those words. Column and build are 1:1 again, so
+        // there is nothing left to excuse - and an exemption kept past its cause is how a real drift
+        // hides.)
         // The two Warchanter armour masteries write the RESULT and the code stores the FACTOR that
         // produces it. Both are only meaningful against Spellcaster Mastery's x0.5, which is applied
         // separately — exactly like the cleric's light row (see HealerArmorMastery).

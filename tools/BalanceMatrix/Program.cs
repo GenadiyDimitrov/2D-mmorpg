@@ -547,9 +547,10 @@ if (args.Length > 0 && args[0] == "--defbreak")
     string q = args.Length > 2 ? args[2] : "mythic";
     int t = GearTier(L);
     string sfx = q is "mythic" ? "" : "_" + q;
+    bool bf = args.Contains("--buffed");   // the NPC buffer shelf, for the fully-buffed shield target
 
     Console.WriteLine();
-    Console.WriteLine($"=== P.DEF DECOMPOSITION — level {L}, {q} gear (tier t{t}) ===");
+    Console.WriteLine($"=== P.DEF DECOMPOSITION — level {L}, {q} gear (tier t{t}), {(bf ? "NPC-BUFFED" : "unbuffed")} ===");
     Console.WriteLine("  IG's 526 heavy / 442 light / 359 robe are ITEM SUMS. That is the row to compare.");
     Console.WriteLine();
 
@@ -576,7 +577,7 @@ if (args.Length > 0 && args[0] == "--defbreak")
     Entity War2H()
     {
         var w = BuildPlayer(Race.Human, BaseClass.Fighter, L, quality: q, warrior: true,
-                            discipline: Discipline.Ravager, secondClass: 14, fourth: true);
+                            discipline: Discipline.Ravager, secondClass: 14, fourth: true, npcBuffed: bf);
         w.Inventory.RemoveAll(i => ItemCatalog.Get(i.DefId)?.Slot == EquipSlot.Weapon);
         EquipEnchanted(w, $"sword2h_t{t}{sfx}", 0);
         w.RecomputeDerived();
@@ -587,10 +588,10 @@ if (args.Length > 0 && args[0] == "--defbreak")
     var sheets = new (string Name, Entity E, int Items, bool Shield)[]
     {
         ("tank (Bulwark)", BuildPlayer(Race.Human, BaseClass.Fighter, L, quality: q,
-             discipline: Discipline.Bulwark, fourth: true), heavyItems, true),
+             discipline: Discipline.Bulwark, fourth: true, npcBuffed: bf), heavyItems, true),
         ("warrior",        War2H(), heavyItems, false),
         ("mage (Magus)",   BuildPlayer(Race.Human, BaseClass.Mage, L, quality: q,
-             discipline: Discipline.Magus, fourth: true), robeItems, false),
+             discipline: Discipline.Magus, fourth: true, npcBuffed: bf), robeItems, false),
     };
     float lm = StatCalculator.PhysicalDefenceLevelMod(L);
     int basePd = StatCalculator.PhysicalDefenceBase(L);
@@ -605,8 +606,9 @@ if (args.Length > 0 && args[0] == "--defbreak")
                              : name.StartsWith("mage") ? "robe mastery + set" : "heavy mastery + set";
         Console.WriteLine($"  {name,-16} {e.EffectiveDefence,7:F0} {items,6} {expected,20:F0} {leftover,11:0.00}  {what}");
         if (shield)
-            Console.WriteLine($"  {"",-16} {"",7}   of which ShieldDefense = {e.ShieldDefense} "
-                            + $"(added OUTSIDE levelMod, at Entity.cs:1711) and body P.Def = {e.EffectiveDefence - e.ShieldDefense:F0}");
+            Console.WriteLine($"  {"",-16} {"",7}   the shield adds NO P.Def since 2026-09-09 - it pays "
+                            + $"only on a block: chance {e.BlockChance:P0} x reduction {e.BlockReduction:P0} "
+                            + $"= {e.BlockChance * e.BlockReduction:P1} average mitigation");
     }
     Console.WriteLine();
     var tankE = sheets[0].E; var mageE = sheets[2].E; var warE = sheets[1].E;

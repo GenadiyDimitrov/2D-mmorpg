@@ -601,7 +601,6 @@ public record ItemDef(
     // ----- Shield stats (only when Slot == Shield) -----
     float BlockChance = 0f,        // flat chance to block (0..1); buffs/passives add
     float BlockReduction = 0f,     // fraction of damage removed on a block (0..1)
-    int ShieldDefense = 0,         // flat defence while shield equipped
     float ShieldCritDefense = 0f,  // reduces attacker crit CHANCE (0..1)
     int ShieldEvasionPenalty = 0,  // lowers your evasion (the IG tradeoff)
     // ----- Consumables -----
@@ -1711,7 +1710,7 @@ public static class ItemCatalog
         // nothing to author.
         list.Add(new ItemDef(WoodenShield, "Wooden Shield", EquipSlot.Shield,
             ItemGrade.F, ItemRarity.Common,
-            BlockChance: 0.10f, BlockReduction: 0.10f, ShieldDefense: 7,
+            BlockChance: 0.10f, BlockReduction: 0.10f,
             ShieldCritDefense: 0.03f, ShieldEvasionPenalty: 3,
             Tradable: false, SellPriceOverride: 0, BuyPriceOverride: TrainingGearPrice,
             NoAttributes: true,
@@ -2229,7 +2228,6 @@ public static class ItemCatalog
                     HpBonus = S(d.HpBonus),
                     MpBonus = S(d.MpBonus),
                     EvaBonus = S(d.EvaBonus),
-                    ShieldDefense = S(d.ShieldDefense),
                     // THE 70% SPLIT. Below Epic a piece is numbers only — no set bonus, no rolled
                     // attributes — and from Epic up it keeps its identity. That one rule is what makes
                     // Rare and Epic (identical raw stats) different things worth wanting.
@@ -2472,9 +2470,12 @@ public static class ItemCatalog
         // the difference back through his PASSIVE, not through the item (Skills.Fighter Shield Mastery
         // passive went x5, 0.40 -> 2.00), which is exactly the split he asked for: at 61 a shielded mage
         // now carries 51 (~+7% P.Def) and a mastery tank 229 (~+33%).
-        // ⚠ Nothing is added at block time. A block is its reduction % and nothing else — the flat
-        // defence already paid on the hit. Do not "re-add the shield on a block": that IS the bug.
-        int[] shDef = Column(18, new[]{ 29, 41, 46, 51, 60 }, 83);
+        // 🔑 A SHIELD HAS NO DEFENCE NUMBER ANY MORE (owner, 2026-09-09). The `shDef` ladder that
+        // stood here — 18/29/41/46/51/60/83 — was added into P.Def PERMANENTLY, so it paid on every
+        // hit and was then multiplied by every P.Def passive, buff and set on top: 300 points on a
+        // level-76 tank off an 83-point item. His ruling: *"lets remove defence as additional armor …
+        // the shield only will provide dmg reduction based on actual block"*. A block is now its
+        // reduction %, and that is the shield's entire contribution.
         // ===== HE RE-GAVE THE WHOLE BLOCK PROFILE (2026-08-11) ======================================
         // "To much dmg reduction on top of the additional pdef when sucsessifull blocked. Mage should
         //  not be immortal even with a shield — it helps a bit but not 47% dmg reduction with 33%
@@ -2508,7 +2509,7 @@ public static class ItemCatalog
         for (int i = 0; i < lv.Length; i++)
             yield return new ItemDef($"shield_t{lv[i]}", $"{GradeTheme(lv[i])} Aegis",
                 EquipSlot.Shield, TierGrade(lv[i]), ItemRarity.Mythic,
-                BlockChance: shBlock[i], BlockReduction: shReduce[i], ShieldDefense: shDef[i],
+                BlockChance: shBlock[i], BlockReduction: shReduce[i],
                 ShieldCritDefense: shCrit[i], ShieldEvasionPenalty: shEvaPen[i],
                 SetId: $"set_heavy_t{lv[i]}",
                 ItemLevel: lv[i], NoAttributes: true);

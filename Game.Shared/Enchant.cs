@@ -91,7 +91,9 @@ public static class EnchantRules
     /// was ALREADY paying on every hit. Once that flat defence was cut 5x the same day, an enchant
     /// worth 9 a level would have been worth more than the shield itself by about +6.</para>
     /// Its Max HP is the ordinary armour row too (480 at S).</summary>
-    public const int ShieldDefPerEnchant = ArmorDefPerEnchant;
+    // (`ShieldDefPerEnchant` was here. A shield has carried no defence of its own since
+    //  2026-09-09, so an enchanted shield now buys Max HP only, through HpDelta below.
+    //  OPEN: whether a shield enchant should instead buy BLOCK CHANCE is unruled.)
 
     /// <summary>M.Def a single JEWEL gains per enchant level.</summary>
     public const int JewelMDefPerEnchant = 3;
@@ -146,12 +148,9 @@ public static class EnchantRules
     public static int DefDelta(ItemDef def, int enchant) =>
         enchant <= 0 || def.Slot != EquipSlot.Armor ? 0 : ArmorDefPerEnchant * enchant;
 
-    /// <summary>Total shield defence an enchant level adds (9/level — see
-    /// <see cref="ShieldDefPerEnchant"/>). A SEPARATE method because a shield's defence is
-    /// <see cref="ItemDef.ShieldDefense"/>, a different field on a different accumulator; folding the
-    /// two together would double-count. Block chance / reduction / crit-defence do NOT scale.</summary>
-    public static int ShieldDefDelta(ItemDef def, int enchant) =>
-        enchant <= 0 || def.Slot != EquipSlot.Shield ? 0 : ShieldDefPerEnchant * enchant;
+    // (`ShieldDefDelta` was here - it added 9 P.Def per enchant level to the shield's own
+    //  defence pool. That pool is gone as of 2026-09-09, so the method has no accumulator
+    //  left to feed. An enchanted shield still buys Max HP through HpDelta.)
 
     /// <summary>Total M.Def an enchant level adds. Jewels are the only source of M.Def, and the only
     /// slot this pays out on — an armour piece's authored M.Def does not scale.</summary>

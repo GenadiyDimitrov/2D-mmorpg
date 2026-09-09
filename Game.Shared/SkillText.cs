@@ -116,7 +116,7 @@ public static class SkillText
         // already state their condition by being grouped under "Light:" / "Bow:"; these three were the
         // ones stating a bare number with the condition buried in the prose.
         Pct(o, "Block chance (with a shield)", p.BlockChancePct);
-        Pct(o, "Shield def (with a shield)", p.ShieldDefPct);
+        Pct(o, "Shield damage reduction (with a shield)", p.BlockReductionPct);
         Flat(o, "Bow range (with a bow)", p.BowRange);
 
         // Resists + interrupt
@@ -221,7 +221,7 @@ public static class SkillText
         Pct(o, "Melee vamp", m.MeleeVamp);
         Pct(o, "Spell vamp", m.SpellVamp);
         Pct(o, "Reflect", m.Reflect);
-        Pct(o, "Shield def", m.ShieldDefPct);
+        Pct(o, "Shield damage reduction", m.BlockReductionPct);
         // 🔴 THE FOUR S-GRADE CHANNELS (playtest-21 `67i`). He read the light-S set's flat +200 crit
         // damage on his stat sheet and then could not find it on the Leather armour card: these four
         // were APPENDED to StatMods for the 0.59.1 S sets and never given a line here, so every set
@@ -378,7 +378,7 @@ public static class SkillText
         SkillEffect.BuffMagicCritRate => "M.crit rate",
         SkillEffect.BuffCritDamage => "Crit damage",
         SkillEffect.BuffBlockChance => "Block chance",
-        SkillEffect.BuffShieldDef => "Shield def",
+        SkillEffect.BuffShieldDef => "Shield damage reduction",
         SkillEffect.BuffCooldown => "Reuse delay",
         SkillEffect.BuffPhysAtk => "P.Atk",
         SkillEffect.BuffCritDmgResist => "Crit dmg resist",

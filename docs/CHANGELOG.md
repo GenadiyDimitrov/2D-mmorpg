@@ -7,13 +7,58 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.117.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.118.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
 
-## 2026-09-09 (latest) — 0.117.0: the runes become the SHOT, and defence gets its level term (`BL-185`)
+## 2026-09-09 (latest) — 0.118.0: the shield stops being armour (`BL-185`)
+
+⚠ **NEW APK** — `StatsUpdate` loses a field and the item card loses a line.
+
+Your ruling: *"lets remove defence as additional armor … the shield only will provide dmg reduction
+based on actual block"*. An S-grade shield carried **+83 flat P.Def**, which was added into
+`EffectiveDefence` on **every** hit and then multiplied by every P.Def passive, buff and set on top —
+**300 points** on a level-76 tank, **428** at 90 — and a block then removed another slice on top of
+that. The shield now pays through one channel only.
+
+### What changed
+
+- **`ShieldDefense` is gone end-to-end** — the `ItemDef` field, the `Entity` accumulator, the
+  `StatsUpdate` DTO field, the item-card line, and `EnchantRules.ShieldDefDelta`. `Entity.cs`'s
+  `EffectiveDefence` no longer reads it.
+- **`ShieldDefPct` became `BlockReductionPct`** and now thickens the block instead of a defence pool
+  that no longer exists, in all three channels (passive, buff, armour set).
+- **Every authored value halved**, per your numbers: Shield Mastery `30/40/50/50/50/50/60%` →
+  `15/20/25/25/25/25/30%`; Shield Hardening (`cast_shield_def`) `30/40/50%` → `15/20/25%`;
+  Shield Reinforcement (`wc_shield_reinforcement`) `50%` → `25%`. The CSVs moved with them and now
+  say "Shield Dmg Reduction" in those words — so the **×5 IG-units exemption in `SkillCsvSeed` is
+  deleted**: column and build are 1:1 again.
+- **`StatCaps.BlockChance` 100% → 80%**, your new ceiling.
+
+### Where it lands
+
+| | block chance | reduction | average mitigation |
+|---|---|---|---|
+| any class, S shield, no mastery | 25% | 25% | **6.3%** |
+| tank @90, unbuffed | 50% | 32.5% | 16.2% |
+| tank @90, with the buffer | 80% (cap) | 40.6% | **~32%** |
+
+Both of your targets — ~6% for a shield-carrying non-tank, ~32% for a fully-buffed tank — land
+without further tuning. And `tank:mage` P.Def falls to **2.03 @76 / 2.37 @90** (from 3.09 / 3.56 two
+versions ago) with **no CSV number retuned**: the shield leaving P.Def did it.
+
+⚠ **This reverses playtest-22 ruling `70b`** (*"Shields dmg reduction is never increased by any means
+…only chance"*), which `Entity.cs` explicitly enforced. Newest ruling wins, but the consequence is
+that the item card's "25%" is no longer the literal number subtracted — the stats window shows the
+effective figure, the card shows the item's own.
+
+🔵 **Two things left open, both yours:** the armour sets' shield clause (four sets carried a shield
+multiplier; repointing it at block reduction overshot your 40%, so it is **dropped** for now — say if
+it should instead buy block CHANCE), and shield enchanting, which now buys Max HP only.
+
+## 2026-09-09 — 0.117.0: the runes become the SHOT, and defence gets its level term (`BL-185`)
 
 ⚠ **NEW APK** — the rune buff descriptions and the buff-tooltip text come from `Game.Shared`, and the
 defence change moves every P.Def number the client displays.

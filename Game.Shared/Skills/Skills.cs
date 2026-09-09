@@ -1408,7 +1408,7 @@ public readonly record struct PassiveEffect(
     // 🔑 SHIELD-GATED. The whole effect is off while no shield is equipped — his Healer's Shield
     // Mastery row is *"When Sheild is equiped"*, and until this existed those two numbers rode a
     // plain passive that a healer kept after dropping the shield for a two-handed staff.
-    // ⚠ ALL-OR-NOTHING, unlike the per-field `BlockChancePct`/`ShieldDefPct` gate further down: those
+    // ⚠ ALL-OR-NOTHING, unlike the per-field `BlockChancePct`/`BlockReductionPct` gate further down: those
     // scale the shield's OWN numbers and are inert without one anyway, while this gates effects
     // (heal power, MP regen) that would otherwise apply perfectly well bare-handed.
     bool RequiresShield = false,
@@ -1468,7 +1468,7 @@ public readonly record struct PassiveEffect(
     float MagicResist = 0f,
     // Shield passive (Tank Shield Mastery): scale the equipped shield's block chance and
     // shield defence (fractions; only matter with a shield equipped). Re-clamped after passives.
-    float BlockChancePct = 0f, float ShieldDefPct = 0f,
+    float BlockChancePct = 0f, float BlockReductionPct = 0f,
     // (`DefencePctWithShield` DELETED 2026-08-29, `BL-107`. It existed only because a passive had
     //  nowhere to hang a condition: Shield Mastery's "+10% P.Def" is the WHOLE physical defence and
     //  he ruled it shield-conditional (2026-08-21). There is a general gate now — RequiresShield +

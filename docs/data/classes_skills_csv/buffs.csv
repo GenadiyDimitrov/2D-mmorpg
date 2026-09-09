@@ -134,9 +134,9 @@ Shield Blessing,cast_shield_block,Magic/Buff,,,600,0,party/single,1,Increases Sh
 Shield Blessing,cast_shield_block,Magic/Buff,,,600,0,party/single,1,Increases Shield Rate with 25%
 Shield Blessing,cast_shield_block,Magic/Buff,,,600,0,party/single,1,Increases Shield Rate with 30%
 ,,,,,,,,,,,,---------------------------Shield Harden--------------------------
-Shield Hardening,cast_shield_def,Magic/Buff,,,600,0,party/single,1,Increases Shield PDef with 30%
-Shield Hardening,cast_shield_def,Magic/Buff,,,600,0,party/single,1,Increases Shield PDef with 40%
-Shield Hardening,cast_shield_def,Magic/Buff,,,600,0,party/single,1,Increases Shield PDef with 50%
+Shield Hardening,cast_shield_def,Magic/Buff,,,600,0,party/single,1,Increases Shield Dmg Reduction with 15%
+Shield Hardening,cast_shield_def,Magic/Buff,,,600,0,party/single,1,Increases Shield Dmg Reduction with 20%
+Shield Hardening,cast_shield_def,Magic/Buff,,,600,0,party/single,1,Increases Shield Dmg Reduction with 25%
 ,,,,,,,,,,,,---------------------------Mana Blessing--------------------------
 Mana Blessing,mana_blessing,Magic/Buff,,,600,0,party/single,1,Decrease Physical MP Cost by 10% and Magic MP Cost by 5%
 Mana Blessing,mana_blessing,Magic/Buff,,,600,0,party/single,1,Decrease Physical MP Cost by 15% and Magic MP Cost by 7%
@@ -207,7 +207,7 @@ Harmony of Madness,wc_harmony_madness,Magic/Buff,,,600,800,party/aoe,1,"−10% M
 War Frenzy,madness,Magic/Buff,,,600,800,party/aoe,1,"-10% Max HP/MP, +8% offence and speed, +8 move, -8 evasion."
 War Bulwark,wc_war_bulwark,Magic/Buff,,,600,800,party/aoe,1,+15% P.Def. Does not stack with Other Great Might|Bulwark effects.
 War Might,wc_war_might,Magic/Buff,,,600,800,party/aoe,1,+10% P.Atk. Does not stack with Other Great Might|Bulwark effects.
-Shield Reinforcement,wc_shield_reinforcement,Magic/Buff,,,600,800,party/aoe,1,"Increases Shield P.Def with 50%, and Rate with 30%",
+Shield Reinforcement,wc_shield_reinforcement,Magic/Buff,,,600,800,party/aoe,1,"Increases Shield Dmg Reduction with 25%, and Rate with 30%",
 Feral Precision,wc_feral_precision,Magic/Buff,,,600,800,party/aoe,1,"+30% critical rate, +35% critical damage, +4 accuracy"
 Feral Bloodlust,wc_feral_bloodlust,Magic/Buff,,,600,800,party/aoe,1,"+15% P.Atk, Attack Speed +33%, 9% melee vampirism."
 Arcane Insight,wc_arcane_insight,Magic/Buff,,,600,800,party/aoe,1,"+32% M.Atk, +100% magic critical rate."

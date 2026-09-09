@@ -15749,7 +15749,7 @@ public class GameLoopService : BackgroundService
             p.MaxHp, p.MaxMp, (int)p.EffectiveAttack, (int)p.EffectiveDefence,
             p.Accuracy, (int)p.EffectiveEvasion, p.CritChance, p.BasicAttackRange, p.SecondClass,
             p.EffectiveSpeed, SkillMath.CastModifier(p.Wit), p.EffectiveCastSpeedMultiplier, p.EffectiveAttackSpeedMultiplier, p.SkillPoints, p.MoveState, (int)p.EffectiveMagicAttackShown, p.MagicCritChance,
-            p.HasShield, p.BlockChance, p.BlockReduction, p.ShieldDefense, (int)p.EffectiveMagicDefence,
+            p.HasShield, p.BlockChance, p.BlockReduction, (int)p.EffectiveMagicDefence,
             p.ActiveArmorSet, p.ArmorMasteryLabel,
             hpReg, mpReg, p.CritDamageBonus,
             p.MeleeVamp, p.SpellVamp, p.CooldownReduction,

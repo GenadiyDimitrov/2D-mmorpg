@@ -1255,7 +1255,6 @@ public class Entity
     public bool HasShield { get; set; }
     public float BlockChance { get; set; }       // chance to block a physical hit
     public float BlockReduction { get; set; }    // damage fraction removed on block
-    public int ShieldDefense { get; set; }       // flat defence from the shield
     public float ShieldCritDefense { get; set; } // reduces attacker crit chance
     public float BasicAttackRange { get; set; } = GameConstants.MeleeRange;
 
@@ -1708,7 +1707,12 @@ public class Entity
 
     /// <summary>Defence including BuffDef (adds) and DebuffDef (subtracts).</summary>
     public float EffectiveDefence =>
-        AdminStat("pdef") ?? ModifiedStat(Defence + ShieldDefense, SkillEffect.BuffDef, SkillEffect.DebuffDef)
+        // 🔑 THE SHIELD IS NOT ARMOUR (owner, 2026-09-09): *"lets remove defence as additional armor …
+        // the shield only will provide dmg reduction based on actual block"*. `+ ShieldDefense` used to
+        // sit here, so an S-grade shield's 83 points paid out on EVERY hit and were then multiplied by
+        // every P.Def passive and buff on top — 300 points on a level-76 tank. The shield now pays only
+        // through <see cref="BlockReduction"/>, on hits it actually blocks.
+        AdminStat("pdef") ?? ModifiedStat(Defence, SkillEffect.BuffDef, SkillEffect.DebuffDef)
                              * (1f + FinalDefenceBonus(magic: false));
 
     /// <summary>FINAL DEFENSE (the tank's `tank_final_defense`, level 60) — his three HP bands:
@@ -2613,7 +2617,6 @@ public class Entity
         HasShield = false;
         BlockChance = 0f;
         BlockReduction = 0f;
-        ShieldDefense = 0;
         ShieldCritDefense = 0f;
         HpRegenMult = 1f;
         MpRegenMult = 1f;
@@ -2704,7 +2707,6 @@ public class Entity
                 HasShield = true;
                 BlockChance = def.BlockChance;
                 BlockReduction = def.BlockReduction;
-                ShieldDefense += def.ShieldDefense + EnchantRules.ShieldDefDelta(def, item.Enchant);
                 ShieldCritDefense = def.ShieldCritDefense;
                 Evasion -= def.ShieldEvasionPenalty;   // shield lowers evasion
             }
@@ -2916,7 +2918,7 @@ public class Entity
                 Defence = (int)((Defence + (int)sb.PDef) * (1f + sb.PDefPct));
                 MagicDefence = (int)((MagicDefence + (int)sb.MDef) * (1f + sb.MDefPct));
                 AttackPower = (int)((AttackPower + (int)sb.PAtk) * (1f + sb.PAtkPct));
-                ShieldDefense = (int)(ShieldDefense * (1f + sb.ShieldDefPct));
+                if (sb.BlockReductionPct != 0f) BlockReduction *= 1f + sb.BlockReductionPct;
                 MeleeReflect += sb.Reflect;
                 CcResist += sb.CcResist;
                 // Heavy S repeats "PVP Dmg Received x0.95" in its shield clause, so shield-up compounds
@@ -2988,8 +2990,14 @@ public class Entity
                 }
                 if (buff.Has(SkillEffect.BuffShieldDef))
                 {
-                    ShieldDefense += (int)buff.Flat(SkillEffect.BuffShieldDef);
-                    ShieldDefense = (int)(ShieldDefense * (1f + buff.Percent(SkillEffect.BuffShieldDef)));
+                    // 🔑 REPOINTED 2026-09-09: this channel used to thicken the shield's own DEFENCE,
+                    // which fed P.Def on every hit. The shield no longer has a defence pool, so the
+                    // buff now scales the thing a shield actually does — the damage it removes when it
+                    // BLOCKS. Values were halved at the same time (the ladder 30/40/50 -> 15/20/25),
+                    // because a multiplier on a 25% block reduction is worth far more than the same
+                    // multiplier was on a flat defence number.
+                    if (buff.Percent(SkillEffect.BuffShieldDef) != 0f)
+                        BlockReduction *= 1f + buff.Percent(SkillEffect.BuffShieldDef);
                     // 🔴 A shield-defence buff does NOT thicken the block. HIS RULING, playtest-22 `70b`:
                     // *"Shields dmg reduction is never increased by any means ...only chance."* It used
                     // to add Percent x 0.2 here. See the matching removal in the PASSIVE layer below —
@@ -3187,7 +3195,7 @@ public class Entity
                 {
                     if (pe.BlockChancePct != 0f) BlockChance *= 1f + pe.BlockChancePct;
                     // 🔴 A shield-defence passive raises the shield's DEFENCE and nothing else. It used
-                    // to also add `ShieldDefPct * 0.04` to BlockReduction, which at a maxed Shield
+                    // to also add `BlockReductionPct * 0.04` to BlockReduction, which at a maxed Shield
                     // Mastery (2.00) was a flat +8 points — exactly what he caught in playtest-22 `70b`:
                     // *"The shield says 10 but I see 18% ..the shield says 20 I see 28% ... Shields dmg
                     // reduction is never increased by any means ...only chance."*
@@ -3195,8 +3203,8 @@ public class Entity
                     // passive, buff, set or enchant — may raise it; the ladder scales block CHANCE and
                     // shield DEFENCE instead. That is what makes the item card's "10%" readable as the
                     // number that will actually be subtracted.
-                    if (pe.ShieldDefPct != 0f)
-                        ShieldDefense = (int)(ShieldDefense * (1f + pe.ShieldDefPct));
+                    if (pe.BlockReductionPct != 0f)
+                        BlockReduction *= 1f + pe.BlockReductionPct;
                     // (`DefencePctWithShield` used to live here — Shield Mastery's "+10% P.Def" on the
                     //  WHOLE physical defence, shield-gated. It was a bespoke field invented in
                     //  2026-08-21 for one skill because there was no general gate. `BL-107` built one,
@@ -3722,7 +3730,6 @@ public class Entity
             Defence = (int)(Defence * armor);
             MagicDefence = (int)(MagicDefence * armor);
             Evasion = (int)(Evasion * armor);
-            ShieldDefense = (int)(ShieldDefense * armor);
             // Speed multipliers are TIME factors: dividing by the penalty makes you slower.
             CastSpeedMultiplier = Math.Clamp(CastSpeedMultiplier / armor, 0.4f, 6f);
             AttackSpeedMultiplier = Math.Clamp(AttackSpeedMultiplier / armor, 0.4f, 6f);

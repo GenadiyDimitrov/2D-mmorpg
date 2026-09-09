@@ -79,9 +79,9 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 70,Harmonist Bow Mastery,wc_harmonist_bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"Bow: Range +400, P.Atk +560;",0,390k,[],Elf,
 74,Harmonist Bow Mastery,wc_harmonist_bow_mastery,Passive,bow,,0,0,self/single,0,0,0,"Bow: Range +400, P.Atk +600;",0,880k,[],Elf,
 ,,,,,,,,,,,,,,,,,-----------------------Shield Mastery-----------------------
-40,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield P.Def +30%, Shield Rate +50%;",0,36k,[],Human,
-60,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield P.Def +40%, Shield Rate +70%; bow resistance 16%",0,120k,[],Human,
-70,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield P.Def +50%, Shield Rate +85%; +10% P.Def, bow resistance 16%",0,390k,[],Human,
+40,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield Dmg Reduction +15%, Shield Rate +50%;",0,36k,[],Human,
+60,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield Dmg Reduction +20%, Shield Rate +70%; bow resistance 16%",0,120k,[],Human,
+70,Shield Mastery,tank_shield_mastery,Passive,,heavy/shield,0,0,self/single,0,0,0,"Shield Dmg Reduction +25%, Shield Rate +85%; +10% P.Def, bow resistance 16%",0,390k,[],Human,
 ,,,,,,,,,,,,,,,,,-----------------------Warlock Weapon Mastery-----------------------
 40,Warlock Weapon Mastery,wc_bloodhanter_blunt_mastery,Passive,blunt/2,,0,0,self/single,0,0,0,"2h Blunt: P.Atk 30, Accuracy +3;",0,36k,[],Demon,
 48,Warlock Weapon Mastery,wc_bloodhanter_blunt_mastery,Passive,blunt/2,,0,0,self/single,0,0,0,"2h Blunt: P.Atk 40, Accuracy +3;",0,64k,[],Demon,
@@ -244,11 +244,11 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 66,Shield Blessing,cast_shield_block,Magic/Buff,,,600,0,party/single,1,1,1200,Increases Shield Rate with 25%,110,145k,[],,
 70,Shield Blessing,cast_shield_block,Magic/Buff,,,600,0,party/single,1,1,1200,Increases Shield Rate with 30%,120,200k,[],,
 ,,,,,,,,,,,,,,,,,--------------------------Shield Harden--------------------------
-58,Shield Hardening,cast_shield_def,Magic/Buff,,,600,0,party/single,1,1,1200,Increases Shield PDef with 30%,90,45k,[],,
-66,Shield Hardening,cast_shield_def,Magic/Buff,,,600,0,party/single,1,1,1200,Increases Shield PDef with 40%,110,145k,[],,
-72,Shield Hardening,cast_shield_def,Magic/Buff,,,600,0,party/single,1,1,1200,Increases Shield PDef with 50%,125,330k,[],,
+58,Shield Hardening,cast_shield_def,Magic/Buff,,,600,0,party/single,1,1,1200,Increases Shield Dmg Reduction with 15%,90,45k,[],,
+66,Shield Hardening,cast_shield_def,Magic/Buff,,,600,0,party/single,1,1,1200,Increases Shield Dmg Reduction with 20%,110,145k,[],,
+72,Shield Hardening,cast_shield_def,Magic/Buff,,,600,0,party/single,1,1,1200,Increases Shield Dmg Reduction with 25%,125,330k,[],,
 ,,,,,,,,,,,,,,,,,--------------------------Shield Reinforcement--------------------------
-74,Shield Reinforcement,wc_shield_reinforcement,Magic/Buff,,,600,800,party/aoe,1,1,1200,"Increases Shield P.Def with 50%, and Rate with 30%",375,880k,[cast_shield_def cast_shield_block],,
+74,Shield Reinforcement,wc_shield_reinforcement,Magic/Buff,,,600,800,party/aoe,1,1,1200,"Increases Shield Dmg Reduction with 25%, and Rate with 30%",375,880k,[cast_shield_def cast_shield_block],,
 ,,,,,,,,,,,,,,,,,---------------------------------------------------------------------------------------------Aim & Focus & Ferocity-------------------------------------------------------------------------------------------------------------------
 ,,,,,,,,,,,,,,,,,------------------------------Focus------------------------------
 44,Focus,cast_crit_rate,Magic/Buff,,,600,0,party/single,1,1,1200,+25% critical rate.,72,22k,[],,

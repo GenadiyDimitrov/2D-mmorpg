@@ -26,6 +26,10 @@ ManaDrain      = targetMaxMp * power / 1000                  power is PER MILLE
   than they read: doubling M.Atk is ×1.41 damage, doubling P.Atk is ×2.
 - Magic currently divides by **physical** defence in some paths — magic-resist is a `%` reduction
   (`BuffMagicResist`), not a separate defence stat.
+- 🔑 **THE SHIELD IS NOT ARMOUR** (2026-09-09, `BL-185`): a shield contributes **no P.Def at all**.
+  It pays only when it BLOCKS — `blocked = damage x (1 - BlockReduction)` — and `StatCaps.BlockChance`
+  caps the roll at **80%**. `BlockReductionPct` (passive, buff and set) scales the shield's own
+  reduction; nothing scales a shield defence any more, because there is none.
 - 🔑 **THE SHOT — the War / Spell Runes multiply the FINISHED damage, ×2, per channel** (2026-09-09,
   `BL-185`). `FinalDamage = raw x (1+pve/pvp bonus) x conditional x skillMult x raidMult x takenMult
   x runeMult`, in `GameLoopService.FinalizeDamage`. They are NOT stat buffs any more: `BuffPhysAtk

@@ -367,9 +367,9 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 72,Ultimate party Heal,ultimate_party_heal,Magic/Heal,,,0,1000,party/aoe,7,3,0,heal with power 930. Consumes 4 skill stones,234,650k,[]
 74,Ultimate party Heal,ultimate_party_heal,Magic/Heal,,,0,1000,party/aoe,7,3,0,heal with power 1000. Consumes 4 skill stones,240,880k,[]
 ,,,,,,,,,,,,,,,,,----------------------------Shield Hardening----------------------------
-58,Shield Hardening,cast_shield_def,Magic/Buff,,,600,0,party/single,1,1,1200,Increases Shield PDef with 30%,90,45k,[]
-66,Shield Hardening,cast_shield_def,Magic/Buff,,,600,0,party/single,1,1,1200,Increases Shield PDef with 40%,110,145k,[]
-72,Shield Hardening,cast_shield_def,Magic/Buff,,,600,0,party/single,1,1,1200,Increases Shield PDef with 50%,125,330k,[] 
+58,Shield Hardening,cast_shield_def,Magic/Buff,,,600,0,party/single,1,1,1200,Increases Shield Dmg Reduction with 15%,90,45k,[]
+66,Shield Hardening,cast_shield_def,Magic/Buff,,,600,0,party/single,1,1,1200,Increases Shield Dmg Reduction with 20%,110,145k,[]
+72,Shield Hardening,cast_shield_def,Magic/Buff,,,600,0,party/single,1,1,1200,Increases Shield Dmg Reduction with 25%,125,330k,[] 
 ,,,,,,,,,,,,,,,,,----------------------------Mana Blessing----------------------------
 58,Mana Blessing,mana_blessing,Magic/Buff,,,600,0,party/single,1,1,1200,Decrease Physical MP Cost by 10% and Magic MP Cost by 5%,90,45k,[]
 66,Mana Blessing,mana_blessing,Magic/Buff,,,600,0,party/single,1,1,1200,Decrease Physical MP Cost by 15% and Magic MP Cost by 7%,110,145k,[]

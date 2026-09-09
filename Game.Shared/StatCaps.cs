@@ -229,7 +229,7 @@ public static class StatCaps
     public const float CritChance = 0.50f;
 
     /// <summary>Block chance ceiling — a fully-built tank can reach ~100%.</summary>
-    public const float BlockChance = 1.0f;
+    public const float BlockChance = 0.80f;
 
     /// <summary>Block damage-reduction ceiling (max fraction removed on block).</summary>
     public const float BlockReduction = 0.80f;

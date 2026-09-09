@@ -1270,9 +1270,10 @@ namespace Game.Client
                     EquipSlot.Armor  => "+" + EnchantRules.ArmorDefPerEnchant + " Def"
                                         + (EnchantRules.HpDelta(def, 1) > 0
                                            ? ", +" + EnchantRules.HpDelta(def, 1) + " HP" : ""),
-                    EquipSlot.Shield => "+" + EnchantRules.ShieldDefPerEnchant + " shield defence"
-                                        + (EnchantRules.HpDelta(def, 1) > 0
-                                           ? ", +" + EnchantRules.HpDelta(def, 1) + " HP" : ""),
+                    // A shield has carried no defence since 2026-09-09 - it pays only through block
+                    // reduction, which enchanting does not touch. So an enchant buys HP and nothing else.
+                    EquipSlot.Shield => EnchantRules.HpDelta(def, 1) > 0
+                                        ? "+" + EnchantRules.HpDelta(def, 1) + " HP" : "-",
                     EquipSlot.Jewel  => "+" + EnchantRules.JewelMDefPerEnchant + " M.Def"
                                         + (EnchantRules.MpDelta(def, 1) > 0
                                            ? ", +" + EnchantRules.MpDelta(def, 1) + " MP" : ""),
@@ -1293,8 +1294,8 @@ namespace Game.Client
             {
                 if (def.BlockChance > 0f)    Line("Block chance  " + (def.BlockChance * 100f).ToString("0.#") + "%");
                 if (def.BlockReduction > 0f) Line("Block reduction  " + (def.BlockReduction * 100f).ToString("0.#") + "%");
-                if (def.ShieldDefense > 0)
-                    Line("Shield defence  +" + (def.ShieldDefense + EnchantRules.ShieldDefDelta(def, item.Enchant)));
+                // ("Shield defence" was here. A shield no longer carries P.Def at all — 2026-09-09;
+                //  it pays through block reduction, which the two lines above already show.)
             }
 
             if (item.Attributes != null && item.Attributes.Length > 0)

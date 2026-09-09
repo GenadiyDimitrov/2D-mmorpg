@@ -64,7 +64,7 @@ public readonly record struct StatMods(
     float MeleeVamp = 0f, float SpellVamp = 0f, float Reflect = 0f,
     // Shield defence multiplier (the CSV's "shield.p.def x1.25"). Only bites while a shield is
     // equipped — used by the heavy sets' SHIELD-conditional bonus.
-    float ShieldDefPct = 0f,
+    float BlockReductionPct = 0f,
     // ===== The S-grade set bonuses (gear_sets.csv, him 2026-08-11) needed four more channels. =======
     // ⚠ APPENDED AT THE END ON PURPOSE. Scaled() and StatTotals.Add() build a new value POSITIONALLY,
     // so inserting a field in the middle of this list silently misaligns every field after it — the
@@ -147,7 +147,7 @@ public readonly record struct StatMods(
             CcResist * f, RestoreMpPct * f,
             R(Str), R(Agi), R(Con), R(Int), R(Wit), R(Spt),
             MeleeVamp * f, SpellVamp * f, Reflect * f,
-            ShieldDefPct * f,
+            BlockReductionPct * f,
             CritRateFlat * f, R(CritDamageFlat), MagicResist * f, PvpDamageTakenPct * f,
             R(Atk), MagicCritDamage * f, MpCostPct * f);
     }
@@ -188,7 +188,7 @@ public readonly record struct StatTotals(
     float RestoreMpPct = 0f,
     float Str = 0f, float Agi = 0f, float Con = 0f, float Int = 0f, float Wit = 0f, float Spt = 0f,
     float MeleeVamp = 0f, float SpellVamp = 0f, float Reflect = 0f,
-    float ShieldDefPct = 0f,
+    float BlockReductionPct = 0f,
     float CritRateFlat = 0f, float CritDamageFlat = 0f, float MagicResist = 0f,
     float PvpDamageTakenPct = 0f,
     float Atk = 0f,
@@ -220,7 +220,7 @@ public readonly record struct StatTotals(
         RestoreMpPct + s.RestoreMpPct,
         Str + s.Str, Agi + s.Agi, Con + s.Con, Int + s.Int, Wit + s.Wit, Spt + s.Spt,
         MeleeVamp + s.MeleeVamp, SpellVamp + s.SpellVamp, Reflect + s.Reflect,
-        Mul(ShieldDefPct, s.ShieldDefPct),
+        Mul(BlockReductionPct, s.BlockReductionPct),
         // All four SUM here (this is the mastery/Combine path, which is additive by design). NOTE the
         // armor-SET path in Entity.RecomputeDerived compounds PvpDamageTakenPct instead, because the
         // heavy-S set carries the clause twice — once on the set, once on its shield extra — and the CSV

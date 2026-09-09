@@ -343,7 +343,7 @@ public static partial class SkillCatalog
         // gone. Shield Blessing climbs 5 → 30% over six rungs (40/48/56/62/66/70) and Shield Hardening
         // 30 → 50% over three (58/66/72). The TOP of each is unchanged, which is what keeps
         // `Shield Bless and Harden` (the buffer's group @66) handing out exactly what it always did.
-        list.AddRange(Ladder(FamShieldDef,   "Shield Hardening", SkillEffect.BuffShieldDef,   ModifierMode.Percent, "shield P.Def", 0.30f, 0.40f, 0.50f));
+        list.AddRange(Ladder(FamShieldDef,   "Shield Hardening", SkillEffect.BuffShieldDef,   ModifierMode.Percent, "shield block reduction", 0.15f, 0.20f, 0.25f));
         list.AddRange(Ladder(FamShieldBlock, "Shield Blessing",  SkillEffect.BuffBlockChance, ModifierMode.Percent, "block chance", 0.05f, 0.10f, 0.15f, 0.20f, 0.25f, 0.30f));
 
         // Clarity: 20% is the cleric's @25; 30/40/50 are the healer's @40/48/56.

@@ -130,15 +130,21 @@ public static class ArmorSetCatalog
         // Heavy — "Ironforge". These are the sets the CSV gives a SHIELD-conditional extra to
         // (the def-oriented line: 20/40/52/61/76 — the *_dmg variants get none).
         GearSet("heavy", 20, "Ironforge", new StatMods(PDefPct: 0.05f, MaxHp: 135),
-            shieldBonus: new StatMods(ShieldDefPct: 0.10f)),                     // shield.p.def x1.1
+        // 🔑 THE SET'S SHIELD CLAUSE NO LONGER TOUCHES BLOCK REDUCTION (2026-09-09).
+        // These four carried `ShieldDefPct` — a multiplier on the shield's own DEFENCE, a stat
+        // that no longer exists. Repointing them at BlockReduction like the mastery and the buff
+        // OVERSHOOTS: the owner's target is 0.25 (S shield) x 1.30 (mastery) x 1.25 (buffer) =
+        // 0.406, and a further set multiplier took a level-90 tank to 0.53 before any buff.
+        // 🔵 OPEN, his call: drop it (what is done here), or give the set BLOCK CHANCE instead.
+            shieldBonus: new StatMods()),   // (was shield.p.def x1.1 - see the note above)
         GearSet("heavy", 40, "Ironforge", new StatMods(MaxHp: 270),
             shieldBonus: new StatMods(PDefPct: 0.05f)),                          // p.def x1.05
         GearSet("heavy", 52, "Ironforge", new StatMods(Con: 3, Str: 3),
-            shieldBonus: new StatMods(ShieldDefPct: 0.25f)),                     // shield.p.def x1.25
+            shieldBonus: new StatMods()),  // (was shield.p.def x1.25 - see the note above)
         GearSet("heavy", 61, "Ironforge", new StatMods(PAtkPct: 0.04f, Con: 2, Agi: -2, CcResist: 0.4f),
             shieldBonus: new StatMods(Reflect: 0.05f)),                          // reflect 5% of melee basic
         GearSet("heavy", 76, "Ironforge", new StatMods(MaxHp: 455, Str: 2, Con: 2, Agi: -2, CcResist: 0.4f),
-            shieldBonus: new StatMods(PDefPct: 0.05f, MDefPct: 0.05f, ShieldDefPct: 0.25f, Reflect: 0.05f)),
+            shieldBonus: new StatMods(PDefPct: 0.05f, MDefPct: 0.05f, Reflect: 0.05f)),
         // ===== S (level 80) — AUTHORED BY HIM 2026-08-11. The S row was "set bonus NOT authored yet"
         // in the CSV until now, so all three of these sets are NEW: an S body + S accessories completed
         // nothing at all before, which made the top grade the only one with no set identity. =====
@@ -149,7 +155,7 @@ public static class ArmorSetCatalog
         GearSet("heavy", 80, "Ironforge", new StatMods(Str: 3, Con: 2, Agi: -2, MaxHp: 550,
             CritRateFlat: 0.10f, CcResist: 0.4f, MagicResist: 0.02f, MeleeVamp: 0.02f,
             PvpDamageTakenPct: -0.05f),
-            shieldBonus: new StatMods(PDefPct: 0.06f, MDefPct: 0.06f, ShieldDefPct: 0.30f, Reflect: 0.05f,
+            shieldBonus: new StatMods(PDefPct: 0.06f, MDefPct: 0.06f, Reflect: 0.05f,
                 PvpDamageTakenPct: -0.05f)),
         // Light — "Nightleaf"
         GearSet("light", 20, "Nightleaf", new StatMods(Evasion: 2, MaxMp: 92)),
