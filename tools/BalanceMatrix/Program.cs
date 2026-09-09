@@ -531,6 +531,112 @@ if (args.Length > 0 && args[0] == "--dmgmatrix")
 // way; it is the ratio that is being examined, and the ratio is what the rolls multiply.
 // The `x2 M.Def` columns are his "fully buffed" case: buffs on this channel are large and mostly
 // multiplicative, so doubling the sheet is the honest shorthand until the 4th-class buff set is real.
+// ---------------------------------------------------------------------------------------------
+//  `--defbreak` — WHERE A P.DEF NUMBER ACTUALLY COMES FROM (BL-185, 2026-09-09).
+//
+//  The owner's question, and it is the right one: the +15%/+30% in his tank CSVs is IG's own Majesty
+//  skill, so it is NOT ours to delete. Take it out of the ratio and our tank:mage is still ~2.37
+//  against IG's armour-only 1.47 — "where does the other 60% come from?" A ratio cannot answer that;
+//  only a decomposition can. This prints, per sheet: the ITEM sum (which is the number IG's 526/442/
+//  359 actually are), the flat base, levelMod, and whatever multiplier is left over — that leftover
+//  IS the passive/set/mastery stack, isolated.
+// ---------------------------------------------------------------------------------------------
+if (args.Length > 0 && args[0] == "--defbreak")
+{
+    int L = args.Length > 1 ? int.Parse(args[1]) : 76;
+    string q = args.Length > 2 ? args[2] : "mythic";
+    int t = GearTier(L);
+    string sfx = q is "mythic" ? "" : "_" + q;
+
+    Console.WriteLine();
+    Console.WriteLine($"=== P.DEF DECOMPOSITION — level {L}, {q} gear (tier t{t}) ===");
+    Console.WriteLine("  IG's 526 heavy / 442 light / 359 robe are ITEM SUMS. That is the row to compare.");
+    Console.WriteLine();
+
+    int Def(string id) => ItemCatalog.Get(id)?.DefBonus ?? 0;
+    int[] SetPieces(string body) => new[]
+        { Def($"{body}_t{t}{sfx}"), Def($"helm_t{t}{sfx}"), Def($"gloves_t{t}{sfx}"), Def($"boots_t{t}{sfx}") };
+
+    Console.WriteLine($"  {"set",-8} {"body",6} {"helm",6} {"glove",6} {"boots",6} {"= ITEMS",8} | {"shield",7}");
+    foreach (var body in new[] { "heavy", "light", "robe" })
+    {
+        var p = SetPieces(body);
+        Console.WriteLine($"  {body,-8} {p[0],6} {p[1],6} {p[2],6} {p[3],6} {p.Sum(),8} | "
+                        + $"{Def($"shield_t{t}{sfx}"),7}");
+    }
+    int heavyItems = SetPieces("heavy").Sum(), lightItems = SetPieces("light").Sum(), robeItems = SetPieces("robe").Sum();
+    Console.WriteLine();
+    Console.WriteLine($"  ITEM-ONLY heavy:robe = x{(float)heavyItems / Math.Max(1, robeItems):0.00}"
+                    + $"   light:robe = x{(float)lightItems / Math.Max(1, robeItems):0.00}"
+                    + $"      <- IG: heavy:robe x1.47, light:robe x1.23");
+    Console.WriteLine();
+
+    // The 2H warrior needs his weapon on: the 2H Weapon Mastery carries DefencePct -0.10, so measuring
+    // him 1H-in-hand would flatter his P.Def by 10%.
+    Entity War2H()
+    {
+        var w = BuildPlayer(Race.Human, BaseClass.Fighter, L, quality: q, warrior: true,
+                            discipline: Discipline.Ravager, secondClass: 14, fourth: true);
+        w.Inventory.RemoveAll(i => ItemCatalog.Get(i.DefId)?.Slot == EquipSlot.Weapon);
+        EquipEnchanted(w, $"sword2h_t{t}{sfx}", 0);
+        w.RecomputeDerived();
+        return w;
+    }
+
+    // The finished sheets, built exactly as --dmgmatrix builds them.
+    var sheets = new (string Name, Entity E, int Items, bool Shield)[]
+    {
+        ("tank (Bulwark)", BuildPlayer(Race.Human, BaseClass.Fighter, L, quality: q,
+             discipline: Discipline.Bulwark, fourth: true), heavyItems, true),
+        ("warrior",        War2H(), heavyItems, false),
+        ("mage (Magus)",   BuildPlayer(Race.Human, BaseClass.Mage, L, quality: q,
+             discipline: Discipline.Magus, fourth: true), robeItems, false),
+    };
+    float lm = StatCalculator.PhysicalDefenceLevelMod(L);
+    int basePd = StatCalculator.PhysicalDefenceBase(L);
+    Console.WriteLine($"  levelMod = x{lm:0.00}   flat base = {basePd}   (the base is the empty-slot default; IG replaces it on equip)");
+    Console.WriteLine();
+    Console.WriteLine($"  {"sheet",-16} {"P.Def",7} {"items",6} {"(base+items)*lvlMod",20} {"LEFTOVER x",11}  what the leftover is");
+    foreach (var (name, e, items, shield) in sheets)
+    {
+        float expected = (basePd + items) * lm;
+        float leftover = e.EffectiveDefence / Math.Max(1f, expected);
+        string what = shield ? "shield + Majesty% + tank mastery flats + set"
+                             : name.StartsWith("mage") ? "robe mastery + set" : "heavy mastery + set";
+        Console.WriteLine($"  {name,-16} {e.EffectiveDefence,7:F0} {items,6} {expected,20:F0} {leftover,11:0.00}  {what}");
+    }
+    Console.WriteLine();
+    var tankE = sheets[0].E; var mageE = sheets[2].E; var warE = sheets[1].E;
+    Console.WriteLine($"  FINISHED tank:mage = x{tankE.EffectiveDefence / Math.Max(1f, mageE.EffectiveDefence):0.00}"
+                    + $"   warrior:mage = x{warE.EffectiveDefence / Math.Max(1f, mageE.EffectiveDefence):0.00}"
+                    + $"      <- IG armour-only: x1.47");
+    Console.WriteLine();
+    Console.WriteLine("  🔑 warrior and tank wear the SAME heavy set here. Everything between them is");
+    Console.WriteLine("     shield + tank passives, NOT armour weight — so the weight ladder can only");
+    Console.WriteLine("     ever explain the warrior:mage column.");
+
+    // ---- Strip the LEARNED SKILLS and re-derive: what is left is gear + sets alone, so the
+    //      difference is the PASSIVE stack in isolation. This is the number the ratio hides.
+    Console.WriteLine();
+    Console.WriteLine("  ---- PASSIVES ISOLATED (same character, learned skills removed) ----");
+    Console.WriteLine($"  {"sheet",-16} {"gear+sets",9} {"+passives",9} {"passives add",12} {"as a x",7}");
+    foreach (var (name, e, items, _) in sheets)
+    {
+        float withAll = e.EffectiveDefence;
+        e.LearnedSkills.Clear();
+        e.RecomputeDerived();
+        float bare = e.EffectiveDefence;
+        Console.WriteLine($"  {name,-16} {bare,9:F0} {withAll,9:F0} {withAll - bare,12:F0} "
+                        + $"{withAll / Math.Max(1f, bare),7:0.00}");
+    }
+    Console.WriteLine();
+    Console.WriteLine("  🔑 Compare 'passives add' against the ITEM sum on the same row. Where the passive");
+    Console.WriteLine("     stack grants MORE P.Def than the whole armour set does, the set has stopped");
+    Console.WriteLine("     being what decides how tanky a class is — which is the actual divergence from");
+    Console.WriteLine("     IG, whose 1.47x is armour and nothing else.");
+    return;
+}
+
 if (args.Length > 0 && args[0] == "--magicdef")
 {
     Console.WriteLine();
