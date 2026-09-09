@@ -451,11 +451,9 @@ public static partial class SkillCatalog
                 new(ChildBuffs: new[] { SkillCatalog.BuffSprint1 }, MpCost: 10, SpCost: 3400,
                     Description: "A burst of speed: +40 move speed for 15s."),
                 // 🔴 SP is his `dual 3rd.csv` cell (40 x1000), 2026-09-09; it had been 42,000.
-                // ⚠ MP STAYS 16 AND HIS CELL SAYS 0. Rung 1 costs 10, so a free rung 2 is a ladder
-                // running backwards to nothing — the one thing a ladder is never allowed to do, and the
-                // only MP cell in either 3rd-tier rogue file he did not fill in on his 2026-09-09 pass.
-                // `--check` reports it; that is the flag doing its job rather than me guessing at 0.
-                new(ChildBuffs: new[] { SkillCatalog.BuffSprint2 }, MpCost: 16, SpCost: 40_000,
+                // ✅ AND MP IS 20, his — the cell read 0 for one afternoon, which is what reporting it
+                //    rather than guessing was for: *"Sprint-L2 cost 20mp now fixed as well"*.
+                new(ChildBuffs: new[] { SkillCatalog.BuffSprint2 }, MpCost: 20, SpCost: 40_000,
                     Description: "A burst of speed: +60 move speed for 15s. Overrides every Dash potion."),
             }),
 
@@ -744,8 +742,11 @@ public static partial class SkillCatalog
         // skill that need the prawl effect."* Levels 2-3 are therefore UNREACHABLE until he authors
         // their rungs in `dual 3rd.csv`. That is deliberate; see ClassSkillTables.Third.RegisterHideKit.
         //
-        // Power 500 is his figure, and it is deliberately far below the tank's Provoke: a lure is
-        // how you START a fight, not how you keep a mob off the party.
+        // 🔴 POWER IS 400 SINCE 2026-09-09, his correction while the rungs were priced: *"also mobs
+        // aggro should be 400 not 500"*. It had been 500 since `BL-70`. Still deliberately far below
+        // the tank's Provoke (4,500 at its lowest 3rd-tier rung): a lure is how you START a fight, not
+        // how you keep a mob off the party — and at 400 it is now level with a monster's own aggro
+        // RANGE constant, which is the number a puller is really working against.
         new(Lure, "Lure", BaseClass.Fighter, SkillEffect.Taunt,
             MpCost: 12, CastTicks: 0, CooldownTicks: 100, Range: 200, Power: 0,
             DurationTicks: 30, Category: SkillCategory.Debuff,
@@ -754,7 +755,7 @@ public static partial class SkillCatalog
             //   physical skill authored `Debuff` carries no other physical marker, and his TYPE cell
             //   on all three rows says `physical debuff`.
             PhysicalCast: true,
-            TauntPower: 500, MobTargetOnly: true,
+            TauntPower: 400, MobTargetOnly: true,
             Levels: new SkillLevel[]
             {
                 // 🔴 PRICED 2026-09-09, on his instruction: *"the lure should be at 52,62,74 (with sp
@@ -763,11 +764,11 @@ public static partial class SkillCatalog
                 // written into that file in the same commit — the CSV and the game move together.
                 // ⚠ The old prices (12/16/20 MP, 3.4k/12k/40k SP) were the 2nd class's, from when this
                 // sat at 20/28/36. A level-52 skill costing 12 MP was the leftover, not the design.
-                new(MpCost: 65, SpCost:  74_000, TauntPower: 500, Range: 200f,
+                new(MpCost: 65, SpCost:  74_000, TauntPower: 400, Range: 200f,
                     Description: "Pulls ONE monster onto you from 200 range. No damage, so its clan never answers."),
-                new(MpCost: 80, SpCost: 170_000, TauntPower: 500, Range: 400f,
+                new(MpCost: 80, SpCost: 170_000, TauntPower: 400, Range: 400f,
                     Description: "Pulls ONE monster onto you from 400 range. No damage, so its clan never answers."),
-                new(MpCost: 95, SpCost: 880_000, TauntPower: 500, Range: 600f,
+                new(MpCost: 95, SpCost: 880_000, TauntPower: 400, Range: 600f,
                     Description: "Pulls ONE monster onto you from 600 range — beyond a monster's own aggro range. No damage, so its clan never answers."),
             },
             Description: "Pulls a single monster onto you without hurting it, so its clan has nothing to answer."),

@@ -1946,6 +1946,37 @@ public class Entity
     /// channelled consumable is charged for without authoring anything.</summary>
     public Guid? CastFromItemInstance { get; set; }
 
+    // ----- THE CHANNEL (`SkillDef.ChannelSkill`, 2026-09-09) --------------------------------------
+    // Arrow Barrage's two seconds of arrows. The cast finishes, and THEN these three carry the volley:
+    // the wrapper that started it (for the label and the reuse), the sub-skill's rung, how many shots
+    // are still owed and how long until the next one.
+    //
+    // 🔑 IT IS A SECOND CASTING STATE, deliberately kept apart from CastingSkillId: while a channel
+    //    runs the caster is NOT casting — his cast bar is done and his MP is paid — but he is still
+    //    committed, and anything that would interrupt a cast ends the volley instead. Folding the two
+    //    into one field would have made every `IsCasting` check in the loop mean two different things.
+    public string? ChannelSkillId { get; set; }
+    public Guid? ChannelTargetId { get; set; }
+    public int ChannelLevel { get; set; }
+    public int ChannelShotsLeft { get; set; }
+    public int ChannelTicksToNext { get; set; }
+    /// <summary>Ticks between shots, copied off the wrapper so the loop need not re-look-it-up.</summary>
+    public int ChannelInterval { get; set; }
+
+    /// <summary>The POWER each shot lands for, when the WRAPPER is what carries the ladder (0 = the
+    /// sub-skill has its own).
+    /// <para>🔑 The two channels in the game split exactly here, and both readings are right. Twin
+    /// Arrows is authored *"two arrows each dealing +5200 power"* — the ladder is PER ARROW and lives
+    /// on the wrapper, so the arrow def carries no power at all and would otherwise hit for nothing.
+    /// Arrow Barrage is *"10 arrows each dealing +2500"* with a flat arrow and no wrapper ladder, so
+    /// the arrow keeps its own. Storing the resolved number here is what lets one mechanism serve
+    /// both without the sub-skill duplicating a fifteen-rung column.</para></summary>
+    public int ChannelPower { get; set; }
+
+    /// <summary>Is this entity mid-volley? Used wherever a cast would be cancelled, so a channel dies
+    /// to the same things a cast does.</summary>
+    public bool IsChannelling => ChannelShotsLeft > 0 && ChannelSkillId is not null;
+
     public Dictionary<string, int> SkillCooldowns { get; } = new();
 
     // ----- Auto-hunt / idle farming config (docs/design/AutoHunt.md) -------------------

@@ -10742,9 +10742,42 @@ public class GameLoopService : BackgroundService
         if (entity.IsActionLocked)
         {
             if (entity.CastingSkillId is not null) CancelCast(entity, startCooldown: false);
+            // A stun ends a VOLLEY too. His rule for the channel is "cancelled like a normal skill",
+            // and a stun is the bluntest cancel there is — the arrows not yet loosed are simply lost.
+            EndChannel(entity);
             entity.QueuedSkillId = null;
             entity.ChainedSkillId = null;   // a stun ends the whole plan, not just the current cast
             entity.ChainedTargetId = null;
+            return;
+        }
+
+        // ═══ THE CHANNEL — Arrow Barrage's two seconds of arrows (`SkillDef.ChannelSkill`) ════════
+        // Ticked BEFORE the cast branch and returning early, so a caster mid-volley does nothing else:
+        // he is committed until the last arrow, which is what makes ten of them a decision.
+        // ⚠ Each shot is a full `ExecuteSkill` on the sub-skill — its own crit, its own block, its own
+        //   splash. That is the whole point of the wrapper shape (see SkillDef.ChannelSkill).
+        if (entity.IsChannelling)
+        {
+            if (--entity.ChannelTicksToNext <= 0)
+            {
+                var target = entity.ChannelTargetId is Guid tid
+                    ? _world.Entities.GetValueOrDefault(tid) : null;
+                // A dead or vanished target ends it early: ten arrows into an empty patch of ground
+                // would still be spending the caster's commitment for nothing.
+                if (target is null || target.Dead)
+                {
+                    EndChannel(entity);
+                    return;
+                }
+                if (SkillCatalog.Get(entity.ChannelSkillId!) is SkillDef shot)
+                {
+                    entity.CastTargetId = entity.ChannelTargetId;
+                    ExecuteSkill(entity, shot, entity.ChannelLevel, entity.ChannelPower);
+                }
+                entity.ChannelShotsLeft--;
+                entity.ChannelTicksToNext = Math.Max(1, entity.ChannelInterval);
+                if (entity.ChannelShotsLeft <= 0) EndChannel(entity);
+            }
             return;
         }
 
@@ -11091,11 +11124,16 @@ public class GameLoopService : BackgroundService
         }
     }
 
-    private void ExecuteSkill(Entity caster, SkillDef def)
+    /// <param name="levelOverride">The rung to resolve at, for a skill the caster does not LEARN —
+    /// a channel's sub-skill (Arrow Barrage's arrow), whose rung is the wrapper's. 0 = read the
+    /// caster's own learned level, which is every other call.</param>
+    /// <param name="powerOverride">The power ONE SHOT of a channel lands for, when the wrapper is
+    /// what carries the ladder. 0 = the skill's own. See Entity.ChannelPower.</param>
+    private void ExecuteSkill(Entity caster, SkillDef def, int levelOverride = 0, int powerOverride = 0)
     {
         // The caster's learned LEVEL of this skill selects its per-level values
         // (Power / Magnitudes / MP). Default 1 for anything not in the learned set.
-        int lvl = Math.Max(1, caster.SkillLevelOf(def.Id));
+        int lvl = levelOverride > 0 ? levelOverride : Math.Max(1, caster.SkillLevelOf(def.Id));
         // The REMAINDER of the price, not a second independently-rounded 80%: whatever the cast has
         // already paid comes off the effective total. That keeps the two halves summing to exactly the
         // number the player was quoted, and re-prices the balance if an MP-cost buff expired mid-cast.
@@ -11171,6 +11209,29 @@ public class GameLoopService : BackgroundService
         // numbers, to tell us AoE was broken, so a pulse in the wrong place is a lie about the hit.
         if (def.AreaRadiusAt(lvl) is float areaR && areaR > 0f)
             BroadcastAreaEffect(def.AreaAtTarget ? target : caster, areaR, AreaKindOf(def));
+
+        // ═══ A WRAPPER STARTS ITS VOLLEY HERE AND RESOLVES NOTHING ITSELF (`SkillDef.ChannelSkill`) ═
+        //
+        // Past every gate — the MP is paid, the target is alive and validated, the hide is broken —
+        // so a barrage that could not afford itself never fires an arrow. From here `UpdateAction`
+        // drives it, one sub-skill execution every `ChannelIntervalTicks`.
+        //
+        // ⚠ THE FIRST ARROW IS IMMEDIATE (`ChannelTicksToNext = 1`, fired on the very next tick), so
+        //   ten arrows at 200ms really do span two seconds rather than 2.2. And the wrapper returns:
+        //   it has no damage of its own, and letting it fall through would land an eleventh hit.
+        if (def.ChannelSkill is string channelId && def.ChannelShots > 0)
+        {
+            caster.ChannelSkillId = channelId;
+            caster.ChannelTargetId = target.Id;
+            caster.ChannelLevel = lvl;
+            caster.ChannelShotsLeft = def.ChannelShots;
+            caster.ChannelInterval = Math.Max(1, def.ChannelIntervalTicks);
+            // The wrapper's ladder IS the per-shot power when it has one (Twin Arrows); a wrapper with
+            // no power of its own leaves the arrow to supply it (Arrow Barrage). See Entity.ChannelPower.
+            caster.ChannelPower = def.PowerAt(lvl);
+            caster.ChannelTicksToNext = 1;
+            return;
+        }
 
         // The consumable that STARTED this cast (a buff scroll): take one unit now that it lands.
         // Gone from the bag mid-cast (traded, dropped, sold) = cancel without charging the finish MP,
@@ -11425,6 +11486,10 @@ public class GameLoopService : BackgroundService
             {
                 var (pFlat, pMod) = def.Id == SkillCatalog.TestPhysSkill
                     ? (_testSkillPower, _testSkillMod) : def.PhysDamageAt(lvl);   // test skill: live debug Flat/Mod
+                // ONE SHOT OF A CHANNEL takes the WRAPPER's power when the wrapper is what ladders
+                // (Twin Arrows: *"two arrows EACH dealing +5200"*). 0 = the arrow has its own, which is
+                // Arrow Barrage. See Entity.ChannelPower for why both readings had to be supported.
+                if (powerOverride > 0) pFlat = powerOverride;
                 int damage = StatCalculator.PhysicalDamageFM(
                     (int)caster.EffectiveAttack, pFlat, pMod,
                     (int)target.EffectiveDefence,
@@ -15849,11 +15914,46 @@ public class GameLoopService : BackgroundService
         return (hp, mp);
     }
 
+    /// <summary>Stop a volley in progress (`SkillDef.ChannelSkill`). The arrows not yet loosed are
+    /// LOST — his rule is *"can be canceled like normal skill"*, and a cast that is cancelled does not
+    /// get to finish later either.
+    ///
+    /// <para>⚠ The MP is NOT refunded and the reuse is NOT reset, for the same reason an interrupted
+    /// cast keeps its initial payment: the commitment was made. That is what makes ten arrows a
+    /// decision rather than a button you can always take back.</para>
+    ///
+    /// <para>Safe to call on anything — every caller invokes it unconditionally next to
+    /// <see cref="CancelCast"/>, which is what keeps a channel dying to exactly the things a cast
+    /// dies to without a second list of them to maintain.</para></summary>
+    private static void EndChannel(Entity entity)
+    {
+        if (entity.ChannelSkillId is null) return;
+        entity.ChannelSkillId = null;
+        entity.ChannelTargetId = null;
+        entity.ChannelShotsLeft = 0;
+        entity.ChannelTicksToNext = 0;
+        entity.ChannelLevel = 0;
+    }
+
     /// <summary>Stop an in-progress cast. startCooldown=true (player ESC) puts
     /// the skill on cooldown; false (enemy interrupt / forced) does not, so the
-    /// caster can retry. The initial MP already paid is NOT refunded.</summary>
+    /// caster can retry. The initial MP already paid is NOT refunded.
+    /// <para>⚠ It also ends a VOLLEY, unconditionally and before the early return: a barrage is not a
+    /// cast (`CastingSkillId` is already null while it runs), so an ESC arriving mid-volley would have
+    /// found nothing to cancel and the arrows would have kept coming.</para></summary>
     private void CancelCast(Entity entity, bool startCooldown = false)
     {
+        // ⚠ BEFORE the early return, deliberately — see the note above.
+        if (entity.IsChannelling && startCooldown
+            && entity.ChannelSkillId is not null)
+        {
+            // The wrapper is what carries the reuse; the sub-skill has none. Nothing to look up: the
+            // wrapper's cooldown was already started when its cast landed.
+            EndChannel(entity);
+            SendCooldowns(entity);
+        }
+        else EndChannel(entity);
+
         if (entity.CastingSkillId is null)
             return;
 

@@ -47,6 +47,9 @@ public static partial class SkillCatalog
     public const string ArcherBowSwiftness  = "archer_bow_swiftness";
     public const string ArcherBowStance     = "archer_bow_stence";
     public const string ArcherTwinArrows    = "archer_twin_arrows";
+    /// <summary>ONE ARROW of Twin Arrows — the sub-skill the wrapper fires twice. Never learned,
+    /// never on a bar; see the note on the wrapper for why it exists at all.</summary>
+    public const string ArcherTwinArrow     = "archer_twin_arrows_arrow";
     public const string ArcherExplosiveArrow = "archer_explosive_arrows";
     public const string ArcherBindingTrap   = "archer_binding_trap";
     public const string ArcherPoisonTrap    = "archer_poison_trap";
@@ -146,14 +149,15 @@ public static partial class SkillCatalog
                 Description: $"With light armor: +{RogueArmorPDef(i)} P.Def, +{ArcherArmorEva} evasion, "
                            + $"+{RogueArmorSpeed(i):0} speed, {RogueArmorCritRes(i) * 100:0}% less often "
                            + $"critted, ×{1f + RogueArmorMpReg[i]:0.0} MP regen, "
-                           + $"+{RogueArmorHpReg[i]:0.0} HP/s.")),
+                           + $"+{RogueArmorHpReg[i]:0.0} HP/s.")).Concat(ArcherFourthArmorMasteryRungs()).ToArray(),
             ArmorMasteryLevels: Enumerable.Range(0, BulwarkLevels.Length).Select(i =>
                 new ArmorMasteryProfile(
                     Robe: default, None: default, Heavy: default,
                     Light: new StatMods(
                         PDef: RogueArmorPDef(i), Evasion: ArcherArmorEva,
                         CritRateResist: RogueArmorCritRes(i), MoveSpeed: RogueArmorSpeed(i),
-                        MpRegenPct: RogueArmorMpReg[i], HpRegen: RogueArmorHpReg[i]))).ToArray()));
+                        MpRegenPct: RogueArmorMpReg[i], HpRegen: RogueArmorHpReg[i]))).
+                Concat(ArcherFourthArmorMasteryProfiles()).ToArray()));
 
         // ═══ BOW MASTERY — the ranged branch's weapon passive ════════════════════════════════════
         //
@@ -170,13 +174,14 @@ public static partial class SkillCatalog
             Levels: BulwarkRungs(i => new SkillLevel(SpCost: RogueSp[i],
                 Description: $"Bow: +{BowMasteryAtk[i]} P.Atk, +400 range, ×1.085 P.Atk, "
                            + $"+{BowMasteryCritDmg[i]} crit damage, +3 accuracy, ×1.2 crit rate, "
-                           + $"×1.05 attack speed.")),
+                           + $"×1.05 attack speed.")).Concat(ArcherFourthBowMasteryRungs()).ToArray(),
             WeaponMasteryLevels: Enumerable.Range(0, BulwarkLevels.Length).Select(i =>
                 new WeaponMasteryProfile(
                     Bow: new PassiveEffect(
                         PhysAtk: BowMasteryAtk[i], PhysAtkPct: 0.085f, BowRange: 400f,
                         CritDamageFlat: BowMasteryCritDmg[i], Accuracy: 3,
-                        CritRate: 0.20f, AtkSpeedPct: 0.05f))).ToArray()));
+                        CritRate: 0.20f, AtkSpeedPct: 0.05f)))
+                .Concat(ArcherFourthBowMasteryProfiles()).ToArray()));
 
         // ═══ BOW BLESSING — cheaper physical reuse, twenty minutes ═══════════════════════════════
         // −10 / −15 / −20% on PHYSICAL reuse only (`PhysCooldownPct`), which is every skill an archer
@@ -325,15 +330,37 @@ public static partial class SkillCatalog
         //    more against a shield. That distinction is why HitCount is a field, and it survived a
         //    round of "is the archer double-counted?" on 2026-09-09 by his own arithmetic.
         // ⚠ It also retires `archer_split_volley`, the derived skill it replaces.
+        // 🔴 IT IS A WRAPPER NOW, NOT `HitCount: 2` — his ruling of 2026-09-09, made while choosing
+        //    Arrow Barrage's shape: *"this will change the twin arrow skill to same logic (1 wrapper
+        //    and while cast just cast 2 times same skill per arrow)"*. ✅ The BEHAVIOUR he settled is
+        //    unchanged — two arrows, each resolving on its own — and `HitCount: 2` already delivered
+        //    that. What the wrapper buys is that the two archer volleys are ONE mechanism instead of
+        //    two: an arrow is an arrow, whether two of them fly or ten.
+        // ⚠ The sub-skill is `archer_twin_arrows_arrow`, and its POWER is the rung's. A channel's
+        //   shots resolve at the wrapper's level (ExecuteSkill's `levelOverride`), so the ladder lives
+        //   on the wrapper exactly as it did — nothing had to be duplicated onto the arrow.
         list.Add(new SkillDef(ArcherTwinArrows, "Twin Arrows", BaseClass.Fighter, SkillEffect.PhysicalDamage,
             MpCost: ArcherMp[0], CastTicks: 30, CooldownTicks: 50, Range: 900, Power: TwinArrowPower[0],
             Category: SkillCategory.Physical, SpCost: RogueSp[0],
-            RequiredWeapon: WeaponType.Bow, HitCount: 2,
+            RequiredWeapon: WeaponType.Bow,
+            // Two arrows, 200ms apart — the same cadence Arrow Barrage fires at, because it is the
+            // same act done fewer times.
+            ChannelSkill: ArcherTwinArrow, ChannelShots: 2, ChannelIntervalTicks: 2,
             Replaces: new[] { PreciseShot, ArcherSplitVolley },
             Description: "Two arrows on one breath — each finds its own way in.",
             Levels: BulwarkRungs(i => new SkillLevel(
                 Power: TwinArrowPower[i], MpCost: ArcherMp[i], SpCost: RogueSp[i],
-                Description: $"Strikes 2 times for power {TwinArrowPower[i]:N0} each."))));
+                Description: $"Looses 2 arrows, each for power {TwinArrowPower[i]:N0}."))
+                .Concat(ArcherFourthTwinArrowRungs()).ToArray()));
+
+        // ONE ARROW of Twin Arrows. No area (his AOE cell is 0, unlike Barrage's 150), no MP of its
+        // own, never learned, never on a bar. Its POWER is 0 because the rung's power comes from the
+        // wrapper — see the note above.
+        list.Add(new SkillDef(ArcherTwinArrow, "Twin Arrows", BaseClass.Fighter, SkillEffect.PhysicalDamage,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 900, Power: 0,
+            Category: SkillCategory.Physical,
+            RequiredWeapon: WeaponType.Bow,
+            Description: "One arrow of a twin volley."));
 
         // ═══ EXPLOSIVE ARROW — the archer's AoE ══════════════════════════════════════════════════
         // `target/aoe`: thrown 600 and detonating 200 around whatever it lands on (AreaAtTarget), NOT
@@ -347,7 +374,8 @@ public static partial class SkillCatalog
             Description: "An arrow that bursts where it lands, catching everything within 200.",
             Levels: BulwarkRungs(i => new SkillLevel(
                 Power: ArcherArrowPower[i], MpCost: ArcherMp[i], SpCost: RogueSp[i], AreaRadius: 200f,
-                Description: $"Bursts for power {ArcherArrowPower[i]:N0} on everything within 200."))));
+                Description: $"Bursts for power {ArcherArrowPower[i]:N0} on everything within 200."))
+                .Concat(ArcherFourthExplosiveArrowRungs()).ToArray()));
 
         // ═══ THE THREE TRAPS — one per race ══════════════════════════════════════════════════════
         //
@@ -483,7 +511,8 @@ public static partial class SkillCatalog
             Levels: BulwarkRungs(i => new SkillLevel(
                 MpCost: mp[i], SpCost: RogueSp[i],
                 Rank: tiers is null ? 0 : tiers[i], Magnitudes: mags,
-                Description: rung(i))));
+                Description: rung(i)))
+                .Concat(ArcherFourthTrapRungs(tiers is not null)).ToArray());
     }
 
     /// <summary>One race's Magic Arrow. Fifteen rungs on the shared arrow power column, 900 range, a
@@ -500,5 +529,6 @@ public static partial class SkillCatalog
             Description: blurb,
             Levels: BulwarkRungs(i => new SkillLevel(
                 Power: ArcherArrowPower[i], MpCost: ArcherMpLow[i], SpCost: RogueSp[i], Magnitudes: mags,
-                Description: $"Strikes for power {ArcherArrowPower[i]:N0} {what}.")));
+                Description: $"Strikes for power {ArcherArrowPower[i]:N0} {what}."))
+                .Concat(ArcherFourthMagicArrowRungs(mags, what)).ToArray());
 }

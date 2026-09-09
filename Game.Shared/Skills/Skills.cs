@@ -341,6 +341,27 @@ public record SkillDef(
     // volley against an evasive target is worth less than one 2000, and against a shield it is worth
     // more. MP and cooldown are charged ONCE, for the cast.
     int HitCount = 1,
+    /// <summary>THE CHANNEL (owner, 2026-09-09). This skill is a WRAPPER: when its cast finishes it
+    /// does not resolve itself — it fires <see cref="ChannelSkill"/> <see cref="ChannelShots"/> times,
+    /// one every <see cref="ChannelIntervalTicks"/>, at the same target.
+    ///
+    /// <para>🔑 HIS DESIGN, AND HIS REASON FOR PICKING IT. Arrow Barrage could have been a pulsating
+    /// ground effect, and he threw that out himself: it *"removes our game logic point — always hit
+    /// then calculates evasions etc"*. The shape he kept: *"cast barrage like a wrapper -> inside the
+    /// wrapper each arrow is same skill (power 2500, range 900, aoe 150, etc..) and its cast 10 times
+    /// or until wrapper stops"*. So every shot is a REAL skill execution with its own crit roll, its
+    /// own block and its own splash — the rule is preserved because nothing about it is special-cased.</para>
+    ///
+    /// <para>⚠ THE WRAPPER CHARGES MP AND REUSE, THE SHOTS CHARGE NOTHING. One cast, one price; the
+    /// sub-skill is authored at 0 MP and is never learned, never on a bar. Reuse begins when the
+    /// CHANNEL ends, not when the cast did — two seconds of arrows are part of the skill.</para>
+    ///
+    /// <para>⚠ CANCELLABLE, on his word (*"can be canceled like normal skill"*): moving, casting
+    /// anything else or pressing ESC stops the volley where it is, and the shots not yet fired are
+    /// simply lost. That is what makes ten arrows a commitment rather than a free button.</para></summary>
+    string? ChannelSkill = null,
+    int ChannelShots = 0,
+    int ChannelIntervalTicks = 2,
     // ---- ON-HIT PROC (Warchanter Combo Mastery, 2026-08-21) --------------------------------------
     // A PASSIVE that fires when its owner DEALS damage. ProcChance is rolled per damaging hit;
     // on success the two named skills' buffs are applied (self / party) at the SAME level as the
@@ -1740,6 +1761,7 @@ public static partial class SkillCatalog
         list.AddRange(FighterKits3rdSkills()); // Skills.FighterKits3rd.cs (`BL-185` the warrior's derived damage kit)
         list.AddRange(Dual3rdSkills());       // Skills.Dual3rd.cs (his `dual 3rd.csv`, 40-74)
         list.AddRange(Archer3rdSkills());     // Skills.Archer3rd.cs (his `archer 3rd.csv`, 40-74)
+        list.AddRange(Archer4thSkills());     // Skills.Archer4th.cs (his `archer 4th.csv`, 76-90)
         list.AddRange(ArcherKitRetiredSkills()); // Skills.ArcherKitRetired.cs (the 3-day derived archer kit, orphaned but kept)
         list.AddRange(Bulwark3rdSkills());    // Skills.Bulwark3rd.cs (his `tank 3rd.csv`, 40-74)
         list.AddRange(Bulwark4thSkills());    // Skills.Bulwark4th.cs (`BL-154`/`BL-155` — the pull and the two silences)

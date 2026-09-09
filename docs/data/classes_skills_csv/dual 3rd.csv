@@ -36,11 +36,11 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 ,,,,,,,,,,,,,,,,,----------------------------Vanish----------------------------
 60,Vanish,vanish,physical active,,,0,0,self/single,0,120,30,"Vanish completely for 30s — nobody can see or target you, and every monster loses you. Anything but walking ends it.",30,120,[],
 ,,,,,,,,,,,,,,,,,----------------------------Lure----------------------------
-52,Lure,lure,physical debuff,,,200,0,enemy/single,0,10,3,"Pulls ONE monster onto you from 200 range - aggro 500 - monsters only - does no damage so its clan never answers;",65,74,[],
-62,Lure,lure,physical debuff,,,400,0,enemy/single,0,10,3,"Pulls ONE monster onto you from 400 range - aggro 500 - monsters only - does no damage so its clan never answers;",80,170,[],
-74,Lure,lure,physical debuff,,,600,0,enemy/single,0,10,3,"Pulls ONE monster onto you from 600 range - aggro 500 - monsters only - does no damage so its clan never answers;",95,880,[],
+52,Lure,lure,physical debuff,,,200,0,enemy/single,0,10,3,"Pulls ONE monster onto you from 200 range - aggro 400 - monsters only - does no damage so its clan never answers;",65,74,[],
+62,Lure,lure,physical debuff,,,400,0,enemy/single,0,10,3,"Pulls ONE monster onto you from 400 range - aggro 400 - monsters only - does no damage so its clan never answers;",80,170,[],
+74,Lure,lure,physical debuff,,,600,0,enemy/single,0,10,3,"Pulls ONE monster onto you from 600 range - aggro 400 - monsters only - does no damage so its clan never answers;",95,880,[],
 ,,,,,,,,,,,,,,,,,---------------------------Sprint----------------------------
-46,Sprint,sprint,physical buff,,,0,0,self/single,0.2,30,15,"Increase speed +60",0,40
+46,Sprint,sprint,physical buff,,,0,0,self/single,0.2,30,15,"Increase speed +60",20,40
 ,,,,,,,,,,,,,,,,,----------------------------Evasion Boost----------------------------
 60,Evasion Boost,evasion_boost,physical buff,,,0,0,self/single,0.5,900,30,Increase evasion by +30; Increase skill evasion by x1.3; Increase magic evasion by x1.2; buff cancel resist x1.8; ,20,120,[]
 ,,,,,,,,,,,,,,,,,----------------------------Phantom Jump----------------------------

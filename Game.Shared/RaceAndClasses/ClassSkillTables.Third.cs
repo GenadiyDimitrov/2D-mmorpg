@@ -981,7 +981,13 @@ public static partial class ClassSkillTables
         shared.AddRange(Ladder(ArcherExplosiveArrow, band15));
         shared.AddRange(Ladder(ArcherBowBlessing, buff3));
         shared.AddRange(Ladder(ArcherBowSpirit, buff3));
-        shared.Add(new ClassSkill(WcBowExpertise, 52));
+        // ✅ 37,000 SP, NOT the def's 42,000 — his answer, 2026-09-09: *"bow expertise for buffer and
+        //    archer is at different lvls so it cost different SP"*. The buffer learns it at 56 and pays
+        //    42,000; the archer learns it at 52 and pays 37,000. ONE ability, one set of magnitudes,
+        //    two prices — which is precisely the case `ClassSkill.SpCost` was added for (Shield
+        //    Mastery, 2026-08-21): SP in this game is priced by the LEVEL YOU LEARN AT, not by the
+        //    ability. Splitting it into two SkillDefs would duplicate a ladder and invite it to drift.
+        shared.Add(new ClassSkill(WcBowExpertise, 52, SpCost: 37_000));
         shared.Add(new ClassSkill(ArcherBowStance, 60));
 
         var human = new List<ClassSkill>(shared);

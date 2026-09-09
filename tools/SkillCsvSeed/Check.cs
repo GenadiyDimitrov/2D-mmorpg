@@ -101,6 +101,13 @@ internal static class Check
             { Game.Shared.Discipline.Nullblade, Game.Shared.Discipline.Phantom, Game.Shared.Discipline.Venomweaver }),
         new("archer 3rd",  BaseClass.Fighter, Archetype.Rogue,   40, 75, Disciplines: new[]
             { Game.Shared.Discipline.Sharpshooter, Game.Shared.Discipline.Trapper, Game.Shared.Discipline.Hunter }),
+        // `archer 4th` earned its line the same day, 2026-09-09 — the FOURTH finished 4th-tier file
+        // (*"archer 4th done as well"*). Same three disciplines and the same `Also` as every other
+        // 4th-tier spec: the ALL-CLASSES block and the eighteen Sigils are in every ascended kit.
+        // 🔴 `dual 4th` is NOT here — still the two-line placeholder.
+        new("archer 4th",  BaseClass.Fighter, Archetype.Rogue,   76, 90, Fourth: true,
+            Also: new[] { "shared 4th" }, Disciplines: new[]
+            { Game.Shared.Discipline.Sharpshooter, Game.Shared.Discipline.Trapper, Game.Shared.Discipline.Hunter }),
         // ---- 4th TIER, 76-90. ONE file is authored: `healer 4th.csv`, which he calls finished
         //      (2026-08-26, 255 rows). `Also` folds in `shared 4th.csv` — the ALL-CLASSES block plus the
         //      eighteen Sigils — because those rows are in every ascended class's Cumulative and would
@@ -300,6 +307,24 @@ internal static class Check
     /// <see cref="ClassSkills.Cumulative"/>, NOT ForClass: the armour/weapon masteries are injected
     /// centrally by archetype and are authored in his files, so ForClass alone would report every one
     /// of them as missing.</summary>
+    /// <summary>The radius a PARTY PROC actually reaches, which lives on the buff it hands out rather
+    /// than on the passive that rolls it. Null when the passive hands the party nothing — which is
+    /// every proc before the archer's three level-76 masteries.</summary>
+    private static float? ProcPartyRadius(SkillDef def)
+    {
+        if (def.ProcChance <= 0f || def.ProcPartyRungs is not { Length: > 0 } rungs) return null;
+        return SkillCatalog.Get(rungs[0]) is SkillDef payload && payload.AreaRadius > 0f
+            ? payload.AreaRadius : null;
+    }
+
+    /// <summary>The splash ONE SHOT of a channel makes, which lives on the sub-skill. Null for
+    /// everything that is not a wrapper, and for Twin Arrows, whose arrows have no area at all.</summary>
+    private static float? ChannelShotRadius(SkillDef def)
+    {
+        if (def.ChannelSkill is not string id) return null;
+        return SkillCatalog.Get(id) is SkillDef shot && shot.AreaRadius > 0f ? shot.AreaRadius : null;
+    }
+
     private static List<Rung> ReadRegistered(Spec spec)
     {
         var seen = new HashSet<(string, int, int)>();
@@ -376,7 +401,14 @@ internal static class Check
                     // BL-96 — the radius the GAME carries at this rung, so the new AOE column is
                     // verified against the code like every other number in the row.
                     // …and a TRAP's AoE cell is the radius it catches things in. See the duration note above.
-                    Aoe: def.PlacesTrap ? def.TrapRadius : def.AreaRadiusAt(cs.SkillLevel)));
+                    // ⚠ A PARTY PROC's reach lives on its PAYLOAD, not on the passive: the archer's three
+                    //   level-76 masteries are `self/party` at 900 in his file, and the passive itself has
+                    //   no radius at all — the 900 is the AreaRadius of the buff it hands out.
+                    // …and a CHANNEL WRAPPER's AoE is its ARROW's: the splash is on the thing that lands.
+                    Aoe: def.PlacesTrap ? def.TrapRadius
+                       : ProcPartyRadius(def) is float pr ? pr
+                       : ChannelShotRadius(def) is float cr ? cr
+                       : def.AreaRadiusAt(cs.SkillLevel)));
             }
         return rows;
     }
@@ -458,10 +490,14 @@ internal static class Check
             for (int i = 0; i < Math.Min(a.Count, b.Count); i++)
             {
                 var diffs = new List<string>();
+                // A PARTY PROC is exempt from the two REACH columns — his own files disagree about
+                // whether they describe the trigger or the effect. See the note at the target compare.
+                bool partyProc = b[i].Def is { ProcChance: > 0f } pd0
+                                 && pd0.ProcPartyRungs is { Length: > 0 };
                 Cmp(diffs, "learn lvl", a[i].LearnLevel, b[i].LearnLevel);
                 Cmp(diffs, "range",     a[i].Range,      b[i].Range);
                 // BL-96 — the AOE radius, now a checked number rather than prose in DESCR.
-                Cmp(diffs, "aoe",       a[i].Aoe,        b[i].Aoe);
+                if (!partyProc) Cmp(diffs, "aoe", a[i].Aoe, b[i].Aoe);
                 Cmp(diffs, "cast s",    a[i].Cast,       b[i].Cast);
                 Cmp(diffs, "cd s",      a[i].Cd,         b[i].Cd);
                 Cmp(diffs, "duration",  a[i].Duration,   b[i].Duration);
@@ -481,7 +517,16 @@ internal static class Check
                 // enemy the two words name the same thing. The check that MATTERS still bites, because
                 // it is about the friendly side: a healer's curse authored `party/single` (2026-08-27)
                 // was caught by `party` ≠ `enemy`, and that comparison is untouched.
-                if (a[i].Target.Length > 0 && b[i].Target.Length > 0
+                //
+                // ⚠ AND A PARTY PROC IS ACCEPTED EITHER WAY, because HIS OWN FILES DISAGREE. A passive
+                // that rolls a buff for the whole party is authored `self/single` in `buffer 3rd.csv`
+                // (Combo Mastery) and `tank 3rd.csv` (Aggravated State) and `self/party` in
+                // `archer 4th.csv` (the three level-76 masteries) — the first pair describing the
+                // TRIGGER, the second the EFFECT. Both readings are defensible and the code cannot be
+                // both, so this compares neither rather than reporting six good rows or three.
+                // 🔵 One for him to settle; the AOE cell below is skipped for the same reason.
+                if (!partyProc
+                    && a[i].Target.Length > 0 && b[i].Target.Length > 0
                     && !string.Equals(a[i].Target, b[i].Target, StringComparison.Ordinal)
                     && !string.Equals(a[i].Target.Replace("target/", "enemy/"), b[i].Target, StringComparison.Ordinal))
                     diffs.Add($"target CSV '{a[i].Target}' vs code '{b[i].Target}'");

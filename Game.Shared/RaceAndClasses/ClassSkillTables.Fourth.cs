@@ -37,6 +37,11 @@ public static partial class ClassSkillTables
         //   2/3/4"*. It was three placeholder rows until this pass. See RegisterBulwarkFourth and
         //   Skills.Bulwark4th.cs.
         RegisterBulwarkFourth();
+        // ✅ THE FOURTH FINISHED FILE, 2026-09-09 — `archer 4th.csv`, his *"archer 4th done as well"*
+        //   plus the Twin Arrows dip he fixed the moment it was reported. See RegisterArcherFourth
+        //   and Skills.Archer4th.cs. ⚠ THE DUAL BRANCH IS NOT HERE: `dual 4th.csv` is still the
+        //   two-line placeholder, so the melee rogue stops at 74.
+        RegisterArcherFourth();
     }
 
     // ═════════════════════════════════════════════════════════════════════════════════════════════
@@ -341,5 +346,65 @@ public static partial class ClassSkillTables
         ClassSkills.RegisterFourth(Race.Human, Discipline.Warchanter, human.ToArray());
         ClassSkills.RegisterFourth(Race.Elf,   Discipline.Warchanter, elf.ToArray());
         ClassSkills.RegisterFourth(Race.Demon, Discipline.Warchanter, demon.ToArray());
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════════════════════════
+    //  THE ARCHER, 76-90 — `docs/data/classes_skills_csv/archer 4th.csv`
+    // ═════════════════════════════════════════════════════════════════════════════════════════════
+
+    /// <summary>THE ARCHER'S 4th CLASS, 76-90. Built 2026-09-09, the same day as its 3rd tier.
+    ///
+    /// <para>🔑 <b>NINE FAMILIES SIMPLY CONTINUE</b> — every 3rd-tier ladder gains rungs 16-30 on
+    /// every level from 76 to 90. What is new is three PARTY PROCS at 76 (one per race) and five
+    /// ultimates at 84/85 bought with gold and SP BOTTLES rather than SP.</para>
+    ///
+    /// <para>🔑 Same one-discipline-per-race shape as the 3rd tier: Sharpshooter is the Human, Trapper
+    /// the Elf, Hunter the Demon. Each race's trap, Magic Arrow, party mastery and ultimate follow the
+    /// split his RACE column already made at 40 — nothing crosses over.</para>
+    ///
+    /// <para>⚠ Arrow Barrage and Heavy Arrow carry NO race, so all three learn them.</para></summary>
+    private static void RegisterArcherFourth()
+    {
+        // Rungs 16-30 of a 3rd-tier ladder, one per level from 76 to 90.
+        ClassSkill[] Ladder(string skill, int startRung = 16) =>
+            HealerFourthBands.Select((lvl, i) => new ClassSkill(skill, lvl, SkillLevel: startRung + i))
+                             .ToArray();
+
+        var shared = new List<ClassSkill>();
+        shared.AddRange(Ladder(ArcherArmorMastery));
+        shared.AddRange(Ladder(BowWeaponMastery));
+        shared.AddRange(Ladder(ArcherTwinArrows));
+        shared.AddRange(Ladder(ArcherExplosiveArrow));
+        // The two ultimates his RACE column leaves blank.
+        shared.Add(new ClassSkill(ArcherHeavyArrow,   84));
+        shared.Add(new ClassSkill(ArcherArrowBarrage, 85));
+
+        var human = new List<ClassSkill>(shared);
+        human.AddRange(Ladder(ArcherPoisonTrap));
+        human.AddRange(Ladder(ArcherMagicArrowHuman));
+        human.Add(new ClassSkill(BowDamageMastery,   76));
+        human.Add(new ClassSkill(ArcherDazzlingArrow, 85));
+
+        var elf = new List<ClassSkill>(shared);
+        elf.AddRange(Ladder(ArcherBindingTrap));
+        elf.AddRange(Ladder(ArcherMagicArrowElf));
+        elf.Add(new ClassSkill(BowSpiritMastery,   76));
+        elf.Add(new ClassSkill(ArcherHealingArrow, 85));
+        // 🔴 NO ANTIDOTE RUNG AT 76, and it took `--check` to say so. A tenth rung was added here by
+        //    analogy with the healer's (whose Antidote does get one more at 76, reaching rank 10) —
+        //    and `archer 4th.csv` authors no Antidote row at all. The Elf archer's cure stops at rank
+        //    9, which means the Venomweaver's top-rung venom stays uncurable by anything in either
+        //    rogue file. That is his file; the analogy was mine.
+
+
+        var demon = new List<ClassSkill>(shared);
+        demon.AddRange(Ladder(ArcherBleedTrap));
+        demon.AddRange(Ladder(ArcherMagicArrowDemon));
+        demon.Add(new ClassSkill(BowSwiftMastery,    76));
+        demon.Add(new ClassSkill(ArcherBleedingArrow, 85));
+
+        ClassSkills.RegisterFourth(Race.Human, Discipline.Sharpshooter, human.ToArray());
+        ClassSkills.RegisterFourth(Race.Elf,   Discipline.Trapper,      elf.ToArray());
+        ClassSkills.RegisterFourth(Race.Demon, Discipline.Hunter,       demon.ToArray());
     }
 }

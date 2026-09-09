@@ -7,12 +7,114 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.119.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.120.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-09 (latest) — 0.119.0: the rogue's two branches get their kits (`dual 3rd.csv`, `archer 3rd.csv`)
+## 2026-09-09 (latest) — 0.120.0: the archer's 4th class, and the first CHANNEL in the game
+
+⚠ **NEW APK** — the class-skill tables changed again (three disciplines gain a 76-90 kit).
+
+His word, hours after the 3rd tier shipped: *"i fixed the dips, build archer 4th"*. **`archer 4th.csv`
+is the fourth finished 4th-tier file**, after the Lightbringer, the Warchanter and the Bulwark.
+
+### Most of it is the 3rd tier continuing
+
+Nine families gain rungs 16-30, one per level from 76 to 90: Armor Mastery (P.Def 72 → 100), Bow
+Mastery (P.Atk 820 → 1300, crit damage 682 → 900), Twin Arrows (5200 → 8000 **per arrow**), Explosive
+Arrow, the three traps and the three Magic Arrows. The SP/gold ladder is the healer's exactly —
+6.5kk/11kk/16kk/80kk and then **gold alone**, 1kk climbing to 100kk — so `F4`/`F4Rungs` are reused
+rather than copied.
+
+### What is new
+
+- **Three party procs at 76, one per race.** The archer's first contribution to anybody but himself:
+  3% on a landed hit, 30s lockout, 30s buff, at 900 radius. Human = **Damage Mastery** (+10% final
+  physical *and* magical damage), Demon = **Swift Mastery** (+10% attack and cast speed), Elf =
+  **Spirit Mastery** (−20% MP on every skill, +20% cast speed, +10% crit damage).
+  ⚠ Damage Mastery rides `PhysDamageMult`/`MagicDamageMult`, the SHOT channel `BL-185` built — not a
+  P.Atk buff, which inside an additive ratio would have been worth a fraction of what his row says.
+- **Five ultimates at 84/85**, the first fighter skills bought with **SP BOTTLES** — 100,000,000 gold
+  plus 2 bottles (Heavy Arrow, 84) or 5 (the rest). Heavy Arrow hits for **17,000**; Bleeding Arrow
+  (Demon) for 15,000 plus a tier-11 bleed, Dazzling Arrow (Human) for 15,000 plus a 10s stun and 3
+  buffs stripped, Healing Arrow (Elf) for 15,000 and heals 40% of it back.
+
+### 🔑 ARROW BARRAGE — and the mechanic it needed
+
+His comment cell asked for something the engine had never done: *"like a channeling skill; start to
+cast and for the next 2 second it continue to cast 1 arrow/200ms; can be canceled like normal skill"*.
+He laid out two ways to build it and **killed the first himself**: a pulsating ground effect *"removes
+our game logic point — always hit then calculates evasions etc"*.
+
+The one he kept is a **WRAPPER**: *"inside the wrapper each arrow is same skill (power 2500, range
+900, aoe 150, etc..) and its cast 10 times or until wrapper stops"*. So `archer_arrow_barrage_arrow`
+is a real `SkillDef`, and each of the ten goes through `ExecuteSkill` on its own — its own crit, its
+own block, its own 150 splash. Nothing about it is special-cased, which is exactly why the rule
+survives.
+
+`SkillDef.ChannelSkill` / `ChannelShots` / `ChannelIntervalTicks`, driven by a new branch in
+`UpdateAction` that ticks **before** the cast branch and returns: a caster mid-volley does nothing
+else. Three things fall out of it and all three are deliberate:
+
+- **The wrapper charges MP and reuse; the shots charge nothing.** One cast, one price.
+- **It dies to what a cast dies to.** `CancelCast` ends a volley *before* its own early return —
+  a barrage is not a cast (`CastingSkillId` is already null while it runs), so an ESC would otherwise
+  have found nothing to cancel and the arrows would have kept coming. A stun ends it too.
+- **The arrows not yet loosed are lost, and the MP is not refunded.** That is what makes ten arrows a
+  commitment rather than a button you can take back.
+
+**…and TWIN ARROWS moved to the same shape**, on his instruction in the same breath: *"this will
+change the twin arrow skill to same logic (1 wrapper and while cast just cast 2 times same skill per
+arrow)"*. ✅ The behaviour he settled is unchanged — two arrows, each resolving independently, which
+`HitCount: 2` already delivered. What the wrapper buys is that both archer volleys are ONE mechanism.
+
+⚠ `Entity.ChannelPower` exists because the two channels read their power from opposite ends, and both
+readings are his: Twin Arrows is *"two arrows EACH dealing +5200"* — the ladder is per arrow and lives
+on the wrapper — while Arrow Barrage's arrow carries a flat 2,500 of its own. Storing the resolved
+number lets one mechanism serve both without the sub-skill duplicating a thirty-rung column.
+
+### His three fixes, and four paste artifacts found on the way in
+
+✅ He fixed **Twin Arrows' dip** (1000 → 5200 at 76) the moment it was reported, set **Sprint L2 to 20
+MP**, ruled **Lure's aggro 400, not 500** (*"also mobs aggro should be 400 not 500"*), and settled
+**Bow Expertise's two prices**: *"bow expertise for buffer and archer is at different lvls so it cost
+different SP"* — 56 for 42,000, 52 for 37,000. One ability, one set of magnitudes, two prices, which
+is precisely what `ClassSkill.SpCost` was added for in August.
+
+`--check` then found four more of the same paste artifact in `archer 4th.csv`, all corrected in the
+file so it says what the game does:
+
+- **Armor Mastery's two regen columns** read `mpReg x1.8; hpReg +1.2` — `rogue 2nd.csv`'s level-36
+  rung — against a 3rd tier ending at `+2.5` / `+6.0`. **FROZEN at the 3rd tier's endpoint**: the
+  ladder rule says report or interpolate, never accept, and freezing changes the least while keeping
+  his own flat-across-the-tier shape. 🔵 Two numbers for him.
+- **Six of the thirteen blocks kept the 3rd tier's SP column** (28 → 880 with no gold at all) while
+  the other seven carry the tier's own 6.5kk + gold. The file's own majority defines the price, so
+  the traps and Magic Arrows now use it.
+- **Dazzling Arrow's DURR cell said 30** where its own DESCR says *"stun for 10s"*. The DESCR is the
+  more specific statement; 30 is Bleeding Arrow's number one row up.
+- **An Antidote rung at 76 that I invented** by analogy with the healer's, and `--check` caught it:
+  his file authors no Antidote row, so the Elf archer's cure stops at rank 9 — which means the
+  Venomweaver's top venom stays uncurable by anything in either rogue file.
+
+### The tool learned three more things, all of them it being wrong about correct code
+
+- **A party proc's reach lives on its PAYLOAD**, not on the passive that rolls it.
+- **A channel wrapper's AoE is its arrow's** — the splash is on the thing that lands.
+- **A party proc is now exempt from both reach columns, because HIS OWN FILES DISAGREE**: Combo
+  Mastery (`buffer 3rd`) and Aggravated State (`tank 3rd`) are authored `self/single`, describing the
+  TRIGGER; the archer's three masteries are `self/party` at 900, describing the EFFECT. Both are
+  defensible and the code cannot be both, so it compares neither rather than reporting three good
+  rows or six. 🔵 One for him to settle.
+
+### 🔴 Open
+
+- **`dual 4th.csv` is still the two-line placeholder**, so the melee rogue stops at 74.
+- Armor Mastery's frozen regen pair, and the `self/single` vs `self/party` convention above.
+
+
+## 2026-09-09 — 0.119.0: the rogue's two branches get their kits (`dual 3rd.csv`, `archer 3rd.csv`)
 
 ⚠ **NEW APK** — the class-skill TABLES changed, and the client builds its Learn tab locally from the
 compiled `ClassSkills`. Six disciplines gain a full kit; without a new client none of it is visible.
