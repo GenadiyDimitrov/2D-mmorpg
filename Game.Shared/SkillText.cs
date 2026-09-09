@@ -467,6 +467,19 @@ public static class SkillText
                 o.Add(party.DurationTicks > 0
                     ? $"Grants your party {party.Name} for {Secs(party.DurationTicks)}"
                     : $"Grants your party {party.Name}");
+            // THE VICTIM'S HALF (his archer stances' bleed and poison). Named with its TIER, because
+            // that is the number that decides whether anyone can cure it.
+            if (ProcRung(def.ProcVictimRungs, level) is SkillDef onHit)
+            {
+                string tier = onHit.Rank > 0 ? $" (tier {onHit.Rank})" : "";
+                o.Add(onHit.DurationTicks > 0
+                    ? $"Inflicts {onHit.Name}{tier} on what you hit for {Secs(onHit.DurationTicks)}"
+                    : $"Inflicts {onHit.Name}{tier} on what you hit");
+            }
+            // …and a proc that rides a BUFF only runs while that buff is up, which is not obvious from
+            // a card that otherwise reads like a passive.
+            if (def.Category == SkillCategory.Buff && def.BuffKey.Length > 0)
+                o.Add("Only while this buff is active");
         }
 
         // ---- Resurrection / death ----
@@ -521,12 +534,31 @@ public static class SkillText
             o.Add($"Bypasses shield blocks {def.BlockAccuracy * 100f:0.#}% of the time");
         if (def.InterruptPower > 0) o.Add($"Interrupt power {def.InterruptPower}");
         if (def.InterruptDefense > 0f) o.Add($"Interrupt resistance while casting +{def.InterruptDefense * 100f:0.#}%");
+        // The BUFF-side bow range (his Bow Stance). The passive one is printed with the rest of a
+        // PassiveEffect above; this channel had no line at all because nothing had ever used it.
+        if (def.BuffBowRange != 0f)
+            o.Add($"Bow range (with a bow) +{def.BuffBowRange:0}");
+        // `BL-06` — the ONE skill in the game that grants it (Evasion Boost), and since 2026-09-09 a
+        // two-rung ladder, so it is read PER LEVEL. A rung's number was invisible in the skill window
+        // until now: the buff square said "+30 Evasion" and never mentioned that half the archer's
+        // Twin Arrows were going to miss outright.
+        if (def.SkillEvadeChanceAt(level) > 0f)
+            o.Add($"Dodges physical SKILLS {def.SkillEvadeChanceAt(level) * 100f:0.#}% of the time");
         if (def.DebuffSchool != DebuffSchool.None)
             o.Add($"Landing is contested ({def.DebuffSchool.ToString().ToLowerInvariant()})");
 
         // ---- Stacking ----
         int stacks = def.EffectiveMaxStacks;
         if (stacks > 1) o.Add($"Stacks up to {stacks} times");
+        // PER RUNG, and worth its own line: how many stacks one cast lays is the whole ladder of his
+        // Venom Stab (1 → 3), and with only "stacks up to 10" on the square a player could not tell a
+        // level-40 rung from a level-74 one.
+        int perCast = def.StacksPerCastAt(level);
+        if (stacks > 1 && perCast > 1) o.Add($"Each hit adds {perCast} stacks");
+        // …and the TIER, which is the number an Antidote has to out-reach. Only for a DoT: on anything
+        // else a rank is buff-stacking bookkeeping and means nothing to a player.
+        if ((def.Effect & SkillEffect.AnyDot) != 0 && def.AuthoredRankAt(level) > 0)
+            o.Add($"Tier {def.AuthoredRankAt(level)} — a cure must reach this rank to strip it");
         if (def.ConsumeStackKey.Length > 0)
             o.Add("Consumes its stacks, multiplying the damage by how many had built up");
 

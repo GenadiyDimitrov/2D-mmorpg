@@ -213,9 +213,9 @@ public static partial class SkillCatalog
             {
                 new SkillLevel(Power: 279, MpCost: 40,  SpCost: 1700,  Description: "Precise Shot — power 279."),
                 new SkillLevel(Power: 379, MpCost: 45,  SpCost: 3200,  Description: "Precise Shot — power 379."),
-                new SkillLevel(Power: 507, MpCost: 53,  SpCost: 6000,  Description: "Precise Shot — power 507."),
-                new SkillLevel(Power: 669, MpCost: 34,  SpCost: 11000, Description: "Precise Shot — power 669."),
-                new SkillLevel(Power: 868, MpCost: 67,  SpCost: 20000, Description: "Precise Shot — power 868."),
+                new SkillLevel(Power: 507, MpCost: 52,  SpCost: 6000,  Description: "Precise Shot — power 507."),
+                new SkillLevel(Power: 669, MpCost: 59,  SpCost: 11000, Description: "Precise Shot — power 669."),
+                new SkillLevel(Power: 868, MpCost: 66,  SpCost: 20000, Description: "Precise Shot — power 868."),
             }),
 
         // ===== Warrior 2nd-class (CSV warrior 2nd) =====
@@ -450,7 +450,12 @@ public static partial class SkillCatalog
             {
                 new(ChildBuffs: new[] { SkillCatalog.BuffSprint1 }, MpCost: 10, SpCost: 3400,
                     Description: "A burst of speed: +40 move speed for 15s."),
-                new(ChildBuffs: new[] { SkillCatalog.BuffSprint2 }, MpCost: 16, SpCost: 42000,
+                // 🔴 SP is his `dual 3rd.csv` cell (40 x1000), 2026-09-09; it had been 42,000.
+                // ⚠ MP STAYS 16 AND HIS CELL SAYS 0. Rung 1 costs 10, so a free rung 2 is a ladder
+                // running backwards to nothing — the one thing a ladder is never allowed to do, and the
+                // only MP cell in either 3rd-tier rogue file he did not fill in on his 2026-09-09 pass.
+                // `--check` reports it; that is the flag doing its job rather than me guessing at 0.
+                new(ChildBuffs: new[] { SkillCatalog.BuffSprint2 }, MpCost: 16, SpCost: 40_000,
                     Description: "A burst of speed: +60 move speed for 15s. Overrides every Dash potion."),
             }),
 
@@ -487,16 +492,43 @@ public static partial class SkillCatalog
             MpCost: 20, CastTicks: 5, CooldownTicks: 9000, Range: 0, Power: 0,
             DurationTicks: 300, BuffKey: "evasion_boost", Rank: 1, CountsTowardBuffLimit: false,
             Category: SkillCategory.Buff, PhysicalCast: true, TargetMode: TargetMode.SelfOnly, SpCost: 3400,
-            SkillEvadeChance: 0.25f,
+            SkillEvadeChance: 0.15f,
             Magnitudes: new EffectMagnitude[]
             {
-                new(SkillEffect.BuffEvasion, 20, ModifierMode.Flat),
+                new(SkillEffect.BuffEvasion, 15, ModifierMode.Flat),
                 new(SkillEffect.BuffCancelResist, 0.80f, ModifierMode.Percent),
                 new(SkillEffect.BuffMagicEvasion, 4, ModifierMode.Flat),
             },
-            Description: "Slip every blow for 30s: +20 Evasion, a 25% chance to dodge physical "
+            Description: "Slip every blow for 30s: +15 Evasion, a 15% chance to dodge physical "
                        + "SKILLS outright, spells cast at you are 4% more likely to fail, and your "
-                       + "buffs strongly resist being cancelled."),
+                       + "buffs strongly resist being cancelled.",
+            // ✅ RUNG 2 IS HIS, from `dual 3rd.csv` at 60 — and it is what turned the "40% rung is NOT
+            // here" note above from a gap into a built row. The 2nd-class rung came DOWN to his
+            // `rogue 2nd.csv` numbers at the same time (+20/25% were never in a cell; the row reads
+            // "+15" and "skill evasion x1.15"), so the ladder now runs 15 → 30 evasion and 15% → 30%
+            // skill evasion instead of starting at the number the ultimate was supposed to reach.
+            // ⚠ Magic evasion stays FLAT PERCENTAGE POINTS (see SkillEffect.BuffMagicEvasion): his
+            // `x1.1` → `x1.2` doubles, so 4 → 8. It is the one value on this row `--check` reads as a
+            // MODE difference rather than a value one, and it has read that way since the skill existed.
+            Levels: new SkillLevel[]
+            {
+                new(MpCost: 20, SpCost: 3400, SkillEvadeChance: 0.15f,
+                    Magnitudes: new EffectMagnitude[]
+                    {
+                        new(SkillEffect.BuffEvasion, 15, ModifierMode.Flat),
+                        new(SkillEffect.BuffCancelResist, 0.80f, ModifierMode.Percent),
+                        new(SkillEffect.BuffMagicEvasion, 4, ModifierMode.Flat),
+                    },
+                    Description: "+15 Evasion, 15% to dodge physical skills outright, for 30s."),
+                new(MpCost: 20, SpCost: 120_000, SkillEvadeChance: 0.30f,
+                    Magnitudes: new EffectMagnitude[]
+                    {
+                        new(SkillEffect.BuffEvasion, 30, ModifierMode.Flat),
+                        new(SkillEffect.BuffCancelResist, 0.80f, ModifierMode.Percent),
+                        new(SkillEffect.BuffMagicEvasion, 8, ModifierMode.Flat),
+                    },
+                    Description: "+30 Evasion, 30% to dodge physical skills outright, for 30s."),
+            }),
 
         // Bow Expertise — long self-buff: +8% bow attack speed (requires a bow) for 20 min.
         new(BowExpertise, "Bow Expertise", BaseClass.Fighter, SkillEffect.BuffAtkSpeed,
@@ -612,10 +644,12 @@ public static partial class SkillCatalog
             Description: "Envenoms the target — a physical DoT that also lowers its attack & "
                        + "defence 15%. Lands on AGI-vs-CON; builds stacks for Venom Burst."),
 
-        new(VenomBurst, "Venom Burst", BaseClass.Fighter, SkillEffect.PhysicalDamage,
-            MpCost: 25, CastTicks: 5, CooldownTicks: 60, Range: 0, Power: 12,
-            Category: SkillCategory.Physical, CanDouble: true, ConsumeStackKey: "venom_venom",
-            Description: "Detonates the target's venom stacks for damage ×(stacks) [Double]."),
+        // 🔴 `venom_burst`'s PRIMITIVE DEF LIVED HERE and is gone, 2026-09-09 — not deleted, MOVED:
+        //    Skills.Dual3rd.cs re-authors the SAME ID off his `dual 3rd.csv`, fifteen rungs at 250 → 1280
+        //    per stack instead of the one placeholder rung at power 12. Its applier partner `envenom`
+        //    stays above and is still orphaned; `venom_stab` is what feeds the counter now, through the
+        //    same `venom_venom` StackKey. An id that keeps its meaning may move files; one that changes
+        //    meaning may not.
 
         // Aegis — self ABSORB SHIELD: soaks 8% of max HP for 15s (the damage-absorb primitive).
         new(Aegis, "Aegis", BaseClass.Fighter, SkillEffect.Shield,
@@ -715,14 +749,25 @@ public static partial class SkillCatalog
         new(Lure, "Lure", BaseClass.Fighter, SkillEffect.Taunt,
             MpCost: 12, CastTicks: 0, CooldownTicks: 100, Range: 200, Power: 0,
             DurationTicks: 30, Category: SkillCategory.Debuff,
+            // ⚠ `PhysicalCast` — a lure is a physical act (a shout, a thrown stone), so its cast is
+            //   paced by ATTACK speed, not the mage stat. `BL-132` covers exactly this shape: a
+            //   physical skill authored `Debuff` carries no other physical marker, and his TYPE cell
+            //   on all three rows says `physical debuff`.
+            PhysicalCast: true,
             TauntPower: 500, MobTargetOnly: true,
             Levels: new SkillLevel[]
             {
-                new(MpCost: 12, SpCost: 3400,  TauntPower: 500, Range: 200f,
+                // 🔴 PRICED 2026-09-09, on his instruction: *"the lure should be at 52,62,74 (with sp
+                // for the levels) and mp should be 65,80,95"*. The MP is his; the SP is the levels'
+                // own rungs off `dual 3rd.csv`'s ladder (74k / 170k / 880k). All three rows were
+                // written into that file in the same commit — the CSV and the game move together.
+                // ⚠ The old prices (12/16/20 MP, 3.4k/12k/40k SP) were the 2nd class's, from when this
+                // sat at 20/28/36. A level-52 skill costing 12 MP was the leftover, not the design.
+                new(MpCost: 65, SpCost:  74_000, TauntPower: 500, Range: 200f,
                     Description: "Pulls ONE monster onto you from 200 range. No damage, so its clan never answers."),
-                new(MpCost: 16, SpCost: 12000, TauntPower: 500, Range: 400f,
+                new(MpCost: 80, SpCost: 170_000, TauntPower: 500, Range: 400f,
                     Description: "Pulls ONE monster onto you from 400 range. No damage, so its clan never answers."),
-                new(MpCost: 20, SpCost: 40000, TauntPower: 500, Range: 600f,
+                new(MpCost: 95, SpCost: 880_000, TauntPower: 500, Range: 600f,
                     Description: "Pulls ONE monster onto you from 600 range — beyond a monster's own aggro range. No damage, so its clan never answers."),
             },
             Description: "Pulls a single monster onto you without hurting it, so its clan has nothing to answer."),
@@ -749,7 +794,7 @@ public static partial class SkillCatalog
         // moment the skill came back. At 2 min the counter now buys a real window.
         new(Vanish, "Vanish", BaseClass.Fighter, SkillEffect.None,
             MpCost: 30, CastTicks: 0, CooldownTicks: 1200, Range: 0, Power: 0,
-            DurationTicks: 300, Category: SkillCategory.Physical,
+            DurationTicks: 300, Category: SkillCategory.Physical, SpCost: 120_000,   // 🔴 his `dual 3rd.csv` cell (120 x1000), 2026-09-09 — it had been the record default of 1
             TargetMode: TargetMode.SelfOnly, GrantsHide: true,
             Description: "Vanish completely for 30s — nobody can see or target you, and every monster " +
                          "loses you. Anything but walking ends it."),
@@ -765,7 +810,7 @@ public static partial class SkillCatalog
         new(Prowl, "Prowl", BaseClass.Fighter, SkillEffect.None,
             MpCost: 20, CastTicks: 0, CooldownTicks: 20, Range: 0, Power: 0,
             BuffKey: "prowl", Rank: 1, Category: SkillCategory.Physical,
-            TargetMode: TargetMode.SelfOnly, SpCost: 3400,
+            TargetMode: TargetMode.SelfOnly, SpCost: 28_000,   // 🔴 his `dual 3rd.csv` cell (28 x1000): it moved to 40 and is priced as a 40 skill
             Toggle: true, GrantsMobStealth: true, MpPerSecond: 1,
             Description: "Stance: monsters that haven't already noticed you leave you alone. " +
                          "Anything already chasing you keeps chasing. Costs 1 MP per second."),
@@ -779,7 +824,7 @@ public static partial class SkillCatalog
         // would also raise a mob clan (BL-70) every time someone swept an area for a rogue.
         new(SignalFlare, "Signal Flare", BaseClass.Fighter, SkillEffect.None,
             MpCost: 28, CastTicks: 10, CooldownTicks: 200, Range: 0, Power: 0,
-            Category: SkillCategory.Physical, SpCost: 12000,
+            Category: SkillCategory.Physical, SpCost: 120_000,   // 🔴 his `archer 3rd.csv` cell (120 x1000), 2026-09-09 — it had been 12,000, a stand-in from before the file existed
             TargetMode: TargetMode.SelfOnly, AreaRadius: 300f,
             RequiredWeapon: WeaponType.Bow,
             RevealsHidden: true, NoHideTicks: 300,

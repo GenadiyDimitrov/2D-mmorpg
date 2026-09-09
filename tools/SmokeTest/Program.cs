@@ -304,10 +304,21 @@ Check("server pushed the warehouse on login", a.Ware is not null);
               mHeavy is not null && eHeavy is not null
                 && eHeavy.Mods.MaxHp > 0 && eHeavy.Mods.MaxHp < mHeavy.Mods.MaxHp,
               $"epic {eHeavy?.Mods.MaxHp} vs mythic {mHeavy?.Mods.MaxHp}");
+        // 🔴 THIS ASSERTION HAD BEEN DEAD SINCE 0.118.0 AND NOBODY KNEW, in the worst of the two ways:
+        //    it probed `ShieldBonus.ShieldDefPct`, a field that commit DELETED, so SmokeTest stopped
+        //    COMPILING — and a test that does not build is a test that cannot fail. Nothing in the
+        //    build gate covers `tools/`. (Second time: see 2026-09-02.)
+        // ⚠ AND IT WAS AIMED AT THE WRONG SET. `set_heavy_t20`'s shield clause was EMPTIED by the same
+        //    commit, so restoring it on any surviving channel would still have read 0 vs 0. The
+        //    invariant — an Epic variant's shield clause is scaled below the Mythic's — is worth
+        //    keeping, so it now asks a set that still HAS one: t40, whose shield gives +5% P.Def.
+        var mHeavyShield = ArmorSetCatalog.Get("set_heavy_t40");
+        var eHeavyShield = ArmorSetCatalog.Get("set_heavy_t40_epic");
         Check("the Epic set's SHIELD bonus is scaled too",
-              mHeavy is not null && eHeavy is not null
-                && eHeavy.ShieldBonus.ShieldDefPct > 0f
-                && eHeavy.ShieldBonus.ShieldDefPct < mHeavy.ShieldBonus.ShieldDefPct);
+              mHeavyShield is not null && eHeavyShield is not null
+                && eHeavyShield.ShieldBonus.PDefPct > 0f
+                && eHeavyShield.ShieldBonus.PDefPct < mHeavyShield.ShieldBonus.PDefPct,
+              $"epic {eHeavyShield?.ShieldBonus.PDefPct} vs mythic {mHeavyShield?.ShieldBonus.PDefPct}");
         // An Epic body must want EPIC accessories, not the shared line.
         var epicHelm = ItemCatalog.Get("helm_t20_epic");
         Check("an Epic body's set wants EPIC accessories",

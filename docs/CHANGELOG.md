@@ -7,13 +7,152 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.118.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.119.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-09-09 (latest) — 0.119.0: the rogue's two branches get their kits (`dual 3rd.csv`, `archer 3rd.csv`)
 
-## 2026-09-09 (latest) — 0.118.0: the shield stops being armour (`BL-185`)
+⚠ **NEW APK** — the class-skill TABLES changed, and the client builds its Learn tab locally from the
+compiled `ClassSkills`. Six disciplines gain a full kit; without a new client none of it is visible.
+
+His word, 2026-09-09: *"build/fix rogue 2nd, archer and duals 3rd"*, then *"on duals 3rd add the
+'lure' skill rows"*. Both files were finished that morning — he filled in an MP column he had left at
+zero (*"my slip"*) and raised the Elf stance's move speed while this was being built. **Six of the
+eight fighter disciplines come off the 2026-08-10 forty-plus purge with this commit**; only the
+warrior's two are still waiting for a file.
+
+### The melee rogue — `dual 3rd.csv` → `Skills.Dual3rd.cs`
+
+**Race decides the damage skill, and that is the whole shape of the file.** All three share Armor
+Mastery (rungs 6-20, appended), Dual Mastery, Sprint L2, Evasion Boost L2 and the hide kit; then:
+
+| | Human — Nullblade | Elf — Phantom | Demon — Venomweaver |
+|---|---|---|---|
+| main blow | Killing Stab 1250 → 6400 | Killing Stab | — |
+| second | **Heavy Stab**, that power twice | **Swift Stab**, +5 speed / +15% AS for 5s | **Venom Stab** (half power) + **Venom Burst** |
+| Phantom Jump | blink + **stun** | blink + **charm** + 75% slow | blink + **fear** + 90% slow |
+| also | | **Antidote** (self cure) | |
+
+- **A 3rd-tier blow floors at 1%, not 10%.** Every stab row reads "power N … otherwise N/100" where
+  the 2nd class's Piercing Stab reads 314/31. The dagger branch is far more all-or-nothing than the
+  line it continues, and that is authored, not inherited.
+- **Dual Mastery replaces the rogue's Weapon Mastery outright**, which is what drops the bow half —
+  choosing daggers costs you the bow. It also carries the first proc ever put on a weapon mastery:
+  3% on hit for 5s of −60% skill MP and +10% crit damage.
+- **Venom Stab and Venom Burst are one rotation**, pooled through the `venom_venom` stack key the
+  primitives have used since they were sketched. `venom_burst` is that primitive's own id,
+  re-authored from one placeholder rung at power 12 to fifteen at 250 → 1280 **per stack**.
+
+### The archer — `archer 3rd.csv` → `Skills.Archer3rd.cs`
+
+**Eleven of eighteen families are self-buffs.** Two universal 20-minute ones (Bow Blessing = −20%
+physical reuse, Bow Spirit = −30% physical MP), one 5-minute race stance, and **Bow Stance** — the
+trade the class points at: +15% on attack power, crit rate, crit damage and skill power, **+200 bow
+range, for half your movement**.
+
+- **Race owns one trap, one Magic Arrow and one stance, and nothing overlaps.** Human = stun + poison
+  trap + Bow Focus (bleed rider); Elf = slow + binding trap + Bow Swiftness (self-heal rider) +
+  Antidote; Demon = a P.Atk/P.Def curse + bleed trap + Bow Ferocity (poison rider).
+- **These are the first player traps in the game.** `PlacesTrap` has existed since the Trapper was
+  sketched and nothing had ever authored one.
+- `HitCount: 2` on **Twin Arrows** is his, settled, and unchanged — two independent resolutions, each
+  rolling its own crit and its own evasion.
+
+### 🔴 The derived archer kit of three days ago is retired
+
+`BL-185` built Archer Bow Mastery, Split Volley, a cloned Bow Expertise and Killing Focus off his
+*"take the elf harmonist skills … increase them with ~20%"* recipe, with a note saying his file would
+overwrite them. **It has.** The four defs are kept — `LearnedSkills` persists IDs, so deleting one
+breaks anybody who bought it — orphaned in `Skills.ArcherKitRetired.cs` and retired by `Replaces` on
+their authored successors. Without that, `archer_bow_mastery` would have stacked a second bow passive
+on top of his and `archer_crit_focus` would have been a permanent +20% crit damage nobody could
+account for. **The warrior's half stays derived**: `warrior 3rd.csv` is not finished.
+
+### `rogue 2nd.csv` — fifteen discrepancies, all closed
+
+His numbers the code had never caught up with: Precise Shot's MP ladder (52/59/66 — rung 4 read
+**34**, a hole in a rising line), Armor Mastery's evasion (7/9/12/12/12, not 7/11/13/13/13), its HP
+regen (**2.5**, not 1.2), and Evasion Boost coming **down** to his authored +15 evasion / 15% skill
+evasion from the +20/25% it shipped with. And the mastery is **light-armour only** now, on his WEIGHT
+column — a rogue in plate gets nothing from it, the same road as the 2026-08-29 robe ruling.
+
+### Five engine additions, each because a row asked for it
+
+- **`SkillLevel.Rank`** — a DoT's TIER per rung. His Venom Stab climbs 3,3,4,4,5,5,…,10, which is
+  neither flat nor the `BL-85` level+1, and a tier is exactly what an Antidote has to out-reach.
+- **`SkillDef.StacksPerCast`** (per rung) — one cast may lay more than one stack. His 1 → 3 buys how
+  FAST the burst fills, not how big it gets; the cap stays at ten.
+- **A burst that spent stacks does not hand them back.** Venom Burst carries the venom flags *and*
+  `ConsumeStackKey`, so his *"if no stacks present apply 1"* works — but without the new
+  `spentStacks` guard the CC arm would have re-applied what the damage arm had just spent, making
+  the skill a no-op that refunds itself.
+- **`SkillDef.ProcVictimRungs`** — the first procs that pay the ENEMY (Bow Focus's bleed, Bow
+  Ferocity's poison). Not contested: his 5% *is* the landing chance.
+- **A proc on a BUFF only rolls while that buff is up.** Every proc before this sat on a passive,
+  where "learned" and "active" are the same thing — so an archer who had merely *learned* Bow Focus
+  would have bled everything he hit for the rest of his life. No new field: a `Buff` category with a
+  `BuffKey` says what it is.
+
+Plus `SkillLevel.SkillEvadeChance` (Evasion Boost is a two-rung ladder now) and
+`SkillDef.BuffBowRange` (bow range had been passive-only since the masteries were written). Each of
+them owes `SkillText.cs` a line and got one.
+
+### `--check` walks both files now, and the tool learned three things
+
+`dual 3rd` and `archer 3rd` earned their `Check.Specs` lines. Each needs **three disciplines**, not
+one — the rogue split by race at 40, so a file is the union of three kits, which is what the new
+`Disciplines` parameter is for. Three reader fixes came out of the first run, and every one of them
+was the tool being wrong about correct code:
+
+- **A short alias must be a whole word.** `as` lives inside "incre**as**e" and "decre**as**e", so his
+  Dual Mastery proc clause handed its 10% to ATTACK SPEED and reported six good rungs as defects.
+- **A trap's DURATION is its wait and its AOE is its catch radius** (`TrapLifeTicks` / `TrapRadius`),
+  not the buff duration and `AreaRadius` a normal AoE carries. 45 rows, reported twice each.
+- **The proc override is for PASSIVES.** A buff carrying a proc has timings of its very own; reading
+  the payload's numbers hid Bow Focus's real five-minute duration behind a zero.
+
+And `target/…` is now accepted where the code says `enemy/…`: by the letter of his scheme `target`
+means "any friendly", and by that letter every offensive row of the archer file is mis-scoped, which
+is 105 rows. Nobody authors a two-arrow volley as a friendly buff — he is using it for "the thing I
+have aimed at". The comparison that actually caught something (a healer's curse authored
+`party/single`, 2026-08-27) is untouched.
+
+### Lure is priced, and finally has all three rungs
+
+His instruction: *"the lure should be at 52,62,74 (with sp for the levels) and mp should be
+65,80,95"*. The 200/400/600 reach ladder has been in the catalog since `BL-70` with **only rung 1
+reachable** — the note beside it has said "his to place" since 2026-08-19. Rung 1 also moves **40 →
+52** with them. Three rows written into `dual 3rd.csv` in this commit; SP off the file's own ladder.
+
+### Also
+
+- **Antidote is registered on the Elf tank at last.** `tank 3rd.csv` has authored those six rows
+  since the Bulwark was built and `--check` has printed 🔴 NOT REGISTERED against them ever since:
+  the rows existed, the skill did not. `elf_antidote` is a SELF cure, a different id from the
+  healer's targeted `antidote`, and one skill now serves all three fighter files.
+- **Sprint L2's invented level-40 rung is gone.** It was my pick off the 2nd-class cadence with a
+  note saying "one line to move when his level-40 CSV lands". It landed: 46, melee rogue only.
+- Prowl 3,400 → **28,000** SP, Vanish 1 → **120,000**, Signal Flare 12,000 → **120,000** — all three
+  were stand-ins from before the files existed.
+- **Two CSV cells were corrected, both flagged to him.** The Demon's Phantom Jump block carried the
+  ELF's skill id on all three rows (a different type and a different rider — two skills cannot share
+  one id), and the same block's TARGET said `self/single` for a gap-closer that stuns an enemy.
+- **His SP ladder is not quite the tank's**: rung 6 (level 55) is **80,000** in both rogue files
+  where `tank 3rd.csv` says 81,000. Thirteen skills across two files agree, so it is authoring.
+
+### 🔴 Two things left open, both his
+
+- **Sprint rung 2 costs 0 MP in his file** and rung 1 costs 10. It is the one MP cell he did not fill
+  on his 2026-09-09 pass; the code keeps 16 and `--check` reports the disagreement rather than my
+  guessing at a ladder that runs backwards to nothing.
+- **Bow Expertise has two prices.** `buffer 3rd.csv` says 42,000 SP and `archer 3rd.csv` says 37,000
+  for the same `wc_bow_expertise`. One skill has one price; the def keeps the buffer's.
+
+
+
+## 2026-09-09 — 0.118.0: the shield stops being armour (`BL-185`)
 
 ⚠ **NEW APK** — `StatsUpdate` loses a field and the item card loses a line.
 

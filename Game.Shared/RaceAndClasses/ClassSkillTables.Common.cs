@@ -158,11 +158,11 @@ public static partial class ClassSkillTables
                 new ClassSkill(PreciseShot, 36, SkillLevel: 5),
                 // Bow Expertise moved 28 -> 36: he corrected the CSV in playtest-20 ("The Bow
                 // expertice was with the 36 lvl skills but it was lvl 28 so i fixed it as well").
-                new ClassSkill(BowExpertise, 36, SkillLevel: 1),
-                // Sprint level 2 (+60) — G5 gave the LEVEL and its value but not where it is learned,
-                // and the authored rogue CSV stops at 36. ⚠ 40 is MY pick: it is the next rung on this
-                // block's own 4-level cadence and the level the 3rd-class disciplines already sit at.
-                // One line to move when his level-40 CSV lands; without it level 2 is unreachable.
+                new ClassSkill(BowExpertise, 36, SkillLevel: 1));
+                // ✅ SPRINT LEVEL 2 IS GONE FROM HERE, 2026-09-09 — his level-40 CSV landed, exactly as the
+                // note that used to sit here predicted. `dual 3rd.csv` learns it at 46 on the melee rogue
+                // (RegisterDual3rd), and 40 was never his number: it was my pick off this block's
+                // 4-level cadence, and leaving it would have given every archer a rung his file does not.
                 //
                 // The ARCHER MERGE (2026-07-29) folded the old Archer 2nd class in here. Its whole
                 // table was these two lines — which is why archers were hollow — while the Rogue block
@@ -182,7 +182,7 @@ public static partial class ClassSkillTables
                 // remove it - remove it from after 40lvl as well"*. Same reasoning as Battle Fury —
                 // never in the authored rogue CSV, inherited wholesale from the dead Archer table.
                 // ⚠ The SkillDef STAYS in the catalog (Skills.Fighter.cs); see the note there.
-                new ClassSkill(Sprint, 40, SkillLevel: 2));
+                // (nothing follows: the block ends at the Bow Expertise line above.)
 
             // Nuker (CSV nuker 2nd): Elemental Bolt (replaces Magic Bolt), Quick Bolt,
             // Vampiric Bolt (continues, lvls 2-5), Restore Spirit, Mage Armor Mastery,

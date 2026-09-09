@@ -396,8 +396,31 @@ internal static class Descr
         foreach (var (metric, words) in Aliases)
             foreach (var w in words)
             {
-                int i = fromEnd ? window.LastIndexOf(w, StringComparison.Ordinal)
+                // 🔑 A SHORT ALIAS MUST BE A WHOLE WORD, and the one that proved it is `as`. It lives
+                // inside "incre**as**e" and "decre**as**e", which is how his Dual Mastery proc clause
+                // ("…and increase crit.dmg with 10% for 5 sec") handed its 10% to ATTACK SPEED and
+                // reported six good rungs as defects. Two letters buried in an English verb are not a
+                // stat name. Longer aliases are left alone: they are distinctive enough that a
+                // boundary test buys nothing and risks breaking "p.def"/"mAtk"-style run-together
+                // spellings he really does write.
+                int i = -1;
+                if (w.Length <= 3)
+                {
+                    for (int at = fromEnd ? window.Length - w.Length : 0;
+                         fromEnd ? at >= 0 : at + w.Length <= window.Length;
+                         at += fromEnd ? -1 : 1)
+                    {
+                        if (string.CompareOrdinal(window, at, w, 0, w.Length) != 0) continue;
+                        bool leftOk  = at == 0 || !char.IsLetter(window[at - 1]);
+                        bool rightOk = at + w.Length >= window.Length || !char.IsLetter(window[at + w.Length]);
+                        if (leftOk && rightOk) { i = at; break; }
+                    }
+                }
+                else
+                {
+                    i = fromEnd ? window.LastIndexOf(w, StringComparison.Ordinal)
                                 : window.IndexOf(w, StringComparison.Ordinal);
+                }
                 if (i < 0) continue;
                 int dist = fromEnd ? window.Length - (i + w.Length) : i;
                 if (dist < bestDist) { bestDist = dist; best = metric; bestAt = offset + i; }
@@ -485,7 +508,7 @@ internal static class Descr
             Add("aggro", false, def.TauntPowerAt(level));
             if (def.ConsumableId.Length > 0) Add("reagent", false, def.ConsumableAmountAt(level));
             Add("lifesteal", true, def.Lifesteal);
-            Add("skilleva", true, def.SkillEvadeChance);
+            Add("skilleva", true, def.SkillEvadeChanceAt(level));
             Add("resexp", true, def.ResExpPctAt(level));
             Add("ccresist", true, def.CcResistMagicalAt(level));
             Add("ccresist", true, def.CcResistPhysicalAt(level));

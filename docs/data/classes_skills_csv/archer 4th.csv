@@ -74,6 +74,10 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 85,Bleeding Arrow,archer_bleeding_arrow,Physical/Active,bow,,900,0,target/single,3,10,30,"Shoot arrow dealing +15000 power and inflicts bleed for 30s tire 11 and 30% slow;",208,0,100kk,5,,Demon
 85,Dazzling Arrow,archer_dazzling_arrow,Physical/Active,bow,,900,0,target/single,3,10,30,"Shoot arrow dealing +15000 power and inflicts stun for 10s and chance to cancel 3 buffs;",208,0,100kk,5,,Human
 85,Healing Arrow,archer_healing_arrow,Physical/Active,bow,,900,0,target/single,3,10,0,"Shoot arrow dealing +15000 power and heals for 40% of the dmg;",208,0,100kk,5,,Elf
+,,,,,,,,,,,,,,,,,,,----------------------------Archery Mastery----------------------------
+76,Swift Mastery,bow_swift_mastery,passive,bow,,0,900,self/party,0,30,30,"Bow: with 3% chance to increase attack/cast speed with 10% for self and party;",0,6.5kk,1kk,,,Demon
+76,Damage Mastery,bow_damage_mastery,passive,bow,,0,900,self/party,0,30,30,"Bow: with 3% chance to increase p/m final damage with 10% for self and party;",0,6.5kk,1kk,,,Human
+76,Spirit Mastery,bow_management_mastery,passive,bow,,0,900,self/party,0,30,30,"Bow: with 3% chance to decrease p/m.mana consumption and p.skill cast time by 20% and increase critical damage by 10%for you and party;",0,6.5kk,1kk,,,Elf
 ,,,,,,,,,,,,,,,,,,,----------------------------Explosive Arrow----------------------------
 76,Explosive Arrow,archer_explosive_arrows,Physical/Active,bow,,600,200,target/aoe,3,1,0,"Shot explosive arrow dealing +2600 power;",158,6.5kk,1kk
 77,Explosive Arrow,archer_explosive_arrows,Physical/Active,bow,,600,200,target/aoe,3,1,0,"Shot explosive arrow dealing +2700 power;",164,11kk,1kk

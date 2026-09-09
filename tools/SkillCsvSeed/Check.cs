@@ -40,8 +40,14 @@ internal static class Check
     /// is the only user: its rows are learned by every ascended class, so they show up in every 4th-tier
     /// Cumulative and would read as "extra, unauthored" against a discipline file that does not contain
     /// them. Reading both files into one CSV side is the honest comparison.</param>
+    /// <param name="Disciplines">MORE THAN ONE discipline reads this file, and the code side is their
+    /// UNION. Only the two rogue branches need it: they split by RACE at 40, so `dual 3rd.csv` is the
+    /// Nullblade AND the Phantom AND the Venomweaver, and asking `Cumulative` for any one of them
+    /// would report the other two races' rows as unregistered. Everywhere else <c>Discipline</c>
+    /// alone is right, because one discipline owns the whole file.</param>
     private sealed record Spec(string File, BaseClass Base, Archetype? Archetype, int Min, int Max,
-                               Discipline? Discipline = null, bool Fourth = false, string[]? Also = null);
+                               Discipline? Discipline = null, bool Fourth = false, string[]? Also = null,
+                               Discipline[]? Disciplines = null);
 
     // ⚠ The BAND matters. A 2nd-class ladder does not stop where his file stops — `Elemental Bolt` is
     // registered at 20…80 while `nuker 2nd.csv` authors 20-35, and without the band every one of those
@@ -83,6 +89,18 @@ internal static class Check
         // 🔴 CALM SPIRIT will report as NOT REGISTERED until he lifts his *"w8 on calm spirit"* hold;
         // that is the flag doing its job, not a defect. See RegisterNuker3rd.
         new("nuker 3rd",   BaseClass.Mage,    Archetype.Nuker,   40, 75, Game.Shared.Discipline.Magus),
+        // `dual 3rd` and `archer 3rd` earned their lines on 2026-09-09, the day the kits were built
+        // (*"build/fix rogue 2nd, archer and duals 3rd"*).
+        //
+        // 🔑 THREE DISCIPLINES PER FILE, because the rogue split by RACE at 40 and each branch has one
+        // discipline per race: `dual 3rd.csv` is the Nullblade (Human) + Phantom (Elf) + Venomweaver
+        // (Demon), `archer 3rd.csv` the Sharpshooter + Trapper + Hunter. That is what `Disciplines` is
+        // for — the code side is their UNION, exactly as it is the union over races everywhere else.
+        // Asking for one of them alone would report the other two races' rows as never registered.
+        new("dual 3rd",    BaseClass.Fighter, Archetype.Rogue,   40, 75, Disciplines: new[]
+            { Game.Shared.Discipline.Nullblade, Game.Shared.Discipline.Phantom, Game.Shared.Discipline.Venomweaver }),
+        new("archer 3rd",  BaseClass.Fighter, Archetype.Rogue,   40, 75, Disciplines: new[]
+            { Game.Shared.Discipline.Sharpshooter, Game.Shared.Discipline.Trapper, Game.Shared.Discipline.Hunter }),
         // ---- 4th TIER, 76-90. ONE file is authored: `healer 4th.csv`, which he calls finished
         //      (2026-08-26, 255 rows). `Also` folds in `shared 4th.csv` — the ALL-CLASSES block plus the
         //      eighteen Sigils — because those rows are in every ascended class's Cumulative and would
@@ -286,8 +304,13 @@ internal static class Check
     {
         var seen = new HashSet<(string, int, int)>();
         var rows = new List<Rung>();
+        // One entry unless the file is shared by several disciplines (the two rogue branches).
+        Discipline?[] disciplines = spec.Disciplines is { Length: > 0 } many
+            ? many.Select(d => (Discipline?)d).ToArray()
+            : new[] { spec.Discipline };
         foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
-            foreach (var cs in ClassSkills.Cumulative(race, spec.Base, spec.Archetype, spec.Discipline, spec.Fourth))
+            foreach (var discipline in disciplines)
+            foreach (var cs in ClassSkills.Cumulative(race, spec.Base, spec.Archetype, discipline, spec.Fourth))
             {
                 if (cs.LearnLevel < spec.Min || cs.LearnLevel > spec.Max) continue;
                 if (!seen.Add((cs.SkillId, cs.SkillLevel, cs.LearnLevel))) continue;
@@ -304,13 +327,26 @@ internal static class Check
                 // A TOTEM's "duration" is its LIFE, not a buff duration — `PlacesTotem` skills carry
                 // DurationTicks 0 and TotemLifeTicks 300, while his DURATION column reads 30 (seconds).
                 // Comparing the wrong field made every totem rung a defect.
-                float duration = (def.PlacesTotem ? def.TotemLifeTicks : def.DurationTicksAt(cs.SkillLevel)) / 10f;
+                // A TRAP's "duration" is how long it waits to be walked into, and its AOE column is the
+                // radius it catches things in — `TrapLifeTicks` and `TrapRadius`, not the buff duration
+                // and `AreaRadius` a normal AoE carries. His three archer traps read DURR 30 / AOE 400
+                // against a def whose own AreaRadius is zero, so without this all 45 rows report twice.
+                // Same shape and same reason as the totem case beside it.
+                float duration = (def.PlacesTotem ? def.TotemLifeTicks
+                                : def.PlacesTrap  ? def.TrapLifeTicks
+                                : def.DurationTicksAt(cs.SkillLevel)) / 10f;
                 float cooldown = def.CooldownTicksAt(cs.SkillLevel) / 10f;
                 // A PASSIVE WITH A PROC has no timings of its own, and his CD / DURATION columns on those
                 // rows describe the PROC: *"3% chance on attack to increase attack speed with 30%"* with
                 // CD 20 and DURATION 15 means a 20-second internal cooldown and a 15-second buff. Reading
                 // the skill's own zeroes made every sigil and both 83 proficiencies report two defects.
-                if (def.ProcChance > 0f)
+                //
+                // ⚠ A **PASSIVE**, and the word is load-bearing since 2026-09-09. His three archer race
+                // stances are BUFFS that carry a proc, and a buff has timings of its very own: Bow
+                // Focus's CD 2 / DURR 300 are the cast reuse and the five minutes it lasts, nothing to
+                // do with the 5% bleed rider. Reading the proc's numbers there reported six phantom
+                // defects and, worse, HID the buff's real duration behind the payload's zero.
+                if (def.ProcChance > 0f && def.Category == SkillCategory.Passive)
                 {
                     cooldown = def.ProcCooldownTicks / 10f;
                     if (def.ProcSelfRungs is { Length: > 0 }
@@ -339,7 +375,8 @@ internal static class Check
                     Weight: WeightColumn.CellFor(def, cs.SkillLevel),
                     // BL-96 — the radius the GAME carries at this rung, so the new AOE column is
                     // verified against the code like every other number in the row.
-                    Aoe: def.AreaRadiusAt(cs.SkillLevel)));
+                    // …and a TRAP's AoE cell is the radius it catches things in. See the duration note above.
+                    Aoe: def.PlacesTrap ? def.TrapRadius : def.AreaRadiusAt(cs.SkillLevel)));
             }
         return rows;
     }
@@ -434,8 +471,19 @@ internal static class Check
                 // file that never filled it in is not a mismatch, it is an unauthored row — but any
                 // authored value is held to the SkillDef. That is the whole point of the column being
                 // checkable: he edits a row, this says whether the engine agrees.
+                //
+                // ⚠ `target/…` IS ACCEPTED WHERE THE CODE SAYS `enemy/…`, since 2026-09-09. His scheme
+                // defines `target` as "any friendly" and `enemy` as the hostile one, and by that letter
+                // every offensive row of `archer 3rd.csv` — Twin Arrows, Explosive Arrow, all three
+                // Magic Arrows, all three traps — is mis-scoped, which is 105 rows. It is plainly not
+                // what he means: nobody authors a two-arrow volley as a friendly buff. He is using
+                // `target` for "the thing I have aimed at", and on a skill that only ever aims at an
+                // enemy the two words name the same thing. The check that MATTERS still bites, because
+                // it is about the friendly side: a healer's curse authored `party/single` (2026-08-27)
+                // was caught by `party` ≠ `enemy`, and that comparison is untouched.
                 if (a[i].Target.Length > 0 && b[i].Target.Length > 0
-                    && !string.Equals(a[i].Target, b[i].Target, StringComparison.Ordinal))
+                    && !string.Equals(a[i].Target, b[i].Target, StringComparison.Ordinal)
+                    && !string.Equals(a[i].Target.Replace("target/", "enemy/"), b[i].Target, StringComparison.Ordinal))
                     diffs.Add($"target CSV '{a[i].Target}' vs code '{b[i].Target}'");
 
                 // ---- `BL-132` — THE TYPE COLUMN'S PHYSICAL/MAGICAL WORD, checked at last.

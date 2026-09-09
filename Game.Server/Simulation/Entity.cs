@@ -158,6 +158,10 @@ public class BuffInstance
     /// The rogue's Evasion Boost is the only skill in the game that sets it.</summary>
     public float SkillEvadeChance { get; init; }
 
+    /// <summary>Extra BOW range while this buff is up (his Bow Stance's *"Range +200"*). Applied only
+    /// with a bow held, exactly as the passive <c>PassiveEffect.BowRange</c> is. A field, not a flag.</summary>
+    public float BowRange { get; init; }
+
     /// <summary>Per-school control resistance while this buff is up — the healer's Clarity (magical,
     /// the SPT-defended school) and Fortitude (physical, the CON-defended one). Rides as fields, like
     /// the one above, because the SkillEffect flag enum has no bits left.</summary>
@@ -3405,6 +3409,10 @@ public class Entity
             // BL-06 skill evasion — a buff field for the same reason (the flag enum is full), and
             // MAXed with the passive side rather than added: it is a guarantee, not a stat.
             SkillEvadeChance = Math.Max(SkillEvadeChance, buff.SkillEvadeChance);
+            // Bow range from a BUFF (his Bow Stance) — bow-conditional and clamped by the same ceiling
+            // the passive side uses, so a stance plus two masteries can never out-reach the cap.
+            if (buff.BowRange != 0f && WeaponType == WeaponType.Bow)
+                BasicAttackRange = Math.Min(GameConstants.MaxBasicAttackRange, BasicAttackRange + buff.BowRange);
             // Per-school control resistance ADDS (unlike SkillEvadeChance, which is a guarantee and
             // takes the max): these are ordinary stats stacked from gear and blessings, and the sum is
             // clamped below like CcResist is.

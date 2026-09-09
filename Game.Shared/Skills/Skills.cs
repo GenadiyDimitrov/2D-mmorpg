@@ -299,6 +299,13 @@ public record SkillDef(
     // damage effect itself stays). "" = none.
     string StackKey = "",
     string ConsumeStackKey = "",
+    /// <summary>How many stacks ONE landed cast adds to <see cref="StackKey"/>. 1 for every DoT
+    /// written before 2026-09-09, and the whole ladder of his Venom Stab: *"apply 1 venom stacks
+    /// (max 10)"* at 40 becoming *"apply 3 venom stacks (max 10)"* at 62. The CAP is
+    /// <see cref="MaxStacks"/> and does not move, so what the rung buys is how many casts it takes to
+    /// fill the burst — three instead of ten.
+    /// <para>Per-rung via <see cref="SkillLevel.StacksPerCast"/>, which is where his ladder lives.</para></summary>
+    int StacksPerCast = 1,
     // Cure (Cleanse) / Cancel targeting. DispelMask = which effect flags to remove (None =
     // all of the relevant polarity: Cleanse→any debuff, Cancel→any positive buff). DispelCount
     // = how many (0 = all matching; N = up to N at random). DispelMaxLevel = only effects with
@@ -376,6 +383,19 @@ public record SkillDef(
     // thing he is authoring, and it is legible here.
     string[]? ProcSelfRungs = null,
     string[]? ProcPartyRungs = null,
+    /// <summary>The THIRD proc destination: the thing that was just HIT. Same rung-indexed shape as
+    /// the two above, and only meaningful on a <c>Hit</c> trigger — nothing is being hit when a proc
+    /// fires on damage taken or on a magic cast.
+    ///
+    /// <para>🔑 IT EXISTS FOR HIS ARCHER BUFFS, which are the first procs in the game that pay the
+    /// ENEMY rather than the caster: *"5% chance to inflict bleed on target tire 5 for 10s"* (Bow
+    /// Focus) and the poison twin on Bow Ferocity. Until this, a proc could only hand out a buff to
+    /// its owner or his party, so the rider had nowhere to land.</para>
+    ///
+    /// <para>⚠ IT IS NOT CONTESTED. His cell gives one number — 5% — and a debuff contest on top of it
+    /// would silently make the real rate a fraction of that against anything with CON. A proc's chance
+    /// IS its landing chance; the rung's TIER is what a cure has to out-reach.</para></summary>
+    string[]? ProcVictimRungs = null,
     // Optional REAGENT: an item this skill consumes to cast (e.g. an ultimate that needs
     // a rare catalyst). "" = no requirement (casts freely). The amount is consumed when the
     // cast COMPLETES; availability is checked up front so the cast isn't started in vain.
@@ -427,6 +447,13 @@ public record SkillDef(
     // is full, so this rides as explicit fields, not a flag.)
     float PhysMpCostPct = 0f,
     float MagicMpCostPct = 0f,
+    /// <summary>BOW RANGE this BUFF grants its holder, in world units (0 = none). The buff-side twin of
+    /// <see cref="PassiveEffect.BowRange"/>, which is passive-only and always has been.
+    /// <para>His Bow Stance is the first thing to want it — *"Range +200"* for sixty seconds — and it
+    /// is the whole point of the stance: you stand still (−50% move speed) and shoot further than
+    /// anything can reach you. A FIELD, not a <see cref="SkillEffect"/> bit; the flag enum has none
+    /// left. Bow-conditional at the point of use, exactly as the passive one is.</para></summary>
+    float BuffBowRange = 0f,
     // …and the exact twin for REUSE (`BL-108`, Harmony of the Soul). His row is *"−10% Magical Reuse,
     // −20% Physical Reuse"* on ONE buff, which the existing `BuffCooldown` flag cannot express: it is
     // one number for every skill. Same convention as the pair above — fractions, 0 = none, physical
@@ -978,6 +1005,26 @@ public record SkillDef(
         return v != 0f ? v : BuffMagicAccuracy;
     }
 
+    /// <summary>Chance to dodge a physical SKILL at a LEVEL (`BL-06`). A level's 0 means "inherit",
+    /// so the single-level shape still works. See <see cref="SkillLevel.SkillEvadeChance"/>.</summary>
+    public float SkillEvadeChanceAt(int level)
+    {
+        float v = Lvl(level)?.SkillEvadeChance ?? 0f;
+        return v != 0f ? v : SkillEvadeChance;
+    }
+
+    /// <summary>The rank AUTHORED for this rung, or 0 for "let <c>BuffPlan</c> derive it".
+    /// See <see cref="SkillLevel.Rank"/> — a DoT's tier is the only thing that uses it.</summary>
+    public int AuthoredRankAt(int level) => Lvl(level)?.Rank ?? 0;
+
+    /// <summary>How many stacks ONE cast of this stacking DoT adds. See
+    /// <see cref="SkillLevel.StacksPerCast"/>; 1 for every DoT that does not author it.</summary>
+    public int StacksPerCastAt(int level)
+    {
+        int v = Lvl(level)?.StacksPerCast ?? 0;
+        return Math.Max(1, v != 0 ? v : StacksPerCast);
+    }
+
     /// <summary>Per-school control resistance at a LEVEL. See <see cref="CcResistMagicalAt"/>.</summary>
     public float CcResistPhysicalAt(int level)
     {
@@ -1337,6 +1384,24 @@ public record SkillLevel(
     // rung — a level-80 Reinforcement authored at 30 MP/s really took 12. Same "unset = inherit"
     // shape as every other per-rung field above.
     int MpPerSecond = 0,
+    // THE EFFECT'S RANK AT THIS RUNG (0 = inherit, which is the `BL-85` "def.Rank + level - 1" for a
+    // childless multi-level buff and the flat def.Rank for everything else). Authored for exactly one
+    // thing today: a DoT's TIER, which is what a cure has to out-reach. His `dual 3rd.csv` Venom Stab
+    // ladders it 3,3,4,4,5,5,6,6,7,7,8,8,9,9,10 across fifteen rungs — NOT the straight +1 a rank
+    // derived from the level gives, and not flat either, so neither existing shape could carry it.
+    // ⚠ A rank is also what decides which of two buffs wins. This is safe here because a DoT tier IS
+    // that contest — a stronger venom overriding a weaker one is the intended behaviour.
+    int Rank = 0,
+    // HOW MANY STACKS ONE CAST OF A STACKING DoT ADDS (0 = inherit the SkillDef's StacksPerCast,
+    // which is 1 — every DoT before this one). His Venom Stab climbs 1 → 2 → 3 per hit while its cap
+    // stays at 10, so the ladder buys how FAST you fill the burst, not how big it can get.
+    int StacksPerCast = 0,
+    // CHANCE TO DODGE A PHYSICAL SKILL granted by THIS rung (0 = inherit the SkillDef's). Evasion
+    // Boost is the only skill in the game that grants any (`BL-06`), and it is now a two-rung ladder:
+    // 15% at 28 off `rogue 2nd.csv`, 30% at 60 off `dual 3rd.csv`. Without a per-rung slot the level-60
+    // rung would silently have handed out rung 1's 15% — the `BL-85` shape of bug, and the reason the
+    // note on this skill used to say "the 40% rung is NOT here".
+    float SkillEvadeChance = 0f,
     // BUFF KEYS THIS RUNG COVERS (null = inherit the SkillDef's CoveredKeys). See SkillDef.CoveredKeys
     // for what covering is; this is the per-rung slot, and the harmonies are why it has to exist.
     //
@@ -1672,7 +1737,10 @@ public static partial class SkillCatalog
         list.AddRange(BossJudgmentSkills());  // Skills.BossJudgment.cs (`BL-98` the six-rung ladder — engine-applied only)
         list.AddRange(WhispSkills());         // Skills.Whisps.cs (`BL-109` the whisp's own nine — cast by the whisp, never learned)
         list.AddRange(WhispSummonSkills());   // Skills.Whisps.cs (his six calls + Whisp Mastery)
-        list.AddRange(FighterKits3rdSkills()); // Skills.FighterKits3rd.cs (`BL-185` warrior + archer damage kits)
+        list.AddRange(FighterKits3rdSkills()); // Skills.FighterKits3rd.cs (`BL-185` the warrior's derived damage kit)
+        list.AddRange(Dual3rdSkills());       // Skills.Dual3rd.cs (his `dual 3rd.csv`, 40-74)
+        list.AddRange(Archer3rdSkills());     // Skills.Archer3rd.cs (his `archer 3rd.csv`, 40-74)
+        list.AddRange(ArcherKitRetiredSkills()); // Skills.ArcherKitRetired.cs (the 3-day derived archer kit, orphaned but kept)
         list.AddRange(Bulwark3rdSkills());    // Skills.Bulwark3rd.cs (his `tank 3rd.csv`, 40-74)
         list.AddRange(Bulwark4thSkills());    // Skills.Bulwark4th.cs (`BL-154`/`BL-155` — the pull and the two silences)
 

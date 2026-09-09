@@ -9972,7 +9972,10 @@ public class GameLoopService : BackgroundService
         public float MagicCritDamage, MagicAccuracy, HealReceivedPct;
     }
 
-    private void TryOnHitProcs(Entity attacker) => TryProcs(attacker, ProcWhen.Hit, magicHit: false);
+    /// <param name="victim">What was just hit, so a proc with a `ProcVictimRungs` payload has
+    /// somewhere to put it. Null on the two triggers where nothing is being struck.</param>
+    private void TryOnHitProcs(Entity attacker, Entity? victim = null) =>
+        TryProcs(attacker, ProcWhen.Hit, magicHit: false, victim: victim);
 
     /// <summary>WHEN a proc is being rolled. Three moments, and a passive names exactly one — the
     /// third arrived with Magic Proficiency (`BL-108`), whose *"when using Magic"* covers buffs and
@@ -9997,7 +10000,7 @@ public class GameLoopService : BackgroundService
     private void TryOnDamagedProcs(Entity victim, bool magicHit) =>
         TryProcs(victim, ProcWhen.Damaged, magicHit: magicHit);
 
-    private void TryProcs(Entity owner, ProcWhen when, bool magicHit)
+    private void TryProcs(Entity owner, ProcWhen when, bool magicHit, Entity? victim = null)
     {
         if (owner.Kind != EntityKind.Player || owner.LearnedSkills.Count == 0)
             return;
@@ -10005,6 +10008,16 @@ public class GameLoopService : BackgroundService
         foreach (var (skillId, level) in owner.LearnedSkills)
         {
             if (SkillCatalog.Get(skillId) is not SkillDef def || def.ProcChance <= 0f)
+                continue;
+            // 🔑 A PROC ON A **BUFF** ONLY RUNS WHILE THAT BUFF IS UP. Every proc before 2026-09-09 sat
+            // on a PASSIVE, where "learned" and "active" are the same thing, so the walk over
+            // LearnedSkills was the whole gate. His three archer stances (Bow Focus / Ferocity /
+            // Swiftness) are BUFFS that carry one — *"5% chance to inflict bleed on target"* — and
+            // without this an archer who had merely LEARNED Bow Focus would bleed everything he hit
+            // for the rest of his life, buff or no buff. No new field: a Buff-category def with a
+            // BuffKey says what it is.
+            if (def.Category == SkillCategory.Buff && def.BuffKey.Length > 0
+                && !owner.Buffs.Any(b => b.Key == def.BuffKey))
                 continue;
             // Each passive names ONE moment; anything else is not its trigger.
             var mine = def.ProcOnMagicCast ? ProcWhen.MagicCast
@@ -10037,6 +10050,17 @@ public class GameLoopService : BackgroundService
 
             if (Rung(def.ProcSelfRungs, level) is SkillDef selfPayload)
                 PayOutProc(owner, selfPayload, label, def.Id);
+            // THE VICTIM'S HALF (his Bow Focus's bleed, Bow Ferocity's poison). Applied FLAT — the 5%
+            // roll above IS the landing chance; see the note on SkillDef.ProcVictimRungs for why there
+            // is no second contest. A dead or missing target is simply skipped.
+            if (victim is { Dead: false } && Rung(def.ProcVictimRungs, level) is SkillDef onVictim)
+            {
+                if ((onVictim.Effect & SkillEffect.AnyDot) != 0)
+                    ApplyDotStack(owner, victim, onVictim, 1);
+                else
+                    ApplyBuff(victim, onVictim, 1, label, source: owner);
+                BroadcastCombat(owner, victim, 0, CombatOutcome.Buff, label);
+            }
             if (Rung(def.ProcPartyRungs, level) is SkillDef partyBuff)
                 foreach (var ally in PlayersInRadius(owner, partyBuff.AreaRadius))
                 {
@@ -11363,6 +11387,14 @@ public class GameLoopService : BackgroundService
             return;
         }
 
+        // A BURST THAT FOUND STACKS MUST NOT ALSO RE-APPLY THE DoT. His `dual 3rd.csv` Venom Burst is
+        // *"Does damage based on cosumed venom stacks x250 per stack; If no stacks present apply 1
+        // venom stacks"* — one skill that spends the pool if there is one and starts it if there is
+        // not. It therefore carries BOTH `ConsumeStackKey` and the Venom flags, and without this the
+        // CC/DoT arm two hundred lines below would hand the stacks straight back the instant the
+        // damage arm spent them, making the burst a no-op that refunds itself.
+        bool spentStacks = false;
+
         // ---- Damage (physical) ----
         if (effect.HasFlag(SkillEffect.PhysicalDamage))
         {
@@ -11408,6 +11440,7 @@ public class GameLoopService : BackgroundService
                 {
                     damage = Math.Max(1, damage * ctr.Stacks);
                     target.Buffs.Remove(ctr);
+                    spentStacks = true;
                     target.RecomputeDerived();
                     if (target.Kind == EntityKind.Player) { PushBuffs(target); SendStats(target); }
                 }
@@ -11438,7 +11471,7 @@ public class GameLoopService : BackgroundService
                 ApplyDamage(target, damage, caster);
                 ReflectPhysicalSkill(caster, target, damage, castName);   // BL-07
                 TryInterruptCast(target, def.InterruptPower, damage, caster, def.InterruptMult);
-                if (damage > 0) TryOnHitProcs(caster);   // the skill path's half of the proc trigger
+                if (damage > 0) TryOnHitProcs(caster, target);   // the skill path's half of the proc trigger
             }
             }
         }
@@ -11672,8 +11705,13 @@ public class GameLoopService : BackgroundService
                         // this arm does not also call ApplyBuff: it would land the stun immediately
                         // and the two windows would overlap into one.
                         StartPull(caster, target, def, lvl);
+                    // ⚠ `spentStacks` — a burst that just consumed the pool does NOT refill it; see the
+                    // note where the flag is declared. A burst that found nothing falls through here
+                    // and starts one, which is exactly his "if no stacks present apply 1" clause.
                     else if ((effect & SkillEffect.AnyDot) != 0)
-                        ApplyDotStack(caster, target, def, lvl);   // stacking DoT (refresh on reapply)
+                    {
+                        if (!spentStacks) ApplyDotStack(caster, target, def, lvl);   // stacking DoT (refresh on reapply)
+                    }
                     else
                         ApplyBuff(target, def, lvl, durationOverride: doubledTicks, source: caster);   // single CC buff
                     BroadcastCombat(caster, target, 0, CombatOutcome.Buff,
@@ -11919,7 +11957,13 @@ public class GameLoopService : BackgroundService
         // children and fell through to this flat number, so every rung of them competed as an equal
         // and "equal rank keeps the longer remaining time" let a Lv1 evict a Lv5. Same shape as
         // GroupRank. `FlatRank` opts out — see the field's note on SkillDef for the one pair that does.
-        int rank = def.FlatRank || def.Levels is not { Length: > 1 } ? def.Rank : def.Rank + level - 1;
+        // …unless the RUNG authors its own rank, which is how a DoT's TIER ladders (see
+        // SkillLevel.Rank). His Venom Stab climbs 3,3,4,4,5,5,… — neither flat nor level+1 — and a
+        // tier is exactly what an Antidote's `DispelMaxLevel` has to out-reach, so it has to be the
+        // number the buff actually carries.
+        int authored = def.AuthoredRankAt(level);
+        int rank = authored != 0 ? authored
+                 : def.FlatRank || def.Levels is not { Length: > 1 } ? def.Rank : def.Rank + level - 1;
         return (key, rank, declared, def.DurationTicks);
     }
 
@@ -12214,7 +12258,8 @@ public class GameLoopService : BackgroundService
             SilencesPhysical = def.SilencePhysical,
             SilencesMagical = def.SilenceMagical,
             SourceId = source?.Id ?? Guid.Empty,
-            SkillEvadeChance = def.SkillEvadeChance,   // BL-06, rogue ultimate only
+            SkillEvadeChance = def.SkillEvadeChanceAt(level),   // BL-06, rogue ultimate only — PER RUNG (15% at 28, 30% at 60)
+            BowRange = def.BuffBowRange,               // his Bow Stance's +200 reach, bow-conditional
             EndsOnDamageTaken = def.EndsOnDamageTaken, // Meditation: gone the moment anything lands
             // Reward-rune payload, at the LEVEL that landed: a Rune of Experience (20%) is level 3 of
             // one ladder skill, so reading the def's own field here would hand out the +5% rung.
@@ -12349,13 +12394,17 @@ public class GameLoopService : BackgroundService
         }
 
         // (2) The stack counter — separate, internal, per StackKey; max = the skill's MaxStacks.
+        // ⚠ ONE CAST MAY ADD MORE THAN ONE (`SkillDef.StacksPerCast`, per rung). The cap is unchanged,
+        // so a rung that adds three fills the burst in four casts instead of ten — that is his ladder,
+        // and it is why `add` is read here rather than hard-coded to 1.
         int cap = Math.Max(1, def.MaxStacks);
+        int add = def.StacksPerCastAt(level);
         if (!string.IsNullOrEmpty(def.StackKey))
         {
             var ctr = target.Buffs.FirstOrDefault(b => b.Key == def.StackKey);
             if (ctr is not null)
             {
-                ctr.Stacks = Math.Min(cap, ctr.Stacks + 1);
+                ctr.Stacks = Math.Min(cap, ctr.Stacks + add);
                 ctr.MaxStacks = cap;
                 ctr.TicksRemaining = dotTicks;   // refresh
                 ctr.SourceId = caster.Id;
@@ -12367,7 +12416,7 @@ public class GameLoopService : BackgroundService
                     Effect = SkillEffect.None,           // no stats: a pure counter
                     Magnitudes = Array.Empty<EffectMagnitude>(),
                     TicksRemaining = dotTicks,
-                    Stacks = 1,
+                    Stacks = Math.Min(cap, add),
                     MaxStacks = cap,
                     Internal = true,
                     SourceId = caster.Id,
@@ -13497,7 +13546,7 @@ public class GameLoopService : BackgroundService
             }
             // ON-HIT PROCS (Combo Mastery). Basic attacks are one of the two damage paths that can
             // fire one; the physical-skill path is the other. Rolled on a landed hit only.
-            if (damage > 0) TryOnHitProcs(attacker);
+            if (damage > 0) TryOnHitProcs(attacker, target);
             // MANA vampirism (Warchanter Mana Vampirism) — the same trigger, a different bar. His row
             // says "physical basic atack only", which is exactly where this sits: a skill never drains.
             // Bows are excluded for the same reason melee vamp excludes them, and the mastery that

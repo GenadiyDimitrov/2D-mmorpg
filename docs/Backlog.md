@@ -131,6 +131,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-185` | 🔵 | THE DAMAGE REWORK — ✅ the SHOT (runes x2) and the DEFENCE SHAPE built 0.117.0; the armour spread + the x1.17 residual are open | combat |
 | `BL-186` | ❓ | THE MAX LEVEL CAP — can it be removed? Parked until `BL-185` closes, on your order | systems |
 | `BL-187` | 🔵 | A THIRD RUNE combining both damage channels — engine done, the economy and stacking shape are yours | items |
+| `BL-188` | 🔴 | SKILL [Double] and BLOW crit chance are wrong — the two roll-rate paths need a pass | combat |
 
 ---
 
@@ -1196,3 +1197,56 @@ reads the way you want: the two singles have distinct `BuffKey`s (`rune_war` / `
 combined rune either takes a third key (and then all three stack, which is almost certainly wrong) or
 declares `CoveredKeys` over both and outranks them by `GroupRank`, exactly as a group buff covers its
 singles (`BL-183`). **The second is the right shape**; it just has to be authored.
+
+---
+
+## `BL-188` 🔴 SKILL `[Double]` AND BLOW CRIT CHANCE ARE WRONG — the two roll-rate paths need a pass
+
+**Filed 2026-09-09, on your instruction**, while the melee-rogue and archer 3rd kits were built:
+*"also make a note to fix the skill double and blow crit chance"*.
+
+No diagnosis is recorded yet — this entry exists so the ask is in the repo rather than only in a
+chat line. **What follows is where the two numbers actually come from**, so whoever picks it up is
+not hunting.
+
+### The two paths, and what they read today
+
+| | rolled off | formula | cap | where |
+|---|---|---|---|---|
+| `[Double]` (×2 damage) | the **ATK stat**, 30-60 band | `min(25%, 2.5% + 0.75·(ATK − 30))` | **25%** (`StatCaps.PhysicalDoubleRate`) | `StatCalculator.PhysicalDoubleChance` |
+| a **BLOW** landing (`BlowOnCrit`) | the character's **crit rate**, × the skill's `CritRateMod` | the ordinary physical crit chain | **50%** (`StatCaps.PhysicalCritRate`) | `ResolvePhysicalCritAndBlock`, `StatCalculator.CritChance` |
+
+Both flags are OPT-IN and mutually exclusive (playtest-19 M8: *"if a skill is not described as Can
+Crit or Can Double it doesn't do it"*), and a blow does **not** set `CanCrit` — the crit roll IS its
+landing gate.
+
+### Why it is worth a pass now, and what looks suspect
+
+**Every 3rd-tier dagger skill is a blow with a 1% floor.** `dual 3rd.csv` authors Killing Stab, Swift
+Stab, Heavy Stab and Venom Stab as *"power N — only when skill does critical — otherwise N/100"*,
+where the 2nd class's Piercing Stab reads N/10. So the melee rogue's entire damage output is now
+decided by ONE roll, and the difference between landing and not is a hundredfold rather than tenfold.
+Whatever is off about that roll used to cost 10% of a hit; from 40 it costs the whole rotation.
+
+Three specific things to look at:
+
+1. **`CritRateMod: 2.0` is doing a lot of work and is not authored anywhere.** Piercing Stab carries
+   it, and all four 3rd-tier stabs were given the same 2.0 by inheritance when they were built. It
+   doubles the blow's landing chance against the same 50% cap — so a rogue at 25% crit lands blows
+   at 50% and one at 30% also lands at 50%. **Above 25% base crit the stat stops buying anything**,
+   which is exactly the "each blow lands with the 64+% chance" complaint that got the crit-rate
+   rework (playtest-19 M9) — arrived at from the other direction.
+2. **`[Double]` caps at 25% off a stat that stops at 60.** `PhysicalDoubleChance` saturates at ATK
+   60, and the 3rd-tier kits push ATK well past that, so the last 30 points of the stat buy nothing.
+   Same shape of dead zone as (1).
+3. **A blow and a double are exclusive, but `CanDouble: true` is set on every stab anyway** — the
+   engine resolves the blow first, so the double flag is at best a second chance and at worst dead
+   code on those skills. Worth confirming which it is before tuning either number.
+
+### What is owed
+
+A measurement first (`tools/BalanceMatrix`, `--dmgmatrix`), not a hand-derived fix: what fraction of
+a level-74 Nullblade's Killing Stabs actually land at full power, buffed and unbuffed, and the same
+for an archer's `[Double]`. Then your ruling on the two curves and their caps. **Do not retune the
+CSV powers to compensate** — the powers are authored, the roll rate is not.
+

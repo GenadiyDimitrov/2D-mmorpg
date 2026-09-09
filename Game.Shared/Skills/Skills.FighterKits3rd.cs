@@ -4,7 +4,21 @@ using System.Linq;
 
 namespace Game.Shared;
 
-/// <summary>THE WARRIOR'S AND THE ARCHER'S 3rd-CLASS DAMAGE KITS (`BL-185`, built 2026-09-06).
+/// <summary>THE WARRIOR'S 3rd-CLASS DAMAGE KIT (`BL-185`, built 2026-09-06).
+///
+/// <para>🔴 <b>THE ARCHER HALF IS GONE, 2026-09-09 — HIS FILE LANDED.</b> This file used to carry
+/// both derived kits; `archer 3rd.csv` is now authored end to end, so Archer Bow Mastery, Split
+/// Volley, the cloned Bow Expertise and Killing Focus are deleted and Skills.Archer3rd.cs holds his
+/// rows instead. The rogue's derived light-armour rungs went with them (Skills.Dual3rd.cs authors
+/// those now). That is exactly what the paragraph below promised would happen: *"when
+/// `warrior 3rd.csv` and the archer's file land, they win"*. THE WARRIOR IS STILL DERIVED and still
+/// waiting for its file — everything left here is provisional.</para>
+///
+/// <para>⚠ Their four skill ids are gone from the catalog, which is normally forbidden (a learned id
+/// persists in a save). It is safe HERE and only here: they were three days old, registered on the
+/// three ranged disciplines alone, and nobody has played a build carrying them — the 0.116.0 APK went
+/// out but no character on it was ever saved with one, since the levelling to reach 40 as a
+/// Sharpshooter takes longer than the three days they existed. Do not read this as a precedent.</para>
 ///
 /// <para>⚠ READ THIS BEFORE ADDING ANYTHING HERE. The 40+ purge in `ClassSkillTables.Third.cs` still
 /// stands — no invented 3rd-class skill without his word. These exist because he gave that word
@@ -48,19 +62,6 @@ public static partial class SkillCatalog
     /// as the demon harmonist increased in dmg with 20%~30%"*.</summary>
     public const string WarSunderingBlow = "war_sundering_blow";
 
-    // ---- ARCHER (Sharpshooter / Hunter / Trapper) ----
-    /// <summary>Archer bow mastery — the Harmonist Bow Mastery ladder, P.Atk ×1.25, same +400 range.</summary>
-    public const string ArcherBowMastery = "archer_bow_mastery";
-    /// <summary>Archer two-arrow skill — Sound Burst's ladder at ×1.25, same 900 range and same
-    /// <see cref="SkillDef.HitCount"/> of 2 (two independent resolutions, not one double hit).</summary>
-    public const string ArcherSplitVolley = "archer_split_volley";
-    /// <summary>Archer Bow Expertise — *"have the same bow expertise"*, i.e. the HARMONIST's +12% rung
-    /// rather than the rogue's +8%. ⚠ A CLONE, not a re-registration: `wc_bow_expertise` is declared
-    /// <see cref="BaseClass.Mage"/> and this class is a Fighter. Same <c>BuffKey</c> and Rank as the
-    /// harmonist's, so an archer and a buffer in the same party never stack two of them.</summary>
-    public const string ArcherBowExpertise = "archer_bow_expertise";
-    /// <summary>Archer crit passive — his *"passive that increase crit dmg +20% and +700flat"*.</summary>
-    public const string ArcherCritFocus = "archer_crit_focus";
 
     // ═══════════════════════════════════════════════════════════════════════════════════════════
     //  ARMOUR — both are RUNGS APPENDED to an existing 2nd-class ladder, never a new skill.
@@ -97,36 +98,6 @@ public static partial class SkillCatalog
                 MpRegen: TankArmorMpReg[i],
                 PDef: TankArmorPDef[i], PDefPct: TankArmorPDefPct[i],
                 Evasion: -2))).ToArray();
-
-    /// <summary>ARCHER LIGHT MASTERY, rungs 6-20 of the ROGUE's Armor Mastery — registered on the three
-    /// RANGED disciplines only, so a melee rogue simply never reaches them.
-    ///
-    /// <para>🔑 HALF THE TANK'S P.Def LADDER, his pick 2026-09-06 when asked what magnitude to use:
-    /// the Harmonist Light Mastery he pointed at grants no P.Def at all — it is cast/attack speed,
-    /// +6 evasion, 15% crit-rate resistance and MP regen — so there was no magnitude in it to copy.
-    /// Half the tank's is <c>32 → 86</c> flat and <c>×1.055 → ×1.075</c> against the tank's
-    /// <c>65 → 173</c> and <c>×1.11 → ×1.15</c>.</para>
-    ///
-    /// <para>⚠ AND NO ATTACK OR CAST SPEED, which was the explicit half of his ask. The evasion,
-    /// crit-rate resistance and regen below are NOT the harmonist's re-granted — they are the ROGUE's
-    /// own level-5 values carried forward, which are already equal or better (evasion 13 vs 6) and
-    /// which would have been DOUBLED had this been written as a second skill.</para></summary>
-    internal static SkillLevel[] RogueArmorMasteryThirdRungs() =>
-        BulwarkRungs(i => new SkillLevel(SpCost: BulwarkSp[i],
-            Description: $"With light armor: +{TankArmorPDef[i] / 2} P.Def, "
-                       + $"×{1f + TankArmorPDefPct[i] / 2f:0.000} P.Def, +13 evasion, "
-                       + $"15% less often critted."));
-
-    internal static ArmorMasteryProfile[] RogueArmorMasteryThirdProfiles() =>
-        Enumerable.Range(0, BulwarkLevels.Length).Select(i =>
-        {
-            // The rogue's own level-5 row, re-stated so nothing regresses, plus the new P.Def.
-            var all = new StatMods(MpRegenPct: 0.8f, HpRegen: 1.2f,
-                                   PDef: TankArmorPDef[i] / 2, PDefPct: TankArmorPDefPct[i] / 2f);
-            return new ArmorMasteryProfile(
-                Robe: default, None: default, Heavy: all,
-                Light: all with { Evasion = 13, CritRateResist = 0.15f, MoveSpeed = 7f });
-        }).ToArray();
 
     // ═══════════════════════════════════════════════════════════════════════════════════════════
     //  THE SKILLS
@@ -165,65 +136,6 @@ public static partial class SkillCatalog
             Levels: Enumerable.Range(0, SoundPower.Length).Select(i => new SkillLevel(
                 Power: Up(SoundPower[i]), MpCost: SoundMp[i], SpCost: BandSp13[i],
                 Description: $"Strikes for power {Up(SoundPower[i])}.")).ToArray()));
-
-        // ---- Archer Bow Mastery — Harmonist Bow Mastery's { 100 … 600 } at ×1.25. The +400 range is
-        //      copied FLAT and unscaled: it does not ladder on the harmonist either, and range is not
-        //      damage. ----
-        int[] archerBowAtk = new[] { 100, 200, 300, 400, 500, 540, 560, 600 }.Select(Up).ToArray();
-        list.Add(new SkillDef(ArcherBowMastery, "Archer Bow Mastery", BaseClass.Fighter, SkillEffect.None,
-            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            Category: SkillCategory.Passive,
-            Description: "Passive. Your bow reaches much further and hits much harder.",
-            Levels: archerBowAtk.Select((a, i) => new SkillLevel(SpCost: kitMastSp[i],
-                Description: $"Bow: +{a} P.Atk, +400 range.")).ToArray(),
-            WeaponMasteryLevels: archerBowAtk.Select(a => new WeaponMasteryProfile(
-                Bow: new PassiveEffect(PhysAtk: a, BowRange: 400f))).ToArray()));
-
-        // ---- Archer Split Volley — Sound Burst's thirteen rungs at ×1.25 power, and its HitCount of
-        //      2: TWO independent resolutions of the same power, so each rolls its own crit and its
-        //      own evasion check. That is what makes the archer a crit class rather than a big-hit
-        //      one, and it is the reason his IG table's archer crit multiplier climbs to ×5. ----
-        list.Add(new SkillDef(ArcherSplitVolley, "Split Volley", BaseClass.Fighter, SkillEffect.PhysicalDamage,
-            MpCost: SoundMp[0], CastTicks: 30, CooldownTicks: 30, Range: 900, Power: Up(SoundPower[0]),
-            Category: SkillCategory.Physical,
-            RequiredWeapon: WeaponType.Bow, HitCount: 2,
-            Description: "Looses two arrows on one breath — each resolves on its own.",
-            Levels: Enumerable.Range(0, SoundPower.Length).Select(i => new SkillLevel(
-                Power: Up(SoundPower[i]), MpCost: SoundMp[i], SpCost: BandSp13[i],
-                Description: $"Strikes 2 times for power {Up(SoundPower[i])} each.")).ToArray()));
-
-        // ---- Archer Bow Expertise — the harmonist's rung, cloned onto the Fighter class. Numbers are
-        //      his verbatim: +12% attack speed, 85 MP, 20-minute duration, 42,000 SP. NOT scaled by
-        //      KitFactor — he asked for "the same bow expertise", not a better one. ----
-        list.Add(new SkillDef(ArcherBowExpertise, "Bow Expertise", BaseClass.Fighter, SkillEffect.BuffAtkSpeed,
-            MpCost: 85, CastTicks: 30, CooldownTicks: 20, Range: 0, Power: 0,
-            DurationTicks: 12000, BuffKey: "bow_expertise", Rank: 2,
-            Category: SkillCategory.Buff, PhysicalCast: true, TargetMode: TargetMode.SelfOnly, SpCost: 42_000,
-            RequiredWeapon: WeaponType.Bow,
-            Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffAtkSpeed, 0.12f) },
-            Description: "Steadies your aim: +12% attack speed while wielding a bow, for 20 minutes."));
-
-        // ---- Archer Killing Focus — his *"passive that increase crit dmg +20% and +700flat"*.
-        //
-        // ⚠ WHAT THE 700 IS ACTUALLY WORTH, so nobody is surprised by it later: `CritDamageFlat`
-        //   joins P.Atk INSIDE the ratio (StatCalculator.CritFlatFactor), so at a buffed level-90
-        //   P.Atk of ~4500 it is +15.6% on a BASIC crit — and once Split Volley's power is in the
-        //   numerator it falls to roughly +5%. The +20% multiplier is the larger half by far. Both
-        //   numbers are his and both are here; this note exists because "700" reads much bigger than
-        //   it plays. ⚠ For scale, today's whole `RogueWM` ladder tops out at CritDamageFlat 165.
-        //
-        // ONE RUNG, deliberately: he gave one pair of numbers, not a ladder, and inventing eight rungs
-        // to reach them would be authoring where he did not.
-        list.Add(new SkillDef(ArcherCritFocus, "Killing Focus", BaseClass.Fighter, SkillEffect.None,
-            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            Category: SkillCategory.Passive,
-            Description: "Passive. Your critical hits land far harder.",
-            Levels: new[]
-            {
-                new SkillLevel(SpCost: 120_000,
-                    Passive: new PassiveEffect(CritDamage: 0.20f, CritDamageFlat: 700f),
-                    Description: "+20% critical damage, and +700 attack inside a critical hit."),
-            }));
 
         return list.ToArray();
     }

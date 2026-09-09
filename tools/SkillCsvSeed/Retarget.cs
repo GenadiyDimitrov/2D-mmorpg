@@ -226,10 +226,13 @@ internal static class Retarget
         // BREADTH first: anything with a real radius affects many, whatever it is centred on. His own
         // point — *"aoe depends on skill around the caster or around the target but still the same
         // logic its just the aoe circle where to execute"* — so the centre is deliberately NOT encoded.
+        // …and a TRAP reaches everything inside `TrapRadius` when it springs, which is a radius by any
+        // other name. His three archer traps are authored `target/aoe` and carry no AreaRadius at all.
         bool aoe = d.TargetMode is TargetMode.AlliesInRadius or TargetMode.FriendlyInRadius
                                 or TargetMode.EnemiesInRadius
                 || d.AreaRadius > 0f
-                || d.PlacesTotem;
+                || d.PlacesTotem
+                || d.PlacesTrap;
 
         if (offensive)
             return aoe ? "enemy/aoe" : "enemy/single";

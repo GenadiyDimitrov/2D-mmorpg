@@ -30,8 +30,15 @@ public static partial class SkillCatalog
     /// them wearing a robe. And we have nothing that strips you from armor/weapon"* — the second
     /// sentence is the safety argument, and it is the right one: nothing in the game can disarm you,
     /// so a fighter in a robe chose to be there. The "with all" half now means all TRAINED weights.
+    /// 🔴 AND HEAVY IS OFF TOO SINCE 2026-09-09 — his `rogue 2nd.csv` WEIGHT column reads `light`,
+    /// not `light|heavy`, on all five rungs, and `dual 3rd.csv` / `archer 3rd.csv` say `light` on
+    /// all fifteen of theirs. So the rogue's mastery is a LIGHT mastery end to end: a rogue in plate
+    /// now gets nothing from it rather than keeping the "with all" half. Same road as the robe ruling
+    /// above — the column is the gate, and `--check` had been reporting the disagreement on every
+    /// rung since the WEIGHT column was added. ⚠ The DESCR still reads "with all mpReg…" on his rung-5
+    /// row; the WEIGHT cell is the authority on WHICH weights, the DESCR on what they pay.
     private static ArmorMasteryProfile RogueArmor(StatMods all, int lightEva, float lightSpeed = 0f) =>
-        new(Robe: default, None: default, Heavy: all,
+        new(Robe: default, None: default, Heavy: default,
             Light: all with { Evasion = lightEva, CritRateResist = 0.15f, MoveSpeed = lightSpeed });
 
     /// <summary>Tank Heavy Armor Mastery level: HEAVY armor grants flat P.Def, ×1.07 P.Def,
@@ -160,16 +167,27 @@ public static partial class SkillCatalog
             }.Concat(RogueArmorMasteryThirdRungs()).ToArray(),
             ArmorMasteryLevels: new[]
             {
+                // 🔴 THE EVASION LADDER IS 7/9/12/12/12, his file — corrected 2026-09-09. It had been
+                // 7/11/13/13/13, a point or two over on four of the five rungs, and `--check` had been
+                // saying so for as long as it has read the DESCR column.
+                // ⚠ STILL UNAUTHORED AND STILL HERE: the `MpRegenPct: 0.1f` on rungs 1-4. His rows
+                // author no MP regen at all below 36 — the same shape as the tank's invented ×1.1,
+                // which he ruled out on 2026-09-04 (*"Remove the x1.1 mp regen from tank 20~32"*).
+                // FLAGGED, NOT SWEPT: an unauthored value appears in no cell, so `--check` can never
+                // find it, and removing it is his call rather than a correction.
                 RogueArmor(new StatMods(MpRegenPct: 0.1f, PDef: 16), lightEva: 7),
-                RogueArmor(new StatMods(MpRegenPct: 0.1f, PDef: 18), lightEva: 11),
-                RogueArmor(new StatMods(MpRegenPct: 0.1f, PDef: 20), lightEva: 13, lightSpeed: 7f),
-                RogueArmor(new StatMods(MpRegenPct: 0.1f, PDef: 22), lightEva: 13, lightSpeed: 7f),
+                RogueArmor(new StatMods(MpRegenPct: 0.1f, PDef: 18), lightEva: 9),
+                RogueArmor(new StatMods(MpRegenPct: 0.1f, PDef: 20), lightEva: 12, lightSpeed: 7f),
+                RogueArmor(new StatMods(MpRegenPct: 0.1f, PDef: 22), lightEva: 12, lightSpeed: 7f),
                 // ⚠ The two regen columns of `rogue 2nd.csv` line 7 are read DIFFERENTLY, deliberately.
-                // `hpReg x1.2` became a FLAT +1.2 HP/s with every other hpReg passive (`BL-92`,
+                // 🔴 THE HP REGEN IS +2.5 SINCE 2026-09-09, his cell — it had been 1.2, which is what
+                // his OLD `hpReg x1.2` converted to. His row now reads `hpReg +2.5` and the 3rd tier
+                // continues it 2.5 → 6.0, so this rung is the bottom of one continuous flat column.
+                // `hpReg` is a FLAT +N HP/s with every other hpReg passive (`BL-92`,
                 // 2026-08-26); `mpReg x1.8` stayed a percent because his MP ruling carved out armour
                 // masteries (*"except armor masteries the 20% increase"*) — and that x1.8 is still on
                 // the open list as a weapon-mastery-sized number sitting in an armour row.
-                RogueArmor(new StatMods(MpRegenPct: 0.8f, HpRegen: 1.2f, PDef: 25), lightEva: 13, lightSpeed: 7f),
+                RogueArmor(new StatMods(MpRegenPct: 0.8f, HpRegen: 2.5f, PDef: 25), lightEva: 12, lightSpeed: 7f),
             }.Concat(RogueArmorMasteryThirdProfiles()).ToArray()),
 
         // (Archer Armor Mastery DELETED 2026-08-07 with its id — the rogue light mastery above is

@@ -102,6 +102,12 @@ public static partial class ClassSkillTables
         // while saying *"I'll try next week to finish the csvs"*. Same standing as every narrow entry
         // above: he asked for it by name. See Skills.FighterKits3rd.cs and `BL-185`.
         RegisterWarriorAndArcherKits();
+        // …and the NINTH and TENTH, both on the same footing as the Bulwark and the Magus: his
+        // `dual 3rd.csv` and `archer 3rd.csv` are finished (*"build/fix rogue 2nd, archer and duals
+        // 3rd"*, 2026-09-09), so six more of the eight fighter disciplines come off the 40+ purge.
+        // What is left waiting for a file is the WARRIOR's two, and nothing else.
+        RegisterDual3rd();
+        RegisterArcher3rd();
         // (A FOURTH, `RegisterHealerMasteries()`, existed for one day and is gone: it taught the two
         //  healer masteries and Frenzy L2 while RegisterLightbringer was still commented out. Those
         //  rungs are in the shared ladder now, and keeping both would have registered every one twice.)
@@ -145,11 +151,14 @@ public static partial class ClassSkillTables
                     // ClassSkillTables.Common.cs), which handed out the pull twenty levels before the
                     // stance that makes a pull survivable — and to archers as well, since the 2nd-class
                     // rogue block covers both weapons to 40.
-                    // ⚠ LEVEL 1 ONLY, deliberately: the 200/400/600 reach ladder and its SP are HIS to
-                    // place as he writes `dual 3rd.csv` (*"I'll author it to the corresponding lvls as
-                    // I'm making the file"*). Levels 2-3 exist in the catalog and are unreachable until
-                    // he does — that is the intended state, not a gap to helpfully fill.
-                    new ClassSkill(Lure, 40, SkillLevel: 1),
+                    // ✅ ALL THREE RUNGS, 2026-09-09 — the gap this note used to describe is closed.
+                    // He named the levels and the MP himself (*"the lure should be at 52,62,74 (with
+                    // sp for the levels) and mp should be 65,80,95"*) and the rows are in
+                    // `dual 3rd.csv` now. ⚠ RUNG 1 MOVED 40 → 52 with them: his three levels are the
+                    // whole ladder, so the pull no longer arrives with Prowl but a tier later.
+                    new ClassSkill(Lure, 52, SkillLevel: 1),
+                    new ClassSkill(Lure, 62, SkillLevel: 2),
+                    new ClassSkill(Lure, 74, SkillLevel: 3),
                     new ClassSkill(Vanish, 60));
             foreach (var d in ranged)
                 ClassSkills.RegisterThird(race, d, new ClassSkill(SignalFlare, 60, SkillLevel: 1));
@@ -236,6 +245,14 @@ public static partial class ClassSkillTables
             {
                 kit.AddRange(Ladder(TankCharm, lv, 5));       // continues his 2nd-class 24-36
                 kit.AddRange(Ladder(TankFreeze, lv, 1));
+                // ✅ ANTIDOTE, 2026-09-09 — six rungs at 52/58/62/66/70/74, and the 🔴 NOT REGISTERED
+                // line `--check` has printed against this file since the Bulwark was built is gone with
+                // it. The rows were always there; the SKILL was not. `elf_antidote` is a SELF cure and
+                // a different id from the healer's targeted `antidote`, which is what the tool was
+                // matching against by name — see the def in Skills.Dual3rd.cs. His `dual 3rd.csv` and
+                // `archer 3rd.csv` author the identical six rows for their Elf, so one skill serves all
+                // three files and the Elf is the cure-carrier of every fighter branch.
+                kit.AddRange(Ladder(ElfAntidote, new[] { 52, 58, 62, 66, 70, 74 }, 1));
             }
             else
             {
@@ -867,25 +884,124 @@ public static partial class ClassSkillTables
         warrior.AddRange(Ladder(WarSwordMastery, band8));
         warrior.AddRange(Ladder(WarSunderingBlow, band13));
 
-        var archer = new List<ClassSkill>();
-        archer.AddRange(Ladder(RogueArmorMastery, armour15, startRung: 6));
-        archer.AddRange(Ladder(ArcherBowMastery, band8));
-        archer.AddRange(Ladder(ArcherSplitVolley, band13));
-        // 56 is the Elf Harmonist's own level for Bow Expertise — the same rung, so the same level.
-        archer.Add(new ClassSkill(ArcherBowExpertise, 56));
-        // ⚠ 60 IS MINE, not his: he gave Killing Focus one pair of numbers and no level. 60 is the
-        //   middle of the band and prices at band13's rung-6 SP (120,000), which is the level the
-        //   SkillDef charges. If his file puts it elsewhere, his file wins.
-        archer.Add(new ClassSkill(ArcherCritFocus, 60));
-
+        // 🔴 THE ARCHER'S HALF IS GONE, 2026-09-09 — `archer 3rd.csv` landed and RegisterArcher3rd()
+        //    below teaches his rows instead. The four derived skills it used to register are orphaned
+        //    in Skills.ArcherKitRetired.cs and retired by `Replaces` on their authored successors.
+        //    THE WARRIOR'S HALF STAYS DERIVED: `warrior 3rd.csv` is still not finished.
         foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
-        {
             foreach (var d in new[] { Discipline.Ravager, Discipline.Warlord })
                 ClassSkills.RegisterThird(race, d, warrior.ToArray());
-            // 🔑 RANGED ONLY. The melee rogue disciplines (Nullblade / Venomweaver / Phantom) get
-            //    none of this — they are the DAGGER branch and their kit is his `dual 3rd.csv`.
-            foreach (var d in new[] { Discipline.Sharpshooter, Discipline.Hunter, Discipline.Trapper })
-                ClassSkills.RegisterThird(race, d, archer.ToArray());
-        }
+    }
+
+    /// <summary>THE MELEE ROGUE, 40-74 — every row of `dual 3rd.csv` (2026-09-09). See
+    /// Skills.Dual3rd.cs for the numbers and for what each family is.
+    ///
+    /// <para>🔑 <b>ONE DISCIPLINE PER RACE, so the race column IS the discipline.</b> Unlike the tank —
+    /// one Bulwark shared by three races, where a RACE has to be named — the melee rogue split by race
+    /// at 40 back at the archer merge: Nullblade is the Human, Phantom the Elf, Venomweaver the Demon.
+    /// So his `Human;Elf` cell on Killing Stab means Nullblade and Phantom, and nothing else.</para>
+    ///
+    /// <para>⚠ Prowl, Vanish and Lure are NOT here — they are <see cref="RegisterHideKit"/>'s, which he
+    /// placed by hand and which now carries Lure's full three-rung ladder.</para></summary>
+    private static void RegisterDual3rd()
+    {
+        int[] band15 = { 40, 43, 46, 49, 52, 55, 58, 60, 62, 64, 66, 68, 70, 72, 74 };
+        int[] jump3  = { 52, 60, 74 };
+        int[] cure6  = { 52, 58, 62, 66, 70, 74 };
+
+        static IEnumerable<ClassSkill> Ladder(string id, int[] levels, int startRung = 1) =>
+            levels.Select((lv, i) => new ClassSkill(id, lv, SkillLevel: startRung + i));
+
+        // What all three melee disciplines share. ⚠ Armor Mastery is rungs 6-20 of the 2nd-class
+        // ladder (APPENDED, same id); Dual Mastery is a NEW skill that REPLACES the rogue's weapon
+        // mastery outright — his two rows say so, and the difference is explained on the defs.
+        var shared = new List<ClassSkill>();
+        shared.AddRange(Ladder(RogueArmorMastery, band15, startRung: 6));
+        shared.AddRange(Ladder(DualWeaponMastery, band15));
+        shared.Add(new ClassSkill(Sprint, 46, SkillLevel: 2));
+        shared.Add(new ClassSkill(EvasionBoost, 60, SkillLevel: 2));
+
+        var human = new List<ClassSkill>(shared);
+        human.AddRange(Ladder(KillingStab, band15));
+        human.AddRange(Ladder(HeavyStab, band15));
+        human.AddRange(Ladder(PhantomJumpHuman, jump3));
+
+        var elf = new List<ClassSkill>(shared);
+        elf.AddRange(Ladder(KillingStab, band15));
+        elf.AddRange(Ladder(SwiftStab, band15));
+        elf.AddRange(Ladder(PhantomJumpElf, jump3));
+        elf.AddRange(Ladder(ElfAntidote, cure6));
+
+        // ⚠ THE DEMON GETS NO KILLING STAB. His RACE cell on it is `Human;Elf`, and Venom Stab +
+        //   Venom Burst are the whole of the Venomweaver's damage instead — half the power per blow,
+        //   banked and spent. That is the largest thing race decides in this file.
+        var demon = new List<ClassSkill>(shared);
+        demon.AddRange(Ladder(VenomStab, band15));
+        demon.AddRange(Ladder(VenomBurst, band15));
+        demon.AddRange(Ladder(PhantomJumpDemon, jump3));
+
+        ClassSkills.RegisterThird(Race.Human, Discipline.Nullblade,   human.ToArray());
+        ClassSkills.RegisterThird(Race.Elf,   Discipline.Phantom,     elf.ToArray());
+        ClassSkills.RegisterThird(Race.Demon, Discipline.Venomweaver, demon.ToArray());
+    }
+
+    /// <summary>THE ARCHER, 40-74 — every row of `archer 3rd.csv` (2026-09-09). See
+    /// Skills.Archer3rd.cs.
+    ///
+    /// <para>🔑 Same one-discipline-per-race shape as the melee rogue: Sharpshooter is the Human,
+    /// Trapper the Elf, Hunter the Demon. Each owns one trap, one Magic Arrow and one race stance, and
+    /// the Elf additionally owns the self-Antidote (the same six rows his tank and dual files give the
+    /// Elf, one skill shared by all three).</para>
+    ///
+    /// <para>⚠ Bow Expertise is the WARCHANTER's <c>wc_bow_expertise</c>, named in his own cell — not a
+    /// clone. Nothing in the learn path gates on <see cref="BaseClass"/>, so a Fighter discipline can
+    /// teach a def declared Mage; the alternative was a second skill sharing its buff key, which is
+    /// what the retired derived kit did and which his cell explicitly does not ask for.
+    /// 🔴 ITS SP DISAGREES BETWEEN HIS TWO FILES — 42,000 in `buffer 3rd.csv`, 37,000 here. One skill
+    /// has one price, and the buffer's is the one the def carries; `--check` will report the archer
+    /// row until he settles it.</para>
+    ///
+    /// <para>⚠ Signal Flare is <see cref="RegisterHideKit"/>'s, placed by him at 60 long before this
+    /// file existed. Only its SP moved (12,000 → his 120,000).</para></summary>
+    private static void RegisterArcher3rd()
+    {
+        int[] band15 = { 40, 43, 46, 49, 52, 55, 58, 60, 62, 64, 66, 68, 70, 72, 74 };
+        int[] buff3  = { 58, 66, 74 };
+        int[] cure6  = { 52, 58, 62, 66, 70, 74 };
+
+        static IEnumerable<ClassSkill> Ladder(string id, int[] levels, int startRung = 1) =>
+            levels.Select((lv, i) => new ClassSkill(id, lv, SkillLevel: startRung + i));
+
+        // ⚠ Armor Mastery here is a NEW skill starting at rung 1, not appended rungs: his file gives
+        //   it its own id and a REPLACES cell. The dual file does the opposite with the same ladder.
+        var shared = new List<ClassSkill>();
+        shared.AddRange(Ladder(ArcherArmorMastery, band15));
+        shared.AddRange(Ladder(BowWeaponMastery, band15));
+        shared.AddRange(Ladder(ArcherTwinArrows, band15));
+        shared.AddRange(Ladder(ArcherExplosiveArrow, band15));
+        shared.AddRange(Ladder(ArcherBowBlessing, buff3));
+        shared.AddRange(Ladder(ArcherBowSpirit, buff3));
+        shared.Add(new ClassSkill(WcBowExpertise, 52));
+        shared.Add(new ClassSkill(ArcherBowStance, 60));
+
+        var human = new List<ClassSkill>(shared);
+        human.AddRange(Ladder(ArcherBowFocus, buff3));
+        human.AddRange(Ladder(ArcherPoisonTrap, band15));
+        human.AddRange(Ladder(ArcherMagicArrowHuman, band15));
+
+        var elf = new List<ClassSkill>(shared);
+        elf.AddRange(Ladder(ArcherBowSwiftness, buff3));
+        elf.AddRange(Ladder(ArcherBindingTrap, band15));
+        elf.AddRange(Ladder(ArcherMagicArrowElf, band15));
+        elf.AddRange(Ladder(ElfAntidote, cure6));
+
+        var demon = new List<ClassSkill>(shared);
+        demon.AddRange(Ladder(ArcherBowFerocity, buff3));
+        demon.AddRange(Ladder(ArcherBleedTrap, band15));
+        demon.AddRange(Ladder(ArcherMagicArrowDemon, band15));
+
+        ClassSkills.RegisterThird(Race.Human, Discipline.Sharpshooter, human.ToArray());
+        ClassSkills.RegisterThird(Race.Elf,   Discipline.Trapper,      elf.ToArray());
+        ClassSkills.RegisterThird(Race.Demon, Discipline.Hunter,       demon.ToArray());
     }
 }
