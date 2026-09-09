@@ -429,17 +429,47 @@ public static partial class ClassSkillTables
     /// does its balancing work.</para></summary>
     private static void RegisterDual4th()
     {
-        var kit = new[]
+        int[] all = { 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90 };
+
+        static IEnumerable<ClassSkill> Ladder(string id, int[] levels, int startRung) =>
+            levels.Select((lv, i) => new ClassSkill(id, lv, SkillLevel: startRung + i));
+
+        // ---- WHAT HE RULED: the top of `BL-188`'s blow ladder. ----
+        var shared = new List<ClassSkill>
         {
-            new ClassSkill(AssassinationInstinct, 76),
+            new(AssassinationInstinct, 76),
             // The @80 CHOICE. Both are offered and both are learnable — they are mutually exclusive
             // in the BUFF BAR (one shared key), never in the learn tab.
-            new ClassSkill(PerfectStrike, 80),
-            new ClassSkill(BrutalStrike,  80),
+            new(PerfectStrike, 80),
+            new(BrutalStrike,  80),
         };
 
-        ClassSkills.RegisterFourth(Race.Human, Discipline.Nullblade,   kit);
-        ClassSkills.RegisterFourth(Race.Elf,   Discipline.Phantom,     kit);
-        ClassSkills.RegisterFourth(Race.Demon, Discipline.Venomweaver, kit);
+        // ---- WHAT IS DERIVED so the class is MEASURABLE above 76 (owner, 2026-09-10: *"Build the
+        //      new skills for duals 4 so it's measurable after 76 (even with lower power skills)"*).
+        //      Fifteen rungs each, one per level — the archer's band shape, because a melee rogue's
+        //      families are the same fifteen-rung ladders his are.
+        //      ⚠ Armor Mastery is rungs 21-35 of the SAME id (`rogue_armor_mastery`) and Dual Mastery
+        //      rungs 16-30 of its own, exactly as the 3rd tier appended rungs 6-20 and 1-15.
+        shared.AddRange(Ladder(RogueArmorMastery, all, 21));
+        shared.AddRange(Ladder(DualWeaponMastery, all, 16));
+
+        var human = new List<ClassSkill>(shared);
+        human.AddRange(Ladder(KillingStab, all, 16));
+        human.AddRange(Ladder(HeavyStab,   all, 16));
+
+        var elf = new List<ClassSkill>(shared);
+        elf.AddRange(Ladder(KillingStab, all, 16));
+        elf.AddRange(Ladder(SwiftStab,   all, 16));
+
+        // ⚠ THE DEMON STILL GETS NO KILLING STAB — his `Human;Elf` cell on it at the 3rd tier is a
+        //   race ruling, not a tier one, and Venom Stab + Venom Burst remain the whole of the
+        //   Venomweaver's damage.
+        var demon = new List<ClassSkill>(shared);
+        demon.AddRange(Ladder(VenomStab,  all, 16));
+        demon.AddRange(Ladder(VenomBurst, all, 16));
+
+        ClassSkills.RegisterFourth(Race.Human, Discipline.Nullblade,   human.ToArray());
+        ClassSkills.RegisterFourth(Race.Elf,   Discipline.Phantom,     elf.ToArray());
+        ClassSkills.RegisterFourth(Race.Demon, Discipline.Venomweaver, demon.ToArray());
     }
 }

@@ -7,11 +7,98 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.121.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.122.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-09 (latest) — 0.121.0: `BL-188` — THE BLOW LANDING RATE BECOMES ITS OWN STAT
+## 2026-09-10 (latest) — 0.122.0: every class wears its own weight, and the melee rogue exists above 76
+
+⚠ **NEW APK** — the class-skill tables changed (the melee rogue's 4th class is 105 learn rows now,
+not three).
+
+Three asks, in his order.
+
+### 1. 🔴 THE RIG DRESSED EVERY FIGHTER IN HEAVY PLATE, A SHIELD AND A ONE-HANDED SWORD
+
+`BalanceMatrix.BuildPlayer` gave every `BaseClass.Fighter` `heavy_t{n}` + `shield_t{n}` +
+`sword1h_t{n}`, and each caller then hand-swapped the WEAPON back with a `Dress()` helper — so the
+weapon was usually right and **the armour was wrong for everyone but the tank**. The rogue and the
+archer were measured in plate their own Armor Mastery (`light`) pays nothing for, and the heavy sets
+carry `Agi: -2` where the light ones carry `+1…+3`. On a stat that now drives the blow rate
+(`BL-188`) that is not cosmetic: it read the rogue **4 AGI light**.
+
+His table, built into the builder — there is **not one `Dress` call left**, and the helper is gone:
+
+| role | armour | weapon | shield |
+|---|---|---|---|
+| mage | robe | staff | — |
+| healer | robe | wand | ✔ |
+| buffer — Demon | heavy | 2H blunt | — |
+| buffer — Human | heavy | 1H blunt | ✔ |
+| buffer — Elf | light | bow | — |
+| warrior | heavy | 2H sword | — |
+| rogue | light | duals, or bow for the three archer disciplines | — |
+| tank | heavy | 1H sword | ✔ |
+
+⚠ **Every damage table in the tool moves.** The archer's level-85 P.Atk goes 4540 → 2460 — it was
+wearing the warrior's set. He also ruled the two support roles out of the comparison entirely
+(*"buffers and healers are not measurable because their roles are different"*); they are dressed
+correctly regardless, so any table that does print them is at least honest about the loadout.
+
+### 2. Sound Burst's reuse is 5s
+
+The 28 `--check` discrepancies flagged in 0.121.0, all one number. His `buffer 3rd.csv` and
+`buffer 4th.csv` say 5s on all 28 rungs while `SoundSkill` hard-coded 3s for all three sound skills.
+The CSV is the authority and it was authored after the code, which is the rule he restated:
+*"Make it 5s reuse - if csv is authored after the code"*. Sound Smash and Acoustic Shock stay at 3 —
+the ranged one, which also hits twice, is deliberately slower. **`--check` is now green on all
+seventeen walked files.**
+
+### 3. The melee rogue is measurable above 76
+
+🔴 **Half of `dual 4th.csv` is DERIVED, and it is marked so in the file.** The 40+ rule normally
+forbids inventing a kit; he lifted it for this one job — *"Build the new skills for duals 4 so it's
+measurable after 76 (even with lower power skills)"* — because a class with no 76-90 rungs cannot be
+put on a damage table at all. Every derived block carries `(DERIVED)` in its separator and the header
+says outright that it is his to overwrite. **The file still has no `Check.Specs` line.**
+
+🔑 **The one anchor that IS his is the damage.** He gave the melee rogue's Stab as **7k-11k power at
+85 and 10k-15k at 90** (2026-09-06, the reference `--his` measures against), so Killing Stab is built
+to land on **11,000 at 85 and 15,000 at 90 exactly** — the top of each band — and the other three
+families keep the ratio they already hold to it at the 3rd tier.
+
+| family | 74 (his) | 76 | 85 | 90 |
+|---|---|---|---|---|
+| Killing / Swift Stab | 6,400 | 6,900 | **11,000** | **15,000** |
+| Heavy Stab (×0.75, twice) | 4,800 | 5,175 | 8,250 | 11,250 |
+| Venom Stab (×0.50) | 3,200 | 3,450 | 5,500 | 7,500 |
+| Venom Burst (×0.20/stack) | 1,280 | 1,380 | 2,200 | 3,000 |
+| Dual Mastery P.Atk | 80 | 85 | 130 | 150 |
+| Dual Mastery crit damage | 1,015 | 1,040 | 1,220 | 1,300 |
+
+✅ **Armor Mastery's fifteen rungs are the ARCHER's, verbatim** — both wear light, and his
+`archer 4th.csv` already authors that ladder (P.Def 72→100, evasion 15→19, speed 12→15). Reusing it
+means half of this block is authored rather than none of it, and it avoids inventing a difference he
+never asked for. ⚠ `archer_armor_mastery` REPLACES `rogue_armor_mastery` at 40, so the appended rungs
+reach the three melee disciplines and nobody else.
+
+⚠ **Venom tier and stacks-per-cast are FROZEN at the 3rd tier's endpoint** (rank 10, 3 stacks): rank
+10 is the top rank a debuff can carry, so there is nothing above it to author. Same call the archer's
+regen cells got.
+
+Measured, level 85, mythic, `--dmgmatrix … --his`:
+
+```
+-- ROGUE  [Nullblade]  P.Atk 934  crit 23.2%   skill: Stab (power 11000)
+   tank    def 2599  HP 12673 |  706 hit  1143 crit  |  18.0 hits
+   warrior def 1713  HP 12563 | 1072      2399       |  11.7
+   mage    def 1124  HP  4479 | 1634      3657       |   2.7
+```
+
+The catalogue and his reference now agree on the number, which they could not before: `BestSkill`
+skips blows, so a rogue row without `--his` had nothing to print.
+
+## 2026-09-09 — 0.121.0: `BL-188` — THE BLOW LANDING RATE BECOMES ITS OWN STAT
 
 ⚠ **NEW APK** — the class-skill tables changed (five new skills across the melee rogue's 3rd and 4th
 tiers, one on the tank's 4th).

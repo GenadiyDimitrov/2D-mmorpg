@@ -164,7 +164,8 @@ public static partial class SkillCatalog
                 new SkillLevel(SpCost: 6000),
                 new SkillLevel(SpCost: 11000),
                 new SkillLevel(SpCost: 20000),
-            }.Concat(RogueArmorMasteryThirdRungs()).ToArray(),
+            }.Concat(RogueArmorMasteryThirdRungs())
+             .Concat(RogueArmorMasteryFourthRungs()).ToArray(),   // 76-90, derived — see Skills.Dual4th.cs
             ArmorMasteryLevels: new[]
             {
                 // 🔴 THE EVASION LADDER IS 7/9/12/12/12, his file — corrected 2026-09-09. It had been
@@ -188,7 +189,8 @@ public static partial class SkillCatalog
                 // masteries (*"except armor masteries the 20% increase"*) — and that x1.8 is still on
                 // the open list as a weapon-mastery-sized number sitting in an armour row.
                 RogueArmor(new StatMods(MpRegenPct: 0.8f, HpRegen: 2.5f, PDef: 25), lightEva: 12, lightSpeed: 7f),
-            }.Concat(RogueArmorMasteryThirdProfiles()).ToArray()),
+            }.Concat(RogueArmorMasteryThirdProfiles())
+             .Concat(RogueArmorMasteryFourthProfiles()).ToArray()),
 
         // (Archer Armor Mastery DELETED 2026-08-07 with its id — the rogue light mastery above is
         //  what a bow character wears since the merge.)

@@ -348,8 +348,13 @@ public static partial class SkillCatalog
 
         // ---- Sound Burst (Elf) — 900 range, BOW, and it hits TWICE. Two independent resolutions of
         //      the same power, not one hit at double power: see SkillDef.HitCount. ----
+        // ⚠ ITS REUSE IS 5s, NOT the 3s `SoundSkill` gives the other two. His `buffer 3rd.csv` and
+        //   `buffer 4th.csv` both say 5 on all 28 rungs while Sound Smash and Acoustic Shock say 3 —
+        //   the ranged one, which also hits TWICE, is deliberately slower. `--check` reported all 28
+        //   rows and the code was the stale side (owner, 2026-09-09: *"Make it 5s reuse - if csv is
+        //   authored after the code"*, and it was).
         list.Add(SoundSkill(WcSoundBurst, "Sound Burst", WeaponType.Bow, range: 900, castTicks: 30,
-            hits: 2, stunTicks: 0,
+            hits: 2, stunTicks: 0, cooldownTicks: 50,
             desc: "Looses two arrows on one breath — each resolves on its own."));
 
         // ---- Sound Smash (Demon + Human) — the melee twin: 40 range, blunt, one hit, faster cast. ----
@@ -474,11 +479,11 @@ public static partial class SkillCatalog
     /// his SP column verbatim; what differs is the weapon, the range, the cast, how many times a cast
     /// resolves, and (Acoustic Shock only) a contested stun.</summary>
     private static SkillDef SoundSkill(string id, string name, WeaponType weapon, float range,
-        int castTicks, int hits, int stunTicks, string desc)
+        int castTicks, int hits, int stunTicks, string desc, int cooldownTicks = 30)
     {
         var effect = SkillEffect.PhysicalDamage | (stunTicks > 0 ? SkillEffect.Stun : SkillEffect.None);
         return new SkillDef(id, name, BaseClass.Mage, effect,
-            MpCost: SoundMp[0], CastTicks: castTicks, CooldownTicks: 30, Range: range, Power: SoundPower[0],
+            MpCost: SoundMp[0], CastTicks: castTicks, CooldownTicks: cooldownTicks, Range: range, Power: SoundPower[0],
             Category: SkillCategory.Physical,
             // 🔑 A SOUND SKILL RETIRES HOLY BOLT (owner, playtest 28: *"holy bolt should be replaced from
             // sound smash/burst — [they] are the attack skills of buffers; healers replace [it] with a

@@ -232,14 +232,16 @@ public static partial class SkillCatalog
             Levels: BulwarkRungs(i => new SkillLevel(SpCost: RogueSp[i],
                 Description: $"Duals: +{dualAtk[i]} P.Atk, ×1.085 P.Atk, +{dualCritDmg[i]} crit damage, "
                            + $"+3 accuracy, ×{1f + dualCritRate[i]:0.0} crit rate, "
-                           + $"×{1f + dualAtkSpd[i]:0.00} attack speed.")),
+                           + $"×{1f + dualAtkSpd[i]:0.00} attack speed."))
+                .Concat(DualMasteryFourthRungs()).ToArray(),
             WeaponMasteryLevels: Enumerable.Range(0, BulwarkLevels.Length).Select(i =>
                 new WeaponMasteryProfile(
                     Dual: new PassiveEffect(
                         PhysAtk: dualAtk[i], PhysAtkPct: 0.085f,
                         CritDamageFlat: dualCritDmg[i], Accuracy: 3,
                         CritRate: dualCritRate[i], AtkSpeedPct: dualAtkSpd[i]),
-                    RequiredWeapon: WeaponType.Dual)).ToArray()));
+                    RequiredWeapon: WeaponType.Dual))
+                .Concat(DualMasteryFourthProfiles()).ToArray()));
 
         // The proc's payload. FLAT across all fifteen rungs — his numbers do not ladder (3% / 60% /
         // 10% on every row), so one def is repeated rather than fifteen written.
@@ -268,7 +270,8 @@ public static partial class SkillCatalog
         //   cost of guessing wrong is deleting a skill he wanted kept. Same cell on all five families.
         list.Add(StabSkill(KillingStab, "Killing Stab", StabPower, castTicks: 10,
             "Drives both blades home. Full power only when it crits.",
-            i => $"Blow power {StabPower[i]:N0} on a critical; {(int)MathF.Round(StabPower[i] * ThirdTierBlowFloor)} otherwise."));
+            i => $"Blow power {StabPower[i]:N0} on a critical; {(int)MathF.Round(StabPower[i] * ThirdTierBlowFloor)} otherwise.",
+            fourth: StabFourthRungs(StabPower4)));
 
         // ═══ SWIFT STAB — the Elf's ══════════════════════════════════════════════════════════════
         // Killing Stab's power on HALF the cast time, and it leaves a 5-second rush behind it.
@@ -276,7 +279,7 @@ public static partial class SkillCatalog
             "A blur of a blow that carries you forward with it.",
             i => $"Blow power {StabPower[i]:N0} on a critical; {(int)MathF.Round(StabPower[i] * ThirdTierBlowFloor)} otherwise. "
                + "Leaves +5 speed and +15% attack speed for 5s.",
-            selfBuff: SwiftStabRush));
+            selfBuff: SwiftStabRush, fourth: StabFourthRungs(StabPower4)));
 
         list.Add(new SkillDef(SwiftStabRush, "Swift Stab", BaseClass.Fighter,
             SkillEffect.BuffMoveSpeed | SkillEffect.BuffAtkSpeed,
@@ -298,7 +301,7 @@ public static partial class SkillCatalog
             "Two heavy blows, wound up and delivered. Each bites on its own.",
             i => $"Strikes 2 times; blow power {HeavyStabPower[i]:N0} each on a critical, "
                + $"{(int)MathF.Round(HeavyStabPower[i] * ThirdTierBlowFloor)} otherwise.",
-            hitCount: 2));
+            hitCount: 2, fourth: StabFourthRungs(HeavyStabPower4)));
 
         // ═══ VENOM STAB — the Demon's ════════════════════════════════════════════════════════════
         //
@@ -336,7 +339,8 @@ public static partial class SkillCatalog
                 },
                 Description: $"Blow power {VenomStabPower[i]:N0} on a critical; "
                            + $"{(int)MathF.Round(VenomStabPower[i] * ThirdTierBlowFloor)} otherwise. "
-                           + $"Adds {VenomStacksPerCast[i]} tier-{VenomTier[i]} venom stack(s), max 10."))));
+                           + $"Adds {VenomStacksPerCast[i]} tier-{VenomTier[i]} venom stack(s), max 10."))
+                .Concat(VenomStabFourthRungs()).ToArray()));
 
         // ═══ VENOM BURST — the Demon's detonator ═════════════════════════════════════════════════
         //
@@ -373,7 +377,8 @@ public static partial class SkillCatalog
                     new(SkillEffect.DebuffAtk, 0.15f), new(SkillEffect.DebuffDef, 0.15f),
                 },
                 Description: $"Power {VenomBurstPerStack[i]:N0} per consumed venom stack (up to ×10). "
-                           + $"With no stacks on the target, lays {VenomStacksPerCast[i]} tier-{VenomTier[i]} instead."))));
+                           + $"With no stacks on the target, lays {VenomStacksPerCast[i]} tier-{VenomTier[i]} instead."))
+                .Concat(VenomBurstFourthRungs()).ToArray()));
 
         // ═══ PHANTOM JUMP ×3 — a gap-closer with a different cruelty per race ════════════════════
         //
@@ -514,7 +519,8 @@ public static partial class SkillCatalog
     /// skill's full number about a third of the time and the 1% floor the rest.</para></summary>
     private static SkillDef StabSkill(string id, string name, int[] power, int castTicks,
                                  string blurb, Func<int, string> rung,
-                                 int hitCount = 1, string? selfBuff = null)
+                                 int hitCount = 1, string? selfBuff = null,
+                                 SkillLevel[]? fourth = null)
         => new(id, name, BaseClass.Fighter, SkillEffect.PhysicalDamage,
             MpCost: StabMp[0], CastTicks: castTicks, CooldownTicks: 30, Range: 40, Power: power[0],
             Category: SkillCategory.Physical, SpCost: RogueSp[0],
@@ -525,7 +531,8 @@ public static partial class SkillCatalog
             Replaces: new[] { PreciseShot },
             Description: blurb,
             Levels: BulwarkRungs(i => new SkillLevel(
-                Power: power[i], MpCost: StabMp[i], SpCost: RogueSp[i], Description: rung(i))));
+                Power: power[i], MpCost: StabMp[i], SpCost: RogueSp[i], Description: rung(i)))
+                .Concat(fourth ?? Array.Empty<SkillLevel>()).ToArray());
 
     /// <summary>One race's Phantom Jump. Three rungs, and the ladder is the reach.</summary>
     private static SkillDef PhantomJump(string id, SkillEffect rider, DebuffSchool school,

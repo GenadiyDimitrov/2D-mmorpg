@@ -370,44 +370,38 @@ if (args.Length > 0 && args[0] == "--dmgmatrix")
     Console.WriteLine("  multiplier, the target's own CritDmgResist / BowResist / mRes. No variance, no");
     Console.WriteLine("  miss, no block roll (block is shown separately as the average it removes).");
 
+    // ✅ NOT ONE `Dress` CALL LEFT (2026-09-09). Every row used to hand-swap the weapon `BuildPlayer`
+    //    had just equipped, because the builder gave every Fighter a ONE-HANDED SWORD, heavy plate and
+    //    a shield — so the ARMOUR stayed wrong even where the weapon was corrected, and the Demon
+    //    buffer was measured with a 1H sword where his rule is a 2H blunt. The builder dresses each
+    //    role by his table now, so these rows only say WHO is being measured.
     Entity Make(string kind) => kind switch
     {
         // Human rogue -> Sharpshooter is the BOW branch (Nullblade is its dagger twin).
-        "archer"    => Dress(BuildPlayer(Race.Human, BaseClass.Fighter, L, quality: q,
+        "archer"    => BuildPlayer(Race.Human, BaseClass.Fighter, L, quality: q,
                             discipline: Discipline.Sharpshooter, secondClass: 15, fourth: true,
-                            npcBuffed: buffed), $"bow_t{t}", q),
-        "harmonist" => Dress(BuildPlayer(Race.Elf, BaseClass.Mage, L, quality: q, healer: true,
+                            npcBuffed: buffed),
+        "harmonist" => BuildPlayer(Race.Elf, BaseClass.Mage, L, quality: q, healer: true,
                             discipline: Discipline.Warchanter, secondClass: 11, fourth: true,
-                            npcBuffed: buffed), $"bow_t{t}", q),
+                            npcBuffed: buffed),
         "mage"      => BuildPlayer(Race.Human, BaseClass.Mage, L, quality: q,
                             discipline: Discipline.Magus, fourth: true, npcBuffed: buffed),
-        "warrior"   => Dress(BuildPlayer(Race.Human, BaseClass.Fighter, L, quality: q, warrior: true,
+        "warrior"   => BuildPlayer(Race.Human, BaseClass.Fighter, L, quality: q, warrior: true,
                             discipline: Discipline.Ravager, secondClass: 14, fourth: true,
-                            npcBuffed: buffed), $"sword2h_t{t}", q),
+                            npcBuffed: buffed),
         // The DEMON buffer — "Warlock" (Human = War Doctor, Elf = War Harmonist). He benchmarks the
         // warrior at +20% over this one, exactly as the archer is benchmarked over the elf buffer.
-        "warlock"   => Dress(BuildPlayer(Race.Demon, BaseClass.Mage, L, quality: q, healer: true,
+        "warlock"   => BuildPlayer(Race.Demon, BaseClass.Mage, L, quality: q, healer: true,
                             discipline: Discipline.Warchanter, secondClass: 5, fourth: true,
-                            npcBuffed: buffed), $"sword1h_t{t}", q),
+                            npcBuffed: buffed),
         // Human rogue -> Nullblade is the DAGGER branch. Daggers are WeaponType.Dual here.
-        "rogue"     => Dress(BuildPlayer(Race.Human, BaseClass.Fighter, L, quality: q,
+        "rogue"     => BuildPlayer(Race.Human, BaseClass.Fighter, L, quality: q,
                             discipline: Discipline.Nullblade, secondClass: 15, fourth: true,
-                            npcBuffed: buffed), $"duals_t{t}", q),
+                            npcBuffed: buffed),
         "tank"      => BuildPlayer(Race.Human, BaseClass.Fighter, L, quality: q,
                             discipline: Discipline.Bulwark, fourth: true, npcBuffed: buffed),
         _           => throw new ArgumentException(kind),
     };
-
-    // Swap the weapon BuildPlayer chose for the one this archetype actually fights with.
-    static Entity Dress(Entity e, string weaponId, string quality)
-    {
-        string id = weaponId + (quality == "mythic" ? "" : "_" + quality);
-        if (ItemCatalog.Get(id) is null) { Console.Error.WriteLine($"  !! missing {id}"); return e; }
-        e.Inventory.RemoveAll(i => ItemCatalog.Get(i.DefId)?.Slot == EquipSlot.Weapon);
-        Equip(e, id);
-        e.RecomputeDerived();
-        return e;
-    }
 
     string ClassLabel(Entity e) =>
         (e.FourthClass > 0 ? FourthClassCatalog.Get(e.FourthClass)?.Name
@@ -865,18 +859,11 @@ if (args.Length > 0 && args[0] == "--blowrate")
     {
         Entity Make()
         {
+            // ✅ NO GEAR OVERRIDE — `BuildPlayer` dresses a melee rogue in LIGHT + duals of its own
+            //    accord since 2026-09-09. This probe carried a local swap for one commit, back when
+            //    the builder put every Fighter in plate.
             var e = BuildPlayer(race, BaseClass.Fighter, L, quality: q, discipline: disc,
                                 secondClass: 15, fourth: true);
-            // 🔴 THE RIG DRESSES EVERY FIGHTER IN HEAVY PLATE AND A SHIELD (BuildPlayer, unchanged
-            // here). The melee rogue wears LIGHT — his own Armor Mastery is `light` — and the heavy
-            // sets carry `Agi: -2` while the light ones carry +1..+3, so measuring a rogue in plate
-            // understates the one stat this whole table is about. Swapped for THIS probe only;
-            // fixing it for every table is a wider change than `BL-188` and is flagged, not done.
-            e.Inventory.RemoveAll(i => ItemCatalog.Get(i.DefId) is { } d2
-                && (d2.Slot == EquipSlot.Weapon || d2.Slot == EquipSlot.Armor || d2.Slot == EquipSlot.Shield));
-            Equip(e, $"light_t{t}" + (q == "mythic" ? "" : "_" + q));
-            Equip(e, $"duals_t{t}" + (q == "mythic" ? "" : "_" + q));
-            e.RecomputeDerived();
             return e;
         }
 
@@ -5650,9 +5637,53 @@ static Entity BuildPlayer(Race race, BaseClass cls, int level, string? quality =
     // ⚠ `_mythic` is NOT a real id. Asking for it prints "missing item" and dresses a NAKED character.
     int t = gearTier > 0 ? gearTier : GearTier(level);   // BL-169: an explicit tier lets his own gear be reproduced
     string q = quality is null or "mythic" ? "" : "_" + quality;
-    Equip(e, (cls == BaseClass.Mage ? (healer ? $"wand_t{t}" : $"staff_t{t}") : $"sword1h_t{t}") + q);
-    Equip(e, (cls == BaseClass.Mage ? $"robe_t{t}" : $"heavy_t{t}") + q);
-    if (cls == BaseClass.Fighter) Equip(e, $"shield_t{t}{q}");
+    // 🔴🔑 EVERY CLASS WEARS ITS OWN WEIGHT AND ITS OWN WEAPON (owner, 2026-09-09). Until then this
+    //   block dressed EVERY Fighter in heavy plate, a shield and a ONE-HANDED SWORD — so the warrior
+    //   was measured with the tank's weapon, and the rogue and the archer were measured in plate they
+    //   cannot wear, on kits whose Armor Mastery is `light`. The heavy sets carry `Agi: -2` and the
+    //   light ones `+1…+3`, so a rogue read FOUR AGI light against his real loadout, which on a stat
+    //   that now drives the blow rate (`BL-188`) is not cosmetic. His rules, verbatim:
+    //
+    //     mage    robe + staff            (2H — no shield)
+    //     healer  robe + shield + wand
+    //     buffer  Demon heavy + 2H blunt · Human heavy + shield + 1H blunt · Elf light + bow
+    //     warrior heavy + 2H sword
+    //     rogue   light + duals, or light + bow for the three archer disciplines
+    //     tank    heavy + shield + 1H sword
+    //
+    // ⚠ He also said the two SUPPORT roles are not comparable on a damage table at all — *"buffers and
+    //   healers are not measurable because their roles are different"*. They are dressed correctly
+    //   here so any table that does include them is at least honest about the loadout.
+    {
+        var arch = discipline is { } dd ? Disciplines.Parent(dd)
+                 : cls == BaseClass.Mage ? (healer ? Archetype.Healer : Archetype.Nuker)
+                 : warrior ? Archetype.Warrior
+                 : secondClass == 15 ? Archetype.Rogue
+                 : Archetype.Tank;
+        bool buffer = discipline == Discipline.Warchanter;
+        // The archer disciplines carry a bow; the three melee ones carry duals. With no discipline the
+        // Rogue is measured on duals, which is the 2nd class's own weapon.
+        bool bowRogue = discipline is Discipline.Sharpshooter or Discipline.Trapper or Discipline.Hunter;
+
+        var (weapon, armor, shield) = arch switch
+        {
+            Archetype.Nuker                 => ($"staff_t{t}",   $"robe_t{t}",  false),
+            Archetype.Healer when !buffer   => ($"wand_t{t}",    $"robe_t{t}",  true),
+            // The buffer splits three ways by RACE, and it is the only role that does.
+            Archetype.Healer                => race switch
+            {
+                Race.Demon => ($"blunt2h_t{t}", $"heavy_t{t}", false),
+                Race.Elf   => ($"bow_t{t}",     $"light_t{t}", false),
+                _          => ($"blunt1h_t{t}", $"heavy_t{t}", true),
+            },
+            Archetype.Warrior               => ($"sword2h_t{t}", $"heavy_t{t}", false),
+            Archetype.Rogue                 => (bowRogue ? $"bow_t{t}" : $"duals_t{t}", $"light_t{t}", false),
+            _                               => ($"sword1h_t{t}", $"heavy_t{t}", true),
+        };
+        Equip(e, weapon + q);
+        Equip(e, armor + q);
+        if (shield) Equip(e, $"shield_t{t}{q}");
+    }
     foreach (var acc in new[] { "helm", "gloves", "boots" }) Equip(e, $"{acc}_t{t}{q}");
     Equip(e, $"necklace_t{t}{q}");
     Equip(e, $"ring_t{t}{q}"); Equip(e, $"ring_t{t}{q}");
