@@ -196,6 +196,10 @@ public static class BoxCatalog
                      ItemCatalog.BoxSpellRune24h, ItemCatalog.BoxSpellRune30d,
                  })
             yield return new BoxDef(boxId, new[] { new BoxEntry(ItemCatalog.SpellRune, 1f) });
+
+        // `BL-187` — the combined rune has exactly ONE box, because it has exactly one rung.
+        yield return new BoxDef(ItemCatalog.BoxGrandRune24h,
+            new[] { new BoxEntry(ItemCatalog.GrandRune, 1f) });
     }
 
     /// <summary>One accessory box per gear tier → the 3 accessories of that tier (100% each).</summary>

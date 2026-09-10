@@ -7,11 +7,56 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.124.2**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.124.3**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-10 (latest) — 0.124.2: the masteries stop belonging to one class each (`BL-191`)
+## 2026-09-10 (latest) — 0.124.3: the Grand Rune closes `BL-187`, and `BL-186` is postponed
+
+🔴 **NEW APK REQUIRED** — the Admin panel gained a row. No schema change, protocol stays **35**.
+
+*"build one rune that stays in admin menu and its 1d rune that combine both. it will be prmium
+curency and close the quesion"*
+
+**Grand Rune** (`rune_grand`), from a **Grand Rune Box (1d)** (`box_grand_rune_24h`):
+
+- `PhysDamageMult: 2.0` **and** `MagicDamageMult: 2.0`, plus the Spell Rune's flat +40 cast speed.
+- **24 hours, one rung.** No 1h/2h/30d ladder — one item, not a fourth column.
+- **Premium: not buyable, not tradable, not dropped.** Its only route into a bag is the Admin
+  panel's new **Runes (premium)** row, under Items → Boxes.
+
+🔑 **Three of `BL-187`'s four open questions were answered by the delivery model, not by a number.**
+The entry worried that a ×2/×2 rune strictly dominates both singles — a trap for a pure class, a tax
+on hybrids. Making it premium and admin-only removes the shelf it would have had to compete on: it
+never appears beside the two vendor runes, so a hybrid gets both channels at full strength and a pure
+class gets exactly what its own single already gave. The fourth question was the name.
+
+🔴🔑 **The superseding rule is NOT `CoveredKeys`, and the entry's own recommendation would have
+misfired.** `BL-187` proposed the `BL-183` group shape: declare `CoveredKeys` over `rune_war` /
+`rune_spell` and outrank them. That is correct for a *cast* buff and wrong for a *rune*, because rune
+buffs are owned by `ReconcileRuneBuffs`, which re-derives them from the held items roughly once a
+second. Under a covering rank that loop would try to apply the War Rune on **every pass**, have
+`ApplyBuff` refuse it as outranked, find the buff still missing, and mark stats dirty — a `SendStats`
+every second for as long as a player held both runes. The rule lives where the *wanted set* is built
+instead: hold a Grand Rune and the two singles are dropped from it once. The items are untouched — a
+superseded War Rune keeps ticking down in the bag and comes back by itself when the Grand Rune ends.
+
+⏸ **`BL-186` (removing the max level cap) is POSTPONED**, his call: *"a big discussion and rely on
+current systems to work so to be changed"*. Not declined, not closed, and nothing in it investigated.
+
+⚠ **`nuker 4th.csv` is NOT built yet.** He finished authoring it (236 rows, 25 skills) and the
+research for the build is done — the ladders, the rung start indices and the four engine gaps are
+written up in `BL-192`. Nothing was half-built; the file is untouched.
+
+### Files
+
+`GameConstants.cs` (0.124.3) · `Skills.Common.cs` (`GrandRuneBuff`) · `Items.cs` · `Boxes.cs` ·
+`GameLoopService.cs` (`ReconcileRuneBuffs` step 2b) · `GameUi.Debug.cs` · `Backlog.md` +
+`BacklogArchive.md`
+
+---
+
+## 2026-09-10 — 0.124.2: the masteries stop belonging to one class each (`BL-191`)
 
 🔴 **NEW APK REQUIRED** — two skill ids changed and the melee rogue gained two learnable skills, and
 the client builds its Learn tab locally from the compiled `ClassSkills`. Wire untouched: protocol

@@ -129,10 +129,10 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-172` | 🔴 | `/unstuck <name>` — 180s rooted channel, cast in town, on another char of the same account | systems |
 | `BL-179` | 🔵 | The two TEST skills are granted to EVERY character — three ways to gate them, your pick | systems |
 | `BL-185` | 🔵 | THE DAMAGE REWORK — ✅ the SHOT (runes x2) and the DEFENCE SHAPE built 0.117.0; the armour spread + the x1.17 residual are open | combat |
-| `BL-186` | ❓ | THE MAX LEVEL CAP — can it be removed? Parked until `BL-185` closes, on your order | systems |
-| `BL-187` | 🔵 | A THIRD RUNE combining both damage channels — engine done, the economy and stacking shape are yours | items |
+| `BL-186` | ⏸ | THE MAX LEVEL CAP — can it be removed? POSTPONED on your call 2026-09-10; not the next thing | systems |
 | `BL-189` | 🔵 | Weapon-type protection — `BowResist` generalised to every weapon type | combat |
 | `BL-191` | 🟡 | The SKILL MASTERIES — built for 5 archetypes; tank + bow rogue ruled OUT; ON TRIAL until he playtests | classes |
+| `BL-192` | 🟡 | BUILD THE NUKER 4th KIT — his 236-row file is finished; research + the 4 engine gaps are in the entry | classes |
 
 ---
 
@@ -1157,13 +1157,15 @@ data, so every rung touched owes its row in `docs/data/classes_skills_csv/` in t
 
 ---
 
-## `BL-186` ❓ THE MAX LEVEL CAP — can it be removed?
+## `BL-186` ⏸ THE MAX LEVEL CAP — can it be removed? **POSTPONED (your call, 2026-09-10)**
 
 **Filed 2026-09-09, on your instruction:** *"make a note to ask you about max lvl cap and if we can
 remove it (but 1st to finish the dmg/def discussion)"*.
 
-⏸ **Deliberately not investigated yet** — you asked to close the damage/defence discussion
-(`BL-185`) first. This entry exists only so the question is not lost.
+⏸ **POSTPONED INDEFINITELY, 2026-09-10** — *"bl-186 is a big discussion and rely on current systems
+to work so to be changed... so we prsopone it for now"*. Not declined and not closed: the question
+stands, it is simply not the next thing. It stays in this file so it is not lost, and nothing in it
+should be investigated or half-built until you reopen it.
 
 When it opens, the things that will need answering are roughly: what actually enforces the cap today
 and in how many places; what the EXP curve does past it; whether the mob roster, the zone ladder and
@@ -1172,32 +1174,63 @@ the gear tiers have anything to give above the cap; and what an uncapped level d
 
 ---
 
-## `BL-187` 🔵 A THIRD RUNE THAT COMBINES BOTH CHANNELS
+## `BL-192` 🟡 BUILD THE NUKER'S 4th-CLASS KIT — his file is finished, the code is not
 
-**Filed 2026-09-09, on your instruction** while the runes were rebuilt as damage multipliers
-(`BL-185` step 1): *"add a note to make 3rd rune that combines both"*.
+**`docs/data/classes_skills_csv/nuker 4th.csv` is DONE** (his words, 2026-09-10: *"so i think im done
+with nuker 4th"*). 236 rows, 25 skills, the `NOT DONE` banner gone. **Nothing of it is built.** This
+entry is the research so the build does not start from zero — it was done, then parked when he asked
+for a commit so he could take an APK.
 
-The engine side is already done and this is now a **catalogue entry, not a mechanic**: `SkillDef`
-carries `PhysDamageMult` and `MagicDamageMult` independently, `Entity` compounds each channel
-separately, and `GameLoopService.FinalizeDamage` picks the channel per hit. A combined rune is one
-`SkillDef` setting **both** fields plus one `ItemDef`.
+### What the file contains
 
-**What is still owed is yours to decide, because all of it is economy, not code:**
+**Continuing ladders** — the 3rd tier ran 14 rungs (40-74); the 4th runs **15, one per level, 76-90**.
+Start rungs, counted off `RegisterNuker3rd`, not guessed:
 
-1. **The multiplier.** Same ×2 on both channels, or less on each (e.g. ×1.7/×1.7) so the combined
-   rune is convenience rather than a strict upgrade? A flat ×2/×2 strictly dominates both singles for
-   any hybrid, and equals them for a pure class.
-2. **Who it is for.** Only a hybrid actually uses both channels. A pure nuker gains nothing over a
-   Spell Rune, so priced equal to a single it is a trap, and priced above it is a tax on hybrids.
-3. **Price and duration ladder.** The singles run 1h/2h vendor-bought (150 000 / 280 000 gold,
-   tradable sealed) and 24h/30d premium (not buyable, not tradable). Same four rungs, or fewer?
-4. **The name**, which must pass the `word + SAME RACE + SAME ROLE` test.
+| Skill | id | 4th rungs | Note |
+|---|---|---|---|
+| Anti magic | `anti_magic_mage` | **21-35** | ⚠ ALREADY IN THE DEF (`HealerFourthAntiMagicRungs`) and his rows match it digit for digit. Learn lines only. |
+| Spellcaster Weapon Mastery | `healer_weapon_mastery` | **15-29** | ⚠ ALREADY IN THE DEF (`HealerFourthWeaponRungs`). Learn lines only. |
+| Mage Armor Mastery | `nuker_armor_mastery` | **19-33** | The nuker's own. NEW rungs to author. |
+| Elemental Blast | `elemental_blast` | 15-29 | |
+| Quick Blast | `quick_blast` | 15-29 | |
+| Elemental Wave | `elemental_wave` | 15-29 | |
+| Arcane Wave | `arcane_wave` | 15-29 | Human |
+| Frost Spikes / Frost Pierce | `frost_spikes` / `frost_pierce` | 15-29 | Elf |
+| Witches Curse / Scarecrow | `witches_curse` / `witches_scarecrow` | 15-29 | Demon |
+| Vampiric Bolt | `vampiric_bolt` | **20-34** | Human. 3rd ran rungs 6-19. |
+| Arcane Void | `arcane_void` | **4-7** @76/80/85/90 | Human. Only MP moves; all four say 2~4. |
+| Elemental Burst | `elemental_burst` | **4-6** @80/85/90 | power 200/225/250, 2 Elemental Stones |
+| Thunderstorm | `thunderstorm` | **4-6** @80/85/90 | power 250/300/350, 3 stones |
+| Arcane / Frost / Pyro Burst | `arcane_burst` etc. | **2-4** @80/85/90 | one per race |
+| Arcane Momentum | `reuse_reset_momentum` | 1 @76 | ✅ ALREADY BUILT (`BL-191`) |
 
-⚠ **Stacking is already decided by the existing rules and needs no new mechanic** — but check it
-reads the way you want: the two singles have distinct `BuffKey`s (`rune_war` / `rune_spell`), so a
-combined rune either takes a third key (and then all three stack, which is almost certainly wrong) or
-declares `CoveredKeys` over both and outranks them by `GroupRank`, exactly as a group buff covers its
-singles (`BL-183`). **The second is the right shape**; it just has to be authored.
+**His shared columns, read off the file** (state each once, as `Skills.Nuker3rd.cs` does):
+
+- Bolt MP (Elemental Blast, Quick Blast, Frost Spikes, Frost Pierce): `69,71,73,77,79,91,95,97,99,103,105,107,111,113,115`
+- Wave MP (Elemental Wave, Arcane Wave): `105,107,109,111,114,117,120,123,126,129,132,135,138,141,144`
+- Heavy MP (Vampiric Bolt, Witches Curse, Witches Scarecrow): `138,142,146,154,158,182,190,194,198,206,210,214,222,226,230`
+- Blast power (Elemental Blast, Vampiric Bolt): `110…138` by +2
+- Quick power (Quick Blast, Witches Curse): `88,90,91,93,94,96,99,100,101,102,103,105,106,108,109`
+- Wave power (Elemental Wave, Arcane Wave, Frost Spikes, Frost Pierce): `66,68,70,72,75,78,81,84,87,90,93,96,99,102,105`
+- Frost Spikes slow: 40% ×4, 42% ×5, 45% ×6 · Witches Curse M.Def: 30% ×4, 32% ×5, 35% ×6 · Frost Pierce bleed rank **10 flat**
+- ✅ **The SP/gold ladder is `HealerFourthSp` / `HealerFourthGold` exactly** — 6.5kk/11kk/16kk/80kk then SP 0 and gold 5kk→100kk. Reuse them; do not restate.
+
+**Mage Armor Mastery's 15 new rungs** (his DESCR, in order 76→90): P.Def `89,91,92,93,95,96,97,99,100,101,103,104,105,107,108`; max MP `220,220,250,250,250,290,290,300,300,300,330,330,350,350,400`; mpWhenRestored `60% ×4, 65% ×5, 70% ×6`; **M.Def % `2,4,5,7,8,10,11,13,14,16,17,19,20,22,25`** and **MP-consumption reduction `0,0,5,5,5,8,8,8,8,8,10,10,10,10,10`** — the last two are NEW columns this ladder never had. M.Def% fits `StatMods.MDefPct` in the robe profile; the MP-cost cut has no StatMods field, so give the rung a second, robe-gated `PassiveEffect(RequiredArmor: Robe, MagicMpCostPct: …)` — the `SkillLevel.ExtraPassives` idiom, not a new StatMods field.
+  ❓ **His "Decrease Mp Consumption" is unqualified.** Built as MAGIC-channel unless you say otherwise; a nuker casts magic, and the warrior's toggle only took the physical channel because his row said "p.mp".
+
+### 🔴 SIX SKILLS ARE NEW, and four of them need engine work
+
+1. **`nuker_shield_mastery`** @76 — a robe caster's shield passive: `RequiresShield`, M.Atk +5%, MP cost −10%, MP regen +10%, P.Def +100, **and the shield can never block** (`BlockChancePct: -1f`, which is the existing ×(1+pct) channel reaching ×0). No engine work.
+2. **`nuker_mana_barrier`** @85 — 30 MP, 300s reuse, 30s, **5 SP bottles** (`LearnConsumableId: ItemCatalog.SpBottle`, the `archer 4th` idiom). 🔑 **A def called `mana_barrier` ALREADY EXISTS in `Skills.Mage.cs` with his exact numbers (70% / 0.5 MP / 30s / 300 reuse) and NO class table learns it** — an orphan, like Dispel Magic was. Change its id string to his `nuker_mana_barrier` rather than authoring a second one.
+3. **`nuker_Force_empowerment`** @78/80/82 — a toggle: M.Atk +14/15/16%, magic MP consumption +20/15/10%, **50/40/30 HP a second**. Same shape as `double_mastery`; no engine work.
+4. **`nuker_{human,elf,demon}_spell_empowerment`** @80/85/90 — a 600s self buff: magic MP cost up, M.Atk up, **and a 5% on-being-attacked proc whose payload lands on the ATTACKER**. 🔴 **THIS IS THE ENGINE GAP.** The proc machinery exists (`ProcOnDamaged`, `ProcVictimRungs`) and buff-carried procs already run, but `TryOnDamagedProcs(target, magicHit)` never passes the attacker, so `ProcVictimRungs` can't fire on a defensive proc. Two changes: pass the attacker through, and teach `PayOutProc`/the victim arm to deal DIRECT DAMAGE (the Human's *"inflicts damage on attackers with power 47/51/55"* — the Elf and Demon payloads are ordinary debuffs and already work).
+
+### Before it can be called done
+
+- A `Check.Specs` line for `nuker 4th` — **it earns one**, the file is finished.
+- `dotnet run --project tools/SkillCsvSeed -- --check` green, and `--chains` re-read.
+- Register to `Discipline.Magus` only — `Tempest` was retired (`BL-97`).
+- ⚠ **NEW APK**: the class-skill table changes.
 
 ---
 

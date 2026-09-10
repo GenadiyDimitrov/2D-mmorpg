@@ -3206,7 +3206,69 @@ exactly how a toggle is turned off already, so nothing is left behind claiming i
 
 ⚠ **NEW APK** (two buttons). No schema change.
 
+
 ---
+
+## `BL-187` ✅ CLOSED 2026-09-10 (0.124.3) — ONE COMBINED RUNE, PREMIUM, ADMIN-ONLY
+
+**His ruling, in one line:** *"build one rune that stays in admin menu and its 1d rune that combine
+both. it will be prmium curency and close the quesion"*.
+
+Built as **Grand Rune** (`rune_grand`) + **Grand Rune Box (1d)** (`box_grand_rune_24h`):
+
+- `PhysDamageMult: 2.0` **and** `MagicDamageMult: 2.0`, plus the Spell Rune's flat +40 cast speed.
+- **24 hours, one rung.** No 1h/2h/30d ladder — he asked for one item, not a fourth column.
+- **Not buyable, not tradable, not dropped.** Its only route into a bag is the Admin panel's new
+  "Runes (premium)" row; when a premium currency exists, this is the item it buys.
+
+🔑 **Three of the entry's four open questions were answered by the DELIVERY MODEL rather than by a
+number.** It asked whether the combined rune should be weaker per channel so as not to dominate the
+singles, who it is for, and where it sits on the price ladder. Making it premium and admin-only
+removes the ladder it would have had to compete on: it never appears beside the two vendor runes, so
+a hybrid gets both channels at full strength and a pure class gets exactly what its own single
+already gave it. Nobody is taxed and nobody is trapped. The fourth — the name — is **Grand Rune**,
+which is a generic tier word in nobody's slot.
+
+🔴🔑 **THE SUPERSEDING RULE IS NOT `CoveredKeys`, AND THE ENTRY'S RECOMMENDATION WOULD HAVE MISFIRED.**
+`BL-187` proposed the `BL-183` group shape — declare `CoveredKeys` over `rune_war`/`rune_spell` and
+outrank them. That is right for a CAST buff and wrong for a rune, because rune buffs are owned by
+`ReconcileRuneBuffs`, which re-derives them from the held items about once a second. Under a covering
+rank the loop would try to apply the War Rune on every pass, have `ApplyBuff` refuse it as outranked,
+find the buff still missing, and mark stats dirty — a `SendStats` every second for as long as a
+player held both. The rule instead lives where the WANTED SET is built: hold a Grand Rune and the two
+singles are dropped from it once, and the removal step takes their buffs off. The items are untouched
+— a superseded War Rune keeps ticking down in the bag and comes back by itself when the Grand Rune
+expires.
+
+<details><summary>The entry as filed, 2026-09-09</summary>
+## `BL-187` 🔵 A THIRD RUNE THAT COMBINES BOTH CHANNELS
+
+**Filed 2026-09-09, on your instruction** while the runes were rebuilt as damage multipliers
+(`BL-185` step 1): *"add a note to make 3rd rune that combines both"*.
+
+The engine side is already done and this is now a **catalogue entry, not a mechanic**: `SkillDef`
+carries `PhysDamageMult` and `MagicDamageMult` independently, `Entity` compounds each channel
+separately, and `GameLoopService.FinalizeDamage` picks the channel per hit. A combined rune is one
+`SkillDef` setting **both** fields plus one `ItemDef`.
+
+**What is still owed is yours to decide, because all of it is economy, not code:**
+
+1. **The multiplier.** Same ×2 on both channels, or less on each (e.g. ×1.7/×1.7) so the combined
+   rune is convenience rather than a strict upgrade? A flat ×2/×2 strictly dominates both singles for
+   any hybrid, and equals them for a pure class.
+2. **Who it is for.** Only a hybrid actually uses both channels. A pure nuker gains nothing over a
+   Spell Rune, so priced equal to a single it is a trap, and priced above it is a tax on hybrids.
+3. **Price and duration ladder.** The singles run 1h/2h vendor-bought (150 000 / 280 000 gold,
+   tradable sealed) and 24h/30d premium (not buyable, not tradable). Same four rungs, or fewer?
+4. **The name**, which must pass the `word + SAME RACE + SAME ROLE` test.
+
+⚠ **Stacking is already decided by the existing rules and needs no new mechanic** — but check it
+reads the way you want: the two singles have distinct `BuffKey`s (`rune_war` / `rune_spell`), so a
+combined rune either takes a third key (and then all three stack, which is almost certainly wrong) or
+declares `CoveredKeys` over both and outranks them by `GroupRank`, exactly as a group buff covers its
+singles (`BL-183`). **The second is the right shape**; it just has to be authored.
+
+</details>
 
 ---
 

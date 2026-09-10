@@ -32,6 +32,11 @@ public static partial class SkillCatalog
     //      effective M.Atk (×1.414 magic) + a flat +40 cast, exactly the old passive's numbers. ----
     public const string WarRuneBuff   = "rune_war";
     public const string SpellRuneBuff = "rune_spell";
+    /// <summary>`BL-187` — the THIRD rune, and the one that closes that entry (owner, 2026-09-10:
+    /// *"build one rune that stays in admin menu and its 1d rune that combine both. it will be
+    /// prmium curency and close the quesion"*). Carries both channels at ×2 and the Spell Rune's
+    /// cast-speed half. Admin-granted only; there is no vendor rung and no 1h/2h/30d ladder.</summary>
+    public const string GrandRuneBuff = "rune_grand";
     // ---- PREMIUM REWARD runes (see RewardRunes.cs + Skills.RewardRunes.cs). Same machinery, a
     //      different payload: instead of a combat stat they carry a RewardRates package, so what they
     //      change is what a MONSTER pays. The channel table owns the ids; these are here only so the
@@ -45,7 +50,7 @@ public static partial class SkillCatalog
     /// a rune buff by construction, so a new reward rune can never be forgotten here and come back
     /// duplicated on login.</para></summary>
     public static bool IsRuneBuff(string skillId) =>
-        skillId == WarRuneBuff || skillId == SpellRuneBuff
+        skillId == WarRuneBuff || skillId == SpellRuneBuff || skillId == GrandRuneBuff
         || (Get(skillId) is SkillDef d && !d.RewardsAt(1).IsNeutral);
     // ---- Class identity "sure" floor passives — now ONE multi-level skill each
     //      (auto-granted at the class-change milestone, level = tier 1/2/3). The floor
@@ -622,6 +627,40 @@ public static partial class SkillCatalog
             },
             Category: SkillCategory.Buff, BuffRow: BuffRow.Consumable, CountsTowardBuffLimit: false,
             Description: "Spell Rune: increases the final MAGICAL damage ×2, and cast speed, while the rune is held."),
+
+        // ═══ THE GRAND RUNE — `BL-187`, and the entry closes with it ══════════════════════════════
+        //
+        // *"build one rune that stays in admin menu and its 1d rune that combine both. it will be
+        //   prmium curency and close the quesion"*
+        //
+        // 🔑 IT IS BOTH SINGLES AT FULL STRENGTH, NOT A COMPROMISE. `BL-187` asked whether the
+        // combined rune should be ×2/×2 or something weaker per channel so it is "convenience rather
+        // than a strict upgrade". His answer settles it a different way than the entry expected: the
+        // rune is PREMIUM and admin-granted, so it never competes with the two vendor singles in a
+        // shop and there is no ladder to price it against. A hybrid gets both channels; a pure class
+        // gets exactly what its own single already gave it. Nobody is taxed and nobody is trapped.
+        //
+        // ⚠ ONE RUNG, ONE DURATION — 24 hours. The singles run 1h/2h (vendor) and 24h/30d (premium);
+        // this has neither ladder because he asked for one item, not a fourth column.
+        //
+        // 🔑 IT SUPERSEDES THE SINGLES IN THE RECONCILIATION LOOP, NOT VIA `CoveredKeys`. The rune
+        // buffs are owned by `ReconcileRuneBuffs`, which re-derives them from the held items about
+        // once a second — so a covering rank would have made the loop TRY to re-apply the War Rune
+        // every tick, have it refused, and flag stats dirty every time. The rule lives where the
+        // wanted set is built instead: hold a Grand Rune and the two singles are dropped from it.
+        // See the note there.
+        new(GrandRuneBuff, "Grand Rune", BaseClass.Fighter, SkillEffect.BuffCastSpeed,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+            DurationTicks: 36000, BuffKey: "rune_grand", Rank: 1,
+            PhysDamageMult: 2.0f,
+            MagicDamageMult: 2.0f,
+            Magnitudes: new EffectMagnitude[]
+            {
+                new(SkillEffect.BuffCastSpeed, 40, ModifierMode.Flat),
+            },
+            Category: SkillCategory.Buff, BuffRow: BuffRow.Consumable, CountsTowardBuffLimit: false,
+            Description: "Grand Rune: increases the final PHYSICAL and MAGICAL damage ×2, and cast "
+                       + "speed, while the rune is held."),
 
         // ================== BUFF LADDERS — the single buffs and their consumables ==================
         //  See docs/design/BuffLadders.md. Four families, three rungs each; the improved "Speed"

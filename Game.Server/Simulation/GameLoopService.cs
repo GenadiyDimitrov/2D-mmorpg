@@ -10288,6 +10288,24 @@ public class GameLoopService : BackgroundService
                 wantUntil[d.RuneBuffSkillId] = (level, exp, d.Name);
         }
 
+        // 2b. `BL-187` — THE GRAND RUNE SUPERSEDES THE TWO SINGLES, and the rule lives HERE rather
+        //     than in a `CoveredKeys` declaration on the buff. This loop is the OWNER of every rune
+        //     buff: it re-derives the wanted set from the held items about once a second, applies
+        //     what is missing and removes what is no longer wanted. A covering rank would therefore
+        //     have made it try to apply the War Rune every single pass, have `ApplyBuff` refuse it
+        //     as outranked, find `existing == null` again, and flag stats dirty — a SendStats every
+        //     second, forever, for a player who happens to hold both. Dropping the singles from the
+        //     WANTED SET says the same thing once, and step 4 below then takes their buffs off.
+        //
+        //     ⚠ The rune ITEMS are untouched: a superseded War Rune sits in the bag, keeps ticking
+        //     down (a bag is not a stasis field — the sweep above expires it on schedule) and comes
+        //     back on its own the moment the Grand Rune expires. Nothing is consumed or deleted.
+        if (wantUntil.ContainsKey(SkillCatalog.GrandRuneBuff))
+        {
+            wantUntil.Remove(SkillCatalog.WarRuneBuff);
+            wantUntil.Remove(SkillCatalog.SpellRuneBuff);
+        }
+
         // 3. Apply/keep wanted buffs; drive their remaining from the wall-clock (survives offline on login).
         foreach (var (skillId, want) in wantUntil)
         {

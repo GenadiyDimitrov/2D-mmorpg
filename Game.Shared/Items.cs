@@ -1207,6 +1207,10 @@ public static class ItemCatalog
     public const string BoxSpellRune2h   = "box_spell_rune_2h";
     public const string BoxSpellRune24h  = "box_spell_rune_24h";
     public const string BoxSpellRune30d  = "box_spell_rune_30d";
+    // `BL-187`, 2026-09-10 — the combined rune. ONE item, ONE rung (24h), admin-granted only:
+    // no vendor price, no 1h/2h/30d ladder. See SkillCatalog.GrandRuneBuff.
+    public const string GrandRune        = "rune_grand";
+    public const string BoxGrandRune24h  = "box_grand_rune_24h";
     // Newbie CHOICE selection-boxes (pick one of two sub-boxes).
     public const string BoxNewbieArmorChoice = "box_newbie_armor_choice";
     public const string BoxNewbieRuneChoice  = "box_newbie_rune_choice";
@@ -1426,6 +1430,12 @@ public static class ItemCatalog
             IsRune: true, RuneBuffSkillId: SkillCatalog.SpellRuneBuff, GrantsRuneSeconds: 3600,
             Tradable: false, Value: 0,
             Description: "Held rune: increases your final MAGICAL damage ×2, and cast speed, while in your bag. Boosts MAGIC (spells) only — useless for melee/bow. Move it to the warehouse to switch it off; it can't be deleted."));
+        // `BL-187` — the combined rune. Same held-rune machinery as the two above; the only
+        // differences are that it carries BOTH channels and that nothing sells it.
+        list.Add(new ItemDef(GrandRune, "Grand Rune", EquipSlot.Rune, ItemGrade.F, ItemRarity.Mythic,
+            IsRune: true, RuneBuffSkillId: SkillCatalog.GrandRuneBuff, GrantsRuneSeconds: 24 * 3600,
+            Tradable: false, Value: 0,
+            Description: "Held rune: increases your final PHYSICAL and MAGICAL damage ×2, and cast speed, while in your bag. Supersedes a War or Spell Rune held at the same time. Move it to the warehouse to switch it off; it can't be deleted."));
 
         // Sealed rune boxes. 1h/2h are vendor-stocked (Apothecary, real gold price) and TRADABLE (giftable
         // sealed — the RUNE inside is still bound). 24h/30d are premium/pass items: not buyable (BuyPrice
@@ -1443,6 +1453,10 @@ public static class ItemCatalog
         RuneBox(BoxSpellRune2h,  "Spell Rune Box (2h)",  2 * H, 280000, true,  "Opens to a Spell Rune lasting 2 hours. Spell Runes multiply your final MAGICAL damage ×2 (spells) — useless for melee/bow.");
         RuneBox(BoxSpellRune24h, "Spell Rune Box (1d)",  1 * D, -1,  false,  "Opens to a Spell Rune lasting 24 hours. Spell Runes multiply your final MAGICAL damage ×2 (spells) — useless for melee/bow.");
         RuneBox(BoxSpellRune30d, "Spell Rune Box (30d)", 30 * D, -1, false,  "Opens to a Spell Rune lasting 30 days. Spell Runes multiply your final MAGICAL damage ×2 (spells) — useless for melee/bow.");
+        // ⚠ PREMIUM ONLY — `BuyPriceOverride: -1` and not tradable, exactly like the 24h/30d singles.
+        // Its one route into a bag today is the Admin panel; when a premium currency exists this is
+        // the item it buys. `BL-187` closes here.
+        RuneBox(BoxGrandRune24h, "Grand Rune Box (1d)", 1 * D, -1, false, "Opens to a Grand Rune lasting 24 hours. Grand Runes multiply your final PHYSICAL and MAGICAL damage x2 and raise cast speed - both channels of the War and Spell Runes in one item.");
 
         // ----- PREMIUM REWARD RUNES: one item per channel per rung (5 × 11), plus Sinister and
         // Sinners. Same held-rune machinery as the War/Spell runes above — the difference is entirely

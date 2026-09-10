@@ -386,6 +386,14 @@ namespace Game.Client
                 DebugGive(ItemCatalog.BoxNewbieArmorRobe, "Newbie Robe Armor Box");
                 DebugGive(ItemCatalog.BoxNewbieJewels, "Newbie Jewels Box");
                 DebugGive(ItemCatalog.BoxNewbieWeapons, "Newbie Weapons Box (select)");
+
+                // `BL-187`, 2026-09-10 — *"build one rune that stays in admin menu"*. The Grand Rune
+                // is PREMIUM: nothing sells it and nothing drops it, so this button is its only route
+                // into a bag until a premium currency exists. The two singles are not repeated here —
+                // they are vendor-stocked at the Apothecary and the admin seed already carries their
+                // 30-day boxes.
+                DebugHeader("Runes (premium)");
+                DebugGive(ItemCatalog.BoxGrandRune24h, "Grand Rune Box (1d) — both channels ×2");
                 return;
             }
 
