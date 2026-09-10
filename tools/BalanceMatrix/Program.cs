@@ -3821,16 +3821,31 @@ Console.WriteLine("=== C1: the SKILL MASTERIES — what an authored base pays, b
                                    discipline: Discipline.Magus, fourth: true));
     Mastery("Bulwark (4th)",   BuildPlayer(Race.Human, BaseClass.Fighter, 90, secondClass: 13,
                                    discipline: Discipline.Bulwark, fourth: true));
+    // The MELEE rogue joined the roster on 2026-09-10 — same two ids as the Magus and the warrior,
+    // under the names "Stab Momentum" and "Momentum Mastery". His BOW cousin is ruled out for good,
+    // so the two rows below must differ: the Nullblade carries a reuse base, the Sharpshooter 0/0/0.
+    Mastery("Nullblade (4th)",  BuildPlayer(Race.Human, BaseClass.Fighter, 90, secondClass: 15,
+                                   discipline: Discipline.Nullblade, fourth: true));
+    Mastery("Sharpshooter (4th)", BuildPlayer(Race.Human, BaseClass.Fighter, 90, secondClass: 15,
+                                   discipline: Discipline.Sharpshooter, fourth: true));
     Mastery("warrior, NO discipline", BuildPlayer(Race.Human, BaseClass.Fighter, 90, warrior: true));
-    // BLOOD RAGE — the toggle multiplies the ACCUMULATOR, so it must roughly double the row above it
-    // and then meet the shared 25% cap. If this prints the same number as the plain Ravager, the buff
-    // FIELD is not reaching Entity.RecomputeDerived and the stance is doing nothing.
+    // THE TOGGLE (`double_mastery`) — it multiplies the ACCUMULATORS, so each line must roughly
+    // double the plain row above it and then meet the shared 25% cap. If one prints the same number
+    // as its un-toggled twin, the buff FIELD is not reaching Entity.RecomputeDerived.
+    //
+    // 🔑 TWO ROWS, NOT ONE, AND THAT IS THE POINT OF THE 2026-09-10 GENERALISATION: the warrior's
+    // toggle has to move his DAMAGE column and the rogue's the REUSE column, from one def. A version
+    // of this that only tested the warrior would have passed while the rogue's stance did nothing.
     var rager = BuildPlayer(Race.Human, BaseClass.Fighter, 90, warrior: true,
                             discipline: Discipline.Ravager, secondClass: 14, fourth: true);
-    ApplyOneBuff(rager, SkillCatalog.BloodRage);
-    Mastery("Ravager + BLOOD RAGE", rager);
-    Console.WriteLine("  ⚠ the tank and every rogue read 0/0/0 on purpose — he named four groups and");
-    Console.WriteLine("    they were not among them (`BL-191`).");
+    ApplyOneBuff(rager, SkillCatalog.DoubleMastery);
+    Mastery("Ravager + toggle", rager);
+    var blade = BuildPlayer(Race.Human, BaseClass.Fighter, 90, secondClass: 15,
+                            discipline: Discipline.Nullblade, fourth: true);
+    ApplyOneBuff(blade, SkillCatalog.DoubleMastery);
+    Mastery("Nullblade + toggle", blade);
+    Console.WriteLine("  ⚠ the tank and the BOW rogue read 0/0/0 on purpose — ruled out by name");
+    Console.WriteLine("    2026-09-10 (`BL-191`). The MELEE rogue was ruled IN the same day.");
     Console.WriteLine("  RETIRED: the old rate was min(25, 2.5 + 0.75*(ATK-30)) off the RAW stat — a per-race");
     Console.WriteLine("           constant of Elf 7.0% / Human 10.0% / Demon 10.75% that nothing could raise,");
     Console.WriteLine("           and it drove buff DURATION doubling too. Both are passive-fed now.");
@@ -5431,7 +5446,7 @@ static void ApplyNpcBuffs(Entity e, bool fullShelf = false)
             // multiplier all ride as plain FIELDS. A BuffInstance built without them applies and
             // does NOTHING, and the matrix reports the unbuffed number under a "buffed" heading.
             BlowRatePct = def.BlowRatePctAt(level),
-            DoubleDamageMult = def.DoubleDamageMult,
+            MasteryMult = def.MasteryMult,
             PhysMpCostPct = def.PhysMpCostPctAt(level),
             MagicMpCostPct = def.MagicMpCostPctAt(level),
             TicksRemaining = int.MaxValue, Name = def.Name, Key = def.BuffKey, Level = level,
@@ -5475,7 +5490,7 @@ static void ApplyOneBuff(Entity e, string skillId)
             Magnitudes = def.MagnitudesAt(1) ?? Array.Empty<EffectMagnitude>(),
             // Same FIELD channels as ApplyNpcBuffs above, and for the same reason.
             BlowRatePct = def.BlowRatePctAt(1),
-            DoubleDamageMult = def.DoubleDamageMult,
+            MasteryMult = def.MasteryMult,
             PhysMpCostPct = def.PhysMpCostPctAt(1),
             MagicMpCostPct = def.MagicMpCostPctAt(1),
             TicksRemaining = int.MaxValue, Name = def.Name, Key = def.BuffKey, Level = 1,

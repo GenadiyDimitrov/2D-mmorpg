@@ -27,9 +27,11 @@ public static partial class SkillCatalog
 {
     /// <summary>+5% blow rate at 76 — every melee rogue, no race split.</summary>
     public const string AssassinationInstinct = "assassination_instinct";
-    /// <summary>@80, +40% blow rate. Mutually exclusive with <see cref="BrutalStrike"/>.</summary>
+    /// <summary>@80, +40% blow rate. Shares a <c>BuffKey</c> with <see cref="BrutalStrike"/>, so only
+    /// one of the two can be UP — both are learned.</summary>
     public const string PerfectStrike = "perfect_strike";
-    /// <summary>@80, +30% physical crit damage. Mutually exclusive with <see cref="PerfectStrike"/>.</summary>
+    /// <summary>@80, +30% physical crit damage. Shares a <c>BuffKey</c> with
+    /// <see cref="PerfectStrike"/>, so only one of the two can be UP — both are learned.</summary>
     public const string BrutalStrike = "brutal_strike";
 
     /// <summary>The shared family the @80 pair competes on — the reason neither can be held with the
@@ -222,15 +224,22 @@ public static partial class SkillCatalog
                         Description: rung),
                 });
 
+        // 🔑 BOTH ARE LEARNED, AND THE CHOICE IS PER FIGHT, NOT PER CHARACTER. His 2026-09-10
+        // clarification: *"brutal/perfect strike can be bot learned but they just dont stack as buffs
+        // .. a dual class can have them both and chose depending on situatuion which to use"*. That is
+        // already how this is built — both sit in the learn table at 80 and the exclusion is the
+        // shared `BuffKey`, so casting one evicts the other from the bar and nothing is ever unlearned.
+        // ⚠ Say it that way in the player-facing text too: "Replaces Brutal Strike" reads like a
+        // learn-tab consequence, which is precisely the thing he was ruling out.
         var perfect = Choice(PerfectStrike, "Perfect Strike", 0.40f, 0f,
-            "Five minutes in which almost nothing you swing at is missed. Does not stack with "
-          + "Brutal Strike — you carry one of the two, never both. Requires duals.",
-            "5 min: blow landing rate ×1.40. Replaces Brutal Strike.");
+            "Five minutes in which almost nothing you swing at is missed. You keep Brutal Strike as "
+          + "well — they simply cannot be up at the same time, so pick one per fight. Requires duals.",
+            "5 min: blow landing rate ×1.40. Takes the place of Brutal Strike while it is up.");
 
         var brutal = Choice(BrutalStrike, "Brutal Strike", 0f, 0.30f,
-            "Five minutes in which what does land is ruinous. Does not stack with Perfect Strike — "
-          + "you carry one of the two, never both. Requires duals.",
-            "5 min: +30 crit damage. Replaces Perfect Strike.");
+            "Five minutes in which what does land is ruinous. You keep Perfect Strike as well — they "
+          + "simply cannot be up at the same time, so pick one per fight. Requires duals.",
+            "5 min: +30 crit damage. Takes the place of Perfect Strike while it is up.");
 
         return new[] { instinct, perfect, brutal };
     }

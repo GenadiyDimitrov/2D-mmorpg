@@ -132,7 +132,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-186` | ❓ | THE MAX LEVEL CAP — can it be removed? Parked until `BL-185` closes, on your order | systems |
 | `BL-187` | 🔵 | A THIRD RUNE combining both damage channels — engine done, the economy and stacking shape are yours | items |
 | `BL-189` | 🔵 | Weapon-type protection — `BowResist` generalised to every weapon type | combat |
-| `BL-191` | 🟡 | The SKILL MASTERIES — built; tank and archer ruled OUT, the ROGUE gets one and which is a playtest call | classes |
+| `BL-191` | 🟡 | The SKILL MASTERIES — built for 5 archetypes; tank + bow rogue ruled OUT; ON TRIAL until he playtests | classes |
 
 ---
 
@@ -1233,12 +1233,12 @@ authored the passives that switch it on. What is left is a short list of choices
 
 ### ✅ What is done (0.124.0)
 
-| Skill | Who | Learn | Base |
-|---|---|---|---|
-| **Overpower** | Warrior → Ravager + Warlord | 20 / 40 / 76 | 3% / 7% / 10% double damage |
-| **Blood Rage** (Toggle) | Ravager + Warlord | **81** | ×2 on Overpower's base; 50 HP/s, +25% MP on physical skills |
-| **Lasting Enchantment** | Lightbringer + Warchanter | 76 | 10% buff/debuff duration double |
-| **Arcane Momentum** | Magus | 76 | 5% reuse reset |
+| Skill id | Shown as | Who | Learn | Base |
+|---|---|---|---|---|
+| `overpower` | Overpower | Warrior → Ravager + Warlord | 20 / 40 / 76 | 3% / 7% / 10% double damage |
+| `lasting_enchantment` | Lasting Enchantment | Lightbringer + Warchanter | 76 | 10% buff/debuff duration double |
+| `reuse_reset_momentum` | **Arcane Momentum** / **Stab Momentum** | Magus + the three MELEE rogues | 76 | 5% reuse reset |
+| `double_mastery` (Toggle) | **Overpower Mastery** / **Momentum Mastery** | Ravager + Warlord + the three melee rogues | **81** | **×2 on EVERY mastery base you have**; 50 HP/s, +25% MP on physical skills |
 
 Measured at 90 in mythic gear (`BalanceMatrix` §C1): Ravager **9.4%** damage, **18.8%** under Blood
 Rage; Warchanter 9.7% / Lightbringer 10.9% duration; Magus 5.5% reuse. Every CSV row is verified by
@@ -1246,32 +1246,32 @@ Rage; Warchanter 9.7% / Lightbringer 10.9% duration; Magus 5.5% reuse. Every CSV
 
 ### ❓ What is still yours
 
-1. 🟡 **THE ROGUE GETS ONE — WHICH ONE IS THE ONLY THING LEFT, AND IT IS A PLAYTEST DECISION.**
-   Ruled 2026-09-10: *"the rouge i want to have a double passive gust dont know which one .. and
-   depending his dmg after the play test ill deside byt i lean thowardds the mages one with the
-   reuse"*. So the rogue is a **yes**, the choice waits on measured damage, and the front-runner is
-   **Arcane Momentum** (the 5% reuse reset) rather than the damage double — which fits `BL-188`: a
-   blow already rolls its own landing chance, and a damage double would put two rolls on one hit
-   while a reuse reset puts none. **Nothing is built until you say which** — when you do it is one
-   `ClassSkill` line per rogue discipline plus the CSV rows, and if it is the reuse passive the
-   engine needs no change at all.
-   ⚠ **Which rogue?** Six disciplines, one per race per branch. Say whether it is the dagger branch,
-   the archer branch (see below — that is a no), or all of them.
+1. 🟡 **THE TWO LEARN LEVELS ON THE MELEE ROGUE ARE MINE — the only unauthored numbers in the
+   layer.** You said *"add to duals 4th the same"* twice and gave no levels, so Stab Momentum sits at
+   **76** and Momentum Mastery at **81**, mirroring the Magus's reuse rung and the warrior's toggle
+   exactly. Two `ClassSkill` lines and two CSV rows if you meant otherwise.
 
-   ✅ **CLOSED the same day — the tank and the archer both get NOTHING**, and this is a decision now,
-   not an omission:
-   - **Tank — no.** *"if i give a tank some of the passives he will become even more unstopable"*.
-   - **Archer — no.** *"archer have enough skills that are always hit wit big power (not like daggers
-     80% chance)"* — his big skills already land every time, so a double on top is compensation for
-     a reliability problem he does not have. (Confirmed explicitly when asked, 2026-09-10.)
+2. 🟡 **THE WHOLE LAYER IS ON TRIAL BY YOUR OWN WORDS** — *"ill try with those changes and after
+   playtest ill deside if i add or remove"*. What the rig reads at 90 in mythic gear, so the playtest
+   has a baseline to argue with:
 
-2. ❓ **Does anything BUY a mastery rate besides the passive?** The engine has a buff channel
-   (`SkillDef.DoubleDamageMult`) and Blood Rage is its only author. A party "Mastery Chant", a
-   consumable, a rune — all one line each. Nothing is invented until you ask.
-3. 🔵 **The ladders stop where you stopped them.** Overpower has three rungs because you named three;
-   Lasting Enchantment, Arcane Momentum and Blood Rage have one each. `warrior 4th.csv` and
-   `war_aoe 4th.csv` now carry the 4th-tier header and those two rows with a banner saying the rest
-   is yours — neither earns a `Check.Specs` line until you finish the file.
+   | Class | dmg | duration | reuse |
+   |---|---|---|---|
+   | Ravager / Warlord | 9.4% | — | — |
+   | Ravager **+ toggle** | **18.8%** | — | — |
+   | Warchanter / Lightbringer | — | 9.7% / 10.9% | — |
+   | Magus | — | — | 5.5% |
+   | Nullblade (melee rogue) | — | — | 4.6% |
+   | Nullblade **+ toggle** | — | — | **9.1%** |
+   | Bulwark, Sharpshooter (bow rogue) | 0% | 0% | 0% |
+
+3. ❓ **Does anything BUY a mastery rate besides the passive?** The engine has a buff channel
+   (`SkillDef.MasteryMult`) and the `double_mastery` toggle is its only author. A party "Mastery
+   Chant", a consumable, a rune — all one line each. Nothing is invented until you ask.
+4. 🔵 **The ladders stop where you stopped them.** Overpower has three rungs because you named three;
+   the other three skills have one each. `warrior 4th.csv` and `war_aoe 4th.csv` carry the 4th-tier
+   header and their two rows with a banner saying the rest is yours — neither earns a `Check.Specs`
+   line until you finish the file, and `dual 4th.csv` does not either.
 
 ### ⚠ One thing to know before you retune any of it
 

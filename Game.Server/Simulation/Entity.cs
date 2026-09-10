@@ -122,10 +122,11 @@ public class BuffInstance
     /// See <c>SkillDef.BlowRatePct</c>.</summary>
     public float BlowRatePct { get; init; }
 
-    /// <summary>`BL-191` — what this buff MULTIPLIES its holder's double-damage mastery BASE by
-    /// (0 = not carried, never ×0). The warrior's Blood Rage toggle carries 2 and is its only author.
-    /// See <c>SkillDef.DoubleDamageMult</c>.</summary>
-    public float DoubleDamageMult { get; init; }
+    /// <summary>`BL-191` — what this buff MULTIPLIES its holder's mastery BASES by (0 = not carried,
+    /// never ×0). ALL THREE bases: damage, buff duration and reuse reset. The `double_mastery` toggle
+    /// carries 2 and is its only author — "Overpower Mastery" on the warrior, "Momentum Mastery" on
+    /// the melee rogue. See <c>SkillDef.MasteryMult</c>.</summary>
+    public float MasteryMult { get; init; }
 
     /// <summary>THE TANK'S SHIELD SMASH (his `tank 3rd.csv`) — what this debuff takes off ITS OWN
     /// HOLDER's crit numbers, as fractions. The two Smashes are the tank's contribution to a party's
@@ -3498,9 +3499,19 @@ public class Entity
             // read unconditionally (no `Has`): the carrying buffs declare BuffCritRate purely to be
             // a buff at all, and it is this number, not that flag, that says how much they give.
             if (buff.BlowRatePct != 0f) BlowRateMult *= 1f + buff.BlowRatePct;   // ×1.4, not +40 points
-            // `BL-191` — a buff SCALES the mastery base the passives summed above. ×2, not +2 points,
-            // and inert at 0: Blood Rage doubling a warrior who never learned Overpower doubles zero.
-            if (buff.DoubleDamageMult != 0f) DoubleDamageAcc *= buff.DoubleDamageMult;
+            // `BL-191` — a buff SCALES the mastery bases the passives summed above. ×2, not +2
+            // points, and inert at 0: the toggle doubling someone who never learned a mastery
+            // passive doubles zero.
+            // 🔑 ALL THREE CHANNELS, not just damage (his 2026-09-10 ruling: *"not to double only the
+            // overpowered base but all double passives bases that a class have"*). This is what lets
+            // ONE toggle serve two archetypes — the warrior's base is damage, the melee rogue's is
+            // reuse, and `double_mastery` doubles whichever the holder actually carries.
+            if (buff.MasteryMult != 0f)
+            {
+                DoubleDamageAcc   *= buff.MasteryMult;
+                DoubleDurationAcc *= buff.MasteryMult;
+                CooldownResetAcc  *= buff.MasteryMult;
+            }
             if (buff.Has(SkillEffect.BuffCritRateResist)) CritRateResist += buff.Flat(SkillEffect.BuffCritRateResist) + buff.Percent(SkillEffect.BuffCritRateResist);
             if (buff.Has(SkillEffect.BuffCritDmgResist)) CritDmgResist += buff.Flat(SkillEffect.BuffCritDmgResist) + buff.Percent(SkillEffect.BuffCritDmgResist);
             if (buff.Has(SkillEffect.BuffBowResist)) BowResist += buff.Flat(SkillEffect.BuffBowResist) + buff.Percent(SkillEffect.BuffBowResist);

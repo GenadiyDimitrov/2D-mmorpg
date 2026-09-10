@@ -476,16 +476,23 @@ public record SkillDef(
     /// <c>0 = not carried</c>, never ×0 — the same "inert by default" convention
     /// <c>MagicFailSelfMult</c> uses, so <c>default(SkillDef)</c> stays neutral.
     ///
-    /// <para>The warrior's Blood Rage toggle is its only author and carries <b>2</b>: *"another toggle
-    /// skill that doubles the effect of the double passive"*. It multiplies the ACCUMULATOR, not the
-    /// finished rate, so the ATK band and the shared 25% cap still apply afterwards — a level-76
-    /// warrior on 10% base reads 20% before the band, and the cap is what stops the stance from
-    /// running away once he authors higher rungs.</para>
+    /// <para>🔑 <b>IT SCALES ALL THREE MASTERY BASES, NOT JUST THE DAMAGE ONE</b> (his 2026-09-10
+    /// ruling: *"change blood rage toggle not to double only the overpowered base but all double
+    /// passives bases that a class have"*). That is what makes one toggle serve two archetypes: the
+    /// warrior carries a damage base and the toggle doubles that; the melee rogue carries a reuse
+    /// base and the same toggle doubles that instead. Whatever you have, twice as much of it.</para>
     ///
-    /// <para>⚠ It multiplies a base that is ZERO without the passive, so the toggle is worth exactly
-    /// nothing to anyone who has not learned Overpower. That is deliberate and is the whole `BL-190`
-    /// gate: doubling nothing is nothing.</para></summary>
-    float DoubleDamageMult = 0f,
+    /// <para>It multiplies the ACCUMULATORS, not the finished rates, so the ATK band and the shared
+    /// 25% cap still apply afterwards — a level-76 warrior on a 10% base reads 20% before the band,
+    /// and the cap is what stops the stance from running away once higher rungs are authored.</para>
+    ///
+    /// <para>⚠ It multiplies bases that are ZERO without a mastery passive, so the toggle is worth
+    /// exactly nothing to anyone who has not learned one. That is deliberate and is the whole
+    /// `BL-190` gate: doubling nothing is nothing.</para>
+    ///
+    /// <para>Authored by <c>double_mastery</c> — "Overpower Mastery" on the warrior, "Momentum
+    /// Mastery" on the melee rogue — which carries <b>2</b>.</para></summary>
+    float MasteryMult = 0f,
     /// <summary>BOW RANGE this BUFF grants its holder, in world units (0 = none). The buff-side twin of
     /// <see cref="PassiveEffect.BowRange"/>, which is passive-only and always has been.
     /// <para>His Bow Stance is the first thing to want it — *"Range +200"* for sixty seconds — and it

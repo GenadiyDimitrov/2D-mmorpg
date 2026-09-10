@@ -12336,7 +12336,7 @@ public class GameLoopService : BackgroundService
             // race buffs climb 10 → 15 → 20% across three rungs, and reading the def's own field
             // would hand rung 1's number to all three.
             BlowRatePct = def.BlowRatePctAt(level),
-            DoubleDamageMult = def.DoubleDamageMult,   // `BL-191` — Blood Rage's ×2 on the mastery base
+            MasteryMult = def.MasteryMult,   // `BL-191` — the toggle's ×2 on all three mastery bases
             // `BL-110` — CHARM, and the one buff that needs to remember WHO cast it: TickControlledMovement
             // walks the victim toward this id every tick. A charm with no source is inert by design
             // (nothing to walk toward) rather than crashing or walking to the origin.

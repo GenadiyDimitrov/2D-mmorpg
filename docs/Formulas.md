@@ -147,16 +147,22 @@ rate          = 0                                                     when base 
 
 | Passive | Who | Learn | Base |
 |---|---|---|---|
-| **Overpower** | Warrior, then Ravager + Warlord | 20 / 40 / 76 | 3% / 7% / 10% |
-| **Blood Rage** (toggle) | Ravager + Warlord | 81 | ×2 on Overpower's base; 50 HP/s, +25% MP on physical skills |
-| **Lasting Enchantment** | Lightbringer + Warchanter | 76 | 10% |
-| **Arcane Momentum** | Magus | 76 | 5% |
+| **Overpower** | Warrior, then Ravager + Warlord | 20 / 40 / 76 | 3% / 7% / 10% damage |
+| **Lasting Enchantment** | Lightbringer + Warchanter | 76 | 10% duration |
+| `reuse_reset_momentum` — "Arcane Momentum" (Magus) / "Stab Momentum" (Nullblade, Phantom, Venomweaver) | Magus + the three MELEE rogues | 76 | 5% reuse |
+| `double_mastery` (toggle) — "Overpower Mastery" (warrior) / "Momentum Mastery" (melee rogue) | Ravager + Warlord + the three melee rogues | 81 | **×2 on every mastery base its holder has**; 50 HP/s, +25% MP on physical skills |
 
-Measured at level 90, mythic gear (`BalanceMatrix` §C1): Ravager 9.4% damage (18.8% under Blood
-Rage), Warchanter 9.7% / Lightbringer 10.9% duration, Magus 5.5% reuse. The tank, both rogue branches
-and the archer read 0/0/0 — deliberately. The **tank and the archer never get one** (ruled
-2026-09-10); the **rogue will**, most likely Arcane Momentum, once a playtest says what his damage
-looks like.
+⚠ **The toggle scales all three channels, not just damage** — that is what lets one def serve a
+warrior (whose base is damage) and a melee rogue (whose base is reuse). `SkillDef.MasteryMult` is
+applied to all three accumulators in `Entity.RecomputeDerived`, *before* the ATK band and the cap.
+
+Measured at level 90, mythic gear (`BalanceMatrix` §C1): Ravager 9.4% damage (18.8% with the toggle),
+Warchanter 9.7% / Lightbringer 10.9% duration, Magus 5.5% reuse, Nullblade 4.6% reuse (9.1% with the
+toggle). The **tank and the BOW rogue read 0/0/0 and always will** — both ruled out by name on
+2026-09-10.
+
+🟡 The whole layer is provisional by his own words: *"ill try with those changes and after playtest
+ill deside if i add or remove"*.
 
 Retired with this: `StatCalculator.PhysicalDoubleChance`, `min(25, 2.5 + 0.75·(ATK−30))` off the RAW
 stat — a per-race constant (Elf 7.0% / Human 10.0% / Demon 10.75%) that nothing could raise, and

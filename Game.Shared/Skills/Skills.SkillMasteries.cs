@@ -29,15 +29,34 @@ public static partial class SkillCatalog
     /// <summary>WARRIOR + AoE WARRIOR — the double-damage mastery. 3 / 7 / 10% at 20 / 40 / 76.</summary>
     public const string Overpower = "overpower";
 
-    /// <summary>WARRIOR + AoE WARRIOR — the toggle that doubles Overpower's base. Learned at 81.
-    /// 50 HP/s, +25% MP on physical skills.</summary>
-    public const string BloodRage = "blood_rage";
+    /// <summary>THE TOGGLE that doubles whatever mastery bases its holder carries. 50 HP/s,
+    /// +25% MP on physical skills. Learned at <b>81</b>.
+    ///
+    /// <para>🔑 <b>ONE SKILL, TWO NAMES, TWO ARCHETYPES</b> (his 2026-09-10 rename). The warrior calls
+    /// it <b>"Overpower Mastery"</b> and it doubles his damage base; the melee rogue calls it
+    /// <b>"Momentum Mastery"</b> and it doubles his reuse base. The def is one; the flavour is a
+    /// <c>ClassSkill.DisplayName</c> override, which is this project's standard way to do that.</para>
+    ///
+    /// <para>⚠ It was `blood_rage` / "Blood Rage" for exactly one version (0.124.x). Renamed because
+    /// the skill stopped being the warrior's alone.</para></summary>
+    public const string DoubleMastery = "double_mastery";
 
     /// <summary>BUFFER + HEALER — the duration mastery. 10% at 76.</summary>
     public const string LastingEnchantment = "lasting_enchantment";
 
-    /// <summary>MAGE (nuker) — the cooldown-reset mastery. 5% at 76.</summary>
-    public const string ArcaneMomentum = "arcane_momentum";
+    /// <summary>THE REUSE-RESET mastery, 5% at 76. The nuker calls it <b>"Arcane Momentum"</b>, the
+    /// melee rogue <b>"Stab Momentum"</b>.
+    ///
+    /// <para>⚠ It was `arcane_momentum` for exactly one version. He renamed it 2026-09-10 with the
+    /// reason attached — *"as other classes can aqure it too"* — so the ID is now the MECHANIC and
+    /// the flavour lives in the per-class display name.</para>
+    ///
+    /// <para>⚠ <b>THIS ID IS DELIBERATELY CROSS-CHAIN</b> — a Mage discipline (Magus) and Fighter
+    /// disciplines (the three melee rogues) both learn it, which is the one thing
+    /// <c>SkillCsvSeed --chains</c> exists to report. It will name this id under "CROSS-CHAIN IDS"
+    /// and that is CORRECT output, not a defect to tidy away: the audit's automatic exemption only
+    /// covers ids every ascended class learns, and this one is not that.</para></summary>
+    public const string ReuseResetMomentum = "reuse_reset_momentum";
 
     /// <summary>The warrior's Overpower ladder, as authored: three rungs, three bases.
     /// ⚠ These are the CSV's numbers and the only three that exist — do not extend the array to
@@ -93,20 +112,29 @@ public static partial class SkillCatalog
                            + "passive they never do. Scales with your ATK."),
 
             // ═══════════════════════════════════════════════════════════════════════════════════
-            //  BLOOD RAGE @76 — WARRIOR and AoE WARRIOR. A TOGGLE.
+            //  `double_mastery` @81 — the WARRIOR's "Overpower Mastery" and the MELEE ROGUE's
+            //  "Momentum Mastery". A TOGGLE, and ONE def with two names.
             // ═══════════════════════════════════════════════════════════════════════════════════
             //
             // *"another toggle skill that doubles the effect of the double passive drain 50hp/s and
             //   increases the p.mp.consumtion with 25%"*
             //
-            // 🔑 IT MULTIPLIES THE BASE, NOT THE FINISHED RATE — `SkillDef.DoubleDamageMult` folds
-            // into `Entity.DoubleDamageAcc` before the ATK band and before the 25% cap. So a level-76
-            // warrior on Overpower's 10% reads 20% base, then his band, then the cap. Doubling the
-            // finished number instead would have skipped the cap entirely.
+            // 🔑 IT DOUBLES EVERY MASTERY BASE THE HOLDER HAS, NOT JUST THE DAMAGE ONE. His
+            // 2026-09-10 ruling: *"change blood rage toggle not to double only the overpowered base
+            // but all double passives bases that a class have"*, in the same breath as giving the
+            // melee rogue a copy. That generalisation is the ONLY reason one def can serve both: the
+            // warrior's base is damage (Overpower), the rogue's is reuse (Stab Momentum), and this
+            // stance doubles whichever you actually carry. `Entity.RecomputeDerived` multiplies all
+            // three accumulators by `MasteryMult`.
             //
-            // 🔑 AND IT IS WORTH NOTHING WITHOUT OVERPOWER: ×2 of a zero base is zero. There is no
-            // guard for that and none is wanted — it is the `BL-190` gate working, and a warrior who
-            // has not bought the passive simply pays 50 HP a second for a stance that does nothing.
+            // 🔑 IT MULTIPLIES THE BASES, NOT THE FINISHED RATES — `SkillDef.MasteryMult` folds into
+            // the accumulators before the ATK band and before the 25% cap. So a level-81 warrior on
+            // Overpower's 10% reads 20% base, then his band, then the cap. Doubling the finished
+            // number instead would have skipped the cap entirely.
+            //
+            // 🔑 AND IT IS WORTH NOTHING WITHOUT A MASTERY PASSIVE: ×2 of a zero base is zero. There
+            // is no guard for that and none is wanted — it is the `BL-190` gate working, and someone
+            // who has not bought a passive simply pays 50 HP a second for a stance that does nothing.
             //
             // ⚠ `PhysMpCostPct` is NEGATIVE here. The field is a REDUCTION everywhere else in the
             // game (Holy Soul carries +0.30 for "30% cheaper"), and `Entity.PhysMpCostReduction`
@@ -131,18 +159,18 @@ public static partial class SkillCatalog
             // If it ever moves, it moves LATER than Overpower's top rung, never onto it. The price
             // follows the level for free: `F4New` reads the shared ladder, so 81 charges 200kk SP +
             // 25kk gold, which is what he authored in the CSV to the digit.
-            new(BloodRage, "Blood Rage", BaseClass.Fighter, SkillEffect.None,
+            new(DoubleMastery, "Overpower Mastery", BaseClass.Fighter, SkillEffect.None,
                 MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-                BuffKey: "blood_rage", Rank: 1,
+                BuffKey: "double_mastery", Rank: 1,
                 Category: SkillCategory.Buff, SpCost: sp81,
                 TargetMode: TargetMode.SelfOnly,
                 Toggle: true, CountsTowardBuffLimit: false,
                 HpPerSecond: 50,
-                DoubleDamageMult: 2f,
+                MasteryMult: 2f,
                 PhysMpCostPct: -0.25f,
                 Levels: new[] { new SkillLevel(SpCost: sp81, GoldCost: gold81) },
-                Description: "Stance. Your Overpower chance is DOUBLED, but every physical skill "
-                           + "costs 25% more MP and you burn 50 HP a second."),
+                Description: "Stance. Your skill-mastery chances are DOUBLED, but every physical "
+                           + "skill costs 25% more MP and you burn 50 HP a second."),
 
             // ═══════════════════════════════════════════════════════════════════════════════════
             //  LASTING ENCHANTMENT @76 — BUFFER and HEALER
@@ -172,8 +200,15 @@ public static partial class SkillCatalog
                            + "Scales with your ATK."),
 
             // ═══════════════════════════════════════════════════════════════════════════════════
-            //  ARCANE MOMENTUM @76 — MAGE (the nuker)
+            //  `reuse_reset_momentum` @76 — the MAGUS's "Arcane Momentum" and the MELEE ROGUE's
+            //  "Stab Momentum". ONE def, two names.
             // ═══════════════════════════════════════════════════════════════════════════════════
+            //
+            // 🔑 THE ID IS THE MECHANIC, NOT THE FLAVOUR — that is exactly why he renamed it off
+            // `arcane_momentum` on 2026-09-10: *"as other classes can aqure it too"*. A second class
+            // arrived in the same message. Anything else that ever gets a reuse reset gets THIS id
+            // plus a `DisplayName`, never a copy of the def.
+            //
             //
             // *"Mages get cooldown passive with base 5% @76"* — and, from the same message,
             // *"u for now build the reuse passive and add it to the mages but the other skills
@@ -189,7 +224,7 @@ public static partial class SkillCatalog
             //
             // ⚠ It never fires on a FixedCooldown skill (Return, the ultimates) — that exemption is
             // in ExecuteSkill, not here, and it is the same one reuse REDUCTION already has.
-            new(ArcaneMomentum, "Arcane Momentum", BaseClass.Mage, SkillEffect.None,
+            new(ReuseResetMomentum, "Arcane Momentum", BaseClass.Mage, SkillEffect.None,
                 MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
                 Category: SkillCategory.Buff, SpCost: sp76,
                 TargetMode: TargetMode.SelfOnly,

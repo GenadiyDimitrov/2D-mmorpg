@@ -61,32 +61,33 @@ public static partial class ClassSkillTables
     ///
     /// <para>🔑 <b>FOUR ARCHETYPES, FOUR DIFFERENT ANSWERS</b>, and the split is the design:
     /// <list type="bullet">
-    ///   <item><b>Ravager + Warlord</b> — Overpower rung 3 (10%) at 76 AND the Blood Rage toggle at
-    ///         <b>81</b> (his own level, written into both warrior CSVs 2026-09-10). The only
-    ///         line in the game that can double a skill's damage, and the only tool that doubles the
-    ///         doubler.</item>
+    ///   <item><b>Ravager + Warlord</b> — Overpower rung 3 (10%) at 76 AND the `double_mastery`
+    ///         toggle ("Overpower Mastery") at <b>81</b> (his own level, written into both warrior
+    ///         CSVs 2026-09-10). The only line in the game that can double a skill's damage, and the
+    ///         only tool that doubles the doubler.</item>
     ///   <item><b>Lightbringer + Warchanter</b> — Lasting Enchantment (10%): the buff/debuff duration
     ///         double, which until `BL-190` was free and universal.</item>
-    ///   <item><b>Magus</b> — Arcane Momentum (5%): the reuse reset. *"Mages"* is the NUKER in his
-    ///         vocabulary; the healer and buffer got a different passive in the line above it.</item>
+    ///   <item><b>Magus</b> — `reuse_reset_momentum` ("Arcane Momentum", 5%). *"Mages"* is the NUKER
+    ///         in his vocabulary; the healer and buffer got a different passive in the line above.</item>
+    ///   <item><b>Nullblade + Phantom + Venomweaver</b> (the MELEE rogue, added 2026-09-10) — the
+    ///         SAME two ids the Magus and the warrior carry, under the names <b>"Stab Momentum"</b>
+    ///         and <b>"Momentum Mastery"</b>. See the block at the bottom of the method.</item>
     /// </list></para>
     ///
-    /// <para>⚠ <b>THE ROGUE, THE ARCHER AND THE TANK GET NOTHING HERE — TWO OF THOSE ARE FINAL, ONE
-    /// IS NOT.</b> Ruled 2026-09-10:
+    /// <para>⚠ <b>THE TANK AND THE ARCHER GET NOTHING, AND BOTH ARE FINAL.</b> Ruled 2026-09-10:
     /// <list type="bullet">
     ///   <item><b>Tank — never.</b> *"if i give a tank some of the passives he will become even more
     ///         unstopable"*.</item>
     ///   <item><b>Archer — never.</b> *"archer have enough skills that are always hit wit big power
     ///         (not like daggers 80% chance)"* — his big skills already land every time, so a double
     ///         would be compensation for a reliability problem he does not have.</item>
-    ///   <item>🟡 <b>THE ROGUE IS A YES AND IS NOT BUILT YET</b> — *"the rouge i want to have a
-    ///         double passive gust dont know which one ... i lean thowardds the mages one with the
-    ///         reuse"*. The choice waits on measured playtest damage. If it lands on Arcane Momentum
-    ///         this table gains one line per rogue discipline and the engine needs nothing; if it
-    ///         lands on the damage double, mind `BL-188` — a blow already rolls its own landing
-    ///         chance, and that would be two rolls on one hit.</item>
     /// </list>
-    /// ⚠ Do NOT hand the rogue a mastery to "finish the table" before he names which.</para>
+    /// So a bow rogue reads 0/0/0 for the whole game while his dagger cousin does not — that split is
+    /// the ruling, not an omission to tidy up.</para>
+    ///
+    /// <para>🟡 <b>THE WHOLE MASTERY LAYER IS PROVISIONAL BY HIS OWN WORDS</b> — *"ill try with those
+    /// changes and after playtest ill deside if i add or remove"*. Do not build on it as though it
+    /// were settled; do not extend it either.</para>
     ///
     /// <para>✅ Every level in this table is now a number he wrote — Blood Rage's 81 was the last
     /// assumption and he replaced it himself on 2026-09-10.</para></summary>
@@ -97,15 +98,47 @@ public static partial class ClassSkillTables
             foreach (var d in new[] { Discipline.Ravager, Discipline.Warlord })
                 ClassSkills.RegisterFourth(race, d,
                     new ClassSkill(Overpower, 76, SkillLevel: 3),
-                    new ClassSkill(BloodRage, 81, SkillLevel: 1));
+                    new ClassSkill(DoubleMastery, 81, SkillLevel: 1));
 
             foreach (var d in new[] { Discipline.Lightbringer, Discipline.Warchanter })
                 ClassSkills.RegisterFourth(race, d,
                     new ClassSkill(LastingEnchantment, 76, SkillLevel: 1));
 
             ClassSkills.RegisterFourth(race, Discipline.Magus,
-                new ClassSkill(ArcaneMomentum, 76, SkillLevel: 1));
+                new ClassSkill(ReuseResetMomentum, 76, SkillLevel: 1));
         }
+
+        // ---- THE MELEE ROGUE, 2026-09-10 — the same two skills under two other names. ----
+        //
+        // *"add to duals 4th same reuse_reset_momentum with name Stab Momentum"*
+        // *"add to duals 4th the same double_mastery with name Momentum Mastery"*
+        //
+        // 🔑 SAME IDS, NOT COPIES. One def, one set of numbers, a `DisplayName` override per class —
+        // which is this project's standing convention for per-class flavour and the reason he renamed
+        // both ids off their mage/warrior wording in the first place (*"as other classes can aqure it
+        // too"*). If the reuse base ever moves, it moves for the Magus and the rogue together, which
+        // is what he asked for.
+        //
+        // 🔑 THE PAIR IS COHERENT ONLY BECAUSE THE TOGGLE WAS GENERALISED. A rogue has no Overpower,
+        // so a toggle that doubled only the damage base would be 50 HP/s for nothing. It now doubles
+        // all three bases, so on this class it doubles the reuse base Stab Momentum supplies: 5% → 10%
+        // before the ATK band.
+        //
+        // ⚠ THE TWO LEARN LEVELS ARE MINE, NOT HIS — the one open number in this block. 76 and 81
+        // mirror the Magus's reuse rung and the warrior's toggle exactly, which is the only defensible
+        // read of *"the same"*. If he meant otherwise these are two lines and two CSV rows. Flagged in
+        // `BL-191` so it is not mistaken for an authored number.
+        //
+        // ⚠ ONLY THE THREE MELEE ROGUES. The archer branch was ruled out by name the same day.
+        foreach (var (race, d) in new[]
+                 {
+                     (Race.Human, Discipline.Nullblade),
+                     (Race.Elf,   Discipline.Phantom),
+                     (Race.Demon, Discipline.Venomweaver),
+                 })
+            ClassSkills.RegisterFourth(race, d,
+                new ClassSkill(ReuseResetMomentum, 76, "Stab Momentum",     SkillLevel: 1),
+                new ClassSkill(DoubleMastery,      81, "Momentum Mastery", SkillLevel: 1));
     }
 
     // ═════════════════════════════════════════════════════════════════════════════════════════════

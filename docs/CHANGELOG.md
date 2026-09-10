@@ -7,11 +7,80 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.124.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.124.2**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-10 (latest) — 0.124.1: Blood Rage is a level **81** skill, so the cap is the end of a climb
+## 2026-09-10 (latest) — 0.124.2: the masteries stop belonging to one class each (`BL-191`)
+
+🔴 **NEW APK REQUIRED** — two skill ids changed and the melee rogue gained two learnable skills, and
+the client builds its Learn tab locally from the compiled `ClassSkills`. Wire untouched: protocol
+**35**.
+
+His asks, in order, and what each one turned into:
+
+| He said | Built as |
+|---|---|
+| *"changed `arcane_momentum` → `reuse_reset_momentum` — as other classes can aqure it too"* | id renamed; display name stays **"Arcane Momentum"** on the Magus |
+| *"add to duals 4th same `reuse_reset_momentum` with name **Stab Momentum**"* | the same id on Nullblade / Phantom / Venomweaver, `DisplayName` override |
+| *"change blood rage toggle not to double only the overpowered base but **all double passives bases** that a class have"* | `SkillDef.MasteryMult` now scales **all three** accumulators |
+| *"`blood_rage` → `double_mastery`"* + *"`Blood Rage` → `Overpower Mastery`"* | id and name changed; `BuffKey` too |
+| *"add to duals 4th the same `double_mastery` with name **Momentum Mastery**"* | same id, second `DisplayName` override |
+
+🔑 **The generalisation is what makes the rest of it possible, and it is the only engine change
+here.** A melee rogue has no Overpower, so a toggle that doubled only the damage base would have been
+50 HP a second for nothing. It now multiplies whatever bases its holder actually carries — the
+warrior's damage, the rogue's reuse — which is why ONE def can wear two names instead of becoming two
+skills that drift apart. `Entity.RecomputeDerived` applies it to `DoubleDamageAcc`,
+`DoubleDurationAcc` and `CooldownResetAcc` alike, still before the ATK band and the 25% cap.
+
+🔑 **Two names, one number.** Per-class flavour is a `ClassSkill.DisplayName` override, this
+project's standing convention. If the reuse base ever moves it moves for the Magus and the rogue
+together — which is exactly what "the same" has to mean for it to be worth saying.
+
+### Measured — `BalanceMatrix` §C1 grew two rows and a second toggle test
+
+```
+  Magus (4th)                   0.0%     0.0%     5.5%
+  Nullblade (4th)               0.0%     0.0%     4.6%
+  Sharpshooter (4th)            0.0%     0.0%     0.0%
+  Ravager + toggle             18.8%     0.0%     0.0%
+  Nullblade + toggle            0.0%     0.0%     9.1%
+```
+
+The last two lines are the point: **one def has to move a different column on each class.** A test
+that only ran the warrior would have passed while the rogue's stance did nothing at all.
+
+### Also
+
+- **Perfect Strike / Brutal Strike were already right, only described wrongly.** His clarification —
+  *"brutal/perfect strike can be bot learned but they just dont stack as buffs .. a dual class can
+  have them both and chose depending on situatuion which to use"* — is what the code does: both sit
+  in the learn table at 80 and the exclusion is a shared `BuffKey`. But the rung text said "Replaces
+  Brutal Strike", which reads like a learn-tab consequence. Reworded on both, and in the CSV.
+- 🔴 **`dual 4th.csv` had its `REPLACES` values sitting in the `SP Bottles` column.** Its header was
+  the only 4th-tier one missing that column, so every value from `Gold` rightward was off by one
+  against its siblings. Header and all 126 rows realigned to the canonical 20-column shape, and the
+  top comment block rewritten free of the stray commas and unbalanced quotes that made three of its
+  own lines parse as one field.
+- ⚠ `--chains` will now name `reuse_reset_momentum` under "CROSS-CHAIN IDS" — a Mage discipline and
+  three Fighter ones learn it. That is **correct output**, not a defect: the audit's automatic
+  exemption only covers ids that *every* ascended class learns.
+- 🟡 The two melee-rogue learn levels (76 and 81) are the only unauthored numbers in the layer; they
+  mirror the Magus and the warrior. Flagged in `BL-191`.
+- 🟡 The whole layer is provisional: *"ill try with those changes and after playtest ill deside if i
+  add or remove"*.
+
+### Files
+
+`GameConstants.cs` (0.124.2) · `Skills.cs` (`DoubleDamageMult` → `MasteryMult`) ·
+`Skills.SkillMasteries.cs` · `Skills.Dual4th.cs` · `ClassSkillTables.Fourth.cs` · `Entity.cs` ·
+`GameLoopService.cs` · `BalanceMatrix/Program.cs` · `dual 4th.csv` + `warrior 4th.csv` +
+`war_aoe 4th.csv` · `Formulas.md` · `Backlog.md`
+
+---
+
+## 2026-09-10 — 0.124.1: Blood Rage is a level **81** skill, so the cap is the end of a climb
 
 🔴 **NEW APK REQUIRED** — a learn level is part of the class-skill table, and the client builds its
 Learn tab locally from the compiled `ClassSkills`. An old APK offers the toggle at 76. The wire is
