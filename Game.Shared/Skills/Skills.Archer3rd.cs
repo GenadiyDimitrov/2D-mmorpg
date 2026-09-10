@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -487,18 +487,12 @@ public static partial class SkillCatalog
     private static SkillDef Trap(string id, string name, SkillEffect rider, DebuffSchool school,
                                  int[]? tiers, int[] mp, string blurb, Func<int, string> rung)
     {
-        var mags = rider switch
-        {
-            SkillEffect.Poison => new EffectMagnitude[]
-            {
-                new(SkillEffect.DebuffAtkSpeed, 0.15f), new(SkillEffect.DebuffCastSpeed, 0.15f),
-            },
-            SkillEffect.Bleed => new EffectMagnitude[] { new(SkillEffect.Slow, 0.15f) },
-            _ => Array.Empty<EffectMagnitude>(),
-        };
-        var effect = rider | (rider == SkillEffect.Poison
-            ? SkillEffect.DebuffAtkSpeed | SkillEffect.DebuffCastSpeed
-            : rider == SkillEffect.Bleed ? SkillEffect.Slow : SkillEffect.None);
+        // ⚠ NO RIDER HERE ANY MORE. A trap's poison slowed attack/cast 15% and its bleed slowed
+        //   movement 15% because these lines said so; both now come from the (kind, tier) table
+        //   (`DotTiers.Rider`), which is also why every bleed in the game slows by the same 20%.
+        //   Owner, 2026-09-10: *"remove the dot side effect from the skills"*.
+        var mags = Array.Empty<EffectMagnitude>();
+        var effect = rider;
 
         return new SkillDef(id, name, BaseClass.Fighter, effect,
             MpCost: mp[0], CastTicks: 0, CooldownTicks: 300, Range: 0, Power: 0,
@@ -510,7 +504,7 @@ public static partial class SkillCatalog
             Description: blurb + " Waits 30s at your feet for something to walk into it.",
             Levels: BulwarkRungs(i => new SkillLevel(
                 MpCost: mp[i], SpCost: RogueSp[i],
-                Rank: tiers is null ? 0 : tiers[i], Magnitudes: mags,
+                Rank: tiers is null ? 0 : tiers[i],
                 Description: rung(i)))
                 .Concat(ArcherFourthTrapRungs(tiers is not null)).ToArray());
     }

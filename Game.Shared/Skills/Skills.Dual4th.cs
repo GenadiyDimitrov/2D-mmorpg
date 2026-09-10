@@ -161,10 +161,6 @@ public static partial class SkillCatalog
     internal static SkillLevel[] VenomStabFourthRungs() => F4Rungs(15, 1, (i, sp, gold) =>
         new SkillLevel(Power: VenomStabPower4[i], MpCost: StabMp4[i], SpCost: sp, GoldCost: gold,
             Rank: VenomTier4, StacksPerCast: VenomStacks4,
-            Magnitudes: new EffectMagnitude[]
-            {
-                new(SkillEffect.DebuffAtk, 0.15f), new(SkillEffect.DebuffDef, 0.15f),
-            },
             Description: $"Blow power {VenomStabPower4[i]:N0} on a critical; "
                        + "a normal attack otherwise. "
                        + $"Adds {VenomStacks4} tier-{VenomTier4} venom stack(s), max 10."));
@@ -173,10 +169,6 @@ public static partial class SkillCatalog
     internal static SkillLevel[] VenomBurstFourthRungs() => F4Rungs(15, 1, (i, sp, gold) =>
         new SkillLevel(Power: VenomBurstPerStack4[i], MpCost: StabMp4[i], SpCost: sp, GoldCost: gold,
             Rank: VenomTier4, StacksPerCast: VenomStacks4,
-            Magnitudes: new EffectMagnitude[]
-            {
-                new(SkillEffect.DebuffAtk, 0.15f), new(SkillEffect.DebuffDef, 0.15f),
-            },
             Description: $"Power {VenomBurstPerStack4[i]:N0} per consumed venom stack (up to ×10). "
                        + $"With no stacks on the target, lays {VenomStacks4} tier-{VenomTier4} instead."));
 

@@ -285,6 +285,50 @@ chance = DebuffSchool.Physical -> DebuffReflectPhys
 
 `GameLoopService.TryReflectDebuff` · `PassiveEffect.DebuffReflectPhysChance/DebuffReflectMagicChance`
 
+
+## Damage over time (bleed / poison / venom / burn)
+
+**Both halves come from a (TYPE, TIER) table** — `Game.Shared/Skills/DotTiers.cs`, the mirror of
+`docs/data/dot_table.csv`. Neither the damage nor the side effect belongs to the skill that delivered
+it (owner, 2026-09-10: *"remove the dot side effect from the skills"*), so every bleed in the game
+slows by the same amount and every tier-11 venom ticks for the same number.
+
+```
+tick/s = DotTiers.DamagePerSecond(kind, tier) * stacks        FLAT — no defence, no ATK, no level term
+```
+
+| type | tier 1 → 11 (dmg/s **per stack**) | max stacks | side effect | saves on |
+|---|---|---|---|---|
+| **Venom** | 5,5,7,7,9,9,10,10,15,15,20 | **10** | −10% P.Atk **and** M.Atk | CON |
+| **Poison** | 20,30,40,50,60,70,90,110,130,150,200 | 1 | −15% attack **and** cast speed | SPT |
+| **Bleed** | 20,20,40,40,60,60,80,80,100,100,150 | 1 | −20% move speed (every rank) | CON |
+| **Burn** | *(10,11,12 only)* 100,125,150 | 1 | −70/72/75% **HP and MP received** | — nothing |
+
+- **Flat, undivided, once a second.** *"its true all effects do flat dmg."* The physical/magical label
+  decides **only which stat saves** — nothing else follows from it.
+- **Only the landing is a stat contest** (`StatCalculator.DebuffLandChance`, attacker AGI for
+  bleed/venom else ATK, defender CON or SPT). Once it lands, the tier is the whole number.
+- **Only venom stacks.** `DotTiers.MaxStacks` caps the family, so a skill cannot be authored into a
+  stacking bleed. The side effect does **not** scale with stacks — `BuffInstance.Percent` sums
+  magnitudes and never multiplies by `Stacks`, so venom's −10% is −10% at one stack or ten.
+- **Burn is saved against by nothing and always lands** (*"for burn nothing protects .. always land"*).
+  The contest is skipped outright rather than multiplied up, so `CcResist` and the per-school blessing
+  cannot claw it back.
+- **Cures reach tier 11; tier 12 is beyond every cleanse.** Antidote ladders to 10; **Holy Blessing**
+  (@78) is the only thing that reaches 11. `DotTiers.Curable` refuses 12 to every cure in the game, so
+  it cannot be lifted by mis-authoring a cleanse.
+- **No DoT lowers defence** (*"for now no dot will decrease def"*).
+- **Burn has no `SkillEffect` bit and never can** — `1L << 62` is the last free flag. It carries
+  `SkillEffect.Poison` for membership (`AnyDot`, the bar, what a cure may strip) and declares
+  `DotKind.Burn` for its numbers.
+
+🔴 **Do not restore `DotPowerAt`'s fallback to `Power`.** Until 0.125.1 a DoT with no authored
+`DotPower` ticked for the skill's *direct-hit* power — and only one skill in the catalogue authored the
+field, so Bleeding Arrow (power 15,000 over 30s) dealt **450,000**. A skill's Power is its direct hit;
+a DoT rider is a second number.
+
+`DotTiers` · `GameLoopService.TickDots` / `ApplyBuff` / `ApplyDotStack`
+
 ## Crit rate and crit damage, taken OFF the attacker (`tank 3rd.csv`, 0.105.0)
 
 ```

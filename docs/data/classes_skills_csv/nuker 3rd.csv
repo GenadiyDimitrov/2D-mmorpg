@@ -86,7 +86,7 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 ,,,,,,,,,,,,,,,,,-----------------------------Race Bursts (74)-----------------------------
 74,Arcane Burst,arcane_burst,Magic/Dmg,,,900,0,enemy/single,1,300,15,"Arcance Magic spell, power 150. Decrease SPT resistance by 40% (success chance x1.5), Never Fizzle",150,880k,[],Human
 74,Frost Burst,frost_burst,Magic/Dmg,,,900,0,enemy/single,1,300,15,"Frost Magic spell, power 150. Freeze the enemy: -30% M.def and prevents movement (success chance x1.5), Never Fizzle",150,880k,[],Elf
-74,Pyro Burst,pyro_burst,Magic/Dmg,,,900,0,enemy/single,1,300,15,"Fire Magic spell, power 150. Burns the enemy for -100hp/s and decrease hp/mp received by 70% (success chance x1.5), Never Fizzle",150,880k,[],Demon,new effect like a DOT but its not poision nor bleed nor venom -> burn = true dmg per second no cure and can kill 
+74,Pyro Burst,pyro_burst,Magic/Dmg,,,900,0,enemy/single,1,300,15,"Fire Magic spell, power 150. Burn the enemy for -100/s HP; Never Fizzle",150,880k,[],Demon,new effect like a DOT but its not poision nor bleed nor venom -> burn = true dmg per second no cure and can kill 
 ,,,,,,,,,,,,,,,,,-----------------------------Quick Blast-----------------------------
 40,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk +42; Power in PVP x0.5,33,36k,[quick_bolt]
 44,Quick Blast,quick_blast,Magic/Dmg,,,300,0,enemy/single,2,0.5,0,m.Atk +47; Power in PVP x0.5,38,43k,[quick_bolt]

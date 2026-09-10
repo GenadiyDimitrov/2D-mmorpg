@@ -11836,15 +11836,36 @@ public class GameLoopService : BackgroundService
             {
                 bool agiBased = (effect & (SkillEffect.Bleed | SkillEffect.Venom)) != 0;
                 int atkStat = agiBased ? (int)caster.EffectiveAgi : caster.EffectiveAtk;
-                int defStat = def.DebuffSchool == DebuffSchool.Magical ? target.EffectiveSpt : target.EffectiveCon;
+
+                // 🔑 FOR A DoT THE FAMILY DECIDES WHICH STAT SAVES, not the skill's own DebuffSchool.
+                // Owner, 2026-09-10: *"its true all effects do flat dmg. So magic postion or physical
+                // posion is no difference just naming stuff and dos CON or SPT protects"* — so the
+                // channel is nothing but the save, and it belongs to the type.
+                var landKind = (effect & SkillEffect.AnyDot) != 0
+                    ? DotTiers.KindOf(def.DotKind, effect) : DotKind.None;
+                DebuffSchool school = landKind != DotKind.None
+                    ? DotTiers.Save(landKind) : def.DebuffSchool;
+                int defStat = school == DebuffSchool.Magical ? target.EffectiveSpt : target.EffectiveCon;
+
+                // ⚠ BURN IS SAVED AGAINST BY NOTHING AND ALWAYS LANDS (*"for burn nothing protects ..
+                //   always land"*). He offered the hack himself — *"code success chance x9999"* — but a
+                //   contest that cannot be lost is better expressed as no contest: a 9999x multiplier
+                //   would still be scaled down by CcResist and the per-school blessing below and could,
+                //   with enough of both, come back under 1.
+                bool alwaysLands = landKind != DotKind.None && school == DebuffSchool.None;
+
                 float land = ResistsDebuff(target, effect, def)
                     ? 0f
+                    : alwaysLands ? 1f
                     : StatCalculator.DebuffLandChance(atkStat, defStat,
                                                       RungLevel(caster, def, lvl), target.Level);
                 // BL-90: the PER-SKILL multiplier, before the target's own resistances.
-                land = ApplyDebuffLandMod(land, def, lvl);
-                land *= 1f - target.CcResist;   // gear/buff CC resistance lowers the land chance
-                land *= 1f - SchoolCcResist(target, def.DebuffSchool);   // …and the per-school blessing
+                if (!alwaysLands)
+                {
+                    land = ApplyDebuffLandMod(land, def, lvl);
+                    land *= 1f - target.CcResist;   // gear/buff CC resistance lowers the land chance
+                    land *= 1f - SchoolCcResist(target, school);   // …and the per-school blessing
+                }
                 if (_rng.NextDouble() < land)
                 {
                     if (def.Pulls)
@@ -12351,11 +12372,33 @@ public class GameLoopService : BackgroundService
 
         // A leveled-stack effect starts at stack 1's entry; otherwise the skill's own effect.
         var first = def.StackLevelAt(1);
+
+        // ═══ A DoT's PAYLOAD COMES FROM THE (KIND, TIER) TABLE, NOT FROM THE SKILL ════════════════
+        //
+        // Owner, 2026-09-10: *"lets make them as authored ... remove the dot side effect from the
+        // skills"*. So a bleed slows 20% because it is a BLEED, not because the skill that opened it
+        // said so — and every bleed in the game slows by the same 20% as a result. `rank` is the tier.
+        //
+        // ⚠ The rider REPLACES the skill's own magnitudes rather than adding to them: the skills were
+        //   stripped of their riders in the same increment, and a leftover authored one would stack
+        //   with the type's and quietly double it.
+        var dotKind = (def.Effect & SkillEffect.AnyDot) != 0
+            ? DotTiers.KindOf(def.DotKind, def.Effect) : DotKind.None;
+        SkillEffect dotFlags = SkillEffect.None;
+        EffectMagnitude[]? dotMags = null;
+        if (dotKind != DotKind.None)
+        {
+            var rider = DotTiers.Rider(dotKind, rank);
+            dotFlags = rider.Flags;
+            dotMags = rider.Mags;
+        }
+
         target.Buffs.Add(new BuffInstance
         {
-            Effect = isGroup ? groupEffect : (first?.Effect ?? def.Effect),
-            Magnitudes = isGroup ? groupMags!
-                       : first?.Magnitudes ?? def.MagnitudesAt(level) ?? Array.Empty<EffectMagnitude>(),
+            Effect = (isGroup ? groupEffect : (first?.Effect ?? def.Effect)) | dotFlags,
+            Magnitudes = dotMags
+                       ?? (isGroup ? groupMags!
+                       : first?.Magnitudes ?? def.MagnitudesAt(level) ?? Array.Empty<EffectMagnitude>()),
             CoveredKeys = covered,
             TicksRemaining = duration,
             Toggle = toggle,
@@ -12365,13 +12408,15 @@ public class GameLoopService : BackgroundService
             // DoT damage effect (bleed/poison/venom): carries its per-tick damage so TickDots
             // hits for DotPower each second. Damage does NOT stack — stacks live on a separate
             // counter (see ApplyDotStack); the burst reads the counter, not this.
-            // ⚠ DotPowerAt, not PowerAt, since 2026-08-26: a DoT's per-second damage is USUALLY the
-            // skill's Power (a bleed is its DoT and nothing else), but the nuker's Pyro Burst hits for
-            // 150 on impact and then burns for his authored 100. DotPowerAt falls back to Power, so
-            // every DoT written before it is unchanged.
-            DotPower = (def.Effect & SkillEffect.AnyDot) != 0 ? def.DotPowerAt(level) : 0,
+            // ⚠ DotPowerAt is an OVERRIDE now and is 0 on every authored skill: a DoT's damage comes
+            // from DotTiers[kind][tier]. It used to fall back to the skill's Power, which is how every
+            // bleed in the game came to tick for its direct hit (Bleeding Arrow: 450,000 over 30s).
+            DotPower = dotKind != DotKind.None ? def.DotPowerAt(level) : 0,
+            DotKind = dotKind,
             // The mana twin of the DebuffHealRecv anti-heal — a FIELD, the flag enum being full.
-            MpReceivedPct = def.MpReceivedPct,
+            // ⚠ Burn's half comes from the TABLE, like the rest of its rider.
+            MpReceivedPct = dotKind == DotKind.Burn
+                ? DotTiers.BurnMpCut(dotKind, rank) : def.MpReceivedPct,
             // Absorb shield: flat Power + a % of the target's max HP (a Percent Shield magnitude).
             ShieldPool = (def.Effect & SkillEffect.Shield) != 0
                 ? def.PowerAt(level) + (int)(target.MaxHp * def.MagnitudeOf(SkillEffect.Shield, ModifierMode.Percent, level))
@@ -12551,7 +12596,10 @@ public class GameLoopService : BackgroundService
         // ⚠ ONE CAST MAY ADD MORE THAN ONE (`SkillDef.StacksPerCast`, per rung). The cap is unchanged,
         // so a rung that adds three fills the burst in four casts instead of ten — that is his ladder,
         // and it is why `add` is read here rather than hard-coded to 1.
-        int cap = Math.Max(1, def.MaxStacks);
+        // 🔑 THE FAMILY DECIDES, NOT THE SKILL (*"venom is the only stacking dot atm"*). A skill may
+        // still ask for FEWER, but a bleed or a poison can no longer be authored into a stacking one.
+        var stackKind = DotTiers.KindOf(def.DotKind, def.Effect);
+        int cap = Math.Min(Math.Max(1, def.MaxStacks), DotTiers.MaxStacks(stackKind));
         int add = def.StacksPerCastAt(level);
         if (!string.IsNullOrEmpty(def.StackKey))
         {
@@ -12607,7 +12655,7 @@ public class GameLoopService : BackgroundService
             if ((b.Effect & SkillEffect.AnyDot) == 0) continue;
             // Rank IS the tier on a DoT buff (see SkillLevel.Rank) — the same number his CSVs write as
             // "tire 3" / "tier-11 bleed", and the same one a cure has to out-reach.
-            int dps = b.DotPower > 0 ? b.DotPower : DotTiers.DamagePerSecond(b.Effect, b.Rank);
+            int dps = b.DotPower > 0 ? b.DotPower : DotTiers.DamagePerSecond(b.DotKind, b.Rank);
             if (dps <= 0) continue;
             total += dps * b.Stacks;
             source ??= _world.Entities.GetValueOrDefault(b.SourceId);
@@ -12731,6 +12779,12 @@ public class GameLoopService : BackgroundService
             !b.Internal && b.Cancellable &&
             (positive ? !b.IsDebuff : b.IsDebuff) &&
             (mask == SkillEffect.None || (b.Effect & mask) != 0) &&
+            // 🔑 NOTHING CURES A DoT ABOVE THE CEILING, whatever the cure's own reach says. Owner,
+            // 2026-09-10: *"i want healers holy blessing or whatever that cures/clences to clence to
+            // t11. so pyromancer ultimate is uncurable"*. Tier 12 exists to be beyond every cleanse,
+            // so this is a property of the AILMENT and not of the cure — a future cleanse authored at
+            // DispelMaxLevel 12 by mistake still cannot strip it.
+            (b.DotKind == DotKind.None || DotTiers.Curable(b.Rank)) &&
             (maxRank <= 0 || b.Rank <= maxRank)).ToList();
 
         // Random subset if a count is set and there are more candidates than that.
@@ -15810,6 +15864,12 @@ public class GameLoopService : BackgroundService
     /// buff it is.</summary>
     private static string BuffDescriptionWithSource(BuffInstance b)
     {
+        // 🔑 A DoT DESCRIBES ITSELF FROM THE TABLE, in his format: `Burn T12; -150hp/s; Decreases
+        // Hp/Mp Received with 75%; Uncurable;`. It is generated rather than authored because the
+        // skill no longer knows any of it — the damage, the rider and the curability are all
+        // properties of (kind, tier) now — and because the stack count changes while it runs.
+        if (b.DotKind != DotKind.None)
+            return DotTiers.Describe(b.DotKind, b.Rank, b.Stacks);
         if (string.IsNullOrEmpty(b.SourceSkillId) || b.SourceSkillId == b.SkillId) return b.Description;
         // A one-child wrapper on the Consumable row IS a potion, a scroll or a burst — the three
         // things you drink. A group buff is also a wrapper but has several children and its own row.
@@ -16535,7 +16595,7 @@ public class GameLoopService : BackgroundService
                 stacks = counter.Stacks;
 
             dtos.Add(new BuffDto(
-                b.Name, b.Description,
+                b.Name, BuffDescriptionWithSource(b),
                 b.Toggle ? -1f : b.TicksRemaining * GameConstants.TickSeconds,
                 b.IsDebuff, b.Key, stacks, b.Row, BuffIcon(target, b.SourceSkillId)));
         }

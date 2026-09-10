@@ -7,11 +7,78 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.126.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.127.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-10 (latest) — 0.126.0: the enemy's debuffs and stack counts
+## 2026-09-10 (latest) — 0.127.0: his DoT table lands, and Burn becomes a real family
+
+🟡 **New APK recommended, not required.** Protocol stays **36** — nothing on the wire changed. The
+debuff bar's text comes from the server and is correct on an old client; only the *skill-detail*
+descriptions, which the client renders from its compiled catalogue, would read stale.
+
+His table arrived as `docs/data/dot_table.csv`, and the rulings that came with it turn a damage
+lookup into the whole DoT model.
+
+### Both halves of a DoT belong to the (TYPE, TIER) table
+
+*"lets make them as authored ... remove the dot side effect from the skills"*. So the damage AND the
+rider are properties of the family, and every skill that delivered one was stripped:
+
+| type | tier 1 → 11 (dmg/s **per stack**) | stacks | side effect | saves on |
+|---|---|---|---|---|
+| Venom | 5,5,7,7,9,9,10,10,15,15,20 | **10** | −10% P.Atk and M.Atk | CON |
+| Poison | 20,30,40,50,60,70,90,110,130,150,200 | 1 | −15% attack and cast speed | SPT |
+| Bleed | 20,20,40,40,60,60,80,80,100,100,150 | 1 | −20% move speed, every rank | CON |
+| Burn | *(10/11/12 only)* 100,125,150 | 1 | −70/72/75% HP **and MP** received | nothing |
+
+Consequences worth knowing:
+- **Every bleed now slows 20%.** The archer's trap authored 15% and Bleeding Arrow 30%; both are gone.
+- **Venom no longer lowers defence** (*"for now no dot will decrease def"*) and its −15% atk became
+  −10% off **both** P.Atk and M.Atk — one flag does both, `DebuffAtk` wraps `EffectiveAttack`,
+  `EffectiveMagicAttack` and `EffectiveBasicAttack` alike.
+- **Only venom stacks.** `DotTiers.MaxStacks` caps the family, so a bleed cannot be authored into a
+  stacking one. ⚠ The three orphan Venomweaver builders (Rupture / Toxic Sting / Envenom) still ask
+  for 10 and are now capped to 1 — harmless, since **no class table grants any of them**.
+- The rider does **not** scale with stacks: `BuffInstance.Percent` sums magnitudes and never
+  multiplies by `Stacks`. That is the cheaper of the two shapes he offered and it is now documented.
+
+### 🔑 Burn is a real family, and it needed a FIELD because the enum is full
+
+`1L << 62` is the last free `SkillEffect` bit and it is taken, so `AnyDot` could never grow a fourth
+member. **`DotKind` is a field on `SkillDef`**: a Burn skill still carries `SkillEffect.Poison` for
+membership — `AnyDot`, the buff bar, what a cure may strip — and declares `DotKind.Burn` for its
+damage, its rider and its save.
+
+**Pyro Burst is Burn tier 10, and that is not a guess:** its authored `DotPower: 100` and
+`MpReceivedPct: 0.70f` are his tier-10 row exactly, written months before the table existed.
+
+- **Nothing saves against a burn** (*"for burn nothing protects .. always land"*). He offered the hack
+  himself — *"code success chance x9999"* — but a contest that cannot be lost is better expressed as
+  no contest: a ×9999 would still be scaled by `CcResist` and the per-school blessing and could come
+  back under 1. `DebuffLandMod: 1.5f` is gone from Pyro Burst, and its CSV row with it.
+- **`Cancellable: false` is gone from Pyro Burst**, which is a real change: it made *every* tier of the
+  skill uncurable, where the rule is now the tier's. Pyro Burst at 10 **is** curable.
+
+### Cures: Antidote to 10, Holy Blessing to 11, nothing to 12
+
+*"no no antidot stays to tire 10 ... tire 11 is cured buy the skill holy_blessing -> removes any
+debuff + dots to T11 .. T12 or debuff that is uncurable is not removed"*.
+
+Antidote is untouched. **Holy Blessing keeps its "any debuff, no rank ceiling"** — that half is
+correct as authored — and the T11 wall is the *ailment's*: `DotTiers.Curable` refuses tier 12 to every
+cure in the game, so it cannot be lifted by mis-authoring a cleanse. Its description no longer
+promises "at any rank".
+
+### The debuff bar describes itself
+
+A DoT's bar text is generated from (kind, tier, stacks) in his format — `Burn T12; -150hp/s; Decreases
+Hp/Mp Received with 75%; Uncurable;` — because the skill no longer knows any of it, and because the
+stack count changes while it runs.
+
+⚠ Tier 12 has no skill yet. Pyro Burst is 10; **11 and 12 arrive with the nuker's 4th kit (`BL-192`)**.
+
+## 2026-09-10 — 0.126.0: the enemy's debuffs and stack counts
 
 🔴 **NEW APK REQUIRED — `ProtocolVersion` 35 → 36.** A new server→client message.
 

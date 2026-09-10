@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -250,11 +250,14 @@ public static partial class SkillCatalog
 
         // ═══ THE THREE RACE ULTIMATES (85) ═══════════════════════════════════════════════════════
         list.Add(Ultimate(ArcherBleedingArrow, "Bleeding Arrow",
-            SkillEffect.PhysicalDamage | SkillEffect.Bleed | SkillEffect.Slow,
+            // ⚠ NO `Slow` FLAG AND NO 30% MAGNITUDE. The bleed FAMILY carries the slow now, at a flat
+            //   20% for every rank (`DotTiers.Rider`) — his 2026-09-10 ruling, *"yes lets make bleed
+            //   generally to slow 20% at all ranks"*. This skill used to author 30% of its own.
+            SkillEffect.PhysicalDamage | SkillEffect.Bleed,
             level: 85, bottles: 5, power: 15000, mp: 208, durationTicks: 300,
-            mags: new EffectMagnitude[] { new(SkillEffect.Slow, 0.30f) },
+            mags: Array.Empty<EffectMagnitude>(),
             "An arrow that opens a wound nothing in this game can close.",
-            "Strikes for power 15,000 and leaves a tier-11 bleed and 30% slow for 30s.",
+            "Strikes for power 15,000 and leaves a tier-11 bleed for 30s.",
             rank: 11, school: DebuffSchool.Physical));
 
         list.Add(Ultimate(ArcherDazzlingArrow, "Dazzling Arrow",

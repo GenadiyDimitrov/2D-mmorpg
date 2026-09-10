@@ -1,4 +1,4 @@
-namespace Game.Shared;
+﻿namespace Game.Shared;
 
 /// <summary>
 /// THE NUKER'S 3rd-CLASS KIT, 40 → 74 — every rung read off `docs/data/classes_skills_csv/nuker 3rd.csv`
@@ -395,16 +395,33 @@ public static partial class SkillCatalog
         // `Entity.RestoreMpMod` that the robe mastery's mpWhenRestored raises — so a burning mage's
         // Restore Spirit is cut by exactly the number his row names. His row asks for both halves
         // ("decrease hp/mp received by 70%"); either alone is half a skill.
+        // 🔑 THE GAME'S FIRST BURN, and the skill the whole `DotKind` field exists for. His table
+        //    (2026-09-10) gives Burn tiers 10/11/12 only — 100/125/150 a second, cutting HP *and* MP
+        //    RECEIVED by 70/72/75% — and Pyro Burst is **tier 10**, which is not a guess: its authored
+        //    `DotPower: 100` and `MpReceivedPct: 0.70f` are that row exactly, written months earlier.
+        //
+        // ⚠ IT CARRIES `SkillEffect.Poison` AND ALWAYS WILL. There is no Burn flag and there can never
+        //   be one (1L << 62 is the last free bit), so the flag is only membership — "this is a DoT",
+        //   for AnyDot, the buff bar and what a cure may strip — while `DotKind.Burn` is what decides
+        //   the damage, the rider and the fact that nothing saves against it.
+        //
+        // ⚠ NOTHING PROTECTS AGAINST A BURN (*"for burn nothing protects .. always land"*), so
+        //   `DebuffLandMod` is gone: the landing branch skips the contest outright for a family whose
+        //   save is `DebuffSchool.None`. `DebuffSchool.Magical` is left on the def only for the
+        //   fizzle/interrupt paths that read it for the DIRECT hit.
+        //
+        // ⚠ `Cancellable: false` IS GONE TOO, and that is a real change: it made every tier of this
+        //   skill uncurable, where the rule is now the TIER's — cures reach 11, and only 12 is beyond
+        //   them. Pyro Burst at tier 10 IS curable. His T12 ultimate is not, and lands with `BL-192`.
         new(PyroBurst, "Pyro Burst", BaseClass.Mage,
-            SkillEffect.MagicDamage | SkillEffect.Poison | SkillEffect.DebuffHealRecv,
+            SkillEffect.MagicDamage | SkillEffect.Poison,
             MpCost: 150, CastTicks: 10, CooldownTicks: 3000, Range: 900, Power: 150,
-            DurationTicks: 150, BuffKey: "pyro_burn", Rank: 1,
+            DurationTicks: 150, BuffKey: "pyro_burn", Rank: 10,
             DebuffSchool: DebuffSchool.Magical, Category: SkillCategory.Magic, SpCost: 880000,
-            SureHit: true, DebuffLandMod: 1.5f,
-            Cancellable: false, DotPower: 100, MpReceivedPct: 0.70f,
-            Magnitudes: new EffectMagnitude[] { new(SkillEffect.DebuffHealRecv, 0.70f) },
-            Description: "Sets the target alight: 100 damage a second that nothing can put out, and "
-                       + "almost no healing or mana will reach them.",
+            SureHit: true,
+            DotKind: DotKind.Burn,
+            Description: "Sets the target alight: a tier-10 burn that also chokes off almost every "
+                       + "heal and mana restore that reaches them.",
             Levels: new[]
             {
                 // ⚠ THE IMPACT AND THE BURN ARE TWO DIFFERENT NUMBERS, and this is the first skill in
@@ -412,10 +429,9 @@ public static partial class SkillCatalog
                 // the skill's own Power, because a bleed IS its DoT; Pyro Burst hits for 150 on impact
                 // and then burns for HIS 100 a second. Hence `DotPower` on the def — 0 still means
                 // "use Power", so nothing else in the catalog moved.
-                new SkillLevel(Power: 150, MpCost: 150, SpCost: 880000, DotPower: 100,
-                    Magnitudes: new EffectMagnitude[] { new(SkillEffect.DebuffHealRecv, 0.70f) },
-                    Description: "Power 150, never fizzles, then burns for 100/s for 15s — uncurable — "
-                               + "and cuts healing and mana received by 70%."),
+                new SkillLevel(Power: 150, MpCost: 150, SpCost: 880000, Rank: 10,
+                    Description: "Power 150, never fizzles, then burns for 100/s for 15s and cuts "
+                               + "healing and mana received by 70%."),
             }),
     };
 }

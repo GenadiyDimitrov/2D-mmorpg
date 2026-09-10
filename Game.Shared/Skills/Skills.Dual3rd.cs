@@ -312,8 +312,10 @@ public static partial class SkillCatalog
         // ⚠ THE TIER LADDERS (3 → 10) and so does the stacks-per-cast (1 → 3). Both needed a new
         //   per-rung slot; see SkillLevel.Rank and SkillLevel.StacksPerCast.
         list.Add(new SkillDef(VenomStab, "Venom Stab", BaseClass.Fighter,
-            SkillEffect.PhysicalDamage | SkillEffect.Venom
-            | SkillEffect.DebuffAtk | SkillEffect.DebuffDef,
+            // ⚠ The DEBUFF FLAGS are gone with the magnitudes: `ApplyBuff` ORs in whatever the venom
+            //   family's rider needs (`DotTiers.Rider`), so a flag stated here would only be a lie the
+            //   day the family's rider changes.
+            SkillEffect.PhysicalDamage | SkillEffect.Venom,
             MpCost: StabMp[0], CastTicks: 10, CooldownTicks: 30, Range: 40, Power: VenomStabPower[0],
             DurationTicks: 300, BuffKey: "venom", Rank: 3, SharesLadderKey: true,
             DebuffSchool: DebuffSchool.Physical,
@@ -323,19 +325,15 @@ public static partial class SkillCatalog
             // `BL-188` - the unauthored x2.0 on the crit rate is gone; a blow rolls Entity.BlowRate now.
             RequiredWeapon: WeaponType.Dual,
             Replaces: new[] { PreciseShot },
-            Magnitudes: new EffectMagnitude[]
-            {
-                new(SkillEffect.DebuffAtk, 0.15f), new(SkillEffect.DebuffDef, 0.15f),
-            },
+            // ⚠ NO RIDER MAGNITUDES: a DoT's side effect belongs to the (kind, tier) TABLE now
+            //   (`DotTiers.Rider`), not to the skill that delivered it — his 2026-09-10 ruling,
+            //   *"remove the dot side effect from the skills"*. Authoring one here would be
+            //   APPLIED IN ADDITION and quietly double the real one.
             Description: "A poisoned blade — less damage than a killing blow, but it banks venom "
                        + "for Venom Burst to spend.",
             Levels: BulwarkRungs(i => new SkillLevel(
                 Power: VenomStabPower[i], MpCost: StabMp[i], SpCost: RogueSp[i],
                 Rank: VenomTier[i], StacksPerCast: VenomStacksPerCast[i],
-                Magnitudes: new EffectMagnitude[]
-                {
-                    new(SkillEffect.DebuffAtk, 0.15f), new(SkillEffect.DebuffDef, 0.15f),
-                },
                 Description: $"Blow power {VenomStabPower[i]:N0} on a critical; "
                            + "a normal attack otherwise. "
                            + $"Adds {VenomStacksPerCast[i]} tier-{VenomTier[i]} venom stack(s), max 10."))
@@ -353,8 +351,10 @@ public static partial class SkillCatalog
         //    spent a counter (see `spentStacks` in ExecuteSkill). A Demon with an empty target opens
         //    with this and it behaves as a weak Venom Stab; with ten stacks banked it is ×10.
         list.Add(new SkillDef(VenomBurst, "Venom Burst", BaseClass.Fighter,
-            SkillEffect.PhysicalDamage | SkillEffect.Venom
-            | SkillEffect.DebuffAtk | SkillEffect.DebuffDef,
+            // ⚠ The DEBUFF FLAGS are gone with the magnitudes: `ApplyBuff` ORs in whatever the venom
+            //   family's rider needs (`DotTiers.Rider`), so a flag stated here would only be a lie the
+            //   day the family's rider changes.
+            SkillEffect.PhysicalDamage | SkillEffect.Venom,
             MpCost: StabMp[0], CastTicks: 10, CooldownTicks: 100, Range: 40, Power: VenomBurstPerStack[0],
             DurationTicks: 300, BuffKey: "venom", Rank: 3, SharesLadderKey: true,
             DebuffSchool: DebuffSchool.Physical,
@@ -362,19 +362,15 @@ public static partial class SkillCatalog
             Category: SkillCategory.Physical, SpCost: RogueSp[0],
             RequiredWeapon: WeaponType.Dual,
             Replaces: new[] { PreciseShot },
-            Magnitudes: new EffectMagnitude[]
-            {
-                new(SkillEffect.DebuffAtk, 0.15f), new(SkillEffect.DebuffDef, 0.15f),
-            },
+            // ⚠ NO RIDER MAGNITUDES: a DoT's side effect belongs to the (kind, tier) TABLE now
+            //   (`DotTiers.Rider`), not to the skill that delivered it — his 2026-09-10 ruling,
+            //   *"remove the dot side effect from the skills"*. Authoring one here would be
+            //   APPLIED IN ADDITION and quietly double the real one.
             Description: "Detonates every venom stack on the target for damage per stack — and if "
                        + "there are none, lays the first one instead.",
             Levels: BulwarkRungs(i => new SkillLevel(
                 Power: VenomBurstPerStack[i], MpCost: StabMp[i], SpCost: RogueSp[i],
                 Rank: VenomTier[i], StacksPerCast: VenomStacksPerCast[i],
-                Magnitudes: new EffectMagnitude[]
-                {
-                    new(SkillEffect.DebuffAtk, 0.15f), new(SkillEffect.DebuffDef, 0.15f),
-                },
                 Description: $"Power {VenomBurstPerStack[i]:N0} per consumed venom stack (up to ×10). "
                            + $"With no stacks on the target, lays {VenomStacksPerCast[i]} tier-{VenomTier[i]} instead."))
                 .Concat(VenomBurstFourthRungs()).ToArray()));

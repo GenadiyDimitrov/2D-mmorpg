@@ -103,6 +103,15 @@ public class BuffInstance
     /// The mana twin of the <see cref="SkillEffect.DebuffHealRecv"/> anti-heal, and a FIELD for the
     /// usual reason — the flag enum is full. Pyro Burst is its only author today.</summary>
     public float MpReceivedPct { get; set; }
+
+    /// <summary>WHICH DoT FAMILY this buff is, when it is one — the key into <see cref="DotTiers"/>
+    /// for its per-second damage, its rider and whether anything can cure it. <c>None</c> for
+    /// everything that is not a damage-over-time.
+    ///
+    /// <para>⚠ It is carried on the INSTANCE rather than looked up from the skill each tick because a
+    /// reflected DoT has no skill to look up (see TryReflectDebuff) and a persisted one is rebuilt from
+    /// its row.</para></summary>
+    public DotKind DotKind { get; set; }
     /// <summary>Remaining absorb pool for a Shield effect (damage soaked before HP). The buff
     /// is removed when it hits 0.</summary>
     public int ShieldPool { get; set; }

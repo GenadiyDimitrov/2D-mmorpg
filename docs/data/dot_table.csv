@@ -1,0 +1,41 @@
+TIRE,TYPE,DMG/S (Per stack),DEBUF,MAX STACKS,SAVE
+,,,,,------------------ VENOM ----------------
+1,Venom,5,-10% P.Atk / M.Atk,10,CON
+2,Venom,5,-10% P.Atk / M.Atk,10,CON
+3,Venom,7,-10% P.Atk / M.Atk,10,CON
+4,Venom,7,-10% P.Atk / M.Atk,10,CON
+5,Venom,9,-10% P.Atk / M.Atk,10,CON
+6,Venom,9,-10% P.Atk / M.Atk,10,CON
+7,Venom,10,-10% P.Atk / M.Atk,10,CON
+8,Venom,10,-10% P.Atk / M.Atk,10,CON
+9,Venom,15,-10% P.Atk / M.Atk,10,CON
+10,Venom,15,-10% P.Atk / M.Atk,10,CON
+11,Venom,20,-10% P.Atk / M.Atk,10,CON
+,,,,,------------------ POISON ----------------
+1,Poison,20,-15% Attack and Cast Speed,1,SPT
+2,Poison,30,-15% Attack and Cast Speed,1,SPT
+3,Poison,40,-15% Attack and Cast Speed,1,SPT
+4,Poison,50,-15% Attack and Cast Speed,1,SPT
+5,Poison,60,-15% Attack and Cast Speed,1,SPT
+6,Poison,70,-15% Attack and Cast Speed,1,SPT
+7,Poison,90,-15% Attack and Cast Speed,1,SPT
+8,Poison,110,-15% Attack and Cast Speed,1,SPT
+9,Poison,130,-15% Attack and Cast Speed,1,SPT
+10,Poison,150,-15% Attack and Cast Speed,1,SPT
+11,Poison,200,-15% Attack and Cast Speed,1,SPT
+,,,,,------------------ BLEED ----------------
+1,Bleed,20,-20% Movement Speed,1,CON
+2,Bleed,20,-20% Movement Speed,1,CON
+3,Bleed,40,-20% Movement Speed,1,CON
+4,Bleed,40,-20% Movement Speed,1,CON
+5,Bleed,60,-20% Movement Speed,1,CON
+6,Bleed,60,-20% Movement Speed,1,CON
+7,Bleed,80,-20% Movement Speed,1,CON
+8,Bleed,80,-20% Movement Speed,1,CON
+9,Bleed,100,-20% Movement Speed,1,CON
+10,Bleed,100,-20% Movement Speed,1,CON
+11,Bleed,150,-20% Movement Speed,1,CON
+,,,,,------------------ BURN ----------------
+10,Burn,100,-70% Hp/Mp Received,1,-
+11,Burn,125,-72% Hp/Mp Received,1,-
+12,Burn,150,-75% Hp/Mp Received; UNCURABLE,1,-

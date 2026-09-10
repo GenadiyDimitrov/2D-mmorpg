@@ -595,11 +595,13 @@ public static partial class SkillCatalog
         // Rupture — applies BLEED (physical DoT): stacks up to 10 (reapply refreshes 30s),
         // ticks DotPower×stacks/sec, and slows the target 15% (bleed's secondary). Lands on
         // AGI-vs-CON. The Venomweaver's stack builder; pair with Detonate Wounds.
-        new(Rupture, "Rupture", BaseClass.Fighter, SkillEffect.Bleed | SkillEffect.Slow,
+        new(Rupture, "Rupture", BaseClass.Fighter, SkillEffect.Bleed,
             MpCost: 12, CastTicks: 5, CooldownTicks: 30, Range: 0, Power: 5,
             DurationTicks: 300, BuffKey: "bleed", Rank: 1, DebuffSchool: DebuffSchool.Physical,
-            StackKey: "venom_bleed", MaxStacks: 10,   // per-skill counter (share id to pool stacks)
-            Magnitudes: new EffectMagnitude[] { new(SkillEffect.Slow, 0.15f) },
+            // ⚠ MaxStacks 10 IS NOW CAPPED TO 1 BY THE FAMILY (`DotTiers.MaxStacks`): *"bleed is slow,
+            //   poison is just a magic posion and venom is the only stacking dot atm"*. Left as written
+            //   because it is his authored intent for a skill NOBODY LEARNS — see the header note.
+            StackKey: "venom_bleed", MaxStacks: 10,
             Description: "Opens a bleeding wound — a flat physical DoT (+15% slow) plus a stack "
                        + "that builds toward a burst. Lands on a AGI-vs-CON contest."),
 
@@ -614,14 +616,10 @@ public static partial class SkillCatalog
         // Toxic Sting — POISON (magical DoT, ATK-vs-WIT): per-tick damage + slows the target's
         // attack & cast speed 15% (poison's secondary). Stacks; Toxic Burst spends them.
         new(ToxicSting, "Toxic Sting", BaseClass.Fighter,
-            SkillEffect.Poison | SkillEffect.DebuffAtkSpeed | SkillEffect.DebuffCastSpeed,
+            SkillEffect.Poison,
             MpCost: 12, CastTicks: 5, CooldownTicks: 30, Range: 0, Power: 5,
             DurationTicks: 300, BuffKey: "poison", Rank: 1, DebuffSchool: DebuffSchool.Magical,
-            StackKey: "venom_poison", MaxStacks: 10,
-            Magnitudes: new EffectMagnitude[]
-            {
-                new(SkillEffect.DebuffAtkSpeed, 0.15f), new(SkillEffect.DebuffCastSpeed, 0.15f),
-            },
+            StackKey: "venom_poison", MaxStacks: 10,   // capped to 1 by the family — see Rupture
             Description: "Poisons the target — a magic DoT that also slows its attack & cast speed "
                        + "15%. Lands on ATK-vs-WIT; builds stacks for Toxic Burst."),
 
@@ -633,14 +631,10 @@ public static partial class SkillCatalog
         // Envenom — VENOM (physical DoT, AGI-vs-CON): per-tick damage + lowers the target's
         // attack 15% and defence 15% (venom's secondary). Stacks; Venom Burst spends them.
         new(Envenom, "Envenom", BaseClass.Fighter,
-            SkillEffect.Venom | SkillEffect.DebuffAtk | SkillEffect.DebuffDef,
+            SkillEffect.Venom,
             MpCost: 12, CastTicks: 5, CooldownTicks: 30, Range: 0, Power: 5,
             DurationTicks: 300, BuffKey: "venom", Rank: 1, DebuffSchool: DebuffSchool.Physical,
             StackKey: "venom_venom", MaxStacks: 10,
-            Magnitudes: new EffectMagnitude[]
-            {
-                new(SkillEffect.DebuffAtk, 0.15f), new(SkillEffect.DebuffDef, 0.15f),
-            },
             Description: "Envenoms the target — a physical DoT that also lowers its attack & "
                        + "defence 15%. Lands on AGI-vs-CON; builds stacks for Venom Burst."),
 

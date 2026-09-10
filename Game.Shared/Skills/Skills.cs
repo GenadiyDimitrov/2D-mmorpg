@@ -325,10 +325,22 @@ public record SkillDef(
     int DispelCount = 0,
     int DispelMaxLevel = 0,
     bool Cancellable = true,
-    /// <summary>DAMAGE PER SECOND of this skill's damage-over-time, when that is NOT the same number as
-    /// the skill's <see cref="Power"/>. 0 = use Power, which is what every DoT before the nuker's Pyro
-    /// Burst did — a bleed IS its DoT, so one number served both. Pyro Burst hits for 150 on impact and
-    /// then burns for his authored 100 a second, and there was nowhere to say so.</summary>
+    /// <summary>WHICH DoT FAMILY this skill's damage-over-time belongs to, when the legacy
+    /// <see cref="SkillEffect"/> flag cannot say. <c>None</c> = read it off the flag
+    /// (<see cref="DotTiers.KindOf"/>), which is right for every bleed, poison and venom.
+    ///
+    /// <para>🔑 IT EXISTS FOR BURN, which has no flag and can never have one: 1L &lt;&lt; 62 is the last
+    /// free bit in the enum. A Burn skill carries <c>SkillEffect.Poison</c> so it is still a DoT for
+    /// <c>AnyDot</c>, cures and the buff bar, and declares <c>DotKind.Burn</c> so its damage, its rider
+    /// and its "nothing saves against it" come from the Burn row of the table.</para></summary>
+    DotKind DotKind = DotKind.None,
+    /// <summary>DAMAGE PER SECOND of this skill's damage-over-time — an EXPLICIT override of the
+    /// (kind, tier) table, for the rare skill whose burn is not one of the authored tiers.
+    ///
+    /// <para>🔴 IT NO LONGER FALLS BACK TO <see cref="Power"/>. It used to, and since exactly one skill
+    /// in the catalogue authored it, every other DoT in the game ticked for its DIRECT HIT's power —
+    /// Bleeding Arrow dealt 450,000 over its 30 seconds. 0 now means "read the table", which is what
+    /// every DoT should do. See <see cref="DotTiers"/>.</para></summary>
     int DotPower = 0,
     /// <summary>How much of the MP a target RECEIVES this debuff cuts away (0.70 = they get 30%). The
     /// mana twin of <see cref="SkillEffect.DebuffHealRecv"/>, which does the same to healing; Pyro Burst

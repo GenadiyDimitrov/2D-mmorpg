@@ -1,4 +1,4 @@
-namespace Game.Shared;
+﻿namespace Game.Shared;
 
 /// <summary>
 /// THE LIGHTBRINGER'S 4th TIER, 76-90 — `docs/data/classes_skills_csv/healer 4th.csv` (255 rows,
@@ -512,19 +512,26 @@ public static partial class SkillCatalog
                 Description: "For 20 minutes each of the target's buffs has a 30% chance to survive "
                            + "an enemy's dispel."),
 
-            // ---- HOLY BLESSING @78 — the total cleanse. Antidote's ceiling is a rank; this has none:
-            //      *"Remove every debuff (burning and venom 11 as well)"*, i.e. above what a rank can
-            //      express. Priced in a HOLY STONE, which is what stops it retiring Antidote.
+            // ---- HOLY BLESSING @78 — the total cleanse, and the ONLY thing that reaches tier 11.
+            //      *"Remove every debuff (burning and venom 11 as well)"*, and re-stated 2026-09-10:
+            //      *"no no antidot stays to tire 10 ... tire 11 is cured buy the skill holy_blessing ->
+            //      removes any debuff + dots to T11 .. T12 or debuff that is uncurable is not removed"*.
+            //      Priced in a HOLY STONE, which is what stops it retiring Antidote.
+            //
+            // ⚠ IT STILL DECLARES NO RANK CEILING, and that is correct: *"removes any debuff"* has no
+            //   limit, and the T11 wall is the DoT's own — `DotTiers.Curable` refuses tier 12 to every
+            //   cure in the game, so it cannot be lifted by mis-authoring a cleanse. An ordinary
+            //   debuff's rank is unrelated to a DoT tier and must not be capped here.
             new(HolyBlessing, "Holy Blessing", BaseClass.Mage, SkillEffect.Cleanse,
                 MpCost: 72, CastTicks: 8, CooldownTicks: 30, Range: 600, Power: 0,
                 Category: SkillCategory.Heal, SpCost: sp76,
                 TargetMode: TargetMode.SelfOrTarget,
-                // DispelMask None = every debuff, DispelMaxLevel 0 = at any rank. Both defaults, stated
-                // for the reader: this is the one cure in the game with no ceiling of any kind.
+                // DispelMask None = every debuff, DispelMaxLevel 0 = no rank ceiling of its own.
                 DispelMask: SkillEffect.None, DispelCount: 0, DispelMaxLevel: 0,
                 ConsumableId: ItemCatalog.HolyStone, ConsumableAmount: 1,
                 Levels: new[] { new SkillLevel(MpCost: 72, SpCost: sp76, GoldCost: gold76) },
-                Description: "Strips EVERY harmful effect from an ally, at any rank. Consumes one Holy Stone."),
+                Description: "Strips every harmful effect from an ally, and is the only cure that "
+                           + "reaches a tier-11 burn or venom. Tier 12 is beyond it. Consumes one Holy Stone."),
 
             // ---- HOLY SOUL @76 — a TOGGLE, and the only one a healer has. ⚠ Its cast-speed clause is a
             //      PENALTY, which his comment column confirms is deliberate (*"Intentional decrease in
