@@ -1,4 +1,4 @@
-namespace Game.Shared;
+﻿namespace Game.Shared;
 
 /// <summary>Base Fighter kit — the skills available to all fighters before (and
 /// after) the level-20 class change. Archer's bow skill (Heavy Draw) lives here
@@ -109,16 +109,16 @@ public static partial class SkillCatalog
                 new SkillLevel(Power: 84,  MpCost: 17,  SpCost: 910,   Description: "Strike — power 84."),
             }),
 
-        // Stab — dagger (dual) BLOW: full power only on a critical/double, else a soft 10%.
+        // Stab — dagger (dual) BLOW: full power only when the blow lands, else a NORMAL ATTACK (`BL-193`).
         new(Stab, "Stab", BaseClass.Fighter, SkillEffect.PhysicalDamage,
             MpCost: 10, CastTicks: 10, CooldownTicks: 30, Range: 40, Power: 88,
             Category: SkillCategory.Physical, BlowOnCrit: true, 
             // `BL-188` - NO CritRateMod any more: the blow gate is Entity.BlowRate, not the crit chain.
             RequiredWeapon: WeaponType.Dual,
-            Description: "A dagger blow (duals). Lands for FULL power only on a critical or double — a soft 10% otherwise.",
+            Description: "A dagger blow (duals). Lands for FULL power only when the blow finds its mark — otherwise it strikes as a normal attack.",
             Levels: new[]
             {
-                new SkillLevel(Power: 88,  MpCost: 10,  SpCost: 160,   Description: "Stab — blow power 88 (10% without a crit)."),
+                new SkillLevel(Power: 88,  MpCost: 10,  SpCost: 160,   Description: "Stab — blow power 88 (a normal attack when it does not land)."),
                 new SkillLevel(Power: 137, MpCost: 11,  SpCost: 910,   Description: "Stab — blow power 137."),
                 new SkillLevel(Power: 210, MpCost: 15,  SpCost: 910,   Description: "Stab — blow power 210."),
             }),
@@ -189,8 +189,8 @@ public static partial class SkillCatalog
             // `BL-188` - NO CritRateMod any more: the blow gate is Entity.BlowRate, not the crit chain.
             RequiredWeapon: WeaponType.Dual,
             Replaces: new[] { Stab, Strike },
-            Description: "A precise dagger blow — the rogue's Stab upgrade. Full power only on a "
-                       + "critical/double (a soft 10% otherwise).",
+            Description: "A precise dagger blow — the rogue's Stab upgrade. Full power only when the "
+                       + "blow finds its mark — otherwise it strikes as a normal attack.",
             Levels: new[]
             {
                 new SkillLevel(Power: 314, MpCost: 18,  SpCost: 1700,  Description: "Piercing Stab — blow power 314."),

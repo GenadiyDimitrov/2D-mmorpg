@@ -1,4 +1,4 @@
-# Backlog archive — everything `Backlog.md` no longer owes
+﻿# Backlog archive — everything `Backlog.md` no longer owes
 
 The other half of [Backlog.md](Backlog.md), which holds **open entries only**. Anything that stops
 being owed — because it was built, because you declined it, or because a rewrite replaced its text —
@@ -3616,3 +3616,87 @@ lands within a point of it for a human.
 line now), but not to make them work — the rates are server-side and the rolls are server-side.
 
 </details>
+
+## `BL-193` ✅ CLOSED 2026-09-10 (0.125.0) — A FAILED BLOW IS A NORMAL ATTACK
+
+**Filed and built the same day.** Your ask: *"can we make if a blow fails to hit as normal atack
+(with crit chance and everithing)?"*
+
+### What you ruled
+
+1. **What the fallback is** — *"a normal atack as if i never used skill but just basic attack"*. Not
+   the skill's damage with a crit roll bolted on: a real basic attack, off `EffectiveBasicAttack`.
+2. **The floor goes** — *"we remove the 10% wiff and floor or whatever .. if it missies or is blocked
+   so be it ... its a normal baisc attack"*. So `BlowFailFraction` is deleted, and the fallback is
+   fully evadable and fully blockable.
+3. **Which skills** — *"mighty blow if its a stab skill and its rogue-line ok .. but if its warrior
+   line it should be a normal physical skill"*.
+
+### The answer to (3), which needed no work
+
+**Every blow in the game is already dual/rogue-line.** Enumerated, not assumed: `BlowOnCrit` is set
+on exactly four definitions — `Stab` (fighter 1st), `Piercing Stab` (rogue 2nd), and the `Killing` /
+`Swift` / `Heavy` / `Venom Stab` family in `Skills.Dual3rd.cs` (with their 4th-tier rungs) — and all
+of them carry `RequiredWeapon: WeaponType.Dual`. There is no warrior-line blow to reclassify.
+
+🔑 **`Mighty Blow` is a NAME, not a mechanic.** `mighty_blow` is `SureHit: true` with no `BlowOnCrit`
+at all — already the ordinary physical skill you said a warrior-line one should be. It is also an
+**orphan**: no class table grants it and it appears in no CSV, like `Heavy Draw` (`power_shot`). It
+survives as a definition only. Your read of `fighter 1st` was right — the file's three attack skills
+are **Stab / Smash / Shot**, and the Stab is the blow.
+
+### What it cost
+
+- `GameLoopService`: `BlowLands` split out of `ResolveBlow` (the gate is now rolled by the CALLER,
+  **before** the skill's miss roll, so neither branch is gated twice); `ResolveBasicAttack` split so
+  its resolution half — `ResolveBasicSwing` — is shared with the fallback rather than copied.
+- `SkillDef.BlowFailFraction` and `Skills.Dual3rd.ThirdTierBlowFloor` deleted, with the four skills'
+  description strings rewritten.
+- The Unity skill-detail line (`GameUi.SkillDetail.CritLine`) no longer quotes a percentage.
+- 128 CSV cells across four files: *"otherwise N"* → *"otherwise normal attack"*.
+- `BalanceMatrix` §C1: a `gate%` column and a `fail OLD / fail NEW` pair — **and a real bug fixed**,
+  `SkillHitFactor` had been gating blows on the crit rate since before `BL-188`.
+
+### Worth remembering
+
+⚠ **The floor is not a knob to bring back.** If the rogue ends up too strong or too weak, the levers
+are `BlowRate` (`BL-188`'s ladder) and the authored stab power — not a re-introduced fraction, which
+would put two different failure payouts back in the same mechanic.
+
+## `BL-194` ✅ CLOSED 2026-09-10 (0.126.0) — SEEING A TARGET'S DEBUFFS AND STACKS
+
+**Filed and built the same day**, from the playtest: *"i cannot see stacks on enemy (need to see
+debuffs+stacks)"*, and the reason — *"so i know when to burst"*. His instruction on scope: *"make
+debuffs + stacks to show on enemy so i know when to burst ... do that untill i authior the table"*.
+
+### The finding that made it bigger than a UI job
+
+**There was no wire message for another entity's buffs at all.** Not a filter to relax — nothing
+existed. `BuffUpdate` only ever carried the player's own bar; the party roster carried debuff NAMES for
+members; an enemy carried nothing. And **selection itself was client-only** (`GameBoot.TargetId`),
+so nothing server-side could answer "what is on the thing he is looking at".
+
+That is also why his other find — *"burs dont do nothing .. or atleast dont show that it does"* — read
+the way it did: Venom Burst was consuming a stack pool that was never visible.
+
+### What was built
+
+- `TargetBuffUpdate(TargetId, BuffDto[])`, the enemy-side twin of `BuffUpdate`.
+- `Entity.UiTargetId` + a `SetTarget` hub method; the client sends it when the selection CHANGES.
+  ⚠ `InspectTarget` is a different thing and stays a one-shot pull for the stats sheet.
+- Pushed once a second off the same `secondTick` as his own bar, gated on a change signature
+  (`LastTargetBuffSig`) — a selected mob usually carries nothing and that must cost nothing — plus one
+  immediate push on selection so the row fills on the tap.
+- 🔑 **The stack counter is FOLDED into the debuff it counts.** A stacking DoT is two buffs
+  server-side: the damage effect on `BuffKey`, and an `Internal` counter on `StackKey`. The HUD reads
+  `Venom x7`, never `Venom` beside `Venom (stacks)`.
+- Client: one ellipsised line under the target frame's detail row, debuffs (red) then buffs (green),
+  counts shown only above 1. The panel grew 160 → 186px to pay for it.
+
+⚠ `ProtocolVersion` 35 → **36**, so it needs a new APK.
+
+### Worth remembering
+
+`GameBoot.TargetId` is a real property now rather than an auto-property — that is the whole trick that
+makes every existing assignment site (tap, tab-target, auto-hunt, the clear-on-death rule) notify the
+server without touching any of them.

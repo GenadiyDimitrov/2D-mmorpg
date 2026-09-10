@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Game.Shared;
@@ -60,7 +60,30 @@ namespace Game.Client
         public string LastError { get; set; }
         public CharacterSlot[] Characters { get; private set; } = Array.Empty<CharacterSlot>();
         public Guid SelfId => _selfId;
-        public Guid? TargetId { get; set; }
+        /// <summary>THE SELECTED TARGET. A property with a body, not an auto-property, because a
+        /// CHANGE has to reach the server: it is what lets it push the target's debuffs and stack
+        /// counts back (`TargetBuffUpdate`). Every existing assignment site — tap, tab-target,
+        /// auto-hunt, the clear-on-death rule — notifies for free this way, which is the point.
+        ///
+        /// <para>⚠ Only on a real change, and the old bar is dropped immediately rather than left
+        /// showing the previous mob's stacks until the next push lands.</para></summary>
+        public Guid? TargetId
+        {
+            get => _targetId;
+            set
+            {
+                if (_targetId == value) return;
+                _targetId = value;
+                TargetBuffs = Array.Empty<BuffDto>();
+                if (_net != null && Phase == ClientPhase.InWorld)
+                    _ = _net.SetTargetAsync(value);
+            }
+        }
+        private Guid? _targetId;
+
+        /// <summary>The selected target's buffs/debuffs, DoT stacks already folded in by the server.
+        /// Empty whenever nothing is selected.</summary>
+        public BuffDto[] TargetBuffs { get; private set; } = Array.Empty<BuffDto>();
 
         /// <summary>The target we have observed ALIVE — the only one whose death clears the selection
         /// (owner, playtest-21 `65d`). See OnDelta; it is what makes the rule a transition rather than
@@ -1192,6 +1215,13 @@ namespace Game.Client
             _net.AutoTargetReceived += t => Main(() => TargetId = t.TargetId);
             _net.CooldownsReceived += c => Main(() => ApplyCooldowns(c));
             _net.BuffsReceived += b => Main(() => Buffs = b?.Buffs ?? new BuffDto[0]);
+            // Ignore a push for a target we have already moved off: the two cross on the wire when he
+            // taps quickly, and the late one would repaint the previous mob's stacks.
+            _net.TargetBuffsReceived += b => Main(() =>
+            {
+                if (b != null && TargetId.HasValue && b.TargetId == TargetId.Value)
+                    TargetBuffs = b.Buffs ?? Array.Empty<BuffDto>();
+            });
             _net.TargetDetailsReceived += d => Main(() => Details = d);
             _net.PvpStateReceived += p => Main(() =>
             {
@@ -1678,6 +1708,7 @@ namespace Game.Client
             // one with nothing left the first character's buffs sitting on the bar until some unrelated
             // push happened to replace them (using a potion "fixed" it). Same for the sold-items list.
             Buffs = new BuffDto[0];
+            TargetBuffs = Array.Empty<BuffDto>();
             BuyBack = new BuyBackEntryDto[0];
             Restorable = new BuyBackEntryDto[0];   // per CHARACTER, like the sold list
             // Nobody in the world you are LEAVING is still casting at you. Entity ids are per-session,

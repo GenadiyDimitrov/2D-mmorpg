@@ -1,4 +1,4 @@
-using Game.Shared;
+﻿using Game.Shared;
 
 namespace Game.Server.Simulation;
 
@@ -2237,6 +2237,15 @@ public class Entity
     /// crediting that death to the wrong bucket is what would let a guaranteed quest population drift.
     /// Runtime only — mobs are never persisted.</summary>
     public string? SpawnerMobId { get; set; }
+    /// <summary>WHAT THIS PLAYER CURRENTLY HAS SELECTED, for the target buff/debuff bar. Set by
+    /// `SetUiTargetCmd` when the client's selection changes; null when nothing is selected.
+    /// Runtime-only and never persisted — a selection does not survive a logout.</summary>
+    public Guid? UiTargetId { get; set; }
+
+    /// <summary>Signature of the last <c>TargetBuffUpdate</c> sent, so the once-a-second refresh only
+    /// pushes when something actually moved. Cleared with the selection.</summary>
+    public string LastTargetBuffSig { get; set; } = "";
+
     /// <summary>Training dummy: immortal (GodMode), stationary, never attacks/aggroes.</summary>
     public bool TrainingDummy { get; set; }
 

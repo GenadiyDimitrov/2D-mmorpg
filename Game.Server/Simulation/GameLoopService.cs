@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using Game.Server.Hubs;
 using Game.Server.Persistence;
 using Game.Shared;
@@ -196,6 +196,7 @@ public class GameLoopService : BackgroundService
                 case OpenBoxCmd c: HandleOpenBox(c); break;
                 case SelectBoxItemsCmd c: HandleSelectBoxItems(c); break;
                 case InspectTargetCmd c: HandleInspectTarget(c); break;
+                case SetUiTargetCmd c: HandleSetUiTarget(c); break;
                 case RespawnCmd c: HandleRespawn(c); break;
                 case ClassChangeCmd c: HandleClassChange(c); break;
                 case EquipCmd c: HandleEquip(c); break;
@@ -9044,6 +9045,7 @@ public class GameLoopService : BackgroundService
                 if (entity.Kind == EntityKind.Player)
                 {
                     PushBuffs(entity);
+                    PushTargetBuffs(entity);   // the SELECTED enemy's debuffs + stacks
                     if (entity.AutoSkills.Count > 0)
                         SendAutoHuntStatus(entity);   // keep MP/s live as buffs change
                 }
@@ -9887,7 +9889,16 @@ public class GameLoopService : BackgroundService
         bool mobCaster = caster.Kind == EntityKind.Mob;
         foreach (var e in _world.Grid.Nearby(caster))
         {
-            if (e.Dead || e.TrainingDummy)
+            // 🔴🔑 `|| e.TrainingDummy` USED TO BE HERE, AND IT MADE EVERY AREA SKILL IN THE GAME
+            //    UNTESTABLE (playtest, 2026-09-10: *"barage ... does no dmg to a training fummy"*).
+            //    Arrow Barrage's arrow is `TargetMode.EnemiesInRadius`, so the sweep returned an empty
+            //    set and ten arrows resolved against nobody — reading exactly like a dead skill.
+            //    A dummy is GodMode, stationary and never aggroes, so letting an area skill land on
+            //    one costs nothing and is the entire point of standing in front of it.
+            // ⚠ A dummy still takes no HP damage (ApplyDamage refuses GodMode) — what it now does is
+            //   SHOW THE NUMBER, which is what it is for. Its 10k HP/sec regen means the bar was never
+            //   the readout anyway; the floating text is.
+            if (e.Dead)
                 continue;
             bool hostile = e.Kind switch
             {
@@ -11228,28 +11239,6 @@ public class GameLoopService : BackgroundService
         if (def.AreaRadiusAt(lvl) is float areaR && areaR > 0f)
             BroadcastAreaEffect(def.AreaAtTarget ? target : caster, areaR, AreaKindOf(def));
 
-        // ═══ A WRAPPER STARTS ITS VOLLEY HERE AND RESOLVES NOTHING ITSELF (`SkillDef.ChannelSkill`) ═
-        //
-        // Past every gate — the MP is paid, the target is alive and validated, the hide is broken —
-        // so a barrage that could not afford itself never fires an arrow. From here `UpdateAction`
-        // drives it, one sub-skill execution every `ChannelIntervalTicks`.
-        //
-        // ⚠ THE FIRST ARROW IS IMMEDIATE (`ChannelTicksToNext = 1`, fired on the very next tick), so
-        //   ten arrows at 200ms really do span two seconds rather than 2.2. And the wrapper returns:
-        //   it has no damage of its own, and letting it fall through would land an eleventh hit.
-        if (def.ChannelSkill is string channelId && def.ChannelShots > 0)
-        {
-            caster.ChannelSkillId = channelId;
-            caster.ChannelTargetId = target.Id;
-            caster.ChannelLevel = lvl;
-            caster.ChannelShotsLeft = def.ChannelShots;
-            caster.ChannelInterval = Math.Max(1, def.ChannelIntervalTicks);
-            // The wrapper's ladder IS the per-shot power when it has one (Twin Arrows); a wrapper with
-            // no power of its own leaves the arrow to supply it (Arrow Barrage). See Entity.ChannelPower.
-            caster.ChannelPower = def.PowerAt(lvl);
-            caster.ChannelTicksToNext = 1;
-            return;
-        }
 
         // The consumable that STARTED this cast (a buff scroll): take one unit now that it lands.
         // Gone from the bag mid-cast (traded, dropped, sold) = cancel without charging the finish MP,
@@ -11362,6 +11351,41 @@ public class GameLoopService : BackgroundService
         // race's renamed spell (e.g. Elf "Moonlight Bolt") reads correctly in floating text.
         string castName = ClassSkills.DisplayName(
             def.Id, caster.Race, caster.BaseClass, caster.Archetype, caster.Discipline);
+
+        // ═══ A WRAPPER STARTS ITS VOLLEY HERE AND RESOLVES NOTHING ITSELF (`SkillDef.ChannelSkill`) ═
+        //
+        // 🔴🔑 THIS BLOCK USED TO SIT ~80 LINES EARLIER, ABOVE THE MP CHARGE AND THE COOLDOWN, and its
+        //    `return` skipped BOTH (playtest, 2026-09-10: *"barage have no cd"*). Arrow Barrage was
+        //    therefore paying only the 20% initial MP of its 208 — never the 80% on landing — and
+        //    starting no reuse at all: a spammable ultimate at a fifth of its price. `CancelCast`'s
+        //    note that *"the wrapper's cooldown was already started when its cast landed"* was simply
+        //    untrue.
+        //
+        // ⚠ SO THE POSITION IS THE FIX. It belongs HERE, beside the trap and totem branches — the
+        //   other two "deliver the thing and finish" arms — which is the far side of every gate a cast
+        //   owes: the finish MP, the HP cost, the reagent, the reuse. Do not move it back up; an early
+        //   `return` in this method silently skips whatever it jumped over.
+        //
+        // Past every gate — the MP is paid, the target is alive and validated, the hide is broken —
+        // so a barrage that could not afford itself never fires an arrow. From here `UpdateAction`
+        // drives it, one sub-skill execution every `ChannelIntervalTicks`.
+        //
+        // ⚠ THE FIRST ARROW IS IMMEDIATE (`ChannelTicksToNext = 1`, fired on the very next tick), so
+        //   ten arrows at 200ms really do span two seconds rather than 2.2. And the wrapper returns:
+        //   it has no damage of its own, and letting it fall through would land an eleventh hit.
+        if (def.ChannelSkill is string channelId && def.ChannelShots > 0)
+        {
+            caster.ChannelSkillId = channelId;
+            caster.ChannelTargetId = target.Id;
+            caster.ChannelLevel = lvl;
+            caster.ChannelShotsLeft = def.ChannelShots;
+            caster.ChannelInterval = Math.Max(1, def.ChannelIntervalTicks);
+            // The wrapper's ladder IS the per-shot power when it has one (Twin Arrows); a wrapper with
+            // no power of its own leaves the arrow to supply it (Arrow Barrage). See Entity.ChannelPower.
+            caster.ChannelPower = def.PowerAt(lvl);
+            caster.ChannelTicksToNext = 1;
+            return;
+        }
 
         // ---- Trap placement: drop the trap at the caster's feet and finish. Its damage/CC
         //      payload (this skill's Effect/Power) fires later, when a hostile trips it. ----
@@ -11510,6 +11534,28 @@ public class GameLoopService : BackgroundService
             for (int hit = 0; hit < Math.Max(1, def.HitCount); hit++)
             {
             if (target.Dead) break;
+
+            // `BL-193` — THE BLOW GATE IS ROLLED HERE, BEFORE THE SKILL'S OWN MISS ROLL, and a blow
+            // that does not find its mark is resolved as an ORDINARY BASIC ATTACK. Owner, 2026-09-10:
+            // *"a normal atack as if i never used skill but just basic attack"*, and on the floor it
+            // replaces: *"we remove the 10% wiff and floor or whatever .. if it missies or is blocked
+            // so be it"*. The old `BlowFailFraction` — a flat 1-10% of the skill's damage that could
+            // neither crit nor be blocked — is gone from the game.
+            //
+            // 🔑 THE ORDER IS THE DESIGN, not an implementation detail. The gate must come BEFORE the
+            // skill-evade roll, or a failed blow would be gated TWICE — once by SkillEvadeChance and
+            // again by the basic attack's own accuracy roll — which is not "as if I never used the
+            // skill". Each branch now carries exactly ONE miss gate: the skill's for a landed blow,
+            // the basic attack's for one that fell through.
+            //
+            // ⚠ Inside the HitCount loop on purpose: a multi-hit stab rolls the gate per hit, exactly
+            // as it already rolls its miss, its crit and its block per hit.
+            if (def.BlowOnCrit && !BlowLands(caster, target))
+            {
+                ResolveBasicSwing(caster, target, castName);
+                continue;
+            }
+
             if (_rng.NextDouble() < miss)
             {
                 BroadcastCombat(caster, target, 0, CombatOutcome.Miss, castName);
@@ -11547,8 +11593,9 @@ public class GameLoopService : BackgroundService
                 float critFlat = StatCalculator.CritFlatFactor(
                     caster.EffectiveAttack, caster.CritDamageFlat, pFlat, pMod);
 
-                // BLOW skills (dagger Stab) land full damage only on a crit, and a landed one is
-                // computed with the crit-damage values, else a soft 10% floor. "[Double]" skills
+                // BLOW skills (dagger Stab) land full damage only when the gate above says so, and
+                // a landed one is computed with the crit-damage values (a failed one never reaches
+                // here — it was resolved as a basic attack). "[Double]" skills
                 // roll a flat ×2 off the caster's Double Damage MASTERY (`BL-190`: a passive grants
                 // the rate, the ATK band scales it, and no passive means no roll at all — the flag
                 // says the skill is ELIGIBLE, the character says whether it can). Everything else lands FLAT:
@@ -12537,8 +12584,19 @@ public class GameLoopService : BackgroundService
         if (target.Kind == EntityKind.Player) { PushBuffs(target); SendStats(target); }
     }
 
-    /// <summary>Tick all damage-over-time effects on an entity once (per second): each DoT
-    /// deals DotPower×Stacks; damage is credited to the applier (kill credit + drops).</summary>
+    /// <summary>Tick all damage-over-time effects on an entity once (per second). Damage is credited
+    /// to the applier (kill credit + drops).
+    ///
+    /// <para>🔑 THE PER-SECOND NUMBER IS FLAT AND COMES FROM (TYPE, TIER) — <see cref="DotTiers"/>, his
+    /// model of 2026-09-10: *"ill write u each type each tire what dmg it does ... and it does it as
+    /// flat dmg ... just the landing rate depends on stat"*. So no defence division and no ATK scaling
+    /// here is CORRECT and deliberate, not an oversight; the only stat-dependent part of a DoT is
+    /// whether it lands, which happens once, in the cast path.</para>
+    ///
+    /// <para>⚠ <c>b.DotPower</c> survives as an EXPLICIT per-skill override that wins over the table —
+    /// exactly one skill uses it (Pyro Burst, 100/s). Everything else reads the tier, and reads 0 until
+    /// he authors the table, which is why an unauthored DoT is INERT rather than falling back to a
+    /// floor of 1. A visibly dead bleed gets reported; a bleed quietly doing 1 does not.</para></summary>
     private void TickDots(Entity entity)
     {
         if (entity.Dead) return;
@@ -12547,7 +12605,11 @@ public class GameLoopService : BackgroundService
         foreach (var b in entity.Buffs)
         {
             if ((b.Effect & SkillEffect.AnyDot) == 0) continue;
-            total += Math.Max(1, b.DotPower * b.Stacks);
+            // Rank IS the tier on a DoT buff (see SkillLevel.Rank) — the same number his CSVs write as
+            // "tire 3" / "tier-11 bleed", and the same one a cure has to out-reach.
+            int dps = b.DotPower > 0 ? b.DotPower : DotTiers.DamagePerSecond(b.Effect, b.Rank);
+            if (dps <= 0) continue;
+            total += dps * b.Stacks;
             source ??= _world.Entities.GetValueOrDefault(b.SourceId);
         }
         if (total <= 0) return;
@@ -13619,6 +13681,29 @@ public class GameLoopService : BackgroundService
         if (attacker.Kind == EntityKind.Player)
             AdvanceActionQuests(attacker, QuestActions.UseSkill);
 
+        ResolveBasicSwing(attacker, target);
+
+        Retaliate(target, attacker);
+
+        if (target.Hp <= 0)
+            Kill(target, attacker);
+    }
+
+    /// <summary>ONE SWING of a basic attack: the miss roll, the damage, the crit/block resolution
+    /// and every on-hit rider (melee vamp, mana vamp, reflect, interrupt, procs).
+    ///
+    /// <para>It is a method of its own because a BLOW THAT FAILS TO FIND ITS MARK LANDS HERE
+    /// (`BL-193`, his ruling 2026-09-10: *"a normal atack as if i never used skill but just basic
+    /// attack"*). Sharing the body is the entire point — a fallback that re-implemented "a basic
+    /// attack" would drift from the real one the first time a rider was added to either side.</para>
+    ///
+    /// <para><paramref name="castName"/> only LABELS the floating text, so a player whose blow fell
+    /// through still sees which skill fired. It changes nothing mechanical.</para>
+    ///
+    /// <para>⚠ Kill and Retaliate deliberately stay with the CALLER: the skill path runs its own
+    /// AfterOffensiveSkill + Kill at the end of ExecuteSkill, and doing them here would double them.</para></summary>
+    private void ResolveBasicSwing(Entity attacker, Entity target, string? castName = null)
+    {
         float missChance = StatCalculator.ResolveAvoidChance(
             attacker.Accuracy, (int)target.EffectiveEvasion,
             target.EvadeFloor, attacker.HitFloor,
@@ -13627,7 +13712,7 @@ public class GameLoopService : BackgroundService
 
         if (_rng.NextDouble() < missChance)
         {
-            BroadcastCombat(attacker, target, 0, CombatOutcome.Miss);
+            BroadcastCombat(attacker, target, 0, CombatOutcome.Miss, castName);
         }
         else
         {
@@ -13643,7 +13728,7 @@ public class GameLoopService : BackgroundService
                 attacker, target, damage, attacker.CritChance, 0f,
                 StatCalculator.CritFlatFactor(attacker.EffectiveBasicAttack, attacker.CritDamageFlat));
             damage = finalDmg;
-            BroadcastCombat(attacker, target, damage, outcome);
+            BroadcastCombat(attacker, target, damage, outcome, castName);
             ApplyDamage(target, damage, attacker);
             // Melee basic-attack vampirism (Might lvl 4 etc.) — bow attacks don't leech.
             if (attacker.MeleeVamp > 0f && damage > 0 && attacker.WeaponType != WeaponType.Bow)
@@ -13683,11 +13768,6 @@ public class GameLoopService : BackgroundService
             // Rogues carry magic-interrupt power on basic attacks; others = 0.
             TryInterruptCast(target, attacker.BasicAttackInterruptPower, damage, attacker);
         }
-
-        Retaliate(target, attacker);
-
-        if (target.Hp <= 0)
-            Kill(target, attacker);
     }
 
     /// <summary>Apply damage unless the target is in god mode.
@@ -16401,6 +16481,77 @@ public class GameLoopService : BackgroundService
 
     /// <summary>Build the expanded target window: the target's detailed stats and,
     /// for a mob, its passive modifier lines (from the MobCatalog template).</summary>
+    /// <summary>The client's selection changed. Store it and push once immediately, so the bar fills
+    /// the moment he taps a mob rather than up to a second later.</summary>
+    private void HandleSetUiTarget(SetUiTargetCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player)) return;
+        if (player.UiTargetId == cmd.TargetId) return;
+        player.UiTargetId = cmd.TargetId;
+        player.LastTargetBuffSig = "";      // force the next push, even onto an identical buff list
+        PushTargetBuffs(player);
+    }
+
+    /// <summary>Push the SELECTED target's buffs and debuffs to one player — the enemy-side twin of
+    /// <see cref="PushBuffs"/>.
+    ///
+    /// <para>Owner, playtest 2026-09-10: *"i cannot see stacks on enemy (need to see debuffs+stacks)"*
+    /// — *"so i know when to burst"*. Nothing in the game sent another entity's buffs before this.</para>
+    ///
+    /// <para>🔑 THE STACK COUNTER IS FOLDED INTO THE DEBUFF IT COUNTS. On the server a stacking DoT is
+    /// TWO buffs: the damage effect keyed on the skill's <c>BuffKey</c>, and a separate internal counter
+    /// keyed on its <c>StackKey</c> (see <see cref="ApplyDotStack"/>). The counter is `Internal`, so it
+    /// is filtered out of every bar — which is exactly why the venom pool was invisible and the burst
+    /// read as doing nothing. Rather than expose the counter as its own row, its count is merged onto
+    /// the row a player already understands.</para>
+    ///
+    /// <para>⚠ Sent once a second off the same `secondTick` as his own bar, and only when the list
+    /// actually changed (<see cref="Entity.LastTargetBuffSig"/>) — a selected target is usually a mob
+    /// standing still with nothing on it, and that must cost nothing.</para></summary>
+    private void PushTargetBuffs(Entity player)
+    {
+        if (player.UiTargetId is not Guid tid
+            || !_world.Entities.TryGetValue(tid, out var target)
+            || target.Dead)
+        {
+            // Clear the bar once, when the selection goes away or the target dies.
+            if (player.LastTargetBuffSig.Length == 0) return;
+            player.LastTargetBuffSig = "";
+            SendTo(player, "TargetBuffs",
+                new TargetBuffUpdate(player.UiTargetId ?? Guid.Empty, Array.Empty<BuffDto>()));
+            return;
+        }
+
+        var dtos = new List<BuffDto>();
+        foreach (var b in target.Buffs)
+        {
+            if (b.Internal) continue;
+            int stacks = b.Stacks;
+            // FOLD: if this buff is a DoT whose skill declares a StackKey, the real count lives on the
+            // hidden counter, not here — ApplyDotStack pins the damage effect at maxStacks: 1.
+            if ((b.Effect & SkillEffect.AnyDot) != 0
+                && SkillCatalog.Get(b.SkillId) is { } sd && !string.IsNullOrEmpty(sd.StackKey)
+                && target.Buffs.FirstOrDefault(c => c.Key == sd.StackKey) is { } counter)
+                stacks = counter.Stacks;
+
+            dtos.Add(new BuffDto(
+                b.Name, b.Description,
+                b.Toggle ? -1f : b.TicksRemaining * GameConstants.TickSeconds,
+                b.IsDebuff, b.Key, stacks, b.Row, BuffIcon(target, b.SourceSkillId)));
+        }
+
+        // Cheap change test — name + stacks + whole seconds. Seconds are rounded so a ticking timer
+        // does not make every second a "change" for a bar that only shows whole numbers anyway.
+        var sb = new System.Text.StringBuilder();
+        foreach (var d in dtos)
+            sb.Append(d.Name).Append('#').Append(d.Stacks).Append('#')
+              .Append((int)d.SecondsLeft).Append('|');
+        string sig = sb.ToString();
+        if (sig == player.LastTargetBuffSig) return;
+        player.LastTargetBuffSig = sig;
+        SendTo(player, "TargetBuffs", new TargetBuffUpdate(tid, dtos.ToArray()));
+    }
+
     private void HandleInspectTarget(InspectTargetCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player)) return;
@@ -16706,41 +16857,38 @@ public class GameLoopService : BackgroundService
         return (baseDamage, CombatOutcome.Hit);
     }
 
-    /// <summary>Resolution for a BLOW skill (dagger Stab) — docs/design/CritBlowAndDouble.md §2.
-    /// THE BLOW ROLL is the gate: the blow deals its full damage only if it LANDS, and since
-    /// `BL-188` (2026-09-09) that roll is its own stat — <see cref="Entity.BlowRate"/>, cut by the
-    /// defender's <see cref="Entity.BlowResist"/> — NOT the character's crit rate.
-    /// A landed blow is then computed WITH THE CRIT-DAMAGE VALUES
-    /// — the flat crit-damage add (critFlatFactor) and the crit multiplier — because a blow scales
-    /// off crit damage, not off p.Atk (7-11k of skill power against under 1k of p.Atk). ONLY after
-    /// that does it roll a DOUBLE (the caster's ATK curve) for a further ×2. A blow that FAILS to
-    /// crit deals a flat BlowFailFraction of its damage — that floor can neither crit nor double
-    /// (a soft floor, not IG's 0-damage whiff). Blows bypass shields, so the floor isn't blocked.</summary>
+    /// <summary>THE BLOW GATE — does this stab find its mark? `BL-188` (2026-09-09) made it its own
+    /// stat: <see cref="Entity.BlowRate"/>, cut by the defender's <see cref="Entity.BlowResist"/>,
+    /// NOT the character's crit rate.
+    ///
+    /// <para>The attacker's side is already computed and CLAMPED in RecomputeDerived; only the
+    /// defender's term belongs here, and it lands OUTSIDE that cap on purpose — his own worked
+    /// example is "~80% × 0.7 = ~56%", which only reads that way if the cap comes first.</para>
+    ///
+    /// <para>🔑 Three things deliberately do NOT touch this roll: the skill's <c>CritRateMod</c>
+    /// (the field survives for the CanCrit path), the shield's <c>ShieldCritDefense</c>, and
+    /// <c>CritRateResist</c> — the last matters most, because the rogue's own Armor Mastery carries
+    /// 25-35% of it and would otherwise have made rogues the best anti-rogue armour in the game.</para>
+    ///
+    /// <para>It is a method of its own since `BL-193`, because the CALLER now needs the answer
+    /// BEFORE the skill's miss roll: a blow that fails is resolved as an ordinary basic attack,
+    /// which brings its own accuracy roll with it.</para></summary>
+    private bool BlowLands(Entity attacker, Entity target)
+        => _rng.NextDouble() < Math.Clamp(attacker.BlowRate * (1f - target.BlowResist), 0f, 1f);
+
+    /// <summary>Damage for a blow that HAS landed — docs/design/CritBlowAndDouble.md §2.
+    /// It is computed WITH THE CRIT-DAMAGE VALUES (the flat crit-damage add inside the ratio, then
+    /// the crit multiplier) because a blow scales off crit damage, not off p.Atk (7-11k of skill
+    /// power against under 1k of p.Atk). ONLY after that does it roll a DOUBLE for a further ×2.
+    ///
+    /// <para>⚠ There is no failure branch here any more (`BL-193`): the gate is <see cref="BlowLands"/>
+    /// and it is rolled by the caller. A blow that misses its mark is a BASIC ATTACK now, not a
+    /// fraction of the skill — see <see cref="ResolveBasicSwing"/>.</para></summary>
     private (int damage, CombatOutcome outcome) ResolveBlow(
         Entity attacker, Entity target, int baseDamage, SkillDef def, float critFlatFactor = 1f)
     {
-        // `BL-188` (owner ruling 2026-09-09) — THE BLOW ROLL IS ITS OWN STAT, not the crit chain.
-        //
-        //     blowRate = clamp(0.30 × buffs × passives × BlowAgiMod(AGI), 20%, 80%) × (1 − BlowResist)
-        //
-        // The attacker's side is already computed and CLAMPED in RecomputeDerived; only the
-        // defender's term belongs here, and it lands OUTSIDE the cap on purpose — his own worked
-        // example is "~80% × 0.7 = ~56%", which only reads that way if the cap comes first.
-        //
-        // 🔑 What used to be here was `attacker.CritChance × def.CritRateMod` clamped to [0,1] — an
-        // unauthored ×2.0 on an already-50%-capped rate, i.e. EVERY stab landing at the crit cap.
-        // Three things deliberately no longer touch this roll: `CritRateMod` (the field survives for
-        // the CanCrit path), the shield's `ShieldCritDefense`, and `CritRateResist` — the last
-        // matters most, because the rogue's own Armor Mastery carries 25-35% of it and would
-        // otherwise have made rogues the best anti-rogue armour in the game.
-        float effCrit = Math.Clamp(attacker.BlowRate * (1f - target.BlowResist), 0f, 1f);
-
-        if (_rng.NextDouble() >= effCrit)
-            // Missed the crit: soft floor only — cannot crit or double.
-            return (Math.Max(1, (int)(baseDamage * def.BlowFailFraction)), CombatOutcome.Hit);
-
-        // Crit landed → apply the crit-damage values (flat add inside the ratio, then the
-        // multiplier), trimmed by the target's crit-damage resist exactly as a normal crit is.
+        // Crit-damage values: flat add inside the ratio, then the multiplier, trimmed by the
+        // target's crit-damage resist exactly as a normal crit is.
         float mult = StatCalculator.PhysicalCritMult(attacker.CritDamageBonus);
         float extra = (critFlatFactor * mult - 1f) * (1f - target.CritDmgResist);
         int damage = Math.Max(1, (int)(baseDamage * (1f + extra)));
@@ -17050,6 +17198,11 @@ public class GameLoopService : BackgroundService
             _world.Grid.Add(entity);
         }
         _log.LogInformation("Spawned {Count} NPCs", WorldMap.Npcs.Length);
+        // 🔵 A DoT layer with no table is INERT, and that must be visible at boot rather than in a
+        //    playtest. Drops out of the log the moment his (type, tier) numbers land in DotTiers.
+        if (DotTiers.Unauthored)
+            _log.LogWarning("DoT damage table is EMPTY — every bleed/poison/venom ticks for 0. "
+                          + "Awaiting the owner's per-type, per-tier numbers (Game.Shared/Skills/DotTiers.cs).");
 
         // Region membership is geometric, so a polygon authored slightly wrong contains no spawners and
         // fails silently — it would still draw, still teleport, and simply never show a level band.

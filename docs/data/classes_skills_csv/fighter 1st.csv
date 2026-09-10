@@ -12,9 +12,9 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 10,Strike,strike,physical active,sword|blunt,,40,0,enemy/single,1,3,0,dmg with 65 power - can double - require blunt/sword,13,910,[]
 15,Strike,strike,physical active,sword|blunt,,40,0,enemy/single,1,3,0,dmg with 84 power - can double - require blunt/sword,17,910,[]
 ,,,,,,,,,,,,,,,,----------------------------Stab----------------------------
-5,Stab,stab,physical active,duals,,40,0,enemy/single,1,3,0,power 88 - only when skill does critical - otherwise 8.8 - require duals,10,160,[]
-10,Stab,stab,physical active,duals,,40,0,enemy/single,1,3,0,power 137 - only when skill does critical - otherwise 13.7 - require duals,11,910,[]
-15,Stab,stab,physical active,duals,,40,0,enemy/single,1,3,0,power 210 - only when skill does critical - otherwise 21 - require duals,15,910,[]
+5,Stab,stab,physical active,duals,,40,0,enemy/single,1,3,0,power 88 - only when skill does critical - otherwise normal attack.8 - require duals,10,160,[]
+10,Stab,stab,physical active,duals,,40,0,enemy/single,1,3,0,power 137 - only when skill does critical - otherwise normal attack.7 - require duals,11,910,[]
+15,Stab,stab,physical active,duals,,40,0,enemy/single,1,3,0,power 210 - only when skill does critical - otherwise normal attack - require duals,15,910,[]
 ,,,,,,,,,,,,,,,,----------------------------Shot----------------------------
 5,Shot,shot,physical active,bow,,350,0,enemy/single,3,6,0,power 78 - ranged shot - require a bow,20,160,[]
 10,Shot,shot,physical active,bow,,350,0,enemy/single,3,6,0,power 122 - ranged shot - require a bow,25,910,[]

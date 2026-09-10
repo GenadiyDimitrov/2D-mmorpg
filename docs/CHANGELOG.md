@@ -1,4 +1,4 @@
-# Changelog
+﻿# Changelog
 
 Development history, newest first.
 
@@ -7,11 +7,168 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.124.3**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.126.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-10 (latest) — 0.124.3: the Grand Rune closes `BL-187`, and `BL-186` is postponed
+## 2026-09-10 (latest) — 0.126.0: the enemy's debuffs and stack counts
+
+🔴 **NEW APK REQUIRED — `ProtocolVersion` 35 → 36.** A new server→client message.
+
+*"i cannot see stacks on enemy (need to see debuffs+stacks)"* — and the reason: *"so i know when to
+burst"*. A venom pool he could not see was a burst he had to guess at, which is also why the burst
+itself read as *"dont do nothing .. or atleast dont show that it does"*.
+
+### There was no wire message for another entity's buffs at all
+
+Not a filter to relax — nothing existed. `BuffUpdate` only ever carried your own bar; the party roster
+carried debuff NAMES for members; an enemy carried nothing. So this adds the whole path:
+
+- **`TargetBuffUpdate(TargetId, BuffDto[])`** — the enemy-side twin of `BuffUpdate`.
+- **A selected target now exists server-side.** Selection used to be purely client-side
+  (`GameBoot.TargetId`), which is precisely why nothing here could answer "what is on the thing he is
+  looking at". The client sends `SetTarget` on every change; the server keeps `Entity.UiTargetId`.
+  ⚠ `InspectTarget` is a different thing and stays what it was — a one-shot pull for the stats sheet,
+  not a subscription.
+- **Pushed once a second**, off the same `secondTick` as his own buff bar, and **only when the list
+  actually changed** (`LastTargetBuffSig`) — a selected mob usually stands there with nothing on it and
+  that has to cost nothing. Selecting pushes once immediately so the row fills on the tap.
+
+### 🔑 The stack counter is folded into the debuff it counts
+
+On the server a stacking DoT is **two** buffs: the damage effect keyed on the skill's `BuffKey`, and a
+separate `Internal` counter keyed on its `StackKey` (`ApplyDotStack` deliberately pins the damage
+effect at `maxStacks: 1`). The counter being `Internal` is what made the venom pool invisible on every
+bar. Rather than expose it as its own row, its count is merged onto the row a player already
+understands — so the HUD reads `Venom x7`, not `Venom` beside `Venom (stacks)`.
+
+### The client
+
+One line under the target frame's detail row, debuffs first (red) then buffs (green), stack counts
+shown only above 1. Ellipsised rather than wrapped, and the panel grew 160 → **186px** to pay for the
+row: the action buttons are bottom-anchored, the detail row is top-anchored, and anything inserted
+between them eats the gap two earlier playtest fixes bought.
+
+⚠ `GameBoot.TargetId` is a real property now, not an auto-property — that is what makes every existing
+assignment site (tap, tab-target, auto-hunt, the clear-on-death rule) notify the server for free.
+
+## 2026-09-10 — 0.125.1: the DoT layer was ticking for the skill's whole Power
+
+🟢 **SERVER-ONLY — your 0.125.0 APK is fine.** Protocol stays **35**, and the version label does not
+gate anything once a client sends a protocol number.
+
+Playtest finds, four of them with one root cause each.
+
+### 🔴 Every DoT in the game ticked for its DIRECT HIT's power
+
+*"bleeding trap is a bleeding arrow that does 15k dmg each second ... which is increadibly op"* ·
+*"i think all dots are OP ... venomancer dot does 7500"*.
+
+`SkillDef.DotPowerAt` fell back to the skill's own **`Power`** when no `DotPower` was authored — and
+`DotPower` is authored on **exactly one skill in the catalogue** (Pyro Burst). Every other DoT
+therefore ticked for the number meant for its direct hit: **flat, undivided by defence, once a second,
+for the whole duration**. Bleeding Arrow (power 15,000, 30s) dealt **450,000** from a single arrow.
+
+🔑 **A skill's Power is its direct hit; a DoT rider is a second number.** Inferring one from the other
+is the bug, and the fallback is gone.
+
+**The replacement is `Game.Shared/Skills/DotTiers.cs`** — a (type, tier) → flat damage-per-second
+table, to his model: *"ill write u each type each tire what dmg it does .. and depending on
+dmg-magic/phys and it does it as flat dmg ... just the landing rate depends on stat"*. So flat damage,
+no defence division (correct and deliberate), the channel already carried by `DebuffSchool`, and the
+landing contest untouched.
+
+🔵 **The numbers are his and are not written yet, so every DoT ticks for 0** — following his own
+precedent on the masteries (*"Nobody — dead until you author it"*). The server logs a warning at boot
+while the table is empty. An invented placeholder gets mistaken for a tuned number and ships; an inert
+bleed gets reported.
+
+### 🔴 Arrow Barrage paid a fifth of its MP and had no reuse
+
+*"barage have no cd"* — and it was worse than that. The channel branch sat ~80 lines too early in
+`ExecuteSkill`, and its `return` jumped over the **80% finish MP**, the HP cost **and** the cooldown.
+The barrage charged only the 20% initial (~42 of its 208) and started no reuse: a spammable ultimate
+at a fifth price. The block now sits beside the trap and totem branches, past every gate a cast owes.
+
+⚠ `CancelCast`'s note that *"the wrapper's cooldown was already started when its cast landed"* had
+been false since the channel shipped.
+
+### 🔴 No area skill could hit a training dummy
+
+*"barage ... does no dmg to a training fummy"*. `EnemiesInRadius` opened with
+`if (e.Dead || e.TrainingDummy) continue;` — so Barrage's `EnemiesInRadius` arrow swept an empty set
+and ten arrows resolved against nobody. **Every AoE in the game was untestable on the one thing built
+for testing it.** A dummy still takes no HP (GodMode); what it does now is show the number, which is
+what it is for — its bar was never the readout, it regenerates 10,000 HP/sec.
+
+### 🟢 The traps are fine — nothing was owed
+
+*"archers dont have a trap skill"*. Each archer race gets exactly one, in the code and in his CSVs:
+Human = Poison Trap, Elf = Binding Trap, Demon = Bleeding Trap, from 40 and again at the 4th. He was
+on the Demon, which holds both Bleeding **Trap** and the level-85 Bleeding **Arrow** — the 15k/sec
+was the Arrow. `Mighty Blow`-style naming confusion, nothing more.
+
+### 🔵 Still owed: seeing a target's debuffs and stacks
+
+*"burs dont do nothing .. or atleast dont show that it does"* · *"i cannot see stacks on enemy"*.
+Same root: the stack counter is `Internal`, and more fundamentally **there is no wire message for a
+target's buffs at all** — `BuffUpdate` only carries your own. Needs a selected-target concept on the
+server, a new DTO, a protocol bump and a new APK. Its own increment.
+
+## 2026-09-10 — 0.125.0: a blow that misses its mark is a NORMAL ATTACK (`BL-193`)
+
+🔴 **NEW APK REQUIRED** — the skill-detail line changed and the client builds it locally from the
+compiled catalogue. No schema change, protocol stays **35** (`SkillDef` never crosses the wire).
+
+*"can we make if a blow fails to hit as normal atack (with crit chance and everithing)?"* — and on
+what it replaces: *"we remove the 10% wiff and floor or whatever .. if it missies or is blocked so be
+it ... its a normal baisc attack"*.
+
+**`BlowFailFraction` is deleted from the game.** A dagger blow that fails its landing roll used to
+pay a flat fraction of the skill's damage — 10% at the 1st/2nd tier, **1%** at the 3rd/4th — which
+could neither crit, nor double, nor be blocked. It now resolves as an **ordinary basic attack**: full
+damage off `EffectiveBasicAttack`, its own accuracy roll, its own crit, its own block, and every
+on-hit rider a real swing carries (melee vamp, mana vamp, reflect, interrupt, procs).
+
+🔑 **THE ORDER IS THE DESIGN.** The blow gate is now rolled **before** the skill's own miss roll. Put
+it after, and a failed blow would be gated twice — once by `SkillEvadeChance` and again by the basic
+attack's accuracy — which is not "as if I never used the skill". Each branch now carries exactly one
+miss gate.
+
+🔑 **The fallback SHARES the basic-attack body, it does not re-implement it.** `ResolveBasicAttack`
+was split so its resolution half is `ResolveBasicSwing`, called from both places. A fallback with its
+own copy of "a basic attack" drifts from the real one the first time a rider is added to either side.
+The floating text still names the skill that fired; that is a label, nothing mechanical.
+
+**Measured, not derived** — `BalanceMatrix` §C1 grew a `gate%` column and a `fail OLD / fail NEW`
+pair, so the change is readable directly:
+
+| lvl | gate | fail OLD | fail NEW |
+|---|---|---|---|
+| 20 | 30.0% | 64 | 174 |
+| 28 | 30.0% | 76 | 150 |
+| 36 | 30.0% | 91 | 140 |
+
+That is **+5% to +17%** expected damage per stab at the 2nd tier, and more at the 3rd/4th where the
+floor was 1% — against a level-90 tank a basic swing is worth ~80 where the floor paid single digits.
+The rogue was sitting at 0.65x the warrior's DPS early precisely *because* a failed blow was nearly
+nothing, so the direction is intended.
+
+🔴🔑 **THE RIG'S OWN BLOW MATH WAS STALE AND WAS FIXED ON THE WAY PAST.** `SkillHitFactor` still gated
+a blow on `CritChance * CritRateMod` — the **pre-`BL-188`** model, nine versions old — so every blow
+row in §C1 had been wrong since 0.121.0. It reads `Entity.BlowRate` now. (Check the rig before the
+subject; this is the fourth time.)
+
+**Which skills:** every blow in the game, and they are all dual/rogue-line — `Stab` (fighter 1st),
+`Piercing Stab` (rogue 2nd), `Killing`/`Swift`/`Heavy`/`Venom Stab` (dual 3rd + their 4th rungs).
+**There is no warrior-line blow.** `Mighty Blow` is a name, not a mechanic: it is `SureHit`, carries
+no `BlowOnCrit`, and no class table grants it — an orphan definition like `Heavy Draw`.
+
+**The CSVs moved with the code, same increment:** 128 authored cells across `dual 3rd`, `dual 4th`,
+`fighter 1st` and `rogue 2nd` read *"only when skill does critical - otherwise N"*; the dead second
+number is now *"otherwise normal attack"*. `--check` is green on all 17 files.
+
+## 2026-09-10 — 0.124.3: the Grand Rune closes `BL-187`, and `BL-186` is postponed
 
 🔴 **NEW APK REQUIRED** — the Admin panel gained a row. No schema change, protocol stays **35**.
 

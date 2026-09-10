@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading.Tasks;
 using Game.Shared;
 using Microsoft.AspNetCore.SignalR.Client;
@@ -43,6 +43,8 @@ namespace Game.Client
         public event Action<RestoreUpdate> RestoreReceived;
         public event Action<StatsUpdate> StatsReceived;
         public event Action<BuffUpdate> BuffsReceived;
+        /// <summary>The SELECTED target's buffs/debuffs, with DoT stacks already folded in.</summary>
+        public event Action<TargetBuffUpdate> TargetBuffsReceived;
         public event Action<GoldUpdate> GoldReceived;
         /// <summary>Reuse timers, pushed when one starts. The client counts them down itself, so this
         /// arrives a handful of times per fight — not per tick.</summary>
@@ -174,6 +176,7 @@ namespace Game.Client
             _connection.On<SelectionOffer>("Selection", o => SelectionReceived?.Invoke(o));
             _connection.On<TitleColorOffer>("TitleColors", o => TitleColorsReceived?.Invoke(o));
             _connection.On<BuffUpdate>("Buffs", b => BuffsReceived?.Invoke(b));
+            _connection.On<TargetBuffUpdate>("TargetBuffs", b => TargetBuffsReceived?.Invoke(b));
             _connection.On<GoldUpdate>("Gold", g => GoldReceived?.Invoke(g));
             _connection.On<CooldownUpdate>("Cooldowns", c => CooldownsReceived?.Invoke(c));
             _connection.On<AutoTargetUpdate>("AutoTarget", t => AutoTargetReceived?.Invoke(t));
@@ -421,6 +424,11 @@ namespace Game.Client
         /// <summary>Ask the server for the expanded target window. withDrops adds a mob's drop list.</summary>
         public Task InspectTargetAsync(Guid targetId, bool withDrops) =>
             _connection.SendAsync("InspectTarget", targetId, withDrops);
+
+        /// <summary>Tell the server what is selected so it can push that entity's debuffs and stacks.
+        /// Sent only when the selection CHANGES — see GameBoot.TargetId.</summary>
+        public Task SetTargetAsync(Guid? targetId) =>
+            _connection.SendAsync("SetTarget", targetId);
 
         public Task ResurrectResponseAsync(bool accept) =>
             _connection.SendAsync("ResurrectResponse", accept);

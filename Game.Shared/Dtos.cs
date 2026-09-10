@@ -1,4 +1,4 @@
-namespace Game.Shared;
+﻿namespace Game.Shared;
 
 // ---------------------------------------------------------------------------
 // Network contracts. These records are serialized by SignalR (System.Text.Json)
@@ -445,6 +445,21 @@ public record SkillRef(string Id, int Level);
 /// <summary>Server -> owning client: the player's current buffs (sent each
 /// second while any are active, and once when the last one drops).</summary>
 public record BuffUpdate(BuffDto[] Buffs);
+
+/// <summary>THE SELECTED TARGET'S buffs and debuffs — the enemy-side twin of <see cref="BuffUpdate"/>.
+///
+/// <para>Owner, playtest 2026-09-10: *"i cannot see stacks on enemy (need to see debuffs+stacks)"*, and
+/// the reason he needs it: *"so i know when to burst"*. A venom pool he cannot see is a burst he has to
+/// guess at.</para>
+///
+/// <para>🔑 Before this there was NO wire message for another entity's buffs at all. `BuffUpdate` only
+/// ever carried your own, and the party roster carried debuff NAMES for members — nothing for an enemy.
+/// That is why the burst read as "does nothing": the stacks it consumed were never visible.</para>
+///
+/// <para>⚠ <c>Stacks</c> here is FOLDED — the DoT's internal counter is merged into the visible debuff
+/// row, because on the server they are two separate buffs (the damage effect keyed on `BuffKey`, the
+/// counter on `StackKey`) and no player should have to know that.</para></summary>
+public record TargetBuffUpdate(Guid TargetId, BuffDto[] Buffs);
 
 /// <summary>Server -> owning client: a SELECTION box was opened — show a chooser. The
 /// player picks PickCount of Options, then calls SelectBoxItems with the chosen ids.</summary>

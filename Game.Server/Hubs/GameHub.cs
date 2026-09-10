@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using Game.Server.Persistence;
 using Game.Server.Simulation;
 using Game.Shared;
@@ -366,6 +366,15 @@ public class GameHub : Hub
     {
         _world.Commands.Enqueue(new SelectBoxItemsCmd(Context.ConnectionId, instanceId,
             itemIds ?? System.Array.Empty<string>()));
+        return Task.CompletedTask;
+    }
+
+    /// <summary>Tell the server what the player currently has selected, so it can push that entity's
+    /// debuffs and stack counts. Null clears the selection. Cheap and idempotent: the client sends it
+    /// only when the selection CHANGES.</summary>
+    public Task SetTarget(Guid? targetId)
+    {
+        _world.Commands.Enqueue(new SetUiTargetCmd(Context.ConnectionId, targetId));
         return Task.CompletedTask;
     }
 

@@ -1,4 +1,4 @@
-# Crit damage, Blows and `[Double]` (spec)
+﻿# Crit damage, Blows and `[Double]` (spec)
 
 Owner ruling, **2026-08-05**. This is a deliberate *simplification* of IG, not a copy of it — the
 naming below was chosen because IG's own naming confuses players about where crit damage comes from.
@@ -97,17 +97,30 @@ p.Atk — and what actually grows a dagger's damage is **crit damage**. We repro
 
 Sequence for a blow (`BlowOnCrit`):
 
-1. **Land on a crit.** Roll the attacker's crit chance (AGI-driven), reduced by the target's
-   `ShieldCritDefense` + `CritRateResist`. A blow that fails to crit deals a flat
-   `BlowFailFraction` floor (~10%) which can neither crit nor double. Blows bypass shields, so the
-   floor is not blocked.
+1. **Land the blow.** Roll `Entity.BlowRate` cut by the target's `BlowResist` (`BL-188` — its own
+   stat, NOT the crit rate; see `docs/Formulas.md`).
+
+   🔑 **A blow that does not find its mark strikes as an ORDINARY BASIC ATTACK** — `BL-193`, his
+   ruling 2026-09-10: *"a normal atack as if i never used skill but just basic attack"*, and on what
+   it replaces: *"we remove the 10% wiff and floor or whatever .. if it missies or is blocked so be
+   it"*. Full basic damage off `EffectiveBasicAttack`, its own accuracy roll, its own crit, its own
+   block. The `BlowFailFraction` floor is **deleted** — do not reinstate a fraction here.
+
+   ⚠ The gate is therefore rolled **before** the skill's own miss roll, or a failed blow would be
+   gated twice (once by `SkillEvadeChance`, again by basic accuracy) and that is not "as if I never
+   used the skill". `GameLoopService.BlowLands` → `ResolveBasicSwing`.
 2. **Apply the crit-damage values** to the landed blow — the flat crit-damage add (below) and any
    crit-damage multiplier.
 3. **Then it may `[Double]`** — the ATK roll above, ×2 on top.
 
-⚠ Step 2 is the piece that does not exist yet: `ResolveBlow` currently returns the base damage
-unmodified, so a dagger's `crit dmg +80` does **nothing** to Stab today. Steps 1 and 3 are already
-correct in code.
+✅ All three steps are in code. (Step 2 was the last to land, 2026-08-05; step 1 was rewritten by
+`BL-188` and again by `BL-193`.)
+
+⚠ **Measured, not derived** (`BalanceMatrix` §C1, which now prints `gate%` and the fail branch old
+vs new): at the 2nd tier the fail branch goes from **64-91 → 140-174** at a 30% gate, i.e. roughly
++5% to +17% expected damage per stab. At the 3rd/4th tier, where the floor was 1% of a 7-15k-power
+skill, the gain is larger — a basic swing is worth ~80 against a level-90 tank where the floor paid
+single digits.
 
 ## 3. Crit damage in the CSVs is FLAT, added as attack before the multiplier
 

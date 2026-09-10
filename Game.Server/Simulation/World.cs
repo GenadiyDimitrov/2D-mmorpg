@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using Game.Shared;
 
 namespace Game.Server.Simulation;
@@ -328,6 +328,14 @@ public record SelectBoxItemsCmd(string ConnectionId, Guid InstanceId, string[] I
 /// only the [Details] click asks for (the 1s refresh loop leaves it false so the static table isn't
 /// recomputed each second).</summary>
 public record InspectTargetCmd(string ConnectionId, Guid TargetId, bool WithDrops = false) : IGameCommand;
+
+/// <summary>The client's CURRENT SELECTION, so the server can push that entity's debuffs and stack
+/// counts back (<see cref="TargetBuffUpdate"/>). Null clears it.
+///
+/// <para>⚠ Selection used to be purely client-side — `GameBoot.TargetId` and nothing on the server —
+/// which is why an enemy's buffs could not be shown: nobody here knew what you were looking at.
+/// `InspectTarget` is a different thing: a one-shot pull for the stats sheet, not a subscription.</para></summary>
+public record SetUiTargetCmd(string ConnectionId, Guid? TargetId) : IGameCommand;
 
 public record RespawnCmd(string ConnectionId) : IGameCommand;
 

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -131,11 +131,10 @@ public static partial class SkillCatalog
     private static readonly int[] VenomStacksPerCast =
         { 1, 1, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3 };
 
-    /// <summary>🔑 A BLOW'S NON-CRIT FLOOR IS 1%, NOT the engine's default 10%. Every stab row in this
-    /// file reads "power N - only when skill does critical - otherwise N/100" — 1250/12, 6400/64 —
-    /// where the 2nd class's Piercing Stab reads 314/31, a tenth. He has made the 3rd-tier blow far
-    /// more all-or-nothing than the one it continues, and that is the identity of the branch.</summary>
-    private const float ThirdTierBlowFloor = 0.01f;
+    // 🔑 `ThirdTierBlowFloor` (1%) LIVED HERE AND IS GONE (`BL-193`, 2026-09-10). His stab rows used
+    //    to read "power N - only when skill does critical - otherwise N/100", but the floor those
+    //    second numbers described no longer exists: a blow that fails now strikes as an ordinary
+    //    BASIC ATTACK. The CSV cells were rewritten to say so in the same increment.
 
     // ═══════════════════════════════════════════════════════════════════════════════════════════
     //  ARMOUR — rungs 6-20 of the ROGUE's own mastery, APPENDED. Not a new skill: see the header of
@@ -270,14 +269,14 @@ public static partial class SkillCatalog
         //   cost of guessing wrong is deleting a skill he wanted kept. Same cell on all five families.
         list.Add(StabSkill(KillingStab, "Killing Stab", StabPower, castTicks: 10,
             "Drives both blades home. Full power only when it crits.",
-            i => $"Blow power {StabPower[i]:N0} on a critical; {(int)MathF.Round(StabPower[i] * ThirdTierBlowFloor)} otherwise.",
+            i => $"Blow power {StabPower[i]:N0} on a critical; a normal attack otherwise.",
             fourth: StabFourthRungs(StabPower4)));
 
         // ═══ SWIFT STAB — the Elf's ══════════════════════════════════════════════════════════════
         // Killing Stab's power on HALF the cast time, and it leaves a 5-second rush behind it.
         list.Add(StabSkill(SwiftStab, "Swift Stab", StabPower, castTicks: 5,
             "A blur of a blow that carries you forward with it.",
-            i => $"Blow power {StabPower[i]:N0} on a critical; {(int)MathF.Round(StabPower[i] * ThirdTierBlowFloor)} otherwise. "
+            i => $"Blow power {StabPower[i]:N0} on a critical; a normal attack otherwise. "
                + "Leaves +5 speed and +15% attack speed for 5s.",
             selfBuff: SwiftStabRush, fourth: StabFourthRungs(StabPower4)));
 
@@ -300,7 +299,7 @@ public static partial class SkillCatalog
         list.Add(StabSkill(HeavyStab, "Heavy Stab", HeavyStabPower, castTicks: 30,
             "Two heavy blows, wound up and delivered. Each bites on its own.",
             i => $"Strikes 2 times; blow power {HeavyStabPower[i]:N0} each on a critical, "
-               + $"{(int)MathF.Round(HeavyStabPower[i] * ThirdTierBlowFloor)} otherwise.",
+               + "a normal attack otherwise.",
             hitCount: 2, fourth: StabFourthRungs(HeavyStabPower4)));
 
         // ═══ VENOM STAB — the Demon's ════════════════════════════════════════════════════════════
@@ -320,7 +319,7 @@ public static partial class SkillCatalog
             DebuffSchool: DebuffSchool.Physical,
             StackKey: "venom_venom", MaxStacks: 10, StacksPerCast: 1,
             Category: SkillCategory.Physical, SpCost: RogueSp[0],
-            BlowOnCrit: true, BlowFailFraction: ThirdTierBlowFloor,
+            BlowOnCrit: true,
             // `BL-188` - the unauthored x2.0 on the crit rate is gone; a blow rolls Entity.BlowRate now.
             RequiredWeapon: WeaponType.Dual,
             Replaces: new[] { PreciseShot },
@@ -338,7 +337,7 @@ public static partial class SkillCatalog
                     new(SkillEffect.DebuffAtk, 0.15f), new(SkillEffect.DebuffDef, 0.15f),
                 },
                 Description: $"Blow power {VenomStabPower[i]:N0} on a critical; "
-                           + $"{(int)MathF.Round(VenomStabPower[i] * ThirdTierBlowFloor)} otherwise. "
+                           + "a normal attack otherwise. "
                            + $"Adds {VenomStacksPerCast[i]} tier-{VenomTier[i]} venom stack(s), max 10."))
                 .Concat(VenomStabFourthRungs()).ToArray()));
 
@@ -524,7 +523,7 @@ public static partial class SkillCatalog
         => new(id, name, BaseClass.Fighter, SkillEffect.PhysicalDamage,
             MpCost: StabMp[0], CastTicks: castTicks, CooldownTicks: 30, Range: 40, Power: power[0],
             Category: SkillCategory.Physical, SpCost: RogueSp[0],
-            BlowOnCrit: true, BlowFailFraction: ThirdTierBlowFloor,
+            BlowOnCrit: true,
             // `BL-188` - see Killing Stab: the blow gate left the crit chain on 2026-09-09.
             HitCount: hitCount, SelfBuff: selfBuff,
             RequiredWeapon: WeaponType.Dual,

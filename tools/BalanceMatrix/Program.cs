@@ -1,4 +1,4 @@
-using Game.Server.Simulation;
+﻿using Game.Server.Simulation;
 using Game.Shared;
 
 // Balance matrix generator.
@@ -453,7 +453,7 @@ if (args.Length > 0 && args[0] == "--dmgmatrix")
         var sk = BestSkill(a, magic);
         // 🔑 A STAB IS A BLOW: its damage is (pAtk + power) with the power dwarfing the pAtk, and it
         // only pays out ON A CRIT. So it belongs in the crit column and nowhere else — reporting a
-        // blow's non-crit number as its damage is reporting its BlowFailFraction floor.
+        // blow's non-crit number as its damage is reporting the basic swing it falls back to.
         if (his && an == "rogue") sk = (StabPower(L), 1f, RogueStabName(L), false, 1);
         if (his && magic)         sk = (0, NukePower(L), NukeName(L), true, 1);
         Console.WriteLine();
@@ -3855,7 +3855,8 @@ Console.WriteLine();
 
 Console.WriteLine("=== C1: ROGUE — the five crit-damage rungs (duals + light, best gear, vs a same-level mob) ===");
 {
-    Console.WriteLine("  lvl | P.Atk  crit%  ATK | critFlat |  basic hit  avg OLD  avg NEW |   blow hit  avg OLD  avg NEW");
+    Console.WriteLine("  lvl | P.Atk  crit%  ATK | critFlat |  basic hit  avg OLD  avg NEW |   blow hit  avg OLD  avg NEW"
+        + " | gate%  fail OLD  fail NEW");
     foreach (int lvl in new[] { 20, 24, 28, 32, 36 })
     {
         var r = BuildRogue(lvl);
@@ -3871,23 +3872,42 @@ Console.WriteLine("=== C1: ROGUE — the five crit-damage rungs (duals + light, 
 
         var (blow, blvl) = TopSkill(r, SkillEffect.PhysicalDamage);
         float blowHit = 0f, blowOld = 0f, blowNew = 0f;
+        // `BL-193` — what the FAIL branch pays, then and now. This is the whole of the change: the
+        // gate and the landed number are untouched, only what happens when the blow misses its mark.
+        float gate = 0f, failOld = 0f, failNew = 0f;
         if (blow is not null)
         {
             int power = blow.PowerAt(blvl);
             blowHit = Shot(r, false, StatCalculator.PhysicalDamage((int)r.EffectiveAttack, power, pDef, lvl));
-            blowNew = SkillHitFactor(r, blow, power, 2f);
+            // `BL-193` — A FAILED BLOW IS A BASIC ATTACK NOW, so the fail branch is worth the basic
+            // swing's own expected damage. SkillHitFactor returns a multiplier on the SKILL's base
+            // damage, so it is handed in as a fraction of that.
+            float fallback = blowHit > 0f ? basicHit * basicNew / blowHit : 0f;
+            blowNew = SkillHitFactor(r, blow, power, 2f, fallback);
+            gate = Math.Clamp(r.BlowRate, 0f, 1f);
+            failNew = basicHit * basicNew;              // a real swing, crit folded in
+            failOld = blowHit * 0.10f;                  // the retired floor: 10% of the skill
             // OLD: a landed blow returned base damage untouched, then doubled off max(AGI,ATK).
             float oldDbl = Math.Clamp(Math.Max(r.EffectiveAgi, r.AtkStat) * 0.001f, 0f, 0.30f);
+            // ⚠ The RETIRED floor, kept as a literal on purpose: `BlowFailFraction` was deleted with
+            // `BL-193`, and this column is a historical comparison, not live behaviour. 10% was the
+            // engine default the 1st/2nd-tier stab carried (the 3rd tier's own was 1%).
+            const float retiredBlowFloor = 0.10f;
             blowOld = blow.BlowOnCrit
-                ? r.CritChance * (1f + oldDbl) + (1f - r.CritChance) * blow.BlowFailFraction
+                ? r.CritChance * (1f + oldDbl) + (1f - r.CritChance) * retiredBlowFloor
                 : CritFactor(r.CritChance, oldMult);
         }
         Console.WriteLine($"  {lvl,3} | {(int)r.EffectiveAttack,5} {r.CritChance * 100,5:F1}% {r.AtkStat,4} |"
             + $" {csvFlat,8:F0} | {basicHit,10} {basicHit * basicOld,8:F0} {basicHit * basicNew,8:F0} |"
             + $" {blowHit,10:F0} {blowHit * blowOld,8:F0} {blowHit * blowNew,8:F0}"
+            + $" | {gate * 100,5:F1}% {failOld,8:F0} {failNew,8:F0}"
             + (blow is null ? "  (no skill)" : $"  ({NameOf(blow.Id)} {blvl})"));
     }
     Console.WriteLine("  avg = expected damage per hit with crit / blow / [Double] folded in.");
+    Console.WriteLine("  gate% = the BLOW landing roll (`BL-188`, Entity.BlowRate — NOT the crit rate).");
+    Console.WriteLine("  fail OLD/NEW = what the (1-gate) branch pays: the retired 10% floor vs a real");
+    Console.WriteLine("                 basic attack with its own crit (`BL-193`). Miss and block are");
+    Console.WriteLine("                 NOT folded in here, so the NEW column is a ceiling.");
 }
 Console.WriteLine();
 
@@ -5506,10 +5526,13 @@ static float CritFactor(float chance, float mult) => 1f + chance * (mult - 1f);
 
 /// <summary>Expected damage multiplier on ONE hit of a physical SKILL, running the same three
 /// resolutions GameLoopService does (docs/design/CritBlowAndDouble.md):
-/// a BLOW crits or falls to its BlowFailFraction floor, and a landed blow takes the crit-damage
-/// values and may then [Double]; a [Double] skill is a flat x2 on the ATK curve and nothing else;
-/// anything else is the ordinary crit, with the flat crit damage inside it.</summary>
-static float SkillHitFactor(Entity atk, SkillDef skill, int power, float critMult)
+/// a BLOW either lands or falls back to a basic attack, and a landed blow takes the crit-damage
+/// values and may then [Double]; a [Double] skill is a flat x2 on the mastery rate and nothing else;
+/// anything else is the ordinary crit, with the flat crit damage inside it.
+///
+/// <para><paramref name="blowFallback"/> is what a FAILED blow is worth, as a fraction of this
+/// skill's own base damage — the caller has both numbers, this function only has one. 0 = ignore.</para></summary>
+static float SkillHitFactor(Entity atk, SkillDef skill, int power, float critMult, float blowFallback = 0f)
 {
     float flatF = StatCalculator.CritFlatFactor(atk.EffectiveAttack, atk.CritDamageFlat, power);
     // `BL-190` — the character's OWN Double Damage mastery rate, not a curve off his ATK stat.
@@ -5520,8 +5543,13 @@ static float SkillHitFactor(Entity atk, SkillDef skill, int power, float critMul
 
     if (skill.BlowOnCrit)
     {
+        // 🔴 `BL-188` — THE GATE IS ITS OWN STAT, not the crit chain. This read `skillCrit` until
+        // 2026-09-10, which is the pre-BL-188 model and made every blow row in this table wrong.
+        // (The defender's BlowResist is not available here — this is the attacker's own rate.)
+        float gate = Math.Clamp(atk.BlowRate, 0f, 1f);
         float landed = flatF * critMult * (skill.CanDouble ? 1f + dbl : 1f);
-        return skillCrit * landed + (1f - skillCrit) * skill.BlowFailFraction;
+        // `BL-193` — the fail branch is a BASIC ATTACK; there is no BlowFailFraction any more.
+        return gate * landed + (1f - gate) * blowFallback;
     }
     if (skill.CanDouble) return CritFactor(dbl, 2f);
     // Can Crit and Can Double are exclusive OPT-IN flags now (M8): a skill with neither lands flat.

@@ -1,5 +1,6 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Text;
 using Game.Shared;
 using TMPro;
 using UnityEngine;
@@ -38,6 +39,11 @@ namespace Game.Client
         // row it used to sit in was 28px of duplication.
         private TextMeshProUGUI _selfName, _targetDetail;
         private TextMeshProUGUI _selfHpText, _selfMpText, _selfXpText, _targetHpText, _targetMpText;
+        /// <summary>THE TARGET'S DEBUFFS AND STACK COUNTS — one line under the detail row. Owner,
+        /// playtest 2026-09-10: *"i cannot see stacks on enemy (need to see debuffs+stacks)"*, and why:
+        /// *"so i know when to burst"*. Fed by `TargetBuffUpdate`, which folds a DoT's hidden stack
+        /// counter into the debuff it counts.</summary>
+        private TextMeshProUGUI _targetBuffLine;
         private Image _selfHp, _selfMp, _selfXp, _targetHp, _targetMp;
         private RectTransform _targetMpRow;
         private RectTransform _targetPanel;
@@ -390,8 +396,11 @@ namespace Game.Client
             // panel's floor, straight into them. Fixed twice over — one BUTTON ROW instead of two (five
             // of the seven buttons have been permanently hidden since playtest 23, so the second row
             // held one button and a gap), and 12px of room so the gap is real rather than a tie.
+            // 🔴 …AND 26px TALLER AGAIN (2026-09-10) for the DEBUFF LINE. The buttons are bottom-anchored
+            // at y=8 h28, the detail row is top-anchored — so a new row between them eats the gap those
+            // two playtest fixes above bought, unless the panel grows by exactly what the row costs.
             UiKit.Place(_targetPanel, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-                        new Vector2(0f, -48f), new Vector2(300f, 160f));
+                        new Vector2(0f, -48f), new Vector2(300f, 186f));
             var inner = _targetPanel.GetChild(0);
 
             // Deliberately NOT CloseWindow: this panel is not in the stack, and hiding it while the
@@ -420,6 +429,14 @@ namespace Game.Client
             _targetDetail = UiKit.Label(inner, "", 14f, UiKit.TextDim);
             UiKit.Place(UiKit.Rect(_targetDetail.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(12f, -chrome - 48f), new Vector2(276f, 20f));
+
+            // The debuff/buff line. One row, ellipsised rather than wrapped: a frame that changes height
+            // with the number of debuffs makes the buttons move under his thumb mid-fight.
+            _targetBuffLine = UiKit.Label(inner, "", 13f, UiKit.TextDim);
+            _targetBuffLine.overflowMode = TextOverflowModes.Ellipsis;
+            _targetBuffLine.enableWordWrapping = false;
+            UiKit.Place(UiKit.Rect(_targetBuffLine.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(12f, -chrome - 70f), new Vector2(276f, 20f));
 
             // ONE row of contextual action buttons (`87d`), so every target command is one tap — no slash
             // typing. The server refuses anything invalid, but RefreshTarget only SHOWS the ones that
@@ -1329,6 +1346,28 @@ namespace Game.Client
             bool self = Boot.Entities != null && Boot.TargetId == Boot.Entities.SelfId;
             bool player = target.Kind == EntityKind.Player && !self;
             bool mob = target.Kind == EntityKind.Mob;
+
+            // DEBUFFS + STACKS. Debuffs first — they are the ones he is watching for the burst — then
+            // anything beneficial the target is carrying, which on a mob is rare and worth seeing.
+            if (_targetBuffLine != null)
+            {
+                var bl = new StringBuilder();
+                var rows = Boot.TargetBuffs;
+                for (int pass = 0; pass < 2 && rows != null; pass++)
+                    foreach (var b in rows)
+                    {
+                        if (b.IsDebuff != (pass == 0)) continue;
+                        if (bl.Length > 0) bl.Append("  ");
+                        bl.Append("<color=#").Append(b.IsDebuff ? "E08A8A" : "8AE0A0").Append('>')
+                          .Append(b.Name);
+                        // The count is the whole reason this row exists, so it is the one thing that
+                        // never gets dimmed away — but a lone stack is noise on every non-stacking buff.
+                        if (b.Stacks > 1) bl.Append(" x").Append(b.Stacks);
+                        bl.Append("</color>");
+                    }
+                _targetBuffLine.text = bl.ToString();
+                _targetBuffLine.gameObject.SetActive(bl.Length > 0);
+            }
 
             UiKit.SetBar(_targetHp, target.Hp, target.MaxHp);
             // CURRENT/MAX digits, not a percentage (owner, 2026-07-24). This reverses the older "another

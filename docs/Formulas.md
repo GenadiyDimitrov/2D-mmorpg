@@ -1,4 +1,4 @@
-# Formulas — the whole game's maths on one page
+﻿# Formulas — the whole game's maths on one page
 
 **Every number here is read off the code, not remembered.** Source in brackets after each block.
 When you change a formula, change this file in the same commit — same rule as the skill CSVs.
@@ -104,9 +104,17 @@ rolledBlow = BlowRate * (1 - target.BlowResist)                       BlowResist
 
 ⚠ **The cap is applied to the attacker's own rate BEFORE the defender's resist**, so the tank's Vital
 Organ Protection (30%, the only blow defence in the game) takes a maxed 80% rogue to 56%.
-A blow that lands is then computed with the CRIT-DAMAGE values and may roll a `[Double]` on top;
-a blow that misses deals a flat `BlowFailFraction` (1% at the 3rd tier, 10% at the 2nd).
-`Entity.BlowRate` / `BlowResist` · `StatCalculator.BlowAgiMod` / `BlowRate` · `GameLoopService.ResolveBlow`
+A blow that lands is then computed with the CRIT-DAMAGE values and may roll a `[Double]` on top.
+
+🔑 **A blow that MISSES ITS MARK IS AN ORDINARY BASIC ATTACK** (`BL-193`, 0.125.0) — full basic
+damage off `EffectiveBasicAttack`, its own accuracy roll, its own crit and its own block. There is no
+`BlowFailFraction` any more: the old flat floor (1% at the 3rd tier, 10% at the 2nd) is gone.
+
+⚠ **The gate is rolled BEFORE the skill's own miss roll**, so each branch carries exactly ONE miss
+gate — `SkillEvadeChance` for a landed blow, basic accuracy for one that fell through.
+
+`Entity.BlowRate` / `BlowResist` · `StatCalculator.BlowAgiMod` / `BlowRate` ·
+`GameLoopService.BlowLands` / `ResolveBlow` / `ResolveBasicSwing`
 
 **Bow resistance** — applied FIRST, before crit and block, and only when the attacker's weapon is a
 bow (basic attacks and physical skills alike):

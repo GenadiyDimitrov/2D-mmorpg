@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 
 namespace Game.Shared;
@@ -155,7 +155,7 @@ public static partial class SkillCatalog
     internal static SkillLevel[] StabFourthRungs(int[] power) => F4Rungs(15, 1, (i, sp, gold) =>
         new SkillLevel(Power: power[i], MpCost: StabMp4[i], SpCost: sp, GoldCost: gold,
             Description: $"Blow power {power[i]:N0} on a critical; "
-                       + $"{(int)MathF.Round(power[i] * ThirdTierBlowFloor)} otherwise."));
+                       + "a normal attack otherwise."));
 
     /// <summary>Rungs 16-30 of Venom Stab — the venom rider rides along, frozen at tier 10.</summary>
     internal static SkillLevel[] VenomStabFourthRungs() => F4Rungs(15, 1, (i, sp, gold) =>
@@ -166,7 +166,7 @@ public static partial class SkillCatalog
                 new(SkillEffect.DebuffAtk, 0.15f), new(SkillEffect.DebuffDef, 0.15f),
             },
             Description: $"Blow power {VenomStabPower4[i]:N0} on a critical; "
-                       + $"{(int)MathF.Round(VenomStabPower4[i] * ThirdTierBlowFloor)} otherwise. "
+                       + "a normal attack otherwise. "
                        + $"Adds {VenomStacks4} tier-{VenomTier4} venom stack(s), max 10."));
 
     /// <summary>Rungs 16-30 of Venom Burst.</summary>

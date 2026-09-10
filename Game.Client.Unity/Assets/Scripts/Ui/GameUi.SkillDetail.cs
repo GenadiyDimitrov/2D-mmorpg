@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using Game.Shared;
 using TMPro;
 using UnityEngine;
@@ -160,9 +160,10 @@ namespace Game.Client
             if (!physical && !magic) return null;
 
             string rate = def.CritRateMod == 1f ? "" : "  (crit rate x" + def.CritRateMod.ToString("0.#") + ")";
+            // `BL-193` — there is no failure FRACTION to quote any more: a blow that does not find
+            // its mark strikes as an ordinary basic attack, with its own crit and its own block.
             if (def.BlowOnCrit)
-                return "Blow — full power only on a crit, otherwise "
-                       + Mathf.RoundToInt(def.BlowFailFraction * 100f) + "%" + rate;
+                return "Blow — full power when it lands, otherwise a normal attack" + rate;
             // `BL-190` — CanDouble says the skill is ELIGIBLE; whether it can actually double is a
             // question about the CHARACTER (the Double Damage mastery passive), so the line says so
             // rather than promising a ×2 that a rogue with no mastery will never see.

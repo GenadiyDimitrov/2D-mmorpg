@@ -1,4 +1,4 @@
-namespace Game.Shared;
+﻿namespace Game.Shared;
 
 // ===========================================================================
 //  SKILLS — core types + the single catalog assembly.
@@ -239,11 +239,17 @@ public record SkillDef(
     // exactly as a weapon-mastery passive gates on WeaponMasteryProfile rather than on RequiredWeapon.
     ArmorWeights RequiredArmor = ArmorWeights.None,
     ShieldGate RequiredShield = ShieldGate.Any,
-    // BLOW skill (dagger Stab): lands for FULL Power only if it CRITS (or, with CanDouble,
-    // doubles). A blow that fails to crit deals only BlowFailFraction of its damage — a soft
-    // floor, not IG's 0-damage whiff. Only meaningful with a physical-damage effect.
+    // BLOW skill (dagger Stab): lands for FULL Power only if the BLOW GATE says so
+    // (GameLoopService.BlowLands — Entity.BlowRate vs the defender's BlowResist, `BL-188`).
+    //
+    // 🔑 `BL-193` (his ruling, 2026-09-10) DELETED THE FAILURE FLOOR. There is no `BlowFailFraction`
+    // any more: a blow that does not find its mark is resolved as an ORDINARY BASIC ATTACK, with its
+    // own accuracy roll, its own crit and its own block — *"a normal atack as if i never used skill
+    // but just basic attack ... if it missies or is blocked so be it"*. Do not reinstate a fraction
+    // here; the fallback is a real swing, not a share of the skill.
+    //
+    // Only meaningful with a physical-damage effect.
     bool BlowOnCrit = false,
-    float BlowFailFraction = 0.10f,
     // A per-SKILL crit-rate modifier, multiplying the caster's own crit chance for THIS skill's
     // roll only (1.0 = exactly the character's rate). This is IG's rule that a blow's landing
     // chance was never the raw crit rate — Mortal/Deadly Blow carried a bonus of their own — and
@@ -1021,13 +1027,23 @@ public record SkillDef(
         return v > 0 ? v : DispelCount;
     }
 
-    /// <summary>The DoT damage per second this LEVEL deals: the level's own DotPower, else the def's,
-    /// else the skill's Power — which is what every DoT authored before Pyro Burst relies on.</summary>
+    /// <summary>An EXPLICIT per-second DoT damage for this level: the level's own DotPower, else the
+    /// def's, else 0 — and 0 means "read <see cref="DotTiers"/> instead", which is where every DoT's
+    /// damage now comes from.
+    ///
+    /// <para>🔴🔑 IT USED TO FALL BACK TO <c>PowerAt(level)</c>, AND THAT WAS THE WORST NUMBER BUG THE
+    /// GAME HAS HAD. `DotPower` is authored on exactly ONE skill (Pyro Burst), so every other DoT
+    /// ticked for its own DIRECT-HIT power — flat, undivided by defence, once a second, for the whole
+    /// duration. Bleeding Arrow (power 15,000 over 30s) dealt 450,000 from one arrow; Venom Stab dealt
+    /// 7,500 a second. Found in the 2026-09-10 playtest: *"bleeding trap is a bleeding arrow that does
+    /// 15k dmg each second ... i think all dots are OP"*.</para>
+    ///
+    /// <para>⚠ A skill's Power is its DIRECT HIT. A DoT rider is a SECOND number and must be authored
+    /// as one — never inferred from the first. Do not restore the fallback.</para></summary>
     public int DotPowerAt(int level)
     {
         int v = Lvl(level)?.DotPower ?? 0;
-        if (v > 0) return v;
-        return DotPower > 0 ? DotPower : PowerAt(level);
+        return v > 0 ? v : DotPower;
     }
 
     /// <summary>Heal POWER this level of the buff grants its holder (flat), falling back to the def.</summary>

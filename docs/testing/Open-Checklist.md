@@ -1,4 +1,4 @@
-# OPEN CHECKLIST — the 0.93.0 pass
+﻿# OPEN CHECKLIST — the 0.93.0 pass
 
 > **Rolling and unversioned, and this one is a CLEAN RESET** — your own instruction: *"whatever is
 > build/finishes goes to backlog/playarchive … now my finds is full and annoying but its build"*.
@@ -50,6 +50,64 @@
 ## My Finds — next pass (empty, write here)
 
 *Blank page. The previous seventeen are answered and archived.*
+
+### Playtest 2026-09-10 — the archer's 4th and the DoT layer (server fixes in **0.125.1**)
+
+Six finds, four with a single root cause each, all reproduced in code before anything was changed.
+
+- [!] **"bleeding trap is a bleeding arrow that does 15k dmg each second ... i think all dots are OP
+  ... venomancer dot does 7500"**
+  - ✅ **FIXED 0.125.1 — ONE LINE, AND IT WAS EVERY DoT IN THE GAME.** `SkillDef.DotPowerAt` fell back
+    to the skill's own **`Power`** when no `DotPower` was authored — and `DotPower` was authored on
+    **exactly one skill in the catalogue** (Pyro Burst). So every other DoT ticked for its *direct
+    hit's* power: flat, undivided by defence, once a second, for the whole duration. Bleeding Arrow
+    (power 15,000 / 30s) dealt **450,000** from one arrow; Venom Stab dealt 7,500 a second.
+  - 🔑 **A skill's Power is its DIRECT HIT. A DoT rider is a SECOND number** and has to be authored as
+    one. The fallback is gone and must not come back.
+  - 🔵 **The replacement is `Game.Shared/Skills/DotTiers.cs` — a (type, tier) → flat damage/sec table,
+    to your model** (*"ill write u each type each tire what dmg it does ... and it does it as flat
+    dmg ... just the landing rate depends on stat"*). **Its numbers are yours and are still empty**, so
+    every DoT currently ticks for **0** — deliberately, and the server logs a warning at boot saying
+    so. Fill the three arrays in and the whole layer starts working with no other change.
+  - ⚠ **One thing I assumed and want confirmed with the table:** a venom's tier damage is **per stack**
+    and multiplies by the stack count (1-10), so tier 3 × 10 stacks = ten ticks' worth. That is what
+    the code did before and what your CSVs imply (*"apply 1 venom stacks (max 10) tire 3"*), but you
+    only named the tier, not the stack rule.
+
+- [!] **"barage have no cd"**
+  - ✅ **FIXED 0.125.1 — AND IT WAS WORSE THAN NO COOLDOWN.** The channel branch sat ~80 lines too
+    early in `ExecuteSkill` and its `return` jumped over the **finish MP**, the HP cost *and* the
+    reuse. Arrow Barrage was paying only the 20% initial MP of its 208 (~42) and starting no cooldown
+    at all — a spammable ultimate at a fifth of its price. The block now lives beside the trap and
+    totem branches, on the far side of every gate a cast owes.
+  - 🔑 `CancelCast`'s comment asserting *"the wrapper's cooldown was already started when its cast
+    landed"* had been false since the channel shipped. It is true now.
+
+- [!] **"barage ... does no dmg to a training fummy"**
+  - ✅ **FIXED 0.125.1 — NO AREA SKILL IN THE GAME COULD HIT A DUMMY.** `EnemiesInRadius` opened with
+    `if (e.Dead || e.TrainingDummy) continue;`. Barrage's arrow is `TargetMode.EnemiesInRadius`, so
+    the sweep returned an empty set and ten arrows resolved against nobody. Every AoE was untestable
+    on the one thing built for testing.
+  - ⚠ A dummy still takes no HP (GodMode) — what it does now is **show the number**. Its bar was never
+    a readout anyway: it regenerates **10,000 HP/sec**.
+
+- [!] **"burs dont do nothing .. or atleast dont show that it does"** · **"i cannot see stacks on
+  enemy (need to see debuffs+stacks)"**
+  - 🔵 **THE SAME ROOT, AND IT IS NOT BUILT YET.** The stack counter is created with `Internal = true`
+    and every send path filters `!b.Internal` — but the deeper problem is that **there is no wire
+    message for a target's buffs at all**. `BuffUpdate` only ever carries your own; the party roster
+    sends debuff *names* for members; an enemy sends nothing. So you cannot see stacks build, and you
+    cannot tell whether the burst consumed them.
+  - ✅ **BUILT 0.126.0 as `BL-194`** — a selected-target concept on the server (`Entity.UiTargetId` +
+    a `SetTarget` hub method), a `TargetBuffUpdate` message pushed once a second when the list changes,
+    and the DoT's hidden counter **folded into the debuff row** so the HUD reads `Venom x7`. One line
+    under the target frame, debuffs first. ⚠ `ProtocolVersion` 35 → **36**, new APK required.
+  - 🔵 Still to confirm in play: that the burst visibly eats the pool now.
+
+- [x] **"archers dont have a trap skill"** — **nothing owed.** Answered in-session: each archer race
+  gets exactly one trap (Human = Poison, Elf = Binding, Demon = Bleeding), in the code *and* in your
+  CSVs, learnable from 40 and again at the 4th, and the trap mechanic works. You were on the Demon,
+  which holds both Bleeding **Trap** and the level-85 Bleeding **Arrow** — the 15k/sec was the Arrow.
 
 - [!] when bow expertise is inactive and showing details from the buff bar the containing window is smaller than the text
   - ✅ **FIXED 0.106.0 — and the buffs that most needed explaining were the ones that overflowed.**
