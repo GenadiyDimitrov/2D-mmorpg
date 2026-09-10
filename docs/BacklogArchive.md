@@ -3448,9 +3448,23 @@ left it alone.
 ## `BL-191` — question 1 (Blood Rage's level) ANSWERED 2026-09-10, same day (0.124.1)
 
 He answered it himself, in the only place that counts: he edited **81** into the `LEARN @ LVL` column
-of `warrior 4th.csv` and `war_aoe 4th.csv`, and moved the price with it — `200kk` SP + `25kk` gold,
-which is the shared 4th-tier ladder's 81 rung to the digit. So the toggle is bought five levels
-*after* the Overpower rung it doubles. The open text it replaces:
+of `warrior 4th.csv` and `war_aoe 4th.csv`. Asked why, he gave the reason the next message:
+
+> well some toggles will cost 50 hp .. doesnt matter if its 76/78/81 .. etc lvl .. its a toggle that
+> will cost hp and give other benifits .. and i dont want at 76 lvl warrior to start doubling at 25%
+> .. until 81 he is at base 10% .. at 81 then gets the toggle and become stronger
+
+🔑 **The five levels are a PLATEAU, and that is the whole design.** Overpower's last rung lands at 76
+and leaves the warrior on a 10% base (≈13% after a high-ATK band) for five levels; at 81 the toggle
+doubles the base to 20%, the band carries it to 26%, and `StatCaps` trims it to **25%** — the ceiling
+reached exactly once, at the end of the climb. Shipped at 76 it would have been reached on the day of
+ascension with nothing left above it.
+
+⚠ **The number 81 is not sacred — the ORDER is.** *"doesnt matter if its 76/78/81"*. If it ever
+moves, it moves *later* than Overpower's top rung, never onto it. The price follows for free: 200kk
+SP + 25kk gold is what `F4New(81)` returns, which is what he authored in the CSV to the digit.
+
+The open text it replaces:
 
 <details><summary>As filed 2026-09-10</summary>
 
@@ -3463,9 +3477,14 @@ which is the shared 4th-tier ladder's 81 rung to the digit. So the toggle is bou
 </details>
 
 🔑 **The lesson, for the next time I am tempted to pick a number for him:** the guess was defensible
-and it was still wrong, and it was wrong in a direction I could not have reasoned to — he wanted the
-toggle *gated behind its own price rung*, not handed over with the passive. Flagging it as an
+(Holy Soul, the only other 50 HP/s toggle, is a 76 skill) and it was still wrong, because I picked
+the level off the skill's *cost* while he picked it off the *ladder it sits on*. Flagging it as an
 assumption in three places is what made it a one-line fix instead of a silent mis-tuning.
+
+⚠ And the first correction I wrote was *also* wrong — I read the 200kk price as the point ("he gates
+the toggle behind its own rung") when the price is merely what `F4New(81)` happens to return. **A
+plausible rationale invented for someone else's number is still an invention**; the fix was to ask,
+which took one line and got the real answer.
 
 ---
 

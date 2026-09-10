@@ -132,7 +132,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-186` | ❓ | THE MAX LEVEL CAP — can it be removed? Parked until `BL-185` closes, on your order | systems |
 | `BL-187` | 🔵 | A THIRD RUNE combining both damage channels — engine done, the economy and stacking shape are yours | items |
 | `BL-189` | 🔵 | Weapon-type protection — `BowResist` generalised to every weapon type | combat |
-| `BL-191` | 🟡 | The SKILL MASTERIES — four authored and built (Blood Rage's level settled at 81); who ELSE gets one is open | classes |
+| `BL-191` | 🟡 | The SKILL MASTERIES — built; tank and archer ruled OUT, the ROGUE gets one and which is a playtest call | classes |
 
 ---
 
@@ -1246,11 +1246,25 @@ Rage; Warchanter 9.7% / Lightbringer 10.9% duration; Magus 5.5% reuse. Every CSV
 
 ### ❓ What is still yours
 
-1. ❓ **Does the ROGUE, the ARCHER or the TANK ever get one?** You named four groups and none of them
-   was among them, so all three read 0 / 0 / 0 today. That is built as ruled and it is defensible —
-   a blow already has its own landing roll (`BL-188`), so a rogue with a double mastery would be
-   rolling twice on one hit. But the tank and the archer have no such argument, and right now the
-   reuse-reset and duration masteries are mage-only tools by omission rather than by decision.
+1. 🟡 **THE ROGUE GETS ONE — WHICH ONE IS THE ONLY THING LEFT, AND IT IS A PLAYTEST DECISION.**
+   Ruled 2026-09-10: *"the rouge i want to have a double passive gust dont know which one .. and
+   depending his dmg after the play test ill deside byt i lean thowardds the mages one with the
+   reuse"*. So the rogue is a **yes**, the choice waits on measured damage, and the front-runner is
+   **Arcane Momentum** (the 5% reuse reset) rather than the damage double — which fits `BL-188`: a
+   blow already rolls its own landing chance, and a damage double would put two rolls on one hit
+   while a reuse reset puts none. **Nothing is built until you say which** — when you do it is one
+   `ClassSkill` line per rogue discipline plus the CSV rows, and if it is the reuse passive the
+   engine needs no change at all.
+   ⚠ **Which rogue?** Six disciplines, one per race per branch. Say whether it is the dagger branch,
+   the archer branch (see below — that is a no), or all of them.
+
+   ✅ **CLOSED the same day — the tank and the archer both get NOTHING**, and this is a decision now,
+   not an omission:
+   - **Tank — no.** *"if i give a tank some of the passives he will become even more unstopable"*.
+   - **Archer — no.** *"archer have enough skills that are always hit wit big power (not like daggers
+     80% chance)"* — his big skills already land every time, so a double on top is compensation for
+     a reliability problem he does not have. (Confirmed explicitly when asked, 2026-09-10.)
+
 2. ❓ **Does anything BUY a mastery rate besides the passive?** The engine has a buff channel
    (`SkillDef.DoubleDamageMult`) and Blood Rage is its only author. A party "Mastery Chant", a
    consumable, a rune — all one line each. Nothing is invented until you ask.

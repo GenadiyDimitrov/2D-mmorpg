@@ -71,10 +71,22 @@ public static partial class ClassSkillTables
     ///         vocabulary; the healer and buffer got a different passive in the line above it.</item>
     /// </list></para>
     ///
-    /// <para>⚠ <b>THE ROGUE, THE ARCHER AND THE TANK GET NOTHING HERE</b>, and that is not an
-    /// oversight to be tidied up later — he named four groups and they were not among them. A rogue's
-    /// blows already have their own landing stat (`BL-188`); handing him a double mastery as well
-    /// would stack two rolls on one hit.</para>
+    /// <para>⚠ <b>THE ROGUE, THE ARCHER AND THE TANK GET NOTHING HERE — TWO OF THOSE ARE FINAL, ONE
+    /// IS NOT.</b> Ruled 2026-09-10:
+    /// <list type="bullet">
+    ///   <item><b>Tank — never.</b> *"if i give a tank some of the passives he will become even more
+    ///         unstopable"*.</item>
+    ///   <item><b>Archer — never.</b> *"archer have enough skills that are always hit wit big power
+    ///         (not like daggers 80% chance)"* — his big skills already land every time, so a double
+    ///         would be compensation for a reliability problem he does not have.</item>
+    ///   <item>🟡 <b>THE ROGUE IS A YES AND IS NOT BUILT YET</b> — *"the rouge i want to have a
+    ///         double passive gust dont know which one ... i lean thowardds the mages one with the
+    ///         reuse"*. The choice waits on measured playtest damage. If it lands on Arcane Momentum
+    ///         this table gains one line per rogue discipline and the engine needs nothing; if it
+    ///         lands on the damage double, mind `BL-188` — a blow already rolls its own landing
+    ///         chance, and that would be two rolls on one hit.</item>
+    /// </list>
+    /// ⚠ Do NOT hand the rogue a mastery to "finish the table" before he names which.</para>
     ///
     /// <para>✅ Every level in this table is now a number he wrote — Blood Rage's 81 was the last
     /// assumption and he replaced it himself on 2026-09-10.</para></summary>

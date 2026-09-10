@@ -154,7 +154,9 @@ rate          = 0                                                     when base 
 
 Measured at level 90, mythic gear (`BalanceMatrix` §C1): Ravager 9.4% damage (18.8% under Blood
 Rage), Warchanter 9.7% / Lightbringer 10.9% duration, Magus 5.5% reuse. The tank, both rogue branches
-and the archer read 0/0/0 — deliberately.
+and the archer read 0/0/0 — deliberately. The **tank and the archer never get one** (ruled
+2026-09-10); the **rogue will**, most likely Arcane Momentum, once a playtest says what his damage
+looks like.
 
 Retired with this: `StatCalculator.PhysicalDoubleChance`, `min(25, 2.5 + 0.75·(ATK−30))` off the RAW
 stat — a per-race constant (Elf 7.0% / Human 10.0% / Demon 10.75%) that nothing could raise, and

@@ -114,11 +114,23 @@ public static partial class SkillCatalog
             // the PHYSICAL side — the magic channel is deliberately untouched, because a warrior
             // casting a magic skill is not what this stance is about.
             //
-            // 🔑 THE LEVEL IS 81 AND IT IS HIS. This file assumed 76 for one version; on 2026-09-10
-            // he wrote `81` into `warrior 4th.csv` and `war_aoe 4th.csv` himself, and he moved the
-            // PRICE with it — `200kk` SP + `25kk` gold is the shared 4th-tier ladder's 81 rung to
-            // the digit. So the toggle is bought five levels AFTER the Overpower rung that gives it
-            // something to double, and the 76 above is not a default to fall back to.
+            // 🔑 THE LEVEL IS 81 AND IT IS HIS — and the REASON is the rate ramp, not the price.
+            // He wrote 81 into both warrior CSVs on 2026-09-10 and then said why in as many words:
+            //
+            //   *"i dont want at 76 lvl warrior to start doubling at 25% .. until 81 he is at base
+            //     10% .. at 81 then gets the toggle and become stronger"*
+            //   *"well some toggles will cost 50 hp .. doesnt matter if its 76/78/81 .. etc lvl"*
+            //
+            // 🔑 SO THE FIVE LEVELS ARE A PLATEAU, DELIBERATELY. Overpower's last rung lands at 76
+            // and the warrior sits on a 10% base (13% after a high-ATK band) for five levels. At 81
+            // the toggle doubles the base to 20%, which the band carries to 26% and `StatCaps`
+            // trims to 25 — the ceiling, reached exactly once, at the end. Had this shipped at 76
+            // the warrior would have hit the cap the day he ascended and had nothing left to climb.
+            //
+            // ⚠ THE NUMBER 81 ITSELF IS NOT SACRED ("doesnt matter if its 76/78/81"); THE ORDER IS.
+            // If it ever moves, it moves LATER than Overpower's top rung, never onto it. The price
+            // follows the level for free: `F4New` reads the shared ladder, so 81 charges 200kk SP +
+            // 25kk gold, which is what he authored in the CSV to the digit.
             new(BloodRage, "Blood Rage", BaseClass.Fighter, SkillEffect.None,
                 MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
                 BuffKey: "blood_rage", Rank: 1,

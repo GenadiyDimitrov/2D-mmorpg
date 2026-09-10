@@ -11,7 +11,7 @@ from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVers
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-10 (latest) — 0.124.1: Blood Rage is a level **81** skill, and he priced it there
+## 2026-09-10 (latest) — 0.124.1: Blood Rage is a level **81** skill, so the cap is the end of a climb
 
 🔴 **NEW APK REQUIRED** — a learn level is part of the class-skill table, and the client builds its
 Learn tab locally from the compiled `ClassSkills`. An old APK offers the toggle at 76. The wire is
@@ -24,11 +24,20 @@ in the build. He answered it the only way that counts — by editing the CSVs:
 81,Blood Rage,blood_rage,Toggle,...,0,200kk,25kk,,,,Worth nothing without Overpower
 ```
 
-🔑 **He moved the PRICE with the level, and that is the whole point of the change.** `200kk` SP +
-`25kk` gold is `F4New(81)` to the digit — the shared 4th-tier ladder's 81 rung, not the 6.5kk/1kk of
-the 76 row the passive sits on. So the stance is not handed over alongside Overpower's last rung; it
-is bought five levels later, at forty times the SP. That is a gate, and it is not a number I would
-have reasoned my way to from "50 HP/s sounds like a 76 skill".
+🔑 **The five levels are a PLATEAU, and that is the point.** His reason, given in as many words:
+
+> i dont want at 76 lvl warrior to start doubling at 25% .. until 81 he is at base 10% .. at 81 then
+> gets the toggle and become stronger
+
+Overpower's last rung lands at 76 and leaves the warrior on a **10%** base — ≈13% once the high-ATK
+band is applied — for five levels. At 81 the toggle doubles the base to 20%, the band carries that to
+26%, and `StatCaps.SkillMasteryRateMax` trims it to **25%**: the ceiling is reached exactly once, at
+the end of the climb, rather than on the day he ascends.
+
+⚠ **The number 81 is not sacred — the ORDER is.** *"doesnt matter if its 76/78/81 .. etc lvl"*. If it
+ever moves it moves *later* than Overpower's top rung, never onto it. The price follows for free,
+because `F4New` reads the shared ladder: 81 charges `200kk` SP + `25kk` gold, which is what he
+authored in the CSV to the digit.
 
 Changed: `ClassSkillTables.Fourth.cs` (the one `ClassSkill` line, 76 → 81) and
 `Skills.SkillMasteries.cs` (the def now reads `F4New(81)` for both `SpCost` and its single rung's
