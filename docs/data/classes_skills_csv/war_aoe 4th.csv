@@ -3,4 +3,4 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 ,,,,,,,,,,,,,,,,,,,----------------------------Overpower----------------------------
 76,Overpower,overpower,passive,,,0,0,self/single,0,0,0,double rate 10% - skills marked [Double] strike for DOUBLE damage that often - scales with ATK - without this passive NO skill can double,0,6.5kk,1kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Blood Rage----------------------------
-76,Blood Rage,blood_rage,Toggle,,,0,0,self/single,0,0,0,Doubles the base of Overpower; increases P.MP consumation by 25%; Consume 50 HP/s,0,6.5kk,1kk,,,,Worth nothing without Overpower - it doubles that base and no other
+81,Blood Rage,blood_rage,Toggle,,,0,0,self/single,0,0,0,Doubles the base of Overpower; increases P.MP consumation by 25%; Consume 50 HP/s,0,200kk,25kk,,,,Worth nothing without Overpower - it doubles that base and no other

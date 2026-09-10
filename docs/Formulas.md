@@ -148,7 +148,7 @@ rate          = 0                                                     when base 
 | Passive | Who | Learn | Base |
 |---|---|---|---|
 | **Overpower** | Warrior, then Ravager + Warlord | 20 / 40 / 76 | 3% / 7% / 10% |
-| **Blood Rage** (toggle) | Ravager + Warlord | 76 | ×2 on Overpower's base; 50 HP/s, +25% MP on physical skills |
+| **Blood Rage** (toggle) | Ravager + Warlord | 81 | ×2 on Overpower's base; 50 HP/s, +25% MP on physical skills |
 | **Lasting Enchantment** | Lightbringer + Warchanter | 76 | 10% |
 | **Arcane Momentum** | Magus | 76 | 5% |
 

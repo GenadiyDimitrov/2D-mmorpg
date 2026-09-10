@@ -29,8 +29,8 @@ public static partial class SkillCatalog
     /// <summary>WARRIOR + AoE WARRIOR — the double-damage mastery. 3 / 7 / 10% at 20 / 40 / 76.</summary>
     public const string Overpower = "overpower";
 
-    /// <summary>WARRIOR + AoE WARRIOR — the toggle that doubles Overpower's base. 50 HP/s,
-    /// +25% MP on physical skills.</summary>
+    /// <summary>WARRIOR + AoE WARRIOR — the toggle that doubles Overpower's base. Learned at 81.
+    /// 50 HP/s, +25% MP on physical skills.</summary>
     public const string BloodRage = "blood_rage";
 
     /// <summary>BUFFER + HEALER — the duration mastery. 10% at 76.</summary>
@@ -48,8 +48,11 @@ public static partial class SkillCatalog
     private static SkillDef[] SkillMasterySkills()
     {
         // 4th-tier prices come from the shared ladder (`shared 4th.csv`'s 76 row: 6.5kk SP + 1kk
-        // gold), so a mastery costs what every other 76 passive costs.
+        // gold), so a mastery costs what every other 76 passive costs. Blood Rage is the exception:
+        // it is learned at 81 and pays THAT rung — 200kk SP + 25kk gold, which is what he wrote into
+        // both warrior files on 2026-09-10 and exactly what `F4New(81)` returns.
         var (sp76, gold76) = F4New(76);
+        var (sp81, gold81) = F4New(81);
 
         return new SkillDef[]
         {
@@ -111,21 +114,21 @@ public static partial class SkillCatalog
             // the PHYSICAL side — the magic channel is deliberately untouched, because a warrior
             // casting a magic skill is not what this stance is about.
             //
-            // ⚠ THE LEVEL IS AN ASSUMPTION. He gave this skill no learn level, only its effects, in
-            // a sub-bullet under the 20/40/76 ladder. 76 is the defensible read: 50 HP/s is a 4th
-            // class's price (Holy Soul, the only other HP-drain toggle in the game, is 50 HP/s at
-            // 76), and at level 20 it would kill a warrior in under a minute. If he meant 40, this
-            // is the one line to move.
+            // 🔑 THE LEVEL IS 81 AND IT IS HIS. This file assumed 76 for one version; on 2026-09-10
+            // he wrote `81` into `warrior 4th.csv` and `war_aoe 4th.csv` himself, and he moved the
+            // PRICE with it — `200kk` SP + `25kk` gold is the shared 4th-tier ladder's 81 rung to
+            // the digit. So the toggle is bought five levels AFTER the Overpower rung that gives it
+            // something to double, and the 76 above is not a default to fall back to.
             new(BloodRage, "Blood Rage", BaseClass.Fighter, SkillEffect.None,
                 MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
                 BuffKey: "blood_rage", Rank: 1,
-                Category: SkillCategory.Buff, SpCost: sp76,
+                Category: SkillCategory.Buff, SpCost: sp81,
                 TargetMode: TargetMode.SelfOnly,
                 Toggle: true, CountsTowardBuffLimit: false,
                 HpPerSecond: 50,
                 DoubleDamageMult: 2f,
                 PhysMpCostPct: -0.25f,
-                Levels: new[] { new SkillLevel(SpCost: sp76, GoldCost: gold76) },
+                Levels: new[] { new SkillLevel(SpCost: sp81, GoldCost: gold81) },
                 Description: "Stance. Your Overpower chance is DOUBLED, but every physical skill "
                            + "costs 25% more MP and you burn 50 HP a second."),
 

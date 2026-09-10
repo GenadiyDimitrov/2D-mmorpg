@@ -61,7 +61,8 @@ public static partial class ClassSkillTables
     ///
     /// <para>🔑 <b>FOUR ARCHETYPES, FOUR DIFFERENT ANSWERS</b>, and the split is the design:
     /// <list type="bullet">
-    ///   <item><b>Ravager + Warlord</b> — Overpower rung 3 (10%) AND the Blood Rage toggle. The only
+    ///   <item><b>Ravager + Warlord</b> — Overpower rung 3 (10%) at 76 AND the Blood Rage toggle at
+    ///         <b>81</b> (his own level, written into both warrior CSVs 2026-09-10). The only
     ///         line in the game that can double a skill's damage, and the only tool that doubles the
     ///         doubler.</item>
     ///   <item><b>Lightbringer + Warchanter</b> — Lasting Enchantment (10%): the buff/debuff duration
@@ -75,8 +76,8 @@ public static partial class ClassSkillTables
     /// blows already have their own landing stat (`BL-188`); handing him a double mastery as well
     /// would stack two rolls on one hit.</para>
     ///
-    /// <para>⚠ Blood Rage's LEVEL is the one assumption in this table — see Skills.SkillMasteries.cs.
-    /// Everything else is a number he wrote.</para></summary>
+    /// <para>✅ Every level in this table is now a number he wrote — Blood Rage's 81 was the last
+    /// assumption and he replaced it himself on 2026-09-10.</para></summary>
     private static void RegisterSkillMasteriesFourth()
     {
         foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
@@ -84,7 +85,7 @@ public static partial class ClassSkillTables
             foreach (var d in new[] { Discipline.Ravager, Discipline.Warlord })
                 ClassSkills.RegisterFourth(race, d,
                     new ClassSkill(Overpower, 76, SkillLevel: 3),
-                    new ClassSkill(BloodRage, 76, SkillLevel: 1));
+                    new ClassSkill(BloodRage, 81, SkillLevel: 1));
 
             foreach (var d in new[] { Discipline.Lightbringer, Discipline.Warchanter })
                 ClassSkills.RegisterFourth(race, d,

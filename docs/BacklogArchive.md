@@ -3445,6 +3445,30 @@ left it alone.
 
 ---
 
+## `BL-191` — question 1 (Blood Rage's level) ANSWERED 2026-09-10, same day (0.124.1)
+
+He answered it himself, in the only place that counts: he edited **81** into the `LEARN @ LVL` column
+of `warrior 4th.csv` and `war_aoe 4th.csv`, and moved the price with it — `200kk` SP + `25kk` gold,
+which is the shared 4th-tier ladder's 81 rung to the digit. So the toggle is bought five levels
+*after* the Overpower rung it doubles. The open text it replaces:
+
+<details><summary>As filed 2026-09-10</summary>
+
+1. 🟡 **BLOOD RAGE'S LEVEL IS AN ASSUMPTION — the only one in the build.** You gave the toggle its
+   effects but no learn level, in a sub-bullet under the 20/40/76 ladder. It is at **76**, because
+   Holy Soul (the only other 50 HP/s toggle in the game) is a 76 skill and because 50 HP/s at level
+   20 kills a warrior in under a minute. **Say the word and it moves to 40** — it is one line in
+   `ClassSkillTables.Fourth.cs` and two CSV rows.
+
+</details>
+
+🔑 **The lesson, for the next time I am tempted to pick a number for him:** the guess was defensible
+and it was still wrong, and it was wrong in a direction I could not have reasoned to — he wanted the
+toggle *gated behind its own price rung*, not handed over with the passive. Flagging it as an
+assumption in three places is what made it a one-line fix instead of a silent mis-tuning.
+
+---
+
 ## `BL-191` — its original text, superseded 2026-09-10 the same day it was filed
 
 He authored all four passives within the hour, so the "nothing grants them" entry never described a

@@ -132,7 +132,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-186` | ❓ | THE MAX LEVEL CAP — can it be removed? Parked until `BL-185` closes, on your order | systems |
 | `BL-187` | 🔵 | A THIRD RUNE combining both damage channels — engine done, the economy and stacking shape are yours | items |
 | `BL-189` | 🔵 | Weapon-type protection — `BowResist` generalised to every weapon type | combat |
-| `BL-191` | 🟡 | The SKILL MASTERIES — four authored and built; Blood Rage's level, and who else gets one, are open | classes |
+| `BL-191` | 🟡 | The SKILL MASTERIES — four authored and built (Blood Rage's level settled at 81); who ELSE gets one is open | classes |
 
 ---
 
@@ -1236,7 +1236,7 @@ authored the passives that switch it on. What is left is a short list of choices
 | Skill | Who | Learn | Base |
 |---|---|---|---|
 | **Overpower** | Warrior → Ravager + Warlord | 20 / 40 / 76 | 3% / 7% / 10% double damage |
-| **Blood Rage** (Toggle) | Ravager + Warlord | 76 | ×2 on Overpower's base; 50 HP/s, +25% MP on physical skills |
+| **Blood Rage** (Toggle) | Ravager + Warlord | **81** | ×2 on Overpower's base; 50 HP/s, +25% MP on physical skills |
 | **Lasting Enchantment** | Lightbringer + Warchanter | 76 | 10% buff/debuff duration double |
 | **Arcane Momentum** | Magus | 76 | 5% reuse reset |
 
@@ -1246,20 +1246,15 @@ Rage; Warchanter 9.7% / Lightbringer 10.9% duration; Magus 5.5% reuse. Every CSV
 
 ### ❓ What is still yours
 
-1. 🟡 **BLOOD RAGE'S LEVEL IS AN ASSUMPTION — the only one in the build.** You gave the toggle its
-   effects but no learn level, in a sub-bullet under the 20/40/76 ladder. It is at **76**, because
-   Holy Soul (the only other 50 HP/s toggle in the game) is a 76 skill and because 50 HP/s at level
-   20 kills a warrior in under a minute. **Say the word and it moves to 40** — it is one line in
-   `ClassSkillTables.Fourth.cs` and two CSV rows.
-2. ❓ **Does the ROGUE, the ARCHER or the TANK ever get one?** You named four groups and none of them
+1. ❓ **Does the ROGUE, the ARCHER or the TANK ever get one?** You named four groups and none of them
    was among them, so all three read 0 / 0 / 0 today. That is built as ruled and it is defensible —
    a blow already has its own landing roll (`BL-188`), so a rogue with a double mastery would be
    rolling twice on one hit. But the tank and the archer have no such argument, and right now the
    reuse-reset and duration masteries are mage-only tools by omission rather than by decision.
-3. ❓ **Does anything BUY a mastery rate besides the passive?** The engine has a buff channel
+2. ❓ **Does anything BUY a mastery rate besides the passive?** The engine has a buff channel
    (`SkillDef.DoubleDamageMult`) and Blood Rage is its only author. A party "Mastery Chant", a
    consumable, a rune — all one line each. Nothing is invented until you ask.
-4. 🔵 **The ladders stop where you stopped them.** Overpower has three rungs because you named three;
+3. 🔵 **The ladders stop where you stopped them.** Overpower has three rungs because you named three;
    Lasting Enchantment, Arcane Momentum and Blood Rage have one each. `warrior 4th.csv` and
    `war_aoe 4th.csv` now carry the 4th-tier header and those two rows with a banner saying the rest
    is yours — neither earns a `Check.Specs` line until you finish the file.

@@ -7,11 +7,47 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.124.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.124.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-10 (latest) — 0.124.0: four passives turn `[Double]` back on (`BL-191`)
+## 2026-09-10 (latest) — 0.124.1: Blood Rage is a level **81** skill, and he priced it there
+
+🔴 **NEW APK REQUIRED** — a learn level is part of the class-skill table, and the client builds its
+Learn tab locally from the compiled `ClassSkills`. An old APK offers the toggle at 76. The wire is
+untouched: `ProtocolVersion` stays **35**.
+
+0.124.0 shipped Blood Rage at **76** and said, in three places, that the level was the one assumption
+in the build. He answered it the only way that counts — by editing the CSVs:
+
+```
+81,Blood Rage,blood_rage,Toggle,...,0,200kk,25kk,,,,Worth nothing without Overpower
+```
+
+🔑 **He moved the PRICE with the level, and that is the whole point of the change.** `200kk` SP +
+`25kk` gold is `F4New(81)` to the digit — the shared 4th-tier ladder's 81 rung, not the 6.5kk/1kk of
+the 76 row the passive sits on. So the stance is not handed over alongside Overpower's last rung; it
+is bought five levels later, at forty times the SP. That is a gate, and it is not a number I would
+have reasoned my way to from "50 HP/s sounds like a 76 skill".
+
+Changed: `ClassSkillTables.Fourth.cs` (the one `ClassSkill` line, 76 → 81) and
+`Skills.SkillMasteries.cs` (the def now reads `F4New(81)` for both `SpCost` and its single rung's
+`GoldCost`). Overpower is untouched at 20/40/76. `Formulas.md` and `BL-191`'s table moved with it, and
+`BL-191`'s open question 1 is answered and cut to `BacklogArchive.md` — what is still open there is
+only *who else, if anyone, gets a mastery*.
+
+⚠ The 81 row is authored in **both** warrior files (`warrior 4th.csv` and `war_aoe 4th.csv`) — they
+are the same two rows in two files because Ravager and Warlord share this pair. Neither file earns a
+`Check.Specs` line yet; the rest of both is still his to write.
+
+### Files
+
+`GameConstants.cs` (0.124.1) · `ClassSkillTables.Fourth.cs` · `Skills.SkillMasteries.cs` ·
+`warrior 4th.csv` + `war_aoe 4th.csv` (his) · `Formulas.md` · `Backlog.md` + `BacklogArchive.md`
+
+---
+
+## 2026-09-10 — 0.124.0: four passives turn `[Double]` back on (`BL-191`)
 
 🔴 **NEW APK REQUIRED** — the class-skill tables changed (four new learnable skills), and the client
 builds its Learn tab locally from the compiled `ClassSkills`.
@@ -93,7 +129,8 @@ top of it was never the design, and no rogue has Overpower anyway. Bow and sword
 - ⚠ **Blood Rage's LEVEL is the one assumption in this build.** He gave the toggle its effects but no
   learn level, in a sub-bullet under the 20/40/76 ladder. 76 is the defensible read — Holy Soul, the
   only other 50 HP/s toggle in the game, is a 76 skill, and at level 20 this would kill a warrior in
-  under a minute. One line to move if he meant 40.
+  under a minute. One line to move if he meant 40. → **He meant 81. Corrected in 0.124.1 above**, with
+  the 81 price rung to match; neither 76 nor 40.
 
 ### Files
 
