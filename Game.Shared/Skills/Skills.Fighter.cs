@@ -42,8 +42,17 @@ public static partial class SkillCatalog
     public const string Strike = "strike";                    // sword/blunt attack (can double)
     public const string Stab = "stab";                        // dual BLOW (full on crit, else 10%)
     public const string Shot = "shot";                        // bow ranged attack
-    public const string FighterArmorMastery = "fighter_armor_mastery";   // all-weight def + mpReg
+    public const string FighterArmorMastery = "fighter_armor_mastery";   // all-weight flat P.Def
     public const string FighterWeaponMastery = "fighter_weapon_mastery"; // any-weapon +p.Atk
+    // 🔑 THE ×1.1 MP REGEN LEFT `fighter_armor_mastery` AND BECAME A SKILL OF ITS OWN, 2026-09-11 —
+    //  his `fighter 1st.csv` edit, in his own words: *"fixed fighter 1st all fighters to get a passive
+    //  for x1.1 (i was mistaken when i though it was a multi/additive mistake .. so all fighters now
+    //  get their x1.1 mp regen)"*. It HAD to move to be "all fighters": every 2nd-class armour mastery
+    //  carries `Replaces: [fighter_armor_mastery]`, so the regen died at the class change and survived
+    //  only where the replacing mastery happened to re-state `MpRegenPct: 0.1f` — the warrior and the
+    //  rogue did, the TANK never has. One skill that nothing replaces gives it to all four for good.
+    //  ⚠ Which is also why it is NOT in anybody's `Replaces` list. Adding it to one is the bug.
+    public const string FighterSpiritMastery = "fighter_spirit_mastery"; // any-weight ×1.1 MP regen
 
     // 2nd-class continuations of the base attack chain (each REPLACES the base skill(s) —
     // same pattern as the mage bolt chain). Warriors keep only melee; rogues keep stab+bow.
@@ -60,6 +69,13 @@ public static partial class SkillCatalog
     public const string BattleRegeneration = "battle_regeneration";// self-heal 10% max HP
     public const string BattlePresence = "battle_presence";        // HP<60% stance: +p.Atk
     public const string BattleDefence = "battle_defence";          // HP<60% stance: +p.Def
+    // The two his 2026-09-11 `warrior 2nd.csv` pass added, both continuing into `warrior 3rd.csv`
+    // and `war_aoe 3rd.csv`.
+    public const string BattleResilience = "battle_resilience";    // self buff: CC + cancel resistance
+    // ⚠ `_active` IS PART OF HIS ID, and his own Comment column says why: *"_actvie because for
+    //   balance later we can add a passive to other classes as well"*. He is holding the bare
+    //   `monster_knowledge` for a passive twin. Don't "tidy" the suffix away.
+    public const string MonsterKnowledgeActive = "monster_knowledge_active"; // self buff: +PvE damage
 
     // --- Tank 2nd-class (CSV tank 2nd) ---
     public const string TankShieldMastery = "tank_shield_mastery"; // passive: +shield def/rate + bow resist
@@ -75,21 +91,61 @@ public static partial class SkillCatalog
 
     // Base-fighter armor mastery per level (@5/10/15): flat P.Def + MP-regen for ALL weights;
     // at level 3 light armor also aids evasion. No off-weight penalty (fighters adapt).
+    // ⚠ NO MP REGEN HERE SINCE 2026-09-11 — his rows now read a bare "P.Def + 9" and the ×1.1 is
+    //   `fighter_spirit_mastery`'s whole payload. See the note on that const for why it moved.
     private static readonly ArmorMasteryProfile[] FighterArmorLevels = new[]
     {
         new ArmorMasteryProfile(
-            new StatMods(PDef: 9,  MpRegenPct: 0.1f),
-            new StatMods(PDef: 9,  MpRegenPct: 0.1f),
-            new StatMods(PDef: 9,  MpRegenPct: 0.1f)),
+            new StatMods(PDef: 9),
+            new StatMods(PDef: 9),
+            new StatMods(PDef: 9)),
         new ArmorMasteryProfile(
-            new StatMods(PDef: 12, MpRegenPct: 0.1f),
-            new StatMods(PDef: 12, MpRegenPct: 0.1f),
-            new StatMods(PDef: 12, MpRegenPct: 0.1f)),
+            new StatMods(PDef: 12),
+            new StatMods(PDef: 12),
+            new StatMods(PDef: 12)),
         new ArmorMasteryProfile(
-            new StatMods(PDef: 14, MpRegenPct: 0.1f),
-            new StatMods(PDef: 14, MpRegenPct: 0.1f, Evasion: 3),
-            new StatMods(PDef: 14, MpRegenPct: 0.1f)),
+            new StatMods(PDef: 14),
+            new StatMods(PDef: 14, Evasion: 3),
+            new StatMods(PDef: 14)),
     };
+
+    /// <summary>One rung of Monster Knowledge: the SAME fraction on all three PvE damage channels.
+    /// A helper rather than three literals per rung so a rung can never set two of the three — the
+    /// exact bug that would read as "my basic attacks ignore my own buff".</summary>
+    /// <summary>One rung of Battle Presence. <paramref name="atkPct"/> is the BONUS, not the
+    /// multiplier — his "p.Atk x1.50" is 0.50 here, the same convention every BuffPhysAtk magnitude
+    /// in the catalog uses.</summary>
+    private static SkillLevel BattleStanceRung(float atkPct, int acc, int mp, int sp) =>
+        new SkillLevel(MpCost: mp, SpCost: sp,
+            Magnitudes: new EffectMagnitude[]
+            {
+                new(SkillEffect.BuffPhysAtk, atkPct),
+                new(SkillEffect.BuffAccuracy, acc, ModifierMode.Flat),
+            },
+            Description: $"×{1f + atkPct:0.00} P.Atk and +{acc} accuracy for 90s, at ≤60% HP.");
+
+    /// <summary>One rung of Battle Defence. Same convention: his "p.Def x2" is 1.0 here.</summary>
+    private static SkillLevel BattleDefenceRung(float defPct, int mp, int sp) =>
+        new SkillLevel(MpCost: mp, SpCost: sp,
+            Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffDef, defPct, ModifierMode.Percent) },
+            Description: $"×{1f + defPct:0.0} P.Def for 90s, at ≤60% HP.");
+
+    /// <summary>One rung of Battle Regeneration: a PERCENT of max HP, so it keeps pace with the class
+    /// that learns it without a power number to re-tune.</summary>
+    private static SkillLevel BattleRegenRung(float pct, int mp, int sp) =>
+        new SkillLevel(MpCost: mp, SpCost: sp,
+            Magnitudes: new EffectMagnitude[] { new(SkillEffect.Heal, pct, ModifierMode.Percent) },
+            Description: $"Restores {pct * 100:0}% of your maximum HP instantly (90s reuse).");
+
+    private static SkillLevel MonsterKnowledgeRung(float pct, int mp, int sp) =>
+        new SkillLevel(MpCost: mp, SpCost: sp,
+            Magnitudes: new EffectMagnitude[]
+            {
+                new(SkillEffect.BuffPveSkillDamage, pct, ModifierMode.Percent),
+                new(SkillEffect.BuffPveMagicDamage, pct, ModifierMode.Percent),
+                new(SkillEffect.BuffPveBasicDamage, pct, ModifierMode.Percent),
+            },
+            Description: $"+{pct * 100:0}% damage to monsters for 10 minutes.");
 
     private static SkillDef[] FighterSkills() => new SkillDef[]
     {
@@ -140,7 +196,7 @@ public static partial class SkillCatalog
         new(FighterArmorMastery, "Armor Mastery", BaseClass.Fighter, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive,
-            Description: "Passive. Improves defence and MP regen with any armor weight "
+            Description: "Passive. Improves defence with any armor weight "
                        + "(light armor also aids evasion at higher levels).",
             Levels: new[]
             {
@@ -149,6 +205,18 @@ public static partial class SkillCatalog
                 new SkillLevel(SpCost: 910),
             },
             ArmorMasteryLevels: FighterArmorLevels),
+
+        // Spirit Mastery — base fighter, ×1.1 MP regen on ANY weight, ONE rung at 5 (SP 160).
+        // 🔑 NOTHING REPLACES IT, which is the entire reason it is its own skill rather than a line
+        // on Armor Mastery. A level-74 warrior in plate is still wearing this rung.
+        new(FighterSpiritMastery, "Spirit Mastery", BaseClass.Fighter, SkillEffect.None,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+            Category: SkillCategory.Passive,
+            Description: "Passive. Your MP regenerates 10% faster, whatever you are wearing.",
+            Levels: new[]
+            {
+                new SkillLevel(SpCost: 160, Passive: new PassiveEffect(MpRegenPct: 0.1f)),
+            }),
 
         // Weapon Mastery — base fighter, flat + % attack power with ANY weapon.
         new(FighterWeaponMastery, "Weapon Mastery", BaseClass.Fighter, SkillEffect.None,
@@ -222,12 +290,28 @@ public static partial class SkillCatalog
 
         // ===== Warrior 2nd-class (CSV warrior 2nd) =====
 
-        // Battle Regeneration — instant self-heal for 10% of max HP (short cast, 90s cooldown).
+        // Battle Regeneration — instant self-heal for a % of max HP (short cast, 90s cooldown).
+        // SIX rungs since 2026-09-11: 10% at 28 (2nd class), then 15/20/25% at 40/49/58 on BOTH
+        // warrior disciplines, and 30/35% at 64/70 on the WARLORD alone — the Ravager's file stops at
+        // 25% because he spends those two levels on the Battle stances the Warlord never learns.
+        // ⚠ EVERY 3rd-TIER ROW OF HIS AUTHORS MP 0. Written through as 0, not "inherited": a blank
+        //   would fall back to the def's 25 and quietly invent a price he did not write. If that turns
+        //   out to be an unfilled column rather than a decision, it is six numbers, and the SP is
+        //   authored on all six — which is what a filled-in row looks like.
         new(BattleRegeneration, "Battle Regeneration", BaseClass.Fighter, SkillEffect.Heal,
             MpCost: 25, CastTicks: 5, CooldownTicks: 900, Range: 0, Power: 0,
             Category: SkillCategory.Heal, PhysicalCast: true, TargetMode: TargetMode.SelfOnly, SpCost: 6000,
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.Heal, 0.10f, ModifierMode.Percent) },
-            Description: "Restores 10% of your maximum HP instantly (90s reuse)."),
+            Description: "Restores a share of your maximum HP instantly (90s reuse).",
+            Levels: new[]
+            {
+                BattleRegenRung(0.10f, mp: 25, sp: 6_000),
+                BattleRegenRung(0.15f, mp: 0,  sp: 28_000),
+                BattleRegenRung(0.20f, mp: 0,  sp: 65_000),
+                BattleRegenRung(0.25f, mp: 0,  sp: 88_000),
+                BattleRegenRung(0.30f, mp: 0,  sp: 190_000),
+                BattleRegenRung(0.35f, mp: 0,  sp: 390_000),
+            }),
 
         // Battle Presence — LOW-HP offensive stance (usable only at ≤60% HP): +35% P.Atk and
         // +2 accuracy for 90s. Requires a sword/blunt; shares the "battle_stance" key with
@@ -236,6 +320,16 @@ public static partial class SkillCatalog
             SkillEffect.BuffPhysAtk | SkillEffect.BuffAccuracy,
             MpCost: 20, CastTicks: 5, CooldownTicks: 3000, Range: 0, Power: 0,
             DurationTicks: 900, BuffKey: "battle_stance", Rank: 1, CountsTowardBuffLimit: false,
+            // 🔑 `FlatRank: true` ON BOTH STANCES, required from the moment either grew a second rung
+            // (the `BL-85` startup guard refuses the pair otherwise, and it was right to). They SHARE
+            // `battle_stance` on purpose so casting either evicts the other — his *"cannot be used
+            // with Battle Defence"* — and that is the same "one or the other, never both" pair Great
+            // Might / Great Bulwark are. Carrying the level in the rank would let a Ravager's Lv3
+            // Presence lock out his own Lv3 Defence, which is the opposite of the ruling.
+            // ⚠ The usual cost of FlatRank — rung 1 and rung 3 competing as equals — cannot bite here:
+            //   both are SelfOnly and a character casts only his highest LEARNED rung, so two rungs of
+            //   one stance never exist on one bar.
+            FlatRank: true,
             Category: SkillCategory.Buff, PhysicalCast: true, TargetMode: TargetMode.SelfOnly, SpCost: 11000,
             RequireHpBelowFraction: 0.60f, RequiredWeapon: WeaponType.AnySword | WeaponType.AnyBlunt, RequiredHands: WeaponHands.Two,
             Magnitudes: new EffectMagnitude[]
@@ -243,19 +337,108 @@ public static partial class SkillCatalog
                 new(SkillEffect.BuffPhysAtk, 0.35f),
                 new(SkillEffect.BuffAccuracy, 2, ModifierMode.Flat),
             },
-            Description: "A desperate offensive: +35% P.Atk and +2 accuracy for 90s. Usable only at "
-                       + "≤60% HP with a sword/blunt. Cannot be combined with Battle Defence."),
+            Description: "A desperate offensive: greatly increased P.Atk and accuracy for 90s. Usable "
+                       + "only at ≤60% HP with a two-handed sword/blunt. Cannot be combined with "
+                       + "Battle Defence.",
+            // THREE rungs since 2026-09-11: 32 (2nd class), then 46 and 55 on the RAVAGER alone —
+            // `war_aoe 3rd.csv` has no Battle Presence row at all, and no Battle Defence either.
+            // ⚠ His 3rd-tier rows leave the WEAPON cell empty but the DESCR still says *"requres 2h
+            //   sword/blunt"*, so the def's gate is unchanged. The free-text is the authority there,
+            //   exactly as it is on every other requirement that a column cannot express.
+            // ⚠ MP 0 on both new rungs, his column — see the note on Battle Regeneration above.
+            Levels: new[]
+            {
+                BattleStanceRung(0.35f, acc: 2, mp: 20, sp: 11_000),
+                BattleStanceRung(0.50f, acc: 4, mp: 0,  sp: 40_000),
+                BattleStanceRung(0.65f, acc: 6, mp: 0,  sp: 80_000),
+            }),
 
         // Battle Defence — LOW-HP defensive stance (usable only at ≤60% HP): DOUBLE P.Def for
         // 90s. Shares "battle_stance" with Battle Presence (mutually exclusive).
         new(BattleDefence, "Battle Defence", BaseClass.Fighter, SkillEffect.BuffDef,
             MpCost: 20, CastTicks: 5, CooldownTicks: 3000, Range: 0, Power: 0,
             DurationTicks: 900, BuffKey: "battle_stance", Rank: 1, CountsTowardBuffLimit: false,
+            FlatRank: true,   // see the note on Battle Presence — the shared key is the whole point
             Category: SkillCategory.Buff, PhysicalCast: true, TargetMode: TargetMode.SelfOnly, SpCost: 20000,
             RequireHpBelowFraction: 0.60f,
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffDef, 1.0f, ModifierMode.Percent) },
-            Description: "A desperate defence: DOUBLES your P.Def for 90s. Usable only at ≤60% HP. "
-                       + "Cannot be combined with Battle Presence."),
+            Description: "A desperate defence: multiplies your P.Def for 90s. Usable only at ≤60% HP. "
+                       + "Cannot be combined with Battle Presence.",
+            // THREE rungs since 2026-09-11: 36 (2nd class), then 43 and 52 on the RAVAGER alone.
+            // ✅ ×2 → ×2.5 → ×3, a clean +0.5 a rung — `BL-200`, ruled 2026-09-11: *"Battle defense
+            //    is x2->x2.5->x3 ... Typo on both"*. His file's top rung read ×2.3, which made the
+            //    74k-SP rung WEAKER than the 42k one below it; `--check`'s LADDER DIP found it and
+            //    the CSV cell moved with this line, in the same commit.
+            // ⚠ The magnitude is the BONUS, not the multiplier — ×3.0 is 2.0f here.
+            Levels: new[]
+            {
+                BattleDefenceRung(1.0f, mp: 20, sp: 20_000),
+                BattleDefenceRung(1.5f, mp: 0,  sp: 42_000),
+                BattleDefenceRung(2.0f, mp: 0,  sp: 74_000),
+            }),
+
+        // Battle Resilience — self buff, 60s, 150s reuse: *"Increase resistance to Stun/Shock,
+        // Hold/Bind and Buff-Removal Attacks with 40%"* (`warrior 2nd.csv` @36, continued at 49/62).
+        //
+        // 🔑 HIS SENTENCE NAMES THREE THINGS AND THEY ARE THREE DIFFERENT CHANNELS, which is why this
+        // is not one number:
+        //   • Stun/Shock and Hold/Bind land through the ATK-vs-CON/WIT contest, and the contest is
+        //     defended per SCHOOL — CcResistPhysical (CON) against a warrior's shield bash,
+        //     CcResistMagical (SPT) against a mage's root. He named the EFFECTS, not a school, so
+        //     both get the number; taking only one would have left the warrior naked to half the
+        //     stuns in the game and the CSV would never have said so.
+        //   • "Buff-Removal" is the Cancel channel and has its own roll entirely
+        //     (SkillEffect.BuffCancelResist, rolled per buff when a dispel lands).
+        // ⚠ NOT `CountsTowardBuffLimit: false` — the Battle stances are exempt because they are a
+        //   low-HP emergency, and this is an ordinary 60-second cooldown-gated buff.
+        new(BattleResilience, "Battle Resilience", BaseClass.Fighter, SkillEffect.BuffCancelResist,
+            MpCost: 20, CastTicks: 5, CooldownTicks: 1500, Range: 0, Power: 0,
+            DurationTicks: 600, BuffKey: "battle_resilience", Rank: 1,
+            Category: SkillCategory.Buff, PhysicalCast: true, TargetMode: TargetMode.SelfOnly,
+            Description: "Braces you against control: greatly increased resistance to stun, hold and "
+                       + "buff-stripping attacks for 60s.",
+            Levels: new[]
+            {
+                new SkillLevel(SpCost: 20_000, MpCost: 20,
+                    CcResistPhysical: 0.40f, CcResistMagical: 0.40f,
+                    Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffCancelResist, 0.40f, ModifierMode.Percent) },
+                    Description: "+40% resistance to stun/hold and to buff removal, 60s."),
+                new SkillLevel(SpCost: 65_000, MpCost: 40,
+                    CcResistPhysical: 0.60f, CcResistMagical: 0.60f,
+                    Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffCancelResist, 0.60f, ModifierMode.Percent) },
+                    Description: "+60% resistance to stun/hold and to buff removal, 60s."),
+                new SkillLevel(SpCost: 170_000, MpCost: 60,
+                    CcResistPhysical: 0.80f, CcResistMagical: 0.80f,
+                    Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffCancelResist, 0.80f, ModifierMode.Percent) },
+                    Description: "+80% resistance to stun/hold and to buff removal, 60s."),
+            }),
+
+        // Monster Knowledge — self buff, TEN MINUTES, 5s reuse: *"Increase PVE Dmg with 5%"*
+        // (`warrior 2nd.csv` @32, continued 10/15/20/25/30% on both 3rd-class files).
+        //
+        // 🔑 "PVE Dmg" IS ALL THREE PvE CHANNELS. The damage-out matrix is 2×3 — context (PvE/PvP) ×
+        // source (physical skill / magic / basic) — and his sentence names the context and says
+        // nothing about the source, so all three PvE bits are set. Setting only the skill channel
+        // would have made a warrior's basic attacks, which are most of his damage between reuses,
+        // silently exempt from his own buff.
+        // ⚠ The three PvP bits stay OFF. That is his line too, by omission, and it is the whole point
+        //   of the field existing: this is a farming tool, not a duelling one.
+        new(MonsterKnowledgeActive, "Monster Knowledge", BaseClass.Fighter,
+            SkillEffect.BuffPveSkillDamage | SkillEffect.BuffPveMagicDamage | SkillEffect.BuffPveBasicDamage,
+            MpCost: 20, CastTicks: 10, CooldownTicks: 50, Range: 0, Power: 0,
+            DurationTicks: 6000, BuffKey: "monster_knowledge", Rank: 1,
+            Category: SkillCategory.Buff, PhysicalCast: true, TargetMode: TargetMode.SelfOnly,
+            Description: "What you know about a creature, you know how to kill: your damage against "
+                       + "MONSTERS is increased for 10 minutes. Does nothing in PvP.",
+            Levels: new[]
+            {
+                MonsterKnowledgeRung(0.05f, mp: 20, sp: 11_000),
+                MonsterKnowledgeRung(0.10f, mp: 40, sp: 28_000),
+                MonsterKnowledgeRung(0.15f, mp: 40, sp: 40_000),
+                MonsterKnowledgeRung(0.20f, mp: 40, sp: 42_000),
+                MonsterKnowledgeRung(0.25f, mp: 40, sp: 88_000),
+                MonsterKnowledgeRung(0.30f, mp: 40, sp: 190_000),
+            }),
 
         // ===== Tank 2nd-class (CSV tank 2nd) =====
 

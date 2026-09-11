@@ -497,7 +497,20 @@ internal static class Descr
         // ARMOR MASTERY: the row for the named weight, or every row when unscoped.
         if (def.ArmorMasteryAt(level) is ArmorMasteryProfile amp)
         {
-            if (scope?.Weight is ArmorWeight w) AddStatMods(Add, Row(amp, w));
+            if (scope?.Weight is ArmorWeight w)
+            {
+                AddStatMods(Add, Row(amp, w));
+                // 🔑 A WEIGHT CLAUSE IS AN ADDITION, NOT A TOTAL — his grammar, and it took
+                // `warrior 3rd.csv` to make it visible. That row reads "P.def +40 and hpReg +1.7;
+                // Light: eva +9; Heavy: P.Def +10, HP +50": the leading clause is what EVERY trained
+                // weight gets, and `Heavy:` says what heavy adds ON TOP. The code stores the TOTAL
+                // (50 in heavy), so a scoped segment comparing against the stored number reported all
+                // fifteen rungs as wrong — the code was right and the reading was not.
+                // So offer the DELTA over the common baseline as well, and let either match. The
+                // baseline is the SMALLEST value across the trained weights, which is exactly "what
+                // this clause did not have to say".
+                AddStatMods(Add, WeightDelta(amp, w));
+            }
             else if (scope?.Weapon is null)
                 foreach (var weight in new[] { ArmorWeight.Robe, ArmorWeight.Light, ArmorWeight.Heavy, ArmorWeight.None })
                     AddStatMods(Add, Row(amp, weight));
@@ -627,6 +640,32 @@ internal static class Descr
         ArmorWeight.Heavy => p.Heavy, _ => p.None,
     };
 
+    /// <summary>What the named weight ADDS over the profile's common baseline — see the call site for
+    /// why a weight clause is read as an addition. The baseline is the per-field MINIMUM across the
+    /// TRAINED weights (a weight the mastery says nothing about is all-zero and would drag every
+    /// baseline to nothing), so a field only one weight carries comes back whole.</summary>
+    private static StatMods WeightDelta(ArmorMasteryProfile p, ArmorWeight w)
+    {
+        var rows = new[] { p.Robe, p.Light, p.Heavy, p.None }
+            .Where(r => r != default).ToArray();
+        if (rows.Length < 2) return Row(p, w);
+
+        var me = Row(p, w);
+        float Base(Func<StatMods, float> f) => rows.Min(f);
+        float D(Func<StatMods, float> f) => f(me) - Base(f);
+        // Only the fields a weight clause has ever been written about. Everything else falls through
+        // to the absolute row pooled beside this one, so nothing is lost by leaving a field out.
+        return new StatMods(
+            PDef: D(m => m.PDef), PDefPct: D(m => m.PDefPct),
+            MDef: D(m => m.MDef), MDefPct: D(m => m.MDefPct),
+            MaxHp: D(m => m.MaxHp), MaxMp: D(m => m.MaxMp),
+            Evasion: D(m => m.Evasion), Accuracy: D(m => m.Accuracy),
+            HpRegen: D(m => m.HpRegen), MpRegen: D(m => m.MpRegen),
+            MpRegenPct: D(m => m.MpRegenPct), HpRegenPct: D(m => m.HpRegenPct),
+            MoveSpeed: D(m => m.MoveSpeed),
+            CritDmgResist: D(m => m.CritDmgResist), CritRateResist: D(m => m.CritRateResist));
+    }
+
     private static void AddStatMods(Action<string, bool, float> add, StatMods m)
     {
         add("pdef", false, m.PDef);           add("pdef", true, m.PDefPct);
@@ -683,6 +722,15 @@ internal static class Descr
         add("ms", true, p.MoveSpeedPct);      add("reuse", true, p.CooldownPct);
         add("hpreg", false, p.HpRegen);       add("hpreg", true, p.HpRegenPct);
         add("mpreg", false, p.MpRegen);       add("mpreg", true, p.MpRegenPct);
+        // SITTING-ONLY regen — the warrior's HP Regeneration (*"Increase Hp regen +1.4; When sitting
+        // Hp regen +1, Mp regen +2.0"*). Pooled under the SAME keys as the always-on pair, because the
+        // reader has no way to tell which clause of a sentence a number came out of and his row writes
+        // both under the words "Hp regen". That makes these two rows verify as a SET rather than
+        // position by position — which is honest about what can actually be checked here, and still
+        // catches the thing worth catching: a rung whose sitting bonus was dropped or mistyped
+        // produces a number the pool cannot offer.
+        add("hpreg", false, p.HpRegenSitting);
+        add("mpreg", false, p.MpRegenSitting);
         // Calm Spirit's three stance multipliers. Offered as PERCENTS and as `mult − 1`, the dialect
         // the token reader renders every authored "xN" in (`x1.03` → 0.03), so both sides match. A
         // stance the passive does not carry is 0 here and Add() drops it — which is right: a rung that

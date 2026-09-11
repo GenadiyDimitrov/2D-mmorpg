@@ -1127,6 +1127,17 @@ public class Entity
     }
     public float HpRegenBonus { get; set; }     // flat HP/s from gear attributes
     public float MpRegenBonus { get; set; }     // flat MP/s from gear attributes
+    // Flat HP/MP per second paid ONLY while sitting, on top of the two above — the warrior's
+    // HP Regeneration passive. See PassiveEffect.HpRegenSitting for why these are flats.
+    public float HpRegenSitBonus { get; set; }
+    public float MpRegenSitBonus { get; set; }
+
+    /// <summary>BASIC-ATTACK CLEAVE, from the warrior's blunt masteries (`PassiveEffect.CleaveTargets`).
+    /// <see cref="CleaveTargets"/> is the TOTAL bodies one swing may touch INCLUDING the actual target,
+    /// so anything ≤ 1 means no cleave. Reset and re-accumulated by RecomputeDerived, which is what
+    /// makes it follow the equipped weapon — put the mace away and the cleave goes with it.</summary>
+    public int CleaveTargets { get; set; }
+    public float CleaveRadius { get; set; }
     public float HpRegenMult { get; set; } = 1f; // HP-regen multiplier (armor mastery)
     public float MpRegenMult { get; set; } = 1f; // MP-regen multiplier (armor mastery)
     // ----- Calm Spirit (`BL-92`): per-stance MULTIPLIERS on MovementTuning.RegenMultiplier, MP only.
@@ -1668,8 +1679,13 @@ public class Entity
         return Math.Max(0f, baseValue * (1f + percent) + flat);
     }
 
+    /// 🔑 FINAL STAND rides OUTSIDE the buff stack, exactly like Final Defense does on
+    /// <see cref="EffectiveDefence"/> — it is read live off the HP bar, not applied as a buff. Both
+    /// physical attack getters carry it, so a warrior's basic swings gain it too; see
+    /// <see cref="FinalStandBonus"/>.
     public float EffectiveAttack =>
-        AdminStat("patk") ?? AtkDebuffed(ModifiedStatDual(AttackPower, SkillEffect.BuffAtk, SkillEffect.BuffPhysAtk));
+        AdminStat("patk") ?? AtkDebuffed(ModifiedStatDual(AttackPower, SkillEffect.BuffAtk, SkillEffect.BuffPhysAtk))
+                             * (1f + FinalStandBonus);
 
     /// <summary>Buffed magic attack (mAtk), the INTERNAL value — feeds the √ magic-damage/heal formulas
     /// (unchanged; mobs share the same formulas). Magic buffs (shared BuffAtk + magic-only BuffMagAtk) are
@@ -1734,7 +1750,9 @@ public class Entity
 
     /// <summary>Buffed attack power for BASIC attacks (archetype-scaled). Basic attacks
     /// are physical, so they take the shared BuffAtk plus physical-only BuffPhysAtk.</summary>
-    public float EffectiveBasicAttack => AtkDebuffed(ModifiedStatDual(BasicAttackPower, SkillEffect.BuffAtk, SkillEffect.BuffPhysAtk));
+    public float EffectiveBasicAttack =>
+        AtkDebuffed(ModifiedStatDual(BasicAttackPower, SkillEffect.BuffAtk, SkillEffect.BuffPhysAtk))
+        * (1f + FinalStandBonus);
 
     /// <summary>Apply DebuffAtk (e.g. venom) as a multiplicative reduction to an attack value.</summary>
     private float AtkDebuffed(float v)
@@ -1822,9 +1840,8 @@ public class Entity
         AdminStat("pdef") ?? ModifiedStat(Defence, SkillEffect.BuffDef, SkillEffect.DebuffDef)
                              * (1f + FinalDefenceBonus(magic: false));
 
-    /// <summary>FINAL DEFENSE (the tank's `tank_final_defense`, level 60) — his three HP bands:
-    /// *"When hp is below 75% increase P.Def with 10%, when HP is below 50% ... 20% and M.Def with
-    /// 5%, when HP is below 25% ... 30% and M.Def with 10%"*. Returns the fraction to add.
+    /// <summary>Which HP BAND the entity is in, strongest-first: 3 = below 25%, 2 = below 50%,
+    /// 1 = below 75%, 0 = healthy. The one place the "last stand" family reads the bar.
     ///
     /// <para>🔑 READ LIVE, NOT APPLIED AS A BUFF, and that is the whole design decision here. HP moves
     /// on every tick of a fight and nothing recomputes derived stats when it does — so a buff would
@@ -1832,21 +1849,60 @@ public class Entity
     /// path, and whichever one was forgotten is where the tank silently keeps a 30% bonus at full
     /// health or loses it at 24%. A getter cannot be forgotten.</para>
     ///
-    /// <para>⚠ The bands are EXCLUSIVE and read strongest-first: at 20% HP he has 30%, not 60%.
-    /// His wording is a ladder of states, not a stack of three bonuses.</para></summary>
-    private float FinalDefenceBonus(bool magic)
+    /// <para>⚠ The bands are EXCLUSIVE: at 20% HP you are in band 3 and nothing else. His wording is
+    /// a ladder of states, not a stack of three bonuses.</para></summary>
+    private int LastStandBand
     {
-        if (!HasFinalDefense || MaxHp <= 0) return 0f;
-        float pct = Hp * 100f / MaxHp;
-        if (pct < 25f) return magic ? 0.10f : 0.30f;
-        if (pct < 50f) return magic ? 0.05f : 0.20f;
-        if (pct < 75f) return magic ? 0.00f : 0.10f;
-        return 0f;
+        get
+        {
+            if (MaxHp <= 0) return 0;
+            float pct = Hp * 100f / MaxHp;
+            return pct < 25f ? 3 : pct < 50f ? 2 : pct < 75f ? 1 : 0;
+        }
     }
 
-    /// <summary>Does this character know Final Defense? Set in RecomputeDerived, because THAT is the
-    /// part that changes rarely — what changes every tick is the HP the getter above reads.</summary>
-    public bool HasFinalDefense { get; set; }
+    /// <summary>FINAL DEFENSE (the tank's `tank_final_defense`) — the fraction to add to P.Def or
+    /// M.Def at the current HP band. Returns the fraction to add.
+    ///
+    /// <para>🔑 THREE RUNGS SINCE 2026-09-11, and the numbers therefore live in an ARRAY rather than
+    /// in three `return`s. His `tank 3rd.csv` grew rows at 40 and 52 under the level-60 one it had
+    /// ("fixed tanks final_defence to have lvls"), so the skill's LEVEL now picks the ladder and the
+    /// HP band picks the rung within it. The old hard-coded 10/20/30 is row 3 — a tank who reaches 60
+    /// is exactly as strong as he was.</para></summary>
+    private float FinalDefenceBonus(bool magic)
+    {
+        int lvl = FinalDefenseLevel;
+        if (lvl <= 0) return 0f;
+        int band = LastStandBand;
+        if (band == 0) return 0f;
+        // [skill level − 1][band − 1] — his three rows, P.Def then M.Def.
+        float[][] pdef = { new[] { .05f, .10f, .15f }, new[] { .07f, .14f, .21f }, new[] { .10f, .20f, .30f } };
+        float[][] mdef = { new[] { .00f, .025f, .05f }, new[] { .00f, .035f, .07f }, new[] { .00f, .05f, .10f } };
+        var row = magic ? mdef : pdef;
+        return row[Math.Clamp(lvl, 1, row.Length) - 1][band - 1];
+    }
+
+    /// <summary>FINAL STAND (the warrior's `warrior_final_stand`) — the P.Atk twin of the above, and
+    /// deliberately the same shape: his `warrior 3rd.csv` / `war_aoe 3rd.csv` rows are Final Defense's
+    /// sentence with "P.Def" swapped for "P.Atk" and no magic column at all.</summary>
+    public float FinalStandBonus
+    {
+        get
+        {
+            int lvl = FinalStandLevel;
+            if (lvl <= 0) return 0f;
+            int band = LastStandBand;
+            if (band == 0) return 0f;
+            float[][] patk = { new[] { .05f, .10f, .20f }, new[] { .07f, .15f, .25f }, new[] { .10f, .20f, .30f } };
+            return patk[Math.Clamp(lvl, 1, patk.Length) - 1][band - 1];
+        }
+    }
+
+    /// <summary>What LEVEL of Final Defense / Final Stand does this character know (0 = none)? Set in
+    /// RecomputeDerived, because THAT is the part that changes rarely — what changes every tick is the
+    /// HP the getters above read.</summary>
+    public int FinalDefenseLevel { get; set; }
+    public int FinalStandLevel { get; set; }
 
     /// <summary>Magic defence — the divisor for incoming magic damage. Separate
     /// channel from physical defence; sourced from level base + jewels + the Tank
@@ -2719,6 +2775,8 @@ public class Entity
         CritDamagePenalty = 0f;
         CritDmgResist = 0f;
         BowResist = 0f;
+        CleaveTargets = 0;
+        CleaveRadius = 0f;
         CcResist = 0f;
         CcResistMagical = 0f;
         CcResistPhysical = 0f;
@@ -2994,6 +3052,10 @@ public class Entity
         if (accPct != 0f) Accuracy += (int)(Accuracy * accPct / 100f);
         HpRegenBonus = hpRegFlat;
         MpRegenBonus = mpRegFlat;
+        // ⚠ ASSIGNED, not +=, for the same reason the two above are: this is the first write of the
+        //   recompute, and it is what clears last recompute's total. Nothing but passives feeds it.
+        HpRegenSitBonus = 0f;
+        MpRegenSitBonus = 0f;
         if (hpRegPct != 0f) HpRegenMult *= 1f + hpRegPct / 100f;
         if (mpRegPct != 0f) MpRegenMult *= 1f + mpRegPct / 100f;
         CritDamageBonus = critDmgPct / 100f;   // e.g. 20 -> +0.20x crit multiplier
@@ -3339,6 +3401,8 @@ public class Entity
                 if (pe.MagicCritDamage != 0f) MagicCritDamageMult *= 1f + pe.MagicCritDamage;   // ×1.3, not +30 points
                 HpRegenBonus += pe.HpRegen;
                 MpRegenBonus += pe.MpRegen;
+                HpRegenSitBonus += pe.HpRegenSitting;
+                MpRegenSitBonus += pe.MpRegenSitting;
                 if (pe.HpRegenPct != 0f) HpRegenMult *= 1f + pe.HpRegenPct;
                 if (pe.MpRegenPct != 0f) MpRegenMult *= 1f + pe.MpRegenPct;
                 // Stance-conditional MP regen (Calm Spirit). 0 = not carried, never ×0.
@@ -3368,6 +3432,13 @@ public class Entity
                 // Bow range bonus applies only while a bow is equipped (rogue/archer mastery).
                 if (pe.BowRange != 0f && WeaponType == WeaponType.Bow)
                     BasicAttackRange = Math.Min(GameConstants.MaxBasicAttackRange, BasicAttackRange + pe.BowRange);
+                // BASIC-ATTACK CLEAVE — the BIGGEST wins rather than summing, because the ladder is one
+                // growing number on one mastery (2 → 4 on the warrior, 5 → 10 on the Warlord). Summing
+                // would make a Warlord holding both his masteries cleave 14 bodies.
+                // ⚠ Already weapon-gated: this arrives through WeaponMasteryProfile.For(WeaponType),
+                //   which hands back `default` — CleaveTargets 0 — with anything but a 2H blunt.
+                if (pe.CleaveTargets > CleaveTargets) CleaveTargets = pe.CleaveTargets;
+                if (pe.CleaveRadius > CleaveRadius) CleaveRadius = pe.CleaveRadius;
                 // Shield passive (only with a shield equipped): scale block chance / shield def.
                 if (HasShield)
                 {
@@ -3456,10 +3527,11 @@ public class Entity
                     ApplyPassive(wm.For(WeaponType));
             }
 
-            // FINAL DEFENSE — a flag, not a passive: what it grants depends on CURRENT HP, which
-            // no recompute can see (see Entity.FinalDefenceBonus). All this pass decides is whether
-            // the tank knows the skill at all.
-            HasFinalDefense = HasSkill(SkillCatalog.TankFinalDefense);
+            // FINAL DEFENSE / FINAL STAND — a LEVEL, not a passive: what they grant depends on
+            // CURRENT HP, which no recompute can see (see Entity.FinalDefenceBonus). All this pass
+            // decides is which rung the character has bought.
+            FinalDefenseLevel = SkillLevelOf(SkillCatalog.TankFinalDefense);
+            FinalStandLevel   = SkillLevelOf(SkillCatalog.WarriorFinalStand);
 
             // THE ONE REMAINING WEAPON PENALTY (Spellcaster Mastery): an UNTRAINED weapon — bow, dagger
             // or bare hands — halves cast speed and magic, and multiplies the fizzle roll. Sword and

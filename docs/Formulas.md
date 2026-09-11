@@ -132,6 +132,45 @@ worn by tanks and by the Human Warchanter in heavy armour, and by nobody else.
 `StatCalculator.cs` — `ResolveAvoidChance`, `PhysicalCritBase`, `MagicCritBase`, `PhysicalCritMult`,
 `MagicCritMult` · block in `GameLoopService.ApplyDamage`
 
+## Basic-attack cleave (the warrior's blunt masteries, 0.130.0)
+
+```
+extraBodies = CleaveTargets - 1          <- CleaveTargets COUNTS the real target
+victims     = up to extraBodies hostiles within CleaveRadius OF THE TARGET
+```
+
+Each extra body takes a **whole basic swing**, not a share of one: its own miss roll, crit, block and
+every on-hit rider, plus its own Retaliate and Kill so a cleaved kill still credits the drop. There is
+no damage falloff and no per-victim scaling — his line is *"Allow basic attack to hit around in 150
+range (max N targets)"* and nothing more.
+
+Radius is measured from the **target**, not the attacker: he is hitting around the body he swung at.
+Both sources are weapon masteries, so the gate is the equipped weapon and nothing else — a
+**two-handed blunt**, at 150 range, for 2→4 targets (`warrior_weapon_mastery`, from 20) or 5→10
+(`warrior_blunt_mastery`, the Warlord, from 40). Holding both, the **LARGER** wins; they never sum.
+
+`PassiveEffect.CleaveTargets`/`CleaveRadius` · `Entity.CleaveTargets` · `GameLoopService.ResolveCleave`
+
+## Last stand — the two passives that read your own HP bar
+
+One HP band, read live, strongest-first and **exclusive** (at 20% HP you are in the bottom band and
+nothing else). Never applied as a buff: HP moves every tick and nothing recomputes derived stats when
+it does, so a buff would need a watcher on the damage path, the heal path, the regen tick *and* the
+potion path, and whichever was forgotten is where the bonus silently sticks or vanishes.
+
+```
+band         = HP% < 25 -> 3 | < 50 -> 2 | < 75 -> 1 | else 0
+FinalDefense = P.Def x (1 + f[skillLevel][band])   f = 5/10/15 · 7/14/21 · 10/20/30  %
+               M.Def x (1 + m[skillLevel][band])   m = 0/2.5/5 · 0/3.5/7 · 0/5/10    %
+FinalStand   = P.Atk x (1 + a[skillLevel][band])   a = 5/10/20 · 7/15/25 · 10/20/30  %
+```
+
+Final Defense is the tank's (`tank_final_defense`, 40/52/60); Final Stand is the warrior's
+(`warrior_final_stand`, 40/52/60, both disciplines) and rides both physical attack getters, so basic
+swings gain it too. Each lands OUTSIDE the buff stack, as a multiplier on the finished stat.
+
+`Entity.LastStandBand` / `FinalDefenceBonus` / `FinalStandBonus`
+
 ## The three skill masteries (`BL-190`)
 
 Three passives, one piece of math. Each grants the BASE RATE of its own roll; ATK is only a band
@@ -409,7 +448,14 @@ MpRegen/s    =  (2 + L*0.08) * sptRegenModifier(effectiveSpt)
 sptRegenModifier(spt) = clamp(1 + (spt - 40)*0.02, 0.70, 1.30)
 stance                = running 0.70 | walking 0.85 | STANDING STILL 1.00 | sitting 1.50
 flats                 = the hpReg/mpReg mastery rungs + gear flats + flat regen buffs
+                        + the SITTING-ONLY flats, while sitting (see below)
 ```
+
+**Sitting-only flats** (2026-09-11, the warrior's HP Regeneration passive — *"Increase Hp regen +1.4;
+When sitting Hp regen +1, Mp regen +2.0"*). `PassiveEffect.HpRegenSitting` / `MpRegenSitting`, flat
+per second, paid only while `MoveState == Sitting` and added with the other flats — i.e. **OUTSIDE**
+the stance multiplier. That placement is the whole of it: sitting already pays ×1.5 on the formula
+half, so folding an authored +2.0 inside would silently make it +3.0.
 
 **IG's own HP regen, for reference** (owner supplied it 2026-08-26; ours is compared against it by
 `BalanceMatrix --hpregen`):

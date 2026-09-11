@@ -101,6 +101,21 @@ internal static class Check
             { Game.Shared.Discipline.Nullblade, Game.Shared.Discipline.Phantom, Game.Shared.Discipline.Venomweaver }),
         new("archer 3rd",  BaseClass.Fighter, Archetype.Rogue,   40, 75, Disciplines: new[]
             { Game.Shared.Discipline.Sharpshooter, Game.Shared.Discipline.Trapper, Game.Shared.Discipline.Hunter }),
+        // The WARRIOR's two earned their lines on 2026-09-11 — ONE DISCIPLINE EACH, unlike the rogue's
+        // two files: `warrior 3rd.csv` is the Ravager (two-handed sword + the Battle stances) and
+        // `war_aoe 3rd.csv` the Warlord (two-handed blunt that cleaves).
+        //
+        // 🔴 NEITHER FILE IS FINISHED, and they are here anyway. His words: *"they are missing only
+        // teir dmg and control (active dmg) skills."* That normally disqualifies a file — "ONLY FILES
+        // HE HAS FINISHED GO HERE" is the rule at the top of this block — but `BL-197` settled the
+        // other half of it: a file whose code side is half his and half DERIVED is exactly where the
+        // two drift apart silently, which is what the `atk -15%; def -15%` rider did for a whole
+        // chronicle across thirty rows. So the line goes in early and the missing half reports itself.
+        // ⚠ EXPECT ONE 🔴 NOT REGISTERED-shaped complaint until his damage rows land: `war_sundering_blow`
+        //   is the last of the `BL-185` derived kit and is on no row of either file. That is the
+        //   pressure working, not a defect — see RegisterWarriorAndArcherKits.
+        new("warrior 3rd", BaseClass.Fighter, Archetype.Warrior, 40, 75, Game.Shared.Discipline.Ravager),
+        new("war_aoe 3rd", BaseClass.Fighter, Archetype.Warrior, 40, 75, Game.Shared.Discipline.Warlord),
         // `archer 4th` earned its line the same day, 2026-09-09 — the FOURTH finished 4th-tier file
         // (*"archer 4th done as well"*). Same three disciplines and the same `Also` as every other
         // 4th-tier spec: the ALL-CLASSES block and the eighteen Sigils are in every ascended kit.

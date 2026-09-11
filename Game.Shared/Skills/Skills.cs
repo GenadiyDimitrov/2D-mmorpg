@@ -1650,6 +1650,17 @@ public readonly record struct PassiveEffect(
     // fixed pair balances at exactly one level. A multiplier on the stance cancels the 0.85 exactly,
     // at every rung. Do not "simplify" these into flats.
     float MpRegenRunMult = 0f, float MpRegenWalkMult = 0f, float MpRegenStandMult = 0f,
+    // ----- SITTING-ONLY regen, his `warrior 3rd.csv` HP Regeneration rows: *"Increase Hp regen +1.4;
+    // When sitting Hp regen +1, Mp regen +2.0"*. FLAT per-second, ADDED ON TOP of the always-on
+    // HpRegen/MpRegen above, and only while MoveState is Sitting.
+    //
+    // 🔑 FLATS, NOT MULTIPLIERS, unlike the stance trio directly above — and the two are answering
+    // different questions. Calm Spirit's job is to CANCEL the movement penalty exactly, which only a
+    // multiplier can do at every level; this one is "resting pays you more", where a number is a
+    // number. It is the same flat channel every other `hpReg +N` passive uses since `BL-92`.
+    // ⚠ ADDED OUTSIDE the stance/safe-zone multiplier, beside HpRegenBonus — sitting already pays
+    //   ×1.5 through the stance, and putting this inside would multiply his authored number by it.
+    float HpRegenSitting = 0f, float MpRegenSitting = 0f,
     float AtkSpeedPct = 0f, float CastSpeedPct = 0f, float MoveSpeedPct = 0f,
     float CooldownPct = 0f,       // spell reuse-delay reduction (0.10 = -10%)
     // Defensive resists (fractions). MeleeVamp/SpellVamp = lifesteal fractions.
@@ -1671,6 +1682,18 @@ public readonly record struct PassiveEffect(
     // Bow range bonus (Rogue/Archer Weapon Mastery "range +200"): added to basic-attack range
     // while a BOW is equipped. Inert with any other weapon.
     float BowRange = 0f,
+    // ----- BASIC-ATTACK CLEAVE (`warrior 2nd.csv` / `war_aoe 3rd.csv`, 2026-09-11) ----------------
+    // His clause, verbatim: *"With 2h Blunt: Allow basic attack to hit around in 150 range (max 2
+    // targets)"*. CleaveTargets is the TOTAL the swing may touch INCLUDING the one you are actually
+    // attacking — his "max 2" means the target plus one — so 0 and 1 both mean "no cleave".
+    //
+    // 🔑 IT IS A PASSIVE FIELD RATHER THAN A SKILL because it rides a WEAPON MASTERY: the whole
+    // mechanic is gated on holding a two-handed blunt, and WeaponMasteryProfile already does exactly
+    // that gating for every other number on the same rung. Putting it anywhere else would need a
+    // second weapon check that could drift from the first.
+    // ⚠ The extra bodies take a BASIC SWING each, not a share of one — miss roll, crit, block and
+    //   every on-hit rider resolve per victim. See GameLoopService.ResolveBasicAttack.
+    int CleaveTargets = 0, float CleaveRadius = 0f,
     // ⚠ UNITS, since IG's interrupt formula landed (2026-08-26): InterruptPower is percentage POINTS
     // added to the final interrupt roll; InterruptResist is a FRACTION subtracted from it (0.10 = 10%).
     int InterruptPower = 0, float InterruptResist = 0f,
@@ -1887,6 +1910,7 @@ public static partial class SkillCatalog
         list.AddRange(WhispSkills());         // Skills.Whisps.cs (`BL-109` the whisp's own nine — cast by the whisp, never learned)
         list.AddRange(WhispSummonSkills());   // Skills.Whisps.cs (his six calls + Whisp Mastery)
         list.AddRange(FighterKits3rdSkills()); // Skills.FighterKits3rd.cs (`BL-185` the warrior's derived damage kit)
+        list.AddRange(Warrior3rdSkills());     // Skills.Warrior3rd.cs (his `warrior 3rd.csv` + `war_aoe 3rd.csv`)
         list.AddRange(Dual3rdSkills());       // Skills.Dual3rd.cs (his `dual 3rd.csv`, 40-74)
         list.AddRange(Dual4thSkills());       // Skills.Dual4th.cs (`BL-188` — the top of the blow ladder ONLY)
         list.AddRange(Archer3rdSkills());     // Skills.Archer3rd.cs (his `archer 3rd.csv`, 40-74)

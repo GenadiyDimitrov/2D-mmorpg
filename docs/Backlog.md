@@ -133,6 +133,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-189` | 🔵 | Weapon-type protection — `BowResist` generalised to every weapon type | combat |
 | `BL-191` | 🟡 | The SKILL MASTERIES — built for 5 archetypes; tank + bow rogue ruled OUT; ON TRIAL until he playtests | classes |
 | `BL-192` | 🟡 | BUILD THE NUKER 4th KIT — his 236-row file is finished; research + the 4 engine gaps are in the entry | classes |
+| `BL-202` | 🔵 | THE WARRIOR'S DAMAGE + CONTROL SKILLS — the half of both 3rd kits still owed | classes |
 
 ---
 
@@ -1312,3 +1313,32 @@ The base is **not** the rate. `rate = clamp(base × buffs × MasteryAtkMod(Effec
 the band runs ×0.70 at ATK 30 to ×1.30 at ATK 50. So a 20% base is already at the cap for anyone with
 ATK 45+, and **a 30% base is at the cap for everybody** — raising it past ~19% buys nothing without
 raising `StatCaps.SkillMasteryRateMax` too. `BalanceMatrix` §C1 prints the whole surface.
+
+---
+
+## `BL-202` 🔵 THE WARRIOR'S DAMAGE AND CONTROL SKILLS — the half of both 3rd kits that is still owed
+
+Your own words, 2026-09-11: *"I made some passives and buffs for warrior/aoe 3rd - they are missing
+only teir dmg and control (active dmg) skills."*
+
+Everything else in both files is **built** (0.130.0) — armour, Warrior's Strength, both weapon
+masteries, Final Stand, HP Boost, HP Regeneration, Overpower, Battle Regeneration/Presence/Defence/
+Resilience, Monster Knowledge. What neither file has is a single **damage** or **control** row.
+
+**What stands in until they land:** `war_sundering_blow`, the last survivor of the `BL-185` derived
+kit (Sound Smash's thirteen rungs at ×1.25 power, gated to a two-handed sword). It is registered on
+**both** disciplines, which is a stand-in's shape and not yours — everything else in those two files
+splits sword from blunt, and the damage will almost certainly split too.
+
+⚠ **`--check` prints `🟠 NOT IN THE CSV  Sundering Blow` against both files, deliberately.** Both files
+earned their `Check.Specs` line the day they landed rather than the day they are finished (the
+`BL-197` lesson: a code side that is half yours and half derived is exactly where the two drift apart
+silently). That line is the pressure working, and it goes out the moment your rows arrive.
+
+🔑 **Two things the Warlord's half will want to answer**, because his identity is already built and
+his damage is not:
+- His basic attack already cleaves up to **ten** bodies. Does his damage skill AoE on top of that, or
+  is the cleave the AoE and his skills single-target?
+- He is twenty points of flat P.Atk under the Ravager at every rung, by your own columns. If his
+  skills match the Ravager's power, the cleave is pure profit; if they are under, the gap compounds.
+

@@ -1,11 +1,78 @@
-LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,REPLACES,RACE
-,,,,,,,,,,,,,,,,----------------------HP Boost----------------------
-43,HP Boost,hp_boost,Passive,,,0,0,self/single,0,0,0,"Increase max HP +400",0,42k,[],,
-49,HP Boost,hp_boost,Passive,,,0,0,self/single,0,0,0,"Increase max HP +500",0,65k,[],,
-55,HP Boost,hp_boost,Passive,,,0,0,self/single,0,0,0,"Increase max HP +600",0,80k,[],,
-62,HP Boost,hp_boost,Passive,,,0,0,self/single,0,0,0,"Increase max HP +700",0,170k,[],,
-66,HP Boost,hp_boost,Passive,,,0,0,self/single,0,0,0,"Increase max HP +800",0,280k,[],,
-70,HP Boost,hp_boost,Passive,,,0,0,self/single,0,0,0,"Increase max HP +900",0,390k,[],,
-74,HP Boost,hp_boost,Passive,,,0,0,self/single,0,0,0,"Increase max HP +1000",0,880k,[],,
-,,,,,,,,,,,,,,,,----------------------------Overpower----------------------------
-40,Overpower,overpower,passive,,,0,0,self/single,0,0,0,double rate 7% - skills marked [Double] strike for DOUBLE damage that often - scales with ATK - without this passive NO skill can double,0,28k,[],
+LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST (x1000),REPLACES,RACE,COMMENT
+,,,,,,,,,,,,,,,,,----------------------------Armor Mastery----------------------------
+40,Warriors Strenght,warrior_strenght,passive,sword|blunt/2,,0,0,self/single,0,0,0,"With 2h sword/blunt: acc +3; p.atk +25%;",0,28
+46,Warriors Strenght,warrior_strenght,passive,sword|blunt/2,,0,0,self/single,0,0,0,"With 2h sword/blunt: acc +6; p.atk +25%;",0,40
+52,Warriors Strenght,warrior_strenght,passive,sword|blunt/2,,0,0,self/single,0,0,0,"With 2h sword/blunt: acc +9; p.atk +30%;",0,74
+,,,,,,,,,,,,,,,,,----------------------------Armor Mastery----------------------------
+40,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +40 and hpReg +1.7; Light: eva +9; Heavy: P.Def +10, HP +50;",0,28
+43,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +45 and hpReg +1.7; Light: eva +9; Heavy: P.Def +12, HP +50;",0,35
+46,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +50 and hpReg +2.1; Light: eva +9; Heavy: P.Def +14, HP +50;",0,40
+49,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +55 and hpReg +2.1; Light: eva +9; Heavy: P.Def +16, HP +50;",0,50
+52,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +58 and hpReg +2.6; Light: eva +9; Heavy: P.Def +18, HP +60;",0,74
+55,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +60 and hpReg +2.6; Light: eva +9; Heavy: P.Def +20, HP +60;",0,80
+58,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +63 and hpReg +2.7; Light: eva +9; Heavy: P.Def +22, HP +60;",0,88
+60,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +70 and hpReg +2.7; Light: eva +9; Heavy: P.Def +24, HP +70;",0,120
+62,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +77 and hpReg +2.7; Light: eva +9; Heavy: P.Def +27, HP +70;",0,170
+64,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +85 and hpReg +2.7; Light: eva +9; Heavy: P.Def +30, HP +80;",0,190
+66,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +92 and hpReg +2.7; Light: eva +9; Heavy: P.Def +33, HP +80;",0,280
+68,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +100 and hpReg +3.4; Light: eva +9; Heavy: P.Def +36, HP +90;",0,320
+70,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +107 and hpReg +3.4; Light: eva +9; Heavy: P.Def +40, HP +90;",0,390
+72,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +115 and hpReg +3.4; Light: eva +9; Heavy: P.Def +45, HP +100;",0,650
+74,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +123 and hpReg +4.0; Light: eva +9; Heavy: P.Def +50, HP +100;",0,880
+,,,,,,,,,,,,,,,,,----------------------------Weapon Mastery----------------------------
+40,Two-Hand Mastery,warrior_sword_mastery,passive,sword/2,,0,0,self/single,0,0,0,"With 2h sword: crit dmg +145; p.atk +52;",0,28
+43,Two-Hand Mastery,warrior_sword_mastery,passive,sword/2,,0,0,self/single,0,0,0,"With 2h sword: crit dmg +172; p.atk +59;",0,35
+46,Two-Hand Mastery,warrior_sword_mastery,passive,sword/2,,0,0,self/single,0,0,0,"With 2h sword: crit dmg +202; p.atk +66;",0,40
+49,Two-Hand Mastery,warrior_sword_mastery,passive,sword/2,,0,0,self/single,0,0,0,"With 2h sword: crit dmg +235; p.atk +73;",0,50
+52,Two-Hand Mastery,warrior_sword_mastery,passive,sword/2,,0,0,self/single,0,0,0,"With 2h sword: crit dmg +272; p.atk +80;",0,74
+55,Two-Hand Mastery,warrior_sword_mastery,passive,sword/2,,0,0,self/single,0,0,0,"With 2h sword: crit dmg +312; p.atk +87;",0,80
+58,Two-Hand Mastery,warrior_sword_mastery,passive,sword/2,,0,0,self/single,0,0,0,"With 2h sword: crit dmg +355; p.atk +94;",0,88
+60,Two-Hand Mastery,warrior_sword_mastery,passive,sword/2,,0,0,self/single,0,0,0,"With 2h sword: crit dmg +385; p.atk +101;",0,120
+62,Two-Hand Mastery,warrior_sword_mastery,passive,sword/2,,0,0,self/single,0,0,0,"With 2h sword: crit dmg +416; p.atk +108;",0,170
+64,Two-Hand Mastery,warrior_sword_mastery,passive,sword/2,,0,0,self/single,0,0,0,"With 2h sword: crit dmg +449; p.atk +115;",0,190
+66,Two-Hand Mastery,warrior_sword_mastery,passive,sword/2,,0,0,self/single,0,0,0,"With 2h sword: crit dmg +481; p.atk +122;",0,280
+68,Two-Hand Mastery,warrior_sword_mastery,passive,sword/2,,0,0,self/single,0,0,0,"With 2h sword: crit dmg +515; p.atk +129;",0,320
+70,Two-Hand Mastery,warrior_sword_mastery,passive,sword/2,,0,0,self/single,0,0,0,"With 2h sword: crit dmg +548; p.atk +136;",0,390
+72,Two-Hand Mastery,warrior_sword_mastery,passive,sword/2,,0,0,self/single,0,0,0,"With 2h sword: crit dmg +582; p.atk +143;",0,650
+74,Two-Hand Mastery,warrior_sword_mastery,passive,sword/2,,0,0,self/single,0,0,0,"With 2h sword: crit dmg +615; p.atk +150;",0,880
+,,,,,,,,,,,,,,,,,----------------------------Final Stand----------------------------
+40,Final Stand,warrior_final_stand,Passive,,,0,0,self/single,0,0,0,"When hp is below 75% increase P.Atk with 5%, when HP is below 50% increase P.Atk with 10%, when HP is below 25% increase P.Atk with 20%",0,28
+52,Final Stand,warrior_final_stand,Passive,,,0,0,self/single,0,0,0,"When hp is below 75% increase P.Atk with 7%, when HP is below 50% increase P.Atk with 15%, when HP is below 25% increase P.Atk with 25%",0,74
+60,Final Stand,warrior_final_stand,Passive,,,0,0,self/single,0,0,0,"When hp is below 75% increase P.Atk with 10%, when HP is below 50% increase P.Atk with 20%, when HP is below 25% increase P.Atk with 30%",0,120
+,,,,,,,,,,,,,,,,,----------------------HP Boost----------------------
+43,HP Boost,hp_boost,Passive,,,0,0,self/single,0,0,0,"Increase max HP +400",0,35,[],,
+49,HP Boost,hp_boost,Passive,,,0,0,self/single,0,0,0,"Increase max HP +500",0,50,[],,
+55,HP Boost,hp_boost,Passive,,,0,0,self/single,0,0,0,"Increase max HP +600",0,80,[],,
+62,HP Boost,hp_boost,Passive,,,0,0,self/single,0,0,0,"Increase max HP +700",0,170,[],,
+66,HP Boost,hp_boost,Passive,,,0,0,self/single,0,0,0,"Increase max HP +800",0,280,[],,
+70,HP Boost,hp_boost,Passive,,,0,0,self/single,0,0,0,"Increase max HP +900",0,390,[],,
+74,HP Boost,hp_boost,Passive,,,0,0,self/single,0,0,0,"Increase max HP +1000",0,880,[],,
+,,,,,,,,,,,,,,,,,----------------------HP Regeneration----------------------
+43,HP Regeneration,warrior_hp_regeneration,Passive,,,0,0,self/single,0,0,0,"Increase Hp regen +1.4; When sitting Hp regen +1, Mp regen +2.0;",0,28,[],,
+49,HP Regeneration,warrior_hp_regeneration,Passive,,,0,0,self/single,0,0,0,"Increase Hp regen +1.5; When sitting Hp regen +1, Mp regen +2.0;",0,50,[],,
+55,HP Regeneration,warrior_hp_regeneration,Passive,,,0,0,self/single,0,0,0,"Increase Hp regen +1.6; When sitting Hp regen +1, Mp regen +2.0;",0,80,[],,
+62,HP Regeneration,warrior_hp_regeneration,Passive,,,0,0,self/single,0,0,0,"Increase Hp regen +1.7; When sitting Hp regen +3, Mp regen +2.5;",0,170,[],,
+66,HP Regeneration,warrior_hp_regeneration,Passive,,,0,0,self/single,0,0,0,"Increase Hp regen +1.8; When sitting Hp regen +3, Mp regen +2.5;",0,280,[],,
+70,HP Regeneration,warrior_hp_regeneration,Passive,,,0,0,self/single,0,0,0,"Increase Hp regen +1.9; When sitting Hp regen +5, Mp regen +3.0;",0,390,[],,
+74,HP Regeneration,warrior_hp_regeneration,Passive,,,0,0,self/single,0,0,0,"Increase Hp regen +2.0; When sitting Hp regen +5, Mp regen +3.0;",0,880,[],,
+,,,,,,,,,,,,,,,,,----------------------------Overpower----------------------------
+40,Overpower,overpower,passive,,,0,0,self/single,0,0,0,double rate 7% - skills marked [Double] strike for DOUBLE damage that often - scales with ATK - without this passive NO skill can double,0,28,[],
+,,,,,,,,,,,,,,,,,----------------------------Battle Regeneration----------------------------
+40,Battle Regeneration,battle_regeneration,heal,,,0,0,self/single,0.5,90,0,restores 15% of max hp,0,28
+49,Battle Regeneration,battle_regeneration,heal,,,0,0,self/single,0.5,90,0,restores 20% of max hp,0,65
+58,Battle Regeneration,battle_regeneration,heal,,,0,0,self/single,0.5,90,0,restores 25% of max hp,0,88
+,,,,,,,,,,,,,,,,,----------------------------Battle Presence----------------------------
+46,Battle Presence,battle_presence,physical buff,sword|blunt/2,,0,0,self/single,0.5,300,90,increase p.Atk x1.50; acc +4; can be used only when Hp is below 60% (once used even if hp is at 100% it still works only for activation need hp  <= 0.6) and cannot be used with Battle Defence; requres 2h sword/blunt;,0,40
+55,Battle Presence,battle_presence,physical buff,sword|blunt/2,,0,0,self/single,0.5,300,90,increase p.Atk x1.65; acc +6; can be used only when Hp is below 60% (once used even if hp is at 100% it still works only for activation need hp  <= 0.6) and cannot be used with Battle Defence; requres 2h sword/blunt;,0,80
+,,,,,,,,,,,,,,,,,----------------------------Battle Defence----------------------------
+43,Battle Defence,battle_defence,physical buff,,,0,0,self/single,0.5,300,90,increase p.Def x2.5; can be used only when Hp is below 60% (once used even if hp is at 100% it still works only for activation need hp  <= 0.6) and cannot be used with Battle Presence;,0,42
+52,Battle Defence,battle_defence,physical buff,,,0,0,self/single,0.5,300,90,increase p.Def x3; can be used only when Hp is below 60% (once used even if hp is at 100% it still works only for activation need hp  <= 0.6) and cannot be used with Battle Presence;,0,74
+,,,,,,,,,,,,,,,,,----------------------------Battle Resilience----------------------------
+49,Battle Resilience,battle_resilience,physical buff,,,0,0,self/single,0.5,150,60,"Increase resistance to Stun/Shock, Hold/Bind and Buff-Removal Attacks with 60%;",40,65
+62,Battle Resilience,battle_resilience,physical buff,,,0,0,self/single,0.5,150,60,"Increase resistance to Stun/Shock, Hold/Bind and Buff-Removal Attacks with 80%;",60,170
+,,,,,,,,,,,,,,,,,----------------------------Monster Knowlegee----------------------------
+40,Monster Knowlege,monster_knowledge_active,physical buff,,,0,0,self/single,1,5,600,Increase PVE Dmg with 10%,40,28
+46,Monster Knowlege,monster_knowledge_active,physical buff,,,0,0,self/single,1,5,600,Increase PVE Dmg with 15%,40,40
+52,Monster Knowlege,monster_knowledge_active,physical buff,,,0,0,self/single,1,5,600,Increase PVE Dmg with 20%,40,42
+58,Monster Knowlege,monster_knowledge_active,physical buff,,,0,0,self/single,1,5,600,Increase PVE Dmg with 25%,40,88
+64,Monster Knowlege,monster_knowledge_active,physical buff,,,0,0,self/single,1,5,600,Increase PVE Dmg with 30%,40,190

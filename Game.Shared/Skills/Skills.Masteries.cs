@@ -74,11 +74,19 @@ public static partial class SkillCatalog
     /// naked from warrior mastery no point in them wearing a robe"*. See the note on RogueArmor above;
     /// the same ruling covers both, and it deliberately reverses the 2026-07-01 "with all means every
     /// weight" fix. A warrior in a robe now gets no P.Def, no MP regen and no HP regen from this.
-    private static ArmorMasteryProfile WarriorArmor(int def, int lightEva, float hpRegen = 0f) => new(
+    /// ✅ NO MP REGEN SINCE 2026-09-11 — his `warrior 2nd.csv` rows dropped "mp x1.1" the day
+    /// `fighter_spirit_mastery` was born to carry it for every fighter, replaced by nobody. His
+    /// `warrior 3rd.csv` rows (rungs 6-20) never mention it either. Re-adding it here pays the 10%
+    /// twice.
+    /// 🔑 <paramref name="heavyDef"/> / <paramref name="heavyHp"/> are the 3rd class's "Heavy: P.Def
+    /// +10, HP +50" half — ADDED ON TOP of the all-weight numbers, so heavy = def+heavyDef. They are
+    /// zero on the 2nd-class rungs, whose rows have no heavy clause at all.
+    private static ArmorMasteryProfile WarriorArmor(int def, int lightEva, float hpRegen = 0f,
+        int heavyDef = 0, int heavyHp = 0) => new(
         Robe:  default,
         None:  default,
-        Light: new StatMods(PDef: def, MpRegenPct: 0.1f, HpRegen: hpRegen, Evasion: lightEva),
-        Heavy: new StatMods(PDef: def, MpRegenPct: 0.1f, HpRegen: hpRegen));
+        Light: new StatMods(PDef: def, HpRegen: hpRegen, Evasion: lightEva),
+        Heavy: new StatMods(PDef: def + heavyDef, HpRegen: hpRegen, MaxHp: heavyHp));
 
     private static SkillDef ArmorMasteryPassive(string id, BaseClass cls, ArmorMasteryProfile profile) =>
         new(id, "Armor Mastery", cls, SkillEffect.None,
@@ -126,9 +134,9 @@ public static partial class SkillCatalog
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive,
             Replaces: new[] { FighterArmorMastery },
-            Description: "Passive. In LIGHT or HEAVY armor: improves defence, MP regeneration and "
-                       + "(from level 2) HP regeneration; light armor also boosts evasion. "
-                       + "A robe or a bare torso gets nothing.",
+            Description: "Passive. In LIGHT or HEAVY armor: improves defence and (from level 2) HP "
+                       + "regeneration; light armor also boosts evasion, and from the 3rd class heavy "
+                       + "armor adds defence and max HP. A robe or a bare torso gets nothing.",
             Levels: new[]
             {
                 new SkillLevel(SpCost: 1700),
@@ -171,15 +179,21 @@ public static partial class SkillCatalog
                 // 🔴 THE EVASION LADDER IS 7/9/12/12/12, his file — corrected 2026-09-09. It had been
                 // 7/11/13/13/13, a point or two over on four of the five rungs, and `--check` had been
                 // saying so for as long as it has read the DESCR column.
-                // ⚠ STILL UNAUTHORED AND STILL HERE: the `MpRegenPct: 0.1f` on rungs 1-4. His rows
-                // author no MP regen at all below 36 — the same shape as the tank's invented ×1.1,
-                // which he ruled out on 2026-09-04 (*"Remove the x1.1 mp regen from tank 20~32"*).
-                // FLAGGED, NOT SWEPT: an unauthored value appears in no cell, so `--check` can never
-                // find it, and removing it is his call rather than a correction.
-                RogueArmor(new StatMods(MpRegenPct: 0.1f, PDef: 16), lightEva: 7),
-                RogueArmor(new StatMods(MpRegenPct: 0.1f, PDef: 18), lightEva: 9),
-                RogueArmor(new StatMods(MpRegenPct: 0.1f, PDef: 20), lightEva: 12, lightSpeed: 7f),
-                RogueArmor(new StatMods(MpRegenPct: 0.1f, PDef: 22), lightEva: 12, lightSpeed: 7f),
+                // ✅ THE UNAUTHORED `MpRegenPct: 0.1f` ON RUNGS 1-4 IS GONE, 2026-09-11 — and it left
+                // for a reason rather than on a tidy-up. It was the same invented ×1.1 the tank had
+                // (ruled out 2026-09-04: *"Remove the x1.1 mp regen from tank 20~32"*), flagged here
+                // and deliberately not swept because removing it was his call. He has now made that
+                // call from the other end: `fighter 1st.csv` gives EVERY fighter the ×1.1 as its own
+                // unreplaceable `fighter_spirit_mastery`. Leaving these four would have paid a rogue
+                // the same 10% twice, which is a regression this change would have caused.
+                // ⚠ STILL UNAUTHORED AND STILL HERE: the `MpRegenPct: 0.8f` on rung 5 below, whose
+                //   cell reads `mpReg +1.8` — a FLAT, the way the tank's `mpReg +3.1` and the `hpReg
+                //   +2.5` on that same row are flat. Not touched here: it is a units question with a
+                //   number attached, not a duplicate, and it predates this change. Owed a ruling.
+                RogueArmor(new StatMods(PDef: 16), lightEva: 7),
+                RogueArmor(new StatMods(PDef: 18), lightEva: 9),
+                RogueArmor(new StatMods(PDef: 20), lightEva: 12, lightSpeed: 7f),
+                RogueArmor(new StatMods(PDef: 22), lightEva: 12, lightSpeed: 7f),
                 // ⚠ The two regen columns of `rogue 2nd.csv` line 7 are read DIFFERENTLY, deliberately.
                 // 🔴 THE HP REGEN IS +2.5 SINCE 2026-09-09, his cell — it had been 1.2, which is what
                 // his OLD `hpReg x1.2` converted to. His row now reads `hpReg +2.5` and the 3rd tier

@@ -108,6 +108,12 @@ public static partial class ClassSkillTables
         // What is left waiting for a file is the WARRIOR's two, and nothing else.
         RegisterDual3rd();
         RegisterArcher3rd();
+        // …and the ELEVENTH, 2026-09-11: the WARRIOR's two, `warrior 3rd.csv` (Ravager) and
+        // `war_aoe 3rd.csv` (Warlord). With these the 40+ purge covers no fighter discipline at all —
+        // every one of the eight now learns from a file. ⚠ HALF a file each, in his own words: they
+        // carry the passives and the buffs and *"are missing only teir dmg and control (active dmg)
+        // skills"*, which is why `war_sundering_blow` above is still registered.
+        RegisterWarrior3rd();
         // (A FOURTH, `RegisterHealerMasteries()`, existed for one day and is gone: it taught the two
         //  healer masteries and Frenzy L2 while RegisterLightbringer was still commented out. Those
         //  rungs are in the shared ladder now, and keeping both would have registered every one twice.)
@@ -235,7 +241,11 @@ public static partial class ClassSkillTables
             kit.AddRange(Ladder(TankShieldStun, TankShieldShockLevels, 5));   // Shield Shock, continued from 24-36
             kit.Add(new ClassSkill(DefensiveWall, 46, SkillLevel: 2));
             kit.Add(new ClassSkill(TankShieldReinforce, 60, SkillLevel: 1));
-            kit.Add(new ClassSkill(TankFinalDefense, 60, SkillLevel: 1));
+            // Final Defense — THREE rungs since 2026-09-11 (his *"fixed tanks final_defence to have
+            // lvls"*). 60 keeps the numbers it always had; 40 and 52 are the new lower two.
+            kit.Add(new ClassSkill(TankFinalDefense, 40, SkillLevel: 1));
+            kit.Add(new ClassSkill(TankFinalDefense, 52, SkillLevel: 2));
+            kit.Add(new ClassSkill(TankFinalDefense, 60, SkillLevel: 3));
             kit.Add(new ClassSkill(TankAggravatedState, 52, SkillLevel: 1));
             kit.Add(new ClassSkill(TankAggravatedState, 60, SkillLevel: 2));
             kit.Add(new ClassSkill(TankAggravatedState, 68, SkillLevel: 3));
@@ -571,12 +581,18 @@ public static partial class ClassSkillTables
         int[] warriorBands = { 43, 49, 55, 62, 66, 70, 74 };
         int[] bufferBands = { 40, 44, 48, 52, 56, 62, 70 };
         int[] bufferSp = { 36_000, 43_000, 64_000, 74_000, 81_000, 170_000, 390_000 };
+        // 🔑 THE TWO WARRIOR DISCIPLINES PRICE THE SAME SEVEN RUNGS DIFFERENTLY, and only on the first
+        // two: `warrior 3rd.csv` (Ravager) reads 35k/50k where `war_aoe 3rd.csv` (Warlord) reads
+        // 42k/65k, which is also the SkillDef's own ladder. Both files agree from rung 6 up. Same
+        // payload, two prices — so an SpCost override, never a second SkillDef.
+        int[] ravagerSp = { 35_000, 50_000, 80_000, 170_000, 280_000, 390_000, 880_000 };
+        int[] warlordSp = { 42_000, 65_000, 80_000, 170_000, 280_000, 390_000, 880_000 };
 
         foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
         {
-            foreach (var disc in new[] { Discipline.Ravager, Discipline.Warlord })
+            foreach (var (disc, sp) in new[] { (Discipline.Ravager, ravagerSp), (Discipline.Warlord, warlordSp) })
                 ClassSkills.RegisterThird(race, disc,
-                    warriorBands.Select((lvl, i) => new ClassSkill(HpBoost, lvl, SkillLevel: i + 4))
+                    warriorBands.Select((lvl, i) => new ClassSkill(HpBoost, lvl, SkillLevel: i + 4, SpCost: sp[i]))
                                 .ToArray());
 
             ClassSkills.RegisterThird(race, Discipline.Warchanter,
@@ -869,33 +885,113 @@ public static partial class ClassSkillTables
     /// warrior rungs 4-10, i.e. up to +1000 max HP, which is exactly what he asked for.</para></summary>
     private static void RegisterWarriorAndArcherKits()
     {
-        // The tank's fifteen-rung spine (SkillCatalog.BulwarkLevels), written out because it is
-        // private to the catalog. Both armour ladders ride it, so both stay in step with the tank's.
-        int[] armour15 = { 40, 43, 46, 49, 52, 55, 58, 60, 62, 64, 66, 68, 70, 72, 74 };
-        // The Warchanter's own two bands, so a derived ladder learns on the same levels as its source.
+        // The Warchanter's own band, so the ONE surviving derived ladder learns on the same levels as
+        // its source. (`band8` and `armour15` went with the sword mastery and the armour rungs.)
         int[] band13 = { 40, 48, 52, 56, 58, 60, 62, 64, 66, 68, 70, 72, 74 };
-        int[] band8  = { 40, 48, 56, 60, 64, 68, 70, 74 };
 
         static IEnumerable<ClassSkill> Ladder(string id, int[] levels, int startRung = 1) =>
             levels.Select((lv, i) => new ClassSkill(id, lv, SkillLevel: startRung + i));
 
+        // 🔴 EVERYTHING BUT THIS ONE LADDER IS GONE, 2026-09-11 — his `warrior 3rd.csv` and
+        //    `war_aoe 3rd.csv` landed and RegisterWarrior3rd() below teaches his rows instead. The
+        //    derived sword mastery and the tank-copy armour rungs are deleted; see the header of
+        //    Skills.FighterKits3rd.cs. Sundering Blow stays because his files carry the passives and
+        //    buffs and *"are missing only teir dmg and control (active dmg) skills"* — so the DAMAGE
+        //    half is still owed, and this is what stands in for it.
+        // ⚠ It is registered on BOTH disciplines, which is a stand-in's shape and not his: when his
+        //   damage rows land they will almost certainly split sword from blunt like everything else in
+        //   those two files does.
         var warrior = new List<ClassSkill>();
-        warrior.AddRange(Ladder(WarriorArmorMastery, armour15, startRung: 6));
-        warrior.AddRange(Ladder(WarSwordMastery, band8));
         warrior.AddRange(Ladder(WarSunderingBlow, band13));
-        // `BL-191` — OVERPOWER rung 2 (7%) at 40, his *"3,7,10% @20,40,76"*. ⚠ This is AUTHORED, not
-        // derived, and so is the only row in this list that is: the three ladders above it are the
-        // derived warrior kit that stands in until `warrior 3rd.csv` is written, while this one is
-        // his own ruling of 2026-09-10. Rung 1 is on the 2nd-class table, rung 3 on the 4th.
-        warrior.Add(new ClassSkill(Overpower, 40, SkillLevel: 2));
 
         // 🔴 THE ARCHER'S HALF IS GONE, 2026-09-09 — `archer 3rd.csv` landed and RegisterArcher3rd()
         //    below teaches his rows instead. The four derived skills it used to register are orphaned
         //    in Skills.ArcherKitRetired.cs and retired by `Replaces` on their authored successors.
-        //    THE WARRIOR'S HALF STAYS DERIVED: `warrior 3rd.csv` is still not finished.
         foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
             foreach (var d in new[] { Discipline.Ravager, Discipline.Warlord })
                 ClassSkills.RegisterThird(race, d, warrior.ToArray());
+    }
+
+    /// <summary>THE WARRIOR'S TWO DISCIPLINES, 40-74 — every row of `warrior 3rd.csv` (the RAVAGER)
+    /// and `war_aoe 3rd.csv` (the WARLORD), 2026-09-11. The numbers are in Skills.Warrior3rd.cs; this
+    /// is which of them each discipline learns, and when.
+    ///
+    /// <para>🔑 <b>THE WEAPON IS THE SPLIT.</b> Ravager = two-handed SWORD + the two Battle stances;
+    /// Warlord = two-handed BLUNT whose basic attack CLEAVES, no stances, and two extra rungs of
+    /// Battle Regeneration instead. Everything else is shared rung for rung because both files author
+    /// it identically.</para>
+    ///
+    /// <para>🔑 <b>WHERE THE TWO FILES DISAGREE IT IS ONLY THE PRICE OR THE LEVEL</b>, never the
+    /// payload — so those ride as <see cref="ClassSkill.SpCost"/> overrides rather than as a second
+    /// SkillDef. Three skills need one: HP Boost and HP Regeneration (the Ravager's first two rungs
+    /// are cheaper) and Warrior's Strength (rung 3 is 46/40k for him, 52/74k for the Warlord).</para>
+    ///
+    /// <para>⚠ HP Boost's LEVELS are already right for both — <see cref="RegisterHpBoost"/> gives every
+    /// warrior discipline rungs 4-10 at 43-74, which is both files' column. Only two of its SP cells
+    /// move.</para></summary>
+    private static void RegisterWarrior3rd()
+    {
+        int[] band15 = SkillCatalog.Warrior3rdLevels;
+        int[] sp15   = SkillCatalog.Warrior3rdSp;
+        int[] regen7 = { 43, 49, 55, 62, 66, 70, 74 };   // HP Regeneration, both files' column
+        // Same story as HP Boost: one payload, two prices, differing on the first two rungs only.
+        int[] regenSpRavager = { 28_000, 50_000, 80_000, 170_000, 280_000, 390_000, 880_000 };
+        int[] regenSpWarlord = { 42_000, 65_000, 80_000, 170_000, 280_000, 390_000, 880_000 };
+
+        static IEnumerable<ClassSkill> Ladder(string id, int[] levels, int startRung = 1) =>
+            levels.Select((lv, i) => new ClassSkill(id, lv, SkillLevel: startRung + i));
+
+        static IEnumerable<ClassSkill> PricedLadder(string id, int[] levels, int[] sp) =>
+            levels.Select((lv, i) => new ClassSkill(id, lv, SkillLevel: i + 1, SpCost: sp[i]));
+
+        // ---- What both disciplines learn, identically. ----
+        var shared = new List<ClassSkill>();
+        // Armour Mastery rungs 6-20 — APPENDED to the 2nd-class ladder, same id (the tank's idiom).
+        shared.AddRange(Ladder(WarriorArmorMastery, band15, startRung: 6));
+        // Final Stand — the P.Atk twin of the tank's Final Defense, three rungs on the same levels.
+        shared.AddRange(Ladder(WarriorFinalStand, new[] { 40, 52, 60 }));
+        // Battle Regeneration rungs 2-4 (15/20/25%). The Warlord takes two more, below.
+        shared.AddRange(Ladder(BattleRegeneration, new[] { 40, 49, 58 }, startRung: 2));
+        // Battle Resilience rungs 2-3 and Monster Knowledge rungs 2-6, both files' columns.
+        shared.AddRange(Ladder(BattleResilience, new[] { 49, 62 }, startRung: 2));
+        shared.AddRange(Ladder(MonsterKnowledgeActive, new[] { 40, 46, 52, 58, 64 }, startRung: 2));
+        // `BL-191` — OVERPOWER rung 2 (7%) at 40, his *"3,7,10% @20,40,76"*. Rung 1 is on the
+        // 2nd-class table, rung 3 on the 4th. Both his files carry the row.
+        shared.Add(new ClassSkill(Overpower, 40, SkillLevel: 2));
+
+        // ---- THE RAVAGER: the sword, the stances, and the cheaper early prices. ----
+        var ravager = new List<ClassSkill>(shared);
+        ravager.AddRange(PricedLadder(WarriorSwordMastery, band15, sp15));
+        ravager.AddRange(PricedLadder(WarriorHpRegeneration, regen7, regenSpRavager));
+        // Warrior's Strength rungs 2-4 at 40/46/52. ⚠ The Warlord takes only 2-3, and takes rung 3
+        //   twelve levels later for nearly twice the SP — hence two lists rather than one.
+        ravager.Add(new ClassSkill(WarriorStrength, 40, SkillLevel: 2, SpCost: 28_000));
+        ravager.Add(new ClassSkill(WarriorStrength, 46, SkillLevel: 3, SpCost: 40_000));
+        ravager.Add(new ClassSkill(WarriorStrength, 52, SkillLevel: 4, SpCost: 74_000));
+        // The two Battle stances — the Ravager's alone; `war_aoe 3rd.csv` has neither.
+        ravager.Add(new ClassSkill(BattlePresence, 46, SkillLevel: 2));
+        ravager.Add(new ClassSkill(BattlePresence, 55, SkillLevel: 3));
+        ravager.Add(new ClassSkill(BattleDefence, 43, SkillLevel: 2));
+        ravager.Add(new ClassSkill(BattleDefence, 52, SkillLevel: 3));
+        // ⚠ HP Boost's two cheaper cells are NOT here — they are in RegisterHpBoost, which owns that
+        //   ladder for every class that learns it. An override added beside a ladder rather than ON
+        //   it registers the rung TWICE, and the second row's price is not the one anything reads.
+
+        // ---- THE WARLORD: the blunt that cleaves, and the longer Battle Regeneration. ----
+        var warlord = new List<ClassSkill>(shared);
+        warlord.AddRange(PricedLadder(WarriorBluntMastery, band15, sp15));
+        warlord.AddRange(PricedLadder(WarriorHpRegeneration, regen7, regenSpWarlord));
+        warlord.Add(new ClassSkill(WarriorStrength, 40, SkillLevel: 2, SpCost: 28_000));
+        warlord.Add(new ClassSkill(WarriorStrength, 52, SkillLevel: 3, SpCost: 74_000));
+        // Rungs 5-6 (30/35%) — the two levels the Ravager spends on Battle Presence instead.
+        warlord.Add(new ClassSkill(BattleRegeneration, 64, SkillLevel: 5));
+        warlord.Add(new ClassSkill(BattleRegeneration, 70, SkillLevel: 6));
+
+        foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
+        {
+            ClassSkills.RegisterThird(race, Discipline.Ravager, ravager.ToArray());
+            ClassSkills.RegisterThird(race, Discipline.Warlord, warlord.ToArray());
+        }
     }
 
     /// <summary>THE MELEE ROGUE, 40-74 — every row of `dual 3rd.csv` (2026-09-09). See

@@ -7,12 +7,169 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.129.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.130.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-11 (latest) — 0.129.0: the channel becomes a real channel — it roots you, it shows a bar, and a second skill queues
+## 2026-09-11 (latest) — 0.130.0: his five CSV edits land — the warrior gets its two 3rd-class kits, and a blunt starts cleaving
+
+⚠ **NEW APK.** No protocol bump (nothing on the wire changed), but the client builds its Learn tab
+locally from the compiled `ClassSkills`, and this moves five class tables at once.
+
+Five files of his, in the order he asked for them: *"U can apply changes to tank(3rd)/fighter(1st) -
+then build(apply changes) to warrior 2nd - then u can build warrior/aoe 3rd whats there."*
+
+### `fighter 1st.csv` — the ×1.1 MP regen becomes a skill of its own
+
+His words: *"fixed fighter 1st all fighters to get a passive for x1.1 (i was mistaken when i though
+it was a multi/additive mistake .. so all fighters now get their x1.1 mp regen)."*
+
+🔑 **It had to MOVE to be "all fighters".** The ×1.1 lived on `fighter_armor_mastery`, and every
+2nd-class armour mastery carries `Replaces: [fighter_armor_mastery]` — so the regen died at the class
+change and survived only where the replacing mastery happened to re-state it. The warrior's did and
+the rogue's did; **the tank's never has**. So `fighter_spirit_mastery` is a new one-rung passive at 5
+(SP 160) that **nothing replaces**, and all four archetypes keep it for the rest of the game.
+
+Two consequences, both of them removals of a number that would now be paid twice:
+- `warrior_armor_mastery` drops its `MpRegenPct` on all twenty rungs — his rows no longer mention it.
+- ✅ **The rogue's unauthored ×1.1 on rungs 1-4 is finally gone.** It was the same invented value the
+  tank had (ruled out 2026-09-04: *"Remove the x1.1 mp regen from tank 20~32"*), flagged in the code
+  and deliberately left because removing it was his call. He has now made that call from the other
+  end. ⚠ Rung 5's `MpRegenPct: 0.8f` against a cell reading `mpReg +1.8` is a **units** question, not
+  a duplicate, and is untouched — still owed a ruling.
+
+### `tank 3rd.csv` — Final Defense grows a ladder
+
+*"fixed tanks final_defence to have lvls."* Rungs at **40** (5/10/15% P.Def, 2.5/5% M.Def) and **52**
+(7/14/21%, 3.5/7%) under the level-60 one, whose numbers are **unchanged** — a tank who reaches 60 is
+exactly as strong as he was, and the two new rows are a cheaper on-ramp twenty levels earlier.
+`Entity.FinalDefenceBonus` now reads a `[skill level][HP band]` table instead of three hard-coded
+`return`s. Aggravated State re-priced to his 74k / 120k / 320k (all three rungs read 120k before).
+
+### `warrior 2nd.csv` — Two-Hand Mastery is split, and loses its penalty
+
+🔴 **Four columns left that skill and only two went somewhere else.** His rows now read
+*"crit dmg +35; p.atk +13; With 2h Blunt: Allow basic attack to hit around in 150 range (max 2
+targets)"* and nothing more:
+- `acc +3` and `p.atk ×1.2` **moved** to a new **Warrior's Strength** (`warrior_strenght`) — same
+  learn level, same weapon gate, its own SP row, and the 3rd class continues *that* ladder.
+- `eva −3` and `p.def ×0.9` **are simply gone.** The penalty he cut to −10% in playtest-19 (*"I want
+  a warrior in a heavy not to have lower defence than a mage"*) has now been cut the rest of the way.
+- Top-rung flat P.Atk 20 → 22, so the 13/15/17/20/22 ladder no longer plateaus.
+
+🔑 **THE BLUNT CLEAVE IS A NEW ENGINE CHANNEL.** *"Allow basic attack to hit around in 150 range"* —
+`PassiveEffect.CleaveTargets`/`CleaveRadius`, riding a WEAPON MASTERY so the gate is the same one
+every other number on the rung uses: put the mace away and the cleave goes with it. Each extra body
+takes a **whole swing** through `ResolveBasicSwing` — its own miss roll, crit, block and on-hit
+riders — not a share of one, and its own Retaliate and Kill so a cleaved kill still credits the drop.
+`CleaveTargets` counts the primary target, which is what his "max 2" means.
+
+Two new self-buffs, both continuing into the 3rd tier:
+- **Battle Resilience** (36) — *"Increase resistance to Stun/Shock, Hold/Bind and Buff-Removal
+  Attacks with 40%"*. 🔑 His sentence names **three** things and they are three different channels:
+  stun and hold land through the ATK-vs-CON/WIT contest, defended per SCHOOL (`CcResistPhysical` /
+  `CcResistMagical` — he named the effects, not a school, so both get the number), and Buff-Removal
+  is the Cancel roll, which is its own.
+- **Monster Knowledge** (32) — +5% PvE damage, 10 minutes, 5s reuse. 🔑 "PVE Dmg" is **all three** PvE
+  channels (skill / magic / basic): his sentence names the context and says nothing about the source,
+  and setting only the skill channel would exempt the basic attacks that are most of a warrior's
+  damage between reuses. The three PvP bits stay off — that is his line too, by omission.
+
+🔴 **`Precision` LEFT THAT FILE — AND NOW THE WARRIOR TOO** (`BL-201`). The row's absence was raised
+rather than acted on (deleting a combat mechanic on the strength of a deleted row is not a
+transcription), and he ruled the same day: *"Delete precition ... Now he have +9 which kills 50% of
+the rogues evasion anyway (no need for another hit floor) - leave the mechanic but not the skill on
+warrior."*
+
+🔑 **ACCURACY IS THE REPLACEMENT, and it measures out.** Warrior's Strength now carries up to **+9
+accuracy**, and the resolver is one line — `miss = 5% + (EVA − ACC) × 1%` — so nine points *is* nine
+points of a rogue's evasion lead. The floor existed to stop an evasion-stacked rogue locking a warrior
+out entirely; `--dmgmatrix` §E1 puts a buffed champion at **16% miss** against a light rogue at 36,
+nowhere near the 90% ceiling the floor capped. It was a second layer that never bound.
+
+`FloorPassiveFor` no longer names `Archetype.Warrior`. ⚠ The `Precision` def and
+`PassiveEffect.HitFloor` both **stay**: "leave the mechanic".
+
+🔑 **AND NOTHING UN-GRANTS IT.** A strip in `AutoLearnCoreSkills` was written first — an auto-grant is
+a plain assignment, so it is permanent, which is why `BL-143` needed exactly that for the tank's
+Backlash — and he deleted it the same afternoon: *"no1 except me plays this game for now .. so no
+lingering warriors when I clear a db .. So no point of migration type to remove a skill from some1.
+They will never have it in the 1st place."* **Pre-release, a `game.db` delete IS the migration.**
+Un-grant code is only worth writing for a skill that shipped to somebody who is not him.
+
+### `warrior 3rd.csv` + `war_aoe 3rd.csv` — both disciplines get their kits
+
+*"I made some passives and buffs for warrior/aoe 3rd - they are missing only teir dmg and control
+(active dmg) skills."* So this is the **passive and buff half** of two kits, and the damage half is
+still owed — the derived `war_sundering_blow` stands in until it lands.
+
+🔑 **THE WEAPON IS THE WHOLE SPLIT.** The **Ravager** trains a two-handed SWORD
+(`warrior_sword_mastery`, +52→150 P.Atk and +145→615 crit damage over fifteen rungs) and keeps both
+Battle stances. The **Warlord** trains a two-handed BLUNT (`warrior_blunt_mastery`) whose basic attack
+cleaves **5 → 10** bodies, has no stances at all, and pays for it with twenty fewer points of P.Atk at
+every rung. Everything else is shared rung for rung because both files author it identically.
+
+New, and shared: **Final Stand** (the P.Atk twin of the tank's Final Defense, read live off the HP
+bar) and **HP Regeneration** — the first passive in the game that pays for **sitting**
+(`PassiveEffect.HpRegenSitting`/`MpRegenSitting`, flat, added outside the stance multiplier because
+sitting already pays ×1.5 and folding his +2.0 inside would have quietly made it +3.0). A warrior has
+no other MP regen of his own, so that half is what lets him sit ten seconds between pulls instead of
+thirty.
+
+🔴 **`war_sword_mastery` IS GONE** — `warrior_sword_mastery` is its successor, a rename plus his own
+fifteen-rung ladder, not a second skill. Safe to delete only because it was five days old, lived on
+these two disciplines alone, and reaching 40 as a Ravager takes longer than it existed. The derived
+tank-copy armour rungs went with it; his own shape is nothing like them (no ×1.07 P.Def, no −2
+evasion, and a light branch that keeps growing instead of freezing at the level-36 rung).
+
+### What the tooling caught, and what it still says
+
+Both files got their `Check.Specs` line the day they landed, **unfinished** — `BL-197`'s lesson was
+that a code side half-authored and half-derived is exactly where the two drift apart silently. It
+paid immediately:
+
+- 🔴 The **`BL-85` startup guard** refused the build outright: both Battle stances now ladder on one
+  shared `battle_stance` key. They are the deliberate "one or the other, never both" pair, so both
+  take `FlatRank: true` — the documented opt-out, same as Great Might / Great Bulwark.
+- 🔑 The checker learned that **a weight clause is an ADDITION, not a total**. His row reads *"P.def
+  +40 …; Heavy: P.Def +10"* — the leading clause is every trained weight and `Heavy:` says what heavy
+  adds on top. The code stores the total (50), so all fifteen rungs reported as wrong when the code
+  was right and the reading was not.
+- 🔑 It also learned the **sitting-regen clause**, which it had been reading as the main `hpReg`.
+- Two of his cells fixed in place, both making a row agree with itself: the Battle Presence WEAPON
+  column (empty, while its own DESCR says *"requres 2h sword/blunt"*) and `+1,8` → `+1.8` (a
+  Bulgarian decimal comma the reader parsed as `1`).
+
+✅ **TWO LADDER DIPS FOUND AND RULED THE SAME AFTERNOON** (`BL-200`). Both were raised rather than
+guessed at — the CSV is never quietly retuned — and both came back *"Typo on both"*:
+- `warrior_sword_mastery` rung 8 (level 60) read **+91 P.Atk** between 94 and 108 → **101**, so the
+  +7 step now runs unbroken 52 → 150.
+- `battle_defence` went **×2.5 at 43 → ×2.3 at 52**, making the 74k-SP rung weaker than the 42k one
+  → **×3**, a clean +0.5 ladder (×2 → ×2.5 → ×3).
+
+Code array and CSV cell moved together, in this commit.
+
+🔑 **`--check`'s LADDER DIP found both, on files that are not finished** — which is the whole argument
+for giving a half-authored file its `Check.Specs` line the day it lands rather than the day it is
+done (`BL-197`). Two typos caught the same afternoon they were written, in rows nobody had played.
+
+### Measured, not derived
+
+🔴 **The rig's flagship level-74 comparison had no discipline on the champion** — `BuildPlayer`
+teaches nothing above the 2nd class without one, so "is the warrior keeping up with the nuker" was
+measuring a level-74 **Champion** against a full **Magus**, two class tiers apart, and had been since
+`nuker 3rd.csv` landed in August. With `Discipline.Ravager` passed and his kit built:
+
+| | P.Atk | total DPS | vs nuker |
+|---|---|---|---|
+| champion, no discipline (what the rig measured) | 815 | 604.8 | 0.95× |
+| Ravager with his kit (what it measures now) | 1079 | 719.4 | **1.13×** |
+
+…and that is **without** the damage skills he still owes. `--check` is green on all seventeen finished
+files; the two warrior files report only the stand-in Sundering Blow and the two dips above.
+
+## 2026-09-11 — 0.129.0: the channel becomes a real channel — it roots you, it shows a bar, and a second skill queues
 
 ✅ **No new APK, no protocol bump.** Every part of this is server-side: the volley reuses the cast
 bar's own message, and the client already roots, draws the X and cancels off "am I casting".

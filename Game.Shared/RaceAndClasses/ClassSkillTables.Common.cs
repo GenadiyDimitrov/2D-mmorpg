@@ -90,6 +90,10 @@ public static partial class ClassSkillTables
             ClassSkills.Register(race, BaseClass.Fighter, Archetype.Warrior,
                 new ClassSkill(WarriorArmorMastery, 20, SkillLevel: 1),
                 new ClassSkill(WarriorWeaponMastery, 20, SkillLevel: 1),
+                // Warrior's Strength — the accuracy + ×1.2 P.Atk half of the old Two-Hand Mastery,
+                // its own skill since his 2026-09-11 pass. Same level, same gate, its own SP row;
+                // the 3rd class continues THIS ladder (40/46/52) rather than the mastery's.
+                new ClassSkill(WarriorStrength, 20, SkillLevel: 1),
                 new ClassSkill(Smash, 20, SkillLevel: 1),
                 // HP Boost L1-L3 at 20/28/36 (`warrior 2nd.csv`, 2026-08-27). The ladder continues
                 // L4-L10 on the 3rd-class table; the buffer takes L1-L7 from 40. See SkillCatalog.HpBoost.
@@ -111,10 +115,15 @@ public static partial class ClassSkillTables
                 new ClassSkill(WarriorWeaponMastery, 32, SkillLevel: 4),
                 new ClassSkill(Smash, 32, SkillLevel: 4),
                 new ClassSkill(BattlePresence, 32, SkillLevel: 1),
+                // Monster Knowledge (2026-09-11) — the farming buff. 10 minutes, 5s reuse, PvE only.
+                new ClassSkill(MonsterKnowledgeActive, 32, SkillLevel: 1),
                 new ClassSkill(WarriorArmorMastery, 36, SkillLevel: 5),
                 new ClassSkill(WarriorWeaponMastery, 36, SkillLevel: 5),
                 new ClassSkill(Smash, 36, SkillLevel: 5),
                 new ClassSkill(BattleDefence, 36, SkillLevel: 1),
+                // Battle Resilience (2026-09-11) — stun/hold/cancel resistance, learned beside the
+                // second Battle stance because it is the third answer to "I am being focused".
+                new ClassSkill(BattleResilience, 36, SkillLevel: 1),
                 new ClassSkill(HpBoost, 36, SkillLevel: 3));
             // Rogue (CSV rogue 2nd): Rogue Armor/Weapon Mastery, Stab + Shot continue (levels
             // 4-8), Sprint, Bow Expertise.

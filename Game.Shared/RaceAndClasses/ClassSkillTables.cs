@@ -27,6 +27,10 @@ public static partial class ClassSkillTables
             ClassSkills.Register(race, BaseClass.Fighter, null,
                 new ClassSkill(FighterArmorMastery, 5,  SkillLevel: 1),
                 new ClassSkill(FighterWeaponMastery, 5, SkillLevel: 1),
+                // Spirit Mastery — ONE rung, and the only place any fighter ever buys the ×1.1 MP
+                // regen (2026-09-11, his `fighter 1st.csv`). No 2nd class replaces it, so a warrior,
+                // rogue or tank keeps it for the rest of the game. See SkillCatalog.FighterSpiritMastery.
+                new ClassSkill(FighterSpiritMastery, 5, SkillLevel: 1),
                 new ClassSkill(Strike, 5, SkillLevel: 1),
                 new ClassSkill(Stab,   5, SkillLevel: 1),
                 new ClassSkill(Shot,   5, SkillLevel: 1),

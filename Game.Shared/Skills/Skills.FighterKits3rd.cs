@@ -53,51 +53,24 @@ public static partial class SkillCatalog
     private static int Up(int v) => (int)MathF.Round(v * KitFactor);
 
     // ---- WARRIOR (Ravager / Warlord) ----
-    /// <summary>Warrior 2H SWORD mastery — the Demon Harmonist's Warlock Weapon Mastery, sword instead
-    /// of blunt, P.Atk ×1.25. His line: *"the same 2h mastery as demon harmonist only for sword and
-    /// power increased with 20~30%"*.</summary>
-    public const string WarSwordMastery = "war_sword_mastery";
+    // 🔴 `war_sword_mastery` AND THE ARMOUR RUNGS LEFT THIS FILE ON 2026-09-11 — his two warrior files
+    //    landed, which is exactly the event the paragraph at the top of this file has been promising:
+    //    *"when `warrior 3rd.csv` and the archer's file land, they win and this becomes the thing that
+    //    gets corrected."* `warrior_sword_mastery` in Skills.Warrior3rd.cs is the derived sword
+    //    mastery's SUCCESSOR (a rename plus his own fifteen-rung ladder, not a second skill), and
+    //    WarriorArmorMasteryThirdRungs/Profiles are his numbers now — he authors a light branch that
+    //    keeps growing and a heavy branch that is nothing like the tank's copy that stood here.
+    //    ⚠ Deleting the id is safe HERE for the same narrow reason the archer's four were: it was five
+    //      days old (0.116.0), registered on these two disciplines alone, and reaching 40 as a Ravager
+    //      takes longer than it existed. Not a precedent.
     /// <summary>Warrior melee damage skill — Sound Smash's ladder at ×1.25, gated to a TWO-HANDED
     /// SWORD (the weapon his 2H mastery line commits the class to). His *"the same smash/shock skill
-    /// as the demon harmonist increased in dmg with 20%~30%"*.</summary>
+    /// as the demon harmonist increased in dmg with 20%~30%"*.
+    /// 🔴 THE LAST SURVIVOR OF THE DERIVED KIT, and it survives for a stated reason: his 2026-09-11
+    /// files carry the warrior's passives and buffs but *"are missing only teir dmg and control
+    /// (active dmg) skills"*. This stands in until those rows land, then it goes the way of the
+    /// sword mastery above. Do not author a second damage skill beside it in the meantime.</summary>
     public const string WarSunderingBlow = "war_sundering_blow";
-
-
-    // ═══════════════════════════════════════════════════════════════════════════════════════════
-    //  ARMOUR — both are RUNGS APPENDED to an existing 2nd-class ladder, never a new skill.
-    //
-    //  🔑 WHY APPEND RATHER THAN ADD A SKILL. An armour mastery's payload rides ArmorMasteryLevels,
-    //     and the profile at the LEARNED rung supplies every weight at once. A second, separate
-    //     mastery would either stack silently with the 2nd-class one (the archer would carry 15%
-    //     crit-rate resistance twice) or, with `Replaces`, would delete the weights it does not
-    //     re-state (a light-armour warrior would lose everything). Appending is the idiom the TANK
-    //     already uses — one skill, 2nd-class rungs then 3rd-class rungs — and it is regression-proof
-    //     by construction: each new profile RE-STATES the 2nd class's other weights.
-    //  ⚠ APPEND ONLY. A rung inserted mid-ladder silently re-points every saved SkillLevel above it.
-    // ═══════════════════════════════════════════════════════════════════════════════════════════
-
-    /// <summary>WARRIOR HEAVY MASTERY, rungs 6-20 — *"have the same heavy passive as tanks minus the
-    /// crit dmg reduction"*. Verbatim <see cref="TankArmorPDef"/> / <see cref="TankArmorPDefPct"/> /
-    /// <see cref="TankArmorMpReg"/> and the tank's −2 evasion, with <c>CritDmgResist</c> left at zero:
-    /// that one column is the tank's alone, and it is the whole difference between the two kits.</summary>
-    internal static SkillLevel[] WarriorArmorMasteryThirdRungs() =>
-        BulwarkRungs(i => new SkillLevel(SpCost: BulwarkSp[i],
-            Description: $"With heavy armor: +{TankArmorPDef[i]} P.Def, "
-                       + $"×{1f + TankArmorPDefPct[i]:0.00} P.Def, +{TankArmorMpReg[i]:0.0} MP regen/s, "
-                       + $"−2 evasion. (Light armor keeps its level-36 bonus.)"));
-
-    /// <summary>The profiles for those rungs. ⚠ LIGHT is FROZEN at the 2nd class's top rung
-    /// (<c>WarriorArmor(32, 9, hpRegen: 1.6f)</c>) rather than left blank — blank would mean a
-    /// warrior who learns rung 6 in light armour loses the defence he had at rung 5. His ask was
-    /// "the same HEAVY passive"; the light branch is carried forward untouched, not extended.</summary>
-    internal static ArmorMasteryProfile[] WarriorArmorMasteryThirdProfiles() =>
-        Enumerable.Range(0, BulwarkLevels.Length).Select(i => new ArmorMasteryProfile(
-            Robe: default, None: default,
-            Light: new StatMods(PDef: 32, MpRegenPct: 0.1f, HpRegen: 1.6f, Evasion: 9),
-            Heavy: new StatMods(
-                MpRegen: TankArmorMpReg[i],
-                PDef: TankArmorPDef[i], PDefPct: TankArmorPDefPct[i],
-                Evasion: -2))).ToArray();
 
     // ═══════════════════════════════════════════════════════════════════════════════════════════
     //  THE SKILLS
@@ -106,23 +79,6 @@ public static partial class SkillCatalog
     private static SkillDef[] FighterKits3rdSkills()
     {
         var list = new List<SkillDef>();
-
-        // ---- Warrior 2H Sword Mastery — Warlock Weapon Mastery's { 30 … 100 } at ×1.25, and its
-        //      constant +3 accuracy. TWO-HANDED SWORD: a bare `AnySword` would also pass a one-hander,
-        //      which is the tank's weapon, so the hands axis is not optional here. ----
-        int[] warSwordAtk = new[] { 30, 40, 50, 60, 70, 80, 90, 100 }.Select(Up).ToArray();
-        int[] kitMastSp = { 36_000, 64_000, 81_000, 120_000, 190_000, 320_000, 390_000, 880_000 };
-        list.Add(new SkillDef(WarSwordMastery, "Two-Handed Sword Mastery", BaseClass.Fighter, SkillEffect.None,
-            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            Category: SkillCategory.Passive,
-            Description: "Passive. A TWO-HANDED sword strikes harder and truer in your hands. "
-                       + "No effect one-handed, and none with any other weapon.",
-            Levels: warSwordAtk.Select((a, i) => new SkillLevel(SpCost: kitMastSp[i],
-                Description: $"Two-handed sword: +{a} P.Atk, +3 accuracy.")).ToArray(),
-            WeaponMasteryLevels: warSwordAtk.Select(a => new WeaponMasteryProfile(
-                Sword: new PassiveEffect(PhysAtk: a, Accuracy: 3),
-                RequiredWeapon: WeaponType.AnySword,
-                RequiredHands: WeaponHands.Two)).ToArray()));
 
         // ---- Warrior Sundering Blow — Sound Smash's thirteen rungs at ×1.25 power. Same MP, same SP,
         //      same 40 range, same 1s cast, same 3s reuse; the weapon is a 2H sword instead of a blunt.

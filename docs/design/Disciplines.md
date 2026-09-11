@@ -7,6 +7,21 @@ The single file for 3rd-class content. It merges what used to be three docs: you
 > 🔴 **Nothing here is built yet.** `BL-02` stands: no level-40+ skill exists until the CSVs below
 > land. The only exceptions you granted by name are the two level-83 skills (§8). This is the plan.
 
+> ✅🔑 **THAT SENTENCE IS NOW FALSE FOR EVERY DISCIPLINE — the last two landed 2026-09-11.** All ten
+> files exist and all ten kits are built, so this document is the **PLAN** and the CSVs are the
+> **GAME**; where they disagree, the file wins and this page is the record of what was intended.
+> ⚠ **Two things to know before reading §5 as though it described the build:**
+> - **The filenames here are not the filenames.** He authored `warrior 3rd.csv` (the Ravager) and
+>   `war_aoe 3rd.csv` (the Warlord), not `ravager 40+.csv` / `warlord 40+.csv`. Same for the rest:
+>   `tank 3rd`, `dual 3rd`, `archer 3rd`, `nuker 3rd`, `healer 3rd`, `buffer 3rd`.
+> - 🔴 **THE WARRIOR'S TWO ARE HALF-AUTHORED.** His own words: *"they are missing only teir dmg and
+>   control (active dmg) skills."* So everything §5.3 and §5.4 describe as `[DMG]` / `[AOE/CC]` — Main
+>   1, Main 2, the race CC, the self-buffs — **is still owed** (`BL-202`). What IS built is the
+>   passive/buff half, and one piece of it turned out quite different from the plan below: the Warlord
+>   does not get his AoE from a skill, he gets it from a **basic attack that cleaves up to ten bodies**
+>   within 150 (`warrior_blunt_mastery`). §5.4's "Main 1 — big AoE slash" has not been written yet, and
+>   when it is, it lands on a class that is already an AoE class without it.
+
 > ⚠🔑 **TWO DISCIPLINES IN THIS DOCUMENT NO LONGER EXIST.** `Tempest` and `Vanguard` were both
 > **RETIRED in code on 2026-08-28** (0.96.0, `BL-97`) — *"Tempests must go"*, then *"Remove the vacant
 > tank as well"*. The nuker opens into the **Magus alone** (Human Magus / Elf Starweaver / Ork

@@ -3913,3 +3913,139 @@ job is to stop two halves of the same fact drifting, and it does not care which 
 that it does for the warrior, so it keeps the def's own name, **Overpower Mastery**. `Stab Momentum`
 keeps its override because there the base mechanic really is different from the Magus's Arcane
 Momentum wearing the same id. **Rename the flavour, never the mechanic.**
+
+---
+
+## `BL-200` ✅ CLOSED 2026-09-11 — both ladder dips were typos, both fixed in code AND CSV
+
+His ruling, within the hour of the entry being written: *"Warrior sword mastery should be
+94->101->108 / Battle defense is x2->x2.5->x3 / Typo on both."*
+
+- `warrior_sword_mastery` rung 8 (level 60): **91 → 101**, so the +7 step runs unbroken 52 → 150.
+- `battle_defence`: **×2.3 → ×3.0** at 52, so the ladder is a clean +0.5 (×2 → ×2.5 → ×3).
+
+Both the code array and his CSV cell moved in the same commit (0.130.0). `--check` reports no LADDER
+DIP on either file any more.
+
+🔑 **`--check`'s LADDER DIP is what found both**, and it found them on a pair of files that are not
+finished — which is the `BL-197` argument for giving a half-authored file its `Check.Specs` line the
+day it lands rather than the day it is done. Two typos, spotted the same afternoon they were written,
+in rows nobody had played yet.
+
+---
+
+## `BL-201` ✅ CLOSED 2026-09-11 — the warrior loses Precision; ACCURACY is the replacement
+
+Asked whether the row leaving `warrior 2nd.csv` meant the mechanic or just the row, he ruled:
+*"Delete precition as we deleted the rogue floor. Probably will give more acc later on warrior. Now
+he have +9 which kills 50% of the rogues evasion anyway (no need for another hit floor) - leave the
+mechanic but not the skill on warrior."*
+
+**What changed:** `SkillCatalog.FloorPassiveFor` no longer names `Archetype.Warrior`. That is the
+whole change.
+
+🔑 **NO UN-GRANT, AND THAT IS A RULING OF ITS OWN.** A strip in `AutoLearnCoreSkills` went in first,
+on the reasoning that an auto-grant is a plain assignment and therefore permanent (which is why
+`BL-143` needed exactly that for the tank's Backlash). He deleted it the same afternoon: *"no1 except
+me plays this game for now .. so no lingering warriors when I clear a db .. So no point of migration
+type to remove a skill from some1. They will never have it in the 1st place."*
+
+**Pre-release, a `game.db` delete IS the migration.** Write un-grant code only for a skill that
+shipped to somebody who is not him — and nothing has. ⚠ The Backlash strip predates this ruling and
+is still in the file; it is not the pattern to copy.
+
+**What deliberately did NOT change:** the `Precision` SkillDef and `PassiveEffect.HitFloor` both stay.
+*"leave the mechanic but not the skill on warrior"* — the def because a save can still carry the id
+and a learned id must resolve, the field because the resolver's floor is a general mechanic the next
+thing to want one can author against.
+
+🔑 **HIS ARGUMENT IS THAT ACCURACY ALREADY DID THE JOB, and it measures out.** Warrior's Strength now
+carries up to **+9 accuracy** (`warrior_strenght` rung 4), and the resolver is one line —
+`miss = 5% + (EVA − ACC) × 1%` — so nine points *is* nine points of a rogue's evasion lead. The floor
+existed to stop an evasion-stacked rogue locking a warrior out entirely; `BalanceMatrix` §E1 puts a
+buffed champion at **16% miss** against a light-armour rogue at 36, nowhere near the 90% ceiling the
+floor capped. It was a second layer of protection that never bound.
+
+⚠ **Still spelled three different ways across three files**, which is worth knowing next time one of
+them is touched: the tank's Anti-Magic row is in `tank 2nd.csv` reporting ⚪ AUTO-GRANTED, the rogue
+has no `Evasion Mastery` row at all, and the warrior now has neither row nor grant.
+
+---
+
+## `BL-200` 🔵 TWO LADDER DIPS in the warrior 3rd files — one number each, both yours
+
+Both files landed 2026-09-11 and both are built (0.130.0). Two cells make a ladder go **down**, which
+is the one shape `--check` refuses to guess at, so both are in the code **exactly as you wrote them**
+and flagged at the line. Each is a single number once you rule.
+
+### 1. `warrior_sword_mastery` (Two-Hand Mastery, Ravager) — rung 8 reads **+91 P.Atk**
+
+`warrior 3rd.csv`, level 60. The column either side of it:
+
+| level | 52 | 55 | 58 | **60** | 62 | 64 | 66 |
+|---|---|---|---|---|---|---|---|
+| P.Atk | 80 | 87 | 94 | **91** | 108 | 115 | 122 |
+
+Every other step in the fifteen is an exact **+7**, which puts **101** where 91 sits — a digit swap
+is the obvious reading, and 101 is the only value that makes the column one straight line. As
+written, a Ravager who buys the level-60 rung **loses three points of attack he already had** and
+pays 120k SP for the privilege.
+
+⚠ The crit-damage column on the same fifteen rows is clean end to end (145 → 615), so this is one
+cell, not a mis-transcribed ladder.
+
+**Owed: 91 or 101.** `SkillCatalog.W3SwordAtk` in `Skills/Skills.Warrior3rd.cs`, one array entry.
+
+### 2. `battle_defence` — rung 3 is **weaker** than rung 2
+
+`warrior 3rd.csv`, the Ravager's only Battle Defence rows:
+
+| level | 36 (2nd class) | 43 | 52 |
+|---|---|---|---|
+| P.Def | ×2.0 | ×2.5 | **×2.3** |
+| SP | 20k | 42k | **74k** |
+
+So the 74k rung is a **downgrade** on the 42k one. I can see three readings and nothing in the file
+picks between them:
+
+- **×3.0** — continues the +0.5 step from 2.0 → 2.5.
+- **×3.5** — matches Battle Presence's own shape on the same two levels (it climbs ×1.35 → ×1.50 →
+  ×1.65, i.e. the gap widens).
+- **×3.2** — a digit swap, the same failure mode as the sword mastery above.
+
+**Owed: one number.** `BattleDefenceRung(1.3f, …)` in `Skills/Skills.Fighter.cs`.
+
+---
+
+## `BL-201` ❓ `Precision` left `warrior 2nd.csv` — is the warrior's HIT FLOOR gone, or just the row?
+
+Your 2026-09-11 pass deleted the whole `Precision` block from `warrior 2nd.csv`. **The mechanic is
+still in the game** and I have not touched it: `SkillCatalog.FloorPassiveFor` auto-grants it at the
+2nd class and it is the warrior's archetype identity passive, the twin of the rogue's Evasion Mastery
+and the tank's Anti-Magic.
+
+**What it does:** a **10% hit floor** — your physical attacks land at least one swing in ten no matter
+how much evasion the target stacks. It grants no accuracy points and it is an anti-evasion tool only;
+it exists so that a warrior is never locked out of hurting a rogue who has stacked evasion past his
+accuracy. Rung 2 (20%) is written and reachable at 40; rung 3 (30%) is written and deliberately
+unreachable until the 4th class exists.
+
+**Why the row's absence proves nothing either way:** the skill is auto-granted, so it has no class-table
+entry, so `--check` compares it against nothing and reported it only as ⚪ AUTO-GRANTED when the row
+existed. Its disappearance is invisible to the tool, and a deleted row is not enough to delete a combat
+mechanic on.
+
+Three things it could have been:
+1. **Tidying** — you dropped an SP-0 row that was never really a purchase. Nothing owed; I put the row
+   back so the file says what the game does.
+2. **A real removal** — the warrior loses the floor. Then the rogue's Evasion Mastery and the tank's
+   Anti-Magic should probably be looked at in the same breath, since the three are one design.
+3. **A move** — it belongs on the 3rd-tier files instead, with the rest of the 40+ identity.
+
+🔵 **Nothing is built either way; say which and it is small.** ⚠ Same question, one file over: the
+rogue's `rogue 2nd.csv` still has no `Precision`-shaped row either, and the tank's Anti-Magic row is
+still in `tank 2nd.csv` reporting ⚪ AUTO-GRANTED — so the three identity passives are already spelled
+three different ways across the three files.
+
+---
+

@@ -162,13 +162,29 @@ public partial class SkillCatalog
             }).Concat(TankFourthFreezeRungs()).ToArray()),
 
         // ═══ FINAL DEFENSE — the passive that reads your own HP bar ══════════════════════════════
-        // One rung at 60. Its numbers live in `Entity.FinalDefenceBonus`, not here, because they are
-        // read LIVE off current HP — see that method for why a buff would have been the wrong shape.
+        // THREE rungs at 40 / 52 / 60 since 2026-09-11 ("fixed tanks final_defence to have lvls"); it
+        // was one rung at 60. Its numbers live in `Entity.FinalDefenceBonus`, not here, because they
+        // are read LIVE off current HP — see that method for why a buff would have been the wrong
+        // shape, and for the [level][band] table his three rows fill.
+        // ⚠ The top rung is UNCHANGED (10/20/30 + 5/10): a tank who reaches 60 is exactly as strong as
+        //   he was, and the two new rows are a cheaper on-ramp twenty levels earlier.
         new(TankFinalDefense, "Final Defense", BaseClass.Fighter, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            Category: SkillCategory.Passive, SpCost: 120_000,
-            Description: "Passive. The worse it is going, the harder you are: below 75% HP +10% P.Def; "
-                       + "below 50% +20% P.Def and +5% M.Def; below 25% +30% P.Def and +10% M.Def."),
+            Category: SkillCategory.Passive, SpCost: 28_000,
+            Description: "Passive. The worse it is going, the harder you are: below 75% HP, below 50% "
+                       + "and below 25% each raise your P.Def (and, in the lower two bands, your M.Def).",
+            Levels: new[]
+            {
+                new SkillLevel(SpCost: 28_000,
+                    Description: "Below 75% HP +5% P.Def; below 50% +10% P.Def and +2.5% M.Def; "
+                               + "below 25% +15% P.Def and +5% M.Def."),
+                new SkillLevel(SpCost: 74_000,
+                    Description: "Below 75% HP +7% P.Def; below 50% +14% P.Def and +3.5% M.Def; "
+                               + "below 25% +21% P.Def and +7% M.Def."),
+                new SkillLevel(SpCost: 120_000,
+                    Description: "Below 75% HP +10% P.Def; below 50% +20% P.Def and +5% M.Def; "
+                               + "below 25% +30% P.Def and +10% M.Def."),
+            }),
 
         // ═══ AGGRAVATED STATE — the tank's gift to the party, paid for in blood ═══════════════════
         // *"When dmg is received with 15% chance increase P.Atk and Attack speed of party memebrs
@@ -190,9 +206,12 @@ public partial class SkillCatalog
                        + "attack power, attack speed and physical skill power for 30s.",
             Levels: new[]
             {
+                // 🔑 74k / 120k / 320k, his `tank 3rd.csv` of 2026-09-11. All three rungs read 120k
+                // before that, which is the 3rd tier's level-60 price charged at 52 and again at 68 —
+                // the band ladder every other file in this tier runs on puts them where they are now.
+                new SkillLevel(SpCost: 74_000),
                 new SkillLevel(SpCost: 120_000),
-                new SkillLevel(SpCost: 120_000),
-                new SkillLevel(SpCost: 120_000),
+                new SkillLevel(SpCost: 320_000),
             }),
 
         AggravatedPayload(TankAggravatedSelf,      "Aggravated State", 0.03f, 0.10f),

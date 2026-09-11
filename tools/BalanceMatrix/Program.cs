@@ -340,6 +340,38 @@ if (args.Length > 0 && args[0] == "--warchanter")
 }
 // `--buffs` — the buff census (see BuffCensus at the bottom of this file).
 if (args.Length > 0 && args[0] == "--buffs") { BuffCensus.Run(); return; }
+
+// `--cleave` — THE WARLORD'S BASIC-ATTACK CLEAVE, read off REAL entities (0.130.0).
+//
+// 🔑 IT EXISTS BECAUSE THE GATE IS THE INTERESTING PART, not the number. The cleave rides a WEAPON
+// mastery, so it must be live on a two-handed blunt and DEAD on everything else — a sword, a
+// one-hander, a bare hand, and on the Ravager whose file never authors it. Four ways to be wrong,
+// none of them visible in the catalogue: `SkillCatalog` says what the rung CARRIES,
+// `Entity.CleaveTargets` says what the character actually HOLDS, and only the second is the mechanic.
+if (args.Length > 0 && args[0] == "--cleave")
+{
+    Console.WriteLine("=== BASIC-ATTACK CLEAVE — what each build actually holds ===");
+    Console.WriteLine("  `CleaveTargets` COUNTS the real target, so 1 or 0 means no cleave at all.");
+    Console.WriteLine("  Sources: warrior_weapon_mastery (2H blunt, from 20) and warrior_blunt_mastery");
+    Console.WriteLine("  (the Warlord's, from 40). Holding both, the LARGER wins — they never sum.");
+    Console.WriteLine();
+    Console.WriteLine($"  {"lvl",3} {"discipline",-10} {"weapon",-12} {"targets",8} {"radius",7}");
+    foreach (var (lvl, disc) in new (int, Discipline?)[]
+             { (20, null), (36, null), (40, Discipline.Warlord), (52, Discipline.Warlord),
+               (74, Discipline.Warlord), (74, Discipline.Ravager) })
+        foreach (var weapon in new[] { "blunt2h", "sword2h", "blunt1h", null })
+        {
+            var w = BuildPlayer(Race.Human, BaseClass.Fighter, lvl, warrior: true,
+                                discipline: disc, secondClass: 14);
+            w.Inventory.RemoveAll(i => ItemCatalog.Get(i.DefId) is { } d
+                && (d.Slot == EquipSlot.Weapon || d.Slot == EquipSlot.Shield));
+            if (weapon is not null) Equip(w, $"{weapon}_t{GearTier(lvl)}");
+            w.RecomputeDerived();
+            Console.WriteLine($"  {lvl,3} {disc?.ToString() ?? "(2nd)",-10} {weapon ?? "bare hands",-12}"
+                            + $" {w.CleaveTargets,8} {w.CleaveRadius,7:0}");
+        }
+    return;
+}
 // `BL-158` — what the buffer actually sells a character of each level, READ OFF the real shelf.
 if (args.Length > 0 && args[0] == "--npcshelf") { NpcShelfDump(); return; }
 
@@ -566,8 +598,10 @@ if (args.Length > 0 && args[0] == "--defbreak")
                     + $"      <- IG: heavy:robe x1.47, light:robe x1.23");
     Console.WriteLine();
 
-    // The 2H warrior needs his weapon on: the 2H Weapon Mastery carries DefencePct -0.10, so measuring
-    // him 1H-in-hand would flatter his P.Def by 10%.
+    // The 2H warrior needs his weapon on. ⚠ The reason CHANGED on 2026-09-11 and the requirement did
+    // not: the 2H mastery no longer carries DefencePct at all (so a 1H measurement no longer flatters
+    // his P.Def), but every point of his ATTACK — the flat P.Atk, the crit damage, Warrior's Strength
+    // and the whole 3rd-class sword mastery — is still gated on a two-handed sword.
     Entity War2H()
     {
         var w = BuildPlayer(Race.Human, BaseClass.Fighter, L, quality: q, warrior: true,
@@ -1249,7 +1283,10 @@ static (string, Entity)[] Targets(int L, float fighterRes = -1f, float casterRes
 int[] levels = { 20, 40, 52, 61, 76, 85 };
 
 Console.WriteLine();
-Console.WriteLine("!! 3rd/4th-class kits are placeholders — levels 61+ measure a 2nd-class kit.");
+// ⚠ THIS BANNER IS NARROWER THAN IT WAS. Every 3rd-class kit is authored now — the warrior's two
+// were the last, 2026-09-11 — so a row built WITH a discipline measures a real kit. What is still
+// a placeholder is a row built WITHOUT one, which is most of the 20-52 sheet tables by design.
+Console.WriteLine("!! A row built with no DISCIPLINE measures a 2nd-class kit, whatever its level.");
 Console.WriteLine("!! Endgame damage below is a FLOOR, not a forecast. See the header comment.");
 Console.WriteLine("=== MOB CURVE ===");
 Console.WriteLine($"{"Lvl",4} {"HP",8} {"P.Def",7} {"M.Def",7} {"P.Atk",7} {"M.Atk",7}");
@@ -1297,9 +1334,10 @@ static (string Name, Entity E)[] FarmRoster(int level)
     rogueBow.RecomputeDerived();
 
     // The champion is measured TWO-HANDED. BuildPlayer dresses every fighter in 1H + shield, which
-    // for a warrior measures a character who never pays — and never collects — his Two-Hand Weapon
-    // Mastery: the +30/50% P.Atk, the crit-damage flat, and the DefencePct −0.10 / Evasion −3 the
-    // owner is asking about are ALL gated on WeaponType.TwoHanded. A 1H champion is not a champion.
+    // for a warrior measures a character who never collects his Two-Hand Weapon Mastery or Warrior's
+    // Strength: the flat P.Atk, the crit-damage flat and the ×1.2 are ALL gated on
+    // WeaponType.TwoHanded. A 1H champion is not a champion.
+    // ⚠ This roster is the 20-52 sheet table, so it stays 2nd-class on purpose — no discipline here.
     var champ = BuildPlayer(Race.Human, BaseClass.Fighter, level, warrior: true);
     champ.Inventory.RemoveAll(i => ItemCatalog.Get(i.DefId) is { } d
         && (d.Slot == EquipSlot.Weapon || d.Slot == EquipSlot.Shield));
@@ -1513,9 +1551,10 @@ Console.WriteLine("=== E2: DEFENCE & SURVIVAL — the champion's complaint, meas
         }
         Console.WriteLine();
     }
-    Console.WriteLine("  The champion's 2H Weapon Mastery (Skills.WeaponMasteries.cs) carries DefencePct −0.10 and");
-    Console.WriteLine("  Evasion −3 on EVERY rung — but it is gated to WeaponType.TwoHanded, so the roster above");
-    Console.WriteLine("  (1H + shield, what BuildPlayer dresses him in) does NOT pay it. The 2H row:");
+    Console.WriteLine("  ✅ THE 2H DEFENCE PENALTY IS GONE, 2026-09-11 — his `warrior 2nd.csv` pass dropped both");
+    Console.WriteLine("  `p.def x0.9` and `eva -3` from Two-Hand Mastery outright. The two rows below used to");
+    Console.WriteLine("  differ by that 10%, which was the whole point of printing them; they are now identical,");
+    Console.WriteLine("  and the table is kept as the PROOF of that rather than as a measurement of it.");
     Console.WriteLine($"  {"Lvl",3} {"weapon",-20} {"P.Def",6} {"eva",5} {"mob miss",9} {"mob dps",8} {"survives",9}");
     foreach (int L in new[] { 20, 28, 36, 44, 52 })
     {
@@ -2208,7 +2247,15 @@ Console.WriteLine();
     Console.WriteLine($"  mob: {mobHp} HP, {mobPDef} P.Def, {mobMDef} M.Def");
 
     // ---- Champion: Heavenly Crush on cooldown, autoattacks filling the gaps ----
-    var champ = BuildPlayer(Race.Human, BaseClass.Fighter, refLevel, warrior: true);
+    // 🔴 `discipline: Ravager` SINCE 2026-09-11, and it was missing for as long as this comparison has
+    //    existed. BuildPlayer teaches nothing above the 2nd class without a discipline, so the flagship
+    //    "is the warrior keeping up with the nuker" number was a level-74 CHAMPION — no armour rungs
+    //    6-20, no Warrior's Strength, no two-handed sword mastery, no Final Stand. The nuker on the
+    //    other side of the ratio has been a full Magus since `nuker 3rd.csv` landed in August, so the
+    //    two halves were being measured a whole class tier apart. Same trap as every other stale-rig
+    //    find: CHECK THE RIG BEFORE THE SUBJECT.
+    var champ = BuildPlayer(Race.Human, BaseClass.Fighter, refLevel, warrior: true,
+                            discipline: Discipline.Ravager);
     ApplyNpcBuffs(champ);
     int cAtk = (int)champ.EffectiveAttack;
     // Crit folds in the FLAT crit damage (it joins P.Atk inside the ratio on a crit); [Double] is a

@@ -384,7 +384,25 @@ public static partial class SkillCatalog
             // everything else about being level 40, 76 or 90 is irrelevant to it.
             Archetype.Rogue   => (EvadeMastery,
                 level >= 40 && discipline is { } d && !Disciplines.IsRanged(d) ? 2 : 1),
-            Archetype.Warrior => (Precision, tier),
+            // 🔴 THE WARRIOR GETS NO FLOOR SINCE 2026-09-11 (`BL-201`). It was `(Precision, tier)`.
+            // His ruling, when asked whether the row leaving `warrior 2nd.csv` meant the mechanic or
+            // just the row: *"Delete precition as we deleted the rogue floor. Probably will give more
+            // acc later on warrior. Now he have +9 which kills 50% of the rogues evasion anyway (no
+            // need for another hit floor) - leave the mechanic but not the skill on warrior"*.
+            //
+            // 🔑 THE ARGUMENT IS THAT ACCURACY ALREADY DID THE JOB. Warrior's Strength now carries up
+            // to +9 accuracy (`warrior_strenght` rung 4), and on a resolver that is one line —
+            // `miss = 5% + (EVA − ACC) × 1%` — nine points IS nine points of a rogue's evasion lead.
+            // The floor existed to stop an evasion-stacked rogue locking a warrior out entirely; the
+            // accuracy he now buys does that directly, and a floor on top would have been the same
+            // protection charged twice. Any future top-up is MORE ACCURACY, not a floor.
+            //
+            // ⚠ `Precision` THE SKILL STILL EXISTS and so does `PassiveEffect.HitFloor` — *"leave the
+            //   mechanic but not the skill on warrior"*. Nothing grants it today. Do NOT delete the
+            //   def and do NOT delete HitFloor from the resolver; this line is the whole change.
+            // ⚠ AND NOTHING UN-GRANTS IT EITHER, deliberately — his ruling, same day: *"no point of
+            //   migration type to remove a skill from some1. They will never have it in the 1st
+            //   place."* Pre-release, a `game.db` delete is the migration.
             Archetype.Tank    => (AntiMagic, tier),
             // Archetype.Archer gets nothing: `reflexes` is deleted and no 2nd class carries
             // Archer any more. A bow character is a Rogue whose discipline is ranged (above).
@@ -867,6 +885,14 @@ public static partial class SkillCatalog
         //  one genuinely dead line on that list: no 2nd class has carried Archetype.Archer since the
         //  archer→rogue merge, so nothing could ever be granted it. Don't re-add it; a ranged rogue's
         //  floor comes from Evasion Mastery, and after 40 the ranged DISCIPLINES get none — see M7.)
+        // 🔴 NOBODY IS GRANTED THIS SINCE 2026-09-11 (`BL-201`) — his ruling: *"Delete precition ...
+        //    Now he have +9 which kills 50% of the rogues evasion anyway (no need for another hit
+        //    floor) - leave the mechanic but not the skill on warrior"*. The warrior was its only
+        //    holder, and `FloorPassiveFor` no longer names the archetype.
+        // ⚠ THE DEF AND `PassiveEffect.HitFloor` BOTH STAY, deliberately — "leave the mechanic". The
+        //   FIELD stays because the resolver's floor is a general mechanic that the next thing to want
+        //   one can author against; the DEF stays because it is what that next thing would author.
+        //   Do not garbage-collect either on the grounds that nothing uses them.
         LeveledPassive(Precision, "Precision", BaseClass.Fighter,
             "Passive. Your physical attacks always land at least 10/20/30% of the time.",
             new PassiveEffect(HitFloor: 0.10f), new PassiveEffect(HitFloor: 0.20f), new PassiveEffect(HitFloor: 0.30f)),

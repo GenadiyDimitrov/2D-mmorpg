@@ -1,8 +1,10 @@
 LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,REPLACES,Comment
 ,,,,,,,,,,,,,,,,----------------------------Armor Mastery----------------------------
-5,Armor Mastery,fighter_armor_mastery,passive,,heavy|light|robe,0,0,self/single,0,0,0,P.Def + 9 mpReg x1.1 - all weights,0,160,[]
-10,Armor Mastery,fighter_armor_mastery,passive,,heavy|light|robe,0,0,self/single,0,0,0,P.Def + 12 mpReg x1.1,0,910,[]
-15,Armor Mastery,fighter_armor_mastery,passive,,heavy|light|robe,0,0,self/single,0,0,0,with light:  eva +3; with all mp x1.1 and p.def +14,0,910,[]
+5,Armor Mastery,fighter_armor_mastery,passive,,heavy|light|robe,0,0,self/single,0,0,0,P.Def + 9,0,160,[]
+10,Armor Mastery,fighter_armor_mastery,passive,,heavy|light|robe,0,0,self/single,0,0,0,P.Def + 12,0,910,[]
+15,Armor Mastery,fighter_armor_mastery,passive,,heavy|light|robe,0,0,self/single,0,0,0,p.def +14; Light: eva +3,0,910,[]
+,,,,,,,,,,,,,,,,----------------------------Spirit Mastery----------------------------
+5,Spirit Mastery,fighter_spirit_mastery,passive,,,0,0,self/single,0,0,0,MP rege x1.1,0,160,[]
 ,,,,,,,,,,,,,,,,----------------------------Weapon Mastery----------------------------
 5,Weapon Mastery,fighter_weapon_mastery,passive,,,0,0,self/single,0,0,0,with any weapon: p.Atk x1.085 and p.Atk +2,0,160,[]
 10,Weapon Mastery,fighter_weapon_mastery,passive,,,0,0,self/single,0,0,0,with any weapon: p.Atk x1.085 and p.Atk +3,0,910,[]

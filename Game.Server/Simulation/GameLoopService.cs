@@ -1560,6 +1560,14 @@ public class GameLoopService : BackgroundService
         if (SkillCatalog.FloorPassiveFor(player.Archetype, player.Level, player.Discipline) is { } floor)
             player.LearnedSkills[floor.Id] = floor.Level;
 
+        // (A `precision` STRIP stood here for one afternoon, 2026-09-11, when `BL-201` took the floor
+        //  off the warrior. He deleted it the same day, and the reasoning generalises: *"no1 except me
+        //  plays this game for now .. so no lingering warriors when I clear a db .. So no point of
+        //  migration type to remove a skill from some1. They will never have it in the 1st place."*
+        //  🔑 PRE-RELEASE, A `game.db` DELETE IS THE MIGRATION. Un-grant code is only worth writing for
+        //  a skill that shipped to somebody who is not him — and nothing has. The Backlash strip below
+        //  predates that ruling; don't take it as the pattern to copy.)
+
         // The SECOND identity passive — the skill-defence channels (BL-07 warrior Deflection /
         // BL-08 tank Backlash). Its own ladder because it starts at the 3rd class change, not the
         // 2nd. Plain assignment like the floor above, so a rung is never stuck once granted.
@@ -13985,6 +13993,42 @@ public class GameLoopService : BackgroundService
 
         if (target.Hp <= 0)
             Kill(target, attacker);
+
+        ResolveCleave(attacker, target);
+    }
+
+    /// <summary>THE BLUNT WARRIOR'S BASIC-ATTACK CLEAVE — his *"With 2h Blunt: Allow basic attack to
+    /// hit around in 150 range (max N targets)"*, on `warrior_weapon_mastery` from 20 and on the
+    /// Warlord's `warrior_blunt_mastery` from 40.
+    ///
+    /// <para>🔑 EACH EXTRA BODY TAKES A WHOLE SWING, sharing <see cref="ResolveBasicSwing"/> with the
+    /// real target. So a cleaved victim rolls its own miss, its own crit, its own block, and pays the
+    /// attacker's vamp/reflect/proc riders — the same reason `BL-193`'s failed blow shares that method
+    /// rather than re-implementing "a basic attack" beside it. A copy here would drift the first time
+    /// a rider was added to one side.</para>
+    ///
+    /// <para>⚠ <c>CleaveTargets</c> COUNTS THE PRIMARY TARGET, which is what his "max 2" means — so the
+    /// sweep takes <c>CleaveTargets − 1</c> extra bodies and anything ≤ 1 does nothing at all.</para>
+    ///
+    /// <para>⚠ Radius is measured from the TARGET, not from the attacker: he is hitting "around" the
+    /// body he swung at. Each extra victim gets its own Retaliate and its own Kill, exactly as the
+    /// primary does above — a cleave that killed without crediting the kill would eat the drop.</para></summary>
+    private void ResolveCleave(Entity attacker, Entity target)
+    {
+        int extra = attacker.CleaveTargets - 1;
+        if (extra <= 0 || attacker.CleaveRadius <= 0f) return;
+
+        // ⚠ ToList() before the loop: ResolveBasicSwing can kill, and Kill mutates the grid the
+        //   EnemiesInRadius walk is iterating. Same rule every other sweep in this file follows.
+        foreach (var victim in EnemiesInRadius(attacker, attacker.CleaveRadius, origin: target).ToList())
+        {
+            if (extra <= 0) break;
+            if (ReferenceEquals(victim, target) || victim.Dead) continue;
+            extra--;
+            ResolveBasicSwing(attacker, victim);
+            Retaliate(victim, attacker);
+            if (victim.Hp <= 0) Kill(victim, attacker);
+        }
     }
 
     /// <summary>ONE SWING of a basic attack: the miss roll, the damage, the crit/block resolution
@@ -15278,6 +15322,17 @@ public class GameLoopService : BackgroundService
         // i.e. INSIDE the stance/safe-zone multiplier: sitting to meditate should pay.
         float hpRegenPct = 0f, mpRegenPct = 0f;
         float hpRegenFlat = 0f, mpRegenFlat = 0f;
+
+        // SITTING-ONLY passive regen — the warrior's HP Regeneration (*"When sitting Hp regen +1,
+        // Mp regen +2.0"*). Folded in with the other FLATS, i.e. OUTSIDE the stance multiplier: the
+        // ×1.5 for sitting is already paid on the formula half, and multiplying his authored +2.0 by
+        // it again would quietly make the passive worth 50% more than the number on his row.
+        if (entity.MoveState == MoveState.Sitting)
+        {
+            hpRegenFlat += entity.HpRegenSitBonus;
+            mpRegenFlat += entity.MpRegenSitBonus;
+        }
+
         foreach (var b in entity.Buffs)
         {
             if (b.Has(SkillEffect.BuffHpRegen))
