@@ -24,7 +24,14 @@ public static partial class SkillCatalog
     public const string CreepingFrost = "creeping_frost";     // stacking slow (10/20/30% over 3)
     // (`dispel_magic` — deleted 2026-08-07, playtest-19 `0a`/G1: on no class table, learnable by
     //  nobody. SkillEffect.Cancel / DispelCount remain in the engine for a future authored skill.)
-    public const string ManaBarrier = "mana_barrier";         // mana shield (damage→MP)
+    // 🔑 RENAMED `mana_barrier` → `nuker_mana_barrier` on 2026-09-11 (`BL-192`). It was an ORPHAN for
+    //    months — a def carrying his exact numbers (70% of damage to MP at 0.5 MP a point, 30s) that
+    //    NO class table taught, exactly as Dispel Magic was before it was deleted. His `nuker 4th.csv`
+    //    finally learns it at 85, under that id. The ID MOVED rather than a second def being authored,
+    //    because two defs with one payload is how a number drifts.
+    // ⚠ Ids are append-only as a rule; this one is exempt because nothing has ever referenced it —
+    //   no class table, no bar, no save. Nobody can be holding the old string.
+    public const string ManaBarrier = "nuker_mana_barrier";   // mana shield (damage→MP)
     public const string PhaseShift = "phase_shift";           // blink away from target (escape)
     // --- Nuker 2nd-class (CSV nuker 2nd) ---
     public const string ElementalBolt = "elemental_bolt";     // nuker basic nuke (replaces Magic Bolt)
@@ -198,7 +205,9 @@ public static partial class SkillCatalog
                 new SkillLevel(Power: 102, MpCost: 130,  SpCost: 390000, Range: 900f, Description: "Drain power 102; heals 40% of damage."),  // 70
                 new SkillLevel(Power: 105, MpCost: 134,  SpCost: 650000, Range: 900f, Description: "Drain power 105; heals 40% of damage."),  // 72
                 new SkillLevel(Power: 108, MpCost: 138,  SpCost: 880000, Range: 900f, Description: "Drain power 108; heals 40% of damage."),  // 74
-            }),
+                // ⚠ RUNGS 20-34 ARE HIS 4th TIER (`nuker 4th.csv`, `BL-192`) — one per level, 76-90.
+                // Still the HUMAN's alone, still the heavy MP line, and still Elemental Blast's power.
+            }.Concat(NukerFourthVampiricRungs()).ToArray()),
 
         // Elemental Bolt — the Nuker's MAIN nuke (replaces Magic Bolt). 13 levels, learned
         // every 5 levels from 20 to 80.
@@ -331,14 +340,34 @@ public static partial class SkillCatalog
 
         // Mana Barrier — MANA SHIELD: while up, 70% of incoming damage is paid from MP instead
         // of HP, at 0.5 MP per 1 damage (until MP runs out). Self, 30s.
+        //
+        // 🔑 HIS ROW AT LAST (`nuker 4th.csv` @85, `BL-192`). Every magnitude here already matched his
+        //    cell to the digit — the def predates the file by months and nobody could learn it. What
+        //    the row changed is the PRICE and the REUSE.
+        // 🔴 THE REUSE WAS 30 SECONDS AND HIS CELL SAYS 300. `CooldownTicks` is TENTHS — 300 ticks is
+        //    30s, and a 30-second reuse on a 30-second shield is a permanent one. 3000 now.
+        // ⚠ PAID IN FIVE SP BOTTLES on top of 100kk gold, with an SP cell of 0 — the `archer 4th`
+        //   idiom (a bottle is 1kkk SP, and five would overflow `Entity.SkillPoints` as a number).
         new(ManaBarrier, "Mana Barrier", BaseClass.Mage, SkillEffect.ManaShield,
-            MpCost: 30, CastTicks: 0, CooldownTicks: 300, Range: 0, Power: 0,
+            MpCost: 30, CastTicks: 0, CooldownTicks: 3000, Range: 0, Power: 0,
             DurationTicks: 300, BuffKey: "mana_barrier", Rank: 1, CountsTowardBuffLimit: false, TargetMode: TargetMode.SelfOnly,
-            Category: SkillCategory.Buff,
+            Category: SkillCategory.Buff, SpCost: 0,
+            LearnConsumableId: ItemCatalog.SpBottle, LearnConsumableAmount: 5,
             Magnitudes: new EffectMagnitude[]
             {
                 new(SkillEffect.ManaShield, 0.70f, ModifierMode.Percent),  // 70% of damage diverted
                 new(SkillEffect.ManaShield, 0.5f,  ModifierMode.Flat),     // 0.5 MP per 1 damage
+            },
+            Levels: new[]
+            {
+                new SkillLevel(MpCost: 30, SpCost: 0, GoldCost: 100_000_000, LearnConsumableAmount: 5,
+                    Magnitudes: new EffectMagnitude[]
+                    {
+                        new(SkillEffect.ManaShield, 0.70f, ModifierMode.Percent),
+                        new(SkillEffect.ManaShield, 0.5f,  ModifierMode.Flat),
+                    },
+                    Description: "Diverts 70% of incoming damage to MP (0.5 MP per damage) for 30s, "
+                               + "while MP lasts."),
             },
             Description: "Diverts 70% of incoming damage to MP (0.5 MP per damage) for 30s, while MP lasts."),
 
@@ -397,7 +426,8 @@ public static partial class SkillCatalog
                     Description: "Magic damage, power 133. Consumes 2 Elemental Stones."),   // 66
                 new SkillLevel(Power: 154, MpCost: 154, SpCost: 880000,
                     Description: "Magic damage, power 154. Consumes 2 Elemental Stones."),   // 74
-            }),
+                // Rungs 4-6 are his 4th tier — 200 / 225 / 250 at 80 / 85 / 90 (`BL-192`).
+            }.Concat(NukerFourthElementalBurstRungs()).ToArray()),
 
         // Frost Bind — first CONTESTED crowd-control skill (P1 primitive demo). A magical
         // Slow: lands via ATK-vs-WIT (DebuffLandChance), reduces move speed 50% for 10s.

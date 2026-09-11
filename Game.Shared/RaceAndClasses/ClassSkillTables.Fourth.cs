@@ -48,9 +48,16 @@ public static partial class ClassSkillTables
         RegisterDual4th();
         // ✅ `BL-191` (2026-09-10) — the four SKILL MASTERIES he authored the day `BL-190` shipped.
         //    Like RegisterDual4th above it, this is a PARTIAL that crosses unfinished files: the
-        //    warrior's two 4th CSVs are still placeholders and the nuker's is being written right
-        //    now. What is registered here is exactly what he ruled and nothing around it.
+        //    warrior's two 4th CSVs are still placeholders. What is registered here is exactly what he
+        //    ruled and nothing around it.
+        //    ⚠ The nuker's file is FINISHED now (see below), so the Magus's Arcane Momentum rung is no
+        //      longer a partial crossing an unfinished file — but it still lives there, beside its
+        //      three siblings, because the four masteries are one layer and one ruling.
         RegisterSkillMasteriesFourth();
+        // ✅ THE FIFTH FINISHED FILE, 2026-09-11 — `nuker 4th.csv`, 236 rows, his *"so i think im done
+        //    with nuker 4th"*. `BL-192`. ONE discipline: the Magus, because the Tempest was retired
+        //    (`BL-97`) and the race is what splits this kit, exactly as it does at the 3rd tier.
+        RegisterMagusFourth();
     }
 
     // ═════════════════════════════════════════════════════════════════════════════════════════════
@@ -552,6 +559,17 @@ public static partial class ClassSkillTables
         //      rungs 16-30 of its own, exactly as the 3rd tier appended rungs 6-20 and 1-15.
         shared.AddRange(Ladder(RogueArmorMastery, all, 21));
         shared.AddRange(Ladder(DualWeaponMastery, all, 16));
+        // `BL-203` — OVERPOWER's SECOND AND LAST RUNG for this class: 7% at 76, where the warrior's
+        // third (10%) would be. See the 3rd-tier table for his ruling and for why the top rung is
+        // left unreachable.
+        // ⚠ PRICED AT THIS TIER, not at the warrior's 40 — rung 2's own 28,000 is a 3rd-class price
+        //   and every first rung of an ascended kit charges the shared 76 ladder (6.5kk). Same reason
+        //   the 40 entry overrides upward; see ClassSkill.SpCost.
+        // 🔑 THE GOLD IS 0 AND THAT IS A GAP, NOT A CHOICE: `ClassSkill` can override SP and nothing
+        //    else, and rung 2 of a ladder authored for level 40 carries no `GoldCost`. Every other
+        //    76 row in `dual 4th.csv` charges 1kk gold beside its SP. If that matters it wants a
+        //    `GoldCost` override on ClassSkill, not a second Overpower def.
+        shared.Add(new ClassSkill(Overpower, 76, SkillLevel: 2, SpCost: 6_500_000));
 
         // ---- HIS 2026-09-11 BLOCK — the race IDENTITY passives and the race ULTIMATES, which is what
         //      closed the file (*"With that duals 4th is finihed"*). ONE axis per race, carried at two
@@ -585,5 +603,96 @@ public static partial class ClassSkillTables
         ClassSkills.RegisterFourth(Race.Human, Discipline.Nullblade,   human.ToArray());
         ClassSkills.RegisterFourth(Race.Elf,   Discipline.Phantom,     elf.ToArray());
         ClassSkills.RegisterFourth(Race.Demon, Discipline.Venomweaver, demon.ToArray());
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════════════════════════
+    //  THE MAGUS, 76-90 — `docs/data/classes_skills_csv/nuker 4th.csv` (`BL-192`)
+    // ═════════════════════════════════════════════════════════════════════════════════════════════
+
+    /// <summary>THE NUKER'S 4th CLASS. His file, 236 rows, finished 2026-09-10.
+    ///
+    /// <para>🔑 <b>ONE DISCIPLINE, THREE RACES.</b> The Magus is the archetype's only discipline since
+    /// the Tempest was retired (`BL-97`), and — exactly as at the 3rd tier — it is the RACE that splits
+    /// the kit: Human takes Arcane Wave / Vampiric Bolt / Arcane Void / Arcane Burst, Elf takes Frost
+    /// Spikes / Frost Pierce / Frost Burst, Demon takes Witches Curse / Witches Scarecrow / Pyro Burst,
+    /// and each gets its own Spell Empowerment.</para>
+    ///
+    /// <para>🔑 <b>THE START RUNGS ARE WHERE THE 3rd-CLASS LADDERS ACTUALLY ENDED</b>, counted off
+    /// <c>RegisterNuker3rd</c> and the defs, never guessed — an off-by-one sells a level-76 Magus his
+    /// level-74 numbers for 6.5kk of SP. Anti-Magic reached 20 (six mage rungs + fourteen), Spellcaster
+    /// Weapon Mastery 14, Mage Armor Mastery 18 (four at 20-35 + fourteen), the three shared nukes 14,
+    /// Vampiric Bolt 19 (five below 40 + fourteen), the two stone-eating ultimates 3, the three race
+    /// Bursts 1, and Arcane Void 3.</para>
+    ///
+    /// <para>⚠ <b>FOUR 3rd-TIER FAMILIES GAIN NOTHING HERE, AND THAT IS HIS FILE.</b> Calm Spirit,
+    /// Restore Spirit, Phase Shift and Meditation have no row in `nuker 4th.csv`. Do not invent
+    /// continuations for them — the same ruling that stopped Harmony of Speed at 58.</para>
+    ///
+    /// <para>⚠ <b>ARCANE MOMENTUM IS NOT LISTED.</b> Its @76 rung is registered with its three siblings
+    /// in <see cref="RegisterSkillMasteriesFourth"/> (`BL-191`), which is one layer and one ruling;
+    /// adding it here as well would register the same rung twice.</para></summary>
+    private static void RegisterMagusFourth()
+    {
+        // Rungs `startRung`… of a continuing ladder, one per level from 76 to 90.
+        ClassSkill[] Ladder(string skill, int startRung) =>
+            HealerFourthBands.Select((lvl, i) => new ClassSkill(skill, lvl, SkillLevel: startRung + i))
+                             .ToArray();
+
+        // Explicit (character level, rung) rows, for the ladders that are neither shape.
+        ClassSkill[] At(string skill, params (int Level, int Rung)[] rows) =>
+            rows.Select(r => new ClassSkill(skill, r.Level, SkillLevel: r.Rung)).ToArray();
+
+        // The three ULTIMATE bands his file uses: 80 / 85 / 90, three rungs, one price.
+        ClassSkill[] Ult(string skill, int startRung) =>
+            new[] { 80, 85, 90 }.Select((lvl, i) => new ClassSkill(skill, lvl, SkillLevel: startRung + i))
+                                .ToArray();
+
+        var shared = new List<ClassSkill>();
+
+        // ---- THE THREE PASSIVES. Two are shared outright with the healer's kit (same def, same
+        //      rungs); Mage Armor Mastery is the nuker's own because it alone carries mpWhenRestored.
+        shared.AddRange(Ladder(MageAntiMagic,            21));
+        shared.AddRange(Ladder(HealerWeaponMasterySkill, 15));
+        shared.AddRange(Ladder(NukerArmorMastery,        19));
+
+        // ---- THE THREE SHARED ATTACK SPELLS, one rung a level.
+        shared.AddRange(Ladder(ElementalBlast, 15));
+        shared.AddRange(Ladder(QuickBlast,     15));
+        shared.AddRange(Ladder(ElementalWave,  15));
+
+        // ---- THE TWO STONE-EATING NUKES. Both stop at rung 6 and then they are finished.
+        shared.AddRange(Ult(ElementalBurst, 4));
+        shared.AddRange(Ult(Thunderstorm,   4));
+
+        // ---- NEW AT THE 4th TIER, and shared by all three races.
+        shared.Add(new ClassSkill(NukerShieldMastery, 76));
+        shared.AddRange(At(NukerForceEmpowerment, (78, 1), (80, 2), (82, 3)));
+        shared.Add(new ClassSkill(ManaBarrier, 85));
+
+        // ═══ THE RACE SPLIT ══════════════════════════════════════════════════════════════════════
+        var human = new List<ClassSkill>(shared);
+        human.AddRange(Ladder(ArcaneWave,   15));
+        human.AddRange(Ladder(VampiricBolt, 20));
+        // ⚠ Arcane Void is the ONE family on a 76/80/85/90 shape — four rungs, not fifteen and not
+        //   three. His rows; only the MP moves across them.
+        human.AddRange(At(ArcaneVoid, (76, 4), (80, 5), (85, 6), (90, 7)));
+        human.AddRange(Ult(ArcaneBurst, 2));
+        human.AddRange(Ult(NukerSpellEmpowermentHuman, 1));
+
+        var elf = new List<ClassSkill>(shared);
+        elf.AddRange(Ladder(FrostSpikes, 15));
+        elf.AddRange(Ladder(FrostPierce, 15));
+        elf.AddRange(Ult(FrostBurst, 2));
+        elf.AddRange(Ult(NukerSpellEmpowermentElf, 1));
+
+        var demon = new List<ClassSkill>(shared);
+        demon.AddRange(Ladder(WitchesCurse,     15));
+        demon.AddRange(Ladder(WitchesScarecrow, 15));
+        demon.AddRange(Ult(PyroBurst, 2));
+        demon.AddRange(Ult(NukerSpellEmpowermentDemon, 1));
+
+        ClassSkills.RegisterFourth(Race.Human, Discipline.Magus, human.ToArray());
+        ClassSkills.RegisterFourth(Race.Elf,   Discipline.Magus, elf.ToArray());
+        ClassSkills.RegisterFourth(Race.Demon, Discipline.Magus, demon.ToArray());
     }
 }

@@ -98,7 +98,7 @@ not apply the way it does to the table above.
 | **Holy Soul** | `holy_soul` | 1 | Stance. Every skill costs 30% less MP, but you cast 10% slower and burn 50 HP a second | Holy Soul | no |
 | **Indomitable** | `indomitable` | 1 | For 30s your buffs have an 80% chance to resist being cancelled/dispelled | Indomitable | no |
 | **Last Stand** | `last_stand` | 1 | For 10s, the next blow that would kill you instead leaves you at 50% HP | Last Stand | no |
-| **Mana Barrier** | `mana_barrier` | 1 | Diverts 70% of incoming damage to MP (0.5 MP per damage) for 30s, while MP lasts | Mana Barrier | no |
+| **Mana Barrier** | `nuker_mana_barrier` | 1 | Diverts 70% of incoming damage to MP (0.5 MP per damage) for 30s, while MP lasts | Mana Barrier | no |
 | **Mana Blessing** | `mana_blessing` | 2 | −20% physical and −10% magic skill MP cost | Soul Reinforcement (group), Mana Blessing | no |
 | **Meditation** | `meditation` | 1 | Sit inside your own magic for 30s: MP floods back and your Physical Defence all but disappears. The first hit you take ends it | Meditation | no |
 | **Reinforcement** | `wc_reinforcement` | 1 | Toggle. Brace yourself: greater physical defence for as long as you can pay for it | Reinforcement | no |

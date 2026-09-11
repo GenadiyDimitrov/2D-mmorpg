@@ -93,7 +93,14 @@ public static partial class SkillCatalog
             // (the 3rd tier's first rung everywhere), and the shared 4th-tier price at 76.
             new(Overpower, "Overpower", BaseClass.Fighter, SkillEffect.None,
                 MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-                Category: SkillCategory.Physical, SpCost: 3400,
+                // `BL-205` — PASSIVE, not Physical. It is the SKILL-WINDOW GROUP and nothing else:
+                // the Known tab heads each block with the category name, so Overpower used to sit
+                // among the damage skills while being neither castable nor damage. Owner,
+                // 2026-09-11: *"all classes overpowerd/momentum is in buffs group not in passives in
+                // the skill window"*.
+                // ⚠ It also makes the server refuse to CAST it, which is correct and was already true
+                //   in practice: `def.Passive != null` has always kept these off the bar.
+                Category: SkillCategory.Passive, SpCost: 3400,
                 TargetMode: TargetMode.SelfOnly,
                 Passive: new PassiveEffect(DoubleDamageRate: OverpowerBase[0]),
                 Levels: new[]
@@ -188,7 +195,9 @@ public static partial class SkillCatalog
             // the learn tables decide who gets it.
             new(LastingEnchantment, "Lasting Enchantment", BaseClass.Mage, SkillEffect.None,
                 MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-                Category: SkillCategory.Buff, SpCost: sp76,
+                // `BL-205` — PASSIVE, not Buff. See Overpower above: the skill window groups by this
+                // field, and a passive listed under "Buffs" reads as something you cast.
+                Category: SkillCategory.Passive, SpCost: sp76,
                 TargetMode: TargetMode.SelfOnly,
                 Passive: new PassiveEffect(DoubleDurationRate: 0.10f),
                 Levels: new[]
@@ -226,7 +235,10 @@ public static partial class SkillCatalog
             // in ExecuteSkill, not here, and it is the same one reuse REDUCTION already has.
             new(ReuseResetMomentum, "Arcane Momentum", BaseClass.Mage, SkillEffect.None,
                 MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-                Category: SkillCategory.Buff, SpCost: sp76,
+                // `BL-205` — PASSIVE, not Buff. See Overpower above. ⚠ NOT `double_mastery`, which
+                // stays a Buff on purpose: that one is a TOGGLE the player switches on, so it needs a
+                // bar slot and belongs with the stances.
+                Category: SkillCategory.Passive, SpCost: sp76,
                 TargetMode: TargetMode.SelfOnly,
                 Passive: new PassiveEffect(CooldownResetRate: 0.05f),
                 Levels: new[]

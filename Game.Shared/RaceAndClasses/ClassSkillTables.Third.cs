@@ -1025,6 +1025,23 @@ public static partial class ClassSkillTables
         // `BL-188` — Vital Points, the shared blow-rate passive. THREE rungs at 52/64/74, and the
         // one part of the blow ladder that is NOT race-split.
         shared.AddRange(Ladder(VitalPoints, new[] { 52, 64, 74 }));
+        // `BL-203` — OVERPOWER, the melee rogue's, and it is the WARRIOR'S LADDER ONE RUNG SHORT.
+        // Owner, 2026-09-11: *"give duals 3rd/4th stabs a [double] flag and overpower passive but
+        // least than warrior @40 3% @76-7% (1 rung less. If it's too low I'll give him the last rung
+        // at 80 - for now only the 2 rungs)"*.
+        //
+        // 🔑 SAME DEF, SAME RUNGS, LATER LEVELS — `SkillLevel: 1` is the 3% the warrior buys at 20 and
+        //    `SkillLevel: 2` (in the 4th table) the 7% he buys at 40. Nothing is authored twice: the
+        //    ladder is one array in Skills.SkillMasteries.cs and the class table decides who reaches
+        //    which rung and when.
+        // ⚠ `SpCost` OVERRIDES THE RUNG'S PRICE, and it has to: rung 1 costs 3,400 because that is
+        //   what a level-20 warrior pays, and SP in this game is priced by the LEVEL YOU LEARN AT, not
+        //   by the ability (see ClassSkill.SpCost). A melee rogue meets it at 40, where every first
+        //   rung in `dual 3rd.csv` costs 28,000 — which is also the only price his `SP COST (x1000)`
+        //   column can even spell.
+        // ⚠ THE TOP RUNG (10%) IS DELIBERATELY UNREACHABLE for this class. If he adds it, it is one
+        //   line at 80 with `SkillLevel: 3` in the 4th table and one CSV row — not a new ladder.
+        shared.Add(new ClassSkill(Overpower, 40, SkillLevel: 1, SpCost: RogueSp[0]));
 
         var human = new List<ClassSkill>(shared);
         human.AddRange(Ladder(KillingStab, band15));

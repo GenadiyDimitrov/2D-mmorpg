@@ -4049,3 +4049,327 @@ three different ways across the three files.
 
 ---
 
+## `BL-203` ✅ CLOSED 2026-09-11 (0.131.0) — THE STAB LADDERS HALVE, AND A HALVED STAB LEARNS TO DOUBLE
+
+*"cut dual 3rd/4th stab skills to have twice less power … now ~11k dmg on a 90 mob with 19k hp. And
+78k mob hit for 8k. A bit too much. Let atleast this dmg to be a double dmg. (kiling/heavy/swift/
+venoms/etc..)"* · *"give duals 3rd/4th stabs a [double] flag and overpower passive but least than
+warrior @40 3% @76-7% (1 rung less. If it's too low I'll give him the last rung at 80 — for now only
+the 2 rungs)"* · *"make venomWeaver — venom stab to have the same power as killing strike (the new /2
+dmg)"* · *"Increase heavy stab reuse to 7.5s., swift strike reuse to 5s. To balance the dmg~reuse for
+races."*
+
+### 🔴 HALVING THE POWER DOES NOT HALVE THE DAMAGE — the one number to carry forward
+
+Power is a term INSIDE the ratio (`K·(atk·lvlMod + power)/def`), so the attacker's own P.Atk is
+untouched by it. Measured at 90 in mythic gear (`BalanceMatrix --stab`, written for this), where the
+ATK term is worth ~2,470 of the numerator:
+
+| | power | blow | doubled |
+|---|---|---|---|
+| Killing Stab, before | 15,000 | ~6,970 | — |
+| Killing Stab, after | 7,500 | **3,978** | **7,956** |
+
+So the trade is better than "half unless you double": the floor fell to ×0.57 and the **ceiling rose
+~14%**. ⚠ Never restate this as *"2 × the new IS the old"* — it is the mistake the block comment on
+`StabPower` exists to stop, and it was in the first draft of that comment.
+
+### What moved
+
+- **Four ladders halved at both tiers** — Killing/Swift (`StabPower`), Heavy (×0.75 per hit, two
+  hits), Venom Stab, Venom Burst (per consumed stack). Every ratio between the families is preserved
+  by halving all of them, so ten stacks is still exactly twice a Killing Stab.
+- **`CanDouble: true` on all four stab families.** A blow rolls its double INSIDE `ResolveBlow`,
+  after the crit-damage values — so a doubled stab is the crit number ×2.
+- **Venom Stab = Killing Stab's ladder.** The Demon's old ×0.50 would have compounded with the
+  halving on the one discipline that has no Killing Stab. In numbers it barely moved: 675 → 625 at
+  the first rung and nothing else.
+- **Overpower at 40 (3%) and 76 (7%)** for all three melee rogues — the warrior's def, rungs 1 and 2,
+  with `ClassSkill.SpCost` overriding the price to the tier the rogue meets it at (28,000 / 6.5kk).
+  🔑 The top rung (10%) is left unreachable by design; if he adds it, it is **one line at 80 with
+  `SkillLevel: 3`** and one CSV row, never a new ladder.
+- **Reuse prices the races apart** now that they share a power ladder: Heavy 7.5s, Swift 5s, Venom 3s.
+
+### Still open, and small
+
+🟡 **The 76 rung charges NO GOLD.** `ClassSkill` can override SP and nothing else, and rung 2 of a
+ladder authored for level 40 carries no `GoldCost`. Every other 76 row in `dual 4th.csv` charges 1kk
+gold beside its SP. If that matters it wants a `GoldCost` override on `ClassSkill` — **not** a second
+Overpower def.
+
+🟡 **Venom Burst did NOT get `[Double]`.** His word was *"stabs"*, and the burst is a ×10 pool: a
+double on a full detonation is a very large single number. Say if it should have it.
+
+---
+
+## `BL-204` ⚠ SUPERSEDED THE SAME DAY BY `BL-207` — venom burst on a flat 80% rider, as first built
+
+🔴 **BUILT AND THEN REPLACED WITHIN THE HOUR**, on his counter-proposal. The diagnosis below is still
+the right one and is why `BL-207` exists; the FIX is gone. `SkillDef.FixedLandChance` was removed with
+it — do not re-add the field. What survives is the half he kept: `ExecuteSkill` no longer rolls a
+rider it has already decided to skip, so the cosmetic `Fail` is gone at its source.
+
+## `BL-204` (as built, superseded) — VENOM BURST LANDS ON A FLAT 80%, AND NOTHING SCALES IT
+
+*"make venom burst to always have max 80% roof land rate independent on dex … now u fail fail, stack
+3, fail fail, stack to 6 … then sooner or later u make 10 stack and venom burst fails and u cry :) …
+The venom burst if fails takes stacks and don't do dmg, so it burns twice (low land rate and take
+stacks) — let's punish only the true unlucky, 80% land rate, if it fails it fails."*
+
+### 🔑 WHAT WAS ACTUALLY FAILING WAS THE RIDER, NOT THE DAMAGE
+
+Venom Burst has **no blow gate** — it is not `BlowOnCrit`, and its damage lands on every cast that is
+not evaded. What he was watching was its **venom contest**: the burst spends the pool in the damage
+arm and only *then* rolls AGI-vs-CON for the rider, so a lost roll broadcasts `CombatOutcome.Fail` on
+the same cast that had just consumed ten stacks. From the player's seat that is indistinguishable
+from "the burst failed and took my stacks", and he is right that it is a double burn.
+
+### The field, and why it is not a cap
+
+`SkillDef.FixedLandChance` (0 = off) **replaces the stat curve outright** and skips the per-skill
+`DebuffLandMod` and the target's CC/school resistances with it. A ceiling on the curve would still be
+DEX-shaped underneath, which is the half he named; and a number authored as "always 80%" that a
+blessing can still divide is not 80%. `ResistsDebuff` — total immunity — still applies, because
+immunity is a different statement from a resistance.
+
+⚠ **The stacks are still spent on a failure.** That is his ruling, not an oversight: he chose to fix
+the rate and keep the cost. It matters most on the EMPTY-pool cast, where the rider is the whole point
+of the skill (*"if no stacks present apply 1 venom stacks"*) — a Venomweaver now opens his rotation 4
+times in 5 instead of on an AGI roll.
+
+---
+
+## `BL-205` ✅ CLOSED 2026-09-11 (0.131.0) — THE SKILL MASTERIES BELONG IN THE PASSIVES GROUP
+
+*"all classes overpowerd/momentum is in buffs group not in passives in the skill window."*
+
+The Known tab groups strictly by `SkillDef.Category` and heads each block with its name. Overpower was
+`Physical` (so it sat among the damage skills) and Arcane/Stab Momentum + Lasting Enchantment were
+`Buff` (so they sat among the stances). All three are `Passive` now.
+
+⚠ **`double_mastery` deliberately stays a Buff.** Overpower Mastery / Momentum Mastery is a TOGGLE the
+player switches on — it needs a bar slot, and `SkillCategory.Passive` is what makes the server refuse
+to cast a skill at all.
+
+🔑 The grouping was the *only* thing wrong: `def.Passive != null` has always kept these off the bar,
+so nothing about their behaviour changes.
+
+---
+
+## `BL-206` ✅ CLOSED 2026-09-11 (0.131.0) — GROUND PAINT IS SCENERY, DECALS ARE GAMEPLAY
+
+*"traps orange-gold circle for the owner is under the red zone poligon and I see only the half that is
+outside if any."*
+
+Exactly what the heights said. The map paints the ground in layers — spawn-zone discs **0.01**,
+coloured FIELD polygons **0.02** (red at the high level bands), town islands **0.03**, region outlines
+0.06, world border 0.08, jail 0.09 — while `GroundDecals` drew a trap at **0.01** (under the field
+fill) and a totem at **0.02** (z-fighting it). Only the part of a trap outside a field polygon was
+ever visible, which is what he saw.
+
+The whole decal stack moved above every painted layer and kept its own order: trap **0.10**, totem
+**0.11**, flash **0.13**.
+
+🔑 **THE RULE, so the next decal does not repeat it:** ground paint is scenery and decals are
+gameplay, so every decal goes above every painted layer. 0.10 is the floor for `GroundDecals`.
+⚠ The totem was mis-layered too and nobody had reported it — worth remembering that a z-order bug is
+only ever noticed on the layer someone is looking at.
+
+---
+## `BL-207` ✅ CLOSED 2026-09-11 (0.131.0) — THE BURST IS A STAB: it rolls the blow gate, it can double, and a failed one refunds
+
+Supersedes `BL-204` the same day, on his counter-proposal — and his is the better design.
+
+*"venom burst is a single stab skill that it's effective power depend on stacks count. It's not like
+barrage -> 10 stabs x1.5k power; it's one stab x15k power (so if it lands with 10 stacks it's like a
+killing stab with a double) … So venom burst also must land a double. Can we make venom burst to be
+with normal land rate (30% like other stabs) and on fail not to take all stacks but to restore 3 — a
+burst without stacks give 3, so a failed one takes all and gives you 3. U do burst for 10 stacks, if
+it fails u pay only with 7 stacks and cd, so next 10 stacks are faster to stack, u don't start from
+0."*
+
+### 🔑 HIS RACE-PARITY MODEL, AND IT MEASURES OUT
+
+He gave the design a unit — **multiples of that race's own plain stab per 10 seconds** — and asked
+whether the three land in the same place. Measured at 90, mythic, unbuffed (`BalanceMatrix --stab`,
+extended for this):
+
+| race | rotation | × its own stab |
+|---|---|---|
+| Elf | 3 Killing + 2 Swift | **5.00** |
+| Human | 3 Killing + 1.5 Heavy | **5.44** |
+| Demon | 3 Venom Stab + 1 Burst (9 stacks) | **5.47** |
+
+His arithmetic was right. ⚠ The board deliberately does NOT apply the blow rate — every race is gated
+by the same roll, so it cancels — but it also does not capture that the Demon needs three
+**successful** stabs before his burst is worth casting (`BL-197`), so his rotation is longer in real
+time than the other two, whose every landed blow is damage on its own. That is the argument for his
+column being the biggest of the three.
+
+### 🔴 `damage × stacks` IS NOT `power × stacks`, and the difference is 55%
+
+`ExecuteSkill` multiplies the **resolved damage** by the stacks spent. Power sits beside `atk·lvlMod`
+inside the ratio, so multiplying afterwards multiplies the ATK term ten times over as well:
+
+- as built (damage × 10): a full pool reads **10,850**, or **2.73×** a Killing Stab
+- as he described it ("one stab x15k power"): it would read 6,970, or **1.75×**
+
+**Kept as built.** His prose said 2×; the engine gives 2.7×; and it is the 2.7× that lands his own
+parity table on 5.47 against the Human's 5.44. Flagged rather than silently reconciled — if he wants
+the literal "one stab of 15k power" it is a one-line change (`pFlat * spent` before the ratio instead
+of `damage * spent` after it) and the Demon's column drops to about 4.6.
+
+### What moved
+
+- **`BlowOnCrit: true` + `CanDouble: true`** on Venom Burst. It used to land ALWAYS and FLAT — no
+  crit values at all — so this is a change in both directions: bigger when it lands, a basic swing
+  when it does not, which is the trade the other two races already make.
+- **The crit-flat factor is measured against `power × stacks`** (`critPower`). Feeding it the
+  per-stack power while the damage was already ×10 would have valued the flat crit add against a tenth
+  of the real numerator and inflated every detonation. It never mattered while the burst was not a
+  blow, because it computed no crit factor at all.
+- **A failed burst empties the pool and banks one cast's worth back** — 10 → 3 at the top rungs, per
+  rung the same number a stackless burst lays (1/1/2/2/2/2/2/2/3×7). It runs through the SAME two
+  calls the detonation does, so a failed burst and an empty-pool burst leave the target in identical
+  states. `ClearStackPool` was extracted for exactly that reason: **one place, so a future change
+  cannot fix the detonation and forget the failure.**
+- **The cosmetic `Fail` is gone at its source.** A burst that spent a pool no longer rolls its rider
+  contest at all — `spentStacks` already suppressed re-applying the DoT, so every branch of that roll
+  was a no-op and the only thing it could still do was print `Fail` over a cast that had just dealt ten
+  stacks of damage. **A roll whose every branch is a no-op is not a contest, it is a lie on the
+  screen.** A burst that found no pool still rolls, which is his *"if no stacks present apply 1"*.
+
+### ⚠ On the ~20%
+
+He justified the halving with *"the double occur only ~20% of the time so average is lower than what
+is now"* — and the conclusion is right, but the rate is **7%** (Overpower rung 2 at 76), doubling to
+**14%** only with Momentum Mastery running from 81. At 7% the average landed stab is 4,257 against the
+old 6,970; at 14%, 4,535. Either way it is well under, so nothing changed — but the number matters if
+he tunes the ladder off it.
+
+---
+
+## `BL-192` ✅ CLOSED 2026-09-11 (0.132.0) — THE NUKER'S 4th-CLASS KIT IS BUILT
+
+**All 236 rows.** Nineteen families continued past 74, six new skills, and the one engine gap this
+entry named turned out to be real: `TryOnDamagedProcs` never passed the ATTACKER, so `ProcVictimRungs`
+could not fire on a defensive proc and all three Spell Empowerments would have cost 150kk and done
+nothing. `nuker 4th` earns its `Check.Specs` line and reads clean. See the 0.132.0 CHANGELOG entry for
+what was corrected in the file, what was left alone, and the four items below that are still yours.
+
+🔑 **TWO OF THIS ENTRY'S OWN RECOMMENDATIONS WERE STALE AND BOTH WERE WRONG** — the standing lesson
+that a parked research note is a hypothesis, not a spec, and has to be re-verified against the code:
+- It said *"the MP-cost cut has no StatMods field"*. `StatMods.MpCostPct` has existed since the
+  healer's own 78+ robe rungs shipped, and is one number for BOTH channels by design. No
+  `ExtraPassives` layer was needed.
+- It recommended building the unqualified *"Decrease Mp Consumption"* as MAGIC-only. Its own evidence
+  argued the other way (he writes `p.mp` when he means one channel), and the healer's identical robe
+  clause already ships as both. Built as BOTH.
+
+### ❓ STILL YOURS — four small things, none of them blocking
+
+1. 🔴 **Force Empowerment's HP drain does not ladder.** Your 50 / 40 / 30 a second needs a per-LEVEL
+   `HpPerSecond`; the field exists only on `SkillDef`, so all three rungs burn the first rung's **50**.
+   That is the harshest of your three numbers, never a silent buff. `SkillLevel.HpPerSecond` plus one
+   lookup in `TickToggleUpkeep` is the whole fix.
+2. ❓ **Two numbers in the Spell Empowerments are MINE.** The retaliation rider lasts **10s** and the
+   proc has a **10s** internal cooldown; your cells give the chance and the magnitude and nothing else.
+   Both are the archer stances' own values, which are the only other victim-paying procs in the game.
+3. ❓ **Pyro Burst's `(success chance x1.5)` is carried and is inert** — a burn's save is
+   `DebuffSchool.None`, so nothing contests it. Your 3rd-tier row has no such clause and these three
+   do. Say the word and the cells go; nothing changes either way.
+4. ⚠ **The first 4th rung of all three race Bursts buys nothing** — power 150, the same rider, for
+   100kk of gold, repeating the 3rd tier's last rung before climbing to 200 and 250. Built as
+   authored (your Gravity has the same shape at the healer's tier boundary), but if it was meant to
+   start at 200 it is three numbers.
+
+---
+
+### The entry as it stood, for the research in it
+
+
+**`docs/data/classes_skills_csv/nuker 4th.csv` is DONE** (his words, 2026-09-10: *"so i think im done
+with nuker 4th"*). 236 rows, 25 skills, the `NOT DONE` banner gone. **Nothing of it is built.** This
+entry is the research so the build does not start from zero — it was done, then parked when he asked
+for a commit so he could take an APK.
+
+### What the file contains
+
+**Continuing ladders** — the 3rd tier ran 14 rungs (40-74); the 4th runs **15, one per level, 76-90**.
+Start rungs, counted off `RegisterNuker3rd`, not guessed:
+
+| Skill | id | 4th rungs | Note |
+|---|---|---|---|
+| Anti magic | `anti_magic_mage` | **21-35** | ⚠ ALREADY IN THE DEF (`HealerFourthAntiMagicRungs`) and his rows match it digit for digit. Learn lines only. |
+| Spellcaster Weapon Mastery | `healer_weapon_mastery` | **15-29** | ⚠ ALREADY IN THE DEF (`HealerFourthWeaponRungs`). Learn lines only. |
+| Mage Armor Mastery | `nuker_armor_mastery` | **19-33** | The nuker's own. NEW rungs to author. |
+| Elemental Blast | `elemental_blast` | 15-29 | |
+| Quick Blast | `quick_blast` | 15-29 | |
+| Elemental Wave | `elemental_wave` | 15-29 | |
+| Arcane Wave | `arcane_wave` | 15-29 | Human |
+| Frost Spikes / Frost Pierce | `frost_spikes` / `frost_pierce` | 15-29 | Elf |
+| Witches Curse / Scarecrow | `witches_curse` / `witches_scarecrow` | 15-29 | Demon |
+| Vampiric Bolt | `vampiric_bolt` | **20-34** | Human. 3rd ran rungs 6-19. |
+| Arcane Void | `arcane_void` | **4-7** @76/80/85/90 | Human. Only MP moves; all four say 2~4. |
+| Elemental Burst | `elemental_burst` | **4-6** @80/85/90 | power 200/225/250, 2 Elemental Stones |
+| Thunderstorm | `thunderstorm` | **4-6** @80/85/90 | power 250/300/350, 3 stones |
+| Arcane / Frost / Pyro Burst | `arcane_burst` etc. | **2-4** @80/85/90 | one per race |
+| Arcane Momentum | `reuse_reset_momentum` | 1 @76 | ✅ ALREADY BUILT (`BL-191`) |
+
+**His shared columns, read off the file** (state each once, as `Skills.Nuker3rd.cs` does):
+
+- Bolt MP (Elemental Blast, Quick Blast, Frost Spikes, Frost Pierce): `69,71,73,77,79,91,95,97,99,103,105,107,111,113,115`
+- Wave MP (Elemental Wave, Arcane Wave): `105,107,109,111,114,117,120,123,126,129,132,135,138,141,144`
+- Heavy MP (Vampiric Bolt, Witches Curse, Witches Scarecrow): `138,142,146,154,158,182,190,194,198,206,210,214,222,226,230`
+- Blast power (Elemental Blast, Vampiric Bolt): `110…138` by +2
+- Quick power (Quick Blast, Witches Curse): `88,90,91,93,94,96,99,100,101,102,103,105,106,108,109`
+- Wave power (Elemental Wave, Arcane Wave, Frost Spikes, Frost Pierce): `66,68,70,72,75,78,81,84,87,90,93,96,99,102,105`
+- Frost Spikes slow: 40% ×4, 42% ×5, 45% ×6 · Witches Curse M.Def: 30% ×4, 32% ×5, 35% ×6 · Frost Pierce bleed rank **10 flat**
+- ✅ **The SP/gold ladder is `HealerFourthSp` / `HealerFourthGold` exactly** — 6.5kk/11kk/16kk/80kk then SP 0 and gold 5kk→100kk. Reuse them; do not restate.
+
+**Mage Armor Mastery's 15 new rungs** (his DESCR, in order 76→90): P.Def `89,91,92,93,95,96,97,99,100,101,103,104,105,107,108`; max MP `220,220,250,250,250,290,290,300,300,300,330,330,350,350,400`; mpWhenRestored `60% ×4, 65% ×5, 70% ×6`; **M.Def % `2,4,5,7,8,10,11,13,14,16,17,19,20,22,25`** and **MP-consumption reduction `0,0,5,5,5,8,8,8,8,8,10,10,10,10,10`** — the last two are NEW columns this ladder never had. M.Def% fits `StatMods.MDefPct` in the robe profile; the MP-cost cut has no StatMods field, so give the rung a second, robe-gated `PassiveEffect(RequiredArmor: Robe, MagicMpCostPct: …)` — the `SkillLevel.ExtraPassives` idiom, not a new StatMods field.
+  ❓ **His "Decrease Mp Consumption" is unqualified.** Built as MAGIC-channel unless you say otherwise; a nuker casts magic, and the warrior's toggle only took the physical channel because his row said "p.mp".
+
+### 🔴 SIX SKILLS ARE NEW, and four of them need engine work
+
+1. **`nuker_shield_mastery`** @76 — a robe caster's shield passive: `RequiresShield`, M.Atk +5%, MP cost −10%, MP regen +10%, P.Def +100, **and the shield can never block** (`BlockChancePct: -1f`, which is the existing ×(1+pct) channel reaching ×0). No engine work.
+2. **`nuker_mana_barrier`** @85 — 30 MP, 300s reuse, 30s, **5 SP bottles** (`LearnConsumableId: ItemCatalog.SpBottle`, the `archer 4th` idiom). 🔑 **A def called `mana_barrier` ALREADY EXISTS in `Skills.Mage.cs` with his exact numbers (70% / 0.5 MP / 30s / 300 reuse) and NO class table learns it** — an orphan, like Dispel Magic was. Change its id string to his `nuker_mana_barrier` rather than authoring a second one.
+3. **`nuker_Force_empowerment`** @78/80/82 — a toggle: M.Atk +14/15/16%, magic MP consumption +20/15/10%, **50/40/30 HP a second**. Same shape as `double_mastery`; no engine work.
+4. **`nuker_{human,elf,demon}_spell_empowerment`** @80/85/90 — a 600s self buff: magic MP cost up, M.Atk up, **and a 5% on-being-attacked proc whose payload lands on the ATTACKER**. 🔴 **THIS IS THE ENGINE GAP.** The proc machinery exists (`ProcOnDamaged`, `ProcVictimRungs`) and buff-carried procs already run, but `TryOnDamagedProcs(target, magicHit)` never passes the attacker, so `ProcVictimRungs` can't fire on a defensive proc. Two changes: pass the attacker through, and teach `PayOutProc`/the victim arm to deal DIRECT DAMAGE (the Human's *"inflicts damage on attackers with power 47/51/55"* — the Elf and Demon payloads are ordinary debuffs and already work).
+
+### Before it can be called done
+
+- A `Check.Specs` line for `nuker 4th` — **it earns one**, the file is finished.
+- `dotnet run --project tools/SkillCsvSeed -- --check` green, and `--chains` re-read.
+- Register to `Discipline.Magus` only — `Tempest` was retired (`BL-97`).
+- ⚠ **NEW APK**: the class-skill table changes.
+
+---
+
+
+## `BL-208` ✅ THREE OF FOUR CLOSED 2026-09-11 (0.132.0), SAME DAY — the toggle drain laddered, the burst rung explained
+
+Filed and answered within the hour. Your three rulings, and what each did:
+
+1. ✅ **THE TOGGLE DRAIN NOW LADDERS, BOTH BARS.** *"Make togles to can change value of drain per lvl
+   .. Some can drain more mp why some cant drain less hp?"* — and the asymmetry was exactly that:
+   `SkillLevel.MpPerSecond` got its per-rung slot on 2026-08-27 and the HP half simply never did.
+   Added `SkillLevel.HpPerSecond` + `SkillDef.HpPerSecondAt(level)`, and BOTH readers go through it now
+   (the tick loop and the description card). Force Empowerment really drains **50 / 40 / 30** at
+   78 / 80 / 82. Holy Soul and Overpower Mastery are untouched — a rung of 0 inherits the def.
+2. ✅ **THE 10s / 10s ON THE SPELL EMPOWERMENT RIDER STANDS.** *"I haven't written the duration and cd of
+   empowerment debuff part 10/10 is good call"*. Ratified, so they are no longer unauthored numbers.
+3. ✅ **THE RACE-BURST @80 RUNG IS NOT A WASTED RUNG, AND THE REPORT WAS WRONG.** *"it don't give power
+   but it gives higher debuff chance .. the magic become lvl 80 not 74 .. (it won't fail anyway but
+   atleast debuff will land more often)"*. Correct, and it is the rule Witches Scarecrow already runs
+   on: `DebuffLandChance` reads the RUNG's own LEARN LEVEL, so an identical spell bought at 80 wins a
+   level contest a 74 one loses. A Burst cannot fizzle (`SureHit`), so the level term has nowhere else
+   to show — buying the rung buys the rider's landing rate and nothing else. The code comment said
+   "buys nothing" and now says this. ⚠ Damage stays as authored until you playtest it.
+
+### The original entry's text, for the record
+
+It listed four items; the fourth is still open and lives in `Backlog.md`. Items 1, 2 and 4 of that
+list are the three above. Item 3 was Pyro Burst's inert `(success chance x1.5)` cell.
+
+---

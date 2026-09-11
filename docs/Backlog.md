@@ -132,8 +132,8 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-186` | ⏸ | THE MAX LEVEL CAP — can it be removed? POSTPONED on your call 2026-09-10; not the next thing | systems |
 | `BL-189` | 🔵 | Weapon-type protection — `BowResist` generalised to every weapon type | combat |
 | `BL-191` | 🟡 | The SKILL MASTERIES — built for 5 archetypes; tank + bow rogue ruled OUT; ON TRIAL until he playtests | classes |
-| `BL-192` | 🟡 | BUILD THE NUKER 4th KIT — his 236-row file is finished; research + the 4 engine gaps are in the entry | classes |
 | `BL-202` | 🔵 | THE WARRIOR'S DAMAGE + CONTROL SKILLS — the half of both 3rd kits still owed | classes |
+| `BL-208` | ❓ | ONE cosmetic cell left from the Magus's 4th kit — three of four closed the same day | classes |
 
 ---
 
@@ -1175,66 +1175,6 @@ the gear tiers have anything to give above the cap; and what an uncapped level d
 
 ---
 
-## `BL-192` 🟡 BUILD THE NUKER'S 4th-CLASS KIT — his file is finished, the code is not
-
-**`docs/data/classes_skills_csv/nuker 4th.csv` is DONE** (his words, 2026-09-10: *"so i think im done
-with nuker 4th"*). 236 rows, 25 skills, the `NOT DONE` banner gone. **Nothing of it is built.** This
-entry is the research so the build does not start from zero — it was done, then parked when he asked
-for a commit so he could take an APK.
-
-### What the file contains
-
-**Continuing ladders** — the 3rd tier ran 14 rungs (40-74); the 4th runs **15, one per level, 76-90**.
-Start rungs, counted off `RegisterNuker3rd`, not guessed:
-
-| Skill | id | 4th rungs | Note |
-|---|---|---|---|
-| Anti magic | `anti_magic_mage` | **21-35** | ⚠ ALREADY IN THE DEF (`HealerFourthAntiMagicRungs`) and his rows match it digit for digit. Learn lines only. |
-| Spellcaster Weapon Mastery | `healer_weapon_mastery` | **15-29** | ⚠ ALREADY IN THE DEF (`HealerFourthWeaponRungs`). Learn lines only. |
-| Mage Armor Mastery | `nuker_armor_mastery` | **19-33** | The nuker's own. NEW rungs to author. |
-| Elemental Blast | `elemental_blast` | 15-29 | |
-| Quick Blast | `quick_blast` | 15-29 | |
-| Elemental Wave | `elemental_wave` | 15-29 | |
-| Arcane Wave | `arcane_wave` | 15-29 | Human |
-| Frost Spikes / Frost Pierce | `frost_spikes` / `frost_pierce` | 15-29 | Elf |
-| Witches Curse / Scarecrow | `witches_curse` / `witches_scarecrow` | 15-29 | Demon |
-| Vampiric Bolt | `vampiric_bolt` | **20-34** | Human. 3rd ran rungs 6-19. |
-| Arcane Void | `arcane_void` | **4-7** @76/80/85/90 | Human. Only MP moves; all four say 2~4. |
-| Elemental Burst | `elemental_burst` | **4-6** @80/85/90 | power 200/225/250, 2 Elemental Stones |
-| Thunderstorm | `thunderstorm` | **4-6** @80/85/90 | power 250/300/350, 3 stones |
-| Arcane / Frost / Pyro Burst | `arcane_burst` etc. | **2-4** @80/85/90 | one per race |
-| Arcane Momentum | `reuse_reset_momentum` | 1 @76 | ✅ ALREADY BUILT (`BL-191`) |
-
-**His shared columns, read off the file** (state each once, as `Skills.Nuker3rd.cs` does):
-
-- Bolt MP (Elemental Blast, Quick Blast, Frost Spikes, Frost Pierce): `69,71,73,77,79,91,95,97,99,103,105,107,111,113,115`
-- Wave MP (Elemental Wave, Arcane Wave): `105,107,109,111,114,117,120,123,126,129,132,135,138,141,144`
-- Heavy MP (Vampiric Bolt, Witches Curse, Witches Scarecrow): `138,142,146,154,158,182,190,194,198,206,210,214,222,226,230`
-- Blast power (Elemental Blast, Vampiric Bolt): `110…138` by +2
-- Quick power (Quick Blast, Witches Curse): `88,90,91,93,94,96,99,100,101,102,103,105,106,108,109`
-- Wave power (Elemental Wave, Arcane Wave, Frost Spikes, Frost Pierce): `66,68,70,72,75,78,81,84,87,90,93,96,99,102,105`
-- Frost Spikes slow: 40% ×4, 42% ×5, 45% ×6 · Witches Curse M.Def: 30% ×4, 32% ×5, 35% ×6 · Frost Pierce bleed rank **10 flat**
-- ✅ **The SP/gold ladder is `HealerFourthSp` / `HealerFourthGold` exactly** — 6.5kk/11kk/16kk/80kk then SP 0 and gold 5kk→100kk. Reuse them; do not restate.
-
-**Mage Armor Mastery's 15 new rungs** (his DESCR, in order 76→90): P.Def `89,91,92,93,95,96,97,99,100,101,103,104,105,107,108`; max MP `220,220,250,250,250,290,290,300,300,300,330,330,350,350,400`; mpWhenRestored `60% ×4, 65% ×5, 70% ×6`; **M.Def % `2,4,5,7,8,10,11,13,14,16,17,19,20,22,25`** and **MP-consumption reduction `0,0,5,5,5,8,8,8,8,8,10,10,10,10,10`** — the last two are NEW columns this ladder never had. M.Def% fits `StatMods.MDefPct` in the robe profile; the MP-cost cut has no StatMods field, so give the rung a second, robe-gated `PassiveEffect(RequiredArmor: Robe, MagicMpCostPct: …)` — the `SkillLevel.ExtraPassives` idiom, not a new StatMods field.
-  ❓ **His "Decrease Mp Consumption" is unqualified.** Built as MAGIC-channel unless you say otherwise; a nuker casts magic, and the warrior's toggle only took the physical channel because his row said "p.mp".
-
-### 🔴 SIX SKILLS ARE NEW, and four of them need engine work
-
-1. **`nuker_shield_mastery`** @76 — a robe caster's shield passive: `RequiresShield`, M.Atk +5%, MP cost −10%, MP regen +10%, P.Def +100, **and the shield can never block** (`BlockChancePct: -1f`, which is the existing ×(1+pct) channel reaching ×0). No engine work.
-2. **`nuker_mana_barrier`** @85 — 30 MP, 300s reuse, 30s, **5 SP bottles** (`LearnConsumableId: ItemCatalog.SpBottle`, the `archer 4th` idiom). 🔑 **A def called `mana_barrier` ALREADY EXISTS in `Skills.Mage.cs` with his exact numbers (70% / 0.5 MP / 30s / 300 reuse) and NO class table learns it** — an orphan, like Dispel Magic was. Change its id string to his `nuker_mana_barrier` rather than authoring a second one.
-3. **`nuker_Force_empowerment`** @78/80/82 — a toggle: M.Atk +14/15/16%, magic MP consumption +20/15/10%, **50/40/30 HP a second**. Same shape as `double_mastery`; no engine work.
-4. **`nuker_{human,elf,demon}_spell_empowerment`** @80/85/90 — a 600s self buff: magic MP cost up, M.Atk up, **and a 5% on-being-attacked proc whose payload lands on the ATTACKER**. 🔴 **THIS IS THE ENGINE GAP.** The proc machinery exists (`ProcOnDamaged`, `ProcVictimRungs`) and buff-carried procs already run, but `TryOnDamagedProcs(target, magicHit)` never passes the attacker, so `ProcVictimRungs` can't fire on a defensive proc. Two changes: pass the attacker through, and teach `PayOutProc`/the victim arm to deal DIRECT DAMAGE (the Human's *"inflicts damage on attackers with power 47/51/55"* — the Elf and Demon payloads are ordinary debuffs and already work).
-
-### Before it can be called done
-
-- A `Check.Specs` line for `nuker 4th` — **it earns one**, the file is finished.
-- `dotnet run --project tools/SkillCsvSeed -- --check` green, and `--chains` re-read.
-- Register to `Discipline.Magus` only — `Tempest` was retired (`BL-97`).
-- ⚠ **NEW APK**: the class-skill table changes.
-
----
-
 ## `BL-189` 🔵 WEAPON-TYPE PROTECTION — `BowResist` generalised to every weapon type
 
 **Your ask, 2026-09-09**, alongside the blow ruling: *"make a note later I want to do a wepon type
@@ -1342,3 +1282,21 @@ his damage is not:
 - He is twenty points of flat P.Atk under the Ravager at every rung, by your own columns. If his
   skills match the Ravager's power, the cleave is pure profit; if they are under, the gap compounds.
 
+
+---
+
+
+## `BL-208` ❓ ONE COSMETIC CELL LEFT FROM THE MAGUS'S 4th KIT
+
+Filed 2026-09-11 with four items; **three you closed the same day** and they are in
+[BacklogArchive.md](BacklogArchive.md) — the toggle drain now ladders per rung (both bars), the Spell
+Empowerment rider's 10s / 10s is ratified, and the race-Burst @80 rung is a **debuff-landing** step,
+not a wasted one (the spell becomes level 80, and `DebuffLandChance` reads the rung's own learn level).
+
+**What is left is one inert cell.** Pyro Burst's three 4th-tier rows carry `(success chance x1.5)`;
+your 3rd-tier row does not, and it looks copied from the Arcane Burst and Frost Burst rows beside them.
+
+**It cannot bite either way.** A burn's save is `DebuffSchool.None` — your own *"for burn nothing
+protects .. always land"* — so the landing branch skips the contest this number would modify. It is
+carried on the def so your cell and the code read alike, rather than deleted from your file over a
+number that does nothing. Say the word and the three cells go.

@@ -7,12 +7,239 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.130.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.132.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-11 (latest) — 0.130.0: his five CSV edits land — the warrior gets its two 3rd-class kits, and a blunt starts cleaving
+## 2026-09-11 (latest) — 0.132.0: the Magus's 4th class, and a defensive proc that can finally reach the attacker
+
+⚠ **NEW APK.** No protocol bump (nothing on the wire changed), but the client builds its Learn tab
+locally from the compiled `ClassSkills`, and the Magus's table gains 236 rows.
+
+`BL-192`. His `nuker 4th.csv` — 236 rows, *"so i think im done with nuker 4th"* — is built. It is the
+**fifth finished 4th-tier file** after the healer, the buffer, the tank and the archer, and it leaves
+only the warrior's two.
+
+### Nineteen families simply continue, and six are new
+
+One rung per level, 76 → 90, on the shared 4th-tier price ladder (6.5kk SP at 76 climbing to 80kk at
+79, then **no SP at all** and gold 5kk → 100kk):
+
+| | |
+|---|---|
+| **shared** | Anti-Magic (21-35) · Spellcaster Weapon Mastery (15-29) · Mage Armor Mastery (19-33) · Elemental Blast · Quick Blast · Elemental Wave (15-29) · Elemental Burst + Thunderstorm (rungs 4-6 @80/85/90) |
+| **Human** | Arcane Wave (15-29) · Vampiric Bolt (20-34) · Arcane Void (4-7 @76/80/85/90) · Arcane Burst (2-4) |
+| **Elf** | Frost Spikes · Frost Pierce (15-29) · Frost Burst (2-4) |
+| **Demon** | Witches Curse · Witches Scarecrow (15-29) · Pyro Burst (2-4) |
+
+The six new ones: **Mage Shield Mastery** @76, **Force Empowerment** @78/80/82, **Mana Barrier** @85 and
+one **Spell Empowerment** per race @80/85/90.
+
+**Mage Armor Mastery grows two columns it never had** — an M.Def *percent* (2 → 25%) and an MP-cost cut
+(0 → 10%) — and all four of its moving numbers are the healer's 4th-tier robe rung to the digit. The one
+thing that still makes it the nuker's own skill is `mpWhenRestored`, which resumes climbing at 60% and
+reaches 70%.
+
+**Mage Shield Mastery is a shield that cannot block.** His row: *"increase m.atk +5%, mp consumption
+-10% and mpReg +10%, Pdef +100, but shield can never block (block rate x0)"*. No new primitive —
+`BlockChancePct` is already a ×(1 + pct) channel, so −1 lands on exactly ×0.
+
+**Mana Barrier already existed and had never been learnable.** A def in `Skills.Mage.cs` carrying his
+exact numbers (70% of damage paid from MP at 0.5 MP a point, 30s) that **no class table taught** — an
+orphan like Dispel Magic was. Its id moved to his `nuker_mana_barrier` rather than a second def being
+authored. 🔴 Its **reuse was 30 seconds against his 300**: `CooldownTicks` is tenths, and a 30-second
+reuse on a 30-second shield is a permanent one.
+
+**Pyro Burst reaches burn tier 12, which nothing in the game can cure.** His three rows read
+−100/−125/−150 HP a second at 70/72/75% HP-and-MP-received — that is the burn table's t10/t11/t12 line
+verbatim, so the whole rider is the RANK and no damage number is authored anywhere. *"i want healers
+holy blessing … to clence to t11. so pyromancer ultimate is uncurable"* — `DotTiers.Curable` refuses 12,
+so the level-90 Demon Magus's burn is beyond Holy Blessing, an Antidote and everything else.
+
+### 🔴 The engine gap: a defensive proc had nowhere to put its payload
+
+His three Spell Empowerments are *"being attacked with 5% chance [do something] **to the attacker**"*.
+Both halves of that machinery existed — `ProcOnDamaged` since the Sigils, `ProcVictimRungs` since the
+archer stances — but `TryOnDamagedProcs` called `TryProcs` **with no payload target at all**, so the
+victim arm was silently unreachable on that trigger. All three would have cost 150kk SP and done
+nothing. The attacker is passed through now, and the victim arm learned to deal **direct damage** for
+the Human's *"inflicts damage on attackers with power 47"* — the first victim payload in the game that
+is a hit rather than a debuff, delivered through the existing `DeliverSimpleHit` so it brings fizzle,
+magic crit and the PvE/PvP matrix with it. It cannot ping-pong: the proc's internal cooldown is set
+before any payout.
+
+### 🔴 The `BL-85` boot guard refused the build — again
+
+Three Spell Empowerments, three rungs each, one buff key. Same shape as the warrior's two Battle
+stances in 0.130.0, and the same answer the archer's three race stances already use: `SharesLadderKey:
+true`. It is safe here for the reason it is safe there — a Spell Empowerment is one per RACE, so no
+character can hold two, and sharing the key keeps them one family for a future group buff to compete
+with.
+
+### What was corrected in his file, and what was left alone
+
+- 🟡 **13 TARGET cells read bare `self`** where the `scope/breadth` scheme — and all 47 other self rows
+  in the same file, and every row of every other file — read `self/single`. Corrected; a missing breadth
+  half is a formatting slip, not a different mechanic.
+- 🔑 **The first 4th rung of all three race Bursts repeats the 3rd tier's last** (power 150, same
+  rider, 100kk of gold), then climbs 150 → 200 → 250. Built as authored — and see the last bullet
+  below for why it is a real rung and not a dead one.
+- ⚠ **Pyro Burst's `(success chance x1.5)` is carried and is inert.** His 3rd-tier row has no such
+  clause and these three do — almost certainly copied from the two Burst rows beside them. A burn's save
+  is `DebuffSchool.None` (*"for burn nothing protects .. always land"*), so the landing branch skips the
+  contest this number would modify. Carried so his cell and the code read alike, rather than deleted
+  from his file over a number that cannot bite.
+- ⚠ **Four families gain nothing at the 4th tier** — Calm Spirit, Restore Spirit, Phase Shift and
+  Meditation have no row in his file. No continuations invented, same ruling that stopped Harmony of
+  Speed at 58.
+- ✅ **A TOGGLE'S HP DRAIN NOW LADDERS PER RUNG** — his ruling the same day (`BL-208`): *"Make togles to
+  can change value of drain per lvl .. Some can drain more mp why some cant drain less hp?"*, and the
+  asymmetry was exactly that. `SkillLevel.MpPerSecond` got its per-rung slot on 2026-08-27 and the HP
+  half never did, so a stance whose drain is a ladder was charged rung 1's number at every rung — the
+  identical bug the MP half had. `SkillLevel.HpPerSecond` + `SkillDef.HpPerSecondAt(level)`, and **both**
+  readers go through it (the tick loop and the description card). Force Empowerment really drains
+  **50 / 40 / 30** at 78 / 80 / 82. Holy Soul and Overpower Mastery are untouched: a rung of 0 inherits
+  the def's flat number.
+- ✅ **The Spell Empowerment rider's 10s duration and 10s proc cooldown are ratified** — they were mine
+  (the archer stances' values), and he took them: *"I haven't written the duration and cd of empowerment
+  debuff part 10/10 is good call"*.
+- 🔴 **THE RACE-BURST @80 RUNG IS NOT A WASTED RUNG, AND THE REPORT WAS WRONG.** It was flagged as a
+  100kk rung that buys nothing; his answer is the mechanic: *"it don't give power but it gives higher
+  debuff chance .. the magic become lvl 80 not 74 .. (it won't fail anyway but atleast debuff will land
+  more often)"*. `DebuffLandChance` reads the RUNG's own **learn level**, so an identical spell bought
+  at 80 wins a level contest a 74 one loses — the same rule Witches Scarecrow's whole ladder runs on.
+  A Burst cannot fizzle (`SureHit`), so the level term has nowhere else to show up: the rung buys the
+  rider's landing rate and nothing else. Damage stays as authored until he playtests it.
+- ❓ **"Decrease Mp Consumption" unqualified = BOTH channels.** Where he means one he says so (Spell
+  Empowerment is *"magic MP consumption"*, the warrior's toggle was *"p.mp"*). The robe mastery, the
+  shield mastery and Force Empowerment are unqualified, so they take both — which is also exactly what
+  the healer's identical robe clause has shipped as since 0.107.0.
+
+### `--check` gains a line and loses eight false alarms
+
+`nuker 4th` earns its `Check.Specs` line and reads **clean** — all 236 rows verified in both directions.
+
+The ladder-dip detector learned the **magnitude-only penalty ladder**. `mpcost` is authored both ways
+(*"Decrease Mp Consumption with 5%"* and *"−15% Magic MP Consumption"*), so the reader strips the sign
+and the existing "both values negative" exemption could not fire. The Magus's two stances are the first
+ladders where the MP cost is a **price that shrinks** — Force Empowerment's 20 → 15 → 10% surcharge —
+and every step of both was reporting as a typo. Gated on his own word *"increase"* sitting in front of
+the phrase on both rungs, so a real discount ladder that falls still reports.
+
+## 2026-09-11 — 0.131.0: the melee rogue's blows halve and learn to double; the burst stops failing on a DEX roll
+
+⚠ **NEW APK.** No protocol bump (nothing on the wire changed), but the client builds its Learn tab
+locally from the compiled `ClassSkills`, and the melee rogue's table gains Overpower at 40 and 76.
+
+Seven fixes off one playtest message, all of them the melee rogue's except the last two.
+
+### The stab ladders are HALVED — and every stab becomes a `[Double]` skill
+
+*"cut dual 3rd/4th stab skills to have twice less power … now ~11k dmg on a 90 mob with 19k hp. And
+78k mob hit for 8k. A bit too much. Let atleast this dmg to be a double dmg."*
+
+Both halves are one change. Killing / Swift / Heavy / Venom Stab and Venom Burst each lost half their
+authored power at both tiers, and all four stab families are now flagged `CanDouble`, so the number he
+was measuring comes back on the Overpower roll instead of on every cast.
+
+🔴 **HALVING THE POWER DOES NOT HALVE THE DAMAGE.** Power is a term *inside* the ratio —
+`K·(atk·lvlMod + power)/def` — so the attacker's own P.Atk rides through untouched. Measured at 90 in
+mythic gear (the new `BalanceMatrix --stab`): a Killing Stab went **6,970 → 3,978** (×0.57, not ×0.5)
+and a **doubled** one lands **7,956**, about 14% *above* what the skill used to do flat. The floor came
+down; the ceiling went up slightly.
+
+| level 90, mythic, unbuffed | power | blow | vs 19.5k mob | DOUBLE |
+|---|---|---|---|---|
+| Killing / Swift / Venom Stab | 7,500 | 3,978 | 20% | 7,956 |
+| Heavy Stab (×2 hits) | 5,625 | 6,460 per use | 33% | 12,920 |
+
+### Overpower comes to the melee rogue — two rungs, not three
+
+*"give duals 3rd/4th stabs a [double] flag and overpower passive but least than warrior @40 3% @76-7%
+(1 rung less. If it's too low I'll give him the last rung at 80 — for now only the 2 rungs)."*
+
+Same def, same ladder, later levels: `SkillLevel 1` (3%) at 40 and `SkillLevel 2` (7%) at 76. The
+warrior's third rung (10%) is deliberately unreachable. The **price** is overridden per class
+(`ClassSkill.SpCost`) — rung 1 costs 3,400 because that is a level-20 warrior's price, and SP here is
+priced by the level you learn at, not by the ability.
+
+### Venom Stab now hits as hard as a Killing Stab
+
+*"make venomWeaver — venom stab to have the same power as killing strike (the new /2 dmg)."* The
+Demon's old ×0.50 per blow would have compounded with the halving — half of a half, on the one
+discipline with no Killing Stab at all. In practice the venom ladder barely moves (675 → 625 at the
+first rung, nothing else); it is the other three families that halved.
+
+### Venom Burst lands on a flat 80%, and nothing scales it
+
+*"make venom burst to always have max 80% roof land rate independent on dex … the venom burst if fails
+takes stacks and don't do dmg, so it burns twice."*
+
+🔑 **What was failing was the RIDER, not the damage.** The burst has no blow gate and its damage always
+landed — but it spends the pool in the damage arm and only *then* rolls its venom contest, so a lost
+AGI-vs-CON roll broadcast `Fail` on the same cast that had just consumed ten stacks. A new
+`SkillDef.FixedLandChance` replaces the stat curve outright (not a ceiling on it — a cap would still be
+DEX-shaped underneath), and skips the per-skill multiplier and the target's CC resistances with it.
+Total immunity still applies. The stacks are still spent on a failure: *"if it fails it fails."*
+
+### Venom Burst becomes a stab — `BL-207`, and it replaces the 80% rule above
+
+*"venom burst is a single stab skill that it's effective power depend on stacks count … it's one stab
+x15k power … So venom burst also must land a double. Can we make venom burst to be with normal land
+rate (30% like other stabs) and on fail not to take all stacks but to restore 3."*
+
+It now rolls the **blow gate** like every other stab and **can Double**. It used to land always and
+flat — no crit values at all — so this cuts both ways: much bigger when it lands, a basic swing when
+it does not. A **failed** burst empties the pool and banks one cast's worth back (10 → 3 at the top
+rungs), so a Demon restarts at 3 rather than 0. The flat-80% rider from `BL-204` is gone with
+`SkillDef.FixedLandChance`; the cosmetic `Fail` it was working around is fixed at its source instead —
+a burst that spent a pool no longer rolls a rider contest whose every branch was already a no-op.
+
+🔴 **`damage × stacks` is not `power × stacks`.** The engine multiplies the *resolved damage*, and
+power sits beside `atk·lvlMod` inside the ratio — so a full pool reads **10,850** at 90 (**2.73×** a
+Killing Stab) where "one stab of 15k power" would read 6,970 (1.75×). Kept as built, because it is the
+2.73× that lands his own race-parity table:
+
+| race | 10s rotation | × its own plain stab |
+|---|---|---|
+| Elf | 3 Killing + 2 Swift | **5.00** |
+| Human | 3 Killing + 1.5 Heavy | **5.44** |
+| Demon | 3 Venom Stab + 1 Burst (9 stacks) | **5.47** |
+
+### Reuse prices the three races apart
+
+*"Increase heavy stab reuse to 7.5s, swift strike reuse to 5s. To balance the dmg~reuse for races."*
+All three races carry the same power ladder now, so time is the only thing left to separate them:
+Heavy Stab **7.5s** (two resolutions, 1.5 Killing Stabs a cast), Swift Stab **5s** (half the cast
+time), Venom Stab keeps 3s (its damage is banked, not dealt).
+
+### The two skill masteries move to the Passives group
+
+*"all classes overpowerd/momentum is in buffs group not in passives in the skill window."* Overpower,
+Arcane/Stab Momentum and Lasting Enchantment were `Category` Physical or Buff, and the Known tab heads
+each block with that name. They are `Passive` now. ⚠ **Not** `double_mastery` — Overpower Mastery /
+Momentum Mastery is a TOGGLE the player switches on, so it needs a bar slot and stays with the stances.
+
+### A trap's circle is no longer painted over
+
+*"traps orange-gold circle for the owner is under the red zone poligon and I see only the half that is
+outside if any."* Exactly what the numbers said: the map paints spawn-zone discs at y=0.01, coloured
+FIELD polygons at 0.02 (red at the high bands), town islands at 0.03. The trap disc sat at 0.01 and the
+totem at 0.02, z-fighting the fill. The whole decal stack moved above every painted layer (trap 0.10,
+totem 0.11, flash 0.13) and keeps its own order. **The rule going forward: ground paint is scenery,
+decals are gameplay — every decal sits above every painted layer.**
+
+### Tooling
+
+`BalanceMatrix --stab [level] [quality] [--buffed]` — the melee rogue has never had a damage row
+anywhere in the rig, because `--dmgmatrix`'s skill picker deliberately skips `BlowOnCrit` skills. It
+prints power, the landed blow, per-use, the doubled number and the blow rate, against the
+**zone-laddered** mob pool (`MobBaseStats.Hp × WorldPlan.HpScaleFor`) — 19,560 at 90, which is the
+19k creature he quotes, with the ×4 elite beside it.
+
+
+## 2026-09-11 — 0.130.0: his five CSV edits land — the warrior gets its two 3rd-class kits, and a blunt starts cleaving
 
 ⚠ **NEW APK.** No protocol bump (nothing on the wire changed), but the client builds its Learn tab
 locally from the compiled `ClassSkills`, and this moves five class tables at once.

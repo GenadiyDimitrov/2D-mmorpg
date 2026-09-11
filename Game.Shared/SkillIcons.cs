@@ -60,8 +60,20 @@ public static class SkillIcons
         ["frost_bind"]      = "❄️",
         ["entangling_roots"] = "🪢",
         ["creeping_frost"]  = "🌨",
-        ["mana_barrier"]    = "🔮",
+        // 🔴 THE KEY MOVED WITH THE SKILL ID (`BL-192`, 2026-09-11): `mana_barrier` →
+        //    `nuker_mana_barrier`. This table is keyed by SKILL ID, so the rename would have silently
+        //    dropped the glyph back to the letters fallback the first time anyone learned it.
+        // ⚠ AND THE GLYPH CHANGED, because 🔮 is also the NPC buffer's `atk_mag` — a buff every Magus
+        //   wears — and his rule is that no two skills ONE class can hold may share an icon.
+        ["nuker_mana_barrier"] = "🧿",
         ["phase_shift"]     = "🌌",
+        // ---- THE MAGUS'S 4th TIER (`BL-192`). The three Spell Empowerments deliberately SHARE one
+        //      glyph: they are one skill per race and no character can ever hold two.
+        ["nuker_shield_mastery"]         = "🪬",
+        ["nuker_Force_empowerment"]      = "💢",
+        ["nuker_human_spell_empowerment"] = "✴️",
+        ["nuker_elf_spell_empowerment"]   = "✴️",
+        ["nuker_demon_spell_empowerment"] = "✴️",
         ["weakness"]        = "📉",
         ["greater_weakness"] = "🔻",
         ["restore_spirit"]  = "♻️",

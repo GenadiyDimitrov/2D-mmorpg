@@ -57,9 +57,20 @@ namespace Game.Client
 
         // Height above the grid. The totem sits UNDER a flash so a heal landing on a totem still reads;
         // a trap sits under both — it is the longest-lived and the least urgent of the three.
-        private const float TrapHeight = 0.01f;
-        private const float TotemHeight = 0.02f;
-        private const float FlashHeight = 0.04f;
+        //
+        // 🔴 THE WHOLE STACK WAS LIFTED ABOVE THE GROUND PAINT on 2026-09-11 (`BL-206`). Owner:
+        //    *"traps orange-gold circle for the owner is under the red zone poligon and I see only the
+        //    half that is outside if any"* — and that is exactly what the numbers said. The map paints
+        //    the ground in its own layers: spawn-zone discs at 0.01, the coloured FIELD polygons at
+        //    0.02 (red at the high level bands), town islands at 0.03, region outlines at 0.06, the
+        //    world border at 0.08, the jail at 0.09. A trap at 0.01 was UNDER the field fill and a
+        //    totem at 0.02 was z-fighting it.
+        // 🔑 THE RULE, so the next decal does not repeat this: ground PAINT is scenery and decals are
+        //    gameplay, so every decal goes above every painted layer. 0.10 is the floor for this file;
+        //    the three keep their old order and their old spacing relative to each other.
+        private const float TrapHeight = 0.10f;
+        private const float TotemHeight = 0.11f;
+        private const float FlashHeight = 0.13f;
 
         private sealed class Decal
         {

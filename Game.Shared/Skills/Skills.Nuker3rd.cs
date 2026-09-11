@@ -149,7 +149,8 @@ public static partial class SkillCatalog
             Description: "The nuker's main attack spell — raw elemental force at long range.",
             Levels: HealerRungs(0, 14, (i, sp) =>
                 new SkillLevel(Power: NukerBlastPower[i], MpCost: NukerBoltMp[i], SpCost: sp,
-                    Description: $"Magic damage, power {NukerBlastPower[i]}."))),
+                    Description: $"Magic damage, power {NukerBlastPower[i]}."))
+                .Concat(NukerFourthBlastRungs()).ToArray()),
 
         // ⚠ PVP POWER ×0.5 — his row, on every rung ("Power in PVP x0.5"). A 2s cast at 300 range that
         // hits for 80% of the main nuke is a duelling tool, not a farming one, and halving it in PvP is
@@ -164,7 +165,8 @@ public static partial class SkillCatalog
             Description: "A fast, short-range blast (2s cast, half-second reuse). Half power against players.",
             Levels: HealerRungs(0, 14, (i, sp) =>
                 new SkillLevel(Power: NukerQuickPower[i], MpCost: NukerBoltMp[i], SpCost: sp,
-                    Description: $"Magic damage, power {NukerQuickPower[i]}. Half power in PvP."))),
+                    Description: $"Magic damage, power {NukerQuickPower[i]}. Half power in PvP."))
+                .Concat(NukerFourthQuickRungs()).ToArray()),
 
         // ═══ THE TWO AREA SPELLS ═════════════════════════════════════════════════════════════════
         //
@@ -186,7 +188,8 @@ public static partial class SkillCatalog
             Description: "Erupts around you, striking every enemy within 200.",
             Levels: HealerRungs(0, 14, (i, sp) =>
                 new SkillLevel(Power: NukerWavePower[i], MpCost: NukerWaveMp[i], SpCost: sp,
-                    Description: $"Hits every enemy within 200 for power {NukerWavePower[i]}."))),
+                    Description: $"Hits every enemy within 200 for power {NukerWavePower[i]}."))
+                .Concat(NukerFourthWaveRungs()).ToArray()),
 
         // ⚠ `AreaAtTarget: true` — his whole point: *"the arcane wave should AOE around the mob not
         // the player like elemental wave … enemy/aoe with 900 range and hit 400 range around the
@@ -201,7 +204,8 @@ public static partial class SkillCatalog
             Description: "Detonates arcane force around your target, striking everything within 400 of it.",
             Levels: HealerRungs(0, 14, (i, sp) =>
                 new SkillLevel(Power: NukerWavePower[i], MpCost: NukerWaveMp[i], SpCost: sp,
-                    Description: $"Hits every enemy within 400 of the target for power {NukerWavePower[i]}."))),
+                    Description: $"Hits every enemy within 400 of the target for power {NukerWavePower[i]}."))
+                .Concat(NukerFourthArcaneWaveRungs()).ToArray()),
 
         // ═══ THE ELF'S TWO RIDERS ════════════════════════════════════════════════════════════════
         //
@@ -228,7 +232,7 @@ public static partial class SkillCatalog
                 return new SkillLevel(Power: NukerWavePower[i], MpCost: NukerBoltMp[i], SpCost: sp,
                     Magnitudes: new EffectMagnitude[] { new(SkillEffect.Slow, slow[i]) },
                     Description: $"Power {NukerWavePower[i]}, and a chance to slow by {slow[i] * 100:0}% for 30s.");
-            })),
+            }).Concat(NukerFourthFrostSpikesRungs()).ToArray()),
 
         // ⚠ BLEED IS A `Rank`, NOT A MAGNITUDE. His rows read "bleed effect rank 3 … rank 10", and rank
         // is what a cure has to out-reach (Antidote's DispelMaxLevel). The DoT's damage per second is
@@ -247,7 +251,7 @@ public static partial class SkillCatalog
                 int[] rank = { 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10 };
                 return new SkillLevel(Power: NukerWavePower[i], MpCost: NukerBoltMp[i], SpCost: sp,
                     Description: $"Power {NukerWavePower[i]}, and a chance to open a rank-{rank[i]} bleed for 15s.");
-            })),
+            }).Concat(NukerFourthFrostPierceRungs()).ToArray()),
 
         // ═══ THE ORK'S TWO ═══════════════════════════════════════════════════════════════════════
 
@@ -268,7 +272,7 @@ public static partial class SkillCatalog
                 return new SkillLevel(Power: NukerQuickPower[i], MpCost: NukerHeavyMp[i], SpCost: sp,
                     Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffMagicDef, -mDef[i]) },
                     Description: $"Power {NukerQuickPower[i]}, and a chance to cut M.Def by {mDef[i] * 100:0}% for 30s.");
-            })),
+            }).Concat(NukerFourthWitchesCurseRungs()).ToArray()),
 
         // ⚠ A NOTE FOR ANYONE READING THIS FILE BY EYE: `nuker 3rd.csv` ends WITHOUT A TRAILING
         // NEWLINE, so `wc -l` and a plain `sed -n '1,212p'` both lose its last row — which is this
@@ -284,7 +288,8 @@ public static partial class SkillCatalog
             // level contest (DebuffLandChance reads the RUNG's learn level).
             Levels: HealerRungs(0, 14, (i, sp) =>
                 new SkillLevel(MpCost: NukerHeavyMp[i], SpCost: sp,
-                    Description: "Terrifies the target for 10s."))),
+                    Description: "Terrifies the target for 10s."))
+                .Concat(NukerFourthScarecrowRungs()).ToArray()),
 
         // ═══ THE HUMAN'S CANCEL ══════════════════════════════════════════════════════════════════
         //
@@ -307,7 +312,7 @@ public static partial class SkillCatalog
                     Description: "A chance to strip 2-3 positive effects."),   // 62
                 new SkillLevel(MpCost: 138, SpCost: 650000, DispelCount: 4,
                     Description: "A chance to strip 2-4 positive effects."),   // 72
-            }),
+            }.Concat(NukerFourthArcaneVoidRungs()).ToArray()),
 
         // ═══ THE SIEGE NUKE ══════════════════════════════════════════════════════════════════════
         //
@@ -334,7 +339,7 @@ public static partial class SkillCatalog
                     Description: "Storm damage, power 204. Consumes 3 Elemental Stones."),   // 70
                 new SkillLevel(Power: 216, MpCost: 216, SpCost: 880000,
                     Description: "Storm damage, power 216. Consumes 3 Elemental Stones."),   // 74
-            }),
+            }.Concat(NukerFourthThunderstormRungs()).ToArray()),
 
         // ═══ THE THREE LEVEL-74 BURSTS — ONE PER RACE ════════════════════════════════════════════
         //
@@ -363,7 +368,7 @@ public static partial class SkillCatalog
             {
                 new SkillLevel(Power: 150, MpCost: 150, SpCost: 880000, CcResistMagical: -0.40f,
                     Description: "Power 150, never fizzles, and cuts SPT resistance by 40% for 30s."),
-            }),
+            }.Concat(NukerFourthArcaneBurstRungs()).ToArray()),
 
         // Freeze = Root + a 30% M.Def cut, one buff, so a cure that lifts the hold lifts both.
         new(FrostBurst, "Frost Burst", BaseClass.Mage,
@@ -379,7 +384,7 @@ public static partial class SkillCatalog
                 new SkillLevel(Power: 150, MpCost: 150, SpCost: 880000,
                     Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffMagicDef, -0.30f) },
                     Description: "Power 150, never fizzles, and freezes for 15s: −30% M.Def, cannot move."),
-            }),
+            }.Concat(NukerFourthFrostBurstRungs()).ToArray()),
 
         // 🔑 BURN NEEDED NO NEW PRIMITIVE AT ALL — it is `Cancellable: false`. His note on the row:
         // *"new effect like a DOT but its not poision nor bleed nor venom -> burn = true dmg per second
@@ -432,6 +437,6 @@ public static partial class SkillCatalog
                 new SkillLevel(Power: 150, MpCost: 150, SpCost: 880000, Rank: 10,
                     Description: "Power 150, never fizzles, then burns for 100/s for 15s and cuts "
                                + "healing and mana received by 70%."),
-            }),
+            }.Concat(NukerFourthPyroBurstRungs()).ToArray()),
     };
 }

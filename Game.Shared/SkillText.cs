@@ -469,14 +469,29 @@ public static class SkillText
                 o.Add(party.DurationTicks > 0
                     ? $"Grants your party {party.Name} for {Secs(party.DurationTicks)}"
                     : $"Grants your party {party.Name}");
-            // THE VICTIM'S HALF (his archer stances' bleed and poison). Named with its TIER, because
-            // that is the number that decides whether anyone can cure it.
+            // THE VICTIM'S HALF (his archer stances' bleed and poison, and the Magus's retaliation).
+            // Named with its TIER, because that is the number that decides whether anyone can cure it.
+            //
+            // ⚠ WHO IT LANDS ON DEPENDS ON THE TRIGGER (`BL-192`). On a Hit proc the payload target is
+            //   what you just struck; on a DAMAGED proc it is whoever struck YOU, which is the whole
+            //   point of the Magus's Spell Empowerment. The card used to say "on what you hit" either
+            //   way, which is exactly backwards for a defensive proc.
+            // ⚠ AND A DAMAGE PAYLOAD IS NOT INFLICTED, IT IS DEALT — the Human's rider is power 47,
+            //   not a debuff, so "Inflicts Arcane Recoil for 0s" would have been nonsense.
             if (ProcRung(def.ProcVictimRungs, level) is SkillDef onHit)
             {
-                string tier = onHit.Rank > 0 ? $" (tier {onHit.Rank})" : "";
-                o.Add(onHit.DurationTicks > 0
-                    ? $"Inflicts {onHit.Name}{tier} on what you hit for {Secs(onHit.DurationTicks)}"
-                    : $"Inflicts {onHit.Name}{tier} on what you hit");
+                string who = def.ProcOnDamaged ? "whoever hits you" : "what you hit";
+                if ((onHit.Effect & (SkillEffect.PhysicalDamage | SkillEffect.MagicDamage)) != 0)
+                {
+                    o.Add($"Strikes {who} back for power {onHit.Power}");
+                }
+                else
+                {
+                    string tier = onHit.Rank > 0 ? $" (tier {onHit.Rank})" : "";
+                    o.Add(onHit.DurationTicks > 0
+                        ? $"Inflicts {onHit.Name}{tier} on {who} for {Secs(onHit.DurationTicks)}"
+                        : $"Inflicts {onHit.Name}{tier} on {who}");
+                }
             }
             // …and a proc that rides a BUFF only runs while that buff is up, which is not obvious from
             // a card that otherwise reads like a passive.
@@ -668,7 +683,10 @@ public static class SkillText
             var upkeep = new List<string>(2);
             int mps = def.MpPerSecondAt(level);
             if (mps > 0) upkeep.Add($"{mps} MP");
-            if (def.HpPerSecond > 0) upkeep.Add($"{def.HpPerSecond} HP");
+            // ⚠ THE RUNG'S, not the def's (`BL-208`) — the card and the tick loop must quote the same
+            //   number, and Force Empowerment's drain falls 50 → 30 across its three rungs.
+            int hps = def.HpPerSecondAt(level);
+            if (hps > 0) upkeep.Add($"{hps} HP");
             o.Add(upkeep.Count > 0
                 ? $"Toggle — stays up until switched off, costing {string.Join(" and ", upkeep)} a second"
                 : "Toggle — stays up until switched off");

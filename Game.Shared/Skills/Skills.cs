@@ -207,6 +207,13 @@ public record SkillDef(
     /// ask was explicitly *"a sucess multiplier (per skill/lvl)"* — a ladder can buy reliability as it
     /// climbs.</para></summary>
     float DebuffLandMod = 1f,
+    // 🔴 `FixedLandChance` LIVED HERE FOR ONE VERSION (`BL-204`, 2026-09-11) and is GONE the same day
+    //    (`BL-207`). It gave a skill's contested rider a flat land chance instead of the stat curve,
+    //    for Venom Burst and nothing else. The problem it solved — a lost rider printing `Fail` over
+    //    a cast that had already spent the stack pool — is fixed at its source now: `ExecuteSkill`
+    //    does not roll a rider it has already decided to skip. Nothing else ever wanted the field, so
+    //    it went rather than sitting unused. If a skill genuinely needs a stat-free rider one day,
+    //    note that `alwaysLands` (a DoT family that saves against nothing) is the existing shape.
     // "[Double]" physical skills: a flat ×2 on the caster's Double Damage MASTERY. Ordinary
     // physical skills never double. Magic skills use magic crit.
     // 🔑 `BL-190` (2026-09-10) — this flag says the skill is ELIGIBLE, not that it doubles. The RATE
@@ -980,6 +987,12 @@ public record SkillDef(
     /// ⚠ NOT MpCostAt: Prowl carries a 20 MP one-off cast cost AND a 1 MP/s burn, so the two numbers
     /// are genuinely different fields on the same skill.</summary>
     public int MpPerSecondAt(int level) => Lvl(level)?.MpPerSecond is int v && v > 0 ? v : MpPerSecond;
+    /// <summary>The HP half of the same upkeep at a level (`BL-208`). A rung's 0 falls back to the
+    /// SkillDef's <see cref="HpPerSecond"/>, so a flat stance needs no per-level entry.
+    /// ⚠ EVERY read of the HP drain goes through this, exactly as the MP one does — the toggle tick,
+    /// the description card and autohunt's "can I afford to hold this" test. Reading the raw field
+    /// anywhere is the bug that made a 50/40/30 ladder charge 50 at every rung.</summary>
+    public int HpPerSecondAt(int level) => Lvl(level)?.HpPerSecond is int v && v > 0 ? v : HpPerSecond;
     /// <summary>HP price at a level (Restore Spirit). A level's -1 falls back to the SkillDef's
     /// HpCost, so a single-level HP skill needs no per-level entry at all.</summary>
     public int HpCostAt(int level)
@@ -1502,6 +1515,15 @@ public record SkillLevel(
     // rung — a level-80 Reinforcement authored at 30 MP/s really took 12. Same "unset = inherit"
     // shape as every other per-rung field above.
     int MpPerSecond = 0,
+    // THE HP TWIN OF THE LINE ABOVE (`BL-208`, owner 2026-09-11: *"Make togles to can change value of
+    // drain per lvl .. Some can drain more mp why some cant drain less hp?"*). MP got its per-rung slot
+    // on 2026-08-27 and HP simply never did — so a stance whose HP drain is a LADDER was charged rung
+    // 1's number at every rung, which is the identical bug the MP half had. The Magus's Force
+    // Empowerment is the first author: 50 / 40 / 30 a second at 78 / 80 / 82, where the rungs buy
+    // SUSTAIN rather than power.
+    // ⚠ Same "0 = inherit the SkillDef's HpPerSecond" shape, so Holy Soul's single flat 50 needs no
+    //   per-level entry.
+    int HpPerSecond = 0,
     // THE EFFECT'S RANK AT THIS RUNG (0 = inherit, which is the `BL-85` "def.Rank + level - 1" for a
     // childless multi-level buff and the flat def.Rank for everything else). Authored for exactly one
     // thing today: a DoT's TIER, which is what a cure has to out-reach. His `dual 3rd.csv` Venom Stab
@@ -1919,6 +1941,7 @@ public static partial class SkillCatalog
         list.AddRange(Bulwark3rdSkills());    // Skills.Bulwark3rd.cs (his `tank 3rd.csv`, 40-74)
         list.AddRange(Bulwark4thSkills());    // Skills.Bulwark4th.cs (`BL-154`/`BL-155` — the pull and the two silences)
         list.AddRange(SkillMasterySkills());  // Skills.SkillMasteries.cs (`BL-191` — the four passives that turn `BL-190` on)
+        list.AddRange(Nuker4thSkills());      // Skills.Nuker4th.cs (his `nuker 4th.csv`, 76-90 — `BL-192`)
 
         var dict = new Dictionary<string, SkillDef>();
         foreach (var sk in list)

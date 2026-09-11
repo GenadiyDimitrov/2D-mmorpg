@@ -82,35 +82,42 @@ public static partial class SkillCatalog
     //  continuation of his own numbers rather than an invention on top of them.
     // ═════════════════════════════════════════════════════════════════════════════════════════════
 
-    /// <summary>Killing Stab / Swift Stab, 6,900 → 15,000. The 3rd tier ended at 6,400.
-    /// ⚠ It lands on HIS two anchors: 11,000 at level 85 and 15,000 at 90. The stride widens at 86
-    /// (+450 a rung to 85, then +800) because his own bands widen there.</summary>
+    /// <summary>Killing Stab / Swift Stab, 3,450 → 7,500. HALVED on 2026-09-11 (`BL-203`) along with
+    /// the whole 3rd tier — see the block comment on <c>StabPower</c> in Skills.Dual3rd.cs for why a
+    /// halving rather than a re-tune, and for the `CanDouble` flag that hands the old number back on
+    /// a roll.
+    ///
+    /// <para>⚠ HIS TWO ANCHORS MOVE WITH IT. This ladder was built to land on his *"7k-11k at 85,
+    /// 10k-15k at 90"* exactly; halved, it lands on 5,500 at 85 and 7,500 at 90 — the same anchors
+    /// under the new scale, and the old ones again whenever Overpower doubles the blow. The stride
+    /// still widens at 86 (+225 a rung to 85, then +400) because his own bands widen there.</para></summary>
     private static readonly int[] StabPower4 =
-    {
-        6900, 7350, 7800, 8250, 8700, 9150, 9600, 10050,
-        10500, 11000, 11800, 12600, 13400, 14200, 15000,
-    };
-
-    /// <summary>Heavy Stab — ×0.75 of <see cref="StabPower4"/> PER HIT, and it hits twice. Exactly
-    /// the ratio the two carry at the 3rd tier (4,800 against 6,400).</summary>
-    private static readonly int[] HeavyStabPower4 =
-    {
-        5175, 5500, 5850, 6175, 6525, 6850, 7200, 7550,
-        7875, 8250, 8850, 9450, 10050, 10650, 11250,
-    };
-
-    /// <summary>Venom Stab — ×0.50, the Demon's standing trade: half the blow, banked as stacks.</summary>
-    private static readonly int[] VenomStabPower4 =
     {
         3450, 3675, 3900, 4125, 4350, 4575, 4800, 5025,
         5250, 5500, 5900, 6300, 6700, 7100, 7500,
     };
 
-    /// <summary>Venom Burst, PER CONSUMED STACK — ×0.20, so ten stacks is ×2 a Killing Stab.</summary>
+    /// <summary>Heavy Stab — ×0.75 of <see cref="StabPower4"/> PER HIT, and it hits twice. Exactly
+    /// the ratio the two carry at the 3rd tier (2,400 against 3,200). Odd rungs round up.</summary>
+    private static readonly int[] HeavyStabPower4 =
+    {
+        2588, 2750, 2925, 3088, 3263, 3425, 3600, 3775,
+        3938, 4125, 4425, 4725, 5025, 5325, 5625,
+    };
+
+    /// <summary>Venom Stab — <b>the same ladder as Killing Stab</b>, his 2026-09-11 ruling. The
+    /// ×0.50 the Demon used to pay per blow is gone; the 3rd tier's note explains why keeping it
+    /// would have halved the Venomweaver twice. ⚠ The NUMBERS here are unchanged by that: this
+    /// ladder was already ×0.50 of the old <see cref="StabPower4"/>, and ×0.50 of the old is
+    /// ×1.00 of the new.</summary>
+    private static readonly int[] VenomStabPower4 = StabPower4;
+
+    /// <summary>Venom Burst, PER CONSUMED STACK — ×0.20, so ten stacks is ×2 a Killing Stab.
+    /// Halved with the rest (`BL-203`), which is what preserves that ×2.</summary>
     private static readonly int[] VenomBurstPerStack4 =
     {
-        1380, 1470, 1560, 1650, 1740, 1830, 1920, 2010,
-        2100, 2200, 2360, 2520, 2680, 2840, 3000,
+        690, 735, 780, 825, 870, 915, 960, 1005,
+        1050, 1100, 1180, 1260, 1340, 1420, 1500,
     };
 
     /// <summary>The stab MP ladder, 80 → 110, continuing the 3rd tier's 78.</summary>

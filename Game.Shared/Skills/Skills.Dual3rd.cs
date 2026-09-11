@@ -88,35 +88,67 @@ public static partial class SkillCatalog
     private static readonly int[] StabMp =
         { 36, 40, 43, 45, 47, 50, 55, 56, 58, 62, 65, 68, 70, 75, 78 };
 
-    /// <summary>Killing Stab / Swift Stab — the same power ladder, 1250 → 6400. It is his, and it is
-    /// a straight arithmetic climb apart from the widening stride at 52.</summary>
+    // ═══════════════════════════════════════════════════════════════════════════════════════════
+    //  🔑 EVERY LADDER BELOW WAS HALVED ON 2026-09-11 (`BL-203`), AND THE HALF IS THE POINT.
+    //
+    //  His measurement: *"now ~11k dmg on a 90 mob with 19k hp .. And 78k mob hit for 8k. A bit too
+    //  much. Let atleast this dmg to be a double dmg"* — so the number he was seeing does not go
+    //  away, it moves BEHIND A ROLL. Every stab is flagged `CanDouble` in the same increment, so a
+    //  melee rogue carrying Overpower still lands the old figure; he just no longer lands it every
+    //  time.
+    //
+    //  🔴 BUT HALVING THE POWER DOES NOT HALVE THE DAMAGE, and the difference is not small. Power is
+    //  a TERM INSIDE the ratio — `K·(atk·lvlMod + power)/def` — so the attacker's own P.Atk rides
+    //  through untouched. Measured at 90 in mythic gear (`BalanceMatrix --stab`), where that term is
+    //  worth ~2,470 of the numerator: a Killing Stab went from ~6,970 to 3,978 (×0.57, not ×0.5), and
+    //  a DOUBLED one lands 7,956 — about 14% ABOVE what the skill used to do flat. So the trade is
+    //  better than "half, unless you double": the ceiling actually rose slightly and only the floor
+    //  came down. ⚠ Do not restate this as "2 × the new IS the old" anywhere; that is the mistake
+    //  this paragraph exists to stop.
+    //
+    //  ⚠ THE RATIOS BETWEEN THE FOUR FAMILIES ARE UNCHANGED except where he changed one by name
+    //  (Venom Stab, below). Heavy stays ×0.75 per hit of Killing, Venom Burst ×0.20 per stack, so
+    //  ten stacks is still twice a Killing Stab. Halving the whole file keeps every one of those.
+    // ═══════════════════════════════════════════════════════════════════════════════════════════
+
+    /// <summary>Killing Stab / Swift Stab — the same power ladder, 625 → 3200. It is his ladder
+    /// HALVED (`BL-203`): it ran 1250 → 6400 and every rung is exactly half of what he authored,
+    /// keeping the straight arithmetic climb and the widening stride at 52.</summary>
     private static readonly int[] StabPower =
     {
-        1250, 1500, 1750, 2000, 2400, 2800, 3200, 3600,
-        4000, 4400, 4800, 5200, 5600, 6000, 6400,
-    };
-
-    /// <summary>Venom Stab — deliberately about half of <see cref="StabPower"/>, because the Demon is
-    /// paid for the difference in stacks that Venom Burst spends.</summary>
-    private static readonly int[] VenomStabPower =
-    {
-        675, 750, 875, 1000, 1200, 1400, 1600, 1800,
+        625, 750, 875, 1000, 1200, 1400, 1600, 1800,
         2000, 2200, 2400, 2600, 2800, 3000, 3200,
     };
 
+    /// <summary>Venom Stab — <b>the same ladder as Killing Stab</b>, and that is his ruling of
+    /// 2026-09-11: *"make venomWeaver - venom stab to have the same power as killing strike (the new
+    /// /2 dmg)"*.
+    ///
+    /// <para>🔑 SO THE DEMON'S TRADE MOVED. Venom Stab used to be deliberately HALF of a Killing
+    /// Stab, the Venomweaver being paid the difference in stacks. After the halving that discount
+    /// would have stacked with it — half of a half — and the one discipline with no Killing Stab at
+    /// all would have been the one hit twice. It now pays for its stacks with its ROTATION (a burst
+    /// on a 10s reuse) rather than with per-blow power.</para>
+    ///
+    /// <para>⚠ In practice this ladder barely moved: the old venom numbers were 675 → 3200, so only
+    /// the first rung changes. It is the KILLING/SWIFT/HEAVY families that halved.</para></summary>
+    private static readonly int[] VenomStabPower = StabPower;
+
     /// <summary>Heavy Stab — his *"power 950 twice"*: TWO resolutions (<see cref="SkillDef.HitCount"/>)
-    /// of this number, on a 3-second cast rather than Killing Stab's one.</summary>
+    /// of this number, on a 3-second cast rather than Killing Stab's one. HALVED (`BL-203`) from
+    /// 950 → 4800; the odd rung rounds up (1125 → 563), which keeps the ×0.75-of-Killing ratio.</summary>
     private static readonly int[] HeavyStabPower =
     {
-        950, 1125, 1300, 1500, 1800, 2100, 2400, 2700,
-        3000, 3300, 3600, 3900, 4200, 4500, 4800,
+        475, 563, 650, 750, 900, 1050, 1200, 1350,
+        1500, 1650, 1800, 1950, 2100, 2250, 2400,
     };
 
-    /// <summary>Venom Burst — damage PER CONSUMED STACK, ×250 at 40 climbing to ×1280 at 74.</summary>
+    /// <summary>Venom Burst — damage PER CONSUMED STACK, ×125 at 40 climbing to ×640 at 74.
+    /// HALVED (`BL-203`) from his 250 → 1280, so ten stacks is still exactly twice a Killing Stab.</summary>
     private static readonly int[] VenomBurstPerStack =
     {
-        250, 300, 350, 400, 480, 560, 640, 720,
-        800, 880, 960, 1040, 1120, 1200, 1280,
+        125, 150, 175, 200, 240, 280, 320, 360,
+        400, 440, 480, 520, 560, 600, 640,
     };
 
     /// <summary>His venom TIER per rung — 3,3,4,4,5,5,6,6,7,7,8,8,9,9,10. It is the rank an Antidote
@@ -274,11 +306,17 @@ public static partial class SkillCatalog
 
         // ═══ SWIFT STAB — the Elf's ══════════════════════════════════════════════════════════════
         // Killing Stab's power on HALF the cast time, and it leaves a 5-second rush behind it.
+        //
+        // 🔑 REUSE 5s, NOT 3s (`BL-203`, owner 2026-09-11: *"swift strike reuse to 5s ... to balance
+        //    the dmg~reuse for races"*). The three races carry the SAME power ladder now, so the only
+        //    thing left to price them apart is time: the Elf pays for a half-length cast with a
+        //    longer wait, the Human for two resolutions with a longer one still (Heavy Stab, 7.5s),
+        //    and the Demon's Venom Stab keeps the 3s because its damage is banked, not dealt.
         list.Add(StabSkill(SwiftStab, "Swift Stab", StabPower, castTicks: 5,
             "A blur of a blow that carries you forward with it.",
             i => $"Blow power {StabPower[i]:N0} on a critical; a normal attack otherwise. "
                + "Leaves +5 speed and +15% attack speed for 5s.",
-            selfBuff: SwiftStabRush, fourth: StabFourthRungs(StabPower4)));
+            selfBuff: SwiftStabRush, fourth: StabFourthRungs(StabPower4), cooldownTicks: 50));
 
         list.Add(new SkillDef(SwiftStabRush, "Swift Stab", BaseClass.Fighter,
             SkillEffect.BuffMoveSpeed | SkillEffect.BuffAtkSpeed,
@@ -296,11 +334,15 @@ public static partial class SkillCatalog
         // *"power 950 twice"* — TWO independent resolutions (HitCount), each rolling its own crit,
         // on a 3-second cast. Against a blow floor of 1% that is a genuine gamble: two chances to
         // land the big number, and two chances to land almost nothing.
+        // 🔑 REUSE 7.5s, NOT 3s (`BL-203`) — the longest of the three, because it is the only family
+        //    that resolves TWICE: at ×0.75 power per hit it lands 1.5 Killing Stabs a cast, and on a
+        //    3-second reuse that was simply more damage per minute than either sibling. See Swift
+        //    Stab above for the shape of the three-way trade.
         list.Add(StabSkill(HeavyStab, "Heavy Stab", HeavyStabPower, castTicks: 30,
             "Two heavy blows, wound up and delivered. Each bites on its own.",
             i => $"Strikes 2 times; blow power {HeavyStabPower[i]:N0} each on a critical, "
                + "a normal attack otherwise.",
-            hitCount: 2, fourth: StabFourthRungs(HeavyStabPower4)));
+            hitCount: 2, fourth: StabFourthRungs(HeavyStabPower4), cooldownTicks: 75));
 
         // ═══ VENOM STAB — the Demon's ════════════════════════════════════════════════════════════
         //
@@ -323,6 +365,8 @@ public static partial class SkillCatalog
             Category: SkillCategory.Physical, SpCost: RogueSp[0],
             BlowOnCrit: true,
             // `BL-188` - the unauthored x2.0 on the crit rate is gone; a blow rolls Entity.BlowRate now.
+            // `BL-203` — [Double], same as the other three families. See StabSkill.
+            CanDouble: true,
             RequiredWeapon: WeaponType.Dual,
             Replaces: new[] { PreciseShot },
             // ⚠ NO RIDER MAGNITUDES: a DoT's side effect belongs to the (kind, tier) TABLE now
@@ -361,6 +405,36 @@ public static partial class SkillCatalog
             DebuffSchool: DebuffSchool.Physical,
             StackKey: "venom_venom", ConsumeStackKey: "venom_venom", MaxStacks: 10,
             Category: SkillCategory.Physical, SpCost: RogueSp[0],
+            // ═══ `BL-207` — THE BURST IS A STAB. ════════════════════════════════════════════════
+            //
+            // 🔑 HIS MODEL, AND IT MATCHES THE ARITHMETIC EXACTLY (2026-09-11): *"venom burst is a
+            //    single stab skill that it's effective power depend on stacks count. It's not like
+            //    barrage -> 10 stabs x1.5k power; it's one stab x15k power (so if it lands with 10
+            //    stacks it's like a killing stab with a double)"*. At 90 the per-stack power is 1,500
+            //    and a Killing Stab is 7,500, so ten stacks IS two Killing Stabs, to the digit.
+            //
+            // 🔑 SO IT ROLLS THE BLOW GATE AND IT CAN DOUBLE, like every other stab. That is the
+            //    whole of his race-parity design — each race reaches ~x5 a normal stab per 10s:
+            //      · Elf    — 2 Swift + 3 Killing, short cast, short reuse
+            //      · Human  — 3 Killing + ~1.5 Heavy, one slow strike at x1.5
+            //      · Demon  — ~3 Venom Stabs to bank 9, then ONE burst worth x2
+            //    A burst that could not double was the one hole in it: the other two races' payoff
+            //    strikes can, so the Demon's had to.
+            // ⚠ THIS IS A DAMAGE CHANGE IN BOTH DIRECTIONS. It used to land ALWAYS and flat (no crit
+            //   values at all, `CanCrit` unset); it now lands on the blow rate and is resolved WITH
+            //   the crit-damage values like its siblings. Bigger when it lands, nothing when it does
+            //   not — which is exactly the trade the other two races already make.
+            BlowOnCrit: true,
+            CanDouble: true,
+            // 🔴 `FixedLandChance: 0.80f` LIVED HERE FOR ONE VERSION AND IS GONE (`BL-204`, superseded
+            //    by `BL-207` the same day). It made the venom RIDER land on a flat 80% because a lost
+            //    rider printed `Fail` over a cast that had already spent the pool. He replaced the
+            //    whole idea with a better one: *"can we make venom burst to be with normal land rate
+            //    (30% like other stabs) and on fail not to take all stacks but to restore 3"*. The
+            //    failure that costs stacks is the BLOW now, it is survivable, and the rider goes back
+            //    to the ordinary contest every other venom runs on. The cosmetic `Fail` is fixed at
+            //    its source instead — `ExecuteSkill` no longer rolls a rider it has already decided
+            //    to skip. ⚠ Do not re-add the field: the SkillDef property went with it.
             RequiredWeapon: WeaponType.Dual,
             Replaces: new[] { PreciseShot },
             // ⚠ NO RIDER MAGNITUDES: a DoT's side effect belongs to the (kind, tier) TABLE now
@@ -516,12 +590,17 @@ public static partial class SkillCatalog
     private static SkillDef StabSkill(string id, string name, int[] power, int castTicks,
                                  string blurb, Func<int, string> rung,
                                  int hitCount = 1, string? selfBuff = null,
-                                 SkillLevel[]? fourth = null)
+                                 SkillLevel[]? fourth = null, int cooldownTicks = 30)
         => new(id, name, BaseClass.Fighter, SkillEffect.PhysicalDamage,
-            MpCost: StabMp[0], CastTicks: castTicks, CooldownTicks: 30, Range: 40, Power: power[0],
+            MpCost: StabMp[0], CastTicks: castTicks, CooldownTicks: cooldownTicks, Range: 40, Power: power[0],
             Category: SkillCategory.Physical, SpCost: RogueSp[0],
             BlowOnCrit: true,
             // `BL-188` - see Killing Stab: the blow gate left the crit chain on 2026-09-09.
+            // `BL-203` — [Double]. The halving above and this flag are ONE change: the old power is
+            // still reachable, on the rate Overpower grants. ⚠ A blow rolls its double INSIDE
+            // ResolveBlow (after the crit-damage values, never instead of them), so a doubled stab
+            // is the crit number ×2 — which is exactly the figure he measured before the halving.
+            CanDouble: true,
             HitCount: hitCount, SelfBuff: selfBuff,
             RequiredWeapon: WeaponType.Dual,
             Replaces: new[] { PreciseShot },

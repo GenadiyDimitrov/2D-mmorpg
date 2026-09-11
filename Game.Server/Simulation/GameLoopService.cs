@@ -10092,10 +10092,23 @@ public class GameLoopService : BackgroundService
     ///
     /// <para>⚠ The WEAPON requirement is deliberately still honoured here even though a defensive proc
     /// has no natural weapon clause: nothing authors one today, and a passive that says it needs a bow
-    /// should mean it whichever way it triggers.</para></summary>
-    private void TryOnDamagedProcs(Entity victim, bool magicHit) =>
-        TryProcs(victim, ProcWhen.Damaged, magicHit: magicHit);
+    /// should mean it whichever way it triggers.</para>
+    ///
+    /// <para>🔴 <b><paramref name="attacker"/> IS THE `BL-192` FIX, AND IT WAS A DEAD END BEFORE IT.</b>
+    /// This overload used to call <c>TryProcs</c> with no payload target at all, so a defensive proc
+    /// could only ever pay its OWNER (<c>ProcSelfRungs</c>) or his party — <c>ProcVictimRungs</c> was
+    /// silently unreachable on this trigger. His three Spell Empowerments are *"being attacked with 5%
+    /// chance [do something] to the attacker"*, which is precisely the arm that had nowhere to land, so
+    /// they would have cost 150kk and done nothing. The person who hit you IS the payload's target on
+    /// this trigger, and passing them costs nothing anywhere else: null (an environmental hit, a DoT
+    /// tick with no owner) simply skips the arm, exactly as a dead victim already did.</para></summary>
+    private void TryOnDamagedProcs(Entity victim, bool magicHit, Entity? attacker = null) =>
+        TryProcs(victim, ProcWhen.Damaged, magicHit: magicHit, victim: attacker);
 
+    /// <param name="victim">WHO THE `ProcVictimRungs` PAYLOAD LANDS ON — the thing that was just hit on
+    /// a <see cref="ProcWhen.Hit"/> trigger, and the thing that just hit YOU on a
+    /// <see cref="ProcWhen.Damaged"/> one. The name is the Hit trigger's; the role is "the other
+    /// party", and it is deliberately one parameter rather than two because the payload arm is one.</param>
     private void TryProcs(Entity owner, ProcWhen when, bool magicHit, Entity? victim = null)
     {
         if (owner.Kind != EntityKind.Player || owner.LearnedSkills.Count == 0)
@@ -10151,11 +10164,30 @@ public class GameLoopService : BackgroundService
             // is no second contest. A dead or missing target is simply skipped.
             if (victim is { Dead: false } && Rung(def.ProcVictimRungs, level) is SkillDef onVictim)
             {
-                if ((onVictim.Effect & SkillEffect.AnyDot) != 0)
+                // 🔑 A PAYLOAD THAT DEALS DAMAGE IS DELIVERED, NOT APPLIED (`BL-192`). The Human
+                // Magus's Spell Empowerment is *"inflicts damage on attackers with power 47"* — the
+                // first victim payload in the game that is a HIT rather than a debuff, and routing it
+                // through ApplyBuff would have applied a buff with a Power field and done nothing at
+                // all. DeliverSimpleHit is the existing one-shot damage path (traps, boss slams) and
+                // brings fizzle, magic crit and the PvE/PvP matrix with it.
+                //
+                // ⚠ IT CANNOT PING-PONG. This proc's internal cooldown was set ABOVE, before any
+                //   payout, so the counter-damage waking the attacker's OWN defensive proc can at
+                //   worst come back once and then stops.
+                if ((onVictim.Effect & (SkillEffect.PhysicalDamage | SkillEffect.MagicDamage)) != 0)
+                {
+                    DeliverSimpleHit(owner, victim, onVictim, 1, label);
+                }
+                else if ((onVictim.Effect & SkillEffect.AnyDot) != 0)
+                {
                     ApplyDotStack(owner, victim, onVictim, 1);
+                    BroadcastCombat(owner, victim, 0, CombatOutcome.Buff, label);
+                }
                 else
+                {
                     ApplyBuff(victim, onVictim, 1, label, source: owner);
-                BroadcastCombat(owner, victim, 0, CombatOutcome.Buff, label);
+                    BroadcastCombat(owner, victim, 0, CombatOutcome.Buff, label);
+                }
             }
             if (Rung(def.ProcPartyRungs, level) is SkillDef partyBuff)
                 foreach (var ally in PlayersInRadius(owner, partyBuff.AreaRadius))
@@ -11692,6 +11724,32 @@ public class GameLoopService : BackgroundService
                 //   AGI-vs-CON contest, which the pool no longer waits on (`BL-199`): ONE roll gates a
                 //   stack now, and it is the one the player has a buff for.
                 ResolveBasicSwing(caster, target, castName);
+
+                // 🔑 `BL-207` — A FAILED BURST COSTS THE POOL BUT NOT ALL OF IT. His ruling,
+                //    2026-09-11: *"on fail not to take all stacks but to restore 3 — a burst without
+                //    stacks give 3 .. so a failed one takes all and gives you 3. U do burst for 10
+                //    stacks, if it fails u pay only with 7 stacks and cd, so next 10 stacks are faster
+                //    to stack, u don't start from 0"*.
+                //
+                // 🔑 WHY IT IS NOT SIMPLY "KEEP THE STACKS": the Demon's whole rotation is bank-then-
+                //    spend, and a burst that risked nothing would make the blow rate meaningless to
+                //    the one race whose damage is the burst. This costs him a real 7 stacks and the
+                //    10s reuse — about one Venom Stab of rebuilding, which is what he priced it at.
+                // ⚠ It runs through the SAME two calls the detonation does (drop the counter and the
+                //   DoT it counts, then bank a fresh cast's worth), so a failed burst and an
+                //   empty-pool burst leave the target in exactly the same state. `bankStacks` cannot
+                //   be reused for it — that flag means "the strike connected", and this one did not.
+                if (!string.IsNullOrEmpty(def.ConsumeStackKey))
+                {
+                    int had = ClearStackPool(target, def.ConsumeStackKey);
+                    AddDotStacks(caster, target, def, lvl);
+                    int left = target.Buffs.FirstOrDefault(b => b.Key == def.StackKey)?.Stacks ?? 0;
+                    target.RecomputeDerived();
+                    if (target.Kind == EntityKind.Player) { PushBuffs(target); SendStats(target); }
+                    if (caster.Kind == EntityKind.Player && had > 0)
+                        SendSystemToEntity(caster,
+                            $"{castName} failed — {had} stack(s) lost, {left} left.");
+                }
                 continue;
             }
 
@@ -11707,6 +11765,9 @@ public class GameLoopService : BackgroundService
                 // (Twin Arrows: *"two arrows EACH dealing +5200"*). 0 = the arrow has its own, which is
                 // Arrow Barrage. See Entity.ChannelPower for why both readings had to be supported.
                 if (powerOverride > 0) pFlat = powerOverride;
+                // The power the CRIT-FLAT factor is measured against. Equal to pFlat for everything
+                // except a detonating burst, which raises it to the pool it just spent (see below).
+                int critPower = pFlat;
                 int damage = StatCalculator.PhysicalDamageFM(
                     (int)caster.EffectiveAttack, pFlat, pMod,
                     (int)target.EffectiveDefence,
@@ -11725,15 +11786,18 @@ public class GameLoopService : BackgroundService
                 // ⚠ The DoT is found through the SKILL's StackKey, not the buff key, so a burst
                 //   detonates exactly the applier line it shares a pool with and nothing else.
                 if (!string.IsNullOrEmpty(def.ConsumeStackKey) &&
-                    target.Buffs.FirstOrDefault(b => b.Key == def.ConsumeStackKey) is BuffInstance ctr)
+                    target.Buffs.Any(b => b.Key == def.ConsumeStackKey))
                 {
-                    int spent = Math.Max(1, ctr.Stacks);
+                    int spent = Math.Max(1, ClearStackPool(target, def.ConsumeStackKey));
                     damage = Math.Max(1, damage * spent);
-                    target.Buffs.Remove(ctr);
-                    target.Buffs.RemoveAll(b => (b.Effect & SkillEffect.AnyDot) != 0
-                        && !string.IsNullOrEmpty(b.SkillId)
-                        && SkillCatalog.Get(b.SkillId)?.StackKey == def.ConsumeStackKey);
                     spentStacks = true;
+                    // ⚠ `BL-207` — THE CRIT-FLAT FACTOR BELOW HAS TO SEE THE DETONATED POWER. It is a
+                    //   RATIO, (atk·lvlMod + power + critFlatDmg) / (atk·lvlMod + power), so feeding it
+                    //   the PER-STACK power while the damage is already ×10 would value the flat crit
+                    //   add against a tenth of the real numerator and inflate every detonation. This
+                    //   never mattered while the burst was not a blow (it computed no crit factor at
+                    //   all); it does now that it resolves through ResolveBlow like its siblings.
+                    critPower = pFlat * spent;
                     target.RecomputeDerived();
                     if (target.Kind == EntityKind.Player) { PushBuffs(target); SendStats(target); }
                     // He could not tell whether the multiplier was real — *"I have the feeling that the
@@ -11745,7 +11809,7 @@ public class GameLoopService : BackgroundService
                 // FLAT crit damage joins pAtk inside the ratio, on a crit only — as a factor here
                 // because everything after the ratio is linear (see StatCalculator.CritFlatFactor).
                 float critFlat = StatCalculator.CritFlatFactor(
-                    caster.EffectiveAttack, caster.CritDamageFlat, pFlat, pMod);
+                    caster.EffectiveAttack, caster.CritDamageFlat, critPower, pMod);
 
                 // BLOW skills (dagger Stab) land full damage only when the gate above says so, and
                 // a landed one is computed with the crit-damage values (a failed one never reaches
@@ -11985,7 +12049,19 @@ public class GameLoopService : BackgroundService
             && _rng.NextDouble() < caster.DoubleDurationRate;
         int doubledTicks = durationDoubled ? def.DurationTicks * 2 : -1;
 
-        if (IsContestedDebuff(def, effect))
+        // 🔑 `BL-207` — A BURST THAT DETONATED DOES NOT ROLL A RIDER IT HAS ALREADY DECIDED TO SKIP.
+        //    This is the real source of his *"venom burst fails"*: the burst spends the pool in the
+        //    damage arm above, which sets `spentStacks`, and the DoT branch below then honours that by
+        //    NOT re-applying the venom — but the CONTEST was still rolled first, and a lost roll
+        //    broadcasts `CombatOutcome.Fail` over a cast that had just dealt ten stacks of damage.
+        //    Nothing about the outcome depended on it. A roll whose every branch is a no-op is not a
+        //    contest, it is a lie on the screen, so it does not happen.
+        // ⚠ Deliberately narrow: ONLY when this cast consumed a pool AND the rider is the DoT that
+        //   pool belongs to. A burst that found nothing still rolls, which is his *"if no stacks
+        //   present apply 1 venom stacks"*.
+        bool riderAlreadySpent = spentStacks && (effect & SkillEffect.AnyDot) != 0;
+
+        if (IsContestedDebuff(def, effect) && !riderAlreadySpent)
         {
             offensive = true;
             // BL-08: the reflect roll comes FIRST — before the contest, because a bounced debuff is
@@ -12872,6 +12948,32 @@ public class GameLoopService : BackgroundService
     /// existed in <see cref="PushTargetBuffs"/> — the bar SHOWED "x7" — and nowhere else, so the bar
     /// and the damage disagreed and the bar was the one telling the truth about intent. Owner: *"try
     /// to do a venom debuff that do dmg depending on those stacks"*.</para></summary>
+    /// <summary>Empty a stack POOL and take the DoT it was counting with it, returning how many
+    /// stacks were in it (0 = there was no pool).
+    ///
+    /// <para>🔑 THE TWO REMOVALS ARE ONE ACT and must never drift apart (`BL-199`, his *"when venom
+    /// burst is used it takes with it the stacks + the dot debuff"*): leaving the venom ticking after
+    /// the pool is gone reads as the burst having done nothing, because the bar still shows the
+    /// debuff. Extracted as a method for `BL-207`, which gave a FAILED burst the same emptying — one
+    /// place, so a future change cannot fix the detonation and forget the failure.</para>
+    ///
+    /// <para>⚠ The DoT is found through the SKILL's <c>StackKey</c>, not through the buff key, so a
+    /// burst empties exactly the applier line it shares a pool with and nothing else.</para></summary>
+    private static int ClearStackPool(Entity target, string stackKey)
+    {
+        if (string.IsNullOrEmpty(stackKey)) return 0;
+        int had = 0;
+        if (target.Buffs.FirstOrDefault(b => b.Key == stackKey) is { } counter)
+        {
+            had = Math.Max(1, counter.Stacks);
+            target.Buffs.Remove(counter);
+        }
+        target.Buffs.RemoveAll(b => (b.Effect & SkillEffect.AnyDot) != 0
+            && !string.IsNullOrEmpty(b.SkillId)
+            && SkillCatalog.Get(b.SkillId)?.StackKey == stackKey);
+        return had;
+    }
+
     private static int DotStacksOf(Entity target, BuffInstance b)
     {
         if (!string.IsNullOrEmpty(b.SkillId)
@@ -13327,19 +13429,26 @@ public class GameLoopService : BackgroundService
             // every rung until 2026-08-27, because SkillDef.MpPerSecond is one field and a def has
             // one of them. Measured (`BalanceMatrix --mpdrain`), a level-80 buffer paid 15 MP/s for
             // two stances his CSV prices at 45.
-            int mpPerSec = def.MpPerSecondAt(Math.Max(1, e.SkillLevelOf(b.SkillId)));
-            if (mpPerSec <= 0 && def.HpPerSecond <= 0) continue;
+            // 🔑 …AND THE HP HALF READS THE RUNG TOO SINCE `BL-208` (2026-09-11). It did not until
+            // then — *"Some can drain more mp why some cant drain less hp?"* — so a stance whose HP
+            // drain is a LADDER was charged rung 1's number at every rung, the identical bug the MP
+            // half had. The Magus's Force Empowerment is the first author: 50 / 40 / 30 a second at
+            // 78 / 80 / 82, where the rungs buy SUSTAIN rather than power.
+            int rung = Math.Max(1, e.SkillLevelOf(b.SkillId));
+            int mpPerSec = def.MpPerSecondAt(rung);
+            int hpPerSec = def.HpPerSecondAt(rung);
+            if (mpPerSec <= 0 && hpPerSec <= 0) continue;
 
             // Both halves are checked BEFORE either is charged, so a stance the caster can only
             // half-afford takes nothing at all rather than draining one bar and then dropping.
             bool canPayMp = mpPerSec <= 0 || e.Mp >= mpPerSec;
             // 🔑 STRICTLY greater: an HP stance stops while HP remains and never lands the killing
             // blow itself. Dying to your own toggle would be a bug report, not a trade-off.
-            bool canPayHp = def.HpPerSecond <= 0 || e.Hp > def.HpPerSecond;
+            bool canPayHp = hpPerSec <= 0 || e.Hp > hpPerSec;
             if (canPayMp && canPayHp)
             {
                 e.Mp -= mpPerSec;
-                e.Hp -= def.HpPerSecond;
+                e.Hp -= hpPerSec;
             }
             else (broke ??= new()).Add((b, canPayMp));
         }
@@ -14230,8 +14339,11 @@ public class GameLoopService : BackgroundService
         //      absorb shield ate, or that a frozen bar ignored, still happened. The one thing it is not
         //      is a MANA hit — that leaves this method further up, and Mana Ray is not "damage received"
         //      in the sense any of these sigils mean.
+        // ⚠ THE ATTACKER GOES THROUGH (`BL-192`) so a defensive proc can pay HIM — the Magus's three
+        //   Spell Empowerments are the first that do. Null here (an environmental hit, a DoT with no
+        //   living owner) simply means the victim arm is skipped.
         if (damage > 0)
-            TryOnDamagedProcs(target, magicHit: magicHit);
+            TryOnDamagedProcs(target, magicHit: magicHit, attacker: attacker);
 
         // ---- IMMORTALITY (the Immortality Sigil, owner 2026-08-26: *"HP is unchanged; move and casts
         //      are unnafected -> also healing dont increase HP as DMG dont decrease it"*).

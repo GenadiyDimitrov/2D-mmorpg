@@ -847,6 +847,153 @@ if (args.Length > 0 && args[0] == "--buff-consumables")
     return;
 }
 
+// `BL-203` — WHAT A STAB ACTUALLY HITS FOR, measured against the mob curve he quotes his numbers
+// against. The `--dmgmatrix` board cannot answer this: its `BestSkill` deliberately SKIPS
+// `BlowOnCrit` skills ("drains and blows resolve differently"), so the melee rogue has never had a
+// damage row anywhere in this tool — which is why his *"~11k dmg on a 90 mob with 19k hp"* had to be
+// read off the game instead.
+//
+// 🔑 A BLOW IS NOT A CRIT AND IT IS NOT A HIT. It is resolved once, WITH the crit-damage values
+//    (`ResolveBlow`), and only then does it roll the [Double]. So the column that matters is `blow`,
+//    not `hit` — a landed stab never deals the `hit` number to anything.
+// ⚠ The mob is the REAL curve (`MobBaseStats`), not a player dressed as one: his 19k-HP / 78k-HP
+//   creatures are zone mobs, and `MobBaseStats.Hp(L) = 40 + 0.8*L^2` is what makes 90 read 19,240.
+if (args.Length > 0 && args[0] == "--stab")
+{
+    string q = args.Length > 2 ? args[2] : "mythic";
+    bool stabBuffed = args.Contains("--buffed");
+    int[] stabLevels = args.Length > 1 && int.TryParse(args[1], out var one)
+        ? new[] { one } : new[] { 85, 90 };
+
+    Console.WriteLine();
+    Console.WriteLine("=== THE MELEE ROGUE'S BLOWS — what a landed stab deals to a mob of its own level ===");
+    Console.WriteLine("  blow   = the landed number (crit-damage values applied, `ResolveBlow`)");
+    Console.WriteLine("  DOUBLE = that number x2, which is what Overpower buys (3% at 40, 7% at 76)");
+    Console.WriteLine("  x2 hits are already folded into PER USE; `%HP` is PER USE against the mob's pool.");
+
+    foreach (int L in stabLevels)
+    {
+        int mobDef = MobBaseStats.PDef(L);
+        // ⚠ THE POOL HE QUOTES IS THE ZONE-LADDERED ONE, NOT the base curve: `MobBaseStats.Hp(90)`
+        //   is 6,520 and his *"90 mob with 19k hp"* is that times the live x3 (`WorldPlan.HpScaleFor`,
+        //   `BL-148`). An ELITE is x4 on top of it, which is where his 78k creature comes from.
+        //   A %HP column against the base curve would have flattered every row by 3x.
+        float zone = WorldPlan.HpScaleFor(L);
+        int mobHp = (int)(MobBaseStats.Hp(L) * zone);
+        int eliteHp = mobHp * 4;
+        Console.WriteLine();
+        Console.WriteLine($"-- LEVEL {L}   mob P.Def {mobDef}   mob HP {mobHp} (zone x{zone:0.#})"
+                        + $"   elite {eliteHp}   gear {q} t{GearTier(L)}{(stabBuffed ? "  NPC-BUFFED" : "")} "
+                        + new string('-', 6));
+        Console.WriteLine($"   {"race",-6} {"skill",-14} {"power",6} {"hits",4} | {"blow",7} {"PER USE",8}"
+                        + $" {"%HP",5} {"%elite",6} | {"DOUBLE",7} {"%HP",5} | {"land",5}");
+
+        foreach (var (race, disc) in new[]
+                 { (Race.Human, Discipline.Nullblade), (Race.Elf, Discipline.Phantom),
+                   (Race.Demon, Discipline.Venomweaver) })
+        {
+            var a = BuildPlayer(race, BaseClass.Fighter, L, quality: q,
+                                discipline: disc, secondClass: 15, fourth: L >= 76, npcBuffed: stabBuffed);
+            int pAtk = (int)a.EffectiveAttack;
+            float coef = StatCalculator.WeaponDefenceCoef(a.WeaponType, 1f, 1f, 1f);
+
+            foreach (var (id, lvl) in a.LearnedSkills.OrderBy(k => k.Key))
+            {
+                var d = SkillCatalog.Get(id);
+                if (d is null || !d.BlowOnCrit) continue;
+                var (flat, mod) = d.PhysDamageAt(lvl);
+                // 🔑 A BURST IS ONE STAB WHOSE POWER IS THE POOL (`BL-207`, his own words: *"it's not
+                //    like barrage -> 10 stabs x1.5k power; it's one stab x15k power"*). The engine
+                //    multiplies the RESOLVED damage by the stacks spent and measures the crit-flat
+                //    factor against `power x stacks`, so the rig has to do both or it understates the
+                //    Demon's whole rotation by 10x. Shown at a FULL pool.
+                int pool = string.IsNullOrEmpty(d.ConsumeStackKey) ? 1 : Math.Max(1, d.MaxStacks);
+                int raw = Shot(a, false, StatCalculator.PhysicalDamageFM(pAtk, flat, mod, mobDef, coef)) * pool;
+                // ResolveBlow: the flat crit-damage add rides INSIDE the ratio, the crit multiplier on
+                // top. A mob carries no CritDmgResist, so nothing trims the extra here.
+                float cff = StatCalculator.CritFlatFactor(pAtk, a.CritDamageFlat, flat * pool, mod);
+                int blow = Math.Max(1, (int)(raw * (1f + (cff * StatCalculator.PhysicalCritMult(a.CritDamageBonus) - 1f))));
+                int hits = Math.Max(1, d.HitCount);
+                int use = blow * hits;
+                string label = pool > 1 ? d.Name + $" x{pool}" : d.Name;
+                Console.WriteLine($"   {race,-6} {label,-14} {flat * pool,6} {hits,4} | {blow,7} {use,8}"
+                                + $" {use / (float)mobHp,5:P0} {use / (float)eliteHp,6:P0}"
+                                + $" | {use * 2,7} {use * 2 / (float)mobHp,5:P0}"
+                                + $" | {a.BlowRate,5:P0}");
+            }
+        }
+    }
+    Console.WriteLine();
+    Console.WriteLine("  VENOM BURST is shown at a FULL POOL (x10); its `power` column is per-stack x10.");
+    Console.WriteLine("  A FAILED burst deals a basic swing, empties the pool and leaves one cast's worth (`BL-207`).");
+    Console.WriteLine();
+
+    // ─── HIS 10-SECOND RACE PARITY, measured (`BL-207`, 2026-09-11) ───────────────────────────
+    //
+    // 🔑 HE DID THIS ARITHMETIC HIMSELF and asked whether it holds: *"elf does 2 strikes in short
+    //    sessions … (for 10s he can do 2 swift +3 killing that's x5 of normal stab dmg) · human does
+    //    1 strike with 7.5k and one with longer cast/cd that does x1.5 dmg (3 killing + ~1.5 heavy =
+    //    ~x5) · demon must cast few successful normal stabs then burst for x2 dmg (3 stabs for 9
+    //    stacks and burst, which is again ~x5). If my math is correct … the average dmg of the 3
+    //    duals is the same"*. So the unit is HIS unit: multiples of that race's own plain stab.
+    // ⚠ THIS IS THE "IF EVERYTHING LANDS" BOARD, exactly as he framed it. It deliberately does NOT
+    //   apply the blow rate — every race is gated by the same roll, so it cancels out of the
+    //   comparison. What it does NOT capture is that the Demon needs three SUCCESSFUL stabs before
+    //   his burst is worth casting (`BL-197`), so his rotation takes longer in real time than the
+    //   other two, whose every landed blow is damage on its own.
+    foreach (int L in stabLevels)
+    {
+        int mobDef = MobBaseStats.PDef(L);
+        Console.WriteLine($"-- HIS 10-SECOND PARITY, level {L} {(stabBuffed ? "NPC-BUFFED" : "unbuffed")}"
+                        + "  (multiples of that race's own plain stab) " + new string('-', 6));
+        Console.WriteLine($"   {"race",-6} {"rotation",-34} {"total",8} {"x stab",7}");
+
+        foreach (var (race, disc, rotation) in new (Race, Discipline, (string Skill, float Times)[])[]
+                 {
+                     (Race.Elf,   Discipline.Phantom,     new[] { ("killing_stab", 3f), ("swift_stab", 2f) }),
+                     (Race.Human, Discipline.Nullblade,   new[] { ("killing_stab", 3f), ("heavy_stab", 1.5f) }),
+                     (Race.Demon, Discipline.Venomweaver, new[] { ("venom_stab", 3f), ("venom_burst", 1f) }),
+                 })
+        {
+            var a = BuildPlayer(race, BaseClass.Fighter, L, quality: q,
+                                discipline: disc, secondClass: 15, fourth: L >= 76, npcBuffed: stabBuffed);
+            int pAtk = (int)a.EffectiveAttack;
+            float coef = StatCalculator.WeaponDefenceCoef(a.WeaponType, 1f, 1f, 1f);
+
+            float Blow(string id, int stacks)
+            {
+                var d = SkillCatalog.Get(id);
+                if (d is null || !a.LearnedSkills.TryGetValue(id, out int lvl)) return 0f;
+                var (flat, mod) = d.PhysDamageAt(lvl);
+                // ⚠ x STACKS MULTIPLIES THE RESOLVED DAMAGE, NOT THE POWER — `ExecuteSkill` does
+                //   `damage * spent`. The two are NOT the same thing: power sits beside `atk*lvlMod`
+                //   inside the ratio, so multiplying afterwards multiplies the ATK term as well. At
+                //   90 that makes a full pool 2.7x a Killing Stab where "one stab of 15k power"
+                //   would be 1.75x. It is the reason the Demon's column lands where it does.
+                float raw = Shot(a, false, StatCalculator.PhysicalDamageFM(pAtk, flat, mod, mobDef, coef)) * stacks;
+                float cff = StatCalculator.CritFlatFactor(pAtk, a.CritDamageFlat, flat * stacks, mod);
+                return raw * (1f + (cff * StatCalculator.PhysicalCritMult(a.CritDamageBonus) - 1f))
+                     * Math.Max(1, d.HitCount);
+            }
+
+            float unit = Blow(race == Race.Demon ? "venom_stab" : "killing_stab", 1);
+            float total = 0f;
+            var parts = new List<string>();
+            foreach (var (skill, times) in rotation)
+            {
+                // The Demon banks 3 stacks a cast, so three stabs fill NINE — his own number.
+                int stacks = skill == "venom_burst" ? 9 : 1;
+                total += Blow(skill, stacks) * times;
+                parts.Add($"{times:0.#}x {SkillCatalog.Get(skill)?.Name}{(stacks > 1 ? $" (x{stacks})" : "")}");
+            }
+            Console.WriteLine($"   {race,-6} {string.Join(" + ", parts),-34} {total,8:0}"
+                            + $" {total / Math.Max(1f, unit),7:0.00}");
+        }
+        Console.WriteLine();
+    }
+    return;
+}
+
 // `--hpcurve` — the PLAYER HP CURVE against IG's own per-class tables and the three anchors the
 // owner set on 2026-08-27 (tank@40 CON43 = 2380, buffer@40 CON31 = 1180, knight@80 CON43 = 9840).
 // Reads StatCalculator directly, so it measures the SHIPPED curve, not a re-derivation.

@@ -113,6 +113,19 @@ damage off `EffectiveBasicAttack`, its own accuracy roll, its own crit and its o
 ⚠ **The gate is rolled BEFORE the skill's own miss roll**, so each branch carries exactly ONE miss
 gate — `SkillEvadeChance` for a landed blow, basic accuracy for one that fell through.
 
+**A STACK BURST IS A BLOW** (`ConsumeStackKey`; today only Venom Burst — `BL-207`, 0.131.0):
+
+```
+landed  = resolvedDamage * stacksSpent, then the crit-damage values, then [Double]
+          ^ the DAMAGE is multiplied, NOT the power
+failed  = an ordinary basic swing; the pool is emptied and ONE cast's worth banked back
+```
+
+🔑 **`damage * stacks` is not `power * stacks`.** Power sits beside `atk·lvlMod` inside the ratio, so
+multiplying afterwards multiplies the ATK term too: at 90 a full pool reads **2.7×** a Killing Stab
+where "one stab of 15k power" would read 1.75×. The crit-flat factor is measured against
+`power * stacks` so it is not inflated by the same asymmetry.
+
 `Entity.BlowRate` / `BlowResist` · `StatCalculator.BlowAgiMod` / `BlowRate` ·
 `GameLoopService.BlowLands` / `ResolveBlow` / `ResolveBasicSwing`
 
@@ -252,6 +265,12 @@ chance = 0.5 + 0.5 * (attackerAtk - def) / (attackerAtk + def)
   ×0.7 = 35%, ×0.5 = 25%, ×0.3 = 15%. A ×0.5 skill may go under the floor; nothing may pass 0.90.
 - ⚠ Attacker level here is also the **RUNG's** learn level.
 
+- **BURN lands unconditionally** — a DoT whose family saves against nothing (`DotTiers.Save` = None)
+  skips the contest entirely.
+- 🔑 **A BURST THAT DETONATED DOES NOT ROLL THIS CONTEST AT ALL** (`BL-207`, 0.131.0). Spending a stack
+  pool sets `spentStacks`, which already suppresses re-applying the DoT — so rolling first only ever
+  produced a cosmetic `Fail` over a cast that had just dealt ten stacks of damage. A burst that found
+  **no** pool still rolls, because that is where the rider is the point of the skill.
 - **A WHISP contests on a FLAT attack of its own** (`GameConstants.WhispCcAtk` = 40, a plain melee
   creature's) at the **MASTER'S level** — never the master's ATK, never his gear. `BL-109`.
 - **A TAUNT has no roll at all**, and its two halves go different distances (`BL-123`): the target

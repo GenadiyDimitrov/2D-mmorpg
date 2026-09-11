@@ -29,6 +29,12 @@ internal static class Check
     /// is the one thing the tool reports about the CSV rather than about the code.</summary>
     private static int ladderDips;
 
+    /// <summary>"…increases … MP/mana consumption …" — a rung whose MP cost is a PRICE and not a
+    /// discount. See the exemption in the ladder check for why the sign cannot say this on its own.</summary>
+    private static readonly System.Text.RegularExpressions.Regex CostIncrease =
+        new(@"increas\w*[^.;]{0,40}(mp|mana)\s*consumption",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
     private static string Num(float v, bool pct) =>
         pct ? (v * 100f).ToString("0.##", CultureInfo.InvariantCulture) + "%"
             : v.ToString("0.##", CultureInfo.InvariantCulture);
@@ -154,6 +160,12 @@ internal static class Check
         new("dual 4th",    BaseClass.Fighter, Archetype.Rogue,   76, 90, Fourth: true,
             Also: new[] { "shared 4th" }, Disciplines: new[]
             { Game.Shared.Discipline.Nullblade, Game.Shared.Discipline.Phantom, Game.Shared.Discipline.Venomweaver }),
+        // `nuker 4th` earned its line on 2026-09-11, the day `BL-192` built it — he called the file
+        // finished the night before (*"so i think im done with nuker 4th"*). ONE discipline, like the
+        // healer's and the buffer's: the Magus is the nuker archetype's only one since `BL-97` retired
+        // the Tempest, and the RACE is what splits this kit.
+        new("nuker 4th",   BaseClass.Mage,    Archetype.Nuker,   76, 90, Game.Shared.Discipline.Magus,
+            Fourth: true, Also: new[] { "shared 4th" }),
     };
 
     /// <summary>One rung, from either side, reduced to the fields worth comparing.
@@ -700,6 +712,20 @@ internal static class Check
                     // a genuine mistake, because a bonus that falls still has a positive `was`.
                     if (was <= 0f && now <= 0f) continue;
                     var parts = key.Split('|');
+                    // 🔑 …AND THE SAME THING WHERE THE SIGN CANNOT CARRY IT (`BL-192`, 2026-09-11).
+                    // `mpcost` is in Descr's `MagnitudeOnly` set — he writes the identical mechanic as
+                    // "Decrease Mp Consumption with 5%" and "−15% Magic MP Consumption", so the reader
+                    // keeps the magnitude and drops the sign, and the trick one line up cannot fire.
+                    // The Magus's two stances are the first ladders where the cost RISES as a price:
+                    // Force Empowerment is *"Increases mAtk +14%, mana consumption with 20%"* and steps
+                    // to 15% and 10%, and the three Spell Empowerments do the same. A surcharge getting
+                    // SMALLER is the rung doing its job, and reporting eight of those every run is how
+                    // a standing check stops being read. Gated on his own word "increase" sitting in
+                    // front of the phrase on BOTH rungs, so a real discount ladder that falls still
+                    // reports.
+                    if (parts[0] == "mpcost"
+                        && CostIncrease.IsMatch(a[i - 1].Descr) && CostIncrease.IsMatch(a[i].Descr))
+                        continue;
                     string scope = parts[2].Length == 0 ? "" : $" [{parts[2]}]";
                     Console.WriteLine($"  🔵 LADDER DIP      {label}{scope} {parts[0]}: " +
                                       $"rung {i} (lvl {a[i - 1].LearnLevel}) = {Num(was, parts[1] == "%")}, " +

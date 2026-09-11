@@ -240,7 +240,9 @@ public static partial class SkillCatalog
                 new SkillLevel(SpCost: 190000), new SkillLevel(SpCost: 280000),
                 new SkillLevel(SpCost: 320000), new SkillLevel(SpCost: 390000),
                 new SkillLevel(SpCost: 650000), new SkillLevel(SpCost: 880000),
-            },
+                // Rungs 19-33 (@76 → 90) — HIS, from `nuker 4th.csv` (`BL-192`, 2026-09-11). One per
+                // level, on the shared 4th-tier price ladder (6.5kk SP → gold-only from 80).
+            }.Concat(NukerFourthArmorMasteryRungs()).ToArray(),
             ArmorMasteryLevels: new[]
             {
                 // 🔑 mpWhenRestored IS A PERCENT since 2026-08-19 (owner) — "+10%" means any MP
@@ -290,7 +292,11 @@ public static partial class SkillCatalog
                 NukerRobe(pDef: 79, maxMp: 180, restorePct: 0.60f),   // 70
                 NukerRobe(pDef: 83, maxMp: 200, restorePct: 0.60f),   // 72
                 NukerRobe(pDef: 87, maxMp: 200, restorePct: 0.60f),   // 74
-            }),
+                // ⚠ RUNGS 19-33 GROW TWO NEW COLUMNS his 3rd tier never had — an M.Def PERCENT (2 →
+                //   25%) and an MP-cost cut (0 → 10%) — and both are `StatMods` fields the healer's
+                //   identical 4th-tier robe rung already uses. Four of the five numbers ARE the
+                //   healer's; only `mpWhenRestored` is the nuker's. See NukerFourthRobeProfiles.
+            }.Concat(NukerFourthRobeProfiles()).ToArray()),
     };
 
     /// <summary>Nuker robe-mastery level: ROBE gets +MP regen, flat P.Def, flat max MP and the

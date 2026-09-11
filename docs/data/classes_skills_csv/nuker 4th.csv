@@ -52,21 +52,21 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 ,,,,,,,,,,,,,,,,,,,----------------------------Mage Shield Mastery----------------------------
 76,Mage Shield Mastery,nuker_shield_mastery,Passive,,/shield,0,0,self/single,0,0,0,"When Shield is equiped increase m.atk +5%, mp consumption -10% and mpReg +10%, Pdef +100, but shield can never block (block rate x0)",0,6.5kk,1kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Mana Barrier----------------------------
-85,Mana Barrier,nuker_mana_barrier,Magic/Buff,,,0,,self,0,300,30,"Diverts 70% of incoming damage to MP (0.5 MP per damage) for 30s or while MP lasts.",30,0,100kk,5
+85,Mana Barrier,nuker_mana_barrier,Magic/Buff,,,0,,self/single,0,300,30,"Diverts 70% of incoming damage to MP (0.5 MP per damage) for 30s or while MP lasts.",30,0,100kk,5
 ,,,,,,,,,,,,,,,,,,,----------------------------Force Empowerment----------------------------
-78,Force Empowerment,nuker_Force_empowerment,Toggle,,,0,,self,0,0,0,"Increases mAtk +14%, mana consumption with 20% and drains 50/s HP",0,16kk,1kk,,,
-80,Force Empowerment,nuker_Force_empowerment,Toggle,,,0,,self,0,0,0,"Increases mAtk +15%, mana consumption with 15% and drains 40/s HP",0,150kk,10kk,,,
-82,Force Empowerment,nuker_Force_empowerment,Toggle,,,0,,self,0,0,0,"Increases mAtk +16%, mana consumption with 10% and drains 30/s HP",0,300kk,50kk,,,
+78,Force Empowerment,nuker_Force_empowerment,Toggle,,,0,,self/single,0,0,0,"Increases mAtk +14%, mana consumption with 20% and drains 50/s HP",0,16kk,1kk,,,
+80,Force Empowerment,nuker_Force_empowerment,Toggle,,,0,,self/single,0,0,0,"Increases mAtk +15%, mana consumption with 15% and drains 40/s HP",0,150kk,10kk,,,
+82,Force Empowerment,nuker_Force_empowerment,Toggle,,,0,,self/single,0,0,0,"Increases mAtk +16%, mana consumption with 10% and drains 30/s HP",0,300kk,50kk,,,
 ,,,,,,,,,,,,,,,,,,,----------------------------Race Empowerment----------------------------
-80,Spell Empowerment,nuker_demon_spell_empowerment,Magic/Buff,,,0,,self,1,5,600,"Increases magic MP consumption by 30% and M. Atk. by 15%; being attacked with 5% chance decrease attackers cast/attack speed with 23%",100,150kk,10kk,,,Demon
-85,Spell Empowerment,nuker_demon_spell_empowerment,Magic/Buff,,,0,,self,1,5,600,"Increases magic MP consumption by 25% and M. Atk. by 15%; being attacked with 5% chance decrease attackers cast/attack speed with 23%",100,0,100kk,,,Demon
-90,Spell Empowerment,nuker_demon_spell_empowerment,Magic/Buff,,,0,,self,1,5,600,"Increases magic MP consumption by 20% and M. Atk. by 15%; being attacked with 5% chance decrease attackers cast/attack speed with 23%",100,0,100kk,,,Demon
-80,Spell Empowerment,nuker_elf_spell_empowerment,Magic/Buff,,,0,,self,1,5,600,"Increases magic MP consumption by 20% and M. Atk. by 10%; being attacked with 5% chance decrease attackers move speed with 30% and Mdef with 10%",100,150kk,10kk,,,Elf
-85,Spell Empowerment,nuker_elf_spell_empowerment,Magic/Buff,,,0,,self,1,5,600,"Increases magic MP consumption by 15% and M. Atk. by 10%; being attacked with 5% chance decrease attackers move speed with 30% and Mdef with 10%",100,0,100kk,,,Elf
-90,Spell Empowerment,nuker_elf_spell_empowerment,Magic/Buff,,,0,,self,1,5,600,"Increases magic MP consumption by 10% and M. Atk. by 10%; being attacked with 5% chance decrease attackers move speed with 30% and Mdef with 10%",100,0,100kk,,,Elf
-80,Spell Empowerment,nuker_human_spell_empowerment,Magic/Buff,,,0,,self,1,5,600,"Increases magic MP consumption by 25% and M. Atk. by 12%; being attacked with 5% chance inflicts damage on attackers with power 47",100,150kk,10kk,,,Human
-85,Spell Empowerment,nuker_human_spell_empowerment,Magic/Buff,,,0,,self,1,5,600,"Increases magic MP consumption by 20% and M. Atk. by 12%; being attacked with 5% chance inflicts damage on attackers with power 51",100,0,100kk,,,Human
-90,Spell Empowerment,nuker_human_spell_empowerment,Magic/Buff,,,0,,self,1,5,600,"Increases magic MP consumption by 15% and M. Atk. by 12%; being attacked with 5% chance inflicts damage on attackers with power 55",100,0,100kk,,,Human
+80,Spell Empowerment,nuker_demon_spell_empowerment,Magic/Buff,,,0,,self/single,1,5,600,"Increases magic MP consumption by 30% and M. Atk. by 15%; being attacked with 5% chance decrease attackers cast/attack speed with 23%",100,150kk,10kk,,,Demon
+85,Spell Empowerment,nuker_demon_spell_empowerment,Magic/Buff,,,0,,self/single,1,5,600,"Increases magic MP consumption by 25% and M. Atk. by 15%; being attacked with 5% chance decrease attackers cast/attack speed with 23%",100,0,100kk,,,Demon
+90,Spell Empowerment,nuker_demon_spell_empowerment,Magic/Buff,,,0,,self/single,1,5,600,"Increases magic MP consumption by 20% and M. Atk. by 15%; being attacked with 5% chance decrease attackers cast/attack speed with 23%",100,0,100kk,,,Demon
+80,Spell Empowerment,nuker_elf_spell_empowerment,Magic/Buff,,,0,,self/single,1,5,600,"Increases magic MP consumption by 20% and M. Atk. by 10%; being attacked with 5% chance decrease attackers move speed with 30% and Mdef with 10%",100,150kk,10kk,,,Elf
+85,Spell Empowerment,nuker_elf_spell_empowerment,Magic/Buff,,,0,,self/single,1,5,600,"Increases magic MP consumption by 15% and M. Atk. by 10%; being attacked with 5% chance decrease attackers move speed with 30% and Mdef with 10%",100,0,100kk,,,Elf
+90,Spell Empowerment,nuker_elf_spell_empowerment,Magic/Buff,,,0,,self/single,1,5,600,"Increases magic MP consumption by 10% and M. Atk. by 10%; being attacked with 5% chance decrease attackers move speed with 30% and Mdef with 10%",100,0,100kk,,,Elf
+80,Spell Empowerment,nuker_human_spell_empowerment,Magic/Buff,,,0,,self/single,1,5,600,"Increases magic MP consumption by 25% and M. Atk. by 12%; being attacked with 5% chance inflicts damage on attackers with power 47",100,150kk,10kk,,,Human
+85,Spell Empowerment,nuker_human_spell_empowerment,Magic/Buff,,,0,,self/single,1,5,600,"Increases magic MP consumption by 20% and M. Atk. by 12%; being attacked with 5% chance inflicts damage on attackers with power 51",100,0,100kk,,,Human
+90,Spell Empowerment,nuker_human_spell_empowerment,Magic/Buff,,,0,,self/single,1,5,600,"Increases magic MP consumption by 15% and M. Atk. by 12%; being attacked with 5% chance inflicts damage on attackers with power 55",100,0,100kk,,,Human
 ,,,,,,,,,,,,,,,,,,,----------------------------Elemental Blast----------------------------
 76,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +110,69,6.5kk,1kk
 77,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +112,71,11kk,1kk
