@@ -7,11 +7,198 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.127.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.128.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-10 (latest) — 0.127.0: his DoT table lands, and Burn becomes a real family
+
+## 2026-09-11 (latest) — 0.128.0: venom stacks stop needing two rolls; the buff limit becomes a collection
+
+🔴 **New APK required. Protocol 37** — `TrapList` is a new server→client message, and the reuse,
+cast-time and skill-description changes below are all rendered from the client's compiled catalogue.
+
+Six playtest asks, then his two rulings on them and the close of `dual 4th.csv`.
+
+### `BL-199` — a venom stack is the record of a blade going in
+
+*"Now venomweaver almost cannot stack venom... Stacks should be independent of dot... So each landed
+venom blow adds stacks that do not do nothing just stacks, and try to do a venom debuff that do dmg
+depending on those stacks and when venom burst is used it takes with it the stacks + the dot debuff"*
+
+Four separate things were wrong, and each one on its own would have been enough to make the
+discipline unplayable:
+
+- 🔴 **A STACK NEEDED TWO ROLLS TO COME UP.** Stacks were added inside the DoT's AGI-vs-CON contest,
+  so a Venom Stab had to land its blow *and* win the contest to bank anything. They are banked by the
+  **strike** now — any resolution of the damage arm that connects, including a blow that fell through
+  to a basic swing and hit. Only a clean miss banks nothing. The venom debuff still lands on its own
+  contest; losing it costs the damage, never the pool.
+- 🔴 **THE VENOM TICKED FOR ONE STACK NO MATTER WHAT.** A stacking DoT is two statuses — the damage
+  buff, pinned at one stack, and a hidden counter that holds the real number. `TickDots` read the
+  pinned one. The fold existed in exactly one place, `PushTargetBuffs`, so **the bar showed "x7" while
+  the damage was x1** — and the bar was the half telling the truth about intent. One helper,
+  `DotStacksOf`, is now read by both.
+- 🔴 **THE BURST LEFT THE VENOM RUNNING**, so spending ten stacks changed nothing visible: same debuff
+  on the bar, a number that looked like an ordinary stab. It takes the DoT with the pool now.
+- **The burst always did multiply by stacks** — he was right to suspect it and wrong about which half
+  was broken; it was the pool being empty. It now says so: *"Venom Burst detonated 7 stack(s) — ×7
+  damage."*
+
+🔑 **`BL-197` — ONLY A SUCCESSFUL STAB BANKS.** "Each landed blow" has two readings on a `BlowOnCrit`
+skill and he settled it the tight way: *"only the succesfull stab .. not the failed/basick attack
+one"*. His reason is the better design and it was not the one I had: the blow RATE is meant to be the
+knob the player chooses with — *"if i chose to use perfect_strike i land more ophen i stack faster but
+for less dmg ... if i use brutal_strike i land less ofthen i stack slower but do more dmg"*. The @80
+pair is only a real choice if the rate it moves is also the stacking rate. So ONE roll gates a stack,
+and the player has a buff for it.
+
+### `BL-195` → `BL-198` — the buff limit is a COLLECTION, not a timer
+
+*"let's make all buffs that are not 20min and not harmonies or marks (the current ones) not enter the
+limit ... Like bow expertise and bow blessing/egc to count towards limit but bow Ferocity/swiftness
+don't."* He offered a self-vs-party split as the alternative and rejected it himself.
+
+Built as a 20-minute duration test (`BL-195`) — and he overturned the shape the same day, correctly:
+
+> *"it should not work only on timer ... the limit should have an id collection ... i gave the
+> duration as filter not as solution ... if one buff a 10 min buff and it doubles it probanbly break
+> en enter the count .. but it shouldns"*
+
+🔴 **His counterexample is unanswerable.** `BL-190`'s `DoubleDurationRate` doubles a landed duration
+**on a roll**, so under a duration test a 10-minute buff that rolled a double would start costing a
+square — the same buff on the same character, decided by a die. **A property of the skill must never
+read a number something else in the game is allowed to multiply.**
+
+So membership of `SkillCatalog.BuffLimitIds` is now the whole test. The collection is **derived, not
+typed out** — a typed list goes stale and whole tiers vanish from it — from two sources that between
+them are exactly his enumeration:
+
+1. **the two shelves unioned**, which is the same universe the admin Buffs menu's four drawers come
+   from: every single, group, harmony and Mark, at any duration;
+2. **every other `BuffRow.Buff` skill whose AUTHORED duration is ≥ 20 minutes** — the archer's Bow
+   Expertise / Blessing / Spirit, and anything authored that long later, with no edit anywhere.
+
+`BuffRow.Buff` in rule 2 is what keeps the three **runes** out, which closes the other half of
+`BL-198`: they run an hour, but a ~1/s reconciliation loop owns them, so evicting one frees a square
+for a fraction of a second and then puts it back. Potions and scrolls are `Consumable` too — but their
+CHILDREN are in via rule 1, because a potion of Might and a cleric's Might are the same buff from
+different bottles.
+
+📐 **`dotnet run --project tools/BalanceMatrix -- --bufflimit`** prints both halves — 221 buffs that
+cost a square and 149 that do not. That listing is the answer to his *"U can ask me for some that i
+didnt meantion"*: reading a derived list beats remembering the buffs.
+
+🔴 **Found in passing: a venom stack counter was eating one of its VICTIM's buff slots.** The hidden
+counter is a `BuffInstance` with no effect and `Internal = true`, so no debuff test caught it and it
+sat in the default buff row — invisible, and in PvP able to evict a real blessing. `Internal` is an
+exclusion now. It went unnoticed only because banking a stack used to need two rolls.
+
+### `BL-196` — cast SPEED and cast TIME are two different channels
+
+*"the elf archer spirit mastery should increase the phisical cast speed as well. It should not
+increase cast speed as stat for mages only. It should increase the end cast time."*
+
+Spirit Mastery is the **archer's own** party proc, and its 20% rode `BuffCastSpeed` — the mage's stat.
+A physical skill is paced by ATTACK speed, so the buff reached every mage in the party and did nothing
+at all for the Elf who cast it. His own CSV cell says `p.skill cast time`, which no cast-speed channel
+could ever have expressed.
+
+`SkillDef.CastTimePct` is the new channel and it multiplies the **finished** cast, after the 333 model
+has already picked whichever stat paces the skill — exactly where his formula puts it:
+*"(baseCastOrAttackSpeedValue x castOrAttackSpeedBuffs x castOrAttackSpeedDebuffs / 333 or whatever) x
+castTimeDebffs x spirit_mastery and other cast time buffs"*. A negative value lengthens a cast, which
+is the `castTimeDebffs` half; nothing authors one yet.
+
+### The archer's five ultimates get a reuse ladder of their own
+
+*"archers arrow barrage to have 30s cd, bleeding arrow and other class analogies to have 15s, heavy
+arrow 10s -> now with all the cd reduction 25k dmg skill is used every 3~4s"*
+
+His file gave all five 10s. **Arrow Barrage 30s · the three race ultimates 15s · Heavy Arrow 10s**
+(unchanged), in the code and in `archer 4th.csv`. The cooldown-reduction stack is deliberately left
+alone — the lever is the base number, not the buffs he already bought.
+
+### Sprint is physical — and so is every other physical skill, for reuse
+
+*"rogues sprint is physical not magical"*. Sprint already carried `PhysicalCast`, so it was physical
+for cast pacing and for silence. `Entity.CooldownReductionFor` was the **last call site still asking
+`Category`** — a ROLE tag — so Sprint, the three traps and every physical stance were filed under
+MAGIC reuse, and Bow Blessing's *"−20% physical reuse"* did not in fact reach *"every skill an archer
+owns"* as its own comment claimed. It asks `SkillMath.IsPhysical` now, like the speed model and
+silence. Same mistake `BL-132` fixed once already.
+
+### `dual 4th.csv` closes — three race passives, three race ultimates, a fixed Vanish
+
+*"I added 3 new ulsitmate skills, 3 new passiives for identity for each race and make vanish cooldown
+fixed. With that duals 4th is finihed (untill dmg is rly tested)"* — his rows, built as authored.
+
+**ONE AXIS PER RACE, CARRIED AT TWO STRENGTHS.** A small permanent passive at 80/85/90 (5 → 7 → 10%)
+and the same defence turned up for ten seconds at 83. That pairing is what makes them identity rather
+than six unrelated numbers:
+
+| race | passive (80/85/90) | ultimate (83, 10s, 90s reuse) |
+|---|---|---|
+| **Human** | `Anti-Magic` — magic resistance +5/7/10% | `Magical Armor` — +30% magic resistance |
+| **Elf** | `Anti-Physical` — physical-SKILL evasion +5/7/10% | `Dodge` — 30% to evade a physical skill |
+| **Demon** | `Duel-Expertise` — PvP damage +5/7/10% | `Demon Contract` — +25% PvP damage |
+
+⚠ *"p.skill evasion"* is `SkillEvadeChance`, not Evasion — the grant `BL-06` left as the only way a
+physical SKILL can be dodged at all. ⚠ `PvP.Dmg` is unqualified in his cell, so it rides all three PvP
+channels: a dagger's damage comes from skills, basics and Venom Burst, and covering one would read as
+broken on the other two.
+
+**Vanish is `FixedCooldown` now.** Two minutes is the price of thirty seconds untouchable, and the
+reuse stack a 4th-tier rogue carries — physical reuse buffs, the Sigils, Stab Momentum's reset roll,
+and Overpower Mastery doubling that roll — was aimed straight at it. A vanish on a 40-second real
+reuse is not an escape, it is a movement mode. The flag skips reduction entirely, so it is immune to
+whatever is added to that stack later; raising the number would not have been.
+
+**Wording, which is the half he asked for separately:**
+- 🔴 **Venom Stab and Venom Burst still advertised `atk -15%; def -15%`** on all 30 rows — the
+  per-skill venom rider, dead since `DotTiers` made the rider a property of the (kind, tier) table.
+  The real tier-10 venom is 20 hp/s **per stack** and −10% P.Atk/M.Atk, with **no** defence cut at all
+  (*"for now no dot will decrease def"*). Both halves of that row were wrong, in opposite directions.
+- **`double_mastery` is `Overpower Mastery` for the rogue too** — *"dagger double_mastery is with name
+  Overpower Mastery not Momentum Mastery"*. The rename was mine and it was the wrong instinct: a
+  `DisplayName` is for when the flavour genuinely differs, and the toggle does the same thing for the
+  rogue that it does for the warrior. `Stab Momentum` keeps its override, because there the base
+  mechanic really is different from the Magus's Arcane Momentum wearing the same id.
+- **Three derived families advertised the wrong DURATION** (Venom Stab/Burst 0 instead of 30s, Swift
+  Stab 0 instead of its 5s rush).
+
+🔑 **`dual 4th.csv` EARNED ITS `Check.Specs` LINE**, and that is what found the last three: the file is
+walked now, and it reports **no discrepancies** against the code — 18 files green. Most of the file is
+still DERIVED rather than authored, and the DAMAGE is the part he has not signed off (*"untill dmg is
+rly tested"*), but a derived half that silently drifts from the code is exactly how `atk -15%` survived
+a whole chronicle.
+
+
+### Traps: an arming time, a radius that means something, and you can see your own
+
+*"a mob start to walk with binding trap debuff. Also it don't say 'resisted' and for every trap the
+owner should see it where he placed it so he can lure the enemy to it. Also traps should have arming
+time ... Add to traps 2s cast time."*
+
+- 🔴 **A TRAP ONLY EVER HIT ONE BODY.** It is authored `target/aoe` with a 400 reach and its own text
+  says *"holds the enemis in range"* — plural — but only the nearest was delivered to. A pack walking
+  over a Binding Trap had one held and **the rest strolled on**, which is what he saw. It catches
+  everything in the circle now. Same mistake AoE taunt (`BL-123`) and the AoE pull (`BL-154`) each
+  made once.
+- 🔴 **A RESISTED TRAP SAID NOTHING AT ALL** — no float, no line. `DeliverSimpleHit` (traps and boss
+  slams) had no `else` on its contest, so the only honest reading from the floor was "the skill is
+  broken". It broadcasts `Fail` now, like the cast path it shares the contest with. That path had also
+  drifted on WHICH stats contest: a bleed or venom is an AGI roll, and for any DoT the FAMILY decides
+  what saves — a Bleeding Trap was rolling ATK-vs-CON while the identical arrow rolled AGI.
+- **You can see your own traps.** New `TrapList`, owner-only — a totem is ground you want your party
+  standing in, a trap is ground the enemy must not know about. Amber disc at the real trigger radius,
+  breathing on the opposite phase to a totem so overlapping circles still read.
+- **2 seconds to arm**, in the code and in both archer CSVs (his cells read 0).
+
+🔵 **Still open on the trap report:** the ENGINE holds a rooted mob at speed 0 — `EffectiveSpeed`
+returns 0 for `IsRooted` before anything else, and `MoveTowardTarget` is the only stepper in the game.
+So *"a mob start to walk with binding trap debuff"* is best explained by the one-victim bug above.
+Worth one re-test now that the trap catches the whole pack and says when it is resisted.
+## 2026-09-10 — 0.127.0: his DoT table lands, and Burn becomes a real family
 
 🟡 **New APK recommended, not required.** Protocol stays **36** — nothing on the wire changed. The
 debuff bar's text comes from the server and is correct on an old client; only the *skill-detail*

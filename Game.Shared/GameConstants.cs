@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.127.0";
+    public const string GameVersion = "0.128.0";
 
     // ----- SP BOTTLE (owner, 2026-08-26) -------------------------------------------------------
     // *"u can make an npc to take your 1kkk SP + 100kk gold and give you a tradable/sellabel
@@ -189,7 +189,7 @@ public static class GameConstants
     /// `[Double]` from is DELETED — an old APK would keep showing a number the server no longer
     /// agrees with (it derives 7-10.75%; the truth is 0% until a mastery passive is authored).
     /// ⚠ A NEW APK IS WANTED, but an old one still plays.
-    public const int ProtocolVersion = 36;   // 36: TargetBuffUpdate — the enemy's debuffs + stacks
+    public const int ProtocolVersion = 37;   // 37: TrapList — the owner sees his own armed traps
 
     /// <summary>
     /// The oldest protocol this server still speaks. Equal to <see cref="ProtocolVersion"/> means
@@ -284,15 +284,35 @@ public static class GameConstants
     /// buffer, it limits the ALTERNATIVE to the buffer. To make it bite harder, lower this number;
     /// do not touch the flag. Measure it with `dotnet run --project tools/BalanceMatrix -- --buffs`.
     ///
-    /// WHAT COUNTS is per-buff and authored: `SkillDef.CountsTowardBuffLimit`, default true, false on
-    /// the temporary ones. Toggles, debuffs and the gear/rune row are excluded by the engine — see
-    /// GameLoopService.CountsAgainstBuffCap for why each.
+    /// WHAT COUNTS is MEMBERSHIP OF A COLLECTION — `SkillCatalog.BuffLimitIds`, his rule of
+    /// 2026-09-11: the singles, the groups, the harmonies, the Marks and every 20-minute buff row.
+    /// `CountsTowardBuffLimit` survives as an authored veto; toggles, debuffs, internal mechanics and
+    /// the gear/rune row are excluded by the engine — see GameLoopService.CountsAgainstBuffCap.
+    /// 📐 Read the whole list: `dotnet run --project tools/BalanceMatrix -- --bufflimit`.
     ///
     /// Over the cap the OLDEST buff is dropped and the new one lands, FIFO, *"if the 1st buff still
     /// have 2h time remaining I still can overbuff and remove it"*. It is never the other way round: a
     /// refusal arrives mid-fight and sends you hunting through the bar for something to cancel, which
     /// is the exact moment you cannot afford to be reading icons.</summary>
     public const int MaxBuffSlots = 20;
+
+    /// <summary>Twenty minutes, in ticks — the AUTHORED duration at which a plain class self-buff joins
+    /// <c>SkillCatalog.BuffLimitIds</c>.
+    ///
+    /// <para>🔴 IT IS A RULE FOR BUILDING THE COLLECTION, NOT THE TEST ITSELF, and the distinction is
+    /// his (2026-09-11, overturning the previous day's shape): *"it should not work only on timer ...
+    /// the limit should have an id collection ... i gave the duration as filter not as solution"*. The
+    /// counterexample that killed the duration test: *"if one buff a 10 min buff and it doubles it
+    /// probanbly break en enter the count .. but it shouldns"* — `BL-190`'s <c>DoubleDurationRate</c>
+    /// is a per-cast ROLL, so a landed-duration test made "does this cost a square" depend on a die.
+    /// A property of the SKILL must never read a number something else is allowed to multiply.</para>
+    ///
+    /// <para>⚠ So this is read ONCE, at startup, against <c>SkillDef.DurationTicks</c> — the authored
+    /// field, which nothing can multiply. It is what sweeps in the archer's 20-minute self-buffs
+    /// (*"bow expertise and bow blessing/egc to count towards limit but bow Ferocity/swiftness
+    /// don't"*) and anything else authored that long later, with no edit anywhere. The singles,
+    /// groups, harmonies and Marks are in the collection by IDENTITY, not by this.</para></summary>
+    public const int BuffLimitMinDurationTicks = 12_000;   // 20 minutes at 10 ticks/s
 
     /// <summary>Seconds per tick (0.1s at 10 t/s).</summary>
     public const float TickSeconds = 1f / TickRate;

@@ -36,11 +36,20 @@ public class TradeSession
     public void SetGold(Entity e, long v) { if (e == A) GoldA = v; else GoldB = v; }
 }
 
-/// <summary>A placed TRAP (Trapper skill). Server-only (not an Entity, so it's invisible to the
-/// snapshot — a dedicated visual is client work). When a hostile steps within Radius the trap
-/// delivers its skill's damage + CC to that intruder, attributed to the owner, then is removed.</summary>
+/// <summary>A placed TRAP (Trapper skill). Not an Entity, so it never travels in the world snapshot;
+/// it reaches its OWNER through <c>TrapList</c> instead, the same way a totem does. When a hostile
+/// steps within Radius the trap delivers its skill's damage + CC to EVERYTHING in the circle,
+/// attributed to the owner, and is then removed.
+///
+/// <para>⚠ ONLY THE OWNER IS TOLD. Owner, 2026-09-11: *"for every trap the owner should see it where
+/// he placed it so he can lure the enemy to it"* — the whole use of a trap is walking a pack over a
+/// spot you chose, which is impossible when the spot is invisible. Showing it to everyone would hand
+/// the enemy the same information and make it useless in the one place it matters.</para></summary>
 public class TrapInstance
 {
+    /// <summary>Identity for the client's decal list — a trap never moves, so an id is enough for the
+    /// viewer to tell "still there" from "a new one".</summary>
+    public Guid Id { get; } = Guid.NewGuid();
     public required Guid OwnerId { get; init; }
     public required string SkillId { get; init; }
     public int Level { get; init; } = 1;

@@ -798,6 +798,11 @@ if (args.Length > 0 && args[0] == "--magicdef")
 // a phone is how one survives three versions.
 if (args.Length > 0 && args[0] == "--buffmenu") { BuffMenuDump(); return; }
 
+// `BL-198` — THE BUFF-LIMIT COLLECTION, read off SkillCatalog.BuffLimitIds. His rule is membership
+// of a set, and the set is DERIVED, so the only way to answer his own *"U can ask me for some that i
+// didnt meantion"* is to print it and let him strike rows out.
+if (args.Length > 0 && args[0] == "--bufflimit") { BuffLimitDump(); return; }
+
 // `--buff-consumables` — `BL-147`. Writes docs/data/BuffConsumables.md: which buffs exist as a potion,
 // which as a scroll, where each comes from, whether the NPC buffer gives the same thing, and — the half
 // he actually asked for — which single buffs have NO consumable at all. Generated for the same reason
@@ -5340,6 +5345,57 @@ static int TopNukePower(Entity e)
 /// dump that repeats an authored number can never contradict you.</summary>
 /// <summary>`BL-180` — print the four drawers of the admin Buffs menu exactly as the client builds
 /// them, plus anything grantable the menu does NOT reach.</summary>
+/// <summary>`BL-198` — print every buff that costs one of the 20 slots, grouped the way he listed
+/// them, plus the ones that DON'T so the line between them is visible in one screen.
+///
+/// <para>He asked for exactly this when he gave the rule: *"for now that collection must be: single
+/// buffs, grouped buffs, harmonies, marks, archers 20 min buffs, any other self 20 min buff we have
+/// (cant remember them all). U can ask me for some that i didnt meantion."* Asking him to recall the
+/// buffs is the wrong way round — the catalogue already knows, and a list he can strike rows out of
+/// is worth more than a question.</para></summary>
+static void BuffLimitDump()
+{
+    Console.WriteLine("=== WHICH BUFFS COST A SLOT (BL-198) ===");
+    Console.WriteLine($"Cap = {GameConstants.MaxBuffSlots}. Membership of SkillCatalog.BuffLimitIds is the whole test —");
+    Console.WriteLine("NOT a duration, because DoubleDurationRate can double a landed one (his counterexample).");
+    Console.WriteLine("Derived from: the two shelves (singles/groups/harmonies/marks) + every 20-min buff row.");
+    Console.WriteLine();
+
+    var ids = SkillCatalog.BuffLimitIds;
+    var defs = ids.Select(SkillCatalog.Get).OfType<SkillDef>()
+                  .OrderBy(d => d.Name, StringComparer.Ordinal).ToList();
+
+    // The SAME classifier the admin menu files its drawers by, so a row can never be labelled one
+    // thing here and filed as another there — Harmony Mark is a MARK, by key, despite its name.
+    static string Kind(SkillDef d) => SkillCatalog.DrawerOf(d).ToString().ToLowerInvariant();
+
+    static string Mins(SkillDef d) =>
+        d.DurationTicks <= 0 ? "  (wrapper owns it)"
+                             : $"{d.DurationTicks * GameConstants.TickSeconds / 60f,6:0.#} min";
+
+    Console.WriteLine($"--- COUNTS ({defs.Count}) ---");
+    foreach (var d in defs)
+        Console.WriteLine($"  {d.Name,-34} {d.Id,-30} {Kind(d),-8} {Mins(d)}"
+                        + (d.CountsTowardBuffLimit ? "" : "   ⚠ VETOED by CountsTowardBuffLimit:false"));
+
+    // The other half of the line: timed buffs that do NOT cost a square. This is where he will spot
+    // something he wanted counted — which is the whole reason it is printed beside the list above.
+    var free = SkillCatalog.AllSkills
+        .Where(d => d.Category == SkillCategory.Buff && d.DurationTicks > 0 && !ids.Contains(d.Id))
+        .OrderByDescending(d => d.DurationTicks)
+        .ThenBy(d => d.Name, StringComparer.Ordinal)
+        .ToList();
+
+    Console.WriteLine();
+    Console.WriteLine($"--- FREE ({free.Count}) — timed buffs that cost NO square ---");
+    foreach (var d in free)
+        Console.WriteLine($"  {d.Name,-34} {d.Id,-30} {d.BuffRow,-10} {Mins(d)}");
+
+    Console.WriteLine();
+    Console.WriteLine("⚠ Anything in FREE that runs 20 min or more is there because its row is not");
+    Console.WriteLine("  BuffRow.Buff (the runes) or because it is authored CountsTowardBuffLimit:false.");
+}
+
 static void BuffMenuDump()
 {
     Console.WriteLine("=== THE ADMIN BUFF MENU (BL-180) ===");

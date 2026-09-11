@@ -482,7 +482,13 @@ public static partial class SkillCatalog
     }
 
     /// <summary>One of the three traps. Fifteen rungs, and only the tier moves — the reach (400), the
-    /// wait (30s), the reuse (30s) and the MP ladder are the same in all three of his blocks.</summary>
+    /// wait (30s), the reuse (30s) and the MP ladder are the same in all three of his blocks.
+    ///
+    /// <para>🔑 <b>THE 2-SECOND CAST IS THE ARMING TIME</b> (owner, 2026-09-11: *"traps should have
+    /// arming time now it's instant I guess is probably of csv I've made them 0s .. Add to traps 2s
+    /// cast time"*). It was his own CAST cell reading 0, and he is right that an instant trap is the
+    /// wrong shape: a trap is something you PREPARE, and the two seconds are what stop it being an
+    /// instant-cast AoE root you drop under your own feet mid-fight.</para></summary>
     /// <param name="tiers">The DoT's rank per rung, or null for Binding Trap, whose root has no tier.</param>
     private static SkillDef Trap(string id, string name, SkillEffect rider, DebuffSchool school,
                                  int[]? tiers, int[] mp, string blurb, Func<int, string> rung)
@@ -495,13 +501,14 @@ public static partial class SkillCatalog
         var effect = rider;
 
         return new SkillDef(id, name, BaseClass.Fighter, effect,
-            MpCost: mp[0], CastTicks: 0, CooldownTicks: 300, Range: 0, Power: 0,
+            MpCost: mp[0], CastTicks: 20, CooldownTicks: 300, Range: 0, Power: 0,
             DurationTicks: 300, BuffKey: id, Rank: tiers?[0] ?? 1,
             DebuffSchool: school, Category: SkillCategory.Debuff, PhysicalCast: true,
             SpCost: RogueSp[0], RequiredWeapon: WeaponType.Bow,
             PlacesTrap: true, TrapRadius: 400f, TrapLifeTicks: 300,
             Magnitudes: mags,
-            Description: blurb + " Waits 30s at your feet for something to walk into it.",
+            Description: blurb + " Two seconds to set, then it waits 30s at your feet for "
+                              + "something to walk into it.",
             Levels: BulwarkRungs(i => new SkillLevel(
                 MpCost: mp[i], SpCost: RogueSp[i],
                 Rank: tiers is null ? 0 : tiers[i],

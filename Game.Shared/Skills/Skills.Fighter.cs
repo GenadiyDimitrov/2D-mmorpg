@@ -789,9 +789,18 @@ public static partial class SkillCatalog
         // 30s."* They replace the 20s/30s it shipped with — a 30s cooldown on a full hide made the
         // counter (Signal Flare's 30s no-hide stamp) meaningless, because the stamp expired at the same
         // moment the skill came back. At 2 min the counter now buys a real window.
+        // 🔑 `FixedCooldown` — his 2026-09-11 ruling, *"make vanish cooldown fixed"*. Two minutes is
+        //    the price of thirty seconds of being untouchable and unfindable, and the reuse stack a
+        //    4th-tier rogue now carries (Bow Blessing-style physical reuse, the Sigils, Stab Momentum's
+        //    reset roll, and Overpower Mastery doubling that roll) was aimed squarely at it. A vanish
+        //    on a 40-second real reuse is not an escape, it is a movement mode.
+        // ⚠ `FixedCooldown` skips the reduction entirely — see GameLoopService.ExecuteSkill — so this
+        //   is immune to anything added to that stack later, which is the point of using the flag
+        //   rather than raising the number.
         new(Vanish, "Vanish", BaseClass.Fighter, SkillEffect.None,
             MpCost: 30, CastTicks: 0, CooldownTicks: 1200, Range: 0, Power: 0,
             DurationTicks: 300, Category: SkillCategory.Physical, SpCost: 120_000,   // 🔴 his `dual 3rd.csv` cell (120 x1000), 2026-09-09 — it had been the record default of 1
+            FixedCooldown: true,
             TargetMode: TargetMode.SelfOnly, GrantsHide: true,
             Description: "Vanish completely for 30s — nobody can see or target you, and every monster " +
                          "loses you. Anything but walking ends it."),

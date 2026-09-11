@@ -525,6 +525,19 @@ public record SkillDef(
     // These ADD to whatever BuffCooldown grants; see Entity.CooldownReductionFor.
     float PhysCooldownPct = 0f,
     float MagicCooldownPct = 0f,
+    // ---- CAST TIME, and it is NOT cast speed (`BL-196`, owner 2026-09-11) ------------------------
+    // A FRACTION off the FINISHED cast, after the 333 model has already picked attack speed or cast
+    // speed for this skill: `ticks = base x speedMult x (1 - CastTimePct)`.
+    //
+    // 🔑 WHY IT HAD TO BE ITS OWN CHANNEL. `BuffCastSpeed` is the MAGE's stat — a physical skill is
+    //    paced by ATTACK speed (`SkillMath.PacedByAttackSpeed`), so a cast-speed grant on an ARCHER'S
+    //    party buff did nothing at all for the archer who cast it. His words: *"it should not increase
+    //    cast speed as stat for mages only. It should increase the end cast time.
+    //    (baseCastOrAttackSpeedValue x buffs x debuffs / 333) x castTimeDebffs x spirit_mastery"*.
+    //    So this multiplies the ANSWER, whichever stat produced it, and reaches both halves of a party.
+    // ⚠ Negative lengthens — the cast-time DEBUFF half of his formula, which nothing authors yet.
+    //   Entity.CastTimeMultiplier sums these and clamps the product to [0.2x, 3x].
+    float CastTimePct = 0f,
     // BLOW LANDING RATE granted by a BUFF (`BL-188`, 2026-09-09), as a FRACTION: 0.20 = x1.20 on
     // Entity.BlowRateMult, never +20 percentage points. A FIELD and not a SkillEffect bit for the
     // usual reason - the flag enum has been full since `1L << 62` - so a blow-rate buff still has to
@@ -1203,6 +1216,15 @@ public record SkillDef(
         return v != 0f ? v : MagicCooldownPct;
     }
 
+    /// <summary>Cast-TIME change at a LEVEL (positive = faster). Same <c>!= 0</c> "unset = inherit"
+    /// test as the MP-cost and reuse pairs, and for the same reason: a negative value is meaningful
+    /// here — it is the cast-time DEBUFF half of his formula. See <see cref="CastTimePct"/>.</summary>
+    public float CastTimePctAt(int level)
+    {
+        float v = Lvl(level)?.CastTimePct ?? 0f;
+        return v != 0f ? v : CastTimePct;
+    }
+
     /// <summary>The highest ailment Rank this skill can strip at a LEVEL. A level's 0 means "inherit",
     /// so a cure with one flat ceiling needs no per-level entry (see SkillLevel.DispelMaxLevel).</summary>
     public int DispelMaxLevelAt(int level)
@@ -1430,6 +1452,9 @@ public record SkillLevel(
     // Soul climbs −10/−20% to −20/−30% across its seven rungs, so it needs the per-level slot too.
     float PhysCooldownPct = 0f,
     float MagicCooldownPct = 0f,
+    // CAST-TIME CHANGE at THIS level (0 = inherit). See SkillDef.CastTimePct — a FRACTION off the
+    // FINISHED cast, positive = faster. Not cast SPEED; read the note there before authoring one.
+    float CastTimePct = 0f,
     // BLOW LANDING RATE at THIS level (0 = inherit). See SkillDef.BlowRatePct — every blow-rate buff
     // in the game is a LADDER (the dagger race buffs climb 10/15/20%), so it needs the per-level slot
     // for the same reason the two pairs above it do.

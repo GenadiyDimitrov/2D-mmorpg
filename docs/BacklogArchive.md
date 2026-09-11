@@ -3700,3 +3700,216 @@ the way it did: Venom Burst was consuming a stack pool that was never visible.
 `GameBoot.TargetId` is a real property now rather than an auto-property — that is the whole trick that
 makes every existing assignment site (tap, tab-target, auto-hunt, the clear-on-death rule) notify the
 server without touching any of them.
+
+## `BL-195` ⚠ SUPERSEDED THE SAME DAY BY `BL-198` — the shelf rule, as first built (duration)
+
+🔴 **WHAT FOLLOWS SHIPPED FOR ONE AFTERNOON AND IS NOT HOW THE GAME WORKS.** He read it and replaced
+the MECHANISM (not the intent) within hours: *"it should not work only on timer ... the limit should
+have an id collection ... i gave the duration as filter not as solution"*. See **`BL-198`** below for
+what is actually built. Kept because the intent below is still the intent, and because the reason it
+was wrong is worth having in writing: a duration is not a property of a skill when something else in
+the game is allowed to multiply it.
+
+*"let's make all buffs that are not 20min and not harmonies or marks (the current ones) not enter the
+limit. Now archer if not remove the 2 buffs (arcane insight and shield reinforcement) he have no way
+to use his own .. Or make it party/target buffs to be in the limit and all self not. But I preffer the
+20 min onse. Like bow expertise and bow blessing/egc to count towards limit but bow
+Ferocity/swiftness don't."*
+
+He named both designs and chose between them himself. The 20-minute one is the better of the two:
+"self vs party" is about who *cast* it, and the cap is about what you *carry*. A 30-second stance is
+not a shelf item whoever cast it.
+
+### The rule
+
+A buff occupies one of the 20 slots iff **`CountsTowardBuffLimit`** (authored, default true) **and**
+(it runs **≥ 12000 ticks / 20 minutes**, **or** `SkillCatalog.IsHarmonyOrMark`), **and** it is not a
+toggle, not a debuff, and its row is `Buff` or `Consumable`.
+
+🔑 **The harmony/mark exception reuses the admin menu's own drawer tests, in the same order** — Mark
+by buff KEY, harmony by NAME. Two copies of "what is a harmony" would drift the first time one grew a
+thirteenth member.
+
+🔴 **THE DURATION IS THE LONGEST OF THREE CLOCKS, and each one is load-bearing.** What it landed with
+(the only one that sees a one-child WRAPPER's time — the child authors zero, so reading the def alone
+would exempt the entire NPC shelf); the landing def's own authored time (the only one that survives a
+RELOG, where the buff is re-applied with the seconds it had LEFT); and the source wrapper's, for a
+relogged wrapper-delivered one, where neither of the other two can see twenty minutes.
+
+### Worth remembering
+
+`CountsTowardBuffLimit` did not go away and must not: it is how the three RUNES stay exempt despite
+running an hour, because a ~1/s reconciliation loop owns them. See **`BL-198`**, which is open.
+
+## `BL-196` ✅ CLOSED 2026-09-11 (0.128.0) — CAST SPEED AND CAST TIME ARE TWO DIFFERENT CHANNELS
+
+*"the elf archer spirit mastery should increase the phisical cast speed as well. It should not
+increase cast speed as stat for mages only. It should increase the end cast time.
+(baseCastOrAttackSpeedValue x castOrAttackSpeedBuffs x castOrAttackSpeedDebuffs / 333 or whatever) x
+castTimeDebffs x spirit_mastery and other cast time buffs"*
+
+### The finding
+
+**Spirit Mastery is the ARCHER's own party proc and it did nothing for the archer.** Its 20% rode a
+`BuffCastSpeed` magnitude — the mage's stat. A physical skill is paced by ATTACK speed
+(`SkillMath.PacedByAttackSpeed`), so the buff reached every mage in the party and not the Elf who
+cast it. His CSV cell had always said `p.skill cast time`, and **no cast-speed channel could express
+that at all**: cast speed is chosen *instead of* attack speed, per skill, by the physical/magical
+axis. The distinction he drew is real and the engine did not have it.
+
+### What was built
+
+`SkillDef.CastTimePct` (+ the `SkillLevel` slot and `CastTimePctAt`) → `BuffInstance.CastTimePct` →
+`Entity.CastTimeReduction` / `CastTimeMultiplier`, applied at both cast-length sites (the real cast in
+`BeginCast`, and `AutoCycleTicks`'s estimate, which must agree with it or autohunt misprices MP/s).
+
+```
+castTicks = authored x (333 model: attack speed OR cast speed) x CastTimeMultiplier
+CastTimeMultiplier = clamp(1 - SUM(buff.CastTimePct), 0.2, 3)
+```
+
+Everything inside his bracket is the existing 333 model; this is what is outside it. **It multiplies
+the answer, so it does not care which stat produced it** — which is the whole reason it had to exist.
+
+⚠ A `FixedCast` skill and a MOB skip it, exactly as they skip the speed model.
+⚠ **Negative lengthens** — the `castTimeDebffs` half of his formula. Nothing authors one yet.
+
+## `BL-199` ✅ CLOSED 2026-09-11 (0.128.0) — A VENOM STACK IS THE RECORD OF A BLADE GOING IN
+
+*"Now venomweaver almost cannot stack venom... Stacks should be independent of dot... So each landed
+venom blow adds stacks that do not do nothing just stacks, and try to do a venom debuff that do dmg
+depending on those stacks and when venom burst is used it takes with it the stacks + the dot debuff
+... (also I have the feeling that the burst don't do dmg per stack)"*
+
+Four defects, and any one of them alone would have made the discipline unplayable.
+
+### 1. A stack needed TWO rolls to come up
+
+Stacks were banked inside the DoT's AGI-vs-CON contest, so a Venom Stab had to land its blow **and**
+win the contest to bank anything. They are banked by the **strike** now: `ApplyDotStack` applies only
+the DoT damage effect, and a new `AddDotStacks` is called after both arms of `ExecuteSkill` whenever
+the damage arm connected. The venom debuff still lands on its own contest; losing it costs the damage,
+never the pool.
+
+### 2. The venom ticked for ONE stack no matter what
+
+A stacking DoT is two statuses — the damage buff, pinned at `maxStacks: 1`, and a hidden counter that
+holds the real number. `TickDots` read the pinned one. 🔴 **The fold existed in exactly one place,
+`PushTargetBuffs`, so the bar showed "x7" while the damage was x1** — and the bar was the half telling
+the truth about intent. `DotStacksOf` is now the one helper both read.
+
+### 3. The burst left the venom running
+
+So spending ten stacks changed nothing visible: the same debuff on the bar, and a number that looked
+like an ordinary stab. It removes the counter **and** every DoT whose skill shares that `StackKey`.
+
+### 4. The burst always DID multiply by stacks
+
+He was right to suspect it and wrong about which half was broken — it was the pool being empty. It now
+says what it spent: *"Venom Burst detonated 7 stack(s) — ×7 damage."*
+
+### Worth remembering
+
+🔑 **"Landed" on a `BlowOnCrit` skill has two readings, and the looser one was taken** — the strike
+connecting, so a blow that fell through to a normal attack (`BL-193`) still banks if that swing hit.
+The tighter reading puts the pool back behind a rate roll, which is half of what was broken. **That
+choice is his to confirm: `BL-197`, open.**
+
+## `BL-197` ✅ CLOSED 2026-09-11 (0.128.0) — ONLY A SUCCESSFUL STAB BANKS A VENOM STACK
+
+Filed the same day it was answered. `BL-199` had rebuilt venom stacking and left one reading open:
+*"each landed venom blow adds stacks"* has two meanings on a `BlowOnCrit` skill, and I took the looser
+one (the strike connecting, so a blow that fell through to a normal attack still banked).
+
+**His ruling:** *"only the succesfull stab .. not the failed/basick attack one .. if i chose to use
+perfect_strike i land more ophen i stack faster but for less dmg ... if i use brutal_strike i land
+less ofthen i stack slower but do more dmg."*
+
+### Why his reading is the better design, and mine was not
+
+🔑 **THE BLOW RATE IS THE KNOB HE BUILT THE CLASS AROUND.** `BL-188` made blow landing its own stat,
+and the @80 pair — Perfect Strike (rate ×1.40) against Brutal Strike (+30% crit damage) — is a choice
+between *more, smaller* and *fewer, bigger*. Under my reading the pool filled at the same speed either
+way, so Perfect Strike bought nothing a Venomweaver cared about and the choice was only half real. Tie
+the pool to the gate and the two buffs become two genuinely different rotations.
+
+⚠ **This is not what made the class unplayable and it must not be confused with it.** That was the DoT's
+SEPARATE AGI-vs-CON contest, which the pool no longer waits on at all (`BL-199`). One roll gates a
+stack now, and it is the one the player has a buff for. **Two rolls for one outcome is the bug; one
+roll the player can influence is the design.**
+
+## `BL-198` ✅ CLOSED 2026-09-11 (0.128.0) — THE BUFF LIMIT IS A COLLECTION, NOT A TIMER
+
+Filed as "the three runes are exempt, confirm or flip" and answered much more usefully than that:
+
+*"it should not work only on timer ... the limit should have an id collection ... and if that skill is
+inside that collection it goes to the buff bar and counts ... i gave the duration as filter not as
+solution ... if one buff a 10 min buff and it doubles it probanbly break en enter the count .. but it
+shouldns ... for now that collection must be the: single buffs, grouped buffs, harmonies, marks,
+archers 20 min buffs, any other self 20 min buff we have (cant remember them all). U can ask me for
+some that i didnt meantion."*
+
+### 🔴 The counterexample is unanswerable, and it generalises
+
+`BL-190`'s `DoubleDurationRate` doubles a landed duration **on a roll**. So under a duration test, a
+10-minute buff that happened to roll a double would cross twenty minutes and start costing a square —
+**the same buff on the same character, decided by a die.** The rule worth keeping out of this:
+
+> **Never make a rule read a number something else in the game is allowed to multiply.**
+
+The duration was his *description* of the set he had in mind, and I built the description instead of
+the set. That is the whole mistake, and it is one to watch for: when someone characterises a group by
+a property, check whether the property is stable before making it the definition.
+
+### What is built
+
+`SkillCatalog.BuffLimitIds`, **derived and not typed out** (a typed list goes stale and whole tiers
+vanish from it), from two sources that between them are exactly his enumeration:
+
+1. **the two shelves unioned** — the same universe the admin Buffs menu's four drawers come from, so
+   singles, groups, harmonies and Marks are in **by identity, at any duration**;
+2. **every other `BuffRow.Buff` skill whose AUTHORED `DurationTicks` ≥ 20 min** — the archer's Bow
+   Expertise / Blessing / Spirit, and anything authored that long later, with no edit anywhere.
+
+⚠ **Child ids are in the set too.** A single blessing lands through a one-child wrapper and the buff on
+the bar carries the CHILD's id; a set of wrapper ids alone would match nothing at the only moment it is
+asked.
+
+⚠ **`BuffRow.Buff` in rule 2 closes the original question** — the three runes run an hour but draw in
+the consumable row, so they are out without needing a special case. The mechanical reason still holds:
+a ~1/s reconciliation loop owns them, so evicting one frees a square for a fraction of a second.
+Potions and scrolls are `Consumable` too, but their CHILDREN are in via rule 1 — a potion of Might and
+a cleric's Might are the same buff from different bottles, and always have been.
+
+### His last sentence is answered with a tool, not a question
+
+*"U can ask me for some that i didnt meantion."* — `dotnet run --project tools/BalanceMatrix --
+--bufflimit` prints **both** halves: the 221 ids that cost a square and the 149 timed buffs that do
+not. Reading a derived list beats remembering the buffs, and the FREE half is where he will spot
+anything he wanted counted. The two sitting closest to the line today are **Shield Mastery (10 min)**
+and **Bow Focus (5 min)**.
+
+## `dual 4th.csv` ✅ FINISHED 2026-09-11 (0.128.0) — and the file earned its `Check.Specs` line
+
+*"as general fix the duals 4th.csv in wording etc .. I added 3 new ulsitmate skills, 3 new passiives
+for identity for each race and make vanish cooldown fixed. With that duals 4th is finihed (untill dmg
+is rly tested)."*
+
+Six new families built as authored — one defensive axis per race, carried at two strengths (a
+permanent 5/7/10% passive at 80/85/90, and the same defence turned up to 25-30% for ten seconds at
+83). Human vs magic, Elf vs physical skills, Demon vs people. Vanish became `FixedCooldown`.
+
+### Worth remembering
+
+🔴 **`atk -15%; def -15%` SURVIVED A WHOLE CHRONICLE ON 30 ROWS.** It was the per-skill venom rider,
+dead since `DotTiers` made a DoT's side effect a property of the (kind, tier) table — and BOTH halves
+were wrong by then, in opposite directions: the attack cut is −10% (P.Atk *and* M.Atk), and there is
+no defence cut at all (*"for now no dot will decrease def"*). Nothing caught it because the file had
+no `Check.Specs` line, which is precisely the argument for giving a DERIVED file one: the checker's
+job is to stop two halves of the same fact drifting, and it does not care which half a human wrote.
+
+⚠ **A `DisplayName` override is for when the flavour genuinely differs.** `double_mastery` got one
+("Momentum Mastery") on the rogue, and he corrected it: the toggle does the same thing for the rogue
+that it does for the warrior, so it keeps the def's own name, **Overpower Mastery**. `Stab Momentum`
+keeps its override because there the base mechanic really is different from the Magus's Arcane
+Momentum wearing the same id. **Rename the flavour, never the mechanic.**

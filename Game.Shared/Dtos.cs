@@ -160,6 +160,23 @@ public record TotemDto(Guid Id, float X, float Y, float Radius, bool Heals, bool
 /// world with no totems in it is silent.</summary>
 public record TotemList(TotemDto[] Totems);
 
+/// <summary>Server -&gt; Client: one armed TRAP of the viewer's OWN, as the ground needs to draw it.
+///
+/// <para>🔑 A trap had the same problem a totem had: it is a <c>TrapInstance</c> in a list on the
+/// world, never an entity, so nothing was drawn and nothing was sent. Owner, 2026-09-11: *"for every
+/// trap the owner should see it where he placed it so he can lure the enemy to it"* — luring a pack
+/// onto a spot you cannot see is not a tactic, it is a guess.</para>
+///
+/// <para>⚠ THE OWNER ONLY. Unlike <see cref="TotemDto"/>, which everyone standing in it benefits
+/// from, a trap's whole value is that the thing walking into it does not know. <paramref name="Radius"/>
+/// is the SERVER radius, scaled client-side like every other distance; <paramref name="SecondsLeft"/>
+/// is how long before it expires unsprung, so the bar can fade it out as the window closes.</para></summary>
+public record TrapDto(Guid Id, float X, float Y, float Radius, int SecondsLeft);
+
+/// <summary>Server -&gt; Client: every trap this viewer OWNS, whole — sent on the same "only when the
+/// set changes" rule as <see cref="TotemList"/>, so a character with no traps out costs nothing.</summary>
+public record TrapList(TrapDto[] Traps);
+
 /// <summary>`BL-109` — one WHISP, for drawing. A whisp is not an entity (see <c>WhispInstance</c>), so
 /// it never appears in the world delta and this is the only way a client learns one exists.
 ///

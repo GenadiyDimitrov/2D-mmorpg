@@ -1338,3 +1338,43 @@ have still never been played. Check the flag behaviour in the same sitting.
   the level number; the real value of that rung at 52 is `72`. With 72 the row's shot multiplier lands
   at ×2.37, in line with the other four (×2.23–×2.52); with 52 it reads ×3.28 and is the only outlier
   in the file. Almost certainly a transcription slip, but it is your measurement, so your call.
+
+## §99 — 0.128.0: six asks, your two rulings on them, and the close of `dual 4th` (2026-09-11, not played)
+
+🔴 **NEW APK — protocol 37.** Traps are drawn client-side, the archer's reuse ladder and Spirit
+Mastery's text come off the compiled catalogue, and the trap cast time is in both archer CSVs.
+
+- 🔴 **BINDING TRAP AND THE WALKING MOB — RE-TEST.** *"a mob start to walk with binding trap
+  debuff."* I could not reproduce this as a ROOT failure by reading the code: `Entity.EffectiveSpeed`
+  returns 0 for `IsRooted` **before** every other branch, and `MoveTowardTarget` is the only thing in
+  the game that moves a body. What I *did* find is that **a trap only ever delivered to ONE victim**
+  (the nearest), while its own text says *"holds the enemis in range"* — so a pack walking over it had
+  one held and the rest strolled on, which is exactly what that looks like from the floor. Fixed
+  (it catches the whole circle now) and it now says **"resisted"** when the contest is lost, which it
+  never did. **If a single mob, alone, still walks while visibly holding the debuff, that is a
+  different bug and worth its own report** — say which mob and whether the debuff icon was on it.
+- ✅ **VENOM — ANSWERED (`BL-197`): only a successful stab banks.** A failed blow resolves as a normal
+  attack and banks nothing, so **Perfect Strike really does stack faster for less damage and Brutal
+  Strike slower for more** — the @80 choice is a rotation choice now, not just a damage one. Built.
+- ⚠ **VENOM — is x10 still the right burst now that the pool actually fills?** It never did before:
+  the stack needed the blow AND the DoT contest, and the venom ticked for one stack regardless. A
+  Venomweaver at ten stacks is a genuinely different character from the one you played. Watch the
+  burst number before retuning `VenomBurstPerStack`.
+- ⚠ **"bleeding arrow and other class analogies"** — I read that as the three RACE ultimates at 85
+  (Bleeding / Dazzling / Healing Arrow), all three now 15s. Heavy Arrow stayed 10s, Arrow Barrage is
+  30s. Say if you meant something wider.
+- ✅ **THE BUFF LIMIT — ANSWERED (`BL-198`): it is an ID COLLECTION, not a timer.** Rebuilt that way,
+  and the runes fall out of it on their own (they draw in the consumable row). 📐 **`dotnet run
+  --project tools/BalanceMatrix -- --bufflimit`** prints both halves — 221 buffs that cost a square,
+  149 that do not. **The FREE half is the one to read**: it is where you strike rows out. The two
+  sitting closest to the line are **Shield Mastery (10 min)** and **Bow Focus (5 min)** — say if
+  either should count, and anything else in that list you expected to see on the other side.
+- ⚠ **`dual 4th.csv` IS WALKED BY `--check` NOW** and reports clean, but most of it is still DERIVED
+  rather than authored — the four stab ladders and both masteries were written FROM the code so the
+  class would be measurable above 76. The DAMAGE is the half you have not signed off (*"untill dmg is
+  rly tested"*). Three race passives, three race ultimates and the fixed Vanish are yours verbatim.
+- ⚠ **Reuse buffs now reach more skills than they did.** `CooldownReductionFor` asked `Category`,
+  which only ever caught physical DAMAGE; it asks `SkillMath.IsPhysical` now. So Bow Blessing's −20%
+  physical reuse really does cover the traps and the stances, and a magic-reuse buff no longer
+  shortens a fighter's stance. Worth a glance at whether any physical reuse now feels too short —
+  it is a widening, not a number change.

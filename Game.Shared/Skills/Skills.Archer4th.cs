@@ -201,8 +201,8 @@ public static partial class SkillCatalog
         list.Add(PartyMastery(BowDamageMastery, "Damage Mastery", BowDamageMasteryBuff, mastSp, mastGold,
             "Passive. Your aim sharpens the whole party: now and then everyone hits harder."));
         list.Add(PartyMastery(BowSpiritMastery, "Spirit Mastery", BowSpiritMasteryBuff, mastSp, mastGold,
-            "Passive. Your economy steadies the whole party: now and then everyone casts cheaper, "
-          + "faster and crueller."));
+            "Passive. Your economy steadies the whole party: now and then everyone acts cheaper, "
+          + "faster and crueller — bow and spell alike."));
 
         // The three payloads. ⚠ `Damage Mastery` is the FINAL-damage channel (`PhysDamageMult` /
         // `MagicDamageMult`), not a P.Atk buff — his words are *"increase p/m final damage"*, and that
@@ -233,13 +233,23 @@ public static partial class SkillCatalog
             DurationTicks: 300, BuffKey: "bow_management_mastery", Rank: 1, CountsTowardBuffLimit: false,
             Category: SkillCategory.Buff, AreaRadius: 900f,
             PhysMpCostPct: 0.20f, MagicMpCostPct: 0.20f,
-            // ⚠ "p.skill CAST TIME by 20%" is a cast-speed grant, not a reuse one — his word is `cast
-            //   time`. It rides `BuffCastSpeed`'s magnitude like every other cast-speed buff.
+            // 🔴 "p.skill CAST TIME by 20%" IS NOT A CAST-SPEED GRANT, and shipping it as one made the
+            //    ARCHER'S OWN party buff worth nothing to the archer. Cast speed is the MAGE's stat:
+            //    a physical skill is paced by ATTACK speed (`SkillMath.PacedByAttackSpeed`), so
+            //    `BuffCastSpeed` reached every mage in the party and not the Elf who cast it. His own
+            //    cell says `p.skill cast time` — PHYSICAL skills — which no cast-speed channel could
+            //    ever have expressed. Owner, 2026-09-11: *"It should not increase cast speed as stat
+            //    for mages only. It should increase the end cast time."*
+            // 🔑 `CastTimePct` multiplies the FINISHED cast, after the 333 model has picked whichever
+            //    stat paces the skill — so the same 20% now reaches both halves of the party, which is
+            //    what a party buff is for. See SkillDef.CastTimePct.
+            CastTimePct: 0.20f,
             Magnitudes: new EffectMagnitude[]
             {
-                new(SkillEffect.BuffCritDamage, 0.10f), new(SkillEffect.BuffCastSpeed, 0.20f),
+                new(SkillEffect.BuffCritDamage, 0.10f),
             },
-            Description: "−20% MP on every skill, +20% cast speed and +10% critical damage for 30s."));
+            Description: "−20% MP on every skill, −20% cast time on every skill (physical ones "
+                       + "included) and +10% critical damage for 30s."));
 
         // ═══ HEAVY ARROW (84) — one shot, and the biggest number in the archer's book ═════════════
         list.Add(Ultimate(ArcherHeavyArrow, "Heavy Arrow", SkillEffect.PhysicalDamage,
@@ -258,7 +268,7 @@ public static partial class SkillCatalog
             mags: Array.Empty<EffectMagnitude>(),
             "An arrow that opens a wound nothing in this game can close.",
             "Strikes for power 15,000 and leaves a tier-11 bleed for 30s.",
-            rank: 11, school: DebuffSchool.Physical));
+            rank: 11, school: DebuffSchool.Physical, cooldownTicks: 150));
 
         list.Add(Ultimate(ArcherDazzlingArrow, "Dazzling Arrow",
             SkillEffect.PhysicalDamage | SkillEffect.Stun | SkillEffect.Cancel,
@@ -267,7 +277,7 @@ public static partial class SkillCatalog
             "A burst of light and noise: the target is out on its feet, and whatever was protecting "
           + "it is gone.",
             "Strikes for power 15,000, stuns for 10s and strips up to 3 buffs.",
-            school: DebuffSchool.Physical, dispelCount: 3));
+            school: DebuffSchool.Physical, dispelCount: 3, cooldownTicks: 150));
 
         list.Add(Ultimate(ArcherHealingArrow, "Healing Arrow",
             SkillEffect.PhysicalDamage,
@@ -275,7 +285,7 @@ public static partial class SkillCatalog
             mags: Array.Empty<EffectMagnitude>(),
             "What it takes out of them, it puts back into you.",
             "Strikes for power 15,000 and heals you for 40% of the damage dealt.",
-            lifesteal: 0.40f));
+            lifesteal: 0.40f, cooldownTicks: 150));
 
         // ═══ ARROW BARRAGE (85) — THE FIRST CHANNEL IN THE GAME ══════════════════════════════════
         //
@@ -302,7 +312,7 @@ public static partial class SkillCatalog
             mags: Array.Empty<EffectMagnitude>(),
             "Ten arrows in two seconds, and none of them politely.",
             "Looses 10 arrows over 2s, each for power 2,500 with a 150 splash.",
-            channelSkill: ArcherBarrageArrow, channelShots: 10, channelIntervalTicks: 2));
+            channelSkill: ArcherBarrageArrow, channelShots: 10, channelIntervalTicks: 2, cooldownTicks: 300));
 
         // ONE ARROW. Never learned and never on a bar — the wrapper is what the player owns.
         // ⚠ MP is ZERO here: the wrapper charges his 208 once, for the whole volley. Ten arrows each
@@ -336,16 +346,23 @@ public static partial class SkillCatalog
             Levels: new[] { new SkillLevel(SpCost: sp, GoldCost: gold, Description: blurb) });
 
     /// <summary>One of the five 84/85 ultimates. All share his row shape — 900 range, a 3-second draw,
-    /// a 10-second reuse, 100kk gold and SP BOTTLES instead of SP — and differ only in their rider.</summary>
+    /// 100kk gold and SP BOTTLES instead of SP — and differ only in their rider and their reuse.
+    ///
+    /// <para>🔑 THE REUSE IS NO LONGER ONE NUMBER FOR ALL FIVE (owner, 2026-09-11). His file gave every
+    /// one of them 10s, and against the archer's own reuse stack — Bow Blessing's −20% physical reuse,
+    /// the 4th-tier Sigils, Swift Mastery — that came out at *"25k dmg skill is used every 3~4s"*. So
+    /// the ladder is authored per skill instead: <b>Heavy Arrow 10s</b> (the plain one, unchanged),
+    /// <b>the three race ultimates 15s</b>, <b>Arrow Barrage 30s</b>. The cooldown-reduction stack is
+    /// deliberately left alone — the lever is the base number, not the buffs he already bought.</para></summary>
     private static SkillDef Ultimate(string id, string name, SkillEffect effect,
                                      int level, int bottles, int power, int mp, int durationTicks,
                                      EffectMagnitude[] mags, string blurb, string rungText,
                                      int rank = 0, DebuffSchool school = DebuffSchool.None,
                                      int dispelCount = 0, float lifesteal = 0f,
                                      string? channelSkill = null, int channelShots = 0,
-                                     int channelIntervalTicks = 0)
+                                     int channelIntervalTicks = 0, int cooldownTicks = 100)
         => new(id, name, BaseClass.Fighter, effect,
-            MpCost: mp, CastTicks: 30, CooldownTicks: 100, Range: 900, Power: power,
+            MpCost: mp, CastTicks: 30, CooldownTicks: cooldownTicks, Range: 900, Power: power,
             DurationTicks: durationTicks, BuffKey: id, Rank: rank,
             DebuffSchool: school, DispelCount: dispelCount, Lifesteal: lifesteal,
             Category: SkillCategory.Physical,

@@ -136,9 +136,16 @@ public static partial class ClassSkillTables
                      (Race.Elf,   Discipline.Phantom),
                      (Race.Demon, Discipline.Venomweaver),
                  })
+            // ⚠ ONLY `reuse_reset_momentum` IS RENAMED HERE. The toggle keeps its own name —
+            //   **Overpower Mastery** — on his 2026-09-11 correction: *"dagger double_mastery is with
+            //   name Overpower Mastery not Momentum Mastery"*. The override was mine and it was the
+            //   wrong instinct: a DisplayName is for when the flavour genuinely differs per class, and
+            //   here it does not — the toggle does the same thing for the rogue that it does for the
+            //   warrior. `Stab Momentum` stays because the rogue's base IS a different mechanic from
+            //   the Magus's Arcane Momentum wearing the same id.
             ClassSkills.RegisterFourth(race, d,
-                new ClassSkill(ReuseResetMomentum, 76, "Stab Momentum",     SkillLevel: 1),
-                new ClassSkill(DoubleMastery,      81, "Momentum Mastery", SkillLevel: 1));
+                new ClassSkill(ReuseResetMomentum, 76, "Stab Momentum", SkillLevel: 1),
+                new ClassSkill(DoubleMastery,      81, SkillLevel: 1));
     }
 
     // ═════════════════════════════════════════════════════════════════════════════════════════════
@@ -546,13 +553,25 @@ public static partial class ClassSkillTables
         shared.AddRange(Ladder(RogueArmorMastery, all, 21));
         shared.AddRange(Ladder(DualWeaponMastery, all, 16));
 
+        // ---- HIS 2026-09-11 BLOCK — the race IDENTITY passives and the race ULTIMATES, which is what
+        //      closed the file (*"With that duals 4th is finihed"*). ONE axis per race, carried at two
+        //      strengths: a permanent 5/7/10% passive at 80/85/90, and the same defence turned up to
+        //      25-30% for ten seconds at 83. Human vs magic, Elf vs physical skills, Demon vs people.
+        //      ⚠ Three rungs, so `SkillLevel` is 1/2/3 — not the fifteen-rung ladders above.
+        static IEnumerable<ClassSkill> Identity(string id) =>
+            new[] { 80, 85, 90 }.Select((lv, i) => new ClassSkill(id, lv, SkillLevel: i + 1));
+
         var human = new List<ClassSkill>(shared);
         human.AddRange(Ladder(KillingStab, all, 16));
         human.AddRange(Ladder(HeavyStab,   all, 16));
+        human.AddRange(Identity(DualAntiMagic));
+        human.Add(new ClassSkill(DualMagicArmor, 83));
 
         var elf = new List<ClassSkill>(shared);
         elf.AddRange(Ladder(KillingStab, all, 16));
         elf.AddRange(Ladder(SwiftStab,   all, 16));
+        elf.AddRange(Identity(DualAntiPhysical));
+        elf.Add(new ClassSkill(DualDodge, 83));
 
         // ⚠ THE DEMON STILL GETS NO KILLING STAB — his `Human;Elf` cell on it at the 3rd tier is a
         //   race ruling, not a tier one, and Venom Stab + Venom Burst remain the whole of the
@@ -560,6 +579,8 @@ public static partial class ClassSkillTables
         var demon = new List<ClassSkill>(shared);
         demon.AddRange(Ladder(VenomStab,  all, 16));
         demon.AddRange(Ladder(VenomBurst, all, 16));
+        demon.AddRange(Identity(DualDuelExpertise));
+        demon.Add(new ClassSkill(DualDemonContract, 83));
 
         ClassSkills.RegisterFourth(Race.Human, Discipline.Nullblade,   human.ToArray());
         ClassSkills.RegisterFourth(Race.Elf,   Discipline.Phantom,     elf.ToArray());

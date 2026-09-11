@@ -26,6 +26,10 @@ namespace Game.Client
         /// <summary>Every totem this viewer can see, whole — sent only when the set changes. A totem
         /// is not an entity, so it can never arrive in a snapshot; this is the only channel it has.</summary>
         public event Action<TotemList> TotemsReceived;
+
+        /// <summary>Every trap this viewer OWNS, whole — sent only when the set changes. Owner-only on
+        /// purpose: a trap is ground the enemy must not know about (see TrapDto).</summary>
+        public event Action<TrapList> TrapsReceived;
         public event Action<WhispList> WhispsReceived;   // `BL-109` — whisps are not entities, so they ride their own push
 
         /// <summary>An area skill just landed nearby — flash its footprint once.</summary>
@@ -146,6 +150,7 @@ namespace Game.Client
             _connection.On<ChatMessage>("Chat", m => ChatReceived?.Invoke(m));
             _connection.On<CombatEvent>("Combat", c => CombatReceived?.Invoke(c));
             _connection.On<TotemList>("Totems", t => TotemsReceived?.Invoke(t));
+            _connection.On<TrapList>("Traps", t => TrapsReceived?.Invoke(t));
             _connection.On<WhispList>("Whisps", w => WhispsReceived?.Invoke(w));
             _connection.On<AreaEffectEvent>("AreaEffect", a => AreaEffectReceived?.Invoke(a));
             _connection.On<ProgressUpdate>("Progress", p => ProgressReceived?.Invoke(p));

@@ -70,10 +70,10 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 90,Twin Arrows,archer_twin_arrows,Physical/Active,bow,,900,0,target/single,3,5,0,"Shot two arrows each dealing +8000  power;",235,0,100kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Strong Arrows----------------------------
 84,Heavy Arrow,archer_heavy_arrow,Physical/Active,bow,,900,0,target/single,3,10,0,"Shoot arrow dealing +17000 power;",195,0,100kk,2
-85,Arrow barrage,archer_arrow_barrage,Physical/Active,bow,,900,150,target/single,3,10,2,"Shoot 10 arrows (over 2s) each dealing +2500 power;",208,0,100kk,5,,,Like a channeling skill; Stat to cast and for the next 2 second it continue to cast 1arrow/200ms; can be cancaled like normal skill
-85,Bleeding Arrow,archer_bleeding_arrow,Physical/Active,bow,,900,0,target/single,3,10,30,"Shoot arrow dealing +15000 power and inflicts bleed for 30s tire 11 and 30% slow;",208,0,100kk,5,,Demon
-85,Dazzling Arrow,archer_dazzling_arrow,Physical/Active,bow,,900,0,target/single,3,10,10,"Shoot arrow dealing +15000 power and inflicts stun for 10s and chance to cancel 3 buffs;",208,0,100kk,5,,Human
-85,Healing Arrow,archer_healing_arrow,Physical/Active,bow,,900,0,target/single,3,10,0,"Shoot arrow dealing +15000 power and heals for 40% of the dmg;",208,0,100kk,5,,Elf
+85,Arrow barrage,archer_arrow_barrage,Physical/Active,bow,,900,150,target/single,3,30,2,"Shoot 10 arrows (over 2s) each dealing +2500 power;",208,0,100kk,5,,,Like a channeling skill; Stat to cast and for the next 2 second it continue to cast 1arrow/200ms; can be cancaled like normal skill
+85,Bleeding Arrow,archer_bleeding_arrow,Physical/Active,bow,,900,0,target/single,3,15,30,"Shoot arrow dealing +15000 power and inflicts bleed for 30s tire 11 and 30% slow;",208,0,100kk,5,,Demon
+85,Dazzling Arrow,archer_dazzling_arrow,Physical/Active,bow,,900,0,target/single,3,15,10,"Shoot arrow dealing +15000 power and inflicts stun for 10s and chance to cancel 3 buffs;",208,0,100kk,5,,Human
+85,Healing Arrow,archer_healing_arrow,Physical/Active,bow,,900,0,target/single,3,15,0,"Shoot arrow dealing +15000 power and heals for 40% of the dmg;",208,0,100kk,5,,Elf
 ,,,,,,,,,,,,,,,,,,,----------------------------Archery Mastery----------------------------
 76,Swift Mastery,bow_swift_mastery,passive,bow,,0,900,party/aoe,0,30,30,"Bow: with 3% chance to increase attack/cast speed with 10% for self and party;",0,6.5kk,1kk,,,Demon
 76,Damage Mastery,bow_damage_mastery,passive,bow,,0,900,party/aoe,0,30,30,"Bow: with 3% chance to increase p/m final damage with 10% for self and party;",0,6.5kk,1kk,,,Human
@@ -95,53 +95,53 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 89,Explosive Arrow,archer_explosive_arrows,Physical/Active,bow,,600,200,target/aoe,3,1,0,"Shot explosive arrow dealing +3900 power;",230,0,100kk
 90,Explosive Arrow,archer_explosive_arrows,Physical/Active,bow,,600,200,target/aoe,3,1,0,"Shot explosive arrow dealing +4000 power;",235,0,100kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Binding Trap----------------------------
-76,Binding Trap,archer_binding_trap,Physical/Debuff,bow,,0,400,target/aoe,0,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",158,6.5kk,1kk,,,Elf
-77,Binding Trap,archer_binding_trap,Physical/Debuff,bow,,0,400,target/aoe,0,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",164,11kk,1kk,,,Elf
-78,Binding Trap,archer_binding_trap,Physical/Debuff,bow,,0,400,target/aoe,0,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",169,16kk,1kk,,,Elf
-79,Binding Trap,archer_binding_trap,Physical/Debuff,bow,,0,400,target/aoe,0,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",173,80kk,1kk,,,Elf
-80,Binding Trap,archer_binding_trap,Physical/Debuff,bow,,0,400,target/aoe,0,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",180,0,5kk,,,Elf
-81,Binding Trap,archer_binding_trap,Physical/Debuff,bow,,0,400,target/aoe,0,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",186,0,7.5kk,,,Elf
-82,Binding Trap,archer_binding_trap,Physical/Debuff,bow,,0,400,target/aoe,0,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",191,0,10kk,,,Elf
-83,Binding Trap,archer_binding_trap,Physical/Debuff,bow,,0,400,target/aoe,0,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",195,0,15kk,,,Elf
-84,Binding Trap,archer_binding_trap,Physical/Debuff,bow,,0,400,target/aoe,0,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",202,0,30kk,,,Elf
-85,Binding Trap,archer_binding_trap,Physical/Debuff,bow,,0,400,target/aoe,0,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",208,0,50kk,,,Elf
-86,Binding Trap,archer_binding_trap,Physical/Debuff,bow,,0,400,target/aoe,0,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",213,0,75kk,,,Elf
-87,Binding Trap,archer_binding_trap,Physical/Debuff,bow,,0,400,target/aoe,0,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",217,0,100kk,,,Elf
-88,Binding Trap,archer_binding_trap,Physical/Debuff,bow,,0,400,target/aoe,0,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",224,0,100kk,,,Elf
-89,Binding Trap,archer_binding_trap,Physical/Debuff,bow,,0,400,target/aoe,0,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",230,0,100kk,,,Elf
-90,Binding Trap,archer_binding_trap,Physical/Debuff,bow,,0,400,target/aoe,0,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",235,0,100kk,,,Elf
+76,Binding Trap,archer_binding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",158,6.5kk,1kk,,,Elf
+77,Binding Trap,archer_binding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",164,11kk,1kk,,,Elf
+78,Binding Trap,archer_binding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",169,16kk,1kk,,,Elf
+79,Binding Trap,archer_binding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",173,80kk,1kk,,,Elf
+80,Binding Trap,archer_binding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",180,0,5kk,,,Elf
+81,Binding Trap,archer_binding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",186,0,7.5kk,,,Elf
+82,Binding Trap,archer_binding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",191,0,10kk,,,Elf
+83,Binding Trap,archer_binding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",195,0,15kk,,,Elf
+84,Binding Trap,archer_binding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",202,0,30kk,,,Elf
+85,Binding Trap,archer_binding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",208,0,50kk,,,Elf
+86,Binding Trap,archer_binding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",213,0,75kk,,,Elf
+87,Binding Trap,archer_binding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",217,0,100kk,,,Elf
+88,Binding Trap,archer_binding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",224,0,100kk,,,Elf
+89,Binding Trap,archer_binding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",230,0,100kk,,,Elf
+90,Binding Trap,archer_binding_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha holds the enemis in range when triggered;",235,0,100kk,,,Elf
 ,,,,,,,,,,,,,,,,,,,----------------------------Poison Trap----------------------------
-76,Poison Trap,archer_poison_trap,Physical/Debuff,bow,,0,400,target/aoe,0,30,30,"For 30 seconds places a trap tha inflicts posion tire 10 the enemis in range when triggered;",158,6.5kk,1kk,,,Human
-77,Poison Trap,archer_poison_trap,Physical/Debuff,bow,,0,400,target/aoe,0,30,30,"For 30 seconds places a trap tha inflicts posion tire 10 the enemis in range when triggered;",164,11kk,1kk,,,Human
-78,Poison Trap,archer_poison_trap,Physical/Debuff,bow,,0,400,target/aoe,0,30,30,"For 30 seconds places a trap tha inflicts posion tire 10 the enemis in range when triggered;",169,16kk,1kk,,,Human
-79,Poison Trap,archer_poison_trap,Physical/Debuff,bow,,0,400,target/aoe,0,30,30,"For 30 seconds places a trap tha inflicts posion tire 10 the enemis in range when triggered;",173,80kk,1kk,,,Human
-80,Poison Trap,archer_poison_trap,Physical/Debuff,bow,,0,400,target/aoe,0,30,30,"For 30 seconds places a trap tha inflicts posion tire 10 the enemis in range when triggered;",180,0,5kk,,,Human
-81,Poison Trap,archer_poison_trap,Physical/Debuff,bow,,0,400,target/aoe,0,30,30,"For 30 seconds places a trap tha inflicts posion tire 10 the enemis in range when triggered;",186,0,7.5kk,,,Human
-82,Poison Trap,archer_poison_trap,Physical/Debuff,bow,,0,400,target/aoe,0,30,30,"For 30 seconds places a trap tha inflicts posion tire 10 the enemis in range when triggered;",191,0,10kk,,,Human
-83,Poison Trap,archer_poison_trap,Physical/Debuff,bow,,0,400,target/aoe,0,30,30,"For 30 seconds places a trap tha inflicts posion tire 10 the enemis in range when triggered;",195,0,15kk,,,Human
-84,Poison Trap,archer_poison_trap,Physical/Debuff,bow,,0,400,target/aoe,0,30,30,"For 30 seconds places a trap tha inflicts posion tire 10 the enemis in range when triggered;",202,0,30kk,,,Human
-85,Poison Trap,archer_poison_trap,Physical/Debuff,bow,,0,400,target/aoe,0,30,30,"For 30 seconds places a trap tha inflicts posion tire 10 the enemis in range when triggered;",208,0,50kk,,,Human
-86,Poison Trap,archer_poison_trap,Physical/Debuff,bow,,0,400,target/aoe,0,30,30,"For 30 seconds places a trap tha inflicts posion tire 10 the enemis in range when triggered;",213,0,75kk,,,Human
-87,Poison Trap,archer_poison_trap,Physical/Debuff,bow,,0,400,target/aoe,0,30,30,"For 30 seconds places a trap tha inflicts posion tire 10 the enemis in range when triggered;",217,0,100kk,,,Human
-88,Poison Trap,archer_poison_trap,Physical/Debuff,bow,,0,400,target/aoe,0,30,30,"For 30 seconds places a trap tha inflicts posion tire 10 the enemis in range when triggered;",224,0,100kk,,,Human
-89,Poison Trap,archer_poison_trap,Physical/Debuff,bow,,0,400,target/aoe,0,30,30,"For 30 seconds places a trap tha inflicts posion tire 10 the enemis in range when triggered;",230,0,100kk,,,Human
-90,Poison Trap,archer_poison_trap,Physical/Debuff,bow,,0,400,target/aoe,0,30,30,"For 30 seconds places a trap tha inflicts posion tire 10 the enemis in range when triggered;",235,0,100kk,,,Human
+76,Poison Trap,archer_poison_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts posion tire 10 the enemis in range when triggered;",158,6.5kk,1kk,,,Human
+77,Poison Trap,archer_poison_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts posion tire 10 the enemis in range when triggered;",164,11kk,1kk,,,Human
+78,Poison Trap,archer_poison_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts posion tire 10 the enemis in range when triggered;",169,16kk,1kk,,,Human
+79,Poison Trap,archer_poison_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts posion tire 10 the enemis in range when triggered;",173,80kk,1kk,,,Human
+80,Poison Trap,archer_poison_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts posion tire 10 the enemis in range when triggered;",180,0,5kk,,,Human
+81,Poison Trap,archer_poison_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts posion tire 10 the enemis in range when triggered;",186,0,7.5kk,,,Human
+82,Poison Trap,archer_poison_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts posion tire 10 the enemis in range when triggered;",191,0,10kk,,,Human
+83,Poison Trap,archer_poison_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts posion tire 10 the enemis in range when triggered;",195,0,15kk,,,Human
+84,Poison Trap,archer_poison_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts posion tire 10 the enemis in range when triggered;",202,0,30kk,,,Human
+85,Poison Trap,archer_poison_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts posion tire 10 the enemis in range when triggered;",208,0,50kk,,,Human
+86,Poison Trap,archer_poison_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts posion tire 10 the enemis in range when triggered;",213,0,75kk,,,Human
+87,Poison Trap,archer_poison_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts posion tire 10 the enemis in range when triggered;",217,0,100kk,,,Human
+88,Poison Trap,archer_poison_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts posion tire 10 the enemis in range when triggered;",224,0,100kk,,,Human
+89,Poison Trap,archer_poison_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts posion tire 10 the enemis in range when triggered;",230,0,100kk,,,Human
+90,Poison Trap,archer_poison_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts posion tire 10 the enemis in range when triggered;",235,0,100kk,,,Human
 ,,,,,,,,,,,,,,,,,,,----------------------------Bleeding Trap----------------------------
-76,Bleeding Trap,archer_bleed_trap,Physical/Debuff,bow,,0,400,target/aoe,0,30,30,"For 30 seconds places a trap tha inflicts bleed tire 10 the enemis in range when triggered;",158,6.5kk,1kk,,,Demon
-77,Bleeding Trap,archer_bleed_trap,Physical/Debuff,bow,,0,400,target/aoe,0,30,30,"For 30 seconds places a trap tha inflicts bleed tire 10 the enemis in range when triggered;",164,11kk,1kk,,,Demon
-78,Bleeding Trap,archer_bleed_trap,Physical/Debuff,bow,,0,400,target/aoe,0,30,30,"For 30 seconds places a trap tha inflicts bleed tire 10 the enemis in range when triggered;",169,16kk,1kk,,,Demon
-79,Bleeding Trap,archer_bleed_trap,Physical/Debuff,bow,,0,400,target/aoe,0,30,30,"For 30 seconds places a trap tha inflicts bleed tire 10 the enemis in range when triggered;",173,80kk,1kk,,,Demon
-80,Bleeding Trap,archer_bleed_trap,Physical/Debuff,bow,,0,400,target/aoe,0,30,30,"For 30 seconds places a trap tha inflicts bleed tire 10 the enemis in range when triggered;",180,0,5kk,,,Demon
-81,Bleeding Trap,archer_bleed_trap,Physical/Debuff,bow,,0,400,target/aoe,0,30,30,"For 30 seconds places a trap tha inflicts bleed tire 10 the enemis in range when triggered;",186,0,7.5kk,,,Demon
-82,Bleeding Trap,archer_bleed_trap,Physical/Debuff,bow,,0,400,target/aoe,0,30,30,"For 30 seconds places a trap tha inflicts bleed tire 10 the enemis in range when triggered;",191,0,10kk,,,Demon
-83,Bleeding Trap,archer_bleed_trap,Physical/Debuff,bow,,0,400,target/aoe,0,30,30,"For 30 seconds places a trap tha inflicts bleed tire 10 the enemis in range when triggered;",195,0,15kk,,,Demon
-84,Bleeding Trap,archer_bleed_trap,Physical/Debuff,bow,,0,400,target/aoe,0,30,30,"For 30 seconds places a trap tha inflicts bleed tire 10 the enemis in range when triggered;",202,0,30kk,,,Demon
-85,Bleeding Trap,archer_bleed_trap,Physical/Debuff,bow,,0,400,target/aoe,0,30,30,"For 30 seconds places a trap tha inflicts bleed tire 10 the enemis in range when triggered;",208,0,50kk,,,Demon
-86,Bleeding Trap,archer_bleed_trap,Physical/Debuff,bow,,0,400,target/aoe,0,30,30,"For 30 seconds places a trap tha inflicts bleed tire 10 the enemis in range when triggered;",213,0,75kk,,,Demon
-87,Bleeding Trap,archer_bleed_trap,Physical/Debuff,bow,,0,400,target/aoe,0,30,30,"For 30 seconds places a trap tha inflicts bleed tire 10 the enemis in range when triggered;",217,0,100kk,,,Demon
-88,Bleeding Trap,archer_bleed_trap,Physical/Debuff,bow,,0,400,target/aoe,0,30,30,"For 30 seconds places a trap tha inflicts bleed tire 10 the enemis in range when triggered;",224,0,100kk,,,Demon
-89,Bleeding Trap,archer_bleed_trap,Physical/Debuff,bow,,0,400,target/aoe,0,30,30,"For 30 seconds places a trap tha inflicts bleed tire 10 the enemis in range when triggered;",230,0,100kk,,,Demon
-90,Bleeding Trap,archer_bleed_trap,Physical/Debuff,bow,,0,400,target/aoe,0,30,30,"For 30 seconds places a trap tha inflicts bleed tire 10 the enemis in range when triggered;",235,0,100kk,,,Demon
+76,Bleeding Trap,archer_bleed_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts bleed tire 10 the enemis in range when triggered;",158,6.5kk,1kk,,,Demon
+77,Bleeding Trap,archer_bleed_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts bleed tire 10 the enemis in range when triggered;",164,11kk,1kk,,,Demon
+78,Bleeding Trap,archer_bleed_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts bleed tire 10 the enemis in range when triggered;",169,16kk,1kk,,,Demon
+79,Bleeding Trap,archer_bleed_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts bleed tire 10 the enemis in range when triggered;",173,80kk,1kk,,,Demon
+80,Bleeding Trap,archer_bleed_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts bleed tire 10 the enemis in range when triggered;",180,0,5kk,,,Demon
+81,Bleeding Trap,archer_bleed_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts bleed tire 10 the enemis in range when triggered;",186,0,7.5kk,,,Demon
+82,Bleeding Trap,archer_bleed_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts bleed tire 10 the enemis in range when triggered;",191,0,10kk,,,Demon
+83,Bleeding Trap,archer_bleed_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts bleed tire 10 the enemis in range when triggered;",195,0,15kk,,,Demon
+84,Bleeding Trap,archer_bleed_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts bleed tire 10 the enemis in range when triggered;",202,0,30kk,,,Demon
+85,Bleeding Trap,archer_bleed_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts bleed tire 10 the enemis in range when triggered;",208,0,50kk,,,Demon
+86,Bleeding Trap,archer_bleed_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts bleed tire 10 the enemis in range when triggered;",213,0,75kk,,,Demon
+87,Bleeding Trap,archer_bleed_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts bleed tire 10 the enemis in range when triggered;",217,0,100kk,,,Demon
+88,Bleeding Trap,archer_bleed_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts bleed tire 10 the enemis in range when triggered;",224,0,100kk,,,Demon
+89,Bleeding Trap,archer_bleed_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts bleed tire 10 the enemis in range when triggered;",230,0,100kk,,,Demon
+90,Bleeding Trap,archer_bleed_trap,Physical/Debuff,bow,,0,400,target/aoe,2,30,30,"For 30 seconds places a trap tha inflicts bleed tire 10 the enemis in range when triggered;",235,0,100kk,,,Demon
 ,,,,,,,,,,,,,,,,,,,----------------------------Magic Arrow----------------------------
 76,Magic Arrow,archer_elf_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +2600 power (physical) and decreases Atack speed and Move speed with 30%;",158,6.5kk,1kk,,,Elf
 77,Magic Arrow,archer_elf_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,15,"Shot arrow dealing +2700 power (physical) and decreases Atack speed and Move speed with 30%;",164,11kk,1kk,,,Elf

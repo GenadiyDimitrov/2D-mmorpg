@@ -38,6 +38,31 @@ public static partial class SkillCatalog
     /// other. Named for what it is rather than for either skill, exactly as `great_blessing` is.</summary>
     private const string StrikeChoiceKey = "dagger_strike_choice";
 
+    // ---- HIS 2026-09-11 BLOCK: the three race IDENTITY passives and the three race ULTIMATES, which
+    //      is what he meant by *"With that duals 4th is finihed (untill dmg is rly tested)"*. Every
+    //      number below is authored — read off `dual 4th.csv`, not derived.
+    //
+    // 🔑 THE PAIRING IS THE DESIGN, and it is one axis per race carried at two strengths: a small
+    //    PERMANENT passive (5/7/10% at 80/85/90) and a big TEN-SECOND ultimate on the same axis. The
+    //    Human is proofed against magic, the Elf against physical SKILLS, the Demon against people.
+    //    So the ultimate is not a different tool from the passive — it is the same defence, briefly
+    //    turned up to where it decides a fight.
+    /// <summary>Human, 80/85/90 — magic resistance 5/7/10%. Pairs with <see cref="DualMagicArmor"/>.</summary>
+    public const string DualAntiMagic = "dual_anti_magic";
+    /// <summary>Elf, 80/85/90 — physical-SKILL evasion 5/7/10%. Pairs with <see cref="DualDodge"/>.
+    /// ⚠ Not `Evasion`: his cell says *"p.skill evasion"*, which is <c>SkillEvadeChance</c> — the
+    /// grant that `BL-06` left as the ONLY way a physical skill can be dodged at all.</summary>
+    public const string DualAntiPhysical = "dual_anti_physical";
+    /// <summary>Demon, 80/85/90 — PvP damage 5/7/10%. Pairs with <see cref="DualDemonContract"/>.</summary>
+    public const string DualDuelExpertise = "dual_duel_expertise";
+
+    /// <summary>Elf @83 — 30% chance to evade physical skills for 10s.</summary>
+    public const string DualDodge = "dual_dodge";
+    /// <summary>Human @83 — +30% magic resistance for 10s.</summary>
+    public const string DualMagicArmor = "dual_magic_armor";
+    /// <summary>Demon @83 — +25% PvP damage for 10s.</summary>
+    public const string DualDemonContract = "dual_demon_contract";
+
 
     // ═════════════════════════════════════════════════════════════════════════════════════════════
     //  THE CONTINUING LADDERS — rungs 16-30 of the 3rd tier's fifteen, one per level 76-90.
@@ -233,6 +258,104 @@ public static partial class SkillCatalog
           + "simply cannot be up at the same time, so pick one per fight. Requires duals.",
             "5 min: +30 crit damage. Takes the place of Perfect Strike while it is up.");
 
-        return new[] { instinct, perfect, brutal };
+        // ═══ THE THREE RACE IDENTITY PASSIVES — 80 / 85 / 90, 5% → 7% → 10% ══════════════════════
+        //
+        // 🔑 THREE RUNGS, NOT FIFTEEN. The GOLD ladder is `F4New`'s at those three levels (5kk / 50kk /
+        //    100kk) and matches his cells exactly, so it is read rather than repeated.
+        // ⚠ THE SP IS ZERO AND IS **NOT** `F4New`'s — his `SP COST` cell reads 0 on all nine rows,
+        //   while `F4New(80)` would charge 150kk. The CSV is the authority; `--check` caught this the
+        //   moment `dual 4th` earned its spec line, which is the whole reason the spec was added.
+        // ⚠ NO WEAPON GATE. His WEAPON cell is empty on all nine rows, unlike Dual Mastery's `duals`,
+        //   and that is consistent: this is who the character IS, not what he is holding.
+        float[] identity = { 0.05f, 0.07f, 0.10f };
+        int[] identityLevels = { 80, 85, 90 };
+
+        SkillDef Identity(string id, string name, Func<float, PassiveEffect> effect,
+                          string blurb, Func<float, string> rung) =>
+            new(id, name, BaseClass.Fighter, SkillEffect.None,
+                MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+                Category: SkillCategory.Passive,
+                SpCost: 0,
+                Passive: effect(identity[0]),
+                Description: blurb,
+                Levels: identityLevels.Select((lv, i) =>
+                    new SkillLevel(SpCost: 0, GoldCost: F4New(lv).Gold,
+                        Passive: effect(identity[i]),
+                        Description: rung(identity[i]))).ToArray());
+
+        var antiMagic = Identity(DualAntiMagic, "Anti-Magic",
+            v => new PassiveEffect(MagicResist: v),
+            "Passive. Spells slide off you a little more each time you learn to expect them.",
+            v => $"Magic resistance +{v * 100:0}%.");
+
+        var antiPhysical = Identity(DualAntiPhysical, "Anti-Physical",
+            v => new PassiveEffect(SkillEvadeChance: v),
+            "Passive. You read the wind-up. Some blows simply never arrive.",
+            v => $"A {v * 100:0}% chance to evade a physical SKILL outright.");
+
+        var duelExpertise = Identity(DualDuelExpertise, "Duel-Expertise",
+            // ⚠ ALL THREE PvP CHANNELS. His cell is `PvP.Dmg`, unqualified — a dagger's damage comes
+            //   from skills, basics and (through Venom Burst) neither cleanly, and a bonus that
+            //   covered only one of the three would read as broken on the other two.
+            v => new PassiveEffect(PvpSkillDamagePct: v, PvpMagicDamagePct: v, PvpBasicDamagePct: v),
+            "Passive. Killing people is a different craft from killing monsters, and you have it.",
+            v => $"+{v * 100:0}% damage against PLAYERS (skills, spells and basic attacks alike).");
+
+        // ═══ THE THREE RACE ULTIMATES — 83, ten seconds, 90-second reuse ═════════════════════════
+        //
+        // 🔑 TEN SECONDS ON A NINETY-SECOND REUSE IS A PANIC BUTTON, not a stance — an 11% uptime you
+        //    spend on the one exchange that would otherwise kill you. That is why each is the BIG
+        //    version of its race's own passive rather than a new axis: the Human's 10% magic
+        //    resistance becomes 30% for ten seconds, and so on.
+        // ⚠ MP 0 AND SP 500kk ARE HIS, from the file. An ultimate paid for once in SP and never again
+        //   in MP is a deliberate shape here — the reuse is the cost.
+        // ⚠ NO BUFF FAMILY, for the same reason Evasion Boost and Defensive Wall have none: an
+        //   ultimate must stack on top of whatever ladder it resembles rather than evict a potion.
+        // ⚠ `PhysicalCast` — his TYPE cell is `Physical Buff`, so it is paced by attack speed and
+        //   stopped by a PHYSICAL silence, like every other thing a rogue does.
+        var (ultSp, ultGold) = (500_000_000, 100_000_000);
+
+        SkillDef Ultimate83(string id, string name, SkillEffect effect, EffectMagnitude[] mags,
+                            float skillEvade, string blurb, string rung) =>
+            new(id, name, BaseClass.Fighter, effect,
+                MpCost: 0, CastTicks: 0, CooldownTicks: 900, Range: 0, Power: 0,
+                DurationTicks: 100, BuffKey: id, Rank: 1,
+                Category: SkillCategory.Buff, PhysicalCast: true, TargetMode: TargetMode.SelfOnly,
+                SpCost: ultSp, SkillEvadeChance: skillEvade,
+                Magnitudes: mags,
+                Description: blurb,
+                Levels: new[]
+                {
+                    new SkillLevel(MpCost: 0, SpCost: ultSp, GoldCost: ultGold,
+                        SkillEvadeChance: skillEvade, Magnitudes: mags, Description: rung),
+                });
+
+        var dodge = Ultimate83(DualDodge, "Dodge", SkillEffect.None,
+            Array.Empty<EffectMagnitude>(), 0.30f,
+            "Ten seconds in which almost nothing aimed at you connects. Then it does.",
+            "10s: a 30% chance to evade any physical SKILL outright.");
+
+        var magicArmor = Ultimate83(DualMagicArmor, "Magical Armor", SkillEffect.BuffMagicResist,
+            new EffectMagnitude[] { new(SkillEffect.BuffMagicResist, 0.30f) }, 0f,
+            "Ten seconds wearing the shape of a spell, so the spells find nothing to hold.",
+            "10s: +30% magic resistance.");
+
+        var demonContract = Ultimate83(DualDemonContract, "Demon Contract",
+            SkillEffect.BuffPvpSkillDamage | SkillEffect.BuffPvpMagicDamage | SkillEffect.BuffPvpBasicDamage,
+            new EffectMagnitude[]
+            {
+                new(SkillEffect.BuffPvpSkillDamage, 0.25f),
+                new(SkillEffect.BuffPvpMagicDamage, 0.25f),
+                new(SkillEffect.BuffPvpBasicDamage, 0.25f),
+            }, 0f,
+            "Ten seconds of something older than you doing the aiming. It only ever wants people.",
+            "10s: +25% damage against PLAYERS.");
+
+        return new[]
+        {
+            instinct, perfect, brutal,
+            antiMagic, antiPhysical, duelExpertise,
+            dodge, magicArmor, demonContract,
+        };
     }
 }

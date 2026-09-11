@@ -125,6 +125,12 @@ public class BuffInstance
     public float PhysCooldownPct { get; init; }
     public float MagicCooldownPct { get; init; }
 
+    /// <summary>`BL-196` — how much this buff takes off the FINISHED cast time, as a fraction
+    /// (0.20 = the cast takes ×0.80 as long). NOT cast speed: it multiplies the answer the 333 model
+    /// already produced, so it reaches a physical skill paced by ATTACK speed as well as a spell.
+    /// See <c>SkillDef.CastTimePct</c> for why the archer's Spirit Mastery forced the distinction.</summary>
+    public float CastTimePct { get; init; }
+
     /// <summary>`BL-188` — how much this buff raises its holder's BLOW landing rate, as a fraction
     /// (0.40 = ×1.40). A field for the same reason as the four above it: the SkillEffect enum is
     /// full. Authored by the three dagger race buffs (40/60/70) and the 4th tier's Perfect Strike.
@@ -1218,12 +1224,43 @@ public class Entity
     public float CooldownReductionPhysical { get; set; }
     public float CooldownReductionMagic { get; set; }
 
-    /// <summary>The reuse reduction that applies to a skill of this CATEGORY — the blanket
-    /// <see cref="CooldownReduction"/> plus whichever channel-only half it belongs to. Physical is the
-    /// one category that is not "magic": his list for the magic half is spells, buffs, debuffs and
-    /// heals, which is every other one.</summary>
-    public float CooldownReductionFor(SkillCategory cat) => Math.Clamp(
-        CooldownReduction + (cat == SkillCategory.Physical ? CooldownReductionPhysical : CooldownReductionMagic),
+    /// <summary>`BL-196` — THE CAST-TIME MULTIPLIER, and the last factor in the cast-length formula.
+    ///
+    /// <para>His formula, 2026-09-11, verbatim: *"(baseCastOrAttackSpeedValue x castOrAttackSpeedBuffs
+    /// x castOrAttackSpeedDebuffs / 333 or whatever) x castTimeDebffs x spirit_mastery and other cast
+    /// time buffs"*. Everything inside his bracket is the existing 333 model
+    /// (<c>EffectiveCastSpeedMultiplier</c> / <c>EffectiveAttackSpeedMultiplier</c>, whichever
+    /// <see cref="SkillMath.PacedByAttackSpeed"/> picks); this is the part outside it.</para>
+    ///
+    /// <para>🔑 IT IS THE ONLY CHANNEL THAT REACHES BOTH HALVES OF A PARTY. A cast-SPEED grant on the
+    /// archer's Spirit Mastery did nothing for the archer — his skills are paced by attack speed —
+    /// which is exactly his complaint: *"It should not increase cast speed as stat for mages only."*
+    /// A multiplier on the finished number does not care which stat produced it.</para>
+    ///
+    /// <para>⚠ Summed as fractions (0.20 + 0.10 = −30% cast) then expressed as 1−x, and CLAMPED to
+    /// [0.2, 3]: an instant cast is not a cast, and a debuff channel that could reach ×∞ is a stun
+    /// with extra steps. A NEGATIVE <c>CastTimePct</c> lengthens — the *"castTimeDebffs"* half of his
+    /// formula, which nothing in the game authors yet.</para></summary>
+    public float CastTimeReduction { get; set; }
+
+    /// <summary>What to multiply a finished cast length by. See <see cref="CastTimeReduction"/>.</summary>
+    public float CastTimeMultiplier => Math.Clamp(1f - CastTimeReduction, 0.2f, 3f);
+
+    /// <summary>The reuse reduction that applies to THIS SKILL — the blanket
+    /// <see cref="CooldownReduction"/> plus whichever channel-only half it belongs to.
+    ///
+    /// <para>🔑 THE TEST IS <see cref="SkillMath.IsPhysical"/>, NOT <c>Category == Physical</c>
+    /// (2026-09-11, his *"rogues sprint is physical not magical"*). Category is a ROLE tag — a
+    /// physical self-buff is <c>Buff</c>, a physical root is <c>Debuff</c> — so the old test only ever
+    /// caught physical DAMAGE skills and quietly filed the rogue's Sprint, the archer's three traps
+    /// and every physical stance under MAGIC reuse. That is the exact mistake `BL-132` fixed for the
+    /// cast-speed model and for silence; this was the last call site still asking Category.</para>
+    ///
+    /// <para>⚠ It cuts both ways and that is intended: Bow Blessing's *"−20% PHYSICAL reuse"* now
+    /// really does reach *"every skill an archer owns"*, as its own comment always claimed, and a
+    /// mage's magic-reuse buff stops reaching a fighter's stances.</para></summary>
+    public float CooldownReductionFor(SkillDef def) => Math.Clamp(
+        CooldownReduction + (SkillMath.IsPhysical(def) ? CooldownReductionPhysical : CooldownReductionMagic),
         0f, 0.8f);
     public float CritRateResist { get; set; }    // reduces an attacker's physical crit CHANCE vs you
     // …and its MAGIC twin (`BL-108`, the 4th-tier Marks). Separate because the two channels have
@@ -2650,6 +2687,7 @@ public class Entity
         WhispLimit = GameConstants.WhispSlotsBase;   // `BL-109` — raised by Whisp Mastery below
         CooldownReductionPhysical = 0f;
         CooldownReductionMagic = 0f;
+        CastTimeReduction = 0f;
         CritRateResist = 0f;
         MagicCritRateResist = 0f;
         CritRateMult = 1f;
@@ -3577,6 +3615,7 @@ public class Entity
             // The two channel-only halves ride as FIELDS (the flag enum is full), like the MP-cost pair.
             CooldownReductionPhysical += buff.PhysCooldownPct;
             CooldownReductionMagic += buff.MagicCooldownPct;
+            CastTimeReduction += buff.CastTimePct;   // `BL-196` — the FINISHED cast, not the stat
             if (buff.Has(SkillEffect.BuffPveSkillDamage)) PveSkillDamageBonus += buff.Flat(SkillEffect.BuffPveSkillDamage) + buff.Percent(SkillEffect.BuffPveSkillDamage);
             if (buff.Has(SkillEffect.BuffPveMagicDamage)) PveMagicDamageBonus += buff.Flat(SkillEffect.BuffPveMagicDamage) + buff.Percent(SkillEffect.BuffPveMagicDamage);
             if (buff.Has(SkillEffect.BuffPveBasicDamage)) PveBasicDamageBonus += buff.Flat(SkillEffect.BuffPveBasicDamage) + buff.Percent(SkillEffect.BuffPveBasicDamage);

@@ -336,7 +336,8 @@ public static partial class SkillCatalog
                 Rank: VenomTier[i], StacksPerCast: VenomStacksPerCast[i],
                 Description: $"Blow power {VenomStabPower[i]:N0} on a critical; "
                            + "a normal attack otherwise. "
-                           + $"Adds {VenomStacksPerCast[i]} tier-{VenomTier[i]} venom stack(s), max 10."))
+                           + $"Banks {VenomStacksPerCast[i]} venom stack(s) whenever the strike connects (max 10), "
+                           + $"and lands a tier-{VenomTier[i]} venom on a contest."))
                 .Concat(VenomStabFourthRungs()).ToArray()));
 
         // ═══ VENOM BURST — the Demon's detonator ═════════════════════════════════════════════════
@@ -366,8 +367,8 @@ public static partial class SkillCatalog
             //   (`DotTiers.Rider`), not to the skill that delivered it — his 2026-09-10 ruling,
             //   *"remove the dot side effect from the skills"*. Authoring one here would be
             //   APPLIED IN ADDITION and quietly double the real one.
-            Description: "Detonates every venom stack on the target for damage per stack — and if "
-                       + "there are none, lays the first one instead.",
+            Description: "Detonates every venom stack on the target for damage per stack, taking the venom "
+                       + "itself with it — and if there are none, lays the first one instead.",
             Levels: BulwarkRungs(i => new SkillLevel(
                 Power: VenomBurstPerStack[i], MpCost: StabMp[i], SpCost: RogueSp[i],
                 Rank: VenomTier[i], StacksPerCast: VenomStacksPerCast[i],

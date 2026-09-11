@@ -1360,6 +1360,7 @@ namespace Game.Client
             // The ground circles. Both go straight to the decal renderer — nothing here decides
             // anything, because the server already decided what is visible and what colour it is.
             _net.TotemsReceived += t => Main(() => Decals?.SetTotems(t));
+            _net.TrapsReceived += t => Main(() => Decals?.SetTraps(t));
             _net.WhispsReceived += w => Main(() => Decals?.SetWhisps(w));   // `BL-109`
             _net.AreaEffectReceived += a => Main(() => Decals?.Flash(a));
             _net.CastReceived += c => Main(() =>

@@ -5940,12 +5940,13 @@ public class GameLoopService : BackgroundService
     {
         // Same one test the real cast uses (`BL-132`) — an estimate that priced a physical stun on the
         // cast stat would quote an MP/s the fight never charges.
-        float castMult = SkillMath.PacedByAttackSpeed(def)
-            ? p.EffectiveAttackSpeedMultiplier : p.EffectiveCastSpeedMultiplier;
+        float castMult = (SkillMath.PacedByAttackSpeed(def)
+            ? p.EffectiveAttackSpeedMultiplier : p.EffectiveCastSpeedMultiplier)
+            * p.CastTimeMultiplier;   // `BL-196` — the same last factor the real cast applies
         int castTicks = Math.Max(2,
             (int)(def.CastTicksAt(Math.Max(1, p.SkillLevelOf(def.Id))) * castMult));
         int reducedCd = def.CooldownTicksAt(Math.Max(1, p.SkillLevelOf(def.Id)));
-        float cdr = p.CooldownReductionFor(def.Category);
+        float cdr = p.CooldownReductionFor(def);
         if (reducedCd > 0 && cdr > 0f)
             reducedCd = Math.Max(1, (int)(reducedCd * (1f - cdr)));
         return castTicks + reducedCd + Math.Max(0, extraDelay);
@@ -9685,14 +9686,34 @@ public class GameLoopService : BackgroundService
 
     /// <summary>Deliver a sprung trap's payload: the trap skill's damage (physical/magic) + any
     /// contested CC (Root/Stun/Slow), attributed to the owner. A compact reuse of the cast path
-    /// (no crit/block nuance — traps are control tools; retune later).</summary>
-    private void FireTrap(Entity owner, Entity victim, TrapInstance trap)
+    /// (no crit/block nuance — traps are control tools; retune later).
+    ///
+    /// <para>🔴 IT CATCHES EVERYTHING IN THE RADIUS, NOT JUST THE ONE THAT TRIPPED IT (2026-09-11).
+    /// A trap is authored `target/aoe` with a 400 reach and its own text says *"holds the enemis in
+    /// range"* — plural — but only <see cref="FindTrapVictim"/>'s nearest body was ever delivered to.
+    /// So a pack walking over a Binding Trap had one held and the rest strolled on, which is exactly
+    /// the shape of his report: *"a mob start to walk with binding trap debuff"*. Same mistake AoE
+    /// taunt (`BL-123`) and the AoE pull (`BL-154`) each made once.</para>
+    ///
+    /// <para><paramref name="tripper"/> is only how the trap LEARNED it had been stepped on; the sweep
+    /// is re-taken here because a body may have entered the circle in the same tick.</para></summary>
+    private void FireTrap(Entity owner, Entity tripper, TrapInstance trap)
     {
         if (SkillCatalog.Get(trap.SkillId) is not SkillDef def)
             return;
         string name = ClassSkills.DisplayName(
             def.Id, owner.Race, owner.BaseClass, owner.Archetype, owner.Discipline);
-        DeliverSimpleHit(owner, victim, def, trap.Level, name);
+
+        float r2 = trap.Radius * trap.Radius;
+        // Materialised before delivering: DeliverSimpleHit can kill, and a kill mutates the world.
+        var caught = _world.Entities.Values
+            .Where(e => !e.Dead && e.Kind == EntityKind.Mob && !e.TrainingDummy
+                        && (e.X - trap.X) * (e.X - trap.X) + (e.Y - trap.Y) * (e.Y - trap.Y) <= r2)
+            .ToList();
+        if (caught.Count == 0) caught.Add(tripper);   // belt and braces: the body that tripped it
+
+        foreach (var victim in caught)
+            DeliverSimpleHit(owner, victim, def, trap.Level, name);
     }
 
     /// <summary>Apply a skill's damage (physical/magic) + any contested CC to one victim, attributed
@@ -9774,15 +9795,29 @@ public class GameLoopService : BackgroundService
         // Contested CC (Root/Stun/Slow): the control payload.
         if (IsContestedDebuff(def, effect) && !victim.Dead)
         {
-            int atkStat = attacker.EffectiveAtk;
-            int defStat = def.DebuffSchool == DebuffSchool.Magical ? victim.EffectiveSpt : victim.EffectiveCon;
+            // 🔑 THE SAME TWO READINGS THE CAST PATH USES, and they had drifted here. A bleed or a
+            // venom is an AGI contest, not an ATK one, and for ANY DoT the FAMILY decides which stat
+            // saves (`DotTiers.Save`) rather than the skill's own DebuffSchool. A Bleeding Trap was
+            // rolling a fighter's ATK against CON while the identical arrow rolled AGI.
+            bool agiBased = (effect & (SkillEffect.Bleed | SkillEffect.Venom)) != 0;
+            int atkStat = agiBased ? (int)attacker.EffectiveAgi : attacker.EffectiveAtk;
+            var landKind = (effect & SkillEffect.AnyDot) != 0
+                ? DotTiers.KindOf(def.DotKind, effect) : DotKind.None;
+            DebuffSchool school = landKind != DotKind.None
+                ? DotTiers.Save(landKind) : def.DebuffSchool;
+            int defStat = school == DebuffSchool.Magical ? victim.EffectiveSpt : victim.EffectiveCon;
+            bool alwaysLands = landKind != DotKind.None && school == DebuffSchool.None;   // Burn
             float land = ResistsDebuff(victim, effect, def)
                 ? 0f
+                : alwaysLands ? 1f
                 : StatCalculator.DebuffLandChance(atkStat, defStat,
                                                   RungLevel(attacker, def, lvl), victim.Level);
-            land = ApplyDebuffLandMod(land, def, lvl);   // BL-90
-            land *= 1f - victim.CcResist;
-            land *= 1f - SchoolCcResist(victim, def.DebuffSchool);
+            if (!alwaysLands)
+            {
+                land = ApplyDebuffLandMod(land, def, lvl);   // BL-90
+                land *= 1f - victim.CcResist;
+                land *= 1f - SchoolCcResist(victim, school);
+            }
             if (_rng.NextDouble() < land)
             {
                 // `BL-154` — the AREA path needs the pull arm too. This method is where an
@@ -9790,8 +9825,19 @@ public class GameLoopService : BackgroundService
                 // pull would roll its contest, announce itself and drag nobody — the same shape of
                 // silent nothing that Mass Taunt had here until `BL-123`.
                 if (def.Pulls) StartPull(attacker, victim, def, lvl);
+                // A DoT through this path goes through the DoT applier, so its rider comes off the
+                // (kind, tier) table and it is credited to the trapper for the kill.
+                else if ((effect & SkillEffect.AnyDot) != 0) ApplyDotStack(attacker, victim, def, lvl);
                 else ApplyBuff(victim, def, lvl, source: attacker);   // `BL-110`: a charm must know who cast it
                 BroadcastCombat(attacker, victim, 0, CombatOutcome.Buff, name);
+            }
+            else
+            {
+                // 🔴 THIS `else` DID NOT EXIST (2026-09-11, his *"it don't say 'resisted'"*). A trap or
+                // a boss slam whose contest was lost said NOTHING AT ALL — no float, no line — so the
+                // only honest reading from the floor was "the skill is broken". The contested cast path
+                // has always broadcast Fail here; this is the same line, on the path that shares it.
+                BroadcastCombat(attacker, victim, 0, CombatOutcome.Fail, name);
             }
         }
         if (victim.Hp <= 0 && !victim.Dead)
@@ -11123,6 +11169,14 @@ public class GameLoopService : BackgroundService
             : SkillMath.PacedByAttackSpeed(def)
                 ? caster.EffectiveAttackSpeedMultiplier
                 : caster.EffectiveCastSpeedMultiplier;
+        // `BL-196` — THE CAST-TIME CHANNEL, applied to the ANSWER the 333 model just produced, which is
+        // exactly where his formula puts it: *"(base x buffs x debuffs / 333) x castTimeDebffs x
+        // spirit_mastery and other cast time buffs"*. Outside the bracket, so it does not care whether
+        // the bracket read attack speed or cast speed — that is the whole point of it existing.
+        // ⚠ A FixedCast skill keeps its authored time here too: `speedMult` is 1 for one and this must
+        //   not be the thing that quietly starts shortening it.
+        if (!def.FixedCast && caster.Kind != EntityKind.Mob)
+            speedMult *= caster.CastTimeMultiplier;
         // ⚠ CastTicksAt, not CastTicks: a rung may shorten the base cast (his Resurrection, 10s → 5s).
         caster.CastTicksRemaining = Math.Max(2,
             (int)(def.CastTicksAt(Math.Max(1, caster.SkillLevelOf(def.Id))) * speedMult));
@@ -11284,7 +11338,7 @@ public class GameLoopService : BackgroundService
         int cooldown = def.CooldownTicksAt(lvl);
         // …and the reduction is now per CHANNEL (`BL-108`): Harmony of the Soul shortens a physical
         // reuse by more than a magical one, so which number applies depends on the skill's category.
-        float castCdr = caster.CooldownReductionFor(def.Category);
+        float castCdr = caster.CooldownReductionFor(def);
         if (cooldown > 0 && !def.FixedCooldown && castCdr > 0f)
             cooldown = Math.Max(1, (int)(cooldown * (1f - castCdr)));
         // `BL-190` — THE COOLDOWN RESET MASTERY. His third passive: *"one that resets cooldown of
@@ -11512,6 +11566,14 @@ public class GameLoopService : BackgroundService
         // damage arm spent them, making the burst a no-op that refunds itself.
         bool spentStacks = false;
 
+        // ---- `BL-199` — THE STACK POOL IS BANKED BY THE STRIKE, NOT BY THE DoT'S CONTEST. Set by a
+        //      resolution of the damage arm that LANDED THE SKILL: a blow that passed its gate, or an
+        //      ordinary physical or magic hit. NOT by a failed blow's fallback swing — `BL-197`, so
+        //      the blow rate is the one knob that moves both the damage and the stacking speed.
+        //      Read once after both arms. Owner, 2026-09-11: *"Stacks should be independent of dot ...
+        //      each landed venom blow adds stacks that do not do nothing just stacks"*.
+        bool bankStacks = false;
+
         // ---- Damage (physical) ----
         if (effect.HasFlag(SkillEffect.PhysicalDamage))
         {
@@ -11552,6 +11614,16 @@ public class GameLoopService : BackgroundService
             // as it already rolls its miss, its crit and its block per hit.
             if (def.BlowOnCrit && !BlowLands(caster, target))
             {
+                // 🔑 A FAILED BLOW BANKS NOTHING — `BL-197`, his ruling 2026-09-11: *"only the
+                //    succesfull stab .. not the failed/basick attack one"*. The reason is that the
+                //    BLOW RATE is the knob he wants the player choosing with: *"if i chose to use
+                //    perfect_strike i land more ophen i stack faster but for less dmg ... if i use
+                //    brutal_strike i land less ofthen i stack slower but do more dmg"*. The @80
+                //    choice between those two buffs only means something if the rate it moves is
+                //    ALSO the stacking rate — so the gate that decides the damage decides the pool.
+                // ⚠ This is not the thing that made the class unplayable. That was the DoT's separate
+                //   AGI-vs-CON contest, which the pool no longer waits on (`BL-199`): ONE roll gates a
+                //   stack now, and it is the one the player has a buff for.
                 ResolveBasicSwing(caster, target, castName);
                 continue;
             }
@@ -11575,17 +11647,32 @@ public class GameLoopService : BackgroundService
                 damage = (int)(damage * StatCalculator.WeaponVariance(caster.WeaponType, _rng));
                 damage = FinalizeDamage(caster, target, damage, DamageKind.SkillPhysical, def);
 
-                // DoT BURST: consume THIS skill's stack counter (by key — so only its own
-                // applier line can detonate), multiplying damage by the stacks (×10 at full),
-                // then remove the counter. The bleed DAMAGE effect itself is left in place.
+                // DoT BURST: consume THIS skill's stack counter (by key — so only its own applier line
+                // can detonate), multiplying damage by the stacks (×10 at full), then remove the
+                // counter AND the DoT it was counting.
+                //
+                // 🔑 THE DEBUFF GOES WITH THE POOL (owner, 2026-09-11: *"when venom burst is used it
+                //    takes with it the stacks + the dot debuff"*). It used to leave the venom ticking,
+                //    which read as the burst having done nothing: the bar still showed the debuff, so
+                //    the only visible change was a number that looked like an ordinary stab.
+                // ⚠ The DoT is found through the SKILL's StackKey, not the buff key, so a burst
+                //   detonates exactly the applier line it shares a pool with and nothing else.
                 if (!string.IsNullOrEmpty(def.ConsumeStackKey) &&
                     target.Buffs.FirstOrDefault(b => b.Key == def.ConsumeStackKey) is BuffInstance ctr)
                 {
-                    damage = Math.Max(1, damage * ctr.Stacks);
+                    int spent = Math.Max(1, ctr.Stacks);
+                    damage = Math.Max(1, damage * spent);
                     target.Buffs.Remove(ctr);
+                    target.Buffs.RemoveAll(b => (b.Effect & SkillEffect.AnyDot) != 0
+                        && !string.IsNullOrEmpty(b.SkillId)
+                        && SkillCatalog.Get(b.SkillId)?.StackKey == def.ConsumeStackKey);
                     spentStacks = true;
                     target.RecomputeDerived();
                     if (target.Kind == EntityKind.Player) { PushBuffs(target); SendStats(target); }
+                    // He could not tell whether the multiplier was real — *"I have the feeling that the
+                    // burst don't do dmg per stack"*. A pool you spend should say what it was worth.
+                    if (caster.Kind == EntityKind.Player)
+                        SendSystemToEntity(caster, $"{castName} detonated {spent} stack(s) — ×{spent} damage.");
                 }
 
                 // FLAT crit damage joins pAtk inside the ratio, on a crit only — as a factor here
@@ -11613,6 +11700,7 @@ public class GameLoopService : BackgroundService
                             caster, target, damage, def.CanCrit ? caster.CritChance * def.CritRateMod : 0f,
                             def.BlockAccuracy, critFlat);
                 damage = finalDmg;
+                bankStacks = true;   // `BL-199` — the strike connected, so the pool is banked
                 BroadcastCombat(caster, target, damage, outcome, castName);
                 ApplyDamage(target, damage, caster);
                 ReflectPhysicalSkill(caster, target, damage, castName);   // BL-07
@@ -11626,6 +11714,10 @@ public class GameLoopService : BackgroundService
         if (effect.HasFlag(SkillEffect.MagicDamage))
         {
             offensive = true;
+            // `BL-199` — a spell has no miss roll (a fizzle still lands, at a third of the damage), so
+            // reaching this arm at all IS the strike connecting. No stacking magic DoT exists today;
+            // this is here so the next one does not have to rediscover where the pool is banked.
+            bankStacks = true;
             var (mFlat, mMod) = def.Id == SkillCatalog.TestMagicSkill
                 ? (_testSkillPower, _testSkillMod) : def.MagicDamageAt(lvl);   // test skill: live debug Flat/Mod
             int damage;
@@ -11875,12 +11967,14 @@ public class GameLoopService : BackgroundService
                         // this arm does not also call ApplyBuff: it would land the stun immediately
                         // and the two windows would overlap into one.
                         StartPull(caster, target, def, lvl);
-                    // ⚠ `spentStacks` — a burst that just consumed the pool does NOT refill it; see the
-                    // note where the flag is declared. A burst that found nothing falls through here
-                    // and starts one, which is exactly his "if no stacks present apply 1" clause.
+                    // ⚠ `spentStacks` — a burst that just consumed the pool does NOT re-apply the DoT it
+                    // took with it; see the note where the flag is declared. A burst that found nothing
+                    // falls through here and starts one, which is his "if no stacks present apply 1".
+                    // 🔑 THE STACKS ARE NOT ADDED HERE ANY MORE (`BL-199`) — only the venom itself. The
+                    //    pool is banked by the strike, below, whether or not this contest was won.
                     else if ((effect & SkillEffect.AnyDot) != 0)
                     {
-                        if (!spentStacks) ApplyDotStack(caster, target, def, lvl);   // stacking DoT (refresh on reapply)
+                        if (!spentStacks) ApplyDotStack(caster, target, def, lvl);   // the DoT damage effect
                     }
                     else
                         ApplyBuff(target, def, lvl, durationOverride: doubledTicks, source: caster);   // single CC buff
@@ -11935,6 +12029,15 @@ public class GameLoopService : BackgroundService
                 }
             }
         }
+
+        // ---- `BL-199` — BANK THE STACK POOL. AFTER both the damage arm and the contest above, and
+        //      that order is the design: if the venom landed this cast the counter takes its real
+        //      remaining time (`BL-156` shortens a DoT by the target's CON), and if the venom was
+        //      resisted the counter still opens, on the skill's authored duration. The pool is a
+        //      record of blades going in — *"stacks that do not do nothing just stacks"*.
+        //      ⚠ `!spentStacks`: a burst that just detonated the pool must not immediately re-bank it.
+        if (bankStacks && !spentStacks && !string.IsNullOrEmpty(def.StackKey))
+            AddDotStacks(caster, target, def, lvl);
 
         // ---- De-taunt — shed the caster's aggro from nearby foes ----
         if (effect.HasFlag(SkillEffect.Detaunt))
@@ -12367,7 +12470,20 @@ public class GameLoopService : BackgroundService
         // charm FIELD, since a charm carries no debuff bit at all (`BL-110`).
         bool landingIsDebuff = ((isGroup ? groupEffect : (def.StackLevelAt(1)?.Effect ?? def.Effect))
                                 & SkillEffect.AnyDebuff) != 0 || def.Charms;
-        if (CountsAgainstBuffCap(landingRow, toggle, def.CountsTowardBuffLimit, landingIsDebuff))
+        // `BL-198` — THE SHELF TEST, computed once here and then carried on the instance, so the gate,
+        // the eviction loop and the counter on his HUD can never disagree about what a slot is.
+        //
+        // 🔑 IT IS A COLLECTION MEMBERSHIP, NOT A DURATION. His ruling 2026-09-11, one day after
+        //    `BL-195` shipped the duration test: *"it should not work only on timer ... the limit
+        //    should have an id collection ... i gave the duration as filter not as solution"*, with the
+        //    counterexample that settles it — *"if one buff a 10 min buff and it doubles it probanbly
+        //    break en enter the count .. but it shouldns"*. `DoubleDurationRate` is a per-cast ROLL, so
+        //    a duration test made "does this cost a slot" depend on a die. See SkillCatalog.BuffLimitIds.
+        //
+        // ⚠ Asked of the LANDING def — the child for a one-child wrapper — which is why the collection
+        //   holds the child ids as well as the wrapper ones.
+        bool landingCounts = OccupiesBuffSlot(def);
+        if (CountsAgainstBuffCap(landingRow, toggle, landingCounts, landingIsDebuff))
             EvictOldestBuffIfFull(target);
 
         // A leveled-stack effect starts at stack 1's entry; otherwise the skill's own effect.
@@ -12425,7 +12541,7 @@ public class GameLoopService : BackgroundService
             AppliedAtTick = _tick,
             Cancellable = def.Cancellable,
             SourceRow = rowOverride ?? def.BuffRow,   // which buff-bar row this lands in (debuffs override it)
-            CountsTowardBuffLimit = def.CountsTowardBuffLimit,   // the LANDING def, i.e. the child for a wrapper
+            CountsTowardBuffLimit = landingCounts,   // the LANDING def + the duration it landed with
             // The skill whose icon the bar shows. For a one-child wrapper that is the WRAPPER (the
             // potion / the blessing), so a Swift potion and a cleric's Swift look like what cast them.
             SourceSkillId = string.IsNullOrEmpty(sourceSkillId) ? def.Id : sourceSkillId!,
@@ -12441,6 +12557,7 @@ public class GameLoopService : BackgroundService
             PhysMpCostPct = GroupOr(gf.PhysMpCostPct, def.PhysMpCostPctAt(level)),
             MagicMpCostPct = GroupOr(gf.MagicMpCostPct, def.MagicMpCostPctAt(level)),
             PhysCooldownPct = def.PhysCooldownPctAt(level),
+            CastTimePct = def.CastTimePctAt(level),
             MagicCooldownPct = def.MagicCooldownPctAt(level),
             // `BL-188` — PER RUNG, for the same reason as everything else on this list: the dagger
             // race buffs climb 10 → 15 → 20% across three rungs, and reading the def's own field
@@ -12517,10 +12634,12 @@ public class GameLoopService : BackgroundService
     /// <summary>Does a buff occupy one of the <see cref="GameConstants.MaxBuffSlots"/> slots — and,
     /// equivalently, may it be evicted to make room for another?
     ///
-    /// Since playtest 27 the last word belongs to the SKILL: <c>SkillDef.CountsTowardBuffLimit</c>,
-    /// default true, authored false on the temporary ones (owner: *"a self 30s buff is temporary and
-    /// is not [counted] ... the flag is not self or not, the flag is per buff"*). The three engine
-    /// exclusions below are older and stay, because none of them is an authoring question:
+    /// The `authored` argument is <see cref="OccupiesBuffSlot"/>'s answer — since 2026-09-11 that is
+    /// the SHELF test (20 minutes, or a harmony/mark) with the per-skill flag as an opt-out on top,
+    /// and it replaces the playtest-27 rule where the authored flag was the whole of it (*"a self 30s
+    /// buff is temporary and is not [counted] ... the flag is not self or not, the flag is per
+    /// buff"*). Same intent, expressed as the property he was really authoring by hand each time. The
+    /// three engine exclusions below are older and stay, because none of them is an authoring question:
     ///   • DEBUFFS — you did not choose them. Counting them would let an enemy's poison push a
     ///     blessing off your bar, making every DoT a dispel; refusing them would make a full bar a
     ///     debuff immunity. Both are worse than not counting them.
@@ -12543,9 +12662,32 @@ public class GameLoopService : BackgroundService
     ///     fight that applied the poison — and then sat in the slot itself. It was invisible for as
     ///     long as nobody could see the count, which is exactly what `BL-111` set out to fix; the
     ///     counter he asked for could not have been made truthful without this.
+    ///   • 🔴 <b>INTERNAL mechanics — added 2026-09-11, and also a real bug.</b> A stacking DoT's
+    ///     hidden stack counter is a <c>BuffInstance</c> with no effect, no magnitudes and
+    ///     <c>Internal = true</c>. It is therefore not a debuff by any test, and it sat in the
+    ///     default <c>BuffRow.Buff</c> — so <b>a Venomweaver's venom pool occupied one of his
+    ///     victim's twenty buff slots</b>, invisibly, and in PvP could evict a real blessing. It was
+    ///     rare enough to go unnoticed only because banking a stack used to need two rolls; `BL-199`
+    ///     made it reliable. A thing the bar cannot show must never cost a square on the bar.
     private static bool CountsAgainstBuffCap(BuffRow row, bool toggle, bool authored,
-                                             bool isDebuff = false) =>
-        authored && !toggle && !isDebuff && row is BuffRow.Buff or BuffRow.Consumable;
+                                             bool isDebuff = false, bool isInternal = false) =>
+        authored && !toggle && !isDebuff && !isInternal
+        && row is BuffRow.Buff or BuffRow.Consumable;
+
+    /// <summary>`BL-198` — DOES THIS BUFF OCCUPY A SLOT AT ALL? The SHELF test, and the one place it
+    /// is asked.
+    ///
+    /// <para>🔑 MEMBERSHIP OF <see cref="SkillCatalog.BuffLimitIds"/> IS THE ANSWER — his 2026-09-11
+    /// ruling, *"the limit should have an id collection ... and if that skill is inside that collection
+    /// it goes to the buff bar and counts"*. The collection is derived (the two shelves, plus every
+    /// 20-minute buff row), never typed out; read the note on it for what is in and why.</para>
+    ///
+    /// <para>⚠ <c>CountsTowardBuffLimit</c> survives as an authored VETO, and it is now nearly inert:
+    /// nothing currently in the collection carries it false. It is kept as the one-line escape hatch
+    /// for a buff that qualifies structurally but must not cost a square, which is the shape the runes
+    /// needed before rule 2 learned to exclude the consumable row.</para></summary>
+    private static bool OccupiesBuffSlot(SkillDef def) =>
+        def.CountsTowardBuffLimit && SkillCatalog.OccupiesBuffSlot(def);
 
     /// <summary>Make room for one more collected buff, dropping the OLDEST if the target is already at
     /// the cap (owner's rule: drop the oldest, never refuse the new one — a refusal arrives mid-fight
@@ -12555,7 +12697,7 @@ public class GameLoopService : BackgroundService
     {
         while (true)
         {
-            var counted = target.Buffs.Where(b => CountsAgainstBuffCap(b.SourceRow, b.Toggle, b.CountsTowardBuffLimit, b.IsDebuff)).ToList();
+            var counted = target.Buffs.Where(b => CountsAgainstBuffCap(b.SourceRow, b.Toggle, b.CountsTowardBuffLimit, b.IsDebuff, b.Internal)).ToList();
             if (counted.Count < GameConstants.MaxBuffSlots) return;
 
             // Oldest by application, and among equals the one expiring soonest — on login every
@@ -12571,65 +12713,105 @@ public class GameLoopService : BackgroundService
         }
     }
 
-    /// <summary>Apply a damage-over-time. Two SEPARATE statuses (the IG split): (1) the bleed
-    /// DAMAGE effect — shared key, overrides by Rank (stronger wins), flat per-tick damage, does
-    /// NOT stack, cure/cancel target it by flag+level; (2) a per-skill STACK COUNTER (StackKey,
-    /// Internal) that just counts 1..Max and is what a burst consumes — independent of (1), so a
-    /// stronger overriding bleed or a cure never touches another applier's stacks.</summary>
+    /// <summary>Apply a damage-over-time's DAMAGE EFFECT — shared key, overrides by Rank (stronger
+    /// wins), flat per-tick damage, does not stack, cure/cancel target it by flag+level.
+    ///
+    /// <para>🔑 IT NO LONGER TOUCHES THE STACK COUNTER (owner, 2026-09-11: *"Stacks should be
+    /// independent of dot"*). The counter is banked by the STRIKE — see <see cref="AddDotStacks"/> —
+    /// and this is only the contested half. Until then a Venomweaver had to win the AGI-vs-CON contest
+    /// to bank a single stack, which is the whole of *"venomweaver almost cannot stack venom"*: two
+    /// separate rolls had to come up for one stack, and losing either lost both.</para></summary>
     private void ApplyDotStack(Entity caster, Entity target, SkillDef def, int level)
     {
-        // (1) The damage effect — flat per-tick, overrides by Rank (force non-stacking so the
-        // skill's MaxStacks, which governs the counter, doesn't stack the damage effect).
+        // Flat per-tick, overrides by Rank (force non-stacking: the skill's MaxStacks governs the
+        // COUNTER, and must not also stack the damage effect — the per-stack arithmetic is done once,
+        // in TickDots, off the counter).
         ApplyBuff(target, def, level, refresh: false, maxStacks: 1);
         string dmgKey = string.IsNullOrEmpty(def.BuffKey) ? def.Name : def.BuffKey;
-        // ⚠ `BL-156` — the counter must run for as long as the DAMAGE buff actually got, not for the
-        // skill's authored duration: CON now shortens the bleed itself, and a counter that outlived it
-        // would keep a stale stack alive for a target the DoT had already left.
-        int dotTicks = def.DurationTicks;
         if (target.Buffs.FirstOrDefault(b => b.Key == dmgKey) is BuffInstance dmg)
-        {
             dmg.SourceId = caster.Id;   // credit DoT kills to the applier
-            if (dmg.TicksRemaining > 0) dotTicks = dmg.TicksRemaining;
-        }
-
-        // (2) The stack counter — separate, internal, per StackKey; max = the skill's MaxStacks.
-        // ⚠ ONE CAST MAY ADD MORE THAN ONE (`SkillDef.StacksPerCast`, per rung). The cap is unchanged,
-        // so a rung that adds three fills the burst in four casts instead of ten — that is his ladder,
-        // and it is why `add` is read here rather than hard-coded to 1.
-        // 🔑 THE FAMILY DECIDES, NOT THE SKILL (*"venom is the only stacking dot atm"*). A skill may
-        // still ask for FEWER, but a bleed or a poison can no longer be authored into a stacking one.
-        var stackKind = DotTiers.KindOf(def.DotKind, def.Effect);
-        int cap = Math.Min(Math.Max(1, def.MaxStacks), DotTiers.MaxStacks(stackKind));
-        int add = def.StacksPerCastAt(level);
-        if (!string.IsNullOrEmpty(def.StackKey))
-        {
-            var ctr = target.Buffs.FirstOrDefault(b => b.Key == def.StackKey);
-            if (ctr is not null)
-            {
-                ctr.Stacks = Math.Min(cap, ctr.Stacks + add);
-                ctr.MaxStacks = cap;
-                ctr.TicksRemaining = dotTicks;   // refresh
-                ctr.SourceId = caster.Id;
-            }
-            else
-            {
-                target.Buffs.Add(new BuffInstance
-                {
-                    Effect = SkillEffect.None,           // no stats: a pure counter
-                    Magnitudes = Array.Empty<EffectMagnitude>(),
-                    TicksRemaining = dotTicks,
-                    Stacks = Math.Min(cap, add),
-                    MaxStacks = cap,
-                    Internal = true,
-                    SourceId = caster.Id,
-                    Name = def.Name + " (stacks)",
-                    Key = def.StackKey,
-                });
-            }
-        }
 
         target.RecomputeDerived();   // secondary debuff magnitudes (slow etc.) take effect
         if (target.Kind == EntityKind.Player) { PushBuffs(target); SendStats(target); }
+    }
+
+    /// <summary>Bank this skill's STACKS on the target — the per-skill counter (StackKey, Internal)
+    /// that counts 1..Max and is what a burst consumes.
+    ///
+    /// <para>🔑 CALLED FOR A STRIKE THAT LANDED THE SKILL, and from nowhere else. Owner, 2026-09-11:
+    /// *"each landed venom blow adds stacks that do not do nothing just stacks"* — a stack is the
+    /// record of a blade going in, and the venom debuff is a separate thing that lands on its own
+    /// contest and then does damage PER STACK. **The DoT's contest is irrelevant to the pool.**</para>
+    ///
+    /// <para>🔑 ON A BLOW SKILL THE BLOW GATE IS THE STACK GATE (`BL-197`): a failed blow resolves as
+    /// an ordinary attack and banks nothing, so Perfect Strike (blow rate ×1.4) really does mean
+    /// *"i land more ophen i stack faster but for less dmg"* against Brutal Strike's *"land less
+    /// ofthen ... but do more dmg"*. ONE roll gates a stack, and the player has a buff for it.</para>
+    ///
+    /// <para>⚠ THE COUNTER OUTLIVES A FAILED CONTEST, so it carries its own clock: the DoT buff's
+    /// remaining time when one is present (`BL-156` — CON shortens the DoT, and a counter that
+    /// outlived it would keep a stale stack alive), and the skill's authored duration when the venom
+    /// itself was resisted.</para>
+    ///
+    /// <para>⚠ ONE CAST MAY ADD MORE THAN ONE (<c>SkillDef.StacksPerCast</c>, per rung) — his ladder
+    /// goes 1 → 3, which is how fast the burst fills, so <c>add</c> is read rather than hard-coded.
+    /// 🔑 THE FAMILY DECIDES THE CAP, NOT THE SKILL (*"venom is the only stacking dot atm"*).</para></summary>
+    private void AddDotStacks(Entity caster, Entity target, SkillDef def, int level)
+    {
+        if (string.IsNullOrEmpty(def.StackKey)) return;
+
+        string dmgKey = string.IsNullOrEmpty(def.BuffKey) ? def.Name : def.BuffKey;
+        int dotTicks = def.DurationTicksAt(level);
+        if (target.Buffs.FirstOrDefault(b => b.Key == dmgKey) is { TicksRemaining: > 0 } dmg)
+            dotTicks = dmg.TicksRemaining;
+        if (dotTicks <= 0) dotTicks = Math.Max(1, def.DurationTicks);
+
+        var stackKind = DotTiers.KindOf(def.DotKind, def.Effect);
+        int cap = Math.Min(Math.Max(1, def.MaxStacks), DotTiers.MaxStacks(stackKind));
+        int add = def.StacksPerCastAt(level);
+
+        var ctr = target.Buffs.FirstOrDefault(b => b.Key == def.StackKey);
+        if (ctr is not null)
+        {
+            ctr.Stacks = Math.Min(cap, ctr.Stacks + add);
+            ctr.MaxStacks = cap;
+            ctr.TicksRemaining = dotTicks;   // refresh
+            ctr.SourceId = caster.Id;
+        }
+        else
+        {
+            target.Buffs.Add(new BuffInstance
+            {
+                Effect = SkillEffect.None,           // no stats: a pure counter
+                Magnitudes = Array.Empty<EffectMagnitude>(),
+                TicksRemaining = dotTicks,
+                Stacks = Math.Min(cap, add),
+                MaxStacks = cap,
+                Internal = true,
+                SourceId = caster.Id,
+                Name = def.Name + " (stacks)",
+                Key = def.StackKey,
+            });
+        }
+
+        if (target.Kind == EntityKind.Player) PushBuffs(target);
+    }
+
+    /// <summary>How many stacks a DoT buff is actually ticking for. The count lives on the hidden
+    /// counter when the skill declares a <c>StackKey</c> (<see cref="AddDotStacks"/> pins the damage
+    /// effect itself at one), so reading <c>b.Stacks</c> alone is reading the wrong number.
+    ///
+    /// <para>🔴 THIS IS WHY VENOM TICKED FOR ONE STACK NO MATTER WHAT (found 2026-09-11). The fold
+    /// existed in <see cref="PushTargetBuffs"/> — the bar SHOWED "x7" — and nowhere else, so the bar
+    /// and the damage disagreed and the bar was the one telling the truth about intent. Owner: *"try
+    /// to do a venom debuff that do dmg depending on those stacks"*.</para></summary>
+    private static int DotStacksOf(Entity target, BuffInstance b)
+    {
+        if (!string.IsNullOrEmpty(b.SkillId)
+            && SkillCatalog.Get(b.SkillId) is { } sd && !string.IsNullOrEmpty(sd.StackKey)
+            && target.Buffs.FirstOrDefault(c => c.Key == sd.StackKey) is { } counter)
+            return Math.Max(1, counter.Stacks);
+        return Math.Max(1, b.Stacks);
     }
 
     /// <summary>Tick all damage-over-time effects on an entity once (per second). Damage is credited
@@ -12657,7 +12839,10 @@ public class GameLoopService : BackgroundService
             // "tire 3" / "tier-11 bleed", and the same one a cure has to out-reach.
             int dps = b.DotPower > 0 ? b.DotPower : DotTiers.DamagePerSecond(b.DotKind, b.Rank);
             if (dps <= 0) continue;
-            total += dps * b.Stacks;
+            // ⚠ DotStacksOf, NOT b.Stacks: for a skill with a StackKey the real count is on the hidden
+            // counter and this buff is pinned at one. Venom is the only family that stacks, and this
+            // line is the whole of *"a venom debuff that does dmg depending on those stacks"*.
+            total += dps * DotStacksOf(entity, b);
             source ??= _world.Entities.GetValueOrDefault(b.SourceId);
         }
         if (total <= 0) return;
@@ -13755,8 +13940,13 @@ public class GameLoopService : BackgroundService
     /// through still sees which skill fired. It changes nothing mechanical.</para>
     ///
     /// <para>⚠ Kill and Retaliate deliberately stay with the CALLER: the skill path runs its own
-    /// AfterOffensiveSkill + Kill at the end of ExecuteSkill, and doing them here would double them.</para></summary>
-    private void ResolveBasicSwing(Entity attacker, Entity target, string? castName = null)
+    /// AfterOffensiveSkill + Kill at the end of ExecuteSkill, and doing them here would double them.</para>
+    ///
+    /// <returns>Whether the swing CONNECTED. Nothing reads it today: `BL-197` ruled that a failed blow
+    /// banks no venom stack (*"only the succesfull stab .. not the failed/basick attack one"*), so the
+    /// fallback's outcome feeds nothing. Kept because it is free and true, and because the next caller
+    /// that needs to know whether a swing landed should not have to add it.</returns></summary>
+    private bool ResolveBasicSwing(Entity attacker, Entity target, string? castName = null)
     {
         float missChance = StatCalculator.ResolveAvoidChance(
             attacker.Accuracy, (int)target.EffectiveEvasion,
@@ -13767,6 +13957,7 @@ public class GameLoopService : BackgroundService
         if (_rng.NextDouble() < missChance)
         {
             BroadcastCombat(attacker, target, 0, CombatOutcome.Miss, castName);
+            return false;
         }
         else
         {
@@ -13821,6 +14012,7 @@ public class GameLoopService : BackgroundService
             }
             // Rogues carry magic-interrupt power on basic attacks; others = 0.
             TryInterruptCast(target, attacker.BasicAttackInterruptPower, damage, attacker);
+            return true;
         }
     }
 
@@ -15415,6 +15607,7 @@ public class GameLoopService : BackgroundService
             // is not an entity, so a world where nobody moves still has to be able to report one
             // appearing. Silent unless the viewer's visible SET changed.
             SendTotemsIfChanged(player, connectionId, sends);
+            SendTrapsIfChanged(player, connectionId, sends);
             SendWhispsIfChanged(player, connectionId, sends);   // `BL-109` — whisps are not entities
 
             // Nothing changed for this viewer — stay silent, UNLESS they are due a heartbeat. Silence
@@ -15445,6 +15638,7 @@ public class GameLoopService : BackgroundService
                 _lastSentByConn.Remove(conn);
                 _lastSentAtByConn.Remove(conn);   // or the heartbeat clock leaks a row per logout
                 _lastTotemsByConn.Remove(conn);   // ...and so would the totem set
+                _lastTrapsByConn.Remove(conn);    // ...and his own trap set
                 _hadWhispsByConn.Remove(conn);    // ...and the whisp-visibility flag
             }
         }
@@ -15456,6 +15650,46 @@ public class GameLoopService : BackgroundService
     /// <summary>The totem ids each connection has been told about, so the push can stay silent while
     /// nothing changes. Keyed the same way the snapshot diff is, and cleaned up beside it.</summary>
     private readonly Dictionary<string, HashSet<Guid>> _lastTotemsByConn = new();
+
+    /// <summary>The same, for the viewer's OWN traps.</summary>
+    private readonly Dictionary<string, HashSet<Guid>> _lastTrapsByConn = new();
+
+    /// <summary>Send this viewer HIS OWN armed traps, and only when the set changed — armed, sprung or
+    /// expired. Owner, 2026-09-11: *"for every trap the owner should see it where he placed it so he
+    /// can lure the enemy to it"*.
+    ///
+    /// <para>⚠ OWNER-ONLY, unlike the totem push beside it, and that is the design rather than a
+    /// shortcut: a totem is ground you want your party standing in, a trap is ground you want the
+    /// enemy not to know about. There is also no view-range test — a trap you set is yours to see even
+    /// after you have backed off to shoot, which is precisely the lure this is for.</para>
+    ///
+    /// <para>⚠ Seconds are rounded and folded into the change test rather than sent every tick: the
+    /// circle has to fade as the window closes, but a timer that ticks ten times a second would turn
+    /// "send when it changes" into a per-viewer message every 100ms.</para></summary>
+    private void SendTrapsIfChanged(Entity player, string connectionId, List<Task> sends)
+    {
+        List<TrapDto>? mine = null;
+        foreach (var t in _world.Traps)
+        {
+            if (t.OwnerId != player.Id) continue;
+            (mine ??= new()).Add(new TrapDto(
+                t.Id, t.X, t.Y, t.Radius,
+                (int)MathF.Ceiling(t.LifeTicks * GameConstants.TickSeconds)));
+        }
+
+        if (!_lastTrapsByConn.TryGetValue(connectionId, out var last))
+            _lastTrapsByConn[connectionId] = last = new HashSet<Guid>();
+
+        bool same = mine is null ? last.Count == 0
+                                 : mine.Count == last.Count && mine.All(v => last.Contains(v.Id));
+        if (same) return;
+
+        last.Clear();
+        if (mine is not null) foreach (var v in mine) last.Add(v.Id);
+
+        sends.Add(_hub.Clients.Client(connectionId)
+            .SendAsync("Traps", new TrapList(mine?.ToArray() ?? Array.Empty<TrapDto>())));
+    }
 
     /// <summary>Send this viewer the totems they can see — but ONLY if the set has changed since the
     /// last time, which for a totem means planted, moved, or expired.
@@ -15900,7 +16134,7 @@ public class GameLoopService : BackgroundService
             b.Suppressed,
             // `BL-111` — off the SAME predicate the eviction uses, so the counter on his bar and the
             // rule that throws a buff away can never disagree.
-            CountsAgainstBuffCap(b.SourceRow, b.Toggle, b.CountsTowardBuffLimit, b.IsDebuff))).ToList();
+            CountsAgainstBuffCap(b.SourceRow, b.Toggle, b.CountsTowardBuffLimit, b.IsDebuff, b.Internal))).ToList();
 
         // The GRADE PENALTY rides along as a synthetic, never-expiring DEBUFF row. It is not a real
         // BuffInstance (nothing casts it — it's a property of what you're wearing), but without a row on
@@ -16586,13 +16820,10 @@ public class GameLoopService : BackgroundService
         foreach (var b in target.Buffs)
         {
             if (b.Internal) continue;
-            int stacks = b.Stacks;
             // FOLD: if this buff is a DoT whose skill declares a StackKey, the real count lives on the
-            // hidden counter, not here — ApplyDotStack pins the damage effect at maxStacks: 1.
-            if ((b.Effect & SkillEffect.AnyDot) != 0
-                && SkillCatalog.Get(b.SkillId) is { } sd && !string.IsNullOrEmpty(sd.StackKey)
-                && target.Buffs.FirstOrDefault(c => c.Key == sd.StackKey) is { } counter)
-                stacks = counter.Stacks;
+            // hidden counter, not here — ApplyDotStack pins the damage effect at maxStacks: 1. Same
+            // helper TickDots charges the damage from, so the bar and the damage cannot disagree.
+            int stacks = (b.Effect & SkillEffect.AnyDot) != 0 ? DotStacksOf(target, b) : b.Stacks;
 
             dtos.Add(new BuffDto(
                 b.Name, BuffDescriptionWithSource(b),

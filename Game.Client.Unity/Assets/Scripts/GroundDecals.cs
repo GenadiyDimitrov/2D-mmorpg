@@ -49,7 +49,15 @@ namespace Game.Client
         [Tooltip("A flash starts slightly inside its true radius and snaps out to it.")]
         public float FlashGrowFrom = 0.75f;
 
-        // Height above the grid. The totem sits UNDER a flash so a heal landing on a totem still reads.
+        [Tooltip("Colour of one of YOUR armed traps. Amber, so it reads as a warning rather than as a "
+               + "totem you should stand in — and distinct from the red of an incoming area attack.")]
+        public Color TrapColour = new Color(0.95f, 0.62f, 0.15f);
+        [Tooltip("Resting alpha of a trap's disc. Fainter than a totem's: it marks ground you AVOID.")]
+        public float TrapAlpha = 0.13f;
+
+        // Height above the grid. The totem sits UNDER a flash so a heal landing on a totem still reads;
+        // a trap sits under both — it is the longest-lived and the least urgent of the three.
+        private const float TrapHeight = 0.01f;
         private const float TotemHeight = 0.02f;
         private const float FlashHeight = 0.04f;
 
@@ -63,6 +71,7 @@ namespace Game.Client
         }
 
         private readonly Dictionary<System.Guid, List<Decal>> _totems = new();
+        private readonly Dictionary<System.Guid, Decal> _traps = new();
         private readonly List<Decal> _flashes = new();
 
         // ---------------------------------------------------------------------------------------
@@ -128,6 +137,40 @@ namespace Game.Client
                 if (seen.Contains(id)) continue;
                 foreach (var d in _totems[id]) if (d.T != null) Destroy(d.T.gameObject);
                 _totems.Remove(id);
+            }
+        }
+
+        // ---------------------------------------------------------------------------------------
+        //  TRAPS — the server sends the whole set of the viewer's OWN traps whenever it changes.
+        // ---------------------------------------------------------------------------------------
+
+        /// <summary>Replace the drawn traps with exactly what the server says this player has armed.
+        ///
+        /// <para>Owner, 2026-09-11: *"for every trap the owner should see it where he placed it so he
+        /// can lure the enemy to it"*. So the disc is the trap's REAL trigger radius, exactly as a
+        /// totem's is its real reach — the point is not "a trap is here", it is "this is the ground
+        /// that springs it", and a lure is aiming a pack at that ground.</para>
+        ///
+        /// <para>⚠ NOBODY ELSE IS SENT THIS. A trap's value is that the thing walking into it does not
+        /// know; the server filters by owner (see <c>SendTrapsIfChanged</c>) and this list is simply
+        /// whatever arrived. Same whole-list, self-healing shape as <see cref="SetTotems"/>.</para></summary>
+        public void SetTraps(TrapList list)
+        {
+            var all = list?.Traps ?? System.Array.Empty<TrapDto>();
+            var seen = new HashSet<System.Guid>();
+
+            foreach (var t in all)
+            {
+                seen.Add(t.Id);
+                if (_traps.ContainsKey(t.Id)) continue;   // already drawn; a trap never moves
+                _traps[t.Id] = MakeDisc(t.X, t.Y, t.Radius, TrapColour, TrapHeight, "Trap");
+            }
+
+            foreach (var id in new List<System.Guid>(_traps.Keys))
+            {
+                if (seen.Contains(id)) continue;
+                if (_traps[id].T != null) Destroy(_traps[id].T.gameObject);
+                _traps.Remove(id);
             }
         }
 
@@ -328,6 +371,21 @@ namespace Game.Client
                         var c = d.Base; c.a = alpha;
                         UnlitMaterials.SetColor(d.M, c);
                     }
+            }
+
+            // Traps breathe too, on the OPPOSITE phase and half the swing. Opposite because the two
+            // can overlap — a healer's totem and a trapper's circle on the same ground — and two discs
+            // brightening together read as one; out of phase they separate without either being loud.
+            if (_traps.Count > 0 && TotemPulseSeconds > 0f)
+            {
+                float phase = -Mathf.Sin(Time.time * (2f * Mathf.PI / TotemPulseSeconds));
+                float alpha = Mathf.Max(0.02f, TrapAlpha + phase * TotemPulseAlpha * 0.5f);
+                foreach (var d in _traps.Values)
+                {
+                    if (d.M == null) continue;
+                    var c = d.Base; c.a = alpha;
+                    UnlitMaterials.SetColor(d.M, c);
+                }
             }
 
             // Flashes fade out and grow to their true radius, then delete themselves.

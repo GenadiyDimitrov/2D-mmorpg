@@ -61,12 +61,112 @@ public static partial class SkillCatalog
     /// eight NPC ones are one-child wrappers, so no structural test sees both. A group is decided by
     /// STRUCTURE (more than one child), the same test <c>BuildAdminBuffSet</c> uses to put groups
     /// first. Everything else is a single.</para></summary>
-    private static AdminBuffDrawer DrawerOf(SkillDef def)
+    public static AdminBuffDrawer DrawerOf(SkillDef def)
     {
         if (def.BuffKey == MarkKey) return AdminBuffDrawer.Mark;
         if (def.Name.StartsWith("Harmony", StringComparison.Ordinal)) return AdminBuffDrawer.Harmony;
         if (def.ChildBuffsAt(def.MaxLevel) is { Length: > 1 }) return AdminBuffDrawer.Group;
         return AdminBuffDrawer.Single;
+    }
+
+    /// <summary>Is this a HARMONY or a MARK — the top shelf, the two families that occupy a buff slot
+    /// however briefly they run (owner, 2026-09-11: *"all buffs that are not 20min and not harmonies
+    /// or marks ... not enter the limit"*).
+    ///
+    /// <para>🔑 THE SAME TWO TESTS <see cref="DrawerOf"/> USES, IN THE SAME ORDER, and deliberately
+    /// sharing them: the classification he named the drawers by is the classification the cap is
+    /// priced on, and two copies of "what is a harmony" would drift the first time one grew a
+    /// thirteenth member. Mark by buff KEY (his *"Do not Stack with Other 'Mark' Skills"* family),
+    /// harmony by NAME — the only thing the twelve share, since four carry magnitudes and eight are
+    /// one-child wrappers.</para>
+    ///
+    /// <para>⚠ Asked of the LANDING def. The eight NPC harmonies land through a wrapper, so what
+    /// arrives here is their child — which does not matter, because those run an hour and clear the
+    /// duration line on their own. It is the four CLASS harmonies and the Marks, at five minutes, that
+    /// need this test at all.</para></summary>
+    public static bool IsHarmonyOrMark(SkillDef def) =>
+        def.BuffKey == MarkKey || def.Name.StartsWith("Harmony", StringComparison.Ordinal);
+
+    private static HashSet<string>? _buffLimitIds;
+
+    /// <summary>`BL-198` — <b>THE BUFF-LIMIT COLLECTION</b>: the ids of every buff that occupies one of
+    /// the <see cref="GameConstants.MaxBuffSlots"/> squares. Membership is the whole test.
+    ///
+    /// <para>🔑 <b>HIS RULING, 2026-09-11, AND IT OVERTURNED THE DURATION TEST `BL-195` SHIPPED THE
+    /// DAY BEFORE:</b> *"it should not work only on timer ... the limit should have an id collection
+    /// ... and if that skill is inside that collection it goes to the buff bar and counts ... i gave
+    /// the duration as filter not as solution"*.</para>
+    ///
+    /// <para>🔴 <b>AND HE IS RIGHT, WITH A COUNTEREXAMPLE THE DURATION TEST COULD NOT SURVIVE:</b>
+    /// *"if one buff a 10 min buff and it doubles it probanbly break en enter the count .. but it
+    /// shouldns"*. `BL-190`'s <c>DoubleDurationRate</c> doubles a landed duration on a roll — so a
+    /// 10-minute buff that happened to roll a double would cross twenty minutes and start costing a
+    /// slot, and the same buff on the same character would cost a slot or not depending on a die. A
+    /// property of the SKILL cannot be decided by a per-cast roll. **Never make a rule read a number
+    /// something else in the game is allowed to multiply.**</para>
+    ///
+    /// <para>🔑 <b>THE COLLECTION IS DERIVED, NOT TYPED OUT</b>, for the reason every list in this file
+    /// is: a typed list goes stale and whole tiers silently vanish from it. His own enumeration —
+    /// *"single buffs, grouped buffs, harmonies, marks, archers 20 min buffs, any other self 20 min
+    /// buff we have (cant remember them all)"* — is exactly two sources:</para>
+    /// <list type="number">
+    ///   <item><b>THE TWO SHELVES</b>, unioned — every single, group, harmony and Mark the game has.
+    ///         That is the same universe the admin Buffs menu's four drawers are built from, so his
+    ///         first four categories ARE those four drawers and need no second definition.</item>
+    ///   <item><b>EVERY OTHER 20-MINUTE BUFF</b>, by its AUTHORED <c>DurationTicks</c> — which is what
+    ///         picks up the archer's Bow Expertise / Blessing / Spirit and anything else authored that
+    ///         long later, with no edit here. ⚠ The authored field, never the landed one: that is what
+    ///         makes it immune to the doubling above.</item>
+    /// </list>
+    ///
+    /// <para>⚠ <b>ROW <c>Buff</c> ONLY IN RULE 2.</b> The three RUNES run an HOUR and would otherwise
+    /// be swept in, and they must not be: a ~1/s reconciliation loop re-derives them from the held
+    /// items, so evicting one frees a slot for a fraction of a second and then puts it straight back.
+    /// They draw in <c>BuffRow.Consumable</c>, and so do potions and scrolls — whose CHILDREN are
+    /// already in via rule 1, because a potion of Might and a cleric's Might are literally the same
+    /// buff from different bottles and always have been.</para>
+    ///
+    /// <para>⚠ <b>THE CHILD IDS ARE IN TOO.</b> A single blessing lands through a one-child wrapper and
+    /// the buff that ends up on the bar carries the CHILD's id, so a set of wrapper ids alone would
+    /// match nothing at the only moment it is asked.</para>
+    ///
+    /// <para>📐 Print it: <c>dotnet run --project tools/BalanceMatrix -- --bufflimit</c>. That listing
+    /// is the answer to his *"U can ask me for some that i didnt meantion"* — it is faster to read the
+    /// derived list than to remember the buffs.</para></summary>
+    public static IReadOnlyCollection<string> BuffLimitIds => _buffLimitIds ??= BuildBuffLimitIds();
+
+    /// <summary>Does this landing def occupy a buff slot? See <see cref="BuffLimitIds"/>.</summary>
+    public static bool OccupiesBuffSlot(SkillDef def) => BuffLimitIds.Contains(def.Id);
+
+    private static HashSet<string> BuildBuffLimitIds()
+    {
+        var set = new HashSet<string>(StringComparer.Ordinal);
+
+        void Include(SkillDef def)
+        {
+            // The same test the drawers use: a TIMED BUFF and nothing else. It is what drops the
+            // attack skills, the heals, the totems and every passive as the kit grows.
+            if (def.Category != SkillCategory.Buff || def.DurationTicks <= 0) return;
+            if (!set.Add(def.Id)) return;
+            // …and whatever actually LANDS. A one-child wrapper stamps the CHILD's id on the buff, and
+            // a wrapper may pick a different child per level (Sprint's two rungs), so every level's.
+            for (int lv = 1; lv <= Math.Max(1, def.MaxLevel); lv++)
+                if (def.ChildBuffsAt(lv) is { Length: 1 } kid)
+                    set.Add(kid[0]);
+        }
+
+        // 1 — the two shelves: singles, groups, harmonies and Marks, i.e. his first four categories.
+        foreach (string id in AdminBuffSet.Concat(AdminBuffSkip).Concat(NewbieBuffSet))
+            if (Get(id) is SkillDef shelf) Include(shelf);
+
+        // 2 — every other TWENTY-MINUTE buff, off its AUTHORED duration. ⚠ `BuffRow.Buff` only: see
+        //     the note about the runes on BuffLimitIds.
+        foreach (var def in AllSkills)
+            if (def.BuffRow == BuffRow.Buff
+                && def.DurationTicks >= GameConstants.BuffLimitMinDurationTicks)
+                Include(def);
+
+        return set;
     }
 
     private static Dictionary<AdminBuffDrawer, AdminBuffEntry[]> BuildAdminBuffMenu()

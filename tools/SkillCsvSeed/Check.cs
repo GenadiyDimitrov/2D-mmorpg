@@ -126,6 +126,19 @@ internal static class Check
         // two above.
         new("tank 4th",    BaseClass.Fighter, Archetype.Tank,    76, 90, Game.Shared.Discipline.Bulwark,
             Fourth: true, Also: new[] { "shared 4th" }),
+        // `dual 4th` earned its line on 2026-09-11, when he added the three race identity passives, the
+        // three race ultimates and the fixed Vanish reuse and said so: *"With that duals 4th is
+        // finihed (untill dmg is rly tested)"*.
+        //
+        // ⚠ MOST OF THIS FILE IS STILL DERIVED, not authored — the four stab ladders and both masteries
+        //   were written FROM the code on 2026-09-10 so the class would be measurable above 76. The
+        //   spec is still worth having: it stops the derived half and the code drifting apart silently,
+        //   which is exactly what the `atk -15%; def -15%` rider text did for a whole chronicle.
+        //   The DAMAGE is the part he has not signed off — *"untill dmg is rly tested"*.
+        // 🔑 Three disciplines, like `dual 3rd`: the melee rogue splits by RACE at 40.
+        new("dual 4th",    BaseClass.Fighter, Archetype.Rogue,   76, 90, Fourth: true,
+            Also: new[] { "shared 4th" }, Disciplines: new[]
+            { Game.Shared.Discipline.Nullblade, Game.Shared.Discipline.Phantom, Game.Shared.Discipline.Venomweaver }),
     };
 
     /// <summary>One rung, from either side, reduced to the fields worth comparing.

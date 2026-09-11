@@ -311,6 +311,27 @@ tick/s = DotTiers.DamagePerSecond(kind, tier) * stacks        FLAT — no defenc
 - **Only venom stacks.** `DotTiers.MaxStacks` caps the family, so a skill cannot be authored into a
   stacking bleed. The side effect does **not** scale with stacks — `BuffInstance.Percent` sums
   magnitudes and never multiplies by `Stacks`, so venom's −10% is −10% at one stack or ten.
+- 🔑 **THE STACKS ARE BANKED BY THE STRIKE, NOT BY THE CONTEST** (`BL-199`, 0.128.0). A stacking
+  skill's pool is a hidden counter on its `StackKey`; a resolution of the damage arm that **LANDS THE
+  SKILL** adds `StacksPerCast` to it. The DoT is a separate thing that lands on its own AGI-vs-CON
+  contest; losing it costs the damage, never the pool. Owner, 2026-09-11: *"Stacks should be
+  independent of dot ... each landed venom blow adds stacks that do not do nothing just stacks"*.
+  🔴 Until then BOTH rolls had to come up for one stack — the blow gate *and* the contest — which is
+  the whole of *"venomweaver almost cannot stack venom"*.
+- 🔑 **ON A BLOW SKILL THE BLOW GATE IS THE STACK GATE** (`BL-197`, same day): a failed blow resolves
+  as an ordinary basic attack (`BL-193`) and banks **nothing**. That is deliberate and it is the
+  design — *"if i chose to use perfect_strike i land more ophen i stack faster but for less dmg ... if
+  i use brutal_strike i land less ofthen i stack slower but do more dmg"*. The @80 choice between
+  those two buffs only means something if the rate it moves is also the stacking rate. **One roll
+  gates a stack, and the player has a buff for it.**
+- 🔑 **`stacks` in the tick formula is the COUNTER's**, read through `GameLoopService.DotStacksOf`. The
+  damage buff itself is pinned at one (`ApplyDotStack`), so `b.Stacks` is the wrong number and venom
+  ticked for a single stack at any count until 0.128.0 — while the bar showed "x7", because the fold
+  existed there and nowhere else.
+- **A BURST takes the DoT with the pool.** `ConsumeStackKey` multiplies the burst's damage by the
+  stacks, removes the counter **and** removes every DoT whose skill shares that `StackKey` (owner:
+  *"when venom burst is used it takes with it the stacks + the dot debuff"*), then tells the caster
+  what it spent. A burst that found no pool falls through and lays the first stack instead.
 - **Burn is saved against by nothing and always lands** (*"for burn nothing protects .. always land"*).
   The contest is skipped outright rather than multiplied up, so `CcResist` and the per-school blessing
   cannot claw it back.
@@ -327,7 +348,7 @@ tick/s = DotTiers.DamagePerSecond(kind, tier) * stacks        FLAT — no defenc
 field, so Bleeding Arrow (power 15,000 over 30s) dealt **450,000**. A skill's Power is its direct hit;
 a DoT rider is a second number.
 
-`DotTiers` · `GameLoopService.TickDots` / `ApplyBuff` / `ApplyDotStack`
+`DotTiers` · `GameLoopService.TickDots` / `ApplyBuff` / `ApplyDotStack` / `AddDotStacks` / `DotStacksOf`
 
 ## Crit rate and crit damage, taken OFF the attacker (`tank 3rd.csv`, 0.105.0)
 
@@ -523,13 +544,86 @@ autohunt's budget. Reading the authored number anywhere else is the bug.
 ```
 reuse = authored * (1 - reduction)                       min 1 tick; skipped when FixedCooldown
 reduction = CooldownReduction                            every skill (Spell Mastery, buffs)
-          + (category == Physical ? CooldownReductionPhysical : CooldownReductionMagic)
+          + (SkillMath.IsPhysical(def) ? CooldownReductionPhysical : CooldownReductionMagic)
           clamp [0, 0.8]
 ```
 
-⚠ "Magic" is spells, buffs, debuffs AND heals — everything but the Physical category. The per-channel
+🔑 **THE CHANNEL IS `SkillMath.IsPhysical`, THE SAME TEST THE SPEED MODEL AND SILENCE USE** (0.128.0).
+It asked `Category == Physical` until then — a ROLE tag — so the rogue's Sprint, the archer's three
+traps and every physical stance were filed under MAGIC reuse (owner: *"rogues sprint is physical not
+magical"*), and Bow Blessing's *"−20% physical reuse"* did not in fact reach *"every skill an archer
+owns"*. Same mistake `BL-132` fixed for cast pacing; this was the last call site still asking Category.
+
+⚠ "Magic" is spells, buffs, debuffs AND heals — everything the physical test rejects. The per-channel
 halves exist because one buff can carry two different numbers (Harmony of the Soul: −20% magic,
 −30% physical).
+
+## Cast length (`BL-196`, 0.128.0)
+
+```
+castTicks = authoredCast
+          * (IsPhysical(def) ? 333/attackSpeedStat : 333/castSpeedStat)   ← the 333 model
+          * CastTimeMultiplier                                            ← the cast-TIME channel
+   min 2 ticks · a MOB and a FixedCast skill skip BOTH factors (multiplier 1)
+
+CastTimeMultiplier = clamp(1 - SUM(buff.CastTimePct), 0.2, 3)
+```
+
+🔑 **CAST SPEED AND CAST TIME ARE TWO DIFFERENT CHANNELS.** Cast *speed* is a STAT, and it only paces
+skills the physical/magical axis sends to it — so a cast-speed grant is worth nothing to a fighter,
+whose skills are paced by attack speed. Cast *time* multiplies the answer, whichever stat produced it.
+His formula, verbatim: *"(baseCastOrAttackSpeedValue x castOrAttackSpeedBuffs x castOrAttackSpeedDebuffs
+/ 333 or whatever) x castTimeDebffs x spirit_mastery and other cast time buffs"* — everything inside
+his bracket is the 333 model; `CastTimePct` is what is outside it.
+
+⚠ Authored by exactly one skill today: the archer's **Spirit Mastery** (−20%), which was a
+`BuffCastSpeed` magnitude and therefore did nothing for the archer who cast it. A NEGATIVE
+`CastTimePct` lengthens a cast — his *"castTimeDebffs"* — and nothing authors one yet.
+
+`SkillDef.CastTimePct` · `Entity.CastTimeMultiplier` · `GameLoopService.BeginCast` / `AutoCycleTicks`
+
+## Which buffs cost a slot (`BL-198`, 0.128.0)
+
+```
+occupies a slot  iff  landingDef.Id ∈ SkillCatalog.BuffLimitIds
+                 and  CountsTowardBuffLimit         authored VETO; default true, nearly inert now
+                 and  not toggle, not a debuff, not Internal, row is Buff or Consumable
+cap = 20 · over it the OLDEST counted buff is dropped, FIFO — never a refusal
+```
+
+🔑 **IT IS A COLLECTION, NOT A DURATION** (owner, 2026-09-11: *"it should not work only on timer ...
+the limit should have an id collection ... i gave the duration as filter not as solution"*).
+
+🔴 **The counterexample that killed the duration test:** *"if one buff a 10 min buff and it doubles it
+probanbly break en enter the count .. but it shouldns"*. `BL-190`'s `DoubleDurationRate` doubles a
+landed duration **on a roll**, so a 10-minute buff that rolled a double would start costing a square —
+the same buff on the same character, decided by a die. **A property of the skill must never read a
+number something else in the game is allowed to multiply.**
+
+**The collection is DERIVED, never typed out** (a typed list goes stale and whole tiers vanish from
+it), from two sources that between them are exactly his enumeration — *"single buffs, grouped buffs,
+harmonies, marks, archers 20 min buffs, any other self 20 min buff"*:
+
+1. **The two shelves unioned** — the buffer CLASS kit + the Spirit Helper's shelf. That is the same
+   universe the admin Buffs menu's four drawers come from, so singles, groups, harmonies and Marks are
+   in by identity, at any duration.
+2. **Every other buff whose AUTHORED `DurationTicks` ≥ 20 min** and whose row is `BuffRow.Buff`. This
+   is what sweeps in the archer's Bow Expertise / Blessing / Spirit with no edit anywhere.
+
+⚠ **`BuffRow.Buff` in rule 2 is what keeps the RUNES out** — they run an hour, but a ~1/s
+reconciliation loop owns them, so evicting one frees a square for a fraction of a second and then puts
+it straight back. Potions and scrolls are also `Consumable`, but their CHILDREN are already in via rule
+1 — a potion of Might and a cleric's Might are the same buff from different bottles.
+
+⚠ **Child ids are in the set too.** A single blessing lands through a one-child wrapper, and the buff
+on the bar carries the CHILD's id — a set of wrapper ids alone would match nothing at the only moment
+it is asked.
+
+📐 `dotnet run --project tools/BalanceMatrix -- --bufflimit` prints both halves: what costs a square
+and what does not.
+
+`SkillCatalog.BuffLimitIds` / `DrawerOf` · `GameConstants.BuffLimitMinDurationTicks` (rule 2 only) ·
+`GameLoopService.OccupiesBuffSlot` / `CountsAgainstBuffCap` / `EvictOldestBuffIfFull`
 
 `Entity.CooldownReductionFor` · `GameLoopService.ExecuteSkill` / `AutoCycleTicks`
 
