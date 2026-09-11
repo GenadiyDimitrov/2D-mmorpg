@@ -7,12 +7,76 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.128.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.129.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-11 (latest) — 0.128.0: venom stacks stop needing two rolls; the buff limit becomes a collection
+## 2026-09-11 (latest) — 0.129.0: the channel becomes a real channel — it roots you, it shows a bar, and a second skill queues
+
+✅ **No new APK, no protocol bump.** Every part of this is server-side: the volley reuses the cast
+bar's own message, and the client already roots, draws the X and cancels off "am I casting".
+
+His report, on Arrow Barrage: *"it does the 10 times dmg .. just i have 2s to cast it .. i cast it and
+it does then 10times dmg .. and in that time i can move .. but when i cast another skill it cancels
+... the idea with the channel skill is it locks me in place ... its high dmg skill that requires
+strategy to use not blindly click and run"*.
+
+The volley worked; the **commitment** did not. Three gaps, and each one made the skill strictly better
+than it was designed to be — you fired ten arrows and then walked away with the payment already made.
+
+### The volley roots you
+
+`Entity.IsCommitted` — a cast in flight **or** a volley in progress — is now what the movement doors
+ask, in place of `CastingSkillId`. (Distinct from `IsRooted`, which is the Root debuff: that one is
+done to you, this one you chose.) It gates the move tap (`HandleMove`), sitting down, the item-use
+cast, the auto-hunt loop, and `TickFollow`.
+
+🔑 **TickFollow is the one that had to be found rather than reasoned about.** It writes a destination
+*every tick*, so refusing the player's own taps would have achieved nothing: a following archer would
+have been walked through his own barrage by his auto-repath. The follow is not dropped — it resumes
+by itself when the last arrow leaves.
+
+### The volley has a bar
+
+The channel pushes the **same `CastInfo` message** the cast does, for `shots × interval`, and every
+way a volley can end takes it down again — which is why `EndChannel` is no longer static: it owns that
+bar. `CancelCast` could not do it, because its own clearing push sits past an early return that fires
+for exactly this case (a channel runs with `CastingSkillId` already null).
+
+🔑 **The bar is also the entire client change, and it is why there isn't one.** The cast bar's X and
+the skill slot's X both key off "am I casting", and both already send `CancelCast` — which has ended
+volleys since the day the channel shipped. Giving the volley a bar handed it the cancel UI for free.
+
+⚠ Sent when the volley STARTS rather than added to the cast's seconds up front: the length is only
+known to be real once every gate has passed, and a bar that kept running after a barrage failed to
+fire would be advertising a root the player does not have.
+
+### A second skill CHAINS instead of killing the arrows
+
+*"clicking on next skill dosnt cancel the cast just mark it in the queue"* — which is the playtest-27
+rule the cast has followed for a month: the same skill cancels, anything else follows. A volley fell
+past that test (it is not a cast and holds no queued skill) and died on the belt-and-braces
+`CancelCast` at the foot of `BeginSkill`. It now takes the same branch, compared by the **wrapper's**
+id (`Entity.ChannelWrapperId`, new) — the arrow's id is an engine detail and is on nobody's bar.
+
+🔴 **And the chain had a second bug waiting behind that one.** `TryStartChainedSkill` is called the
+instant a cast LANDS — and a barrage's cast landing is precisely the moment its volley BEGINS. The
+chained skill would have started on top of ten arrows still in the air, and its re-entry (`fromChain`,
+so it skips the cancel/chain test) would have reached that same belt `CancelCast` and thrown the rest
+of the volley away. The "not yet" test now stands **before** the chain slot is cleared, unlike the
+failures around it: those are *"it was tried and it did not work"*, this is *"it is not its turn"*,
+and consuming the chain there would have silently swallowed a skill the player was promised. The
+volley's own end calls it again — the last arrow is when the promise comes due.
+
+A volley that ends early because its target died takes the chain too; a cancel, a stun or an interrupt
+still clears it, exactly as for a cast.
+
+⚠ **Twin Arrows is the same mechanism and gets the same treatment** — a 0.4s root and a 0.4s bar.
+Uniform on purpose: the channel is one rule, not one skill's rule.
+
+
+## 2026-09-11 — 0.128.0: venom stacks stop needing two rolls; the buff limit becomes a collection
 
 🔴 **New APK required. Protocol 37** — `TrapList` is a new server→client message, and the reuse,
 cast-time and skill-description changes below are all rendered from the client's compiled catalogue.

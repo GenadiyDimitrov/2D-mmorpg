@@ -2059,6 +2059,11 @@ public class Entity
     //    committed, and anything that would interrupt a cast ends the volley instead. Folding the two
     //    into one field would have made every `IsCasting` check in the loop mean two different things.
     public string? ChannelSkillId { get; set; }
+    /// <summary>The WRAPPER that started this volley (Arrow Barrage), as opposed to
+    /// <see cref="ChannelSkillId"/>, which is the arrow it looses. It is the wrapper the player
+    /// pressed, so it is the wrapper the cast bar must name and the wrapper a second press of the
+    /// same slot cancels — the arrow is an engine detail and is on nobody's skill bar.</summary>
+    public string? ChannelWrapperId { get; set; }
     public Guid? ChannelTargetId { get; set; }
     public int ChannelLevel { get; set; }
     public int ChannelShotsLeft { get; set; }
@@ -2079,6 +2084,15 @@ public class Entity
     /// <summary>Is this entity mid-volley? Used wherever a cast would be cancelled, so a channel dies
     /// to the same things a cast does.</summary>
     public bool IsChannelling => ChannelShotsLeft > 0 && ChannelSkillId is not null;
+
+    /// <summary>COMMITTED WHERE YOU STAND — a cast in flight or a volley in progress. (Distinct from
+    /// <see cref="IsRooted"/>, which is the Root DEBUFF: that one is done to you, this one you chose.)
+    /// <para>🔑 Owner, 2026-09-11: *"the idea with the channel skill is it locks me in place … its
+    /// high dmg skill that requires strategy to use not blindly click and run"*. A barrage that let
+    /// you walk was strictly better than one that did not, so the root IS the price of the damage.
+    /// One property rather than two tests at each door, because the first version of this shipped
+    /// with the channel arm missing from every one of them.</para></summary>
+    public bool IsCommitted => CastingSkillId is not null || IsChannelling;
 
     public Dictionary<string, int> SkillCooldowns { get; } = new();
 

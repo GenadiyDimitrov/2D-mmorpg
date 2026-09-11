@@ -1292,7 +1292,10 @@ public class GameLoopService : BackgroundService
 
         // Casting roots you — movement is rejected until the cast finishes or you
         // cancel it explicitly (ESC). Moving does NOT cancel the cast.
-        if (entity.CastingSkillId is not null)
+        // ⚠ `IsCommitted`, not `CastingSkillId`: a VOLLEY roots you too (owner, 2026-09-11 — *"while
+        // channeling i cannot move"*). It is the same commitment one step later, and the channel is
+        // the only part of a barrage the player actually experiences as the skill.
+        if (entity.IsCommitted)
             return;
 
         // `BL-110` — FEAR/CHARM TAKE THE FEET, not just the hands. The server is writing this
@@ -1403,7 +1406,7 @@ public class GameLoopService : BackgroundService
         if (player.StandUpTicks > 0) return;   // mid stand-up, ignore
 
         // Sitting requires being idle (not engaged / not casting).
-        if (cmd.State == MoveState.Sitting && (player.Engaged || player.CastingSkillId is not null))
+        if (cmd.State == MoveState.Sitting && (player.Engaged || player.IsCommitted))
             return;
 
         // Standing UP from a sit costs the stand-up recovery (the standing animation): you can't move,
@@ -1845,11 +1848,21 @@ public class GameLoopService : BackgroundService
     private void TryStartChainedSkill(Entity entity)
     {
         if (entity.ChainedSkillId is not string next) return;
+        // 🔴 NOT YET — AND THIS TEST STANDS *BEFORE* THE SLOT IS CLEARED, unlike the failures the note
+        // above is about. Those are "it was tried and it did not work"; this is "it is not its turn",
+        // and consuming the chain here would silently swallow the skill the player was promised.
+        //
+        // The case is a CHANNEL: the cast branch calls this the instant a cast LANDS, and a barrage's
+        // cast landing is precisely the moment its volley BEGINS. Without this the chained skill would
+        // start on top of ten arrows still in the air — and worse, the chained re-entry (fromChain, so
+        // it skips the cancel/chain test in BeginSkill) would fall to the belt `CancelCast` at the
+        // foot of that method and throw the rest of the volley away. The volley's own end calls this
+        // again; that is when the promise comes due.
+        if (entity.IsCommitted || entity.QueuedSkillId is not null) return;
         entity.ChainedSkillId = null;
         var target = entity.ChainedTargetId;
         entity.ChainedTargetId = null;
         if (entity.Kind != EntityKind.Player || entity.Dead) return;
-        if (entity.CastingSkillId is not null || entity.QueuedSkillId is not null) return;
         BeginSkill(entity, next, target, fromChain: true);
     }
     private void HandleSkill(SkillCmd cmd)
@@ -1899,15 +1912,28 @@ public class GameLoopService : BackgroundService
         // way it would have if you had pressed it yourself at that moment.
         // ⚠ A TOGGLE is never chained: it is instant, costs no cast time, and stopping mid-cast to
         // remember a stance for later would be strictly worse than just flipping it now.
+        //
+        // 🔑 A VOLLEY IN FLIGHT IS "IN FLIGHT" TOO (owner, 2026-09-11: *"clicking on next skill dosnt
+        // cancel the cast just mark it in the queue"*). It used to fall past this test — a channel is
+        // not a cast and holds no queued skill — and die on the belt-and-braces `CancelCast` at the
+        // bottom of this method, so any second press threw the rest of the arrows away. Now the volley
+        // obeys exactly the playtest-27 rule the cast does: the same skill cancels it, anything else
+        // chains. ⚠ The id compared is the WRAPPER's (`ChannelWrapperId`) — the arrow's id is an engine
+        // detail and is on nobody's bar, so comparing against that would never match a press.
         if (!fromChain && !def.Toggle
-            && (caster.CastingSkillId is not null || caster.QueuedSkillId is not null))
+            && (caster.CastingSkillId is not null || caster.QueuedSkillId is not null
+                || caster.IsChannelling))
         {
-            string current = caster.CastingSkillId ?? caster.QueuedSkillId!;
+            string current = caster.CastingSkillId ?? caster.QueuedSkillId
+                             ?? caster.ChannelWrapperId ?? caster.ChannelSkillId!;
             if (current == def.Id)
             {
                 caster.ChainedSkillId = null;
                 caster.ChainedTargetId = null;
-                if (caster.CastingSkillId is not null) CancelCast(caster, startCooldown: true);
+                // ⚠ The channel arm goes through CancelCast as well: it is what ends the volley AND
+                // drops the bar, and its own early return means it is a no-op on the cast fields.
+                if (caster.CastingSkillId is not null || caster.IsChannelling)
+                    CancelCast(caster, startCooldown: true);
                 else { caster.QueuedSkillId = null; caster.QueuedTargetId = null; }
                 SendSystemToEntity(caster, $"{def.Name} cancelled.");
                 return;
@@ -4123,7 +4149,7 @@ public class GameLoopService : BackgroundService
         // cast lands, and refunds it if interrupted. The skill is NOT learned — the ITEM grants it.
         if (skill.CastTicks > 0)
         {
-            if (player.CastingSkillId is not null || player.QueuedSkillId is not null)
+            if (player.IsCommitted || player.QueuedSkillId is not null)
                 return false;
             if (player.SkillCooldowns.TryGetValue(skill.Id, out int cd) && cd > 0)
             {
@@ -5039,8 +5065,8 @@ public class GameLoopService : BackgroundService
             }
             return;
         }
-        if (p.CastingSkillId is not null || p.QueuedSkillId is not null)
-            return;   // let an in-progress cast/queue resolve
+        if (p.IsCommitted || p.QueuedSkillId is not null)
+            return;   // let an in-progress cast/volley/queue resolve
 
         // Counter-attack: if a player just hit us and counter-attack is on, retaliate — unless we're
         // about to finish a nearly-dead mob (owner-delegated heuristic: <25% HP = finish it first).
@@ -8631,6 +8657,11 @@ public class GameLoopService : BackgroundService
     private void TickFollow(Entity p)
     {
         if (p.FollowTargetId is not Guid tid) return;
+        // 🔑 A COMMITMENT BEATS A FOLLOW, and it has to be refused HERE rather than downstream: this
+        // writes a destination every tick, so a committed follower would be walked through his own
+        // barrage by his auto-repath while HandleMove was busy refusing his taps. The follow is not
+        // dropped — it resumes by itself the moment the cast lands or the last arrow leaves the bow.
+        if (p.IsCommitted) return;
         if (p.Dead || !_world.Entities.TryGetValue(tid, out var target) || target.Dead ||
             DistanceSq(p, target) > GameConstants.ViewRange * GameConstants.ViewRange)
         {
@@ -10842,6 +10873,7 @@ public class GameLoopService : BackgroundService
                 if (target is null || target.Dead)
                 {
                     EndChannel(entity);
+                    TryStartChainedSkill(entity);   // the volley is over: whatever was chained may start
                     return;
                 }
                 if (SkillCatalog.Get(entity.ChannelSkillId!) is SkillDef shot)
@@ -10851,7 +10883,16 @@ public class GameLoopService : BackgroundService
                 }
                 entity.ChannelShotsLeft--;
                 entity.ChannelTicksToNext = Math.Max(1, entity.ChannelInterval);
-                if (entity.ChannelShotsLeft <= 0) EndChannel(entity);
+                if (entity.ChannelShotsLeft <= 0)
+                {
+                    EndChannel(entity);
+                    // THE CHAIN, exactly as the cast branch below takes it when a cast lands: the
+                    // skill pressed DURING the volley was promised ("… will follow"), and the last
+                    // arrow is the moment that promise comes due. Only the natural end takes it — a
+                    // cancel, a stun or an interrupt clears the chain instead, which is the rule
+                    // playtest 27 settled for casts and there is no reason for a volley to differ.
+                    TryStartChainedSkill(entity);
+                }
             }
             return;
         }
@@ -11430,6 +11471,7 @@ public class GameLoopService : BackgroundService
         if (def.ChannelSkill is string channelId && def.ChannelShots > 0)
         {
             caster.ChannelSkillId = channelId;
+            caster.ChannelWrapperId = def.Id;
             caster.ChannelTargetId = target.Id;
             caster.ChannelLevel = lvl;
             caster.ChannelShotsLeft = def.ChannelShots;
@@ -11438,6 +11480,23 @@ public class GameLoopService : BackgroundService
             // no power of its own leaves the arrow to supply it (Arrow Barrage). See Entity.ChannelPower.
             caster.ChannelPower = def.PowerAt(lvl);
             caster.ChannelTicksToNext = 1;
+
+            // ═══ THE CHANNEL BAR — the cast bar's second act (owner, 2026-09-11) ═════════════════
+            // *"while those 2 sec last i have a cast bar that shows the duration of the channel"*.
+            // It is the SAME bar and the same message; nothing new is on the wire. Sending it here
+            // rather than extending the original cast's seconds is deliberate: the volley's length is
+            // only known to be REAL once every gate above has passed, and a bar that kept running
+            // after a barrage failed to fire would be showing a root the player does not have.
+            //
+            // 🔑 The bar is also what makes the volley CANCELLABLE from the client with no client
+            //    change at all: its X and the skill slot's X both key off "am I casting", and both
+            //    already send CancelCast — which ends a volley (see that method).
+            //
+            // ⚠ Shots × interval, not (shots-1) × interval: the first arrow flies on the NEXT tick, so
+            //   ten arrows every two ticks really do span the two seconds the bar promises, and the bar
+            //   empties as the last one lands.
+            float volleySeconds = caster.ChannelShotsLeft * caster.ChannelInterval * GameConstants.TickSeconds;
+            SendTo(caster, "Cast", new CastInfo(castName, volleySeconds));
             return;
         }
 
@@ -16342,15 +16401,23 @@ public class GameLoopService : BackgroundService
     ///
     /// <para>Safe to call on anything — every caller invokes it unconditionally next to
     /// <see cref="CancelCast"/>, which is what keeps a channel dying to exactly the things a cast
-    /// dies to without a second list of them to maintain.</para></summary>
-    private static void EndChannel(Entity entity)
+    /// dies to without a second list of them to maintain.</para>
+    ///
+    /// <para>⚠ NOT static any more, and deliberately: it OWNS THE CHANNEL BAR. The bar is pushed when
+    /// the volley starts, so every way a volley can end — the last arrow, a cancel, a stun, a target
+    /// that died — has to take it down, and this is the one place all of them pass through.
+    /// `CancelCast` cannot do it: its own push sits past an early return that fires for exactly this
+    /// case (a channel runs with `CastingSkillId` already null).</para></summary>
+    private void EndChannel(Entity entity)
     {
         if (entity.ChannelSkillId is null) return;
         entity.ChannelSkillId = null;
+        entity.ChannelWrapperId = null;
         entity.ChannelTargetId = null;
         entity.ChannelShotsLeft = 0;
         entity.ChannelTicksToNext = 0;
         entity.ChannelLevel = 0;
+        SendTo(entity, "Cast", new CastInfo("", 0f));   // the volley is over: drop the bar and the root
     }
 
     /// <summary>Stop an in-progress cast. startCooldown=true (player ESC) puts
