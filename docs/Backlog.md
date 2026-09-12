@@ -82,7 +82,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 
 ---
 
-## Index — 48 open entries
+## Index — 50 open entries
 
 | id | | what it is | area |
 |---|---|---|---|
@@ -131,9 +131,11 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-185` | 🔵 | THE DAMAGE REWORK — ✅ the SHOT (runes x2) and the DEFENCE SHAPE built 0.117.0; the armour spread + the x1.17 residual are open | combat |
 | `BL-186` | ⏸ | THE MAX LEVEL CAP — can it be removed? POSTPONED on your call 2026-09-10; not the next thing | systems |
 | `BL-189` | 🔵 | Weapon-type protection — `BowResist` generalised to every weapon type | combat |
-| `BL-191` | 🟡 | The SKILL MASTERIES — built for 5 archetypes; tank + bow rogue ruled OUT; ON TRIAL until he playtests | classes |
 | `BL-202` | 🔵 | THE WARRIOR'S DAMAGE + CONTROL SKILLS — the half of both 3rd kits still owed | classes |
 | `BL-208` | ❓ | ONE cosmetic cell left from the Magus's 4th kit — three of four closed the same day | classes |
+| `BL-212` | 🔵 | The creature ×2 is LEVEL-FLAT while the loss it corrects is not — built as asked, one choice left | world |
+| `BL-213` | 🟡 | The mastery roster, rewritten to your table — BUILT; two display names and four learn levels are mine | classes |
+| `BL-215` | 🔵 | THE MAGE'S DAMAGE — the crit pass bought +25%; three levers left and none of them is mine to pull | combat |
 
 ---
 
@@ -1200,62 +1202,6 @@ Nothing is built. Filed so the ask is in the repo rather than only in a chat lin
 
 ---
 
-## `BL-191` 🟡 THE SKILL MASTERIES — four are authored and built; the rest of the roster is open
-
-**Filed 2026-09-10 when `BL-190` shipped the engine, and mostly CLOSED the same day** when you
-authored the passives that switch it on. What is left is a short list of choices, not a build.
-
-### ✅ What is done (0.124.0)
-
-| Skill id | Shown as | Who | Learn | Base |
-|---|---|---|---|---|
-| `overpower` | Overpower | Warrior → Ravager + Warlord | 20 / 40 / 76 | 3% / 7% / 10% double damage |
-| `lasting_enchantment` | Lasting Enchantment | Lightbringer + Warchanter | 76 | 10% buff/debuff duration double |
-| `reuse_reset_momentum` | **Arcane Momentum** / **Stab Momentum** | Magus + the three MELEE rogues | 76 | 5% reuse reset |
-| `double_mastery` (Toggle) | **Overpower Mastery** / **Momentum Mastery** | Ravager + Warlord + the three melee rogues | **81** | **×2 on EVERY mastery base you have**; 50 HP/s, +25% MP on physical skills |
-
-Measured at 90 in mythic gear (`BalanceMatrix` §C1): Ravager **9.4%** damage, **18.8%** under Blood
-Rage; Warchanter 9.7% / Lightbringer 10.9% duration; Magus 5.5% reuse. Every CSV row is verified by
-`--check`, which learned the three metrics.
-
-### ❓ What is still yours
-
-1. 🟡 **THE TWO LEARN LEVELS ON THE MELEE ROGUE ARE MINE — the only unauthored numbers in the
-   layer.** You said *"add to duals 4th the same"* twice and gave no levels, so Stab Momentum sits at
-   **76** and Momentum Mastery at **81**, mirroring the Magus's reuse rung and the warrior's toggle
-   exactly. Two `ClassSkill` lines and two CSV rows if you meant otherwise.
-
-2. 🟡 **THE WHOLE LAYER IS ON TRIAL BY YOUR OWN WORDS** — *"ill try with those changes and after
-   playtest ill deside if i add or remove"*. What the rig reads at 90 in mythic gear, so the playtest
-   has a baseline to argue with:
-
-   | Class | dmg | duration | reuse |
-   |---|---|---|---|
-   | Ravager / Warlord | 9.4% | — | — |
-   | Ravager **+ toggle** | **18.8%** | — | — |
-   | Warchanter / Lightbringer | — | 9.7% / 10.9% | — |
-   | Magus | — | — | 5.5% |
-   | Nullblade (melee rogue) | — | — | 4.6% |
-   | Nullblade **+ toggle** | — | — | **9.1%** |
-   | Bulwark, Sharpshooter (bow rogue) | 0% | 0% | 0% |
-
-3. ❓ **Does anything BUY a mastery rate besides the passive?** The engine has a buff channel
-   (`SkillDef.MasteryMult`) and the `double_mastery` toggle is its only author. A party "Mastery
-   Chant", a consumable, a rune — all one line each. Nothing is invented until you ask.
-4. 🔵 **The ladders stop where you stopped them.** Overpower has three rungs because you named three;
-   the other three skills have one each. `warrior 4th.csv` and `war_aoe 4th.csv` carry the 4th-tier
-   header and their two rows with a banner saying the rest is yours — neither earns a `Check.Specs`
-   line until you finish the file, and `dual 4th.csv` does not either.
-
-### ⚠ One thing to know before you retune any of it
-
-The base is **not** the rate. `rate = clamp(base × buffs × MasteryAtkMod(EffectiveAtk), 0, 25%)`, and
-the band runs ×0.70 at ATK 30 to ×1.30 at ATK 50. So a 20% base is already at the cap for anyone with
-ATK 45+, and **a 30% base is at the cap for everybody** — raising it past ~19% buys nothing without
-raising `StatCaps.SkillMasteryRateMax` too. `BalanceMatrix` §C1 prints the whole surface.
-
----
-
 ## `BL-202` 🔵 THE WARRIOR'S DAMAGE AND CONTROL SKILLS — the half of both 3rd kits that is still owed
 
 Your own words, 2026-09-11: *"I made some passives and buffs for warrior/aoe 3rd - they are missing
@@ -1300,3 +1246,154 @@ your 3rd-tier row does not, and it looks copied from the Arcane Burst and Frost 
 protects .. always land"* — so the landing branch skips the contest this number would modify. It is
 carried on the def so your cell and the code read alike, rather than deleted from your file over a
 number that does nothing. Say the word and the three cells go.
+
+---
+
+
+## `BL-212` 🔵 THE CREATURE ×2 IS BUILT — but it is LEVEL-FLAT and the loss it corrects is not
+
+**BUILT exactly as you asked (0.133.0)**, both halves: every creature's finished damage is ×2
+(`MobRankScale.MobDamageOut`, applied once in `GameLoopService.FinalizeDamage` to any attacker that is
+not a player), and an ELITE's attack went ×1.5 → **×3.0**. On a basic attack the two compose to your
+**×4**; on a mob skill carrying power it is less, because damage is a ratio and only the `pAtk` half
+of `(pAtk + power)` is doubled by the elite's rung. Your *"not patk just dmg"* was the right call and
+for a second reason as well: the creature attack curve is fitted to IG off 2,831 measured monsters and
+is on the inspect panel, so moving it would make every future comparison lie.
+
+**What "the last update" actually was**, since it decides whether ×2 is the right size: `BL-185`
+(0.117.0) gave the PHYSICAL channel the defender level term M.Def had always had. A defender's P.Def
+is now multiplied by `(level + 89)/100`. **So the loss you felt is level-shaped and the correction is
+not:**
+
+| your level | P.Def multiplier `BL-185` added | damage it removed | what ×2 restores |
+|---|---|---|---|
+| 20 | ×1.09 | −8% | **×2.18 of what it was** |
+| 50 | ×1.39 | −28% | ×1.44 |
+| 76 | ×1.65 | −39% | ×1.21 |
+| 90 | ×1.79 | −44% | ×1.12 |
+
+At 90 the ×2 is barely more than the correction — which is what you asked for and it lands well. At
+20 it is more than double an over-correction. **Measured** (`dotnet run --project tools/BalanceMatrix`,
+the E4 farm loop, unbuffed and solo — so a floor, not what you play): HP spent per kill doubles at
+every level, and **kills-until-your-bar-is-empty** falls from 29 → 11 for a level-36 tank, 43 → 15 for
+a melee rogue, and **8 → 3 for a level-36 nuker**. That is the same population `BL-72` already flags
+as not surviving an unbuffed auto-farm.
+
+🔵 **THE ONE CHOICE LEFT IS YOURS, and it is one line either way:**
+- **Keep the flat ×2.** Simple, it is your number, and the low levels get harder. Nothing to do.
+- **Make it the level term itself** — multiply creature damage by `PhysicalDefenceLevelMod(target)`
+  instead of by 2. That restores *exactly* what `BL-185` took, at every level: ×1.09 at 20, ×1.79 at
+  90. At the level you actually play it is 10% under your ×2 and you would not feel it; at 20 it is
+  half of it.
+- **Both** — the level term with a floor or a small flat bonus on top, if you want the hit "noticed"
+  at 90 as well as restored.
+
+⚠ **A BOSS TAKES THE ×2 TOO.** You measured bosses as *"OK for now ... They do ok dmg no1 survives"*
+**before** this change, so their ladder (×4 × rune ×2 × solo ×2) now rides on top of a doubled base.
+If a boss overshoots at the next playtest, the knob is `MobRankScale.Atk`'s boss rung, not this one.
+
+
+---
+
+
+## `BL-213` 🟡 THE MASTERY ROSTER IS REBUILT TO YOUR TABLE — six numbers in it are still mine
+
+**BUILT (0.133.0).** Your table, verbatim, and what each line became:
+
+| you said | who that is | built |
+|---|---|---|
+| mages → duration/reuse, no toggle | Magus | had reuse @76; **gains Lasting Enchantment @76** |
+| archers/warriors/duals → double_dmg/reuse + toggle | Ravager + Warlord | had Overpower 3/7/10% @20/40/76 and the toggle @81; **gain reuse @76** |
+| ” | the three MELEE rogues | already had all three (`BL-203` gave them Overpower @40/76) — **unchanged** |
+| ” | the three ARCHERS | **all four are new**: Overpower @40/76, reuse @76, toggle @81 |
+| “1 rung lower than warriors … (40,76)” | archers + duals | rung 1 (3%) at 40, rung 2 (7%) at 76 — the ladder `BL-203` already gave the duals |
+| buffer/healer → duration no toggle | Lightbringer + Warchanter | **unchanged** |
+| tank → nothing | Bulwark | **unchanged**, and the only line of the old roster that survived |
+
+This **reverses `BL-191`'s "ARCHER — never"**, which was ruled 2026-09-10 with a reason (*"archer have
+enough skills that are always hit wit big power"*) and which I asked you to confirm before writing it
+down. Two days of play reversed it. The old entry is in [BacklogArchive.md](BacklogArchive.md).
+
+🟡 **WHAT IS MINE AND NOT YOURS — six numbers, every one a single line to change:**
+
+1. **Two DISPLAY NAMES.** `reuse_reset_momentum` is ONE skill with ONE number and a per-class name —
+   your own rename rationale, *"as other classes can aqure it too"*. The Magus calls it **Arcane
+   Momentum** and the dagger rogue **Stab Momentum**, both yours. The warrior's and the archer's
+   copies needed labels, so I took them from each file's own vocabulary: **"Battle Momentum"** (beside
+   Battle Regeneration / Resilience / the Battle stances) and **"Bow Momentum"** (beside Bow Blessing
+   / Spirit / Focus / Stance). The toggle keeps **Overpower Mastery** on all four classes, per your
+   2026-09-11 correction.
+2. **Four LEARN LEVELS.** The warrior's new reuse rung, the Magus's new duration rung and the
+   archer's reuse rung all sit at **76**; the archer's toggle at **81**. They mirror every other
+   mastery rung in the game, which is the only defensible read of *"the same … as duals"*.
+
+🔴🔑 **AND ONE THING THE TABLE MAKES LOUDER THAN IT WAS — read this before the next playtest.**
+The archer now carries a `[Double]` rate, and **not one skill in his 3rd or 4th tier can use it.**
+`CanDouble` is flagged on exactly eleven defs: the three dagger stabs, the warrior's damage line, and
+the two EARLY bow skills (`Shot` at the 1st class, `Precise Shot` at the 2nd) — both of which
+`archer 3rd.csv` retires by `REPLACES` the moment Twin Arrows lands at 40. Twin Arrows, Explosive
+Arrow, Heavy Arrow, the three Magic Arrows and Arrow Barrage carry no flag at all.
+
+So Overpower on an archer pays out on **nothing** above 40 as the files stand, and the passive will
+measure as doing exactly zero in the playtest that is meant to judge it. It is one flag per skill and
+the choice is yours — by shape the candidates are **Heavy Arrow** (the 84 single-target ultimate) and
+**Twin Arrows** (the rotation skill, though it already fires twice, so a double there is ×4 on one
+button). ⚠ It is the same question your dagger ruling answered on 2026-09-11 (*"give duals 3rd/4th
+stabs a [double] flag"*) — the archer half of it has not been asked yet. **Name the skills.**
+
+⚠ **NEW APK** — the class-skill TABLES changed and the client builds its Learn tab locally.
+
+
+---
+
+
+## `BL-215` 🔵 THE MAGE'S DAMAGE — the crit pass bought +25%, and the three levers left are all yours
+
+You asked one question directly: *"if we touch a bit the magic K(91) and increase it with like 30% does
+will increase the overall dmg and will it break the low lvls? Or we need to increase the 76+ spells
+power?"* Here is the measured answer, and then the choice.
+
+### First: what today's work already bought, before any of these levers
+
+Three things landed in 0.133.0 — your two crit rulings (`BL-209`, `BL-210`) and a bug neither of us
+knew about (`BL-214`: Harmony of the Wizard's crit-rate line had **never worked**, because the def's
+`Effect` mask did not declare the flag). Measured with `--mcrit 90 epic`, a fully-blessed Magus:
+
+| | crit rate | crit damage | average damage multiplier |
+|---|---|---|---|
+| before | 8.8% | ×2.60 | ×1.141 |
+| **after** | **20%** (the cap) | **×3.12** | **×1.424** |
+
+**+25% average magic damage**, and your ×3.12 lands on the digit. **Re-playtest before pulling
+anything else** — a good part of what you were reaching for with `MagicK` has already arrived.
+
+### 🔴 Lever 1 — `MagicK` 91 → ~118. My recommendation: NO.
+
+- **It is IG's constant, verbatim**, and so is `PhysicalK 77` (`docs/balance/DamageVsIG.md`). The last
+  real measurement put our mage **1.19× ABOVE** IG's own observed damage at 76 unbuffed. Nothing in
+  the constant is short.
+- **It answers your "will it break the low lvls?" with: it changes them by exactly the same 30%.**
+  `MagicK` is a flat scalar with no level term. The rig already reports a level-8 mage's first nuke
+  killing a same-level mob in **one cast** (91 damage vs 91 HP) and a level-20 mage overkilling by
+  1.7× — a 30% rise deepens both. Meanwhile at 90 an elite has ×4 HP and ×1.33 M.Def, so 30% takes it
+  from ~24 casts to ~18. **The deficit you feel is level-shaped; this lever is not.**
+
+### 🔵 Lever 2 — the 76+ spell power. The right shape, and it is YOUR file.
+
+`nuker 4th.csv`'s blast ladder is **110 → 138** across 76 → 90 (+2 a level), and the 3rd tier ends at
+108 at 74. So the whole 4th tier is +28% of power over fifteen levels while mob HP grows ~40% and an
+elite multiplies it by four again. This is the number that decides endgame mage damage and it is
+authored by you — I will not retune a CSV. **Give me a new column, or a multiplier to apply to it.**
+
+### 🔵 Lever 3 — the magic crit-RATE cap, `StatCaps.MagicCritRate = 20%`. Newly load-bearing.
+
+Your `BL-209` ruling took Harmony of the Wizard from ×1.3 to ×2 on the rate — and a fully-blessed
+Magus of **every race** now sits exactly ON the 20% ceiling, so the second half of that buff is being
+thrown away. That is not an argument against the ruling (it is what makes the Human and Demon reach
+the cap at all, and they did not before), but it does mean **the cap is now the lever, not the buff**.
+Its own doc-comment anticipated this: *"still max 20% but one day if we want to increase it no mage to
+be short on crit"*. At ×3.12 crit damage, every 5 points of cap is about **+10%** average damage.
+
+⚠ **And one thing that got HARDER today, which you should weigh with all three:** `BL-212` doubled
+every creature's damage and tripled an elite's attack. The mage was already the sheet that spends the
+most HP per kill.

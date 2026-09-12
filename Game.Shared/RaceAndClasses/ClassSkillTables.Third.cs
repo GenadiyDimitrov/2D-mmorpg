@@ -1114,6 +1114,22 @@ public static partial class ClassSkillTables
         //    ability. Splitting it into two SkillDefs would duplicate a ladder and invite it to drift.
         shared.Add(new ClassSkill(WcBowExpertise, 52, SpCost: 37_000));
         shared.Add(new ClassSkill(ArcherBowStance, 60));
+        // 🔴 `BL-213` (2026-09-12) — OVERPOWER rung 1 (3%) at 40. THE ARCHER GETS THE MELEE ROGUE'S
+        //    LADDER, RUNG FOR RUNG AND LEVEL FOR LEVEL: *"archers must get the same double passives and
+        //    overpower mastery as duals"*, and, in the same message, *"archers and duals take 1 rung
+        //    lower than warriors on the double one (40,76)"* — which is a description of the ladder
+        //    `BL-203` gave the duals yesterday, extended to the bow branch.
+        //
+        // 🔴🔑 THIS REVERSES `BL-191`'s *"ARCHER — never"*, which was ruled 2026-09-10 with a reason
+        //    (*"archer have enough skills that are always hit wit big power (not like daggers 80%
+        //    chance)"*) and reversed 2026-09-12 by the playtest that followed it: *"archers are like
+        //    mages ... Strongest skill does only 5k dmg to elit"*. Newest ruling wins; the old one is
+        //    kept in the doc-comment on RegisterSkillMasteriesFourth so nobody re-derives it.
+        //
+        // ⚠ SAME `SpCost` OVERRIDE AS THE DUAL'S. Rung 1's own price (3,400) is what a level-20 WARRIOR
+        //   pays; a rogue of either branch meets it at 40, where every first rung in his 3rd-tier files
+        //   costs 28,000. SP is priced by the level you learn at, never by the ability.
+        shared.Add(new ClassSkill(Overpower, 40, SkillLevel: 1, SpCost: RogueSp[0]));
 
         var human = new List<ClassSkill>(shared);
         human.AddRange(Ladder(ArcherBowFocus, buff3));

@@ -1001,6 +1001,130 @@ if (args.Length > 0 && args[0] == "--stab")
 // than guessed. Prints, per level: the base curve, what each candidate ladder makes of it, and the
 // TIME TO KILL that produces for the buffed farm roster — plus the ELITE, where the zone ladder and
 // the rank multiplier compose and produce the ~68k he found.
+// ═══ `BL-209` / `BL-210` — THE NUKER'S CRIT CHAIN, MEASURED END TO END (2026-09-12) ══════════
+//
+//  Why this probe had to exist before either ask could be answered: `--dmgmatrix --buffed` dresses a
+//  mage in the NPC SHELF and nothing else, so the two buffs he actually plays with — a 4th-class
+//  Warchanter's Harmony of the Wizard (rung 5) and Harmony Mark — were in NO table in this tool. His
+//  report said *"my crit dmg stays 2.6"*, which is base ×2 × Harmony of the Wizard's 1.30: proof he
+//  wears both, and proof the rig was measuring a different character. It printed ×2.00 flat.
+//
+//  ⚠ It also needed ApplyNpcBuffs/ApplyOneBuff to stop dropping `MagicCritDamage`, which is a FIELD.
+// ═══ `BL-214` — THE EFFECT-MASK AUDIT (2026-09-12) ═══════════════════════════════════
+//
+//  🔴🔑 A BUFF'S `Effect` MASK COMES FROM THE **DEF**, ITS MAGNITUDES FROM THE **RUNG**, AND
+//     `Entity.RecomputeDerived` READS EVERY CHANNEL BEHIND `buff.Has(flag)`. So a magnitude whose flag
+//     is missing from the def's mask is applied to nobody, silently, for as long as nobody measures it.
+//
+//  This audit exists because that happened and shipped: Harmony of the Wizard's rungs 3-5 authored
+//  +20% MP regen and +30% magic crit rate while the def declared only `BuffMagAtk | BuffCastSpeed`.
+//  Both lines had never once worked. It was found on 2026-09-12 only because `BL-209` moved the crit
+//  number and a purpose-built probe (`--mcrit`) printed the rate not moving with it.
+//
+//  ⚠ THE REVERSE IS NOT AN ERROR. A mask flag with no magnitude anywhere is how a ladder declares a
+//    channel its LATER rungs will use (Skills.Lightbringer4th.cs says so in as many words), and a
+//    FIELD payload (blow rate, MP cost, magic crit damage) legitimately carries no magnitude at all.
+//    Only the missing direction is reported.
+if (args.Length > 0 && args[0] == "--maskaudit")
+{
+    Console.WriteLine();
+    Console.WriteLine("=== EFFECT-MASK AUDIT — magnitudes the def's mask does not declare ===");
+    Console.WriteLine("  Each line is a payload the engine CANNOT apply: RecomputeDerived gates on buff.Has(flag).");
+    Console.WriteLine();
+    int bad = 0;
+    foreach (var def in SkillCatalog.AllSkills.OrderBy(d => d.Id, StringComparer.Ordinal))
+    {
+        SkillEffect authored = SkillEffect.None;
+        foreach (var m in def.Magnitudes ?? Array.Empty<EffectMagnitude>()) authored |= m.Effect;
+        int rungs = def.Levels?.Length ?? 0;
+        for (int i = 1; i <= Math.Max(1, rungs); i++)
+            foreach (var m in def.MagnitudesAt(i) ?? Array.Empty<EffectMagnitude>()) authored |= m.Effect;
+
+        var missing = authored & ~def.Effect;
+        if (missing == SkillEffect.None) continue;
+        bad++;
+        Console.WriteLine($"  🔴 {def.Id,-34} {def.Name,-30} missing: {missing}");
+    }
+    Console.WriteLine();
+    Console.WriteLine(bad == 0
+        ? "  ✅ CLEAN — every authored magnitude is declared on its def's mask."
+        : $"  🔴 {bad} skill(s) carry a magnitude the engine can never read.");
+    return;
+}
+
+if (args.Length > 0 && args[0] == "--mcrit")
+{
+    int L = args.Length > 1 ? int.Parse(args[1]) : 90;
+    string q = args.Length > 2 ? args[2] : "epic";
+
+    // A buff at a NAMED RUNG. ApplyOneBuff is rung-1 only, and both of these are ladders.
+    static void Wear(Entity e, string id, int rung)
+    {
+        if (SkillCatalog.Get(id) is not { } def) { Console.Error.WriteLine($"  !! missing {id}"); return; }
+        e.Buffs.Add(new Game.Server.Simulation.BuffInstance
+        {
+            Effect = def.Effect,
+            Magnitudes = def.MagnitudesAt(rung) ?? Array.Empty<EffectMagnitude>(),
+            MagicCritDamage = def.MagicCritDamageAt(rung),
+            TicksRemaining = int.MaxValue, Name = def.Name, Key = def.BuffKey,
+            Rank = def.Rank, Level = rung,
+        });
+        e.RecomputeDerived();
+    }
+
+    Console.WriteLine();
+    Console.WriteLine($"=== MAGIC CRIT CHAIN — Magus, level {L}, {q} gear  (`BL-209` + `BL-210`) ===");
+    Console.WriteLine($"    rate   = 4% × witMod × buffs, capped at {StatCaps.MagicCritRate:P0}");
+    Console.WriteLine($"    damage = ×{StatCaps.MagicCritDamageBase} base × multipliers (they COMPOUND), "
+                    + $"capped at ×{StatCaps.MagicCritDamageCap}");
+    Console.WriteLine("    'avg' = the multiplier on AVERAGE damage, 1 + rate×(critDmg−1) — what a rotation feels.");
+    Console.WriteLine();
+    // 🔴🔑 THE SHELF ALREADY HANDS OUT A MARK. `NewbieBuffSet` concatenates `NpcMarkSet`, and a
+    //    healer's Mark carries magic crit DAMAGE — so a naive "shelf, then add Harmony Mark" row wears
+    //    TWO Marks and double-counts +20%, which the game never allows (all four Marks share `MarkKey`
+    //    with `FlatRank`, so exactly one is ever on you). The shelf is stripped of Marks here and the
+    //    one being measured is put on explicitly. Getting this wrong would have reported ×3.74 for a
+    //    caster who can only ever reach ×3.12.
+    static void Shelf(Entity e)
+    {
+        ApplyNpcBuffs(e);
+        // "healer_mark" is SkillCatalog.MarkKey, which is private — all four Marks land under it.
+        e.Buffs.RemoveAll(b => b.Key == "healer_mark");
+        e.RecomputeDerived();
+    }
+
+    Console.WriteLine("  race    stage                              WIT |   rate   critDmg |    avg   vs bare");
+    foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
+    {
+        float baseAvg = 0f;
+        var stages = new (string Label, Action<Entity> Dress)[]
+        {
+            ("bare",                        _ => { }),
+            ("+ NPC shelf, no Mark",        e => Shelf(e)),
+            ("+ Harmony of the Wizard L5",  e => { Shelf(e); Wear(e, SkillCatalog.NpcHarmonyWizard, 5); }),
+            ("+ Harmony Mark L2  (buffer)", e => { Shelf(e); Wear(e, SkillCatalog.NpcHarmonyWizard, 5);
+                                                   Wear(e, SkillCatalog.WcHarmonyMark, 2); }),
+        };
+        foreach (var (label, dress) in stages)
+        {
+            var m = BuildPlayer(race, BaseClass.Mage, L, quality: q,
+                                discipline: Discipline.Magus, fourth: true);
+            dress(m);
+            float rate = m.MagicCritChance, cd = m.EffectiveMagicCritDamage;
+            float avg = 1f + rate * (cd - 1f);
+            if (label == "bare") baseAvg = avg;
+            Console.WriteLine($"  {race,-7} {label,-32} {m.EffectiveWit,3:0} | {rate,6:P1}   ×{cd,6:0.00} |"
+                            + $" ×{avg,5:0.000}   ×{avg / baseAvg,5:0.00}");
+        }
+        Console.WriteLine();
+    }
+    Console.WriteLine("  ⚠ THE RATE CAP IS THE THING TO WATCH. `BL-209` took Harmony of the Wizard's crit-rate");
+    Console.WriteLine($"    line from +30% to +100% (Insight's number, his ruling), but every point of it is");
+    Console.WriteLine($"    thrown away above StatCaps.MagicCritRate = {StatCaps.MagicCritRate:P0}. Where the last two rows");
+    Console.WriteLine("    read the same rate, the buff bought NOTHING and the cap is the real lever.");
+    return;
+}
+
 if (args.Length > 0 && args[0] == "--blowrate")
 {
     // `BL-188` — THE BLOW LANDING RATE, measured, not derived. Prints the whole product he
@@ -1040,7 +1164,25 @@ if (args.Length > 0 && args[0] == "--blowrate")
         ("Demon  (Venomblade)",  Race.Demon, Discipline.Venomweaver, SkillCatalog.LethalFrenzy),
     };
 
-    Console.WriteLine("  race                  AGI  agiMod | passives only |  + race buff  | + Perfect Strike | vs a tank");
+    // 🔴 `BL-211` (2026-09-12) — THE DEFENDER IS THREE COLUMNS NOW, NOT ONE. His ruling put
+    //    `CritRateResist` back into the blow roll (*"the light armor mastery and every crit chance
+    //    reduction passive/buff to lower the blow rate as well"*), so the gate is
+    //    `rate × (1 − BlowResist) × (1 − CritRateResist)` and the interesting defender is no longer the
+    //    tank — it is the LIGHT-ARMOUR classes, who carry 25-35% of it and had zero blow defence before.
+    //    A table with only a tank column would have shown this change doing almost nothing.
+    Entity Defender(Discipline d, int second) =>
+        BuildPlayer(Race.Human, BaseClass.Fighter, L, quality: q, discipline: d,
+                    secondClass: second, fourth: true);
+
+    float Gate(float rate, Entity d) =>
+        Math.Clamp(rate * (1f - d.BlowResist) * (1f - d.CritRateResist), 0f, 1f);
+
+    var defTank   = Defender(Discipline.Bulwark, 0);
+    var defArcher = Defender(Discipline.Sharpshooter, 15);
+    var defRogue  = Defender(Discipline.Nullblade, 15);
+
+    Console.WriteLine("  race                  AGI  agiMod | passives only |  + race buff  | + Perfect Strike"
+                    + " |  vs tank  vs archer  vs rogue");
     foreach (var (label, race, disc, focusId) in rows)
     {
         Entity Make()
@@ -1063,14 +1205,18 @@ if (args.Length > 0 && args[0] == "--blowrate")
         SelfBuff(full, focusId, 3);
         SelfBuff(full, SkillCatalog.PerfectStrike, 1);   // the @80 rate half of the exclusive pair
 
-        // The tank's answer: Vital Organ Protection, 30% off whatever survived the cap.
-        var tank = BuildPlayer(Race.Human, BaseClass.Fighter, L, quality: q,
-                               discipline: Discipline.Bulwark, fourth: true);
-
         Console.WriteLine($"  {label,-20} {agi,4} ×{StatCalculator.BlowAgiMod(agi),4:0.00} |"
                         + $"    {bare.BlowRate,8:P1}   |  {withFocus.BlowRate,8:P1}   |"
-                        + $"     {full.BlowRate,8:P1}     | {full.BlowRate * (1f - tank.BlowResist),7:P1}");
+                        + $"     {full.BlowRate,8:P1}     |"
+                        + $" {Gate(full.BlowRate, defTank),7:P1}  {Gate(full.BlowRate, defArcher),8:P1}"
+                        + $"  {Gate(full.BlowRate, defRogue),8:P1}");
     }
+
+    Console.WriteLine();
+    Console.WriteLine("  --- WHAT EACH DEFENDER BRINGS (`BL-211`: the two terms MULTIPLY) ---");
+    foreach (var (dn, de) in new[] { ("tank   ", defTank), ("archer ", defArcher), ("rogue  ", defRogue) })
+        Console.WriteLine($"   {dn}  BlowResist {de.BlowResist,6:P0}   CritRateResist {de.CritRateResist,6:P0}"
+                        + $"   -> a blow is multiplied by {(1f - de.BlowResist) * (1f - de.CritRateResist),5:0.00}");
 
     Console.WriteLine();
     // What the whole ladder is worth as a pure multiplier, so the AGI term can be varied on its own.
@@ -2575,8 +2721,13 @@ Console.WriteLine($"{"Lvl",4} | {"FTR int",8} {"now",6} {"new",6} | {"MAGE int",
 /// picked them up for free. They no longer are. Without this wrapper every table that says "War/Spell
 /// Rune ON" would quietly drop a ×2 and we would be measuring a rig, not the game — which is exactly
 /// how three wrong diagnoses got written in three days.</para></summary>
+/// <para>🔴 AND SINCE `BL-212` (2026-09-12) IT CARRIES THE CREATURE ×2 AS WELL, for exactly the same
+/// reason: <c>MobRankScale.MobDamageOut</c> is applied in <c>FinalizeDamage</c> beside the rune, so a
+/// rig that multiplied only the rune would print every mob, guard and boss at half what the server
+/// deals. The test is "not a Player", not "is a Mob" — same as the server's.</para>
 static int Shot(Entity a, bool magic, int dmg) =>
-    Math.Max(1, (int)(dmg * (magic ? a.MagicDamageDealtMult : a.PhysDamageDealtMult)));
+    Math.Max(1, (int)(dmg * (magic ? a.MagicDamageDealtMult : a.PhysDamageDealtMult)
+                          * (a.Kind == EntityKind.Player ? 1f : MobRankScale.MobDamageOut)));
 
 static float ShownNow(Entity e) => 20 * MathF.Sqrt(e.EffectiveMagicAttack);
 static float ShownNew(Entity e) => MathF.Min(e.EffectiveMagicAttack, 20 * MathF.Sqrt(e.EffectiveMagicAttack));
@@ -5719,6 +5870,12 @@ static void ApplyNpcBuffs(Entity e, bool fullShelf = false)
             MasteryMult = def.MasteryMult,
             PhysMpCostPct = def.PhysMpCostPctAt(level),
             MagicMpCostPct = def.MagicMpCostPctAt(level),
+            // 🔴 `BL-210`, 2026-09-12 — the FOURTH time a field channel had been left out of this
+            //    builder. Harmony of the Wizard's top rung and Harmony Mark both carry their magic
+            //    crit DAMAGE here and nowhere else, so without this line the rig prints ×2.00 for a
+            //    caster the game gives ×3.12 and the whole ask measures as doing nothing.
+            MagicCritDamage = def.MagicCritDamageAt(level),
+            MagicCritDamageDebuff = def.MagicCritDamageDebuffAt(level),
             TicksRemaining = int.MaxValue, Name = def.Name, Key = def.BuffKey, Level = level,
         });
     }
@@ -5763,6 +5920,9 @@ static void ApplyOneBuff(Entity e, string skillId)
             MasteryMult = def.MasteryMult,
             PhysMpCostPct = def.PhysMpCostPctAt(1),
             MagicMpCostPct = def.MagicMpCostPctAt(1),
+            // `BL-210` — see ApplyNpcBuffs above; same omission, same consequence.
+            MagicCritDamage = def.MagicCritDamageAt(1),
+            MagicCritDamageDebuff = def.MagicCritDamageDebuffAt(1),
             TicksRemaining = int.MaxValue, Name = def.Name, Key = def.BuffKey, Level = 1,
         });
     }

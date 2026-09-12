@@ -152,9 +152,20 @@ public static class MobRankScale
     /// against the straw party `BL-169` retired, and re-measured against the party people actually
     /// play, a boss at ×4 cost the owner's own tank 2.1% of his bar per swing and could not kill him in
     /// five minutes of standing still unhealed.</para></summary>
+    /// <para>🔴🔑 <b>THE ELITE IS ×3.0 SINCE 2026-09-12 (`BL-212`), AND IT IS HIS ×2 ON TOP OF THE
+    /// ×1.5 THAT WAS HERE.</b> Playtest ruling, verbatim: *"elits should get (x2 p atk on what they have
+    /// now) so elit with the double in dmg and double in patk should do ~x4 dmg as of now ..and their
+    /// hit will be noticed"*. The other half of that sentence is <see cref="MobDamageOut"/>, the global
+    /// ×2 on every creature's finished damage — the two compose to his ×4 on a BASIC attack, which is
+    /// what an elite mostly throws.</para>
+    ///
+    /// <para>⚠ ON A MOB SKILL IT IS LESS THAN ×4, and that is the ratio formula, not a bug: damage is
+    /// <c>77·(pAtk + power)/pDef</c>, so doubling pAtk doubles the whole numerator only while `power` is
+    /// zero. That is exactly why he asked for the GLOBAL half as damage rather than as P.Atk — see
+    /// <see cref="MobDamageOut"/>.</para></summary>
     public static float Atk(MobRank rank, bool solo = false, bool world = false) => rank switch
     {
-        MobRank.Elite => 1.5f,
+        MobRank.Elite => 3.0f,
         MobRank.Boss  => 4f * BossRuneAtk
                          * (solo || world ? BossSoloMult : 1f)
                          * (world ? WorldStatMult : 1f),
@@ -186,6 +197,41 @@ public static class MobRankScale
         MobRank.Boss  => 2.0f * (world ? WorldStatMult : 1f),
         _             => 1f,
     };
+
+    // ═══ `BL-212` — THE GLOBAL CREATURE DAMAGE MULTIPLIER, 2026-09-12 ════════════════════════
+    //
+    //  *"mobs should get x2 power - after the last update the dmg of monsters get diminished we need
+    //    to increase it (not patk just dmg)"*
+    //
+    //  🔑 WHAT "THE LAST UPDATE" WAS, so the number is understood and not re-derived later.
+    //  `BL-185` (0.117.0) gave the PHYSICAL channel the level term M.Def had always had —
+    //  StatCalculator.PhysicalDefenceLevelMod — so a defender's P.Def is now multiplied by
+    //  `(level + 89)/100`. At level 90 that is ×1.79, and creature damage against him fell by 44%
+    //  overnight. IG carries levelMod on both sides where they largely cancel; ours cancels on the
+    //  PLAYER's attack (PhysicalAttackFromWeapon has the same term) and does NOT on a creature's,
+    //  whose attack curve is a bare `a·(L+31)^4.539`. This ×2 is the correction for that asymmetry,
+    //  and it lands slightly above it on purpose — he wants the hit felt, not merely restored.
+    //
+    //  🔑 WHY IT IS DAMAGE AND NOT P.Atk, IN HIS OWN WORDS: *"not patk just dmg"*. Two reasons, both
+    //  real. (1) The creature attack curve is FITTED TO IG off 2,831 measured monsters (`BL-78`,
+    //  MobBaseStats.PAtk); moving it makes every future comparison to IG lie, and the number is on the
+    //  target-inspect panel. (2) Damage is a RATIO — `77·(pAtk + power)/pDef` — so doubling P.Atk is
+    //  ×2 on a basic attack and LESS on any skill that carries power. A multiplier on the finished
+    //  number is exactly ×2 for everything a creature does. His instinct was the correct one.
+    //
+    //  ⚠ IT IS APPLIED IN ONE PLACE: `GameLoopService.FinalizeDamage`, the central damage-OUT
+    //  pipeline, gated on the ATTACKER not being a player. So it reaches basic attacks, mob skills and
+    //  mob spells alike, and it deliberately does NOT reach a player's reflected damage (which never
+    //  enters that pipeline) or a training dummy. Never re-apply it at a call site.
+    //
+    //  ⚠ A BOSS TAKES IT TOO. His sentence says "mobs", and a boss is a creature: the boss ladder
+    //  (×4 × rune × solo) is a multiplier on the same base and rides on top of this. He measured bosses
+    //  as *"OK for now ... They do ok dmg no1 survives"* BEFORE this change — re-measure them, and if a
+    //  boss now overshoots, the knob to move is `Atk`'s boss rung, not this one.
+
+    /// <summary>Every creature's FINISHED damage, ×2 (`BL-212`). See the block above for why it is not
+    /// P.Atk and what it is compensating for.</summary>
+    public const float MobDamageOut = 2.0f;
 
     /// <summary>Flat accuracy by rank — a boss must be able to land on a dodge build (his playtest-20
     /// *"Acc +20"*). Flat, and applied after the template's own Accuracy multiplier, so a boss gets it

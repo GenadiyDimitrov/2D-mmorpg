@@ -695,9 +695,11 @@ public partial class SkillCatalog
         // 🔑 THE ORDER IS THE DESIGN. This lands OUTSIDE the attacker's [20%, 80%] clamp, so a rogue
         //    who has maxed the whole blow ladder is still taken from 80% to 56% — a cap the tank can
         //    reach past is what makes the tank's answer worth a skill at all.
-        // ⚠ It is `BlowResist`, deliberately NOT `CritRateResist`: a blow left the crit chain in the
-        //    same ruling, and the ROGUE's own Armor Mastery carries 25-35% crit-rate resist, which
-        //    would have quietly made rogues the best anti-rogue armour in the game.
+        // ⚠ It is `BlowResist`, the tank's DEDICATED channel, and it stays its own field — but since
+        //    `BL-211` (2026-09-12) it is no longer the only one: `CritRateResist` multiplies into the
+        //    same roll on his ruling (*"every crit chance reduction passive/buff to lower the blow
+        //    rate as well"*). This skill is unchanged and is still worth exactly its 30%; what changed
+        //    is that a light-armour class now brings a partial answer of its own.
         new(TankVitalOrganProtection, "Vital Organ Protection", BaseClass.Fighter, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive, SpCost: 150_000_000,

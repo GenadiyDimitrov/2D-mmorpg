@@ -17390,16 +17390,37 @@ public class GameLoopService : BackgroundService
     /// defender's term belongs here, and it lands OUTSIDE that cap on purpose — his own worked
     /// example is "~80% × 0.7 = ~56%", which only reads that way if the cap comes first.</para>
     ///
-    /// <para>🔑 Three things deliberately do NOT touch this roll: the skill's <c>CritRateMod</c>
-    /// (the field survives for the CanCrit path), the shield's <c>ShieldCritDefense</c>, and
-    /// <c>CritRateResist</c> — the last matters most, because the rogue's own Armor Mastery carries
-    /// 25-35% of it and would otherwise have made rogues the best anti-rogue armour in the game.</para>
+    /// <para>🔴🔑 <b>`BL-211`, 2026-09-12 — <c>CritRateResist</c> NOW CUTS THIS ROLL, AND THAT REVERSES
+    /// `BL-188`.</b> His playtest ruling, verbatim: *"The only think I want is the light armor mastery
+    /// and every crit chance reduction passive/buff to lower the blow rate as well (the blow is crit
+    /// dmg so heaving less chance to be hit by crit means blows as well. I forgot to mention)"*.
+    ///
+    /// <para>`BL-188` left it out ON PURPOSE and said why: the rogue's own Armor Mastery carries
+    /// 25-35% of it, so wiring it in makes light armour the best anti-rogue armour in the game. That
+    /// consequence has NOT gone away — it is now the intended one. A level-90 archer in a full light
+    /// kit reads 35% (Archer Armor Mastery) + 10% (a Mark's second rung) + 10% (a sigil) = 55%, and a
+    /// dagger's blow rate against him is multiplied by 0.45 on top of whatever `BlowResist` he
+    /// carries. That is the whole point of the ask: he is protecting the two classes he measured as
+    /// dying to a 2-3 stab burst.</para>
+    ///
+    /// <para>🔑 THE TWO DEFENDER TERMS MULTIPLY, they do not sum. `BlowResist` is the TANK's dedicated
+    /// answer (Vital Organ Protection, 30%, capped at <see cref="StatCaps.BlowResist"/> 90%) and
+    /// `CritRateResist` is the crit-chance channel every armour mastery, sigil and Mark already feeds.
+    /// Summing them would let two independently-capped ladders add past 100% and invert the roll;
+    /// multiplying keeps each honest and keeps the tank's own skill worth exactly what it says.</para>
+    ///
+    /// <para>⚠ STILL OUTSIDE THE ROLL, and both deliberately: the skill's <c>CritRateMod</c> (the
+    /// field survives for the CanCrit path) and the shield's <c>ShieldCritDefense</c>. His sentence
+    /// names *"passive/buff"* — a shield's block chain is an ITEM stat resolved in
+    /// <c>ResolvePhysicalCritAndBlock</c>, and folding it in here would hand the tank a third layer
+    /// on a class he had just called *"almost immortal"*. Flagged to him rather than assumed.</para>
     ///
     /// <para>It is a method of its own since `BL-193`, because the CALLER now needs the answer
     /// BEFORE the skill's miss roll: a blow that fails is resolved as an ordinary basic attack,
     /// which brings its own accuracy roll with it.</para></summary>
     private bool BlowLands(Entity attacker, Entity target)
-        => _rng.NextDouble() < Math.Clamp(attacker.BlowRate * (1f - target.BlowResist), 0f, 1f);
+        => _rng.NextDouble() < Math.Clamp(
+               attacker.BlowRate * (1f - target.BlowResist) * (1f - target.CritRateResist), 0f, 1f);
 
     /// <summary>Damage for a blow that HAS landed — docs/design/CritBlowAndDouble.md §2.
     /// It is computed WITH THE CRIT-DAMAGE VALUES (the flat crit-damage add inside the ratio, then
@@ -17472,7 +17493,18 @@ public class GameLoopService : BackgroundService
         float runeMult = kind == DamageKind.SkillMagic
             ? attacker.MagicDamageDealtMult
             : attacker.PhysDamageDealtMult;
-        float result = dmg * (1f + bonus) * (1f + condBonus) * skillMult * raidMult * takenMult * runeMult;
+        // 🔴 `BL-212` — THE GLOBAL CREATURE ×2, 2026-09-12: *"mobs should get x2 power ... (not patk
+        // just dmg)"*. It lives HERE, once, because this is the only pipeline every creature swing,
+        // skill and spell passes through — and because it must NOT touch the P.Atk curve, which is
+        // fitted to IG off 2,831 measured monsters and is on the inspect panel. The reason it is owed
+        // at all is `BL-185`: the physical channel gained the defender level term M.Def always had, so
+        // at 90 a player's P.Def is ×1.79 and creature damage fell 44%. See MobRankScale.MobDamageOut.
+        // ⚠ NOT `attacker.Kind == EntityKind.Mob` — a guard, a tower and a boss are creatures too, and
+        //   every one of them is something other than a Player. The one thing this must never scale is
+        //   a PLAYER's output, which is what this test says and nothing more.
+        float mobMult = attacker.Kind == EntityKind.Player ? 1f : MobRankScale.MobDamageOut;
+        float result = dmg * (1f + bonus) * (1f + condBonus) * skillMult * raidMult * takenMult
+                     * runeMult * mobMult;
         // A skill explicitly multiplied to 0 in this context deals 0 (e.g. a mob-only nuke
         // vs a player); otherwise a real hit is at least 1.
         return skillMult <= 0f ? 0 : Math.Max(1, (int)result);

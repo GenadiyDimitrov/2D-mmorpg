@@ -334,9 +334,12 @@ public static partial class SkillCatalog
         // The defensive harmony, and the only one that reaches its final effect at 74. Reflect is
         // last on purpose: it is the rung that makes a tank's party genuinely different, not just
         // sturdier. ⚠ Its magnitudes are CUMULATIVE per rung — read the whole array, not the tail.
+        // 🔴 `BL-214` — `BuffBowResist` added 2026-09-12. Rung 6 (@76, `BL-108`) has authored
+        //    "10% bow resistance" since 0.106.0 and it had never once applied: the mask did not declare
+        //    the flag. See the note on Lethal Focus in Skills.Dual3rd.cs for the mechanism.
         WcHarmony(NpcHarmonyProtection, "Harmony of Protection", "harmony_protection",
             SkillEffect.BuffMagicDef | SkillEffect.BuffHpRegen | SkillEffect.BuffDef
-            | SkillEffect.BuffHp | SkillEffect.BuffReflect,
+            | SkillEffect.BuffHp | SkillEffect.BuffReflect | SkillEffect.BuffBowResist,
             new[]
             {
                 // 🔑 `BL-183`, the covering ladder alongside the payload ladder — @44 this is Harmony
@@ -424,8 +427,17 @@ public static partial class SkillCatalog
         // ⚠ The old def also carried +20% MP regen and a −30% magic-skill MP cost. Both are GONE
         // from the 3rd tier by his ruling — the MP-cost half is Mana Blessing's job now, and the
         // regen half is on the 4th-class ladder (`buffer 4th.csv` @77). Do not restore them here.
+        // 🔴🔑 `BL-214`, 2026-09-12 — `BuffMpRegen` AND `BuffMagicCritRate` ADDED, AND BOTH RUNGS
+        //    THAT AUTHOR THEM HAD BEEN DEAD SINCE 0.106.0. The 4th-tier rungs (BufferFourthWizardRungs,
+        //    77/78/79) carry +20% MP regen and a magic crit-rate line as MAGNITUDES; this mask declared
+        //    neither, and `RecomputeDerived` gates every channel on `buff.Has(flag)`. So the buffer's
+        //    top harmony delivered M.Atk and cast speed only, and the mage's crit rate never moved.
+        //    🔑 IT WAS FOUND BY MEASURING, NOT BY READING: `BL-209` raised the crit-rate number from
+        //    30% to 100% and `BalanceMatrix --mcrit` printed the rate identical before and after. A
+        //    number that refuses to move when you change it is the loudest signal there is.
         WcHarmony(NpcHarmonyWizard, "Harmony of the Wizard", "harmony_wizard",
-            SkillEffect.BuffMagAtk | SkillEffect.BuffCastSpeed,
+            SkillEffect.BuffMagAtk | SkillEffect.BuffCastSpeed
+            | SkillEffect.BuffMpRegen | SkillEffect.BuffMagicCritRate,
             new[]
             {
                 // `BL-183` — M.Atk @48 is Harmony of Force; cast speed (Harmony of Alacrity) is @52.

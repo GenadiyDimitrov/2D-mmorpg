@@ -24,6 +24,62 @@ Three kinds of entry:
 
 ## Superseded backlog entries
 
+### `BL-191` (superseded) — THE SKILL MASTERIES, as the roster stood 2026-09-10 to 2026-09-12
+
+**Filed 2026-09-10 when `BL-190` shipped the engine, and mostly CLOSED the same day** when you
+authored the passives that switch it on. What is left is a short list of choices, not a build.
+
+### ✅ What is done (0.124.0)
+
+| Skill id | Shown as | Who | Learn | Base |
+|---|---|---|---|---|
+| `overpower` | Overpower | Warrior → Ravager + Warlord | 20 / 40 / 76 | 3% / 7% / 10% double damage |
+| `lasting_enchantment` | Lasting Enchantment | Lightbringer + Warchanter | 76 | 10% buff/debuff duration double |
+| `reuse_reset_momentum` | **Arcane Momentum** / **Stab Momentum** | Magus + the three MELEE rogues | 76 | 5% reuse reset |
+| `double_mastery` (Toggle) | **Overpower Mastery** / **Momentum Mastery** | Ravager + Warlord + the three melee rogues | **81** | **×2 on EVERY mastery base you have**; 50 HP/s, +25% MP on physical skills |
+
+Measured at 90 in mythic gear (`BalanceMatrix` §C1): Ravager **9.4%** damage, **18.8%** under Blood
+Rage; Warchanter 9.7% / Lightbringer 10.9% duration; Magus 5.5% reuse. Every CSV row is verified by
+`--check`, which learned the three metrics.
+
+### ❓ What is still yours
+
+1. 🟡 **THE TWO LEARN LEVELS ON THE MELEE ROGUE ARE MINE — the only unauthored numbers in the
+   layer.** You said *"add to duals 4th the same"* twice and gave no levels, so Stab Momentum sits at
+   **76** and Momentum Mastery at **81**, mirroring the Magus's reuse rung and the warrior's toggle
+   exactly. Two `ClassSkill` lines and two CSV rows if you meant otherwise.
+
+2. 🟡 **THE WHOLE LAYER IS ON TRIAL BY YOUR OWN WORDS** — *"ill try with those changes and after
+   playtest ill deside if i add or remove"*. What the rig reads at 90 in mythic gear, so the playtest
+   has a baseline to argue with:
+
+   | Class | dmg | duration | reuse |
+   |---|---|---|---|
+   | Ravager / Warlord | 9.4% | — | — |
+   | Ravager **+ toggle** | **18.8%** | — | — |
+   | Warchanter / Lightbringer | — | 9.7% / 10.9% | — |
+   | Magus | — | — | 5.5% |
+   | Nullblade (melee rogue) | — | — | 4.6% |
+   | Nullblade **+ toggle** | — | — | **9.1%** |
+   | Bulwark, Sharpshooter (bow rogue) | 0% | 0% | 0% |
+
+3. ❓ **Does anything BUY a mastery rate besides the passive?** The engine has a buff channel
+   (`SkillDef.MasteryMult`) and the `double_mastery` toggle is its only author. A party "Mastery
+   Chant", a consumable, a rune — all one line each. Nothing is invented until you ask.
+4. 🔵 **The ladders stop where you stopped them.** Overpower has three rungs because you named three;
+   the other three skills have one each. `warrior 4th.csv` and `war_aoe 4th.csv` carry the 4th-tier
+   header and their two rows with a banner saying the rest is yours — neither earns a `Check.Specs`
+   line until you finish the file, and `dual 4th.csv` does not either.
+
+### ⚠ One thing to know before you retune any of it
+
+The base is **not** the rate. `rate = clamp(base × buffs × MasteryAtkMod(EffectiveAtk), 0, 25%)`, and
+the band runs ×0.70 at ATK 30 to ×1.30 at ATK 50. So a 20% base is already at the cap for anyone with
+ATK 45+, and **a 30% base is at the cap for everybody** — raising it past ~19% buys nothing without
+raising `StatCaps.SkillMasteryRateMax` too. `BalanceMatrix` §C1 prints the whole surface.
+
+---
+
 ### `BL-78` — "mobs are too easy and the HP curve is ~3× short"
 **Replaced 2026-08-19**, after item 3's research came back and you ruled on it. Two things in the text
 below turned out to be wrong, and both are worth keeping because they are the reason the fix looks the
@@ -4373,3 +4429,129 @@ It listed four items; the fourth is still open and lives in `Backlog.md`. Items 
 list are the three above. Item 3 was Pyro Burst's inert `(success chance x1.5)` cell.
 
 ---
+
+---
+
+
+## `BL-209` ✅ CLOSED 2026-09-12 (0.133.0) — HARMONY OF THE WIZARD'S MAGIC CRIT RATE IS INSIGHT'S
+
+*"We need to make harmony of wizard crit rate be same as insight (x2 not x1.3)"*
+
+One number: the buff's crit-rate magnitude on rungs 4 and 5 (levels 78 and 79) went `0.30f` → `1.00f`,
+which is exactly what `Insight`'s top rung carries. Both DESCR cells moved with it in
+`buffer 4th.csv` **and** `buffs.csv`, which mirrors the same ladder and would otherwise have gone
+stale in silence.
+
+🔴🔑 **AND THE NUMBER HAD NEVER MATTERED, WHICH IS THE REAL FINDING.** Raising it changed nothing in
+the rig, because the def's `Effect` mask never declared `BuffMagicCritRate` — see **`BL-214`**. The
+30% had been discarded since 0.106.0. Fixing the mask is what actually gave you a crit rate; this
+ruling is what then takes you to the ceiling.
+
+📐 Measured (`--mcrit 90 epic`): a fully-blessed Magus of every race now reads **20%**, the
+`StatCaps.MagicCritRate` cap, where a Human read 8.8% before. ⚠ The cap is therefore now the binding
+constraint rather than the buff — carried forward as lever 3 of **`BL-215`**.
+
+
+---
+
+
+## `BL-210` ✅ CLOSED 2026-09-12 (0.133.0) — HARMONY MARK GIVES MAGIC CRIT DAMAGE, AND ×3.12 IS EXACT
+
+*"also harmony mark don't give m crit dmg ..my crit dmg stays 2.6 but it should go to 3.12 (and we
+should not limit it ..no other buffs to increase it x3.12 is max currently - hwi x1.3 mark x1.2 ==
+3.12 not 2.6)"*
+
+**You had already designed it and the code had never carried it.** The Mark's payload has thirteen
+universal lines and every one of them is +20% — including `BuffCritRate`, `BuffMagicCritRate` and
+`BuffCritDamage`. The fourth cell of that square, magic crit *damage*, was simply never authored, and
+the rung text said *"critical rate and damage"* as though it were. Your own comment column on the
+level-83 row proves the intent, written weeks ago: *"crit dmg we have 35% + 35% + 20% for phisical and
+30+20% for magical"* — the `20%` in "30+20" is this Mark.
+
+Built as `MagicCritDamage: 0.20f` on the def. 🔑 **It is a FIELD, not a magnitude, and that is why it
+was missed**: `SkillEffect` has had no bits since `1L << 62`, so anyone auditing the skill by reading
+its `Magnitudes` array sees twelve lines and no thirteenth. The healer's three Marks carry it the same
+way.
+
+📐 `StatCaps.MagicCritDamageBase 2.0 × 1.30 (Harmony of the Wizard) × 1.20 = ×3.12`, to the digit,
+because `MagicCritDamageMult` compounds. The cap is ×5, so nothing is limiting it — your
+*"we should not limit it"*. `--mcrit 90 epic` prints the chain.
+
+**The checker learned to read it.** `magiccritdmg` is its own metric now, declared ABOVE `magiccritrate`
+in `Descr.cs` — until today `magiccritrate`'s `"magic critical"` alias swallowed the cell
+*"+30% magic critical dmg"* and compared it against the crit RATE. That went unseen for a chronicle
+for the worst possible reason: both numbers on that row were 30, so the wrong reading agreed with the
+right one.
+
+
+---
+
+
+## `BL-211` ✅ CLOSED 2026-09-12 (0.133.0) — CRIT-RATE RESIST CUTS THE BLOW RATE, REVERSING `BL-188`
+
+*"The only think I want is the light armor mastery and every crit chance reduction passive/buff to
+lower the blow rate as well (the blow is crit dmg so heaving less chance to be hit by crit means blows
+as well. I forgot to mention)"*
+
+```
+rolledBlow = BlowRate × (1 − target.BlowResist) × (1 − target.CritRateResist)
+```
+
+The two defender terms **multiply**; they do not sum. Two independently-capped ladders that added
+could pass 100% and invert the roll, and multiplying leaves the tank's own skill worth exactly its 30%.
+
+🔑 **THIS KNOWINGLY REVERSES `BL-188`, WHICH LEFT IT OUT ON PURPOSE AND SAID WHY:** the rogue's own
+Armor Mastery carries 25-35% crit-rate resist, so wiring it in makes light armour the best anti-rogue
+armour in the game. That consequence has not gone away — it is now the intended one, and it is the
+point of the ask: you had just measured duals two-or-three-shotting a mage and wanted the light kits
+to have an answer.
+
+📐 Measured at 90 (`--blowrate 90 epic`, which grew two defender columns for this): a light-armour
+target reads 35% and multiplies an incoming blow by **0.65** — against **0.70** for the tank, who now
+has company. A maxed Human dagger's 60% gate reads 39% into an archer or another dagger.
+
+⚠ A shield's `ShieldCritDefense` still does NOT touch the roll. Your sentence named *passives and
+buffs*; a shield is an item stat with its own layer, and folding it in would hand a third one to the
+class you had just called *"almost immortal"*. Say the word if you meant it too.
+
+
+---
+
+
+## `BL-214` ✅ CLOSED 2026-09-12 (0.133.0) — FOUR BUFF PAYLOADS THAT HAD NEVER APPLIED, AND THE GUARD
+
+**Not asked for — found while measuring `BL-209`.** Its crit-rate number went from 30% to 100% and the
+rig printed the same rate before and after. A number that refuses to move when you change it is the
+loudest signal there is.
+
+🔴🔑 **THE MECHANISM.** A `BuffInstance` takes its `Effect` MASK from the SkillDef and its MAGNITUDES
+from the RUNG, and every channel in `Entity.RecomputeDerived` is read behind `buff.Has(flag)`. So a
+magnitude authored on a rung whose flag the def does not declare is discarded — no error, no log line,
+nothing on any screen, and the skill card still advertises it, because `SkillText` reads the magnitude
+directly. `SkillCsvSeed --check` cannot see it either: it compares your authored number against
+`MagnitudesAt`, which is exactly the value the engine then throws away.
+
+**The four, all authored, priced, documented, CSV-checked and inert:**
+
+| skill | dead payload | dead since |
+|---|---|---|
+| **Harmony of the Wizard** | +20% MP regen **and** the whole magic crit-rate line | 0.106.0 |
+| **Harmony of Protection** | 10% bow resistance (rung 6, @76) | 0.106.0 |
+| **Lethal Precision** (Elf) | +10/15/20% crit damage — i.e. **the entire buff** | 0.121.0 |
+| **Lethal Focus** (Human) | the crit-damage half of it | 0.121.0 |
+
+🔑 The Lethal pair is the one that stings: `BL-188`'s whole design is *"the race split IS the
+balance"* — Elf buys crit DAMAGE, Demon buys rate, Human splits — and only the Demon's half ever
+worked, because his rides the `BlowRatePct` FIELD rather than a magnitude. `--blowrate` had been
+printing the Elf's "+ race buff" column identical to his "passives only" column for nine versions and
+nobody read it as a defect.
+
+**Fixed, and then guarded so it cannot recur:** `SkillCatalog.BuildCatalog` throws at startup if any
+def authors a magnitude its mask omits — the third member of the family beside the duplicate-id, the
+child-id and the `CoveredKeys` guards, all of which exist for the same reason. `dotnet run --project
+tools/BalanceMatrix -- --maskaudit` lists them; it reads **CLEAN**.
+
+⚠ **Only that direction is an error.** A mask flag with no magnitude is legitimate and common: it is
+how a ladder declares a channel its later rungs will fill, and how a FIELD payload keeps a buff
+landable while carrying its real value elsewhere (Lethal Frenzy declares `BuffCritRate` with no
+magnitude and pays through `BlowRatePct`).

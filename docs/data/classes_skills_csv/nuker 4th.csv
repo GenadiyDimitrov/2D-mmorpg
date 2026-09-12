@@ -234,3 +234,5 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 88,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy (success chance x0.5);,222,0,100kk,,,Demon
 89,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy (success chance x0.5);,226,0,100kk,,,Demon
 90,Witches Scarecrow,witches_scarecrow,Magic/Debuff,,,900,0,enemy/single,2,5,10,Fear the enemy (success chance x0.5);,230,0,100kk,,,Demon
+,,,,,,,,,,,,,,,,,,,----------------------------Lasting Enchantment----------------------------
+76,Lasting Enchantment,lasting_enchantment,Passive,,,0,0,self/single,0,0,0,double duration rate 10% - buffs and debuffs you cast have that chance to last TWICE as long - one roll per cast so an area blessing doubles for everyone or no one - scales with ATK,0,6.5kk,1kk,,,,Same id and number the healer and buffer carry - on a nuker it is mostly his debuffs that double

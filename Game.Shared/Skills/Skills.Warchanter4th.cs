@@ -231,7 +231,15 @@ public static partial class SkillCatalog
     /// <summary>Harmony of the Wizard's rungs 3-5, at 77 / 78 / 79. Each is the one before plus one
     /// line: MP regen, then magic crit rate, then magic crit damage.
     /// ⚠ HIS THIRD ROW SAYS 78, like the second. Its price cells are the 79 band (80kk SP + 1kk gold)
-    /// and a ladder cannot have two rungs at one level, so it is read as 79.</summary>
+    /// and a ladder cannot have two rungs at one level, so it is read as 79.
+    ///
+    /// <para>🔑 <b>THE CRIT-RATE LINE IS +100%, NOT +30%, SINCE 2026-09-12</b> (`BL-209`). His playtest
+    /// ruling, verbatim: *"We need to make harmony of wizard crit rate be same as insight (x2 not
+    /// x1.3)"*. Insight's top rung is <c>1.00f</c> in <see cref="SkillCatalog"/>'s buff ladder, so the
+    /// two now read the same number and a fully-blessed nuker multiplies ×2 × ×2 × ×1.2 (Mark) rather
+    /// than ×2 × ×1.3 × ×1.2. ⚠ It is a MULTIPLIER on the WIT base, not percentage points — see
+    /// StatCalculator.MagicCritBase — and the finished rate still meets
+    /// <see cref="StatCaps.MagicCritRate"/> (20%) at the end of the chain.</para></summary>
     internal static SkillLevel[] BufferFourthWizardRungs()
     {
         var (sp3, g3) = F4(1);
@@ -247,13 +255,13 @@ public static partial class SkillCatalog
             new SkillLevel(MpCost: 199, SpCost: sp3, GoldCost: g3, Magnitudes: baseMags,
                 Description: "+10% M.Atk, +30% cast speed, +20% MP regeneration (5 minutes)."),
             new SkillLevel(MpCost: 279, SpCost: sp4, GoldCost: g4,
-                Magnitudes: baseMags.Append(new EffectMagnitude(SkillEffect.BuffMagicCritRate, 0.30f)).ToArray(),
-                Description: "+10% M.Atk, +30% cast speed, +20% MP regeneration, +30% magic critical "
+                Magnitudes: baseMags.Append(new EffectMagnitude(SkillEffect.BuffMagicCritRate, 1.00f)).ToArray(),
+                Description: "+10% M.Atk, +30% cast speed, +20% MP regeneration, +100% magic critical "
                            + "rate (5 minutes)."),
             new SkillLevel(MpCost: 367, SpCost: sp5, GoldCost: g5,
-                Magnitudes: baseMags.Append(new EffectMagnitude(SkillEffect.BuffMagicCritRate, 0.30f)).ToArray(),
+                Magnitudes: baseMags.Append(new EffectMagnitude(SkillEffect.BuffMagicCritRate, 1.00f)).ToArray(),
                 MagicCritDamage: 0.30f,
-                Description: "+10% M.Atk, +30% cast speed, +20% MP regeneration, +30% magic critical "
+                Description: "+10% M.Atk, +30% cast speed, +20% MP regeneration, +100% magic critical "
                            + "rate and +30% magic critical damage (5 minutes)."),
         };
     }
@@ -433,6 +441,28 @@ public static partial class SkillCatalog
             //    rung must not ride in the rank or a Lv2 Harmony Mark would lock out a Lv1 Holy Mark.
             // ⚠ IT IS THE PARTY-WIDE ONE — the healer's three are single-target. That, the 2-minute
             //   reuse and the ten Skill Stones are what it pays for covering everybody at once.
+            //
+            // 🔴🔑 `BL-210` — THE MAGIC CRIT-DAMAGE LINE WAS MISSING, AND IT WAS THE ONLY GAP IN AN
+            //    OTHERWISE SYMMETRICAL PAYLOAD. `markMags` carries `BuffCritRate 0.20`,
+            //    `BuffMagicCritRate 0.20` and `BuffCritDamage 0.20` — three of the four cells of the
+            //    crit square — while the fourth, magic crit DAMAGE, was simply never authored, and the
+            //    rung text said "critical rate and damage" as though it were. He found it in play
+            //    (2026-09-12): *"harmony mark don't give m crit dmg .. my crit dmg stays 2.6 but it
+            //    should go to 3.12 ... hwi x1.3 mark x1.2 == 3.12 not 2.6"*.
+            //
+            // 🔑 IT IS A FIELD, NOT A MAGNITUDE, and that is WHY it was missed. `SkillEffect` has had
+            //    no bits left since `1L << 62`, so magic crit damage rides `SkillDef.MagicCritDamage`
+            //    the way the healer's three Marks already carry it (Skills.Lightbringer4th.cs passes
+            //    it as a constructor argument too). Anyone auditing this skill by reading its
+            //    `Magnitudes` array — which is what the payload LOOKS like — sees the other twelve
+            //    lines and no thirteenth. **Half of all buff payloads are fields; count both.**
+            //
+            // 🔑 0.20 IS THE SKILL'S OWN NUMBER, not a new one: every universal line on this Mark is
+            //    +20%, its physical twin `BuffCritDamage` included. And it lands EXACTLY on his 3.12 —
+            //    `StatCaps.MagicCritDamageBase 2.0 × 1.30 (Harmony of the Wizard) × 1.20 = 3.12`,
+            //    because MagicCritDamageMult COMPOUNDS in RecomputeDerived. The 5.0 cap
+            //    (`StatCaps.MagicCritDamageCap`) is well clear of it, which is his *"we should not
+            //    limit it .. x3.12 is max currently"*.
             new(WcHarmonyMark, "Harmony Mark", BaseClass.Mage,
                 markMags2.Aggregate(SkillEffect.None, (a, m) => a | m.Effect),
                 MpCost: 300, CastTicks: 50, CooldownTicks: 1200, Range: 900, Power: 0,
@@ -440,21 +470,22 @@ public static partial class SkillCatalog
                 Category: SkillCategory.Buff, SpCost: sp79,
                 TargetMode: TargetMode.AlliesInRadius, AreaRadius: 800f,
                 ConsumableId: ItemCatalog.SkillStone, ConsumableAmount: 10,
+                MagicCritDamage: 0.20f,
                 Magnitudes: markMags,
                 Levels: new[]
                 {
                     new SkillLevel(MpCost: 300, SpCost: sp79, GoldCost: gold79,
                         Magnitudes: markMags, LearnConsumableAmount: 0,
                         Description: "The whole party: +10% attack, +3 accuracy, and +20% to both "
-                                   + "defences, attack and cast speed, critical rate and damage, "
-                                   + "maximum HP and MP and regeneration, for five minutes. Consumes "
-                                   + "10 Skill Stones. Only one Mark at a time."),
+                                   + "defences, attack and cast speed, physical AND magic critical "
+                                   + "rate and damage, maximum HP and MP and regeneration, for five "
+                                   + "minutes. Consumes 10 Skill Stones. Only one Mark at a time."),
                     new SkillLevel(MpCost: 300, SpCost: 0, GoldCost: goldUp83,
                         Magnitudes: markMags2, MagicCritRateDebuff: 0.10f,
                         ConsumableAmount: 15,
                         Description: "The whole party: +10% attack, +3 accuracy, and +20% to both "
-                                   + "defences, attack and cast speed, critical rate and damage, "
-                                   + "maximum HP and MP and regeneration; blows and spells aimed at "
+                                   + "defences, attack and cast speed, physical AND magic critical "
+                                   + "rate and damage, maximum HP and MP and regeneration; blows and spells aimed at "
                                    + "them are 10% less likely to crit and physical criticals deal "
                                    + "30% less extra damage. Five minutes, 15 Skill Stones. Only one "
                                    + "Mark at a time."),

@@ -531,9 +531,20 @@ public static partial class SkillCatalog
         // that level. 40 / 60 / 70 are rungs 1, 8 and 13 of `RogueSp`.
         int[]   focusSp     = { RogueSp[0], RogueSp[7], RogueSp[12] };
 
+        // 🔴🔑 `BL-214`, 2026-09-12 — `BuffCritDamage` WAS MISSING FROM THIS MASK AND THE ELF'S
+        //    ENTIRE BUFF DID NOTHING. The comment four lines above already said the crit-damage half
+        //    rides "in a real `BuffCritDamage` magnitude" — it does, and the def never declared the
+        //    flag, so `RecomputeDerived`'s `buff.Has(BuffCritDamage)` gate threw all of it away. Lethal
+        //    Precision is crit damage and nothing else, so the ELF's race buff was worth exactly zero
+        //    from `BL-188` (0.121.0) until now, and the HUMAN's was worth half of what it claimed. The
+        //    Demon's, being pure rate on the `BlowRatePct` FIELD, was the only one that ever worked —
+        //    which is why `--blowrate` showed the elf's "+ race buff" column not moving and nobody read
+        //    it as a defect.
+        // ⚠ Adding the flag is safe for a rung that authors no magnitude: `buff.Percent(flag)` returns
+        //   0 and the fold is a ×1. That is the same pattern the healer's Marks use deliberately.
         SkillDef Focus(string id, string name, Func<int, float> rate, Func<int, float> critDmg,
                        string blurb, Func<int, string> rung) =>
-            new(id, name, BaseClass.Fighter, SkillEffect.BuffCritRate,
+            new(id, name, BaseClass.Fighter, SkillEffect.BuffCritRate | SkillEffect.BuffCritDamage,
                 MpCost: focusMp[0], CastTicks: 0, CooldownTicks: 900, Range: 0, Power: 0,
                 DurationTicks: 3000, BuffKey: id, Rank: 1,
                 Category: SkillCategory.Buff, PhysicalCast: true, TargetMode: TargetMode.SelfOnly,

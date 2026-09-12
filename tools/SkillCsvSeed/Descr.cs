@@ -125,6 +125,16 @@ internal static class Descr
         ("durationrate",  new[] { "double duration rate", "duration double rate", "durationrate" }),
         ("reusereset",    new[] { "reuse reset rate", "reuse reset", "cooldown reset" }),
         ("critrate",      new[] { "critical rate", "crit rate", "critrate", "critical" }),
+        // 🔴🔑 `BL-210` — MAGIC CRIT **DAMAGE** IS ITS OWN KEY NOW, AND IT MUST STAY ABOVE THE RATE.
+        // Until 2026-09-12 there was no such key at all, so `magiccritrate`'s "magic critical" alias
+        // swallowed Harmony of the Wizard's *"+30% magic critical dmg"* cell and checked it against the
+        // crit RATE. That went unseen for a chronicle for the worst possible reason: BOTH numbers on
+        // that row were 30, so the wrong reading agreed with the right one. It surfaced the moment the
+        // rate moved to 100% and the row started reporting a LADDER DIP against itself.
+        // ⚠ The pair is one of the traps this table's own header warns about — a key that is a PREFIX
+        //   of a longer phrase must be declared BELOW it. "magic crit" is a prefix of "magic crit dmg".
+        ("magiccritdmg",  new[] { "magic critical damage", "magic critical dmg", "magic crit damage",
+                                  "magic crit dmg", "m.crit.dmg", "m crit dmg" }),
         ("magiccritrate", new[] { "magic critical", "magic crit" }),
         // ⚠ THREE evasion channels, and his rogue row names all three in one cell: plain "evasion +20",
         // "skill evasion x1.25" (dodging a physical SKILL outright) and "magic evasion x1.1" (points on
@@ -476,6 +486,10 @@ internal static class Descr
             Add("blowrate", true, def.BlowRatePctAt(level));
             // MAGIC crit rate RECEIVED — pooled with the physical one; see the `critrateres` aliases.
             Add("critrateres", true, def.MagicCritRateDebuffAt(level));
+            // `BL-210` — MAGIC crit DAMAGE, a FIELD for the usual reason (SkillEffect has had no bits
+            // since `1L << 62`), so it needs its own line here or it is never read at all. Two skills
+            // author it today: Harmony of the Wizard's top rung (+30%) and Harmony Mark (+20%).
+            Add("magiccritdmg", true, def.MagicCritDamageAt(level));
 
             // DEBUFF SUCCESS MULTIPLIER (`BL-90`) — his `(success chance x1.5)`.
             // ⚠ TWO THINGS ARE DELIBERATE HERE. (1) It is stored as a PERCENT and as `mod − 1`, because

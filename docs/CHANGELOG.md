@@ -7,12 +7,129 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.132.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.133.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-11 (latest) — 0.132.0: the Magus's 4th class, and a defensive proc that can finally reach the attacker
+## 2026-09-12 (latest) — 0.133.0: the mage's crit chain, blows against light armour, creatures that hit twice as hard — and four buffs that had never applied
+
+⚠ **NEW APK.** No protocol bump — nothing on the wire changed — but the class-skill TABLES did, and
+the client builds its Learn tab locally from the compiled `ClassSkills`.
+
+A playtest pass at 90 in epic gear. Seven changes, six of them his and one found on the way.
+
+### 🔴 Four buff payloads had never applied, and now a startup guard says so (`BL-214`)
+
+Found while measuring `BL-209`: its crit-rate number went 30% → 100% and the rig printed the same rate
+before and after. **A `BuffInstance` takes its `Effect` mask from the SkillDef and its magnitudes from
+the RUNG, and every channel in `RecomputeDerived` is read behind `buff.Has(flag)`** — so a magnitude
+whose flag the def omits is discarded in silence, while `SkillText` still advertises it and
+`SkillCsvSeed --check` still verifies it against the value the engine throws away.
+
+| skill | dead payload | dead since |
+|---|---|---|
+| Harmony of the Wizard | +20% MP regen **and** the whole magic crit-rate line | 0.106.0 |
+| Harmony of Protection | 10% bow resistance (rung 6, @76) | 0.106.0 |
+| Lethal Precision (Elf) | +10/15/20% crit damage — **the entire buff** | 0.121.0 |
+| Lethal Focus (Human) | the crit-damage half of it | 0.121.0 |
+
+The Lethal pair is the expensive one: `BL-188`'s whole design is *"the race split IS the balance"* —
+Elf buys crit DAMAGE, Demon buys rate, Human splits — and only the Demon's ever worked, because his
+rides a FIELD rather than a magnitude. `--blowrate` had been printing the Elf's "+ race buff" column
+identical to his "passives only" column for nine versions.
+
+`SkillCatalog.BuildCatalog` now throws at startup if any def authors a magnitude its mask omits — the
+third guard beside the duplicate-id, child-id and `CoveredKeys` ones, all there for the same reason.
+`dotnet run --project tools/BalanceMatrix -- --maskaudit` lists them; it reads CLEAN.
+
+### The mage's crit chain (`BL-209`, `BL-210`)
+
+- **Harmony of the Wizard's magic crit rate is Insight's** — `0.30f` → `1.00f` on rungs 4 and 5
+  (*"make harmony of wizard crit rate be same as insight (x2 not x1.3)"*).
+- **Harmony Mark grants magic crit damage**, +20%, matching every other universal line on that Mark and
+  its own physical twin. His comment column on the level-83 row had said so for weeks
+  (*"30+20% for magical"*); the code had never carried it. It is a FIELD, which is why it was missed.
+
+📐 `--mcrit 90 epic`, a fully-blessed Magus: rate **8.8% → 20%** (the cap), crit damage **×2.60 →
+×3.12** — his arithmetic to the digit — and **+25% average magic damage**. Roughly half of that is the
+mask fix, not the two rulings.
+
+⚠ The 20% rate cap now binds for every race, so it, not the buff, is the next lever. `BL-215`.
+
+### A blow is cut by crit-rate resist (`BL-211`)
+
+```
+rolledBlow = BlowRate × (1 − target.BlowResist) × (1 − target.CritRateResist)
+```
+
+*"the light armor mastery and every crit chance reduction passive/buff to lower the blow rate as well
+(the blow is crit dmg so heaving less chance to be hit by crit means blows as well)"*. The two terms
+multiply rather than sum, so two independently-capped ladders can never pass 100% and invert the roll.
+
+This **knowingly reverses `BL-188`**, which left it out because the rogue's own Armor Mastery carries
+25-35% of it and it makes light armour the best anti-rogue armour in the game. That is now the intent.
+📐 A light kit at 90 reads 35% and multiplies an incoming blow by **0.65**, against the tank's 0.70.
+A shield's `ShieldCritDefense` still does not touch the roll — he named passives and buffs.
+
+### Creatures hit twice as hard, elites four times (`BL-212`)
+
+*"mobs should get x2 power ... (not patk just dmg) and elits should get (x2 p atk on what they have
+now) so elit with the double in dmg and double in patk should do ~x4 dmg as of now"*
+
+`MobRankScale.MobDamageOut = 2.0`, applied once in `FinalizeDamage` to any attacker that is not a
+player, and the elite's attack rung ×1.5 → **×3.0**. Damage rather than P.Atk, on his call and for two
+good reasons: the creature attack curve is fitted to IG off 2,831 measured monsters and sits on the
+inspect panel, and damage is a ratio — doubling P.Atk is ×2 only while `power` is 0.
+
+⚠ **It is level-flat and the loss it corrects is not.** `BL-185` gave the physical channel the
+defender level term M.Def always had, so a defender's P.Def is ×1.79 at 90 (−44% creature damage) but
+only ×1.09 at 20 (−8%). Measured, HP per kill doubles at every level and kills-until-empty falls
+29 → 11 for a level-36 tank and 8 → 3 for a level-36 nuker. Carried to him as `BL-212`, with the
+level-shaped alternative costed.
+
+### The mastery roster, rewritten to his table (`BL-213`)
+
+| | double dmg | reuse | duration | toggle |
+|---|---|---|---|---|
+| Magus | — | 76 | **76 (new)** | — |
+| Ravager · Warlord | 20/40/76 | **76 (new)** | — | 81 |
+| the three melee rogues | 40/76 | 76 | — | 81 |
+| **the three archers** | **40/76 (new)** | **76 (new)** | — | **81 (new)** |
+| Lightbringer · Warchanter | — | — | 76 | — |
+| Bulwark | — | — | — | — |
+
+This reverses `BL-191`'s *"ARCHER — never"* (2026-09-10, *"archer have enough skills that are always
+hit wit big power"*) after two days of play: *"archers are like mages ...Strongest skill does only 5k
+dmg to elit"*. Archers and duals take Overpower one rung under the warrior at 40 and 76, which is the
+ladder `BL-203` already gave the duals.
+
+⚠ Two display names are mine — **"Battle Momentum"** and **"Bow Momentum"**, from each file's own
+vocabulary — and so are four learn levels, all mirroring existing rungs. Flagged in `BL-213`.
+🔴 **No archer skill is flagged `[Double]`** above level 40, so his new Overpower pays out on nothing
+until he names one. Also in `BL-213`.
+
+### Tooling
+
+- `BalanceMatrix --mcrit <level> <quality>` — the nuker's crit chain stage by stage. It strips the
+  shelf's Mark before wearing the one being measured: all four Marks share a key, so a naive
+  "shelf + Harmony Mark" row double-counts +20% and reports a ×3.74 nobody can reach.
+- `BalanceMatrix --maskaudit` — the effect-mask audit above.
+- `--blowrate` grew three defender columns (tank / archer / rogue) and a line saying what each brings.
+- `Shot()` carries the creature ×2, beside the rune, exactly as `FinalizeDamage` does.
+- `ApplyNpcBuffs` and `ApplyOneBuff` stopped dropping `MagicCritDamage` — **the fourth field channel**
+  one of those two builders has silently lost.
+- `SkillCsvSeed`'s `Descr.cs` learned `magiccritdmg`, declared ABOVE `magiccritrate` so that
+  *"magic critical dmg"* is no longer read as the crit RATE. It had been, since the metric existed —
+  invisible only because both numbers on the one row that used it were 30.
+
+### Verified
+
+`Game.sln`, `Game.Client.Unity`, `tools/BalanceMatrix` and `tools/SmokeTest` all build; the server
+boots as `v0.133.0` (which is what proves the new startup guard passes); `SmokeTest` reports ALL
+CHECKS PASSED; `SkillCsvSeed --check` is at its two pre-existing `BL-202` rows and nothing else.
+
+## 2026-09-11 — 0.132.0: the Magus's 4th class, and a defensive proc that can finally reach the attacker
 
 ⚠ **NEW APK.** No protocol bump (nothing on the wire changed), but the client builds its Learn tab
 locally from the compiled `ClassSkills`, and the Magus's table gains 236 rows.

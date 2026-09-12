@@ -190,3 +190,9 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 88,Magic Arrow,archer_human_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,5,"Shot arrow dealing +3800 power (physical) and stunning the target;",224,0,100kk,,,Human
 89,Magic Arrow,archer_human_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,5,"Shot arrow dealing +3900 power (physical) and stunning the target;",230,0,100kk,,,Human
 90,Magic Arrow,archer_human_magic_arrow,Physical/Active,bow,,900,0,target/single,1,5,5,"Shot arrow dealing +4000 power (physical) and stunning the target;",235,0,100kk,,,Human
+,,,,,,,,,,,,,,,,,,,----------------------------Overpower----------------------------
+76,Overpower,overpower,passive,,,0,0,self/single,0,0,0,double rate 7% - skills marked [Double] strike for DOUBLE damage that often - scales with ATK - without this passive NO skill can double,0,6.5kk,0,
+,,,,,,,,,,,,,,,,,,,----------------------------Bow Momentum----------------------------
+76,Bow Momentum,reuse_reset_momentum,passive,,,0,0,self/single,0,0,0,reuse reset 5% - a skill you cast has that chance to come off reuse immediately - never on a fixed-cooldown skill - scales with ATK,0,6.5kk,1kk,,,,Same id as the Magus Arcane Momentum and the dagger Stab Momentum - one skill - one number - three names
+,,,,,,,,,,,,,,,,,,,----------------------------Overpower Mastery----------------------------
+81,Overpower Mastery,double_mastery,Toggle,,,0,0,self/single,0,0,0,Doubles the base of EVERY skill mastery you have; increases P.MP consumation by 25%; Consume 50 HP/s,0,200kk,25kk,,,,Same id and same name as the warrior and dagger toggle - here it doubles both Overpower and Bow Momentum

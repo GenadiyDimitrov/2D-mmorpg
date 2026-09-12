@@ -1651,12 +1651,15 @@ public readonly record struct PassiveEffect(
     // BlowRate  — the ATTACKER's half: a fraction, 0.20 = ×1.20 on Entity.BlowRateMult, exactly the
     //             convention `CritRate` above it uses. The dagger's Vital Points (52/64/74) and
     //             Assassination Instinct (76) are its only authors today.
-    // BlowResist— the DEFENDER's half, and the ONLY thing in the game that resists a blow now that
-    //             the roll has left the crit chain: a fraction cut off the attacker's ALREADY-CAPPED
+    // BlowResist— the DEFENDER's DEDICATED half: a fraction cut off the attacker's ALREADY-CAPPED
     //             rate, so the tank's 0.30 takes a maxed 80% rogue to ~56%. His number, his example.
-    //             ⚠ Deliberately NOT `CritRateResist` — a blow is no longer a crit, and the rogue's
-    //             own Armor Mastery carries 25-35% crit-rate resist that must NOT protect against
-    //             stabs by accident. Tank 4th's Vital Organ Protection is its only author.
+    //             Tank 4th's Vital Organ Protection is its only author.
+    //             🔴 ⚠ IT IS NO LONGER THE ONLY BLOW DEFENCE. `BL-211` (2026-09-12) put
+    //             `CritRateResist` back into the roll on his ruling — *"every crit chance reduction
+    //             passive/buff to lower the blow rate as well"* — so the gate is now
+    //             `BlowRate × (1 − BlowResist) × (1 − CritRateResist)`. The two MULTIPLY. See
+    //             GameLoopService.BlowLands; the rogue's own 25-35% light-armour resist protecting
+    //             him against stabs is now the INTENDED behaviour, not the accident `BL-188` avoided.
     float BlowRate = 0f, float BlowResist = 0f,
     float HpRegen = 0f, float MpRegen = 0f,            // FLAT regen per tick
     float HpRegenPct = 0f, float MpRegenPct = 0f,      // regen MULTIPLIER (additive: 0.20 = +20%)
@@ -1987,6 +1990,43 @@ public static partial class SkillCatalog
                       + "not skill ids — a ladder rung's id is 'buff_<family>_<rank>' and its key is "
                       + "'<family>'; the NPC single harmonies are 'npc_harmony_swift' keyed "
                       + "'npc_h_swift'. Name the key the covered buff lands under.");
+        }
+
+        // 🔴🔑 `BL-214` EFFECT-MASK GUARD, 2026-09-12 — the third member of the family above, and
+        // the one that cost the most before it existed. A `BuffInstance` takes its `Effect` MASK from
+        // the DEF (GameLoopService.ApplyBuff: `first?.Effect ?? def.Effect`) and its MAGNITUDES from
+        // the RUNG, and every single channel in `Entity.RecomputeDerived` is read behind
+        // `buff.Has(flag)`. So a magnitude authored on a rung whose flag the def does not declare is
+        // applied to NOBODY — no error, no log line, nothing on any screen, and the skill card still
+        // advertises it because SkillText reads the magnitude directly.
+        //
+        // Four skills were in that state when this guard was written, and the oldest had been dead
+        // since 0.106.0: Lethal Focus and Lethal Precision (the melee rogue's crit-DAMAGE half, so the
+        // ELF's entire race buff was worth zero), Harmony of Protection (10% bow resistance) and
+        // Harmony of the Wizard (+20% MP regen AND the magic crit rate). Every one of them was
+        // authored, documented, priced, CSV-checked — and inert. `SkillCsvSeed --check` cannot see it
+        // either: it compares the authored number against `MagnitudesAt`, which is exactly the value
+        // the engine then throws away.
+        //
+        // ⚠ ONLY THIS DIRECTION IS AN ERROR. A mask flag with NO magnitude is legitimate and common:
+        //   it is how a ladder declares a channel its later rungs will fill (the healer's Marks say so
+        //   in as many words), and how a FIELD payload keeps the buff landable while carrying its real
+        //   value elsewhere (Lethal Frenzy declares `BuffCritRate` with no magnitude and pays through
+        //   `BlowRatePct`). Flagging that would break a dozen deliberate designs.
+        foreach (var sk in dict.Values)
+        {
+            SkillEffect authored = SkillEffect.None;
+            foreach (var m in sk.Magnitudes ?? Array.Empty<EffectMagnitude>()) authored |= m.Effect;
+            foreach (var lvl in sk.Levels ?? Array.Empty<SkillLevel>())
+                foreach (var m in lvl.Magnitudes ?? Array.Empty<EffectMagnitude>()) authored |= m.Effect;
+
+            var missing = authored & ~sk.Effect;
+            if (missing != SkillEffect.None)
+                throw new InvalidOperationException(
+                    $"Skill '{sk.Id}' authors magnitude(s) for {missing} but its Effect mask does not "
+                  + "declare them, so RecomputeDerived's buff.Has() gate discards the payload and the "
+                  + "buff silently does nothing. Add the flag(s) to the SkillDef's Effect argument — a "
+                  + "mask flag costs nothing on a rung that authors no magnitude for it.");
         }
 
         // 🔑 BL-85 GUARD. A childless multi-level buff now carries its LEVEL in its rank

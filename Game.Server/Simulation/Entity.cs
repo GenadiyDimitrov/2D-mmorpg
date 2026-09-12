@@ -1202,10 +1202,12 @@ public class Entity
     public float CooldownResetRate { get; set; }
 
     /// <summary>How much of an attacker's blow rate this defender takes away (0.30 = the tank's
-    /// Vital Organ Protection). The ONLY blow defence in the game: a blow is not a crit any more, so
-    /// <see cref="CritRateResist"/> and a shield's <see cref="ShieldCritDefense"/> deliberately do
-    /// not touch it — the rogue's own Armor Mastery carries 25-35% crit-rate resist and must not
-    /// start protecting against stabs by accident.</summary>
+    /// Vital Organ Protection) — the DEDICATED blow defence, and the tank's alone.
+    /// <para>🔴 Since `BL-211` (2026-09-12) it is not the only term: <see cref="CritRateResist"/>
+    /// multiplies into the same roll, on his ruling that *"every crit chance reduction passive/buff"*
+    /// must lower a blow too. A shield's <see cref="ShieldCritDefense"/> still does NOT — his sentence
+    /// named passives and buffs, and a shield already carries its own layer. See
+    /// GameLoopService.BlowLands, the one place both terms meet.</para></summary>
     public float BlowResist { get; set; }
     // ----- Magic crit DAMAGE (owner ruling 2026-08-19) -----
     // `base ×2 × multipliers × (1 − debuffs)` — his formula, and the reason the flat ×3 became a
@@ -1273,6 +1275,8 @@ public class Entity
     public float CooldownReductionFor(SkillDef def) => Math.Clamp(
         CooldownReduction + (SkillMath.IsPhysical(def) ? CooldownReductionPhysical : CooldownReductionMagic),
         0f, 0.8f);
+    // 🔴 `BL-211` — this ALSO cuts an attacker's BLOW rate now (GameLoopService.BlowLands),
+    //    multiplied with the defender's own BlowResist. The light-armour classes' answer to a dagger.
     public float CritRateResist { get; set; }    // reduces an attacker's physical crit CHANCE vs you
     // …and its MAGIC twin (`BL-108`, the 4th-tier Marks). Separate because the two channels have
     // shared nothing since 2026-08-06: different stat, different cap, different roll site.

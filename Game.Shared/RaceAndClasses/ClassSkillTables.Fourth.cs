@@ -81,16 +81,50 @@ public static partial class ClassSkillTables
     ///         and <b>"Momentum Mastery"</b>. See the block at the bottom of the method.</item>
     /// </list></para>
     ///
-    /// <para>⚠ <b>THE TANK AND THE ARCHER GET NOTHING, AND BOTH ARE FINAL.</b> Ruled 2026-09-10:
+    /// <para>🔴🔑 <b>`BL-213`, 2026-09-12 — HE REWROTE THE WHOLE ROSTER AFTER A PLAYTEST, AND IT IS
+    /// A TABLE NOW, NOT A LIST OF EXCEPTIONS.</b> His words, verbatim and complete:
+    /// <code>- mages -&gt; duration/reuse, no toggle mastery
+    /// - archers/warriors/duals -&gt; double_dmg/reuse + toggle mastery
+    ///     (archers and duals take 1 rung lower than warriors on the double one (40,76))
+    /// - buffer/healer -&gt; duration no toggle
+    /// - tank -&gt; nothing</code>
+    /// which lands as:
     /// <list type="bullet">
-    ///   <item><b>Tank — never.</b> *"if i give a tank some of the passives he will become even more
-    ///         unstopable"*.</item>
-    ///   <item><b>Archer — never.</b> *"archer have enough skills that are always hit wit big power
-    ///         (not like daggers 80% chance)"* — his big skills already land every time, so a double
-    ///         would be compensation for a reliability problem he does not have.</item>
-    /// </list>
-    /// So a bow rogue reads 0/0/0 for the whole game while his dagger cousin does not — that split is
-    /// the ruling, not an omission to tidy up.</para>
+    ///   <item><b>Magus</b> — reuse (had it) <b>+ duration, NEW at 76</b>. No toggle, by name.</item>
+    ///   <item><b>Ravager + Warlord</b> — Overpower 3/7/10% at 20/40/76 and the toggle at 81 (had both)
+    ///         <b>+ reuse, NEW at 76</b>, which is also his separate line *"Warriors can get the reuse
+    ///         passive as well"*.</item>
+    ///   <item><b>Nullblade + Phantom + Venomweaver</b> — unchanged: Overpower 3/7% at 40/76
+    ///         (`BL-203`), reuse at 76, toggle at 81. His "(40,76)" clause is a DESCRIPTION of this
+    ///         class, written so the archer could be told to match it.</item>
+    ///   <item><b>Sharpshooter + Trapper + Hunter</b> — <b>all four, NEW</b>: Overpower 3/7% at 40/76,
+    ///         reuse at 76, toggle at 81. *"archers must get the same double passives and overpower
+    ///         mastery as duals"*.</item>
+    ///   <item><b>Lightbringer + Warchanter</b> — unchanged: duration at 76, no toggle.</item>
+    ///   <item><b>Bulwark</b> — unchanged: nothing, and it is the only line of the old ruling that
+    ///         survived. *"if i give a tank some of the passives he will become even more
+    ///         unstopable"*, and the 2026-09-12 playtest re-confirmed it in the same breath
+    ///         (*"tanks for now seem OK"*).</item>
+    /// </list></para>
+    ///
+    /// <para>🔴🔑 <b>WHAT THIS REVERSED, AND WHY IT IS WORTH KNOWING.</b> `BL-191` ruled on
+    /// 2026-09-10 that the ARCHER gets a mastery <i>never</i>, with a reason: *"archer have enough
+    /// skills that are always hit wit big power (not like daggers 80% chance)"* — a double would be
+    /// compensation for a reliability problem he does not have. I ASKED before writing that down,
+    /// because the sentence could be read either way, and he confirmed the no. Two days of play
+    /// reversed it outright: *"archers are like mages ...Strongest skill does only 5k dmg to elit ...
+    /// archers must get the same double passives and overpower mastery as duals"*. 🔑 The lesson is
+    /// not that the first answer was wrong — it is that a RELIABILITY argument does not settle a
+    /// DAMAGE question, and this layer was declared provisional (*"ill try with those changes and
+    /// after playtest ill deside if i add or remove"*) precisely so it could move.</para>
+    ///
+    /// <para>⚠ <b>TWO DISPLAY NAMES IN THIS BLOCK ARE MINE, NOT HIS</b> — the only unauthored thing
+    /// here. `reuse_reset_momentum` is one def with one number and a per-class name (his own rename
+    /// rationale: *"as other classes can aqure it too"*), so the warrior's and the archer's copies each
+    /// need one. I took them from each file's own vocabulary — <b>"Battle Momentum"</b> beside Battle
+    /// Regeneration / Battle Resilience / the Battle stances, and <b>"Bow Momentum"</b> beside Bow
+    /// Blessing / Bow Spirit / Bow Focus / Bow Stance. Both are one line and one CSV cell to change.
+    /// The MECHANIC is never renamed; only the label is.</para>
     ///
     /// <para>🟡 <b>THE WHOLE MASTERY LAYER IS PROVISIONAL BY HIS OWN WORDS</b> — *"ill try with those
     /// changes and after playtest ill deside if i add or remove"*. Do not build on it as though it
@@ -102,17 +136,40 @@ public static partial class ClassSkillTables
     {
         foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
         {
+            // THE WARRIORS — Overpower's top rung, the toggle, and (`BL-213`) the reuse passive.
             foreach (var d in new[] { Discipline.Ravager, Discipline.Warlord })
                 ClassSkills.RegisterFourth(race, d,
                     new ClassSkill(Overpower, 76, SkillLevel: 3),
+                    new ClassSkill(ReuseResetMomentum, 76, "Battle Momentum", SkillLevel: 1),
                     new ClassSkill(DoubleMastery, 81, SkillLevel: 1));
 
+            // HEALER + BUFFER — duration only. The one archetype `BL-213` did not move.
             foreach (var d in new[] { Discipline.Lightbringer, Discipline.Warchanter })
                 ClassSkills.RegisterFourth(race, d,
                     new ClassSkill(LastingEnchantment, 76, SkillLevel: 1));
 
+            // THE MAGUS — reuse, and (`BL-213`) duration beside it. *"mages -> duration/reuse"*, and
+            // *"Mages also must take the double duration passive"* earlier in the same message.
+            // 🔑 WHAT A DURATION DOUBLE IS WORTH TO A NUKER, since it is not obvious: it covers BOTH
+            //    signs (*"doubles duration of bad and good buffs"*), so on this class it is mostly his
+            //    DEBUFFS — the Frost pair, Witches Curse, the Scarecrow — plus his own stances. Same
+            //    def and the same 10% the healer and buffer carry; nothing is authored twice.
             ClassSkills.RegisterFourth(race, Discipline.Magus,
-                new ClassSkill(ReuseResetMomentum, 76, SkillLevel: 1));
+                new ClassSkill(ReuseResetMomentum, 76, SkillLevel: 1),
+                new ClassSkill(LastingEnchantment, 76, SkillLevel: 1));
+
+            // THE ARCHER — `BL-213`, all of it new: *"archers must get the same double passives and
+            // overpower mastery as duals"*. Overpower's two rungs live on the archer's own 3rd/4th
+            // tables beside the rest of his kit (RegisterArcher3rd / RegisterArcherFourth), exactly
+            // where the melee rogue's two sit; the reuse passive and the toggle are here.
+            // ⚠ "Bow Momentum" is MY label, mirroring the melee rogue's "Stab Momentum" — see the
+            //   summary above. The toggle keeps its own name, "Overpower Mastery", on his 2026-09-11
+            //   correction for the dagger: a DisplayName is for when the flavour genuinely differs, and
+            //   the stance does the same thing for an archer that it does for a warrior.
+            foreach (var d in new[] { Discipline.Sharpshooter, Discipline.Trapper, Discipline.Hunter })
+                ClassSkills.RegisterFourth(race, d,
+                    new ClassSkill(ReuseResetMomentum, 76, "Bow Momentum", SkillLevel: 1),
+                    new ClassSkill(DoubleMastery, 81, SkillLevel: 1));
         }
 
         // ---- THE MELEE ROGUE, 2026-09-10 — the same two skills under two other names. ----
@@ -493,6 +550,14 @@ public static partial class ClassSkillTables
         // The two ultimates his RACE column leaves blank.
         shared.Add(new ClassSkill(ArcherHeavyArrow,   84));
         shared.Add(new ClassSkill(ArcherArrowBarrage, 85));
+        // 🔴 `BL-213` — OVERPOWER's SECOND AND LAST RUNG for the bow branch: 7% at 76, where the
+        //    warrior's third (10%) would be. The melee rogue's line, copied deliberately — see the 3rd
+        //    tier for his ruling, and RegisterMeleeRogueFourth's own copy for why the top rung is left
+        //    unreachable and why the price is overridden upward to this tier's 6.5kk.
+        // ⚠ GOLD IS 0 for the same reason it is 0 on the dual's row: `ClassSkill` can override SP and
+        //   nothing else, and rung 2 of a ladder authored for level 40 carries no `GoldCost`. If that
+        //   matters it wants a `GoldCost` override on ClassSkill, not a second Overpower def.
+        shared.Add(new ClassSkill(Overpower, 76, SkillLevel: 2, SpCost: 6_500_000));
 
         var human = new List<ClassSkill>(shared);
         human.AddRange(Ladder(ArcherPoisonTrap));

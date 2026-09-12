@@ -32,13 +32,27 @@ ManaDrain      = targetMaxMp * power / 1000                  power is PER MILLE
   reduction; nothing scales a shield defence any more, because there is none.
 - 🔑 **THE SHOT — the War / Spell Runes multiply the FINISHED damage, ×2, per channel** (2026-09-09,
   `BL-185`). `FinalDamage = raw x (1+pve/pvp bonus) x conditional x skillMult x raidMult x takenMult
-  x runeMult`, in `GameLoopService.FinalizeDamage`. They are NOT stat buffs any more: `BuffPhysAtk
+  x runeMult`, in `GameLoopService.FinalizeDamage`, and since `BL-212` (0.133.0) a `mobMult` factor rides beside
+  `runeMult` in the same line. They are NOT stat buffs any more: `BuffPhysAtk
   1.00` fed an ADDITIVE formula and moved a 7635-power skill by only ×1.29 while reading "+100%", and
   the magic side reached ×1.414 only through a magnitude stored pre-`sqrt`. ×2 is IG's **blessed**
   shot exactly (its magic form is M.Atk ×4 under the `sqrt`, i.e. ×2 damage). ⚠ A rig that calls
   `StatCalculator` directly must apply `Entity.PhysDamageDealtMult`/`MagicDamageDealtMult` itself.
 
+- 🔑 **EVERY CREATURE'S FINISHED DAMAGE IS ×2** (`BL-212`, 0.133.0, owner: *"mobs should get x2 power
+  ... (not patk just dmg)"*). `MobRankScale.MobDamageOut`, applied once in `FinalizeDamage` to any
+  attacker whose `Kind` is not `Player` — so guards, towers, elites and bosses all take it, and a
+  player's reflected damage (which never enters that pipeline) does not.
+  ⚠ **It is DAMAGE, not P.Atk, and the distinction is real twice over.** The creature attack curve is
+  fitted to IG off 2,831 measured monsters (`MobBaseStats.PAtk`) and is on the inspect panel; and
+  because damage is a RATIO, doubling P.Atk is ×2 only while `power` is 0 — less on any skill.
+  ⚠ **What it compensates for is `BL-185`**, which gave the physical channel the defender level term
+  M.Def always had. A defender's P.Def is now ×`(level+89)/100`, i.e. ×1.79 at 90, so creature damage
+  had quietly fallen 44% there. **The correction is level-FLAT and the loss was not** — at level 20 the
+  loss was 9% and the correction is still ×2.
+
 `Game.Shared/StatCalculator.cs` — `PhysicalDamage`, `MagicDamage`, `ManaDrain`, `PhysicalK`, `MagicK`
+`Game.Shared/MobRankScale.cs` — `MobDamageOut`
 
 ## Attack and defence inputs
 
@@ -79,6 +93,19 @@ MagicCritRate = base * 1.63^((wit - 20)/10)                           cap 20%
 MagicCritDmg  = 2.0 * mult * (1 - resist)                             cap x5
 ```
 
+🔑 **THE MAGIC CRIT-DAMAGE MULTIPLIERS COMPOUND** (`Entity.MagicCritDamageMult`, folded from passives,
+sets and buffs; debuffs SUM into `resist`). The whole shelf a level-90 nuker can wear, and it is
+exactly the owner's own arithmetic of 2026-09-12: base ×2 × **1.30** Harmony of the Wizard L5
+× **1.20** a Mark = **×3.12**, against a `StatCaps.MagicCritDamageCap` of ×5.
+⚠ All four Marks share one buff key, so exactly one is ever on you — the 1.20 is not stackable.
+📐 `dotnet run --project tools/BalanceMatrix -- --mcrit 90 epic` prints the chain stage by stage.
+
+🔴 **A BUFF'S PAYLOAD IS ONLY APPLIED IF THE DEF'S `Effect` MASK DECLARES IT.** The mask comes from the
+SkillDef, the magnitudes from the RUNG, and every channel in `RecomputeDerived` is gated on
+`buff.Has(flag)` — so a magnitude authored on a rung whose flag the def omits is discarded in silence.
+`SkillCatalog` throws at startup if the two disagree (`BL-214`, 0.133.0); `BalanceMatrix --maskaudit`
+lists them. Four skills were in that state when the guard was written, the oldest dead since 0.106.0.
+
 Both crit RATES are then reduced by whatever the DEFENDER carries — the two are separate stats:
 
 ```
@@ -94,16 +121,27 @@ rolledMagicCrit = MagicCritRate * (1 - target.MagicCritRateResist)    resist cla
 ⚠ **DEX/AGI does NOT affect block** — flat shield values and passives only. **Magic is never blocked.**
 
 **Blow landing rate** (dagger Stabs, `BlowOnCrit`) — **its own stat since `BL-188`, 0.121.0. It is
-NOT the crit rate**, and neither `CritRateResist` nor a shield's `ShieldCritDefense` touches it:
+NOT the crit rate**, but since `BL-211` (0.133.0) the defender's **crit-rate resist cuts it anyway**:
 
 ```
 BlowAgiMod = 1 + 0.03 * (clamp(agi, 20, 40) - 30)                     x0.70 … x1.30
 BlowRate   = clamp(0.30 * Π(buffs, passives) * BlowAgiMod, 0.20, 0.80)
-rolledBlow = BlowRate * (1 - target.BlowResist)                       BlowResist clamp [0, 0.9]
+rolledBlow = BlowRate * (1 - target.BlowResist)                       BlowResist    clamp [0, 0.9]
+                      * (1 - target.CritRateResist)                   CritRateResist clamp [0, 1]
 ```
 
-⚠ **The cap is applied to the attacker's own rate BEFORE the defender's resist**, so the tank's Vital
-Organ Protection (30%, the only blow defence in the game) takes a maxed 80% rogue to 56%.
+⚠ **The cap is applied to the attacker's own rate BEFORE the defender's resists**, so the tank's Vital
+Organ Protection (30%) takes a maxed 80% rogue to 56%.
+
+🔑 **THE TWO DEFENDER TERMS MULTIPLY, THEY DO NOT SUM** — two independently-capped ladders that added
+could pass 100% and invert the roll. `BlowResist` is the tank's dedicated answer (Vital Organ
+Protection, 30%); `CritRateResist` is the channel every armour mastery, sigil and Mark already feeds,
+so a LIGHT-armour class now brings its own. Measured at 90: a full light kit reads 35% and multiplies
+an incoming blow by **0.65**. Owner, 2026-09-12: *"the light armor mastery and every crit chance
+reduction passive/buff to lower the blow rate as well (the blow is crit dmg so heaving less chance to
+be hit by crit means blows as well)"* — which knowingly reverses `BL-188`'s reason for leaving it out.
+⚠ A shield's `ShieldCritDefense` still does NOT touch the roll: his sentence named passives and buffs.
+📐 `dotnet run --project tools/BalanceMatrix -- --blowrate 90 epic`
 A blow that lands is then computed with the CRIT-DAMAGE values and may roll a `[Double]` on top.
 
 🔑 **A blow that MISSES ITS MARK IS AN ORDINARY BASIC ATTACK** (`BL-193`, 0.125.0) — full basic
@@ -756,11 +794,15 @@ recompute (never multiplied in place).
 
 ```
             HP                       PAtk/MAtk   PDef/MDef   Accuracy
-Elite       x4                       x1.5        x1.33       +0
+Elite       x4                       x3.0        x1.33       +0
 Boss        43000 / L^1.49  (min 20) x4          x2.0        +20
 Contest     StatCaps.CcRankMult:     Elite x1.33, Boss x2.0   (CON/SPT/ATK, the debuff roll)
 ```
 
+- 🔑 **THE ELITE'S ATTACK IS x3.0 SINCE `BL-212` (0.133.0)** — his x2 on the x1.5 that was there,
+  *"so elit with the double in dmg and double in patk should do ~x4 dmg as of now"*. The other half of
+  that x4 is the global `MobRankScale.MobDamageOut` (see **Damage**), and the two compose to x4 on a
+  BASIC attack; on a mob skill carrying power it is less, because damage is a ratio.
 - ⚠ The BOSS HP multiplier is a **curve, not a number**: the base pool is quadratic in L while a
   party's DPS is flat across the game, so a flat multiple made time-to-kill grow with `L²`. This one
   lands every level in the 600-1800s band (12-25 min for a 5-man).
