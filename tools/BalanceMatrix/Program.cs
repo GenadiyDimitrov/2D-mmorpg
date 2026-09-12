@@ -1107,7 +1107,7 @@ if (args.Length > 0 && args[0] == "--castcycle")
     Console.WriteLine();
     Console.WriteLine($"=== CAST CYCLE — Magus, level {L}, {q} gear ===");
     Console.WriteLine("    castTicks = authored × (333 / castSpeedStat) × CastTimeMultiplier     min 2 ticks");
-    Console.WriteLine("    reuse     = authored × (1 − CooldownReduction − CooldownReductionMagic)  min 1 tick");
+    Console.WriteLine("    reuse     = authored × CooldownRetain × CooldownRetainMagic   — they COMPOUND, min 1 tick");
     Console.WriteLine("    cycle     = cast + reuse   (the reuse starts when the cast LANDS)");
     Console.WriteLine();
 
@@ -1158,7 +1158,8 @@ if (args.Length > 0 && args[0] == "--castcycle")
             float ctm = m.CastTimeMultiplier;
             Console.WriteLine($"  {race,-6} {label,-24} castSpeed {stat,7:0}"
                             + $"  ×{mult,5:0.000}  castTimeMult ×{ctm,4:0.00}"
-                            + $"  magic reuse cut {m.CooldownReduction + m.CooldownReductionMagic,5:P0}");
+                            + $"  magic reuse ×{m.CooldownRetain * m.CooldownRetainMagic,5:0.000}"
+                            + $" (cut {1f - m.CooldownRetain * m.CooldownRetainMagic,4:P0})");
 
             foreach (var id in new[] { SkillCatalog.ElementalBlast, SkillCatalog.QuickBlast })
             {

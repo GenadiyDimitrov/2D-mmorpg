@@ -1230,12 +1230,45 @@ public class Entity
     public float EffectiveMagicCritDamage =>
         StatCalculator.MagicCritMult(MagicCritDamageMult, MagicCritDamageResist);
     // ----- Healer buff/effect layer (folded from buffs + passives in RecomputeDerived) -----
-    public float CooldownReduction { get; set; } // reuse-delay reduction for EVERY skill (0..cap)
+    // ═══ 🔴🔑 REUSE REDUCTIONS **COMPOUND**, THEY DO NOT SUM (`BL-217`, 2026-09-12) ════════════
+    //
+    //  Owner: *"Make it mutiolicative if u haven't as any other buff is ... Don't add clamp no need
+    //  when it mutiolicative - I want to test with the 0.42 not 0.25 and if it additive to 80% the
+    //  spell never can go bellow 0.2s."*
+    //
+    //  🔑 WHAT IS STORED IS WHAT **SURVIVES**, and that is the whole trick. Each source multiplies
+    //  `retain` by its own `(1 − r)`, so three 20/20/35% cuts leave `0.8 × 0.8 × 0.65 = 0.416` — his
+    //  number — where SUMMING them left `1 − 0.75 = 0.25`. The public `CooldownReduction*` properties
+    //  are computed back out of it (`1 − retain`), so the stat panel, the DTO and every other reader
+    //  keep seeing an ordinary reduction fraction and nothing else had to change.
+    //
+    //  🔑 NO CLAMP, AND THAT IS THE POINT, NOT AN OMISSION. A product of `(1 − r)` terms can never
+    //  reach zero from sources under 100%, so it needs no ceiling — whereas the old 0.8 clamp was a
+    //  hard floor of 0.2× the authored reuse that the caster stack had already reached (75%), which
+    //  meant his next tuning step would have moved a number the engine had stopped reading. A single
+    //  source authored at 100% or more still lands safely: `ExecuteSkill` floors the result at 1 tick.
+    //
+    //  ⚠ A PENALTY RIDES THE SAME CHANNEL. A negative `r` multiplies retain ABOVE 1, which lengthens
+    //  the reuse — which is what a "slow reuse" debuff should do and what summing also did. Nothing
+    //  authors one today.
+    //
+    //  ⚠ WRITE TO `CooldownRetain*`, NEVER TO `CooldownReduction*` — the latter are getters now, so a
+    //  stray `+=` is a compile error rather than a silent return to summing. That is deliberate.
+    public float CooldownRetain { get; set; } = 1f;
     // …and the two CHANNEL-ONLY halves (`BL-108`, Harmony of the Soul). His row is *"−10% Magical
     // Reuse, −20% Physical Reuse"*: one buff, two different numbers, exactly the shape the MP-cost
     // pair already has. They ADD to the blanket number above; read CooldownReductionFor, not these.
-    public float CooldownReductionPhysical { get; set; }
-    public float CooldownReductionMagic { get; set; }
+    public float CooldownRetainPhysical { get; set; } = 1f;
+    public float CooldownRetainMagic { get; set; } = 1f;
+
+    /// <summary>The blanket reuse reduction as a FRACTION (0.36 = 36% shorter) — computed out of
+    /// <see cref="CooldownRetain"/>. Read-only on purpose; see the block above.</summary>
+    public float CooldownReduction => 1f - CooldownRetain;
+    /// <summary>The PHYSICAL-only half, as a fraction. Read <see cref="CooldownReductionFor"/> for
+    /// what a skill actually gets — this one is for display and does not include the blanket.</summary>
+    public float CooldownReductionPhysical => 1f - CooldownRetainPhysical;
+    /// <summary>The MAGIC-only half, as a fraction. Same caveat as its physical twin.</summary>
+    public float CooldownReductionMagic => 1f - CooldownRetainMagic;
 
     /// <summary>`BL-196` — THE CAST-TIME MULTIPLIER, and the last factor in the cast-length formula.
     ///
@@ -1260,7 +1293,8 @@ public class Entity
     public float CastTimeMultiplier => Math.Clamp(1f - CastTimeReduction, 0.2f, 3f);
 
     /// <summary>The reuse reduction that applies to THIS SKILL — the blanket
-    /// <see cref="CooldownReduction"/> plus whichever channel-only half it belongs to.
+    /// <see cref="CooldownRetain"/> TIMES whichever channel-only half it belongs to, returned as a
+    /// reduction fraction. `BL-217`: they COMPOUND — 20% + 20% + 35% is ×0.416, not ×0.25.
     ///
     /// <para>🔑 THE TEST IS <see cref="SkillMath.IsPhysical"/>, NOT <c>Category == Physical</c>
     /// (2026-09-11, his *"rogues sprint is physical not magical"*). Category is a ROLE tag — a
@@ -1272,9 +1306,8 @@ public class Entity
     /// <para>⚠ It cuts both ways and that is intended: Bow Blessing's *"−20% PHYSICAL reuse"* now
     /// really does reach *"every skill an archer owns"*, as its own comment always claimed, and a
     /// mage's magic-reuse buff stops reaching a fighter's stances.</para></summary>
-    public float CooldownReductionFor(SkillDef def) => Math.Clamp(
-        CooldownReduction + (SkillMath.IsPhysical(def) ? CooldownReductionPhysical : CooldownReductionMagic),
-        0f, 0.8f);
+    public float CooldownReductionFor(SkillDef def) =>
+        1f - CooldownRetain * (SkillMath.IsPhysical(def) ? CooldownRetainPhysical : CooldownRetainMagic);
     // 🔴 `BL-211` — this ALSO cuts an attacker's BLOW rate now (GameLoopService.BlowLands),
     //    multiplied with the defender's own BlowResist. The light-armour classes' answer to a dagger.
     public float CritRateResist { get; set; }    // reduces an attacker's physical crit CHANCE vs you
@@ -2757,10 +2790,10 @@ public class Entity
         DebuffReflectPhys = 0f;
         DebuffReflectMagic = 0f;
         Immune = false;
-        CooldownReduction = 0f;
+        CooldownRetain = 1f;
         WhispLimit = GameConstants.WhispSlotsBase;   // `BL-109` — raised by Whisp Mastery below
-        CooldownReductionPhysical = 0f;
-        CooldownReductionMagic = 0f;
+        CooldownRetainPhysical = 1f;
+        CooldownRetainMagic = 1f;
         CastTimeReduction = 0f;
         CritRateResist = 0f;
         MagicCritRateResist = 0f;
@@ -3427,7 +3460,7 @@ public class Entity
                 if (pe.CastPenaltyMult != 0f) CasterCastPenaltyCancel *= pe.CastPenaltyMult;
                 if (pe.MagicPenaltyMult != 0f) CasterMagicPenaltyCancel *= pe.MagicPenaltyMult;
                 if (pe.MoveSpeedPct != 0f) { RunSpeed *= 1f + pe.MoveSpeedPct; WalkSpeed = RunSpeed * MovementTuning.WalkSpeedFactor; Speed = RunSpeed; }
-                CooldownReduction += pe.CooldownPct;
+                CooldownRetain *= 1f - pe.CooldownPct;   // `BL-217` — compounds
                 // `BL-109` — extra whisp slots. SUMMED, so a second mastery rung adds a third slot.
                 WhispLimit += pe.WhispSlots;
                 CritRateResist += pe.CritRateResist;
@@ -3701,10 +3734,11 @@ public class Entity
             // …and the magic crit RATE the holder is hit with. SUMMED, exactly like its physical twin
             // a few lines down, so two Marks could never multiply into immunity.
             MagicCritRateResist += buff.MagicCritRateDebuff;
-            if (buff.Has(SkillEffect.BuffCooldown)) CooldownReduction += buff.Flat(SkillEffect.BuffCooldown) + buff.Percent(SkillEffect.BuffCooldown);
+            if (buff.Has(SkillEffect.BuffCooldown))
+                CooldownRetain *= 1f - (buff.Flat(SkillEffect.BuffCooldown) + buff.Percent(SkillEffect.BuffCooldown));
             // The two channel-only halves ride as FIELDS (the flag enum is full), like the MP-cost pair.
-            CooldownReductionPhysical += buff.PhysCooldownPct;
-            CooldownReductionMagic += buff.MagicCooldownPct;
+            CooldownRetainPhysical *= 1f - buff.PhysCooldownPct;
+            CooldownRetainMagic *= 1f - buff.MagicCooldownPct;
             CastTimeReduction += buff.CastTimePct;   // `BL-196` — the FINISHED cast, not the stat
             if (buff.Has(SkillEffect.BuffPveSkillDamage)) PveSkillDamageBonus += buff.Flat(SkillEffect.BuffPveSkillDamage) + buff.Percent(SkillEffect.BuffPveSkillDamage);
             if (buff.Has(SkillEffect.BuffPveMagicDamage)) PveMagicDamageBonus += buff.Flat(SkillEffect.BuffPveMagicDamage) + buff.Percent(SkillEffect.BuffPveMagicDamage);
@@ -3776,9 +3810,11 @@ public class Entity
         // "opposite of the bow penalty" he asked for, and MagicFailMod above (the DEFENDER's) is the
         // one that must never help the attacker.
         MagicFailSelfMult = Math.Max(0f, MagicFailSelfMult);
-        CooldownReduction = Math.Clamp(CooldownReduction, 0f, 0.8f);
-        CooldownReductionPhysical = Math.Clamp(CooldownReductionPhysical, 0f, 0.8f);
-        CooldownReductionMagic = Math.Clamp(CooldownReductionMagic, 0f, 0.8f);
+        // 🔴 `BL-217` — THE THREE 0.8 CLAMPS ARE GONE, on his ruling: *"Don't add clamp no need when
+        //    it mutiolicative"*. They were a real ceiling and not a safety net — the caster stack had
+        //    already reached 75% under summing, so the next number he raised would have done nothing.
+        //    A product of `(1 − r)` needs none: it approaches zero and never arrives, and `ExecuteSkill`
+        //    floors the finished reuse at one tick anyway.
         MeleeReflect = Math.Clamp(MeleeReflect, 0f, 0.5f);   // never reflect more than half
         // The skill-defence channels. Evade and the two reflect CHANCES stop short of 1 on purpose —
         // "never dodges anything, ever" and "a skill user can never touch this class" are both

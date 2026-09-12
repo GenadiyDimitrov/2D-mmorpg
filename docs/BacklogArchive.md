@@ -4767,3 +4767,106 @@ the playtest stops being readable. Say the word and it is one line, better after
 rest.
 
 ⚠ **It would reach every caster, not just the nuker** — the healer and the buffer hold the same rune.
+
+---
+
+
+## `BL-217` ✅ CLOSED 2026-09-12 (0.136.0) — REUSE REDUCTIONS COMPOUND, AND THE CLAMP IS GONE
+
+Filed the same evening the ladder was built, because the ladder landed on ×0.25 where your own
+arithmetic said ×0.416. **You ruled option 2 within the hour:**
+
+> *"Still additive as our was ..to 40% that's still 0.6 cooldown of a 1s spell ... Make it
+> mutiolicative if u haven't as any other buff is ... Don't add clamp no need when it mutiolicative -
+> I want to test with the 0.42 not 0.25 and if it additive to 80% the spell never can go bellow 0.2s."*
+
+```
+reuse  = authored × retain                     min 1 tick; skipped when FixedCooldown
+retain = CooldownRetain × (physical ? CooldownRetainPhysical : CooldownRetainMagic)
+         each source multiplies its channel's retain by its own (1 − r).  NO CLAMP.
+```
+
+🔑 **WHAT IS STORED IS WHAT SURVIVES.** The three `CooldownReduction*` properties are computed getters
+now (`1 − retain`), so the stat panel, the `StatsUpdate` DTO and the target inspector all keep seeing
+an ordinary reduction fraction — nothing on the wire changed and no other reader needed touching. And
+a stray `+=` on one of them is now a **compile error** rather than a silent return to summing, which
+is the point of making them read-only.
+
+📐 Measured (`--castcycle 90 epic`), the caster stack: Spell Mastery 20% (blanket) × Harmony of the
+Soul 20% × Harmony of the Wizard 35% (both magic) = **×0.416**, your number to three decimals.
+Elemental Blast's 1s reuse reads 0.40s (ticks are 100ms), and the full cycle is 0.90s against the
+1.70s you were playing.
+
+🔑 **The three 0.8 clamps are gone and it is your reasoning that removed them** — *"if it additive to
+80% the spell never can go bellow 0.2s"*. They were a hard floor of 0.2× the authored reuse, and the
+caster stack had already reached 75% under summing, so your next tuning step would have moved a number
+the engine had stopped reading. A product of `(1 − r)` terms approaches zero and never arrives, and
+`ExecuteSkill` floors the finished reuse at one tick regardless.
+
+⚠ **It reaches PHYSICAL reuse too**, which is what you asked for ("as any other buff is") and worth
+knowing at the next playtest: Harmony of the Soul's −30% physical beside Bow Blessing's −20% now reads
+×0.56 where it read ×0.50. Every stack of two or more reuse sources in the game got slightly *weaker*;
+only stacks of three or more (the caster's) got stronger.
+
+### The text as filed
+
+## `BL-217` 🔵 THE MAGIC REUSE STACK IS BUILT — but our reductions SUM and your arithmetic MULTIPLIES
+
+**BUILT (0.135.0).** Harmony of the Wizard gains three 3rd-tier rungs, exactly as you specified:
+
+| rung | level | MP | SP | payload |
+|---|---|---|---|---|
+| 3 | 58 | 150 | 88k | +10% M.Atk, +30% cast speed, **−15% magic reuse** |
+| 4 | 66 | 170 | 280k | … **−25%** |
+| 5 | 74 | 190 | 880k | … **−35%** |
+
+Every rung above (77/78/79, now numbered 6-8) carries the −35% forward, because a harmony rung is
+cumulative. ⚠ The three MP figures are **mine** — they sit between rung 2's 126 and the 4th tier's 199
+so the ladder stays monotonic without moving a cell you authored. The SP are **yours**, read off what
+your other harmonies charge at those exact levels.
+
+✅ **And your suspicion about Harmony of the Soul was wrong, which is why this is only a ladder.**
+*"if the harmony buff don't reach the spell reuse and we fix it it should be ok"* — it reaches.
+`SoulRung` authors `MagicCooldownPct` 0.10 → 0.20, `ApplyBuff` copies it, `RecomputeDerived` folds it
+into `CooldownReductionMagic`, and `CooldownReductionFor` reads it for every magical skill. Nothing was
+broken; the stack was one source short. I checked before building.
+
+### 🔴 THE ONE THING THAT NEEDS YOU
+
+**Our reuse reductions SUM. Yours multiply.**
+
+```
+ours:   authored × (1 − (20% + 20% + 35%))  =  × 0.25       ← clamped at 80%; we are at 75%
+yours:  authored × 0.8 × 0.8 × 0.65         =  × 0.416
+```
+
+So the endgame magic reuse is **~40% shorter than you intended** — Elemental Blast's 1s reuse reads
+**0.20s**, not the 0.42s your model gives. Measured cycle (`--castcycle 90 epic`), Elemental Blast:
+
+| stack | cast | reuse | cycle |
+|---|---|---|---|
+| NPC shelf only (where you were) | 0.90s | 0.80s | **1.70s** |
+| + Harmony of the Wizard L8 | 0.70s | 0.40s | 1.10s |
+| + Harmony of the Soul L7 | 0.70s | 0.20s | 0.90s |
+| + Spell Rune (`BL-216`) | **0.50s** | 0.20s | **0.70s** |
+
+🔴 **And it matters more than the 40%, because of what you said next.** *"if still feels slow I'll up
+the souls and mastery to 30%"* — under summing that is 30 + 30 + 35 = **95%, clamped to 80%**. You
+would be tuning a number the engine has stopped listening to. Three ways out:
+
+1. **Leave it summed and re-cut the numbers.** To land on your ×0.416 the three must total 58.4% —
+   e.g. leave mastery and souls at 20 and make the harmony's top rung **18%** instead of 35%.
+2. **Make reuse reductions COMPOUND** (`1 − r` multiplied instead of summed). One line, matches IG,
+   matches how every other buff channel in this game already stacks (crit rate, magic crit damage,
+   cast speed), and the 0.8 clamp stops being reachable by accident. ⚠ It reaches PHYSICAL reuse too,
+   so every class's numbers move a little — Harmony of the Soul's −30% physical beside Bow Blessing's
+   −20% would read ×0.56 instead of ×0.50.
+3. **Leave it as built** and accept a faster endgame caster than IG's.
+
+**I did not choose for you** — the summing rule is a documented engine decision that reaches every
+class, and CLAUDE.md says to discuss a mechanic change of that size first. My pick is **2**.
+
+### 🔵 Also still open
+
+The **20% magic crit-RATE cap** (`StatCaps.MagicCritRate`), which every race now sits exactly on —
+about +10% average damage per 5 points. It was lever 3 of `BL-215` and nothing has changed it.

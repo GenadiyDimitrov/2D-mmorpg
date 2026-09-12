@@ -7,12 +7,51 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.135.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.136.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-12 (latest) — 0.135.0: the shot shortens a cast, the buffer gets a reuse ladder, and Elemental Blast keeps its second
+## 2026-09-12 (latest) — 0.136.0: reuse reductions compound
+
+⚠ **NEW APK** (rebuilt for the same evening's class-table change). No protocol bump.
+
+One ruling, and it is a change to how a whole channel stacks.
+
+*"Make it mutiolicative if u haven't as any other buff is ... Don't add clamp no need when it
+mutiolicative - I want to test with the 0.42 not 0.25 and if it additive to 80% the spell never can go
+bellow 0.2s."*
+
+```
+reuse  = authored × retain                     min 1 tick; skipped when FixedCooldown
+retain = CooldownRetain × (physical ? CooldownRetainPhysical : CooldownRetainMagic)
+         each source multiplies its channel's retain by its own (1 − r).  NO CLAMP.
+```
+
+**What is stored is what SURVIVES.** `Entity.CooldownReduction` / `…Physical` / `…Magic` are computed
+getters now (`1 − retain`), so the stat panel, the `StatsUpdate` DTO and the target inspector keep an
+ordinary reduction fraction and nothing on the wire moved. A stray `+=` on one of them is a **compile
+error** instead of a silent return to summing — that is why they are read-only.
+
+**The three 0.8 clamps are gone**, on his reasoning: they were a hard floor of 0.2× the authored reuse
+that the caster stack had already reached (75%), so his next tuning step would have moved a number the
+engine had stopped reading. A product of `(1 − r)` approaches zero and never arrives, and
+`ExecuteSkill` floors the result at one tick.
+
+📐 `--castcycle 90 epic`, Elemental Blast on a Magus: Spell Mastery 20% (blanket) × Harmony of the Soul
+20% × Harmony of the Wizard 35% (magic) = **×0.416**, his number to three decimals. Reuse 0.40s, and
+the full cycle 0.90s against the 1.70s he was playing.
+
+⚠ **It reaches PHYSICAL reuse too** — Harmony of the Soul's −30% beside Bow Blessing's −20% now reads
+×0.56 where it read ×0.50. Every stack of TWO reuse sources got slightly weaker; only stacks of three
+or more got stronger. Worth an eye at the next playtest.
+
+### Verified
+
+All four projects build; the server boots; `SmokeTest` passes; `--check` and `--maskaudit` clean but
+for the two `BL-202` rows.
+
+## 2026-09-12 — 0.135.0: the shot shortens a cast, the buffer gets a reuse ladder, and Elemental Blast keeps its second
 
 ⚠ **NEW APK.** The class-skill tables changed (Harmony of the Wizard gains three rungs). No protocol bump.
 

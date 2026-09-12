@@ -132,8 +132,10 @@ public static partial class SkillCatalog
     /// Harmony of Bulwark off and hand back nothing. Rung by rung the swap is exactly even: the
     /// harmony's number at that rung and the single's number are the same number.</param>
     /// <param name="magicReuse">`BL-217` — the MAGIC reuse cut, a FIELD (`SkillLevel.MagicCooldownPct`)
-    /// for the usual reason: `SkillEffect` has had no bits since `1L &lt;&lt; 62`. It SUMS with every other
-    /// reuse source in <c>Entity.CooldownReductionFor</c> and the sum is clamped at 80%.</param>
+    /// for the usual reason: `SkillEffect` has had no bits since `1L &lt;&lt; 62`. It <b>COMPOUNDS</b> with
+    /// every other reuse source (<c>Entity.CooldownReductionFor</c>) and there is no clamp: with Spell
+    /// Mastery's 20% and Harmony of the Soul's 20%, this rung's 35% lands the caster on
+    /// <c>0.8 × 0.8 × 0.65 = ×0.416</c>, which is the owner's own target.</param>
     private static SkillLevel HarmonyRung(int mp, int sp, EffectMagnitude[] mags, string desc,
         float physMpCost = 0f, float magicMpCost = 0f, string[]? covers = null,
         float magicReuse = 0f) =>

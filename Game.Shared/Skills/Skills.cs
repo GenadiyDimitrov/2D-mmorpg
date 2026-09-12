@@ -529,7 +529,10 @@ public record SkillDef(
     // −20% Physical Reuse"* on ONE buff, which the existing `BuffCooldown` flag cannot express: it is
     // one number for every skill. Same convention as the pair above — fractions, 0 = none, physical
     // means the Physical CATEGORY and "magic" is his own list of spells, buffs, debuffs and heals.
-    // These ADD to whatever BuffCooldown grants; see Entity.CooldownReductionFor.
+    // 🔴 THESE **COMPOUND** WITH `BuffCooldown` AND WITH EACH OTHER (`BL-217`, 2026-09-12) — they
+    // used to sum. `Entity.CooldownRetain*` stores what SURVIVES and each source multiplies it by its
+    // own `(1 − r)`, so 20% + 20% + 35% is ×0.416 rather than ×0.25, and there is no clamp any more.
+    // Owner: *"Make it mutiolicative if u haven't as any other buff is"*. See Entity.CooldownReductionFor.
     float PhysCooldownPct = 0f,
     float MagicCooldownPct = 0f,
     // ---- CAST TIME, and it is NOT cast speed (`BL-196`, owner 2026-09-11) ------------------------

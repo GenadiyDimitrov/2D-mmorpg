@@ -662,11 +662,11 @@ autohunt's budget. Reading the authored number anywhere else is the bug.
 ## Skill reuse
 
 ```
-reuse = authored * (1 - reduction)                       min 1 tick; skipped when FixedCooldown
-reduction = CooldownReduction                            every skill (Spell Mastery, buffs)
-          + (SkillMath.IsPhysical(def) ? CooldownReductionPhysical : CooldownReductionMagic)
-            each clamped to 0.8, and they SUM — they do not compound
-          clamp [0, 0.8]
+reuse  = authored * retain                               min 1 tick; skipped when FixedCooldown
+retain = CooldownRetain                                  every skill (Spell Mastery, buffs)
+       * (IsPhysical(def) ? CooldownRetainPhysical : CooldownRetainMagic)
+
+each source multiplies its channel's retain by its own (1 - r).  NO CLAMP.
 ```
 
 🔑 **THE CHANNEL IS `SkillMath.IsPhysical`, THE SAME TEST THE SPEED MODEL AND SILENCE USE** (0.128.0).
@@ -679,13 +679,19 @@ owns"*. Same mistake `BL-132` fixed for cast pacing; this was the last call site
 halves exist because one buff can carry two different numbers (Harmony of the Soul: −20% magic,
 −30% physical).
 
-🔴🔑 **THEY SUM, AND IG'S EQUIVALENTS MULTIPLY.** The caster stack at 90 is Spell Mastery 20% +
-Harmony of the Soul 20% + Harmony of the Wizard 35% (`BL-217`) = a **75%** cut, ×0.25. The owner's own
-arithmetic for the same three is `0.8 × 0.8 × 0.65 = ×0.416`. His numbers are authored as given and the
-difference is a live question (`BL-217`), not a defect — but two things follow from it and both matter:
-- the endgame magic reuse is **~40% shorter than he intended**;
-- the sum is **already at 75% against a 0.8 clamp**, so the next tuning step saturates and stops
-  responding. Anyone raising one of these three numbers must check the total first.
+🔴🔑 **THEY COMPOUND, AND THERE IS NO CLAMP** (`BL-217`, 0.136.0). What is stored is what SURVIVES
+— `Entity.CooldownRetain` / `CooldownRetainPhysical` / `CooldownRetainMagic`, each multiplied by a
+source's own `(1 − r)`. The caster stack at 90 is Spell Mastery 20% (blanket) × Harmony of the Soul 20%
+× Harmony of the Wizard 35% (both magic) = **×0.416**, the owner's own number. Summed it read ×0.25.
+
+- ⚠ **WRITE TO `CooldownRetain*`, NEVER TO `CooldownReduction*`** — the latter three are computed
+  getters (`1 − retain`) so the stat panel and the DTO keep an ordinary fraction, and a stray `+=` is
+  a compile error instead of a silent return to summing.
+- ⚠ **The 0.8 clamps are GONE and that is deliberate.** They were a hard floor of 0.2× the authored
+  reuse, and the caster stack had already reached 75% — the next number raised would have moved
+  nothing. A product of `(1 − r)` approaches zero and never arrives; `ExecuteSkill` floors at 1 tick.
+- ⚠ A negative `r` (a "slow reuse" debuff) multiplies retain ABOVE 1 and lengthens the reuse, which
+  is correct. Nothing authors one today.
 
 ## Cast length (`BL-196`, 0.128.0)
 
@@ -720,12 +726,12 @@ is: forty points on a stat an endgame caster carries at 1400-1900, i.e. **about 
 cast LANDS (`ExecuteSkill`), never when it begins, so a nuke's cycle is the sum. Elemental Blast
 (4s authored cast, 1s authored reuse) on a level-90 Magus in epic gear, `--castcycle 90 epic`:
 
-| stack | cast speed | cast | reuse | cycle |
+| stack | cast speed | cast | reuse (retain) | cycle |
 |---|---|---|---|---|
-| NPC shelf only | 1425 | 0.90s | 0.80s | 1.70s |
-| + Harmony of the Wizard L8 (−35% reuse) | 1853 | 0.70s | 0.40s | 1.10s |
-| + Harmony of the Soul L7 (−20% reuse) | 1853 | 0.70s | 0.20s | 0.90s |
-| + Spell Rune (−30% cast time) | 1853 | **0.50s** | 0.20s | **0.70s** |
+| NPC shelf only | 1425 | 0.90s | 0.80s (×0.800) | 1.70s |
+| + Harmony of the Wizard L8 (−35% reuse) | 1853 | 0.70s | 0.50s (×0.520) | 1.20s |
+| + Harmony of the Soul L7 (−20% reuse) | 1853 | 0.70s | 0.40s (**×0.416**) | 1.10s |
+| + Spell Rune (−30% cast time) | 1853 | **0.50s** | 0.40s | **0.90s** |
 
 ⚠ **A cast-SPEED grant dies at the cap and a cast-TIME cut does not**, because `CastTimeMultiplier`
 is applied *after* the 333 model. `StatCaps.CastSpeed` is 1999 and a fully-stacked caster is close to
