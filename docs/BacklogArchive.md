@@ -4932,3 +4932,208 @@ were string literals on the server with a matching literal in the client's float
 arrangement where renaming one half silently breaks the other and nothing errors.
 
 ⚠ **NEW APK.**
+
+---
+
+## `BL-221` ✅ BUILT 0.138.0 (2026-09-13) — Magical Armor 30% → 50%
+
+*"Alao increase the magic armor to 50% ..it's a 10s buff ..let him take less dmg"*. Done, and the CSV
+row with it.
+
+| | mRes | divisor | a Magus's Arcane Burst |
+|---|---|---|---|
+| bare (the race passive alone) | 10% | 1.100 | 734 |
+| + Magical Armor, was | 40% | 1.400 | 577 (×0.79) |
+| + Magical Armor, **now** | **60%** | **1.600** | **505 (×0.69)** |
+
+So it is **−31% on his own damage** now instead of −21%, and **−38%** against a dual carrying
+neither. ⚠ The reminder from the measurement that opened this entry still holds: resistance is a
+DIVISOR, so "+50%" is not "half damage" — it is ÷1.6.
+
+---
+
+## `BL-222` ✅ BUILT 0.138.0 (2026-09-13) — a trap could only ever see MOBS
+
+*"Also both players are flagged both players are with pvp on ..and enemy cannot trigger trap ... Only
+mobs... A trap should trigger when I'm put it and I'm with pvp on ... And any pvp /pk (not friendly)
+walking over should trigger it if I'm with pvp off a trap triggers only by pk/mob (by any enemy that
+wont flag me)"*.
+
+🔴 **`FindTrapVictim` filtered on `e.Kind != EntityKind.Mob`, and the doc-comment above it read
+"(and, once PvP exists, enemy players)"** — a TODO written before PvP shipped that nothing ever came
+back to. The Trapper's entire discipline was PvE-only and nothing said so.
+
+🔑 **THE RULE IS `CanPvpHit`, ASKED AS THE OWNER.** Your parenthetical — *"by any enemy that wont
+flag me"* — is already exactly what that predicate means: a flagged or red player is always hittable,
+an innocent one needs the PvP toggle. So the trap asks the ordinary attack question and inherits the
+safe-zone check, the never-your-own-party rule and the guard/NPC doors for free. Nothing re-derived.
+
+Two details that needed deciding:
+- **The toggle is captured when you ARM it**, not read live (`TrapInstance.OwnerPvpEnabled`). Your
+  *"when I'm put it"*. A trap already in the ground must not re-aim itself because you toggled PvP
+  fifty metres away, where you cannot see it happen.
+- **The safe-zone test reads the TRAP's position**, not the owner's, so walking back to town does not
+  switch off a trap you left in the field. (`CanPvpHit` grew an overload for both.)
+
+⚠ `FireTrap`'s sweep carried its own copy of the mobs-only filter, so without fixing it too an enemy
+would have *sprung* a trap and walked away unharmed. One predicate, `TrapCatches`, both places — the
+`BL-154`/`BL-123` lesson for the third time.
+
+⚠ **ONE CONSEQUENCE, STATED NOT BURIED:** a trap armed with PvP **on** will trip on a clean (white)
+stranger and flag you, exactly as swinging at him would. That is the bargain the toggle makes
+everywhere else, but it is the one case where you are not standing there to choose. One line to
+change if you would rather a PvP-on trap still ignored innocents.
+
+🔵 Known edge, not fixed: `ApplyDamage` zeroes player-vs-player damage if the **attacker** is in a
+safe zone, and for a trap the attacker is the owner. So a trap that fires while you are standing in
+town does no damage (the CC still lands). Safe failure, rare, and the fix would mean threading a
+position through the one seam every damage source in the game passes — not worth it for this.
+
+---
+
+## `BL-223` ✅ BUILT 0.138.0 (2026-09-13) — the rig was wearing four Marks and sixteen harmonies
+
+Found while re-measuring `BL-218`. `SkillCatalog.NewbieBuffSet` has **contained**
+`NpcSingleHarmonySet` and `NpcMarkSet` since `BL-160`/`BL-161` — its own doc-comment says so
+("19 + 8 + 3 = THIRTY") — but `BalanceMatrix.ApplyNpcBuffs` still concatenated both again for
+`fullShelf: true`. So the eight harmonies landed twice and the Marks four times; and even the PLAIN
+shelf wore all three Marks, where all three share `MarkKey` with `FlatRank` and the engine allows
+exactly **one**.
+
+**Every "buffed" row this tool has printed since 0.113.0 was a character wearing buffs the game cannot
+give him** — inflated M.Def, crit damage, cast speed and control resistance. `--mcrit` had a hand-written
+workaround for the Mark half (it stripped `healer_mark` explicitly) which is the clue that was sitting
+there the whole time.
+
+🔑 **THE FIX IS THE ENGINE'S OWN INVARIANT: A BUFF KEY IS BUFF IDENTITY** — two buffs with the same key
+never coexist on a bar. The shelf is deduped by key, which repairs this and any future overlap without
+the builder needing to know which sets contain which. `fullShelf` now means what its name says: false =
+the nineteen singles, true = all thirty.
+
+⚠ **Other signed-off tables move**: anything passing `buffed` / `npcBuffed` — `--dmgmatrix`, `--stab`,
+`--castcycle`, `--magicdef`, `--defbreak`. They are now LOWER and correct. If a number in an older
+note disagrees with the tool, the tool is right.
+
+⚠ Also added: `WarchanterParty()` (a real party buffer's blessings, which the NPC shelf does not sell
+and which is what you actually play with), and it applies `CoveredKeys` so a class buff evicts the NPC
+singles it contains rather than stacking with them (`BL-183`).
+
+---
+
+## `BL-224` ✅ BUILT 0.138.0 (2026-09-13) — Arrow Barrage: the `[Double]` off, power 2,500 → 2,000
+
+*"OK a mage is killed by one arrow barrage .. Also remove double of arrow barrage if it can (I haven't
+seen for about a x10 bae ages not a single arrow crit) but I don't hwat it to have.. Also decrease
+it's dmg to 2k per arrow"*.
+
+🔑 **THE DOUBLE WAS THE REAL PROBLEM AND IT IS ALSO WHY YOU NEVER SAW IT.** `BL-213` gave this skill
+**ten independent doubling rolls** — one per arrow — where every other skill in the game gets one per
+cast. At a ~10% mastery rate a ten-arrow volley doubles *some* arrow **65% of the time**, so the
+volley's average ran ~10% hot while no single arrow ever looked doubled on screen. A per-shot roll on
+a ten-shot channel is not the same mechanic as a per-cast roll, and the asymmetry is exactly the
+report: a skill that deletes a mage while showing you nothing to blame.
+
+Both the arrow def and the wrapper drop the flag — the wrapper carried it only so the skill card
+could say so, and a card advertising a doubling that can no longer happen is worse than no card.
+
+⚠ **`Power` is the AUTHORED power, not damage on screen.** Your *"~1k to an elit and ~870 to a mage"*
+is what 2,500 produces through the ratio; 2,000 takes about a fifth off that, and losing the double
+takes roughly another tenth off the volley's average. Combined: a barrage lands near **70%** of what
+it did.
+
+---
+
+## Superseded text — `BL-218` and `BL-221` as they stood on 2026-09-12
+
+Kept verbatim per rule 2 (a rewrite's old text comes here). `BL-218` was rewritten on 2026-09-13
+after his 20% ruling and the `BL-223` rig fix; `BL-221` was closed as BUILT the same day.
+
+## `BL-218` 🔵 WHY DEBUFFS DON'T LAND — measured; the SPT land-rate passive is yours to rule
+
+Playtest 2026-09-12: *"Also debuffs almost never land wit all the resistanses we have … in general
+debuffs don't land … not human stuns mage nor the other way around … Can you get me same lvl debuffs
+and check their land rate with and without buffs/passives ? **I think we hit the floor for
+landing**"* — and, conditionally, *"Can we add to a mage 40,76,80 a spt debuff land rate passive that
+increases land rate of all spt debuffs 2 times (atleast in pvp) but 1st the ask below ?"*
+
+📐 **THE MEASUREMENT IS DONE AND IT IS IN THE REPO: [balance/DebuffLandRate.md](balance/DebuffLandRate.md).**
+New rig mode `dotnet run --project tools/BalanceMatrix -- --ccland [level] [quality]`, which builds
+real 4th-tier characters and runs the exact product `GameLoopService` computes.
+
+🔑 **YOU ARE NOT HITTING THE FLOOR.** `CcLandMin` is 10% and it clamps the STAT CONTEST only — which
+between two level-90 characters comes out at **50-54%**, nowhere near it. What eats the number is the
+three multipliers applied **after** the clamp, none of which is floored:
+
+```
+land = clamp(contest, 10%, 90%)      ~52% at parity
+     × DebuffLandMod                 the skill's own: 1.50 / 1.00 / 0.70 / 0.50 / 0.30
+     × (1 − CcResist)                0% / 0% / 28% / 40%  by GEAR QUALITY
+     × (1 − CcResist<school>)        20% bare → 35% NPC shelf → 50% FULL shelf
+```
+
+So a fully-blessed level-90 target in mythic gear multiplies every incoming debuff by **×0.30**, and
+a `×0.50` skill by **×0.15**. A tank's Numbing Shock lands **11%**. A Magus's Arcane Void lands
+**6%**. The doc has the whole table, every class both ways.
+
+**Three findings worth ruling on, smallest first:**
+
+1. 🔴 **The flat `CcResist` is a GEAR CLIFF: 0% at common and rare, 28% at epic, 40% at mythic.** No
+   buff feeds it — it is armour-set only, every class gets the same number from its own tier's set,
+   and nothing on the attacker's side can answer it. This is the single biggest term in the product
+   and it is why control stopped working around epic gear without anything being changed. **Halving
+   it (0 / 0 / 14 / 20%) is my recommendation and costs nothing** — one armour-set number, no new
+   mechanic, no `game.db` delete.
+2. 🔵 **YOUR PASSIVE IS THE RIGHT SHAPE, and bigger than you may realise: there is no attacker-side
+   land channel in the engine AT ALL today.** Every multiplier above is defender-side or authored per
+   skill; the caster contributes one stat to a contest that moves by thirteen points end to end —
+   which is why *"you cannot build for landing debuffs"* is literally true right now. One
+   `PassiveEffect` field feeding one multiplier next to `DebuffLandMod` is the whole build. At ×2 it
+   restores a fully-blessed target to Arcane Burst 64% / Gravity 44% / Mana Strain 22%. **Two things
+   I need from you before building it:**
+   - **×2 flat at all three rungs, or a ladder?** Three rungs at 40/76/80 reads as a ladder to me —
+     ×1.3 / ×1.6 / ×2.0 — so a level-40 mage is not handed the endgame number.
+   - **PvP only, or everywhere?** You wrote *"atleast in pvp"*. Both are one line. PvE control is
+     already shortened by `MobCcSpt`, so doubling it there is a real farming change.
+   ⚠ And if it goes in, it should be a channel every class can be given later, not a mage-only
+   field — the tank's kit is control and sits at 11-27%.
+3. 🔵 **The ×0.30 and ×0.50 skills are decoration now.** Your `BL-90` ruling priced those multipliers
+   when the base at parity was 50% and nothing came after it. With three defensive layers behind
+   them, ×0.30 means 6%. Raising the bottom tier to ×0.60 would be enough.
+
+⚠ **The rig was lying until this pass**, and it is the fifth time the same builder has done it:
+`ApplyNpcBuffs` never copied the `CcResistMagical`/`CcResistPhysical` **fields** (they are fields,
+not `Effect`+`Magnitudes`, the flag enum being full), so the first run of this table read identical
+buffed and unbuffed. Fixed in the same commit.
+
+---
+
+## `BL-221` ❓ MAGICAL ARMOR "DOES NOTHING" — the engine says it does; I need your two numbers
+
+Playtest 2026-09-12: *"Also magic armor of null blade does nothing … he takes ~300 dmg less than
+other duals because of his anti magic but with magic armor on the dmg is the same… Not 30% less"*.
+
+**Measured end to end and it works** (`dotnet run --project tools/BalanceMatrix -- --mres 90`), a
+level-90 Nullblade under a same-level Magus's Arcane Burst:
+
+| stage | mRes | divisor | nuke damage |
+|---|---|---|---|
+| bare (the `dual_anti_magic` passive alone) | 10% | 1.100 | 734 |
+| + Magical Armor | **40%** | **1.400** | **577**  (×0.79) |
+| + NPC shelf | 10% | 1.100 | 272 |
+| + NPC shelf + Magical Armor | **40%** | **1.400** | **213**  (×0.78) |
+
+The def carries `BuffMagicResist 0.3 Percent` at both the skill and the rung level, `RecomputeDerived`
+folds it, and `MagicDefCoef` divides the nuke by it — including a crit, which multiplies the already
+resisted number.
+
+🔑 **ONE THING TO KNOW: +30% MAGIC RESIST IS NOT −30% DAMAGE, AND IT NEVER WAS.** Resistance is a
+DIVISOR (`damage ÷ (1 + mRes)`), the same shape as defence everywhere else in this game. Going from
++10% to +40% divides by 1.4 instead of 1.1, which is **−21%** on your own damage — but **−29.5%**
+against a dual who has neither, which is probably the comparison you were making and is your "30%".
+So the number you were looking for exists; it is just relative to the other dual, not to yourself.
+
+❓ **WHAT I NEED:** −21% is not a subtle change, so if it really moved nothing, something in the live
+path is not what the rig builds. Give me two numbers off one target — the same nuke's damage with the
+buff visibly on the bar and immediately after it drops (it is **10 seconds**, 90s reuse) — and
+whether the bar showed it at all. If they are equal I will chase the live path; if they are ~21%
+apart the mechanic is fine and this entry closes.

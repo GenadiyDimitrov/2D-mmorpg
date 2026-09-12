@@ -311,23 +311,39 @@ public static partial class SkillCatalog
             level: 85, bottles: 5, power: 0, mp: 208, durationTicks: 20,
             mags: Array.Empty<EffectMagnitude>(),
             "Ten arrows in two seconds, and none of them politely.",
-            "Looses 10 arrows over 2s, each for power 2,500 with a 150 splash.",
+            "Looses 10 arrows over 2s, each for power 2,000 with a 150 splash.",
             channelSkill: ArcherBarrageArrow, channelShots: 10, channelIntervalTicks: 2, cooldownTicks: 300,
-            canDouble: true));
+            // 🔴 NO `[Double]`, owner 2026-09-13 — see the arrow def below. The wrapper carried the
+            //    flag only so the card could say so; it must drop it with the arrow or the skill
+            //    detail advertises a doubling that can no longer happen.
+            canDouble: false));
 
         // ONE ARROW. Never learned and never on a bar — the wrapper is what the player owns.
         // ⚠ MP is ZERO here: the wrapper charges his 208 once, for the whole volley. Ten arrows each
         //   charging MP would be a different skill and a different price.
         list.Add(new SkillDef(ArcherBarrageArrow, "Arrow Barrage", BaseClass.Fighter,
             SkillEffect.PhysicalDamage,
-            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 900, Power: 2500,
-            // 🔴 `[Double]`, 2026-09-12 (`BL-213`) — *"the twin/heavy/barrage(each arrow on its own)"*.
-            //    TEN independent rolls, one per arrow, because a channel resolves each shot separately.
-            //    The wrapper carries the flag too, for the card; only this def ever resolves damage.
-            Category: SkillCategory.Physical, CanDouble: true,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 900, Power: 2000,
+            // 🔴 THE `[Double]` IS GONE AND THE POWER IS 2,500 → 2,000 (owner, 2026-09-13): *"a mage
+            //    is killed by one arrow barrage .. Also remove double of arrow barrage if it can (I
+            //    haven't seen for about a x10 bae ages not a single arrow crit) but I don't hwat it
+            //    to have.. Also decrease it's dmg to 2k per arrow"*.
+            //
+            // 🔑 THE DOUBLE WAS THE REAL PROBLEM AND IT IS WHY HE NEVER SAW IT. `BL-213` gave this
+            //    skill TEN independent doubling rolls — one per arrow — where every other skill in
+            //    the game gets one. At a ~10% mastery rate a ten-arrow volley doubles *some* arrow
+            //    65% of the time, so the volley's average ran ~10% hot while no single arrow ever
+            //    looked doubled on screen. A per-shot roll on a ten-shot channel is not the same
+            //    mechanic as a per-cast roll, and that asymmetry is exactly what he is reporting: a
+            //    skill that kills a mage outright while showing him nothing to blame.
+            //
+            // ⚠ `Power` here is the AUTHORED power, not damage on screen. His "~1k to an elit and
+            //    ~870 to a mage" is what 2,500 produces through the ratio; 2,000 takes roughly a
+            //    fifth off that, and dropping the double takes another tenth off the average.
+            Category: SkillCategory.Physical, CanDouble: false,
             AreaRadius: 150f, AreaAtTarget: true, TargetMode: TargetMode.EnemiesInRadius,
             RequiredWeapon: WeaponType.Bow,
-            Description: "One arrow of a barrage: power 2,500 where it lands, and 150 around it."));
+            Description: "One arrow of a barrage: power 2,000 where it lands, and 150 around it."));
 
         return list.ToArray();
     }

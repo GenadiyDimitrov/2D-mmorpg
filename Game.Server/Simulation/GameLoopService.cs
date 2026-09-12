@@ -1027,7 +1027,18 @@ public class GameLoopService : BackgroundService
     /// mis-tap on the ally standing next to you would silently turn you into the enemy's best asset.
     /// Because it lives in here, every path inherits it at once — basic attack, offensive skills, the
     /// autopilot's retaliation and the PvP counter-attack all ask this one question.</summary>
-    private bool CanPvpHit(Entity attacker, Entity target)
+    private bool CanPvpHit(Entity attacker, Entity target) =>
+        CanPvpHit(attacker, target, attacker.PvpEnabled, attacker.X, attacker.Y);
+
+    /// <inheritdoc cref="CanPvpHit(Entity, Entity)"/>
+    /// <param name="pvpEnabled">The attacker's PvP toggle to judge by. It is a parameter ONLY so a
+    /// placed TRAP can ask this question with the toggle it was ARMED under rather than the owner's
+    /// current one (`BL-222`) — everything else passes the live field via the overload above.</param>
+    /// <param name="atX">Where the attacker counts as STANDING for the safe-zone test. Also for the
+    /// trap: it fires from where it lies, so an owner who has walked back to town must not switch his
+    /// own trap off by crossing a town line a hundred metres away.</param>
+    /// <param name="atY"><inheritdoc cref="CanPvpHit(Entity, Entity, bool, float, float)" path="/param[@name='atX']"/></param>
+    private bool CanPvpHit(Entity attacker, Entity target, bool pvpEnabled, float atX, float atY)
     {
         // BL-79 — SWINGING AT THE WATCH IS A DELIBERATE ACT. His "a player attacking them (pvp-on
         // must be on)": the toggle is the GATE, exactly as it is for a player target, so nobody
@@ -1035,7 +1046,7 @@ public class GameLoopService : BackgroundService
         // ONE case where a MOB target consults the attacker's PvP flag, which is why it sits above
         // the player-vs-player early-out rather than inside it.
         if (attacker.Kind == EntityKind.Player && target.Kind == EntityKind.Mob && IsGuard(target))
-            return attacker.PvpEnabled;
+            return pvpEnabled;
 
         // `BL-115` — AND SO IS SWINGING AT ANY NPC. His rule, and it REPLACES the flat refusal that
         // stood here since 2026-07-21: *"all npc can be attacked only with pvp-on and all npcs
@@ -1045,7 +1056,7 @@ public class GameLoopService : BackgroundService
         // on, deliberately, and never by accident. The immortality half is ApplyDamage's floor; this
         // is only the door.
         if (attacker.Kind == EntityKind.Player && target.Kind == EntityKind.Npc)
-            return attacker.PvpEnabled;
+            return pvpEnabled;
 
         if (attacker.Kind != EntityKind.Player || target.Kind != EntityKind.Player)
             return true;
@@ -1053,9 +1064,9 @@ public class GameLoopService : BackgroundService
             return false;
         if (SameParty(attacker, target))
             return false;
-        if (GameConstants.InSafeZone(attacker.X, attacker.Y) || GameConstants.InSafeZone(target.X, target.Y))
+        if (GameConstants.InSafeZone(atX, atY) || GameConstants.InSafeZone(target.X, target.Y))
             return false;
-        return FlagOf(target) != PvpFlag.Innocent || attacker.PvpEnabled;
+        return FlagOf(target) != PvpFlag.Innocent || pvpEnabled;
     }
 
     /// <summary>Why a swing at this player was refused. Split out so the party rule can say so
@@ -9712,8 +9723,28 @@ public class GameLoopService : BackgroundService
         return inParty && caster.PvpEnabled;      // flagged/PK: own party, and only with PvP ON
     }
 
-    /// <summary>The nearest hostile within a trap's radius, or null. A trap triggers on mobs (and,
-    /// once PvP exists, enemy players); never on the owner or allies.</summary>
+    /// <summary>The nearest hostile within a trap's radius, or null; never the owner or an ally.
+    ///
+    /// <para>🔴 <b>`BL-222`, 2026-09-13 — A TRAP COULD ONLY EVER SEE MOBS.</b> The filter read
+    /// <c>e.Kind != EntityKind.Mob</c> and the doc-comment above it said "(and, once PvP exists, enemy
+    /// players)" — a TODO from before PvP shipped that nothing ever came back to. His report:
+    /// *"both players are flagged both players are with pvp on ..and enemy cannot trigger trap ...
+    /// Only mobs"*. The Trapper's whole discipline was PvE-only and nothing said so.</para>
+    ///
+    /// <para>🔑 THE PVP RULE IS <see cref="CanPvpHit"/>, ASKED AS THE OWNER. His spec —
+    /// *"A trap should trigger when I'm put it and I'm with pvp on … And any pvp/pk (not friendly)
+    /// walking over should trigger it. If I'm with pvp off a trap triggers only by pk/mob (**by any
+    /// enemy that wont flag me**)"* — is exactly that predicate, because that is what CanPvpHit
+    /// already means: a flagged or red player is always hittable, an innocent one needs the PvP
+    /// toggle. His parenthetical IS the rule and it falls out for free, along with the safe-zone
+    /// check, the never-your-own-party rule and the guard/NPC doors. Nothing is re-derived here.</para>
+    ///
+    /// <para>⚠ ONE CONSEQUENCE, STATED RATHER THAN BURIED: a trap armed with PvP ON will trip on a
+    /// clean (white) stranger who wanders into it, and flag the owner exactly as swinging at that
+    /// stranger would have. That is the same bargain the toggle makes everywhere else — but it is the
+    /// one case where the owner is not standing there to choose, so if he would rather a PvP-on trap
+    /// still ignored innocents, this is a one-line change (test <c>FlagOf(e) != Innocent</c> instead
+    /// of the toggle).</para></summary>
     private Entity? FindTrapVictim(TrapInstance trap, Entity owner)
     {
         float r2 = trap.Radius * trap.Radius;
@@ -9721,13 +9752,30 @@ public class GameLoopService : BackgroundService
         float bestD = float.MaxValue;
         foreach (var e in _world.Entities.Values)
         {
-            if (e.Dead || e.Kind != EntityKind.Mob || e.TrainingDummy)
+            if (!TrapCatches(trap, owner, e))
                 continue;
             float dx = e.X - trap.X, dy = e.Y - trap.Y;
             float d = dx * dx + dy * dy;
             if (d <= r2 && d < bestD) { bestD = d; best = e; }
         }
         return best;
+    }
+
+    /// <summary>May this trap fire on this body at all (distance aside)? The ONE place the rule lives,
+    /// so <see cref="FindTrapVictim"/> and <see cref="FireTrap"/> cannot drift apart — they had two
+    /// hand-written copies of the old mobs-only test, which is how `BL-154` and `BL-123` each shipped
+    /// a sweep that disagreed with its own trigger.
+    /// <para>The owner's PvP toggle is the one captured when the trap was ARMED, not his current one
+    /// (see <see cref="TrapInstance.OwnerPvpEnabled"/>), so the answer cannot change under a trap
+    /// already in the ground.</para></summary>
+    private bool TrapCatches(TrapInstance trap, Entity owner, Entity e)
+    {
+        if (e.Dead || e.TrainingDummy || e.Id == owner.Id) return false;
+        if (e.Kind == EntityKind.Npc) return false;   // vendors and masters never trip a trap
+        // Ask the ordinary attack question, but with the toggle the trap was armed under and from
+        // where the trap LIES. Mobs fall out of the same call (a guard needs the toggle, `BL-79`;
+        // everything else is always fair game), so there is one rule here and not two.
+        return CanPvpHit(owner, e, trap.OwnerPvpEnabled, trap.X, trap.Y);
     }
 
     /// <summary>Deliver a sprung trap's payload: the trap skill's damage (physical/magic) + any
@@ -9752,8 +9800,12 @@ public class GameLoopService : BackgroundService
 
         float r2 = trap.Radius * trap.Radius;
         // Materialised before delivering: DeliverSimpleHit can kill, and a kill mutates the world.
+        // ⚠ `BL-222` — THE SWEEP ASKS THE SAME QUESTION THE TRIGGER DID. It carried its own copy of
+        //    the mobs-only test, so when the trigger learned about players this would still have
+        //    delivered to creatures alone — an enemy would spring a trap and walk away unharmed,
+        //    which is a worse bug than not springing it. One predicate, both places.
         var caught = _world.Entities.Values
-            .Where(e => !e.Dead && e.Kind == EntityKind.Mob && !e.TrainingDummy
+            .Where(e => TrapCatches(trap, owner, e)
                         && (e.X - trap.X) * (e.X - trap.X) + (e.Y - trap.Y) * (e.Y - trap.Y) <= r2)
             .ToList();
         if (caught.Count == 0) caught.Add(tripper);   // belt and braces: the body that tripped it
@@ -11555,7 +11607,9 @@ public class GameLoopService : BackgroundService
             {
                 OwnerId = caster.Id, SkillId = def.Id, Level = lvl,
                 X = caster.X, Y = caster.Y,
-                Radius = def.TrapRadius, LifeTicks = Math.Max(1, def.TrapLifeTicks)
+                Radius = def.TrapRadius, LifeTicks = Math.Max(1, def.TrapLifeTicks),
+                // `BL-222` — the PvP rule is frozen at arming time. See TrapInstance.OwnerPvpEnabled.
+                OwnerPvpEnabled = caster.PvpEnabled
             });
             BroadcastCombat(caster, caster, 0, CombatOutcome.Buff, castName);
             SendSystemToEntity(caster, $"{castName} armed.");

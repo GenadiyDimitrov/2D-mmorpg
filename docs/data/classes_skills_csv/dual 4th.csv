@@ -43,7 +43,7 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 90,Duel-Expertise,dual_duel_expertise,Passive,,,0,0,self/single,0,0,0,"Increase PvP.Dmg +10%;",0,0,100kk,,,Demon
 ,,,,,,,,,,,,,,,,,,,----------------------------Race ultimates----------------------------
 83,Dodge,dual_dodge,Physical Buff,,,0,0,self/single,0,90,10,"30% chance to Evade Physical Skills",0,500kk,100kk,,,Elf
-83,Magical Armor,dual_magic_armor,Physical Buff,,,0,0,self/single,0,90,10,"Increase mResist with 30%",0,500kk,100kk,,,Human
+83,Magical Armor,dual_magic_armor,Physical Buff,,,0,0,self/single,0,90,10,"Increase mResist with 50%",0,500kk,100kk,,,Human
 83,Demon Contract,dual_demon_contract,Physical Buff,,,0,0,self/single,0,90,10,"Increase PvP.Dmg with 25%",0,500kk,100kk,,,Demon
 ,,,,,,,,,,,,,,,,,,,----------------------------Dual Mastery (DERIVED)----------------------------
 76,Dual Mastery,dual_weapon_mastery,passive,duals,,0,0,self/single,0,8,5,"Dual: p.Atk +85; p.atk x1.085 and crit dmg +1040 and acc +3 and crit rate x1.5 and AS x1.10; With 3% chance to decrease skill mp consumption with 60% and increase crit.dmg with 10% for 5 sec",0,6.5kk,1kk,,[rogue_weapon_mastery]

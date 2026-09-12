@@ -6084,11 +6084,27 @@ static void ApplyNpcBuffs(Entity e, bool fullShelf = false)
     // The eight single harmonies (`BL-160`) and ONE Mark (`BL-161`, they do not stack with each other)
     // are on the same shelf and bought the same way — their own level gates in NpcBuffTiers refuse a
     // character too young, so nothing here needs a second age test.
+    // 🔴🔴 `BL-223`, 2026-09-13 — THE SHELF WAS WEARING FOUR MARKS AND SIXTEEN HARMONIES.
+    //
+    //    `NewbieBuffSet` has CONTAINED `NpcSingleHarmonySet` and `NpcMarkSet` since `BL-160`/`BL-161`
+    //    (read its own tail: "19 + 8 + 3 = THIRTY"). This method still concatenated both again for
+    //    `fullShelf`, so the eight harmonies landed twice and the Marks four times — and even the
+    //    PLAIN shelf wore all three Marks, where all three share `MarkKey` with `FlatRank` and the
+    //    engine allows exactly ONE. Every "buffed" row this tool has printed since 0.113.0 was a
+    //    character wearing buffs the game cannot give him.
+    //
+    // 🔑 THE FIX IS THE ENGINE'S OWN INVARIANT: A BUFF KEY IS BUFF IDENTITY — two buffs with the same
+    //    key never coexist on a bar. So the shelf is deduped by key, which repairs this case and any
+    //    future one without the builder having to know which sets overlap.
+    //
+    // ⚠ `fullShelf` now means what its name says: false = the nineteen SINGLES, true = all thirty
+    //    (singles + the eight harmonies + one Mark). Both rows move. Every other mode that passes
+    //    `buffed`/`npcBuffed` moves with them — see the CHANGELOG.
     var shelf = fullShelf
-        ? SkillCatalog.NewbieBuffSet
-            .Concat(SkillCatalog.NpcSingleHarmonySet)
-            .Concat(SkillCatalog.NpcMarkSet.Take(1))
-        : SkillCatalog.NewbieBuffSet.AsEnumerable();
+        ? SkillCatalog.NewbieBuffSet.AsEnumerable()
+        : SkillCatalog.NewbieBuffSet
+            .Except(SkillCatalog.NpcSingleHarmonySet)
+            .Except(SkillCatalog.NpcMarkSet);
     foreach (var id in shelf)
     {
         // Out of this character's reach — the NPC would refuse, so the matrix must not wear it.
@@ -6096,6 +6112,7 @@ static void ApplyNpcBuffs(Entity e, bool fullShelf = false)
         if (tier <= 0) continue;
         if (SkillCatalog.Get(id) is SkillDef def) Add(def, tier);
     }
+    DedupeByKey(e);
     e.RecomputeDerived();
 }
 
@@ -6281,6 +6298,61 @@ static Entity Who(Race race, BaseClass cls, Discipline d, int level, string qual
                        discipline: d, secondClass: tc.ParentSecondClassId, fourth: true);
 }
 
+/// <summary>Wear the party buffs a real level-90 WARCHANTER casts, at their top rungs. Only the ones
+/// that touch control resistance are needed for `--ccland`, but they are applied through the same
+/// rung-aware path as everything else so the fields ride along.
+/// <para>⚠ TOP RUNG, read off the def rather than typed in: `MaxLevel` moves whenever he adds a rung
+/// to his CSV, and a hardcoded 9 here would quietly measure the second-best version forever.</para></summary>
+/// <summary>Collapse buffs that share a BUFF KEY down to the first of each — the engine's own
+/// invariant (a key IS buff identity; `ApplyBuff` never lets two coexist), which this tool has to
+/// reproduce by hand because it bolts BuffInstances on directly instead of going through ApplyBuff.
+/// <para>⚠ Keyless buffs are left alone: an empty key means "no family", not "all the same family",
+/// and collapsing them would delete unrelated payloads.</para></summary>
+static void DedupeByKey(Entity e)
+{
+    var seen = new HashSet<string>();
+    for (int i = 0; i < e.Buffs.Count; i++)
+    {
+        string k = e.Buffs[i].Key ?? "";
+        if (k.Length == 0) continue;
+        if (!seen.Add(k)) { e.Buffs.RemoveAt(i); i--; }
+    }
+}
+
+static void WarchanterParty(Entity e)
+{
+    foreach (var id in new[] { SkillCatalog.WcArcaneFeralProt, SkillCatalog.WcHarmonySoul })
+    {
+        if (SkillCatalog.Get(id) is not { } def) { Console.Error.WriteLine($"  !! missing {id}"); continue; }
+        int top = def.MaxLevel;
+        // 🔴 COVERING IS NOT OPTIONAL HERE. A class buff EVICTS the NPC singles and harmonies it
+        //    contains (`BL-183`) — Arcane and Feral Protection covers Clarity and Fortitude, and the
+        //    class harmony covers the Spirit Helper's. Bolting these on top of a full shelf instead
+        //    of replacing what they cover double-counts every resistance and pins the character on
+        //    the 80% clamp, which is exactly the wrong answer to print in a table about resistances.
+        if (def.CoveredKeysAt(top) is { Length: > 0 } covered)
+            e.Buffs.RemoveAll(b => covered.Contains(b.Key));
+        if (!string.IsNullOrEmpty(def.BuffKey)) e.Buffs.RemoveAll(b => b.Key == def.BuffKey);
+        e.Buffs.Add(new Game.Server.Simulation.BuffInstance
+        {
+            Effect = def.Effect,
+            Magnitudes = def.MagnitudesAt(top) ?? Array.Empty<EffectMagnitude>(),
+            CcResistMagical = def.CcResistMagicalAt(top),
+            CcResistPhysical = def.CcResistPhysicalAt(top),
+            TicksRemaining = int.MaxValue, Name = def.Name, Key = def.BuffKey, Level = top,
+        });
+    }
+    e.RecomputeDerived();
+
+    // `CCDEBUG=1` lists every buff on the character that carries a control resistance, with its KEY.
+    // Kept because it is what found `BL-223`: the totals looked plausible (80%, the clamp) and only
+    // the itemised list showed the same Mark on the bar twice. When a summed stat lands on its clamp,
+    // print the ADDENDS — a clamp hides how many there were.
+    if (Environment.GetEnvironmentVariable("CCDEBUG") == "1")
+        foreach (var b in e.Buffs.Where(b => b.CcResistMagical != 0f || b.CcResistPhysical != 0f))
+            Console.WriteLine($"    [cc] {b.Name,-34} key={b.Key,-30} mag={b.CcResistMagical:P0} phys={b.CcResistPhysical:P0}");
+}
+
 static void CcLand(string[] args)
 {
     int L = args.Length > 1 && int.TryParse(args[1], out var lv) ? lv : 90;
@@ -6288,11 +6360,18 @@ static void CcLand(string[] args)
 
     // The three dress states he asked for — *"with and without buffs/passives"*. The class PASSIVES
     // are never removable (they are the kit), so the axis that actually moves is the NPC shelf.
+    // 🔴 THE FOURTH ROW IS THE ONE THAT MATTERS AND IT WAS MISSING (2026-09-13). The three NPC rows
+    //    measure what the SHELF sells; he plays in a party with a real WARCHANTER, whose 4th-tier
+    //    party buffs carry far bigger control resistances than anything the NPC hands out — which is
+    //    why his own arithmetic (30% harmony + 50% buff) and the first version of this table
+    //    (20% → 50% off the shelf) did not describe the same character. Measure the loadout he
+    //    actually plays.
     var dress = new (string Label, Action<Entity> Wear)[]
     {
         ("bare (gear + own passives)", _ => { }),
         ("+ NPC shelf",               e => ApplyNpcBuffs(e)),
         ("+ FULL shelf (harmonies)",  e => ApplyNpcBuffs(e, fullShelf: true)),
+        ("+ a real WARCHANTER",       e => { ApplyNpcBuffs(e, fullShelf: true); WarchanterParty(e); }),
     };
 
     // 🔴 THE 2nd-CLASS ID IS NOT OPTIONAL. BuildPlayer defaults a Fighter to the HUMAN KNIGHT (13),
@@ -6451,7 +6530,7 @@ static void MagicResistChain(string[] args)
     var stages = new (string Label, Action<Entity> Wear)[]
     {
         ("bare (passives only)",        _ => { }),
-        ("+ Magical Armor (ult, +30%)", e => ApplyOneBuff(e, SkillCatalog.DualMagicArmor)),
+        ("+ Magical Armor (ult, +50%)", e => ApplyOneBuff(e, SkillCatalog.DualMagicArmor)),
         ("+ NPC shelf",                 e => ApplyNpcBuffs(e, fullShelf: true)),
         ("+ shelf + Magical Armor",     e => { ApplyNpcBuffs(e, fullShelf: true);
                                                ApplyOneBuff(e, SkillCatalog.DualMagicArmor); }),

@@ -7,12 +7,94 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.137.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.138.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-12 (latest) — 0.137.0: the target window keeps up, and why debuffs don't land
+## 2026-09-13 (latest) — 0.138.0: traps see people, the barrage stops doubling, and the rig was wearing four Marks
+
+⚠ **NEW APK.** No protocol bump. ⚠ **Every `--buffed` number this repo has quoted since 0.113.0 was
+too high** — see `BL-223`.
+
+### `BL-224` — Arrow Barrage: the `[Double]` off, power 2,500 → 2,000
+
+> *"a mage is killed by one arrow barrage .. Also remove double of arrow barrage if it can (I haven't
+> seen for about a x10 bae ages not a single arrow crit) but I don't hwat it to have.. Also decrease
+> it's dmg to 2k per arrow"*
+
+🔑 **THE DOUBLE WAS THE PROBLEM AND ALSO THE REASON HE NEVER SAW IT.** `BL-213` gave this skill **ten
+independent doubling rolls** — one per arrow — where every other skill gets one per cast. At a ~10%
+mastery rate a ten-arrow volley doubles *some* arrow **65% of the time**, so the volley's average ran
+~10% hot while no single arrow ever looked doubled on screen. A per-shot roll on a ten-shot channel is
+not the same mechanic as a per-cast roll. Wrapper and arrow both drop the flag; the CSV row moved with
+the power.
+
+### `BL-222` — a trap could only ever see MOBS
+
+> *"both players are flagged both players are with pvp on ..and enemy cannot trigger trap ... Only
+> mobs... A trap should trigger when I'm put it and I'm with pvp on ... (by any enemy that wont flag me)"*
+
+🔴 `FindTrapVictim` filtered `e.Kind != EntityKind.Mob`, above a doc-comment reading "(and, once PvP
+exists, enemy players)" — a TODO from before PvP shipped that nothing came back to. The Trapper's whole
+discipline was PvE-only and nothing said so.
+
+🔑 **THE RULE IS `CanPvpHit`, ASKED AS THE OWNER.** His *"any enemy that wont flag me"* is already what
+that predicate means, so the trap asks the ordinary attack question and inherits the safe-zone check,
+the never-your-own-party rule and the guard/NPC doors. The toggle is **captured when the trap is armed**
+(his *"when I'm put it"*) and the safe-zone test reads the **trap's** position, not the owner's —
+`CanPvpHit` grew an overload for both. `FireTrap`'s sweep had its own copy of the mobs-only filter, so
+without fixing it too an enemy would have sprung a trap and walked away unharmed: one predicate,
+`TrapCatches`, both places — the `BL-154`/`BL-123` lesson for the third time.
+
+### `BL-221` — Magical Armor 30% → 50%
+
+mRes 10% → **60%**, divisor 1.100 → **1.600**, a Magus's Arcane Burst 734 → **505 (×0.69)**. So −31% on
+his own damage instead of −21%, and −38% against a dual carrying neither.
+
+### `BL-218` — his 20% SPT ruling is in; the band it aimed at is not reached
+
+> *"I calculated we must do the harmony and buff also be 20% (not 30/50) that way the land rate will be
+> 15-25% which is good"*
+
+Harmony of the Soul's top rung 30% → 20% SPT and Arcane and Feral Protection 50% → 20% SPT, CSV rows
+with them. The CON half (43→65%) is untouched — his message is about SPT throughout and that column is
+his authored CSV.
+
+🔑 **HE WAS PINNED ON THE 80% CLAMP**: passive 20 + buff 50 + harmony 30 + **Mark 15** = 115 → 80. Same
+trap as the reuse clamp he killed in 0.136.0, which is why only changing *both* numbers moved anything.
+
+🔴 **THE BAND IS STILL NOT REACHED** — ×1.50 skills 15-16%, ×1.00 skills 10-11%, ×0.50 skills 5%. Two
+arithmetic reasons: he counted three sources and there are **four** (a Mark carries 15% SPT), and they
+**SUM** where he multiplied (×0.25 rather than ×0.512). Making them compound — his own 0.136.0 ruling,
+same shape — gives 16% / 24% / 8%, almost exactly his band, and takes the clamp out of reach. Put to
+him rather than done: it reaches the CON side too, where 75% summed becomes ×0.315, a real loosening
+for tanks. 📐 [balance/DebuffLandRate.md](balance/DebuffLandRate.md).
+
+### 🔴 `BL-223` — THE BALANCE RIG HAS BEEN WEARING FOUR MARKS AND SIXTEEN HARMONIES SINCE 0.113.0
+
+`SkillCatalog.NewbieBuffSet` has **contained** `NpcSingleHarmonySet` and `NpcMarkSet` since
+`BL-160`/`BL-161` — its own doc-comment says "19 + 8 + 3 = THIRTY" — but `ApplyNpcBuffs` concatenated
+both **again** for `fullShelf: true`. The eight harmonies landed twice and the Marks four times; even
+the PLAIN shelf wore all three Marks, where all three share `MarkKey` with `FlatRank` and the engine
+allows exactly **one**.
+
+**Every "buffed" row this tool has printed since 0.113.0 was a character wearing buffs the game cannot
+give him** — inflated M.Def, crit damage, cast speed and control resistance. `--mcrit` carried a
+hand-written workaround for the Mark half, which is the clue that had been sitting there the whole time.
+
+🔑 **THE FIX IS THE ENGINE'S OWN INVARIANT: A BUFF KEY IS BUFF IDENTITY** — two buffs with one key never
+coexist. The shelf is deduped by key, which repairs this and any future overlap without the builder
+knowing which sets contain which. `fullShelf` now means what its name says.
+
+⚠ Tables that move (lower, and correct): `--dmgmatrix`, `--stab`, `--castcycle`, `--magicdef`,
+`--defbreak`, and `--ccland`'s own shelf rows from yesterday. Also added: `WarchanterParty()`, because
+he plays beside a real buffer whose class blessings the NPC shelf does not sell — and it applies
+`CoveredKeys`, so a class buff evicts the NPC singles it contains instead of stacking (`BL-183`).
+`CCDEBUG=1` itemises every control-resist source: a summed stat sitting on its clamp hides how many
+addends there were.
+
+## 2026-09-12 — 0.137.0: the target window keeps up, and why debuffs don't land
 
 ⚠ **NEW APK** (client-side changes). No protocol bump — nothing on the wire moved.
 

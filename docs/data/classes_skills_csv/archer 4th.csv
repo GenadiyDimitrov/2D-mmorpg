@@ -70,7 +70,7 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 90,Twin Arrows,archer_twin_arrows,Physical/Active,bow,,900,0,target/single,3,5,0,"Shot two arrows each dealing +8000  power;",235,0,100kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Strong Arrows----------------------------
 84,Heavy Arrow,archer_heavy_arrow,Physical/Active,bow,,900,0,target/single,3,10,0,"Shoot arrow dealing +17000 power;",195,0,100kk,2
-85,Arrow barrage,archer_arrow_barrage,Physical/Active,bow,,900,150,target/single,3,30,2,"Shoot 10 arrows (over 2s) each dealing +2500 power;",208,0,100kk,5,,,Like a channeling skill; Stat to cast and for the next 2 second it continue to cast 1arrow/200ms; can be cancaled like normal skill
+85,Arrow barrage,archer_arrow_barrage,Physical/Active,bow,,900,150,target/single,3,30,2,"Shoot 10 arrows (over 2s) each dealing +2000 power;",208,0,100kk,5,,,Like a channeling skill; Stat to cast and for the next 2 second it continue to cast 1arrow/200ms; can be cancaled like normal skill
 85,Bleeding Arrow,archer_bleeding_arrow,Physical/Active,bow,,900,0,target/single,3,15,30,"Shoot arrow dealing +15000 power and inflicts bleed for 30s tire 11 and 30% slow;",208,0,100kk,5,,Demon
 85,Dazzling Arrow,archer_dazzling_arrow,Physical/Active,bow,,900,0,target/single,3,15,10,"Shoot arrow dealing +15000 power and inflicts stun for 10s and chance to cancel 3 buffs;",208,0,100kk,5,,Human
 85,Healing Arrow,archer_healing_arrow,Physical/Active,bow,,900,0,target/single,3,15,0,"Shoot arrow dealing +15000 power and heals for 40% of the dmg;",208,0,100kk,5,,Elf

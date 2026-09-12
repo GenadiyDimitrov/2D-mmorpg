@@ -342,10 +342,16 @@ public static partial class SkillCatalog
             "Ten seconds in which almost nothing aimed at you connects. Then it does.",
             "10s: a 30% chance to evade any physical SKILL outright.");
 
+        // 🔴 30% → 50%, owner 2026-09-13: *"Alao increase the magic armor to 50% ..it's a 10s buff
+        //    ..let him take less dmg"*. ⚠ Magic resistance is a DIVISOR (`damage ÷ (1 + mRes)`), so
+        //    the 20 points are not 20% off the damage: with the race passive's 10% the human goes
+        //    from ÷1.40 to ÷1.60, which is −12.5% on top of what he already had and −37.5% against a
+        //    dual carrying neither. Written down because the gap between "+50% resist" and "half
+        //    damage" is exactly what `BL-221` was about.
         var magicArmor = Ultimate83(DualMagicArmor, "Magical Armor", SkillEffect.BuffMagicResist,
-            new EffectMagnitude[] { new(SkillEffect.BuffMagicResist, 0.30f) }, 0f,
+            new EffectMagnitude[] { new(SkillEffect.BuffMagicResist, 0.50f) }, 0f,
             "Ten seconds wearing the shape of a spell, so the spells find nothing to hold.",
-            "10s: +30% magic resistance.");
+            "10s: +50% magic resistance.");
 
         var demonContract = Ultimate83(DualDemonContract, "Demon Contract",
             SkillEffect.BuffPvpSkillDamage | SkillEffect.BuffPvpMagicDamage | SkillEffect.BuffPvpBasicDamage,

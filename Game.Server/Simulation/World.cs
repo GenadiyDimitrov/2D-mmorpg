@@ -57,6 +57,18 @@ public class TrapInstance
     public float Y { get; init; }
     public float Radius { get; init; }
     public int LifeTicks { get; set; }
+
+    /// <summary>Was the owner's PvP toggle ON at the moment he armed this trap? (`BL-222`.)
+    ///
+    /// <para>🔑 IT IS CAPTURED AT PLACEMENT, NOT READ LIVE, and that is his wording: *"A trap should
+    /// trigger when I'm put it and I'm with pvp on"*. A trap is a contract you sign when you set it
+    /// — arming one with PvP on and then switching off (or the reverse) must not silently re-aim
+    /// something already in the ground, because you are not standing there to see it happen.</para>
+    ///
+    /// <para>It is the whole of the PvP rule: the trap asks <c>CanPvpHit</c> as if the owner were
+    /// standing on it with this toggle, so "anything that would not flag me" falls out of the
+    /// predicate every other attack path already uses, rather than being re-derived here.</para></summary>
+    public bool OwnerPvpEnabled { get; init; }
 }
 
 /// <summary>A placed TOTEM (the Demon healer's totem line). Server-only for now, exactly like

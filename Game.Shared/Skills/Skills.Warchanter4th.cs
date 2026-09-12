@@ -293,16 +293,28 @@ public static partial class SkillCatalog
     }
 
     /// <summary>Arcane and Feral Protection rungs 2-9. Both resistances are FIELDS, so they are stated
-    /// on the rung for the same reason Soul Reinforcement's MP cost is. The SPT half is pinned at 50%
-    /// for the whole tier and only the CON half climbs — his column, 43% to 65%.</summary>
+    /// on the rung for the same reason Soul Reinforcement's MP cost is. Only the CON half climbs —
+    /// his column, 43% to 65%.
+    ///
+    /// <para>🔴 <b>THE SPT HALF WAS PINNED AT 50% AND IS NOW 20%</b> (owner, 2026-09-13): *"I
+    /// calculated we must do the harmony and buff also be 20% (not 30/50) that way the land rate will
+    /// be 15-25% which is good"*. See the note on <c>CcResistMagical</c> summing in
+    /// <see cref="Entity.RecomputeDerived"/>: this 50%, Harmony of the Soul's 30% and Strong Mind's
+    /// 20% ADD to 100% and were being clamped to 80%, so a debuffer was facing a flat ×0.20 and the
+    /// three numbers had stopped being distinguishable from each other.</para>
+    ///
+    /// <para>⚠ <b>THE CON HALF IS UNTOUCHED AND IS NOW THE WORSE OF THE TWO</b> — 65% + Strong Body's
+    /// 10% = 75%, which is a ×0.25 on every physical debuff in the game and only just under the clamp.
+    /// He ruled on SPT alone (his message is about SPT debuffs throughout) and this column is his
+    /// authored CSV, so it is not mine to move; it is measured and reported instead.</para></summary>
     internal static SkillLevel[] BufferFourthArcaneFeralRungs()
     {
         int[] mp = { 350, 360, 370, 380, 390, 400, 410, 420 };
         float[] con = { .43f, .47f, .50f, .54f, .57f, .60f, .63f, .65f };
         return F4Rungs(8, 2, (i, sp, gold) => new SkillLevel(
             MpCost: mp[i], SpCost: sp, GoldCost: gold,
-            CcResistMagical: 0.50f, CcResistPhysical: con[i],
-            Description: $"{con[i] * 100:0}% resistance to Constitution-defended debuffs and 50% to "
+            CcResistMagical: 0.20f, CcResistPhysical: con[i],
+            Description: $"{con[i] * 100:0}% resistance to Constitution-defended debuffs and 20% to "
                        + "Spirit-defended ones."));
     }
 
@@ -343,7 +355,10 @@ public static partial class SkillCatalog
             SoulRung(3, 367, .20f, .30f, .15f, .20f, .05f,  0f),
             SoulRung(4, 367, .20f, .30f, .15f, .20f, .10f,  0f),
             SoulRung(5, 464, .20f, .30f, .15f, .20f, .15f, .20f),
-            SoulRung(6, 464, .20f, .30f, .15f, .20f, .20f, .30f),
+            // 🔴 The top rung's SPT resistance was .30 and is now .20 (owner, 2026-09-13) — see the
+            //    note on BufferFourthArcaneFeralRungs. The two rungs now carry the same 20%, which is
+            //    deliberate: the ladder's last step buys healing received, not more resistance.
+            SoulRung(6, 464, .20f, .30f, .15f, .20f, .20f, .20f),
         };
 
         // Harmony Mark's universal half — everything both rungs carry.
