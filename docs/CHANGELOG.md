@@ -7,12 +7,109 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.136.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.137.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-12 (latest) — 0.136.0: reuse reductions compound
+## 2026-09-12 (latest) — 0.137.0: the target window keeps up, and why debuffs don't land
+
+⚠ **NEW APK** (client-side changes). No protocol bump — nothing on the wire moved.
+
+Four asks from the second message of the 2026-09-12 playtest. Three are built; two are answered with
+measurements and need a ruling.
+
+### `BL-219` — the target window: debuffs only, abbreviated, and LIVE
+
+> *"Remove the positive effect of the target window …leave only the abriviation of debuffs.. Also I
+> don't think the target window even debuffs are updated when they suppose to … when stab lands I
+> suppose to see x3 but I dont ... I land several more then in one go I see x9 ... Some times I se
+> 3-6-9-10 ... At random .. Like some kind of update interval ..."*
+
+🔑 **IT WAS EXACTLY AN UPDATE INTERVAL.** `PushTargetBuffs` ran on the once-a-second `secondTick`,
+the same beat as the player's own buff bar. A stab banks its venom the instant it connects, so two
+stabs inside one second arrived as a single jump of six, and the same two either side of the beat
+arrived as two threes — the 3-6-9-10 / 6-9-10 pattern, random-looking because the beat has no
+relationship to when he presses anything.
+
+It runs **every tick** now. The change that makes 10/s affordable is the ORDER: the signature is
+built FIRST, straight off the buff list (name + stacks + whole seconds), and the expensive half — the
+DTO list with descriptions, icons and source lookups — only runs on ticks where something moved. A
+selected creature with an empty buff list is zero iterations and no message. Seconds are still
+rounded into the signature, so the countdown did not become ten times chattier; only the STACKS
+became immediate.
+
+⚠ `StacksShown` extracted so the signature and the DTO read the SAME number. Writing those two out
+separately, with a stack fold applied to one and not the other, is exactly how the bar came to show
+"x7" while the venom ticked for one (`BL-198`).
+
+Client: the beneficial half of the line is gone, names are abbreviated (multi-word → INITIALS,
+"Venom Stab" → `VS`; single word → first four, "Gravity" → `Grav`), stack counts never shortened,
+and the green/red colouring went with the positive half.
+
+### `BL-220` — DoT/HoT out of the combat chat
+
+> *"Remove dot/hot from combat chat (or make it option for the client) it's to much flood and miss
+> the dmg."*
+
+Both: removed by default, **Settings → `DoT/HoT in chat`** brings them back. Default OFF because he
+asked for removal and offered the toggle as the alternative.
+
+🔑 It hides a LINE OF TEXT and nothing else — the filter sits below `CombatHappened`, so floating
+numbers, attack animations and the "who is hitting me" list still see every tick.
+
+Covers the DoT tick, the HoT tick and the MANA half of a heal-over-time. ⚠ Mana VAMPIRISM shares the
+`Mana` tag but is a per-HIT effect broadcast as `Heal` rather than `ManaHeal`, so it is not filtered.
+The three tags moved to `GameConstants` (`DotTag`/`HotTag`/`ManaTickTag`/`IsTickTag`) — they were
+string literals on the server with a matching literal in the client's floater code, the arrangement
+where renaming one half silently breaks the other and nothing errors.
+
+### `BL-218` 🔵 — why debuffs don't land: measured, and it is NOT the floor
+
+> *"debuffs almost never land wit all the resistanses we have … Can you get me same lvl debuffs and
+> check their land rate with and without buffs/passives ? I think we hit the floor for landing."*
+
+New rig mode **`--ccland [level] [quality]`**, and the whole table is in
+[balance/DebuffLandRate.md](balance/DebuffLandRate.md).
+
+🔑 **`CcLandMin` (10%) clamps the STAT CONTEST only, and the contest between two level-90 characters
+comes out at 50-54% — nowhere near it.** What eats the number is the three multipliers applied
+AFTER the clamp, none of which is floored:
+
+```
+land = clamp(contest, 10%, 90%)   × DebuffLandMod   × (1 − CcResist)   × (1 − CcResist<school>)
+       ~52% at parity               1.50 … 0.30       0/0/28/40% BY GEAR   20% → 35% → 50% by shelf
+```
+
+A fully-blessed level-90 in mythic gear multiplies every incoming debuff by **×0.30**; a `×0.50`
+skill by **×0.15**. Numbing Shock lands 11%, Arcane Void 6%.
+
+🔴 **The flat `CcResist` is a GEAR CLIFF — 0% at common and rare, 28% at epic, 40% at mythic** — no
+buff feeds it, every class gets the same number from its own tier's set, and nothing on the
+attacker's side can answer it. 🔴 **And there is no attacker-side land channel in the engine at all**,
+which is why his own proposed SPT passive is the right shape and bigger than it looks. Three things
+to rule; his call on each.
+
+⚠ **THE RIG WAS LYING AND IT IS THE FIFTH TIME THE SAME BUILDER HAS DONE IT.** `ApplyNpcBuffs` never
+copied the `CcResistMagical`/`CcResistPhysical` **fields** off a buff def — they are fields, not
+`Effect`+`Magnitudes`, because the flag enum is full — so the NPC shelf moved control resistance by
+ZERO and the first run of this table read identical buffed and unbuffed. Both builders fixed.
+
+### `BL-221` ❓ — Magical Armor "does nothing": the engine says it does
+
+> *"magic armor of null blade does nothing …with magic armor on the dmg is the same… Not 30% less"*
+
+New rig mode **`--mres`**. A level-90 Nullblade under a same-level Magus's Arcane Burst: mRes
+10% → **40%**, divisor 1.100 → **1.400**, damage 734 → **577 (×0.79)**, and 272 → **213** with the
+shelf on. The def carries `BuffMagicResist 0.3 Percent` at both skill and rung level and every layer
+folds it, crits included.
+
+🔑 **+30% MAGIC RESIST IS NOT −30% DAMAGE.** Resistance is a DIVISOR (`damage ÷ (1 + mRes)`), the
+same shape as defence everywhere else here: 1.1 → 1.4 is **−21%** on his own damage, but **−29.5%**
+against a dual who has neither — which is probably the comparison he was making, and is his "30%".
+Two numbers off one target will close it either way.
+
+## 2026-09-12 — 0.136.0: reuse reductions compound
 
 ⚠ **NEW APK** (rebuilt for the same evening's class-table change). No protocol bump.
 

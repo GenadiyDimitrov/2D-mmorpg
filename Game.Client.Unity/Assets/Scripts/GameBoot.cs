@@ -1925,6 +1925,14 @@ namespace Game.Client
         /// these into floating damage numbers.</summary>
         public event Action<CombatEvent> CombatHappened;
 
+        /// <summary>`BL-220` — does the COMBAT TAB print per-second tick lines (DoT/HoT/mana-over-time)?
+        /// Default false: he asked for them removed and offered the toggle as the alternative.
+        /// <para>Static, and owned HERE rather than on the settings window, because the filter runs in
+        /// OnCombat — a UI preference that the network layer has to read is a preference the UI cannot
+        /// be the home of without a back-reference. GameUi loads it from PlayerPrefs at boot and writes
+        /// it when the toggle is tapped; this is the single value both sides read.</para></summary>
+        public static bool ShowCombatTickLines;
+
         /// <summary>What this character is casting, and when it finishes (realtime). Name is null when
         /// nothing is being cast.</summary>
         public string CastingSkill { get; private set; }
@@ -2007,6 +2015,16 @@ namespace Game.Client
                 if (e.TargetId == _selfId && e.AttackerId != _selfId)
                     _recentAttackers[e.AttackerId] = Time.realtimeSinceStartup;
                 if (CombatHappened != null) CombatHappened(e);
+
+                // `BL-220` — THE TICK LINES ARE FILTERED OUT OF THE CHAT, NOT OUT OF THE GAME. Owner
+                // 2026-09-12: *"Remove dot/hot from combat chat (or make it option for the client)
+                // it's to much flood and miss the dmg"*. A 30-second bleed writes thirty lines into
+                // the one tab he is reading to see what his stab hit for.
+                // ⚠ The filter is BELOW CombatHappened on purpose: the floating numbers over the
+                // target, the attack animation and the "who is hitting me" list all hang off that
+                // event and must keep seeing every tick. This hides a LINE OF TEXT and nothing else.
+                if (!ShowCombatTickLines && GameConstants.IsTickTag(e.Skill, e.Outcome)) return;
+
                 bool mine = e.AttackerId == _selfId;
                 string verb = mine ? "You → " + e.TargetName : e.AttackerName + " → you";
                 // Tab.Combat, not System (D5): one fight writes a line per swing, which is what buried

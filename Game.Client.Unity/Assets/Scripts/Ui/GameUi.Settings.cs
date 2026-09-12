@@ -30,8 +30,22 @@ namespace Game.Client
         private const string PrefUiScale    = "ui.referenceHeight";
         private const string PrefDamage     = "ui.damageNumbers";
         private const string PrefZones      = "ui.zoneOverlay";
+        /// <summary>`BL-220` — whether the COMBAT TAB prints per-second tick lines (DoT, HoT, the
+        /// mana-over-time tick). Owner 2026-09-12: *"Remove dot/hot from combat chat (or make it
+        /// option for the client) it's to much flood and miss the dmg"*.</summary>
+        private const string PrefTicks      = "ui.combatTickLines";
 
         private bool _showDamageNumbers = true;
+        /// <summary>Default OFF, because he asked for them REMOVED and offered the toggle only as an
+        /// alternative. A DoT on a 30-second timer writes thirty lines into the one tab he is reading
+        /// to see what his stab hit for — the flood is the whole complaint, so the quiet state is the
+        /// one a fresh install gets. The floating numbers over the target are NOT affected: this is a
+        /// chat filter, and watching a poison tick on the mob is still how you know it landed.</summary>
+        private static bool _showTickLines
+        {
+            get => GameBoot.ShowCombatTickLines;
+            set => GameBoot.ShowCombatTickLines = value;
+        }
 
         /// <summary>Load saved look settings BEFORE anything is built, so the UI is created at the
         /// player's chosen scale rather than built at the default and resized a frame later.</summary>
@@ -43,6 +57,7 @@ namespace Game.Client
             EntityManager.EntityScale = PlayerPrefs.GetFloat(PrefEntity, EntityManager.EntityScale);
             NameplateHeight = PlayerPrefs.GetFloat(PrefPlate, NameplateHeight);
             _showDamageNumbers = PlayerPrefs.GetInt(PrefDamage, 1) == 1;
+            _showTickLines = PlayerPrefs.GetInt(PrefTicks, 0) == 1;
 
             // Applied here rather than only written on tap: the preference was being saved and then
             // ignored on the next launch, so "zone colours off" never survived a restart.
@@ -143,6 +158,19 @@ namespace Game.Client
                         new Vector2(18f, y), new Vector2(260f, 38f));
             _damageToggle = damage;
 
+            // `BL-220` — the tick lines. It sits beside "Damage numbers" on purpose: the two together
+            // are the whole of "how loud is combat", and a player who turns one down usually wants the
+            // other left alone (the floaters are readable, the chat flood is not).
+            var ticks = UiKit.TextButton(inner, "", () =>
+            {
+                _showTickLines = !_showTickLines;
+                PlayerPrefs.SetInt(PrefTicks, _showTickLines ? 1 : 0);
+                RefreshSettingsLabels();
+            }, 15f);
+            UiKit.Place(UiKit.Rect(ticks.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(292f, y - 48f), new Vector2(260f, 38f));
+            _tickToggle = ticks;
+
             // Boot.Zones is a HELD reference. This used to call FindAnyObjectByType<ZoneOverlay>(),
             // which does not return INACTIVE objects — so the first tap hid the overlay and every tap
             // after it found nothing to un-hide. The colours could be turned off exactly once, for the
@@ -183,7 +211,8 @@ namespace Game.Client
             var reset = UiKit.TextButton(inner, "Reset to defaults", () =>
             {
                 foreach (var key in new[] { PrefPitch, PrefYaw, PrefOrtho, PrefOrthoSize,
-                                            PrefEntity, PrefPlate, PrefUiScale, PrefDamage, PrefZones })
+                                            PrefEntity, PrefPlate, PrefUiScale, PrefDamage, PrefZones,
+                                            PrefTicks })
                     PlayerPrefs.DeleteKey(key);
                 PlayerPrefs.Save();
                 ClientLog.Info("Look settings reset — restart the app to apply.");
@@ -195,7 +224,7 @@ namespace Game.Client
             _settingsPanel.gameObject.SetActive(false);
         }
 
-        private Button _damageToggle, _zoneToggle, _projectionToggle, _modelToggle;
+        private Button _damageToggle, _zoneToggle, _projectionToggle, _modelToggle, _tickToggle;
 
         private void RefreshSettingsLabels()
         {
@@ -203,6 +232,7 @@ namespace Game.Client
             UiKit.SetButtonText(_projectionToggle, ortho ? "View: ORTHO (even sight)" : "View: perspective");
 
             UiKit.SetButtonText(_damageToggle, _showDamageNumbers ? "Damage numbers: ON" : "Damage numbers: off");
+            UiKit.SetButtonText(_tickToggle, _showTickLines ? "DoT/HoT in chat: ON" : "DoT/HoT in chat: off");
             bool zonesOn = Boot.Zones != null && Boot.Zones.gameObject.activeSelf;
             UiKit.SetButtonText(_zoneToggle, zonesOn ? "Zone colours: ON" : "Zone colours: off");
             UiKit.SetButtonText(_modelToggle,

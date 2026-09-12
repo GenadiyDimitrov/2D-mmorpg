@@ -4870,3 +4870,65 @@ class, and CLAUDE.md says to discuss a mechanic change of that size first. My pi
 
 The **20% magic crit-RATE cap** (`StatCaps.MagicCritRate`), which every race now sits exactly on —
 about +10% average damage per 5 points. It was lever 3 of `BL-215` and nothing has changed it.
+
+---
+
+## `BL-219` ✅ BUILT 0.137.0 (2026-09-12) — the target window: debuffs only, abbreviated, and LIVE
+
+Playtest 2026-09-12: *"Remove the positive effect of the target window …leave only the abriviation of
+debuffs.. Also I don't think the target window even debuffs are updated when they suppose to … I'm a
+venom and hitting a mage ..when stab lands I suppose to see x3 but I dont ... I land several more
+then in one go I see x9 ... Some times I se 3-6-9-10 ... Some times I see 6-9-10 ... At random ..
+Like some kind of update interval ..."*
+
+**It was exactly an update interval.** `PushTargetBuffs` ran on the once-a-second `secondTick`, the
+same beat as your own buff bar. A stab banks its venom the instant it connects, so two stabs inside
+one second arrived as a single jump of six, and the same two either side of the beat arrived as two
+threes — which is precisely the 3-6-9-10 / 6-9-10 pattern, and why it looked random: the beat has no
+relationship to when you press anything.
+
+**Now it runs every tick (10/s).** 🔑 The change that makes that free is the ORDER: the signature is
+built FIRST, straight off the buff list (name + stacks + whole seconds), and the expensive half — the
+DTO list with its descriptions, icons and source lookups — only runs on the ticks where something
+actually moved. A selected creature with an empty buff list is zero iterations and no message. The
+countdown did not become ten times chattier (seconds are still rounded into the signature); only the
+STACKS became immediate.
+
+⚠ Extracted `StacksShown` so the signature and the DTO read the SAME number. When those two were
+written out separately, a fold applied to one and not the other is exactly how the bar came to show
+"x7" while the venom ticked for one (`BL-198`).
+
+**And the window itself:** the beneficial half of the line is gone — it was there because a creature
+carrying a blessing is worth seeing, but it is rare and on one ellipsised row it competed for width
+with the only numbers you are reading. Names are abbreviated: a multi-word name becomes its INITIALS
+("Venom Stab" → `VS`, "Vital Organ Protection" → `VOP`), a single-word one keeps its first four
+letters ("Gravity" → `Grav`). The stack count is never shortened. The green/red colouring went with
+the positive half — every row is a debuff now, so the colour said nothing.
+
+⚠ **NEW APK** (client-side half). No protocol bump — nothing on the wire moved.
+
+---
+
+## `BL-220` ✅ BUILT 0.137.0 (2026-09-12) — DoT/HoT out of the combat chat
+
+Playtest 2026-09-12: *"Remove dot/hot from combat chat (or make it option for the client) it's to
+much flood and miss the dmg."*
+
+Both: removed by default, with **Settings → `DoT/HoT in chat`** to bring them back. Default OFF
+because you asked for them removed and offered the toggle as the alternative — a 30-second bleed
+writes thirty lines into the one tab you are reading to see what your stab hit for.
+
+🔑 **IT HIDES A LINE OF TEXT AND NOTHING ELSE.** The filter sits BELOW `CombatHappened`, so the
+floating numbers over the target, the attack animations and the "who is hitting me" list all still
+see every tick — watching a poison tick on the mob is still how you know it landed.
+
+Covers the DoT tick, the HoT tick and the MANA half of a heal-over-time (Harmony of Restoration's
+"+5 MP/s"). ⚠ **Mana VAMPIRISM is deliberately not covered**: it shares the `Mana` tag but is a
+per-HIT effect broadcast as `Heal` rather than `ManaHeal`, so it is not a tick and you did not ask
+for it. One word if you want it in.
+
+⚠ The three tags moved to `GameConstants` (`DotTag` / `HotTag` / `ManaTickTag` / `IsTickTag`). They
+were string literals on the server with a matching literal in the client's floater code — the
+arrangement where renaming one half silently breaks the other and nothing errors.
+
+⚠ **NEW APK.**

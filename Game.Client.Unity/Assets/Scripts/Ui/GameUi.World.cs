@@ -1312,6 +1312,29 @@ namespace Game.Client
                  + "   " + (100f * value / max).ToString("0.#") + "%";
         }
 
+        /// <summary>Shorten a debuff's name for the target frame's one ellipsised row — his
+        /// *"leave only the abriviation of debuffs"* (2026-09-12).
+        ///
+        /// <para>🔑 TWO RULES, BECAUSE ONE DOES NOT FIT BOTH SHAPES. A multi-word name is its
+        /// INITIALS ("Venom Stab" → VS, "Vital Organ Protection" → VOP) — the words carry the meaning
+        /// and the first letters are enough to tell his own debuffs apart. A single-word name has no
+        /// initials to take, so it keeps its first four letters ("Gravity" → Grav, "Silence" → Sile).
+        /// The stack count is appended by the caller and is never shortened: it is the number he is
+        /// reading.</para></summary>
+        private static string Abbreviate(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return "";
+            var initials = new StringBuilder();
+            bool atWordStart = true;
+            foreach (char c in name)
+            {
+                if (c == ' ' || c == '-' || c == '\'') { atWordStart = true; continue; }
+                if (atWordStart) { initials.Append(char.ToUpperInvariant(c)); atWordStart = false; }
+            }
+            if (initials.Length > 1) return initials.ToString();
+            return name.Length <= 4 ? name : name.Substring(0, 4);
+        }
+
         private void RefreshTarget()
         {
             EntityDto target = null;
@@ -1347,25 +1370,28 @@ namespace Game.Client
             bool player = target.Kind == EntityKind.Player && !self;
             bool mob = target.Kind == EntityKind.Mob;
 
-            // DEBUFFS + STACKS. Debuffs first — they are the ones he is watching for the burst — then
-            // anything beneficial the target is carrying, which on a mob is rare and worth seeing.
+            // DEBUFFS + STACKS, AND NOTHING ELSE (owner 2026-09-12: *"Remove the positive effect of
+            // the target window ... leave only the abriviation of debuffs"*). The beneficial half was
+            // there because a mob carrying a blessing is worth seeing — but it is rare, and on one
+            // ellipsised row it competed for width with the only numbers he is actually reading. The
+            // green colour goes with it: every row here is now a debuff, so the colour said nothing.
             if (_targetBuffLine != null)
             {
                 var bl = new StringBuilder();
                 var rows = Boot.TargetBuffs;
-                for (int pass = 0; pass < 2 && rows != null; pass++)
+                if (rows != null)
                     foreach (var b in rows)
                     {
-                        if (b.IsDebuff != (pass == 0)) continue;
+                        if (!b.IsDebuff) continue;
                         if (bl.Length > 0) bl.Append("  ");
-                        bl.Append("<color=#").Append(b.IsDebuff ? "E08A8A" : "8AE0A0").Append('>')
-                          .Append(b.Name);
+                        bl.Append(Abbreviate(b.Name));
                         // The count is the whole reason this row exists, so it is the one thing that
-                        // never gets dimmed away — but a lone stack is noise on every non-stacking buff.
-                        if (b.Stacks > 1) bl.Append(" x").Append(b.Stacks);
-                        bl.Append("</color>");
+                        // never gets shortened — but a lone stack is noise on every non-stacking buff.
+                        if (b.Stacks > 1) bl.Append('x').Append(b.Stacks);
                     }
-                _targetBuffLine.text = bl.ToString();
+                _targetBuffLine.text = bl.Length > 0
+                    ? "<color=#E08A8A>" + bl + "</color>"
+                    : "";
                 _targetBuffLine.gameObject.SetActive(bl.Length > 0);
             }
 

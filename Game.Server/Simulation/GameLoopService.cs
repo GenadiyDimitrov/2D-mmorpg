@@ -9078,6 +9078,14 @@ public class GameLoopService : BackgroundService
                 TickWhisps(entity);
             _world.Grid.UpdatePosition(entity);
 
+            // `BL-219` — THE ENEMY'S DEBUFF BAR IS NOT ON THE SECOND CLOCK. It is the one bar whose
+            // numbers change on HIS input rather than on a timer: a stab banks its venom the instant
+            // it connects, and a counter he reads to decide when to burst has to move when the thing
+            // it counts moves. PushTargetBuffs does its own change test before it builds anything, so
+            // the ticks where nothing moved cost a walk of the target's buff list and no message.
+            if (entity.Kind == EntityKind.Player)
+                PushTargetBuffs(entity);   // the SELECTED enemy's debuffs + stacks
+
             if (secondTick)
             {
                 TickDots(entity);           // damage-over-time (bleed/poison/venom) ticks per second
@@ -9085,7 +9093,6 @@ public class GameLoopService : BackgroundService
                 if (entity.Kind == EntityKind.Player)
                 {
                     PushBuffs(entity);
-                    PushTargetBuffs(entity);   // the SELECTED enemy's debuffs + stacks
                     if (entity.AutoSkills.Count > 0)
                         SendAutoHuntStatus(entity);   // keep MP/s live as buffs change
                 }
@@ -13017,7 +13024,7 @@ public class GameLoopService : BackgroundService
         if (total <= 0) return;
         var attacker = source ?? entity;
         ApplyDamage(entity, total, source);
-        BroadcastCombat(attacker, entity, total, CombatOutcome.Hit, "DoT");
+        BroadcastCombat(attacker, entity, total, CombatOutcome.Hit, GameConstants.DotTag);
         if (entity.Hp <= 0 && !entity.Dead) Kill(entity, attacker);
     }
 
@@ -15544,9 +15551,10 @@ public class GameLoopService : BackgroundService
 
     /// <summary>Heal-over-time buffs (e.g. Warchanter's Renew): heal a % of max HP
     /// each second, in or out of combat, until the buff expires.</summary>
-    /// <summary>Skill tag on a heal-over-time floater. The client keys its potion-tinted "+N" off this,
-    /// so a potion tick is distinguishable from a heal cast on you or from ambient regen.</summary>
-    public const string HotFloaterTag = "HoT";
+    /// <summary>Skill tag on a heal-over-time floater — now an alias for the SHARED constant, which
+    /// the client compiles in too (`BL-220`). It stays as a name because the call site below reads
+    /// better with it than with the qualified constant.</summary>
+    public const string HotFloaterTag = GameConstants.HotTag;
 
     private void TickHealOverTime(Entity entity)
     {
@@ -15580,7 +15588,7 @@ public class GameLoopService : BackgroundService
             // totem is a blue 20"*. The distinct outcome already existed (the totem uses it); this one
             // path was written before it and never moved.
             if (entity.Mp > had)
-                BroadcastCombat(entity, entity, entity.Mp - had, CombatOutcome.ManaHeal, "Mana");
+                BroadcastCombat(entity, entity, entity.Mp - had, CombatOutcome.ManaHeal, GameConstants.ManaTickTag);
         }
         if (entity.Hp >= entity.MaxHp)
             return;
@@ -17033,9 +17041,25 @@ public class GameLoopService : BackgroundService
     /// read as doing nothing. Rather than expose the counter as its own row, its count is merged onto
     /// the row a player already understands.</para>
     ///
-    /// <para>⚠ Sent once a second off the same `secondTick` as his own bar, and only when the list
-    /// actually changed (<see cref="Entity.LastTargetBuffSig"/>) — a selected target is usually a mob
-    /// standing still with nothing on it, and that must cost nothing.</para></summary>
+    /// <para>🔴 <b>IT RUNS EVERY TICK NOW, NOT ONCE A SECOND</b> (`BL-219`, owner 2026-09-12). His
+    /// report: *"I'm a venom and hitting a mage ... when stab lands I suppose to see x3 but I dont ...
+    /// I land several more then in one go I see x9 ... Sometimes I see 3-6-9-10 ... At random ... like
+    /// some kind of update interval"*. It was exactly that: a stab banks its stacks the instant it
+    /// connects, and the bar was redrawn on a 1-second beat that has no relationship to when he
+    /// presses anything — so two stabs inside one second arrived as a single jump of six, and the
+    /// same two either side of the beat arrived as two threes. A counter you read to decide when to
+    /// burst has to move when the thing it counts moves.
+    ///
+    /// <para>🔑 THE SIGNATURE IS BUILT BEFORE THE DTOs, AND THAT IS WHAT MAKES 10/s FREE. The old
+    /// order built the whole DTO list — descriptions, icons, source lookups — and only then asked
+    /// whether anything had changed, which is affordable once a second and not ten times. Walking the
+    /// buff list for a name, a stack count and a whole second costs nothing on the overwhelmingly
+    /// common case (a selected mob with an empty buff list is zero iterations), and the expensive half
+    /// only runs on the ticks where something actually moved.</para>
+    ///
+    /// <para>⚠ Seconds are still rounded into the signature, so a ticking timer redraws the bar once a
+    /// second exactly as before — the countdown did not become ten times chattier, only the STACKS
+    /// became immediate.</para></summary>
     private void PushTargetBuffs(Entity player)
     {
         if (player.UiTargetId is not Guid tid
@@ -17050,32 +17074,40 @@ public class GameLoopService : BackgroundService
             return;
         }
 
+        // ---- THE CHANGE TEST, FIRST. Name + stacks + whole seconds, off the buff list itself. ----
+        var sb = new System.Text.StringBuilder();
+        foreach (var b in target.Buffs)
+        {
+            if (b.Internal) continue;
+            sb.Append(b.Name).Append('#').Append(StacksShown(target, b)).Append('#')
+              .Append(b.Toggle ? -1 : b.TicksRemaining / GameConstants.TickRate).Append('|');
+        }
+        string sig = sb.ToString();
+        if (sig == player.LastTargetBuffSig) return;
+        player.LastTargetBuffSig = sig;
+
         var dtos = new List<BuffDto>();
         foreach (var b in target.Buffs)
         {
             if (b.Internal) continue;
-            // FOLD: if this buff is a DoT whose skill declares a StackKey, the real count lives on the
-            // hidden counter, not here — ApplyDotStack pins the damage effect at maxStacks: 1. Same
-            // helper TickDots charges the damage from, so the bar and the damage cannot disagree.
-            int stacks = (b.Effect & SkillEffect.AnyDot) != 0 ? DotStacksOf(target, b) : b.Stacks;
-
             dtos.Add(new BuffDto(
                 b.Name, BuffDescriptionWithSource(b),
                 b.Toggle ? -1f : b.TicksRemaining * GameConstants.TickSeconds,
-                b.IsDebuff, b.Key, stacks, b.Row, BuffIcon(target, b.SourceSkillId)));
+                b.IsDebuff, b.Key, StacksShown(target, b), b.Row, BuffIcon(target, b.SourceSkillId)));
         }
 
-        // Cheap change test — name + stacks + whole seconds. Seconds are rounded so a ticking timer
-        // does not make every second a "change" for a bar that only shows whole numbers anyway.
-        var sb = new System.Text.StringBuilder();
-        foreach (var d in dtos)
-            sb.Append(d.Name).Append('#').Append(d.Stacks).Append('#')
-              .Append((int)d.SecondsLeft).Append('|');
-        string sig = sb.ToString();
-        if (sig == player.LastTargetBuffSig) return;
-        player.LastTargetBuffSig = sig;
         SendTo(player, "TargetBuffs", new TargetBuffUpdate(tid, dtos.ToArray()));
     }
+
+    /// <summary>The stack count a BAR should show for a buff. FOLD: if this buff is a DoT whose skill
+    /// declares a StackKey, the real count lives on the hidden counter, not here — ApplyDotStack pins
+    /// the damage effect at maxStacks: 1. Same helper TickDots charges the damage from, so the bar and
+    /// the damage cannot disagree.
+    /// <para>⚠ Extracted from PushTargetBuffs so the signature and the DTO read the SAME number. When
+    /// the two were written out separately, a fold applied to one and not the other is precisely how
+    /// the bar came to show "x7" while the venom ticked for one (`BL-198`).</para></summary>
+    private static int StacksShown(Entity target, BuffInstance b) =>
+        (b.Effect & SkillEffect.AnyDot) != 0 ? DotStacksOf(target, b) : b.Stacks;
 
     private void HandleInspectTarget(InspectTargetCmd cmd)
     {

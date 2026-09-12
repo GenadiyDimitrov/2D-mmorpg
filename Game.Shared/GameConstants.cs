@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.136.0";
+    public const string GameVersion = "0.137.0";
 
     // ----- SP BOTTLE (owner, 2026-08-26) -------------------------------------------------------
     // *"u can make an npc to take your 1kkk SP + 100kk gold and give you a tradable/sellabel
@@ -688,6 +688,34 @@ public static class GameConstants
     /// how the regen cadence is tuned — they used to share the regen flag, so retuning regen would
     /// silently have nerfed every DoT by the same factor.</summary>
     public const int SecondIntervalTicks = TickRate;
+
+    // ----- THE PER-SECOND TICK TAGS (`BL-220`) --------------------------------------------------
+    //
+    // A tick is not a swing, and the combat tab should not have to guess which it is looking at. Every
+    // repeating per-second effect broadcasts under one of these SKILL TAGS instead of a skill name,
+    // and the client's "DoT/HoT in chat" filter is one call to IsTickTag.
+    //
+    // 🔑 THEY LIVE HERE BECAUSE BOTH SIDES NEED THEM. They were string literals on the server and a
+    // matching literal in the client's floater code ("HoT"), which is the arrangement where renaming
+    // one half silently breaks the other and nothing errors — the floater just stops being tinted and
+    // the filter just stops filtering. One constant, compiled into both.
+
+    /// <summary>Tag on a damage-over-time tick (bleed/poison/venom), one line per second.</summary>
+    public const string DotTag = "DoT";
+    /// <summary>Tag on a heal-over-time tick. The client also keys its potion-tinted "+N" off this,
+    /// so a potion tick is distinguishable from a heal cast on you or from ambient regen.</summary>
+    public const string HotTag = "HoT";
+    /// <summary>Tag on the MANA half of a heal-over-time (Harmony of Restoration's "+5 MP/s").
+    /// ⚠ Mana VAMPIRISM broadcasts under the same tag but as <c>CombatOutcome.Heal</c>, not
+    /// <c>ManaHeal</c> — it is a per-HIT effect, not a tick, and must not be filtered with these.</summary>
+    public const string ManaTickTag = "Mana";
+
+    /// <summary>Is this combat event's skill tag one of the per-second ticks?
+    /// <para>⚠ The mana tag needs its outcome checked (see <see cref="ManaTickTag"/>), so callers that
+    /// can see the outcome should pass it; a caller that cannot gets the two unambiguous tags.</para></summary>
+    public static bool IsTickTag(string? skill, CombatOutcome outcome = CombatOutcome.Hit) =>
+        skill == DotTag || skill == HotTag
+        || (skill == ManaTickTag && outcome == CombatOutcome.ManaHeal);
 
     /// <summary>Out-of-combat natural regen cadence, in ticks. Default 30 = **3 seconds**, matching
     /// IG's `HP_REGENERATE_PERIOD = 3000`. NOT a const: it's live-editable from the admin Debug Tuning

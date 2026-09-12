@@ -1298,6 +1298,25 @@ if (args.Length > 0 && args[0] == "--mcrit")
     return;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+//  `--ccland` — WHY NOTHING LANDS, measured rather than argued. Owner, 2026-09-12: *"in general
+//  debuffs don't land ... can you get me same lvl debuffs and check their land rate with and
+//  without buffs/passives ? I think we hit the floor for landing"*.
+//
+//  It prints the WHOLE product the engine computes in the `IsContestedDebuff` arm of ExecuteSkill:
+//      contest = DebuffLandChance(attacker ATK|AGI, defender CON|SPT, levels)  [clamped 10%..90%]
+//            x DebuffLandMod                    (the skill's own, `BL-90`)
+//            x (1 - CcResist)                   (the flat, school-blind one)
+//            x (1 - CcResistMagical|Physical)   (Clarity / Fortitude and the class passives)
+//  BOTH SIDES SAME LEVEL, so the level term is exactly x1 and what is left is stat vs stat.
+if (args.Length > 0 && args[0] == "--ccland") { CcLand(args); return; }
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+//  `--mres` — the magic-resistance CHANNEL end to end, because he reported the Nullblade's
+//  ultimate doing nothing: *"magic armor of null blade does nothing ... he takes ~300 dmg less than
+//  other duals because of his anti magic but with magic armor on the dmg is the same"*.
+if (args.Length > 0 && args[0] == "--mres") { MagicResistChain(args); return; }
+
 if (args.Length > 0 && args[0] == "--blowrate")
 {
     // `BL-188` — THE BLOW LANDING RATE, measured, not derived. Prints the whole product he
@@ -6051,6 +6070,13 @@ static void ApplyNpcBuffs(Entity e, bool fullShelf = false)
             //    caster the game gives ×3.12 and the whole ask measures as doing nothing.
             MagicCritDamage = def.MagicCritDamageAt(level),
             MagicCritDamageDebuff = def.MagicCritDamageDebuffAt(level),
+            // 🔴 `BL-218`, 2026-09-12 — the FIFTH field channel this builder had been missing. Arcane and
+            //    Feral Protection carry their whole payload here (SkillDef.CcResistMagical/Physical
+            //    are FIELDS, the flag enum being full), so without these two lines the NPC shelf moved
+            //    a character's control resistance by ZERO and every debuff land rate measured here was
+            //    identical buffed and unbuffed. If a buff has a number, ask where that number RIDES.
+            CcResistMagical = def.CcResistMagicalAt(level),
+            CcResistPhysical = def.CcResistPhysicalAt(level),
             TicksRemaining = int.MaxValue, Name = def.Name, Key = def.BuffKey, Level = level,
         });
     }
@@ -6098,6 +6124,9 @@ static void ApplyOneBuff(Entity e, string skillId)
             // `BL-210` — see ApplyNpcBuffs above; same omission, same consequence.
             MagicCritDamage = def.MagicCritDamageAt(1),
             MagicCritDamageDebuff = def.MagicCritDamageDebuffAt(1),
+            // `BL-218` — see ApplyNpcBuffs above; same omission, same consequence.
+            CcResistMagical = def.CcResistMagicalAt(1),
+            CcResistPhysical = def.CcResistPhysicalAt(1),
             TicksRemaining = int.MaxValue, Name = def.Name, Key = def.BuffKey, Level = 1,
         });
     }
@@ -6225,6 +6254,261 @@ static int TopPhysSkillPower(Entity e)
 /// four classes at 40+ and the other six at their 2nd-class ceiling, which is worse than measuring all
 /// ten at the ceiling. The boss party passes Lightbringer, because a level-40+ healer really is one and
 /// his heal ladder above 35 is the whole difference between "the healer can hold" and "he cannot".</param>
+// ============================================================================================
+//  `--ccland` — THE CONTESTED-DEBUFF LAND RATE, measured.
+//
+//  🔑 IT REPRODUCES THE ENGINE'S PRODUCT, NOT A FORMULA FROM THE DOCS. Every factor below is read
+//  from the same place GameLoopService reads it, in the same order, so a number here that differs
+//  from a number in the game is a bug in one of the two — which is the only reason a rig is worth
+//  having. See the `IsContestedDebuff` arm of ExecuteSkill.
+// ============================================================================================
+/// <summary>Build a 4th-tier character of a NAMED discipline, carrying the 2nd-class id its
+/// archetype actually needs.
+///
+/// <para>🔴 <b>THE 2nd-CLASS ID IS NOT OPTIONAL.</b> <see cref="BuildPlayer"/> defaults a Fighter to
+/// the HUMAN KNIGHT (13), so a caller who names a rogue discipline and leaves it out measures a TANK
+/// wearing the rogue's name and none of its kit — no identity passives, no ultimate, nothing. The
+/// skill lookup keys on (race, archetype, discipline) and the ARCHETYPE comes from this number. It is
+/// taken from the 3rd class's own <c>ParentSecondClassId</c> rather than a table here, so a new
+/// discipline needs nothing added.</para></summary>
+static Entity Who(Race race, BaseClass cls, Discipline d, int level, string quality)
+{
+    var tc = ThirdClassCatalog.Playable.First(c => c.Race == race && c.Discipline == d);
+    var parent = ClassCatalog.Playable.First(c => c.Id == tc.ParentSecondClassId);
+    return BuildPlayer(race, cls, level, quality,
+                       warrior: parent.Archetype == Archetype.Warrior,
+                       healer: parent.Archetype == Archetype.Healer,
+                       discipline: d, secondClass: tc.ParentSecondClassId, fourth: true);
+}
+
+static void CcLand(string[] args)
+{
+    int L = args.Length > 1 && int.TryParse(args[1], out var lv) ? lv : 90;
+    string q = args.Length > 2 && !args[2].StartsWith("--") ? args[2] : "epic";
+
+    // The three dress states he asked for — *"with and without buffs/passives"*. The class PASSIVES
+    // are never removable (they are the kit), so the axis that actually moves is the NPC shelf.
+    var dress = new (string Label, Action<Entity> Wear)[]
+    {
+        ("bare (gear + own passives)", _ => { }),
+        ("+ NPC shelf",               e => ApplyNpcBuffs(e)),
+        ("+ FULL shelf (harmonies)",  e => ApplyNpcBuffs(e, fullShelf: true)),
+    };
+
+    // 🔴 THE 2nd-CLASS ID IS NOT OPTIONAL. BuildPlayer defaults a Fighter to the HUMAN KNIGHT (13),
+    //    so a caller who names a rogue discipline and forgets this measures a TANK wearing the rogue's
+    //    name and none of its kit — 25 skills, no 4th-tier identity passives, no ultimate. The whole
+    //    lookup keys on (race, archetype, discipline), and the archetype comes from THIS number.
+    var defenders = new (string Name, Func<Entity> Make)[]
+    {
+        ("Magus (nuker)",     () => Who(Race.Human, BaseClass.Mage,    Discipline.Magus,        L, q)),
+        ("Lightbringer",      () => Who(Race.Human, BaseClass.Mage,    Discipline.Lightbringer, L, q)),
+        ("Nullblade (dual)",  () => Who(Race.Human, BaseClass.Fighter, Discipline.Nullblade,    L, q)),
+        ("Bulwark (tank)",    () => Who(Race.Human, BaseClass.Fighter, Discipline.Bulwark,      L, q)),
+        ("Ravager (warrior)", () => Who(Race.Human, BaseClass.Fighter, Discipline.Ravager,      L, q)),
+        ("Sharpshooter",      () => Who(Race.Human, BaseClass.Fighter, Discipline.Sharpshooter, L, q)),
+    };
+
+    var attackers = new (string Name, Func<Entity> Make)[]
+    {
+        ("Magus (nuker)",     () => Who(Race.Human, BaseClass.Mage,    Discipline.Magus,        L, q)),
+        ("Lightbringer",      () => Who(Race.Human, BaseClass.Mage,    Discipline.Lightbringer, L, q)),
+        ("Venomweaver",       () => Who(Race.Demon, BaseClass.Fighter, Discipline.Venomweaver,  L, q)),
+        ("Nullblade (dual)",  () => Who(Race.Human, BaseClass.Fighter, Discipline.Nullblade,    L, q)),
+        ("Bulwark (tank)",    () => Who(Race.Human, BaseClass.Fighter, Discipline.Bulwark,      L, q)),
+        ("Ravager (warrior)", () => Who(Race.Human, BaseClass.Fighter, Discipline.Ravager,      L, q)),
+        ("Trapper (archer)",  () => Who(Race.Elf,   BaseClass.Fighter, Discipline.Trapper,      L, q)),
+    };
+
+    Console.WriteLine();
+    Console.WriteLine($"=== CONTESTED DEBUFF LAND RATE — level {L} vs level {L}, {q} gear (PvP) ===");
+    Console.WriteLine($"    contest = 0.5 + 0.5*(atk - def)/(atk + def), clamped [{StatCaps.CcLandMin:P0}, {StatCaps.CcLandMax:P0}]");
+    Console.WriteLine("    atk = ATK stat (AGI for bleed/venom) · def = CON (physical) or SPT (magical)");
+    Console.WriteLine("    then x the skill's DebuffLandMod x (1-CcResist) x (1-CcResist<school>)");
+    Console.WriteLine("    SAME LEVEL, so the level term is exactly x1.000 — this is pure stat vs stat.");
+    Console.WriteLine();
+
+    // ---- 1. THE STAT SHEET. Everything downstream is these six numbers, so print them first. ----
+    Console.WriteLine("--- THE CONTEST STATS (what the roll actually reads) ---");
+    Console.WriteLine($"  {"character",-20} {"dress",-28} {"ATK",4} {"AGI",4} | {"CON",4} {"SPT",4} |"
+                    + $" {"CcRes",6} {"magRes",7} {"phyRes",7}");
+    foreach (var (name, make) in defenders)
+        foreach (var (label, wear) in dress)
+        {
+            var e = make(); wear(e);
+            Console.WriteLine($"  {name,-20} {label,-28} {e.EffectiveAtk,4} {(int)e.EffectiveAgi,4} |"
+                            + $" {e.EffectiveCon,4} {e.EffectiveSpt,4} |"
+                            + $" {e.CcResist,6:P0} {e.CcResistMagical,7:P0} {e.CcResistPhysical,7:P0}");
+        }
+    Console.WriteLine();
+
+    // ---- 2. THE SKILLS. Every contested debuff each attacker can actually cast at this level. ----
+    foreach (var (aName, aMake) in attackers)
+    {
+        var atk = aMake();
+        var skills = ContestedOf(atk).ToList();
+        if (skills.Count == 0) continue;
+
+        Console.WriteLine($"--- {aName.ToUpperInvariant()}  (ATK {atk.EffectiveAtk}, AGI {(int)atk.EffectiveAgi}) "
+                        + new string('-', Math.Max(2, 52 - aName.Length)));
+        Console.WriteLine($"  {"skill",-26} {"save",-8} {"xmod",5} | "
+                        + string.Join(" | ", defenders.Select(d => Abbrev(d.Name).PadLeft(6))));
+        foreach (var (def, lvl) in skills)
+        {
+            var school = SchoolOf(def);
+            bool agiBased = (def.Effect & (SkillEffect.Bleed | SkillEffect.Venom)) != 0;
+            int a = agiBased ? (int)atk.EffectiveAgi : atk.EffectiveAtk;
+            float mod = def.DebuffLandModAt(lvl);
+
+            foreach (var (label, wear) in dress)
+            {
+                var cells = new List<string>();
+                foreach (var (_, dMake) in defenders)
+                {
+                    var d = dMake(); wear(d);
+                    cells.Add(Land(a, d, school, mod, L).ToString("P0").PadLeft(6));
+                }
+                string head = label == dress[0].Label
+                    ? $"  {Trim(def.Name, 26),-26} {school,-8} {mod,5:0.00}"
+                    : $"  {"",-26} {Trim(label, 8),-8} {"",5}";
+                Console.WriteLine(head + " | " + string.Join(" | ", cells));
+            }
+        }
+        Console.WriteLine();
+    }
+
+    Console.WriteLine("  ⚠ THE FLOOR IS NOT NECESSARILY WHERE THE LOSS IS. `CcLandMin` is 10% and the contest");
+    Console.WriteLine("    itself rarely reaches it at parity — the stat spread between two level-90");
+    Console.WriteLine("    characters is a handful of points. What eats the number is the MULTIPLIERS after");
+    Console.WriteLine("    the clamp: the skill's own xmod, then CcResist, then the school blessing. Those");
+    Console.WriteLine("    are applied AFTER the [10%, 90%] clamp and are NOT floored — the final product");
+    Console.WriteLine("    can and does go under 10%.");
+
+    // ---- helpers -------------------------------------------------------------------------
+    static string Abbrev(string s) => Trim(s.Split(' ')[0], 6);
+    static string Trim(string s, int n) => s.Length <= n ? s : s.Substring(0, n);
+
+    // The same school choice ExecuteSkill makes: for a DoT the FAMILY decides the save, not the
+    // skill's own DebuffSchool (owner, 2026-09-10).
+    static DebuffSchool SchoolOf(SkillDef def)
+    {
+        var kind = (def.Effect & SkillEffect.AnyDot) != 0
+            ? DotTiers.KindOf(def.DotKind, def.Effect) : DotKind.None;
+        return kind != DotKind.None ? DotTiers.Save(kind) : def.DebuffSchool;
+    }
+
+    static float Land(int atkStat, Entity d, DebuffSchool school, float mod, int level)
+    {
+        if (school == DebuffSchool.None) return 1f;     // burn: nothing saves, always lands
+        int defStat = school == DebuffSchool.Magical ? d.EffectiveSpt : d.EffectiveCon;
+        float land = StatCalculator.DebuffLandChance(atkStat, defStat, level, level);
+        if (mod != 1f) land = Math.Clamp(land * mod, 0f, StatCaps.CcLandMax);
+        land *= 1f - d.CcResist;
+        land *= 1f - (school == DebuffSchool.Magical ? d.CcResistMagical : d.CcResistPhysical);
+        return land;
+    }
+
+    // Every contested debuff this character can cast, at the rung he has learned.
+    static IEnumerable<(SkillDef Def, int Level)> ContestedOf(Entity e)
+    {
+        foreach (var kv in e.LearnedSkills.OrderBy(k => k.Key))
+        {
+            if (SkillCatalog.Get(kv.Key) is not { } def) continue;
+            if (def.TargetMode == TargetMode.SelfOnly) continue;
+            if (def.Passive is not null) continue;
+            bool contested = (def.Effect & SkillEffect.ContestCc) != 0
+                          || def.DebuffSchool != DebuffSchool.None
+                          || def.Charms || def.Pulls || def.SilencePhysical || def.SilenceMagical;
+            if (!contested) continue;
+            yield return (def, kv.Value);
+        }
+    }
+}
+
+// ============================================================================================
+//  `--mres` — THE MAGIC-RESISTANCE CHANNEL, end to end.
+//
+//  His report: the Nullblade's `anti_magic` passive visibly cuts ~300 off a nuke, and his level-83
+//  ultimate `Magical Armor` (+30%) changes nothing. Both feed the SAME field — Entity.MagicResist,
+//  turned into the divisor MagicDefCoef = 1 + MagicResist — so if one works and the other does not,
+//  the break is between the skill def and that field, not in the damage formula.
+// ============================================================================================
+static void MagicResistChain(string[] args)
+{
+    int L = args.Length > 1 && int.TryParse(args[1], out var lv) ? lv : 90;
+    string q = args.Length > 2 && !args[2].StartsWith("--") ? args[2] : "epic";
+
+    var mage = Who(Race.Human, BaseClass.Mage, Discipline.Magus, L, q);
+    var (nukeDef, nukeLvl) = TopSkill(mage, SkillEffect.MagicDamage);
+
+    Console.WriteLine();
+    Console.WriteLine($"=== MAGIC RESISTANCE — level {L}, {q} gear ===");
+    Console.WriteLine("    incoming magic damage is divided by MagicDefCoef = 1 + Entity.MagicResist");
+    Console.WriteLine($"    attacker: Magus M.Atk {(int)mage.EffectiveMagicAttack}"
+                    + (nukeDef is null ? "" : $", top nuke '{nukeDef.Name}'"));
+    Console.WriteLine();
+
+    var stages = new (string Label, Action<Entity> Wear)[]
+    {
+        ("bare (passives only)",        _ => { }),
+        ("+ Magical Armor (ult, +30%)", e => ApplyOneBuff(e, SkillCatalog.DualMagicArmor)),
+        ("+ NPC shelf",                 e => ApplyNpcBuffs(e, fullShelf: true)),
+        ("+ shelf + Magical Armor",     e => { ApplyNpcBuffs(e, fullShelf: true);
+                                               ApplyOneBuff(e, SkillCatalog.DualMagicArmor); }),
+    };
+
+    var who = new (string Name, Func<Entity> Make)[]
+    {
+        ("Nullblade (human)",   () => Who(Race.Human, BaseClass.Fighter, Discipline.Nullblade,   L, q)),
+        ("Phantom (elf)",       () => Who(Race.Elf,   BaseClass.Fighter, Discipline.Phantom,     L, q)),
+        ("Venomweaver (demon)", () => Who(Race.Demon, BaseClass.Fighter, Discipline.Venomweaver, L, q)),
+    };
+
+    Console.WriteLine($"  {"defender",-22} {"stage",-30} {"mRes",7} {"coef",6} {"M.Def",7} {"nuke dmg",9} {"vs bare",8}");
+    foreach (var (name, make) in who)
+    {
+        float bare = 0f;
+        foreach (var (label, wear) in stages)
+        {
+            var d = make();
+            bool holdsUlt = d.LearnedSkills.ContainsKey(SkillCatalog.DualMagicArmor);
+            if (label.Contains("Magical Armor") && !holdsUlt)
+            {
+                Console.WriteLine($"  {name,-22} {label,-30}  (not learned — 4th class {d.FourthClass},"
+                                + $" {d.LearnedSkills.Count} skills)");
+                continue;
+            }
+            wear(d);
+            int dmg = 0;
+            if (nukeDef is not null)
+            {
+                var (mFlat, mMod) = nukeDef.MagicDamageAt(nukeLvl);
+                dmg = StatCalculator.MagicDamageFM((int)mage.EffectiveMagicAttack, mFlat, mMod,
+                                                   (int)d.EffectiveMagicDefence, d.MagicDefCoef);
+            }
+            if (label.StartsWith("bare")) bare = dmg;
+            Console.WriteLine($"  {name,-22} {label,-30} {d.MagicResist,7:P1} {d.MagicDefCoef,6:0.000}"
+                            + $" {(int)d.EffectiveMagicDefence,7} {dmg,9:N0}"
+                            + $" {(bare > 0 ? (dmg / bare).ToString("0.00") + "x" : ""),8}");
+        }
+        Console.WriteLine();
+    }
+
+    // The def itself, printed raw — if the payload is missing this is where it shows.
+    if (SkillCatalog.Get(SkillCatalog.DualMagicArmor) is { } ult)
+    {
+        Console.WriteLine("--- THE SKILL DEF AS THE CATALOG HOLDS IT ---");
+        Console.WriteLine($"  id {ult.Id}  effect [{ult.Effect}]  category {ult.Category}"
+                        + $"  target {ult.TargetMode}  duration {ult.DurationTicks} ticks");
+        Console.WriteLine($"  def magnitudes:    {Mags(ult.Magnitudes)}");
+        Console.WriteLine($"  rung 1 magnitudes: {Mags(ult.MagnitudesAt(1))}");
+    }
+
+    static string Mags(EffectMagnitude[]? m) =>
+        m is null or { Length: 0 } ? "(none)"
+        : string.Join(", ", m.Select(x => $"{x.Effect} {x.Value} {x.Mode}"));
+}
+
 static Entity BuildPlayer(Race race, BaseClass cls, int level, string? quality = null, bool warrior = false,
                           bool healer = false, Discipline? discipline = null, bool npcBuffed = false,
                           int gearTier = 0, int secondClass = 0, bool fourth = false)

@@ -32,7 +32,18 @@ different professions to farm to see who can craft what — and it's a single pl
 So **`BL-05`** and **`BL-50`** are not to be worked on or re-raised until you open that playtest.
 Nothing about them is blocked or broken; they wait on a test only you can run.
 
-★ **The ones you named most recently (2026-09-06):** three asks in one message, filed as
+★ **The ones you named most recently (2026-09-12, the second message of the playtest):** six asks.
+✅ **THREE ARE BUILT (0.137.0)** and are in the archive — **`BL-219`** (the target window: positive
+effects gone, debuffs abbreviated, and the stack counter now updates the instant a stab banks rather
+than on a 1-second beat — that beat was your *"3-6-9-10 … at random"*), **`BL-220`** (DoT/HoT out of
+the combat chat, with a Settings toggle to bring them back), and the rig fix inside `BL-218`.
+🔵 **TWO NEED YOU:** **`BL-218`** — the debuff land rates you asked for are measured
+([balance/DebuffLandRate.md](balance/DebuffLandRate.md)) and it is NOT the floor; three things to
+rule, of which your SPT passive is one. **`BL-221`** — Magical Armor measures as working, so I need
+two numbers from you. The sixth (duals vs mage, *"mage does good amount of dmg now"*) was an
+observation with nothing owed. ⚠ **NEW APK.**
+
+★ **The ones before those (2026-09-06):** three asks in one message, filed as
 **`BL-180`…`BL-182`** and **all three BUILT (0.115.0)** — they are in the archive. `BL-180` the admin
 `Functions > [Buffs]` drill-down (four derived drawers — 31 singles, 9 groups, 14 harmonies, 4 marks —
 and the four Mark buttons off the Functions tab, as you asked); `BL-181` `FullHeal` / `/heal`, both
@@ -135,6 +146,8 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-208` | ❓ | ONE cosmetic cell left from the Magus's 4th kit — three of four closed the same day | classes |
 | `BL-213` | 🟡 | The mastery roster, rewritten to your table — BUILT; two display names and four learn levels are mine | classes |
 | `BL-215` | 🔵 | THE MAGE'S DAMAGE — two levers pulled (≈×2.3 since 0.132.0); the crit-rate CAP is the third | combat |
+| `BL-218` | 🔵 | WHY DEBUFFS DON'T LAND — measured; it is NOT the floor. Three things to rule, your SPT passive is one | combat |
+| `BL-221` | ❓ | MAGICAL ARMOR "does nothing" — the engine measures it working; I need your two numbers | combat |
 
 ---
 
@@ -1349,3 +1362,95 @@ able to tell which of the three did it.
 
 
 ---
+
+---
+
+## `BL-218` 🔵 WHY DEBUFFS DON'T LAND — measured; the SPT land-rate passive is yours to rule
+
+Playtest 2026-09-12: *"Also debuffs almost never land wit all the resistanses we have … in general
+debuffs don't land … not human stuns mage nor the other way around … Can you get me same lvl debuffs
+and check their land rate with and without buffs/passives ? **I think we hit the floor for
+landing**"* — and, conditionally, *"Can we add to a mage 40,76,80 a spt debuff land rate passive that
+increases land rate of all spt debuffs 2 times (atleast in pvp) but 1st the ask below ?"*
+
+📐 **THE MEASUREMENT IS DONE AND IT IS IN THE REPO: [balance/DebuffLandRate.md](balance/DebuffLandRate.md).**
+New rig mode `dotnet run --project tools/BalanceMatrix -- --ccland [level] [quality]`, which builds
+real 4th-tier characters and runs the exact product `GameLoopService` computes.
+
+🔑 **YOU ARE NOT HITTING THE FLOOR.** `CcLandMin` is 10% and it clamps the STAT CONTEST only — which
+between two level-90 characters comes out at **50-54%**, nowhere near it. What eats the number is the
+three multipliers applied **after** the clamp, none of which is floored:
+
+```
+land = clamp(contest, 10%, 90%)      ~52% at parity
+     × DebuffLandMod                 the skill's own: 1.50 / 1.00 / 0.70 / 0.50 / 0.30
+     × (1 − CcResist)                0% / 0% / 28% / 40%  by GEAR QUALITY
+     × (1 − CcResist<school>)        20% bare → 35% NPC shelf → 50% FULL shelf
+```
+
+So a fully-blessed level-90 target in mythic gear multiplies every incoming debuff by **×0.30**, and
+a `×0.50` skill by **×0.15**. A tank's Numbing Shock lands **11%**. A Magus's Arcane Void lands
+**6%**. The doc has the whole table, every class both ways.
+
+**Three findings worth ruling on, smallest first:**
+
+1. 🔴 **The flat `CcResist` is a GEAR CLIFF: 0% at common and rare, 28% at epic, 40% at mythic.** No
+   buff feeds it — it is armour-set only, every class gets the same number from its own tier's set,
+   and nothing on the attacker's side can answer it. This is the single biggest term in the product
+   and it is why control stopped working around epic gear without anything being changed. **Halving
+   it (0 / 0 / 14 / 20%) is my recommendation and costs nothing** — one armour-set number, no new
+   mechanic, no `game.db` delete.
+2. 🔵 **YOUR PASSIVE IS THE RIGHT SHAPE, and bigger than you may realise: there is no attacker-side
+   land channel in the engine AT ALL today.** Every multiplier above is defender-side or authored per
+   skill; the caster contributes one stat to a contest that moves by thirteen points end to end —
+   which is why *"you cannot build for landing debuffs"* is literally true right now. One
+   `PassiveEffect` field feeding one multiplier next to `DebuffLandMod` is the whole build. At ×2 it
+   restores a fully-blessed target to Arcane Burst 64% / Gravity 44% / Mana Strain 22%. **Two things
+   I need from you before building it:**
+   - **×2 flat at all three rungs, or a ladder?** Three rungs at 40/76/80 reads as a ladder to me —
+     ×1.3 / ×1.6 / ×2.0 — so a level-40 mage is not handed the endgame number.
+   - **PvP only, or everywhere?** You wrote *"atleast in pvp"*. Both are one line. PvE control is
+     already shortened by `MobCcSpt`, so doubling it there is a real farming change.
+   ⚠ And if it goes in, it should be a channel every class can be given later, not a mage-only
+   field — the tank's kit is control and sits at 11-27%.
+3. 🔵 **The ×0.30 and ×0.50 skills are decoration now.** Your `BL-90` ruling priced those multipliers
+   when the base at parity was 50% and nothing came after it. With three defensive layers behind
+   them, ×0.30 means 6%. Raising the bottom tier to ×0.60 would be enough.
+
+⚠ **The rig was lying until this pass**, and it is the fifth time the same builder has done it:
+`ApplyNpcBuffs` never copied the `CcResistMagical`/`CcResistPhysical` **fields** (they are fields,
+not `Effect`+`Magnitudes`, the flag enum being full), so the first run of this table read identical
+buffed and unbuffed. Fixed in the same commit.
+
+---
+
+## `BL-221` ❓ MAGICAL ARMOR "DOES NOTHING" — the engine says it does; I need your two numbers
+
+Playtest 2026-09-12: *"Also magic armor of null blade does nothing … he takes ~300 dmg less than
+other duals because of his anti magic but with magic armor on the dmg is the same… Not 30% less"*.
+
+**Measured end to end and it works** (`dotnet run --project tools/BalanceMatrix -- --mres 90`), a
+level-90 Nullblade under a same-level Magus's Arcane Burst:
+
+| stage | mRes | divisor | nuke damage |
+|---|---|---|---|
+| bare (the `dual_anti_magic` passive alone) | 10% | 1.100 | 734 |
+| + Magical Armor | **40%** | **1.400** | **577**  (×0.79) |
+| + NPC shelf | 10% | 1.100 | 272 |
+| + NPC shelf + Magical Armor | **40%** | **1.400** | **213**  (×0.78) |
+
+The def carries `BuffMagicResist 0.3 Percent` at both the skill and the rung level, `RecomputeDerived`
+folds it, and `MagicDefCoef` divides the nuke by it — including a crit, which multiplies the already
+resisted number.
+
+🔑 **ONE THING TO KNOW: +30% MAGIC RESIST IS NOT −30% DAMAGE, AND IT NEVER WAS.** Resistance is a
+DIVISOR (`damage ÷ (1 + mRes)`), the same shape as defence everywhere else in this game. Going from
++10% to +40% divides by 1.4 instead of 1.1, which is **−21%** on your own damage — but **−29.5%**
+against a dual who has neither, which is probably the comparison you were making and is your "30%".
+So the number you were looking for exists; it is just relative to the other dual, not to yourself.
+
+❓ **WHAT I NEED:** −21% is not a subtle change, so if it really moved nothing, something in the live
+path is not what the rig builds. Give me two numbers off one target — the same nuke's damage with the
+buff visibly on the bar and immediately after it drops (it is **10 seconds**, 90s reuse) — and
+whether the bar showed it at all. If they are equal I will chase the live path; if they are ~21%
+apart the mechanic is fine and this entry closes.
