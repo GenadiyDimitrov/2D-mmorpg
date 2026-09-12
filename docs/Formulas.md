@@ -312,8 +312,19 @@ failChance = clamp(failPoints / 100, 0, 0.95)
 def    = defenderStat * CcLevelBase^(defenderLevel - attackerLevel)
 chance = 0.5 + 0.5 * (attackerAtk - def) / (attackerAtk + def)
          clamp [0.10, 0.90], then * skill.DebuffLandMod, then re-cap at 0.90
+land   = chance * CcLandRetain * CcLandRetain<school>
 ```
 
+- 🔑 **THE TWO RESISTANCES ARE PRODUCTS, NOT SUMS** (`BL-225`, 0.139.0). Every source folds in as its
+  own factor — `retain *= (1 - r)` — so harmony 20% + buff 20% + passive 20% is **×0.512**, not
+  ×0.40. Blanket (armour/shield) and per-school (passive/buff/harmony/Mark) are two separate products
+  and multiply with each other at the roll.
+- ⚠ **NO CLAMP on either product.** The old 0.8 caps existed because summing could reach 100%; a
+  product of factors below 1 never reaches 0, so the cap had become a ceiling the stack was already
+  sitting on. Only a sign guard remains (a source authored above 100% would invert the mechanic).
+- ⚠ A **negative** resistance is legal and useful — the Magus's curses author `CcResistMagical: -0.40`
+  and contribute a ×1.40 factor. This is why the entity stores the RETAIN and exposes `CcResist*` as
+  a derived getter: accumulate through `AddCcResist*` or it will not compile.
 - `defenderStat` is **CON** for a physical debuff, **SPT** for a magical one (`DebuffSchool`).
 - `CcLevelBase` is derived, not authored: it is whatever makes the floor land exactly 18 levels out.
 - **`DebuffLandMod` is the per-skill success multiplier** (`BL-90`): ×1.5 = 75% at parity, ×1 = 50%,
@@ -331,7 +342,7 @@ chance = 0.5 + 0.5 * (attackerAtk - def) / (attackerAtk + def)
 - **A TAUNT has no roll at all**, and its two halves go different distances (`BL-123`): the target
   LOCK lands on mobs AND players; the aggro ladder is paid only into a monster's threat table.
 
-`StatCalculator.DebuffLandChance` · `StatCaps.CcLandMin/CcLandMax/CcLevelFloorGap`
+`StatCalculator.DebuffLandChance` · `StatCaps.CcLandMin/CcLandMax/CcLevelFloorGap` · `Entity.CcLandRetain[Magical|Physical]`
 
 ## How LONG a landed debuff runs (`BL-156`, 0.110.0)
 

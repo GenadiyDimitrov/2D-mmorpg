@@ -9167,14 +9167,17 @@ public class GameLoopService : BackgroundService
         }
     }
 
-    /// <summary>The target's control resistance for ONE school — Clarity against the SPT-defended
-    /// (magical) debuffs, Fortitude against the CON-defended (physical) ones. A debuff with no school
-    /// at all is resisted by neither: it is not part of the stat contest in the first place.</summary>
-    private static float SchoolCcResist(Entity target, DebuffSchool school) => school switch
+    /// <summary>The fraction of a debuff's land chance that survives ONE school's resistance — the
+    /// form the roll actually wants. `BL-225`: the three roll sites used to write `1f - CcResistX`,
+    /// which is the same number by algebra but re-derives a quantity the entity already stores as a
+    /// product. Reading the retain directly is what keeps "every source is its own (1−r) factor" true
+    /// all the way from the skill def to the die.
+    /// <para>A school of None resists nothing: such a debuff is not part of the stat contest.</para></summary>
+    private static float SchoolCcRetain(Entity target, DebuffSchool school) => school switch
     {
-        DebuffSchool.Magical  => target.CcResistMagical,
-        DebuffSchool.Physical => target.CcResistPhysical,
-        _ => 0f,
+        DebuffSchool.Magical  => target.CcLandRetainMagical,
+        DebuffSchool.Physical => target.CcLandRetainPhysical,
+        _ => 1f,
     };
 
     /// <summary>A RAID BOSS is immune to CONTROL — stun, root, fear and slow simply never land on it,
@@ -9616,8 +9619,8 @@ public class GameLoopService : BackgroundService
                 : StatCalculator.DebuffLandChance(GameConstants.WhispCcAtk, defStat,
                                                   master.Level, target.Level);
             land = ApplyDebuffLandMod(land, def, w.Level);
-            land *= 1f - target.CcResist;
-            land *= 1f - SchoolCcResist(target, def.DebuffSchool);
+            land *= target.CcLandRetain;                              // `BL-225` — every source is a factor
+            land *= SchoolCcRetain(target, def.DebuffSchool);
 
             if (_rng.NextDouble() < land)
             {
@@ -9913,8 +9916,8 @@ public class GameLoopService : BackgroundService
             if (!alwaysLands)
             {
                 land = ApplyDebuffLandMod(land, def, lvl);   // BL-90
-                land *= 1f - victim.CcResist;
-                land *= 1f - SchoolCcResist(victim, school);
+                land *= victim.CcLandRetain;                          // `BL-225`
+                land *= SchoolCcRetain(victim, school);
             }
             if (_rng.NextDouble() < land)
             {
@@ -12159,8 +12162,8 @@ public class GameLoopService : BackgroundService
                 if (!alwaysLands)
                 {
                     land = ApplyDebuffLandMod(land, def, lvl);
-                    land *= 1f - target.CcResist;   // gear/buff CC resistance lowers the land chance
-                    land *= 1f - SchoolCcResist(target, school);   // …and the per-school blessing
+                    land *= target.CcLandRetain;              // gear CC resistance, as a FACTOR (`BL-225`)
+                    land *= SchoolCcRetain(target, school);   // …and the per-school blessing, likewise
                 }
                 if (_rng.NextDouble() < land)
                 {

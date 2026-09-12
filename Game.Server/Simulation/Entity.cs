@@ -1316,11 +1316,53 @@ public class Entity
     public float MagicCritRateResist { get; set; }
     public float CritDmgResist { get; set; }     // reduces incoming physical crit EXTRA damage
     public float BowResist { get; set; }         // reduces damage taken from BOW attacks
-    public float CcResist { get; set; }          // reduces the LAND chance of contested CC vs you
-    // …and the same, but only against ONE school. Composes with CcResist multiplicatively at the roll,
-    // so armour's blanket resistance and a healer's targeted blessing never cancel or mask each other.
-    public float CcResistMagical { get; set; }   // vs SPT-defended debuffs (Clarity)
-    public float CcResistPhysical { get; set; }  // vs CON-defended debuffs (Fortitude)
+    // ═══ CONTROL RESISTANCE — STORED AS WHAT SURVIVES, NOT AS THE RESISTANCE ════════════════════
+    //
+    // 🔑 EVERY SOURCE COMPOUNDS (owner ruling, 2026-09-13, `BL-225`): *"I want the cc resist formula
+    //    to be something if we have harmony 20%, buff 20%, Passive 20% -> baseLandRate x LandMod x
+    //    (1-buff1/passive1) x (1- buff2/passive2) x (1-buffN/passiveN) … having those 3 20% resists
+    //    make the debuff land 2 times less (x 0.512) not ~4 (x 0.28) as it was."*
+    //
+    // 🔑 WHY THE FIELD IS THE *RETAIN* AND THE RESISTANCE IS A GETTER. The same shape `BL-217` used
+    //    for reuse in 0.136.0, and for the same three reasons: every existing reader keeps working
+    //    untouched, nothing on the wire moves, and a stray `+=` on the resistance is now a COMPILE
+    //    ERROR instead of a silent return to summing. Accumulate through AddCcResist* only.
+    //
+    // ⚠ NO 0.8 CLAMP ANY MORE. It existed because summing could reach 100% and make a character
+    //    CC-immune; a product of factors below 1 never reaches 0, so the clamp had become a CEILING
+    //    rather than a safety net — exactly what it was in the reuse stack, where three sources had
+    //    already pinned it and his next tune would have moved nothing.
+    //
+    // ⚠ A NEGATIVE RESISTANCE IS A REAL THING AND IT STILL WORKS: the Magus's curses author
+    //    `CcResistMagical: -0.40`, which contributes a ×1.40 factor and makes control MORE likely to
+    //    land. That falls out of the product for free — it is one of the reasons to store the retain.
+
+    /// <summary>Fraction of a contested debuff's land chance that survives this character's BLANKET
+    /// (school-blind) control resistance — armour sets and shields. 1 = nothing resisted.</summary>
+    public float CcLandRetain { get; private set; } = 1f;
+    /// <summary>…the same against SPT-defended (magical) debuffs only — Clarity, Strong Mind, the
+    /// buffer's Arcane Protection, Holy Mark. Composes with <see cref="CcLandRetain"/> at the roll, so
+    /// armour's blanket resistance and a targeted blessing never cancel or mask each other.</summary>
+    public float CcLandRetainMagical { get; private set; } = 1f;
+    /// <summary>…and against CON-defended (physical) ones — Fortitude, Strong Body, Feral Protection,
+    /// Life Mark.</summary>
+    public float CcLandRetainPhysical { get; private set; } = 1f;
+
+    /// <summary>The blanket control resistance as a FRACTION, for display and for the older callers
+    /// that read it. Derived; assign through <see cref="AddCcResist"/>.</summary>
+    public float CcResist => 1f - CcLandRetain;
+    /// <inheritdoc cref="CcResist"/>
+    public float CcResistMagical => 1f - CcLandRetainMagical;
+    /// <inheritdoc cref="CcResist"/>
+    public float CcResistPhysical => 1f - CcLandRetainPhysical;
+
+    /// <summary>Fold ONE source of blanket control resistance into the product. `r` is a fraction
+    /// (0.28 = 28%); a negative `r` legitimately makes control more likely to land.</summary>
+    private void AddCcResist(float r) => CcLandRetain *= 1f - r;
+    /// <inheritdoc cref="AddCcResist"/>
+    private void AddCcResistMagical(float r) => CcLandRetainMagical *= 1f - r;
+    /// <inheritdoc cref="AddCcResist"/>
+    private void AddCcResistPhysical(float r) => CcLandRetainPhysical *= 1f - r;
     // Weapon-TYPE resistance: a multiplier on MY P.Def applied only when the attacker uses
     // that weapon type (the resist rides inside pDef so a def-ignore skill bypasses it).
     // 1 = neutral, >1 = resistant, <1 = weak, ≤0 = no defence (one-shot of that type).
@@ -2814,9 +2856,9 @@ public class Entity
         BowResist = 0f;
         CleaveTargets = 0;
         CleaveRadius = 0f;
-        CcResist = 0f;
-        CcResistMagical = 0f;
-        CcResistPhysical = 0f;
+        CcLandRetain = 1f;            // `BL-225` — a PRODUCT, so the identity is 1, not 0
+        CcLandRetainMagical = 1f;
+        CcLandRetainPhysical = 1f;
         PierceDefCoef = 1f;
         BluntDefCoef = 1f;
         BowDefCoef = 1f;
@@ -3159,7 +3201,7 @@ public class Entity
             if (m.MpRegenPct != 0f) MpRegenMult *= 1f + m.MpRegenPct;
             MeleeVamp += m.MeleeVamp;
             MeleeReflect += m.Reflect;
-            CcResist += m.CcResist;
+            AddCcResist(m.CcResist);
             // The four channels the S sets introduced. Crit rate/damage are the FLAT ones on purpose —
             // gear crit lands outside every multiplier (see the crit-model note further down), and the
             // single fold + clamp of CritChance still happens at the end of this method.
@@ -3187,7 +3229,7 @@ public class Entity
                 AttackPower = (int)((AttackPower + (int)sb.PAtk) * (1f + sb.PAtkPct));
                 if (sb.BlockReductionPct != 0f) BlockReduction *= 1f + sb.BlockReductionPct;
                 MeleeReflect += sb.Reflect;
-                CcResist += sb.CcResist;
+                AddCcResist(sb.CcResist);
                 // Heavy S repeats "PVP Dmg Received x0.95" in its shield clause, so shield-up compounds
                 // with the set's own: ×0.95 × ×0.95 = ×0.9025. That is what the CSV writes.
                 if (sb.PvpDamageTakenPct != 0f) PvpDamageTaken *= 1f + sb.PvpDamageTakenPct;
@@ -3535,8 +3577,8 @@ public class Entity
                 //      once at the bottom of this method — so a Sigil, a Clarity and an armour set
                 //      cannot together make you CC-immune, and Magic Proficiency plus Mana Blessing
                 //      cannot make a spell free.
-                CcResistMagical += pe.CcResistMagical;
-                CcResistPhysical += pe.CcResistPhysical;
+                AddCcResistMagical(pe.CcResistMagical);
+                AddCcResistPhysical(pe.CcResistPhysical);
                 PhysMpCostReduction += pe.PhysMpCostPct;
                 MagicMpCostReduction += pe.MagicMpCostPct;
                 MagicFailBonus += pe.MagicEvasion;          // "M.Evasion" points, the Agility Sigil
@@ -3720,8 +3762,8 @@ public class Entity
             HealPowerFlat += buff.HealPowerFlat;
             if (buff.HealPowerPct != 0f) HealPowerMod *= 1f + buff.HealPowerPct;
             if (buff.HealReceivedPct != 0f) HealReceivedMod *= 1f + buff.HealReceivedPct;
-            CcResistMagical += buff.CcResistMagical;
-            CcResistPhysical += buff.CcResistPhysical;
+            AddCcResistMagical(buff.CcResistMagical);
+            AddCcResistPhysical(buff.CcResistPhysical);
             // Magic crit damage — the blessings COMPOUND (×1.3 × ×1.3 = ×1.69 on the ×2 base, the
             // owner's own ×3.38), the debuffs SUM. Both ride as buff fields; the flag enum is full.
             if (buff.MagicCritDamage != 0f) MagicCritDamageMult *= 1f + buff.MagicCritDamage;
@@ -3825,11 +3867,18 @@ public class Entity
         PhysSkillReflectPct = Math.Clamp(PhysSkillReflectPct, 0f, 1f);
         DebuffReflectPhys  = Math.Clamp(DebuffReflectPhys,  0f, 0.95f);
         DebuffReflectMagic = Math.Clamp(DebuffReflectMagic, 0f, 0.95f);
-        CcResist = Math.Clamp(CcResist, 0f, 0.8f);           // never fully CC-immune from gear
-        // Each school's own resistance is capped the same way, and because the two multiply with the
-        // blanket one at the roll, the floor on a landing debuff is still the contest's own 10%.
-        CcResistMagical = Math.Clamp(CcResistMagical, 0f, 0.8f);
-        CcResistPhysical = Math.Clamp(CcResistPhysical, 0f, 0.8f);
+        // `BL-225` — THE THREE 0.8 CLAMPS ARE GONE. They existed because SUMMING could reach 100% and
+        // make a character outright CC-immune; a product of factors below 1 can never reach 0, so the
+        // clamp had stopped being a safety net and become a ceiling — and a ceiling three sources were
+        // already sitting on (20+50+30+15 = 115 → 80), which is why retuning any one of them moved
+        // nothing. Same story, same month, as the reuse clamp `BL-217` deleted.
+        //
+        // The only guard kept is a SIGN guard: a source authored above 100% would make its factor
+        // negative and flip a debuff's land chance below zero. Nothing authors that today; this costs
+        // one compare and means a typo can never invert the mechanic.
+        CcLandRetain = Math.Max(0f, CcLandRetain);
+        CcLandRetainMagical = Math.Max(0f, CcLandRetainMagical);
+        CcLandRetainPhysical = Math.Max(0f, CcLandRetainPhysical);
         // MP cost: −2 … +0.8, i.e. from THREE TIMES the price up to a 80% discount. The floor used to
         // be 0, which quietly made a cost-RAISING effect impossible — and that is exactly Mana Strain
         // (owner 2026-08-19: *"a debuff that increases mana consumption of the enemy"*). One number

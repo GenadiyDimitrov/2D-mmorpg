@@ -7,12 +7,69 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.138.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.139.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-13 (latest) — 0.138.0: traps see people, the barrage stops doubling, and the rig was wearing four Marks
+## 2026-09-13 (latest) — 0.139.0: control resistances compound, and three more clamps go
+
+⚠ **NEW APK.** No protocol bump. ⚠ **A `game.db` delete is NOT needed** — nothing schema-side moved.
+
+### `BL-225` — every control resistance is its own factor
+
+> *"I want the cc resist formula to be something if we have harmony 20%,buff 20%,Passive 20% ->
+> baseLandRate x LandMod x (1-buff1/passive1) x (1- buff2/passive2) x(1-buffN/passiveN) … having those
+> 3 20% resists make the debuff land 2 times less (x 0.512) not ~4 (x 0.28) as it was. And adding a
+> set bonus u get to ~3 times less -> which is nicably less but not never"*
+
+```
+land = clamp(contest, 10%, 90%) × DebuffLandMod
+     × Π(1 − r) over every BLANKET source     (armour sets, shields)
+     × Π(1 − r) over every SCHOOL source      (passive, class buff, harmony, Mark)
+```
+
+Three 20% resistances are **×0.512** exactly as he wrote; with an epic set's 28% it is **×0.369**, his
+*"~3 times less"*.
+
+🔑 **THE FIELD STORES WHAT SURVIVES AND THE RESISTANCE IS A GETTER** — the same shape `BL-217` used for
+reuse in 0.136.0, for the same three reasons: every existing reader kept working untouched, nothing on
+the wire moved, and a stray `+=` on `CcResist` is now a **compile error** rather than a silent return
+to summing. `AddCcResist` / `AddCcResistMagical` / `AddCcResistPhysical` are the only writers.
+
+⚠ **THE THREE 0.8 CLAMPS ARE DELETED.** They existed because summing could reach 100%; a product of
+factors below 1 never reaches 0, so they had become ceilings the stack was already pinned on — *"Don't
+add clamp no need when it mutiolicative"*, his own words a week earlier about reuse. Only a sign guard
+remains, against a source authored above 100%.
+
+⚠ **NEGATIVE RESISTANCES STILL WORK**, and are the second reason to store the retain: the Magus's
+curses author `CcResistMagical: -0.40` and contribute a ×1.40 factor to the product for free.
+
+⚠ `SchoolCcResist` deleted in favour of `SchoolCcRetain`, and the three roll sites read the retain
+instead of writing `1f - CcResist`. Identical by algebra — but a helper returning a *resistance* beside
+a product is how the next edit reintroduces summing.
+
+### ✅ He was right about the Marks
+
+*"the con/spt resists are on a single marks not on the harmony one ... Ppl will chose harmony mark"* —
+confirmed: **Harmony Mark carries no control resistance at all.** Only Holy Mark (15% SPT) and Life
+Mark (10% CON) do, and all four share `MarkKey` with `FlatRank`, so taking the Harmony Mark costs the
+grant outright. `--ccland` now prints both cases as separate rows. ⚠ One correction to his arithmetic:
+the SPT Mark is 15%, not 10%, so his ×0.460 is the CON case and the SPT case is ×0.435.
+
+### The result
+
+| ×1.00 skill, fully buffed, level 90 | this morning | now |
+|---|---|---|
+| magical (SPT) | 10-11% | **20-22%** |
+| physical (CON) | 8-10% | **10-13%** |
+
+His *"15-25% which is good"* is hit on the magical side. 🔵 **CON is not, and is now the outlier** —
+he ruled on SPT only, so Feral Protection's 43→65% column is untouched and is the biggest resistance
+in the game; the tank's whole control kit sits at half the mage's reliability. One number, and it is
+his CSV. → `BL-218`. 📐 [balance/DebuffLandRate.md](balance/DebuffLandRate.md), `docs/Formulas.md`.
+
+## 2026-09-13 — 0.138.0: traps see people, the barrage stops doubling, and the rig was wearing four Marks
 
 ⚠ **NEW APK.** No protocol bump. ⚠ **Every `--buffed` number this repo has quoted since 0.113.0 was
 too high** — see `BL-223`.

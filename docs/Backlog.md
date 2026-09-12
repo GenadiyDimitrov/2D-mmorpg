@@ -32,22 +32,27 @@ different professions to farm to see who can craft what — and it's a single pl
 So **`BL-05`** and **`BL-50`** are not to be worked on or re-raised until you open that playtest.
 Nothing about them is blocked or broken; they wait on a test only you can run.
 
-★ **The ones you named most recently (2026-09-13):** four asks, **ALL FOUR BUILT (0.138.0)** and in
-the archive — **`BL-224`** (Arrow Barrage: the `[Double]` off and power 2,500 → 2,000; the double was
-TEN rolls, one per arrow, which is why the volley ran hot while you never saw an arrow crit),
-**`BL-222`** (traps could only ever see MOBS — a TODO from before PvP shipped; they now ask the
-ordinary attack question as you, with the toggle captured when you ARMED it), **`BL-221`** (Magical
-Armor 30% → 50%) and your **20% SPT ruling**, which is the built half of `BL-218`.
+★ **The ones you named most recently (2026-09-13, second message):** the CC-resist formula.
+✅ **BUILT (0.139.0)** as **`BL-225`** — control resistances **COMPOUND** now, every source its own
+`(1−r)` factor, so your harmony 20% + buff 20% + passive 20% is **×0.512** and with an epic set
+**×0.369**, your *"~3 times less"*. The three 0.8 clamps are deleted for the same reason you deleted
+the reuse one in 0.136.0. ✅ **And you were right about the Marks** — Harmony Mark carries no control
+resistance at all, so choosing it costs you the Holy/Life Mark's grant outright; both cases are
+measured rows now. (One correction: the SPT Mark is 15%, not 10% — 10% is the CON one.)
 
-🔴 **`BL-218` IS STILL OPEN AND IT NEEDS ONE RULING.** Your 20% numbers are in, but the **15-25% band
-you aimed at is not reached** — ×1.00 skills land 10-11%. You counted three resist sources and there
-are four (a Mark carries 15% too), and they **SUM** in the engine where you multiplied. Making them
-compound — your own 0.136.0 ruling — lands 16% / 24% / 8%, almost exactly your band. Details and the
-whole table: [balance/DebuffLandRate.md](balance/DebuffLandRate.md).
+🔵 **`BL-218` STAYS OPEN, BUT THE QUESTION HAS MOVED.** Magical debuffs now land **20-22%**, inside
+your band. **Physical land 10-13%**, because you ruled on SPT only and Feral Protection's CON column
+(43→65%) is untouched and is now the biggest resistance in the game — the tank's whole kit is at half
+the mage's reliability. One number, and it is your CSV.
 
-⚠ Also fixed on the way past: **`BL-223`** — the balance rig has been dressing every "buffed"
-character in **four Marks and sixteen harmonies** since 0.113.0. Every `--buffed` table it has
-printed was too high. ⚠ **NEW APK.**
+★ **Earlier the same day:** four asks, **ALL BUILT (0.138.0)**, in the archive — **`BL-224`** (Arrow
+Barrage: the `[Double]` off and power 2,500 → 2,000; the double was TEN rolls, one per arrow, which is
+why the volley ran hot while you never saw an arrow crit), **`BL-222`** (traps could only ever see
+MOBS — a TODO from before PvP shipped; they now ask the ordinary attack question as you, with the
+toggle captured when you ARMED it), **`BL-221`** (Magical Armor 30% → 50%) and your **20% SPT
+ruling**. ⚠ Also **`BL-223`**: the balance rig had been dressing every "buffed" character in **four
+Marks and sixteen harmonies** since 0.113.0, so every `--buffed` table it printed was too high.
+⚠ **NEW APK.**
 
 ★ **The ones before those (2026-09-12, the second message of the playtest):** six asks.
 ✅ **THREE BUILT (0.137.0)**, in the archive — **`BL-219`** (the target window: positive effects gone,
@@ -159,7 +164,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-208` | ❓ | ONE cosmetic cell left from the Magus's 4th kit — three of four closed the same day | classes |
 | `BL-213` | 🟡 | The mastery roster, rewritten to your table — BUILT; two display names and four learn levels are mine | classes |
 | `BL-215` | 🔵 | THE MAGE'S DAMAGE — two levers pulled (≈×2.3 since 0.132.0); the crit-rate CAP is the third | combat |
-| `BL-218` | 🔵 | WHY DEBUFFS DONT LAND — your 20% ruling is BUILT; the 15-25% band it aimed at is not reached | combat |
+| `BL-218` | 🔵 | DEBUFF LAND RATES — magical is in your band; Feral Protections CON column is now the outlier | combat |
 
 ---
 
@@ -1377,67 +1382,45 @@ able to tell which of the three did it.
 
 ---
 
-## `BL-218` 🔵 WHY DEBUFFS DON'T LAND — your 20% ruling is IN; the band it was aimed at is not reached
+## `BL-218` 🔵 DEBUFF LAND RATES — magical is in your band; the CON column is now the outlier
 
-**2026-09-13 — REWRITTEN.** Your ruling is built and the measurement is redone; the old text of this
-entry is in the archive. 📐 The whole table: [balance/DebuffLandRate.md](balance/DebuffLandRate.md),
-regenerated with `dotnet run --project tools/BalanceMatrix -- --ccland`.
+**2026-09-13, rewritten again** — your 20% ruling and your compounding ruling (`BL-225`) are both
+built, and what is left of this entry is different from what it was this morning. The old text is in
+the archive. 📐 The whole table: [balance/DebuffLandRate.md](balance/DebuffLandRate.md).
 
-### ✅ Built — your ruling, exactly as given
+### ✅ Where it landed
 
-> *"I calculated we must do the harmony and buff also be 20% (not 30/50) that way the land rate will
-> be 15-25% which is good"*
+An ordinary `×1.00` magical debuff against a fully-buffed level-90 now lands **20-22%** with the
+Harmony Mark (which you expect most people to wear) or **17-19%** with a Holy Mark. That is inside
+your *"15-25% which is good"*. The `×1.50` skills sit at 30-33%, which reads right — they are the ones
+you priced to be reliable.
 
-Harmony of the Soul's top rung **30% → 20%** SPT, Arcane and Feral Protection **50% → 20%** SPT, both
-CSV rows moved with the code. ⚠ The **CON** half of Arcane/Feral (43→65%) is untouched: your message
-is about SPT throughout, and that column is your authored CSV.
+### 🔴 THE ONE THING LEFT: the two schools are now TWICE as far apart
 
-### 🔑 You were pinned on the 80% CLAMP, which is why only changing BOTH worked
+You ruled on SPT only, so **Feral Protection's CON column (43→65%) is untouched** and is now the
+biggest resistance in the game. Compounded with Strong Body and a Mark it is **68%**, against the SPT
+side's 49-56%:
 
-The SPT sources SUM: passive 20 + buff 50 + harmony 30 + **Mark 15** = **115%, clamped to 80**. Same
-trap as the reuse clamp you killed in 0.136.0 — dropping the harmony alone would still have summed
-past 80 and moved **nothing**.
+| ×1.00 skill lands | |
+|---|---|
+| magical (SPT) | **20-22%** |
+| physical (CON) | **10-13%** |
 
-### 🔴 THE BAND IS STILL NOT REACHED, and it is arithmetic, not opinion
+So the **tank's entire kit** — Grapple, Stay!, Shield Shock, Numbing Shock — and the Venomweaver's and
+the Trapper's all sit at about half the mage's reliability, and the stun that ends a fight is at
+**5-6%**.
 
-Against a target buffed by a real Warchanter, at level 90 in epic gear:
+🔵 **The lever is one number and it is yours: Feral Protection's CON column.** Its top rung at ~25%
+instead of 65% would put both schools on the same footing; anything between moves it proportionally.
+Not touched — your message was about SPT throughout and that column is your authored CSV.
 
-| | ×1.50 skills | ×1.00 skills | ×0.50 skills |
-|---|---|---|---|
-| magical (SPT) | **15-16%** | 10-11% | 5% |
-| physical (CON) | — | 8-10% | 4-5% |
+### 🔵 Also still open
 
-Only your best skill reaches 15%. Two reasons your arithmetic and the engine's disagree:
-
-1. **You counted three sources; there are four.** A **Mark** carries 15% SPT (and 10% CON). Your
-   20+20+20 = 60 is really **75**.
-2. **They SUM; you multiplied.** `(1−.2)(1−.2)(1−.2)` = ×0.512 is the generous answer. Summing to
-   75% is **×0.25**.
-
-### ❓ Two ways to land your band — my pick is the first, and it is your own ruling
-
-**(a) Make school resistances COMPOUND instead of summing** — *"Make it mutiolicative if u haven't as
-any other buff is"* (your 0.136.0 words, same shape, and it takes the 80% clamp out of reach for
-free):
-
-```
-(1−.20)(1−.20)(1−.20)(1−.15) = x0.435, x (1−.28 set) = x0.313
-   →  x1.00 skills 16%,  x1.50 skills 24%,  x0.50 skills 8%
-```
-
-**That is 15-25% almost exactly.** ⚠ It reaches the CON side too: the summed 75% becomes ×0.315,
-which is a real loosening for tanks and the moment your authored 43→65% CON column wants a second
-look. That is why I have not just done it.
-
-**(b) Cut further under the current summing** — the four SPT sources need to total ~50%, so the
-Mark's 15% comes out or the passive halves as well. More numbers moved, same brittle rule.
-
-### 🔵 Unchanged and still open
-
-- **The flat `CcResist` gear cliff**: 0% common, 0% rare, **28% epic, 40% mythic** — armour-set only,
-  identical for every class, and nothing on the attacker's side answers it. A ×0.72 / ×0.60 blanket
-  on top of everything above.
-- **There is no attacker-side land channel in the engine at all** — which is why your mage SPT
-  passive is the missing half of the mechanic, not one more buff. Still needs two rulings from you:
-  **ladder or flat ×2** across 40/76/80, and **PvP-only or everywhere**.
+- **The flat `CcResist` gear cliff** — 0% common, 0% rare, **28% epic, 40% mythic**. Armour-set only,
+  identical for every class, nothing on the attacker's side answers it. Now that the school stack
+  compounds, **this is the largest single term left** in the whole product.
+- **There is no attacker-side land channel in the engine at all** — your mage SPT passive would be the
+  missing half of the mechanic. It still needs **ladder or flat ×2** across 40/76/80 and **PvP-only or
+  everywhere** if you want it — but with the magical side now at 20% it may simply not be needed, and
+  the CON column above is the better-targeted fix.
 

@@ -5137,3 +5137,131 @@ path is not what the rig builds. Give me two numbers off one target — the same
 buff visibly on the bar and immediately after it drops (it is **10 seconds**, 90s reuse) — and
 whether the bar showed it at all. If they are equal I will chase the live path; if they are ~21%
 apart the mechanic is fine and this entry closes.
+
+---
+
+## `BL-225` ✅ BUILT 0.139.0 (2026-09-13) — control resistances COMPOUND, and the clamps are gone
+
+Your ruling: *"I want the cc resist formula to be something if we have harmony 20%, buff 20%, Passive
+20% -> baseLandRate x LandMod x (1-buff1/passive1) x (1- buff2/passive2) x (1-buffN/passiveN) Or
+something and having those 3 20% resists make the debuff land 2 times less (x 0.512) not ~4 (x 0.28)
+as it was. And adding a set bonus u get to ~3 times less -> which is nicably less but not never"*.
+
+```
+land = clamp(contest, 10%, 90%) × DebuffLandMod
+     × Π(1 − r) over every BLANKET source     (armour sets, shields)
+     × Π(1 − r) over every SCHOOL source      (passive, class buff, harmony, Mark)
+```
+
+Three 20% resistances are **×0.512** exactly as you wrote, and with an epic set's 28% it is **×0.369**
+— your *"~3 times less"*.
+
+🔑 **THE FIELD STORES WHAT SURVIVES; THE RESISTANCE IS A GETTER.** Same shape `BL-217` used for reuse
+in 0.136.0 and for the same three reasons: every existing reader kept working untouched, nothing on
+the wire moved, and a stray `+=` on `CcResist` is now a **compile error** instead of a silent return
+to summing. Accumulate through `AddCcResist` / `AddCcResistMagical` / `AddCcResistPhysical`, which are
+the only writers.
+
+⚠ **THE THREE 0.8 CLAMPS ARE DELETED.** They existed because summing could reach 100% and make a
+character CC-immune; a product of factors below 1 never reaches 0. They had become ceilings the stack
+was already sitting on — *"Don't add clamp no need when it mutiolicative"*, your 0.136.0 words, same
+month, same mistake. Only a sign guard remains, against a source authored above 100%.
+
+⚠ **NEGATIVE RESISTANCES STILL WORK** and are a second reason to store the retain: the Magus's curses
+author `CcResistMagical: -0.40` and simply contribute a ×1.40 factor to the product.
+
+⚠ `SchoolCcResist` was deleted and replaced by `SchoolCcRetain`, and the three roll sites now read the
+retain directly instead of writing `1f - CcResist`. Algebraically identical — but a helper returning a
+*resistance* sitting beside the product is precisely how the next edit reintroduces summing.
+
+### ✅ You were right about the Marks
+
+*"the con/spt resists are on a single marks not on the harmony one ... Ppl will chose harmony mark"* —
+confirmed in the code. **Harmony Mark carries no control resistance at all**; only Holy Mark (SPT) and
+Life Mark (CON) do, and all four share `MarkKey` with `FlatRank` so exactly one is ever on you. Both
+cases are now measured rows in `--ccland`.
+
+⚠ One correction: the SPT Mark is **15%**, not 10% — 10% is the CON one. So your ×0.460 is the CON
+case; the SPT case is ×0.435.
+
+### The result, level 90, fully buffed, same level
+
+| ×1.00 skill lands | before today | now |
+|---|---|---|
+| magical (SPT) | 10-11% | **20-22%** |
+| physical (CON) | 8-10% | **10-13%** |
+
+Your *"15-25% which is good"* is hit on the magical side. 🔵 **The CON side is not, and it is now the
+outlier** — see `BL-218`.
+
+---
+
+## Superseded text — `BL-218` as it stood earlier on 2026-09-13
+
+Kept verbatim per rule 2. Rewritten the same day once `BL-225` (compounding) was built and the
+magical side reached his band, which moved the open question to the CON column.
+
+## `BL-218` 🔵 WHY DEBUFFS DON'T LAND — your 20% ruling is IN; the band it was aimed at is not reached
+
+**2026-09-13 — REWRITTEN.** Your ruling is built and the measurement is redone; the old text of this
+entry is in the archive. 📐 The whole table: [balance/DebuffLandRate.md](balance/DebuffLandRate.md),
+regenerated with `dotnet run --project tools/BalanceMatrix -- --ccland`.
+
+### ✅ Built — your ruling, exactly as given
+
+> *"I calculated we must do the harmony and buff also be 20% (not 30/50) that way the land rate will
+> be 15-25% which is good"*
+
+Harmony of the Soul's top rung **30% → 20%** SPT, Arcane and Feral Protection **50% → 20%** SPT, both
+CSV rows moved with the code. ⚠ The **CON** half of Arcane/Feral (43→65%) is untouched: your message
+is about SPT throughout, and that column is your authored CSV.
+
+### 🔑 You were pinned on the 80% CLAMP, which is why only changing BOTH worked
+
+The SPT sources SUM: passive 20 + buff 50 + harmony 30 + **Mark 15** = **115%, clamped to 80**. Same
+trap as the reuse clamp you killed in 0.136.0 — dropping the harmony alone would still have summed
+past 80 and moved **nothing**.
+
+### 🔴 THE BAND IS STILL NOT REACHED, and it is arithmetic, not opinion
+
+Against a target buffed by a real Warchanter, at level 90 in epic gear:
+
+| | ×1.50 skills | ×1.00 skills | ×0.50 skills |
+|---|---|---|---|
+| magical (SPT) | **15-16%** | 10-11% | 5% |
+| physical (CON) | — | 8-10% | 4-5% |
+
+Only your best skill reaches 15%. Two reasons your arithmetic and the engine's disagree:
+
+1. **You counted three sources; there are four.** A **Mark** carries 15% SPT (and 10% CON). Your
+   20+20+20 = 60 is really **75**.
+2. **They SUM; you multiplied.** `(1−.2)(1−.2)(1−.2)` = ×0.512 is the generous answer. Summing to
+   75% is **×0.25**.
+
+### ❓ Two ways to land your band — my pick is the first, and it is your own ruling
+
+**(a) Make school resistances COMPOUND instead of summing** — *"Make it mutiolicative if u haven't as
+any other buff is"* (your 0.136.0 words, same shape, and it takes the 80% clamp out of reach for
+free):
+
+```
+(1−.20)(1−.20)(1−.20)(1−.15) = x0.435, x (1−.28 set) = x0.313
+   →  x1.00 skills 16%,  x1.50 skills 24%,  x0.50 skills 8%
+```
+
+**That is 15-25% almost exactly.** ⚠ It reaches the CON side too: the summed 75% becomes ×0.315,
+which is a real loosening for tanks and the moment your authored 43→65% CON column wants a second
+look. That is why I have not just done it.
+
+**(b) Cut further under the current summing** — the four SPT sources need to total ~50%, so the
+Mark's 15% comes out or the passive halves as well. More numbers moved, same brittle rule.
+
+### 🔵 Unchanged and still open
+
+- **The flat `CcResist` gear cliff**: 0% common, 0% rare, **28% epic, 40% mythic** — armour-set only,
+  identical for every class, and nothing on the attacker's side answers it. A ×0.72 / ×0.60 blanket
+  on top of everything above.
+- **There is no attacker-side land channel in the engine at all** — which is why your mage SPT
+  passive is the missing half of the mechanic, not one more buff. Still needs two rulings from you:
+  **ladder or flat ×2** across 40/76/80, and **PvP-only or everywhere**.
+

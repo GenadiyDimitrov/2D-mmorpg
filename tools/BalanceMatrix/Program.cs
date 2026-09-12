@@ -6319,6 +6319,27 @@ static void DedupeByKey(Entity e)
     }
 }
 
+/// <summary>Replace whichever Mark the shelf handed out with the WARCHANTER'S Harmony Mark — the one
+/// most players will actually pick, and the one that carries no control resistance at all.
+/// <para>All four Marks share `MarkKey` with `FlatRank`, so exactly one is ever on you; swapping is a
+/// remove-then-add rather than an add.</para></summary>
+static void SwapToHarmonyMark(Entity e)
+{
+    if (SkillCatalog.Get(SkillCatalog.WcHarmonyMark) is not { } mark) return;
+    int top = mark.MaxLevel;
+    e.Buffs.RemoveAll(b => b.Key == mark.BuffKey);
+    e.Buffs.Add(new Game.Server.Simulation.BuffInstance
+    {
+        Effect = mark.Effect,
+        Magnitudes = mark.MagnitudesAt(top) ?? Array.Empty<EffectMagnitude>(),
+        CcResistMagical = mark.CcResistMagicalAt(top),
+        CcResistPhysical = mark.CcResistPhysicalAt(top),
+        MagicCritDamage = mark.MagicCritDamageAt(top),
+        TicksRemaining = int.MaxValue, Name = mark.Name, Key = mark.BuffKey, Level = top,
+    });
+    e.RecomputeDerived();
+}
+
 static void WarchanterParty(Entity e)
 {
     foreach (var id in new[] { SkillCatalog.WcArcaneFeralProt, SkillCatalog.WcHarmonySoul })
@@ -6371,7 +6392,13 @@ static void CcLand(string[] args)
         ("bare (gear + own passives)", _ => { }),
         ("+ NPC shelf",               e => ApplyNpcBuffs(e)),
         ("+ FULL shelf (harmonies)",  e => ApplyNpcBuffs(e, fullShelf: true)),
-        ("+ a real WARCHANTER",       e => { ApplyNpcBuffs(e, fullShelf: true); WarchanterParty(e); }),
+        ("+ WARCHANTER + Holy Mark", e => { ApplyNpcBuffs(e, fullShelf: true); WarchanterParty(e); }),
+        // 🔑 HIS POINT, 2026-09-13: *"the con/spt resists are on a single marks not on the harmony
+        //    one ... Ppl will chose harmony mark"*. He is right — Harmony Mark carries NO control
+        //    resistance, and all four Marks share `MarkKey` with `FlatRank`, so taking it costs you
+        //    the Holy/Life Mark's 15%/10% outright. This is the realistic endgame row.
+        ("+ WARCHANTER + Harmony Mk", e => { ApplyNpcBuffs(e, fullShelf: true); WarchanterParty(e);
+                                              SwapToHarmonyMark(e); }),
     };
 
     // 🔴 THE 2nd-CLASS ID IS NOT OPTIONAL. BuildPlayer defaults a Fighter to the HUMAN KNIGHT (13),
@@ -6449,7 +6476,7 @@ static void CcLand(string[] args)
                 }
                 string head = label == dress[0].Label
                     ? $"  {Trim(def.Name, 26),-26} {school,-8} {mod,5:0.00}"
-                    : $"  {"",-26} {Trim(label, 8),-8} {"",5}";
+                    : $"  {Trim(label, 26),-26} {"",-8} {"",5}";
                 Console.WriteLine(head + " | " + string.Join(" | ", cells));
             }
         }
@@ -6482,8 +6509,11 @@ static void CcLand(string[] args)
         int defStat = school == DebuffSchool.Magical ? d.EffectiveSpt : d.EffectiveCon;
         float land = StatCalculator.DebuffLandChance(atkStat, defStat, level, level);
         if (mod != 1f) land = Math.Clamp(land * mod, 0f, StatCaps.CcLandMax);
-        land *= 1f - d.CcResist;
-        land *= 1f - (school == DebuffSchool.Magical ? d.CcResistMagical : d.CcResistPhysical);
+        // `BL-225` — read the RETAINS the entity stores, exactly as the three roll sites do. Writing
+        // `1 - CcResist` here would still be right by algebra, but it is the phrasing that invites
+        // someone to "simplify" two factors into one sum, which is the bug this ruling removed.
+        land *= d.CcLandRetain;
+        land *= school == DebuffSchool.Magical ? d.CcLandRetainMagical : d.CcLandRetainPhysical;
         return land;
     }
 
