@@ -17493,16 +17493,25 @@ public class GameLoopService : BackgroundService
         float runeMult = kind == DamageKind.SkillMagic
             ? attacker.MagicDamageDealtMult
             : attacker.PhysDamageDealtMult;
-        // 🔴 `BL-212` — THE GLOBAL CREATURE ×2, 2026-09-12: *"mobs should get x2 power ... (not patk
-        // just dmg)"*. It lives HERE, once, because this is the only pipeline every creature swing,
-        // skill and spell passes through — and because it must NOT touch the P.Atk curve, which is
-        // fitted to IG off 2,831 measured monsters and is on the inspect panel. The reason it is owed
-        // at all is `BL-185`: the physical channel gained the defender level term M.Def always had, so
-        // at 90 a player's P.Def is ×1.79 and creature damage fell 44%. See MobRankScale.MobDamageOut.
-        // ⚠ NOT `attacker.Kind == EntityKind.Mob` — a guard, a tower and a boss are creatures too, and
-        //   every one of them is something other than a Player. The one thing this must never scale is
-        //   a PLAYER's output, which is what this test says and nothing more.
-        float mobMult = attacker.Kind == EntityKind.Player ? 1f : MobRankScale.MobDamageOut;
+        // 🔴 `BL-212` — THE CREATURE DAMAGE CURVE, 2026-09-12: *"mobs should get x2 power ... (not
+        // patk just dmg)"*, refined the same day to *"Let's make it lvl mod as u said. But <76 to
+        // restore what they lost (be as it was before bl185) and 76 to become harder"*. It lives HERE,
+        // once, because this is the only pipeline every creature swing, skill and spell passes through
+        // — and it must NOT touch the P.Atk curve, which is fitted to IG off 2,831 measured monsters
+        // and is on the inspect panel.
+        //
+        // 🔑 IT READS THE **TARGET'S** LEVEL, NOT THE ATTACKER'S, and that is not a slip: what it undoes
+        //    is `BL-185`'s level term inside the DEFENDER's own P.Def and M.Def. A level-90 creature
+        //    hitting a level-20 player must give back what THAT player's defence took, which is ×1.09.
+        //
+        // ⚠ BOTH SIDES ARE TESTED. The attacker must not be a player (a guard, a tower and a boss are
+        //   creatures too, so the test is "not Player", never "is Mob"), and the TARGET must be one —
+        //   `BL-185`'s level term is applied to player stats only (`Entity.RecomputeDerived`'s
+        //   `playerStats` branch), so paying it back on a mob-versus-mob hit would be inventing damage
+        //   nothing ever took away.
+        float mobMult = attacker.Kind != EntityKind.Player && target.Kind == EntityKind.Player
+            ? MobRankScale.DamageOut(attacker.Rank, target.Level)
+            : 1f;
         float result = dmg * (1f + bonus) * (1f + condBonus) * skillMult * raidMult * takenMult
                      * runeMult * mobMult;
         // A skill explicitly multiplied to 0 in this context deals 0 (e.g. a mob-only nuke

@@ -57,20 +57,46 @@ public static partial class SkillCatalog
     private static readonly int[] NukerHeavyMp4 =
         { 138, 142, 146, 154, 158, 182, 190, 194, 198, 206, 210, 214, 222, 226, 230 };
 
-    /// <summary>The BLAST power ladder, 110 → 138 by +2: Elemental Blast and Vampiric Bolt.</summary>
+    // ═══ 🔴 ALL THREE ROTATION LADDERS ARE HIS OWN ×1.30, 2026-09-12 ═══════════════════════
+    //
+    //  *"increase the mages spell power with some points to increase the dmg with atleast 30% on top
+    //    of the avr crit dmg we increases (so about 20~40 points up 110-> 130, 138->180/190) after 76"*
+    //
+    //  🔑 ×1.30 RATHER THAN HIS TWO POINT FIGURES, and the reason is that they disagree with each
+    //  other: +20 on 110 is +18%, which is under his own *"atleast 30%"* floor, while +40 on 138 is
+    //  +29%. A flat 30% satisfies the requirement at every rung and lands inside the range he gave at
+    //  the top — 143 against his "130", 179 against his "180/190". The percentage is the ruling; the
+    //  point figures were prefixed "about".
+    //
+    //  ⚠ ALL THREE LADDERS, NOT JUST THE BLAST. He named the blast's numbers because they are the
+    //  ones he reads, but *"the mages spell power"* is a class statement and the rotation is not one
+    //  spell: raising only the blast would silently retune Quick Blast and the waves DOWN by 30%
+    //  relative to it. Their ratios to each other are exactly as he authored them, to the point.
+    //
+    //  ⚠ THE ULTIMATES ARE NOT IN THIS — Elemental Burst, Thunderstorm, Arcane Void and the three race
+    //  Bursts keep their authored power. They are five-minute showpieces, not *"the dmg"*, and moving
+    //  them would change what a mage does in a boss window rather than what he does in a rotation.
+    //  One line each if he wants them.
+    //
+    //  🔑 THE 3rd TIER IS UNTOUCHED, on his *"after 76"*. So the class change at 76 now steps from
+    //  108 (the 74 rung) to 143, a +32% ascension jump where it used to be +2%.
+
+    /// <summary>The BLAST power ladder: Elemental Blast and Vampiric Bolt. His 110 → 138 by +2,
+    /// ×1.30 (2026-09-12) — <b>143 → 179</b>.</summary>
     private static readonly int[] NukerBlastPower4 =
-        { 110, 112, 114, 116, 118, 120, 122, 124, 126, 128, 130, 132, 134, 136, 138 };
+        { 143, 146, 148, 151, 153, 156, 159, 161, 164, 166, 169, 172, 174, 177, 179 };
 
-    /// <summary>The FAST/RIDER power ladder, 88 → 109: Quick Blast and Witches Curse. ⚠ Again the
-    /// healer's Holy Ray numbers exactly.</summary>
+    /// <summary>The FAST/RIDER power ladder: Quick Blast and Witches Curse. His 88 → 109, ×1.30 —
+    /// <b>114 → 142</b>. ⚠ It was the healer's Holy Ray numbers exactly and no longer is; that
+    /// coincidence was never load-bearing, and the healer keeps his own column.</summary>
     private static readonly int[] NukerQuickPower4 =
-        { 88, 90, 91, 93, 94, 96, 99, 100, 101, 102, 103, 105, 106, 108, 109 };
+        { 114, 117, 118, 121, 122, 125, 129, 130, 131, 133, 134, 137, 138, 140, 142 };
 
-    /// <summary>The AREA / RIDER power ladder, 66 → 105: Elemental Wave, Arcane Wave, Frost Spikes,
-    /// Frost Pierce. Flatter than the single-target line for the same reason it was at the 3rd tier —
-    /// these four either sweep or carry a debuff.</summary>
+    /// <summary>The AREA / RIDER power ladder: Elemental Wave, Arcane Wave, Frost Spikes, Frost
+    /// Pierce. His 66 → 105, ×1.30 — <b>86 → 137</b>. Still flatter than the single-target line for
+    /// the same reason it was at the 3rd tier — these four either sweep or carry a debuff.</summary>
     private static readonly int[] NukerWavePower4 =
-        { 66, 68, 70, 72, 75, 78, 81, 84, 87, 90, 93, 96, 99, 102, 105 };
+        { 86, 88, 91, 94, 98, 101, 105, 109, 113, 117, 121, 125, 129, 133, 137 };
 
     /// <summary>`mpWhenRestored`, 60% ×4 / 65% ×5 / 70% ×6 — the ONE robe column that is the nuker's own.
     /// ⚠ It RESUMES at 60%, where the 3rd tier plateaued for its last three rungs, and climbs again.</summary>

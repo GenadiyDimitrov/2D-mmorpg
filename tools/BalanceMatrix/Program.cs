@@ -1025,6 +1025,143 @@ if (args.Length > 0 && args[0] == "--stab")
 //    channel its LATER rungs will use (Skills.Lightbringer4th.cs says so in as many words), and a
 //    FIELD payload (blow rate, MP cost, magic crit damage) legitimately carries no magnitude at all.
 //    Only the missing direction is reported.
+// ═══ THE NUKER'S CAST CYCLE, MEASURED (2026-09-12) ══════════════════════════════════
+//
+//  *"why casting feels slow? I have 1500 cast ~4 times and 1s feels so long in real fight ... Also 1s
+//    cd with all the resuses also seems long"*
+//
+//  Prints the whole chain end to end so the answer is a number and not an opinion: the cast-speed
+//  STAT, the 333 multiplier it produces, the finished cast, the reuse after its reduction, and the
+//  CYCLE — which is what a rotation actually feels, and which nothing in this tool printed before.
+//  ⚠ The reuse starts when the cast LANDS (GameLoopService.ExecuteSkill), not when it begins, so the
+//    cycle is cast + reuse and not max(cast, reuse).
+// ═══ `BL-212` — WHAT A CREATURE ACTUALLY LANDS ON A PLAYER (2026-09-12) ══════════════════
+//
+//  His two anchors, read off his own level-90 mage before this change: *"now elit mob vs mage makes
+//  300 and normal does about 130 ... I want ... 300 for normal and elits from 300-> 750 with 150% and
+//  doubling it's patk as elit 1500 against a mage"*. This is the table that says whether we hit them.
+//
+//  ⚠ `raw` is the ratio formula's output BEFORE the creature curve — i.e. what the game dealt on
+//    0.132.0 — so the two columns beside it are the before and after of one change.
+if (args.Length > 0 && args[0] == "--mobdmg")
+{
+    int L = args.Length > 1 ? int.Parse(args[1]) : 90;
+    string q = args.Length > 2 ? args[2] : "epic";
+    bool buffed = args.Contains("--buffed");
+
+    Console.WriteLine();
+    Console.WriteLine($"=== CREATURE DAMAGE ON A PLAYER — level {L}, {q} gear, "
+                    + $"{(buffed ? "NPC-BUFFED" : "unbuffed")} ===");
+    Console.WriteLine($"    curve: MobRankScale.DamageOut(rank, {L}) = ×{MobRankScale.DamageOut(MobRank.Normal, L):0.000}"
+                    + $"   (boss exempt: ×{MobRankScale.DamageOut(MobRank.Boss, L):0.000})");
+    Console.WriteLine("    'raw' = the ratio formula alone, i.e. what 0.132.0 dealt. Basic attacks, non-crit.");
+    Console.WriteLine();
+    Console.WriteLine($"  {"target",-10} {"P.Def",7} {"M.Def",7} {"MaxHP",7} |{"normal raw",11}{"-> now",9}"
+                    + $" |{"elite raw",10}{"-> now",9} |{"boss",9}");
+
+    (string, Func<Entity>)[] sheets =
+    {
+        ("mage",    () => BuildPlayer(Race.Human, BaseClass.Mage, L, quality: q,
+                            discipline: Discipline.Magus, fourth: true, npcBuffed: buffed)),
+        ("tank",    () => BuildPlayer(Race.Human, BaseClass.Fighter, L, quality: q,
+                            discipline: Discipline.Bulwark, fourth: true, npcBuffed: buffed)),
+        ("warrior", () => BuildPlayer(Race.Human, BaseClass.Fighter, L, quality: q, warrior: true,
+                            discipline: Discipline.Ravager, secondClass: 14, fourth: true, npcBuffed: buffed)),
+        ("rogue",   () => BuildPlayer(Race.Human, BaseClass.Fighter, L, quality: q,
+                            discipline: Discipline.Nullblade, secondClass: 15, fourth: true, npcBuffed: buffed)),
+        ("archer",  () => BuildPlayer(Race.Human, BaseClass.Fighter, L, quality: q,
+                            discipline: Discipline.Sharpshooter, secondClass: 15, fourth: true, npcBuffed: buffed)),
+    };
+
+    foreach (var (name, make) in sheets)
+    {
+        var p = make();
+        int Raw(Entity mob) => StatCalculator.PhysicalDamage(
+            (int)mob.EffectiveBasicAttack, 0, Math.Max(1, (int)p.EffectiveDefence), mob.Level);
+
+        var normal = SpawnRanked(L, MobRank.Normal);
+        var elite  = SpawnRanked(L, MobRank.Elite);
+        var boss   = SpawnRanked(L, MobRank.Boss);
+        Console.WriteLine($"  {name,-10} {(int)p.EffectiveDefence,7} {(int)p.EffectiveMagicDefence,7} {p.MaxHp,7} |"
+                        + $"{Raw(normal),11}{BasicHit(normal, p),9} |{Raw(elite),10}{BasicHit(elite, p),9} |"
+                        + $"{BasicHit(boss, p),9}");
+    }
+
+    Console.WriteLine();
+    Console.WriteLine("  --- THE CURVE ACROSS THE GAME (what `BL-185` took, and what goes back) ---");
+    Console.WriteLine($"  {"lvl",4} {"levelMod",9} {"BL-185 took",12} {"DamageOut",10} {"net vs 0.132.0",15}");
+    foreach (int lv in new[] { 1, 10, 20, 30, 40, 52, 61, 70, 76, 80, 85, 90 })
+    {
+        float lm = StatCalculator.LevelMod(lv);
+        float outm = MobRankScale.DamageOut(MobRank.Normal, lv);
+        Console.WriteLine($"  {lv,4} {lm,9:0.00} {1f - 1f / lm,11:P0} {outm,10:0.00} {outm,14:0.00}×");
+    }
+    return;
+}
+
+if (args.Length > 0 && args[0] == "--castcycle")
+{
+    int L = args.Length > 1 ? int.Parse(args[1]) : 90;
+    string q = args.Length > 2 ? args[2] : "epic";
+
+    Console.WriteLine();
+    Console.WriteLine($"=== CAST CYCLE — Magus, level {L}, {q} gear ===");
+    Console.WriteLine("    castTicks = authored × (333 / castSpeedStat) × CastTimeMultiplier     min 2 ticks");
+    Console.WriteLine("    reuse     = authored × (1 − CooldownReduction − CooldownReductionMagic)  min 1 tick");
+    Console.WriteLine("    cycle     = cast + reuse   (the reuse starts when the cast LANDS)");
+    Console.WriteLine();
+
+    foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
+    {
+        foreach (var (label, buffed) in new[] { ("bare", false), ("NPC-buffed", true) })
+        {
+            var m = BuildPlayer(race, BaseClass.Mage, L, quality: q,
+                                discipline: Discipline.Magus, fourth: true, npcBuffed: buffed);
+            // ⚠ EffectiveCastSpeedMultiplier IS the 333/stat TIME multiplier already; the STAT is
+            //   its reciprocal. Reading it as a stat would print 0.2 where 1500 belongs.
+            float mult = m.EffectiveCastSpeedMultiplier;
+            float stat = StatCalculator.SpeedBaseline / MathF.Max(1e-6f, mult);
+            float ctm = m.CastTimeMultiplier;
+            Console.WriteLine($"  {race,-6} {label,-11} WIT {m.EffectiveWit,3:0}  castSpeed {stat,7:0}"
+                            + $"  ×{mult,5:0.000}  castTimeMult ×{ctm,4:0.00}");
+
+            foreach (var id in new[] { SkillCatalog.ElementalBlast, SkillCatalog.QuickBlast })
+            {
+                if (SkillCatalog.Get(id) is not { } d) continue;
+                int lvl = m.SkillLevelOf(id); if (lvl <= 0) lvl = 1;
+                int authoredCast = d.CastTicksAt(lvl), authoredCd = d.CooldownTicksAt(lvl);
+                int castTicks = Math.Max(2, (int)(authoredCast * mult * ctm));
+                float cdr = m.CooldownReductionFor(d);
+                int cdTicks = d.FixedCooldown ? authoredCd
+                            : Math.Max(1, (int)(authoredCd * (1f - cdr)));
+                float cast = castTicks * GameConstants.TickSeconds;
+                float cd = cdTicks * GameConstants.TickSeconds;
+                Console.WriteLine($"      {d.Name,-18} authored {authoredCast * GameConstants.TickSeconds,4:0.0}s cast /"
+                                + $" {authoredCd * GameConstants.TickSeconds,4:0.0}s reuse   →  cast {cast,5:0.00}s"
+                                + $"  reuse {cd,5:0.00}s (−{cdr,4:P0})  CYCLE {cast + cd,5:0.00}s");
+            }
+        }
+    }
+
+    Console.WriteLine();
+    Console.WriteLine("  --- WHAT A −40% CAST-TIME SHOT WOULD DO (his *\"ig bsps add 40% to the casting\"*) ---");
+    Console.WriteLine("  The Spell Rune today grants `BuffCastSpeed 40` FLAT — 40 points on a STAT that is");
+    Console.WriteLine("  already ~1400-1900, i.e. about +2%. `CastTimePct` is the channel that expresses a");
+    Console.WriteLine("  real cast-TIME cut (BL-196); nothing but the archer's Spirit Mastery authors one.");
+    {
+        var m = BuildPlayer(Race.Human, BaseClass.Mage, L, quality: q,
+                            discipline: Discipline.Magus, fourth: true, npcBuffed: true);
+        float mult = m.EffectiveCastSpeedMultiplier;
+        var d = SkillCatalog.Get(SkillCatalog.ElementalBlast)!;
+        int lvl = Math.Max(1, m.SkillLevelOf(d.Id));
+        int a = d.CastTicksAt(lvl);
+        float now = Math.Max(2, (int)(a * mult * m.CastTimeMultiplier)) * GameConstants.TickSeconds;
+        float with40 = Math.Max(2, (int)(a * mult * m.CastTimeMultiplier * 0.60f)) * GameConstants.TickSeconds;
+        Console.WriteLine($"    Elemental Blast: {now:0.00}s today  →  {with40:0.00}s with the shot as −40% cast time");
+    }
+    return;
+}
+
 if (args.Length > 0 && args[0] == "--maskaudit")
 {
     Console.WriteLine();
@@ -2721,13 +2858,15 @@ Console.WriteLine($"{"Lvl",4} | {"FTR int",8} {"now",6} {"new",6} | {"MAGE int",
 /// picked them up for free. They no longer are. Without this wrapper every table that says "War/Spell
 /// Rune ON" would quietly drop a ×2 and we would be measuring a rig, not the game — which is exactly
 /// how three wrong diagnoses got written in three days.</para></summary>
-/// <para>🔴 AND SINCE `BL-212` (2026-09-12) IT CARRIES THE CREATURE ×2 AS WELL, for exactly the same
-/// reason: <c>MobRankScale.MobDamageOut</c> is applied in <c>FinalizeDamage</c> beside the rune, so a
-/// rig that multiplied only the rune would print every mob, guard and boss at half what the server
-/// deals. The test is "not a Player", not "is a Mob" — same as the server's.</para>
-static int Shot(Entity a, bool magic, int dmg) =>
+/// <para>🔴 AND SINCE `BL-212` (2026-09-12) IT CARRIES THE CREATURE DAMAGE CURVE AS WELL, for exactly
+/// the same reason: <c>MobRankScale.DamageOut</c> is applied in <c>FinalizeDamage</c> beside the rune,
+/// so a rig that multiplied only the rune would print every mob, guard and elite well under what the
+/// server deals. ⚠ It needs the DEFENDER, because the curve reads the defender's level — a call that
+/// omits <paramref name="d"/> is measuring a player's output and correctly takes no creature term.</para>
+static int Shot(Entity a, bool magic, int dmg, Entity? d = null) =>
     Math.Max(1, (int)(dmg * (magic ? a.MagicDamageDealtMult : a.PhysDamageDealtMult)
-                          * (a.Kind == EntityKind.Player ? 1f : MobRankScale.MobDamageOut)));
+                          * (a.Kind != EntityKind.Player && d is { Kind: EntityKind.Player }
+                             ? MobRankScale.DamageOut(a.Rank, d.Level) : 1f)));
 
 static float ShownNow(Entity e) => 20 * MathF.Sqrt(e.EffectiveMagicAttack);
 static float ShownNew(Entity e) => MathF.Min(e.EffectiveMagicAttack, 20 * MathF.Sqrt(e.EffectiveMagicAttack));
@@ -6299,7 +6438,7 @@ static float BlockFactor(Entity atk, Entity def)
 /// this, not the telegraphed skill, is what *"not one shooting"* has to be measured on.</summary>
 static int BasicHit(Entity atk, Entity def) =>
     Shot(atk, false, StatCalculator.PhysicalDamage((int)atk.EffectiveBasicAttack, 0,
-        Math.Max(1, (int)def.EffectiveDefence), atk.Level));
+        Math.Max(1, (int)def.EffectiveDefence), atk.Level), def);
 
 /// <summary>The biggest SINGLE blow this attacker can land — basic or skill. Non-crit on purpose:
 /// a crit is variance on top, and a boss that one-shots only on a crit is a different complaint.</summary>
@@ -6307,13 +6446,13 @@ static int BiggestHit(Entity atk, Entity def)
 {
     int pDef = Math.Max(1, (int)def.EffectiveDefence);
     int mDef = Math.Max(1, (int)def.EffectiveMagicDefence);
-    int best = Shot(atk, false, StatCalculator.PhysicalDamage((int)atk.EffectiveBasicAttack, 0, pDef, atk.Level));
+    int best = Shot(atk, false, StatCalculator.PhysicalDamage((int)atk.EffectiveBasicAttack, 0, pDef, atk.Level), def);
     var (ps, pl) = TopSkill(atk, SkillEffect.PhysicalDamage);
     if (ps is not null)
-        best = Math.Max(best, Shot(atk, false, StatCalculator.PhysicalDamage((int)atk.EffectiveAttack, ps.PowerAt(pl), pDef, atk.Level)));
+        best = Math.Max(best, Shot(atk, false, StatCalculator.PhysicalDamage((int)atk.EffectiveAttack, ps.PowerAt(pl), pDef, atk.Level), def));
     var (ms, ml) = TopSkill(atk, SkillEffect.MagicDamage);
     if (ms is not null)
-        best = Math.Max(best, Shot(atk, true, StatCalculator.MagicDamage((int)atk.EffectiveMagicAttack, ms.PowerAt(ml), mDef, atk.Level)));
+        best = Math.Max(best, Shot(atk, true, StatCalculator.MagicDamage((int)atk.EffectiveMagicAttack, ms.PowerAt(ml), mDef, atk.Level), def));
     return best;
 }
 

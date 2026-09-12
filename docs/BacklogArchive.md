@@ -4555,3 +4555,139 @@ tools/BalanceMatrix -- --maskaudit` lists them; it reads **CLEAN**.
 how a ladder declares a channel its later rungs will fill, and how a FIELD payload keeps a buff
 landable while carrying its real value elsewhere (Lethal Frenzy declares `BuffCritRate` with no
 magnitude and pays through `BlowRatePct`).
+
+---
+
+
+## `BL-212` ✅ CLOSED 2026-09-12 (0.134.0) — THE CREATURE DAMAGE CURVE, AND IT IS A LEVEL MOD
+
+Filed the same day the flat ×2 shipped, flagging that the ×2 was level-flat while the `BL-185` loss it
+corrected was not. **You ruled within the hour:** *"Let's make it lvl mod as u said. But <76 to restore
+what they lost (be as it was before bl185) and 76 to become harder."*
+
+```
+mult(L) = levelMod(L) x (1 + 0.40 x clamp((L-76)/14, 0, 1))
+          L 20 -> x1.09    L 52 -> x1.41    L 76 -> x1.65    L 90 -> x2.51
+BOSS: exempt
+```
+
+📐 **Measured against your own two anchors and it lands on them.** You gave, off your level-90 mage:
+a normal creature ~130 and an elite ~300, wanting ~300 and ~750, with the elite's doubled P.Atk
+carrying it to ~1500. `--mobdmg 90 epic --buffed` reads **107 → 268** for a normal and **161 → 806**
+for an elite — ×2.51 and ×5.0 respectively, which is your 130 → 300 and your 300 → 1500 to the ratio.
+⚠ The absolute numbers differ from yours (our rig's level-90 epic mage sheet is not your character,
+and its elite reads 161 raw where you saw 300) — it is the RATIOS that are yours.
+
+🔴 **THE BOSS IS EXEMPT** — *"Bosses to compensate with their passive so they won't change after the
+base increase"*. Written as an exemption rather than as a division of `MobRankScale.Atk`'s boss rung,
+because this multiplier is LEVEL-SHAPED and that rung is a single constant: it could only have
+cancelled at one level. The result is exactly yours — nothing about a boss moves.
+
+⚠ An ELITE is **not** exempt; it takes the curve AND its own ×3.0 attack rung. Guards and towers ride
+it too, and their `MobMod.PAtk` multiplies on top as it always did.
+
+🔑 **It reads the TARGET's level**, because what it undoes lives in the defender's own P.Def, and both
+sides are tested: the attacker must not be a player and the target must be one. `BL-185`'s level term
+is applied to player stats only, so paying it back on a mob-vs-mob hit would invent damage nothing
+ever removed.
+
+### The 0.133.0 text, superseded the same day
+
+## `BL-212` 🔵 THE CREATURE ×2 IS BUILT — but it is LEVEL-FLAT and the loss it corrects is not
+
+**BUILT exactly as you asked (0.133.0)**, both halves: every creature's finished damage is ×2
+(`MobRankScale.MobDamageOut`, applied once in `GameLoopService.FinalizeDamage` to any attacker that is
+not a player), and an ELITE's attack went ×1.5 → **×3.0**. On a basic attack the two compose to your
+**×4**; on a mob skill carrying power it is less, because damage is a ratio and only the `pAtk` half
+of `(pAtk + power)` is doubled by the elite's rung. Your *"not patk just dmg"* was the right call and
+for a second reason as well: the creature attack curve is fitted to IG off 2,831 measured monsters and
+is on the inspect panel, so moving it would make every future comparison lie.
+
+**What "the last update" actually was**, since it decides whether ×2 is the right size: `BL-185`
+(0.117.0) gave the PHYSICAL channel the defender level term M.Def had always had. A defender's P.Def
+is now multiplied by `(level + 89)/100`. **So the loss you felt is level-shaped and the correction is
+not:**
+
+| your level | P.Def multiplier `BL-185` added | damage it removed | what ×2 restores |
+|---|---|---|---|
+| 20 | ×1.09 | −8% | **×2.18 of what it was** |
+| 50 | ×1.39 | −28% | ×1.44 |
+| 76 | ×1.65 | −39% | ×1.21 |
+| 90 | ×1.79 | −44% | ×1.12 |
+
+At 90 the ×2 is barely more than the correction — which is what you asked for and it lands well. At
+20 it is more than double an over-correction. **Measured** (`dotnet run --project tools/BalanceMatrix`,
+the E4 farm loop, unbuffed and solo — so a floor, not what you play): HP spent per kill doubles at
+every level, and **kills-until-your-bar-is-empty** falls from 29 → 11 for a level-36 tank, 43 → 15 for
+a melee rogue, and **8 → 3 for a level-36 nuker**. That is the same population `BL-72` already flags
+as not surviving an unbuffed auto-farm.
+
+🔵 **THE ONE CHOICE LEFT IS YOURS, and it is one line either way:**
+- **Keep the flat ×2.** Simple, it is your number, and the low levels get harder. Nothing to do.
+- **Make it the level term itself** — multiply creature damage by `PhysicalDefenceLevelMod(target)`
+  instead of by 2. That restores *exactly* what `BL-185` took, at every level: ×1.09 at 20, ×1.79 at
+  90. At the level you actually play it is 10% under your ×2 and you would not feel it; at 20 it is
+  half of it.
+- **Both** — the level term with a floor or a small flat bonus on top, if you want the hit "noticed"
+  at 90 as well as restored.
+
+⚠ **A BOSS TAKES THE ×2 TOO.** You measured bosses as *"OK for now ... They do ok dmg no1 survives"*
+**before** this change, so their ladder (×4 × rune ×2 × solo ×2) now rides on top of a doubled base.
+If a boss overshoots at the next playtest, the knob is `MobRankScale.Atk`'s boss rung, not this one.
+
+
+---
+
+
+## `BL-215` (superseded 2026-09-12) — the three-lever version, before you answered the IG question
+
+## `BL-215` 🔵 THE MAGE'S DAMAGE — the crit pass bought +25%, and the three levers left are all yours
+
+You asked one question directly: *"if we touch a bit the magic K(91) and increase it with like 30% does
+will increase the overall dmg and will it break the low lvls? Or we need to increase the 76+ spells
+power?"* Here is the measured answer, and then the choice.
+
+### First: what today's work already bought, before any of these levers
+
+Three things landed in 0.133.0 — your two crit rulings (`BL-209`, `BL-210`) and a bug neither of us
+knew about (`BL-214`: Harmony of the Wizard's crit-rate line had **never worked**, because the def's
+`Effect` mask did not declare the flag). Measured with `--mcrit 90 epic`, a fully-blessed Magus:
+
+| | crit rate | crit damage | average damage multiplier |
+|---|---|---|---|
+| before | 8.8% | ×2.60 | ×1.141 |
+| **after** | **20%** (the cap) | **×3.12** | **×1.424** |
+
+**+25% average magic damage**, and your ×3.12 lands on the digit. **Re-playtest before pulling
+anything else** — a good part of what you were reaching for with `MagicK` has already arrived.
+
+### 🔴 Lever 1 — `MagicK` 91 → ~118. My recommendation: NO.
+
+- **It is IG's constant, verbatim**, and so is `PhysicalK 77` (`docs/balance/DamageVsIG.md`). The last
+  real measurement put our mage **1.19× ABOVE** IG's own observed damage at 76 unbuffed. Nothing in
+  the constant is short.
+- **It answers your "will it break the low lvls?" with: it changes them by exactly the same 30%.**
+  `MagicK` is a flat scalar with no level term. The rig already reports a level-8 mage's first nuke
+  killing a same-level mob in **one cast** (91 damage vs 91 HP) and a level-20 mage overkilling by
+  1.7× — a 30% rise deepens both. Meanwhile at 90 an elite has ×4 HP and ×1.33 M.Def, so 30% takes it
+  from ~24 casts to ~18. **The deficit you feel is level-shaped; this lever is not.**
+
+### 🔵 Lever 2 — the 76+ spell power. The right shape, and it is YOUR file.
+
+`nuker 4th.csv`'s blast ladder is **110 → 138** across 76 → 90 (+2 a level), and the 3rd tier ends at
+108 at 74. So the whole 4th tier is +28% of power over fifteen levels while mob HP grows ~40% and an
+elite multiplies it by four again. This is the number that decides endgame mage damage and it is
+authored by you — I will not retune a CSV. **Give me a new column, or a multiplier to apply to it.**
+
+### 🔵 Lever 3 — the magic crit-RATE cap, `StatCaps.MagicCritRate = 20%`. Newly load-bearing.
+
+Your `BL-209` ruling took Harmony of the Wizard from ×1.3 to ×2 on the rate — and a fully-blessed
+Magus of **every race** now sits exactly ON the 20% ceiling, so the second half of that buff is being
+thrown away. That is not an argument against the ruling (it is what makes the Human and Demon reach
+the cap at all, and they did not before), but it does mean **the cap is now the lever, not the buff**.
+Its own doc-comment anticipated this: *"still max 20% but one day if we want to increase it no mage to
+be short on crit"*. At ×3.12 crit damage, every 5 points of cap is about **+10%** average damage.
+
+⚠ **And one thing that got HARDER today, which you should weigh with all three:** `BL-212` doubled
+every creature's damage and tripled an elite's attack. The mage was already the sheet that spends the
+most HP per kill.

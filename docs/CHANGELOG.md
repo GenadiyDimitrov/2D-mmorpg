@@ -7,12 +7,98 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.133.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.134.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-12 (latest) — 0.133.0: the mage's crit chain, blows against light armour, creatures that hit twice as hard — and four buffs that had never applied
+## 2026-09-12 (latest) — 0.134.0: the creature curve becomes a level mod, the mage gets his power and his reuse, the archer gets his double
+
+⚠ **NEW APK** — the class-skill tables changed again (`archer 3rd`/`archer 4th` gain a `[Double]`
+label the client renders from the flag). No protocol bump.
+
+His six follow-ups to 0.133.0, the same evening. Five built; the sixth is measured and handed back.
+
+### The creature damage curve is a LEVEL MOD, not a flat ×2 (`BL-212`)
+
+*"Let's make it lvl mod as u said. But <76 to restore what they lost (be as it was before bl185) and
+76 to become harder."*
+
+```
+mult(L) = levelMod(L) x (1 + 0.40 x clamp((L-76)/14, 0, 1))
+          L 20 -> x1.09    L 52 -> x1.41    L 76 -> x1.65    L 90 -> x2.51
+BOSS: exempt
+```
+
+Below 76 it restores exactly what `BL-185` took and not one point more; above 76 it overshoots on
+purpose. 📐 `--mobdmg 90 epic --buffed` against his two anchors: a normal creature **107 → 268**, an
+elite **161 → 806** — ×2.5 and ×5.0, which is his "130 → 300" and "300 → 1500" to the ratio.
+🔴 A **boss is exempt** — *"Bosses to compensate with their passive so they won't change"* — written
+as an exemption rather than as a division of the boss attack rung, because the multiplier is
+level-shaped and that rung is one constant. An **elite is not**: it takes the curve and its ×3.0 rung.
+🔑 It reads the **target's** level (the term it undoes is the defender's) and tests both sides: the
+attacker must not be a player, the target must be one.
+
+### Does IG carry a level mod on P.Def and M.Def? Yes — and we had already proved it (`BL-215`)
+
+His question decided everything else. `docs/balance/DamageVsIG.md` divides his five in-game M.Def
+rows by gear and then by `levelMod` and the remainder is constant to ±2% across 56 levels:
+`IG M.Def = SUM(jewel M.Def) × MENbonus × (level+89)/100`. P.Def divides out the same way. So the
+level term is shared with IG, `MagicK 91` stays IG's verbatim constant, and the answer is his second
+branch: keep the term, fix `BL-212` as a level mod, raise the 76+ spell power.
+
+### The nuker's 4th-tier rotation power ×1.30 (`BL-215`)
+
+| ladder | skills | was | now |
+|---|---|---|---|
+| blast | Elemental Blast · Vampiric Bolt | 110 → 138 | **143 → 179** |
+| fast/rider | Quick Blast · Witches Curse | 88 → 109 | **114 → 142** |
+| area/rider | Elemental Wave · Arcane Wave · Frost Spikes · Frost Pierce | 66 → 105 | **86 → 137** |
+
+⚠ ×1.30 rather than his two point figures, which disagree with each other: +20 on 110 is +18%, under
+his own *"atleast 30%"* floor. All three ladders, not just the blast he quoted — raising only it would
+have retuned the other two DOWN by 30% against it. The ultimates keep their power.
+
+### Casting is not slow. The REUSE was. (`BL-216`, and his item 6)
+
+Our cast model is IG's arithmetic exactly — `authored × 333 / castSpeedStat`. What the measurement
+found instead: an NPC-buffed Magus of every race is **on the cast-speed cap** (1999), so a 4s cast
+resolves in **0.60s** while its 1s reuse, cut only 20% by Spell Mastery, ran **0.80s**. **57% of the
+cycle was reuse.** Elemental Blast's reuse is **1.0s → 0.5s** on his ruling; the cycle goes
+**1.40s → 1.00s**. The cast is untouched — *"4cast as is"*.
+
+🔵 And the finding he guessed at himself: the **Spell Rune grants `BuffCastSpeed 40` FLAT** on a stat
+already at 1400-1999, i.e. **+2%** — and at the cap a cast-SPEED grant is worth nothing at all, while
+a cast-TIME cut still multiplies. If IG's blessed shot is −40% on the final cast, `CastTimePct: 0.40f`
+is one line and takes the cast to 0.30s. **Not built** — his premise is unverified and the mage is
+already at ≈×2.3 from this pass. `BL-216`.
+
+### The archer's `[Double]` (`BL-213`)
+
+*"Every archer dmg skill without explotion and magic arrow - so the twin/heavy/barrage(each arrow on
+its own)"*. `CanDouble` on **Twin Arrows**, **Heavy Arrow** and **Arrow Barrage**. 🔑 *"each arrow on
+its own"* needed nothing: both volleys are channels, the wrapper resolves nothing, and every arrow is
+its own resolution — so Arrow Barrage rolls ten times. The flag sits on the arrow (the mechanic) and
+on the wrapper (the label). Without this the archer's new Overpower would have measured as zero.
+
+### What the mage has gained since 0.132.0
+
+crit ×1.25 · power ×1.30 · cycle ×1.40 → **≈ ×2.3**. Worth re-playtesting before `BL-215`'s last
+lever (the 20% magic crit-RATE cap, which every race now sits exactly on).
+
+### Tooling
+
+- `--mobdmg <level> <quality> [--buffed]` — what a normal / elite / boss lands on each class sheet,
+  with the raw pre-curve number beside it, plus the curve across the whole game.
+- `--castcycle <level> <quality>` — cast-speed stat, the 333 multiplier, cast, reuse and the CYCLE.
+- `Shot()` takes the defender now, because the creature curve reads the defender's level.
+
+### Verified
+
+All four projects build; the server boots; `SmokeTest` passes; `SkillCsvSeed --check` is back to its
+two pre-existing `BL-202` rows after 134 CSV cells moved with the code (`nuker 3rd`, `nuker 4th`).
+
+## 2026-09-12 — 0.133.0: the mage's crit chain, blows against light armour, creatures that hit twice as hard — and four buffs that had never applied
 
 ⚠ **NEW APK.** No protocol bump — nothing on the wire changed — but the class-skill TABLES did, and
 the client builds its Learn tab locally from the compiled `ClassSkills`.

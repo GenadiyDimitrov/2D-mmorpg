@@ -141,8 +141,16 @@ public static partial class SkillCatalog
         // level-35 spell); his 3rd file is the real thing and it wins. The bolts keep their defs and
         // their 20-35 rungs — see the purge note in ClassSkillTables.Common.cs.
 
+        // 🔴 REUSE 1.0s → 0.5s, 2026-09-12: *"Make mages elemental blast (the 40 normal spell) have
+        //    4cast as is and 0.5 reuse not 1"*, conditioned on *"if nothing wrong with reuses"*.
+        //    Nothing is: the machinery checks out (the reuse starts when the cast LANDS, and the
+        //    per-channel reduction applies) — but MEASURED, the reuse was the SLOW HALF of his cycle.
+        //    `--castcycle 90 epic`: a buffed Magus is at the cast-speed CAP (1999), so the 4s cast
+        //    resolves in 0.60s while the 1s reuse, cut only 20% by Spell Mastery, ran 0.80s. The cycle
+        //    was 57% reuse. At 0.5s it is 0.60 + 0.40 = 1.00s, a ~29% rotation-damage gain on its own.
+        // ⚠ THE CAST IS DELIBERATELY UNTOUCHED — *"4cast as is"*.
         new(ElementalBlast, "Elemental Blast", BaseClass.Mage, SkillEffect.MagicDamage,
-            MpCost: NukerBoltMp[0], CastTicks: 40, CooldownTicks: 10, Range: 900,
+            MpCost: NukerBoltMp[0], CastTicks: 40, CooldownTicks: 5, Range: 900,
             Power: NukerBlastPower[0],
             Category: SkillCategory.Magic, SpCost: 36000,
             Replaces: new[] { ElementalBolt },

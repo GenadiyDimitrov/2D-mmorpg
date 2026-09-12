@@ -229,9 +229,52 @@ public static class MobRankScale
     //  as *"OK for now ... They do ok dmg no1 survives"* BEFORE this change — re-measure them, and if a
     //  boss now overshoots, the knob to move is `Atk`'s boss rung, not this one.
 
-    /// <summary>Every creature's FINISHED damage, ×2 (`BL-212`). See the block above for why it is not
-    /// P.Atk and what it is compensating for.</summary>
-    public const float MobDamageOut = 2.0f;
+    /// <summary>Where the endgame ramp starts and ends, and how much it adds on top of the level
+    /// term. His 2026-09-12 spec: *"&lt;76 to restore what they lost (be as it was before bl185) and 76
+    /// to become harder"*, landing on *"~150% more"* at the level he plays.</summary>
+    private const int   EndgameFrom  = 76;
+    private const int   EndgameTo    = 90;
+    private const float EndgameExtra = 0.40f;
+
+    /// <summary>The multiplier on a creature's FINISHED damage against a PLAYER (`BL-212`). Read the
+    /// DEFENDER's level: what this undoes lives in the defender's own P.Def/M.Def.
+    ///
+    /// <code>
+    /// mult(L) = levelMod(L) × (1 + 0.40 × clamp((L−76)/14, 0, 1))
+    ///           L 20 → ×1.09    L 52 → ×1.41    L 76 → ×1.65    L 90 → ×2.51
+    /// </code>
+    ///
+    /// <para>🔑 <b>BELOW 76 IT IS EXACTLY THE LEVEL TERM, AND THAT IS THE WHOLE POINT.</b> `BL-185`
+    /// gave the physical channel the defender level term M.Def had always had, so a player's P.Def is
+    /// multiplied by <c>(level+89)/100</c> and creature damage fell by exactly <c>1/levelMod</c> — 8% at
+    /// 20, 29% at 52, 44% at 90. Multiplying by the same number puts back precisely what was taken and
+    /// not one point more, at every level. The first `BL-212` shipped a flat ×2, which restored 8% and
+    /// then added 84% on top of it at level 20; his correction: *"Let's make it lvl mod as u said."*</para>
+    ///
+    /// <para>🔑 <b>AND ABOVE 76 IT DELIBERATELY OVERSHOOTS.</b> *"76 to become harder."* His own
+    /// arithmetic, measured against his level-90 mage and quoted to the number: a normal creature hit
+    /// him for ~130 and an elite for ~300; he wants ~300 and ~750, with the elite's doubled P.Atk
+    /// carrying it to ~1500. ×2.51 at 90 delivers 326 / 752 / 1504. The ramp is linear across the last
+    /// fifteen levels rather than a step at 76, because a cliff at the class change is the thing
+    /// `BL-170` already complains about.</para>
+    ///
+    /// <para>🔴 <b>A BOSS TAKES NONE OF IT</b> — *"Bosses to compensate with their passive so they
+    /// won't change after the base increase"*. Expressed as an exemption rather than as a division of
+    /// <see cref="Atk"/>'s boss rung, because this multiplier is LEVEL-SHAPED and that rung is not: a
+    /// single constant there could only cancel it at one level. The observable result is his, exactly —
+    /// nothing about a boss moves. ⚠ An ELITE is not exempt; it takes this AND its own ×2 attack.</para>
+    ///
+    /// <para>⚠ GUARDS AND TOWERS RIDE IT TOO. They are creatures, they are what a PK meets, and their
+    /// own <c>MobMod.PAtk</c> multiplies on top as it always did.</para></summary>
+    /// <param name="rank">The ATTACKER's rank — only <see cref="MobRank.Boss"/> changes the answer.</param>
+    /// <param name="targetLevel">The DEFENDER's level, because the term being undone is the defender's.</param>
+    public static float DamageOut(MobRank rank, int targetLevel)
+    {
+        if (rank == MobRank.Boss) return 1f;
+        float levelMod = StatCalculator.LevelMod(targetLevel);
+        float t = Math.Clamp((targetLevel - EndgameFrom) / (float)(EndgameTo - EndgameFrom), 0f, 1f);
+        return levelMod * (1f + EndgameExtra * t);
+    }
 
     /// <summary>Flat accuracy by rank — a boss must be able to land on a dodge build (his playtest-20
     /// *"Acc +20"*). Flat, and applied after the template's own Accuracy multiplier, so a boss gets it

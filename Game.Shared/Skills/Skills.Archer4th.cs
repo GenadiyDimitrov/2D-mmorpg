@@ -256,7 +256,7 @@ public static partial class SkillCatalog
             level: 84, bottles: 2, power: 17000, mp: 195, durationTicks: 0,
             mags: Array.Empty<EffectMagnitude>(),
             "One arrow drawn to the ear and loosed. There is nothing clever about it.",
-            "Strikes for power 17,000."));
+            "Strikes for power 17,000.", canDouble: true));
 
         // ═══ THE THREE RACE ULTIMATES (85) ═══════════════════════════════════════════════════════
         list.Add(Ultimate(ArcherBleedingArrow, "Bleeding Arrow",
@@ -312,7 +312,8 @@ public static partial class SkillCatalog
             mags: Array.Empty<EffectMagnitude>(),
             "Ten arrows in two seconds, and none of them politely.",
             "Looses 10 arrows over 2s, each for power 2,500 with a 150 splash.",
-            channelSkill: ArcherBarrageArrow, channelShots: 10, channelIntervalTicks: 2, cooldownTicks: 300));
+            channelSkill: ArcherBarrageArrow, channelShots: 10, channelIntervalTicks: 2, cooldownTicks: 300,
+            canDouble: true));
 
         // ONE ARROW. Never learned and never on a bar — the wrapper is what the player owns.
         // ⚠ MP is ZERO here: the wrapper charges his 208 once, for the whole volley. Ten arrows each
@@ -320,7 +321,10 @@ public static partial class SkillCatalog
         list.Add(new SkillDef(ArcherBarrageArrow, "Arrow Barrage", BaseClass.Fighter,
             SkillEffect.PhysicalDamage,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 900, Power: 2500,
-            Category: SkillCategory.Physical,
+            // 🔴 `[Double]`, 2026-09-12 (`BL-213`) — *"the twin/heavy/barrage(each arrow on its own)"*.
+            //    TEN independent rolls, one per arrow, because a channel resolves each shot separately.
+            //    The wrapper carries the flag too, for the card; only this def ever resolves damage.
+            Category: SkillCategory.Physical, CanDouble: true,
             AreaRadius: 150f, AreaAtTarget: true, TargetMode: TargetMode.EnemiesInRadius,
             RequiredWeapon: WeaponType.Bow,
             Description: "One arrow of a barrage: power 2,500 where it lands, and 150 around it."));
@@ -360,12 +364,17 @@ public static partial class SkillCatalog
                                      int rank = 0, DebuffSchool school = DebuffSchool.None,
                                      int dispelCount = 0, float lifesteal = 0f,
                                      string? channelSkill = null, int channelShots = 0,
-                                     int channelIntervalTicks = 0, int cooldownTicks = 100)
+                                     int channelIntervalTicks = 0, int cooldownTicks = 100,
+                                     bool canDouble = false)
         => new(id, name, BaseClass.Fighter, effect,
             MpCost: mp, CastTicks: 30, CooldownTicks: cooldownTicks, Range: 900, Power: power,
             DurationTicks: durationTicks, BuffKey: id, Rank: rank,
             DebuffSchool: school, DispelCount: dispelCount, Lifesteal: lifesteal,
-            Category: SkillCategory.Physical,
+            // 🔴 `BL-213` — `[Double]` on Heavy Arrow and Arrow Barrage only. His list is exact:
+            //    *"Every archer dmg skill without explotion and magic arrow"*, so the three race
+            //    ultimates at 85 (Bleeding / Dazzling / Healing Arrow) are NOT flagged either — they
+            //    are not on his list, and each already carries a rider that is the reason to press it.
+            Category: SkillCategory.Physical, CanDouble: canDouble,
             RequiredWeapon: WeaponType.Bow,
             ChannelSkill: channelSkill, ChannelShots: channelShots,
             ChannelIntervalTicks: channelIntervalTicks,

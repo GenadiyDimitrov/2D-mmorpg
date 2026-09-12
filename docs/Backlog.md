@@ -133,9 +133,9 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-189` | 🔵 | Weapon-type protection — `BowResist` generalised to every weapon type | combat |
 | `BL-202` | 🔵 | THE WARRIOR'S DAMAGE + CONTROL SKILLS — the half of both 3rd kits still owed | classes |
 | `BL-208` | ❓ | ONE cosmetic cell left from the Magus's 4th kit — three of four closed the same day | classes |
-| `BL-212` | 🔵 | The creature ×2 is LEVEL-FLAT while the loss it corrects is not — built as asked, one choice left | world |
 | `BL-213` | 🟡 | The mastery roster, rewritten to your table — BUILT; two display names and four learn levels are mine | classes |
-| `BL-215` | 🔵 | THE MAGE'S DAMAGE — the crit pass bought +25%; three levers left and none of them is mine to pull | combat |
+| `BL-215` | 🔵 | THE MAGE'S DAMAGE — two levers pulled (≈×2.3 since 0.132.0); the crit-rate CAP is the third | combat |
+| `BL-216` | 🔵 | The Spell Rune's cast half is worth +2% — a −40% cast TIME is one line, and your call | combat |
 
 ---
 
@@ -1250,52 +1250,6 @@ number that does nothing. Say the word and the three cells go.
 ---
 
 
-## `BL-212` 🔵 THE CREATURE ×2 IS BUILT — but it is LEVEL-FLAT and the loss it corrects is not
-
-**BUILT exactly as you asked (0.133.0)**, both halves: every creature's finished damage is ×2
-(`MobRankScale.MobDamageOut`, applied once in `GameLoopService.FinalizeDamage` to any attacker that is
-not a player), and an ELITE's attack went ×1.5 → **×3.0**. On a basic attack the two compose to your
-**×4**; on a mob skill carrying power it is less, because damage is a ratio and only the `pAtk` half
-of `(pAtk + power)` is doubled by the elite's rung. Your *"not patk just dmg"* was the right call and
-for a second reason as well: the creature attack curve is fitted to IG off 2,831 measured monsters and
-is on the inspect panel, so moving it would make every future comparison lie.
-
-**What "the last update" actually was**, since it decides whether ×2 is the right size: `BL-185`
-(0.117.0) gave the PHYSICAL channel the defender level term M.Def had always had. A defender's P.Def
-is now multiplied by `(level + 89)/100`. **So the loss you felt is level-shaped and the correction is
-not:**
-
-| your level | P.Def multiplier `BL-185` added | damage it removed | what ×2 restores |
-|---|---|---|---|
-| 20 | ×1.09 | −8% | **×2.18 of what it was** |
-| 50 | ×1.39 | −28% | ×1.44 |
-| 76 | ×1.65 | −39% | ×1.21 |
-| 90 | ×1.79 | −44% | ×1.12 |
-
-At 90 the ×2 is barely more than the correction — which is what you asked for and it lands well. At
-20 it is more than double an over-correction. **Measured** (`dotnet run --project tools/BalanceMatrix`,
-the E4 farm loop, unbuffed and solo — so a floor, not what you play): HP spent per kill doubles at
-every level, and **kills-until-your-bar-is-empty** falls from 29 → 11 for a level-36 tank, 43 → 15 for
-a melee rogue, and **8 → 3 for a level-36 nuker**. That is the same population `BL-72` already flags
-as not surviving an unbuffed auto-farm.
-
-🔵 **THE ONE CHOICE LEFT IS YOURS, and it is one line either way:**
-- **Keep the flat ×2.** Simple, it is your number, and the low levels get harder. Nothing to do.
-- **Make it the level term itself** — multiply creature damage by `PhysicalDefenceLevelMod(target)`
-  instead of by 2. That restores *exactly* what `BL-185` took, at every level: ×1.09 at 20, ×1.79 at
-  90. At the level you actually play it is 10% under your ×2 and you would not feel it; at 20 it is
-  half of it.
-- **Both** — the level term with a floor or a small flat bonus on top, if you want the hit "noticed"
-  at 90 as well as restored.
-
-⚠ **A BOSS TAKES THE ×2 TOO.** You measured bosses as *"OK for now ... They do ok dmg no1 survives"*
-**before** this change, so their ladder (×4 × rune ×2 × solo ×2) now rides on top of a doubled base.
-If a boss overshoots at the next playtest, the knob is `MobRankScale.Atk`'s boss rung, not this one.
-
-
----
-
-
 ## `BL-213` 🟡 THE MASTERY ROSTER IS REBUILT TO YOUR TABLE — six numbers in it are still mine
 
 **BUILT (0.133.0).** Your table, verbatim, and what each line became:
@@ -1327,73 +1281,118 @@ down. Two days of play reversed it. The old entry is in [BacklogArchive.md](Back
    archer's reuse rung all sit at **76**; the archer's toggle at **81**. They mirror every other
    mastery rung in the game, which is the only defensible read of *"the same … as duals"*.
 
-🔴🔑 **AND ONE THING THE TABLE MAKES LOUDER THAN IT WAS — read this before the next playtest.**
-The archer now carries a `[Double]` rate, and **not one skill in his 3rd or 4th tier can use it.**
-`CanDouble` is flagged on exactly eleven defs: the three dagger stabs, the warrior's damage line, and
-the two EARLY bow skills (`Shot` at the 1st class, `Precise Shot` at the 2nd) — both of which
-`archer 3rd.csv` retires by `REPLACES` the moment Twin Arrows lands at 40. Twin Arrows, Explosive
-Arrow, Heavy Arrow, the three Magic Arrows and Arrow Barrage carry no flag at all.
-
-So Overpower on an archer pays out on **nothing** above 40 as the files stand, and the passive will
-measure as doing exactly zero in the playtest that is meant to judge it. It is one flag per skill and
-the choice is yours — by shape the candidates are **Heavy Arrow** (the 84 single-target ultimate) and
-**Twin Arrows** (the rotation skill, though it already fires twice, so a double there is ×4 on one
-button). ⚠ It is the same question your dagger ruling answered on 2026-09-11 (*"give duals 3rd/4th
-stabs a [double] flag"*) — the archer half of it has not been asked yet. **Name the skills.**
+✅ **AND THE `[Double]` GAP IS CLOSED — his list, 2026-09-12:** *"Every archer dmg skill without
+explotion and magic arrow - so the twin/heavy/barrage(each arrow on its own)"*. `CanDouble` is now on
+**Twin Arrows**, **Heavy Arrow** and **Arrow Barrage**; Explosive Arrow, the three Magic Arrows and the
+three race ultimates at 85 are deliberately not on it. 🔑 *"each arrow on its own"* was already the
+shape and needed nothing: both volleys are CHANNELS, the wrapper resolves nothing, and every arrow is
+its own `ExecuteSkill` with its own miss, crit and now double roll — so Arrow Barrage rolls ten times.
+The flag sits on the arrow (the mechanic) and on the wrapper (the label the card reads).
 
 ⚠ **NEW APK** — the class-skill TABLES changed and the client builds its Learn tab locally.
 
 
 ---
 
+## `BL-215` 🔵 THE MAGE'S DAMAGE — two of the three levers are pulled; the third is still yours
 
-## `BL-215` 🔵 THE MAGE'S DAMAGE — the crit pass bought +25%, and the three levers left are all yours
+**Rewritten 2026-09-12** after you answered it. The original text is in
+[BacklogArchive.md](BacklogArchive.md).
 
-You asked one question directly: *"if we touch a bit the magic K(91) and increase it with like 30% does
-will increase the overall dmg and will it break the low lvls? Or we need to increase the 76+ spells
-power?"* Here is the measured answer, and then the choice.
+### ✅ Lever 1 — `MagicK`. CLOSED, and your own question closed it.
 
-### First: what today's work already bought, before any of these levers
+*"I still wonder does mdef in IG have lvl mod? (and same question for pDef)"* — **it does, and we
+measured it off your own five in-game rows** (`docs/balance/DamageVsIG.md`). Divide your stated total
+M.Def by your gear M.Def and then by `levelMod`, and the remainder is constant to ±2% across 56
+levels: `IG M.Def = SUM(jewel M.Def) × MENbonus × (level+89)/100`. Your P.Def divides out the same way.
+So the level term is shared with IG, `MagicK 91` stays IG's verbatim constant, and your branch is the
+second one: fix `BL-212` as a level mod, raise the 76+ spell power.
 
-Three things landed in 0.133.0 — your two crit rulings (`BL-209`, `BL-210`) and a bug neither of us
-knew about (`BL-214`: Harmony of the Wizard's crit-rate line had **never worked**, because the def's
-`Effect` mask did not declare the flag). Measured with `--mcrit 90 epic`, a fully-blessed Magus:
+### ✅ Lever 2 — the 76+ spell power. BUILT (0.134.0).
 
-| | crit rate | crit damage | average damage multiplier |
+*"increase the mages spell power ... atleast 30% ... (so about 20~40 points up 110-> 130, 138->180/190)
+after 76"*. Built as **×1.30 on all three 4th-tier rotation ladders**:
+
+| ladder | skills | was | now |
 |---|---|---|---|
-| before | 8.8% | ×2.60 | ×1.141 |
-| **after** | **20%** (the cap) | **×3.12** | **×1.424** |
+| blast | Elemental Blast · Vampiric Bolt | 110 → 138 | **143 → 179** |
+| fast/rider | Quick Blast · Witches Curse | 88 → 109 | **114 → 142** |
+| area/rider | Elemental Wave · Arcane Wave · Frost Spikes · Frost Pierce | 66 → 105 | **86 → 137** |
 
-**+25% average magic damage**, and your ×3.12 lands on the digit. **Re-playtest before pulling
-anything else** — a good part of what you were reaching for with `MagicK` has already arrived.
+⚠ **×1.30 rather than your two point figures, because they disagree with each other**: +20 on 110 is
++18%, under your own *"atleast 30%"* floor, while +40 on 138 is +29%. The percentage is the ruling and
+the points were prefixed "about"; 143 sits just over your "130" and 179 inside your "180/190".
+⚠ **All three ladders, not just the blast.** You named the blast's numbers because they are the ones
+you read, but raising only it would silently retune Quick Blast and the waves DOWN by 30% against it.
+Their ratios to each other are exactly as you authored them.
+🔵 **The ULTIMATES are NOT in it** — Elemental Burst, Thunderstorm, Arcane Void and the three race
+Bursts keep their power. They are five-minute showpieces rather than *"the dmg"*. One line each if
+you want them, and this is the only part of your item 3 I did not do.
 
-### 🔴 Lever 1 — `MagicK` 91 → ~118. My recommendation: NO.
+### 🔵 Lever 3 — the magic crit-RATE cap. STILL OPEN, and now the only ceiling left.
 
-- **It is IG's constant, verbatim**, and so is `PhysicalK 77` (`docs/balance/DamageVsIG.md`). The last
-  real measurement put our mage **1.19× ABOVE** IG's own observed damage at 76 unbuffed. Nothing in
-  the constant is short.
-- **It answers your "will it break the low lvls?" with: it changes them by exactly the same 30%.**
-  `MagicK` is a flat scalar with no level term. The rig already reports a level-8 mage's first nuke
-  killing a same-level mob in **one cast** (91 damage vs 91 HP) and a level-20 mage overkilling by
-  1.7× — a 30% rise deepens both. Meanwhile at 90 an elite has ×4 HP and ×1.33 M.Def, so 30% takes it
-  from ~24 casts to ~18. **The deficit you feel is level-shaped; this lever is not.**
-
-### 🔵 Lever 2 — the 76+ spell power. The right shape, and it is YOUR file.
-
-`nuker 4th.csv`'s blast ladder is **110 → 138** across 76 → 90 (+2 a level), and the 3rd tier ends at
-108 at 74. So the whole 4th tier is +28% of power over fifteen levels while mob HP grows ~40% and an
-elite multiplies it by four again. This is the number that decides endgame mage damage and it is
-authored by you — I will not retune a CSV. **Give me a new column, or a multiplier to apply to it.**
-
-### 🔵 Lever 3 — the magic crit-RATE cap, `StatCaps.MagicCritRate = 20%`. Newly load-bearing.
-
-Your `BL-209` ruling took Harmony of the Wizard from ×1.3 to ×2 on the rate — and a fully-blessed
-Magus of **every race** now sits exactly ON the 20% ceiling, so the second half of that buff is being
-thrown away. That is not an argument against the ruling (it is what makes the Human and Demon reach
-the cap at all, and they did not before), but it does mean **the cap is now the lever, not the buff**.
+`StatCaps.MagicCritRate = 20%`, and since `BL-209` a fully-blessed Magus of **every race** sits exactly
+on it — so the second half of the Harmony of the Wizard buff you just doubled is being thrown away.
 Its own doc-comment anticipated this: *"still max 20% but one day if we want to increase it no mage to
-be short on crit"*. At ×3.12 crit damage, every 5 points of cap is about **+10%** average damage.
+be short on crit"*. At ×3.12 crit damage, **every 5 points of cap is about +10% average damage**.
 
-⚠ **And one thing that got HARDER today, which you should weigh with all three:** `BL-212` doubled
-every creature's damage and tripled an elite's attack. The mage was already the sheet that spends the
-most HP per kill.
+### 📐 What the mage has gained since you last played (0.132.0 → 0.134.0)
+
+| | |
+|---|---|
+| crit pass (`BL-209`/`BL-210` + the `BL-214` bug) | **×1.25** |
+| 76+ spell power | **×1.30** |
+| Elemental Blast's reuse 1.0s → 0.5s (cycle 1.40s → 1.00s) | **×1.40** |
+| **compounded** | **≈ ×2.3** |
+
+⚠ **Re-playtest before pulling lever 3.** That is a lot in one pass, and if it lands you will not be
+able to tell which of the three did it.
+
+
+---
+
+
+## `BL-216` 🔵 THE SHOT DOES NOTHING FOR A CASTER'S CAST TIME — and the cap is why
+
+*"why casting feels slow? I have 1500 cast ~4 times and 1s feels so long in real fight, ig with that
+king of cast speed is almost instant ... (also ig bsps add 40% to the casting - a 40% reduction in the
+final cast. May be that's is)"*
+
+**I checked all of it. Our cast model is IG's, to the arithmetic**: `castTime = authored × 333 /
+castSpeedStat`, so at 1500 a 4s spell takes 0.89s here and would take 0.89s there. Nothing is broken
+and nothing is missing from that formula. Two things came out of the measurement instead.
+
+### 1. 🔴 It was never the cast. It was the REUSE. (Fixed — your item 6.)
+
+`--castcycle 90 epic`, an NPC-buffed Magus, and the reuse starts when the cast LANDS so the cycle is
+the sum:
+
+| | cast | reuse | cycle |
+|---|---|---|---|
+| before | 0.60s | 0.80s | 1.40s |
+| **after your 0.5s** | 0.60s | **0.40s** | **1.00s** |
+
+**57% of the cycle was reuse**, and the only thing shortening it was Spell Mastery's −20%. Your
+instinct in item 6 was the right lever and it is built. Note the cast reads **0.60s, not 0.89s**: a
+buffed Magus of every race is **on the cast-speed cap** (`StatCaps.CastSpeed` 1999). If you are seeing
+1500 you are short of it, and the difference is 0.89s against 0.60s.
+
+### 2. 🔵 THE SHOT — and here you may well be right. Your call.
+
+The Spell Rune grants `BuffCastSpeed 40`, **FLAT**, on a stat that is already 1400-1999. **That is
+worth about +2%.** And because you are at or near the cap, a cast-SPEED grant is worth nothing there
+at all — whereas a cast-TIME cut still multiplies, since `CastTimeMultiplier` is applied *after* the
+333 model. So if IG's blessed shot really is −40% on the final cast, we are delivering roughly a
+fifteenth of it, and the channel to express it properly already exists (`SkillDef.CastTimePct`,
+`BL-196` — the archer's Spirit Mastery is its only author today).
+
+**One line**: `CastTimePct: 0.40f` on the Spell Rune, and Elemental Blast goes **0.60s → 0.30s**, the
+cycle 1.00s → 0.70s — another **×1.4** on mage damage.
+
+🔵 **I did NOT build it, for two reasons.** (1) It is a design change to the shot on a premise only you
+can confirm — I could not verify the −40% against IG, and everything else in this pass was measured.
+(2) The mage is already at **≈×2.3** from this pass alone (`BL-215`); another ×1.4 makes it ×3.2 and
+the playtest stops being readable. Say the word and it is one line, better after you have felt the
+rest.
+
+⚠ **It would reach every caster, not just the nuker** — the healer and the buffer hold the same rune.

@@ -39,17 +39,34 @@ ManaDrain      = targetMaxMp * power / 1000                  power is PER MILLE
   shot exactly (its magic form is M.Atk ×4 under the `sqrt`, i.e. ×2 damage). ⚠ A rig that calls
   `StatCalculator` directly must apply `Entity.PhysDamageDealtMult`/`MagicDamageDealtMult` itself.
 
-- 🔑 **EVERY CREATURE'S FINISHED DAMAGE IS ×2** (`BL-212`, 0.133.0, owner: *"mobs should get x2 power
-  ... (not patk just dmg)"*). `MobRankScale.MobDamageOut`, applied once in `FinalizeDamage` to any
-  attacker whose `Kind` is not `Player` — so guards, towers, elites and bosses all take it, and a
-  player's reflected damage (which never enters that pipeline) does not.
-  ⚠ **It is DAMAGE, not P.Atk, and the distinction is real twice over.** The creature attack curve is
-  fitted to IG off 2,831 measured monsters (`MobBaseStats.PAtk`) and is on the inspect panel; and
-  because damage is a RATIO, doubling P.Atk is ×2 only while `power` is 0 — less on any skill.
-  ⚠ **What it compensates for is `BL-185`**, which gave the physical channel the defender level term
-  M.Def always had. A defender's P.Def is now ×`(level+89)/100`, i.e. ×1.79 at 90, so creature damage
-  had quietly fallen 44% there. **The correction is level-FLAT and the loss was not** — at level 20 the
-  loss was 9% and the correction is still ×2.
+- 🔑 **A CREATURE'S FINISHED DAMAGE AGAINST A PLAYER IS MULTIPLIED BY A LEVEL CURVE** (`BL-212`,
+  0.134.0). `MobRankScale.DamageOut(rank, targetLevel)`, applied once in `FinalizeDamage`:
+
+  ```
+  mult(L) = levelMod(L) x (1 + 0.40 x clamp((L-76)/14, 0, 1))
+            L 20 -> x1.09    L 52 -> x1.41    L 76 -> x1.65    L 90 -> x2.51
+  BOSS: exempt (x1.00)
+  ```
+
+  - **Below 76 it is exactly `levelMod`, and that is the point.** `BL-185` gave the physical channel
+    the defender level term M.Def always had, so a player's P.Def is ×`(level+89)/100` and creature
+    damage fell by precisely `1/levelMod` — 8% at 20, 44% at 90. This puts back what was taken and
+    nothing more. (0.133.0 shipped a flat ×2, which over-corrected the bottom of the game by ~2.2×;
+    owner, the same day: *"Let's make it lvl mod as u said."*)
+  - **Above 76 it deliberately overshoots**, reaching ×2.51 at 90 — his *"76 to become harder"*,
+    measured against his own numbers (a normal creature 130 → ~300, an elite 300 → 750, and ×2 again
+    from the elite's own attack rung → 1500).
+  - 🔑 **It reads the TARGET's level**, because the term it undoes lives in the defender's own P.Def.
+  - ⚠ **Both sides are tested**: the attacker must not be a player (a guard, a tower and a boss are
+    creatures too) and the target must be one (`BL-185`'s level term is `playerStats`-only, so paying
+    it back on a mob-vs-mob hit would invent damage nothing removed). A player's reflected damage
+    never enters this pipeline and is untouched.
+  - 🔴 **A BOSS IS EXEMPT** — *"Bosses to compensate with their passive so they won't change after
+    the base increase"*. An ELITE is not: it takes this AND its own ×3.0 attack rung.
+  - ⚠ **It is DAMAGE, not P.Atk, and the distinction is real twice over.** The creature attack curve
+    is fitted to IG off 2,831 measured monsters (`MobBaseStats.PAtk`) and is on the inspect panel; and
+    because damage is a RATIO, doubling P.Atk is ×2 only while `power` is 0 — less on any skill.
+  - 📐 `dotnet run --project tools/BalanceMatrix -- --mobdmg 90 epic --buffed`
 
 `Game.Shared/StatCalculator.cs` — `PhysicalDamage`, `MagicDamage`, `ManaDrain`, `PhysicalK`, `MagicK`
 `Game.Shared/MobRankScale.cs` — `MobDamageOut`
@@ -683,6 +700,16 @@ his bracket is the 333 model; `CastTimePct` is what is outside it.
 `BuffCastSpeed` magnitude and therefore did nothing for the archer who cast it. A NEGATIVE
 `CastTimePct` lengthens a cast — his *"castTimeDebffs"* — and nothing authors one yet.
 
+🔑 **THE ROTATION IS CAST + REUSE, AND AT THE TOP THE REUSE IS THE BIGGER HALF.** The reuse starts
+when the cast LANDS (`ExecuteSkill`), never when it begins, so a nuke's cycle is the sum. Measured at
+90 in epic gear (`--castcycle 90 epic`), an NPC-buffed Magus of every race sits **on the cast-speed
+cap** (`StatCaps.CastSpeed` 1999, ×0.167), so a 4s authored cast resolves in **0.60s** — while a 1s
+authored reuse, cut only 20% by Spell Mastery, ran **0.80s**. 57% of the cycle was reuse.
+⚠ **So a cast-SPEED grant is worth nothing to an endgame caster** (he is already capped) while a
+cast-TIME cut still multiplies, because `CastTimeMultiplier` is applied after the 333 model. That is
+the practical difference between the two channels, and the reason to reach for `CastTimePct`.
+📐 `dotnet run --project tools/BalanceMatrix -- --castcycle <level> <quality>`
+
 `SkillDef.CastTimePct` · `Entity.CastTimeMultiplier` · `GameLoopService.BeginCast` / `AutoCycleTicks`
 
 ## Which buffs cost a slot (`BL-198`, 0.128.0)
@@ -799,10 +826,12 @@ Boss        43000 / L^1.49  (min 20) x4          x2.0        +20
 Contest     StatCaps.CcRankMult:     Elite x1.33, Boss x2.0   (CON/SPT/ATK, the debuff roll)
 ```
 
-- 🔑 **THE ELITE'S ATTACK IS x3.0 SINCE `BL-212` (0.133.0)** — his x2 on the x1.5 that was there,
+- 🔑 **THE ELITE'S ATTACK IS x3.0 SINCE `BL-212`** — his x2 on the x1.5 that was there,
   *"so elit with the double in dmg and double in patk should do ~x4 dmg as of now"*. The other half of
-  that x4 is the global `MobRankScale.MobDamageOut` (see **Damage**), and the two compose to x4 on a
-  BASIC attack; on a mob skill carrying power it is less, because damage is a ratio.
+  that is `MobRankScale.DamageOut` (see **Damage**), and the two compose to **x5.0 at level 90** on a
+  BASIC attack — measured 161 → 806 against a level-90 epic mage, which is his "300 → 1500" exactly.
+  On a mob skill carrying power it is less, because damage is a ratio.
+- 🔴 **THE BOSS IS EXEMPT FROM `DamageOut`** and therefore unchanged by all of it, on his ruling.
 - ⚠ The BOSS HP multiplier is a **curve, not a number**: the base pool is quadratic in L while a
   party's DPS is flat across the game, so a flat multiple made time-to-kill grow with `L²`. This one
   lands every level in the 600-1800s band (12-25 min for a 5-man).

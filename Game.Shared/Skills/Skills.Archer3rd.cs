@@ -339,9 +339,21 @@ public static partial class SkillCatalog
         // ⚠ The sub-skill is `archer_twin_arrows_arrow`, and its POWER is the rung's. A channel's
         //   shots resolve at the wrapper's level (ExecuteSkill's `levelOverride`), so the ladder lives
         //   on the wrapper exactly as it did — nothing had to be duplicated onto the arrow.
+            // 🔴🔑 `[Double]`, 2026-09-12 (`BL-213`). Owner: *"Every archer dmg skill without explotion
+            //    and magic arrow - so the twin/heavy/barrage(each arrow on its own)"*. It is what makes
+            //    the archer's new Overpower (3% @40, 7% @76) pay out at all — before this, `CanDouble`
+            //    lived on the dagger stabs, the warrior line, and `Shot`/`Precise Shot`, both of which
+            //    `archer 3rd.csv` retires by REPLACES the moment Twin Arrows lands at 40. So the passive
+            //    would have measured as exactly zero in the playtest meant to judge it.
+            // 🔑 "EACH ARROW ON ITS OWN" IS ALREADY THE SHAPE, AND IT IS WHY THE FLAG GOES ON BOTH.
+            //    A channel WRAPPER resolves nothing (GameLoopService: *"a wrapper starts its volley here
+            //    and resolves nothing itself"*) — every arrow is a separate ExecuteSkill of the
+            //    sub-skill, with its own miss, its own crit and now its own double roll. So the flag on
+            //    `ArcherTwinArrow` below is the MECHANIC; the one here is the LABEL, because SkillText
+            //    reads the def the player owns and the card would otherwise not say [Double].
         list.Add(new SkillDef(ArcherTwinArrows, "Twin Arrows", BaseClass.Fighter, SkillEffect.PhysicalDamage,
             MpCost: ArcherMp[0], CastTicks: 30, CooldownTicks: 50, Range: 900, Power: TwinArrowPower[0],
-            Category: SkillCategory.Physical, SpCost: RogueSp[0],
+            Category: SkillCategory.Physical, SpCost: RogueSp[0], CanDouble: true,
             RequiredWeapon: WeaponType.Bow,
             // Two arrows, 200ms apart — the same cadence Arrow Barrage fires at, because it is the
             // same act done fewer times.
@@ -358,7 +370,9 @@ public static partial class SkillCatalog
         // wrapper — see the note above.
         list.Add(new SkillDef(ArcherTwinArrow, "Twin Arrows", BaseClass.Fighter, SkillEffect.PhysicalDamage,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 900, Power: 0,
-            Category: SkillCategory.Physical,
+            // 🔴 THE MECHANICAL HALF of the wrapper's `[Double]` — see the note on ArcherTwinArrows.
+            //    Each arrow rolls its own.
+            Category: SkillCategory.Physical, CanDouble: true,
             RequiredWeapon: WeaponType.Bow,
             Description: "One arrow of a twin volley."));
 
