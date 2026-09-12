@@ -228,8 +228,13 @@ public static partial class SkillCatalog
         };
     }
 
-    /// <summary>Harmony of the Wizard's rungs 3-5, at 77 / 78 / 79. Each is the one before plus one
-    /// line: MP regen, then magic crit rate, then magic crit damage.
+    /// <summary>Harmony of the Wizard's rungs <b>6-8</b>, at 77 / 78 / 79. Each is the one before plus
+    /// one line: MP regen, then magic crit rate, then magic crit damage.
+    /// ⚠ THEY WERE RUNGS 3-5 UNTIL `BL-217` (2026-09-12) INSERTED THREE 3rd-TIER RUNGS BELOW THEM at
+    /// 58/66/74. The levels are unchanged; only the indices moved, and the class table moved with them.
+    /// 🔴 Each now also carries the −35% MAGIC REUSE that rung 5 reaches, because a harmony rung is
+    /// CUMULATIVE — it replaces the one below rather than adding to it, so an effect a lower rung
+    /// granted must be restated here or a level-77 buffer would hand out LESS than a level-74 one.
     /// ⚠ HIS THIRD ROW SAYS 78, like the second. Its price cells are the 79 band (80kk SP + 1kk gold)
     /// and a ladder cannot have two rungs at one level, so it is read as 79.
     ///
@@ -250,19 +255,24 @@ public static partial class SkillCatalog
             new(SkillEffect.BuffMagAtk,    0.10f), new(SkillEffect.BuffCastSpeed, 0.30f),
             new(SkillEffect.BuffMpRegen,   0.20f),
         };
+        // `BL-217` — the reuse cut rung 5 (@74) reaches, carried forward by every rung above it.
+        const float Reuse = 0.35f;
         return new[]
         {
             new SkillLevel(MpCost: 199, SpCost: sp3, GoldCost: g3, Magnitudes: baseMags,
-                Description: "+10% M.Atk, +30% cast speed, +20% MP regeneration (5 minutes)."),
+                MagicCooldownPct: Reuse,
+                Description: "+10% M.Atk, +30% cast speed, +20% MP regeneration, −35% magic reuse "
+                           + "(5 minutes)."),
             new SkillLevel(MpCost: 279, SpCost: sp4, GoldCost: g4,
                 Magnitudes: baseMags.Append(new EffectMagnitude(SkillEffect.BuffMagicCritRate, 1.00f)).ToArray(),
-                Description: "+10% M.Atk, +30% cast speed, +20% MP regeneration, +100% magic critical "
-                           + "rate (5 minutes)."),
+                MagicCooldownPct: Reuse,
+                Description: "+10% M.Atk, +30% cast speed, +20% MP regeneration, −35% magic reuse, "
+                           + "+100% magic critical rate (5 minutes)."),
             new SkillLevel(MpCost: 367, SpCost: sp5, GoldCost: g5,
                 Magnitudes: baseMags.Append(new EffectMagnitude(SkillEffect.BuffMagicCritRate, 1.00f)).ToArray(),
-                MagicCritDamage: 0.30f,
-                Description: "+10% M.Atk, +30% cast speed, +20% MP regeneration, +100% magic critical "
-                           + "rate and +30% magic critical damage (5 minutes)."),
+                MagicCritDamage: 0.30f, MagicCooldownPct: Reuse,
+                Description: "+10% M.Atk, +30% cast speed, +20% MP regeneration, −35% magic reuse, "
+                           + "+100% magic critical rate and +30% magic critical damage (5 minutes)."),
         };
     }
 

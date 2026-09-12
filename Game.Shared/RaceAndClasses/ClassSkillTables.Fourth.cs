@@ -491,7 +491,10 @@ public static partial class ClassSkillTables
         // ---- THE HARMONIES. Protection gains a sixth rung; the Wizard's three continue a ladder his
         //      3rd-class file deliberately stopped at 52; Soul and Madness are new skills. ----
         shared.AddRange(At(NpcHarmonyProtection, (76, 6)));
-        shared.AddRange(At(NpcHarmonyWizard,     (77, 3), (78, 4), (79, 5)));
+        // ⚠ RUNGS 6-8, NOT 3-5, SINCE `BL-217` — three 3rd-tier rungs were inserted below them at
+        //   58/66/74. The LEVELS are unchanged; an off-by-three here sells a level-77 buffer his
+        //   level-58 rung.
+        shared.AddRange(At(NpcHarmonyWizard,     (77, 6), (78, 7), (79, 8)));
         shared.AddRange(Ladder(WcHarmonySoul, new[] { 77, 78, 79, 80, 81, 82, 83 }, 1));
         shared.Add(new ClassSkill(WcHarmonyMadness, 83));
         // Harmony Mark: 79, then its second rung at 83 — the only two it has.

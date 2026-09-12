@@ -374,3 +374,7 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 ,,,,,,,,,,,,,,,,,BL-183: the rung granting +10% M.Atk (48) replaces NPC Harmony of Force; the rung granting +30% cast speed (52) also replaces NPC Harmony of Alacrity.
 48,Harmony of the Wizard,npc_harmony_wizard,Magic/Buff,,,600,800,party/aoe,1,120,300,+10% M.Atk,60,64k,[],,
 52,Harmony of the Wizard,npc_harmony_wizard,Magic/Buff,,,600,800,party/aoe,1,120,300,"+10% M.Atk, 30% cast speed",126,74k,[],,
+,,,,,,,,,,,,,,,,,BL-217: rungs 3-5 (58/66/74) are the magic-reuse ladder - your "gift of seraphim" third source. MP 150/170/190 are derived; the SP are your own prices at those levels.
+58,Harmony of the Wizard,npc_harmony_wizard,Magic/Buff,,,600,800,party/aoe,1,120,300,"+10% M.Atk, 30% cast speed, -15% Magical Reuse",150,88k,[],,
+66,Harmony of the Wizard,npc_harmony_wizard,Magic/Buff,,,600,800,party/aoe,1,120,300,"+10% M.Atk, 30% cast speed, -25% Magical Reuse",170,280k,[],,
+74,Harmony of the Wizard,npc_harmony_wizard,Magic/Buff,,,600,800,party/aoe,1,120,300,"+10% M.Atk, 30% cast speed, -35% Magical Reuse",190,880k,[],,

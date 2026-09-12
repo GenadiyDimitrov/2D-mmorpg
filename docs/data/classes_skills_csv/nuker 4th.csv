@@ -68,21 +68,21 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 85,Spell Empowerment,nuker_human_spell_empowerment,Magic/Buff,,,0,,self/single,1,5,600,"Increases magic MP consumption by 20% and M. Atk. by 12%; being attacked with 5% chance inflicts damage on attackers with power 51",100,0,100kk,,,Human
 90,Spell Empowerment,nuker_human_spell_empowerment,Magic/Buff,,,0,,self/single,1,5,600,"Increases magic MP consumption by 15% and M. Atk. by 12%; being attacked with 5% chance inflicts damage on attackers with power 55",100,0,100kk,,,Human
 ,,,,,,,,,,,,,,,,,,,----------------------------Elemental Blast----------------------------
-76,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,0.5,0,m.Atk +143,69,6.5kk,1kk
-77,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,0.5,0,m.Atk +146,71,11kk,1kk
-78,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,0.5,0,m.Atk +148,73,16kk,1kk
-79,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,0.5,0,m.Atk +151,77,80kk,1kk
-80,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,0.5,0,m.Atk +153,79,0,5kk
-81,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,0.5,0,m.Atk +156,91,0,7.5kk
-82,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,0.5,0,m.Atk +159,95,0,10kk
-83,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,0.5,0,m.Atk +161,97,0,15kk
-84,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,0.5,0,m.Atk +164,99,0,30kk
-85,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,0.5,0,m.Atk +166,103,0,50kk
-86,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,0.5,0,m.Atk +169,105,0,75kk
-87,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,0.5,0,m.Atk +172,107,0,100kk
-88,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,0.5,0,m.Atk +174,111,0,100kk
-89,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,0.5,0,m.Atk +177,113,0,100kk
-90,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,0.5,0,m.Atk +179,115,0,100kk
+76,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +143,69,6.5kk,1kk
+77,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +146,71,11kk,1kk
+78,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +148,73,16kk,1kk
+79,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +151,77,80kk,1kk
+80,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +153,79,0,5kk
+81,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +156,91,0,7.5kk
+82,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +159,95,0,10kk
+83,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +161,97,0,15kk
+84,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +164,99,0,30kk
+85,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +166,103,0,50kk
+86,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +169,105,0,75kk
+87,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +172,107,0,100kk
+88,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +174,111,0,100kk
+89,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +177,113,0,100kk
+90,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +179,115,0,100kk
 ,,,,,,,,,,,,,,,,,,,-----------------------------Elemental Burst-----------------------------
 80,Elemental Burst,elemental_burst,Magic/Dmg,,,900,0,enemy/single,1,300,0,"Gathers Elemental energy to burst the enemy, power 200. Consumes 2 Elemental Stone.",200,0,100kk
 85,Elemental Burst,elemental_burst,Magic/Dmg,,,900,0,enemy/single,1,300,0,"Gathers Elemental energy to burst the enemy, power 225. Consumes 2 Elemental Stone.",225,0,100kk

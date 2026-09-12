@@ -7,12 +7,68 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.134.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.135.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-12 (latest) — 0.134.0: the creature curve becomes a level mod, the mage gets his power and his reuse, the archer gets his double
+## 2026-09-12 (latest) — 0.135.0: the shot shortens a cast, the buffer gets a reuse ladder, and Elemental Blast keeps its second
+
+⚠ **NEW APK.** The class-skill tables changed (Harmony of the Wizard gains three rungs). No protocol bump.
+
+His third pass of the evening, and two of the three items were corrections to 0.134.0.
+
+### The shot cuts 30% off the final cast time (`BL-216`)
+
+His formula: `(baseCastTime / (charCastSpeed/333)) × (runeActive ? 0.7 : 1)`. Built as
+`CastTimePct: 0.30f` on the Spell Rune. The old `BuffCastSpeed 40` FLAT grant stays beside it — forty
+points on a stat an endgame caster carries at 1400-1900 is **+2%**, and nothing at all at the 1999 cap,
+which is the whole reason the cast half felt missing. A cast-TIME cut survives the cap; a cast-SPEED
+grant does not. ⚠ The War Rune is deliberately not given the same: he described the blessed spiritshot.
+
+### Harmony of the Wizard gains a magic-reuse ladder (`BL-217`)
+
+Three new 3rd-tier rungs at **58 / 66 / 74**, at **−15 / −25 / −35% magic reuse**, cumulative, and
+carried forward by the 77/78/79 rungs (which are numbered 6-8 now, not 3-5). It is his "gift of
+seraphim" third source, put in the buffer's hands.
+
+✅ **And his suspicion about Harmony of the Soul was wrong** — *"if the harmony buff don't reach the
+spell reuse and we fix it"* — it reaches: `SoulRung` authors `MagicCooldownPct` 0.10 → 0.20 and the
+whole chain to `CooldownReductionFor` is intact. Checked before building; the stack was one source
+short, not broken.
+
+🔴 **But our reductions SUM and his arithmetic multiplies**: 20 + 20 + 35 is a **75%** cut (×0.25)
+where his `0.8 × 0.8 × 0.65` is ×0.416. His numbers are authored exactly as given and the divergence is
+reported rather than corrected, because the summing rule is a documented engine decision reaching every
+class. ⚠ It also means his stated next step (*"up the souls and mastery to 30%"*) would read 95%,
+**clamped to 80%**, and stop responding. Three ways out in `BL-217`.
+
+📐 Elemental Blast's cycle at 90, epic (`--castcycle 90 epic`):
+
+| stack | cast | reuse | cycle |
+|---|---|---|---|
+| NPC shelf only | 0.90s | 0.80s | **1.70s** |
+| + Harmony of the Wizard L8 | 0.70s | 0.40s | 1.10s |
+| + Harmony of the Soul L7 | 0.70s | 0.20s | 0.90s |
+| + Spell Rune | **0.50s** | 0.20s | **0.70s** |
+
+### Elemental Blast's reuse goes back to 1.0s
+
+*"no need to decrease the cooldown to 0.5"* — 0.134.0's change is reverted. The reuse was indeed the
+slow half of the cycle, but the fix is the buffer's ladder rather than a shorter authored number on
+one spell: a party buff the mage has to be given, not a spell that is faster for everyone forever.
+
+### And the nuker CSVs
+
+The ×1.30 spell powers from 0.134.0 stand and the reuse cells are back to 1 — *"update the csv with the
+increased spell powers (and untouched cooldown for now)"*. `--check` is back to its two pre-existing
+`BL-202` rows.
+
+### Verified
+
+All four projects build; the server boots; `SmokeTest` passes; `--check` green but for `BL-202`.
+
+## 2026-09-12 — 0.134.0: the creature curve becomes a level mod, the mage gets his power and his reuse, the archer gets his double
 
 ⚠ **NEW APK** — the class-skill tables changed again (`archer 3rd`/`archer 4th` gain a `[Double]`
 label the client renders from the flag). No protocol bump.

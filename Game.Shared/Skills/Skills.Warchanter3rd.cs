@@ -131,10 +131,15 @@ public static partial class SkillCatalog
     /// `npc_h_bulwark` from rung 1 would let a level-44 Warchanter tear a level-56 player's 50,000-gold
     /// Harmony of Bulwark off and hand back nothing. Rung by rung the swap is exactly even: the
     /// harmony's number at that rung and the single's number are the same number.</param>
+    /// <param name="magicReuse">`BL-217` — the MAGIC reuse cut, a FIELD (`SkillLevel.MagicCooldownPct`)
+    /// for the usual reason: `SkillEffect` has had no bits since `1L &lt;&lt; 62`. It SUMS with every other
+    /// reuse source in <c>Entity.CooldownReductionFor</c> and the sum is clamped at 80%.</param>
     private static SkillLevel HarmonyRung(int mp, int sp, EffectMagnitude[] mags, string desc,
-        float physMpCost = 0f, float magicMpCost = 0f, string[]? covers = null) =>
+        float physMpCost = 0f, float magicMpCost = 0f, string[]? covers = null,
+        float magicReuse = 0f) =>
         new(MpCost: mp, SpCost: sp, Magnitudes: mags, Description: desc + " (5 minutes).",
-            PhysMpCostPct: physMpCost, MagicMpCostPct: magicMpCost, CoveredKeys: covers);
+            PhysMpCostPct: physMpCost, MagicMpCostPct: magicMpCost, CoveredKeys: covers,
+            MagicCooldownPct: magicReuse);
 
     /// <param name="covers">`BL-183` — the NPC buffer's SINGLE harmonies this one contains, as BUFF
     /// KEYS, and the def-level FULL list: every rung from the last new effect upward inherits it (see
@@ -423,7 +428,39 @@ public static partial class SkillCatalog
             "Drives you and nearby allies into a fighting song. Stacks on top of Focus and Ferocity.",
             covers:   new[] { KeyHMight, KeyHFury }),
 
-        // ── HARMONY OF THE WIZARD — 2 rungs @48/52, and it STOPS ─────────────────────────────
+        // ── HARMONY OF THE WIZARD — 5 rungs at 48/52/58/66/74, then three more at the 4th ──
+        //
+        // 🔴🔑 `BL-217`, 2026-09-12 — THREE NEW RUNGS AT 58 / 66 / 74, AND THEY ARE MAGIC REUSE.
+        //    *"let buffer 3rd learn another lvls of harmony of wizard that decrease reuse with
+        //      15,25,35% at 58/66/74 that way we Wil match ig on reuse"*
+        //
+        //    The reason is his reading of IG's caster reuse stack: *"Also spells not only 20% cd
+        //    reduction from mages passive. We have a harmony of souls is another 20% ... Also I saw
+        //    that a IG have one more buff that reduce delay - gift of seraphim that is an other 35%
+        //    so finally the magic reuse is multiplied by 0.416 not 0.64."* This ladder is that third
+        //    source, put in the BUFFER's hands rather than minted as a new skill.
+        //
+        // ✅ HIS SUSPICION ABOUT HARMONY OF THE SOUL WAS WRONG, AND CHECKING IT FIRST IS WHY THIS IS
+        //    ONLY A LADDER. *"if the harmony buff don't reach the spell reuse and we fix it it should
+        //    be ok"* — it does reach: `Skills.Warchanter4th.SoulRung` authors `MagicCooldownPct`
+        //    0.10 → 0.20, `ApplyBuff` copies it, `RecomputeDerived` folds it into
+        //    `CooldownReductionMagic`, and `CooldownReductionFor` reads it for every magical skill.
+        //    Nothing was broken; the stack was simply one source short.
+        //
+        // 🔴🔑 ⚠ OUR REUSE REDUCTIONS **SUM**; HIS ARITHMETIC MULTIPLIES. The engine is
+        //    `authored × (1 − (blanket + channel))`, clamped at 80% — so 20 + 20 + 35 is a 75% cut
+        //    (×0.25) where his 0.8 × 0.8 × 0.65 is ×0.416. His numbers are authored here EXACTLY as
+        //    given and the difference is reported rather than quietly corrected, because the summing
+        //    rule is a documented engine decision (docs/Formulas.md) reaching every class's physical
+        //    reuse as well. ⚠ It also means his own stated next step — *"if still feels slow I'll up
+        //    the souls and mastery to 30%"* — would read 30 + 30 + 35 = 95%, **clamped to 80%**, and
+        //    stop responding to him. `BL-217` holds the choice.
+        //
+        // ⚠ THE MP FIGURES (150 / 170 / 190) ARE MINE, the only unauthored numbers here. They sit
+        //   between rung 2's 126 and the 4th tier's 199 so the ladder stays monotonic without moving a
+        //   single cell he authored in `buffer 4th.csv`. The SP figures are HIS, read off what his
+        //   other harmonies charge at those exact levels: 88,000 at 58 (Harmony of the Warrior),
+        //   280,000 at 66 and 880,000 at 74 (Harmony of Protection).
         // ⚠ The old def also carried +20% MP regen and a −30% magic-skill MP cost. Both are GONE
         // from the 3rd tier by his ruling — the MP-cost half is Mana Blessing's job now, and the
         // regen half is on the 4th-class ladder (`buffer 4th.csv` @77). Do not restore them here.
@@ -447,9 +484,23 @@ public static partial class SkillCatalog
                 HarmonyRung(126, 74000, new EffectMagnitude[]
                     { new(SkillEffect.BuffMagAtk, 0.10f), new(SkillEffect.BuffCastSpeed, 0.30f) },
                     "+10% M.Atk, +30% cast speed"),
+            // `BL-217` — rungs 3, 4 and 5. CUMULATIVE, like every harmony rung: each carries rung 2's
+            // whole payload and adds its own reuse cut on top.
+                HarmonyRung(150, 88_000, new EffectMagnitude[]
+                    { new(SkillEffect.BuffMagAtk, 0.10f), new(SkillEffect.BuffCastSpeed, 0.30f) },
+                    "+10% M.Atk, +30% cast speed, −15% magic reuse", magicReuse: 0.15f),
+                HarmonyRung(170, 280_000, new EffectMagnitude[]
+                    { new(SkillEffect.BuffMagAtk, 0.10f), new(SkillEffect.BuffCastSpeed, 0.30f) },
+                    "+10% M.Atk, +30% cast speed, −25% magic reuse", magicReuse: 0.25f),
+                HarmonyRung(190, 880_000, new EffectMagnitude[]
+                    { new(SkillEffect.BuffMagAtk, 0.10f), new(SkillEffect.BuffCastSpeed, 0.30f) },
+                    "+10% M.Atk, +30% cast speed, −35% magic reuse", magicReuse: 0.35f),
             // 🔴 "IT STOPS" WAS TRUE OF THE 3rd TIER ONLY. The comment above says the MP-regen half is
-            //    on the 4th-class ladder @77, and this is that ladder arriving: rungs 3-5 at 77/78/79
-            //    (`BL-108`), adding MP regen, then magic crit rate, then magic crit damage.
+            //    on the 4th-class ladder @77, and this is that ladder arriving: rungs 6-8 at 77/78/79
+            //    (`BL-108`), adding MP regen, then magic crit rate, then magic crit damage — and each
+            //    carrying rung 5's −35% reuse forward, because a harmony rung is cumulative.
+            //    ⚠ THEY WERE RUNGS 3-5 UNTIL `BL-217` INSERTED THREE BELOW THEM. Anything naming a rung
+            //      INDEX for this skill moved with them; the LEVELS did not.
             }.Concat(BufferFourthWizardRungs()).ToArray(),
             "Sharpens the casters around you. Stacks on top of Force and Alacrity.",
             covers:   new[] { KeyHForce, KeyHAlacrity }),

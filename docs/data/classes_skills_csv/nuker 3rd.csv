@@ -61,20 +61,20 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 62,Phase Shift,phase_shift,Magic/Buff,,,0,0,self/single,0,8,0,Blink 400 away from the nearest enemy to create distance (no target needed).,116,170k,[],
 72,Phase Shift,phase_shift,Magic/Buff,,,0,0,self/single,0,8,0,Blink 600 away from the nearest enemy to create distance (no target needed).,138,650k,[],
 ,,,,,,,,,,,,,,,,,-----------------------------Elemental Blast-----------------------------
-40,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,0.5,0,m.Atk +52,33,36k,[elemental_bolt]
-44,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,0.5,0,m.Atk +58,38,43k,[elemental_bolt]
-48,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,0.5,0,m.Atk +65,44,64k,[elemental_bolt]
-52,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,0.5,0,m.Atk +72,48,74k,[elemental_bolt]
-56,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,0.5,0,m.Atk +78,52,81k,[elemental_bolt]
-58,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,0.5,0,m.Atk +82,54,88k,[elemental_bolt]
-60,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,0.5,0,m.Atk +85,55,120k,[elemental_bolt]
-62,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,0.5,0,m.Atk +89,58,170k,[elemental_bolt]
-64,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,0.5,0,m.Atk +92,60,190k,[elemental_bolt]
-66,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,0.5,0,m.Atk +96,62,280k,[elemental_bolt]
-68,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,0.5,0,m.Atk +99,64,320k,[elemental_bolt]
-70,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,0.5,0,m.Atk +102,65,390k,[elemental_bolt]
-72,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,0.5,0,m.Atk +105,67,650k,[elemental_bolt]
-74,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,0.5,0,m.Atk +108,69,880k,[elemental_bolt]
+40,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +52,33,36k,[elemental_bolt]
+44,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +58,38,43k,[elemental_bolt]
+48,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +65,44,64k,[elemental_bolt]
+52,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +72,48,74k,[elemental_bolt]
+56,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +78,52,81k,[elemental_bolt]
+58,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +82,54,88k,[elemental_bolt]
+60,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +85,55,120k,[elemental_bolt]
+62,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +89,58,170k,[elemental_bolt]
+64,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +92,60,190k,[elemental_bolt]
+66,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +96,62,280k,[elemental_bolt]
+68,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +99,64,320k,[elemental_bolt]
+70,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +102,65,390k,[elemental_bolt]
+72,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +105,67,650k,[elemental_bolt]
+74,Elemental Blast,elemental_blast,Magic/Dmg,,,900,0,enemy/single,4,1,0,m.Atk +108,69,880k,[elemental_bolt]
 ,,,,,,,,,,,,,,,,,-----------------------------Elemental Burst-----------------------------
 58,Elemental Burst,elemental_burst,Magic/Dmg,,,900,0,enemy/single,1,300,0,"Gathers Elemental energy to burst the enemy, power 120. Consumes 2 Elemental Stone.",120,88k,[],
 66,Elemental Burst,elemental_burst,Magic/Dmg,,,900,0,enemy/single,1,300,0,"Gathers Elemental energy to burst the enemy, power 133. Consumes 2 Elemental Stone.",133,280k,[],

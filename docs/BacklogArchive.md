@@ -4691,3 +4691,79 @@ be short on crit"*. At ×3.12 crit damage, every 5 points of cap is about **+10%
 ⚠ **And one thing that got HARDER today, which you should weigh with all three:** `BL-212` doubled
 every creature's damage and tripled an elite's attack. The mage was already the sheet that spends the
 most HP per kill.
+
+---
+
+
+## `BL-216` ✅ CLOSED 2026-09-12 (0.135.0) — THE SHOT CUTS 30% OFF THE FINAL CAST TIME
+
+Filed the same day, measured but not built, because the premise was yours to confirm. **You confirmed
+it with the arithmetic:**
+
+> *"It increases the cast speed behind the scene with ~40% ..which is actually 30% decrease on the
+> final cast time. So if rune is active the cast time of a spell is:
+> `(baseCastTime/(charCastSpeed/333))x(runeActive ? 0.7 : 1)`. So a max cast speed of 1999 with spell
+> that is 4000ms -> 4000/(1999/333) = 667 ms but with rune active it becomes 467ms."*
+
+Built as `CastTimePct: 0.30f` on the Spell Rune — `CastTimeMultiplier = clamp(1 − Σ CastTimePct, 0.2,
+3)`, so the finished cast is ×0.70 exactly as your formula says. 📐 Elemental Blast on a fully-stacked
+level-90 Magus: **0.70s → 0.50s**, and the whole cycle 0.90s → 0.70s.
+
+🔑 **The old `BuffCastSpeed 40` FLAT grant is kept beside it and is not the same thing.** Forty points
+on a stat an endgame caster carries at 1400-1900 is about **+2%**, and at `StatCaps.CastSpeed` (1999)
+it is worth nothing at all — while a cast-TIME cut survives the cap, because `CastTimeMultiplier`
+multiplies after the 333 model. Removing the flat grant would have been a silent nerf to every
+low-level caster to fix a complaint that only exists at 90, so both stand.
+
+⚠ **The War Rune deliberately did NOT get the same.** You described the blessed SPIRITSHOT; whether
+IG's soulshot shortens an attack is yours to say, and a blanket 30% off every fighter's skill
+animation is not a small change to make on an inference.
+⚠ Ticks are 100ms and `BeginCast` truncates, so your 467ms reads as 0.40s here at 1999. That is the
+tick rate, not the number.
+
+### The 0.134.0 text, as filed
+
+## `BL-216` 🔵 THE SHOT DOES NOTHING FOR A CASTER'S CAST TIME — and the cap is why
+
+*"why casting feels slow? I have 1500 cast ~4 times and 1s feels so long in real fight, ig with that
+king of cast speed is almost instant ... (also ig bsps add 40% to the casting - a 40% reduction in the
+final cast. May be that's is)"*
+
+**I checked all of it. Our cast model is IG's, to the arithmetic**: `castTime = authored × 333 /
+castSpeedStat`, so at 1500 a 4s spell takes 0.89s here and would take 0.89s there. Nothing is broken
+and nothing is missing from that formula. Two things came out of the measurement instead.
+
+### 1. 🔴 It was never the cast. It was the REUSE. (Fixed — your item 6.)
+
+`--castcycle 90 epic`, an NPC-buffed Magus, and the reuse starts when the cast LANDS so the cycle is
+the sum:
+
+| | cast | reuse | cycle |
+|---|---|---|---|
+| before | 0.60s | 0.80s | 1.40s |
+| **after your 0.5s** | 0.60s | **0.40s** | **1.00s** |
+
+**57% of the cycle was reuse**, and the only thing shortening it was Spell Mastery's −20%. Your
+instinct in item 6 was the right lever and it is built. Note the cast reads **0.60s, not 0.89s**: a
+buffed Magus of every race is **on the cast-speed cap** (`StatCaps.CastSpeed` 1999). If you are seeing
+1500 you are short of it, and the difference is 0.89s against 0.60s.
+
+### 2. 🔵 THE SHOT — and here you may well be right. Your call.
+
+The Spell Rune grants `BuffCastSpeed 40`, **FLAT**, on a stat that is already 1400-1999. **That is
+worth about +2%.** And because you are at or near the cap, a cast-SPEED grant is worth nothing there
+at all — whereas a cast-TIME cut still multiplies, since `CastTimeMultiplier` is applied *after* the
+333 model. So if IG's blessed shot really is −40% on the final cast, we are delivering roughly a
+fifteenth of it, and the channel to express it properly already exists (`SkillDef.CastTimePct`,
+`BL-196` — the archer's Spirit Mastery is its only author today).
+
+**One line**: `CastTimePct: 0.40f` on the Spell Rune, and Elemental Blast goes **0.60s → 0.30s**, the
+cycle 1.00s → 0.70s — another **×1.4** on mage damage.
+
+🔵 **I did NOT build it, for two reasons.** (1) It is a design change to the shot on a premise only you
+can confirm — I could not verify the −40% against IG, and everything else in this pass was measured.
+(2) The mage is already at **≈×2.3** from this pass alone (`BL-215`); another ×1.4 makes it ×3.2 and
+the playtest stops being readable. Say the word and it is one line, better after you have felt the
+rest.
+
+⚠ **It would reach every caster, not just the nuker** — the healer and the buffer hold the same rune.

@@ -665,6 +665,7 @@ autohunt's budget. Reading the authored number anywhere else is the bug.
 reuse = authored * (1 - reduction)                       min 1 tick; skipped when FixedCooldown
 reduction = CooldownReduction                            every skill (Spell Mastery, buffs)
           + (SkillMath.IsPhysical(def) ? CooldownReductionPhysical : CooldownReductionMagic)
+            each clamped to 0.8, and they SUM — they do not compound
           clamp [0, 0.8]
 ```
 
@@ -677,6 +678,14 @@ owns"*. Same mistake `BL-132` fixed for cast pacing; this was the last call site
 ⚠ "Magic" is spells, buffs, debuffs AND heals — everything the physical test rejects. The per-channel
 halves exist because one buff can carry two different numbers (Harmony of the Soul: −20% magic,
 −30% physical).
+
+🔴🔑 **THEY SUM, AND IG'S EQUIVALENTS MULTIPLY.** The caster stack at 90 is Spell Mastery 20% +
+Harmony of the Soul 20% + Harmony of the Wizard 35% (`BL-217`) = a **75%** cut, ×0.25. The owner's own
+arithmetic for the same three is `0.8 × 0.8 × 0.65 = ×0.416`. His numbers are authored as given and the
+difference is a live question (`BL-217`), not a defect — but two things follow from it and both matter:
+- the endgame magic reuse is **~40% shorter than he intended**;
+- the sum is **already at 75% against a 0.8 clamp**, so the next tuning step saturates and stops
+  responding. Anyone raising one of these three numbers must check the total first.
 
 ## Cast length (`BL-196`, 0.128.0)
 
@@ -700,14 +709,27 @@ his bracket is the 333 model; `CastTimePct` is what is outside it.
 `BuffCastSpeed` magnitude and therefore did nothing for the archer who cast it. A NEGATIVE
 `CastTimePct` lengthens a cast — his *"castTimeDebffs"* — and nothing authors one yet.
 
-🔑 **THE ROTATION IS CAST + REUSE, AND AT THE TOP THE REUSE IS THE BIGGER HALF.** The reuse starts
-when the cast LANDS (`ExecuteSkill`), never when it begins, so a nuke's cycle is the sum. Measured at
-90 in epic gear (`--castcycle 90 epic`), an NPC-buffed Magus of every race sits **on the cast-speed
-cap** (`StatCaps.CastSpeed` 1999, ×0.167), so a 4s authored cast resolves in **0.60s** — while a 1s
-authored reuse, cut only 20% by Spell Mastery, ran **0.80s**. 57% of the cycle was reuse.
-⚠ **So a cast-SPEED grant is worth nothing to an endgame caster** (he is already capped) while a
-cast-TIME cut still multiplies, because `CastTimeMultiplier` is applied after the 333 model. That is
-the practical difference between the two channels, and the reason to reach for `CastTimePct`.
+🔑 **THE SHOT CUTS CAST TIME BY 30%** (`BL-216`, 0.135.0). The Spell Rune carries
+`CastTimePct: 0.30f` — owner: *"It increases the cast speed behind the scene with ~40% ..which is
+actually 30% decrease on the final cast time ... (baseCastTime/(charCastSpeed/333))x(runeActive ?
+0.7 : 1)"*. Its older `BuffCastSpeed 40` FLAT grant stays beside it and is kept honest about what it
+is: forty points on a stat an endgame caster carries at 1400-1900, i.e. **about +2%**.
+⚠ The WAR rune has no equivalent — he described the blessed SPIRITSHOT only.
+
+🔑 **THE ROTATION IS CAST + REUSE, AND THE REUSE WAS THE BIGGER HALF.** The reuse starts when the
+cast LANDS (`ExecuteSkill`), never when it begins, so a nuke's cycle is the sum. Elemental Blast
+(4s authored cast, 1s authored reuse) on a level-90 Magus in epic gear, `--castcycle 90 epic`:
+
+| stack | cast speed | cast | reuse | cycle |
+|---|---|---|---|---|
+| NPC shelf only | 1425 | 0.90s | 0.80s | 1.70s |
+| + Harmony of the Wizard L8 (−35% reuse) | 1853 | 0.70s | 0.40s | 1.10s |
+| + Harmony of the Soul L7 (−20% reuse) | 1853 | 0.70s | 0.20s | 0.90s |
+| + Spell Rune (−30% cast time) | 1853 | **0.50s** | 0.20s | **0.70s** |
+
+⚠ **A cast-SPEED grant dies at the cap and a cast-TIME cut does not**, because `CastTimeMultiplier`
+is applied *after* the 333 model. `StatCaps.CastSpeed` is 1999 and a fully-stacked caster is close to
+it. That is the practical difference between the two channels.
 📐 `dotnet run --project tools/BalanceMatrix -- --castcycle <level> <quality>`
 
 `SkillDef.CastTimePct` · `Entity.CastTimeMultiplier` · `GameLoopService.BeginCast` / `AutoCycleTicks`

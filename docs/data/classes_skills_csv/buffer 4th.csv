@@ -100,9 +100,9 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 ,,,,,,,,,,,,,,,,,,,------------------------------Harmony of Protection------------------------------
 76,Harmony of Protection,npc_harmony_protection,Magic/Buff,,,600,800,party/aoe,1,120,300,"+30% M.Def, +20% HP Regen, +25% P.Def, +30% Max HP, +20% Mele Reflect, +10% Bow Resistance",464,6.5kk,1kk
 ,,,,,,,,,,,,,,,,,,,------------------------------Harmony of the Wizard------------------------------
-77,Harmony of the Wizard,npc_harmony_wizard,Magic/Buff,,,600,800,party/aoe,1,120,300,"+10% M.Atk, 30% cast speed, +20% MP Regen",199,11kk,1kk
-78,Harmony of the Wizard,npc_harmony_wizard,Magic/Buff,,,600,800,party/aoe,1,120,300,"+10% M.Atk, 30% cast speed, +20% MP Regen, +100% magic crit rate",279,16kk,1kk
-79,Harmony of the Wizard,npc_harmony_wizard,Magic/Buff,,,600,800,party/aoe,1,120,300,"+10% M.Atk, 30% cast speed, +20% MP Regen, +100% magic crit rate, +30% magic critical dmg",367,80kk,1kk
+77,Harmony of the Wizard,npc_harmony_wizard,Magic/Buff,,,600,800,party/aoe,1,120,300,"+10% M.Atk, 30% cast speed, +20% MP Regen, -35% Magical Reuse",199,11kk,1kk
+78,Harmony of the Wizard,npc_harmony_wizard,Magic/Buff,,,600,800,party/aoe,1,120,300,"+10% M.Atk, 30% cast speed, +20% MP Regen, -35% Magical Reuse, +100% magic crit rate",279,16kk,1kk
+79,Harmony of the Wizard,npc_harmony_wizard,Magic/Buff,,,600,800,party/aoe,1,120,300,"+10% M.Atk, 30% cast speed, +20% MP Regen, -35% Magical Reuse, +100% magic crit rate, +30% magic critical dmg",367,80kk,1kk
 ,,,,,,,,,,,,,,,,,,,------------------------------Harmony of the Soul------------------------------
 77,Harmony of the Soul,wc_harmony_soul,Magic/Buff,,,600,800,party/aoe,1,120,300,"-10% Magical Reuse, -20% Physical Reuse, -10% Magic MP Consumption, -10% Physical MP Consumption",279,11kk,1kk
 78,Harmony of the Soul,wc_harmony_soul,Magic/Buff,,,600,800,party/aoe,1,120,300,"-15% Magical Reuse, -25% Physical Reuse, -12% Magic MP Consumption, -15% Physical MP Consumption",279,16kk,1kk

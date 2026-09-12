@@ -634,17 +634,48 @@ public static partial class SkillCatalog
             PhysDamageMult: 2.0f,
             Category: SkillCategory.Buff, BuffRow: BuffRow.Consumable, CountsTowardBuffLimit: false,
             Description: "War Rune: increases the final PHYSICAL damage ×2 while the rune is held."),
+        // 🔴🔑 `BL-216`, 2026-09-12 — THE SHOT ALSO CUTS THE FINAL CAST TIME BY 30%, and until today
+        //    its cast half was worth about +2%. His spec, verbatim, with the arithmetic he gave:
+        //
+        //      *"It increases the cast speed behind the scene with ~40% ..which is actually 30%
+        //        decrease on the final cast time. So if rune is active the cast time of a spell is:
+        //        (baseCastTime/(charCastSpeed/333))x(runeActive ? 0.7 : 1)"*
+        //      *"a max cast speed of 1999 with spell that is 4000ms -> 4000/(1999/333) = 667 ms but
+        //        with rune active it becomes 467ms that's why ig felt faster."*
+        //
+        // 🔑 WHY THE FLAT +40 COULD NEVER HAVE DONE THIS, which is the whole finding. `BuffCastSpeed
+        //    40` is FORTY POINTS added to a STAT that an endgame caster already carries at 1400-1999 —
+        //    about +2% — and at `StatCaps.CastSpeed` (1999), which a buffed Magus of every race sits
+        //    exactly on, it is worth precisely NOTHING. A cast-TIME cut is a different channel and
+        //    survives the cap, because `CastTimeMultiplier` multiplies the answer AFTER the 333 model
+        //    has produced it. That is exactly the distinction `BL-196` built `CastTimePct` for.
+        //
+        // ⚠ THE FLAT +40 STAYS BESIDE IT. It is not what he was describing and it is not redundant:
+        //   below the cap it is a small real gain, and removing it would be a silent nerf to every
+        //   low-level caster holding a rune to fix a complaint that only exists at 90.
+        //
+        // ⚠ `CastTimePct` reaches whichever stat paced the skill, so a mage's rare PHYSICAL skill is
+        //   shortened too. That is the channel behaving as designed (the archer's Spirit Mastery is
+        //   deliberately both halves) and is not worth a special case for a caster's spare stun.
+        //
+        // ⚠ TICKS ARE 100ms, SO THE ANSWER IS FLOORED TO ONE. His 467ms reads as 0.40s here, not 0.47
+        //   — `BeginCast` truncates. That is the tick rate, not this number.
+        //
+        // ⚠ THE WAR RUNE IS DELIBERATELY NOT GIVEN THE SAME. He described the BLESSED SPIRITSHOT and
+        //   the magic channel only; whether IG's soulshot shortens an attack is his to say, and giving
+        //   a fighter a blanket 30% off every skill's animation on an assumption is not a small change.
         new(SpellRuneBuff, "Spell Rune", BaseClass.Mage, SkillEffect.BuffCastSpeed,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             DurationTicks: 36000, BuffKey: "rune_spell", Rank: 1,
-            MagicDamageMult: 2.0f,
+            MagicDamageMult: 2.0f, CastTimePct: 0.30f,
             Magnitudes: new EffectMagnitude[]
             {
-                // The cast-speed half is UNCHANGED and stays a stat buff — it is not part of the shot.
+                // The flat cast-speed grant, kept beside the cast-TIME cut above — see the note.
                 new(SkillEffect.BuffCastSpeed, 40, ModifierMode.Flat),     // flat +40 cast stat (not %, per the old passive)
             },
             Category: SkillCategory.Buff, BuffRow: BuffRow.Consumable, CountsTowardBuffLimit: false,
-            Description: "Spell Rune: increases the final MAGICAL damage ×2, and cast speed, while the rune is held."),
+            Description: "Spell Rune: the final MAGICAL damage ×2, casts 30% shorter, and cast speed, "
+                       + "while the rune is held."),
 
         // ═══ THE GRAND RUNE — `BL-187`, and the entry closes with it ══════════════════════════════
         //

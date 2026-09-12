@@ -444,7 +444,8 @@ public static partial class ClassSkillTables
         kit.AddRange(At(NpcHarmonyWarrior,    (40, 1), (44, 2), (48, 3), (56, 4), (58, 5), (74, 6)));
         kit.AddRange(At(NpcHarmonyProtection, (44, 1), (52, 2), (56, 3), (66, 4), (74, 5)));
         kit.AddRange(At(WcHarmonySpeed,       (48, 1), (58, 2)));
-        kit.AddRange(At(NpcHarmonyWizard,     (48, 1), (52, 2)));
+        // `BL-217` — rungs 3-5 at 58/66/74 are the magic-reuse ladder (−15 / 25 / 35%).
+        kit.AddRange(At(NpcHarmonyWizard,     (48, 1), (52, 2), (58, 3), (66, 4), (74, 5)));
 
         foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
             ClassSkills.RegisterThird(race, Discipline.Warchanter, kit.ToArray());

@@ -1111,19 +1111,54 @@ if (args.Length > 0 && args[0] == "--castcycle")
     Console.WriteLine("    cycle     = cast + reuse   (the reuse starts when the cast LANDS)");
     Console.WriteLine();
 
-    foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
+    // 🔴 THE FULL CASTER STACK, NOT JUST THE NPC SHELF. `BL-216`/`BL-217` are both about buffs a
+    //    real party gives a mage — Harmony of the Wizard's reuse ladder, Harmony of the Soul, and the
+    //    Spell Rune's cast-time cut — and NOT ONE of them is in `npcBuffed`. Measuring the shelf alone
+    //    is how the first pass read a 0.80s reuse as the floor.
+    static void WearAt(Entity e, string id, int rung)
     {
-        foreach (var (label, buffed) in new[] { ("bare", false), ("NPC-buffed", true) })
+        if (SkillCatalog.Get(id) is not { } def) { Console.Error.WriteLine($"  !! missing {id}"); return; }
+        e.Buffs.Add(new Game.Server.Simulation.BuffInstance
+        {
+            Effect = def.Effect,
+            Magnitudes = def.MagnitudesAt(rung) ?? Array.Empty<EffectMagnitude>(),
+            MagicCritDamage = def.MagicCritDamageAt(rung),
+            MagicCooldownPct = def.MagicCooldownPctAt(rung),
+            PhysCooldownPct = def.PhysCooldownPctAt(rung),
+            CastTimePct = def.CastTimePct,
+            TicksRemaining = int.MaxValue, Name = def.Name, Key = def.BuffKey,
+            Rank = def.Rank, Level = rung,
+        });
+        e.RecomputeDerived();
+    }
+
+    var stack = new (string Label, Action<Entity> Dress)[]
+    {
+        ("bare",                   _ => { }),
+        ("+ NPC shelf",            e => ApplyNpcBuffs(e)),
+        ("+ Harmony of Wizard L8", e => { ApplyNpcBuffs(e); WearAt(e, SkillCatalog.NpcHarmonyWizard, 8); }),
+        ("+ Harmony of Soul L7",   e => { ApplyNpcBuffs(e); WearAt(e, SkillCatalog.NpcHarmonyWizard, 8);
+                                          WearAt(e, SkillCatalog.WcHarmonySoul, 7); }),
+        ("+ Spell Rune",           e => { ApplyNpcBuffs(e); WearAt(e, SkillCatalog.NpcHarmonyWizard, 8);
+                                          WearAt(e, SkillCatalog.WcHarmonySoul, 7);
+                                          WearAt(e, SkillCatalog.SpellRuneBuff, 1); }),
+    };
+
+    foreach (var race in new[] { Race.Human })
+    {
+        foreach (var (label, dress) in stack)
         {
             var m = BuildPlayer(race, BaseClass.Mage, L, quality: q,
-                                discipline: Discipline.Magus, fourth: true, npcBuffed: buffed);
+                                discipline: Discipline.Magus, fourth: true);
+            dress(m);
             // ⚠ EffectiveCastSpeedMultiplier IS the 333/stat TIME multiplier already; the STAT is
             //   its reciprocal. Reading it as a stat would print 0.2 where 1500 belongs.
             float mult = m.EffectiveCastSpeedMultiplier;
             float stat = StatCalculator.SpeedBaseline / MathF.Max(1e-6f, mult);
             float ctm = m.CastTimeMultiplier;
-            Console.WriteLine($"  {race,-6} {label,-11} WIT {m.EffectiveWit,3:0}  castSpeed {stat,7:0}"
-                            + $"  ×{mult,5:0.000}  castTimeMult ×{ctm,4:0.00}");
+            Console.WriteLine($"  {race,-6} {label,-24} castSpeed {stat,7:0}"
+                            + $"  ×{mult,5:0.000}  castTimeMult ×{ctm,4:0.00}"
+                            + $"  magic reuse cut {m.CooldownReduction + m.CooldownReductionMagic,5:P0}");
 
             foreach (var id in new[] { SkillCatalog.ElementalBlast, SkillCatalog.QuickBlast })
             {

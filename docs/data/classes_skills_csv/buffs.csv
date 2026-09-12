@@ -190,9 +190,12 @@ Harmony of the Warrior,npc_harmony_warrior,Magic/Buff,,,600,800,party/aoe,1,"+10
 ,,,,,,,,,,,,---------------------------Harmony of the Wizard------------------------------
 Harmony of the Wizard,npc_harmony_wizard,Magic/Buff,,,600,800,party/aoe,1,+10% M.Atk
 Harmony of the Wizard,npc_harmony_wizard,Magic/Buff,,,600,800,party/aoe,1,"+10% M.Atk, 30% cast speed"
-Harmony of the Wizard,npc_harmony_wizard,Magic/Buff,,,600,800,party/aoe,1,"+10% M.Atk, 30% cast speed, +20% MP Regen",
-Harmony of the Wizard,npc_harmony_wizard,Magic/Buff,,,600,800,party/aoe,1,"+10% M.Atk, 30% cast speed, +20% MP Regen, +100% magic crit rate"
-Harmony of the Wizard,npc_harmony_wizard,Magic/Buff,,,600,800,party/aoe,1,"+10% M.Atk, 30% cast speed, +20% MP Regen, +100% magic crit rate, +30% magic critical dmg"
+Harmony of the Wizard,npc_harmony_wizard,Magic/Buff,,,600,800,party/aoe,1,"+10% M.Atk, 30% cast speed, -15% Magical Reuse"
+Harmony of the Wizard,npc_harmony_wizard,Magic/Buff,,,600,800,party/aoe,1,"+10% M.Atk, 30% cast speed, -25% Magical Reuse"
+Harmony of the Wizard,npc_harmony_wizard,Magic/Buff,,,600,800,party/aoe,1,"+10% M.Atk, 30% cast speed, -35% Magical Reuse"
+Harmony of the Wizard,npc_harmony_wizard,Magic/Buff,,,600,800,party/aoe,1,"+10% M.Atk, 30% cast speed, +20% MP Regen, -35% Magical Reuse",
+Harmony of the Wizard,npc_harmony_wizard,Magic/Buff,,,600,800,party/aoe,1,"+10% M.Atk, 30% cast speed, +20% MP Regen, -35% Magical Reuse, +100% magic crit rate"
+Harmony of the Wizard,npc_harmony_wizard,Magic/Buff,,,600,800,party/aoe,1,"+10% M.Atk, 30% cast speed, +20% MP Regen, -35% Magical Reuse, +100% magic crit rate, +30% magic critical dmg"
 ,,,,,,,,,,,,---------------------------Harmony of the Soul------------------------------
 Harmony of the Soul,wc_harmony_soul,Magic/Buff,,,600,800,party/aoe,1,"-10% Magical Reuse, -20% Physical Reuse, -10% Magic MP Consumption, -10% Physical MP Consumption"
 Harmony of the Soul,wc_harmony_soul,Magic/Buff,,,600,800,party/aoe,1,"-15% Magical Reuse, -25% Physical Reuse, -12% Magic MP Consumption, -15% Physical MP Consumption"

@@ -135,7 +135,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-208` | ❓ | ONE cosmetic cell left from the Magus's 4th kit — three of four closed the same day | classes |
 | `BL-213` | 🟡 | The mastery roster, rewritten to your table — BUILT; two display names and four learn levels are mine | classes |
 | `BL-215` | 🔵 | THE MAGE'S DAMAGE — two levers pulled (≈×2.3 since 0.132.0); the crit-rate CAP is the third | combat |
-| `BL-216` | 🔵 | The Spell Rune's cast half is worth +2% — a −40% cast TIME is one line, and your call | combat |
+| `BL-217` | 🔵 | The magic reuse stack — BUILT to your numbers, but ours SUM and yours multiply; 3 ways out | combat |
 
 ---
 
@@ -1351,48 +1351,63 @@ able to tell which of the three did it.
 
 ---
 
+## `BL-217` 🔵 THE MAGIC REUSE STACK IS BUILT — but our reductions SUM and your arithmetic MULTIPLIES
 
-## `BL-216` 🔵 THE SHOT DOES NOTHING FOR A CASTER'S CAST TIME — and the cap is why
+**BUILT (0.135.0).** Harmony of the Wizard gains three 3rd-tier rungs, exactly as you specified:
 
-*"why casting feels slow? I have 1500 cast ~4 times and 1s feels so long in real fight, ig with that
-king of cast speed is almost instant ... (also ig bsps add 40% to the casting - a 40% reduction in the
-final cast. May be that's is)"*
+| rung | level | MP | SP | payload |
+|---|---|---|---|---|
+| 3 | 58 | 150 | 88k | +10% M.Atk, +30% cast speed, **−15% magic reuse** |
+| 4 | 66 | 170 | 280k | … **−25%** |
+| 5 | 74 | 190 | 880k | … **−35%** |
 
-**I checked all of it. Our cast model is IG's, to the arithmetic**: `castTime = authored × 333 /
-castSpeedStat`, so at 1500 a 4s spell takes 0.89s here and would take 0.89s there. Nothing is broken
-and nothing is missing from that formula. Two things came out of the measurement instead.
+Every rung above (77/78/79, now numbered 6-8) carries the −35% forward, because a harmony rung is
+cumulative. ⚠ The three MP figures are **mine** — they sit between rung 2's 126 and the 4th tier's 199
+so the ladder stays monotonic without moving a cell you authored. The SP are **yours**, read off what
+your other harmonies charge at those exact levels.
 
-### 1. 🔴 It was never the cast. It was the REUSE. (Fixed — your item 6.)
+✅ **And your suspicion about Harmony of the Soul was wrong, which is why this is only a ladder.**
+*"if the harmony buff don't reach the spell reuse and we fix it it should be ok"* — it reaches.
+`SoulRung` authors `MagicCooldownPct` 0.10 → 0.20, `ApplyBuff` copies it, `RecomputeDerived` folds it
+into `CooldownReductionMagic`, and `CooldownReductionFor` reads it for every magical skill. Nothing was
+broken; the stack was one source short. I checked before building.
 
-`--castcycle 90 epic`, an NPC-buffed Magus, and the reuse starts when the cast LANDS so the cycle is
-the sum:
+### 🔴 THE ONE THING THAT NEEDS YOU
 
-| | cast | reuse | cycle |
+**Our reuse reductions SUM. Yours multiply.**
+
+```
+ours:   authored × (1 − (20% + 20% + 35%))  =  × 0.25       ← clamped at 80%; we are at 75%
+yours:  authored × 0.8 × 0.8 × 0.65         =  × 0.416
+```
+
+So the endgame magic reuse is **~40% shorter than you intended** — Elemental Blast's 1s reuse reads
+**0.20s**, not the 0.42s your model gives. Measured cycle (`--castcycle 90 epic`), Elemental Blast:
+
+| stack | cast | reuse | cycle |
 |---|---|---|---|
-| before | 0.60s | 0.80s | 1.40s |
-| **after your 0.5s** | 0.60s | **0.40s** | **1.00s** |
+| NPC shelf only (where you were) | 0.90s | 0.80s | **1.70s** |
+| + Harmony of the Wizard L8 | 0.70s | 0.40s | 1.10s |
+| + Harmony of the Soul L7 | 0.70s | 0.20s | 0.90s |
+| + Spell Rune (`BL-216`) | **0.50s** | 0.20s | **0.70s** |
 
-**57% of the cycle was reuse**, and the only thing shortening it was Spell Mastery's −20%. Your
-instinct in item 6 was the right lever and it is built. Note the cast reads **0.60s, not 0.89s**: a
-buffed Magus of every race is **on the cast-speed cap** (`StatCaps.CastSpeed` 1999). If you are seeing
-1500 you are short of it, and the difference is 0.89s against 0.60s.
+🔴 **And it matters more than the 40%, because of what you said next.** *"if still feels slow I'll up
+the souls and mastery to 30%"* — under summing that is 30 + 30 + 35 = **95%, clamped to 80%**. You
+would be tuning a number the engine has stopped listening to. Three ways out:
 
-### 2. 🔵 THE SHOT — and here you may well be right. Your call.
+1. **Leave it summed and re-cut the numbers.** To land on your ×0.416 the three must total 58.4% —
+   e.g. leave mastery and souls at 20 and make the harmony's top rung **18%** instead of 35%.
+2. **Make reuse reductions COMPOUND** (`1 − r` multiplied instead of summed). One line, matches IG,
+   matches how every other buff channel in this game already stacks (crit rate, magic crit damage,
+   cast speed), and the 0.8 clamp stops being reachable by accident. ⚠ It reaches PHYSICAL reuse too,
+   so every class's numbers move a little — Harmony of the Soul's −30% physical beside Bow Blessing's
+   −20% would read ×0.56 instead of ×0.50.
+3. **Leave it as built** and accept a faster endgame caster than IG's.
 
-The Spell Rune grants `BuffCastSpeed 40`, **FLAT**, on a stat that is already 1400-1999. **That is
-worth about +2%.** And because you are at or near the cap, a cast-SPEED grant is worth nothing there
-at all — whereas a cast-TIME cut still multiplies, since `CastTimeMultiplier` is applied *after* the
-333 model. So if IG's blessed shot really is −40% on the final cast, we are delivering roughly a
-fifteenth of it, and the channel to express it properly already exists (`SkillDef.CastTimePct`,
-`BL-196` — the archer's Spirit Mastery is its only author today).
+**I did not choose for you** — the summing rule is a documented engine decision that reaches every
+class, and CLAUDE.md says to discuss a mechanic change of that size first. My pick is **2**.
 
-**One line**: `CastTimePct: 0.40f` on the Spell Rune, and Elemental Blast goes **0.60s → 0.30s**, the
-cycle 1.00s → 0.70s — another **×1.4** on mage damage.
+### 🔵 Also still open
 
-🔵 **I did NOT build it, for two reasons.** (1) It is a design change to the shot on a premise only you
-can confirm — I could not verify the −40% against IG, and everything else in this pass was measured.
-(2) The mage is already at **≈×2.3** from this pass alone (`BL-215`); another ×1.4 makes it ×3.2 and
-the playtest stops being readable. Say the word and it is one line, better after you have felt the
-rest.
-
-⚠ **It would reach every caster, not just the nuker** — the healer and the buffer hold the same rune.
+The **20% magic crit-RATE cap** (`StatCaps.MagicCritRate`), which every race now sits exactly on —
+about +10% average damage per 5 points. It was lever 3 of `BL-215` and nothing has changed it.
