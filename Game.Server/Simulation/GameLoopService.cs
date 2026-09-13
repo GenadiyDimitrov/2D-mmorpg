@@ -13093,7 +13093,14 @@ public class GameLoopService : BackgroundService
         if (target.Dead) return;
         // Target's HEAL RECEIVED: (flat + HealReceivedFlat)·HealReceivedMod (anti-heal debuffs lower the mod;
         // buffs/passives raise it). The % half (pct) ignores this, as before.
-        int amount = (int)Math.Round((flat + target.HealReceivedFlat) * Math.Max(0f, target.HealReceivedMod)) + pct;
+        // HEAL-RECEIVED IS THE FLAT HALF'S STAT AND ONLY THE FLAT HALF'S (owner, 2026-09-13 - the same
+        // ruling that emptied HealPower out of a % heal in SkillMath.HealAmount). The MOD already only
+        // touched this half; the FLAT did not, so a target carrying HealReceivedFlat collected it from
+        // a pure %-heal that authored no power at all - once per target, on an 11-target cast.
+        // ⚠ lat <= 0 is the test, not pct > 0: a skill with BOTH halves (the three Restorations)
+        //   keeps its flat half fully modified, which is what a mixed heal is supposed to do.
+        int amount = (flat <= 0 ? 0
+            : (int)Math.Round((flat + target.HealReceivedFlat) * Math.Max(0f, target.HealReceivedMod))) + pct;
         // IMMORTALITY, the other half: *"healing dont increase HP as DMG dont decrease it"*. The cast
         // still happened — it still spends MP, still flags the healer for supporting an outlaw, still
         // shows a number — the HP simply does not move. Zeroing the AMOUNT rather than skipping the

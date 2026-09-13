@@ -176,6 +176,8 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-230` | 🔵 | CONTROL RESISTANCE IS NOT ON THE NPC SHELF — part 1 only; part 2 built in 0.142.0 | buffs |
 | `BL-231` | 🟢 | THE LANDING-MODIFIER SCHEMA — superseded by `BL-232`; the five-bucket version was rejected | combat |
 | `BL-232` | 🔵 | `debuff_landmods.csv` IS LIVE — 74 rows built and checked; the SUCCESS column is yours to author | combat |
+| `BL-233` | ❓ | THE DEMON BUFFER'S P.DEF — measured three ways and heavy is AHEAD; I need your two sheets | classes |
+| `BL-234` | ❓ | URGENT LESSER HEAL — built to your four numbers; the per-rank falloff is mine to confirm | classes |
 
 ---
 
@@ -1687,3 +1689,67 @@ assignments went, the defs stayed on purpose. The others are boss / whisp / proc
 column says which. **They are also the obvious raw material for the 40+ files still to come**, which
 is exactly why they were kept.
 
+## `BL-233` ❓ THE DEMON BUFFER'S P.DEF — I cannot reproduce it, and here is what I measured
+
+> *"check demon buffer (epic 76 heavy + maul) had less pDef than elf buffer (epic 76 light + bow)
+> both @90lvl admin buffed"* — 2026-09-13
+
+🔴 **The rig says the opposite, in both states.** A new mode builds exactly those two characters —
+level 90, epic quality, tier-76 gear, the 4th-class kit, the demon in `heavy_t76_epic` + 2H maul and
+the elf in `light_t76_epic` + bow — and reads `EffectiveDefence`, which is the identical field the
+character sheet prints:
+
+```
+dotnet run --project tools/BalanceMatrix -- --bufferdef 90 epic 76 [--buffed]
+
+  race     CON |  items   P.Def   M.Def |      HP   eva   (unbuffed)
+  human     29 |    366    1118    1476 |    7255   105
+  demon     31 |    366     991    1509 |    7814   109
+  elf       25 |    308     887    1443 |    6184   129     demon − elf = +104
+
+  race     CON |  items   P.Def   M.Def |      HP   eva   (ADMIN-BUFFED)
+  human     29 |    366    1788    2656 |   11515    96
+  demon     31 |    366    1585    2716 |   12438   100
+  elf       25 |    308    1419    2597 |    9748   120     demon − elf = +166
+```
+
+**Why the gap can only widen when you buff:** every P.Def buff on the admin bar is a PERCENT
+(Harmony of Protection, Harmony Mark, Bulwark — the mode prints them per race), and a percent
+multiplies whatever it lands on. So buffing *amplifies* an armour lead, it cannot reverse one.
+
+**And there is nothing weight-shaped that could reverse it.** P.Def in this game has **no stat term
+at all** — not CON, not AGI (`Entity.RecomputeDerived`, and `docs/Formulas.md`) — so its only inputs
+are items, armour masteries, set bonuses and buffs, and all four were checked:
+
+| input | heavy (Demon) | light (Elf) |
+|---|---|---|
+| epic 76 body | **232** | 174 |
+| helm + gloves + boots + jewels | 134 | 134 |
+| `buffer_armor_mastery` rung 29 | +193 (identical for all three weights, by your own one-line rows) | +193 |
+| race mastery (`Heavy Armor Mastery` / `Harmonist Light Mastery`) | no P.Def — speed clauses, crit-damage resist, MP regen | no P.Def — speed clauses, evasion, crit-rate resist |
+| tier-76 set bonus | Ironforge A: HP/STR/CON/CC — **no P.Def** | Nightleaf A: P.Atk/atk speed/MP — **no P.Def** |
+
+### ❓ What I need from you (any one of these settles it)
+
+1. **The two numbers off the two sheets**, and the two characters' levels.
+2. **What the demon is actually wearing in the BODY slot** — if a piece is missing or it is a
+   different body, the 232 is not being paid at all.
+3. Whether either character had **buffs already up** when you pressed the admin full buff (the set is
+   18 squares against a cap of 20, so a couple of pre-existing ones can push it over and the FIFO
+   drops the OLDEST — which is the GROUPS, i.e. exactly the P.Def layers).
+
+Until one of those lands there is nothing to fix: every path I can measure has heavy ahead by
+~100 (bare) to ~170 (buffed).
+
+## `BL-234` ❓ URGENT LESSER HEAL — you gave four numbers, the fifth is mine
+
+✅ **BUILT (0.143.0)**, at 83 for all three buffer races, exactly as you specified: MP **250**, cast
+**3s**, reuse **5s**, **3** Skill Stones, range **0/1000**, **5** targets, **20%** on the first.
+
+❓ **The per-rank falloff is the one thing you did not give.** I carried the healer's own **−2%**
+over, so the five slots pay **20 / 18 / 16 / 14 / 12%** of each target's own maximum HP (worst-hurt
+first, the caster placed by his own injury like anyone else). Tell me if you want a different decay —
+it is one number in `Skills.Warchanter4th.cs` and one in the CSV row.
+
+📐 On a 21k tank the whole cast is ~16,700 HP spread over five people, against the healer's ~46,000
+over eleven: `dotnet run --project tools/BalanceMatrix -- --healpower 90 epic`.

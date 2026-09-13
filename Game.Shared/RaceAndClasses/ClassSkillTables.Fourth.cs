@@ -497,6 +497,13 @@ public static partial class ClassSkillTables
         shared.AddRange(At(NpcHarmonyWizard,     (77, 6), (78, 7), (79, 8)));
         shared.AddRange(Ladder(WcHarmonySoul, new[] { 77, 78, 79, 80, 81, 82, 83 }, 1));
         shared.Add(new ClassSkill(WcHarmonyMadness, 83));
+        // Urgent Lesser Heal @83 - SHARED, all three races, exactly as the healer's Urgent Great Heal
+        // is shared at the same level (owner, 2026-09-13: *"I would like buffers to get at same lvl as
+        // healers get the urgent great heal ... Buffers to get urgent lesser heal"*).
+        // 🔑 IT REPLACES NOTHING. The healer's version supersedes Urgent Heal because the buffer has
+        //    never had that skill - the 3rd-tier % heal is the LIGHTBRINGER's line, not this one - so
+        //    there is no ladder underneath this to retire. Do not give it a Replaces.
+        shared.Add(new ClassSkill(UrgentLesserHeal, 83));
         // Harmony Mark: 79, then its second rung at 83 — the only two it has.
         shared.AddRange(At(WcHarmonyMark, (79, 1), (83, 2)));
 

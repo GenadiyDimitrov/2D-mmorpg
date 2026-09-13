@@ -638,6 +638,40 @@ IG's band and mages 6-13% above it.
 `MovementTuning.RegenMultiplier` · `GameLoopService.Regenerate` · measured by `BalanceMatrix --mpregen`
 and `BalanceMatrix --hpregen` (the latter also prints IG's own numbers beside ours)
 
+## Healing (`0.143.0`)
+
+```
+FLAT half  (skill Power > 0):
+  output   = max(1, (casterHealPowerFlat + skillPower) * casterHealPowerMod)
+  received = round((output + targetHealReceivedFlat) * max(0, targetHealReceivedMod))
+
+%   half  (a Heal magnitude in Percent mode):
+  received = floor(target.MaxHp * share)          <- NO heal stats of any kind
+
+landed = flatReceived + pctReceived               (0 while the target is HP-frozen)
+```
+
+- 🔑 **EVERY HEALING STAT IS A FLAT-HEAL STAT** (owner, 2026-09-13: *"make healing power and healing
+  amount and healing increase/receive … affect only flat heals … now healing power with urgent great
+  heal is a bit too much"*). All four channels — the caster's `HealPowerFlat`/`HealPowerMod` and the
+  target's `HealReceivedFlat`/`HealReceivedMod` — are **switched off entirely on a skill that authors
+  no `Power`**. Before, a pure %-heal collected `HealPowerFlat` as though its power were 0: Healer's
+  Power rung 5 (+2000) added 2,000 HP *per target* to Urgent Great Heal, i.e. **+22,000 on one cast**.
+- A heal has **NO M.Atk term** at all (owner, 2026-07-17) — gear and buffs reach it only through the
+  four channels above.
+- The **% half is the anti-heal-proof one**: it ignores heal reduction the same way it now ignores
+  heal power, which is the whole reason % heals exist. A skill carrying BOTH halves (the three
+  Restorations) keeps them independent — the flat half is fully modified, the % half is not.
+- **Area triage** (`MaxTargets` + `TargetFalloff`): sort everyone in range by the FRACTION of their
+  bar missing, take the first `MaxTargets`, and pay rank *i* `share − falloff·i`, clamped at 0.
+  Urgent Great Heal (healer, 83) = 11 slots from 30% by −2%; Urgent Lesser Heal (buffer, 83) = 5
+  slots from 20% by −2%.
+- **HoT ticks** run the same split: `MaxHp·pct + flat·HealReceivedMod`, so a flat potion is hindered
+  by an anti-heal debuff and a % channel is not.
+
+`SkillMath.HealAmount` · `GameLoopService.HealOne` (the flat/% split) and its heal branch in
+`ExecuteSkill` (the triage ordering) · `Entity.HealPowerFlat/HealPowerMod/HealReceivedFlat/HealReceivedMod`
+
 ## Speed
 
 ```

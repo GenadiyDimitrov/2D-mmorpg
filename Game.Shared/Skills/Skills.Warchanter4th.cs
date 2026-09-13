@@ -53,6 +53,7 @@ public static partial class SkillCatalog
     public const string WcHarmonySoul       = "wc_harmony_soul";
     public const string WcHarmonyMadness    = "wc_harmony_madness";
     public const string WcHarmonyMark       = "wc_harmony_mark";
+    public const string UrgentLesserHeal    = "urgent_lesser_heal";
 
     /// <summary>The 4th tier's every-level band, 76-90. Same list the healer uses; named here so the
     /// buffer's table never has to reach into a file called "Lightbringer".</summary>
@@ -460,6 +461,46 @@ public static partial class SkillCatalog
                 },
                 Description: "A hymn that trades the party's guard for its edge: less life and mana, "
                            + "more of everything that ends a fight."),
+
+            // ═══ URGENT LESSER HEAL @83 ═══════════════════════════════════════════════════════════
+            // 🔑 THE BUFFER'S OWN TRIAGE BUTTON, at the level the healer gets his (owner, 2026-09-13):
+            //    *"I would like buffers to get at same lvl as healers get the urgent great heal ...
+            //    Buffers to get urgent lesser heal ... Half mp cost (250) same cd same cast 3 skill
+            //    stones same aoe range but only 5 targets 20% on 1st .. Same just half mp/stones cost
+            //    for half the targets healed and less heling factor."*
+            //
+            // 🔑 IT IS URGENT GREAT HEAL WITH THREE NUMBERS CHANGED and nothing else, which is what he
+            //    described: MP 500→250, stones 5→3, targets 11→5, first share 30%→20%. Cast (3s),
+            //    reuse (5s), range (0/1000) and the target mode are the healer's, verbatim — see
+            //    Skills.Lightbringer4th.cs for why they are what they are, and do not re-derive them
+            //    here: two skills that are meant to be the same button at two sizes must move together.
+            //
+            // 🔑 POWER IS 0 — it is a PURE % heal, so the size comes from each target's own pool and
+            //    NOT from the buffer's sheet. That is also the rule that keeps this honest after the
+            //    2026-09-13 heal-power ruling (SkillMath.HealAmount): heal power has no flat half to
+            //    multiply here, so a buffed Warchanter cannot inflate it.
+            //
+            // ⚠ THE −2% FALLOFF IS THE PARENT'S, NOT HIS. He gave the first share (20%) and the target
+            //   count (5) and said nothing about the decay, so the healer's own −2% per rank is carried
+            //   over: 20 / 18 / 16 / 14 / 12. If he wants the five to fade faster or not at all, it is
+            //   one number here and one in the CSV row — flagged on the Backlog rather than guessed
+            //   quietly.
+            //
+            // ⚠ FIVE SLOTS = FOUR ALLIES PLUS THE CASTER, the same arithmetic as the healer's eleven
+            //   (ten plus the caster). The caster is placed by his own injury like anybody else.
+            new(UrgentLesserHeal, "Urgent Lesser Heal", BaseClass.Mage, SkillEffect.Heal,
+                MpCost: 250, CastTicks: 30, CooldownTicks: 50, Range: 0, Power: 0,
+                Category: SkillCategory.Heal, SpCost: sp83,
+                // FriendlyInRadius, not AlliesInRadius — the same ruling the healer's carries: a triage
+                // heal reaches anyone friendly standing in it, party or not.
+                TargetMode: TargetMode.FriendlyInRadius, AreaRadius: 1000f,
+                MaxTargets: 5, TargetFalloff: 0.02f,
+                ConsumableId: ItemCatalog.SkillStone, ConsumableAmount: 3,
+                Magnitudes: new EffectMagnitude[] { new(SkillEffect.Heal, 0.20f, ModifierMode.Percent) },
+                Levels: new[] { new SkillLevel(MpCost: 250, SpCost: sp83, GoldCost: gold83) },
+                Description: "Finds the four most badly hurt allies within 1000, plus yourself, and "
+                           + "heals them worst-first — 20% of their own maximum HP for the worst, 2% "
+                           + "less for each one after, down to 12%. Consumes 3 Skill Stones."),
 
             // ═══ HARMONY MARK, 79 and 83 ═════════════════════════════════════════════════════════
             // 🔑 THE BUFFER'S MARK, and it carries the HEALER'S KEY on purpose — an ally wears ONE

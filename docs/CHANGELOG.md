@@ -7,12 +7,107 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.142.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.143.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-13 (latest) — 0.142.1: the debuff landing file
+## 2026-09-13 (latest) — 0.143.0: heal power is a FLAT-heal stat, and the buffer gets a triage heal
+
+🔴 **NEW APK REQUIRED** — a class-skill-TABLE change (the client builds its Learn tab locally from the
+compiled `ClassSkills`). No protocol bump, no `game.db` delete.
+
+### 1. Every healing stat now touches ONLY flat heals
+
+> *"Can we make heling power and healing amount and heling increase/receive or whatever heling power
+> ups we have to affect only flat heals … Now healing power with urgent great heal is a bit to much."*
+
+You are right, and the reason it was "a bit too much" is arithmetic, not tuning. A pure %-of-max-HP
+heal authors `Power: 0`, and the flat half was computed anyway:
+
+```
+was:  flat = (HealPowerFlat + 0) x HealPowerMod        <- the whole sheet, on a skill with no power
+now:  flat = 0 when the skill authors no power
+```
+
+So Healer's Power at its top rung (+2000, ×1.10 with the shield passive) was adding **2,200 HP per
+target** to a skill whose entire design is *"the size comes from the TARGET'S own pool"* — and Urgent
+Great Heal pays eleven targets. All four channels are now gated the same way: your `HealPowerFlat`
+and `HealPowerMod`, and the target's `HealReceivedFlat` and `HealReceivedMod` (the *Mod* already only
+touched this half; the *Flat* did not).
+
+📐 `dotnet run --project tools/BalanceMatrix -- --healpower 90 epic` — level 90, epic gear, on a
+20,917-HP Bulwark, Healer's Power up. The "was" column is the OLD arithmetic recomputed, not remembered:
+
+| skill | power | share | slots | one target, was → now | whole cast, was → now |
+|---|---|---|---|---|---|
+| Urgent Great Heal | 0 | 30% | 11 | 8,475 → **6,275** | 70,213 → **46,013** |
+| Life Restoration | 0 | 100% | 1 | 23,117 → **20,917** | — |
+| Great Heal | 1400 | — | 1 | 3,740 → **3,740** | unchanged |
+| Ultimate Party Heal | 2000 | — | 1 | 4,400 → **4,400** | unchanged |
+
+**Not one flat heal moved.** The cut is −24,200 on a single Urgent Great Heal and −2,200 on a
+Restoration, and nothing else in the game changed.
+
+⚠ A skill carrying BOTH halves keeps them independent — the flat half is fully modified, the % half
+is not. That was always the design of the % channel (it is the half an anti-heal ultimate cannot
+touch); heal POWER is now on the same side of the line as heal REDUCTION.
+
+### 2. Urgent Lesser Heal — the buffer's own triage button, at 83
+
+> *"I would like buffers to get at same lvl as healers get the urgent great heal … Buffers to get
+> urgent lesser heal … Half mp cost (250) same cd same cast 3 skill stones same aoe range but only 5
+> targets 20% on 1st .. Same just half mp/stones cost for half the targets healed and less heling
+> factor."*
+
+Built for all three buffer races at **83**, as Urgent Great Heal with four numbers changed and
+nothing else:
+
+| | healer (83) | buffer (83) |
+|---|---|---|
+| MP | 500 | **250** |
+| Skill Stones | 5 | **3** |
+| targets | 11 (10 + you) | **5** (4 + you) |
+| first share | 30% | **20%** |
+| cast / reuse / range | 3s / 5s / 0-1000 | *identical* |
+
+Worst-hurt first, the caster placed by his own injury like anybody else, and — like its parent — a
+pure % heal, so §1 above means a buffed Warchanter cannot inflate it. On a 21k tank the whole cast is
+~16,700 HP across five people against the healer's ~46,000 across eleven.
+
+❓ **One number is mine, not yours: the per-rank falloff.** You gave the first share and the target
+count; I carried the healer's **−2%** over, so the five slots pay **20 / 18 / 16 / 14 / 12%**. Filed
+as **`BL-234`** — say the word and it is one edit in the code and one in the CSV row.
+
+`buffer 4th.csv` gained its row in the same commit, and `SkillCsvSeed --check` is clean.
+
+### 3. The demon-vs-elf P.Def report — measured, and I cannot reproduce it (`BL-233`)
+
+> *"check demon buffer (epic 76 heavy + maul) had less pDef than elf buffer (epic 76 light + bow)
+> both @90lvl admin buffed"*
+
+New mode: `dotnet run --project tools/BalanceMatrix -- --bufferdef 90 epic 76 [--buffed]`. It builds
+exactly those two characters and reads the same `EffectiveDefence` the character sheet prints. The
+demon is **+104 P.Def ahead bare and +166 ahead admin-buffed** — and the gap can only *widen* when
+you buff, because every P.Def buff on that bar is a percent. P.Def has no stat term in this game at
+all, so the only inputs are items (232 vs 174 on the body), armour masteries (identical for all three
+weights, by your own one-line rows), set bonuses (neither tier-76 set grants P.Def) and those buffs.
+`BL-233` lists the three things that would settle it — the two numbers off your sheets is the
+quickest.
+
+### Also in this version
+
+- `docs/Formulas.md` gained a **Healing** section — the flat/% split, the four channels, the area
+  triage ordering, in one place. It had none.
+- 🔴 **A sixth field channel was missing from the balance rig's buff builder**: the three HEAL
+  channels ride as plain fields (`SkillEffect` has had no bits for years), so Harmony of the Soul's
+  *"+20% Healing Received"* landed as **nothing** in every `--buffed` table. Fifth was `BL-218`'s
+  CC-resist pair, fourth `BL-210`'s magic crit damage. **If a buff has a number, ask where it rides.**
+- `--bufferdef` and `--healpower` are new; `ApplyAdminBuffs` models the ADMIN full buff (the buffer
+  class's own kit) as `ApplyNpcBuffs` models the Spirit Helper's shelf — the two shelves are separate
+  lists by your 2026-09-03 ruling, and a table that says "admin buffed" must use the right one.
+
+## 2026-09-13 — 0.142.1: the debuff landing file
 
 ⚠ **NEW APK not required.** No protocol bump, no `game.db` delete.
 🔑 **A NEW AUTHORING FILE: `docs/data/debuff_landmods.csv`.** It is the authority for

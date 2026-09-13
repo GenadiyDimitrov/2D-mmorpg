@@ -2348,9 +2348,18 @@ public static class SkillMath
     /// flat heals wither and only the % heals still work.</summary>
     /// <summary>Heal OUTPUT (endHeal) — owner 2026-07-17: NO M.Atk. = (HealPowerFlat + skillPower)·HealPowerMod.
     /// With the default HealPower (0 flat / ×1) a heal is EXACTLY its skill power, so nobody overheals unless
-    /// a class / gear / buff grants HealPower. The target's HealReceived is applied separately in HealOne.</summary>
+    /// a class / gear / buff grants HealPower. The target's HealReceived is applied separately in HealOne.
+    ///
+    /// <para>HEAL POWER BUYS NOTHING ON A SKILL WITH NO FLAT HALF (owner, 2026-09-13: *"make healing
+    /// power / healing amount / healing increase-receive ... affect only flat heals ... now healing
+    /// power with urgent great heal is a bit too much"*). A pure %-of-max-HP heal authors Power: 0,
+    /// and this used to return (healPowerFlat + 0) x mod - so Healer's Power at its top rung (+2000)
+    /// added a full 2,000 HP PER TARGET to a skill that is sized by the TARGET'S OWN POOL, eleven
+    /// times over on one cast of Urgent Great Heal. The zero is the whole rule: no authored power, no
+    /// flat half, and the percentage stands alone exactly as its text says. (The Math.Max(1, ...)
+    /// floor is kept for a real flat heal, so a heal with power never rounds away to nothing.)</para></summary>
     public static int HealAmount(int skillPower, int healPowerFlat, float healPowerMod) =>
-        Math.Max(1, (int)((healPowerFlat + skillPower) * healPowerMod));
+        skillPower <= 0 ? 0 : Math.Max(1, (int)((healPowerFlat + skillPower) * healPowerMod));
 
     public const float CritMultiplierSkills = 2.0f;
     // (PhysicalSkillAccuracyBonus DELETED 2026-08-14, BL-06. It was +10 accuracy on a physical

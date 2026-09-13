@@ -218,3 +218,5 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 90,Sharpening,wc_sharpening,Toggle,,,0,0,self/single,0,0,0,Increase P.Atk +400 (Consumes: 15/s),15,0,100kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Lasting Enchantment----------------------------
 76,Lasting Enchantment,lasting_enchantment,Passive,,,0,0,self/single,0,0,0,double duration rate 10% - buffs and debuffs you cast have that chance to last TWICE as long - one roll per cast so an area blessing doubles for everyone or no one - scales with ATK,0,6.5kk,1kk
+,,,,,,,,,,,,,,,,,,,----------------------------Urgent Lesser Heal----------------------------
+83,Urgent Lesser Heal,urgent_lesser_heal,Magic/Heal,,,0,1000,target/aoe,3,5,0,"Heals 4 most injured friendly target around the caster (including caster in 1000 range) starting with most injured one by 20% and every next target is healed -2% less form the one before, Consumes 3 skill stones",250,500kk,100kk,,,,half the MP / stones / targets of the healer's Urgent Great Heal and 20% instead of 30% - his 2026-09-13 ask. The -2% per rank is carried over from the healer's row (he did not give one): 20 -> 18 -> 16 -> 14 -> 12%

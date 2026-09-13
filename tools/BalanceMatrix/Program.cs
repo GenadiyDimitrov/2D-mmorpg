@@ -567,6 +567,199 @@ if (args.Length > 0 && args[0] == "--dmgmatrix")
 //  359 actually are), the flat base, levelMod, and whatever multiplier is left over — that leftover
 //  IS the passive/set/mastery stack, isolated.
 // ---------------------------------------------------------------------------------------------
+// `--healpower` — WHAT A HEAL ACTUALLY LANDS, before and after the 2026-09-13 ruling that the heal
+// stats touch only FLAT heals. The "was" column is the OLD arithmetic recomputed here, not
+// remembered: (healPowerFlat + power) x mod even when power is 0, which is how a pure %-heal used to
+// collect the healer's whole sheet once PER TARGET.
+// Usage: --healpower [level] [quality]
+if (args.Length > 0 && args[0] == "--healpower")
+{
+    int L = args.Length > 1 && int.TryParse(args[1], out var hpLvl) ? hpLvl : 90;
+    string q = args.Length > 2 && !args[2].StartsWith("--") ? args[2] : "epic";
+
+    var healer = BuildPlayer(Race.Human, BaseClass.Mage, L, quality: q, healer: true,
+                             discipline: Discipline.Lightbringer, fourth: true);
+    // Healer's Power at the rung this character has actually LEARNED (rung 5 = +2000 at 90).
+    // ⚠ NOT ApplyOneBuff — that helper applies every buff at level 1, which here is +1000 and would
+    //   have halved the very number the ruling is about.
+    if (SkillCatalog.Get(SkillCatalog.HealersPower) is { } hpDef
+        && healer.LearnedSkills.TryGetValue(SkillCatalog.HealersPower, out int hpRung))
+    {
+        healer.Buffs.Add(new Game.Server.Simulation.BuffInstance
+        {
+            Effect = hpDef.Effect, Magnitudes = hpDef.MagnitudesAt(hpRung) ?? Array.Empty<EffectMagnitude>(),
+            HealPowerFlat = hpDef.HealPowerFlatAt(hpRung),
+            HealPowerPct = hpDef.HealPowerPctAt(hpRung),
+            HealReceivedPct = hpDef.HealReceivedPctAt(hpRung),
+            TicksRemaining = int.MaxValue, Name = hpDef.Name, Key = hpDef.BuffKey, Level = hpRung,
+        });
+        healer.RecomputeDerived();
+    }
+    int bufferSecond = ClassCatalog.Playable.First(c => c.Race == Race.Demon && c.Archetype == Archetype.Healer).Id;
+    var buffer = BuildPlayer(Race.Demon, BaseClass.Mage, L, quality: q, healer: true,
+                             discipline: Discipline.Warchanter, secondClass: bufferSecond, fourth: true);
+    var tank = BuildPlayer(Race.Human, BaseClass.Fighter, L, quality: q,
+                           discipline: Discipline.Bulwark, fourth: true, npcBuffed: true);
+
+    Console.WriteLine();
+    Console.WriteLine($"=== WHAT A HEAL LANDS — level {L}, {q} gear, on a {tank.MaxHp}-HP Bulwark ===");
+    Console.WriteLine($"  healer heal power: +{healer.HealPowerFlat} flat x{healer.HealPowerMod:0.00}  "
+                    + $"(Healer's Power up)   buffer: +{buffer.HealPowerFlat} flat x{buffer.HealPowerMod:0.00}");
+    Console.WriteLine($"  target heal received: +{tank.HealReceivedFlat} flat x{tank.HealReceivedMod:0.00}");
+    Console.WriteLine();
+
+    void Table(string who, Entity caster)
+    {
+        Console.WriteLine($"  ---- {who} ----");
+        Console.WriteLine($"  {"skill",-26} {"power",6} {"share",6} {"tgts",5} | {"was",8} {"now",8} {"delta",8} | "
+                        + $"{"was all",9} {"now all",9}");
+        var rows = caster.LearnedSkills
+            .Select(kv => (Def: SkillCatalog.Get(kv.Key), Lvl: kv.Value))
+            .Where(r => r.Def is not null && (r.Def.Effect & SkillEffect.Heal) != 0 && !r.Def.PlacesTotem)
+            .OrderBy(r => r.Def!.Name);
+        foreach (var (def, lvl) in rows)
+        {
+            int power = def!.PowerAt(lvl);
+            float share = def.MagnitudeOf(SkillEffect.Heal, ModifierMode.Percent, lvl);
+            int slots = def.MaxTargets > 0 ? def.MaxTargets : 1;
+
+            // OLD: the flat half was computed even with no power at all.
+            int oldFlat = Math.Max(1, (int)((caster.HealPowerFlat + power) * caster.HealPowerMod));
+            int oldOne = (int)Math.Round((oldFlat + tank.HealReceivedFlat)
+                                         * Math.Max(0f, tank.HealReceivedMod)) + (int)(tank.MaxHp * share);
+            // NEW: no authored power, no flat half.
+            int newFlat = SkillMath.HealAmount(power, caster.HealPowerFlat, caster.HealPowerMod);
+            int newOne = (newFlat <= 0 ? 0
+                : (int)Math.Round((newFlat + tank.HealReceivedFlat) * Math.Max(0f, tank.HealReceivedMod)))
+                + (int)(tank.MaxHp * share);
+
+            // …and across every slot the skill pays, with the falloff applied rank by rank.
+            int oldAll = 0, newAll = 0;
+            for (int i = 0; i < slots; i++)
+            {
+                float s = Math.Max(0f, share - def.TargetFalloff * i);
+                oldAll += (int)Math.Round((oldFlat + tank.HealReceivedFlat) * Math.Max(0f, tank.HealReceivedMod))
+                        + (int)(tank.MaxHp * s);
+                newAll += (newFlat <= 0 ? 0
+                        : (int)Math.Round((newFlat + tank.HealReceivedFlat) * Math.Max(0f, tank.HealReceivedMod)))
+                        + (int)(tank.MaxHp * s);
+            }
+            Console.WriteLine($"  {def.Name,-26} {power,6} {share,6:P0} {slots,5} | "
+                            + $"{oldOne,8} {newOne,8} {newOne - oldOne,8} | {oldAll,9} {newAll,9}");
+        }
+        Console.WriteLine();
+    }
+    Table("LIGHTBRINGER (healer), Healer's Power UP", healer);
+    Table("WARCHANTER (buffer)", buffer);
+    Console.WriteLine("  'was all' / 'now all' = the whole cast, every slot, one identical target — which is");
+    Console.WriteLine("  the number Urgent Great Heal was actually paying: eleven copies of the healer's sheet.");
+    return;
+}
+
+// `--bufferdef` — THE THREE BUFFERS' P.DEF, decomposed. He reported a DEMON buffer (epic 76 heavy +
+// maul) reading LESS P.Def than an ELF buffer (epic 76 light + bow) at 90, both admin-buffed, which
+// is backwards: heavy's body is 332 against light's 249 before anything is applied. So the table
+// prints the ITEM sum, the finished sheet, and then attributes the gap per PASSIVE and per BUFF —
+// the same rebuild-without-one the tank column in `--defbreak` uses.
+// Usage: --bufferdef [level] [quality] [tier] [--buffed]
+if (args.Length > 0 && args[0] == "--bufferdef")
+{
+    int L = args.Length > 1 && int.TryParse(args[1], out var bdLvl) ? bdLvl : 90;
+    string q = args.Length > 2 && !args[2].StartsWith("--") ? args[2] : "epic";
+    int t = args.Length > 3 && int.TryParse(args[3], out var bdTier) ? bdTier : 76;
+    bool bf = args.Contains("--buffed");
+    string sfx = q is "mythic" ? "" : "_" + q;
+
+    Entity Buffer(Race r, bool buffed)
+    {
+        int second = ClassCatalog.Playable.First(c => c.Race == r && c.Archetype == Archetype.Healer).Id;
+        var e = BuildPlayer(r, BaseClass.Mage, L, quality: q, healer: true,
+                            discipline: Discipline.Warchanter, gearTier: t, secondClass: second,
+                            fourth: true);
+        if (buffed) ApplyAdminBuffs(e);
+        return e;
+    }
+    int ItemDef(Entity e) => e.Inventory.Where(i => i.Equipped)
+        .Sum(i => ItemCatalog.Get(i.DefId)?.DefBonus ?? 0);
+
+    Console.WriteLine();
+    Console.WriteLine($"=== THE THREE BUFFERS' P.DEF — level {L}, {q} gear (tier t{t}), "
+                    + $"{(bf ? "ADMIN-BUFFED" : "unbuffed")} ===");
+    Console.WriteLine("  Human heavy + 1H blunt + SHIELD   Demon heavy + 2H maul   Elf light + bow");
+    Console.WriteLine($"  body P.Def: heavy {ItemCatalog.Get($"heavy_t{t}{sfx}")?.DefBonus}  "
+                    + $"light {ItemCatalog.Get($"light_t{t}{sfx}")?.DefBonus}  "
+                    + $"robe {ItemCatalog.Get($"robe_t{t}{sfx}")?.DefBonus}");
+    Console.WriteLine();
+    Console.WriteLine($"  {"race",-7} {"CON",4} | {"items",6} {"P.Def",7} {"M.Def",7} | {"HP",7} {"eva",5} {"set",-22}");
+    var sheets = new List<(Race R, string Label, Entity E)>();
+    foreach (var (race, label) in new[] { (Race.Human, "human"), (Race.Demon, "demon"), (Race.Elf, "elf") })
+    {
+        var e = Buffer(race, bf);
+        sheets.Add((race, label, e));
+        Console.WriteLine($"  {label,-7} {e.Con,4} | {ItemDef(e),6} {(int)e.EffectiveDefence,7} "
+                        + $"{(int)e.EffectiveMagicDefence,7} | {e.MaxHp,7} {(int)e.EffectiveEvasion,5} {e.ActiveArmorSet,-22}");
+    }
+    var demon = sheets.First(s => s.R == Race.Demon).E;
+    var elfB  = sheets.First(s => s.R == Race.Elf).E;
+    Console.WriteLine();
+    Console.WriteLine($"  >>> demon − elf = {(int)demon.EffectiveDefence - (int)elfB.EffectiveDefence:+#;-#;0} P.Def"
+                    + "   (heavy SHOULD be ahead; a negative number is the bug he reported)");
+
+    // ---- PASSIVES, one at a time, on the UNBUFFED sheet: the gear+set floor is the baseline.
+    Console.WriteLine();
+    Console.WriteLine("  ---- P.DEF ATTRIBUTED PER LEARNED SKILL (rebuild-without-one, unbuffed) ----");
+    var perSkill = new Dictionary<string, float[]>();
+    var order = new List<string>();
+    for (int s = 0; s < sheets.Count; s++)
+    {
+        var full = Buffer(sheets[s].R, false);
+        float total = full.EffectiveDefence;
+        foreach (var id in full.LearnedSkills.Keys.ToList())
+        {
+            var probe = Buffer(sheets[s].R, false);
+            probe.LearnedSkills.Remove(id);
+            probe.RecomputeDerived();
+            float d = total - probe.EffectiveDefence;
+            if (Math.Abs(d) < 1f) continue;
+            if (!perSkill.TryGetValue(id, out var row)) { perSkill[id] = row = new float[3]; order.Add(id); }
+            row[s] = d;
+        }
+    }
+    Console.WriteLine($"  {"skill",-30} {"id",-28} {"human",8} {"demon",8} {"elf",8}");
+    foreach (var id in order.OrderByDescending(i => perSkill[i].Max()))
+        Console.WriteLine($"  {SkillCatalog.Get(id)?.Name ?? id,-30} {id,-28} "
+                        + $"{perSkill[id][0],8:F0} {perSkill[id][1],8:F0} {perSkill[id][2],8:F0}");
+
+    // ---- BUFFS, one at a time, on the buffed sheet.
+    if (bf)
+    {
+        Console.WriteLine();
+        Console.WriteLine("  ---- P.DEF ATTRIBUTED PER ADMIN BUFF (remove-one, per race) ----");
+        var perBuff = new Dictionary<string, float[]>();
+        var bOrder = new List<string>();
+        for (int s = 0; s < sheets.Count; s++)
+        {
+            var full = Buffer(sheets[s].R, true);
+            float total = full.EffectiveDefence;
+            for (int b = 0; b < full.Buffs.Count; b++)
+            {
+                var probe = Buffer(sheets[s].R, true);
+                string name = probe.Buffs[b].Name ?? "?";
+                probe.Buffs.RemoveAt(b);
+                probe.RecomputeDerived();
+                float d = total - probe.EffectiveDefence;
+                if (Math.Abs(d) < 1f) continue;
+                if (!perBuff.TryGetValue(name, out var row)) { perBuff[name] = row = new float[3]; bOrder.Add(name); }
+                row[s] = d;
+            }
+        }
+        Console.WriteLine($"  {"buff",-34} {"human",8} {"demon",8} {"elf",8}");
+        foreach (var n in bOrder.OrderByDescending(n => perBuff[n].Max()))
+            Console.WriteLine($"  {n,-34} {perBuff[n][0],8:F0} {perBuff[n][1],8:F0} {perBuff[n][2],8:F0}");
+    }
+    return;
+}
+
 if (args.Length > 0 && args[0] == "--defbreak")
 {
     int L = args.Length > 1 ? int.Parse(args[1]) : 76;
@@ -6476,6 +6669,12 @@ static void ApplyNpcBuffs(Entity e, bool fullShelf = false)
             //    builder. Harmony of the Wizard's top rung and Harmony Mark both carry their magic
             //    crit DAMAGE here and nowhere else, so without this line the rig prints ×2.00 for a
             //    caster the game gives ×3.12 and the whole ask measures as doing nothing.
+            // 🔴 THE SIXTH FIELD CHANNEL (2026-09-13). The three HEAL channels ride as fields too —
+            //    Harmony of the Soul's "+20% Healing Received" is BuffHealReceivedPct and nothing
+            //    else — so a buffed heal measured here landed as though the party wore no harmony.
+            HealPowerFlat = def.HealPowerFlatAt(level),
+            HealPowerPct = def.HealPowerPctAt(level),
+            HealReceivedPct = def.HealReceivedPctAt(level),
             MagicCritDamage = def.MagicCritDamageAt(level),
             MagicCritDamageDebuff = def.MagicCritDamageDebuffAt(level),
             // 🔴 `BL-218`, 2026-09-12 — the FIFTH field channel this builder had been missing. Arcane and
@@ -6547,6 +6746,12 @@ static void ApplyOneBuff(Entity e, string skillId)
             PhysMpCostPct = def.PhysMpCostPctAt(1),
             MagicMpCostPct = def.MagicMpCostPctAt(1),
             // `BL-210` — see ApplyNpcBuffs above; same omission, same consequence.
+            // 🔴 THE SIXTH FIELD CHANNEL (2026-09-13). The three HEAL channels ride as fields too —
+            //    Harmony of the Soul's "+20% Healing Received" is BuffHealReceivedPct and nothing
+            //    else — so a buffed heal measured here landed as though the party wore no harmony.
+            HealPowerFlat = def.HealPowerFlatAt(1),
+            HealPowerPct = def.HealPowerPctAt(1),
+            HealReceivedPct = def.HealReceivedPctAt(1),
             MagicCritDamage = def.MagicCritDamageAt(1),
             MagicCritDamageDebuff = def.MagicCritDamageDebuffAt(1),
             // `BL-218` — see ApplyNpcBuffs above; same omission, same consequence.
@@ -6557,6 +6762,64 @@ static void ApplyOneBuff(Entity e, string skillId)
     }
 
     if (SkillCatalog.Get(skillId) is SkillDef def) Add(def);
+    e.RecomputeDerived();
+}
+
+/// <summary>THE ADMIN FULL BUFF, modelled — `SkillCatalog.AdminBuffSet` at every def's MaxLevel,
+/// applied in the SET'S OWN ORDER through the same family/rank refusal `GrantFullBuffSet` runs:
+/// the groups come first and simply win, so every single they cover is refused rather than evicted.
+///
+/// <para>🔑 IT IS NOT <see cref="ApplyNpcBuffs"/>. The two shelves are separate lists by his ruling
+/// (2026-09-03) — the Spirit Helper sells `NewbieBuffSet`, the admin button and `/buff` hand out the
+/// buffer CLASS's own kit — and a table that says "admin buffed" must use this one. The NPC shelf
+/// carries no Clarity and no Fortitude; this does.</para></summary>
+static void ApplyAdminBuffs(Entity e)
+{
+    // Same FIELD channels as ApplyNpcBuffs — half of a buff's payload never rides on `Effect`.
+    void Add(SkillDef def, int level)
+    {
+        var kids = def.ChildBuffsAt(level);
+        if (kids is { Length: > 0 })
+        {
+            foreach (var kid in kids)
+                if (SkillCatalog.Get(kid) is SkillDef child) Add(child, 1);
+            return;
+        }
+        e.Buffs.Add(new Game.Server.Simulation.BuffInstance
+        {
+            Effect = def.Effect,
+            Magnitudes = def.MagnitudesAt(level) ?? Array.Empty<EffectMagnitude>(),
+            BlowRatePct = def.BlowRatePctAt(level),
+            MasteryMult = def.MasteryMult,
+            PhysMpCostPct = def.PhysMpCostPctAt(level),
+            MagicMpCostPct = def.MagicMpCostPctAt(level),
+            // 🔴 THE SIXTH FIELD CHANNEL (2026-09-13). The three HEAL channels ride as fields too —
+            //    Harmony of the Soul's "+20% Healing Received" is BuffHealReceivedPct and nothing
+            //    else — so a buffed heal measured here landed as though the party wore no harmony.
+            HealPowerFlat = def.HealPowerFlatAt(level),
+            HealPowerPct = def.HealPowerPctAt(level),
+            HealReceivedPct = def.HealReceivedPctAt(level),
+            MagicCritDamage = def.MagicCritDamageAt(level),
+            MagicCritDamageDebuff = def.MagicCritDamageDebuffAt(level),
+            CcResistMagical = def.CcResistMagicalAt(level),
+            CcResistPhysical = def.CcResistPhysicalAt(level),
+            TicksRemaining = int.MaxValue, Name = def.Name, Key = def.BuffKey, Level = level,
+        });
+    }
+
+    var claimed = new HashSet<string>(StringComparer.Ordinal);
+    foreach (var id in SkillCatalog.AdminBuffSet)
+    {
+        if (SkillCatalog.Get(id) is not SkillDef def) continue;
+        int lvl = def.MaxLevel;
+        if (lvl <= 0) continue;
+        var (key, _, covered, _) = GameLoopService.BuffPlan(def, lvl);
+        if (claimed.Contains(key) || Array.Exists(covered, claimed.Contains)) continue;
+        Add(def, lvl);
+        claimed.Add(key);
+        foreach (var c in covered) claimed.Add(c);
+    }
+    DedupeByKey(e);
     e.RecomputeDerived();
 }
 
