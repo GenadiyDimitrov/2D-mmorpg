@@ -1435,7 +1435,7 @@ public static class ItemCatalog
         list.Add(new ItemDef(GrandRune, "Grand Rune", EquipSlot.Rune, ItemGrade.F, ItemRarity.Mythic,
             IsRune: true, RuneBuffSkillId: SkillCatalog.GrandRuneBuff, GrantsRuneSeconds: 24 * 3600,
             Tradable: false, Value: 0,
-            Description: "Held rune: increases your final PHYSICAL and MAGICAL damage ×2, and cast speed, while in your bag. Supersedes a War or Spell Rune held at the same time. Move it to the warehouse to switch it off; it can't be deleted."));
+            Description: "Held rune: increases your final PHYSICAL and MAGICAL damage ×2, shortens your casts by 30%, and raises cast speed, while in your bag. Supersedes a War or Spell Rune held at the same time. Move it to the warehouse to switch it off; it can't be deleted."));
 
         // Sealed rune boxes. 1h/2h are vendor-stocked (Apothecary, real gold price) and TRADABLE (giftable
         // sealed — the RUNE inside is still bound). 24h/30d are premium/pass items: not buyable (BuyPrice
@@ -1456,7 +1456,7 @@ public static class ItemCatalog
         // ⚠ PREMIUM ONLY — `BuyPriceOverride: -1` and not tradable, exactly like the 24h/30d singles.
         // Its one route into a bag today is the Admin panel; when a premium currency exists this is
         // the item it buys. `BL-187` closes here.
-        RuneBox(BoxGrandRune24h, "Grand Rune Box (1d)", 1 * D, -1, false, "Opens to a Grand Rune lasting 24 hours. Grand Runes multiply your final PHYSICAL and MAGICAL damage x2 and raise cast speed - both channels of the War and Spell Runes in one item.");
+        RuneBox(BoxGrandRune24h, "Grand Rune Box (1d)", 1 * D, -1, false, "Opens to a Grand Rune lasting 24 hours. Grand Runes multiply your final PHYSICAL and MAGICAL damage x2, shorten your casts by 30% and raise cast speed - both channels of the War and Spell Runes in one item, each at full strength.");
 
         // ----- PREMIUM REWARD RUNES: one item per channel per rung (5 × 11), plus Sinister and
         // Sinners. Same held-rune machinery as the War/Spell runes above — the difference is entirely

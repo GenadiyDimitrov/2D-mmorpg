@@ -698,18 +698,30 @@ public static partial class SkillCatalog
         // every tick, have it refused, and flag stats dirty every time. The rule lives where the
         // wanted set is built instead: hold a Grand Rune and the two singles are dropped from it.
         // See the note there.
+        // 🔴🔑 …AND IT CARRIES THE SPELL RUNE'S CAST-TIME CUT TOO (2026-09-13, his *"spell rune don't
+        //    decrease the cast time"*). `BL-216` added `CastTimePct` to the Spell Rune the day before
+        //    and did not come back here — so the rune that is supposed to be BOTH SINGLES AT FULL
+        //    STRENGTH was, for the magic channel, strictly WORSE than the single it replaces. The
+        //    reconciliation loop drops both singles the moment a Grand Rune is held, so there was no
+        //    way to hold one and still get the cut.
+        // 🔑 THIS IS THE COVERING-GROUP RULE IN ANOTHER COSTUME: a thing that supersedes others must be
+        //    ≥ them in EVERY channel they carry, and every channel is a separate number to forget.
+        //    ⚠ Whatever moves on the Spell Rune's cast half moves HERE in the same edit.
+        // ⚠ It is the same 0.30 and not a merged/compounded number: the Grand Rune replaces the Spell
+        //   Rune, it does not stack with it.
         new(GrandRuneBuff, "Grand Rune", BaseClass.Fighter, SkillEffect.BuffCastSpeed,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             DurationTicks: 36000, BuffKey: "rune_grand", Rank: 1,
             PhysDamageMult: 2.0f,
             MagicDamageMult: 2.0f,
+            CastTimePct: 0.30f,
             Magnitudes: new EffectMagnitude[]
             {
                 new(SkillEffect.BuffCastSpeed, 40, ModifierMode.Flat),
             },
             Category: SkillCategory.Buff, BuffRow: BuffRow.Consumable, CountsTowardBuffLimit: false,
-            Description: "Grand Rune: increases the final PHYSICAL and MAGICAL damage ×2, and cast "
-                       + "speed, while the rune is held."),
+            Description: "Grand Rune: increases the final PHYSICAL and MAGICAL damage ×2, casts 30% "
+                       + "shorter, and cast speed, while the rune is held."),
 
         // ================== BUFF LADDERS — the single buffs and their consumables ==================
         //  See docs/design/BuffLadders.md. Four families, three rungs each; the improved "Speed"

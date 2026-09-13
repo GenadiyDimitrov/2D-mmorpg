@@ -7,12 +7,56 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.141.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.141.2**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-13 (latest) — 0.141.1: a curse is not a blessing
+## 2026-09-13 (latest) — 0.141.2: the Grand Rune was missing the cast-time cut
+
+⚠ **NEW APK not required** — cast length is computed server-side and sent to the client. No protocol
+bump, no `game.db` delete.
+
+### The report
+
+> *"Also spell rune don't decrease the cast time with 40% as we spoke"*
+
+**The cut works — on the Spell Rune.** It is the GRAND Rune that never got it, and the Grand Rune is
+the one in the admin menu, so it is the one being tested with.
+
+`BL-216` gave the Spell Rune `CastTimePct: 0.30f` on 2026-09-12 and did not come back to the Grand
+Rune. That rune's own note says it is *"BOTH SINGLES AT FULL STRENGTH, NOT A COMPROMISE"* — and since
+`ReconcileRuneBuffs` **drops both singles the moment a Grand Rune is held**, there was no way to hold
+one and still get the cut. For a day the premium rune was strictly **worse** in the magic channel than
+the vendor rune it supersedes.
+
+🔑 **This is the covering-group rule wearing a different hat:** a thing that supersedes others must be
+≥ them in **every channel they carry**, and every channel is a separate number to forget. The Grand
+Rune now carries the same `0.30`, and `--castcycle` grew a **Grand Rune row directly beneath the Spell
+Rune row** so the two `castTimeMult` cells can be read against each other and never silently diverge
+again. Both item descriptions now say the 30%.
+
+| Magus 90, full caster stack | castTimeMult | Elemental Blast | Quick Blast |
+|---|---|---|---|
+| + Harmony of Soul (no rune) | ×1.00 | 1.60s | 0.80s |
+| + Spell Rune | ×0.70 | **1.10s** | **0.50s** |
+| + Grand Rune — **was ×1.00** | **×0.70** | **1.10s** | **0.50s** |
+
+### ❓ On the 40% — it is 30%, and that was your own arithmetic
+
+Your `BL-216` spec gave the number three ways and all three agreed on **30% off the final cast time**:
+
+> *"It increases the cast speed behind the scene with ~40% ..which is actually **30% decrease on the
+> final cast time**. So if rune is active the cast time of a spell is:
+> `(baseCastTime/(charCastSpeed/333))x(runeActive ? 0.7 : 1)`"* — and your worked example,
+> *"4000/(1999/333) = 667 ms but with rune active it becomes **467ms**"* (667 × 0.7 = 467 ✓).
+
+×1.4 cast **speed** is ×0.714 cast **time** — the 40% and the 30% are the same statement from the two
+ends. So `0.70` is what shipped. **If you now want 40% off the FINAL time** (`×0.60`), say so and it is
+a one-character change in two places; `--castcycle` already prints that row: Elemental Blast **1.30s →
+0.80s** on the NPC shelf alone.
+
+## 2026-09-13 — 0.141.1: a curse is not a blessing
 
 ⚠ **NEW APK not required** — the server already told the client which row a buff belongs in; it was
 telling it the wrong thing. No protocol bump, no `game.db` delete.

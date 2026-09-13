@@ -1142,6 +1142,14 @@ if (args.Length > 0 && args[0] == "--castcycle")
         ("+ Spell Rune",           e => { ApplyNpcBuffs(e); WearAt(e, SkillCatalog.NpcHarmonyWizard, 8);
                                           WearAt(e, SkillCatalog.WcHarmonySoul, 7);
                                           WearAt(e, SkillCatalog.SpellRuneBuff, 1); }),
+        // 🔴 THE GRAND RUNE IS MEASURED BESIDE THE SINGLE IT REPLACES, and that is the whole reason
+        //    this row exists: `BL-216` gave the Spell Rune a cast-time cut and did not come back to
+        //    the Grand Rune, so for a day the premium rune was strictly WORSE in the magic channel
+        //    than the vendor one it supersedes. His *"spell rune don't decrease the cast time"*,
+        //    2026-09-13. ⚠ The two `castTimeMult` cells must read the SAME number.
+        ("+ Grand Rune (instead)", e => { ApplyNpcBuffs(e); WearAt(e, SkillCatalog.NpcHarmonyWizard, 8);
+                                          WearAt(e, SkillCatalog.WcHarmonySoul, 7);
+                                          WearAt(e, SkillCatalog.GrandRuneBuff, 1); }),
     };
 
     foreach (var race in new[] { Race.Human })
@@ -1180,10 +1188,12 @@ if (args.Length > 0 && args[0] == "--castcycle")
     }
 
     Console.WriteLine();
-    Console.WriteLine("  --- WHAT A −40% CAST-TIME SHOT WOULD DO (his *\"ig bsps add 40% to the casting\"*) ---");
-    Console.WriteLine("  The Spell Rune today grants `BuffCastSpeed 40` FLAT — 40 points on a STAT that is");
-    Console.WriteLine("  already ~1400-1900, i.e. about +2%. `CastTimePct` is the channel that expresses a");
-    Console.WriteLine("  real cast-TIME cut (BL-196); nothing but the archer's Spirit Mastery authors one.");
+    Console.WriteLine("  --- IF THE SHOT WERE −40% OFF THE FINAL CAST TIME INSTEAD OF −30% ---");
+    Console.WriteLine("  ⚠ SHIPPED IS 30% (BL-216), and that is HIS OWN ARITHMETIC, not a rounding of his 40%:");
+    Console.WriteLine("      *\"increases the cast speed behind the scene with ~40% .. which is actually 30%");
+    Console.WriteLine("        decrease on the final cast time ... x(runeActive ? 0.7 : 1)\"*  — x1.4 speed IS");
+    Console.WriteLine("      x0.714 time. The row below is the OTHER reading (0.60), kept so the gap is a");
+    Console.WriteLine("      number he can look at rather than a thing to re-derive.");
     {
         var m = BuildPlayer(Race.Human, BaseClass.Mage, L, quality: q,
                             discipline: Discipline.Magus, fourth: true, npcBuffed: true);
