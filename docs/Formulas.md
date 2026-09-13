@@ -313,8 +313,12 @@ def    = defenderStat * CcLevelBase^(defenderLevel - attackerLevel)
 chance = 0.5 + 0.5 * (attackerAtk - def) / (attackerAtk + def)
          clamp [0.10, 0.90], then * skill.DebuffLandMod, then re-cap at 0.90
 land   = chance * CcLandRetain * CcLandRetain<school>
+                          * (1 - MagicResist)   ← MAGICAL school only (`BL-227`)
 ```
 
+- 🔑 **MAGIC RESISTANCE IS ALSO A FACTOR, ON THE MAGICAL SIDE ONLY** (`BL-227`, 0.141.0). `mRes`
+  therefore buys two things off one number: less magic DAMAGE (it is the divisor in `MagicDefCoef`)
+  and fewer magic DEBUFFS landing. Linear `(1 − r)`, not a second divisor. Passive mRes counts.
 - 🔑 **THE TWO RESISTANCES ARE PRODUCTS, NOT SUMS** (`BL-225`, 0.139.0). Every source folds in as its
   own factor — `retain *= (1 - r)` — so harmony 20% + buff 20% + passive 20% is **×0.512**, not
   ×0.40. Blanket (armour/shield) and per-school (passive/buff/harmony/Mark) are two separate products

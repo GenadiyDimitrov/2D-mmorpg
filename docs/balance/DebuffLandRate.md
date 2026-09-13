@@ -1,9 +1,8 @@
-# Contested debuff land rates — measured (`BL-218`, `BL-225`)
+# Contested debuff land rates — measured (`BL-218`, `BL-225`, `BL-226`, `BL-227`)
 
-> **2026-09-13, third pass — the numbers below are the ones in the build now.** Your compounding
-> ruling (`BL-225`), your 20% SPT ruling and your 35% CON ruling (`BL-226`) are all in, on top of the
-> `BL-223` rig fix. Two earlier versions of this page had wrong numbers; this one is measured against
-> the shipped build.
+> **2026-09-13 — final state of the day.** Every ruling from this playtest is in the build: the 20%
+> SPT cut, compounding (`BL-225`), the 35% CON cut (`BL-226`) and magic resistance joining the
+> magical product (`BL-227`). Measured against the shipped 0.141.0.
 
 Measured with `dotnet run --project tools/BalanceMatrix -- --ccland [level] [quality]`, which builds
 REAL level-90 fourth-tier characters in real gear and runs the exact product `GameLoopService`
@@ -44,6 +43,7 @@ author `CcResistMagical: -0.40`, which is simply a ×1.40 factor in the same pro
 | **Holy Mark / Life Mark** | 15% | 10% |
 | **Harmony Mark** | **none** | **none** |
 | **Clarity / Fortitude** — the SINGLES the group covers, top rung | **20%** (was 50%) | **35%** (was 65%) |
+| **MagicResist** — `BL-227`, a separate factor, passives included | 10-35% (60% under Magical Armor) | — |
 | **compounded** (with Holy/Life Mark) | **56%** | **42%** |
 | **compounded** (with Harmony Mark) | **49%** | **42%** |
 
@@ -67,31 +67,37 @@ cases are measured below.
 
 ### Magical (SPT-defended)
 
-| skill | ×mod | bare | NPC shelf | full shelf | **WC + Holy Mark** | **WC + Harmony Mark** |
-|---|---|---|---|---|---|---|
-| Arcane Burst / Weapon Break | 1.50 | 52% | 52% | 44% | 25-28% | **30-33%** |
-| Gravity | 1.00 | 35% | 35% | 30% | 17-19% | **20-22%** |
-| Mana Strain | 0.50 | 18% | 18% | 15% | 8-10% | **10-11%** |
-| Arcane Void | 0.30 | 11% | 11% | 9% | 5-6% | **6-7%** |
+| skill | ×mod | bare | **fully buffed** |
+|---|---|---|---|
+| Arcane Burst / Weapon Break | 1.50 | 30-52% | **19-33%** |
+| Gravity | 1.00 | 20-35% | **13-22%** |
+| Mana Strain | 0.50 | 10-18% | **6-11%** |
+| Arcane Void | 0.30 | 6-11% | **4-7%** |
+
+⚠ The magical spread is wide now because `BL-227` folded each defender's own mRes in: the MAGE
+(35% mRes) sits at the bottom of every band and the Nullblade (10%) at the top, with the Nullblade
+dropping to the very bottom for the ten seconds his Magical Armor is up.
 
 ### Physical (CON-defended) — after the 35% ruling
 
-| skill | ×mod | bare | NPC shelf | full shelf | **WC + either Mark** |
-|---|---|---|---|---|---|
-| Grapple / Stay! / Phantom Jump | 1.00 | 30% | 30% | 30% | **19-24%** |
-| Shield Shock | 0.70 | 21% | 21% | 21% | **13-17%** |
-| Numbing Shock (stun) | 0.50 | 15% | 15% | 15% | **10-12%** |
+| skill | ×mod | bare | **fully buffed** |
+|---|---|---|---|
+| Grapple / Stay! / Phantom Jump | 1.00 | 26-36% | **19-24%** |
+| Shield Shock | 0.70 | 21-25% | **13-17%** |
+| Numbing Shock (stun) | 0.50 | 15-18% | **10-12%** |
 
 ---
 
 ## 3. ✅ BOTH SCHOOLS ARE IN YOUR BAND
 
-| ×1.00 skill, fully buffed | before this pass | now |
+| ×1.00 skill, fully buffed | before the pass | now |
 |---|---|---|
-| magical (SPT) | 10-11% | **20-23%** |
+| magical (SPT) | 10-11% | **13-22%** |
 | physical (CON) | 8-10% | **19-24%** |
 
-Inside your *"15-25% which is good"*, and within a couple of points of each other for the first time.
+Physical sits squarely in your *"15-25% which is good"*. Magical now runs from 13% (against a mage,
+whose own 35% anti-nuke mRes counts since `BL-227`) up to 22% (against a Nullblade), which is the
+spread you asked for when you said you expect the Nullblade with Magical Armor to resist more.
 The `×1.50` skills sit a little above at ~30%, which reads correct — they are the ones you priced to
 be reliable.
 

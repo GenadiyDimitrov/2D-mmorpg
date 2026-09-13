@@ -6420,8 +6420,8 @@ static void CcProfile(string[] args)
     var caster = Who(Race.Human, BaseClass.Mage, Discipline.Magus, L, q);
     Console.WriteLine($"--- A. x1.00 MAGIC DEBUFF, cast by a Magus (ATK {caster.EffectiveAtk}) "
                     + new string('-', 24));
-    Console.WriteLine($"  {"defender",-20} {"SPT",4} {"mRes",6} | {"base",7} {"+set",7} {"+buffed",8}"
-                    + $" | {"x mRes",8}");
+    Console.WriteLine($"  {"defender",-20} {"SPT",4} {"mRes",6} | {"base",7} {"+set",7} {"no mRes",8}"
+                    + $" | {"+buffed",8}");
 
     var magicTargets = new (string Name, Func<Entity> Make)[]
     {
@@ -6435,13 +6435,14 @@ static void CcProfile(string[] args)
         var bare = Dressed(make, false);
         var buff = Dressed(make, true);
         float b = StatCalculator.DebuffLandChance(caster.EffectiveAtk, bare.EffectiveSpt, L, L);
-        float set = b * bare.CcLandRetain * bare.CcLandRetainMagical;
-        float bf = b * buff.CcLandRetain * buff.CcLandRetainMagical;
-        // His proposal: magic resistance ALSO resists magical debuffs, as one more factor.
-        // Measured on the BUFFED character, since that is the one he would be fighting.
-        float withM = bf * (1f - buff.MagicResist);
+        float set = b * bare.CcLandRetain * bare.CcLandRetainMagical * Math.Max(0f, 1f - bare.MagicResist);
+        // `BL-227` — mRes is now PART of the build, so the last column is the real number and the
+        // one before it is the counterfactual. Printed side by side so what mResist bought stays
+        // visible after everyone has forgotten it was ever a question.
+        float noM = b * buff.CcLandRetain * buff.CcLandRetainMagical;
+        float bf = noM * Math.Max(0f, 1f - buff.MagicResist);
         Console.WriteLine($"  {name,-20} {bare.EffectiveSpt,4} {buff.MagicResist,6:P0} |"
-                        + $" {b,7:P1} {set,7:P1} {bf,8:P1} | {withM,8:P1}");
+                        + $" {b,7:P1} {set,7:P1} {noM,8:P1} | {bf,8:P1}");
     }
 
     // The Nullblade's ultimate is the case he named — ten seconds at +50% mRes on top.
@@ -6449,13 +6450,14 @@ static void CcProfile(string[] args)
         var ult = Dressed(() => Who(Race.Human, BaseClass.Fighter, Discipline.Nullblade, L, q), true);
         ApplyOneBuff(ult, SkillCatalog.DualMagicArmor);
         float b = StatCalculator.DebuffLandChance(caster.EffectiveAtk, ult.EffectiveSpt, L, L);
-        float bf = b * ult.CcLandRetain * ult.CcLandRetainMagical;
+        float noM = b * ult.CcLandRetain * ult.CcLandRetainMagical;
         Console.WriteLine($"  {"  …+ Magical Armor",-20} {ult.EffectiveSpt,4} {ult.MagicResist,6:P0} |"
-                        + $" {b,7:P1} {"",7} {bf,8:P1} | {bf * (1f - ult.MagicResist),8:P1}   (10s)");
+                        + $" {b,7:P1} {"",7} {noM,8:P1} | {noM * Math.Max(0f, 1f - ult.MagicResist),8:P1}   (10s)");
     }
     Console.WriteLine();
-    Console.WriteLine("  ⚠ The `x mRes` column is a PROPOSAL — magic resistance does NOT touch debuff");
-    Console.WriteLine("    landing today. It is the mitigation channel for magic DAMAGE only.");
+    Console.WriteLine("  ⚠ `+buffed` is the BUILD (`BL-227`): magic resistance is one of the factors on the");
+    Console.WriteLine("    magical side, so mRes buys less magic DAMAGE and fewer magic DEBUFFS off one");
+    Console.WriteLine("    number. `no mRes` is the counterfactual, kept so what it bought stays visible.");
     Console.WriteLine();
 
     // ---------- TABLE B: a STUN, cast by a same-level Bulwark ----------
@@ -6636,7 +6638,11 @@ static void CcLand(string[] args)
         // `1 - CcResist` here would still be right by algebra, but it is the phrasing that invites
         // someone to "simplify" two factors into one sum, which is the bug this ruling removed.
         land *= d.CcLandRetain;
-        land *= school == DebuffSchool.Magical ? d.CcLandRetainMagical : d.CcLandRetainPhysical;
+        // `BL-227` — MAGIC RESISTANCE IS A FACTOR ON THE MAGICAL SIDE TOO. Mirrors
+        // GameLoopService.SchoolCcRetain exactly; if that changes, change this in the same commit.
+        land *= school == DebuffSchool.Magical
+              ? d.CcLandRetainMagical * Math.Max(0f, 1f - d.MagicResist)
+              : d.CcLandRetainPhysical;
         return land;
     }
 

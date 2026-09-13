@@ -5352,3 +5352,35 @@ Seven CSV files moved with the code: `healer 3rd`, `healer 4th`, `buffer 3rd`, `
 
 Both inside your band, and the two schools are within a couple of points of each other for the first
 time.
+
+---
+
+## `BL-227` ✅ BUILT 0.141.0 (2026-09-13) — magic resistance also resists magic debuffs
+
+*"OK I like the idea mresist to decrease the chance ..it look not so much op (it takes of tank/nage
+~5% and 2% for nullblade) and we espect nullblade with magical armor to resist more."*
+
+`mRes` now buys two things off one number: less magic **damage** (it is the divisor in
+`MagicDefCoef`) and fewer magic **debuffs** landing. It is a plain `(1 − r)` factor on the magical
+side, like every other source since `BL-225` — your *"endLandRate x 0.3(30% mresist)"* is linear, not
+a second divisor. One place: `GameLoopService.SchoolCcRetain`, so all three roll sites inherit it.
+
+⚠ **It includes PASSIVE mRes, deliberately.** I flagged that this makes the MAGE — whose `anti_magic`
+ladder is the largest passive mRes in the game at 35% — the hardest of the three to land a magic
+debuff on, which reads backwards. You looked at that row and took it. It is written into the code
+comment so nobody quietly narrows it to buffs-only later.
+
+⚠ A NEGATIVE mRes (a "Magic WEAK" creature, −20%) correctly becomes a ×1.20 factor and makes control
+land MORE often — the same behaviour negative `CcResistMagical` already had.
+
+### A `×1.00` magic debuff, fully buffed, level 90
+
+| defender | mRes | without mRes | **with mRes** |
+|---|---|---|---|
+| Magus (mage) | 35% | 19.8% | **12.9%** |
+| Bulwark (tank) | 21% | 22.8% | **17.9%** |
+| Nullblade | 10% | 22.4% | **20.2%** |
+| Nullblade **+ Magical Armor** (10s) | 60% | 22.4% | **9.0%** |
+
+The Nullblade's ultimate is now a real ten-second control window as well as a damage one, which is
+the thing you wanted from it.

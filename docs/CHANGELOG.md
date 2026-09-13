@@ -7,12 +7,51 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.140.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.141.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-13 (latest) — 0.140.0: the CON resistance comes down, and a Clarity cliff that was never there
+## 2026-09-13 (latest) — 0.141.0: magic resistance also resists magic debuffs
+
+⚠ **NEW APK.** No protocol bump, no `game.db` delete.
+
+### `BL-227` — mRes joins the magical side of the control product
+
+> *"OK I like the idea mresist to decrease the chance ..it look not so much op (it takes of tank/nage
+> ~5% and 2% for nullblade) and we espect nullblade with magical armor to resist more."*
+
+`mRes` now buys two things off one number: less magic **damage** (it is the divisor in
+`MagicDefCoef`) and fewer magic **debuffs** landing. A plain `(1 − r)` factor on the magical side,
+like every other source since `BL-225` — his *"endLandRate x 0.3(30% mresist)"* is linear, not a
+second divisor. One place, `GameLoopService.SchoolCcRetain`, so all three roll sites inherit it.
+
+| a ×1.00 magic debuff, fully buffed, level 90 | mRes | without | **with** |
+|---|---|---|---|
+| Magus (mage) | 35% | 19.8% | **12.9%** |
+| Bulwark (tank) | 21% | 22.8% | **17.9%** |
+| Nullblade | 10% | 22.4% | **20.2%** |
+| Nullblade **+ Magical Armor** (10s) | 60% | 22.4% | **9.0%** |
+
+⚠ **Passive mRes is included, deliberately.** It was flagged to him that this makes the MAGE — whose
+`anti_magic` ladder is the largest passive mRes in the game at 35% — the hardest of the three to land
+a magic debuff on, which reads backwards. He looked at that row and took it; it is written into the
+code comment so nobody quietly narrows it later. ⚠ A negative mRes (a "Magic WEAK" creature, −20%)
+correctly becomes a ×1.20 factor.
+
+`--ccprofile`'s table A now prints the built number with a `no mRes` counterfactual beside it, so what
+the change bought stays visible.
+
+### ⏸ `BL-228` — boss jewels, filed as future content
+
+His idea, parked by him in the same breath: jewels that grant a chance on one school of control and
+resist another, so a build chooses *"resist stuns and your fears land, or resist fears and land
+holds"*. Not scheduled. Recorded because the engine is already shaped for it — every resistance is a
+factor in a product now, and a second differently-sourced one (mRes) just joined it — and because the
+two things it would still need are worth knowing: a per-EFFECT axis (everything today is per-SCHOOL)
+and an attacker-side land channel, which the engine still does not have at all.
+
+## 2026-09-13 — 0.140.0: the CON resistance comes down, and a Clarity cliff that was never there
 
 ⚠ **NEW APK.** No protocol bump, no `game.db` delete.
 

@@ -40,10 +40,16 @@ the reuse one in 0.136.0. ✅ **And you were right about the Marks** — Harmony
 resistance at all, so choosing it costs you the Holy/Life Mark's grant outright; both cases are
 measured rows now. (One correction: the SPT Mark is 15%, not 10% — 10% is the CON one.)
 
-🔵 **`BL-218` STAYS OPEN, BUT THE QUESTION HAS MOVED.** Magical debuffs now land **20-22%**, inside
-your band. **Physical land 10-13%**, because you ruled on SPT only and Feral Protection's CON column
-(43→65%) is untouched and is now the biggest resistance in the game — the tank's whole kit is at half
-the mage's reliability. One number, and it is your CSV.
+✅ **AND THE LAST TWO RULINGS ARE IN TOO** — **`BL-226`** (0.140.0) took Fortitude's CON resistance to
+your **35%** at the top, which needed the whole ladder re-spread because rung 4 was already above the
+new ceiling, and which turned up a levelling CLIFF shipped in 0.138.0 (Clarity 50% vs the group's 20%,
+so SPT resistance would have DROPPED at 74). **`BL-227`** (0.141.0) makes **magic resistance also
+resist magic debuffs**, passives included, as you ruled — the Nullblade's Magical Armor is now a real
+ten-second control window (22.4% → 9.0%). ⏸ The boss-jewel idea is filed as **`BL-228`**, future
+content, not scheduled.
+
+🟢 **`BL-218` needs nothing from you now** — every ruling in it is built and both schools land inside
+your 15-25% band. It stays listed only so the next playtest has somewhere to disagree.
 
 ★ **Earlier the same day:** four asks, **ALL BUILT (0.138.0)**, in the archive — **`BL-224`** (Arrow
 Barrage: the `[Double]` off and power 2,500 → 2,000; the double was TEN rolls, one per arrow, which is
@@ -164,7 +170,8 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-208` | ❓ | ONE cosmetic cell left from the Magus's 4th kit — three of four closed the same day | classes |
 | `BL-213` | 🟡 | The mastery roster, rewritten to your table — BUILT; two display names and four learn levels are mine | classes |
 | `BL-215` | 🔵 | THE MAGE'S DAMAGE — two levers pulled (≈×2.3 since 0.132.0); the crit-rate CAP is the third | combat |
-| `BL-218` | 🔵 | DEBUFF LAND RATES — both schools in your band; open: should mResist also resist magic debuffs? | combat |
+| `BL-218` | 🟢 | DEBUFF LAND RATES — all rulings built; nothing owed unless a playtest says so | combat |
+| `BL-228` | ⏸ | FUTURE — boss jewels that trade one school of control against another | items |
 
 ---
 
@@ -1382,7 +1389,7 @@ able to tell which of the three did it.
 
 ---
 
-## `BL-218` 🔵 DEBUFF LAND RATES — both schools are in your band; one open question left
+## `BL-218` 🟢 DEBUFF LAND RATES — every ruling is built; open only if a playtest disagrees
 
 **2026-09-13, third rewrite.** Your 20% SPT ruling, the compounding ruling (`BL-225`) and the 35% CON
 ruling are all built. The old text is in the archive. 📐 Tables:
@@ -1406,30 +1413,27 @@ Your *"if you haven't added the passive on mage for x2 spt resistance ..good don
 ruling"*. Never built; struck. The land rates got there from the resistance side instead, so there is
 no attacker-side channel in the engine and nothing plans to add one.
 
-### ❓ STILL OPEN — should magic RESISTANCE also resist magic debuffs?
+### ✅ ANSWERED AND BUILT (`BL-227`, 0.141.0) — magic resistance also resists magic debuffs
 
 Your question: *"I wonder just logically shouldnt mresist add to magic debuffs resistance? that way a
 tank and a nullblade(for 10s) will have aditional anti magic - like endLandRate x 0.3(30% mresist)"*.
-Measured as a proposal, **not built** — table A of `--ccprofile`:
+Table A of `--ccprofile`, where the last column is now the BUILD:
 
-| defender | SPT | mRes | buffed | **× mRes** |
+| defender | SPT | mRes | without mRes | **with mRes (built)** |
 |---|---|---|---|---|
 | Magus (mage) | 36 | 35% | 19.8% | **12.9%** |
 | Bulwark (tank) | 26 | 21% | 22.8% | **17.9%** |
 | Nullblade | 27 | 10% | 22.4% | **20.2%** |
 | Nullblade + Magical Armor (10s) | 27 | 60% | 22.4% | **9.0%** |
 
-It does what you want for the two classes you named — the Nullblade's ultimate becomes a real
-ten-second control immunity window, and the tank picks up a few points.
+Your ruling: *"I like the idea mresist to decrease the chance ..it look not so much op ... and we
+espect nullblade with magical armor to resist more."* Built, passives included — you looked at the
+mage row and took it. The Nullblade ultimate is now a real ten-second control window.
 
-🔴 **But look at the first row: the MAGE has the most magic resistance of the three (35%), so he would
-end up the hardest of all to land a magic debuff on.** That is backwards from every other line in this
-design, where the mage is the one who gave up CON/SPT to buy offence. His 35% comes from the nuker's
-own `anti_magic` passive ladder, which exists to survive *nukes*.
-
-So if you want this, I would suggest it reads better as **mResist from BUFFS and ULTIMATES only**, not
-from passives — which is exactly the Nullblade-and-tank case you described and leaves the mage's own
-anti-nuke passive out of it. One line either way; your call on which.
+⚠ Noted for later, since it is now the build: the MAGE carries the most magic resistance of the three
+(35%, from the nuker's own anti-NUKE `anti_magic` ladder), so he is the hardest of all to land a magic
+debuff on. You judged that acceptable; if a playtest disagrees, the narrow version is "mResist from
+buffs and ultimates only, not passives", which is one line.
 
 ### 🔵 Also still open, unchanged
 
@@ -1441,3 +1445,35 @@ anti-nuke passive out of it. One line either way; your call on which.
   dominant term when resistances summed (it alone hit the old 0.8 clamp); compounding has made it
   cleaner but no smaller. Not touched — flagging it because it is now the biggest number in the file.
 
+
+---
+
+## `BL-228` ⏸ FUTURE CONTENT — boss jewels that trade one school of control against another
+
+Your idea, 2026-09-13, parked by you in the same breath as raising it:
+
+> *"Later we can have like ig boss jewels that give chance to one school and resist other , and
+> depending on what jewels u equip u can resist stuns and your fears land or resist fears and land
+> holds ..etc (mark it as future content)"*
+
+**Not scheduled and not designed** — filed so it is not lost, because it is the first idea in this
+project that would make control a BUILD rather than a stat.
+
+🔑 **THE ENGINE IS ALREADY SHAPED FOR IT, and that is worth recording while it is fresh.** Since
+`BL-225` every control resistance is its own `(1 − r)` factor in a product, and since `BL-227` a
+second, differently-sourced number (`MagicResist`) joins that same product. A jewel that reads
+*"+X% chance for your HOLDS to land, −Y% resistance to FEAR"* is two more factors — one on the
+attacker's side, one on the defender's — and needs no new mechanic, only:
+
+1. **A per-EFFECT axis.** Everything today is per-SCHOOL (SPT vs CON). Trading "stuns" against
+   "fears" needs the factors keyed on the `SkillEffect` bit (Stun / Fear / Root / Slow), not on
+   `DebuffSchool`. That is the real work in this entry.
+2. **An attacker-side land channel**, which the engine still does not have at all — the same gap the
+   declined mage SPT passive would have filled. A jewel granting *"your fears land more"* is the
+   natural first thing to own it.
+3. **Jewels as a slot that carries authored skill-shaped payloads**, which armour sets already do
+   (`ClassFlatBonus` survives as an armour-set type) — so the precedent exists.
+
+⚠ **Don't build 1 or 2 speculatively.** Both are cheap only once the jewels tell them what shape to
+be; inventing a per-effect resist matrix with nothing authoring it is how `BL-192`'s parked
+recommendations went wrong.

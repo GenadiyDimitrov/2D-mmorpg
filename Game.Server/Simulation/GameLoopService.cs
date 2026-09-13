@@ -9172,10 +9172,28 @@ public class GameLoopService : BackgroundService
     /// which is the same number by algebra but re-derives a quantity the entity already stores as a
     /// product. Reading the retain directly is what keeps "every source is its own (1−r) factor" true
     /// all the way from the skill def to the die.
-    /// <para>A school of None resists nothing: such a debuff is not part of the stat contest.</para></summary>
+    /// <para>A school of None resists nothing: such a debuff is not part of the stat contest.</para>
+    ///
+    /// <para>🔑 <b>MAGIC RESISTANCE IS ONE OF THE FACTORS ON THE MAGICAL SIDE</b> (`BL-227`, owner
+    /// 2026-09-13): *"I like the idea mresist to decrease the chance ..it look not so much op (it
+    /// takes of tank/nage ~5% and 2% for nullblade) and we espect nullblade with magical armor to
+    /// resist more."* So `mRes` now buys two things off one number — less magic DAMAGE (it is the
+    /// divisor in <see cref="Entity.MagicDefCoef"/>) and fewer magic DEBUFFS landing. It is a plain
+    /// `(1 − r)` factor like every other source since `BL-225`, not a second divisor: he wrote
+    /// *"endLandRate x 0.3(30% mresist)"* and that is linear.</para>
+    ///
+    /// <para>⚠ IT INCLUDES PASSIVE mRes, DELIBERATELY. I flagged that this makes the MAGE — whose
+    /// `anti_magic` ladder is the largest passive mRes in the game at 35% — the hardest of the three
+    /// to land a magic debuff on, which reads backwards. He looked at that exact row and took it:
+    /// *"it look not so much op"*. Do not quietly narrow it to buffs-only later without asking.</para>
+    ///
+    /// <para>⚠ A NEGATIVE mRes (a "Magic WEAK" creature, −0.20) correctly becomes a ×1.20 factor and
+    /// makes control land MORE often — the same behaviour negative `CcResistMagical` already has. The
+    /// clamp is only a sign guard, as everywhere else in this product.</para></summary>
     private static float SchoolCcRetain(Entity target, DebuffSchool school) => school switch
     {
-        DebuffSchool.Magical  => target.CcLandRetainMagical,
+        DebuffSchool.Magical  => target.CcLandRetainMagical
+                                 * Math.Max(0f, 1f - target.MagicResist),
         DebuffSchool.Physical => target.CcLandRetainPhysical,
         _ => 1f,
     };
