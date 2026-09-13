@@ -164,7 +164,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-208` | ❓ | ONE cosmetic cell left from the Magus's 4th kit — three of four closed the same day | classes |
 | `BL-213` | 🟡 | The mastery roster, rewritten to your table — BUILT; two display names and four learn levels are mine | classes |
 | `BL-215` | 🔵 | THE MAGE'S DAMAGE — two levers pulled (≈×2.3 since 0.132.0); the crit-rate CAP is the third | combat |
-| `BL-218` | 🔵 | DEBUFF LAND RATES — magical is in your band; Feral Protections CON column is now the outlier | combat |
+| `BL-218` | 🔵 | DEBUFF LAND RATES — both schools in your band; open: should mResist also resist magic debuffs? | combat |
 
 ---
 
@@ -1382,45 +1382,62 @@ able to tell which of the three did it.
 
 ---
 
-## `BL-218` 🔵 DEBUFF LAND RATES — magical is in your band; the CON column is now the outlier
+## `BL-218` 🔵 DEBUFF LAND RATES — both schools are in your band; one open question left
 
-**2026-09-13, rewritten again** — your 20% ruling and your compounding ruling (`BL-225`) are both
-built, and what is left of this entry is different from what it was this morning. The old text is in
-the archive. 📐 The whole table: [balance/DebuffLandRate.md](balance/DebuffLandRate.md).
+**2026-09-13, third rewrite.** Your 20% SPT ruling, the compounding ruling (`BL-225`) and the 35% CON
+ruling are all built. The old text is in the archive. 📐 Tables:
+[balance/DebuffLandRate.md](balance/DebuffLandRate.md) ·
+`dotnet run --project tools/BalanceMatrix -- --ccprofile`
 
-### ✅ Where it landed
+### ✅ Where it landed — a `×1.00` debuff against a fully-buffed level 90
 
-An ordinary `×1.00` magical debuff against a fully-buffed level-90 now lands **20-22%** with the
-Harmony Mark (which you expect most people to wear) or **17-19%** with a Holy Mark. That is inside
-your *"15-25% which is good"*. The `×1.50` skills sit at 30-33%, which reads right — they are the ones
-you priced to be reliable.
+| | before this pass | now |
+|---|---|---|
+| magical (SPT) | 10-11% | **20-23%** |
+| physical (CON) | 8-10% | **19-24%** |
 
-### 🔴 THE ONE THING LEFT: the two schools are now TWICE as far apart
+Both inside your *"15-25% which is good"*, and the two schools are within a couple of points of each
+other for the first time. A `×0.50` skill (Numbing Shock) halves those; a `×1.50` one (Arcane Burst,
+Weapon Break) lands about 30%.
 
-You ruled on SPT only, so **Feral Protection's CON column (43→65%) is untouched** and is now the
-biggest resistance in the game. Compounded with Strong Body and a Mark it is **68%**, against the SPT
-side's 49-56%:
+### ❌ DECLINED — the mage's ×2 SPT land-rate passive
 
-| ×1.00 skill lands | |
-|---|---|
-| magical (SPT) | **20-22%** |
-| physical (CON) | **10-13%** |
+Your *"if you haven't added the passive on mage for x2 spt resistance ..good don't and remove it as
+ruling"*. Never built; struck. The land rates got there from the resistance side instead, so there is
+no attacker-side channel in the engine and nothing plans to add one.
 
-So the **tank's entire kit** — Grapple, Stay!, Shield Shock, Numbing Shock — and the Venomweaver's and
-the Trapper's all sit at about half the mage's reliability, and the stun that ends a fight is at
-**5-6%**.
+### ❓ STILL OPEN — should magic RESISTANCE also resist magic debuffs?
 
-🔵 **The lever is one number and it is yours: Feral Protection's CON column.** Its top rung at ~25%
-instead of 65% would put both schools on the same footing; anything between moves it proportionally.
-Not touched — your message was about SPT throughout and that column is your authored CSV.
+Your question: *"I wonder just logically shouldnt mresist add to magic debuffs resistance? that way a
+tank and a nullblade(for 10s) will have aditional anti magic - like endLandRate x 0.3(30% mresist)"*.
+Measured as a proposal, **not built** — table A of `--ccprofile`:
 
-### 🔵 Also still open
+| defender | SPT | mRes | buffed | **× mRes** |
+|---|---|---|---|---|
+| Magus (mage) | 36 | 35% | 19.8% | **12.9%** |
+| Bulwark (tank) | 26 | 21% | 22.8% | **17.9%** |
+| Nullblade | 27 | 10% | 22.4% | **20.2%** |
+| Nullblade + Magical Armor (10s) | 27 | 60% | 22.4% | **9.0%** |
+
+It does what you want for the two classes you named — the Nullblade's ultimate becomes a real
+ten-second control immunity window, and the tank picks up a few points.
+
+🔴 **But look at the first row: the MAGE has the most magic resistance of the three (35%), so he would
+end up the hardest of all to land a magic debuff on.** That is backwards from every other line in this
+design, where the mage is the one who gave up CON/SPT to buy offence. His 35% comes from the nuker's
+own `anti_magic` passive ladder, which exists to survive *nukes*.
+
+So if you want this, I would suggest it reads better as **mResist from BUFFS and ULTIMATES only**, not
+from passives — which is exactly the Nullblade-and-tank case you described and leaves the mage's own
+anti-nuke passive out of it. One line either way; your call on which.
+
+### 🔵 Also still open, unchanged
 
 - **The flat `CcResist` gear cliff** — 0% common, 0% rare, **28% epic, 40% mythic**. Armour-set only,
-  identical for every class, nothing on the attacker's side answers it. Now that the school stack
-  compounds, **this is the largest single term left** in the whole product.
-- **There is no attacker-side land channel in the engine at all** — your mage SPT passive would be the
-  missing half of the mechanic. It still needs **ladder or flat ×2** across 40/76/80 and **PvP-only or
-  everywhere** if you want it — but with the magical side now at 20% it may simply not be needed, and
-  the CON column above is the better-targeted fix.
+  identical for every class, nothing on the attacker's side answers it. Now the largest single term
+  left in the product.
+- ⚠ **Battle Resilience is very strong under compounding.** 80% CON *and* SPT for 60 seconds on a 150s
+  reuse takes a stun from 19% to **3.8%** — near-immunity for 40% of the time. It was already the
+  dominant term when resistances summed (it alone hit the old 0.8 clamp); compounding has made it
+  cleaner but no smaller. Not touched — flagging it because it is now the biggest number in the file.
 

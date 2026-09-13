@@ -175,14 +175,14 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 48,Ferocity,cast_crit_dmg,Magic/Buff,,,600,0,party/single,1,1,1200,+30% critical damage.,75,32k,[]
 56,Ferocity,cast_crit_dmg,Magic/Buff,,,600,0,party/single,1,1,1200,+35% critical damage.,85,42k,[]
 ,,,,,,,,,,,,,,,,,----------------------------Clarity----------------------------
-40,Clarity,cast_cc_res_mag,Magic/Buff,,,600,0,party/single,1,1,1200,30% resist to SPT debuffs,60,19k,[],,Changed SP
-48,Clarity,cast_cc_res_mag,Magic/Buff,,,600,0,party/single,1,1,1200,40% resist to SPT debuffs,75,32k,[]
-56,Clarity,cast_cc_res_mag,Magic/Buff,,,600,0,party/single,1,1,1200,50% resist to SPT debuffs,85,42k,[]
+40,Clarity,cast_cc_res_mag,Magic/Buff,,,600,0,party/single,1,1,1200,14% resist to SPT debuffs,60,19k,[],,Changed SP
+48,Clarity,cast_cc_res_mag,Magic/Buff,,,600,0,party/single,1,1,1200,17% resist to SPT debuffs,75,32k,[]
+56,Clarity,cast_cc_res_mag,Magic/Buff,,,600,0,party/single,1,1,1200,20% resist to SPT debuffs,85,42k,[]
 ,,,,,,,,,,,,,,,,,----------------------------Fortitude----------------------------
 40,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,15% resist to CON debuffs,60,19k,[],,Changed SP
-52,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,20% resist to CON debuffs,80,38k,[]
-64,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,30% resist to CON debuffs,105,100k,[]
-72,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,40% resist to CON debuffs,125,330k,[]
+52,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,17% resist to CON debuffs,80,38k,[]
+64,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,19% resist to CON debuffs,105,100k,[]
+72,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,21% resist to CON debuffs,125,330k,[]
 ,,,,,,,,,,,,,,,,,----------------------------Shield Blessing----------------------------
 40,Shield Blessing,cast_shield_block,Magic/Buff,,,600,0,party/single,1,1,1200,Increases Shield Rate with 5%,60,19k,[],,Changed to the rate increase buff (harden at 58); my mistake to have them reversed
 48,Shield Blessing,cast_shield_block,Magic/Buff,,,600,0,party/single,1,1,1200,Increases Shield Rate with 10%,75,32k,[]

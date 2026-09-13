@@ -1317,6 +1317,11 @@ if (args.Length > 0 && args[0] == "--ccland") { CcLand(args); return; }
 //  other duals because of his anti magic but with magic armor on the dmg is the same"*.
 if (args.Length > 0 && args[0] == "--mres") { MagicResistChain(args); return; }
 
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+//  `--ccprofile` — the two tables he asked for on 2026-09-13: one row per DEFENDER, one column per
+//  layer of the product, for a x1.00 magic debuff and for a stun.
+if (args.Length > 0 && args[0] == "--ccprofile") { CcProfile(args); return; }
+
 if (args.Length > 0 && args[0] == "--blowrate")
 {
     // `BL-188` — THE BLOW LANDING RATE, measured, not derived. Prints the whole product he
@@ -6372,6 +6377,124 @@ static void WarchanterParty(Entity e)
     if (Environment.GetEnvironmentVariable("CCDEBUG") == "1")
         foreach (var b in e.Buffs.Where(b => b.CcResistMagical != 0f || b.CcResistPhysical != 0f))
             Console.WriteLine($"    [cc] {b.Name,-34} key={b.Key,-30} mag={b.CcResistMagical:P0} phys={b.CcResistPhysical:P0}");
+}
+
+// ============================================================================================
+//  `--ccprofile` — HIS TWO TABLES, 2026-09-13. One row per DEFENDER, one column per stage of the
+//  product, so the question "what does each layer actually cost me" is answerable by reading across.
+//
+//  🔑 THE LAST COLUMN OF EACH IS A PROPOSAL, NOT THE BUILD. Table A's is his open question —
+//     *"shouldnt mresist add to magic debuffs resistance? that way a tank and a nullblade(for 10s)
+//     will have aditional anti magic - like endLandRate x 0.3(30% mresist)"*. Table B's is Battle
+//     Resilience, which IS built but is a 60-second button rather than a standing buff. Both are
+//     printed so he can rule on numbers rather than on a description.
+// ============================================================================================
+static void CcProfile(string[] args)
+{
+    int L = args.Length > 1 && int.TryParse(args[1], out var lv) ? lv : 90;
+    string q = args.Length > 2 && !args[2].StartsWith("--") ? args[2] : "epic";
+
+    // The old CON number, so the "was" column is a real recomputation rather than a remembered one.
+    const float OldFeralCon = 0.65f, NewFeralCon = 0.35f;
+
+    static Entity Dressed(Func<Entity> make, bool buffed)
+    {
+        var e = make();
+        if (!buffed) return e;                      // "only with set": gear + the character's own passives
+        ApplyNpcBuffs(e, fullShelf: true);
+        WarchanterParty(e);
+        SwapToHarmonyMark(e);                        // the Mark he expects people to pick
+        return e;
+    }
+
+    Console.WriteLine();
+    Console.WriteLine($"=== CONTESTED DEBUFF PROFILE — level {L} vs level {L}, {q} gear, PvP ===");
+    Console.WriteLine( "    Every column is the SAME roll with one more factor folded in:");
+    Console.WriteLine( "      base      = the stat contest alone (x1.00 DebuffLandMod)");
+    Console.WriteLine( "      +set      = x the armour set's blanket CcResist and the character's own passives");
+    Console.WriteLine( "      +buffed   = x the full party stack (NPC shelf + Warchanter + Harmony Mark)");
+    Console.WriteLine( "    Buffed rows use the HARMONY Mark, which carries no control resistance at all.");
+    Console.WriteLine();
+
+    // ---------- TABLE A: a x1.00 MAGICAL debuff, cast by a same-level Magus ----------
+    var caster = Who(Race.Human, BaseClass.Mage, Discipline.Magus, L, q);
+    Console.WriteLine($"--- A. x1.00 MAGIC DEBUFF, cast by a Magus (ATK {caster.EffectiveAtk}) "
+                    + new string('-', 24));
+    Console.WriteLine($"  {"defender",-20} {"SPT",4} {"mRes",6} | {"base",7} {"+set",7} {"+buffed",8}"
+                    + $" | {"x mRes",8}");
+
+    var magicTargets = new (string Name, Func<Entity> Make)[]
+    {
+        ("Magus (mage)",      () => Who(Race.Human, BaseClass.Mage,    Discipline.Magus,     L, q)),
+        ("Bulwark (tank)",    () => Who(Race.Human, BaseClass.Fighter, Discipline.Bulwark,   L, q)),
+        ("Nullblade",         () => Who(Race.Human, BaseClass.Fighter, Discipline.Nullblade, L, q)),
+    };
+
+    foreach (var (name, make) in magicTargets)
+    {
+        var bare = Dressed(make, false);
+        var buff = Dressed(make, true);
+        float b = StatCalculator.DebuffLandChance(caster.EffectiveAtk, bare.EffectiveSpt, L, L);
+        float set = b * bare.CcLandRetain * bare.CcLandRetainMagical;
+        float bf = b * buff.CcLandRetain * buff.CcLandRetainMagical;
+        // His proposal: magic resistance ALSO resists magical debuffs, as one more factor.
+        // Measured on the BUFFED character, since that is the one he would be fighting.
+        float withM = bf * (1f - buff.MagicResist);
+        Console.WriteLine($"  {name,-20} {bare.EffectiveSpt,4} {buff.MagicResist,6:P0} |"
+                        + $" {b,7:P1} {set,7:P1} {bf,8:P1} | {withM,8:P1}");
+    }
+
+    // The Nullblade's ultimate is the case he named — ten seconds at +50% mRes on top.
+    {
+        var ult = Dressed(() => Who(Race.Human, BaseClass.Fighter, Discipline.Nullblade, L, q), true);
+        ApplyOneBuff(ult, SkillCatalog.DualMagicArmor);
+        float b = StatCalculator.DebuffLandChance(caster.EffectiveAtk, ult.EffectiveSpt, L, L);
+        float bf = b * ult.CcLandRetain * ult.CcLandRetainMagical;
+        Console.WriteLine($"  {"  …+ Magical Armor",-20} {ult.EffectiveSpt,4} {ult.MagicResist,6:P0} |"
+                        + $" {b,7:P1} {"",7} {bf,8:P1} | {bf * (1f - ult.MagicResist),8:P1}   (10s)");
+    }
+    Console.WriteLine();
+    Console.WriteLine("  ⚠ The `x mRes` column is a PROPOSAL — magic resistance does NOT touch debuff");
+    Console.WriteLine("    landing today. It is the mitigation channel for magic DAMAGE only.");
+    Console.WriteLine();
+
+    // ---------- TABLE B: a STUN, cast by a same-level Bulwark ----------
+    var tank = Who(Race.Human, BaseClass.Fighter, Discipline.Bulwark, L, q);
+    Console.WriteLine($"--- B. STUN (x1.00), cast by a Bulwark (ATK {tank.EffectiveAtk}) "
+                    + new string('-', 28));
+    Console.WriteLine($"  {"defender",-20} {"CON",4} {"BRes",6} | {"base",7} {"+set",7} {"+buffed",8}"
+                    + $" {"was 65%",8} | {"x BRes",8}");
+
+    var physTargets = new (string Name, Func<Entity> Make)[]
+    {
+        ("Magus (mage)",      () => Who(Race.Human, BaseClass.Mage,    Discipline.Magus,       L, q)),
+        ("Venomweaver (rogue)",() => Who(Race.Demon, BaseClass.Fighter, Discipline.Venomweaver, L, q)),
+        ("Ravager (warrior)", () => Who(Race.Human, BaseClass.Fighter, Discipline.Ravager,     L, q)),
+    };
+
+    // Battle Resilience's top rung — the warrior's own emergency button, NOT the shared passive.
+    float brTop = SkillCatalog.Get(SkillCatalog.BattleResilience) is { } br
+                ? br.CcResistPhysicalAt(br.MaxLevel) : 0f;
+
+    foreach (var (name, make) in physTargets)
+    {
+        var bare = Dressed(make, false);
+        var buff = Dressed(make, true);
+        float b = StatCalculator.DebuffLandChance(tank.EffectiveAtk, bare.EffectiveCon, L, L);
+        float set = b * bare.CcLandRetain * bare.CcLandRetainPhysical;
+        float bf = b * buff.CcLandRetain * buff.CcLandRetainPhysical;
+        // WAS: swap the new Feral/Fortitude CON factor back out for the old one. Recomputed rather
+        // than remembered, so this column cannot drift away from the build.
+        float was = bf / (1f - NewFeralCon) * (1f - OldFeralCon);
+        Console.WriteLine($"  {name,-20} {bare.EffectiveCon,4} {brTop,6:P0} |"
+                        + $" {b,7:P1} {set,7:P1} {bf,8:P1} {was,8:P1} | {bf * (1f - brTop),8:P1}");
+    }
+    Console.WriteLine();
+    Console.WriteLine($"  ⚠ `BRes` = Battle Resilience at its top rung ({brTop:P0} CON *and* SPT), a 60s");
+    Console.WriteLine("    self-buff on a 150s reuse — a button, not a standing buff, so it is shown as its");
+    Console.WriteLine("    own column rather than folded into `+buffed`.");
+    Console.WriteLine("  ⚠ A real stun also carries its skill's DebuffLandMod: Numbing Shock is x0.50, so");
+    Console.WriteLine("    halve the `+buffed` cell for it. Shield Shock is x0.70.");
 }
 
 static void CcLand(string[] args)

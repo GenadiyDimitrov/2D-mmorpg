@@ -252,7 +252,7 @@ public static partial class SkillCatalog
             new[] { Rung(FamCcResMag, 4), Rung(FamCcResPhys, 4) },
             new[] { CastId(FamCcResMag), CastId(FamCcResPhys) },
             mp: 340, sp: 880000,
-            "50% resistance to SPT-defended debuffs and 40% to CON-defended ones.",
+            "20% resistance to SPT-defended debuffs and 21% to CON-defended ones.",
             BufferFourthArcaneFeralRungs()),
 
         // MP 198 = Swift 33 (the cleric's level-30 rung) + Agility 80, + 85 at level 56. That the

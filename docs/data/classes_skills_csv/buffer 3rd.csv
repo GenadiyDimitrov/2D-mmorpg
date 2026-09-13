@@ -332,16 +332,16 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 72,Body Reinforcement,wc_body_reinforcement,Magic/Buff,,,600,800,party/aoe,1,1,1200,"+35% Max HP, +15% P.Def +20% HP regeneration.",402,650k,[cast_hp_max cast_def_phys cast_hp_regen],,
 ,,,,,,,,,,,,,,,,,---------------------------------------------------------------------------------------------Fortitude & Clarity-------------------------------------------------------------------------------------------------------------------
 ,,,,,,,,,,,,,,,,,------------------------------Clarity------------------------------
-40,Clarity,cast_cc_res_mag,Magic/Buff,,,600,0,party/single,1,1,1200,30% resist to SPT debuffs,60,19k,[],,
-48,Clarity,cast_cc_res_mag,Magic/Buff,,,600,0,party/single,1,1,1200,40% resist to SPT debuffs,75,32k,[],,
-56,Clarity,cast_cc_res_mag,Magic/Buff,,,600,0,party/single,1,1,1200,50% resist to SPT debuffs,85,42k,[],,
+40,Clarity,cast_cc_res_mag,Magic/Buff,,,600,0,party/single,1,1,1200,14% resist to SPT debuffs,60,19k,[],,
+48,Clarity,cast_cc_res_mag,Magic/Buff,,,600,0,party/single,1,1,1200,17% resist to SPT debuffs,75,32k,[],,
+56,Clarity,cast_cc_res_mag,Magic/Buff,,,600,0,party/single,1,1,1200,20% resist to SPT debuffs,85,42k,[],,
 ,,,,,,,,,,,,,,,,,----------------------------Fortitude----------------------------
 40,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,15% resist to CON debuffs,60,19k,[],,
-52,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,20% resist to CON debuffs,80,38k,[],,
-64,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,30% resist to CON debuffs,105,100k,[],,
-72,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,40% resist to CON debuffs,125,330k,[],,
+52,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,17% resist to CON debuffs,80,38k,[],,
+64,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,19% resist to CON debuffs,105,100k,[],,
+72,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,21% resist to CON debuffs,125,330k,[],,
 ,,,,,,,,,,,,,,,,,------------------------------Arcane and Feral Protection------------------------------
-74,Arcane and Feral Protection,wc_arcane_feral_protection,Magic/Buff,,,600,800,party/aoe,1,1,1200,"40% resist to CON debuffs, 50% resist to SPT debuffs",340,880k,[cast_cc_res_mag cast_cc_res_phys],,
+74,Arcane and Feral Protection,wc_arcane_feral_protection,Magic/Buff,,,600,800,party/aoe,1,1,1200,"21% resist to CON debuffs, 20% resist to SPT debuffs",340,880k,[cast_cc_res_mag cast_cc_res_phys],,
 ,,,,,,,,,,,,,,,,,---------------------------------------------------------------------------------------------Swift & Agility-------------------------------------------------------------------------------------------------------------------
 ,,,,,,,,,,,,,,,,,------------------------------Agility------------------------------
 44,Agility,cast_spd_eva,Magic/Buff,,,600,0,party/single,1,1,1200,+3 Evasion.,72,22k,[],,

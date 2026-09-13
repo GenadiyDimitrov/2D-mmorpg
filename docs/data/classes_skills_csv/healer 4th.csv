@@ -216,14 +216,14 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 ,,,,,,,,,,,,,,,,,,,----------------------------Arcane Resistance----------------------------
 76,Arcane Resistance,arcane_resistance,Magic/Buff,,,600,0,party/single,1,1,1200,30% resist to Buff removal,130,6.5kk,1kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Fortitude----------------------------
-76,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,43% resist to CON debuffs,130,6.5kk,1kk
-78,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,47% resist to CON debuffs,140,16kk,1kk
-80,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,50% resist to CON debuffs,150,0,5kk
-82,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,54% resist to CON debuffs,160,0,10kk
-84,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,57% resist to CON debuffs,170,0,30kk
-86,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,60% resist to CON debuffs,180,0,75kk
-88,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,63% resist to CON debuffs,190,0,100kk
-90,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,65% resist to CON debuffs,200,0,100kk
+76,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,23% resist to CON debuffs,130,6.5kk,1kk
+78,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,25% resist to CON debuffs,140,16kk,1kk
+80,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,27% resist to CON debuffs,150,0,5kk
+82,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,29% resist to CON debuffs,160,0,10kk
+84,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,31% resist to CON debuffs,170,0,30kk
+86,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,33% resist to CON debuffs,180,0,75kk
+88,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,34% resist to CON debuffs,190,0,100kk
+90,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,35% resist to CON debuffs,200,0,100kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Antidote----------------------------
 76,Antidote,antidote,Magic/Heal,,,600,0,party/single,0.8,3,0,"Cures poison, venom and bleed of rank 10 or lower from an ally (or self).",72,6.5kk,1kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Holy Blessing----------------------------

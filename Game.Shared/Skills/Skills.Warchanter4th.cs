@@ -303,14 +303,17 @@ public static partial class SkillCatalog
     /// 20% ADD to 100% and were being clamped to 80%, so a debuffer was facing a flat ×0.20 and the
     /// three numbers had stopped being distinguishable from each other.</para>
     ///
-    /// <para>⚠ <b>THE CON HALF IS UNTOUCHED AND IS NOW THE WORSE OF THE TWO</b> — 65% + Strong Body's
-    /// 10% = 75%, which is a ×0.25 on every physical debuff in the game and only just under the clamp.
-    /// He ruled on SPT alone (his message is about SPT debuffs throughout) and this column is his
-    /// authored CSV, so it is not mine to move; it is measured and reported instead.</para></summary>
+    /// <para>🔴 <b>AND THE CON HALF CAME DOWN TOO, 65% → 35% AT THE TOP</b> (owner, 2026-09-13, after
+    /// the measurement this entry's first version asked for): *"OK make it 35% con resistance on the
+    /// fortitude at max rung and I'll test it"*. Once `BL-225` made resistances COMPOUND, 65% here was
+    /// the biggest single resistance in the game and left the tank's own control kit landing at half
+    /// the mage's rate. It MIRRORS Fortitude's rungs 5-12 — read the note there for why the whole
+    /// ladder had to be re-spread rather than just its last rung, and keep the two in step: this is
+    /// the GROUP over that family and a group may never be weaker than a single it covers.</para></summary>
     internal static SkillLevel[] BufferFourthArcaneFeralRungs()
     {
         int[] mp = { 350, 360, 370, 380, 390, 400, 410, 420 };
-        float[] con = { .43f, .47f, .50f, .54f, .57f, .60f, .63f, .65f };
+        float[] con = { .23f, .25f, .27f, .29f, .31f, .33f, .34f, .35f };
         return F4Rungs(8, 2, (i, sp, gold) => new SkillLevel(
             MpCost: mp[i], SpCost: sp, GoldCost: gold,
             CcResistMagical: 0.20f, CcResistPhysical: con[i],

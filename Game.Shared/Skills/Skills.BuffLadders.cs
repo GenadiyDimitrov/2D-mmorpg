@@ -347,24 +347,44 @@ public static partial class SkillCatalog
         list.AddRange(Ladder(FamShieldBlock, "Shield Blessing",  SkillEffect.BuffBlockChance, ModifierMode.Percent, "block chance", 0.05f, 0.10f, 0.15f, 0.20f, 0.25f, 0.30f));
 
         // Clarity: 20% is the cleric's @25; 30/40/50 are the healer's @40/48/56.
-        list.Add(CcResistRung(FamCcResMag, "Clarity", 1, magical: 0.20f));
-        list.Add(CcResistRung(FamCcResMag, "Clarity", 2, magical: 0.30f));
-        list.Add(CcResistRung(FamCcResMag, "Clarity", 3, magical: 0.40f));
-        list.Add(CcResistRung(FamCcResMag, "Clarity", 4, magical: 0.50f));
-        // Fortitude is the healer's alone — 15/20/30/40% at 40/52/64/72. ⚠ It climbs SLOWER than
-        // Clarity and ends lower on purpose: the physical school is the one CON already defends, and
-        // his two 40-level rows (30% vs 15%) set that gap on the first rung.
-        list.Add(CcResistRung(FamCcResPhys, "Fortitude", 1, physical: 0.15f));
-        list.Add(CcResistRung(FamCcResPhys, "Fortitude", 2, physical: 0.20f));
-        list.Add(CcResistRung(FamCcResPhys, "Fortitude", 3, physical: 0.30f));
-        list.Add(CcResistRung(FamCcResPhys, "Fortitude", 4, physical: 0.40f));
-        // ---- RUNGS 5-12 are the healer's 4th tier (`healer 4th.csv`, 76-90 every other level): 43%
-        //      climbing to 65%. ⚠ FORTITUDE IS THE ONLY BUFF FAMILY HIS 4th-TIER FILE CONTINUES — every
-        //      other single (Might, Ward, Focus, Resolve …) stops at the 3rd class, which is his file,
-        //      not an omission here. Don't extend the others "for symmetry".
+        // 🔴 CLARITY CAME DOWN WITH ITS GROUP, 50% → 20% at the top (2026-09-13). His 20% ruling
+        //    moved Arcane and Feral Protection — the GROUP over this family — to 20% SPT, and a
+        //    group may never be weaker than a single it covers (docs/design/BuffLadders.md). Left
+        //    alone this would have been worse than an authoring slip: Clarity tops out at level 72
+        //    and the group takes over at 74, so a character's SPT resistance would have DROPPED from
+        //    50% to 20% on levelling up, and a party with no buffer would have been harder to debuff
+        //    than one with one. Re-spread to keep the rung-1 → rung-4 shape, ending on his number.
+        list.Add(CcResistRung(FamCcResMag, "Clarity", 1, magical: 0.11f));
+        list.Add(CcResistRung(FamCcResMag, "Clarity", 2, magical: 0.14f));
+        list.Add(CcResistRung(FamCcResMag, "Clarity", 3, magical: 0.17f));
+        list.Add(CcResistRung(FamCcResMag, "Clarity", 4, magical: 0.20f));
+        // Fortitude is the healer's alone. ⚠ It climbs SLOWER than Clarity and ends lower on purpose:
+        // the physical school is the one CON already defends, and his two 40-level rows (30% vs 15%)
+        // set that gap on the first rung.
+        //
+        // 🔴 THE WHOLE LADDER WAS RE-SPREAD ON 2026-09-13, and it is not only the top rung that moved.
+        //    His ruling was *"make it 35% con resistance on the fortitude at max rung"* — down from
+        //    65%, because once `BL-225` made resistances COMPOUND the CON stack became the biggest in
+        //    the game and left the tank's own control kit landing at half the mage's rate.
+        //
+        // 🔑 BUT 35% AT THE TOP IS BELOW WHAT RUNG 4 ALREADY WAS (40%), so "change only the max rung"
+        //    is not a thing this ladder can express — it would run 15 / 20 / 30 / 40 / … / 35 and go
+        //    DOWNWARDS, and every ladder here is monotonic. So the twelve rungs are re-spread between
+        //    the two numbers that are HIS: rung 1 stays **15%** (his authored first rung, the half of
+        //    the 30-vs-15 gap he set at 40) and rung 12 is his new **35%**. The middle is interpolated;
+        //    his old 20/30/40 at rungs 2-4 could not survive the new ceiling.
+        //
+        // ⚠ The group that covers this family — Arcane and Feral Protection — mirrors rungs 5-12 and
+        //   was moved with it, or the group would have been WEAKER than a single it covers.
         foreach (var (rank, pct) in new[]
-                 { (5, 0.43f), (6, 0.47f), (7, 0.50f), (8, 0.54f),
-                   (9, 0.57f), (10, 0.60f), (11, 0.63f), (12, 0.65f) })
+                 { (1, 0.15f), (2, 0.17f), (3, 0.19f), (4, 0.21f),
+                   // ---- RUNGS 5-12 are the healer's 4th tier (`healer 4th.csv`, 76-90 every other
+                   //      level). ⚠ FORTITUDE IS THE ONLY BUFF FAMILY HIS 4th-TIER FILE CONTINUES —
+                   //      every other single (Might, Ward, Focus, Resolve …) stops at the 3rd class,
+                   //      which is his file, not an omission here. Don't extend the others "for
+                   //      symmetry".
+                   (5, 0.23f), (6, 0.25f), (7, 0.27f), (8, 0.29f),
+                   (9, 0.31f), (10, 0.33f), (11, 0.34f), (12, 0.35f) })
             list.Add(CcResistRung(FamCcResPhys, "Fortitude", rank, physical: pct));
 
         // ═══ RUNGS 1 AND 2 ARE HIS, verbatim (2026-08-20) ═══════════════════════════════════════════

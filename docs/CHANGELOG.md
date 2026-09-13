@@ -7,12 +7,69 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.139.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.140.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-13 (latest) — 0.139.0: control resistances compound, and three more clamps go
+## 2026-09-13 (latest) — 0.140.0: the CON resistance comes down, and a Clarity cliff that was never there
+
+⚠ **NEW APK.** No protocol bump, no `game.db` delete.
+
+### `BL-226` — Fortitude's CON resistance 65% → 35% at the top
+
+> *"OK make it 35% con resistance on the fortitude at max rung and I'll test it"*
+
+🔑 **IT COULD NOT BE JUST THE MAX RUNG.** Rung 4 was already **40%**, above the new ceiling, so
+changing only rung 12 would have produced 15 / 20 / 30 / 40 / … / 35 — a ladder running DOWNWARDS,
+and every ladder here is monotonic. The twelve rungs are re-spread between his two anchors: rung 1
+keeps his **15%** and rung 12 is his new **35%**; his old 20/30/40 at rungs 2-4 could not survive.
+
+⚠ It reached three more families:
+- **Arcane and Feral Protection's CON column** (the GROUP over Fortitude) mirrors rungs 5-12 and moved
+  with it, 43→65% becoming 23→35% — a group may never be weaker than a single it covers.
+- 🔴 **CLARITY, 50% → 20%, and this was a REAL DEFECT SHIPPED IN 0.138.0.** His 20% SPT ruling moved
+  the GROUP to 20% while the SINGLE it covers still granted 50%. Clarity tops out at level 72 and the
+  group takes over at 74, so **SPT resistance would have DROPPED from 50% to 20% on levelling up**, and
+  a party with no buffer would have been harder to debuff than one with a buffer. Caught by
+  `SkillCsvSeed --check` complaining about a CSV row, not by anyone reasoning about it. Re-spread to
+  11/14/17/20.
+- The group's rung-1 blurb and the `cleric 2nd` Clarity row followed.
+
+Five CSV files moved with the code. `--check` is back to its two pre-existing Sundering Blow lines.
+
+### The result
+
+| ×1.00 debuff, fully buffed, level 90 | before | now |
+|---|---|---|
+| magical (SPT) | 10-11% | **20-23%** |
+| physical (CON) | 8-10% | **19-24%** |
+
+Both inside his *"15-25% which is good"*, and the two schools are within a couple of points of each
+other for the first time.
+
+### `--ccprofile` — the two tables he asked for
+
+New rig mode printing one row per DEFENDER and one column per layer of the product, for a `×1.00`
+magic debuff and for a stun, with the "was 65%" column recomputed rather than remembered.
+
+**His open question is measured but NOT built** — *"shouldnt mresist add to magic debuffs
+resistance?"*. It does what he wants for the two classes he named (a Nullblade's Magical Armor becomes
+a real 10-second control-immunity window at 9.0%, the tank picks up a few points) — **but the MAGE has
+the most magic resistance of the three (35%, from the nuker's own anti-nuke passive ladder), so he
+would end up the hardest of all to land a magic debuff on**, which is backwards from the rest of this
+design. Suggested to him as "buffs and ultimates only, not passives" if he wants it. → `BL-218`.
+
+⚠ Also flagged, not touched: **Battle Resilience is now the biggest number in the file** — 80% CON
+*and* SPT for 60s on a 150s reuse takes a stun from 19% to **3.8%**. It was already dominant when
+resistances summed (it alone reached the old 0.8 clamp); compounding made it cleaner, not smaller.
+
+### ❌ Declined
+
+The mage's ×2 SPT land-rate passive — *"if you haven't added the passive on mage for x2 spt resistance
+..good don't and remove it as ruling"*. Never built; struck from `BL-218`.
+
+## 2026-09-13 — 0.139.0: control resistances compound, and three more clamps go
 
 ⚠ **NEW APK.** No protocol bump. ⚠ **A `game.db` delete is NOT needed** — nothing schema-side moved.
 

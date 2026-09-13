@@ -54,7 +54,7 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 ,,,,,,,,,,,,,,,,----------------------------Bulwark----------------------------
 25,Bulwark,cast_def_phys,Magic/Buff,,,600,0,party/single,1,1,1200,+12% P.Def.,26,3200,[]
 ,,,,,,,,,,,,,,,,----------------------------Clarity----------------------------
-25,Clarity,cast_cc_res_mag,Magic/Buff,,,600,0,party/single,1,1,1200,20% resist to SPT debuffs,26,3200,[]
+25,Clarity,cast_cc_res_mag,Magic/Buff,,,600,0,party/single,1,1,1200,11% resist to SPT debuffs,26,3200,[]
 ,,,,,,,,,,,,,,,,----------------------------Force----------------------------
 25,Force,cast_atk_mag,Magic/Buff,,,600,0,party/single,1,1,1200,+25% M.Atk.,26,3200,[]
 ,,,,,,,,,,,,,,,,----------------------------Focus----------------------------

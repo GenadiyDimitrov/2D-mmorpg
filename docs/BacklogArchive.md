@@ -5265,3 +5265,90 @@ Mark's 15% comes out or the passive halves as well. More numbers moved, same bri
   passive is the missing half of the mechanic, not one more buff. Still needs two rulings from you:
   **ladder or flat ×2** across 40/76/80, and **PvP-only or everywhere**.
 
+
+---
+
+## Superseded text — `BL-218`, second version of 2026-09-13
+
+Kept verbatim per rule 2. Replaced once the 35% CON ruling landed and both schools reached his band.
+
+## `BL-218` 🔵 DEBUFF LAND RATES — magical is in your band; the CON column is now the outlier
+
+**2026-09-13, rewritten again** — your 20% ruling and your compounding ruling (`BL-225`) are both
+built, and what is left of this entry is different from what it was this morning. The old text is in
+the archive. 📐 The whole table: [balance/DebuffLandRate.md](balance/DebuffLandRate.md).
+
+### ✅ Where it landed
+
+An ordinary `×1.00` magical debuff against a fully-buffed level-90 now lands **20-22%** with the
+Harmony Mark (which you expect most people to wear) or **17-19%** with a Holy Mark. That is inside
+your *"15-25% which is good"*. The `×1.50` skills sit at 30-33%, which reads right — they are the ones
+you priced to be reliable.
+
+### 🔴 THE ONE THING LEFT: the two schools are now TWICE as far apart
+
+You ruled on SPT only, so **Feral Protection's CON column (43→65%) is untouched** and is now the
+biggest resistance in the game. Compounded with Strong Body and a Mark it is **68%**, against the SPT
+side's 49-56%:
+
+| ×1.00 skill lands | |
+|---|---|
+| magical (SPT) | **20-22%** |
+| physical (CON) | **10-13%** |
+
+So the **tank's entire kit** — Grapple, Stay!, Shield Shock, Numbing Shock — and the Venomweaver's and
+the Trapper's all sit at about half the mage's reliability, and the stun that ends a fight is at
+**5-6%**.
+
+🔵 **The lever is one number and it is yours: Feral Protection's CON column.** Its top rung at ~25%
+instead of 65% would put both schools on the same footing; anything between moves it proportionally.
+Not touched — your message was about SPT throughout and that column is your authored CSV.
+
+### 🔵 Also still open
+
+- **The flat `CcResist` gear cliff** — 0% common, 0% rare, **28% epic, 40% mythic**. Armour-set only,
+  identical for every class, nothing on the attacker's side answers it. Now that the school stack
+  compounds, **this is the largest single term left** in the whole product.
+- **There is no attacker-side land channel in the engine at all** — your mage SPT passive would be the
+  missing half of the mechanic. It still needs **ladder or flat ×2** across 40/76/80 and **PvP-only or
+  everywhere** if you want it — but with the magical side now at 20% it may simply not be needed, and
+  the CON column above is the better-targeted fix.
+
+
+---
+
+## `BL-226` ✅ BUILT 0.140.0 (2026-09-13) — the CON resistance comes down to 35%
+
+*"OK make it 35% con resistance on the fortitude at max rung and I'll test it"* — after `BL-225` made
+resistances compound, 65% here was the biggest single resistance in the game and left the tank's own
+control kit landing at half the mage's rate.
+
+🔑 **IT COULD NOT BE JUST THE MAX RUNG.** Fortitude's rung 4 was already **40%**, above your new
+ceiling, so "change the top rung" would have produced 15 / 20 / 30 / 40 / … / 35 — a ladder that goes
+DOWNWARDS, and every ladder here is monotonic. The twelve rungs are re-spread between the two numbers
+that are yours: rung 1 stays **15%** (your authored first rung, the half of the 30-vs-15 gap you set
+at level 40) and rung 12 is your new **35%**. Your old 20/30/40 at rungs 2-4 could not survive the new
+ceiling.
+
+⚠ **AND IT REACHED THREE MORE FAMILIES, because the checker caught what the first pass broke:**
+- **Arcane and Feral Protection's CON column** (the GROUP over Fortitude) mirrors rungs 5-12 and moved
+  with it — 43→65% became 23→35%. A group may never be weaker than a single it covers.
+- 🔴 **CLARITY had to come down too, 50% → 20%**, and this was a real defect I introduced in 0.138.0
+  and did not catch: your 20% SPT ruling moved the GROUP to 20% while the SINGLE it covers still gave
+  50%. Clarity tops out at level 72 and the group takes over at 74, so **a character's SPT resistance
+  would have DROPPED from 50% to 20% on levelling up**, and a party with no buffer would have been
+  harder to debuff than one with a buffer. Re-spread to 11/14/17/20.
+- The group's rung-1 blurb and the `cleric 2nd` Clarity row followed.
+
+Seven CSV files moved with the code: `healer 3rd`, `healer 4th`, `buffer 3rd`, `buffer 4th`,
+`cleric 2nd`. `SkillCsvSeed --check` is back to its two pre-existing Sundering Blow lines (`BL-202`).
+
+### The result — a `×1.00` debuff against a fully-buffed level 90
+
+| | before | now |
+|---|---|---|
+| magical (SPT) | 10-11% | **20-23%** |
+| physical (CON) | 8-10% | **19-24%** |
+
+Both inside your band, and the two schools are within a couple of points of each other for the first
+time.
