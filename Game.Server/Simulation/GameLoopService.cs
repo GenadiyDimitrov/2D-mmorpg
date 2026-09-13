@@ -9912,20 +9912,9 @@ public class GameLoopService : BackgroundService
             ApplyDamage(victim, dmg, attacker);
         }
         // Contested CC (Root/Stun/Slow): the control payload.
-        if (IsContestedDebuff(def, effect) && !victim.Dead)
+        if (SkillMath.IsContestedDebuff(def, effect) && !victim.Dead)
         {
-            // 🔑 THE SAME TWO READINGS THE CAST PATH USES, and they had drifted here. A bleed or a
-            // venom is an AGI contest, not an ATK one, and for ANY DoT the FAMILY decides which stat
-            // saves (`DotTiers.Save`) rather than the skill's own DebuffSchool. A Bleeding Trap was
-            // rolling a fighter's ATK against CON while the identical arrow rolled AGI.
-            bool agiBased = (effect & (SkillEffect.Bleed | SkillEffect.Venom)) != 0;
-            int atkStat = agiBased ? (int)attacker.EffectiveAgi : attacker.EffectiveAtk;
-            var landKind = (effect & SkillEffect.AnyDot) != 0
-                ? DotTiers.KindOf(def.DotKind, effect) : DotKind.None;
-            DebuffSchool school = landKind != DotKind.None
-                ? DotTiers.Save(landKind) : def.DebuffSchool;
-            int defStat = school == DebuffSchool.Magical ? victim.EffectiveSpt : victim.EffectiveCon;
-            bool alwaysLands = landKind != DotKind.None && school == DebuffSchool.None;   // Burn
+            var (atkStat, defStat, school, alwaysLands) = CcContest(attacker, victim, def, effect);
             float land = ResistsDebuff(victim, effect, def)
                 ? 0f
                 : alwaysLands ? 1f
@@ -12151,25 +12140,7 @@ public class GameLoopService : BackgroundService
             // and you are not tested against your own.
             if (!TryReflectDebuff(caster, target, def, lvl, doubledTicks, castName))
             {
-                bool agiBased = (effect & (SkillEffect.Bleed | SkillEffect.Venom)) != 0;
-                int atkStat = agiBased ? (int)caster.EffectiveAgi : caster.EffectiveAtk;
-
-                // 🔑 FOR A DoT THE FAMILY DECIDES WHICH STAT SAVES, not the skill's own DebuffSchool.
-                // Owner, 2026-09-10: *"its true all effects do flat dmg. So magic postion or physical
-                // posion is no difference just naming stuff and dos CON or SPT protects"* — so the
-                // channel is nothing but the save, and it belongs to the type.
-                var landKind = (effect & SkillEffect.AnyDot) != 0
-                    ? DotTiers.KindOf(def.DotKind, effect) : DotKind.None;
-                DebuffSchool school = landKind != DotKind.None
-                    ? DotTiers.Save(landKind) : def.DebuffSchool;
-                int defStat = school == DebuffSchool.Magical ? target.EffectiveSpt : target.EffectiveCon;
-
-                // ⚠ BURN IS SAVED AGAINST BY NOTHING AND ALWAYS LANDS (*"for burn nothing protects ..
-                //   always land"*). He offered the hack himself — *"code success chance x9999"* — but a
-                //   contest that cannot be lost is better expressed as no contest: a 9999x multiplier
-                //   would still be scaled down by CcResist and the per-school blessing below and could,
-                //   with enough of both, come back under 1.
-                bool alwaysLands = landKind != DotKind.None && school == DebuffSchool.None;
+                var (atkStat, defStat, school, alwaysLands) = CcContest(caster, target, def, effect);
 
                 float land = ResistsDebuff(target, effect, def)
                     ? 0f
@@ -17647,43 +17618,45 @@ public class GameLoopService : BackgroundService
     /// bigger — whereas a ×0.5 is the skill saying it is unreliable BY DESIGN, and re-flooring it would
     /// quietly delete his number at exactly the level gaps where it matters most. The ceiling stays
     /// because "nothing is ever a certainty" is a rule about the game, not about the contest.</para></summary>
+    /// <summary>THE TWO STATS A CONTESTED DEBUFF IS ROLLED ON, and the school that chose the second —
+    /// asked in ONE place because the two roll sites (the cast path and the on-hit rider path) have
+    /// already drifted apart once.
+    ///
+    /// <para>🔑 THE ATTACKER IS ALWAYS <b>ATK</b> (owner, 2026-09-13): *"why bleed is agi vs con?
+    /// Physical buffs should be atk vs con magical atk vs spt"*. Bleed and venom used to read the
+    /// caster's <b>AGI</b> instead, which made the attacking half of the contest depend on the EFFECT
+    /// rather than on the channel, and left the archer's own bleed rolling a different stat from the
+    /// nuker's identical one. His rule is a clean two-by-two and this is the whole of it:
+    /// <code>
+    ///   physical debuff → ATK vs CON
+    ///   magical  debuff → ATK vs SPT
+    /// </code></para>
+    ///
+    /// <para>🔑 THE DEFENDING SIDE IS UNCHANGED and still comes from the DoT FAMILY, not the skill's own
+    /// <see cref="SkillDef.DebuffSchool"/> (his 2026-09-10 ruling: *"magic postion or physical posion is
+    /// no difference just naming stuff and dos CON or SPT protects"*). So a bleed is saved by CON even
+    /// when the spell that opened it is <c>DebuffSchool.Magical</c> — that is the channel, and it is a
+    /// different question from which stat throws the punch.</para>
+    ///
+    /// <para>⚠ <c>AlwaysLands</c> is BURN, which nothing saves against (*"for burn nothing protects ..
+    /// always land"*). Expressed as "no contest" rather than a ×9999 multiplier, because a multiplier
+    /// would still be scaled down by CcResist and the per-school blessing and could come back under 1.</para></summary>
+    private static (int Atk, int Def, DebuffSchool School, bool AlwaysLands) CcContest(
+        Entity attacker, Entity defender, SkillDef def, SkillEffect effect)
+    {
+        var landKind = (effect & SkillEffect.AnyDot) != 0
+            ? DotTiers.KindOf(def.DotKind, effect) : DotKind.None;
+        DebuffSchool school = landKind != DotKind.None ? DotTiers.Save(landKind) : def.DebuffSchool;
+        int defStat = school == DebuffSchool.Magical ? defender.EffectiveSpt : defender.EffectiveCon;
+        return (attacker.EffectiveAtk, defStat, school,
+                landKind != DotKind.None && school == DebuffSchool.None);
+    }
+
     private static float ApplyDebuffLandMod(float land, SkillDef def, int lvl)
     {
         float mod = def.DebuffLandModAt(lvl);
         return mod == 1f ? land : Math.Clamp(land * mod, 0f, StatCaps.CcLandMax);
     }
-
-    /// <summary>Does this skill's debuff land on the CONTESTED roll (<see cref="StatCalculator.DebuffLandChance"/>,
-    /// ~50% at parity) rather than the fizzle roll (<see cref="StatCalculator.MagicFailChance"/>, ~99%)?
-    ///
-    /// <para>🔑 TWO WAYS IN, AND THE SECOND ONE WAS MISSING UNTIL 2026-08-24. A `ContestCc` effect flag
-    /// (Slow/Stun/Fear/Root/Bleed/Poison/Venom) has always routed here. But a skill can also DECLARE
-    /// itself contested by setting <see cref="DebuffSchool"/> — the enum's own documentation says
-    /// *"None = not a contested debuff"* — and that declaration was never read. Armor Break, Weapon
-    /// Break, Gravity and Mana Strain all set it, all said *"Contested ATK vs SPT"* on their cards, and
-    /// all silently took the fizzle roll instead, landing ~99% of the time.</para>
-    ///
-    /// <para>It surfaced through his `BL-90` numbers: *"armor/weapon break + gravity … should be 75% at
-    /// parity (x1.5) and the other should be 25% at parity (x0.5)"*. ×1.5 only reaches 75% off a 50%
-    /// base, so his arithmetic only closes on the contested curve — the multiplier he was asking for
-    /// could not exist without this fix.</para>
-    ///
-    /// <para>⚠ The two are OR'd, never overlapping in effect: a skill with both a ContestCc flag and a
-    /// school resolves once, here. The `else if` on the fizzle branch is what guarantees that.</para>
-    ///
-    /// <para>⚠ A THIRD WAY IN SINCE 2026-09-02 (`BL-110`): <c>def.Charms</c>. Charm is control, and
-    /// control has always landed on the contest, never on the ~99% fizzle roll — but its payload is a
-    /// FIELD, so neither of the two tests above can see it. Without this line a charm authored with
-    /// no <see cref="DebuffSchool"/> would have landed nearly every time it was cast.</para></summary>
-    /// <para>⚠ AND A FOURTH AND FIFTH SINCE 2026-09-03: <c>def.Pulls</c> (`BL-154`) and the two
-    /// SILENCE fields (`BL-155`). Both are payload FIELDS for the same reason charm is — the flag enum
-    /// is full — and both are control, so both belong on the contest. In practice every one of them is
-    /// authored with a DebuffSchool as well and would route here anyway; they are listed because the
-    /// NEXT field-payload author will copy whichever skill he finds, and a control skill that quietly
-    /// lands 99% of the time is the exact bug this method exists to remember.</para></summary>
-    private static bool IsContestedDebuff(SkillDef def, SkillEffect effect) =>
-        (effect & SkillEffect.ContestCc) != 0 || def.DebuffSchool != DebuffSchool.None || def.Charms
-        || def.Pulls || def.SilencePhysical || def.SilenceMagical;
 
     /// <summary>Roll ONE hit against a cast in progress — IG's own formula, adapted (owner, 2026-08-26).
     /// See <see cref="StatCalculator.InterruptChance"/> for the model and for the two places we

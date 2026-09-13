@@ -221,13 +221,33 @@ public static partial class SkillCatalog
         // PURPOSE. His comment on the rows is explicit: *"does dmg but have a lower success rate for the
         // slow - interrupt unaffected"*. The debuff is the unreliable half; breaking a cast is the
         // reliable half, and doubling it is what makes the elf nuker the anti-caster.
+        //
+        // 🔴🔑 THE PENALTY CAME MOSTLY OFF ON 2026-09-13 — 0.70/0.50 → **0.85 both**, and Witches Curse
+        //    (the demon's, below) to **1.00**. His reasoning, and it is the rule to apply to the NEXT
+        //    one of these: *"maybe we need to remove the 3 skills the success decrease .. As they don't
+        //    Harm as a buff removal or bind or silence etc... They are not sure kill if they land"*.
+        //
+        // 🔑 THE TEST IS **WHAT LANDING TAKES AWAY FROM THE TARGET**, not how big the number is. A
+        //    cancel, a hold, a silence or a fear takes the target's TURN — those keep their steep
+        //    penalties (Witches Scarecrow stays 0.50, Arcane Void stays 0.30). A slow, a bleed and an
+        //    M.Def cut only make the fight worse; you can still play through all three, so they are
+        //    priced as riders, not as control.
+        //
+        // ⚠ WHY 0.85 AND NOT 1.00 FOR THESE TWO, when the curse got the full removal — HIS OWN reason,
+        //   and it is a stacking argument, not a fairness one: *"If we make the pierce a atk vs con it
+        //   adds 20% slow and the 45% slow from spike it makes the archer with 68 speed"*. Frost
+        //   Pierce's bleed carries the BLEED family's own 20% slow (DotTiers, not this skill), and
+        //   Frost Spikes' own slow tops out at 45% — landing both is a movement debuff neither row
+        //   advertises. The curse carries no control at all, which is exactly why it is the one that
+        //   reaches 1.00. 📐 `--slowstack` prints the resulting speed.
 
         new(FrostSpikes, "Frost Spikes", BaseClass.Mage, SkillEffect.MagicDamage | SkillEffect.Slow,
             MpCost: NukerBoltMp[0], CastTicks: 25, CooldownTicks: 10, Range: 900,
             Power: NukerWavePower[0],
             DurationTicks: 300, BuffKey: "slow", Rank: 1,
             DebuffSchool: DebuffSchool.Magical, Category: SkillCategory.Magic, SpCost: 36000,
-            DebuffLandMod: 0.7f,   // his CSV: "(success chance x0.7)" = 35% at parity
+            // 🔑 0.70 → 0.85 (owner, 2026-09-13). See the RAISED-SUCCESS note above the elf pair.
+            DebuffLandMod: 0.85f,  // his CSV: "(success chance x0.85)"
             InterruptMult: 2f,     // his CSV: "(interrupt chance x2)"
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.Slow, 0.15f) },
             Description: "Shards of ice: damage, a chance to slow for 30s, and twice the usual chance "
@@ -250,7 +270,9 @@ public static partial class SkillCatalog
             Power: NukerWavePower[0],
             DurationTicks: 150, BuffKey: "bleed", Rank: 3,
             DebuffSchool: DebuffSchool.Magical, Category: SkillCategory.Magic, SpCost: 36000,
-            DebuffLandMod: 0.5f,   // his CSV: "(success chance x0.5)" = 25% at parity
+            // 🔑 0.50 → 0.85 (owner, 2026-09-13), and it now rolls ATK vs CON like every other
+            //    physical debuff — see GameLoopService.CcContest. Both changes push the same number up.
+            DebuffLandMod: 0.85f,  // his CSV: "(success chance x0.85)"
             InterruptMult: 2f,
             Description: "Impales the target: damage, a chance to open a 15s bleed, and twice the usual "
                        + "chance to break their cast.",
@@ -271,7 +293,10 @@ public static partial class SkillCatalog
             Power: NukerQuickPower[0],
             DurationTicks: 300, BuffKey: "witches_curse", Rank: 1,
             DebuffSchool: DebuffSchool.Magical, Category: SkillCategory.Magic, SpCost: 36000,
-            DebuffLandMod: 0.7f,   // his CSV: "(success chance x0.7)"
+            // 🔑 0.70 → **1.00** (owner, 2026-09-13): this one carries no control at all — only an
+            //    M.Def cut — so it takes no success penalty at all. See the RAISED-SUCCESS note
+            //    above the elf pair for the rule it is an instance of.
+            DebuffLandMod: 1.00f,
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffMagicDef, -0.10f) },
             Description: "A hexing bolt: damage, and a chance to rot the target's magic defence for 30s.",
             Levels: HealerRungs(0, 14, (i, sp) =>

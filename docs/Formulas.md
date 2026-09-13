@@ -329,10 +329,20 @@ land   = chance * CcLandRetain * CcLandRetain<school>
 - ⚠ A **negative** resistance is legal and useful — the Magus's curses author `CcResistMagical: -0.40`
   and contribute a ×1.40 factor. This is why the entity stores the RETAIN and exposes `CcResist*` as
   a derived getter: accumulate through `AddCcResist*` or it will not compile.
-- `defenderStat` is **CON** for a physical debuff, **SPT** for a magical one (`DebuffSchool`).
+- 🔑 **`attackerAtk` IS ALWAYS THE ATK STAT** (0.142.0) — *"Physical buffs should be atk vs con magical
+  atk vs spt"*. Bleed and venom read the attacker's **AGI** until then, which made the attacking half
+  depend on the EFFECT rather than the channel. Both roll sites read one `GameLoopService.CcContest`.
+- `defenderStat` is **CON** for a physical debuff, **SPT** for a magical one — and for a **DoT** the
+  FAMILY decides (`DotTiers.Save`), not the skill's own `DebuffSchool`: a bleed opened by a `Magical`
+  spell still saves on CON. Which stat throws and which stat takes are two separate questions.
 - `CcLevelBase` is derived, not authored: it is whatever makes the floor land exactly 18 levels out.
 - **`DebuffLandMod` is the per-skill success multiplier** (`BL-90`): ×1.5 = 75% at parity, ×1 = 50%,
-  ×0.7 = 35%, ×0.5 = 25%, ×0.3 = 15%. A ×0.5 skill may go under the floor; nothing may pass 0.90.
+  ×0.85 = 42.5%, ×0.7 = 35%, ×0.5 = 25%, ×0.3 = 15%. A ×0.5 skill may go under the floor; nothing may
+  pass 0.90.
+- 🔑 **WHAT SETS IT IS WHAT LANDING TAKES AWAY** (0.142.0): a cancel, hold, silence or fear costs the
+  target their TURN and keeps a steep penalty (×0.30-0.50). A slow, a bleed or a stat cut only makes
+  the fight worse — *"they don't Harm as a buff removal or bind or silence … not sure kill if they
+  land"* — so those are priced as riders (×0.85-1.00).
 - ⚠ Attacker level here is also the **RUNG's** learn level.
 
 - **BURN lands unconditionally** — a DoT whose family saves against nothing (`DotTiers.Save` = None)
@@ -434,14 +444,15 @@ tick/s = DotTiers.DamagePerSecond(kind, tier) * stacks        FLAT — no defenc
 
 - **Flat, undivided, once a second.** *"its true all effects do flat dmg."* The physical/magical label
   decides **only which stat saves** — nothing else follows from it.
-- **Only the landing is a stat contest** (`StatCalculator.DebuffLandChance`, attacker AGI for
-  bleed/venom else ATK, defender CON or SPT). Once it lands, the tier is the whole number.
+- **Only the landing is a stat contest** (`StatCalculator.DebuffLandChance`; attacker **always ATK**,
+  defender CON or SPT — and for a DoT the **family** picks which, not the skill's `DebuffSchool`).
+  Once it lands, the tier is the whole number. ⚠ Bleed and venom read the attacker's AGI until 0.142.0.
 - **Only venom stacks.** `DotTiers.MaxStacks` caps the family, so a skill cannot be authored into a
   stacking bleed. The side effect does **not** scale with stacks — `BuffInstance.Percent` sums
   magnitudes and never multiplies by `Stacks`, so venom's −10% is −10% at one stack or ten.
 - 🔑 **THE STACKS ARE BANKED BY THE STRIKE, NOT BY THE CONTEST** (`BL-199`, 0.128.0). A stacking
   skill's pool is a hidden counter on its `StackKey`; a resolution of the damage arm that **LANDS THE
-  SKILL** adds `StacksPerCast` to it. The DoT is a separate thing that lands on its own AGI-vs-CON
+  SKILL** adds `StacksPerCast` to it. The DoT is a separate thing that lands on its own ATK-vs-CON
   contest; losing it costs the damage, never the pool. Owner, 2026-09-11: *"Stacks should be
   independent of dot ... each landed venom blow adds stacks that do not do nothing just stacks"*.
   🔴 Until then BOTH rolls had to come up for one stack — the blow gate *and* the contest — which is

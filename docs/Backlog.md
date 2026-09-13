@@ -173,6 +173,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-218` | 🟢 | DEBUFF LAND RATES — all rulings built; nothing owed unless a playtest says so | combat |
 | `BL-228` | ⏸ | FUTURE — boss jewels that trade one school of control against another | items |
 | `BL-229` | 🔵 | THE 74→76 DEBUFF CLIFF — an un-ascended caster keeps casting the @74 rung while the world levels past it | combat |
+| `BL-230` | 🔵 | CONTROL RESISTANCE IS NOT ON THE NPC SHELF — part 1 only; part 2 built in 0.142.0 | buffs |
 
 ---
 
@@ -1516,6 +1517,78 @@ of its rate with nothing on screen explaining why.
 
 ⚠ It is not a nuker problem. Every contested debuff in the game is on this curve: holds, stuns, fears,
 armour breaks, DoT openers. The nuker is just where you happened to look.
+
+---
+
+## `BL-230` 🔵 CONTROL RESISTANCE IS NOT ON THE NPC SHELF — and two nuker races land the same
+
+> *"A 90 lvl ice master (frost spike/Pierce) or a infermo master (whiches curse) land somehow the same
+> at 90lvl demon archer with ot without buffs for spt resist"* — 2026-09-13
+
+**Both halves of that are true, and they are two different things.** Measured with
+`dotnet run --project tools/BalanceMatrix -- --ccland`, which now carries an **Elf Magus (Ice
+Master)** and a **Demon Magus (Inferno Master)** as attackers and a **Demon Hunter** as a defender —
+his exact case was not in the table before.
+
+### 1. 🔴 The NPC buffer sells no control resistance — but your ADMIN FULL BUFF does
+
+⚠ **CORRECTION, after you said *"I test with fullbuff from admin menu"*.** `AdminBuffSet` is every skill
+every race of **Warchanter** can learn, and the Warchanter learns **Clarity and Fortitude**
+(`RegisterWarchanterBuffs`). So your full buff DOES raise SPT resistance — 20% → 49-56% — and the
+magic debuffs DO drop with it, 24% → 13-16%. **This section is about the NPC SHELF only, and it is
+not what you were seeing.** What you saw is §2: the two casters equal to EACH OTHER, in both states.
+
+| vs Hunter (Demon bow), lvl 90 | bare | **+ NPC shelf** | + full shelf | + Warchanter + Holy Mark |
+|---|---|---|---|---|
+| Frost Spikes (Ice, SPT, ×0.70) | 23% | **23%** | 20% | 13% |
+| Witches Curse (Inferno, SPT, ×0.70) | 24% | **24%** | 21% | 13% |
+| Frost Pierce (Ice, **CON**, ×0.50) | 13% | **13%** | **13%** | 9% |
+
+`magRes` reads **20% bare and 20% buffed**; `phyRes` reads **10% and 10%**. The whole 30-blessing
+shelf — Might, Ward, Body, Soul, Insight, eight harmonies, three Marks — contains **neither Clarity
+(SPT) nor Fortitude (CON)**. `NpcBuffTiers` is *"his CSV, verbatim"*, so this is authored, not a code
+slip; it has simply never been tested from the receiving end.
+
+**So today, control resistance is not something a solo player can buy.** It comes only from your gear
+set, your own passives, a real Lightbringer casting Clarity/Fortitude, or a Mark — and the Mark that
+carries it is the one nobody takes (`BL-225`: Harmony Mark grants none, and all four share `MarkKey`).
+
+**Your call — three shapes:**
+1. **Put Clarity and Fortitude on the shelf**, laddered and priced like Ward/Body. Buffing then
+   visibly changes how often you get held. Simplest, and it makes the shelf honest.
+2. **Leave it — control resistance is what a BUFFER CLASS is for.** Defensible: it gives the
+   Lightbringer something the NPC can never sell, which is the argument for every class buff.
+3. **Only the low rungs on the shelf**, the top two class-only — the compromise the Ward ladder
+   already uses.
+
+### 2. ✅ RULED AND BUILT (0.142.0) — they landed the same because it WAS the same roll
+
+`save = Magical` (SPT) and `xmod = 0.70` on both — his own CSV rows, *"(success chance x0.7)"* each.
+And **a class grants no stats** (2026-08-10), so the only thing separating the two casters is base
+ATK: Elf Magus **38**, Demon Magus **43**. Five points of ATK is worth about **one percentage point**
+in the contest. 23% vs 24% is not a coincidence — it is the design holding.
+
+⚠ **The lever, if you want them to differ, is the `xmod` in the CSV, not a stat.** Two same-school
+debuffs at the same multiplier will always land within a point of each other no matter who casts them.
+
+⚠ **Frost Pierce is a genuinely different axis** and worth knowing: it opens a **Bleed**, and a DoT's
+save comes from the FAMILY, not the skill's `DebuffSchool` (your 2026-09-10 ruling) — so it is
+**AGI vs CON**, and no amount of SPT resistance will ever touch it. That is why its row does not move
+even on the full shelf.
+
+---
+
+**`BL-230` §2 closed 2026-09-13 — built as 0.142.0.** Your three rulings, verbatim:
+
+1. *"why bleed is agi vs con? Physical buffs should be atk vs con magical atk vs spt"* → **the attacker
+   is always ATK.** The AGI branch is gone from both roll sites, now one `GameLoopService.CcContest`.
+2. *"remove the 3 skills the success decrease .. they don't Harm as a buff removal or bind or silence
+   … not sure kill if they land"* → Frost Spikes **0.70 → 0.85**, Frost Pierce **0.50 → 0.85**,
+   Witches Curse **0.70 → 1.00**. Scarecrow keeps 0.50 and Arcane Void 0.30: a fear and a cancel take
+   the target's turn, which is the line you drew.
+3. Your 0.85-not-1.00 reason is recorded in the code and measurable: `--slowstack`.
+
+What is still 🔵 and owed is **§1 only** — whether Clarity/Fortitude belong on the NPC shelf.
 
 ---
 

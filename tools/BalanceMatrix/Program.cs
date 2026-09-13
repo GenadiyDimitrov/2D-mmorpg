@@ -1332,6 +1332,68 @@ if (args.Length > 0 && args[0] == "--mres") { MagicResistChain(args); return; }
 //  layer of the product, for a x1.00 magic debuff and for a stun.
 if (args.Length > 0 && args[0] == "--ccprofile") { CcProfile(args); return; }
 
+// `--slowstack` — HIS 68 (2026-09-13): *"If we make the pierce a atk vs con it adds 20% slow and the
+// 45% slow from spike it makes the archer with 68 speed"*. Slows SUM (Entity.SlowFraction, clamped at
+// 90%), so Frost Spikes' own slow and the BLEED FAMILY's flat 20% add rather than compound — and the
+// bleed's half is authored in DotTiers, not on Frost Pierce, so neither skill's row advertises it.
+// This is the one place both halves are printed together.
+if (args.Length > 0 && args[0] == "--slowstack")
+{
+    int L = args.Length > 1 && int.TryParse(args[1], out var sl) ? sl : 90;
+    var spikes = SkillCatalog.Get(SkillCatalog.FrostSpikes)!;
+    int topRung = spikes.Levels?.Length ?? 1;
+    float spikeSlow = spikes.MagnitudeOf(SkillEffect.Slow, ModifierMode.Percent, topRung);
+    float bleedSlow = DotTiers.Rider(DotKind.Bleed, DotTiers.MaxCurableTier).Mags
+        .Where(m => m.Effect == SkillEffect.Slow).Select(m => m.Value).FirstOrDefault();
+
+    Console.WriteLine();
+    Console.WriteLine($"=== SLOW STACK — level {L}, epic gear ===");
+    Console.WriteLine($"    Frost Spikes top rung (L{topRung}) slow : {spikeSlow,6:P0}");
+    Console.WriteLine($"    Bleed family slow (DotTiers, flat)     : {bleedSlow,6:P0}");
+    Console.WriteLine($"    They SUM — Entity.SlowFraction, clamped at 90%, NOT a product.");
+    Console.WriteLine();
+    Console.WriteLine($"  {"character",-22} {"dress",-26} {"clean",7} {"spikes",8} {"bleed",8} {"BOTH",8}");
+
+    var who = new (string Name, Func<Entity> Make)[]
+    {
+        ("Hunter (Demon bow)",  () => Who(Race.Demon, BaseClass.Fighter, Discipline.Hunter,   L, "epic")),
+        ("Sharpshooter (Human)",() => Who(Race.Human, BaseClass.Fighter, Discipline.Sharpshooter, L, "epic")),
+        ("Ravager (warrior)",   () => Who(Race.Human, BaseClass.Fighter, Discipline.Ravager,  L, "epic")),
+    };
+    var dress = new (string Label, Action<Entity> Wear)[]
+    {
+        ("bare",                     _ => { }),
+        ("+ FULL shelf (harmonies)", e => ApplyNpcBuffs(e, fullShelf: true)),
+        ("+ WARCHANTER + Holy Mark", e => { ApplyNpcBuffs(e, fullShelf: true); WarchanterParty(e); }),
+    };
+    static void Slow(Entity e, float pct, string key)
+    {
+        if (pct <= 0f) return;
+        e.Buffs.Add(new Game.Server.Simulation.BuffInstance
+        {
+            Effect = SkillEffect.Slow,
+            Magnitudes = new[] { new EffectMagnitude(SkillEffect.Slow, pct, ModifierMode.Percent) },
+            TicksRemaining = int.MaxValue, Name = key, Key = key,
+        });
+        e.RecomputeDerived();
+    }
+    foreach (var (name, make) in who)
+        foreach (var (label, wear) in dress)
+        {
+            Entity Fresh() { var e = make(); wear(e); return e; }
+            var clean = Fresh();
+            var a = Fresh(); Slow(a, spikeSlow, "slow");
+            var b = Fresh(); Slow(b, bleedSlow, "bleed");
+            var c = Fresh(); Slow(c, spikeSlow, "slow"); Slow(c, bleedSlow, "bleed");
+            Console.WriteLine($"  {name,-22} {label,-26} {clean.EffectiveSpeed,7:0} {a.EffectiveSpeed,8:0}"
+                            + $" {b.EffectiveSpeed,8:0} {c.EffectiveSpeed,8:0}");
+        }
+    Console.WriteLine();
+    Console.WriteLine($"  ⚠ BOTH = −{(spikeSlow + bleedSlow):P0} off the buffed speed. That is the number behind his");
+    Console.WriteLine("    0.85 on the two frost skills: the curse got 1.00 because it carries no control.");
+    return;
+}
+
 if (args.Length > 0 && args[0] == "--blowrate")
 {
     // `BL-188` — THE BLOW LANDING RATE, measured, not derived. Prints the whole product he
@@ -6548,11 +6610,22 @@ static void CcLand(string[] args)
         ("Bulwark (tank)",    () => Who(Race.Human, BaseClass.Fighter, Discipline.Bulwark,      L, q)),
         ("Ravager (warrior)", () => Who(Race.Human, BaseClass.Fighter, Discipline.Ravager,      L, q)),
         ("Sharpshooter",      () => Who(Race.Human, BaseClass.Fighter, Discipline.Sharpshooter, L, q)),
+        // 🔑 HIS DEFENDER, 2026-09-13: *"a 90lvl demon archer"*. The Demon rogue's bow branch is the
+        //    HUNTER (Venomweaver / Hunter) — Sharpshooter is the HUMAN one, so the row above is not
+        //    the character he was shooting at. See ThirdClasses.Of(Race.Demon, Archetype.Rogue).
+        ("Hunter (Demon bow)", () => Who(Race.Demon, BaseClass.Fighter, Discipline.Hunter,      L, q)),
     };
 
+    // 🔑 THE NUKER IS LISTED THREE TIMES, ONCE PER RACE, AND THAT IS THE POINT (2026-09-13). His
+    //    question — *"an ice master (frost spike/Pierce) or an inferno master (whiches curse) land
+    //    somehow the same"* — cannot be answered by one Human row: the nuker's THREE identities ARE
+    //    the three races (`BL-97`), and each learns a different set of contested debuffs. Same stats,
+    //    different kit — which is exactly what makes the comparison worth printing.
     var attackers = new (string Name, Func<Entity> Make)[]
     {
-        ("Magus (nuker)",     () => Who(Race.Human, BaseClass.Mage,    Discipline.Magus,        L, q)),
+        ("Magus — Arcane Master (Human)", () => Who(Race.Human, BaseClass.Mage, Discipline.Magus, L, q)),
+        ("Magus — Ice Master (Elf)",      () => Who(Race.Elf,   BaseClass.Mage, Discipline.Magus, L, q)),
+        ("Magus — Inferno Master (Demon)",() => Who(Race.Demon, BaseClass.Mage, Discipline.Magus, L, q)),
         ("Lightbringer",      () => Who(Race.Human, BaseClass.Mage,    Discipline.Lightbringer, L, q)),
         ("Venomweaver",       () => Who(Race.Demon, BaseClass.Fighter, Discipline.Venomweaver,  L, q)),
         ("Nullblade (dual)",  () => Who(Race.Human, BaseClass.Fighter, Discipline.Nullblade,    L, q)),

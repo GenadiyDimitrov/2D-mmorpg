@@ -7,12 +7,77 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.141.2**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.142.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-13 (latest) — 0.141.2: the Grand Rune was missing the cast-time cut
+## 2026-09-13 (latest) — 0.142.0: the attacker is always ATK, and three riders stop apologising
+
+⚠ **NEW APK not required** — all server-side. No protocol bump, no `game.db` delete.
+⚠ **`nuker 3rd.csv` and `nuker 4th.csv` moved with the code**, same commit: 87 rows.
+
+### 1. `ATK vs CON` / `ATK vs SPT` — the whole rule, in two lines
+
+> *"Still why bleed is agi vs con ? Physical buffs should be atk vs con magical atk vs spt ?"*
+
+A bleed or a venom rolled the caster's **AGI**; everything else rolled **ATK**. That made the
+*attacking* half of the contest depend on the EFFECT rather than on the channel — so an Ice Master's
+Frost Pierce and his Frost Spikes threw two different stats at the same archer, and the nuker's bleed
+rolled a different stat from the archer's identical one. Now:
+
+```
+physical debuff → ATK vs CON
+magical  debuff → ATK vs SPT
+```
+
+The **defending** side is untouched and still comes from the DoT **family**, not the skill's own
+`DebuffSchool` (your 2026-09-10 ruling) — so a bleed is saved by CON even when the spell that opened
+it is `Magical`. Which stat throws the punch and which stat takes it are two different questions.
+
+🔑 Both roll sites — the cast path and the on-hit rider path — now read one
+`GameLoopService.CcContest`. They had **already drifted apart once** (the comment on the second site
+said so), and this is three readings each; leaving them as two copies was the bug waiting to happen.
+
+### 2. The three riders
+
+> *"maybe we need to remove the 3 skills the success decrease .. As they don't Harm as a buff removal
+> or bind or silence etc... They are not sure kill if the land"*
+
+| skill | was | now | why |
+|---|---|---|---|
+| **Witches Curse** | ×0.70 | **×1.00** | carries no control at all — only an M.Def cut |
+| **Frost Spikes** | ×0.70 | **×0.85** | carries a slow |
+| **Frost Pierce** | ×0.50 | **×0.85** | its bleed carries the family's 20% slow |
+| Witches Scarecrow | ×0.50 | ×0.50 | a **fear** takes the target's turn |
+| Arcane Void | ×0.30 | ×0.30 | a **cancel** takes their buff bar |
+
+🔑 **The test you drew is what landing TAKES AWAY, not how big the number is.** A cancel, hold,
+silence or fear costs the target their turn and keeps its steep penalty. A slow, a bleed and an M.Def
+cut only make the fight worse — you play through all three — so they are priced as riders.
+
+### 3. Why 0.85 and not 1.00 on the two frost skills — your own number, confirmed
+
+> *"If we make the pierce a atk vs con it adds 20% slow and the 45% slow from spike it makes the
+> archer with 68 speed"*
+
+Measured (`--slowstack`, new): Frost Spikes' top rung slows **45%**, the **bleed family's** own flat
+slow is **20%** — authored in `DotTiers`, so *neither skill's row advertises it* — and slows **SUM**
+(`Entity.SlowFraction`, clamped 90%), they do not compound. A fully-buffed Demon Hunter runs **216**
+and lands on **76** with both. Your 68 was the right shape and very nearly the right number.
+
+### What it does, vs a level-90 Demon Hunter
+
+| | bare | + full shelf | + Warchanter + Holy Mark |
+|---|---|---|---|
+| Frost Pierce | 13% → **23%** | 13% → **23%** | 9% → **15%** |
+| Frost Spikes | 23% → **28%** | 20% → **24%** | 13% → **15%** |
+| Witches Curse | 24% → **35%** | 21% → **30%** | 13% → **19%** |
+
+⚠ And the two nukers are no longer twins: Witches Curse **35%** against Frost Spikes **28%**, which is
+the ×1.00-vs-×0.85 plus the Demon Magus's 43 ATK against the Elf's 38.
+
+## 2026-09-13 — 0.141.2: the Grand Rune was missing the cast-time cut
 
 ⚠ **NEW APK not required** — cast length is computed server-side and sent to the client. No protocol
 bump, no `game.db` delete.
