@@ -1330,6 +1330,337 @@ if (args.Length > 0 && args[0] == "--mres") { MagicResistChain(args); return; }
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 //  `--ccprofile` — the two tables he asked for on 2026-09-13: one row per DEFENDER, one column per
 //  layer of the product, for a x1.00 magic debuff and for a stun.
+
+
+// ============================================================================================
+//  `--dump-landmod-csv` — WRITES `docs/data/debuff_landmods.csv`, THE DEBUFF LANDING FILE.
+//
+//  His ask, 2026-09-13: *"take all the debuffs each single skill make them in a table and put the
+//  modifiers there -> name of skill, I'd of skill, class that learns it, description of the skill
+//  (what it does and what stat it debuffs - % of max rung), saving stat, success modifier. Then each
+//  new debuff to go there and to ask for modifier edit ... The current classes csv descriptions to
+//  remove the modifiers and those modifiers to be red from that new file"*.
+//
+//  🔑 THE FILE IS THE AUTHORITY FOR THE MODIFIER, the way the class CSVs are for everything else —
+//     same contract (`CLAUDE.md`): he edits a row, the code moves to match; a skill is retuned in
+//     chat, the row moves with it in the SAME commit. `SkillCsvSeed --check` reads it back.
+//  ⚠ THE SEED COLUMNS ARE REGENERATED, THE `SUCCESS` COLUMN IS HIS. Running this again REFRESHES the
+//    derived columns and PRESERVES whatever he has authored in SUCCESS — see MergeExisting.
+// ============================================================================================
+if (args.Length > 0 && args[0] == "--dump-landmod-csv")
+{
+    string outPath = args.Length > 1 && !args[1].StartsWith("--")
+        ? args[1] : "docs/data/debuff_landmods.csv";
+
+    // ---- 1. WHO LEARNS IT. There is no reverse index, so build one: every (race, discipline) the
+    //         game has, including the base/2nd tier (discipline null) and the ascended 4th.
+    var learners = new Dictionary<string, SortedSet<string>>(StringComparer.Ordinal);
+    static BaseClass BaseOf(Archetype a) =>
+        a == Archetype.Nuker || a == Archetype.Healer ? BaseClass.Mage : BaseClass.Fighter;
+    foreach (Race race in new[] { Race.Human, Race.Elf, Race.Demon })
+    {
+        var keys = new List<(Archetype? Arch, Discipline? Disc, string Label)>();
+        foreach (Archetype a in Enum.GetValues<Archetype>())
+            keys.Add((a, null, a.ToString()));
+        foreach (Discipline d in Enum.GetValues<Discipline>())
+            keys.Add((Disciplines.Parent(d), d, d.ToString()));
+        foreach (var (arch, disc, label) in keys)
+        {
+            var bc = BaseOf(arch ?? Archetype.Tank);
+            foreach (bool fourth in new[] { false, true })
+                foreach (var cs in ClassSkills.Cumulative(race, bc, arch, disc, fourth))
+                {
+                    if (!learners.TryGetValue(cs.SkillId, out var set))
+                        learners[cs.SkillId] = set = new SortedSet<string>(StringComparer.Ordinal);
+                    set.Add(label + "/" + race);
+                }
+        }
+    }
+    // Collapse "Magus/Human, Magus/Elf, Magus/Demon" to "Magus"; keep the race when it is a split.
+    static string ClassLabel(SortedSet<string> raw)
+    {
+        // ⚠ NOT ALWAYS A MOB SKILL. Several of these are ORPHANED PLAYER DEFS — the 2026-08-10 40+
+        //   purge and the nuker rebuild deleted the learn assignments and deliberately kept the defs
+        //   (LearnedSkills persists ids, so deleting a def breaks anyone who bought one). A row like
+        //   this is telling him not to spend a modifier on something nobody can cast.
+        if (raw.Count == 0) return "(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)";
+        var byClass = raw.Select(s => s.Split('/')).GroupBy(p => p[0], p => p[1]);
+        var parts = byClass.Select(g =>
+            g.Distinct().Count() >= 3 ? g.Key : g.Key + "(" + string.Join("+", g.Distinct().OrderBy(x => x)) + ")");
+        return string.Join(" | ", parts.OrderBy(x => x, StringComparer.Ordinal));
+    }
+
+    // ---- 2. WHAT THE CAST DOES AT ONCE — his new pricing axis.
+    //   *"dmg + debuff should have lower chance than a solo debuff ... a solo slow or a solo dot
+    //     should be at x1 but combined should be x0.85 ... armor break should stay as solo debuff
+    //     and nothing else at x1.5 but witches curse that does dmg should be x0.85"*
+    static (bool Dmg, int Payloads, string Shape) ShapeOf(SkillDef d, SkillEffect eff, EffectMagnitude[] mags)
+    {
+        bool dmg = (eff & (SkillEffect.MagicDamage | SkillEffect.PhysicalDamage)) != 0 || d.PowerAt(1) > 0;
+        int n = 0;
+        foreach (var f in new[] { SkillEffect.Stun, SkillEffect.Root, SkillEffect.Fear, SkillEffect.Slow,
+                                  SkillEffect.Bleed, SkillEffect.Poison, SkillEffect.Venom,
+                                  SkillEffect.DebuffDef, SkillEffect.DebuffAtk, SkillEffect.DebuffAtkSpeed,
+                                  SkillEffect.DebuffCastSpeed, SkillEffect.DebuffHealRecv, SkillEffect.Cancel })
+            if ((eff & f) != 0) n++;
+        foreach (var f in new[] { SkillEffect.BuffMagicDef, SkillEffect.BuffDef, SkillEffect.BuffPhysAtk,
+                                  SkillEffect.BuffMagAtk, SkillEffect.BuffMoveSpeed, SkillEffect.BuffAtkSpeed,
+                                  SkillEffect.BuffCastSpeed })
+            if (mags.Any(m => m.Effect == f && m.Value < 0f)) n++;
+        if (d.Charms) n++;
+        if (d.Pulls) n++;
+        if (d.SilencePhysical || d.SilenceMagical) n++;
+        if (d.CcResistMagical < 0f || d.CcResistPhysical < 0f) n++;
+        if (d.MpReceivedPct != 0f) n++;
+        n = Math.Max(1, n);
+        string shape = (dmg ? "dmg+" : "") + (n == 1 ? "1 debuff" : n + " debuffs");
+        if (!dmg) shape = n == 1 ? "DEBUFF ONLY (1)" : "DEBUFF ONLY (" + n + ")";
+        return (dmg, n, shape);
+    }
+
+    static string Payload(SkillDef d, SkillEffect eff, EffectMagnitude[] mags)
+    {
+        var p = new List<string>();
+        var kind = (eff & SkillEffect.AnyDot) != 0 ? DotTiers.KindOf(d.DotKind, eff) : DotKind.None;
+        if (kind != DotKind.None) p.Add(kind + " DoT (+ its family rider)");
+        foreach (var m in mags.OrderBy(m => m.Effect.ToString(), StringComparer.Ordinal))
+        {
+            // ⚠ A `Debuff*` magnitude is authored POSITIVE and SUBTRACTS (DebuffDef 0.40 = −40% P.Def),
+            //   while a `Buff*` one used as a curse is authored NEGATIVE (BuffMagicDef −0.35). Printing
+            //   the raw sign gave "P.Def - +40%". Flip the debuff family so every row reads as a cut.
+            bool subtracts = m.Effect is SkillEffect.DebuffDef or SkillEffect.DebuffAtk
+                or SkillEffect.DebuffAtkSpeed or SkillEffect.DebuffCastSpeed
+                or SkillEffect.DebuffHealRecv or SkillEffect.Slow;
+            float val = subtracts ? -Math.Abs(m.Value) : m.Value;
+            string v = m.Mode == ModifierMode.Percent || Math.Abs(val) <= 3f
+                ? (val * 100).ToString("+0;-0") + "%" : val.ToString("+0;-0");
+            p.Add(Pretty(m.Effect) + " " + v);
+        }
+        if (d.Charms) p.Add("charm");
+        if (d.Pulls) p.Add("pull");
+        if (d.SilencePhysical) p.Add("silence physical");
+        if (d.SilenceMagical) p.Add("silence magical");
+        if (d.DispelCount > 0) p.Add("cancels " + d.DispelCount + " buff(s)");
+        if (d.CcResistMagical != 0f) p.Add("SPT resist " + (d.CcResistMagical * 100).ToString("+0;-0") + "%");
+        if (d.CcResistPhysical != 0f) p.Add("CON resist " + (d.CcResistPhysical * 100).ToString("+0;-0") + "%");
+        if (d.MpReceivedPct != 0f) p.Add("MP received -" + (d.MpReceivedPct * 100).ToString("0") + "%");
+        foreach (var f in new[] { SkillEffect.Stun, SkillEffect.Root, SkillEffect.Fear,
+                                  SkillEffect.DebuffHealRecv, SkillEffect.Slow })
+            if ((eff & f) != 0 && !p.Any(s => s.StartsWith(Pretty(f), StringComparison.Ordinal)))
+                p.Add(Pretty(f));
+        return p.Count == 0 ? "(no payload on the def - CHECK IT)" : string.Join("; ", p);
+    }
+
+    static string Pretty(SkillEffect f) => f switch
+    {
+        SkillEffect.BuffMagicDef => "M.Def",
+        SkillEffect.DebuffDef => "P.Def",
+        SkillEffect.BuffDef => "P.Def",
+        SkillEffect.BuffPhysAtk => "P.Atk",
+        SkillEffect.BuffMagAtk => "M.Atk",
+        SkillEffect.DebuffAtk => "P/M.Atk",
+        SkillEffect.DebuffAtkSpeed => "Atk.Spd",
+        SkillEffect.DebuffCastSpeed => "Cast.Spd",
+        SkillEffect.BuffMoveSpeed => "Move.Spd",
+        SkillEffect.DebuffHealRecv => "HP received",
+        SkillEffect.Slow => "Slow",
+        _ => f.ToString(),
+    };
+
+    // ---- 3. PRESERVE HIS COLUMN. Re-running must never overwrite an authored SUCCESS value.
+    var authored = new Dictionary<string, string>(StringComparer.Ordinal);
+    if (File.Exists(outPath))
+        foreach (var line in File.ReadAllLines(outPath).Skip(1))
+        {
+            var c = SplitCsv(line);
+            if (c.Length > 5 && c[1].Length > 0) authored[c[1]] = c[5];
+        }
+
+    var sb = new System.Text.StringBuilder();
+    sb.AppendLine("SKILL,SKILL_ID,CLASS,DESCR,SAVE,SUCCESS,SHAPE,IN_CODE");
+    int rows = 0, drift = 0;
+    foreach (var d in SkillCatalog.AllSkills.OrderBy(x => x.Name, StringComparer.Ordinal)
+                                            .ThenBy(x => x.Id, StringComparer.Ordinal))
+    {
+        if (d.Passive is not null) continue;
+        if (!SkillMath.IsHostile(d)) continue;
+        int top = Math.Max(1, d.Levels?.Length ?? 1);
+        var eff = (d.StackLevelAt(top)?.Effect ?? d.Effect) | d.Effect;
+        var mags = (d.MagnitudesAt(top) ?? d.Magnitudes ?? Array.Empty<EffectMagnitude>()).ToArray();
+        if ((eff & SkillEffect.Taunt) != 0 && d.DebuffSchool == DebuffSchool.None) continue;  // no roll at all
+
+        var kind = (eff & SkillEffect.AnyDot) != 0 ? DotTiers.KindOf(d.DotKind, eff) : DotKind.None;
+        var school = kind != DotKind.None ? DotTiers.Save(kind) : d.DebuffSchool;
+        string save = school == DebuffSchool.Magical ? "SPT"
+                    : school == DebuffSchool.Physical ? "CON" : "none (fizzle roll)";
+        float now = d.DebuffLandModAt(top);
+        var (_, _, shape) = ShapeOf(d, eff, mags);
+        string success = authored.TryGetValue(d.Id, out var a) && a.Length > 0
+            ? a : now.ToString("0.##");
+        if (Math.Abs(ParseOr(success, now) - now) > 0.001f) drift++;
+        learners.TryGetValue(d.Id, out var who);
+
+        sb.AppendLine(string.Join(",",
+            Q(d.Name), Q(d.Id), Q(ClassLabel(who ?? new SortedSet<string>(StringComparer.Ordinal))),
+            Q(Payload(d, eff, mags)), Q(save), Q(success), Q(shape), Q(now.ToString("0.##"))));
+        rows++;
+    }
+
+    Directory.CreateDirectory(Path.GetDirectoryName(outPath)!);
+    File.WriteAllText(outPath, sb.ToString());
+    Console.WriteLine();
+    Console.WriteLine("Wrote " + outPath + "  (" + rows + " debuff skills)");
+    Console.WriteLine("  SUCCESS  = HIS column. Edit it; re-running preserves it.");
+    Console.WriteLine("  IN_CODE  = what the build ships today, regenerated every run.");
+    if (drift > 0)
+        Console.WriteLine("  >> " + drift + " row(s) where SUCCESS and IN_CODE DISAGREE - the code owes them.");
+    else
+        Console.WriteLine("  OK - every authored SUCCESS matches the code.");
+    return;
+
+    static string Q(string s) => s.Contains(',') || s.Contains('"')
+        ? "\"" + s.Replace("\"", "\"\"") + "\"" : s;
+    static float ParseOr(string s, float fallback) =>
+        float.TryParse(s.Trim().TrimStart('x', 'X'), System.Globalization.NumberStyles.Float,
+                       System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : fallback;
+    static string[] SplitCsv(string line)
+    {
+        var outp = new List<string>(); var cur = new System.Text.StringBuilder(); bool q = false;
+        for (int i = 0; i < line.Length; i++)
+        {
+            char ch = line[i];
+            if (ch == '"') { if (q && i + 1 < line.Length && line[i + 1] == '"') { cur.Append('"'); i++; } else q = !q; }
+            else if (ch == ',' && !q) { outp.Add(cur.ToString()); cur.Clear(); }
+            else cur.Append(ch);
+        }
+        outp.Add(cur.ToString());
+        return outp.ToArray();
+    }
+}
+// ============================================================================================
+//  `--landmods` — EVERY LANDING MODIFIER IN THE GAME, WITH WHAT THE DEBUFF ACTUALLY DOES.
+//
+//  His ask, 2026-09-13: *"Show me all landing modifiers on what debuffs (name + stat decrease) and
+//  what is the saving stat ... Stuns/hold/fears/charm should be x0.7, All dots can be at x1, all
+//  mdef decreases and p Def decreases to X1, All p/m.atk and a/c/m.speed x0.85, buff cancel x0.5..
+//  Somethig like that."*
+//
+//  🔑 THE POINT OF THE `want` COLUMN IS TO FIND WHAT HIS FIVE BUCKETS DO **NOT** COVER. A schema is
+//     easy to state and the exceptions are the whole job — so every skill his rule cannot classify
+//     prints as `UNRULED` rather than being quietly defaulted to 1.00.
+//  ⚠ IT CHANGES NOTHING. This is a report; the retune is a separate edit once he has ruled on the
+//    leftovers. `docs/balance/DebuffLandMods.md` is generated from here — never written by hand.
+// ============================================================================================
+if (args.Length > 0 && args[0] == "--landmods")
+{
+    // --- his five buckets, most-restrictive first. The ORDER is the rule: a skill that both holds
+    //     and cuts defence is priced as the hold, because that is the half that takes the turn.
+    static (string Bucket, float Want) Classify(SkillDef d, SkillEffect eff, EffectMagnitude[] mags)
+    {
+        bool Neg(SkillEffect f) => mags.Any(m => m.Effect == f && m.Value < 0f);
+        bool Has(SkillEffect f) => (eff & f) != 0;
+
+        if (d.DispelCount > 0 || Has(SkillEffect.Cancel))                  return ("cancel", 0.50f);
+        if (d.SilencePhysical || d.SilenceMagical)                         return ("silence", -1f);
+        if (Has(SkillEffect.Stun) || Has(SkillEffect.Root) || Has(SkillEffect.Fear)
+            || d.Charms || d.Pulls)                                        return ("control", 0.70f);
+        if ((eff & SkillEffect.AnyDot) != 0 || d.DotKind != DotKind.None)  return ("dot", 1.00f);
+        if (Has(SkillEffect.DebuffDef) || Neg(SkillEffect.BuffDef)
+            || Neg(SkillEffect.BuffMagicDef))                              return ("defence", 1.00f);
+        if (Has(SkillEffect.DebuffAtk) || Neg(SkillEffect.BuffPhysAtk) || Neg(SkillEffect.BuffMagAtk)
+            || Has(SkillEffect.DebuffAtkSpeed) || Neg(SkillEffect.BuffAtkSpeed)
+            || Has(SkillEffect.DebuffCastSpeed) || Neg(SkillEffect.BuffCastSpeed)
+            || Has(SkillEffect.Slow) || Neg(SkillEffect.BuffMoveSpeed))    return ("offence/speed", 0.85f);
+        return ("UNRULED", -1f);
+    }
+
+    // --- what the debuff DOES, in his words: "name + stat decrease".
+    static string Payload(SkillDef d, SkillEffect eff, EffectMagnitude[] mags)
+    {
+        var p = new List<string>();
+        if (d.DotKind != DotKind.None || (eff & SkillEffect.AnyDot) != 0)
+        {
+            var kind = DotTiers.KindOf(d.DotKind, eff);
+            if (kind != DotKind.None) p.Add(kind + " DoT + family rider");
+        }
+        foreach (var m in mags.OrderBy(m => m.Effect.ToString(), StringComparer.Ordinal))
+        {
+            string v = m.Mode == ModifierMode.Percent || Math.Abs(m.Value) <= 3f
+                ? (m.Value * 100).ToString("+0;-0") + "%" : m.Value.ToString("+0;-0");
+            p.Add(m.Effect + " " + v);
+        }
+        if (d.Charms) p.Add("CHARM (takes control)");
+        if (d.Pulls) p.Add("PULL");
+        if (d.SilencePhysical) p.Add("SILENCE physical");
+        if (d.SilenceMagical) p.Add("SILENCE magical");
+        if (d.DispelCount > 0) p.Add("CANCEL " + d.DispelCount + " buff(s)");
+        if (d.CcResistMagical != 0f) p.Add("SPT resist " + (d.CcResistMagical * 100).ToString("+0;-0") + "%");
+        if (d.CcResistPhysical != 0f) p.Add("CON resist " + (d.CcResistPhysical * 100).ToString("+0;-0") + "%");
+        if (d.MagicCritDamageDebuff != 0f) p.Add("M.crit dmg -" + (d.MagicCritDamageDebuff * 100).ToString("0") + "%");
+        if (d.MagicCritRateDebuff != 0f) p.Add("M.crit rate -" + (d.MagicCritRateDebuff * 100).ToString("0") + "%");
+        if (d.MpReceivedPct != 0f) p.Add("MP received -" + (d.MpReceivedPct * 100).ToString("0") + "%");
+        foreach (var f in new[] { SkillEffect.Stun, SkillEffect.Root, SkillEffect.Fear,
+                                  SkillEffect.DebuffHealRecv, SkillEffect.Slow })
+            if ((eff & f) != 0 && !p.Any(s => s.StartsWith(f.ToString(), StringComparison.Ordinal)))
+                p.Add(f.ToString());
+        return p.Count == 0 ? "(no payload on the def — check it)" : string.Join("; ", p);
+    }
+
+    static DebuffSchool SaveOf(SkillDef d, SkillEffect eff)
+    {
+        var kind = (eff & SkillEffect.AnyDot) != 0 ? DotTiers.KindOf(d.DotKind, eff) : DotKind.None;
+        return kind != DotKind.None ? DotTiers.Save(kind) : d.DebuffSchool;
+    }
+
+    static string Cut(string s, int n) => s.Length <= n ? s : s.Substring(0, n - 1) + "…";
+
+    var rows = new List<(string Bucket, float Want, string Name, string Save, float Mod, string Pay)>();
+    foreach (var d in SkillCatalog.AllSkills)
+    {
+        if (d.Passive is not null) continue;
+        if (!SkillMath.IsHostile(d)) continue;
+        int top = Math.Max(1, d.Levels?.Length ?? 1);
+        var eff = (d.StackLevelAt(top)?.Effect ?? d.Effect) | d.Effect;
+        var mags = (d.MagnitudesAt(top) ?? d.Magnitudes ?? Array.Empty<EffectMagnitude>()).ToArray();
+        // Taunts have no landing roll at all (`BL-123`) — hostile, but never contested.
+        if ((eff & SkillEffect.Taunt) != 0 && d.DebuffSchool == DebuffSchool.None) continue;
+        var (bucket, want) = Classify(d, eff, mags);
+        var school = SaveOf(d, eff);
+        rows.Add((bucket, want, d.Name,
+                  school == DebuffSchool.Magical ? "SPT" : school == DebuffSchool.Physical ? "CON" : "none",
+                  d.DebuffLandModAt(top), Payload(d, eff, mags)));
+    }
+
+    Console.WriteLine();
+    Console.WriteLine("=== EVERY LANDING MODIFIER, ITS PAYLOAD, AND THE SAVING STAT ===");
+    Console.WriteLine("    `now` = what ships today.  `want` = HIS SCHEMA (2026-09-13), applied mechanically.");
+    Console.WriteLine("      cancel x0.50 | control (stun/hold/fear/charm) x0.70 | dot x1.00");
+    Console.WriteLine("      defence cuts (P.Def/M.Def) x1.00 | offence & speed cuts x0.85");
+    Console.WriteLine("    A skill in two buckets is priced by the FIRST in that order - the half that takes the turn.");
+    Console.WriteLine();
+
+    string[] order = { "cancel", "silence", "control", "dot", "defence", "offence/speed", "UNRULED" };
+    foreach (var bucket in order)
+    {
+        var block = rows.Where(r => r.Bucket == bucket).OrderBy(r => r.Name, StringComparer.Ordinal).ToList();
+        if (block.Count == 0) continue;
+        float want = block[0].Want;
+        Console.WriteLine("--- " + bucket.ToUpperInvariant() + "  ->  "
+                        + (want < 0 ? "NO RULE GIVEN" : "x" + want.ToString("0.00"))
+                        + "   (" + block.Count + " skills)");
+        Console.WriteLine(string.Format("  {0,-24} {1,-5} {2,5} {3,6}  payload", "skill", "save", "now", "want"));
+        foreach (var r in block)
+        {
+            string flag = want < 0 ? " ?" : Math.Abs(r.Mod - want) < 0.001f ? " ." : " <";
+            Console.WriteLine(string.Format("  {0,-24} {1,-5} {2,5:0.00} {3,6}{4} {5}",
+                Cut(r.Name, 24), r.Save, r.Mod, want < 0 ? "-" : want.ToString("0.00"), flag, Cut(r.Pay, 92)));
+        }
+        Console.WriteLine();
+    }
+    Console.WriteLine("  " + rows.Count + " skills.  `<` = today differs from his schema.  `?` = his rule does not cover it.");
+    Console.WriteLine("  NOTHING WAS CHANGED BY THIS COMMAND. It is a report.");
+    return;
+}
 if (args.Length > 0 && args[0] == "--ccprofile") { CcProfile(args); return; }
 
 // `--slowstack` — HIS 68 (2026-09-13): *"If we make the pierce a atk vs con it adds 20% slow and the

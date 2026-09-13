@@ -255,6 +255,12 @@ internal static class Check
             problems += Compare(csv, code, spec);
         }
 
+        // 🔑 THE DEBUFF LANDING FILE IS CHECKED HERE TOO, and deliberately inside `--check` rather than
+        //    behind a flag of its own: his rule is that the data files and the game move together *at
+        //    all times*, and a verifier you have to remember to run separately is one you forget.
+        //    `Specs` above walks the class CSVs; this walks `docs/data/debuff_landmods.csv`.
+        problems += LandMods.Run(dir);
+
         Console.WriteLine();
         Console.WriteLine(problems == 0
             ? "No discrepancies. Every authored row matches a registered skill, and vice versa."

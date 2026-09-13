@@ -254,50 +254,50 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 88,Mana Ray,mana_ray,Magic/Active,,,600,0,enemy/single,2,2,0,Damages the MP of an enemy with +175 Power (Half effect on monsters),430,0,100kk
 90,Mana Ray,mana_ray,Magic/Active,,,600,0,enemy/single,2,2,0,Damages the MP of an enemy with +180 Power (Half effect on monsters),440,0,100kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Mana Strain----------------------------
-76,Mana Strain,mana_strain,Magic/Debuff,,,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 205% (success chance x0.5),69,6.5kk,1kk
-78,Mana Strain,mana_strain,Magic/Debuff,,,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 210% (success chance x0.5),73,16kk,1kk
-80,Mana Strain,mana_strain,Magic/Debuff,,,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 215% (success chance x0.5),79,0,5kk
-82,Mana Strain,mana_strain,Magic/Debuff,,,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 220% (success chance x0.5),95,0,10kk
-84,Mana Strain,mana_strain,Magic/Debuff,,,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 225% (success chance x0.5),99,0,30kk
-86,Mana Strain,mana_strain,Magic/Debuff,,,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 230% (success chance x0.5),105,0,75kk
-88,Mana Strain,mana_strain,Magic/Debuff,,,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 240% (success chance x0.5),111,0,100kk
-90,Mana Strain,mana_strain,Magic/Debuff,,,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 250% (success chance x0.5),115,0,100kk
+76,Mana Strain,mana_strain,Magic/Debuff,,,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 205%,69,6.5kk,1kk
+78,Mana Strain,mana_strain,Magic/Debuff,,,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 210%,73,16kk,1kk
+80,Mana Strain,mana_strain,Magic/Debuff,,,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 215%,79,0,5kk
+82,Mana Strain,mana_strain,Magic/Debuff,,,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 220%,95,0,10kk
+84,Mana Strain,mana_strain,Magic/Debuff,,,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 225%,99,0,30kk
+86,Mana Strain,mana_strain,Magic/Debuff,,,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 230%,105,0,75kk
+88,Mana Strain,mana_strain,Magic/Debuff,,,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 240%,111,0,100kk
+90,Mana Strain,mana_strain,Magic/Debuff,,,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 250%,115,0,100kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Weapon Break----------------------------
-76,Weapon Break,weapon_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Atk and M.Atk by 16% (success chance x1.5),69,6.5kk,1kk
-78,Weapon Break,weapon_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Atk and M.Atk by 17% (success chance x1.5),73,16kk,1kk
-80,Weapon Break,weapon_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Atk and M.Atk by 18% (success chance x1.5),79,0,5kk
-82,Weapon Break,weapon_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Atk and M.Atk by 19% (success chance x1.5),95,0,10kk
-84,Weapon Break,weapon_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Atk and M.Atk by 20% (success chance x1.5),99,0,30kk
-86,Weapon Break,weapon_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Atk and M.Atk by 21% (success chance x1.5),105,0,75kk
-88,Weapon Break,weapon_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Atk and M.Atk by 23% (success chance x1.5),111,0,100kk
-90,Weapon Break,weapon_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Atk and M.Atk by 25% (success chance x1.5),115,0,100kk
+76,Weapon Break,weapon_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Atk and M.Atk by 16%,69,6.5kk,1kk
+78,Weapon Break,weapon_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Atk and M.Atk by 17%,73,16kk,1kk
+80,Weapon Break,weapon_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Atk and M.Atk by 18%,79,0,5kk
+82,Weapon Break,weapon_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Atk and M.Atk by 19%,95,0,10kk
+84,Weapon Break,weapon_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Atk and M.Atk by 20%,99,0,30kk
+86,Weapon Break,weapon_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Atk and M.Atk by 21%,105,0,75kk
+88,Weapon Break,weapon_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Atk and M.Atk by 23%,111,0,100kk
+90,Weapon Break,weapon_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Atk and M.Atk by 25%,115,0,100kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Gravity----------------------------
-76,Gravity,lb_human_gravity,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 23%  (success chance x1),69,6.5kk,1kk,,,Human
-78,Gravity,lb_human_gravity,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 24%  (success chance x1),73,16kk,1kk,,,Human
-80,Gravity,lb_human_gravity,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 25%  (success chance x1),79,0,5kk,,,Human
-82,Gravity,lb_human_gravity,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 26%  (success chance x1),95,0,10kk,,,Human
-84,Gravity,lb_human_gravity,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 27%  (success chance x1),99,0,30kk,,,Human
-86,Gravity,lb_human_gravity,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 28%  (success chance x1),105,0,75kk,,,Human
-88,Gravity,lb_human_gravity,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 29%  (success chance x1),111,0,100kk,,,Human
-90,Gravity,lb_human_gravity,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 30%  (success chance x1),115,0,100kk,,,Human
+76,Gravity,lb_human_gravity,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 23%,69,6.5kk,1kk,,,Human
+78,Gravity,lb_human_gravity,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 24%,73,16kk,1kk,,,Human
+80,Gravity,lb_human_gravity,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 25%,79,0,5kk,,,Human
+82,Gravity,lb_human_gravity,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 26%,95,0,10kk,,,Human
+84,Gravity,lb_human_gravity,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 27%,99,0,30kk,,,Human
+86,Gravity,lb_human_gravity,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 28%,105,0,75kk,,,Human
+88,Gravity,lb_human_gravity,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 29%,111,0,100kk,,,Human
+90,Gravity,lb_human_gravity,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 30%,115,0,100kk,,,Human
 ,,,,,,,,,,,,,,,,,,,----------------------------Bind----------------------------
-76,Bind,lb_elf_bind,Magical Debuff,,,600,0,enemy/single,2.5,5,31,Hold enemy for 31s (success chance x0.7),69,6.5kk,1kk,,,Elf,intentional increasing in duration
-78,Bind,lb_elf_bind,Magical Debuff,,,600,0,enemy/single,2.5,5,32,Hold enemy for 32s (success chance x0.7),73,16kk,1kk,,,Elf
-80,Bind,lb_elf_bind,Magical Debuff,,,600,0,enemy/single,2.5,5,33,Hold enemy for 33s (success chance x0.71),79,0,5kk,,,Elf,Intentionall increasing in chance
-82,Bind,lb_elf_bind,Magical Debuff,,,600,0,enemy/single,2.5,5,34,Hold enemy for 34s (success chance x0.73),95,0,10kk,,,Elf
-84,Bind,lb_elf_bind,Magical Debuff,,,600,0,enemy/single,2.5,5,35,Hold enemy for 35s (success chance x0.75),99,0,30kk,,,Elf
-86,Bind,lb_elf_bind,Magical Debuff,,,600,0,enemy/single,2.5,5,36,Hold enemy for 36s (success chance x0.77),105,0,75kk,,,Elf
-88,Bind,lb_elf_bind,Magical Debuff,,,600,0,enemy/single,2.5,5,38,Hold enemy for 38s (success chance x0.8),111,0,100kk,,,Elf
-90,Bind,lb_elf_bind,Magical Debuff,,,600,0,enemy/single,2.5,5,40,Hold enemy for 40s (success chance x0.8),115,0,100kk,,,Elf
+76,Bind,lb_elf_bind,Magical Debuff,,,600,0,enemy/single,2.5,5,31,Hold enemy for 31s,69,6.5kk,1kk,,,Elf,intentional increasing in duration
+78,Bind,lb_elf_bind,Magical Debuff,,,600,0,enemy/single,2.5,5,32,Hold enemy for 32s,73,16kk,1kk,,,Elf
+80,Bind,lb_elf_bind,Magical Debuff,,,600,0,enemy/single,2.5,5,33,Hold enemy for 33s,79,0,5kk,,,Elf,Intentionall increasing in chance
+82,Bind,lb_elf_bind,Magical Debuff,,,600,0,enemy/single,2.5,5,34,Hold enemy for 34s,95,0,10kk,,,Elf
+84,Bind,lb_elf_bind,Magical Debuff,,,600,0,enemy/single,2.5,5,35,Hold enemy for 35s,99,0,30kk,,,Elf
+86,Bind,lb_elf_bind,Magical Debuff,,,600,0,enemy/single,2.5,5,36,Hold enemy for 36s,105,0,75kk,,,Elf
+88,Bind,lb_elf_bind,Magical Debuff,,,600,0,enemy/single,2.5,5,38,Hold enemy for 38s,111,0,100kk,,,Elf
+90,Bind,lb_elf_bind,Magical Debuff,,,600,0,enemy/single,2.5,5,40,Hold enemy for 40s,115,0,100kk,,,Elf
 ,,,,,,,,,,,,,,,,,,,----------------------------Armor Break----------------------------
-76,Armor Break,lb_ork_armor_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 31% and MDef by 15% (success chance x1.5),69,6.5kk,1kk,,,Demon
-78,Armor Break,lb_ork_armor_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 32% and MDef by 16% (success chance x1.5),73,16kk,1kk,,,Demon
-80,Armor Break,lb_ork_armor_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 33% and MDef by 16% (success chance x1.5),79,0,5kk,,,Demon
-82,Armor Break,lb_ork_armor_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 34% and MDef by 17% (success chance x1.5),95,0,10kk,,,Demon
-84,Armor Break,lb_ork_armor_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 35% and MDef by 17% (success chance x1.5),99,0,30kk,,,Demon
-86,Armor Break,lb_ork_armor_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 36% and MDef by 18% (success chance x1.5),105,0,75kk,,,Demon
-88,Armor Break,lb_ork_armor_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 38% and MDef by 19% (success chance x1.5),111,0,100kk,,,Demon
-90,Armor Break,lb_ork_armor_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 40% and MDef by 20% (success chance x1.5),115,0,100kk,,,Demon
+76,Armor Break,lb_ork_armor_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 31% and MDef by 15%,69,6.5kk,1kk,,,Demon
+78,Armor Break,lb_ork_armor_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 32% and MDef by 16%,73,16kk,1kk,,,Demon
+80,Armor Break,lb_ork_armor_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 33% and MDef by 16%,79,0,5kk,,,Demon
+82,Armor Break,lb_ork_armor_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 34% and MDef by 17%,95,0,10kk,,,Demon
+84,Armor Break,lb_ork_armor_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 35% and MDef by 17%,99,0,30kk,,,Demon
+86,Armor Break,lb_ork_armor_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 36% and MDef by 18%,105,0,75kk,,,Demon
+88,Armor Break,lb_ork_armor_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 38% and MDef by 19%,111,0,100kk,,,Demon
+90,Armor Break,lb_ork_armor_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 40% and MDef by 20%,115,0,100kk,,,Demon
 ,,,,,,,,,,,,,,,,,,,---------------------------Holy Soul----------------------------
 76,Holy Soul,holy_soul,Toggle,,,0,0,self/single,0,0,0,Decrease MP Consumtion by 30% and Casting speed by 10%; Consume 50 HP/s,0,6.5kk,1kk,,,,Intentional decrease in Cast speed
 ,,,,,,,,,,,,,,,,,,,----------------------------Lasting Enchantment----------------------------

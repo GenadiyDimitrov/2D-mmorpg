@@ -321,6 +321,27 @@ coverage, and a number it could not read prints as `UNREAD` rather than being si
 ⚠ **It only walks the files listed in `Check.Specs`** — the seven 1st/2nd files plus `healer 3rd`.
 A 3rd-tier file earns its line the day he finishes it, never while it is a placeholder.
 
+### 🔑 `docs/data/debuff_landmods.csv` IS THE AUTHORITY FOR `DebuffLandMod` (owner, 2026-09-13)
+*"take all the debuffs each single skill make them in a table and put the modifiers there … Then each
+new debuff to go there and to ask for modifier edit … The current classes csv descriptions to remove
+the modifiers and those modifiers to be red from that new file"*.
+
+One flat file, one row per debuff skill, `SUCCESS` is his column. **The `(success chance xN)` text is
+GONE from the class CSVs** — never put it back. Same two-way contract as the class CSVs: he edits a
+row → the code moves; a skill is retuned in chat → the row moves in the SAME commit.
+
+- Regenerate the derived columns: `dotnet run --project tools/BalanceMatrix -- --dump-landmod-csv`.
+  ⚠ It **preserves `SUCCESS`** and refreshes everything around it.
+- `SkillCsvSeed --check` walks it (`tools/SkillCsvSeed/LandMods.cs`): **DRIFT** = file and code
+  disagree, the code owes it; **NOT IN THE FILE** = a debuff nobody has priced.
+- 🔑 **A NEW DEBUFF MEANS ASKING HIM FOR ITS MODIFIER. Never pick one yourself** — that is the
+  explicit instruction, and the checker prints the row until he has.
+- 🔑 **THE MODIFIER PRICES HOW MUCH ONE CAST DOES AT ONCE**, not what kind of effect it is:
+  *"dmg + debuff should have lower chance than a solo debuff … an armor break should stay as solo
+  debuff and nothing else at x1.5 but witches curse that does dmg should be x0.85"*. The `SHAPE`
+  column (`DEBUFF ONLY (2)` vs `dmg+1 debuff`) is that axis. ⚠ It is **not** an effect-type rule —
+  an earlier five-bucket version keyed on the effect and he rejected it.
+
 ## Style
 Keep changes consistent with the above. Prefer C# .NET idioms. For web/UI work the
 owner prefers ASP.NET + HTML/CSS, JavaScript only as a last resort.

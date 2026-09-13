@@ -174,6 +174,8 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-228` | ⏸ | FUTURE — boss jewels that trade one school of control against another | items |
 | `BL-229` | 🔵 | THE 74→76 DEBUFF CLIFF — an un-ascended caster keeps casting the @74 rung while the world levels past it | combat |
 | `BL-230` | 🔵 | CONTROL RESISTANCE IS NOT ON THE NPC SHELF — part 1 only; part 2 built in 0.142.0 | buffs |
+| `BL-231` | 🟢 | THE LANDING-MODIFIER SCHEMA — superseded by `BL-232`; the five-bucket version was rejected | combat |
+| `BL-232` | 🔵 | `debuff_landmods.csv` IS LIVE — 74 rows built and checked; the SUCCESS column is yours to author | combat |
 
 ---
 
@@ -1591,4 +1593,97 @@ even on the full shelf.
 What is still 🔵 and owed is **§1 only** — whether Clarity/Fortitude belong on the NPC shelf.
 
 ---
+
+## `BL-231` 🔵 THE LANDING-MODIFIER SCHEMA — priced by what landing TAKES AWAY
+
+> *"Show me all landing modifiers on what debuffs(name + stat decrease) and what is the saving stat
+> ... Stuns/hold/fears/charm should be x0.7, All dots can be at x1, all mdef decreases and p Def
+> decreases to X1, All p/m.atk and a/c/m.speed x0.85, buff cancel x0.5.. Somethig like that."*
+> — 2026-09-13
+
+📐 **THE FULL TABLE IS [balance/DebuffLandMods.md](balance/DebuffLandMods.md)** — 74 skills, every one
+with its payload and its saving stat, regenerated from the code with
+`dotnet run --project tools/BalanceMatrix -- --landmods`. **Nothing has been retuned.** The `want`
+column is your schema applied mechanically so the disagreements show.
+
+Your five buckets classify **63 of 74**. What needs you:
+
+### A. Seven skills the rule does not reach
+Three **silences** sitting at three different numbers today (×0.50 / ×0.70 / ×1.00) with no rule —
+you grouped silence with *"a buff removal or bind"* earlier the same day, so is it **control (0.70)**
+or **cancel (0.50)**? Then **Soul Sap** (anti-heal −50% HP received), **Mana Strain** (MP costs ×2),
+**Arcane Burst** (cuts the target's SPT *resist* 40% — a force multiplier, not a debuff) and
+**Boss's Judgment** (a scripted boss mechanic; probably outside the schema entirely).
+
+### B. Four places it contradicts a ruling you already made
+1. **Frost Pierce** — you set ×0.85 an hour earlier *because* its bleed's hidden 20% slow stacks with
+   Frost Spikes. "All dots at ×1" undoes that. ⚠ And **every** bleed carries that slow (`DotTiers`),
+   so the DoT bucket is really "×1 including a movement debuff the row does not show".
+2. **Armor Break / Weapon Break are ×1.50 on your own `BL-90` ruling** — *"should be 75% at parity
+   (x1.5)"*. The schema drops them to ×1.00 and ×0.85. Opposite direction from everything else here.
+3. **Thirteen stuns/roots/fears outside the nuker are ×1.00 today** and the schema takes them all to
+   ×0.70 — a real, broad nerf to every tank and rogue, not a nuker tweak. Intended?
+4. **Dazzling Arrow cancels 3 buffs AND stuns, at ×1.00** while Arcane Void (cancels 2) sits at ×0.30.
+   This one is the best argument *for* the schema in the whole file.
+
+### C. Two facts to know before ruling
+- **Pyro Burst's ×1.50 does nothing** — Burn saves against nothing, so `alwaysLands` short-circuits
+  before the modifier is read. Decoration; should be ×1.00 or deleted either way.
+- **`save = none` means the FIZZLE roll (~99%), not the contest (50%).** Chilled, Sapped, Weakness,
+  Greater Weakness, Soul Sap and Boss's Judgment are all in that state, so a ×1.00 there is close to
+  *"always lands"* — a very different thing from ×1.00 on a contested skill. If defence cuts are
+  going to ×1.00 across the board, look at those rows twice.
+
+**Say go and I apply the whole schema in one pass** (code + both nuker CSVs + `Formulas.md`), with
+whatever you decide for A and B.
+
+---
+
+## `BL-232` 🔵 `debuff_landmods.csv` — built, checked, and waiting on your pass
+
+> *"I group them but it's not OK as u said ... So dmg + debuff should have lower chance than a solo
+> debuff ... Ao take all the debuffs each single skill make them in a table and put the modifiers
+> there -> name of skill, I'd of skill, class that learns it, description of the skill (what it does
+> and what stat it debuffs - % of max rung), saving stat, success modifier. Then each new debuff to go
+> there and to ask for modifier edit ... The current classes csv descriptions to remove the modifiers
+> and those modifiers to be red from that new file"* — 2026-09-13
+
+✅ **BUILT (0.142.1).** `docs/data/debuff_landmods.csv`, 74 rows, your six columns plus `SHAPE` and
+`IN_CODE` as decision aids. `(success chance xN)` is stripped from all four class CSVs (231 rows).
+`SkillCsvSeed --check` walks it. `CLAUDE.md` carries the contract.
+
+🔑 **Your new rule replaces the bucket scheme in `BL-231`, and it is a better rule**: the modifier
+prices **how much one cast does at once**, not what kind of effect it is. Buckets keyed on the effect
+put Armor Break (two debuffs, no damage, ×1.5) and Witches Curse (one debuff + damage) in the same
+place while they deserve opposite numbers. Applied so far: **Witches Curse ×1.00 → ×0.85**, your
+worked example.
+
+### 🔵 What is owed: your pass over the `SUCCESS` column
+
+The file ships as a faithful mirror of today's code, so **nothing moved except Witches Curse**. Edit
+`SUCCESS`, tell me, and I move the code to match. The `SHAPE` column sorts the work for you:
+
+| SHAPE | rows | your rule says |
+|---|---|---|
+| `DEBUFF ONLY (1)` | 32 | ×1.00 — *"a solo slow or a solo dot should be at x1"* |
+| `DEBUFF ONLY (2)` | 15 | ? — two cuts, no damage. **Armor Break is here, at ×1.5** |
+| `dmg+1 debuff` | 16 | ×0.85 — *"witches curse that does dmg should be x0.85"* |
+| `dmg+2 debuffs` | 8 | ? — *"with dmg or other debuff should go lower"*. Lower than 0.85 — 0.70? |
+| `dmg+3 debuffs` | 3 | ? — lower still? |
+
+⚠ **Four questions the file cannot answer for you:**
+1. **`DEBUFF ONLY (2)` vs `(1)`** — is Armor Break ×1.5 *because* it is debuff-only, or is ×1.5 its
+   own special case? Gravity is also debuff-only-with-two-cuts and sits at ×1.00 today.
+2. **`dmg+2` and `dmg+3`** — how far below 0.85? Eleven rows wait on one number each.
+3. **The three silences** are ×0.50 / ×0.70 / ×1.00 and none of them does damage. Still unruled.
+4. **`SAVE = none (fizzle roll)`** — those skills take the ~99% fizzle roll, not the 50% contest, so
+   ×1.00 there means "always lands" rather than "half the time". Different number, same column.
+
+### ⚠ 39 of the 74 rows are NOT LEARNABLE — don't spend modifiers on them
+`Shield Bash`, `Envenom`, `Rupture`, `Terrifying Roar`, `Snare Trap`, `Entangling Roots`, `Soul Sap`,
+`Warding Step`, `Weakness`, `Greater Weakness`, `Frost Bind`, `Creeping Frost`, `Hamstring`,
+`Toxic Sting` were orphaned by the **2026-08-10 40+ purge** and the nuker rebuild — the learn
+assignments went, the defs stayed on purpose. The others are boss / whisp / proc-granted. The `CLASS`
+column says which. **They are also the obvious raw material for the 40+ files still to come**, which
+is exactly why they were kept.
 

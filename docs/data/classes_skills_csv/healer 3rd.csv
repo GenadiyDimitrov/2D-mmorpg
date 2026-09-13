@@ -197,50 +197,50 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 ,,,,,,,,,,,,,,,,,----------------------------Conceal----------------------------
 40,Conceal,conceal,Magic/Buff,,,0,0,self/single,5,10,30,"Monsters that haven't already noticed you leave you alone. Anything already chasing you keeps chasing, Increase mana consuption by 50% while active",100,19k,[]
 ,,,,,,,,,,,,,,,,,----------------------------Bind----------------------------
-40,Bind,lb_elf_bind,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Hold enemy for 30s (success chance x0.7) (ATK vs SPT),35,36k,[],Elf
-44,Bind,lb_elf_bind,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Hold enemy for 30s (success chance x0.7),38,43k,[],Elf
-48,Bind,lb_elf_bind,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Hold enemy for 30s (success chance x0.7),44,64k,[],Elf
-52,Bind,lb_elf_bind,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Hold enemy for 30s (success chance x0.7),48,74k,[],Elf
-56,Bind,lb_elf_bind,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Hold enemy for 30s (success chance x0.7),52,81k,[],Elf
-58,Bind,lb_elf_bind,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Hold enemy for 30s (success chance x0.7),54,88k,[],Elf
-60,Bind,lb_elf_bind,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Hold enemy for 30s (success chance x0.7),55,120k,[],Elf
-62,Bind,lb_elf_bind,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Hold enemy for 30s (success chance x0.7),58,170k,[],Elf
-64,Bind,lb_elf_bind,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Hold enemy for 30s (success chance x0.7),60,190k,[],Elf
-66,Bind,lb_elf_bind,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Hold enemy for 30s (success chance x0.7),62,280k,[],Elf
-68,Bind,lb_elf_bind,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Hold enemy for 30s (success chance x0.7),64,320k,[],Elf
-70,Bind,lb_elf_bind,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Hold enemy for 30s (success chance x0.7),65,390k,[],Elf
-72,Bind,lb_elf_bind,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Hold enemy for 30s (success chance x0.7),67,650k,[],Elf
-74,Bind,lb_elf_bind,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Hold enemy for 30s (success chance x0.7),69,880k,[],Elf
+40,Bind,lb_elf_bind,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Hold enemy for 30s (ATK vs SPT),35,36k,[],Elf
+44,Bind,lb_elf_bind,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Hold enemy for 30s,38,43k,[],Elf
+48,Bind,lb_elf_bind,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Hold enemy for 30s,44,64k,[],Elf
+52,Bind,lb_elf_bind,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Hold enemy for 30s,48,74k,[],Elf
+56,Bind,lb_elf_bind,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Hold enemy for 30s,52,81k,[],Elf
+58,Bind,lb_elf_bind,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Hold enemy for 30s,54,88k,[],Elf
+60,Bind,lb_elf_bind,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Hold enemy for 30s,55,120k,[],Elf
+62,Bind,lb_elf_bind,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Hold enemy for 30s,58,170k,[],Elf
+64,Bind,lb_elf_bind,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Hold enemy for 30s,60,190k,[],Elf
+66,Bind,lb_elf_bind,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Hold enemy for 30s,62,280k,[],Elf
+68,Bind,lb_elf_bind,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Hold enemy for 30s,64,320k,[],Elf
+70,Bind,lb_elf_bind,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Hold enemy for 30s,65,390k,[],Elf
+72,Bind,lb_elf_bind,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Hold enemy for 30s,67,650k,[],Elf
+74,Bind,lb_elf_bind,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Hold enemy for 30s,69,880k,[],Elf
 ,,,,,,,,,,,,,,,,,----------------------------Armor Break----------------------------
-40,Armor Break,lb_ork_armor_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 10% and MDef by  5% (success chance x1.5) (ATK vs SPT),35,36k,[],Demon
-44,Armor Break,lb_ork_armor_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 12% and MDef by  6% (success chance x1.5),38,43k,[],Demon
-48,Armor Break,lb_ork_armor_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 14% and MDef by  7% (success chance x1.5),44,64k,[],Demon
-52,Armor Break,lb_ork_armor_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 16% and MDef by  8% (success chance x1.5),48,74k,[],Demon
-56,Armor Break,lb_ork_armor_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 18% and MDef by  9% (success chance x1.5),52,81k,[],Demon
-58,Armor Break,lb_ork_armor_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 20% and MDef by 10% (success chance x1.5),54,88k,[],Demon
-60,Armor Break,lb_ork_armor_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 22% and MDef by 11% (success chance x1.5),55,120k,[],Demon
-62,Armor Break,lb_ork_armor_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 24% and MDef by 12% (success chance x1.5),58,170k,[],Demon
-64,Armor Break,lb_ork_armor_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 26% and MDef by 13% (success chance x1.5),60,190k,[],Demon
-66,Armor Break,lb_ork_armor_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 30% and MDef by 15% (success chance x1.5),62,280k,[],Demon
-68,Armor Break,lb_ork_armor_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 30% and MDef by 15% (success chance x1.5),64,320k,[],Demon
-70,Armor Break,lb_ork_armor_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 30% and MDef by 15% (success chance x1.5),65,390k,[],Demon
-72,Armor Break,lb_ork_armor_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 30% and MDef by 15% (success chance x1.5),67,650k,[],Demon
-74,Armor Break,lb_ork_armor_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 30% and MDef by 15% (success chance x1.5),69,880k,[],Demon
+40,Armor Break,lb_ork_armor_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 10% and MDef by  5% (ATK vs SPT),35,36k,[],Demon
+44,Armor Break,lb_ork_armor_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 12% and MDef by  6%,38,43k,[],Demon
+48,Armor Break,lb_ork_armor_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 14% and MDef by  7%,44,64k,[],Demon
+52,Armor Break,lb_ork_armor_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 16% and MDef by  8%,48,74k,[],Demon
+56,Armor Break,lb_ork_armor_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 18% and MDef by  9%,52,81k,[],Demon
+58,Armor Break,lb_ork_armor_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 20% and MDef by 10%,54,88k,[],Demon
+60,Armor Break,lb_ork_armor_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 22% and MDef by 11%,55,120k,[],Demon
+62,Armor Break,lb_ork_armor_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 24% and MDef by 12%,58,170k,[],Demon
+64,Armor Break,lb_ork_armor_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 26% and MDef by 13%,60,190k,[],Demon
+66,Armor Break,lb_ork_armor_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 30% and MDef by 15%,62,280k,[],Demon
+68,Armor Break,lb_ork_armor_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 30% and MDef by 15%,64,320k,[],Demon
+70,Armor Break,lb_ork_armor_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 30% and MDef by 15%,65,390k,[],Demon
+72,Armor Break,lb_ork_armor_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 30% and MDef by 15%,67,650k,[],Demon
+74,Armor Break,lb_ork_armor_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Def by 30% and MDef by 15%,69,880k,[],Demon
 ,,,,,,,,,,,,,,,,,----------------------------Gravity----------------------------
-40,Gravity,lb_human_gravity,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by  7% (success chance x1) (ATK vs SPT),35,36k,[],Human,changed values
-44,Gravity,lb_human_gravity,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by  9% (success chance x1),38,43k,[],Human
-48,Gravity,lb_human_gravity,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 11% (success chance x1),44,64k,[],Human
-52,Gravity,lb_human_gravity,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 13% (success chance x1),48,74k,[],Human
-56,Gravity,lb_human_gravity,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 15% (success chance x1),52,81k,[],Human
-58,Gravity,lb_human_gravity,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 17% (success chance x1),54,88k,[],Human
-60,Gravity,lb_human_gravity,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 19% (success chance x1),55,120k,[],Human
-62,Gravity,lb_human_gravity,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 21% (success chance x1),58,170k,[],Human,
-64,Gravity,lb_human_gravity,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 23% (success chance x1),60,190k,[],Human
-66,Gravity,lb_human_gravity,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 23% (success chance x1),62,280k,[],Human
-68,Gravity,lb_human_gravity,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 23% (success chance x1),64,320k,[],Human
-70,Gravity,lb_human_gravity,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 23% (success chance x1),65,390k,[],Human
-72,Gravity,lb_human_gravity,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 23% (success chance x1),67,650k,[],Human
-74,Gravity,lb_human_gravity,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 23% (success chance x1),69,880k,[],Human
+40,Gravity,lb_human_gravity,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by  7% (ATK vs SPT),35,36k,[],Human,changed values
+44,Gravity,lb_human_gravity,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by  9%,38,43k,[],Human
+48,Gravity,lb_human_gravity,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 11%,44,64k,[],Human
+52,Gravity,lb_human_gravity,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 13%,48,74k,[],Human
+56,Gravity,lb_human_gravity,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 15%,52,81k,[],Human
+58,Gravity,lb_human_gravity,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 17%,54,88k,[],Human
+60,Gravity,lb_human_gravity,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 19%,55,120k,[],Human
+62,Gravity,lb_human_gravity,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 21%,58,170k,[],Human,
+64,Gravity,lb_human_gravity,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 23%,60,190k,[],Human
+66,Gravity,lb_human_gravity,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 23%,62,280k,[],Human
+68,Gravity,lb_human_gravity,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 23%,64,320k,[],Human
+70,Gravity,lb_human_gravity,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 23%,65,390k,[],Human
+72,Gravity,lb_human_gravity,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 23%,67,650k,[],Human
+74,Gravity,lb_human_gravity,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy Atack speed and cast speed by 23%,69,880k,[],Human
 ,,,,,,,,,,,,,,,,,----------------------------Urgent Heal----------------------------
 44,Urgent Heal,urgent_heal,Magic/Heal,,,600,0,target/single,8,30,0,heal for 15%,136,43k,[]
 48,Urgent Heal,urgent_heal,Magic/Heal,,,600,0,target/single,8,30,0,heal for 20%,152,64k,[]
@@ -319,17 +319,17 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 ,,,,,,,,,,,,,,,,,----------------------------Frenzy----------------------------
 52,Frenzy,holy_frenzy,Magic/Buff,,,600,0,party/single,1,1,1200,"−10% Max HP/MP, +8% offence and speed, +8 move, −8 evasion.",80,38k,[]
 ,,,,,,,,,,,,,,,,,----------------------------Mana Strain----------------------------
-52,Mana Strain,mana_strain,Magic/Debuff,,,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 100% (success chance x0.5),48,74k,[],,Increases Mana consumption of the target (x2) for 60 seconds; SPT resist
-56,Mana Strain,mana_strain,Magic/Debuff,,,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 110% (success chance x0.5),52,81k,[]
-58,Mana Strain,mana_strain,Magic/Debuff,,,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 120% (success chance x0.5),54,88k,[]
-60,Mana Strain,mana_strain,Magic/Debuff,,,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 130% (success chance x0.5),55,120k,[]
-62,Mana Strain,mana_strain,Magic/Debuff,,,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 140% (success chance x0.5),58,170k,[]
-64,Mana Strain,mana_strain,Magic/Debuff,,,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 150% (success chance x0.5),60,190k,[]
-66,Mana Strain,mana_strain,Magic/Debuff,,,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 160% (success chance x0.5),62,280k,[]
-68,Mana Strain,mana_strain,Magic/Debuff,,,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 170% (success chance x0.5),64,320k,[]
-70,Mana Strain,mana_strain,Magic/Debuff,,,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 180% (success chance x0.5),65,390k,[]
-72,Mana Strain,mana_strain,Magic/Debuff,,,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 190% (success chance x0.5),67,650k,[]
-74,Mana Strain,mana_strain,Magic/Debuff,,,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 200% (success chance x0.5),69,880k,[],,(x3)
+52,Mana Strain,mana_strain,Magic/Debuff,,,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 100%,48,74k,[],,Increases Mana consumption of the target (x2) for 60 seconds; SPT resist
+56,Mana Strain,mana_strain,Magic/Debuff,,,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 110%,52,81k,[]
+58,Mana Strain,mana_strain,Magic/Debuff,,,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 120%,54,88k,[]
+60,Mana Strain,mana_strain,Magic/Debuff,,,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 130%,55,120k,[]
+62,Mana Strain,mana_strain,Magic/Debuff,,,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 140%,58,170k,[]
+64,Mana Strain,mana_strain,Magic/Debuff,,,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 150%,60,190k,[]
+66,Mana Strain,mana_strain,Magic/Debuff,,,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 160%,62,280k,[]
+68,Mana Strain,mana_strain,Magic/Debuff,,,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 170%,64,320k,[]
+70,Mana Strain,mana_strain,Magic/Debuff,,,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 180%,65,390k,[]
+72,Mana Strain,mana_strain,Magic/Debuff,,,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 190%,67,650k,[]
+74,Mana Strain,mana_strain,Magic/Debuff,,,600,0,enemy/single,4,4,60,Increase Physical and Magic MP Cost by 200%,69,880k,[],,(x3)
 ,,,,,,,,,,,,,,,,,----------------------------Mana Ray----------------------------
 56,Mana Ray,mana_ray,Magic/Active,,,600,0,enemy/single,2,2,0,Damages the MP of an enemy with +100 Power (Half effect on monsters),216,81k,[],,Like a magic attack but damages MP not HP. Same formula; mRes; can fizzle; etc). In PVE dmg is halved (x0.5)
 58,Mana Ray,mana_ray,Magic/Active,,,600,0,enemy/single,2,2,0,Damages the MP of an enemy with +105 Power (Half effect on monsters),222,88k,[]
@@ -386,7 +386,7 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 62,Insight,cast_mcrit_rate,Magic/Buff,,,600,0,party/single,1,1,1200,+50% magic critical rate.,100,86k,[]
 70,Insight,cast_mcrit_rate,Magic/Buff,,,600,0,party/single,1,1,1200,+100% magic critical rate.,120,200k,[]
 ,,,,,,,,,,,,,,,,,----------------------------Weapon Break----------------------------
-62,Weapon Break,weapon_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Atk and M.Atk by  9% (success chance x1.5),58,170k,[]
-66,Weapon Break,weapon_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Atk and M.Atk by 11% (success chance x1.5),62,280k,[]
-70,Weapon Break,weapon_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Atk and M.Atk by 13% (success chance x1.5),65,390k,[]
-74,Weapon Break,weapon_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Atk and M.Atk by 15% (success chance x1.5),69,880k,[]
+62,Weapon Break,weapon_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Atk and M.Atk by  9%,58,170k,[]
+66,Weapon Break,weapon_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Atk and M.Atk by 11%,62,280k,[]
+70,Weapon Break,weapon_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Atk and M.Atk by 13%,65,390k,[]
+74,Weapon Break,weapon_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Atk and M.Atk by 15%,69,880k,[]

@@ -7,12 +7,62 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.142.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.142.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-13 (latest) — 0.142.0: the attacker is always ATK, and three riders stop apologising
+## 2026-09-13 (latest) — 0.142.1: the debuff landing file
+
+⚠ **NEW APK not required.** No protocol bump, no `game.db` delete.
+🔑 **A NEW AUTHORING FILE: `docs/data/debuff_landmods.csv`.** It is the authority for
+`DebuffLandMod`, on the same contract as the class CSVs. The four class CSVs that carried
+`(success chance xN)` no longer do — **231 rows stripped**.
+
+### Your rule changed, and it is a better one
+
+> *"I group them but it's not OK as u said ... So dmg + debuff should have lower chance than a solo
+> debuff ... a solo slow or a solo dot should be at x1 but combined should be x0.85 ... A solo stun
+> can sit at x1 but with dmg or other debuff should go lower ... An armor break should stay as solo
+> debuff and nothing else at x1.5 but witches curse that does dmg should be x0.85"*
+
+The modifier prices **how much one cast does at once**, not what kind of effect it is. That is why
+the five buckets could not work: they keyed on the effect, and Armor Break (two debuffs, no damage,
+×1.5) and Witches Curse (one debuff plus damage) landed in the same bucket while deserving opposite
+numbers. **Applied so far: Witches Curse ×1.00 → ×0.85**, your worked example.
+
+### The file
+
+| column | what it is |
+|---|---|
+| `SKILL`, `SKILL_ID` | name and id |
+| `CLASS` | who learns it — collapsed, so `Magus` = all three races, `Magus(Elf)` = a race split |
+| `DESCR` | what it does and what it cuts, **at the top rung** |
+| `SAVE` | `SPT` / `CON` / `none (fizzle roll)` |
+| **`SUCCESS`** | **yours.** The modifier. |
+| `SHAPE` | `DEBUFF ONLY (2)` vs `dmg+1 debuff` — the axis your new rule prices on |
+| `IN_CODE` | what the build ships, regenerated every run |
+
+Regenerate the derived columns with
+`dotnet run --project tools/BalanceMatrix -- --dump-landmod-csv`. ⚠ **It preserves `SUCCESS`** — the
+seed columns refresh around whatever you have authored.
+
+### And it is CHECKED, or it would be decoration
+
+`dotnet run --project tools/SkillCsvSeed -- --check` now walks it too, and reports two different
+things: **DRIFT** (file and code disagree — the code owes it) and **NOT IN THE FILE** (a debuff
+nobody has priced, which is your *"each new debuff to go there and to ask for modifier edit"*).
+It earned its place immediately: it caught Witches Curse mid-edit, file ×1 against code ×0.85.
+
+### ⚠ 39 of the 74 rows are not learnable by any class
+
+`Shield Bash`, `Envenom`, `Rupture`, `Terrifying Roar`, `Snare Trap`, `Entangling Roots`, `Soul Sap`,
+`Warding Step`, `Weakness`, `Greater Weakness`, `Frost Bind`, `Creeping Frost`, `Hamstring`,
+`Toxic Sting` — orphaned by the **2026-08-10 40+ purge** and the nuker rebuild, which deleted the
+learn assignments and kept the defs on purpose (`LearnedSkills` persists ids). The rest are boss,
+whisp and proc-granted skills. **Don't spend modifiers on those rows** — the `CLASS` column says so.
+
+## 2026-09-13 — 0.142.0: the attacker is always ATK, and three riders stop apologising
 
 ⚠ **NEW APK not required** — all server-side. No protocol bump, no `game.db` delete.
 ⚠ **`nuker 3rd.csv` and `nuker 4th.csv` moved with the code**, same commit: 87 rows.

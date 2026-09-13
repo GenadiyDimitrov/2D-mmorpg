@@ -293,10 +293,15 @@ public static partial class SkillCatalog
             Power: NukerQuickPower[0],
             DurationTicks: 300, BuffKey: "witches_curse", Rank: 1,
             DebuffSchool: DebuffSchool.Magical, Category: SkillCategory.Magic, SpCost: 36000,
-            // 🔑 0.70 → **1.00** (owner, 2026-09-13): this one carries no control at all — only an
-            //    M.Def cut — so it takes no success penalty at all. See the RAISED-SUCCESS note
-            //    above the elf pair for the rule it is an instance of.
-            DebuffLandMod: 1.00f,
+            // 🔑 0.70 → 1.00 → **0.85**, twice in one day (2026-09-13), and the SECOND ruling is the
+            //    one that generalises. First: "it carries no control, remove the penalty" → 1.00. Then
+            //    he replaced the whole scheme — the modifier prices HOW MUCH ONE CAST DOES, not what
+            //    kind of effect it is: *"dmg + debuff should have lower chance than a solo debuff …
+            //    an armor break should stay as solo debuff and nothing else at x1.5 but witches curse
+            //    that does dmg should be x0.85"*. This skill does damage AND curses, so 0.85.
+            // ⚠ THE AUTHORITY FOR THIS NUMBER IS NOW `docs/data/debuff_landmods.csv`, not this line
+            //   and not the class CSV's DESCR text. Change it there, then here. See `BL-232`.
+            DebuffLandMod: 0.85f,
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffMagicDef, -0.10f) },
             Description: "A hexing bolt: damage, and a chance to rot the target's magic defence for 30s.",
             Levels: HealerRungs(0, 14, (i, sp) =>
