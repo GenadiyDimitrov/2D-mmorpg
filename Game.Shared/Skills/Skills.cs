@@ -187,7 +187,7 @@ public record SkillDef(
     /// + gravity + Arcane/Fros/Pyro blasts(nuker 3rd) should be 75% at parity (x1.5) and the other
     /// should be 25% at parity (x0.5)"*. So ×1.5 → 75%, ×1 → 50%, ×0.7 → 35%, ×0.5 → 25%, ×0.3 → 15%.
     /// A skill carrying one of these must therefore be CONTESTED, which for a non-`ContestCc` payload
-    /// means declaring a <see cref="DebuffSchool"/> — see <c>GameLoopService.IsContestedDebuff</c>.</para>
+    /// means declaring a <see cref="DebuffSchool"/> — see <c>SkillMath.IsContestedDebuff</c>.</para>
     ///
     /// <para>🔑 THE VALUES LIVE IN HIS CSVs, NOT IN A TIER TABLE. He authors them into the DESCR column
     /// as <c>(success chance x1.5)</c>; `SkillCsvSeed --check` reads that column and compares it here,
@@ -2169,6 +2169,82 @@ public static class SkillMath
     /// paced by attack speed, a magical one by cast speed. Kept as the name at the speed call sites
     /// because that is what the question means THERE.</summary>
     public static bool PacedByAttackSpeed(SkillDef def) => IsPhysical(def);
+
+    /// <summary>Does this skill's debuff land on the CONTESTED roll (<see cref="StatCalculator.DebuffLandChance"/>,
+    /// ~50% at parity) rather than the fizzle roll (<see cref="StatCalculator.MagicFailChance"/>, ~99%)?
+    ///
+    /// <para>🔑 TWO WAYS IN, AND THE SECOND ONE WAS MISSING UNTIL 2026-08-24. A `ContestCc` effect flag
+    /// (Slow/Stun/Fear/Root/Bleed/Poison/Venom) has always routed here. But a skill can also DECLARE
+    /// itself contested by setting <see cref="SkillDef.DebuffSchool"/> — the enum's own documentation says
+    /// *"None = not a contested debuff"* — and that declaration was never read. Armor Break, Weapon
+    /// Break, Gravity and Mana Strain all set it, all said *"Contested ATK vs SPT"* on their cards, and
+    /// all silently took the fizzle roll instead, landing ~99% of the time.</para>
+    ///
+    /// <para>It surfaced through his `BL-90` numbers: *"armor/weapon break + gravity … should be 75% at
+    /// parity (x1.5) and the other should be 25% at parity (x0.5)"*. ×1.5 only reaches 75% off a 50%
+    /// base, so his arithmetic only closes on the contested curve — the multiplier he was asking for
+    /// could not exist without this fix.</para>
+    ///
+    /// <para>⚠ The two are OR'd, never overlapping in effect: a skill with both a ContestCc flag and a
+    /// school resolves once, here. The `else if` on the fizzle branch is what guarantees that.</para>
+    ///
+    /// <para>⚠ A THIRD WAY IN SINCE 2026-09-02 (`BL-110`): <c>def.Charms</c>. Charm is control, and
+    /// control has always landed on the contest, never on the ~99% fizzle roll — but its payload is a
+    /// FIELD, so neither of the two tests above can see it. Without this line a charm authored with
+    /// no <see cref="SkillDef.DebuffSchool"/> would have landed nearly every time it was cast.</para>
+    ///
+    /// <para>⚠ AND A FOURTH AND FIFTH SINCE 2026-09-03: <c>def.Pulls</c> (`BL-154`) and the two
+    /// SILENCE fields (`BL-155`). Both are payload FIELDS for the same reason charm is — the flag enum
+    /// is full — and both are control, so both belong on the contest. In practice every one of them is
+    /// authored with a DebuffSchool as well and would route here anyway; they are listed because the
+    /// NEXT field-payload author will copy whichever skill he finds, and a control skill that quietly
+    /// lands 99% of the time is the exact bug this method exists to remember.</para>
+    ///
+    /// <para>🔑 MOVED HERE FROM <c>GameLoopService</c> on 2026-09-13, when <see cref="IsHostile"/> needed
+    /// it: the question is about a DEF and nothing else, so it belongs beside <see cref="IsPhysical"/>
+    /// where the next author will find it.</para></summary>
+    public static bool IsContestedDebuff(SkillDef def, SkillEffect effect) =>
+        (effect & SkillEffect.ContestCc) != 0 || def.DebuffSchool != DebuffSchool.None || def.Charms
+        || def.Pulls || def.SilencePhysical || def.SilenceMagical;
+
+    /// <summary>Is this skill HOSTILE — does what it leaves on its target belong in the debuff row,
+    /// outside the player's reach, and off the login save?
+    ///
+    /// <para>🔴 THE FLAG MASK IS NOT THE ANSWER, and believing it was is what put Witches Curse in his
+    /// BUFF bar (2026-09-13: *"i apply witches curse to an enemy .. and he gets it as a buff and can be
+    /// hold to dismiss"*). Its M.Def rot is a NEGATIVE <see cref="SkillEffect.BuffMagicDef"/> magnitude
+    /// — the idiom Armor Break, Frost Burst and every whisp curse use, because the effect enum is full
+    /// and there is no <c>DebuffMagicDef</c> bit to spend. A negative BUFF flag is still a BUFF flag, so
+    /// <c>Effect &amp; AnyDebuff</c> was 0 and every downstream test agreed the curse was a blessing:
+    /// it rendered in the buff row, hold-to-cancel offered to dismiss it, a "cancel positive buffs"
+    /// would strip it and <c>PersistenceService</c> saved it across a relog.</para>
+    ///
+    /// <para>🔑 THE THREE DOORS ARE THE SAME THREE <c>ExecuteSkill</c> USES to decide a skill is
+    /// offensive, and that is the point of gathering them here: the two debuff arms and the buff arm's
+    /// <c>harmfulPayload</c> guard already asked exactly this question, in exactly this form, and the
+    /// buff INSTANCE — which outlives the cast — was the one place that asked a narrower one. One
+    /// predicate, so a curse cannot be harmful while it is landing and a blessing forever after.</para>
+    ///
+    /// <para>⚠ A SELF-BUFF WITH A DOWNSIDE IS NOT HOSTILE. Frenzy pays −Max HP, Defensive Wall pays
+    /// −50% move speed, Combat Stance pays −50% M.Atk — all negative magnitudes on buff flags, and all
+    /// <c>Category.Buff</c> with no <see cref="SkillDef.DebuffSchool"/>, so none of them trips any of
+    /// the three doors. That is the line: a downside you chose is not a curse somebody cast on you.</para></summary>
+    public static bool IsHostile(SkillDef def, SkillEffect effect) =>
+        IsContestedDebuff(def, effect)
+        || (effect & SkillEffect.AnyDebuff) != 0
+        || def.Category == SkillCategory.Debuff;
+
+    /// <summary>The whole def's hostility, asked without a rung in hand — the union of the def's own
+    /// mask and every rung's, so a curse whose harmful flag appears only on a later
+    /// <see cref="SkillLevel"/> is still recognised.</summary>
+    public static bool IsHostile(SkillDef def)
+    {
+        if (IsHostile(def, def.Effect)) return true;
+        int rungs = def.Levels?.Length ?? 0;
+        for (int i = 1; i <= rungs; i++)
+            if (IsHostile(def, def.StackLevelAt(i)?.Effect ?? def.Effect)) return true;
+        return false;
+    }
 
 
     // ===== THE MP SPLIT ==============================================================================

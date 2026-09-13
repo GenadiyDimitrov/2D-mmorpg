@@ -282,12 +282,26 @@ public class BuffInstance
 
     public bool Has(SkillEffect flag) => !Suppressed && (Effect & flag) != 0;
 
+    /// <summary>The CAST's own verdict on whether the skill that left this buff was hostile, stamped
+    /// on by <c>ApplyBuff</c> from <see cref="SkillMath.IsHostile(SkillDef)"/>.
+    ///
+    /// <para>🔴 IT IS CARRIED RATHER THAN RE-DERIVED because the flags on the instance cannot answer
+    /// the question. Witches Curse expresses its M.Def rot as a NEGATIVE <c>BuffMagicDef</c> magnitude
+    /// (the effect enum is full — the same idiom Armor Break and every whisp curse use), so its mask
+    /// reads as a blessing no matter how carefully you inspect it. Only the DEF knows, and only at the
+    /// moment it lands. Default false, which is right for every synthetic buff built without a def.</para></summary>
+    public bool Hostile { get; init; }
+
     /// <summary>⚠ <see cref="Charms"/> is OR'd in because a charm's whole payload is that field — it
     /// carries no <c>AnyDebuff</c> bit to be recognised by, and without this it would render in the
     /// BUFF row and be strippable by a "cancel positive buffs" rather than by a cleanse. The same
     /// lesson Clarity and Fortitude taught on the buff side (see the `Category == Buff` arm in
-    /// ApplyBuff): when a payload is a field, every flag test in its path has to learn about it.</summary>
-    public bool IsDebuff => (Effect & SkillEffect.AnyDebuff) != 0 || Charms
+    /// ApplyBuff): when a payload is a field, every flag test in its path has to learn about it.
+    ///
+    /// <para>🔑 <see cref="Hostile"/> IS THE GENERAL FORM OF THAT LESSON (2026-09-13) and now carries
+    /// it: the flag tests below are kept only because a buff rebuilt from a persisted row or bounced by
+    /// a reflect has no def to have been stamped from. Every new curse is recognised by the stamp.</para></summary>
+    public bool IsDebuff => Hostile || (Effect & SkillEffect.AnyDebuff) != 0 || Charms
                          || SilencesPhysical || SilencesMagical;
 
     /// <summary>Sum of this buff's flat entries for an effect. For a stacking effect the

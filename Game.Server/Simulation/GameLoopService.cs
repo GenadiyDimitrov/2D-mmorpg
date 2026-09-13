@@ -12143,7 +12143,7 @@ public class GameLoopService : BackgroundService
         //   present apply 1 venom stacks"*.
         bool riderAlreadySpent = spentStacks && (effect & SkillEffect.AnyDot) != 0;
 
-        if (IsContestedDebuff(def, effect) && !riderAlreadySpent)
+        if (SkillMath.IsContestedDebuff(def, effect) && !riderAlreadySpent)
         {
             offensive = true;
             // BL-08: the reflect roll comes FIRST — before the contest, because a bounced debuff is
@@ -12219,7 +12219,7 @@ public class GameLoopService : BackgroundService
         // (Mana Strain's MP-cost multiplier) has no AnyDebuff flag to be recognised by.
         // ⚠ THE EXCLUSION IS `IsContestedDebuff`, NOT THE ContestCc FLAG. Both arms used to test the
         // flag mask alone, which is exactly how four skills that declare a DebuffSchool ended up on
-        // the fizzle roll — see IsContestedDebuff for the whole story.
+        // the fizzle roll — see SkillMath.IsContestedDebuff for the whole story.
         else if ((effect & SkillEffect.AnyDebuff) != 0 || def.Category == SkillCategory.Debuff)
         {
             offensive = true;
@@ -12349,9 +12349,10 @@ public class GameLoopService : BackgroundService
         // The debuff arms above already apply the whole def — both magnitudes, one BuffInstance, which
         // is what Frost Burst's *"one buff, so a cure that lifts the hold lifts both"* asks for — so
         // there is nothing here for a debuff to come and collect.
-        bool harmfulPayload = IsContestedDebuff(def, effect)
-            || (effect & SkillEffect.AnyDebuff) != 0
-            || def.Category == SkillCategory.Debuff;
+        // 🔑 THE SAME THREE DOORS THE BUFF INSTANCE IS NOW STAMPED WITH (2026-09-13). This test used to
+        //    be spelled out here and nowhere else, which is how a curse could be harmful for the length
+        //    of its cast and a dismissible blessing forever after — see SkillMath.IsHostile.
+        bool harmfulPayload = SkillMath.IsHostile(def, effect);
         if (def.SummonsWhisp is { Length: > 0 })
         {
             SummonWhisp(caster, def, lvl);
@@ -12691,10 +12692,12 @@ public class GameLoopService : BackgroundService
         // going to free, so a buff that merely replaces another never evicts a third by accident.
         BuffRow landingRow = rowOverride ?? def.BuffRow;
         // 🔴 The `isDebuff` argument is what stops a poison from evicting a blessing (see the
-        // predicate). Computed the same way `BuffInstance.IsDebuff` computes it — the flags, plus the
-        // charm FIELD, since a charm carries no debuff bit at all (`BL-110`).
-        bool landingIsDebuff = ((isGroup ? groupEffect : (def.StackLevelAt(1)?.Effect ?? def.Effect))
-                                & SkillEffect.AnyDebuff) != 0 || def.Charms;
+        // predicate). It is ALSO what the instance is stamped with below, so the eviction rule and the
+        // buff bar can never disagree about which of the two a landing curse is.
+        // ⚠ Asked of the DEF, not of the flag mask: a curse whose payload is a negative BUFF magnitude
+        //   (Witches Curse, Armor Break) has no debuff bit to be recognised by — see SkillMath.IsHostile.
+        bool landingIsDebuff = SkillMath.IsHostile(
+            def, isGroup ? groupEffect : (def.StackLevelAt(1)?.Effect ?? def.Effect));
         // `BL-198` — THE SHELF TEST, computed once here and then carried on the instance, so the gate,
         // the eviction loop and the counter on his HUD can never disagree about what a slot is.
         //
@@ -12765,6 +12768,9 @@ public class GameLoopService : BackgroundService
             MaxStacks = eff,
             AppliedAtTick = _tick,
             Cancellable = def.Cancellable,
+            // THE CAST'S VERDICT, carried for the life of the buff. Same number `landingIsDebuff`
+            // above evicted on, so the slot cap, the bar row and hold-to-cancel all read one answer.
+            Hostile = landingIsDebuff,
             SourceRow = rowOverride ?? def.BuffRow,   // which buff-bar row this lands in (debuffs override it)
             CountsTowardBuffLimit = landingCounts,   // the LANDING def + the duration it landed with
             // The skill whose icon the bar shows. For a one-child wrapper that is the WRAPPER (the

@@ -7,12 +7,89 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.141.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.141.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-13 (latest) — 0.141.0: magic resistance also resists magic debuffs
+## 2026-09-13 (latest) — 0.141.1: a curse is not a blessing
+
+⚠ **NEW APK not required** — the server already told the client which row a buff belongs in; it was
+telling it the wrong thing. No protocol bump, no `game.db` delete.
+
+### The report
+
+> *"I apply witches curse to an enemy .. and he gets it as a buff and can be hold to dismiss.. It
+> don't feel the curses land so often"*
+
+Both halves were one bug. **Witches Curse expresses its M.Def rot as a NEGATIVE `BuffMagicDef`
+magnitude** — the idiom Armor Break, Frost Burst and every whisp curse already use, because the
+`SkillEffect` enum is full and there is no `DebuffMagicDef` bit left to spend. A negative buff flag is
+still a buff flag, so `Effect & AnyDebuff` was **0**, so `BuffInstance.IsDebuff` said *blessing* and
+everything downstream agreed with it:
+
+- it rendered in the **buff row**, not the debuff row;
+- **hold-to-cancel offered to dismiss it** — the victim could delete the curse with a long press;
+- a *"cancel positive buffs"* would have **stripped it as a blessing**;
+- it **counted against the target's 24 buff slots** and could **evict one of their real buffs**;
+- `PersistenceService` **saved it across a relog** (the save skips `IsDebuff`).
+
+A curse you can press off, that eats a slot and survives logout, is a curse that does not feel like
+it landed. That is the second half of his sentence, and it needed no balance change to explain.
+
+### The fix — one predicate, `SkillMath.IsHostile`
+
+`ExecuteSkill` had **already** been asking the right question in three places: the contested-debuff
+arm, the fizzle arm, and the buff arm's `harmfulPayload` guard (added 2026-09-03 for exactly this
+class of bug, when the same negative-magnitude idiom made Armor Break resolve **twice**). The buff
+**instance** — the thing that outlives the cast — was the one place still asking the narrow flag-mask
+question. So the three doors are now one predicate in `Game.Shared`:
+
+```
+IsHostile(def, effect) = IsContestedDebuff(def, effect)        // ContestCc | DebuffSchool | Charms | Pulls | Silence
+                       | (effect & AnyDebuff) != 0
+                       | def.Category == SkillCategory.Debuff
+```
+
+`IsContestedDebuff` moved out of `GameLoopService` to sit beside `IsPhysical` in `SkillMath` — it is a
+question about a def and nothing else. **`ApplyBuff` stamps the answer onto the instance** as
+`BuffInstance.Hostile`, and `IsDebuff` reads the stamp. It is carried rather than re-derived because
+the flags on a landed buff genuinely cannot answer it: only the def knows, and only while it lands.
+The same number now drives the slot-cap eviction test, so the cap, the row and hold-to-cancel can no
+longer disagree.
+
+⚠ **A self-buff with a downside is NOT hostile**, and the line is sharp: Frenzy pays −Max HP,
+Defensive Wall pays −50% move speed, Combat Stance pays −50% M.Atk, Holy Soul pays −10% cast speed —
+all negative magnitudes on buff flags, all `Category.Buff` with no `DebuffSchool`, none of them
+tripping any of the three doors. A downside you chose is not a curse somebody cast on you.
+
+### Ten skills were in the wrong row
+
+| skill | why the old test missed it |
+|---|---|
+| **Witches Curse** | payload is a negative `BuffMagicDef` |
+| **Arcane Burst** | payload is the `CcResistMagical −40%` **field** |
+| Arcane Void, Mana Strain | payload is a field (`DispelCount`, MP-cost %) |
+| Taunt, Mass Taunt, Lure, Whisp Taunt, Tauting Wall | `Taunt` is not in the `AnyDebuff` mask |
+| Boss's Judgment | `Effect` is `None` — the mark is all field |
+
+### On the landing rate itself — measured, not derived
+
+Against a **same-level** creature, holding the **best rung you can learn**, Witches Curse lands:
+
+| target | contest | × his `x0.70` |
+|---|---|---|
+| melee creature (SPT 38) | 52.5% | **36.7%** |
+| caster creature (SPT 58) | 42.0% | **29.4%** |
+
+That is his own CSV working as authored — *"(success chance x0.7)"* off a 50%-at-parity base. **The
+number that collapses is an OLD RUNG**, because `DebuffLandChance` reads the rung's LEARN level, not
+the caster's: at level 90 the `@74` rung lands **9.5%** and everything below `@72` sits on the 10%
+floor at **7.0%**. ⚠ So the one real cliff is **74 → 76**: a Magus who has not paid the Rite at
+Archmaster Sevrin keeps casting the `@74` rung while the creatures keep levelling, and by 85 it is
+landing 15.7%. Nothing was changed here — flagged so he can rule on it.
+
+## 2026-09-13 — 0.141.0: magic resistance also resists magic debuffs
 
 ⚠ **NEW APK.** No protocol bump, no `game.db` delete.
 

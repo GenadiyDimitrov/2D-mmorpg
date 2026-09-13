@@ -172,6 +172,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-215` | 🔵 | THE MAGE'S DAMAGE — two levers pulled (≈×2.3 since 0.132.0); the crit-rate CAP is the third | combat |
 | `BL-218` | 🟢 | DEBUFF LAND RATES — all rulings built; nothing owed unless a playtest says so | combat |
 | `BL-228` | ⏸ | FUTURE — boss jewels that trade one school of control against another | items |
+| `BL-229` | 🔵 | THE 74→76 DEBUFF CLIFF — an un-ascended caster keeps casting the @74 rung while the world levels past it | combat |
 
 ---
 
@@ -1477,3 +1478,44 @@ attacker's side, one on the defender's — and needs no new mechanic, only:
 ⚠ **Don't build 1 or 2 speculatively.** Both are cheap only once the jewels tell them what shape to
 be; inventing a per-effect resist matrix with nothing authoring it is how `BL-192`'s parked
 recommendations went wrong.
+
+---
+
+## `BL-229` 🔵 THE 74 → 76 DEBUFF CLIFF — a rung that stops climbing while the world does not
+
+Found 2026-09-13 while answering your *"it don't feel the curses land so often"*. **Nothing here is a
+defect**; every number below is the design working exactly as authored. It is a shape you have not
+ruled on, so it is yours to decide.
+
+`DebuffLandChance` reads the rung's **LEARN level**, not the caster's — your own ruling 2026-08-19:
+*"it should be difference enemy lvl and skill learned lvl .. not casters"*. That is what makes a
+ladder worth climbing. The consequence at the top of the 3rd tier is a wall.
+
+**Witches Curse (`x0.70`), against a same-level melee creature (SPT 38):**
+
+| your level | best rung you hold | it lands |
+|---|---|---|
+| 40 – 74 | tracks you (`@40` … `@74`) | **36.7%** every step |
+| 80, still `@74` | `@74` | **24.3%** |
+| 85, still `@74` | `@74` | **15.7%** |
+| 90, still `@74` | `@74` | **9.5%** |
+| 90, ascended (`@90`) | `@90` | **36.7%** |
+
+The 4th tier fixes it completely — its rungs run `@76, @77, @78 … @90`, one per level, so an ascended
+caster never drifts. **The cliff is entirely the gap between reaching 76 and paying the 100kk Rite at
+Archmaster Sevrin.** A caster who levels to 85 first has watched his whole debuff kit fall to a third
+of its rate with nothing on screen explaining why.
+
+**Three ways out, if you want one:**
+
+1. **Leave it.** The Rite is the fix, and a kit that decays until you pay for it is a real incentive.
+2. **Floor the drift at the tier boundary** — a rung never counts as more than N levels behind the
+   caster (N = 2 would hold 36.7% ≈ 30%).
+3. **Say it on the skill card** — *"cast at level 74 · loses power against higher creatures"* — and
+   change no number at all. Cheapest, and it turns an invisible decay into a reason to ascend.
+
+⚠ It is not a nuker problem. Every contested debuff in the game is on this curve: holds, stuns, fears,
+armour breaks, DoT openers. The nuker is just where you happened to look.
+
+---
+
