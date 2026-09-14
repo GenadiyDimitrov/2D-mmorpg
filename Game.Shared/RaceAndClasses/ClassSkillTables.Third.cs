@@ -851,8 +851,8 @@ public static partial class ClassSkillTables
         //
         //    His lanes: ELF magic, HUMAN defence, DEMON attack. Every number — level, SP, MP — lives
         //    in `SkillCatalog.WcSingleTwins`, beside the groups these are derived from, so the learn
-        //    line and the def can never disagree. ⚠ They carry no `Replaces`: a healer keeps his
-        //    singles, and the covering is what stops the two stacking on a target.
+        //    line and the def can never disagree. 🔑 They carry the group's `Replaces` (owner, same day,
+        //    reversing 0.145.0): learning the bundle retires the singles in it, as for the buffer.
         ClassSkills.RegisterThird(Race.Human, Discipline.Lightbringer,
             shared.Concat(Full(LbHumanMend)).Concat(Full(LbHumanGravity))
                   .Concat(SkillCatalog.LightbringerTwinsFor(Race.Human)).ToArray());

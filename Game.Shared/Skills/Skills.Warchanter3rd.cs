@@ -100,12 +100,17 @@ public static partial class SkillCatalog
     //     76 the Warchanter's two LADDERED groups reach rung 2+ and simply outrank the healer's twin,
     //     which is correct: at that point the party version really is the stronger buff.
     //
-    //  🔴 A TWIN CARRIES **NO** `Replaces`, unlike the group it copies. The group's REPLACES column
-    //     retires the singles because a party-wide version of all three is strictly better. For the
-    //     healer it would be a straight loss: he would stop being able to learn Force, Insight,
-    //     Alacrity, Resolve, Ward, Soul, Mana Blessing… and would have to pay 200-325 MP to hand out
-    //     one blessing. The covering still stops any double-dip — the twin's ChildBuffs cover those
-    //     families at group rank, so a single cast over it is refused on the target.
+    //  🔑 A TWIN CARRIES ITS GROUP'S `Replaces` (owner, 2026-09-14, reversing 0.145.0): *"i want
+    //     grouped buffs once learned to remove the single ones (example: once elf learns the 'arcane
+    //     insight' -> it removes/replaces his 'Force'+'Insight') .. like the buffer does"*. 0.145.0
+    //     left it off on the theory that a healer would rather keep the cheap singles; his call is the
+    //     opposite — the bundle IS the upgrade, exactly as it is for the buffer. His healer 3rd.csv
+    //     REPLACES cells are the group's lists verbatim, so the twin simply inherits them.
+    //
+    //     🔑 And the 4th tier follows from it: a single a race has retired gets no 76-90 rungs for
+    //     that race (Mana Blessing: Human + Demon; Fortitude: Elf + Demon), and the two twins that
+    //     cover a laddered single ladder with it instead (Soul Reinforcement for the Elf, Arcane and
+    //     Feral Protection for the Human) — `healer 4th.csv`.
     //
     //  🔑 THE RACE SPLIT IS HIS, by lane: ELF = magic (Insight, Serenity, Soul), HUMAN = defence
     //     (Body, Shield, Arcane and Feral Protection), DEMON = attack (Precision, Bloodlust, Grace).
@@ -133,33 +138,42 @@ public static partial class SkillCatalog
     /// Warchanter's — that is why Arcane Insight is 70 here and 72 there). <b>SP</b> = the healer
     /// file's own top band at that level: 52 → 74k, 56 → 81k, 68 → 320k, 70 → 390k, 72 → 650k. A
     /// bundled blessing is the marquee purchase of its level, and SP in his files is a property of the
-    /// level you buy at, never of the ability.</para></summary>
-    private static readonly (string Group, string Single, int Mp, Race Race, int Level, int Sp)[]
+    /// level you buy at, never of the ability.</para>
+    ///
+    /// <para>🔑 <b>FOURTH</b> = his `healer 4th.csv` MP for rungs 2-9 (76, 78 … 90), for the two twins
+    /// whose group ladders into the 4th tier — still Σ children, with the laddered child at ITS 4th rung. Everything else on those rungs — payload, SP, gold — is
+    /// the group's own rung, because his rows are the buffer's rows with only the MP changed. Null =
+    /// one rung, as before.</para></summary>
+    private static readonly (string Group, string Single, int Mp, Race Race, int Level, int Sp, int[]? Fourth)[]
         WcSingleTwins =
     {
         // ---- DEMON: the attack lane ----
         // Focus 80 + Ferocity 85 + Aim 85                      (group 340 − 90 @58)   Aim/Ferocity @56
-        (WcFeralPrecision,  HolyFeralPrecisionOne,  250, Race.Demon,  56,  81_000),
+        (WcFeralPrecision,  HolyFeralPrecisionOne,  250, Race.Demon,  56,  81_000, null),
         // Might 60 + Fury 80 + Vampirism 125                   (group 395 − 130 @74)  Vampirism @72
-        (WcFeralBloodlust,  HolyFeralBloodlustOne,  265, Race.Demon,  72, 650_000),
+        (WcFeralBloodlust,  HolyFeralBloodlustOne,  265, Race.Demon,  72, 650_000, null),
         // Swift 33 (the cleric's level-30 rung) + Agility 80   (group 198 −  85 @56)  Agility @52
-        (WcWindGrace,       HolyWindGraceOne,       113, Race.Demon,  52,  74_000),
+        (WcWindGrace,       HolyWindGraceOne,       113, Race.Demon,  52,  74_000, null),
 
         // ---- ELF: the magic lane ----
         // Insight 120 + Force 80 — HIS WORKED EXAMPLE          (group 325 − 125 @72)  Insight @70
-        (WcArcaneInsight,   HolyArcaneInsightOne,   200, Race.Elf,    70, 390_000),
+        (WcArcaneInsight,   HolyArcaneInsightOne,   200, Race.Elf,    70, 390_000, null),
         // Alacrity 75 + Resolve 115 + Serenity 85              (group 395 − 120 @70)  Resolve @68
-        (WcArcaneSerenity,  HolyArcaneSerenityOne,  275, Race.Elf,    68, 320_000),
+        (WcArcaneSerenity,  HolyArcaneSerenityOne,  275, Race.Elf,    68, 320_000, null),
         // Ward 80 + Soul 120 + Mana Blessing 125               (group 455 − 130 @74)  Mana Blessing @72
-        (WcSoulReinforce,   HolySoulReinforceOne,   325, Race.Elf,    72, 650_000),
+        // 76-90: Ward 80 + Soul 120 + Mana Blessing's own 4th rung (130 → 200) — the same Σ rule.
+        (WcSoulReinforce,   HolySoulReinforceOne,   325, Race.Elf,    72, 650_000,
+            new[] { 330, 340, 350, 360, 370, 380, 390, 400 }),
 
         // ---- HUMAN: the defence lane ----
         // Body 120 + Bulwark 72 + Vigor 85                     (group 402 − 125 @72)  Body @70
-        (WcBodyReinforce,   HolyBodyReinforceOne,   277, Race.Human,  70, 390_000),
+        (WcBodyReinforce,   HolyBodyReinforceOne,   277, Race.Human,  70, 390_000, null),
         // Shield Blessing 120 + Shield Hardening 125           (group 375 − 130 @74)  Hardening @72
-        (WcShieldReinforce, HolyShieldReinforceOne, 245, Race.Human,  72, 650_000),
+        (WcShieldReinforce, HolyShieldReinforceOne, 245, Race.Human,  72, 650_000, null),
         // Clarity 85 + Fortitude 125                           (group 340 − 130 @74)  Fortitude @72
-        (WcArcaneFeralProt, HolyArcaneFeralProtOne, 210, Race.Human,  72, 650_000),
+        // 76-90: Clarity 85 + Fortitude's own 4th rung (130 → 200) — the same Σ rule.
+        (WcArcaneFeralProt, HolyArcaneFeralProtOne, 210, Race.Human,  72, 650_000,
+            new[] { 215, 225, 235, 245, 255, 265, 275, 285 }),
     };
 
     /// <summary>The learn lines for the nine twins, read straight off <see cref="WcSingleTwins"/>.
@@ -168,6 +182,12 @@ public static partial class SkillCatalog
     internal static IEnumerable<ClassSkill> LightbringerTwinsFor(Race race) =>
         WcSingleTwins.Where(t => t.Race == race)
                      .Select(t => new ClassSkill(t.Single, t.Level, SkillLevel: 1, SpCost: t.Sp));
+
+    /// <summary>The 76-90 learn lines (rungs 2-9, every other level) for the twins that have them —
+    /// `ClassSkillTables.RegisterLightbringerFourth` calls this per race.</summary>
+    internal static IEnumerable<ClassSkill> LightbringerFourthTwinsFor(Race race, int[] bands) =>
+        WcSingleTwins.Where(t => t.Race == race && t.Fourth is not null)
+                     .SelectMany(t => bands.Select((lvl, i) => new ClassSkill(t.Single, lvl, SkillLevel: 2 + i)));
 
     // ---- Two of the three PARTY ECHOES: a single-target buff the buffer re-learns as a party cast.
     //      Not groups — each hands out the SAME thing its single does, to everyone in radius.
@@ -234,26 +254,28 @@ public static partial class SkillCatalog
     /// <para>⚠ <c>AreaRadius</c> has to go back to 0 as well as the mode: `IsAreaSupport` reads the
     /// MODE, but a stray radius on a single-target buff is the kind of thing a later branch reads.</para>
     ///
-    /// <para>🔴 <c>Replaces = null</c> — the group retires its singles, the twin must not. See the
-    /// block above the ids for why that would be a straight loss to a healer.</para>
+    /// <para>🔑 <c>Replaces</c> is the group's, inherited untouched — learning the bundle retires the
+    /// singles it contains, the same as the buffer's (owner, 2026-09-14; see the block above the ids).</para>
     ///
-    /// <para>🔴 <c>Levels = null</c> — rung 1 only. The two groups that ladder into 76-90 do so on the
-    /// Warchanter's `buffer 4th.csv` rows; the healer's file authors no continuation, so the twin has
-    /// exactly one rung and the def's own MpCost/SpCost are what it charges. This is also what closed
-    /// `BL-235`: nothing is priced twice because nothing is bought twice.</para>
+    /// <para>🔑 <c>Levels</c>: rung 1 only, unless <paramref name="fourth"/> gives his 76-90 MP — then
+    /// the group's own rungs 2-9 with just the MP swapped, since his healer rows are the buffer's rows
+    /// at a lower price. Rung 1 is restated with the twin's MP/SP so a level-1 read never sees the
+    /// group's.</para>
     ///
     /// <para>⚠ The description loses its "and nearby allies" tail and says who it lands on instead.
     /// The rest of the sentence is the group's, which is the point — two casts of one blessing.</para>
     /// </summary>
-    private static SkillDef WcSingleTwin(SkillDef group, string id, int mp, int sp) => group with
+    private static SkillDef WcSingleTwin(SkillDef group, string id, int mp, int sp, int[]? fourth) => group with
     {
         Id = id,
         MpCost = mp,
         SpCost = sp,
         TargetMode = TargetMode.SelfOrTarget,
         AreaRadius = 0f,
-        Replaces = null,
-        Levels = null,
+        Levels = fourth is null ? null
+            : new[] { group.Levels![0] with { MpCost = mp, SpCost = sp } }
+                .Concat(group.Levels.Skip(1).Select((l, i) => l with { MpCost = fourth[i] }))
+                .ToArray(),
         Description = group.Description.Replace(" Blesses you and nearby allies for 20 minutes.",
                                                 " Blesses one ally for 20 minutes."),
     };
@@ -326,7 +348,7 @@ public static partial class SkillCatalog
     {
         var defs = Warchanter3rdAuthored();
         var byId = defs.ToDictionary(d => d.Id);
-        return defs.Concat(WcSingleTwins.Select(t => WcSingleTwin(byId[t.Group], t.Single, t.Mp, t.Sp)))
+        return defs.Concat(WcSingleTwins.Select(t => WcSingleTwin(byId[t.Group], t.Single, t.Mp, t.Sp, t.Fourth)))
                    .ToArray();
     }
 

@@ -7,12 +7,43 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.145.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.145.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-14 (latest) — 0.145.0: the bundled blessings are the HEALER's, and they cost what their parts cost
+## 2026-09-14 (latest) — 0.145.1: a healer's bundle retires its singles, and two bundles ladder to 90
+
+🔴 **NEW APK REQUIRED** — a class-skill-TABLE change. No protocol change and no `game.db` delete.
+
+> *"i want grouped buffs once learned to remove the single ones (example: once elf learns the "arcane
+> insight" -> it removes/replaces his "Force"+"Insight") .. like the buffer does"*
+
+**This reverses 0.145.0.** That version deliberately left `Replaces` off the nine twins so a healer
+would keep his cheap singles. Your ruling is the opposite: the bundle is the upgrade, the same as the
+buffer's group. The twins now inherit their group's REPLACES list, which is the list you wrote into
+`healer 3rd.csv`. The buffer's groups already had it, so nothing changed for him.
+
+**The 4th tier splits two singles by race, per your `healer 4th.csv` RACE cells:**
+
+| Race | Mana Blessing 76-90 | Fortitude 76-90 | Bundle that ladders 76-90 instead |
+|---|---|---|---|
+| Human | ✅ | ❌ (retired by Arcane and Feral Protection) | **Arcane and Feral Protection**, 215 → 285 MP |
+| Elf | ❌ (retired by Soul Reinforcement) | ✅ | **Soul Reinforcement**, 330 → 400 MP |
+| Demon | ✅ | ✅ | none |
+
+Both bundle ladders use the buffer group's rungs 2-9 (same payload, SP and gold) at your healer MP.
+**Still the sum of the parts**, with the laddered child at its own 4th-tier rung: Clarity 85 +
+Fortitude 130 → 200, and Ward 80 + Soul 120 + Mana Blessing 130 → 200. (My first pass had your
+earlier 290/335 figures; you corrected the file, and `BL-236` closed the same day.)
+
+In passing, a stale comment claiming Fortitude's 4th-tier rungs ran "43% → 65%" now says 23% → 35%.
+
+**Verified:** `SkillCsvSeed --check` passes both healer files. The checker merges all three races, so
+I read the race split directly from `ClassSkills.Cumulative`: all three races match the table above,
+and both twins carry nine rungs with your MP.
+
+## 2026-09-14 — 0.145.0: the bundled blessings are the HEALER's, and they cost what their parts cost
 
 🔴 **NEW APK REQUIRED** — a class-skill-TABLE change. No protocol bump, no `game.db` delete.
 

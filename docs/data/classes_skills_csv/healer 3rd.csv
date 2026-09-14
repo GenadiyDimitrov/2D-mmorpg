@@ -391,20 +391,20 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 70,Weapon Break,weapon_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Atk and M.Atk by 13%,65,390k,[]
 74,Weapon Break,weapon_break,Magical Debuff,,,600,0,enemy/single,2.5,5,30,Decrease enemy P.Atk and M.Atk by 15%,69,880k,[]
 ,,,,,,,,,,,,,,,,,----------------------------Wind Grace----------------------------
-52,Wind Grace,holy_wind_grace_single,Magic/Buff,,,600,0,party/single,1,1,1200,"+33 Move Speed, +4 Evasion.",113,74k,[],Demon,MP = Swift 33 + Agility 80
+52,Wind Grace,holy_wind_grace_single,Magic/Buff,,,600,0,party/single,1,1,1200,"+33 Move Speed, +4 Evasion.",113,74k,[cast_spd_move cast_spd_eva],Demon
 ,,,,,,,,,,,,,,,,,----------------------------Feral Precision----------------------------
-56,Feral Precision,holy_feral_precision_single,Magic/Buff,,,600,0,party/single,1,1,1200,"+30% critical rate, +35% critical damage, +4 accuracy",250,81k,[],Demon,MP = Focus 80 + Ferocity 85 + Aim 85
+56,Feral Precision,holy_feral_precision_single,Magic/Buff,,,600,0,party/single,1,1,1200,"+30% critical rate, +35% critical damage, +4 accuracy",250,81k,[cast_crit_rate cast_crit_dmg cast_accuracy],Demon
 ,,,,,,,,,,,,,,,,,----------------------------Feral Bloodlust----------------------------
-72,Feral Bloodlust,holy_feral_bloodlust_single,Magic/Buff,,,600,0,party/single,1,1,1200,"+15% P.Atk, Attack Speed +33%, 9% melee vampirism.",265,650k,[],Demon,MP = Might 60 + Fury 80 + Vampirism 125
+72,Feral Bloodlust,holy_feral_bloodlust_single,Magic/Buff,,,600,0,party/single,1,1,1200,"+15% P.Atk, Attack Speed +33%, 9% melee vampirism.",265,650k,[cast_atk_phys cast_spd_as cast_vamp],Demon
 ,,,,,,,,,,,,,,,,,----------------------------Arcane Serenity----------------------------
-68,Arcane Serenity,holy_arcane_serenity_single,Magic/Buff,,,600,0,party/single,1,1,1200,"+30% Cast Speed, +54% interrupt resistance, +20% MP regeneration.",275,320k,[],Elf,MP = Alacrity 75 + Resolve 115 + Serenity 85
+68,Arcane Serenity,holy_arcane_serenity_single,Magic/Buff,,,600,0,party/single,1,1,1200,"+30% Cast Speed, +54% interrupt resistance, +20% MP regeneration.",275,320k,[cast_spd_cast cast_interrupt cast_mp_regen],Elf
 ,,,,,,,,,,,,,,,,,----------------------------Arcane Insight----------------------------
-70,Arcane Insight,holy_arcane_insight_single,Magic/Buff,,,600,0,party/single,1,1,1200,"+32% M.Atk, +100% magic critical rate.",200,390k,[],Elf,MP = Insight 120 + Force 80
+70,Arcane Insight,holy_arcane_insight_single,Magic/Buff,,,600,0,party/single,1,1,1200,"+32% M.Atk, +100% magic critical rate.",200,390k,[cast_atk_mag cast_mcrit_rate],Elf
 ,,,,,,,,,,,,,,,,,----------------------------Soul Reinforcement----------------------------
-72,Soul Reinforcement,holy_soul_reinforcement_single,Magic/Buff,,,600,0,party/single,1,1,1200,"+35% Max MP, +30% M.Def, Decrease Physical MP Cost by 20% and Magic MP Cost by 10%.",325,650k,[],Elf,MP = Ward 80 + Soul 120 + Mana Blessing 125
+72,Soul Reinforcement,holy_soul_reinforcement_single,Magic/Buff,,,600,0,party/single,1,1,1200,"+35% Max MP, +30% M.Def, Decrease Physical MP Cost by 20% and Magic MP Cost by 10%.",325,650k,[cast_mp_max cast_def_mag mana_blessing],Elf
 ,,,,,,,,,,,,,,,,,----------------------------Body Reinforcement----------------------------
-70,Body Reinforcement,holy_body_reinforcement_single,Magic/Buff,,,600,0,party/single,1,1,1200,"+35% Max HP, +15% P.Def +20% HP regeneration.",277,390k,[],Human,MP = Body 120 + Bulwark 72 + Vigor 85
+70,Body Reinforcement,holy_body_reinforcement_single,Magic/Buff,,,600,0,party/single,1,1,1200,"+35% Max HP, +15% P.Def +20% HP regeneration.",277,390k,[cast_hp_max cast_def_phys cast_hp_regen],Human
 ,,,,,,,,,,,,,,,,,----------------------------Shield Reinforcement----------------------------
-72,Shield Reinforcement,holy_shield_reinforcement_single,Magic/Buff,,,600,0,party/single,1,1,1200,"Increases Shield Dmg Reduction with 25%, and Rate with 30%",245,650k,[],Human,MP = Shield Blessing 120 + Shield Hardening 125
+72,Shield Reinforcement,holy_shield_reinforcement_single,Magic/Buff,,,600,0,party/single,1,1,1200,"Increases Shield Dmg Reduction with 25%, and Rate with 30%",245,650k,[cast_shield_def cast_shield_block],Human
 ,,,,,,,,,,,,,,,,,----------------------------Arcane and Feral Protection----------------------------
-72,Arcane and Feral Protection,holy_arcane_feral_protection_single,Magic/Buff,,,600,0,party/single,1,1,1200,"21% resist to CON debuffs, 20% resist to SPT debuffs",210,650k,[],Human,MP = Clarity 85 + Fortitude 125
+72,Arcane and Feral Protection,holy_arcane_feral_protection_single,Magic/Buff,,,600,0,party/single,1,1,1200,"21% resist to CON debuffs, 20% resist to SPT debuffs",210,650k,[cast_cc_res_mag cast_cc_res_phys],Human

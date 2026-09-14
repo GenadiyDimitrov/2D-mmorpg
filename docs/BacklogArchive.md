@@ -5421,3 +5421,19 @@ But laddering them means the twin's eight rungs charge **the group's own SP and 
 3. **A fraction** — name it (10%? 25%?) and both sides move together.
 
 ⚠ The other seven twins are a single rung each and are not affected either way.
+
+## `BL-236` ✅ CLOSED 2026-09-14 (0.145.1) — the healer's two 4th-tier bundles now cost the sum of their parts
+
+**Answered by a CSV edit, nothing owed.** You fixed both MP columns in `healer 4th.csv` to Σ children,
+and the code follows: Soul Reinforcement **330 → 400** (Ward 80 + Soul 120 + Mana Blessing 130 → 200),
+Arcane and Feral Protection **215 → 285** (Clarity 85 + Fortitude 130 → 200).
+
+The question as it was asked:
+
+> ❓ **Neither MP column matches the rule you set in 0.145.0**, *"mp should be decreased to the sum of
+> buffs it gives"*, when I apply it to your own 4th-tier single rows:
+>
+> | Bundle | 76 in your file | Σ children at 76 | Gap |
+> |---|---|---|---|
+> | Soul Reinforcement | **335** → 405 | Ward 80 + Soul 120 + Mana Blessing **130** = **330** → 400 | +5 every rung |
+> | Arcane and Feral Protection | **290** → 360 | Clarity 85 + Fortitude **130** = **215** → 285 | **+75** every rung |

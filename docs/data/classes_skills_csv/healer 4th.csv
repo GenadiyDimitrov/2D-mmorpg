@@ -205,25 +205,25 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 87,Healers Power,healers_power,Magic/Buff,,,0,0,self/single,1,300,15,"Increase Healing Power +1750",250,0,100kk
 90,Healers Power,healers_power,Magic/Buff,,,0,0,self/single,1,300,15,"Increase Healing Power +2000",300,0,100kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Mana Blessing----------------------------
-76,Mana Blessing,mana_blessing,Magic/Buff,,,600,0,party/single,1,1,1200,Decrease Physical MP Cost by 21% and Magic MP Cost by 11%,130,6.5kk,1kk
-78,Mana Blessing,mana_blessing,Magic/Buff,,,600,0,party/single,1,1,1200,Decrease Physical MP Cost by 22% and Magic MP Cost by 12%,140,16kk,1kk
-80,Mana Blessing,mana_blessing,Magic/Buff,,,600,0,party/single,1,1,1200,Decrease Physical MP Cost by 23% and Magic MP Cost by 13%,150,0,5kk
-82,Mana Blessing,mana_blessing,Magic/Buff,,,600,0,party/single,1,1,1200,Decrease Physical MP Cost by 24% and Magic MP Cost by 14%,160,0,10kk
-84,Mana Blessing,mana_blessing,Magic/Buff,,,600,0,party/single,1,1,1200,Decrease Physical MP Cost by 25% and Magic MP Cost by 15%,170,0,30kk
-86,Mana Blessing,mana_blessing,Magic/Buff,,,600,0,party/single,1,1,1200,Decrease Physical MP Cost by 26% and Magic MP Cost by 16%,180,0,75kk
-88,Mana Blessing,mana_blessing,Magic/Buff,,,600,0,party/single,1,1,1200,Decrease Physical MP Cost by 28% and Magic MP Cost by 18%,190,0,100kk
-90,Mana Blessing,mana_blessing,Magic/Buff,,,600,0,party/single,1,1,1200,Decrease Physical MP Cost by 30% and Magic MP Cost by 20%,200,0,100kk
+76,Mana Blessing,mana_blessing,Magic/Buff,,,600,0,party/single,1,1,1200,Decrease Physical MP Cost by 21% and Magic MP Cost by 11%,130,6.5kk,1kk,,,Human;Demon
+78,Mana Blessing,mana_blessing,Magic/Buff,,,600,0,party/single,1,1,1200,Decrease Physical MP Cost by 22% and Magic MP Cost by 12%,140,16kk,1kk,,,Human;Demon
+80,Mana Blessing,mana_blessing,Magic/Buff,,,600,0,party/single,1,1,1200,Decrease Physical MP Cost by 23% and Magic MP Cost by 13%,150,0,5kk,,,Human;Demon
+82,Mana Blessing,mana_blessing,Magic/Buff,,,600,0,party/single,1,1,1200,Decrease Physical MP Cost by 24% and Magic MP Cost by 14%,160,0,10kk,,,Human;Demon
+84,Mana Blessing,mana_blessing,Magic/Buff,,,600,0,party/single,1,1,1200,Decrease Physical MP Cost by 25% and Magic MP Cost by 15%,170,0,30kk,,,Human;Demon
+86,Mana Blessing,mana_blessing,Magic/Buff,,,600,0,party/single,1,1,1200,Decrease Physical MP Cost by 26% and Magic MP Cost by 16%,180,0,75kk,,,Human;Demon
+88,Mana Blessing,mana_blessing,Magic/Buff,,,600,0,party/single,1,1,1200,Decrease Physical MP Cost by 28% and Magic MP Cost by 18%,190,0,100kk,,,Human;Demon
+90,Mana Blessing,mana_blessing,Magic/Buff,,,600,0,party/single,1,1,1200,Decrease Physical MP Cost by 30% and Magic MP Cost by 20%,200,0,100kk,,,Human;Demon
 ,,,,,,,,,,,,,,,,,,,----------------------------Arcane Resistance----------------------------
 76,Arcane Resistance,arcane_resistance,Magic/Buff,,,600,0,party/single,1,1,1200,30% resist to Buff removal,130,6.5kk,1kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Fortitude----------------------------
-76,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,23% resist to CON debuffs,130,6.5kk,1kk
-78,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,25% resist to CON debuffs,140,16kk,1kk
-80,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,27% resist to CON debuffs,150,0,5kk
-82,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,29% resist to CON debuffs,160,0,10kk
-84,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,31% resist to CON debuffs,170,0,30kk
-86,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,33% resist to CON debuffs,180,0,75kk
-88,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,34% resist to CON debuffs,190,0,100kk
-90,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,35% resist to CON debuffs,200,0,100kk
+76,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,23% resist to CON debuffs,130,6.5kk,1kk,,,Elf;Demon
+78,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,25% resist to CON debuffs,140,16kk,1kk,,,Elf;Demon
+80,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,27% resist to CON debuffs,150,0,5kk,,,Elf;Demon
+82,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,29% resist to CON debuffs,160,0,10kk,,,Elf;Demon
+84,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,31% resist to CON debuffs,170,0,30kk,,,Elf;Demon
+86,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,33% resist to CON debuffs,180,0,75kk,,,Elf;Demon
+88,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,34% resist to CON debuffs,190,0,100kk,,,Elf;Demon
+90,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,35% resist to CON debuffs,200,0,100kk,,,Elf;Demon
 ,,,,,,,,,,,,,,,,,,,----------------------------Antidote----------------------------
 76,Antidote,antidote,Magic/Heal,,,600,0,party/single,0.8,3,0,"Cures poison, venom and bleed of rank 10 or lower from an ally (or self).",72,6.5kk,1kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Holy Blessing----------------------------
@@ -302,3 +302,21 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 76,Holy Soul,holy_soul,Toggle,,,0,0,self/single,0,0,0,Decrease MP Consumtion by 30% and Casting speed by 10%; Consume 50 HP/s,0,6.5kk,1kk,,,,Intentional decrease in Cast speed
 ,,,,,,,,,,,,,,,,,,,----------------------------Lasting Enchantment----------------------------
 76,Lasting Enchantment,lasting_enchantment,Passive,,,0,0,self/single,0,0,0,double duration rate 10% - buffs and debuffs you cast have that chance to last TWICE as long - one roll per cast so an area blessing doubles for everyone or no one - scales with ATK,0,6.5kk,1kk
+,,,,,,,,,,,,,,,,,,,----------------------------Soul Reinforcement----------------------------
+76,Soul Reinforcement,holy_soul_reinforcement_single,Magic/Buff,,,600,0,party/single,1,1,1200,"+35% Max MP, +30% M.Def, Decrease Physical MP Cost by 21% and Magic MP Cost by 11%",330,6.5kk,1kk,,,Elf
+78,Soul Reinforcement,holy_soul_reinforcement_single,Magic/Buff,,,600,0,party/single,1,1,1200,"+35% Max MP, +30% M.Def, Decrease Physical MP Cost by 22% and Magic MP Cost by 12%",340,16kk,1kk,,,Elf
+80,Soul Reinforcement,holy_soul_reinforcement_single,Magic/Buff,,,600,0,party/single,1,1,1200,"+35% Max MP, +30% M.Def, Decrease Physical MP Cost by 23% and Magic MP Cost by 13%",350,0,5kk,,,Elf
+82,Soul Reinforcement,holy_soul_reinforcement_single,Magic/Buff,,,600,0,party/single,1,1,1200,"+35% Max MP, +30% M.Def, Decrease Physical MP Cost by 24% and Magic MP Cost by 14%",360,0,10kk,,,Elf
+84,Soul Reinforcement,holy_soul_reinforcement_single,Magic/Buff,,,600,0,party/single,1,1,1200,"+35% Max MP, +30% M.Def, Decrease Physical MP Cost by 25% and Magic MP Cost by 15%",370,0,30kk,,,Elf
+86,Soul Reinforcement,holy_soul_reinforcement_single,Magic/Buff,,,600,0,party/single,1,1,1200,"+35% Max MP, +30% M.Def, Decrease Physical MP Cost by 26% and Magic MP Cost by 16%",380,0,75kk,,,Elf
+88,Soul Reinforcement,holy_soul_reinforcement_single,Magic/Buff,,,600,0,party/single,1,1,1200,"+35% Max MP, +30% M.Def, Decrease Physical MP Cost by 28% and Magic MP Cost by 18%",390,0,100kk,,,Elf
+90,Soul Reinforcement,holy_soul_reinforcement_single,Magic/Buff,,,600,0,party/single,1,1,1200,"+35% Max MP, +30% M.Def, Decrease Physical MP Cost by 30% and Magic MP Cost by 20%",400,0,100kk,,,Elf
+,,,,,,,,,,,,,,,,,,,----------------------------Arcane and Feral Protectio----------------------------
+76,Arcane and Feral Protection,holy_arcane_feral_protection_single,Magic/Buff,,,600,0,party/single,1,1,1200,"23% resist to CON debuff, 20% resist to SPT debuffs",215,6.5kk,1kk,,,Human
+78,Arcane and Feral Protection,holy_arcane_feral_protection_single,Magic/Buff,,,600,0,party/single,1,1,1200,"25% resist to CON debuff, 20% resist to SPT debuffs",225,16kk,1kk,,,Human
+80,Arcane and Feral Protection,holy_arcane_feral_protection_single,Magic/Buff,,,600,0,party/single,1,1,1200,"27% resist to CON debuff, 20% resist to SPT debuffs",235,0,5kk,,,Human
+82,Arcane and Feral Protection,holy_arcane_feral_protection_single,Magic/Buff,,,600,0,party/single,1,1,1200,"29% resist to CON debuff, 20% resist to SPT debuffs",245,0,10kk,,,Human
+84,Arcane and Feral Protection,holy_arcane_feral_protection_single,Magic/Buff,,,600,0,party/single,1,1,1200,"31% resist to CON debuff, 20% resist to SPT debuffs",255,0,30kk,,,Human
+86,Arcane and Feral Protection,holy_arcane_feral_protection_single,Magic/Buff,,,600,0,party/single,1,1,1200,"33% resist to CON debuff, 20% resist to SPT debuffs",265,0,75kk,,,Human
+88,Arcane and Feral Protection,holy_arcane_feral_protection_single,Magic/Buff,,,600,0,party/single,1,1,1200,"34% resist to CON debuff, 20% resist to SPT debuffs",275,0,100kk,,,Human
+90,Arcane and Feral Protection,holy_arcane_feral_protection_single,Magic/Buff,,,600,0,party/single,1,1,1200,"35% resist to CON debuff, 20% resist to SPT debuffs",285,0,100kk,,,Human

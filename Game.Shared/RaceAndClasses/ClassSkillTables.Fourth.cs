@@ -387,10 +387,7 @@ public static partial class ClassSkillTables
         shared.AddRange(Ladder(ManaRay,                   HealerFourthEven,  11));
         shared.AddRange(Ladder(ManaStrain,                HealerFourthEven,  12));
         shared.AddRange(Ladder(WeaponBreak,               HealerFourthEven,   5));
-        shared.AddRange(Ladder(ManaBlessing,              HealerFourthEven,   4));
-        // Fortitude is a rung of the SHARED CC-resist family, not a skill of its own — the same rule
-        // as every buff row on the 3rd-class table. Rungs 5-12 are his 43% → 65%.
-        shared.AddRange(Ladder(CastId(FamCcResPhys),      HealerFourthEven,   5));
+        // ⚠ MANA BLESSING and FORTITUDE are NOT shared — see the race split below.
         // Resurrection and its field: two rungs each, at 76 and 80, and then they stop for good.
         shared.AddRange(At(Resurrection,      (76, 17), (80, 18)));
         shared.AddRange(At(ResurrectionField, (76, 5),  (80, 6)));
@@ -419,15 +416,29 @@ public static partial class ClassSkillTables
         //
         // ⚠ The Elf also gains a fourth: Healer PARTY Blessing, 83-90, which the other two races have
         // no equivalent of. That asymmetry is his (`healer 4th.csv`), not an omission here.
+        //
+        // 🔑 AND THE BUNDLED BLESSINGS SPLIT TWO SINGLES (owner, 2026-09-14): a bundle REPLACES the
+        //    singles it carries, so a race that bought the bundle at 72 has no single left to ladder.
+        //    The Elf's Soul Reinforcement retired Mana Blessing → the Elf ladders the bundle instead;
+        //    the Human's Arcane and Feral Protection retired Fortitude → same. The Demon owns neither
+        //    bundle and ladders both singles. Fortitude is a rung of the SHARED CC-resist family, not a
+        //    skill of its own; rungs 5-12 are his 23% → 35%.
+        ClassSkill[] ManaBless() => Ladder(ManaBlessing,         HealerFourthEven, 4);
+        ClassSkill[] Fortitude() => Ladder(CastId(FamCcResPhys), HealerFourthEven, 5);
+
         ClassSkills.RegisterFourth(Race.Human, Discipline.Lightbringer,
-            shared.Concat(Ladder(LbHumanMend,    HealerFourthBands, 15))
+            shared.Concat(ManaBless())
+                  .Concat(SkillCatalog.LightbringerFourthTwinsFor(Race.Human, HealerFourthEven))
+                  .Concat(Ladder(LbHumanMend,    HealerFourthBands, 15))
                   .Concat(Ladder(LbHumanGravity, HealerFourthEven,  15))
                   .Concat(At(LifeMark, (78, 1), (83, 2)))
                   .Concat(new[] { new ClassSkill(LifeRestoration, 83) })
                   .ToArray());
 
         ClassSkills.RegisterFourth(Race.Elf, Discipline.Lightbringer,
-            shared.Concat(Ladder(LbElfDawn, HealerFourthBands, 15))
+            shared.Concat(Fortitude())
+                  .Concat(SkillCatalog.LightbringerFourthTwinsFor(Race.Elf, HealerFourthEven))
+                  .Concat(Ladder(LbElfDawn, HealerFourthBands, 15))
                   .Concat(Ladder(LbElfBind, HealerFourthEven,  15))
                   .Concat(Ladder(HealerPartyBlessing, new[] { 83, 84, 85, 86, 87, 88, 89, 90 }, 1))
                   .Concat(At(HolyMark, (78, 1), (83, 2)))
@@ -435,7 +446,8 @@ public static partial class ClassSkillTables
                   .ToArray());
 
         ClassSkills.RegisterFourth(Race.Demon, Discipline.Lightbringer,
-            shared.Concat(Ladder(LbOrkFont,       HealerFourthBands, 15))
+            shared.Concat(ManaBless()).Concat(Fortitude())
+                  .Concat(Ladder(LbOrkFont,       HealerFourthBands, 15))
                   .Concat(Ladder(LbOrkArmorBreak, HealerFourthEven,  15))
                   .Concat(At(BloodMark, (78, 1), (83, 2)))
                   .Concat(new[] { new ClassSkill(SpiritRestoration, 83) })
