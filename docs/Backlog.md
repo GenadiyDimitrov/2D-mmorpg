@@ -1778,13 +1778,15 @@ same day.** Nothing is built yet.
 - **Saints Sword Dance** hits an area: `target/aoe`.
 - **Two-Hand Mastery 4th**: 666 → **678** → 690 (+12 on both steps, so 80 onward is unchanged).
 
-### Left over — I'll fix these as obvious unless you say otherwise
-- `warrior 3rd.csv` Saints Sword Dance is still `target/single` (only the 4th was changed) → `target/aoe`.
-- 3rd Demon Slash TYPE is still `Physical/Active`; the 4th and the other two say `Physical/Debuf`.
-- 4th Slash RANGE is `0`; the 3rd is `40` (melee).
-- 4th Focused Double Slash is cast 2 / reuse 5; the 3rd is 1.5 / 3 — same as the Triple now. Meant?
-- Focus Limit is `target/single`; it only sets your own Focus → `self/single`?
-- Cosmetic: Sword Blast AOE `00`, Armor Mastery 4th 146 at 87, stale separator labels.
+### Second round of rulings (same day) — applied to the CSVs
+- Saints Sword Dance is `target/aoe` in **both** tiers.
+- Demon Slash (3rd) is `Physical/Debuf`, like the other two.
+- 🔑 **LAW: every melee physical attack skill has RANGE 40**, the melee basic-attack range — *"if I miss
+  to type it it's a law"*. The 4th Slash rows were 0 → 40. Every class CSV was swept: no other melee
+  strike breaks it (Signal Flare, Prowl, Vanish and Mass Taunt are self/area skills, not strikes).
+- Focus Limit is `self/single` — it affects the caster only.
+- 4th Focused Double Slash is cast **1.5 / reuse 3** (left over from copying the Triple).
+- Still cosmetic, untouched: Sword Blast AOE `00`, Armor Mastery 4th 146 at 87, stale separator labels.
 
 Not a question: the 4th file stops Final Stand, HP Boost, HP Regeneration, the Battle stances, Monster
 Knowledge, Focus Mastery, Battle Frenzy and Antidote at their 74 rungs. The Final Stand acc edit changes a

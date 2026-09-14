@@ -81,6 +81,10 @@ from IG references.
 ## Core conventions (follow these)
 - **Skill ids are STRINGS** everywhere (`"magic_bolt"`), append-only, collision-
   guarded at startup. Item DefIds are strings too. Mob template ids are strings.
+  ⚠ **A SKILL_ID is plain ASCII** — the owner types Bulgarian, and a Cyrillic `к` once sat invisibly at
+  the end of `warrior_sword_shock` (`BL-237`). Check new CSV ids for non-ASCII before building.
+- **Every melee physical attack skill has RANGE 40** — the melee basic-attack range. Owner's LAW
+  (2026-09-14, `BL-237`): *"if I miss to type it it's a law"*. A blank/0 range on a melee strike means 40.
 - `Effective*` stat getters on `Entity` return **float**; cast to `(int)` when
   feeding int-typed `StatCalculator` methods.
 - Editing existing files in the chat sandbox used `str_replace` / `cat > EOF`
