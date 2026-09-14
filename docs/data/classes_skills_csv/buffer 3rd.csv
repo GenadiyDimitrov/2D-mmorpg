@@ -249,7 +249,6 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 72,Shield Hardening,cast_shield_def,Magic/Buff,,,600,0,party/single,1,1,1200,Increases Shield Dmg Reduction with 25%,125,330k,[],,
 ,,,,,,,,,,,,,,,,,--------------------------Shield Reinforcement--------------------------
 74,Shield Reinforcement,wc_shield_reinforcement,Magic/Buff,,,600,800,party/aoe,1,1,1200,"Increases Shield Dmg Reduction with 25%, and Rate with 30%",375,880k,[cast_shield_def cast_shield_block],,
-74,Shield Reinforcement,wc_shield_reinforcement_single,Magic/Buff,,,600,0,party/single,1,1,1200,"Increases Shield Dmg Reduction with 25%, and Rate with 30%",375,880k,[cast_shield_def cast_shield_block],Human,
 ,,,,,,,,,,,,,,,,,---------------------------------------------------------------------------------------------Aim & Focus & Ferocity-------------------------------------------------------------------------------------------------------------------
 ,,,,,,,,,,,,,,,,,------------------------------Focus------------------------------
 44,Focus,cast_crit_rate,Magic/Buff,,,600,0,party/single,1,1,1200,+25% critical rate.,72,22k,[],,
@@ -264,7 +263,6 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 56,Ferocity,cast_crit_dmg,Magic/Buff,,,600,0,party/single,1,1,1200,+35% critical damage.,85,42k,[],,
 ,,,,,,,,,,,,,,,,,------------------------------Feral Precision------------------------------
 58,Feral Precision,wc_feral_precision,Magic/Buff,,,600,800,party/aoe,1,1,1200,"+30% critical rate, +35% critical damage, +4 accuracy",340,88k,[cast_crit_rate cast_crit_dmg cast_accuracy],,
-58,Feral Precision,wc_feral_precision_single,Magic/Buff,,,600,0,party/single,1,1,1200,"+30% critical rate, +35% critical damage, +4 accuracy",340,88k,[cast_crit_rate cast_crit_dmg cast_accuracy],Demon,
 ,,,,,,,,,,,,,,,,,---------------------------------------------------------------------------------------------Might & Fury & Vampirism-------------------------------------------------------------------------------------------------------------------
 ,,,,,,,,,,,,,,,,,------------------------------Might------------------------------
 40,Might,cast_atk_phys,Magic/Buff,,,600,0,party/single,1,1,1200,+15% P.Atk.,60,19k,[],,
@@ -277,7 +275,6 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 72,Vampirism,cast_vamp,Magic/Buff,,,600,0,party/single,1,1,1200,+9% melee vampirism.,125,330k,[],,
 ,,,,,,,,,,,,,,,,,------------------------------Feral Bloodlust------------------------------
 74,Feral Bloodlust,wc_feral_bloodlust,Magic/Buff,,,600,800,party/aoe,1,1,1200,"+15% P.Atk, Attack Speed +33%, 9% melee vampirism.",395,880k,[cast_atk_phys cast_spd_as cast_vamp],,
-74,Feral Bloodlust,wc_feral_bloodlust_single,Magic/Buff,,,600,0,party/single,1,1,1200,"+15% P.Atk, Attack Speed +33%, 9% melee vampirism.",395,880k,[cast_atk_phys cast_spd_as cast_vamp],Demon,
 ,,,,,,,,,,,,,,,,,---------------------------------------------------------------------------------------------Force & Insight-------------------------------------------------------------------------------------------------------------------
 ,,,,,,,,,,,,,,,,,------------------------------Force------------------------------
 44,Force,cast_atk_mag,Magic/Buff,,,600,0,party/single,1,1,1200,+28% M.Atk.,72,22k,[],,
@@ -287,7 +284,6 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 70,Insight,cast_mcrit_rate,Magic/Buff,,,600,0,party/single,1,1,1200,+100% magic critical rate.,120,200k,[],,
 ,,,,,,,,,,,,,,,,,------------------------------Arcane Insight------------------------------
 72,Arcane Insight,wc_arcane_insight,Magic/Buff,,,600,800,party/aoe,1,1,1200,"+32% M.Atk, +100% magic critical rate.",325,650k,[cast_atk_mag cast_mcrit_rate],,
-72,Arcane Insight,wc_arcane_insight_single,Magic/Buff,,,600,0,party/single,1,1,1200,"+32% M.Atk, +100% magic critical rate.",325,650k,[cast_atk_mag cast_mcrit_rate],Elf,
 ,,,,,,,,,,,,,,,,,---------------------------------------------------------------------------------------------Alacrity & Resolve & Serenity-------------------------------------------------------------------------------------------------------------------
 ,,,,,,,,,,,,,,,,,--------------------------Alacrity--------------------------
 48,Alacrity,cast_spd_cast,Magic/Buff,,,600,0,party/single,1,1,1200,+30% Cast Speed.,75,32k,[],,
@@ -302,7 +298,6 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 68,Resolve,cast_interrupt,Magic/Buff,,,600,0,party/single,1,1,1200,+54% interrupt resistance.,115,165k,[],,
 ,,,,,,,,,,,,,,,,,------------------------------Arcane Serenity------------------------------
 70,Arcane Serenity,wc_arcane_serenity,Magic/Buff,,,600,800,party/aoe,1,1,1200,"+30% Cast Speed, +54% interrupt resistance, +20% MP regeneration.",395,170k,[cast_spd_cast cast_interrupt cast_mp_regen],,
-70,Arcane Serenity,wc_arcane_serenity_single,Magic/Buff,,,600,0,party/single,1,1,1200,"+30% Cast Speed, +54% interrupt resistance, +20% MP regeneration.",395,170k,[cast_spd_cast cast_interrupt cast_mp_regen],Elf,
 ,,,,,,,,,,,,,,,,,---------------------------------------------------------------------------------------------Ward & Soul & Mana Blessing-------------------------------------------------------------------------------------------------------------------
 ,,,,,,,,,,,,,,,,,-------------------------------Ward-------------------------------
 44,Ward,cast_def_mag,Magic/Buff,,,600,0,party/single,1,1,1200,+23% M.Def.,72,22k,[],,
@@ -320,7 +315,6 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 72,Mana Blessing,mana_blessing,Magic/Buff,,,600,0,party/single,1,1,1200,Decrease Physical MP Cost by 20% and Magic MP Cost by 10%,125,330k,[],,
 ,,,,,,,,,,,,,,,,,------------------------------Soul Blessing------------------------------
 74,Soul Reinforcement,wc_soul_reinforcement,Magic/Buff,,,600,800,party/aoe,1,1,1200,"+35% Max MP, +30% M.Def, Decrease Physical MP Cost by 20% and Magic MP Cost by 10%.",455,880k,[cast_mp_max cast_def_mag mana_blessing],,
-74,Soul Reinforcement,wc_soul_reinforcement_single,Magic/Buff,,,600,0,party/single,1,1,1200,"+35% Max MP, +30% M.Def, Decrease Physical MP Cost by 20% and Magic MP Cost by 10%.",455,880k,[cast_mp_max cast_def_mag mana_blessing],Elf,
 ,,,,,,,,,,,,,,,,,---------------------------------------------------------------------------------------------Body & Bulwark & Vigor-------------------------------------------------------------------------------------------------------------------
 ,,,,,,,,,,,,,,,,,------------------------------Bulwark------------------------------
 44,Bulwark,cast_def_phys,Magic/Buff,,,600,0,party/single,1,1,1200,+15% P.Def.,72,22k,[],,
@@ -336,7 +330,6 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 70,Body,cast_hp_max,Magic/Buff,,,600,0,party/single,1,1,1200,+35% Max HP.,120,200k,[],,
 ,,,,,,,,,,,,,,,,,------------------------------Body Blessing------------------------------
 72,Body Reinforcement,wc_body_reinforcement,Magic/Buff,,,600,800,party/aoe,1,1,1200,"+35% Max HP, +15% P.Def +20% HP regeneration.",402,650k,[cast_hp_max cast_def_phys cast_hp_regen],,
-72,Body Reinforcement,wc_body_reinforcement_single,Magic/Buff,,,600,0,party/single,1,1,1200,"+35% Max HP, +15% P.Def +20% HP regeneration.",402,650k,[cast_hp_max cast_def_phys cast_hp_regen],Human,
 ,,,,,,,,,,,,,,,,,---------------------------------------------------------------------------------------------Fortitude & Clarity-------------------------------------------------------------------------------------------------------------------
 ,,,,,,,,,,,,,,,,,------------------------------Clarity------------------------------
 40,Clarity,cast_cc_res_mag,Magic/Buff,,,600,0,party/single,1,1,1200,14% resist to SPT debuffs,60,19k,[],,
@@ -349,14 +342,12 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 72,Fortitude,cast_cc_res_phys,Magic/Buff,,,600,0,party/single,1,1,1200,21% resist to CON debuffs,125,330k,[],,
 ,,,,,,,,,,,,,,,,,------------------------------Arcane and Feral Protection------------------------------
 74,Arcane and Feral Protection,wc_arcane_feral_protection,Magic/Buff,,,600,800,party/aoe,1,1,1200,"21% resist to CON debuffs, 20% resist to SPT debuffs",340,880k,[cast_cc_res_mag cast_cc_res_phys],,
-74,Arcane and Feral Protection,wc_arcane_feral_protection_single,Magic/Buff,,,600,0,party/single,1,1,1200,"21% resist to CON debuffs, 20% resist to SPT debuffs",340,880k,[cast_cc_res_mag cast_cc_res_phys],Human,
 ,,,,,,,,,,,,,,,,,---------------------------------------------------------------------------------------------Swift & Agility-------------------------------------------------------------------------------------------------------------------
 ,,,,,,,,,,,,,,,,,------------------------------Agility------------------------------
 44,Agility,cast_spd_eva,Magic/Buff,,,600,0,party/single,1,1,1200,+3 Evasion.,72,22k,[],,
 52,Agility,cast_spd_eva,Magic/Buff,,,600,0,party/single,1,1,1200,+4 Evasion.,80,38k,[],,
 ,,,,,,,,,,,,,,,,,------------------------------Agility------------------------------
 56,Wind Grace,wc_wind_grace,Magic/Buff,,,600,800,party/aoe,1,1,1200,"+33 Move Speed, +4 Evasion.",198,38k,[cast_spd_move cast_spd_eva],,
-56,Wind Grace,wc_wind_grace_single,Magic/Buff,,,600,0,party/single,1,1,1200,"+33 Move Speed, +4 Evasion.",198,38k,[cast_spd_move cast_spd_eva],Demon,
 ,,,,,,,,,,,,,,,,,---------------------------------------------------------------------------------------------Shrouding Hymn-------------------------------------------------------------------------------------------------------------------
 74,Shrouding Hymn,shrouding_hymn,Magic/Buff,,,600,800,party/aoe,2,30,60,For 1 minute monsters that have not already noticed you and nearby allies leave you alone.,300,880k,[],,
 ,,,,,,,,,,,,,,,,,---------------------------------------------------------------------------------------------Harmonies-------------------------------------------------MP for each buff inside 60/66/73/80/88/97 = 464 at 6 buffs -- [60x1.1^buffIndex per buff]

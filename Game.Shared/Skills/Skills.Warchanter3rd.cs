@@ -66,55 +66,108 @@ public static partial class SkillCatalog
     public const string WcArcaneFeralProt  = "wc_arcane_feral_protection"; // combined: both CC resists
     public const string WcWindGrace        = "wc_wind_grace";         // combined: move speed + evasion
 
-    // ---- THE SINGLE-TARGET TWINS of those nine groups, three per race (owner, 2026-09-14:
-    //      *"I want buffers to learn few grouped buffs (but single target -> work the same as
-    //      buffers just a single target one) … Names can be the same just casting to be target/single
-    //      as other healers buffs … They replace each other with the buffers party equivalents (like
-    //      (war) great bulwark/might)"*).
+    // ═══ THE SINGLE-TARGET TWINS — AND THEY BELONG TO THE **LIGHTBRINGER**, NOT TO THIS CLASS ═══
     //
-    //  🔑 WHY THEY ARE WORTH OWNING when the party version is the same buff: `AlliesInRadius` NEVER
-    //     LEAVES THE PARTY — that is GameLoopService's own note on the mode, and it means a group cast
-    //     reaches the party and nobody else. Without these a Warchanter cannot bless one ungrouped
-    //     ally at all, which is most of what a buffer is actually asked to do.
+    //  🔴🔑 READ THIS BEFORE ASSUMING THE `holy_` IDS ARE IN THE WRONG FILE. They are the HEALER's
+    //     skills; they live here because they are DERIVED from the groups directly above, and the
+    //     derivation has to sit where its source does. Who learns them is `RegisterLightbringer` in
+    //     ClassSkillTables.Third.cs. The Warchanter learns NONE of them — 0.144.0 gave them to him and
+    //     his correction the same day was immediate: *"No no … Those single buffs to be given to
+    //     healers not buffers"*.
     //
-    //  🔑 THE TWIN IS THE GROUP, VERBATIM — same name, same MP, same SP, same payload, same ladder.
-    //     The ONLY difference is `TargetMode`, exactly as his sentence says, and it is BUILT from the
-    //     group def (WcSingleTwin) rather than authored a second time, so the two can never drift.
+    //  Owner, 2026-09-14: *"I want buffers to learn few grouped buffs (but single target -> work the
+    //  same … just a single target one) … Names can be the same just casting to be target/single as
+    //  other healers buffs … They replace each other with the buffers party equivalents (like (war)
+    //  great bulwark/might)"*, then: *"mp should be decreased to the sum of buffs it gives .. Healer
+    //  3rd (elf) learns "Arcane Insight" @70 and it costs 200(120+80)Mp"*.
     //
-    //  🔑 "THEY REPLACE EACH OTHER" NEEDS NO NEW MACHINERY: the pair share the group's BuffKey and,
-    //     being groups both, land at the same `GroupRank(level)`. At equal rank ApplyBuff keeps the
-    //     LONGER remaining time, and a fresh 20-minute cast always beats a running one — which is the
-    //     same swap Great Might and War Might already do, and the pair he named.
+    //  🔑 THE MP IS THE SUM OF THE CHILDREN'S TOP RUNGS — his rule, and his own worked example:
+    //     Insight 120 + Force 80 = 200. It is the GROUP's published MP **minus the band premium**
+    //     (the group rule is *"each max lvl buff of the group MP + the group learned lvl MP cost"*),
+    //     so a healer bundling three blessings pays exactly what casting the three singles costs and
+    //     saves the casts, while the Warchanter's party version still pays the premium for reaching
+    //     everyone. That is the whole difference between the two, and it is why the twin needed no
+    //     price of its own to be worth owning.
     //
-    //  🔑 THE RACE SPLIT IS HIS, lane-shaped like everything else in this class: ELF = magic (Insight,
-    //     Serenity, Soul), HUMAN = defence (Body, Shield, Arcane and Feral Protection), DEMON = attack
-    //     (Feral Precision, Feral Bloodlust, Wind Grace). Who learns them: ClassSkillTables.Third.
-    public const string WcFeralPrecisionOne  = "wc_feral_precision_single";
-    public const string WcFeralBloodlustOne  = "wc_feral_bloodlust_single";
-    public const string WcArcaneInsightOne   = "wc_arcane_insight_single";
-    public const string WcArcaneSerenityOne  = "wc_arcane_serenity_single";
-    public const string WcSoulReinforceOne   = "wc_soul_reinforcement_single";
-    public const string WcBodyReinforceOne   = "wc_body_reinforcement_single";
-    public const string WcShieldReinforceOne = "wc_shield_reinforcement_single";
-    public const string WcArcaneFeralProtOne = "wc_arcane_feral_protection_single";
-    public const string WcWindGraceOne       = "wc_wind_grace_single";
+    //  🔑 THE LEARN LEVEL IS WHERE THE LAST CHILD LADDER MAXES **in the healer's own table** — which
+    //     is what makes his Arcane Insight land at 70 (Force 52, Insight 70) rather than the
+    //     Warchanter's 72. A twin any earlier would hand out a rung its caster has not bought.
+    //
+    //  🔑 "THEY REPLACE EACH OTHER" NEEDS NO NEW MACHINERY: a twin shares its group's BuffKey and,
+    //     being a group structurally (>1 ChildBuffs), lands at the same `GroupRank(level)`. At equal
+    //     rank ApplyBuff keeps the LONGER remaining time, so a fresh 20-minute cast always beats a
+    //     running one — the same swap Great Might and War Might already do, the pair he named. Above
+    //     76 the Warchanter's two LADDERED groups reach rung 2+ and simply outrank the healer's twin,
+    //     which is correct: at that point the party version really is the stronger buff.
+    //
+    //  🔴 A TWIN CARRIES **NO** `Replaces`, unlike the group it copies. The group's REPLACES column
+    //     retires the singles because a party-wide version of all three is strictly better. For the
+    //     healer it would be a straight loss: he would stop being able to learn Force, Insight,
+    //     Alacrity, Resolve, Ward, Soul, Mana Blessing… and would have to pay 200-325 MP to hand out
+    //     one blessing. The covering still stops any double-dip — the twin's ChildBuffs cover those
+    //     families at group rank, so a single cast over it is refused on the target.
+    //
+    //  🔑 THE RACE SPLIT IS HIS, by lane: ELF = magic (Insight, Serenity, Soul), HUMAN = defence
+    //     (Body, Shield, Arcane and Feral Protection), DEMON = attack (Precision, Bloodlust, Grace).
+    public const string HolyFeralPrecisionOne  = "holy_feral_precision_single";
+    public const string HolyFeralBloodlustOne  = "holy_feral_bloodlust_single";
+    public const string HolyArcaneInsightOne   = "holy_arcane_insight_single";
+    public const string HolyArcaneSerenityOne  = "holy_arcane_serenity_single";
+    public const string HolySoulReinforceOne   = "holy_soul_reinforcement_single";
+    public const string HolyBodyReinforceOne   = "holy_body_reinforcement_single";
+    public const string HolyShieldReinforceOne = "holy_shield_reinforcement_single";
+    public const string HolyArcaneFeralProtOne = "holy_arcane_feral_protection_single";
+    public const string HolyWindGraceOne       = "holy_wind_grace_single";
 
-    /// <summary>Group id → its single-target twin's id. ONE table, read both by the catalog (which
-    /// builds each twin from its group) and by nothing else — the class tables name the twin consts
-    /// directly. Adding a group and forgetting its twin is therefore a deliberate choice, not a slip.
-    /// </summary>
-    private static readonly (string Group, string Single)[] WcSingleTwins =
+    /// <summary>THE WHOLE TWIN TABLE, and the only place any of it is written: which group each twin
+    /// copies, its id, its MP, the race that learns it, and the level and SP it is learned at. The
+    /// catalog builds the defs from this (<see cref="WcSingleTwin"/>) and
+    /// <c>ClassSkillTables.RegisterLightbringer</c> reads the same rows for the learn lines, so the
+    /// two halves cannot disagree.
+    ///
+    /// <para>🔑 <b>MP</b> = Σ(each child's TOP-rung MP), his rule, read off the rungs and never
+    /// remembered — the arithmetic is written out on each line so a retuned rung shows up as a sum
+    /// that no longer adds. Every one is the group's published MP minus the band premium.</para>
+    ///
+    /// <para>🔑 <b>LEVEL</b> = where the LAST child ladder maxes in <i>the healer's</i> table (not the
+    /// Warchanter's — that is why Arcane Insight is 70 here and 72 there). <b>SP</b> = the healer
+    /// file's own top band at that level: 52 → 74k, 56 → 81k, 68 → 320k, 70 → 390k, 72 → 650k. A
+    /// bundled blessing is the marquee purchase of its level, and SP in his files is a property of the
+    /// level you buy at, never of the ability.</para></summary>
+    private static readonly (string Group, string Single, int Mp, Race Race, int Level, int Sp)[]
+        WcSingleTwins =
     {
-        (WcFeralPrecision,  WcFeralPrecisionOne),
-        (WcFeralBloodlust,  WcFeralBloodlustOne),
-        (WcArcaneInsight,   WcArcaneInsightOne),
-        (WcArcaneSerenity,  WcArcaneSerenityOne),
-        (WcSoulReinforce,   WcSoulReinforceOne),
-        (WcBodyReinforce,   WcBodyReinforceOne),
-        (WcShieldReinforce, WcShieldReinforceOne),
-        (WcArcaneFeralProt, WcArcaneFeralProtOne),
-        (WcWindGrace,       WcWindGraceOne),
+        // ---- DEMON: the attack lane ----
+        // Focus 80 + Ferocity 85 + Aim 85                      (group 340 − 90 @58)   Aim/Ferocity @56
+        (WcFeralPrecision,  HolyFeralPrecisionOne,  250, Race.Demon,  56,  81_000),
+        // Might 60 + Fury 80 + Vampirism 125                   (group 395 − 130 @74)  Vampirism @72
+        (WcFeralBloodlust,  HolyFeralBloodlustOne,  265, Race.Demon,  72, 650_000),
+        // Swift 33 (the cleric's level-30 rung) + Agility 80   (group 198 −  85 @56)  Agility @52
+        (WcWindGrace,       HolyWindGraceOne,       113, Race.Demon,  52,  74_000),
+
+        // ---- ELF: the magic lane ----
+        // Insight 120 + Force 80 — HIS WORKED EXAMPLE          (group 325 − 125 @72)  Insight @70
+        (WcArcaneInsight,   HolyArcaneInsightOne,   200, Race.Elf,    70, 390_000),
+        // Alacrity 75 + Resolve 115 + Serenity 85              (group 395 − 120 @70)  Resolve @68
+        (WcArcaneSerenity,  HolyArcaneSerenityOne,  275, Race.Elf,    68, 320_000),
+        // Ward 80 + Soul 120 + Mana Blessing 125               (group 455 − 130 @74)  Mana Blessing @72
+        (WcSoulReinforce,   HolySoulReinforceOne,   325, Race.Elf,    72, 650_000),
+
+        // ---- HUMAN: the defence lane ----
+        // Body 120 + Bulwark 72 + Vigor 85                     (group 402 − 125 @72)  Body @70
+        (WcBodyReinforce,   HolyBodyReinforceOne,   277, Race.Human,  70, 390_000),
+        // Shield Blessing 120 + Shield Hardening 125           (group 375 − 130 @74)  Hardening @72
+        (WcShieldReinforce, HolyShieldReinforceOne, 245, Race.Human,  72, 650_000),
+        // Clarity 85 + Fortitude 125                           (group 340 − 130 @74)  Fortitude @72
+        (WcArcaneFeralProt, HolyArcaneFeralProtOne, 210, Race.Human,  72, 650_000),
     };
+
+    /// <summary>The learn lines for the nine twins, read straight off <see cref="WcSingleTwins"/>.
+    /// `ClassSkillTables.RegisterLightbringer` calls this per race so the table above stays the one
+    /// place a twin's level or price is written.</summary>
+    internal static IEnumerable<ClassSkill> LightbringerTwinsFor(Race race) =>
+        WcSingleTwins.Where(t => t.Race == race)
+                     .Select(t => new ClassSkill(t.Single, t.Level, SkillLevel: 1, SpCost: t.Sp));
 
     // ---- Two of the three PARTY ECHOES: a single-target buff the buffer re-learns as a party cast.
     //      Not groups — each hands out the SAME thing its single does, to everyone in radius.
@@ -173,21 +226,34 @@ public static partial class SkillCatalog
                     .Concat(fourth).ToArray(),
             Description: desc + " Blesses you and nearby allies for 20 minutes.");
 
-    /// <summary>The SINGLE-TARGET twin of a group: the same def with a different target mode and a
-    /// different id. Everything else — name, key, rank, MP, SP, children, Replaces, and the whole
-    /// 76-90 ladder where there is one — is the group's, by construction.
+    /// <summary>The LIGHTBRINGER's single-target twin of a Warchanter group: the same def, retargeted
+    /// and re-priced. Name, buff key, rank, children and payload are the group's by construction, so
+    /// the two can never drift; what changes is the id, the target, the MP (Σ children — see
+    /// <see cref="WcSingleTwins"/>), and three deliberate removals.
     ///
     /// <para>⚠ <c>AreaRadius</c> has to go back to 0 as well as the mode: `IsAreaSupport` reads the
     /// MODE, but a stray radius on a single-target buff is the kind of thing a later branch reads.</para>
     ///
+    /// <para>🔴 <c>Replaces = null</c> — the group retires its singles, the twin must not. See the
+    /// block above the ids for why that would be a straight loss to a healer.</para>
+    ///
+    /// <para>🔴 <c>Levels = null</c> — rung 1 only. The two groups that ladder into 76-90 do so on the
+    /// Warchanter's `buffer 4th.csv` rows; the healer's file authors no continuation, so the twin has
+    /// exactly one rung and the def's own MpCost/SpCost are what it charges. This is also what closed
+    /// `BL-235`: nothing is priced twice because nothing is bought twice.</para>
+    ///
     /// <para>⚠ The description loses its "and nearby allies" tail and says who it lands on instead.
     /// The rest of the sentence is the group's, which is the point — two casts of one blessing.</para>
     /// </summary>
-    private static SkillDef WcSingleTwin(SkillDef group, string id) => group with
+    private static SkillDef WcSingleTwin(SkillDef group, string id, int mp, int sp) => group with
     {
         Id = id,
+        MpCost = mp,
+        SpCost = sp,
         TargetMode = TargetMode.SelfOrTarget,
         AreaRadius = 0f,
+        Replaces = null,
+        Levels = null,
         Description = group.Description.Replace(" Blesses you and nearby allies for 20 minutes.",
                                                 " Blesses one ally for 20 minutes."),
     };
@@ -253,14 +319,15 @@ public static partial class SkillCatalog
             Levels: levels,
             Description: desc);
 
-    /// <summary>The authored defs, plus the nine single-target twins derived from the groups among
-    /// them (see <see cref="WcSingleTwins"/>). The twins are appended LAST so the pairing is done in
-    /// one place and a group can never be edited without its twin following.</summary>
+    /// <summary>The authored defs, plus the nine LIGHTBRINGER single-target twins derived from the
+    /// groups among them (see <see cref="WcSingleTwins"/>). The twins are appended LAST so the pairing
+    /// is done in one place and a group can never be edited without its twin following.</summary>
     private static SkillDef[] Warchanter3rdSkills()
     {
         var defs = Warchanter3rdAuthored();
         var byId = defs.ToDictionary(d => d.Id);
-        return defs.Concat(WcSingleTwins.Select(t => WcSingleTwin(byId[t.Group], t.Single))).ToArray();
+        return defs.Concat(WcSingleTwins.Select(t => WcSingleTwin(byId[t.Group], t.Single, t.Mp, t.Sp)))
+                   .ToArray();
     }
 
     private static SkillDef[] Warchanter3rdAuthored() => new SkillDef[]

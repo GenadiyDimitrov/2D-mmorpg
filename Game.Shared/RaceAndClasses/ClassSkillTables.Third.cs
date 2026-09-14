@@ -450,25 +450,11 @@ public static partial class ClassSkillTables
         foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
             ClassSkills.RegisterThird(race, Discipline.Warchanter, kit.ToArray());
 
-        // ---- THE SINGLE-TARGET TWINS — THREE PER RACE, and the one place in this class where the
-        //      BUFF half is not shared (owner, 2026-09-14). Each arrives at the SAME level as the
-        //      party version it twins, because a group's learn level is exactly where its last child
-        //      ladder maxes out: any earlier and the twin would be handing out rungs the buffer has
-        //      not bought yet. Defs and the full reasoning: Skills.Warchanter3rd.cs.
-        //
-        //      His lanes: ELF magic, HUMAN defence, DEMON attack.
-        ClassSkills.RegisterThird(Race.Elf, Discipline.Warchanter,
-            new ClassSkill(WcArcaneSerenityOne, 70),
-            new ClassSkill(WcArcaneInsightOne,  72),
-            new ClassSkill(WcSoulReinforceOne,  74));
-        ClassSkills.RegisterThird(Race.Human, Discipline.Warchanter,
-            new ClassSkill(WcBodyReinforceOne,   72),
-            new ClassSkill(WcShieldReinforceOne, 74),
-            new ClassSkill(WcArcaneFeralProtOne, 74));
-        ClassSkills.RegisterThird(Race.Demon, Discipline.Warchanter,
-            new ClassSkill(WcWindGraceOne,      56),
-            new ClassSkill(WcFeralPrecisionOne, 58),
-            new ClassSkill(WcFeralBloodlustOne, 74));
+        // 🔴 THE SINGLE-TARGET TWINS ARE **NOT** HERE. 0.144.0 gave them to this class and his
+        //    correction was immediate: *"No no … Those single buffs to be given to healers not
+        //    buffers"*. They are the Lightbringer's — see RegisterLightbringer, and the ids and the
+        //    reasoning in Skills.Warchanter3rd.cs. The Warchanter keeps the party GROUPS above and
+        //    nothing single-target; that split is the point of the two classes.
 
         // ═══ THE NON-BUFF HALF — his passives, actives and toggles, 40-74 ═════════════════════════
         // Built 2026-08-21 from the rows below his old `NOT DONE` banner, once he said the file was
@@ -852,17 +838,31 @@ public static partial class ClassSkillTables
         shared.AddRange(At(GreatMight,   (58, 1), (66, 2), (72, 3)));
         shared.AddRange(At(GreatBulwark, (58, 1), (66, 2), (72, 3)));
 
-        // ═══ THE RACE SPLIT — it happens TWICE, and only twice ════════════════════════════════════
-        // Once on the fast heal (Human throughput / Elf heal-and-cure / Demon planted totem) and once on
-        // the control debuff (Gravity / Bind / Armor Break). Both are full 14-rung ladders, and the Demon
-        // carries a third: the Mana Totem, from 52.
+        // ═══ THE RACE SPLIT — it happens THREE times now ══════════════════════════════════════════
+        // Once on the fast heal (Human throughput / Elf heal-and-cure / Demon planted totem), once on
+        // the control debuff (Gravity / Bind / Armor Break) — both full 14-rung ladders, and the Demon
+        // carries a third, the Mana Totem from 52.
+        //
+        // 🔑 AND SINCE 0.145.0, ON THE THREE BUNDLED BLESSINGS (owner, 2026-09-14: *"Those single
+        //    buffs to be given to healers not buffers … Healer 3rd (elf) learns 'Arcane Insight' @70
+        //    and it costs 200(120+80)Mp"*). One cast that hands an ally everything three of his own
+        //    singles would, for exactly what those three cost in MP — the Warchanter's party version
+        //    of the same blessing pays a band premium on top for reaching the whole party.
+        //
+        //    His lanes: ELF magic, HUMAN defence, DEMON attack. Every number — level, SP, MP — lives
+        //    in `SkillCatalog.WcSingleTwins`, beside the groups these are derived from, so the learn
+        //    line and the def can never disagree. ⚠ They carry no `Replaces`: a healer keeps his
+        //    singles, and the covering is what stops the two stacking on a target.
         ClassSkills.RegisterThird(Race.Human, Discipline.Lightbringer,
-            shared.Concat(Full(LbHumanMend)).Concat(Full(LbHumanGravity)).ToArray());
+            shared.Concat(Full(LbHumanMend)).Concat(Full(LbHumanGravity))
+                  .Concat(SkillCatalog.LightbringerTwinsFor(Race.Human)).ToArray());
         ClassSkills.RegisterThird(Race.Elf, Discipline.Lightbringer,
-            shared.Concat(Full(LbElfDawn)).Concat(Full(LbElfBind)).ToArray());
+            shared.Concat(Full(LbElfDawn)).Concat(Full(LbElfBind))
+                  .Concat(SkillCatalog.LightbringerTwinsFor(Race.Elf)).ToArray());
         ClassSkills.RegisterThird(Race.Demon, Discipline.Lightbringer,
             shared.Concat(Full(LbOrkFont)).Concat(Full(LbOrkArmorBreak))
-                  .Concat(Full(ManaTotem, startBand: 3)).ToArray());
+                  .Concat(Full(ManaTotem, startBand: 3))
+                  .Concat(SkillCatalog.LightbringerTwinsFor(Race.Demon)).ToArray());
     }
 
     // Warchanter (Healer B) — buffer: per-race DMG + party mega-buff + party HoT + passive.

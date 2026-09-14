@@ -5384,3 +5384,40 @@ land MORE often — the same behaviour negative `CcResistMagical` already had.
 
 The Nullblade's ultimate is now a real ten-second control window as well as a damage one, which is
 the thing you wanted from it.
+
+
+## `BL-235` ✅ CLOSED 2026-09-14 — THE SINGLE-TARGET TWINS, and the double price that stopped existing
+
+**Answered the same day it was raised, by moving the skills to another class:** *"No no ... Those
+single buffs to be given to healers not buffers .... And mp should be decreased to the sum of buffs it
+gives .. Healer 3rd (elf) learns "Arcane Insight" @70 and it costs 200(120+80)Mp"*, and then: *"That
+way bl235 is not needed to decide."* Correct — the twins are the **Lightbringer's** now (0.145.0), one
+rung each, priced at Σ(children). The 76-90 ladder stays the Warchanter's alone, so nothing is bought
+twice and there was nothing left to rule on. The entry as it was raised is kept below.
+
+### The original entry (0.144.0)
+
+✅ **BUILT (0.144.0)** — nine single-target twins of the Warchanter's group buffs, three per race,
+exactly as you specified: same name, same MP, same SP, same payload, `party/single` instead of
+`party/aoe`, sharing the group's buff key so the two replace each other the way Great Might and War
+Might already do. Elf gets the magic three (Arcane Serenity 70, Arcane Insight 72, Soul Reinforcement
+74), Human the defensive three (Body Reinforcement 72, Shield Reinforcement 74, Arcane and Feral
+Protection 74), Demon the attack three (Wind Grace 56, Feral Precision 58, Feral Bloodlust 74).
+
+❓ **THE ONE THING I DECIDED FOR YOU: the 76-90 ladder is now bought twice.** Two of the nine groups
+ladder into the 4th tier — **Soul Reinforcement** (Elf) and **Arcane and Feral Protection** (Human) —
+and their twins have to ladder with them, level for level. They have no choice about that: the pair
+share one buff key and compete at `GroupRank(level)`, so a twin left behind at rung 1 would stop being
+able to replace the party version the moment the party version reached rung 2, and would go on handing
+out a level-74 blessing at 90.
+
+But laddering them means the twin's eight rungs charge **the group's own SP and gold a second time** —
+`6.5kk` + `16kk` SP and `1kk … 100kk` gold, for a casting shape of something you already own. I did
+**not** invent a discount, because a price is yours to set. Three ways to go, tell me which:
+
+1. **Leave it** — a twin is a separate skill and separate skills cost. (What is built.)
+2. **Free above rung 1** — you buy the ability once on the party version and the twin tracks it. One
+   line in `ClassSkillTables.Fourth.cs` and eight zeroed cells in `buffer 4th.csv`.
+3. **A fraction** — name it (10%? 25%?) and both sides move together.
+
+⚠ The other seven twins are a single rung each and are not affected either way.

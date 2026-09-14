@@ -513,20 +513,11 @@ public static partial class ClassSkillTables
         human.Add(new ClassSkill(BufferShieldMastery, 76));
         human.AddRange(Ladder(DoctorBluntMastery, even, 9));
         human.AddRange(Ladder(WcSoundSmash,       all,  14));
-        // 🔑 THE SINGLE-TARGET TWIN LADDERS WITH ITS GROUP, rung for rung and level for level (owner,
-        //    2026-09-14; the three twins per race are granted at the 3rd tier). It has to: the pair
-        //    share one buff key and land at `GroupRank(level)`, so a twin left behind at rung 1 would
-        //    stop being able to replace the party version the moment the party version reached rung 2
-        //    — and would go on handing out a level-74 blessing at 90. Only these two groups ladder at
-        //    all (Soul Reinforcement and Arcane and Feral Protection); the other seven twins are a
-        //    single rung and need nothing here.
-        human.AddRange(Ladder(WcArcaneFeralProtOne, even, 2));
 
         // ---- ELF: the archer. ----
         var elf = new List<ClassSkill>(shared);
         elf.AddRange(Ladder(WcHarmonistBowMast, even, 9));
         elf.AddRange(Ladder(WcSoundBurst,       all,  14));
-        elf.AddRange(Ladder(WcSoulReinforceOne, even, 2));
 
         // ---- DEMON: the melee fighter, two damage skills as always. ----
         var demon = new List<ClassSkill>(shared);

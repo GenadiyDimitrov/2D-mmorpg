@@ -7,12 +7,64 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.144.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.145.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-14 (latest) — 0.144.0: the buffer's groups get single-target twins, and a wand stops out-nuking a staff
+## 2026-09-14 (latest) — 0.145.0: the bundled blessings are the HEALER's, and they cost what their parts cost
+
+🔴 **NEW APK REQUIRED** — a class-skill-TABLE change. No protocol bump, no `game.db` delete.
+
+**0.144.0 put the nine single-target twins on the wrong class.** Your correction:
+
+> *"No no ... Those single buffs to be given to healers not buffers .... And mp should be decreased to
+> the sum of buffs it gives .. Healer 3rd (elf) learns "Arcane Insight" @70 and it costs 200(120+80)Mp"*
+
+Both halves are in. The **Warchanter learns none of them** — he keeps the party groups, which is the
+whole split between the two classes. The **Lightbringer** learns three each, by your lanes:
+
+| Race | Lane | Learns | Level | MP | = |
+|---|---|---|---|---|---|
+| **Demon** | attack | Wind Grace | 52 | **113** | Swift 33 + Agility 80 |
+| | | Feral Precision | 56 | **250** | Focus 80 + Ferocity 85 + Aim 85 |
+| | | Feral Bloodlust | 72 | **265** | Might 60 + Fury 80 + Vampirism 125 |
+| **Elf** | magic | Arcane Serenity | 68 | **275** | Alacrity 75 + Resolve 115 + Serenity 85 |
+| | | **Arcane Insight** | **70** | **200** | **Insight 120 + Force 80** — your example |
+| | | Soul Reinforcement | 72 | **325** | Ward 80 + Soul 120 + Mana Blessing 125 |
+| **Human** | defence | Body Reinforcement | 70 | **277** | Body 120 + Bulwark 72 + Vigor 85 |
+| | | Shield Reinforcement | 72 | **245** | Shield Blessing 120 + Shield Hardening 125 |
+| | | Arcane and Feral Protection | 72 | **210** | Clarity 85 + Fortitude 125 |
+
+**The MP rule is now the thing that makes the two versions different.** A group's price is your own
+*"each max lvl buff of the group MP + the group learned lvl MP cost"* — so Σ(children) is exactly the
+group minus the band premium. The healer pays what his three singles would cost and saves the casts;
+the Warchanter pays the premium on top, and gets the whole party. Nothing else separates them.
+
+**The learn level is where the last child ladder maxes in the *healer's own* table** — which is what
+puts Arcane Insight at **70** (Force 52, Insight 70) where the Warchanter's group sits at 72. Any
+earlier and a twin would hand out a rung its caster has not bought. SP is the healer file's own top
+band at that level (74k / 81k / 320k / 390k / 650k).
+
+🔑 **A twin carries no `Replaces`, unlike the group it copies.** The group retires its singles because a
+party-wide version of all three is strictly better; for a healer that would be a straight loss — he
+would stop being able to learn Force, Insight, Alacrity, Resolve, Ward, Soul, Mana Blessing, and would
+have to pay 200-325 MP to hand out one blessing. The covering still stops any double-dip: the twin's
+children cover those families at group rank, so a single cast over it is refused on the target.
+
+✅ **`BL-235` is closed by this and needed no ruling** — nothing is priced twice because nothing is
+bought twice. The healer's twins are one rung; the 76-90 ladder stays the Warchanter's alone, and
+above 76 his laddered groups simply outrank the healer's version, which is correct.
+
+⚠ Ids are `holy_*_single` now, and the CSV rows moved with them: `buffer 3rd.csv` and `buffer 4th.csv`
+are back to what they were, and `healer 3rd.csv` carries all nine (+18 rows, each with the MP
+arithmetic in its comment cell). `SkillCsvSeed --check` is clean.
+
+## 2026-09-14 — 0.144.0: the buffer's groups get single-target twins, and a wand stops out-nuking a staff
+
+⚠ **Section 1 below was corrected the same day — see 0.145.0.** The twins went to the Warchanter and
+kept the group's MP; they are the Lightbringer's now, and priced at the sum of their parts. Section 2
+(Mage Shield Mastery) stands as written.
 
 🔴 **NEW APK REQUIRED** — a class-skill-TABLE change (the client builds its Learn tab locally from the
 compiled `ClassSkills`). No protocol bump, no `game.db` delete.
