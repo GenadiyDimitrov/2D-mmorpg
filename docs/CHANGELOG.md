@@ -7,12 +7,69 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.143.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.144.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-13 (latest) — 0.143.0: heal power is a FLAT-heal stat, and the buffer gets a triage heal
+## 2026-09-14 (latest) — 0.144.0: the buffer's groups get single-target twins, and a wand stops out-nuking a staff
+
+🔴 **NEW APK REQUIRED** — a class-skill-TABLE change (the client builds its Learn tab locally from the
+compiled `ClassSkills`). No protocol bump, no `game.db` delete.
+
+### 1. Nine single-target twins of the Warchanter's group buffs, three per race
+
+> *"I want buffers to learn few grouped buffs (but single target -> work the same as buffers just a
+> single target one) … Names can be the same just casting to be target/single as other healers buffs
+> … They replace each other with the buffers party equivalents (like (war) great bulwark/might)"*
+
+Built exactly that. Each of the nine groups now has a **single-target twin**: same name, same MP, same
+SP, same payload, same 76-90 ladder where there is one. **The only difference is the target.** Your
+lanes, one race each:
+
+| Race | Lane | Twins learned |
+|---|---|---|
+| **Elf** | magic | Arcane Serenity (70), Arcane Insight (72), Soul Reinforcement (74) |
+| **Human** | defence | Body Reinforcement (72), Shield Reinforcement (74), Arcane and Feral Protection (74) |
+| **Demon** | attack | Wind Grace (56), Feral Precision (58), Feral Bloodlust (74) |
+
+**Why they are worth owning when the party version is the same buff:** `AlliesInRadius` — the mode
+every group cast uses — **never leaves the party**. So a Warchanter could not bless one ungrouped
+ally at all, which is most of what a buffer is actually asked to do. The twin is his door to that.
+
+**"They replace each other" needed no new machinery.** The pair share the group's buff key and, both
+being groups, land at the same `GroupRank(level)`; at equal rank the engine keeps the LONGER remaining
+time, so a fresh 20-minute cast always wins. That is the same swap **Great Might / War Might** already
+do — the pair you named.
+
+Each twin is **built from its group def** (`WcSingleTwin`) rather than authored a second time, so the
+two can never drift apart. One consequence worth stating: the two groups that ladder into 76-90 (Soul
+Reinforcement, Arcane and Feral Protection) have their twins laddering with them, level for level —
+they have to, or the twin would stop being able to replace the party version at rung 2 and would go on
+handing out a level-74 blessing at 90. **That ladder is currently priced twice** (once per skill) —
+see **`BL-235`**, the one thing here I would rather you ruled on than I guessed.
+
+⚠ One wording note: the CSV cells say **`party/single`**, not `target/single`. That is your own column
+grammar for a single-target *buff* (*"a recharge should be party/single as buff but the heal is
+target/single"*) and it is what every other single-target buff row in these files says. The mechanic is
+the one you described — it is `SelfOrTarget`, and the engine lets a clean caster support anyone
+friendly, party or not.
+
+### 2. Mage Shield Mastery loses its +5% M.Atk
+
+> *"on nukers in their shield mastery remove the % matk increase … they are not suppose to have more
+> matk with wand then Battlestaff"*
+
+Removed. A shield is only ever worn with a **one-handed** weapon, so the M.Atk half was paying the
+nuker to give up his two-hander: wand + shield came out ahead of the battle staff the class is built
+around, and the weapon is supposed to be the decision. The other three halves stay (−10% MP cost,
++10% MP regen, +100 P.Def, and the shield still never blocks) — those are survivability and economy,
+not power.
+
+Both sides of the CSV contract moved with the code: `buffer 3rd.csv` (+9 rows), `buffer 4th.csv`
+(+16 rows) and the `nuker 4th.csv` row. `SkillCsvSeed --check` is clean on all of them.
+
+## 2026-09-13 — 0.143.0: heal power is a FLAT-heal stat, and the buffer gets a triage heal
 
 🔴 **NEW APK REQUIRED** — a class-skill-TABLE change (the client builds its Learn tab locally from the
 compiled `ClassSkills`). No protocol bump, no `game.db` delete.

@@ -178,6 +178,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-232` | 🔵 | `debuff_landmods.csv` IS LIVE — 74 rows built and checked; the SUCCESS column is yours to author | combat |
 | `BL-233` | ❓ | THE DEMON BUFFER'S P.DEF — measured three ways and heavy is AHEAD; I need your two sheets | classes |
 | `BL-234` | ❓ | URGENT LESSER HEAL — built to your four numbers; the per-rank falloff is mine to confirm | classes |
+| `BL-235` | ❓ | THE SINGLE-TARGET TWINS — built; their 76-90 ladder is priced TWICE and that is my call, not yours | classes |
 
 ---
 
@@ -1753,3 +1754,30 @@ it is one number in `Skills.Warchanter4th.cs` and one in the CSV row.
 
 📐 On a 21k tank the whole cast is ~16,700 HP spread over five people, against the healer's ~46,000
 over eleven: `dotnet run --project tools/BalanceMatrix -- --healpower 90 epic`.
+
+## `BL-235` ❓ THE SINGLE-TARGET TWINS — built; two of them are priced twice and that is my call
+
+✅ **BUILT (0.144.0)** — nine single-target twins of the Warchanter's group buffs, three per race,
+exactly as you specified: same name, same MP, same SP, same payload, `party/single` instead of
+`party/aoe`, sharing the group's buff key so the two replace each other the way Great Might and War
+Might already do. Elf gets the magic three (Arcane Serenity 70, Arcane Insight 72, Soul Reinforcement
+74), Human the defensive three (Body Reinforcement 72, Shield Reinforcement 74, Arcane and Feral
+Protection 74), Demon the attack three (Wind Grace 56, Feral Precision 58, Feral Bloodlust 74).
+
+❓ **THE ONE THING I DECIDED FOR YOU: the 76-90 ladder is now bought twice.** Two of the nine groups
+ladder into the 4th tier — **Soul Reinforcement** (Elf) and **Arcane and Feral Protection** (Human) —
+and their twins have to ladder with them, level for level. They have no choice about that: the pair
+share one buff key and compete at `GroupRank(level)`, so a twin left behind at rung 1 would stop being
+able to replace the party version the moment the party version reached rung 2, and would go on handing
+out a level-74 blessing at 90.
+
+But laddering them means the twin's eight rungs charge **the group's own SP and gold a second time** —
+`6.5kk` + `16kk` SP and `1kk … 100kk` gold, for a casting shape of something you already own. I did
+**not** invent a discount, because a price is yours to set. Three ways to go, tell me which:
+
+1. **Leave it** — a twin is a separate skill and separate skills cost. (What is built.)
+2. **Free above rung 1** — you buy the ability once on the party version and the twin tracks it. One
+   line in `ClassSkillTables.Fourth.cs` and eight zeroed cells in `buffer 4th.csv`.
+3. **A fraction** — name it (10%? 25%?) and both sides move together.
+
+⚠ The other seven twins are a single rung each and are not affected either way.

@@ -50,7 +50,7 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 ,,,,,,,,,,,,,,,,,,,----------------------------Arcane Momentum----------------------------
 76,Arcane Momentum,reuse_reset_momentum,Passive,,,0,0,self/single,0,0,0,reuse reset 5% - a skill you cast has that chance to come off reuse immediately - never on a fixed-cooldown skill - scales with ATK,0,6.5kk,1kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Mage Shield Mastery----------------------------
-76,Mage Shield Mastery,nuker_shield_mastery,Passive,,/shield,0,0,self/single,0,0,0,"When Shield is equiped increase m.atk +5%, mp consumption -10% and mpReg +10%, Pdef +100, but shield can never block (block rate x0)",0,6.5kk,1kk
+76,Mage Shield Mastery,nuker_shield_mastery,Passive,,/shield,0,0,self/single,0,0,0,"When Shield is equiped mp consumption -10% and mpReg +10%, Pdef +100, but shield can never block (block rate x0)",0,6.5kk,1kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Mana Barrier----------------------------
 85,Mana Barrier,nuker_mana_barrier,Magic/Buff,,,0,,self/single,0,300,30,"Diverts 70% of incoming damage to MP (0.5 MP per damage) for 30s or while MP lasts.",30,0,100kk,5
 ,,,,,,,,,,,,,,,,,,,----------------------------Force Empowerment----------------------------

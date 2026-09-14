@@ -66,6 +66,56 @@ public static partial class SkillCatalog
     public const string WcArcaneFeralProt  = "wc_arcane_feral_protection"; // combined: both CC resists
     public const string WcWindGrace        = "wc_wind_grace";         // combined: move speed + evasion
 
+    // ---- THE SINGLE-TARGET TWINS of those nine groups, three per race (owner, 2026-09-14:
+    //      *"I want buffers to learn few grouped buffs (but single target -> work the same as
+    //      buffers just a single target one) … Names can be the same just casting to be target/single
+    //      as other healers buffs … They replace each other with the buffers party equivalents (like
+    //      (war) great bulwark/might)"*).
+    //
+    //  🔑 WHY THEY ARE WORTH OWNING when the party version is the same buff: `AlliesInRadius` NEVER
+    //     LEAVES THE PARTY — that is GameLoopService's own note on the mode, and it means a group cast
+    //     reaches the party and nobody else. Without these a Warchanter cannot bless one ungrouped
+    //     ally at all, which is most of what a buffer is actually asked to do.
+    //
+    //  🔑 THE TWIN IS THE GROUP, VERBATIM — same name, same MP, same SP, same payload, same ladder.
+    //     The ONLY difference is `TargetMode`, exactly as his sentence says, and it is BUILT from the
+    //     group def (WcSingleTwin) rather than authored a second time, so the two can never drift.
+    //
+    //  🔑 "THEY REPLACE EACH OTHER" NEEDS NO NEW MACHINERY: the pair share the group's BuffKey and,
+    //     being groups both, land at the same `GroupRank(level)`. At equal rank ApplyBuff keeps the
+    //     LONGER remaining time, and a fresh 20-minute cast always beats a running one — which is the
+    //     same swap Great Might and War Might already do, and the pair he named.
+    //
+    //  🔑 THE RACE SPLIT IS HIS, lane-shaped like everything else in this class: ELF = magic (Insight,
+    //     Serenity, Soul), HUMAN = defence (Body, Shield, Arcane and Feral Protection), DEMON = attack
+    //     (Feral Precision, Feral Bloodlust, Wind Grace). Who learns them: ClassSkillTables.Third.
+    public const string WcFeralPrecisionOne  = "wc_feral_precision_single";
+    public const string WcFeralBloodlustOne  = "wc_feral_bloodlust_single";
+    public const string WcArcaneInsightOne   = "wc_arcane_insight_single";
+    public const string WcArcaneSerenityOne  = "wc_arcane_serenity_single";
+    public const string WcSoulReinforceOne   = "wc_soul_reinforcement_single";
+    public const string WcBodyReinforceOne   = "wc_body_reinforcement_single";
+    public const string WcShieldReinforceOne = "wc_shield_reinforcement_single";
+    public const string WcArcaneFeralProtOne = "wc_arcane_feral_protection_single";
+    public const string WcWindGraceOne       = "wc_wind_grace_single";
+
+    /// <summary>Group id → its single-target twin's id. ONE table, read both by the catalog (which
+    /// builds each twin from its group) and by nothing else — the class tables name the twin consts
+    /// directly. Adding a group and forgetting its twin is therefore a deliberate choice, not a slip.
+    /// </summary>
+    private static readonly (string Group, string Single)[] WcSingleTwins =
+    {
+        (WcFeralPrecision,  WcFeralPrecisionOne),
+        (WcFeralBloodlust,  WcFeralBloodlustOne),
+        (WcArcaneInsight,   WcArcaneInsightOne),
+        (WcArcaneSerenity,  WcArcaneSerenityOne),
+        (WcSoulReinforce,   WcSoulReinforceOne),
+        (WcBodyReinforce,   WcBodyReinforceOne),
+        (WcShieldReinforce, WcShieldReinforceOne),
+        (WcArcaneFeralProt, WcArcaneFeralProtOne),
+        (WcWindGrace,       WcWindGraceOne),
+    };
+
     // ---- Two of the three PARTY ECHOES: a single-target buff the buffer re-learns as a party cast.
     //      Not groups — each hands out the SAME thing its single does, to everyone in radius.
     //      (The third is War Frenzy, which is `Madness` renamed and lives in Skills.Healer.cs.) ----
@@ -109,7 +159,12 @@ public static partial class SkillCatalog
         SkillLevel[]? fourth = null) =>
         new(id, name, BaseClass.Mage, effect,
             MpCost: mp, CastTicks: 10, CooldownTicks: 10, Range: 600, Power: 0,
-            DurationTicks: 12000, ChildBuffs: children,
+            // 🔑 AN EXPLICIT KEY, AND IT IS THE GROUP'S OWN ID (2026-09-14). `BuffPlan` falls back to
+            // `def.Name` when this is blank, which worked only for as long as nothing else in the game
+            // shared a display name — the Bulwark's stance is already called "Shield Reinforcement",
+            // one letter of casing away from this group's fallback key. It is also what the
+            // single-target twin rides on: the pair share this key, so they replace each other.
+            DurationTicks: 12000, ChildBuffs: children, BuffKey: id,
             Category: SkillCategory.Buff, SpCost: sp,
             TargetMode: TargetMode.AlliesInRadius, AreaRadius: 800f,
             Replaces: replaces,
@@ -117,6 +172,25 @@ public static partial class SkillCatalog
                 : new[] { new SkillLevel(MpCost: mp, SpCost: sp, Description: desc) }
                     .Concat(fourth).ToArray(),
             Description: desc + " Blesses you and nearby allies for 20 minutes.");
+
+    /// <summary>The SINGLE-TARGET twin of a group: the same def with a different target mode and a
+    /// different id. Everything else — name, key, rank, MP, SP, children, Replaces, and the whole
+    /// 76-90 ladder where there is one — is the group's, by construction.
+    ///
+    /// <para>⚠ <c>AreaRadius</c> has to go back to 0 as well as the mode: `IsAreaSupport` reads the
+    /// MODE, but a stray radius on a single-target buff is the kind of thing a later branch reads.</para>
+    ///
+    /// <para>⚠ The description loses its "and nearby allies" tail and says who it lands on instead.
+    /// The rest of the sentence is the group's, which is the point — two casts of one blessing.</para>
+    /// </summary>
+    private static SkillDef WcSingleTwin(SkillDef group, string id) => group with
+    {
+        Id = id,
+        TargetMode = TargetMode.SelfOrTarget,
+        AreaRadius = 0f,
+        Description = group.Description.Replace(" Blesses you and nearby allies for 20 minutes.",
+                                                " Blesses one ally for 20 minutes."),
+    };
 
     /// <summary>A HARMONY rung. Own key, stacks on top of the whole basic layer — 5 minutes on a
     /// 2-minute reuse (owner 2026-08-21). <paramref name="mags"/> is the CUMULATIVE payload at this
@@ -179,7 +253,17 @@ public static partial class SkillCatalog
             Levels: levels,
             Description: desc);
 
-    private static SkillDef[] Warchanter3rdSkills() => new SkillDef[]
+    /// <summary>The authored defs, plus the nine single-target twins derived from the groups among
+    /// them (see <see cref="WcSingleTwins"/>). The twins are appended LAST so the pairing is done in
+    /// one place and a group can never be edited without its twin following.</summary>
+    private static SkillDef[] Warchanter3rdSkills()
+    {
+        var defs = Warchanter3rdAuthored();
+        var byId = defs.ToDictionary(d => d.Id);
+        return defs.Concat(WcSingleTwins.Select(t => WcSingleTwin(byId[t.Group], t.Single))).ToArray();
+    }
+
+    private static SkillDef[] Warchanter3rdAuthored() => new SkillDef[]
     {
         // ═══ THE FIGHTER LANE ════════════════════════════════════════════════════════════════
         // MP 340 = Focus 80 + Ferocity 85 + Aim 85, + the 90 his band charges at level 58.

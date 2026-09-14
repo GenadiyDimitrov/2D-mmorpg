@@ -314,10 +314,17 @@ public static partial class SkillCatalog
         // ═══ MAGE SHIELD MASTERY @76 ═════════════════════════════════════════════════════════════
         //
         // 🔑 A ROBE CASTER'S SHIELD PASSIVE, and the trade is explicit in his own row: *"but shield can
-        //    never block (block rate x0)"*. So it is not the tank's shield — you carry it for the M.Atk,
-        //    the cheaper spells, the mana and the 100 P.Def, and you give up the one thing a shield
+        //    never block (block rate x0)"*. So it is not the tank's shield — you carry it for the
+        //    cheaper spells, the mana and the 100 P.Def, and you give up the one thing a shield
         //    normally does. No new primitive: `BlockChancePct` is already a ×(1 + pct) channel
         //    (Entity.RecomputeDerived), so −1 reaches exactly ×0 and the roll can never come up.
+        //
+        // 🔴 THE +5% M.ATK IS GONE (owner, 2026-09-14: *"on nukers in their shield mastery remove the %
+        //    matk increase … they are not suppose to have more matk with wand then Battlestaff"*). A
+        //    shield is only ever worn with a ONE-HANDED weapon, so the M.Atk half was paying the nuker
+        //    to give up his two-hander: wand + shield came out ahead of the battle staff the class is
+        //    built around, and the weapon is supposed to be the decision. The other three halves stay
+        //    — they are survivability and economy, not power.
         //
         // ⚠ `RequiresShield` gates the WHOLE effect, which is what his *"When Shield is equiped"* means
         //   — a nuker who swaps to a two-handed staff keeps none of it, penalty included.
@@ -328,10 +335,10 @@ public static partial class SkillCatalog
             Levels: new[]
             {
                 new SkillLevel(SpCost: sp76, GoldCost: gold76, Passive: NukerShieldRung(),
-                    Description: "With a shield equipped: +5% M.Atk, −10% MP cost, +10% MP regeneration "
+                    Description: "With a shield equipped: −10% MP cost, +10% MP regeneration "
                                + "and +100 P.Def — but the shield can never block."),
             },
-            Description: "With a shield equipped: +5% M.Atk, −10% MP cost, +10% MP regeneration and "
+            Description: "With a shield equipped: −10% MP cost, +10% MP regeneration and "
                        + "+100 P.Def — but the shield can never block."));
 
         // ═══ FORCE EMPOWERMENT @78 / 80 / 82 — a TOGGLE ══════════════════════════════════════════
@@ -422,7 +429,9 @@ public static partial class SkillCatalog
     /// builder in this file — nothing here can then run before the catalog does.</summary>
     private static PassiveEffect NukerShieldRung() => new(
         RequiresShield: true,
-        MagAtkPct: 0.05f, MpRegenPct: 0.10f, Defence: 100,
+        // 🔴 NO `MagAtkPct` — his 2026-09-14 ruling; see the def above. A wand and a shield must never
+        //    out-damage a battle staff, and this was the only line in the passive that did.
+        MpRegenPct: 0.10f, Defence: 100,
         // Unqualified "mp consumption −10%" → BOTH channels; see the class summary. POSITIVE = cheaper.
         PhysMpCostPct: 0.10f, MagicMpCostPct: 0.10f,
         // ×(1 + −1) = ×0: the shield is worn, and it never blocks.

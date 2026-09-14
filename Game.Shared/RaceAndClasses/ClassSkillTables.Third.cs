@@ -450,6 +450,26 @@ public static partial class ClassSkillTables
         foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
             ClassSkills.RegisterThird(race, Discipline.Warchanter, kit.ToArray());
 
+        // ---- THE SINGLE-TARGET TWINS — THREE PER RACE, and the one place in this class where the
+        //      BUFF half is not shared (owner, 2026-09-14). Each arrives at the SAME level as the
+        //      party version it twins, because a group's learn level is exactly where its last child
+        //      ladder maxes out: any earlier and the twin would be handing out rungs the buffer has
+        //      not bought yet. Defs and the full reasoning: Skills.Warchanter3rd.cs.
+        //
+        //      His lanes: ELF magic, HUMAN defence, DEMON attack.
+        ClassSkills.RegisterThird(Race.Elf, Discipline.Warchanter,
+            new ClassSkill(WcArcaneSerenityOne, 70),
+            new ClassSkill(WcArcaneInsightOne,  72),
+            new ClassSkill(WcSoulReinforceOne,  74));
+        ClassSkills.RegisterThird(Race.Human, Discipline.Warchanter,
+            new ClassSkill(WcBodyReinforceOne,   72),
+            new ClassSkill(WcShieldReinforceOne, 74),
+            new ClassSkill(WcArcaneFeralProtOne, 74));
+        ClassSkills.RegisterThird(Race.Demon, Discipline.Warchanter,
+            new ClassSkill(WcWindGraceOne,      56),
+            new ClassSkill(WcFeralPrecisionOne, 58),
+            new ClassSkill(WcFeralBloodlustOne, 74));
+
         // ═══ THE NON-BUFF HALF — his passives, actives and toggles, 40-74 ═════════════════════════
         // Built 2026-08-21 from the rows below his old `NOT DONE` banner, once he said the file was
         // finished. Defs in Skills.Warchanter3rd.Kit.cs; the two extended ladders in Skills.Healer.cs.
