@@ -178,6 +178,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-232` | 🔵 | `debuff_landmods.csv` IS LIVE — 74 rows built and checked; the SUCCESS column is yours to author | combat |
 | `BL-233` | ❓ | THE DEMON BUFFER'S P.DEF — measured three ways and heavy is AHEAD; I need your two sheets | classes |
 | `BL-234` | ❓ | URGENT LESSER HEAL — built to your four numbers; the per-rank falloff is mine to confirm | classes |
+| `BL-237` | 🔴 | WARRIOR 3rd + 4th CSVs — reviewed, fixed by you, ready to build | classes |
 
 ---
 
@@ -1754,3 +1755,37 @@ it is one number in `Skills.Warchanter4th.cs` and one in the CSV row.
 📐 On a 21k tank the whole cast is ~16,700 HP spread over five people, against the healer's ~46,000
 over eleven: `dotnet run --project tools/BalanceMatrix -- --healpower 90 epic`.
 
+
+---
+
+## `BL-237` 🔴 WARRIOR 3rd + 4th CSVs — reviewed, your fixes in, READY TO BUILD
+
+**2026-09-14.** You landed `warrior 3rd.csv` (Ravager race kits, Charge, the three Presences),
+`warrior 4th.csv` (76-90) and small `war_aoe 3rd.csv` edits (Final Stand acc, Antidote, Charge). I read
+them end to end and listed 8 slips + 8 questions; **you fixed all 8 slips and answered the questions the
+same day.** Nothing is built yet.
+
+### Your rulings (built as written when this lands)
+- **Charge**: 400 (3rd) / 600 (4th) is its RANGE; usable with a 2h sword **or** blunt.
+- **Every Slash debuff lasts 15s.** Demon Slash is now cast 1 / reuse 3 like the other two.
+- **All three Slashes land at ×0.7; Sword Shock at ×1.** → these go into `debuff_landmods.csv` **at
+  build time**: that file is regenerated from the code, so a row for an unbuilt skill would be wiped.
+  The `Chance x0.7` / `Success rate x1` comments come out of the class CSV in the same commit.
+- **The 74-rung MP was a real re-price, not a typo**: at 350 MP your 4th Triple Slash was unusable on a
+  900-MP warrior, so both 4th Slash skills were cut and the 3rd rungs now match (Double 88, Triple 98).
+- **Focus Force** is IG's normal "power attack" as a physical skill that can double; we have no skill
+  crits, so it carries +500 power and gathers Focus.
+- **Saints Sword Dance** hits an area: `target/aoe`.
+- **Two-Hand Mastery 4th**: 666 → **678** → 690 (+12 on both steps, so 80 onward is unchanged).
+
+### Left over — I'll fix these as obvious unless you say otherwise
+- `warrior 3rd.csv` Saints Sword Dance is still `target/single` (only the 4th was changed) → `target/aoe`.
+- 3rd Demon Slash TYPE is still `Physical/Active`; the 4th and the other two say `Physical/Debuf`.
+- 4th Slash RANGE is `0`; the 3rd is `40` (melee).
+- 4th Focused Double Slash is cast 2 / reuse 5; the 3rd is 1.5 / 3 — same as the Triple now. Meant?
+- Focus Limit is `target/single`; it only sets your own Focus → `self/single`?
+- Cosmetic: Sword Blast AOE `00`, Armor Mastery 4th 146 at 87, stale separator labels.
+
+Not a question: the 4th file stops Final Stand, HP Boost, HP Regeneration, the Battle stances, Monster
+Knowledge, Focus Mastery, Battle Frenzy and Antidote at their 74 rungs. The Final Stand acc edit changes a
+built skill, so both 3rd files owe the code that change too.

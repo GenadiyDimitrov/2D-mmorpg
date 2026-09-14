@@ -35,9 +35,9 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 72,Two-Hand Mastery,warrior_blunt_mastery,passive,blunt/2,,0,0,self/single,0,0,0,"With 2h blunt: crit dmg +582; p.atk +123; Allow basic attack to hit around in 150 range (max 10 targets);",0,650,[warrior_weapon_mastery]
 74,Two-Hand Mastery,warrior_blunt_mastery,passive,blunt/2,,0,0,self/single,0,0,0,"With 2h blunt: crit dmg +615; p.atk +130; Allow basic attack to hit around in 150 range (max 10 targets);",0,880,[warrior_weapon_mastery]
 ,,,,,,,,,,,,,,,,,----------------------------Final Stand----------------------------
-40,Final Stand,warrior_final_stand,Passive,,,0,0,self/single,0,0,0,"When hp is below 75% increase P.Atk with 5%, when HP is below 50% increase P.Atk with 10%, when HP is below 25% increase P.Atk with 20%",0,28
-52,Final Stand,warrior_final_stand,Passive,,,0,0,self/single,0,0,0,"When hp is below 75% increase P.Atk with 7%, when HP is below 50% increase P.Atk with 15%, when HP is below 25% increase P.Atk with 25%",0,74
-60,Final Stand,warrior_final_stand,Passive,,,0,0,self/single,0,0,0,"When hp is below 75% increase P.Atk with 10%, when HP is below 50% increase P.Atk with 20%, when HP is below 25% increase P.Atk with 30%",0,120
+40,Final Stand,warrior_final_stand,Passive,,,0,0,self/single,0,0,0,"When hp is below 75% increase P.Atk with 5%, when HP is below 50% increase P.Atk with 10%, when HP is below 25% increase P.Atk with 20% and acc +2",0,28
+52,Final Stand,warrior_final_stand,Passive,,,0,0,self/single,0,0,0,"When hp is below 75% increase P.Atk with 7%, when HP is below 50% increase P.Atk with 15% and acc +2, when HP is below 25% increase P.Atk with 25% and acc +4",0,74
+60,Final Stand,warrior_final_stand,Passive,,,0,0,self/single,0,0,0,"When hp is below 75% increase P.Atk with 10% and acc +2, when HP is below 50% increase P.Atk with 20% and acc +4, when HP is below 25% increase P.Atk with 30% and acc +8",0,120
 ,,,,,,,,,,,,,,,,,----------------------HP Boost----------------------
 43,HP Boost,hp_boost,Passive,,,0,0,self/single,0,0,0,"Increase max HP +400",0,42,[],,
 49,HP Boost,hp_boost,Passive,,,0,0,self/single,0,0,0,"Increase max HP +500",0,65,[],,
@@ -71,3 +71,12 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 52,Monster Knowlege,monster_knowledge_active,physical buff,,,0,0,self/single,1,5,600,Increase PVE Dmg with 20%,40,42
 58,Monster Knowlege,monster_knowledge_active,physical buff,,,0,0,self/single,1,5,600,Increase PVE Dmg with 25%,40,88
 64,Monster Knowlege,monster_knowledge_active,physical buff,,,0,0,self/single,1,5,600,Increase PVE Dmg with 30%,40,190
+,,,,,,,,,,,,,,,,,----------------------------Elf Antidote----------------------------
+52,Antidote,elf_antidote,Magic/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 4 or lower from an self.",42,74,[],Elf
+58,Antidote,elf_antidote,Magic/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 5 or lower from an self.",50,88,[],Elf
+62,Antidote,elf_antidote,Magic/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 6 or lower from an self.",53,170,[],Elf
+66,Antidote,elf_antidote,Magic/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 7 or lower from an self.",57,280,[],Elf
+70,Antidote,elf_antidote,Magic/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 8 or lower from an self.",60,390,[],Elf
+74,Antidote,elf_antidote,Magic/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 9 or lower from an self.",64,880,[],Elf
+,,,,,,,,,,,,,,,,,----------------------------Charge----------------------------
+40,Charge,warrior_charge,physical/active,sword|blunt/2,,400,0,target/single,0.5,3,0,Charges to enemy,40,28
