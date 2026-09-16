@@ -104,6 +104,10 @@ staff high, sword low. **WIT is not power**: it is cast speed + magic crit rate.
 ```
 AvoidChance = 0.05 + (defenderEvasion - attackerAccuracy) * 0.01      clamp [0.05, 0.95]
               then clamped again by the level gap, then by both sides' floors
+              🔴 NO PLAYER HAS A PHYSICAL FLOOR ANY MORE — the warrior's Precision went in
+              `BL-201` and the rogue's Evasion Mastery in `BL-251`. Both channels
+              (PassiveEffect.HitFloor / EvadeFloor) still exist and are still read; only
+              the grant is gone (SkillCatalog.FloorPassiveFor). Mobs may still carry one.
 PhysCritRate  = base(weapon) * (1 + (agi - 30)*0.01)                  cap 50%
 PhysCritDmg   = 2.0 + bonus                                           cap x10
 MagicCritRate = base * 1.63^((wit - 20)/10)                           cap 20%

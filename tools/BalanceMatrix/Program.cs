@@ -2661,8 +2661,16 @@ Console.WriteLine();
 Console.WriteLine("=== E1: ACCURACY vs EVASION — the whole board (why only the rogue never dies) ===");
 {
     Console.WriteLine("  The resolver is one line: miss = 5% + (defender EVASION − attacker ACCURACY) x 1%, clamped");
-    Console.WriteLine("  to [5%, 95%], and only THEN the class floors. So the spread is the entire mechanic, and the");
-    Console.WriteLine("  rogue's EvadeFloor (10/20/30%) never binds while the spread alone already beats it.");
+    Console.WriteLine("  to [5%, 95%], and only THEN the class floors. So the spread is the entire mechanic — and");
+    Console.WriteLine("  since `BL-201`/`BL-251` took the warrior's hit floor and the rogue's evade floor away, the");
+    Console.WriteLine("  spread is now the WHOLE physical answer for every player. Read the 'floor' column below:");
+    Console.WriteLine("  it is 0% on every row now, including the rogue's.");
+    Console.WriteLine("  ⚠ IT WAS NOT A NO-OP. The old 20% melee rung DID bind from ~44 up — the rogue's natural");
+    Console.WriteLine("  spread against a same-level mob measures 14 points at 44 (19% dodge) and 11 at 52 (16%),");
+    Console.WriteLine("  both under 20 — so a melee rogue at those levels loses 1-4 points of dodge to this change.");
+    Console.WriteLine("  His case for it is gear the rig does not dress here (the AGI set and the full buff shelf,");
+    Console.WriteLine("  *\"about 25+ evasion differnese with the same lvl mob\"*); B and C below are the honest");
+    Console.WriteLine("  measurement of a rogue WITHOUT them. If the dodge reads low in a playtest, that is where.");
     Console.Write($"  {"spread",-10}");
     for (int d = -10; d <= 60; d += 5) Console.Write($"{d,6}");
     Console.WriteLine();
@@ -2785,12 +2793,14 @@ Console.WriteLine("=== E1: ACCURACY vs EVASION — the whole board (why only the
         Console.WriteLine($"  {gap,12} {Pct(n0),8} {Pct(n5),8} {Pct(n0 - n5),7} |" +
             $" {"",22} {Pct(f0),8} {Pct(f5),8} {Pct(f0 - f5),7}");
     }
-    Console.WriteLine("  🔴 READ THIS: +5 accuracy buys the full 5% only once the defender out-evades you by 10+.");
-    Console.WriteLine("  Against a ROGUE it buys NOTHING at any gap under 10, because his 10% evade floor is a hard");
-    Console.WriteLine("  lower bound on miss that no amount of accuracy can go under. His \"the archers will have acc");
-    Console.WriteLine("  buffs/passives\" therefore needs an answer: accuracy is currently a stat that does nothing");
-    Console.WriteLine("  against the one target class it is meant to counter. (Evasion has no such problem — it is");
-    Console.WriteLine("  additive against the 5% base from the first point.) Not a bug in this change; a design gap.");
+    Console.WriteLine("  ✅ THE RIGHT-HAND COLUMNS ARE NOW HISTORY, AND THAT IS THE POINT OF `BL-251`.");
+    Console.WriteLine("  They used to be live: a rogue's 10% EvadeFloor was a hard lower bound on miss that no");
+    Console.WriteLine("  amount of accuracy could go under, so +5 accuracy bought NOTHING at any gap under 10 —");
+    Console.WriteLine("  accuracy was a stat that did nothing against the one class it is meant to counter. Since");
+    Console.WriteLine("  2026-09-16 NO ROGUE HAS AN EVADE FLOOR (and no warrior a hit floor, `BL-201`), so only the");
+    Console.WriteLine("  left-hand columns apply to any player: every accuracy point is worth a full point from the");
+    Console.WriteLine("  first one, exactly as evasion always was. The floor columns are kept because the TANK still");
+    Console.WriteLine("  has one (anti_magic, the magic channel) and because re-granting either is one line.");
     Console.WriteLine();
     Console.WriteLine("  And the live rogue-vs-mob numbers, which is where a bow actually shoots:");
     Console.WriteLine($"  {"Lvl",3} {"mob eva",8} | {"no roll",8} {"hit",6} |" +
@@ -6327,14 +6337,15 @@ static string NameOf(string id) => SkillCatalog.Get(id)?.Name ?? id;
 /// <summary>A Human ASSASSIN (rogue) of this level in the best duals + LIGHT armor for its tier —
 /// the class the crit-damage rungs actually belong to. BuildPlayer only knows tank/warrior/nuker
 /// and dresses them in a sword and heavy, which would measure the wrong masteries entirely.</summary>
-// The archetype IDENTITY floor passive (Evasion Mastery / Precision / Anti-Magic) is
-// AUTO-granted in game by AutoLearnCoreSkills — it is not in the class tables, so a synthetic
-// character built from those tables alone was missing it entirely. That is why §50h measured the
-// rogue's blow gate at a 9.2% crit: his own Evasion Mastery (then worth +20 crit POINTS) was absent
-// from the MODEL, not from the game. Never measure a character without it.
-// ⚠ No DISCIPLINE is passed, so a rogue here is measured as a MELEE rogue (the full 20/40/76 evade
-// ladder). A ranged discipline is capped at rung 1 in game since 2026-08-07 (playtest-19 M7) — if a
-// bow rogue at 40+ is ever measured, pass its discipline or the model will over-state its dodge.
+// The archetype IDENTITY floor passive is AUTO-granted in game by AutoLearnCoreSkills — it is not
+// in the class tables, so a synthetic character built from those tables alone was missing it
+// entirely. That is why §50h measured the rogue's blow gate at a 9.2% crit: his own Evasion Mastery
+// (then worth +20 crit POINTS) was absent from the MODEL, not from the game. Never measure a
+// character without asking FloorPassiveFor.
+// 🔴 ONLY THE TANK STILL HAS ONE. Warrior's Precision went in `BL-201` (2026-09-11) and the rogue's
+// Evasion Mastery in `BL-251` (2026-09-16), so for everyone but the tank this is now a no-op that
+// only calls RecomputeDerived. A rogue measured here has NO evade floor — which is the game. Do not
+// "fix" a low rogue dodge by re-granting it; the lever he chose is the kit (AGI, light mastery, set).
 static void GrantFloorPassive(Entity e, int level)
 {
     if (SkillCatalog.FloorPassiveFor(e.Archetype, level) is { } fp)

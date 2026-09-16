@@ -121,9 +121,12 @@ public static class Disciplines
 
     /// <summary>Is this one of the three RANGED (bow) rogue disciplines? The archer merge made
     /// bow-vs-dagger a level-40 choice, so the discipline — not the archetype — is what tells a
-    /// bow character from a dagger one. Used by <see cref="SkillCatalog.FloorPassiveFor"/>: after
-    /// 40 the ranged branches stop taking Evasion Mastery rungs (playtest-19 M7, *"the archer
-    /// should not have evasion mastery after 40 .. the 10% are ok"*).</summary>
+    /// bow character from a dagger one.
+    ///
+    /// ⚠ UNCALLED since `BL-251` (2026-09-16). Its one caller was
+    /// <see cref="SkillCatalog.FloorPassiveFor"/>, where after 40 the ranged branches stopped taking
+    /// Evasion Mastery rungs (playtest-19 M7); no rogue has an evade floor at all any more. Kept
+    /// because "is this discipline a bow one" is a roster fact, not a detail of that one rule.</summary>
     public static bool IsRanged(Discipline d) =>
         d is Discipline.Sharpshooter or Discipline.Trapper or Discipline.Hunter;
 

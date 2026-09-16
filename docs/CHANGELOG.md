@@ -7,12 +7,74 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.146.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.150.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-16 (latest) — 0.149.0: `BL-238` is built — a Mark costs you 10% move speed
+## 2026-09-16 (latest) — 0.150.0: the dash goes to 90s, and the rogue loses his evade floor
+
+🔴 **NEW APK REQUIRED** (skill card text + the dash reuse the client renders). **No protocol change,
+no `game.db` delete needed** — though see the note at the foot.
+
+Two small builds off one batch of rulings, plus the answer to a drop-table question. **Nothing here
+touches the warrior kit**; this build exists so you can test 0.146.0's warrior tiers with the speed
+decisions settled behind them.
+
+### `BL-249` — a dash potion is an escape, not a movement stat
+`SkillCatalog.DashPotion` goes from `cooldownTicks: 600` to **900**, for all six rarities. The
+15-second duration and the `+15…+60` rungs are untouched, so the only thing that changed is uptime:
+**25% → 16.7%**. Your reason was a design one, not a number one — *"a dash potion is a escape from a
+situation .. not outruning the fastest classes in game"*.
+
+### `BL-251` — Evasion Mastery is removed from every rogue discipline
+*"Evasion mastery is removed out of any rogue/dual/archer. no1 learns it or auto gets it. same as
+warriors precision"*. `FloorPassiveFor` no longer names `Archetype.Rogue`, which makes the **tank's
+`anti_magic` the last floor left in the game** — the warrior's `precision` went the same way in
+`BL-201` four days ago, and these two were one decision made twice.
+
+🔑 **The SKILL and the MECHANIC both stay.** `evade_mastery` is still a `SkillDef` and
+`PassiveEffect.EvadeFloor` is still read by the resolver; only the GRANT is gone, so re-granting it is
+one line. And nothing un-grants it from a character who has it, deliberately — your standing rule:
+*"no point of migration type to remove a skill from some1."* ⚠ **A character who already had it keeps
+it until you delete `game.db`.**
+
+⚠ `Disciplines.IsRanged` now has no caller — capping a bow rogue at rung 1 was its only job. Kept and
+marked, because "is this a bow discipline" is a roster fact worth having.
+
+🔴 **MEASURED, AND IT IS NOT A NO-OP — the rig says the 20% rung WAS binding from about 44 up.** A
+melee rogue's natural evasion spread against a same-level mob is **14 points at 44 (19% dodge)** and
+**11 at 52 (16%)**, both under the 20% the floor was pinning — so at those levels he loses 1-4 points
+of dodge. Your case is gear `BalanceMatrix` does not dress in that section (the AGI set, the full buff
+shelf, *"about 25+ evasion differnese"*), and I have no measurement of that; the note is now printed
+in E1 so it cannot be forgotten. **If the dodge reads low in the playtest, that is where it went.**
+
+✅ **And it closes a design gap the rig had been flagging for weeks.** E1b's note used to read
+*"against a ROGUE, +5 accuracy buys NOTHING at any gap under 10 … accuracy is currently a stat that
+does nothing against the one target class it is meant to counter"* — because his floor was a hard
+lower bound no accuracy could go under. With both floors gone, **every accuracy point is worth a full
+point from the first one**, which is what makes the warrior's `+9` from `BL-201` actually work.
+
+⚠ **`docs/design/CombatResolution.md`'s floor table was stale on three of its four rows** and has been
+rewritten: it still listed Reflexes (deleted 2026-08-07) and Precision (gone 2026-09-11). The doc has
+been wrong about this for five weeks.
+
+### `BL-248` — closed, declined: move speed is settled
+All three measured levers refused. *"the rogues have enough sprint to outrun anyone … so do not do any
+of the .1,.2,.3 -> we leave speed as is (after the marks update)"*. 🔑 He rejected the premise, not
+just the levers: the rogue's advantage is a **sprint he can spend**, not a standing number, and the
+burst everyone else could buy (the dash) is what actually broke it — which is why `BL-249` was the fix
+and no stat channel moved.
+
+### `BL-247` — the sweep, answered: there is **no Elite or Boss between level 66 and 79**
+Not a code change; the finding is in the Backlog entry. Every scroll / top-material / blueprint faucet
+is gated on Elite or Boss rank, rank belongs to the SPAWN, and **no zone creates one in 66-79**. The A
+enchant band is 76-79, so it lands exactly in the hole: `scroll_greater_a` and `scroll_safe_a` have
+**no source of any kind** today, and `scroll_enchant_a` comes from one mob in the game. A-grade
+blueprints *do* drop from every elite at 80+, but at **0.001 per kill** on a raw roll no drop-rate
+multiplier touches — which is why the ×100 test rate never produced one.
+
+## 2026-09-16 — 0.149.0: `BL-238` is built — a Mark costs you 10% move speed
 
 🔴 **NEW APK REQUIRED** (skill card text). **No protocol change, no `game.db` delete.**
 

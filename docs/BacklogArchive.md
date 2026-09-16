@@ -5543,3 +5543,204 @@ version of the cut makes the rogue's lead *smaller*. What closed the band is the
 character the most), and with sprint **every row in the game is at the 250 cap today**. §6 of the
 page lists what would actually reserve the top of the band — a percent shelf instead of a flat one is
 the shortest road — all unbuilt and unruled.
+
+## `BL-237` §1-§4 — CONFIRMED 2026-09-16. The four readings that were mine, and his answer.
+
+His answer, verbatim: *"BL-237 -> 1,2,3,4 as you desided -> ill do .5 later"*. All four stand as
+built in 0.146.0; §5 (the Warlord's damage rows) stays open in the live file under the same id.
+
+### 1. ❓ *"Decrease received HP 60%"* — I read it as HEALING RECEIVED
+Battle Frenzy's only downside. I read it as "heals and potions restore 60/70/80% less while it runs",
+because that is what pairs with *"can be used when HP is less or equal to 30%"* — you go berserk at a
+third of your bar and nobody can top you back up. The other reading available was "you take 60% more
+damage", which is a different and far harsher skill. **If you meant the second, it is one field.**
+
+### 2. ❓ Saints Blessing's three numbers — I read two of them as CHANCES
+*"Reflect 30% of normal basic attacks, 15% to reflect debuff and 10% to reflect Physical Damage
+skill"*. I read the first as a FRACTION of the damage returned every time, and the other two as
+CHANCES that the whole thing bounces — following your own Deflection ruling, where you were offered
+*"a 100% chance to reflect 15%, or 15% chance to reflect 100%"* and picked the second. The `of` / `to`
+in your own sentence is the tell, but it is thin, so it is written down here.
+
+### 3. ❓ Battle Frenzy is EXEMPT from the buff-slot limit
+Like the two Battle stances, and for their reason: a buff you may only press below 30% HP is an
+emergency, not a slot you plan around. Battle Resilience is NOT exempt and stays that way. If you want
+frenzy counted, it is one flag.
+
+### 4. ⚠ TWO CELLS OF YOURS MOVED — both slips, both reversible
+- **Sword Shock's DURR cell was 0** in both tiers while its DESCR said *"Stuns for 5s"*. A zero-tick
+  stun is not a skill, so the cell is 5 now. (Your Human archer's Magic Arrow — the same idea with a
+  bow — has always read 5.)
+- **The `Chance x0.7` / `Success rate x1` comments came OUT of `warrior 3rd.csv`** and into
+  `debuff_landmods.csv`, which is where landing modifiers live since `BL-232`. The values are yours,
+  unchanged: three Slashes ×0.7, Sword Shock ×1.
+
+## `BL-248` ⛔ DECLINED 2026-09-16 — MOVE SPEED IS SETTLED, ALL THREE LEVERS REFUSED
+
+His ruling, verbatim and complete: *"we desided marks to debuff for 10% and no move speed buff in
+them .. the rogues have enough sprint to outrun anyone, thats why is BL-249.. a dash potion is a
+escape from a situation .. not outruning the fastest classes in game ... (an archer uses both frenzies
+so he is fastest.. while duals wond because of the evasion drop but in long run can outrun any other
+class) -> so do not do any of the .1,.2,.3 -> we leave speed as is (after the marks update)"*.
+
+🔑 **HE REJECTED THE PREMISE, NOT JUST THE LEVERS.** The entry was written as "the band is not
+reserved for rogues, here are three ways to reserve it". His answer is that **the band does not need
+reserving** because the rogue's advantage is a SPRINT — a burst he can spend and everyone else cannot
+— rather than a standing number, and the burst everyone else could buy (the dash potion) is what
+actually broke it. So the fix was `BL-249`, an item reuse, and not a stat channel at all.
+⚠ **He also accepts the ordering that falls out of it, explicitly**: the archer runs both frenzies and
+is fastest; the dual refuses them for the evasion and loses the sprint race but wins the long one.
+That is a designed spread, not a defect — **do not re-raise it as one.**
+
+The pre-decline entry, verbatim:
+
+## `BL-248` 🔵 THE SPEED BAND IS STILL NOT RESERVED FOR ROGUES — and the Mark cut could never have done it
+
+**2026-09-16, the half of `BL-238` that outlived it.** Your complaint was two sentences and only one
+of them is now answered. The Mark's price is built (0.149.0, −10% in the F2 position, both files).
+This is the other one: *"this values should be reserved for rogues"*.
+
+🔑 **THE CUT CANNOT DO IT, AND NEITHER ORDERING COULD.** Measured, in
+[balance/MoveSpeedOrderings.md](balance/MoveSpeedOrderings.md) §5: F1 and F2 produce the **identical**
+rogue-minus-mage gap, because both scale the same base difference by the same factor and the flat
+shelf is common to every row, so it cancels out of a difference. Every version of the cut makes the
+rogue's lead **smaller**. Marked and unsprinted the rogue leads the mage of his race by **16.6**
+(Human), **37.8** (Elf) and **10.2** (Demon).
+
+**What actually closed the band is that the shelf is FLAT.** The same +61 is worth proportionally
+more to a slow character: the mage multiplies his own speed by 1.74, the elf rogue by 1.58.
+🔑 **Your own follow-up table reaches the same place from the other side** — rogues skip Frenzy (it
+costs evasion), so their shelf is **+53** against everyone else's **+61/+69**, and on your "full"
+ordering the **Demon rogue comes out LAST of the eight**. A band that puts one rogue first and another
+last is not a band.
+
+**The levers, measured and unbuilt — pick one and it gets built:**
+
+1. ⛔ **Make the shelf's move speed a PERCENT instead of a flat** — Swift `+33` → `×1.25`, so the band
+   scales with base instead of collapsing toward it. It was the only lever that makes the rogue's base
+   advantage survive buffing. ❓ **I read your 2026-09-16 note as DECLINING it:** *"buffs (swiftness
+   +20/33, harmony of swiftness +20, harmony of speed +20, frenzy +5/8, harmony of madness +8) to be
+   as is"* — those five ARE the shelf, and you listed them at their flat values. Verified against the
+   code, all five match to the number (`+33`/`+20` Swift rungs, Harmony of Swift `+20`, Frenzy
+   `+5`/`+8`, Harmony of Madness `+8`; the `+53`/`+61`/`+69` shelves this entry quotes are those
+   sums). **Say if "as is" meant only "don't retune the magnitudes" and the flat→percent change is
+   still open** — it is the only one of the three that fixes the cause rather than the symptom.
+2. **Cut the flat shelf and give the difference to the rogue's own kit** — the light Armor Mastery
+   already carries `speed +7` and is the natural home for more.
+3. **Move the CAP per class.** `Entity.MoveSpeedCap` is already per-entity, so a rogue ceiling above
+   250 (or everyone else's below it) costs nothing structurally. ⚠ Since 0.149.0 the **elf rogue is
+   the only character in the game who reaches 250 on his own**, so this lever is live rather than
+   theoretical.
+
+⚠ **One measured slip in your own table, worth a look before you rule:** the **Demon fighter** row
+repeats its `shelf` figures in the `full` columns (173/156/210 twice) where every other non-rogue row
+gains +8. If that is a paste, his `full` is 181 and the ordering at the bottom of your list changes.
+
+
+## `BL-249` ✅ BUILT 2026-09-16 in 0.150.0. The pre-build entry, verbatim.
+
+## `BL-249` 🔴 DASH POTIONS GO TO A 90-SECOND REUSE
+
+**2026-09-16.** *"Make dash potions reuse to 90s"*. One number, in one place:
+`SkillCatalog.DashPotion` (`Skills.Common.cs`) builds all six rarities with `cooldownTicks: 600`
+(60s) — it becomes **900**. The 15-second duration and the six `+15…+60` move-speed rungs are
+untouched, so what changes is only how often the burst comes back: from **25% uptime to 16.7%**.
+
+⚠ Two comments carry the old number and go with it: the *"15 seconds of sprint on a 1-minute reuse"*
+header above the six `ItemDef`s in `Items.cs`, and anything in `docs/guides/ItemIds.md` that repeats
+it. No CSV is involved — potions are not class skills.
+
+
+## `BL-250` — RE-SPECCED 2026-09-16 (he answered every open question). The first draft, verbatim.
+
+## `BL-250` 🔵 THE SIGILS BECOME SUBCLASS-GATED — your IG "subclass ability" model
+
+**2026-09-16.** A rework of what 0.113-era built, and it changes the GATE, not the eighteen sigils —
+every name in your six groups already exists in `Skills.Sigils.cs` under exactly that name.
+
+**Your model, verbatim:** *"In IG when you lvl up a sub class to 75 u get to use its 'Ability' → each
+subclass have its ability-identity … because a tank cannot take a tank subclass it cannot get its
+ability … so i want sigils not to be separated as attak/support/defence .. u can have up to 3 sigils
+active … each subclass @76(4th) activates a sigil slot (up to 3) + unlocks its designated sigils"*.
+
+**What changes**
+
+1. 🔑 **The three SLOTS stop being Attack / Defence / Support.** Today `SigilSlot` is a real
+   exclusion axis — one per slot, enforced by `ExclusiveGroup`. It becomes **three identical slots**:
+   any three of the eighteen, so long as you have unlocked them. The `SigilSlot` enum stays as a
+   *label* for the UI or goes entirely; that is a free choice.
+2. 🔑 **Slots are EARNED, not granted at 76.** Each subclass that reaches **76 (its own 4th class)**
+   opens one slot, to a maximum of three. So a character with one 4th-class subclass has one sigil,
+   and only a fully built-out character has three. Today all three open at once on the main.
+3. 🔑 **A group is unlocked by OWNING a subclass of it**, and your main class grants nothing:
+
+   | group | the classes that unlock it | its three sigils |
+   |---|---|---|
+   | mage | the 3 Apprentice | Frenzy · Mage Defence · Arcane Support |
+   | healer | the 3 Priest, healer discipline | Holy Power · Holy Protection · Holy Support |
+   | buffer | the 3 Priest, buffer discipline | Soul · Spirit · Immortality |
+   | rogue | the 6 Rogue | Focus · Agility · Aim |
+   | warrior | the 6 Warrior | Fury · Duel · Fortitude |
+   | tank | the 3 Knight | Body · Aegis · Critical Protection |
+
+✅ **The exclusion you want already falls out of the rule we have.** *"mage wont be able to take mage
+sigils (cannot take another mage class) … rogues and warriors can take their own because they have a
+separate discipline"* — `Player.CanAddDiscipline` already refuses a second class of the same
+**discipline**, and the roster does the rest: the nuker's three names are one discipline (so no mage
+may add a mage), while the rogue's six are **two** (dagger ↔ bow) and the warrior's six are two
+(warrior ↔ war\_aoe), so those two archetypes can add their own. Healer/buffer/tank cannot. **No new
+rule is needed for any of it** — and when summoners arrive, nuker ↔ summoner unlocks the mage group
+for a mage exactly as you describe, with no code change here either.
+
+**What this costs, so you can judge it before it is built**
+
+- ⚠ **Sigils become END-game, hard.** Three sigils today = 76 + 60kk SP + 30kk gold. Three sigils
+  after this = **three subclasses each levelled to 76**, on top of the existing gate that every class
+  you own must be 75+ *with* its 3rd class before you may add another. That is a very long road, and
+  it is the IG road. Say if you want the SP/gold price cut to compensate, or left as it is.
+- ❓ **Does the MAIN class open a slot too?** Your sentence says *"each subclass"*, and IG's ability
+  is a subclass ability. Taken literally a character with no subclass has **zero** sigils. Confirm.
+- ❓ **What happens to a character who already owns three?** Pre-release, so the answer can simply be
+  a `game.db` delete — but if you would rather they be re-granted under the new rule, say so.
+- ⚠ The client's Sigils tab is built around the three named slots and would be rebuilt with them.
+
+## `BL-251` ✅ BUILT 2026-09-16 in 0.150.0 — EVASION MASTERY IS REMOVED FROM EVERY ROGUE
+
+Never had a pre-build entry: he specified it and it was built the same hour. His words, verbatim:
+
+> *"Evasion mastery is removed out of any rogue/dual/archer . no1 learns it or auto gets it. same as
+> warriors precision ... they have enought passive to acomudate for the evasion/acc difference with the
+> same lvl player/mob ... duals with passive, +agi, +set Agi, +buffs gets about 25+ evasion differnese
+> with the same lvl mob ... same goes for fighters (demon even more/ war_aoe will get +10 on a toggle
+> so they will do without floor boost)"*
+
+**Built exactly as `BL-201` built the warrior's half, four days earlier** — the two are one decision
+made twice:
+
+- `SkillCatalog.FloorPassiveFor` no longer names `Archetype.Rogue`. **The tank's `anti_magic` is now
+  the only floor left in the game.**
+- 🔑 **The SKILL and the MECHANIC both stay.** `evade_mastery` is still a `SkillDef` and
+  `PassiveEffect.EvadeFloor` is still read by the resolver — only the grant is gone, so re-granting it
+  is one line. Same treatment `precision` got, for the same reason.
+- 🔑 **Nothing UN-grants it**, deliberately, under his standing pre-release rule: *"no point of
+  migration type to remove a skill from some1. They will never have it in the 1st place."* A `game.db`
+  delete is the migration.
+- ⚠ `Disciplines.IsRanged` now has **no caller** — its one job was capping a bow rogue at rung 1. Kept
+  (it is a roster fact, not a detail of that rule) and marked as uncalled.
+- `docs/design/CombatResolution.md`'s floor table was **stale on three of its four rows** and was
+  rewritten with this: it still listed Reflexes (deleted 2026-08-07) and Precision (gone in `BL-201`).
+- `tools/BalanceMatrix`'s `GrantFloorPassive` is now a no-op for everyone but the tank, and says so —
+  a rogue measured there has no evade floor, which is the game. Do not "fix" that by re-granting it.
+
+🔴 **MEASURED AFTERWARDS — it is NOT a no-op, and the entry says so because the rig does.** A melee
+rogue's natural evasion spread against a same-level mob measures **14 points at level 44 (19% dodge)**
+and **11 at 52 (16%)** — both under the 20% the floor was pinning — so at those levels he loses 1-4
+points of dodge. His case rests on gear `BalanceMatrix` does not dress in that section (the AGI set
+and the full buff shelf, *"about 25+ evasion differnese with the same lvl mob"*), which is unmeasured.
+The note is printed in the rig's §E1 so it cannot be lost.
+
+✅ **It also closes a design gap the rig had been flagging.** §E1b used to read *"against a ROGUE, +5
+accuracy buys NOTHING at any gap under 10 … accuracy is currently a stat that does nothing against the
+one target class it is meant to counter"*, because the floor was a hard lower bound on miss. With both
+floors gone every accuracy point is worth a full point from the first one — which is what makes the
+warrior's `+9` from `BL-201` do anything at all. The two rulings complete each other.

@@ -1690,7 +1690,7 @@ public static class ItemCatalog
         BuffScroll(VampScrollM,     "Scroll of Vampirism", SkillCatalog.ScrVampM);
         BuffScroll(ResolveScrollM,  "Scroll of Resolve",   SkillCatalog.ScrResolveM);
 
-        // Dash — 15 seconds of sprint on a 1-minute reuse, six rarities, no scroll. Priced at half
+        // Dash — 15 seconds of sprint on a 90-second reuse (`BL-249`), six rarities, no scroll. Priced at half
         // a buff potion of the same rarity: it is a burst, not a blessing.
         list.Add(new ItemDef(DashPotionC, "Dash Potion (Lesser)", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Common, UseSkillId: SkillCatalog.PotDashC, SellPriceOverride: 0, Value: 750));

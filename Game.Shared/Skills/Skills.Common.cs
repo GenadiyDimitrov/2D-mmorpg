@@ -263,11 +263,16 @@ public static partial class SkillCatalog
       : wrapper.DurationTicks == PotionBuffTicks ? BuffForm.Potion
       : BuffForm.None;
 
-    /// <summary>Dash: a 15-second sprint on a 1-minute reuse, on its OWN family — it must never
-    /// join spd_move, or it would evict an hour-long Swift scroll and give it back 15s later.</summary>
+    /// <summary>Dash: a 15-second sprint on a 90-second reuse, on its OWN family — it must never
+    /// join spd_move, or it would evict an hour-long Swift scroll and give it back 15s later.
+    ///
+    /// ⚠ The reuse was 600 ticks (60s) until `BL-249` (2026-09-16). His reason is a DESIGN one, not a
+    /// balance number: *"a dash potion is a escape from a situation .. not outruning the fastest
+    /// classes in game"*. At 25% uptime it was a movement stat anyone could buy; at 16.7% it is a
+    /// burst. The 15-second duration and the six +15…+60 rungs are deliberately unchanged.</summary>
     private static SkillDef DashPotion(string id, string name, string child, int move) =>
         ConsumableBuff(id, name, child, SkillEffect.BuffMoveSpeed, durationTicks: 150,
-            castTicks: 0, cooldownTicks: 600, desc: $"+{move} Move Speed for 15 seconds.");
+            castTicks: 0, cooldownTicks: 900, desc: $"+{move} Move Speed for 15 seconds.");
 
     // ---- Multi-level PASSIVE factory: a pure passive whose levels each carry a
     //      PassiveEffect (the floor/lean value for that level). ----
@@ -346,31 +351,15 @@ public static partial class SkillCatalog
     /// tier (milestones 20/40/76) — as (skill id, skill LEVEL), or null. Granted in
     /// AutoLearnCoreSkills. The floor VALUES live in the SkillDef Levels, not in code.
     ///
-    /// ⚠ The ROGUE's ladder is NOT the plain 20/40/76 the others use (owner, 2026-08-07, refining
-    /// playtest-19 M7). It is tied to the CLASS CHANGE, not to the level number:
+    /// 🔴 <b>ONLY THE TANK STILL HAS ONE.</b> The warrior's `precision` went in `BL-201`
+    /// (2026-09-11) and the rogue's `evade_mastery` in `BL-251` (2026-09-16) — see the two blocks
+    /// below. The `discipline` parameter survives them both because it is the only thing that can
+    /// tell a bow rogue from a dagger one, and a future floor may need it again.
     ///
-    ///   Lv1 @20 — every rogue, on the 2nd class change. The 10% floor.
-    ///   Lv2 @40 — <b>only on taking a MELEE discipline</b> (Phantom / Venomweaver / Nullblade).
-    ///             A rogue who is level 40+ but has not chosen yet stays at Lv1, and a RANGED
-    ///             discipline (Sharpshooter / Trapper / Hunter) stays at Lv1 forever —
-    ///             *"the archer should not have evasion mastery after 40 .. the 10% are ok"*.
-    ///   Lv3     — 🔴 NOBODY, and that is deliberate: its milestone is the <b>4th class change,
-    ///             WHICH DOES NOT EXIST YET</b>. 76 is only a level; granting a rung there would
-    ///             hand out a 3rd-class-sized bonus for no class change at all. When the 4th tier
-    ///             lands, gate Lv3 on holding it — not on <c>level >= 76</c>.
+    /// ⚠ The tank still uses the plain 20/40/76 curve, so `anti_magic` DOES still grant a Lv3 at 76.
+    /// The owner's "76 is not a class change" argument (playtest-19 M7) applies to it too and is
+    /// <b>owed back to him</b> before changing it.
     ///
-    /// Since the archer→rogue merge, ONE 2nd class covers bow and dagger, so the discipline is the
-    /// only thing that can tell a bow rogue from a dagger one — hence the parameter.
-    ///
-    /// ⚠ Warrior/Tank still use the plain 20/40/76 curve, so `precision` and `anti_magic` DO still
-    /// grant a Lv3 at 76. The owner ruled on the rogue's; the same "76 is not a class change"
-    /// argument applies to those two and is <b>owed back to him</b> before changing them.
-    ///
-    /// ⚠ 2026-08-10 — ALL THREE ARE NOW AUTHORED IN THE CSVs (owner: *"Put evasion mastery/anymagic/
-    /// precision inside the csv for the warrior/tank/rogue"*), as a level-20 row in
-    /// `docs/data/classes_skills_csv/{rogue,tank,warrior} 2nd.csv`. The CSV is the AUTHORITY on
-    /// their numbers — change a floor there first, then mirror it into the Levels below. They stay
-    /// auto-granted from here (SP 0) rather than bought, which is why the CSV rows carry SP 0.
     /// ⚠ The tank's CSV also has a *different* skill called "Tank Anti-Magic" (m.def +25/+45) —
     /// do not conflate the two: that one is a stat, this one is the fizzle floor.</summary>
     public static (string Id, int Level)? FloorPassiveFor(Archetype? archetype, int level,
@@ -378,12 +367,31 @@ public static partial class SkillCatalog
     {
         int tier = level >= 76 ? 3 : level >= 40 ? 2 : level >= 20 ? 1 : 0;
         if (tier == 0) return null;
+        _ = discipline;   // kept in the signature — see the summary.
         return archetype switch
         {
-            // The rogue's own ladder — see the block above. Lv2 needs a MELEE discipline in hand;
-            // everything else about being level 40, 76 or 90 is irrelevant to it.
-            Archetype.Rogue   => (EvadeMastery,
-                level >= 40 && discipline is { } d && !Disciplines.IsRanged(d) ? 2 : 1),
+            // 🔴 THE ROGUE GETS NO FLOOR SINCE 2026-09-16 (`BL-251`), exactly as the warrior lost his
+            // in `BL-201`. His ruling: *"Evasion mastery is removed out of any rogue/dual/archer. no1
+            // learns it or auto gets it. same as warriors precision .. they have enought passive to
+            // acomudate for the evasion/acc difference with the same lvl player/mob .. duals with
+            // passive, +agi, +set Agi, +buffs gets about 25+ evasion differnese with the same lvl mob
+            // ... same goes for fighters (demon even more/ war_aoe will get +10 on a toggle so they
+            // will do without floor boost)"*.
+            //
+            // 🔑 SAME ARGUMENT AS THE WARRIOR'S BELOW, FROM THE OTHER SIDE: the kit already buys what
+            // the floor was guaranteeing. His count is ~25 points of evasion lead over a same-level
+            // mob (light Armor Mastery + AGI + the AGI set + buffs), which on the one-line resolver —
+            // `miss = 5% + (EVA − ACC) × 1%` — is worth far more than the 10/20% the floor pinned.
+            //
+            // ⚠ It was the LAST auto-granted rung on this ladder that a DISCIPLINE could change, which
+            //   is why `Disciplines.IsRanged` now has no caller.
+            // ⚠ `EvadeMastery` THE SKILL STILL EXISTS and so does `PassiveEffect.EvadeFloor` — the same
+            //   treatment `Precision` got. Nothing grants it today. Do NOT delete the def and do NOT
+            //   delete EvadeFloor from the resolver; these two lines are the whole change.
+            // ⚠ AND NOTHING UN-GRANTS IT EITHER, deliberately — his standing ruling on the warrior's:
+            //   *"no point of migration type to remove a skill from some1. They will never have it in
+            //   the 1st place."* Pre-release, a `game.db` delete is the migration.
+            // (It was: `(EvadeMastery, level >= 40 && !IsRanged(discipline) ? 2 : 1)`.)
             // 🔴 THE WARRIOR GETS NO FLOOR SINCE 2026-09-11 (`BL-201`). It was `(Precision, tier)`.
             // His ruling, when asked whether the row leaving `warrior 2nd.csv` meant the mechanic or
             // just the row: *"Delete precition as we deleted the rogue floor. Probably will give more
@@ -915,10 +923,10 @@ public static partial class SkillCatalog
         // is already closed at ~18 by authoring — 14 from armor mastery + 4 from the buff. More
         // than that and "everything else will make him untouchable". The floor is an anti-ACCURACY
         // tool only: it exists for fighting the classes that stack accuracy, not as a stat lean.
-        // ⚠ Lv3 is authored but UNREACHABLE on purpose (owner, 2026-08-07): its milestone is the 4th
-        // class change, which does not exist yet, and 76 is only a level. `FloorPassiveFor` grants
-        // Lv1 at the 2nd class and Lv2 only to a MELEE discipline. Leave the rung here — when the 4th
-        // tier lands it is already written, and gating it is one condition in FloorPassiveFor.
+        // 🔴 NOBODY IS GRANTED THIS SINCE 2026-09-16 (`BL-251`) — his ruling: *"Evasion mastery is
+        // removed out of any rogue/dual/archer. no1 learns it or auto gets it. same as warriors
+        // precision"*. The def and `PassiveEffect.EvadeFloor` stay, exactly as `Precision` below;
+        // `FloorPassiveFor` no longer names the archetype. All three rungs are now unreachable.
         LeveledPassive(EvadeMastery, "Evasion Mastery", BaseClass.Fighter,
             "Passive. Dodge floor 10/20/30%.",
             new PassiveEffect(EvadeFloor: 0.10f),
@@ -926,8 +934,8 @@ public static partial class SkillCatalog
             new PassiveEffect(EvadeFloor: 0.30f)),
         // (Reflexes — the ARCHER floor passive — DELETED 2026-08-07, playtest-19 `0a`/G1. It was the
         //  one genuinely dead line on that list: no 2nd class has carried Archetype.Archer since the
-        //  archer→rogue merge, so nothing could ever be granted it. Don't re-add it; a ranged rogue's
-        //  floor comes from Evasion Mastery, and after 40 the ranged DISCIPLINES get none — see M7.)
+        //  archer→rogue merge, so nothing could ever be granted it. Don't re-add it; since `BL-251`
+        //  no rogue of any discipline has an evade floor at all, so there is nothing for it to mirror.)
         // 🔴 NOBODY IS GRANTED THIS SINCE 2026-09-11 (`BL-201`) — his ruling: *"Delete precition ...
         //    Now he have +9 which kills 50% of the rogues evasion anyway (no need for another hit
         //    floor) - leave the mechanic but not the skill on warrior"*. The warrior was its only

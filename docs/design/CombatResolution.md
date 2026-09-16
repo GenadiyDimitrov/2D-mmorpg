@@ -70,11 +70,23 @@ These are **learned passive skills**, NOT hardcoded — the values live in `Skil
 `PassiveEffect`s and are auto-granted at the class-change milestone by
 `SkillCatalog.FloorPassiveFor`. The resolver takes the **max** floor across passives.
 
-| Floor | Class | Passive | @20 | @40 | @76 | meaning |
+🔴 **NOBODY HAS A PHYSICAL FLOOR ANY MORE.** Both sides of the hit/evade pair were removed, four
+days apart, for the same reason — the kit already buys what the floor guaranteed:
+
+| Floor | Class | Passive | @20 | @40 | @76 | gone |
 |---|---|---|---|---|---|---|
-| **Evade** (min phys miss vs them) | Rogue | Evasion Mastery | 10% | 20% | 30% | sure to dodge |
-| | Archer | Reflexes | 5% | 10% | 15% | half a rogue's |
-| **Hit** (min phys hit; caps incoming miss at 1−floor) | Warrior | Precision | 10% | 20% | 30% | sure to land |
+| **Evade** (min phys miss vs them) | Rogue | Evasion Mastery | 10% | 20% | 30% | 🔴 `BL-251`, 2026-09-16 |
+| | Archer | Reflexes | 5% | 10% | 15% | 🔴 deleted 2026-08-07 (no class carried Archer) |
+| **Hit** (min phys hit; caps incoming miss at 1−floor) | Warrior | Precision | 10% | 20% | 30% | 🔴 `BL-201`, 2026-09-11 |
+
+⚠ **The two SKILLS and both `PassiveEffect` channels still exist** (`EvadeFloor`, `HitFloor`) and the
+resolver still reads them — only the grant is gone, in `FloorPassiveFor`. That is deliberate: it is one
+line to re-grant either. Do not delete the defs or strip the channels out of the resolver.
+His reasoning, both times, was that accuracy and evasion now move far enough on their own — the warrior
+buys up to **+9 accuracy** from Strength, and a dual with light Armor Mastery + AGI + the AGI set +
+buffs runs *"about 25+ evasion difference with the same lvl mob"*. On the one-line resolver
+(`miss = 5% + (EVA − ACC) × 1%`) those points are worth more than the floors they replace, and a floor
+on top would be the same protection charged twice.
 
 🔴 **There is no magic floor any more** (2026-08-10). The old row — Tank Anti-Magic 10/15/20%, Mage
 "Spell Ward" 10% — is gone: the tank's Anti-Magic is a **×2 multiplier** on the magic-fail formula,

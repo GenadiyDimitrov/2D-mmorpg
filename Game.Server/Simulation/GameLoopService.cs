@@ -1569,11 +1569,10 @@ public class GameLoopService : BackgroundService
         // held RUNE items that grant the same buff, see ReconcileRuneBuffs / SkillCatalog.WarRuneBuff.)
 
         // Class identity "sure" floor passive for the current class tier (level = tier).
-        // ⚠ The DISCIPLINE is passed because the rogue's ladder is tied to the CLASS CHANGE, not to
-        // the level (owner, 2026-08-07): Lv1 at the 2nd class, Lv2 only on taking a MELEE discipline,
-        // and Lv3 never — its milestone is the 4th class change, which does not exist yet. Plain
-        // assignment, so picking a bow discipline at 40 DOWNGRADES a granted Lv2 back to Lv1, and a
-        // rogue who hits 76 no longer silently gains a Lv3. Both are intended. See FloorPassiveFor.
+        // 🔴 ONLY THE TANK STILL GETS ONE. The warrior's `precision` went in `BL-201` and the rogue's
+        // `evade_mastery` in `BL-251`, so for every other archetype this line is a no-op — see
+        // FloorPassiveFor for both rulings. The DISCIPLINE is still passed: it costs nothing and the
+        // signature keeps it for whatever floor needs it next.
         if (SkillCatalog.FloorPassiveFor(player.Archetype, player.Level, player.Discipline) is { } floor)
             player.LearnedSkills[floor.Id] = floor.Level;
 

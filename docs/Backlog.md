@@ -43,13 +43,19 @@ of `healer 4th.csv`), and **yes, the Harmony Mark takes it** (both `buffer 4th.c
 onto your own hand table, row for row. 🔴 The `+20% move speed` the Marks used to GRANT went with it —
 no CSV row ever authored it, and it was much of why everyone was over 200.
 
-🔵 **What that did NOT settle is now `BL-248`**: the band is still not reserved for rogues, and no
-version of the cut could reserve it. Three measured levers there; pick one.
+✅✅ **AND `BL-248` IS CLOSED — YOU DECLINED ALL THREE LEVERS (2026-09-16, archived).** *"the rogues
+have enough sprint to outrun anyone, thats why is BL-249 .. a dash potion is a escape from a situation
+.. not outruning the fastest classes in game .. so do not do any of the .1,.2,.3 -> we leave speed as
+is (after the marks update)"*. **Move speed is settled** — nothing further is owed on it.
 
-The other eight asks (`BL-239`…`BL-246`) are 🔵 waiting to be built, and `BL-247` is a sweep.
+The other eight asks (`BL-239`…`BL-246`) are 🔵 waiting to be built. **`BL-247` gained a requirement**
+on top of its sweep and is now a build.
 
-★ **And two more from your notes file, same day:** **`BL-249`** (dash potions to a 90-second reuse)
-and **`BL-250`** (the sigils become subclass-gated, your IG "subclass ability" model).
+★ **And from your notes file, same day:** **`BL-249`** (dash potions to a 90-second reuse) — **BUILT
+in 0.150.0 and archived** — and **`BL-250`** (the sigils become subclass-gated), which **you have now
+answered in full** and is ready to build. Two more landed with those answers: **`BL-251`**, Evasion
+Mastery removed from every rogue discipline (**BUILT in 0.150.0**, archived — the twin of the warrior's
+`BL-201`), and **`BL-252`**, a new subclass being born at 40 with a 1-day rune instead of at 1.
 
 ✅ **The third thing in that file needed no build.** You asked whether the Mark's cut *"sits in the
 buff part or debuff part of the formula — if it's in the debuff part a 10% decrease is good … if it's
@@ -205,7 +211,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-232` | 🔵 | `debuff_landmods.csv` IS LIVE — 74 rows built and checked; the SUCCESS column is yours to author | combat |
 | `BL-233` | ❓ | THE DEMON BUFFER'S P.DEF — measured three ways and heavy is AHEAD; I need your two sheets | classes |
 | `BL-234` | ❓ | URGENT LESSER HEAL — built to your four numbers; the per-rank falloff is mine to confirm | classes |
-| `BL-237` | ❓ | WARRIOR 3rd + 4th — **BUILT** in 0.146.0; three readings of yours are mine to confirm | classes |
+| `BL-237` | 🔵 | THE WARLORD'S DAMAGE ROWS — all that is left of WARRIOR 3rd+4th; `war_aoe 3rd/4th.csv` author none | classes |
 | `BL-239` | 🔵 | AN ITEM LOCK, BY ITEM ID — no sell/dismantle/delete/keeper/trade; consumables still usable | items |
 | `BL-240` | 🔵 | INSTANT SELL BY RARITY, scoped by the vendor tab you are on | items |
 | `BL-241` | 🔵 | A PER-TYPE RARITY FILTER ON PICKUP — and it drops you from the party LOOT ROSTER too | items |
@@ -214,10 +220,9 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-244` | 🔵 | THE FAST-DELETE BUTTON BECOMES A CYCLE — DEL:OFF → DEL:ON → BRAKE:ON | ui |
 | `BL-245` | 🔵 | THE CRAFTER SHOULD SEE PRIVATE WAREHOUSE MATS — a toggle, on by default | crafting |
 | `BL-246` | 🔵 | THE STATS WINDOW BECOMES TWO TABS — your full layout; several rows have no source yet | ui |
-| `BL-247` | ❓ | WHAT DROPS A-grade enchant scrolls, epic/rare WOOD and epic LEATHER? A sweep, not a build | items |
-| `BL-248` | 🔵 | THE SPEED BAND IS STILL NOT RESERVED FOR ROGUES — the Mark cut could never do it; three measured levers, pick one | buffs |
-| `BL-249` | 🔴 | DASH POTIONS GO TO A 90-SECOND REUSE — one number, all six rarities | items |
-| `BL-250` | 🔵 | THE SIGILS BECOME SUBCLASS-GATED — no attack/defence/support split; each 4th-class SUBCLASS opens a slot and unlocks its own three | classes |
+| `BL-247` | 🔴 | A-GRADE SCROLLS AND BLUEPRINTS NEED A SOURCE — 76-80 mobs drop the scrolls, 80-85 elites the blueprints | items |
+| `BL-250` | 🔴 | THE SIGILS BECOME SUBCLASS-GATED — three identical slots, opened by your first three SUBCLASSES at 75; SP/gold cost gone, clearing costs 100kk | classes |
+| `BL-252` | 🔴 | A NEW SUBCLASS IS BORN AT 40 — no learned skills, 0 SP, 0% exp, and a 1-day 100% SP/XP rune | classes |
 
 ---
 
@@ -1809,38 +1814,13 @@ over eleven: `dotnet run --project tools/BalanceMatrix -- --healpower 90 epic`.
 
 ---
 
-## `BL-237` ❓ WARRIOR 3rd + 4th — BUILT (0.146.0). THREE READINGS ARE MINE, NOT YOURS
+## `BL-237` 🔵 THE WARLORD'S DAMAGE ROWS — the last open half of WARRIOR 3rd + 4th
 
-**Built 2026-09-16.** Both files are in, `--check` is green on all three warrior specs, and the
-Ravager finally has damage. Everything you ruled was built verbatim; what is left below is only what
-I had to DECIDE because your cell did not say, plus two cells I moved. Say the word on any of them
-and it changes in a line — none of it is load-bearing anywhere else.
-
-### 1. ❓ *"Decrease received HP 60%"* — I read it as HEALING RECEIVED
-Battle Frenzy's only downside. I read it as "heals and potions restore 60/70/80% less while it runs",
-because that is what pairs with *"can be used when HP is less or equal to 30%"* — you go berserk at a
-third of your bar and nobody can top you back up. The other reading available was "you take 60% more
-damage", which is a different and far harsher skill. **If you meant the second, it is one field.**
-
-### 2. ❓ Saints Blessing's three numbers — I read two of them as CHANCES
-*"Reflect 30% of normal basic attacks, 15% to reflect debuff and 10% to reflect Physical Damage
-skill"*. I read the first as a FRACTION of the damage returned every time, and the other two as
-CHANCES that the whole thing bounces — following your own Deflection ruling, where you were offered
-*"a 100% chance to reflect 15%, or 15% chance to reflect 100%"* and picked the second. The `of` / `to`
-in your own sentence is the tell, but it is thin, so it is written down here.
-
-### 3. ❓ Battle Frenzy is EXEMPT from the buff-slot limit
-Like the two Battle stances, and for their reason: a buff you may only press below 30% HP is an
-emergency, not a slot you plan around. Battle Resilience is NOT exempt and stays that way. If you want
-frenzy counted, it is one flag.
-
-### 4. ⚠ TWO CELLS OF YOURS MOVED — both slips, both reversible
-- **Sword Shock's DURR cell was 0** in both tiers while its DESCR said *"Stuns for 5s"*. A zero-tick
-  stun is not a skill, so the cell is 5 now. (Your Human archer's Magic Arrow — the same idea with a
-  bow — has always read 5.)
-- **The `Chance x0.7` / `Success rate x1` comments came OUT of `warrior 3rd.csv`** and into
-  `debuff_landmods.csv`, which is where landing modifiers live since `BL-232`. The values are yours,
-  unchanged: three Slashes ×0.7, Sword Shock ×1.
+**Built 2026-09-16 (0.146.0); your four readings CONFIRMED 2026-09-16** — *"1,2,3,4 as you desided ->
+ill do .5 later"*. So Battle Frenzy's downside is **healing received**, Saints Blessing's two `to`
+numbers are **chances**, Battle Frenzy is **exempt from the buff-slot limit**, and both moved cells
+(Sword Shock's 5s stun, the landing modifiers into `debuff_landmods.csv`) stand. Those four are
+archived under this id. **Only §5 is still open, and it is yours:**
 
 ### 5. 🔴 STILL OWED BY YOU — the WARLORD's damage rows
 `war_aoe 3rd.csv` and `war_aoe 4th.csv` author **no damage row of any kind**. The blunt discipline
@@ -1947,114 +1927,199 @@ three mastery rates (`x2 Dmg`, `Reuse rst`, `x2 Duration`), `Stab Rate` and the 
 all live derived values that the stats payload does not currently carry. So this is a protocol change
 as well as a layout, and it wants doing in one pass rather than a row at a time.
 
-## `BL-247` ❓ WHAT DROPS A-GRADE ENCHANT SCROLLS, EPIC/RARE WOOD AND EPIC LEATHER?
+## `BL-247` 🔴 A-GRADE SCROLLS AND BLUEPRINTS NEED A SOURCE — the sweep is done, and the cause is ONE HOLE
 
-**2026-09-16.** *"what drops A grade enchant scrolls ? Also where epic/rare wood and epic leather are
-dropped -> also got none"*. Owed as a **drop-table sweep and an answer**, not a build: which mobs carry
-each of the three, at which levels, and at what EFFECTIVE rate once the group multiplier is applied
-(`MobCatalog.EffectiveRate`). If the honest answer is "nothing does", that is the finding — and it
-pairs with `BL-30`, which already records that no recipe item exists below A grade.
-## `BL-248` 🔵 THE SPEED BAND IS STILL NOT RESERVED FOR ROGUES — and the Mark cut could never have done it
+**Asked 2026-09-16** — *"what drops A grade enchant scrolls ? Also where epic/rare wood and epic
+leather are dropped -> also got none"* — then, the same day, a requirement: *"mobs 76-80 should drop A
+scrolls, elits 80-85 should drop A grade blueprints ... 1st answer me if anything drops those things"*.
+**Below is that answer. The build is yours to approve, because the honest fix is not the one you
+asked for.**
 
-**2026-09-16, the half of `BL-238` that outlived it.** Your complaint was two sentences and only one
-of them is now answered. The Mark's price is built (0.149.0, −10% in the F2 position, both files).
-This is the other one: *"this values should be reserved for rogues"*.
+### 🔴 THE FINDING: THERE IS NO ELITE OR BOSS ANYWHERE BETWEEN LEVEL 66 AND 79
+Every scroll, top-material and blueprint faucet in the game is gated on `MobRank` being Elite or Boss
+(`EnchantScrollDrops`, `EliteMatDrops`, `RollBossBonus`) — and **rank is a property of the SPAWN, not
+the template**, so the only thing that creates one is a zone. Here is every Elite/Boss spawn that
+exists today:
 
-🔑 **THE CUT CANNOT DO IT, AND NEITHER ORDERING COULD.** Measured, in
-[balance/MoveSpeedOrderings.md](balance/MoveSpeedOrderings.md) §5: F1 and F2 produce the **identical**
-rogue-minus-mage gap, because both scale the same base difference by the same factor and the flat
-shelf is common to every row, so it cancels out of a difference. Every version of the cut makes the
-rogue's lead **smaller**. Marked and unsprinted the rogue leads the mage of his race by **16.6**
-(Human), **37.8** (Elf) and **10.2** (Demon).
+| source | rank | level |
+|---|---|---|
+| Hollow Crypt rooms | Elite | 39-42 |
+| Hollow Crypt boss (`grave_lich`) | Boss | 44 |
+| Sunless Warrens rooms | Elite | 58-64 |
+| Valley field boss (`valley_treant`) | Boss | 60 |
+| Sunless Warrens boss (`dread_knight`) | Boss | 65 |
+| 🔴 **— nothing at all —** | | **66 → 79** |
+| Frostmere elite camp | Elite | 80 |
+| Ashen Sepulchre rooms | Elite | 80-85 |
+| Radiant Expanse elite camp | Elite | 84 |
+| Dawnbreak Summit elite camp | Elite | 90 |
+| Ashen Sepulchre boss (`disciple_of_the_dawn`) | Boss | 90 |
 
-**What actually closed the band is that the shelf is FLAT.** The same +61 is worth proportionally
-more to a slow character: the mage multiplies his own speed by 1.74, the elf rogue by 1.58.
-🔑 **Your own follow-up table reaches the same place from the other side** — rogues skip Frenzy (it
-costs evasion), so their shelf is **+53** against everyone else's **+61/+69**, and on your "full"
-ordering the **Demon rogue comes out LAST of the eight**. A band that puts one rogue first and another
-last is not a band.
+🔑 **The A band is levels 76-79** (`Items.EnchantScrollBands`: A opens at 76, S at 80) — which lands
+exactly in the hole. That single gap is the whole explanation for "I got none".
 
-**The levers, measured and unbuilt — pick one and it gets built:**
+### 1. A-GRADE ENCHANT SCROLLS — one of the three is reachable, two are not
 
-1. ⛔ **Make the shelf's move speed a PERCENT instead of a flat** — Swift `+33` → `×1.25`, so the band
-   scales with base instead of collapsing toward it. It was the only lever that makes the rogue's base
-   advantage survive buffing. ❓ **I read your 2026-09-16 note as DECLINING it:** *"buffs (swiftness
-   +20/33, harmony of swiftness +20, harmony of speed +20, frenzy +5/8, harmony of madness +8) to be
-   as is"* — those five ARE the shelf, and you listed them at their flat values. Verified against the
-   code, all five match to the number (`+33`/`+20` Swift rungs, Harmony of Swift `+20`, Frenzy
-   `+5`/`+8`, Harmony of Madness `+8`; the `+53`/`+61`/`+69` shelves this entry quotes are those
-   sums). **Say if "as is" meant only "don't retune the magnitudes" and the flat→percent change is
-   still open** — it is the only one of the three that fixes the cause rather than the symptom.
-2. **Cut the flat shelf and give the difference to the rogue's own kit** — the light Armor Mastery
-   already carries `speed +7` and is the natural home for more.
-3. **Move the CAP per class.** `Entity.MoveSpeedCap` is already per-entity, so a rogue ceiling above
-   250 (or everyone else's below it) costs nothing structurally. ⚠ Since 0.149.0 the **elf rogue is
-   the only character in the game who reaches 250 on his own**, so this lever is live rather than
-   theoretical.
+| item | what pays it | reachable today? |
+|---|---|---|
+| `scroll_enchant_a` (Normal) | an Elite in its own band (0.030 → **9%**); a Boss in its own band (0.100 → **30%**); a Boss ONE band above, i.e. 80+ (0.100 → **30%**) | ✅ **but from ONE mob in the game** — `disciple_of_the_dawn`, the L90 dungeon boss. Also craftable (Scribe rung 5, `craft_scroll_enchant_a`) |
+| `scroll_greater_a` (Greater) | a Boss whose OWN band is A → **level 76-79** (0.030 → 9%) | 🔴 **NO. Unreachable.** No boss exists in 76-79, and Greater became boss-only earlier today (§100) |
+| `scroll_safe_a` (Safe) | same — a Boss at 76-79 (0.0015 → 0.45%) | 🔴 **NO. Unreachable.** |
 
-⚠ **One measured slip in your own table, worth a look before you rule:** the **Demon fighter** row
-repeats its `shelf` figures in the `full` columns (173/156/210 twice) where every other non-rogue row
-gains +8. If that is a paste, his `full` is 181 and the ordering at the bottom of your list changes.
+⚠ Neither Greater nor Safe is craftable at any rung, by design — *"they are the elite/boss reward"*.
+So two of the three A scrolls currently have **no source of any kind**.
 
+**Your ask was "mobs 76-80 should drop A scrolls".** ⚠ Taken literally that means ORDINARY mobs, and
+`EnchantScrollDrops` pays a Normal-rank kill nothing at any grade — so it would be a new rule for the
+A band alone. ❓ **I think what you actually want is an elite camp (and a boss) in the 76-79 hole**,
+which pays all three A scrolls at the rates already authored, needs no new rule, and fixes the
+materials below at the same time. **Say which** — camp, or normal mobs.
 
-## `BL-249` 🔴 DASH POTIONS GO TO A 90-SECOND REUSE
+### 2. A-GRADE BLUEPRINTS — they already drop, at 1 in 1000
+They exist (`recipe_craft_*`, `ItemGrade.A`, Epic rarity — one per Mythic level-76+ gear piece) and
+`RollBossBonus` already pays them **exactly where you asked**: any **Elite at level ≥76**, which is the
+80/84/90 camps and the whole Ashen Sepulchre. So the answer to *"does anything drop those"* is **yes**.
 
-**2026-09-16.** *"Make dash potions reuse to 90s"*. One number, in one place:
-`SkillCatalog.DashPotion` (`Skills.Common.cs`) builds all six rarities with `cooldownTicks: 600`
-(60s) — it becomes **900**. The 15-second duration and the six `+15…+60` move-speed rungs are
-untouched, so what changes is only how often the burst comes back: from **25% uptime to 16.7%**.
+| rank | chance per kill |
+|---|---|
+| Elite ≥76 | **0.001 — one roll across all ten slot families** |
+| Boss ≥76 | 0.50 armor · 0.40 weapon · 0.60 jewel |
 
-⚠ Two comments carry the old number and go with it: the *"15 seconds of sprint on a 1-minute reuse"*
-header above the six `ItemDef`s in `Items.cs`, and anything in `docs/guides/ItemIds.md` that repeats
-it. No CSV is involved — potions are not class skills.
+🔑 **It is not a missing source, it is a rate.** 0.1% is a thousand elite kills for one book, and it is
+a raw `_rng` roll — **no drop-group multiplier touches it**, so your ×100 test rate never applied to it
+either. That is why you have none. ❓ **Give me the number you want and it is one line.** For scale,
+0.02 would be ~1 book per 50 elite kills.
 
-## `BL-250` 🔵 THE SIGILS BECOME SUBCLASS-GATED — your IG "subclass ability" model
+### 3. EPIC / RARE WOOD AND EPIC LEATHER — the original question
 
-**2026-09-16.** A rework of what 0.113-era built, and it changes the GATE, not the eighteen sigils —
-every name in your six groups already exists in `Skills.Sigils.cs` under exactly that name.
+| material | source | reachable? |
+|---|---|---|
+| **Rare Wood** | 🔴 **nothing, anywhere.** Wood is only ever the *secondary* material of a category, and `StandardDrops` stops a secondary at Uncommon; `EliteMatDrops` has **no Rare rung at all** — it jumps Uncommon → Epic | ❌ craft only (PotionMaster refines 5 Uncommon Wood + Ingot + Thread) |
+| **Epic Wood** | `EliteMatDrops` Elite/Boss at level **52-79** | ✅ Sunless Warrens (elites 58-64, boss 65) and `valley_treant`. 🔴 **Nothing at 80+ pays Epic** — the S band drops it for Legendary/Mythic |
+| **Epic Leather** | same rung, same bands | ✅ same two places |
+
+⚠ `StandardDrops` also has an Epic rung for a category's PRIMARY material at level ≥76 — and for
+Leather that means an Animal or Plant mob at 76+. **There isn't one**: the highest Animal/Plant
+template in the roster is `dire_beast` at 70. So that rung is dead code in practice.
+
+### 🔑 MY RECOMMENDATION, IN ONE LINE
+**Fill the 66-79 hole with an elite camp (or two) and a boss around 78.** It is one `WorldPlan` entry
+each, it pays all three A scrolls, Epic Wood and Epic Leather at rates that are already authored and
+already balanced, and it removes the reason three separate items are unobtainable — instead of three
+separate special cases. The blueprint RATE is a genuinely separate question and wants a number from you.
+
+## `BL-250` 🔴 THE SIGILS BECOME SUBCLASS-GATED — fully answered, ready to build
+
+**Re-specced 2026-09-16 with your answers; the first draft is in the archive.** It changes the GATE
+and the PRICE, not the eighteen sigils — every name in your six groups already exists in
+`Skills.Sigils.cs` under exactly that name.
 
 **Your model, verbatim:** *"In IG when you lvl up a sub class to 75 u get to use its 'Ability' → each
 subclass have its ability-identity … because a tank cannot take a tank subclass it cannot get its
 ability … so i want sigils not to be separated as attak/support/defence .. u can have up to 3 sigils
-active … each subclass @76(4th) activates a sigil slot (up to 3) + unlocks its designated sigils"*.
+active … each subclass activates a sigil slot (up to 3) + unlocks its designated sigils"*.
 
-**What changes**
+### 1. 🔑 THE THREE SLOTS STOP BEING Attack / Defence / Support
+Today `SigilSlot` is a real exclusion axis — one per slot, enforced by `ExclusiveGroup`. It becomes
+**three identical slots**: any three of the eighteen, so long as you have unlocked them. The
+`SigilSlot` enum stays as a *label* for the UI or goes entirely; that is a free choice.
 
-1. 🔑 **The three SLOTS stop being Attack / Defence / Support.** Today `SigilSlot` is a real
-   exclusion axis — one per slot, enforced by `ExclusiveGroup`. It becomes **three identical slots**:
-   any three of the eighteen, so long as you have unlocked them. The `SigilSlot` enum stays as a
-   *label* for the UI or goes entirely; that is a free choice.
-2. 🔑 **Slots are EARNED, not granted at 76.** Each subclass that reaches **76 (its own 4th class)**
-   opens one slot, to a maximum of three. So a character with one 4th-class subclass has one sigil,
-   and only a fully built-out character has three. Today all three open at once on the main.
-3. 🔑 **A group is unlocked by OWNING a subclass of it**, and your main class grants nothing:
+### 2. 🔑 THE GATE IS A SUBCLASS AT **75**, NOT 76
+*"lets make them once sub becomes 75 u are able to get the tree + sigil slot -> 3rd class
+(automatically gotten when taken subclass) … main class dont open slot; only subs will .. the 1st
+three subs are required to open the 3 slot -> then every other just opens their tree (if not
+opened)"*.
 
-   | group | the classes that unlock it | its three sigils |
-   |---|---|---|
-   | mage | the 3 Apprentice | Frenzy · Mage Defence · Arcane Support |
-   | healer | the 3 Priest, healer discipline | Holy Power · Holy Protection · Holy Support |
-   | buffer | the 3 Priest, buffer discipline | Soul · Spirit · Immortality |
-   | rogue | the 6 Rogue | Focus · Agility · Aim |
-   | warrior | the 6 Warrior | Fury · Duel · Fortitude |
-   | tank | the 3 Knight | Body · Aegis · Critical Protection |
+| what | rule |
+|---|---|
+| **level gate** | that SUBCLASS is **75** (was 76/4th in the first draft — this is your change) |
+| **class gate** | it holds its **3rd class**, which it gets automatically when the subclass is created (see `BL-252`) |
+| **slots** | subclass #1 → slot 1, #2 → slot 2, #3 → slot 3. **Three is the ceiling** |
+| **subs 4, 5, 6** | open **only their tree**, never a fourth slot |
+| **main class** | opens **nothing** — no slot, and no tree of its own group |
 
-✅ **The exclusion you want already falls out of the rule we have.** *"mage wont be able to take mage
-sigils (cannot take another mage class) … rogues and warriors can take their own because they have a
-separate discipline"* — `Player.CanAddDiscipline` already refuses a second class of the same
-**discipline**, and the roster does the rest: the nuker's three names are one discipline (so no mage
-may add a mage), while the rogue's six are **two** (dagger ↔ bow) and the warrior's six are two
-(warrior ↔ war\_aoe), so those two archetypes can add their own. Healer/buffer/tank cannot. **No new
-rule is needed for any of it** — and when summoners arrive, nuker ↔ summoner unlocks the mage group
-for a mage exactly as you describe, with no code change here either.
+⚠ **This needs `GameConstants.MaxSubclasses` raised.** It is **4** today (main + 3 subs) and your
+model needs **7** (main + 6). Nothing else about the constant's job changes.
 
-**What this costs, so you can judge it before it is built**
+### 3. 🔑 A GROUP IS UNLOCKED BY OWNING A SUBCLASS OF IT
 
-- ⚠ **Sigils become END-game, hard.** Three sigils today = 76 + 60kk SP + 30kk gold. Three sigils
-  after this = **three subclasses each levelled to 76**, on top of the existing gate that every class
-  you own must be 75+ *with* its 3rd class before you may add another. That is a very long road, and
-  it is the IG road. Say if you want the SP/gold price cut to compensate, or left as it is.
-- ❓ **Does the MAIN class open a slot too?** Your sentence says *"each subclass"*, and IG's ability
-  is a subclass ability. Taken literally a character with no subclass has **zero** sigils. Confirm.
-- ❓ **What happens to a character who already owns three?** Pre-release, so the answer can simply be
-  a `game.db` delete — but if you would rather they be re-granted under the new rule, say so.
-- ⚠ The client's Sigils tab is built around the three named slots and would be rebuilt with them.
+| group | the classes that unlock it | its three sigils |
+|---|---|---|
+| mage | the 3 Apprentice | Frenzy · Mage Defence · Arcane Support |
+| healer | the 3 Priest, healer discipline | Holy Power · Holy Protection · Holy Support |
+| buffer | the 3 Priest, buffer discipline | Soul · Spirit · Immortality |
+| rogue | the 6 Rogue | Focus · Agility · Aim |
+| warrior | the 6 Warrior | Fury · Duel · Fortitude |
+| tank | the 3 Knight | Body · Aegis · Critical Protection |
+
+**Your own count of who ends up with what, verbatim:** *"as warrior/rogue u can have 6 subs and all
+trees and change them as u like for the price of 100kk, tank,buffer,healer will get up to 5 trees
+without their own, mage for now 5 trees"*. ✅ That falls straight out of the rule with nothing added:
+`Player.CanAddDiscipline` already refuses a second class of the same **discipline**, and the roster
+does the rest — the nuker's three names are ONE discipline (so no mage may add a mage), while the
+rogue's six are **two** (dagger ↔ bow) and the warrior's six are **two** (warrior ↔ war_aoe), so
+those two archetypes reach their own group and the other four do not. When summoners arrive, nuker ↔
+summoner unlocks the mage group for a mage — **no code change here either**.
+
+### 4. 🔑 THE PRICE MOVES ENTIRELY ONTO CLEARING
+*"we can remove their sp/gold cost -> they are their own system. only clearing will cost 100kk (its
+10kk now i think + losing the 60kk sp and 30kk gold)"*.
+
+| | today | after |
+|---|---|---|
+| commit one sigil | 20kk SP + 10kk gold (`SigilSpCost` / `SigilGoldCost`) | **free** |
+| commit all three | 60kk SP + 30kk gold | **free** |
+| clear one | 10kk gold, no refund (`SigilResetGold`) | — |
+| **clear** | — | **100kk gold** |
+
+❓ **One reading is mine: `SigilResetGold` becomes 100kk and stays PER SIGIL.** Your sentence prices
+"clearing" against the old total of *"10kk + losing the 60kk sp and 30kk gold"*, which is the cost of
+one sigil, so per-sigil is the like-for-like comparison and it keeps the existing per-skill Forget
+button at the Mindwright doing exactly what it does now. **If you meant 100kk to wipe all three at
+once, it is one line.**
+
+✅ **And re-taking a class is NOT a separate charge** — *"if u have tank,war,rogue and u decide to
+remove them and want to add a mage it will cost you the removal price + adding mage class to 75"*.
+That is the 100kk plus the ordinary cost of levelling a new subclass to 75; nothing new to build.
+
+### 5. ⚠ What it costs you, for the record
+Three sigils today = level 76 + 60kk SP + 30kk gold on ONE character. Three sigils after this =
+**three subclasses each levelled to 75**, on top of the existing rule that every class you own must
+be 75+ with its 3rd class before you may add another. The money is gone and the ROAD is the price —
+which is what *"yes sigils become end game and hard"* asks for.
+
+✅ **Characters who already own three: nothing is built.** *"development -> db is reset periodically -
+no need for migrations"* — the standing pre-release rule.
+
+⚠ The client's Sigils tab is built around the three named slots and gets rebuilt with them, so this
+ships with an APK.
+
+## `BL-252` 🔴 A NEW SUBCLASS IS BORN AT 40, WITH A ONE-DAY RUNE
+
+**2026-09-16**, given alongside `BL-250` and gating it — a subclass must be able to reach 75 for a
+sigil slot to mean anything. Verbatim: *"i want when you change a sub class u get a sp/xp 100% 1d
+rune. U get your lvl to lvl 40 (not lvl 1). skills are not learned (skills are like your lvl 1 char
+creation) if a player want his sub class to have sp to learn his skills for up to 40lvl he must spend
+on main class SP+Gold for SP bottle or must go farm a bit to lvl up skills. new sub class is born @40,
+no learned skills (except auto learned like mage etc.), 0SP, 0% exp, rune for 1d sp/exp 100%"*.
+
+| on creating a subclass | value |
+|---|---|
+| level | **40**, not 1 |
+| exp into that level | **0%** |
+| skill points | **0** |
+| learned skills | **none** — except what `AutoLearnCoreSkills` grants anyway |
+| 3rd class | **granted automatically** (it is a level-40 class change and the character is level 40) |
+| a gift | a **1-day 100% SP/XP rune** |
+
+🔑 **THE POINT IS THAT 40 LEVELS OF SP ARE *NOT* GIVEN WITH THE LEVELS.** A new sub stands at 40 with
+an empty skill list and no SP to fill it, so you either buy SP bottles with your MAIN class's SP and
+gold, or you farm the bar back up. That is the whole design — the level is a shortcut past the boring
+part, the SP is not.
+
+❓ **Two are mine unless you say otherwise:**
+- **The rune is a real item in the inventory**, not an invisible timer — so it can be saved for a
+  session rather than burning while you walk to a field. The rune layer already exists (War Rune /
+  Spell Rune are held items), and an XP/SP rune is the same shape.
+- **One rune per subclass CREATED**, not per swap. *"when you change a sub class"* can read either
+  way, and per-swap would be farmable: swap out and back every day for a free rune forever.
