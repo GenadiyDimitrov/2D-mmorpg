@@ -7,11 +7,66 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.153.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.154.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-16 (latest) — 0.153.0: `BL-257` — PLATINUM, the account currency
+## 2026-09-17 (latest) — 0.154.0: `BL-252` — a subclass is BORN AT 40, with nothing but a rune
+
+🔴 **DELETE `Game.Server/game.db`** if you want the old level-1 subclasses gone; nothing in this
+version needs a new column, so an existing DB runs — it just keeps any subclass you already made at
+the level it already is.
+
+Your spec, verbatim: *"i want when you change a sub class u get a sp/xp 100% 1d rune. U get your lvl
+to lvl 40 (not lvl 1). skills are not learned (skills are like your lvl 1 char creation) … new sub
+class is born @40, no learned skills (except auto learned like mage etc.), 0SP, 0% exp, rune for 1d
+sp/exp 100%"*. All of it, built.
+
+### THE LEVELS ARE GIVEN AND THE SP IS NOT — that asymmetry is the whole design
+
+A new subclass now arrives at **level 40, 0% into it, with 0 SP and an empty skill list**. It used to
+arrive at level 1, which never squared with the fact that it is handed a **3rd class** on creation —
+a class change that is itself gated at 40. The contradiction had been there since subclasses shipped.
+
+What it does NOT get is forty levels' worth of skill points, and that is the point rather than an
+oversight: you either buy SP bottles with your MAIN class's SP and gold, or you farm the bar back up.
+The level is a shortcut past the boring part; the kit is not.
+
+⚠ **"No learned skills" is not an empty list, and the code does not make one.** `LearnedSkills` is
+born empty and `AutoLearnCoreSkills` then grants exactly the *"auto learned like mage etc."* set you
+carved out — a mage's Magic Bolt and Spellcaster Mastery, and the class identity floor/reflect
+passives. That method is **level-aware**, so a sub born at 40 gets what a 40 of that class gets. That
+is the rule working, not an exception to it. (The SmokeTest asserts **0 SP** and not an empty list for
+exactly this reason — asserting an empty list would fail on a mage for being correct.)
+
+### THE RUNE IS THE EXISTING TOP RUNG, NOT A NEW ITEM
+
+The gift is `rune_expsp_100` — **Rune of Exp/SP (100%)** — off the reward-rune ladder that has been in
+the game since `BL-153`. That ladder already tops out at +100% and already defaults to **24 hours**,
+so this is a LOOKUP (`RewardRunes.ChannelOf(KeyExpSp).ItemId(100)`) rather than an authored duplicate
+that could drift from it. It is a **real held item on a wall clock**, so it can be saved for a session
+instead of burning while you walk to a field, and `AddItem` stamps the expiry from the def's own
+`GrantsRuneSeconds`.
+
+🔑 **ONE RUNE PER SUBCLASS CREATED, never per swap.** Your *"when you change a sub class"* reads both
+ways, and per-swap would be farmable — swap out and back every day for a free rune forever. Both of
+these were flagged as MY readings in `BL-252` and are built as written there; say the word if either
+is wrong.
+
+### Verified
+
+`tools/SmokeTest` — **ALL CHECKS PASSED**, including three new/changed assertions: a new class starts
+at **level 40** (read off `ThirdClassCatalog.ChangeLevel`, not a literal, so it moves with the rule),
+starts with **0 SP**, and both its birth level and its levelled-up value **survive a relog**.
+
+### Also
+
+`BL-250` is now 🟢 **fully unblocked** — you ruled the sub swap **free below 75** (*"You lose your
+progress anyways"*) and **cut the 5,000-platinum rung** until the summoner exists, which lands the
+ladder on seven rungs against seven reachable subclasses. Its build is next: the tickets, the slot
+ladder, the class-master dialogue and the sigil rework.
+
+## 2026-09-16 — 0.153.0: `BL-257` — PLATINUM, the account currency
 
 🔴 **DELETE `Game.Server/game.db` (+ `-shm`/`-wal`) before you run this** — the accounts table gains a
 `Platinum` column and `EnsureCreated()` does not ALTER an existing one.

@@ -3593,15 +3593,22 @@ public class GameLoopService : BackgroundService
     // work, and the rules will gate the COMMAND, not the mechanism.
 
     /// <summary>Add a SUBCLASS chosen by its 3rd-class DISCIPLINE (owner rework, 2026-07-15). You pick
-    /// a discipline from ALL races/disciplines (not a bare base class); the new class starts at level 1
-    /// but with that 3rd class already APPROVED — race, base class and 2nd class all come from it, so
-    /// the 2nd/3rd-class quests are skipped as a bonus. (Once a 4th tier exists this is unchanged: a 3rd
-    /// class still has one 4th path, still quested.)
+    /// a discipline from ALL races/disciplines (not a bare base class); the new class is born at
+    /// <b>level 40</b> with that 3rd class already APPROVED — race, base class and 2nd class all come
+    /// from it, so the 2nd/3rd-class quests are skipped as a bonus. (Once a 4th tier exists this is
+    /// unchanged: a 3rd class still has one 4th path, still quested.)
+    ///
+    /// <para>🔑 <b>BORN AT 40, WITH NOTHING (`BL-252`, owner 2026-09-16)</b> — *"new sub class is born
+    /// @40, no learned skills (except auto learned like mage etc.), 0SP, 0% exp, rune for 1d sp/exp
+    /// 100%"*. It used to start at level 1, which never squared with holding a class change that is
+    /// itself gated at 40. <b>The forty levels are given and the forty levels of SP are NOT</b>: that
+    /// asymmetry is the design, not an oversight — you buy SP bottles with your main's SP and gold, or
+    /// you farm the bar back. The rune is the apology for the second half.</para>
     ///
     /// Rules: character must be level 76+ (stand-in for the future 4th class). Normal accounts cap at
     /// <see cref="GameConstants.MaxSubclasses"/>; ADMINS are unlimited. NO duplicate DISCIPLINE (owning
     /// the Magus bars the Starweaver and the Cinderwitch too — the bar is the PATH, not the class id).
-    /// Every equipped item is UNEQUIPPED — you don't play a level-1 class in level-76 gear.</summary>
+    /// Every equipped item is UNEQUIPPED — you don't play a level-40 class in level-76 gear.</summary>
     private void HandleDebugAddSubclass(DebugAddSubclassCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead)
@@ -3644,7 +3651,7 @@ public class GameLoopService : BackgroundService
             return;
         }
 
-        // Unequip everything — a fresh level-1 class doesn't play in the old class's gear.
+        // Unequip everything — a fresh class doesn't play in the old class's gear.
         foreach (var item in player.Inventory) item.Equipped = false;
 
         int slot = player.Subclasses.Max(s => s.Slot) + 1;
@@ -3656,14 +3663,43 @@ public class GameLoopService : BackgroundService
             BaseClass = parent?.Base ?? BaseClass.Fighter,
             SecondClass = tcd.ParentSecondClassId, // 2nd class pre-approved
             ThirdClass = tcd.Id,                   // 3rd class pre-approved (skips the quests)
+            // `BL-252` — BORN AT 40, NOT 1. The 3rd class it is created with is a level-40 class
+            // change, so a level-1 carrier of one was a contradiction the old code lived with. Exp is
+            // per-LEVEL progress here, so 0 is his *"0% exp"* exactly, and SkillPoints is the whole
+            // point of the rule: the levels are a shortcut past the boring part, the SP is not.
+            Level = ThirdClassCatalog.ChangeLevel,
+            Exp = 0,
+            SkillPoints = 0,
         };
         sc.RollBaseStats();
         player.Subclasses.Add(sc);
 
+        // 🔑 NOTHING IS LEARNED (`BL-252`): *"skills are like your lvl 1 char creation"*. There is no
+        // code here for that — `LearnedSkills` is born empty and ActivateSubclass's AutoLearnCoreSkills
+        // grants exactly the *"auto learned like mage etc."* set he carved out. It IS level-aware (the
+        // identity floor and reflect passives read `player.Level`), so a sub born at 40 gets the same
+        // freebies a 40 of that class would — which is the rule, not an exception to it.
         ActivateSubclass(player, slot,
-            $"Added {tcd.Race} {tcd.Name} as class #{slot} (level 1). Your gear was unequipped.");
+            $"Added {tcd.Race} {tcd.Name} as class #{slot} (level {ThirdClassCatalog.ChangeLevel}, "
+            + "0 SP, no skills learned). Your gear was unequipped.");
+
+        // The gift. ONE PER SUBCLASS CREATED — never per swap, which would be farmable (swap out and
+        // back daily for a free rune forever). It is a real held item on a 24h wall clock, so it can be
+        // saved for a session instead of burning while you walk to a field; `AddItem` stamps the
+        // expiry from the def's own GrantsRuneSeconds.
+        if (AddItem(player, SubclassGiftRuneId))
+            SendSystemToEntity(player,
+                $"A {ItemCatalog.Get(SubclassGiftRuneId)?.Name ?? "rune"} was placed in your bag — it lasts 24 hours.");
+
         SendInventory(player);
     }
+
+    /// <summary>`BL-252`'s gift: the 100% Exp/SP rune a newly-created subclass is handed, *"rune for 1d
+    /// sp/exp 100%"*. It is the top rung of the existing Exp/SP reward-rune ladder rather than a new
+    /// item — the ladder already tops out at +100% and already defaults to 24 hours, so this is a
+    /// LOOKUP, not an authored duplicate that could drift from it.</summary>
+    private static readonly string SubclassGiftRuneId =
+        RewardRunes.ChannelOf(RewardRunes.KeyExpSp).ItemId(100);
 
     /// <summary>Switch to a class this character already owns — under the player-facing rules he
     /// finally gave on 2026-08-14 (`BL-36`). Until now the swap was a bare debug entry point; the

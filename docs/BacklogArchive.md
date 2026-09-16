@@ -6057,3 +6057,41 @@ recorded in **`BL-250` §5** as slots 6 · 7 · 8 = **100 / 1,000 / 5,000 platin
 entry's first blocker — but the ticket item, the slot ladder, the persisted slot count, the class
 master's dialogue and the info panel are `BL-250`'s own build, and it still waits on two decisions of
 yours (§6's swap price and §5's one-rung-too-long ladder).
+
+---
+
+## `BL-252` — BUILT 2026-09-17 in **0.154.0**. The entry as it stood, verbatim.
+
+✅ Both of the readings marked "mine unless you say otherwise" were built as written: the rune is a
+real held item, and it is granted **once per subclass CREATED**, never per swap.
+
+## `BL-252` 🔴 A NEW SUBCLASS IS BORN AT 40, WITH A ONE-DAY RUNE
+
+**2026-09-16**, given alongside `BL-250` and gating it — a subclass must be able to reach 75 for a
+sigil slot to mean anything. Verbatim: *"i want when you change a sub class u get a sp/xp 100% 1d
+rune. U get your lvl to lvl 40 (not lvl 1). skills are not learned (skills are like your lvl 1 char
+creation) if a player want his sub class to have sp to learn his skills for up to 40lvl he must spend
+on main class SP+Gold for SP bottle or must go farm a bit to lvl up skills. new sub class is born @40,
+no learned skills (except auto learned like mage etc.), 0SP, 0% exp, rune for 1d sp/exp 100%"*.
+
+| on creating a subclass | value |
+|---|---|
+| level | **40**, not 1 |
+| exp into that level | **0%** |
+| skill points | **0** |
+| learned skills | **none** — except what `AutoLearnCoreSkills` grants anyway |
+| 3rd class | **granted automatically** (it is a level-40 class change and the character is level 40) |
+| a gift | a **1-day 100% SP/XP rune** |
+
+🔑 **THE POINT IS THAT 40 LEVELS OF SP ARE *NOT* GIVEN WITH THE LEVELS.** A new sub stands at 40 with
+an empty skill list and no SP to fill it, so you either buy SP bottles with your MAIN class's SP and
+gold, or you farm the bar back up. That is the whole design — the level is a shortcut past the boring
+part, the SP is not.
+
+❓ **Two are mine unless you say otherwise:**
+- **The rune is a real item in the inventory**, not an invisible timer — so it can be saved for a
+  session rather than burning while you walk to a field. The rune layer already exists (War Rune /
+  Spell Rune are held items), and an XP/SP rune is the same shape.
+- **One rune per subclass CREATED**, not per swap. *"when you change a sub class"* can read either
+  way, and per-swap would be farmable: swap out and back every day for a free rune forever.
+

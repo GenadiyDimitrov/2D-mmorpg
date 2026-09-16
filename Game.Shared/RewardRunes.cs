@@ -97,6 +97,12 @@ public static class RewardRunes
         new(KeyDrop,  "rune_drop",  "Rune of Drop",        "DRP"),
     };
 
+    /// <summary>The channel with this key. Throws on an unknown key ON PURPOSE — every caller passes
+    /// one of the <c>Key*</c> consts above, so a miss is a typo at build time, not a runtime default
+    /// that would quietly hand back the wrong ladder.</summary>
+    public static Channel ChannelOf(string key) =>
+        All.First(c => c.Key == key);
+
     // ---- The two ZEROING runes. Single-rung, and they do NOT compete with the ladders: they hold
     //      their own buff families and win by hard override when the rates are folded, so no pile of
     //      +100% runes can dilute either of them. ----

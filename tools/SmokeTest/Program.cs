@@ -714,7 +714,16 @@ Check("subclass added", a.Subclasses!.Classes.Length == 2,
       $"got {a.Subclasses.Classes.Length}");
 var sub = a.Subclasses.Classes.FirstOrDefault(c => c.Slot != mainSlot);
 Check("now PLAYING the new class", sub is { Active: true });
-Check("new class starts at level 1", sub?.Level == 1, $"level {sub?.Level}");
+// `BL-252` — a subclass is BORN AT 40, not 1. Read off the rule rather than a literal, so the day the
+// birth level moves the test moves with it instead of failing as a stale number.
+Check($"new class starts at level {ThirdClassCatalog.ChangeLevel}",
+      sub?.Level == ThirdClassCatalog.ChangeLevel, $"level {sub?.Level}");
+// 🔑 SP, not the skill list. A sub is NOT born with an empty `Learned` — AutoLearnCoreSkills grants
+// the *"auto learned like mage etc."* set he carved out, and at 40 that legitimately includes an
+// identity floor passive. ZERO SP is the half of his rule that is unconditional, so that is what is
+// asserted; asserting an empty list would fail on a mage for being correct.
+Check("new class starts with 0 SP (the levels are given, the SP is not)",
+      a.Progress?.SkillPoints == 0, $"{a.Progress?.SkillPoints} SP");
 Check("new class has the chosen 3rd class pre-approved", sub?.ThirdClass == chosen.Id);
 Check("new class is the discipline's own race", sub?.Race == chosen.Race);
 Check("switching pushed a fresh skill bar", a.Bar is not null);
@@ -755,8 +764,9 @@ Check("main class kept its OWN level (the subclass's levels did not leak into it
       a.Subclasses.Classes.First(c => c.Slot == mainSlot).Level == 81,
       $"level {a.Subclasses.Classes.First(c => c.Slot == mainSlot).Level}, expected 81");
 Check("subclass kept its own level while parked",
-      a.Subclasses.Classes.First(c => c.Slot == subSlot).Level == 5,
-      $"level {a.Subclasses.Classes.First(c => c.Slot == subSlot).Level}, expected 5");
+      a.Subclasses.Classes.First(c => c.Slot == subSlot).Level == ThirdClassCatalog.ChangeLevel + 4,
+      $"level {a.Subclasses.Classes.First(c => c.Slot == subSlot).Level}, "
+      + $"expected {ThirdClassCatalog.ChangeLevel + 4}");
 
 // -------------------------------------------------------------------------------------------
 // 4b. Bar CAPACITY + ITEM SLOTS. Both are 2026-07-17 changes that live in persistence and would look
@@ -971,9 +981,9 @@ Check("the ITEM slot survived the relog (SyncSkillBar kept the item: token, not 
       b.Bar is not null && b.Bar.Slots.Contains(itemToken));
 Check("the PRESET slot survived the relog (SyncSkillBar kept the preset: token, not wiped as a skill)",
       b.Bar is not null && b.Bar.Slots.Contains(presetToken));
-Check("levels survived the relog (main 81, subclass 5)",
+Check($"levels survived the relog (main 81, subclass {ThirdClassCatalog.ChangeLevel + 4})",
       b.Subclasses!.Classes.First(c => c.Slot == mainSlot).Level == 81 &&
-      b.Subclasses.Classes.First(c => c.Slot == subSlot).Level == 5,
+      b.Subclasses.Classes.First(c => c.Slot == subSlot).Level == ThirdClassCatalog.ChangeLevel + 4,
       $"main {b.Subclasses!.Classes.First(c => c.Slot == mainSlot).Level}, " +
       $"sub {b.Subclasses.Classes.First(c => c.Slot == subSlot).Level}");
 
