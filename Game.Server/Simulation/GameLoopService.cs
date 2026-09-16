@@ -2124,7 +2124,17 @@ public class GameLoopService : BackgroundService
             // ⚠ `BL-154` / `BL-155` — the same lesson a third and fourth time: a pull and a silence are
             // payload FIELDS, so a pull authored as anything but Category.Debuff would have read as a
             // friendly cast and been allowed on a party member.
-            || def.Pulls || def.SilencePhysical || def.SilenceMagical;
+            || def.Pulls || def.SilencePhysical || def.SilenceMagical
+            // 🔴 `BL-256` — AND A FIFTH AND SIXTH TIME, both found by the same bug report. A CHARGE is a
+            // field (`ChargesToTarget`), and a targeted BLINK is an Effect flag that was simply never in
+            // this mask. Warrior Charge was the one skill in the game whose ONLY payload was a targeted
+            // blink, so it fell through to the self-cast arm below, `target == caster`, and the blink arm
+            // ran `BlinkAwayFromNearest(caster, max(1, 0))` — a ONE-UNIT hop. That is his *"no charge no
+            // displacement.. Nothing"*, exactly.
+            // ⚠ The Blink clause must exclude SelfOnly or it would break Phase Shift, whose whole design
+            //   is a blink with NO target ("no target needed" — see Skills.Mage.cs).
+            || def.ChargesToTarget
+            || (def.Effect.HasFlag(SkillEffect.Blink) && def.TargetMode != TargetMode.SelfOnly);
 
         // ---- `BL-99` — AIMING A SUPPORT SKILL AT SOMEONE ELSE'S RAID. -------------------------
         // His ruling, 2026-08-28: *"if he tries to heal with a single/target heal he is deliberately
@@ -9918,7 +9928,36 @@ public class GameLoopService : BackgroundService
                 (int)attacker.EffectiveAttack, pFlat, pMod, (int)victim.EffectiveDefence,
                 StatCalculator.WeaponDefenceCoef(attacker.WeaponType, victim.PierceDefCoef, victim.BluntDefCoef, victim.BowDefCoef));
             dmg = FinalizeDamage(attacker, victim, dmg, DamageKind.SkillPhysical, def);
-            BroadcastCombat(attacker, victim, dmg, CombatOutcome.Hit, name);
+
+            // ---- CRIT / [Double] / BLOCK, for a PLAYER's area strike (`BL-256`, 2026-09-16) ----
+            //
+            // 🔴 THE PHYSICAL ARM WAS A DEAD CHANNEL. This method was written for mob spells and traps,
+            // where none of the three exists; the MAGIC arm below grew its fizzle and its crit on
+            // 2026-08-28 when a mage's AoE was routed through here, and the physical arm never did. So
+            // every player physical AREA skill in the game landed a FLAT hit — it could not crit, it
+            // could not [Double], and no shield could block it. That is his *"Elf sword dance never
+            // crits"*: the dance's ten strokes are `TargetMode.EnemiesInRadius`, so all ten come here.
+            //
+            // 🔑 SAME THREE-WAY CHOICE AS THE SINGLE-TARGET ARM, read from the same fields, so a skill
+            //    resolves identically whether it happens to sweep or not. A crit-less, double-less skill
+            //    still goes through ResolvePhysicalCritAndBlock with a zero chance — it must keep the
+            //    block roll (playtest-19 M8: the two flags are opt-in, the block is not).
+            // ⚠ GATED ON A PLAYER ATTACKER, exactly as the magic arm is and for the same reason: giving
+            //   creatures crit and doubling here would retune every boss slam as a side effect.
+            var outcome = CombatOutcome.Hit;
+            if (attacker.Kind == EntityKind.Player)
+            {
+                float critFlat = StatCalculator.CritFlatFactor(
+                    attacker.EffectiveAttack, attacker.CritDamageFlat, pFlat, pMod);
+                (dmg, outcome) = def.CanDouble
+                    ? ResolvePhysicalDouble(attacker, victim, dmg, attacker.DoubleDamageRate, def.BlockAccuracy)
+                    : ResolvePhysicalCritAndBlock(
+                        attacker, victim, dmg,
+                        def.CanCrit ? attacker.CritChance * def.CritRateMod : 0f,
+                        def.BlockAccuracy, critFlat);
+            }
+
+            BroadcastCombat(attacker, victim, dmg, outcome, name);
             ApplyDamage(victim, dmg, attacker);
             ReflectPhysicalSkill(attacker, victim, dmg, name);   // BL-07
         }
@@ -11468,8 +11507,17 @@ public class GameLoopService : BackgroundService
         // past every gate, so an interrupted or unaffordable cast never rolls one, and once per cast
         // rather than once per target an AoE happens to touch. "Magic" is his own list — spells, buffs,
         // debuffs and heals — which is every category but Physical (Passive never executes).
-        if (def.Category is SkillCategory.Magic or SkillCategory.Buff
-                         or SkillCategory.Debuff or SkillCategory.Heal)
+        //
+        // 🔴 `BL-256` — `!SkillMath.IsPhysical(def)` IS THE OTHER HALF OF THE TEST, and leaving it out
+        //    was the bug he reported as *"focus must be physical (now it activates my magic
+        //    proficiency)"*. `Category` is a ROLE tag and has been since `BL-132`: a physical self-buff
+        //    is `Category.Buff` and says what it really is with `PhysicalCast`. So every physical buff
+        //    in the game — Focus, the three Presences, the archer's stances, Dance of Fury — was rolling
+        //    a MAGE's level-83 passive on every press. `SkillMath.IsPhysical` is the one three-marker
+        //    test; this site was reading one marker and guessing the rest.
+        if (!SkillMath.IsPhysical(def)
+            && def.Category is SkillCategory.Magic or SkillCategory.Buff
+                            or SkillCategory.Debuff or SkillCategory.Heal)
             TryOnMagicCastProcs(caster);
 
         // A HIDE ends when a skill EXECUTES (BL-69) — not when it is clicked. His rule, and it is
@@ -12380,6 +12428,13 @@ public class GameLoopService : BackgroundService
         {
             if (target != caster) { offensive = true; DoBlink(caster, target, def.BlinkRangeAt(lvl)); }
             else BlinkAwayFromNearest(caster, Math.Max(1f, def.BlinkRangeAt(lvl)));
+        }
+        // ---- CHARGE (`BL-256`): the caster CROSSES the ground to the target instead of teleporting.
+        //      The pull's machinery with the ends swapped — see StartCharge.
+        if (def.ChargesToTarget && target != caster)
+        {
+            offensive = true;
+            StartCharge(caster, target, def, lvl);
         }
         // BL-81 — a knockback is not a debuff (no roll, no buff, nothing to resist), but shoving
         // someone across the field against his will is exactly what god mode exists to refuse, and a
@@ -13606,8 +13661,25 @@ public class GameLoopService : BackgroundService
         // The stun is owed whether or not there is any travel to do, so resolve it first.
         string? stunId = (def.Effect & SkillEffect.Stun) != 0 && def.DurationTicksAt(level) > 0
             ? def.Id : null;
+        BeginDrag(dragged: target, anchor: caster, def, level, stunId);
+    }
 
-        float dx = caster.X - target.X, dy = caster.Y - target.Y;
+    /// <summary>THE PULL WITH ITS ENDS SWAPPED — the warrior's Charge (`BL-256`, owner 2026-09-16:
+    /// *"it should act as the pull but reverse (caster goes to target)"*). The CASTER is the body that
+    /// travels and the TARGET is the anchor; everything else — the timing, the per-tick re-aim, the
+    /// interpolated (un-announced) steps, the action lock while it runs — is the drag, unchanged.
+    ///
+    /// <para>🔑 NO STUN TAIL, ever. A charge is movement the caster CHOSE; the tail exists so a pull's
+    /// victim cannot simply walk back out, and there is nobody to hold here.</para></summary>
+    private void StartCharge(Entity caster, Entity target, SkillDef def, int level) =>
+        BeginDrag(dragged: caster, anchor: target, def, level, stunId: null);
+
+    /// <summary>Drag <paramref name="dragged"/> to melee range of <paramref name="anchor"/> over
+    /// <see cref="SkillDef.PullSeconds"/>. Shared by the tank's pull and the warrior's charge — see
+    /// <see cref="StartPull"/> and <see cref="StartCharge"/> for which end is which.</summary>
+    private void BeginDrag(Entity dragged, Entity anchor, SkillDef def, int level, string? stunId)
+    {
+        float dx = anchor.X - dragged.X, dy = anchor.Y - dragged.Y;
         float dist = MathF.Sqrt(dx * dx + dy * dy);
         float travel = dist - GameConstants.MeleeRange;
 
@@ -13615,10 +13687,15 @@ public class GameLoopService : BackgroundService
         // stood next to you is a stun, which is the honest outcome rather than a wasted cast.
         if (travel <= 0f)
         {
-            ClearPull(target);
-            if (stunId is not null) ApplyBuff(target, def, level, source: caster);
+            ClearPull(dragged);
+            if (stunId is not null) ApplyBuff(dragged, def, level, source: anchor);
             return;
         }
+
+        // Local aliases so the body below reads as it always has. `target` is the body that MOVES and
+        // `caster` the thing it moves toward — which is the pull's naming, and the charge is that same
+        // journey with the two swapped by the caller.
+        Entity target = dragged, caster = anchor;
 
         int ticks = Math.Max(1, (int)MathF.Round(def.PullSeconds / GameConstants.TickSeconds));
         // The floor is on the SPEED, so it shortens the journey rather than slowing it: a short pull

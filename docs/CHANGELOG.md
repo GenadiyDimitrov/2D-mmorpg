@@ -7,12 +7,85 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.151.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.152.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-16 (latest) — 0.151.1: `BL-255` — three daggers were three legal subclasses
+## 2026-09-16 (latest) — 0.152.0: `BL-256` — the warrior PvP pass, and two dead channels behind it
+
+**Needs an APK** (skill powers live in `Game.Shared`, so the client's own cards would quote the old
+numbers). No protocol change, no `game.db` delete.
+
+Your report after the warrior duels: *"Only human does decent (low but better) dmg than other 2
+warriors ... Elf sword dance never crits .. And have the lowest dmg even when power is combined is
+equal to the demons"*. Six asks, and **two of them turned out to be engine bugs rather than numbers**.
+
+### 🔴 THE ELF'S DANCE COULD NOT CRIT, DOUBLE OR BE BLOCKED — AND NEITHER COULD ANY AREA STRIKE
+
+`DeliverSimpleHit` is the AREA damage path. It was written for mob spells and traps, where crit,
+[Double] and block do not exist. On 2026-08-28 its **magic** arm grew a fizzle roll and a crit roll,
+because routing a mage's AoE through it unchanged would have deleted both from every area spell. **Its
+physical arm never got the same treatment.** So every player physical AREA skill in the game landed a
+flat hit: it could not crit, it could not [Double], and no shield could block it.
+
+Saints Sword Dance is ten `EnemiesInRadius` strokes, so all ten came through there — which is your
+*"never crits"* precisely. It resolves through the same three-way choice as the single-target arm now
+(`ResolveBlow` / `ResolvePhysicalDouble` / `ResolvePhysicalCritAndBlock`), read off the same fields,
+gated on a PLAYER attacker exactly as the magic arm is so no boss slam is retuned by a bug fix.
+
+### 🔴 CHARGE DID NOTHING BECAUSE IT NEVER GOT A TARGET
+
+*"charge does noting only use as vusual - no charge no displacement.. Nothing"*. The blink itself was
+fine. `BeginSkill` decides whether a cast is **offensive** — and that mask asks about damage, debuffs,
+Cancel, Taunt, `Charms`, `Pulls`, `Silence`. It has never asked about `Blink`. Charge is the one skill
+in the game whose ONLY payload is a targeted blink, so it fell through to the **self-cast** arm,
+`target == caster`, and the blink arm ran `BlinkAwayFromNearest(caster, max(1, 0))` — a **one-unit
+hop**. That is the sixth time a payload carried in a field or an unexpected flag has had to be taught
+to that gate (`BL-110` charm, `BL-154` pull, `BL-155` silence…), and the mask now knows about a
+targeted blink as well as the new field below.
+
+And it is a **reverse pull** now, as you asked: *"it should act as the pull but reverse (caster goes to
+target)"*. `SkillDef.ChargesToTarget` reuses the drag machinery whole — `StartPull` and `StartCharge`
+are one method, `BeginDrag`, called with the two ends swapped. The caster crosses the ground, the
+direction is recomputed every tick so it still lands on a target that is running, the steps are
+un-announced so the client interpolates instead of snapping, and the caster is action-locked while it
+runs. **0.4s, not the pull's 1.2s** — 600 range in 0.4s is ~1,500 u/s, about six times a run. A tow can
+afford to lock you for over a second; a leap cannot.
+
+### 🔴 FOCUS WAS ROLLING A MAGE'S LEVEL-83 PASSIVE
+
+*"focus must be physical (now it activates my magic proficiency)"*. The magic-cast proc trigger tested
+`def.Category is Magic or Buff or Debuff or Heal` — but **`Category` is a ROLE tag** and has been since
+`BL-132`: a physical self-buff is `Category.Buff` and says what it really is with `PhysicalCast`. The
+one three-marker test, `SkillMath.IsPhysical`, existed and this site was not calling it. So **every
+physical buff in the game** — Focus, the three Presences, the archer's stances, Dance of Fury — rolled
+Magic Proficiency on every press. One `!SkillMath.IsPhysical(def)`.
+
+### THE NUMBERS
+
+| what | before | after |
+|---|---|---|
+| Sword Shock · Demonic Smash · Sword Blast · Focused Blast · Focused Double Slash · Focused Tripple Slash | — | **×2 power**, every rung of both tiers |
+| Saints Sword Dance | 150 → 750 · 780 → 1200 | **×2.5**: 375 → 1,875 · 1,950 → 3,000 |
+| the three **Slashes** | | **untouched**, as you said |
+| Focus Force | power 500, reuse 0 | **power 1,200**, reuse **0.5s** |
+| Focus | reuse 0 | reuse **0.5s** |
+
+The 3rd tier's ×2.5 rounds to the nearest 5 (375 · 490 · 600 · 715 …) so the column stays readable;
+the 4th tier's is exact. Demonic Smash is still **exactly 3× Sword Shock** on every one of the thirty
+rungs — the cheapest typo check that pair has. Focus Force's **1,200 is your hand-priced number, not
+part of the ×2 sweep**, and must not be doubled again by a later one.
+
+⚠ **The WARLORD (`war_aoe`) is untouched, and there was nothing to touch**: his files author no damage
+skills at all — Charge is his only active — so the doubling covers the whole authored warrior damage
+kit. The moment his damage rows land they are authored at the new scale, not the old.
+
+Both CSVs moved with the code in this commit (182 rows), and `SkillCsvSeed --check` is back to its one
+pre-existing line (the Warlord's unauthored Sundering Blow).
+
+
+## 2026-09-16 — 0.151.1: `BL-255` — three daggers were three legal subclasses
 
 **No APK needed, no protocol change, no `game.db` delete.** Server-side rule only.
 

@@ -243,18 +243,18 @@ public static partial class SkillCatalog
     private static readonly int[] FocusMasterySp   = { 18_000, 25_000, 40_000, 85_000, 160_000, 440_000 };
 
     internal static readonly int[] FocusedBlastLevels = { 40, 46, 52, 58, 62, 66, 70, 74 };
-    private static readonly int[] FocusedBlastPower  = { 1000, 1600, 2100, 2700, 3300, 3900, 4400, 5000 };
+    private static readonly int[] FocusedBlastPower  = { 2000, 3200, 4200, 5400, 6600, 7800, 8800, 10000 };
     private static readonly int[] FocusedBlastMp     = { 36, 43, 47, 55, 58, 65, 70, 78 };
     private static readonly int[] FocusedBlastSp     = { 28_000, 40_000, 74_000, 88_000, 170_000, 280_000, 390_000, 880_000 };
 
     internal static readonly int[] FocusedDoubleLevels = { 46, 49, 52, 55, 58, 60, 62, 64, 66, 68, 70, 72, 74 };
-    private static readonly int[] FocusedDoublePower  = { 800, 950, 1050, 1200, 1350, 1500, 1650, 1800, 1950, 2050, 2200, 2350, 2500 };
+    private static readonly int[] FocusedDoublePower  = { 1600, 1900, 2100, 2400, 2700, 3000, 3300, 3600, 3900, 4100, 4400, 4700, 5000 };
     private static readonly int[] FocusedDoubleMp     = { 58, 60, 62, 65, 70, 71, 73, 77, 79, 81, 83, 85, 88 };
     private static readonly int[] FocusedDoubleSp     =
         { 40_000, 50_000, 74_000, 80_000, 88_000, 120_000, 170_000, 190_000, 280_000, 320_000, 390_000, 650_000, 880_000 };
 
     internal static readonly int[] FocusedTripleLevels = { 55, 58, 60, 62, 64, 66, 68, 70, 72, 74 };
-    private static readonly int[] FocusedTriplePower  = { 1200, 1350, 1500, 1650, 1800, 1950, 2050, 2200, 2350, 2500 };
+    private static readonly int[] FocusedTriplePower  = { 2400, 2700, 3000, 3300, 3600, 3900, 4100, 4400, 4700, 5000 };
     private static readonly int[] FocusedTripleMp     = { 75, 80, 81, 83, 87, 89, 91, 93, 95, 98 };
     private static readonly int[] FocusedTripleSp     =
         { 80_000, 88_000, 120_000, 170_000, 190_000, 280_000, 320_000, 390_000, 650_000, 880_000 };
@@ -270,8 +270,12 @@ public static partial class SkillCatalog
         //    a 10-charge pool instead of clamping it to 1 (RestorePersistedBuffs clamps to the def's).
         // ⚠ NOT CANCELLABLE: a Cancel strips blessings, and this is a resource the warrior built by
         //   swinging, not something anyone cast on him. My call — his row does not say.
+        // 🔴 `BL-256`, 2026-09-16 — REUSE 0 → 0.5s: *"focus and focus force to have 0.5 cd... Now I spam
+        //    it as crazy"*. His CD cell reads 0 and stays 0; half a second is a FLOOR against queueing a
+        //    0.5s cast on top of itself, not a reuse the player is meant to wait out. Focus Force takes
+        //    the same five ticks, in Skills.Warrior4th.cs.
         new(WarriorFocus, "Focus", BaseClass.Fighter, SkillEffect.None,
-            MpCost: 5, CastTicks: 5, CooldownTicks: 0, Range: 0, Power: 0,
+            MpCost: 5, CastTicks: 5, CooldownTicks: 5, Range: 0, Power: 0,
             DurationTicks: 6000, BuffKey: WarriorFocus, MaxStacks: 10, Cancellable: false,
             Category: SkillCategory.Buff, PhysicalCast: true, TargetMode: TargetMode.SelfOnly,
             RequiredWeapon: WeaponType.AnySword, RequiredHands: WeaponHands.Two, HpCost: 20,
@@ -418,12 +422,12 @@ public static partial class SkillCatalog
     // ---- THE DEMON'S TWO STRIKES. Demonic Smash is EXACTLY 3x Sword Shock on every 3rd-tier rung,
     //      which is what made a mis-typed 659 findable in the review; keep the columns side by side.
     private static readonly int[] W3SwordShockPower =
-        { 500, 650, 800, 950, 1050, 1200, 1350, 1500, 1650, 1800, 1950, 2050, 2200, 2350, 2500 };
+        { 1000, 1300, 1600, 1900, 2100, 2400, 2700, 3000, 3300, 3600, 3900, 4100, 4400, 4700, 5000 };
     private static readonly int[] W3DemonicSmashPower =
-        { 1500, 1950, 2400, 2850, 3150, 3600, 4050, 4500, 4950, 5400, 5850, 6150, 6600, 7050, 7500 };
-    // ...and the Elf's dance is the same column at 0.3x — ONE stroke of ten.
+        { 3000, 3900, 4800, 5700, 6300, 7200, 8100, 9000, 9900, 10800, 11700, 12300, 13200, 14100, 15000 };
+    // ...and the Elf's dance is that column at 0.75x — ONE stroke of ten (it was 0.3x before `BL-256`).
     private static readonly int[] W3SwordDancePower =
-        { 150, 195, 240, 285, 315, 360, 405, 450, 495, 540, 585, 615, 660, 705, 750 };
+        { 375, 490, 600, 715, 790, 900, 1015, 1125, 1240, 1350, 1465, 1540, 1650, 1765, 1875 };
 
     // ---- BATTLE FRENZY, the Demon's low-HP burn. Three rungs at 60/66/74, and his 4th file adds
     //      none — it stops here, like the Battle stances and Monster Knowledge.
@@ -447,15 +451,24 @@ public static partial class SkillCatalog
     private static SkillDef[] Warrior3rdRaceSkills() => new SkillDef[]
     {
         // ═══ CHARGE — the gap-closer, both disciplines, one rung at 40 and one at 76 ═════════════
-        // *"Charges to enemy"*, range 400, no damage cell at all. That is `SkillEffect.Blink` with a
-        // TARGET, which lands the caster behind it — the same primitive Shadowstep and Phantom Jump
-        // use; only those two carry a strike on top and this one does not.
+        // *"Charges to enemy"*, range 400, no damage cell at all.
+        //
+        // 🔴 `BL-256`, 2026-09-16 — IT IS A REVERSE PULL NOW, NOT A BLINK. Owner: *"charge does noting
+        //    only use as vusual - no charge no displacement.. Nothing ..it should act as the pull but
+        //    reverse (caster goes to target)"*. Both halves of that sentence are answered here: the
+        //    BEHAVIOUR is a real stride across the ground (see SkillDef.ChargesToTarget), and the reason
+        //    it did nothing is that a pure-`Blink` skill was never treated as offensive, so it never got
+        //    a target and self-cast into a one-unit hop. Its `Blink` flag is gone with it.
+        // 🔑 0.4s, not the pull's 1.2s. `PullSeconds` action-locks the body that travels, and 1.2s of
+        //    being unable to act is a price a TOW pays, not a leap. 600 range in 0.4s is ~1,500 u/s,
+        //    about six times a run — which is what a charge should look like.
         // 🔑 SWORD **OR** BLUNT, his `sword|blunt/2` cell and his ruling: *"400 (3rd) / 600 (4th) is
         //    its RANGE; usable with a 2h sword or blunt"*. `|` is OR and `/2` narrows both to two
         //    hands — so it is the one active in his file the WARLORD can also press.
-        new(WarriorCharge, "Charge", BaseClass.Fighter, SkillEffect.Blink,
+        new(WarriorCharge, "Charge", BaseClass.Fighter, SkillEffect.None,
             MpCost: 40, CastTicks: 5, CooldownTicks: 30, Range: 400, Power: 0,
             Category: SkillCategory.Physical, SpCost: 28_000,
+            ChargesToTarget: true, PullSeconds: 0.4f,
             RequiredWeapon: WeaponType.AnySword | WeaponType.AnyBlunt, RequiredHands: WeaponHands.Two,
             Description: "Close the ground to an enemy in one stride. Requires a two-handed sword or blunt.",
             Levels: new[]

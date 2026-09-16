@@ -621,6 +621,11 @@ public static class SkillText
             if ((def.Effect & SkillEffect.Stun) != 0 && def.DurationTicksAt(level) > 0)
                 o.Add($"…and is stunned for {Secs(def.DurationTicksAt(level))} once it arrives");
         }
+        // `BL-256` — CHARGE, the same sentence with the ends swapped. It says "you cannot act" because
+        // the stride action-locks the caster for its whole length, which is the one thing about it a
+        // player has to know before pressing it next to a caster he wanted to interrupt.
+        if (def.ChargesToTarget)
+            o.Add($"You charge to the target over {def.PullSeconds:0.#}s — you cannot act on the way");
         // `BL-155` — SILENCE. Both halves named, because which one you are wearing decides what you
         // can still do, and a basic attack is never silenced.
         if (def.SilencePhysical && def.SilenceMagical)

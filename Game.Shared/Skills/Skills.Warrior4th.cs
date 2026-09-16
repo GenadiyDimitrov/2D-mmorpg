@@ -68,21 +68,21 @@ public static partial class SkillCatalog
     internal static readonly float[] W4ElfSlashSpeed  = Flat15(.23f);
 
     internal static readonly int[] W4SwordShockPower =
-        { 2600, 2700, 2800, 2900, 3000, 3100, 3200, 3300, 3400, 3500, 3600, 3700, 3800, 3900, 4000 };
+        { 5200, 5400, 5600, 5800, 6000, 6200, 6400, 6600, 6800, 7000, 7200, 7400, 7600, 7800, 8000 };
     /// <summary>🔑 DEMONIC SMASH IS STILL EXACTLY 3× SWORD SHOCK, rung for rung, all fifteen of them
-    /// (+300 a rung against the Shock's +100). That relationship held across the whole 3rd tier too, and
+    /// (+600 a rung against the Shock's +200). That relationship held across the whole 3rd tier too, and
     /// it is the cheapest check there is on this pair: a cell off the multiple is a typo. It is how the
     /// mis-typed 659 was found in the review.</summary>
     internal static readonly int[] W4DemonicSmashPower =
-        { 7800, 8100, 8400, 8700, 9000, 9300, 9600, 9900, 10200, 10500, 10800, 11100, 11400, 11700, 12000 };
+        { 15600, 16200, 16800, 17400, 18000, 18600, 19200, 19800, 20400, 21000, 21600, 22200, 22800, 23400, 24000 };
     internal static readonly int[] W4SwordDancePower =
-        { 780, 810, 840, 870, 900, 930, 960, 990, 1020, 1050, 1080, 1110, 1140, 1170, 1200 };
+        { 1950, 2025, 2100, 2175, 2250, 2325, 2400, 2475, 2550, 2625, 2700, 2775, 2850, 2925, 3000 };
     internal static readonly int[] W4FocusedBlastPower =
-        { 5200, 5600, 6000, 6400, 6800, 7200, 7600, 8000 };
-    /// <summary>The Double and the Triple share ONE power column at the 4th tier — 2600 → 4000, +100 a
+        { 10400, 11200, 12000, 12800, 13600, 14400, 15200, 16000 };
+    /// <summary>The Double and the Triple share ONE power column at the 4th tier — 5200 → 8000, +200 a
     /// rung. They differ only in how many times it lands and what they may spend.</summary>
     internal static readonly int[] W4FocusedMultiPower =
-        { 2600, 2700, 2800, 2900, 3000, 3100, 3200, 3300, 3400, 3500, 3600, 3700, 3800, 3900, 4000 };
+        { 5200, 5400, 5600, 5800, 6000, 6200, 6400, 6600, 6800, 7000, 7200, 7400, 7600, 7800, 8000 };
 
     private static float[] Flat15(float v) => Enumerable.Repeat(v, 15).ToArray();
 
@@ -164,6 +164,13 @@ public static partial class SkillCatalog
         // *"Deals Physical damage with +500 power and gather 'Focus' up to 10, Cost 50 HP and 5 MP"*,
         // range 600, cast 1, NO REUSE AT ALL.
         //
+        // 🔴 `BL-256`, 2026-09-16 — POWER 500 → 1,200 and the reuse 0 → 0.5s, both his numbers after the
+        //    warrior PvP pass: *"focus force to have 1200 power (I'll see how it goes)"* and *"focus and
+        //    focus force to have 0.5 cd... Now I spam it as crazy"*. Half a second is not a real reuse,
+        //    it is a FLOOR — the thing that stops a 1s cast being queued on top of itself.
+        // ⚠ 1,200 IS NOT PART OF THE ×2 DAMAGE PASS. He priced this one skill by hand in the same
+        //   breath, so it is 1,200 rather than 1,000, and it must not be doubled again by a later sweep.
+        //
         // 🔑 HIS RULING ON WHAT IT IS: *"Focus Force is IG's normal 'power attack' as a physical skill
         //    that can double; we have no skill crits, so it carries +500 power and gathers Focus."*
         //    So it is a filler the Human presses between the Focused strikes — cheap in MP, dear in HP,
@@ -173,7 +180,7 @@ public static partial class SkillCatalog
         //   to gate a damaging skill: a full pool must not refuse an ATTACK. See GameLoopService — the
         //   gather runs AFTER the damage arm, and adds nothing once the pool is at 10.
         new(WarriorFocusForce, "Focus Force", BaseClass.Fighter, SkillEffect.PhysicalDamage,
-            MpCost: 5, CastTicks: 10, CooldownTicks: 0, Range: 600, Power: 500,
+            MpCost: 5, CastTicks: 10, CooldownTicks: 5, Range: 600, Power: 1200,
             Category: SkillCategory.Physical, CanDouble: true,
             RequiredWeapon: WeaponType.AnySword, RequiredHands: WeaponHands.Two,
             HpCost: 50, SpCost: W4NewSp(78),
@@ -181,8 +188,8 @@ public static partial class SkillCatalog
             Description: "A thrown blow that costs blood, not mana — and every one of them gathers Focus.",
             Levels: new[]
             {
-                new SkillLevel(Power: 500, MpCost: 5, SpCost: W4NewSp(78), GoldCost: W4NewGold(78),
-                    Description: "Strikes for power 500 and gathers 1 Focus, up to 10. Costs 50 HP and 5 MP."),
+                new SkillLevel(Power: 1200, MpCost: 5, SpCost: W4NewSp(78), GoldCost: W4NewGold(78),
+                    Description: "Strikes for power 1,200 and gathers 1 Focus, up to 10. Costs 50 HP and 5 MP."),
             }),
 
         // ═══ FOCUS LIMIT (Human) — fill the pool outright ════════════════════════════════════════

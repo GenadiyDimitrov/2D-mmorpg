@@ -226,6 +226,10 @@ internal static class Retarget
                       // (`BL-237`, the warrior's Charge — the first pure one; Shadowstep and Phantom
                       // Jump both strike or curse and were already caught above). `BlinkRange > 0` is
                       // the ESCAPE shape (Phase Shift), which is SelfOnly and is not this.
+                      // ⚠ TWO SHAPES SINCE `BL-256`: Charge stopped being a blink and became a real
+                      //   stride across the ground (`ChargesToTarget`). Both are gap-closers and both
+                      //   are aimed at an enemy, so both belong on this line.
+                      || d.ChargesToTarget
                       || (d.Effect.HasFlag(SkillEffect.Blink) && d.BlinkRange <= 0f);
 
         // BREADTH first: anything with a real radius affects many, whatever it is centred on. His own

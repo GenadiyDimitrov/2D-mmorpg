@@ -734,8 +734,30 @@ public record SkillDef(
     // with startCooldown:false — the existing enemy-interrupt contract. An AoE pull authored with no
     // Stun therefore interrupts nobody, which is what keeps it a repositioning tool.
     bool Pulls = false,
-    /// <summary>How long the whole drag takes, in seconds (`BL-154`). His 1-1.5s.</summary>
+    /// <summary>How long the whole drag takes, in seconds (`BL-154`). His 1-1.5s. Also the CHARGE's
+    /// stride — see <see cref="ChargesToTarget"/>, which is the same journey with the ends swapped.</summary>
     float PullSeconds = 1.2f,
+    // ===== CHARGE (`BL-256`, owner 2026-09-16) ======================================================
+    // *"charge does noting only use as vusual - no charge no displacement.. Nothing ..it should act as
+    //  the pull but reverse (caster goes to target)"*.
+    //
+    // 🔑 THE PULL WITH THE ENDS SWAPPED, and deliberately nothing else: the CASTER is the body that
+    // travels and the TARGET is the anchor, so it reuses the drag machinery whole (timed by
+    // <see cref="PullSeconds"/>, direction recomputed every tick so it still lands on a target that is
+    // running, `announce: false` so the client interpolates instead of snapping). See
+    // GameLoopService.BeginDrag — StartPull and StartCharge are one method called two ways.
+    //
+    // 🔴 WHY IT REPLACED A BLINK. Charge used to be `SkillEffect.Blink` with a target, and it did
+    // nothing at all — not because the blink was broken but because the skill never got a TARGET.
+    // `Blink` is not in BeginSkill's `offensive` mask (it is not damage, not a debuff, not a taunt),
+    // so the one skill in the game whose ONLY effect is a targeted blink fell through to the self-cast
+    // arm, and `BlinkAwayFromNearest(caster, max(1, 0))` moved him ONE unit. The `offensive` mask
+    // learned about both this field and a targeted Blink in the same commit — the `BL-110`/`BL-154`
+    // lesson for the sixth time: a payload carried in a FIELD has to be taught to every gate.
+    //
+    // ⚠ The stride action-LOCKS the caster while it runs (IsBeingPulled), which is what "act as the
+    //   pull" asks for. It is why the authored seconds are short: this is a leap, not a tow.
+    bool ChargesToTarget = false,
     // ===== SILENCE (`BL-155`, owner 2026-09-03) =====================================================
     // *"have physical skill silence (only basic attack) … magical skill silence … and both at once a
     //  full silence"*. Two INDEPENDENT debuffs: land both and the target is fully silenced, which is

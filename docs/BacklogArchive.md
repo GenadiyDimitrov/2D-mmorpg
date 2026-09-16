@@ -5952,3 +5952,66 @@ authored in that pair and nowhere else.
 ⚠ **Nothing un-does an illegal pair a character already has** — the pre-release rule. In practice
 nobody has one: `MaxSubclasses` is 4 and only the admin path can add them, so this was latent until
 `BL-250` raises the slot count. It is fixed BEFORE that, not after.
+
+
+## `BL-256` ✅ BUILT 2026-09-16 in 0.152.0 — the warrior PvP pass: ×2 damage, a real Charge, and two dead channels
+
+**Your report, 2026-09-16, after duelling the three warrior races and taking a champion to 76:** *"Only
+human does decent (low but better) dmg than other 2 warriors ... Elf sword dance never crits .. And
+have the lowest dmg even when power is combined is equal to the demons .. so a demon and a elf do about
+~1k to a human and human does with triple a 2400 (3x800)"*. Six asks. **Two of them were engine bugs,
+not numbers**, and both were channels that had been dead since the day they were written.
+
+### 1. ✅ ×2 POWER ON EVERY WARRIOR DAMAGE SKILL EXCEPT THE SLASHES
+*"I want the 3 warriors - all dmg skills except slash of warrior to double in power"*.
+
+Sword Shock · Demonic Smash · Sword Blast · Focused Blast · Focused Double Slash · Focused Tripple
+Slash, every rung of the 3rd AND the 4th tier. The three Slashes are untouched, as you said. Demonic
+Smash is still exactly 3× Sword Shock on all thirty rungs.
+
+### 2. ✅ SAINTS SWORD DANCE ×2.5 — AND IT CAN DOUBLE AT LAST
+*"Saints dance x2.5 and to be able to [double]"*. 150 → 750 becomes **375 → 1,875** (rounded to the
+nearest 5 so the column stays readable); 780 → 1,200 becomes **1,950 → 3,000** (exact).
+
+🔴 **Its inability to crit was not the dance, it was every area strike in the game.**
+`DeliverSimpleHit` — the AREA damage path — was written for mob spells and traps. Its MAGIC arm grew a
+fizzle roll and a crit roll on 2026-08-28, when a mage's AoE was first routed through it; **its
+physical arm never did**. So every player physical AREA skill landed a flat hit — no crit, no
+[Double], no block. The dance is ten `EnemiesInRadius` strokes, so all ten went through there. It now
+takes the same three-way resolution as the single-target arm, gated on a PLAYER attacker exactly as
+the magic arm is.
+
+### 3. ✅ CHARGE IS A REVERSE PULL, AND IT WORKS NOW
+*"charge does noting only use as vusual - no charge no displacement.. Nothing ..it should act as the
+pull but reverse (caster goes to target)"*.
+
+🔴 **Why it did nothing:** `BeginSkill`'s `offensive` mask asks about damage, debuffs, Cancel, Taunt,
+`Charms`, `Pulls` and `Silence` — never `Blink`. Charge was the ONE skill whose only payload is a
+targeted blink, so it self-cast and ran `BlinkAwayFromNearest(caster, max(1, 0))`: a one-unit hop. The
+sixth time a payload in a field has had to be taught to that gate.
+
+**What it is now:** `SkillDef.ChargesToTarget`, the drag machinery with its ends swapped —
+`StartPull` and `StartCharge` are one method called two ways. The caster crosses the ground, re-aimed
+every tick so it lands on a target that is running, un-announced steps so the client interpolates, and
+action-locked while it runs. **0.4s**, not the pull's 1.2s: a tow can afford to lock you for over a
+second, a leap cannot.
+
+### 4. ✅ FOCUS IS PHYSICAL — AND SO WERE EIGHT OTHER BUFFS ROLLING A MAGE PASSIVE
+*"focus must be physical (now it activates my magic proficiency)"*. The magic-cast proc trigger tested
+`Category` alone, and `Category` is a ROLE tag (`BL-132`): a physical self-buff is `Category.Buff` and
+declares itself with `PhysicalCast`. `SkillMath.IsPhysical` is the one three-marker test and that site
+was not calling it — so Focus, the three Presences, the archer's stances and Dance of Fury had all
+been rolling Magic Proficiency on every press.
+
+### 5. ✅ FOCUS AND FOCUS FORCE TAKE A 0.5s REUSE
+*"focus and focus force to have 0.5 cd... Now I spam it as crazy"*. Five ticks each. Not a reuse to
+wait out — a floor against queueing a 0.5s cast on top of itself. Both CD cells moved with it.
+
+### 6. ✅ FOCUS FORCE CARRIES 1,200 POWER
+*"focus force to have 1200 power (I'll see how it goes)"*. ⚠ **Hand-priced, NOT part of the ×2 sweep** —
+it is 1,200 rather than 1,000, and a later sweep must not double it again.
+
+### ⚠ THE WARLORD WAS LEFT ALONE, AND THERE WAS NOTHING TO LEAVE
+`war_aoe 3rd.csv` and `war_aoe 4th.csv` author **no damage skills at all** — Charge is the Warlord's
+only active — so "the 3 warriors" and "the whole authored warrior damage kit" are the same set. The day
+his damage rows land they are authored at the new scale.
