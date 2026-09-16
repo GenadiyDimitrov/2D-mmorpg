@@ -7,12 +7,98 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.152.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.153.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
+## 2026-09-16 (latest) — 0.153.0: `BL-257` — PLATINUM, the account currency
 
-## 2026-09-16 (latest) — 0.152.0: `BL-256` — the warrior PvP pass, and two dead channels behind it
+🔴 **DELETE `Game.Server/game.db` (+ `-shm`/`-wal`) before you run this** — the accounts table gains a
+`Platinum` column and `EnsureCreated()` does not ALTER an existing one.
+🔴 **NEEDS AN APK** — protocol 38: the wallet push and every shop row carry a second number.
+
+Your spec, verbatim: *"Also make platinum -> copy of gold without the drop -> items Def on their buy
+price also must have a platinum value (Default 0) · any item that have a platinum or/and gold must be
+bought with the value · platinum is not an item. It cannot be traded (until global marketplace) ·
+platunum is account value. So any char in the acc shares it · add /giveplat admin command same as
+givegold"*. All five, built.
+
+### IT LIVES ON THE ACCOUNT, AND THAT IS THE WHOLE OF "SHARED"
+
+There is **no per-character copy** — nothing to keep in step, nothing to reconcile when two of your
+characters spend at once. `AccountFarmBudget` was already the one per-account object (one load at
+login, one save), so it took the wallet and was **renamed `AccountState`**: it was the farm allowance
+and nothing else, and a second per-account dictionary with a second lifetime rule is exactly the sort
+of thing that drifts apart.
+
+Two consequences worth knowing:
+
+- **A change pushes to every online character of the account**, not just the one who spent it. The
+  other one would otherwise sit there showing a number that is no longer true.
+- **A change is flushed to the DB at once**, unlike the farm allowance, which can afford to ride the
+  60-second autosave. This is money: a crash between a purchase and the autosave would hand the
+  platinum back and keep the item.
+
+🔴 **And there is a guard on the wallet that the farm allowance does not need.** The account state is
+created LAZILY for a character that never came through the login read (the debug seeder, a test
+harness). An empty one is the safe answer for the farm allowance — it just means "a full day left". It
+is the opposite for money: writing a lazily-created `Platinum = 0` back would **delete a real
+balance**. So the state records whether it was really loaded, every platinum path refuses on one that
+was not and says so, and the save passes `null` for the wallet rather than a zero.
+
+### THE PRICE IS TWO NUMBERS
+
+`ItemDef.PlatinumPrice`, default 0 — which is every item in the game today. An item may be priced in
+gold alone (the normal shelf), in **platinum alone** (`BuyPriceOverride: -1` beside it — the shape the
+premium rune boxes already carry), or in **both**, and when both are set **both are charged**. One
+helper, `ItemCatalog.IsPurchasable`, answers "is this for sale at all", so the shelf, the client and
+`HandleBuy` cannot drift on whether a platinum-only item exists.
+
+⚠ The platinum price is **authored verbatim** — no rarity multiplier, no vendor tax, no equipment
+floor. Those exist to keep a DERIVED gold price sane; a premium price is one hand-picked number and a
+formula quietly moving it is the last thing it wants.
+
+⚠ In `HandleBuy` the platinum is taken **before** the item is made and the gold **after**, because
+taking platinum is the one step that can still fail. If the bag turns out to be full, the platinum is
+handed straight back.
+
+### IT IS NOT AN ITEM
+
+No `ItemDef`, so there is nothing to drop, trade, warehouse, sell or loot — the trade window and the
+drop tables never see it, with no rule written to stop them. That is your *"copy of gold without the
+drop … cannot be traded (until global marketplace)"* enforced by not existing rather than by a check.
+
+### `/giveplat`
+
+`/givegold`'s twin, deliberately identical: `<name> <amount>`, k/m/b/t suffixes and `1_000_000`,
+a negative amount takes it away, clamped at zero. One thing differs and it is the one that matters —
+it credits the **account**, and the message says so.
+
+### THE CLIENT
+
+The vendor's Buy title, every shelf row, the affordability dimming, the numpad maximum and the confirm
+dialog all read both halves through three shared helpers rather than each spelling out the rule. The
+bag's gold line and the Stats window grew a platinum reading. **All four hide platinum at zero** — a
+premium line saying 0 on every character in the game is noise until you have some.
+
+### ⚠ THE SMOKE TEST CAUGHT 0.152.0's FOCUS REUSE
+
+`tools/SmokeTest` presses Focus three times in a row to prove it gathers one charge a use. With
+yesterday's reuse of 0 that worked; with the **0.5s** you asked for it is two charges and a refusal, so
+the run came back **2 CHECK(S) FAILED** — the test, not the game. It presses until the pool moves now
+(and until the CAP refusal comes back, which is raised past the reuse gate and so was being answered
+with the wrong message). Retries, never a sleep: a fixed wait either flakes or hides a real stall.
+
+### WHAT THIS UNBLOCKS
+
+**`BL-250`'s blocker #1 is gone**, and you answered X/Y/Z in the same message: *"make the slots
+tickets buy able with plat need 100/1000/5000"*. Subclass slots 6, 7 and 8 are **100 / 1,000 / 5,000
+platinum**, recorded in the entry. ⚠ **The ticket itself is still not built** — that is `BL-250`'s own
+job (the slot ladder, the persisted slot count, the class-master dialogue, the info panel), and it
+still waits on §6's swap price and §5's cap question.
+
+
+## 2026-09-16 — 0.152.0: `BL-256` — the warrior PvP pass, and two dead channels behind it
 
 **Needs an APK** (skill powers live in `Game.Shared`, so the client's own cards would quote the old
 numbers). No protocol change, no `game.db` delete.

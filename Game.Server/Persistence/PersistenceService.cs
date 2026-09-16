@@ -1334,14 +1334,16 @@ public class PersistenceService
     /// once, on the first login of any of the account's characters, then kept live by the loop (two
     /// characters of one account can be spending it at the same time and must share ONE balance).
     /// Returns null only if the account row has vanished.</summary>
-    public async Task<AccountFarmBudget?> LoadAccountBudgetAsync(int accountId)
+    public async Task<AccountState?> LoadAccountBudgetAsync(int accountId)
     {
         await using var db = await _factory.CreateDbContextAsync();
         var a = await db.Accounts.FirstOrDefaultAsync(x => x.Id == accountId);
         if (a is null) return null;
-        return new AccountFarmBudget
+        return new AccountState
         {
             AccountId         = accountId,
+            Loaded            = true,   // `BL-257` — the platinum paths refuse a state that is not this
+            Platinum          = a.Platinum,
             AutoTicksLeft     = a.AutoTicksLeft,
             OfflineTicksLeft  = a.OfflineTicksLeft,
             LastResetDate     = a.LastFarmResetDate,
@@ -1354,11 +1356,15 @@ public class PersistenceService
     /// snapshots on the tick thread (single-writer rule) and this runs off it.</summary>
     public async Task SaveAccountBudgetAsync(
         int accountId, long autoTicks, long offlineTicks, DateOnly lastReset,
-        int autoCapSeconds, int offlineCapSeconds)
+        int autoCapSeconds, int offlineCapSeconds, long? platinum = null)
     {
         await using var db = await _factory.CreateDbContextAsync();
         var a = await db.Accounts.FirstOrDefaultAsync(x => x.Id == accountId);
         if (a is null) return;
+        // `BL-257` — NULL MEANS "DO NOT TOUCH THE WALLET". Only a state that was really loaded from
+        // this row passes a value; a lazily-created one passes null, so it can never write its own 0
+        // over a real balance. See AccountState.Loaded.
+        if (platinum is long plat) a.Platinum = plat;
         a.AutoTicksLeft     = autoTicks;
         a.OfflineTicksLeft  = offlineTicks;
         a.LastFarmResetDate = lastReset;

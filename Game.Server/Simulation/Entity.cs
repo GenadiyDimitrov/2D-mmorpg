@@ -2464,7 +2464,7 @@ public class Entity
     public PvpFlag FlagState { get; set; }
     // The old AutoHuntLocked / AutoIdleElapsedTicks / AutoOfflineElapsedTicks lived here and WERE the
     // defect: per-SESSION counters on the CHARACTER, zeroed at every login. The allowance is a
-    // per-ACCOUNT daily balance now — see AccountFarmBudget and World.AccountBudgets.
+    // per-ACCOUNT daily balance now — see AccountState and World.AccountBudgets.
     /// <summary>Seconds of offline budget left, stamped by the game loop each tick while offline
     /// farming (-1 = uncapped). It exists so the HUB can show it on the character screen without
     /// computing anything: the loop is still the only writer, the hub only reads the last value.</summary>

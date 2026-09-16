@@ -123,6 +123,10 @@ namespace Game.Client
             t.AppendLine(Row2("Armour", string.IsNullOrEmpty(s.ArmorMastery) ? "—" : s.ArmorMastery,
                               "Set", string.IsNullOrEmpty(s.ActiveSet) ? "—" : s.ActiveSet));
             t.AppendLine(Row2("Gold", Boot.Gold.ToString("N0"), "State", s.MoveState.ToString()));
+            // `BL-257` — platinum is the ACCOUNT's, so the row says so. Hidden at zero: a premium line
+            // reading 0 on every character in the game is noise until he has any.
+            if (Boot.Platinum > 0)
+                t.AppendLine(Row2("Platinum (account)", Boot.Platinum.ToString("N0"), "", ""));
 
             // PvP / reputation, at the bottom because it is read rarely and matters enormously when it
             // is. Karma was not shown ANYWHERE before — and karma is what turns guards hostile, makes

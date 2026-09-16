@@ -120,6 +120,11 @@ namespace Game.Client
         public ProgressUpdate Progress { get; private set; }
         public long Gold { get; private set; }
 
+        /// <summary>PLATINUM (`BL-257`) — the premium currency. ⚠ It belongs to the ACCOUNT, not to this
+        /// character, so a purchase on another character of the same account changes it while you are
+        /// standing still; the server pushes the wallet to every online character when it moves.</summary>
+        public long Platinum { get; private set; }
+
         /// <summary>Staff role of the character in world — mirrors the WPF client, which only bothers
         /// sending admin commands when it believes it's allowed (the server re-checks regardless).</summary>
         public AccountRole Role { get; private set; } = AccountRole.Player;
@@ -1208,7 +1213,7 @@ namespace Game.Client
                 SkillPoints = p.SkillPoints;   // SP is earned on this event; stats aren't pushed here
                 if (p.LeveledUp) ClientLog.Good("Level up! Now level " + p.Level + ".");
             });
-            _net.GoldReceived += g => Main(() => Gold = g.Gold);
+            _net.GoldReceived += g => Main(() => { Gold = g.Gold; Platinum = g.Platinum; });
             // Auto-hunt drives the target window. The server owns the choice while the autopilot is on,
             // so this simply adopts it; when auto-hunt stops the server sends null and the window clears
             // rather than freezing on the last mob it killed.
@@ -1864,7 +1869,7 @@ namespace Game.Client
                 if (CameraRig != null) CameraRig.Target = null;
                 if (Marker != null) { Marker.Follow = null; Marker.Hide(); }
                 ResetWorldTransients();
-                Stats = null; Progress = null; Gold = 0;
+                Stats = null; Progress = null; Gold = 0; Platinum = 0;
                 Characters = Array.Empty<CharacterSlot>();
                 LastError = null;
                 Phase = ClientPhase.Offline;

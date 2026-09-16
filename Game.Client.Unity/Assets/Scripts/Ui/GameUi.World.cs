@@ -1993,14 +1993,16 @@ namespace Game.Client
             int used = 0;
             foreach (var it in items) if (!it.Equipped) used++;   // worn gear doesn't take a slot
 
-            int revision = items.Length * 17 + (int)_bagTab * 7919 + (_bagFastDel ? 104729 : 0) + (int)(Boot.Gold % 1_000_000);
+            int revision = items.Length * 17 + (int)_bagTab * 7919 + (_bagFastDel ? 104729 : 0)
+                         + (int)(Boot.Gold % 1_000_000) + (int)(Boot.Platinum % 1_000_000) * 7;
             foreach (var item in items)
                 revision = revision * 31 + item.InstanceId.GetHashCode()
                          + (item.Equipped ? 1 : 0) + item.Quantity * 7 + item.Enchant;
             if (revision == _bagRevision) return;
             _bagRevision = revision;
 
-            _bagGoldLabel.text = "Gold: " + Boot.Gold.ToString("N0");
+            _bagGoldLabel.text = "Gold: " + Boot.Gold.ToString("N0")
+                               + (Boot.Platinum > 0 ? "   Plat: " + Boot.Platinum.ToString("N0") : "");
             _bagSlotsLabel.text = "Slots " + used + " / " + GameConstants.InventorySize;
             PaintCategoryTabs(_bagTabButtons, BagTabs, _bagTab);
             UiKit.SetButtonText(_bagDelToggle, _bagFastDel ? "Del: ON" : "Del: off");

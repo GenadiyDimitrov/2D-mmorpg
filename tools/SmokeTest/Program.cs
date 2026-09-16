@@ -2550,17 +2550,34 @@ await gm.DisposeAsync();
         await fs.Settle();
 
         // ---- GATHER TO THE CAP, ONE CHARGE A USE. ----
-        for (int n = 1; n <= 3; n++)
+        //
+        // ⚠ `BL-256` GAVE FOCUS A 0.5s REUSE (*"focus and focus force to have 0.5 cd... Now I spam it as
+        //   crazy"*), so three presses back to back are two charges and a refusal — which is exactly what
+        //   this section caught the day the reuse landed. PRESS UNTIL THE POOL MOVES, which is what a
+        //   player's thumb does; never a sleep (a fixed wait either flakes or hides a real stall).
+        async Task<bool> GatherTo(int n)
         {
-            await fs.Hub.SendAsync("UseSkill", SkillCatalog.WarriorFocus, fs.MyId);
-            await fs.WaitFor(() => FocusOf(fs) >= n, 5000);
+            for (int attempt = 0; attempt < 20; attempt++)
+            {
+                await fs.Hub.SendAsync("UseSkill", SkillCatalog.WarriorFocus, fs.MyId);
+                if (await fs.WaitFor(() => FocusOf(fs) >= n, 800)) return true;
+            }
+            return false;
         }
+        for (int n = 1; n <= 3; n++) await GatherTo(n);
         Check("Focus gathers one charge per use, up to its rung's cap (3 at level 49)",
               FocusOf(fs) == 3, $"pool reads {FocusOf(fs)}");
 
+        // The cap refusal is raised in ExecuteSkill, PAST the reuse gate — so a press sent while the
+        // 0.5s is still running is refused for the wrong reason and never reaches it. Press until one
+        // of the two answers comes back, and assert it was the cap's.
         fs.SystemChat.Clear();
-        await fs.Hub.SendAsync("UseSkill", SkillCatalog.WarriorFocus, fs.MyId);
-        bool refused = await fs.WaitFor(() => fs.SystemChat.Any(s => s.Contains("already at its limit")), 4000);
+        bool refused = false;
+        for (int attempt = 0; attempt < 20 && !refused; attempt++)
+        {
+            await fs.Hub.SendAsync("UseSkill", SkillCatalog.WarriorFocus, fs.MyId);
+            refused = await fs.WaitFor(() => fs.SystemChat.Any(s => s.Contains("already at its limit")), 800);
+        }
         await Task.Delay(1200);   // long enough for a gather that WRONGLY went through to land
         Check("...and at the cap it is REFUSED (*\"Cannot be used if maximum is reached\"*), not overfilled",
               refused && FocusOf(fs) == 3, $"refused={refused}, pool reads {FocusOf(fs)}");

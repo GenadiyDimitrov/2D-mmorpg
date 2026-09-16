@@ -537,7 +537,9 @@ public record RerollResultDto(string ItemName, string Outcome);
 
 /// <summary>Server -> owning client: the player's gold wallet balance (sent on entry
 /// and whenever it changes — kills, quest rewards, vendor buy/sell, teleport fees).</summary>
-public record GoldUpdate(long Gold);
+/// <summary>The wallet. `Gold` is the CHARACTER's; `Platinum` (`BL-257`) is the ACCOUNT's, shared by
+/// every character on it — which is why a spend on one character pushes this to all of them.</summary>
+public record GoldUpdate(long Gold, long Platinum = 0);
 
 /// <summary>Server -> owning client: an incoming party invite from Inviter (accept/decline). Carries
 /// the loot rule the invitee would be joining under so they can decide before accepting.</summary>
@@ -1134,7 +1136,9 @@ public record ClassChangeOption(int SecondClassId, string ClassName, bool Meets,
     string[] RequiredItemNames, bool[] HasItem, string Description = "");
 
 /// <summary>One buyable line in a vendor shop.</summary>
-public record ShopItemDto(string DefId, string Name, int BuyPrice);
+/// <summary>One shelf row. `BuyPrice` is gold (0 = costs no gold) and `PlatinumPrice` is the premium
+/// half (`BL-257`, 0 = costs none). An item may be priced in EITHER or BOTH, and both are charged.</summary>
+public record ShopItemDto(string DefId, string Name, int BuyPrice, int PlatinumPrice = 0);
 
 /// <summary>A vendor's wares, attached to the dialog when talking to a vendor.</summary>
 public record ShopInfo(string Title, ShopItemDto[] Items);

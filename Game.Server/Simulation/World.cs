@@ -212,7 +212,7 @@ public class World
     /// <summary>accountId -> the shared daily farm allowance. Same lifetime rule as
     /// <see cref="AccountWarehouses"/>: loaded on the first login of any of the account's characters
     /// and live from then on, because several of them can be spending it at once.</summary>
-    public Dictionary<int, AccountFarmBudget> AccountBudgets { get; } = new();
+    public Dictionary<int, AccountState> AccountBudgets { get; } = new();
 
     /// <summary>Every party MEMBER id maps to the shared <see cref="Party"/> object.</summary>
     public Dictionary<Guid, Party> Parties { get; } = new();
@@ -272,7 +272,7 @@ public record EnterWorldCommand(
     Entity Entity,
     TaskCompletionSource<LoginResult> Result,
     List<InventoryItem>? AccountBank = null,
-    AccountFarmBudget? AccountBudget = null) : IGameCommand;
+    AccountState? AccountBudget = null) : IGameCommand;
 
 public record LeaveCommand(string ConnectionId) : IGameCommand;
 

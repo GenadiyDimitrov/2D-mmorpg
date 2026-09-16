@@ -1265,10 +1265,12 @@ public class GameLoopService : BackgroundService
         {
             if (!b.Dirty) continue;
             b.Dirty = false;
-            var (id, auto, off, date, ac, oc) =
+            // `BL-257` — the wallet rides the SAME snapshot and the same write. `null` when the state
+            // was never loaded from the row, which is what stops a lazily-created 0 erasing a balance.
+            var (id, auto, off, date, ac, oc, plat) =
                 (b.AccountId, b.AutoTicksLeft, b.OfflineTicksLeft, b.LastResetDate,
-                 b.AutoCapSeconds, b.OfflineCapSeconds);
-            RunSave(() => _db.SaveAccountBudgetAsync(id, auto, off, date, ac, oc));
+                 b.AutoCapSeconds, b.OfflineCapSeconds, b.Loaded ? b.Platinum : (long?)null);
+            RunSave(() => _db.SaveAccountBudgetAsync(id, auto, off, date, ac, oc, plat));
         }
     }
 
@@ -1279,10 +1281,10 @@ public class GameLoopService : BackgroundService
         if (p.AccountId == 0 || !_world.AccountBudgets.TryGetValue(p.AccountId, out var b) || !b.Dirty)
             return;
         b.Dirty = false;
-        var (id, auto, off, date, ac, oc) =
+        var (id, auto, off, date, ac, oc, plat) =
             (b.AccountId, b.AutoTicksLeft, b.OfflineTicksLeft, b.LastResetDate,
-             b.AutoCapSeconds, b.OfflineCapSeconds);
-        RunSave(() => _db.SaveAccountBudgetAsync(id, auto, off, date, ac, oc));
+             b.AutoCapSeconds, b.OfflineCapSeconds, b.Loaded ? b.Platinum : (long?)null);
+        RunSave(() => _db.SaveAccountBudgetAsync(id, auto, off, date, ac, oc, plat));
     }
 
     /// <summary>Fire-and-forget a DB write off the tick thread, logging any failure
@@ -4896,14 +4898,14 @@ public class GameLoopService : BackgroundService
 
     // Server-default DAILY caps (docs/design/AutoHunt.md): online auto 8h, offline farm 2h; disconnect
     // grace 180s. Tunable in seconds via the Debug panel / /testcaps. Premium (12h/4h) is the
-    // per-account override on AccountFarmBudget, which wins over these.
+    // per-account override on AccountState, which wins over these.
     private int _idleCapSeconds = 8 * 3600;
     private int _offlineCapSeconds = 2 * 3600;
     private int _graceSeconds = 180;
 
     // 0 (or less) = UNLIMITED (never caps) — for leaving people farming/levelling to gauge speed.
-    private int AutoIdleCapSecondsFor(AccountFarmBudget b) => AccountFarmBudget.ResolveCap(b.AutoCapSeconds, _idleCapSeconds);
-    private int AutoOfflineCapSecondsFor(AccountFarmBudget b) => AccountFarmBudget.ResolveCap(b.OfflineCapSeconds, _offlineCapSeconds);
+    private int AutoIdleCapSecondsFor(AccountState b) => AccountState.ResolveCap(b.AutoCapSeconds, _idleCapSeconds);
+    private int AutoOfflineCapSecondsFor(AccountState b) => AccountState.ResolveCap(b.OfflineCapSeconds, _offlineCapSeconds);
 
     /// <summary>The account's live daily allowance, refilled if the server date has rolled over.
     /// Returns null only for an account-less entity (a mob, or a character created before accounts) —
@@ -4912,13 +4914,75 @@ public class GameLoopService : BackgroundService
     /// <para>Lazily created rather than required: a character can reach the world down paths that never
     /// went through the login read (the debug seeder, a test harness), and refusing to farm because a
     /// row wasn't pre-loaded would be a bug, not a policy.</para></summary>
-    private AccountFarmBudget? BudgetOf(Entity p)
+    private AccountState? BudgetOf(Entity p)
     {
         if (p.AccountId == 0) return null;
         if (!_world.AccountBudgets.TryGetValue(p.AccountId, out var b))
-            _world.AccountBudgets[p.AccountId] = b = new AccountFarmBudget { AccountId = p.AccountId };
+            _world.AccountBudgets[p.AccountId] = b = new AccountState { AccountId = p.AccountId };
         b.EnsureFresh(AutoIdleCapSecondsFor(b), AutoOfflineCapSecondsFor(b), GameConstants.TickRate);
         return b;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════════════════════
+    //  THE PLATINUM WALLET (`BL-257`, owner 2026-09-16) — *"platunum is account value. So any char in
+    //  the acc shares it."*
+    //
+    //  🔑 THERE IS NO PER-CHARACTER COPY. Every read and every write goes through the ONE
+    //     AccountState, so two characters of the same account spending at the same moment spend the
+    //     same balance and there is nothing to reconcile. That is the whole of "shared".
+    //  🔑 EVERY CHANGE PUSHES TO EVERY ONLINE CHARACTER OF THE ACCOUNT, not just the one who spent —
+    //     otherwise the other one sits there showing a number that is no longer true.
+    //  🔴 AND EVERY CHANGE IS FLUSHED AT ONCE, unlike the farm allowance, which can afford to ride the
+    //     60s autosave. This is MONEY: a crash between a purchase and the autosave would hand the
+    //     platinum back and keep the item.
+    // ═══════════════════════════════════════════════════════════════════════════════════════════
+
+    /// <summary>The account's platinum balance. 0 for an account-less entity, and 0 for a state that
+    /// was never loaded from the DB — see <see cref="AccountState.Loaded"/>: guessing 0 is safe to
+    /// READ and catastrophic to write back, which is what that flag guards.</summary>
+    private long PlatinumOf(Entity p) => BudgetOf(p) is { Loaded: true } s ? s.Platinum : 0;
+
+    /// <summary>Add (or, with a negative delta, take) platinum. Returns the delta ACTUALLY applied —
+    /// 0 when there is no loaded account state, which is the only way this can refuse.
+    /// Clamps at zero rather than failing, so "take all of it" needs no exact figure (`/givegold`'s
+    /// rule, kept deliberately identical).</summary>
+    private long AddPlatinum(Entity p, long delta)
+    {
+        if (BudgetOf(p) is not { Loaded: true } s) return 0;
+        long before = s.Platinum;
+        s.Platinum = delta >= 0
+            ? (s.Platinum > long.MaxValue - delta ? long.MaxValue : s.Platinum + delta)
+            : Math.Max(0, s.Platinum + delta);
+        long applied = s.Platinum - before;
+        if (applied == 0) return 0;
+        s.Dirty = true;
+        SaveBudgetOf(p);       // money is flushed now, not at the autosave
+        PushWalletToAccount(p);
+        return applied;
+    }
+
+    /// <summary>Take <paramref name="cost"/> platinum if the account has it. False leaves the balance
+    /// untouched — a price is all-or-nothing, never a partial debit.</summary>
+    private bool TrySpendPlatinum(Entity p, long cost)
+    {
+        if (cost <= 0) return true;
+        if (BudgetOf(p) is not { Loaded: true } s || s.Platinum < cost) return false;
+        s.Platinum -= cost;
+        s.Dirty = true;
+        SaveBudgetOf(p);
+        PushWalletToAccount(p);
+        return true;
+    }
+
+    /// <summary>Send the wallet to EVERY online character of this account. Platinum is shared, so a
+    /// spend on one of them changes what the others may buy; the gold half each of them gets is still
+    /// its own character's.</summary>
+    private void PushWalletToAccount(Entity p)
+    {
+        if (p.AccountId == 0) { SendGold(p); return; }
+        foreach (var e in _world.Entities.Values)
+            if (e.Kind == EntityKind.Player && e.AccountId == p.AccountId)
+                SendGold(e);
     }
 
     /// <summary>Is there ONLINE auto-hunt time left on this account today? (Unlimited → always.)</summary>
@@ -6857,7 +6921,8 @@ public class GameLoopService : BackgroundService
                         "/god, /invis (both survive a relog), /heal [name], " +
                         "/chatlog [name] [-w] [around <time>] [-p <page>], " +
                         "/spd <m|a|c> <v> (bare /spd resets), /bag <name>, /give <name>, " +
-                        "/givegold <name> <amount>, /lvl [name] <level|max>, /sp [name] <amount|max>, " +
+                        "/givegold <name> <amount>, /giveplat <name> <amount>, " +
+                        "/lvl [name] <level|max>, /sp [name] <amount|max>, " +
                         "/exp [name] <amount|max>, /droprate [group|gear|global|amount|item <id>] [mult], " +
                         "/titleright <name> <on|off>, /buff [name] [level], /clearbuffs [name], " +
                         "/server <shutdown|reboot|on> [min] [adminOnly]" +
@@ -7538,6 +7603,48 @@ public class GameLoopService : BackgroundService
                     SendSystemToEntity(gt, delta >= 0
                         ? $"You received {delta:#,##0} gold."
                         : $"{-delta:#,##0} gold was taken from you.");
+                break;
+            }
+
+            // ---- `/giveplat` (`BL-257`) — `/givegold`'s twin, and deliberately the same shape: the
+            //      same `<name> <amount>`, the same k/m/b/t suffixes, the same "a negative amount takes
+            //      it away", the same clamp at zero. One thing differs and it is the thing that matters:
+            //      PLATINUM IS THE ACCOUNT'S, so this credits every character on it at once and the
+            //      message says whose account it landed in.
+            case "giveplat":
+            {
+                int psp = arg.LastIndexOf(' ');
+                if (psp <= 0 || !TryParseGold(arg[(psp + 1)..], out long pamount))
+                {
+                    SendSystemToEntity(admin,
+                        "Usage: /giveplat <name> <amount>  — k/m/b/t suffixes and 1_000_000 both work; " +
+                        "a negative amount takes platinum away. It is ACCOUNT-wide.");
+                    break;
+                }
+                string platTarget = arg[..psp].Trim();
+                if (FindOnlinePlayer(platTarget) is not Entity pt)
+                {
+                    SendSystemToEntity(admin, $"{platTarget} is not online.");
+                    break;
+                }
+                long pdelta = AddPlatinum(pt, pamount);
+                if (pdelta == 0 && pamount != 0)
+                {
+                    // Either the balance was already 0 and we were taking, or — the case worth saying
+                    // out loud — this character's account state never came through the login read, so
+                    // the wallet is not safe to touch. See AccountState.Loaded.
+                    SendSystemToEntity(admin, PlatinumOf(pt) == 0 && pamount < 0
+                        ? $"{pt.Name} has no {GameConstants.PlatinumName} to take."
+                        : $"{pt.Name}'s account wallet is not loaded — nothing was changed.");
+                    break;
+                }
+                SendSystemToEntity(admin,
+                    $"{pt.Name}'s ACCOUNT: {pdelta:+#,##0;-#,##0;0} {GameConstants.PlatinumName} "
+                    + $"(now {PlatinumOf(pt):#,##0}).");
+                if (pt.Id != admin.Id)
+                    SendSystemToEntity(pt, pdelta >= 0
+                        ? $"Your account received {pdelta:#,##0} {GameConstants.PlatinumName}."
+                        : $"{-pdelta:#,##0} {GameConstants.PlatinumName} was taken from your account.");
                 break;
             }
 
@@ -16613,7 +16720,7 @@ public class GameLoopService : BackgroundService
     private bool _creditingCollectSteps;
 
     private void SendGold(Entity player) =>
-        SendTo(player, "Gold", new GoldUpdate(player.Gold));
+        SendTo(player, "Gold", new GoldUpdate(player.Gold, PlatinumOf(player)));
 
     private readonly HashSet<Guid> _hadBuffs = new();
 
@@ -18287,8 +18394,13 @@ public class GameLoopService : BackgroundService
             return;
         }
 
-        long unit = ItemCatalog.BuyPrice(def);
-        if (unit <= 0)
+        // `BL-257` — TWO PRICES, EITHER OR BOTH. *"any item that have a platinum or/and gold must be
+        // bought with the value."* A `BuyPrice` of -1 means "no gold price", not "not for sale": an
+        // item priced in platinum alone carries exactly that, so it is floored to 0 here and the
+        // for-sale question is asked of BOTH halves through the one shared helper.
+        long unit = Math.Max(0, ItemCatalog.BuyPrice(def));
+        long unitPlat = ItemCatalog.PlatinumPrice(def);
+        if (!ItemCatalog.IsPurchasable(def))
         {
             SendSystemToEntity(player, "That item is not for sale.");
             return;
@@ -18309,11 +18421,21 @@ public class GameLoopService : BackgroundService
         bool stackable = def.IsStackable;
         int qty = stackable ? Math.Clamp(cmd.Quantity, 1, def.MaxStack) : 1;
         long total = unit * qty;
+        long totalPlat = unitPlat * qty;
 
         if (player.Gold < total)
         {
             SendSystemToEntity(player,
                 $"Not enough {GameConstants.CurrencyName} (need {total:N0}).");
+            return;
+        }
+        // ⚠ CHECKED HERE, TAKEN BELOW, and the two are separated on purpose: the item is created
+        //   between them, so a debit up here would be paid for an inventory that then turned out to be
+        //   full. Everything above this line is a pure question.
+        if (totalPlat > 0 && PlatinumOf(player) < totalPlat)
+        {
+            SendSystemToEntity(player,
+                $"Not enough {GameConstants.PlatinumName} (need {totalPlat:N0}).");
             return;
         }
 
@@ -18324,9 +18446,21 @@ public class GameLoopService : BackgroundService
             return;
         }
 
+        // 🔴 THE PLATINUM IS TAKEN BEFORE THE ITEM IS MADE, and the gold after — because taking
+        //    platinum is the one step here that can still FAIL (an account state that never loaded).
+        //    Doing it last would mean handing over a premium item and then discovering we cannot
+        //    charge for it. If the bag turns out to be full below, the platinum is handed straight
+        //    back; that refund is the price of ordering it this way and it is the cheap half.
+        if (!TrySpendPlatinum(player, totalPlat))
+        {
+            SendSystemToEntity(player, $"Not enough {GameConstants.PlatinumName} (need {totalPlat:N0}).");
+            return;
+        }
+
         // Vendor gear is created PLAIN (no rolled attributes).
         if (!AddItem(player, def.Id, qty, rollAttributes: false))
         {
+            if (totalPlat > 0) AddPlatinum(player, totalPlat);   // refund — nothing was delivered
             SendSystemToEntity(player, "Your inventory is full.");
             return;
         }
@@ -18334,8 +18468,12 @@ public class GameLoopService : BackgroundService
         player.Gold -= total;
         SendGold(player);
         SendInventory(player);
+        string paid = total > 0 && totalPlat > 0
+            ? $"{total:N0} {GameConstants.CurrencyName} and {totalPlat:N0} {GameConstants.PlatinumName}"
+            : totalPlat > 0 ? $"{totalPlat:N0} {GameConstants.PlatinumName}"
+                            : $"{total:N0} {GameConstants.CurrencyName}";
         SendSystemToEntity(player,
-            $"Bought {def.Name}{(qty > 1 ? $" x{qty}" : "")} for {total:N0} {GameConstants.CurrencyName}.");
+            $"Bought {def.Name}{(qty > 1 ? $" x{qty}" : "")} for {paid}.");
     }
 
     private void HandleSell(SellItemCmd cmd)
@@ -19347,7 +19485,7 @@ public class GameLoopService : BackgroundService
             var items = shopDef.ItemIds
                 .Select(id => ItemCatalog.Get(id))
                 .Where(d => d is not null)
-                .Select(d => new ShopItemDto(d!.Id, d.Name, ItemCatalog.BuyPrice(d)))
+                .Select(d => new ShopItemDto(d!.Id, d.Name, ItemCatalog.BuyPrice(d), ItemCatalog.PlatinumPrice(d)))
                 .ToArray();
             shop = new ShopInfo(shopDef.Title, items);
             SendBuyBack(player);   // the vendor also shows what you recently sold, to re-buy

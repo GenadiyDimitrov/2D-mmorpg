@@ -48,6 +48,12 @@ public class AccountRecord
     public int AutoCapSeconds { get; set; } = -1;
     public int OfflineCapSeconds { get; set; } = -1;
 
+    /// <summary>PLATINUM (`BL-257`) — the premium currency, held by the ACCOUNT so every character on
+    /// it spends one balance. It is not an item: no def, no stack, nothing to drop or trade.
+    /// ⚠ NEW COLUMN 2026-09-16: `EnsureCreated()` does not ALTER an existing table, so this needs the
+    /// usual `Game.Server/game.db` (+ `-shm`/`-wal`) delete-and-recreate.</summary>
+    public long Platinum { get; set; }
+
     public List<CharacterRecord> Characters { get; set; } = new();
 }
 

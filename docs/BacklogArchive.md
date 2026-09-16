@@ -6015,3 +6015,45 @@ it is 1,200 rather than 1,000, and a later sweep must not double it again.
 `war_aoe 3rd.csv` and `war_aoe 4th.csv` author **no damage skills at all** — Charge is the Warlord's
 only active — so "the 3 warriors" and "the whole authored warrior damage kit" are the same set. The day
 his damage rows land they are authored at the new scale.
+
+
+## `BL-257` ✅ BUILT 2026-09-16 in 0.153.0 — PLATINUM, the account currency
+
+**Your spec, 2026-09-16, verbatim:** *"Also make platinum -> copy of gold without the drop -> items Def
+on their buy price also must have a platinum value (Default 0) · any item that have a platinum or/and
+gold must be bought with the value · platinum is not an item. It cannot be traded (until global
+marketplace) · platunum is account value. So any char in the acc shares it · add /giveplat admin
+command same as givegold and make the slots tickets buy able with plat need 100/1000/5000"*.
+
+### WHAT WAS BUILT
+- **An ACCOUNT balance, not a character one.** `AccountFarmBudget` was already the one per-account
+  runtime object (one load at login, one save), so it took the wallet and was renamed **`AccountState`**
+  — a second per-account dictionary with a second lifetime rule would have drifted. There is no
+  per-character copy, which is the whole of *"any char in the acc shares it"*.
+- **Every change pushes to every online character of the account**, and is **flushed to the DB at
+  once** rather than riding the 60s autosave. It is money.
+- 🔴 **A guard the farm allowance does not need.** The state is created LAZILY for a character that
+  never came through the login read. An empty one is the safe answer for a daily allowance; for money
+  it is a WIPE — a lazily-created `Platinum = 0` written back deletes a real balance. So the state
+  records whether it was really loaded, every platinum path refuses on one that was not, and the save
+  passes `null` for the wallet rather than a zero.
+- **`ItemDef.PlatinumPrice`, default 0.** Gold alone, platinum alone (`BuyPriceOverride: -1` beside
+  it) or BOTH — and both are charged. `ItemCatalog.IsPurchasable` is the one place "is this for sale"
+  is asked. The platinum price is authored verbatim: no rarity multiplier, no vendor tax, no
+  equipment floor, because those exist to keep a DERIVED gold price sane.
+- **It is not an item**, so there is nothing to drop, trade, warehouse, sell or loot — enforced by not
+  existing rather than by a check.
+- **`/giveplat`**, `/givegold`'s twin down to the k/m/b/t suffixes and the negative amount; it credits
+  the ACCOUNT and says so.
+- **Client**: the vendor title, shelf rows, affordability dimming, numpad maximum and confirm dialog
+  all read both halves through three shared helpers; the bag line and the Stats window show it. All
+  hide platinum at zero.
+
+⚠ **`game.db` delete required** (new `Accounts.Platinum` column) and **an APK** (protocol 38).
+
+### WHAT IT DID NOT BUILD
+**The subclass slot tickets.** Your *"make the slots tickets buy able with plat need 100/1000/5000"* is
+recorded in **`BL-250` §5** as slots 6 · 7 · 8 = **100 / 1,000 / 5,000 platinum**, and it unblocks that
+entry's first blocker — but the ticket item, the slot ladder, the persisted slot count, the class
+master's dialogue and the info panel are `BL-250`'s own build, and it still waits on two decisions of
+yours (§6's swap price and §5's one-rung-too-long ladder).

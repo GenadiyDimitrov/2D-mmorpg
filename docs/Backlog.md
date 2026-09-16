@@ -63,7 +63,7 @@ in 0.150.0 and archived**. **`BL-251`**, Evasion Mastery removed from every rogu
 **BUILT in 0.150.0** too (archived — the twin of the warrior's `BL-201`), and **`BL-252`** is a new
 subclass being born at 40 with a 1-day rune instead of at 1.
 
-🔵 **`BL-250` GREW INTO THE WHOLE SUBCLASS SYSTEM and is no longer ready to build.** Your second pass
+🟡 **`BL-250` GREW INTO THE WHOLE SUBCLASS SYSTEM. Its CURRENCY blocker is gone (`BL-257`, 0.153.0) and its three premium prices are answered — 100/1,000/5,000 platinum. Two of YOUR decisions still gate it.** Your second pass
 on it added the slot ladder (three earned, five bought, as consumable **tickets**), the rule that a
 subclass below 75 can be swapped out, the class-master NPC that hands them out, and the panel that
 says what a subclass will give you before you commit. 🔴 **It is blocked on a PREMIUM CURRENCY that
@@ -233,7 +233,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-244` | 🔵 | THE FAST-DELETE BUTTON BECOMES A CYCLE — DEL:OFF → DEL:ON → BRAKE:ON | ui |
 | `BL-245` | 🔵 | THE CRAFTER SHOULD SEE PRIVATE WAREHOUSE MATS — a toggle, on by default | crafting |
 | `BL-246` | 🔵 | THE STATS WINDOW BECOMES TWO TABS — your full layout; several rows have no source yet | ui |
-| `BL-250` | 🔵 | THE SUBCLASS SYSTEM — 3 slots earned + 5 bought (ticket items), swap a sub below 75, an NPC to take one, and the 3 sigil slots they open | classes |
+| `BL-250` | 🟡 | THE SUBCLASS SYSTEM — 3 slots earned + 5 bought (ticket items), swap a sub below 75, an NPC to take one, and the 3 sigil slots they open | classes |
 | `BL-252` | 🔴 | A NEW SUBCLASS IS BORN AT 40 — no learned skills, 0 SP, 0% exp, and a 1-day 100% SP/XP rune | classes |
 | `BL-253` | 🔵 | A DROP DATABASE — name an item, see every source; the BalanceMatrix half is built, the in-game window is owed | items |
 | `BL-254` | ❓ | RARE WOOD DROPS FROM NOTHING — wood is never a category's primary, so no Rare rung can reach it | items |
@@ -1941,12 +1941,12 @@ three mastery rates (`x2 Dmg`, `Reuse rst`, `x2 Duration`), `Stab Rate` and the 
 all live derived values that the stats payload does not currently carry. So this is a protocol change
 as well as a layout, and it wants doing in one pass rather than a row at a time.
 
-## `BL-250` 🔵 THE SUBCLASS SYSTEM — SLOTS, TICKETS, AN NPC, AND THE SIGILS THEY UNLOCK
+## `BL-250` 🟡 THE SUBCLASS SYSTEM — SLOTS, TICKETS, AN NPC, AND THE SIGILS THEY UNLOCK
 
 **Re-specced 2026-09-16, the SECOND time that day; both earlier drafts are in the archive.** The sigil
 half (§1-§4) is unchanged and settled. What is new is everything around it: subclass slots are now a
 thing you EARN and then BUY, a subclass is taken from an NPC, and a subclass below 75 can be swapped
-out. 🔵 **It is no longer ready to build** — three numbers and one currency are missing; see §9.
+out. 🟡 **The currency and two of the three numbers landed on 2026-09-16 (`BL-257`). What is left is two DECISIONS of yours; see §9.**
 
 **Your model, verbatim, in two messages:** *"In IG when you lvl up a sub class to 75 u get to use its
 'Ability' → each subclass have its ability-identity … you can have up to 3 sigils active … each
@@ -2020,7 +2020,7 @@ every one after that is bought.**
 | — | subclass #3 reaching 75 pays **no ticket** | *"then u lvl up ur 3rd sub class and no ticket only sigils"* |
 | **4** | bought for **500kk gold** | |
 | **5** | bought for **5kkk gold** (5 billion — checked: `Gold` is a `long` on the entity, the record and every DTO, so it fits) | |
-| **6 · 7 · 8** | bought for **X / Y / Z premium** | *"X amount of premium, Y amunt of premium, Z amount of premium"* |
+| **6 · 7 · 8** | bought for **100 / 1,000 / 5,000 PLATINUM** ✅ | *"make the slots tickets buy able with plat need 100/1000/5000"* (2026-09-16) |
 
 🔑 **THE TICKET IS AN ITEM, NOT A COUNTER.** *"those values give you a subclassTicket and u can unlock
 them using(consumable) ticket"* — earning or buying one puts a **Subclass Ticket** in your bag, and
@@ -2085,11 +2085,14 @@ from the catalogues — nothing about it is authored twice.
 
 ### 9. 🔵 WHAT IS BLOCKING THE BUILD
 
-1. 🔴 **THERE IS NO PREMIUM CURRENCY IN THE GAME.** Slots 6, 7 and 8 are priced in one, and `Items.cs`
-   says so in as many words: *"when a premium currency exists this is…"*. The gold rungs (500kk, 5kkk)
-   can ship the day you say go; the three premium rungs cannot exist until that economy does.
-2. ❓ **X / Y / Z** — the three premium numbers.
-3. ❓ §6's swap price, and §5's cap question.
+1. ✅ **THE PREMIUM CURRENCY EXISTS — `BL-257`, built 2026-09-16 in 0.153.0.** PLATINUM: an account
+   balance, not an item, with a `PlatinumPrice` on every `ItemDef`, a vendor that charges gold and/or
+   platinum, and `/giveplat`. This blocker is gone.
+2. ✅ **X / Y / Z ARE 100 / 1,000 / 5,000 PLATINUM**, your 2026-09-16 message. Recorded in §5.
+3. ❓ **STILL OPEN, AND THEY ARE ALL THAT IS LEFT:** §6's swap price (my reading if you say nothing:
+   free below 75), and §5's cap question — three earned + five bought is **eight** slots where the
+   roster can only ever fill **seven**, so the last ticket permanently prints *"no more available
+   subclasses"*. Say whether you want the ladder trimmed by one rung.
 4. ⚠ `GameConstants.MaxSubclasses` is **4** (main + 3). This needs **9** (main + 8) as the hard
    ceiling, with the per-character UNLOCKED SLOT COUNT — a new persisted field — as the gate that
    actually binds. Nothing else about the constant's job changes.

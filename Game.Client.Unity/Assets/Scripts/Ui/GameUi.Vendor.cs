@@ -143,7 +143,8 @@ namespace Game.Client
             var items = Boot.Inventory ?? Array.Empty<InventoryItemDto>();
             int revision = (_vendorSell ? 1 : 0) * 92821 + (_vendorDetailed ? 7919 : 0)
                          + (_vendorQuickSell ? 15485863 : 0)
-                         + (int)_vendorTab * 104729 + (int)(Boot.Gold % 1_000_000);
+                         + (int)_vendorTab * 104729 + (int)(Boot.Gold % 1_000_000)
+                         + (int)(Boot.Platinum % 1_000_000) * 7;   // `BL-257` — the wallet has two halves now
             revision = revision * 31 + (Boot.Dialog?.Shop?.Items?.Length ?? 0);
             // Identity, not just quantity — same reason as the bag stamp: an item swapped for another
             // of the same count would otherwise leave the sell list showing what you no longer own.
@@ -155,7 +156,7 @@ namespace Game.Client
             _vendorTitle.text = _vendorSell
                 ? _vendorQuickSell ? "Sell — one tap sells the WHOLE stack"
                                    : "Sell — pick an item from your bag"
-                : "Buy — you have " + Boot.Gold.ToString("N0") + " " + GameConstants.CurrencyName;
+                : "Buy — you have " + Wallet();
             _vendorBuyTab.targetGraphic.color = _vendorSell ? UiKit.PanelLight : UiKit.TabActive;
             _vendorSellTab.targetGraphic.color = _vendorSell ? UiKit.TabActive : UiKit.PanelLight;
             UiKit.SetButtonText(_vendorViewTab, _vendorDetailed ? "Compact" : "Detail");
@@ -174,6 +175,32 @@ namespace Game.Client
             else BuildBuyList();
         }
 
+        // ═══ `BL-257` — TWO CURRENCIES ON ONE SHELF ═══════════════════════════════════════════════
+        //
+        // *"any item that have a platinum or/and gold must be bought with the value."* So a row prices
+        // whichever halves it has, an item you cannot afford is dim because of EITHER half, and the
+        // numpad's maximum is the smaller of what the two wallets allow. All three read the same two
+        // helpers rather than each spelling out "if plat > 0" — the shop and `HandleBuy` already agree
+        // on the rule and the UI must not invent a third version of it.
+
+        /// <summary>What the player is carrying, both halves. Platinum is only named when there is some
+        /// — a wallet line reading "0 Platinum" on every vendor in the game is noise until he has any.</summary>
+        private string Wallet() =>
+            Boot.Gold.ToString("N0") + " " + GameConstants.CurrencyName
+            + (Boot.Platinum > 0 ? "  ·  " + Boot.Platinum.ToString("N0") + " " + GameConstants.PlatinumName : "");
+
+        /// <summary>A price tag: gold, platinum, or both. Unlike the wallet above, a zero half here is
+        /// simply absent — the item genuinely does not cost it.</summary>
+        private static string Price(long gold, long plat, int qty = 1) =>
+            gold > 0 && plat > 0 ? (gold * qty).ToString("N0") + " " + GameConstants.CurrencyName
+                                   + " + " + (plat * qty).ToString("N0") + " " + GameConstants.PlatinumName
+          : plat > 0 ? (plat * qty).ToString("N0") + " " + GameConstants.PlatinumName
+          : (gold * qty).ToString("N0") + " " + GameConstants.CurrencyName;
+
+        /// <summary>Can this many be paid for out of BOTH wallets?</summary>
+        private bool CanAfford(long gold, long plat, int qty = 1) =>
+            Boot.Gold >= gold * qty && Boot.Platinum >= plat * qty;
+
         private void BuildBuyList()
         {
             var shop = Boot.Dialog?.Shop;
@@ -189,8 +216,9 @@ namespace Game.Client
                 var def = ItemCatalog.Get(ware.DefId);
                 if (def == null || !InCategory(_vendorTab, def)) continue;
                 anyInTab = true;
-                long unit = ware.BuyPrice;
-                bool afford = Boot.Gold >= unit;
+                long unit = Math.Max(0, ware.BuyPrice);   // -1 = no GOLD price, not "unbuyable"
+                long unitPlat = ware.PlatinumPrice;
+                bool afford = CanAfford(unit, unitPlat);
                 string defId = ware.DefId;
                 string name = ware.Name;
 
@@ -200,13 +228,13 @@ namespace Game.Client
                 // own colour for that span, so a coloured name ignored the dimming that says "you can't
                 // buy this" — the quality cue was quietly cancelling the affordability cue.
                 string head = (afford ? Coloured(name, def.Rarity) : name)
-                              + "   " + unit.ToString("N0") + " " + GameConstants.CurrencyName;
+                              + "   " + Price(unit, unitPlat);
                 // DETAIL view adds a second line saying WHAT the thing is (owner: "i hve no idea which
                 // is which"). Compact view is the old one-line row, for scrolling a long ladder fast.
                 string label = _vendorDetailed ? head + "\n<size=12><color=#9AA3AD>" + WareSummary(def) + "</color></size>"
                                                : head;
                 VendorRow(label, afford ? UiKit.Text : UiKit.TextDim,
-                          () => BuyTap(defId, name, def, unit), _vendorDetailed ? 56f : 38f);
+                          () => BuyTap(defId, name, def, unit, unitPlat), _vendorDetailed ? 56f : 38f);
             }
             if (!anyInTab) VendorNote("Nothing in this category here — try All.");
         }
@@ -246,9 +274,9 @@ namespace Game.Client
         // stackable **the numpad IS the confirmation**: it names the item, prices it, and its button
         // says what it will do. Nothing is asked twice. A NON-stackable still gets the one confirm
         // dialog — it has no numpad to carry the question, and it is a single step, not a second one.
-        private void BuyTap(string defId, string name, ItemDef def, long unit)
+        private void BuyTap(string defId, string name, ItemDef def, long unit, long unitPlat)
         {
-            if (!IsStackable(def)) { ConfirmBuy(defId, name, unit, 1); return; }
+            if (!IsStackable(def)) { ConfirmBuy(defId, name, unit, unitPlat, 1); return; }
 
             // Max = the most you can AFFORD, clamped to ONE STACK — the server's own rule since 0.93.0
             // (*"max shop buy = 1 stack"*), so the cap here is the item's, not a hard-coded 999: mana
@@ -257,12 +285,15 @@ namespace Game.Client
             // clamp is never a refusal, so a mismatch would silently truncate an order instead of
             // erroring.
             int cap = def.MaxStack;
-            int affordable = unit > 0 ? (int)Math.Min(cap, Boot.Gold / unit) : cap;
+            // `BL-257` — the SMALLER of what each wallet allows. A half that is not charged does not
+            // limit anything, which is why each side only narrows the cap when its price is real.
+            int affordable = cap;
+            if (unit > 0) affordable = (int)Math.Min(affordable, Boot.Gold / unit);
+            if (unitPlat > 0) affordable = (int)Math.Min(affordable, Boot.Platinum / unitPlat);
             OpenNumpad("Buy " + name, Mathf.Max(1, affordable), "Buy",
                        qty => { Boot.BuyItem(defId, qty); CloseNumpad(); },
-                       qty => qty + " x " + unit.ToString("N0") + " = " + (unit * qty).ToString("N0")
-                              + " " + GameConstants.CurrencyName
-                              + "   (you have " + Boot.Gold.ToString("N0") + ")");
+                       qty => qty + " x " + Price(unit, unitPlat) + " = " + Price(unit, unitPlat, qty)
+                              + "   (you have " + Wallet() + ")");
         }
 
         private void SellTap(InventoryItemDto item, ItemDef def, long unit)
@@ -305,7 +336,7 @@ namespace Game.Client
             t.Append("</size>");
         }
 
-        private void ConfirmBuy(string defId, string name, long unit, int qty)
+        private void ConfirmBuy(string defId, string name, long unit, long unitPlat, int qty)
         {
             // The confirm dialog is where the item DESCRIPTION belongs (owner, playtest-13: "clicking on
             // the item opens confirmation dialog with the items description"). It is the last moment
@@ -315,7 +346,7 @@ namespace Game.Client
             var def = ItemCatalog.Get(defId);
             var t = new StringBuilder();
             t.Append("Buy ").Append(qty).Append(" x ").Append(name)
-             .Append(" for ").Append((unit * qty).ToString("N0")).Append(' ').Append(GameConstants.CurrencyName).Append('?');
+             .Append(" for ").Append(Price(unit, unitPlat, qty)).Append('?');
             AppendItemDetails(t, def, defId);
             Ask(t.ToString(), "Confirm", () => { Boot.BuyItem(defId, qty); CloseNumpad(); });
         }

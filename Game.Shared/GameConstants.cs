@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.152.0";
+    public const string GameVersion = "0.153.0";
 
     // ----- SP BOTTLE (owner, 2026-08-26) -------------------------------------------------------
     // *"u can make an npc to take your 1kkk SP + 100kk gold and give you a tradable/sellabel
@@ -189,7 +189,7 @@ public static class GameConstants
     /// `[Double]` from is DELETED — an old APK would keep showing a number the server no longer
     /// agrees with (it derives 7-10.75%; the truth is 0% until a mastery passive is authored).
     /// ⚠ A NEW APK IS WANTED, but an old one still plays.
-    public const int ProtocolVersion = 37;   // 37: TrapList — the owner sees his own armed traps
+    public const int ProtocolVersion = 38;   // 38: the wallet and the shelf carry PLATINUM (`BL-257`)
 
     /// <summary>
     /// The oldest protocol this server still speaks. Equal to <see cref="ProtocolVersion"/> means
@@ -271,6 +271,12 @@ public static class GameConstants
     /// <summary>Display name of the in-game currency. Generic on purpose (no IP);
     /// change here to rebrand everywhere it's shown.</summary>
     public const string CurrencyName = "Gold";
+
+    /// <summary>Display name of the PREMIUM currency (`BL-257`, owner 2026-09-16: *"make platinum ->
+    /// copy of gold without the drop"*). It is held by the ACCOUNT, never dropped, never traded, and
+    /// is not an item — there is no <c>ItemDef</c> for it. Same rebranding rule as
+    /// <see cref="CurrencyName"/>: change it here and it changes everywhere it is shown.</summary>
+    public const string PlatinumName = "Platinum";
 
     /// <summary>Simulation ticks per second on the server.</summary>
     public const int TickRate = 10;

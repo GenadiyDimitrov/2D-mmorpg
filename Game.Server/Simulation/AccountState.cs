@@ -1,7 +1,15 @@
 namespace Game.Server.Simulation;
 
 /// <summary>
-/// One account's daily allowance of automated farming, shared by every character on it.
+/// THE STATE THAT BELONGS TO AN ACCOUNT RATHER THAN TO A CHARACTER, shared by every character on it:
+/// the daily automated-farming allowance, and (since `BL-257`) the PLATINUM wallet.
+///
+/// <para>🔑 RENAMED FROM `AccountFarmBudget` on 2026-09-16, when platinum arrived. It was the farm
+/// allowance and nothing else; it is now the one per-account object, with one load on login and one
+/// save, because a second dictionary with a second lifetime rule is exactly the kind of thing that
+/// drifts. Everything below the farm heading is unchanged.</para>
+///
+/// <para><b>The farm allowance</b> — one account's daily budget of automated farming.</para>
 ///
 /// <para>This replaces a per-SESSION elapsed counter that lived on the character. The old model was
 /// broken twice over (verified 2026-08-05): entering the world zeroed the counters, and
@@ -25,9 +33,37 @@ namespace Game.Server.Simulation;
 /// 00:00, drain 2h more = 4h between 22:00 and 02:00. It still averages to the cap per day, and it is
 /// player agency. Do not "fix" it.</para>
 /// </summary>
-public sealed class AccountFarmBudget
+public sealed class AccountState
 {
     public int AccountId { get; init; }
+
+    // ═══════════════════════════════════════════════════════════════════════════════════════════
+    //  PLATINUM (`BL-257`, owner 2026-09-16) — the premium currency.
+    //
+    //  *"make platinum -> copy of gold without the drop … platinum is not an item. It cannot be traded
+    //   (until global marketplace) … platunum is account value. So any char in the acc shares it."*
+    //
+    //  🔑 IT LIVES HERE AND NOWHERE ELSE, which is the whole of "any char in the acc shares it": there
+    //     is no per-character copy to keep in step, so two characters of one account spending at the
+    //     same time spend the same balance, exactly as they already share the farm allowance.
+    //  🔑 A `long`, like Gold, and for the same reason — the ladders are already at 5kkk.
+    //  ⚠ NOT AN ITEM. It has no `ItemDef`, so it cannot be dropped, traded, warehoused, sold or looted
+    //    without something first inventing a way to; the trade window and the drop tables never see it.
+    // ═══════════════════════════════════════════════════════════════════════════════════════════
+
+    /// <summary>The account's platinum balance, shared by every character on it.</summary>
+    public long Platinum { get; set; }
+
+    /// <summary>Did this object come from the DB row, or was it created lazily by
+    /// <c>GameLoopService.StateOf</c> for an account that never went through the login read?
+    ///
+    /// <para>🔴 IT GUARDS THE WALLET AND NOTHING ELSE. A lazily-created state is fine for the farm
+    /// allowance — an empty one just means "a full day left", which is the safe answer. It is NOT fine
+    /// for money: writing a lazily-created `Platinum = 0` back to the row would DELETE a real balance.
+    /// So every platinum path refuses on a state that was never loaded, and says so, rather than
+    /// guessing. Normal login always loads (GameHub.Login), so this only ever bites the debug seeder
+    /// and a test harness — which is precisely the case that must not silently wipe an account.</para></summary>
+    public bool Loaded { get; init; }
 
     /// <summary>Ticks of ONLINE auto-hunt left today. Meaningless while <see cref="AutoUnlimited"/>.</summary>
     public long AutoTicksLeft { get; set; }

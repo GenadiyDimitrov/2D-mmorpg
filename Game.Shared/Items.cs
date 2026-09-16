@@ -650,6 +650,21 @@ public record ItemDef(
     bool Tradable = true,
     int? BuyPriceOverride = null,
     int? SellPriceOverride = null,
+    // ----- PLATINUM (`BL-257`, owner 2026-09-16) -----------------------------------------------
+    //  *"items Def on their buy price also must have a platinum value (Default 0) … any item that have
+    //   a platinum or/and gold must be bought with the value."*
+    //
+    //  🔑 A SECOND PRICE, NOT A SECOND CURRENCY FIELD ON THE SAME PRICE. 0 = this item costs no
+    //     platinum, which is every item in the game today. An item may be priced in gold ALONE (the
+    //     normal shelf), in platinum ALONE (set `BuyPriceOverride: -1` beside it, the shape the premium
+    //     rune boxes already have), or in BOTH — and when both are set, BOTH are charged.
+    //  ⚠ It is NOT scaled by rarity, by the vendor tax or by the equipment floor. Those all exist to
+    //    keep a DERIVED gold price sane; a platinum price is always authored by hand, one number, and
+    //    a formula quietly moving it is the last thing a premium price wants.
+    //  ⚠ There is no platinum SELL price and there will not be one by accident: selling returns gold,
+    //    so a premium item that must not be laundered into gold carries `SellPriceOverride: 0`, which
+    //    is what every premium item already does.
+    int PlatinumPrice = 0,
     // NoAttributes=true: never rolls a random attribute and can't be given one
     // (newbie/starter gear). Enforced in AttributeSystem.Roll.
     bool NoAttributes = false,
@@ -1454,8 +1469,11 @@ public static class ItemCatalog
         RuneBox(BoxSpellRune24h, "Spell Rune Box (1d)",  1 * D, -1,  false,  "Opens to a Spell Rune lasting 24 hours. Spell Runes multiply your final MAGICAL damage ×2 (spells) — useless for melee/bow.");
         RuneBox(BoxSpellRune30d, "Spell Rune Box (30d)", 30 * D, -1, false,  "Opens to a Spell Rune lasting 30 days. Spell Runes multiply your final MAGICAL damage ×2 (spells) — useless for melee/bow.");
         // ⚠ PREMIUM ONLY — `BuyPriceOverride: -1` and not tradable, exactly like the 24h/30d singles.
-        // Its one route into a bag today is the Admin panel; when a premium currency exists this is
-        // the item it buys. `BL-187` closes here.
+        // Its one route into a bag today is the Admin panel. `BL-187` closes here.
+        // 🔑 THE CURRENCY EXISTS NOW (`BL-257`, 2026-09-16) — this and the 24h/30d singles are the
+        //    items it was waiting for. Giving one a price is a single `PlatinumPrice: N` beside the
+        //    `-1`, which is precisely the platinum-ONLY shape; it is left at 0 because he has not
+        //    priced them, and an invented premium price is not ours to author.
         RuneBox(BoxGrandRune24h, "Grand Rune Box (1d)", 1 * D, -1, false, "Opens to a Grand Rune lasting 24 hours. Grand Runes multiply your final PHYSICAL and MAGICAL damage x2, shorten your casts by 30% and raise cast speed - both channels of the War and Spell Runes in one item, each at full strength.");
 
         // ----- PREMIUM REWARD RUNES: one item per channel per rung (5 × 11), plus Sinister and
@@ -2755,6 +2773,17 @@ public static class ItemCatalog
             price = Math.Max(EquipmentMinBuyPrice, price);
         return price;
     }
+
+    /// <summary>The PLATINUM half of an item's shelf price (`BL-257`). 0 for everything that is not
+    /// premium. Authored verbatim — no rarity multiplier, no vendor tax, no equipment floor; see the
+    /// field's note in the record for why a derived platinum price would be a mistake.</summary>
+    public static int PlatinumPrice(ItemDef def) => Math.Max(0, def.PlatinumPrice);
+
+    /// <summary>Is this item on sale at all? TRUE when it carries a gold price, a platinum price, or
+    /// both — his *"any item that have a platinum or/and gold must be bought with the value"*. The
+    /// single place that question is asked, so the shelf, the client and <c>HandleBuy</c> cannot
+    /// disagree about whether a platinum-only item exists.</summary>
+    public static bool IsPurchasable(ItemDef def) => BuyPrice(def) > 0 || PlatinumPrice(def) > 0;
 
     /// <summary>An item the player can sell to a vendor: TRADABLE, not a quest item,
     /// and worth something. Untradeable items can only be deleted.</summary>
