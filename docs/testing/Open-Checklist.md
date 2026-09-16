@@ -1378,3 +1378,61 @@ Mastery's text come off the compiled catalogue, and the trap cast time is in bot
   physical reuse really does cover the traps and the stances, and a magic-reuse buff no longer
   shortens a fighter's stance. Worth a glance at whether any physical reuse now feels too short —
   it is a widening, not a number change.
+
+## §100 — YOUR PLAYTEST OF 2026-09-16, the BUGS (twelve of them, none investigated yet)
+
+You handed this list the moment 0.146.0 was committed, so **none of it has been looked at in code**
+— it is recorded here exactly as you wrote it, and the ten ASKS that came with it are in
+[docs/Backlog.md](../Backlog.md) as `BL-238` … `BL-247`. The two that are really re-reports of
+standing rules are marked as such.
+
+- 🔴 **SWIFT STAB GIVES NO BUFF.** *"when used it should increase AS/MS but it dont."* A skill whose
+  whole payload is a buff and the buff never lands — closest known shape is `BL-139`, where Shield
+  Reinforcement was missing `Toggle: true` and *"casts something but doesnt do nothing"*. Check the
+  flag, the `BuffKey`, and whether anything already on the bar covers it.
+- 🔴 **`rogue_armor_mastery` ADVERTISES "MP regen +130%" AND YOUR CSV SAYS `+1.8 ~ +2.5`.** At 66,
+  buffed with Serenity only, you read **15.5 MP/s** (HP 14.3/s). A PERCENT shown where a FLAT is
+  authored is the `BL-92` shape of bug — and the number on the card is the one you plan around, so
+  this is a lie either in `SkillText` or in the profile. **Read the CSV, then the profile, then the
+  card**; do not assume which of the three moved.
+- 🔴 **TMP UNICODE SPAM DROPS FPS, AND ONLY IN THE SYSTEM TAB.** Verbatim: *"the unicode character
+  with value [] cannot be found in [liberation sans srf] any asset or any potential Fallback. It was
+  replaced with unicode character [] in text object [lable]"*. The glyph draws as a square so you
+  cannot name it. ⚠ **The TMP atlas is STATIC** — a character outside it logs once per FRAME per
+  label, which is the FPS drop. Find which system message carries a non-ASCII character (an en dash,
+  an ellipsis, a ×, an emoji) and either add it to the atlas or stop emitting it.
+- 🔴 **THE SELL LIST SHOWS NO ENCHANT VALUE**, and the sell row's description should show the item's
+  attributes if it has any. You can currently sell a +6 and a +0 without being able to tell them
+  apart in that window.
+- 🔴 **THE SP REQUIREMENT IS SOMETIMES MISSING** in the skills-to-learn list. *"some times"* — so it
+  is conditional, not absent. Worth checking a rung whose `SpCost` is 0 (a 4th-tier rung priced in
+  GOLD carries `SpCost: 0` by design, and that is almost certainly it).
+- 🔴 **THE NPC BUFFER DOES NOT RE-BUFF A MARK.** 19 buffs saved; on a re-buff every other buff's timer
+  resets and the Mark's does not — *"same mark, same lvl, same npc"*. A Mark carries a shared
+  `MarkKey` so a healer's and a buffer's can never stack (`BL-108`); the suspicion is that the
+  equal-rank path is choosing "keep the LONGER remaining time" and the incoming cast is shorter, so
+  nothing happens. If so it is correct behaviour for a PLAYER cast and wrong for an NPC re-buff.
+- 🔴 **AUTO-FARM RUBBER-BANDS YOU.** *"when in auto farm when i click on the ground char start to move
+  but then gets rubber banded back."* Your rule, and it is the standing one: *"auto farm should not
+  prevent me from moving -> it should allow me to kite only when stoped then it attacks and use
+  skills."* ⚠ **KITING IS INTENDED** — that has been a rule since playtest 22, so this is the autopilot
+  fighting the player for the movement authority, not a movement bug.
+- 🔴 **ANGEL'S PROTECTION DOES NOT WORK** — you respawn in town with no buffs. ⚠ Read against
+  `BL-60`, which is where the death-penalty / buff-keep-on-death design lives and which says *"nothing
+  exists in code"*. So the first question is whether the skill was ever wired at all, not why it broke.
+- 🔴 **GREATER SCROLLS OF ENCHANT SHOULD BE BOSS-ONLY.** At ×100 you got stacks — *"even if i cut the
+  amount /100 i still will have 2-3"*. So they are on ordinary drop tables and should not be.
+- 🔴 **ENCHANT SCROLL RATES CUT ≥5×.** Scroll(B) is **5.42% at ×100** and you got stacks while
+  fighting. Your yardstick, and it is the one to tune against: *"enchants are a drop that is rarer
+  than a weapon, or at least as rare as an epic weapon."* ⚠ Every rate here is composed in ONE place
+  (`MobCatalog.EffectiveRate`) — the global × the drop GROUP's multiplier, plus a per-item override.
+  The `scrolls` group is one of the GUARANTEED ones that ignores the global, which is probably why
+  ×100 did not behave the way you expected.
+- ⚠ **ROGUES STILL LEARN EVASION MASTERY (the dodge floor).** *"we should have removed it? they have
+  enough evasion difference with each mob at their lvl."* This is a re-report of the same shape as
+  `BL-15` (`precision` / `anti_magic` should be learnable rather than auto-granted floors), and it is
+  gated the same way: a floor becomes a CSV row, and inventing one re-specs a file. **Say whether it
+  goes entirely or becomes a row, and in which file.**
+- ❓ **NOTHING SEEMS TO DROP A-GRADE ENCHANT SCROLLS, EPIC/RARE WOOD OR EPIC LEATHER** — you got none
+  of the three. Needs a drop-table sweep, not a guess: which mobs carry them, at which levels, and at
+  what effective rate once the group multiplier is applied.

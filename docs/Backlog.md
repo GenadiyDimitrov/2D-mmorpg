@@ -179,6 +179,16 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-233` | ❓ | THE DEMON BUFFER'S P.DEF — measured three ways and heavy is AHEAD; I need your two sheets | classes |
 | `BL-234` | ❓ | URGENT LESSER HEAL — built to your four numbers; the per-rank falloff is mine to confirm | classes |
 | `BL-237` | ❓ | WARRIOR 3rd + 4th — **BUILT** in 0.146.0; three readings of yours are mine to confirm | classes |
+| `BL-238` | 🔴 | EVERY MARK COSTS 20% MOVE SPEED — the two-formula TABLE is owed first; the buff shelf puts everyone over 200 | buffs |
+| `BL-239` | 🔵 | AN ITEM LOCK, BY ITEM ID — no sell/dismantle/delete/keeper/trade; consumables still usable | items |
+| `BL-240` | 🔵 | INSTANT SELL BY RARITY, scoped by the vendor tab you are on | items |
+| `BL-241` | 🔵 | A PER-TYPE RARITY FILTER ON PICKUP — and it drops you from the party LOOT ROSTER too | items |
+| `BL-242` | 🔵 | THE SELL LIST SHOWS NO ENCHANT VALUE and no attributes | ui |
+| `BL-243` | 🔵 | MP POTIONS PER RARITY in the auto-potion window, or one slot with a dropdown | ui |
+| `BL-244` | 🔵 | THE FAST-DELETE BUTTON BECOMES A CYCLE — DEL:OFF → DEL:ON → BRAKE:ON | ui |
+| `BL-245` | 🔵 | THE CRAFTER SHOULD SEE PRIVATE WAREHOUSE MATS — a toggle, on by default | crafting |
+| `BL-246` | 🔵 | THE STATS WINDOW BECOMES TWO TABS — your full layout; several rows have no source yet | ui |
+| `BL-247` | ❓ | WHAT DROPS A-grade enchant scrolls, epic/rare WOOD and epic LEATHER? A sweep, not a build | items |
 
 ---
 
@@ -1808,3 +1818,137 @@ frenzy counted, it is one flag.
 therefore still carries the derived `war_sundering_blow` I would otherwise have deleted today (the
 Ravager's copy is gone, since his rows landed), and `--check` prints one 🟠 line against `war_aoe 3rd`
 until you write them. That line is the reminder; nothing is invented in the meantime.
+
+---
+
+## `BL-238` 🔴 EVERY MARK SHOULD COST 20% MOVE SPEED — and first, the table you asked for
+
+**2026-09-16.** *"every mark should decrease speed with 20% -> the move speed of chars with all the
+buffs is + 69 and make all over 200.. And this values should be reserved for rogues ... I just don't
+know the formula we should use - can u make me tables with bot formulas below and : race,
+mage/fighter/rogue(with armor passive), base, without mark, formula1 with mark, formula 2 with mark,
++60(sprint)"*
+
+  1. `(base × buffs) × debuffs + flat`
+  2. `(base × buffs + flat) × debuffs`
+
+🔑 **THE ASK IS THE TABLE, NOT THE RETUNE.** You said in as many words that you do not know which
+ordering you want, so what is owed first is the measurement — both orderings, side by side, on the
+rows you listed — and the ruling comes after you read it. It is a `tools/BalanceMatrix` job off real
+`Entity` objects with real gear, never a hand-derived table: hand-derived balance numbers have been
+wrong here before.
+
+**Why it matters and what the problem actually is.** 250 is the buffed move CAP and the base run
+speeds per race+class sit below it. Your complaint is that the full buff shelf adds **+69 flat** and
+puts *everyone* over 200 — so the top of the speed band, which is meant to be the rogue's identity,
+is bought by anyone who visits an NPC buffer. The 20% Mark cut is your lever; **the ordering decides
+whether it is a real cut or almost nothing**, because a +69 FLAT applied AFTER a ×0.8 keeps most of
+itself, and applied BEFORE it does not. That is exactly the difference between your two formulas.
+
+⚠ It also touches every other percentage debuff in the game, not just Marks — slows SUM and are
+clamped at 90%, and the same ordering question governs them. Whatever you pick becomes the rule.
+
+## `BL-239` 🔵 AN ITEM LOCK, BY ITEM ID
+
+**2026-09-16.** *"we need a lock on items not to show in sell window nor their del/dismantle button to
+be active. -> open details window of an item and top there is a button that locks that item. (its lock
+for the current inventory -> cannot sell/dismantle/put in keeper/traded/etc ...) you lock item id ->
+every item(stacks) of that item is locked -> you lock one stack of potions .. mobs drop more .. u get
+new stack its also locked, u can use consumables when locked (lock prevent mistake sells/deletes/etc)"*
+
+🔑 **IT LOCKS THE DEF ID, NOT THE INSTANCE**, and that is the whole design: a stack you lock stays
+locked when it is consumed and re-dropped. So it persists as a **set of item ids on the character**,
+not as a flag on an inventory row — which also means it survives a relog for free and needs no
+migration of existing rows.
+
+**What the lock blocks:** sell, dismantle, delete, warehouse, trade. **What it does NOT block:** USING
+a consumable. A locked item should not appear in the sell window at all, and its delete/dismantle
+buttons should be inert rather than hidden.
+
+## `BL-240` 🔵 INSTANT SELL BY RARITY, PER VENDOR TAB
+
+**2026-09-16.** *"We need a system for instant sell u click on button inside the vendor sell tab and it
+shows rarity to instant sell -> it sells everitying of that rarity depending on the tab you are on.. If
+I'm on the 'gear' tab and click 'instant sale' and chose 'rare' it sells all that are rare gear in my
+inventory"*
+
+The TAB scopes it (gear / mats / use) and the rarity picks the rung. ⚠ Reads directly against
+`BL-239`: a locked item must be invisible to this, or the button is a foot-gun rather than a
+convenience.
+
+## `BL-241` 🔵 A PER-TYPE RARITY FILTER ON PICKUP
+
+**2026-09-16.** *"we need in bag rarity filter for any type gear/mats/use to be able to select min
+rarity for pickup.. For 'gear' I make it rare and for 'use' I mkae it unc -> any uncommon/common gear
+is ignored and not picked up and any 'use' that is common Is ignored as well; (if in party I'm ignored
+in the roster if that rarity is filtered for me)"*
+
+🔑 **THE PARTY CLAUSE IS THE INTERESTING HALF** and it is easy to miss: a filtered player is skipped
+in the **loot roster** for that drop, not merely prevented from picking it up himself. So the filter
+changes who the party's loot modes hand an item to — it is a loot-rule change, not a UI toggle.
+
+## `BL-242` 🔵 THE SELL LIST SHOULD SHOW ENCHANT AND ATTRIBUTES
+
+**2026-09-16.** *"sale list don't show enchant value and in the description of the sell item row should
+show the attributed if any"*. Recorded here as well as in §100 because it is half a defect and half a
+UI ask; the defect half is that a +6 and a +0 are indistinguishable in the window where you part with
+them.
+
+## `BL-243` 🔵 MP POTIONS PER RARITY IN THE AUTO-POTION WINDOW
+
+**2026-09-16.** *"make the same as healing pots and for mana pots in the `auto potions` window -> mp
+pots to be separated per rarity -> or we can make one potion for hp and one for mp and select from a
+drop down which potion to use..."* — two shapes offered; the dropdown is the smaller one and the one
+that stops the window growing again the next time a rarity is added.
+
+## `BL-244` 🔵 THE FAST-DELETE BUTTON BECOMES A CYCLE
+
+**2026-09-16.** *"the button for fast delete in bag to be a cycle button after fast delete on to be fast
+dismantle and the del button to become some dark purple for dismantle. DEL:OFF -> DEL:ON -> BRAKE:ON ->
+DEL:OFF ..."* Three states, and the third is **dismantle**, coloured dark purple so the two destructive
+modes cannot be confused for one another. ⚠ Reads against `BL-239` — a locked item ignores both.
+
+## `BL-245` 🔵 THE CRAFTER SHOULD SEE PRIVATE WAREHOUSE MATS
+
+**2026-09-16.** *"crafter should see mats in private wharehouse -> maybe the crafting window can have a
+toggle button (on by default) [show keeper items]"*. On by default, so the common case needs no click.
+⚠ The question the build has to answer is whether the craft CONSUMES from the warehouse or only
+counts it toward the recipe — a window that says you can craft and then refuses is worse than one that
+never offered.
+
+## `BL-246` 🔵 THE STATS WINDOW BECOMES TWO TABS
+
+**2026-09-16.** Your layout, row for row. 🔑 **BASIC shows the LAST class only** — *"Class: Shadowblade
+(Directly Shadowblade, not ElfRogue,Descipiline etc ... just last class)"* — and DETAILS shows the full
+chain. That distinction is the point of the split.
+
+**1. BASIC**
+
+| group | rows |
+|---|---|
+| Class | `Race: elf` · `Level: 85` — `Class: Shadowblade` |
+| Primary | `ATK` `CON` `SPT` — `WIT` `AGI` |
+| Basic | `HP` `MP` — `P.Atk` `M.Atk` — `P.Def` `M.Def` — `Atk Speed: 1/1500` `Cast Speed: 2/1999` — `Acc` `Eva` `Speed` |
+| PVP | `PVP: 0` `PK: 0` — `Karma: 0` |
+
+**2. DETAILS**
+
+| group | rows |
+|---|---|
+| Class | `Elf Rogue -> Phantom -> Shadowblade` |
+| Vitals | `HP/s` `MP/s` — `HP Receive: 0%` `MP Receive: 0%` — `Restore power: x1 + 0` |
+| Offence | `Acc` — `Crit: 1%` `Crit dmg: x1.2 +1` — `M.Crit: 1%` `M.Crit dmg: x2` — `x2 Dmg: 0%` `Reuse rst: 0%` — `x2 Duration: 0%` `Stab Rate: 30%` — `Atk.Speed: x4` `Cast.Speed: x0.7` |
+| Defence | `Eva` `Speed` `State: Run\|Sit\|Walk` — `M.Fail: 5%` `M.Resist: 20%` — `Crit: 15%` `Crit dmg: 35%` — `M.Crit: 0%` — `Block Rate: 0%` `Block Red: 0%` |
+
+⚠ Several of these rows have **no source today** — `HP Receive` / `MP Receive`, `Restore power`, the
+three mastery rates (`x2 Dmg`, `Reuse rst`, `x2 Duration`), `Stab Rate` and the crit-RESIST pair are
+all live derived values that the stats payload does not currently carry. So this is a protocol change
+as well as a layout, and it wants doing in one pass rather than a row at a time.
+
+## `BL-247` ❓ WHAT DROPS A-GRADE ENCHANT SCROLLS, EPIC/RARE WOOD AND EPIC LEATHER?
+
+**2026-09-16.** *"what drops A grade enchant scrolls ? Also where epic/rare wood and epic leather are
+dropped -> also got none"*. Owed as a **drop-table sweep and an answer**, not a build: which mobs carry
+each of the three, at which levels, and at what EFFECTIVE rate once the group multiplier is applied
+(`MobCatalog.EffectiveRate`). If the honest answer is "nothing does", that is the finding — and it
+pairs with `BL-30`, which already records that no recipe item exists below A grade.
