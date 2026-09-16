@@ -544,17 +544,29 @@ public class Entity
                   .Where(d => d is not null)
                   .Select(d => d!.Value);
 
+    /// <summary>Every PATH this character owns across all its classes — the quantity the add rule
+    /// compares. See <see cref="CanAddDiscipline"/> and <see cref="Disciplines.PathOf"/>.</summary>
+    public IEnumerable<Disciplines.ClassPath> PathsOwned =>
+        DisciplinesOwned.Select(Disciplines.PathOf);
+
     /// <summary>Can this character ADD a subclass of the given 3rd class? False if ANY of its classes
-    /// (active included) already walks that discipline.</summary>
+    /// (active included) already walks that PATH.
+    ///
+    /// <para>🔑 <b>THE COMPARISON IS THE PATH, NOT THE DISCIPLINE</b> (`BL-255`, owner 2026-09-16). The
+    /// rogue's branches are split per RACE — dagger is three `Discipline` values and bow is three — and
+    /// a subclass may be any race, so keying on the discipline let one character hold all three daggers
+    /// as three separate classes. His count of what a Magus may own is *"Buffer, healer, duals, Archer,
+    /// warrior, war aoe, Tank .. thats 7"*, and `Disciplines.PathOf` is that count expressed.</para></summary>
     public bool CanAddDiscipline(int thirdClassId) =>
         ThirdClassCatalog.Get(thirdClassId) is not { } def
-        || !DisciplinesOwned.Contains(def.Discipline);
+        || !PathsOwned.Contains(Disciplines.PathOf(def.Discipline));
 
     /// <summary>Can the class currently being played take this 3rd class? False if one of your OTHER
-    /// classes already walks that discipline. (There is deliberately no 2nd-class/archetype limit.)</summary>
+    /// classes already walks that path. (There is deliberately no 2nd-class/archetype limit.)</summary>
     public bool CanTakeThirdClass(int thirdClassId) =>
         ThirdClassCatalog.Get(thirdClassId) is not { } def
-        || !DisciplinesTakenElsewhere.Contains(def.Discipline);
+        || !DisciplinesTakenElsewhere.Select(Disciplines.PathOf)
+                                     .Contains(Disciplines.PathOf(def.Discipline));
 
     /// <summary>DB character id (null for mobs / unsaved).</summary>
     public int? PersistentId { get; set; }

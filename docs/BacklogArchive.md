@@ -5916,3 +5916,39 @@ no need for migrations"* — the standing pre-release rule.
 ⚠ The client's Sigils tab is built around the three named slots and gets rebuilt with them, so this
 ships with an APK.
 
+
+## `BL-255` ✅ BUILT 2026-09-16 in 0.151.1 — the duplicate-class rule compares the PATH, not the discipline. Your correction, and the entry as filed.
+
+**Your correction, 2026-09-16:** *"How a nuker can hold 11? Buffer, healer, duals, Archer, warrior,
+war aoe, Tank .. thats 7 .. Not 11"*. You were right and the code was not.
+
+**What it was doing.** `Player.CanAddDiscipline` barred a repeated `Discipline` value. But the archer
+merge made the rogue's split **per race** — dagger is three discipline values (Nullblade · Venomweaver
+· Phantom) and bow is three (Sharpshooter · Hunter · Trapper) — and a subclass may be **any race**. So
+one character could hold all three daggers as three separate classes, each of them legal, each of them
+the same class with a different name on it.
+
+**What it does now.** The comparison is `Disciplines.PathOf` — the parent archetype plus which BRANCH
+of its pair the discipline is. Measured with `dotnet run --project tools/BalanceMatrix -- --paths`:
+
+| path | branch | disciplines folded onto it |
+|---|---|---|
+| Tank | 0 | Bulwark |
+| Warrior | 0 · 1 | Ravager · Warlord |
+| Rogue | 0 · 1 | **Phantom · Venomweaver · Nullblade** · **Sharpshooter · Trapper · Hunter** |
+| Healer | 0 · 1 | Lightbringer · Warchanter |
+| Nuker | 0 | Magus |
+
+**Twelve live disciplines fold into EIGHT paths**, so one character may own 8 classes — its main plus
+**7 subclasses**, exactly your list.
+
+⚠ **It cannot just ask `IsRanged`** — that was the obvious shortcut and it is wrong for the WARRIOR,
+whose Ravager and Warlord are both melee and genuinely two paths. The branch INDEX separates them.
+
+⚠ **The branch is DERIVED from `Disciplines.Of`**, the table that already authors each archetype's
+pair per race, rather than written out a second time. A new class lands in the right path by being
+authored in that pair and nowhere else.
+
+⚠ **Nothing un-does an illegal pair a character already has** — the pre-release rule. In practice
+nobody has one: `MaxSubclasses` is 4 and only the admin path can add them, so this was latent until
+`BL-250` raises the slot count. It is fixed BEFORE that, not after.

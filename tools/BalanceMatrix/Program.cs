@@ -2552,6 +2552,26 @@ if (args.Length > 0 && args[0] == "--goldflow")
 // answer knows about RANK, which is where half the top-end faucets live. See DropFinder.cs.
 if (args.Length > 0 && args[0] == "--drops") { DropFinder.Run(args); return; }
 
+// `--paths` — HOW MANY CLASSES CAN ONE CHARACTER OWN (`BL-255`). The add rule compares the PATH, not
+// the discipline, because the rogue's branches are split per race; this prints the paths and what each
+// one costs a main, so the answer is measured rather than counted on fingers.
+if (args.Length > 0 && args[0] == "--paths")
+{
+    var live = Enum.GetValues<Discipline>()
+        .Where(d => d is not (Discipline.Vanguard or Discipline.Tempest))
+        .ToArray();
+    var paths = live.GroupBy(Disciplines.PathOf)
+                    .OrderBy(g => g.Key.Archetype).ThenBy(g => g.Key.Branch)
+                    .ToArray();
+    Console.WriteLine($"\n═══ CLASS PATHS — {live.Length} live disciplines fold into {paths.Length} paths ═══\n");
+    Console.WriteLine($"{"path",-18} {"branch",-7} disciplines on it");
+    foreach (var g in paths)
+        Console.WriteLine($"{g.Key.Archetype,-18} {g.Key.Branch,-7} {string.Join(" · ", g.Select(d => d.ToString()))}");
+    Console.WriteLine($"\nSo ONE character may own {paths.Length} classes: its main plus "
+                    + $"{paths.Length - 1} subclasses, whatever race each of them is.");
+    return;
+}
+
 // The four same-level PvP targets a drain is judged against. One list, so every table below
 // measures the same characters.
 //

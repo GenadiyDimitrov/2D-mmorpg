@@ -7,12 +7,57 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.151.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.151.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-16 (latest) — 0.151.0: `BL-247` — the 66-79 hole is filled, and blueprints take the rates
+## 2026-09-16 (latest) — 0.151.1: `BL-255` — three daggers were three legal subclasses
+
+**No APK needed, no protocol change, no `game.db` delete.** Server-side rule only.
+
+Your correction, in full: *"How a nuker can hold 11? Buffer, healer, duals, Archer, warrior, war aoe,
+Tank .. thats 7 .. Not 11"*. **You were right and the code was not.**
+
+`Player.CanAddDiscipline` barred a repeated `Discipline` VALUE. But the archer merge split the rogue
+per RACE — dagger is three discipline values (Nullblade · Venomweaver · Phantom) and bow is three
+(Sharpshooter · Hunter · Trapper) — and a subclass may be **any** race. So one character could hold all
+three daggers as three separate, individually legal classes: the same class with a different name on it
+three times.
+
+The comparison is now `Disciplines.PathOf` — the parent archetype plus **which branch of its pair** the
+discipline is. Measured, `dotnet run --project tools/BalanceMatrix -- --paths`:
+
+```
+Tank     0   Bulwark
+Warrior  0   Ravager          Warrior  1   Warlord
+Rogue    0   Phantom · Venomweaver · Nullblade
+Rogue    1   Sharpshooter · Trapper · Hunter
+Healer   0   Lightbringer     Healer   1   Warchanter
+Nuker    0   Magus
+```
+
+**Twelve live disciplines fold into eight paths**, so one character may own 8 classes — its main plus
+**7 subclasses**. Exactly your list.
+
+⚠ **It cannot just ask `IsRanged`.** That is the obvious shortcut and it is wrong for the WARRIOR:
+Ravager and Warlord are both melee and are genuinely two paths. The branch INDEX separates them.
+(`IsRanged` had no caller at all after `BL-251`; it still doesn't. This is a different question.)
+
+⚠ **The branch is DERIVED from `Disciplines.Of`** — the table that already authors each archetype's
+pair per race — rather than written out a second time. A new class lands in the right path by being
+authored there and nowhere else.
+
+⚠ **Nothing un-does an illegal pair already on a character**, per the standing pre-release rule. In
+practice nobody has one: `MaxSubclasses` is 4 and only the admin path adds them, so this was latent
+until `BL-250` raises the slot count — which is why it is fixed BEFORE that rather than with it.
+
+🔑 **It also makes your own ladder one rung longer than the roster.** `BL-250`'s three earned + five
+bought = **eight** slots, and only seven can ever be filled, so the last ticket is the one that prints
+*"no more available subclasses"* — permanently, until a new path exists. Your rule working as
+described; worth knowing it fires on the fifth purchase rather than never.
+
+## 2026-09-16 — 0.151.0: `BL-247` — the 66-79 hole is filled, and blueprints take the rates
 
 🔴 **NEW APK REQUIRED** (a new field, a new boss template and its plate; the gatekeeper's Frostmere
 menu grows a line). **No protocol change.** ⚠ **DELETE `game.db`** only if you want the new gate on an

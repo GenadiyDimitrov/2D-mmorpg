@@ -1988,15 +1988,11 @@ opened)"*.
 **Your own count, verbatim:** *"as warrior/rogue u can have 6 subs and all trees and change them as u
 like for the price of 100kk, tank,buffer,healer will get up to 5 trees without their own, mage for now
 5 trees"*. ✅ That falls straight out of the rule with nothing added: `Player.CanAddDiscipline` already
-refuses a second class of the same **discipline**, so the nuker's three names are ONE discipline (no
-mage may add a mage) while the warrior's six names are **two** disciplines and the rogue's six are
-**six** — those two archetypes reach their own group and the other four do not. When summoners arrive,
-nuker ↔ summoner unlocks the mage group for a mage, with no code change here either.
-
-⚠ *(Correcting my own line in the previous draft, which called the rogue's six "two, dagger ↔ bow":
-the archer merge made the rogue's split RACE-based, so Phantom · Venomweaver · Sharpshooter · Trapper
-· Nullblade · Hunter are six separate `Discipline` values. It makes the conclusion stronger, not
-weaker — a rogue can add five more rogues.)*
+refuses a second class on the same **path** (`BL-255`), so the nuker is ONE path — no mage may add a
+mage — while the warrior's six names are **two** paths and the rogue's six are **two** (dagger and
+bow, each spelled three ways by race). Those two archetypes reach their own group and the other four
+do not. When summoners arrive, nuker ↔ summoner unlocks the mage group for a mage, with no code change
+here either.
 
 ### 4. 🔑 THE SIGIL PRICE MOVES ENTIRELY ONTO CLEARING
 *"we can remove their sp/gold cost -> they are their own system. only clearing will cost 100kk (its
@@ -2038,14 +2034,18 @@ will be available again"*. So the purchase is gated on a COMPUTED question — "
 left that this character could legally add" — never on an authored number, and the day a new class
 lands the ticket unlocks itself with nothing edited.
 
-❓ **Your example number and the live roster disagree, and it is worth a second look.** You wrote
-*"like the mage,healer,buffer,tank unlock to 6"* — but there are **twelve live disciplines** today
-(Bulwark · Ravager · Warlord · Phantom · Venomweaver · Sharpshooter · Trapper · Nullblade · Hunter ·
-Lightbringer · Warchanter · Magus; Vanguard and Tempest are retired), `CanAddDiscipline` bars only a
-REPEAT, and a subclass may be **any race** — so a Magus main can legally hold **eleven** others. What
-actually binds is your own ladder at **8 slots**, not the roster, and the "no more available
-subclasses" message would never fire. **If 6 is the cap you want, it wants to be an authored number,
-not a computed one — say so and it is one line.**
+🔑 **HOW MANY SUBCLASSES EXIST TO BUY SLOTS FOR: SEVEN.** I first wrote eleven here and **you were
+right to push back** — *"Buffer, healer, duals, Archer, warrior, war aoe, Tank .. thats 7 .. Not 11"*.
+The rule that counts is now the PATH rather than the raw discipline (**`BL-255`**, built in 0.151.1),
+and measured with `--paths` the twelve live disciplines fold into **eight**: Tank 1 · Warrior 2 ·
+Rogue 2 · Healer 2 (healer + buffer) · Nuker 1. A main takes one, so **seven subclasses is the
+ceiling for anybody**.
+
+⚠ **Which makes your ladder one rung longer than the roster.** Three earned + five bought = **eight
+slots**, and only seven can ever be filled — so the last ticket is the one that would print *"no more
+available subclasses"*, permanently, until a new path is added. That is your rule working exactly as
+you described it; it is just worth knowing that it fires on the FIFTH purchase rather than never.
+❓ **If you would rather the ladder stop at seven, drop one rung — say which.**
 
 ### 6. 🔴 NEW — A SUBCLASS AT 74 OR BELOW CAN BE SWAPPED OUT
 *"while your subclass is less or equal to 74 .. u are allowed to remove it (reset it to other - mage
@@ -2188,3 +2188,4 @@ Plant, which is Leather+Wood today and is the one category where leather makes n
 
 ⚠ **Whichever you pick, it is the same question for every SECONDARY material at Rare** — Wood is just
 the one you noticed, because it is the only type that is never anybody's primary.
+

@@ -130,6 +130,42 @@ public static class Disciplines
     public static bool IsRanged(Discipline d) =>
         d is Discipline.Sharpshooter or Discipline.Trapper or Discipline.Hunter;
 
+    /// <summary>
+    /// THE PATH a discipline walks: its parent archetype plus which BRANCH of that archetype's pair it
+    /// is (0 = the first, 1 = the second). This — not the raw <see cref="Discipline"/> — is the identity
+    /// the "never the same class twice" rule compares, and `BL-255` is why.
+    ///
+    /// <para>🔑 <b>THE ROGUE'S SPLIT IS PER-RACE, so dagger is THREE discipline values and bow is three</b>
+    /// (Nullblade/Venomweaver/Phantom · Sharpshooter/Hunter/Trapper). A subclass may be any race, so a
+    /// rule keyed on the discipline let one character hold all three daggers as three separate classes.
+    /// Owner, 2026-09-16: *"Buffer, healer, duals, Archer, warrior, war aoe, Tank .. thats 7 .. Not
+    /// 11"*. Dagger is ONE path however many races spell it.</para>
+    ///
+    /// <para>⚠ The WARRIOR is why this cannot just be <see cref="IsRanged"/>: Ravager and Warlord are
+    /// both melee and are genuinely two paths. The branch INDEX separates them; "is it a bow" does not.
+    /// The eight paths are Tank 1 · Warrior 2 · Rogue 2 · Healer 2 (healer + buffer) · Nuker 1.</para>
+    ///
+    /// <para>⚠ Derived from <see cref="Of"/> by asking every race, never a second table: the pairs are
+    /// authored once up there, and a table down here would be one more thing to keep agreeing.</para>
+    /// </summary>
+    public readonly record struct ClassPath(Archetype Archetype, int Branch);
+
+    /// <summary>The path a discipline belongs to. See <see cref="ClassPath"/>.</summary>
+    public static ClassPath PathOf(Discipline d)
+    {
+        var archetype = Parent(d);
+        foreach (Race race in new[] { Race.Human, Race.Elf, Race.Demon })
+        {
+            var (a, b) = Of(race, archetype);
+            if (a == d) return new ClassPath(archetype, 0);
+            if (b == d) return new ClassPath(archetype, 1);
+        }
+        // A RETIRED discipline (Vanguard, Tempest) reaches here — Of() no longer offers either. Branch 0
+        // is right for both: each was the second door of an archetype that now has only its first, so
+        // folding them onto it is exactly the "you already walk this path" answer they should give.
+        return new ClassPath(archetype, 0);
+    }
+
     /// <summary>The parent archetype a discipline evolves from.</summary>
     public static Archetype Parent(Discipline d) => d switch
     {
