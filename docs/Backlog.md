@@ -48,6 +48,17 @@ version of the cut could reserve it. Three measured levers there; pick one.
 
 The other eight asks (`BL-239`…`BL-246`) are 🔵 waiting to be built, and `BL-247` is a sweep.
 
+★ **And two more from your notes file, same day:** **`BL-249`** (dash potions to a 90-second reuse)
+and **`BL-250`** (the sigils become subclass-gated, your IG "subclass ability" model).
+
+✅ **The third thing in that file needed no build.** You asked whether the Mark's cut *"sits in the
+buff part or debuff part of the formula — if it's in the debuff part a 10% decrease is good … if it's
+in the buff part it should be −15%"*. **It is in the debuff part**, so **10% stands and no CSV wording
+changes**: `Entity.EffectiveSpeed` reads `ModifiedStat(base, BuffMoveSpeed) * (1 − slow) * (1 −
+BuffSpeedPenaltyFraction)`, i.e. `(base × buffs + flat) × 0.90` — the cut is a trailing factor applied
+*after* the flat shelf, exactly your `(114 + 61) × 0.9 = 157.5`, and the built game measures 158 on
+that row. Recorded at the foot of [balance/MoveSpeedOrderings.md](balance/MoveSpeedOrderings.md).
+
 ★ **The ones before those (2026-09-13, second message):** the CC-resist formula.
 ✅ **BUILT (0.139.0)** as **`BL-225`** — control resistances **COMPOUND** now, every source its own
 `(1−r)` factor, so your harmony 20% + buff 20% + passive 20% is **×0.512** and with an epic set
@@ -205,6 +216,8 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-246` | 🔵 | THE STATS WINDOW BECOMES TWO TABS — your full layout; several rows have no source yet | ui |
 | `BL-247` | ❓ | WHAT DROPS A-grade enchant scrolls, epic/rare WOOD and epic LEATHER? A sweep, not a build | items |
 | `BL-248` | 🔵 | THE SPEED BAND IS STILL NOT RESERVED FOR ROGUES — the Mark cut could never do it; three measured levers, pick one | buffs |
+| `BL-249` | 🔴 | DASH POTIONS GO TO A 90-SECOND REUSE — one number, all six rarities | items |
+| `BL-250` | 🔵 | THE SIGILS BECOME SUBCLASS-GATED — no attack/defence/support split; each 4th-class SUBCLASS opens a slot and unlocks its own three | classes |
 
 ---
 
@@ -1963,9 +1976,15 @@ last is not a band.
 
 **The levers, measured and unbuilt — pick one and it gets built:**
 
-1. 🔑 **Make the shelf's move speed a PERCENT instead of a flat.** Swift `+33` → `×1.25` and the band
-   scales with base instead of collapsing toward it. The only change that makes the rogue's base
-   advantage survive buffing, and it is independent of everything already ruled.
+1. ⛔ **Make the shelf's move speed a PERCENT instead of a flat** — Swift `+33` → `×1.25`, so the band
+   scales with base instead of collapsing toward it. It was the only lever that makes the rogue's base
+   advantage survive buffing. ❓ **I read your 2026-09-16 note as DECLINING it:** *"buffs (swiftness
+   +20/33, harmony of swiftness +20, harmony of speed +20, frenzy +5/8, harmony of madness +8) to be
+   as is"* — those five ARE the shelf, and you listed them at their flat values. Verified against the
+   code, all five match to the number (`+33`/`+20` Swift rungs, Harmony of Swift `+20`, Frenzy
+   `+5`/`+8`, Harmony of Madness `+8`; the `+53`/`+61`/`+69` shelves this entry quotes are those
+   sums). **Say if "as is" meant only "don't retune the magnitudes" and the flat→percent change is
+   still open** — it is the only one of the three that fixes the cause rather than the symptom.
 2. **Cut the flat shelf and give the difference to the rogue's own kit** — the light Armor Mastery
    already carries `speed +7` and is the natural home for more.
 3. **Move the CAP per class.** `Entity.MoveSpeedCap` is already per-entity, so a rogue ceiling above
@@ -1977,3 +1996,65 @@ last is not a band.
 repeats its `shelf` figures in the `full` columns (173/156/210 twice) where every other non-rogue row
 gains +8. If that is a paste, his `full` is 181 and the ordering at the bottom of your list changes.
 
+
+## `BL-249` 🔴 DASH POTIONS GO TO A 90-SECOND REUSE
+
+**2026-09-16.** *"Make dash potions reuse to 90s"*. One number, in one place:
+`SkillCatalog.DashPotion` (`Skills.Common.cs`) builds all six rarities with `cooldownTicks: 600`
+(60s) — it becomes **900**. The 15-second duration and the six `+15…+60` move-speed rungs are
+untouched, so what changes is only how often the burst comes back: from **25% uptime to 16.7%**.
+
+⚠ Two comments carry the old number and go with it: the *"15 seconds of sprint on a 1-minute reuse"*
+header above the six `ItemDef`s in `Items.cs`, and anything in `docs/guides/ItemIds.md` that repeats
+it. No CSV is involved — potions are not class skills.
+
+## `BL-250` 🔵 THE SIGILS BECOME SUBCLASS-GATED — your IG "subclass ability" model
+
+**2026-09-16.** A rework of what 0.113-era built, and it changes the GATE, not the eighteen sigils —
+every name in your six groups already exists in `Skills.Sigils.cs` under exactly that name.
+
+**Your model, verbatim:** *"In IG when you lvl up a sub class to 75 u get to use its 'Ability' → each
+subclass have its ability-identity … because a tank cannot take a tank subclass it cannot get its
+ability … so i want sigils not to be separated as attak/support/defence .. u can have up to 3 sigils
+active … each subclass @76(4th) activates a sigil slot (up to 3) + unlocks its designated sigils"*.
+
+**What changes**
+
+1. 🔑 **The three SLOTS stop being Attack / Defence / Support.** Today `SigilSlot` is a real
+   exclusion axis — one per slot, enforced by `ExclusiveGroup`. It becomes **three identical slots**:
+   any three of the eighteen, so long as you have unlocked them. The `SigilSlot` enum stays as a
+   *label* for the UI or goes entirely; that is a free choice.
+2. 🔑 **Slots are EARNED, not granted at 76.** Each subclass that reaches **76 (its own 4th class)**
+   opens one slot, to a maximum of three. So a character with one 4th-class subclass has one sigil,
+   and only a fully built-out character has three. Today all three open at once on the main.
+3. 🔑 **A group is unlocked by OWNING a subclass of it**, and your main class grants nothing:
+
+   | group | the classes that unlock it | its three sigils |
+   |---|---|---|
+   | mage | the 3 Apprentice | Frenzy · Mage Defence · Arcane Support |
+   | healer | the 3 Priest, healer discipline | Holy Power · Holy Protection · Holy Support |
+   | buffer | the 3 Priest, buffer discipline | Soul · Spirit · Immortality |
+   | rogue | the 6 Rogue | Focus · Agility · Aim |
+   | warrior | the 6 Warrior | Fury · Duel · Fortitude |
+   | tank | the 3 Knight | Body · Aegis · Critical Protection |
+
+✅ **The exclusion you want already falls out of the rule we have.** *"mage wont be able to take mage
+sigils (cannot take another mage class) … rogues and warriors can take their own because they have a
+separate discipline"* — `Player.CanAddDiscipline` already refuses a second class of the same
+**discipline**, and the roster does the rest: the nuker's three names are one discipline (so no mage
+may add a mage), while the rogue's six are **two** (dagger ↔ bow) and the warrior's six are two
+(warrior ↔ war\_aoe), so those two archetypes can add their own. Healer/buffer/tank cannot. **No new
+rule is needed for any of it** — and when summoners arrive, nuker ↔ summoner unlocks the mage group
+for a mage exactly as you describe, with no code change here either.
+
+**What this costs, so you can judge it before it is built**
+
+- ⚠ **Sigils become END-game, hard.** Three sigils today = 76 + 60kk SP + 30kk gold. Three sigils
+  after this = **three subclasses each levelled to 76**, on top of the existing gate that every class
+  you own must be 75+ *with* its 3rd class before you may add another. That is a very long road, and
+  it is the IG road. Say if you want the SP/gold price cut to compensate, or left as it is.
+- ❓ **Does the MAIN class open a slot too?** Your sentence says *"each subclass"*, and IG's ability
+  is a subclass ability. Taken literally a character with no subclass has **zero** sigils. Confirm.
+- ❓ **What happens to a character who already owns three?** Pre-release, so the answer can simply be
+  a `game.db` delete — but if you would rather they be re-granted under the new rule, say so.
+- ⚠ The client's Sigils tab is built around the three named slots and would be rebuilt with them.

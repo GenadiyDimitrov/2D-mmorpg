@@ -67,6 +67,10 @@ the game who still reaches the cap on his own.
 resistance resist the price of your own blessing, and made a raid boss immune to it. **A buff's own
 price is not a debuff someone landed on you.**
 
+✅ **And the follow-up you asked the same day — *"buff part or debuff part?"* — is worked through at
+the FOOT OF THIS PAGE.** The cut is in the **debuff part**, so **10% stands** and no CSV wording
+changes; your own `(114 + 61) × 0.9 = 157.5` is the row it was priced on.
+
 ---
 
 ### (the pre-ruling material follows — kept because the reasoning is what the ruling was made on)
@@ -270,3 +274,40 @@ Full: (1)Elf Rogue > Elf Fighter > Elf Mage > Demon Mage > (5)Human Rogue > Huma
 If rogues dont use Frenzy/Harmony of Maddness they become lot slower they dont lose 16 evasion and ~21%HP but they miss on 16 speed (~ +7/14 with mark)
 Their sprint alows them to keep high speed more often and have jumping skill. -> after all other use their dash pots for the next 75 secs they are slower
 
+
+---
+
+## ✅ AND THE FOLLOW-UP QUESTION, ANSWERED — 2026-09-16, nothing to change
+
+You came back with one more: *"I want the formula to stay as is `{(base × buffs + flat) × debuffs}` …
+my only question is Mark sits in the buff part or debuff part of the formula → if it's in the debuff
+part a 10% decrease is good .. if it's in the buff part it should be −15% … just fix the wording in
+the csvs if needed to be 15%"*.
+
+🔑 **IT IS IN THE DEBUFF PART. 10% STANDS, AND NO CSV WORDING CHANGES.** `Entity.EffectiveSpeed`:
+
+```csharp
+float withBuffs = ModifiedStat(baseSpeed, SkillEffect.BuffMoveSpeed)   // base × (1+pct) + flat
+                * (1f - SlowFraction)                                   // enemy slows
+                * (1f - BuffSpeedPenaltyFraction);                      // ← the Mark's 10%
+```
+
+`ModifiedStat` is `base × (1 + percent) + flat` — your `(base × buffs + flat)` — and the Mark's cut is
+a **separate trailing factor beside the slow one**, so it multiplies the flat shelf too. That is the
+`F2` you ruled, and it is the position your own arithmetic priced at 10%: your
+`(114 + 61) × 0.9 = 157.5` is the human mage row, and the built game measures **158** there.
+
+So the CSVs keep *"Decrease movement speed with 10%"* on all four Mark rows — the **10% debuff
+wording** of the two you offered, not the −15% buff one. Nothing in code or data moves.
+
+⚠ **The two warrior toggles use the same channel** (`warrior_parry` and `warrior_saints_blessing`,
+*"Decrease move/attack.speed with 10%"*) — so they sit in the same position and price the same way. If
+you ever author a move-speed cut that should ride *inside* the buff bracket instead, it needs a
+different field; `MoveSpeedPenaltyPct` is the debuff-position one by construction.
+
+✅ **The shelf is confirmed unchanged too:** *"buffs (swiftness +20/33, harmony of swiftness +20,
+harmony of speed +20, frenzy +5/8, harmony of madness +8) to be as is"*. All five verified against the
+code and all five match — `BuffSwiftU/R` `+20`/`+33`, `NpcHSwift` `+20`, `FamFrenzy` rungs `+5`/`+8`,
+`WcHarmonyMadness` `+8`. Those sums ARE the `+53` (rogue, no Frenzy) / `+61` / `+69` shelves this page
+measures. ❓ **Read as declining §6's lever 1** (flat → percent) — see `BL-248`, where the question is
+put back to you, because that lever is the only one that reaches the cause.
