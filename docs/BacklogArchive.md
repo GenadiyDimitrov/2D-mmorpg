@@ -5437,3 +5437,41 @@ The question as it was asked:
 > |---|---|---|---|
 > | Soul Reinforcement | **335** → 405 | Ward 80 + Soul 120 + Mana Blessing **130** = **330** → 400 | +5 every rung |
 > | Arcane and Feral Protection | **290** → 360 | Clarity 85 + Fortitude **130** = **215** → 285 | **+75** every rung |
+
+---
+
+## `BL-237` — BUILT 2026-09-16 in 0.146.0. The pre-build entry, verbatim.
+
+## `BL-237` 🔴 WARRIOR 3rd + 4th CSVs — reviewed, your fixes in, READY TO BUILD
+
+**2026-09-14.** You landed `warrior 3rd.csv` (Ravager race kits, Charge, the three Presences),
+`warrior 4th.csv` (76-90) and small `war_aoe 3rd.csv` edits (Final Stand acc, Antidote, Charge). I read
+them end to end and listed 8 slips + 8 questions; **you fixed all 8 slips and answered the questions the
+same day.** Nothing is built yet.
+
+### Your rulings (built as written when this lands)
+- **Charge**: 400 (3rd) / 600 (4th) is its RANGE; usable with a 2h sword **or** blunt.
+- **Every Slash debuff lasts 15s.** Demon Slash is now cast 1 / reuse 3 like the other two.
+- **All three Slashes land at ×0.7; Sword Shock at ×1.** → these go into `debuff_landmods.csv` **at
+  build time**: that file is regenerated from the code, so a row for an unbuilt skill would be wiped.
+  The `Chance x0.7` / `Success rate x1` comments come out of the class CSV in the same commit.
+- **The 74-rung MP was a real re-price, not a typo**: at 350 MP your 4th Triple Slash was unusable on a
+  900-MP warrior, so both 4th Slash skills were cut and the 3rd rungs now match (Double 88, Triple 98).
+- **Focus Force** is IG's normal "power attack" as a physical skill that can double; we have no skill
+  crits, so it carries +500 power and gathers Focus.
+- **Saints Sword Dance** hits an area: `target/aoe`.
+- **Two-Hand Mastery 4th**: 666 → **678** → 690 (+12 on both steps, so 80 onward is unchanged).
+
+### Second round of rulings (same day) — applied to the CSVs
+- Saints Sword Dance is `target/aoe` in **both** tiers.
+- Demon Slash (3rd) is `Physical/Debuf`, like the other two.
+- 🔑 **LAW: every melee physical attack skill has RANGE 40**, the melee basic-attack range — *"if I miss
+  to type it it's a law"*. The 4th Slash rows were 0 → 40. Every class CSV was swept: no other melee
+  strike breaks it (Signal Flare, Prowl, Vanish and Mass Taunt are self/area skills, not strikes).
+- Focus Limit is `self/single` — it affects the caster only.
+- 4th Focused Double Slash is cast **1.5 / reuse 3** (left over from copying the Triple).
+- Still cosmetic, untouched: Sword Blast AOE `00`, Armor Mastery 4th 146 at 87, stale separator labels.
+
+Not a question: the 4th file stops Final Stand, HP Boost, HP Regeneration, the Battle stances, Monster
+Knowledge, Focus Mastery, Battle Frenzy and Antidote at their 74 rungs. The Final Stand acc edit changes a
+built skill, so both 3rd files owe the code that change too.

@@ -2504,6 +2504,222 @@ await gm.DisposeAsync();
     await wh.DisposeAsync();
 }
 
+// -------------------------------------------------------------------------------------------
+// 16. THE HUMAN RAVAGER'S FOCUS POOL (`BL-237`) — gather, the cap, the relog, the spend, the proc.
+//
+//     🔑 WHY OVER THE WIRE: every part of this is invisible bookkeeping. A pool that is refilled past
+//     its cap, spent per slash instead of per cast, or quietly reset to 1 by a relog all LOOK fine on
+//     the buff bar for exactly as long as nobody counts. Level 49 is chosen for its numbers: Focus's
+//     cap there is 3, which is also the Double Slash's spend limit, so one full pool must vanish in
+//     one cast and a per-slash bug would show up as a second "spent" line.
+// -------------------------------------------------------------------------------------------
+{
+    var fs = await ConnectAsync("test1", "test");
+    string fname = "Fcs" + DateTime.UtcNow.ToString("HHmmssff");
+    var ferr = await fs.Hub.InvokeAsync<string?>("CreateCharacter",
+        new CreateCharacterRequest(fname, Race.Human, BaseClass.Fighter));
+    Check("created a human fighter to raise a Ravager", ferr is null, ferr);
+
+    if (ferr is null)
+    {
+        await PromoteToAdminAsync(fname);
+        async Task EnterAsFocusChar(Session s)
+        {
+            var list = await s.Hub.InvokeAsync<CharacterList>("ListCharacters");
+            var inWorld = await s.Hub.InvokeAsync<LoginResult>("EnterWorld",
+                new EnterWorldRequest(list.Characters.First(c => c.Name == fname).Id));
+            s.MyId = inWorld.EntityId;
+            s.MyX = inWorld.X; s.MyY = inWorld.Y;
+        }
+        int FocusOf(Session s) =>
+            s.Buffs?.Buffs.FirstOrDefault(b => b.Key == SkillCatalog.WarriorFocus)?.Stacks ?? 0;
+        bool HasFocus(Session s) =>
+            s.Buffs?.Buffs.Any(b => b.Key == SkillCatalog.WarriorFocus) == true;
+
+        await EnterAsFocusChar(fs);
+        for (int i = 0; i < 4; i++) await fs.Hub.SendAsync("DebugLevel", 10);
+        await fs.Hub.SendAsync("DebugLevel", 8);   // 1 + 48 = 49
+        var ravager = ThirdClassCatalog.Playable
+            .First(t => t.Race == Race.Human && t.Discipline == Discipline.Ravager);
+        await fs.Hub.SendAsync("DebugThirdClass", ravager.Id);
+        await fs.Hub.SendAsync("DebugLearnAll");
+        await fs.Hub.SendAsync("DebugGive", ItemCatalog.NewbieSword2H, 1);
+        await fs.WaitFor(() => fs.Inv?.Items.Any(i => i.DefId == ItemCatalog.NewbieSword2H) == true, 5000);
+        var sword = fs.Inv?.Items.FirstOrDefault(i => i.DefId == ItemCatalog.NewbieSword2H);
+        if (sword is not null) await fs.Hub.SendAsync("EquipItem", sword.InstanceId);
+        await fs.Settle();
+
+        // ---- GATHER TO THE CAP, ONE CHARGE A USE. ----
+        for (int n = 1; n <= 3; n++)
+        {
+            await fs.Hub.SendAsync("UseSkill", SkillCatalog.WarriorFocus, fs.MyId);
+            await fs.WaitFor(() => FocusOf(fs) >= n, 5000);
+        }
+        Check("Focus gathers one charge per use, up to its rung's cap (3 at level 49)",
+              FocusOf(fs) == 3, $"pool reads {FocusOf(fs)}");
+
+        fs.SystemChat.Clear();
+        await fs.Hub.SendAsync("UseSkill", SkillCatalog.WarriorFocus, fs.MyId);
+        bool refused = await fs.WaitFor(() => fs.SystemChat.Any(s => s.Contains("already at its limit")), 4000);
+        await Task.Delay(1200);   // long enough for a gather that WRONGLY went through to land
+        Check("...and at the cap it is REFUSED (*\"Cannot be used if maximum is reached\"*), not overfilled",
+              refused && FocusOf(fs) == 3, $"refused={refused}, pool reads {FocusOf(fs)}");
+
+        // ---- THE POOL SURVIVES A RELOG AT ITS REAL COUNT. RestorePersistedBuffs clamps stacks to the
+        //      DEF's MaxStacks, so a pool def left at 1 would come back as a single charge. ----
+        await fs.LeaveWorldAsync();
+        await fs.DisposeAsync();
+        fs = await ConnectAsync("test1", "test");
+        await EnterAsFocusChar(fs);
+        await fs.WaitFor(() => fs.Buffs is not null, 5000);
+        Check("a relog restores the Focus pool at its real count, not at 1",
+              FocusOf(fs) == 3, $"pool reads {FocusOf(fs)} after relog");
+
+        // ---- SPENT ONCE PER CAST: a two-hit Double Slash takes the whole 3 in ONE spend. ----
+        // ⚠ THE PLAIN LEVEL-40 DUMMY, not a striking one. The first cut of this section used the
+        //   Striking Training Dummy — which is LEVEL 80, and killed the level-49 Ravager mid-test, so the
+        //   proc check below read "pool 0" off a corpse. This one never hits back and sits nine levels
+        //   under him, so his swings actually land. A dummy's plate carries its level
+        //   ("Training Dummy (Lv 40)"), which is what tells the four plain ones apart.
+        const string Dummy40 = "Training Dummy (Lv 40)";
+        var dz = WorldMap.SpawnZones.First(z => z.MobTypes.Contains("training_dummy") && z.MinLevel == 40);
+        await fs.Hub.SendAsync("DebugTeleport", dz.X, dz.Y);
+        await fs.Settle();
+        await fs.WaitFor(() => fs.EntityNames.Any(kv => kv.Value == Dummy40), 4000);
+        var fdummy = fs.EntityNames.FirstOrDefault(kv => kv.Value == Dummy40);
+        if (fdummy.Key != Guid.Empty)
+        {
+            var at = fs.EntityPos[fdummy.Key];
+            await fs.Hub.SendAsync("DebugTeleport", at.X, at.Y);
+            await fs.Settle();
+            fs.SystemChat.Clear();
+            fs.Combat.Clear();
+            await fs.Hub.SendAsync("UseSkill", SkillCatalog.WarriorFocusedDoubleSlash, fdummy.Key);
+            bool slashed = await fs.WaitFor(
+                () => fs.Combat.Count(c => c.Skill == "Focused Double Slash" && c.AttackerId == fs.MyId) >= 2, 8000);
+            await Task.Delay(500);
+            var spends = fs.SystemChat.Where(s => s.Contains("spent") && s.Contains("Focus")).ToList();
+            Check("Focused Double Slash lands BOTH slashes", slashed,
+                  $"{fs.Combat.Count(c => c.Skill == "Focused Double Slash")} slash event(s)");
+            Check("...and spends the pool ONCE for the cast — 3 Focus, +45% power, a single spend line",
+                  spends.Count == 1 && spends[0].Contains("spent 3 Focus") && spends[0].Contains("+45%"),
+                  string.Join(" | ", spends));
+            Check("...leaving the pool empty and GONE from the bar, not sitting at x0",
+                  !HasFocus(fs), $"pool reads {FocusOf(fs)}");
+
+            // ---- FOCUS MASTERY: basic swings gather it. 15% a hit, so ~20 swings is 96% sure;
+            //      WaitFor returns the moment it procs. ----
+            await fs.Hub.SendAsync("Attack", fdummy.Key);
+            bool procced = await fs.WaitFor(() => FocusOf(fs) > 0, 30000);
+            Check("Focus Mastery gathers Focus from basic attacks", procced, $"pool reads {FocusOf(fs)}");
+        }
+        else
+        {
+            Check("found a training dummy to spend Focus on", false,
+                  "no level-40 'Training Dummy' in view after teleporting to its zone");
+        }
+
+        await fs.Hub.SendAsync("Move", new MoveCommand(fs.MyX + 900, fs.MyY));
+        await Task.Delay(1500);
+        await fs.LeaveWorldAsync();
+    }
+    await fs.DisposeAsync();
+}
+
+// -------------------------------------------------------------------------------------------
+// 17. THE 4th TIER'S TWO GATHERERS (`BL-237`) — Focus Limit and Focus Force.
+//
+//     🔑 WHY OVER THE WIRE, and it is a different reason from section 16's. Both of these are NEW
+//     SHAPES of the gather rule and both are refusals waiting to happen:
+//       • FOCUS LIMIT gathers TEN against a cap of ten, which is how "set Focus to max" is expressed
+//         without a new mechanic. If the clamp were wrong it would fill to one and cost 80 HP.
+//       • FOCUS FORCE is the only gatherer in the game that also DEALS DAMAGE, and `IsChargePoolFull`
+//         has to let it through at a full pool — refusing an ATTACK because a resource is full is the
+//         kind of wall that reads as a broken button, and it is invisible until the pool happens to
+//         be full. The gather itself sits AFTER the damage arm, which is the half a playtest cannot see.
+// -------------------------------------------------------------------------------------------
+{
+    var f4 = await ConnectAsync("test1", "test");
+    string f4name = "Fc4" + DateTime.UtcNow.ToString("HHmmssff");
+    var f4err = await f4.Hub.InvokeAsync<string?>("CreateCharacter",
+        new CreateCharacterRequest(f4name, Race.Human, BaseClass.Fighter));
+    Check("created a human fighter to raise an ascended Ravager", f4err is null, f4err);
+
+    if (f4err is null)
+    {
+        await PromoteToAdminAsync(f4name);
+        var list4 = await f4.Hub.InvokeAsync<CharacterList>("ListCharacters");
+        var world4 = await f4.Hub.InvokeAsync<LoginResult>("EnterWorld",
+            new EnterWorldRequest(list4.Characters.First(c => c.Name == f4name).Id));
+        f4.MyId = world4.EntityId; f4.MyX = world4.X; f4.MyY = world4.Y;
+
+        int Focus4() => f4.Buffs?.Buffs.FirstOrDefault(b => b.Key == SkillCatalog.WarriorFocus)?.Stacks ?? 0;
+
+        for (int i = 0; i < 8; i++) await f4.Hub.SendAsync("DebugLevel", 10);   // 1 + 80 = 81
+        var rav4 = ThirdClassCatalog.Playable
+            .First(t => t.Race == Race.Human && t.Discipline == Discipline.Ravager);
+        await f4.Hub.SendAsync("DebugThirdClass", rav4.Id);
+        await f4.Hub.SendAsync("DebugFourthClass");
+        await f4.Hub.SendAsync("DebugLearnAll");
+        await f4.Hub.SendAsync("DebugGive", ItemCatalog.NewbieSword2H, 1);
+        await f4.WaitFor(() => f4.Inv?.Items.Any(i => i.DefId == ItemCatalog.NewbieSword2H) == true, 5000);
+        var sw4 = f4.Inv?.Items.FirstOrDefault(i => i.DefId == ItemCatalog.NewbieSword2H);
+        if (sw4 is not null) await f4.Hub.SendAsync("EquipItem", sw4.InstanceId);
+        await f4.Settle();
+
+        // ---- FOCUS LIMIT: one press, a full pool of TEN. ----
+        await f4.Hub.SendAsync("UseSkill", SkillCatalog.WarriorFocusLimit, f4.MyId);
+        await f4.WaitFor(() => Focus4() >= 10, 6000);
+        Check("Focus Limit fills the pool to its ceiling of 10 in one cast", Focus4() == 10,
+              $"pool reads {Focus4()}");
+
+        // ---- FOCUS FORCE against a FULL pool: it must still SWING. ----
+        const string Dummy80 = "Training Dummy (Lv 80)";
+        var dz4 = WorldMap.SpawnZones.FirstOrDefault(z => z.MobTypes.Contains("training_dummy") && z.MinLevel == 40);
+        if (dz4 is not null)
+        {
+            await f4.Hub.SendAsync("DebugTeleport", dz4.X, dz4.Y);
+            await f4.Settle();
+            await f4.WaitFor(() => f4.EntityNames.Any(kv => kv.Value.StartsWith("Training Dummy")), 4000);
+            var d4 = f4.EntityNames.FirstOrDefault(kv => kv.Value.StartsWith("Training Dummy") && kv.Value != Dummy80);
+            if (d4.Key != Guid.Empty)
+            {
+                var at4 = f4.EntityPos[d4.Key];
+                await f4.Hub.SendAsync("DebugTeleport", at4.X, at4.Y);
+                await f4.Settle();
+                f4.SystemChat.Clear();
+                f4.Combat.Clear();
+                await f4.Hub.SendAsync("UseSkill", SkillCatalog.WarriorFocusForce, d4.Key);
+                bool struck = await f4.WaitFor(
+                    () => f4.Combat.Any(c => c.Skill == "Focus Force" && c.AttackerId == f4.MyId), 8000);
+                Check("Focus Force strikes even with the pool already full — a gatherer that DAMAGES is "
+                    + "never refused", struck,
+                      string.Join(" | ", f4.SystemChat.Take(3)));
+                Check("...and the full pool is neither overfilled nor emptied by it", Focus4() == 10,
+                      $"pool reads {Focus4()}");
+
+                // ---- ...and the Triple Slash spends its four. ----
+                f4.SystemChat.Clear();
+                await f4.Hub.SendAsync("UseSkill", SkillCatalog.WarriorFocusedTripleSlash, d4.Key);
+                await f4.WaitFor(() => f4.SystemChat.Any(x => x.Contains("spent") && x.Contains("Focus")), 8000);
+                var spend4 = f4.SystemChat.FirstOrDefault(x => x.Contains("spent") && x.Contains("Focus"));
+                Check("Focused Tripple Slash spends exactly 4 of the ten, leaving 6",
+                      spend4 is not null && spend4.Contains("spent 4 Focus") && Focus4() == 6,
+                      $"{spend4} / pool reads {Focus4()}");
+            }
+            else
+            {
+                Check("found a training dummy for the ascended Focus checks", false, "none in view");
+            }
+        }
+
+        await f4.Hub.SendAsync("Move", new MoveCommand(f4.MyX + 900, f4.MyY));
+        await Task.Delay(1500);
+        await f4.LeaveWorldAsync();
+    }
+    await f4.DisposeAsync();
+}
+
 
 return Finish();
 

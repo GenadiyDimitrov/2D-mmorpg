@@ -145,21 +145,21 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 ,,,,,,,,,,,,,,,,,,,---------------------------Parry----------------------------
 78,Parry,warrior_parry,toggle,sword/2,,0,0,self/single,0,0,0,"Increase P/M.Def with 25%; Decrease move/attack.speed with 10%;",10,16kk,1kk,,,Demon
 ,,,,,,,,,,,,,,,,,,,---------------------------Sword Shock----------------------------
-76,Sword Shock,warrior_sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,0,"Deals Physical damage with +2600 power and Stuns for 5s, Cannot be blocked, Can double;",80,6.5kk,1kk,,,Demon
-77,Sword Shock,warrior_sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,0,"Deals Physical damage with +2700 power and Stuns for 5s, Cannot be blocked, Can double;",82,11kk,1kk,,,Demon
-78,Sword Shock,warrior_sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,0,"Deals Physical damage with +2800 power and Stuns for 5s, Cannot be blocked, Can double;",84,16kk,1kk,,,Demon
-79,Sword Shock,warrior_sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,0,"Deals Physical damage with +2900 power and Stuns for 5s, Cannot be blocked, Can double;",86,80kk,1kk,,,Demon
-80,Sword Shock,warrior_sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,0,"Deals Physical damage with +3000 power and Stuns for 5s, Cannot be blocked, Can double;",88,0,5kk,,,Demon
-81,Sword Shock,warrior_sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,0,"Deals Physical damage with +3100 power and Stuns for 5s, Cannot be blocked, Can double;",90,0,7.5kk,,,Demon
-82,Sword Shock,warrior_sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,0,"Deals Physical damage with +3200 power and Stuns for 5s, Cannot be blocked, Can double;",92,0,10kk,,,Demon
-83,Sword Shock,warrior_sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,0,"Deals Physical damage with +3300 power and Stuns for 5s, Cannot be blocked, Can double;",95,0,15kk,,,Demon
-84,Sword Shock,warrior_sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,0,"Deals Physical damage with +3400 power and Stuns for 5s, Cannot be blocked, Can double;",98,0,30kk,,,Demon
-85,Sword Shock,warrior_sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,0,"Deals Physical damage with +3500 power and Stuns for 5s, Cannot be blocked, Can double;",100,0,50kk,,,Demon
-86,Sword Shock,warrior_sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,0,"Deals Physical damage with +3600 power and Stuns for 5s, Cannot be blocked, Can double;",102,0,75kk,,,Demon
-87,Sword Shock,warrior_sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,0,"Deals Physical damage with +3700 power and Stuns for 5s, Cannot be blocked, Can double;",104,0,100kk,,,Demon
-88,Sword Shock,warrior_sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,0,"Deals Physical damage with +3800 power and Stuns for 5s, Cannot be blocked, Can double;",106,0,100kk,,,Demon
-89,Sword Shock,warrior_sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,0,"Deals Physical damage with +3900 power and Stuns for 5s, Cannot be blocked, Can double;",108,0,100kk,,,Demon
-90,Sword Shock,warrior_sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,0,"Deals Physical damage with +4000 power and Stuns for 5s, Cannot be blocked, Can double;",110,0,100kk,,,Demon
+76,Sword Shock,warrior_sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,5,"Deals Physical damage with +2600 power and Stuns for 5s, Cannot be blocked, Can double;",80,6.5kk,1kk,,,Demon
+77,Sword Shock,warrior_sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,5,"Deals Physical damage with +2700 power and Stuns for 5s, Cannot be blocked, Can double;",82,11kk,1kk,,,Demon
+78,Sword Shock,warrior_sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,5,"Deals Physical damage with +2800 power and Stuns for 5s, Cannot be blocked, Can double;",84,16kk,1kk,,,Demon
+79,Sword Shock,warrior_sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,5,"Deals Physical damage with +2900 power and Stuns for 5s, Cannot be blocked, Can double;",86,80kk,1kk,,,Demon
+80,Sword Shock,warrior_sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,5,"Deals Physical damage with +3000 power and Stuns for 5s, Cannot be blocked, Can double;",88,0,5kk,,,Demon
+81,Sword Shock,warrior_sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,5,"Deals Physical damage with +3100 power and Stuns for 5s, Cannot be blocked, Can double;",90,0,7.5kk,,,Demon
+82,Sword Shock,warrior_sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,5,"Deals Physical damage with +3200 power and Stuns for 5s, Cannot be blocked, Can double;",92,0,10kk,,,Demon
+83,Sword Shock,warrior_sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,5,"Deals Physical damage with +3300 power and Stuns for 5s, Cannot be blocked, Can double;",95,0,15kk,,,Demon
+84,Sword Shock,warrior_sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,5,"Deals Physical damage with +3400 power and Stuns for 5s, Cannot be blocked, Can double;",98,0,30kk,,,Demon
+85,Sword Shock,warrior_sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,5,"Deals Physical damage with +3500 power and Stuns for 5s, Cannot be blocked, Can double;",100,0,50kk,,,Demon
+86,Sword Shock,warrior_sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,5,"Deals Physical damage with +3600 power and Stuns for 5s, Cannot be blocked, Can double;",102,0,75kk,,,Demon
+87,Sword Shock,warrior_sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,5,"Deals Physical damage with +3700 power and Stuns for 5s, Cannot be blocked, Can double;",104,0,100kk,,,Demon
+88,Sword Shock,warrior_sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,5,"Deals Physical damage with +3800 power and Stuns for 5s, Cannot be blocked, Can double;",106,0,100kk,,,Demon
+89,Sword Shock,warrior_sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,5,"Deals Physical damage with +3900 power and Stuns for 5s, Cannot be blocked, Can double;",108,0,100kk,,,Demon
+90,Sword Shock,warrior_sword_shock,Physical/Active,sword/2,,40,0,target/single,1,5,5,"Deals Physical damage with +4000 power and Stuns for 5s, Cannot be blocked, Can double;",110,0,100kk,,,Demon
 ,,,,,,,,,,,,,,,,,,,---------------------------Demonic Smash----------------------------
 76,Demonic Smash,warrior_demonic_smash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +7800 power, Cannot be blocked, Can double;",100,6.5kk,1kk,,,Demon
 77,Demonic Smash,warrior_demonic_smash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +8100 power, Cannot be blocked, Can double;",102,11kk,1kk,,,Demon

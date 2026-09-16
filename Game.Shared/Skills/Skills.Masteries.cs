@@ -144,7 +144,8 @@ public static partial class SkillCatalog
                 new SkillLevel(SpCost: 6000),
                 new SkillLevel(SpCost: 11000),
                 new SkillLevel(SpCost: 20000),
-            }.Concat(WarriorArmorMasteryThirdRungs()).ToArray(),
+            }.Concat(WarriorArmorMasteryThirdRungs())
+             .Concat(WarriorArmorMasteryFourthRungs()).ToArray(),   // `BL-237` — his 76-90 rows
             ArmorMasteryLevels: new[]
             {
                 WarriorArmor(19, 6),
@@ -152,7 +153,8 @@ public static partial class SkillCatalog
                 WarriorArmor(23, 9, hpRegen: 1.1f),
                 WarriorArmor(28, 9, hpRegen: 1.6f),
                 WarriorArmor(32, 9, hpRegen: 1.6f),
-            }.Concat(WarriorArmorMasteryThirdProfiles()).ToArray()),
+            }.Concat(WarriorArmorMasteryThirdProfiles())
+             .Concat(WarriorArmorMasteryFourthProfiles()).ToArray()),
 
         // Rogue — Armor Mastery (CSV rogue 2nd): "with all" = ×1.1 MP regen + flat P.Def (at L5
         // ×1.8 MP regen and ×1.2 HP regen); "with light" adds big evasion, +15% crit-rate resist

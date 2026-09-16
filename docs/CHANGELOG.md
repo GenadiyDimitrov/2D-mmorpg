@@ -7,12 +7,93 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.145.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.146.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-14 (latest) — 0.145.1: a healer's bundle retires its singles, and two bundles ladder to 90
+## 2026-09-16 (latest) — 0.146.0: the warrior's 3rd and 4th tiers, race by race
+
+🔴 **NEW APK REQUIRED** — a class-skill-TABLE change (the client builds its Learn tab locally). No
+protocol change. A `game.db` delete is not required, but is harmless and is what I ran here.
+
+**`BL-237` is built.** You landed `warrior 3rd.csv` and `warrior 4th.csv` on 2026-09-14, fixed all
+eight slips and answered every question the same day; nothing had been built since. This is the whole
+of both files — **the Ravager's damage half, which had never existed**, plus the 4th tier on top of it.
+
+### The RAVAGER splits three ways, and the race column is the whole split
+
+| | Human | Demon | Elf |
+|---|---|---|---|
+| Presence (64/74, 76/85) | **Champion** — atk speed + PvP damage | **Berserker** — P.Atk + accuracy | **Saints** — crit rate, crit damage, speed |
+| Slash (15 + 15 rungs) | P.Def −10→25% | P/M.Atk −5→12% | atk/cast/move speed −10→23% |
+| its own damage | the **Focus** kit | **Sword Shock** (5s stun) + **Demonic Smash** | **Saints Sword Dance** + **Sword Blast** |
+| a stance or a burn | **Focus Force** + **Focus Limit** @78 | **Battle Frenzy** (60/66/74) · **Parry** @78 | **Antidote** (52-74) · **Saints Blessing** @78 |
+
+**Shared by both disciplines:** **Charge**, the gap-closer — 400 at 40, 600 at 76, a two-handed sword
+*or* blunt, per your ruling. It is the only thing the Warlord takes from either file.
+
+### The five pieces that needed new engine, and why
+
+- **Saints Sword Dance is a CHANNEL**, the shape you chose for Arrow Barrage: ten strokes over two
+  seconds, each a real skill execution with its own miss, crit and 150 splash. Nothing is
+  special-cased, so the rule survives.
+- **Battle Frenzy's price.** *"Decrease received HP 60%"* is the healing you receive, cut — read that
+  way because it pairs with *"can be used when HP is less or equal to 30%"*. 🔑 It is a **negative
+  `HealReceivedPct`, not the anti-heal FLAG**: the flag is in `AnyDebuff`, and `IsHostile` reads the
+  flag mask, so declaring it would have parked a warrior's own war-cry in his DEBUFF row —
+  un-dismissable, stripped by a cancel, dropped on relog. A downside you chose is not a curse.
+- **Saints Blessing reflects three different ways**, and your three numbers mean three different
+  things: *"Reflect 30% OF basic attacks"* is a fraction, *"15% TO reflect debuff"* and *"10% TO
+  reflect Physical Damage skill"* are chances. The last two had only ever ridden PASSIVES — and a
+  learned passive pays whether the stance is up or not, which would have made the toggle free. They
+  now ride the buff, folding by MAX against their passive twins so Deflection and this never sum.
+- **Focus Force is the first gatherer that also damages.** The full-pool refusal had to learn not to
+  wall an ATTACK, and its gather runs after the damage arm — so an interrupted cast gathers nothing.
+- **Focus Limit needed no mechanic at all**: gather TEN against a cap of ten *is* "set Focus to max".
+
+### Final Stand grew a second channel
+
+Your acc edit to both 3rd-tier files is in. It is **not a rider on the P.Atk half** — it is its own
+live read off the HP bar (`Entity.FinalStandAccuracy`, through the new `EffectiveAccuracy`), and it
+starts one band later at every rung, so the first rung pays it only below 25% HP. `docs/Formulas.md`
+moved in the same commit.
+
+### Sundering Blow leaves the Ravager
+
+The derived `BL-185` stand-in has said since it was built that *"it goes the day his damage rows
+land"*. They landed. ⚠ **The WARLORD keeps it** — `war_aoe 3rd.csv` and `war_aoe 4th.csv` still author
+no damage row of any kind, so dropping it there would leave the blunt discipline with a 2nd-class
+Smash and nothing else from 40 to 90. `--check` goes on printing 🟠 against `war_aoe 3rd` until your
+blunt damage rows land, which is the same pressure that produced this pass.
+
+### Two cells of yours moved, both slips, both reversible
+
+- **Sword Shock's DURR cell read 0** while its own DESCR said *"Stuns for 5s"*. A zero-tick stun is
+  not a skill; the cell is 5 now, in both tiers. (The Human archer's Magic Arrow — the same idea in
+  bow form — has always read 5.)
+- **The `Chance x0.7` / `Success rate x1` comments came out of the class CSV** and went into
+  `debuff_landmods.csv`, which is where they belong (`BL-232`). Your ruling, verbatim: the three
+  Slashes ×0.7, Sword Shock ×1.
+
+### Verified
+
+- `SkillCsvSeed --check` is **green on `warrior 3rd`, `war_aoe 3rd` and the new `warrior 4th` spec**,
+  and all 78 landmod rows verify. The one remaining line is the Warlord's Sundering Blow, above.
+- **Every number in both files is now READ, not skipped.** Fourteen new `Descr` aliases cover the
+  Presences' dotted `P.Crit.Rate`, PvP/PvE damage, the three reflect channels, a channel's shot count,
+  the HP gate and the anti-heal. 🔴 One of them taught me something the table's own header did not
+  say: **a hyphen can never appear in an alias** — `-` is a clause separator in `Clip`, so
+  *"Buff-Removal Attacks with 60%"* only ever presents `removal attacks with ` to the matcher. Battle
+  Resilience had been UNREAD on that line since it was built.
+- Also fixed by it: *"P.Atk.Speed with 10%"* was being read as MOVE speed, because `ms`'s bare
+  `"speed"` alias claimed a number `as` could not reach through the dots.
+- `tools/SmokeTest` gains **section 17**, the ascended Focus pool: Focus Limit filling to ten, Focus
+  Force swinging against a FULL pool without being refused, and the Triple Slash spending exactly
+  four. All twelve Focus checks pass, and so does the rest of the run.
+- Server boots green on 0.146.0; the Unity client type-checks.
+
+## 2026-09-14 — 0.145.1: a healer's bundle retires its singles, and two bundles ladder to 90
 
 🔴 **NEW APK REQUIRED** — a class-skill-TABLE change. No protocol change and no `game.db` delete.
 

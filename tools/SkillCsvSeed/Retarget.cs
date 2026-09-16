@@ -221,7 +221,12 @@ internal static class Retarget
                       || d.TargetMode == TargetMode.EnemiesInRadius
                       || d.Effect.HasFlag(SkillEffect.Cancel)
                       || d.DebuffSchool != DebuffSchool.None
-                      || d.Category == SkillCategory.Debuff;
+                      || d.Category == SkillCategory.Debuff
+                      // 🔑 A GAP-CLOSER IS AIMED AT AN ENEMY even when it carries nothing else
+                      // (`BL-237`, the warrior's Charge — the first pure one; Shadowstep and Phantom
+                      // Jump both strike or curse and were already caught above). `BlinkRange > 0` is
+                      // the ESCAPE shape (Phase Shift), which is SelfOnly and is not this.
+                      || (d.Effect.HasFlag(SkillEffect.Blink) && d.BlinkRange <= 0f);
 
         // BREADTH first: anything with a real radius affects many, whatever it is centred on. His own
         // point — *"aoe depends on skill around the caster or around the target but still the same

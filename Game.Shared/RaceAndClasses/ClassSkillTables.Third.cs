@@ -928,9 +928,17 @@ public static partial class ClassSkillTables
         // 🔴 THE ARCHER'S HALF IS GONE, 2026-09-09 — `archer 3rd.csv` landed and RegisterArcher3rd()
         //    below teaches his rows instead. The four derived skills it used to register are orphaned
         //    in Skills.ArcherKitRetired.cs and retired by `Replaces` on their authored successors.
+        // 🔴 THE RAVAGER NO LONGER LEARNS IT, 2026-09-16 (`BL-237`). The header of Skills.Warrior3rd.cs
+        //    has said since this stand-in was built that *"it goes the day his damage rows land"* — and
+        //    `warrior 3rd.csv` + `warrior 4th.csv` are those rows: three race Slashes, Sword Shock,
+        //    Demonic Smash, Saints Sword Dance, Sword Blast and the whole Focus kit.
+        // ⚠ THE WARLORD KEEPS IT, and that is not an oversight: `war_aoe 3rd.csv` and `war_aoe 4th.csv`
+        //   still author NO damage row of any kind, so dropping it there would leave the blunt
+        //   discipline with a 2nd-class Smash and nothing else from 40 to 90. `--check` will go on
+        //   printing 🟠 NOT IN THE CSV against `war_aoe 3rd` until his blunt damage rows land, which is
+        //   the pressure working exactly as it did for the sword half.
         foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
-            foreach (var d in new[] { Discipline.Ravager, Discipline.Warlord })
-                ClassSkills.RegisterThird(race, d, warrior.ToArray());
+            ClassSkills.RegisterThird(race, Discipline.Warlord, warrior.ToArray());
     }
 
     /// <summary>THE WARRIOR'S TWO DISCIPLINES, 40-74 — every row of `warrior 3rd.csv` (the RAVAGER)
@@ -1013,6 +1021,56 @@ public static partial class ClassSkillTables
             ClassSkills.RegisterThird(race, Discipline.Ravager, ravager.ToArray());
             ClassSkills.RegisterThird(race, Discipline.Warlord, warlord.ToArray());
         }
+
+        // ═══ `BL-237` — THE REST OF HIS TWO 3rd FILES: ONE SHARED SKILL, ONE ELF CURE, THREE RACE KITS.
+        //
+        // 🔑 WHAT IS SHARED AND WHAT IS RACED, straight off his RACE column:
+        //      • CHARGE has no race cell and sits in BOTH files — every warrior, both disciplines.
+        //      • ANTIDOTE is the Elf's, and also sits in both files — so both disciplines, Elf only.
+        //      • EVERYTHING ELSE is the RAVAGER's, one kit per race. `war_aoe 3rd.csv` authors none
+        //        of it, which is why none of it is on the Warlord.
+        // ⚠ These go on TOP of the `shared`/`ravager` lists above, which are already registered — a
+        //   second RegisterThird call for the same (race, discipline) APPENDS, which is the idiom the
+        //   Focus kit below has used since it was built.
+        foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
+            foreach (var d in new[] { Discipline.Ravager, Discipline.Warlord })
+            {
+                var extra = new List<ClassSkill> { new(WarriorCharge, 40) };
+                // ✅ ANTIDOTE — the same six rungs the tank's, the dual's and the archer's Elves get,
+                //    on the same skill (`elf_antidote`, a SELF cure). The Elf is the cure-carrier of
+                //    every fighter branch, and now of the last two as well.
+                if (race == Race.Elf)
+                    extra.AddRange(Ladder(ElfAntidote, new[] { 52, 58, 62, 66, 70, 74 }));
+                ClassSkills.RegisterThird(race, d, extra.ToArray());
+            }
+
+        // ---- HUMAN: the Focus kit (five ladders) + Champion Presence + the P.Def Slash. ----
+        var human = new List<ClassSkill>();
+        human.AddRange(Ladder(WarriorFocus, WarriorFocusLevels));
+        human.AddRange(Ladder(WarriorFocusMastery, WarriorFocusLevels));
+        human.AddRange(Ladder(WarriorFocusedBlast, FocusedBlastLevels));
+        human.AddRange(Ladder(WarriorFocusedDoubleSlash, FocusedDoubleLevels));
+        human.AddRange(Ladder(WarriorFocusedTripleSlash, FocusedTripleLevels));
+        human.AddRange(Ladder(WarriorChampionPresence, W3PresenceLevels));
+        human.AddRange(Ladder(WarriorHumanSlash, band15));
+        ClassSkills.RegisterThird(Race.Human, Discipline.Ravager, human.ToArray());
+
+        // ---- DEMON: Berserker Presence, the P/M.Atk Slash, Battle Frenzy, Sword Shock, Demonic Smash.
+        var demon = new List<ClassSkill>();
+        demon.AddRange(Ladder(WarriorBerserkerPresence, W3PresenceLevels));
+        demon.AddRange(Ladder(WarriorDemonSlash, band15));
+        demon.AddRange(Ladder(WarriorBattleFrenzy, W3FrenzyLevels));
+        demon.AddRange(Ladder(WarriorSwordShock, band15));
+        demon.AddRange(Ladder(WarriorDemonicSmash, band15));
+        ClassSkills.RegisterThird(Race.Demon, Discipline.Ravager, demon.ToArray());
+
+        // ---- ELF: Saints Presence, the speed Slash, the sword dance, the long blast. ----
+        var elf = new List<ClassSkill>();
+        elf.AddRange(Ladder(WarriorSaintsPresence, W3PresenceLevels));
+        elf.AddRange(Ladder(WarriorElfSlash, band15));
+        elf.AddRange(Ladder(WarriorSwordDance, band15));
+        elf.AddRange(Ladder(WarriorSwordBlast, FocusedBlastLevels));   // his 8 levels, shared with the Blast
+        ClassSkills.RegisterThird(Race.Elf, Discipline.Ravager, elf.ToArray());
     }
 
     /// <summary>THE MELEE ROGUE, 40-74 — every row of `dual 3rd.csv` (2026-09-09). See

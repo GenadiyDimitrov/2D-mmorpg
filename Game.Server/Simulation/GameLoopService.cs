@@ -2086,6 +2086,13 @@ public class GameLoopService : BackgroundService
             return;
         }
 
+        // `BL-237` — FOCUS: *"Cannot be used if maximum is reached"*. See IsChargePoolFull.
+        if (IsChargePoolFull(caster, def))
+        {
+            SendSystemToEntity(caster, $"{def.Name} is already at its limit.");
+            return;
+        }
+
         // `BL-130` — A WHISP IS RE-CALLABLE ON ITS REUSE, AND ON NOTHING ELSE. Owner, 2026-09-03:
         // *"charming whisp (and i guess all whisps) resummon on cd not when whisps disapear"*.
         //
@@ -5683,6 +5690,12 @@ public class GameLoopService : BackgroundService
         if (def.SummonsWhisp is { Length: > 0 })
             return p.Whisps.Any(w => w.SummonSkillId == def.Id && w.Level >= level);
 
+        // `BL-237` — A CHARGE GATHERER IS "UP" ONLY WHEN THE POOL IS FULL. Asked of `Buffs` like a
+        // blessing it would read as up the moment one charge existed, and the autopilot would never
+        // gather a second — the Focused strikes would then only ever spend one.
+        if (def.Charge is { GatherPerUse: > 0 })
+            return IsChargePoolFull(p, def);
+
         // One child = the wrapper hands out that family's rung; ask about the CHILD.
         if (def.ChildBuffsAt(level) is { Length: 1 } one
             && SkillCatalog.Get(one[0]) is SkillDef child)
@@ -5786,6 +5799,8 @@ public class GameLoopService : BackgroundService
             if (!ArmorGate.Satisfies(p.BodyArmorWeight, p.HasShield,
                                      def.RequiredArmor, def.RequiredShield)) continue;
             if (def.RequireHpBelowFraction > 0f && p.Hp > p.MaxHp * def.RequireHpBelowFraction) continue;
+            // `BL-237` — a full Focus pool is a refused tap, so it is a skipped entry here too.
+            if (IsChargePoolFull(p, def)) continue;
 
             int lvl = Math.Max(1, p.SkillLevelOf(def.Id));
             if (p.Mp < EffectiveMpCost(p, def, lvl)) continue;
@@ -11389,6 +11404,16 @@ public class GameLoopService : BackgroundService
             return;
         }
 
+        // `BL-237` — the Focus cap, re-checked for the same reason as the HP gate above: Focus Mastery
+        // can fill the pool from a basic swing while the half-second cast runs, and a gather that could
+        // not add a charge must not take the 20 HP and the MP for nothing.
+        if (IsChargePoolFull(caster, def))
+        {
+            SendSystemToEntity(caster, $"{def.Name} is already at its limit.");
+            CancelCast(caster);
+            return;
+        }
+
         // The tutorial's "use a skill" beat (`58a`). Here rather than at cast START: a cast that was
         // interrupted or cancelled is not a skill you used, and past this point the MP is paid.
         AdvanceActionQuests(caster, QuestActions.UseSkill);
@@ -11655,6 +11680,17 @@ public class GameLoopService : BackgroundService
             return;
         }
 
+        // ---- `BL-237` — FOCUS: add a charge to the caster's own pool and finish. ----
+        //      Past every gate (MP, HP, reuse), so a refused or interrupted gather adds nothing.
+        //      ⚠ ONLY A GATHERER WITH NO DAMAGE OF ITS OWN returns here. The 4th file's Focus Force
+        //      *"Deals Physical damage … and gather 'Focus'"* will need its gather AFTER the damage arm.
+        if (def.Charge is { GatherPerUse: > 0 } gather && !effect.HasFlag(SkillEffect.PhysicalDamage))
+        {
+            GatherCharge(caster, def, lvl, gather.GatherPerUse);
+            BroadcastCombat(caster, caster, 0, CombatOutcome.Buff, castName);
+            return;
+        }
+
         // ---- REVEAL (BL-69): drag every hidden character in radius back into view and bar them
         //      from hiding again. Deals nothing, so it never raises a mob clan. ----
         if (def.RevealsHidden)
@@ -11759,6 +11795,11 @@ public class GameLoopService : BackgroundService
             // thing being complained about. All three still govern BASIC attacks, untouched.
             float miss = target.Immune ? 1f : def.SureHit ? 0f : target.SkillEvadeChance;
 
+            // `BL-237` — FOCUS IS SPENT ONCE PER CAST, BEFORE THE FIRST HIT. His comment on the Double
+            // Slash: *"consume warrior_focus once per skil use - not each slash"*. So it sits OUTSIDE the
+            // HitCount loop, and every slash of the cast swings with the same bonus. 1 = nothing spent.
+            float focusMult = SpendCharges(caster, def, castName);
+
             // MULTI-HIT (Sound Burst: *"Deals Physical Damag With Power +1000 Twice"*). Each hit is an
             // INDEPENDENT resolution — its own miss roll, its own crit, its own block — which is why
             // this is a loop rather than a ×2 on the power. Stop early if the target dies, so a corpse
@@ -11836,6 +11877,11 @@ public class GameLoopService : BackgroundService
                 // (Twin Arrows: *"two arrows EACH dealing +5200"*). 0 = the arrow has its own, which is
                 // Arrow Barrage. See Entity.ChannelPower for why both readings had to be supported.
                 if (powerOverride > 0) pFlat = powerOverride;
+                // `BL-237` — his formula: *"effective_power = basePower x (1 + consimed_focus x 0.1)"*.
+                // The POWER moves, not the finished damage, so +20% power is less than +20% damage
+                // (damage is K·(atk·lvlMod + power)/def). Before critPower, so a crit's flat add is
+                // measured against the power that actually swung.
+                if (focusMult != 1f) pFlat = (int)MathF.Round(pFlat * focusMult);
                 // The power the CRIT-FLAT factor is measured against. Equal to pFlat for everything
                 // except a detonating burst, which raises it to the pool it just spent (see below).
                 int critPower = pFlat;
@@ -11910,6 +11956,16 @@ public class GameLoopService : BackgroundService
                 if (damage > 0) TryOnHitProcs(caster, target);   // the skill path's half of the proc trigger
             }
             }
+
+            // `BL-237` — A STRIKE THAT ALSO GATHERS (the 4th tier's Focus Force: *"Deals Physical
+            // damage with +500 power and gather 'Focus' up to 10"*). AFTER the hits, so a cast that
+            // was interrupted before this point gathers nothing — the same rule the pure gatherer
+            // above follows, and the reason its own branch refuses to handle a damaging skill.
+            // ⚠ It gathers whether or not the swing LANDED. His row prices it at 50 HP and 5 MP with
+            //   no reuse at all; making the charge depend on an evasion roll would turn the Human's
+            //   only ranged filler into a coin flip he pays HP for.
+            if (def.Charge is { GatherPerUse: > 0 } strikeGather)
+                GatherCharge(caster, def, lvl, strikeGather.GatherPerUse);
         }
 
         // ---- Damage (magic) ----
@@ -12732,6 +12788,10 @@ public class GameLoopService : BackgroundService
             // ⚠ Burn's half comes from the TABLE, like the rest of its rider.
             MpReceivedPct = dotKind == DotKind.Burn
                 ? DotTiers.BurnMpCut(dotKind, rank) : def.MpReceivedPct,
+            // `BL-237` — the two buff-side reflect channels (Saints Blessing).
+            PhysSkillReflectChance = def.PhysSkillReflectChance,
+            PhysSkillReflectPct = def.PhysSkillReflectPct,
+            DebuffReflectChance = def.DebuffReflectChance,
             // Absorb shield: flat Power + a % of the target's max HP (a Percent Shield magnitude).
             ShieldPool = (def.Effect & SkillEffect.Shield) != 0
                 ? def.PowerAt(level) + (int)(target.MaxHp * def.MagnitudeOf(SkillEffect.Shield, ModifierMode.Percent, level))
@@ -13018,6 +13078,101 @@ public class GameLoopService : BackgroundService
     ///
     /// <para>⚠ The DoT is found through the SKILL's <c>StackKey</c>, not through the buff key, so a
     /// burst empties exactly the applier line it shares a pool with and nothing else.</para></summary>
+    // ═══════════════════════════════════════════════════════════════════════════════════════════
+    //  THE CASTER'S CHARGE POOL — the Human Ravager's Focus (`BL-237`). See SkillDef.Charge /
+    //  ChargeRule for the design; these four are the whole engine side of it.
+    // ═══════════════════════════════════════════════════════════════════════════════════════════
+
+    /// <summary>The live pool buff a rule names, or null when the entity holds no charges.</summary>
+    private static BuffInstance? ChargePoolOf(Entity e, ChargeRule rule) =>
+        SkillCatalog.Get(rule.Pool) is SkillDef pool
+            ? e.Buffs.FirstOrDefault(b => b.Key == BuffPlan(pool, 1).Key)
+            : null;
+
+    /// <summary>Is <paramref name="def"/> a gatherer that must be REFUSED because the pool already sits
+    /// at its rung's cap? His Focus row: *"Cannot be used if maximum is reached"*. False for everything
+    /// else — a spender, a proc passive, and a gatherer that also deals damage (the 4th file's Focus
+    /// Force is an attack first, and refusing an attack because the pool is full would be a wall).</summary>
+    private static bool IsChargePoolFull(Entity e, SkillDef def)
+    {
+        if (def.Charge is not { GatherPerUse: > 0 } rule || def.Effect.HasFlag(SkillEffect.PhysicalDamage))
+            return false;
+        int cap = rule.CapAt(Math.Max(1, e.SkillLevelOf(def.Id)));
+        return cap > 0 && (ChargePoolOf(e, rule)?.Stacks ?? 0) >= cap;
+    }
+
+    /// <summary>Add <paramref name="add"/> charges to the pool, up to THIS skill's cap at
+    /// <paramref name="level"/>, and restart the pool's clock (*"Each use resets duration"*). Returns
+    /// whether anything was added.
+    ///
+    /// <para>⚠ NOT ApplyBuff's stacking path, which sets <c>Stacks = Min(cap, Stacks + 1)</c> — handed
+    /// a rung-1 Focus Mastery's cap of 2, it would pull a 10-charge pool DOWN to 2. A gatherer below the
+    /// pool simply adds nothing. ApplyBuff is still what creates the buff the first time, so the pool is
+    /// an ordinary buff for the bar, persistence and death.</para></summary>
+    private bool GatherCharge(Entity e, SkillDef gatherer, int level, int add)
+    {
+        if (gatherer.Charge is not { } rule || SkillCatalog.Get(rule.Pool) is not SkillDef poolDef) return false;
+        int cap = Math.Min(rule.CapAt(level), poolDef.EffectiveMaxStacks);
+        if (cap <= 0 || add <= 0) return false;
+
+        var pool = ChargePoolOf(e, rule);
+        if (pool is not null && pool.Stacks >= cap) return false;
+
+        if (pool is null)
+        {
+            // The pool's own level labels the buff ("Focus Lv.3"); a proc that opens it before Focus is
+            // learned simply shows Lv.1.
+            ApplyBuff(e, poolDef, Math.Max(1, e.SkillLevelOf(poolDef.Id)), refresh: false);
+            pool = ChargePoolOf(e, rule);
+            if (pool is null) return false;
+            pool.Stacks = 0;
+        }
+        pool.Stacks = Math.Min(cap, pool.Stacks + add);
+        pool.MaxStacks = poolDef.EffectiveMaxStacks;
+        pool.TicksRemaining = poolDef.DurationTicks;
+        pool.AppliedAtTick = _tick;
+        if (e.Kind == EntityKind.Player) PushBuffs(e);
+        return true;
+    }
+
+    /// <summary>Spend a spender's share of the pool and return the POWER multiplier it buys — his formula
+    /// verbatim: <c>consumed = Min(count, max); ×(1 + consumed × pct); count −= consumed</c>. 1 when the
+    /// skill spends nothing or the pool is empty. An emptied pool is removed, so the bar loses the square.</summary>
+    private float SpendCharges(Entity caster, SkillDef def, string castName)
+    {
+        if (def.Charge is not { SpendMax: > 0 } rule || ChargePoolOf(caster, rule) is not { } pool) return 1f;
+        int spent = Math.Min(pool.Stacks, rule.SpendMax);
+        if (spent <= 0) return 1f;
+
+        pool.Stacks -= spent;
+        if (pool.Stacks <= 0) caster.Buffs.Remove(pool);
+        if (caster.Kind == EntityKind.Player)
+        {
+            PushBuffs(caster);
+            // The venom lesson (`BL-207`): a pool you spend should say what it bought, or the bonus is
+            // invisible and reads as not working.
+            SendSystemToEntity(caster,
+                $"{castName} spent {spent} Focus — +{spent * rule.PowerPerCharge * 100f:0}% power.");
+        }
+        return 1f + spent * rule.PowerPerCharge;
+    }
+
+    /// <summary>FOCUS MASTERY's proc — one roll per LANDED basic swing, at the crit chance when the swing
+    /// crit and the hit chance when it did not (*"Basic attack (15%), Critical attack (30%)"*). Walks the
+    /// learned passives the way TryProcs does, and honours each one's weapon gate the same way.</summary>
+    private void TryChargeOnBasic(Entity attacker, bool crit)
+    {
+        if (attacker.Kind != EntityKind.Player || attacker.LearnedSkills.Count == 0) return;
+        foreach (var (skillId, level) in attacker.LearnedSkills)
+        {
+            if (SkillCatalog.Get(skillId) is not SkillDef def || def.Charge is not { } rule) continue;
+            float chance = crit ? rule.OnBasicCrit : rule.OnBasicHit;
+            if (chance <= 0f) continue;
+            if (!attacker.WeaponType.Satisfies(def.RequiredWeapon, def.RequiredHands)) continue;
+            if (_rng.NextDouble() < chance) GatherCharge(attacker, def, level, 1);
+        }
+    }
+
     private static int ClearStackPool(Entity target, string stackKey)
     {
         if (string.IsNullOrEmpty(stackKey)) return 0;
@@ -14227,7 +14382,7 @@ public class GameLoopService : BackgroundService
     private bool ResolveBasicSwing(Entity attacker, Entity target, string? castName = null)
     {
         float missChance = StatCalculator.ResolveAvoidChance(
-            attacker.Accuracy, (int)target.EffectiveEvasion,
+            attacker.EffectiveAccuracy, (int)target.EffectiveEvasion,   // `BL-237` — Final Stand's acc is live
             target.EvadeFloor, attacker.HitFloor,
             attacker.Level, target.Level,
             sureHit: false, defenderImmune: target.Immune);
@@ -14262,6 +14417,8 @@ public class GameLoopService : BackgroundService
             // ON-HIT PROCS (Combo Mastery). Basic attacks are one of the two damage paths that can
             // fire one; the physical-skill path is the other. Rolled on a landed hit only.
             if (damage > 0) TryOnHitProcs(attacker, target);
+            // `BL-237` — FOCUS MASTERY: a landed swing may gather Focus, at the crit chance if it crit.
+            if (damage > 0) TryChargeOnBasic(attacker, outcome == CombatOutcome.Crit);
             // MANA vampirism (Warchanter Mana Vampirism) — the same trigger, a different bar. His row
             // says "physical basic atack only", which is exactly where this sits: a skill never drains.
             // Bows are excluded for the same reason melee vamp excludes them, and the mastery that
@@ -16570,7 +16727,7 @@ public class GameLoopService : BackgroundService
             // *"con armor set now will buy u nothing and atk-con won't hinder you"*.
             p.EffectiveCon, p.EffectiveAtk, p.EffectiveWit, p.EffectiveAgi, p.EffectiveSpt,
             p.MaxHp, p.MaxMp, (int)p.EffectiveAttack, (int)p.EffectiveDefence,
-            p.Accuracy, (int)p.EffectiveEvasion, p.CritChance, p.BasicAttackRange, p.SecondClass,
+            p.EffectiveAccuracy, (int)p.EffectiveEvasion, p.CritChance, p.BasicAttackRange, p.SecondClass,
             p.EffectiveSpeed, SkillMath.CastModifier(p.Wit), p.EffectiveCastSpeedMultiplier, p.EffectiveAttackSpeedMultiplier, p.SkillPoints, p.MoveState, (int)p.EffectiveMagicAttackShown, p.MagicCritChance,
             p.HasShield, p.BlockChance, p.BlockReduction, (int)p.EffectiveMagicDefence,
             p.ActiveArmorSet, p.ArmorMasteryLabel,

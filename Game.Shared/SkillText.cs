@@ -564,9 +564,24 @@ public static class SkillText
         if (def.DebuffSchool != DebuffSchool.None)
             o.Add($"Landing is contested ({def.DebuffSchool.ToString().ToLowerInvariant()})");
 
+        // ---- `BL-237` — THE FOCUS POOL (SkillDef.Charge). Said in the pool's own words, per rung. ----
+        if (def.Charge is { } charge)
+        {
+            string pool = SkillCatalog.Get(charge.Pool)?.Name ?? "charges";
+            if (charge.GatherPerUse > 0)
+                o.Add($"Gathers {charge.GatherPerUse} {pool}, up to {charge.CapAt(level)} — refused at the limit");
+            if (charge.OnBasicHit > 0f || charge.OnBasicCrit > 0f)
+                o.Add($"Basic attacks gather {pool} up to {charge.CapAt(level)}: "
+                    + $"{charge.OnBasicHit * 100f:0.#}% per hit, {charge.OnBasicCrit * 100f:0.#}% per critical hit");
+            if (charge.SpendMax > 0)
+                o.Add($"Spends up to {charge.SpendMax} {pool} once per use: +{charge.PowerPerCharge * 100f:0.#}% power each");
+        }
+
         // ---- Stacking ----
+        // ⚠ Not for a charge pool: its def's MaxStacks is the POOL's ceiling (10), while the rung's real
+        //   limit is the "up to N" line above — printing both would contradict itself on every rung below 74.
         int stacks = def.EffectiveMaxStacks;
-        if (stacks > 1) o.Add($"Stacks up to {stacks} times");
+        if (stacks > 1 && def.Charge is null) o.Add($"Stacks up to {stacks} times");
         // PER RUNG, and worth its own line: how many stacks one cast lays is the whole ladder of his
         // Venom Stab (1 → 3), and with only "stacks up to 10" on the square a player could not tell a
         // level-40 rung from a level-74 one.

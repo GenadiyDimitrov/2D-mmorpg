@@ -101,7 +101,16 @@ internal static class Descr
         ("mpreg",         new[] { "mp regeneration", "mp regen", "mpreg", "mp reg", "mp" }),
         ("hpreg",         new[] { "hp regeneration", "hp regen", "hpreg", "hp reg" }),
         ("cast",          new[] { "cast speed", "casting speed", "cast" }),
-        ("as",            new[] { "attack speed", "atack speed", "atk speed", "as" }),
+        // `BL-237` — HIS DOTTED SPELLINGS ("P.Atk.Speed with 10%"). Without them `ms`'s bare "speed"
+        // claimed the number and Battle Frenzy's attack-speed rung was compared against MOVE speed,
+        // which the tool then reported as a MODE mismatch rather than the mis-read it was.
+        ("as",            new[] { "p.atk.speed", "atk.speed", "attack.speed",
+                                  "attack speed", "atack speed", "atk speed", "as" }),
+        // `BL-237` — ONE number, TWO stats: the two 4th-tier stances both pay *"Decrease
+        // move/attack.speed with 10%"*. Same shape as `offencespeed` below, and built the same way —
+        // only when the code really does carry one value for both, so a rung that split them reads as
+        // UNCHECKED rather than passing on whichever half happened to match.
+        ("movatkspeed",   new[] { "move/attack.speed", "move/attack speed" }),
         ("ms",            new[] { "move speed", "movement speed", "ms", "speed", "move" }),
         ("reuse",         new[] { "reuse delay", "reuse", "cooldown" }),
         // ⚠ "chance for spells to fizzle" IS mRes in his mage file. The number is the same one the code
@@ -124,6 +133,26 @@ internal static class Descr
         ("doublerate",    new[] { "double damage rate", "double rate", "doublerate" }),
         ("durationrate",  new[] { "double duration rate", "duration double rate", "durationrate" }),
         ("reusereset",    new[] { "reuse reset rate", "reuse reset", "cooldown reset" }),
+        // `BL-237` — HIS DOTTED SPELLINGS, which the warrior Presences use throughout ("P.Crit.Rate
+        // with 15%, P.Crit.Dmg with 20%"). They sit ABOVE the plain keys, longest-first, and BELOW the
+        // `*.Received` pair further down, which is longer still and therefore still wins its rows.
+        ("critdmg",       new[] { "p.crit.dmg", "p.critical.dmg" }),
+        ("critrate",      new[] { "p.crit.rate", "p.critical.rate" }),
+        // `BL-237` — the PvP damage channels. His Champion Presence is the only skill in any file that
+        // authors them ("PVP Dmg with 15%"), and all three code flags carry the one number.
+        ("pvpdmg",        new[] { "pvp dmg", "pvp damage" }),
+        // `BL-237` — the three REFLECT channels of the Elf Ravager's Saints Blessing, and they are
+        // three DIFFERENT stats one word apart, so the two long spellings must out-reach the bare one.
+        //   *"Reflect 30% OF normal basic attacks"*      → the FRACTION returned (`BuffReflect`)
+        //   *"15% TO reflect debuff"*                    → a CHANCE the debuff bounces
+        //   *"10% TO reflect Physical Damage skill"*     → a CHANCE the whole skill bounces
+        ("skillreflect",  new[] { "to reflect physical damage skill", "reflect physical damage skill",
+                                  "physical skill reflect" }),
+        ("debuffreflect", new[] { "to reflect debuff", "reflect debuff", "debuff reflect" }),
+        ("reflect",       new[] { "reflect" }),
+        // `BL-237` — a CHANNEL's shot count. Saints Sword Dance is *"+150 power 10 times over 2s"*, and
+        // the 10 was the only number on that row nothing could read.
+        ("channelshots",  new[] { "times over" }),
         ("critrate",      new[] { "critical rate", "crit rate", "critrate", "critical" }),
         // 🔴🔑 `BL-210` — MAGIC CRIT **DAMAGE** IS ITS OWN KEY NOW, AND IT MUST STAY ABOVE THE RATE.
         // Until 2026-09-12 there was no such key at all, so `magiccritrate`'s "magic critical" alias
@@ -181,7 +210,25 @@ internal static class Descr
         ("successchance", new[] { "success chance" }),
         ("procchance",    new[] { "chance" }),
         ("ccresist",      new[] { "resist to spt", "resist to con" }),
-        ("cancelresist",  new[] { "cancel resist", "buff cancel resist" }),
+        // `BL-237` — Battle Frenzy's and Battle Resilience's own wording. Both are two of the longest
+        // aliases in the table, so neither can be claimed by "resist" or "chance" above them.
+        ("ccresist",      new[] { "resistance to debuffs", "resist to debuffs", "debuff resistance" }),
+        // ⚠ NO HYPHEN IN AN ALIAS. `-` is a CLAUSE SEPARATOR in `Clip`, so the window before
+        //   *"Buff-Removal Attacks with 60%"* is only ever `removal attacks with ` — a "buff-removal"
+        //   alias can never match, and every such row stayed UNREAD until this was understood.
+        ("cancelresist",  new[] { "removal attacks", "removal",
+                                  "cancel resist", "buff cancel resist" }),
+        // `BL-237` — the ANTI-HEAL a self-buff pays. Battle Frenzy's *"Decrease received HP 60%"* is a
+        // NEGATIVE `BuffHealReceivedPct` in the code and a positive percent in his cell; Compare's
+        // sign-flip rule covers that, exactly as it does for an M.Def curse.
+        ("healrecv",      new[] { "received hp", "healing received", "heal received" }),
+        // `BL-237` — the HP GATE. Both Battle stances and Battle Frenzy end on *"can be used when HP is
+        // less or equal to 30%"*, which is `SkillDef.RequireHpBelowFraction` and was UNREAD on every one
+        // of them since the stances were built.
+        ("hpgate",        new[] { "less or equal to", "when hp is below", "hp is below" }),
+        // `BL-237` — the PvE twin of the `pvpdmg` key above. Monster Knowledge is its only author
+        // (*"Increase PVE Dmg with 20%"*) and all three PvE flags carry the one number.
+        ("pvedmg",        new[] { "pve dmg", "pve damage" }),
         ("aggro",         new[] { "aggro", "threat" }),
         // A REAGENT COUNT is checkable data, not noise: his two Ultimate heals read "Consumes 1 skill
         // stone" / "Consumes 4 skill stones" against `ConsumableAmount`. Reading it beats an ignore
@@ -195,6 +242,34 @@ internal static class Descr
         // the code really does carry one value for all four, so a rung that split them reads as
         // UNCHECKED rather than passing on whichever channel happened to match.
         ("offencespeed",  new[] { "offence and speed", "offense and speed" }),
+        // `BL-237` — THE FOCUS ROWS. Every one of these phrases is his, and every one is lifted out of
+        // its brackets or its run-on sentence by FocusLift first, so each number stands in its own
+        // clause beside exactly one of these words. The last two are ahead of nothing they could steal:
+        // "focus spend", "focus bonus", "hp price", "mp price" appear nowhere but in what FocusLift writes.
+        ("chargecap",     new[] { "focus' up to", "focus up to" }),
+        ("chargespend",   new[] { "focus spend" }),
+        ("chargepower",   new[] { "focus bonus" }),
+        ("chargeonhit",   new[] { "focus on hit" }),
+        ("chargeoncrit",  new[] { "focus on crit" }),
+        ("hpprice",       new[] { "hp price" }),
+        ("mpprice",       new[] { "mp price" }),
+    };
+
+    /// <summary>`BL-237` — HIS FOCUS ROWS PUT DATA WHERE THE READER ASSUMES COMMENTARY. Three shapes:
+    /// <c>Consume 'Focus' to increase power with 15% (Max 3)</c> (a bracket — which <see cref="Parenthetical"/>
+    /// would strip — and a percent that <c>power</c> would claim as a percent POWER),
+    /// <c>Basic attack (15%), Critical attack (30%)</c> (two proc chances, both bracketed), and
+    /// <c>Cost 20 HP and 5 MP</c> (the skill's price, which the bare <c>mp</c> alias files as MP regen).
+    /// Each is rewritten into its own clauses with an unambiguous word, the way
+    /// <see cref="SuccessChanceLift"/> handles the landing modifier. Anchored on the whole phrase, so a
+    /// venom row's <c>(max 10)</c> stays commentary.</summary>
+    private static readonly (Regex Pattern, string Replacement)[] FocusLift =
+    {
+        (new(@"consume\s+'?focus'?\s+to\s+increase\s+power\s+with\s+(\d+(?:\.\d+)?%)\s*\(\s*max\s+(\d+)\s*\)", RegexOptions.IgnoreCase),
+            "; focus bonus $1 ; focus spend $2 ;"),
+        (new(@"basic\s+attack\s*\(\s*(\d+(?:\.\d+)?%)\s*\)", RegexOptions.IgnoreCase), "; focus on hit $1 ;"),
+        (new(@"critical\s+attack\s*\(\s*(\d+(?:\.\d+)?%)\s*\)", RegexOptions.IgnoreCase), "; focus on crit $1 ;"),
+        (new(@"cost\s+(\d+)\s*hp\s+and\s+(\d+)\s*mp", RegexOptions.IgnoreCase), "; hp price $1 ; mp price $2 ;"),
     };
 
     /// <summary>Numbers that are NOT stats — durations, ranks, ranges, counts. Matched against the text
@@ -269,6 +344,7 @@ internal static class Descr
     private static List<(Scope? Scope, string Text)> Segments(string descr)
     {
         descr = SuccessChanceLift.Replace(descr, m => "; " + m.Groups[1].Value + " ; ");
+        foreach (var (pattern, replacement) in FocusLift) descr = pattern.Replace(descr, replacement);
         descr = Parenthetical.Replace(descr, " ");
         var outp = new List<(Scope?, string)>();
         foreach (var chunk in descr.Split(';', StringSplitOptions.RemoveEmptyEntries))
@@ -577,6 +653,29 @@ internal static class Descr
             AddPassive(Add, pe);
         }
         Add("procchance", true, def.ProcChance);
+        // `BL-237` — THE FOCUS POOL (SkillDef.Charge): the cap, the spend limit, the power per charge and
+        // the two proc chances, plus the HP/MP price his Focus rows restate in the text. See FocusLift.
+        if (def.Charge is { } charge)
+        {
+            Add("chargecap",    false, charge.CapAt(level));
+            Add("chargespend",  false, charge.SpendMax);
+            Add("chargepower",  true,  charge.PowerPerCharge);
+            Add("chargeonhit",  true,  charge.OnBasicHit);
+            Add("chargeoncrit", true,  charge.OnBasicCrit);
+        }
+        Add("hpprice", false, def.HpCostAt(level));
+        Add("mpprice", false, def.MpCostAt(level));
+        // `BL-237` — a CHANNEL's shots (Saints Sword Dance's "10 times over 2s"), and the two reflect
+        // channels a BUFF can carry (Saints Blessing). The melee-basic third of that trio is an
+        // ordinary `BuffReflect` magnitude and arrives through AddMagnitudes below.
+        if (scope is null)
+        {
+            Add("channelshots",  false, def.ChannelShots);
+            Add("hpgate",        true,  def.RequireHpBelowFraction);
+            Add("healrecv",      true,  def.HealReceivedPctAt(level));
+            Add("skillreflect",  true,  def.PhysSkillReflectChance);
+            Add("debuffreflect", true,  def.DebuffReflectChance);
+        }
         AddMagnitudes(Add, def, level);
 
         // 🔑 FOLLOW THE BUFF LADDER. `Might` is `cast_atk_phys`, and a cast-skill's level carries only
@@ -603,6 +702,12 @@ internal static class Descr
 
         // "offence and speed" is only a real metric when the four channels agree. Built LAST, from the
         // finished pool, so it sees whatever the passive/magnitude/child walk above put there.
+        // `BL-237` — "move/attack.speed" is only a real metric when BOTH channels carry the same
+        // number. Built here, from the finished pool, for the same reason `offencespeed` is.
+        if (pool.TryGetValue(("ms", true), out var msv) && msv.Count == 1
+            && pool.TryGetValue(("as", true), out var asv) && asv.Contains(msv[0]))
+            pool[("movatkspeed", true)] = new List<float> { msv[0] };
+
         if (pool.TryGetValue(("patk", true), out var pa) && pa.Count == 1
             && pool.TryGetValue(("matk", true), out var ma) && ma.Contains(pa[0])
             && pool.TryGetValue(("as", true), out var asp) && asp.Contains(pa[0])
@@ -796,6 +901,14 @@ internal static class Descr
         SkillEffect.BuffBowResist => "bowresist",
         SkillEffect.BuffMagicEvasion => "magiceva",
         SkillEffect.BuffInterruptResist => "interrupt",
+        // `BL-237` — the melee-basic reflect fraction, and the three PvP damage-out channels, which
+        // his Champion Presence authors as ONE number ("PVP Dmg with 15%") exactly as Monster
+        // Knowledge authors the PvE three.
+        SkillEffect.BuffReflect => "reflect",
+        SkillEffect.BuffPvpSkillDamage or SkillEffect.BuffPvpMagicDamage
+            or SkillEffect.BuffPvpBasicDamage => "pvpdmg",
+        SkillEffect.BuffPveSkillDamage or SkillEffect.BuffPveMagicDamage
+            or SkillEffect.BuffPveBasicDamage => "pvedmg",
         SkillEffect.Heal or SkillEffect.RestoreMp => "power",
         _ => null,
     };

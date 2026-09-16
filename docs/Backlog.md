@@ -178,7 +178,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-232` | 🔵 | `debuff_landmods.csv` IS LIVE — 74 rows built and checked; the SUCCESS column is yours to author | combat |
 | `BL-233` | ❓ | THE DEMON BUFFER'S P.DEF — measured three ways and heavy is AHEAD; I need your two sheets | classes |
 | `BL-234` | ❓ | URGENT LESSER HEAL — built to your four numbers; the per-rank falloff is mine to confirm | classes |
-| `BL-237` | 🔴 | WARRIOR 3rd + 4th CSVs — reviewed, fixed by you, ready to build | classes |
+| `BL-237` | ❓ | WARRIOR 3rd + 4th — **BUILT** in 0.146.0; three readings of yours are mine to confirm | classes |
 
 ---
 
@@ -198,8 +198,15 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 
   What is left, and it is now a short list — **the six authored files are ALL built:** healer 3rd + 4th,
   buffer 3rd + 4th, nuker 3rd, and tank 2nd/3rd/4th. What is missing is what you have not written:
-  - 🔵 **FOUR 3rd files are still two-line placeholders** — `warrior` (9 lines, a header block only),
-    `war_aoe`, `dual`, `archer` — and **FIVE 4th files** with them (the same four, plus `nuker 4th`).
+  - ✅ ~~`warrior 3rd` / `warrior 4th`~~ — **DONE, built 2026-09-16 in 0.146.0 (`BL-237`).** The
+    RAVAGER's whole kit, both tiers, race by race, and `warrior 4th` earned its `Check.Specs` line the
+    same day. It is the SEVENTH and EIGHTH authored file built.
+  - 🔴 **`war_aoe 3rd` and `war_aoe 4th` are the last warrior gap, and it is a DAMAGE gap.** The 3rd
+    file has his passives and buffs and *"is missing only teir dmg and control (active dmg) skills"*;
+    the 4th is still two lines. Until they land the WARLORD carries the derived `war_sundering_blow`
+    and `--check` prints one 🟠 line at him.
+  - 🔵 **The rogue's two are still two-line placeholders** — `dual 3rd`/`4th` and `archer` were built
+    from his files in 0.119/0.120; what is left on this bullet is `nuker 4th`.
     Same rule: nothing invented in the meantime, and each earns its `Check.Specs` line the day you
     finish it.
   - ✅ ~~`buffer 4th.csv`~~ — DONE, built by `BL-108` in 0.103.0. Harmony Mark shares `MarkKey` with the
@@ -245,8 +252,11 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
   - 🟡 **Gated, deliberately.** A learnable passive is a **CSV row**, and inventing one re-specs the
     file you have not written yet. `warrior 3rd`, `rogue 3rd` and their 4th-tier files are still
     two-line placeholders (`BL-02`), so this lands the day you author them and not before.
-  - 🔔 **THIS IS THE REMINDER YOU ASKED FOR.** When you open a warrior or rogue file, `precision` and
-    `anti_magic` want rows in it. ⚠ **A class-skill-TABLE change needs a new APK** — the client builds
+  - 🔔 **THIS IS THE REMINDER YOU ASKED FOR, AND IT HAS NOW FIRED ONCE AND GONE UNANSWERED.** You
+    wrote `warrior 3rd.csv` and `warrior 4th.csv` on 2026-09-14 and neither carries a `precision` or an
+    `anti_magic` row — so 0.146.0 built both files without them and both stayed auto-granted floors.
+    They are still yours to author, and the next file to open is `war_aoe`. When you open a warrior or
+    rogue file, `precision` and `anti_magic` want rows in it. ⚠ **A class-skill-TABLE change needs a new APK** — the client builds
     its Learn tab locally — so it rides a client batch, not a server-only push.
   - ⚠ The level question the old entry asked (class change vs 76) is answered by this: a learn level
     is whatever the row says, so there is nothing left to rule separately.
@@ -1758,36 +1768,43 @@ over eleven: `dotnet run --project tools/BalanceMatrix -- --healpower 90 epic`.
 
 ---
 
-## `BL-237` 🔴 WARRIOR 3rd + 4th CSVs — reviewed, your fixes in, READY TO BUILD
+---
 
-**2026-09-14.** You landed `warrior 3rd.csv` (Ravager race kits, Charge, the three Presences),
-`warrior 4th.csv` (76-90) and small `war_aoe 3rd.csv` edits (Final Stand acc, Antidote, Charge). I read
-them end to end and listed 8 slips + 8 questions; **you fixed all 8 slips and answered the questions the
-same day.** Nothing is built yet.
+## `BL-237` ❓ WARRIOR 3rd + 4th — BUILT (0.146.0). THREE READINGS ARE MINE, NOT YOURS
 
-### Your rulings (built as written when this lands)
-- **Charge**: 400 (3rd) / 600 (4th) is its RANGE; usable with a 2h sword **or** blunt.
-- **Every Slash debuff lasts 15s.** Demon Slash is now cast 1 / reuse 3 like the other two.
-- **All three Slashes land at ×0.7; Sword Shock at ×1.** → these go into `debuff_landmods.csv` **at
-  build time**: that file is regenerated from the code, so a row for an unbuilt skill would be wiped.
-  The `Chance x0.7` / `Success rate x1` comments come out of the class CSV in the same commit.
-- **The 74-rung MP was a real re-price, not a typo**: at 350 MP your 4th Triple Slash was unusable on a
-  900-MP warrior, so both 4th Slash skills were cut and the 3rd rungs now match (Double 88, Triple 98).
-- **Focus Force** is IG's normal "power attack" as a physical skill that can double; we have no skill
-  crits, so it carries +500 power and gathers Focus.
-- **Saints Sword Dance** hits an area: `target/aoe`.
-- **Two-Hand Mastery 4th**: 666 → **678** → 690 (+12 on both steps, so 80 onward is unchanged).
+**Built 2026-09-16.** Both files are in, `--check` is green on all three warrior specs, and the
+Ravager finally has damage. Everything you ruled was built verbatim; what is left below is only what
+I had to DECIDE because your cell did not say, plus two cells I moved. Say the word on any of them
+and it changes in a line — none of it is load-bearing anywhere else.
 
-### Second round of rulings (same day) — applied to the CSVs
-- Saints Sword Dance is `target/aoe` in **both** tiers.
-- Demon Slash (3rd) is `Physical/Debuf`, like the other two.
-- 🔑 **LAW: every melee physical attack skill has RANGE 40**, the melee basic-attack range — *"if I miss
-  to type it it's a law"*. The 4th Slash rows were 0 → 40. Every class CSV was swept: no other melee
-  strike breaks it (Signal Flare, Prowl, Vanish and Mass Taunt are self/area skills, not strikes).
-- Focus Limit is `self/single` — it affects the caster only.
-- 4th Focused Double Slash is cast **1.5 / reuse 3** (left over from copying the Triple).
-- Still cosmetic, untouched: Sword Blast AOE `00`, Armor Mastery 4th 146 at 87, stale separator labels.
+### 1. ❓ *"Decrease received HP 60%"* — I read it as HEALING RECEIVED
+Battle Frenzy's only downside. I read it as "heals and potions restore 60/70/80% less while it runs",
+because that is what pairs with *"can be used when HP is less or equal to 30%"* — you go berserk at a
+third of your bar and nobody can top you back up. The other reading available was "you take 60% more
+damage", which is a different and far harsher skill. **If you meant the second, it is one field.**
 
-Not a question: the 4th file stops Final Stand, HP Boost, HP Regeneration, the Battle stances, Monster
-Knowledge, Focus Mastery, Battle Frenzy and Antidote at their 74 rungs. The Final Stand acc edit changes a
-built skill, so both 3rd files owe the code that change too.
+### 2. ❓ Saints Blessing's three numbers — I read two of them as CHANCES
+*"Reflect 30% of normal basic attacks, 15% to reflect debuff and 10% to reflect Physical Damage
+skill"*. I read the first as a FRACTION of the damage returned every time, and the other two as
+CHANCES that the whole thing bounces — following your own Deflection ruling, where you were offered
+*"a 100% chance to reflect 15%, or 15% chance to reflect 100%"* and picked the second. The `of` / `to`
+in your own sentence is the tell, but it is thin, so it is written down here.
+
+### 3. ❓ Battle Frenzy is EXEMPT from the buff-slot limit
+Like the two Battle stances, and for their reason: a buff you may only press below 30% HP is an
+emergency, not a slot you plan around. Battle Resilience is NOT exempt and stays that way. If you want
+frenzy counted, it is one flag.
+
+### 4. ⚠ TWO CELLS OF YOURS MOVED — both slips, both reversible
+- **Sword Shock's DURR cell was 0** in both tiers while its DESCR said *"Stuns for 5s"*. A zero-tick
+  stun is not a skill, so the cell is 5 now. (Your Human archer's Magic Arrow — the same idea with a
+  bow — has always read 5.)
+- **The `Chance x0.7` / `Success rate x1` comments came OUT of `warrior 3rd.csv`** and into
+  `debuff_landmods.csv`, which is where landing modifiers live since `BL-232`. The values are yours,
+  unchanged: three Slashes ×0.7, Sword Shock ×1.
+
+### 5. 🔴 STILL OWED BY YOU — the WARLORD's damage rows
+`war_aoe 3rd.csv` and `war_aoe 4th.csv` author **no damage row of any kind**. The blunt discipline
+therefore still carries the derived `war_sundering_blow` I would otherwise have deleted today (the
+Ravager's copy is gone, since his rows landed), and `--check` prints one 🟠 line against `war_aoe 3rd`
+until you write them. That line is the reminder; nothing is invented in the meantime.

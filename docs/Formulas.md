@@ -231,13 +231,18 @@ band         = HP% < 25 -> 3 | < 50 -> 2 | < 75 -> 1 | else 0
 FinalDefense = P.Def x (1 + f[skillLevel][band])   f = 5/10/15 · 7/14/21 · 10/20/30  %
                M.Def x (1 + m[skillLevel][band])   m = 0/2.5/5 · 0/3.5/7 · 0/5/10    %
 FinalStand   = P.Atk x (1 + a[skillLevel][band])   a = 5/10/20 · 7/15/25 · 10/20/30  %
+             + Acc +   c[skillLevel][band]         c = 0/0/2  · 0/2/4   · 2/4/8      flat
 ```
 
 Final Defense is the tank's (`tank_final_defense`, 40/52/60); Final Stand is the warrior's
 (`warrior_final_stand`, 40/52/60, both disciplines) and rides both physical attack getters, so basic
 swings gain it too. Each lands OUTSIDE the buff stack, as a multiplier on the finished stat.
 
-`Entity.LastStandBand` / `FinalDefenceBonus` / `FinalStandBonus`
+Final Stand's ACCURACY (`BL-237`, 2026-09-14) is a second live channel, not a rider on the P.Atk one,
+and it starts a band later at every rung — the first rung pays it only below 25% HP. It is read
+through `Entity.EffectiveAccuracy`; the stored `Accuracy` int only moves on a recompute.
+
+`Entity.LastStandBand` / `FinalDefenceBonus` / `FinalStandBonus` / `FinalStandAccuracy`
 
 ## The three skill masteries (`BL-190`)
 

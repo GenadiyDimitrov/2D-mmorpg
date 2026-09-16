@@ -122,6 +122,17 @@ internal static class Check
         //   pressure working, not a defect — see RegisterWarriorAndArcherKits.
         new("warrior 3rd", BaseClass.Fighter, Archetype.Warrior, 40, 75, Game.Shared.Discipline.Ravager),
         new("war_aoe 3rd", BaseClass.Fighter, Archetype.Warrior, 40, 75, Game.Shared.Discipline.Warlord),
+        // `warrior 4th` earned its line on 2026-09-16, the day `BL-237` built it — he landed the file
+        // finished on 2026-09-14 and answered every question on it the same day.
+        //
+        // 🔑 THE RAVAGER ONLY, and that is the whole reason there is no `war_aoe 4th` line beside it:
+        // that file is still the two-line placeholder, so the WARLORD's 4th tier is Charge's second
+        // rung and the three skill masteries and nothing else. A spec over a placeholder would report
+        // every one of those as an unauthored extra.
+        // ⚠ `Also: shared 4th` like every other 4th-tier spec — the ALL-CLASSES block and the eighteen
+        //   Sigils are in every ascended class's Cumulative and would otherwise read as extras here.
+        new("warrior 4th", BaseClass.Fighter, Archetype.Warrior, 76, 90, Game.Shared.Discipline.Ravager,
+            Fourth: true, Also: new[] { "shared 4th" }),
         // `archer 4th` earned its line the same day, 2026-09-09 — the FOURTH finished 4th-tier file
         // (*"archer 4th done as well"*). Same three disciplines and the same `Also` as every other
         // 4th-tier spec: the ALL-CLASSES block and the eighteen Sigils are in every ascended kit.

@@ -46,6 +46,11 @@ public static partial class ClassSkillTables
         //   on 2026-09-09 and asked to be built with the rest of it. Everything else the discipline
         //   will own waits on his file, exactly as before. See RegisterDual4th / Skills.Dual4th.cs.
         RegisterDual4th();
+        // ✅ THE FIFTH FINISHED FILE, 2026-09-14 — `warrior 4th.csv` (`BL-237`), 199 rows, landed with
+        //   `warrior 3rd.csv` and reviewed before either was built. It is the RAVAGER's alone:
+        //   `war_aoe 4th.csv` is still the two-line placeholder, so the Warlord takes nothing from
+        //   this tier but Charge's second rung. See RegisterWarriorFourth / Skills.Warrior4th.cs.
+        RegisterWarriorFourth();
         // ✅ `BL-191` (2026-09-10) — the four SKILL MASTERIES he authored the day `BL-190` shipped.
         //    Like RegisterDual4th above it, this is a PARTIAL that crosses unfinished files: the
         //    warrior's two 4th CSVs are still placeholders. What is registered here is exactly what he
@@ -781,5 +786,75 @@ public static partial class ClassSkillTables
         ClassSkills.RegisterFourth(Race.Human, Discipline.Magus, human.ToArray());
         ClassSkills.RegisterFourth(Race.Elf,   Discipline.Magus, elf.ToArray());
         ClassSkills.RegisterFourth(Race.Demon, Discipline.Magus, demon.ToArray());
+    }
+
+    /// <summary>THE RAVAGER'S 4th CLASS, 76-90 — every row of `warrior 4th.csv` (`BL-237`).
+    ///
+    /// <para>🔑 <b>TWELVE OF ITS SIXTEEN FAMILIES ARE CONTINUATIONS</b>, so most of this is `Ladder`
+    /// calls that start where the 3rd tier stopped. The numbers are in Skills.Warrior4th.cs; what is
+    /// here is only which rung each discipline and race reaches, and when.</para>
+    ///
+    /// <para>🔑 <b>THE RACE SPLIT IS THE 3rd TIER'S, CONTINUED EXACTLY</b> — Human keeps the Focus kit
+    /// and Champion Presence, the Demon keeps Sword Shock / Demonic Smash / Berserker Presence, the Elf
+    /// keeps the dance, the blast and Saints Presence. Each race also gains ONE new 78 tool, and they
+    /// are the only four new skills in the file.</para>
+    ///
+    /// <para>⚠ <b>OVERPOWER, BATTLE MOMENTUM AND OVERPOWER MASTERY ARE ALREADY REGISTERED</b> — his
+    /// three rows for them at 76/76/81 are the four skill masteries `BL-191` built, and
+    /// <see cref="RegisterSkillMasteriesFourth"/> has put them on both warrior disciplines since
+    /// 2026-09-10. Registering them again here would double-teach them.</para>
+    ///
+    /// <para>⚠ <b>WHAT HIS FILE STOPS AT 74, DELIBERATELY:</b> Final Stand, HP Boost, HP Regeneration,
+    /// both Battle stances, Battle Resilience, Battle Regeneration, Monster Knowledge, Warrior's
+    /// Strength, Focus, Focus Mastery, Battle Frenzy and Antidote. `BL-237` records it as *"not a
+    /// question"*; do not extend one by analogy.</para></summary>
+    private static void RegisterWarriorFourth()
+    {
+        int[] all = HealerFourthBands;                       // 76 → 90, every level
+        int[] even = SkillCatalog.Warrior4thEven;            // 76 → 90, every other
+
+        static IEnumerable<ClassSkill> Ladder(string id, int[] levels, int startRung) =>
+            levels.Select((lv, i) => new ClassSkill(id, lv, SkillLevel: startRung + i));
+
+        // ---- CHARGE — the ONE row of this file both disciplines carry (no race cell, no discipline
+        //      split, and `war_aoe 3rd.csv` authored its first rung too).
+        foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
+            foreach (var d in new[] { Discipline.Ravager, Discipline.Warlord })
+                ClassSkills.RegisterFourth(race, d, new ClassSkill(WarriorCharge, 76, SkillLevel: 2));
+
+        // ---- What every Ravager learns: the armour (rungs 21-35) and the sword (16-30). ----
+        var shared = new List<ClassSkill>();
+        shared.AddRange(Ladder(WarriorArmorMastery, all, 21));
+        shared.AddRange(Ladder(WarriorSwordMastery, all, 16));
+
+        // ---- HUMAN — the Focus kit continues, and gains the two tools that FILL the pool. ----
+        var human = new List<ClassSkill>(shared);
+        human.AddRange(Ladder(WarriorChampionPresence, SkillCatalog.W4PresenceLevels, 3));
+        human.AddRange(Ladder(WarriorHumanSlash, all, 16));
+        human.AddRange(Ladder(WarriorFocusedBlast, even, 9));
+        human.AddRange(Ladder(WarriorFocusedDoubleSlash, all, 14));
+        human.AddRange(Ladder(WarriorFocusedTripleSlash, all, 11));
+        human.Add(new ClassSkill(WarriorFocusForce, 78));
+        human.Add(new ClassSkill(WarriorFocusLimit, 78));
+
+        // ---- DEMON — the two strikes continue, and Parry is the new stance. ----
+        var demon = new List<ClassSkill>(shared);
+        demon.AddRange(Ladder(WarriorBerserkerPresence, SkillCatalog.W4PresenceLevels, 3));
+        demon.AddRange(Ladder(WarriorDemonSlash, all, 16));
+        demon.AddRange(Ladder(WarriorSwordShock, all, 16));
+        demon.AddRange(Ladder(WarriorDemonicSmash, all, 16));
+        demon.Add(new ClassSkill(WarriorParry, 78));
+
+        // ---- ELF — the dance and the blast continue, and Saints Blessing is the new stance. ----
+        var elf = new List<ClassSkill>(shared);
+        elf.AddRange(Ladder(WarriorSaintsPresence, SkillCatalog.W4PresenceLevels, 3));
+        elf.AddRange(Ladder(WarriorElfSlash, all, 16));
+        elf.AddRange(Ladder(WarriorSwordDance, all, 16));
+        elf.AddRange(Ladder(WarriorSwordBlast, even, 9));
+        elf.Add(new ClassSkill(WarriorSaintsBlessing, 78));
+
+        ClassSkills.RegisterFourth(Race.Human, Discipline.Ravager, human.ToArray());
+        ClassSkills.RegisterFourth(Race.Demon, Discipline.Ravager, demon.ToArray());
+        ClassSkills.RegisterFourth(Race.Elf,   Discipline.Ravager, elf.ToArray());
     }
 }

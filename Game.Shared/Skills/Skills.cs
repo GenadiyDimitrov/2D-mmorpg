@@ -355,6 +355,16 @@ public record SkillDef(
     /// the victim refill their bar with Restore Spirit would be half a skill. A FIELD, not a flag — the
     /// SkillEffect enum has no bits left.</summary>
     float MpReceivedPct = 0f,
+    /// <summary>REFLECT, carried on a BUFF rather than a passive (`BL-237`, the Elf Ravager's Saints
+    /// Blessing — a TOGGLE, so its payload cannot be a <see cref="PassiveEffect"/>: a learned passive
+    /// applies whether the stance is up or not). Three channels, his row's three numbers:
+    /// <c>PhysSkillReflectChance</c>/<c>Pct</c> is the physical-SKILL bounce (Deflection's channel),
+    /// <c>DebuffReflectChance</c> the blanket debuff bounce (Backlash's), and basic attacks are the
+    /// existing <see cref="SkillEffect.BuffReflect"/> magnitude. Each folds by MAX with its passive
+    /// twin in <c>RecomputeDerived</c>, so a stance and a passive never compound.</summary>
+    float PhysSkillReflectChance = 0f,
+    float PhysSkillReflectPct = 0f,
+    float DebuffReflectChance = 0f,
     // Movement effects. BlinkRange: 0 = teleport the caster just BEHIND the target (gap-closer);
     // > 0 = teleport the caster that far AWAY from the target (escape). KnockbackRange: shove
     // the target that far away from the caster.
@@ -886,7 +896,11 @@ public record SkillDef(
     ///
     /// <para>⚠ Ignored on a ONE-CHILD WRAPPER: the CHILD is the buff that lands, so the wrapper's own
     /// covering would never be consulted. Put it on the child.</para></summary>
-    string[]? CoveredKeys = null)
+    string[]? CoveredKeys = null,
+    /// <summary>THE CASTER'S OWN CHARGE POOL — the Human Ravager's 'Focus' (`BL-237`, his
+    /// <c>warrior 3rd.csv</c>). How this skill fills or spends it; null for every skill that does
+    /// neither. See <see cref="ChargeRule"/>.</summary>
+    ChargeRule? Charge = null)
 {
     /// <summary>Hash on the ID alone — and this override MUST stay.
     ///
@@ -1208,6 +1222,7 @@ public record SkillDef(
         float v = Lvl(level)?.MagicMpCostPct ?? 0f;
         return v != 0f ? v : MagicMpCostPct;
     }
+
 
     /// <summary>Per-channel REUSE reduction at a LEVEL. Same "0 = inherit" shape as the MP-cost pair
     /// it mirrors. See <see cref="PhysCooldownPct"/>.</summary>
@@ -1575,6 +1590,54 @@ public record SkillLevel(
 /// <para>These are MONSTER rewards. Quest rewards are authored numbers and are deliberately left
 /// alone — his three phrasings ("exp/sp gain from monsters", "gold DROP amount", "drop CHANCE") are
 /// all kill-side, and a rune that inflated hand-authored quest exp would need every quest retuned.</para></summary>
+/// <summary>A CHARGE POOL THE CASTER CARRIES ON HIMSELF — the Human Ravager's 'Focus' (`BL-237`, his
+/// <c>warrior 3rd.csv</c>, 2026-09-14). One rule, three roles, and a skill takes whichever it authors:
+/// <list type="bullet">
+///   <item><b>GATHER</b> (<see cref="GatherPerUse"/>) — Focus itself: *"Each use increases
+///   warrior_focus_count + 1; Adds it as self buff for 10 mins; Each use resets duration; Cannot be used
+///   if maximum is reached"*.</item>
+///   <item><b>PROC</b> (<see cref="OnBasicHit"/> / <see cref="OnBasicCrit"/>) — Focus Mastery:
+///   *"Chance to increase 'Focus' up to N per: Basic attack (15%), Critical attack (30%)"*.</item>
+///   <item><b>SPEND</b> (<see cref="SpendMax"/> / <see cref="PowerPerCharge"/>) — the three Focused
+///   strikes, his formula verbatim: <c>consumed = Min(count, max); power = basePower × (1 + consumed ×
+///   pct); count −= consumed</c>, once per CAST, *"not each slash"*.</item>
+/// </list>
+///
+/// <para>🔑 <b>THE POOL IS A VISIBLE SELF-BUFF, NOT A HIDDEN COUNTER.</b> The rogue's venom pool
+/// (<see cref="SkillDef.StackKey"/>) is an <c>Internal</c> counter on the TARGET; this one lives on the
+/// CASTER, the player has to see it to play the class, and his row says in so many words that it is
+/// *"a self buff for 10 mins"*. So it is the ordinary buff of <see cref="Pool"/>, and its
+/// <c>Stacks</c> ARE the count — which gives the buff bar's "Focus x3", the 10-minute clock and the relog
+/// restore for free, all of which already exist for stacking buffs.</para>
+///
+/// <para>⚠ <b>EACH GATHERER FILLS ONLY TO ITS OWN RUNG'S CAP</b> (<see cref="Caps"/>), and never pulls a
+/// fuller pool DOWN to it. That is why gathering does not go through <c>ApplyBuff</c>'s stacking path,
+/// which clamps to the cap it is handed: a rung-1 Focus Mastery proc would have cut a 10-charge pool
+/// filled by a rung-6 Focus back to 2.</para></summary>
+public sealed record ChargeRule(
+    /// <summary>The skill id whose self-buff IS the pool. Every gatherer and spender of one pool names
+    /// the same id (for Focus: <c>warrior_focus</c>), so the three roles can never drift onto two.</summary>
+    string Pool,
+    /// <summary>Per rung (index = level − 1, clamped): how high THIS skill may fill the pool. His
+    /// "up to 2 … up to 10". Gatherers and procs only.</summary>
+    int[]? Caps = null,
+    /// <summary>Charges one landed cast adds. Focus: 1. An active gatherer with no damage of its own is
+    /// refused at cast start while the pool is at its cap — his "Cannot be used if maximum is reached".</summary>
+    int GatherPerUse = 0,
+    /// <summary>Chance a LANDED basic swing adds a charge, and the chance used instead when the swing
+    /// crit. Focus Mastery: 0.15 / 0.30. Read through the skill's own weapon gate, like every proc.</summary>
+    float OnBasicHit = 0f,
+    float OnBasicCrit = 0f,
+    /// <summary>The most charges one cast of a spender consumes (Focused Blast 2, Double 3, Triple 4).</summary>
+    int SpendMax = 0,
+    /// <summary>Power added per consumed charge, as a fraction of the skill's base power (0.10 = +10%).</summary>
+    float PowerPerCharge = 0f)
+{
+    /// <summary>This skill's cap at a learned level; 0 when it authors none.</summary>
+    public int CapAt(int level) =>
+        Caps is { Length: > 0 } c ? c[Math.Clamp(level - 1, 0, c.Length - 1)] : 0;
+}
+
 public readonly record struct RewardRates(
     float Exp = 0f,
     float Sp = 0f,
@@ -1939,6 +2002,9 @@ public static partial class SkillCatalog
         list.AddRange(WhispSummonSkills());   // Skills.Whisps.cs (his six calls + Whisp Mastery)
         list.AddRange(FighterKits3rdSkills()); // Skills.FighterKits3rd.cs (`BL-185` the warrior's derived damage kit)
         list.AddRange(Warrior3rdSkills());     // Skills.Warrior3rd.cs (his `warrior 3rd.csv` + `war_aoe 3rd.csv`)
+        list.AddRange(WarriorFocusSkills());   // Skills.Warrior3rd.cs — the Human Ravager's Focus kit (`BL-237`)
+        list.AddRange(Warrior3rdRaceSkills()); // Skills.Warrior3rd.cs — Charge, the Presences, the three race kits
+        list.AddRange(Warrior4thSkills());     // Skills.Warrior4th.cs — the four new 4th-tier race tools
         list.AddRange(Dual3rdSkills());       // Skills.Dual3rd.cs (his `dual 3rd.csv`, 40-74)
         list.AddRange(Dual4thSkills());       // Skills.Dual4th.cs (`BL-188` — the top of the blow ladder ONLY)
         list.AddRange(Archer3rdSkills());     // Skills.Archer3rd.cs (his `archer 3rd.csv`, 40-74)

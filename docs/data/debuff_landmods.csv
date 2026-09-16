@@ -51,9 +51,13 @@ Sapped,nuker_empower_demon_curse_3,"(NOT LEARNABLE - boss/whisp/proc, or orphane
 Shield Bash,shield_bash,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",Stun,CON,1,DEBUFF ONLY (1),1
 Shield Shock,tank_shield_stun,Bulwark | Tank | Vanguard,Stun,CON,0.7,DEBUFF ONLY (1),0.7
 Silencing Shock,tank_silence_magical,Bulwark(Elf),silence magical,SPT,0.7,DEBUFF ONLY (1),0.7
+Slash,warrior_demon_slash,Ravager(Demon),P/M.Atk -12%,CON,0.7,dmg+1 debuff,0.7
+Slash,warrior_elf_slash,Ravager(Elf),Atk.Spd -23%; Cast.Spd -23%; Slow -23%,CON,0.7,dmg+3 debuffs,0.7
+Slash,warrior_human_slash,Ravager(Human),P.Def -25%,CON,0.7,dmg+1 debuff,0.7
 Snare Trap,snare_trap,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",Root,CON,1,dmg+1 debuff,1
 Soul Sap,lb_ork_sap,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",HP received -50%,none (fizzle roll),1,DEBUFF ONLY (1),1
 Stay,tank_stay,Bulwark,Root,CON,1,DEBUFF ONLY (1),1
+Sword Shock,warrior_sword_shock,Ravager(Demon),Stun,CON,1,dmg+1 debuff,1
 Terrifying Roar,terrifying_roar,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",Fear,CON,1,DEBUFF ONLY (1),1
 Thorn Nova,boss_thorn_nova,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",Slow -40%,SPT,1,dmg+1 debuff,1
 Toxic Sting,toxic_sting,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",Poison DoT (+ its family rider),SPT,1,dmg+1 debuff,1

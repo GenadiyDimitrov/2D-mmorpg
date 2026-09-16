@@ -118,6 +118,13 @@ public class BuffInstance
     /// <summary>MP-cost reduction this buff grants for PHYSICAL / magic-side skills (fractions).</summary>
     public float PhysMpCostPct { get; init; }
     public float MagicMpCostPct { get; init; }
+    /// <summary>REFLECT carried on a BUFF rather than a passive — the physical-SKILL bounce and the
+    /// blanket DEBUFF bounce. Saints Blessing is a TOGGLE, so its payload cannot ride a PassiveEffect
+    /// (a learned passive pays whether the stance is up or not). Each folds by MAX with its passive
+    /// twin. See <c>SkillDef.PhysSkillReflectChance</c>.</summary>
+    public float PhysSkillReflectChance { get; init; }
+    public float PhysSkillReflectPct { get; init; }
+    public float DebuffReflectChance { get; init; }
 
     /// <summary>Reuse-delay reduction for ONE channel only — the twin of the MP-cost pair above, and
     /// a field for the same reason (the SkillEffect enum is full). Harmony of the Soul is the first
@@ -1991,6 +1998,32 @@ public class Entity
         }
     }
 
+    /// <summary>FINAL STAND'S OTHER HALF — the ACCURACY his `BL-237` edit added to both warrior 3rd
+    /// files, and the reason it lives here rather than in <c>RecomputeDerived</c>: like the P.Atk above
+    /// it is read off the CURRENT HP bar, and <see cref="Accuracy"/> is a stored int that only a
+    /// recompute moves. A warrior dropping below half would have kept the accuracy of a full one.
+    ///
+    /// <para>His three rows, band by band (75% / 50% / 25% of HP):
+    /// <c>L1 — / — / +2 · L2 — / +2 / +4 · L3 +2 / +4 / +8</c>. A zero is a real cell, not a gap: the
+    /// first rung only pays at the bottom band.</para></summary>
+    public int FinalStandAccuracy
+    {
+        get
+        {
+            int lvl = FinalStandLevel;
+            if (lvl <= 0) return 0;
+            int band = LastStandBand;
+            if (band == 0) return 0;
+            int[][] acc = { new[] { 0, 0, 2 }, new[] { 0, 2, 4 }, new[] { 2, 4, 8 } };
+            return acc[Math.Clamp(lvl, 1, acc.Length) - 1][band - 1];
+        }
+    }
+
+    /// <summary>Accuracy as it stands RIGHT NOW — the recomputed <see cref="Accuracy"/> plus whatever
+    /// Final Stand is paying at this instant. Every combat read goes through this; reading the raw field
+    /// in a resolver is the bug.</summary>
+    public int EffectiveAccuracy => Accuracy + FinalStandAccuracy;
+
     /// <summary>What LEVEL of Final Defense / Final Stand does this character know (0 = none)? Set in
     /// RecomputeDerived, because THAT is the part that changes rarely — what changes every tick is the
     /// HP the getters above read.</summary>
@@ -3760,6 +3793,15 @@ public class Entity
             // ...and its MANA twin, which rides as a field. A burn that stopped heals but left the
             // victim refilling with Restore Spirit would be half a skill (owner's Pyro Burst row).
             if (buff.MpReceivedPct != 0f) RestoreMpMod *= 1f - buff.MpReceivedPct;
+            // `BL-237` — the two buff-side reflect channels (Saints Blessing). MAX with the passive twins
+            // for the reason the passives themselves are maxed: a reflect is a guarantee, never a sum.
+            if (buff.PhysSkillReflectChance > PhysSkillReflectChance)
+            {
+                PhysSkillReflectChance = buff.PhysSkillReflectChance;
+                PhysSkillReflectPct = buff.PhysSkillReflectPct;
+            }
+            DebuffReflectPhys  = Math.Max(DebuffReflectPhys,  buff.DebuffReflectChance);
+            DebuffReflectMagic = Math.Max(DebuffReflectMagic, buff.DebuffReflectChance);
             PhysMpCostReduction += buff.PhysMpCostPct;   // MP-cost reduction (rides as buff fields, not a flag)
             MagicMpCostReduction += buff.MagicMpCostPct;
             // BL-06 skill evasion — a buff field for the same reason (the flag enum is full), and
