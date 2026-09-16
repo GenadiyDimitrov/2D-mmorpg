@@ -2548,6 +2548,10 @@ if (args.Length > 0 && args[0] == "--goldflow")
     return;
 }
 
+// `--drops <text>` — WHERE DOES THIS COME FROM (`BL-253`). Walks every spawner × its roster, so the
+// answer knows about RANK, which is where half the top-end faucets live. See DropFinder.cs.
+if (args.Length > 0 && args[0] == "--drops") { DropFinder.Run(args); return; }
+
 // The four same-level PvP targets a drain is judged against. One list, so every table below
 // measures the same characters.
 //

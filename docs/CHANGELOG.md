@@ -7,12 +7,90 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.150.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.151.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-16 (latest) — 0.150.0: the dash goes to 90s, and the rogue loses his evade floor
+## 2026-09-16 (latest) — 0.151.0: `BL-247` — the 66-79 hole is filled, and blueprints take the rates
+
+🔴 **NEW APK REQUIRED** (a new field, a new boss template and its plate; the gatekeeper's Frostmere
+menu grows a line). **No protocol change.** ⚠ **DELETE `game.db`** only if you want the new gate on an
+existing character's teleport list — nothing here is a schema change.
+
+### The finding this is built on: nothing Elite or Boss existed between level 66 and 79
+Every top-end faucet in the game is gated on **rank** — `EnchantScrollDrops`, `EliteMatDrops` and the
+recipe roll in `RollBossBonus` all pay a Normal kill nothing — and **rank is a property of the SPAWN,
+not of the template**, so the only thing that creates one is a zone. The complete live list ran
+39-44 (Hollow Crypt), 58-65 (Sunless Warrens + the treant), then **nothing until 80**. The A enchant
+band is exactly 76-79, which is why three unrelated "I got none" questions were one cause.
+
+Your ruling: *"fill the gap with the elits+boss, and fix the blueprints to take the rates
+multiplier"*.
+
+### 1. Four new elite camps — 68, 72, 75 and 78
+`WorldPlan.FieldPlan.EliteLevel` becomes **`EliteLevels`**, a list, and the camp is now placed beyond
+the camp whose **band contains it** rather than always the field's last one. Every elite authored
+before today sat at its field's cap, so they all take that fallback and **not one of them moved**.
+
+| field | elite camps |
+|---|---|
+| Ironreach March / Redhorn Highlands / Sunland Crags | **68 / 72 / 75** — new |
+| Frostmere Wastes | **78** (new) and 80 |
+| Radiant Expanse · Dawnbreak Summit | 84 · 90, unchanged |
+
+🔑 **Why the Wastes needed two.** Its bands run 76-80 and the enchant ladder splits them: A is 76-79,
+S opens at 80. Its one camp was at 80, in S — so the A band had no elite anywhere in the world.
+
+### 2. A field boss in the A band — the Emberwyrm Matriarch, level 78
+A new template and a new field, **Wyrmfall Basin**, north-west of Frostmere: the boss alone in the
+centre on the treant's 21h ± 3h timer, two 76-79 trash flanks 3,500u out so you reach her without an
+escort. Managed by **Frostmere**, so she is on that gatekeeper's menu and her dead go to the right
+town (the Sunken Vale names no city because its band and its geography disagree; here they agree).
+
+🔑 **A boss, not just another camp, because the Greater and the Safe scroll are BOSS-ONLY** (your own
+§100 ruling this morning) **and a boss pays them for its OWN band**. `scroll_greater_a` and
+`scroll_safe_a` therefore had **no source of any kind** — not a rare one, none — until this spawner.
+
+⚠ Her 50% phase (enrage + two drakes) **is mine, not yours**: a template with no profile already
+fights, so what it buys is that she reads like the game's other field boss. No stat multipliers, no
+unique skill, escorted like the treant.
+
+### 3. Blueprints take the rate knobs
+The recipe roll was a raw `_rng.NextDouble() < chance` that **no multiplier reached** — not the global
+rate, not the group, not a Rune of Drop, not the level gap. That is the whole answer to "I got none":
+you play at ×100 and an elite's 0.1% stayed 0.1%, one book per thousand elite kills.
+
+It now goes through `MobCatalog.EffectiveRate` and `DropCopies` like every other drop. **The delivered
+numbers at ×1 are unchanged** (boss armor 50% / weapon 40% / jewel 60%, elite 0.1% across ten
+families) — the authored numbers are divided by the `other` group's ×3 exactly as `EliteMatDrops`
+authors its rungs, so only the KNOBS changed, not the balance. At ×100 an elite now pays ~10%.
+
+### 4. A drop lookup you can actually ask — `--drops`
+`dotnet run --project tools/BalanceMatrix -- --drops "greater scroll"` prints every source of anything
+matching, as **creature / level / rank / where / chance per kill**. It walks spawners rather than
+templates, which is the only way to see the rank-gated half of the table, and every chance goes
+through `EffectiveChance`, so it shows the number you actually roll — `/droprate` moves it.
+
+This is the measuring half of **`BL-253`**, your *"we will need a drop database"*; the in-game version
+is filed and still owed. It already earned itself twice here: it caught the Matriarch spawning as
+ordinary roster filler in two Frostmere camps (she is `HandPlaced` now), and it is where the table
+below is read from rather than derived.
+
+| what you asked about | before | now |
+|---|---|---|
+| `scroll_greater_a` | **nothing, anywhere** | Matriarch, 9% |
+| `scroll_safe_a` | **nothing, anywhere** | Matriarch, 0.45% |
+| `scroll_enchant_a` | one creature in the game (the L90 boss) | 4 — 2 bosses at 30%, 2 elites at 9% |
+| Epic Wood / Epic Leather | the two 58-65 dungeons only | **30 sources**, 61-78 |
+| A blueprints | 0.1%/50% with every knob dead | same at ×1, live at your rate |
+
+🔴 **Rare Wood still has no mob source anywhere** and this build does not change that: wood is only
+ever a category's SECONDARY material, `StandardDrops` stops a secondary at Uncommon, and
+`EliteMatDrops` has no Rare rung at all. It is craft-only (PotionMaster refines 5 Uncommon). Filed as
+**`BL-254`** — one rung, one line, but it wants your call on whether craft-only was the intent.
+
+## 2026-09-16 — 0.150.0: the dash goes to 90s, and the rogue loses his evade floor
 
 🔴 **NEW APK REQUIRED** (skill card text + the dash reuse the client renders). **No protocol change,
 no `game.db` delete needed** — though see the note at the foot.

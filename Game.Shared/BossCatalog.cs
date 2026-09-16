@@ -145,6 +145,25 @@ public static class BossCatalog
             // the default and is therefore not written out here.
             Solo: false),
 
+        // THE A-BAND FIELD BOSS (`BL-247`): the Emberwyrm Matriarch, 78, alone in Wyrmfall Basin.
+        //
+        // ⚠ THE PHASE IS MINE, NOT HIS. His instruction was *"fill the gap with the elits+boss"* — the
+        // DROPS are the point, and a template with no profile already fights (the generic slam). What a
+        // profile buys here is that she reads like the game's other field boss instead of a punching bag
+        // with a 21-hour timer: the treant calls two bogwood at 50% and enrages, so she calls two of her
+        // own brood. Nothing else about her is touched — no stat multipliers, no unique skill, and
+        // ESCORTED like the treant (the ×2 `solo boss` rung belongs to a boss that fights alone to the
+        // end, which she does not once the brood lands).
+        ["emberwyrm_matriarch"] = new BossProfile(
+            Skills: new[] { new BossSkillEntry(SkillCatalog.BossSlamSkill) },
+            Phases: new[]
+            {
+                new BossPhase(0.50f, "The Emberwyrm Matriarch shrieks — the brood answers from the crags!",
+                    Enrage: true, AddTemplateId: "emberwyrm_drake", AddCount: 2, AddLevelOffset: -6),
+                new BossPhase(0.25f, "The Emberwyrm Matriarch's scales run white with heat!"),
+            },
+            Solo: false),
+
         // ═══ THE THREE DUNGEON BOSSES — `BL-155`'s full silence ══════════════════════════════════
         //
         // His ask, 2026-09-03: *"U can add dungeon bosses a full silence aoe skill for 15s duration

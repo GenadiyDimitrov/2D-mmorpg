@@ -48,14 +48,27 @@ have enough sprint to outrun anyone, thats why is BL-249 .. a dash potion is a e
 .. not outruning the fastest classes in game .. so do not do any of the .1,.2,.3 -> we leave speed as
 is (after the marks update)"*. **Move speed is settled** — nothing further is owed on it.
 
-The other eight asks (`BL-239`…`BL-246`) are 🔵 waiting to be built. **`BL-247` gained a requirement**
-on top of its sweep and is now a build.
+The other eight asks (`BL-239`…`BL-246`) are 🔵 waiting to be built.
+
+✅✅ **AND `BL-247` IS BUILT AND ARCHIVED (0.151.0)** — you took the recommendation (*"fill the gap with
+the elits+boss, and fix the blueprints to take the rates multiplier"*). Four new elite camps (68 / 72 /
+75 / 78), a new level-78 field boss in **Wyrmfall Basin**, and the recipe roll finally goes through the
+rate knobs — it was a raw roll that no multiplier reached, which is why your ×100 never touched it.
+🔴 **Two leftovers earned their own ids**: **`BL-253`** (your drop database — the measuring half ships
+with it as `--drops`, the in-game window is owed) and **`BL-254`** (Rare Wood drops from nothing
+anywhere, and filling the 66-79 hole does not change that — it is structural, and it is a question).
 
 ★ **And from your notes file, same day:** **`BL-249`** (dash potions to a 90-second reuse) — **BUILT
-in 0.150.0 and archived** — and **`BL-250`** (the sigils become subclass-gated), which **you have now
-answered in full** and is ready to build. Two more landed with those answers: **`BL-251`**, Evasion
-Mastery removed from every rogue discipline (**BUILT in 0.150.0**, archived — the twin of the warrior's
-`BL-201`), and **`BL-252`**, a new subclass being born at 40 with a 1-day rune instead of at 1.
+in 0.150.0 and archived**. **`BL-251`**, Evasion Mastery removed from every rogue discipline, is
+**BUILT in 0.150.0** too (archived — the twin of the warrior's `BL-201`), and **`BL-252`** is a new
+subclass being born at 40 with a 1-day rune instead of at 1.
+
+🔵 **`BL-250` GREW INTO THE WHOLE SUBCLASS SYSTEM and is no longer ready to build.** Your second pass
+on it added the slot ladder (three earned, five bought, as consumable **tickets**), the rule that a
+subclass below 75 can be swapped out, the class-master NPC that hands them out, and the panel that
+says what a subclass will give you before you commit. 🔴 **It is blocked on a PREMIUM CURRENCY that
+does not exist** — three of the five bought slots are priced in one — plus three numbers only you can
+give. The sigil half of it is unchanged and still settled.
 
 ✅ **The third thing in that file needed no build.** You asked whether the Mark's cut *"sits in the
 buff part or debuff part of the formula — if it's in the debuff part a 10% decrease is good … if it's
@@ -220,9 +233,10 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-244` | 🔵 | THE FAST-DELETE BUTTON BECOMES A CYCLE — DEL:OFF → DEL:ON → BRAKE:ON | ui |
 | `BL-245` | 🔵 | THE CRAFTER SHOULD SEE PRIVATE WAREHOUSE MATS — a toggle, on by default | crafting |
 | `BL-246` | 🔵 | THE STATS WINDOW BECOMES TWO TABS — your full layout; several rows have no source yet | ui |
-| `BL-247` | 🔴 | A-GRADE SCROLLS AND BLUEPRINTS NEED A SOURCE — 76-80 mobs drop the scrolls, 80-85 elites the blueprints | items |
-| `BL-250` | 🔴 | THE SIGILS BECOME SUBCLASS-GATED — three identical slots, opened by your first three SUBCLASSES at 75; SP/gold cost gone, clearing costs 100kk | classes |
+| `BL-250` | 🔵 | THE SUBCLASS SYSTEM — 3 slots earned + 5 bought (ticket items), swap a sub below 75, an NPC to take one, and the 3 sigil slots they open | classes |
 | `BL-252` | 🔴 | A NEW SUBCLASS IS BORN AT 40 — no learned skills, 0 SP, 0% exp, and a 1-day 100% SP/XP rune | classes |
+| `BL-253` | 🔵 | A DROP DATABASE — name an item, see every source; the BalanceMatrix half is built, the in-game window is owed | items |
+| `BL-254` | ❓ | RARE WOOD DROPS FROM NOTHING — wood is never a category's primary, so no Rare rung can reach it | items |
 
 ---
 
@@ -1927,104 +1941,26 @@ three mastery rates (`x2 Dmg`, `Reuse rst`, `x2 Duration`), `Stab Rate` and the 
 all live derived values that the stats payload does not currently carry. So this is a protocol change
 as well as a layout, and it wants doing in one pass rather than a row at a time.
 
-## `BL-247` 🔴 A-GRADE SCROLLS AND BLUEPRINTS NEED A SOURCE — the sweep is done, and the cause is ONE HOLE
+## `BL-250` 🔵 THE SUBCLASS SYSTEM — SLOTS, TICKETS, AN NPC, AND THE SIGILS THEY UNLOCK
 
-**Asked 2026-09-16** — *"what drops A grade enchant scrolls ? Also where epic/rare wood and epic
-leather are dropped -> also got none"* — then, the same day, a requirement: *"mobs 76-80 should drop A
-scrolls, elits 80-85 should drop A grade blueprints ... 1st answer me if anything drops those things"*.
-**Below is that answer. The build is yours to approve, because the honest fix is not the one you
-asked for.**
+**Re-specced 2026-09-16, the SECOND time that day; both earlier drafts are in the archive.** The sigil
+half (§1-§4) is unchanged and settled. What is new is everything around it: subclass slots are now a
+thing you EARN and then BUY, a subclass is taken from an NPC, and a subclass below 75 can be swapped
+out. 🔵 **It is no longer ready to build** — three numbers and one currency are missing; see §9.
 
-### 🔴 THE FINDING: THERE IS NO ELITE OR BOSS ANYWHERE BETWEEN LEVEL 66 AND 79
-Every scroll, top-material and blueprint faucet in the game is gated on `MobRank` being Elite or Boss
-(`EnchantScrollDrops`, `EliteMatDrops`, `RollBossBonus`) — and **rank is a property of the SPAWN, not
-the template**, so the only thing that creates one is a zone. Here is every Elite/Boss spawn that
-exists today:
+**Your model, verbatim, in two messages:** *"In IG when you lvl up a sub class to 75 u get to use its
+'Ability' → each subclass have its ability-identity … you can have up to 3 sigils active … each
+subclass activates a sigil slot (up to 3) + unlocks its designated sigils"*, then *"we can make subs
+slot limit to 3 and u need to pay 500kk, 5kkk, X amount of premium, Y amount of premium, Z amount of
+premium to unlock all slots … those values give you a subclassTicket and u can unlock them
+using(consumable) ticket"*.
 
-| source | rank | level |
-|---|---|---|
-| Hollow Crypt rooms | Elite | 39-42 |
-| Hollow Crypt boss (`grave_lich`) | Boss | 44 |
-| Sunless Warrens rooms | Elite | 58-64 |
-| Valley field boss (`valley_treant`) | Boss | 60 |
-| Sunless Warrens boss (`dread_knight`) | Boss | 65 |
-| 🔴 **— nothing at all —** | | **66 → 79** |
-| Frostmere elite camp | Elite | 80 |
-| Ashen Sepulchre rooms | Elite | 80-85 |
-| Radiant Expanse elite camp | Elite | 84 |
-| Dawnbreak Summit elite camp | Elite | 90 |
-| Ashen Sepulchre boss (`disciple_of_the_dawn`) | Boss | 90 |
-
-🔑 **The A band is levels 76-79** (`Items.EnchantScrollBands`: A opens at 76, S at 80) — which lands
-exactly in the hole. That single gap is the whole explanation for "I got none".
-
-### 1. A-GRADE ENCHANT SCROLLS — one of the three is reachable, two are not
-
-| item | what pays it | reachable today? |
-|---|---|---|
-| `scroll_enchant_a` (Normal) | an Elite in its own band (0.030 → **9%**); a Boss in its own band (0.100 → **30%**); a Boss ONE band above, i.e. 80+ (0.100 → **30%**) | ✅ **but from ONE mob in the game** — `disciple_of_the_dawn`, the L90 dungeon boss. Also craftable (Scribe rung 5, `craft_scroll_enchant_a`) |
-| `scroll_greater_a` (Greater) | a Boss whose OWN band is A → **level 76-79** (0.030 → 9%) | 🔴 **NO. Unreachable.** No boss exists in 76-79, and Greater became boss-only earlier today (§100) |
-| `scroll_safe_a` (Safe) | same — a Boss at 76-79 (0.0015 → 0.45%) | 🔴 **NO. Unreachable.** |
-
-⚠ Neither Greater nor Safe is craftable at any rung, by design — *"they are the elite/boss reward"*.
-So two of the three A scrolls currently have **no source of any kind**.
-
-**Your ask was "mobs 76-80 should drop A scrolls".** ⚠ Taken literally that means ORDINARY mobs, and
-`EnchantScrollDrops` pays a Normal-rank kill nothing at any grade — so it would be a new rule for the
-A band alone. ❓ **I think what you actually want is an elite camp (and a boss) in the 76-79 hole**,
-which pays all three A scrolls at the rates already authored, needs no new rule, and fixes the
-materials below at the same time. **Say which** — camp, or normal mobs.
-
-### 2. A-GRADE BLUEPRINTS — they already drop, at 1 in 1000
-They exist (`recipe_craft_*`, `ItemGrade.A`, Epic rarity — one per Mythic level-76+ gear piece) and
-`RollBossBonus` already pays them **exactly where you asked**: any **Elite at level ≥76**, which is the
-80/84/90 camps and the whole Ashen Sepulchre. So the answer to *"does anything drop those"* is **yes**.
-
-| rank | chance per kill |
-|---|---|
-| Elite ≥76 | **0.001 — one roll across all ten slot families** |
-| Boss ≥76 | 0.50 armor · 0.40 weapon · 0.60 jewel |
-
-🔑 **It is not a missing source, it is a rate.** 0.1% is a thousand elite kills for one book, and it is
-a raw `_rng` roll — **no drop-group multiplier touches it**, so your ×100 test rate never applied to it
-either. That is why you have none. ❓ **Give me the number you want and it is one line.** For scale,
-0.02 would be ~1 book per 50 elite kills.
-
-### 3. EPIC / RARE WOOD AND EPIC LEATHER — the original question
-
-| material | source | reachable? |
-|---|---|---|
-| **Rare Wood** | 🔴 **nothing, anywhere.** Wood is only ever the *secondary* material of a category, and `StandardDrops` stops a secondary at Uncommon; `EliteMatDrops` has **no Rare rung at all** — it jumps Uncommon → Epic | ❌ craft only (PotionMaster refines 5 Uncommon Wood + Ingot + Thread) |
-| **Epic Wood** | `EliteMatDrops` Elite/Boss at level **52-79** | ✅ Sunless Warrens (elites 58-64, boss 65) and `valley_treant`. 🔴 **Nothing at 80+ pays Epic** — the S band drops it for Legendary/Mythic |
-| **Epic Leather** | same rung, same bands | ✅ same two places |
-
-⚠ `StandardDrops` also has an Epic rung for a category's PRIMARY material at level ≥76 — and for
-Leather that means an Animal or Plant mob at 76+. **There isn't one**: the highest Animal/Plant
-template in the roster is `dire_beast` at 70. So that rung is dead code in practice.
-
-### 🔑 MY RECOMMENDATION, IN ONE LINE
-**Fill the 66-79 hole with an elite camp (or two) and a boss around 78.** It is one `WorldPlan` entry
-each, it pays all three A scrolls, Epic Wood and Epic Leather at rates that are already authored and
-already balanced, and it removes the reason three separate items are unobtainable — instead of three
-separate special cases. The blueprint RATE is a genuinely separate question and wants a number from you.
-
-## `BL-250` 🔴 THE SIGILS BECOME SUBCLASS-GATED — fully answered, ready to build
-
-**Re-specced 2026-09-16 with your answers; the first draft is in the archive.** It changes the GATE
-and the PRICE, not the eighteen sigils — every name in your six groups already exists in
-`Skills.Sigils.cs` under exactly that name.
-
-**Your model, verbatim:** *"In IG when you lvl up a sub class to 75 u get to use its 'Ability' → each
-subclass have its ability-identity … because a tank cannot take a tank subclass it cannot get its
-ability … so i want sigils not to be separated as attak/support/defence .. u can have up to 3 sigils
-active … each subclass activates a sigil slot (up to 3) + unlocks its designated sigils"*.
-
-### 1. 🔑 THE THREE SLOTS STOP BEING Attack / Defence / Support
+### 1. 🔑 THE THREE SIGIL SLOTS STOP BEING Attack / Defence / Support
 Today `SigilSlot` is a real exclusion axis — one per slot, enforced by `ExclusiveGroup`. It becomes
 **three identical slots**: any three of the eighteen, so long as you have unlocked them. The
 `SigilSlot` enum stays as a *label* for the UI or goes entirely; that is a free choice.
 
-### 2. 🔑 THE GATE IS A SUBCLASS AT **75**, NOT 76
+### 2. 🔑 A SIGIL SLOT IS OPENED BY A SUBCLASS AT **75**, NOT 76
 *"lets make them once sub becomes 75 u are able to get the tree + sigil slot -> 3rd class
 (automatically gotten when taken subclass) … main class dont open slot; only subs will .. the 1st
 three subs are required to open the 3 slot -> then every other just opens their tree (if not
@@ -2032,16 +1968,13 @@ opened)"*.
 
 | what | rule |
 |---|---|
-| **level gate** | that SUBCLASS is **75** (was 76/4th in the first draft — this is your change) |
-| **class gate** | it holds its **3rd class**, which it gets automatically when the subclass is created (see `BL-252`) |
-| **slots** | subclass #1 → slot 1, #2 → slot 2, #3 → slot 3. **Three is the ceiling** |
-| **subs 4, 5, 6** | open **only their tree**, never a fourth slot |
+| **level gate** | that SUBCLASS is **75** |
+| **class gate** | it holds its **3rd class**, granted automatically when the subclass is created (`BL-252`) |
+| **slots** | subclass #1 → sigil slot 1, #2 → slot 2, #3 → slot 3. **Three is the ceiling** |
+| **subs 4 and up** | open **only their tree**, never a fourth sigil slot |
 | **main class** | opens **nothing** — no slot, and no tree of its own group |
 
-⚠ **This needs `GameConstants.MaxSubclasses` raised.** It is **4** today (main + 3 subs) and your
-model needs **7** (main + 6). Nothing else about the constant's job changes.
-
-### 3. 🔑 A GROUP IS UNLOCKED BY OWNING A SUBCLASS OF IT
+### 3. 🔑 A SIGIL GROUP IS UNLOCKED BY OWNING A SUBCLASS OF IT
 
 | group | the classes that unlock it | its three sigils |
 |---|---|---|
@@ -2052,16 +1985,20 @@ model needs **7** (main + 6). Nothing else about the constant's job changes.
 | warrior | the 6 Warrior | Fury · Duel · Fortitude |
 | tank | the 3 Knight | Body · Aegis · Critical Protection |
 
-**Your own count of who ends up with what, verbatim:** *"as warrior/rogue u can have 6 subs and all
-trees and change them as u like for the price of 100kk, tank,buffer,healer will get up to 5 trees
-without their own, mage for now 5 trees"*. ✅ That falls straight out of the rule with nothing added:
-`Player.CanAddDiscipline` already refuses a second class of the same **discipline**, and the roster
-does the rest — the nuker's three names are ONE discipline (so no mage may add a mage), while the
-rogue's six are **two** (dagger ↔ bow) and the warrior's six are **two** (warrior ↔ war_aoe), so
-those two archetypes reach their own group and the other four do not. When summoners arrive, nuker ↔
-summoner unlocks the mage group for a mage — **no code change here either**.
+**Your own count, verbatim:** *"as warrior/rogue u can have 6 subs and all trees and change them as u
+like for the price of 100kk, tank,buffer,healer will get up to 5 trees without their own, mage for now
+5 trees"*. ✅ That falls straight out of the rule with nothing added: `Player.CanAddDiscipline` already
+refuses a second class of the same **discipline**, so the nuker's three names are ONE discipline (no
+mage may add a mage) while the warrior's six names are **two** disciplines and the rogue's six are
+**six** — those two archetypes reach their own group and the other four do not. When summoners arrive,
+nuker ↔ summoner unlocks the mage group for a mage, with no code change here either.
 
-### 4. 🔑 THE PRICE MOVES ENTIRELY ONTO CLEARING
+⚠ *(Correcting my own line in the previous draft, which called the rogue's six "two, dagger ↔ bow":
+the archer merge made the rogue's split RACE-based, so Phantom · Venomweaver · Sharpshooter · Trapper
+· Nullblade · Hunter are six separate `Discipline` values. It makes the conclusion stronger, not
+weaker — a rogue can add five more rogues.)*
+
+### 4. 🔑 THE SIGIL PRICE MOVES ENTIRELY ONTO CLEARING
 *"we can remove their sp/gold cost -> they are their own system. only clearing will cost 100kk (its
 10kk now i think + losing the 60kk sp and 30kk gold)"*.
 
@@ -2069,30 +2006,104 @@ summoner unlocks the mage group for a mage — **no code change here either**.
 |---|---|---|
 | commit one sigil | 20kk SP + 10kk gold (`SigilSpCost` / `SigilGoldCost`) | **free** |
 | commit all three | 60kk SP + 30kk gold | **free** |
-| clear one | 10kk gold, no refund (`SigilResetGold`) | — |
-| **clear** | — | **100kk gold** |
+| clear one | 10kk gold, no refund (`SigilResetGold`) | **100kk gold** |
 
-❓ **One reading is mine: `SigilResetGold` becomes 100kk and stays PER SIGIL.** Your sentence prices
-"clearing" against the old total of *"10kk + losing the 60kk sp and 30kk gold"*, which is the cost of
-one sigil, so per-sigil is the like-for-like comparison and it keeps the existing per-skill Forget
-button at the Mindwright doing exactly what it does now. **If you meant 100kk to wipe all three at
-once, it is one line.**
+❓ **One reading is mine: `SigilResetGold` becomes 100kk and stays PER SIGIL**, because your sentence
+prices "clearing" against the old cost of ONE sigil. If you meant 100kk to wipe all three at once, it
+is one line.
 
-✅ **And re-taking a class is NOT a separate charge** — *"if u have tank,war,rogue and u decide to
-remove them and want to add a mage it will cost you the removal price + adding mage class to 75"*.
-That is the 100kk plus the ordinary cost of levelling a new subclass to 75; nothing new to build.
+### 5. 🔴 NEW — THE SUBCLASS SLOT LADDER: THREE EARNED, FIVE BOUGHT
+A character does not simply "have" subclass slots any more. **Three arrive with your progress, and
+every one after that is bought.**
 
-### 5. ⚠ What it costs you, for the record
-Three sigils today = level 76 + 60kk SP + 30kk gold on ONE character. Three sigils after this =
-**three subclasses each levelled to 75**, on top of the existing rule that every class you own must
-be 75+ with its 3rd class before you may add another. The money is gone and the ROAD is the price —
-which is what *"yes sigils become end game and hard"* asks for.
+| slot | how it opens | your words |
+|---|---|---|
+| **1** | your MAIN reaches **76** and takes its 4th class | *"When you get main to 76(4th) u get your 1st ticket"* |
+| **2** | subclass #1 reaches **75** | *"then once sub gets to 75 u get ur secondTicket (+ sigils and etc)"* |
+| **3** | subclass #2 reaches **75** | *"same for second"* |
+| — | subclass #3 reaching 75 pays **no ticket** | *"then u lvl up ur 3rd sub class and no ticket only sigils"* |
+| **4** | bought for **500kk gold** | |
+| **5** | bought for **5kkk gold** (5 billion — checked: `Gold` is a `long` on the entity, the record and every DTO, so it fits) | |
+| **6 · 7 · 8** | bought for **X / Y / Z premium** | *"X amount of premium, Y amunt of premium, Z amount of premium"* |
 
-✅ **Characters who already own three: nothing is built.** *"development -> db is reset periodically -
-no need for migrations"* — the standing pre-release rule.
+🔑 **THE TICKET IS AN ITEM, NOT A COUNTER.** *"those values give you a subclassTicket and u can unlock
+them using(consumable) ticket"* — earning or buying one puts a **Subclass Ticket** in your bag, and
+CONSUMING it is what opens the slot. That is worth having for a reason beyond flavour: it separates
+the reward from the decision, so the ticket the main's 4th class paid you can sit in the bag until you
+know which class you want.
 
-⚠ The client's Sigils tab is built around the three named slots and gets rebuilt with them, so this
-ships with an APK.
+🔑 **AND THE LADDER STOPS WHEN THE ROSTER DOES.** *"when no more available subclasses … next ticket is
+locked and cannot be bought .. with the text that no more available subclasses -> when we add more it
+will be available again"*. So the purchase is gated on a COMPUTED question — "is there a discipline
+left that this character could legally add" — never on an authored number, and the day a new class
+lands the ticket unlocks itself with nothing edited.
+
+❓ **Your example number and the live roster disagree, and it is worth a second look.** You wrote
+*"like the mage,healer,buffer,tank unlock to 6"* — but there are **twelve live disciplines** today
+(Bulwark · Ravager · Warlord · Phantom · Venomweaver · Sharpshooter · Trapper · Nullblade · Hunter ·
+Lightbringer · Warchanter · Magus; Vanguard and Tempest are retired), `CanAddDiscipline` bars only a
+REPEAT, and a subclass may be **any race** — so a Magus main can legally hold **eleven** others. What
+actually binds is your own ladder at **8 slots**, not the roster, and the "no more available
+subclasses" message would never fire. **If 6 is the cap you want, it wants to be an authored number,
+not a computed one — say so and it is one line.**
+
+### 6. 🔴 NEW — A SUBCLASS AT 74 OR BELOW CAN BE SWAPPED OUT
+*"while your subclass is less or equal to 74 .. u are allowed to remove it (reset it to other - mage
+subclass can take other mage subclass when resetting -> it takes its place so no duplicates will be at
+the end)"*.
+
+- The gate is the SUBCLASS's own level, **≤ 74**. At 75 it is yours for good — which is exactly the
+  level that pays its sigil slot and its tree, so the point of no return is the point of reward.
+- **The replacement takes its SLOT.** That is the load-bearing half: the no-duplicate-discipline check
+  has to ignore the slot being replaced, or swapping a Magus for a Magus-race sibling would refuse
+  itself. Your *"it takes its place so no duplicates will be at the end"* is that rule stated.
+- ⚠ It also means a mis-picked subclass is not a dead character, which is what makes the 500kk and
+  5kkk slots safe to sell.
+
+❓ **What does a swap COST?** You priced *clearing a sigil* at 100kk and said elsewhere *"if u have
+tank,war,rogue and u decide to remove them and want to add a mage it will cost you the removal price +
+adding mage class to 75"* — but "the removal price" for a SUBCLASS has never been named. **Free, or a
+number?** My reading if you say nothing: **free below 75**, because the 40 levels you throw away are
+already the price and a fee on top would just make people park an unwanted class instead.
+
+### 7. 🔴 NEW — YOU TAKE A SUBCLASS FROM AN NPC
+*"admins can take subclass as its of now ... and normal players also need a NPC to give them (u can
+reuse the @40 class master to open new dialogue when u go back to him with main @76+4th)"*.
+
+- The admin path (`HandleDebugAddSubclass`) is **untouched** — it stays the unlimited, ungated one.
+- The **level-40 class master** grows a second dialogue, offered when you return to him with a main at
+  **76+ holding its 4th class**. Same NPC, same town, a different conversation.
+- It consumes a **Subclass Ticket** (§5) and applies the ordinary rules the debug path already
+  enforces: every class you own at 75+ with its 3rd class, no repeated discipline, gear unequipped.
+
+### 8. 🔴 NEW — "WHAT DOES THIS SUBCLASS GIVE ME" MUST BE READABLE BEFORE YOU COMMIT
+*"we will need an detailed information when taking subclass what that subclass will give you when
+reaching 75lvl etc"*. The dialogue in §7 shows, per offered class: the **sigil group it unlocks** and
+its three sigils, whether it would open a **sigil SLOT** (its number) or only the tree, that it starts
+at **40 with 0 SP** (`BL-252`), and the 1-day rune it comes with. Everything on that panel is derived
+from the catalogues — nothing about it is authored twice.
+
+### 9. 🔵 WHAT IS BLOCKING THE BUILD
+
+1. 🔴 **THERE IS NO PREMIUM CURRENCY IN THE GAME.** Slots 6, 7 and 8 are priced in one, and `Items.cs`
+   says so in as many words: *"when a premium currency exists this is…"*. The gold rungs (500kk, 5kkk)
+   can ship the day you say go; the three premium rungs cannot exist until that economy does.
+2. ❓ **X / Y / Z** — the three premium numbers.
+3. ❓ §6's swap price, and §5's cap question.
+4. ⚠ `GameConstants.MaxSubclasses` is **4** (main + 3). This needs **9** (main + 8) as the hard
+   ceiling, with the per-character UNLOCKED SLOT COUNT — a new persisted field — as the gate that
+   actually binds. Nothing else about the constant's job changes.
+
+### 10. ⚠ For the record
+Three sigils today = level 76 + 60kk SP + 30kk gold on ONE character. Three sigils after this = **three
+subclasses each levelled to 75**, each of them born at 40 with no SP. The money is gone and the ROAD is
+the price — which is what *"yes sigils become end game and hard"* asks for.
+
+✅ **Characters who already own three sigils: nothing is built.** *"development -> db is reset
+periodically - no need for migrations"*, the standing pre-release rule.
+
+⚠ The client's Sigils tab is built around the three named slots and gets rebuilt with them; the class
+master's new dialogue and §8's panel are client work too. **This ships with an APK.**
 
 ## `BL-252` 🔴 A NEW SUBCLASS IS BORN AT 40, WITH A ONE-DAY RUNE
 
@@ -2123,3 +2134,57 @@ part, the SP is not.
   Spell Rune are held items), and an XP/SP rune is the same shape.
 - **One rune per subclass CREATED**, not per swap. *"when you change a sub class"* can read either
   way, and per-swap would be farmable: swap out and back every day for a free rune forever.
+
+## `BL-253` 🔵 A DROP DATABASE — "I SAY WHAT I AM LOOKING FOR AND IT SHOWS ME WHERE IT DROPS"
+
+**2026-09-16, alongside `BL-247`:** *"we will need a drop database -> i say what im looking for and it
+shows me all mob_name/[mob_lvl-elite|boss|normal]/location/drop_rate"*.
+
+✅ **THE MEASURING HALF IS BUILT (0.151.0)** — `dotnet run --project tools/BalanceMatrix -- --drops
+"greater scroll"` prints exactly those four columns for anything matching, by item name or id. It is
+in `tools/BalanceMatrix/DropFinder.cs`, and it earned itself the day it was written: it caught a new
+boss template spawning as ordinary camp filler, and every number in `BL-247`'s report is read off it.
+
+🔑 **The one design fact worth carrying into the in-game version: it must walk SPAWNS, not templates.**
+Rank is a property of the spawn, and half the top-end faucets in the game (every Greater/Safe enchant
+scroll, every Epic+ material, every recipe book) exist only for an Elite or a Boss kill. A lookup
+written against `MobType.Drops` would answer "nothing drops this" — correctly, and uselessly.
+
+🔵 **What is still owed is the IN-GAME window**, which is what you actually asked for. Open questions:
+
+1. ❓ **Where does it live** — a player window (a search box in the Items UI, reachable at any time),
+   or an admin `/whatdrops <item>` that prints to chat? The first is a feature; the second is an hour.
+   My reading: **player window**, because *"i say what im looking for"* is a play-time question, and a
+   drop table nobody can read is why three items sat unobtainable for weeks.
+2. ❓ **Does it show what you have not met yet?** A full index tells you a level-78 boss drops the A
+   scroll before you have ever seen one. That is either the point of the feature or a spoiler; your
+   call.
+3. ⚠ **The recipe books are the one row the tool reconstructs rather than reads.** They are not
+   `DropEntry`s — `RollBossBonus` rolls them by hand — so the two sides can drift. If the in-game
+   version is built, that roll should move into a real drop table first, and then there is one source
+   of truth instead of two.
+
+## `BL-254` ❓ RARE WOOD DROPS FROM NOTHING, ANYWHERE — is craft-only the intent?
+
+**Found while answering `BL-247` (2026-09-16), and NOT fixed by it.** You asked *"where epic/rare wood
+… are dropped -> also got none"*. Epic Wood now has thirty sources; **Rare Wood has none, and never
+had any.**
+
+The cause is structural, not a missing row:
+
+- Every creature has a PRIMARY and a SECONDARY material type, by category (`StandardDrops`). **Wood is
+  only ever a SECONDARY** — Animal/Plant pay Leather+Wood, MagicCreature/Angel pay Gem+Wood, and no
+  category anywhere pays Wood as its primary.
+- A secondary stops at **Uncommon**. The Rare rung (level 60+) and the Epic rung (76+) are authored
+  for the PRIMARY only.
+- `EliteMatDrops` — the elite/boss faucet — jumps **Uncommon → Epic**. It has no Rare rung at all.
+
+So Rare Wood's only route is the PotionMaster refining 5 Uncommon Wood + an Ingot + a Thread.
+
+❓ **Three ways out, and it is your call which:** (a) leave it — refining is the intended route and
+wood is deliberately the "bought, not found" material; (b) give `EliteMatDrops` a Rare rung, which
+pays every type and is one line; (c) give some category Wood as its PRIMARY (the obvious candidate is
+Plant, which is Leather+Wood today and is the one category where leather makes no sense at all).
+
+⚠ **Whichever you pick, it is the same question for every SECONDARY material at Rare** — Wood is just
+the one you noticed, because it is the only type that is never anybody's primary.

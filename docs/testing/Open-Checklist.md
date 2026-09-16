@@ -1379,7 +1379,7 @@ Mastery's text come off the compiled catalogue, and the trap cast time is in bot
   shortens a fighter's stance. Worth a glance at whether any physical reuse now feels too short —
   it is a widening, not a number change.
 
-## §100 — YOUR PLAYTEST OF 2026-09-16, the BUGS (thirteen; NINE fixed, one answered)
+## §100 — YOUR PLAYTEST OF 2026-09-16, the BUGS (thirteen; ELEVEN fixed, one answered)
 
 You handed this list the moment 0.146.0 was committed, so apart from the ones marked ✅ **none of it
 has been looked at in code** — it is recorded here exactly as you wrote it, and the ten ASKS that
@@ -1460,11 +1460,20 @@ re-reports of standing rules are marked as such.
   one per 267 kills, so a scroll is **already "rarer than a weapon"**. ⚠ **Your other clause is a
   different number by 100×**: an epic weapon off a normal mob is `0.0001 × 0.075` = 0.00075%/kill, one
   per 133,000. The two halves of your sentence are **500× apart** — say which you meant and it moves.
-- ⚠ **ROGUES STILL LEARN EVASION MASTERY (the dodge floor).** *"we should have removed it? they have
-  enough evasion difference with each mob at their lvl."* This is a re-report of the same shape as
-  `BL-15` (`precision` / `anti_magic` should be learnable rather than auto-granted floors), and it is
-  gated the same way: a floor becomes a CSV row, and inventing one re-specs a file. **Say whether it
-  goes entirely or becomes a row, and in which file.**
-- ❓ **NOTHING SEEMS TO DROP A-GRADE ENCHANT SCROLLS, EPIC/RARE WOOD OR EPIC LEATHER** — you got none
-  of the three. Needs a drop-table sweep, not a guess: which mobs carry them, at which levels, and at
-  what effective rate once the group multiplier is applied.
+- ✅ **ROGUES NO LONGER LEARN EVASION MASTERY — BUILT in 0.150.0 as `BL-251`.** You answered the
+  question this row asked (*"Evasion mastery is removed out of any rogue/dual/archer. no1 learns it or
+  auto gets it. same as warriors precision"*): it goes ENTIRELY, so `FloorPassiveFor` no longer names
+  the rogue and the tank's `anti_magic` is the last floor in the game. 🔴 **It was NOT a no-op** — the
+  rig measures a melee rogue's natural spread at 14 points of evasion at 44 and 11 at 52, both under
+  the 20% the floor pinned, so 44-52 really does lose 1-4 points of dodge. ⚠ A character who already
+  has the skill keeps it until you delete `game.db`, deliberately.
+- ✅ **NOTHING DROPPED A-GRADE SCROLLS, EPIC/RARE WOOD OR EPIC LEATHER — SWEPT AND FIXED in 0.151.0
+  (`BL-247`).** All three were ONE cause: **no Elite and no Boss existed anywhere between level 66 and
+  79**, and every top faucet in the game is gated on rank. Four elite camps (68 / 72 / 75 / 78) and a
+  level-78 field boss in **Wyrmfall Basin** fill it; the A enchant band is exactly 76-79, which is why
+  `scroll_greater_a` and `scroll_safe_a` had no source *of any kind*. Blueprints were a RATE, not a
+  source — a raw roll no multiplier reached, so your ×100 never applied; they take the knobs now.
+  🔵 **Two things to test:** that the basin appears on the Frostmere gatekeeper's list at Lv 76-79, and
+  that an hour in the new 78 elite camp actually pays A scrolls and Epic mats at your server rate.
+  🔴 **Rare Wood is still unobtainable and this did not change it** — it is structural (wood is never a
+  category's PRIMARY material), and it is a question for you: **`BL-254`**.

@@ -103,13 +103,39 @@ public static class WorldMap
             MobTypes: new[] { "demo_curve_80" }, MaxCount: 1, RespawnSeconds: 15),
 
         // ===== Boss placeholders (more bosses/instances later) =====
-        // The lone emberwyrm ELITE that used to roam here is GONE: every Frostmere field now generates its
-        // own elite camp at its band cap (80 / 84 / 90), placed 1500 out from the field's top camp — so a
+        // The lone emberwyrm ELITE that used to roam here is GONE: every Frostmere field generates its
+        // own elite camps (78 / 80 / 84 / 90), placed 1500 out from the camp whose band holds them — so a
         // hand-placed elite at a hand-picked level was both redundant and the one spawner most likely to
         // land on top of a generated camp.
         new(X: 24000, Y: 45000, Radius: 250,  MinLevel: 60, MaxLevel: 60,
             MobTypes: new[] { "valley_treant" }, MaxCount: 1,
             RespawnSeconds: 21 * 3600, RespawnVariance: 3 * 3600, Rank: MobRank.Boss),
+
+        // ── WYRMFALL BASIN — the A-BAND FIELD BOSS (`BL-247`, his *"fill the gap with the elits+boss"*) ──
+        // The Emberwyrm Matriarch at 78, north-west of Frostmere, laid out exactly like the Sunken Vale:
+        // the boss alone in the centre, two trash flanks 3500u out so you reach her without an escort.
+        //
+        // 🔑 WHY A BOSS AND NOT ANOTHER ELITE CAMP. `MobCatalog.EnchantScrollDrops` pays an elite the
+        // band's ORDINARY scroll and nothing else; the Greater and the Safe scroll are boss-only (§100,
+        // 2026-09-16), and a boss pays them for its OWN band. The A band is 76-79, so `scroll_greater_a`
+        // and `scroll_safe_a` had no source of any kind in the game until this spawner existed — not a
+        // rare one, none. 78 puts her in the middle of the band rather than on either edge of it.
+        //
+        // ⚠ Same 21h ± 3h timer as the treant. A boss gates a one-off, never a supply (0.09 kills/h);
+        // the A-band ELITE camp in Frostmere Wastes is what a farmer actually clears.
+        new(X: 7000, Y: 27000, Radius: 250, MinLevel: 78, MaxLevel: 78,
+            MobTypes: new[] { "emberwyrm_matriarch" }, MaxCount: 1,
+            RespawnSeconds: 21 * 3600, RespawnVariance: 3 * 3600, Rank: MobRank.Boss),
+
+        // The flanks. Roster is what the A band actually holds — the drakes nest here and the Redhorn
+        // and Sunland warbands are up here raiding the nests, which is also where they live in the
+        // Frostmere Wastes camps two fields south.
+        new(X: 3500, Y: 27000, Radius: 1400, MinLevel: 76, MaxLevel: 79,
+            MobTypes: new[] { "emberwyrm_drake", "redhorn_general", "sunland_orc_captain" }, MaxCount: 7,
+            RespawnSeconds: 26, RespawnVariance: 8),
+        new(X: 10500, Y: 27000, Radius: 1400, MinLevel: 76, MaxLevel: 79,
+            MobTypes: new[] { "emberwyrm_drake", "redhorn_soldier", "sunland_orc_commander" }, MaxCount: 7,
+            RespawnSeconds: 26, RespawnVariance: 8),
 
         // Sunken Vale — trash for the treant BOSS field, kept on the flanks (>3500u from the boss) so you
         // reach the boss without an escort. Level 58-60 to sit just under the boss and match its band.

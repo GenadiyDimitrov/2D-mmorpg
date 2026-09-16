@@ -88,9 +88,15 @@ public static class WorldPlan
         string CityId, string Id, string Name,
         float Bearing, float Distance,
         Band[] Bands,
-        /// <summary>Level of this field's ELITE camp; 0 for none. Placed <see cref="EliteOffset"/> further
-        /// out from the field's last (highest) camp, reusing its roster.</summary>
-        int EliteLevel = 0);
+        /// <summary>The levels of this field's ELITE camps; null or empty for none. Each one is placed
+        /// <see cref="EliteOffset"/> further out from the camp whose BAND CONTAINS it (the last camp when
+        /// no band does), reusing that camp's roster.
+        ///
+        /// <para>🔑 It is a LIST because a field can straddle two reward bands. Frostmere Wastes runs
+        /// 76-80, and the enchant ladder splits it: 76-79 is the A band, 80 is S
+        /// (<see cref="MobCatalog.EnchantScrollDrops"/>). One elite camp at the field's cap paid S and
+        /// left A with no elite anywhere in the world — which is half of `BL-247`.</para></summary>
+        int[]? EliteLevels = null);
 
     private static Band B(int min, int max, string[]? mobs = null, string[]? aggressive = null,
                           int? aggressiveCount = null, bool force = false, float? hpScale = null) =>
@@ -161,8 +167,8 @@ public static class WorldPlan
     /// fields, grouped under cities — the layout the owner specified in playtest-13:
     ///
     ///   Brackenford  1-16   2 fields    Stonewatch  16-40  3 fields
-    ///   Greymarsh    40-60  3 fields    Ironreach   60-75  3 fields
-    ///   Frostmere    76-90  3 fields, each with its own elite camp (80 / 84 / 90)
+    ///   Greymarsh    40-60  3 fields    Ironreach   60-75  3 fields, elite camps 68 / 72 / 75
+    ///   Frostmere    76-90  3 fields, with elite camps at 78 / 80 / 84 / 90
     ///
     /// Bearings are chosen so no city's fields reach another city's, the Training Grounds or the Sunken
     /// Vale — <see cref="ValidateLayout"/> fails the boot if that ever stops being true, so a bearing can
@@ -247,23 +253,35 @@ public static class WorldPlan
 
         // ── Ironreach (south, 24000/38000, r2200) — levels 60-75 ──────────────────────────────────
         // 90° (further south) is the Sunken Vale boss field, so the third field goes north instead.
+        //
+        // 🔑 EACH FIELD HAS AN ELITE CAMP AT ITS CAP since `BL-247` (68 / 72 / 75). Before them there was
+        // NO elite and NO boss anywhere between level 66 and 79 — and every top faucet in the game is
+        // gated on RANK (EnchantScrollDrops, EliteMatDrops, the recipe roll in RollBossBonus), so the
+        // whole of Ironreach's range paid no enchant scroll above its band's ordinary one and no Epic
+        // material at all. His instruction: *"fill the gap with the elits+boss"*.
         new("castle_ironreach", "field_iron_march", "Ironreach March", 180f, 4600f,
-            new[] { B(60, 64), B(64, 68) }),
+            new[] { B(60, 64), B(64, 68) }, EliteLevels: new[] { 68 }),
         new("castle_ironreach", "field_iron_highlands", "Redhorn Highlands", 0f, 4600f,
-            new[] { B(68, 72) }),
+            new[] { B(68, 72) }, EliteLevels: new[] { 72 }),
         new("castle_ironreach", "field_iron_crags", "Sunland Crags", 270f, 4600f,
-            new[] { B(72, 75) }),
+            new[] { B(72, 75) }, EliteLevels: new[] { 75 }),
 
         // ── Frostmere (north-west, 12000/15000, r2000) — levels 76-90, the endgame city ───────────
         // Two-level bands, and one ELITE camp per field at the band cap (owner's 80 / 84 / 90).
+        //
+        // ⚠ THE WASTES HAS TWO ELITE CAMPS, 78 AND 80 (`BL-247`). Its three bands straddle the enchant
+        // ladder's A/S boundary — A is 76-79, S opens at 80 — and the one camp at the field's cap was in
+        // S, so the A band had no elite anywhere in the world and `scroll_enchant_a` was reachable from a
+        // single creature. The 78 camp is the A band's, and it is also the only Epic-material faucet
+        // between 66 and 79.
         new("town_frostmere", "field_frost_wastes", "Frostmere Wastes", 180f, 5000f,
-            new[] { B(76, 77), B(78, 79), B(80, 80) }, EliteLevel: 80),
+            new[] { B(76, 77), B(78, 79), B(80, 80) }, EliteLevels: new[] { 78, 80 }),
         new("town_frostmere", "field_frost_expanse", "Radiant Expanse", 90f, 5000f,
-            new[] { B(81, 82), B(83, 84) }, EliteLevel: 84),
+            new[] { B(81, 82), B(83, 84) }, EliteLevels: new[] { 84 }),
         new("town_frostmere", "field_frost_summit", "Dawnbreak Summit", 270f, 5000f,
             new[] { B(85, 86, force: true),
                     B(87, 88, SummitRoster, force: true),
-                    B(89, 90, SummitRoster, force: true) }, EliteLevel: 90),
+                    B(89, 90, SummitRoster, force: true) }, EliteLevels: new[] { 90 }),
     };
 
     /// <summary>How many types attack on sight at a given band cap. Ramped, not flat: 71 of ~80 templates
@@ -447,16 +465,25 @@ public static class WorldPlan
                                    BuildGate(plan, band, x, y, angle, i, n)));
             }
 
-            // The elite camp sits EliteOffset further out along the last (highest) camp's own bearing —
-            // same trip, its own ground, and past aggro range of the normal camp.
-            if (plan.EliteLevel > 0)
+            // An elite camp sits EliteOffset further out along the bearing of the camp it belongs to —
+            // same trip, its own ground, and past aggro range of that normal camp.
+            //
+            // 🔑 WHICH camp it belongs to is the band that CONTAINS its level, falling back to the last
+            // (highest) band when no band does. Every elite authored before `BL-247` sat at its field's
+            // cap, so that fallback is what they all take and their ground is unchanged; the rule only
+            // starts to matter for a field with two of them (Frostmere Wastes, 78 in the A band and 80
+            // in S), where it is also what keeps the two on different angles rather than stacked.
+            foreach (int eliteLevel in plan.EliteLevels ?? Array.Empty<int>())
             {
-                var last = plan.Bands[n - 1];
-                double angle = centre + ((n - 1) - (n - 1) / 2.0) * step;
+                if (eliteLevel <= 0) continue;
+                int bi = Array.FindIndex(plan.Bands, b => eliteLevel >= b.Min && eliteLevel <= b.Max);
+                if (bi < 0) bi = n - 1;
+                var host = plan.Bands[bi];
+                double angle = centre + (bi - (n - 1) / 2.0) * step;
                 float ex = city.X + (plan.Distance + EliteOffset) * (float)Math.Cos(angle);
                 float ey = city.Y + (plan.Distance + EliteOffset) * (float)Math.Sin(angle);
-                var eliteBand = new Band(plan.EliteLevel, plan.EliteLevel,
-                                         last.Mobs ?? MobCatalog.InBand(last.Min, last.Max).Select(m => m.Id).ToArray(),
+                var eliteBand = new Band(eliteLevel, eliteLevel,
+                                         host.Mobs ?? MobCatalog.InBand(host.Min, host.Max).Select(m => m.Id).ToArray(),
                                          ForceZoneLevel: true);
                 camps.Add(new Camp(BuildZone(eliteBand, ex, ey, EliteRadius, MobRank.Elite, 2), Gate: null));
             }

@@ -316,10 +316,10 @@ public static class MobCatalog
     /// at spawn — the template only carries identity, movement, level, family and passives.</summary>
     private static MobType Mob(string id, string name, int level, MobCategory cat,
         float run, bool aggressive, MobMod? mod = null, MobRole role = MobRole.Melee,
-        string clan = "") =>
+        string clan = "", bool handPlaced = false) =>
         new(id, name, run * 0.55f, run, Aggressive: aggressive,
             Drops: StandardDrops(level, cat, id), Mod: mod, Level: level, Category: cat, Role: role,
-            Clan: clan);
+            Clan: clan, HandPlaced: handPlaced);
 
     // ----- BL-47 step 2 authoring helpers. See the demo block at the bottom of Build(). -----
 
@@ -1331,6 +1331,18 @@ public static class MobCatalog
             Mob("sunland_orc_captain", "Sunland Orc Captain", 77, MobCategory.Humanoid, 132f, true, clan: ClanOrc),
             Mob("redhorn_general", "Redhorn General", 78, MobCategory.Humanoid, 132f, true, clan: ClanRedhorn),
             Mob("emberwyrm_drake", "Emberwyrm Drake", 79, MobCategory.Dragon, 155f, true, clan: ClanDrake),
+            // THE A-BAND FIELD BOSS (`BL-247`) — the only boss between level 66 and 79, and the reason
+            // `scroll_greater_a` and `scroll_safe_a` have a source at all: EnchantScrollDrops pays the
+            // Greater and the Safe scroll of a boss's OWN band, and the A band is exactly 76-79. She
+            // stands alone in Wyrmfall Basin (WorldMap) on the treant's 21h timer.
+            //
+            // ⚠ HAND-PLACED, which is load-bearing here and NOT decoration: a template with a natural
+            // level is rostered into every generated camp whose band contains it (InBand), so without
+            // this she would have spawned as ordinary trash in the Frostmere Wastes 78-79 camp AND as an
+            // elite in its new 78 camp — a named boss standing three deep in a field. Measured, not
+            // guessed: `--drops scroll_enchant_a` listed her as an elite before this flag went on.
+            Mob("emberwyrm_matriarch", "Emberwyrm Matriarch", 78, MobCategory.Dragon, 150f, true,
+                clan: ClanDrake, handPlaced: true),
             Mob("wrathborn_demon", "Wrathborn Demon", 80, MobCategory.Demon, 145f, true),
             Mob("scarlet_mantis", "Scarlet Mantis", 80, MobCategory.Insect, 142f, true, clan: ClanMantis),
             Mob("radiant_scout", "Radiant Scout", 81, MobCategory.Angel, 140f, true, clan: ClanRadiant),

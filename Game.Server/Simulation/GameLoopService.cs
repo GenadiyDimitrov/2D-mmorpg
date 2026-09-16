@@ -15084,7 +15084,11 @@ public class GameLoopService : BackgroundService
 
         // Boss/elite pile goes to ONE recipient per the loot rule (mats stay together).
         var bossTo = LootRecipient(killer, eligible, party);
-        if (RollBossBonus(bossTo, mob, mobType))
+        // The RECIPE roll inside takes the same rate every other drop on this kill takes — the global
+        // rate × the "other" group × the killer's own Rune of Drop × the level-gap penalty. See the
+        // comment on the roll itself (`BL-247`): it used to be a raw _rng roll no knob touched.
+        if (RollBossBonus(bossTo, mob, mobType,
+                MobCatalog.EffectiveRate(0, dropMult) * dropGap))
             touched.Add(bossTo);
 
         foreach (var t in touched)
@@ -15149,7 +15153,7 @@ public class GameLoopService : BackgroundService
 
     /// <summary>Elite/boss EXTRA loot: a pile of crafting mats (rarity + amount by rank) and a chance
     /// at the finished tiered set piece — bosses are the reliable gear/mat source (docs/design/Crafting.md).</summary>
-    private bool RollBossBonus(Entity recipient, Entity mob, MobType mobType)
+    private bool RollBossBonus(Entity recipient, Entity mob, MobType mobType, float recipeRate)
     {
         if (mob.Rank is not (MobRank.Boss or MobRank.Elite))
             return false;
@@ -15183,13 +15187,29 @@ public class GameLoopService : BackgroundService
         // A grade up — every recipe below 76 is learned by LEVEL, not found (RecipeCatalog.DropOnly), so
         // there is no item to drop for the owner's "below level 74 also drop a recipe at 0.1%". That rung
         // needs recipe books authored for the lower grades first; flagged, not faked.
+        //
+        // 🔑 THE RATE KNOBS APPLY HERE (`BL-247`, owner 2026-09-16: *"fix the blueprints to take the
+        // rates multiplier"*). This was a raw `_rng.NextDouble() < chance` that NO multiplier reached —
+        // not the global rate, not the group, not a Rune of Drop, not the level gap — which is the whole
+        // reason he had none: he plays at ×100 and the elite's 0.1% stayed 0.1%, one book per thousand
+        // elite kills. `recipeRate` is the composed number from the call site, and the numbers below are
+        // the DELIVERED chances at ×1 divided by the "other" group's ×3, exactly as EliteMatDrops
+        // authors its rungs — so nothing changes at ×1 and his test rate finally lands.
+        //
+        // ⚠ DropCopies, not a comparison: above 100% the excess is COPIES, the same rule every other
+        // drop on this kill runs on. At ×100 a boss's armor book is 50 copies, not one — "as if you had
+        // killed fifty", which is what the rate means everywhere else.
         if (tier >= 76)
         {
+            const float OtherGroupRate = 3f;   // see the note above — the authored numbers are /3
             string PickRecipe(params string[] keys) =>
                 ItemCatalog.RecipeBookId($"craft_{keys[_rng.Next(keys.Length)]}_t{tier}");
-            void RecipeRoll(float chance, params string[] keys)
+            void RecipeRoll(float delivered, params string[] keys)
             {
-                if (_rng.NextDouble() < chance) AddItem(recipient, PickRecipe(keys));
+                int copies = MobCatalog.DropCopies(
+                    delivered / OtherGroupRate * recipeRate, _rng.NextDouble());
+                for (int i = 0; i < copies; i++)
+                    if (!AddItem(recipient, PickRecipe(keys))) break;
             }
             if (boss)
             {

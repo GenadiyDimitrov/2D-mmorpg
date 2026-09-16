@@ -152,6 +152,22 @@ public static class RegionMap
             new[] { Gate("field_treant#0", "Sunken Vale West", "Lv 58-60 · trash flank, west of the boss", 20500, 45000),
                     Gate("field_treant#1", "Sunken Vale East", "Lv 58-60 · trash flank, east of the boss", 27500, 45000) }),
 
+        // Wyrmfall Basin — the Emberwyrm Matriarch's BOSS field (band 76-79, `BL-247`). Same shape as the
+        // Sunken Vale above, which is the field-boss pattern: boss alone in the centre, trash on the
+        // flanks. North-west of Frostmere, in the one empty quadrant left — its nearest neighbours are
+        // Frostmere's own 81-84 field (5.7k away) and the city wall itself (12k).
+        // ⚠ UNLIKE the vale, it IS managed by a city — Frostmere. The vale names none because its band
+        // (58-60) is Greymarsh's while it sits on Ironreach's doorstep, so there is no right answer to
+        // pick on the owner's behalf. Here band and geography agree: 76-79 is the bottom of Frostmere's
+        // range and Frostmere is the nearest city by 12k. That is worth having, because a managing city
+        // is what puts the basin on a gatekeeper's menu and sends its dead to the right town — without
+        // it the only way to a 21-hour boss is a 13,000-unit walk from the city you were already in.
+        new("field_wyrmfall", "Wyrmfall Basin", RegionKind.Field,
+            new[] { new Vec2(1350, 26200), new Vec2(2400, 25100), new Vec2(11600, 25100), new Vec2(12650, 26200), new Vec2(12650, 27800), new Vec2(11600, 28900), new Vec2(2400, 28900), new Vec2(1350, 27800) },
+            new[] { Gate("field_wyrmfall#0", "Wyrmfall Basin West", "Lv 76-79 · trash flank, west of the boss", 3500, 27000),
+                    Gate("field_wyrmfall#1", "Wyrmfall Basin East", "Lv 76-79 · trash flank, east of the boss", 10500, 27000) },
+            "town_frostmere"),
+
         // THE THREE DUNGEONS come from DungeonLayout — outline, arrival gate and managing city all
         // generated from the same numbers that place their spawners (WorldMap.SpawnZones). They were
         // three hand-drawn twelve-vertex bands here, the second and third being the first translated

@@ -997,14 +997,27 @@ NOT in his party    silently skipped, no cost   REFUSED at cast start + one rung
 effective = RateConfig.DropChanceRate * DropGroupRates[group] * perItemOverride
 ```
 
-Guaranteed groups (mats / always / scrolls) **ignore the global** — they are authored as absolutes.
-⚠ Composed in **one** place, `MobCatalog.EffectiveRate`; never redo this arithmetic at a call site,
-or the kill roll and the number the player is shown will disagree.
+The guaranteed groups (mats / always / scrolls) are authored as ABSOLUTES but are **not exempt** from
+the global — that exemption came off on 2026-08-18 when `DropCopies` removed the 100% clamp, so a 100%
+group at ×30 fires thirty weighted picks with its proportions intact. ⚠ Composed in **one** place,
+`MobCatalog.EffectiveRate`; never redo this arithmetic at a call site, or the kill roll and the number
+the player is shown will disagree.
+
+Above 100% the excess is **copies**, not a clamp: `DropCopies` = the whole part guaranteed, the
+fraction rolled, so `E[copies] == chance` exactly.
 
 ⚠ A template's `Drops` is **not the whole table**. RANK is a property of the spawn, not the template,
-so three layers are added at kill time (`GameLoopService.RollDrop`, mirrored by target-inspect):
+so four layers are added at kill time (`GameLoopService.RollDrop`, mirrored by target-inspect):
 `GearDrops` *replaces* the gear groups, and `EnchantScrollDrops`, `UtilityScrollDrops` (return /
-resurrection, `BL-174`) and `EliteMatDrops` *add* for elites and bosses.
+resurrection, `BL-174`) and `EliteMatDrops` *add* for elites and bosses. The fourth is the **recipe
+book** roll inside `RollBossBonus`, which is not a `DropEntry` at all — it is hand-rolled, and since
+`BL-247` it takes the same `EffectiveRate` × level-gap product as everything above. Its authored
+numbers are **divided by the `other` group's ×3**, exactly as `EliteMatDrops` authors its rungs, so
+what they state is the delivered chance at ×1.
+
+🔎 **To ask where something drops, don't read these tables** — `dotnet run --project tools/BalanceMatrix
+-- --drops "<item>"` walks every spawner × roster and prints creature / level / rank / field / chance,
+all of it through `EffectiveChance`. Templates cannot answer the question; only spawns know rank.
 
 In a GROUP the member's authored chance **is** its marginal per-kill chance: the group fires once at
 the members' SUM and then picks one weighted, so adding or removing members changes how often the
