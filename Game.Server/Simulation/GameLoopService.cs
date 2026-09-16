@@ -12430,6 +12430,20 @@ public class GameLoopService : BackgroundService
                 SkillDef.BuffThreat(RungLevel(caster, def, lvl), blessed.Count));
         }
 
+        // ---- THE CASTER'S OWN HALF (`SkillDef.SelfBuff`), for every skill that is NOT the AoE branch.
+        //      🔴🔑 THIS WAS MISSING ENTIRELY (§100, 2026-09-16: *"swift stab ... when used it should
+        //      increase AS/MS but it dont"*). The field was read in exactly ONE place — the
+        //      `EnemiesInRadius` arm, written for Taunting Wall, which RETURNS — so a SINGLE-TARGET
+        //      skill's self-buff was never applied by anything. Swift Stab is the only other user, and
+        //      its whole identity ("a blur of a blow that carries you forward with it") is this buff:
+        //      the skill cast, dealt its damage, and silently dropped its other half.
+        //      ⚠ UNCONDITIONAL, exactly like the AoE arm: a rush you build from your own momentum does
+        //      not care whether the blow crit. A blow that FAILS is still a landed strike (`BL-193`).
+        //      ⚠ No floating text: the AoE arm does not broadcast one either, and a 5-second rush that
+        //      re-lands every cast would put a second float on top of its own damage number.
+        if (def.SelfBuff is string ownBuffId && SkillCatalog.Get(ownBuffId) is SkillDef ownBuff)
+            ApplyBuff(caster, ownBuff, lvl, ownBuff.Name);
+
         if (offensive)
             AfterOffensiveSkill(caster, target);
 
@@ -12496,9 +12510,25 @@ public class GameLoopService : BackgroundService
     /// <summary>Would this buff land, or be refused by something stronger? Asked BEFORE a channelled
     /// consumable starts its cast — a buff scroll is taken from the bag when the cast LANDS, so
     /// without this you would spend a second reading a scroll and lose it for nothing.</summary>
-    private static bool BuffWouldLand(Entity target, SkillDef def, int level)
+    /// <param name="durationOverride">The duration this buff will ACTUALLY be granted for, when the
+    /// caller is going to override the skill's own (-1 = the skill's).
+    ///
+    /// 🔴🔑 WITHOUT IT THIS PREDICATE LIED, AND IT IS WHY A MARK WOULD NOT RE-BUFF (§100, 2026-09-16:
+    /// *"npc buffer does not re-buff a mark — same mark, same lvl, same npc; every other buff's timer
+    /// resets and the Mark's does not"*). The NPC grants everything for <c>NpcBuffTicks</c>, ONE HOUR,
+    /// but this filter asked <c>BuffPlan</c> for the skill's own duration — and a Mark's own duration
+    /// is FIVE MINUTES (it is a Lightbringer party skill the NPC happens to sell). So the equal-rank
+    /// test read "you already have 47 minutes left, this would only give you 5" and dropped the Mark
+    /// out of the landing list before <c>ApplyBuff</c> — which, being told the real hour, would have
+    /// accepted it — ever saw it. Every ordinary blessing authors the full hour itself, which is
+    /// exactly why the Mark was the only one that misbehaved.
+    ///
+    /// ⚠ The general shape: **a pre-filter that predicts a decision must be given the same inputs as
+    /// the decision.** This one shares its two rules with ApplyBuff by hand; when those move, both move.</param>
+    private static bool BuffWouldLand(Entity target, SkillDef def, int level, int durationOverride = -1)
     {
         var (key, rank, covered, duration) = BuffPlan(def, level);
+        if (durationOverride >= 0) duration = durationOverride;
         foreach (var b in target.Buffs)
         {
             if (!BuffsConflict(b, key, covered)) continue;
@@ -16274,12 +16304,20 @@ public class GameLoopService : BackgroundService
         }
     }
 
+    // 🔴🔑 `AsciiText.Fold` ON EVERY SERVER-AUTHORED LINE (§100, 2026-09-16). The TMP atlas is STATIC,
+    //    so one em dash in a system message logs a missing-glyph warning ONCE PER FRAME PER LABEL —
+    //    his *"it was replaced with unicode character [] in text object [lable]"* and the FPS drop
+    //    that came with it. Our server prose carries 394 em dashes, 102 U+2212 minus signs, 77 × and
+    //    30 ellipses, and the System tab is where that prose streams. Folding here fixes it with NO
+    //    APK: the characters never reach the client.
+    // ⚠ PLAYER CHAT IS NOT FOLDED and must never be — he types Bulgarian, and the fold passes anything
+    //    it does not recognise through untouched precisely so it cannot eat his words. See AsciiText.
     private void BroadcastSystem(string text) =>
-        _ = _hub.Clients.All.SendAsync("Chat", new ChatMessage("SYSTEM", text, ChatChannel.System));
+        _ = _hub.Clients.All.SendAsync("Chat", new ChatMessage("SYSTEM", AsciiText.Fold(text), ChatChannel.System));
 
     private void SendSystemTo(string connectionId, string text) =>
         _ = _hub.Clients.Client(connectionId)
-            .SendAsync("Chat", new ChatMessage("SYSTEM", text, ChatChannel.System));
+            .SendAsync("Chat", new ChatMessage("SYSTEM", AsciiText.Fold(text), ChatChannel.System));
 
     private void SendSystemToEntity(Entity entity, string text)
     {
@@ -16301,7 +16339,7 @@ public class GameLoopService : BackgroundService
     private void SendCombatToEntity(Entity entity, string kind, string text)
     {
         if (_world.EntityToConnection.TryGetValue(entity.Id, out var conn))
-            _ = _hub.Clients.Client(conn).SendAsync("Chat", new ChatMessage(kind, text, ChatChannel.Combat));
+            _ = _hub.Clients.Client(conn).SendAsync("Chat", new ChatMessage(kind, AsciiText.Fold(text), ChatChannel.Combat));
     }
 
     private void SendTo(Entity entity, string method, object payload)
@@ -18832,7 +18870,10 @@ public class GameLoopService : BackgroundService
                 int tooYoung = ids.Count(id => player.Level < SkillCatalog.NpcBuffMinLevel(id));
                 var landing = ids.Where(id => player.Level >= SkillCatalog.NpcBuffMinLevel(id)
                                               && SkillCatalog.Get(id) is SkillDef d
-                                              && BuffWouldLand(player, d, SkillCatalog.NpcBuffTierFor(id, player.Level)))
+                                              // 🔴 The BUFFER'S HOUR, not the skill's own — §100's Mark
+                                              //    bug; see BuffWouldLand's `durationOverride`.
+                                              && BuffWouldLand(player, d, SkillCatalog.NpcBuffTierFor(id, player.Level),
+                                                               SkillCatalog.NpcBuffTicks))
                                  .ToList();
                 if (landing.Count == 0)
                 {
@@ -18911,7 +18952,11 @@ public class GameLoopService : BackgroundService
                 // real. Both the "would it land" question and the grant must use it: asking at level 1
                 // and granting at tier 3 would refuse a blessing that actually beats what you wear.
                 int tier = SkillCatalog.NpcBuffTierFor(cmd.SkillId, player.Level);
-                if (!BuffWouldLand(player, def, tier))
+                // 🔴 ...AND THE HOUR HAS TO BE QUOTED HERE TOO (§100, 2026-09-16). The grant below
+                //    forces `NpcBuffTicks`; this predicate used to ask the skill's own duration, so a
+                //    Mark — five minutes of its own — was refused as "you already carry something
+                //    stronger" against the 47 minutes of the Mark you were standing there wearing.
+                if (!BuffWouldLand(player, def, tier, SkillCatalog.NpcBuffTicks))
                 {
                     SendSystemToEntity(player, $"You already carry something stronger than {def.Name}.");
                     return;

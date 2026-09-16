@@ -116,8 +116,27 @@ namespace Game.Client
             Append(text, color, Tab.System);
         }
 
+        /// 🔴🔑 EVERY LINE IS FOLDED TO ASCII HERE, AND THIS IS WHERE THE FEEDBACK LOOP WAS CUT
+        /// (§100, 2026-09-16). His report: *"the unicode character with value [] cannot be found in
+        /// [liberation sans srf] … replaced with unicode character [] in text object [lable]"*, with an
+        /// FPS drop, **and only in the System tab**.
+        ///
+        /// <para>The TMP atlas is STATIC, so a character outside it logs a warning ONCE PER FRAME PER
+        /// LABEL. The System tab is special because this class hooks
+        /// <c>Application.logMessageReceived</c>: TMP's own missing-glyph warning — which CONTAINS the
+        /// offending character — was appended here, rendered by the console label, and logged again.
+        /// One em dash in one system line became a self-feeding loop that grew a warning per frame.
+        /// That is the FPS drop, and folding at this single sink stops it whatever the source: server
+        /// prose, our own Info/Warn lines, or Unity's engine log.</para>
+        ///
+        /// <para>🔑 A FOLD, NOT A STRIP. <see cref="AsciiText.Fold"/> maps only the typographic set
+        /// (em dash, U+2212, ×, …) and passes everything else through untouched, because the owner
+        /// types BULGARIAN in chat and this sink carries chat. The server folds its own prose too, so
+        /// this is the belt to that braces — and it is the half that also covers the client's own
+        /// 120-odd em dashes and Unity's log.</para></summary>
         private static void Append(string text, Color color, Tab tab = Tab.System)
         {
+            text = Game.Shared.AsciiText.Fold(text);
             lock (_lines)
             {
                 if (_lines.Count >= Capacity) _lines.RemoveAt(0);

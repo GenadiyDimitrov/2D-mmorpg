@@ -388,8 +388,16 @@ namespace Game.Client
                     bool canLearn = levelMet && Boot.SkillPoints >= sp && (gold == 0 || Boot.Gold >= gold);
 
                     string levelTag = def.MaxLevel > 1 ? "  Lv." + cs.SkillLevel : "";
-                    string price = gold > 0 ? "(" + gold.ToString("N0") + " " + GameConstants.CurrencyName + ")"
-                                            : "(SP " + sp + ")";
+                    // 🔴🔑 BOTH PRICES, WHEN THERE ARE BOTH (§100, 2026-09-16: *"the SP requirement is
+                    //    sometimes missing in the skills to learn list"*). This read
+                    //    `gold > 0 ? gold : SP`, so the moment a rung carried a gold price its SP cost
+                    //    vanished from the row — while `canLearn` one line up kept demanding BOTH.
+                    //    That is a row that refuses to be bought and does not say why, and "sometimes"
+                    //    is exactly right: only the gold-priced rungs (the 4th tier's) do it.
+                    string price = gold > 0 && sp > 0
+                        ? "(SP " + sp + " + " + gold.ToString("N0") + " " + GameConstants.CurrencyName + ")"
+                        : gold > 0 ? "(" + gold.ToString("N0") + " " + GameConstants.CurrencyName + ")"
+                                   : "(SP " + sp + ")";
 
                     // Detail shows the level you would GET, not the one you have — the numbers should
                     // match the purchase being considered.

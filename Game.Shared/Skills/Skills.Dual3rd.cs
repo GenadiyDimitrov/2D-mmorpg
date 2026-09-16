@@ -197,13 +197,22 @@ public static partial class SkillCatalog
     /// (playtest-20: *"Also speed is +7 flat not x1.07"*).</summary>
     private static float RogueArmorSpeed(int i) => i == 0 ? 7f : 11f;
 
-    /// <summary>His `mpReg +1.8` … `+2.5`, carried as a MULTIPLIER (value − 1) because that is what
-    /// the same cell already meant at the 2nd class: `rogue 2nd.csv`'s top rung reads `mpReg +1.8`
-    /// against a stored <c>MpRegenPct: 0.8f</c>, and this ladder starts at the very same 1.8. His MP
-    /// ruling carves armour masteries out of the flat-regen rule explicitly (*"except armor masteries
-    /// the 20% increase"*), so one continuous multiplier column runs 20 → 74.</summary>
+    /// <summary>His `mpReg +1.8` … `+2.5`, <b>FLAT MP/s</b> — the number in the cell, not a multiplier.
+    ///
+    /// <para>🔴🔑 IT WAS A MULTIPLIER UNTIL 2026-09-16 (§100), and that is what he caught: *"rogue
+    /// armour mastery says +130% MP regen against a CSV of +1.8"*. ×2.3 at his level 66 IS "+130%".
+    /// The old reading leaned on his *"except armor masteries the 20% increase"* — but that sentence
+    /// was about a `x1.2`, and these cells are `+1.8 … +2.5`, sitting beside `hpReg +2.5 … +6.0` in the
+    /// SAME row, which has always been built flat. One grammar cannot mean two things in one cell pair.
+    /// The TANK's twin was corrected the same way on 2026-09-04 (`tank 2nd.csv` now reads
+    /// `mpReg +3.1`, built flat; see Skills.Bulwark3rd, where the multiplier reading had been paying a
+    /// level-74 tank +410% MP regen).</para>
+    ///
+    /// <para>⚠ So the column is one continuous FLAT ladder from the 2nd class's +1.8 at 36 to +2.5,
+    /// exactly like the HP one beside it. `--check` had been printing this as a ⚪ MODE note on
+    /// `rogue 2nd.csv` rung 5 the whole time; a note is not an exemption.</para></summary>
     private static readonly float[] RogueArmorMpReg =
-        { 0.8f, 0.9f, 1.0f, 1.1f, 1.2f, 1.2f, 1.2f, 1.2f, 1.3f, 1.3f, 1.3f, 1.4f, 1.4f, 1.4f, 1.5f };
+        { 1.8f, 1.9f, 2.0f, 2.1f, 2.2f, 2.2f, 2.2f, 2.2f, 2.3f, 2.3f, 2.3f, 2.4f, 2.4f, 2.4f, 2.5f };
 
     /// <summary>His `hpReg +2.5` … `+6.0`, FLAT HP/s (`BL-92`) and continuous with the 2nd class's
     /// top rung, which is also 2.5.</summary>
@@ -214,7 +223,7 @@ public static partial class SkillCatalog
         BulwarkRungs(i => new SkillLevel(SpCost: RogueSp[i],
             Description: $"With light armor: +{RogueArmorPDef(i)} P.Def, +{RogueArmorEva[i]} evasion, "
                        + $"+{RogueArmorSpeed(i):0} speed, {RogueArmorCritRes(i) * 100:0}% less often "
-                       + $"critted, ×{1f + RogueArmorMpReg[i]:0.0} MP regen, +{RogueArmorHpReg[i]:0.0} HP/s."));
+                       + $"critted, +{RogueArmorMpReg[i]:0.0} MP/s, +{RogueArmorHpReg[i]:0.0} HP/s."));
 
     internal static ArmorMasteryProfile[] RogueArmorMasteryThirdProfiles() =>
         Enumerable.Range(0, BulwarkLevels.Length).Select(i => new ArmorMasteryProfile(
@@ -222,7 +231,7 @@ public static partial class SkillCatalog
             Light: new StatMods(
                 PDef: RogueArmorPDef(i), Evasion: RogueArmorEva[i],
                 CritRateResist: RogueArmorCritRes(i), MoveSpeed: RogueArmorSpeed(i),
-                MpRegenPct: RogueArmorMpReg[i], HpRegen: RogueArmorHpReg[i]))).ToArray();
+                MpRegen: RogueArmorMpReg[i], HpRegen: RogueArmorHpReg[i]))).ToArray();
 
     // ═══════════════════════════════════════════════════════════════════════════════════════════
     //  THE SKILLS

@@ -8,10 +8,19 @@
 > mage/fighter/rogue(with armor passive), base, without mark, formula1 with mark, formula 2 with
 > mark, +60(sprint)"*
 
-| | ordering |
-|---|---|
+|        | ordering                                                                      |
+| ------ | ----------------------------------------------------------------------------- |
 | **F1** | `(base × buffs) × debuffs + flat` — the flat shelf survives the cut untouched |
-| **F2** | `(base × buffs + flat) × debuffs` — the cut eats the flat shelf too |
+| **F2** | `(base × buffs + flat) × debuffs` — the cut eats the flat shelf too           |
+
+*F1* Is Declined - Owner don't like it!
+
+✅ **RULED, 2026-09-16 — the line above is yours, and it settles ordering: F2.** It is also the
+cheaper of the two to build, because **F2 is what the engine already does** (§0.3 below), so not one
+slow in the game moves and the Mark cut becomes the only change. **Two questions from this page are
+still open** — §0.1's *which reading of "decrease by 20%"* (the Marks **grant** +20% move speed
+today, and the two readings are 40 points apart) and §0.2's *does the Harmony Mark take the cut*.
+Nothing is built until those two land.
 
 Everything below is measured, not derived: `dotnet run --project tools/BalanceMatrix -- --speed`
 builds real level-90 `Entity` objects in real epic gear with the real NPC shelf and reads
@@ -53,15 +62,15 @@ That is one ruling, not two.
 
 ## 1. Where the +69 actually comes from
 
-| source | flat | pct |
-|---|---:|---:|
-| SpeedTable base (Human fighter) | 115 | — |
-| gear + armour passives (folded into BASE) | +0 (heavy) … +17 (light rogue) | — |
-| Swift (NPC single) | +33 | — |
-| Frenzy | +8 | — |
-| Harmony of Swift | +20 | — |
-| **Holy Mark** | 0 | **+20%** |
-| **= the shelf** | **+61** | **+20%** |
+| source                                    |                           flat |      pct |
+| ----------------------------------------- | -----------------------------: | -------: |
+| SpeedTable base (Human fighter)           |                            115 |        — |
+| gear + armour passives (folded into BASE) | +0 (heavy) … +17 (light rogue) |        — |
+| Swift (NPC single)                        |                            +33 |        — |
+| Frenzy                                    |                             +8 |        — |
+| Harmony of Swift                          |                            +20 |        — |
+| **Holy Mark**                             |                              0 | **+20%** |
+| **= the shelf**                           |                        **+61** | **+20%** |
 
 Your "+69" is the **+61 of buff flat** plus whatever gear and passives fold into the base — and the
 Mark's percent on top of both. The split matters, because the two orderings treat the flat half and
@@ -78,45 +87,45 @@ multiplied by percents and, under F2, cut by the Mark.
 
 Level 90, epic gear, full NPC shelf. `250*` = the row exceeds the cap and the game gives you 250.
 
-| race | role | raw | base | shelf | NO MARK | TODAY | F1 | F2 | +sprint TODAY | +sprint F1 | +sprint F2 |
-|---|---|---:|---:|---|---:|---:|---:|---:|---:|---:|---:|
-| Human | mage | 109 | 114 | ×1.00 +61 | 175 | 198 | 170 | 158 | 250\* | 230 | 206 |
-| Human | fighter | 115 | 115 | ×1.00 +61 | 176 | 199 | 171 | 159 | 250\* | 231 | 207 |
-| Human | rogue | 115 | 132 | ×1.00 +61 | 193 | 220 | 188 | 176 | 250\* | 248 | 224 |
-| Elf | mage | 114 | 119 | ×1.00 +61 | 180 | 204 | 175 | 163 | 250\* | 235 | 211 |
-| Elf | fighter | 143 | 143 | ×1.00 +61 | 204 | 233 | 198 | 186 | 250\* | 250\* | 234 |
-| Elf | rogue | 143 | 161 | ×1.00 +61 | 222 | 250\* | 216 | 203 | 250\* | 250\* | 250\* |
-| Demon | mage | 113 | 118 | ×1.00 +61 | 179 | 203 | 174 | 162 | 250\* | 234 | 210 |
-| Demon | fighter | 112 | 112 | ×1.00 +61 | 173 | 195 | 169 | 156 | 250\* | 229 | 204 |
-| Demon | rogue | 112 | 129 | ×1.00 +61 | 190 | 216 | 185 | 173 | 250\* | 245 | 221 |
+| race  | role    |  raw | base | shelf     | NO MARK | TODAY |   F2 | +sprint TODAY | +sprint F2 |
+| ----- | ------- | ---: | ---: | --------- | ------: | ----: | ---: | ------------: | ---------: |
+| Human | mage    |  109 |  114 | ×1.00 +61 |     175 |   198 |  158 |         250\* |        206 |
+| Human | fighter |  115 |  115 | ×1.00 +61 |     176 |   199 |  159 |         250\* |        207 |
+| Human | rogue   |  115 |  132 | ×1.00 +61 |     193 |   220 |  176 |         250\* |        224 |
+| Elf   | mage    |  114 |  119 | ×1.00 +61 |     180 |   204 |  163 |         250\* |        211 |
+| Elf   | fighter |  143 |  143 | ×1.00 +61 |     204 |   233 |  186 |         250\* |        234 |
+| Elf   | rogue   |  143 |  161 | ×1.00 +61 |     222 | 250\* |  203 |         250\* |      250\* |
+| Demon | mage    |  113 |  118 | ×1.00 +61 |     179 |   203 |  162 |         250\* |        210 |
+| Demon | fighter |  112 |  112 | ×1.00 +61 |     173 |   195 |  156 |         250\* |        204 |
+| Demon | rogue   |  112 |  129 | ×1.00 +61 |     190 |   216 |  173 |         250\* |        221 |
 
 ## 3. READING B — the Mark's +20% becomes −20%
 
-| race | role | raw | base | shelf | NO MARK | TODAY | F1 | F2 | +sprint TODAY | +sprint F1 | +sprint F2 |
-|---|---|---:|---:|---|---:|---:|---:|---:|---:|---:|---:|
-| Human | mage | 109 | 114 | ×1.00 +61 | 175 | 198 | 152 | 140 | 250\* | 212 | 188 |
-| Human | fighter | 115 | 115 | ×1.00 +61 | 176 | 199 | 153 | 141 | 250\* | 213 | 189 |
-| Human | rogue | 115 | 132 | ×1.00 +61 | 193 | 220 | 167 | 155 | 250\* | 227 | 203 |
-| Elf | mage | 114 | 119 | ×1.00 +61 | 180 | 204 | 156 | 144 | 250\* | 216 | 192 |
-| Elf | fighter | 143 | 143 | ×1.00 +61 | 204 | 233 | 175 | 163 | 250\* | 235 | 211 |
-| Elf | rogue | 143 | 161 | ×1.00 +61 | 222 | 250\* | 190 | 178 | 250\* | 250 | 226 |
-| Demon | mage | 113 | 118 | ×1.00 +61 | 179 | 203 | 155 | 143 | 250\* | 215 | 191 |
-| Demon | fighter | 112 | 112 | ×1.00 +61 | 173 | 195 | 151 | 138 | 250\* | 211 | 186 |
-| Demon | rogue | 112 | 129 | ×1.00 +61 | 190 | 216 | 164 | 152 | 250\* | 224 | 200 |
+| race  | role    |  raw | base | shelf     | NO MARK | TODAY |   F2 | +sprint TODAY | +sprint F2 |
+| ----- | ------- | ---: | ---: | --------- | ------: | ----: | ---: | ------------: | ---------: |
+| Human | mage    |  109 |  114 | ×1.00 +61 |     175 |   198 |  140 |         250\* |        188 |
+| Human | fighter |  115 |  115 | ×1.00 +61 |     176 |   199 |  141 |         250\* |        189 |
+| Human | rogue   |  115 |  132 | ×1.00 +61 |     193 |   220 |  155 |         250\* |        203 |
+| Elf   | mage    |  114 |  119 | ×1.00 +61 |     180 |   204 |  144 |         250\* |        192 |
+| Elf   | fighter |  143 |  143 | ×1.00 +61 |     204 |   233 |  163 |         250\* |        211 |
+| Elf   | rogue   |  143 |  161 | ×1.00 +61 |     222 | 250\* |  178 |         250\* |        226 |
+| Demon | mage    |  113 |  118 | ×1.00 +61 |     179 |   203 |  143 |         250\* |        191 |
+| Demon | fighter |  112 |  112 | ×1.00 +61 |     173 |   195 |  138 |         250\* |        186 |
+| Demon | rogue   |  112 |  129 | ×1.00 +61 |     190 |   216 |  152 |         250\* |        200 |
 
 ## 4. What a Mark costs you, against no Mark at all
 
-| race | role | today | A: F1 | A: F2 | B: F1 | B: F2 |
-|---|---|---:|---:|---:|---:|---:|
-| Human | mage | +22.8 | −4.6 | −16.8 | −22.8 | −35.0 |
-| Human | fighter | +23.0 | −4.6 | −16.8 | −23.0 | −35.2 |
-| Human | rogue | +26.5 | −5.3 | −17.5 | −26.5 | −38.7 |
-| Elf | mage | +23.8 | −4.8 | −17.0 | −23.8 | −36.0 |
-| Elf | fighter | +28.6 | −5.7 | −17.9 | −28.6 | −40.8 |
-| Elf | rogue | +32.2 | −6.4 | −18.6 | −32.2 | −44.4 |
-| Demon | mage | +23.6 | −4.7 | −16.9 | −23.6 | −35.8 |
-| Demon | fighter | +22.4 | −4.5 | −16.7 | −22.4 | −34.6 |
-| Demon | rogue | +25.9 | −5.2 | −17.4 | −25.9 | −38.1 |
+| race  | role    | today | A: F2 | B: F2 |
+| ----- | ------- | ----: | ----: | ----: |
+| Human | mage    | +22.8 | −16.8 | −35.0 |
+| Human | fighter | +23.0 | −16.8 | −35.2 |
+| Human | rogue   | +26.5 | −17.5 | −38.7 |
+| Elf   | mage    | +23.8 | −17.0 | −36.0 |
+| Elf   | fighter | +28.6 | −17.9 | −40.8 |
+| Elf   | rogue   | +32.2 | −18.6 | −44.4 |
+| Demon | mage    | +23.6 | −16.9 | −35.8 |
+| Demon | fighter | +22.4 | −16.7 | −34.6 |
+| Demon | rogue   | +25.9 | −17.4 | −38.1 |
 
 **Reading A + F1 is the weakest lever on the board: about −5 points.** Reading B + F2 is the
 strongest: −35 to −44.
@@ -127,11 +136,11 @@ strongest: −35 to −44.
 
 How far the rogue sits above the mage **of his own race**, buffed, no sprint:
 
-| race | no mark | today | A: F1 | A: F2 | B: F1 | B: F2 |
-|---|---:|---:|---:|---:|---:|---:|
-| Human | 18.4 | 22.1 | 17.7 | 17.7 | 14.7 | 14.7 |
-| Elf | 42.0 | 50.4 | 40.3 | 40.3 | 33.6 | 33.6 |
-| Demon | 11.4 | 13.6 | 10.9 | 10.9 | 9.1 | 9.1 |
+| race  | no mark | today | A: F1 | A: F2 | B: F1 | B: F2 |
+| ----- | ------: | ----: | ----: | ----: | ----: | ----: |
+| Human |    18.4 |  22.1 |  17.7 |  17.7 |  14.7 |  14.7 |
+| Elf   |    42.0 |  50.4 |  40.3 |  40.3 |  33.6 |  33.6 |
+| Demon |    11.4 |  13.6 |  10.9 |  10.9 |   9.1 |   9.1 |
 
 **F1 and F2 give the identical gap.** They have to: both multiply the same base difference by the
 same factors, and the flat shelf is the same +61 on every row, so it cancels out of a difference.
@@ -141,17 +150,17 @@ version of the Mark cut makes the rogue's lead **smaller**, not bigger.
 What actually closed the band is the flat shelf, because a flat +61 is worth more to a slow
 character than to a fast one:
 
-| race | role | base | buffed | gain | × base |
-|---|---|---:|---:|---:|---:|
-| Human | mage | 114 | 198 | +84 | 1.74 |
-| Human | fighter | 115 | 199 | +84 | 1.73 |
-| Human | rogue | 132 | 220 | +87 | 1.66 |
-| Elf | mage | 119 | 204 | +85 | 1.71 |
-| Elf | fighter | 143 | 233 | +90 | 1.63 |
-| Elf | rogue | 161 | 254 | +93 | 1.58 |
-| Demon | mage | 118 | 203 | +85 | 1.72 |
-| Demon | fighter | 112 | 195 | +83 | 1.74 |
-| Demon | rogue | 129 | 216 | +87 | 1.67 |
+| race  | role    | base | buffed | gain | × base |
+| ----- | ------- | ---: | -----: | ---: | -----: |
+| Human | mage    |  114 |    198 |  +84 |   1.74 |
+| Human | fighter |  115 |    199 |  +84 |   1.73 |
+| Human | rogue   |  132 |    220 |  +87 |   1.66 |
+| Elf   | mage    |  119 |    204 |  +85 |   1.71 |
+| Elf   | fighter |  143 |    233 |  +90 |   1.63 |
+| Elf   | rogue   |  161 |    254 |  +93 |   1.58 |
+| Demon | mage    |  118 |    203 |  +85 |   1.72 |
+| Demon | fighter |  112 |    195 |  +83 |   1.74 |
+| Demon | rogue   |  129 |    216 |  +87 |   1.67 |
 
 The mage multiplies his own speed by **1.74**; the elf rogue by **1.58**. The buff shelf is
 *regressive* on move speed — it pays the slowest character the most.

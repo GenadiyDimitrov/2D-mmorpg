@@ -188,10 +188,14 @@ public static partial class SkillCatalog
                 // call from the other end: `fighter 1st.csv` gives EVERY fighter the ×1.1 as its own
                 // unreplaceable `fighter_spirit_mastery`. Leaving these four would have paid a rogue
                 // the same 10% twice, which is a regression this change would have caused.
-                // ⚠ STILL UNAUTHORED AND STILL HERE: the `MpRegenPct: 0.8f` on rung 5 below, whose
-                //   cell reads `mpReg +1.8` — a FLAT, the way the tank's `mpReg +3.1` and the `hpReg
-                //   +2.5` on that same row are flat. Not touched here: it is a units question with a
-                //   number attached, not a duplicate, and it predates this change. Owed a ruling.
+                // ✅ AND THE `MpRegenPct: 0.8f` ON RUNG 5 IS GONE TOO, 2026-09-16 (§100) — it is a FLAT
+                //   `+1.8` MP/s now. The note that used to sit here called it "a units question with a
+                //   number attached … owed a ruling"; he made the ruling from the other end, by
+                //   PLAYING it: *"rogue armour mastery says +130% MP regen against a CSV of +1.8"*.
+                //   His cell reads `+1.8`, the `hpReg +2.5` beside it in the same row has always been
+                //   flat, and the tank's twin was corrected the same way on 2026-09-04. The whole
+                //   column — 2nd, 3rd and 4th tier — is one flat ladder now; see `RogueArmorMpReg` in
+                //   Skills.Dual3rd.cs for the full reasoning.
                 RogueArmor(new StatMods(PDef: 16), lightEva: 7),
                 RogueArmor(new StatMods(PDef: 18), lightEva: 9),
                 RogueArmor(new StatMods(PDef: 20), lightEva: 12, lightSpeed: 7f),
@@ -204,7 +208,7 @@ public static partial class SkillCatalog
                 // 2026-08-26); `mpReg x1.8` stayed a percent because his MP ruling carved out armour
                 // masteries (*"except armor masteries the 20% increase"*) — and that x1.8 is still on
                 // the open list as a weapon-mastery-sized number sitting in an armour row.
-                RogueArmor(new StatMods(MpRegenPct: 0.8f, HpRegen: 2.5f, PDef: 25), lightEva: 12, lightSpeed: 7f),
+                RogueArmor(new StatMods(MpRegen: 1.8f, HpRegen: 2.5f, PDef: 25), lightEva: 12, lightSpeed: 7f),
             }.Concat(RogueArmorMasteryThirdProfiles())
              .Concat(RogueArmorMasteryFourthProfiles()).ToArray()),
 

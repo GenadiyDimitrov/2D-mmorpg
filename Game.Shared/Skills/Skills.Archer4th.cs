@@ -103,15 +103,19 @@ public static partial class SkillCatalog
     private static readonly int[] ArcherArmorSpeed4 =
         { 12, 12, 12, 13, 13, 13, 14, 14, 14, 15, 15, 15, 15, 15, 15 };
 
-    /// <summary>🔴 HIS TWO REGEN CELLS ARE A REGRESSION AND ARE NOT BUILT AS WRITTEN. Every 4th-tier
-    /// row reads <c>mpReg x1.8; hpReg +1.2</c> — which is `rogue 2nd.csv`'s LEVEL-36 rung, pasted —
-    /// against a 3rd tier that ends at <c>mpReg +2.5</c> (a ×2.5 multiplier, stored 1.5) and
-    /// <c>hpReg +6.0</c> flat. Building the cells would make a level-76 archer regenerate a fifth of
-    /// what he did at 74.
+    /// <summary>🔴 HIS TWO REGEN CELLS ARE A REGRESSION AND ARE NOT BUILT AS WRITTEN. Every
+    /// `archer 4th.csv` row reads <c>mpReg x1.8; hpReg +1.2</c> — which is `rogue 2nd.csv`'s LEVEL-36
+    /// rung, pasted — against a 3rd tier that ends at <c>mpReg +2.5</c> and <c>hpReg +6.0</c>.
+    /// Building the cells would make a level-76 archer regenerate a fifth of what he did at 74.
     /// <para>FROZEN at the 3rd tier's endpoint across all fifteen rungs, which is the smallest change
     /// that obeys the ladder rule AND keeps his own shape (his column is flat across the tier too —
-    /// only the value is wrong). One number each for him to correct.</para></summary>
-    private const float ArcherArmorMpReg4 = 1.5f;   // his 3rd tier's `mpReg +2.5`, stored as a multiplier
+    /// only the value is wrong). `dual 4th.csv`, the melee twin, reads <c>mpReg +2.5</c> on every one
+    /// of its rows, so the frozen value is authored on one of the two files. One number for him to
+    /// correct on the archer's.</para>
+    /// <para>🔴 BOTH ARE FLAT MP/s AND HP/s SINCE 2026-09-16 (§100). The MP half was stored as a
+    /// MULTIPLIER (1.5 = ×2.5) on the reading that armour masteries keep percents; his `+2.5` cell and
+    /// the `hpReg +6.0` beside it say otherwise. See <c>RogueArmorMpReg</c> in Skills.Dual3rd.cs.</para></summary>
+    private const float ArcherArmorMpReg4 = 2.5f;   // his 3rd tier's `mpReg +2.5`, FLAT MP/s
     private const float ArcherArmorHpReg4 = 6.0f;   // his 3rd tier's `hpReg +6.0`, flat HP/s
 
     /// <summary>What a skill first LEARNED at 84 or 85 costs: 100,000,000 gold and SP BOTTLES, with
@@ -129,7 +133,7 @@ public static partial class SkillCatalog
         new SkillLevel(SpCost: sp, GoldCost: gold,
             Description: $"With light armor: +{ArcherArmorPDef4(i)} P.Def, +{ArcherArmorEva4[i]} evasion, "
                        + $"+{ArcherArmorSpeed4[i]} speed, 35% less often critted, "
-                       + $"×{1f + ArcherArmorMpReg4:0.0} MP regen, +{ArcherArmorHpReg4:0.0} HP/s."));
+                       + $"+{ArcherArmorMpReg4:0.0} MP/s, +{ArcherArmorHpReg4:0.0} HP/s."));
 
     internal static ArmorMasteryProfile[] ArcherFourthArmorMasteryProfiles() =>
         Enumerable.Range(0, 15).Select(i => new ArmorMasteryProfile(
@@ -137,7 +141,7 @@ public static partial class SkillCatalog
             Light: new StatMods(
                 PDef: ArcherArmorPDef4(i), Evasion: ArcherArmorEva4[i],
                 CritRateResist: 0.35f, MoveSpeed: ArcherArmorSpeed4[i],
-                MpRegenPct: ArcherArmorMpReg4, HpRegen: ArcherArmorHpReg4))).ToArray();
+                MpRegen: ArcherArmorMpReg4, HpRegen: ArcherArmorHpReg4))).ToArray();
 
     internal static SkillLevel[] ArcherFourthBowMasteryRungs() => F4Rungs(15, 1, (i, sp, gold) =>
         new SkillLevel(SpCost: sp, GoldCost: gold,

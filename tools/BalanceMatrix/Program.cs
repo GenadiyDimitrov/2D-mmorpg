@@ -1926,6 +1926,74 @@ if (args.Length > 0 && args[0] == "--slowstack")
 //  without mark, formula1 with mark, formula2 with mark, +60(sprint)"*.
 //
 //      F1 = (base x buffs) x debuffs + flat      — the flat shelf survives the cut untouched
+
+// ============================================================================================
+//  `--classregen` — WHAT A CHARACTER'S TWO BARS ACTUALLY REFILL AT, per role, standing still.
+//
+//  Added 2026-09-16 for §100's rogue-mastery report (*"rogue armour mastery says +130% MP regen
+//  against a CSV of +1.8"*): the question "what does this character regenerate" had no answer in
+//  this tool for anything but the nuker (`--mpregen`), so a regen change could only be argued from
+//  the formula. It is a MEASUREMENT now.
+//
+//  ⚠ The two lines below are `GameLoopService.StandingRegen`'s, in the same order and with the same
+//  flats-OUTSIDE placement (`BL-92`). They are copied because that helper is private; if the engine's
+//  order ever changes, change it here in the same commit or this page starts lying.
+// ============================================================================================
+if (args.Length > 0 && args[0] == "--classregen")
+{
+    int L = args.Length > 1 && int.TryParse(args[1], out var crL) ? crL : 66;
+    string crQ = args.Length > 2 && !args[2].StartsWith("--") ? args[2] : "epic";
+
+    static (float Hp, float Mp) Standing(Entity p)
+    {
+        float hpPct = 0f, mpPct = 0f, hpFlat = 0f, mpFlat = 0f;
+        foreach (var b in p.Buffs)
+        {
+            if (b.Has(SkillEffect.BuffHpRegen)) { hpPct += b.Percent(SkillEffect.BuffHpRegen); hpFlat += b.Flat(SkillEffect.BuffHpRegen); }
+            if (b.Has(SkillEffect.BuffMpRegen)) { mpPct += b.Percent(SkillEffect.BuffMpRegen); mpFlat += b.Flat(SkillEffect.BuffMpRegen); }
+        }
+        // STANDING STILL: stance 1.00 and the caster's own standing multiplier, which is what a
+        // farming character reads off his stats window.
+        float hp = StatCalculator.HpRegenPerSecond(p.EffectiveCon, p.Level) * p.HpRegenMult * (1f + hpPct)
+                 + p.HpRegenBonus + hpFlat;
+        float mp = StatCalculator.MpRegenPerSecond(p.EffectiveSpt, p.Level) * p.MpRegenStandMult
+                       * p.MpRegenMult * (1f + mpPct)
+                 + p.MpRegenBonus + mpFlat;
+        return (hp, mp);
+    }
+
+    Console.WriteLine();
+    Console.WriteLine($"=== REGEN PER SECOND, STANDING STILL — level {L}, {crQ} gear ===");
+    Console.WriteLine("    bare = gear + the character's own passives.  +shelf = the full NPC shelf on top.");
+    Console.WriteLine($"  {"race",-6} {"role",-9} {"SPT",4} {"mult",6} {"flat",6} {"HP/s bare",10} {"MP/s bare",10}"
+                    + $" {"HP/s shelf",11} {"MP/s shelf",11}");
+
+    var crRoles = new (string Label, BaseClass Cls, Func<Race, Discipline> Pick)[]
+    {
+        ("mage",    BaseClass.Mage,    _ => Discipline.Magus),
+        ("fighter", BaseClass.Fighter, _ => Discipline.Ravager),
+        ("tank",    BaseClass.Fighter, _ => Discipline.Bulwark),
+        ("rogue",   BaseClass.Fighter, r => Disciplines.Of(r, Archetype.Rogue).A),
+        ("archer",  BaseClass.Fighter, r => Disciplines.Of(r, Archetype.Rogue).B ?? Discipline.Sharpshooter),
+    };
+    foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
+        foreach (var (label, cls, pick) in crRoles)
+        {
+            var bare = Who(race, cls, pick(race), L, crQ);
+            var (hpB, mpB) = Standing(bare);
+            var shelf = Who(race, cls, pick(race), L, crQ);
+            ApplyNpcBuffs(shelf, fullShelf: true);
+            var (hpS, mpS) = Standing(shelf);
+            Console.WriteLine($"  {race,-6} {label,-9} {bare.EffectiveSpt,4:0} {bare.MpRegenMult,6:0.00}"
+                            + $" {bare.MpRegenBonus,6:0.0} {hpB,10:0.0} {mpB,10:0.0} {hpS,11:0.0} {mpS,11:0.0}");
+        }
+
+    Console.WriteLine();
+    Console.WriteLine("  ⚠ `mult` is the MULTIPLIER stack the character's passives build (MpRegenMult) and `flat`");
+    Console.WriteLine("    the flat MP/s they grant (MpRegenBonus). A number that moves from one column to the");
+    Console.WriteLine("    other is exactly the §100 rogue-mastery fix: his cell says +1.8, not x1.8.");
+    return;
+}
 //      F2 = (base x buffs + flat) x debuffs      — the cut eats the flat shelf too  [TODAY'S ENGINE]
 //
 //  🔑 F2 IS WHAT THE ENGINE ALREADY DOES. `Entity.EffectiveSpeed` reads

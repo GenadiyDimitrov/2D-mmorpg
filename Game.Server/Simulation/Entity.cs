@@ -3436,13 +3436,19 @@ public class Entity
                 RunSpeed = (RunSpeed + sm.MoveSpeed) * (1f + sm.MoveSpeedPct);
                 WalkSpeed = RunSpeed * MovementTuning.WalkSpeedFactor;
                 Speed = RunSpeed;
-                // ⚠ HP and MP are read DIFFERENTLY here and it is deliberate. The rogue's level-36
-                // Armor Mastery row carries BOTH `hpReg x1.2` and `mpReg x1.8`; `BL-92` converted the
-                // HP side to a flat (+1.2 HP/s) with every other hpReg passive on 2026-08-26, while
-                // the MP side stayed a percent because his MP ruling carved out armour masteries
-                // (*"except armor masteries the 20% increase"*). That `mpReg x1.8` is still on the
-                // open list as a weapon-mastery-sized number sitting in an armour row.
+                // 🔴🔑 `MpRegenBonus += sm.MpRegen` WAS MISSING, AND IT WAS A DEAD CHANNEL (2026-09-16,
+                // found while fixing §100's rogue-mastery report). An `ArmorMasteryProfile` could
+                // author a FLAT MP/s and this method simply did not read the field — so the TANK's
+                // whole MP-regen ladder, `mpReg +3.1` at 36 climbing to +5.1 at 90, has been worth
+                // exactly ZERO since it was converted from a multiplier on 2026-09-04, and so has the
+                // healer's `mpReg +3.4`. The HP twin one line up was read; its MP mirror never was.
+                // ⚠ The old comment here explained why the two halves were read DIFFERENTLY (the rogue's
+                // `mpReg x1.8` being a percent). That reading is gone — his cells say `+1.8`…`+2.5` and
+                // the whole rogue column is flat now — so the two halves are symmetric again, which is
+                // what makes the missing line visible at all. **A percent and a flat are two channels;
+                // author one and read the other and the number vanishes in silence.**
                 HpRegenBonus += sm.HpRegen;
+                MpRegenBonus += sm.MpRegen;
                 HpRegenMult *= 1f + sm.HpRegenPct;
                 MpRegenMult *= 1f + sm.MpRegenPct;
                 MaxHp = (int)((MaxHp + sm.MaxHp) * (1f + sm.MaxHpPct));

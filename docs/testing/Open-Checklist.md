@@ -1379,9 +1379,9 @@ Mastery's text come off the compiled catalogue, and the trap cast time is in bot
   shortens a fighter's stance. Worth a glance at whether any physical reuse now feels too short —
   it is a widening, not a number change.
 
-## §100 — YOUR PLAYTEST OF 2026-09-16, the BUGS (thirteen; one fixed)
+## §100 — YOUR PLAYTEST OF 2026-09-16, the BUGS (thirteen; SIX fixed)
 
-You handed this list the moment 0.146.0 was committed, so apart from the one marked ✅ **none of it
+You handed this list the moment 0.146.0 was committed, so apart from the ones marked ✅ **none of it
 has been looked at in code** — it is recorded here exactly as you wrote it, and the ten ASKS that
 came with it are in [docs/Backlog.md](../Backlog.md) as `BL-238` … `BL-247`. The two that are really
 re-reports of standing rules are marked as such.
@@ -1397,32 +1397,45 @@ re-reports of standing rules are marked as such.
   not caught it yet — and the box-loot path, where it was only inefficient. **No APK needed**: the
   client was already correct.
 
-- 🔴 **SWIFT STAB GIVES NO BUFF.** *"when used it should increase AS/MS but it dont."* A skill whose
-  whole payload is a buff and the buff never lands — closest known shape is `BL-139`, where Shield
-  Reinforcement was missing `Toggle: true` and *"casts something but doesnt do nothing"*. Check the
-  flag, the `BuffKey`, and whether anything already on the bar covers it.
-- 🔴 **`rogue_armor_mastery` ADVERTISES "MP regen +130%" AND YOUR CSV SAYS `+1.8 ~ +2.5`.** At 66,
-  buffed with Serenity only, you read **15.5 MP/s** (HP 14.3/s). A PERCENT shown where a FLAT is
-  authored is the `BL-92` shape of bug — and the number on the card is the one you plan around, so
-  this is a lie either in `SkillText` or in the profile. **Read the CSV, then the profile, then the
-  card**; do not assume which of the three moved.
-- 🔴 **TMP UNICODE SPAM DROPS FPS, AND ONLY IN THE SYSTEM TAB.** Verbatim: *"the unicode character
-  with value [] cannot be found in [liberation sans srf] any asset or any potential Fallback. It was
-  replaced with unicode character [] in text object [lable]"*. The glyph draws as a square so you
-  cannot name it. ⚠ **The TMP atlas is STATIC** — a character outside it logs once per FRAME per
-  label, which is the FPS drop. Find which system message carries a non-ASCII character (an en dash,
-  an ellipsis, a ×, an emoji) and either add it to the atlas or stop emitting it.
+- ✅ **SWIFT STAB GIVES NO BUFF — FIXED in 0.147.0.** *"when used it should increase AS/MS but it
+  dont."* `SkillDef.SelfBuff` was read in **exactly one place**: the `EnemiesInRadius` arm of
+  `ExecuteSkill`, written for the tank's Taunting Wall, which `return`s. So a SINGLE-TARGET skill's
+  self-buff was applied by nothing at all. Swift Stab is the only other user in the game. It lands on
+  the ordinary path now, unconditionally (a failed blow is still a landed strike, `BL-193`).
+- ✅ **`rogue_armor_mastery` "+130% MP regen" vs your `+1.8 ~ +2.5` — FIXED in 0.147.0, and it hid a
+  SECOND bug.** Your cells were built as a MULTIPLIER (`MpRegenPct`, stored value − 1), so the card
+  read ×2.3 = "+130%" at 66. That leaned on *"except armor masteries the 20% increase"* — a sentence
+  about a `x1.2`, while these cells sit beside `hpReg +2.5 … +6.0` in the SAME row, always built flat.
+  **The whole rogue/archer column is FLAT MP/s now**, 2nd/3rd/4th tier. 🔴 **And behind it:
+  `ApplyArmorMastery` never read `StatMods.MpRegen` at all** — so the TANK's `mpReg +3.1 → +5.1`
+  ladder has been worth ZERO since it became a flat on 2026-09-04, and so has the healer's `+3.4`.
+  Measure it with `dotnet run --project tools/BalanceMatrix -- --classregen 66`.
+- ✅ **TMP UNICODE SPAM — FIXED in 0.147.0, and it was a FEEDBACK LOOP.** The glyph is the **em dash**.
+  The atlas is static, so a character outside it logs once per frame per label — and `ClientLog` hooks
+  `Application.logMessageReceived`, so **TMP's own warning, which contains the offending character,
+  was appended to the System tab, rendered, and logged again**. One em dash grew a warning per frame.
+  That is the FPS drop and why it was the System tab and nothing else. Fixed with
+  `Game.Shared/AsciiText.Fold` at `ClientLog.Append` and at the server's three system/combat message
+  sites. 🔑 **A FOLD, NOT A STRIP** — your Bulgarian and the emoji skill icons pass through untouched.
+  ⚠ Skill and item DESCRIPTIONS still carry the same characters and are built locally by the client;
+  they are not covered by either sink. Say if you see the square in a tooltip.
 - 🔴 **THE SELL LIST SHOWS NO ENCHANT VALUE**, and the sell row's description should show the item's
   attributes if it has any. You can currently sell a +6 and a +0 without being able to tell them
   apart in that window.
-- 🔴 **THE SP REQUIREMENT IS SOMETIMES MISSING** in the skills-to-learn list. *"some times"* — so it
-  is conditional, not absent. Worth checking a rung whose `SpCost` is 0 (a 4th-tier rung priced in
-  GOLD carries `SpCost: 0` by design, and that is almost certainly it).
-- 🔴 **THE NPC BUFFER DOES NOT RE-BUFF A MARK.** 19 buffs saved; on a re-buff every other buff's timer
-  resets and the Mark's does not — *"same mark, same lvl, same npc"*. A Mark carries a shared
-  `MarkKey` so a healer's and a buffer's can never stack (`BL-108`); the suspicion is that the
-  equal-rank path is choosing "keep the LONGER remaining time" and the incoming cast is shorter, so
-  nothing happens. If so it is correct behaviour for a PLAYER cast and wrong for an NPC re-buff.
+- ✅ **THE SP REQUIREMENT IS SOMETIMES MISSING — FIXED in 0.147.0.** *"some times"* was exactly right.
+  The row read `gold > 0 ? gold : SP`, so the moment a rung carried a GOLD price its SP cost vanished
+  from the row — while the affordability test one line up kept demanding BOTH. A row that refuses to
+  be bought and does not say why. Both prices show now when there are both. (The guess in the original
+  note — a rung with `SpCost: 0` — was wrong; it is the gold ones.)
+- ✅ **THE NPC BUFFER DOES NOT RE-BUFF A MARK — FIXED in 0.147.0.** The suspicion in this note was
+  half right: it IS the equal-rank "keep the LONGER remaining time" rule, but the bug is not in that
+  rule — it is that the PRE-FILTER was asking the wrong question. The NPC grants everything for
+  `NpcBuffTicks`, ONE HOUR, while `BuffWouldLand` asked `BuffPlan` for the skill's OWN duration — and
+  a Mark's own duration is FIVE MINUTES (it is a Lightbringer party skill the NPC happens to sell).
+  So the filter read "you have 47 minutes left, this would give you 5" and dropped the Mark before
+  `ApplyBuff` — which, told the real hour, accepts it — ever saw it. Every ordinary blessing authors
+  the full hour itself, which is why the Mark was the only one that misbehaved. 🔑 **A pre-filter that
+  predicts a decision must be given the same inputs as the decision.**
 - 🔴 **AUTO-FARM RUBBER-BANDS YOU.** *"when in auto farm when i click on the ground char start to move
   but then gets rubber banded back."* Your rule, and it is the standing one: *"auto farm should not
   prevent me from moving -> it should allow me to kite only when stoped then it attacks and use

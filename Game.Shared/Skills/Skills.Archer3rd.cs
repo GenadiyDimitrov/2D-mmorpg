@@ -148,7 +148,7 @@ public static partial class SkillCatalog
             Levels: BulwarkRungs(i => new SkillLevel(SpCost: RogueSp[i],
                 Description: $"With light armor: +{RogueArmorPDef(i)} P.Def, +{ArcherArmorEva} evasion, "
                            + $"+{RogueArmorSpeed(i):0} speed, {RogueArmorCritRes(i) * 100:0}% less often "
-                           + $"critted, ×{1f + RogueArmorMpReg[i]:0.0} MP regen, "
+                           + $"critted, +{RogueArmorMpReg[i]:0.0} MP/s, "
                            + $"+{RogueArmorHpReg[i]:0.0} HP/s.")).Concat(ArcherFourthArmorMasteryRungs()).ToArray(),
             ArmorMasteryLevels: Enumerable.Range(0, BulwarkLevels.Length).Select(i =>
                 new ArmorMasteryProfile(
@@ -156,7 +156,7 @@ public static partial class SkillCatalog
                     Light: new StatMods(
                         PDef: RogueArmorPDef(i), Evasion: ArcherArmorEva,
                         CritRateResist: RogueArmorCritRes(i), MoveSpeed: RogueArmorSpeed(i),
-                        MpRegenPct: RogueArmorMpReg[i], HpRegen: RogueArmorHpReg[i]))).
+                        MpRegen: RogueArmorMpReg[i], HpRegen: RogueArmorHpReg[i]))).
                 Concat(ArcherFourthArmorMasteryProfiles()).ToArray()));
 
         // ═══ BOW MASTERY — the ranged branch's weapon passive ════════════════════════════════════

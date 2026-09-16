@@ -12,7 +12,73 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-16 (latest) — 0.146.1: a vendor sold you one rune box however many you asked for
+## 2026-09-16 (latest) — 0.147.0: five of §100's bugs, and two dead channels found behind them
+
+🔴 **NEW APK REQUIRED** (client code + skill card text changed). **No protocol change, no `game.db`
+delete.**
+
+### 1. Swift Stab gave no buff — because `SelfBuff` was only ever read on the AoE branch
+
+Your report: *"when used it should increase AS/MS but it dont"*. `SkillDef.SelfBuff` was read in
+**exactly one place** — the `EnemiesInRadius` arm of `ExecuteSkill`, written for the tank's Taunting
+Wall, which `return`s. So a **single-target** skill's self-buff was applied by nothing at all. Swift
+Stab is the only other user in the game, and its whole identity is that buff. It now lands on the
+ordinary path too, unconditionally — a rush you build from your own momentum does not care whether the
+blow crit, and a failed blow is still a landed strike (`BL-193`).
+
+### 2. `rogue_armor_mastery` said "+130% MP regen" against a CSV of `+1.8`
+
+Your `mpReg +1.8 … +2.5` cells were built as a **multiplier** (`MpRegenPct`, stored as value − 1), so
+the card read ×2.3 — which is "+130%" — at your level 66. The reading leaned on *"except armor
+masteries the 20% increase"*, but that sentence was about a `x1.2`; these cells sit beside
+`hpReg +2.5 … +6.0` in the **same row**, which has always been built flat. One grammar cannot mean two
+things in one cell pair. **The whole rogue/archer column is FLAT MP/s now**, 2nd, 3rd and 4th tier —
+`--check` had been printing it as a ⚪ MODE note the whole time, and a note is not an exemption. (The
+TANK's twin was corrected the same way on 2026-09-04, where the multiplier reading had been paying a
+level-74 tank +410%.)
+
+🔴 **And behind it, a DEAD CHANNEL: `ApplyArmorMastery` never read `StatMods.MpRegen`.** The HP twin
+one line up was read; its MP mirror never was. So the **tank's entire MP-regen ladder — `mpReg +3.1`
+at 36 climbing to +5.1 at 90 — has been worth exactly ZERO since it was converted to a flat**, and so
+has the healer's `+3.4`. One line. Measured now with a new
+`dotnet run --project tools/BalanceMatrix -- --classregen [level]`, which prints HP/s and MP/s per
+role, bare and shelf-buffed: at 66 the tank's flat column reads **4.7 MP/s** where it read 0, and the
+rogue stands at **8.1 MP/s bare / 9.2 buffed**.
+
+### 3. The TMP unicode spam, and why it was a FEEDBACK LOOP
+
+The missing glyph is the **em dash**. The TMP atlas is static, so a character outside it logs a
+warning **once per frame per label** — and `ClientLog` hooks `Application.logMessageReceived`, so
+TMP's own warning, *which contains the offending character*, was appended to the System tab, rendered,
+and logged again. One em dash in one system line grew into a warning per frame. **That is the FPS
+drop, and it is why it was the System tab and nothing else.**
+
+Fixed at both ends with `Game.Shared/AsciiText.Fold` — a **fold, not a strip**: em dash, en dash,
+U+2212, ×, …, ·, ± and the curly quotes map to ASCII and **everything else passes through untouched**,
+because you type Bulgarian and this sink carries chat. Applied at `ClientLog.Append` (one sink, covers
+server prose, our own 120-odd em dashes and Unity's engine log) and at the server's three
+system/combat `ChatMessage` sites (so it works without an APK too).
+
+### 4. The SP price vanished from gold-priced rows in Skills-to-Learn
+
+*"some times"* was exactly right: the row read `gold > 0 ? gold : SP`, so the moment a rung carried a
+gold price its SP cost disappeared — while the affordability test one line up kept demanding **both**.
+A row that refuses to be bought and does not say why. Both prices show now when there are both.
+
+### 5. The NPC buffer would not re-buff a Mark
+
+*"same mark, same lvl, same npc"* — every other timer resets and the Mark's does not. The NPC grants
+everything for `NpcBuffTicks`, **one hour**, but the pre-filter `BuffWouldLand` asked `BuffPlan` for
+the skill's **own** duration — and a Mark's own duration is **five minutes** (it is a Lightbringer
+party skill the NPC happens to sell). So the equal-rank test read "you have 47 minutes left, this
+would only give you 5" and dropped the Mark out of the landing list before `ApplyBuff` — which, told
+the real hour, would have accepted it — ever saw it. Every ordinary blessing authors the full hour
+itself, which is exactly why the Mark was the only one that misbehaved.
+
+🔑 **The shape worth keeping: a pre-filter that predicts a decision must be given the same inputs as
+the decision.**
+
+## 2026-09-16 — 0.146.1: a vendor sold you one rune box however many you asked for
 
 **No APK, no protocol change, no `game.db` delete.** Server-side only.
 
