@@ -1379,12 +1379,23 @@ Mastery's text come off the compiled catalogue, and the trap cast time is in bot
   shortens a fighter's stance. Worth a glance at whether any physical reuse now feels too short —
   it is a widening, not a number change.
 
-## §100 — YOUR PLAYTEST OF 2026-09-16, the BUGS (twelve of them, none investigated yet)
+## §100 — YOUR PLAYTEST OF 2026-09-16, the BUGS (thirteen; one fixed)
 
-You handed this list the moment 0.146.0 was committed, so **none of it has been looked at in code**
-— it is recorded here exactly as you wrote it, and the ten ASKS that came with it are in
-[docs/Backlog.md](../Backlog.md) as `BL-238` … `BL-247`. The two that are really re-reports of
-standing rules are marked as such.
+You handed this list the moment 0.146.0 was committed, so apart from the one marked ✅ **none of it
+has been looked at in code** — it is recorded here exactly as you wrote it, and the ten ASKS that
+came with it are in [docs/Backlog.md](../Backlog.md) as `BL-238` … `BL-247`. The two that are really
+re-reports of standing rules are marked as such.
+
+- ✅ **BUYING SEVERAL WAR RUNE BOXES BUYS ONLY ONE — FIXED in 0.146.1.** *"also buing several war
+  rune boxes it buys only 1 no matter how many i select"*. `HandleBuy` asked
+  `Slot is Consumable or Scroll`, a hand-rolled list that is **narrower than `ItemDef.IsStackable`** —
+  which also covers Material, QuestItem and **Box**. The CLIENT asks the shared rule (it was corrected
+  when crafting mats got their quantity pad), so the pad offered you a number and the server clamped
+  the order to 1. You were charged for one, so no gold was lost. 🔑 Two more places asked the same
+  narrow question and both are now on the shared rule: **HandleSell** — so a stack of boxes or mats
+  sold ONE at a time however many you picked, which is the same bug facing the other way and you had
+  not caught it yet — and the box-loot path, where it was only inefficient. **No APK needed**: the
+  client was already correct.
 
 - 🔴 **SWIFT STAB GIVES NO BUFF.** *"when used it should increase AS/MS but it dont."* A skill whose
   whole payload is a buff and the buff never lands — closest known shape is `BL-139`, where Shield

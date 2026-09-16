@@ -17041,7 +17041,10 @@ public class GameLoopService : BackgroundService
             if (qty <= 0) continue;
 
             // Stackables merge in one AddItem; non-stackable gear needs one call each.
-            bool stackable = ItemCatalog.Get(entry.ItemId)?.Slot is EquipSlot.Consumable or EquipSlot.Scroll;
+            // Same shared rule as the vendor (`ItemDef.IsStackable`): the old slot list was narrower,
+            // so box loot of MATS or BOXES took the one-call-each road — harmless, but it asked a
+            // different question than `AddItem` answers.
+            bool stackable = ItemCatalog.Get(entry.ItemId)?.IsStackable == true;
             int added = 0;
             if (stackable)
             {
@@ -18111,7 +18114,14 @@ public class GameLoopService : BackgroundService
         // at a time and a buff scroll buys 9. This is also what keeps the shop out of the partial-order
         // question entirely — a single stack either fits or it doesn't, so nothing half-completes and
         // takes your gold with it.
-        bool stackable = def.Slot is EquipSlot.Consumable or EquipSlot.Scroll;
+        //
+        // 🔴🔑 ASK THE SHARED RULE, NEVER RE-LIST THE SLOTS (2026-09-16). This read
+        // `Slot is Consumable or Scroll`, which is NARROWER than `ItemDef.IsStackable` — that one also
+        // covers Material, QuestItem and BOX. So the client offered a quantity pad for a rune box (it
+        // asks `def.IsStackable`, fixed when mats got theirs) and the server silently clamped the
+        // order to ONE: *"also buing several war rune boxes it buys only 1 no matter how many i
+        // select"*. The two sides must ask the SAME question, and `AddItem`/`Stacking` already do.
+        bool stackable = def.IsStackable;
         int qty = stackable ? Math.Clamp(cmd.Quantity, 1, def.MaxStack) : 1;
         long total = unit * qty;
 
@@ -18165,7 +18175,9 @@ public class GameLoopService : BackgroundService
             return;
         }
 
-        bool stackable = def.Slot is EquipSlot.Consumable or EquipSlot.Scroll;
+        // Same shared rule as HandleBuy above, and it was wrong here for the same reason: a stack of
+        // boxes or crafting mats sold ONE at a time however many the pad offered.
+        bool stackable = def.IsStackable;
         int qty = stackable ? Math.Clamp(cmd.Quantity, 1, item.Quantity) : 1;
         long total = item.SellPrice(def) * qty;
 

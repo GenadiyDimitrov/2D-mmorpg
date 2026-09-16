@@ -12,7 +12,31 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-16 (latest) — `BL-238`: the move-speed table, both orderings, measured
+## 2026-09-16 (latest) — 0.146.1: a vendor sold you one rune box however many you asked for
+
+**No APK, no protocol change, no `game.db` delete.** Server-side only.
+
+Your report: *"also buing several war rune boxes it buys only 1 no matter how many i select"*.
+
+`HandleBuy` decided what a quantity even means with a hand-rolled
+`def.Slot is EquipSlot.Consumable or EquipSlot.Scroll`. That list is **narrower than the shared rule,
+`ItemDef.IsStackable`**, which also covers `Material`, `QuestItem` and **`Box`**. The client asks the
+shared rule — it was corrected when crafting mats got their quantity pad — so the numpad offered you
+1-99 boxes and the server silently clamped the order to one. You were charged for one, so nothing was
+lost but the trip.
+
+🔑 **Two more places asked the same narrow question, and both are fixed with it:**
+
+- **`HandleSell`** — the same bug facing the other way. A stack of boxes or crafting mats **sold one
+  at a time** however many the pad offered. Not reported yet; found by fixing the buy side.
+- **The box-loot path** (`HandleOpenBox`) — where it was only inefficient: stackable loot took the
+  one-`AddItem`-per-unit road instead of merging in one call.
+
+⚠ The lesson is the one that keeps recurring here: `AddItem` and `Stacking` already answer "does a
+quantity mean anything for this item", and three call sites re-listed the slots themselves instead of
+asking. A rule with four copies has four chances to be wrong, and three of them were.
+
+## 2026-09-16 — `BL-238`: the move-speed table, both orderings, measured
 
 No game change — a **measurement** and the report it produced, which is what `BL-238` asks for first
 (*"i just don't know the formula we should use - can u make me tables with bot formulas"*).
