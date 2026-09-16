@@ -395,6 +395,15 @@ public static partial class SkillCatalog
     /// it MUST carry this key, or a healer's Mark and a buffer's would stack.</para></summary>
     private const string MarkKey = "healer_mark";
 
+    /// <summary>What wearing ANY Mark costs you in move speed — `BL-238`, his ruling of 2026-09-16,
+    /// authored into every Mark row of `healer 4th.csv` AND `buffer 4th.csv`: *"Decrease movement
+    /// speed with 10%"*. Shared by the buffer's Harmony Mark (Skills.Warchanter4th.cs) so the four
+    /// Marks cannot drift apart — the asymmetry between them was one of the three findings the
+    /// measurement turned up (docs/balance/MoveSpeedOrderings.md §0.2).
+    /// <para>⚠ Applied in the `F2` position — after the flat buff shelf — which is the ordering he
+    /// picked on that page (*"F1 Is Declined"*). See <c>SkillDef.MoveSpeedPenaltyPct</c>.</para></summary>
+    internal const float MarkSpeedPenalty = 0.10f;
+
     private static SkillDef[] Lightbringer4thSkills()
     {
         var (sp76, gold76) = F4New(76);
@@ -408,7 +417,13 @@ public static partial class SkillCatalog
             new(SkillEffect.BuffMagAtk,    0.10f, ModifierMode.Percent),
             new(SkillEffect.BuffDef,       0.20f, ModifierMode.Percent),
             new(SkillEffect.BuffMagicDef,  0.20f, ModifierMode.Percent),
-            new(SkillEffect.BuffMoveSpeed, 0.20f, ModifierMode.Percent),
+            // 🔴🔑 THE `+20% MOVE SPEED` THAT USED TO SIT HERE IS GONE (`BL-238`, 2026-09-16), and it
+            //    was NEVER AUTHORED: not one Mark row in `healer 4th.csv` mentions move speed — they
+            //    read *"Atk/Cast.Speed +20%"* and nothing else — so this line was an invented third
+            //    speed to keep the pair company. It was also a large part of why every buffed character
+            //    was over 200, which is the complaint `BL-238` started from. Its replacement is the
+            //    OPPOSITE sign and a different channel: `MoveSpeedPenaltyPct: 0.10f` on the def below,
+            //    his *"Decrease movement speed with 10%"*, now on every Mark row in both 4th files.
             new(SkillEffect.BuffAtkSpeed,  0.20f, ModifierMode.Percent),
             new(SkillEffect.BuffCastSpeed, 0.20f, ModifierMode.Percent),
         };
@@ -434,12 +449,12 @@ public static partial class SkillCatalog
         {
             var mags1 = markCore.Concat(extras).ToArray();
             var mags2 = mags1.Concat(rung2 ?? Array.Empty<EffectMagnitude>()).ToArray();
-            string blurb = "P.Atk and M.Atk +10%, both defences +20%, and move, attack and cast "
-                         + "speed +20%, for five minutes. " + extraText
+            string blurb = "P.Atk and M.Atk +10%, both defences +20%, attack and cast speed +20% — "
+                         + "and move speed −10% — for five minutes. " + extraText
                          + " Consumes 4 Skill Stones. Only one Mark at a time.";
             return new(id, name, BaseClass.Mage,
                 SkillEffect.BuffPhysAtk | SkillEffect.BuffMagAtk | SkillEffect.BuffDef
-                | SkillEffect.BuffMagicDef | SkillEffect.BuffMoveSpeed | SkillEffect.BuffAtkSpeed
+                | SkillEffect.BuffMagicDef | SkillEffect.BuffAtkSpeed
                 | SkillEffect.BuffCastSpeed | mags2.Aggregate(SkillEffect.None, (a, m) => a | m.Effect),
                 // ⚠ 150 MP, not 300 — his 2026-09-02 edit halved it on all three.
                 MpCost: 150, CastTicks: 50, CooldownTicks: 50, Range: 900, Power: 0,
@@ -456,6 +471,9 @@ public static partial class SkillCatalog
                 ConsumableId: ItemCatalog.SkillStone, ConsumableAmount: 4,
                 CcResistMagical: ccMag, CcResistPhysical: ccPhys, MagicCritDamage: magicCritDmg,
                 BuffMagicAccuracy: magicAcc,
+                // `BL-238` — his *"Decrease movement speed with 10%"*, on every Mark row of both 4th
+                // files. Same 10% at both rungs, so it rides on the def and not per level.
+                MoveSpeedPenaltyPct: MarkSpeedPenalty,
                 Magnitudes: mags1,
                 Levels: new[]
                 {

@@ -111,6 +111,12 @@ internal static class Descr
         // only when the code really does carry one value for both, so a rung that split them reads as
         // UNCHECKED rather than passing on whichever half happened to match.
         ("movatkspeed",   new[] { "move/attack.speed", "move/attack speed" }),
+        // `BL-238` — the MARKS' compound, and it only became visible the day the code carried a real
+        // `ms` value: every Mark row reads *"Atk/Cast.Speed +20%"*, and `ms`'s bare "speed" alias was
+        // claiming that 20% as MOVE speed. It then met the Mark's authored −10% move cut and reported
+        // "CSV 20% vs code 10%" — a mis-read wearing the clothes of a defect. Longest-first, so this
+        // pair is matched before `ms` ever sees the word. Same shape as `movatkspeed` above.
+        ("atkcastspeed",  new[] { "atk/cast.speed", "atk/cast speed", "attack/cast speed" }),
         ("ms",            new[] { "move speed", "movement speed", "ms", "speed", "move" }),
         ("reuse",         new[] { "reuse delay", "reuse", "cooldown" }),
         // ⚠ "chance for spells to fizzle" IS mRes in his mage file. The number is the same one the code
@@ -560,6 +566,11 @@ internal static class Descr
             // `BL-188` - the BLOW-RATE buffs. Same shape as the two pairs above: a FIELD on the
             // SkillDef because the SkillEffect enum is full, authored as "blow rate x1.4".
             Add("blowrate", true, def.BlowRatePctAt(level));
+            // `BL-238` — A BUFF'S OWN MOVE-SPEED PRICE, his *"Decrease movement speed with 10%"* on all
+            // four Mark rows. Another FIELD (SkillDef.MoveSpeedPenaltyPct), so without this line the
+            // number he authored reads as UNCHECKED forever. Offered POSITIVE under the `ms` key: his
+            // cell says "Decrease … with 10%", i.e. the sign is in the word, not in the number.
+            Add("ms", true, def.MoveSpeedPenaltyPct);
             // MAGIC crit rate RECEIVED — pooled with the physical one; see the `critrateres` aliases.
             Add("critrateres", true, def.MagicCritRateDebuffAt(level));
             // `BL-210` — MAGIC crit DAMAGE, a FIELD for the usual reason (SkillEffect has had no bits
@@ -707,6 +718,13 @@ internal static class Descr
         if (pool.TryGetValue(("ms", true), out var msv) && msv.Count == 1
             && pool.TryGetValue(("as", true), out var asv) && asv.Contains(msv[0]))
             pool[("movatkspeed", true)] = new List<float> { msv[0] };
+
+        // `BL-238` — "Atk/Cast.Speed +20%" is one number for two channels, and it is only a real metric
+        // when both carry it. Same construction as the two neighbours, same reason.
+        if (pool.TryGetValue(("as", true), out var asv2) && asv2.Count > 0
+            && pool.TryGetValue(("cast", true), out var csv2)
+            && asv2.Find(v => csv2.Contains(v)) is float both && both != 0f)
+            pool[("atkcastspeed", true)] = new List<float> { both };
 
         if (pool.TryGetValue(("patk", true), out var pa) && pa.Count == 1
             && pool.TryGetValue(("matk", true), out var ma) && ma.Contains(pa[0])

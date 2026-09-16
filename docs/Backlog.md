@@ -34,12 +34,19 @@ Nothing about them is blocked or broken; they wait on a test only you can run.
 
 ★ **The ones you named most recently (2026-09-16, the playtest):** ten asks, `BL-238`…`BL-247`.
 The twelve BUGS from the same pass are in [testing/Open-Checklist.md](testing/Open-Checklist.md) §100,
-not here. ✅ **`BL-238`'s table is delivered** —
-[balance/MoveSpeedOrderings.md](balance/MoveSpeedOrderings.md), both orderings on your nine rows — and
-**you have ruled the ordering: F2** (*"F1 Is Declined"*, written on the page). **TWO answers are still
-owed**: which *reading* of "decrease by 20%" (a Mark **grants** +20% move speed today, so the readings
-are 40 points apart), and whether the buffer's Harmony Mark takes the cut.
-The other nine asks are 🔵 waiting to be built.
+not here — and **nine of those thirteen are fixed** (0.146.1 / 0.147.0 / 0.148.0).
+
+✅✅ **`BL-238` IS BUILT AND ARCHIVED (0.149.0).** You answered all three of its questions, two of them
+by **editing files rather than writing a sentence**: **F2** (*"F1 Is Declined"*, on the page),
+**reading B at −10%** (you retitled §3 and put *"Decrease movement speed with 10%"* on every Mark row
+of `healer 4th.csv`), and **yes, the Harmony Mark takes it** (both `buffer 4th.csv` rows). It measures
+onto your own hand table, row for row. 🔴 The `+20% move speed` the Marks used to GRANT went with it —
+no CSV row ever authored it, and it was much of why everyone was over 200.
+
+🔵 **What that did NOT settle is now `BL-248`**: the band is still not reserved for rogues, and no
+version of the cut could reserve it. Three measured levers there; pick one.
+
+The other eight asks (`BL-239`…`BL-246`) are 🔵 waiting to be built, and `BL-247` is a sweep.
 
 ★ **The ones before those (2026-09-13, second message):** the CC-resist formula.
 ✅ **BUILT (0.139.0)** as **`BL-225`** — control resistances **COMPOUND** now, every source its own
@@ -188,7 +195,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-233` | ❓ | THE DEMON BUFFER'S P.DEF — measured three ways and heavy is AHEAD; I need your two sheets | classes |
 | `BL-234` | ❓ | URGENT LESSER HEAL — built to your four numbers; the per-rank falloff is mine to confirm | classes |
 | `BL-237` | ❓ | WARRIOR 3rd + 4th — **BUILT** in 0.146.0; three readings of yours are mine to confirm | classes |
-| `BL-238` | 🔵 | EVERY MARK COSTS 20% MOVE SPEED — ✅ table DELIVERED, ✅ **F2 ruled**; waiting on WHICH READING (a Mark grants +20% today) and on the Harmony Mark | buffs |
 | `BL-239` | 🔵 | AN ITEM LOCK, BY ITEM ID — no sell/dismantle/delete/keeper/trade; consumables still usable | items |
 | `BL-240` | 🔵 | INSTANT SELL BY RARITY, scoped by the vendor tab you are on | items |
 | `BL-241` | 🔵 | A PER-TYPE RARITY FILTER ON PICKUP — and it drops you from the party LOOT ROSTER too | items |
@@ -198,6 +204,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-245` | 🔵 | THE CRAFTER SHOULD SEE PRIVATE WAREHOUSE MATS — a toggle, on by default | crafting |
 | `BL-246` | 🔵 | THE STATS WINDOW BECOMES TWO TABS — your full layout; several rows have no source yet | ui |
 | `BL-247` | ❓ | WHAT DROPS A-grade enchant scrolls, epic/rare WOOD and epic LEATHER? A sweep, not a build | items |
+| `BL-248` | 🔵 | THE SPEED BAND IS STILL NOT RESERVED FOR ROGUES — the Mark cut could never do it; three measured levers, pick one | buffs |
 
 ---
 
@@ -1830,64 +1837,6 @@ until you write them. That line is the reminder; nothing is invented in the mean
 
 ---
 
-## `BL-238` 🔵 EVERY MARK SHOULD COST 20% MOVE SPEED — the table is delivered, the ruling is yours
-
-**2026-09-16.** *"every mark should decrease speed with 20% -> the move speed of chars with all the
-buffs is + 69 and make all over 200.. And this values should be reserved for rogues ... I just don't
-know the formula we should use - can u make me tables with bot formulas below and : race,
-mage/fighter/rogue(with armor passive), base, without mark, formula1 with mark, formula 2 with mark,
-+60(sprint)"*
-
-  1. `(base × buffs) × debuffs + flat`
-  2. `(base × buffs + flat) × debuffs`
-
-🔑 **THE ASK IS THE TABLE, NOT THE RETUNE.** You said in as many words that you do not know which
-ordering you want, so what is owed first is the measurement — both orderings, side by side, on the
-rows you listed — and the ruling comes after you read it. It is a `tools/BalanceMatrix` job off real
-`Entity` objects with real gear, never a hand-derived table: hand-derived balance numbers have been
-wrong here before.
-
-**Why it matters and what the problem actually is.** 250 is the buffed move CAP and the base run
-speeds per race+class sit below it. Your complaint is that the full buff shelf adds **+69 flat** and
-puts *everyone* over 200 — so the top of the speed band, which is meant to be the rogue's identity,
-is bought by anyone who visits an NPC buffer. The 20% Mark cut is your lever; **the ordering decides
-whether it is a real cut or almost nothing**, because a +69 FLAT applied AFTER a ×0.8 keeps most of
-itself, and applied BEFORE it does not. That is exactly the difference between your two formulas.
-
-⚠ It also touches every other percentage debuff in the game, not just Marks — slows SUM and are
-clamped at 90%, and the same ordering question governs them. Whatever you pick becomes the rule.
-
-✅🔑 **ONE OF THE THREE IS RULED — YOU PICKED F2.** You wrote it into the page itself, 2026-09-16:
-*"**F1** Is Declined - Owner don't like it!"*. That is the cheaper ruling to build, because **F2 is
-already what the engine does** (`ModifiedStat(base) × (1 − SlowFraction)`), so no slow in the game
-moves and the Mark cut is the only change. **Still owed: which READING, and the Harmony Mark** — see
-the two numbered questions below.
-
-✅ **THE TABLE IS BUILT — [docs/balance/MoveSpeedOrderings.md](balance/MoveSpeedOrderings.md)**,
-off `dotnet run --project tools/BalanceMatrix -- --speed` (real level-90 Entities, real epic gear,
-the real shelf; the mode checks itself against `Entity.EffectiveSpeed` on every row). Nine rows,
-both orderings, with and without the +60 sprint, exactly the columns you listed. **It needed THREE
-answers back, not one; you have given the first:**
-
-1. ✅ ~~**F1 or F2?**~~ — **F2**, ruled on the page 2026-09-16. No slow moves; the Mark cut is the
-   whole change.
-2. 🔴 **WHICH READING?** A Mark **grants +20% move speed today** (`markCore`,
-   `Skills.Lightbringer4th.cs`) — Holy, Life and Blood are all speed buffs. So *"decrease speed with
-   20%"* can mean **(A)** keep the +20% and cut 20% on top — net ×0.96, worth about **−5 points** —
-   or **(B)** the +20% becomes −20%, worth **−35 to −44**. Forty points apart. Not picked for you.
-3. 🔴 **Does the buffer's Harmony Mark take the cut?** It carries **no move speed at all** today, so
-   the four Marks already disagree by 20% of base — under (A) it becomes the FAST Mark, under (B) they
-   finally agree.
-
-🔑 **AND THE FINDING WORTH READING BEFORE YOU RULE: the ordering does not reserve the band.** F1 and
-F2 produce the **identical** rogue-minus-mage gap — both scale the same base difference by the same
-factors, and the +61 flat shelf is common to all nine rows, so it cancels out of a difference. Every
-version of the cut makes the rogue's lead *smaller*. What closed the band is the flat shelf itself
-(the mage multiplies his own speed by 1.74, the elf rogue by 1.58 — a flat buff pays the slowest
-character the most), and with sprint **every row in the game is at the 250 cap today**. §6 of the
-page lists what would actually reserve the top of the band — a percent shelf instead of a flat one is
-the shortest road — all unbuilt and unruled.
-
 ## `BL-239` 🔵 AN ITEM LOCK, BY ITEM ID
 
 **2026-09-16.** *"we need a lock on items not to show in sell window nor their del/dismantle button to
@@ -1992,3 +1941,39 @@ dropped -> also got none"*. Owed as a **drop-table sweep and an answer**, not a 
 each of the three, at which levels, and at what EFFECTIVE rate once the group multiplier is applied
 (`MobCatalog.EffectiveRate`). If the honest answer is "nothing does", that is the finding — and it
 pairs with `BL-30`, which already records that no recipe item exists below A grade.
+## `BL-248` 🔵 THE SPEED BAND IS STILL NOT RESERVED FOR ROGUES — and the Mark cut could never have done it
+
+**2026-09-16, the half of `BL-238` that outlived it.** Your complaint was two sentences and only one
+of them is now answered. The Mark's price is built (0.149.0, −10% in the F2 position, both files).
+This is the other one: *"this values should be reserved for rogues"*.
+
+🔑 **THE CUT CANNOT DO IT, AND NEITHER ORDERING COULD.** Measured, in
+[balance/MoveSpeedOrderings.md](balance/MoveSpeedOrderings.md) §5: F1 and F2 produce the **identical**
+rogue-minus-mage gap, because both scale the same base difference by the same factor and the flat
+shelf is common to every row, so it cancels out of a difference. Every version of the cut makes the
+rogue's lead **smaller**. Marked and unsprinted the rogue leads the mage of his race by **16.6**
+(Human), **37.8** (Elf) and **10.2** (Demon).
+
+**What actually closed the band is that the shelf is FLAT.** The same +61 is worth proportionally
+more to a slow character: the mage multiplies his own speed by 1.74, the elf rogue by 1.58.
+🔑 **Your own follow-up table reaches the same place from the other side** — rogues skip Frenzy (it
+costs evasion), so their shelf is **+53** against everyone else's **+61/+69**, and on your "full"
+ordering the **Demon rogue comes out LAST of the eight**. A band that puts one rogue first and another
+last is not a band.
+
+**The levers, measured and unbuilt — pick one and it gets built:**
+
+1. 🔑 **Make the shelf's move speed a PERCENT instead of a flat.** Swift `+33` → `×1.25` and the band
+   scales with base instead of collapsing toward it. The only change that makes the rogue's base
+   advantage survive buffing, and it is independent of everything already ruled.
+2. **Cut the flat shelf and give the difference to the rogue's own kit** — the light Armor Mastery
+   already carries `speed +7` and is the natural home for more.
+3. **Move the CAP per class.** `Entity.MoveSpeedCap` is already per-entity, so a rogue ceiling above
+   250 (or everyone else's below it) costs nothing structurally. ⚠ Since 0.149.0 the **elf rogue is
+   the only character in the game who reaches 250 on his own**, so this lever is live rather than
+   theoretical.
+
+⚠ **One measured slip in your own table, worth a look before you rule:** the **Demon fighter** row
+repeats its `shelf` figures in the `full` columns (173/156/210 twice) where every other non-rogue row
+gains +8. If that is a paste, his `full` is 181 and the ordering at the bottom of your list changes.
+

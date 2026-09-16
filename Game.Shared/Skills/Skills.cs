@@ -900,7 +900,24 @@ public record SkillDef(
     /// <summary>THE CASTER'S OWN CHARGE POOL — the Human Ravager's 'Focus' (`BL-237`, his
     /// <c>warrior 3rd.csv</c>). How this skill fills or spends it; null for every skill that does
     /// neither. See <see cref="ChargeRule"/>.</summary>
-    ChargeRule? Charge = null)
+    ChargeRule? Charge = null,
+    /// <summary>A MOVE-SPEED CUT this buff carries as its own DOWNSIDE — `BL-238`, 2026-09-16. `0.10`
+    /// is his *"Decrease movement speed with 10%"*, authored on all four Marks in `healer 4th.csv` and
+    /// `buffer 4th.csv`.
+    ///
+    /// <para>🔑 <b>IT IS A FIELD, NOT A `Slow` MAGNITUDE, AND THAT IS THE WHOLE POINT.</b> `Slow` sits
+    /// in `AnyDebuff` AND in `ControlCc`, so spelling this as a slow would have (a) made
+    /// `SkillMath.IsHostile` file a Mark in the player's DEBUFF row, which is
+    /// [[negative-buff-magnitude-is-not-a-debuff]] all over again, (b) let the target's own CC
+    /// RESISTANCE resist the downside of his own blessing, and (c) made a RAID BOSS immune to it. A
+    /// buff's own price is not a debuff someone landed on you.</para>
+    ///
+    /// <para>🔑 <b>IT LANDS IN THE `F2` POSITION</b> — after the flat shelf, not before it. His ruling
+    /// on the two orderings (docs/balance/MoveSpeedOrderings.md, *"F1 Is Declined"*):
+    /// `(base × buffs + flat) × (1 − cut)`. That is where `Entity.EffectiveSpeed` already applies
+    /// `SlowFraction`, so the cut is a second independent factor beside it and nothing about slows
+    /// moves. Written as a FRACTION (0.10 = −10%), summed across buffs and clamped like a slow.</para></summary>
+    float MoveSpeedPenaltyPct = 0f)
 {
     /// <summary>Hash on the ID alone — and this override MUST stay.
     ///

@@ -12902,6 +12902,10 @@ public class GameLoopService : BackgroundService
             // race buffs climb 10 → 15 → 20% across three rungs, and reading the def's own field
             // would hand rung 1's number to all three.
             BlowRatePct = def.BlowRatePctAt(level),
+            // `BL-238` — the buff's own MOVE-SPEED PRICE (the Marks' −10%). Read off the def rather
+            // than per rung: every Mark charges the same 10% at both its rungs, and a per-rung version
+            // would be a ladder nobody authored.
+            MoveSpeedPenaltyPct = def.MoveSpeedPenaltyPct,
             MasteryMult = def.MasteryMult,   // `BL-191` — the toggle's ×2 on all three mastery bases
             // `BL-110` — CHARM, and the one buff that needs to remember WHO cast it: TickControlledMovement
             // walks the victim toward this id every tick. A charm with no source is inert by design

@@ -12,7 +12,45 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-16 (latest) — 0.148.0: Angel's Protection, the auto-farm rubber-band, Greater scrolls
+## 2026-09-16 (latest) — 0.149.0: `BL-238` is built — a Mark costs you 10% move speed
+
+🔴 **NEW APK REQUIRED** (skill card text). **No protocol change, no `game.db` delete.**
+
+You answered all three of the table's questions, two of them by editing files rather than writing a
+sentence: **F2** (*"F1 Is Declined"*, on the page), **reading B at −10%** (you retitled §3 and put
+*"Decrease movement speed with 10%"* on every Mark row of `healer 4th.csv`), and **yes, the Harmony
+Mark takes it too** (both `buffer 4th.csv` rows). Built exactly as authored.
+
+🔴 **And the `+20% move speed` the Marks used to grant is GONE, because no CSV row ever authored it.**
+Your Mark rows read *"Atk/Cast.Speed +20%"* and say nothing about movement; the third speed was
+invented in code, and it was a large share of why everyone was over 200. So a Marked character swings
+by the full **30%**, not 10%.
+
+**It measures onto your own hand table.** Every row of the built game matches the `F2(10)` column you
+computed yourself — 158, 158, 174, 162, 184, 200, 161, 156, 171. ⚠ And your *"Today +Sprint all get to
+max 250"* is no longer true: sprinting lands between 210 and 238 for everyone but the **elf rogue**,
+now the only character who reaches the cap on his own.
+
+🔑 **The cut is a FIELD on the buff (`SkillDef.MoveSpeedPenaltyPct`), not a `Slow` magnitude**, and
+that choice is load-bearing. `Slow` sits in `AnyDebuff` **and** in `ControlCc`, so spelling it as a
+slow would have filed a Mark in your DEBUFF row (`BL-216`'s lesson again), let your own **CC
+resistance resist the price of your own blessing**, and made a **raid boss immune** to it. It lands in
+the F2 position as a second factor beside the slow one, so nothing about slows moved.
+
+⚠ Two tool fixes rode along, both of the recurring kind: the **balance rig's buff builder was missing
+the new field channel** (the seventh time — a `BuffInstance` built by hand applies and does nothing),
+and `SkillCsvSeed` learned to read the cell. That second one exposed a latent mis-read: **`ms`'s bare
+`"speed"` alias had been claiming the `Atk/Cast.Speed +20%` in every Mark row as MOVE speed**, which
+only became visible the day the code carried a real move number to compare it against. Fixed with an
+`atk/cast.speed` compound key, the same shape `BL-237` needed for `move/attack.speed`.
+
+⚠ **Still open, and §5-6 of the page is the argument:** the cut does **not** reserve the band for
+rogues and no ordering could — it scales the same base difference by the same factor on every row.
+What closed the band is the **flat** shelf, worth proportionally more to the slowest character. Your
+own follow-up table (rogues skip Frenzy, so their shelf is +53 against +61/+69) reaches the same
+place. Unbuilt and unruled.
+
+## 2026-09-16 — 0.148.0: Angel's Protection, the auto-farm rubber-band, Greater scrolls
 
 **No APK, no protocol change, no `game.db` delete.** All three are server-side.
 

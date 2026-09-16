@@ -540,6 +540,11 @@ public static partial class SkillCatalog
                 TargetMode: TargetMode.AlliesInRadius, AreaRadius: 800f,
                 ConsumableId: ItemCatalog.SkillStone, ConsumableAmount: 10,
                 MagicCritDamage: 0.20f,
+                // `BL-238` — THE HARMONY MARK PAYS THE SAME PRICE AS THE HEALER'S THREE, and that was
+                // the third question the measurement raised: this Mark carried NO move speed at all,
+                // so the four were already 20% of base apart on that axis. He answered it in the file —
+                // *"Decrease movement speed with 10%"* is on both `buffer 4th.csv` rows too.
+                MoveSpeedPenaltyPct: MarkSpeedPenalty,
                 Magnitudes: markMags,
                 Levels: new[]
                 {
@@ -547,14 +552,16 @@ public static partial class SkillCatalog
                         Magnitudes: markMags, LearnConsumableAmount: 0,
                         Description: "The whole party: +10% attack, +3 accuracy, and +20% to both "
                                    + "defences, attack and cast speed, physical AND magic critical "
-                                   + "rate and damage, maximum HP and MP and regeneration, for five "
+                                   + "rate and damage, maximum HP and MP and regeneration, and −10% "
+                                   + "move speed, for five "
                                    + "minutes. Consumes 10 Skill Stones. Only one Mark at a time."),
                     new SkillLevel(MpCost: 300, SpCost: 0, GoldCost: goldUp83,
                         Magnitudes: markMags2, MagicCritRateDebuff: 0.10f,
                         ConsumableAmount: 15,
                         Description: "The whole party: +10% attack, +3 accuracy, and +20% to both "
                                    + "defences, attack and cast speed, physical AND magic critical "
-                                   + "rate and damage, maximum HP and MP and regeneration; blows and spells aimed at "
+                                   + "rate and damage, maximum HP and MP and regeneration, and −10% move speed; "
+                                   + "blows and spells aimed at "
                                    + "them are 10% less likely to crit and physical criticals deal "
                                    + "30% less extra damage. Five minutes, 15 Skill Stones. Only one "
                                    + "Mark at a time."),

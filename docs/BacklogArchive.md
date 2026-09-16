@@ -5475,3 +5475,71 @@ same day.** Nothing is built yet.
 Not a question: the 4th file stops Final Stand, HP Boost, HP Regeneration, the Battle stances, Monster
 Knowledge, Focus Mastery, Battle Frenzy and Antidote at their 74 rungs. The Final Stand acc edit changes a
 built skill, so both 3rd files owe the code that change too.
+
+## `BL-238` — BUILT 2026-09-16 in 0.149.0. The pre-build entry, verbatim.
+
+He answered all three of its questions, two of them by EDITING FILES rather than writing a sentence:
+**F2** (`*"F1 Is Declined"*`, on the page), **reading B at −10%** (he retitled §3 of
+`docs/balance/MoveSpeedOrderings.md` and put *"Decrease movement speed with 10%"* on every Mark row
+of `healer 4th.csv`), and **yes, the Harmony Mark takes it too** (both `buffer 4th.csv` rows).
+🔴 The `+20% move speed` the Marks used to GRANT is gone with it — no CSV row ever authored it.
+⚠ What the entry did NOT settle is the band: the cut does not reserve the top for rogues and no
+ordering could. That half is `BL-248`.
+
+## `BL-238` 🔵 EVERY MARK SHOULD COST 20% MOVE SPEED — the table is delivered, the ruling is yours
+
+**2026-09-16.** *"every mark should decrease speed with 20% -> the move speed of chars with all the
+buffs is + 69 and make all over 200.. And this values should be reserved for rogues ... I just don't
+know the formula we should use - can u make me tables with bot formulas below and : race,
+mage/fighter/rogue(with armor passive), base, without mark, formula1 with mark, formula 2 with mark,
++60(sprint)"*
+
+  1. `(base × buffs) × debuffs + flat`
+  2. `(base × buffs + flat) × debuffs`
+
+🔑 **THE ASK IS THE TABLE, NOT THE RETUNE.** You said in as many words that you do not know which
+ordering you want, so what is owed first is the measurement — both orderings, side by side, on the
+rows you listed — and the ruling comes after you read it. It is a `tools/BalanceMatrix` job off real
+`Entity` objects with real gear, never a hand-derived table: hand-derived balance numbers have been
+wrong here before.
+
+**Why it matters and what the problem actually is.** 250 is the buffed move CAP and the base run
+speeds per race+class sit below it. Your complaint is that the full buff shelf adds **+69 flat** and
+puts *everyone* over 200 — so the top of the speed band, which is meant to be the rogue's identity,
+is bought by anyone who visits an NPC buffer. The 20% Mark cut is your lever; **the ordering decides
+whether it is a real cut or almost nothing**, because a +69 FLAT applied AFTER a ×0.8 keeps most of
+itself, and applied BEFORE it does not. That is exactly the difference between your two formulas.
+
+⚠ It also touches every other percentage debuff in the game, not just Marks — slows SUM and are
+clamped at 90%, and the same ordering question governs them. Whatever you pick becomes the rule.
+
+✅🔑 **ONE OF THE THREE IS RULED — YOU PICKED F2.** You wrote it into the page itself, 2026-09-16:
+*"**F1** Is Declined - Owner don't like it!"*. That is the cheaper ruling to build, because **F2 is
+already what the engine does** (`ModifiedStat(base) × (1 − SlowFraction)`), so no slow in the game
+moves and the Mark cut is the only change. **Still owed: which READING, and the Harmony Mark** — see
+the two numbered questions below.
+
+✅ **THE TABLE IS BUILT — [docs/balance/MoveSpeedOrderings.md](balance/MoveSpeedOrderings.md)**,
+off `dotnet run --project tools/BalanceMatrix -- --speed` (real level-90 Entities, real epic gear,
+the real shelf; the mode checks itself against `Entity.EffectiveSpeed` on every row). Nine rows,
+both orderings, with and without the +60 sprint, exactly the columns you listed. **It needed THREE
+answers back, not one; you have given the first:**
+
+1. ✅ ~~**F1 or F2?**~~ — **F2**, ruled on the page 2026-09-16. No slow moves; the Mark cut is the
+   whole change.
+2. 🔴 **WHICH READING?** A Mark **grants +20% move speed today** (`markCore`,
+   `Skills.Lightbringer4th.cs`) — Holy, Life and Blood are all speed buffs. So *"decrease speed with
+   20%"* can mean **(A)** keep the +20% and cut 20% on top — net ×0.96, worth about **−5 points** —
+   or **(B)** the +20% becomes −20%, worth **−35 to −44**. Forty points apart. Not picked for you.
+3. 🔴 **Does the buffer's Harmony Mark take the cut?** It carries **no move speed at all** today, so
+   the four Marks already disagree by 20% of base — under (A) it becomes the FAST Mark, under (B) they
+   finally agree.
+
+🔑 **AND THE FINDING WORTH READING BEFORE YOU RULE: the ordering does not reserve the band.** F1 and
+F2 produce the **identical** rogue-minus-mage gap — both scale the same base difference by the same
+factors, and the +61 flat shelf is common to all nine rows, so it cancels out of a difference. Every
+version of the cut makes the rogue's lead *smaller*. What closed the band is the flat shelf itself
+(the mage multiplies his own speed by 1.74, the elf rogue by 1.58 — a flat buff pays the slowest
+character the most), and with sprint **every row in the game is at the 250 cap today**. §6 of the
+page lists what would actually reserve the top of the band — a percent shelf instead of a flat one is
+the shortest road — all unbuilt and unruled.

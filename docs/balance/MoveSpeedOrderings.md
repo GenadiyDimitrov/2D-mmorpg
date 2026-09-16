@@ -15,12 +15,61 @@
 
 *F1* Is Declined - Owner don't like it!
 
-✅ **RULED, 2026-09-16 — the line above is yours, and it settles ordering: F2.** It is also the
-cheaper of the two to build, because **F2 is what the engine already does** (§0.3 below), so not one
-slow in the game moves and the Mark cut becomes the only change. **Two questions from this page are
-still open** — §0.1's *which reading of "decrease by 20%"* (the Marks **grant** +20% move speed
-today, and the two readings are 40 points apart) and §0.2's *does the Harmony Mark take the cut*.
-Nothing is built until those two land.
+## ✅ RULED AND BUILT — 0.149.0, 2026-09-16
+
+You answered all three questions on this page, two of them by editing files rather than by writing a
+sentence, which is why they are recorded here:
+
+| question | your answer | where you gave it |
+|---|---|---|
+| F1 or F2? | **F2** | the line above, on this page |
+| which reading? | **B, at −10%** — the +20% goes, a −10% cut arrives | §3's heading, and the CSVs |
+| does the Harmony Mark take it? | **yes** | `buffer 4th.csv`, both rungs |
+
+**What is in the game now:** every Mark row of `healer 4th.csv` and `buffer 4th.csv` reads
+*"Decrease movement speed with 10%"*, and the code matches — `(base × buffs + flat) × 0.90`, the cut
+landing **after** the flat shelf, which is F2.
+
+🔴 **And the `+20% move speed` the Marks used to grant is GONE, because no CSV row ever authored it.**
+Your Mark rows say *"Atk/Cast.Speed +20%"* and nothing about movement; the third speed was invented in
+code. It was also a large share of why everyone was over 200 — so the swing on a Marked character is
+the full 30%, not 10%.
+
+**Measured, and it lands on your own numbers.** Every row of the built game matches the `F2(10)`
+column you computed by hand in §3 below — 157/158, 174, 184, 200, 156, 171, 162, 161 — which is the
+best check either of us could ask for. Re-read it any time with
+`dotnet run --project tools/BalanceMatrix -- --speed`, which now **measures** `Entity.EffectiveSpeed`
+instead of proposing:
+
+| race | role | raw | base | bare | no mark | **MARK** | +sprint | mark+sprint |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| Human | mage | 109 | 114 | 114 | 175 | **158** | 235 | 212 |
+| Human | fighter | 115 | 115 | 115 | 176 | **158** | 236 | 212 |
+| Human | rogue | 115 | 132 | 132 | 193 | **174** | 250\* | 228 |
+| Elf | mage | 114 | 119 | 119 | 180 | **162** | 240 | 216 |
+| Elf | fighter | 143 | 143 | 143 | 204 | **184** | 250\* | 238 |
+| Elf | rogue | 143 | 161 | 161 | 222 | **200** | 250\* | 250\* |
+| Demon | mage | 113 | 118 | 118 | 179 | **161** | 239 | 215 |
+| Demon | fighter | 112 | 112 | 112 | 173 | **156** | 233 | 210 |
+| Demon | rogue | 112 | 129 | 129 | 190 | **171** | 250\* | 225 |
+
+⚠ **Your *"Today +Sprint all get to max 250"* is no longer true, and that is the change working**:
+sprinting now lands between 210 and 238 for everyone but the elf rogue, who is the only character in
+the game who still reaches the cap on his own.
+
+⚠ **The band is still not reserved for rogues, and no version of this cut could reserve it** — see
+§5. Marked and unsprinted, the rogue leads the mage of his race by 16.6 (Human), 37.8 (Elf) and 10.2
+(Demon). §6 lists the levers that would actually move it; none is built or ruled.
+
+🔑 **The implementation note worth keeping:** the cut is a FIELD on the buff
+(`SkillDef.MoveSpeedPenaltyPct`), **not** a `Slow` magnitude. `Slow` lives in `AnyDebuff` *and* in
+`ControlCc`, so spelling it as a slow would have filed a Mark in your DEBUFF row, let your own CC
+resistance resist the price of your own blessing, and made a raid boss immune to it. **A buff's own
+price is not a debuff someone landed on you.**
+
+---
+
+### (the pre-ruling material follows — kept because the reasoning is what the ruling was made on)
 
 Everything below is measured, not derived: `dotnet run --project tools/BalanceMatrix -- --speed`
 builds real level-90 `Entity` objects in real epic gear with the real NPC shelf and reads

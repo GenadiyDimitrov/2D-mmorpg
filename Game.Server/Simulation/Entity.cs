@@ -244,6 +244,12 @@ public class BuffInstance
     /// Rides as a field, like the two above, because the SkillEffect flag enum has no bits left.</summary>
     public RewardRates Rewards { get; init; }
 
+    /// <summary>A MOVE-SPEED CUT this buff carries as its own downside (`BL-238`): 0.10 = −10%, the
+    /// Marks' price. Applied in the `F2` position — after the flat shelf, beside the slow factor — in
+    /// <see cref="EffectiveSpeed"/>. A FIELD and not a `Slow` magnitude on purpose; see
+    /// <c>SkillDef.MoveSpeedPenaltyPct</c> for the three reasons.</summary>
+    public float MoveSpeedPenaltyPct { get; init; }
+
     /// <summary>Angel's Protection / noblesse marker: while a buff with this set is present, DEATH removes
     /// only the protection buff(s) and keeps every other buff (see Kill). No stat effect of its own.</summary>
     public bool KeepsBuffsOnDeath { get; init; }
@@ -1921,8 +1927,35 @@ public class Entity
                 return 0f;
             float baseSpeed = MoveState == MoveState.Walking ? WalkSpeed : RunSpeed;
             if (baseSpeed <= 0) baseSpeed = Speed;   // fallback
-            float withBuffs = ModifiedStat(baseSpeed, SkillEffect.BuffMoveSpeed) * (1f - SlowFraction);
+            // `BL-238` — THE MARK'S OWN PRICE, in the `F2` position he ruled: the cut lands on
+            // `base × buffs + flat`, i.e. it eats the flat shelf too, NOT on the base alone. His words
+            // on the page: *"F1 Is Declined"*. It is a second, independent factor beside the slow one
+            // rather than a term summed into it, because a blessing's price and a curse someone cast on
+            // you are different things — see BuffSpeedPenaltyFraction.
+            float withBuffs = ModifiedStat(baseSpeed, SkillEffect.BuffMoveSpeed)
+                            * (1f - SlowFraction) * (1f - BuffSpeedPenaltyFraction);
             return Math.Min(withBuffs, MoveSpeedCap);
+        }
+    }
+
+    /// <summary>Total move-speed reduction the character's own BUFFS charge him (`BL-238`) — the four
+    /// Marks' *"Decrease movement speed with 10%"* and anything authored the same way later.
+    ///
+    /// <para>🔑 SEPARATE FROM <see cref="SlowFraction"/> ON PURPOSE. A slow is something an enemy did
+    /// to you: it is contested, it is resisted by CC resistance, a raid boss is immune to it, and it
+    /// sums with every other slow under one 90% clamp. A Mark's cut is the PRICE OF A BLESSING YOU
+    /// CHOSE — nothing should resist it, nothing is immune to it, and it must not eat into the slow
+    /// budget. Two factors, multiplied, so neither can mask the other.</para>
+    ///
+    /// <para>⚠ Summed across buffs and clamped at 90% for the same reason a slow is: it is the only
+    /// thing standing between a future authoring slip and a character who cannot move.</para></summary>
+    private float BuffSpeedPenaltyFraction
+    {
+        get
+        {
+            float pct = 0f;
+            foreach (var b in Buffs) if (!b.Suppressed) pct += b.MoveSpeedPenaltyPct;
+            return Math.Clamp(pct, 0f, 0.9f);
         }
     }
 
