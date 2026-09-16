@@ -1918,6 +1918,213 @@ if (args.Length > 0 && args[0] == "--slowstack")
     return;
 }
 
+// ============================================================================================
+//  `--speed` — `BL-238`, 2026-09-16. HIS TWO FORMULA ORDERINGS, SIDE BY SIDE, ON HIS OWN ROWS.
+//
+//  The ask is the TABLE, not the retune: *"i just don't know the formula we should use - can u make
+//  me tables with bot formulas below and : race, mage/fighter/rogue(with armor passive), base,
+//  without mark, formula1 with mark, formula2 with mark, +60(sprint)"*.
+//
+//      F1 = (base x buffs) x debuffs + flat      — the flat shelf survives the cut untouched
+//      F2 = (base x buffs + flat) x debuffs      — the cut eats the flat shelf too  [TODAY'S ENGINE]
+//
+//  🔑 F2 IS WHAT THE ENGINE ALREADY DOES. `Entity.EffectiveSpeed` reads
+//  `ModifiedStat(base, BuffMoveSpeed) * (1 - SlowFraction)`, and `ModifiedStat` is
+//  `base * (1 + pct) + flat` — so every slow in the game is already ordering-2. Picking F1 is
+//  therefore a change to SLOWS as well as to the Mark, which is why the choice is one ruling.
+//
+//  🔴🔑 AND THE FINDING THIS TABLE TURNED UP: **A MARK GRANTS +20% MOVE SPEED TODAY.** It is in
+//  `markCore` in Skills.Lightbringer4th.cs, shared by Holy / Life / Blood, and it is a large part
+//  of why everyone is over 200. So "every mark should decrease speed with 20%" has TWO readings and
+//  they are 40 points apart, which is why both are printed:
+//      A — the +20% STAYS and a 20% cut is applied on top  (a Mark is then ~net-neutral)
+//      B — the Mark's +20% BECOMES −20%                    (the Mark is then a real cost)
+//  ⚠ The buffer's Harmony Mark carries NO move speed at all, so under A it is already the fast
+//  choice and under B it stays the fast choice — measured in the last table.
+//
+//  ⚠ Everything here is read off REAL Entities with real gear and the real shelf; the only thing
+//  synthesised is the cut itself, which does not exist in the code yet — that is the point.
+// ============================================================================================
+if (args.Length > 0 && args[0] == "--speed")
+{
+    int L = args.Length > 1 && int.TryParse(args[1], out var spLvl) ? spLvl : 90;
+    string spQ = args.Length > 2 && !args[2].StartsWith("--") ? args[2] : "epic";
+    const float MarkCut = 0.20f;
+
+    // Sprint's top rung, read off the catalog rather than typed: his "+60" is BuffSprint2, and if a
+    // rung ever moves this table moves with it.
+    float sprintFlat = 0f;
+    if (SkillCatalog.Get(SkillCatalog.BuffSprint2) is { } sprintDef)
+        foreach (var m in sprintDef.MagnitudesAt(1) ?? Array.Empty<EffectMagnitude>())
+            if (m.Effect == SkillEffect.BuffMoveSpeed && m.Mode == ModifierMode.Flat) sprintFlat += m.Value;
+
+    // All four Marks share ONE buff key, so this is how a Mark is told from the rest of the shelf
+    // without hardcoding which one the shelf handed out.
+    string spMarkKey = SkillCatalog.Get(SkillCatalog.HolyMark)?.BuffKey ?? "";
+
+    // The melee rogue is race-split (archer merge): Human Nullblade / Elf Phantom / Demon Venomweaver.
+    // Asked of the catalog, never typed — the dagger branch is A of the pair for every race.
+    static Discipline MeleeRogue(Race r) => Disciplines.Of(r, Archetype.Rogue).A;
+
+    var spRaces = new[] { Race.Human, Race.Elf, Race.Demon };
+    var spRoles = new (string Label, Func<Race, (BaseClass Cls, Discipline D)> Pick)[]
+    {
+        ("mage",    _ => (BaseClass.Mage,    Discipline.Magus)),
+        ("fighter", _ => (BaseClass.Fighter, Discipline.Ravager)),
+        ("rogue",   r => (BaseClass.Fighter, MeleeRogue(r))),
+    };
+
+    Console.WriteLine();
+    Console.WriteLine($"=== MOVE SPEED — THE TWO ORDERINGS — level {L}, {spQ} gear, FULL NPC shelf ===");
+    Console.WriteLine($"    cap {StatCaps.MoveSpeed:0} (a row over it prints the cap and a *)   ·   Mark cut {MarkCut:P0}"
+                    + $"   ·   sprint +{sprintFlat:0} flat");
+    Console.WriteLine();
+
+    // ---- where the shelf's numbers actually come from, itemised once ----------------------------
+    {
+        var probe = Who(Race.Human, BaseClass.Fighter, Discipline.Ravager, L, spQ);
+        float tableBase = SpeedTable.BaseRunSpeed(Race.Human, BaseClass.Fighter);
+        float bare = probe.RunSpeed;
+        ApplyNpcBuffs(probe, fullShelf: true);
+        Console.WriteLine("  --- every move-speed source on a fully buffed character (Human fighter) ---");
+        Console.WriteLine($"  {"source",-34} {"flat",6} {"pct",8}");
+        Console.WriteLine($"  {"SpeedTable base (race+class)",-34} {tableBase,6:0} {"-",8}");
+        Console.WriteLine($"  {"gear + armour passives (into BASE)",-34} {bare - tableBase,6:+0;-0;0} {"-",8}");
+        float itemFlat = 0f, itemPct = 0f;
+        foreach (var b in probe.Buffs)
+        {
+            if (!b.Has(SkillEffect.BuffMoveSpeed)) continue;
+            float f = b.Flat(SkillEffect.BuffMoveSpeed), p = b.Percent(SkillEffect.BuffMoveSpeed);
+            if (f == 0f && p == 0f) continue;
+            itemFlat += f; itemPct += p;
+            Console.WriteLine($"  {b.Name,-34} {f,6:+0;-0;0} {p,8:+0%;-0%;-}");
+        }
+        Console.WriteLine($"  {"= the shelf, summed",-34} {itemFlat,6:+0;-0;0} {itemPct,8:+0%;-0%;-}");
+        Console.WriteLine($"  (his \"+69\" is {itemFlat:0} of BUFF flat plus the {bare - tableBase:0} gear and passives fold into");
+        Console.WriteLine("   the BASE, and the Mark's own percent on top. The orderings treat those differently.)");
+        Console.WriteLine("  ⚠ The raw->base gap in the table below is everything that lands BEFORE any buff: the");
+        Console.WriteLine("    armour SET's move-speed line, item speed rolls, and — the rogue's whole point — the");
+        Console.WriteLine("    light Armor Mastery's flat +7. All of it is multiplied by percents and cut by F2.");
+        Console.WriteLine();
+    }
+
+    static string SpCap(float v)
+    {
+        float cap = StatCaps.MoveSpeed;
+        return v > cap + 0.5f ? $"{cap:0}*" : $"{v:0}";
+    }
+
+    // One row of measurements per (race, role) — everything both readings need.
+    var spRows = new List<(string Race, string Role, float Raw, float Base, float Flat,
+                           float PctNoMark, float PctMark)>();
+    foreach (var race in spRaces)
+        foreach (var (label, pick) in spRoles)
+        {
+            var (cls, disc) = pick(race);
+            var e = Who(race, cls, disc, L, spQ);
+            float bas = e.RunSpeed;                       // gear + armour passives already folded in
+            ApplyNpcBuffs(e, fullShelf: true);
+            float flat = 0f, pct = 0f, markPct = 0f, markFlat = 0f;
+            foreach (var b in e.Buffs)
+            {
+                if (!b.Has(SkillEffect.BuffMoveSpeed)) continue;
+                float f = b.Flat(SkillEffect.BuffMoveSpeed), p = b.Percent(SkillEffect.BuffMoveSpeed);
+                flat += f; pct += p;
+                if (b.Key == spMarkKey) { markFlat += f; markPct += p; }
+            }
+            // Sanity: the engine must agree with the arithmetic this table is built on, or every
+            // column below is a story about a character the game does not have.
+            float live = e.EffectiveSpeed, mine = Math.Min(bas * (1f + pct) + flat, e.MoveSpeedCap);
+            if (Math.Abs(live - mine) > 0.5f)
+                Console.WriteLine($"  !! {race} {label}: engine {live:0} vs computed {mine:0} — the model below is WRONG");
+            spRows.Add((race.ToString(), label, SpeedTable.BaseRunSpeed(race, cls), bas,
+                        flat - markFlat, pct - markPct, pct));
+        }
+
+    // ---- the table he asked for, once per reading of "the Mark decreases speed by 20%" ----------
+    void SpTable(string title, string note, bool markKeepsItsBonus)
+    {
+        Console.WriteLine($"  --- {title} ---");
+        Console.WriteLine($"      {note}");
+        Console.WriteLine($"  {"race",-6} {"role",-8} {"raw",4} {"base",5} {"buffs",-11} {"NO MARK",8} {"TODAY",6}"
+                        + $" {"F1",6} {"F2",6}  ||  {"TODAY",6} {"F1",6} {"F2",6}   (right: +sprint)");
+        foreach (var r in spRows)
+        {
+            // The percent the character wears once the ruling is in. Reading A keeps the Mark's own
+            // +20% and stacks the cut on it; reading B spends the Mark's percent slot on the cut.
+            float pctUsed = markKeepsItsBonus ? r.PctMark : r.PctNoMark;
+            float NoMark(float extra) => r.Base * (1f + r.PctNoMark) + r.Flat + extra;
+            float Today(float extra) => r.Base * (1f + r.PctMark) + r.Flat + extra;
+            float F1(float extra) => r.Base * (1f + pctUsed) * (1f - MarkCut) + r.Flat + extra;
+            float F2(float extra) => (r.Base * (1f + pctUsed) + r.Flat + extra) * (1f - MarkCut);
+            Console.WriteLine($"  {r.Race,-6} {r.Role,-8} {r.Raw,4:0} {r.Base,5:0} {"x" + (1f + r.PctNoMark).ToString("0.00") + " +" + r.Flat.ToString("0"),-11}"
+                            + $" {SpCap(NoMark(0)),8} {SpCap(Today(0)),6} {SpCap(F1(0)),6} {SpCap(F2(0)),6}"
+                            + $"  ||  {SpCap(Today(sprintFlat)),6} {SpCap(F1(sprintFlat)),6} {SpCap(F2(sprintFlat)),6}");
+        }
+        Console.WriteLine();
+    }
+
+    SpTable("READING A — the Mark KEEPS its +20% move speed and takes a 20% cut on top",
+            "net effect of wearing a Mark: x1.20 x0.80 = x0.96 on the base. Nearly nothing.", true);
+    SpTable("READING B — the Mark's +20% move speed BECOMES −20%",
+            "net swing vs today: x1.20 -> x0.80, a third off the percent half of the bar.", false);
+
+    // ---- what the choice actually decides --------------------------------------------------------
+    Console.WriteLine("  --- what a Mark COSTS you against NO MARK AT ALL, in points ---");
+    Console.WriteLine($"  {"race",-6} {"role",-8} {"today",8} {"A:F1",8} {"A:F2",8} {"B:F1",8} {"B:F2",8}");
+    foreach (var r in spRows)
+    {
+        float noMark = r.Base * (1f + r.PctNoMark) + r.Flat;
+        float today  = r.Base * (1f + r.PctMark) + r.Flat;
+        float a1 = r.Base * (1f + r.PctMark) * (1f - MarkCut) + r.Flat;
+        float a2 = (r.Base * (1f + r.PctMark) + r.Flat) * (1f - MarkCut);
+        float b1 = r.Base * (1f + r.PctNoMark) * (1f - MarkCut) + r.Flat;
+        float b2 = (r.Base * (1f + r.PctNoMark) + r.Flat) * (1f - MarkCut);
+        Console.WriteLine($"  {r.Race,-6} {r.Role,-8} {today - noMark,8:+0.0;-0.0;0} {a1 - noMark,8:+0.0;-0.0;0}"
+                        + $" {a2 - noMark,8:+0.0;-0.0;0} {b1 - noMark,8:+0.0;-0.0;0} {b2 - noMark,8:+0.0;-0.0;0}");
+    }
+
+    Console.WriteLine();
+    Console.WriteLine("  --- THE BAND: how far the rogue sits above the mage of his own race (buffed, no sprint) ---");
+    Console.WriteLine($"  {"race",-6} {"no mark",9} {"today",9} {"A:F1",9} {"A:F2",9} {"B:F1",9} {"B:F2",9}");
+    foreach (var race in spRaces)
+    {
+        var m = spRows.First(r => r.Race == race.ToString() && r.Role == "mage");
+        var g = spRows.First(r => r.Race == race.ToString() && r.Role == "rogue");
+        float Gap(Func<(string Race, string Role, float Raw, float Base, float Flat, float PctNoMark, float PctMark), float> f)
+            => f(g) - f(m);
+        Console.WriteLine($"  {race,-6} "
+            + $"{Gap(r => r.Base * (1f + r.PctNoMark) + r.Flat),9:0.0} "
+            + $"{Gap(r => r.Base * (1f + r.PctMark) + r.Flat),9:0.0} "
+            + $"{Gap(r => r.Base * (1f + r.PctMark) * (1f - MarkCut) + r.Flat),9:0.0} "
+            + $"{Gap(r => (r.Base * (1f + r.PctMark) + r.Flat) * (1f - MarkCut)),9:0.0} "
+            + $"{Gap(r => r.Base * (1f + r.PctNoMark) * (1f - MarkCut) + r.Flat),9:0.0} "
+            + $"{Gap(r => (r.Base * (1f + r.PctNoMark) + r.Flat) * (1f - MarkCut)),9:0.0}");
+    }
+
+    Console.WriteLine();
+    Console.WriteLine("  --- WHY THE BAND CLOSED: A FLAT SHELF IS WORTH MORE TO A SLOW CHARACTER ---");
+    Console.WriteLine($"      the shelf is the SAME +{spRows[0].Flat:0} for all nine rows, so it buys the mage a bigger");
+    Console.WriteLine("      share of his own speed than it buys the rogue. That, not the Mark, is what");
+    Console.WriteLine("      put everyone in the rogue's band.");
+    Console.WriteLine($"  {"race",-6} {"role",-8} {"base",5} {"buffed",7} {"gain",6} {"x base",7}");
+    foreach (var r in spRows)
+    {
+        float buffed = r.Base * (1f + r.PctMark) + r.Flat;
+        Console.WriteLine($"  {r.Race,-6} {r.Role,-8} {r.Base,5:0} {buffed,7:0} {buffed - r.Base,6:+0;-0;0} {buffed / r.Base,7:0.00}");
+    }
+
+    Console.WriteLine();
+    Console.WriteLine("  ⚠ F2 is what the engine does TODAY (every slow already orders this way), so choosing F1");
+    Console.WriteLine("    re-orders every percentage debuff in the game, not just the Mark.");
+    Console.WriteLine("  ⚠ THE BAND BARELY MOVES IN EITHER ORDERING. Both scale the SAME base difference by the");
+    Console.WriteLine("    same factors, so the rogue's lead over the mage shrinks in both and widens in neither:");
+    Console.WriteLine("    a cut that lands on everyone cannot reserve the top of the band for anyone. What sets");
+    Console.WriteLine("    the band is the FLAT shelf (it is identical for all nine rows) against the base spread.");
+    Console.WriteLine("  ⚠ The buffer's Harmony Mark carries NO move speed, so today it is already 20% of base");
+    Console.WriteLine("    behind the healer's three; under reading A it becomes the FAST Mark by the same amount.");
+    return;
+}
 if (args.Length > 0 && args[0] == "--blowrate")
 {
     // `BL-188` — THE BLOW LANDING RATE, measured, not derived. Prints the whole product he

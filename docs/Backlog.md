@@ -32,7 +32,15 @@ different professions to farm to see who can craft what — and it's a single pl
 So **`BL-05`** and **`BL-50`** are not to be worked on or re-raised until you open that playtest.
 Nothing about them is blocked or broken; they wait on a test only you can run.
 
-★ **The ones you named most recently (2026-09-13, second message):** the CC-resist formula.
+★ **The ones you named most recently (2026-09-16, the playtest):** ten asks, `BL-238`…`BL-247`.
+The twelve BUGS from the same pass are in [testing/Open-Checklist.md](testing/Open-Checklist.md) §100,
+not here. ✅ **`BL-238`'s table is delivered** —
+[balance/MoveSpeedOrderings.md](balance/MoveSpeedOrderings.md), both orderings on your nine rows —
+and it needs **three** answers back, not one: which ordering, which *reading* of "decrease by 20%"
+(a Mark **grants** +20% move speed today), and whether the buffer's Harmony Mark takes the cut.
+The other nine asks are 🔵 waiting to be built.
+
+★ **The ones before those (2026-09-13, second message):** the CC-resist formula.
 ✅ **BUILT (0.139.0)** as **`BL-225`** — control resistances **COMPOUND** now, every source its own
 `(1−r)` factor, so your harmony 20% + buff 20% + passive 20% is **×0.512** and with an epic set
 **×0.369**, your *"~3 times less"*. The three 0.8 clamps are deleted for the same reason you deleted
@@ -179,7 +187,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-233` | ❓ | THE DEMON BUFFER'S P.DEF — measured three ways and heavy is AHEAD; I need your two sheets | classes |
 | `BL-234` | ❓ | URGENT LESSER HEAL — built to your four numbers; the per-rank falloff is mine to confirm | classes |
 | `BL-237` | ❓ | WARRIOR 3rd + 4th — **BUILT** in 0.146.0; three readings of yours are mine to confirm | classes |
-| `BL-238` | 🔴 | EVERY MARK COSTS 20% MOVE SPEED — the two-formula TABLE is owed first; the buff shelf puts everyone over 200 | buffs |
+| `BL-238` | 🔵 | EVERY MARK COSTS 20% MOVE SPEED — ✅ **the table is DELIVERED**; waiting on your ordering AND on which reading of "decrease by 20%" | buffs |
 | `BL-239` | 🔵 | AN ITEM LOCK, BY ITEM ID — no sell/dismantle/delete/keeper/trade; consumables still usable | items |
 | `BL-240` | 🔵 | INSTANT SELL BY RARITY, scoped by the vendor tab you are on | items |
 | `BL-241` | 🔵 | A PER-TYPE RARITY FILTER ON PICKUP — and it drops you from the party LOOT ROSTER too | items |
@@ -1821,7 +1829,7 @@ until you write them. That line is the reminder; nothing is invented in the mean
 
 ---
 
-## `BL-238` 🔴 EVERY MARK SHOULD COST 20% MOVE SPEED — and first, the table you asked for
+## `BL-238` 🔵 EVERY MARK SHOULD COST 20% MOVE SPEED — the table is delivered, the ruling is yours
 
 **2026-09-16.** *"every mark should decrease speed with 20% -> the move speed of chars with all the
 buffs is + 69 and make all over 200.. And this values should be reserved for rogues ... I just don't
@@ -1847,6 +1855,29 @@ itself, and applied BEFORE it does not. That is exactly the difference between y
 
 ⚠ It also touches every other percentage debuff in the game, not just Marks — slows SUM and are
 clamped at 90%, and the same ordering question governs them. Whatever you pick becomes the rule.
+
+✅ **THE TABLE IS BUILT — [docs/balance/MoveSpeedOrderings.md](balance/MoveSpeedOrderings.md)**,
+off `dotnet run --project tools/BalanceMatrix -- --speed` (real level-90 Entities, real epic gear,
+the real shelf; the mode checks itself against `Entity.EffectiveSpeed` on every row). Nine rows,
+both orderings, with and without the +60 sprint, exactly the columns you listed. **What it needs
+back from you is now THREE answers, not one:**
+
+1. 🔴 **WHICH READING?** A Mark **grants +20% move speed today** (`markCore`,
+   `Skills.Lightbringer4th.cs`) — Holy, Life and Blood are all speed buffs. So *"decrease speed with
+   20%"* can mean **(A)** keep the +20% and cut 20% on top — net ×0.96, worth about **−5 points** —
+   or **(B)** the +20% becomes −20%, worth **−35 to −44**. Forty points apart. Not picked for you.
+2. **F1 or F2?** F2 is what the engine already does, so F1 re-orders every slow in the game too.
+3. **Does the buffer's Harmony Mark take the cut?** It carries **no move speed at all** today, so the
+   four Marks already disagree by 20% of base.
+
+🔑 **AND THE FINDING WORTH READING BEFORE YOU RULE: the ordering does not reserve the band.** F1 and
+F2 produce the **identical** rogue-minus-mage gap — both scale the same base difference by the same
+factors, and the +61 flat shelf is common to all nine rows, so it cancels out of a difference. Every
+version of the cut makes the rogue's lead *smaller*. What closed the band is the flat shelf itself
+(the mage multiplies his own speed by 1.74, the elf rogue by 1.58 — a flat buff pays the slowest
+character the most), and with sprint **every row in the game is at the 250 cap today**. §6 of the
+page lists what would actually reserve the top of the band — a percent shelf instead of a flat one is
+the shortest road — all unbuilt and unruled.
 
 ## `BL-239` 🔵 AN ITEM LOCK, BY ITEM ID
 

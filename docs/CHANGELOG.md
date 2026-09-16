@@ -12,7 +12,37 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-16 (latest) — 0.146.0: the warrior's 3rd and 4th tiers, race by race
+## 2026-09-16 (latest) — `BL-238`: the move-speed table, both orderings, measured
+
+No game change — a **measurement** and the report it produced, which is what `BL-238` asks for first
+(*"i just don't know the formula we should use - can u make me tables with bot formulas"*).
+
+**New: `dotnet run --project tools/BalanceMatrix -- --speed [level] [quality]`** — real level-90
+`Entity` objects, real epic gear, the real NPC shelf, nine rows (3 races × mage/fighter/rogue) and
+both of his orderings side by side, with and without the +60 sprint. The mode re-reads
+`Entity.EffectiveSpeed` on every row and prints `!!` if its own arithmetic and the engine disagree,
+so the page cannot go quietly stale. Written up in
+**[docs/balance/MoveSpeedOrderings.md](balance/MoveSpeedOrderings.md)**.
+
+Three things it found, all of which change the shape of the ruling:
+
+- 🔴 **A MARK GRANTS +20% MOVE SPEED TODAY.** `markCore` in `Skills.Lightbringer4th.cs` carries
+  `BuffMoveSpeed +20%` beside its attack- and cast-speed lines, so Holy/Life/Blood are speed *buffs*.
+  *"every mark should decrease speed with 20%"* therefore has two readings 40 points apart — keep the
+  +20% and cut on top (net ×0.96, worth about −5 points), or flip the +20% to −20% (−35 to −44).
+  Both are tabulated; neither was picked.
+- ⚠ **The buffer's Harmony Mark carries no move speed at all**, so the four Marks already disagree on
+  this axis by 20% of base.
+- 🔑 **Neither ordering reserves the band for rogues** — F1 and F2 give the *identical* rogue-minus-mage
+  gap, because both scale the same base difference by the same factors and the +61 flat shelf is
+  common to all nine rows. What closed the band is that flat shelf: the mage multiplies his own speed
+  by 1.74, the elf rogue by 1.58. And with sprint, **every row is at the 250 cap today**. §6 of the
+  page lists what would actually reserve the band, unbuilt and unruled.
+
+⚠ **F2 is what the engine already does** — `EffectiveSpeed` is `ModifiedStat(base) × (1 − SlowFraction)`
+— so choosing F1 re-orders every percentage debuff in the game, slows included, not just the Mark.
+
+## 2026-09-16 — 0.146.0: the warrior's 3rd and 4th tiers, race by race
 
 🔴 **NEW APK REQUIRED** — a class-skill-TABLE change (the client builds its Learn tab locally). No
 protocol change. A `game.db` delete is not required, but is harmless and is what I ran here.
