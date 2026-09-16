@@ -890,6 +890,14 @@ public class Entity
     /// While &gt; 0 the player can't move/cast/act.</summary>
     public int StandUpTicks { get; set; }
 
+    /// <summary>Ticks left in which the AUTOPILOT MAY NOT WRITE THIS CHARACTER'S DESTINATION, because
+    /// the player moved himself. Set by a manual move command, held while he is still walking, and
+    /// counted down only once he has stopped. Runtime only — an autopilot that has been handed back
+    /// the feet is not a state worth persisting.
+    /// <para>§100, 2026-09-16: *"when in auto farm when i click on the ground char start to move but
+    /// then gets rubber banded back"*. See <c>GameLoopService.AutoManualMoveHoldTicks</c>.</para></summary>
+    public int ManualMoveHoldTicks { get; set; }
+
     /// <summary>Tick the entity last SAT DOWN, so a voluntary stand can tell a genuine rest from
     /// sit/stand spam. Runtime only — sitting does not survive a relog.</summary>
     public long SatDownTick { get; set; }

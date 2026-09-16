@@ -706,8 +706,10 @@ public static class MobCatalog
     /// how an 80+ boss drops both the S and the A scroll (bosses pay several pieces — see
     /// <see cref="BossGearRates"/>).
     ///
-    /// GREATER is the elite reward and SAFE is boss-only, both at the mob's own band — the two types
-    /// that make an enchant worth attempting are exactly the two you cannot farm off a normal mob.
+    /// 🔴 GREATER AND SAFE ARE BOTH BOSS-ONLY since 2026-09-16 (§100). Greater used to be the ELITE
+    /// reward; his ruling moved it up — *"greater scrolls of enchant should be boss only"* — so the two
+    /// types that make an enchant worth attempting are now both a boss reward, and an elite pays the
+    /// band's ordinary scroll and nothing else.
     ///
     /// ⚠ These are INDEPENDENT rolls (GroupId 0 = the "other" tuning group), so they take the global
     /// rate AND that group's x3 — the delivered chances are three times the numbers authored here,
@@ -724,8 +726,12 @@ public static class MobCatalog
         if (rank == MobRank.Elite)
         {
             yield return new DropEntry(Normal(band), 0.030f);                                    // 9%
-            yield return new DropEntry(ItemCatalog.EnchantScrollKey(ScrollKind.Greater, band),
-                                       0.006f);                                                  // 1.8%
+            // 🔴 GREATER IS BOSS-ONLY SINCE 2026-09-16 (§100, his ruling: *"greater scrolls of enchant
+            //    should be boss only"*). It used to pay an elite 0.006 authored = 1.8% per kill, and an
+            //    elite camp is something you can farm, so at his ×100 test rate that read as stacks.
+            //    The line above — the band's NORMAL scroll — is what an elite pays now, and SAFE was
+            //    already boss-only: the two scrolls that make an enchant worth attempting are both a
+            //    boss reward, which is the shape the original spec described and only half implemented.
             yield break;
         }
 

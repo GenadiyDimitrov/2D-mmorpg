@@ -1344,6 +1344,12 @@ public class GameLoopService : BackgroundService
 
         entity.TargetX = tx;
         entity.TargetY = ty;
+        // 🔑 THE PLAYER HAS TAKEN THE FEET BACK. While this is running, the autopilot's own movement
+        //    arm (AutoRoam) leaves the destination alone — his standing rule, *"auto farm should not
+        //    prevent me from moving … it should allow me to kite"*. It is set unconditionally rather
+        //    than only when auto-hunt is on: the flag costs nothing when nothing reads it, and a tap
+        //    that lands in the same tick as the toggle would otherwise fall through the gap.
+        entity.ManualMoveHoldTicks = AutoManualMoveHoldTicks;
     }
 
     /// <summary>Clamp a move destination to the domain the player is CURRENTLY in: the positive overworld
@@ -2355,7 +2361,15 @@ public class GameLoopService : BackgroundService
         entity.PendingResTicks = 0;
         entity.Hp = entity.MaxHp;
         entity.Mp = entity.MaxMp;
-        entity.Buffs.Clear();
+        // 🔴🔑 NO `Buffs.Clear()` HERE — THAT LINE WAS THE WHOLE OF §100's *"angels protection does not
+        //    work, you respawn in town with no buffs"* (2026-09-16). `Kill` has ALREADY decided what a
+        //    death costs you: with a preservation buff up it removes only the protection itself and
+        //    leaves every other blessing standing, and without one it clears the lot. Clearing a second
+        //    time here was redundant in the ordinary case and destroyed the feature in the one case it
+        //    exists for — a player who paid 5 Skill Stones for Angel's Protection watched his bar
+        //    survive the death and empty the instant he pressed "return to town".
+        // ⚠ A death suffered while OFFLINE (`DiedWhileAway`) went through `Kill` too, at the time it
+        //    happened, so nothing reaches this point with buffs that were meant to be gone.
         // Respawn in the city that MANAGES the field you fell in, and only fall back to the nearest town
         // when no field does — open ground, the boss vale, a dungeon (owner: "each field has its parent
         // city; dying returns you to that city, and as a failsafe keep the nearest-city formula").
@@ -2366,6 +2380,11 @@ public class GameLoopService : BackgroundService
         var town = RegionMap.ManagingCity(entity.X, entity.Y)
                    ?? WorldMap.NearestSafeZone(entity.X, entity.Y);
         PlaceEntity(entity, town.X + _rng.Next(-250, 250), town.Y + _rng.Next(-250, 250));
+        // Push the bar the survivor actually stands up with. Without the clear above, a protected
+        // player keeps his blessings through the respawn — and the client, which empties its own bar on
+        // death, has to be told they are still there or the feature works and looks like it doesn't.
+        PushBuffs(entity);
+        SendStats(entity);
     }
 
     // ----- Class change ------------------------------------------------------------
@@ -4850,6 +4869,22 @@ public class GameLoopService : BackgroundService
     private const float AutoChaseMargin = 400f;
     private const float AutoReturnEpsilon = 150f;
 
+    /// <summary>How long the autopilot keeps its hands off your feet after you have MOVED YOURSELF —
+    /// counted from the moment you stop walking, not from the tap (§100, 2026-09-16).
+    ///
+    /// <para>🔑 His rule, and it is a standing one: *"auto farm should not prevent me from moving → it
+    /// should allow me to kite; only when stopped then it attacks and use skills."* A static farm spot
+    /// used to rewrite your destination to the farm centre EVERY TICK you stood more than
+    /// <see cref="AutoReturnEpsilon"/> from it, so a tap on the ground walked two steps and snapped
+    /// back — his *"char start to move but then gets rubber banded back"*. KITING IS INTENDED and has
+    /// been since playtest 22; the autopilot owns the fighting, the player owns the feet.</para>
+    ///
+    /// <para>⚠ Five seconds, not forever: the static spot is still a feature, and after you have
+    /// finished moving and stood still for a beat it may take you home again. It is the FIGHT arms
+    /// that are untouched by this — attacking and casting carry on throughout, which is exactly what
+    /// "it should allow me to kite" asks for.</para></summary>
+    private const int AutoManualMoveHoldTicks = 50;   // 5s @ 10 ticks/s
+
     // Server-default DAILY caps (docs/design/AutoHunt.md): online auto 8h, offline farm 2h; disconnect
     // grace 180s. Tunable in seconds via the Debug panel / /testcaps. Premium (12h/4h) is the
     // per-account override on AccountFarmBudget, which wins over these.
@@ -5292,6 +5327,12 @@ public class GameLoopService : BackgroundService
     /// wander to a fresh random point within the farm range (re-scanning as it goes).</summary>
     private void AutoRoam(Entity p)
     {
+        // 🔴 THE PLAYER'S OWN MOVE WINS (§100, 2026-09-16). This is the only place the autopilot writes
+        //    a destination when there is nothing to fight, and in STATIC mode it rewrote it EVERY TICK
+        //    — so a tap on the ground walked two steps and snapped back to the farm centre. The hold is
+        //    refreshed by every move command and counted down only once he has actually stopped, so a
+        //    long walk is never interrupted halfway. See AutoManualMoveHoldTicks.
+        if (p.ManualMoveHoldTicks > 0) return;
         if (p.AutoFarmStatic)
         {
             float dx = p.FarmCenterX - p.X, dy = p.FarmCenterY - p.Y;
@@ -9081,6 +9122,12 @@ public class GameLoopService : BackgroundService
                 // two would alternate and he would vibrate on the spot instead of being controlled.
                 // Auto-potions go with them, which is the right call anyway — quaffing is an ACTION,
                 // and the whole state is "cannot act".
+                // 🔑 THE MANUAL-MOVE HOLD RUNS DOWN ONLY ONCE HE HAS STOPPED (§100, 2026-09-16). While
+                //    a destination is still set he is WALKING, and a long walk must not expire halfway
+                //    and be yanked back to the farm centre. Decremented BEFORE AutoPilot so the tick he
+                //    arrives is still his. See AutoManualMoveHoldTicks.
+                if (entity.ManualMoveHoldTicks > 0 && entity.TargetX is null)
+                    entity.ManualMoveHoldTicks--;
                 AutoPilot(entity);   // auto-potions always; hunt loop if enabled (may queue a skill)
                 if (entity.AutoHuntEnabled || entity.IsOfflineFarming)
                     TickAutoHuntBudget(entity);   // idle/offline runtime caps

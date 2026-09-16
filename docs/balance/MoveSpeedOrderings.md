@@ -86,32 +86,35 @@ multiplied by percents and, under F2, cut by the Mark.
 ## 2. READING A — the Mark keeps its +20% and takes a 20% cut on top
 
 Level 90, epic gear, full NPC shelf. `250*` = the row exceeds the cap and the game gives you 250.
+Today +Sprint all geto to max 250
 
-| race  | role    |  raw | base | shelf     | NO MARK | TODAY |   F2 | +sprint TODAY | +sprint F2 |
-| ----- | ------- | ---: | ---: | --------- | ------: | ----: | ---: | ------------: | ---------: |
-| Human | mage    |  109 |  114 | ×1.00 +61 |     175 |   198 |  158 |         250\* |        206 |
-| Human | fighter |  115 |  115 | ×1.00 +61 |     176 |   199 |  159 |         250\* |        207 |
-| Human | rogue   |  115 |  132 | ×1.00 +61 |     193 |   220 |  176 |         250\* |        224 |
-| Elf   | mage    |  114 |  119 | ×1.00 +61 |     180 |   204 |  163 |         250\* |        211 |
-| Elf   | fighter |  143 |  143 | ×1.00 +61 |     204 |   233 |  186 |         250\* |        234 |
-| Elf   | rogue   |  143 |  161 | ×1.00 +61 |     222 | 250\* |  203 |         250\* |      250\* |
-| Demon | mage    |  113 |  118 | ×1.00 +61 |     179 |   203 |  162 |         250\* |        210 |
-| Demon | fighter |  112 |  112 | ×1.00 +61 |     173 |   195 |  156 |         250\* |        204 |
-| Demon | rogue   |  112 |  129 | ×1.00 +61 |     190 |   216 |  173 |         250\* |        221 |
+| race  | role    |  raw | base | shelf     | NO MARK | TODAY |   F2 | +sprint F2 |
+| ----- | ------- | ---: | ---: | --------- | ------: | ----: | ---: | ---------: |
+| Human | mage    |  109 |  114 | ×1.00 +61 |     175 |   198 |  158 |        206 |
+| Human | fighter |  115 |  115 | ×1.00 +61 |     176 |   199 |  159 |        207 |
+| Human | rogue   |  115 |  132 | ×1.00 +61 |     193 |   220 |  176 |        224 |
+| Elf   | mage    |  114 |  119 | ×1.00 +61 |     180 |   204 |  163 |        211 |
+| Elf   | fighter |  143 |  143 | ×1.00 +61 |     204 |   233 |  186 |        234 |
+| Elf   | rogue   |  143 |  161 | ×1.00 +61 |     222 | 250\* |  203 |      250\* |
+| Demon | mage    |  113 |  118 | ×1.00 +61 |     179 |   203 |  162 |        210 |
+| Demon | fighter |  112 |  112 | ×1.00 +61 |     173 |   195 |  156 |        204 |
+| Demon | rogue   |  112 |  129 | ×1.00 +61 |     190 |   216 |  173 |        221 |
 
-## 3. READING B — the Mark's +20% becomes −20%
+## 3. READING B — the Mark's +20% becomes −10%
 
-| race  | role    |  raw | base | shelf     | NO MARK | TODAY |   F2 | +sprint TODAY | +sprint F2 |
-| ----- | ------- | ---: | ---: | --------- | ------: | ----: | ---: | ------------: | ---------: |
-| Human | mage    |  109 |  114 | ×1.00 +61 |     175 |   198 |  140 |         250\* |        188 |
-| Human | fighter |  115 |  115 | ×1.00 +61 |     176 |   199 |  141 |         250\* |        189 |
-| Human | rogue   |  115 |  132 | ×1.00 +61 |     193 |   220 |  155 |         250\* |        203 |
-| Elf   | mage    |  114 |  119 | ×1.00 +61 |     180 |   204 |  144 |         250\* |        192 |
-| Elf   | fighter |  143 |  143 | ×1.00 +61 |     204 |   233 |  163 |         250\* |        211 |
-| Elf   | rogue   |  143 |  161 | ×1.00 +61 |     222 | 250\* |  178 |         250\* |        226 |
-| Demon | mage    |  113 |  118 | ×1.00 +61 |     179 |   203 |  143 |         250\* |        191 |
-| Demon | fighter |  112 |  112 | ×1.00 +61 |     173 |   195 |  138 |         250\* |        186 |
-| Demon | rogue   |  112 |  129 | ×1.00 +61 |     190 |   216 |  152 |         250\* |        200 |
+Today +Sprint all geto to max 250
+
+| race  | role    |  raw | base | shelf     | NO MARK | TODAY | F2(10) | +sprint F2(10) |
+| ----- | ------- | ---: | ---: | --------- | ------: | ----: | -----: | -------------: |
+| Human | mage    |  109 |  114 | ×1.00 +61 |     175 |   198 |    157 |            211 |
+| Human | fighter |  115 |  115 | ×1.00 +61 |     176 |   199 |    158 |            212 |
+| Human | rogue   |  115 |  132 | ×1.00 +61 |     193 |   220 |    174 |            228 |
+| Elf   | mage    |  114 |  119 | ×1.00 +61 |     180 |   204 |    162 |            216 |
+| Elf   | fighter |  143 |  143 | ×1.00 +61 |     204 |   233 |    184 |            238 |
+| Elf   | rogue   |  143 |  161 | ×1.00 +61 |     222 | 250\* |    200 |          250\* |
+| Demon | mage    |  113 |  118 | ×1.00 +61 |     179 |   203 |    161 |            215 |
+| Demon | fighter |  112 |  112 | ×1.00 +61 |     173 |   195 |    156 |            210 |
+| Demon | rogue   |  112 |  129 | ×1.00 +61 |     190 |   216 |    171 |            225 |
 
 ## 4. What a Mark costs you, against no Mark at all
 
@@ -195,3 +198,26 @@ dotnet run --project tools/BalanceMatrix -- --speed [level] [quality]
 Defaults to level 90 and epic gear. The mode checks its own arithmetic against
 `Entity.EffectiveSpeed` on every row and prints `!!` if the model and the engine disagree, so a
 future change to how speed composes cannot leave this page quietly wrong.
+
+
+Owner test Table -> Rogues dont use Frenzy (decreases evasion)
+Shelf/Full for rogues is 53 for all other is 61/69
+
+| race  | role    | base  | shelf | F2(10)/shelf | +spr F2(10)/sh | full  | F2(10)/full | +dsh F2(10)/sh |
+| ----- | ------- | :---: | :---: | :----------: | :------------: | :---: | :---------: | :------------: |
+| Human | mage    |  114  |  175  |     157      |      211       |  183  |     165     |      219       |
+| Human | fighter |  115  |  176  |     158      |      212       |  184  |     166     |      220       |
+| Human | rogue   |  132  |  185  |     166      |      220       |  185  |     166     |      220       |
+| Elf   | mage    |  119  |  180  |     162      |      216       |  188  |     169     |      223       |
+| Elf   | fighter |  143  |  204  |     184      |      238       |  212  |     191     |      245       |
+| Elf   | rogue   |  161  |  214  |     193      |      247       |  214  |     193     |      247       |
+| Demon | mage    |  118  |  179  |     161      |      215       |  187  |     168     |      222       |
+| Demon | fighter |  112  |  173  |     156      |      210       |  173  |     156     |      210       |
+| Demon | rogue   |  129  |  182  |     164      |      218       |  182  |     164     |      218       |
+
+Shelf: (1)Elf Rogue > Elf Fighter > (3)Human Rogue > (4)Demon Rogue
+Full: (1)Elf Rogue > Elf Fighter > Elf Mage > Demon Mage > (5)Human Rogue > Human Fighter > Human Mage > (8)Demon Rogue
+
+If rogues dont use Frenzy/Harmony of Maddness they become lot slower they dont lose 16 evasion and ~21%HP but they miss on 16 speed (~ +7/14 with mark)
+Their sprint alows them to keep high speed more often and have jumping skill. -> after all other use their dash pots for the next 75 secs they are slower
+

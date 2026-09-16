@@ -1379,7 +1379,7 @@ Mastery's text come off the compiled catalogue, and the trap cast time is in bot
   shortens a fighter's stance. Worth a glance at whether any physical reuse now feels too short —
   it is a widening, not a number change.
 
-## §100 — YOUR PLAYTEST OF 2026-09-16, the BUGS (thirteen; SIX fixed)
+## §100 — YOUR PLAYTEST OF 2026-09-16, the BUGS (thirteen; NINE fixed, one answered)
 
 You handed this list the moment 0.146.0 was committed, so apart from the ones marked ✅ **none of it
 has been looked at in code** — it is recorded here exactly as you wrote it, and the ten ASKS that
@@ -1436,22 +1436,30 @@ re-reports of standing rules are marked as such.
   `ApplyBuff` — which, told the real hour, accepts it — ever saw it. Every ordinary blessing authors
   the full hour itself, which is why the Mark was the only one that misbehaved. 🔑 **A pre-filter that
   predicts a decision must be given the same inputs as the decision.**
-- 🔴 **AUTO-FARM RUBBER-BANDS YOU.** *"when in auto farm when i click on the ground char start to move
-  but then gets rubber banded back."* Your rule, and it is the standing one: *"auto farm should not
-  prevent me from moving -> it should allow me to kite only when stoped then it attacks and use
-  skills."* ⚠ **KITING IS INTENDED** — that has been a rule since playtest 22, so this is the autopilot
-  fighting the player for the movement authority, not a movement bug.
-- 🔴 **ANGEL'S PROTECTION DOES NOT WORK** — you respawn in town with no buffs. ⚠ Read against
-  `BL-60`, which is where the death-penalty / buff-keep-on-death design lives and which says *"nothing
-  exists in code"*. So the first question is whether the skill was ever wired at all, not why it broke.
-- 🔴 **GREATER SCROLLS OF ENCHANT SHOULD BE BOSS-ONLY.** At ×100 you got stacks — *"even if i cut the
-  amount /100 i still will have 2-3"*. So they are on ordinary drop tables and should not be.
-- 🔴 **ENCHANT SCROLL RATES CUT ≥5×.** Scroll(B) is **5.42% at ×100** and you got stacks while
-  fighting. Your yardstick, and it is the one to tune against: *"enchants are a drop that is rarer
-  than a weapon, or at least as rare as an epic weapon."* ⚠ Every rate here is composed in ONE place
-  (`MobCatalog.EffectiveRate`) — the global × the drop GROUP's multiplier, plus a per-item override.
-  The `scrolls` group is one of the GUARANTEED ones that ignores the global, which is probably why
-  ×100 did not behave the way you expected.
+- ✅ **AUTO-FARM RUBBER-BANDS YOU — FIXED in 0.148.0.** A **static** farm spot rewrote your
+  destination to the farm centre **every tick** you stood more than 150 units from it, so a ground tap
+  walked two steps and snapped back. A manual move now takes the feet back
+  (`Entity.ManualMoveHoldTicks`): `AutoRoam` leaves your destination alone while it runs, it counts
+  down **only once you have stopped** so a long walk is never cut in half, and it holds 5s after that.
+  **The fight arms are untouched** — it still attacks and casts throughout, which is what *"allow me
+  to kite"* asks for. ⚠ **KITING IS INTENDED**, a rule since playtest 22.
+- ✅ **ANGEL'S PROTECTION DOES NOT WORK — FIXED in 0.148.0, and `BL-60` was a red herring.** The skill
+  WAS wired and `Kill` gets it exactly right: with a preservation buff up it removes only the
+  protection and every other blessing survives. Then **`HandleRespawn` called `Buffs.Clear()`
+  unconditionally** — so the bar survived the death and emptied the moment you pressed "return to
+  town". The respawn now also pushes the bar and stats, because the client empties its own on death.
+- ✅ **GREATER SCROLLS OF ENCHANT ARE BOSS-ONLY — BUILT in 0.148.0.** They were the ELITE reward at
+  1.8% per kill and an elite camp is farmable. Safe was already boss-only, so both of the scrolls that
+  make an enchant worth attempting are a boss reward now; an elite pays the band's ordinary scroll.
+- 🔵 **ENCHANT SCROLL RATES — MEASURED, AND NOTHING WAS CHANGED. It is your ×100, not the table.**
+  The `scrolls` group **stopped being exempt from the global drop rate on 2026-08-18** (the note in
+  this list saying it still ignores the global was STALE — `DropCopies` removed the 100% clamp and the
+  exemption came off with it). So ×100 multiplied enchant scrolls by 100 too. At the shipped ×1 the B
+  rung is `0.15 × 0.005 = 0.075%` per kill — **one per 1,333 kills** — which is exactly the target you
+  set in playtest-21 (*"I need like 2-3 … enchant scrolls must be for over farm"*). A common weapon is
+  one per 267 kills, so a scroll is **already "rarer than a weapon"**. ⚠ **Your other clause is a
+  different number by 100×**: an epic weapon off a normal mob is `0.0001 × 0.075` = 0.00075%/kill, one
+  per 133,000. The two halves of your sentence are **500× apart** — say which you meant and it moves.
 - ⚠ **ROGUES STILL LEARN EVASION MASTERY (the dodge floor).** *"we should have removed it? they have
   enough evasion difference with each mob at their lvl."* This is a re-report of the same shape as
   `BL-15` (`precision` / `anti_magic` should be learnable rather than auto-granted floors), and it is

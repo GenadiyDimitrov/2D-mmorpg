@@ -12,7 +12,55 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-09-16 (latest) — 0.147.0: five of §100's bugs, and two dead channels found behind them
+## 2026-09-16 (latest) — 0.148.0: Angel's Protection, the auto-farm rubber-band, Greater scrolls
+
+**No APK, no protocol change, no `game.db` delete.** All three are server-side.
+
+### Angel's Protection did nothing — `HandleRespawn` cleared the buffs `Kill` had just saved
+
+*"you respawn in town with no buffs"*. `Kill` gets this exactly right: with a preservation buff up it
+removes only the protection itself and every other blessing survives. Then **`HandleRespawn` called
+`entity.Buffs.Clear()` unconditionally** — redundant in the ordinary case and fatal in the one case
+the skill exists for. You paid 5 Skill Stones, watched the bar survive the death, and emptied it by
+pressing "return to town". The line is gone, and the respawn now pushes the bar and stats so the
+client — which empties its own bar on death — is told the blessings are still there.
+
+### Auto-farm rubber-banded you off a click
+
+*"when in auto farm when i click on the ground char start to move but then gets rubber banded back."*
+A **static** farm spot rewrote your destination to the farm centre **every tick** you stood more than
+150 units from it, so a ground tap walked two steps and snapped back. Your rule is the standing one —
+*"auto farm should not prevent me from moving → it should allow me to kite; only when stopped then it
+attacks and use skills"* — and **kiting has been intended since playtest 22**.
+
+A manual move now takes the feet back: `Entity.ManualMoveHoldTicks` is set by every move command and
+the autopilot's movement arm (`AutoRoam`) leaves your destination alone while it runs. It counts down
+**only once you have stopped**, so a long walk is never cut in half, and it holds for 5 seconds after
+that. **The fight arms are untouched** — it still attacks and casts throughout, which is what "allow
+me to kite" asks for.
+
+### Greater scrolls of enchant are BOSS-ONLY
+
+Your ruling, built. Greater used to be the ELITE reward at 1.8% per kill, and an elite camp is
+something you can farm. Safe was already boss-only, so the two scrolls that make an enchant worth
+attempting are now both a boss reward; an elite pays the band's ordinary scroll and nothing else.
+
+### 🔑 The enchant RATE, measured — and it is your ×100, not the table
+
+**Nothing changed here, deliberately.** The `scrolls` group **stopped being exempt from the global
+drop rate on 2026-08-18** (`DropCopies` removed the 100% clamp, so the exemption that existed to
+protect the weights came off). So your ×100 multiplied enchant scrolls by 100 as well.
+
+At the shipped ×1 the B rung is `0.15 × 0.005 = 0.075%` per kill — **one per 1,333 kills** — which is
+precisely the target you set yourself in playtest-21 (*"I need like 2-3 … enchant scrolls must be for
+over farm not a casual one"*, worked out at the time as 0.2% per kill on the E rung). A common weapon
+is one per 267 kills, so the scroll is **already "rarer than a weapon"**.
+
+⚠ Your other clause — *"or at least as rare as an epic weapon"* — is a **different number by 100×**:
+an epic weapon off a normal mob is `0.0001 × 0.075` = 0.00075% per kill, one per 133,000. The two
+halves of your sentence are 500× apart, so this one is left alone until you say which you meant.
+
+## 2026-09-16 — 0.147.0: five of §100's bugs, and two dead channels found behind them
 
 🔴 **NEW APK REQUIRED** (client code + skill card text changed). **No protocol change, no `game.db`
 delete.**
