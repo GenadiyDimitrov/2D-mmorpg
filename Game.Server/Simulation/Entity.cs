@@ -1873,28 +1873,26 @@ public class Entity
         }
     }
 
-    /// <summary>The DISPLAYED M.Atk. Combat (damage + heals) always uses the INTERNAL EffectiveMagicAttack
-    /// with a √; this shrinks only what the player SEES. Path B, refined by the owner 2026-07-25:
-    ///
-    ///   shown = min(internal, scale·√internal)   (scale = 20)
-    ///
-    /// i.e. show the HONEST raw internal until it outgrows the shrink, then switch to scale·√internal. The
-    /// two are equal at internal = 400 (20·√400 = 400), so the switch is continuous. Below it a small
-    /// M.Atk reads as itself (a level-1 wand mage shows ~its real ~13, a fighter's stays tiny); only a
-    /// high-M.Atk geared caster — internal past 400, ~level 30-40 — crosses into the shrink that keeps the
-    /// endgame number from going cosmic. This makes the display STAT-driven, not level-driven: fighters
-    /// stay low on their own because their M.Atk never reaches the crossover. A squared magic buff still
-    /// shows its honest % in the shrink regime; in the raw regime it shows squared, which is fine — that
-    /// band is the low numbers nobody buffs around. Damage is untouched either way.</summary>
-    public float EffectiveMagicAttackShown
-    {
-        get
-        {
-            float internalMAtk = Math.Max(0f, EffectiveMagicAttack);
-            float shrunk = StatCalculator.MagicAttackDisplayScale * MathF.Sqrt(internalMAtk);
-            return MathF.Min(internalMAtk, shrunk);
-        }
-    }
+    // ===== THE SHOWN M.Atk IS GONE — THE SHEET SHOWS THE INTERNAL NUMBER ==========================
+    //
+    // 🔑 Owner, 2026-09-17: *"show the inner mAtk in stats ... now i have archers with 4-5k p atk ..
+    // and mages stay at 1000 ... and looks now very underinflated .. so leave the visual == inner mAtk
+    // and if it feels again overinflated we will fix the formula"*.
+    //
+    // There WAS a display shrink here (`EffectiveMagicAttackShown`, owner 2026-07-25):
+    // `min(internal, 20·√internal)`, equal to the internal below 400 and shrinking above it, so a
+    // level-85 nuker's 1,174 read as 685 on the sheet. It existed to stop the endgame M.Atk going
+    // cosmic next to a P.Atk, and it is retired because it now does the opposite: beside a 4-5k archer
+    // the shrunk number reads as though a mage has no offence at all.
+    //
+    // 🔑 THE LEVER HE NAMED FOR THE NEXT ROUND IS THE FORMULA, NOT THE DISPLAY. If the honest number
+    // reads too big, M.Atk itself moves — do NOT reintroduce a second number that only the sheet sees.
+    // A display value that disagrees with the one the damage uses is how you end up unable to tell a
+    // balance problem from a rendering one, which is half of why the runes/`√` confusion cost three
+    // wrong diagnoses in three days (docs/balance — the 2026-09-09 refit).
+    //
+    // ⚠ Combat never read the shown value anyway: damage and heals take `EffectiveMagicAttack` through
+    // a √. Nothing about damage changes here — only what the sheet and the target window print.
 
     /// <summary>Is this a weapon a mage is TRAINED with (sword or blunt — wands/staves are blunt)? An
     /// untrained weapon (bow/dual/bare hands) triggers the Weapon Proficiency cast-speed penalty.</summary>

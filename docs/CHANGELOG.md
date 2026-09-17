@@ -7,11 +7,48 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.160.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.161.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-17 (latest) — 0.160.0: `BL-246` — THE CHARACTER SHEET BECOMES TWO TABS
+## 2026-09-17 (latest) — 0.161.0: THE SHEET SHOWS THE REAL M.ATK — THE DISPLAY SHRINK IS RETIRED
+
+⚠ **Needs an APK only to see it on the phone's own numbers** — the value is computed server-side, so
+an existing APK connected to this server already shows the new number. No `game.db` change.
+
+*"show the inner mAtk in stats ... now i have archers with 4-5k p atk .. and mages stay at 1000 ... and
+looks now very underinflated .. so leave the visual == inner mAtk and if it feels again overinflated we
+will fix the formula"*.
+
+**There is now ONE M.Atk.** The character sheet and the target window print exactly the
+`EffectiveMagicAttack` the damage formula reads. The shrink — `min(internal, 20·√internal)`, in from
+2026-07-25 — is **deleted**, along with `Entity.EffectiveMagicAttackShown` and
+`StatCalculator.MagicAttackDisplayScale`, which was its only user.
+
+**What moves, measured:** at level 85 in best gear an unbuffed nuker's sheet goes **685 → 1,174**.
+Below internal 400 (roughly level 55 and under) **nothing changes at all** — the shrink was equal to
+the internal value there and only bit above the crossover.
+
+🔑 **The next lever is the FORMULA, not the display** — your words, and the code now says so in three
+places (`Entity.cs`, `StatCalculator.cs`, `docs/Formulas.md`). A display number that disagrees with the
+one damage uses is how you lose the ability to tell a balance problem from a rendering one.
+
+⚠ **One thing the measurement says, for when you look at it on the phone.** Unbuffed, best gear, the
+mage's M.Atk was already AHEAD of the fighter's P.Atk before this change and is further ahead after it:
+
+| lvl | FTR P.Atk | MAGE M.Atk | M/P |
+|---|---|---|---|
+| 40 | 237 | 217 | 0.92 |
+| 61 | 412 | 425 | 1.03 |
+| 76 | 548 | 669 | 1.22 |
+| 85 | 907 | **1,174** | 1.29 |
+
+So the 4-5k archer is a **buffed and enchanted** number, not a base-curve one, and the gap you are
+seeing is the physical buff stack rather than the M.Atk curve. Worth knowing before the formula moves.
+`tools/BalanceMatrix` prints that table now — it replaced the old display-ramp comparison, which
+measured a shrink that no longer exists.
+
+## 2026-09-17 — 0.160.0: `BL-246` — THE CHARACTER SHEET BECOMES TWO TABS
 
 ⚠ **Needs an APK** (the whole change is the window). No new `game.db` delete beyond the one `BL-239`
 and `BL-241` already owe.

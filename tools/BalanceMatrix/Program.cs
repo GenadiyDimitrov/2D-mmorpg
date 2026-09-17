@@ -142,7 +142,7 @@ if (args.Length > 0 && args[0] == "--mana-ray")
 
     Console.WriteLine();
     Console.WriteLine($"=== MANA RAY: power {power} at level {L} (Human Cleric, wand + best gear, Spell Rune on) ===");
-    Console.WriteLine($"  caster internal M.Atk {hAtk} (shown {(int)healer.EffectiveMagicAttackShown}), " +
+    Console.WriteLine($"  caster M.Atk {hAtk}, " +
                       $"magic crit {healer.MagicCritChance:P1} x{StatCaps.MagicCritDamageBase}");
     Console.WriteLine();
     Console.WriteLine($"  {"target",-14} {"M.Def",6} {"mRes",5} {"MaxMP",7} | {"hit",6} {"crit",6} {"fizzle",6} | " +
@@ -293,7 +293,7 @@ if (args.Length > 0 && args[0] == "--warchanter")
         var e = BuildWarchanter(race, L);
         var s = StatCalculator.GetBaseStats(race, BaseClass.Mage);
         Console.WriteLine($"  {label,-7} {s.Con,4} {s.Atk,4} {s.Wit,4} {s.Agi,4} {s.Spt,4} | " +
-                          $"{(int)e.EffectiveAttack,7} {(int)e.EffectiveMagicAttackShown,7} " +
+                          $"{(int)e.EffectiveAttack,7} {(int)e.EffectiveMagicAttack,7} " +
                           $"{(int)e.EffectiveDefence,7} {(int)e.EffectiveMagicDefence,7} " +
                           $"{e.Accuracy,5} {(int)e.EffectiveEvasion,5} | {e.MaxHp,7} {e.MaxMp,7}");
     }
@@ -314,7 +314,7 @@ if (args.Length > 0 && args[0] == "--warchanter")
     {
         var e = BuildWarchanter(Race.Demon, L, atkOverride: a);
         int p = (int)e.EffectiveAttack;
-        Console.WriteLine($"  {a,8} {p,7} {(int)e.EffectiveMagicAttackShown,7} | " +
+        Console.WriteLine($"  {a,8} {p,7} {(int)e.EffectiveMagicAttack,7} | " +
                           $"{(p - hP) * 100f / hP,8:+0.0;-0.0}% {(p - eP) * 100f / eP,7:+0.0;-0.0}%");
     }
 
@@ -324,7 +324,7 @@ if (args.Length > 0 && args[0] == "--warchanter")
     Console.WriteLine();
     Console.WriteLine($"=== THE SIDE EFFECT: the ORK NUKER (staff + robe), who shares the same ATK ===");
     var humanNuke = BuildWarchanter(Race.Human, L, disc: Discipline.Magus);
-    int hM = (int)humanNuke.EffectiveMagicAttackShown;
+    int hM = (int)humanNuke.EffectiveMagicAttack;
     Console.WriteLine($"  reference: human Magus M.Atk {hM}, WIT {StatCalculator.GetBaseStats(Race.Human, BaseClass.Mage).Wit} " +
                       $"(cast x{humanNuke.EffectiveCastSpeedMultiplier:F2}, magic crit {humanNuke.MagicCritChance:P1})");
     Console.WriteLine();
@@ -332,7 +332,7 @@ if (args.Length > 0 && args[0] == "--warchanter")
     foreach (int a in sweep)
     {
         var n = BuildWarchanter(Race.Demon, L, atkOverride: a, disc: Discipline.Magus);
-        int m = (int)n.EffectiveMagicAttackShown;
+        int m = (int)n.EffectiveMagicAttack;
         Console.WriteLine($"  {a,8} {m,7} | {(m - hM) * 100f / hM,8:+0.0;-0.0}% | " +
                           $"x{n.EffectiveCastSpeedMultiplier,5:F2} {n.MagicCritChance,7:P1}");
     }
@@ -490,7 +490,7 @@ if (args.Length > 0 && args[0] == "--dmgmatrix")
         if (his && magic)         sk = (0, NukePower(L), NukeName(L), true, 1);
         Console.WriteLine();
         Console.WriteLine($"-- {an.ToUpperInvariant()}  [{ClassLabel(a)}]  "
-            + (magic ? $"M.Atk {a.EffectiveMagicAttack:0} (shown {a.EffectiveMagicAttackShown:0})"
+            + (magic ? $"M.Atk {a.EffectiveMagicAttack:0}"
                      : $"P.Atk {a.EffectiveAttack:0}")
             + $"  crit {(magic ? a.MagicCritChance : a.CritChance):P1}   skill: {sk.Name}"
             + (sk.Hits > 1 ? $"  [x{sk.Hits} HITS]" : ""));
@@ -935,7 +935,7 @@ if (args.Length > 0 && args[0] == "--magicdef")
         int mAtk16 = (int)mage16.EffectiveMagicAttack;
 
         Console.WriteLine($"-- LEVEL {L}  (gear tier t{GearTier(L)}) " + new string('-', 46));
-        Console.WriteLine($"   nuker M.Atk internal {mAtk}  (shown {mage.EffectiveMagicAttackShown:0})"
+        Console.WriteLine($"   nuker M.Atk {mAtk}"
                         + $"   top nuke power {power}");
         Console.WriteLine($"   with a +16 staff: internal {mAtk16} (x{(float)mAtk16 / Math.Max(1, mAtk):0.00})"
                         + $" -> damage x{MathF.Sqrt((float)mAtk16 / Math.Max(1, mAtk)):0.00}  <- the sqrt eats it");
@@ -3738,14 +3738,21 @@ Console.WriteLine("  (a lvl-1 that one-shots a same-or-higher-level mob = the ba
 Console.WriteLine();
 
 // -----------------------------------------------------------------------------------------------
-// M.ATK DISPLAY RAMP (owner 2026-07-25): the shown M.Atk = scale·√internal. "now" uses the flat
-// scale 20; "new" ramps scale = min(level, 20) so low levels read close to IG (a lvl-1 wand mage
-// showed ~72 where IG shows ~8). DAMAGE is untouched (it uses the internal value, printed too).
-// Training gear, no shots — a real new character 1-30.
+// M.ATK vs P.ATK ON THE SHEET (owner 2026-09-17): *"now i have archers with 4-5k p atk .. and mages
+// stay at 1000 ... and looks now very underinflated"*.
+//
+// 🔑 This table REPLACED the old "display ramp" comparison, which measured a shrink that no longer
+// exists: since 0.161.0 the sheet prints the INTERNAL M.Atk and there is only one number. What is
+// worth measuring now is the thing he actually compared — the two offence stats side by side, as the
+// player reads them — so that "does magic look underinflated" is a question the rig can answer.
+//
+// ⚠ These are the DISPLAYED stats, not damage. The two channels have different K constants and magic
+// takes a √, so a mage's M.Atk is NOT meant to equal a fighter's P.Atk; the ratio column is here to
+// show how the gap MOVES with level, which is what a scaling problem looks like.
 // -----------------------------------------------------------------------------------------------
-Console.WriteLine("=== M.ATK DISPLAY: flat-20 (now) vs min(internal, 20·√internal) (new) — best gear ===");
-Console.WriteLine("  new = show raw internal until it passes 20·√internal (crossover at internal=400), then shrink.");
-Console.WriteLine($"{"Lvl",4} | {"FTR int",8} {"now",6} {"new",6} | {"MAGE int",9} {"now",6} {"new",6}");
+Console.WriteLine("=== M.ATK vs P.ATK, as the CHARACTER SHEET now prints them — best gear ===");
+Console.WriteLine("  one number only: the sheet shows the internal M.Atk (the display shrink was retired 0.161.0).");
+Console.WriteLine($"{"Lvl",4} | {"FTR P.Atk",10} {"FTR M.Atk",10} | {"MAGE M.Atk",11} {"MAGE P.Atk",11} | {"M/P",6}");
 /// <summary>THE SHOT — the War / Spell Rune, as the SERVER applies it since 2026-09-09: a multiplier
 /// on the FINISHED damage, per channel (see <c>GameLoopService.FinalizeDamage</c>).
 ///
@@ -3765,16 +3772,15 @@ static int Shot(Entity a, bool magic, int dmg, Entity? d = null) =>
                           * (a.Kind != EntityKind.Player && d is { Kind: EntityKind.Player }
                              ? MobRankScale.DamageOut(a.Rank, d.Level) : 1f)));
 
-static float ShownNow(Entity e) => 20 * MathF.Sqrt(e.EffectiveMagicAttack);
-static float ShownNew(Entity e) => MathF.Min(e.EffectiveMagicAttack, 20 * MathF.Sqrt(e.EffectiveMagicAttack));
 foreach (int L in new[] { 1, 5, 10, 20, 30, 40, 52, 61, 76, 85 })
 {
     // Below 20 use training gear (no tier gear exists), at/above 20 use best-for-tier — the real play state.
     var ftr  = L >= 20 ? BuildPlayer(Race.Human, BaseClass.Fighter, L) : BuildStarter(BaseClass.Fighter, L);
     var mage = L >= 20 ? BuildPlayer(Race.Human, BaseClass.Mage, L)    : BuildStarter(BaseClass.Mage, L);
+    float mAtk = mage.EffectiveMagicAttack, pAtk = ftr.EffectiveAttack;
     Console.WriteLine(
-        $"{L,4} | {ftr.EffectiveMagicAttack,8:F0} {ShownNow(ftr),6:F0} {ShownNew(ftr),6:F0} | " +
-        $"{mage.EffectiveMagicAttack,9:F0} {ShownNow(mage),6:F0} {ShownNew(mage),6:F0}");
+        $"{L,4} | {pAtk,10:F0} {ftr.EffectiveMagicAttack,10:F0} | " +
+        $"{mAtk,11:F0} {mage.EffectiveAttack,11:F0} | {(pAtk > 0 ? mAtk / pAtk : 0),6:F2}");
 }
 Console.WriteLine();
 

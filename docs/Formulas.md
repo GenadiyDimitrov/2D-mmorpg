@@ -24,6 +24,11 @@ ManaDrain      = targetMaxMp * power / 1000                  power is PER MILLE
   armour resistances), then floored at 1.
 - ⚠ **Magic uses `sqrt(mAtk)` and physical uses `pAtk` flat.** That is why +M.Atk buffs feel weaker
   than they read: doubling M.Atk is ×1.41 damage, doubling P.Atk is ×2.
+- 🔑 **THERE IS ONE M.Atk** (2026-09-17, 0.161.0): the character sheet and the target window print the
+  same `EffectiveMagicAttack` the formula above reads. A display shrink `min(internal, 20·√internal)`
+  hid it between 2026-07-25 and 0.161.0 — an 85 nuker's 1,174 read as 685 — and it is retired, on the
+  owner's instruction: *"leave the visual == inner mAtk and if it feels again overinflated we will fix
+  the formula"*. ⚠ So the lever is THIS page, never a second number only the sheet sees.
 - Magic currently divides by **physical** defence in some paths — magic-resist is a `%` reduction
   (`BuffMagicResist`), not a separate defence stat.
 - 🔑 **THE SHIELD IS NOT ARMOUR** (2026-09-09, `BL-185`): a shield contributes **no P.Def at all**.

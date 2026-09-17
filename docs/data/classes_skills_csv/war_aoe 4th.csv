@@ -1,8 +1,41 @@
 LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,Gold,SP Bottles,REPLACES,RACE,Comment
-# only the two SKILL MASTERY rows below are authored (BL-191, 2026-09-10) - the rest of this discipline is still yours to write.
+,,,,,,,,,,,,,,,,,,,----------------------------Armor Mastery----------------------------
+76,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +124 and hpReg +4.0; Light: eva +10; Heavy: P.Def +60, HP +200;",0,6.5kk,1kk
+77,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +126 and hpReg +4.0; Light: eva +10; Heavy: P.Def +60, HP +200;",0,11kk,1kk
+78,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +128 and hpReg +4.0; Light: eva +10; Heavy: P.Def +60, HP +200;",0,16kk,1kk
+79,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +130 and hpReg +4.0; Light: eva +10; Heavy: P.Def +60, HP +200;",0,80kk,1kk
+80,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +132 and hpReg +4.0; Light: eva +11; Heavy: P.Def +70, HP +250;",0,0,5kk
+81,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +134 and hpReg +4.0; Light: eva +11; Heavy: P.Def +70, HP +250;",0,0,7.5kk
+82,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +136 and hpReg +4.0; Light: eva +11; Heavy: P.Def +70, HP +250;",0,0,10kk
+83,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +138 and hpReg +4.0; Light: eva +11; Heavy: P.Def +70, HP +250;",0,0,15kk
+84,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +140 and hpReg +4.0; Light: eva +11; Heavy: P.Def +70, HP +250;",0,0,30kk
+85,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +142 and hpReg +4.0; Light: eva +11; Heavy: P.Def +80, HP +300;",0,0,50kk
+86,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +145 and hpReg +4.0; Light: eva +12; Heavy: P.Def +80, HP +300;",0,0,75kk
+87,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +146 and hpReg +4.0; Light: eva +12; Heavy: P.Def +80, HP +300;",0,0,100kk
+88,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +149 and hpReg +4.0; Light: eva +12; Heavy: P.Def +80, HP +300;",0,0,100kk
+89,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +152 and hpReg +4.0; Light: eva +12; Heavy: P.Def +80, HP +300;",0,0,100kk
+90,Armor Mastery,warrior_armor_mastery,passive,,heavy|light,0,0,self/single,0,0,0,"P.def +155 and hpReg +4.0; Light: eva +12; Heavy: P.Def +80, HP +300;",0,0,100kk
+,,,,,,,,,,,,,,,,,,,----------------------------Two-Hand Mastery----------------------------
+76,Two-Hand Mastery,warrior_blunt_mastery,passive,blunt/2,,0,0,self/single,0,0,0,"With 2h blunt: crit dmg +632; p.atk +153; Allow basic attack to hit around in 150 range (max 10 targets);",0,6.5kk,1kk
+77,Two-Hand Mastery,warrior_blunt_mastery,passive,blunt/2,,0,0,self/single,0,0,0,"With 2h blunt: crit dmg +649; p.atk +156; Allow basic attack to hit around in 150 range (max 10 targets);",0,11kk,1kk
+78,Two-Hand Mastery,warrior_blunt_mastery,passive,blunt/2,,0,0,self/single,0,0,0,"With 2h blunt: crit dmg +666; p.atk +159; Allow basic attack to hit around in 150 range (max 10 targets);",0,16kk,1kk
+79,Two-Hand Mastery,warrior_blunt_mastery,passive,blunt/2,,0,0,self/single,0,0,0,"With 2h blunt: crit dmg +678; p.atk +162; Allow basic attack to hit around in 150 range (max 10 targets);",0,80kk,1kk
+80,Two-Hand Mastery,warrior_blunt_mastery,passive,blunt/2,,0,0,self/single,0,0,0,"With 2h blunt: crit dmg +690; p.atk +165; Allow basic attack to hit around in 150 range (max 10 targets);",0,0,5kk
+81,Two-Hand Mastery,warrior_blunt_mastery,passive,blunt/2,,0,0,self/single,0,0,0,"With 2h blunt: crit dmg +707; p.atk +168; Allow basic attack to hit around in 150 range (max 10 targets);",0,0,7.5kk
+82,Two-Hand Mastery,warrior_blunt_mastery,passive,blunt/2,,0,0,self/single,0,0,0,"With 2h blunt: crit dmg +724; p.atk +171; Allow basic attack to hit around in 150 range (max 10 targets);",0,0,10kk
+83,Two-Hand Mastery,warrior_blunt_mastery,passive,blunt/2,,0,0,self/single,0,0,0,"With 2h blunt: crit dmg +741; p.atk +174; Allow basic attack to hit around in 150 range (max 10 targets);",0,0,15kk
+84,Two-Hand Mastery,warrior_blunt_mastery,passive,blunt/2,,0,0,self/single,0,0,0,"With 2h blunt: crit dmg +758; p.atk +177; Allow basic attack to hit around in 150 range (max 10 targets);",0,0,30kk
+85,Two-Hand Mastery,warrior_blunt_mastery,passive,blunt/2,,0,0,self/single,0,0,0,"With 2h blunt: crit dmg +775; p.atk +180; Allow basic attack to hit around in 150 range (max 10 targets);",0,0,50kk
+86,Two-Hand Mastery,warrior_blunt_mastery,passive,blunt/2,,0,0,self/single,0,0,0,"With 2h blunt: crit dmg +792; p.atk +184; Allow basic attack to hit around in 150 range (max 10 targets);",0,0,75kk
+87,Two-Hand Mastery,warrior_blunt_mastery,passive,blunt/2,,0,0,self/single,0,0,0,"With 2h blunt: crit dmg +809; p.atk +188; Allow basic attack to hit around in 150 range (max 10 targets);",0,0,100kk
+88,Two-Hand Mastery,warrior_blunt_mastery,passive,blunt/2,,0,0,self/single,0,0,0,"With 2h blunt: crit dmg +826; p.atk +192; Allow basic attack to hit around in 150 range (max 10 targets);",0,0,100kk
+89,Two-Hand Mastery,warrior_blunt_mastery,passive,blunt/2,,0,0,self/single,0,0,0,"With 2h blunt: crit dmg +843; p.atk +196; Allow basic attack to hit around in 150 range (max 10 targets);",0,0,100kk
+90,Two-Hand Mastery,warrior_blunt_mastery,passive,blunt/2,,0,0,self/single,0,0,0,"With 2h blunt: crit dmg +860; p.atk +200; Allow basic attack to hit around in 150 range (max 10 targets);",0,0,100kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Overpower----------------------------
 76,Overpower,overpower,passive,,,0,0,self/single,0,0,0,double rate 10% - skills marked [Double] strike for DOUBLE damage that often - scales with ATK - without this passive NO skill can double,0,6.5kk,1kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Overpower Mastery----------------------------
 81,Overpower Mastery,double_mastery,Toggle,,,0,0,self/single,0,0,0,Doubles the base of EVERY skill mastery you have; increases P.MP consumation by 25%; Consume 50 HP/s,0,200kk,25kk,,,,Worth nothing without a mastery passive - it doubles whichever bases you have rather than a fixed one
 ,,,,,,,,,,,,,,,,,,,----------------------------Battle Momentum----------------------------
 76,Battle Momentum,reuse_reset_momentum,passive,,,0,0,self/single,0,0,0,reuse reset 5% - a skill you cast has that chance to come off reuse immediately - never on a fixed-cooldown skill - scales with ATK,0,6.5kk,1kk,,,,Same id as the Magus Arcane Momentum - one skill - one number - a name per class
+,,,,,,,,,,,,,,,,,,,----------------------------Charge----------------------------
+76,Charge,warrior_charge,physical/active,sword|blunt/2,,600,0,target/single,0.5,3,0,Charges to enemy,50,6.5kk,1kk

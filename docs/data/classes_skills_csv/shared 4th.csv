@@ -43,4 +43,10 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 76,Critical Protection Sigil,tank_support_sigil,Passive,,,0,0,self/single,0,0,0,Increase resistance to critical rate/dmg +10%,0,20kk,10kk,,[buffer_support_sigil healer_support_sigil mage_support_sigil rogue_support_sigil warrior_support_sigil],,Tank_Support_Sigil
 76,Arcane Support Sigil,mage_support_sigil,Passive,,,0,0,self/single,0,5,0,5% chance on attack to heal 2% MP,0,20kk,10kk,,[buffer_support_sigil healer_support_sigil rogue_support_sigil tank_support_sigil warrior_support_sigil],,Mage_Support_Sigil
 76,Aim Sigil,rogue_support_sigil,Passive,,,0,0,self/single,0,0,0,Bow: Range +100; Blunt/Sword/Dual: Acc +5,0,20kk,10kk,,[buffer_support_sigil healer_support_sigil mage_support_sigil tank_support_sigil warrior_support_sigil],,Rogue_Support_Sigil
-,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,----------------------------Elf Antidote----------------------------
+52,Antidote,elf_antidote,Magic/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 4 or lower from an self.",42,74k,0,0,,Elf
+58,Antidote,elf_antidote,Magic/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 5 or lower from an self.",50,88k,0,0,,Elf
+62,Antidote,elf_antidote,Magic/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 6 or lower from an self.",53,170k,0,0,,Elf
+66,Antidote,elf_antidote,Magic/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 7 or lower from an self.",57,280k,0,0,,Elf
+70,Antidote,elf_antidote,Magic/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 8 or lower from an self.",60,390k,0,0,,Elf
+74,Antidote,elf_antidote,Magic/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 9 or lower from an self.",64,880k,0,0,,Elf

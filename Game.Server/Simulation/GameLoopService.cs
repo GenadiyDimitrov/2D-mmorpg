@@ -17665,7 +17665,7 @@ public class GameLoopService : BackgroundService
             p.EffectiveCon, p.EffectiveAtk, p.EffectiveWit, p.EffectiveAgi, p.EffectiveSpt,
             p.MaxHp, p.MaxMp, (int)p.EffectiveAttack, (int)p.EffectiveDefence,
             p.EffectiveAccuracy, (int)p.EffectiveEvasion, p.CritChance, p.BasicAttackRange, p.SecondClass,
-            p.EffectiveSpeed, SkillMath.CastModifier(p.Wit), p.EffectiveCastSpeedMultiplier, p.EffectiveAttackSpeedMultiplier, p.SkillPoints, p.MoveState, (int)p.EffectiveMagicAttackShown, p.MagicCritChance,
+            p.EffectiveSpeed, SkillMath.CastModifier(p.Wit), p.EffectiveCastSpeedMultiplier, p.EffectiveAttackSpeedMultiplier, p.SkillPoints, p.MoveState, (int)p.EffectiveMagicAttack, p.MagicCritChance,
             p.HasShield, p.BlockChance, p.BlockReduction, (int)p.EffectiveMagicDefence,
             p.ActiveArmorSet, p.ArmorMasteryLabel,
             hpReg, mpReg, p.CritDamageBonus,
@@ -18554,7 +18554,7 @@ public class GameLoopService : BackgroundService
             // inspecting yourself, where it is your own to read.
             t.Id, t.Name, isMob || t.Id == player.Id ? t.Level : 0, isMob,
             t.Hp, t.MaxHp, t.Mp, t.MaxMp,
-            t.AttackPower, (int)t.EffectiveMagicAttackShown,   // shrunk display, matches the stats window
+            t.AttackPower, (int)t.EffectiveMagicAttack,   // the INTERNAL value, matching the stats window
             (int)t.EffectiveDefence, (int)t.EffectiveMagicDefence,
             t.Accuracy, t.Evasion, t.CritChance,
             t.BowResist, t.CritRateResist,

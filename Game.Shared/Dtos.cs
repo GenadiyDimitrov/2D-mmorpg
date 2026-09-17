@@ -387,7 +387,11 @@ public record StatsUpdate(
     // Interrupt resistance as a whole PERCENT (SPT curve x resist buffs, folded). Was flat "points"
     // against a wit-based pool until IG's interrupt formula landed on 2026-08-26.
     int InterruptResist = 0,
-    // DEBUG / IG-reference: the OLD-style internal M.Atk (base·levelMod²·buffs²) the shrunk display hides.
+    // ⚠ EQUAL TO <see cref="MagicAttack"/> SINCE 0.161.0. It was the IG-reference internal value that
+    // the shrunk display hid; the shrink is retired and the sheet now prints this same number, so the
+    // two fields carry one value. Kept rather than removed because StatsUpdate is a POSITIONAL record
+    // — dropping a field here shifts every field after it and garbles an older client's whole sheet
+    // (the 17 → 18 and 34 → 35 precedent). It is drawn nowhere.
     int MagicAttackInternal = 0,
     // Heal stats (no M.Atk): output = (HealPowerFlat + skillPower)·HealPowerMod; received = (HealReceivedFlat
     // + output)·HealReceivedMod. Default 0/×1.

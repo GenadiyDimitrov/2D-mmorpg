@@ -612,11 +612,11 @@ public static class StatCalculator
     public const float PhysicalK = 77f;
     public const float MagicK = 91f;
 
-    /// <summary>PATH B (owner 2026-07-16): M.Atk is STORED as its displayed value = this scale · √(internal),
-    /// so the cosmic `base·levelMod²` number shrinks to P.Atk size while the √ (and its level self-balancing)
-    /// is preserved. <see cref="MagicDamage"/> is then LINEAR on the stored value (K/scale reproduces the old
-    /// `91·power·√internal/mDef` exactly). The internal value = (shown/scale)².</summary>
-    public const float MagicAttackDisplayScale = 20f;
+    // (MagicAttackDisplayScale = 20 — DELETED 2026-09-17 with the M.Atk display shrink it was the only
+    //  user of. Owner: *"leave the visual == inner mAtk and if it feels again overinflated we will fix
+    //  the formula"*. There is now ONE M.Atk: the number damage reads is the number the sheet prints.
+    //  See the note in Entity.cs where EffectiveMagicAttackShown used to be — the lever for the next
+    //  round is this file's formula, never a second display-only number.)
 
     /// <summary>Physical ratio damage (IG model): 77·(pAtk + skillPower)/pDef. No level
     /// term (level is already baked into pAtk/pDef growth). 'power' is 0 for a basic
