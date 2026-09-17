@@ -867,6 +867,106 @@ public static class MobCatalog
         }
     }
 
+    /// <summary>ONE RECIPE-BOOK ROLL: the chance it fires, and the pool of books it picks one from.</summary>
+    public readonly struct RecipeRoll
+    {
+        public RecipeRoll(float delivered, string[] bookIds) { Delivered = delivered; BookIds = bookIds; }
+        /// <summary>The DELIVERED chance at x1, as authored in his §3. The roll divides it by the
+        /// "other" group's x3 before applying the live rate — see the note in <see cref="RecipeRolls"/>.</summary>
+        public float Delivered { get; }
+        /// <summary>Every book this roll could yield; one is picked at random PER COPY.</summary>
+        public string[] BookIds { get; }
+    }
+
+    /// <summary>THE RECIPE BOOKS a boss or elite rolls (§3: boss armor 50% / weapon 40% / jewel 60%,
+    /// elite 0.1%) — now a TABLE rather than three hand-written lines inside the kill path.
+    ///
+    /// <para>🔑 IT WAS MIRRORED IN THREE PLACES AND THAT IS WHY IT MOVED HERE (`BL-253`). The roll lives
+    /// in `GameLoopService.RollBossBonus`, `tools/BalanceMatrix`'s `--drops` had reconstructed it by hand,
+    /// and the in-game drop database needs it too. Books are not `DropEntry`s — the roll picks one book
+    /// out of a pool per copy, which no drop group expresses — so the two readers could only ever agree
+    /// by both being edited. Now there is one list and three callers.</para>
+    ///
+    /// <para>⚠ Books only EXIST from A grade up: every recipe below 76 is learned by LEVEL, not found
+    /// (`RecipeCatalog.DropOnly`), so there is nothing to drop below that tier. That is a gap in the item
+    /// catalogue, not in this table.</para>
+    ///
+    /// <para>The DELIVERED number is what a x1 server pays. A reader that wants a per-ITEM chance divides
+    /// by <see cref="RecipeOtherGroupRate"/> (the "other" group's x3, which the authored numbers already
+    /// have baked in) and by the pool size, then runs it through <see cref="EffectiveChance"/> like
+    /// anything else.</para></summary>
+    public static IEnumerable<RecipeRoll> RecipeRolls(int level, MobRank rank)
+    {
+        if (rank is not (MobRank.Boss or MobRank.Elite)) yield break;
+        int tier = RecipeTier(level);
+        if (tier < 76) yield break;
+
+        string[] Books(params string[] keys)
+        {
+            var ids = new string[keys.Length];
+            for (int i = 0; i < keys.Length; i++)
+                ids[i] = ItemCatalog.RecipeBookId($"craft_{keys[i]}_t{tier}");
+            return ids;
+        }
+
+        if (rank == MobRank.Boss)
+        {
+            yield return new RecipeRoll(0.50f, Books("heavy", "light", "robe", "helm", "gloves", "boots", "shield"));
+            yield return new RecipeRoll(0.40f, Books("sword1h", "sword2h", "blunt1h", "blunt2h", "duals", "bow", "wand", "staff"));
+            yield return new RecipeRoll(0.60f, Books("necklace", "ring", "earring"));
+        }
+        else
+        {
+            yield return new RecipeRoll(0.001f, Books("heavy", "light", "robe", "sword1h", "sword2h", "bow", "wand",
+                                                     "necklace", "ring", "earring"));
+        }
+    }
+
+    /// <summary>The "other" group's x3, which the authored §3 numbers in <see cref="RecipeRolls"/> already
+    /// have baked in and every reader therefore divides out. Named rather than typed twice.</summary>
+    public const float RecipeOtherGroupRate = 3f;
+
+    /// <summary>Which recipe-book TIER a creature of this level pays. Same ladder the kill path used.</summary>
+    public static int RecipeTier(int level) =>
+        level >= 76 ? 76 : level >= 61 ? 61 : level >= 52 ? 52 : level >= 40 ? 40 : 20;
+
+    /// <summary>ONE ROW of the boss/elite MAT PILE — a material type, a rarity, the chance the row fires
+    /// and the quantity band it gives (both inclusive).</summary>
+    public readonly struct PileRow
+    {
+        public PileRow(MaterialType type, ItemRarity rarity, float chance, int minQty, int maxQty)
+        { Type = type; Rarity = rarity; Chance = chance; MinQty = minQty; MaxQty = maxQty; }
+        public MaterialType Type { get; }
+        public ItemRarity Rarity { get; }
+        public float Chance { get; }
+        public int MinQty { get; }
+        public int MaxQty { get; }
+    }
+
+    /// <summary>THE BOSS/ELITE MAT PILE — the guaranteed handful of crafting materials every rank kill
+    /// pays on top of its drop table, flavoured by the creature's own <see cref="MatFlavor"/> primary.
+    ///
+    /// <para>🔑 Extracted from `RollBossBonus` for the same reason as <see cref="RecipeRolls"/>: it is a
+    /// real source of materials that no drop table names, so a "where does this come from" lookup that
+    /// only read `DropEntry`s would answer wrongly for every Common and Uncommon mat in the game.</para>
+    ///
+    /// <para>⚠ THIS PILE TAKES NO RATE KNOB — not the global, not the group, not a Rune of Drop. It is a
+    /// flat give inside the kill path, which is the same shape the recipe roll had before `BL-247` fixed
+    /// it. Readers must therefore NOT run these rows through <see cref="EffectiveChance"/>; the numbers
+    /// here are what a x100 server pays, unchanged. Whether that is intended is `BL-262`.</para></summary>
+    public static IEnumerable<PileRow> BossPile(int level, MobRank rank, MobCategory cat)
+    {
+        if (rank is not (MobRank.Boss or MobRank.Elite)) yield break;
+        bool boss = rank == MobRank.Boss;
+        var primary = MatFlavor(cat).Primary;
+
+        yield return new PileRow(primary, ItemRarity.Common, 1f, boss ? 6 : 2, boss ? 10 : 3);
+        yield return new PileRow(MaterialType.Gem, ItemRarity.Common, 1f, boss ? 4 : 1, boss ? 7 : 2);
+        yield return new PileRow(primary, ItemRarity.Uncommon, 1f, boss ? 2 : 1, boss ? 4 : 1);
+        if (boss && level >= 30) yield return new PileRow(primary, ItemRarity.Rare, 0.5f, 1, 1);
+        if (boss && level >= 76) yield return new PileRow(primary, ItemRarity.Epic, 0.2f, 1, 1);
+    }
+
     public static IEnumerable<DropEntry> GearDrops(int level, MobRank rank)
     {
         int tier = GearTier(level);

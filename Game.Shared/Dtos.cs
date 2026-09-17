@@ -530,6 +530,26 @@ public record SelectionOption(string ItemId, string Name);
 /// authority on which colours exist and what hex each one is.</summary>
 public record TitleColorOffer(string[] Colors);
 
+/// <summary>ONE SOURCE ROW of a drop-database answer — deliberately five separate strings rather than
+/// one formatted line, so the client can column-align them the way the inspect window aligns its own
+/// drop list. The SERVER formats each cell (it owns the rate arithmetic); the client only lays them out.</summary>
+/// <param name="Note">Why this row is unusual, when it is: that the chance is only paid from part of the
+/// creature's level band, or that it is the boss MAT PILE, which no rate knob reaches. Empty normally.</param>
+public record DropLookupRow(string Mob, string Level, string Rank, string Where, string Chance, string Note);
+
+/// <summary>Every source of ONE item.</summary>
+public record DropLookupItem(string ItemId, string Name, DropLookupRow[] Sources);
+
+/// <summary>Server -> owning client: the answer to *"i say what im looking for and it shows me all
+/// mob_name/[mob_lvl-elite|boss|normal]/location/drop_rate"* (`BL-253`).
+///
+/// <para>🔑 THE CHANCES ARE THIS PLAYER'S, not the table's — the same rule the inspect window's drop list
+/// already runs on. His own Rune of Drop is applied, and so is the LEVEL-GAP penalty against each
+/// creature's level, because a number that is personal in one of those ways and not the other is worse
+/// than one that is personal in neither. <paramref name="Note"/> carries anything that qualifies the
+/// whole answer (a truncated result, a gap warning).</para></summary>
+public record DropLookupResult(string Query, DropLookupItem[] Items, string Note = "");
+
 /// <summary>Server -> owning client: the expanded target window (IG-style inspect) —
 /// the target's detailed stats and, for a mob, its passive modifier lines.</summary>
 public record TargetDetails(

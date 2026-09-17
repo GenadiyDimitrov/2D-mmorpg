@@ -7,11 +7,72 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.167.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.168.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-17 (latest) — 0.167.1: the Plant boss was still paying leather
+## 2026-09-17 (latest) — 0.168.0: the drop database, built once and remembered — `BL-253`
+
+*"a drop db should be build once and only once when server starts … it should remember it every restart
+until something tuches drops/mobs … on start if its missing its build with drops x1 … each ask of item it
+looks up and see mobs that drop and show the drop rate for the player (similar to [info->drops] on mobs)
+… same as server<>apk protocol -> a version that says (rebuild even when u have the mob database)
+otherwise it only build if missing"*. All of it, plus the two questions the entry was holding — it is a
+**player** window and it shows **everything**, both of which that message answers.
+
+### Where it is
+* **Menu → Drops.** Type two characters, get every source of everything that matches: creature, level
+  band, rank, field, chance.
+* **`/whatdrops <item>`** in chat prints the same answer. It needs no APK, so it works the moment you
+  restart the server — and it is not admin-gated, because your ask was a player's question.
+* `--drops` in BalanceMatrix still works and now reads the same index as the other two.
+
+### Built once, remembered, and the two stamps that decide
+The index is **19,842 rows** cached as `Game.Server/dropindex.txt`, beside `game.db`. Two stamps guard it,
+because they catch different failures:
+* a **content hash** over the templates, their drop rows and the spawn zones — your *"until something
+  touches drops/mobs"*, automatic, nothing to remember;
+* a hand-bumped **`DropIndex.Version`** — your *"rebuild even when u have the mob database"*, for what a
+  data hash cannot see: the rank LAYERS are code, and editing a number inside one moves no data at all.
+
+`/dropindex` says what the last boot did; `/dropindex rebuild` forces one.
+
+🔑 **CHANCES ARE STORED AT ×1 AND MULTIPLIED WHEN READ** — your *"build with drops x1"*, and it is also
+what makes the cache safe: `/droprate ×100` moves every number in the window without the index being
+rebuilt, because the knobs were never baked in.
+
+🔴 **A measurement you should have, because it argues against the cache.** The index builds in **13 ms**
+and loads in **28 ms**. The file is *slower than rebuilding it*. It is 15 ms at boot either way, so
+nothing is hurt — but the speed argument for keeping the file is simply not there, and if you would
+rather not have a 1.8 MB generated file next to the database, say so and the stamps stay while the file
+goes. I built it as specified rather than quietly dropping half your instruction.
+
+### The two faucets that were invisible, and the drift that is now impossible
+A "where does this come from" lookup that read `MobType.Drops` answers wrongly for half the game — rank
+is a property of the SPAWN, and the elite/boss layers were **hand-rolled inside the kill path**. Two of
+them were not drop tables at all:
+* the **recipe-book roll** — which `--drops` had been reconstructing by hand, free to drift from
+  `RollBossBonus`, and which the in-game window would have made a *third* copy of;
+* the **boss mat pile** — which nothing outside the kill path could see, so every Common and Uncommon
+  material in the game had a source no lookup could report.
+
+Both are tables in `MobCatalog` now (`RecipeRolls`, `BossPile`) with the kill path as one reader and the
+index as another. **One walk, three readers** (`Game.Shared/DropIndex.cs`): the tool, the server and the
+client window. ✅ It immediately paid: the lookup now shows that a Valley Treant BOSS drops Rare Wood at
+50% from its pile — a source that became true in 0.167.1 and that no tool could see before today.
+
+### 🔴 And it found something: `BL-262`
+Extracting the mat pile made visible that **nothing multiplies it** — not the global rate, not the group,
+not a Rune of Drop, not the level gap. That is exactly the shape `BL-247` found in the recipe roll
+(*"fix the blueprints to take the rates multiplier"*), which is why your ×100 never touched the books.
+I did **not** apply that ruling here on my own, because it is not the same decision: a rate on the books
+means more books, a rate on the pile means 600-1000 Common Leather off one boss. Three ways out are in
+the entry; my reading is to rate only the two CHANCE rows and leave the guaranteed handful alone.
+
+⚠ **Protocol 44** (a new hub method and a new push, both pure additions — an old APK simply has no Drops
+window). **A NEW APK IS WANTED.**
+
+## 2026-09-17 — 0.167.1: the Plant boss was still paying leather
 
 The wood fix shipped an hour earlier and **a second copy of the same map outlived it**. The boss and
 elite MAT PILE (`RollBossBonus`) is not a drop table — it is a hand-rolled pile — and it carried its

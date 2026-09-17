@@ -366,6 +366,14 @@ public record InspectTargetCmd(string ConnectionId, Guid TargetId, bool WithDrop
 /// `InspectTarget` is a different thing: a one-shot pull for the stats sheet, not a subscription.</para></summary>
 public record SetUiTargetCmd(string ConnectionId, Guid? TargetId) : IGameCommand;
 
+/// <summary>THE DROP DATABASE QUERY — *"each ask of item it looks up and see mobs that drop and show the
+/// drop rate for the player"* (`BL-253`). Free text, matched against item ids and item NAMES.
+///
+/// <para>⚠ It is a command like everything else rather than a direct read on the hub thread, even though
+/// the index is immutable: the ANSWER is not immutable. It reads the player's Rune of Drop and their level
+/// against each creature's, and player state belongs to the tick loop. Nothing here touches the world.</para></summary>
+public record LookupDropsCmd(string ConnectionId, string Query) : IGameCommand;
+
 public record RespawnCmd(string ConnectionId) : IGameCommand;
 
 /// <summary>Advance to a second class (level 20+, once).</summary>

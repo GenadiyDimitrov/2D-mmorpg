@@ -88,6 +88,13 @@ PRIMARY — which is what the entry's wider warning asked for. **`BL-259` is ans
 Warlord modifiers stay at `x1` (*"leave them as u made them -> playtest will show"*), and the rule
 around them narrowed — an unpriced debuff ships at the DEFAULT rather than blocking on you.
 
+✅ **`BL-253` IS BUILT (2026-09-17, 0.168.0)** — the drop database, to the spec you gave that day: built
+once at boot, cached beside `game.db`, rebuilt automatically when drops or mobs change and on demand
+when the version stamp moves. In game it is **menu → Drops** (and `/whatdrops <item>` in chat, which
+needs no APK). ⚠ **Two things came out of it**: the cache is measurably SLOWER than rebuilding
+(13 ms to build, 28 ms to load) so its file half is yours to keep or kill, and the boss MAT PILE takes
+no rate knob at all — **`BL-262`**, a question, the same shape `BL-247` fixed in the recipe roll.
+
 ★ **And from your notes file, same day:** **`BL-249`** (dash potions to a 90-second reuse) — **BUILT
 in 0.150.0 and archived**. **`BL-251`**, Evasion Mastery removed from every rogue discipline, is
 **BUILT in 0.150.0** too (archived — the twin of the warrior's `BL-201`), and **`BL-252`** — a new
@@ -257,8 +264,8 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-233` | ❓ | THE DEMON BUFFER'S P.DEF — measured three ways and heavy is AHEAD; I need your two sheets | classes |
 | `BL-234` | ❓ | URGENT LESSER HEAL — built to your four numbers; the per-rank falloff is mine to confirm | classes |
 | `BL-250` | 🟡 | THE SUBCLASS SYSTEM — **the server half is BUILT (0.155.0)**; what is left is the CLIENT dialogue + panel (APK) and the SIGIL half (§1-§4). ❓ one new question in §9.6 | classes |
-| `BL-253` | 🔵 | A DROP DATABASE — name an item, see every source; the BalanceMatrix half is built, the in-game window is owed | items |
 | `BL-260` | ❓ | **SUMMONERS — the conversation we have never had**, and four shipped decisions already lean on it | classes |
+| `BL-262` | ❓ | THE BOSS MAT PILE TAKES NO RATE KNOB — the same shape `BL-247` fixed in the recipe roll; three ways out, my reading is (2) | items |
 
 ---
 
@@ -2056,34 +2063,6 @@ periodically - no need for migrations"*, the standing pre-release rule.
 ⚠ The client's Sigils tab is built around the three named slots and gets rebuilt with them; the class
 master's new dialogue and §8's panel are client work too. **This ships with an APK.**
 
-## `BL-253` 🔵 A DROP DATABASE — "I SAY WHAT I AM LOOKING FOR AND IT SHOWS ME WHERE IT DROPS"
-
-**2026-09-16, alongside `BL-247`:** *"we will need a drop database -> i say what im looking for and it
-shows me all mob_name/[mob_lvl-elite|boss|normal]/location/drop_rate"*.
-
-✅ **THE MEASURING HALF IS BUILT (0.151.0)** — `dotnet run --project tools/BalanceMatrix -- --drops
-"greater scroll"` prints exactly those four columns for anything matching, by item name or id. It is
-in `tools/BalanceMatrix/DropFinder.cs`, and it earned itself the day it was written: it caught a new
-boss template spawning as ordinary camp filler, and every number in `BL-247`'s report is read off it.
-
-🔑 **The one design fact worth carrying into the in-game version: it must walk SPAWNS, not templates.**
-Rank is a property of the spawn, and half the top-end faucets in the game (every Greater/Safe enchant
-scroll, every Epic+ material, every recipe book) exist only for an Elite or a Boss kill. A lookup
-written against `MobType.Drops` would answer "nothing drops this" — correctly, and uselessly.
-
-🔵 **What is still owed is the IN-GAME window**, which is what you actually asked for. Open questions:
-
-1. ❓ **Where does it live** — a player window (a search box in the Items UI, reachable at any time),
-   or an admin `/whatdrops <item>` that prints to chat? The first is a feature; the second is an hour.
-   My reading: **player window**, because *"i say what im looking for"* is a play-time question, and a
-   drop table nobody can read is why three items sat unobtainable for weeks.
-2. ❓ **Does it show what you have not met yet?** A full index tells you a level-78 boss drops the A
-   scroll before you have ever seen one. That is either the point of the feature or a spoiler; your
-   call.
-3. ⚠ **The recipe books are the one row the tool reconstructs rather than reads.** They are not
-   `DropEntry`s — `RollBossBonus` rolls them by hand — so the two sides can drift. If the in-game
-   version is built, that roll should move into a real drop table first, and then there is one source
-   of truth instead of two.
 
 ---
 
@@ -2123,3 +2102,44 @@ one-line "…when the summoner ships"; that is cheap once and a trap four more t
 
 ---
 
+
+---
+
+## `BL-262` ❓ THE BOSS MAT PILE TAKES NO RATE KNOB — the same shape `BL-247` fixed
+
+**Found while building `BL-253` (2026-09-17), and NOT fixed by it** — because it is a tuning decision
+and those are yours.
+
+Every elite and boss pays a **mat pile** on top of its drop table: a handful of its own primary
+material plus gems, and at 30+/76+ a chance at a Rare and an Epic one. It is now a table
+(`MobCatalog.BossPile`) rather than five lines buried in the kill path, which is how the drop database
+can see it at all. What the extraction made visible is this:
+
+> **Nothing multiplies it.** Not `RateConfig.DropChanceRate`, not the group rate, not a Rune of Drop,
+> not the level-gap penalty. A boss on your ×100 server hands over the same 6-10 Common Leather it
+> hands a ×1 server.
+
+🔑 **That is exactly the shape `BL-247` found in the recipe roll** — *"fix the blueprints to take the
+rates multiplier"* — and it is why your ×100 never touched the books either. I have not applied your
+`BL-247` ruling here on my own, because the two are not the same decision:
+
+| | recipe books | the mat pile |
+|---|---|---|
+| what a rate does | more BOOKS — a chance becoming copies | more of a **quantity** that is already guaranteed |
+| at ×100 | 50 copies of a book, "as if you had killed fifty" | 600-1000 Common Leather off one boss |
+
+The second is a real economic choice rather than a bug fix, which is the whole reason it is a question.
+
+❓ **Three ways, and it is your call:**
+1. **Leave it flat.** The pile is a fixed "thanks for the trip" and the rate knobs are for the table.
+2. **Rate the CHANCE rows only** (the Rare at 50% and the Epic at 20%) and leave the guaranteed
+   handful alone. That fixes the part that behaves like a drop and leaves the part that behaves like
+   a reward.
+3. **Rate all of it**, exactly as `BL-247` ruled for the books — consistent, and at ×100 it is a
+   thousand hides.
+
+My reading if you say nothing: **(2)**. It is the only one where nothing you already like changes and
+the one genuinely drop-shaped thing in the pile starts obeying the knob you play with.
+
+⚠ Whichever you pick, the fix is a few lines: the pile is one table with one reader now
+(`GameLoopService.RollBossBonus`), and the drop database reads the same table, so both move together.

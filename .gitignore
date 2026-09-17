@@ -65,3 +65,7 @@ Desktop.ini
 *.gmap
 *.gsite
 *.glink
+
+# The generated drop index (`BL-253`) — rebuilt from the catalogues whenever its stamps stop
+# matching, exactly like game.db. 1.8 MB of derived data; nothing here is authored.
+dropindex.txt

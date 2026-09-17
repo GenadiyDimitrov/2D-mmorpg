@@ -1050,17 +1050,30 @@ Above 100% the excess is **copies**, not a clamp: `DropCopies` = the whole part 
 fraction rolled, so `E[copies] == chance` exactly.
 
 ⚠ A template's `Drops` is **not the whole table**. RANK is a property of the spawn, not the template,
-so four layers are added at kill time (`GameLoopService.RollDrop`, mirrored by target-inspect):
-`GearDrops` *replaces* the gear groups, and `EnchantScrollDrops`, `UtilityScrollDrops` (return /
-resurrection, `BL-174`) and `EliteMatDrops` *add* for elites and bosses. The fourth is the **recipe
-book** roll inside `RollBossBonus`, which is not a `DropEntry` at all — it is hand-rolled, and since
-`BL-247` it takes the same `EffectiveRate` × level-gap product as everything above. Its authored
-numbers are **divided by the `other` group's ×3**, exactly as `EliteMatDrops` authors its rungs, so
-what they state is the delivered chance at ×1.
+so five layers are added at kill time (`GameLoopService.RollDrop`, mirrored by target-inspect and by
+`DropIndex`): `GearDrops` *replaces* the gear groups, and `EnchantScrollDrops`, `UtilityScrollDrops`
+(return / resurrection, `BL-174`) and `EliteMatDrops` *add* for elites and bosses. Two of them are not
+`DropEntry`s at all and live as tables in `MobCatalog` since `BL-253`:
 
-🔎 **To ask where something drops, don't read these tables** — `dotnet run --project tools/BalanceMatrix
--- --drops "<item>"` walks every spawner × roster and prints creature / level / rank / field / chance,
-all of it through `EffectiveChance`. Templates cannot answer the question; only spawns know rank.
+* **`RecipeRolls`** — the recipe-book roll. One roll picks one book out of a pool, which no drop group
+  expresses. Since `BL-247` it takes the same `EffectiveRate` × level-gap product as everything above,
+  and its authored numbers are **divided by the `other` group's ×3**, exactly as `EliteMatDrops`
+  authors its rungs, so what they state is the delivered chance at ×1.
+* **`BossPile`** — the guaranteed handful of materials every elite and boss pays, flavoured by
+  `MatFlavor(category).Primary`. 🔴 **It takes NO rate knob** — not the global, not the group, not a
+  Rune of Drop, not the level gap. That is the shape the recipe roll had before `BL-247`; whether it
+  should stay that way is **`BL-262`**.
+
+🔑 **`MatFlavor` is the one category → (primary, secondary) material map**, and **only the PRIMARY
+climbs**: both types pay at Uncommon (30+), the primary alone at Rare (60+) and Epic (76+). A type
+that is nobody's primary is therefore unfindable above Uncommon anywhere in the world — which is what
+happened to Wood until `BL-254` gave it to Plant.
+
+🔎 **To ask where something drops, don't read these tables** — in game it is the **Drops** window
+(menu → Drops) or `/whatdrops <item>`, both off the cached `DropIndex` (`BL-253`); offline it is
+`dotnet run --project tools/BalanceMatrix -- --drops "<item>"`. All three walk every spawner × roster
+and print creature / level / rank / field / chance through `EffectiveChance`, off **one** walk.
+Templates cannot answer the question; only spawns know rank.
 
 In a GROUP the member's authored chance **is** its marginal per-kill chance: the group fires once at
 the members' SUM and then picks one weighted, so adding or removing members changes how often the

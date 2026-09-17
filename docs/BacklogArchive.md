@@ -6411,3 +6411,36 @@ x1.5"*, and the code ships 1.5. That is the `BL-232` rule working: a shout that 
 readily than a Slash that curses **and** strikes (x0.7).
 
 Edit the cell and `SkillCsvSeed --check` will print DRIFT until the code matches it.
+
+---
+
+## `BL-253` ✅ BUILT 2026-09-17 in **0.168.0** — the drop database, to your spec of the same day: *"a drop db should be build once and only once when server starts … it should remember it every restart until something tuches drops/mobs … on start if its missing its build with drops x1 … each ask of item it looks up and see mobs that drop and show the drop rate for the player (similar to [info->drops] on mobs) … same as server<>apk protocol -> a version that says (rebuild even when u have the mob database) otherwise it only build if missing"*. Both open questions in the entry were answered by that message: it is a PLAYER window, and it shows everything. The walk moved into `Game.Shared/DropIndex.cs` so the tool, the server and the client share one; the recipe roll and the boss mat pile became real tables (`MobCatalog.RecipeRolls` / `BossPile`), which closes the entry's ⚠ about the books drifting. ⚠ Two leftovers: the cache is measurably SLOWER than rebuilding (13 ms build, 28 ms load) — say the word and the file half goes; and the boss pile takes no rate knob at all, which is **`BL-262`**. The entry as it stood:
+
+## `BL-253` 🔵 A DROP DATABASE — "I SAY WHAT I AM LOOKING FOR AND IT SHOWS ME WHERE IT DROPS"
+
+**2026-09-16, alongside `BL-247`:** *"we will need a drop database -> i say what im looking for and it
+shows me all mob_name/[mob_lvl-elite|boss|normal]/location/drop_rate"*.
+
+✅ **THE MEASURING HALF IS BUILT (0.151.0)** — `dotnet run --project tools/BalanceMatrix -- --drops
+"greater scroll"` prints exactly those four columns for anything matching, by item name or id. It is
+in `tools/BalanceMatrix/DropFinder.cs`, and it earned itself the day it was written: it caught a new
+boss template spawning as ordinary camp filler, and every number in `BL-247`'s report is read off it.
+
+🔑 **The one design fact worth carrying into the in-game version: it must walk SPAWNS, not templates.**
+Rank is a property of the spawn, and half the top-end faucets in the game (every Greater/Safe enchant
+scroll, every Epic+ material, every recipe book) exist only for an Elite or a Boss kill. A lookup
+written against `MobType.Drops` would answer "nothing drops this" — correctly, and uselessly.
+
+🔵 **What is still owed is the IN-GAME window**, which is what you actually asked for. Open questions:
+
+1. ❓ **Where does it live** — a player window (a search box in the Items UI, reachable at any time),
+   or an admin `/whatdrops <item>` that prints to chat? The first is a feature; the second is an hour.
+   My reading: **player window**, because *"i say what im looking for"* is a play-time question, and a
+   drop table nobody can read is why three items sat unobtainable for weeks.
+2. ❓ **Does it show what you have not met yet?** A full index tells you a level-78 boss drops the A
+   scroll before you have ever seen one. That is either the point of the feature or a spoiler; your
+   call.
+3. ⚠ **The recipe books are the one row the tool reconstructs rather than reads.** They are not
+   `DropEntry`s — `RollBossBonus` rolls them by hand — so the two sides can drift. If the in-game
+   version is built, that roll should move into a real drop table first, and then there is one source
+   of truth instead of two.

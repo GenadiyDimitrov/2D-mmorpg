@@ -202,6 +202,7 @@ public class GameLoopService : BackgroundService
                 case OpenBoxCmd c: HandleOpenBox(c); break;
                 case SelectBoxItemsCmd c: HandleSelectBoxItems(c); break;
                 case InspectTargetCmd c: HandleInspectTarget(c); break;
+                case LookupDropsCmd c: HandleLookupDrops(c); break;
                 case SetUiTargetCmd c: HandleSetUiTarget(c); break;
                 case RespawnCmd c: HandleRespawn(c); break;
                 case ClassChangeCmd c: HandleClassChange(c); break;
@@ -8115,6 +8116,30 @@ public class GameLoopService : BackgroundService
                 break;
             }
 
+            // `/whatdrops <item>` — THE DROP DATABASE IN CHAT (`BL-253`). The same answer the window
+            // shows, on the same index, through the same handler; it exists because chat needs no APK,
+            // so the feature is usable the moment the server restarts and stays useful for a quick
+            // check afterwards. ⚠ Deliberately NOT admin-gated — his ask was a player question
+            // (*"i say what im looking for"*), and everything it reveals is on the inspect window
+            // already for anyone standing in front of the creature.
+            case "whatdrops" or "drops":
+            {
+                HandleLookupDropsToChat(admin, arg.Trim());
+                break;
+            }
+
+            // `/dropindex` / `/dropindex rebuild` — his *"a version that says (rebuild even when u have
+            // the mob database)"*, as a lever you can pull without editing a constant. The bare form
+            // reports what the last load did, which is the only way to tell a cache hit from a rebuild
+            // after the boot line has scrolled away.
+            case "dropindex":
+            {
+                if (arg.Trim().Equals("rebuild", StringComparison.OrdinalIgnoreCase))
+                    DropIndexStore.Rebuild();
+                SendSystemToEntity(admin, $"Drop index: {DropIndexStore.LastAction}");
+                break;
+            }
+
             // `/server <shutdown|stop|reboot|restart|on|online> [minutes] [adminOnly]` — the whole
             // procedure lives in ServerControl; this is only the parsing and the first announcement.
             // Every command REPLACES the one before it, which is why there is no "cancel" verb: `on` is
@@ -15705,13 +15730,6 @@ public class GameLoopService : BackgroundService
         if (mob.Rank is not (MobRank.Boss or MobRank.Elite))
             return false;
         bool boss = mob.Rank == MobRank.Boss;
-        int tier = mob.Level >= 76 ? 76 : mob.Level >= 61 ? 61 : mob.Level >= 52 ? 52 : mob.Level >= 40 ? 40 : 20;
-        // ⚠ ONE MAP, IN `MobCatalog.MatFlavor`. This used to be a hand-written copy — coarser, and by
-        // 0.167.0 wrong: it still read `Animal or Plant => Leather` after the drop TABLE had split the
-        // two, so a Plant boss went on paying leather while every Plant creature beside it paid wood
-        // (`BL-254`). The two maps agree on every other category; they always did, which is exactly how
-        // a duplicate survives long enough to drift.
-        MaterialType primary = MobCatalog.MatFlavor(mobType.Category).Primary;
 
         // `BL-241` — the pickup filter applies to the pile, one item at a time. A mats filter set to
         // Rare skips the Common ingots and still takes the Rare hide off the same boss. `gave` tracks
@@ -15726,11 +15744,16 @@ public class GameLoopService : BackgroundService
             if (AddItem(recipient, matId, qty)) gave = true;
         }
 
-        GiveMat(primary, ItemRarity.Common, boss ? _rng.Next(6, 11) : _rng.Next(2, 4));
-        GiveMat(MaterialType.Gem, ItemRarity.Common, boss ? _rng.Next(4, 8) : _rng.Next(1, 3));
-        GiveMat(primary, ItemRarity.Uncommon, boss ? _rng.Next(2, 5) : 1);
-        if (boss && mob.Level >= 30 && _rng.NextDouble() < 0.5) GiveMat(primary, ItemRarity.Rare, 1);
-        if (boss && mob.Level >= 76 && _rng.NextDouble() < 0.2) GiveMat(primary, ItemRarity.Epic, 1);
+        // THE PILE IS A TABLE NOW — `MobCatalog.BossPile` (`BL-253`). It was five hand-written lines
+        // here, which made it invisible to every reader but this one: the drop database has to answer
+        // "where does Common Leather come from" and a boss pile that only exists inside the kill path
+        // cannot be part of that answer. Same move the recipe roll makes below.
+        // ⚠ Still rate-free, exactly as it was — see the ⚠ on BossPile and `BL-262`.
+        foreach (var row in MobCatalog.BossPile(mob.Level, mob.Rank, mobType.Category))
+        {
+            if (row.Chance < 1f && _rng.NextDouble() >= row.Chance) continue;
+            GiveMat(row.Type, row.Rarity, _rng.Next(row.MinQty, row.MaxQty + 1));
+        }
 
         // The GEAR a boss or elite drops is no longer decided here — RollDrop swaps the normal gear groups
         // for MobCatalog.GearDrops(level, rank), which is the owner's §3 rank table (elite U 10 / R 2 /
@@ -15753,36 +15776,23 @@ public class GameLoopService : BackgroundService
         // ⚠ DropCopies, not a comparison: above 100% the excess is COPIES, the same rule every other
         // drop on this kill runs on. At ×100 a boss's armor book is 50 copies, not one — "as if you had
         // killed fifty", which is what the rate means everywhere else.
-        if (tier >= 76)
+        //
+        // 🔑 THE ROLLS THEMSELVES ARE A TABLE NOW — `MobCatalog.RecipeRolls` (`BL-253`). They were three
+        // literal lines here and a hand-made COPY of them in `tools/BalanceMatrix`, and the in-game drop
+        // database would have been a third. One list, three callers.
+        foreach (var roll in MobCatalog.RecipeRolls(mob.Level, mob.Rank))
         {
-            const float OtherGroupRate = 3f;   // see the note above — the authored numbers are /3
-            string PickRecipe(params string[] keys) =>
-                ItemCatalog.RecipeBookId($"craft_{keys[_rng.Next(keys.Length)]}_t{tier}");
-            void RecipeRoll(float delivered, params string[] keys)
+            int copies = MobCatalog.DropCopies(
+                roll.Delivered / MobCatalog.RecipeOtherGroupRate * recipeRate, _rng.NextDouble());
+            for (int i = 0; i < copies; i++)
             {
-                int copies = MobCatalog.DropCopies(
-                    delivered / OtherGroupRate * recipeRate, _rng.NextDouble());
-                for (int i = 0; i < copies; i++)
-                {
-                    // `BL-241` — a filter can refuse a recipe book too; each copy re-rolls WHICH book,
-                    // so the check is per copy rather than per roll.
-                    string bookId = PickRecipe(keys);
-                    if (ItemCatalog.Get(bookId) is ItemDef bookDef && !PickupWanted(recipient, bookDef))
-                        continue;
-                    if (!AddItem(recipient, bookId)) break;
-                    gave = true;
-                }
-            }
-            if (boss)
-            {
-                RecipeRoll(0.50f, "heavy", "light", "robe", "helm", "gloves", "boots", "shield");
-                RecipeRoll(0.40f, "sword1h", "sword2h", "blunt1h", "blunt2h", "duals", "bow", "wand", "staff");
-                RecipeRoll(0.60f, "necklace", "ring", "earring");
-            }
-            else
-            {
-                RecipeRoll(0.001f, "heavy", "light", "robe", "sword1h", "sword2h", "bow", "wand",
-                    "necklace", "ring", "earring");
+                // `BL-241` — a filter can refuse a recipe book too; each copy re-rolls WHICH book,
+                // so the check is per copy rather than per roll.
+                string bookId = roll.BookIds[_rng.Next(roll.BookIds.Length)];
+                if (ItemCatalog.Get(bookId) is ItemDef bookDef && !PickupWanted(recipient, bookDef))
+                    continue;
+                if (!AddItem(recipient, bookId)) break;
+                gave = true;
             }
         }
 
@@ -18540,6 +18550,106 @@ public class GameLoopService : BackgroundService
     /// the bar came to show "x7" while the venom ticked for one (`BL-198`).</para></summary>
     private static int StacksShown(Entity target, BuffInstance b) =>
         (b.Effect & SkillEffect.AnyDot) != 0 ? DotStacksOf(target, b) : b.Stacks;
+
+    /// <summary>THE DROP DATABASE — `BL-253`. *"each ask of item it looks up and see mobs that drop and
+    /// show the drop rate for the player (similar to [info->drops] on mobs)"*.
+    ///
+    /// <para>🔑 "SIMILAR TO INFO→DROPS" IS A SPEC, NOT A COMPARISON, and it is the reason this handler is
+    /// short. The inspect window's drop list already decided what a per-kill chance MEANS for a player:
+    /// the item's own rate knobs, times the looker's Rune of Drop, times the LEVEL-GAP penalty between
+    /// him and that creature — and above 100% it stops being a percentage and becomes copies per kill.
+    /// All of that is reproduced here, because a window that showed the table's number beside a window
+    /// that shows the player's would make one of the two a liar.</para>
+    ///
+    /// <para>⚠ THE GAP IS PER ROW, not per query. Rare Wood off a level-60 Treant and off a level-78 boss
+    /// are two different numbers for the same level-70 player, and the whole point of the window is to
+    /// answer "where should I go", which is exactly the question the gap decides.</para></summary>
+    private void HandleLookupDrops(LookupDropsCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player)) return;
+        SendTo(player, "DropLookupResult", LookupDrops(player, cmd.Query));
+    }
+
+    /// <summary>The same answer, printed to CHAT — `/whatdrops <item>`. It exists so the feature works
+    /// the moment the server restarts, with no APK, and it stays useful afterwards for a one-line check.
+    /// ⚠ ONE builder, two renderers: if these two ever compute anything separately, one of them is wrong.</summary>
+    private void HandleLookupDropsToChat(Entity player, string query)
+    {
+        var result = LookupDrops(player, query);
+        foreach (var item in result.Items)
+        {
+            SendSystemToEntity(player, $"{item.Name} [{item.ItemId}] — {item.Sources.Length} source(s)");
+            foreach (var r in item.Sources)
+                SendSystemToEntity(player,
+                    $"   {r.Mob} (lvl {r.Level}, {r.Rank}) — {r.Where} — {r.Chance}"
+                    + (r.Note.Length > 0 ? $"  [{r.Note}]" : ""));
+        }
+        if (result.Note.Length > 0) SendSystemToEntity(player, result.Note);
+    }
+
+    private DropLookupResult LookupDrops(Entity player, string rawQuery)
+    {
+        string query = (rawQuery ?? "").Trim();
+        if (query.Length < 2)
+            return new DropLookupResult(query, Array.Empty<DropLookupItem>(), "Type at least two characters.");
+
+        var index = DropIndexStore.Current;
+        float lookMult = player.Runes.DropChance;
+
+        // Above 100% a percentage stops meaning anything, so the label switches to copies per kill —
+        // the same `Odds` the inspect list uses, plain "x" and never "×" (the client's TMP atlas is
+        // static and carries no multiplication sign).
+        static string Odds(double c) => c >= 1.0 ? $"x{c:0.##}/kill" : c >= 0.0001 ? $"{c * 100:0.##}%" : $"{c * 100:0.0000}%";
+
+        var items = new List<DropLookupItem>();
+        int shown = 0;
+        string note = "";
+
+        foreach (var g in DropIndex.Find(index, query, lookMult).GroupBy(s => s.ItemId))
+        {
+            if (items.Count >= MaxLookupItems) { note = $"Showing the first {MaxLookupItems} items — narrow the search."; break; }
+
+            var rows = new List<DropLookupRow>();
+            foreach (var s in g)
+            {
+                // The gap is against the creature's level. A band reports its BEST rate, so the gap is
+                // measured at the level that pays it — the same level the note names.
+                float gap = ExpCurve.LevelGapMultiplier(player.Level - s.BestLevel);
+                double chance = DropIndex.ChanceFor(s, lookMult) * gap;
+
+                var bits = new List<string>();
+                if (s.MinLevel != s.MaxLevel && s.BestLevel != s.MinLevel) bits.Add($"from lvl {s.BestLevel}");
+                if (s.IgnoresRates) bits.Add("guaranteed pile, no rates");
+                if (s.MaxQty > 1) bits.Add($"x{s.MinQty}-{s.MaxQty}");
+                if (gap <= 0f) bits.Add("TOO FAR from your level — drops nothing for you");
+                else if (gap < 0.999f) bits.Add($"level gap: cut to {gap * 100:0.#}%");
+
+                rows.Add(new DropLookupRow(
+                    s.MobName,
+                    s.MinLevel == s.MaxLevel ? s.MinLevel.ToString() : $"{s.MinLevel}-{s.MaxLevel}",
+                    s.Rank switch { MobRank.Boss => "BOSS", MobRank.Elite => "elite", _ => "normal" },
+                    s.Location,
+                    Odds(chance),
+                    string.Join("; ", bits)));
+
+                if (rows.Count >= MaxLookupRowsPerItem) break;
+            }
+            shown += rows.Count;
+            items.Add(new DropLookupItem(g.Key, DropIndex.NameOf(g.Key), rows.ToArray()));
+        }
+
+        if (items.Count == 0)
+            note = "Nothing in the world drops that. It may be craft-only, vendor-only or quest-only.";
+        else if (note.Length == 0)
+            note = $"{items.Count} item(s), {shown} source(s).";
+
+        return new DropLookupResult(query, items.ToArray(), note);
+    }
+
+    /// <summary>Caps on one drop-database answer. A two-letter query legitimately matches hundreds of
+    /// items, and the phone has to draw the result; these are the point at which a list stops being an
+    /// answer and becomes a dump. The note says when it bit.</summary>
+    private const int MaxLookupItems = 30, MaxLookupRowsPerItem = 25;
 
     private void HandleInspectTarget(InspectTargetCmd cmd)
     {

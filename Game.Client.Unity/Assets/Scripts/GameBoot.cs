@@ -942,6 +942,22 @@ namespace Game.Client
         /// <summary>The expanded target window's contents, or null. Arrives only after asking.</summary>
         public TargetDetails Details { get; private set; }
 
+        /// <summary>`BL-253` — the last drop-database answer, or null before the first search. The UI
+        /// redraws off this; it is replaced whole rather than appended to, because a search REPLACES
+        /// its predecessor and a stale list under a new query is the one confusing outcome here.</summary>
+        public DropLookupResult DropLookup { get; private set; }
+
+        /// <summary>Bumped when a new drop-database answer lands. The UI polls revisions rather than
+        /// subscribing to events — the idiom the rest of this client already runs on.</summary>
+        public int DropLookupRevision { get; private set; }
+
+        public async void LookupDrops(string query)
+        {
+            if (Phase != ClientPhase.InWorld) return;
+            try { await _net.LookupDropsAsync(query ?? ""); }
+            catch (Exception ex) { ClientLog.Warn("Drop lookup: " + ex.Message); }
+        }
+
         /// <summary>A pending resurrect offer, or null.</summary>
         public ResurrectOffer PendingResurrect { get; private set; }
 
@@ -1292,6 +1308,7 @@ namespace Game.Client
                     TargetBuffs = b.Buffs ?? Array.Empty<BuffDto>();
             });
             _net.TargetDetailsReceived += d => Main(() => Details = d);
+            _net.DropLookupReceived += d => Main(() => { DropLookup = d; DropLookupRevision++; });
             _net.PvpStateReceived += p => Main(() =>
             {
                 if (p == null) return;

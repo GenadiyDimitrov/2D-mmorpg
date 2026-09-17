@@ -409,6 +409,13 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    /// <summary>`BL-253` — the drop database. Free text; the answer comes back as `DropLookupResult`.</summary>
+    public Task LookupDrops(string query)
+    {
+        _world.Commands.Enqueue(new LookupDropsCmd(Context.ConnectionId, query ?? ""));
+        return Task.CompletedTask;
+    }
+
     public Task Respawn()
     {
         _world.Commands.Enqueue(new RespawnCmd(Context.ConnectionId));

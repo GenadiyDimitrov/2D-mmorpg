@@ -57,6 +57,9 @@ namespace Game.Client
         /// can follow auto-hunt instead of sitting empty while it fights.</summary>
         public event Action<AutoTargetUpdate> AutoTargetReceived;
         public event Action<TargetDetails> TargetDetailsReceived;
+
+        /// <summary>`BL-253` — the answer to a drop-database query.</summary>
+        public event Action<DropLookupResult> DropLookupReceived;
         /// <summary>PvP toggles + reputation (karma, PK/PvP counts). The client used to TRACK the PvP
         /// flag locally by flipping a bool on every tap, which is a guess: the server refuses the
         /// toggle in a safe zone, and nothing told the button. This push is the authority.</summary>
@@ -186,6 +189,7 @@ namespace Game.Client
             _connection.On<CooldownUpdate>("Cooldowns", c => CooldownsReceived?.Invoke(c));
             _connection.On<AutoTargetUpdate>("AutoTarget", t => AutoTargetReceived?.Invoke(t));
             _connection.On<TargetDetails>("TargetDetails", d => TargetDetailsReceived?.Invoke(d));
+            _connection.On<DropLookupResult>("DropLookupResult", d => DropLookupReceived?.Invoke(d));
             _connection.On<PvpState>("PvpState", p => PvpStateReceived?.Invoke(p));
             _connection.On<SelfStateDto>("SelfState", s => SelfStateReceived?.Invoke(s));
             _connection.On<TitlesDto>("Titles", t => TitlesReceived?.Invoke(t));
@@ -441,6 +445,10 @@ namespace Game.Client
         /// <summary>Ask the server for the expanded target window. withDrops adds a mob's drop list.</summary>
         public Task InspectTargetAsync(Guid targetId, bool withDrops) =>
             _connection.SendAsync("InspectTarget", targetId, withDrops);
+
+        /// <summary>`BL-253` — ask the drop database where an item comes from.</summary>
+        public Task LookupDropsAsync(string query) =>
+            _connection.SendAsync("LookupDrops", query);
 
         /// <summary>Tell the server what is selected so it can push that entity's debuffs and stacks.
         /// Sent only when the selection CHANGES — see GameBoot.TargetId.</summary>

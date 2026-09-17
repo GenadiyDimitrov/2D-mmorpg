@@ -315,7 +315,128 @@ namespace Game.Client
             _cmpView.Column.gameObject.SetActive(false);
 
             BuildSelectionPopup();
+            BuildDropSearchWindow();
             _itemPanel.gameObject.SetActive(false);
+        }
+
+        // ── THE DROP DATABASE (`BL-253`) ──────────────────────────────────────────────────────────
+        // *"i say what im looking for and it shows me all mob_name/[mob_lvl-elite|boss|normal]/location/
+        // drop_rate"*, and *"each ask of item it looks up and see mobs that drop and show the drop rate
+        // for the player (similar to [info->drops] on mobs)"*.
+        //
+        // 🔑 IT LIVES HERE, in the ITEMS file, and it is not an accident of where there was room: the
+        // question it answers is an item question, its rows are item rows, and its formatting rules are
+        // the target window's drop-list rules. Nothing about it belongs to the world or the menu but the
+        // button that opens it.
+        //
+        // ⚠ THE CLIENT COMPUTES NOTHING. Every cell arrives pre-formatted (`DropLookupRow`) because the
+        // chance is the SERVER's arithmetic — the item's rate knobs, the player's Rune of Drop and the
+        // level gap against that creature. A client that did any of that itself would be a fourth place
+        // the drop rate is calculated, and the one rule this system has is that there is one.
+        private RectTransform _dropSearchPanel;
+        private TMP_InputField _dropSearchInput;
+        private RectTransform _dropSearchList;
+        private TextMeshProUGUI _dropSearchNote;
+        private int _dropSearchSeen = -1;
+
+        /// <summary>Polled from the world refresh — the revision idiom the rest of this client uses.
+        /// Only while the window is OPEN: a search you left behind is not worth a rebuild, and the
+        /// answer is still there in <see cref="GameBoot.DropLookup"/> when you reopen it.</summary>
+        private void RefreshDropSearch()
+        {
+            if (_dropSearchPanel == null || !_dropSearchPanel.gameObject.activeSelf) return;
+            if (Boot.DropLookupRevision == _dropSearchSeen) return;
+            _dropSearchSeen = Boot.DropLookupRevision;
+            RenderDropSearch();
+        }
+
+        private const float DropSearchWidth = 620f, DropSearchHeight = 520f;
+
+        private void BuildDropSearchWindow()
+        {
+            _dropSearchPanel = UiKit.PanelBox(_worldRoot, "DropSearch");
+            UiKit.Place(_dropSearchPanel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+                        Vector2.zero, new Vector2(DropSearchWidth, DropSearchHeight));
+            var inner = _dropSearchPanel.GetChild(0);
+            float chrome = UiKit.WindowChrome(_dropSearchPanel, "Where does it drop?",
+                                              () => CloseWindow(_dropSearchPanel));
+
+            _dropSearchInput = UiKit.InputField(inner, "item name or id…", size: 17f);
+            UiKit.Place(UiKit.Rect(_dropSearchInput.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(14f, -chrome - 6f), new Vector2(DropSearchWidth - 140f, 44f));
+            // Enter searches, so the soft keyboard's own action key works and the button is optional.
+            _dropSearchInput.onSubmit.AddListener(_ => SubmitDropSearch());
+
+            var go = UiKit.TextButton(inner, "Find", SubmitDropSearch, 16f);
+            UiKit.Place(UiKit.Rect(go.gameObject), new Vector2(1f, 1f), new Vector2(1f, 1f),
+                        new Vector2(-62f, -chrome - 28f), new Vector2(100f, 44f));
+
+            _dropSearchNote = UiKit.Label(inner, "", 14f, UiKit.TextDim, TextAlignmentOptions.Left);
+            UiKit.Place(UiKit.Rect(_dropSearchNote.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(14f, -chrome - 56f), new Vector2(DropSearchWidth - 28f, 22f));
+
+            ScrollRect scroll;
+            _dropSearchList = UiKit.ScrollArea(inner, out scroll, 2f);
+            UiKit.Stretch((RectTransform)scroll.transform, 10f, chrome + 82f, 10f, 12f);
+
+            _dropSearchPanel.gameObject.SetActive(false);
+        }
+
+        /// <summary>Opened from the menu. Focuses the box so the first tap is already typing — the
+        /// window has exactly one control and making you find it would be a wasted tap.</summary>
+        private void OpenDropSearch()
+        {
+            ToggleWindow(_dropSearchPanel);
+            if (!_dropSearchPanel.gameObject.activeSelf) return;
+            _dropSearchInput.ActivateInputField();
+            RenderDropSearch();
+        }
+
+        private void SubmitDropSearch()
+        {
+            string q = _dropSearchInput.text?.Trim() ?? "";
+            if (q.Length < 2)
+            {
+                _dropSearchNote.text = "Type at least two characters.";
+                return;
+            }
+            _dropSearchNote.text = "Searching…";
+            Boot.LookupDrops(q);
+        }
+
+        /// <summary>Redraw from <see cref="GameBoot.DropLookup"/>. Rows are built fresh each time: an
+        /// answer replaces its predecessor whole, and a pooled list showing half of two different
+        /// searches is the one outcome that would make the window untrustworthy.</summary>
+        private void RenderDropSearch()
+        {
+            if (_dropSearchList == null) return;
+            for (int i = _dropSearchList.childCount - 1; i >= 0; i--)
+                Destroy(_dropSearchList.GetChild(i).gameObject);
+
+            var result = Boot.DropLookup;
+            if (result == null) { _dropSearchNote.text = ""; return; }
+            _dropSearchNote.text = result.Note ?? "";
+
+            foreach (var item in result.Items)
+            {
+                var head = UiKit.Label(_dropSearchList, item.Name, 17f, UiKit.Accent, TextAlignmentOptions.Left);
+                UiKit.Rect(head.gameObject).sizeDelta = new Vector2(0f, 24f);
+                head.gameObject.AddComponent<LayoutElement>().preferredHeight = 24f;
+
+                foreach (var r in item.Sources)
+                {
+                    // One line per source, laid out as his four columns plus the chance. TMP rich-text
+                    // alignment tabs keep the columns straight without five separate labels per row —
+                    // and the phone has to draw up to 25 of these.
+                    string note = string.IsNullOrEmpty(r.Note) ? "" : $"  <color=#8a8f98>({r.Note})</color>";
+                    var line = UiKit.Label(_dropSearchList,
+                        $"   {r.Mob}  <color=#8a8f98>lvl {r.Level} · {r.Rank}</color>  {r.Where}  "
+                        + $"<color=#e0b64a>{r.Chance}</color>{note}",
+                        14f, UiKit.Text, TextAlignmentOptions.TopLeft);
+                    var le = line.gameObject.AddComponent<LayoutElement>();
+                    le.preferredHeight = 20f;
+                }
+            }
         }
 
         private DetailView BuildDetailColumn(Transform inner, string name, float chrome)

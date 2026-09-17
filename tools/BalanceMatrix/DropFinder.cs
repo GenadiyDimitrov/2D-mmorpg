@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Game.Shared;
 
 /// <summary>
@@ -7,30 +8,19 @@ using Game.Shared;
 /// <para>`dotnet run --project tools/BalanceMatrix -- --drops &lt;text&gt;` answers "where does this come
 /// from" for any item, by name or by id, substring, case-insensitive.</para>
 ///
-/// ── Why it walks SPAWNS and not the catalogue ──────────────────────────────────────────────────
-/// 🔑 RANK IS A PROPERTY OF THE SPAWN, NOT OF THE TEMPLATE. Half the top-end faucets in the game —
-/// every Greater/Safe enchant scroll, every Epic+ crafting material, every recipe book — are emitted
-/// only for an Elite or a Boss kill, and the only thing that creates one of those is a ZONE. A tool
-/// that read `MobType.Drops` would have reported, correctly and uselessly, that nothing drops
-/// `scroll_greater_a`. So the unit of the answer is a (zone × template) pair: this is the same list
-/// the kill roll builds in `GameLoopService.RollDrop`, assembled the same way, in the same order.
+/// ── This file is now a PRINTER and nothing else ────────────────────────────────────────────────
+/// 🔑 THE WALK MOVED INTO <see cref="DropIndex"/> (Game.Shared, 0.168.0). It used to live here, and the
+/// in-game window he asked for would have been a second copy of it — with the recipe-book roll a *third*
+/// copy, reconstructed by hand from `RollBossBonus` and free to drift from it. One walk, three readers:
+/// this tool, the server's cached index, and the client window it feeds.
 ///
-/// ⚠ EVERY CHANCE HERE GOES THROUGH <see cref="MobCatalog.EffectiveChance"/>, which is the rule the
-/// whole drop system runs on: the kill roll, the target-inspect list and this tool must read the same
-/// number or the number on screen stops being the number you get. Rates shown are therefore LIVE —
-/// run it after a `/droprate` change and the table moves with it.
-///
-/// ⚠ THE RECIPE BOOKS ARE NOT `DropEntry`s. They are rolled by hand inside `RollBossBonus`, so their
-/// rows below are reconstructed from that code and are the one place this file can silently drift
-/// from the server. If you change that roll, change <see cref="RecipeRows"/> with it.
+/// Everything the old header argued is still true and now lives on `DropIndex`: it walks SPAWNS rather
+/// than templates because rank is a property of the spawn; every chance goes through
+/// `MobCatalog.EffectiveChance` so the number printed is the number rolled; and the boss MAT PILE, which
+/// takes no rate knob at all, is marked so it is never shown scaled.
 /// </summary>
 internal static class DropFinder
 {
-    /// <summary>One place an item comes from.</summary>
-    private readonly record struct Source(
-        string ItemId, string ItemName, string MobName, string Level, MobRank Rank,
-        string Location, float Chance, string Note);
-
     public static void Run(string[] args)
     {
         string query = args.Length > 1 ? string.Join(' ', args[1..]).Trim() : "";
@@ -40,11 +30,11 @@ internal static class DropFinder
             return;
         }
 
-        var hits = new List<Source>();
-        foreach (var zone in WorldMap.SpawnZones)
-            foreach (string id in zone.MobTypes)
-                Collect(zone, id, query, hits);
+        var sw = Stopwatch.StartNew();
+        var index = DropIndex.Build();
+        sw.Stop();
 
+        var hits = DropIndex.Find(index, query);
         if (hits.Count == 0)
         {
             Console.WriteLine($"\nNothing in the world drops anything matching \"{query}\".");
@@ -54,122 +44,35 @@ internal static class DropFinder
         }
 
         Console.WriteLine($"\n═══ WHAT DROPS \"{query}\" ═══");
-        Console.WriteLine("Chance is PER KILL, with every live rate knob applied (global × group × item).\n");
+        Console.WriteLine("Chance is PER KILL, with every live rate knob applied (global × group × item).");
+        Console.WriteLine($"(index: {index.Sources.Count} rows, built in {sw.ElapsedMilliseconds} ms, "
+                        + $"v{index.Version} #{index.ContentHash})\n");
 
-        foreach (var group in hits.GroupBy(h => h.ItemId).OrderBy(g => g.Key))
+        foreach (var group in hits.GroupBy(h => h.ItemId))
         {
-            var rows = group.OrderByDescending(r => r.Chance).ToList();
-            Console.WriteLine($"── {rows[0].ItemName}  [{group.Key}]  — {rows.Count} source(s)");
+            var rows = group.ToList();
+            Console.WriteLine($"── {DropIndex.NameOf(group.Key)}  [{group.Key}]  — {rows.Count} source(s)");
             Console.WriteLine($"   {"creature",-28} {"lvl",-7} {"rank",-6} {"where",-26} {"per kill",10}  note");
             foreach (var r in rows)
-                Console.WriteLine($"   {Trim(r.MobName, 28),-28} {r.Level,-7} {Rank(r.Rank),-6} "
-                                + $"{Trim(r.Location, 26),-26} {Pct(r.Chance),10}  {r.Note}");
+                Console.WriteLine($"   {Trim(r.MobName, 28),-28} {Level(r),-7} {Rank(r.Rank),-6} "
+                                + $"{Trim(r.Location, 26),-26} {Pct(DropIndex.ChanceFor(r)),10}  {Note(r)}");
             Console.WriteLine();
         }
     }
 
-    /// <summary>Every row one (zone × template) pair pays, assembled exactly as `RollDrop` assembles it.</summary>
-    private static void Collect(SpawnZone zone, string mobId, string query, List<Source> hits)
+    private static string Level(DropSource s) =>
+        s.MinLevel == s.MaxLevel ? s.MinLevel.ToString() : $"{s.MinLevel}-{s.MaxLevel}";
+
+    /// <summary>The two things a row may need said about it: that its chance is only paid at part of the
+    /// band, and that it is the rate-free boss pile rather than a drop table row.</summary>
+    private static string Note(DropSource s)
     {
-        var type = MobCatalog.Get(mobId);
-        if (type.Dummy) return;
-
-        // The LEVELS this spawner actually produces. A template with a natural level brings its own and
-        // the zone's band is only a label — unless ForceZoneLevel, where the zone wins. Same rule as
-        // WorldPlan.DedicatedFor and GameLoopService's spawn path; getting it wrong here would report a
-        // band's drops off a creature that never spawns in it.
-        int lo = type.Level > 0 && !zone.ForceZoneLevel ? type.Level : zone.MinLevel;
-        int hi = type.Level > 0 && !zone.ForceZoneLevel ? type.Level : zone.MaxLevel;
-        string levelLabel = lo == hi ? lo.ToString() : $"{lo}-{hi}";
-        string where = LocationOf(zone);
-
-        // The drop rows are level-gated (DropEntry.MinLevel/MaxLevel), so a band is walked level by
-        // level and the best chance in the band is what the row reports — a band that pays a thing at
-        // only one of its levels is still a source, and saying "76-79" next to the 79-only rate would
-        // be the lie this whole tool exists to avoid. The note says so when it happens.
-        var best = new Dictionary<string, (float Chance, int At)>();
-
-        for (int lvl = lo; lvl <= hi; lvl++)
-        {
-            var rows = new List<DropEntry>();
-            if (type.Drops is not null)
-                rows.AddRange(type.Drops.Where(e => e.AppliesAtLevel(lvl)));
-
-            if (zone.Rank != MobRank.Normal)
-            {
-                rows.RemoveAll(e => MobCatalog.IsGearGroup(e.GroupId));
-                rows.AddRange(MobCatalog.GearDrops(lvl, zone.Rank));
-                rows.AddRange(MobCatalog.EnchantScrollDrops(lvl, zone.Rank));
-                rows.AddRange(MobCatalog.UtilityScrollDrops(lvl, zone.Rank));
-                rows.AddRange(MobCatalog.EliteMatDrops(lvl, zone.Rank, type.Category));
-            }
-
-            foreach (var e in rows)
-            {
-                if (!Matches(e.ItemId, query)) continue;
-                float c = MobCatalog.EffectiveChance(e);
-                if (!best.TryGetValue(e.ItemId, out var had) || c > had.Chance)
-                    best[e.ItemId] = (c, lvl);
-            }
-
-            foreach (var (itemId, chance) in RecipeRows(lvl, zone.Rank))
-            {
-                if (!Matches(itemId, query)) continue;
-                if (!best.TryGetValue(itemId, out var had) || chance > had.Chance)
-                    best[itemId] = (chance, lvl);
-            }
-        }
-
-        foreach (var (itemId, (chance, at)) in best)
-            hits.Add(new Source(itemId, NameOf(itemId), type.Name, levelLabel, zone.Rank, where, chance,
-                                lo == hi || at == lo ? "" : $"only from level {at}"));
+        var bits = new List<string>();
+        if (s.MinLevel != s.MaxLevel && s.BestLevel != s.MinLevel) bits.Add($"only from level {s.BestLevel}");
+        if (s.IgnoresRates) bits.Add($"boss pile, x{s.MinQty}-{s.MaxQty}, NO rate knobs");
+        else if (s.MaxQty > 1) bits.Add($"x{s.MinQty}-{s.MaxQty}");
+        return string.Join("; ", bits);
     }
-
-    /// <summary>The RECIPE BOOK roll from `GameLoopService.RollBossBonus`, mirrored. ⚠ These are not
-    /// DropEntries and there is no shared function to call — see the ⚠ in the file header. Since
-    /// `BL-247` the roll takes the rate knobs like everything else, so the numbers here are the
-    /// authored chance × the live "other" group rate ÷ its own ×3 baseline, i.e. the global rate.</summary>
-    private static IEnumerable<(string ItemId, float Chance)> RecipeRows(int level, MobRank rank)
-    {
-        if (rank == MobRank.Normal || level < 76) yield break;
-        float rate = MobCatalog.EffectiveRate(0) / 3f;   // the "other" group's ×3 is baked into the author
-
-        IEnumerable<(string, float)> Roll(float chance, params string[] keys)
-        {
-            foreach (string k in keys)
-                yield return (ItemCatalog.RecipeBookId($"craft_{k}_t76"), chance * rate / keys.Length);
-        }
-
-        if (rank == MobRank.Boss)
-        {
-            foreach (var r in Roll(0.50f, "heavy", "light", "robe", "helm", "gloves", "boots", "shield")) yield return r;
-            foreach (var r in Roll(0.40f, "sword1h", "sword2h", "blunt1h", "blunt2h", "duals", "bow", "wand", "staff")) yield return r;
-            foreach (var r in Roll(0.60f, "necklace", "ring", "earring")) yield return r;
-        }
-        else
-        {
-            foreach (var r in Roll(0.001f, "heavy", "light", "robe", "sword1h", "sword2h", "bow", "wand",
-                                   "necklace", "ring", "earring")) yield return r;
-        }
-    }
-
-    /// <summary>The FIELD whose polygon holds this spawner, which is the name a player would say. Every
-    /// spawner is inside one — `RegionMap.ValidateSpawnersInFields` fails the boot otherwise — so the
-    /// nearest-town fallback is for a tool run against a half-edited world, not for normal use.</summary>
-    private static string LocationOf(SpawnZone z)
-    {
-        foreach (var f in RegionMap.Fields)
-            if (f.Contains(z.X, z.Y))
-                return f.Name;
-        return $"near {WorldMap.NearestSafeZone(z.X, z.Y).Name}";
-    }
-
-    private static bool Matches(string itemId, string query) =>
-        itemId.Contains(query, StringComparison.OrdinalIgnoreCase)
-        || NameOf(itemId).Contains(query, StringComparison.OrdinalIgnoreCase);
-
-    private static string NameOf(string itemId) =>
-        ItemCatalog.Get(itemId) is ItemDef d ? d.Name : itemId;
 
     private static string Rank(MobRank r) => r switch
     {

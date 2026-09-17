@@ -853,6 +853,10 @@ namespace Game.Client
                 // undo you can only reach in town is no undo at all.
                 ("Restore", () => { CloseWindow(_menuPanel); OpenRestoreWindow(); }, false),
                 ("Rank",   () => { CloseWindow(_menuPanel); OpenRank(); }, false),
+                // `BL-253` — the drop database. On the MENU rather than at an NPC or inside the bag for
+                // the same reason Craft is: "where do I get this" is a question you ask while looking
+                // at a recipe or an empty slot, not one you walk to town to ask.
+                ("Drops",  () => { CloseWindow(_menuPanel); OpenDropSearch(); }, false),
                 ("Setup",  () => { CloseWindow(_menuPanel); ToggleWindow(_settingsPanel); }, false),
                 // Options ≠ Setup: Setup is how the game LOOKS (local, PlayerPrefs), Options is what
                 // other players may do to you (server-side, per character) — M2/B11.
@@ -1246,6 +1250,7 @@ namespace Game.Client
             RefreshBag();
             RefreshItemDetails();    // `BL-141` — the open item redraws from the push, like every window here
             RefreshPickupFilter();   // `BL-241` — the filter rows relabel from the server's echo
+            RefreshDropSearch();     // `BL-253` — the drop database redraws when an answer lands
             RefreshSkillsWindow();
             RefreshStatsWindow();
             RefreshTargetWindow();

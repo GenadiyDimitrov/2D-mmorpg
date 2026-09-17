@@ -140,6 +140,15 @@ try
             "Base stat columns must each sum to 153 (StatCalculator.GetBaseStats):\n  "
             + string.Join("\n  ", sums));
 
+    // `BL-253` — THE DROP DATABASE, built once and cached beside game.db. His rule: *"a drop db should be
+    // build once and only once when server starts … it should remember it every restart until something
+    // tuches drops/mobs"*. Two stamps decide: a hand-bumped version for the rank-layer CODE, and a content
+    // hash for the data. Deliberately AFTER the validators above — every one of them is a reason the world
+    // might not be the world we are about to index.
+    Game.Server.Persistence.DropIndexStore.LoadOrBuild(
+        app.Environment.ContentRootPath,
+        msg => app.Logger.LogInformation("Drop index: {What}", msg));
+
     app.Logger.LogInformation("L2Clone server v{Version} starting.", Game.Shared.GameConstants.GameVersion);
 
     // (There used to be a LAN-address printout here for the phone. It enumerated every NIC that was up,
