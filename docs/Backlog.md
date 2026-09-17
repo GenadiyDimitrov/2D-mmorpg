@@ -81,6 +81,13 @@ rate knobs — it was a raw roll that no multiplier reached, which is why your �
 with it as `--drops`, the in-game window is owed) and **`BL-254`** (Rare Wood drops from nothing
 anywhere, and filling the 66-79 hole does not change that — it is structural, and it is a question).
 
+✅ **`BL-254` IS ANSWERED AND BUILT (2026-09-17, 0.167.0)** — option (c): *"make wood drop as lether ..
+primary/secondary -> animals: leather/wood, plants: wood/leather"*. The two categories mirror each other
+instead of sharing one line, Rare Wood has five sources, and all five material types are now somebody's
+PRIMARY — which is what the entry's wider warning asked for. **`BL-259` is answered too**: the four
+Warlord modifiers stay at `x1` (*"leave them as u made them -> playtest will show"*), and the rule
+around them narrowed — an unpriced debuff ships at the DEFAULT rather than blocking on you.
+
 ★ **And from your notes file, same day:** **`BL-249`** (dash potions to a 90-second reuse) — **BUILT
 in 0.150.0 and archived**. **`BL-251`**, Evasion Mastery removed from every rogue discipline, is
 **BUILT in 0.150.0** too (archived — the twin of the warrior's `BL-201`), and **`BL-252`** — a new
@@ -251,8 +258,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-234` | ❓ | URGENT LESSER HEAL — built to your four numbers; the per-rank falloff is mine to confirm | classes |
 | `BL-250` | 🟡 | THE SUBCLASS SYSTEM — **the server half is BUILT (0.155.0)**; what is left is the CLIENT dialogue + panel (APK) and the SIGIL half (§1-§4). ❓ one new question in §9.6 | classes |
 | `BL-253` | 🔵 | A DROP DATABASE — name an item, see every source; the BalanceMatrix half is built, the in-game window is owed | items |
-| `BL-254` | ❓ | RARE WOOD DROPS FROM NOTHING — wood is never a category's primary, so no Rare rung can reach it | items |
-| `BL-259` | ❓ | FOUR LANDING MODIFIERS — Charge n Shock, Shocking Shout, Shocking Javelin, Taunting Shout | classes |
 | `BL-260` | ❓ | **SUMMONERS — the conversation we have never had**, and four shipped decisions already lean on it | classes |
 
 ---
@@ -2080,72 +2085,8 @@ written against `MobType.Drops` would answer "nothing drops this" — correctly,
    version is built, that roll should move into a real drop table first, and then there is one source
    of truth instead of two.
 
-## `BL-254` ❓ RARE WOOD DROPS FROM NOTHING, ANYWHERE — is craft-only the intent?
-
-**Found while answering `BL-247` (2026-09-16), and NOT fixed by it.** You asked *"where epic/rare wood
-… are dropped -> also got none"*. Epic Wood now has thirty sources; **Rare Wood has none, and never
-had any.**
-
-The cause is structural, not a missing row:
-
-- Every creature has a PRIMARY and a SECONDARY material type, by category (`StandardDrops`). **Wood is
-  only ever a SECONDARY** — Animal/Plant pay Leather+Wood, MagicCreature/Angel pay Gem+Wood, and no
-  category anywhere pays Wood as its primary.
-- A secondary stops at **Uncommon**. The Rare rung (level 60+) and the Epic rung (76+) are authored
-  for the PRIMARY only.
-- `EliteMatDrops` — the elite/boss faucet — jumps **Uncommon → Epic**. It has no Rare rung at all.
-
-So Rare Wood's only route is the PotionMaster refining 5 Uncommon Wood + an Ingot + a Thread.
-
-❓ **Three ways out, and it is your call which:** (a) leave it — refining is the intended route and
-wood is deliberately the "bought, not found" material; (b) give `EliteMatDrops` a Rare rung, which
-pays every type and is one line; (c) give some category Wood as its PRIMARY (the obvious candidate is
-Plant, which is Leather+Wood today and is the one category where leather makes no sense at all).
-
-⚠ **Whichever you pick, it is the same question for every SECONDARY material at Rare** — Wood is just
-the one you noticed, because it is the only type that is never anybody's primary.
-
-
 ---
 
-## `BL-259` ❓ FOUR LANDING MODIFIERS — four cells, and only you may set them
-
-Built 2026-09-17 across 0.164.0-0.166.0 from your two `war_aoe` files. All four are **new debuffs**, so
-by your own rule (`BL-232`) I do not price any of them:
-
-> *"Then each new debuff to go there and to ask for modifier edit"*
-
-`docs/data/debuff_landmods.csv` carries all four rows and their `SUCCESS` reads the code default of
-**1** — that is the file being filled in, not a decision.
-
-| SKILL | SKILL_ID | DESCR | SAVE | SHAPE | SUCCESS |
-|---|---|---|---|---|---|
-| Charge n Shock | `warrior_charge_stun` | charge; Stun | CON | `DEBUFF ONLY (1)` | **your cell** |
-| Shocking Shout | `waraoe_shock_shout` | Stun | CON | `dmg+1 debuff` | **your cell** |
-| Taunting Shout | `waraoe_taunting_shout` | vulnerable to blunt +10%; taunt | CON | `DEBUFF ONLY (1)` | **your cell** |
-| Shocking Javelin | `waraoe_shock_javelin` | Stun | CON | `dmg+1 debuff` | **your cell** |
-
-**What each does at once**, since that is the axis your modifier prices:
-
-- **Charge n Shock** closes 800 of ground over two seconds and stuns for two — **no damage at all**, so
-  it is a solo debuff by your `SHAPE` test, not a `dmg+1 debuff`. ⚠ For scale, not as a suggestion:
-  *Phantom Jump* (blink + Stun) and *Grapple* (pull + Stun) both sit at **1** — but both arrive
-  instantly or drag the victim, while this one telegraphs itself for two full seconds first.
-- **Shocking Shout** is damage **and** a 5s stun **on a whole ring**, which is the heaviest thing in
-  the three. Its neighbour *Acoustic Shock* (`dmg+1 debuff`, single target) is **1**.
-- **Taunting Shout** is a taunt plus the blunt vulnerability, thirty seconds, on a 600-800 ring. It is
-  the only one of the four whose payload is not control at all.
-- **Shocking Javelin** is Shocking Shout thrown 900 away with a tighter ring (150 against 200). Same
-  power ladder, same stun — so if the two do not share one modifier, the difference is paying for the
-  reach.
-
-✅ **The three race Shouts needed nothing** — you priced them yourself in the cell *"Single debuff
-x1.5"*, and the code ships 1.5. That is the `BL-232` rule working: a shout that only curses lands more
-readily than a Slash that curses **and** strikes (x0.7).
-
-Edit the cell and `SkillCsvSeed --check` will print DRIFT until the code matches it.
-
----
 
 ## `BL-260` ❓ SUMMONERS — the conversation we have never had
 

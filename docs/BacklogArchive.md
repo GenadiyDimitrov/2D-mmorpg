@@ -6341,3 +6341,73 @@ code is one array (`SkillCatalog.WaraoeWhirlwindPower`) and follows in a minute.
 column is multiplied by twenty: at rung 12 as authored, one Whirlwind is 30,800 power against Shocking
 Shout's 3,400 on the same rung. If 1540 is the intended number, the two are not in the same game.
 
+
+---
+
+## `BL-254` ✅ ANSWERED AND BUILT 2026-09-17 in **0.167.0** — you took option (c) and made the two categories MIRROR each other: *"make wood drop as lether .. primary/secondary -> animals: leather/wood, plants: wood/leather"*. Rare Wood has five sources now (Valley Treant 60, Bogwood 62), and all five material types are somebody's primary, which closes the entry's wider warning. The entry as it stood:
+
+## `BL-254` ❓ RARE WOOD DROPS FROM NOTHING, ANYWHERE — is craft-only the intent?
+
+**Found while answering `BL-247` (2026-09-16), and NOT fixed by it.** You asked *"where epic/rare wood
+… are dropped -> also got none"*. Epic Wood now has thirty sources; **Rare Wood has none, and never
+had any.**
+
+The cause is structural, not a missing row:
+
+- Every creature has a PRIMARY and a SECONDARY material type, by category (`StandardDrops`). **Wood is
+  only ever a SECONDARY** — Animal/Plant pay Leather+Wood, MagicCreature/Angel pay Gem+Wood, and no
+  category anywhere pays Wood as its primary.
+- A secondary stops at **Uncommon**. The Rare rung (level 60+) and the Epic rung (76+) are authored
+  for the PRIMARY only.
+- `EliteMatDrops` — the elite/boss faucet — jumps **Uncommon → Epic**. It has no Rare rung at all.
+
+So Rare Wood's only route is the PotionMaster refining 5 Uncommon Wood + an Ingot + a Thread.
+
+❓ **Three ways out, and it is your call which:** (a) leave it — refining is the intended route and
+wood is deliberately the "bought, not found" material; (b) give `EliteMatDrops` a Rare rung, which
+pays every type and is one line; (c) give some category Wood as its PRIMARY (the obvious candidate is
+Plant, which is Leather+Wood today and is the one category where leather makes no sense at all).
+
+⚠ **Whichever you pick, it is the same question for every SECONDARY material at Rare** — Wood is just
+the one you noticed, because it is the only type that is never anybody's primary.
+
+---
+
+## `BL-259` ✅ ANSWERED 2026-09-17, nothing owed — *"leave them as u made them -> playtest will show (if i forget to write modifiers put default ones .. in playtests ill modify them if needed)"*. All four keep the default `x1` they shipped with; the file and the code already agreed. 🔑 It also **narrowed `BL-232`**: an unpriced debuff now ships at the DEFAULT instead of blocking on him — the licence is the default, never an invented number. Recorded in `CLAUDE.md` and in the checker (0.167.0). The entry as it stood:
+
+## `BL-259` ❓ FOUR LANDING MODIFIERS — four cells, and only you may set them
+
+Built 2026-09-17 across 0.164.0-0.166.0 from your two `war_aoe` files. All four are **new debuffs**, so
+by your own rule (`BL-232`) I do not price any of them:
+
+> *"Then each new debuff to go there and to ask for modifier edit"*
+
+`docs/data/debuff_landmods.csv` carries all four rows and their `SUCCESS` reads the code default of
+**1** — that is the file being filled in, not a decision.
+
+| SKILL | SKILL_ID | DESCR | SAVE | SHAPE | SUCCESS |
+|---|---|---|---|---|---|
+| Charge n Shock | `warrior_charge_stun` | charge; Stun | CON | `DEBUFF ONLY (1)` | **your cell** |
+| Shocking Shout | `waraoe_shock_shout` | Stun | CON | `dmg+1 debuff` | **your cell** |
+| Taunting Shout | `waraoe_taunting_shout` | vulnerable to blunt +10%; taunt | CON | `DEBUFF ONLY (1)` | **your cell** |
+| Shocking Javelin | `waraoe_shock_javelin` | Stun | CON | `dmg+1 debuff` | **your cell** |
+
+**What each does at once**, since that is the axis your modifier prices:
+
+- **Charge n Shock** closes 800 of ground over two seconds and stuns for two — **no damage at all**, so
+  it is a solo debuff by your `SHAPE` test, not a `dmg+1 debuff`. ⚠ For scale, not as a suggestion:
+  *Phantom Jump* (blink + Stun) and *Grapple* (pull + Stun) both sit at **1** — but both arrive
+  instantly or drag the victim, while this one telegraphs itself for two full seconds first.
+- **Shocking Shout** is damage **and** a 5s stun **on a whole ring**, which is the heaviest thing in
+  the three. Its neighbour *Acoustic Shock* (`dmg+1 debuff`, single target) is **1**.
+- **Taunting Shout** is a taunt plus the blunt vulnerability, thirty seconds, on a 600-800 ring. It is
+  the only one of the four whose payload is not control at all.
+- **Shocking Javelin** is Shocking Shout thrown 900 away with a tighter ring (150 against 200). Same
+  power ladder, same stun — so if the two do not share one modifier, the difference is paying for the
+  reach.
+
+✅ **The three race Shouts needed nothing** — you priced them yourself in the cell *"Single debuff
+x1.5"*, and the code ships 1.5. That is the `BL-232` rule working: a shout that only curses lands more
+readily than a Slash that curses **and** strikes (x0.7).
+
+Edit the cell and `SkillCsvSeed --check` will print DRIFT until the code matches it.

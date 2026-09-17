@@ -7,11 +7,52 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.166.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.167.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-17 (latest) — 0.166.1: Whirlwind's power column is one ladder again
+## 2026-09-17 (latest) — 0.167.0: a Plant is what you farm for wood, and an unpriced debuff stops blocking
+
+Two of your four rulings, taken first because neither needs a client.
+
+### `BL-254` — RARE WOOD EXISTS NOW: *"make wood drop as lether .. primary/secondary -> animals: leather/wood, plants: wood/leather"*
+
+Animal and Plant shared **one line** in `StandardDrops`, and that line is the whole bug. Every creature
+pays a PRIMARY and a SECONDARY material type — and only the primary climbs: the Uncommon rung (30+)
+pays both, but **Rare (60+) and Epic (76+) name the primary alone**. Wood was every category's
+secondary and nobody's primary, so no Rare rung anywhere in the world could ever name it. Rare Wood
+did not drop rarely; it had **zero sources and never had one**.
+
+The two categories now mirror each other instead of sharing a row — Animal `(Leather, Wood)`, Plant
+`(Wood, Leather)` — and **Rare Wood has five sources**: the Valley Treant (60) and the Bogwood (62), in
+Sunken Hollow, Ironreach March and Sunken Vale.
+
+✅ **All five material types are now somebody's primary** — Leather (Animal), Wood (Plant), Ingot
+(Humanoid), Thread (Undead/Insect), Gem (MagicCreature/Angel) — which closes the entry's wider warning
+that *"it is the same question for every SECONDARY material at Rare"*. Measured, not assumed:
+`--drops mat_<type>_rare` returns 12 · 5 · 61 · 27 · 7 sources.
+
+⚠ **Wood is the thinnest of the five, and it is the WORLD that makes it thin, not the drop table.**
+There are exactly **two Plant templates in the game**, both around level 60. Leather has 12 sources
+because the world is full of animals. If wood should be commoner, the fix is more Plant creatures in
+the roster, not a rate — say so and it is a spawn pass, not a formula.
+
+### `BL-259` — THE FOUR WARLORD MODIFIERS STAY AT `x1`, AND THE RULE AROUND THEM CHANGED
+
+*"leave them as u made them -> playtest will show (if i forget to write modifiers put default ones ..
+in playtests ill modify them if needed)"*. Charge n Shock, Shocking Shout, Shocking Javelin and
+Taunting Shout keep the `SUCCESS` of **1** they shipped with — **no code change was owed**, the file
+and the build already agreed, and `--check` confirms it (86 rows verified, OK).
+
+🔑 **The general half is the part worth keeping.** `BL-232`'s *"never pick one yourself"* is now
+**narrowed, not repealed**: an unpriced debuff ships at the **default `x1`** and gets its number at a
+playtest, instead of blocking on you. The licence is to use the *default* — never to invent a
+plausible-looking `0.85`, which would be indistinguishable from your own cell and is exactly what
+`BL-232` forbade. The row still goes in the file and you are still told, because a row you cannot see
+is a row you cannot retune. Written into `CLAUDE.md` and into the checker, whose MISSING line now says
+so rather than telling the next session to stop and ask.
+
+## 2026-09-17 — 0.166.1: Whirlwind's power column is one ladder again
 
 *"i fixed wirlwind rungs -> 300 +50/rung"*. `BL-261` closed within the hour it was raised.
 **300 / 350 / … / 1000** across the 3rd tier, running straight into `war_aoe 4th.csv`'s 1050 with no

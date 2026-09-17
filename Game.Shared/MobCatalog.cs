@@ -909,9 +909,18 @@ public static class MobCatalog
     {
         // Family-flavored primary mat types (+ Gem is universal). The mats keep their category flavor —
         // only the GEAR families were randomised (owner, §4); what a wolf is made of is not a slot roll.
+        //
+        // 🔑 A IS THE **PRIMARY** AND ONLY THE PRIMARY REACHES RARE AND EPIC (the rungs below gate B at
+        // Uncommon and stop). That is what made Rare Wood unobtainable anywhere in the world: Wood was
+        // every category's SECONDARY and nobody's primary, so no Rare rung could ever name it
+        // (`BL-254`). The owner's fix, 2026-09-17: *"make wood drop as lether .. primary/secondary ->
+        // animals: leather/wood, plants: wood/leather"* — so the two categories MIRROR each other
+        // rather than sharing one row, and a Plant is now the creature you farm for wood.
+        // ⚠ Do not re-merge these two cases. Their sharing one line is exactly the bug.
         (MaterialType A, MaterialType B) mats = cat switch
         {
-            MobCategory.Animal or MobCategory.Plant => (MaterialType.Leather, MaterialType.Wood),
+            MobCategory.Animal => (MaterialType.Leather, MaterialType.Wood),
+            MobCategory.Plant => (MaterialType.Wood, MaterialType.Leather),
             MobCategory.Humanoid => (MaterialType.Ingot, MaterialType.Thread),
             MobCategory.Undead => (MaterialType.Thread, MaterialType.Gem),
             MobCategory.Insect => (MaterialType.Thread, MaterialType.Leather),

@@ -16,10 +16,18 @@ using Game.Shared;
 /// <list type="bullet">
 ///   <item><b>DRIFT</b> — the file says one number and the build ships another. The CSV is the
 ///   authority, so the CODE owes the change.</item>
-///   <item><b>MISSING</b> — a debuff skill exists in the catalog with no row here. That is his *"each
-///   new debuff to go there and to ask for modifier edit"*: regenerate with
-///   <c>--dump-landmod-csv</c>, then ASK HIM for the modifier. Never pick one.</item>
+///   <item><b>MISSING</b> — a debuff skill exists in the catalog with no row here. Regenerate with
+///   <c>--dump-landmod-csv</c> so it HAS a row, and tell him it is waiting on a number.</item>
 /// </list>
+///
+/// <para>🔑 AND A NEW DEBUFF NO LONGER BLOCKS ON HIM (`BL-259`, 2026-09-17): *"leave them as u made
+/// them -> playtest will show (if i forget to write modifiers put default ones .. in playtests ill
+/// modify them if needed)"*. So the rule that replaced *"never pick one"* is narrower and easier:
+/// **a debuff he has not priced ships at the DEFAULT, <c>x1</c>** (<see cref="SkillDef.DebuffLandMod"/>'s
+/// own initialiser) — never at a number invented to look right. The row still goes in the file and he
+/// is still told, because the playtest is where he tunes it and he cannot tune a row he cannot see.
+/// ⚠ That is a licence to use the DEFAULT, not a licence to pick: a `0.85` or a `1.5` chosen here is
+/// exactly the guess his `BL-232` ruling forbade, and it would be indistinguishable from his own cell.</para>
 internal static class LandMods
 {
     public const string FileName = "debuff_landmods.csv";
@@ -89,7 +97,8 @@ internal static class LandMods
             var eff = (def.StackLevelAt(top)?.Effect ?? def.Effect) | def.Effect;
             if ((eff & SkillEffect.Taunt) != 0 && def.DebuffSchool == DebuffSchool.None) continue;
             if (authored.ContainsKey(def.Id)) continue;
-            Console.WriteLine($"  NOT IN THE FILE    {def.Id,-32} \"{def.Name}\" — regenerate, then ASK HIM for the modifier.");
+            Console.WriteLine($"  NOT IN THE FILE    {def.Id,-32} \"{def.Name}\" — regenerate (--dump-landmod-csv); "
+                            + "it ships at the default x1 until he retunes it in a playtest.");
             missing++;
         }
 

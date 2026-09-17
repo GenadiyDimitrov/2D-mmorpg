@@ -338,8 +338,11 @@ row → the code moves; a skill is retuned in chat → the row moves in the SAME
   ⚠ It **preserves `SUCCESS`** and refreshes everything around it.
 - `SkillCsvSeed --check` walks it (`tools/SkillCsvSeed/LandMods.cs`): **DRIFT** = file and code
   disagree, the code owes it; **NOT IN THE FILE** = a debuff nobody has priced.
-- 🔑 **A NEW DEBUFF MEANS ASKING HIM FOR ITS MODIFIER. Never pick one yourself** — that is the
-  explicit instruction, and the checker prints the row until he has.
+- 🔑 **A NEW DEBUFF SHIPS AT THE DEFAULT `x1` AND HE TUNES IT IN A PLAYTEST** (`BL-259`, 2026-09-17:
+  *"leave them as u made them -> playtest will show (if i forget to write modifiers put default ones ..
+  in playtests ill modify them if needed)"*). This **narrows** the older *"never pick one yourself"*:
+  the licence is to use the DEFAULT, never to invent a plausible-looking `0.85`. Write the row, keep
+  `SUCCESS` at `1`, and say in the increment that it is waiting on a number — do not block on him.
 - 🔑 **THE MODIFIER PRICES HOW MUCH ONE CAST DOES AT ONCE**, not what kind of effect it is:
   *"dmg + debuff should have lower chance than a solo debuff … an armor break should stay as solo
   debuff and nothing else at x1.5 but witches curse that does dmg should be x0.85"*. The `SHAPE`
