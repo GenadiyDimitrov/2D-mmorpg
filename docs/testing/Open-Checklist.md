@@ -1480,3 +1480,38 @@ re-reports of standing rules are marked as such.
   that an hour in the new 78 elite camp actually pays A scrolls and Epic mats at your server rate.
   🔴 **Rare Wood is still unobtainable and this did not change it** — it is structural (wood is never a
   category's PRIMARY material), and it is a question for you: **`BL-254`**.
+
+---
+
+## §101 — THE SMOKE TEST'S THREE CRAFTING FAILURES (found 2026-09-17, NOT played)
+
+🔴 **`tools/SmokeTest` fails three crafting assertions, and it is NOT new.** Found while running it after
+`BL-250`'s sigil work; **reproduced identically against a worktree at 0.166.1** — same three failures,
+byte-for-byte the same numbers — so it predates this session's four increments and none of them caused
+it. That check is why it is filed as a finding rather than as a regression.
+
+| assertion | result |
+|---|---|
+| attempts at the master resolve, and every one consumes its materials | **FAIL** — 60 attempts, 5,612 mats where 92 were expected |
+| the blueprint is spent on SUCCESS ONLY — items made == blueprints spent | **FAIL** — made 0, blueprints spent 0 of 5 |
+| a craft with no blueprint is blocked, and the mats survive | **FAIL** — made 0/0, 5,704 mats where 184 were expected |
+
+**What the numbers say, and it is one symptom rather than three.** The test loops sixty times: give one
+recipe's worth of every input, then craft. It ends holding `92 + 60 × 92` — so **not one attempt consumed
+anything**, and **not one produced an item** (`craft_sword1h_t76`, an A-grade weapon, whose odds table is
+20% Mythic / 30% Legendary / 50% fail — sixty consecutive failures is 2⁻⁶⁰, so the roll is not being
+reached). The two surrounding checks PASS, so the refusal is not the master-distance gate and not the
+crafting-level gate: **something between the input check and the roll is bailing out**, or the test's own
+`DebugGive` stops delivering (a full bag after sixty passes is the obvious candidate, and would explain
+why a LATER input goes missing while input[0] piles up).
+
+⚠ **NOT INVESTIGATED FURTHER, AND DELIBERATELY SO.** Crafting is **parked** on your instruction
+(2026-08-14): *"leave the salvage/mats etc craft until I'm able to test it fully — need to increase the
+drop rate and exp by 100 so I can make chars different professions to farm to see who can craft what — and
+it's a single playtest only for this."* `BL-05` and `BL-50` wait on that playtest, and so does this. It is
+recorded here so the playtest starts from a known symptom instead of discovering it.
+
+🔵 **What to do when you open that pass:** run `dotnet run --project tools/SmokeTest` first and read this
+section; if the three still fail, the first thing to establish is whether the bag is full at the sixtieth
+pass (a test defect) or the first attempt already refuses (an engine defect). Those are different bugs and
+the current output cannot tell them apart.
