@@ -13,6 +13,14 @@ compatibility, not this feature history.
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 ## 2026-09-17 (latest) — 0.161.0: THE SHEET SHOWS THE REAL M.ATK — THE DISPLAY SHRINK IS RETIRED
 
+🔴 **BOOKKEEPING, SO IT IS NOT LOST: THIS COMMIT (`0b7bb6b`) ALSO CARRIES YOUR CSV ROWS, AND THEY ARE
+NOT BUILT YET.** While 0.159-0.161 were being written you authored `war_aoe 3rd.csv` (+97 rows —
+Shocking Shout, Wirlwind, Taunting Shout, the three racial Support passives, Battle Revival, the
+racial Shouts), `war_aoe 4th.csv` (+34 — Armor Mastery, Two-Hand Mastery, Charge) and moved **Elf
+Antidote** out of `war_aoe 3rd` into `shared 4th.csv`. A `git add -A` swept them into this commit,
+whose message says nothing about them — hence this line. **That is `BL-237`, and the code half is
+still owed.** Nothing was lost or overwritten; the Antidote rows were MOVED, not deleted.
+
 ⚠ **Needs an APK only to see it on the phone's own numbers** — the value is computed server-side, so
 an existing APK connected to this server already shows the new number. No `game.db` change.
 
