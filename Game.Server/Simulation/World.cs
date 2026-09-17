@@ -472,9 +472,24 @@ public record DebugKarmaCmd(string ConnectionId, int Delta) : IAdminCommand;
 
 /// <summary>DEBUG: add a new SUBCLASS (a second/third class this character owns) and switch to it.
 /// No cap, no delay, no safe-zone requirement — the real rules come with the player-facing system.</summary>
-/// <summary>Add a SUBCLASS by its 3rd-class discipline id (a ThirdClassCatalog id). The new class
-/// starts at level 1 but with that 3rd class already approved (race/base/2nd derived from it).</summary>
+/// <summary>Add a SUBCLASS by its 3rd-class discipline id (a ThirdClassCatalog id). The new class is
+/// born at level 40 with that 3rd class already approved (race/base/2nd derived from it).</summary>
 public record DebugAddSubclassCmd(string ConnectionId, int ThirdClassId) : IAdminCommand;
+
+// ---- `BL-250`: the PLAYER-facing subclass system. None of these three is an IAdminCommand — that is
+//      the whole point of them existing beside the debug entry above, which stays ungated for admins.
+
+/// <summary>Take a subclass at the class master (`BL-250` §7). Costs an OPEN SLOT, not money.</summary>
+public record TakeSubclassCmd(string ConnectionId, int ThirdClassId) : IGameCommand;
+
+/// <summary>Buy the next Subclass Ticket at the class master (`BL-250` §5). The PRICE is not on the
+/// wire — the server reads it off the ladder from how many slots this character has spoken for, so a
+/// client cannot name its own number.</summary>
+public record BuySubclassTicketCmd(string ConnectionId) : IGameCommand;
+
+/// <summary>Replace the subclass in <paramref name="Slot"/> with a different discipline (`BL-250` §6).
+/// FREE, and legal only while that subclass is at or below level 74.</summary>
+public record SwapSubclassOutCmd(string ConnectionId, int Slot, int NewThirdClassId) : IGameCommand;
 
 /// <summary>DEBUG: switch to another class this character already owns.</summary>
 public record SwitchSubclassCmd(string ConnectionId, int Slot) : IAdminCommand;

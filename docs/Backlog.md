@@ -63,12 +63,14 @@ in 0.150.0 and archived**. **`BL-251`**, Evasion Mastery removed from every rogu
 **BUILT in 0.150.0** too (archived — the twin of the warrior's `BL-201`), and **`BL-252`** — a new
 subclass born at 40 with a 1-day rune instead of at level 1 — is **BUILT in 0.154.0 and archived**.
 
-🟢 **`BL-250` GREW INTO THE WHOLE SUBCLASS SYSTEM, AND IT IS FULLY UNBLOCKED (2026-09-17).** Platinum exists (`BL-257`, 0.153.0), the bought slots cost 500kk · 5kkk · 100 plat · 1,000 plat, **a swap below 75 is FREE**, and **the 5,000-platinum rung is cut until the summoner ships** — seven rungs for seven reachable subclasses. Your second pass
+🟡 **`BL-250` — THE SERVER HALF IS BUILT (0.155.0). Everything you ruled is in.** Platinum exists (`BL-257`, 0.153.0), the bought slots cost 500kk · 5kkk · 100 plat · 1,000 plat, **a swap below 75 is FREE**, and **the 5,000-platinum rung is cut until the summoner ships** — seven rungs for seven reachable subclasses. Your second pass
 on it added the slot ladder (three earned, five bought, as consumable **tickets**), the rule that a
 subclass below 75 can be swapped out, the class-master NPC that hands them out, and the panel that
 says what a subclass will give you before you commit. **Every decision it was waiting on is answered.**
 The sigil half of it is unchanged and still settled. ✅ Its prerequisite `BL-252` (a sub is born at 40)
-is BUILT, in 0.154.0. ⚠ The build still owes a `game.db` delete for the new slot-count column, and **an APK**.
+is BUILT, in 0.154.0. 🔵 **What is LEFT is the CLIENT (the dialogue + the info panel, an APK) and the
+SIGIL half (§1-§4).** ❓ And one NEW question came out of the build — §9.6, the completeness gate
+against a BOUGHT slot. ⚠ 0.155.0 needs a `game.db` delete (two new columns).
 
 ✅ **The third thing in that file needed no build.** You asked whether the Mark's cut *"sits in the
 buff part or debuff part of the formula — if it's in the debuff part a 10% decrease is good … if it's
@@ -233,7 +235,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-244` | 🔵 | THE FAST-DELETE BUTTON BECOMES A CYCLE — DEL:OFF → DEL:ON → BRAKE:ON | ui |
 | `BL-245` | 🔵 | THE CRAFTER SHOULD SEE PRIVATE WAREHOUSE MATS — a toggle, on by default | crafting |
 | `BL-246` | 🔵 | THE STATS WINDOW BECOMES TWO TABS — your full layout; several rows have no source yet | ui |
-| `BL-250` | 🟢 | THE SUBCLASS SYSTEM — 3 slots earned + 4 bought (ticket items), a free swap below 75, an NPC to take one, and the 3 sigil slots they open. **Unblocked; build with `BL-252`** | classes |
+| `BL-250` | 🟡 | THE SUBCLASS SYSTEM — **the server half is BUILT (0.155.0)**; what is left is the CLIENT dialogue + panel (APK) and the SIGIL half (§1-§4). ❓ one new question in §9.6 | classes |
 | `BL-253` | 🔵 | A DROP DATABASE — name an item, see every source; the BalanceMatrix half is built, the in-game window is owed | items |
 | `BL-254` | ❓ | RARE WOOD DROPS FROM NOTHING — wood is never a category's primary, so no Rare rung can reach it | items |
 
@@ -2102,11 +2104,36 @@ from the catalogues — nothing about it is authored twice.
 3. ✅ **§6's swap price is FREE below 75** — your ruling, 2026-09-17.
 4. ✅ **§5's cap is settled** — the ladder is trimmed to seven rungs, matching the seven reachable
    subclasses.
-5. ❓ **ONE READING LEFT, and it does not block: §4's clearing price.** `SigilResetGold` becomes 100kk
+5. ❓ **A READING, and it does not block: §4's clearing price.** `SigilResetGold` becomes 100kk
    **per sigil** unless you say it wipes all three for one payment.
-6. ⚠ `GameConstants.MaxSubclasses` is **4** (main + 3). This needs **8** (main + 7) as the hard
-   ceiling, with the per-character UNLOCKED SLOT COUNT — a new persisted field — as the gate that
-   actually binds. Nothing else about the constant's job changes.
+6. 🔴 ❓ **NEW, AND IT IS A REAL INTERACTION YOU MAY NOT HAVE SEEN. The COMPLETENESS GATE now bites on
+   a BOUGHT slot in a way it never did on an earned one.** The rule — *every class you own must be at
+   75 with its 3rd class before you may add another* — predates this entry and you have never repealed
+   it, so **0.155.0 kept it**. But look at what it does against the ladder: an EARNED slot is paid BY a
+   subclass reaching 75, so the gate is satisfied by construction and you never notice it. A **500kk or
+   5kkk slot can be bought at any moment** and then sits unusable until every other class you own is at
+   75. **Should a bought slot bypass the gate?** My reading if you say nothing: **keep it as built** —
+   it is your existing rule, it is what stops half-levelled subclasses stacking up, and a bought slot is
+   never lost, only waiting. But it is your call and it costs one line either way.
+7. ✅ ~~`GameConstants.MaxSubclasses` is 4~~ — done in 0.155.0, and it is **derived from the ladder**
+   rather than typed (`1 + SubclassSlots.MaxSlots`), so restoring the 8th rung moves it too. The gate
+   that actually binds is the per-character `SubclassSlotsUnlocked`, persisted, starting at 0.
+
+### 9b. ✅ WHAT IS BUILT (0.155.0) AND WHAT IS LEFT
+
+**BUILT, server-side and SmokeTest-covered:** the slot ladder and its prices (`Game.Shared/SubclassSlots.cs`);
+the **Subclass Ticket** item; the two persisted counts; the three earned triggers (main 76+4th, and the
+first two subclasses reaching 75) fired from level-up, the 4th-class change and login; the ticket
+purchase gated on the COMPUTED *"no more available subclasses"*; **the free swap-out at ≤74** with the
+duplicate check run as if the outgoing class were already gone; the player-facing `TakeSubclass`
+alongside the still-ungated admin path, both through one `CreateSubclass`; and §7+§8's dialogue payload
+(`SubclassOfferInfo`) with the sigil group, the sigils, the slot it would open and the swappable rows —
+all of it derived.
+
+🔵 **LEFT: (a) the CLIENT — drawing that dialogue and the info panel, plus using a ticket from the bag.
+APK, protocol 39. (b) the SIGIL half, §1-§4.** `SkillCatalog.SigilGroupOf` already exists and is used
+for display; what is not built is the GATING — three identical slots opened by a subclass at 75, groups
+unlocked by owning a subclass of them, commit free, clearing 100kk.
 
 ### 10. ⚠ For the record
 Three sigils today = level 76 + 60kk SP + 30kk gold on ONE character. Three sigils after this = **three

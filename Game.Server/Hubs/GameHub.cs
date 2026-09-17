@@ -838,6 +838,34 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    // ---- `BL-250`: the PLAYER-facing subclass system, all three at the class master. Not admin —
+    //      every rule is checked in the loop, where entity state may actually be read.
+
+    /// <summary>Take a subclass at the class master. Needs an OPEN SLOT (see BuySubclassTicket).</summary>
+    public Task TakeSubclass(int thirdClassId)
+    {
+        if (!Sessions.ContainsKey(Context.ConnectionId)) return Task.CompletedTask;
+        _world.Commands.Enqueue(new TakeSubclassCmd(Context.ConnectionId, thirdClassId));
+        return Task.CompletedTask;
+    }
+
+    /// <summary>Buy the next Subclass Ticket. ⚠ The PRICE is deliberately not a parameter — the server
+    /// reads the rung off the ladder, so a client can never name its own.</summary>
+    public Task BuySubclassTicket()
+    {
+        if (!Sessions.ContainsKey(Context.ConnectionId)) return Task.CompletedTask;
+        _world.Commands.Enqueue(new BuySubclassTicketCmd(Context.ConnectionId));
+        return Task.CompletedTask;
+    }
+
+    /// <summary>Replace the subclass in a slot with another discipline. Free, and only at or below 74.</summary>
+    public Task SwapSubclassOut(int slot, int newThirdClassId)
+    {
+        if (!Sessions.ContainsKey(Context.ConnectionId)) return Task.CompletedTask;
+        _world.Commands.Enqueue(new SwapSubclassOutCmd(Context.ConnectionId, slot, newThirdClassId));
+        return Task.CompletedTask;
+    }
+
     /// <summary>Switch to a class this character already owns. ADMIN for now — the player-facing version
     /// gates this on a safe zone + a delay, and will wrap this same command.</summary>
     public Task SwitchSubclass(int slot)

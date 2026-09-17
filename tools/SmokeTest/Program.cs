@@ -725,6 +725,42 @@ Check($"new class starts at level {ThirdClassCatalog.ChangeLevel}",
 Check("new class starts with 0 SP (the levels are given, the SP is not)",
       a.Progress?.SkillPoints == 0, $"{a.Progress?.SkillPoints} SP");
 Check("new class has the chosen 3rd class pre-approved", sub?.ThirdClass == chosen.Id);
+
+// -------------------------------------------------------------------------------------------
+// 3b. `BL-250` — THE SUBCLASS SLOT LADDER. The ticket is an ITEM and the slot count is PERSISTED,
+//     which is exactly the shape of bug this harness exists for: a slot that looks open on screen
+//     and was never written. The admin path above is deliberately ungated, so this tests the STATE
+//     the player path runs on rather than the player path itself (that one needs an NPC in range).
+// -------------------------------------------------------------------------------------------
+Console.WriteLine("  -- BL-250: the subclass slot ladder --");
+Check("the ladder is seven rungs (three earned + four bought)",
+      SubclassSlots.MaxSlots == 7 && SubclassSlots.BoughtRungs.Length == 4,
+      $"{SubclassSlots.MaxSlots} slots, {SubclassSlots.BoughtRungs.Length} bought");
+Check("the bought rungs are 500kk / 5kkk gold then 100 / 1,000 platinum",
+      SubclassSlots.PriceOf(4) is { Gold: 500_000_000L, Platinum: 0 }
+      && SubclassSlots.PriceOf(5) is { Gold: 5_000_000_000L, Platinum: 0 }
+      && SubclassSlots.PriceOf(6) is { Gold: 0L, Platinum: 100 }
+      && SubclassSlots.PriceOf(7) is { Gold: 0L, Platinum: 1_000 });
+Check("slot 8 is not on the ladder (the 5,000-platinum rung is cut until the summoner)",
+      SubclassSlots.PriceOf(8) is null);
+Check("an EARNED slot has no price", SubclassSlots.PriceOf(3) is null);
+
+int slotsBefore = a.Subclasses!.SlotsUnlocked;
+await a.Hub.SendAsync("DebugGive", ItemCatalog.SubclassTicket, 1);
+await a.Settle();
+var ticket = a.Inv?.Items.FirstOrDefault(i => i.DefId == ItemCatalog.SubclassTicket);
+Check("a Subclass Ticket can be held", ticket is not null);
+
+await a.Hub.SendAsync("UsePotion", ticket!.InstanceId);
+await a.Settle();
+Check("using the ticket opened ONE slot",
+      a.Subclasses!.SlotsUnlocked == slotsBefore + 1,
+      $"{slotsBefore} -> {a.Subclasses.SlotsUnlocked}");
+Check("...and consumed the ticket",
+      (a.Inv?.Items.Count(i => i.DefId == ItemCatalog.SubclassTicket) ?? 0) == 0);
+Check("the client is told the ceiling rather than hard-coding it",
+      a.Subclasses.MaxSlots == SubclassSlots.MaxSlots, $"{a.Subclasses.MaxSlots}");
+int slotsUnlockedForRelog = a.Subclasses.SlotsUnlocked;
 Check("new class is the discipline's own race", sub?.Race == chosen.Race);
 Check("switching pushed a fresh skill bar", a.Bar is not null);
 
@@ -981,6 +1017,11 @@ Check("the ITEM slot survived the relog (SyncSkillBar kept the item: token, not 
       b.Bar is not null && b.Bar.Slots.Contains(itemToken));
 Check("the PRESET slot survived the relog (SyncSkillBar kept the preset: token, not wiped as a skill)",
       b.Bar is not null && b.Bar.Slots.Contains(presetToken));
+// `BL-250` — the whole point of the slot count being persisted. A slot that opens and is not written
+// is the exact failure mode this harness was built for: correct on screen, gone on the next login.
+Check("the unlocked SUBCLASS SLOT count survived the relog",
+      b.Subclasses!.SlotsUnlocked == slotsUnlockedForRelog,
+      $"{b.Subclasses.SlotsUnlocked}, expected {slotsUnlockedForRelog}");
 Check($"levels survived the relog (main 81, subclass {ThirdClassCatalog.ChangeLevel + 4})",
       b.Subclasses!.Classes.First(c => c.Slot == mainSlot).Level == 81 &&
       b.Subclasses.Classes.First(c => c.Slot == subSlot).Level == ThirdClassCatalog.ChangeLevel + 4,

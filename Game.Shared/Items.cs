@@ -1242,6 +1242,14 @@ public static class ItemCatalog
     public const string TitleColorRune    = "rune_title_colour";
     public const string TitleRuneName     = "Rune of Tincture";
 
+    /// <summary>THE SUBCLASS TICKET (`BL-250` §5) — *"those values give you a subclassTicket and u can
+    /// unlock them using(consumable) ticket"*. Earned three times over your progress and bought four
+    /// more; USING one opens the next subclass slot. See <see cref="SubclassSlots"/> for the ladder.
+    /// <para>⚠ Untradable and unsellable by design. It is an ENTITLEMENT that four of its seven copies
+    /// were paid for in gold or platinum, so a market in them would be a way to launder premium
+    /// currency into gold, and a way to sell a slot you were given for reaching 76.</para></summary>
+    public const string SubclassTicket    = "subclass_ticket";
+
     // ----- PREMIUM REWARD RUNES (2026-08-12). One ITEM per channel per rung, every one pointing at
     //       the ONE ladder skill for its channel. The ids and the wording live in RewardRunes.cs;
     //       these two are aliased here because they are named directly (by `/give`, by the tests). -----
@@ -1531,6 +1539,21 @@ public static class ItemCatalog
         list.Add(new ItemDef(TitleColorRune, TitleRuneName, EquipSlot.Consumable, ItemGrade.F, ItemRarity.Uncommon,
             Value: 40000, NoAttributes: true,
             Description: "Keep it to earn the right to colour the title you wrote, and use it to pick the colour."));
+
+        // The SUBCLASS TICKET (`BL-250` §5). A Consumable with no use-skill, answered by name in
+        // HandleUsePotion exactly like the Rune of Tincture above — the one thing it does is not a
+        // skill, so there is nothing for a UseSkillId to point at.
+        // ⚠ Untradable, unsellable, unbuyable off any SHELF (`BuyPriceOverride: -1`): four of the
+        //   seven are sold, but by the CLASS MASTER at a price that depends on which slot you are
+        //   opening, which no fixed shelf row could express. ConfirmOnUse because it is permanent and
+        //   it lands on a bar you can tap by accident.
+        list.Add(new ItemDef(SubclassTicket, "Subclass Ticket", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Mythic,
+            Tradable: false, BuyPriceOverride: -1, SellPriceOverride: 0, Value: 0,
+            NoAttributes: true, ConfirmOnUse: true,
+            Description: "Use it to open one more subclass slot. Three are earned — your main's 4th "
+                       + "class, then your first and second subclasses reaching level "
+                       + $"{ThirdClassCatalog.SubclassLevel} — and the rest are bought from a class master."));
 
         // Return scrolls: same mechanism, but their skill has a CAST time, so double-clicking one
         // channels it. The skills are NOT learned — the ITEM is what grants them.

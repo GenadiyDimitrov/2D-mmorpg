@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.154.0";
+    public const string GameVersion = "0.155.0";
 
     // ----- SP BOTTLE (owner, 2026-08-26) -------------------------------------------------------
     // *"u can make an npc to take your 1kkk SP + 100kk gold and give you a tradable/sellabel
@@ -189,7 +189,7 @@ public static class GameConstants
     /// `[Double]` from is DELETED — an old APK would keep showing a number the server no longer
     /// agrees with (it derives 7-10.75%; the truth is 0% until a mastery passive is authored).
     /// ⚠ A NEW APK IS WANTED, but an old one still plays.
-    public const int ProtocolVersion = 38;   // 38: the wallet and the shelf carry PLATINUM (`BL-257`)
+    public const int ProtocolVersion = 39;   // 39: the class master carries the SUBCLASS dialogue (`BL-250`)
 
     /// <summary>
     /// The oldest protocol this server still speaks. Equal to <see cref="ProtocolVersion"/> means
@@ -926,10 +926,18 @@ public static class GameConstants
 
     public const int ClassChangeLevel = 20;
 
-    /// <summary>Max classes ONE character may own (IG-style: the main class + up to 3 subclasses).
-    /// Stops a character stacking pointless duplicate base classes when only a few can reach a unique
-    /// 3rd-class discipline. The player-facing swap rules are <see cref="SubclassSwapDelaySeconds"/>.</summary>
-    public const int MaxSubclasses = 4;
+    /// <summary>Max classes ONE character may own — the main class plus every slot the ladder can
+    /// open (<see cref="SubclassSlots.MaxSlots"/>).
+    ///
+    /// <para>🔑 <b>THIS IS THE HARD CEILING, NOT THE GATE THAT BINDS</b> (`BL-250`). What actually
+    /// limits a character is its own <c>SubclassSlotsUnlocked</c>, a persisted per-character count
+    /// that starts at ZERO and is raised one at a time by consuming a Subclass Ticket. This constant
+    /// only says "no ladder can ever go past here", which is why it is DERIVED from the ladder rather
+    /// than typed: it was 4 (main + 3) for a year, and the day the summoner restores the eighth rung
+    /// it must move again with nothing else edited.</para>
+    ///
+    /// <para>The player-facing swap rules are <see cref="SubclassSwapDelaySeconds"/>.</para></summary>
+    public static int MaxSubclasses => 1 + SubclassSlots.MaxSlots;
 
     /// <summary>How long a class change takes when it is started OUTSIDE a town or peace zone
     /// (`BL-36`, his 2026-08-14 ruling). Inside one it is instant and this never applies.

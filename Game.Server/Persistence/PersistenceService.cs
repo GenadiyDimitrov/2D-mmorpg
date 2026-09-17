@@ -855,6 +855,11 @@ public class PersistenceService
 
         // Clamp on load: karma is never negative, and this heals any row corrupted by the old
         // overflow bug (a big-level-gap PK cast a huge double to int → int.MinValue).
+        // `BL-250` — the slot count is clamped to the LADDER on load, not merely read: the ladder can
+        // SHRINK (the 5,000-platinum rung was cut on 2026-09-17), and a saved 8 would otherwise let a
+        // character keep a slot the ladder no longer sells.
+        entity.SubclassSlotsUnlocked = Math.Clamp(rec.SubclassSlotsUnlocked, 0, SubclassSlots.MaxSlots);
+        entity.SubclassTicketsEarned = Math.Clamp(rec.SubclassTicketsEarned, 0, SubclassSlots.EarnedSlots);
         entity.Karma = Math.Clamp(rec.Karma, 0, 1_000_000);
         entity.PkCount = rec.PkCount;
         entity.PvpCount = rec.PvpCount;
@@ -998,6 +1003,7 @@ public class PersistenceService
         string KnownRecipesCsv, string FriendsCsv, string BlockedCsv, string AutoHuntJson, string EquipPresetsJson,
         string BuffsJson,
         int ActiveSubclassSlot, IReadOnlyList<SubclassSnapshot> Subclasses,
+        int SubclassSlotsUnlocked, int SubclassTicketsEarned,
         int Karma, int PkCount, int PvpCount, int ConsecutivePk, bool DiedWhileAway,
         DateTime? JailedUntilUtc, DateTime? ChatBannedUntilUtc,
         int BossJudgmentRung, DateTime? BossJudgmentUntilUtc,
@@ -1050,6 +1056,7 @@ public class PersistenceService
                 JsonSerializer.Serialize(e.EquipPresets),
                 JsonSerializer.Serialize(BuffSnapshot.CaptureAll(e)),
                 e.ActiveSubclass.Slot, subs,
+                e.SubclassSlotsUnlocked, e.SubclassTicketsEarned,
                 e.Karma, e.PkCount, e.PvpCount, e.ConsecutivePk, e.DiedWhileAway,
                 e.JailedUntil, e.ChatBannedUntil,
                 e.BossJudgmentRung, e.BossJudgmentUntil, e.TotalOnlineSeconds,
@@ -1190,6 +1197,8 @@ public class PersistenceService
         rec.AutoHuntJson = snap.AutoHuntJson;
         rec.EquipPresetsJson = snap.EquipPresetsJson;
         rec.BuffsJson = snap.BuffsJson;
+        rec.SubclassSlotsUnlocked = snap.SubclassSlotsUnlocked;
+        rec.SubclassTicketsEarned = snap.SubclassTicketsEarned;
         rec.Karma = snap.Karma;
         rec.PkCount = snap.PkCount;
         rec.PvpCount = snap.PvpCount;

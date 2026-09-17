@@ -92,6 +92,10 @@ public class GameLoopService : BackgroundService
             RemoveItemCmd c => c.ConnectionId,
             RestoreItemCmd c => c.ConnectionId,
             OpenBoxCmd c => c.ConnectionId,
+            // `BL-250` — a jailed player does not shop for subclass slots or reshape his classes.
+            TakeSubclassCmd c => c.ConnectionId,
+            BuySubclassTicketCmd c => c.ConnectionId,
+            SwapSubclassOutCmd c => c.ConnectionId,
             SelectBoxItemsCmd c => c.ConnectionId,
             EnchantCmd c => c.ConnectionId,
             RerollAttributesCmd c => c.ConnectionId,
@@ -229,6 +233,9 @@ public class GameLoopService : BackgroundService
                 case DebugBuffCmd c: HandleDebugBuff(c); break;
                 case DebugKarmaCmd c: HandleDebugKarma(c); break;
                 case DebugAddSubclassCmd c: HandleDebugAddSubclass(c); break;
+                case TakeSubclassCmd c: HandleTakeSubclass(c); break;
+                case BuySubclassTicketCmd c: HandleBuySubclassTicket(c); break;
+                case SwapSubclassOutCmd c: HandleSwapSubclassOut(c); break;
                 case SwitchSubclassCmd c: HandleSwitchSubclass(c); break;
                 case DebugSpCmd c: HandleDebugSp(c); break;
                 case DebugResetCmd c: HandleDebugReset(c); break;
@@ -318,6 +325,10 @@ public class GameLoopService : BackgroundService
             new LoginResult(true, null, entity.Id, entity.X, entity.Y, GameClock.Epoch, entity.Role));
 
         AutoLearnCoreSkills(entity);
+        // `BL-250` — pay any earned Subclass Ticket this character has qualified for and not received:
+        // a character who was already 76 with a 4th class before the ladder existed, or whose bag was
+        // full the last time one was due. Idempotent, so it is free to ask on every login.
+        GrantEarnedSubclassTickets(entity);
         // …which now recomputes, so the pools it just moved have to be re-filled. PersistenceService
         // fills them to the max it knew BEFORE the auto-granted passives existed; a mage whose
         // Spellcaster Mastery or floor passive raises MaxMp would otherwise log in short of full every
@@ -3605,52 +3616,108 @@ public class GameLoopService : BackgroundService
     /// asymmetry is the design, not an oversight — you buy SP bottles with your main's SP and gold, or
     /// you farm the bar back. The rune is the apology for the second half.</para>
     ///
-    /// Rules: character must be level 76+ (stand-in for the future 4th class). Normal accounts cap at
-    /// <see cref="GameConstants.MaxSubclasses"/>; ADMINS are unlimited. NO duplicate DISCIPLINE (owning
-    /// the Magus bars the Starweaver and the Cinderwitch too — the bar is the PATH, not the class id).
+    /// <para>⚠ <b>THIS IS THE ADMIN ROUTE AND IT IS DELIBERATELY UNGATED</b> (`BL-250` §7). The rules a
+    /// player meets — an open slot bought or earned, the completeness gate, the class master — live in
+    /// <see cref="HandleTakeSubclass"/>. The only thing checked on both sides is the no-duplicate-PATH
+    /// rule, because that one is an invariant rather than a gate: two classes on one path would break
+    /// every later question about what this character owns.</para>
+    ///
     /// Every equipped item is UNEQUIPPED — you don't play a level-40 class in level-76 gear.</summary>
     private void HandleDebugAddSubclass(DebugAddSubclassCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead)
             return;
-
-        // Completeness gate (normal accounts): every class you already own must be level 75+ AND hold its
-        // 3rd class before you may add another. No 4th tier exists, so "3rd class + level 75" is the gate —
-        // and requiring ALL owned classes to clear it stops stacking half-levelled subclasses (a freshly
-        // added class starts at level 1, so you level each one to 75 before the next add). Admins bypass
-        // this, same as the count cap below.
-        if (!player.IsAdmin)
-        {
-            var incomplete = player.Subclasses
-                .FirstOrDefault(s => s.Level < ThirdClassCatalog.SubclassLevel || s.ThirdClass <= 0);
-            if (incomplete is not null)
-            {
-                SendSystemToEntity(player,
-                    $"Every class must reach level {ThirdClassCatalog.SubclassLevel} and its 3rd class before you can add another.");
-                return;
-            }
-        }
-
-        // Count cap — admins are unlimited (the no-duplicate-discipline filter still applies to them).
-        if (!player.IsAdmin && player.Subclasses.Count >= GameConstants.MaxSubclasses)
-        {
-            SendSystemToEntity(player,
-                $"You can own at most {GameConstants.MaxSubclasses} classes.");
-            return;
-        }
-
         if (ThirdClassCatalog.Get(cmd.ThirdClassId) is not { } tcd)
             return;
 
-        // No two of the same discipline (across races) — checked against ALL owned classes, active too.
+        // 🔑 THE ADMIN PATH IS UNGATED AND STAYS THAT WAY (`BL-250` §7, his words: *"admins can take
+        // subclass as its of now"*). No ticket, no slot, no completeness check, no level requirement —
+        // only the no-duplicate-discipline rule, which is not a gate but an INVARIANT: two classes on
+        // one path would break `CanAddDiscipline` for everything downstream of it.
+        // The player-facing route is HandleTakeSubclass, which wraps the same creation with the rules.
         if (!player.CanAddDiscipline(cmd.ThirdClassId))
         {
-            // Names the CLASS, not the raw discipline: since names went per-race an Demon's Bulwark
+            // Names the CLASS, not the raw discipline: since names went per-race a Demon's Bulwark
             // is called an Ironhide, and printing the enum would show a word he has never seen.
             SendSystemToEntity(player, $"You already walk that path — {tcd.Name} shares it.");
             return;
         }
 
+        CreateSubclass(player, tcd);
+    }
+
+    /// <summary>`BL-250` §7 — THE PLAYER'S ROUTE TO A SUBCLASS: the level-40 class master, revisited
+    /// with a main at 76 holding its 4th class. *"normal players also need a NPC to give them (u can
+    /// reuse the @40 class master to open new dialogue when u go back to him with main @76+4th)"*.
+    ///
+    /// <para>Every rule the admin path skips lives here, in the order a player meets them: be at the
+    /// NPC, have an OPEN SLOT, have nothing half-levelled, and not already walk that path.</para></summary>
+    private void HandleTakeSubclass(TakeSubclassCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead)
+            return;
+        if (ThirdClassCatalog.Get(cmd.ThirdClassId) is not { } tcd)
+            return;
+        if (IsInCombat(player))
+        {
+            SendSystemToEntity(player, "Not while you are in combat.");
+            return;
+        }
+
+        // You must be standing at the class master. The dialogue is the only way to reach this command,
+        // but the command is a wire message and the check belongs on the server.
+        if (NearestNpcInRange(player, NpcRole.ClassChange) is null)
+        {
+            SendSystemToEntity(player, "You must speak to a class master.");
+            return;
+        }
+
+        if (!CanOpenSubclassDialogue(player))
+        {
+            SendSystemToEntity(player,
+                $"Bring a main class of level {SubclassSlots.MainTicketLevel} holding its 4th class.");
+            return;
+        }
+
+        // An OPEN, EMPTY slot. This is the ladder's whole grip on the feature.
+        if (SubclassesHeld(player) >= player.SubclassSlotsUnlocked)
+        {
+            SendSystemToEntity(player, player.SubclassSlotsUnlocked >= SubclassSlots.MaxSlots
+                ? "Every subclass slot you have is full, and there are no more to open."
+                : "You have no open subclass slot. Use a Subclass Ticket to open one.");
+            return;
+        }
+
+        // ⚠ THE COMPLETENESS GATE, KEPT AS IT WAS: every class you own must already be at
+        // ThirdClassCatalog.SubclassLevel and hold its 3rd class. It predates the ladder and he has
+        // never repealed it, so it is not ours to drop — but note it BITES ON A BOUGHT SLOT in a way
+        // it never did on an earned one: an earned slot is paid BY a subclass reaching 75, so the gate
+        // is satisfied by construction, while a 500kk slot can be bought at any time and then sit
+        // unusable until everything else is levelled. Raised in `BL-250` §9 rather than decided here.
+        var incomplete = player.Subclasses.FirstOrDefault(
+            s => s.Level < ThirdClassCatalog.SubclassLevel || s.ThirdClass <= 0);
+        if (incomplete is not null)
+        {
+            SendSystemToEntity(player,
+                $"Every class must reach level {ThirdClassCatalog.SubclassLevel} and its 3rd class before you can add another.");
+            return;
+        }
+
+        if (!player.CanAddDiscipline(cmd.ThirdClassId))
+        {
+            SendSystemToEntity(player, $"You already walk that path — {tcd.Name} shares it.");
+            return;
+        }
+
+        CreateSubclass(player, tcd);
+    }
+
+    /// <summary>Create a subclass of this discipline, switch to it, and hand over `BL-252`'s rune. THE
+    /// ONE PLACE a subclass is born — the admin path and the player path differ only in what they
+    /// check before calling it, which is the point: a rule can never apply to one and not the other by
+    /// accident, and the birth values cannot drift between two copies.</summary>
+    private void CreateSubclass(Entity player, ThirdClassDef tcd)
+    {
         // Unequip everything — a fresh class doesn't play in the old class's gear.
         foreach (var item in player.Inventory) item.Equipped = false;
 
@@ -3866,7 +3933,8 @@ public class GameLoopService : BackgroundService
             .Select(s => new SubclassDto(
                 s.Slot, s.Race, s.BaseClass, s.SecondClass, s.ThirdClass, s.Level,
                 s.Slot == p.ActiveSubclass.Slot, s.FourthClass))
-            .ToArray()));
+            .ToArray(),
+            p.SubclassSlotsUnlocked, SubclassSlots.MaxSlots));
 
     /// <summary>The level ceiling this character is subject to. ADMINS ARE EXEMPT — an admin needs to
     /// be able to push past the cap to test the top of the curve without lifting it for everyone.</summary>
@@ -4184,6 +4252,14 @@ public class GameLoopService : BackgroundService
             }
             SendTo(player, "TitleColors", new TitleColorOffer(
                 Array.ConvertAll(TitleCatalog.Palette, c => c.Name)));
+            return;
+        }
+
+        // The Subclass Ticket has no use-skill either (`BL-250` §5): what it does is raise a persisted
+        // count, which is not a thing a skill can express. Consuming it IS the unlock.
+        if (item.DefId == ItemCatalog.SubclassTicket)
+        {
+            UseSubclassTicket(player, item);
             return;
         }
 
@@ -15930,7 +16006,391 @@ public class GameLoopService : BackgroundService
         if (player.Level >= GameConstants.ClassChangeLevel && player.SecondClass == 0)
             SendSystemToEntity(player,
                 "You are ready for a second class — seek a class-change quest.");
+
+        // `BL-250` — two of the three earned tickets are paid by a SUBCLASS reaching 75, and the third
+        // by the main reaching 76 with its 4th class. Every one of those is a level-up, so this is the
+        // natural place to ask; the method is idempotent, so asking too often costs nothing.
+        GrantEarnedSubclassTickets(player);
     }
+
+    // =====================================================================================
+    //  `BL-250` — THE SUBCLASS SLOT LADDER
+    //  Three slots are earned and four are bought, and what you receive in every case is a
+    //  Subclass Ticket ITEM. Consuming it opens the slot. See Game.Shared/SubclassSlots.cs.
+    // =====================================================================================
+
+    /// <summary>How many EARNED tickets this character has qualified for, 0..<see cref="SubclassSlots.EarnedSlots"/>.
+    ///
+    /// <para>His ladder, verbatim: *"When you get main to 76(4th) u get your 1st ticket … then once sub
+    /// gets to 75 u get ur secondTicket (+ sigils and etc) … same for second … then u lvl up ur 3rd sub
+    /// class and no ticket only sigils"*. So: the main's 4th class pays one, and the first TWO
+    /// subclasses to reach 75 pay one each. A third does not.</para>
+    ///
+    /// <para>🔑 <b>IT IS A COUNT OF SUBCLASSES AT 75, NOT OF WHICH ONES.</b> "Subclass #1" and
+    /// "subclass #2" are his words for the first two you levelled, and slots are not levelled in
+    /// order — you may push slot 3 to 75 before slot 1. Counting how many have arrived and capping at
+    /// two is that rule stated without inventing an ordering he never described.</para>
+    ///
+    /// <para>⚠ THE MAIN'S GATE IS THE CLASS, NOT THE LEVEL. A 4th class cannot be taken below 76, so
+    /// asking for the class alone would be enough — the level is checked too because an admin
+    /// `/setlevel` can move a character underneath a class it already holds, and a ticket that a
+    /// de-levelled character keeps is a ticket that was never earned.</para></summary>
+    private static int EarnedTicketsDue(Entity player)
+    {
+        var main = player.Subclasses.FirstOrDefault(s => s.Slot == 0);
+        int due = main is not null
+                  && main.FourthClass > 0
+                  && main.Level >= SubclassSlots.MainTicketLevel ? 1 : 0;
+
+        int subsAtGate = player.Subclasses.Count(
+            s => s.Slot != 0 && s.Level >= ThirdClassCatalog.SubclassLevel);
+        due += Math.Min(SubclassSlots.EarnedSlots - 1, subsAtGate);
+
+        return Math.Min(due, SubclassSlots.EarnedSlots);
+    }
+
+    /// <summary>Hand out any earned Subclass Tickets this character has qualified for and not yet been
+    /// paid. Idempotent: it compares what is DUE against what has been GIVEN
+    /// (<see cref="Entity.SubclassTicketsEarned"/>) and posts the difference.
+    ///
+    /// <para>🔑 <b>WHY A COUNTER AND NOT JUST THE CONDITION.</b> Every earn condition here stays true
+    /// forever — your main does not stop being 76. Without a record of what has been paid, this would
+    /// post a fresh ticket on every level-up and every login, which is an infinite faucet for an item
+    /// that is otherwise worth five billion gold. The counter records what was GIVEN; what happens to
+    /// the ticket afterwards (sitting in the bag, consumed) is not its business.</para>
+    ///
+    /// <para>⚠ A full bag is the one way this can fail, and it must not eat the ticket: the counter is
+    /// only advanced when <c>AddItem</c> actually took it, so the player is told and paid next time.</para></summary>
+    private void GrantEarnedSubclassTickets(Entity player)
+    {
+        int due = EarnedTicketsDue(player);
+        while (player.SubclassTicketsEarned < due)
+        {
+            if (!AddItem(player, ItemCatalog.SubclassTicket))
+            {
+                SendSystemToEntity(player,
+                    "You have earned a Subclass Ticket but your bag is full — make room and it will be given.");
+                return;
+            }
+            player.SubclassTicketsEarned++;
+            SendSystemToEntity(player,
+                "You have earned a Subclass Ticket. Use it to open another subclass slot.");
+        }
+    }
+
+    /// <summary>Subclass slots this character has FILLED — every class it owns except the main.</summary>
+    private static int SubclassesHeld(Entity player) => Math.Max(0, player.Subclasses.Count - 1);
+
+    /// <summary>The id of an NPC of this role within talk range, or null. Same static-table walk and
+    /// same reason as <see cref="MasterNpcNear"/>: NPCs never move, so scanning the live entity
+    /// dictionary for one would cost far more than a handful of distance checks.</summary>
+    private static string? NearestNpcInRange(Entity player, NpcRole role)
+    {
+        foreach (var n in WorldMap.Npcs)
+        {
+            if (n.Role != role) continue;
+            float dx = n.X - player.X, dy = n.Y - player.Y;
+            if (dx * dx + dy * dy <= GameConstants.TalkRange * GameConstants.TalkRange)
+                return n.Id;
+        }
+        return null;
+    }
+
+    /// <summary>`BL-250` §7 — does the class master open his SECOND dialogue for this character?
+    /// *"u can reuse the @40 class master to open new dialogue when u go back to him with main @76+4th"*.
+    ///
+    /// <para>🔑 <b>IT ASKS ABOUT THE MAIN, NOT THE CLASS BEING PLAYED.</b> A character standing there on
+    /// a level-45 subclass still qualifies — the main is what paid for the right, and the whole feature
+    /// exists so you can go and get another subclass, which you would naturally do while playing one.
+    /// Reading `player.Level` here (the ACTIVE class's level) would have locked you out of the window
+    /// precisely when you had most use for it.</para></summary>
+    private static bool CanOpenSubclassDialogue(Entity player)
+    {
+        var main = player.Subclasses.FirstOrDefault(s => s.Slot == 0);
+        return main is not null
+            && main.Level >= SubclassSlots.MainTicketLevel
+            && main.FourthClass > 0;
+    }
+
+    /// <summary>Spend a Subclass Ticket: one more slot opens. The slot is opened EMPTY — taking the
+    /// class itself is a separate visit to a class master (§7), which is the whole reason the ticket
+    /// is an item rather than an automatic unlock.</summary>
+    private void UseSubclassTicket(Entity player, InventoryItem item)
+    {
+        if (player.SubclassSlotsUnlocked >= SubclassSlots.MaxSlots)
+        {
+            // Not reachable through the shop (buying is gated below), but a ticket can be sitting in a
+            // bag from before the ladder was trimmed. Refuse without eating it.
+            SendSystemToEntity(player, "You have opened every subclass slot there is.");
+            return;
+        }
+
+        if (!ConsumeItem(player, item.DefId, 1)) return;
+
+        player.SubclassSlotsUnlocked++;
+        SendInventory(player);
+        SendSubclasses(player);
+        SaveEntity(player);
+        SendSystemToEntity(player,
+            $"Subclass slot {player.SubclassSlotsUnlocked} is open "
+            + $"({SubclassesHeld(player)} of {player.SubclassSlotsUnlocked} filled). "
+            + "See a class master to take a new class.");
+    }
+
+
+    /// <summary>`BL-250` §7+§8 — everything the class master's subclass dialogue shows, all of it
+    /// DERIVED. §8's requirement is that *"what that subclass will give you when reaching 75lvl"* be
+    /// readable before you commit, and the only way that stays true is for none of it to be authored
+    /// twice: the sigil group comes from <see cref="SkillCatalog.SigilGroupOf"/>, the price from the
+    /// ladder, the availability from <see cref="Entity.CanAddDiscipline"/>.</summary>
+    private SubclassOfferInfo BuildSubclassOffer(Entity player)
+    {
+        int held = SubclassesHeld(player);
+        int inBag = player.Inventory
+            .Where(i => i.DefId == ItemCatalog.SubclassTicket)
+            .Sum(i => Math.Max(1, i.Quantity));
+        int nextSlot = player.SubclassSlotsUnlocked + inBag + 1;
+        var price = SubclassSlots.PriceOf(nextSlot);
+        bool earnedNext = nextSlot <= SubclassSlots.EarnedSlots;
+        bool noneLeft = !AnySubclassLeftToTake(player);
+        bool canBuy = price is { } p && !noneLeft
+                      && player.Gold >= p.Gold
+                      && (p.Platinum == 0 || PlatinumOf(player) >= p.Platinum);
+
+        var options = ThirdClassCatalog.Playable.Select(t =>
+        {
+            var group = SkillCatalog.SigilGroupOf(t.Discipline);
+            // Which sigil SLOT this class would open: subclasses 1, 2 and 3 open slots 1, 2 and 3 and
+            // everything after them opens only its tree (§2). Counted off what is already HELD, so the
+            // panel answers "if I take this one now", which is the question being asked.
+            int opensSlot = held < SigilSlotsFromSubclasses ? held + 1 : 0;
+            return new SubclassOptionDto(
+                t.Id, t.Name, t.Race, Disciplines.Blurb(t.Discipline),
+                group.ToString(),
+                SkillCatalog.SigilsOfGroup(group)
+                    .Select(id => SkillCatalog.Get(id)?.Name ?? id).ToArray(),
+                opensSlot,
+                ThirdClassCatalog.ChangeLevel,
+                player.CanAddDiscipline(t.Id));
+        }).ToArray();
+
+        var heldRows = player.Subclasses.OrderBy(s => s.Slot).Select(s => new SubclassHeldDto(
+            s.Slot,
+            ThirdClassCatalog.Get(s.ThirdClass)?.Name ?? s.BaseClass.ToString(),
+            s.Level,
+            s.Slot != 0 && s.Level < ThirdClassCatalog.SubclassLevel)).ToArray();
+
+        return new SubclassOfferInfo(
+            player.SubclassSlotsUnlocked, held, SubclassSlots.MaxSlots, inBag,
+            price?.Gold ?? 0, price?.Platinum ?? 0, earnedNext,
+            canBuy, noneLeft, options, heldRows);
+    }
+
+    /// <summary>`BL-250` §2 — how many SIGIL slots subclasses can open between them. Three is the
+    /// ceiling and subclasses 4+ open only their tree: *"the 1st three subs are required to open the 3
+    /// slot -> then every other just opens their tree"*.</summary>
+    private const int SigilSlotsFromSubclasses = 3;
+
+    /// <summary>`BL-250` §5 — BUY the next Subclass Ticket from the class master. Slots 4-7 on the
+    /// ladder: 500kk gold, 5kkk gold, 100 platinum, 1,000 platinum.
+    ///
+    /// <para>🔑 <b>THE RUNG IS DECIDED BY HOW MANY SLOTS YOU HAVE OPENED, NOT BY HOW MANY TICKETS YOU
+    /// HOLD.</b> A ticket in the bag is an unspent slot; pricing off the ticket count would let you buy
+    /// the 500kk rung three times over by never using them. Tickets in hand are therefore counted as
+    /// already-opened for pricing purposes — see <c>slotsSpokenFor</c>.</para></summary>
+    private void HandleBuySubclassTicket(BuySubclassTicketCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead)
+            return;
+        if (NearestNpcInRange(player, NpcRole.ClassChange) is null)
+        {
+            SendSystemToEntity(player, "You must speak to a class master.");
+            return;
+        }
+        if (!CanOpenSubclassDialogue(player))
+        {
+            SendSystemToEntity(player,
+                $"Bring a main class of level {SubclassSlots.MainTicketLevel} holding its 4th class.");
+            return;
+        }
+
+        // Slots already open, PLUS tickets already in the bag: both are slots you have paid for.
+        int inBag = player.Inventory
+            .Where(i => i.DefId == ItemCatalog.SubclassTicket)
+            .Sum(i => Math.Max(1, i.Quantity));
+        int slotsSpokenFor = player.SubclassSlotsUnlocked + inBag;
+        int nextSlot = slotsSpokenFor + 1;
+
+        // Below the bought band the ticket is EARNED, never sold — telling the player how is far more
+        // use than "you can't buy that".
+        if (nextSlot <= SubclassSlots.EarnedSlots)
+        {
+            SendSystemToEntity(player,
+                $"Slot {nextSlot} is earned, not bought — take your main to "
+                + $"{SubclassSlots.MainTicketLevel} and its 4th class, then bring a subclass to "
+                + $"{ThirdClassCatalog.SubclassLevel}.");
+            return;
+        }
+
+        if (SubclassSlots.PriceOf(nextSlot) is not { } price)
+        {
+            SendSystemToEntity(player, "There are no more subclass slots to open.");
+            return;
+        }
+
+        // 🔑 HIS RULE, AND IT IS COMPUTED: *"when no more available subclasses … next ticket is locked
+        // and cannot be bought .. with the text that no more available subclasses -> when we add more
+        // it will be available again"*. Nothing here is an authored count, so the day a new path ships
+        // this unlocks itself.
+        if (!AnySubclassLeftToTake(player))
+        {
+            SendSystemToEntity(player,
+                "No more available subclasses — there is no class left for another slot to hold.");
+            return;
+        }
+
+        if (player.Gold < price.Gold)
+        {
+            SendSystemToEntity(player,
+                $"Slot {nextSlot} costs {price.Gold:N0} {GameConstants.CurrencyName}.");
+            return;
+        }
+        if (price.Platinum > 0 && !TrySpendPlatinum(player, price.Platinum))
+        {
+            SendSystemToEntity(player, $"Slot {nextSlot} costs {price.Platinum:N0} platinum.");
+            return;
+        }
+
+        player.Gold -= price.Gold;
+        if (!AddItem(player, ItemCatalog.SubclassTicket))
+        {
+            // Refund BOTH halves. A purchase that takes the money and drops the goods is the one
+            // failure this must never have.
+            player.Gold += price.Gold;
+            if (price.Platinum > 0) AddPlatinum(player, price.Platinum);
+            SendSystemToEntity(player, "Your bag is full.");
+            return;
+        }
+
+        SendGold(player);
+        SendInventory(player);
+        SaveEntity(player);
+        SendSystemToEntity(player,
+            $"Subclass Ticket bought for slot {nextSlot}. Use it to open the slot.");
+    }
+
+    /// <summary>`BL-250` §6 — SWAP A SUBCLASS OUT for a different one. *"while your subclass is less or
+    /// equal to 74 .. u are allowed to remove it (reset it to other - mage subclass can take other mage
+    /// subclass when resetting -> it takes its place so no duplicates will be at the end)"*.
+    ///
+    /// <para>🔑 <b>IT IS FREE</b> (his ruling, 2026-09-17: *"The swap below 75 of sub should be free..
+    /// You lose your progress anyways"*). The levels you throw away — up to 34, plus every SP you fed
+    /// it — ARE the price. A fee on top would only make people park an unwanted class instead of
+    /// replacing it, which is the opposite of what the rule is for.</para>
+    ///
+    /// <para>🔑 <b>THE REPLACEMENT TAKES THE SAME SLOT, AND THAT IS THE LOAD-BEARING HALF.</b> His *"it
+    /// takes its place so no duplicates will be at the end"* is a statement about the duplicate check:
+    /// it must be run with the OUTGOING class already discounted, or swapping a Magus for its
+    /// race-sibling would refuse itself for clashing with the very class being removed. That is why
+    /// the path check below walks `Subclasses` minus this slot rather than calling
+    /// <see cref="Entity.CanAddDiscipline"/>, which counts everything.</para>
+    ///
+    /// <para>⚠ At 75 it is refused outright rather than priced — that level is exactly the one that
+    /// pays the sigil slot and the tree, so the point of no return is the point of reward.</para></summary>
+    private void HandleSwapSubclassOut(SwapSubclassOutCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead)
+            return;
+        if (ThirdClassCatalog.Get(cmd.NewThirdClassId) is not { } tcd)
+            return;
+        if (IsInCombat(player))
+        {
+            SendSystemToEntity(player, "Not while you are in combat.");
+            return;
+        }
+        if (NearestNpcInRange(player, NpcRole.ClassChange) is null)
+        {
+            SendSystemToEntity(player, "You must speak to a class master.");
+            return;
+        }
+
+        if (cmd.Slot == 0)
+        {
+            SendSystemToEntity(player, "Your main class cannot be replaced.");
+            return;
+        }
+        var outgoing = player.Subclasses.FirstOrDefault(s => s.Slot == cmd.Slot);
+        if (outgoing is null)
+        {
+            SendSystemToEntity(player, "You don't have that class.");
+            return;
+        }
+        if (outgoing.Level >= ThirdClassCatalog.SubclassLevel)
+        {
+            SendSystemToEntity(player,
+                $"That class has reached level {ThirdClassCatalog.SubclassLevel} — it is yours for good.");
+            return;
+        }
+
+        // The duplicate check, run as if the outgoing class were already gone. Same-path replacement is
+        // legal and is the case he named; every OTHER class you own still bars its own path.
+        var otherPaths = player.Subclasses
+            .Where(s => s.Slot != cmd.Slot && s.ThirdClass > 0)
+            .Select(s => ThirdClassCatalog.Get(s.ThirdClass)?.Discipline)
+            .Where(d => d is not null)
+            .Select(d => Disciplines.PathOf(d!.Value))
+            .ToHashSet();
+        if (otherPaths.Contains(Disciplines.PathOf(tcd.Discipline)))
+        {
+            SendSystemToEntity(player, $"You already walk that path — {tcd.Name} shares it.");
+            return;
+        }
+
+        // Swapping away from the class you are STANDING IN would leave the active slot pointing at a
+        // class that no longer exists. Move to the main first; the rebuild below activates the new one
+        // anyway, so this is only about never holding an invalid active slot for even one statement.
+        bool wasActive = player.ActiveSubclass.Slot == cmd.Slot;
+        if (wasActive) ActivateSubclass(player, 0, null);
+
+        player.Subclasses.Remove(outgoing);
+        foreach (var item in player.Inventory) item.Equipped = false;
+
+        var parent = ClassCatalog.Get(tcd.ParentSecondClassId);
+        var sc = new Subclass
+        {
+            Slot = cmd.Slot,                       // ⚠ THE SAME SLOT — "it takes its place"
+            Race = tcd.Race,
+            BaseClass = parent?.Base ?? BaseClass.Fighter,
+            SecondClass = tcd.ParentSecondClassId,
+            ThirdClass = tcd.Id,
+            Level = ThirdClassCatalog.ChangeLevel, // born at 40 like any other (`BL-252`)
+            Exp = 0,
+            SkillPoints = 0,
+        };
+        sc.RollBaseStats();
+        player.Subclasses.Add(sc);
+
+        ActivateSubclass(player, cmd.Slot,
+            $"Class #{cmd.Slot} is now a {tcd.Race} {tcd.Name} (level {ThirdClassCatalog.ChangeLevel}, "
+            + "0 SP, no skills learned). Your gear was unequipped.");
+
+        // 🔑 NO RUNE HERE. `BL-252`'s gift is ONE PER SUBCLASS CREATED and a swap is not a creation —
+        // paying it per swap would make it farmable: swap out and back every day for a free 100%
+        // Exp/SP rune forever. The entry says so in as many words; this is where it would have leaked.
+        SendInventory(player);
+    }
+
+    /// <summary>Is there a discipline left that this character could legally take? The gate on buying
+    /// the NEXT ticket, and his own rule: *"when no more available subclasses … next ticket is locked
+    /// and cannot be bought .. with the text that no more available subclasses -> when we add more it
+    /// will be available again"*.
+    ///
+    /// <para>🔑 <b>COMPUTED, NEVER AN AUTHORED NUMBER.</b> It asks the catalogue whether any playable
+    /// 3rd class passes <see cref="Entity.CanAddDiscipline"/>, so the day a new path ships the ticket
+    /// unlocks itself with nothing edited here — which is exactly what he asked for, and exactly what
+    /// makes the retired 5,000-platinum rung a one-row change when the summoner lands.</para></summary>
+    private static bool AnySubclassLeftToTake(Entity player) =>
+        ThirdClassCatalog.Playable.Any(t => player.CanAddDiscipline(t.Id));
 
     private void Regenerate(Entity entity)
     {
@@ -19606,11 +20066,17 @@ public class GameLoopService : BackgroundService
                 player.SkillPoints, player.Gold,
                 player.SkillPoints >= GameConstants.SpBottleSpCost
                     && player.Gold >= GameConstants.SpBottleGoldCost);
+        // `BL-250` §7+§8 — the class master's SECOND dialogue, offered only when you come back with a
+        // main at 76 holding its 4th class. Same NPC, same town, a different conversation.
+        SubclassOfferInfo? subclass = null;
+        if (npc.NpcRole == NpcRole.ClassChange && CanOpenSubclassDialogue(player))
+            subclass = BuildSubclassOffer(player);
+
         SendTo(player, "Dialog", new NpcDialog(
             npc.Name, npc.NpcRole.ToString(),
             offered, turnable.ToArray(), inProgress.ToArray(), changes.ToArray(), shop, teleport, reset,
             Warehouse: npc.NpcRole == NpcRole.Warehouse,
-            CraftMaster: craft, SpExchange: spExchange));
+            CraftMaster: craft, SpExchange: spExchange, Subclass: subclass));
 
         // Talking can itself advance a TalkTo step.
         AdvanceTalkStep(player, npcId);
@@ -20051,6 +20517,11 @@ public class GameLoopService : BackgroundService
         if (req.Tier == 4) player.FourthClass = classId;
         else if (req.Tier == 3) player.ThirdClass = classId;
         else player.SecondClass = classId;
+
+        // `BL-250` — the FIRST earned ticket is paid by the main taking its 4th class, and a class
+        // change is not a level-up, so OnLevelUp's call would never have seen it. *"When you get main
+        // to 76(4th) u get your 1st ticket"*.
+        GrantEarnedSubclassTickets(player);
 
         AutoLearnCoreSkills(player);
         player.RecomputeDerived();

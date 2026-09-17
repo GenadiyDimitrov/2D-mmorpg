@@ -7,11 +7,98 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.154.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.155.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-17 (latest) — 0.154.0: `BL-252` — a subclass is BORN AT 40, with nothing but a rune
+## 2026-09-17 (latest) — 0.155.0: `BL-250` — the subclass slot ladder, the tickets, and the free swap
+
+🔴 **DELETE `Game.Server/game.db` (+ `-shm`/`-wal`)** — characters gain two columns
+(`SubclassSlotsUnlocked`, `SubclassTicketsEarned`) and `EnsureCreated()` does not ALTER an existing table.
+⚠ **Protocol 39.** The class master's dialogue carries a new section; an old client simply does not see
+it (the field is appended with a default), so the phone keeps working until **the client half lands in
+0.156.0 with an APK**. Nothing on the ladder is reachable from the phone until then — this is the
+server half, complete and tested.
+
+This is §5, §6 and §7 of `BL-250`, plus §8's data. The sigil half (§1-§4) is still to come.
+
+### SLOTS ARE A THING YOU UNLOCK, NOT A THING YOU HAVE
+
+A character starts with **zero** subclass slots. Three are earned and four are bought, and what you
+receive in every case is a **Subclass Ticket** — an ITEM, exactly as you asked
+(*"those values give you a subclassTicket and u can unlock them using(consumable) ticket"*). Earning or
+buying one puts it in your bag; **using it** opens the slot. That separation earns its keep: the ticket
+your main's 4th class paid you can sit there until you know which class you want.
+
+| slot | how | |
+|---|---|---|
+| 1 | earned | your main reaches 76 and takes its **4th class** |
+| 2 | earned | subclass #1 reaches 75 |
+| 3 | earned | subclass #2 reaches 75 — a third pays nothing |
+| 4 | **500kk gold** | bought at a class master |
+| 5 | **5kkk gold** | |
+| 6 | **100 platinum** | |
+| 7 | **1,000 platinum** | |
+
+🔑 **SEVEN RUNGS FOR SEVEN REACHABLE SUBCLASSES** — your cut of the 5,000-platinum rung landed the
+ladder exactly on the roster. **Putting it back when the summoner ships is one row** in
+`SubclassSlots.BoughtRungs` and nothing else, and that is by construction: the prices are an authored
+list whose LENGTH is the ceiling, and "may another ticket be bought" is the COMPUTED question *"is
+there a path this character could still legally add"*. **Nothing anywhere hard-codes seven** — even
+`GameConstants.MaxSubclasses`, which was the literal `4` for a year, is now derived from the ladder.
+
+⚠ Two guards worth knowing. **Tickets in the bag count as slots already paid for** when pricing the
+next one — otherwise you could buy the 500kk rung three times by never using them. And **the earned
+tickets are counted, not re-derived**: every earn condition stays true forever (your main does not
+stop being 76), so without a record of what was *given* the game would post a fresh 5-billion-gold item
+on every login.
+
+### A SWAP BELOW 75 IS FREE, AND THE REPLACEMENT TAKES THE SLOT
+
+Your ruling, built as stated. At 74 or below you may replace a subclass with any other you could
+legally take, for **nothing** — *"You lose your progress anyways"*. At 75 it is refused rather than
+priced, which is the level that pays its sigil slot and its tree.
+
+🔑 **The load-bearing half is the duplicate check.** Your *"it takes its place so no duplicates will be
+at the end"* is a statement about WHEN that check runs: with the outgoing class already discounted.
+Otherwise swapping a Magus for its race-sibling would refuse itself for clashing with the very class
+being removed — so the swap compares against your OTHER classes' paths, not against all of them.
+
+⚠ **A swap grants no rune.** `BL-252`'s gift is one per subclass CREATED; per-swap would be farmable —
+out and back every day for a free 100% Exp/SP rune forever.
+
+### THE ADMIN PATH IS UNTOUCHED, WHICH IS WHY THERE ARE NOW TWO
+
+*"admins can take subclass as its of now ... and normal players also need a NPC"*. `DebugAddSubclass`
+stays ungated — no ticket, no slot, no level. The new `TakeSubclass` carries every player rule. Both
+call **one** `CreateSubclass`, so the birth values can never drift apart and a rule can never apply to
+one path and not the other by accident. The only check on both sides is the no-duplicate-PATH rule,
+which is not a gate but an invariant.
+
+The class master's second dialogue (§7) and its "what will this give me" panel (§8) are **built and on
+the wire**: per offered class, the **sigil group it unlocks** and its three sigils, whether it would
+open a sigil SLOT or only the tree, that it starts at 40 with 0 SP, and your held classes with which
+of them may still be swapped. Every field is DERIVED from the catalogues — nothing about that panel is
+authored twice. **Drawing it is 0.156.0.**
+
+### ❓ ONE THING I DID NOT DECIDE FOR YOU
+
+**The completeness gate now bites on a BOUGHT slot in a way it never did on an earned one.** The
+existing rule — *every class you own must be at 75 with its 3rd class before you may add another* —
+predates the ladder and you have never repealed it, so I kept it. But an earned slot is paid BY a
+subclass reaching 75, so that gate is satisfied by construction; a **500kk slot can be bought at any
+time and then sit unusable** until everything else is levelled. Recorded as `BL-250` §9.6. Say whether
+a bought slot should bypass it.
+
+### Verified
+
+`tools/SmokeTest` — **ALL CHECKS PASSED**, with eight new assertions: the ladder is seven rungs, the
+four prices are exactly 500kk/5kkk/100/1,000, **slot 8 is not on it**, an earned slot has no price, a
+ticket can be held, using it opens exactly one slot and is consumed, the client is told the ceiling
+rather than assuming it, and 🔑 **the unlocked slot count survives a relog** — a slot that opens on
+screen and is never written is precisely the failure this harness exists to catch.
+
+## 2026-09-17 — 0.154.0: `BL-252` — a subclass is BORN AT 40, with nothing but a rune
 
 🔴 **DELETE `Game.Server/game.db`** if you want the old level-1 subclasses gone; nothing in this
 version needs a new column, so an existing DB runs — it just keeps any subclass you already made at

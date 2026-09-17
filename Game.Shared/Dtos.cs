@@ -565,7 +565,11 @@ public record SubclassDto(
     int FourthClass = 0);
 
 /// <summary>Every class this character owns. Pushed on login and after any add/swap.</summary>
-public record SubclassListDto(SubclassDto[] Classes);
+/// <param name="SlotsUnlocked">`BL-250` — subclass slots OPENED, 0-7. Appended with a default, so an
+/// older client deserialises and simply reads 0. ⚠ Slots, not classes: an open slot may be EMPTY, and
+/// the difference between this and <c>Classes.Length - 1</c> is exactly how many you may still take.</param>
+/// <param name="MaxSlots">The ladder's ceiling today, so the client never hard-codes seven.</param>
+public record SubclassListDto(SubclassDto[] Classes, int SlotsUnlocked = 0, int MaxSlots = 0);
 
 /// <summary>The character's skill-bar layout: one entry per slot, "" = empty. Travels BOTH ways —
 /// server → client on login (restore), client → server on every rearrangement (persist).
@@ -1187,7 +1191,49 @@ public record NpcDialog(
     BufferInfo? Buffer = null, // buffer options (null for non-buffers)
     bool Warehouse = false, // true for a Warehouse Keeper — the client shows an "Open Warehouse" button
     CraftMasterInfo? CraftMaster = null, // crafting master options (null for everyone else)
-    SpExchangeInfo? SpExchange = null); // SP broker (null for everyone else) — APPENDED, old clients ignore it
+    SpExchangeInfo? SpExchange = null, // SP broker (null for everyone else) — APPENDED, old clients ignore it
+    SubclassOfferInfo? Subclass = null); // `BL-250` — the class master's SECOND dialogue (null everywhere else)
+
+/// <summary>Server -> client: `BL-250` §7+§8, the class master's SECOND dialogue — the one he opens
+/// when you come back with a main at 76 holding its 4th class.
+///
+/// <para>🔑 <b>EVERYTHING HERE IS DERIVED FROM THE CATALOGUES</b>, which is §8's actual requirement:
+/// *"we will need an detailed information when taking subclass what that subclass will give you when
+/// reaching 75lvl etc"*. Nothing about this panel is authored a second time, so it cannot fall out of
+/// step with the sigil groups or the ladder.</para></summary>
+/// <param name="SlotsUnlocked">Slots this character has OPENED (0-7).</param>
+/// <param name="SlotsFilled">Of those, how many hold a class.</param>
+/// <param name="MaxSlots">The ladder's ceiling today — 7 until the summoner restores the 8th rung.</param>
+/// <param name="TicketsInBag">Unspent Subclass Tickets. An unspent ticket is an unopened slot you own.</param>
+/// <param name="NextSlotGoldPrice">Gold for the next BUYABLE slot (0 = none owed).</param>
+/// <param name="NextSlotPlatinumPrice">Platinum for the same (0 = none owed).</param>
+/// <param name="NextSlotIsEarned">True when the next slot is one of the three EARNED ones, so the
+/// client says how to earn it instead of offering a price.</param>
+/// <param name="CanBuyTicket">Everything checked: a rung exists, a class is still available, and the
+/// character can afford it. Display only — <c>HandleBuySubclassTicket</c> re-checks all of it.</param>
+/// <param name="NoClassesLeft">His *"no more available subclasses"* state, which is why a ticket may
+/// be unbuyable even with the money in hand.</param>
+public record SubclassOfferInfo(
+    int SlotsUnlocked, int SlotsFilled, int MaxSlots, int TicketsInBag,
+    long NextSlotGoldPrice, int NextSlotPlatinumPrice, bool NextSlotIsEarned,
+    bool CanBuyTicket, bool NoClassesLeft,
+    SubclassOptionDto[] Options,
+    SubclassHeldDto[] Held);
+
+/// <summary>One class you could TAKE, with everything §8 asks be readable before you commit.</summary>
+/// <param name="SigilGroup">The sigil group this class unlocks ("Rogue", "Tank", …) and its three
+/// sigils — the reward at 75, and the reason one class is worth more to you than another.</param>
+/// <param name="OpensSigilSlot">The sigil SLOT number this class would open (1-3), or 0 when it would
+/// open only its tree. Subclasses 4 and up open no further slots.</param>
+/// <param name="Available">False when another of your classes already walks this path.</param>
+public record SubclassOptionDto(
+    int ThirdClassId, string Name, Race Race, string Description,
+    string SigilGroup, string[] SigilNames, int OpensSigilSlot,
+    int BornAtLevel, bool Available);
+
+/// <summary>One class you already own, as the swap panel needs it (`BL-250` §6).</summary>
+/// <param name="CanSwapOut">Level ≤ 74 and not the main. The swap itself is FREE.</param>
+public record SubclassHeldDto(int Slot, string Name, int Level, bool CanSwapOut);
 
 /// <summary>Server -> client: the SP BROKER's one trade (owner, 2026-08-26) — *"an npc to take your
 /// 1kkk SP + 100kk gold and give you a tradable/sellabel SP bottle"*.

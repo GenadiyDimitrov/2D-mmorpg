@@ -2449,6 +2449,23 @@ public class Entity
     /// wherever the character walks, INCLUDING into a town: his rule is that the city neither cancels
     /// nor shortcuts a running timer, only that it never starts one.</summary>
     public int SubclassSwapTicks { get; set; }
+
+    /// <summary>`BL-250` — how many SUBCLASS SLOTS this character has opened. <b>Starts at ZERO</b>:
+    /// slots are not a thing you have, they are a thing you unlock by consuming a Subclass Ticket.
+    /// This is the gate that actually binds when adding a class; <see cref="GameConstants.MaxSubclasses"/>
+    /// is only the ceiling no character may pass. Persisted.
+    /// <para>⚠ It counts SLOTS, not subclasses — a character can hold an unlocked slot it has not
+    /// filled, which is the whole point of the ticket being an item you can sit on.</para></summary>
+    public int SubclassSlotsUnlocked { get; set; }
+
+    /// <summary>`BL-250` — how many EARNED tickets (the first three) have already been handed out.
+    /// Persisted, and it exists for one reason: the earn conditions are things that stay TRUE. Your
+    /// main is still 76 tomorrow and your first subclass is still 75, so without a record of what has
+    /// been paid, every login and every level-up would post another ticket. It counts what was GIVEN,
+    /// never what was spent — spending is <see cref="SubclassSlotsUnlocked"/>'s business and the
+    /// ticket in between is an ordinary item that may be sitting in the bag.</summary>
+    public int SubclassTicketsEarned { get; set; }
+
     /// <summary>Purple flag: I recently attacked another player and am freely attackable until this
     /// tick (killing me = a PvP kill, not a PK). Refreshed on each PvP action.</summary>
     public long PvpFlagUntilTick { get; set; }

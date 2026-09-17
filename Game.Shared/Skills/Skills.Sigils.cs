@@ -79,6 +79,39 @@ public static partial class SkillCatalog
     public const string RogueDefenceSigil   = "rogue_defence_sigil";
     public const string RogueSupportSigil   = "rogue_support_sigil";
 
+    /// <summary>`BL-250` §3 — WHICH SIGIL GROUP A DISCIPLINE UNLOCKS. His table, verbatim: the three
+    /// Apprentice unlock <b>mage</b>, the Priest's healer discipline <b>healer</b> and its buffer
+    /// discipline <b>buffer</b>, the six Rogue <b>rogue</b>, the six Warrior <b>warrior</b>, the three
+    /// Knight <b>tank</b>.
+    ///
+    /// <para>🔑 <b>IT IS KEYED ON THE ARCHETYPE EXCEPT WHERE HE SPLIT IT</b> — the Healer archetype is
+    /// the one row that maps to two groups, because Lightbringer and Warchanter are two different
+    /// rewards and he listed them separately. Everything else falls out of the archetype, which is why
+    /// the archer's six and the dagger's six both read "rogue": they are one archetype pair in his
+    /// table, not two.</para>
+    ///
+    /// <para>⚠ Today this only DESCRIBES a class in the subclass panel (`BL-250` §8). The gating half —
+    /// a group being locked until you own a subclass of it — ships with the sigil rework.</para></summary>
+    public static SigilFlavour SigilGroupOf(Discipline d) => d switch
+    {
+        Discipline.Warchanter => SigilFlavour.Buffer,
+        Discipline.Lightbringer => SigilFlavour.Healer,
+        _ => Disciplines.PathOf(d).Archetype switch
+        {
+            Archetype.Tank => SigilFlavour.Tank,
+            Archetype.Warrior => SigilFlavour.Warrior,
+            Archetype.Nuker => SigilFlavour.Mage,
+            Archetype.Healer => SigilFlavour.Healer,
+            _ => SigilFlavour.Rogue,   // Rogue AND Archer — one group in his table
+        },
+    };
+
+    /// <summary>The three sigils of one group, in slot order (Attack, Defence, Support).</summary>
+    public static string[] SigilsOfGroup(SigilFlavour flavour) =>
+        AllSigilIds.Where(id => SigilTable[id].Flavour == flavour)
+                   .OrderBy(id => (int)SigilTable[id].Slot)
+                   .ToArray();
+
     /// <summary>The exclusive group per SLOT. Three groups, not one: two sigils of the same slot may
     /// never be held together, but an Attack and a Defence sigil obviously may.</summary>
     public const string SigilGroupAttack  = "sigil_attack";

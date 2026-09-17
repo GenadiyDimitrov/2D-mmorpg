@@ -202,6 +202,13 @@ public class CharacterRecord
     /// without loading its subclasses. Never read them for gameplay — read the subclass.</summary>
     public List<SubclassRecord> Subclasses { get; set; } = new();
 
+    /// <summary>`BL-250` — subclass slots OPENED (by consuming a Subclass Ticket), and how many of the
+    /// three EARNED tickets have already been handed out. Both start at 0. The first is the gate that
+    /// binds when adding a class; the second stops a still-true earn condition (your main is still 76)
+    /// from paying again on every login. See Entity for the full note.</summary>
+    public int SubclassSlotsUnlocked { get; set; }
+    public int SubclassTicketsEarned { get; set; }
+
     /// <summary>PvP reputation: PK karma (>0 = red), and lifetime PK / PvP kill counts.</summary>
     public int Karma { get; set; }
     public int PkCount { get; set; }
