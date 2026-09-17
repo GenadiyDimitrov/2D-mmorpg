@@ -824,6 +824,18 @@ public static partial class ClassSkillTables
             foreach (var d in new[] { Discipline.Ravager, Discipline.Warlord })
                 ClassSkills.RegisterFourth(race, d, new ClassSkill(WarriorCharge, 76, SkillLevel: 2));
 
+        // ---- …AND THE WARLORD ALONE PICKS ONE OF FOUR AT 80 (`war_aoe 4th.csv`, 2026-09-17).
+        //      🔑 ONE CHOICE, MADE ONCE. All four are on the shelf and all four are MUTUALLY exclusive
+        //      through `Replaces` — the moment one is bought the other three (and the base Charge) leave
+        //      the tree for good. Nothing new is needed to enforce that; see Skills.Warlord4th.cs.
+        //      ⚠ The RAVAGER gets none of them: his own 4th file authors no charge above the 76 rung.
+        foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
+            ClassSkills.RegisterFourth(race, Discipline.Warlord,
+                new ClassSkill(WarriorChargeNormal, 80),
+                new ClassSkill(WarriorChargeInstant, 80),
+                new ClassSkill(WarriorChargeStun, 80),
+                new ClassSkill(WarriorChargeAoe, 80));
+
         // ---- What every Ravager learns: the armour (rungs 21-35) and the sword (16-30). ----
         var shared = new List<ClassSkill>();
         shared.AddRange(Ladder(WarriorArmorMastery, all, 21));

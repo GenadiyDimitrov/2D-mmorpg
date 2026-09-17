@@ -2328,6 +2328,25 @@ public class GameLoopService : BackgroundService
             targetId = caster.Id;
         }
 
+        // ---- THE CHARGE'S FLOOR (owner, 2026-09-17: *"Min charge distance 150"*) --------------
+        //
+        // 🔑 A REFUSAL, NOT A SILENT NO-OP, and it stands HERE rather than at the drag. `BeginDrag`
+        // already tolerates "nothing to travel" — it pays the arrival at once — which is right for a
+        // PULL (a tow used point-blank is a stun) and wrong for a charge: the reuse would be spent for
+        // a stride of nine units and the player would read it as the skill being broken again. The
+        // floor is the opposite end of the range gate, so it says the opposite thing in the same voice.
+        //
+        // ⚠ It is measured to the TARGET's centre, like every other range test in this method, so the
+        //   number is comparable with the authored Range on the same row.
+        if (def.MinChargeDistance > 0f && targetId != caster.Id
+            && _world.Entities.TryGetValue(targetId, out var chargeTarget)
+            && DistanceSq(caster, chargeTarget) < def.MinChargeDistance * def.MinChargeDistance)
+        {
+            SendSystemToEntity(caster,
+                $"{def.Name} needs at least {def.MinChargeDistance:0} distance to charge.");
+            return;
+        }
+
         // Restore Mana can't target yourself or another mana-restorer (no self/healer refunds).
         if (IsRestoreManaCast(def) &&
             _world.Entities.TryGetValue(targetId, out var mpTarget) &&
@@ -13967,26 +13986,56 @@ public class GameLoopService : BackgroundService
     /// travels and the TARGET is the anchor; everything else — the timing, the per-tick re-aim, the
     /// interpolated (un-announced) steps, the action lock while it runs — is the drag, unchanged.
     ///
-    /// <para>🔑 NO STUN TAIL, ever. A charge is movement the caster CHOSE; the tail exists so a pull's
-    /// victim cannot simply walk back out, and there is nobody to hold here.</para></summary>
-    private void StartCharge(Entity caster, Entity target, SkillDef def, int level) =>
-        BeginDrag(dragged: caster, anchor: target, def, level, stunId: null);
+    /// <para>🔑 ITS STUN TAIL LANDS ON THE ANCHOR, NOT ON THE TRAVELLER (owner, 2026-09-17: *"stuning
+    /// charge -&gt; charges slower for 2 sec, but in the end stuns"*). That is the ONE asymmetry between
+    /// the two ends: a pull stuns the body it dragged, a charge stuns the body it arrived at. Everything
+    /// else — the timing, the per-tick re-aim, the action lock, the interpolated steps — is the drag,
+    /// unchanged. Before 2026-09-17 a charge had no tail at all, because no charge asked for one.</para>
+    ///
+    /// <para>🔑 …AND ITS <see cref="SkillDef.ChargeArrivalSkill"/> FIRES THERE TOO, for a payload the
+    /// tail cannot express (Charge n Stomp's AoE).</para></summary>
+    private void StartCharge(Entity caster, Entity target, SkillDef def, int level)
+    {
+        string? stunId = (def.Effect & SkillEffect.Stun) != 0 && def.DurationTicksAt(level) > 0
+            ? def.Id : null;
+        BeginDrag(dragged: caster, anchor: target, def, level, stunId, tailOnAnchor: true);
+    }
 
     /// <summary>Drag <paramref name="dragged"/> to melee range of <paramref name="anchor"/> over
     /// <see cref="SkillDef.PullSeconds"/>. Shared by the tank's pull and the warrior's charge — see
     /// <see cref="StartPull"/> and <see cref="StartCharge"/> for which end is which.</summary>
-    private void BeginDrag(Entity dragged, Entity anchor, SkillDef def, int level, string? stunId)
+    private void BeginDrag(Entity dragged, Entity anchor, SkillDef def, int level, string? stunId,
+                           bool tailOnAnchor = false)
     {
         float dx = anchor.X - dragged.X, dy = anchor.Y - dragged.Y;
         float dist = MathF.Sqrt(dx * dx + dy * dy);
         float travel = dist - GameConstants.MeleeRange;
+
+        // How long the journey takes. `PullSeconds` is the tank's authored drag and, since 2026-09-17,
+        // the CHARGE's authored DURATION column — so zero is a real, authored value (Flash Step) and
+        // means TELEPORT, not "one tick".
+        int ticks = (int)MathF.Round(def.PullSeconds / GameConstants.TickSeconds);
 
         // Already close enough: nothing to drag, so the tail lands at once. A pull used on something
         // stood next to you is a stun, which is the honest outcome rather than a wasted cast.
         if (travel <= 0f)
         {
             ClearPull(dragged);
-            if (stunId is not null) ApplyBuff(dragged, def, level, source: anchor);
+            PayArrival(dragged, anchor, def, level, stunId, tailOnAnchor);
+            return;
+        }
+
+        // ═══ THE INSTANT ONE — Flash Step (owner, 2026-09-17: *"flash step -> isntant (like phantom
+        //     jump) -> higher cd no duration no cast"*). His DURR cell is 0, so there is no stride to
+        //     interpolate and `announce: true` is CORRECT here where it is wrong for every paced drag:
+        //     this really is a teleport and the client should snap rather than slide 800 units in one
+        //     frame. It is still a CHARGE and not a Blink — same floor, same refusal, same arrival.
+        if (ticks <= 0)
+        {
+            ClearPull(dragged);
+            PlaceEntity(dragged, anchor.X - dx / dist * GameConstants.MeleeRange,
+                                 anchor.Y - dy / dist * GameConstants.MeleeRange, announce: true);
+            PayArrival(dragged, anchor, def, level, stunId, tailOnAnchor);
             return;
         }
 
@@ -13995,7 +14044,6 @@ public class GameLoopService : BackgroundService
         // journey with the two swapped by the caller.
         Entity target = dragged, caster = anchor;
 
-        int ticks = Math.Max(1, (int)MathF.Round(def.PullSeconds / GameConstants.TickSeconds));
         // The floor is on the SPEED, so it shortens the journey rather than slowing it: a short pull
         // arrives early and the stun starts early, which is the readable behaviour.
         float perTick = travel / ticks;
@@ -14011,6 +14059,8 @@ public class GameLoopService : BackgroundService
         target.PullSourceId = caster.Id;
         target.PullStunSkillId = stunId;
         target.PullStunLevel = level;
+        target.PullTailOnAnchor = tailOnAnchor;
+        target.PullArrivalSkillId = tailOnAnchor ? def.ChargeArrivalSkill : null;
 
         // Its own destination is not its own any more. Left standing, a mob's walk order would be
         // re-asserted the moment the drag ended and it would stroll straight back.
@@ -14055,14 +14105,53 @@ public class GameLoopService : BackgroundService
     private void FinishPull(Entity e)
     {
         string? stunId = e.PullStunSkillId;
+        string? arrivalId = e.PullArrivalSkillId;
         int level = e.PullStunLevel;
+        bool onAnchor = e.PullTailOnAnchor;
         Guid sourceId = e.PullSourceId;
         ClearPull(e);   // BEFORE the stun: the tail must not land on a body still flagged as dragged
 
-        if (stunId is null || SkillCatalog.Get(stunId) is not SkillDef def) return;
-        _world.Entities.TryGetValue(sourceId, out var source);
-        ApplyBuff(e, def, level, source: source);
-        if (e.Kind == EntityKind.Player) SendSystemToEntity(e, "You have been pulled off balance.");
+        _world.Entities.TryGetValue(sourceId, out var anchor);
+        PayArrival(e, anchor, stunId, level, onAnchor, arrivalId);
+    }
+
+    /// <summary>What is owed the moment a drag ENDS, however it ended — the paced journey's last tick,
+    /// a journey that had no distance to cover, or Flash Step's instant hop. Three callers, one rule:
+    /// extracting it is what stops the instant charge from silently skipping its own payload.</summary>
+    private void PayArrival(Entity traveller, Entity? anchor, SkillDef def, int level,
+                            string? stunId, bool tailOnAnchor) =>
+        PayArrival(traveller, anchor, stunId, level, tailOnAnchor,
+                   tailOnAnchor ? def.ChargeArrivalSkill : null);
+
+    /// <inheritdoc cref="PayArrival(Entity, Entity?, SkillDef, int, string?, bool)"/>
+    private void PayArrival(Entity traveller, Entity? anchor, string? stunId, int level,
+                            bool onAnchor, string? arrivalId)
+    {
+        Entity e = traveller;
+        if (stunId is not null && SkillCatalog.Get(stunId) is SkillDef def)
+        {
+            // 🔑 WHICH END TAKES THE TAIL IS THE ONE ASYMMETRY between a pull and a charge. A pull
+            // stuns the body it dragged (`e`) with the puller as source; a charge stuns the body it
+            // ARRIVED AT (`anchor`) with the traveller as source. Getting this backwards would have
+            // Charge n Shock stun its own caster.
+            Entity victim = onAnchor ? anchor! : e;
+            Entity? source = onAnchor ? e : anchor;
+            if (victim is not null)
+            {
+                ApplyBuff(victim, def, level, source: source);
+                if (victim.Kind == EntityKind.Player)
+                    SendSystemToEntity(victim, "You have been knocked off balance.");
+            }
+        }
+
+        // ---- THE ARRIVAL PAYLOAD (Charge n Stomp). A full sub-skill execution at the anchor, so it
+        //      brings its own AoE, its own crit and its own block — see SkillDef.ChargeArrivalSkill.
+        if (arrivalId is not null && anchor is not null && !anchor.Dead
+            && SkillCatalog.Get(arrivalId) is SkillDef stomp)
+        {
+            e.CastTargetId = anchor.Id;
+            ExecuteSkill(e, stomp, level);
+        }
     }
 
     /// <summary>Forget any drag on this body. Called on death, on a cleanse of the whole state, and by
@@ -14074,6 +14163,8 @@ public class GameLoopService : BackgroundService
         e.PullSourceId = Guid.Empty;
         e.PullStunSkillId = null;
         e.PullStunLevel = 0;
+        e.PullTailOnAnchor = false;
+        e.PullArrivalSkillId = null;
     }
 
     // ===== INVISIBILITY (BL-69) =========================================================

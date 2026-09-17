@@ -72,7 +72,7 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 58,Monster Knowlege,monster_knowledge_active,physical buff,,,0,0,self/single,1,5,600,Increase PVE Dmg with 25%,40,88
 64,Monster Knowlege,monster_knowledge_active,physical buff,,,0,0,self/single,1,5,600,Increase PVE Dmg with 30%,40,190
 ,,,,,,,,,,,,,,,,,----------------------------Charge----------------------------
-40,Charge,warrior_charge,physical/active,sword|blunt/2,,400,0,target/single,0.5,3,0,Charges to enemy,40,28
+40,Charge,warrior_charge,physical/active,sword|blunt/2,,400,0,target/single,0.5,5,1,Charges to enemy; Min charge distance 150,40,28
 ,,,,,,,,,,,,,,,,,----------------------------Battle Regeneration----------------------------
 70,Battle Revival,waraoe_battle_revival,heal,,,0,0,self/single,0,300,0,Instantly heals to full HP,0,390
 ,,,,,,,,,,,,,,,,,----------------------------Life Support----------------------------
@@ -88,85 +88,85 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 66,Vanguard support,waraoe_support,Passive,,,0,0,self/single,0,15,10,"15% chance to heal for 7% max HP, and leave lingering 2% vampiric and 33/s healing effect",0,280,[],Human
 74,Vanguard support,waraoe_support,Passive,,,0,0,self/single,0,15,10,"20% chance to heal for 10% max HP, and leave lingering 3% vampiric and 50/s healing effect",0,880,[],Human
 ,,,,,,,,,,,,,,,,,---------------------------Shocking Shout----------------------------
-40,Shocking Shout,waraoe_shock_shout,Physical/Active,blunt/2,,0,200,self/aoe,1,5,5,"Shouts to do Physical damage with +1000 power and Stuns around for 5s, Cannot be blocked, Can double;",36,28,,
-43,Shocking Shout,waraoe_shock_shout,Physical/Active,blunt/2,,0,200,self/aoe,1,5,5,"Shouts to do Physical damage with +1200 power and Stuns around for 5s, Cannot be blocked, Can double;",40,35,,
-46,Shocking Shout,waraoe_shock_shout,Physical/Active,blunt/2,,0,200,self/aoe,1,5,5,"Shouts to do Physical damage with +1400 power and Stuns around for 5s, Cannot be blocked, Can double;",43,40,,
-49,Shocking Shout,waraoe_shock_shout,Physical/Active,blunt/2,,0,200,self/aoe,1,5,5,"Shouts to do Physical damage with +1600 power and Stuns around for 5s, Cannot be blocked, Can double;",45,50,,
-52,Shocking Shout,waraoe_shock_shout,Physical/Active,blunt/2,,0,200,self/aoe,1,5,5,"Shouts to do Physical damage with +1800 power and Stuns around for 5s, Cannot be blocked, Can double;",47,74,,
-55,Shocking Shout,waraoe_shock_shout,Physical/Active,blunt/2,,0,200,self/aoe,1,5,5,"Shouts to do Physical damage with +2000 power and Stuns around for 5s, Cannot be blocked, Can double;",50,80,,
-58,Shocking Shout,waraoe_shock_shout,Physical/Active,blunt/2,,0,200,self/aoe,1,5,5,"Shouts to do Physical damage with +2400 power and Stuns around for 5s, Cannot be blocked, Can double;",55,88,,
-60,Shocking Shout,waraoe_shock_shout,Physical/Active,blunt/2,,0,200,self/aoe,1,5,5,"Shouts to do Physical damage with +2600 power and Stuns around for 5s, Cannot be blocked, Can double;",56,120,,
-62,Shocking Shout,waraoe_shock_shout,Physical/Active,blunt/2,,0,200,self/aoe,1,5,5,"Shouts to do Physical damage with +2800 power and Stuns around for 5s, Cannot be blocked, Can double;",58,170,,
-64,Shocking Shout,waraoe_shock_shout,Physical/Active,blunt/2,,0,200,self/aoe,1,5,5,"Shouts to do Physical damage with +3000 power and Stuns around for 5s, Cannot be blocked, Can double;",62,190,,
-66,Shocking Shout,waraoe_shock_shout,Physical/Active,blunt/2,,0,200,self/aoe,1,5,5,"Shouts to do Physical damage with +3200 power and Stuns around for 5s, Cannot be blocked, Can double;",65,280,,
-68,Shocking Shout,waraoe_shock_shout,Physical/Active,blunt/2,,0,200,self/aoe,1,5,5,"Shouts to do Physical damage with +3400 power and Stuns around for 5s, Cannot be blocked, Can double;",68,320,,
-70,Shocking Shout,waraoe_shock_shout,Physical/Active,blunt/2,,0,200,self/aoe,1,5,5,"Shouts to do Physical damage with +3600 power and Stuns around for 5s, Cannot be blocked, Can double;",70,390,,
-72,Shocking Shout,waraoe_shock_shout,Physical/Active,blunt/2,,0,200,self/aoe,1,5,5,"Shouts to do Physical damage with +3800 power and Stuns around for 5s, Cannot be blocked, Can double;",75,650,,
-74,Shocking Shout,waraoe_shock_shout,Physical/Active,blunt/2,,0,200,self/aoe,1,5,5,"Shouts to do Physical damage with +4000 power and Stuns around for 5s, Cannot be blocked, Can double;",78,880,,
+40,Shocking Shout,waraoe_shock_shout,Physical/Active,blunt/2,,0,200,enemy/aoe,1,5,5,"Shouts to do Physical damage with +1000 power and Stuns around for 5s, Cannot be blocked, Can double;",36,28,,
+43,Shocking Shout,waraoe_shock_shout,Physical/Active,blunt/2,,0,200,enemy/aoe,1,5,5,"Shouts to do Physical damage with +1200 power and Stuns around for 5s, Cannot be blocked, Can double;",40,35,,
+46,Shocking Shout,waraoe_shock_shout,Physical/Active,blunt/2,,0,200,enemy/aoe,1,5,5,"Shouts to do Physical damage with +1400 power and Stuns around for 5s, Cannot be blocked, Can double;",43,40,,
+49,Shocking Shout,waraoe_shock_shout,Physical/Active,blunt/2,,0,200,enemy/aoe,1,5,5,"Shouts to do Physical damage with +1600 power and Stuns around for 5s, Cannot be blocked, Can double;",45,50,,
+52,Shocking Shout,waraoe_shock_shout,Physical/Active,blunt/2,,0,200,enemy/aoe,1,5,5,"Shouts to do Physical damage with +1800 power and Stuns around for 5s, Cannot be blocked, Can double;",47,74,,
+55,Shocking Shout,waraoe_shock_shout,Physical/Active,blunt/2,,0,200,enemy/aoe,1,5,5,"Shouts to do Physical damage with +2000 power and Stuns around for 5s, Cannot be blocked, Can double;",50,80,,
+58,Shocking Shout,waraoe_shock_shout,Physical/Active,blunt/2,,0,200,enemy/aoe,1,5,5,"Shouts to do Physical damage with +2400 power and Stuns around for 5s, Cannot be blocked, Can double;",55,88,,
+60,Shocking Shout,waraoe_shock_shout,Physical/Active,blunt/2,,0,200,enemy/aoe,1,5,5,"Shouts to do Physical damage with +2600 power and Stuns around for 5s, Cannot be blocked, Can double;",56,120,,
+62,Shocking Shout,waraoe_shock_shout,Physical/Active,blunt/2,,0,200,enemy/aoe,1,5,5,"Shouts to do Physical damage with +2800 power and Stuns around for 5s, Cannot be blocked, Can double;",58,170,,
+64,Shocking Shout,waraoe_shock_shout,Physical/Active,blunt/2,,0,200,enemy/aoe,1,5,5,"Shouts to do Physical damage with +3000 power and Stuns around for 5s, Cannot be blocked, Can double;",62,190,,
+66,Shocking Shout,waraoe_shock_shout,Physical/Active,blunt/2,,0,200,enemy/aoe,1,5,5,"Shouts to do Physical damage with +3200 power and Stuns around for 5s, Cannot be blocked, Can double;",65,280,,
+68,Shocking Shout,waraoe_shock_shout,Physical/Active,blunt/2,,0,200,enemy/aoe,1,5,5,"Shouts to do Physical damage with +3400 power and Stuns around for 5s, Cannot be blocked, Can double;",68,320,,
+70,Shocking Shout,waraoe_shock_shout,Physical/Active,blunt/2,,0,200,enemy/aoe,1,5,5,"Shouts to do Physical damage with +3600 power and Stuns around for 5s, Cannot be blocked, Can double;",70,390,,
+72,Shocking Shout,waraoe_shock_shout,Physical/Active,blunt/2,,0,200,enemy/aoe,1,5,5,"Shouts to do Physical damage with +3800 power and Stuns around for 5s, Cannot be blocked, Can double;",75,650,,
+74,Shocking Shout,waraoe_shock_shout,Physical/Active,blunt/2,,0,200,enemy/aoe,1,5,5,"Shouts to do Physical damage with +4000 power and Stuns around for 5s, Cannot be blocked, Can double;",78,880,,
 ,,,,,,,,,,,,,,,,,---------------------------Wirlwind----------------------------
-40,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,self/aoe,0.5,8,4,"Deals Physical damage with +300 power 20 times over 4s, Cannot be blocked, Can double;",36,28,[]
-43,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,self/aoe,0.5,8,4,"Deals Physical damage with +415 power 20 times over 4s, Cannot be blocked, Can double;",40,35,[]
-46,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,self/aoe,0.5,8,4,"Deals Physical damage with +525 power 20 times over 4s, Cannot be blocked, Can double;",43,40,[]
-49,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,self/aoe,0.5,8,4,"Deals Physical damage with +640 power 20 times over 4s, Cannot be blocked, Can double;",45,50,[]
-52,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,self/aoe,0.5,8,4,"Deals Physical damage with +715 power 20 times over 4s, Cannot be blocked, Can double;",47,74,[]
-55,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,self/aoe,0.5,8,4,"Deals Physical damage with +825 power 20 times over 4s, Cannot be blocked, Can double;",50,80,[]
-58,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,self/aoe,0.5,8,4,"Deals Physical damage with +940 power 20 times over 4s, Cannot be blocked, Can double;",55,88,[]
-60,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,self/aoe,0.5,8,4,"Deals Physical damage with +1125 power 20 times over 4s, Cannot be blocked, Can double;",56,120,[]
-62,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,self/aoe,0.5,8,4,"Deals Physical damage with +1240 power 20 times over 4s, Cannot be blocked, Can double;",58,170,[]
-64,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,self/aoe,0.5,8,4,"Deals Physical damage with +1350 power 20 times over 4s, Cannot be blocked, Can double;",62,190,[]
-66,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,self/aoe,0.5,8,4,"Deals Physical damage with +1465 power 20 times over 4s, Cannot be blocked, Can double;",65,280,[]
-68,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,self/aoe,0.5,8,4,"Deals Physical damage with +1540 power 20 times over 4s, Cannot be blocked, Can double;",68,320,[]
-70,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,self/aoe,0.5,8,4,"Deals Physical damage with +900 power 20 times over 4s, Cannot be blocked, Can double;",70,390,[]
-72,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,self/aoe,0.5,8,4,"Deals Physical damage with +950 power 20 times over 4s, Cannot be blocked, Can double;",75,650,[]
-74,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,self/aoe,0.5,8,4,"Deals Physical damage with +1000 power 20 times over 4s, Cannot be blocked, Can double;",78,880,[]
+40,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,4,"Deals Physical damage with +300 power 20 times over 4s, Cannot be blocked, Can double;",36,28,[]
+43,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,4,"Deals Physical damage with +415 power 20 times over 4s, Cannot be blocked, Can double;",40,35,[]
+46,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,4,"Deals Physical damage with +525 power 20 times over 4s, Cannot be blocked, Can double;",43,40,[]
+49,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,4,"Deals Physical damage with +640 power 20 times over 4s, Cannot be blocked, Can double;",45,50,[]
+52,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,4,"Deals Physical damage with +715 power 20 times over 4s, Cannot be blocked, Can double;",47,74,[]
+55,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,4,"Deals Physical damage with +825 power 20 times over 4s, Cannot be blocked, Can double;",50,80,[]
+58,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,4,"Deals Physical damage with +940 power 20 times over 4s, Cannot be blocked, Can double;",55,88,[]
+60,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,4,"Deals Physical damage with +1125 power 20 times over 4s, Cannot be blocked, Can double;",56,120,[]
+62,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,4,"Deals Physical damage with +1240 power 20 times over 4s, Cannot be blocked, Can double;",58,170,[]
+64,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,4,"Deals Physical damage with +1350 power 20 times over 4s, Cannot be blocked, Can double;",62,190,[]
+66,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,4,"Deals Physical damage with +1465 power 20 times over 4s, Cannot be blocked, Can double;",65,280,[]
+68,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,4,"Deals Physical damage with +1540 power 20 times over 4s, Cannot be blocked, Can double;",68,320,[]
+70,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,4,"Deals Physical damage with +900 power 20 times over 4s, Cannot be blocked, Can double;",70,390,[]
+72,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,4,"Deals Physical damage with +950 power 20 times over 4s, Cannot be blocked, Can double;",75,650,[]
+74,Wirlwind,waraoe_wirlwind,Physical/Active,blunt/2,,0,200,enemy/aoe,0.5,8,4,"Deals Physical damage with +1000 power 20 times over 4s, Cannot be blocked, Can double;",78,880,[]
 ,,,,,,,,,,,,,,,,,---------------------------Taunting Shout----------------------------
-52,Taunting Shout,waraoe_taunting_shout,Physical/Active,blunt/2,,0,600,self/aoe,1,20,30,"Shouts to do provoke enemies in a large area and make them vunarable to bludgering attacks (10% more dmg from blunts);",50,74,,
-74,Taunting Shout,waraoe_taunting_shout,Physical/Active,blunt/2,,0,800,self/aoe,1,20,30,"Shouts to do provoke enemies in a large area and make them vunarable to bludgering attacks (20% more dmg from blunts);",50,74,,
+52,Taunting Shout,waraoe_taunting_shout,Physical/Debuf,blunt/2,,0,600,enemy/aoe,1,20,30,"Shouts to do provoke enemies in a large area and make them vunarable to bludgering attacks (10% more dmg from blunts);",50,74,,
+74,Taunting Shout,waraoe_taunting_shout,Physical/Debuf,blunt/2,,0,800,enemy/aoe,1,20,30,"Shouts to do provoke enemies in a large area and make them vunarable to bludgering attacks (20% more dmg from blunts);",60,74,,
 ,,,,,,,,,,,,,,,,,---------------------------Shout----------------------------
-40,Shattaring Shout,waraoe_human_shout,Physical/Debuf,sword/2,,0,200,target/single,1,10,15,"Decrease P.Def of Enemies with 10%;",36,28,[smash],Human
-43,Shattaring Shout,waraoe_human_shout,Physical/Debuf,sword/2,,0,200,target/single,1,10,15,"Decrease P.Def of Enemies with 13%;",40,35,[smash],Human
-46,Shattaring Shout,waraoe_human_shout,Physical/Debuf,sword/2,,0,200,target/single,1,10,15,"Decrease P.Def of Enemies with 16%;",43,40,[smash],Human
-49,Shattaring Shout,waraoe_human_shout,Physical/Debuf,sword/2,,0,200,target/single,1,10,15,"Decrease P.Def of Enemies with 19%;",45,50,[smash],Human
-52,Shattaring Shout,waraoe_human_shout,Physical/Debuf,sword/2,,0,200,target/single,1,10,15,"Decrease P.Def of Enemies with 21%;",47,74,[smash],Human
-55,Shattaring Shout,waraoe_human_shout,Physical/Debuf,sword/2,,0,200,target/single,1,10,15,"Decrease P.Def of Enemies with 23%;",50,80,[smash],Human
-58,Shattaring Shout,waraoe_human_shout,Physical/Debuf,sword/2,,0,200,target/single,1,10,15,"Decrease P.Def of Enemies with 23%;",55,88,[smash],Human
-60,Shattaring Shout,waraoe_human_shout,Physical/Debuf,sword/2,,0,200,target/single,1,10,15,"Decrease P.Def of Enemies with 23%;",56,120,[smash],Human
-62,Shattaring Shout,waraoe_human_shout,Physical/Debuf,sword/2,,0,200,target/single,1,10,15,"Decrease P.Def of Enemies with 23%;",58,170,[smash],Human
-64,Shattaring Shout,waraoe_human_shout,Physical/Debuf,sword/2,,0,200,target/single,1,10,15,"Decrease P.Def of Enemies with 23%;",62,190,[smash],Human
-66,Shattaring Shout,waraoe_human_shout,Physical/Debuf,sword/2,,0,200,target/single,1,10,15,"Decrease P.Def of Enemies with 23%;",65,280,[smash],Human
-68,Shattaring Shout,waraoe_human_shout,Physical/Debuf,sword/2,,0,200,target/single,1,10,15,"Decrease P.Def of Enemies with 23%;",68,320,[smash],Human
-70,Shattaring Shout,waraoe_human_shout,Physical/Debuf,sword/2,,0,200,target/single,1,10,15,"Decrease P.Def of Enemies with 23%;",70,390,[smash],Human
-72,Shattaring Shout,waraoe_human_shout,Physical/Debuf,sword/2,,0,200,target/single,1,10,15,"Decrease P.Def of Enemies with 23%;",75,650,[smash],Human
-74,Shattaring Shout,waraoe_human_shout,Physical/Debuf,sword/2,,0,200,target/single,1,10,15,"Decrease P.Def of Enemies with 23%;",78,880,[smash],Human
+40,Shattaring Shout,waraoe_human_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 10%;",36,28,[smash],Human,Single debuff x1.5
+43,Shattaring Shout,waraoe_human_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 13%;",40,35,[smash],Human
+46,Shattaring Shout,waraoe_human_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 16%;",43,40,[smash],Human
+49,Shattaring Shout,waraoe_human_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 19%;",45,50,[smash],Human
+52,Shattaring Shout,waraoe_human_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 21%;",47,74,[smash],Human
+55,Shattaring Shout,waraoe_human_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 23%;",50,80,[smash],Human
+58,Shattaring Shout,waraoe_human_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 23%;",55,88,[smash],Human
+60,Shattaring Shout,waraoe_human_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 23%;",56,120,[smash],Human
+62,Shattaring Shout,waraoe_human_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 23%;",58,170,[smash],Human
+64,Shattaring Shout,waraoe_human_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 23%;",62,190,[smash],Human
+66,Shattaring Shout,waraoe_human_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 23%;",65,280,[smash],Human
+68,Shattaring Shout,waraoe_human_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 23%;",68,320,[smash],Human
+70,Shattaring Shout,waraoe_human_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 23%;",70,390,[smash],Human
+72,Shattaring Shout,waraoe_human_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 23%;",75,650,[smash],Human
+74,Shattaring Shout,waraoe_human_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 23%;",78,880,[smash],Human
 ,,,,,,,,,,,,,,,,,---------------------------Shout----------------------------
-40,Breaking Shout,waraoe_demon_shout,Physical/Debuf,sword/2,,0,200,target/single,1,10,15,"Decrease P/M.Atk of Enemy with 5%;",36,28,[smash],Demon
-43,Breaking Shout,waraoe_demon_shout,Physical/Debuf,sword/2,,0,200,target/single,1,10,15,"Decrease P/M.Atk of Enemy with 5%;",40,35,[smash],Demon
-46,Breaking Shout,waraoe_demon_shout,Physical/Debuf,sword/2,,0,200,target/single,1,10,15,"Decrease P/M.Atk of Enemy with 5%;",43,40,[smash],Demon
-49,Breaking Shout,waraoe_demon_shout,Physical/Debuf,sword/2,,0,200,target/single,1,10,15,"Decrease P/M.Atk of Enemy with 5%;",45,50,[smash],Demon
-52,Breaking Shout,waraoe_demon_shout,Physical/Debuf,sword/2,,0,200,target/single,1,10,15,"Decrease P/M.Atk of Enemy with 5%;",47,74,[smash],Demon
-55,Breaking Shout,waraoe_demon_shout,Physical/Debuf,sword/2,,0,200,target/single,1,10,15,"Decrease P/M.Atk of Enemy with 10%;",50,80,[smash],Demon
-58,Breaking Shout,waraoe_demon_shout,Physical/Debuf,sword/2,,0,200,target/single,1,10,15,"Decrease P/M.Atk of Enemy with 10%;",55,88,[smash],Demon
-60,Breaking Shout,waraoe_demon_shout,Physical/Debuf,sword/2,,0,200,target/single,1,10,15,"Decrease P/M.Atk of Enemy with 10%;",56,120,[smash],Demon
-62,Breaking Shout,waraoe_demon_shout,Physical/Debuf,sword/2,,0,200,target/single,1,10,15,"Decrease P/M.Atk of Enemy with 10%;",58,170,[smash],Demon
-64,Breaking Shout,waraoe_demon_shout,Physical/Debuf,sword/2,,0,200,target/single,1,10,15,"Decrease P/M.Atk of Enemy with 10%;",62,190,[smash],Demon
-66,Breaking Shout,waraoe_demon_shout,Physical/Debuf,sword/2,,0,200,target/single,1,10,15,"Decrease P/M.Atk of Enemy with 10%;",65,280,[smash],Demon
-68,Breaking Shout,waraoe_demon_shout,Physical/Debuf,sword/2,,0,200,target/single,1,10,15,"Decrease P/M.Atk of Enemy with 10%;",68,320,[smash],Demon
-70,Breaking Shout,waraoe_demon_shout,Physical/Debuf,sword/2,,0,200,target/single,1,10,15,"Decrease P/M.Atk of Enemy with 10%;",70,390,[smash],Demon
-72,Breaking Shout,waraoe_demon_shout,Physical/Debuf,sword/2,,0,200,target/single,1,10,15,"Decrease P/M.Atk of Enemy with 10%;",75,650,[smash],Demon
-74,Breaking Shout,waraoe_demon_shout,Physical/Debuf,sword/2,,0,200,target/single,1,10,15,"Decrease P/M.Atk of Enemy with 10%;",78,880,[smash],Demon
+40,Breaking Shout,waraoe_demon_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P/M.Atk of Enemy with 5%;",36,28,[smash],Demon,Single debuff x1.5
+43,Breaking Shout,waraoe_demon_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P/M.Atk of Enemy with 5%;",40,35,[smash],Demon
+46,Breaking Shout,waraoe_demon_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P/M.Atk of Enemy with 5%;",43,40,[smash],Demon
+49,Breaking Shout,waraoe_demon_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P/M.Atk of Enemy with 5%;",45,50,[smash],Demon
+52,Breaking Shout,waraoe_demon_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P/M.Atk of Enemy with 5%;",47,74,[smash],Demon
+55,Breaking Shout,waraoe_demon_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P/M.Atk of Enemy with 10%;",50,80,[smash],Demon
+58,Breaking Shout,waraoe_demon_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P/M.Atk of Enemy with 10%;",55,88,[smash],Demon
+60,Breaking Shout,waraoe_demon_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P/M.Atk of Enemy with 10%;",56,120,[smash],Demon
+62,Breaking Shout,waraoe_demon_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P/M.Atk of Enemy with 10%;",58,170,[smash],Demon
+64,Breaking Shout,waraoe_demon_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P/M.Atk of Enemy with 10%;",62,190,[smash],Demon
+66,Breaking Shout,waraoe_demon_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P/M.Atk of Enemy with 10%;",65,280,[smash],Demon
+68,Breaking Shout,waraoe_demon_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P/M.Atk of Enemy with 10%;",68,320,[smash],Demon
+70,Breaking Shout,waraoe_demon_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P/M.Atk of Enemy with 10%;",70,390,[smash],Demon
+72,Breaking Shout,waraoe_demon_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P/M.Atk of Enemy with 10%;",75,650,[smash],Demon
+74,Breaking Shout,waraoe_demon_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P/M.Atk of Enemy with 10%;",78,880,[smash],Demon
 ,,,,,,,,,,,,,,,,,---------------------------Shout----------------------------
-40,Crippling Shout,waraoe_elf_shout,Physical/Debuf,sword/2,,0,200,target/single,1,10,15,"Decrease Attack/Cast/Move Speed of Enemy with 10%",36,28,[smash],Elf
-43,Crippling Shout,waraoe_elf_shout,Physical/Debuf,sword/2,,0,200,target/single,1,10,15,"Decrease Attack/Cast/Move Speed of Enemy with 12%",40,35,[smash],Elf
-46,Crippling Shout,waraoe_elf_shout,Physical/Debuf,sword/2,,0,200,target/single,1,10,15,"Decrease Attack/Cast/Move Speed of Enemy with 14%",43,40,[smash],Elf
-49,Crippling Shout,waraoe_elf_shout,Physical/Debuf,sword/2,,0,200,target/single,1,10,15,"Decrease Attack/Cast/Move Speed of Enemy with 16%",45,50,[smash],Elf
-52,Crippling Shout,waraoe_elf_shout,Physical/Debuf,sword/2,,0,200,target/single,1,10,15,"Decrease Attack/Cast/Move Speed of Enemy with 18%",47,74,[smash],Elf
-55,Crippling Shout,waraoe_elf_shout,Physical/Debuf,sword/2,,0,200,target/single,1,10,15,"Decrease Attack/Cast/Move Speed of Enemy with 20%",50,80,[smash],Elf
-58,Crippling Shout,waraoe_elf_shout,Physical/Debuf,sword/2,,0,200,target/single,1,10,15,"Decrease Attack/Cast/Move Speed of Enemy with 20%",55,88,[smash],Elf
-60,Crippling Shout,waraoe_elf_shout,Physical/Debuf,sword/2,,0,200,target/single,1,10,15,"Decrease Attack/Cast/Move Speed of Enemy with 20%",56,120,[smash],Elf
-62,Crippling Shout,waraoe_elf_shout,Physical/Debuf,sword/2,,0,200,target/single,1,10,15,"Decrease Attack/Cast/Move Speed of Enemy with 20%",58,170,[smash],Elf
-64,Crippling Shout,waraoe_elf_shout,Physical/Debuf,sword/2,,0,200,target/single,1,10,15,"Decrease Attack/Cast/Move Speed of Enemy with 20%",62,190,[smash],Elf
-66,Crippling Shout,waraoe_elf_shout,Physical/Debuf,sword/2,,0,200,target/single,1,10,15,"Decrease Attack/Cast/Move Speed of Enemy with 20%",65,280,[smash],Elf
-68,Crippling Shout,waraoe_elf_shout,Physical/Debuf,sword/2,,0,200,target/single,1,10,15,"Decrease Attack/Cast/Move Speed of Enemy with 20%",68,320,[smash],Elf
-70,Crippling Shout,waraoe_elf_shout,Physical/Debuf,sword/2,,0,200,target/single,1,10,15,"Decrease Attack/Cast/Move Speed of Enemy with 20%",70,390,[smash],Elf
-72,Crippling Shout,waraoe_elf_shout,Physical/Debuf,sword/2,,0,200,target/single,1,10,15,"Decrease Attack/Cast/Move Speed of Enemy with 20%",75,650,[smash],Elf
-74,Crippling Shout,waraoe_elf_shout,Physical/Debuf,sword/2,,0,200,target/single,1,10,15,"Decrease Attack/Cast/Move Speed of Enemy with 20%",78,880,[smash],Elf
+40,Crippling Shout,waraoe_elf_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease Attack/Cast/Move Speed of Enemy with 10%",36,28,[smash],Elf,Single debuff x1.5
+43,Crippling Shout,waraoe_elf_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease Attack/Cast/Move Speed of Enemy with 12%",40,35,[smash],Elf
+46,Crippling Shout,waraoe_elf_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease Attack/Cast/Move Speed of Enemy with 14%",43,40,[smash],Elf
+49,Crippling Shout,waraoe_elf_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease Attack/Cast/Move Speed of Enemy with 16%",45,50,[smash],Elf
+52,Crippling Shout,waraoe_elf_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease Attack/Cast/Move Speed of Enemy with 18%",47,74,[smash],Elf
+55,Crippling Shout,waraoe_elf_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease Attack/Cast/Move Speed of Enemy with 20%",50,80,[smash],Elf
+58,Crippling Shout,waraoe_elf_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease Attack/Cast/Move Speed of Enemy with 20%",55,88,[smash],Elf
+60,Crippling Shout,waraoe_elf_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease Attack/Cast/Move Speed of Enemy with 20%",56,120,[smash],Elf
+62,Crippling Shout,waraoe_elf_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease Attack/Cast/Move Speed of Enemy with 20%",58,170,[smash],Elf
+64,Crippling Shout,waraoe_elf_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease Attack/Cast/Move Speed of Enemy with 20%",62,190,[smash],Elf
+66,Crippling Shout,waraoe_elf_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease Attack/Cast/Move Speed of Enemy with 20%",65,280,[smash],Elf
+68,Crippling Shout,waraoe_elf_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease Attack/Cast/Move Speed of Enemy with 20%",68,320,[smash],Elf
+70,Crippling Shout,waraoe_elf_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease Attack/Cast/Move Speed of Enemy with 20%",70,390,[smash],Elf
+72,Crippling Shout,waraoe_elf_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease Attack/Cast/Move Speed of Enemy with 20%",75,650,[smash],Elf
+74,Crippling Shout,waraoe_elf_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease Attack/Cast/Move Speed of Enemy with 20%",78,880,[smash],Elf

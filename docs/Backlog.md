@@ -253,6 +253,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-250` | 🟡 | THE SUBCLASS SYSTEM — **the server half is BUILT (0.155.0)**; what is left is the CLIENT dialogue + panel (APK) and the SIGIL half (§1-§4). ❓ one new question in §9.6 | classes |
 | `BL-253` | 🔵 | A DROP DATABASE — name an item, see every source; the BalanceMatrix half is built, the in-game window is owed | items |
 | `BL-254` | ❓ | RARE WOOD DROPS FROM NOTHING — wood is never a category's primary, so no Rare rung can reach it | items |
+| `BL-259` | ❓ | THE LANDING MODIFIER FOR **Charge n Shock** — one cell in `debuff_landmods.csv`, and only you may set it | classes |
 
 ---
 
@@ -2119,5 +2120,31 @@ Plant, which is Leather+Wood today and is the one category where leather makes n
 ⚠ **Whichever you pick, it is the same question for every SECONDARY material at Rare** — Wood is just
 the one you noticed, because it is the only type that is never anybody's primary.
 
+
+---
+
+## `BL-259` ❓ THE LANDING MODIFIER FOR **Charge n Shock** — one cell, and only you may set it
+
+Built 2026-09-17 in 0.164.0 from `war_aoe 4th.csv`: *"80,Charge n Shock,warrior_charge_stun … Chance
+to stun target for 2s"*. It is a **new debuff**, so by your own rule (`BL-232`) I do not price it:
+
+> *"Then each new debuff to go there and to ask for modifier edit"*
+
+`docs/data/debuff_landmods.csv` now carries its row and `SUCCESS` reads the code's default of **1** —
+that is the file being filled in, not a decision.
+
+| SKILL | SKILL_ID | CLASS | DESCR | SAVE | SHAPE | SUCCESS |
+|---|---|---|---|---|---|---|
+| Charge n Shock | `warrior_charge_stun` | Warlord | Stun | CON | `DEBUFF ONLY (1)` | **your cell** |
+
+**What it does at once**, since that is the axis your modifier prices: it closes 800 of ground over
+two seconds and stuns for two — **no damage at all**. So it is a solo debuff by your `SHAPE` test,
+not a `dmg+1 debuff`.
+
+⚠ **The neighbours, for scale, not as a suggestion:** *Phantom Jump* (blink + Stun, `DEBUFF ONLY (1)`)
+is **1**, and *Grapple* (`tank_pull`, pull + Stun) is **1** — but both of those arrive instantly or
+drag the victim, while this one telegraphs itself for two full seconds first.
+
+Edit the cell and `SkillCsvSeed --check` will print DRIFT until the code matches it.
 
 ---

@@ -77,7 +77,7 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 58,Monster Knowlege,monster_knowledge_active,physical buff,,,0,0,self/single,1,5,600,Increase PVE Dmg with 25%,40,88
 64,Monster Knowlege,monster_knowledge_active,physical buff,,,0,0,self/single,1,5,600,Increase PVE Dmg with 30%,40,190
 ,,,,,,,,,,,,,,,,,----------------------------Charge----------------------------
-40,Charge,warrior_charge,physical/active,sword|blunt/2,,400,0,target/single,0.5,3,0,Charges to enemy,40,28
+40,Charge,warrior_charge,physical/active,sword|blunt/2,,400,0,target/single,0.5,5,1,Charges to enemy; Min charge distance 150,40,28
 ,,,,,,,,,,,,,,,,,----------------------------Champion Presence----------------------------
 64,Champion Presence,warrior_champion_presence,physical buff,,,0,0,self/single,1,5,600,"Increase: Attack Speed with 5%, PVP Dmg with 5%",40,190,,Human
 74,Champion Presence,warrior_champion_presence,physical buff,,,0,0,self/single,1,5,600,"Increase: Attack Speed with 10%, PVP Dmg with 10%",60,880,,Human

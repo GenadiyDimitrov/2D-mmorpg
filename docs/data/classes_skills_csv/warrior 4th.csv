@@ -38,7 +38,7 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 ,,,,,,,,,,,,,,,,,,,----------------------------Battle Momentum----------------------------
 76,Battle Momentum,reuse_reset_momentum,passive,,,0,0,self/single,0,0,0,reuse reset 5% - a skill you cast has that chance to come off reuse immediately - never on a fixed-cooldown skill - scales with ATK,0,6.5kk,1kk,,,,Same id as the Magus Arcane Momentum - one skill - one number - a name per class
 ,,,,,,,,,,,,,,,,,,,----------------------------Charge----------------------------
-76,Charge,warrior_charge,physical/active,sword|blunt/2,,600,0,target/single,0.5,3,0,Charges to enemy,50,6.5kk,1kk
+76,Charge,warrior_charge,physical/active,sword|blunt/2,,600,0,target/single,0.5,5,1,Charges to enemy; Min charge distance 150,50,6.5kk,1kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Champion Presence----------------------------
 76,Champion Presence,warrior_champion_presence,physical buff,,,0,0,self/single,1,5,600,"Increase: Attack Speed with 15%, PVP Dmg with 15%",80,6.5kk,1kk,,,Human
 85,Champion Presence,warrior_champion_presence,physical buff,,,0,0,self/single,1,5,600,"Increase: Attack Speed with 20%, PVP Dmg with 25%",100,0,50kk,,,Human

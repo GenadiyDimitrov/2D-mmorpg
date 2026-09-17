@@ -492,6 +492,14 @@ internal static class Check
                 if (def.SelfBuff is string selfBuffId
                     && SkillCatalog.Get(selfBuffId) is SkillDef selfBuff)
                     duration = selfBuff.DurationTicksAt(cs.SkillLevel) / 10f;
+                // A CHARGE'S "duration" IS ITS STRIDE (owner, 2026-09-17: *"i gave on charge duration ..
+                // it should move the distance for the duration .. not instantly"*), which lives in
+                // `PullSeconds`, not in DurationTicks. Fourth case of the same shape as the three above
+                // — his column describes the thing the skill DOES, and for a gap-closer that is travel.
+                // ⚠ …EXCEPT where the charge also carries a real buff duration: Charge n Shock's DURR
+                //   is both, so prefer the stride only when DurationTicks has nothing to say.
+                if (def.ChargesToTarget && duration <= 0f)
+                    duration = def.PullSeconds;
                 rows.Add(new Rung(cs.DisplayName ?? def.Name, cs.LearnLevel,
                     def.RangeAt(cs.SkillLevel), def.CastTicksAt(cs.SkillLevel) / 10f, cooldown,
                     duration,

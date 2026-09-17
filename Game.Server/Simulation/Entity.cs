@@ -1761,6 +1761,13 @@ public class Entity
     public string? PullStunSkillId { get; set; }
     /// <inheritdoc cref="PullStunSkillId"/>
     public int PullStunLevel { get; set; }
+    /// <summary>TRUE when this drag is a CHARGE, whose arrival payload lands on the ANCHOR rather than
+    /// on the body that travelled (owner, 2026-09-17 — Charge n Shock stuns what it reaches, not
+    /// itself). The one asymmetry between a pull and a charge; everything else is the same journey.</summary>
+    public bool PullTailOnAnchor { get; set; }
+    /// <summary>A charge's <see cref="SkillDef.ChargeArrivalSkill"/> — the hidden sub-skill fired at the
+    /// anchor when the stride ends (Charge n Stomp's AoE). Null on every pull and on most charges.</summary>
+    public string? PullArrivalSkillId { get; set; }
 
     /// <summary>Being dragged by a pull — cannot act and cannot steer.</summary>
     public bool IsBeingPulled => PullTicksRemaining > 0;

@@ -7,11 +7,61 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.163.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.164.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-17 (latest) — 0.163.1: the cleric's Heal replaces `elf_self_heal`, not nothing
+## 2026-09-17 (latest) — 0.164.0: the charge moves over its DURATION, and the Warlord picks one of four
+
+His note, whole: *"i gave on charge duration .. it should move the distance for the duration .. not
+instantly"*, with four readings attached — normal charge cuts the distance over **1s**; **Flash Step**
+is instant, higher reuse, no duration and no cast; **stunning charge** takes **2s** and stuns at the
+end; **damaging charge** strides like the normal one and *"give[s] up on cooldown for a dmg"*.
+
+### 🔑 HIS DURATION COLUMN IS THE STRIDE
+`PullSeconds` was **0.4s — a number I picked** when Charge became a reverse pull (`BL-256`). Every
+charge row in all four warrior files now carries a DURR cell, so the cell is what the engine reads.
+Three consequences, all of them his:
+
+| | before | now |
+|---|---|---|
+| Charge (40 / 76) | 0.4s stride, 3s reuse, no floor | **1s stride, 5s reuse, 150 floor** |
+| a zero DURR | (impossible) | **instant — a teleport, not a one-tick crawl** |
+| the checker | compared DURR to `DurationTicks` → every charge row 🟡 | compares it to the **stride** |
+
+⚠ **ZERO IS NOW A REAL AUTHORED VALUE.** `BeginDrag` used to floor the journey at one tick
+(`Math.Max(1, …)`); Flash Step needs zero to mean *teleport*, so the floor is gone and the instant case
+is its own branch — the only place in the drag machinery that passes `announce: true`, because this one
+really is a warp and the client should snap rather than slide 800 units in a frame.
+
+### 🔑 "MIN CHARGE DISTANCE 150" IS A REFUSAL, NOT A NO-OP
+New field `SkillDef.MinChargeDistance`, gated in `BeginSkill` beside the range test — "too close" and
+"too far" are the same kind of answer and belong in the same voice. `BeginDrag` already tolerated *no
+distance to travel* and that is right for a **pull** (a tow used point-blank is a stun) and wrong for a
+gap-closer: it would spend a 10-second reuse on a stride of nine units and read as broken.
+
+### 🔑 THE FOUR CHARGES ARE ONE CHOICE, MADE ONCE (`war_aoe 4th.csv`, level 80, Warlord only)
+`Charge` · `Flash Step` · `Charge n Shock` · `Charge n Stomp`, each naming the other three **and** the
+base Charge in `Replaces`. **Nothing was needed to enforce that** — see the correction on 0.163.1
+below. New file `Skills.Warlord4th.cs`.
+
+Two engine seams were needed for the payloads, and each is the natural one:
+* **the stun lands on the ANCHOR.** `BL-154` already applies a pull's stun *when the journey arrives*;
+  a charge is that journey with the ends swapped, so Charge n Shock reuses the tail and stuns what it
+  reached. That is the **one** asymmetry between the two directions — get it backwards and the skill
+  stuns its own caster. One skill id, one row in `debuff_landmods.csv`.
+* **the stomp is a sub-skill.** `SkillDef.ChargeArrivalSkill` fires a hidden def at the anchor on
+  landing (`warrior_charge_stomp`, 5000 power, 200 radius) — the `ChannelSkill` shape, so it brings its
+  own crit, block and splash. ⚠ It is **not** the charge's own payload re-run: `ExecuteSkill` is the
+  method that *pays* for a cast, so re-entering it would charge the MP and restart the reuse twice.
+
+❓ **OWED BY HIM: the landing modifier for Charge n Shock.** `debuff_landmods.csv` has its row
+(`DEBUFF ONLY (1)`, CON) and `SUCCESS` reads the code default of **1** — the file, not a decision.
+
+⚠ **Needs a new APK** (the client builds its Learn tab from the compiled `ClassSkills`) and the
+`war_aoe` kit itself is still unbuilt — see `BL-237`.
+
+## 2026-09-17 — 0.163.1: the cleric's Heal replaces `elf_self_heal`, not nothing
 
 His correction on the 0.163.0 flag (*"it was self_heal and should have become elf_self_heal .. it
 removes the healers self heal to give him a targeted one"*). `cleric 2nd.csv`'s REPLACES cell was
@@ -23,11 +73,13 @@ gives up a self-only heal for a targeted one — strictly the better tool, and t
 exists. Don't generalise it: nothing else in either race block is replaced by anything, and the Human's
 drain LADDER explicitly is not (only the level-14 `vampiric_bolt` taster beside it is).
 
-⚠ **The re-buy gap is real and is NOT new.** `Replaces` deletes the skill on first learn
-(`HandleLearnSkill`) but nothing hides it from the learn window afterwards, so an Elf cleric can buy a
-rung back — and unlike Flame Bolt / Magic Bolt, this ladder keeps offering HIGHER rungs to 74. Every
-`Replaces` pair in the game has had this shape since the field existed; closing it is a one-line
-`IsSuperseded` gate in `HandleLearnSkill` that would touch all of them, so it waits for his word.
+🔴 ~~**The re-buy gap is real and is NOT new.**~~ **WRONG, corrected 2026-09-17 in 0.164.0 — there is
+no gap.** `HandleLearnSkill` has carried `if (cur == 0 && IsSuperseded(player, def.Id))` since
+2026-06-25, so a skill that something you own `Replaces` is refused at the shop; the client's learn tab
+hides it (`GameUi.Skills.Superseded`) and `PersistenceService` prunes it again on every login. The
+claim above was read off `HandleLearnSkill`'s *removal* line without reading its *gate* twenty lines
+earlier. **`Replaces` really does mean "gone for good"** — which is what `war_aoe 4th.csv`'s four
+interlocking charges are built on.
 
 **Also settled, no code owed:** a ladder authored in a lower-tier file is gated by LEVEL, not by tier
 (*"i can lvl up a human mage without changing class and ill lvl up a vampiric bolt with it … same goes

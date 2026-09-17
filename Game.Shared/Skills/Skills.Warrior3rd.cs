@@ -459,16 +459,19 @@ public static partial class SkillCatalog
         //    BEHAVIOUR is a real stride across the ground (see SkillDef.ChargesToTarget), and the reason
         //    it did nothing is that a pure-`Blink` skill was never treated as offensive, so it never got
         //    a target and self-cast into a one-unit hop. Its `Blink` flag is gone with it.
-        // 🔑 0.4s, not the pull's 1.2s. `PullSeconds` action-locks the body that travels, and 1.2s of
-        //    being unable to act is a price a TOW pays, not a leap. 600 range in 0.4s is ~1,500 u/s,
-        //    about six times a run — which is what a charge should look like.
+        // 🔑 THE STRIDE IS HIS DURATION COLUMN, AND IT IS 1s (2026-09-17, both files re-authored the
+        //    same day: CD 3 → 5, DURR 0 → 1, and *"Min charge distance 150"*). His note is the whole
+        //    rule: *"i gave on charge duration .. it should move the distance for the duration .. not
+        //    instantly"*. It was 0.4s before, a number I picked; the column is his, so the column wins.
         // 🔑 SWORD **OR** BLUNT, his `sword|blunt/2` cell and his ruling: *"400 (3rd) / 600 (4th) is
         //    its RANGE; usable with a 2h sword or blunt"*. `|` is OR and `/2` narrows both to two
         //    hands — so it is the one active in his file the WARLORD can also press.
+        // ⚠ THE WARLORD'S FOUR VARIANTS AT 80 ALL REPLACE THIS ONE and each other — `war_aoe 4th.csv`,
+        //   an interlock built out of mutual `Replaces`. See Skills.Warlord4th.cs.
         new(WarriorCharge, "Charge", BaseClass.Fighter, SkillEffect.None,
-            MpCost: 40, CastTicks: 5, CooldownTicks: 30, Range: 400, Power: 0,
+            MpCost: 40, CastTicks: 5, CooldownTicks: 50, Range: 400, Power: 0,
             Category: SkillCategory.Physical, SpCost: 28_000,
-            ChargesToTarget: true, PullSeconds: 0.4f,
+            ChargesToTarget: true, PullSeconds: 1f, MinChargeDistance: 150f,
             RequiredWeapon: WeaponType.AnySword | WeaponType.AnyBlunt, RequiredHands: WeaponHands.Two,
             Description: "Close the ground to an enemy in one stride. Requires a two-handed sword or blunt.",
             Levels: new[]

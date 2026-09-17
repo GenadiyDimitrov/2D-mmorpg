@@ -624,8 +624,23 @@ public static class SkillText
         // `BL-256` — CHARGE, the same sentence with the ends swapped. It says "you cannot act" because
         // the stride action-locks the caster for its whole length, which is the one thing about it a
         // player has to know before pressing it next to a caster he wanted to interrupt.
+        // ⚠ …and since 2026-09-17 the seconds are HIS DURATION COLUMN, so 0 is a real authored value
+        //   (Flash Step) and must read as instant rather than as "over 0s".
         if (def.ChargesToTarget)
-            o.Add($"You charge to the target over {def.PullSeconds:0.#}s — you cannot act on the way");
+        {
+            o.Add(def.PullSeconds <= 0f
+                ? "You step INSTANTLY to the target"
+                : $"You charge to the target over {def.PullSeconds:0.#}s — you cannot act on the way");
+            if ((def.Effect & SkillEffect.Stun) != 0 && def.DurationTicksAt(level) > 0)
+                o.Add($"…and it is stunned for {Secs(def.DurationTicksAt(level))} when you arrive");
+            if (def.ChargeArrivalSkill is string arrival && SkillCatalog.Get(arrival) is SkillDef land)
+                o.Add($"…and you land for {land.PowerAt(level)} power"
+                      + (land.AreaRadius > 0f ? $" on everything within {(int)land.AreaRadius}" : ""));
+        }
+        // THE FLOOR — the opposite end of the range line, and it belongs beside it: a gap-closer that
+        // silently refuses at point-blank reads as broken unless the card says so.
+        if (def.MinChargeDistance > 0f)
+            o.Add($"Needs the target at least {(int)def.MinChargeDistance} away");
         // `BL-155` — SILENCE. Both halves named, because which one you are wearing decides what you
         // can still do, and a basic attack is never silenced.
         if (def.SilencePhysical && def.SilenceMagical)

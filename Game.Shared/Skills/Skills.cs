@@ -757,7 +757,32 @@ public record SkillDef(
     //
     // ⚠ The stride action-LOCKS the caster while it runs (IsBeingPulled), which is what "act as the
     //   pull" asks for. It is why the authored seconds are short: this is a leap, not a tow.
+    //
+    // 🔑 `PullSeconds` IS HIS *DURATION* COLUMN, NOT A CONSTANT (owner, 2026-09-17: *"i gave on charge
+    //    duration .. it should move the distance for the duration .. not instantly"*). Every charge row
+    //    he authored carries a DURR cell and that cell is the STRIDE: 1s for the normal charge, 2s for
+    //    the slow one that stuns, and **0 for Flash Step, which is the instant one**. So a charge whose
+    //    `PullSeconds` rounds to zero ticks is a TELEPORT (announced, the client snaps) rather than a
+    //    one-tick crawl — see GameLoopService.BeginDrag.
     bool ChargesToTarget = false,
+    /// <summary>THE CHARGE'S FLOOR — *"Min charge distance 150"*, on every charge row he authored
+    /// (2026-09-17). A target nearer than this REFUSES the cast outright rather than spending the reuse
+    /// on a stride of nine units. 0 = no floor. Gated in <c>BeginSkill</c>, beside the range check,
+    /// because "too close" and "too far" are the same kind of answer and belong at the same seam.</summary>
+    float MinChargeDistance = 0f,
+    /// <summary>What a charge does WHEN IT ARRIVES — a hidden sub-skill fired at the ANCHOR the moment
+    /// the stride ends. Charge n Stomp's AoE is authored this way. Same shape as
+    /// <see cref="ChannelSkill"/>: never learned, never on a bar, no MP and no reuse of its own, and a
+    /// full <c>ExecuteSkill</c> so it brings its own crit, its own block and its own splash.
+    ///
+    /// <para>🔑 IT IS NOT THE CHARGE'S OWN PAYLOAD RE-RUN. Re-entering <c>ExecuteSkill</c> on the charge
+    /// itself would charge the MP and restart the reuse a second time — <c>ExecuteSkill</c> is the
+    /// method that pays for a cast, not a pure resolver.</para>
+    ///
+    /// <para>⚠ A STUN ON ARRIVAL DOES NOT NEED THIS. The drag machinery already owns a stun TAIL (the
+    /// tank's Grapple, `BL-154`) and Charge n Shock uses it with the ends swapped — one skill id, one
+    /// row in `debuff_landmods.csv`. Only a payload the tail cannot express belongs here.</para></summary>
+    string? ChargeArrivalSkill = null,
     // ===== SILENCE (`BL-155`, owner 2026-09-03) =====================================================
     // *"have physical skill silence (only basic attack) … magical skill silence … and both at once a
     //  full silence"*. Two INDEPENDENT debuffs: land both and the target is fully silenced, which is
@@ -2133,6 +2158,7 @@ public static partial class SkillCatalog
         list.AddRange(WarriorFocusSkills());   // Skills.Warrior3rd.cs — the Human Ravager's Focus kit (`BL-237`)
         list.AddRange(Warrior3rdRaceSkills()); // Skills.Warrior3rd.cs — Charge, the Presences, the three race kits
         list.AddRange(Warrior4thSkills());     // Skills.Warrior4th.cs — the four new 4th-tier race tools
+        list.AddRange(Warlord4thCharges());    // Skills.Warlord4th.cs — the four interlocking charges + the stomp
         list.AddRange(Dual3rdSkills());       // Skills.Dual3rd.cs (his `dual 3rd.csv`, 40-74)
         list.AddRange(Dual4thSkills());       // Skills.Dual4th.cs (`BL-188` — the top of the blow ladder ONLY)
         list.AddRange(Archer3rdSkills());     // Skills.Archer3rd.cs (his `archer 3rd.csv`, 40-74)

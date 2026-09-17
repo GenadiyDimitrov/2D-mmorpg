@@ -12,6 +12,7 @@ Bleeding Arrow,archer_bleeding_arrow,Hunter(Demon),Bleed DoT (+ its family rider
 Bleeding Trap,archer_bleed_trap,Hunter(Demon),Bleed DoT (+ its family rider),CON,1,DEBUFF ONLY (1),1
 Boss's Judgment,boss_judgment,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",Stun,none (fizzle roll),1,DEBUFF ONLY (1),1
 Boss's Judgment,boss_judgment_mark,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",(no payload on the def - CHECK IT),none (fizzle roll),1,DEBUFF ONLY (1),1
+Charge n Shock,warrior_charge_stun,Warlord,Stun,CON,1,DEBUFF ONLY (1),1
 Charm,charm,Bulwark(Elf) | Tank(Elf) | Vanguard(Elf),charm,SPT,0.7,DEBUFF ONLY (1),0.7
 Chilled,nuker_empower_elf_curse_1,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",M.Def -10%; Slow -30%,none (fizzle roll),1,DEBUFF ONLY (2),1
 Chilled,nuker_empower_elf_curse_2,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",M.Def -10%; Slow -30%,none (fizzle roll),1,DEBUFF ONLY (2),1

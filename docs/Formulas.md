@@ -404,20 +404,34 @@ duration = round( authoredTicks * factor )        min 1 tick
 
 `StatCalculator.DebuffDurationFactor` · `StatCaps.DebuffDurationStatBase/StatFull/Floor`
 
-## Pull (`BL-154`, 0.110.0)
+## Pull and charge (`BL-154`, 0.110.0 · `BL-256`, 0.146.0 · the stride, 0.164.0)
 
 ```
-travel   = distance(caster, target) - 80          (MeleeRange; <=0 -> stun at once)
-ticks    = round(PullSeconds / 0.1)
+travel   = distance(dragged, anchor) - 80         (MeleeRange; <=0 -> arrive at once)
+ticks    = round(PullSeconds / 0.1)               (0 -> TELEPORT, no stride: Flash Step)
 perTick  = max(travel / ticks, 300 * 0.1)         (PullMinSpeed floor, so short pulls arrive early)
 ```
 
-Timed, not paced: the drag takes `PullSeconds` from **any** distance, so range buys reach and never
-lockdown. Direction is re-aimed each tick at the puller. One contest (ATK vs CON) covers the drag and
-the stun; the stun is applied **on arrival**, so drag and stun run in sequence. Being dragged is an
+Timed, not paced: the journey takes `PullSeconds` from **any** distance, so range buys reach and never
+lockdown. Direction is re-aimed each tick at the anchor. One contest (ATK vs CON) covers the journey
+and the stun; the stun is applied **on arrival**, so the two run in sequence. Being dragged is an
 action lock, so it cancels a cast the same way charm and fear do.
 
-`GameLoopService.StartPull/TickPull/FinishPull` · `SkillDef.Pulls/PullSeconds` · `GameConstants.PullMinSpeed`
+A **charge** is the same journey with the ends swapped — the caster travels, the target is the anchor
+— and differs in exactly three ways:
+
+| | pull | charge |
+|---|---|---|
+| `PullSeconds` | the authored drag (1.2s) | **his DURATION column** — 1s / 2s / **0 = instant** |
+| the stun tail | lands on the **dragged** | lands on the **anchor** |
+| a floor | none | `MinChargeDistance` — a nearer target **refuses the cast** |
+
+`ChargeArrivalSkill` fires a hidden sub-skill at the anchor on landing (Charge n Stomp's AoE) — a full
+`ExecuteSkill`, so it carries its own crit, block and splash.
+
+`GameLoopService.StartPull/StartCharge/BeginDrag/TickPull/FinishPull/PayArrival` ·
+`SkillDef.Pulls/PullSeconds/ChargesToTarget/MinChargeDistance/ChargeArrivalSkill` ·
+`GameConstants.PullMinSpeed`
 
 ## Silence (`BL-155`, 0.110.0)
 
