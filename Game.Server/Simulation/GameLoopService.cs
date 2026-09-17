@@ -20474,7 +20474,10 @@ public class GameLoopService : BackgroundService
         // list itself is NOT filtered: seeing what waits at 40 is the point of showing it.
         var buffs = canBuff
             ? SkillCatalog.NewbieBuffSet
-                .Select(id => new BufferBuff(id, SkillCatalog.Get(id)?.Name ?? id,
+                // ✅ `BL-163` — the label is the RUNG's name, not a wrapper's. The rung is the buff the
+                // player ends up wearing, so the button and the bar read as the same thing, and a row
+                // added to `npc_buff_shelf.csv` needs no label authored in code at all.
+                .Select(id => new BufferBuff(id, SkillCatalog.NpcBuffName(id),
                                              SingleBuffCost(player, id),
                                              SkillCatalog.NpcBuffMinLevel(id)))
                 .ToArray()
@@ -20563,13 +20566,17 @@ public class GameLoopService : BackgroundService
                 // land yet, and starts landing on its own the day the character reaches 40.
                 // ✅ `BL-158` — the same TIER rule as the single case: each id is tested and granted at
                 // the rung this character's level buys, not at the def's top.
+                // ✅ `BL-163` — and the rung is now asked for by NAME, through `NpcBuffRung`, which
+                // returns the def the shelf file points at. The old form resolved the SHELF id to a
+                // wrapper and passed the tier INDEX as its SkillLevel; those wrappers carry no ladder
+                // any more, so an index would silently fall back to the wrapper's top rung — which is
+                // the one bug the whole feature exists to prevent.
                 int tooYoung = ids.Count(id => player.Level < SkillCatalog.NpcBuffMinLevel(id));
-                var landing = ids.Where(id => player.Level >= SkillCatalog.NpcBuffMinLevel(id)
-                                              && SkillCatalog.Get(id) is SkillDef d
+                var landing = ids.Where(id => SkillCatalog.NpcBuffRung(id, player.Level)
+                                                  is (SkillDef d, int rung)
                                               // 🔴 The BUFFER'S HOUR, not the skill's own — §100's Mark
                                               //    bug; see BuffWouldLand's `durationOverride`.
-                                              && BuffWouldLand(player, d, SkillCatalog.NpcBuffTierFor(id, player.Level),
-                                                               SkillCatalog.NpcBuffTicks))
+                                              && BuffWouldLand(player, d, rung, SkillCatalog.NpcBuffTicks))
                                  .ToList();
                 if (landing.Count == 0)
                 {
@@ -20625,51 +20632,59 @@ public class GameLoopService : BackgroundService
                 break;
 
             case "single":
-                if (SkillCatalog.Get(cmd.SkillId) is not SkillDef def
-                    || !SkillCatalog.NewbieBuffSet.Contains(cmd.SkillId))
+            {
+                // ✅ `BL-163` — the membership test is the FILE. `NpcSells` is a dictionary lookup on
+                // the shelf the operator authored, so a row deleted from it really does stop being
+                // buyable, including by a hand-made packet.
+                if (!SkillCatalog.NpcSells(cmd.SkillId))
                 {
                     SendSystemToEntity(player, "That buff isn't on offer.");
                     return;
                 }
+                string shown = SkillCatalog.NpcBuffName(cmd.SkillId);
                 // `BL-150` — the eleven paid blessings unlock at 40. Server-side because the greyed-out
                 // button is a courtesy, not the rule; a hand-made packet must hit the same wall.
-                if (player.Level < SkillCatalog.NpcBuffMinLevel(cmd.SkillId))
+                // ✅ `BL-163` — ONE RESOLUTION, and a null answer IS the level gate: `NpcBuffRung`
+                // returns nothing when no rung of this blessing is open to the character yet, so the
+                // gate and the grant can no longer be computed from two different readings of the file.
+                if (SkillCatalog.NpcBuffRung(cmd.SkillId, player.Level) is not (SkillDef def, int rung))
                 {
                     SendSystemToEntity(player,
-                        $"{def.Name} is beyond you until level {SkillCatalog.NpcBuffMinLevel(cmd.SkillId)}.");
+                        $"{shown} is beyond you until level {SkillCatalog.NpcBuffMinLevel(cmd.SkillId)}.");
                     return;
                 }
                 // Ask BEFORE charging. A blessing that loses the family contest to something you
                 // already hold (your own buffer's stronger Might, a Greater potion) simply does not
                 // land, and the old order took the gold anyway. Same resolver the cast path uses, so
                 // the refusal and the outcome cannot disagree.
-                // ✅ `BL-158` — THE TIER, NOT LEVEL 1. The wrapper's SkillLevel n carries the family rung
-                // a same-level buffer would cast, so this is the one line that makes the whole feature
-                // real. Both the "would it land" question and the grant must use it: asking at level 1
-                // and granting at tier 3 would refuse a blessing that actually beats what you wear.
-                int tier = SkillCatalog.NpcBuffTierFor(cmd.SkillId, player.Level);
                 // 🔴 ...AND THE HOUR HAS TO BE QUOTED HERE TOO (§100, 2026-09-16). The grant below
                 //    forces `NpcBuffTicks`; this predicate used to ask the skill's own duration, so a
                 //    Mark — five minutes of its own — was refused as "you already carry something
                 //    stronger" against the 47 minutes of the Mark you were standing there wearing.
-                if (!BuffWouldLand(player, def, tier, SkillCatalog.NpcBuffTicks))
+                if (!BuffWouldLand(player, def, rung, SkillCatalog.NpcBuffTicks))
                 {
-                    SendSystemToEntity(player, $"You already carry something stronger than {def.Name}.");
+                    SendSystemToEntity(player, $"You already carry something stronger than {shown}.");
                     return;
                 }
                 if (!Charge(SingleBuffCost(player, cmd.SkillId))) return;
                 // ⚠ DURATION IS FORCED TO THE BUFFER'S HOUR, and it has to be stated rather than
-                // inherited. Nineteen of the thirty shelf ids are `npc_*` wrappers that already carry
-                // 36,000 ticks, so for them this is a no-op — but `BL-161` put the three MARKS on the
-                // shelf, and those are the Lightbringer's own 5-minute class skills. Granted as they
-                // are, the NPC would have sold a five-minute buff for 300,000 gold. His CSV is explicit:
-                // *"NPC marks default duration 1 h"*.
-                ApplyBuff(player, def, tier, refresh: false, durationOverride: SkillCatalog.NpcBuffTicks);
+                // inherited. The family rungs the shelf names carry no duration of their own at all,
+                // and `BL-161` put the three MARKS on the shelf — the Lightbringer's own 5-minute class
+                // skills. Granted as they are, the NPC would have sold a five-minute buff for 300,000
+                // gold. His CSV is explicit: *"NPC marks default duration 1 h"*.
+                // 🔑 `sourceSkillId` IS THE SHELF ID, and that is `BL-163`'s one real trap. [Save] and
+                //    the role presets store what you PRESSED (`BuffInstance.SourceSkillId`); storing
+                //    the RUNG would freeze the player at the rung they saved — save Ward at 44 and you
+                //    would still be buying +23% at 70 — and every preset already in the database holds
+                //    the `npc_*` ids. See the note on `NpcBuffShelf`.
+                ApplyBuff(player, def, rung, refresh: false,
+                          durationOverride: SkillCatalog.NpcBuffTicks, sourceSkillId: cmd.SkillId);
                 player.RecomputeDerived();
                 PushBuffs(player);
                 SendStats(player);
-                SendSystemToEntity(player, $"{def.Name} granted.");
+                SendSystemToEntity(player, $"{shown} granted.");
                 break;
+            }
 
             case "restore":
                 if (player.Hp >= player.MaxHp && player.Mp >= player.MaxMp)
@@ -20737,11 +20752,14 @@ public class GameLoopService : BackgroundService
     /// point of the command is to put this set on someone; FALSE at the NPC buffer, which already
     /// pre-filters with <c>BuffWouldLand</c> so that nobody is charged for a blessing the contest would
     /// throw away — forcing there would quietly overwrite a player's own stronger buff with a bought one.</param>
-    /// <param name="npcTiers">`BL-158` — read each id's level from <c>NpcBuffTierFor</c> (the rung a
-    /// same-level buffer would cast) instead of <c>def.MaxLevel</c>. TRUE only on the buffer NPC's own
+    /// <param name="npcTiers">`BL-158` — resolve each id through the SHELF (the rung a same-level buffer
+    /// would cast) instead of granting the def at <c>def.MaxLevel</c>. TRUE only on the buffer NPC's own
     /// routes; the admin set and `/buff` deliberately stay at MaxLevel, because their whole job is to
     /// show the game's ceiling. 🔑 The two shelves are separate and neither may be built out of the
-    /// other (his rule, 2026-09-03) — this parameter is the seam.</param>
+    /// other (his rule, 2026-09-03) — this parameter is the seam.
+    /// <para>✅ `BL-163` — it now asks <c>SkillCatalog.NpcBuffRung</c>, which hands back the DEF the
+    /// shelf file names plus the level to apply it at, and the grant passes the shelf id as the buff's
+    /// SOURCE so [Save] still stores the blessing rather than the rung.</para></param>
     private void GrantFullBuffSet(Entity player, IReadOnlyList<string>? set = null,
                                   int durationTicks = -1, bool force = false, bool npcTiers = false)
     {
@@ -20762,15 +20780,37 @@ public class GameLoopService : BackgroundService
         var claimed = new HashSet<string>(StringComparer.Ordinal);
         foreach (var id in set ?? SkillCatalog.NewbieBuffSet)
         {
-            if (SkillCatalog.Get(id) is not SkillDef def) continue;
-            int lvl = npcTiers ? SkillCatalog.NpcBuffTierFor(id, player.Level) : def.MaxLevel;
-            if (lvl <= 0) continue;   // out of this character's reach — the caller already filtered, belt and braces
-            // BuffPlan, not the def's own fields: a one-child wrapper (every NPC blessing is one)
-            // competes under its CHILD's family, and claiming the wrapper's name would protect nothing.
+            // ✅ `BL-163` — TWO DIFFERENT QUESTIONS, and they resolve to different defs now. The NPC
+            // route asks the shelf file "what rung does this character buy", and gets the RUNG's def
+            // back; the admin route asks the CATALOG for the blessing itself at its top level. Passing
+            // a tier index into the wrapper (what `BL-158` did) cannot work any more: the wrappers
+            // carry no ladder, so an index above 1 would silently fall back to their top rung.
+            SkillDef def;
+            int lvl;
+            string source = id;
+            if (npcTiers)
+            {
+                if (SkillCatalog.NpcBuffRung(id, player.Level) is not (SkillDef rungDef, int rung))
+                    continue;   // out of this character's reach — the caller already filtered
+                def = rungDef;
+                lvl = rung;
+            }
+            else
+            {
+                if (SkillCatalog.Get(id) is not SkillDef adminDef) continue;
+                def = adminDef;
+                lvl = adminDef.MaxLevel;
+                if (lvl <= 0) continue;
+            }
+            // BuffPlan, not the def's own fields: a one-child wrapper competes under its CHILD's
+            // family, and claiming the wrapper's name would protect nothing.
             var (key, _, covered, _) = BuffPlan(def, lvl);
             bool oursAlready = claimed.Contains(key) || Array.Exists(covered, claimed.Contains);
-            if (!ApplyBuff(player, def, lvl, refresh: false,
-                           durationOverride: durationTicks, force: force && !oursAlready))
+            // 🔑 `sourceSkillId: source` — on the NPC route that is the SHELF id, so [Save] stores the
+            //    blessing and not the rung it happened to buy today (see the `single` case above). On
+            //    the admin route it is the def's own id, which is what it always was.
+            if (!ApplyBuff(player, def, lvl, refresh: false, durationOverride: durationTicks,
+                           sourceSkillId: source, force: force && !oursAlready))
                 continue;
             claimed.Add(key);
             foreach (var c in covered) claimed.Add(c);

@@ -7,11 +7,100 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.172.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.173.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-17 (latest) — 0.172.0: `/unstuck <name>` — three minutes rooted in town, and your other character is rescued
+## 2026-09-17 (latest) — 0.173.0: the Spirit Helper's shelf is a FILE now — `BL-163`
+
+Your ruling of 2026-09-04, the day after `BL-158` shipped:
+
+*"that's why I wanted the npc buffer to be like the /buff command not like a wrapper or check player
+lvl and put him in a range table with available buffs ... and that table can be a file with min
+lvl,skill_id_rung,price (editable from outside - so a pvp server won't require new npc just change of
+id's) .. but whatever is working"*.
+
+**`docs/data/npc_buff_shelf.csv`** — fifty rows, one per rung the NPC sells. Edit it, restart the
+server, done. No rebuild, no code change, no new NPC.
+
+```
+SHELF_ID,MIN_LEVEL,RUNG_SKILL_ID,RUNG_LEVEL,PRICE
+npc_ward,40,buff_def_mag_1,1,5000
+npc_ward,44,buff_def_mag_3,1,10000
+npc_ward,52,buff_def_mag_4,1,15000
+```
+
+### The two things that make it a server-operator feature, and both are yours
+
+**1. The row names the RUNG.** The shelf points at `buff_def_mag_3` and the NPC grants it exactly the
+way `/buff` does. There is no per-blessing `Levels` array to keep in step with a second table, and no
+"tier index IS the SkillLevel index" invariant to guard — **the whole `BL-158` startup assertion is
+deleted**, which is what that entry predicted would happen.
+
+**2. It is outside C#.** `NpcBuffTier`, `NpcBuffTiers` (thirty hand-written level/price rows),
+`HarmonyPrice`, `MarkPrice` and the `NpcLadder` factory are all gone from `Skills.Buffer.cs`.
+
+### A FIFTH column, which your four did not have, and why
+
+`RUNG_LEVEL`. Nineteen blessings name a family rung, and every family rung is its own def — level 1,
+always. The **three Marks** are the exception: they are the Lightbringer's own class skill with two
+rungs, and the shelf sells rung 1 only (`BL-161`). Four columns could not say that. It also means a
+PvP server that wants to sell her rung 2 at 83 just writes the row.
+
+### What DID NOT change, and it is measured rather than asserted
+
+Every level, price and rung is byte-for-byte what the C# table handed out. `--npcshelf` prints the
+whole shelf level by level and `--buffmenu` prints the admin drawers; both were captured before and
+after, and the admin menu is identical **button for button**. ⚠ Comparing the dump against the old
+table is also what caught the one transcription error I made — Aim's ladder is 40/48/56, and I had
+copied Ward's 40/44/52 onto it.
+
+### The file refuses to load rather than selling the wrong thing
+
+A typo in an operator-edited file is far likelier than a typo in C#, and the failure mode of
+tolerating one is a blessing that is silently unbuyable — or worse, one that quietly sells a different
+rung. So the server **does not boot** on: an unknown rung id, a rung level the def does not have, a
+ladder whose levels or prices go backwards, a duplicate row, a **non-ASCII character in an id** (the
+`BL-237` Cyrillic `к`, and this file is edited by the same keyboard), a SHELF_ID that is not one of the
+game's blessings, a blessing your Mage/Fighter preset names that the file no longer sells, or one of
+the free eight carrying a price. Every problem is listed at once, by line number. Verified by breaking
+the file on purpose.
+
+### Two traps this walked into, both worth writing down
+
+🔑 **THE SHELF ID IS STILL THE BLESSING'S IDENTITY.** `[Save]` and the two role presets store what you
+PRESSED (`BuffInstance.SourceSkillId`), so every grant passes the SHELF id as the buff's source. A
+preset holding rung ids would freeze you at the rung you saved — save Ward at 44 and you would still
+be buying +23% at 70 — and every preset already in `game.db` holds the `npc_*` ids. It is also what
+makes your `BL-150` rule work with no extra state: *"if some1 buff me with body or soul and i save it
+and im <40lvl they will not activate .. they will activate after 40+"*.
+
+🔑 **THE UNITY CLIENT COMPILES THE SAME ASSEMBLY AND HAS NO FILE.** `GameUi.Debug` builds the admin
+Buffs drawers **locally** from the compiled catalogue, and it reached the shelf through
+`NewbieBuffSet` — on a phone that is a `FileNotFoundException` on the Debug tab. So the thirty ids
+stay in C# as `NpcShelfCatalogue`, the *universe* the shelf may choose from, while the FILE owns what
+is on offer, in what order, at what level, for what price, handing out which rung. The loader asserts
+the file is a subset of the universe, so the two cannot drift in silence. The buff-slot rule
+(`BuffLimitIds`) moved to the universe for the same reason: whether a Mark occupies a square must not
+depend on whether the NPC happens to be selling it today.
+
+### Also fixed, found because this rebuilt a tool nobody had rebuilt
+
+`tools/BalanceMatrix/DropFinder.cs` had not compiled since **0.171.0** — it still printed the drop
+index's version stamp and content hash, both of which you had just had deleted. The tool is outside
+`Game.sln`, so nothing caught it.
+
+### Where the file is read from, and why the server says so out loud
+
+Startup logs `NPC buff shelf: 30 blessings from <path>`. The repo copy in `docs/data/` **wins**; a
+published build also carries a copy at `data/` beside the exe, for a server with no repo behind it.
+⚠ Deliberately that way round: a build-copied file that shadows the authored one is exactly how an
+edit appears to do nothing — the same trap a stale `bin/` copy of `game.db` set once already.
+
+⚠ **Nothing about the game changed for a player.** This is `BL-163`'s own warning honoured: *"Nothing
+is broken today — this is a refactor for editability, not a fix."*
+
+## 2026-09-17 — 0.172.0: `/unstuck <name>` — three minutes rooted in town, and your other character is rescued
 
 `BL-172`, built to your spec of 2026-09-05 and to the fork you ruled the same day.
 

@@ -6835,11 +6835,14 @@ static void BuffMenuDump()
 static void NpcShelfDump()
 {
     var shelf = SkillCatalog.NewbieBuffSet;
-    var breakpoints = shelf.SelectMany(id => SkillCatalog.NpcBuffTiers[id].Select(t => t.MinLevel))
+    var breakpoints = shelf.SelectMany(id => NpcBuffShelf.Shelf[id].Select(t => t.MinLevel))
                            .Distinct().OrderBy(x => x).ToArray();
 
-    Console.WriteLine("=== THE NPC BUFFER'S SHELF (BL-158/160/161) ===");
-    Console.WriteLine($"{shelf.Length} blessings; the shelf changes at levels {string.Join(", ", breakpoints)}.");
+    Console.WriteLine("=== THE NPC BUFFER'S SHELF (BL-158/160/161/163) ===");
+    // ✅ `BL-163` — say WHERE it was read from. The file is hand-edited and the second-copy trap is
+    // real (see `game.db`); a dump that cannot name its own source is how an edit appears to do nothing.
+    Console.WriteLine($"Read from: {NpcBuffShelf.LoadedFrom}");
+    Console.WriteLine($"{shelf.Count} blessings; the shelf changes at levels {string.Join(", ", breakpoints)}.");
     Console.WriteLine();
 
     foreach (int lvl in breakpoints)
@@ -6857,14 +6860,15 @@ static void NpcShelfDump()
         foreach (var id in open)
         {
             int tier = SkillCatalog.NpcBuffTierFor(id, lvl);
-            var def  = SkillCatalog.Get(id)!;
-            var kid  = def.ChildBuffsAt(tier)?.FirstOrDefault();
-            // The rung's OWN description is what lands, so print that rather than the wrapper's.
-            string what = kid is not null && SkillCatalog.Get(kid) is { } c
-                ? c.Description : def.DescriptionAt(tier);
-            long price = SkillCatalog.NpcBuffPrice(id, lvl);
-            int tiers = SkillCatalog.NpcBuffTiers[id].Length;
-            Console.WriteLine($"    {def.Name,-24} t{tier}/{tiers}  {price,8:N0}g   {Trim(what)}");
+            var rung = NpcBuffShelf.Shelf[id][tier - 1];
+            // ✅ `BL-163` — the rung IS the row now; there is no wrapper child to dig out. The rung's
+            // own description is what lands, which is why it was already printed rather than the
+            // wrapper's, and the id is printed too so a shelf row can be checked against the file.
+            var rungDef = SkillCatalog.Get(rung.RungId);
+            string what = rungDef?.DescriptionAt(rung.RungLevel) ?? "(missing rung)";
+            int tiers = NpcBuffShelf.Shelf[id].Length;
+            Console.WriteLine($"    {SkillCatalog.NpcBuffName(id),-24} t{tier}/{tiers}  "
+                            + $"{rung.Price,8:N0}g   {rung.RungId,-22} {Trim(what)}");
         }
         Console.WriteLine();
     }
@@ -6970,10 +6974,14 @@ static void ApplyNpcBuffs(Entity e, bool fullShelf = false)
             .Except(SkillCatalog.NpcMarkSet);
     foreach (var id in shelf)
     {
-        // Out of this character's reach — the NPC would refuse, so the matrix must not wear it.
-        int tier = SkillCatalog.NpcBuffTierFor(id, e.Level);
-        if (tier <= 0) continue;
-        if (SkillCatalog.Get(id) is SkillDef def) Add(def, tier);
+        // ✅ `BL-163` — ASK THE SHELF FOR THE RUNG, exactly as the game does. Out of this character's
+        // reach means no rung, so the matrix does not wear it and the NPC would refuse it.
+        // 🔴 This line HAD to move with the shelf. It used to resolve the blessing to its wrapper and
+        //    pass the TIER INDEX as a SkillLevel; the wrappers carry no ladder any more, so that would
+        //    have fallen back to their TOP rung and dressed a level-40 character in the level-52
+        //    version of every paid blessing. That is `BL-223` again — a rig quietly printing buffed
+        //    numbers the game cannot produce — and it is why the rung is asked for by name.
+        if (SkillCatalog.NpcBuffRung(id, e.Level) is (SkillDef def, int rung)) Add(def, rung);
     }
     DedupeByKey(e);
     e.RecomputeDerived();

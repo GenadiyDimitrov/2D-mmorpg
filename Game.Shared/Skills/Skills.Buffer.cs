@@ -175,7 +175,38 @@ public static partial class SkillCatalog
     /// else to put in those slots anyway, except their own class self-buffs. Taking all nineteen is a
     /// choice to fill your own bar. Raised with him on the day; if it bites, the cap moves, not this
     /// list.</para></summary>
-    public static readonly string[] NewbieBuffSet =
+    /// ✅ `BL-163`, 2026-09-17 — <b>THE LIST IS THE FILE NOW.</b> It used to be this hand-written array
+    /// concatenated with the harmony and Mark sets: nineteen + eight + three = thirty ids, in
+    /// buff-bar order. All thirty (and their levels, prices and the RUNG each one hands out) live in
+    /// `docs/data/npc_buff_shelf.csv`, and the file's row order IS this order — his ask:
+    /// *"that table can be a file with min lvl,skill_id_rung,price (editable from outside — so a pvp
+    /// server won't require new npc just change of id's)"*.
+    /// <para>⚠ A PROPERTY, never a field. The shelf loads the file on first access, and a static field
+    /// initialiser here would run during <see cref="SkillCatalog"/>'s own construction — which is when
+    /// the file's validator wants to read <see cref="FreeNpcBuffSet"/> back. That is the cross-file
+    /// static-initialiser trap `BL-237` already cost a build to; a property cannot fall into it.</para>
+    /// <para>⚠ THIRTY OFFERS AGAINST A BUFF CAP OF TWENTY, and that is deliberate — his ruling when it
+    /// was put to him: *"Its a strategy -> deside what u want .. a fighter wont get magic buffs no need
+    /// cast/insight/force etc"*. He then wrote both role loadouts by hand and each is EIGHTEEN, leaving
+    /// room for self-buffs. The cap does not move; choosing is the content.</para>
+    public static IReadOnlyList<string> NewbieBuffSet => NpcBuffShelf.Order;
+
+    /// <summary>`BL-163` — EVERY BLESSING THE SHELF IS ALLOWED TO NAME, in C#, and not the same thing
+    /// as <see cref="NewbieBuffSet"/>: this is the UNIVERSE, that is what is actually ON OFFER (the
+    /// file, in the file's order). The shelf may drop a blessing, re-price it, move its levels or point
+    /// it at a different rung; it may not invent a blessing this assembly has never heard of, and
+    /// <c>NpcBuffShelf</c> refuses to load a file whose SHELF_IDs are not all in here.
+    ///
+    /// <para>🔑 IT EXISTS BECAUSE TWO THINGS NEED THE LIST WITHOUT THE FILE. The admin Buffs menu is
+    /// built on the UNITY CLIENT (`GameUi.Debug`), where there is no `docs/data/` to read — and a
+    /// DEBUG menu wants every blessing that exists anyway, including one an operator has edited off
+    /// the shelf while testing it. Keeping the universe in code and the tuning in the file is what
+    /// makes the file safe to hand to a server operator.</para>
+    ///
+    /// <para>⚠ The order here is the historical shelf order and is NOT what the window uses — the
+    /// FILE's row order is. It is kept because the admin menu dedupes by display name and takes the
+    /// first, so a reshuffle here would change which def a shared name resolves to.</para></summary>
+    public static readonly string[] NpcShelfCatalogue =
         new[]
         { NpcMight, NpcBulwark, NpcVampirism,
           NpcForce, NpcWard, NpcResolve,
@@ -183,18 +214,7 @@ public static partial class SkillCatalog
           NpcAlacrity, NpcHaste, NpcSwift, NpcAgility,
           NpcAccuracy,
           NpcFrenzy,
-          // `BL-150` — the crit block comes BACK. Cut in playtest 28 as "the optimiser's row" and
-          // restored by name here; the 40-level gate is what playtest 28's trim was really reaching
-          // for, so the buff can exist without landing on a character too young to want it.
           NpcFocus, NpcFerocity, NpcInsight }
-        // ✅ `BL-160` + `BL-161`, 2026-09-04 — THE SHELF IS NOW 19 + 8 + 3 = THIRTY. The eight single
-        // harmonies and the three Marks join the nineteen singles, appended so the singles keep their
-        // order (which is buff-bar order, and which his saved presets were built against).
-        //
-        // ⚠ THIRTY OFFERS AGAINST A BUFF CAP OF TWENTY, and that is deliberate — his ruling when it was
-        // put to him: *"Its a strategy -> deside what u want .. a fighter wont get magic buffs no need
-        // cast/insight/force etc"*. He then wrote both role loadouts by hand and each is EIGHTEEN,
-        // leaving room for self-buffs. The cap does not move; choosing is the content.
         .Concat(NpcSingleHarmonySet).Concat(NpcMarkSet).ToArray();
 
     /// <summary>`BL-150` — the EIGHT blessings that are free, and available from level 6. His list, in
@@ -224,8 +244,9 @@ public static partial class SkillCatalog
     /// first tier IS its unlock level, so Insight's 62 and the Marks' 78 are answered by the same line
     /// that answers Might's 6, and the greyed-out button and the refused cast can never disagree.
     /// The 40 is gone as a constant: eleven blessings no longer share one gate.
-    public static int NpcBuffMinLevel(string skillId) =>
-        NpcBuffTiers.TryGetValue(skillId, out var tiers) && tiers.Length > 0 ? tiers[0].MinLevel : 6;
+    /// ✅ `BL-163`, 2026-09-17 — it reads the FILE's first row for the blessing. Same answer, one less
+    /// hand-written table behind it.
+    public static int NpcBuffMinLevel(string skillId) => NpcBuffShelf.MinLevel(skillId);
 
     /// <summary>Is this blessing one of the free eight? See <see cref="FreeNpcBuffSet"/>.</summary>
     public static bool IsFreeNpcBuff(string skillId) => _freeNpcBuffs.Contains(skillId);
@@ -434,90 +455,43 @@ public static partial class SkillCatalog
     // ⚠ THE PAID ELEVEN DELIBERATELY SKIP RUNGS — Body and Soul take rungs 1, 4 and 6 of six, Aim
     // skips its first. The gaps are what a real buffer fills, and they are the mechanism rather than an
     // oversight. **Never "fill them in" for tidiness.**
-    /// <summary>One rung of the NPC buffer's shelf: the character level it unlocks at and its price in
-    /// gold. Position in the array is the wrapper's SkillLevel, which is what picks the family rung.</summary>
-    public readonly record struct NpcBuffTier(int MinLevel, long Price);
+    // ✅ `BL-163`, 2026-09-17 — THE TABLE IS GONE FROM C#. `NpcBuffTier`, `NpcBuffTiers` (thirty rows
+    // of level/price), `HarmonyPrice`, `MarkPrice` and the `NpcLadder` factory all lived here and are
+    // now `docs/data/npc_buff_shelf.csv` + `NpcBuffShelf`. What follows is the same four questions the
+    // game has always asked the shelf, forwarded, so the thirty call sites did not have to move:
+    //
+    // 🔑 AND THE ONE REAL CHANGE IS THAT THE ROW NAMES THE RUNG. A blessing's tier used to be an INDEX
+    //    into the wrapper's `Levels`, which is why the wrapper had to carry a ladder that agreed with
+    //    the table row-for-row — the invariant `BL-158`'s startup check existed to police. Now the file
+    //    says `npc_ward,44,buff_def_mag_3,1,10000` and the NPC grants `buff_def_mag_3` the way `/buff`
+    //    does. See `NpcBuffRung` below; the wrappers kept here are one-rung labels for `/buff` and the
+    //    admin menu, and carry no ladder that can drift.
 
-    private const long HarmonyPrice = 50_000;   // `BL-160` — his flat price for all eight singles
-    private const long MarkPrice    = 300_000;  // `BL-161` — and you only ever wear ONE Mark
+    /// <summary>The tier INDEX (1-based) this character qualifies for, or 0 if the blessing is still
+    /// out of reach. The highest rung at or below their level wins.</summary>
+    public static int NpcBuffTierFor(string skillId, int playerLevel) =>
+        NpcBuffShelf.TierFor(skillId, playerLevel);
 
-    /// <summary>Every blessing the buffer sells, and the ladder it sells it on. His CSV, verbatim.</summary>
-    public static readonly IReadOnlyDictionary<string, NpcBuffTier[]> NpcBuffTiers =
-        new Dictionary<string, NpcBuffTier[]>(StringComparer.Ordinal)
-        {
-            // ---- THE FREE EIGHT: level 6, free, top rung, no ladder. ----
-            [NpcMight]      = new[] { new NpcBuffTier(6, 0) },
-            [NpcBulwark]    = new[] { new NpcBuffTier(6, 0) },
-            [NpcVampirism]  = new[] { new NpcBuffTier(6, 0) },
-            [NpcHaste]      = new[] { new NpcBuffTier(6, 0) },
-            [NpcSwift]      = new[] { new NpcBuffTier(6, 0) },
-            [NpcAlacrity]   = new[] { new NpcBuffTier(6, 0) },
-            [NpcForce]      = new[] { new NpcBuffTier(6, 0) },
-            [NpcResolve]    = new[] { new NpcBuffTier(6, 0) },
-
-            // ---- THE PAID ELEVEN: 5k / 10k / 15k as the rung climbs. ----
-            [NpcFocus]     = new[] { new NpcBuffTier(40, 5_000), new NpcBuffTier(44, 10_000), new NpcBuffTier(52, 15_000) },
-            [NpcAgility]   = new[] { new NpcBuffTier(40, 5_000), new NpcBuffTier(44, 10_000), new NpcBuffTier(52, 15_000) },
-            [NpcWard]      = new[] { new NpcBuffTier(40, 5_000), new NpcBuffTier(44, 10_000), new NpcBuffTier(52, 15_000) },
-            [NpcVigor]     = new[] { new NpcBuffTier(40, 5_000), new NpcBuffTier(48, 10_000), new NpcBuffTier(56, 15_000) },
-            [NpcSerenity]  = new[] { new NpcBuffTier(40, 5_000), new NpcBuffTier(48, 10_000), new NpcBuffTier(56, 15_000) },
-            [NpcFerocity]  = new[] { new NpcBuffTier(40, 5_000), new NpcBuffTier(48, 10_000), new NpcBuffTier(56, 15_000) },
-            [NpcAccuracy]  = new[] { new NpcBuffTier(40, 5_000), new NpcBuffTier(48, 10_000), new NpcBuffTier(56, 15_000) },
-            // ⚠ Frenzy's first tier is 10k, not 5k — his row. It is a two-rung family (2026-09-04).
-            [NpcFrenzy]    = new[] { new NpcBuffTier(40, 10_000), new NpcBuffTier(52, 15_000) },
-            [NpcSoul]      = new[] { new NpcBuffTier(44, 5_000), new NpcBuffTier(56, 10_000), new NpcBuffTier(70, 15_000) },
-            [NpcBody]      = new[] { new NpcBuffTier(44, 5_000), new NpcBuffTier(56, 10_000), new NpcBuffTier(70, 15_000) },
-            [NpcInsight]   = new[] { new NpcBuffTier(62, 10_000), new NpcBuffTier(70, 15_000) },
-
-            // ---- `BL-160`: THE EIGHT SINGLE HARMONIES. One rung each, 50k, no ladder. ----
-            [NpcHWard]     = new[] { new NpcBuffTier(44, HarmonyPrice) },
-            [NpcHForce]    = new[] { new NpcBuffTier(48, HarmonyPrice) },
-            [NpcHSwift]    = new[] { new NpcBuffTier(48, HarmonyPrice) },
-            [NpcHAlacrity] = new[] { new NpcBuffTier(52, HarmonyPrice) },
-            [NpcHBulwark]  = new[] { new NpcBuffTier(56, HarmonyPrice) },
-            [NpcHMight]    = new[] { new NpcBuffTier(56, HarmonyPrice) },
-            [NpcHFury]     = new[] { new NpcBuffTier(58, HarmonyPrice) },
-            [NpcHBody]     = new[] { new NpcBuffTier(66, HarmonyPrice) },
-
-            // ---- `BL-161`: THE THREE MARKS. Rung 1 only, 78, 300k, and they do not stack. ----
-            [HolyMark]     = new[] { new NpcBuffTier(78, MarkPrice) },
-            [LifeMark]     = new[] { new NpcBuffTier(78, MarkPrice) },
-            [BloodMark]    = new[] { new NpcBuffTier(78, MarkPrice) },
-        };
-
-    /// <summary>The tier INDEX (1-based, = the wrapper's SkillLevel) this character qualifies for, or
-    /// 0 if the blessing is still out of reach. The highest tier at or below their level wins.</summary>
-    public static int NpcBuffTierFor(string skillId, int playerLevel)
-    {
-        if (!NpcBuffTiers.TryGetValue(skillId, out var tiers)) return 0;
-        int found = 0;
-        for (int i = 0; i < tiers.Length; i++)
-            if (playerLevel >= tiers[i].MinLevel) found = i + 1;
-        return found;
-    }
-
-    /// <summary>What this character pays for the tier they qualify for. 0 for the free eight — and 0
-    /// for a blessing they cannot buy yet, which never reaches a charge because the level gate refuses
+    /// <summary>What this character pays for the rung they qualify for. 0 for a free blessing — and 0
+    /// for one they cannot buy yet, which never reaches a charge because the level gate refuses
     /// first.</summary>
-    public static long NpcBuffPrice(string skillId, int playerLevel)
-    {
-        int tier = NpcBuffTierFor(skillId, playerLevel);
-        return tier == 0 ? 0 : NpcBuffTiers[skillId][tier - 1].Price;
-    }
+    public static long NpcBuffPrice(string skillId, int playerLevel) =>
+        NpcBuffShelf.Price(skillId, playerLevel);
 
-    /// <summary>A laddered blessing: one wrapper whose every SkillLevel hands out a different rung of
-    /// the same family. <paramref name="rungs"/> is in tier order and must be the same length as the
-    /// blessing's row in <see cref="NpcBuffTiers"/> — startup asserts it.</summary>
-    private static SkillDef NpcLadder(string id, string name, SkillEffect effect,
-        (string Rung, string Desc)[] rungs) =>
-        new(id, name, BaseClass.Mage, effect,
-            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            DurationTicks: NpcBuffTicks, ChildBuffs: new[] { rungs[0].Rung },
-            Category: SkillCategory.Buff,
-            Levels: rungs.Select(r => new SkillLevel(
-                        ChildBuffs: new[] { r.Rung },
-                        Description: r.Desc + " (buffer's blessing, 1 hour).")).ToArray(),
-            Description: rungs[^1].Desc + " (buffer's blessing, 1 hour).");
+    /// <summary>`BL-163` — THE BUFF THAT ACTUALLY LANDS, and the level to apply it at. Every caller
+    /// that grants or price-checks a blessing must resolve it through this one method: asking the
+    /// shelf twice is how a refusal and an outcome come to disagree.
+    /// <para>⚠ Whoever grants it must pass the SHELF id as <c>sourceSkillId</c>, or [Save] will store
+    /// the rung and freeze the player at the rung they saved.</para></summary>
+    public static (SkillDef Def, int Level)? NpcBuffRung(string skillId, int playerLevel) =>
+        NpcBuffShelf.RungDefFor(skillId, playerLevel);
+
+    /// <summary>What the buffer window writes on the button. The rung's own name, so a row added to
+    /// the file needs no label authored in code — see <see cref="NpcBuffShelf.DisplayName"/>.</summary>
+    public static string NpcBuffName(string skillId) => NpcBuffShelf.DisplayName(skillId);
+
+    /// <summary>Does the NPC sell this at all? The guard against a hand-made packet.</summary>
+    public static bool NpcSells(string skillId) => NpcBuffShelf.Sells(skillId);
 
     /// <summary>`BL-160` — one of the eight NPC single harmonies. Its own BuffKey, so all eight can sit
     /// on the bar at once (his fighter list wants six of them together); rank <see cref="NpcBuffRank"/>,
@@ -563,34 +537,18 @@ public static partial class SkillCatalog
         // potions, all three scrolls), and the owner asks for it by that name (`BL-95`). This single
         // was the one place the stat's name was showing instead of the buff's, which read as a
         // different blessing on the same bar. Only the display name moved; the id is append-only.
-        NpcLadder(NpcAccuracy, "Aim", SkillEffect.BuffAccuracy, new[]
-            { (BuffAcc2, "+2 Accuracy"), (BuffAcc3, "+3 Accuracy"), (BuffAcc4, "+4 Accuracy") }),
+        NpcSingle(NpcAccuracy, "Aim", BuffAcc4, SkillEffect.BuffAccuracy, "+4 Accuracy"),
 
         // ---- The FORCE family (was a single three-effect "Force"). ----
         NpcSingle(NpcForce, "Force", BuffMAtk4, SkillEffect.BuffMagAtk, "+32% M.Atk"),
-        NpcLadder(NpcWard, "Ward", SkillEffect.BuffMagicDef, new[]
-            { (BuffMDef1, "+10% M.Def"), (BuffMDef3, "+23% M.Def"), (BuffMDef4, "+30% M.Def") }),
+        NpcSingle(NpcWard, "Ward", BuffMDef4, SkillEffect.BuffMagicDef, "+30% M.Def"),
         NpcSingle(NpcResolve, "Resolve", BuffIntr7, SkillEffect.BuffInterruptResist,
             "+54% interrupt resistance"),
 
         // ---- The FOCUS family (was a single three-effect "Focus"). ----
-        NpcLadder(NpcFocus, "Focus", SkillEffect.BuffCritRate, new[]
-        {
-            (Rung(FamCritRate, 4), "+20% critical rate"),
-            (Rung(FamCritRate, 5), "+25% critical rate"),
-            (Rung(FamCritRate, 6), "+30% critical rate"),
-        }),
-        NpcLadder(NpcFerocity, "Ferocity", SkillEffect.BuffCritDamage, new[]
-        {
-            (Rung(FamCritDmg, 4), "+25% critical damage"),
-            (Rung(FamCritDmg, 5), "+30% critical damage"),
-            (Rung(FamCritDmg, 6), "+35% critical damage"),
-        }),
-        NpcLadder(NpcInsight, "Insight", SkillEffect.BuffMagicCritRate, new[]
-        {
-            (Rung(FamMagCrit, 3), "+50% magic critical rate"),
-            (Rung(FamMagCrit, 6), "double magic critical rate"),
-        }),
+        NpcSingle(NpcFocus, "Focus", Rung(FamCritRate, 6), SkillEffect.BuffCritRate, "+30% critical rate"),
+        NpcSingle(NpcFerocity, "Ferocity", Rung(FamCritDmg, 6), SkillEffect.BuffCritDamage, "+35% critical damage"),
+        NpcSingle(NpcInsight, "Insight", Rung(FamMagCrit, 6), SkillEffect.BuffMagicCritRate, "double magic critical rate"),
 
         // Speed used to be an IMPROVED (group) buff here. The owner cut it (2026-07-31): the NPC
         // buffer gives the SCROLL tier — four separate single buffs, bought and cancelled one at a
@@ -626,48 +584,24 @@ public static partial class SkillCatalog
         // ---- The four speed singles the buffer actually offers, one hour each. ----
         NpcSingle(NpcSwift, "Swift", BuffSwiftR, SkillEffect.BuffMoveSpeed, "+33 Move Speed"),
         NpcSingle(NpcAlacrity, "Alacrity", BuffAlacrityR, SkillEffect.BuffCastSpeed, "+30% Cast Speed"),
-        NpcLadder(NpcAgility, "Agility", SkillEffect.BuffEvasion, new[]
-            { (BuffAgilityU, "+2 Evasion"), (BuffAgility3, "+3 Evasion"), (BuffAgilityR, "+4 Evasion") }),
+        NpcSingle(NpcAgility, "Agility", BuffAgilityR, SkillEffect.BuffEvasion, "+4 Evasion"),
         NpcSingle(NpcHaste, "Fury", BuffHasteR, SkillEffect.BuffAtkSpeed, "+33% Attack Speed"),
 
         // ---- The BODY family (was a single four-effect "Body"). ----
         // ⚠ Body and Soul take rungs 1, 4 and 6 of SIX. The skipped rungs are his and are the point —
         // they are what a real buffer fills in. Do not "complete" this ladder.
-        NpcLadder(NpcBody, "Body", SkillEffect.BuffHp, new[]
-        {
-            (Rung(FamMaxHp, 1), "+10% Max HP"),
-            (Rung(FamMaxHp, 4), "+25% Max HP"),
-            (Rung(FamMaxHp, 6), "+35% Max HP"),
-        }),
-        NpcLadder(NpcSoul, "Soul", SkillEffect.BuffMp, new[]
-        {
-            (Rung(FamMaxMp, 1), "+10% Max MP"),
-            (Rung(FamMaxMp, 4), "+25% Max MP"),
-            (Rung(FamMaxMp, 6), "+35% Max MP"),
-        }),
-        NpcLadder(NpcVigor, "Vigor", SkillEffect.BuffHpRegen, new[]
-        {
-            (Rung(FamHpRegen, 2), "+10% HP regeneration"),
-            (Rung(FamHpRegen, 4), "+15% HP regeneration"),
-            (Rung(FamHpRegen, 6), "+20% HP regeneration"),
-        }),
-        NpcLadder(NpcSerenity, "Serenity", SkillEffect.BuffMpRegen, new[]
-        {
-            (Rung(FamMpRegen, 2), "+10% MP regeneration"),
-            (Rung(FamMpRegen, 4), "+15% MP regeneration"),
-            (Rung(FamMpRegen, 6), "+20% MP regeneration"),
-        }),
+        NpcSingle(NpcBody, "Body", Rung(FamMaxHp, 6), SkillEffect.BuffHp, "+35% Max HP"),
+        NpcSingle(NpcSoul, "Soul", Rung(FamMaxMp, 6), SkillEffect.BuffMp, "+35% Max MP"),
+        NpcSingle(NpcVigor, "Vigor", Rung(FamHpRegen, 6), SkillEffect.BuffHpRegen, "+20% HP regeneration"),
+        NpcSingle(NpcSerenity, "Serenity", Rung(FamMpRegen, 6), SkillEffect.BuffMpRegen, "+20% MP regeneration"),
 
         // Frenzy — a reckless trade-off buff, and the one family whose rung is a whole buff rather
         // than one stat. INCLUDED in the full set (it's a FULL buffer); a player who doesn't want
         // the -10% Max HP/MP can just cancel this one buff.
         // ⚠ RUNG 2, NOT 6 (2026-09-04). The family was cut to two rungs on his ruling and rung 6 was
         // byte-for-byte identical to rung 2, so this hands out exactly the numbers it always did.
-        NpcLadder(NpcFrenzy, "Frenzy", SkillEffect.BuffPhysAtk, new[]
-        {
-            (Rung(FamFrenzy, 1), "-7% Max HP/MP but +5% offence and speed, +5 move, -5 evasion"),
-            (Rung(FamFrenzy, 2), "-10% Max HP/MP but +8% offence and speed, +8 move, -8 evasion"),
-        }),
+        NpcSingle(NpcFrenzy, "Frenzy", Rung(FamFrenzy, 2), SkillEffect.BuffPhysAtk,
+            "-10% Max HP/MP but +8% offence and speed, +8 move, -8 evasion"),
 
         // ----- `BL-160`: THE EIGHT SINGLE HARMONIES -----------------------------------------------
         // Each carries the SAME payload as the Warchanter rung it is lifted from, at the level she

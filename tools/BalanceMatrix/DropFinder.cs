@@ -45,8 +45,13 @@ internal static class DropFinder
 
         Console.WriteLine($"\n═══ WHAT DROPS \"{query}\" ═══");
         Console.WriteLine("Chance is PER KILL, with every live rate knob applied (global × group × item).");
+        // ⚠ The version stamp and the content hash are GONE (0.171.0, his ruling on `BL-253`: *"if drop
+        // indexes are build even after x10 more mobs still faster than reading a file, build each
+        // restart"*). There is no cache to identify any more — the build time below is the whole story.
+        // This line still quoted them and had stopped compiling; the tool is outside `Game.sln`, so
+        // nothing caught it until the shelf work rebuilt it (`BL-163`).
         Console.WriteLine($"(index: {index.Sources.Count} rows, built in {sw.ElapsedMilliseconds} ms, "
-                        + $"v{index.Version} #{index.ContentHash})\n");
+                        + "never cached — a restart is the rebuild)\n");
 
         foreach (var group in hits.GroupBy(h => h.ItemId))
         {

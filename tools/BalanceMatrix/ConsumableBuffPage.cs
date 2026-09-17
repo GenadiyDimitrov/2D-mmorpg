@@ -247,16 +247,14 @@ internal static class ConsumableBuffPage
             // buffer's ceiling as Ward +10% when it sells +30%, i.e. understate the NPC everywhere this
             // page compares it against a potion. The top tier is the honest answer to "what can the NPC
             // give me for this family".
+            // ✅ `BL-163` — it reads the SHELF FILE's rungs directly. It used to walk each wrapper's
+            // `ChildBuffsAt(tier)`, which only worked while the wrapper carried a per-tier ladder that
+            // agreed with the table; the shelf names the rung itself now, so this is one lookup.
             int best = 0;
             foreach (var id in SkillCatalog.NewbieBuffSet)
-            {
-                if (SkillCatalog.Get(id) is not SkillDef def) continue;
-                int tiers = SkillCatalog.NpcBuffTiers.TryGetValue(id, out var t) ? t.Length : 1;
-                for (int tier = 1; tier <= tiers; tier++)
-                    foreach (var kid in def.ChildBuffsAt(tier) ?? Array.Empty<string>())
-                        if (SkillCatalog.Get(kid) is { } c && c.BuffKey == family && c.Rank > best)
-                            best = c.Rank;
-            }
+                foreach (var rung in NpcBuffShelf.Shelf[id])
+                    if (SkillCatalog.Get(rung.RungId) is { } c && c.BuffKey == family && c.Rank > best)
+                        best = c.Rank;
             return best;
         }
     }

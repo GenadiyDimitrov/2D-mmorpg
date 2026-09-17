@@ -123,6 +123,24 @@ try
     // the bag looking exactly right and pays nothing. Cheap to check, invisible to a playtest.
     Game.Shared.ItemCatalog.ValidateRunes();
 
+    // `BL-163` — THE SPIRIT HELPER'S SHELF, loaded HERE rather than lazily on the first player to talk
+    // to a buffer. Two reasons, both about the failure mode: a typo in an operator-edited file must
+    // stop the SERVER rather than one NPC (a buffer with nothing to sell and no message is the worst
+    // version of this), and the path has to be resolved against the CONTENT ROOT so the answer never
+    // depends on the working directory the server happened to be launched from.
+    //
+    // 🔑 IT SAYS WHERE IT READ FROM. This is the `game.db` trap in a new file: a second copy sitting in
+    //    `bin/` while a person edits the one in `docs/data/` and wonders why nothing changed. The repo
+    //    copy wins on purpose (see NpcBuffShelf.Find) — edit it, restart, no rebuild, which is the ask.
+    {
+        string shelfPath = Game.Shared.NpcBuffShelf.Find()
+            ?? Path.Combine(app.Environment.ContentRootPath, "..", "docs", "data",
+                            Game.Shared.NpcBuffShelf.FileName);
+        Game.Shared.NpcBuffShelf.Load(shelfPath);
+        app.Logger.LogInformation("NPC buff shelf: {Count} blessings from {Path}",
+            Game.Shared.NpcBuffShelf.Order.Count, Game.Shared.NpcBuffShelf.LoadedFrom);
+    }
+
     // No two classes may share a NAME (2026-08-17, per-race 3rd/4th names). The class-change NPC
     // lists what you may become BY NAME, so a duplicate makes two different changes indistinguishable
     // — and with 48 hand-written strings in one table, a repeat is the likeliest typo there is.

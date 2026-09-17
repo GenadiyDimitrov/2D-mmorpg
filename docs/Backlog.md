@@ -205,9 +205,9 @@ you is `BL-165`** — the two AoE pull shapes (yours to do later) and one clamp.
 · ✅ `BL-158`…`BL-162` — the NPC BUFFER pass is BUILT (0.111.0) and is in the archive: the shelf levels up
 with you, the 75 ceiling is gone, eight single harmonies and the three Marks are on sale, and Swift
 joined the Mage preset. See it with `dotnet run --project tools/BalanceMatrix -- --npcshelf`
-· **`BL-163`** (your
-shape for the buffer shelf: an external `(shelfId, minLvl, rungId, price)` file so *"a pvp server won't
-require new npc just change of id's"* — a refactor for editability, nothing is broken) · **`BL-164`**
+· ✅ `BL-163` — the buffer shelf as an EXTERNAL file is **BUILT (0.173.0) and archived**:
+`docs/data/npc_buff_shelf.csv`, fifty rows, edited and restarted with no rebuild, so *"a pvp server
+won't require new npc just change of id's"* holds · **`BL-164`**
 (the Marks' rank tie, found while building `BL-161` — your call between three fixes) · `BL-156` (debuff
 duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed) ·
 `BL-93` (the visuals conversation, yours to start) · `BL-102` (blocked on one file from you) ·
@@ -254,7 +254,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-104` | 🔵 | The warrior's sword-vs-blunt split — ruled, nothing to attach it to yet | classes |
 | `BL-106` | ❓ | Your cross-chain id rule — six ids disobey it; three answers wanted | classes |
 | `BL-157` | 🔵 | The worm — a polymorph debuffer/nuker class, a seed only | classes |
-| `BL-163` | 🔴 | The buffer shelf as an EXTERNAL table — no wrappers, editable without a build | classes |
 | `BL-164` | 🔵 | The three Marks share one Rank, so the weaker rung can out-hold the stronger | classes |
 | `BL-165` | 🔵 | What the tank's 4th tier LEFT OPEN — the two AoE pulls (yours), and one clamp | combat |
 | `BL-170` | 🔵 | THE CLIFF AT 80 — party dps triples across the S-grade flip; three ways out, your pick | combat |
@@ -875,51 +874,6 @@ that size (`BL-97`). A new discipline either takes a free slot or replaces one, 
 not a design detail. Say where it sits before anything is drawn.
 
 
-### `BL-163` 🔴 The buffer's shelf as an EXTERNAL table — no wrappers, editable without a build
-
-Your ruling on the shape, 2026-09-04, right after `BL-158` shipped: *"that's why I wanted the npc buffer
-to be like the /buff command not like a wrapper or check player lvl and out him in a range table with
-available buffs ... and that table can be a file with min lvl,skill_id_rung,price (editable from outside
-- so a pvp server won't require new npc just change of id's) .. but whatever is working"*.
-
-**What shipped in 0.111.0 is two thirds of this already.** The NPC does grant the REAL buff: `npc_ward`
-is a one-child wrapper and what actually lands is `buff_def_mag_3`, the same rung def a cleric casts.
-And the ladder IS a table — `SkillCatalog.NpcBuffTiers`, `id → (MinLevel, Price)[]`. What your version
-changes is the two things that make it a *server-operator* feature rather than a developer one:
-
-1. **Name the rung directly, drop the wrapper.** The table row carries `skill_id_rung`, so the shelf
-   points at `buff_def_mag_3` and the NPC grants it exactly the way `/buff` does — `ApplyBuff(def, 1,
-   durationOverride: NpcBuffTicks)`. No per-blessing `Levels` array to keep in step with the table, and
-   no "tier index == SkillLevel index" invariant to guard (the whole startup check `BL-158` needed
-   simply stops existing).
-2. **Move it out of C#.** One file, read at startup: a PvP server retunes its buffer by editing ids and
-   prices, with no rebuild and no new NPC. That is the actual ask and it is the part that has value
-   beyond tidiness.
-
-**The one thing that needs care, because it is a real regression if missed.** The table cannot be just
-`(minLevel, rungId, price)` — it needs a fourth column, a stable **shelf id**, and the wrapper id is
-what plays that role today. Two things key off it:
-- **`[Save]` and the two role presets store what you PRESSED, not what landed** (`SourceSkillId`, and it
-  is precisely the playtest-29 bug that killed [Save] for two versions). A preset holding rung ids would
-  freeze the player at the rung they saved — save Ward at 44 and you would still be buying +23% at 70.
-  A preset must name the BLESSING and re-resolve the rung at expansion, which is what makes his
-  `BL-150` rule work: *"if some1 buff me with body or soul and i save it and im <40lvl they will not
-  activate .. they will activate after 40+"*.
-- **Saved presets already in the database hold `npc_*` ids.** Changing what a preset stores is a save
-  migration, or a `game.db` delete — one is already owed, so this should ride it rather than add a second.
-
-So the row is `(shelfId, minLevel, rungSkillId, price)`, and `shelfId` can stay `npc_ward` — the ids are
-append-only anyway and every saved preset in existence already uses them.
-
-**Also needed, and cheap:** startup validation that every `rungSkillId` resolves and every ladder is
-monotonic (the same two guards `BL-158` added, moved to the loader — a typo in an operator-edited file
-is far likelier than a typo in C#, so the file must refuse to load rather than silently sell nothing).
-An admin reload command would be a nice-to-have; startup-read is enough to satisfy the ask.
-
-⚠ **Nothing is broken today** — this is a refactor for editability, not a fix. Your own words:
-*"but whatever is working"*. Queued behind the tank pass unless you say otherwise.
-
----
 
 ### `BL-164` 🔵 The three Marks share one Rank, so the weaker rung can out-hold the stronger
 

@@ -2345,61 +2345,23 @@ public static partial class SkillCatalog
             laddered[key] = sk.Id;
         }
 
-        // ----- `BL-150`: the free tier must be a SUBSET of what the buffer actually offers. -----
-        // The price rule is "membership of FreeNpcBuffSet", and the offer list is NewbieBuffSet. They
-        // are two hand-written arrays of the same ids, so a typo in either is invisible: a free id
-        // that is not offered simply never appears, and nothing would ever say so. Worse in the other
-        // direction — mistyping an id here does not make it free, it makes it cost 15,000 with no
-        // warning at all, which is the shape of bug that reaches a playtest rather than a build.
+        // ----- `BL-150`: every free blessing must at least BE a skill. -----
+        // ⚠ THE OTHER HALF OF THIS CHECK MOVED OUT in `BL-163` — "the free tier is a subset of what
+        // the buffer offers" is now asked by `NpcBuffShelf`, because the offer list is a FILE and this
+        // method runs during SkillCatalog's own static construction. Reading the file from here would
+        // make the catalog and the shelf initialise each other; the shelf reads `FreeNpcBuffSet` on
+        // load and asks exactly the same question, plus "is it really priced 0".
         foreach (var id in FreeNpcBuffSet)
-        {
             if (!dict.ContainsKey(id))
                 throw new InvalidOperationException(
                     $"FreeNpcBuffSet names '{id}', which is not a registered skill (BL-150).");
-            if (Array.IndexOf(NewbieBuffSet, id) < 0)
-                throw new InvalidOperationException(
-                    $"FreeNpcBuffSet names '{id}', which the buffer does not offer (BL-150). The free "
-                  + "tier must be a subset of NewbieBuffSet, or the blessing is free and unreachable.");
-        }
 
-        // ----- `BL-158`: THE TIER TABLE IS THE SHELF, SO IT MUST COVER THE SHELF EXACTLY. -----
-        // Three ways this can silently rot, all of them caught here rather than in a playtest:
-        //   1. A blessing on the shelf with NO tier row would price at 0 and unlock at 6 — a free
-        //      max-rung Mark at level 6, and nothing would say a word.
-        //   2. A tier row whose LENGTH disagrees with the def's `Levels` is the real trap: tier index
-        //      IS the SkillLevel index, so a 3-tier table over a 2-level def hands out level 3 of a
-        //      def that has two, and `ChildBuffsAt` quietly falls back to the def's own child — i.e.
-        //      the TOP rung, which is exactly the bug this whole feature exists to remove.
-        //   3. Non-monotonic levels would let a higher tier unlock EARLIER than a lower one, so the
-        //      "highest tier at or below your level" scan would skip it. His ladders are always
-        //      monotonic; this makes a bulk edit that breaks one loud.
-        foreach (var id in NewbieBuffSet)
-        {
-            if (!NpcBuffTiers.TryGetValue(id, out var tiers) || tiers.Length == 0)
-                throw new InvalidOperationException(
-                    $"The buffer offers '{id}' but NpcBuffTiers has no row for it (BL-158). Every "
-                  + "blessing on the shelf needs its level/price ladder, or it is free at level 6.");
-            if (!dict.TryGetValue(id, out var bdef))
-                throw new InvalidOperationException(
-                    $"NewbieBuffSet names '{id}', which is not a registered skill (BL-158).");
-            int levels = bdef.Levels?.Length ?? 1;
-            // ⚠ A PREFIX IS LEGITIMATE, so this is `>`, not `!=`. The three Marks are the case that
-            // proves it: the Lightbringer learns rung 1 at 78 and rung 2 at 83, and the NPC sells rung
-            // 1 ONLY — one tier over a two-level def, which is precisely his "the NPC is always one
-            // rung behind the class". Selling a PREFIX of a def's levels is the design. (This guard
-            // caught that on its first run written as `!=`, which is why it says so here.)
-            if (tiers.Length > levels)
-                throw new InvalidOperationException(
-                    $"'{id}' has {tiers.Length} NPC tier(s) but only {levels} skill level(s) (BL-158). "
-                  + "The tier index IS the SkillLevel index, so the extra tiers ask for a level the def "
-                  + "does not have — and ChildBuffsAt falls back to the def's own child, i.e. the TOP "
-                  + "rung, which is the exact bug this feature exists to remove.");
-            for (int i = 1; i < tiers.Length; i++)
-                if (tiers[i].MinLevel <= tiers[i - 1].MinLevel)
-                    throw new InvalidOperationException(
-                        $"'{id}' tier {i + 1} unlocks at {tiers[i].MinLevel}, not after tier {i}'s "
-                      + $"{tiers[i - 1].MinLevel} (BL-158). Ladders are monotonic — always.");
-        }
+        // ----- `BL-158`'s TIER-TABLE VALIDATION IS GONE, and that is `BL-163` doing what it promised.
+        // It asserted three things about a C# table: every shelf id has a tier row, no row is longer
+        // than the def's `Levels`, and every ladder climbs. The first and third moved into
+        // `NpcBuffShelf`'s file loader, where the typo now actually lives. The SECOND has no meaning
+        // any more: the shelf's row names the RUNG it sells, so there is no "tier index IS the
+        // SkillLevel index" invariant left to break.
         return dict;
     }
 

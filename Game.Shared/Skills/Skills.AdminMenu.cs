@@ -156,7 +156,12 @@ public static partial class SkillCatalog
         }
 
         // 1 — the two shelves: singles, groups, harmonies and Marks, i.e. his first four categories.
-        foreach (string id in AdminBuffSet.Concat(AdminBuffSkip).Concat(NewbieBuffSet))
+        // ✅ `BL-163` — `NpcShelfCatalogue`, not the file. Whether a buff OCCUPIES A SLOT is a property
+        //    of the buff and must not depend on whether the Spirit Helper happens to be selling it
+        //    today: a Mark granted by `/buff` on a server whose operator removed the Mark row still
+        //    takes its square. (The three Marks run five minutes, so step 2's 20-minute floor does not
+        //    catch them — this leg is the only thing that puts them in the set.)
+        foreach (string id in AdminBuffSet.Concat(AdminBuffSkip).Concat(NpcShelfCatalogue))
             if (Get(id) is SkillDef shelf) Include(shelf);
 
         // 2 — every other TWENTY-MINUTE buff, off its AUTHORED duration. ⚠ `BuffRow.Buff` only: see
@@ -174,9 +179,16 @@ public static partial class SkillCatalog
         // ⚠ ORDER MATTERS HERE AND NOWHERE ELSE: the dedupe below keeps the FIRST def of a given
         // display name, so the class kit has to come before the NPC shelf or "Might" would resolve to
         // the hour-long single instead of the Warchanter's top rung.
+        // ✅ `BL-163`, 2026-09-17 — THE THIRD LEG IS `NpcShelfCatalogue`, NOT `NewbieBuffSet`, and that
+        // is not a tidy-up. The Spirit Helper's OFFER LIST is a FILE now, and THIS METHOD RUNS ON THE
+        // UNITY CLIENT (`GameUi.Debug` builds these drawers locally, from the compiled catalogue) — a
+        // phone has no `docs/data/` to read, so asking the shelf here would throw on the Debug tab.
+        // The catalogue is the C# list of every blessing the shelf is ALLOWED to name, which is a fact
+        // about this assembly rather than a tuning knob, and `NpcBuffShelf` asserts the file is a
+        // subset of it — so the two cannot drift apart in silence.
         var universe = AdminBuffSet
             .Concat(AdminBuffSkip)      // Shrouding Hymn, Bow Expertise, War Bulwark — withheld, not gone
-            .Concat(NewbieBuffSet);     // the Spirit Helper's 30, incl. the 8 single harmonies + 3 Marks
+            .Concat(NpcShelfCatalogue); // the Spirit Helper's 30, incl. the 8 single harmonies + 3 Marks
 
         var seenId = new HashSet<string>(StringComparer.Ordinal);
         var seenName = new HashSet<string>(StringComparer.OrdinalIgnoreCase);

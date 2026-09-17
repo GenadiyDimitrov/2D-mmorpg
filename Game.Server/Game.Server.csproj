@@ -21,4 +21,14 @@
     <ProjectReference Include="..\Game.Shared\Game.Shared.csproj" />
   </ItemGroup>
 
+  <!-- `BL-163` — the Spirit Helper's shelf travels with a PUBLISHED build, so a server operator has
+       the file to edit on a box with no repo behind it. ⚠ The repo copy in docs/data/ is still the
+       authority: NpcBuffShelf.Find() walks UP for it first and only falls back to this one, because a
+       build-copied file that shadows the authored one is how an edit appears to do nothing (the same
+       trap a stale bin/ copy of game.db already set once). The server logs which path it read. -->
+  <ItemGroup>
+    <Content Include="..\docs\data\npc_buff_shelf.csv" Link="data\npc_buff_shelf.csv"
+             CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

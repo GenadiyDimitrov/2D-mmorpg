@@ -1,0 +1,116 @@
+SHELF_ID,MIN_LEVEL,RUNG_SKILL_ID,RUNG_LEVEL,PRICE
+# ============================================================================================
+# THE SPIRIT HELPER'S SHELF — BL-163. Read at SERVER START; edit and restart, no rebuild.
+#
+# Owner, 2026-09-04: "that's why I wanted the npc buffer to be like the /buff command not like a
+# wrapper or check player lvl and put him in a range table with available buffs ... and that table
+# can be a file with min lvl,skill_id_rung,price (editable from outside - so a pvp server won't
+# require new npc just change of id's)".
+#
+# ONE ROW = ONE RUNG THE NPC WILL SELL.
+#   SHELF_ID      the BLESSING's identity. It is what a saved preset stores and what the player's
+#                 buff remembers as its source, so it is APPEND-ONLY: renaming one silently empties
+#                 every [Save] preset in the database that named it. Rows of the same SHELF_ID are
+#                 that blessing's LADDER and must climb (MIN_LEVEL strictly up, PRICE never down).
+#   MIN_LEVEL     the character level this rung unlocks at. The FIRST row's level is the level the
+#                 blessing appears buyable at at all; below it the button is greyed out, not hidden.
+#   RUNG_SKILL_ID the skill that ACTUALLY LANDS — a real buff def, not a wrapper. This is the whole
+#                 point of the file: the shelf names the rung directly, exactly as /buff does.
+#   RUNG_LEVEL    which level of that def (1 for every family rung, since each rung is its own def;
+#                 >1 only for a multi-rung skill like a Mark, where the shelf sells one rung of it).
+#   PRICE         gold. 0 = free. There is no other free/paid rule.
+#
+# ⚠ THE ORDER OF THE ROWS IS THE ORDER OF THE WINDOW, and the window's order is buff-bar order.
+#   The blocks below are the owner's own grouping and his saved presets were built against it.
+#
+# The DISPLAYED NAME is the rung's own name, so a new row needs no label authored anywhere.
+# Startup REFUSES TO BOOT on: an unknown rung id, a rung level the def does not have, a ladder that
+# goes backwards, a duplicate (SHELF_ID, MIN_LEVEL), or a preset naming a blessing not listed here.
+#
+# Lines starting with '#' and blank lines are ignored.
+# ============================================================================================
+
+# ---- THE PHYSICAL BLOCK. Might / Bulwark / Vampirism are three of THE FREE EIGHT (BL-150, his
+#      list: "fury/alacrity/force/mght/bulwark/swift/vamp/resolve from 6+") — one rung, level 6,
+#      free, TOP of their family, forever. The free eight do NOT ladder; his explicit exception
+#      ("except the 8 free"). A level-6 character wears +15% P.Atk and that is intended.
+npc_might,6,buff_atk_phys_3,1,0
+npc_bulwark,6,buff_def_phys_3,1,0
+npc_vampirism,6,buff_vamp_5,1,0
+
+# ---- THE MAGIC BLOCK. Force and Resolve are free; Ward is the one that ladders.
+npc_force,6,buff_atk_mag_4,1,0
+npc_ward,40,buff_def_mag_1,1,5000
+npc_ward,44,buff_def_mag_3,1,10000
+npc_ward,52,buff_def_mag_4,1,15000
+npc_resolve,6,buff_interrupt_7,1,0
+
+# ---- THE POOLS BLOCK, all four paid and all four laddered (BL-158 — "the npc no longer will
+#      provide @40 buff that is learned at 74"), so the NPC always hands out the rung a same-level
+#      buffer would cast.
+#      ⚠ BODY AND SOUL TAKE RUNGS 1, 4 AND 6 OF SIX. The skipped rungs are his and are the point —
+#      they are what a real buffer fills in. Never "complete" these ladders for tidiness.
+npc_body,44,buff_hp_max_1,1,5000
+npc_body,56,buff_hp_max_4,1,10000
+npc_body,70,buff_hp_max_6,1,15000
+npc_vigor,40,buff_hp_regen_2,1,5000
+npc_vigor,48,buff_hp_regen_4,1,10000
+npc_vigor,56,buff_hp_regen_6,1,15000
+npc_soul,44,buff_mp_max_1,1,5000
+npc_soul,56,buff_mp_max_4,1,10000
+npc_soul,70,buff_mp_max_6,1,15000
+npc_serenity,40,buff_mp_regen_2,1,5000
+npc_serenity,48,buff_mp_regen_4,1,10000
+npc_serenity,56,buff_mp_regen_6,1,15000
+
+# ---- THE SPEED BLOCK. Alacrity / Fury / Swift are free; Agility ladders.
+npc_alacrity,6,buff_alacrity_r,1,0
+npc_haste,6,buff_haste_r,1,0
+npc_swift,6,buff_swift_r,1,0
+npc_agility,40,buff_agility_u,1,5000
+npc_agility,44,buff_agility_3,1,10000
+npc_agility,52,buff_agility_r,1,15000
+
+# ---- AIM. Shelf id `npc_accuracy` for history; the blessing has been called Aim since BL-95,
+#      which is the family's name on every other rung. ⚠ It skips its own first rung (+1).
+npc_accuracy,40,buff_accuracy_2,1,5000
+npc_accuracy,48,buff_accuracy_3,1,10000
+npc_accuracy,56,buff_accuracy_4,1,15000
+
+# ---- FRENZY, the reckless trade-off. ⚠ Its first rung is 10k, not 5k — his row — and the family
+#      has TWO rungs only (2026-09-04).
+npc_frenzy,40,buff_frenzy_1,1,10000
+npc_frenzy,52,buff_frenzy_2,1,15000
+
+# ---- THE CRIT BLOCK (BL-150 — cut in playtest 28 as "the optimiser's row" and restored by name;
+#      the level gate is what that trim was really reaching for). ⚠ Insight jumps rung 3 → 6.
+npc_focus,40,buff_crit_rate_4,1,5000
+npc_focus,44,buff_crit_rate_5,1,10000
+npc_focus,52,buff_crit_rate_6,1,15000
+npc_ferocity,40,buff_crit_dmg_4,1,5000
+npc_ferocity,48,buff_crit_dmg_5,1,10000
+npc_ferocity,56,buff_crit_dmg_6,1,15000
+npc_insight,62,buff_mcrit_rate_3,1,10000
+npc_insight,70,buff_mcrit_rate_6,1,15000
+
+# ---- THE EIGHT SINGLE HARMONIES (BL-160). One rung each, 50,000, no ladder. Each unlocks at the
+#      exact level the Warchanter gains that effect, so the NPC is precisely one rung behind the
+#      class — and her own GROUP harmony evicts it (CoveredKeys), which is BL-183's rule.
+#      ⚠ SHELF_ID == RUNG_SKILL_ID here: these are real single buffs, never wrapped.
+npc_harmony_ward,44,npc_harmony_ward,1,50000
+npc_harmony_force,48,npc_harmony_force,1,50000
+npc_harmony_swift,48,npc_harmony_swift,1,50000
+npc_harmony_alacrity,52,npc_harmony_alacrity,1,50000
+npc_harmony_bulwark,56,npc_harmony_bulwark,1,50000
+npc_harmony_might,56,npc_harmony_might,1,50000
+npc_harmony_fury,58,npc_harmony_fury,1,50000
+npc_harmony_body,66,npc_harmony_body,1,50000
+
+# ---- THE THREE MARKS (BL-161). The Lightbringer's own level-78 class skill, sold at RUNG 1 for
+#      300,000 — and you only ever wear ONE, they share a buff key. Her rung 2 (level 83) is
+#      deliberately NOT on the shelf: that one you bring a Lightbringer for.
+#      ⚠ These are the rows RUNG_LEVEL exists for. The duration the NPC sells them at is the
+#      buffer's HOUR, not the skill's own five minutes — his buffs.csv: "NPC marks default 1 h".
+holy_mark,78,holy_mark,1,300000
+life_mark,78,life_mark,1,300000
+blood_mark,78,blood_mark,1,300000
