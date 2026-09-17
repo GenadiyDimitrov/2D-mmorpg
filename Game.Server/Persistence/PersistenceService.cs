@@ -1691,4 +1691,84 @@ public class PersistenceService
     }
 
     public record JailedInfo(string Name, DateTime UntilUtc);
+
+    // ═══ `BL-172` — `/unstuck <name>` ════════════════════════════════════════════════════════════
+    //
+    /// <summary>What a rescue attempt came to. <paramref name="Ok"/> false means nothing was written;
+    /// <paramref name="Message"/> is the sentence the rescuer is shown either way.</summary>
+    public sealed record UnstuckResult(bool Ok, string Message, string? CanonicalName = null,
+        int Unequipped = 0, bool HadBuffs = false);
+
+    /// <summary>`BL-172` — RESCUE one character of <paramref name="accountId"/> by name: strip its
+    /// equipment, clear its blessings, and put it back in the starter town.
+    ///
+    /// <para>🔑 IT WRITES THE DATABASE ROW, not a live entity, and that is the whole of the
+    /// engineering. His spec is *"u create char2 and use /unstuck char1"* — so the target is normally
+    /// LOGGED OUT and has no <c>Entity</c> to mutate. Anything still in the world (an offline farmer, a
+    /// link-dead grace) is evicted by the caller FIRST, through the ordinary logout path, so that its
+    /// own save lands before this runs and cannot overwrite what this writes.</para>
+    ///
+    /// <para><paramref name="commit"/> false checks every gate and writes nothing — the caller runs it
+    /// once before starting the 180-second channel, so a refusal costs no time, and again with
+    /// <c>true</c> when the channel lands, because a jail or a kick handed down during those three
+    /// minutes has to be obeyed.</para>
+    ///
+    /// <para>⚠ WHAT IT DELIBERATELY DOES NOT TOUCH: <c>DiedWhileAway</c> (the anti-exploit flag that
+    /// makes a character who died away log back in dead — clearing it would make this the way to dodge
+    /// a death penalty) and the Boss's Judgment rungs (`BL-98`), a punishment whose clock runs offline
+    /// on purpose. Neither is "stuck"; both would make a rescue a cleanse.</para></summary>
+    public async Task<UnstuckResult> UnstuckCharacterAsync(int accountId, string characterName,
+        bool commit)
+    {
+        if (string.IsNullOrWhiteSpace(characterName))
+            return new UnstuckResult(false, "Usage: /unstuck <character name>");
+
+        await using var db = await _factory.CreateDbContextAsync();
+
+        // The account ban. A banned account cannot log a rescuer in at all, so this half of his
+        // *"don't work on baned … char"* enforces itself — but it is checked anyway, because the
+        // account ban can be LIFTED while a character's own jail runs on, and because a rule that is
+        // only true by accident stops being true the day two sessions per account are allowed.
+        var account = await db.Accounts.FirstOrDefaultAsync(a => a.Id == accountId);
+        if (account is null)
+            return new UnstuckResult(false, "No such account.");
+        if (account.IsBanned || (account.BannedUntilUtc is DateTime ban && ban > DateTime.UtcNow))
+            return new UnstuckResult(false, "This account is banned.");
+
+        var lower = characterName.Trim().ToLower();
+        var target = await db.Characters
+            .Include(c => c.Items)
+            .FirstOrDefaultAsync(c => c.AccountId == accountId && c.Name.ToLower() == lower);
+        if (target is null)
+            return new UnstuckResult(false,
+                $"'{characterName.Trim()}' is not a character on this account.");
+
+        var now = DateTime.UtcNow;
+        if (target.PendingDeleteAt is not null)
+            return new UnstuckResult(false, $"{target.Name} is scheduled for deletion.");
+        if (target.JailedUntilUtc is DateTime jail && jail > now)
+            return new UnstuckResult(false, $"{target.Name} is jailed — a rescue would be an escape.");
+        if (target.KickedUntilUtc is DateTime kick && kick > now)
+            return new UnstuckResult(false, $"{target.Name} is kicked out of the world.");
+
+        int worn = target.Items.Count(i => i.Equipped);
+        bool hadBuffs = target.BuffsJson.Length > 0;
+        if (!commit)
+            return new UnstuckResult(true, "", target.Name, worn, hadBuffs);
+
+        foreach (var item in target.Items)
+            item.Equipped = false;
+        // Debuffs are never in this column (see BuffSnapshot.CaptureAll — they die on logout already),
+        // so clearing it IS the whole of his *"all his buffs/debuffs are cleared"* for a stored
+        // character. A target that was still in the world lost its debuffs on the eviction above.
+        target.BuffsJson = "";
+        var home = WorldMap.StartingTown;
+        target.X = home.X;
+        target.Y = home.Y;
+        await db.SaveChangesAsync();
+        return new UnstuckResult(true,
+            $"{target.Name} has been rescued: {worn} item{(worn == 1 ? "" : "s")} unequipped, "
+            + $"blessings cleared, and moved to {home.Name}.",
+            target.Name, worn, hadBuffs);
+    }
 }

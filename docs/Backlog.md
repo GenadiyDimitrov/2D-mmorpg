@@ -190,10 +190,11 @@ mobs), `BL-175` (the `[Bosses]` teleport page and three kinds of clutter out of 
 `BL-176` (enchant / attribute / potions / stones as sub-pages — which turned up the Holy and Physical
 stones being unreachable from the admin menu at all), `BL-177` (SP 10kk) and `BL-178` (the chat box
 alone keeps Android's native input, so its copy/paste menu is back). ⚠ **NEW APK.**
-**Two are left, and you asked for both to wait:** **`BL-172`** 🔴 `/unstuck` — ready, a **rooted 180s
-channel cast in town** (not a background timer, not an escape), and **`BL-179`** 🔵, which needs one
-choice of yours: `test_phys`/`test_magic` are granted to **every character in the game** from a block
-labelled `TEST ONLY — DELETE ME`.
+✅ **AND `BL-172` IS BUILT TOO (2026-09-17, 0.172.0, archived)** — `/unstuck <name>`, exactly the
+tighter shape you ruled: a **180-second rooted channel cast in town**, not a background timer and not
+an escape. Because the caster is pinned in town for three minutes, no other abuse gate was needed.
+**One is left:** **`BL-179`** 🔵, which needs one choice of yours: `test_phys`/`test_magic` are granted
+to **every character in the game** from a block labelled `TEST ONLY — DELETE ME`.
 · ✅ **THE TANK PASS IS BUILT (0.112.0, 2026-09-04).** All 205 rows
 of `tank 4th.csv`, which closes `BL-154` (pull), `BL-155` (silence) — both in the archive — and the last
 `NOT DONE` file in `BL-02`. Fourteen ladders continue past 74; six things are new (Magic Wall, Tauting
@@ -258,7 +259,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-165` | 🔵 | What the tank's 4th tier LEFT OPEN — the two AoE pulls (yours), and one clamp | combat |
 | `BL-170` | 🔵 | THE CLIFF AT 80 — party dps triples across the S-grade flip; three ways out, your pick | combat |
 | `BL-171` | 🔵 | THE WORLD BOSS — stats built; the encounter, mass-PvP rules and loot are owed | combat |
-| `BL-172` | 🔴 | `/unstuck <name>` — 180s rooted channel, cast in town, on another char of the same account | systems |
 | `BL-179` | 🔵 | The two TEST skills are granted to EVERY character — three ways to gate them, your pick | systems |
 | `BL-185` | 🔵 | THE DAMAGE REWORK — ✅ the SHOT (runes x2) and the DEFENCE SHAPE built 0.117.0; the armour spread + the x1.17 residual are open | combat |
 | `BL-186` | ⏸ | THE MAX LEVEL CAP — can it be removed? POSTPONED on your call 2026-09-10; not the next thing | systems |
@@ -1080,45 +1080,6 @@ boss skill gems and the party loot rules. That is a design pass, not a number.
 respawn made it *look* like one and I read the respawn as the classification; it is a FIELD boss and is
 back on the 20/30-minute enrage ladder. There is now no world boss in the game at all, which is honest —
 the tier exists and nothing wears it yet.
-
----
-
-### `BL-172` 🔴 `/unstuck <name>` — a 180-second rooted channel, cast IN TOWN, on another character of the same account
-
-Your spec, 2026-09-05: *"'/unstuck <name>' command that have 180s cast time and is available from the
-same acc to other chars (Char1 -> /unstuck Char2) and after 180s Char2 is teleported to starting town
-all his equipment is unequiped all his buffs/debuffs are cleared -> don't work on baned/kicked/jailed
-char"* — and your ruling on the fork I raised, same day: *"Works only in town and roots unable to act
-until cast ends or canceled. It's a unstuck command not a escape mechanism -> ur char1 stuck/bug/etc
-.. u create char2 and use /unstuck char1"*.
-
-**So the shape is settled, and it is the tighter one:**
-- the **caster** must be standing in a town (safe zone) — refused anywhere else;
-- the **caster is rooted** for the full 180s, unable to act, exactly like a channel. Anything that
-  cancels a cast cancels this;
-- the **target** is another character on the same account, and the ordinary case is a character that
-  is **logged out**, because you make Char2 precisely in order to rescue Char1.
-
-That last line is the whole of the engineering. 🔑 **The target is normally NOT a live `Entity`** —
-there are three states and the command has to cover all of them:
-1. **Fully logged out** — no entity. The unequip / clear / teleport has to be written to the
-   **persisted record**, which today is only ever written out from a live entity on logout or autosave.
-2. **Still in the world** — a logged-out character keeps playing as an offline farmer
-   (`IsOfflineFarming`) or sits in the link-dead grace (`IsDisconnected`). Here there IS an entity.
-3. **Logged in right now** — only reachable if the server ever allows two sessions on one account.
-
-**The design:** force states 2 and 3 down to state 1 first — evict the entity exactly as a logout
-does, so nothing is lost — then apply the effect to the record. One code path, and it cannot race the
-tick loop.
-
-**The gates are already on the data.** A jail sentence is `CharacterRecord.JailedUntilUtc` (per
-character); a ban is `AccountRecord.BannedUntilUtc` (per **account**), so half your "not on a banned
-char" rule enforces itself — a banned account cannot log Char1 in to type the command at all. Both are
-still checked explicitly, because the account ban can be lifted while a character's jail runs on.
-
-⚠ **One thing your ruling makes free that would not have been otherwise:** because the caster is
-rooted in town for three minutes, this cannot be used as an escape, a fast travel, or a way to strip a
-character mid-fight — which is exactly why no other abuse gate is needed on it.
 
 ---
 

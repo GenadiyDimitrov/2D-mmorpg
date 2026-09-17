@@ -679,6 +679,24 @@ public record JailNowCmd(string CharacterName, DateTime Until, int Minutes) : IG
 /// <summary>Silence a named character immediately.</summary>
 public record ChatBanNowCmd(string CharacterName, DateTime Until, int Minutes) : IGameCommand;
 
+/// <summary>`BL-172` — the answer to a `/unstuck` channel that has just landed, coming back ONTO the
+/// tick loop from the database write it had to do off it.
+/// <para>🔑 A command record rather than a `SendSystemToEntity` from inside the `Task.Run`: the
+/// connection map is an ordinary dictionary the loop writes every tick, so reading it from a worker
+/// thread is a race. The rescuer's ENTITY id, not their connection, because three minutes is long
+/// enough for them to have relogged and a stale connection would be a send into nothing.</para></summary>
+public record UnstuckDoneCmd(Guid RescuerId, string Message) : IGameCommand;
+
+/// <summary>`BL-172` — the answer to the PRE-CHECK, arriving back on the tick loop so the channel can
+/// be armed (or the refusal printed) by the single writer.
+/// <para>The gates live in the database (the account, the jail, the kick, whether the name is even a
+/// character of this account), so they cannot be answered synchronously — and a 180-second channel
+/// that only discovers at the END that the name was misspelled would be the worst possible version of
+/// this command. <paramref name="CanonicalName"/> is the name as STORED, so the cast bar and the
+/// messages use his capitalisation rather than whatever was typed.</para></summary>
+public record UnstuckBeginCmd(Guid RescuerId, bool Ok, string Message, string CanonicalName)
+    : IGameCommand;
+
 /// <summary>Admin -> server: hand one of MY items to another online player (from the /give picker).
 /// Deliberately ignores tradability — staff can give anything.</summary>
 public record AdminGiveItemCmd(string ConnectionId, string TargetName, Guid InstanceId, int Quantity)

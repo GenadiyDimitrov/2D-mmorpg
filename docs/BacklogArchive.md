@@ -2915,6 +2915,47 @@ break. See [design/BossRework.md](design/BossRework.md) §2c-2d.
 
 ---
 
+## `BL-172` ✅ BUILT 2026-09-17 in **0.172.0** — `/unstuck <name>` — a 180-second rooted channel, cast IN TOWN, on another character of the same account
+
+The entry as it stood:
+
+
+Your spec, 2026-09-05: *"'/unstuck <name>' command that have 180s cast time and is available from the
+same acc to other chars (Char1 -> /unstuck Char2) and after 180s Char2 is teleported to starting town
+all his equipment is unequiped all his buffs/debuffs are cleared -> don't work on baned/kicked/jailed
+char"* — and your ruling on the fork I raised, same day: *"Works only in town and roots unable to act
+until cast ends or canceled. It's a unstuck command not a escape mechanism -> ur char1 stuck/bug/etc
+.. u create char2 and use /unstuck char1"*.
+
+**So the shape is settled, and it is the tighter one:**
+- the **caster** must be standing in a town (safe zone) — refused anywhere else;
+- the **caster is rooted** for the full 180s, unable to act, exactly like a channel. Anything that
+  cancels a cast cancels this;
+- the **target** is another character on the same account, and the ordinary case is a character that
+  is **logged out**, because you make Char2 precisely in order to rescue Char1.
+
+That last line is the whole of the engineering. 🔑 **The target is normally NOT a live `Entity`** —
+there are three states and the command has to cover all of them:
+1. **Fully logged out** — no entity. The unequip / clear / teleport has to be written to the
+   **persisted record**, which today is only ever written out from a live entity on logout or autosave.
+2. **Still in the world** — a logged-out character keeps playing as an offline farmer
+   (`IsOfflineFarming`) or sits in the link-dead grace (`IsDisconnected`). Here there IS an entity.
+3. **Logged in right now** — only reachable if the server ever allows two sessions on one account.
+
+**The design:** force states 2 and 3 down to state 1 first — evict the entity exactly as a logout
+does, so nothing is lost — then apply the effect to the record. One code path, and it cannot race the
+tick loop.
+
+**The gates are already on the data.** A jail sentence is `CharacterRecord.JailedUntilUtc` (per
+character); a ban is `AccountRecord.BannedUntilUtc` (per **account**), so half your "not on a banned
+char" rule enforces itself — a banned account cannot log Char1 in to type the command at all. Both are
+still checked explicitly, because the account ban can be lifted while a character's jail runs on.
+
+⚠ **One thing your ruling makes free that would not have been otherwise:** because the caster is
+rooted in town for three minutes, this cannot be used as an escape, a fast travel, or a way to strip a
+character mid-fight — which is exactly why no other abuse gate is needed on it.
+
+
 ## `BL-173` … `BL-178` — six of the nine asks (cut 2026-09-06, built in 0.114.0)
 
 Six of the eight entries filed from his 2026-09-05 messages, built in one pass. `BL-172` (`/unstuck`)

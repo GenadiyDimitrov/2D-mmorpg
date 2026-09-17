@@ -2371,6 +2371,14 @@ public class Entity
     /// channelled consumable is charged for without authoring anything.</summary>
     public Guid? CastFromItemInstance { get; set; }
 
+    /// <summary>`BL-172` — WHO the in-flight `/unstuck` channel is rescuing, by character name.
+    /// <para>🔑 A name and not a <see cref="Guid"/>, because the ordinary case has no entity to point
+    /// at: you make Char2 precisely because Char1 is stuck, so Char1 is normally logged OUT and exists
+    /// only as a database row. The name is resolved against the account ONCE, when the channel starts,
+    /// and re-resolved at the end — a character deleted during those three minutes simply fails.</para>
+    /// Cleared by <c>CancelCast</c> along with the rest of the cast state.</summary>
+    public string? UnstuckTargetName { get; set; }
+
     // ----- THE CHANNEL (`SkillDef.ChannelSkill`, 2026-09-09) --------------------------------------
     // Arrow Barrage's two seconds of arrows. The cast finishes, and THEN these three carry the volley:
     // the wrapper that started it (for the label and the reuse), the sub-skill's rung, how many shots

@@ -629,6 +629,15 @@ public record SkillDef(
     bool FixedCooldown = false,
     bool FragileCast = false,
     bool TeleportsToTown = false,
+    /// <summary>`BL-172` — on completion, RESCUE another character of the same account: strip its
+    /// equipment, clear its buffs and put it back in the starter town. The name it acts on is not a
+    /// target id (the character is normally logged OUT, so there is no entity to point at) — it is
+    /// <c>Entity.UnstuckTargetName</c>, captured when the channel started.
+    /// <para>⚠ The one skill in the game that is never learned and never on a bar: it is reachable
+    /// only through <c>/unstuck &lt;name&gt;</c>, because a bar slot cannot carry a name. It lives in
+    /// the catalog all the same, so the 180-second channel is an ordinary cast and inherits the root,
+    /// the cast bar, ESC and <see cref="FragileCast"/> instead of re-implementing all four.</para></summary>
+    bool RescuesCharacter = false,
     /// <summary>SP granted on use, for a consumable that IS skill points — the SP Bottle
     /// (owner, 2026-08-26). A FIELD and not a `SkillEffect` flag because the flag enum has no bits
     /// left, and because this is a one-off payload rather than a stat.

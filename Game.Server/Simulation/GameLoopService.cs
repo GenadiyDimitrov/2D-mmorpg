@@ -174,6 +174,8 @@ public class GameLoopService : BackgroundService
                 case JailNowCmd c: HandleJailNow(c); break;
                 case CharismaAdjustCmd c: HandleCharismaAdjust(c); break;
                 case ChatBanNowCmd c: HandleChatBanNow(c); break;
+                case UnstuckDoneCmd c: HandleUnstuckDone(c); break;
+                case UnstuckBeginCmd c: HandleUnstuckBegin(c); break;
                 case AdminGiveItemCmd c: HandleAdminGiveItem(c); break;
                 case AdminRemoveItemCmd c: HandleAdminRemoveItem(c); break;
                 case FriendCmd c: HandleFriend(c); break;
@@ -7099,6 +7101,20 @@ public class GameLoopService : BackgroundService
             return;
         }
 
+        // `BL-172` — THE THIRD COMMAND THAT IS NOT STAFF-ONLY. `/unstuck <name>` rescues another
+        // character of YOUR OWN account, so there is no staff half of it to fall through to: the whole
+        // command is handled here, for everybody, staff included.
+        //
+        // ⚠ It sits above the gate for the same reason `/where` and `/buff` do — everything that
+        // reaches the staff branch is refused for an ordinary player, and this one is for ordinary
+        // players by definition (an admin can already `/tp` a stuck character out).
+        if (cmd.Command.Equals("unstuck", StringComparison.OrdinalIgnoreCase)
+            && TryGetPlayer(cmd.ConnectionId, out var rescuer))
+        {
+            BeginUnstuck(rescuer, cmd.Argument.Trim());
+            return;
+        }
+
         // SERVER-AUTHORIZED (owner): every moderation action re-checks the caller's role here, in
         // addition to the hub's session check — these SHIP in release, so authorization can't rely on a
         // compile flag the way the DEBUG cheats do.
@@ -9183,7 +9199,10 @@ public class GameLoopService : BackgroundService
     /// killable, buffable, and still holding the name, so their own account was refused re-entry with
     /// "character is already online". A punishment must not depend on the punished client cooperating,
     /// so removal happens here, server-side, before the notification goes out.</summary>
-    private void ForceRemovePlayer(Entity target, string reason)
+    /// <returns>The SAVE the eviction started. Ignored by the kick/ban callers, who only need the
+    /// player gone; awaited by `/unstuck` (`BL-172`), which then rewrites the very row this save
+    /// writes and would otherwise race it.</returns>
+    private Task ForceRemovePlayer(Entity target, string reason)
     {
         if (_world.EntityToConnection.TryGetValue(target.Id, out var conn))
         {
@@ -9196,7 +9215,161 @@ public class GameLoopService : BackgroundService
         target.IsDisconnected = false;
         target.AutoHuntEnabled = false;
         if (target.CastingSkillId is not null) CancelCast(target, startCooldown: false);
-        NormalLeave(target);
+        return NormalLeave(target);
+    }
+
+    // ═══ `BL-172` — `/unstuck <name>` ════════════════════════════════════════════════════════════
+    //
+    // His spec, 2026-09-05: *"'/unstuck <name>' command that have 180s cast time and is available from
+    // the same acc to other chars (Char1 -> /unstuck Char2) and after 180s Char2 is teleported to
+    // starting town all his equipment is unequiped all his buffs/debuffs are cleared -> don't work on
+    // baned/kicked/jailed char"*. And the fork he ruled the same day, which is what makes the rest of
+    // it cheap: *"Works only in town and roots unable to act until cast ends or canceled. It's a
+    // unstuck command not a escape mechanism"*.
+    //
+    // 🔑 BECAUSE THE CASTER IS ROOTED IN TOWN FOR THREE MINUTES, NO OTHER ABUSE GATE IS NEEDED. It
+    //    cannot be an escape, a fast travel, or a way to strip a character mid-fight. That ruling is
+    //    the whole security model here, so don't "simplify" the root or the town check away.
+    //
+    // 🔑 THE TARGET IS NORMALLY NOT A LIVE ENTITY, and that is the whole of the engineering. Three
+    //    states, one code path: states 2 and 3 are forced down to state 1 first.
+    //      1. fully logged out — no entity; the effect is written to the DATABASE ROW.
+    //      2. still in the world — an offline farmer or a link-dead grace. There IS an entity.
+    //      3. logged in right now — only reachable if two sessions per account are ever allowed.
+    //    Forcing down means the ordinary logout: the entity is evicted and its own save lands BEFORE
+    //    the rescue writes, so nothing is lost and nothing races.
+
+    /// <summary>`/unstuck &lt;name&gt;` — check everything that can be checked on the tick, then ask
+    /// the database the rest. Arming the channel happens in <see cref="HandleUnstuckBegin"/>, once the
+    /// answer comes back.</summary>
+    private void BeginUnstuck(Entity rescuer, string name)
+    {
+        if (name.Length == 0)
+        {
+            SendSystemToEntity(rescuer, "Usage: /unstuck <character name> — another character on your "
+                + "account. You are rooted in town for 180 seconds while it runs.");
+            return;
+        }
+        if (rescuer.Dead) { SendSystemToEntity(rescuer, "Not while dead."); return; }
+        if (string.Equals(rescuer.Name, name, StringComparison.OrdinalIgnoreCase))
+        {
+            SendSystemToEntity(rescuer,
+                "You can't rescue the character you are playing. Log in as another one and name this.");
+            return;
+        }
+        // IN TOWN, his ruling — and a dungeon entrance is NOT a town, the same distinction
+        // NearestTown draws for the Scroll of Return. Being stuck inside a dungeon must not be
+        // rescuable from its doorstep.
+        var here = WorldMap.SafeZoneAt(rescuer.X, rescuer.Y);
+        if (here is null || here.DungeonEntrance)
+        {
+            SendSystemToEntity(rescuer, "You have to be standing in a town to rescue anyone.");
+            return;
+        }
+        if (rescuer.IsActionLocked)
+        {
+            SendSystemToEntity(rescuer, "You can't act right now.");
+            return;
+        }
+        if (rescuer.MoveState == MoveState.Sitting || rescuer.StandUpTicks > 0)
+        {
+            SendSystemToEntity(rescuer, "Stand up first.");
+            return;
+        }
+        if (rescuer.IsCommitted || rescuer.QueuedSkillId is not null)
+        {
+            SendSystemToEntity(rescuer, "You are already casting.");
+            return;
+        }
+        if (IsInCombat(rescuer))
+        {
+            SendSystemToEntity(rescuer, "Not while in combat.");
+            return;
+        }
+        if (rescuer.SkillCooldowns.TryGetValue(SkillCatalog.UnstuckSkill, out int cd) && cd > 0)
+        {
+            SendSystemToEntity(rescuer, "Not ready yet.");
+            return;
+        }
+
+        int accountId = rescuer.AccountId;
+        var rescuerId = rescuer.Id;
+        _ = Task.Run(async () =>
+        {
+            var res = await _db.UnstuckCharacterAsync(accountId, name, commit: false);
+            _world.Commands.Enqueue(new UnstuckBeginCmd(rescuerId, res.Ok, res.Message,
+                res.CanonicalName ?? name));
+        });
+    }
+
+    /// <summary>The pre-check came back. Arm the 180-second channel, or say why not.</summary>
+    private void HandleUnstuckBegin(UnstuckBeginCmd cmd)
+    {
+        if (!_world.Entities.TryGetValue(cmd.RescuerId, out var rescuer)) return;
+        if (!cmd.Ok)
+        {
+            SendSystemToEntity(rescuer, cmd.Message);
+            return;
+        }
+        // The tick-side gates are re-tested: a database round trip is not instant, and the answer
+        // arriving is not a promise that the caster is still standing still and out of combat.
+        if (rescuer.Dead || rescuer.IsActionLocked || rescuer.IsCommitted
+            || rescuer.QueuedSkillId is not null || IsInCombat(rescuer))
+        {
+            SendSystemToEntity(rescuer, "The rescue was interrupted before it began.");
+            return;
+        }
+        var def = SkillCatalog.Get(SkillCatalog.UnstuckSkill);
+        if (def is null) return;   // unreachable; the catalog is a compile-time constant
+
+        // Arm the cast BY HAND rather than through BeginSkill, whose first gate is `HasSkill` — this
+        // is the one skill nobody learns (there is no bar slot that can carry a name). Everything else
+        // about it is an ordinary cast from here: the root (Entity.IsCommitted), the countdown in the
+        // tick loop, ESC, and FragileCast's "any damage cancels it".
+        rescuer.UnstuckTargetName = cmd.CanonicalName;
+        rescuer.CastingSkillId = def.Id;
+        rescuer.CastTargetId = null;
+        rescuer.CastTicksRemaining = def.CastTicks;   // FixedCast: 1800 ticks = 180s, never scaled
+        rescuer.CastInitialMpPaid = 0;
+        rescuer.TargetX = null;
+        rescuer.TargetY = null;
+        SendTo(rescuer, "Cast",
+            new CastInfo($"Unstuck: {cmd.CanonicalName}", def.CastTicks * GameConstants.TickSeconds));
+        SendSystemToEntity(rescuer, $"Rescuing {cmd.CanonicalName}. Hold still for "
+            + $"{def.CastTicks * GameConstants.TickSeconds:0}s — moving is blocked, anything that "
+            + "cancels a cast cancels this.");
+    }
+
+    /// <summary>The channel landed. Evict whatever is left of the target in the world, wait for THAT
+    /// save, then rewrite the row.</summary>
+    private void FinishUnstuck(Entity rescuer)
+    {
+        string? name = rescuer.UnstuckTargetName;
+        rescuer.UnstuckTargetName = null;
+        if (string.IsNullOrEmpty(name)) return;
+
+        // States 2 and 3, forced down to state 1. `FindOnlinePlayer` walks Entities, so it finds an
+        // offline farmer and a link-dead character as well as a connected one — which is exactly the
+        // set that has to be evicted. ⚠ The account is re-checked here too: a name is not an identity,
+        // and two accounts may not share one, but the entity lookup is by name alone.
+        Task evicted = Task.CompletedTask;
+        if (FindOnlinePlayer(name) is Entity live && live.AccountId == rescuer.AccountId)
+            evicted = ForceRemovePlayer(live, "You were rescued — log back in.");
+
+        int accountId = rescuer.AccountId;
+        var rescuerId = rescuer.Id;
+        _ = Task.Run(async () =>
+        {
+            await evicted;
+            var res = await _db.UnstuckCharacterAsync(accountId, name, commit: true);
+            _world.Commands.Enqueue(new UnstuckDoneCmd(rescuerId, res.Message));
+        });
+    }
+
+    private void HandleUnstuckDone(UnstuckDoneCmd cmd)
+    {
+        if (_world.Entities.TryGetValue(cmd.RescuerId, out var rescuer))
+            SendSystemToEntity(rescuer, cmd.Message);
     }
 
     /// <summary>Queue one accepted chat line for the moderation log. Called at the point of DELIVERY,
@@ -11998,6 +12171,14 @@ public class GameLoopService : BackgroundService
         if (def.TeleportsToTown)
         {
             ReturnToTown(caster);
+            return;
+        }
+
+        // ---- `BL-172` — the rescue channel landed. The effect is on ANOTHER character's stored row,
+        //      so it happens off the tick and answers with an UnstuckDoneCmd. Nothing else to do here.
+        if (def.RescuesCharacter)
+        {
+            FinishUnstuck(caster);
             return;
         }
 
@@ -18062,6 +18243,9 @@ public class GameLoopService : BackgroundService
         entity.CastTicksRemaining = 0;
         entity.CastInitialMpPaid = 0;
         entity.CastFromItemInstance = null;   // interrupted: the scroll stays in the bag
+        // `BL-172` — a cancelled rescue rescues nobody. Cleared here rather than only in FinishUnstuck
+        // so a name can never survive into an unrelated later cast of the same skill.
+        entity.UnstuckTargetName = null;
         if (entity.Kind == EntityKind.Mob)
         {
             // Clear the mob's cast bar on nearby clients (interrupt/cancel).

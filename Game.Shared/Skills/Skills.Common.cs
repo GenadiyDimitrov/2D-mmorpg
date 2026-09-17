@@ -202,6 +202,10 @@ public static partial class SkillCatalog
     // ---- Universal "Return" line: teleport to the nearest town. All auto-granted; the scroll
     //      variants require (and consume) their scroll item. Fixed cast + fixed cooldown. ----
     public const string ReturnSkill          = "return_town";        // 60s cast, 10s cd, fragile (`BL-173`)
+    /// <summary>`BL-172` — the 180-second rescue channel behind `/unstuck &lt;name&gt;`. NEVER learned
+    /// and never auto-granted: it is the one skill with no bar slot, because what it acts on is a NAME
+    /// and a bar button cannot carry one. See <see cref="SkillDef.RescuesCharacter"/>.</summary>
+    public const string UnstuckSkill         = "unstuck";            // 180s rooted channel, in town only
     public const string ScrollReturnSkill    = "use_scroll_return";  // 10s cast, needs a scroll
     public const string ScrollReturnUltSkill = "use_scroll_return_ult"; // ~0.4s, needs an ult scroll
     public const string ScrollResurrectSkill    = "use_scroll_resurrect";     // 10s ally-res, 0% exp back
@@ -1023,6 +1027,33 @@ public static partial class SkillCatalog
             Category: SkillCategory.Magic, SpCost: 0, TargetMode: TargetMode.SelfOnly,
             FixedCast: true, FixedCooldown: true, FragileCast: true, TeleportsToTown: true,
             Description: "Channel 60s to return to the nearest town. ANY damage cancels it. 10s reuse."),
+
+        // ----- `BL-172` — THE RESCUE CHANNEL behind `/unstuck <name>`. -------------------------------
+        //
+        // His spec, 2026-09-05: *"'/unstuck <name>' command that have 180s cast time and is available
+        // from the same acc to other chars (Char1 -> /unstuck Char2) and after 180s Char2 is teleported
+        // to starting town all his equipment is unequiped all his buffs/debuffs are cleared -> don't
+        // work on baned/kicked/jailed char"*, and the fork he ruled the same day: *"Works only in town
+        // and roots unable to act until cast ends or canceled. It's a unstuck command not a escape
+        // mechanism -> ur char1 stuck/bug/etc .. u create char2 and use /unstuck char1"*.
+        //
+        // 🔑 IT IS A SKILL SO THAT THE THREE MINUTES COST NOTHING TO BUILD. A cast already roots the
+        // caster, draws the bar, answers ESC and — with FragileCast — dies to any damage. A bespoke
+        // timer would have had to re-implement every one of those and would have missed one.
+        // 🔑 AND IT IS THE ONE SKILL THAT IS NEVER GRANTED. `AutoLearnCoreSkills` does not hand it out
+        // and no class table lists it, because the thing it acts on is a NAME: a bar button has nowhere
+        // to type one, so a slot on the bar would be a button that can only ever fail. The chat command
+        // arms the cast directly (GameLoopService.BeginUnstuck) — deliberately not through BeginSkill,
+        // whose first gate is `HasSkill`.
+        // ⚠ FixedCast/FixedCooldown: three minutes is the price he set, and it must not be shortened by
+        // cast speed, haste, or a Spirit Mastery. Reuse 10s — the price is the channel, as with Return.
+        new(UnstuckSkill, "Unstuck", BaseClass.Fighter, SkillEffect.None,
+            MpCost: 0, CastTicks: 1800, CooldownTicks: 100, Range: 0, Power: 0,
+            Category: SkillCategory.Magic, SpCost: 0, TargetMode: TargetMode.SelfOnly,
+            FixedCast: true, FixedCooldown: true, FragileCast: true, RescuesCharacter: true,
+            Description: "Channel 180s in town to rescue another character on your account: it is "
+                       + "stripped of its equipment, loses its blessings and wakes in the starter "
+                       + "town. ANY damage cancels it."),
 
 
         // ----- SP BOTTLE: drinking your banked skill points back (owner, 2026-08-26). Zero cast, zero

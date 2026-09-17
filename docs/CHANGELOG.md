@@ -7,11 +7,74 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.171.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.172.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-17 (latest) — 0.171.0: the drop database gets its real window, and loses its cache
+## 2026-09-17 (latest) — 0.172.0: `/unstuck <name>` — three minutes rooted in town, and your other character is rescued
+
+`BL-172`, built to your spec of 2026-09-05 and to the fork you ruled the same day.
+
+*"'/unstuck <name>' command that have 180s cast time and is available from the same acc to other chars
+(Char1 -> /unstuck Char2) and after 180s Char2 is teleported to starting town all his equipment is
+unequiped all his buffs/debuffs are cleared -> don't work on baned/kicked/jailed char"* — and:
+*"Works only in town and roots unable to act until cast ends or canceled. It's a unstuck command not a
+escape mechanism -> ur char1 stuck/bug/etc .. u create char2 and use /unstuck char1"*.
+
+### It is a SKILL, and that is what made the three minutes free
+
+A cast already does everything the channel needed: it roots you (`Entity.IsCommitted`), it draws the
+cast bar, it answers ESC, and with `FragileCast` it dies to any damage. So `unstuck` is a real
+`SkillDef` — 1800 ticks, `FixedCast` so no haste can shorten it, `FixedCooldown`, 10s reuse — and the
+chat command arms that cast directly.
+
+🔑 **It is the one skill in the game that is never learned and never on a bar.** `AutoLearnCoreSkills`
+does not hand it out and no class table lists it, because what it acts on is a NAME: a bar button has
+nowhere to type one, so a slot there would be a button that can only ever fail. `BeginSkill`'s first
+gate is `HasSkill`, which is exactly why the command arms the cast itself rather than going through it.
+
+### The target is normally NOT in the world, and that is the whole of the engineering
+
+You make Char2 *because* Char1 is stuck, so Char1 is usually logged out and exists only as a database
+row. Three states, forced down to one:
+
+| the target is | what happens |
+|---|---|
+| **fully logged out** | no entity — the effect is written to the row |
+| **still in the world** (offline farmer, link-dead grace) | evicted by the ordinary logout path FIRST, so its own save lands before the rescue writes |
+| **logged in right now** | same eviction; only reachable if two sessions per account are ever allowed |
+
+The eviction is awaited before the row is rewritten, or the logout save would race the rescue and win.
+
+### The gates
+
+- **You must be standing in a town.** A dungeon ENTRANCE does not count — the same distinction
+  `NearestTown` draws for the Scroll of Return, because being stuck inside a dungeon must not be
+  rescuable from its doorstep.
+- **Same account, and not the character you are playing.**
+- **Not jailed, not kicked, not pending deletion, and not on a banned account.** A banned account
+  cannot log a rescuer in at all, so half your rule enforces itself — checked anyway, because an
+  account ban can be lifted while a character's own jail runs on.
+- **Not dead, not stunned, not seated, not already casting, not in combat.**
+- The gates are asked TWICE: once before the channel starts, so a misspelled name costs no time, and
+  again when it lands, so a jail handed down during those three minutes is obeyed.
+
+⚠ **Because you are rooted in town for three minutes, no other abuse gate is needed** — it cannot be
+an escape, a fast travel, or a way to strip a character mid-fight. That ruling is the security model,
+so the root and the town check are not to be "simplified" away.
+
+### What it deliberately does NOT clear
+
+`DiedWhileAway` (the flag that makes a character who died away log back in dead — clearing it would
+make this the way to dodge a death penalty) and the Boss's Judgment rungs (`BL-98`), a punishment
+whose clock runs offline on purpose. Neither is "stuck"; both would make a rescue a cleanse.
+
+🔑 **NO NEW APK NEEDED FOR YOU.** The client refuses unknown slash commands for non-staff characters,
+and `unstuck` is added to the three it lets through for everybody (`/where`, `/buff`, `/unstuck`) —
+but your own characters are staff, and the client already passes *everything* through for staff. So it
+works on the APK you have. The one-line client change is for ordinary players on the next build.
+
+## 2026-09-17 — 0.171.0: the drop database gets its real window, and loses its cache
 
 Both of your rulings on `BL-253`, in one increment.
 

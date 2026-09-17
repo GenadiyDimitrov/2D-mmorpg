@@ -3020,9 +3020,14 @@ namespace Game.Client
                     // server answers, buffing him if the flag is on and saying so plainly if it is not.
                     // ⚠ The argument form travels too and is ignored server-side: a non-staff `/buff`
                     // is self-only there, which is a rule worth enforcing where it cannot be edited.
+                    // `BL-172` is the third: `/unstuck <name>` rescues another character of YOUR OWN
+                    // account, so it is a player command with no staff half at all — the server owns
+                    // every gate on it (same account, not jailed, not kicked, caster in town) and this
+                    // client knows none of them.
                     bool playerAllowed = (cmd.Equals("where", StringComparison.OrdinalIgnoreCase)
                                           && arg.Length == 0)
-                                         || cmd.Equals("buff", StringComparison.OrdinalIgnoreCase);
+                                         || cmd.Equals("buff", StringComparison.OrdinalIgnoreCase)
+                                         || cmd.Equals("unstuck", StringComparison.OrdinalIgnoreCase);
                     if (!IsAdmin && !playerAllowed) { ClientLog.Warn("Unknown command: " + raw); return; }
                     await _net.AdminCommandAsync(cmd, arg);
                     return;
