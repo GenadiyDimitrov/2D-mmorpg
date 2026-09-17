@@ -29,8 +29,13 @@ namespace Game.Shared;
 /// power 42/67/107, every race) was deleted from his file and re-authored as the ELF's nine-rung
 /// ladder under <see cref="ElfSelfHeal"/>. Ids are append-only as a rule and this one is exempt for
 /// the same reason `mana_barrier` was: pre-release, nobody outside this machine can be holding the
-/// old string, and two defs with one payload is how a number drifts. The healer's `Heal` no longer
-/// `Replaces` it — the race layer is not something a class change takes away.</para></summary>
+/// old string, and two defs with one payload is how a number drifts.
+///
+/// <para>⚠ <b>AND THE REPLACES CELL FOLLOWED THE RENAME.</b> The healer's `Heal` still replaces it,
+/// under the new id — owner, 2026-09-17: *"it was self_heal and should have become elf_self_heal .. it
+/// removes the healers self heal to give him a targeted one"*. This is the ONE place a race layer is
+/// taken away, and it is a trade, not an oversight: an Elf cleric gives up a self-only heal for a
+/// targeted one. Nothing else in this block is replaced by anything.</para></summary>
 public static partial class SkillCatalog
 {
     // ═══ THE MAGE RACE BLOCK ════════════════════════════════════════════════════════════════════

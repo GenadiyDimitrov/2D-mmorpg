@@ -20,7 +20,7 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 30,Holy Bolt,holy_strike,Magic/Dmg,,,750,0,enemy/single,4,1,0,m.Atk +30,26,12800,[]
 35,Holy Bolt,holy_strike,Magic/Dmg,,,750,0,enemy/single,4,1,0,m.Atk +36,31,25000,[]
 ,,,,,,,,,,,,,,,,----------------------------Heal----------------------------
-20,Heal,heal,Magic/Heal,,,600,0,target/single,5,3,0,heal with power 151,30,3200,[]
+20,Heal,heal,Magic/Heal,,,600,0,target/single,5,3,0,heal with power 151,30,3200,[elf_self_heal]
 25,Heal,heal,Magic/Heal,,,600,0,target/single,5,3,0,heal with power 195,38,6400,[]
 30,Heal,heal,Magic/Heal,,,600,0,target/single,5,3,0,heal with power 245,44,12800,[]
 35,Heal,heal,Magic/Heal,,,600,0,target/single,5,3,0,heal with power 301,52,25000,[]

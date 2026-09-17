@@ -7,11 +7,35 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.163.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.163.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-17 (latest) — 0.163.0: `BL-258` — THE MAGE'S RACE LAYER, AND VAMPIRIC BOLT CHANGES HANDS
+## 2026-09-17 (latest) — 0.163.1: the cleric's Heal replaces `elf_self_heal`, not nothing
+
+His correction on the 0.163.0 flag (*"it was self_heal and should have become elf_self_heal .. it
+removes the healers self heal to give him a targeted one"*). `cleric 2nd.csv`'s REPLACES cell was
+emptied when the id it named stopped existing; it should have FOLLOWED the rename. Cell and `SkillDef`
+both point at `elf_self_heal` now.
+
+🔑 **THIS IS THE ONE PLACE A RACE LAYER IS TAKEN AWAY, and it is a TRADE.** An Elf who becomes a cleric
+gives up a self-only heal for a targeted one — strictly the better tool, and the reason the class
+exists. Don't generalise it: nothing else in either race block is replaced by anything, and the Human's
+drain LADDER explicitly is not (only the level-14 `vampiric_bolt` taster beside it is).
+
+⚠ **The re-buy gap is real and is NOT new.** `Replaces` deletes the skill on first learn
+(`HandleLearnSkill`) but nothing hides it from the learn window afterwards, so an Elf cleric can buy a
+rung back — and unlike Flame Bolt / Magic Bolt, this ladder keeps offering HIGHER rungs to 74. Every
+`Replaces` pair in the game has had this shape since the field existed; closing it is a one-line
+`IsSuperseded` gate in `HandleLearnSkill` that would touch all of them, so it waits for his word.
+
+**Also settled, no code owed:** a ladder authored in a lower-tier file is gated by LEVEL, not by tier
+(*"i can lvl up a human mage without changing class and ill lvl up a vampiric bolt with it … same goes
+for any other skills that continue from the class before"*) — which is what 0.163.0 already does, and
+what the 2nd-class bolt ladders registered to 80 have always done. And his `k` shorthand stands as
+built: *"i got lazy to do 12.8k .. any way leave them be if they are build"*.
+
+## 2026-09-17 — 0.163.0: `BL-258` — THE MAGE'S RACE LAYER, AND VAMPIRIC BOLT CHANGES HANDS
 
 His `mage 1st.csv` pass, the twin of 0.162.0's fighter one (*"ok Mage 1st is also done … vampiric_bolt
 id changed and skill moved, self_heal id changed and skill redesigned .. this moved cleric 2nd and

@@ -66,15 +66,21 @@ public static partial class SkillCatalog
         // Heal — the HEALER's targeted heal (ally or self). 4 levels @20/25/30/35 (base-mage no
         // longer learns this).
         //
-        // 🔴 IT NO LONGER `Replaces` A SELF-HEAL, and must not be given one back. It replaced
-        //    `self_heal`, which does not exist any more; the skill that took that id's place is the
-        //    ELF's RACE LADDER, and a race layer is precisely the thing a class change does not take
-        //    away — it goes on climbing to 74 long after the cleric has Heal. An Elf cleric carrying
-        //    both is the intended state. (His `cleric 2nd.csv` REPLACES cell was emptied with this.)
+        // 🔑 IT REPLACES THE ELF'S RACE SELF-HEAL — the id `self_heal` used to name, and the owner's
+        //    own correction (2026-09-17): *"it was self_heal and should have become elf_self_heal ..
+        //    it removes the healers self heal to give him a targeted one"*. So the REPLACES cell
+        //    FOLLOWED the rename rather than being retired with the old id.
+        //
+        // ⚠ THIS IS THE ONE PLACE A RACE LAYER IS TAKEN AWAY, and it is deliberate: an Elf who
+        //   becomes a cleric TRADES a self-only heal for a targeted one, which is strictly the better
+        //   tool and the reason the class exists. Do not generalise it — nothing else in either race
+        //   block is replaced by anything, and the Human's drain LADDER is explicitly not (only the
+        //   level-14 `vampiric_bolt` taster beside it is; see the Holy Bolt note below).
         new(Heal, "Heal", BaseClass.Mage, SkillEffect.Heal,
             // Reuse 2s -> 3s (owner, 2026-08-28: *"heal/great heal are 5 cast 3 reuse"*).
             MpCost: 30, CastTicks: 50, CooldownTicks: 30, Range: 600, Power: 151,
             Category: SkillCategory.Heal,
+            Replaces: new[] { ElfSelfHeal },
             Description: "Restores a friendly target's HP (or your own). Scales with WIT.",
             Levels: new[]
             {
