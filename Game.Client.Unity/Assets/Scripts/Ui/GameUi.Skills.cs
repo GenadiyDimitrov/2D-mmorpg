@@ -499,44 +499,41 @@ namespace Game.Client
                 return;
             }
 
-            Note("Choose ONE Attack, ONE Defence and ONE Support sigil.");
-            Note("Each costs " + SkillCatalog.SigilSpCost.ToString("N0") + " SP + "
-                 + SkillCatalog.SigilGoldCost.ToString("N0") + " " + GameConstants.CurrencyName + ".");
-            Note("They are permanent. The Mindwright will strike one off for "
-                 + SkillCatalog.SigilResetGold.ToString("N0") + " " + GameConstants.CurrencyName
-                 + " — nothing is refunded.");
-
-            // What is already committed, so every row can say why it is or is not available.
-            string ownedAttack = null, ownedDefence = null, ownedSupport = null;
+            // `BL-250` §1-§4 — THREE IDENTICAL SLOTS, and the tab is grouped by CLASS TREE rather than
+            // by slot because that is what a player now chooses between. The slot axis is gone; what
+            // varies row to row is whether your subclasses have opened that tree.
+            int worn = 0;
             foreach (var kv in Boot.Learned)
+                if (SkillCatalog.SigilOf(kv.Key) != null) worn++;
+
+            int open = Boot.SigilSlots;
+            Note("SIGIL SLOTS   " + worn + " / " + open
+                 + (open < SkillCatalog.MaxSigils ? "      (" + SkillCatalog.MaxSigils + " is the ceiling)" : ""));
+            if (open == 0)
+                Note("Each of your first three subclasses opens one at level "
+                     + ThirdClassCatalog.SubclassLevel + ". Your main class opens none.");
+            Note("Committing is FREE. Any three of the eighteen, from any tree you have opened.");
+            Note("The Mindwright CLEARS ALL of them for "
+                 + SkillCatalog.SigilResetGold.ToString("N0") + " " + GameConstants.CurrencyName
+                 + " — one payment, nothing refunded.");
+
+            foreach (SkillCatalog.SigilFlavour flavour in new[]
+                     { SkillCatalog.SigilFlavour.Warrior, SkillCatalog.SigilFlavour.Rogue,
+                       SkillCatalog.SigilFlavour.Tank,    SkillCatalog.SigilFlavour.Mage,
+                       SkillCatalog.SigilFlavour.Healer,  SkillCatalog.SigilFlavour.Buffer })
             {
-                var s = SkillCatalog.SigilOf(kv.Key);
-                if (s == null) continue;
-                if (s.Value.Slot == SkillCatalog.SigilSlot.Attack) ownedAttack = kv.Key;
-                else if (s.Value.Slot == SkillCatalog.SigilSlot.Defence) ownedDefence = kv.Key;
-                else ownedSupport = kv.Key;
-            }
+                bool unlocked = SkillCatalog.SigilGroupUnlocked(Boot.SigilGroups, flavour);
+                Note(flavour.ToString().ToUpperInvariant()
+                     + (unlocked ? "   -   open"
+                                 : "   -   LOCKED (take a " + flavour + " subclass to "
+                                   + ThirdClassCatalog.SubclassLevel + ")"));
 
-            foreach (SkillCatalog.SigilSlot slot in new[]
-                     { SkillCatalog.SigilSlot.Attack, SkillCatalog.SigilSlot.Defence, SkillCatalog.SigilSlot.Support })
-            {
-                string owned = slot == SkillCatalog.SigilSlot.Attack ? ownedAttack
-                             : slot == SkillCatalog.SigilSlot.Defence ? ownedDefence : ownedSupport;
-
-                Note(slot.ToString().ToUpperInvariant()
-                     + (owned != null ? "   -   " + (SkillCatalog.Get(owned)?.Name ?? owned) : "   -   open"));
-
-                foreach (var id in SkillCatalog.AllSigilIds)
+                foreach (var id in SkillCatalog.SigilsOfGroup(flavour))
                 {
-                    var s = SkillCatalog.SigilOf(id);
-                    if (s == null || s.Value.Slot != slot) continue;
                     var def = SkillCatalog.Get(id);
                     if (def == null) continue;
 
                     bool have = Boot.Learned.ContainsKey(id);
-                    bool affordable = Boot.SkillPoints >= SkillCatalog.SigilSpCost
-                                   && Boot.Gold >= SkillCatalog.SigilGoldCost;
-
                     string label = "   " + def.Name;
                     Color colour = UiKit.TextDim;
                     string button = null;
@@ -547,19 +544,22 @@ namespace Game.Client
                         label += "      WORN";
                         colour = UiKit.Accent;
                     }
-                    else if (owned != null)
+                    else if (!unlocked)
                     {
-                        label += "      (slot taken)";
+                        // Deliberately NOT hidden. A tree you cannot reach is the reason to level
+                        // another subclass, so it has to be visible to be a reason.
+                        label += "      (tree locked)";
+                    }
+                    else if (worn >= open)
+                    {
+                        label += open == 0 ? "      (no slots yet)" : "      (all slots filled)";
                     }
                     else
                     {
-                        colour = affordable ? UiKit.Text : UiKit.TextDim;
+                        colour = UiKit.Text;
                         button = "Commit";
-                        if (affordable)
-                        {
-                            string captured = id;
-                            act = () => { Boot.LearnSkill(captured); _skillsRevision = -1; };
-                        }
+                        string captured = id;
+                        act = () => { Boot.LearnSkill(captured); _skillsRevision = -1; };
                     }
 
                     Row(label, button, act, colour, detailSkill: id);

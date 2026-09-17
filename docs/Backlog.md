@@ -105,8 +105,11 @@ on it added the slot ladder (three earned, five bought, as consumable **tickets*
 subclass below 75 can be swapped out, the class-master NPC that hands them out, and the panel that
 says what a subclass will give you before you commit. **Every decision it was waiting on is answered.**
 The sigil half of it is unchanged and still settled. ✅ Its prerequisite `BL-252` (a sub is born at 40)
-is BUILT, in 0.154.0. 🔵 **What is LEFT is the CLIENT (the dialogue + the info panel, an APK) and the
-SIGIL half (§1-§4).** ❓ And one NEW question came out of the build — §9.6, the completeness gate
+is BUILT, in 0.154.0. ✅ **THE SIGIL HALF (§1-§4) IS BUILT (2026-09-17, 0.169.0)** — three identical slots, a slot per subclass
+at 75, groups unlocked by owning a subclass of them, committing FREE, and **100kk clears all three at
+once** (your ruling that day). Nothing was added to `game.db`: both numbers derive from the classes you
+already own. 🔵 **What is LEFT is the CLIENT half of §7+§8** — the class master's dialogue and its info
+panel, an APK. ❓ And one NEW question came out of the build — §9.6, the completeness gate
 against a BOUGHT slot. ⚠ 0.155.0 needs a `game.db` delete (two new columns).
 
 ✅ **The third thing in that file needed no build.** You asked whether the Mark's cut *"sits in the
@@ -263,7 +266,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-232` | 🔵 | `debuff_landmods.csv` IS LIVE — 74 rows built and checked; the SUCCESS column is yours to author | combat |
 | `BL-233` | ❓ | THE DEMON BUFFER'S P.DEF — measured three ways and heavy is AHEAD; I need your two sheets | classes |
 | `BL-234` | ❓ | URGENT LESSER HEAL — built to your four numbers; the per-rank falloff is mine to confirm | classes |
-| `BL-250` | 🟡 | THE SUBCLASS SYSTEM — **the server half is BUILT (0.155.0)**; what is left is the CLIENT dialogue + panel (APK) and the SIGIL half (§1-§4). ❓ one new question in §9.6 | classes |
+| `BL-250` | 🟡 | THE SUBCLASS SYSTEM — the server half (0.155.0) and **the whole SIGIL half (0.169.0)** are built; what is left is the class master's CLIENT dialogue + info panel (APK). ❓ one question in §9.6 | classes |
 | `BL-260` | ❓ | **SUMMONERS — the conversation we have never had**, and four shipped decisions already lean on it | classes |
 | `BL-262` | ❓ | THE BOSS MAT PILE TAKES NO RATE KNOB — the same shape `BL-247` fixed in the recipe roll; three ways out, my reading is (2) | items |
 
@@ -1924,9 +1927,11 @@ here either.
 | commit all three | 60kk SP + 30kk gold | **free** |
 | clear one | 10kk gold, no refund (`SigilResetGold`) | **100kk gold** |
 
-❓ **One reading is mine: `SigilResetGold` becomes 100kk and stays PER SIGIL**, because your sentence
-prices "clearing" against the old cost of ONE sigil. If you meant 100kk to wipe all three at once, it
-is one line.
+✅ **ANSWERED 2026-09-17: `SigilResetGold` is 100kk and it WIPES ALL THREE** — *"100kk wipes all"*.
+My reading was the other one (100kk per sigil, which would have made a full reset 300kk) and you chose
+against it. Built in 0.169.0: tapping any worn sigil at the Mindwright clears every sigil for one
+payment, and the button says **Clear all** before it takes the gold. ⚠ There is no single strike-off any
+more.
 
 ### 5. 🔴 NEW — THE SUBCLASS SLOT LADDER: THREE EARNED, FIVE BOUGHT
 A character does not simply "have" subclass slots any more. **Three arrive with your progress, and
@@ -2047,10 +2052,19 @@ alongside the still-ungated admin path, both through one `CreateSubclass`; and �
 (`SubclassOfferInfo`) with the sigil group, the sigils, the slot it would open and the swappable rows —
 all of it derived.
 
-🔵 **LEFT: (a) the CLIENT — drawing that dialogue and the info panel, plus using a ticket from the bag.
-APK, protocol 39. (b) the SIGIL half, §1-§4.** `SkillCatalog.SigilGroupOf` already exists and is used
-for display; what is not built is the GATING — three identical slots opened by a subclass at 75, groups
-unlocked by owning a subclass of them, commit free, clearing 100kk.
+✅ **AND THE SIGIL HALF (§1-§4) IS BUILT TOO — 0.169.0.** Three identical slots; a slot per subclass at
+75 with its 3rd class (the main opens none); groups unlocked by owning a subclass of them; committing
+free; clearing 100kk for the whole board. Both numbers are DERIVED from the classes you already own, so
+**nothing was added to `game.db`**. The Sigils tab is rebuilt around TREES instead of slots and reads
+those two numbers off the server (protocol 45).
+
+🔴 **Two removals were load-bearing and are worth remembering**: a sigil's `Replaces` list had to go
+(`Replaces` means GONE FOR GOOD here, so a second Attack sigil would have destroyed the first), and
+with `ExclusiveGroup` gone the Mindwright's list and its Forget gate — both keyed on *having* one —
+would have made every sigil permanently un-removable. Both now ask "is it a sigil".
+
+🔵 **LEFT: the CLIENT half of §7+§8** — drawing the class master's subclass dialogue and its info panel,
+plus using a ticket from the bag. The server side of both has been built since 0.155.0.
 
 ### 10. ⚠ For the record
 Three sigils today = level 76 + 60kk SP + 30kk gold on ONE character. Three sigils after this = **three

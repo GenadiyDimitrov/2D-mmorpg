@@ -630,7 +630,14 @@ public record SubclassDto(
 /// older client deserialises and simply reads 0. ⚠ Slots, not classes: an open slot may be EMPTY, and
 /// the difference between this and <c>Classes.Length - 1</c> is exactly how many you may still take.</param>
 /// <param name="MaxSlots">The ladder's ceiling today, so the client never hard-codes seven.</param>
-public record SubclassListDto(SubclassDto[] Classes, int SlotsUnlocked = 0, int MaxSlots = 0);
+public record SubclassListDto(SubclassDto[] Classes, int SlotsUnlocked = 0, int MaxSlots = 0,
+    // `BL-250` §2 — SIGIL slots opened, 0-3. One per subclass that has reached 75 with its 3rd class;
+    // the MAIN opens none. Appended with a default, so an older client reads 0 and simply shows the
+    // Sigils tab as locked, which is the safe wrong answer rather than the dangerous one.
+    int SigilSlots = 0,
+    // `BL-250` §3 — the unlocked sigil GROUPS as a bitmask over SkillCatalog.SigilFlavour. Read it with
+    // SkillCatalog.SigilGroupUnlocked; never by shifting by hand at a call site.
+    int SigilGroups = 0);
 
 /// <summary>The character's skill-bar layout: one entry per slot, "" = empty. Travels BOTH ways —
 /// server → client on login (restore), client → server on every rearrangement (persist).

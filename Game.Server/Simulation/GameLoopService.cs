@@ -1811,6 +1811,16 @@ public class GameLoopService : BackgroundService
             }
         }
 
+        // `BL-250` §1-§3 — THE SIGIL GATE. The three slots stopped being Attack / Defence / Support on
+        // 2026-09-17 and became three identical slots, so what limits a sigil is no longer an exclusion
+        // group (there is none any more) but two things a skill def cannot express: whether a SUBCLASS
+        // has unlocked that group, and whether a slot is free. Both live in SigilRefusal.
+        if (cur == 0 && SigilRefusal(player, def.Id) is { } sigilNo)
+        {
+            SendSystemToEntity(player, sigilNo);
+            return;
+        }
+
         // 🔴 A SIGIL FLAVOUR GUARD STOOD HERE until 2026-08-26. A sigil used to replace the same
         //    flavour's other two as well as every other flavour's same slot, so the three you wore
         //    always came from three different classes. He dropped that half — *"1-attack, 1-Defence,
@@ -4003,7 +4013,12 @@ public class GameLoopService : BackgroundService
                 s.Slot, s.Race, s.BaseClass, s.SecondClass, s.ThirdClass, s.Level,
                 s.Slot == p.ActiveSubclass.Slot, s.FourthClass))
             .ToArray(),
-            p.SubclassSlotsUnlocked, SubclassSlots.MaxSlots));
+            p.SubclassSlotsUnlocked, SubclassSlots.MaxSlots,
+            // `BL-250` §2+§3 — the sigil board, DERIVED here and pushed rather than re-derived on the
+            // phone. The client has the class list and could compute both itself, which is exactly why
+            // it must not: a rule with two implementations is a rule with two answers, and this one
+            // decides what a player may spend three subclasses on.
+            SigilSlotsOpen(p), SigilGroupsUnlocked(p)));
 
     /// <summary>The level ceiling this character is subject to. ADMINS ARE EXEMPT — an admin needs to
     /// be able to push past the cap to test the top of the curve without lifting it for everyone.</summary>
@@ -16467,7 +16482,77 @@ public class GameLoopService : BackgroundService
     /// <summary>`BL-250` §2 — how many SIGIL slots subclasses can open between them. Three is the
     /// ceiling and subclasses 4+ open only their tree: *"the 1st three subs are required to open the 3
     /// slot -> then every other just opens their tree"*.</summary>
-    private const int SigilSlotsFromSubclasses = 3;
+    private const int SigilSlotsFromSubclasses = SkillCatalog.MaxSigils;
+
+    /// <summary>`BL-250` §2 — A SUBCLASS THAT HAS ARRIVED: level 75 with its 3rd class. The one
+    /// predicate behind both halves of the sigil rework, because his sentence gives them one gate —
+    /// *"lets make them once sub becomes 75 u are able to get the tree + sigil slot"*.
+    ///
+    /// <para>⚠ THE MAIN IS NOT ONE. *"main class dont open slot; only subs will"* — so slot 0 is
+    /// excluded here rather than at each call site, which is where it would eventually be forgotten.
+    /// A main at 85 with its 4th class opens nothing and unlocks no group of its own; that is the
+    /// whole reason a mage cannot reach the mage sigils until the summoner ships.</para>
+    ///
+    /// <para>⚠ The 3rd class is checked even though `BL-252` grants one at creation, for the same reason
+    /// <see cref="EarnedTicketsDue"/> re-checks the main's level: an admin can move a character
+    /// underneath what it holds, and a slot opened by a class that no longer qualifies was never
+    /// opened.</para></summary>
+    private static IEnumerable<Subclass> ArrivedSubclasses(Entity player) =>
+        player.Subclasses.Where(s => s.Slot != 0
+                                     && s.Level >= ThirdClassCatalog.SubclassLevel
+                                     && s.ThirdClass > 0);
+
+    /// <summary>`BL-250` §2 — HOW MANY SIGIL SLOTS ARE OPEN, 0..3. Derived, never stored.
+    ///
+    /// <para>🔑 <b>DERIVED IS THE POINT, not a shortcut.</b> Every input is already persisted — the
+    /// subclasses, their levels, their 3rd classes — so a stored count would be a second copy of a
+    /// fact, free to disagree with the first after a `/setlevel`, a subclass swap-out, or the DB reset
+    /// that this project does instead of migrations. It also means there is nothing to add to
+    /// `game.db` for the whole sigil rework.</para></summary>
+    private static int SigilSlotsOpen(Entity player) =>
+        Math.Min(SkillCatalog.MaxSigils, ArrivedSubclasses(player).Count());
+
+    /// <summary>`BL-250` §3 — WHICH SIGIL GROUPS ARE UNLOCKED, as a bitmask. *"A SIGIL GROUP IS
+    /// UNLOCKED BY OWNING A SUBCLASS OF IT"*, on the same 75-with-its-3rd-class gate as the slots —
+    /// his *"u are able to get the tree + sigil slot"* names them in one breath.
+    ///
+    /// <para>🔑 A subclass past the third still unlocks its TREE — *"then every other just opens their
+    /// tree (if not opened)"* — which falls out for free here: the mask has no cap, only the SLOT count
+    /// does. So a warrior with six subclasses reaches six groups and still wears three sigils.</para></summary>
+    private static int SigilGroupsUnlocked(Entity player)
+    {
+        int mask = 0;
+        foreach (var s in ArrivedSubclasses(player))
+            if (ThirdClassCatalog.Get(s.ThirdClass)?.Discipline is { } d)
+                mask |= SkillCatalog.SigilGroupBit(SkillCatalog.SigilGroupOf(d));
+        return mask;
+    }
+
+    /// <summary>Why this character may not commit to this sigil, or null if they may. `BL-250` §1-§3:
+    /// the GROUP must be unlocked by a subclass, and a SLOT must be free.
+    ///
+    /// <para>⚠ Order matters in the message: the group is the interesting refusal (it names the class
+    /// you would have to level), the slot is the boring one. Reporting "no free slot" to somebody who
+    /// also does not own the group would send them to do the wrong thing.</para></summary>
+    private static string? SigilRefusal(Entity player, string sigilId)
+    {
+        if (SkillCatalog.SigilOf(sigilId) is not { } sigil) return null;
+        if (player.HasSkill(sigilId)) return null;   // levelling a worn one is not a commit
+
+        if (!SkillCatalog.SigilGroupUnlocked(SigilGroupsUnlocked(player), sigil.Flavour))
+            return $"The {sigil.Flavour} sigils are locked. Take a {sigil.Flavour} subclass to "
+                 + $"level {ThirdClassCatalog.SubclassLevel} to open that tree.";
+
+        int worn = player.LearnedSkills.Count(kv => SkillCatalog.SigilOf(kv.Key) is not null);
+        int open = SigilSlotsOpen(player);
+        if (worn >= open)
+            return open == 0
+                ? $"You have no sigil slots. Each of your first three subclasses opens one at level "
+                  + $"{ThirdClassCatalog.SubclassLevel}."
+                : $"All {open} of your sigil slots are filled. The Mindwright will clear them for "
+                  + $"{SkillCatalog.SigilResetGold:N0} {GameConstants.CurrencyName} — all at once.";
+        return null;
+    }
 
     /// <summary>`BL-250` §5 — BUY the next Subclass Ticket from the class master. Slots 4-7 on the
     /// ladder: 500kk gold, 5kkk gold, 100 platinum, 1,000 platinum.
@@ -19717,7 +19802,10 @@ public class GameLoopService : BackgroundService
 
         foreach (var (id, level) in player.LearnedSkills)
         {
-            if (SkillCatalog.Get(id) is not SkillDef def || string.IsNullOrEmpty(def.ExclusiveGroup))
+            // ⚠ SIGILS HAVE NO ExclusiveGroup SINCE `BL-250` §1 and must be listed explicitly, or the
+            // Mindwright's list silently loses the one commitment clearing was invented for.
+            if (SkillCatalog.Get(id) is not SkillDef def
+                || (string.IsNullOrEmpty(def.ExclusiveGroup) && SkillCatalog.SigilOf(id) is null))
                 continue;
             long spent = SkillCatalog.StatSwapOf(id) is not null
                 ? SkillCatalog.StatSwapPriceRange(rungs - level, rungs)
@@ -19832,42 +19920,61 @@ public class GameLoopService : BackgroundService
             return;
         }
 
+        // ⚠ `|| isSigilId` IS LOAD-BEARING. A sigil used to carry an ExclusiveGroup and this gate was
+        // written against that; `BL-250` §1 took the group away (three identical slots have nothing to
+        // exclude), which would have made every sigil un-resettable — a permanent choice with no way
+        // out, in the same increment that made clearing the point.
+        bool isSigilId = SkillCatalog.SigilOf(cmd.SkillId) is not null;
         if (SkillCatalog.Get(cmd.SkillId) is not SkillDef def
-            || string.IsNullOrEmpty(def.ExclusiveGroup)
+            || (!isSigilId && string.IsNullOrEmpty(def.ExclusiveGroup))
             || !player.HasSkill(def.Id))
         {
             SendSystemToEntity(player, "That skill cannot be reset.");
             return;
         }
 
-        // ---- A SIGIL COSTS GOLD TO STRIKE OFF (owner, 2026-08-26): *"then to reset them u go to the
-        //      mindweaver and reset them for 10kk gold (no sp/no gold refund)"*. Everything else here —
-        //      the stat swaps, the old exclusive-group commitments — stays FREE to forget, which is the
-        //      deal those were sold under and is not this ruling's to change.
-        //      ⚠ Read as PER SIGIL: this is the per-skill Forget button, and the fee is exactly what
-        //      re-committing to a different one costs. Charged BEFORE the removal, so a player who
-        //      cannot pay keeps both the gold and the sigil.
+        // ---- CLEARING YOUR SIGILS COSTS 100kk AND WIPES ALL OF THEM (owner, 2026-08-26: *"only
+        //      clearing will cost 100kk"*; 2026-09-17, deciding the reading the entry was holding:
+        //      *"100kk wipes all"*). Everything else here — the stat swaps, the old exclusive-group
+        //      commitments — stays FREE to forget, which is the deal those were sold under and is not
+        //      this ruling's to change.
+        //
+        //      🔑 IT IS ONE PAYMENT FOR THE WHOLE BOARD. Tapping ANY worn sigil clears every sigil the
+        //      character wears, for one fee. The alternative reading — 100kk per sigil — would have made
+        //      a full reset 300kk, and he chose against it. So there is no way to strike off a single
+        //      sigil any more, and the dialog says so before the gold moves.
+        //      ⚠ Charged BEFORE the removal, so a player who cannot pay keeps both the gold and the board.
         bool isSigil = SkillCatalog.SigilOf(def.Id) is not null;
+        var wiped = new List<string>();
         if (isSigil)
         {
             if (player.Gold < SkillCatalog.SigilResetGold)
             {
                 SendSystemToEntity(player,
-                    $"Striking off {def.Name} costs {SkillCatalog.SigilResetGold:N0} {GameConstants.CurrencyName} "
+                    $"Clearing your sigils costs {SkillCatalog.SigilResetGold:N0} {GameConstants.CurrencyName} "
                     + $"— you have {player.Gold:N0}.");
                 return;
             }
             player.Gold -= SkillCatalog.SigilResetGold;
+            foreach (var kv in player.LearnedSkills.ToList())
+                if (SkillCatalog.SigilOf(kv.Key) is not null)
+                {
+                    wiped.Add(SkillCatalog.Get(kv.Key)?.Name ?? kv.Key);
+                    player.LearnedSkills.Remove(kv.Key);
+                }
+        }
+        else
+        {
+            player.LearnedSkills.Remove(def.Id);
         }
 
-        player.LearnedSkills.Remove(def.Id);
         player.RecomputeDerived();
         player.Hp = Math.Min(player.Hp, player.MaxHp);   // losing +CON can lower Max HP
         player.Mp = Math.Min(player.Mp, player.MaxMp);
 
         SendSystemToEntity(player, isSigil
-            ? $"{def.Name} struck off for {SkillCatalog.SigilResetGold:N0} {GameConstants.CurrencyName}. "
-              + "The SP and gold you paid for it are gone."
+            ? $"Sigils cleared for {SkillCatalog.SigilResetGold:N0} {GameConstants.CurrencyName}"
+              + (wiped.Count > 1 ? $" — all {wiped.Count}: {string.Join(", ", wiped)}." : $" — {wiped[0]}.")
             : $"{def.Name} forgotten. You may commit to a different path — the gold is not refunded.");
         SendStats(player);
         SendLearned(player);

@@ -1002,6 +1002,15 @@ namespace Game.Client
         /// <summary>Every class this character owns (server-pushed). Drives the debug Class tab.</summary>
         public SubclassDto[] Subclasses { get; private set; } = System.Array.Empty<SubclassDto>();
 
+        /// <summary>`BL-250` §2 — SIGIL slots this character has opened, 0-3. Server-derived and pushed
+        /// with the class list; the client never computes it, because a rule with two implementations
+        /// is a rule with two answers.</summary>
+        public int SigilSlots { get; private set; }
+
+        /// <summary>`BL-250` §3 — unlocked sigil GROUPS, a bitmask over `SkillCatalog.SigilFlavour`.
+        /// Read it with `SkillCatalog.SigilGroupUnlocked`.</summary>
+        public int SigilGroups { get; private set; }
+
         /// <summary>The UI, so a server push can refresh a panel that is currently showing stale data.</summary>
         public GameUi Ui { get; private set; }
 
@@ -1449,6 +1458,8 @@ namespace Game.Client
                 // you own so you can swap between them, which is the owner's way of comparing two
                 // builds in the same gear without relogging.
                 Subclasses = s.Classes;
+                SigilSlots = s.SigilSlots;
+                SigilGroups = s.SigilGroups;
                 foreach (var c in s.Classes) if (c.Active) { ActiveClass = c; break; }
                 Ui?.RefreshDebugPanel();   // a swap that already happened must not still be offered
             });

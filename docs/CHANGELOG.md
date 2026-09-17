@@ -7,11 +7,68 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.168.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.169.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-17 (latest) — 0.168.0: the drop database, built once and remembered — `BL-253`
+## 2026-09-17 (latest) — 0.169.0: the sigils become end game — `BL-250` §1-§4
+
+*"100kk wipes all -> finish all red dots"*. The sigil half of the subclass system, and the one reading
+the entry was holding is decided: **100kk clears the whole board in one payment**, not 100kk per sigil.
+
+### §1 — the three slots stop being Attack / Defence / Support
+They are **three identical slots** now: any three of the eighteen, from any tree you have opened.
+`SigilSlot` survives as a label for the UI and nothing else.
+
+🔴 **The part that had to be removed with it, and would have been a disaster to leave.** A sigil carried
+`Replaces` — every other flavour's same slot. In this engine **`Replaces` means gone for good**, not
+"swapped": under the new rule, committing a Warrior Attack sigil would have silently **destroyed** a
+Mage Attack sigil you already wore, in the same increment whose entire point is that you may now hold
+both. It is gone, and so is the `ExclusiveGroup` — which had a second consequence worth stating,
+because it was the bug waiting in this change: the Mindwright's reset list and its Forget gate were
+both keyed on *having* an ExclusiveGroup, so taking it away would have made every sigil **permanently
+un-removable**, in the increment that made clearing them the point. Both now ask "is it a sigil".
+
+### §2 — a slot is opened by a SUBCLASS at 75, never by your main
+One per subclass that has reached **75 holding its 3rd class**; three is the ceiling; subclass four and
+up open only their tree. Your main opens nothing, however high it goes.
+
+🔑 **Both numbers are DERIVED, so `game.db` gains nothing.** The subclasses, their levels and their 3rd
+classes are already persisted — a stored slot count would be a second copy of a fact, free to disagree
+with the first after a `/setlevel`, a swap-out, or the DB reset this project does instead of migrations.
+
+### §3 — a sigil GROUP is unlocked by owning a subclass of it
+Same gate, his own sentence naming them together: *"once sub becomes 75 u are able to get the tree +
+sigil slot"*. A warrior with six subclasses reaches six trees and still wears three sigils — the mask
+has no cap, only the slot count does. A locked tree is **shown, not hidden**: a tree you cannot reach is
+a reason to level another subclass, and it cannot be a reason if you cannot see it.
+
+### §4 — committing is free, clearing is 100kk, and it takes all three
+*"we can remove their sp/gold cost -> they are their own system. only clearing will cost 100kk"*. So
+20kk SP + 10kk gold each becomes **nothing**, and 10kk-per-strike becomes **100kk for the board**.
+
+🔑 **The price did not vanish, it moved onto the road.** Three sigils used to be level 76 plus 60kk SP
+and 30kk gold on one character. Three sigils are now **three subclasses each levelled to 75**, every one
+of them born at 40 with no SP. Charging for the commit on top of that would have been charging twice.
+⚠ There is no way to strike off a single sigil any more; the Mindwright's button says **Clear all** and
+the row says what it costs, because tapping one line and losing three is not a surprise you can undo.
+
+### The client
+The Sigils tab is rebuilt around trees instead of slots — a `SLOTS worn / open` header, six tree
+headings, each locked or open, each row saying *why* it is unavailable. It reads its two numbers off the
+server (protocol **45**, two appended fields on the subclass push) and computes neither itself: this rule
+decides what three subclasses are spent on, and a rule with two implementations has two answers.
+
+❓ **§9.6 is still unanswered and I have left it as built**: the completeness gate (every class you own at
+75 before you may add another) still bites on a BOUGHT slot, so a 500kk slot can sit unusable. My reading
+stands — it is your existing rule, it is what stops half-levelled subclasses stacking up, and a bought
+slot is never lost, only waiting. One line either way when you want it.
+
+📥 **Still owed on `BL-250`: the class master's subclass dialogue and its info panel (§7-§8) on the
+CLIENT.** The server side of both — `SubclassOfferInfo`, every row of it derived — has been built since
+0.155.0.
+
+## 2026-09-17 — 0.168.0: the drop database, built once and remembered — `BL-253`
 
 *"a drop db should be build once and only once when server starts … it should remember it every restart
 until something tuches drops/mobs … on start if its missing its build with drops x1 … each ask of item it

@@ -123,15 +123,46 @@ public static partial class SkillCatalog
     /// Rite of Ascension), so a level-76 who has not is offered nothing.</summary>
     public const int SigilLearnLevel = FourthClassCatalog.ChangeLevel;   // 76
 
-    /// <summary>His price, the same for all eighteen: 20kk SP + 10kk gold.</summary>
-    public const int SigilSpCost = 20_000_000;
-    public const int SigilGoldCost = 10_000_000;
+    /// <summary>🔴 <b>FREE SINCE `BL-250` §4</b> (2026-09-17): *"we can remove their sp/gold cost -> they
+    /// are their own system. only clearing will cost 100kk (its 10kk now i think + losing the 60kk sp and
+    /// 30kk gold)"*. They were 20kk SP + 10kk gold each.
+    ///
+    /// <para>🔑 <b>THE PRICE DID NOT VANISH, IT MOVED ONTO THE ROAD.</b> Three sigils used to be level 76
+    /// plus 60kk SP and 30kk gold on ONE character. Three sigils are now <b>three subclasses each
+    /// levelled to 75</b>, every one of them born at 40 with no SP — *"yes sigils become end game and
+    /// hard"*. Charging for the commit on top of that would be charging twice for the same thing.</para>
+    ///
+    /// <para>⚠ Kept as named constants at zero rather than deleted: they are read by the learn path, the
+    /// Sigils tab and the affordability label, and a literal 0 in three places is how a price quietly
+    /// comes back in one of them.</para></summary>
+    public const int SigilSpCost = 0;
+    public const int SigilGoldCost = 0;
 
-    /// <summary>What the Mindwright charges to strike ONE sigil off, so the slot is free to commit to
-    /// again — *"then to reset them u go to the mindweaver and reset them for 10kk gold (no sp/no gold
-    /// refund)"*. ⚠ Read as PER SIGIL, which is what the existing per-skill Forget button at that NPC
-    /// already is, and which makes the reset cost exactly what re-committing costs.</summary>
-    public const int SigilResetGold = 10_000_000;
+    /// <summary>What the Mindwright charges to CLEAR YOUR SIGILS — *"only clearing will cost 100kk"*,
+    /// and his 2026-09-17 ruling on the one reading the entry was holding: <b>100kk WIPES ALL THREE</b>.
+    ///
+    /// <para>🔑 <b>IT IS ONE PAYMENT FOR THE WHOLE BOARD, NOT A PER-SIGIL FEE.</b> That was a real fork —
+    /// his sentence priced "clearing" against the old cost of ONE sigil, so per-sigil was the other
+    /// reading, and it would have made a full reset 300kk. He chose the wipe. ⚠ Which means striking off
+    /// a single sigil is NOT a thing you can do any more: tapping any worn sigil at the Mindwright clears
+    /// the lot, and the dialog says so before it takes the gold.</para></summary>
+    public const int SigilResetGold = 100_000_000;
+
+    /// <summary>`BL-250` §1/§2 — how many sigils a character may wear at once, and therefore how many
+    /// SLOTS the ladder can ever open. Three, and the third is the last: *"the 1st three subs are
+    /// required to open the 3 slot -> then every other just opens their tree (if not opened)"*.
+    ///
+    /// <para>⚠ Not the same three as before. It used to mean one Attack, one Defence and one Support;
+    /// it now means three of the eighteen, in any mix.</para></summary>
+    public const int MaxSigils = 3;
+
+    /// <summary>`BL-250` §3 — the unlocked sigil GROUPS as a bitmask, one bit per
+    /// <see cref="SigilFlavour"/>. A mask rather than a list because it crosses the wire on every
+    /// subclass push and the client only ever asks "is this one in".</summary>
+    public static int SigilGroupBit(SigilFlavour f) => 1 << (int)f;
+
+    /// <summary>Is this group unlocked in that mask?</summary>
+    public static bool SigilGroupUnlocked(int mask, SigilFlavour f) => (mask & SigilGroupBit(f)) != 0;
 
     /// <summary>The eighteen, in slot-then-flavour order (the order the Sigils tab renders).</summary>
     public static readonly string[] AllSigilIds =
@@ -209,10 +240,14 @@ public static partial class SkillCatalog
                 // however its def is written. One level, carrying the whole price.
                 Levels: new[] { new SkillLevel(SpCost: SigilSpCost, GoldCost: SigilGoldCost,
                                                Passive: passive, Description: blurb) },
-                ExclusiveGroup: SigilGroup(slot),
-                // Both halves of his REPLACES column, generated rather than typed out 18 × 7 times:
-                // the same flavour's other two slots, and every other flavour's same slot.
-                Replaces: SigilReplaces(flavour, slot),
+                // 🔴 NO `ExclusiveGroup` AND NO `Replaces` SINCE `BL-250` §1 (2026-09-17). The three
+                // slots stopped being Attack / Defence / Support and became three IDENTICAL slots —
+                // *"any three of the eighteen, so long as you have unlocked them"* — so neither an
+                // exclusion group nor a replace list has anything left to say. What limits you now is
+                // the COUNT (three) and the GROUPS your subclasses have unlocked, both enforced in
+                // `GameLoopService.HandleLearnSkill`.
+                // ⚠ `Replaces` would have been actively destructive here, not merely stale: it means
+                // "gone for good", so a second Attack sigil would have deleted the first.
                 Passive: passive,
                 ProcChance: procChance, ProcOnDamaged: procOnDamaged,
                 ProcCooldownTicks: procCooldownTicks,
@@ -387,18 +422,18 @@ public static partial class SkillCatalog
         };
     }
 
-    /// <summary>His REPLACES column, generated: every OTHER flavour's SAME slot. Five ids, exactly as
-    /// he wrote each row out by hand.
+    /// <summary>🔴 <b>GONE — `BL-250` §1, 2026-09-17.</b> This generated his REPLACES column: every OTHER
+    /// flavour's SAME slot, five ids, which is what made the three slots an exclusion axis.
     ///
-    /// <para>⚠ It used to be seven — the same-flavour XOR — until he dropped that half on 2026-08-26.
-    /// See the class summary for the arithmetic that said it was safe to, and for how to restore it.</para></summary>
-    private static string[] SigilReplaces(SigilFlavour flavour, SigilSlot slot)
-    {
-        var list = new List<string>(5);
-        foreach (var (id, v) in SigilTable)
-            if (v.Slot == slot && v.Flavour != flavour)
-                list.Add(id);
-        list.Sort(StringComparer.Ordinal);   // stable order so a diff of this file is readable
-        return list.ToArray();
-    }
+    /// <para>The slots are <b>three identical slots</b> now — any three of the eighteen — so there is
+    /// nothing for a sigil to replace. ⚠ Leaving it would have been the worst kind of leftover, because
+    /// <c>Replaces</c> means <b>gone for good</b> in this engine, not "swapped": committing a Warrior
+    /// Attack sigil would have silently DESTROYED a Mage Attack sigil you had paid for, in a system whose
+    /// whole point is that you may now hold both.</para>
+    ///
+    /// <para>🔴 <b>To restore the one-per-slot rule</b> if a playtest asks for it: put this method and
+    /// the <c>ExclusiveGroup</c> line in <c>Sigil()</c> back. The three <c>SigilGroup*</c> constants and
+    /// <see cref="SigilGroup"/> are kept for exactly that, and because the reset NPC's list is keyed on
+    /// a skill being resettable rather than on this.</para></summary>
+    // private static string[] SigilReplaces(SigilFlavour flavour, SigilSlot slot) { … }
 }

@@ -370,16 +370,19 @@ namespace Game.Client
                     // reading it as a price is the obvious reading: *"i think it will cost me 25kk to
                     // remove them even though upper say its free"*. A header saying "free" directly above
                     // a row saying "cost" makes the header look like the lie.
-                    // ⚠ A SIGIL is the one thing here that costs gold to strike off (10kk, his 4th-class
-                    //    ruling). The header says "free for most" and the row says the price, rather
-                    //    than the header lying about one row in eighteen — the same care `BL-39` took
-                    //    over "losing" vs "cost".
+                    // ⚠ A SIGIL is the one thing here that costs gold, and since `BL-250` §4 it is not
+                    //    a strike-off at all: 100kk CLEARS THE WHOLE BOARD in one payment (his ruling,
+                    //    2026-09-17 — *"100kk wipes all"*). The button has to say so, because tapping
+                    //    one row and losing three sigils is the kind of surprise you cannot undo.
+                    //    The header says "free for most" and the row says the price, rather than the
+                    //    header lying about one row in eighteen — the same care `BL-39` took over
+                    //    "losing" vs "cost".
                     bool sigil = SkillCatalog.SigilOf(skillId) != null;
                     string tail = sigil
-                        ? "   " + SkillCatalog.SigilResetGold.ToString("N0") + " " + GameConstants.CurrencyName + " to strike off"
+                        ? "   " + SkillCatalog.SigilResetGold.ToString("N0") + " " + GameConstants.CurrencyName + " to clear ALL sigils"
                         : skill.GoldSpent > 0 ? "   losing " + skill.GoldSpent.ToString("N0") + " spent" : "";
                     DialogRow(skill.Name + (skill.Level > 1 ? "  Lv." + skill.Level : "") + tail,
-                              sigil ? "Strike off" : "Forget", () => Boot.ForgetSkill(skillId), UiKit.Text);
+                              sigil ? "Clear all" : "Forget", () => Boot.ForgetSkill(skillId), UiKit.Text);
                 }
             }
 

@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.168.0";
+    public const string GameVersion = "0.169.0";
 
     // ----- SP BOTTLE (owner, 2026-08-26) -------------------------------------------------------
     // *"u can make an npc to take your 1kkk SP + 100kk gold and give you a tradable/sellabel
@@ -208,10 +208,11 @@ public static class GameConstants
     /// roster for that drop), so an old APK would be dropped from rosters it cannot see the reason for.
     /// That is safe only because the filter is off on every character until somebody sets it, and only
     /// a new APK can set it. ⚠ A NEW APK IS WANTED.
-    /// 44 (`BL-253`) is a pure ADDITION — a new hub method (`LookupDrops`) and a new server push
-    /// (`DropLookupResult`). An older APK neither calls the one nor listens for the other, so nothing
-    /// it does changes; it simply has no drop-database window. ⚠ A NEW APK IS WANTED.
-    public const int ProtocolVersion = 44;   // 44: LookupDrops + DropLookupResult, the drop database (`BL-253`)
+    /// 44 (`BL-253`) and 45 (`BL-250`) are both pure ADDITIONS — a new hub method and push for the
+    /// drop database, and two appended fields on `SubclassListDto` for the sigil board. An older APK
+    /// neither calls the one nor reads the other; it simply has no Drops window and shows zero sigil
+    /// slots, which is the safe wrong answer. ⚠ A NEW APK IS WANTED.
+    public const int ProtocolVersion = 45;   // 45: SubclassListDto gains SigilSlots + SigilGroups (`BL-250`)
 
     /// <summary>
     /// The oldest protocol this server still speaks. Equal to <see cref="ProtocolVersion"/> means
