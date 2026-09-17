@@ -6138,6 +6138,42 @@ vendor-refused item is never in it. ⚠ One thing found on the way: `ItemCategor
 Unity client, so the server had no way to mean the same "Gear" the tab does — it now lives in
 `Game.Shared` alongside `ItemTag`, for the same reason `ItemTag` does.
 
+## `BL-246` ✅ BUILT 2026-09-17 in **0.160.0** — the character sheet is two tabs, to your layout. The entry as filed.
+
+**2026-09-16.** Your layout, row for row. 🔑 **BASIC shows the LAST class only** — *"Class: Shadowblade
+(Directly Shadowblade, not ElfRogue,Descipiline etc ... just last class)"* — and DETAILS shows the full
+chain. That distinction is the point of the split.
+
+**1. BASIC**
+
+| group | rows |
+|---|---|
+| Class | `Race: elf` · `Level: 85` — `Class: Shadowblade` |
+| Primary | `ATK` `CON` `SPT` — `WIT` `AGI` |
+| Basic | `HP` `MP` — `P.Atk` `M.Atk` — `P.Def` `M.Def` — `Atk Speed: 1/1500` `Cast Speed: 2/1999` — `Acc` `Eva` `Speed` |
+| PVP | `PVP: 0` `PK: 0` — `Karma: 0` |
+
+**2. DETAILS**
+
+| group | rows |
+|---|---|
+| Class | `Elf Rogue -> Phantom -> Shadowblade` |
+| Vitals | `HP/s` `MP/s` — `HP Receive: 0%` `MP Receive: 0%` — `Restore power: x1 + 0` |
+| Offence | `Acc` — `Crit: 1%` `Crit dmg: x1.2 +1` — `M.Crit: 1%` `M.Crit dmg: x2` — `x2 Dmg: 0%` `Reuse rst: 0%` — `x2 Duration: 0%` `Stab Rate: 30%` — `Atk.Speed: x4` `Cast.Speed: x0.7` |
+| Defence | `Eva` `Speed` `State: Run\|Sit\|Walk` — `M.Fail: 5%` `M.Resist: 20%` — `Crit: 15%` `Crit dmg: 35%` — `M.Crit: 0%` — `Block Rate: 0%` `Block Red: 0%` |
+
+⚠ Several of these rows have **no source today** — `HP Receive` / `MP Receive`, `Restore power`, the
+three mastery rates (`x2 Dmg`, `Reuse rst`, `x2 Duration`), `Stab Rate` and the crit-RESIST pair are
+all live derived values that the stats payload does not currently carry. So this is a protocol change
+as well as a layout, and it wants doing in one pass rather than a row at a time.
+
+**Built to it row for row.** ⚠ The "several rows have no source" count was **four, not seven** —
+checked against the code rather than the note: the three masteries, the crit-RESIST pair, `Restore
+power` and `HP Receive` were already on the wire and simply had nowhere to be drawn. The four real
+ones arrived with protocol 43: `MP Receive` (`RestoreMpMod`), `Stab Rate` (`BlowRate`), the magic
+crit RESIST, and `M.Fail` — the last COMPUTED server-side at parity, because a fizzle chance needs
+an attacker and "one of my own level" is its only reading on a sheet with no attacker in it.
+
 ## `BL-241` ✅ BUILT 2026-09-17 in **0.159.0** — the per-type pickup rarity filter, and it edits the party loot roster. The entry as filed.
 
 **2026-09-16.** *"we need in bag rarity filter for any type gear/mats/use to be able to select min

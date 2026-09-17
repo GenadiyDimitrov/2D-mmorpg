@@ -17676,7 +17676,13 @@ public class GameLoopService : BackgroundService
             p.HealPowerFlat, p.HealPowerMod, p.HealReceivedFlat, p.HealReceivedMod,
             p.CritDamageFlat, p.EffectiveMagicCritDamage,
             // `BL-190` — the three masteries, finished. 0/0/0 until a CSV authors a passive.
-            p.DoubleDamageRate, p.DoubleDurationRate, p.CooldownResetRate));
+            p.DoubleDamageRate, p.DoubleDurationRate, p.CooldownResetRate,
+            // `BL-246` — the four rows his two-tab sheet asked for that this payload could not answer.
+            // M.Fail is the only one that is computed rather than copied: it is the chance a caster of
+            // YOUR OWN LEVEL fizzles against you, which is the only reading of a defensive fizzle
+            // number on a sheet with no attacker in it.
+            p.RestoreMpMod, p.BlowRate, p.MagicCritRateResist,
+            StatCalculator.MagicFailChance(p.Level, p.Level, p.MagicFailMod, 1f, p.MagicFailBonus, 0f)));
     }
 
     /// <summary>The player's HP/MP regen per second AS IT IS ACTUALLY PAID right now — base + flat

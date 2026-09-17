@@ -7,11 +7,53 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.159.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.160.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-17 (latest) — 0.159.0: `BL-241` — THE PICKUP FILTER, AND IT IS A LOOT RULE
+## 2026-09-17 (latest) — 0.160.0: `BL-246` — THE CHARACTER SHEET BECOMES TWO TABS
+
+⚠ **Needs an APK** (the whole change is the window). No new `game.db` delete beyond the one `BL-239`
+and `BL-241` already owe.
+
+Built to your layout, row for row: **BASIC** (Class · Primary · Basic · PVP) and **DETAILS** (the class
+chain · Vitals · Offence · Defence).
+
+🔑 **BASIC SHOWS THE LAST CLASS ONLY** — *"Class: Shadowblade (Directly Shadowblade, not
+ElfRogue,Descipiline etc ... just last class)"* — and DETAILS shows `Elf Rogue -> Phantom ->
+Shadowblade`. That distinction is the point of the split, and the rest of the layout follows the same
+rule: BASIC answers *who am I and can I fight that*, DETAILS answers *what exactly is my sheet made of*.
+So the speeds appear on both, in the two readings that are actually different questions — the raw stat
+over its cap on BASIC (how much room is left), the multiplier against the 333 baseline on DETAILS.
+
+**It was a PROTOCOL change too — and FOUR rows, not the seven the entry expected.** Checking each
+against the code rather than the note: the three skill masteries, the crit-RESIST pair, `Restore power`
+and `HP Receive` were **already on the wire** since `BL-190` and the heal-stat work, and simply had
+nowhere to be drawn. The four genuinely missing ones arrive with **protocol 43**, appended to
+`StatsUpdate`:
+
+| row | source |
+|---|---|
+| `MP Receive` | `Entity.RestoreMpMod` — the MP twin of heal-received |
+| `Stab Rate` | `Entity.BlowRate` (`BL-188`), already clamped |
+| Defence `M.Crit` | `Entity.MagicCritRateResist` |
+| `M.Fail` | **computed server-side**: `MagicFailChance` at PARITY |
+
+⚠ **M.Fail is computed, not copied, and that is deliberate.** A fizzle chance needs an attacker, and
+"an attacker of my own level" is the only reading of a defensive fizzle number on a sheet with no
+attacker in it. `MagicFailMod` is still sent beside it — that is the ×2 MULTIPLIER (Anti-Magic), not a
+chance, and the two are different lines.
+
+⚠ **`Crit dmg` now reads as the FINISHED multiplier** (`PhysicalCritMult` = 2.0 + your bonus, capped),
+not the bonus alone — the same reading as the `M.Crit dmg` beside it, which has always been the
+finished ×2 / ×2.6 / ×3.38. Showing one as a total and the other as a bonus is how a sheet teaches you
+a wrong number. The `+N` after it is the FLAT crit damage, which joins attack inside the ratio.
+
+**The Defence group's `Crit` / `Crit dmg` / `M.Crit` are RESISTS**, not your own crit — they cut an
+attacker's rate and extra damage against you (`BL-211`). Same word, opposite side, which is exactly
+why they belong in the group they are in rather than beside the offence rows that share their name.
+
+## 2026-09-17 — 0.159.0: `BL-241` — THE PICKUP FILTER, AND IT IS A LOOT RULE
 
 ⚠ **Needs an APK** (the filter is set from the bag) and ⚠ **a `game.db` delete** (a new column — it
 joins the one `BL-239` already owed).

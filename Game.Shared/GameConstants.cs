@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.159.0";
+    public const string GameVersion = "0.160.0";
 
     // ----- SP BOTTLE (owner, 2026-08-26) -------------------------------------------------------
     // *"u can make an npc to take your 1kkk SP + 100kk gold and give you a tradable/sellabel
@@ -196,13 +196,19 @@ public static class GameConstants
     /// ⚠ A NEW APK IS WANTED — without one there is no way to SET a lock.
     /// 41 (0.158.0) adds the `InstantSell` hub method — `BL-240`. A new method and nothing else; an old
     /// APK has no button for it and never calls it. ⚠ A NEW APK IS WANTED.
+    /// 43 (0.160.0) adds FOUR fields at the END of `StatsUpdate` — `RestoreMpMod`, `BlowRate`,
+    /// `MagicCritRateResist` and `MagicFailAtParity` — the four rows of `BL-246`'s two-tab character
+    /// sheet that had no source in the payload. A pure ADDITION with defaults, the same shape as
+    /// 34 → 35: nothing before them shifts, so an old client renders the whole sheet correctly and
+    /// simply does not draw the new lines (and has no second tab to draw them in anyway).
+    /// ⚠ A NEW APK IS WANTED.
     /// 42 (0.159.0) adds `InventoryUpdate.PickupMinRarity` and the `SetPickupFilter` hub method —
     /// `BL-241`. A pure ADDITION with a default again, but this one is NOT purely cosmetic on an old
     /// client: the filter is a LOOT RULE the server enforces (a filtered player leaves the party's loot
     /// roster for that drop), so an old APK would be dropped from rosters it cannot see the reason for.
     /// That is safe only because the filter is off on every character until somebody sets it, and only
     /// a new APK can set it. ⚠ A NEW APK IS WANTED.
-    public const int ProtocolVersion = 42;   // 42: the per-category pickup rarity filter (`BL-241`)
+    public const int ProtocolVersion = 43;   // 43: four new StatsUpdate fields for the two-tab sheet (`BL-246`)
 
     /// <summary>
     /// The oldest protocol this server still speaks. Equal to <see cref="ProtocolVersion"/> means

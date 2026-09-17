@@ -68,7 +68,10 @@ server and has to mean exactly what the tab you are looking at means.
 change your bracket asked for: a filtered player leaves the party's LOOT ROSTER for that drop, so the
 item goes to somebody who wants it rather than being destroyed. ⚠ **A `game.db` delete** — a new column.
 
-**`BL-246`** is still 🔵 waiting to be built.
+✅ **AND `BL-246` CLOSES THE RUN (0.160.0)** — the character sheet is two tabs, to your layout row for
+row: BASIC shows the LAST class, DETAILS the whole chain. ⚠ Only **four** of its rows really had no
+source, not the seven the entry guessed at — the rest were already on the wire with nowhere to be
+drawn. **All ten of the 2026-09-16 asks are now built.**
 
 ✅✅ **AND `BL-247` IS BUILT AND ARCHIVED (0.151.0)** — you took the recommendation (*"fill the gap with
 the elits+boss, and fix the blueprints to take the rates multiplier"*). Four new elite camps (68 / 72 /
@@ -247,7 +250,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-233` | ❓ | THE DEMON BUFFER'S P.DEF — measured three ways and heavy is AHEAD; I need your two sheets | classes |
 | `BL-234` | ❓ | URGENT LESSER HEAL — built to your four numbers; the per-rank falloff is mine to confirm | classes |
 | `BL-237` | 🔵 | THE WARLORD'S DAMAGE ROWS — all that is left of WARRIOR 3rd+4th; `war_aoe 3rd/4th.csv` author none | classes |
-| `BL-246` | 🔵 | THE STATS WINDOW BECOMES TWO TABS — your full layout; several rows have no source yet | ui |
 | `BL-250` | 🟡 | THE SUBCLASS SYSTEM — **the server half is BUILT (0.155.0)**; what is left is the CLIENT dialogue + panel (APK) and the SIGIL half (§1-§4). ❓ one new question in §9.6 | classes |
 | `BL-253` | 🔵 | A DROP DATABASE — name an item, see every source; the BalanceMatrix half is built, the in-game window is owed | items |
 | `BL-254` | ❓ | RARE WOOD DROPS FROM NOTHING — wood is never a category's primary, so no Rare rung can reach it | items |
@@ -1858,35 +1860,6 @@ until you write them. That line is the reminder; nothing is invented in the mean
 
 ---
 
-
-## `BL-246` 🔵 THE STATS WINDOW BECOMES TWO TABS
-
-**2026-09-16.** Your layout, row for row. 🔑 **BASIC shows the LAST class only** — *"Class: Shadowblade
-(Directly Shadowblade, not ElfRogue,Descipiline etc ... just last class)"* — and DETAILS shows the full
-chain. That distinction is the point of the split.
-
-**1. BASIC**
-
-| group | rows |
-|---|---|
-| Class | `Race: elf` · `Level: 85` — `Class: Shadowblade` |
-| Primary | `ATK` `CON` `SPT` — `WIT` `AGI` |
-| Basic | `HP` `MP` — `P.Atk` `M.Atk` — `P.Def` `M.Def` — `Atk Speed: 1/1500` `Cast Speed: 2/1999` — `Acc` `Eva` `Speed` |
-| PVP | `PVP: 0` `PK: 0` — `Karma: 0` |
-
-**2. DETAILS**
-
-| group | rows |
-|---|---|
-| Class | `Elf Rogue -> Phantom -> Shadowblade` |
-| Vitals | `HP/s` `MP/s` — `HP Receive: 0%` `MP Receive: 0%` — `Restore power: x1 + 0` |
-| Offence | `Acc` — `Crit: 1%` `Crit dmg: x1.2 +1` — `M.Crit: 1%` `M.Crit dmg: x2` — `x2 Dmg: 0%` `Reuse rst: 0%` — `x2 Duration: 0%` `Stab Rate: 30%` — `Atk.Speed: x4` `Cast.Speed: x0.7` |
-| Defence | `Eva` `Speed` `State: Run\|Sit\|Walk` — `M.Fail: 5%` `M.Resist: 20%` — `Crit: 15%` `Crit dmg: 35%` — `M.Crit: 0%` — `Block Rate: 0%` `Block Red: 0%` |
-
-⚠ Several of these rows have **no source today** — `HP Receive` / `MP Receive`, `Restore power`, the
-three mastery rates (`x2 Dmg`, `Reuse rst`, `x2 Duration`), `Stab Rate` and the crit-RESIST pair are
-all live derived values that the stats payload does not currently carry. So this is a protocol change
-as well as a layout, and it wants doing in one pass rather than a row at a time.
 
 ## `BL-250` 🟢 THE SUBCLASS SYSTEM — SLOTS, TICKETS, AN NPC, AND THE SIGILS THEY UNLOCK
 

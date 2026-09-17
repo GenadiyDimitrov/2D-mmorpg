@@ -403,7 +403,30 @@ public record StatsUpdate(
     // rather than derived because the client CANNOT derive them any more: the rate now comes from
     // whichever passives the character happens to hold, which is server knowledge. Expect 0/0/0 on
     // every character until a CSV authors a mastery passive (`BL-191`).
-    float DoubleDamageRate = 0f, float DoubleDurationRate = 0f, float CooldownResetRate = 0f);
+    float DoubleDamageRate = 0f, float DoubleDurationRate = 0f, float CooldownResetRate = 0f,
+    // `BL-246` — the four rows of his two-tab sheet that had NO SOURCE in this payload. Everything
+    // else on his layout was already here (the masteries arrived with `BL-190`, the crit-resist pair
+    // and the heal stats earlier); these four were live derived values the window could not ask for.
+    // Pure additions at the END with defaults, so an older client reads the whole sheet unchanged.
+    //
+    /// <summary>"MP Receive" — the MP-RESTORE RECEIVED multiplier (<c>Entity.RestoreMpMod</c>), the MP
+    /// twin of <see cref="HealReceivedMod"/>. 1 = neutral; Burn's rider and anti-mana debuffs lower it.</summary>
+    float RestoreMpMod = 1f,
+    /// <summary>"Stab Rate" — the finished BLOW rate (<c>Entity.BlowRate</c>, `BL-188`), already
+    /// clamped. ⚠ The DEFENDER's BlowResist is applied on top of it at the point of use, so this is
+    /// your side of the contest and not a landing chance.</summary>
+    float BlowRate = 0f,
+    /// <summary>The MAGIC crit-RATE resist (<c>Entity.MagicCritRateResist</c>) — the magic twin of
+    /// <see cref="CritRateResist"/>, and the third row of his Defence group. There is deliberately no
+    /// magic crit-DAMAGE resist: nothing authors one.</summary>
+    float MagicCritRateResist = 0f,
+    /// <summary>"M.Fail" — the chance an EQUAL-LEVEL caster's spell fizzles against you, as a fraction.
+    /// Computed server-side (<see cref="StatCalculator.MagicFailChance"/> at parity, with your own
+    /// <c>MagicFailMod</c> and magic-evasion points) rather than sent as its inputs: the formula needs
+    /// an attacker, and "an attacker of my level" is the only reading of a defensive number on a sheet
+    /// that has no attacker in it. <see cref="MagicFailMod"/> above is still sent — it is the MULTIPLIER
+    /// (Anti-Magic ×2), not a chance, and the two are different lines.</summary>
+    float MagicFailAtParity = 0f);
 
 /// <summary>Server -> owning client: a potion cooldown started (seconds),
 /// or an active potion effect changed. Cooldown 0 = ready.</summary>
