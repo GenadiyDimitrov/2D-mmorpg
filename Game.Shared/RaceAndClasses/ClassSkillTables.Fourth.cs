@@ -764,7 +764,9 @@ public static partial class ClassSkillTables
         // ═══ THE RACE SPLIT ══════════════════════════════════════════════════════════════════════
         var human = new List<ClassSkill>(shared);
         human.AddRange(Ladder(ArcaneWave,   15));
-        human.AddRange(Ladder(VampiricBolt, 20));
+        // (Vampiric Bolt's fifteen 4th-tier rungs left with the rest of the ladder on 2026-09-17 —
+        //  see the note in ClassSkillTables.Third.cs. `NukerFourthVampiricRungs` still prices them;
+        //  the skill they price is `human_vampiric_bolt`, and every Human MYSTIC buys it now.)
         // ⚠ Arcane Void is the ONE family on a 76/80/85/90 shape — four rungs, not fifteen and not
         //   three. His rows; only the MP moves across them.
         human.AddRange(At(ArcaneVoid, (76, 4), (80, 5), (85, 6), (90, 7)));

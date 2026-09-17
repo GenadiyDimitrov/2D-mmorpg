@@ -199,32 +199,28 @@ public static partial class ClassSkillTables
                 // (nothing follows: the block ends at the Bow Expertise line above.)
 
             // Nuker (CSV nuker 2nd): Elemental Bolt (replaces Magic Bolt), Quick Bolt,
-            // Vampiric Bolt (continues, lvls 2-5), Restore Spirit, Mage Armor Mastery,
+            // Restore Spirit, Mage Armor Mastery,
             // Anti-Magic (lvls 3-6) and Spell Mastery. Cadence 20/25/30/35.
             ClassSkills.Register(race, BaseClass.Mage, Archetype.Nuker,
                 new ClassSkill(NukerArmorMastery, 20, SkillLevel: 1),
                 new ClassSkill(ElementalBolt, 20, SkillLevel: 1),
                 new ClassSkill(QuickBolt, 20, SkillLevel: 1),
-                new ClassSkill(VampiricBolt, 20, SkillLevel: 2),
                 new ClassSkill(MageAntiMagic, 20, SkillLevel: 3),
                 new ClassSkill(SpellMastery, 20, SkillLevel: 1),
                 new ClassSkill(NukerArmorMastery, 25, SkillLevel: 2),
                 new ClassSkill(ElementalBolt, 25, SkillLevel: 2),
                 new ClassSkill(QuickBolt, 25, SkillLevel: 2),
-                new ClassSkill(VampiricBolt, 25, SkillLevel: 3),
                 new ClassSkill(RestoreSpirit, 25, SkillLevel: 1),
                 new ClassSkill(MageAntiMagic, 25, SkillLevel: 4),
                 new ClassSkill(SpellMastery, 25, SkillLevel: 2),
                 new ClassSkill(NukerArmorMastery, 30, SkillLevel: 3),
                 new ClassSkill(ElementalBolt, 30, SkillLevel: 3),
                 new ClassSkill(QuickBolt, 30, SkillLevel: 3),
-                new ClassSkill(VampiricBolt, 30, SkillLevel: 4),
                 new ClassSkill(MageAntiMagic, 30, SkillLevel: 5),
                 new ClassSkill(SpellMastery, 30, SkillLevel: 3),
                 new ClassSkill(NukerArmorMastery, 35, SkillLevel: 4),
                 new ClassSkill(ElementalBolt, 35, SkillLevel: 4),
                 new ClassSkill(QuickBolt, 35, SkillLevel: 4),
-                new ClassSkill(VampiricBolt, 35, SkillLevel: 5),
                 new ClassSkill(MageAntiMagic, 35, SkillLevel: 6),
                 new ClassSkill(SpellMastery, 35, SkillLevel: 4));
 

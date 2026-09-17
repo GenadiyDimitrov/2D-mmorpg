@@ -702,9 +702,11 @@ public static partial class ClassSkillTables
         // ═══ THE RACE SPLIT ══════════════════════════════════════════════════════════════════════
         var human = new List<ClassSkill>(shared);
         human.AddRange(Ladder(ArcaneWave, band14));
-        // Vampiric Bolt continues from the 2nd class too — rungs 1-5 were bought at 14-35, so his
-        // fourteen 3rd-class rows are rungs 6-19.
-        human.AddRange(Ladder(VampiricBolt, band14, startRung: 6));
+        // 🔴 VAMPIRIC BOLT LEFT THIS TABLE ON 2026-09-17 (`BL-258`). His race pass moved the whole
+        //    ladder into the `mage 1st.csv` race block as `human_vampiric_bolt`, where it belongs to
+        //    every HUMAN MYSTIC rather than the Human nuker alone — injected centrally by
+        //    ClassSkills.MageRaceSkills, so re-registering it here would sell a Human nuker every
+        //    rung twice. His rows are deleted from `nuker 2nd/3rd/4th.csv` to match.
         human.AddRange(At(ArcaneVoid, (52, 1), (62, 2), (72, 3)));
         human.Add(new ClassSkill(ArcaneBurst, 74));
 

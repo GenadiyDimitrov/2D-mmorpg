@@ -50,7 +50,17 @@ public static class SkillIcons
 
         // ---- MAGE / NUKER ----
         ["magic_bolt"]      = "🔷",
-        ["vampiric_bolt"]   = "🩸",
+        // ⚠ TWO GLYPHS FOR ONE SPELL, on purpose. A Human mage can hold BOTH — the level-14 taster is
+        //   only replaced by the cleric's Holy Bolt, so a nuker at 20 carries the taster AND rung 1 of
+        //   the race ladder — and his rule is that no two skills ONE class can hold may share an icon.
+        ["vampiric_bolt"]   = "🧛",   // the base mage's level-14 taster (Human)
+        // ---- THE MAGE RACE BLOCK (`BL-258`, his `mage 1st.csv` race block) ----
+        ["human_vampiric_bolt"] = "🩸",   // the Human's drain LADDER, 20-90
+        ["elf_self_heal"]   = "💗",   // was `self_heal` — the Elf's now
+        ["demon_over_limit"] = "🔺",
+        ["elf_blessing"]    = "🍃",
+        ["demon_blessing"]  = "😈",
+        ["human_blessing"]  = "👑",
         ["elemental_bolt"]  = "🌟",
         ["quick_bolt"]      = "⚡",
         ["flame_bolt"]      = "🔥",
@@ -79,7 +89,6 @@ public static class SkillIcons
         ["restore_spirit"]  = "♻️",
 
         // ---- HEALER ----
-        ["self_heal"]    = "💗",
         ["heal"]         = "💚",
         ["quick_heal"]   = "💛",
         ["party_heal"]   = "💞",

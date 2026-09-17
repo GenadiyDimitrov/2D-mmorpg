@@ -131,6 +131,9 @@ public static class ClassSkills
         // the reason the masteries above are. See FighterRaceSkills.
         foreach (var cs in FighterRaceSkills(race, baseClass))
             yield return cs;
+        // …AND THE MAGE'S, his `mage 1st.csv` race block (`BL-258`). Same injector shape, same reason.
+        foreach (var cs in MageRaceSkills(race, baseClass))
+            yield return cs;
         foreach (var cs in GradeSkills())
             yield return cs;
         // The STAT-SWAP passives — GATED ON THE 3RD CLASS (owner, 2026-07-15): they appear only once
@@ -196,6 +199,48 @@ public static class ClassSkills
                 foreach (var cs in Rungs(SkillCatalog.HumanParry, SkillCatalog.HumanParryLevels))
                     yield return cs;
                 foreach (var cs in Rungs(SkillCatalog.HumanRelaxation, SkillCatalog.RaceEightLevels))
+                    yield return cs;
+                break;
+        }
+    }
+
+    /// <summary>THE MAGE'S RACE LAYER — the six skills his `mage 1st.csv` race block authors
+    /// (2026-09-17, `BL-258`), yielded for EVERY mage whatever its archetype, discipline or tier.
+    ///
+    /// <para>🔑 <b>THE EXACT TWIN OF <see cref="FighterRaceSkills"/> ABOVE, and for the same reason:</b>
+    /// the block lives in the FIRST-class file but ladders to 74 (the Elf) and 90 (the Human), so it is
+    /// not a base-class kit that a level-20 grows out of. <see cref="Cumulative"/> yields the base list
+    /// only to a character who has NOT changed class, so listing these there would have deleted them at
+    /// the class change — the one mistake this whole shape exists to prevent.</para>
+    ///
+    /// <para>⚠ NOT the fighter's six. Two of those (a self cure, a self heal) are a mage's day job, so
+    /// his mystic block is a different answer: Elf sustain, Demon burst, Human drain — plus a BLESSING
+    /// for each race at level 7, which every mage gets whatever else his race hands him.</para>
+    ///
+    /// <para>⚠ THE HUMAN LADDER REACHES 90 AND IS NOT TIER-GATED — his fifteen 76-90 rungs are in
+    /// `mage 1st.csv`, not a 4th-tier file, so level alone opens them. That is a real change from the
+    /// `nuker 4th.csv` rows they replaced, which needed the Rite of Ascension; it follows his
+    /// placement, and it is the one thing here worth a second opinion.</para></summary>
+    private static IEnumerable<ClassSkill> MageRaceSkills(Race race, BaseClass baseClass)
+    {
+        if (baseClass != BaseClass.Mage) yield break;
+
+        // The blessing first — every race has one, at the same level, for nothing.
+        if (SkillCatalog.MageBlessingFor(race) is string blessing)
+            yield return new ClassSkill(blessing, SkillCatalog.MageBlessingLevel);
+
+        switch (race)
+        {
+            case Race.Elf:
+                foreach (var cs in Rungs(SkillCatalog.ElfSelfHeal, SkillCatalog.ElfSelfHealLevels))
+                    yield return cs;
+                break;
+            case Race.Demon:
+                foreach (var cs in Rungs(SkillCatalog.DemonOverLimit, SkillCatalog.DemonOverLimitLevels))
+                    yield return cs;
+                break;
+            case Race.Human:
+                foreach (var cs in Rungs(SkillCatalog.HumanVampiricBolt, SkillCatalog.HumanVampiricLevels))
                     yield return cs;
                 break;
         }

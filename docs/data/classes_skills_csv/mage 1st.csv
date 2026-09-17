@@ -1,12 +1,8 @@
-LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRATION s,DESCR,MP,SP COST,REPLACES,Comment
+LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRATION s,DESCR,MP,SP COST,REPLACES,Race,Gold Cost,Comment
 ,,,,,,,,,,,,,,,,----------------------------Magic Bolt----------------------------
 1,Magic Bolt,magic_bolt,magic active,,,600,0,enemy/single,4,1,0,magic dmg power 12 - spells fail rather than miss,9,0,[]
 7,Magic Bolt,magic_bolt,magic active,,,600,0,enemy/single,4,1,0,magic dmg power 15,10,480,[]
 14,Magic Bolt,magic_bolt,magic active,,,600,0,enemy/single,4,1,0,magic dmg power 21,15,2200,[]
-,,,,,,,,,,,,,,,,----------------------------Self Heal----------------------------
-1,Self Heal,self_heal,heal,,,0,0,self/single,5,2,0,restore own HP power 42 - scales with WIT,7,160,[]
-7,Self Heal,self_heal,heal,,,0,0,self/single,5,2,0,restore own HP power 67 - scales with WIT,14,480,[]
-14,Self Heal,self_heal,heal,,,0,0,self/single,5,2,0,rrestore own HP power 107,22,2200,[]
 ,,,,,,,,,,,,,,,,----------------------------Spellcaster Mastery----------------------------
 1,Spellcaster Mastery,spellcaster_mastery,passive,,,0,0,self/single,0,0,0,"ARMOR - Robe: cast x1, mpReg x1.2; Light/Heavy/None: cast x0.5, as x0.5. WEAPON - Sword/Blunt: cast x1, mAtk x1; Bow/Dagger/None: cast x0.5, mAtk x0.5, mAcc x0.5. Auto-granted and NEVER replaced - every mage weapon/weight penalty lives here and nowhere else.",0,0,[weapon_proficiency]
 ,,,,,,,,,,,,,,,,----------------------------Might----------------------------
@@ -17,9 +13,70 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 ,,,,,,,,,,,,,,,,----------------------------Robe Armor Mastery----------------------------
 7,Robe Armor Mastery,mastery_robe,passive,,robe,0,0,self/single,0,0,0,Robe: pDef +7 (bonus only - the wrong-weight penalty is Spellcaster Mastery's),0,480,[]
 14,Robe Armor Mastery,mastery_robe,passive,,robe,0,0,self/single,0,0,0,Robe: pDef +9 (bonus only - the wrong-weight penalty is Spellcaster Mastery's),0,2200,[]
-,,,,,,,,,,,,,,,,----------------------------Vampiric Bolt----------------------------
-14,Vampiric Bolt,vampiric_bolt,magic active,,,750,0,enemy/single,4,1,0,drain power 21 - heals you 40% of damage dealt,28,2200,[]
 ,,,,,,,,,,,,,,,,----------------------------Bulwark----------------------------
 14,Bulwark,cast_def_phys,buff,,,600,0,party/single,1,1,1200,+8% PDef for 20 min,20,960,[]
 ,,,,,,,,,,,,,,,,----------------------------Weapon Mastery----------------------------
 14,Weapon Mastery,weapon_mastery,passive,sword|blunt,,0,0,self/single,0,0,0,with sword/blunt: +4 M.Atk and +2 P.Atk (no penalty on other weapons - that is Spellcaster Mastery's),0,2200,[]
+,,,,,,,,,,,,,,,,----------------------------Grade Permission----------------------------
+1,Grade F,grade_penalty,passive,,,0,0,self/single,0,0,0,"Allow the user to equip F grade; Auto-granted",0,0,[]
+20,Grade E,grade_penalty,passive,,,0,0,self/single,0,0,0,"Allow the user to equip E grade; Auto-granted",0,0,[]
+40,Grade D,grade_penalty,passive,,,0,0,self/single,0,0,0,"Allow the user to equip D grade; Auto-granted",0,0,[]
+52,Grade C,grade_penalty,passive,,,0,0,self/single,0,0,0,"Allow the user to equip C grade; Auto-granted",0,0,[]
+61,Grade B,grade_penalty,passive,,,0,0,self/single,0,0,0,"Allow the user to equip B grade; Auto-granted",0,0,[]
+76,Grade A,grade_penalty,passive,,,0,0,self/single,0,0,0,"Allow the user to equip A grade; Auto-granted",0,0,[]
+80,Grade S,grade_penalty,passive,,,0,0,self/single,0,0,0,"Allow the user to equip S grade; Auto-granted",0,0,[]
+,,,,,,,,,,,,,,,,----------------------------Blessing----------------------------
+7,Forest Blessing,elf_blessing,passive,,,0,0,self/single,0,0,0,"Received HP recovery magic, M.Atk +5%; Mp regen +10%; Auto-granted",0,0,,Elf
+7,Domonic Blessing,demon_blessing,passive,,,0,0,self/single,0,0,0,"M.Crit.Rate and Cast Speed +5%; Hp regen +10%; Auto-granted",0,0,,Demon
+7,Kings Blessing,human_blessing,passive,,,0,0,self/single,0,0,0,"M.Crit.Dmg, Natural Regeneration, Max MP +5%; Auto-granted",0,0,,Human
+,,,,,,,,,,,,,,,,----------------------------Self Heal----------------------------
+7,Self Heal,elf_self_heal,Magic/Heal,,,0,0,self/single,5,5,0,Restore own HP power 60,14,480,,Elf
+20,Self Heal,elf_self_heal,Magic/Heal,,,0,0,self/single,5,5,0,Restore own HP power 100,30,3k,,Elf
+30,Self Heal,elf_self_heal,Magic/Heal,,,0,0,self/single,5,5,0,Restore own HP power 200,44,12k,,Elf
+40,Self Heal,elf_self_heal,Magic/Heal,,,0,0,self/single,5,5,0,Restore own HP power 300,62,36k,,Elf
+48,Self Heal,elf_self_heal,Magic/Heal,,,0,0,self/single,5,5,0,Restore own HP power 400,76,64k,,Elf
+58,Self Heal,elf_self_heal,Magic/Heal,,,0,0,self/single,5,5,0,Restore own HP power 500,95,88k,,Elf
+64,Self Heal,elf_self_heal,Magic/Heal,,,0,0,self/single,5,5,0,Restore own HP power 600,105,190k,,Elf
+70,Self Heal,elf_self_heal,Magic/Heal,,,0,0,self/single,5,5,0,Restore own HP power 700,114,390k,,Elf
+74,Self Heal,elf_self_heal,Magic/Heal,,,0,0,self/single,5,5,0,Restore own HP power 800,120,880k,,Elf
+,,,,,,,,,,,,,,,,----------------------------Over The Limit----------------------------
+7,Over the limit,demon_over_limit,Magic/Buff,,,0,0,self/single,0,60,5,Increase P/M.Atk with 5%,14,480,,Demon
+20,Over the limit,demon_over_limit,Magic/Buff,,,0,0,self/single,0,60,5,Increase P/M.Atk with 7%,30,3k,,Demon
+40,Over the limit,demon_over_limit,Magic/Buff,,,0,0,self/single,0,60,5,Increase P/M.Atk with 10%,62,36k,,Demon
+60,Over the limit,demon_over_limit,Magic/Buff,,,0,0,self/single,0,60,5,Increase P/M.Atk with 15%,76,120k,,Demon
+70,Over the limit,demon_over_limit,Magic/Buff,,,0,0,self/single,0,60,5,Increase P/M.Atk with 20%,114,390k,,Demon
+,,,,,,,,,,,,,,,,----------------------------Vampiric Bolt----------------------------
+14,Vampiric Bolt,vampiric_bolt,Magic/Dmg,,,600,0,enemy/single,4,1,0,"A draining bolt (m.Atk +21) that heals you for 40% of the damage dealt;",28,2k,,Human
+20,Vampiric Bolt,human_vampiric_bolt,Magic/Dmg,,,750,0,enemy/single,4,1,0,"A draining bolt (m.Atk +26) that heals you for 40% of the damage dealt;",40,3k,,Human
+25,Vampiric Bolt,human_vampiric_bolt,Magic/Dmg,,,750,0,enemy/single,4,1,0,"A draining bolt (m.Atk +32) that heals you for 40% of the damage dealt;",46,6k,,Human
+30,Vampiric Bolt,human_vampiric_bolt,Magic/Dmg,,,750,0,enemy/single,4,1,0,"A draining bolt (m.Atk +38) that heals you for 40% of the damage dealt;",52,12k,,Human
+35,Vampiric Bolt,human_vampiric_bolt,Magic/Dmg,,,750,0,enemy/single,4,1,0,"A draining bolt (m.Atk +44) that heals you for 40% of the damage dealt;",62,25k,,Human
+40,Vampiric Bolt,human_vampiric_bolt,Magic/Dmg,,,900,0,enemy/single,4,1,0,"A draining bolt (m.Atk +52) that heals you for 40% of the damage dealt;",66,36k,,Human
+44,Vampiric Bolt,human_vampiric_bolt,Magic/Dmg,,,900,0,enemy/single,4,1,0,"A draining bolt (m.Atk +58) that heals you for 40% of the damage dealt;",76,43k,,Human
+48,Vampiric Bolt,human_vampiric_bolt,Magic/Dmg,,,900,0,enemy/single,4,1,0,"A draining bolt (m.Atk +65) that heals you for 40% of the damage dealt;",88,64k,,Human
+52,Vampiric Bolt,human_vampiric_bolt,Magic/Dmg,,,900,0,enemy/single,4,1,0,"A draining bolt (m.Atk +72) that heals you for 40% of the damage dealt;",96,74k,,Human
+56,Vampiric Bolt,human_vampiric_bolt,Magic/Dmg,,,900,0,enemy/single,4,1,0,"A draining bolt (m.Atk +78) that heals you for 40% of the damage dealt;",104,81k,,Human
+58,Vampiric Bolt,human_vampiric_bolt,Magic/Dmg,,,900,0,enemy/single,4,1,0,"A draining bolt (m.Atk +82) that heals you for 40% of the damage dealt;",108,88k,,Human
+60,Vampiric Bolt,human_vampiric_bolt,Magic/Dmg,,,900,0,enemy/single,4,1,0,"A draining bolt (m.Atk +85) that heals you for 40% of the damage dealt;",110,120k,,Human
+62,Vampiric Bolt,human_vampiric_bolt,Magic/Dmg,,,900,0,enemy/single,4,1,0,"A draining bolt (m.Atk +89) that heals you for 40% of the damage dealt;",116,170k,,Human
+64,Vampiric Bolt,human_vampiric_bolt,Magic/Dmg,,,900,0,enemy/single,4,1,0,"A draining bolt (m.Atk +92) that heals you for 40% of the damage dealt;",120,190k,,Human
+66,Vampiric Bolt,human_vampiric_bolt,Magic/Dmg,,,900,0,enemy/single,4,1,0,"A draining bolt (m.Atk +96) that heals you for 40% of the damage dealt;",124,280k,,Human
+68,Vampiric Bolt,human_vampiric_bolt,Magic/Dmg,,,900,0,enemy/single,4,1,0,"A draining bolt (m.Atk +99) that heals you for 40% of the damage dealt;",128,320k,,Human
+70,Vampiric Bolt,human_vampiric_bolt,Magic/Dmg,,,900,0,enemy/single,4,1,0,"A draining bolt (m.Atk +102) that heals you for 40% of the damage dealt;",130,390k,,Human
+72,Vampiric Bolt,human_vampiric_bolt,Magic/Dmg,,,900,0,enemy/single,4,1,0,"A draining bolt (m.Atk +105) that heals you for 40% of the damage dealt;",134,650k,,Human
+74,Vampiric Bolt,human_vampiric_bolt,Magic/Dmg,,,900,0,enemy/single,4,1,0,"A draining bolt (m.Atk +108) that heals you for 40% of the damage dealt;",138,880k,,Human
+76,Vampiric Bolt,human_vampiric_bolt,Magic/Dmg,,,900,0,enemy/single,4,1,0,"A draining bolt (m.Atk +143) that heals you for 40% of the damage dealt;",138,6.5kk,,Human,1kk
+77,Vampiric Bolt,human_vampiric_bolt,Magic/Dmg,,,900,0,enemy/single,4,1,0,"A draining bolt (m.Atk +146) that heals you for 40% of the damage dealt;",142,11kk,,Human,1kk
+78,Vampiric Bolt,human_vampiric_bolt,Magic/Dmg,,,900,0,enemy/single,4,1,0,"A draining bolt (m.Atk +148) that heals you for 40% of the damage dealt;",146,16kk,,Human,1kk
+79,Vampiric Bolt,human_vampiric_bolt,Magic/Dmg,,,900,0,enemy/single,4,1,0,"A draining bolt (m.Atk +151) that heals you for 40% of the damage dealt;",154,80kk,,Human,1kk
+80,Vampiric Bolt,human_vampiric_bolt,Magic/Dmg,,,900,0,enemy/single,4,1,0,"A draining bolt (m.Atk +153) that heals you for 40% of the damage dealt;",158,0,,Human,5kk
+81,Vampiric Bolt,human_vampiric_bolt,Magic/Dmg,,,900,0,enemy/single,4,1,0,"A draining bolt (m.Atk +156) that heals you for 40% of the damage dealt;",182,0,,Human,7.5kk
+82,Vampiric Bolt,human_vampiric_bolt,Magic/Dmg,,,900,0,enemy/single,4,1,0,"A draining bolt (m.Atk +159) that heals you for 40% of the damage dealt;",190,0,,Human,10kk
+83,Vampiric Bolt,human_vampiric_bolt,Magic/Dmg,,,900,0,enemy/single,4,1,0,"A draining bolt (m.Atk +161) that heals you for 40% of the damage dealt;",194,0,,Human,15kk
+84,Vampiric Bolt,human_vampiric_bolt,Magic/Dmg,,,900,0,enemy/single,4,1,0,"A draining bolt (m.Atk +164) that heals you for 40% of the damage dealt;",198,0,,Human,30kk
+85,Vampiric Bolt,human_vampiric_bolt,Magic/Dmg,,,900,0,enemy/single,4,1,0,"A draining bolt (m.Atk +166) that heals you for 40% of the damage dealt;",206,0,,Human,50kk
+86,Vampiric Bolt,human_vampiric_bolt,Magic/Dmg,,,900,0,enemy/single,4,1,0,"A draining bolt (m.Atk +169) that heals you for 40% of the damage dealt;",210,0,,Human,75kk
+87,Vampiric Bolt,human_vampiric_bolt,Magic/Dmg,,,900,0,enemy/single,4,1,0,"A draining bolt (m.Atk +172) that heals you for 40% of the damage dealt;",214,0,,Human,100kk
+88,Vampiric Bolt,human_vampiric_bolt,Magic/Dmg,,,900,0,enemy/single,4,1,0,"A draining bolt (m.Atk +174) that heals you for 40% of the damage dealt;",222,0,,Human,100kk
+89,Vampiric Bolt,human_vampiric_bolt,Magic/Dmg,,,900,0,enemy/single,4,1,0,"A draining bolt (m.Atk +177) that heals you for 40% of the damage dealt;",226,0,,Human,100kk
+90,Vampiric Bolt,human_vampiric_bolt,Magic/Dmg,,,900,0,enemy/single,4,1,0,"A draining bolt (m.Atk +179) that heals you for 40% of the damage dealt;",230,0,,Human,100kk

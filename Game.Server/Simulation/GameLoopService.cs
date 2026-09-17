@@ -1594,6 +1594,17 @@ public class GameLoopService : BackgroundService
         player.LearnedSkills[SkillCatalog.GradePermission] =
             GradePenalty.StepForLevel(player.Level) + 1;
 
+        // ---- THE MAGE'S RACE BLESSING — auto-granted at 7, free, one rung, never replaced
+        //      (`BL-258`, his `mage 1st.csv` race block: *"Auto-granted"* on all three rows).
+        //      ⚠ `TryAdd`, not an assignment: there is exactly one rung, so a plain write would be
+        //        the same number every time and the level-aware form the grade passive needs above
+        //        would only invite a second rung to be added without the array behind it.
+        //      ⚠ MAGES ONLY. The fighter's race block has no blessing — his six race skills are all
+        //        bought with SP — so nothing is owed here for a fighter.
+        if (player.BaseClass == BaseClass.Mage && player.Level >= SkillCatalog.MageBlessingLevel
+            && SkillCatalog.MageBlessingFor(player.Race) is string blessing)
+            player.LearnedSkills.TryAdd(blessing, 1);
+
         // Class identity "sure" floor passive for the current class tier (level = tier).
         // 🔴 ONLY THE TANK STILL GETS ONE. The warrior's `precision` went in `BL-201` and the rogue's
         // `evade_mastery` in `BL-251`, so for every other archetype this line is a no-op — see

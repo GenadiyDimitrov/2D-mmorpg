@@ -7,7 +7,11 @@ public static partial class SkillCatalog
 {
     public const string MagicBolt = "magic_bolt";
     public const string Heal = "heal";
-    public const string SelfHeal = "self_heal";
+    // (`self_heal` — THE ID MOVED 2026-09-17, `BL-258`. His race pass deleted the base-mage Self Heal
+    //  from `mage 1st.csv` and re-authored it as the ELF's nine-rung ladder, `elf_self_heal`, in
+    //  Skills.MageRace.cs. Ids are append-only as a rule; this one is exempt for the same reason
+    //  `mana_barrier` → `nuker_mana_barrier` was — pre-release, nobody outside this machine holds the
+    //  old string, and two defs with one payload is how a number drifts. Don't reinstate it.)
     public const string Might = "might";
     public const string MageAntiMagic = "anti_magic_mage";
     public const string VampiricBolt = "vampiric_bolt";
@@ -56,28 +60,21 @@ public static partial class SkillCatalog
                 new SkillLevel(Power: 21, MpCost: 15,  SpCost: 2200, Description: "Magic damage, power 21."),   // 14
             }),
 
-        // Self Heal — the base MAGE heal: SELF ONLY, 3 levels (1/7/14). The nuker keeps this
-        // (self-only) so a high-M.Atk nuker can't spam-heal the party; the HEALER replaces it
-        // with the targeted Heal at level 20.
-        new(SelfHeal, "Self Heal", BaseClass.Mage, SkillEffect.Heal,
-            MpCost: 7, CastTicks: 50, CooldownTicks: 20, Range: 0, Power: 42,
-            Category: SkillCategory.Heal,  
-            TargetMode: TargetMode.SelfOnly,
-            Description: "Restores your own HP. Scales with WIT.",
-            Levels: new[]
-            {
-                new SkillLevel(Power: 42,  MpCost: 7,   SpCost: 160,  Description: "Self heal power 42."),
-                new SkillLevel(Power: 67,  MpCost: 14,  SpCost: 480,  Description: "Self heal power 67."),
-                new SkillLevel(Power: 107, MpCost: 22,  SpCost: 2200, Description: "Self heal power 107."),
-            }),
+        // (Self Heal's def stood HERE until 2026-09-17 — three rungs at 1/7/14, every race. See the
+        //  note beside the deleted const above: it is `elf_self_heal` now, nine rungs, Elf only.)
 
-        // Heal — the HEALER's targeted heal (ally or self); REPLACES Self Heal at level 20.
-        // 4 levels @20/25/30/35 (base-mage no longer learns this).
+        // Heal — the HEALER's targeted heal (ally or self). 4 levels @20/25/30/35 (base-mage no
+        // longer learns this).
+        //
+        // 🔴 IT NO LONGER `Replaces` A SELF-HEAL, and must not be given one back. It replaced
+        //    `self_heal`, which does not exist any more; the skill that took that id's place is the
+        //    ELF's RACE LADDER, and a race layer is precisely the thing a class change does not take
+        //    away — it goes on climbing to 74 long after the cleric has Heal. An Elf cleric carrying
+        //    both is the intended state. (His `cleric 2nd.csv` REPLACES cell was emptied with this.)
         new(Heal, "Heal", BaseClass.Mage, SkillEffect.Heal,
             // Reuse 2s -> 3s (owner, 2026-08-28: *"heal/great heal are 5 cast 3 reuse"*).
             MpCost: 30, CastTicks: 50, CooldownTicks: 30, Range: 600, Power: 151,
             Category: SkillCategory.Heal,
-            Replaces: new[] { SelfHeal },
             Description: "Restores a friendly target's HP (or your own). Scales with WIT.",
             Levels: new[]
             {
@@ -160,54 +157,26 @@ public static partial class SkillCatalog
                     Description: "+43 magic defence and 15% magic resistance."),
             }.Concat(HealerAntiMagicRungs()).Concat(HealerFourthAntiMagicRungs()).ToArray()),
 
-        // Vampiric Bolt — magic nuke that heals the caster for 40% of damage dealt. Level 1 is
-        // the base-mage skill (@14); the Nuker CONTINUES it at levels 2-5 (@20/25/30/35).
+        // Vampiric Bolt — the base mage's DRAIN TASTER, and since 2026-09-17 (`BL-258`) exactly ONE
+        // RUNG, learned at 14 by a HUMAN alone.
+        //
+        // 🔴 THE OTHER THIRTY-THREE RUNGS LEFT UNDER A NEW ID. His race pass moved the ladder out of
+        //    `nuker 2nd/3rd/4th.csv` and into the `mage 1st.csv` race block as `human_vampiric_bolt`,
+        //    where it belongs to every HUMAN MYSTIC rather than the Human nuker — see
+        //    Skills.MageRace.cs. This rung stays behind because it has a job the ladder must not
+        //    have: the cleric's Holy Bolt `Replaces` it at 20. A base-class taster is replaceable; a
+        //    race layer is not, and one id could not be both.
+        // ⚠ RANGE 600, not the 750 it carried for a year — his row. The ladder's own first rung
+        //   (level 20) is where 750 starts.
         new(VampiricBolt, "Vampiric Bolt", BaseClass.Mage, SkillEffect.MagicDamage,
-            MpCost: 28, CastTicks: 40, CooldownTicks: 10, Range: 750, Power: 21,
-            Category: SkillCategory.Magic,  SpCost: 2200, Lifesteal: 0.40f,
+            MpCost: 28, CastTicks: 40, CooldownTicks: 10, Range: 600, Power: 21,
+            Category: SkillCategory.Magic,  SpCost: 2_000, Lifesteal: 0.40f,
             Description: "A draining bolt that heals you for 40% of the damage dealt.",
             Levels: new[]
-            {                                                                                     // learn level
-                // ⚠ MP RUNGS 1-5 ARE HIS (`mage 1st.csv` @14, `nuker 2nd.csv` @20-35, 2026-08-19):
-                // 6+22 / 8+32 / 10+36 / 12+40 / 14+48. They were ~37% higher, which is what made this
-                // the one bolt nobody could afford to spam. Rungs 6-14 have no CSV, so they carry the
-                // SAME RATIO his band implies (×0.728 of the old numbers, rounded) — that keeps the
-                // curve's shape and avoids a cliff at 40, where 62 used to jump straight to 90.
-                //
-                // ⚠ POWER RUNGS 1-5 ARE ALSO HIS, and were WRONG until 2026-08-19 (his call: "fix the
-                // nuker bolt power"). His files say 21 @14 and 26/32/38/44 @20-35; the code carried
-                // 29/37/44/50/57, ~25-30% high. `--check` compares MP and SP but NOT power, so nothing
-                // caught it. His four nuker points are exactly linear — **26 + 1.2 per character level**
-                // — and rungs 6-14 are that same line continued, which is the identical treatment the MP
-                // column above already got. Vampiric and Elemental Bolt share one power ladder on his
-                // sheet (both 26/32/38/44), so they are kept identical here.
-                new SkillLevel(Power: 21,  MpCost: 28,   SpCost: 2200,   Description: "Drain power 21; heals 40% of damage."),   // 14
-                new SkillLevel(Power: 26,  MpCost: 40,   SpCost: 3200,   Description: "Drain power 26; heals 40% of damage."),   // 20
-                new SkillLevel(Power: 32,  MpCost: 46,   SpCost: 6400,   Description: "Drain power 32; heals 40% of damage."),   // 25
-                new SkillLevel(Power: 38,  MpCost: 52,   SpCost: 12800,  Description: "Drain power 38; heals 40% of damage."),   // 30
-                new SkillLevel(Power: 44,  MpCost: 62,   SpCost: 25000,  Description: "Drain power 44; heals 40% of damage."),   // 35
-                // ⚠ RUNGS 6-19 ARE HIS, from `nuker 3rd.csv` (2026-08-26), and they REPLACE the nine
-                // we extrapolated at 40/45/…/80. Vampiric Bolt is the HUMAN nuker's 3rd-class spell
-                // now, not a shared continuation — so it runs his fourteen bands (40 → 74), shares
-                // Elemental Blast's power ladder exactly as it did on his 2nd-class sheet, and costs
-                // the "heavy" MP line (66 → 138: twice a plain bolt, which is what the drain is worth).
-                new SkillLevel(Power: 52,  MpCost: 66,   SpCost: 36000, Range: 900f,  Description: "Drain power 52; heals 40% of damage."),   // 40
-                new SkillLevel(Power: 58,  MpCost: 76,   SpCost: 43000, Range: 900f,  Description: "Drain power 58; heals 40% of damage."),   // 44
-                new SkillLevel(Power: 65,  MpCost: 88,   SpCost: 64000, Range: 900f,  Description: "Drain power 65; heals 40% of damage."),   // 48
-                new SkillLevel(Power: 72,  MpCost: 96,   SpCost: 74000, Range: 900f,  Description: "Drain power 72; heals 40% of damage."),   // 52
-                new SkillLevel(Power: 78,  MpCost: 104,  SpCost: 81000, Range: 900f,  Description: "Drain power 78; heals 40% of damage."),   // 56
-                new SkillLevel(Power: 82,  MpCost: 108,  SpCost: 88000, Range: 900f,  Description: "Drain power 82; heals 40% of damage."),   // 58
-                new SkillLevel(Power: 85,  MpCost: 110,  SpCost: 120000, Range: 900f, Description: "Drain power 85; heals 40% of damage."),   // 60
-                new SkillLevel(Power: 89,  MpCost: 116,  SpCost: 170000, Range: 900f, Description: "Drain power 89; heals 40% of damage."),   // 62
-                new SkillLevel(Power: 92,  MpCost: 120,  SpCost: 190000, Range: 900f, Description: "Drain power 92; heals 40% of damage."),   // 64
-                new SkillLevel(Power: 96,  MpCost: 124,  SpCost: 280000, Range: 900f, Description: "Drain power 96; heals 40% of damage."),   // 66
-                new SkillLevel(Power: 99,  MpCost: 128,  SpCost: 320000, Range: 900f, Description: "Drain power 99; heals 40% of damage."),   // 68
-                new SkillLevel(Power: 102, MpCost: 130,  SpCost: 390000, Range: 900f, Description: "Drain power 102; heals 40% of damage."),  // 70
-                new SkillLevel(Power: 105, MpCost: 134,  SpCost: 650000, Range: 900f, Description: "Drain power 105; heals 40% of damage."),  // 72
-                new SkillLevel(Power: 108, MpCost: 138,  SpCost: 880000, Range: 900f, Description: "Drain power 108; heals 40% of damage."),  // 74
-                // ⚠ RUNGS 20-34 ARE HIS 4th TIER (`nuker 4th.csv`, `BL-192`) — one per level, 76-90.
-                // Still the HUMAN's alone, still the heavy MP line, and still Elemental Blast's power.
-            }.Concat(NukerFourthVampiricRungs()).ToArray()),
+            {
+                // MP and POWER are his (`mage 1st.csv` @14): 28 total, power 21.
+                new SkillLevel(Power: 21,  MpCost: 28,   SpCost: 2_000,   Description: "Drain power 21; heals 40% of damage."),   // 14
+            }),
 
         // Elemental Bolt — the Nuker's MAIN nuke (replaces Magic Bolt). 13 levels, learned
         // every 5 levels from 20 to 80.
@@ -481,7 +450,10 @@ public static partial class SkillCatalog
         // 4 levels learned at 20/25/30/35.
         new(HolyStrike, "Holy Bolt", BaseClass.Mage, SkillEffect.MagicDamage,
             MpCost: 20, CastTicks: 40, CooldownTicks: 10, Range: 750, Power: 21,
-            Replaces: new[] { MagicBolt },   // the healer's nuke replaces the basic
+            // The healer's nuke replaces the basic — and, since 2026-09-17, the HUMAN's level-14
+            // drain taster with it (his `cleric 2nd.csv`: `[magic_bolt vampiric_bolt]`). It does NOT
+            // touch `human_vampiric_bolt`: that is the race ladder, which no class change takes away.
+            Replaces: new[] { MagicBolt, VampiricBolt },
             Category: SkillCategory.Magic,  
             Description: "A bolt of holy power — the Healer's offensive spell (replaces Magic Bolt). Spells fail rather than miss.",
             Levels: new[]

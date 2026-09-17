@@ -7,11 +7,79 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.162.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.163.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-17 (latest) — 0.162.0: THE FIGHTER'S RACE LAYER, ON EVERY FIGHTER, FROM LEVEL 10
+## 2026-09-17 (latest) — 0.163.0: `BL-258` — THE MAGE'S RACE LAYER, AND VAMPIRIC BOLT CHANGES HANDS
+
+His `mage 1st.csv` pass, the twin of 0.162.0's fighter one (*"ok Mage 1st is also done … vampiric_bolt
+id changed and skill moved, self_heal id changed and skill redesigned .. this moved cleric 2nd and
+nukers 2,3,4"*). Five CSVs moved; the code follows all five.
+
+🔑 **THE SAME STRUCTURAL POINT AS THE FIGHTER'S, AND IT MATTERS AGAIN.** The block is authored in the
+FIRST-class file but ladders to 74 (the Elf) and **90** (the Human), so it is not a base-class kit a
+level-20 grows out of. `ClassSkills.Cumulative` yields the archetype-null list only to a character who
+has NOT changed class, so listing these there would have deleted them silently at the class change.
+They are injected centrally instead — `ClassSkills.MageRaceSkills`, the exact shape
+`FighterRaceSkills` and the armour masteries already use.
+
+⚠ **IT IS NOT THE FIGHTER'S SIX RE-SKINNED.** Two of those (a self cure, a self heal) are a mage's day
+job already, so his mystic block answers a different question — and every race gets a **blessing** at 7
+on top, which the fighter has no equivalent of.
+
+**THE THREE BLESSINGS** — `elf_blessing` / `demon_blessing` / `human_blessing`, level 7, one rung,
+0 MP, 0 SP, auto-granted beside the grade passive in `AutoLearnCoreSkills`. Elf: +5% healing received,
++5% M.Atk, +10% MP regen. Demon: +5% magic crit rate, +5% cast speed, +10% HP regen. Human: +5% magic
+crit DAMAGE, +5% natural regeneration of both pools, +5% Max MP.
+⚠ The comma in his cells groups the percent — *"Received HP recovery magic, M.Atk +5%; Mp regen +10%"*
+is two channels at 5% and one at 10%, not one at 5%. The Human is the odd one out with three at 5%,
+and his "Natural Regeneration" is read as BOTH pools (the other two each take one at 10%).
+
+**ELF — `elf_self_heal`**, nine rungs at 7-74, 60 → 800 power, 5s cast / 5s reuse.
+🔴 **`self_heal` NO LONGER EXISTS.** The base-mage Self Heal (three rungs at 1/7/14, every race) was
+deleted from his file and re-authored as this. **A Human or Demon mage now has no self-heal at all** —
+that is the race split, not an omission. The id MOVED rather than a second def being authored, for the
+same reason `mana_barrier` → `nuker_mana_barrier` did; pre-release, nobody outside this machine holds
+the old string, and `ParseLearnedSkills` drops an id the catalog no longer knows.
+🔴 The healer's `Heal` **no longer `Replaces`** it, and must not be given a replacement back: a race
+layer is precisely what a class change does not take away, and the ladder goes on climbing to 74 long
+after the cleric has Heal. His `cleric 2nd.csv` REPLACES cell was emptied to match.
+
+**DEMON — `demon_over_limit`** (Over the Limit), five rungs at 7-70: +5/7/10/15/20% P.Atk **and**
+M.Atk for **five seconds** on a **sixty-second** reuse, instant. That shape is the whole skill — you
+spend it on the pull that matters, which is why the MP is a real nuke's worth at every rung.
+⚠ Its own `BuffKey` and NO covered families, deliberately. In `atk_phys`/`atk_mag` it would fight the
+Might/Force ladder: a 20-minute party blessing would refuse the burst on rank, or the burst would evict
+the blessing and leave the mage naked for five seconds. A burst is a THIRD source.
+⚠ Both effect flags. `BuffAtk` has been PHYSICAL-only since 2026-07-16, so "P/M.Atk" needs
+`BuffPhysAtk` **and** `BuffMagAtk` or half of it is silently dead on the class that casts it.
+
+**HUMAN — `human_vampiric_bolt`**, thirty-three rungs at 20-90. 🔴 **The spell did not change; WHO HAS
+IT did.** Power, MP, the 750→900 range step and the 4th-tier prices are the old `vampiric_bolt` ladder
+rung for rung (rungs 2-34, renumbered) — but it was the Human NUKER's, registered across
+`nuker 2nd/3rd/4th`, and it is now **every Human MYSTIC's**. He deleted its rows from all three nuker
+files; the three code registrations went with them, or a Human nuker would buy every rung twice.
+
+🔑 **THE LEVEL-14 TASTER SURVIVES UNDER THE OLD ID, AND THAT IS WHY HE SPLIT THEM.** `vampiric_bolt`
+keeps exactly one rung on the base-mage table — Human only, **range 600** now, his row — because it has
+a job the ladder must not have: the cleric's Holy Bolt `Replaces` it at 20 (`[magic_bolt
+vampiric_bolt]`, his cell). A base-class taster is replaceable; a race layer is not, and one id could
+not be both.
+
+⚠ **THE HUMAN LADDER IS NOT TIER-GATED.** Its fifteen 76-90 rungs are in `mage 1st.csv`, not a 4th-tier
+file, so LEVEL alone opens them — a real change from the `nuker 4th.csv` rows they replace, which
+needed the Rite of Ascension. It follows his placement; it is the one thing here worth a second look.
+
+**The checker.** `mage 1st`'s band went 1-19 → **1-90**, and the code-side skip that keeps a central
+row from reading as an unauthored extra on nine other files is now a shared `SkipCentral` with a mage
+array beside the fighter one. `grade_penalty` is the one skill in both worlds — he authored its seven
+rows in BOTH first-class files — so it is verified by whichever of the two is being walked.
+✅ `--check` is clean on every file but `war_aoe 3rd`, which he is authoring as this ships.
+
+⚠ **An APK is owed**: the client builds its Learn tab locally from the compiled `ClassSkills`.
+
+## 2026-09-17 — 0.162.0: THE FIGHTER'S RACE LAYER, ON EVERY FIGHTER, FROM LEVEL 10
 
 His `fighter 1st.csv` pass (*"fighter 1st is done .. fix all fighters.. give them skills based on
 race"*) plus the grade passive he asked for in the same session. Six new race skills, one new

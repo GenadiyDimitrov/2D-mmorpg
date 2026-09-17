@@ -24,10 +24,5 @@ LEARN @ LVL,NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET,CAST s,CD s,DURRAT
 25,Quick Bolt,quick_bolt,Magic/Dmg,,,150,0,enemy/single,1.5,1,0,m.Atk +26,23,6400,[]
 30,Quick Bolt,quick_bolt,Magic/Dmg,,,150,0,enemy/single,1.5,1,0,m.Atk +30,26,12800,[]
 35,Quick Bolt,quick_bolt,Magic/Dmg,,,150,0,enemy/single,1.5,1,0,m.Atk +36,31,25000,[]
-,,,,,,,,,,,,,,,,----------------------------Vampiric Bolt----------------------------
-20,Vampiric Bolt,vampiric_bolt,Magic/Dmg,,,750,0,enemy/single,4,1,0,A draining bolt (power 26) that heals you for 40% of the damage dealt.,40,3200,[]
-25,Vampiric Bolt,vampiric_bolt,Magic/Dmg,,,750,0,enemy/single,4,1,0,A draining bolt (power 32) that heals you for 40% of the damage dealt.,46,6400,[]
-30,Vampiric Bolt,vampiric_bolt,Magic/Dmg,,,750,0,enemy/single,4,1,0,A draining bolt (power 38) that heals you for 40% of the damage dealt.,52,12800,[]
-35,Vampiric Bolt,vampiric_bolt,Magic/Dmg,,,750,0,enemy/single,4,1,0,A draining bolt (power 44) that heals you for 40% of the damage dealt.,62,25000,[]
 ,,,,,,,,,,,,,,,,----------------------------Restore Spirit----------------------------
 25,Restore Spirit,restore_spirit,Magic/MP Regen,,,0,0,self/single,4,5,0,exchanges HP (-66) for MP (+22) - multiplied by mpWhenRestored from Mage Armor Mastery,0,6400,[]

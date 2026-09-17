@@ -72,8 +72,30 @@ internal static class Check
     private static readonly string[] CentralFighterSkills =
     {
         SkillCatalog.ElfAntidote, SkillCatalog.ElfHeal, SkillCatalog.DemonDrain, SkillCatalog.DemonPain,
-        SkillCatalog.HumanParry, SkillCatalog.HumanRelaxation, SkillCatalog.GradePermission,
+        SkillCatalog.HumanParry, SkillCatalog.HumanRelaxation,
     };
+
+    /// <summary>THE MAGE RACE LAYER — the exact twin of the array above, authored once in
+    /// `mage 1st.csv` (`BL-258`) and in EVERY mage's <c>Cumulative</c> at every tier thereafter.
+    /// Skipped on the code side for every spec but `mage 1st`, which walks them with a 1-90 band.</summary>
+    private static readonly string[] CentralMageSkills =
+    {
+        SkillCatalog.ElfBlessing, SkillCatalog.DemonBlessing, SkillCatalog.HumanBlessing,
+        SkillCatalog.ElfSelfHeal, SkillCatalog.DemonOverLimit, SkillCatalog.HumanVampiricBolt,
+    };
+
+    /// <summary>Is this a centrally-injected row that some OTHER file owns? The grade passive is the
+    /// one skill in both worlds — it is in every class's Cumulative and he authored its seven rows in
+    /// BOTH `fighter 1st.csv` and `mage 1st.csv` — so it is verified by whichever of the two is being
+    /// walked and skipped everywhere else.</summary>
+    private static bool SkipCentral(string file, string skillId)
+    {
+        if (skillId == SkillCatalog.GradePermission)
+            return file != "fighter 1st" && file != "mage 1st";
+        if (Array.IndexOf(CentralFighterSkills, skillId) >= 0) return file != "fighter 1st";
+        if (Array.IndexOf(CentralMageSkills, skillId) >= 0) return file != "mage 1st";
+        return false;
+    }
 
     private static readonly Spec[] Specs =
     {
@@ -81,7 +103,9 @@ internal static class Check
         //   74 (and the grade passive to 80), so a 1-19 band would report every rung above 19 as a
         //   row the code is missing. The band is the TIER, and this file's tier is now "all of it".
         new("fighter 1st", BaseClass.Fighter, null,              1, 90),
-        new("mage 1st",    BaseClass.Mage,    null,              1, 19),
+        // ⚠ 1-90 FOR THE SAME REASON AS THE FIGHTER LINE ABOVE (`BL-258`, 2026-09-17): his mage race
+        //   block is in this file and the Human's Vampiric Bolt ladder reaches 90.
+        new("mage 1st",    BaseClass.Mage,    null,              1, 90),
         new("tank 2nd",    BaseClass.Fighter, Archetype.Tank,    20, 39),
         new("warrior 2nd", BaseClass.Fighter, Archetype.Warrior, 20, 39),
         new("rogue 2nd",   BaseClass.Fighter, Archetype.Rogue,   20, 39),
@@ -429,8 +453,7 @@ internal static class Check
                 // ⚠ THE CENTRAL FIGHTER LAYER IS CHECKED ONCE, BY ITS OWN FILE. See the note on
                 // CentralFighterSkills for why `Also` is the wrong tool for it. These rows ARE
                 // verified — against `fighter 1st.csv` with a 1-90 band — just not nine times over.
-                if (spec.File != "fighter 1st" && Array.IndexOf(CentralFighterSkills, cs.SkillId) >= 0)
-                    continue;
+                if (SkipCentral(spec.File, cs.SkillId)) continue;
                 // A TOTEM's "duration" is its LIFE, not a buff duration — `PlacesTotem` skills carry
                 // DurationTicks 0 and TotemLifeTicks 300, while his DURATION column reads 30 (seconds).
                 // Comparing the wrong field made every totem rung a defect.

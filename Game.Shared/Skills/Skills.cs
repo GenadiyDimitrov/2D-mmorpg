@@ -2107,6 +2107,9 @@ public static partial class SkillCatalog
         list.AddRange(FighterRaceSkills());   // Skills.FighterRace.cs
         list.AddRange(GradePassiveSkills());  // Skills.FighterRace.cs (grade_penalty, 7 named rungs)
         list.AddRange(MageSkills());          // Skills.Mage.cs
+        // The RACE layer every MAGE carries — his `mage 1st.csv` race block (`BL-258`, 2026-09-17):
+        // three blessings at 7, plus the Elf/Demon/Human ladder each race keeps for the whole game.
+        list.AddRange(MageRaceSkills());      // Skills.MageRace.cs
         list.AddRange(HealerSkills());        // Skills.Healer.cs (2nd-class Healer kit)
         list.AddRange(ArmorMasterySkills());  // Skills.Masteries.cs (data-driven per-archetype)
         list.AddRange(WeaponMasterySkills()); // Skills.WeaponMasteries.cs (weapon-type-conditional)

@@ -51,12 +51,14 @@ public static partial class ClassSkillTables
         // ⚠ 2026-08-07: `MasteryRobe` is ROBE ARMOR MASTERY now — a 2-level, bonus-only skill first
         // learned at 7. It is no longer auto-granted at 1 and no longer carries any penalty; the
         // wrong-weight/wrong-weapon rule moved to Spellcaster Mastery (auto-granted, never replaced).
+        // 🔴 SELF HEAL IS NOT HERE ANY MORE (2026-09-17, `BL-258`). His race pass deleted the three
+        // base-mage rows (1/7/14, power 42/67/107) and re-authored the skill as the ELF's nine-rung
+        // ladder under `elf_self_heal` — see ClassSkills.MageRaceSkills. A Human or Demon mage has no
+        // self-heal at all now; that is the point of the race split, not an omission.
         foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
             ClassSkills.Register(race, BaseClass.Mage, null,
-                new ClassSkill(SelfHeal, 1),                         // Lv1 self heal (power 42)
                 new ClassSkill(MagicBolt, 7, SkillLevel: 2),
                 new ClassSkill(MasteryRobe, 7, SkillLevel: 1),       // Robe Armor Mastery +7 P.Def
-                new ClassSkill(SelfHeal, 7, SkillLevel: 2),          // self heal power 67
                 // The base mage's first buffs. These used to be ONE skill (the group "Might") — it is
                 // the Warchanter's now, so the base mage learns the two singles instead (owner
                 // 2026-07-31). ⚠ They are NOT learned together any more: he split the `mage 1st.csv`
@@ -66,11 +68,20 @@ public static partial class ClassSkillTables
                 new ClassSkill(MageAntiMagic, 7, SkillLevel: 1),     // +12 M.Def
                 new ClassSkill(MagicBolt, 14, SkillLevel: 3),
                 new ClassSkill(CastId(FamPhysDef), 14),              // Bulwark +8% P.Def
-                new ClassSkill(VampiricBolt, 14),
                 new ClassSkill(MageAntiMagic, 14, SkillLevel: 2),    // +16 M.Def + 5% fizzle
-                new ClassSkill(SelfHeal, 14, SkillLevel: 3),         // self heal power 107
                 new ClassSkill(MasteryRobe, 14, SkillLevel: 2),      // Robe Armor Mastery +9 P.Def
                 new ClassSkill(WeaponMastery, 14));                  // +4 M.Atk / +2 P.Atk
+
+        // …and the ONE row that is a single race's: the HUMAN's Vampiric Bolt taster at 14 (his
+        // `mage 1st.csv` row carries `Human` in the Race column, 2026-09-17).
+        //
+        // 🔑 IT IS A TASTER, AND IT KEEPS THE OLD ID ON PURPOSE. The Human's real ladder is
+        //    `human_vampiric_bolt`, injected centrally from 20 and never taken away; this single rung
+        //    is base-class content that the cleric's Holy Bolt `Replaces` at 20, exactly as it
+        //    replaces Magic Bolt. Two ids is what lets one of those two things happen without the
+        //    other — which is why he changed the id rather than extending this row.
+        ClassSkills.Register(Race.Human, BaseClass.Mage, null,
+            new ClassSkill(VampiricBolt, 14));
         // (The God base-mage line was deleted 2026-08-07 with the rest of the God layer.)
 
         // Second-class kits live in the per-line partial files (RegisterXxx()).

@@ -181,22 +181,6 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 88,Arcane Wave,arcane_wave,Magic/Dmg,,,900,400,enemy/aoe,4,1,0,Attack the enemt with m.Atk +129 in 400 radius around the target;,138,0,100kk,,,Human
 89,Arcane Wave,arcane_wave,Magic/Dmg,,,900,400,enemy/aoe,4,1,0,Attack the enemt with m.Atk +133 in 400 radius around the target;,141,0,100kk,,,Human
 90,Arcane Wave,arcane_wave,Magic/Dmg,,,900,400,enemy/aoe,4,1,0,Attack the enemt with m.Atk +137 in 400 radius around the target;,144,0,100kk,,,Human
-,,,,,,,,,,,,,,,,,,,-----------------------------Vampiric Bolt-----------------------------
-76,Vampiric Bolt,vampiric_bolt,Magic/Dmg,,,900,0,enemy/single,4,1,0,A draining bolt (m.Atk +143) that heals you for 40% of the damage dealt.,138,6.5kk,1kk,,,Human
-77,Vampiric Bolt,vampiric_bolt,Magic/Dmg,,,900,0,enemy/single,4,1,0,A draining bolt (m.Atk +146) that heals you for 40% of the damage dealt.,142,11kk,1kk,,,Human
-78,Vampiric Bolt,vampiric_bolt,Magic/Dmg,,,900,0,enemy/single,4,1,0,A draining bolt (m.Atk +148) that heals you for 40% of the damage dealt.,146,16kk,1kk,,,Human
-79,Vampiric Bolt,vampiric_bolt,Magic/Dmg,,,900,0,enemy/single,4,1,0,A draining bolt (m.Atk +151) that heals you for 40% of the damage dealt.,154,80kk,1kk,,,Human
-80,Vampiric Bolt,vampiric_bolt,Magic/Dmg,,,900,0,enemy/single,4,1,0,A draining bolt (m.Atk +153) that heals you for 40% of the damage dealt.,158,0,5kk,,,Human
-81,Vampiric Bolt,vampiric_bolt,Magic/Dmg,,,900,0,enemy/single,4,1,0,A draining bolt (m.Atk +156) that heals you for 40% of the damage dealt.,182,0,7.5kk,,,Human
-82,Vampiric Bolt,vampiric_bolt,Magic/Dmg,,,900,0,enemy/single,4,1,0,A draining bolt (m.Atk +159) that heals you for 40% of the damage dealt.,190,0,10kk,,,Human
-83,Vampiric Bolt,vampiric_bolt,Magic/Dmg,,,900,0,enemy/single,4,1,0,A draining bolt (m.Atk +161) that heals you for 40% of the damage dealt.,194,0,15kk,,,Human
-84,Vampiric Bolt,vampiric_bolt,Magic/Dmg,,,900,0,enemy/single,4,1,0,A draining bolt (m.Atk +164) that heals you for 40% of the damage dealt.,198,0,30kk,,,Human
-85,Vampiric Bolt,vampiric_bolt,Magic/Dmg,,,900,0,enemy/single,4,1,0,A draining bolt (m.Atk +166) that heals you for 40% of the damage dealt.,206,0,50kk,,,Human
-86,Vampiric Bolt,vampiric_bolt,Magic/Dmg,,,900,0,enemy/single,4,1,0,A draining bolt (m.Atk +169) that heals you for 40% of the damage dealt.,210,0,75kk,,,Human
-87,Vampiric Bolt,vampiric_bolt,Magic/Dmg,,,900,0,enemy/single,4,1,0,A draining bolt (m.Atk +172) that heals you for 40% of the damage dealt.,214,0,100kk,,,Human
-88,Vampiric Bolt,vampiric_bolt,Magic/Dmg,,,900,0,enemy/single,4,1,0,A draining bolt (m.Atk +174) that heals you for 40% of the damage dealt.,222,0,100kk,,,Human
-89,Vampiric Bolt,vampiric_bolt,Magic/Dmg,,,900,0,enemy/single,4,1,0,A draining bolt (m.Atk +177) that heals you for 40% of the damage dealt.,226,0,100kk,,,Human
-90,Vampiric Bolt,vampiric_bolt,Magic/Dmg,,,900,0,enemy/single,4,1,0,A draining bolt (m.Atk +179) that heals you for 40% of the damage dealt.,230,0,100kk,,,Human
 ,,,,,,,,,,,,,,,,,,,------------------------------Arcane Void------------------------------
 76,Arcane Void,arcane_void,Magic/Buff,,,900,0,enemy/single,4,30,0,Chance to remove 2~4 positive effect of the target,147,6.5kk,1kk,,,Human
 80,Arcane Void,arcane_void,Magic/Buff,,,900,0,enemy/single,4,30,0,Chance to remove 2~4 positive effect of the target,156,0,5kk,,,Human
