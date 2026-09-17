@@ -169,13 +169,17 @@ internal static class Check
         // `warrior 4th` earned its line on 2026-09-16, the day `BL-237` built it — he landed the file
         // finished on 2026-09-14 and answered every question on it the same day.
         //
-        // 🔑 THE RAVAGER ONLY, and that is the whole reason there is no `war_aoe 4th` line beside it:
-        // that file is still the two-line placeholder, so the WARLORD's 4th tier is Charge's second
-        // rung and the three skill masteries and nothing else. A spec over a placeholder would report
-        // every one of those as an unauthored extra.
+        // 🔑 ONE FILE PER DISCIPLINE, and the two disagree on purpose — Final Stand and HP Boost stop
+        // at 74 in the Ravager's file and climb to 90 in the Warlord's, so a single shared spec would
+        // report one of them wrong whichever way it was written.
         // ⚠ `Also: shared 4th` like every other 4th-tier spec — the ALL-CLASSES block and the eighteen
         //   Sigils are in every ascended class's Cumulative and would otherwise read as extras here.
         new("warrior 4th", BaseClass.Fighter, Archetype.Warrior, 76, 90, Game.Shared.Discipline.Ravager,
+            Fourth: true, Also: new[] { "shared 4th" }),
+        // `war_aoe 4th` earned its line on 2026-09-17 — *"im done with war_aoe 3rd/4th"*. It was the
+        // last two-line placeholder in the warrior, and it stopped being one the same day its ten
+        // 3rd-tier siblings were built.
+        new("war_aoe 4th", BaseClass.Fighter, Archetype.Warrior, 76, 90, Game.Shared.Discipline.Warlord,
             Fourth: true, Also: new[] { "shared 4th" }),
         // `archer 4th` earned its line the same day, 2026-09-09 — the FOURTH finished 4th-tier file
         // (*"archer 4th done as well"*). Same three disciplines and the same `Also` as every other

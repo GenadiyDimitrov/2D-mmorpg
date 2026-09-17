@@ -249,11 +249,10 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-232` | 🔵 | `debuff_landmods.csv` IS LIVE — 74 rows built and checked; the SUCCESS column is yours to author | combat |
 | `BL-233` | ❓ | THE DEMON BUFFER'S P.DEF — measured three ways and heavy is AHEAD; I need your two sheets | classes |
 | `BL-234` | ❓ | URGENT LESSER HEAL — built to your four numbers; the per-rank falloff is mine to confirm | classes |
-| `BL-237` | 🟡 | THE WARLORD — `war_aoe 3rd.csv` is BUILT (0.165.0); `war_aoe 4th.csv` is half built | classes |
 | `BL-250` | 🟡 | THE SUBCLASS SYSTEM — **the server half is BUILT (0.155.0)**; what is left is the CLIENT dialogue + panel (APK) and the SIGIL half (§1-§4). ❓ one new question in §9.6 | classes |
 | `BL-253` | 🔵 | A DROP DATABASE — name an item, see every source; the BalanceMatrix half is built, the in-game window is owed | items |
 | `BL-254` | ❓ | RARE WOOD DROPS FROM NOTHING — wood is never a category's primary, so no Rare rung can reach it | items |
-| `BL-259` | ❓ | THREE LANDING MODIFIERS — Charge n Shock, Shocking Shout, Taunting Shout. Only you may set them | classes |
+| `BL-259` | ❓ | FOUR LANDING MODIFIERS — Charge n Shock, Shocking Shout, Shocking Javelin, Taunting Shout | classes |
 | `BL-260` | ❓ | **SUMMONERS — the conversation we have never had**, and four shipped decisions already lean on it | classes |
 | `BL-261` | ❓ | WHIRLWIND'S POWER COLUMN DIPS — 1540 at 68, then 900 at 70. Built verbatim; three checks say the first twelve cells are an older column | classes |
 
@@ -278,10 +277,10 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
   - ✅ ~~`warrior 3rd` / `warrior 4th`~~ — **DONE, built 2026-09-16 in 0.146.0 (`BL-237`).** The
     RAVAGER's whole kit, both tiers, race by race, and `warrior 4th` earned its `Check.Specs` line the
     same day. It is the SEVENTH and EIGHTH authored file built.
-  - 🔴 **`war_aoe 3rd` and `war_aoe 4th` are the last warrior gap, and it is a DAMAGE gap.** The 3rd
-    file has his passives and buffs and *"is missing only teir dmg and control (active dmg) skills"*;
-    the 4th is still two lines. Until they land the WARLORD carries the derived `war_sundering_blow`
-    and `--check` prints one 🟠 line at him.
+  - ✅ ~~`war_aoe 3rd` / `war_aoe 4th`~~ — **DONE, built 2026-09-17 in 0.164.0-0.166.0 (`BL-237`).**
+    The WARLORD's whole kit, both tiers, race by race; `war_aoe 4th` earned its `Check.Specs` line the
+    same day. The NINTH and TENTH authored file built, and with them `war_sundering_blow` — the last
+    derived fighter ladder in the game — is retired. **Every authored warrior file is now mirrored.**
   - 🔵 **The rogue's two are still two-line placeholders** — `dual 3rd`/`4th` and `archer` were built
     from his files in 0.119/0.120; what is left on this bullet is `nuker 4th`.
     Same rule: nothing invented in the meantime, and each earns its `Check.Specs` line the day you
@@ -1847,31 +1846,6 @@ over eleven: `dotnet run --project tools/BalanceMatrix -- --healpower 90 epic`.
 
 ---
 
-## `BL-237` 🟡 THE WARLORD — his 3rd file is BUILT, his 4th file is half built
-
-**Built 2026-09-16 (0.146.0); your four readings CONFIRMED 2026-09-16** — *"1,2,3,4 as you desided ->
-ill do .5 later"*. So Battle Frenzy's downside is **healing received**, Saints Blessing's two `to`
-numbers are **chances**, Battle Frenzy is **exempt from the buff-slot limit**, and both moved cells
-(Sword Shock's 5s stun, the landing modifiers into `debuff_landmods.csv`) stand. Those four are
-archived under this id. **Only §5 is still open, and it is yours:**
-
-### 5. 🟡 YOUR ROWS LANDED 2026-09-16 — the 3rd file is BUILT, the 4th is half built
-**`war_aoe 3rd.csv` is fully built (0.165.0)**: Shocking Shout, Whirlwind, Taunting Shout, the three
-race Shouts, the three Supports and Battle Revival — ten ids that did not exist in the codebase at
-all. `war_sundering_blow` is retired from the Warlord in the same commit, and with it the last derived
-fighter ladder in the game.
-
-**`war_aoe 4th.csv` is NOT finished.** Its four interlocking charges shipped in 0.164.0; still owed are
-Master of Combat, Shocking Javelin, Final Stand rungs 4-5, HP Boost 76-90, the Supports' rung 4, and
-the 76-90 continuations of everything above. ⚠ One reading of yours is needed there and is flagged in
-0.165.0's CHANGELOG: **that file gives all three races the id `waraoe_life_support` at 80**, while its
-own section headers read Life / Blood / Vanguard Support — the 3rd file's three separate ids. It is
-being built as rung 4 of each race's own ladder.
-
-What is still open beyond that: **`BL-259`** (three landing modifiers) and **`BL-261`** (Whirlwind's
-dipping power column).
-
----
 
 
 ## `BL-250` 🟢 THE SUBCLASS SYSTEM — SLOTS, TICKETS, AN NPC, AND THE SIGILS THEY UNLOCK
@@ -2135,14 +2109,14 @@ the one you noticed, because it is the only type that is never anybody's primary
 
 ---
 
-## `BL-259` ❓ THREE LANDING MODIFIERS — three cells, and only you may set them
+## `BL-259` ❓ FOUR LANDING MODIFIERS — four cells, and only you may set them
 
-Built 2026-09-17 in 0.164.0 and 0.165.0 from your two `war_aoe` files. All three are **new debuffs**, so
+Built 2026-09-17 across 0.164.0-0.166.0 from your two `war_aoe` files. All four are **new debuffs**, so
 by your own rule (`BL-232`) I do not price any of them:
 
 > *"Then each new debuff to go there and to ask for modifier edit"*
 
-`docs/data/debuff_landmods.csv` carries all three rows and their `SUCCESS` reads the code default of
+`docs/data/debuff_landmods.csv` carries all four rows and their `SUCCESS` reads the code default of
 **1** — that is the file being filled in, not a decision.
 
 | SKILL | SKILL_ID | DESCR | SAVE | SHAPE | SUCCESS |
@@ -2150,6 +2124,7 @@ by your own rule (`BL-232`) I do not price any of them:
 | Charge n Shock | `warrior_charge_stun` | charge; Stun | CON | `DEBUFF ONLY (1)` | **your cell** |
 | Shocking Shout | `waraoe_shock_shout` | Stun | CON | `dmg+1 debuff` | **your cell** |
 | Taunting Shout | `waraoe_taunting_shout` | vulnerable to blunt +10%; taunt | CON | `DEBUFF ONLY (1)` | **your cell** |
+| Shocking Javelin | `waraoe_shock_javelin` | Stun | CON | `dmg+1 debuff` | **your cell** |
 
 **What each does at once**, since that is the axis your modifier prices:
 
@@ -2160,7 +2135,10 @@ by your own rule (`BL-232`) I do not price any of them:
 - **Shocking Shout** is damage **and** a 5s stun **on a whole ring**, which is the heaviest thing in
   the three. Its neighbour *Acoustic Shock* (`dmg+1 debuff`, single target) is **1**.
 - **Taunting Shout** is a taunt plus the blunt vulnerability, thirty seconds, on a 600-800 ring. It is
-  the only one of the three whose payload is not control at all.
+  the only one of the four whose payload is not control at all.
+- **Shocking Javelin** is Shocking Shout thrown 900 away with a tighter ring (150 against 200). Same
+  power ladder, same stun — so if the two do not share one modifier, the difference is paying for the
+  reach.
 
 ✅ **The three race Shouts needed nothing** — you priced them yourself in the cell *"Single debuff
 x1.5"*, and the code ships 1.5. That is the `BL-232` rule working: a shout that only curses lands more

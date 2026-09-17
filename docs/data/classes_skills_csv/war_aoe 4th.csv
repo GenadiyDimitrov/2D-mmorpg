@@ -46,9 +46,9 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 ,,,,,,,,,,,,,,,,,,,----------------------------Life Support----------------------------
 80,Life support,waraoe_life_support,Passive,,,0,0,self/single,0,15,10,"20% chance to heal for 15% max HP, and leave lingering 300/s healing effect",0,0,5kk,,,Elf
 ,,,,,,,,,,,,,,,,,,,----------------------------Blood Support----------------------------
-80,Life support,waraoe_life_support,Passive,,,0,0,self/single,0,15,10,"20% chance to heal for 15% max HP, and leave lingering 15% vampiric effect",0,0,5kk,,,Demon
+80,Blood support,waraoe_blood_support,Passive,,,0,0,self/single,0,15,10,"20% chance to heal for 15% max HP, and leave lingering 15% vampiric effect",0,0,5kk,,,Demon
 ,,,,,,,,,,,,,,,,,,,----------------------------Vanguard Support----------------------------
-80,Life support,waraoe_life_support,Passive,,,0,0,self/single,0,15,10,"20% chance to heal for 15% max HP, and leave lingering 5% vampiric and 100/s healing effect",0,0,5kk,,,Human
+80,Vanguard support,waraoe_support,Passive,,,0,0,self/single,0,15,10,"20% chance to heal for 15% max HP, and leave lingering 5% vampiric and 100/s healing effect",0,0,5kk,,,Human
 ,,,,,,,,,,,,,,,,,,,----------------------------Overpower----------------------------
 76,Overpower,overpower,passive,,,0,0,self/single,0,0,0,double rate 10% - skills marked [Double] strike for DOUBLE damage that often - scales with ATK - without this passive NO skill can double,0,6.5kk,1kk
 ,,,,,,,,,,,,,,,,,,,----------------------------Overpower Mastery----------------------------
@@ -64,8 +64,8 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 80,Charge n Shock,warrior_charge_stun,physical/active,sword|blunt/2,,800,0,enemy/single,0.5,10,2,Charges to enemy; Min charge distance 150; Chance to stun target for 2s,70,0,5kk,,[warrior_charge warrior_charge_normal warrior_charge_instant warrior_charge_aoe]
 80,Charge n Stomp,warrior_charge_aoe,physical/active,sword|blunt/2,,800,200,enemy/aoe,0.5,10,1,Charges to enemy; Min charge distance 150; Dmg enemies with power +5000,70,0,5kk,,[warrior_charge warrior_charge_normal warrior_charge_instant warrior_charge_stun]
 ,,,,,,,,,,,,,,,,,,,---------------------------Taunting Shout----------------------------
-80,Taunting Shout,waraoe_taunting_shout,Physical/Debuf,blunt/2,,0,600,enemy/aoe,1,20,30,Shouts to do provoke enemies in a large area and make them vunarable to bludgering attacks (25% more dmg from blunts);",70,0,5kk,,,
-90,Taunting Shout,waraoe_taunting_shout,Physical/Debuf,blunt/2,,0,600,enemy/aoe,1,20,30,Shouts to do provoke enemies in a large area and make them vunarable to bludgering attacks (30% more dmg from blunts);",80,0,100kk,,,
+80,Taunting Shout,waraoe_taunting_shout,Physical/Debuf,blunt/2,,0,600,enemy/aoe,1,20,30,"Shouts to do provoke enemies in a large area and make them vunarable to bludgering attacks (25% more dmg from blunts);",70,0,5kk,,,
+90,Taunting Shout,waraoe_taunting_shout,Physical/Debuf,blunt/2,,0,600,enemy/aoe,1,20,30,"Shouts to do provoke enemies in a large area and make them vunarable to bludgering attacks (30% more dmg from blunts);",80,0,100kk,,,
 ,,,,,,,,,,,,,,,,,,,---------------------------Shout----------------------------
 76,Shattaring Shout,waraoe_human_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 25%;",80,6.5kk,1kk,,,Human
 78,Shattaring Shout,waraoe_human_shout,Physical/Debuf,blunt/2,,0,200,enemy/aoe,1,10,15,"Decrease P.Def of Enemies with 25%;",84,16kk,1kk,,,Human

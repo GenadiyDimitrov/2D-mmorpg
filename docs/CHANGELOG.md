@@ -7,11 +7,49 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.165.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.166.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-17 (latest) — 0.165.0: the Warlord finally has a kit — `war_aoe 3rd.csv` is built
+## 2026-09-17 (latest) — 0.166.0: `war_aoe 4th.csv` is built, and the WARLORD is finished
+
+**`BL-237` is closed and archived.** Both of his Warlord files are mirrored in the code, `--check` is
+clean on both, and `war_aoe 4th` has earned its `Check.Specs` line — *"im done with war_aoe 3rd/4th"*.
+**Every authored warrior file is now built.**
+
+Only **two** skills in that file are new; everything else continues a ladder his 3rd file opened.
+* **Master of Combat** (76, toggle) — +10 accuracy, +25% P.Def, +15% M.Def, +20% attack speed, **−30%
+  move speed**, 30 MP/s. 🔑 The speed cut is a **minus on the buff**, not a `Slow`: that is Battle
+  Frenzy's lesson verbatim — *a downside you chose is not a curse somebody cast on you*. A `Slow` sits
+  in `AnyDebuff` **and** `ControlCc`, so a cleanse would strip your own stance, CON resistance would
+  refuse it, and a boss would be immune to it.
+* **Shocking Javelin** (76, ×15) — Shocking Shout thrown 900 away with a tighter ring (150 vs 200).
+  🔑 **The two share ONE power column**, cell for cell: the Javelin buys reach with **radius**, not
+  with damage.
+
+Continued: the blunt mastery (rungs 16-30), the armour (21-35), Whirlwind, Shocking Shout, the three
+race Shouts, Taunting Shout, the Supports' rung 4 — and **Final Stand (4-5) and HP Boost (11-18),
+which his `warrior 4th.csv` deliberately stops at 74.** ⚠ The two warrior files disagree there **on
+purpose**; do not tidy one onto the other. That is also why `war_aoe 4th` gets its own `Check.Specs`
+line rather than sharing the Ravager's.
+
+### 🔴 THREE DEFECTS THE CHECKER FOUND THE MOMENT THAT LINE WENT IN
+Adding the spec was worth more than the code it validated:
+1. **Two rows were unparseable** — Taunting Shout at 80 and 90 had a stray closing `"` with no opening
+   one, so the DESCR swallowed the rest of the line and the checker read the skill as *not authored at
+   all*. Quote closed.
+2. **All three Supports at 80 carried the id `waraoe_life_support`**, while the section headers
+   immediately above them read Life / Blood / Vanguard Support. Three rows, one id, one level, three
+   different payloads and three different race cells — a state the engine cannot express, and the
+   checker said so twice (`RUNG COUNT: CSV has 3 (80/80/80)` and a `LADDER DIP` from 15% vamp to 5%).
+   Restored to the 3rd file's three ids. **One word reverses it if that was deliberate.**
+3. **The blunt mastery and Final Stand had no 4th-tier rungs at all**, so their prices read as 1 SP and
+   28,000 SP against his 6.5kk-to-gold ladder. Both concatenated properly now.
+
+⚠ **`BL-261` (Whirlwind's dipping power column) is still open and still yours** — the one thing
+`--check` prints. ⚠ **`BL-259` is now FOUR cells**: Shocking Javelin joined. ⚠ **Needs a new APK.**
+
+## 2026-09-17 — 0.165.0: the Warlord finally has a kit — `war_aoe 3rd.csv` is built
 
 **`BL-237` §5, the last open half of the warrior, closed.** Until this commit the string `waraoe`
 appeared in **zero** `.cs` files: the blunt discipline had your passives, your buffs and Charge, and

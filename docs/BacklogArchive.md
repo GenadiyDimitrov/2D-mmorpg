@@ -6280,3 +6280,29 @@ missing. Two ways to settle it, your call:
 
 Nothing is broken either way: the passive grants nothing, blocks nothing and is already correct in
 the game for every class. This is about where the row LIVES, not about behaviour.
+
+## `BL-237` ✅ BUILT 2026-09-17 in **0.164.0 / 0.165.0 / 0.166.0** — the WARLORD is finished. Both his files are mirrored in the code, `--check` is clean on both, and `war_sundering_blow` (the last derived fighter ladder in the game) is retired. The entry as it stood when it closed:
+
+
+**Built 2026-09-16 (0.146.0); your four readings CONFIRMED 2026-09-16** — *"1,2,3,4 as you desided ->
+ill do .5 later"*. So Battle Frenzy's downside is **healing received**, Saints Blessing's two `to`
+numbers are **chances**, Battle Frenzy is **exempt from the buff-slot limit**, and both moved cells
+(Sword Shock's 5s stun, the landing modifiers into `debuff_landmods.csv`) stand. Those four are
+archived under this id. **Only §5 is still open, and it is yours:**
+
+### 5. 🟡 YOUR ROWS LANDED 2026-09-16 — the 3rd file is BUILT, the 4th is half built
+**`war_aoe 3rd.csv` is fully built (0.165.0)**: Shocking Shout, Whirlwind, Taunting Shout, the three
+race Shouts, the three Supports and Battle Revival — ten ids that did not exist in the codebase at
+all. `war_sundering_blow` is retired from the Warlord in the same commit, and with it the last derived
+fighter ladder in the game.
+
+**`war_aoe 4th.csv` is NOT finished.** Its four interlocking charges shipped in 0.164.0; still owed are
+Master of Combat, Shocking Javelin, Final Stand rungs 4-5, HP Boost 76-90, the Supports' rung 4, and
+the 76-90 continuations of everything above. ⚠ One reading of yours is needed there and is flagged in
+0.165.0's CHANGELOG: **that file gives all three races the id `waraoe_life_support` at 80**, while its
+own section headers read Life / Blood / Vanguard Support — the 3rd file's three separate ids. It is
+being built as rung 4 of each race's own ladder.
+
+What is still open beyond that: **`BL-259`** (three landing modifiers) and **`BL-261`** (Whirlwind's
+dipping power column).
+

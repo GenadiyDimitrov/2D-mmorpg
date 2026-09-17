@@ -2204,6 +2204,7 @@ public static partial class SkillCatalog
         list.AddRange(Warrior4thSkills());     // Skills.Warrior4th.cs — the four new 4th-tier race tools
         list.AddRange(Warlord3rdSkills());     // Skills.Warlord3rd.cs — the blunt discipline's own ten
         list.AddRange(Warlord4thCharges());    // Skills.Warlord4th.cs — the four interlocking charges + the stomp
+        list.AddRange(Warlord4thNewSkills()); // Skills.Warlord4th.cs — Master of Combat and Shocking Javelin
         list.AddRange(Dual3rdSkills());       // Skills.Dual3rd.cs (his `dual 3rd.csv`, 40-74)
         list.AddRange(Dual4thSkills());       // Skills.Dual4th.cs (`BL-188` — the top of the blow ladder ONLY)
         list.AddRange(Archer3rdSkills());     // Skills.Archer3rd.cs (his `archer 3rd.csv`, 40-74)

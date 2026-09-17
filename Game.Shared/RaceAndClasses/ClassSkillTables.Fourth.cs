@@ -836,6 +836,46 @@ public static partial class ClassSkillTables
                 new ClassSkill(WarriorChargeStun, 80),
                 new ClassSkill(WarriorChargeAoe, 80));
 
+        // ═══ THE WARLORD'S 4th CLASS — every remaining row of `war_aoe 4th.csv` (2026-09-17) ═════
+        //
+        // 🔑 ONLY TWO SKILLS IN THAT FILE ARE NEW — Master of Combat at 76 and Shocking Javelin at 76.
+        //    Everything else continues a ladder his 3rd file opened, which is the same shape the
+        //    Ravager's file has and the reason both are mostly `Ladder` calls.
+        // 🔑 THE ARMOUR IS SHARED WITH THE RAVAGER; THE WEAPON IS NOT. Warlord takes the BLUNT mastery
+        //    (rungs 16-30) where the Ravager takes the sword — his `blunt/2` cell, all the way up.
+        // ⚠ WHAT HIS 4th FILE CONTINUES THAT THE RAVAGER'S DOES NOT: Final Stand (rungs 4-5, at 80 and
+        //   90) and HP Boost (rungs 11-18). Those two stop at 74 in `warrior 4th.csv` and climb here —
+        //   so this is NOT a case of extending one file by analogy with the other; it is two files
+        //   disagreeing on purpose.
+        var warlord = new List<ClassSkill>();
+        warlord.AddRange(Ladder(WarriorArmorMastery, all, 21));
+        warlord.AddRange(Ladder(WarriorBluntMastery, all, 16));
+        warlord.AddRange(Ladder(WaraoeShockShout, all, 16));
+        warlord.AddRange(Ladder(WaraoeShockJavelin, all, 1));      // new at 76
+        warlord.AddRange(Ladder(WaraoeWhirlwind, all, 16));
+        warlord.Add(new ClassSkill(WaraoeMasterCombat, 76));       // new at 76
+        warlord.Add(new ClassSkill(WaraoeTauntingShout, 80, SkillLevel: 3));
+        warlord.Add(new ClassSkill(WaraoeTauntingShout, 90, SkillLevel: 4));
+        warlord.Add(new ClassSkill(WarriorFinalStand, 80, SkillLevel: 4));
+        warlord.Add(new ClassSkill(WarriorFinalStand, 90, SkillLevel: 5));
+        // HP Boost rungs 11-18, his eight even levels. ⚠ Its prices are the LADDER's (the SkillDef now
+        //   carries gold on those rungs), so no SpCost override here — unlike the 3rd-tier rows, where
+        //   the two disciplines genuinely disagree on rungs 1-2.
+        warlord.AddRange(Ladder(HpBoost, even, 11));
+        foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
+            ClassSkills.RegisterFourth(race, Discipline.Warlord, warlord.ToArray());
+
+        // ---- The Warlord's three race halves: one Support rung and one Shout ladder each. ----
+        ClassSkills.RegisterFourth(Race.Human, Discipline.Warlord,
+            Ladder(WaraoeHumanShout, even, 16)
+                .Append(new ClassSkill(WaraoeSupport, 80, SkillLevel: 4)).ToArray());
+        ClassSkills.RegisterFourth(Race.Demon, Discipline.Warlord,
+            Ladder(WaraoeDemonShout, even, 16)
+                .Append(new ClassSkill(WaraoeBloodSupport, 80, SkillLevel: 4)).ToArray());
+        ClassSkills.RegisterFourth(Race.Elf, Discipline.Warlord,
+            Ladder(WaraoeElfShout, even, 16)
+                .Append(new ClassSkill(WaraoeLifeSupport, 80, SkillLevel: 4)).ToArray());
+
         // ---- What every Ravager learns: the armour (rungs 21-35) and the sword (16-30). ----
         var shared = new List<ClassSkill>();
         shared.AddRange(Ladder(WarriorArmorMastery, all, 21));

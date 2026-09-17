@@ -2121,7 +2121,13 @@ public class Entity
             if (lvl <= 0) return 0f;
             int band = LastStandBand;
             if (band == 0) return 0f;
-            float[][] patk = { new[] { .05f, .10f, .20f }, new[] { .07f, .15f, .25f }, new[] { .10f, .20f, .30f } };
+            // ⚠ RUNGS 4 AND 5 ARE THE WARLORD'S (`war_aoe 4th.csv`, levels 80 and 90) — his
+            //   `warrior 4th.csv` stops Final Stand at 74, so the Ravager never reaches them.
+            float[][] patk =
+            {
+                new[] { .05f, .10f, .20f }, new[] { .07f, .15f, .25f }, new[] { .10f, .20f, .30f },
+                new[] { .15f, .25f, .35f }, new[] { .20f, .30f, .40f },
+            };
             return patk[Math.Clamp(lvl, 1, patk.Length) - 1][band - 1];
         }
     }
@@ -2142,7 +2148,13 @@ public class Entity
             if (lvl <= 0) return 0;
             int band = LastStandBand;
             if (band == 0) return 0;
-            int[][] acc = { new[] { 0, 0, 2 }, new[] { 0, 2, 4 }, new[] { 2, 4, 8 } };
+            // ⚠ The 4th-tier rungs pay at EVERY band — his `war_aoe 4th` cells are 3/6/9 and 4/7/10,
+            //   with no zero in either. The zeroes above are real cells of the 3rd-tier ladder.
+            int[][] acc =
+            {
+                new[] { 0, 0, 2 }, new[] { 0, 2, 4 }, new[] { 2, 4, 8 },
+                new[] { 3, 6, 9 }, new[] { 4, 7, 10 },
+            };
             return acc[Math.Clamp(lvl, 1, acc.Length) - 1][band - 1];
         }
     }

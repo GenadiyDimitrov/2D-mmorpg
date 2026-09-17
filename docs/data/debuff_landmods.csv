@@ -12,14 +12,14 @@ Bleeding Arrow,archer_bleeding_arrow,Hunter(Demon),Bleed DoT (+ its family rider
 Bleeding Trap,archer_bleed_trap,Hunter(Demon),Bleed DoT (+ its family rider),CON,1,DEBUFF ONLY (1),1
 Boss's Judgment,boss_judgment,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",Stun,none (fizzle roll),1,DEBUFF ONLY (1),1
 Boss's Judgment,boss_judgment_mark,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",(no payload on the def - CHECK IT),none (fizzle roll),1,DEBUFF ONLY (1),1
-Breaking Shout,waraoe_demon_shout,Warlord(Demon),P/M.Atk -10%,CON,1.5,DEBUFF ONLY (1),1.5
+Breaking Shout,waraoe_demon_shout,Warlord(Demon),P/M.Atk -15%,CON,1.5,DEBUFF ONLY (1),1.5
 Charge n Shock,warrior_charge_stun,Warlord,charge; Stun,CON,1,DEBUFF ONLY (1),1
 Charm,charm,Bulwark(Elf) | Tank(Elf) | Vanguard(Elf),charm; taunt,SPT,0.7,DEBUFF ONLY (1),0.7
 Chilled,nuker_empower_elf_curse_1,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",M.Def -10%; Slow -30%,none (fizzle roll),1,DEBUFF ONLY (2),1
 Chilled,nuker_empower_elf_curse_2,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",M.Def -10%; Slow -30%,none (fizzle roll),1,DEBUFF ONLY (2),1
 Chilled,nuker_empower_elf_curse_3,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",M.Def -10%; Slow -30%,none (fizzle roll),1,DEBUFF ONLY (2),1
 Creeping Frost,creeping_frost,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",Stun; Slow,SPT,1,DEBUFF ONLY (2),1
-Crippling Shout,waraoe_elf_shout,Warlord(Elf),Atk.Spd -20%; Cast.Spd -20%; Slow -20%,CON,1.5,DEBUFF ONLY (3),1.5
+Crippling Shout,waraoe_elf_shout,Warlord(Elf),Atk.Spd -30%; Cast.Spd -30%; Slow -30%,CON,1.5,DEBUFF ONLY (3),1.5
 Dazzling Arrow,archer_dazzling_arrow,Sharpshooter(Human),cancels 3 buff(s); Stun,CON,1,dmg+2 debuffs,1
 Demonic Pain,demon_pain,Archer(Demon) | Bulwark(Demon) | Hunter(Demon) | Nullblade(Demon) | Phantom(Demon) | Ravager(Demon) | Rogue(Demon) | Sharpshooter(Demon) | Tank(Demon) | Trapper(Demon) | Vanguard(Demon) | Venomweaver(Demon) | Warlord(Demon) | Warrior(Demon),Bleed DoT (+ its family rider),CON,1.5,DEBUFF ONLY (1),1.5
 Devastating Slam,boss_slam,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",Stun,CON,1,dmg+1 debuff,1
@@ -52,9 +52,10 @@ Rupture,rupture,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)
 Sapped,nuker_empower_demon_curse_1,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",Atk.Spd -23%; Cast.Spd -23%,none (fizzle roll),1,DEBUFF ONLY (2),1
 Sapped,nuker_empower_demon_curse_2,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",Atk.Spd -23%; Cast.Spd -23%,none (fizzle roll),1,DEBUFF ONLY (2),1
 Sapped,nuker_empower_demon_curse_3,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",Atk.Spd -23%; Cast.Spd -23%,none (fizzle roll),1,DEBUFF ONLY (2),1
-Shattering Shout,waraoe_human_shout,Warlord(Human),P.Def -23%,CON,1.5,DEBUFF ONLY (1),1.5
+Shattering Shout,waraoe_human_shout,Warlord(Human),P.Def -27%,CON,1.5,DEBUFF ONLY (1),1.5
 Shield Bash,shield_bash,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",Stun,CON,1,DEBUFF ONLY (1),1
 Shield Shock,tank_shield_stun,Bulwark | Tank | Vanguard,Stun,CON,0.7,DEBUFF ONLY (1),0.7
+Shocking Javelin,waraoe_shock_javelin,Warlord,Stun,CON,1,dmg+1 debuff,1
 Shocking Shout,waraoe_shock_shout,Warlord,Stun,CON,1,dmg+1 debuff,1
 Silencing Shock,tank_silence_magical,Bulwark(Elf),silence magical,SPT,0.7,DEBUFF ONLY (1),0.7
 Slash,warrior_demon_slash,Ravager(Demon),P/M.Atk -12%,CON,0.7,dmg+1 debuff,0.7

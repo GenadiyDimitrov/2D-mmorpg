@@ -126,17 +126,27 @@ public static partial class SkillCatalog
         // ═══ THE THREE SUPPORTS — one per race, a proc on your own blow ══════════════════════════
         list.AddRange(SupportKit(WaraoeLifeSupport, "Life Support",
             i => new EffectMagnitude[] { new(SkillEffect.HealOverTime, WaraoeElfHot[i], ModifierMode.Flat) },
-            i => $"and {WaraoeElfHot[i]} HP a second for 10s"));
+            i => $"and {WaraoeElfHot[i]} HP a second for 10s",
+            new EffectMagnitude[] { new(SkillEffect.HealOverTime, 300f, ModifierMode.Flat) },
+            "and 300 HP a second for 10s"));
         list.AddRange(SupportKit(WaraoeBloodSupport, "Blood Support",
             i => new EffectMagnitude[] { new(SkillEffect.BuffMeleeVamp, WaraoeDemonVamp[i]) },
-            i => $"and {WaraoeDemonVamp[i] * 100f:0}% melee vampirism for 10s"));
+            i => $"and {WaraoeDemonVamp[i] * 100f:0}% melee vampirism for 10s",
+            new EffectMagnitude[] { new(SkillEffect.BuffMeleeVamp, .15f) },
+            "and 15% melee vampirism for 10s"));
         list.AddRange(SupportKit(WaraoeSupport, "Vanguard Support",
             i => new EffectMagnitude[]
             {
                 new(SkillEffect.BuffMeleeVamp, WaraoeHumanVamp[i]),
                 new(SkillEffect.HealOverTime, WaraoeHumanHot[i], ModifierMode.Flat),
             },
-            i => $"and {WaraoeHumanVamp[i] * 100f:0}% melee vampirism plus {WaraoeHumanHot[i]} HP a second for 10s"));
+            i => $"and {WaraoeHumanVamp[i] * 100f:0}% melee vampirism plus {WaraoeHumanHot[i]} HP a second for 10s",
+            new EffectMagnitude[]
+            {
+                new(SkillEffect.BuffMeleeVamp, .05f),
+                new(SkillEffect.HealOverTime, 100f, ModifierMode.Flat),
+            },
+            "and 5% melee vampirism plus 100 HP a second for 10s"));
 
         // ═══ SHOCKING SHOUT — the ring that stuns ════════════════════════════════════════════════
         // *"Shouts to do Physical damage with +N power and Stuns around for 5s, Cannot be blocked,
@@ -146,7 +156,8 @@ public static partial class SkillCatalog
         list.Add(WarlordShout(WaraoeShockShout, "Shocking Shout", SkillEffect.Stun,
             WaraoeShockShoutPower, castTicks: 10, cooldownTicks: 50, durationTicks: 50,
             "A bellow that flattens everything around you.",
-            _ => "and stuns everything around you for 5s", landMod: 1f));
+            _ => "and stuns everything around you for 5s", landMod: 1f,
+            fourth: WarlordShockShoutRungs()));
 
         // ═══ WHIRLWIND — four seconds of blade ═══════════════════════════════════════════════════
         // *"Deals Physical damage with +N power 20 times over 4s"*. A CHANNEL WRAPPER, the shape the
@@ -169,7 +180,8 @@ public static partial class SkillCatalog
                        + "around you. Requires a two-handed blunt.",
             Levels: Enumerable.Range(0, Warrior3rdLevels.Length).Select(i => new SkillLevel(
                 Power: WaraoeWhirlwindPower[i], MpCost: W3ActiveMp[i], SpCost: Warrior3rdSp[i],
-                Description: WhirlwindRungText(WaraoeWhirlwindPower[i]))).ToArray()));
+                Description: WhirlwindRungText(WaraoeWhirlwindPower[i])))
+                .Concat(WarlordWhirlwindRungs()).ToArray()));
 
         // ONE STROKE. No MP (the wrapper charges once), no power (the wrapper's rung supplies it),
         // never learned. The AoE lives HERE because it is the stroke that splashes, not the wrapper.
@@ -212,24 +224,24 @@ public static partial class SkillCatalog
                     WeaponVulnerabilityPct: .20f,
                     Description: "Provokes everything within 800 for 30s and leaves it taking 20% more "
                                + "damage from blunt weapons."),
-            }));
+            }.Concat(WarlordTauntingShoutRungs()).ToArray()));
 
         // ═══ THE THREE RACE SHOUTS — the Slashes' rots, on a ring, with no strike ════════════════
         list.Add(RaceShout(WaraoeHumanShout, "Shattering Shout", SkillEffect.DebuffDef,
-            WaraoeHumanShoutDef, v => new EffectMagnitude[] { new(SkillEffect.DebuffDef, v) },
+            WaraoeHumanShoutDef, W4WaraoeHumanShoutDef, v => new EffectMagnitude[] { new(SkillEffect.DebuffDef, v) },
             "A shout that opens armour: every guard in the ring fails for 15s.",
             v => $"Cuts the P.Def of everything within 200 by {v * 100f:0}% for 15s."));
         list.Add(RaceShout(WaraoeDemonShout, "Breaking Shout",
             // ⚠ ONE FLAG FOR BOTH HALVES. `DebuffAtk` cuts P.Atk AND M.Atk — the Demon's Slash has
             //   always been authored this way and its own rung text says so. There is no
             //   `DebuffMagicAtk`, and the enum has no bit left to add one.
-            SkillEffect.DebuffAtk, WaraoeDemonShoutAtk,
+            SkillEffect.DebuffAtk, WaraoeDemonShoutAtk, W4WaraoeDemonShoutAtk,
             v => new EffectMagnitude[] { new(SkillEffect.DebuffAtk, v) },
             "A shout that breaks the swing: everything in the ring hits softer for 15s.",
             v => $"Cuts the P.Atk and M.Atk of everything within 200 by {v * 100f:0}% for 15s."));
         list.Add(RaceShout(WaraoeElfShout, "Crippling Shout",
             SkillEffect.Slow | SkillEffect.DebuffAtkSpeed | SkillEffect.DebuffCastSpeed,
-            WaraoeElfShoutSpeed,
+            WaraoeElfShoutSpeed, W4WaraoeElfShoutSpeed,
             v => new EffectMagnitude[]
             {
                 new(SkillEffect.Slow, v),
@@ -262,9 +274,11 @@ public static partial class SkillCatalog
     /// real duration.</para></summary>
     private static SkillDef[] SupportKit(string id, string name,
                                          Func<int, EffectMagnitude[]> lingering,
-                                         Func<int, string> lingeringText)
+                                         Func<int, string> lingeringText,
+                                         EffectMagnitude[] rung4Lingering, string rung4Text)
     {
-        var defs = new SkillDef[WaraoeSupportLevels.Length + 1];
+        // +2: the three 3rd-tier payloads, the level-80 payload, and the passive itself.
+        var defs = new SkillDef[WaraoeSupportLevels.Length + 2];
 
         for (int r = 0; r < WaraoeSupportLevels.Length; r++)
         {
@@ -280,18 +294,31 @@ public static partial class SkillCatalog
                 Description: $"Heals {WaraoeSupportHeal[i] * 100f:0}% of max HP {lingeringText(i)}.");
         }
 
+        // ---- RUNG 4, level 80 (`war_aoe 4th.csv`): 20% for 15% of max HP, and a far heavier tail. ----
+        int last = WaraoeSupportLevels.Length + 1;
+        defs[last] = new SkillDef(SupportPayload(id, WaraoeSupportLevels.Length + 1), name,
+            BaseClass.Fighter,
+            SkillEffect.Heal | rung4Lingering.Aggregate(SkillEffect.None, (a, m) => a | m.Effect),
+            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+            DurationTicks: 100, BuffKey: id, Rank: WaraoeSupportLevels.Length + 1,
+            Category: SkillCategory.Buff, TargetMode: TargetMode.SelfOnly, SpCost: 0,
+            Magnitudes: new[] { new EffectMagnitude(SkillEffect.Heal, .15f, ModifierMode.Percent) }
+                        .Concat(rung4Lingering).ToArray(),
+            Description: $"Heals 15% of max HP {rung4Text}.");
+
         defs[0] = new SkillDef(id, name, BaseClass.Fighter, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive, TargetMode: TargetMode.SelfOnly,
             SpCost: WaraoeSupportSp[0],
             ProcChance: WaraoeSupportChance[0], ProcCooldownTicks: 150,
-            ProcSelfRungs: Enumerable.Range(1, WaraoeSupportLevels.Length)
+            ProcSelfRungs: Enumerable.Range(1, WaraoeSupportLevels.Length + 1)
                                      .Select(r => SupportPayload(id, r)).ToArray(),
             Description: "Every blow you land may pay you back.",
             Levels: Enumerable.Range(0, WaraoeSupportLevels.Length).Select(i => new SkillLevel(
                 SpCost: WaraoeSupportSp[i], ProcChance: WaraoeSupportChance[i],
                 Description: $"{WaraoeSupportChance[i] * 100f:0}% chance on a landed blow (15s reuse) to "
                            + $"heal {WaraoeSupportHeal[i] * 100f:0}% of max HP {lingeringText(i)}."))
+                .Append(SupportRung4(rung4Lingering, rung4Text))
                 .ToArray());
 
         return defs;
@@ -303,7 +330,8 @@ public static partial class SkillCatalog
     /// contested rider on CON.</summary>
     private static SkillDef WarlordShout(string id, string name, SkillEffect rider, int[] power,
                                          int castTicks, int cooldownTicks, int durationTicks,
-                                         string blurb, Func<int, string> what, float landMod)
+                                         string blurb, Func<int, string> what, float landMod,
+                                         SkillLevel[]? fourth = null)
     {
         string Rung(int i, int p) =>
             $"Strikes everything within 200 for power {p:N0} {what(i)}. Cannot be blocked, can double.";
@@ -323,7 +351,8 @@ public static partial class SkillCatalog
             Description: blurb,
             Levels: Enumerable.Range(0, Warrior3rdLevels.Length).Select(i => new SkillLevel(
                 Power: power[i], MpCost: W3ActiveMp[i], SpCost: Warrior3rdSp[i],
-                Description: Rung(i, power[i]))).ToArray());
+                Description: Rung(i, power[i])))
+                .Concat(fourth ?? Array.Empty<SkillLevel>()).ToArray());
     }
 
     /// <summary>ONE OF THE THREE RACE SHOUTS — a SOLO debuff on a self-centred ring, no damage cell at
@@ -331,6 +360,7 @@ public static partial class SkillCatalog
     /// <see cref="WaraoeShoutLandMod"/> because a shout that only curses lands more readily than a
     /// Slash that curses and strikes.</summary>
     private static SkillDef RaceShout(string id, string name, SkillEffect rot, float[] column,
+                                      float[] fourth,
                                       Func<float, EffectMagnitude[]> mags,
                                       string blurb, Func<float, string> rungText) =>
         new(id, name, BaseClass.Fighter, rot,
@@ -347,5 +377,6 @@ public static partial class SkillCatalog
             Levels: Enumerable.Range(0, Warrior3rdLevels.Length).Select(i => new SkillLevel(
                 MpCost: W3ActiveMp[i], SpCost: Warrior3rdSp[i],
                 Magnitudes: mags(column[i]),
-                Description: rungText(column[i]))).ToArray());
+                Description: rungText(column[i])))
+                .Concat(WarlordRaceShoutRungs(fourth, mags, rungText)).ToArray());
 }

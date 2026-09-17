@@ -156,16 +156,30 @@ public static partial class SkillCatalog
             Description: "Passive. A TWO-HANDED BLUNT hits harder and crits worse — and every basic "
                        + "swing sweeps everything within 150 of your target. No effect one-handed, "
                        + "and none with any other weapon.",
+            // ⚠ RUNGS 16-30 ARE THE WARLORD'S 4th TIER (`war_aoe 4th.csv`, 2026-09-17) and they are
+            //   built by CONCATENATING the two halves, exactly as the Ravager's sword mastery does.
+            //   The cleave PLATEAUS at 10 for the whole tier — his column, and the 3rd tier already
+            //   reached 10 at rung 6, so fifteen more rungs buy power and never width.
             Levels: Enumerable.Range(0, Warrior3rdLevels.Length).Select(i => new SkillLevel(
                 SpCost: Warrior3rdSp[i],
                 Description: $"Two-handed blunt: +{W3BluntAtk[i]} P.Atk, +{W3MasteryCritDmg[i]:0} critical "
-                           + $"damage, basic attacks strike up to {W3BluntCleave[i]} targets within 150.")).ToArray(),
+                           + $"damage, basic attacks strike up to {W3BluntCleave[i]} targets within 150."))
+                .Concat(F4Rungs(W4BluntAtk.Length, 1, (i, sp, gold) => new SkillLevel(
+                    SpCost: sp, GoldCost: gold,
+                    Description: $"Two-handed blunt: +{W4BluntAtk[i]} P.Atk, +{W4BluntCritDmg[i]:0} critical "
+                               + "damage, basic attacks strike up to 10 targets within 150."))).ToArray(),
             WeaponMasteryLevels: Enumerable.Range(0, Warrior3rdLevels.Length).Select(i =>
                 new WeaponMasteryProfile(
                     Blunt: new PassiveEffect(PhysAtk: W3BluntAtk[i], CritDamageFlat: W3MasteryCritDmg[i],
                         CleaveTargets: W3BluntCleave[i], CleaveRadius: 150f),
                     RequiredWeapon: WeaponType.AnyBlunt,
-                    RequiredHands: WeaponHands.Two)).ToArray()),
+                    RequiredHands: WeaponHands.Two))
+                .Concat(Enumerable.Range(0, W4BluntAtk.Length).Select(i =>
+                    new WeaponMasteryProfile(
+                        Blunt: new PassiveEffect(PhysAtk: W4BluntAtk[i], CritDamageFlat: W4BluntCritDmg[i],
+                            CleaveTargets: 10, CleaveRadius: 150f),
+                        RequiredWeapon: WeaponType.AnyBlunt,
+                        RequiredHands: WeaponHands.Two))).ToArray()),
 
         // ═══ FINAL STAND — the passive that reads your own HP bar ════════════════════════════════
         // Three rungs at 40 / 52 / 60, both disciplines. Its numbers live in `Entity.FinalStandBonus`
@@ -191,6 +205,17 @@ public static partial class SkillCatalog
                 new SkillLevel(SpCost: 120_000,
                     Description: "Below 75% HP +10% P.Atk and +2 accuracy; below 50% +20% and +4 accuracy; "
                                + "below 25% +30% and +8 accuracy."),
+                // ---- 80 and 90 — the WARLORD'S ALONE (`war_aoe 4th.csv`, 2026-09-17). ----
+                // ⚠ `warrior 4th.csv` stops Final Stand at 74 and `war_aoe 4th.csv` carries it to 90.
+                //   The two files disagree deliberately; do not "tidy" one onto the other. The numbers
+                //   live in Entity.FinalStandBonus / FinalStandAccuracy, which is why only the PRICE
+                //   and the TEXT are here — and from this tier up the accuracy pays at EVERY band.
+                new SkillLevel(SpCost: F4(4).Sp, GoldCost: F4(4).Gold,
+                    Description: "Below 75% HP +15% P.Atk and +3 accuracy; below 50% +25% and +6 accuracy; "
+                               + "below 25% +35% and +9 accuracy."),
+                new SkillLevel(SpCost: F4(14).Sp, GoldCost: F4(14).Gold,
+                    Description: "Below 75% HP +20% P.Atk and +4 accuracy; below 50% +30% and +7 accuracy; "
+                               + "below 25% +40% and +10 accuracy."),
             }),
 
         // ═══ HP REGENERATION — and the first passive in the game that pays for SITTING ═══════════

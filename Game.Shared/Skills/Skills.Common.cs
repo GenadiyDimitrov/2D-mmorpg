@@ -518,10 +518,18 @@ public static partial class SkillCatalog
     /// <para>The SP prices here are the WARRIOR's, because his is the ladder that starts earliest
     /// (rung 1 at level 20 for 3,400). The buffer buys the same rungs later and pays his own 3rd-class
     /// prices, which ride as <see cref="ClassSkill.SpCost"/> overrides on his table entries.</para></summary>
-    private static readonly (int Sp, int MaxHp)[] HpBoostRungs =
+    /// <para>🔑 RUNGS 11-18 ARE THE WARLORD'S ALONE (`war_aoe 4th.csv`, 2026-09-17). His `warrior 4th`
+    /// file stops HP Boost at 74 and his `war_aoe 4th` file carries it to 90 — +1100 climbing to +2500,
+    /// every other level. They are the first rungs of this ladder with a GOLD price, which is why the
+    /// tuple grew a third field rather than the eight rows being given their own table.</para>
+    private static readonly (int Sp, int Gold, int MaxHp)[] HpBoostRungs =
     {
-        (3_400, 120), (12_000, 200), (40_000, 300), (42_000, 400), (65_000, 500),
-        (80_000, 600), (170_000, 700), (280_000, 800), (390_000, 900), (880_000, 1000),
+        (3_400, 0, 120), (12_000, 0, 200), (40_000, 0, 300), (42_000, 0, 400), (65_000, 0, 500),
+        (80_000, 0, 600), (170_000, 0, 700), (280_000, 0, 800), (390_000, 0, 900), (880_000, 0, 1000),
+        // ---- 76 · 78 · 80 · 82 · 84 · 86 · 88 · 90, his cells to the coin. ----
+        (6_500_000, 1_000_000, 1100), (16_000_000, 1_000_000, 1300),
+        (0, 5_000_000, 1500), (0, 10_000_000, 1700), (0, 30_000_000, 1900),
+        (0, 75_000_000, 2100), (0, 100_000_000, 2300), (0, 100_000_000, 2500),
     };
 
     private static SkillDef[] CommonSkills() => new SkillDef[]
@@ -532,7 +540,8 @@ public static partial class SkillCatalog
             Category: SkillCategory.Passive,
             Description: "Passive. Raises your maximum HP.",
             Levels: HpBoostRungs
-                .Select(r => new SkillLevel(SpCost: r.Sp, Passive: new PassiveEffect(MaxHp: r.MaxHp)))
+                .Select(r => new SkillLevel(SpCost: r.Sp, GoldCost: r.Gold,
+                                            Passive: new PassiveEffect(MaxHp: r.MaxHp)))
                 .ToArray()),
 
         // ======================== TEST ONLY — DELETE ME ========================
