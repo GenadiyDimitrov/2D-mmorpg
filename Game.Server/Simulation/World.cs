@@ -303,6 +303,14 @@ public record BuyItemCmd(string ConnectionId, Guid NpcEntityId, string ItemDefId
 /// <summary>Sell an inventory item to a vendor NPC.</summary>
 public record SellItemCmd(string ConnectionId, Guid NpcEntityId, Guid InstanceId, int Quantity) : IGameCommand;
 
+/// <summary>`BL-240` — sell EVERYTHING of one rarity in one tab, in one tap. Owner, 2026-09-16:
+/// *"If I'm on the 'gear' tab and click 'instant sale' and chose 'rare' it sells all that are rare
+/// gear in my inventory"*. The TAB scopes it and the RARITY picks the rung; both travel here because
+/// the server does the sweep and must mean exactly what the window the player is looking at means —
+/// which is why <see cref="ItemCategory"/> lives in Game.Shared now.</summary>
+public record InstantSellCmd(string ConnectionId, Guid NpcEntityId,
+    ItemCategory Category, ItemRarity Rarity) : IGameCommand;
+
 /// <summary>Re-buy a recently-sold item (by its index in the buy-back list) at a vendor.</summary>
 public record BuyBackCmd(string ConnectionId, Guid NpcEntityId, int Index) : IGameCommand;
 

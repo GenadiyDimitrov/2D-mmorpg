@@ -70,29 +70,13 @@ namespace Game.Client
         // piece you are hunting sits in the same place whichever window you opened — the point of the
         // ask was navigability, and three windows filtering three different ways would not deliver it.
         //
-        // Gear = anything you can WEAR (runes included: you hold them). Use = anything you consume,
-        // scrolls and boxes with it — a box is a tap-to-spend, not a material. Mats = the rest, which
-        // is what "everything else" honestly is. Quest is a category so the bag can keep its own tab
-        // for it; the vendor and the keeper never show it at all (B4).
-        internal enum ItemCategory { All = 0, Gear = 1, Use = 2, Mats = 3, Quest = 4 }
-
-        private static ItemCategory CategoryOf(ItemDef def) => def == null ? ItemCategory.Mats : def.Slot switch
-        {
-            EquipSlot.Weapon or EquipSlot.Armor or EquipSlot.Shield
-                or EquipSlot.Jewel or EquipSlot.Rune          => ItemCategory.Gear,
-            EquipSlot.Consumable or EquipSlot.Scroll
-                or EquipSlot.Box                              => ItemCategory.Use,
-            EquipSlot.QuestItem                               => ItemCategory.Quest,
-            _                                                 => ItemCategory.Mats,
-        };
-
-        /// <summary>Does this item belong under the given tab? <see cref="ItemCategory.All"/> means
-        /// everything EXCEPT quest tokens, which are only ever reachable through their own tab.</summary>
-        private static bool InCategory(ItemCategory tab, ItemDef def)
-        {
-            var c = CategoryOf(def);
-            return tab == ItemCategory.All ? c != ItemCategory.Quest : c == tab;
-        }
+        // 🔑 `ItemCategory`, `CategoryOf` and `InCategory` MOVED TO `Game.Shared` (ItemCatalog) in
+        // 0.158.0 / `BL-240`: the instant-sell sweep runs on the SERVER and has to mean exactly what
+        // the tab you are looking at means. Two copies of a tab rule is the drift `ItemTag` exists to
+        // prevent. They are used here unqualified — `using Game.Shared` is at the top of every window
+        // that has tabs.
+        private static ItemCategory CategoryOf(ItemDef def) => ItemCatalog.CategoryOf(def);
+        private static bool InCategory(ItemCategory tab, ItemDef def) => ItemCatalog.InCategory(tab, def);
 
         // ----- `BL-117`: THE [ORDER] BUTTON ------------------------------------------------------
         //

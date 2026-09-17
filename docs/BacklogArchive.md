@@ -6121,6 +6121,23 @@ rule; `LockedItemsCsv` on the character row (⚠ a `game.db` delete); the set ri
 locked item ignores both"* — closed with it: the bag's fast DEL/BRK button is the one control with no
 confirmation behind it, so a lock removes it rather than greying it.
 
+## `BL-240` ✅ BUILT 2026-09-17 in **0.158.0** — instant sale by rarity, per tab. The entry as filed.
+
+**2026-09-16.** *"We need a system for instant sell u click on button inside the vendor sell tab and it
+shows rarity to instant sell -> it sells everitying of that rarity depending on the tab you are on.. If
+I'm on the 'gear' tab and click 'instant sale' and chose 'rare' it sells all that are rare gear in my
+inventory"*
+
+The TAB scopes it (gear / mats / use) and the rarity picks the rung. ⚠ Reads directly against
+`BL-239`: a locked item must be invisible to this, or the button is a foot-gun rather than a
+convenience.
+
+**Built to that scope exactly** — the tab and the rarity, not "and below". The rarity list is built
+from what you actually hold and each row names the count and the gold; a locked, equipped or
+vendor-refused item is never in it. ⚠ One thing found on the way: `ItemCategory` was private to the
+Unity client, so the server had no way to mean the same "Gear" the tab does — it now lives in
+`Game.Shared` alongside `ItemTag`, for the same reason `ItemTag` does.
+
 ## `BL-242` ✅ BUILT 2026-09-17 in **0.156.0** — the sell list shows the enchant and the attributes. The entry as filed.
 
 **2026-09-16.** *"sale list don't show enchant value and in the description of the sell item row should

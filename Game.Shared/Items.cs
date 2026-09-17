@@ -916,6 +916,11 @@ public static class StackLimits
     };
 }
 
+/// <summary>The bag/vendor/keeper tabs (`BL-240` moved them here from the Unity client — see the note
+/// on <see cref="ItemCatalog.CategoryOf"/>). The numbering is the tab ORDER and is on the wire
+/// (`InstantSellCmd`), so it is append-only like every other id in this game.</summary>
+public enum ItemCategory { All = 0, Gear = 1, Use = 2, Mats = 3, Quest = 4 }
+
 public static class ItemCatalog
 {
     // -----------------------------------------------------------------------
@@ -2980,6 +2985,36 @@ public static class ItemCatalog
     public static bool IsAttributeScroll(ItemDef def) => def.AttrScroll != AttrScrollKind.None;
     public static bool IsQuestItem(ItemDef def) => def.Slot == EquipSlot.QuestItem;
     public static bool IsEquippable(ItemDef def) => def.Slot is EquipSlot.Weapon or EquipSlot.Armor or EquipSlot.Jewel;
+
+    // ===== THE BAG TABS ===========================================================================
+    //
+    // 🔑 THESE LIVE HERE, IN SHARED, SINCE `BL-240`. They were private to the Unity `GameUi` until the
+    // instant-sell button gave the SERVER a reason to ask "is this item on the Gear tab?" — and a
+    // second copy of the rule on the server is exactly the drift `ItemTag` exists to prevent: the
+    // player would pick a tab, and the sweep would sell by a slightly different definition of it.
+    //
+    // Gear = anything you can WEAR (runes included: you hold them). Use = anything you consume,
+    // scrolls and boxes with it — a box is a tap-to-spend, not a material. Mats = the rest, which is
+    // what "everything else" honestly is. Quest is a category so the bag can keep its own tab for it;
+    // the vendor and the keeper never show it at all (B4).
+
+    public static ItemCategory CategoryOf(ItemDef def) => def == null ? ItemCategory.Mats : def.Slot switch
+    {
+        EquipSlot.Weapon or EquipSlot.Armor or EquipSlot.Shield
+            or EquipSlot.Jewel or EquipSlot.Rune          => ItemCategory.Gear,
+        EquipSlot.Consumable or EquipSlot.Scroll
+            or EquipSlot.Box                              => ItemCategory.Use,
+        EquipSlot.QuestItem                               => ItemCategory.Quest,
+        _                                                 => ItemCategory.Mats,
+    };
+
+    /// <summary>Does this item belong under the given tab? <see cref="ItemCategory.All"/> means
+    /// everything EXCEPT quest tokens, which are only ever reachable through their own tab.</summary>
+    public static bool InCategory(ItemCategory tab, ItemDef def)
+    {
+        var c = CategoryOf(def);
+        return tab == ItemCategory.All ? c != ItemCategory.Quest : c == tab;
+    }
 
     /// <summary>The level at which an ITEM reaches FULL power (below it you may still equip it, but the
     /// GRADE PENALTY scales your stats down by the grade GAP). Not a hard equip gate. Takes the DEF, not

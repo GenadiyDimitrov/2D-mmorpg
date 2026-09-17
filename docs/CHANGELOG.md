@@ -7,11 +7,42 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.157.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.158.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-17 (latest) — 0.157.0: `BL-239` — AN ITEM LOCK, AND IT LOCKS THE **DEF ID**
+## 2026-09-17 (latest) — 0.158.0: `BL-240` — INSTANT SALE: ONE RARITY, ONE TAB, ONE TAP
+
+⚠ **Needs an APK** (the button is in the vendor's Sell tab). No `game.db` delete.
+
+*"We need a system for instant sell u click on button inside the vendor sell tab and it shows rarity to
+instant sell -> it sells everitying of that rarity depending on the tab you are on.. If I'm on the
+'gear' tab and click 'instant sale' and chose 'rare' it sells all that are rare gear in my inventory"*.
+
+**Built exactly to that scope: the TAB and the RARITY, and nothing else.** In particular it is not
+"and below" — picking Rare sells rare, not rare-and-worse. A ladder would make one button destroy
+things you did not name.
+
+🔑 **`ItemCategory`, `CategoryOf` and `InCategory` MOVED TO `Game.Shared`.** They were private to the
+Unity client until this: the sweep runs on the server, so the server has to mean *exactly* what the
+tab you are looking at means. A second copy of a tab rule on the server is precisely the drift
+`ItemTag` exists to prevent — you would pick "Gear" and the sweep would sell by a slightly different
+definition of it.
+
+**Two taps.** The button lists only the rarities you actually hold something sellable of, each row
+naming how many rows and how much gold; picking one asks a plain confirmation repeating both. The
+quote is the client's arithmetic over the same `ItemTag` predicates the server uses, and the server
+re-derives both — so they agree, and its number is the one that lands.
+
+**Never swept:** equipped gear (skipped silently, not refused — you did not name it, and a sweep that
+stops to complain about your weapon is a sweep you cannot use), quest tokens, anything a vendor would
+refuse one at a time, and **anything LOCKED** (`BL-239`, which is why it was built first).
+
+⚠ **Buy-back is the undo, and it is only `BuyBackSlots` deep.** A sweep of thirty rows pushes the
+earliest ones off the shelf. That cap is not new, but this is the first thing in the game that can
+reach it in one tap — which is why the confirmation says so.
+
+## 2026-09-17 — 0.157.0: `BL-239` — AN ITEM LOCK, AND IT LOCKS THE **DEF ID**
 
 ⚠ **Needs an APK** (the lock is set from the item-details window) **and a `game.db` delete** — the
 locks are a new `LockedItemsCsv` column on the character row, and `EnsureCreated()` does not add

@@ -60,7 +60,11 @@ the stack you lock stays locked after it is drunk empty and re-looted. It took `
 with it: a locked row loses the bag's fast DEL/BRK button entirely, that being the one control in the
 game with no confirmation behind it. ⚠ **A `game.db` delete** — the locks are a new column.
 
-**`BL-240`, `BL-241` and `BL-246`** are still 🔵 waiting to be built.
+✅ **AND `BL-240` WITH IT (0.158.0)** — instant sale, scoped by the tab and the rarity and nothing
+else. It moved `ItemCategory` out of the Unity client into `Game.Shared`, because the sweep runs on the
+server and has to mean exactly what the tab you are looking at means.
+
+**`BL-241` and `BL-246`** are still 🔵 waiting to be built.
 
 ✅✅ **AND `BL-247` IS BUILT AND ARCHIVED (0.151.0)** — you took the recommendation (*"fill the gap with
 the elits+boss, and fix the blueprints to take the rates multiplier"*). Four new elite camps (68 / 72 /
@@ -240,7 +244,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-234` | ❓ | URGENT LESSER HEAL — built to your four numbers; the per-rank falloff is mine to confirm | classes |
 | `BL-237` | 🔵 | THE WARLORD'S DAMAGE ROWS — all that is left of WARRIOR 3rd+4th; `war_aoe 3rd/4th.csv` author none | classes |
 
-| `BL-240` | 🔵 | INSTANT SELL BY RARITY, scoped by the vendor tab you are on | items |
+
 | `BL-241` | 🔵 | A PER-TYPE RARITY FILTER ON PICKUP — and it drops you from the party LOOT ROSTER too | items |
 | `BL-246` | 🔵 | THE STATS WINDOW BECOMES TWO TABS — your full layout; several rows have no source yet | ui |
 | `BL-250` | 🟡 | THE SUBCLASS SYSTEM — **the server half is BUILT (0.155.0)**; what is left is the CLIENT dialogue + panel (APK) and the SIGIL half (§1-§4). ❓ one new question in §9.6 | classes |
@@ -1853,16 +1857,6 @@ until you write them. That line is the reminder; nothing is invented in the mean
 
 ---
 
-## `BL-240` 🔵 INSTANT SELL BY RARITY, PER VENDOR TAB
-
-**2026-09-16.** *"We need a system for instant sell u click on button inside the vendor sell tab and it
-shows rarity to instant sell -> it sells everitying of that rarity depending on the tab you are on.. If
-I'm on the 'gear' tab and click 'instant sale' and chose 'rare' it sells all that are rare gear in my
-inventory"*
-
-The TAB scopes it (gear / mats / use) and the rarity picks the rung. ⚠ Reads directly against
-`BL-239`: a locked item must be invisible to this, or the button is a foot-gun rather than a
-convenience.
 
 ## `BL-241` 🔵 A PER-TYPE RARITY FILTER ON PICKUP
 

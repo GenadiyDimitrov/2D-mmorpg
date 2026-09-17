@@ -268,6 +268,10 @@ namespace Game.Client
         public Task SetItemLockAsync(string defId, bool locked) =>
             _connection.SendAsync("SetItemLock", defId, locked);
 
+        /// <summary>`BL-240` — sell every item of one rarity within one vendor tab.</summary>
+        public Task InstantSellAsync(Guid npcEntityId, int category, int rarity) =>
+            _connection.SendAsync("InstantSell", npcEntityId, category, rarity);
+
         /// <summary>Confirm the chosen item(s) from a selection box.</summary>
         public Task SelectBoxItemsAsync(Guid instanceId, string[] itemIds) =>
             _connection.SendAsync("SelectBoxItems", instanceId, itemIds);

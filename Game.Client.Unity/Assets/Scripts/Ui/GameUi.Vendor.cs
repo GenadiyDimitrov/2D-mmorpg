@@ -30,6 +30,8 @@ namespace Game.Client
         private RectTransform _vendorPanel, _vendorList;
         private TextMeshProUGUI _vendorTitle;
         private Button _vendorBuyTab, _vendorSellTab, _vendorViewTab, _vendorQSellTab;
+        /// <summary>`BL-240` — the instant-sale button. Sell side only.</summary>
+        private Button _vendorInstantSell;
         private bool _vendorSell;
         /// <summary>V1 (playtest-18): quick-sell, the bin's twin. With it ON a row sells the WHOLE
         /// stack on one tap — no numpad, no confirm — which is what emptying a bag of trash actually
@@ -95,6 +97,13 @@ namespace Game.Client
             _vendorViewTab = UiKit.TextButton(inner, "Detail", ToggleVendorView, 15f);
             UiKit.Place(UiKit.Rect(_vendorViewTab.gameObject), new Vector2(1f, 1f), new Vector2(1f, 1f),
                         new Vector2(-18f, -chrome - 32f), new Vector2(120f, 30f));
+
+            // `BL-240` — INSTANT SALE. It sits on the CATEGORY row, hard right, because the tab is half
+            // of what it means: *"it sells everything of that rarity depending on the tab you are on"*.
+            // Hidden on the buy side, like QSell, for the same reason.
+            _vendorInstantSell = UiKit.TextButton(inner, "Instant sale", BeginInstantSell, 14f);
+            UiKit.Place(UiKit.Rect(_vendorInstantSell.gameObject), new Vector2(1f, 1f), new Vector2(1f, 1f),
+                        new Vector2(-18f, -chrome - 66f), new Vector2(152f, 30f));
 
             _vendorTabButtons = BuildCategoryTabs(inner, VendorTabs, new Vector2(18f, -chrome - 66f), 88f,
                                                   cat => { _vendorTab = cat; _vendorRevision = -1; });
@@ -163,6 +172,7 @@ namespace Game.Client
             UiKit.SetButtonText(_vendorViewTab, _vendorDetailed ? "Compact" : "Detail");
             _vendorViewTab.targetGraphic.color = _vendorDetailed ? UiKit.TabActive : UiKit.PanelLight;
             _vendorQSellTab.gameObject.SetActive(_vendorSell);
+            _vendorInstantSell.gameObject.SetActive(_vendorSell);   // `BL-240`
             UiKit.SetButtonText(_vendorQSellTab, _vendorQuickSell ? "QSell: ON" : "QSell: off");
             _vendorQSellTab.targetGraphic.color = _vendorQuickSell
                 ? new Color(0.42f, 0.20f, 0.20f, 0.95f)   // the bin's armed red — it skips the confirm too
@@ -336,6 +346,82 @@ namespace Game.Client
                        qty => qty + " x " + Price(unit, unitPlat) + " = " + Price(unit, unitPlat, qty)
                               + "   (you have " + Wallet() + ")");
         }
+
+        // ═══ `BL-240` — INSTANT SALE ═══════════════════════════════════════════════════════════════
+        //
+        // *"u click on button inside the vendor sell tab and it shows rarity to instant sell -> it sells
+        // everitying of that rarity depending on the tab you are on"*. Two taps: pick the rarity, then
+        // confirm. The rarity list is BUILT FROM THE BAG, so a rung you own nothing of is not offered —
+        // and each row already names what it will take and what it pays, which is what makes the
+        // confirmation a check rather than a guess.
+        //
+        // ⚠ THE COUNT AND THE GOLD HERE ARE THE CLIENT'S ARITHMETIC over the same `ItemTag` predicates
+        // the server uses, so they agree — but the server re-derives both, and its number is the one
+        // that lands. A stack looted between the popup and the tap makes the sale slightly larger than
+        // the quote, never smaller in a way that surprises you.
+
+        private void BeginInstantSell()
+        {
+            var options = new List<(string Label, Action OnPick)>();
+
+            for (int r = 0; r <= (int)ItemRarity.Mythic; r++)
+            {
+                var rarity = (ItemRarity)r;
+                int rows = 0, units = 0;
+                long gold = 0;
+                foreach (var item in Boot.Inventory ?? Array.Empty<InventoryItemDto>())
+                {
+                    if (item.Equipped) continue;
+                    var def = ItemCatalog.Get(item.DefId);
+                    if (def == null || def.Rarity != rarity) continue;
+                    if (!ItemCatalog.InCategory(_vendorTab, def)) continue;
+                    if (Boot.IsLocked(def.Id)) continue;                       // `BL-239`
+                    if (!ItemTag.Sellable(def, item.SellPriceOverride, item.TradableOverride)) continue;
+                    int qty = Mathf.Max(1, item.Quantity);
+                    rows++;
+                    units += qty;
+                    gold += ItemTag.SellPrice(def, item.SellPriceOverride) * qty;
+                }
+                if (rows == 0) continue;
+
+                var picked = rarity;
+                long quoted = gold;
+                int pickedRows = rows, pickedUnits = units;
+                options.Add((Coloured(rarity.ToString(), rarity)
+                             + "   " + pickedRows + (pickedUnits > pickedRows ? " stacks" : " items")
+                             + "   " + quoted.ToString("N0") + " " + GameConstants.CurrencyName,
+                    () =>
+                    {
+                        CloseWindow(_selectPopup);
+                        Ask($"Sell {pickedRows} {picked} {InstantSellTabWord(_vendorTab)}"
+                            + (pickedUnits > pickedRows ? $" ({pickedUnits} items)" : "")
+                            + $" for {quoted:N0} {GameConstants.CurrencyName}?"
+                            + "\n\n<size=15>Buy-back holds the last "
+                            + GameConstants.BuyBackSlots + " sales, so a long sweep can push the "
+                            + "earliest ones off the shelf.</size>",
+                            "Sell all",
+                            () => Boot.InstantSell(_vendorTab, picked));
+                    }));
+            }
+
+            if (options.Count == 0)
+            {
+                ClientLog.Info("Nothing sellable on this tab. (Locked and equipped items are never swept.)");
+                return;
+            }
+
+            ShowSelection("Instant sale — " + CategoryLabel(_vendorTab), options.ToArray());
+        }
+
+        /// <summary>The word a tab goes by in the confirmation. Deliberately the same four words the
+        /// server's own message uses, so the question and the answer read as one sentence.</summary>
+        private static string InstantSellTabWord(ItemCategory c) => c switch
+        {
+            ItemCategory.Gear => "gear",
+            ItemCategory.Use  => "consumables",
+            ItemCategory.Mats => "materials",
+            _                 => "items",
+        };
 
         private void SellTap(InventoryItemDto item, ItemDef def, long unit)
         {

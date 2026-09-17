@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.157.0";
+    public const string GameVersion = "0.158.0";
 
     // ----- SP BOTTLE (owner, 2026-08-26) -------------------------------------------------------
     // *"u can make an npc to take your 1kkk SP + 100kk gold and give you a tradable/sellabel
@@ -194,7 +194,9 @@ public static class GameConstants
     /// simply never sees a lock, and it never calls the new method. The SERVER enforces every one of the
     /// five refusals regardless of which client is asking, which is what makes that safe.
     /// ⚠ A NEW APK IS WANTED — without one there is no way to SET a lock.
-    public const int ProtocolVersion = 40;   // 40: the item lock rides on the bag (`BL-239`)
+    /// 41 (0.158.0) adds the `InstantSell` hub method — `BL-240`. A new method and nothing else; an old
+    /// APK has no button for it and never calls it. ⚠ A NEW APK IS WANTED.
+    public const int ProtocolVersion = 41;   // 41: instant sell by rarity, per tab (`BL-240`)
 
     /// <summary>
     /// The oldest protocol this server still speaks. Equal to <see cref="ProtocolVersion"/> means

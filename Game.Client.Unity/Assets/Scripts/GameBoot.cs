@@ -819,6 +819,16 @@ namespace Game.Client
             catch (Exception ex) { ClientLog.Warn("Sell: " + ex.Message); }
         }
 
+        /// <summary>`BL-240` — sell everything of one rarity within one vendor tab. The SERVER does the
+        /// sweep; this only names the two filters, so the client can never sell by a rule the server
+        /// does not share.</summary>
+        public async void InstantSell(ItemCategory category, ItemRarity rarity)
+        {
+            if (Phase != ClientPhase.InWorld || DialogNpcId == Guid.Empty) return;
+            try { await _net.InstantSellAsync(DialogNpcId, (int)category, (int)rarity); }
+            catch (Exception ex) { ClientLog.Warn("InstantSell: " + ex.Message); }
+        }
+
         public async void BuyBackItem(int index)
         {
             if (Phase != ClientPhase.InWorld || DialogNpcId == Guid.Empty) return;

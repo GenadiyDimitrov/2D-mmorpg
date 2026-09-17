@@ -104,6 +104,7 @@ public class GameLoopService : BackgroundService
             QuitProfessionCmd c => c.ConnectionId,
             BuyItemCmd c => c.ConnectionId,
             SellItemCmd c => c.ConnectionId,
+            InstantSellCmd c => c.ConnectionId,   // `BL-240` — a jailed player sells nothing, fast or slow
             BuyBackCmd c => c.ConnectionId,
             DisassembleItemCmd c => c.ConnectionId,   // `BL-22` — a jailed player handles no items
             OpenWarehouseCmd c => c.ConnectionId,
@@ -189,6 +190,7 @@ public class GameLoopService : BackgroundService
                 case QuestActionCmd c: HandleQuestAction(c); break;
                 case BuyItemCmd c: HandleBuy(c); break;
                 case SellItemCmd c: HandleSell(c); break;
+                case InstantSellCmd c: HandleInstantSell(c); break;
                 case TeleportCmd c: HandleTeleport(c); break;
                 case ForgetSkillCmd c: HandleForgetSkill(c); break;
                 case BuyStatSwapsCmd c: HandleBuyStatSwaps(c); break;
@@ -19166,6 +19168,89 @@ public class GameLoopService : BackgroundService
         SendSystemToEntity(player,
             $"Sold {def.Name}{(qty > 1 ? $" x{qty}" : "")} for {total:N0} {GameConstants.CurrencyName}.");
     }
+
+    /// <summary>`BL-240` — INSTANT SELL: everything of one rarity, within one vendor tab, in one tap.
+    ///
+    /// <para>Owner, 2026-09-16: *"it sells everitying of that rarity depending on the tab you are on..
+    /// If I'm on the 'gear' tab and click 'instant sale' and chose 'rare' it sells all that are rare
+    /// gear in my inventory"*. So the sweep is scoped by TWO things and no others — the tab and the
+    /// rarity — and it is deliberately not "and below": picking Rare sells rare, not rare-and-worse.
+    /// A ladder would make the button destroy things you did not name.</para>
+    ///
+    /// <para>🔑 IT REUSES NOTHING FROM <see cref="HandleSell"/> BY COPY. The per-instance price, the
+    /// per-instance sellable test and the lock all come from the same `item.*` helpers that handler
+    /// uses, so the sweep can never pay a different number or take something the single-item path
+    /// would refuse. The two things it does differently are on purpose: a whole stack goes at once,
+    /// and EQUIPPED gear is skipped silently rather than refused loudly — you did not name it, and a
+    /// sweep that stops to complain about your weapon is a sweep you cannot use.</para>
+    ///
+    /// <para>⚠ BUY-BACK IS THE UNDO, AND IT IS ONLY <see cref="GameConstants.BuyBackSlots"/> DEEP.
+    /// A sweep of thirty rows pushes the earliest ones off the shelf. That is the existing cap rather
+    /// than something this introduces, but this is the first thing in the game that can reach it in
+    /// one tap — which is why the CLIENT asks for a confirmation naming the count and the gold.</para></summary>
+    private void HandleInstantSell(InstantSellCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player)) return;
+        if (!TryGetVendorNpc(player, cmd.NpcEntityId, out _)) return;
+        if (cmd.Category == ItemCategory.Quest) return;   // no tab offers it; a raw command still might
+
+        // Snapshot first: the loop removes rows from the very list it walks.
+        var doomed = new List<InventoryItem>();
+        foreach (var item in player.Inventory)
+        {
+            if (item.Equipped) continue;
+            if (ItemCatalog.Get(item.DefId) is not ItemDef def) continue;
+            if (def.Rarity != cmd.Rarity) continue;
+            if (!ItemCatalog.InCategory(cmd.Category, def)) continue;
+            if (player.LockedItems.Contains(def.Id)) continue;   // `BL-239` — the reason that one came first
+            if (!item.Sellable(def)) continue;
+            doomed.Add(item);
+        }
+
+        if (doomed.Count == 0)
+        {
+            SendSystemToEntity(player, $"No {cmd.Rarity} {TabWord(cmd.Category)} to sell.");
+            return;
+        }
+
+        long total = 0;
+        int rows = 0, units = 0;
+        foreach (var item in doomed)
+        {
+            var def = ItemCatalog.Get(item.DefId)!;
+            int qty = Math.Max(1, item.Quantity);
+            total += item.SellPrice(def) * qty;
+            rows++;
+            units += qty;
+
+            player.BuyBack.Add(new BuyBackEntry
+            {
+                DefId = def.Id, Quantity = qty, Enchant = item.Enchant,
+                Attributes = new List<ItemAttribute>(item.Attributes),
+                UnitPrice = ItemCatalog.SellPrice(def),
+            });
+            player.Inventory.Remove(item);
+        }
+        while (player.BuyBack.Count > GameConstants.BuyBackSlots) player.BuyBack.RemoveAt(0);
+
+        player.Gold += total;
+        SendGold(player);
+        SendInventory(player);
+        SendBuyBack(player);
+        SendSystemToEntity(player,
+            $"Sold {rows} {cmd.Rarity} {TabWord(cmd.Category)}" + (units > rows ? $" ({units} items)" : "")
+            + $" for {total:N0} {GameConstants.CurrencyName}.");
+    }
+
+    /// <summary>The word a tab goes by in a sentence. "All" reads as "items" rather than "all items",
+    /// which would be a lie — the sweep is still filtered by rarity.</summary>
+    private static string TabWord(ItemCategory c) => c switch
+    {
+        ItemCategory.Gear => "gear",
+        ItemCategory.Use  => "consumables",
+        ItemCategory.Mats => "materials",
+        _                 => "items",
+    };
 
     private void SendBuyBack(Entity player) =>
         SendTo(player, "BuyBack", new BuyBackUpdate(
