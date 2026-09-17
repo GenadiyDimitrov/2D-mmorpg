@@ -7,11 +7,26 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.167.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.167.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-17 (latest) — 0.167.0: a Plant is what you farm for wood, and an unpriced debuff stops blocking
+## 2026-09-17 (latest) — 0.167.1: the Plant boss was still paying leather
+
+The wood fix shipped an hour earlier and **a second copy of the same map outlived it**. The boss and
+elite MAT PILE (`RollBossBonus`) is not a drop table — it is a hand-rolled pile — and it carried its
+own, coarser category → material map, still reading `Animal or Plant => Leather`. So a Plant creature
+paid wood when you killed it and leather when you killed its boss.
+
+There is **one map now**, `MobCatalog.MatFlavor`, and both sides call it.
+
+🔑 **The two maps agreed on every other category, which is precisely how a duplicate survives long
+enough to drift** — nothing was ever visibly wrong with it until one of the pair was edited. Worth
+repeating because this is the third time in a month (the stackable rule had four copies in 0.146.1;
+`ItemCategory` had two in 0.158.0): **fixing one copy of a duplicated rule means grepping for the
+others in the SAME commit.** This time the grep was done, and it found exactly one.
+
+## 2026-09-17 — 0.167.0: a Plant is what you farm for wood, and an unpriced debuff stops blocking
 
 Two of your four rulings, taken first because neither needs a client.
 

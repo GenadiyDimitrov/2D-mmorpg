@@ -905,6 +905,30 @@ public static class MobCatalog
     private static bool KeepsStarterReturnScroll(string id) =>
         id is "ridgeback_pup" or "fox" or "goblin_scout";
 
+    /// <summary>WHAT A CREATURE IS MADE OF — the one category → (PRIMARY, SECONDARY) material map, and
+    /// the ONLY copy of it. <see cref="StandardDrops"/> reads it, and so does the boss/elite mat pile in
+    /// `GameLoopService.RollBossBonus`, which used to carry its own hand-written duplicate.
+    ///
+    /// <para>🔑 THE PRIMARY IS THE HALF THAT CLIMBS. The rungs in <c>StandardDrops</c> pay BOTH types at
+    /// Uncommon (30+) and then the PRIMARY alone at Rare (60+) and Epic (76+), and the boss pile does the
+    /// same. So a type that is nobody's primary can never be found above Uncommon anywhere in the world —
+    /// which is exactly what happened to Wood (`BL-254`) while Animal and Plant shared one row.</para>
+    ///
+    /// <para>⚠ THE DUPLICATE WAS REAL AND IT SURVIVED THE FIX BY AN HOUR: `RollBossBonus` had its own
+    /// coarser copy (`Animal or Plant => Leather`), so a Plant boss went on paying leather after the
+    /// table stopped. One map, one place — and every category still has a primary that some creature
+    /// actually is, which is what keeps all five types findable.</para></summary>
+    public static (MaterialType Primary, MaterialType Secondary) MatFlavor(MobCategory cat) => cat switch
+    {
+        MobCategory.Animal => (MaterialType.Leather, MaterialType.Wood),
+        MobCategory.Plant => (MaterialType.Wood, MaterialType.Leather),
+        MobCategory.Humanoid => (MaterialType.Ingot, MaterialType.Thread),
+        MobCategory.Undead => (MaterialType.Thread, MaterialType.Gem),
+        MobCategory.Insect => (MaterialType.Thread, MaterialType.Leather),
+        MobCategory.Demon or MobCategory.Dragon => (MaterialType.Ingot, MaterialType.Gem),
+        _ => (MaterialType.Gem, MaterialType.Wood),   // MagicCreature / Angel
+    };
+
     private static DropEntry[] StandardDrops(int level, MobCategory cat, string id)
     {
         // Family-flavored primary mat types (+ Gem is universal). The mats keep their category flavor —
@@ -917,16 +941,7 @@ public static class MobCatalog
         // animals: leather/wood, plants: wood/leather"* — so the two categories MIRROR each other
         // rather than sharing one row, and a Plant is now the creature you farm for wood.
         // ⚠ Do not re-merge these two cases. Their sharing one line is exactly the bug.
-        (MaterialType A, MaterialType B) mats = cat switch
-        {
-            MobCategory.Animal => (MaterialType.Leather, MaterialType.Wood),
-            MobCategory.Plant => (MaterialType.Wood, MaterialType.Leather),
-            MobCategory.Humanoid => (MaterialType.Ingot, MaterialType.Thread),
-            MobCategory.Undead => (MaterialType.Thread, MaterialType.Gem),
-            MobCategory.Insect => (MaterialType.Thread, MaterialType.Leather),
-            MobCategory.Demon or MobCategory.Dragon => (MaterialType.Ingot, MaterialType.Gem),
-            _ => (MaterialType.Gem, MaterialType.Wood),   // MagicCreature / Angel
-        };
+        var mats = MatFlavor(cat);
         string Mat(MaterialType type, ItemRarity r) => Crafting.MaterialId(type, r);
 
         var drops = new List<DropEntry>();
@@ -936,16 +951,16 @@ public static class MobCatalog
         //      1% -> 10, authored as one member per (type, amount) so the existing weighted group picks
         //      both in a single roll. The three types share the weight, so the group totals exactly 1.0.
         var matRungs = new (int Qty, float Weight)[] { (1, 0.50f), (2, 0.40f), (4, 0.09f), (10, 0.01f) };
-        var matTypes = new[] { mats.A, mats.B, MaterialType.Gem };
+        var matTypes = new[] { mats.Primary, mats.Secondary, MaterialType.Gem };
         foreach (var type in matTypes)
             foreach (var (qty, w) in matRungs)
                 drops.Add(new(Mat(type, ItemRarity.Common), w / matTypes.Length, qty, qty, GroupId: GroupMats));
 
         // Higher-rarity mats stay INDEPENDENT low-chance rolls (group "other"), gated by mob level. These
         // are the ORIGINAL x1 numbers — the global rate still applies to them, as it always did.
-        if (level >= 30) { drops.Add(new(Mat(mats.A, ItemRarity.Uncommon), 0.08f)); drops.Add(new(Mat(mats.B, ItemRarity.Uncommon), 0.05f)); }
-        if (level >= 60) drops.Add(new(Mat(mats.A, ItemRarity.Rare), 0.03f));
-        if (level >= 76) drops.Add(new(Mat(mats.A, ItemRarity.Epic), 0.005f));
+        if (level >= 30) { drops.Add(new(Mat(mats.Primary, ItemRarity.Uncommon), 0.08f)); drops.Add(new(Mat(mats.Secondary, ItemRarity.Uncommon), 0.05f)); }
+        if (level >= 60) drops.Add(new(Mat(mats.Primary, ItemRarity.Rare), 0.03f));
+        if (level >= 76) drops.Add(new(Mat(mats.Primary, ItemRarity.Epic), 0.005f));
 
         // ---- SCROLLS (§4): one per trigger at C 40 / U 20 / R 10 — half an enchant scroll of the grade,
         //      half a BUFF potion (never a healing one; those are the Always group's job). The rungs

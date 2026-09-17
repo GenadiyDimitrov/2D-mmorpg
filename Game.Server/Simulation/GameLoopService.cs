@@ -15706,13 +15706,12 @@ public class GameLoopService : BackgroundService
             return false;
         bool boss = mob.Rank == MobRank.Boss;
         int tier = mob.Level >= 76 ? 76 : mob.Level >= 61 ? 61 : mob.Level >= 52 ? 52 : mob.Level >= 40 ? 40 : 20;
-        MaterialType primary = mobType.Category switch
-        {
-            MobCategory.Animal or MobCategory.Plant => MaterialType.Leather,
-            MobCategory.Undead or MobCategory.Insect => MaterialType.Thread,
-            MobCategory.MagicCreature or MobCategory.Angel => MaterialType.Gem,
-            _ => MaterialType.Ingot,
-        };
+        // ⚠ ONE MAP, IN `MobCatalog.MatFlavor`. This used to be a hand-written copy — coarser, and by
+        // 0.167.0 wrong: it still read `Animal or Plant => Leather` after the drop TABLE had split the
+        // two, so a Plant boss went on paying leather while every Plant creature beside it paid wood
+        // (`BL-254`). The two maps agree on every other category; they always did, which is exactly how
+        // a duplicate survives long enough to drift.
+        MaterialType primary = MobCatalog.MatFlavor(mobType.Category).Primary;
 
         // `BL-241` — the pickup filter applies to the pile, one item at a time. A mats filter set to
         // Rare skips the Common ingots and still takes the Rare hide off the same boss. `gave` tracks
