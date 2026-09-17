@@ -51,7 +51,10 @@ namespace Game.Client
             var def = SkillCatalog.Get(skillId);
             if (def == null) return;
 
-            _detailTitle.text = def.Name + (def.MaxLevel > 1 ? "   Lv." + level : "");
+            // NameAt / HasLevelNames — a rank-named rung ("Grade C") already says which step it is,
+            // so appending "Lv.4" to it would say the opposite. See SkillDef.HasLevelNames.
+            _detailTitle.text = def.NameAt(level)
+                              + (def.MaxLevel > 1 && !def.HasLevelNames ? "   Lv." + level : "");
 
             var text = new StringBuilder();
             // ⚠ DescriptionAt, not Description — the card claimed to describe THIS level (see the

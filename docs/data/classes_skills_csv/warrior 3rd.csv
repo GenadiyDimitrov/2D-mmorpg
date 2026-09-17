@@ -222,13 +222,6 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 72,Demonic Smash,warrior_demonic_smash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +14100 power, Cannot be blocked, Can double;",75,650,[],Demon
 74,Demonic Smash,warrior_demonic_smash,Physical/Active,sword/2,,40,0,target/single,2,5,0,"Deals Physical damage with +15000 power, Cannot be blocked, Can double;",78,880,[],Demon
 ,,,,,,,,,,,,,,,,,============================================= ELF =================================
-,,,,,,,,,,,,,,,,,----------------------------Elf Antidote----------------------------
-52,Antidote,elf_antidote,Magic/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 4 or lower from an self.",42,74,[],Elf
-58,Antidote,elf_antidote,Magic/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 5 or lower from an self.",50,88,[],Elf
-62,Antidote,elf_antidote,Magic/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 6 or lower from an self.",53,170,[],Elf
-66,Antidote,elf_antidote,Magic/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 7 or lower from an self.",57,280,[],Elf
-70,Antidote,elf_antidote,Magic/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 8 or lower from an self.",60,390,[],Elf
-74,Antidote,elf_antidote,Magic/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 9 or lower from an self.",64,880,[],Elf
 ,,,,,,,,,,,,,,,,,---------------------------Demonic Smash----------------------------
 40,Saints Sword Dance,warrior_sword_dance,Physical/Active,sword/2,,40,150,target/aoe,0.5,5,2,"Deals Physical damage with +375 power 10 times over 2s, Cannot be blocked, Can double;",36,28,[],Elf
 43,Saints Sword Dance,warrior_sword_dance,Physical/Active,sword/2,,40,150,target/aoe,0.5,5,2,"Deals Physical damage with +490 power 10 times over 2s, Cannot be blocked, Can double;",40,35,[],Elf

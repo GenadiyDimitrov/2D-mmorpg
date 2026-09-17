@@ -202,6 +202,20 @@ public class BuffInstance
     public float CcResistMagical { get; init; }
     public float CcResistPhysical { get; init; }
 
+    /// <summary>PHYSICAL resistance this buff grants — a fraction added to the holder's P.Def
+    /// COEFFICIENT, the exact twin of what <c>SkillEffect.BuffMagicResist</c> does to the M.Def one.
+    /// The Human's Weapon Parry is its only author. A field, not a flag: the enum is full.
+    /// See <c>SkillDef.PhysicalResistPct</c> and <see cref="Entity.PhysicalDefCoef"/>.</summary>
+    public float PhysicalResistPct { get; init; }
+
+    /// <summary>Regen this buff grants as a FRACTION OF THE HOLDER'S OWN POOL, per second — the
+    /// Human's Relax (1% of max HP a second at rung 1, 5% HP + 3% MP at rung 8). Fields, not flags:
+    /// the enum is full, and this is a third regen channel beside the multiplier and the flat grant.
+    /// See <c>SkillDef.HpRegenPerSecondPct</c>.</summary>
+    public float HpRegenPerSecondPct { get; init; }
+    /// <inheritdoc cref="HpRegenPerSecondPct"/>
+    public float MpRegenPerSecondPct { get; init; }
+
     /// <summary>Heal POWER (caster side) and heal RECEIVED (target side) this buff grants. The
     /// healer's Healer's Power and the Demon's Spirit Restoration are the only users; the channels
     /// themselves are the ones the passives already feed. Fields, not flags — the enum is full.</summary>
@@ -1163,6 +1177,19 @@ public class Entity
     // so a defence-ignoring effect bypasses it too. NOT a fizzle chance — see MagicFailMod.
     public float MagicResist { get; set; }
     public float MagicDefCoef => Math.Max(0.01f, 1f + MagicResist);
+    /// <summary>PHYSICAL RESISTANCE — the twin of <see cref="MagicResist"/>, added 2026-09-17 with the
+    /// Human's Weapon Parry (*"we have MRes channel .. we need PRes"*). Stored the way the CSVs author
+    /// it ("pRes +20%" = 0.20f) and summed across buffs; <see cref="PhysicalDefCoef"/> turns it into a
+    /// defence multiplier that rides INSIDE P.Def, so a defence-ignoring skill bypasses it exactly as
+    /// it bypasses mRes and the three weapon-type resists.
+    ///
+    /// <para>⚠ It is SCHOOL-blind where the weapon-type resists are not: Pierce/Blunt/Bow ask what the
+    /// attacker is holding, this one does not. They MULTIPLY — a parrying Human with a 1.2 pRes coef
+    /// meeting a bow attacker's 1.1 BowDefCoef defends at 1.32, which is the same shape the mob
+    /// resistance ladder already has on the magic side.</para></summary>
+    public float PhysicalResist { get; set; }
+    /// <inheritdoc cref="PhysicalResist"/>
+    public float PhysicalDefCoef => Math.Max(0.01f, 1f + PhysicalResist);
     public float EvadeFloor { get; set; }        // rogue: guaranteed min chance to dodge physical attacks
     public float HitFloor { get; set; }          // warrior: guaranteed min chance THIS entity lands a physical attack
     // ----- The three SKILL-defence channels (BL-06/07/08). All folded by MAX, like the floors
@@ -3015,6 +3042,7 @@ public class Entity
         BowDefCoef = 1f;
         RestoreMpMod = 1f;
         MagicResist = 0f;
+        PhysicalResist = 0f;
         UntrainedCasterWeapon = false;
         MeleeVamp = 0f;
         ManaVamp = 0f;
@@ -3894,6 +3922,9 @@ public class Entity
             if (buff.Has(SkillEffect.BuffCritDmgResist)) CritDmgResist += buff.Flat(SkillEffect.BuffCritDmgResist) + buff.Percent(SkillEffect.BuffCritDmgResist);
             if (buff.Has(SkillEffect.BuffBowResist)) BowResist += buff.Flat(SkillEffect.BuffBowResist) + buff.Percent(SkillEffect.BuffBowResist);
             if (buff.Has(SkillEffect.BuffMagicResist)) MagicResist += buff.Flat(SkillEffect.BuffMagicResist) + buff.Percent(SkillEffect.BuffMagicResist);
+            // pRes — a FIELD, not a flag (the enum is full). Weapon Parry raises both channels at once:
+            // the mRes half rides the flag above, this half rides here. Sums like mRes; clamped with it.
+            if (buff.PhysicalResistPct != 0f) PhysicalResist += buff.PhysicalResistPct;
             if (buff.Has(SkillEffect.BuffMagicEvasion)) MagicFailBonus += buff.Flat(SkillEffect.BuffMagicEvasion);
             MagicAccuracy += buff.MagicAccuracy;   // the mirror, a FIELD (the flag enum is full)
             if (buff.Has(SkillEffect.BuffMeleeVamp)) MeleeVamp += buff.Flat(SkillEffect.BuffMeleeVamp) + buff.Percent(SkillEffect.BuffMeleeVamp);
@@ -4011,6 +4042,7 @@ public class Entity
         //  It was `MagicFailResist *= 0.5f` — inert, because MagicFailResist was 0 on everyone.
         //  The bow now multiplies the FAIL side at the roll, via MagicFailSelfMult below.)
         MagicResist = Math.Clamp(MagicResist, -0.9f, 0.9f);   // negative = a magic WEAKNESS
+        PhysicalResist = Math.Clamp(PhysicalResist, -0.9f, 0.9f);   // negative = a physical WEAKNESS
         MagicFailMod = Math.Max(1f, MagicFailMod);            // never below neutral
         // The CASTER'S chain is clamped only at zero — a product of ×25 penalties and ×0.04 negations
         // has no meaningful ceiling, and its floor is already the fail formula's own clamp at 0%.

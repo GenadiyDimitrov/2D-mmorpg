@@ -57,13 +57,6 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 74,Bow Swiftness,archer_bow_swiftness,Physical/Buff,bow,,0,0,self/single,3,2,300,"Increase p.skill damage with 10%, accuracy +10, p.crit.rate +10%, p.crit.dmg +10%, p.Atk +200, atk.speed +25%, speed +10, 5% to heal self with 500 power (10s reuse); Requre: Bow",100,880,[],Elf
 ,,,,,,,,,,,,,,,,,---------------------------Bow Stence----------------------------
 60,Bow Stence,archer_bow_stence,Physical/Buff,bow,,0,0,self/single,1,600,60,"Increse P.Atk, P.Crit.Rate, P.Crit.Dmg, P.Skill.Power with 15%; Range +200; Decrease speed by 50%; Requre: Bow",50,88,[]
-,,,,,,,,,,,,,,,,,----------------------------Elf Antidote----------------------------
-52,Antidote,elf_antidote,Magic/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 4 or lower from an self.",42,74,[],Elf
-58,Antidote,elf_antidote,Magic/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 5 or lower from an self.",50,88,[],Elf
-62,Antidote,elf_antidote,Magic/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 6 or lower from an self.",53,170,[],Elf
-66,Antidote,elf_antidote,Magic/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 7 or lower from an self.",57,280,[],Elf
-70,Antidote,elf_antidote,Magic/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 8 or lower from an self.",60,390,[],Elf
-74,Antidote,elf_antidote,Magic/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 9 or lower from an self.",64,880,[],Elf
 ,,,,,,,,,,,,,,,,,----------------------------Twin Arrows----------------------------
 40,Twin Arrows,archer_twin_arrows,Physical/Active,bow,,900,0,target/single,3,5,0,"Shot two arrows each dealing +1000  power;",72,28,[precise_shot]
 43,Twin Arrows,archer_twin_arrows,Physical/Active,bow,,900,0,target/single,3,5,0,"Shot two arrows each dealing +1300  power;",79,35,[precise_shot]

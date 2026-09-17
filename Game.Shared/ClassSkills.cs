@@ -127,6 +127,12 @@ public static class ClassSkills
         // edit all 18 per-class files). Same across races; the effect is class-driven.
         foreach (var cs in MasterySkills(baseClass, archetype))
             yield return cs;
+        // THE FIGHTER'S RACE LAYER, and the GRADE passive beside it — injected centrally for exactly
+        // the reason the masteries above are. See FighterRaceSkills.
+        foreach (var cs in FighterRaceSkills(race, baseClass))
+            yield return cs;
+        foreach (var cs in GradeSkills())
+            yield return cs;
         // The STAT-SWAP passives — GATED ON THE 3RD CLASS (owner, 2026-07-15): they appear only once
         // you've taken your 3rd-class discipline, not merely at level 40. `discipline` is non-null iff
         // a 3rd class is held, so injecting them only then is the whole gate. Which swaps a class may
@@ -152,6 +158,59 @@ public static class ClassSkills
                 yield return new ClassSkill(id, SkillCatalog.SigilLearnLevel);
         }
     }
+
+    /// <summary>THE FIGHTER'S RACE LAYER — the six skills his `fighter 1st.csv` race block authors
+    /// (2026-09-17), yielded for EVERY fighter whatever its archetype, discipline or tier.
+    ///
+    /// <para>🔑 <b>THIS IS WHAT "FIX ALL FIGHTERS" MEANS.</b> His race block lives in the FIRST-class
+    /// file but ladders to level 74, so it is not a base-class kit that a level-20 grows out of — it
+    /// is a layer the character keeps for the whole game. <see cref="Cumulative"/> yields the base
+    /// list only for a character who has NOT changed class, so listing these there would have quietly
+    /// deleted them at 20. Fanning them across the eight fighter paths × three races would be
+    /// twenty-four lists that must agree forever. One injector, like the masteries below it.</para>
+    ///
+    /// <para>⚠ FIGHTERS ONLY. `mage 1st.csv` has no race block, and inventing one would put rows in
+    /// the code that no CSV authors — the exact drift the two-way CSV contract exists to stop.</para>
+    ///
+    /// <para>⚠ The DEMON ladders are twenty-one rungs each; this yields one ClassSkill per rung, which
+    /// is what the learn window, the SP audit and `SkillCsvSeed --check` all walk.</para></summary>
+    private static IEnumerable<ClassSkill> FighterRaceSkills(Race race, BaseClass baseClass)
+    {
+        if (baseClass != BaseClass.Fighter) yield break;
+
+        switch (race)
+        {
+            case Race.Elf:
+                foreach (var cs in Rungs(SkillCatalog.ElfAntidote, SkillCatalog.ElfAntidoteLevels))
+                    yield return cs;
+                foreach (var cs in Rungs(SkillCatalog.ElfHeal, SkillCatalog.RaceEightLevels))
+                    yield return cs;
+                break;
+            case Race.Demon:
+                foreach (var cs in Rungs(SkillCatalog.DemonDrain, SkillCatalog.DemonLevels))
+                    yield return cs;
+                foreach (var cs in Rungs(SkillCatalog.DemonPain, SkillCatalog.DemonLevels))
+                    yield return cs;
+                break;
+            case Race.Human:
+                foreach (var cs in Rungs(SkillCatalog.HumanParry, SkillCatalog.HumanParryLevels))
+                    yield return cs;
+                foreach (var cs in Rungs(SkillCatalog.HumanRelaxation, SkillCatalog.RaceEightLevels))
+                    yield return cs;
+                break;
+        }
+    }
+
+    /// <summary>The GRADE PERMISSION passive — every class, every race, auto-granted and free.
+    /// Its learn levels are <see cref="GradePenalty.GradeLevels"/> itself, never a copy: the skill
+    /// exists to TELL the player what the penalty math will do, so the two reading different arrays
+    /// would be the one bug it cannot be allowed to have.</summary>
+    private static IEnumerable<ClassSkill> GradeSkills() =>
+        Rungs(SkillCatalog.GradePermission, GradePenalty.GradeLevels);
+
+    /// <summary>One <see cref="ClassSkill"/> per rung of a ladder: rung i+1 at levels[i].</summary>
+    private static IEnumerable<ClassSkill> Rungs(string id, int[] levels) =>
+        levels.Select((lvl, i) => new ClassSkill(id, lvl, SkillLevel: i + 1));
 
     /// <summary>The armor-mastery passives a class can learn, with learn levels.
     /// Base classes train their natural weight from level 1; second classes gain

@@ -135,13 +135,6 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 70,Heavy Stab,heavy_stab,physical active,duals,,40,0,enemy/single,3,7.5,,"power 2100 twice - only when skill does critical - otherwise normal attack - require duals;",70,390,,Human
 72,Heavy Stab,heavy_stab,physical active,duals,,40,0,enemy/single,3,7.5,,"power 2250 twice - only when skill does critical - otherwise normal attack - require duals;",75,650,,Human
 74,Heavy Stab,heavy_stab,physical active,duals,,40,0,enemy/single,3,7.5,,"power 2400 twice - only when skill does critical - otherwise normal attack - require duals;",78,880,,Human
-,,,,,,,,,,,,,,,,,----------------------------Elf Antidote----------------------------
-52,Antidote,elf_antidote,Magic/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 4 or lower from an self.",42,74,[],Elf
-58,Antidote,elf_antidote,Magic/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 5 or lower from an self.",50,88,[],Elf
-62,Antidote,elf_antidote,Magic/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 6 or lower from an self.",53,170,[],Elf
-66,Antidote,elf_antidote,Magic/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 7 or lower from an self.",57,280,[],Elf
-70,Antidote,elf_antidote,Magic/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 8 or lower from an self.",60,390,[],Elf
-74,Antidote,elf_antidote,Magic/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 9 or lower from an self.",64,880,[],Elf
 ,,,,,,,,,,,,,,,,,----------------------------Lethal Focus / Precision / Frenzy (BL-188)----------------------------
 40,Lethal Focus,lethal_focus,physical buff,duals,,0,0,self/single,0,90,300,"blow rate x1.05; crit dmg +5%;",100,28,[],Human
 60,Lethal Focus,lethal_focus,physical buff,duals,,0,0,self/single,0,90,300,"blow rate x1.075; crit dmg +7.5%;",125,120,[],Human

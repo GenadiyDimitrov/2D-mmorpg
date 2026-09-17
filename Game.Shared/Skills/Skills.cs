@@ -813,6 +813,33 @@ public record SkillDef(
     // Rides as fields, not SkillEffect flags — the flag enum is full (1L << 62 was the last bit).
     float CcResistMagical = 0f,
     float CcResistPhysical = 0f,
+    // PHYSICAL RESISTANCE — the twin of `PassiveEffect.MagicResist`, as a BUFF (owner 2026-09-17, on
+    // the Human's Weapon Parry: *"we have MRes channel .. we need PRes .. its more like Increases
+    // mRes and pRes with x%"*). A FRACTION added to the holder's P.Def COEFFICIENT, exactly as mRes
+    // is added to the M.Def one: 0.20 = P.Def ×1.20 for the hit, i.e. ~17% less physical damage.
+    //
+    // 🔑 IT IS NOT "−x% damage taken", and the difference is the whole reason it lives here rather
+    //   than as a multiplier on the finished number: damage in this game is a RATIO, so a resist has
+    //   to ride INSIDE the defence or a defence-ignoring skill would still be stopped by it. The
+    //   magic side settled this in 2026-08-10 and this is the same answer for the other channel.
+    //
+    // ⚠ A FIELD, not a SkillEffect flag — the flag enum has been full since 1L << 62. mRes keeps its
+    //   flag (`BuffMagicResist`, bit 31) because it already had one; a skill raising both authors the
+    //   flag for mRes and this field for pRes, which is what Weapon Parry does.
+    float PhysicalResistPct = 0f,
+    // REGEN AS A FRACTION OF THE OWN POOL, PER SECOND — the Human's Relax (*"Gives 1.0 % HP/s
+    // regen"*, climbing to 5% HP + 3% MP at 74). 0.01 = 1% of MAX HP every second.
+    //
+    // 🔑 A THIRD REGEN CHANNEL, and it had to be. The other two are a MULTIPLIER on the regen formula
+    //   (`BuffHpRegen` Percent) and a FLAT per-second grant (`BuffHpRegen` Flat, the healer's
+    //   Meditation +30 MP/s). His number is neither: "1% of your pool per second" is an absolute rate
+    //   that has to scale with the character, so a multiplier on a tiny early-game formula cannot
+    //   express it and a flat number is wrong at every level but one.
+    //
+    // ⚠ Folded in OUTSIDE the stance multiplier, with the sitting passives — Relax already forces you
+    //   to sit, so paying the sitting ×1.5 on top would make every rung worth 50% more than his row.
+    float HpRegenPerSecondPct = 0f,
+    float MpRegenPerSecondPct = 0f,
     // MAGIC CRIT DAMAGE (owner 2026-08-19 — the 4th-class buffer/healer blessings). A FRACTION the
     // HOLDER's magic-crit multiplier is raised by: 0.30 = "+30% magic crit dmg", i.e. x2 base -> x2.6.
     // Two of these COMPOUND (x2 × 1.3 × 1.3 = x3.38), which is the owner's own arithmetic.
@@ -977,6 +1004,26 @@ public record SkillDef(
 
     /// <summary>Highest level this skill can reach (1 for a single-level skill).</summary>
     public int MaxLevel => Levels is { Length: > 0 } ? Levels.Length : 1;
+
+    /// <summary>TRUE when this skill's rungs carry their OWN NAMES (<see cref="SkillLevel.Name"/>)
+    /// rather than one name plus a "Lv.N" suffix. The Grade Permission passive is the first and, as
+    /// of 2026-09-17, only author: its seven rungs are called Grade F … Grade S, and "Grade F Lv.4"
+    /// would tell the player the exact opposite of what the rung means.
+    ///
+    /// <para>🔑 UI READS THIS TO DROP THE LEVEL SUFFIX. A named rung already says which step it is,
+    /// so appending the number is noise at best and a contradiction at worst.</para></summary>
+    public bool HasLevelNames =>
+        Levels is { Length: > 0 } && Array.Exists(Levels, l => !string.IsNullOrEmpty(l.Name));
+
+    /// <summary>This skill's name AT a rung — the rung's own <see cref="SkillLevel.Name"/> when it has
+    /// one, the skill's canonical <see cref="Name"/> otherwise. Every display path that knows which
+    /// rung the character holds should ask this instead of reading <c>Name</c>, so a rank-named ladder
+    /// renders correctly everywhere without each call site learning about the feature.</summary>
+    public string NameAt(int level)
+    {
+        string? n = Lvl(level)?.Name;
+        return string.IsNullOrEmpty(n) ? Name : n!;
+    }
 
     private SkillLevel? Lvl(int level) =>
         Levels is { Length: > 0 } && level >= 1 && level <= Levels.Length ? Levels[level - 1] : null;
@@ -1193,6 +1240,28 @@ public record SkillDef(
     {
         float v = Lvl(level)?.CcResistPhysical ?? 0f;
         return v > 0f ? v : CcResistPhysical;
+    }
+
+    /// <summary>PHYSICAL resistance at a LEVEL — the P.Def-coefficient twin of mRes. A level's 0 means
+    /// "inherit", the same shape as every other per-rung field. See <see cref="PhysicalResistPct"/>.</summary>
+    public float PhysicalResistPctAt(int level)
+    {
+        float v = Lvl(level)?.PhysicalResistPct ?? 0f;
+        return v != 0f ? v : PhysicalResistPct;
+    }
+
+    /// <summary>Pool-fraction regen per second at a LEVEL. See <see cref="HpRegenPerSecondPct"/>.</summary>
+    public float HpRegenPerSecondPctAt(int level)
+    {
+        float v = Lvl(level)?.HpRegenPerSecondPct ?? 0f;
+        return v != 0f ? v : HpRegenPerSecondPct;
+    }
+
+    /// <inheritdoc cref="HpRegenPerSecondPctAt"/>
+    public float MpRegenPerSecondPctAt(int level)
+    {
+        float v = Lvl(level)?.MpRegenPerSecondPct ?? 0f;
+        return v != 0f ? v : MpRegenPerSecondPct;
     }
 
     /// <summary>This skill's DEBUFF SUCCESS MULTIPLIER at a LEVEL. A level's 0 means "inherit", so a
@@ -1501,6 +1570,19 @@ public record SkillLevel(
     // climb a ladder like every other buff; see SkillDef.CcResistMagical.
     float CcResistMagical = 0f,
     float CcResistPhysical = 0f,
+    // PHYSICAL RESISTANCE at THIS level (0 = inherit the SkillDef's). Weapon Parry climbs
+    // 5 → 10 → 20 → 30 → 40% across its five rungs, so a per-level slot is not optional here.
+    // See SkillDef.PhysicalResistPct.
+    float PhysicalResistPct = 0f,
+    // POOL-FRACTION REGEN at THIS level (0 = inherit the SkillDef's). Relax climbs 1.0 → 5.0% HP and
+    // 0 → 3% MP across its eight rungs, so a per-level slot is mandatory here.
+    // See SkillDef.HpRegenPerSecondPct.
+    float HpRegenPerSecondPct = 0f,
+    float MpRegenPerSecondPct = 0f,
+    // THIS RUNG'S OWN NAME (null/empty = the SkillDef's). For the rare ladder whose steps are named
+    // rather than numbered — the Grade Permission passive, whose rungs are Grade F … Grade S. Read it
+    // through SkillDef.NameAt, never directly, and see SkillDef.HasLevelNames for the level-suffix rule.
+    string? Name = null,
     // MAGIC CRIT DAMAGE at THIS level (0 = inherit the SkillDef's). See SkillDef.MagicCritDamage.
     float MagicCritDamage = 0f,
     float MagicCritDamageDebuff = 0f,
@@ -2020,6 +2102,10 @@ public static partial class SkillCatalog
         list.AddRange(BuffLadderSkills(list)); // Skills.BuffLadders.cs (every family but speed + its potions/scrolls)
         list.AddRange(StatSwapSkillDefs());   // Skills.StatSwap.cs (the level-40 +stat/−stat passives)
         list.AddRange(FighterSkills());       // Skills.Fighter.cs
+        // The RACE layer every fighter carries from level 10 to 74 (his `fighter 1st.csv` race block,
+        // 2026-09-17) — and the informational grade passive beside it.
+        list.AddRange(FighterRaceSkills());   // Skills.FighterRace.cs
+        list.AddRange(GradePassiveSkills());  // Skills.FighterRace.cs (grade_penalty, 7 named rungs)
         list.AddRange(MageSkills());          // Skills.Mage.cs
         list.AddRange(HealerSkills());        // Skills.Healer.cs (2nd-class Healer kit)
         list.AddRange(ArmorMasterySkills());  // Skills.Masteries.cs (data-driven per-archetype)

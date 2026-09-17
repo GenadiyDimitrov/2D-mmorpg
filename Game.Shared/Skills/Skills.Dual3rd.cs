@@ -55,10 +55,6 @@ public static partial class SkillCatalog
     /// cannot share one id, so the Demon's got its own and the CSV rows were corrected to match, in
     /// the same commit. Flagged to him rather than left: it reads as a copy-paste of the Elf block.</summary>
     public const string PhantomJumpDemon  = "rouge_demon_pahantom_jump";
-    /// <summary>The SELF-only cure the Elf gets in all three of his 3rd-tier fighter files
-    /// (`dual 3rd`, `archer 3rd`, `tank 3rd`). Not the healer's <see cref="Antidote"/>, which is
-    /// targeted and on a different ladder — see the note on the def.</summary>
-    public const string ElfAntidote       = "elf_antidote";
     // ---- `BL-188`, THE BLOW LADDER (2026-09-09). One buff family, three race variants — the same
     //      shape Phantom Jump already uses, and for the same reason: the PAYLOADS differ, and two
     //      skills cannot share one id. Vital Points is shared by all three.
@@ -477,37 +473,6 @@ public static partial class SkillCatalog
         list.Add(PhantomJump(PhantomJumpDemon, SkillEffect.Fear | SkillEffect.Slow, DebuffSchool.Physical,
             charms: false, slow: 0.90f, "terrifies it and cuts its movement by 90%",
             "Closes the distance in a blink and leaves the target fleeing, barely able to move."));
-
-        // ═══ ANTIDOTE (Elf) — the SELF cure ══════════════════════════════════════════════════════
-        //
-        // ⚠ NOT the healer's `antidote`, and deliberately a separate id: his is `elf_antidote`, it is
-        //   `self/single` in every one of the three fighter files that carry it, and its ceiling
-        //   ladder (rank 4 → 9 at 52/58/62/66/70/74) is its own. Registering the healer's skill here
-        //   would have handed a rogue a targeted cure on the healer's ladder.
-        //
-        // 🔑 IT IS ONE SKILL SHARED BY THREE FILES — `dual 3rd.csv`, `archer 3rd.csv` and
-        //    `tank 3rd.csv` all author the identical six rows for their Elf. That last one is why
-        //    `--check` has been reporting a 🔴 NOT REGISTERED Antidote against the tank since the
-        //    Bulwark was built: the rows existed, the skill they name did not.
-        list.Add(new SkillDef(ElfAntidote, "Antidote", BaseClass.Fighter, SkillEffect.Cleanse,
-            MpCost: 42, CastTicks: 10, CooldownTicks: 100, Range: 0, Power: 0,
-            // ⚠ AN EXPLICIT BuffKey, even though a cure lands no buff at all: the startup ladder guard
-            // keys on the display NAME when none is given, and "Antidote" is also the healer's skill.
-            // Two multi-rung ladders on one key make each other's rungs compete (`BL-85`).
-            BuffKey: "elf_antidote",
-            Category: SkillCategory.Heal, TargetMode: TargetMode.SelfOnly,
-            DispelMask: SkillEffect.Poison | SkillEffect.Venom | SkillEffect.Bleed,
-            DispelMaxLevel: 4, SpCost: RogueSp[4],
-            Description: "Purges poison, venom and bleeding from your own blood.",
-            Levels: new SkillLevel[]
-            {
-                new(MpCost: 42, SpCost:  74_000, DispelMaxLevel: 4, Description: "Cures poison, venom and bleed of rank 4 or lower from yourself."),
-                new(MpCost: 50, SpCost:  88_000, DispelMaxLevel: 5, Description: "Cures poison, venom and bleed of rank 5 or lower from yourself."),
-                new(MpCost: 53, SpCost: 170_000, DispelMaxLevel: 6, Description: "Cures poison, venom and bleed of rank 6 or lower from yourself."),
-                new(MpCost: 57, SpCost: 280_000, DispelMaxLevel: 7, Description: "Cures poison, venom and bleed of rank 7 or lower from yourself."),
-                new(MpCost: 60, SpCost: 390_000, DispelMaxLevel: 8, Description: "Cures poison, venom and bleed of rank 8 or lower from yourself."),
-                new(MpCost: 64, SpCost: 880_000, DispelMaxLevel: 9, Description: "Cures poison, venom and bleed of rank 9 or lower from yourself."),
-            }));
 
         // ═══════════════════════════════════════════════════════════════════════════════════════
         //  `BL-188` — THE BLOW LADDER (owner ruling 2026-09-09)

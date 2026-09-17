@@ -58,9 +58,29 @@ internal static class Check
     // ⚠ The BAND matters. A 2nd-class ladder does not stop where his file stops — `Elemental Bolt` is
     // registered at 20…80 while `nuker 2nd.csv` authors 20-35, and without the band every one of those
     // upper rungs reads as "the CSV is missing a row". The band is the tier, not the filename.
+    /// <summary>THE FIGHTER RACE LAYER + THE GRADE PASSIVE — authored once in `fighter 1st.csv`, and in
+    /// EVERY fighter's <c>Cumulative</c> at every tier thereafter (see ClassSkills.FighterRaceSkills).
+    ///
+    /// <para>🔑 SKIPPED ON THE CODE SIDE FOR EVERY SPEC BUT `fighter 1st`, which walks them all with a
+    /// 1-90 band. Without this each one reads as an unauthored extra against all eight of the other
+    /// fighter files, and against the mage files too for the grade passive.</para>
+    ///
+    /// <para>⚠ `Also: "fighter 1st"` is NOT the mechanism, though it is the obvious guess — `Also`
+    /// folds a whole file into the CSV side WITHOUT band-filtering it, so a 20-39 spec would then see
+    /// all twenty-one Demonic Drain rows against the five its band admits and report a rung-count
+    /// mismatch on every fighter file. `shared 4th` gets away with it because its band is the tier.</para></summary>
+    private static readonly string[] CentralFighterSkills =
+    {
+        SkillCatalog.ElfAntidote, SkillCatalog.ElfHeal, SkillCatalog.DemonDrain, SkillCatalog.DemonPain,
+        SkillCatalog.HumanParry, SkillCatalog.HumanRelaxation, SkillCatalog.GradePermission,
+    };
+
     private static readonly Spec[] Specs =
     {
-        new("fighter 1st", BaseClass.Fighter, null,              1, 19),
+        // ⚠ THE BAND IS 1-90, NOT 1-19. His 2026-09-17 race block lives in this file and ladders to
+        //   74 (and the grade passive to 80), so a 1-19 band would report every rung above 19 as a
+        //   row the code is missing. The band is the TIER, and this file's tier is now "all of it".
+        new("fighter 1st", BaseClass.Fighter, null,              1, 90),
         new("mage 1st",    BaseClass.Mage,    null,              1, 19),
         new("tank 2nd",    BaseClass.Fighter, Archetype.Tank,    20, 39),
         new("warrior 2nd", BaseClass.Fighter, Archetype.Warrior, 20, 39),
@@ -406,6 +426,11 @@ internal static class Check
                 // Mindwright finds them), and they ARE authored — every one is a row in `shared 4th.csv`.
                 // Skipping them made all eighteen report as 🔴 NOT REGISTERED against code that had them.
                 if (SkillCatalog.StatSwapOf(cs.SkillId) is not null) continue;
+                // ⚠ THE CENTRAL FIGHTER LAYER IS CHECKED ONCE, BY ITS OWN FILE. See the note on
+                // CentralFighterSkills for why `Also` is the wrong tool for it. These rows ARE
+                // verified — against `fighter 1st.csv` with a 1-90 band — just not nine times over.
+                if (spec.File != "fighter 1st" && Array.IndexOf(CentralFighterSkills, cs.SkillId) >= 0)
+                    continue;
                 // A TOTEM's "duration" is its LIFE, not a buff duration — `PlacesTotem` skills carry
                 // DurationTicks 0 and TotemLifeTicks 300, while his DURATION column reads 30 (seconds).
                 // Comparing the wrong field made every totem rung a defect.

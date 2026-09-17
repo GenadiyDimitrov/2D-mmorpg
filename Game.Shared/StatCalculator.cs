@@ -648,11 +648,18 @@ public static class StatCalculator
     /// hit). Sword/dual → Pierce, blunt → Blunt, bow → Bow; anything else = neutral (1).
     /// IG convention: swords are neutral vs armored mobs — here Sword+Dual share the Pierce
     /// track (splittable later without touching callers).</summary>
-    public static float WeaponDefenceCoef(WeaponType attacker, float pierce, float blunt, float bow) =>
-        (attacker & WeaponType.AnyBlunt) != 0 ? blunt
-        : attacker == WeaponType.Bow ? bow
-        : (attacker & (WeaponType.AnySword | WeaponType.Dual)) != 0 ? pierce
-        : 1f;
+    /// <param name="physResist">The defender's SCHOOL-BLIND physical resistance coefficient
+    /// (<c>Entity.PhysicalDefCoef</c>, 1 = none) — the twin of <c>MagicDefCoef</c> on the magic side,
+    /// added 2026-09-17 with the Human's Weapon Parry. It MULTIPLIES the weapon-type answer rather
+    /// than replacing it: the weapon resists ask what the attacker is holding, this one does not, so a
+    /// parrying defender is 1.20 × whatever his armour already does against that weapon. Folded in
+    /// here, and not at the call sites, so every physical damage path gets it from one place.</param>
+    public static float WeaponDefenceCoef(WeaponType attacker, float pierce, float blunt, float bow,
+                                          float physResist = 1f) =>
+        ((attacker & WeaponType.AnyBlunt) != 0 ? blunt
+         : attacker == WeaponType.Bow ? bow
+         : (attacker & (WeaponType.AnySword | WeaponType.Dual)) != 0 ? pierce
+         : 1f) * physResist;
 
     /// <summary>Magic ratio damage (IG model): K·skillPower·√mAtk/mDef. The SQUARE ROOT
     /// of M.Atk means stacking raw M.Atk gives diminishing returns. 'power' is the

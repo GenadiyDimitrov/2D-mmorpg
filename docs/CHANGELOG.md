@@ -7,11 +7,93 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.161.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.162.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-17 (latest) — 0.161.0: THE SHEET SHOWS THE REAL M.ATK — THE DISPLAY SHRINK IS RETIRED
+## 2026-09-17 (latest) — 0.162.0: THE FIGHTER'S RACE LAYER, ON EVERY FIGHTER, FROM LEVEL 10
+
+His `fighter 1st.csv` pass (*"fighter 1st is done .. fix all fighters.. give them skills based on
+race"*) plus the grade passive he asked for in the same session. Six new race skills, one new
+informational passive, two new engine channels, and Antidote re-homed.
+
+🔑 **THE RACE BLOCK LIVES IN THE FIRST-CLASS FILE AND LADDERS TO 74.** That is the whole structural
+point: these are not a base-class kit a level-20 grows out of, they are a layer the character keeps
+for the entire game. `ClassSkills.Cumulative` yields the base (archetype-null) list ONLY for a
+character who has not changed class, so listing them there would have deleted them silently at 20.
+They are injected centrally instead (`ClassSkills.FighterRaceSkills`), exactly like the armour
+masteries beside them — one injector rather than eight fighter paths × three races that must agree
+forever. The regenerated `debuff_landmods.csv` proves it reached all of them: Demonic Pain's CLASS
+column lists every Demon fighter class from Rogue to Warlord.
+
+**ELF — sustain.** `elf_antidote` MOVED here, out of `tank 3rd` / `dual 3rd` / `archer 3rd` /
+`warrior 3rd` / `shared 4th` (he deleted its rows from all five), and grew from six rungs at 52-74
+to **nine from level 10**, curing ranks 1-9. Its four hand-written 3rd-tier registrations are gone
+with them — reinstating one would sell an Elf rungs 4-9 twice. `elf_heal` (Healing Leaf) is new:
+eight rungs, 100→800 power. Both are `Physical/Heal` now, his change — a fighter has no WIT to pay
+for a magical cure, so `PhysicalCast` keeps them off the fizzle roll.
+
+**DEMON — offence.** `demon_drain`, 21 rungs, physical damage + `Lifesteal: 0.60`, and its RANGE is a
+ladder (400 → 600 → 800), the only fighter skill outside the bow tree that grows reach.
+`demon_pain`, 21 rungs, a SOLO bleed — no direct damage at all, which is why its landing modifier is
+the table's top price.
+
+**HUMAN — defence.** `human_parry` (Weapon Parry) and `human_relaxation` (Relax), both new channels:
+
+🔑 **pRes — THE PHYSICAL TWIN OF mRes** (*"we have MRes channel .. we need PRes .. its more like
+Increases mRes and pRes with x%"*). `Entity.PhysicalResist` / `PhysicalDefCoef`, folded into
+`StatCalculator.WeaponDefenceCoef` so all three physical damage paths get it from one place. It
+rides INSIDE P.Def, like mRes and the weapon-type resists, so a defence-ignoring skill bypasses it.
+⚠ **A resist is not a damage cut:** damage is a ratio, so `pRes +20%` is −16.7% damage, not −20%.
+mRes keeps its flag (bit 31); pRes is a FIELD, because the enum has been full since `1L << 62`.
+
+🔑 **POOL-FRACTION REGEN — a THIRD regen channel.** Relax is *"1.0 % HP/s"* climbing to 5% HP + 3% MP:
+a fraction of your OWN pool per second. Neither existing channel could say that — a multiplier on a
+tiny early formula is wrong, and a flat per-second grant is right at exactly one level. Added with
+the flats, OUTSIDE the stance multiplier, because Relax already makes you sit.
+
+🟢 **THE GRADE PASSIVE** (*"Just user to know when he is 58 and got B grade drop that he is not yet
+allowed to wear"*). `grade_penalty`, seven rungs at 1/20/40/52/61/76/80, auto-granted, free, and it
+grants nothing — the grade system itself is untouched since 2026-07-16. ⚠ Its learn levels ARE
+`GradePenalty.GradeLevels`, never a copy: a skill whose whole job is to describe the equip math must
+not be able to drift from it. ONE id with seven NAMED rungs, his call (*"cannot grade_penalty be one
+id and jsut change the description and Name ?"*) — so `SkillLevel.Name` / `SkillDef.NameAt` /
+`HasLevelNames` are new, and the client drops the "Lv.N" suffix for a rank-named ladder. A rung reads
+**"Grade C"**, never "Grade F Lv.4".
+
+**TYPOS AND LADDER DIPS HE ASKED ME TO CATCH.** Fixed in his CSV, all of them flagged:
+- Three ladders dipped at their FIRST rung (the opening row was copied off `Shot`: 34 MP at 15 against
+  20 MP at 20; parry 25 at 10 against 20 at 20) → 17/17/15. Demonic Drain and Pain also paid the MAGE
+  SP ladder at 20-36, which overshot the 3rd-tier one at 40 (40k at 36, 28k at 40) → dropped onto the
+  fighter ladder 1.7k/3.2k/6k/11k/20k. He chose *"smooth them, show me what changed"*.
+- `Sword|Blunt/2h` → `Sword|Blunt/2` — `/2h` is not valid hands grammar and the checker was ignoring
+  the whole hands clause, so a dagger Human could have parried.
+- `powe` → `power` ×5. **Not cosmetic:** the DESCR reader matches on `power`, so those five rungs
+  would have read as UNREAD rather than being verified.
+- Trailing space in `Demon ` (2 rows, would have broken race parsing) and a leading space in ` 910`.
+- Three section banners said "Demonic Smash" over Demonic Drain, Demonic Pain and the HUMAN's Weapon
+  Parry; "Tree of Life" sat over Relax.
+- `elf_heal` had an EMPTY MP column on all eight rungs → priced on the Antidote ladder, his ruling.
+- Weapon Parry's DURATION was 1 second on a 60-second reuse → **10s** (*"10s (ate the 0)"*).
+
+⚠ **`demon_pain` is a NEW DEBUFF and its modifier is HIS** — `debuff_landmods.csv` row added at
+**x1.5**, the solo-debuff price he named. Never picked locally; that is the standing rule.
+
+**The checker.** `fighter 1st`'s band went 1-19 → **1-90** (the file's tier is "all of it" now), and
+the central layer is skipped on every other spec's code side. ⚠ `Also: "fighter 1st"` is the obvious
+guess and is WRONG — `Also` folds a whole file in WITHOUT band-filtering, so a 20-39 spec then sees
+all 21 Demonic Drain rows against the 5 its band admits. `shared 4th` gets away with it because its
+band is the tier. `fighter 1st.csv` and all nine other fighter files now check clean.
+
+🔵 **LEFT OUT, deliberately: the MAGE.** He said *"fix all fighters"*, and `mage 1st.csv` has no race
+block — inventing one would put rows in the code that no CSV authors. The grade passive DOES reach
+mages (grade is a character property), but its seven rows are authored only in `fighter 1st.csv`; if
+he wants them mirrored into `mage 1st.csv` that is one paste and a line in the checker.
+
+⚠ **No `game.db` delete owed** — no schema change; `LearnedSkills` is a dict and gained ids, not columns.
+⚠ **Needs an APK** for the grade passive's per-rung name and the new skill cards.
+
+## 2026-09-17 — 0.161.0: THE SHEET SHOWS THE REAL M.ATK — THE DISPLAY SHRINK IS RETIRED
 
 🔴 **BOOKKEEPING, SO IT IS NOT LOST: THIS COMMIT (`0b7bb6b`) ALSO CARRIES YOUR CSV ROWS, AND THEY ARE
 NOT BUILT YET.** While 0.159-0.161 were being written you authored `war_aoe 3rd.csv` (+97 rows —

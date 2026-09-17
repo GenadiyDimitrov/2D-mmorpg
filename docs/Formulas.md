@@ -20,8 +20,19 @@ ManaDrain      = targetMaxMp * power / 1000                  power is PER MILLE
 ```
 
 - **Defence is a DIVISOR, never a subtraction** — diminishing returns, and it can never zero a hit.
-- `pDef` / `mDef` are multiplied by a weapon coefficient first (`WeaponDefenceCoef`: pierce/blunt/bow
-  armour resistances), then floored at 1.
+- `pDef` / `mDef` are multiplied by a resistance coefficient first, then floored at 1:
+  ```
+  pDefCoef = WeaponDefenceCoef(attacker weapon) * (1 + PhysicalResist)     clamped |pRes| <= 0.9
+  mDefCoef = 1 + MagicResist                                              clamped |mRes| <= 0.9
+  ```
+  `WeaponDefenceCoef` is the pierce/blunt/bow armour resistance — it asks what the ATTACKER holds.
+  `PhysicalResist` ("pRes") is school-blind and does not, so the two **multiply**.
+- 🔑 **pRes IS THE TWIN OF mRes, added 2026-09-17 (0.162.0)** with the Human's Weapon Parry (owner:
+  *"we have MRes channel .. we need PRes .. its more like Increases mRes and pRes with x%"*). Both ride
+  INSIDE the defence, so a defence-ignoring skill bypasses them. ⚠ **A resist is not a damage cut:**
+  damage is a ratio, so `pRes +20%` is `pDef x1.2` → `x1/1.2` damage = **−16.7%**, not −20%.
+  mRes rides `SkillEffect.BuffMagicResist` (a flag); pRes rides the `PhysicalResistPct` FIELD, because
+  the flag enum has been full since `1L << 62`.
 - ⚠ **Magic uses `sqrt(mAtk)` and physical uses `pAtk` flat.** That is why +M.Atk buffs feel weaker
   than they read: doubling M.Atk is ×1.41 damage, doubling P.Atk is ×2.
 - 🔑 **THERE IS ONE M.Atk** (2026-09-17, 0.161.0): the character sheet and the target window print the
@@ -563,7 +574,15 @@ sptRegenModifier(spt) = clamp(1 + (spt - 40)*0.02, 0.70, 1.30)
 stance                = running 0.70 | walking 0.85 | STANDING STILL 1.00 | sitting 1.50
 flats                 = the hpReg/mpReg mastery rungs + gear flats + flat regen buffs
                         + the SITTING-ONLY flats, while sitting (see below)
+                        + maxHp * HpRegenPerSecondPct  (and maxMp * MpRegenPerSecondPct)
 ```
+
+**Pool-fraction regen** (2026-09-17, 0.162.0 — the Human's Relax, *"Gives 1.0 % HP/s regen"* climbing
+to 5% HP + 3% MP at rung 8). `SkillDef.HpRegenPerSecondPct` / `MpRegenPerSecondPct`, a fraction of the
+holder's OWN max pool per second. **A third channel**, and it had to be: the other two are a
+multiplier on a formula whose base is tiny early on, and a flat per-second grant that is right at
+exactly one level. Added with the flats, i.e. **OUTSIDE** the stance multiplier, for the same reason
+the sitting flats are — Relax makes you sit, so paying the ×1.5 on it again would inflate every rung.
 
 **Sitting-only flats** (2026-09-11, the warrior's HP Regeneration passive — *"Increase Hp regen +1.4;
 When sitting Hp regen +1, Mp regen +2.0"*). `PassiveEffect.HpRegenSitting` / `MpRegenSitting`, flat

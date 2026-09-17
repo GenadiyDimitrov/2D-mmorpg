@@ -255,14 +255,10 @@ public static partial class ClassSkillTables
             {
                 kit.AddRange(Ladder(TankCharm, lv, 5));       // continues his 2nd-class 24-36
                 kit.AddRange(Ladder(TankFreeze, lv, 1));
-                // ✅ ANTIDOTE, 2026-09-09 — six rungs at 52/58/62/66/70/74, and the 🔴 NOT REGISTERED
-                // line `--check` has printed against this file since the Bulwark was built is gone with
-                // it. The rows were always there; the SKILL was not. `elf_antidote` is a SELF cure and
-                // a different id from the healer's targeted `antidote`, which is what the tool was
-                // matching against by name — see the def in Skills.Dual3rd.cs. His `dual 3rd.csv` and
-                // `archer 3rd.csv` author the identical six rows for their Elf, so one skill serves all
-                // three files and the Elf is the cure-carrier of every fighter branch.
-                kit.AddRange(Ladder(ElfAntidote, new[] { 52, 58, 62, 66, 70, 74 }, 1));
+                // (ANTIDOTE left this file on 2026-09-17. He deleted its six rows from `tank 3rd.csv`
+                //  and re-authored the skill in `fighter 1st.csv` as NINE rungs from level 10, where
+                //  EVERY fighter Elf gets it — see ClassSkills.FighterRaceSkills. Registering it here
+                //  again would sell an Elf rungs 4-9 a second time.)
             }
             else
             {
@@ -1036,11 +1032,8 @@ public static partial class ClassSkillTables
             foreach (var d in new[] { Discipline.Ravager, Discipline.Warlord })
             {
                 var extra = new List<ClassSkill> { new(WarriorCharge, 40) };
-                // ✅ ANTIDOTE — the same six rungs the tank's, the dual's and the archer's Elves get,
-                //    on the same skill (`elf_antidote`, a SELF cure). The Elf is the cure-carrier of
-                //    every fighter branch, and now of the last two as well.
-                if (race == Race.Elf)
-                    extra.AddRange(Ladder(ElfAntidote, new[] { 52, 58, 62, 66, 70, 74 }));
+                // (ANTIDOTE left this file on 2026-09-17 with its rows — it is the central race
+                //  layer now, from level 10, for every fighter Elf. See RegisterBulwark.)
                 ClassSkills.RegisterThird(race, d, extra.ToArray());
             }
 
@@ -1087,7 +1080,6 @@ public static partial class ClassSkillTables
     {
         int[] band15 = { 40, 43, 46, 49, 52, 55, 58, 60, 62, 64, 66, 68, 70, 72, 74 };
         int[] jump3  = { 52, 60, 74 };
-        int[] cure6  = { 52, 58, 62, 66, 70, 74 };
         int[] focus3 = { 40, 60, 70 };   // `BL-188` — the race-split blow buff
 
         static IEnumerable<ClassSkill> Ladder(string id, int[] levels, int startRung = 1) =>
@@ -1133,7 +1125,7 @@ public static partial class ClassSkillTables
         elf.AddRange(Ladder(SwiftStab, band15));
         elf.AddRange(Ladder(PhantomJumpElf, jump3));
         elf.AddRange(Ladder(LethalPrecision, focus3));     // `BL-188` — all crit damage (the Elf already leads on AGI)
-        elf.AddRange(Ladder(ElfAntidote, cure6));
+        // (ANTIDOTE moved to the central race layer on 2026-09-17 — his rows left this file too.)
 
         // ⚠ THE DEMON GETS NO KILLING STAB. His RACE cell on it is `Human;Elf`, and Venom Stab +
         //   Venom Burst are the whole of the Venomweaver's damage instead — half the power per blow,
@@ -1171,7 +1163,6 @@ public static partial class ClassSkillTables
     {
         int[] band15 = { 40, 43, 46, 49, 52, 55, 58, 60, 62, 64, 66, 68, 70, 72, 74 };
         int[] buff3  = { 58, 66, 74 };
-        int[] cure6  = { 52, 58, 62, 66, 70, 74 };
 
         static IEnumerable<ClassSkill> Ladder(string id, int[] levels, int startRung = 1) =>
             levels.Select((lv, i) => new ClassSkill(id, lv, SkillLevel: startRung + i));
@@ -1219,7 +1210,7 @@ public static partial class ClassSkillTables
         elf.AddRange(Ladder(ArcherBowSwiftness, buff3));
         elf.AddRange(Ladder(ArcherBindingTrap, band15));
         elf.AddRange(Ladder(ArcherMagicArrowElf, band15));
-        elf.AddRange(Ladder(ElfAntidote, cure6));
+        // (ANTIDOTE moved to the central race layer on 2026-09-17 — his rows left this file too.)
 
         var demon = new List<ClassSkill>(shared);
         demon.AddRange(Ladder(ArcherBowFerocity, buff3));

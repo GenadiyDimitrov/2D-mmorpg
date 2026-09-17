@@ -1,4 +1,4 @@
-LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,REPLACES,Comment
+LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURRATION s, DESCR,MP,SP COST,REPLACES,Race,Comment
 ,,,,,,,,,,,,,,,,----------------------------Armor Mastery----------------------------
 5,Armor Mastery,fighter_armor_mastery,passive,,heavy|light|robe,0,0,self/single,0,0,0,P.Def + 9,0,160,[]
 10,Armor Mastery,fighter_armor_mastery,passive,,heavy|light|robe,0,0,self/single,0,0,0,P.Def + 12,0,910,[]
@@ -21,3 +21,89 @@ LEARN @ LVL, NAME,SKILL_ID,TYPE,WEAPON,WEIGHT,RANGE,AOE,TARGET, CAST s,CD s,DURR
 5,Shot,shot,physical active,bow,,350,0,enemy/single,3,6,0,power 78 - ranged shot - require a bow,20,160,[]
 10,Shot,shot,physical active,bow,,350,0,enemy/single,3,6,0,power 122 - ranged shot - require a bow,25,910,[]
 15,Shot,shot,physical active,bow,,350,0,enemy/single,3,6,0,power 187 - ranged shot - require a bow,34,910,[]
+,,,,,,,,,,,,,,,,----------------------------Elf Antidote----------------------------
+10,Antidote,elf_antidote,Physical/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 1 or lower;",9,460,,Elf
+24,Antidote,elf_antidote,Physical/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 2 or lower;",20,3.2k,,Elf
+40,Antidote,elf_antidote,Physical/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 3 or lower;",31,14k,,Elf
+49,Antidote,elf_antidote,Physical/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 4 or lower",42,25k,,Elf
+55,Antidote,elf_antidote,Physical/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 5 or lower",50,44k,,Elf
+60,Antidote,elf_antidote,Physical/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 6 or lower",53,60k,,Elf
+64,Antidote,elf_antidote,Physical/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 7 or lower",57,90k,,Elf
+68,Antidote,elf_antidote,Physical/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 8 or lower",60,160k,,Elf
+72,Antidote,elf_antidote,Physical/Heal,,,0,0,self/single,1,10,0,"Cures poison, venom and bleed of rank 9 or lower",64,320k,,Elf
+,,,,,,,,,,,,,,,,----------------------------Tree of Life----------------------------
+15,Healing Leaf,elf_heal,Physical/Heal,,,0,0,self/single,5,5,0,"Mending Wounds and Heal oneself with 100 power;",13,1.5k,,Elf
+28,Healing Leaf,elf_heal,Physical/Heal,,,0,0,self/single,5,5,0,"Mending Wounds and Heal oneself with 200 power;",23,12k,,Elf
+40,Healing Leaf,elf_heal,Physical/Heal,,,0,0,self/single,5,5,0,"Mending Wounds and Heal oneself with 300 power;",31,28k,,Elf
+49,Healing Leaf,elf_heal,Physical/Heal,,,0,0,self/single,5,5,0,"Mending Wounds and Heal oneself with 400 power;",42,50k,,Elf
+58,Healing Leaf,elf_heal,Physical/Heal,,,0,0,self/single,5,5,0,"Mending Wounds and Heal oneself with 500 power;",52,88k,,Elf
+64,Healing Leaf,elf_heal,Physical/Heal,,,0,0,self/single,5,5,0,"Mending Wounds and Heal oneself with 600 power;",57,190k,,Elf
+70,Healing Leaf,elf_heal,Physical/Heal,,,0,0,self/single,5,5,0,"Mending Wounds and Heal oneself with 700 power;",62,390k,,Elf
+74,Healing Leaf,elf_heal,Physical/Heal,,,0,0,self/single,5,5,0,"Mending Wounds and Heal oneself with 800 power;",66,880k,,Elf
+,,,,,,,,,,,,,,,,---------------------------Demonic Drain----------------------------
+15,Demonic Drain,demon_drain,Physical/Active,,,400,0,target/single,3,6,0,"Deals Physical damage with +60 power and restores 60% of the dmg as HP;",17,910,,Demon
+20,Demonic Drain,demon_drain,Physical/Active,,,600,0,target/single,3,6,0,"Deals Physical damage with +80 power and restores 60% of the dmg as HP;",20,1.7k,,Demon
+24,Demonic Drain,demon_drain,Physical/Active,,,600,0,target/single,3,6,0,"Deals Physical damage with +100 power and restores 60% of the dmg as HP;",23,3.2k,,Demon
+28,Demonic Drain,demon_drain,Physical/Active,,,600,0,target/single,3,6,0,"Deals Physical damage with +150 power and restores 60% of the dmg as HP;",25,6k,,Demon
+32,Demonic Drain,demon_drain,Physical/Active,,,600,0,target/single,3,6,0,"Deals Physical damage with +200 power and restores 60% of the dmg as HP;",30,11k,,Demon
+36,Demonic Drain,demon_drain,Physical/Active,,,600,0,target/single,3,6,0,"Deals Physical damage with +250 power and restores 60% of the dmg as HP;",35,20k,,Demon
+40,Demonic Drain,demon_drain,Physical/Active,,,800,0,target/single,3,6,0,"Deals Physical damage with +600 power and restores 60% of the dmg as HP;",36,28k,,Demon
+43,Demonic Drain,demon_drain,Physical/Active,,,800,0,target/single,3,6,0,"Deals Physical damage with +900 power and restores 60% of the dmg as HP;",40,35k,,Demon
+46,Demonic Drain,demon_drain,Physical/Active,,,800,0,target/single,3,6,0,"Deals Physical damage with +1200 power and restores 60% of the dmg as HP;",43,40k,,Demon
+49,Demonic Drain,demon_drain,Physical/Active,,,800,0,target/single,3,6,0,"Deals Physical damage with +1500 power and restores 60% of the dmg as HP;",45,50k,,Demon
+52,Demonic Drain,demon_drain,Physical/Active,,,800,0,target/single,3,6,0,"Deals Physical damage with +1800 power and restores 60% of the dmg as HP;",47,74k,,Demon
+55,Demonic Drain,demon_drain,Physical/Active,,,800,0,target/single,3,6,0,"Deals Physical damage with +2100 power and restores 60% of the dmg as HP;",50,80k,,Demon
+58,Demonic Drain,demon_drain,Physical/Active,,,800,0,target/single,3,6,0,"Deals Physical damage with +2400 power and restores 60% of the dmg as HP;",55,88k,,Demon
+60,Demonic Drain,demon_drain,Physical/Active,,,800,0,target/single,3,6,0,"Deals Physical damage with +2700 power and restores 60% of the dmg as HP;",56,120k,,Demon
+62,Demonic Drain,demon_drain,Physical/Active,,,800,0,target/single,3,6,0,"Deals Physical damage with +2900 power and restores 60% of the dmg as HP;",58,170k,,Demon
+64,Demonic Drain,demon_drain,Physical/Active,,,800,0,target/single,3,6,0,"Deals Physical damage with +3100 power and restores 60% of the dmg as HP;",62,190k,,Demon
+66,Demonic Drain,demon_drain,Physical/Active,,,800,0,target/single,3,6,0,"Deals Physical damage with +3300 power and restores 60% of the dmg as HP;",65,280k,,Demon
+68,Demonic Drain,demon_drain,Physical/Active,,,800,0,target/single,3,6,0,"Deals Physical damage with +3500 power and restores 60% of the dmg as HP;",68,320k,,Demon
+70,Demonic Drain,demon_drain,Physical/Active,,,800,0,target/single,3,6,0,"Deals Physical damage with +3700 power and restores 60% of the dmg as HP;",70,390k,,Demon
+72,Demonic Drain,demon_drain,Physical/Active,,,800,0,target/single,3,6,0,"Deals Physical damage with +3900 power and restores 60% of the dmg as HP;",75,650k,,Demon
+74,Demonic Drain,demon_drain,Physical/Active,,,800,0,target/single,3,6,0,"Deals Physical damage with +4000 power and restores 60% of the dmg as HP;",78,880k,,Demon
+,,,,,,,,,,,,,,,,---------------------------Demonic Pain----------------------------
+15,Demonic Pain,demon_pain,Physical/Active,,,40,0,target/single,2,10,15,"Inflicts bleed on target rank 1;",17,910,,Demon
+20,Demonic Pain,demon_pain,Physical/Active,,,40,0,target/single,2,10,15,"Inflicts bleed on target rank 1;",20,1.7k,,Demon
+24,Demonic Pain,demon_pain,Physical/Active,,,40,0,target/single,2,10,15,"Inflicts bleed on target rank 2;",23,3.2k,,Demon
+28,Demonic Pain,demon_pain,Physical/Active,,,40,0,target/single,2,10,15,"Inflicts bleed on target rank 2;",25,6k,,Demon
+32,Demonic Pain,demon_pain,Physical/Active,,,40,0,target/single,2,10,15,"Inflicts bleed on target rank 2;",30,11k,,Demon
+36,Demonic Pain,demon_pain,Physical/Active,,,40,0,target/single,2,10,15,"Inflicts bleed on target rank 2;",35,20k,,Demon
+40,Demonic Pain,demon_pain,Physical/Active,,,40,0,target/single,2,10,15,"Inflicts bleed on target rank 3;",36,28k,,Demon
+43,Demonic Pain,demon_pain,Physical/Active,,,40,0,target/single,2,10,15,"Inflicts bleed on target rank 3;",40,35k,,Demon
+46,Demonic Pain,demon_pain,Physical/Active,,,40,0,target/single,2,10,15,"Inflicts bleed on target rank 3;",43,40k,,Demon
+49,Demonic Pain,demon_pain,Physical/Active,,,40,0,target/single,2,10,15,"Inflicts bleed on target rank 4;",45,50k,,Demon
+52,Demonic Pain,demon_pain,Physical/Active,,,40,0,target/single,2,10,15,"Inflicts bleed on target rank 4;",47,74k,,Demon
+55,Demonic Pain,demon_pain,Physical/Active,,,40,0,target/single,2,10,15,"Inflicts bleed on target rank 5;",50,80k,,Demon
+58,Demonic Pain,demon_pain,Physical/Active,,,40,0,target/single,2,10,15,"Inflicts bleed on target rank 5;",55,88k,,Demon
+60,Demonic Pain,demon_pain,Physical/Active,,,40,0,target/single,2,10,15,"Inflicts bleed on target rank 6;",56,120k,,Demon
+62,Demonic Pain,demon_pain,Physical/Active,,,40,0,target/single,2,10,15,"Inflicts bleed on target rank 6;",58,170k,,Demon
+64,Demonic Pain,demon_pain,Physical/Active,,,40,0,target/single,2,10,15,"Inflicts bleed on target rank 7;",62,190k,,Demon
+66,Demonic Pain,demon_pain,Physical/Active,,,40,0,target/single,2,10,15,"Inflicts bleed on target rank 7;",65,280k,,Demon
+68,Demonic Pain,demon_pain,Physical/Active,,,40,0,target/single,2,10,15,"Inflicts bleed on target rank 8;",68,320k,,Demon
+70,Demonic Pain,demon_pain,Physical/Active,,,40,0,target/single,2,10,15,"Inflicts bleed on target rank 8;",70,390k,,Demon
+72,Demonic Pain,demon_pain,Physical/Active,,,40,0,target/single,2,10,15,"Inflicts bleed on target rank 9;",75,650k,,Demon
+74,Demonic Pain,demon_pain,Physical/Active,,,40,0,target/single,2,10,15,"Inflicts bleed on target rank 9;",78,880k,,Demon
+,,,,,,,,,,,,,,,,---------------------------Weapon Parry----------------------------
+10,Weapon Parry,human_parry,Physical/Active,Sword|Blunt/2,,0,0,self/single,1,60,10,"Increase p.Res and m.Res with 5%;",15,910,,Human
+20,Weapon Parry,human_parry,Physical/Active,Sword|Blunt/2,,0,0,self/single,1,60,10,"Increase p.Res and m.Res with 10%; Increase SPT/CON.Debuff Resist with 5%;",20,3.4k,,Human
+40,Weapon Parry,human_parry,Physical/Active,Sword|Blunt/2,,0,0,self/single,1,60,10,"Increase p.Res and m.Res with 20%; Increase SPT/CON.Debuff Resist with 10%;",36,28k,,Human
+60,Weapon Parry,human_parry,Physical/Active,Sword|Blunt/2,,0,0,self/single,1,60,10,"Increase p.Res and m.Res with 30%; Increase SPT/CON.Debuff Resist with 15%;",56,120k,,Human
+70,Weapon Parry,human_parry,Physical/Active,Sword|Blunt/2,,0,0,self/single,1,60,10,"Increase p.Res and m.Res with 40%; Increase SPT/CON.Debuff Resist with 20%;",70,390k,,Human
+,,,,,,,,,,,,,,,,----------------------------Relax----------------------------
+15,Relax,human_relaxation,Toggle,,,0,0,self/single,5,10,0,"Sit and relax: Gives 1.0 % HP/s regen (cannot act, status is canceld on dmg taken);",0,1.5k,,Human
+28,Relax,human_relaxation,Toggle,,,0,0,self/single,5,10,0,"Sit and relax: Gives 2.0 % HP and 1% MP regen (cannot act, status is canceld on dmg taken);",0,12k,,Human
+40,Relax,human_relaxation,Toggle,,,0,0,self/single,5,10,0,"Sit and relax: Gives 2.5 % HP and 1% MP regen (cannot act, status is canceld on dmg taken);",0,28k,,Human
+49,Relax,human_relaxation,Toggle,,,0,0,self/single,5,10,0,"Sit and relax: Gives 3.0 % HP and 1% MP regen (cannot act, status is canceld on dmg taken);",0,50k,,Human
+58,Relax,human_relaxation,Toggle,,,0,0,self/single,5,10,0,"Sit and relax: Gives 3.5 % HP and 2% MP regen (cannot act, status is canceld on dmg taken);",0,88k,,Human
+64,Relax,human_relaxation,Toggle,,,0,0,self/single,5,10,0,"Sit and relax: Gives 4.0 % HP and 2% MP regen (cannot act, status is canceld on dmg taken);",0,190k,,Human
+70,Relax,human_relaxation,Toggle,,,0,0,self/single,5,10,0,"Sit and relax: Gives 4.5 % HP and 2% MP regen (cannot act, status is canceld on dmg taken);",0,390k,,Human
+74,Relax,human_relaxation,Toggle,,,0,0,self/single,5,10,0,"Sit and relax: Gives 5.0 % HP and 3% MP regen (cannot act, status is canceld on dmg taken);",0,880k,,Human
+,,,,,,,,,,,,,,,,----------------------------Grade Permission----------------------------
+1,Grade F,grade_penalty,passive,,,0,0,self/single,0,0,0,"Allow the user to equip F grade; Auto-granted",0,0,[]
+20,Grade E,grade_penalty,passive,,,0,0,self/single,0,0,0,"Allow the user to equip E grade; Auto-granted",0,0,[]
+40,Grade D,grade_penalty,passive,,,0,0,self/single,0,0,0,"Allow the user to equip D grade; Auto-granted",0,0,[]
+52,Grade C,grade_penalty,passive,,,0,0,self/single,0,0,0,"Allow the user to equip C grade; Auto-granted",0,0,[]
+61,Grade B,grade_penalty,passive,,,0,0,self/single,0,0,0,"Allow the user to equip B grade; Auto-granted",0,0,[]
+76,Grade A,grade_penalty,passive,,,0,0,self/single,0,0,0,"Allow the user to equip A grade; Auto-granted",0,0,[]
+80,Grade S,grade_penalty,passive,,,0,0,self/single,0,0,0,"Allow the user to equip S grade; Auto-granted",0,0,[]

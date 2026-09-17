@@ -154,7 +154,8 @@ namespace Game.Client
         /// wired in the first place.</para></summary>
         private void ConfirmLearn(SkillDef def, int newLevel, int sp, long gold, string blockedReason = null)
         {
-            _learnTitle.text = def.Name + (def.MaxLevel > 1 ? "   Lv." + newLevel : "");
+            _learnTitle.text = def.NameAt(newLevel)
+                             + (def.MaxLevel > 1 && !def.HasLevelNames ? "   Lv." + newLevel : "");
 
             var t = new System.Text.StringBuilder();
             string desc = def.DescriptionAt(newLevel);
@@ -284,7 +285,10 @@ namespace Game.Client
                     Note(CategoryName(def.Category));
                 }
 
-                string level = def.MaxLevel > 1 ? "  Lv." + Boot.Learned[def.Id] : "";
+                // A rung that carries its OWN NAME says which step it is already ("Grade C"), so the
+                // "Lv.N" suffix would contradict it — see SkillDef.HasLevelNames.
+                int rung = Boot.Learned[def.Id];
+                string level = def.MaxLevel > 1 && !def.HasLevelNames ? "  Lv." + rung : "";
                 string token = def.Id;
 
                 // Two ways to be passive, and BOTH have to be checked: a PassiveEffect (Passive is a
@@ -297,7 +301,7 @@ namespace Game.Client
                 if (passive)
                 {
                     // A passive has nothing to press and nowhere to be placed.
-                    Row(SkillLetters(def) + "  " + def.Name + level, null, null, UiKit.TextDim,
+                    Row(SkillLetters(def) + "  " + def.NameAt(rung) + level, null, null, UiKit.TextDim,
                         def.Id, Boot.Learned[def.Id]);
                     continue;
                 }
@@ -308,7 +312,7 @@ namespace Game.Client
                 // "To bar" goes DISABLED once the skill is on the bar, replacing the old "* on bar"
                 // text. The state belongs to the control that acts on it — a greyed button says "no,
                 // and here is why" in the place you were about to press.
-                Row2Buttons(SkillLetters(def) + "  " + def.Name + level,
+                Row2Buttons(SkillLetters(def) + "  " + def.NameAt(rung) + level,
                             "Use", () => Boot.UseSlot(token),
                             _pendingAssign == token ? "Cancel" : "To bar",
                             onBar && _pendingAssign != token ? null : (System.Action)(() => BeginAssign(token)),
@@ -387,7 +391,9 @@ namespace Game.Client
                     long gold = def.GoldCostAt(cs.SkillLevel);
                     bool canLearn = levelMet && Boot.SkillPoints >= sp && (gold == 0 || Boot.Gold >= gold);
 
-                    string levelTag = def.MaxLevel > 1 ? "  Lv." + cs.SkillLevel : "";
+                    string levelTag = def.MaxLevel > 1 && !def.HasLevelNames
+                                    ? "  Lv." + cs.SkillLevel : "";
+                    string learnName = def.NameAt(cs.SkillLevel);
                     // 🔴🔑 BOTH PRICES, WHEN THERE ARE BOTH (§100, 2026-09-16: *"the SP requirement is
                     //    sometimes missing in the skills to learn list"*). This read
                     //    `gold > 0 ? gold : SP`, so the moment a rung carried a gold price its SP cost
@@ -419,7 +425,7 @@ namespace Game.Client
                     int lvlGate = group.Key;
                     string blocked = canLearn ? null : LearnBlockedReason(learnDef, lvlGate, levelMet, sp, gold);
 
-                    Row(SkillLetters(def) + "  " + def.Name + levelTag + "   " + price,
+                    Row(SkillLetters(def) + "  " + learnName + levelTag + "   " + price,
                         null, null,
                         canLearn ? UiKit.Text : UiKit.TextDim,
                         onRowClick: () => ConfirmLearn(learnDef, learnLevel, sp, gold, blocked));

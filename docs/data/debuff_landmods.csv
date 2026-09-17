@@ -18,6 +18,7 @@ Chilled,nuker_empower_elf_curse_2,"(NOT LEARNABLE - boss/whisp/proc, or orphaned
 Chilled,nuker_empower_elf_curse_3,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",M.Def -10%; Slow -30%,none (fizzle roll),1,DEBUFF ONLY (2),1
 Creeping Frost,creeping_frost,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",Stun; Slow,SPT,1,DEBUFF ONLY (2),1
 Dazzling Arrow,archer_dazzling_arrow,Sharpshooter(Human),cancels 3 buff(s); Stun,CON,1,dmg+2 debuffs,1
+Demonic Pain,demon_pain,Archer(Demon) | Bulwark(Demon) | Hunter(Demon) | Nullblade(Demon) | Phantom(Demon) | Ravager(Demon) | Rogue(Demon) | Sharpshooter(Demon) | Tank(Demon) | Trapper(Demon) | Vanguard(Demon) | Venomweaver(Demon) | Warlord(Demon) | Warrior(Demon),Bleed DoT (+ its family rider),CON,1.5,DEBUFF ONLY (1),1.5
 Devastating Slam,boss_slam,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",Stun,CON,1,dmg+1 debuff,1
 Entangling Roots,entangling_roots,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",Root,SPT,0.5,DEBUFF ONLY (1),0.5
 Envenom,envenom,"(NOT LEARNABLE - boss/whisp/proc, or orphaned by the 40+ purge)",Venom DoT (+ its family rider),CON,1,dmg+1 debuff,1

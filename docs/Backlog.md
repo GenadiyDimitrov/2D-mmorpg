@@ -253,6 +253,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-250` | 🟡 | THE SUBCLASS SYSTEM — **the server half is BUILT (0.155.0)**; what is left is the CLIENT dialogue + panel (APK) and the SIGIL half (§1-§4). ❓ one new question in §9.6 | classes |
 | `BL-253` | 🔵 | A DROP DATABASE — name an item, see every source; the BalanceMatrix half is built, the in-game window is owed | items |
 | `BL-254` | ❓ | RARE WOOD DROPS FROM NOTHING — wood is never a category's primary, so no Rare rung can reach it | items |
+| `BL-258` | 🔵 | THE MAGE HAS NO RACE BLOCK — `fighter 1st.csv` got one on 2026-09-17; do the mystics get the same, and do the grade rows mirror into `mage 1st.csv`? | classes |
 
 ---
 
@@ -2119,3 +2120,34 @@ Plant, which is Leather+Wood today and is the one category where leather makes n
 ⚠ **Whichever you pick, it is the same question for every SECONDARY material at Rare** — Wood is just
 the one you noticed, because it is the only type that is never anybody's primary.
 
+
+---
+
+## 🔵 `BL-258` — THE MAGE HAS NO RACE BLOCK, AND THE GRADE ROWS LIVE IN ONE FILE
+
+Opened 2026-09-17, the day `fighter 1st.csv`'s race block was built (0.162.0). Two related questions,
+both waiting on you, neither blocking anything that shipped.
+
+**1. Does the MYSTIC get a race layer too?** Your instruction was *"fix all fighters"*, and it was
+followed exactly: the Elf's cure and self-heal, the Demon's drain and bleed, the Human's parry and
+rest stance reach every fighter of that race at every tier, from level 10 to 74. `mage 1st.csv`
+authors no race rows, so no mage gets anything — and inventing some would be the one thing the
+two-way CSV contract forbids, code the file does not author.
+
+⚠ **It is not a symmetric job, and that is worth knowing before you decide.** Two of the six are
+already a mage's day job: the healer has a targeted `antidote` on its own ladder and every mage has
+`self_heal` from level 1. So a mystic race block would want DIFFERENT skills, not these six copied
+across — otherwise an Elf cleric buys a worse version of a spell he already owns.
+
+**2. The GRADE passive is authored once and learned by everyone.** `grade_penalty`'s seven rows
+(1/20/40/52/61/76/80) sit in `fighter 1st.csv`, but grade is a CHARACTER property, so a mage learns
+the identical rungs. Today the checker skips it on the mage side rather than pretend the rows are
+missing. Two ways to settle it, your call:
+
+- **(a) Paste the seven rows into `mage 1st.csv`** — the file then says what the class actually gets,
+  and the skip comes out of `Check.cs`. One paste, one deleted branch. This is the tidier answer.
+- **(b) Leave it as is** — one authored copy, verified once against `fighter 1st.csv` with a 1-90
+  band, and a commented skip explaining why the mage specs do not see it.
+
+Nothing is broken either way: the passive grants nothing, blocks nothing and is already correct in
+the game for every class. This is about where the row LIVES, not about behaviour.

@@ -1585,6 +1585,15 @@ public class GameLoopService : BackgroundService
         // (The old combat-"training" passive that stood in for soul/spell runes is GONE — runes are now
         // held RUNE items that grant the same buff, see ReconcileRuneBuffs / SkillCatalog.WarRuneBuff.)
 
+        // ---- GRADE PERMISSION — auto-granted, free, and purely informational (2026-09-17). The rung
+        //      IS the character's grade step, so it is a plain assignment off GradePenalty rather than
+        //      a "learn once" TryAdd: it has to climb on its own as he levels, and it must never be
+        //      able to sit one step behind the equip math it exists to describe.
+        //      ⚠ `player.Level`, not the class level — grade is a CHARACTER property. A subclass born
+        //        at 40 gets step 2 (D) immediately, which is exactly right: his gear did not change.
+        player.LearnedSkills[SkillCatalog.GradePermission] =
+            GradePenalty.StepForLevel(player.Level) + 1;
+
         // Class identity "sure" floor passive for the current class tier (level = tier).
         // 🔴 ONLY THE TANK STILL GETS ONE. The warrior's `precision` went in `BL-201` and the rogue's
         // `evade_mastery` in `BL-251`, so for every other archetype this line is a no-op — see
@@ -10197,7 +10206,7 @@ public class GameLoopService : BackgroundService
             var (pFlat, pMod) = def.PhysDamageAt(lvl);
             int dmg = StatCalculator.PhysicalDamageFM(
                 (int)attacker.EffectiveAttack, pFlat, pMod, (int)victim.EffectiveDefence,
-                StatCalculator.WeaponDefenceCoef(attacker.WeaponType, victim.PierceDefCoef, victim.BluntDefCoef, victim.BowDefCoef));
+                StatCalculator.WeaponDefenceCoef(attacker.WeaponType, victim.PierceDefCoef, victim.BluntDefCoef, victim.BowDefCoef, victim.PhysicalDefCoef));
             dmg = FinalizeDamage(attacker, victim, dmg, DamageKind.SkillPhysical, def);
 
             // ---- CRIT / [Double] / BLOCK, for a PLAYER's area strike (`BL-256`, 2026-09-16) ----
@@ -12253,7 +12262,7 @@ public class GameLoopService : BackgroundService
                 int damage = StatCalculator.PhysicalDamageFM(
                     (int)caster.EffectiveAttack, pFlat, pMod,
                     (int)target.EffectiveDefence,
-                    StatCalculator.WeaponDefenceCoef(caster.WeaponType, target.PierceDefCoef, target.BluntDefCoef, target.BowDefCoef));
+                    StatCalculator.WeaponDefenceCoef(caster.WeaponType, target.PierceDefCoef, target.BluntDefCoef, target.BowDefCoef, target.PhysicalDefCoef));
                 damage = (int)(damage * StatCalculator.WeaponVariance(caster.WeaponType, _rng));
                 damage = FinalizeDamage(caster, target, damage, DamageKind.SkillPhysical, def);
 
@@ -13264,6 +13273,13 @@ public class GameLoopService : BackgroundService
             HealReceivedPct = GroupOr(gf.HealReceivedPct, def.HealReceivedPctAt(level)),
             MagicAccuracy = GroupOr(gf.MagicAccuracy, def.MagicAccuracyAt(level)),
             CcResistPhysical = GroupOr(gf.CcResistPhysical, def.CcResistPhysicalAt(level)),
+            // pRes — per LEVEL for the same reason as everything else on this list: Weapon Parry
+            // climbs 5 → 40% across five rungs, and the def's own field would hand rung 1's number
+            // to all of them. The mRes half of the same skill rides the flag, not a field.
+            PhysicalResistPct = def.PhysicalResistPctAt(level),
+            // Relax — per LEVEL, for the same reason: 1.0% HP/s at rung 1 and 5% HP + 3% MP at rung 8.
+            HpRegenPerSecondPct = def.HpRegenPerSecondPctAt(level),
+            MpRegenPerSecondPct = def.MpRegenPerSecondPctAt(level),
             // Magic crit damage — per-LEVEL for the same reason.
             MagicCritDamage = GroupOr(gf.MagicCritDamage, def.MagicCritDamageAt(level)),
             MagicCritDamageDebuff = def.MagicCritDamageDebuffAt(level),
@@ -14825,7 +14841,7 @@ public class GameLoopService : BackgroundService
             int damage = StatCalculator.PhysicalDamage(
                 (int)attacker.EffectiveBasicAttack, 0,
                 (int)target.EffectiveDefence, attacker.Level,
-                StatCalculator.WeaponDefenceCoef(attacker.WeaponType, target.PierceDefCoef, target.BluntDefCoef, target.BowDefCoef));
+                StatCalculator.WeaponDefenceCoef(attacker.WeaponType, target.PierceDefCoef, target.BluntDefCoef, target.BowDefCoef, target.PhysicalDefCoef));
             damage = (int)(damage * StatCalculator.WeaponVariance(attacker.WeaponType, _rng));
             damage = FinalizeDamage(attacker, target, damage, DamageKind.Basic, null);
 
@@ -16560,6 +16576,13 @@ public class GameLoopService : BackgroundService
                 mpRegenPct += b.Percent(SkillEffect.BuffMpRegen);
                 mpRegenFlat += b.Flat(SkillEffect.BuffMpRegen);
             }
+            // ---- THE THIRD CHANNEL: a fraction of the holder's OWN POOL, per second (the Human's
+            //      Relax). Turned into a flat here — `MaxHp` is known at this point and his number is
+            //      a rate, not a multiplier — and added to the flats so it lands OUTSIDE the stance
+            //      multiplier, beside the sitting passives above and for the same reason: Relax makes
+            //      you sit, so charging the sitting bonus on it again would inflate every rung.
+            if (b.HpRegenPerSecondPct != 0f) hpRegenFlat += entity.MaxHp * b.HpRegenPerSecondPct;
+            if (b.MpRegenPerSecondPct != 0f) mpRegenFlat += entity.MaxMp * b.MpRegenPerSecondPct;
         }
 
         // The formulas are authored PER SECOND, so a tick pays out one period's worth. This is what
