@@ -266,7 +266,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-232` | 🔵 | `debuff_landmods.csv` IS LIVE — 74 rows built and checked; the SUCCESS column is yours to author | combat |
 | `BL-233` | ❓ | THE DEMON BUFFER'S P.DEF — measured three ways and heavy is AHEAD; I need your two sheets | classes |
 | `BL-234` | ❓ | URGENT LESSER HEAL — built to your four numbers; the per-rank falloff is mine to confirm | classes |
-| `BL-250` | 🟡 | THE SUBCLASS SYSTEM — the server half (0.155.0) and **the whole SIGIL half (0.169.0)** are built; what is left is the class master's CLIENT dialogue + info panel (APK). ❓ one question in §9.6 | classes |
+| `BL-250` | 🟢 | THE SUBCLASS SYSTEM — **BUILT WHOLE** (0.155.0 server, 0.169.0 sigils, 0.170.0 the class master's dialogue). Only the APK is owed. ❓ one question in §9.6 | classes |
 | `BL-260` | ❓ | **SUMMONERS — the conversation we have never had**, and four shipped decisions already lean on it | classes |
 | `BL-262` | ❓ | THE BOSS MAT PILE TAKES NO RATE KNOB — the same shape `BL-247` fixed in the recipe roll; three ways out, my reading is (2) | items |
 
@@ -2063,8 +2063,12 @@ those two numbers off the server (protocol 45).
 with `ExclusiveGroup` gone the Mindwright's list and its Forget gate — both keyed on *having* one —
 would have made every sigil permanently un-removable. Both now ask "is it a sigil".
 
-🔵 **LEFT: the CLIENT half of §7+§8** — drawing the class master's subclass dialogue and its info panel,
-plus using a ticket from the bag. The server side of both has been built since 0.155.0.
+✅ **AND THE CLIENT HALF OF §7+§8 IS BUILT — 0.170.0.** The class master's second dialogue draws itself
+from `SubclassOfferInfo`: the state line (held / open / unused tickets), the next slot as EARNED or
+priced, every takeable class with its tree, its three sigils and the slot number it would open, and the
+free swap-out rows. **The whole of `BL-250` is built now except the APK that carries it.**
+
+❓ **Only §9.6 is still open** — the completeness gate against a BOUGHT slot, left as built.
 
 ### 10. ⚠ For the record
 Three sigils today = level 76 + 60kk SP + 30kk gold on ONE character. Three sigils after this = **three

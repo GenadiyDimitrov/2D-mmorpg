@@ -7,11 +7,38 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.169.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.170.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-17 (latest) — 0.169.0: the sigils become end game — `BL-250` §1-§4
+## 2026-09-17 (latest) — 0.170.0: the class master's second dialogue — `BL-250` §7+§8
+
+The last of *"finish all red dots"*. The server side of this has been built since 0.155.0 and had
+nothing to draw it; now it does.
+
+*"u can reuse the @40 class master to open new dialogue when u go back to him with main @76+4th"*, and
+§8: *"we will need an detailed information when taking subclass what that subclass will give you when
+reaching 75lvl etc"*.
+
+Every row of the panel answers §8 before you commit: what the class is, that it **starts at 40 with no
+SP** and brings a 1-day rune, **which sigil tree it opens at 75 and which three sigils are in it**, and
+whether it would open a **sigil SLOT** (with its number) or only the tree. Above it: what you hold, what
+you have opened, how many unused **tickets** are in your bag — an unused ticket is a slot you already own
+and is the thing people forget — and either how the next slot is EARNED or what it costs to buy.
+
+🔑 **The client decides nothing here.** Which tree a class unlocks, whether it would open a slot, what
+the next rung costs, whether a class is still legally available, which of your own classes may still be
+swapped out — all of it arrives derived on `SubclassOfferInfo`. That matters more than usual on this
+panel: the same rows decide whether to spend five billion gold, and a second opinion computed on the
+phone is how the two would come to disagree.
+
+A class you cannot take is **dimmed, never hidden** — *"you already walk this path"* is a fact about your
+own build, and hiding the row turns it into a mystery about a missing option.
+
+✅ **`BL-250`'s whole build is now done** except the APK that carries it. Still open in the entry: §9.6,
+the completeness gate against a BOUGHT slot, left as built and unanswered.
+
+## 2026-09-17 — 0.169.0: the sigils become end game — `BL-250` §1-§4
 
 *"100kk wipes all -> finish all red dots"*. The sigil half of the subclass system, and the one reading
 the entry was holding is decided: **100kk clears the whole board in one payment**, not 100kk per sigil.

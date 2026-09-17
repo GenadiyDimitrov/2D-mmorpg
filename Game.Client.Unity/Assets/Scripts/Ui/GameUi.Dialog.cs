@@ -217,6 +217,110 @@ namespace Game.Client
                               + "\n<size=15>" + have + "</size>",
                               "", null, UiKit.TextDim);
             }
+            // ----- `BL-250` §7+§8 — THE CLASS MASTER'S SECOND DIALOGUE -----------------------------
+            //
+            // *"admins can take subclass as its of now ... and normal players also need a NPC to give
+            // them (u can reuse the @40 class master to open new dialogue when u go back to him with
+            // main @76+4th)"*, and §8: *"we will need an detailed information when taking subclass what
+            // that subclass will give you when reaching 75lvl etc"*.
+            //
+            // 🔑 THE CLIENT DECIDES NOTHING HERE. Every field on `SubclassOfferInfo` is derived on the
+            // server — which sigil group a class unlocks, whether it would open a SLOT or only a tree,
+            // what the next ticket costs, whether a class is still legally available, which of your own
+            // classes may still be swapped out. This section is a renderer, and deliberately so: the
+            // same panel decides whether to spend five billion gold, and a second opinion computed on
+            // the phone is how the two would disagree.
+            if (d.Subclass != null)
+            {
+                var sc = d.Subclass;
+                anything = true;
+                Header("Subclasses");
+
+                // The state line first: what you own, what you have opened, and what is sitting unspent.
+                // An unspent TICKET is an unopened slot you already own, which is the one thing a player
+                // forgets — so it is said before anything is offered.
+                DialogRow("You hold " + sc.SlotsFilled + " subclass(es) in " + sc.SlotsUnlocked
+                          + " open slot(s), of " + sc.MaxSlots + " the ladder allows."
+                          + (sc.TicketsInBag > 0
+                              ? "\n<size=15>" + sc.TicketsInBag + " unused Subclass Ticket(s) in your bag — "
+                                + "an unused ticket is a slot you own but have not opened.</size>"
+                              : ""),
+                          "", null, UiKit.TextDim);
+
+                // ---- the next SLOT: earned, bought, or walled ----
+                if (sc.NoClassesLeft)
+                    DialogRow("No more available subclasses — every path your class may legally take is "
+                              + "taken.\n<size=15>Another ticket would have nothing to open. When new "
+                              + "classes are added this unlocks itself.</size>",
+                              "", null, UiKit.TextDim);
+                else if (sc.NextSlotIsEarned)
+                    DialogRow("Your next slot is EARNED, not bought."
+                              + "\n<size=15>Your main at 76 with its 4th class pays the first; each of "
+                              + "your first two subclasses reaching " + ThirdClassCatalog.SubclassLevel
+                              + " pays another.</size>",
+                              "", null, UiKit.TextDim);
+                else if (sc.NextSlotGoldPrice > 0 || sc.NextSlotPlatinumPrice > 0)
+                {
+                    string price = sc.NextSlotGoldPrice > 0
+                        ? sc.NextSlotGoldPrice.ToString("N0") + " " + GameConstants.CurrencyName
+                        : sc.NextSlotPlatinumPrice.ToString("N0") + " platinum";
+                    DialogRow("Buy another Subclass Ticket — " + price
+                              + "\n<size=15>The ticket goes in your bag; using it opens the slot. It can "
+                              + "wait there until you know which class you want.</size>",
+                              sc.CanBuyTicket ? "Buy" : "",
+                              sc.CanBuyTicket
+                                  ? () => Ask("Buy a Subclass Ticket for " + price + "?", "Buy",
+                                              () => Boot.BuySubclassTicket())
+                                  : (System.Action)null,
+                              sc.CanBuyTicket ? UiKit.Text : UiKit.TextDim);
+                }
+
+                // ---- what you could TAKE, with §8's detail on every row ----
+                bool canTake = sc.SlotsUnlocked > sc.SlotsFilled;
+                foreach (var opt in sc.Options)
+                {
+                    // A class you cannot legally add is DIMMED, never hidden: "another of your classes
+                    // already walks this path" is information about your own build, and hiding the row
+                    // turns it into a mystery about a missing option.
+                    string detail = "<size=15>" + opt.Description
+                        + "\nStarts at level " + opt.BornAtLevel + " with no SP, and comes with a 1-day rune."
+                        + "\nAt " + ThirdClassCatalog.SubclassLevel + " it opens the " + opt.SigilGroup
+                        + " sigils: " + string.Join(", ", opt.SigilNames)
+                        + (opt.OpensSigilSlot > 0
+                            ? "\n<b>...and sigil slot " + opt.OpensSigilSlot + " of "
+                              + SkillCatalog.MaxSigils + ".</b>"
+                            : "\n(Opens its tree only — your sigil slots are already accounted for.)")
+                        + "</size>";
+
+                    if (!opt.Available)
+                        DialogRow(opt.Name + "   (you already walk this path)\n" + detail, "", null, UiKit.TextDim);
+                    else if (!canTake)
+                        DialogRow(opt.Name + "   (no open slot)\n" + detail, "", null, UiKit.TextDim);
+                    else
+                    {
+                        int id = opt.ThirdClassId;
+                        string name = opt.Name;
+                        DialogRow(opt.Name + "\n" + detail, "Take",
+                                  () => Ask("Take " + name + " as a subclass?\n\n<size=15>It starts at level "
+                                          + opt.BornAtLevel + " with no SP. Below level "
+                                          + ThirdClassCatalog.SubclassLevel + " you may swap it for another; "
+                                          + "at " + ThirdClassCatalog.SubclassLevel + " it is yours for good.</size>",
+                                          "Take", () => Boot.TakeSubclass(id)),
+                                  UiKit.Text);
+                    }
+                }
+
+                // ---- §6, the free swap-out below 75 ----
+                foreach (var held in sc.Held)
+                {
+                    if (!held.CanSwapOut) continue;
+                    DialogRow("Swap out " + held.Name + " (level " + held.Level + ") — FREE"
+                              + "\n<size=15>Below " + ThirdClassCatalog.SubclassLevel + " a subclass can be "
+                              + "replaced. You lose its levels and its SP; that is the whole price.</size>",
+                              "", null, UiKit.TextDim);
+                }
+            }
+
             // ----- gatekeeper ---------------------------------------------------------------------
             if (d.Teleport != null && d.Teleport.Destinations != null)
             {

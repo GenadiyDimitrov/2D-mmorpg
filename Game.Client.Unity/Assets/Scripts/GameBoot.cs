@@ -487,6 +487,24 @@ namespace Game.Client
             catch (Exception ex) { ClientLog.Warn("BuySpBottle: " + ex.Message); }
         }
 
+        /// <summary>`BL-250` §7 — take a subclass at the class master. Every rule (an open slot, no
+        /// repeated path, gear unequipped) is re-checked server-side; this only asks.</summary>
+        public async void TakeSubclass(int thirdClassId)
+        {
+            if (Phase != ClientPhase.InWorld) return;
+            try { await _net.TakeSubclassAsync(thirdClassId); }
+            catch (Exception ex) { ClientLog.Warn("TakeSubclass: " + ex.Message); }
+        }
+
+        /// <summary>`BL-250` §5 — buy the next Subclass Ticket. ⚠ The PRICE is never sent: the server
+        /// reads the rung off the ladder, so a client cannot name its own.</summary>
+        public async void BuySubclassTicket()
+        {
+            if (Phase != ClientPhase.InWorld) return;
+            try { await _net.BuySubclassTicketAsync(); }
+            catch (Exception ex) { ClientLog.Warn("BuySubclassTicket: " + ex.Message); }
+        }
+
         /// <summary>Quit your profession at your own master. Every crafting level is lost.</summary>
         public async void QuitProfession()
         {
