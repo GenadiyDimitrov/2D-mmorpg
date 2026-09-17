@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.156.0";
+    public const string GameVersion = "0.157.0";
 
     // ----- SP BOTTLE (owner, 2026-08-26) -------------------------------------------------------
     // *"u can make an npc to take your 1kkk SP + 100kk gold and give you a tradable/sellabel
@@ -189,7 +189,12 @@ public static class GameConstants
     /// `[Double]` from is DELETED — an old APK would keep showing a number the server no longer
     /// agrees with (it derives 7-10.75%; the truth is 0% until a mastery passive is authored).
     /// ⚠ A NEW APK IS WANTED, but an old one still plays.
-    public const int ProtocolVersion = 39;   // 39: the class master carries the SUBCLASS dialogue (`BL-250`)
+    /// 40 (0.157.0) adds `InventoryUpdate.LockedDefIds` — the `BL-239` item lock — and the `SetItemLock`
+    /// hub method. Another pure ADDITION with a default: an old APK reads the bag exactly as before and
+    /// simply never sees a lock, and it never calls the new method. The SERVER enforces every one of the
+    /// five refusals regardless of which client is asking, which is what makes that safe.
+    /// ⚠ A NEW APK IS WANTED — without one there is no way to SET a lock.
+    public const int ProtocolVersion = 40;   // 40: the item lock rides on the bag (`BL-239`)
 
     /// <summary>
     /// The oldest protocol this server still speaks. Equal to <see cref="ProtocolVersion"/> means

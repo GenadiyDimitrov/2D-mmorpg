@@ -2016,7 +2016,8 @@ namespace Game.Client
             foreach (var it in items) if (!it.Equipped) used++;   // worn gear doesn't take a slot
 
             int revision = items.Length * 17 + (int)_bagTab * 7919 + (int)_bagFastMode * 104729
-                         + (int)(Boot.Gold % 1_000_000) + (int)(Boot.Platinum % 1_000_000) * 7;
+                         + (int)(Boot.Gold % 1_000_000) + (int)(Boot.Platinum % 1_000_000) * 7
+                         + Boot.LockRevision * 1013;   // `BL-239` — a lock removes the fast button
             foreach (var item in items)
                 revision = revision * 31 + item.InstanceId.GetHashCode()
                          + (item.Equipped ? 1 : 0) + item.Quantity * 7 + item.Enchant;
@@ -2060,6 +2061,10 @@ namespace Game.Client
                 if (item.Enchant > 0) name = "+" + item.Enchant + " " + name;
                 if (item.Quantity > 1) name += "   x" + item.Quantity;
                 if (item.Equipped) name = "* " + name;
+                // `BL-239` — a LOCKED row says so. Without a mark, a locked item in Del mode is simply
+                // a row whose red button is missing, which reads as a bug rather than as protection.
+                // Plain ASCII on purpose: the TMP atlas is static, so a padlock glyph would draw as a box.
+                if (def != null && Boot.IsLocked(def.Id)) name = "[L] " + name;
 
                 // QUALITY COLOUR on the bag row. The vendor, warehouse, item details and worn squares
                 // all colour by rarity; the bag — the list you look at most — was the one place still
@@ -2086,7 +2091,12 @@ namespace Game.Client
                 // only on a piece `Crafting.Disassemble` actually salvages: a Brake button on a potion
                 // would be a tap that does nothing, which is the same foot-gun as one that does the
                 // wrong thing. A row with no salvage simply shows no fast button in Brake mode.
+                // `BL-239` closes `BL-244`'s open clause — *"a locked item ignores both"*. The fast
+                // button is the one place in the game with NO confirmation step, so a lock has to take
+                // it away entirely: greying it here would still be a red button on the row under your
+                // thumb, and there is no dialogue behind it to catch the tap.
                 if (_bagFastMode != BagFastMode.Off && !item.Equipped
+                    && !(def != null && Boot.IsLocked(def.Id))
                     && (def == null || def.Slot != EquipSlot.QuestItem))
                 {
                     bool brake = _bagFastMode == BagFastMode.Brake;

@@ -618,6 +618,19 @@ public class Entity
     /// e.g. the A-grade set recipes). Auto-known recipes are gated by level, not this set.</summary>
     public HashSet<string> KnownRecipes { get; } = new();
 
+    /// <summary>`BL-239` — item DEF ids this character has LOCKED. A locked item cannot be sold,
+    /// binned, broken down, banked (either keeper) or traded; it can still be USED, which is the point
+    /// — you lock a stack of potions so you never sell it, not so you can never drink it.
+    ///
+    /// <para>🔑 <b>DEF ids, not instance ids</b>, and that is the whole design (owner, 2026-09-16):
+    /// the stack you lock keeps the lock after it is drunk empty and re-looted. It also means the lock
+    /// is CHARACTER state rather than a flag on an inventory row, so it survives a relog for free and
+    /// no existing row needs migrating.</para>
+    ///
+    /// <para>Persisted as a CSV, like <see cref="KnownRecipes"/>. Case-insensitive because item def ids
+    /// are matched that way everywhere else.</para></summary>
+    public HashSet<string> LockedItems { get; } = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Friend CHARACTER names (case-preserved; matched case-insensitively). When a friend comes
     /// online you get a "&lt;friend&gt; is back online" message. Per character. Persisted as a CSV.</summary>
     public HashSet<string> Friends { get; } = new(StringComparer.OrdinalIgnoreCase);

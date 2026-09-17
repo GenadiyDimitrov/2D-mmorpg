@@ -264,6 +264,10 @@ namespace Game.Client
         public Task DisassembleItemAsync(Guid instanceId) =>
             _connection.SendAsync("DisassembleItem", instanceId);
 
+        /// <summary>`BL-239` — lock/unlock an item by DEF id (not an instance: the lock outlives the stack).</summary>
+        public Task SetItemLockAsync(string defId, bool locked) =>
+            _connection.SendAsync("SetItemLock", defId, locked);
+
         /// <summary>Confirm the chosen item(s) from a selection box.</summary>
         public Task SelectBoxItemsAsync(Guid instanceId, string[] itemIds) =>
             _connection.SendAsync("SelectBoxItems", instanceId, itemIds);

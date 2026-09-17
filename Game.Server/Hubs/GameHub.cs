@@ -271,6 +271,14 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    /// <summary>`BL-239` — lock/unlock an item by DEF id, so it can't be sold, binned, broken down,
+    /// banked or traded by mistake. Takes the def id, not an instance: the lock outlives the stack.</summary>
+    public Task SetItemLock(string defId, bool locked)
+    {
+        _world.Commands.Enqueue(new SetItemLockCmd(Context.ConnectionId, defId, locked));
+        return Task.CompletedTask;
+    }
+
     public Task OpenWarehouse()
     {
         _world.Commands.Enqueue(new OpenWarehouseCmd(Context.ConnectionId));

@@ -115,7 +115,8 @@ namespace Game.Client
             var bank = (_warehouseAccount ? Boot.AccountWarehouse : Boot.Warehouse)
                        ?? Array.Empty<InventoryItemDto>();
             int revision = (_warehouseWithdraw ? 1 : 0) * 92821 + (_warehouseAccount ? 1 : 0) * 51787
-                         + (int)_warehouseTab * 104729;
+                         + (int)_warehouseTab * 104729
+                         + Boot.LockRevision * 1013;   // `BL-239` — a lock adds/removes deposit rows
             foreach (var it in bag) revision = revision * 31 + it.InstanceId.GetHashCode() + it.Quantity + (it.Equipped ? 7 : 0);
             foreach (var it in bank) revision = revision * 31 + it.InstanceId.GetHashCode() * 7 + it.Quantity;
             if (revision == _warehouseRevision) return;
@@ -175,6 +176,10 @@ namespace Game.Client
                 // Quest items are refused by BOTH banks (B4): banking a token stalled its quest step
                 // while Complete still took it. Same rule as above — never offer the row.
                 if (!withdraw && ItemCatalog.IsQuestItem(def)) continue;
+                // `BL-239` — same treatment for a LOCKED item on the DEPOSIT side. The withdraw side
+                // is deliberately untouched: getting a locked item OUT of a keeper is the one move a
+                // lock has no reason to stop.
+                if (!withdraw && Boot.IsLocked(def.Id)) continue;
                 any = true;
 
                 string label = Coloured(def.Name, def.Rarity) + (item.Quantity > 1 ? "   x" + item.Quantity : "");

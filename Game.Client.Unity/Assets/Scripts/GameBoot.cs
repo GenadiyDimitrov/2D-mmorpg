@@ -170,6 +170,20 @@ namespace Game.Client
 
         /// <summary>The bag, as last sent by the server (it pushes the whole thing on any change).</summary>
         public InventoryItemDto[] Inventory { get; private set; } = new InventoryItemDto[0];
+
+        /// <summary>`BL-239` — the item DEF ids this character has LOCKED, as last sent with the bag.
+        /// A locked item can't be sold, binned, broken down, banked or traded; it CAN still be used.
+        /// The server enforces every one of those; this copy only exists so the windows can stop
+        /// offering a button the server would refuse.</summary>
+        public readonly HashSet<string> LockedItems = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>Bumped whenever the locked set changes. Every window that redraws on a revision
+        /// stamp folds this in — a lock changes what the sell list and the bag's fast button show,
+        /// and neither of those changes any item's quantity or id, so nothing else would notice.</summary>
+        public int LockRevision { get; private set; }
+
+        public bool IsLocked(string defId) =>
+            !string.IsNullOrEmpty(defId) && LockedItems.Contains(defId);
         public InventoryItemDto[] Warehouse { get; private set; } = new InventoryItemDto[0];
 
         /// <summary>The ACCOUNT bank — shared by every character on the account.</summary>
@@ -225,6 +239,15 @@ namespace Game.Client
         }
 
         /// <summary>Break a piece of gear down into crafting materials (`BL-22`).</summary>
+        /// <summary>`BL-239` — lock/unlock an item by DEF id. The server answers with a fresh bag push
+        /// carrying the new set, so nothing is assumed locally.</summary>
+        public async void SetItemLock(string defId, bool locked)
+        {
+            if (Phase != ClientPhase.InWorld || string.IsNullOrEmpty(defId)) return;
+            try { await _net.SetItemLockAsync(defId, locked); }
+            catch (Exception ex) { ClientLog.Warn("SetItemLock: " + ex.Message); }
+        }
+
         public async void DisassembleItem(Guid instanceId)
         {
             if (Phase != ClientPhase.InWorld) return;
@@ -1319,7 +1342,20 @@ namespace Game.Client
                 ClientLog.Good(o.FromName + " offers to resurrect you (" + (int)(o.ExpPct * 100f) + "% exp back).");
             });
             _net.InventoryReceived += i => Main(() =>
-                Inventory = i?.Items ?? new InventoryItemDto[0]);
+            {
+                Inventory = i?.Items ?? new InventoryItemDto[0];
+                // `BL-239` — the lock set travels WITH the bag, so it can never be a push behind it.
+                var locks = i?.LockedDefIds;
+                bool same = locks != null && locks.Length == LockedItems.Count;
+                if (same)
+                    foreach (var id in locks)
+                        if (!LockedItems.Contains(id)) { same = false; break; }
+                if (same) return;
+                LockedItems.Clear();
+                if (locks != null)
+                    foreach (var id in locks) LockedItems.Add(id);
+                LockRevision++;
+            });
             _net.WarehouseReceived += w => Main(() =>
                 Warehouse = w?.Items ?? new InventoryItemDto[0]);
             _net.AccountWarehouseReceived += w => Main(() =>

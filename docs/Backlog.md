@@ -55,8 +55,12 @@ window did not grow: the Potions tab is two columns now), **`BL-244`** (the fast
 DEL:OFF → DEL:ON → BRAKE:ON) and **`BL-245`** (the crafter sees the keeper's shelf — and **spends**
 from it, bag first, which was the open question in the entry).
 
-**`BL-239`, `BL-240`, `BL-241` and `BL-246`** are still 🔵 waiting to be built. `BL-244`'s
-"a locked item ignores both" clause lands with `BL-239`.
+✅ **AND `BL-239` IS BUILT AND ARCHIVED (2026-09-17, 0.157.0)** — the item lock, on the **def id**, so
+the stack you lock stays locked after it is drunk empty and re-looted. It took `BL-244`'s open clause
+with it: a locked row loses the bag's fast DEL/BRK button entirely, that being the one control in the
+game with no confirmation behind it. ⚠ **A `game.db` delete** — the locks are a new column.
+
+**`BL-240`, `BL-241` and `BL-246`** are still 🔵 waiting to be built.
 
 ✅✅ **AND `BL-247` IS BUILT AND ARCHIVED (0.151.0)** — you took the recommendation (*"fill the gap with
 the elits+boss, and fix the blueprints to take the rates multiplier"*). Four new elite camps (68 / 72 /
@@ -235,7 +239,7 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-233` | ❓ | THE DEMON BUFFER'S P.DEF — measured three ways and heavy is AHEAD; I need your two sheets | classes |
 | `BL-234` | ❓ | URGENT LESSER HEAL — built to your four numbers; the per-rank falloff is mine to confirm | classes |
 | `BL-237` | 🔵 | THE WARLORD'S DAMAGE ROWS — all that is left of WARRIOR 3rd+4th; `war_aoe 3rd/4th.csv` author none | classes |
-| `BL-239` | 🔵 | AN ITEM LOCK, BY ITEM ID — no sell/dismantle/delete/keeper/trade; consumables still usable | items |
+
 | `BL-240` | 🔵 | INSTANT SELL BY RARITY, scoped by the vendor tab you are on | items |
 | `BL-241` | 🔵 | A PER-TYPE RARITY FILTER ON PICKUP — and it drops you from the party LOOT ROSTER too | items |
 | `BL-246` | 🔵 | THE STATS WINDOW BECOMES TWO TABS — your full layout; several rows have no source yet | ui |
@@ -1848,23 +1852,6 @@ Ravager's copy is gone, since his rows landed), and `--check` prints one 🟠 li
 until you write them. That line is the reminder; nothing is invented in the meantime.
 
 ---
-
-## `BL-239` 🔵 AN ITEM LOCK, BY ITEM ID
-
-**2026-09-16.** *"we need a lock on items not to show in sell window nor their del/dismantle button to
-be active. -> open details window of an item and top there is a button that locks that item. (its lock
-for the current inventory -> cannot sell/dismantle/put in keeper/traded/etc ...) you lock item id ->
-every item(stacks) of that item is locked -> you lock one stack of potions .. mobs drop more .. u get
-new stack its also locked, u can use consumables when locked (lock prevent mistake sells/deletes/etc)"*
-
-🔑 **IT LOCKS THE DEF ID, NOT THE INSTANCE**, and that is the whole design: a stack you lock stays
-locked when it is consumed and re-dropped. So it persists as a **set of item ids on the character**,
-not as a flag on an inventory row — which also means it survives a relog for free and needs no
-migration of existing rows.
-
-**What the lock blocks:** sell, dismantle, delete, warehouse, trade. **What it does NOT block:** USING
-a consumable. A locked item should not appear in the sell window at all, and its delete/dismantle
-buttons should be inert rather than hidden.
 
 ## `BL-240` 🔵 INSTANT SELL BY RARITY, PER VENDOR TAB
 

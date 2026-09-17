@@ -319,8 +319,14 @@ public static class ItemTag
     }
 }
 
-/// <summary>Server -> owning client: full inventory sync (sent on change).</summary>
-public record InventoryUpdate(InventoryItemDto[] Items);
+/// <summary>Server -> owning client: full inventory sync (sent on change).
+///
+/// <para>`BL-239` — <paramref name="LockedDefIds"/> rides along because the lock IS a property of the
+/// bag: the client needs it on exactly the pushes that change what the bag holds, and a separate
+/// message would let the two arrive out of order and paint a locked row unlocked for a frame.
+/// 🔑 It is a set of <b>DEF</b> ids, not instance ids — you lock the ITEM, so a stack you consume and
+/// re-loot comes back locked. Never null from this server; an older client just ignores it.</para></summary>
+public record InventoryUpdate(InventoryItemDto[] Items, string[]? LockedDefIds = null);
 
 /// <summary>The character's private warehouse contents (same shape as the bag). Sent when the warehouse
 /// window is opened and after every deposit/withdraw.</summary>

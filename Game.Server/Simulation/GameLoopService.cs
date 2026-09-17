@@ -213,6 +213,7 @@ public class GameLoopService : BackgroundService
                 case RestoreItemCmd c: HandleRestoreItem(c); break;
                 case BuyBackCmd c: HandleBuyBack(c); break;
                 case DisassembleItemCmd c: HandleDisassembleItem(c); break;
+                case SetItemLockCmd c: HandleSetItemLock(c); break;
                 case OpenWarehouseCmd c: HandleOpenWarehouse(c); break;
                 case WarehouseDepositCmd c: HandleWarehouseDeposit(c); break;
                 case WarehouseWithdrawCmd c: HandleWarehouseWithdraw(c); break;
@@ -2742,6 +2743,11 @@ public class GameLoopService : BackgroundService
             return;
         }
 
+        // `BL-239` — a locked item is not binned, however the bin was reached: the details window's
+        // Bin button, the bag's fast DEL button, or a raw command from an out-of-date client.
+        if (ItemCatalog.Get(item.DefId) is ItemDef lockDef && LockRefuses(player, lockDef, "bin it"))
+            return;
+
         // Runes are DELETE-PROTECTED (owner: can't fat-finger it off, like a buff). To switch one off,
         // move it to the warehouse; it expires on its own either way.
         if (ItemCatalog.Get(item.DefId) is { IsRune: true })
@@ -2878,6 +2884,11 @@ public class GameLoopService : BackgroundService
             SendSystemToEntity(player, $"{questDef.Name} belongs in your quest bag — it can't be stored.");
             return;
         }
+
+        // `BL-239` — the keeper is one of the five things a lock stops. His word for it was "put in
+        // keeper", and he meant both keepers: the account one is gated the same way below.
+        if (ItemCatalog.Get(item.DefId) is ItemDef lockDef && LockRefuses(player, lockDef, "store it"))
+            return;
 
         // ...and since `58d`, an INSTANCE may refuse the private bank on its own account. The private
         // warehouse had no such gate at all — it takes anything that is not a quest item — which is
@@ -3023,6 +3034,7 @@ public class GameLoopService : BackgroundService
             SendSystemToEntity(player, $"{item.Name(def)} is bound to this character — it can't go in the account warehouse.");
             return;
         }
+        if (LockRefuses(player, def, "store it")) return;   // `BL-239`
 
         var bank = AccountBankOf(player);
         int freeRows = GameConstants.AccountWarehouseSize - bank.Count;
@@ -4635,6 +4647,10 @@ public class GameLoopService : BackgroundService
             var d = ItemCatalog.Get(item.DefId);
             if (d is not null && (!item.Tradable(d) || ItemCatalog.IsQuestItem(d)))
                 continue;   // untradeable / quest items can't be traded (per INSTANCE since `58d`)
+            // `BL-239` — a locked item is silently dropped from the offer rather than refused loudly:
+            // the offer is rebuilt wholesale on every change, so one message per keystroke would spam.
+            // The client greys the row, so this is the belt to that braces.
+            if (d is not null && player.LockedItems.Contains(d.Id)) continue;
 
             // Clamp the count here rather than trusting the client: only a stackable can be split,
             // and never past what is actually in the stack.
@@ -17280,7 +17296,8 @@ public class GameLoopService : BackgroundService
     private void SendInventory(Entity player)
     {
         SendTo(player, "Inventory", new InventoryUpdate(
-            player.Inventory.Select(i => i.ToDto()).ToArray()));
+            player.Inventory.Select(i => i.ToDto()).ToArray(),
+            player.LockedItems.ToArray()));   // `BL-239` — the lock set rides with the bag it describes
 
         // A COLLECT step is credited HERE, off the one funnel every item gain and loss already pushes
         // through — see AdvanceCollectQuests for why. ⚠ Re-entrancy: the advance pushes the quest log,
@@ -17791,12 +17808,53 @@ public class GameLoopService : BackgroundService
     /// bound newbie loaner, the Rune of Sinners). Otherwise "unsellable" would have become a loophole
     /// that launders a bound item into tradable materials, which is the one thing those tags exist to
     /// prevent. His *"trash"* means gear you were going to vendor.</para></summary>
+    // ===== `BL-239`: THE ITEM LOCK =================================================================
+    //
+    // Owner, 2026-09-16: *"we need a lock on items not to show in sell window nor their del/dismantle
+    // button to be active ... you lock item id -> every item(stacks) of that item is locked ... u can
+    // use consumables when locked (lock prevent mistake sells/deletes/etc)"*.
+    //
+    // 🔑 THE LOCK IS ON THE DEF ID. Everything else follows from that: it is character state
+    // (Entity.LockedItems), it survives a relog and a re-loot, and no inventory row carries a flag.
+    //
+    // 🔑 EVERY DISPOSAL PATH ASKS THE SAME ONE QUESTION — LockRefuses below. There are six of them
+    // (sell, bin, break down, both keepers, trade) and the reason they all funnel through one helper
+    // is that they have historically disagreed: the quest-item rule had to be re-added to the private
+    // keeper long after the other five had it (§39e). A seventh path added later gets the gate by
+    // calling this, or it gets it never.
+
+    /// <summary>True if this def is locked for this character, and the player has been told so.
+    /// The message names the item, because the whole point of a lock is that you had forgotten.</summary>
+    private bool LockRefuses(Entity player, ItemDef def, string verb)
+    {
+        if (!player.LockedItems.Contains(def.Id)) return false;
+        SendSystemToEntity(player, $"{def.Name} is locked — unlock it in its details window to {verb}.");
+        return true;
+    }
+
+    /// <summary>`BL-239` — lock or unlock an item by def id. Idempotent, and it pushes the bag so the
+    /// client's locked set (which rides on <see cref="InventoryUpdate"/>) is never a frame behind.</summary>
+    private void HandleSetItemLock(SetItemLockCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player)) return;
+        if (ItemCatalog.Get(cmd.DefId) is not ItemDef def) return;
+
+        bool changed = cmd.Locked ? player.LockedItems.Add(def.Id) : player.LockedItems.Remove(def.Id);
+        if (!changed) return;
+
+        SendSystemToEntity(player, cmd.Locked
+            ? $"{def.Name} is locked. It can't be sold, binned, broken down, banked or traded."
+            : $"{def.Name} is unlocked.");
+        SendInventory(player);
+    }
+
     private void HandleDisassembleItem(DisassembleItemCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player)) return;
         var item = player.Inventory.FirstOrDefault(i => i.InstanceId == cmd.InstanceId);
         if (item is null) return;
         if (ItemCatalog.Get(item.DefId) is not ItemDef def) return;
+        if (LockRefuses(player, def, "break it down")) return;
 
         if (item.Equipped)
         {
@@ -19065,6 +19123,7 @@ public class GameLoopService : BackgroundService
             SendSystemToEntity(player, "Unequip it before selling.");
             return;
         }
+        if (LockRefuses(player, def, "sell it")) return;   // `BL-239`
         // Per INSTANCE since `58d`: a copy handed out with sellPrice -1 is refused even though the
         // catalog would happily buy the ordinary version of it.
         if (!item.Sellable(def))

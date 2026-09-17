@@ -6098,6 +6098,29 @@ part, the SP is not.
 
 ---
 
+## `BL-239` ✅ BUILT 2026-09-17 in **0.157.0** — the item lock, by DEF id. The entry as filed.
+
+**2026-09-16.** *"we need a lock on items not to show in sell window nor their del/dismantle button to
+be active. -> open details window of an item and top there is a button that locks that item. (its lock
+for the current inventory -> cannot sell/dismantle/put in keeper/traded/etc ...) you lock item id ->
+every item(stacks) of that item is locked -> you lock one stack of potions .. mobs drop more .. u get
+new stack its also locked, u can use consumables when locked (lock prevent mistake sells/deletes/etc)"*
+
+🔑 **IT LOCKS THE DEF ID, NOT THE INSTANCE**, and that is the whole design: a stack you lock stays
+locked when it is consumed and re-dropped. So it persists as a **set of item ids on the character**,
+not as a flag on an inventory row — which also means it survives a relog for free and needs no
+migration of existing rows.
+
+**What the lock blocks:** sell, dismantle, delete, warehouse, trade. **What it does NOT block:** USING
+a consumable. A locked item should not appear in the sell window at all, and its delete/dismantle
+buttons should be inert rather than hidden.
+
+**Built as specced.** One gate (`LockRefuses`) behind all five refusals rather than five copies of the
+rule; `LockedItemsCsv` on the character row (⚠ a `game.db` delete); the set rides to the client on
+`InventoryUpdate` so it can never be a push behind the bag it describes. `BL-244`'s open clause — *"a
+locked item ignores both"* — closed with it: the bag's fast DEL/BRK button is the one control with no
+confirmation behind it, so a lock removes it rather than greying it.
+
 ## `BL-242` ✅ BUILT 2026-09-17 in **0.156.0** — the sell list shows the enchant and the attributes. The entry as filed.
 
 **2026-09-16.** *"sale list don't show enchant value and in the description of the sell item row should

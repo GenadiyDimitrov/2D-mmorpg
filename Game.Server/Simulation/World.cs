@@ -395,6 +395,12 @@ public record RemoveItemCmd(string ConnectionId, Guid InstanceId, bool All = fal
 /// npc id — you bin things in the field, so the undo must work there (playtest-17 C18).</summary>
 public record RestoreItemCmd(string ConnectionId, int Index) : IGameCommand;
 
+/// <summary>`BL-239` — lock or unlock an item, BY DEF ID. Owner, 2026-09-16: *"you lock item id ->
+/// every item(stacks) of that item is locked -> you lock one stack of potions .. mobs drop more .. u
+/// get new stack its also locked"*. So the payload is the def id and nothing else: there is no
+/// instance here to lose. <paramref name="Locked"/> false unlocks.</summary>
+public record SetItemLockCmd(string ConnectionId, string DefId, bool Locked) : IGameCommand;
+
 /// <summary>Open the private warehouse (fetch its contents). Gated to safe zones.</summary>
 public record OpenWarehouseCmd(string ConnectionId) : IGameCommand;
 /// <summary>Move a whole item instance bag → warehouse.</summary>

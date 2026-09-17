@@ -7,11 +7,48 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.156.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.157.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-17 (latest) — 0.156.0: `BL-242` · `BL-243` · `BL-244` · `BL-245` — four quality-of-life asks from the playtest
+## 2026-09-17 (latest) — 0.157.0: `BL-239` — AN ITEM LOCK, AND IT LOCKS THE **DEF ID**
+
+⚠ **Needs an APK** (the lock is set from the item-details window) **and a `game.db` delete** — the
+locks are a new `LockedItemsCsv` column on the character row, and `EnsureCreated()` does not add
+columns to an existing database.
+
+*"we need a lock on items not to show in sell window nor their del/dismantle button to be active. ->
+open details window of an item and top there is a button that locks that item ... you lock item id ->
+every item(stacks) of that item is locked -> you lock one stack of potions .. mobs drop more .. u get
+new stack its also locked, u can use consumables when locked"*.
+
+🔑 **THE LOCK IS ON THE DEF ID, NOT THE INSTANCE**, and everything else falls out of that. It is a set
+of item ids on the CHARACTER (`Entity.LockedItems`), not a flag on an inventory row — so the stack you
+lock is still locked after you drink it empty and loot another, it survives a relog for free, and no
+existing inventory row needed migrating.
+
+**What it blocks — five paths, one gate.** Sell, bin, break down, both keepers, and trade. They all
+ask `LockRefuses` rather than each carrying its own copy of the rule: these six handlers have
+historically disagreed (the quest-item refusal had to be re-added to the private keeper long after the
+other five had it, §39e), and a seventh disposal path added later gets the gate by calling this or it
+gets it never.
+
+**What it does NOT block: USING a consumable.** That is the whole point — you lock a stack of potions
+so you never sell it, not so you can never drink it.
+
+**On the phone:** a `Lock` / `Unlock` button at the **top** of the item-details window, beside the
+name. A locked item's `Bin` and `Break down` buttons stay on the row and go grey — *"their
+del/dismantle button to be [in]active"* — because hiding them would read as "this item can't be broken
+down at all", which is a different statement. A locked row is prefixed `[L]` in the bag, it vanishes
+from the sell list entirely (*"not to show in sell window"*), from the keeper's DEPOSIT side, and from
+the trade table; **and it loses the bag's fast DEL/BRK button**, which closes `BL-244`'s open clause —
+that button is the one place in the game with no confirmation step, so there is no dialogue behind it
+to catch the tap.
+
+⚠ The withdraw side of a keeper is deliberately untouched: getting a locked item *out* of a bank is
+the one move a lock has no reason to stop.
+
+## 2026-09-17 — 0.156.0: `BL-242` · `BL-243` · `BL-244` · `BL-245` — four quality-of-life asks from the playtest
 
 ⚠ **Needs an APK** — all four have a client half. No `game.db` delete: the one new stored field
 (`ManaPotions`) lives inside the existing `AutoHuntJson` column, and an existing save without it falls

@@ -764,6 +764,11 @@ public class PersistenceService
         foreach (var rid in rec.KnownRecipesCsv.Split(',', StringSplitOptions.RemoveEmptyEntries))
             entity.KnownRecipes.Add(rid);
 
+        // `BL-239` — the item locks. A def id that no longer exists in the catalog is dropped on the
+        // way in rather than kept: the set is a filter, and a dead id in it can only ever be noise.
+        foreach (var lid in rec.LockedItemsCsv.Split(',', StringSplitOptions.RemoveEmptyEntries))
+            if (ItemCatalog.Get(lid) is not null) entity.LockedItems.Add(lid);
+
         foreach (var fn in rec.FriendsCsv.Split(',', StringSplitOptions.RemoveEmptyEntries))
             entity.Friends.Add(fn);
         foreach (var bn in rec.BlockedCsv.Split(',', StringSplitOptions.RemoveEmptyEntries))
@@ -1002,7 +1007,8 @@ public class PersistenceService
         int SecondClass, int ThirdClass, int FourthClass, int SkillPoints, int Profession, int CraftExp,
         int Con, int Atk, int Wit, int Agi, int Spt, float X, float Y,
         string LearnedSkillsCsv, string CompletedQuestsCsv, string ActiveQuestsJson,
-        string KnownRecipesCsv, string FriendsCsv, string BlockedCsv, string AutoHuntJson, string EquipPresetsJson,
+        string KnownRecipesCsv, string LockedItemsCsv,
+        string FriendsCsv, string BlockedCsv, string AutoHuntJson, string EquipPresetsJson,
         string BuffsJson,
         int ActiveSubclassSlot, IReadOnlyList<SubclassSnapshot> Subclasses,
         int SubclassSlotsUnlocked, int SubclassTicketsEarned,
@@ -1047,6 +1053,7 @@ public class PersistenceService
                 string.Join(',', e.CompletedQuests),
                 JsonSerializer.Serialize(e.ActiveQuests.Values.ToList()),
                 string.Join(',', e.KnownRecipes),
+                string.Join(',', e.LockedItems),
                 string.Join(',', e.Friends),
                 string.Join(',', e.Blocked),
                 JsonSerializer.Serialize(new AutoHuntConfigDto(
@@ -1183,6 +1190,7 @@ public class PersistenceService
         rec.CompletedQuestsCsv = snap.CompletedQuestsCsv;
         rec.ActiveQuestsJson = snap.ActiveQuestsJson;
         rec.KnownRecipesCsv = snap.KnownRecipesCsv;
+        rec.LockedItemsCsv = snap.LockedItemsCsv;
         rec.FriendsCsv = snap.FriendsCsv;
         rec.BlockedCsv = snap.BlockedCsv;
         rec.SocialOptions = snap.SocialOptions;

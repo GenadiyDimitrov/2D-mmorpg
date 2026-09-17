@@ -30,6 +30,11 @@ namespace Game.Client
             public RectTransform Column;
             public TextMeshProUGUI Emark, Title, Body;
             public RectTransform Buttons;
+            /// <summary>`BL-239` — the lock toggle. Owner: *"open details window of an item and TOP
+            /// there is a button that locks that item"*, so it lives beside the title rather than in
+            /// the action row: the row is where you act on an item, and a lock is the opposite of that.
+            /// Built on both columns but only ever shown on the selected one (compare is read-only).</summary>
+            public Button Lock;
             /// <summary>Kept so the body can be scrolled back to the TOP and its layout rebuilt when
             /// new text is put in it — see ShowItem.</summary>
             public ScrollRect Scroll;
@@ -50,6 +55,13 @@ namespace Game.Client
         private const float ItemPanelExpanded = ItemPanelCollapsed + ItemColumnWidth;
         private const float ItemPanelHeight = 470f;
         private const float ItemColumnX = 16f;
+
+        /// <summary>`BL-239` — width of the lock toggle that sits beside the item's title.</summary>
+        private const float ItemLockWidth = 92f;
+
+        /// <summary>The armed look for a LOCKED item: the same amber the "E" mark uses, so "this piece
+        /// is special" reads the same way in both places. Unlocked is the ordinary panel grey.</summary>
+        private static readonly Color ItemLockedColour = new Color(0.52f, 0.36f, 0.10f, 0.95f);
 
         // ----- C8: one item FILTER, shared by every list of your own bag ---------------------------
         //
@@ -337,8 +349,16 @@ namespace Game.Client
                         new Vector2(0f, -2f), new Vector2(26f, 26f));
 
             v.Title = UiKit.Label(v.Column, "", 18f, UiKit.Accent, TextAlignmentOptions.TopLeft);
+            // ⚠ The title is NARROWER than the column now: the lock button sits in the gap on the
+            // right. Give the title the full width back and a long item name runs under the button.
             UiKit.Place(UiKit.Rect(v.Title.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(32f, -4f), new Vector2(ItemColumnWidth - 40f, 26f));
+                        new Vector2(32f, -4f), new Vector2(ItemColumnWidth - 40f - ItemLockWidth - 8f, 26f));
+
+            // `BL-239` — the lock toggle, top-right. Label and colour are set per item in ShowItem.
+            v.Lock = UiKit.TextButton(v.Column, "Lock", null, 14f);
+            UiKit.Place(UiKit.Rect(v.Lock.gameObject), new Vector2(1f, 1f), new Vector2(1f, 1f),
+                        new Vector2(-ItemLockWidth / 2f - 4f, -18f), new Vector2(ItemLockWidth, 30f));
+            v.Lock.gameObject.SetActive(false);
 
             // Body starts well BELOW the title (it used to sit ~8px under it, which crammed the first
             // stat line under the name).
@@ -639,7 +659,11 @@ namespace Game.Client
 
             if (shown == null) { CloseAllItemViews(); return; }
 
-            int stamp = shown.Quantity * 31 + shown.Enchant * 7 + (shown.Equipped ? 1 : 0);
+            // ⚠ THE LOCK REVISION IS PART OF THE STAMP (`BL-239`): locking an item changes nothing
+            // about the item — same instance, same quantity, same enchant — so without this the window
+            // you pressed Lock in would be the one window that never showed it.
+            int stamp = shown.Quantity * 31 + shown.Enchant * 7 + (shown.Equipped ? 1 : 0)
+                      + Boot.LockRevision * 1013;
             if (shown.Attributes != null)
                 foreach (var a in shown.Attributes) stamp = stamp * 131 + (int)a.Type * 17 + a.Value;
             if (stamp == _openItemStamp) return;
@@ -671,6 +695,22 @@ namespace Game.Client
 
             v.Emark.gameObject.SetActive(item.Equipped);
             v.Title.text = DetailTitle(def, item);
+
+            // `BL-239` — the lock toggle. Only on the actionable column, and never on a QUEST item:
+            // every disposal path already refuses one, so a lock on it would be a button that promises
+            // to change something and cannot.
+            bool lockable = actions && !ItemCatalog.IsQuestItem(def);
+            bool locked = Boot.IsLocked(def.Id);
+            v.Lock.gameObject.SetActive(lockable);
+            if (lockable)
+            {
+                UiKit.SetButtonText(v.Lock, locked ? "Unlock" : "Lock");
+                v.Lock.targetGraphic.color = locked ? ItemLockedColour : UiKit.PanelLight;
+                v.Lock.onClick.RemoveAllListeners();
+                var defId = def.Id;
+                bool want = !locked;
+                v.Lock.onClick.AddListener(() => Boot.SetItemLock(defId, want));
+            }
             v.Body.text = ItemStatsText(def, item) + SetInfoText(def);
             // The ContentSizeFitter resizes the body on the NEXT layout pass, and the ScrollRect keeps
             // whatever scroll offset it had. On the first open both were stale, so the content sat too
@@ -757,16 +797,52 @@ namespace Game.Client
             // the label names what you GET, because that is the decision: this or the vendor's gold,
             // never both. Crafting.Disassemble is the same call the server makes, so the button cannot
             // promise a yield the handler then refuses.
+            //
+            // `BL-239` — when the item is LOCKED both this and Bin stay on the row and do nothing:
+            // *"its delete/dismantle button to be [in]active"*. Hiding them would make a locked item
+            // look like an item that can't be broken down at all, which is a different statement.
             if (!item.Equipped && Crafting.Disassemble(def) is Crafting.Salvage salv)
                 buttons.Add(($"Break down ({salv.Qty} {salv.Rarity} {salv.Type})",
-                             () => ConfirmDisassemble(item, def, salv)));
+                             locked ? (Action)(() => SayLocked(def)) : () => ConfirmDisassemble(item, def, salv)));
 
             // Runes and QUEST ITEMS can't be binned (the server refuses both) — don't offer it. B4:
             // every disposal path refuses a token, so none of them may show the button that starts it.
             if (!def.IsRune && !ItemCatalog.IsQuestItem(def))
-                buttons.Add(("Bin", () => ConfirmBin(item, def)));
+                buttons.Add(("Bin", locked ? (Action)(() => SayLocked(def)) : () => ConfirmBin(item, def)));
 
             LayoutButtons(v.Buttons, buttons);
+
+            // A locked item's two disposal buttons are greyed so "inert" is visible rather than a
+            // button you have to tap to discover. LayoutButtons builds them in order, so the tail of
+            // the list is what was just added — repaint by label rather than by index, which survives
+            // a future button being inserted anywhere.
+            if (locked) PaintInert(v.Buttons, "Bin", "Break down");
+        }
+
+        /// <summary>`BL-239` — what an inert disposal button says when tapped. The server would refuse
+        /// the command with the same sentence; not sending it is the difference between a button that
+        /// is disabled and one that merely fails.</summary>
+        private static void SayLocked(ItemDef def) =>
+            ClientLog.Info(def.Name + " is locked. Tap Unlock at the top of this window first.");
+
+        /// <summary>Grey every button in the row whose label STARTS WITH one of these prefixes.
+        /// Prefix, not equality: "Break down (3 rare Leather)" names its yield.</summary>
+        private static void PaintInert(RectTransform row, params string[] prefixes)
+        {
+            for (int i = 0; i < row.childCount; i++)
+            {
+                var b = row.GetChild(i).GetComponent<Button>();
+                if (b == null) continue;
+                var text = b.GetComponentInChildren<TextMeshProUGUI>();
+                if (text == null) continue;
+                foreach (var p in prefixes)
+                    if (text.text.StartsWith(p, StringComparison.Ordinal))
+                    {
+                        b.targetGraphic.color = UiKit.Panel;
+                        text.color = new Color(0.55f, 0.57f, 0.60f, 1f);
+                        break;
+                    }
+            }
         }
 
         // ----- scrolls: enchant + attribute -------------------------------------------------------

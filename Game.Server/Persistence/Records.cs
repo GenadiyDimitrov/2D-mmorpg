@@ -127,6 +127,11 @@ public class CharacterRecord
     /// <summary>Recipe ids learned from drops (DropOnly recipes), comma-separated.</summary>
     public string KnownRecipesCsv { get; set; } = "";
 
+    /// <summary>`BL-239` — item DEF ids this character has locked against sell/bin/break/bank/trade,
+    /// comma-separated. DEF ids, so the lock outlives any one stack. (Schema change — delete game.db
+    /// to recreate.)</summary>
+    public string LockedItemsCsv { get; set; } = "";
+
     /// <summary>Friend character names, comma-separated. Per character.</summary>
     public string FriendsCsv { get; set; } = "";
 

@@ -144,7 +144,8 @@ namespace Game.Client
             int revision = (_vendorSell ? 1 : 0) * 92821 + (_vendorDetailed ? 7919 : 0)
                          + (_vendorQuickSell ? 15485863 : 0)
                          + (int)_vendorTab * 104729 + (int)(Boot.Gold % 1_000_000)
-                         + (int)(Boot.Platinum % 1_000_000) * 7;   // `BL-257` — the wallet has two halves now
+                         + (int)(Boot.Platinum % 1_000_000) * 7    // `BL-257` — the wallet has two halves now
+                         + Boot.LockRevision * 1013;               // `BL-239` — a lock adds/removes rows
             revision = revision * 31 + (Boot.Dialog?.Shop?.Items?.Length ?? 0);
             // Identity, not just quantity — same reason as the bag stamp: an item swapped for another
             // of the same count would otherwise leave the sell list showing what you no longer own.
@@ -251,6 +252,10 @@ namespace Game.Client
                 // built off `ItemCatalog` alone could offer a row the server refuses, or quote a price
                 // it will not pay. `ItemTag` is the one implementation both sides share.
                 if (!ItemTag.Sellable(def, item.SellPriceOverride, item.TradableOverride)) continue;
+                // `BL-239` — *"a lock on items NOT TO SHOW IN SELL WINDOW"*. Gone entirely rather than
+                // greyed: the sell list is a list of what you are offering, and a row you cannot pick
+                // is only a row to scroll past.
+                if (Boot.IsLocked(def.Id)) continue;
                 if (!InCategory(_vendorTab, def)) continue;
                 any = true;
 
