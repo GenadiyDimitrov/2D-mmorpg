@@ -191,6 +191,32 @@ public class World
 {
     public ConcurrentQueue<IGameCommand> Commands { get; } = new();
 
+    /// <summary>THE DROP DATABASE (`BL-253`) — every (zone × template) pair and what it pays, built
+    /// ONCE when the world is constructed and held for the life of the process.
+    ///
+    /// <para>🔴 <b>NO FILE, NO VERSION, NO HASH — his ruling, 2026-09-17:</b> *"If drop indexes are build
+    /// even after x10 more mobs still faster than reading a file, build each restart. (that way no drop
+    /// version needed)"*. Measured: ~13 ms to build ~20k rows against ~28 ms to read them back from disk,
+    /// both linear in rows. The staleness problem went with the file, which is the bigger win — a cache
+    /// needed a hand-bumped stamp for the rank-LAYER code, and that was a thing somebody had to remember
+    /// forever. A restart is the invalidation now.</para>
+    ///
+    /// <para>⚠ IMMUTABLE AFTER CONSTRUCTION, which is why the tick loop may read it without ceremony: it
+    /// is CONTENT, not world state. Nothing writes it, so the single-writer rule has nothing to say here.</para></summary>
+    public DropIndexData Drops { get; }
+
+    /// <summary>How long <see cref="Drops"/> took, for the boot line. Kept so the claim above stays
+    /// checkable on his machine rather than remembered from mine.</summary>
+    public long DropIndexBuildMs { get; }
+
+    public World()
+    {
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        Drops = DropIndex.Build();
+        sw.Stop();
+        DropIndexBuildMs = sw.ElapsedMilliseconds;
+    }
+
     // Everything below is owned by the game-loop thread.
 
     public Dictionary<Guid, Entity> Entities { get; } = new();

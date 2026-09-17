@@ -319,38 +319,54 @@ namespace Game.Client
             _itemPanel.gameObject.SetActive(false);
         }
 
+
         // ── THE DROP DATABASE (`BL-253`) ──────────────────────────────────────────────────────────
         // *"i say what im looking for and it shows me all mob_name/[mob_lvl-elite|boss|normal]/location/
-        // drop_rate"*, and *"each ask of item it looks up and see mobs that drop and show the drop rate
-        // for the player (similar to [info->drops] on mobs)"*.
+        // drop_rate"*, and the shape he asked for on 2026-09-17:
         //
-        // 🔑 IT LIVES HERE, in the ITEMS file, and it is not an accident of where there was room: the
-        // question it answers is an item question, its rows are item rows, and its formatting rules are
-        // the target window's drop-list rules. Nothing about it belongs to the world or the menu but the
-        // button that opens it.
+        //   *"Writing in a text box offers a prediction and selecting one or enter shows item. A item can
+        //    be found by selecting category/rarity/grade etc (like a filter tree) then selecting a single
+        //    item drop it shows a table with mobs and chances -> can order by name/level/chance etc"*
         //
-        // ⚠ THE CLIENT COMPUTES NOTHING. Every cell arrives pre-formatted (`DropLookupRow`) because the
-        // chance is the SERVER's arithmetic — the item's rate knobs, the player's Rune of Drop and the
-        // level gap against that creature. A client that did any of that itself would be a fourth place
-        // the drop rate is calculated, and the one rule this system has is that there is one.
+        // So the window has TWO WAYS IN to the same place and one table at the end of both:
+        //   1. type → predictions → pick one (or Enter takes the top one)
+        //   2. cycle CATEGORY / RARITY / GRADE → the matching items → pick one
+        // and then a sortable table of every creature that pays it.
+        //
+        // 🔑 PREDICTIONS AND FILTERS COST NO ROUND TRIP. The client compiles against `Game.Shared`, so it
+        // HAS `ItemCatalog` — every name, category, rarity and grade in the game is already on the phone.
+        // Narrowing is therefore instant and works while the connection is busy; only the final "where
+        // does this drop" question goes to the server, because only the server may answer it.
+        //
+        // ⚠ AND THAT IS THE LINE. Picking WHICH item is a local question about a catalogue. Its CHANCE is
+        // the server's arithmetic — the rate knobs, the player's Rune of Drop, the level gap — and the
+        // client never recomputes it: it sorts on the value the server sent and prints the text the server
+        // formatted. Sorting on a number is not arithmetic; deriving that number here would be a fourth
+        // place the drop rate is calculated, and the rule is that there is one.
         private RectTransform _dropSearchPanel;
         private TMP_InputField _dropSearchInput;
         private RectTransform _dropSearchList;
         private TextMeshProUGUI _dropSearchNote;
+        private RectTransform _dropHeaderRow;
+        private Button _dropCatButton, _dropRarityButton, _dropGradeButton, _dropBackButton;
         private int _dropSearchSeen = -1;
 
-        /// <summary>Polled from the world refresh — the revision idiom the rest of this client uses.
-        /// Only while the window is OPEN: a search you left behind is not worth a rebuild, and the
-        /// answer is still there in <see cref="GameBoot.DropLookup"/> when you reopen it.</summary>
-        private void RefreshDropSearch()
-        {
-            if (_dropSearchPanel == null || !_dropSearchPanel.gameObject.activeSelf) return;
-            if (Boot.DropLookupRevision == _dropSearchSeen) return;
-            _dropSearchSeen = Boot.DropLookupRevision;
-            RenderDropSearch();
-        }
+        // The filter tree's three axes. -1 means "any", which is why they are ints rather than the enums:
+        // there is no ItemRarity.Any and inventing one would put a fake value in a persisted enum.
+        private int _dropFilterCat = -1, _dropFilterRarity = -1, _dropFilterGrade = -1;
 
-        private const float DropSearchWidth = 620f, DropSearchHeight = 520f;
+        // Which item's sources are on screen, "" while the candidate list is. One field decides the whole
+        // mode, so the two halves cannot both be visible or both be hidden.
+        private string _dropShownItem = "";
+
+        // Sort state for the table. Column 0 mob, 1 level, 2 rank, 3 where, 4 chance.
+        // 🔑 Chance DESCENDING is the default because the question the window answers is "where is the
+        // best place to farm this", and the best place is the top row.
+        private int _dropSortCol = 4;
+        private bool _dropSortDesc = true;
+
+        private const float DropSearchWidth = 660f, DropSearchHeight = 560f;
+        private const int DropMaxCandidates = 60;
 
         private void BuildDropSearchWindow()
         {
@@ -361,29 +377,91 @@ namespace Game.Client
             float chrome = UiKit.WindowChrome(_dropSearchPanel, "Where does it drop?",
                                               () => CloseWindow(_dropSearchPanel));
 
-            _dropSearchInput = UiKit.InputField(inner, "item name or id…", size: 17f);
+            _dropSearchInput = UiKit.InputField(inner, "type an item name...", size: 17f);
             UiKit.Place(UiKit.Rect(_dropSearchInput.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(14f, -chrome - 6f), new Vector2(DropSearchWidth - 140f, 44f));
-            // Enter searches, so the soft keyboard's own action key works and the button is optional.
-            _dropSearchInput.onSubmit.AddListener(_ => SubmitDropSearch());
+                        new Vector2(14f, -chrome - 6f), new Vector2(DropSearchWidth - 150f, 44f));
+            // Every keystroke re-predicts locally — that is the whole point of holding the catalogue on
+            // the phone. Enter takes the top prediction, so the keyboard's own action key finishes the job.
+            _dropSearchInput.onValueChanged.AddListener(_ => { _dropShownItem = ""; RenderDropSearch(); });
+            _dropSearchInput.onSubmit.AddListener(_ => TakeTopPrediction());
 
-            var go = UiKit.TextButton(inner, "Find", SubmitDropSearch, 16f);
-            UiKit.Place(UiKit.Rect(go.gameObject), new Vector2(1f, 1f), new Vector2(1f, 1f),
-                        new Vector2(-62f, -chrome - 28f), new Vector2(100f, 44f));
+            _dropBackButton = UiKit.TextButton(inner, "Back", () => { _dropShownItem = ""; RenderDropSearch(); }, 15f);
+            UiKit.Place(UiKit.Rect(_dropBackButton.gameObject), new Vector2(1f, 1f), new Vector2(1f, 1f),
+                        new Vector2(-66f, -chrome - 28f), new Vector2(108f, 44f));
+
+            // The filter tree, as three CYCLING buttons rather than three dropdowns. A dropdown on a phone
+            // is a second window over a window; a button that reads "Rarity: Epic" and advances on tap says
+            // the same thing in one control and one tap, and it is legible while it is being used.
+            float fw = (DropSearchWidth - 40f) / 3f;
+            _dropCatButton = UiKit.TextButton(inner, "", () => CycleDropFilter(0), 15f);
+            UiKit.Place(UiKit.Rect(_dropCatButton.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(14f + fw / 2f, -chrome - 74f), new Vector2(fw - 6f, 38f));
+            _dropRarityButton = UiKit.TextButton(inner, "", () => CycleDropFilter(1), 15f);
+            UiKit.Place(UiKit.Rect(_dropRarityButton.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(14f + fw * 1.5f, -chrome - 74f), new Vector2(fw - 6f, 38f));
+            _dropGradeButton = UiKit.TextButton(inner, "", () => CycleDropFilter(2), 15f);
+            UiKit.Place(UiKit.Rect(_dropGradeButton.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(14f + fw * 2.5f, -chrome - 74f), new Vector2(fw - 6f, 38f));
 
             _dropSearchNote = UiKit.Label(inner, "", 14f, UiKit.TextDim, TextAlignmentOptions.Left);
             UiKit.Place(UiKit.Rect(_dropSearchNote.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(14f, -chrome - 56f), new Vector2(DropSearchWidth - 28f, 22f));
+                        new Vector2(14f, -chrome - 114f), new Vector2(DropSearchWidth - 28f, 22f));
+
+            // The sortable header. It is a real row of buttons rather than a label, because his
+            // *"can order by name/level/chance etc"* is a thing you tap, and a header that is only a
+            // caption would make the sort invisible to anyone who was not told about it.
+            _dropHeaderRow = UiKit.Rect(UiKit.Box(inner, "DropHeader", new Color(0, 0, 0, 0), blocksInput: false).gameObject);
+            UiKit.Place(_dropHeaderRow, new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(DropSearchWidth / 2f, -chrome - 140f), new Vector2(DropSearchWidth - 28f, 26f));
+            BuildDropHeader();
 
             ScrollRect scroll;
             _dropSearchList = UiKit.ScrollArea(inner, out scroll, 2f);
-            UiKit.Stretch((RectTransform)scroll.transform, 10f, chrome + 82f, 10f, 12f);
+            UiKit.Stretch((RectTransform)scroll.transform, 10f, chrome + 160f, 10f, 12f);
 
             _dropSearchPanel.gameObject.SetActive(false);
         }
 
-        /// <summary>Opened from the menu. Focuses the box so the first tap is already typing — the
-        /// window has exactly one control and making you find it would be a wasted tap.</summary>
+        /// <summary>The five column headings, each a sort toggle. Tapping the current column flips the
+        /// direction; tapping another switches to it, descending for chance and ascending for the rest —
+        /// which is what each column is actually asked for ("where is it best", "what is lowest level").</summary>
+        private void BuildDropHeader()
+        {
+            string[] names = { "Creature", "Lvl", "Rank", "Where", "Per kill" };
+            float[] widths = { 0.30f, 0.10f, 0.12f, 0.26f, 0.22f };
+            float x = 0f, total = DropSearchWidth - 28f;
+            for (int i = 0; i < names.Length; i++)
+            {
+                int col = i;
+                var b = UiKit.TextButton(_dropHeaderRow, names[i], () => SortDropTable(col), 14f);
+                UiKit.Place(UiKit.Rect(b.gameObject), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
+                            new Vector2(x + total * widths[i] / 2f, 0f), new Vector2(total * widths[i] - 4f, 24f));
+                x += total * widths[i];
+            }
+        }
+
+        private void SortDropTable(int col)
+        {
+            if (_dropSortCol == col) _dropSortDesc = !_dropSortDesc;
+            else { _dropSortCol = col; _dropSortDesc = col == 4; }
+            RenderDropSearch();
+        }
+
+        private void CycleDropFilter(int which)
+        {
+            // Each axis cycles ANY -> its values -> ANY. -1 is ANY and is deliberately the value you
+            // land back on, so a filter can always be undone with taps rather than by reopening.
+            // ⚠ The category axis SKIPS `ItemCategory.All` (0). `CategoryOf` never returns it — it is the
+            // name of the bag's "everything" tab, not a category anything is in — so leaving it in the
+            // cycle would give a setting that silently matches nothing. -1 is this axis's "any".
+            if (which == 0) _dropFilterCat = _dropFilterCat >= 4 ? -1 : (_dropFilterCat < 1 ? 1 : _dropFilterCat + 1);
+            else if (which == 1) _dropFilterRarity = _dropFilterRarity >= 5 ? -1 : _dropFilterRarity + 1;
+            else _dropFilterGrade = _dropFilterGrade >= 4 ? -1 : _dropFilterGrade + 1;
+            _dropShownItem = "";        // narrowing the tree means you are choosing again
+            RenderDropSearch();
+        }
+
+        /// <summary>Opened from the menu. Focuses the box so the first tap is already typing.</summary>
         private void OpenDropSearch()
         {
             ToggleWindow(_dropSearchPanel);
@@ -392,52 +470,213 @@ namespace Game.Client
             RenderDropSearch();
         }
 
-        private void SubmitDropSearch()
+        /// <summary>Enter on the search box. Takes the first prediction, which is what a player means by
+        /// pressing it — and does nothing at all when there is no prediction, rather than sending a
+        /// half-typed word to the server and getting back a list of everything containing it.</summary>
+        private void TakeTopPrediction()
         {
-            string q = _dropSearchInput.text?.Trim() ?? "";
-            if (q.Length < 2)
-            {
-                _dropSearchNote.text = "Type at least two characters.";
-                return;
-            }
-            _dropSearchNote.text = "Searching…";
-            Boot.LookupDrops(q);
+            var list = DropCandidates();
+            if (list.Count > 0) ShowDropsFor(list[0].Id);
         }
 
-        /// <summary>Redraw from <see cref="GameBoot.DropLookup"/>. Rows are built fresh each time: an
-        /// answer replaces its predecessor whole, and a pooled list showing half of two different
-        /// searches is the one outcome that would make the window untrustworthy.</summary>
+        private void ShowDropsFor(string itemId)
+        {
+            _dropShownItem = itemId;
+            _dropSearchNote.text = "Looking up " + (ItemCatalog.Get(itemId)?.Name ?? itemId) + "...";
+            Boot.LookupDrops(itemId);      // an exact id, so the server answers with exactly this item
+            RenderDropSearch();
+        }
+
+        /// <summary>THE CANDIDATE LIST — every item matching the typed text AND the three filters, off the
+        /// LOCAL catalogue. Quest tokens are excluded the way `ItemCategory.All` excludes them everywhere
+        /// else in this client; they are reachable by picking the Quest category explicitly.</summary>
+        private List<ItemDef> DropCandidates()
+        {
+            string q = (_dropSearchInput != null ? _dropSearchInput.text : "") ?? "";
+            q = q.Trim();
+
+            var outList = new List<ItemDef>();
+            foreach (var d in ItemCatalog.AllItems)
+            {
+                if (_dropFilterCat >= 0)
+                {
+                    if ((int)ItemCatalog.CategoryOf(d) != _dropFilterCat) continue;
+                }
+                else if (ItemCatalog.CategoryOf(d) == ItemCategory.Quest) continue;
+
+                if (_dropFilterRarity >= 0 && (int)d.Rarity != _dropFilterRarity) continue;
+                if (_dropFilterGrade >= 0 && (int)d.Grade != _dropFilterGrade) continue;
+                if (q.Length > 0
+                    && d.Name.IndexOf(q, System.StringComparison.OrdinalIgnoreCase) < 0
+                    && d.Id.IndexOf(q, System.StringComparison.OrdinalIgnoreCase) < 0) continue;
+                outList.Add(d);
+            }
+
+            // A prefix match first, then the rest alphabetically: typing "gre" should put Greater Potion
+            // above Ogre Hide, and an alphabetical sort alone would not.
+            outList.Sort((a, b) =>
+            {
+                if (q.Length > 0)
+                {
+                    bool pa = a.Name.StartsWith(q, System.StringComparison.OrdinalIgnoreCase);
+                    bool pb = b.Name.StartsWith(q, System.StringComparison.OrdinalIgnoreCase);
+                    if (pa != pb) return pa ? -1 : 1;
+                }
+                return string.Compare(a.Name, b.Name, System.StringComparison.OrdinalIgnoreCase);
+            });
+            return outList;
+        }
+
+        /// <summary>Polled from the world refresh — the revision idiom the rest of this client uses.
+        /// Only while the window is OPEN.</summary>
+        private void RefreshDropSearch()
+        {
+            if (_dropSearchPanel == null || !_dropSearchPanel.gameObject.activeSelf) return;
+            if (Boot.DropLookupRevision == _dropSearchSeen) return;
+            _dropSearchSeen = Boot.DropLookupRevision;
+            RenderDropSearch();
+        }
+
+        /// <summary>Redraw. Two modes off one field: the candidate list, or one item's source table.</summary>
         private void RenderDropSearch()
         {
             if (_dropSearchList == null) return;
             for (int i = _dropSearchList.childCount - 1; i >= 0; i--)
                 Destroy(_dropSearchList.GetChild(i).gameObject);
 
-            var result = Boot.DropLookup;
-            if (result == null) { _dropSearchNote.text = ""; return; }
-            _dropSearchNote.text = result.Note ?? "";
+            RelabelDropFilters();
+            bool table = _dropShownItem.Length > 0;
+            _dropHeaderRow.gameObject.SetActive(table);
+            _dropBackButton.gameObject.SetActive(table);
 
-            foreach (var item in result.Items)
+            if (table) RenderDropTable();
+            else RenderDropCandidates();
+        }
+
+        private void RelabelDropFilters()
+        {
+            string cat = _dropFilterCat < 0 ? "any" : ((ItemCategory)_dropFilterCat).ToString();
+            string rar = _dropFilterRarity < 0 ? "any" : ((ItemRarity)_dropFilterRarity).ToString();
+            string grd = _dropFilterGrade < 0 ? "any" : ((ItemGrade)_dropFilterGrade).ToString();
+            SetButtonText(_dropCatButton, "Type: " + cat);
+            SetButtonText(_dropRarityButton, "Rarity: " + rar);
+            SetButtonText(_dropGradeButton, "Grade: " + grd);
+        }
+
+        private static void SetButtonText(Button b, string text)
+        {
+            if (b == null) return;
+            var label = b.GetComponentInChildren<TextMeshProUGUI>();
+            if (label != null) label.text = text;
+        }
+
+        private void RenderDropCandidates()
+        {
+            var list = DropCandidates();
+            if (list.Count == 0)
             {
-                var head = UiKit.Label(_dropSearchList, item.Name, 17f, UiKit.Accent, TextAlignmentOptions.Left);
-                UiKit.Rect(head.gameObject).sizeDelta = new Vector2(0f, 24f);
-                head.gameObject.AddComponent<LayoutElement>().preferredHeight = 24f;
+                _dropSearchNote.text = "Nothing matches. Clear a filter, or check the spelling.";
+                return;
+            }
+            _dropSearchNote.text = list.Count <= DropMaxCandidates
+                ? list.Count + " item(s) — tap one to see where it drops."
+                : "showing " + DropMaxCandidates + " of " + list.Count + " — narrow it with the filters above.";
 
-                foreach (var r in item.Sources)
+            int n = Mathf.Min(list.Count, DropMaxCandidates);
+            for (int i = 0; i < n; i++)
+            {
+                var d = list[i];
+                string id = d.Id;
+                // The rarity and grade ride along on every row, because they are how he narrows and
+                // seeing them beside the name is what makes the next filter tap an informed one.
+                var row = UiKit.TextButton(_dropSearchList,
+                    d.Name + "   <color=#8a8f98>" + d.Rarity + " / " + d.Grade + "</color>",
+                    () => ShowDropsFor(id), 15f);
+                var le = row.gameObject.AddComponent<LayoutElement>();
+                le.preferredHeight = 34f;
+            }
+        }
+
+        private void RenderDropTable()
+        {
+            var result = Boot.DropLookup;
+            DropLookupItem item = null;
+            if (result != null && result.Items != null)
+                foreach (var it in result.Items)
+                    if (it.ItemId == _dropShownItem) { item = it; break; }
+
+            if (item == null)
+            {
+                // The answer has not landed yet, or it landed empty. Both are states worth naming: a
+                // silent empty list reads as "this drops from nothing", which is the one wrong answer
+                // this window exists to prevent.
+                _dropSearchNote.text = result != null && result.Query == _dropShownItem
+                    ? (ItemCatalog.Get(_dropShownItem)?.Name ?? _dropShownItem)
+                      + " — nothing in the world drops it. It may be craft-only, vendor-only or quest-only."
+                    : "Looking up " + (ItemCatalog.Get(_dropShownItem)?.Name ?? _dropShownItem) + "...";
+                return;
+            }
+
+            var rows = new List<DropLookupRow>(item.Sources);
+            rows.Sort(CompareDropRows);
+            _dropSearchNote.text = item.Name + " — " + rows.Count + " source(s), sorted by "
+                                 + DropSortName() + (_dropSortDesc ? " (high to low)" : " (low to high)");
+
+            float total = DropSearchWidth - 28f;
+            float[] widths = { 0.30f, 0.10f, 0.12f, 0.26f, 0.22f };
+            foreach (var r in rows)
+            {
+                var line = UiKit.Box(_dropSearchList, "Row", new Color(0, 0, 0, 0), blocksInput: false);
+                var lrt = UiKit.Rect(line.gameObject);
+                var le = line.gameObject.AddComponent<LayoutElement>();
+                le.preferredHeight = r.Note.Length > 0 ? 36f : 24f;
+
+                string lvl = r.MinLevel == r.MaxLevel ? r.MinLevel.ToString() : r.MinLevel + "-" + r.MaxLevel;
+                string[] cells = { r.Mob, lvl, r.Rank, r.Where, r.ChanceText };
+                float x = 0f;
+                for (int c = 0; c < cells.Length; c++)
                 {
-                    // One line per source, laid out as his four columns plus the chance. TMP rich-text
-                    // alignment tabs keep the columns straight without five separate labels per row —
-                    // and the phone has to draw up to 25 of these.
-                    string note = string.IsNullOrEmpty(r.Note) ? "" : $"  <color=#8a8f98>({r.Note})</color>";
-                    var line = UiKit.Label(_dropSearchList,
-                        $"   {r.Mob}  <color=#8a8f98>lvl {r.Level} · {r.Rank}</color>  {r.Where}  "
-                        + $"<color=#e0b64a>{r.Chance}</color>{note}",
-                        14f, UiKit.Text, TextAlignmentOptions.TopLeft);
-                    var le = line.gameObject.AddComponent<LayoutElement>();
-                    le.preferredHeight = 20f;
+                    var lab = UiKit.Label(lrt, cells[c], 14f,
+                        c == 4 ? new Color(0.88f, 0.71f, 0.29f) : UiKit.Text,
+                        c == 4 ? TextAlignmentOptions.TopRight : TextAlignmentOptions.TopLeft);
+                    UiKit.Place(UiKit.Rect(lab.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                                new Vector2(x + total * widths[c] / 2f, -2f),
+                                new Vector2(total * widths[c] - 4f, 22f));
+                    x += total * widths[c];
+                }
+                if (r.Note.Length > 0)
+                {
+                    var note = UiKit.Label(lrt, "   " + r.Note, 12f, UiKit.TextDim, TextAlignmentOptions.TopLeft);
+                    UiKit.Place(UiKit.Rect(note.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                                new Vector2(total / 2f, -22f), new Vector2(total - 8f, 14f));
                 }
             }
         }
+
+        private string DropSortName()
+        {
+            if (_dropSortCol == 0) return "creature";
+            if (_dropSortCol == 1) return "level";
+            if (_dropSortCol == 2) return "rank";
+            if (_dropSortCol == 3) return "location";
+            return "chance";
+        }
+
+        /// <summary>⚠ Sorts on the VALUES the server sent, never on the formatted text. Sorting
+        /// "12.5%" against "9%" as strings puts 12.5 below 9, and sorting "76-79" against "8" puts the
+        /// level-8 creature last — both of which would look like a broken table rather than a bad sort.</summary>
+        private int CompareDropRows(DropLookupRow a, DropLookupRow b)
+        {
+            int c;
+            if (_dropSortCol == 0) c = string.Compare(a.Mob, b.Mob, System.StringComparison.OrdinalIgnoreCase);
+            else if (_dropSortCol == 1) c = a.MinLevel.CompareTo(b.MinLevel);
+            else if (_dropSortCol == 2) c = a.RankOrder.CompareTo(b.RankOrder);
+            else if (_dropSortCol == 3) c = string.Compare(a.Where, b.Where, System.StringComparison.OrdinalIgnoreCase);
+            else c = a.Chance.CompareTo(b.Chance);
+            if (c == 0) c = a.Chance.CompareTo(b.Chance);   // a stable, meaningful tiebreak on every column
+            return _dropSortDesc ? -c : c;
+        }
+
 
         private DetailView BuildDetailColumn(Transform inner, string name, float chrome)
         {

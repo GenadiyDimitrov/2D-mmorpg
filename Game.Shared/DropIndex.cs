@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace Game.Shared;
 
@@ -24,12 +23,8 @@ public sealed record DropSource(
     float BaseChance, int MinQty, int MaxQty, int GroupId,
     bool IgnoresRates);
 
-/// <summary>A BUILT index plus the two stamps that say whether it is still true.</summary>
-/// <param name="Version">The hand-bumped <see cref="DropIndex.Version"/> the index was built by. It
-/// covers the things a content hash CANNOT see — the CODE of the rank layers.</param>
-/// <param name="ContentHash">A hash of the data the walk reads (templates, their drop rows, the spawn
-/// zones). It covers *"until something touches drops/mobs"* automatically.</param>
-public sealed record DropIndexData(int Version, string ContentHash, IReadOnlyList<DropSource> Sources);
+/// <summary>A BUILT index.</summary>
+public sealed record DropIndexData(IReadOnlyList<DropSource> Sources);
 
 /// <summary>THE DROP DATABASE — *"i say what im looking for and it shows me all mob_name/[mob_lvl-elite|
 /// boss|normal]/location/drop_rate"* (owner, 2026-09-16, `BL-253`).
@@ -41,43 +36,39 @@ public sealed record DropIndexData(int Version, string ContentHash, IReadOnlyLis
 /// answer is a (zone × template) pair, assembled the same way and in the same order as
 /// <c>GameLoopService.RollDrop</c> assembles it.</para>
 ///
-/// <para>🔑 EVERY CHANCE IS STORED AT x1 AND MULTIPLIED WHEN IT IS READ. That is what lets the index be
-/// built once and cached for good: the rate knobs (<c>/droprate</c>, a Rune of Drop, the group rates) are
-/// live and change under the cache, and a stored *effective* number would go stale the first time he
-/// typed a command. His words for the build step were *"if its missing its build with drops x1"* — this
-/// is that, and it is also why a rate change is not a reason to rebuild.</para>
+/// <para>🔑 EVERY CHANCE IS HELD AT x1 AND MULTIPLIED WHEN IT IS READ. The rate knobs (<c>/droprate</c>,
+/// a Rune of Drop, the group rates) are live and admin-editable, so a stored *effective* number would be
+/// wrong the first time one moved. The index holds the authored chance; <see cref="ChanceFor"/> applies
+/// the knobs. That is his *"build with drops x1"*.</para>
 ///
-/// <para>🔑 WHEN IT REBUILDS — his *"a version that says (rebuild even when u have the mob database),
-/// otherwise it only build if missing"*. There are TWO stamps and they cover different failures:</para>
-/// <list type="bullet">
-///   <item><b><see cref="ContentHash"/></b> — hashed off the templates, their drop rows and the spawn
-///   zones. It catches *"something touches drops/mobs"* with nobody having to remember anything, which
-///   is the half that would otherwise rot silently.</item>
-///   <item><b><see cref="Version"/></b> — bumped by hand. It catches what a data hash cannot see: the
-///   rank LAYERS are code (<see cref="MobCatalog.GearDrops"/>, <see cref="MobCatalog.EnchantScrollDrops"/>,
-///   <see cref="MobCatalog.EliteMatDrops"/>, <see cref="MobCatalog.UtilityScrollDrops"/>,
-///   <see cref="MobCatalog.RecipeRolls"/>, <see cref="MobCatalog.BossPile"/>), and editing a number
-///   inside one of those methods moves no data at all. ⚠ EDIT ANY OF THEM, BUMP THIS.</item>
-/// </list>
+/// <para>🔴 <b>IT IS BUILT ONCE PER SERVER START AND NEVER CACHED TO DISK — his ruling, 2026-09-17:</b>
+/// *"If drop indexes are build even after x10 more mobs still faster than reading a file, build each
+/// restart. (that way no drop version needed)"*. It is, and so there is no file, no content hash and no
+/// version stamp. <b>MEASURED:</b> building 19,842 rows takes <b>13 ms</b> in-process; reading the same
+/// rows back from a 1.8 MB file took <b>28 ms</b>. Both are linear in rows — 0.65 µs/row to build against
+/// 1.4 µs/row to parse — so the build stays roughly twice as fast at any world size, and a ten-fold world
+/// is ~130 ms against ~280 ms.</para>
 ///
-/// <para>⚠ A stale index is worse than a slow one: it tells a player to farm a creature that does not pay.
-/// When in doubt, bump.</para></summary>
+/// <para>🔑 <b>AND THE STALENESS PROBLEM WENT WITH THE FILE</b>, which is the real win rather than the
+/// milliseconds. A cache needed two stamps to know when it had gone wrong: a content hash for the DATA,
+/// and a hand-bumped version for the rank-LAYER CODE (<see cref="MobCatalog.GearDrops"/>,
+/// <see cref="MobCatalog.EnchantScrollDrops"/>, <see cref="MobCatalog.EliteMatDrops"/>,
+/// <see cref="MobCatalog.UtilityScrollDrops"/>, <see cref="MobCatalog.RecipeRolls"/>,
+/// <see cref="MobCatalog.BossPile"/>) — because editing a number inside one of those methods moves no
+/// data at all and no hash could see it. That second stamp was a thing a person had to remember, forever,
+/// or the window would quietly tell a player to farm a creature that does not pay. Nothing to remember
+/// now: a restart is the invalidation.</para></summary>
 public static class DropIndex
 {
-    /// <summary>Bump when the rank-LAYER code changes — see the ⚠ in the class summary. Data changes are
-    /// caught by <see cref="ContentHash"/> and need no bump.
-    /// <list type="bullet"><item>1 — first build (`BL-253`, 0.168.0).</item></list></summary>
-    public const int Version = 1;
-
-    /// <summary>Build the whole index. A few hundred milliseconds; the server does it once and caches the
-    /// result to disk, so this runs on a fresh checkout and after a content change and never otherwise.</summary>
+    /// <summary>Build the whole index — ~13 ms for ~20k rows. The server does this once at boot and holds
+    /// the result; nothing writes it to disk (see the 🔴 in the class summary).</summary>
     public static DropIndexData Build()
     {
         var sources = new List<DropSource>();
         foreach (var zone in WorldMap.SpawnZones)
             foreach (string mobId in zone.MobTypes)
                 Collect(zone, mobId, sources);
-        return new DropIndexData(Version, ContentHash(), sources);
+        return new DropIndexData(sources);
     }
 
     /// <summary>Every row one (zone × template) pair pays, assembled exactly as `RollDrop` assembles it.</summary>
@@ -160,7 +151,16 @@ public static class DropIndex
         query = (query ?? "").Trim();
         if (query.Length == 0) return new List<DropSource>();
 
-        var hits = data.Sources.Where(s => Matches(s.ItemId, query)).ToList();
+        // 🔑 AN EXACT ITEM ID MEANS EXACTLY THAT ITEM, and this is what makes the client's prediction
+        // list work: you pick "Common Wood" and you get Common Wood, not Common Wood beside every id
+        // that happens to contain it. A substring search is the fallback for free text he typed himself.
+        // ⚠ Checked against the CATALOGUE, not against the index — an id that is real but drops from
+        // nothing must answer "nothing drops this", never fall through to a substring sweep.
+        bool exact = ItemCatalog.Get(query) is not null;
+
+        var hits = data.Sources.Where(s => exact
+                                           ? string.Equals(s.ItemId, query, StringComparison.Ordinal)
+                                           : Matches(s.ItemId, query)).ToList();
         hits.Sort((a, b) =>
         {
             int byItem = string.CompareOrdinal(a.ItemId, b.ItemId);
@@ -189,43 +189,4 @@ public static class DropIndex
         return $"near {WorldMap.NearestSafeZone(z.X, z.Y).Name}";
     }
 
-    /// <summary>A stable hash of everything the walk READS as data: the templates, their authored drop
-    /// rows, and the spawn zones' rosters and bands.
-    ///
-    /// <para>⚠ FNV-1a by hand, NOT <c>string.GetHashCode</c>. .NET randomises string hashing per PROCESS,
-    /// so a built-in hash would differ on every restart and the cache would rebuild every single boot
-    /// while looking as though it were working.</para></summary>
-    public static string ContentHash()
-    {
-        var sb = new StringBuilder();
-        foreach (var t in MobCatalog.Templates.OrderBy(t => t.Id, StringComparer.Ordinal))
-        {
-            sb.Append(t.Id).Append('|').Append(t.Level).Append('|').Append((int)t.Category)
-              .Append('|').Append(t.Dummy ? 1 : 0).Append(';');
-            if (t.Drops is not null)
-                foreach (var d in t.Drops)
-                    sb.Append(d.ItemId).Append(',').Append(d.Chance.ToString("R")).Append(',')
-                      .Append(d.MinQty).Append(',').Append(d.MaxQty).Append(',')
-                      .Append(d.MinLevel).Append(',').Append(d.MaxLevel).Append(',')
-                      .Append(d.GroupId).Append(';');
-            sb.Append('\n');
-        }
-        foreach (var z in WorldMap.SpawnZones)
-        {
-            sb.Append(z.X).Append(',').Append(z.Y).Append(',').Append(z.MinLevel).Append(',')
-              .Append(z.MaxLevel).Append(',').Append((int)z.Rank).Append(',')
-              .Append(z.ForceZoneLevel ? 1 : 0).Append(':');
-            foreach (string m in z.MobTypes) sb.Append(m).Append(',');
-            sb.Append('\n');
-        }
-
-        ulong h = 14695981039346656037UL;
-        string s = sb.ToString();
-        for (int i = 0; i < s.Length; i++)
-        {
-            h ^= s[i];
-            h *= 1099511628211UL;
-        }
-        return h.ToString("x16");
-    }
 }

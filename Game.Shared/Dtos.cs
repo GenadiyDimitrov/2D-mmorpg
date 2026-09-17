@@ -530,12 +530,22 @@ public record SelectionOption(string ItemId, string Name);
 /// authority on which colours exist and what hex each one is.</summary>
 public record TitleColorOffer(string[] Colors);
 
-/// <summary>ONE SOURCE ROW of a drop-database answer — deliberately five separate strings rather than
-/// one formatted line, so the client can column-align them the way the inspect window aligns its own
-/// drop list. The SERVER formats each cell (it owns the rate arithmetic); the client only lays them out.</summary>
+/// <summary>ONE SOURCE ROW of a drop-database answer — separate cells rather than one formatted line, so
+/// the client can column-align them the way the inspect window aligns its own drop list.
+///
+/// <para>🔑 <b>EVERY SORTABLE COLUMN TRAVELS AS A VALUE *AND* AS THE SERVER'S TEXT</b> (`BL-253`, his
+/// *"can order by name/level/chance etc"*). Sorting is a local, per-tap operation and must not cost a
+/// round trip — so the client gets <paramref name="Chance"/> and <paramref name="MinLevel"/> to sort on.
+/// But the DISPLAYED chance stays <paramref name="ChanceText"/>, formatted by the server, because the
+/// rate arithmetic is the server's and "the number on screen is the number you get" is the one rule this
+/// whole system has. Sorting on a value is not arithmetic; re-deriving the value would be.</para></summary>
+/// <param name="RankOrder">0 normal, 1 elite, 2 boss — so "sort by rank" means something ordinal rather
+/// than alphabetical, where BOSS would sort between elite and normal.</param>
 /// <param name="Note">Why this row is unusual, when it is: that the chance is only paid from part of the
 /// creature's level band, or that it is the boss MAT PILE, which no rate knob reaches. Empty normally.</param>
-public record DropLookupRow(string Mob, string Level, string Rank, string Where, string Chance, string Note);
+public record DropLookupRow(
+    string Mob, int MinLevel, int MaxLevel, string Rank, int RankOrder,
+    string Where, float Chance, string ChanceText, string Note);
 
 /// <summary>Every source of ONE item.</summary>
 public record DropLookupItem(string ItemId, string Name, DropLookupRow[] Sources);

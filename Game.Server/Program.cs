@@ -140,14 +140,15 @@ try
             "Base stat columns must each sum to 153 (StatCalculator.GetBaseStats):\n  "
             + string.Join("\n  ", sums));
 
-    // `BL-253` — THE DROP DATABASE, built once and cached beside game.db. His rule: *"a drop db should be
-    // build once and only once when server starts … it should remember it every restart until something
-    // tuches drops/mobs"*. Two stamps decide: a hand-bumped version for the rank-layer CODE, and a content
-    // hash for the data. Deliberately AFTER the validators above — every one of them is a reason the world
-    // might not be the world we are about to index.
-    Game.Server.Persistence.DropIndexStore.LoadOrBuild(
-        app.Environment.ContentRootPath,
-        msg => app.Logger.LogInformation("Drop index: {What}", msg));
+    // `BL-253` — THE DROP DATABASE. Built once when the World is constructed (see `World.Drops`) and
+    // never written to disk: *"If drop indexes are build even after x10 more mobs still faster than
+    // reading a file, build each restart. (that way no drop version needed)"* — and it is. The line below
+    // only REPORTS it, so the claim stays checkable on his machine rather than remembered from mine.
+    {
+        var w = app.Services.GetRequiredService<Game.Server.Simulation.World>();
+        app.Logger.LogInformation("Drop index: {Rows} rows built in {Ms} ms.",
+            w.Drops.Sources.Count, w.DropIndexBuildMs);
+    }
 
     app.Logger.LogInformation("L2Clone server v{Version} starting.", Game.Shared.GameConstants.GameVersion);
 

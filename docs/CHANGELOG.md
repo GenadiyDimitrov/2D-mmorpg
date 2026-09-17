@@ -7,11 +7,73 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.170.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.171.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-17 (latest) — 0.170.0: the class master's second dialogue — `BL-250` §7+§8
+## 2026-09-17 (latest) — 0.171.0: the drop database gets its real window, and loses its cache
+
+Both of your rulings on `BL-253`, in one increment.
+
+### 1. NO FILE, NO VERSION, NO HASH — you were right and the numbers say so
+
+*"If drop indexes are build even after x10 more mobs still faster than reading a file, build each
+restart. (that way no drop version needed)"*.
+
+It is. **Building 19,842 rows takes 9-13 ms; reading the same rows back off a 1.8 MB file took 28 ms.**
+Both paths are linear in rows — about **0.65 µs to build a row against 1.4 µs to parse one** — so the
+build stays roughly twice as fast at any size, and a ten-fold world is ~130 ms against ~280 ms. ⚠ I did
+not build a ten-fold world to check; the claim rests on both paths being linear, which they are, and on
+the per-row costs above, which are measured.
+
+So `DropIndexStore` is deleted, `dropindex.txt` is gone, and the index is built once in `World`'s
+constructor and held. `/dropindex` now reports rows and build time; there is no `rebuild` verb, because a
+**restart is the rebuild**.
+
+🔑 **The staleness problem went with the file, and that is the bigger win.** A cache needed TWO stamps:
+a content hash for the data, and a hand-bumped version for the rank-LAYER code — because editing a number
+inside `EliteMatDrops` or `BossPile` moves no data and no hash could see it. That second stamp was a thing
+a person had to remember, forever, or the window would quietly send a player to farm a creature that does
+not pay. **Nothing to remember now.** Your instinct to kill it was worth more than the 15 ms.
+
+### 2. THE WINDOW — predictions, a filter tree, and a table you can order
+
+*"Writing in a text box offers a prediction and selecting one or enter shows item. A item can be found by
+selecting category/rarity/grade etc (like a filter tree) then selecting a single item drop it shows a
+table with mobs and chances -> can order by name/level/chance etc"*. All of it:
+
+* **Type and it predicts.** Every keystroke re-filters the whole item catalogue; a prefix match sorts
+  above a contains-match, so typing `gre` puts Greater Potion above Ogre Hide. Tap one, or press **Enter**
+  to take the top one.
+* **Or narrow with the tree.** Three cycling buttons — **Type / Rarity / Grade** — each reading its
+  current value and advancing on tap. Cycling buttons rather than dropdowns: a dropdown on a phone is a
+  second window over a window, and `Rarity: Epic` says the same thing in one control that stays legible
+  while you use it. Each axis cycles back to *any*, so a filter is always undoable.
+* **Then the table**: Creature · Lvl · Rank · Where · Per kill. **Every heading is a sort toggle** — tap
+  to sort, tap again to reverse. Chance descending is the default, because the question is "where is the
+  best place to farm this" and the best place should be the top row.
+
+🔑 **Predicting and filtering cost NO round trip**, and that is not an optimisation — the client compiles
+against `Game.Shared`, so every name, category, rarity and grade in the game is already on the phone.
+Only "where does this drop" goes to the server, because only the server may answer it.
+
+⚠ **And that is exactly where the line is drawn.** Picking WHICH item is a local question about a
+catalogue. Its CHANCE is the server's arithmetic — the rate knobs, your Rune of Drop, the level gap — so
+`DropLookupRow` now carries **both** the sortable value and the server's formatted text. The client sorts
+on the value and prints the text; it never re-derives the number. Sorting on a number is not arithmetic,
+but deriving it here would be a fourth place the drop rate is calculated, and the rule is that there is
+one. (It also stops the two classic bugs: sorting `"12.5%"` under `"9%"` as strings, and `"76-79"` after
+`"8"`.)
+
+Picking a prediction sends the exact item **id**, and the lookup now honours an exact id as exactly that
+item rather than as a substring — so choosing *Common Wood* returns Common Wood and not everything whose
+id contains it.
+
+⚠ **Protocol 46, and this one is NOT a pure addition** — `DropLookupRow` changed shape. No APK exists on
+44 or 45 (both were cut and superseded the same day), so nothing in the wild has the Drops window and
+`MinAcceptedProtocol` does not move. **A NEW APK IS WANTED.**
+
+## 2026-09-17 — 0.170.0: the class master's second dialogue — `BL-250` §7+§8
 
 The last of *"finish all red dots"*. The server side of this has been built since 0.155.0 and had
 nothing to draw it; now it does.

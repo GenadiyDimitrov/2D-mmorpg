@@ -8143,15 +8143,14 @@ public class GameLoopService : BackgroundService
                 break;
             }
 
-            // `/dropindex` / `/dropindex rebuild` — his *"a version that says (rebuild even when u have
-            // the mob database)"*, as a lever you can pull without editing a constant. The bare form
-            // reports what the last load did, which is the only way to tell a cache hit from a rebuild
-            // after the boot line has scrolled away.
+            // `/dropindex` — what the index holds and what it cost to build. ⚠ There is no `rebuild`
+            // verb any more and there is nothing to invalidate: the index is built fresh every server
+            // start and never cached (his 2026-09-17 ruling), so a RESTART is the rebuild.
             case "dropindex":
             {
-                if (arg.Trim().Equals("rebuild", StringComparison.OrdinalIgnoreCase))
-                    DropIndexStore.Rebuild();
-                SendSystemToEntity(admin, $"Drop index: {DropIndexStore.LastAction}");
+                SendSystemToEntity(admin,
+                    $"Drop index: {_world.Drops.Sources.Count:N0} rows, built in {_world.DropIndexBuildMs} ms "
+                    + "at server start. Restart to rebuild — it is never cached.");
                 break;
             }
 
@@ -18666,7 +18665,8 @@ public class GameLoopService : BackgroundService
             SendSystemToEntity(player, $"{item.Name} [{item.ItemId}] — {item.Sources.Length} source(s)");
             foreach (var r in item.Sources)
                 SendSystemToEntity(player,
-                    $"   {r.Mob} (lvl {r.Level}, {r.Rank}) — {r.Where} — {r.Chance}"
+                    $"   {r.Mob} (lvl {(r.MinLevel == r.MaxLevel ? r.MinLevel.ToString() : $"{r.MinLevel}-{r.MaxLevel}")}, "
+                    + $"{r.Rank}) — {r.Where} — {r.ChanceText}"
                     + (r.Note.Length > 0 ? $"  [{r.Note}]" : ""));
         }
         if (result.Note.Length > 0) SendSystemToEntity(player, result.Note);
@@ -18678,7 +18678,7 @@ public class GameLoopService : BackgroundService
         if (query.Length < 2)
             return new DropLookupResult(query, Array.Empty<DropLookupItem>(), "Type at least two characters.");
 
-        var index = DropIndexStore.Current;
+        var index = _world.Drops;
         float lookMult = player.Runes.DropChance;
 
         // Above 100% a percentage stops meaning anything, so the label switches to copies per kill —
@@ -18710,11 +18710,11 @@ public class GameLoopService : BackgroundService
                 else if (gap < 0.999f) bits.Add($"level gap: cut to {gap * 100:0.#}%");
 
                 rows.Add(new DropLookupRow(
-                    s.MobName,
-                    s.MinLevel == s.MaxLevel ? s.MinLevel.ToString() : $"{s.MinLevel}-{s.MaxLevel}",
+                    s.MobName, s.MinLevel, s.MaxLevel,
                     s.Rank switch { MobRank.Boss => "BOSS", MobRank.Elite => "elite", _ => "normal" },
+                    s.Rank switch { MobRank.Boss => 2, MobRank.Elite => 1, _ => 0 },
                     s.Location,
-                    Odds(chance),
+                    (float)chance, Odds(chance),
                     string.Join("; ", bits)));
 
                 if (rows.Count >= MaxLookupRowsPerItem) break;

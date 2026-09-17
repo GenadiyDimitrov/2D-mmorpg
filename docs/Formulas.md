@@ -1070,7 +1070,9 @@ that is nobody's primary is therefore unfindable above Uncommon anywhere in the 
 happened to Wood until `BL-254` gave it to Plant.
 
 🔎 **To ask where something drops, don't read these tables** — in game it is the **Drops** window
-(menu → Drops) or `/whatdrops <item>`, both off the cached `DropIndex` (`BL-253`); offline it is
+(menu → Drops, with predictions, a Type/Rarity/Grade filter tree and a sortable table) or
+`/whatdrops <item>`, both off `DropIndex`, which is rebuilt from scratch at every server start and never
+cached (`BL-253`); offline it is
 `dotnet run --project tools/BalanceMatrix -- --drops "<item>"`. All three walk every spawner × roster
 and print creature / level / rank / field / chance through `EffectiveChance`, off **one** walk.
 Templates cannot answer the question; only spawns know rank.

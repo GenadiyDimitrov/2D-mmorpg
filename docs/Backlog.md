@@ -88,12 +88,21 @@ PRIMARY — which is what the entry's wider warning asked for. **`BL-259` is ans
 Warlord modifiers stay at `x1` (*"leave them as u made them -> playtest will show"*), and the rule
 around them narrowed — an unpriced debuff ships at the DEFAULT rather than blocking on you.
 
-✅ **`BL-253` IS BUILT (2026-09-17, 0.168.0)** — the drop database, to the spec you gave that day: built
-once at boot, cached beside `game.db`, rebuilt automatically when drops or mobs change and on demand
-when the version stamp moves. In game it is **menu → Drops** (and `/whatdrops <item>` in chat, which
-needs no APK). ⚠ **Two things came out of it**: the cache is measurably SLOWER than rebuilding
-(13 ms to build, 28 ms to load) so its file half is yours to keep or kill, and the boss MAT PILE takes
-no rate knob at all — **`BL-262`**, a question, the same shape `BL-247` fixed in the recipe roll.
+✅ **`BL-253` IS BUILT AND CLOSED (2026-09-17, 0.168.0 + 0.171.0)** — the drop database. In game it is
+**menu → Drops** (and `/whatdrops <item>` in chat, which needs no APK). You then ruled twice more on it
+and both rulings are in:
+
+- ✅ **NO CACHE, NO VERSION STAMP** — *"if drop indexes are build even after x10 more mobs still faster
+  than reading a file, build each restart"*. They are: **9-13 ms to build against 28 ms to read a file**,
+  both linear in rows. The file, the content hash and the hand-bumped version are all deleted, and with
+  them the one thing in it that a person had to remember forever.
+- ✅ **THE WINDOW YOU DESCRIBED** — a text box that predicts as you type (Enter takes the top one), a
+  **Type / Rarity / Grade** filter tree, and a table of creatures and chances whose every heading is a
+  **sort toggle**. Predicting and filtering run off the local catalogue and cost no round trip; the
+  chance stays the server's number.
+
+🔴 **One thing that came out of it is still open: the boss MAT PILE takes no rate knob at all** —
+**`BL-262`**, a question, the same shape `BL-247` fixed in the recipe roll.
 
 ★ **And from your notes file, same day:** **`BL-249`** (dash potions to a 90-second reuse) — **BUILT
 in 0.150.0 and archived**. **`BL-251`**, Evasion Mastery removed from every rogue discipline, is

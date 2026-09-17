@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.170.0";
+    public const string GameVersion = "0.171.0";
 
     // ----- SP BOTTLE (owner, 2026-08-26) -------------------------------------------------------
     // *"u can make an npc to take your 1kkk SP + 100kk gold and give you a tradable/sellabel
@@ -208,11 +208,13 @@ public static class GameConstants
     /// roster for that drop), so an old APK would be dropped from rosters it cannot see the reason for.
     /// That is safe only because the filter is off on every character until somebody sets it, and only
     /// a new APK can set it. ⚠ A NEW APK IS WANTED.
-    /// 44 (`BL-253`) and 45 (`BL-250`) are both pure ADDITIONS — a new hub method and push for the
-    /// drop database, and two appended fields on `SubclassListDto` for the sigil board. An older APK
-    /// neither calls the one nor reads the other; it simply has no Drops window and shows zero sigil
-    /// slots, which is the safe wrong answer. ⚠ A NEW APK IS WANTED.
-    public const int ProtocolVersion = 45;   // 45: SubclassListDto gains SigilSlots + SigilGroups (`BL-250`)
+    /// 44 (`BL-253`) and 45 (`BL-250`) were pure ADDITIONS. 46 is NOT: `DropLookupRow` changed shape,
+    /// trading one formatted `Level` and `Chance` string for sortable VALUES plus the server's text, so
+    /// the drop table can be re-ordered without a round trip (his *"can order by name/level/chance"*).
+    /// An APK on 44 or 45 would mis-read that record — but none exists: 44 and 45 were both cut and
+    /// superseded inside one day and no APK was ever built from either, so nothing in the wild has the
+    /// Drops window at all. That is why `MinAcceptedProtocol` does not move. ⚠ A NEW APK IS WANTED.
+    public const int ProtocolVersion = 46;   // 46: DropLookupRow carries sortable values (`BL-253`)
 
     /// <summary>
     /// The oldest protocol this server still speaks. Equal to <see cref="ProtocolVersion"/> means
