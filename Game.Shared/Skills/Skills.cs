@@ -783,6 +783,23 @@ public record SkillDef(
     /// tank's Grapple, `BL-154`) and Charge n Shock uses it with the ends swapped — one skill id, one
     /// row in `debuff_landmods.csv`. Only a payload the tail cannot express belongs here.</para></summary>
     string? ChargeArrivalSkill = null,
+    // ===== WEAPON VULNERABILITY (`war_aoe 3rd.csv`, 2026-09-17) =====================================
+    // *"Shouts to do provoke enemies in a large area and make them vunarable to bludgering attacks
+    //  (10% more dmg from blunts)"* — Taunting Shout, and the first debuff in the game that makes its
+    //  victim softer to ONE KIND OF WEAPON rather than to everything.
+    //
+    // 🔑 IT CANNOT BE A DERIVED STAT, and that is the whole reason it is two fields and not a
+    // `StatMods` entry. Every other damage-taken channel in the game (`PvpDamageTakenPct`, the armour
+    // sets') lives on the DEFENDER and is folded once in `RecomputeDerived`. This one is keyed on the
+    // ATTACKER'S WEAPON, which the defender's recompute cannot possibly know — so it is read off the
+    // victim's buff list at the moment of the swing. See `GameLoopService.WeaponVulnerabilityMult`.
+    //
+    // ⚠ A MASK, not a single WeaponType, and deliberately: the taunt is authored `blunt` today, but
+    //   "softer to X" is a shape that will come back, and a mask costs nothing now while a second,
+    //   parallel version of this field would cost the usual.
+    WeaponType VulnerableToWeapon = WeaponType.None,
+    /// <inheritdoc cref="VulnerableToWeapon"/>
+    float WeaponVulnerabilityPct = 0f,
     // ===== SILENCE (`BL-155`, owner 2026-09-03) =====================================================
     // *"have physical skill silence (only basic attack) … magical skill silence … and both at once a
     //  full silence"*. Two INDEPENDENT debuffs: land both and the target is fully silenced, which is
@@ -1373,6 +1390,24 @@ public record SkillDef(
         return v != 0f ? v : BlowRatePct;
     }
 
+    /// <summary>How much softer this RUNG makes its victim to <see cref="VulnerableToWeapon"/> — a
+    /// level's 0 inherits the def's. Taunting Shout's two rungs are 10% and 20%.</summary>
+    public float WeaponVulnerabilityPctAt(int level)
+    {
+        float v = Lvl(level)?.WeaponVulnerabilityPct ?? 0f;
+        return v != 0f ? v : WeaponVulnerabilityPct;
+    }
+
+    /// <summary>How often this RUNG fires — a level's 0 inherits the def's <see cref="ProcChance"/>.
+    /// The Warlord's three Supports are the first proc ladder whose CHANCE climbs (10/15/20%).
+    /// ⚠ <see cref="ProcChanceTwoHanded"/> has no per-rung slot and needs none: nothing that authors
+    /// one climbs it. If something ever does, this is the shape.</summary>
+    public float ProcChanceAt(int level)
+    {
+        float v = Lvl(level)?.ProcChance ?? 0f;
+        return v != 0f ? v : ProcChance;
+    }
+
     /// <summary>See <see cref="PhysCooldownPctAt"/>.</summary>
     public float MagicCooldownPctAt(int level)
     {
@@ -1636,6 +1671,15 @@ public record SkillLevel(
     // in the game is a LADDER (the dagger race buffs climb 10/15/20%), so it needs the per-level slot
     // for the same reason the two pairs above it do.
     float BlowRatePct = 0f,
+    // WEAPON VULNERABILITY at THIS level (0 = inherit). See SkillDef.VulnerableToWeapon — Taunting
+    // Shout is 10% at 52 and 20% at 74, so the magnitude is a ladder while the WEAPON MASK is not.
+    float WeaponVulnerabilityPct = 0f,
+    // PROC CHANCE at THIS level (0 = inherit the SkillDef's). See SkillDef.ProcChance.
+    // 🔑 Added 2026-09-17 for the Warlord's three Supports, whose chance is a LADDER — 10 / 15 / 20%
+    //    across three rungs. Every proc before them authored ONE chance and climbed only its PAYLOAD
+    //    (which `ProcSelfRungs` already indexes by level), so the slot had never been needed. Same
+    //    "unset = inherit" shape as the six pairs above it.
+    float ProcChance = 0f,
     // DEBUFF SUCCESS MULTIPLIER at THIS level (0 = inherit the SkillDef's). See SkillDef.DebuffLandMod.
     // His ask names the ladder explicitly — *"a sucess multiplier (per skill/lvl)"* — so a hold whose
     // rungs are otherwise identical can still get more reliable as it climbs.
@@ -2158,6 +2202,7 @@ public static partial class SkillCatalog
         list.AddRange(WarriorFocusSkills());   // Skills.Warrior3rd.cs — the Human Ravager's Focus kit (`BL-237`)
         list.AddRange(Warrior3rdRaceSkills()); // Skills.Warrior3rd.cs — Charge, the Presences, the three race kits
         list.AddRange(Warrior4thSkills());     // Skills.Warrior4th.cs — the four new 4th-tier race tools
+        list.AddRange(Warlord3rdSkills());     // Skills.Warlord3rd.cs — the blunt discipline's own ten
         list.AddRange(Warlord4thCharges());    // Skills.Warlord4th.cs — the four interlocking charges + the stomp
         list.AddRange(Dual3rdSkills());       // Skills.Dual3rd.cs (his `dual 3rd.csv`, 40-74)
         list.AddRange(Dual4thSkills());       // Skills.Dual4th.cs (`BL-188` — the top of the blow ladder ONLY)

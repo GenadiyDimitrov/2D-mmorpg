@@ -921,7 +921,6 @@ public static partial class ClassSkillTables
         //   damage rows land they will almost certainly split sword from blunt like everything else in
         //   those two files does.
         var warrior = new List<ClassSkill>();
-        warrior.AddRange(Ladder(WarSunderingBlow, band13));
 
         // 🔴 THE ARCHER'S HALF IS GONE, 2026-09-09 — `archer 3rd.csv` landed and RegisterArcher3rd()
         //    below teaches his rows instead. The four derived skills it used to register are orphaned
@@ -930,13 +929,20 @@ public static partial class ClassSkillTables
         //    has said since this stand-in was built that *"it goes the day his damage rows land"* — and
         //    `warrior 3rd.csv` + `warrior 4th.csv` are those rows: three race Slashes, Sword Shock,
         //    Demonic Smash, Saints Sword Dance, Sword Blast and the whole Focus kit.
-        // ⚠ THE WARLORD KEEPS IT, and that is not an oversight: `war_aoe 3rd.csv` and `war_aoe 4th.csv`
-        //   still author NO damage row of any kind, so dropping it there would leave the blunt
-        //   discipline with a 2nd-class Smash and nothing else from 40 to 90. `--check` will go on
-        //   printing 🟠 NOT IN THE CSV against `war_aoe 3rd` until his blunt damage rows land, which is
-        //   the pressure working exactly as it did for the sword half.
-        foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
-            ClassSkills.RegisterThird(race, Discipline.Warlord, warrior.ToArray());
+        // 🔴 THE WARLORD NO LONGER LEARNS IT EITHER, 2026-09-17 — and with that this method registers
+        //    NOTHING and the last derived fighter ladder in the game is gone. `war_aoe 3rd.csv` grew
+        //    its damage rows on 2026-09-16 (Shocking Shout, Whirlwind, Taunting Shout and the three
+        //    race Shouts), which is precisely what the note above said this stand-in was waiting for.
+        //    The blunt discipline now teaches HIS rows; see RegisterWarlord3rd and Skills.Warlord3rd.cs.
+        // ⚠ `war_sundering_blow` itself is NOT deleted — it stays orphaned in Skills.FighterKits3rd.cs,
+        //   the same way the four retired archer skills do, so a character who bought it can still be
+        //   LOADED. Deleting a live skill id redistributes every bar that holds it.
+        // ⚠ The empty method and its list are kept rather than removed: the archer half's note and this
+        //   one are the record of what used to stand here, and an empty registrar is cheaper to read
+        //   than a deleted one is to reconstruct.
+        if (warrior.Count > 0)
+            foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
+                ClassSkills.RegisterThird(race, Discipline.Warlord, warrior.ToArray());
     }
 
     /// <summary>THE WARRIOR'S TWO DISCIPLINES, 40-74 — every row of `warrior 3rd.csv` (the RAVAGER)
@@ -1038,6 +1044,37 @@ public static partial class ClassSkillTables
                 //  layer now, from level 10, for every fighter Elf. See RegisterBulwark.)
                 ClassSkills.RegisterThird(race, d, extra.ToArray());
             }
+
+        // ═══ `BL-237` §5 — THE WARLORD'S OWN KIT, 2026-09-17 ═════════════════════════════════════
+        //
+        // The ten `waraoe_*` rows of `war_aoe 3rd.csv`, which closed the last open half of `BL-237`.
+        // 🔑 WHAT IS SHARED AND WHAT IS RACED, straight off his RACE column — and note that it is the
+        //    MIRROR of the Ravager's split, one race tool each and everything else common:
+        //      • SHARED (no race cell): Battle Revival, Shocking Shout, Whirlwind, Taunting Shout.
+        //      • RACED: the three Supports and the three Shouts — Human, Demon, Elf, one of each.
+        // ⚠ These APPEND to the `warlord` list registered above, which is the idiom this file has used
+        //   since the Focus kit was built.
+        var warlordKit = new List<ClassSkill>
+        {
+            new(WaraoeBattleRevival, 70),
+            new(WaraoeTauntingShout, 52, SkillLevel: 1),
+            new(WaraoeTauntingShout, 74, SkillLevel: 2),
+        };
+        warlordKit.AddRange(Ladder(WaraoeShockShout, band15));
+        warlordKit.AddRange(Ladder(WaraoeWhirlwind, band15));
+        foreach (var race in new[] { Race.Human, Race.Elf, Race.Demon })
+            ClassSkills.RegisterThird(race, Discipline.Warlord, warlordKit.ToArray());
+
+        // ---- The three race halves. One Support and one Shout each; nothing crosses. ----
+        ClassSkills.RegisterThird(Race.Human, Discipline.Warlord,
+            Ladder(WaraoeSupport, SkillCatalog.WaraoeSupportLevels)
+                .Concat(Ladder(WaraoeHumanShout, band15)).ToArray());
+        ClassSkills.RegisterThird(Race.Demon, Discipline.Warlord,
+            Ladder(WaraoeBloodSupport, SkillCatalog.WaraoeSupportLevels)
+                .Concat(Ladder(WaraoeDemonShout, band15)).ToArray());
+        ClassSkills.RegisterThird(Race.Elf, Discipline.Warlord,
+            Ladder(WaraoeLifeSupport, SkillCatalog.WaraoeSupportLevels)
+                .Concat(Ladder(WaraoeElfShout, band15)).ToArray());
 
         // ---- HUMAN: the Focus kit (five ladders) + Champion Presence + the P.Def Slash. ----
         var human = new List<ClassSkill>();

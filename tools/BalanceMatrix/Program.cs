@@ -1631,6 +1631,13 @@ if (args.Length > 0 && args[0] == "--dump-landmod-csv")
         }
         if (d.Charms) p.Add("charm");
         if (d.Pulls) p.Add("pull");
+        if (d.ChargesToTarget) p.Add("charge");
+        // Taunting Shout (2026-09-17): its whole payload is a FIELD pair, so without this the row
+        // printed "(no payload on the def - CHECK IT)" for a skill that plainly has one.
+        if (d.WeaponVulnerabilityPct != 0f)
+            p.Add("vulnerable to " + d.VulnerableToWeapon + " +"
+                  + (d.WeaponVulnerabilityPct * 100).ToString("0") + "%");
+        if (d.TauntPower > 0) p.Add("taunt");
         if (d.SilencePhysical) p.Add("silence physical");
         if (d.SilenceMagical) p.Add("silence magical");
         if (d.DispelCount > 0) p.Add("cancels " + d.DispelCount + " buff(s)");

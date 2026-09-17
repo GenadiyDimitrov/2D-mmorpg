@@ -641,6 +641,14 @@ public static class SkillText
         // silently refuses at point-blank reads as broken unless the card says so.
         if (def.MinChargeDistance > 0f)
             o.Add($"Needs the target at least {(int)def.MinChargeDistance} away");
+        // WEAPON VULNERABILITY (Taunting Shout). Said as "from ANYONE" on purpose: it is the blunt
+        // discipline's group tool, and a player who reads it as a personal damage buff will not bring
+        // it to a party that could double its value.
+        if (def.WeaponVulnerabilityPctAt(level) is var vuln && vuln != 0f
+            && def.VulnerableToWeapon != WeaponType.None)
+            o.Add($"The target takes {vuln * 100f:0}% more damage from "
+                  + $"{WeaponTypes.Describe(def.VulnerableToWeapon, WeaponHands.Any)} "
+                  + "— from ANYONE, not just you");
         // `BL-155` — SILENCE. Both halves named, because which one you are wearing decides what you
         // can still do, and a basic attack is never silenced.
         if (def.SilencePhysical && def.SilenceMagical)

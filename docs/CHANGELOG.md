@@ -7,11 +7,59 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.164.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.165.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-17 (latest) — 0.164.0: the charge moves over its DURATION, and the Warlord picks one of four
+## 2026-09-17 (latest) — 0.165.0: the Warlord finally has a kit — `war_aoe 3rd.csv` is built
+
+**`BL-237` §5, the last open half of the warrior, closed.** Until this commit the string `waraoe`
+appeared in **zero** `.cs` files: the blunt discipline had your passives, your buffs and Charge, and
+for its damage it borrowed the derived `war_sundering_blow` stand-in. Ten ids landed; that stand-in is
+**retired in the same commit**, and with it the last derived fighter ladder in the game.
+
+| | what it is |
+|---|---|
+| **Shocking Shout** ×15 | a self-centred ring, 1000 → 4000 power, 5s stun, cannot be blocked, can double |
+| **Whirlwind** ×15 | a CHANNEL — 20 strokes over 4s, each its own execution with its own crit and splash |
+| **Taunting Shout** ×2 | 600/800 taunt, 30s, and *"more dmg from blunts"* — **a new damage channel** |
+| **Shattering / Breaking / Crippling Shout** ×15 each | the three Slashes' rots, **on a ring, with the strike taken out** |
+| **Life / Blood / Vanguard Support** ×3 each | a proc: heal a share of max HP **and** leave something lingering |
+| **Battle Revival** | Battle Regeneration's ladder taken to **100%**, on five minutes |
+
+### 🔑 "MORE DMG FROM BLUNTS" IS THE ONE CHANNEL THAT CANNOT BE A DERIVED STAT
+New `SkillDef.VulnerableToWeapon` + `WeaponVulnerabilityPct`, carried on the **buff**. Every other
+damage-taken channel in the game (`PvpDamageTakenPct`, the armour sets') depends only on the DEFENDER
+and is folded once in `RecomputeDerived` — this one asks **what the attacker is holding**, and a
+defender's recompute has no attacker. So it is read off the victim's buff list at the swing, in the one
+pipeline every hit passes through. ⚠ It pays **anyone** holding a blunt, not just the Warlord: that is
+what makes Taunting Shout a party tool rather than a personal one.
+
+### 🔴 TWO GATES HAD TO LEARN ABOUT A FIELD PAYLOAD, AGAIN
+The same lesson this file has now paid for six times:
+* **`PayOutProc` returned the instant it paid a heal.** Correct while every instant payload was a bare
+  sigil heal. Your Supports are the first that are BOTH — *"heal for 5% max HP, **and** leave
+  lingering …"* — so the lingering half would have been dropped on the floor and the passive would have
+  looked simply broken. The test is now what it always meant: return when there is nothing left to apply.
+* **`ProcChance` had no per-rung slot**, so your 10 / 15 / 20% ladder would have rolled **10% at every
+  rung** — the identical bug the toggle upkeep had (`BL-208`). New `SkillLevel.ProcChance`, taught to
+  the roll, to the loop's entry gate, and to `SkillCsvSeed`.
+
+### ❓ TWO THINGS ARE YOURS
+* **`BL-261` — Whirlwind's power column DIPS**: 1540 at 68, then **900** at 70. Built verbatim, and
+  `--check` now prints 🔵 LADDER DIP at it. Three independent checks say the first twelve cells are an
+  older column: rungs 8-12 are the Elf Sword Dance's cells *exactly*, `war_aoe 4th.csv` opens at 1050
+  (far below 1540) and climbs +50, and +50 backwards from 1000 over fifteen rungs lands on **300** —
+  which is what your rung 1 already says. Both ends agree; only the middle disagrees.
+* **`BL-259` — three landing modifiers**, now that Shocking Shout and Taunting Shout joined Charge n
+  Shock. ✅ The three race Shouts needed nothing: you priced them yourself in the cell *"Single debuff
+  x1.5"*, and that is exactly the `BL-232` rule — a shout that only curses lands more readily than a
+  Slash that curses **and** strikes (×0.7).
+
+⚠ **Still unbuilt: `war_aoe 4th.csv`** — Master of Combat, Shocking Javelin, the 76-90 continuations
+and Final Stand's top rungs. Next. ⚠ **Needs a new APK.**
+
+## 2026-09-17 — 0.164.0: the charge moves over its DURATION, and the Warlord picks one of four
 
 His note, whole: *"i gave on charge duration .. it should move the distance for the duration .. not
 instantly"*, with four readings attached — normal charge cuts the distance over **1s**; **Flash Step**

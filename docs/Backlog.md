@@ -249,11 +249,13 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-232` | 🔵 | `debuff_landmods.csv` IS LIVE — 74 rows built and checked; the SUCCESS column is yours to author | combat |
 | `BL-233` | ❓ | THE DEMON BUFFER'S P.DEF — measured three ways and heavy is AHEAD; I need your two sheets | classes |
 | `BL-234` | ❓ | URGENT LESSER HEAL — built to your four numbers; the per-rank falloff is mine to confirm | classes |
-| `BL-237` | 🔵 | THE WARLORD'S DAMAGE ROWS — all that is left of WARRIOR 3rd+4th; `war_aoe 3rd/4th.csv` author none | classes |
+| `BL-237` | 🟡 | THE WARLORD — `war_aoe 3rd.csv` is BUILT (0.165.0); `war_aoe 4th.csv` is half built | classes |
 | `BL-250` | 🟡 | THE SUBCLASS SYSTEM — **the server half is BUILT (0.155.0)**; what is left is the CLIENT dialogue + panel (APK) and the SIGIL half (§1-§4). ❓ one new question in §9.6 | classes |
 | `BL-253` | 🔵 | A DROP DATABASE — name an item, see every source; the BalanceMatrix half is built, the in-game window is owed | items |
 | `BL-254` | ❓ | RARE WOOD DROPS FROM NOTHING — wood is never a category's primary, so no Rare rung can reach it | items |
-| `BL-259` | ❓ | THE LANDING MODIFIER FOR **Charge n Shock** — one cell in `debuff_landmods.csv`, and only you may set it | classes |
+| `BL-259` | ❓ | THREE LANDING MODIFIERS — Charge n Shock, Shocking Shout, Taunting Shout. Only you may set them | classes |
+| `BL-260` | ❓ | **SUMMONERS — the conversation we have never had**, and four shipped decisions already lean on it | classes |
+| `BL-261` | ❓ | WHIRLWIND'S POWER COLUMN DIPS — 1540 at 68, then 900 at 70. Built verbatim; three checks say the first twelve cells are an older column | classes |
 
 ---
 
@@ -1845,7 +1847,7 @@ over eleven: `dotnet run --project tools/BalanceMatrix -- --healpower 90 epic`.
 
 ---
 
-## `BL-237` 🔵 THE WARLORD'S DAMAGE ROWS — the last open half of WARRIOR 3rd + 4th
+## `BL-237` 🟡 THE WARLORD — his 3rd file is BUILT, his 4th file is half built
 
 **Built 2026-09-16 (0.146.0); your four readings CONFIRMED 2026-09-16** — *"1,2,3,4 as you desided ->
 ill do .5 later"*. So Battle Frenzy's downside is **healing received**, Saints Blessing's two `to`
@@ -1853,11 +1855,21 @@ numbers are **chances**, Battle Frenzy is **exempt from the buff-slot limit**, a
 (Sword Shock's 5s stun, the landing modifiers into `debuff_landmods.csv`) stand. Those four are
 archived under this id. **Only §5 is still open, and it is yours:**
 
-### 5. 🔴 STILL OWED BY YOU — the WARLORD's damage rows
-`war_aoe 3rd.csv` and `war_aoe 4th.csv` author **no damage row of any kind**. The blunt discipline
-therefore still carries the derived `war_sundering_blow` I would otherwise have deleted today (the
-Ravager's copy is gone, since his rows landed), and `--check` prints one 🟠 line against `war_aoe 3rd`
-until you write them. That line is the reminder; nothing is invented in the meantime.
+### 5. 🟡 YOUR ROWS LANDED 2026-09-16 — the 3rd file is BUILT, the 4th is half built
+**`war_aoe 3rd.csv` is fully built (0.165.0)**: Shocking Shout, Whirlwind, Taunting Shout, the three
+race Shouts, the three Supports and Battle Revival — ten ids that did not exist in the codebase at
+all. `war_sundering_blow` is retired from the Warlord in the same commit, and with it the last derived
+fighter ladder in the game.
+
+**`war_aoe 4th.csv` is NOT finished.** Its four interlocking charges shipped in 0.164.0; still owed are
+Master of Combat, Shocking Javelin, Final Stand rungs 4-5, HP Boost 76-90, the Supports' rung 4, and
+the 76-90 continuations of everything above. ⚠ One reading of yours is needed there and is flagged in
+0.165.0's CHANGELOG: **that file gives all three races the id `waraoe_life_support` at 80**, while its
+own section headers read Life / Blood / Vanguard Support — the 3rd file's three separate ids. It is
+being built as rung 4 of each race's own ladder.
+
+What is still open beyond that: **`BL-259`** (three landing modifiers) and **`BL-261`** (Whirlwind's
+dipping power column).
 
 ---
 
@@ -2123,28 +2135,107 @@ the one you noticed, because it is the only type that is never anybody's primary
 
 ---
 
-## `BL-259` ❓ THE LANDING MODIFIER FOR **Charge n Shock** — one cell, and only you may set it
+## `BL-259` ❓ THREE LANDING MODIFIERS — three cells, and only you may set them
 
-Built 2026-09-17 in 0.164.0 from `war_aoe 4th.csv`: *"80,Charge n Shock,warrior_charge_stun … Chance
-to stun target for 2s"*. It is a **new debuff**, so by your own rule (`BL-232`) I do not price it:
+Built 2026-09-17 in 0.164.0 and 0.165.0 from your two `war_aoe` files. All three are **new debuffs**, so
+by your own rule (`BL-232`) I do not price any of them:
 
 > *"Then each new debuff to go there and to ask for modifier edit"*
 
-`docs/data/debuff_landmods.csv` now carries its row and `SUCCESS` reads the code's default of **1** —
-that is the file being filled in, not a decision.
+`docs/data/debuff_landmods.csv` carries all three rows and their `SUCCESS` reads the code default of
+**1** — that is the file being filled in, not a decision.
 
-| SKILL | SKILL_ID | CLASS | DESCR | SAVE | SHAPE | SUCCESS |
-|---|---|---|---|---|---|---|
-| Charge n Shock | `warrior_charge_stun` | Warlord | Stun | CON | `DEBUFF ONLY (1)` | **your cell** |
+| SKILL | SKILL_ID | DESCR | SAVE | SHAPE | SUCCESS |
+|---|---|---|---|---|---|
+| Charge n Shock | `warrior_charge_stun` | charge; Stun | CON | `DEBUFF ONLY (1)` | **your cell** |
+| Shocking Shout | `waraoe_shock_shout` | Stun | CON | `dmg+1 debuff` | **your cell** |
+| Taunting Shout | `waraoe_taunting_shout` | vulnerable to blunt +10%; taunt | CON | `DEBUFF ONLY (1)` | **your cell** |
 
-**What it does at once**, since that is the axis your modifier prices: it closes 800 of ground over
-two seconds and stuns for two — **no damage at all**. So it is a solo debuff by your `SHAPE` test,
-not a `dmg+1 debuff`.
+**What each does at once**, since that is the axis your modifier prices:
 
-⚠ **The neighbours, for scale, not as a suggestion:** *Phantom Jump* (blink + Stun, `DEBUFF ONLY (1)`)
-is **1**, and *Grapple* (`tank_pull`, pull + Stun) is **1** — but both of those arrive instantly or
-drag the victim, while this one telegraphs itself for two full seconds first.
+- **Charge n Shock** closes 800 of ground over two seconds and stuns for two — **no damage at all**, so
+  it is a solo debuff by your `SHAPE` test, not a `dmg+1 debuff`. ⚠ For scale, not as a suggestion:
+  *Phantom Jump* (blink + Stun) and *Grapple* (pull + Stun) both sit at **1** — but both arrive
+  instantly or drag the victim, while this one telegraphs itself for two full seconds first.
+- **Shocking Shout** is damage **and** a 5s stun **on a whole ring**, which is the heaviest thing in
+  the three. Its neighbour *Acoustic Shock* (`dmg+1 debuff`, single target) is **1**.
+- **Taunting Shout** is a taunt plus the blunt vulnerability, thirty seconds, on a 600-800 ring. It is
+  the only one of the three whose payload is not control at all.
+
+✅ **The three race Shouts needed nothing** — you priced them yourself in the cell *"Single debuff
+x1.5"*, and the code ships 1.5. That is the `BL-232` rule working: a shout that only curses lands more
+readily than a Slash that curses **and** strikes (x0.7).
 
 Edit the cell and `SkillCsvSeed --check` will print DRIFT until the code matches it.
+
+---
+
+## `BL-260` ❓ SUMMONERS — the conversation we have never had
+
+**Opened 2026-09-17 on your instruction** (*"make a note to discuss summoners"*). Nothing here is a
+proposal; it is the list of decisions that are ALREADY SHIPPED and already assume a summoner exists.
+The point of the entry is that the discussion is owed **before** any of them is built on further.
+
+`BL-38` (*"Pets and summons — immovable totems, class pets, the mage summoner"*) is the old,
+never-scheduled design note. This is the **live** one, because four things now depend on it:
+
+| what already assumes it | where | what it assumes |
+|---|---|---|
+| the **8th subclass slot** | `BL-250` §5 | cut until *"summoner is build"* — 5,000 platinum comes back with it |
+| the **mage sigil group** | `BL-250` §3 | a mage can only reach his OWN group once nuker ↔ summoner is a second **path** |
+| the **path count** | `BL-255` | 8 paths today; the summoner is the **ninth**, and that is what makes eight subclasses reachable |
+| the **roster shape** | `CLAUDE.md` | *"EIGHT choosable paths per race and 24 third classes"* — a ninth path moves both numbers |
+
+### What has to be decided, and none of it is decided
+1. **Is it a base class, a DISCIPLINE of the mage, or a 3rd-class branch?** `BL-255` makes this the
+   load-bearing question: `CanAddDiscipline` refuses a second class on the same **path**, so whether
+   the summoner is a new path or a new name on the nuker's path decides whether a mage can ever
+   subclass into it — which is the whole reason the mage group is locked today.
+2. **Three race names, like every other discipline?** The roster is `Discipline` values; a ninth path
+   is three more of them plus three 4th-class names.
+3. **What is a summon, mechanically?** `BL-38` names three different things — an immovable totem (which
+   already exists, `PlacesTotem`), a class pet, and a summoner's creature. The engine has no
+   *controlled second body* at all: no ownership, no commands, no threat inheritance, no XP split.
+   That is the real cost, and it is not small.
+4. **Does it break "a class grants NO stats — identity is the KIT"?** A pet IS stats, delivered
+   sideways. Either the pet's numbers derive from the owner's, or the rule gets its first exception.
+
+⚠ **Until this is answered, do not let a fifth thing depend on it.** Each of the four above was a
+one-line "…when the summoner ships"; that is cheap once and a trap four more times.
+
+---
+
+## `BL-261` ❓ WHIRLWIND'S POWER COLUMN DIPS — twelve cells look like an older ladder
+
+`war_aoe 3rd.csv`, built verbatim in 0.165.0. The column **goes down** between two rungs:
+
+```
+rung  1    2    3    4    5    6    7     8     9    10    11    12  |  13   14    15
+lvl  40   43   46   49   52   55   58    60    62    64    66    68  |  70   72    74
+     300  415  525  640  715  825  940  1125  1240  1350  1465  1540 | 900  950  1000
+                                                                      ^^^ -41%
+```
+
+Your own rule (`BL-237`, Armor Mastery) is that a ladder which **rises** is yours and a ladder that
+**dips** is a typo — so this is asked, not assumed. `SkillCsvSeed --check` now prints
+🔵 **LADDER DIP** against it and will until the cells move.
+
+### Three independent checks all say rungs 1-12 are the stale half, not 13-15
+1. **Rungs 8-12 are the Elf Sword Dance's cells EXACTLY** (1125 / 1240 / 1350 / 1465 / 1540), and
+   rungs 1-7 are that same ladder **minus 75**. Two skills in two different files do not agree to the
+   unit by coincidence.
+2. **`war_aoe 4th.csv` opens at 1050** and climbs +50 a rung to 1750. That continues 900 → 950 → 1000
+   perfectly — and is far **below** 1540, so keeping rung 12 would mean levelling 68 → 76 **costs you
+   a third of the skill's power**.
+3. **+50 a rung backwards from 1000, fifteen rungs, lands on 300** — which is exactly what your rung 1
+   already says. **Both ends of your ladder agree with each other; only the middle disagrees.**
+
+❓ **If that reading is right, the fix is one column** — 300 climbing +50 a rung to 1000:
+`300 350 400 450 500 550 600 650 700 750 800 850 900 950 1000`. Edit the twelve cells and say so; the
+code is one array (`SkillCatalog.WaraoeWhirlwindPower`) and follows in a minute.
+
+⚠ **Whichever way it goes, the SHAPE matters more than the cells.** Twenty strokes a cast means this
+column is multiplied by twenty: at rung 12 as authored, one Whirlwind is 30,800 power against Shocking
+Shout's 3,400 on the same rung. If 1540 is the intended number, the two are not in the same game.
 
 ---

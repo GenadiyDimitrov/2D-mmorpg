@@ -41,6 +41,15 @@ public class BuffInstance
     public int Level { get; init; } = 1;
     public string[] Replaces { get; init; } = Array.Empty<string>();
 
+    /// <summary>THE WEAPON THIS BUFF MAKES ITS BEARER SOFT TO, and by how much — Taunting Shout's
+    /// *"vunarable to bludgering attacks (20% more dmg from blunts)"*. Lives on the BUFF rather than on
+    /// a derived stat because it is keyed on the ATTACKER's weapon, which the bearer's own
+    /// <c>RecomputeDerived</c> cannot know. Read at the swing; see
+    /// <c>GameLoopService.WeaponVulnerabilityMult</c>. <see cref="WeaponType.None"/> = ordinary buff.</summary>
+    public WeaponType VulnerableToWeapon { get; init; } = WeaponType.None;
+    /// <inheritdoc cref="VulnerableToWeapon"/>
+    public float WeaponVulnerabilityPct { get; init; }
+
     /// <summary>The server tick this buff was (re)applied on — how "oldest" is decided when the
     /// <see cref="GameConstants.MaxBuffSlots"/> cap has to evict one. Settable rather than init-only
     /// because re-applying a buff makes it NEW: a blessing you just recast should not be first out

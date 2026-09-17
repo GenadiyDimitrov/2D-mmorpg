@@ -49,7 +49,12 @@ ManaDrain      = targetMaxMp * power / 1000                  power is PER MILLE
 - 🔑 **THE SHOT — the War / Spell Runes multiply the FINISHED damage, ×2, per channel** (2026-09-09,
   `BL-185`). `FinalDamage = raw x (1+pve/pvp bonus) x conditional x skillMult x raidMult x takenMult
   x runeMult`, in `GameLoopService.FinalizeDamage`, and since `BL-212` (0.133.0) a `mobMult` factor rides beside
-  `runeMult` in the same line. They are NOT stat buffs any more: `BuffPhysAtk
+  `runeMult` in the same line. `takenMult` itself is **two** things multiplied — the PvP receiving side
+  (`Entity.PvpDamageTaken`) and, since 0.165.0, any **weapon vulnerability** on the target
+  (`GameLoopService.WeaponVulnerabilityMult`: Taunting Shout's *"+20% damage from blunts"*). ⚠ The
+  vulnerability is the one damage factor that **cannot be precomputed on the defender**, because it is
+  keyed on the ATTACKER's equipped weapon — it is read off the victim's buff list at the swing, and
+  several of them MULTIPLY rather than sum. They are NOT stat buffs any more: `BuffPhysAtk
   1.00` fed an ADDITIVE formula and moved a 7635-power skill by only ×1.29 while reading "+100%", and
   the magic side reached ×1.414 only through a magnitude stored pre-`sqrt`. ×2 is IG's **blessed**
   shot exactly (its magic form is M.Atk ×4 under the `sqrt`, i.e. ×2 damage). ⚠ A rig that calls

@@ -10595,7 +10595,11 @@ public class GameLoopService : BackgroundService
 
         foreach (var (skillId, level) in owner.LearnedSkills)
         {
-            if (SkillCatalog.Get(skillId) is not SkillDef def || def.ProcChance <= 0f)
+            // ⚠ THE GATE ASKS THE RUNG TOO. A def that authors its chance only per-level would be
+            //   skipped here and never roll at all — the "a payload in a field must be taught to EVERY
+            //   gate" lesson, which this file has paid for five times.
+            if (SkillCatalog.Get(skillId) is not SkillDef def
+                || (def.ProcChance <= 0f && def.ProcChanceAt(level) <= 0f))
                 continue;
             // 🔑 A PROC ON A **BUFF** ONLY RUNS WHILE THAT BUFF IS UP. Every proc before 2026-09-09 sat
             // on a PASSIVE, where "learned" and "active" are the same thing, so the walk over
@@ -10626,9 +10630,14 @@ public class GameLoopService : BackgroundService
             // hit, so a weapon that swings ~12-18% slower fires it ~12-18% less often for the same
             // authored chance; ProcChanceTwoHanded is what buys that back. Unset (0) = one chance for
             // every weapon, which is every other proc in the game.
+            // 🔑 …AND THE RUNG'S CHANCE, NOT THE DEF'S (2026-09-17). Every proc until the Warlord's
+            // three Supports authored ONE chance and climbed only its payload, so `def.ProcChance` was
+            // the whole truth; his Supports climb 10 → 15 → 20% and would otherwise have rolled rung
+            // 1's number at every rung — the identical bug the toggle upkeep had (`BL-208`) and the
+            // buff magnitudes had before it. See SkillDef.ProcChanceAt.
             float chance = def.ProcChanceTwoHanded > 0f && owner.WeaponType.IsTwoHanded()
                 ? def.ProcChanceTwoHanded
-                : def.ProcChance;
+                : def.ProcChanceAt(level);
             if (_rng.NextDouble() >= chance)
                 continue;
 
@@ -10704,7 +10713,16 @@ public class GameLoopService : BackgroundService
             RestoreMpOne(owner, owner, payload.Power + pct, label);
             instant = true;
         }
-        if (instant) return;
+        // 🔴 …BUT AN INSTANT PAYLOAD MAY STILL HAVE A SECOND HALF (2026-09-17). This used to return
+        // unconditionally, which was right while every instant payload was a bare sigil heal: applying
+        // a buff with no duration and no magnitudes would have left an empty marker on the bar.
+        //
+        // The Warlord's three Supports are the first payload that is BOTH — his sentence is *"10% chance
+        // to heal for 5% max HP, **and** leave lingering 2% vampiric and 33/s healing effect"* — so the
+        // early return would have paid the heal, dropped the lingering half on the floor, and looked
+        // like the passive simply not working. The test is now what it always meant: return when there
+        // is nothing left to apply.
+        if (instant && payload.DurationTicks <= 0) return;
 
         ApplyBuff(owner, payload, 1, label, sourceSkillId: sourceSkillId);
         BroadcastCombat(owner, owner, 0, CombatOutcome.Buff, label);
@@ -13270,6 +13288,10 @@ public class GameLoopService : BackgroundService
             // than per rung: every Mark charges the same 10% at both its rungs, and a per-rung version
             // would be a ladder nobody authored.
             MoveSpeedPenaltyPct = def.MoveSpeedPenaltyPct,
+            // Taunting Shout's *"more dmg from blunts"* — PER RUNG, because its two rungs are 10% and
+            // 20% and reading the def's own field would hand rung 1's number to both.
+            VulnerableToWeapon = def.VulnerableToWeapon,
+            WeaponVulnerabilityPct = def.WeaponVulnerabilityPctAt(level),
             MasteryMult = def.MasteryMult,   // `BL-191` — the toggle's ×2 on all three mastery bases
             // `BL-110` — CHARM, and the one buff that needs to remember WHO cast it: TickControlledMovement
             // walks the victim toward this id every tick. A charm with no source is inert by design
@@ -13906,6 +13928,35 @@ public class GameLoopService : BackgroundService
         // Shift fix is untouched.
         if (announce) unchecked { e.Warp++; }
         _world.Grid.UpdatePosition(e);
+    }
+
+    /// <summary>How much MORE <paramref name="target"/> takes from <paramref name="attacker"/> right
+    /// now because of a WEAPON VULNERABILITY debuff on it — Taunting Shout's *"make them vunarable to
+    /// bludgering attacks (20% more dmg from blunts)"*. 1 when there is none, which is almost always.
+    ///
+    /// <para>🔑 <b>IT IS READ AT THE SWING, NOT FOLDED IN <c>RecomputeDerived</c></b>, and that is
+    /// forced rather than chosen: every other damage-taken channel depends only on the DEFENDER, but
+    /// this one asks what the ATTACKER is holding. A defender's recompute has no attacker. This is the
+    /// one shape in the damage pipeline that genuinely cannot be precomputed.</para>
+    ///
+    /// <para>⚠ Vulnerabilities MULTIPLY rather than sum, like every other damage-taken channel here.
+    /// Nothing stacks two today — one skill in the game carries the field — but a sum would be the
+    /// `BL-142` slow bug waiting to happen the day a second one lands.</para></summary>
+    private static float WeaponVulnerabilityMult(Entity target, Entity attacker)
+    {
+        float mult = 1f;
+        // Buffs is a plain List and this runs on every hit, so it is a for-loop over a field test that
+        // is zero for every ordinary buff — no allocation, no LINQ, no dictionary.
+        for (int i = 0; i < target.Buffs.Count; i++)
+        {
+            var b = target.Buffs[i];
+            if (b.WeaponVulnerabilityPct == 0f || b.VulnerableToWeapon == WeaponType.None) continue;
+            // `Satisfies` is the ONE weapon-mask rule (`BL-120`'s lesson) — an empty hand fails it,
+            // which is correct: a vulnerability to blunts is not a vulnerability to fists.
+            if (!attacker.WeaponType.Satisfies(b.VulnerableToWeapon, WeaponHands.Any)) continue;
+            mult *= 1f + b.WeaponVulnerabilityPct;
+        }
+        return mult;
     }
 
     /// <summary>Blink the caster: range 0 = just behind the target (gap-closer); range &gt; 0
@@ -18900,6 +18951,11 @@ public class GameLoopService : BackgroundService
         // player (the S heavy/light sets' "PVP Dmg Received x0.95"). PvP only — `pvp` already means
         // player-hits-player, so a mob's swing is never reduced by it. Defaults to 1.
         float takenMult = pvp ? target.PvpDamageTaken : 1f;
+        // …and the OTHER receiving-side channel, which is PvE and PvP alike: a VULNERABILITY debuff
+        // (Taunting Shout's *"20% more dmg from blunts"*). It multiplies in beside `takenMult` because
+        // it is the same kind of thing — what the TARGET takes — and differs only in being keyed on the
+        // attacker's weapon, which is why it cannot be a derived stat. See WeaponVulnerabilityMult.
+        takenMult *= WeaponVulnerabilityMult(target, attacker);
         // THE SHOT (the War / Spell Runes) — a multiplier on the FINISHED number, per channel. This is
         // the owner's 2026-09-09 ruling: a shot is not a stat buff, it is the mirror of `MagicResist`,
         // which cuts damage without touching M.Def. Basic attacks take the PHYSICAL rune too — a shot

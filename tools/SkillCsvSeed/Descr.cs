@@ -663,7 +663,8 @@ internal static class Descr
                 && !ArmorGate.Satisfies(sw, true, pe.RequiredArmor)) continue;
             AddPassive(Add, pe);
         }
-        Add("procchance", true, def.ProcChance);
+        // THE RUNG, not the def — the Warlord's three Supports climb 10 / 15 / 20% (2026-09-17).
+        Add("procchance", true, def.ProcChanceAt(level));
         // `BL-237` — THE FOCUS POOL (SkillDef.Charge): the cap, the spend limit, the power per charge and
         // the two proc chances, plus the HP/MP price his Focus rows restate in the text. See FocusLift.
         if (def.Charge is { } charge)
