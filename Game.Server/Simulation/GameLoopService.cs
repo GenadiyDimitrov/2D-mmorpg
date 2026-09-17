@@ -3284,19 +3284,27 @@ public class GameLoopService : BackgroundService
         string? blueprintId = recipe.DropOnly ? ItemCatalog.RecipeBookId(recipe.Id) : null;
         if (blueprintId != null && ItemCatalog.Get(blueprintId) is null) blueprintId = null;
 
+        // `BL-245` — THE KEEPER'S SHELF IS A SECOND PANTRY (owner: *"crafter should see mats in private
+        // wharehouse"*). ⚠ The half that had to be decided is whether the warehouse only COUNTS toward a
+        // recipe or is actually SPENT, and it is spent: a window that says you can craft and then refuses
+        // is worse than one that never offered. So the gate and the spend walk the same two containers,
+        // in the same order, behind the same flag — split them and the gate could pass on a total the
+        // spend cannot reach.
+        bool useWh = cmd.UseWarehouse;
         foreach (var inp in recipe.Inputs)
-            if (CountItem(player, inp.ItemId) < inp.Qty)
+            if (CraftCount(player, inp.ItemId, useWh) < inp.Qty)
             {
                 SendSystemToEntity(player, "You don't have the required materials.");
                 return;
             }
-        if (blueprintId != null && CountItem(player, blueprintId) < 1)
+        if (blueprintId != null && CraftCount(player, blueprintId, useWh) < 1)
         {
             SendSystemToEntity(player, "You need a blueprint to craft this — one is consumed each time.");
             return;
         }
+        bool tookFromWarehouse = false;
         foreach (var inp in recipe.Inputs)
-            ConsumeItem(player, inp.ItemId, inp.Qty);
+            tookFromWarehouse |= CraftConsume(player, inp.ItemId, inp.Qty, useWh);
 
         // ---- THE ROLL. Gear takes the owner's three-way table; everything else its own SuccessChance.
         var outDef = ItemCatalog.Get(recipe.OutputId);
@@ -3322,7 +3330,13 @@ public class GameLoopService : BackgroundService
         // S craft cost four boss blueprints per item and put the top rung out of reach of the drop rate
         // that feeds it.
         if (madeId != null && blueprintId != null)
-            ConsumeItem(player, blueprintId, 1);
+            tookFromWarehouse |= CraftConsume(player, blueprintId, 1, useWh);
+
+        // The keeper's shelf is PUSHED state on this client, not something it re-asks for — it travels
+        // with login (SendWarehouse at EnterWorld) so the crafting window can count it without a town
+        // trip. Which means a craft that spent from it MUST say so, or the window goes on offering
+        // materials that are already gone.
+        if (tookFromWarehouse) SendWarehouse(player);
 
         if (madeId != null)
         {
@@ -5182,6 +5196,9 @@ public class GameLoopService : BackgroundService
         p.AutoHealPotions.Clear();
         foreach (var hp in c.HealPotions ?? Array.Empty<AutoPotionDto>())
             p.AutoHealPotions.Add(new AutoPotionDto(hp.ItemId, hp.Enabled, Math.Clamp(hp.ThresholdPct, 0, 100)));
+        p.AutoManaPotions.Clear();                                   // `BL-243`, the MP twin
+        foreach (var mp in c.ManaPotions ?? Array.Empty<AutoPotionDto>())
+            p.AutoManaPotions.Add(new AutoPotionDto(mp.ItemId, mp.Enabled, Math.Clamp(mp.ThresholdPct, 0, 100)));
         // null = "no opinion", NOT "clear it". The Buffs tab always sends all 17 families, armed or not,
         // so an absent array can only come from a caller that does not know the field exists — and the
         // cost of guessing wrong is a silently emptied tab. Turning every row off is still expressible:
@@ -5578,9 +5595,25 @@ public class GameLoopService : BackgroundService
             UsePotion(p, hpPot, quiet: true);
 
         // The MP line, live since 2026-08-27. UsePotion refuses the drink while flagged (PveOnly).
-        if (p.AutoMpPotionPct > 0 && p.MaxMp > 0 &&
-            p.Mp * 100 < p.MaxMp * p.AutoMpPotionPct &&
-            BestManaPotion(p) is InventoryItem mpPot)
+        //
+        // `BL-243` — a per-RARITY ladder, exactly as the HP side above, and for a sharper reason: the
+        // three mana potions restore 120 / 500 / 3000, so "best potion in the bag" spends a Rare to
+        // top up 40 MP. With the ladder armed, common@70 / uncommon@50 / rare@25 drinks the cheap one
+        // for a nick and keeps the expensive one for the hole.
+        if (p.MaxMp > 0 && p.AutoManaPotions.Count > 0)
+        {
+            int mpPctNow = (int)(p.Mp * 100L / p.MaxMp);
+            foreach (var line in p.AutoManaPotions.Where(l => l.Enabled).OrderByDescending(l => l.ThresholdPct))
+            {
+                if (mpPctNow >= line.ThresholdPct) continue;
+                if (p.Inventory.FirstOrDefault(i => i.DefId == line.ItemId && !i.Equipped) is InventoryItem pot
+                    && UsePotion(p, pot, quiet: true))
+                    break;
+            }
+        }
+        else if (p.AutoMpPotionPct > 0 && p.MaxMp > 0 &&
+                 p.Mp * 100 < p.MaxMp * p.AutoMpPotionPct &&
+                 BestManaPotion(p) is InventoryItem mpPot)
             UsePotion(p, mpPot, quiet: true);
 
         // The BUFFS tab (BL-04) takes over the moment it has been configured. It is per-FAMILY, which
@@ -6302,7 +6335,7 @@ public class GameLoopService : BackgroundService
             p.AutoSkills.ToArray(), p.AutoBuffPotionIds.ToArray(),
             p.AutoFarmRange, p.AutoFarmStatic, p.AutoAttackNormal, p.AutoAttackElite, p.AutoAttackBoss,
             p.AutoHealPotions.ToArray(), p.AutoCyclic, p.AutoHealPct, p.AutoAssistLeader,
-            p.AutoBuffs.ToArray(), p.AutoMpPct));
+            p.AutoBuffs.ToArray(), p.AutoMpPct, p.AutoManaPotions.ToArray()));
 
     /// <summary>Spend ONE tick of the ACCOUNT's daily allowance for this player. Called each tick per
     /// farming character, which IS the drain rule: N characters of one account spend N ticks a tick,
@@ -17166,6 +17199,52 @@ public class GameLoopService : BackgroundService
             it.Quantity -= take;
             remaining -= take;
             if (it.Quantity <= 0) player.Inventory.RemoveAt(i);
+        }
+        return true;
+    }
+
+    // ----- `BL-245`: crafting reads TWO containers -------------------------------------------------
+    //
+    // ⚠ These are deliberately CRAFT-SCOPED and not a `bool includeWarehouse` bolted onto CountItem /
+    // ConsumeItem. Those two are called from thirty places — quests, potions, enchant scrolls, class
+    // change — and every one of them means the BAG. A defaulted parameter there would be one careless
+    // `true` away from letting a quest hand-in or an enchant reach into the bank, which nothing has
+    // ever asked for. Crafting is the one system with the owner's ruling, so crafting gets the pair.
+
+    /// <summary>How much of an item a craft may spend: the bag, plus the private warehouse when the
+    /// window's [keeper] toggle is on.</summary>
+    private static int CraftCount(Entity player, string defId, bool withWarehouse)
+    {
+        int n = CountItem(player, defId);
+        if (withWarehouse)
+            foreach (var it in player.Warehouse)
+                if (it.DefId == defId) n += it.Quantity;
+        return n;
+    }
+
+    /// <summary>Spend <paramref name="amount"/> for a craft, BAG FIRST and the warehouse only for the
+    /// shortfall — what is under your hand goes before what is in the bank, which is what a player
+    /// would do by hand. Returns true if the warehouse was touched, so the caller knows to re-push it.
+    ///
+    /// <para>⚠ It assumes <see cref="CraftCount"/> has already cleared the total, exactly as
+    /// <see cref="ConsumeItem"/> does — HandleCraft gates every input before spending any of them, so a
+    /// half-paid recipe is not reachable.</para></summary>
+    private static bool CraftConsume(Entity player, string defId, int amount, bool withWarehouse)
+    {
+        if (amount <= 0) return false;
+        int fromBag = Math.Min(amount, CountItem(player, defId));
+        ConsumeItem(player, defId, fromBag);
+        int remaining = amount - fromBag;
+        if (remaining <= 0 || !withWarehouse) return false;
+
+        for (int i = player.Warehouse.Count - 1; i >= 0 && remaining > 0; i--)
+        {
+            var it = player.Warehouse[i];
+            if (it.DefId != defId) continue;
+            int take = Math.Min(it.Quantity, remaining);
+            it.Quantity -= take;
+            remaining -= take;
+            if (it.Quantity <= 0) player.Warehouse.RemoveAt(i);
         }
         return true;
     }

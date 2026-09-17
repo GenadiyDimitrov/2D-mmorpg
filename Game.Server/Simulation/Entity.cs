@@ -2340,6 +2340,8 @@ public class Entity
     public List<string> AutoBuffPotionIds { get; } = new();
     // The auto-potions Potions tab: per-potion on/off + HP% threshold (empty = use AutoHpPotionPct).
     public List<AutoPotionDto> AutoHealPotions { get; } = new();
+    // `BL-243` — the same ladder for MANA (empty = use AutoMpPotionPct + BestManaPotion).
+    public List<AutoPotionDto> AutoManaPotions { get; } = new();
     // The auto-potions BUFFS tab: one line per buff family (empty = fall back to AutoBuffPotions +
     // AutoBuffPotionIds, the pre-BL-04 behaviour, so an existing character keeps what it had).
     public List<AutoBuffDto> AutoBuffs { get; } = new();

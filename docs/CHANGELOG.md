@@ -7,18 +7,80 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.155.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.156.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-17 (latest) — 0.155.0: `BL-250` — the subclass slot ladder, the tickets, and the free swap
+## 2026-09-17 (latest) — 0.156.0: `BL-242` · `BL-243` · `BL-244` · `BL-245` — four quality-of-life asks from the playtest
+
+⚠ **Needs an APK** — all four have a client half. No `game.db` delete: the one new stored field
+(`ManaPotions`) lives inside the existing `AutoHuntJson` column, and an existing save without it falls
+back to exactly the behaviour it had.
+
+The cheap half of `BL-239`…`BL-246`, taken first so the expensive four — the item lock, instant-sell,
+the pickup rarity filter and the two-tab stats window — land on their own. Nothing here changes a
+formula, and nothing here is on the balance side of the game at all.
+
+### `BL-244` — THE FAST BUTTON IS A CYCLE: DEL:OFF → DEL:ON → BRAKE:ON
+
+*"the button for fast delete in bag to be a cycle button ... and the del button to become some dark
+purple for dismantle"*. One button, three states, and the third arms a no-confirm **break down** on
+every row instead of a bin. The two destructive modes never wear the same colour — Del keeps the bin's
+red, Brake is purple — so the button under your thumb tells you which one you are in without reading it.
+
+⚠ In Brake mode a row that **cannot** be salvaged shows no button at all, rather than one that does
+nothing. `Crafting.Disassemble` is the same test the details window's Break-down button already uses.
+
+### `BL-242` — THE SELL LIST SHOWS THE ENCHANT, AND THE ATTRIBUTES
+
+*"sale list don't show enchant value and in the description of the sell item row should show the
+attributes if any"*. A +6 and a +0 were two identical rows in the one window where you part with them
+for good. The row now reads `+6 Electrum Blade`, its second line carries any attributes the instance
+holds, and the confirm dialog repeats the `+6` — that dialog is where you actually commit.
+
+🔴 **And the list was asking the DEF, not the INSTANCE.** `ItemCatalog.SellPrice(def)` /
+`IsSellable(def)` ignore `SellPriceOverride` and `TradableOverride`, which the server's `HandleSell`
+reads — so a per-instance-priced item was quoted a price the server would not pay, and a
+per-instance-bound one was offered a row the server refuses. Both sides go through `ItemTag` now.
+
+### `BL-243` — MANA POTIONS PER RARITY
+
+*"make the same as healing pots and for mana pots"*. The MP side needed the ladder more than the HP
+side, not less: the three mana potions restore **120 / 500 / 3000**, so one threshold plus
+"best potion in the bag" spends a Rare to top up a nick. Common@70 / Uncommon@50 / Rare@25 keeps the
+expensive bottle for the hole.
+
+The Potions tab is **two columns** now — heal left, mana right — because a second ladder stacked under
+the first needed ~120px the window does not have, while its 620-wide sliders used half of 760.
+
+⚠ Three mana rarities, four heal ones (there is no Instant mana potion), so they are two arrays and
+two loops rather than one shared index. A save written before this field arrives with `MpPotionPct`
+set and no ladder: every rung comes up armed at that one percent, which is what the old path did.
+
+### `BL-245` — THE CRAFTER SEES (AND SPENDS) THE KEEPER'S SHELF
+
+*"crafter should see mats in private wharehouse -> maybe the crafting window can have a toggle button
+(on by default) [show keeper items]"*. A `[Keeper: ON]` toggle beside the four tabs, on by default,
+remembered in PlayerPrefs like the `[ORDER]` cycle.
+
+🔑 **It counts AND spends** — which is the half that had to be decided. A window that showed 4/4 Rare
+Ingots and then refused would be worse than one that never offered, so the flag rides the Craft call
+and the server takes the shortfall out of the warehouse, **bag first**. The warehouse is pushed back
+to the client whenever a craft touched it, because the client holds it from login and would otherwise
+go on offering materials that are already gone.
+
+⚠ The server pair is `CraftCount` / `CraftConsume`, deliberately craft-scoped rather than a
+`includeWarehouse` flag on `CountItem` / `ConsumeItem`. Those two have thirty callers — quests,
+potions, enchant scrolls, class change — and every one of them means the bag.
+
+## 2026-09-17 — 0.155.0: `BL-250` — the subclass slot ladder, the tickets, and the free swap
 
 🔴 **DELETE `Game.Server/game.db` (+ `-shm`/`-wal`)** — characters gain two columns
 (`SubclassSlotsUnlocked`, `SubclassTicketsEarned`) and `EnsureCreated()` does not ALTER an existing table.
 ⚠ **Protocol 39.** The class master's dialogue carries a new section; an old client simply does not see
-it (the field is appended with a default), so the phone keeps working until **the client half lands in
-0.156.0 with an APK**. Nothing on the ladder is reachable from the phone until then — this is the
-server half, complete and tested.
+it (the field is appended with a default), so the phone keeps working until **the client half lands
+with an APK**. Nothing on the ladder is reachable from the phone until then — this is the server half,
+complete and tested. (⚠ Still owed as of 0.156.0.)
 
 This is §5, §6 and §7 of `BL-250`, plus §8's data. The sigil half (§1-§4) is still to come.
 

@@ -822,6 +822,8 @@ public class PersistenceService
                         entity.AutoBuffPotionIds.Add(id);
                     foreach (var hp in cfg.HealPotions ?? Array.Empty<AutoPotionDto>())
                         entity.AutoHealPotions.Add(hp);
+                    foreach (var mp in cfg.ManaPotions ?? Array.Empty<AutoPotionDto>())
+                        entity.AutoManaPotions.Add(mp);          // `BL-243`
                     foreach (var b in cfg.Buffs ?? Array.Empty<AutoBuffDto>())
                         entity.AutoBuffs.Add(b);
                     entity.AutoFarmRange = cfg.FarmRange <= 0 ? 1000 : Math.Clamp(cfg.FarmRange, 200, 2000);
@@ -1052,7 +1054,7 @@ public class PersistenceService
                     e.AutoSkills.ToArray(), e.AutoBuffPotionIds.ToArray(),
                     e.AutoFarmRange, e.AutoFarmStatic, e.AutoAttackNormal, e.AutoAttackElite, e.AutoAttackBoss,
                     e.AutoHealPotions.ToArray(), e.AutoCyclic, e.AutoHealPct, e.AutoAssistLeader,
-                    e.AutoBuffs.ToArray(), e.AutoMpPct)),
+                    e.AutoBuffs.ToArray(), e.AutoMpPct, e.AutoManaPotions.ToArray())),
                 JsonSerializer.Serialize(e.EquipPresets),
                 JsonSerializer.Serialize(BuffSnapshot.CaptureAll(e)),
                 e.ActiveSubclass.Slot, subs,

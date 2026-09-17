@@ -147,7 +147,26 @@ namespace Game.Client
         private static readonly ItemCategory[] BagTabs =
             { ItemCategory.All, ItemCategory.Gear, ItemCategory.Use, ItemCategory.Mats, ItemCategory.Quest };
         private Button _bagDelToggle;
-        private bool _bagFastDel;            // when on, each row shows a no-confirm Del button
+
+        /// <summary>`BL-244` — the fast-action button is a THREE-STATE CYCLE now, not a bool:
+        /// <c>DEL:OFF -> DEL:ON -> BRAKE:ON -> DEL:OFF</c> (owner, 2026-09-16). Off shows no per-row
+        /// action at all; Del shows a no-confirm bin; Brake shows a no-confirm BREAK DOWN, coloured
+        /// dark purple so the two destructive modes cannot be mistaken for one another at a glance.
+        ///
+        /// <para>An int rather than two bools deliberately: the two modes are mutually exclusive by
+        /// construction, and a pair of flags would let a build reach "both on", which has no row
+        /// layout.</para></summary>
+        private enum BagFastMode { Off = 0, Delete = 1, Brake = 2 }
+
+        private BagFastMode _bagFastMode;
+
+        /// <summary>The two destructive colours. Del keeps the bin's red, which it has worn since the
+        /// toggle existed; Brake is his *"some dark purple"*. They are named constants and not two
+        /// inline `new Color(...)` because the toggle and the per-row button MUST agree — the whole
+        /// point of colouring them differently is that the button under your thumb tells you which
+        /// mode you are in without reading the label.</summary>
+        private static readonly Color BagDeleteColour = new Color(0.42f, 0.20f, 0.20f, 0.95f);
+        private static readonly Color BagBrakeColour  = new Color(0.32f, 0.18f, 0.44f, 0.95f);
         private Button _bagEquipToggle;      // expands the paper-doll column (worn gear) beside the list
         private bool _bagEquipOpen;
         private const float BagWidthCollapsed = 460f, BagWidthExpanded = 792f, BagHeight = 560f;
@@ -1098,10 +1117,13 @@ namespace Game.Client
             // stats"*. Two taps and a window to close, for a number you check between pulls. It is on the
             // ACTION BAR now, between [Bag] and [Skills] (BuildActionBar), one tap from anywhere.
 
+            // `BL-244`: ONE button, three states. It is 104 wide rather than 92 because "Brake: ON" is
+            // the longest caption the cycle can show, and a clipped destructive label is worse than a
+            // slightly wider button.
             _bagDelToggle = UiKit.TextButton(inner, "Del: off",
-                () => { _bagFastDel = !_bagFastDel; _bagRevision = -1; }, 14f);
+                () => { _bagFastMode = (BagFastMode)(((int)_bagFastMode + 1) % 3); _bagRevision = -1; }, 14f);
             UiKit.Place(UiKit.Rect(_bagDelToggle.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(112f, -chrome - 36f), new Vector2(92f, 32f));
+                        new Vector2(112f, -chrome - 36f), new Vector2(104f, 32f));
 
             _bagTabButtons = BuildCategoryTabs(inner, BagTabs, new Vector2(16f, -chrome - 72f), 80f,
                                                cat => { _bagTab = cat; _bagRevision = -1; });
@@ -1993,7 +2015,7 @@ namespace Game.Client
             int used = 0;
             foreach (var it in items) if (!it.Equipped) used++;   // worn gear doesn't take a slot
 
-            int revision = items.Length * 17 + (int)_bagTab * 7919 + (_bagFastDel ? 104729 : 0)
+            int revision = items.Length * 17 + (int)_bagTab * 7919 + (int)_bagFastMode * 104729
                          + (int)(Boot.Gold % 1_000_000) + (int)(Boot.Platinum % 1_000_000) * 7;
             foreach (var item in items)
                 revision = revision * 31 + item.InstanceId.GetHashCode()
@@ -2005,8 +2027,18 @@ namespace Game.Client
                                + (Boot.Platinum > 0 ? "   Plat: " + Boot.Platinum.ToString("N0") : "");
             _bagSlotsLabel.text = "Slots " + used + " / " + GameConstants.InventorySize;
             PaintCategoryTabs(_bagTabButtons, BagTabs, _bagTab);
-            UiKit.SetButtonText(_bagDelToggle, _bagFastDel ? "Del: ON" : "Del: off");
-            _bagDelToggle.targetGraphic.color = _bagFastDel ? new Color(0.42f, 0.20f, 0.20f, 0.95f) : UiKit.PanelLight;
+            UiKit.SetButtonText(_bagDelToggle, _bagFastMode switch
+            {
+                BagFastMode.Delete => "Del: ON",
+                BagFastMode.Brake  => "Brake: ON",
+                _                  => "Del: off",
+            });
+            _bagDelToggle.targetGraphic.color = _bagFastMode switch
+            {
+                BagFastMode.Delete => BagDeleteColour,
+                BagFastMode.Brake  => BagBrakeColour,
+                _                  => UiKit.PanelLight,
+            };
 
             for (int i = _bagContent.childCount - 1; i >= 0; i--)
                 Destroy(_bagContent.GetChild(i).gameObject);
@@ -2047,15 +2079,28 @@ namespace Game.Client
                 var shown = item;
                 float rightX = -8f;   // buttons grow leftward from the row's right edge
 
-                // Fast-delete: HIDDEN unless the Del toggle is on; bins the WHOLE stack with NO
+                // Fast action: HIDDEN unless the cycle is on; acts on the WHOLE stack with NO
                 // confirmation (owner). Never for quest items, nor WORN gear (unequip it first).
-                if (_bagFastDel && !item.Equipped && (def == null || def.Slot != EquipSlot.QuestItem))
+                //
+                // `BL-244` — two modes share this slot. DEL bins; BRAKE breaks down, and is offered
+                // only on a piece `Crafting.Disassemble` actually salvages: a Brake button on a potion
+                // would be a tap that does nothing, which is the same foot-gun as one that does the
+                // wrong thing. A row with no salvage simply shows no fast button in Brake mode.
+                if (_bagFastMode != BagFastMode.Off && !item.Equipped
+                    && (def == null || def.Slot != EquipSlot.QuestItem))
                 {
-                    var bin = UiKit.TextButton(row.transform, "Del", () => Boot.RemoveItem(id, true), 14f);
-                    bin.targetGraphic.color = new Color(0.42f, 0.20f, 0.20f, 0.95f);
-                    UiKit.Place(UiKit.Rect(bin.gameObject), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
-                                new Vector2(rightX, 0f), new Vector2(52f, 38f));
-                    rightX -= 56f;
+                    bool brake = _bagFastMode == BagFastMode.Brake;
+                    bool canBrake = def != null && Crafting.Disassemble(def) != null;
+                    if (!brake || canBrake)
+                    {
+                        var act = brake
+                            ? UiKit.TextButton(row.transform, "Brk", () => Boot.DisassembleItem(id), 14f)
+                            : UiKit.TextButton(row.transform, "Del", () => Boot.RemoveItem(id, true), 14f);
+                        act.targetGraphic.color = brake ? BagBrakeColour : BagDeleteColour;
+                        UiKit.Place(UiKit.Rect(act.gameObject), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
+                                    new Vector2(rightX, 0f), new Vector2(52f, 38f));
+                        rightX -= 56f;
+                    }
                 }
 
                 var details = UiKit.TextButton(row.transform, "Details", () => OpenItemDetails(shown), 14f);

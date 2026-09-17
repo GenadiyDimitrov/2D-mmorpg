@@ -449,7 +449,11 @@ namespace Game.Client
         // ----- crafting ---------------------------------------------------------------------------
         /// <summary>Craft one unit of a recipe. The server re-checks profession, level, blueprint and
         /// every input, so a client that offers a row it should not simply gets a refusal line.</summary>
-        public Task CraftAsync(string recipeId) => _connection.SendAsync("Craft", recipeId);
+        /// <summary>`BL-245` — <paramref name="useWarehouse"/> is the crafting window's [keeper]
+        /// toggle. The server spends from the private warehouse only when it is on, so the flag has to
+        /// travel with the craft rather than being a setting the two sides remember separately.</summary>
+        public Task CraftAsync(string recipeId, bool useWarehouse) =>
+            _connection.SendAsync("Craft", recipeId, useWarehouse);
 
         /// <summary>Pick the character's ONE PERMANENT crafting profession. Refused if already set.</summary>
         public Task JoinProfessionAsync(Guid npcEntityId) =>

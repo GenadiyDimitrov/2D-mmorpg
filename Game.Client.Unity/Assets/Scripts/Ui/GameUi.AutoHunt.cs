@@ -38,9 +38,28 @@ namespace Game.Client
         private readonly Button[] _potToggles = new Button[4];
         private readonly Slider[] _potSliders = new Slider[4];
         private readonly bool[] _potOn = new bool[4];
-        private Button _autoMpToggle;
-        private Slider _autoMpSlider;
-        private bool _autoMpOn;
+
+        // ----- `BL-243`: MANA POTIONS PER RARITY ---------------------------------------------------
+        //
+        //  *"make the same as healing pots and for mana pots in the `auto potions` window -> mp pots to
+        //  be separated per rarity"*. He offered a dropdown as the smaller alternative; this is the
+        //  ladder, because the MP side needs the FALLBACK more than the HP side does, not less: the
+        //  three mana potions restore 120 / 500 / 3000, so a single "best potion" line spends a Rare to
+        //  top up a nick. Common@70 / Uncommon@50 / Rare@25 is the shape that actually saves them.
+        //
+        //  ⚠ There are THREE mana rarities and FOUR heal ones — there is no Instant mana potion. The
+        //  two ladders are therefore separate arrays rather than one loop over a shared index; a single
+        //  four-wide loop would read a mana row that does not exist.
+        private static readonly (string Id, string Name)[] ManaPotRows =
+        {
+            (ItemCatalog.MinorManaPotion,   "Common"),
+            (ItemCatalog.ManaPotion,        "Uncommon"),
+            (ItemCatalog.GreaterManaPotion, "Rare"),
+        };
+        private static readonly int[] DefaultManaThreshold = { 70, 50, 25 };
+        private readonly Button[] _manaToggles = new Button[3];
+        private readonly Slider[] _manaSliders = new Slider[3];
+        private readonly bool[] _manaOn = new bool[3];
 
         // auto-farm
         private RectTransform _autoFarmPanel;
@@ -52,8 +71,8 @@ namespace Game.Client
         private Button _autoCyclicToggle, _autoAssistToggle, _autoHealToggle;
         private Slider _autoHealSlider;
         private bool _autoCyclic, _autoAssist, _autoHealOn;
-        // The MpHeal chain's threshold (BL-67). Named ...MpHeal... and not ...Mp...: _autoMpToggle /
-        // _autoMpSlider above are the auto-POTION MP row, a different window and a different resource path.
+        // The MpHeal chain's threshold (BL-67). Named ...MpHeal... and not ...Mp...: the _mana* ladder
+        // above is the auto-POTION MP side, a different window and a different resource path.
         private Button _autoMpHealToggle;
         private Slider _autoMpHealSlider;
         private bool _autoMpHealOn;
@@ -171,35 +190,55 @@ namespace Game.Client
             _autoPotionsPanel.gameObject.SetActive(false);
         }
 
+        // `BL-243`: the tab is TWO COLUMNS now — HP on the left, MP on the right. Stacking the second
+        // ladder under the first would have needed ~120px the 520-tall window does not have, and the
+        // window is 760 wide with a 620-wide slider using barely half of it. Side by side also reads
+        // the way the decision is made: the two ladders are set against each other, not in sequence.
+        private const float PotColLeftX = 18f, PotColRightX = 392f;
+        private const float PotToggleW = 84f, PotSliderW = 262f;
+
         private void BuildPotionsTab()
         {
-            float y = -12f;
-            UiKit.Place(UiKit.Rect(UiKit.Label(_potionsTabRoot, "Heal potions — drink when HP drops below the %:", 13f, UiKit.Accent).gameObject),
-                        new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(18f, y), new Vector2(620f, 20f));
-            y -= 26f;
+            UiKit.Place(UiKit.Rect(UiKit.Label(_potionsTabRoot, "Heal potions — drink below HP %:", 13f, UiKit.Accent).gameObject),
+                        new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(PotColLeftX, -12f), new Vector2(350f, 20f));
+            UiKit.Place(UiKit.Rect(UiKit.Label(_potionsTabRoot, "Mana potions — drink below MP %:", 13f, UiKit.Accent).gameObject),
+                        new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(PotColRightX, -12f), new Vector2(350f, 20f));
 
             // One row per tier: an on/off toggle + a threshold slider whose title is the tier name. Armed
             // from the highest threshold down, so common@80 / uncommon@70 / rare@50 fall back for one
             // another (the server drinks the first ready one whose line is crossed).
+            float y = -38f;
             for (int i = 0; i < HealPotRows.Length; i++)
             {
                 int idx = i;
-                _potToggles[i] = ToggleButton(_potionsTabRoot, new Vector2(18f, y),
-                    () => { _potOn[idx] = !_potOn[idx]; RefreshAutoLabels(); }, 84f);
+                _potToggles[i] = ToggleButton(_potionsTabRoot, new Vector2(PotColLeftX, y),
+                    () => { _potOn[idx] = !_potOn[idx]; RefreshAutoLabels(); }, PotToggleW);
                 _potSliders[i] = UiKit.SliderRow(_potionsTabRoot, HealPotRows[i].Name, 5f, 95f, DefaultPotThreshold[i], "0", null);
                 UiKit.Place(UiKit.Rect(_potSliders[i].transform.parent.gameObject),
-                            new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(112f, y - 6f), new Vector2(620f, 26f));
+                            new Vector2(0f, 1f), new Vector2(0f, 1f),
+                            new Vector2(PotColLeftX + PotToggleW + 10f, y - 6f), new Vector2(PotSliderW, 26f));
                 y -= 46f;
             }
 
-            y -= 6f;
-            UiKit.Place(UiKit.Rect(UiKit.Label(_potionsTabRoot, "Mana potion (MP potions arrive with the 3rd-class kits):", 13f, UiKit.TextDim).gameObject),
-                        new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(18f, y), new Vector2(620f, 20f));
-            y -= 26f;
-            _autoMpToggle = ToggleButton(_potionsTabRoot, new Vector2(18f, y), () => { _autoMpOn = !_autoMpOn; RefreshAutoLabels(); }, 84f);
-            _autoMpSlider = UiKit.SliderRow(_potionsTabRoot, "MP", 5f, 95f, 40f, "0", null);
-            UiKit.Place(UiKit.Rect(_autoMpSlider.transform.parent.gameObject),
-                        new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(112f, y - 6f), new Vector2(620f, 26f));
+            y = -38f;
+            for (int i = 0; i < ManaPotRows.Length; i++)
+            {
+                int idx = i;
+                _manaToggles[i] = ToggleButton(_potionsTabRoot, new Vector2(PotColRightX, y),
+                    () => { _manaOn[idx] = !_manaOn[idx]; RefreshAutoLabels(); }, PotToggleW);
+                _manaSliders[i] = UiKit.SliderRow(_potionsTabRoot, ManaPotRows[i].Name, 5f, 95f, DefaultManaThreshold[i], "0", null);
+                UiKit.Place(UiKit.Rect(_manaSliders[i].transform.parent.gameObject),
+                            new Vector2(0f, 1f), new Vector2(0f, 1f),
+                            new Vector2(PotColRightX + PotToggleW + 10f, y - 6f), new Vector2(PotSliderW, 26f));
+                y -= 46f;
+            }
+
+            // Mana potions are PvE-only (owner, 2026-08-27) and UsePotion refuses them in a PvP flag,
+            // so the ladder can be armed and still silently do nothing in a fight. Say so once here
+            // rather than letting it read as a bug.
+            UiKit.Place(UiKit.Rect(UiKit.Label(_potionsTabRoot,
+                    "Mana potions are PvE only — none of these are drunk while PvP-flagged.", 12f, UiKit.TextDim).gameObject),
+                new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(PotColRightX, y - 2f), new Vector2(350f, 20f));
         }
 
         // ----- the BUFFS tab (BL-04) ---------------------------------------------------------------
@@ -343,8 +382,20 @@ namespace Game.Client
                 _potSliders[i].value = line != null && line.ThresholdPct > 0
                     ? Mathf.Clamp(line.ThresholdPct, 5, 95) : DefaultPotThreshold[i];
             }
-            _autoMpOn = c.MpPotionPct > 0;
-            _autoMpSlider.value = _autoMpOn ? Mathf.Clamp(c.MpPotionPct, 5, 95) : 40f;
+            // `BL-243`. ⚠ THE FALLBACK IS THE OLD SINGLE LINE, not "off": a character saved before this
+            // field existed has MpPotionPct set and no ManaPotions array, and arming every rung at that
+            // one percent is the closest thing to what it was actually doing. Rare@40 / Uncommon@40 /
+            // Common@40 drinks the cheapest ready one, which is what BestManaPotion did anyway.
+            bool haveManaLines = c.ManaPotions != null && c.ManaPotions.Length > 0;
+            for (int i = 0; i < ManaPotRows.Length; i++)
+            {
+                var line = FindPotLine(c.ManaPotions, ManaPotRows[i].Id);
+                _manaOn[i] = haveManaLines ? line != null && line.Enabled : c.MpPotionPct > 0;
+                _manaSliders[i].value = line != null && line.ThresholdPct > 0
+                    ? Mathf.Clamp(line.ThresholdPct, 5, 95)
+                    : haveManaLines || c.MpPotionPct <= 0 ? DefaultManaThreshold[i]
+                                                          : Mathf.Clamp(c.MpPotionPct, 5, 95);
+            }
 
             // The buff rows fill from the saved lines; a family the config has never mentioned stays
             // off with its cap at the best rarity that family sells — the cap is there to be lowered
@@ -382,7 +433,14 @@ namespace Game.Client
             var lines = new AutoPotionDto[HealPotRows.Length];
             for (int i = 0; i < HealPotRows.Length; i++)
                 lines[i] = new AutoPotionDto(HealPotRows[i].Id, _potOn[i], Mathf.RoundToInt(_potSliders[i].value));
-            int mp = _autoMpOn ? Mathf.RoundToInt(_autoMpSlider.value) : 0;
+
+            // `BL-243` — every rung goes, armed or not, for the same reason the buff families do: a
+            // non-empty array is what tells the server this ladder is in charge, so sending only the
+            // armed rungs would make "I turned them all off" indistinguishable from "I never touched
+            // it" and quietly restore the old single MpPotionPct line.
+            var manaLines = new AutoPotionDto[ManaPotRows.Length];
+            for (int i = 0; i < ManaPotRows.Length; i++)
+                manaLines[i] = new AutoPotionDto(ManaPotRows[i].Id, _manaOn[i], Mathf.RoundToInt(_manaSliders[i].value));
 
             // EVERY family goes, armed or not. A non-empty array is what tells the server the tab is in
             // charge now (it replaces the old keep-every-buff-potion-up switch), so sending only the
@@ -392,10 +450,14 @@ namespace Game.Client
             for (int i = 0; i < _buffFamilies.Length; i++)
                 buffs[i] = new AutoBuffDto(_buffFamilies[i], _buffPotOn[i], _buffScrOn[i], _buffMax[i]);
 
-            // HpPotionPct 0 → the server uses the per-potion HealPotions list, not the old single line.
+            // HpPotionPct / MpPotionPct 0 → the server uses the per-potion ladders, not the old single
+            // lines. Both are zeroed here rather than left alone: the server treats a non-empty array
+            // as a REPLACEMENT, so a stale percent left behind would be a second, invisible drinker.
             Boot.PushAutoConfig(Boot.AutoConfig with
             {
-                HealPotions = lines, HpPotionPct = 0, MpPotionPct = mp, Buffs = buffs,
+                HealPotions = lines, HpPotionPct = 0,
+                ManaPotions = manaLines, MpPotionPct = 0,
+                Buffs = buffs,
             });
             ClientLog.Info("Auto-potions saved.");
         }
@@ -422,8 +484,11 @@ namespace Game.Client
                 _potOn[i] = i == 0;   // Common armed by default
                 _potSliders[i].value = DefaultPotThreshold[i];
             }
-            _autoMpOn = false;
-            _autoMpSlider.value = 40f;
+            for (int i = 0; i < ManaPotRows.Length; i++)
+            {
+                _manaOn[i] = i == 0;   // Common armed by default, as on the heal side
+                _manaSliders[i].value = DefaultManaThreshold[i];
+            }
             RefreshAutoLabels();
         }
 
@@ -582,7 +647,7 @@ namespace Game.Client
         private void RefreshAutoLabels()
         {
             for (int i = 0; i < _potToggles.Length; i++) SetToggleOnOff(_potToggles[i], _potOn[i]);
-            SetToggleOnOff(_autoMpToggle, _autoMpOn);
+            for (int i = 0; i < _manaToggles.Length; i++) SetToggleOnOff(_manaToggles[i], _manaOn[i]);
             SetToggle(_autoStaticToggle, _autoStatic, "Keep position");
             SetToggle(_autoNormalToggle, _autoNormal, "Normal mobs");
             SetToggle(_autoEliteToggle,  _autoElite,  "Elite mobs");

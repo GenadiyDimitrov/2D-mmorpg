@@ -428,7 +428,11 @@ public record AdminEnchantCmd(string ConnectionId, Guid InstanceId, int Value) :
 public record DebugCancelAttrCmd(string ConnectionId, int Index) : IAdminCommand;
 
 /// <summary>Craft a recipe (consume its inputs, roll success, produce the output).</summary>
-public record CraftCmd(string ConnectionId, string RecipeId) : IGameCommand;
+/// <summary>`BL-245` — <paramref name="UseWarehouse"/> lets the craft spend materials sitting in the
+/// PRIVATE warehouse as well as the bag. It rides the command rather than being a server-side always-on
+/// rule because the window has a toggle for it: a craft that silently ate the bank when the checkbox
+/// said otherwise would be the same class of surprise as one that refused after saying it could.</summary>
+public record CraftCmd(string ConnectionId, string RecipeId, bool UseWarehouse) : IGameCommand;
 
 /// <summary>Take a master's profession WITHOUT re-doing his joining quest — open only to someone who has
 /// completed it once before (`BL-05`). Addressed by the master's live ENTITY id and range-checked, like

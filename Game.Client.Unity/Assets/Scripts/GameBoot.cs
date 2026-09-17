@@ -408,9 +408,9 @@ namespace Game.Client
 
         /// <summary>Craft one unit. Same rule as every other action: nothing is applied locally — the
         /// inventory push that follows is what tells us it happened.</summary>
-        public async void Craft(string recipeId)
+        public async void Craft(string recipeId, bool useWarehouse)
         {
-            try { await _net.CraftAsync(recipeId); }
+            try { await _net.CraftAsync(recipeId, useWarehouse); }
             catch (Exception ex) { ClientLog.Warn("Craft: " + ex.Message); }
         }
 

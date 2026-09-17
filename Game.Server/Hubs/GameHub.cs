@@ -746,10 +746,10 @@ public class GameHub : Hub
     /// ⚠ The session check was MISSING here and on the old ChooseProfession, alone among the crafting
     /// methods — closed 2026-08-13 with `BL-05`. It is not what caused `BL-40` (that was a ratio, not a
     /// loop), but it is why a craft could be tapped as fast as the phone could send.</summary>
-    public Task Craft(string recipeId)
+    public Task Craft(string recipeId, bool useWarehouse = true)
     {
         if (!Sessions.ContainsKey(Context.ConnectionId)) return Task.CompletedTask;
-        _world.Commands.Enqueue(new CraftCmd(Context.ConnectionId, recipeId));
+        _world.Commands.Enqueue(new CraftCmd(Context.ConnectionId, recipeId, useWarehouse));
         return Task.CompletedTask;
     }
 

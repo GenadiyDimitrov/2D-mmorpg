@@ -6095,3 +6095,50 @@ part, the SP is not.
 - **One rune per subclass CREATED**, not per swap. *"when you change a sub class"* can read either
   way, and per-swap would be farmable: swap out and back every day for a free rune forever.
 
+
+---
+
+## `BL-242` ✅ BUILT 2026-09-17 in **0.156.0** — the sell list shows the enchant and the attributes. The entry as filed.
+
+**2026-09-16.** *"sale list don't show enchant value and in the description of the sell item row should
+show the attributed if any"*. Recorded here as well as in §100 because it is half a defect and half a
+UI ask; the defect half is that a +6 and a +0 are indistinguishable in the window where you part with
+them.
+
+**Built as asked**, plus one thing found on the way: the sell list was asking `ItemCatalog` about the
+DEF where the server's `HandleSell` asks the INSTANCE, so a per-instance price or a per-instance bind
+was invisible to the window. Both sides read `ItemTag` now.
+
+## `BL-243` ✅ BUILT 2026-09-17 in **0.156.0** — mana potions per rarity. The entry as filed.
+
+**2026-09-16.** *"make the same as healing pots and for mana pots in the `auto potions` window -> mp
+pots to be separated per rarity -> or we can make one potion for hp and one for mp and select from a
+drop down which potion to use..."* — two shapes offered; the dropdown is the smaller one and the one
+that stops the window growing again the next time a rarity is added.
+
+**Built as the LADDER, not the dropdown**, and the window did not grow: the Potions tab became two
+columns (heal left, mana right) in the same 760×520 panel. The ladder was the right half of the choice
+because the three mana potions restore 120 / 500 / 3000 — a dropdown picks ONE, and picking one is
+exactly the behaviour that was spending a Rare bottle to top up 40 MP.
+
+## `BL-244` ✅ BUILT 2026-09-17 in **0.156.0** — the fast-delete button is a three-state cycle. The entry as filed.
+
+**2026-09-16.** *"the button for fast delete in bag to be a cycle button after fast delete on to be fast
+dismantle and the del button to become some dark purple for dismantle. DEL:OFF -> DEL:ON -> BRAKE:ON ->
+DEL:OFF ..."* Three states, and the third is **dismantle**, coloured dark purple so the two destructive
+modes cannot be confused for one another. ⚠ Reads against `BL-239` — a locked item ignores both.
+
+**Built as asked.** The `BL-239` clause is still owed and will be honoured when the lock lands: the row
+filter is one place. In Brake mode a row that cannot be salvaged shows no button rather than a dead one.
+
+## `BL-245` ✅ BUILT 2026-09-17 in **0.156.0** — the crafter sees and SPENDS the keeper's shelf. The entry as filed.
+
+**2026-09-16.** *"crafter should see mats in private wharehouse -> maybe the crafting window can have a
+toggle button (on by default) [show keeper items]"*. On by default, so the common case needs no click.
+⚠ The question the build has to answer is whether the craft CONSUMES from the warehouse or only
+counts it toward the recipe — a window that says you can craft and then refuses is worse than one that
+never offered.
+
+**Answered: it CONSUMES.** Bag first, warehouse for the shortfall, on both sides of the wire; the
+toggle rides the Craft call so the window and the server can never disagree about which containers were
+in play.

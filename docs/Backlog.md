@@ -48,7 +48,15 @@ have enough sprint to outrun anyone, thats why is BL-249 .. a dash potion is a e
 .. not outruning the fastest classes in game .. so do not do any of the .1,.2,.3 -> we leave speed as
 is (after the marks update)"*. **Move speed is settled** — nothing further is owed on it.
 
-The other eight asks (`BL-239`…`BL-246`) are 🔵 waiting to be built.
+✅✅ **AND FOUR OF THE EIGHT ARE BUILT AND ARCHIVED (2026-09-17, 0.156.0)** — the cheap half, taken
+first so the expensive ones land on their own: **`BL-242`** (the sell list shows the enchant, and the
+attributes), **`BL-243`** (mana potions per rarity — built as the LADDER, not the dropdown, and the
+window did not grow: the Potions tab is two columns now), **`BL-244`** (the fast button cycles
+DEL:OFF → DEL:ON → BRAKE:ON) and **`BL-245`** (the crafter sees the keeper's shelf — and **spends**
+from it, bag first, which was the open question in the entry).
+
+**`BL-239`, `BL-240`, `BL-241` and `BL-246`** are still 🔵 waiting to be built. `BL-244`'s
+"a locked item ignores both" clause lands with `BL-239`.
 
 ✅✅ **AND `BL-247` IS BUILT AND ARCHIVED (0.151.0)** — you took the recommendation (*"fill the gap with
 the elits+boss, and fix the blueprints to take the rates multiplier"*). Four new elite camps (68 / 72 /
@@ -230,10 +238,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-239` | 🔵 | AN ITEM LOCK, BY ITEM ID — no sell/dismantle/delete/keeper/trade; consumables still usable | items |
 | `BL-240` | 🔵 | INSTANT SELL BY RARITY, scoped by the vendor tab you are on | items |
 | `BL-241` | 🔵 | A PER-TYPE RARITY FILTER ON PICKUP — and it drops you from the party LOOT ROSTER too | items |
-| `BL-242` | 🔵 | THE SELL LIST SHOWS NO ENCHANT VALUE and no attributes | ui |
-| `BL-243` | 🔵 | MP POTIONS PER RARITY in the auto-potion window, or one slot with a dropdown | ui |
-| `BL-244` | 🔵 | THE FAST-DELETE BUTTON BECOMES A CYCLE — DEL:OFF → DEL:ON → BRAKE:ON | ui |
-| `BL-245` | 🔵 | THE CRAFTER SHOULD SEE PRIVATE WAREHOUSE MATS — a toggle, on by default | crafting |
 | `BL-246` | 🔵 | THE STATS WINDOW BECOMES TWO TABS — your full layout; several rows have no source yet | ui |
 | `BL-250` | 🟡 | THE SUBCLASS SYSTEM — **the server half is BUILT (0.155.0)**; what is left is the CLIENT dialogue + panel (APK) and the SIGIL half (§1-§4). ❓ one new question in §9.6 | classes |
 | `BL-253` | 🔵 | A DROP DATABASE — name an item, see every source; the BalanceMatrix half is built, the in-game window is owed | items |
@@ -1883,35 +1887,6 @@ in the roster if that rarity is filtered for me)"*
 🔑 **THE PARTY CLAUSE IS THE INTERESTING HALF** and it is easy to miss: a filtered player is skipped
 in the **loot roster** for that drop, not merely prevented from picking it up himself. So the filter
 changes who the party's loot modes hand an item to — it is a loot-rule change, not a UI toggle.
-
-## `BL-242` 🔵 THE SELL LIST SHOULD SHOW ENCHANT AND ATTRIBUTES
-
-**2026-09-16.** *"sale list don't show enchant value and in the description of the sell item row should
-show the attributed if any"*. Recorded here as well as in §100 because it is half a defect and half a
-UI ask; the defect half is that a +6 and a +0 are indistinguishable in the window where you part with
-them.
-
-## `BL-243` 🔵 MP POTIONS PER RARITY IN THE AUTO-POTION WINDOW
-
-**2026-09-16.** *"make the same as healing pots and for mana pots in the `auto potions` window -> mp
-pots to be separated per rarity -> or we can make one potion for hp and one for mp and select from a
-drop down which potion to use..."* — two shapes offered; the dropdown is the smaller one and the one
-that stops the window growing again the next time a rarity is added.
-
-## `BL-244` 🔵 THE FAST-DELETE BUTTON BECOMES A CYCLE
-
-**2026-09-16.** *"the button for fast delete in bag to be a cycle button after fast delete on to be fast
-dismantle and the del button to become some dark purple for dismantle. DEL:OFF -> DEL:ON -> BRAKE:ON ->
-DEL:OFF ..."* Three states, and the third is **dismantle**, coloured dark purple so the two destructive
-modes cannot be confused for one another. ⚠ Reads against `BL-239` — a locked item ignores both.
-
-## `BL-245` 🔵 THE CRAFTER SHOULD SEE PRIVATE WAREHOUSE MATS
-
-**2026-09-16.** *"crafter should see mats in private wharehouse -> maybe the crafting window can have a
-toggle button (on by default) [show keeper items]"*. On by default, so the common case needs no click.
-⚠ The question the build has to answer is whether the craft CONSUMES from the warehouse or only
-counts it toward the recipe — a window that says you can craft and then refuses is worse than one that
-never offered.
 
 ## `BL-246` 🔵 THE STATS WINDOW BECOMES TWO TABS
 

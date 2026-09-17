@@ -621,7 +621,14 @@ public record AutoHuntConfigDto(
     // has spent enough HP to cross 30, Vampiric Bolt heals it back.
     // ⚠ Defaults to 60, NOT 0 — 60 is the constant this replaced, so a save written before the field
     // existed keeps the exact behaviour it had instead of silently losing its mana chain.
-    int MpThresholdPct = 60);
+    int MpThresholdPct = 60,
+    // ----- MANA potions, per rarity (`BL-243`) -----
+    // The exact twin of HealPotions, and for the same reason: mana potions come at three rarities that
+    // restore 120 / 500 / 3000, so one MpPotionPct + "best potion" spends a 3000 to top up 40 MP.
+    // Empty/null = fall back to MpPotionPct + BestManaPotion, which is what every save before this
+    // field holds. ⚠ A NON-EMPTY array REPLACES MpPotionPct entirely — the two are not composed, or a
+    // line the player disarmed here would still fire through the old path.
+    AutoPotionDto[]? ManaPotions = null);
 
 /// <summary>One line in the auto-potions Potions tab: which potion item, whether it's armed, and the
 /// HP (or MP) percent below which to drink it.</summary>

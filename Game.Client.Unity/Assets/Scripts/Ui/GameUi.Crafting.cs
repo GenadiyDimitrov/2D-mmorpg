@@ -41,6 +41,22 @@ namespace Game.Client
         private CraftTab _craftTab = CraftTab.Refine;
         private static readonly string[] CraftTabNames = { "Refine", "Gear", "Goods", "Mats" };
 
+        // ----- `BL-245`: the keeper's shelf counts too ---------------------------------------------
+        //
+        //  *"crafter should see mats in private wharehouse -> maybe the crafting window can have a
+        //  toggle button (on by default) [show keeper items]"*.
+        //
+        //  🔑 IT COUNTS **AND SPENDS**. The toggle does not merely tint a row green — it rides the
+        //  Craft call, and the server takes the shortfall out of the warehouse. A window that showed
+        //  4/4 Rare Ingots and then refused would be worse than one that never offered.
+        //
+        //  Bag first, bank second, on both sides. It is a CLIENT preference like the [ORDER] cycle —
+        //  PlayerPrefs, never part of the character — because it changes what this window offers, not
+        //  what the character is.
+        private const string CraftKeeperPref = "l2c.craftKeeper";
+        private Button _craftKeeperToggle;
+        private bool _craftUseKeeper = true;
+
         private void BuildCraftingWindow()
         {
             _craftPanel = UiKit.PanelBox(_worldRoot, "Crafting");
@@ -53,7 +69,10 @@ namespace Game.Client
             UiKit.Place(UiKit.Rect(_craftTitle.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(16f, -chrome - 6f), new Vector2(660f, 22f));
 
-            const float tabW = 150f, tabGap = 6f;
+            // The four tabs lost 20px each to make room for [Keeper] on the same row (`BL-245`). A
+            // third row would have cost the list 40px of height for one toggle; the tab captions are
+            // four to six letters and never came close to filling 150.
+            const float tabW = 130f, tabGap = 6f;
             for (int i = 0; i < CraftTabNames.Length; i++)
             {
                 int index = i;
@@ -66,6 +85,17 @@ namespace Game.Client
                             new Vector2(16f + i * (tabW + tabGap), -chrome - 32f), new Vector2(tabW, 34f));
                 _craftTabButtons.Add(button);
             }
+
+            _craftUseKeeper = PlayerPrefs.GetInt(CraftKeeperPref, 1) != 0;
+            _craftKeeperToggle = UiKit.TextButton(inner, "", () =>
+            {
+                _craftUseKeeper = !_craftUseKeeper;
+                PlayerPrefs.SetInt(CraftKeeperPref, _craftUseKeeper ? 1 : 0);
+                _craftRevision = -1;
+            }, 14f);
+            UiKit.Place(UiKit.Rect(_craftKeeperToggle.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(16f + CraftTabNames.Length * (tabW + tabGap), -chrome - 32f),
+                        new Vector2(126f, 34f));
 
             _craftList = UiKit.ScrollArea(inner, out var scroll, 4f);
             UiKit.Stretch((RectTransform)scroll.transform, 14f, chrome + 72f, 14f, 14f);
@@ -92,13 +122,23 @@ namespace Game.Client
             if (_craftPanel == null || !_craftPanel.gameObject.activeSelf) return;
 
             var bag = Boot.Inventory ?? Array.Empty<InventoryItemDto>();
+            // `BL-245`: the KEEPER is an input to every red/green ingredient now, so both the toggle
+            // and the warehouse's own contents belong in the stamp. Leave the shelf out and a
+            // withdrawal (or a craft that just spent from it) would leave the rows lying.
+            var keeper = _craftUseKeeper ? (Boot.Warehouse ?? Array.Empty<InventoryItemDto>())
+                                         : Array.Empty<InventoryItemDto>();
             int revision = (int)_craftTab * 104729 + (int)Boot.CraftProfession * 31513
                          + Boot.KnownRecipes.Count * 7919 + SelfLevel() * 613
                          + Boot.CraftLevel * 65537 + Boot.CraftExp * 3
-                         + (Boot.AtCraftMaster ? 1046527 : 0);
+                         + (Boot.AtCraftMaster ? 1046527 : 0)
+                         + (_craftUseKeeper ? 15485863 : 0);
             foreach (var it in bag) revision = revision * 31 + it.DefId.GetHashCode() + it.Quantity;
+            foreach (var it in keeper) revision = revision * 37 + it.DefId.GetHashCode() + it.Quantity;
             if (revision == _craftRevision) return;
             _craftRevision = revision;
+
+            UiKit.SetButtonText(_craftKeeperToggle, _craftUseKeeper ? "Keeper: ON" : "Keeper: off");
+            _craftKeeperToggle.targetGraphic.color = _craftUseKeeper ? UiKit.TabActive : UiKit.PanelLight;
 
             // The tabs are hidden until a profession exists: every page behind them is defined BY the
             // profession, so before the choice they are four buttons that all lead to the same chooser.
@@ -115,7 +155,7 @@ namespace Game.Client
 
             if (!chosen) { BuildProfessionInvitation(); return; }
 
-            var counts = MaterialCounts(bag);
+            var counts = MaterialCounts(bag, keeper);
             if (_craftTab == CraftTab.Materials) { BuildMaterialsPage(counts); return; }
 
             _craftTitle.text = CraftHeader();
@@ -257,10 +297,11 @@ namespace Game.Client
             {
                 // A guaranteed craft goes straight through; anything that can fail names the odds first,
                 // because failure eats the materials and that is not something to discover by tapping.
-                if (!isGear && chance >= 1f) { Boot.Craft(id); return; }
+                bool keeperOn = _craftUseKeeper;    // captured, so the tap spends what the row promised
+                if (!isGear && chance >= 1f) { Boot.Craft(id, keeperOn); return; }
                 Ask("Craft " + name + "?\n\n<size=15>" + oddsLine
                     + ". A failure still consumes the materials.</size>",
-                    "Craft", () => Boot.Craft(id));
+                    "Craft", () => Boot.Craft(id, keeperOn));
             });
         }
 
@@ -292,14 +333,25 @@ namespace Game.Client
 
         // ---- helpers ---------------------------------------------------------------------------------
 
-        /// <summary>Bag contents summed by item id. Materials stack, but a stack can still be split
-        /// across slots, so this sums rather than taking the first row it finds.</summary>
-        private static Dictionary<string, int> MaterialCounts(InventoryItemDto[] bag)
+        /// <summary>Everything a craft may spend, summed by item id: the bag, plus the private
+        /// warehouse when [Keeper] is on (`BL-245`). Materials stack, but a stack can still be split
+        /// across slots, so this sums rather than taking the first row it finds.
+        ///
+        /// <para>⚠ It must count exactly what <c>CraftCount</c> on the server counts. The server holds
+        /// the same two containers behind the same flag; if this window summed a third source, or
+        /// skipped one, the rows would go green on a craft the server then refuses.</para></summary>
+        private static Dictionary<string, int> MaterialCounts(InventoryItemDto[] bag,
+                                                              InventoryItemDto[] keeper)
         {
             var counts = new Dictionary<string, int>();
             foreach (var item in bag)
             {
                 if (item.Equipped) continue;              // a worn item is not an ingredient
+                counts.TryGetValue(item.DefId, out var have);
+                counts[item.DefId] = have + Mathf.Max(1, item.Quantity);
+            }
+            foreach (var item in keeper)
+            {
                 counts.TryGetValue(item.DefId, out var have);
                 counts[item.DefId] = have + Mathf.Max(1, item.Quantity);
             }

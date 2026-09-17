@@ -1379,7 +1379,7 @@ Mastery's text come off the compiled catalogue, and the trap cast time is in bot
   shortens a fighter's stance. Worth a glance at whether any physical reuse now feels too short —
   it is a widening, not a number change.
 
-## §100 — YOUR PLAYTEST OF 2026-09-16, the BUGS (thirteen; ELEVEN fixed, one answered)
+## §100 — YOUR PLAYTEST OF 2026-09-16, the BUGS (thirteen; TWELVE fixed, one answered)
 
 You handed this list the moment 0.146.0 was committed, so apart from the ones marked ✅ **none of it
 has been looked at in code** — it is recorded here exactly as you wrote it, and the ten ASKS that
@@ -1419,9 +1419,12 @@ re-reports of standing rules are marked as such.
   sites. 🔑 **A FOLD, NOT A STRIP** — your Bulgarian and the emoji skill icons pass through untouched.
   ⚠ Skill and item DESCRIPTIONS still carry the same characters and are built locally by the client;
   they are not covered by either sink. Say if you see the square in a tooltip.
-- 🔴 **THE SELL LIST SHOWS NO ENCHANT VALUE**, and the sell row's description should show the item's
-  attributes if it has any. You can currently sell a +6 and a +0 without being able to tell them
-  apart in that window.
+- ✅ **THE SELL LIST SHOWS NO ENCHANT VALUE — FIXED in 0.156.0** (`BL-242`). The row reads
+  `+6 Electrum Blade` now, its second line carries any attributes the instance holds, and the confirm
+  dialog repeats the `+6` — that dialog is where you actually commit. 🔴 **And one thing found on the
+  way**: the list was asking the DEF (`ItemCatalog.SellPrice` / `IsSellable`) where the server's
+  `HandleSell` asks the INSTANCE, so a per-instance price or a per-instance bind was invisible to the
+  window — it could quote a price the server would not pay. Both sides read `ItemTag` now.
 - ✅ **THE SP REQUIREMENT IS SOMETIMES MISSING — FIXED in 0.147.0.** *"some times"* was exactly right.
   The row read `gold > 0 ? gold : SP`, so the moment a rung carried a GOLD price its SP cost vanished
   from the row — while the affordability test one line up kept demanding BOTH. A row that refuses to

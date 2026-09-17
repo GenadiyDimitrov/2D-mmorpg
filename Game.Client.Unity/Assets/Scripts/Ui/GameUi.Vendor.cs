@@ -245,17 +245,31 @@ namespace Game.Client
             foreach (var item in ByName(items))          // C8: name order and the category tabs
             {
                 var def = ItemCatalog.Get(item.DefId);
-                if (def == null || item.Equipped || !ItemCatalog.IsSellable(def)) continue;
+                if (def == null || item.Equipped) continue;
+                // ⚠ ASK THE INSTANCE, not the def. `HandleSell` gates on `item.Sellable(def)` and pays
+                // `item.SellPrice(def)` — both of which read the per-instance overrides — so a list
+                // built off `ItemCatalog` alone could offer a row the server refuses, or quote a price
+                // it will not pay. `ItemTag` is the one implementation both sides share.
+                if (!ItemTag.Sellable(def, item.SellPriceOverride, item.TradableOverride)) continue;
                 if (!InCategory(_vendorTab, def)) continue;
                 any = true;
 
-                long unit = ItemCatalog.SellPrice(def);
-                string head = Coloured(def.Name, def.Rarity) + (item.Quantity > 1 ? "   x" + item.Quantity : "")
+                long unit = ItemTag.SellPrice(def, item.SellPriceOverride);
+                // `BL-242` — THE ENCHANT IS ON THE ROW. *"sale list don't show enchant value"*: a +6
+                // and a +0 of the same piece were two identical lines in the one window where you part
+                // with them for good. The bag has shown "+N " forever; the sell list simply never did.
+                string shownName = (item.Enchant > 0 ? "+" + item.Enchant + " " : "") + def.Name;
+                string head = Coloured(shownName, def.Rarity) + (item.Quantity > 1 ? "   x" + item.Quantity : "")
                             + "   " + unit.ToString("N0") + " " + GameConstants.CurrencyName + " ea";
                 // The SELL side gets the same second line the buy side has — "the details on the row"
                 // is what replaced the details dialog, so it has to be on both or selling still needs it.
+                //
+                // `BL-242`, second half: *"in the description of the sell item row should show the
+                // attributes if any"*. They are appended to that line rather than given one of their
+                // own — a row that grows a third line only for enchanted gear makes the list ragged,
+                // and an attribute is a property of the piece exactly like its summary is.
                 string label = _vendorDetailed
-                    ? head + "\n<size=12><color=#9AA3AD>" + WareSummary(def) + "</color></size>"
+                    ? head + "\n<size=12><color=#9AA3AD>" + WareSummary(def) + AttributeSuffix(item) + "</color></size>"
                     : head;
                 var captured = item;
                 VendorRow(label, UiKit.Text, () => SellTap(captured, def, unit),
@@ -264,6 +278,28 @@ namespace Game.Client
             if (!any) VendorNote(_vendorTab == ItemCategory.All
                 ? "Nothing here can be sold (equipped or bound items can't)."
                 : "Nothing sellable in this category — try All.");
+        }
+
+        /// <summary>`BL-242` — the attributes an INSTANCE carries, as a short tail for its summary
+        /// line: <c>  ·  Crit rate +12%, P.Atk +40</c>. Empty when the piece has none, so an ordinary
+        /// row is unchanged.
+        ///
+        /// <para>It reads <see cref="AttributeSystem"/> for the name and the percent flag rather than
+        /// formatting them here — the item-details window and the target inspector already do, and
+        /// three spellings of the same attribute is exactly the drift the shared catalog exists to
+        /// prevent.</para></summary>
+        private static string AttributeSuffix(InventoryItemDto item)
+        {
+            if (item.Attributes == null || item.Attributes.Length == 0) return "";
+            var t = new StringBuilder("  ·  ");
+            for (int i = 0; i < item.Attributes.Length; i++)
+            {
+                var a = item.Attributes[i];
+                if (i > 0) t.Append(", ");
+                t.Append(AttributeSystem.DisplayName(a.Type)).Append(" +").Append(a.Value);
+                if (AttributeSystem.IsPercent(a.Type)) t.Append('%');
+            }
+            return t.ToString();
         }
 
         // ONE confirmation per purchase (owner, playtest-16). 32d put a details dialog in FRONT of the
@@ -311,9 +347,14 @@ namespace Game.Client
                 return;
             }
 
-            if (!IsStackable(def) || item.Quantity <= 1) { ConfirmSell(id, def.Name, unit, 1); return; }
+            // `BL-242` — the enchant rides into the CONFIRM too. The row is where you notice it, but
+            // the dialog is where you commit, and a confirm that says plain "Electrum Blade" after a
+            // row that said "+6 Electrum Blade" is the one place the warning could still be missed.
+            string named = (item.Enchant > 0 ? "+" + item.Enchant + " " : "") + def.Name;
 
-            OpenNumpad("Sell " + def.Name, item.Quantity, "Sell",
+            if (!IsStackable(def) || item.Quantity <= 1) { ConfirmSell(id, named, unit, 1); return; }
+
+            OpenNumpad("Sell " + named, item.Quantity, "Sell",
                        qty => { Boot.SellItem(id, qty); CloseNumpad(); },
                        qty => qty + " of " + item.Quantity + "   you get "
                               + (unit * qty).ToString("N0") + " " + GameConstants.CurrencyName);
