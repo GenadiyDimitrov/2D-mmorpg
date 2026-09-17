@@ -254,7 +254,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-254` | ❓ | RARE WOOD DROPS FROM NOTHING — wood is never a category's primary, so no Rare rung can reach it | items |
 | `BL-259` | ❓ | FOUR LANDING MODIFIERS — Charge n Shock, Shocking Shout, Shocking Javelin, Taunting Shout | classes |
 | `BL-260` | ❓ | **SUMMONERS — the conversation we have never had**, and four shipped decisions already lean on it | classes |
-| `BL-261` | ❓ | WHIRLWIND'S POWER COLUMN DIPS — 1540 at 68, then 900 at 70. Built verbatim; three checks say the first twelve cells are an older column | classes |
 
 ---
 
@@ -2183,37 +2182,3 @@ one-line "…when the summoner ships"; that is cheap once and a trap four more t
 
 ---
 
-## `BL-261` ❓ WHIRLWIND'S POWER COLUMN DIPS — twelve cells look like an older ladder
-
-`war_aoe 3rd.csv`, built verbatim in 0.165.0. The column **goes down** between two rungs:
-
-```
-rung  1    2    3    4    5    6    7     8     9    10    11    12  |  13   14    15
-lvl  40   43   46   49   52   55   58    60    62    64    66    68  |  70   72    74
-     300  415  525  640  715  825  940  1125  1240  1350  1465  1540 | 900  950  1000
-                                                                      ^^^ -41%
-```
-
-Your own rule (`BL-237`, Armor Mastery) is that a ladder which **rises** is yours and a ladder that
-**dips** is a typo — so this is asked, not assumed. `SkillCsvSeed --check` now prints
-🔵 **LADDER DIP** against it and will until the cells move.
-
-### Three independent checks all say rungs 1-12 are the stale half, not 13-15
-1. **Rungs 8-12 are the Elf Sword Dance's cells EXACTLY** (1125 / 1240 / 1350 / 1465 / 1540), and
-   rungs 1-7 are that same ladder **minus 75**. Two skills in two different files do not agree to the
-   unit by coincidence.
-2. **`war_aoe 4th.csv` opens at 1050** and climbs +50 a rung to 1750. That continues 900 → 950 → 1000
-   perfectly — and is far **below** 1540, so keeping rung 12 would mean levelling 68 → 76 **costs you
-   a third of the skill's power**.
-3. **+50 a rung backwards from 1000, fifteen rungs, lands on 300** — which is exactly what your rung 1
-   already says. **Both ends of your ladder agree with each other; only the middle disagrees.**
-
-❓ **If that reading is right, the fix is one column** — 300 climbing +50 a rung to 1000:
-`300 350 400 450 500 550 600 650 700 750 800 850 900 950 1000`. Edit the twelve cells and say so; the
-code is one array (`SkillCatalog.WaraoeWhirlwindPower`) and follows in a minute.
-
-⚠ **Whichever way it goes, the SHAPE matters more than the cells.** Twenty strokes a cast means this
-column is multiplied by twenty: at rung 12 as authored, one Whirlwind is 30,800 power against Shocking
-Shout's 3,400 on the same rung. If 1540 is the intended number, the two are not in the same game.
-
----

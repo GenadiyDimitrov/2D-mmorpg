@@ -48,8 +48,9 @@ public static partial class SkillCatalog
     /// authoring: the Javelin is the Shout thrown 900 away with a tighter ring (150 against 200), and
     /// the trade is reach for radius, not reach for power.</summary>
     internal static int[] W4WaraoeShoutPower => W4SlashPower;
-    /// <summary>Whirlwind's 4th tier: 1050 climbing +50 a rung to 1750. ⚠ See the note on
-    /// <see cref="WaraoeWhirlwindPower"/> — this column is the reason the 3rd-tier one is `BL-261`.</summary>
+    /// <summary>Whirlwind's 4th tier: 1050 climbing +50 a rung to 1750 — the SAME +50 stride as
+    /// <see cref="WaraoeWhirlwindPower"/>, continuing it with no step at the tier boundary. It was this
+    /// column that showed the 3rd-tier one had been mis-transcribed (`BL-261`, fixed 2026-09-17).</summary>
     internal static readonly int[] W4WaraoeWhirlwindPower =
         { 1050, 1100, 1150, 1200, 1250, 1300, 1350, 1400, 1450, 1500, 1550, 1600, 1650, 1700, 1750 };
 

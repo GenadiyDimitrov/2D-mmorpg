@@ -6306,3 +6306,38 @@ being built as rung 4 of each race's own ladder.
 What is still open beyond that: **`BL-259`** (three landing modifiers) and **`BL-261`** (Whirlwind's
 dipping power column).
 
+
+## `BL-261` ✅ FIXED BY YOU 2026-09-17, built the same hour in **0.166.1** — *"i fixed wirlwind rungs -> 300 +50/rung"*. The column is 300 / 350 / … / 1000 and runs straight into the 4th file's 1050 with no step at the tier boundary. `--check` is now completely clean on every walked file. The entry as it stood:
+
+
+`war_aoe 3rd.csv`, built verbatim in 0.165.0. The column **goes down** between two rungs:
+
+```
+rung  1    2    3    4    5    6    7     8     9    10    11    12  |  13   14    15
+lvl  40   43   46   49   52   55   58    60    62    64    66    68  |  70   72    74
+     300  415  525  640  715  825  940  1125  1240  1350  1465  1540 | 900  950  1000
+                                                                      ^^^ -41%
+```
+
+Your own rule (`BL-237`, Armor Mastery) is that a ladder which **rises** is yours and a ladder that
+**dips** is a typo — so this is asked, not assumed. `SkillCsvSeed --check` now prints
+🔵 **LADDER DIP** against it and will until the cells move.
+
+### Three independent checks all say rungs 1-12 are the stale half, not 13-15
+1. **Rungs 8-12 are the Elf Sword Dance's cells EXACTLY** (1125 / 1240 / 1350 / 1465 / 1540), and
+   rungs 1-7 are that same ladder **minus 75**. Two skills in two different files do not agree to the
+   unit by coincidence.
+2. **`war_aoe 4th.csv` opens at 1050** and climbs +50 a rung to 1750. That continues 900 → 950 → 1000
+   perfectly — and is far **below** 1540, so keeping rung 12 would mean levelling 68 → 76 **costs you
+   a third of the skill's power**.
+3. **+50 a rung backwards from 1000, fifteen rungs, lands on 300** — which is exactly what your rung 1
+   already says. **Both ends of your ladder agree with each other; only the middle disagrees.**
+
+❓ **If that reading is right, the fix is one column** — 300 climbing +50 a rung to 1000:
+`300 350 400 450 500 550 600 650 700 750 800 850 900 950 1000`. Edit the twelve cells and say so; the
+code is one array (`SkillCatalog.WaraoeWhirlwindPower`) and follows in a minute.
+
+⚠ **Whichever way it goes, the SHAPE matters more than the cells.** Twenty strokes a cast means this
+column is multiplied by twenty: at rung 12 as authored, one Whirlwind is 30,800 power against Shocking
+Shout's 3,400 on the same rung. If 1540 is the intended number, the two are not in the same game.
+

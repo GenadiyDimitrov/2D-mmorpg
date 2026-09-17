@@ -72,23 +72,26 @@ public static partial class SkillCatalog
     internal static readonly int[] WaraoeShockShoutPower =
         { 1000, 1200, 1400, 1600, 1800, 2000, 2400, 2600, 2800, 3000, 3200, 3400, 3600, 3800, 4000 };
 
-    /// <summary>ONE STROKE of Whirlwind, twenty of which land over four seconds.
-    /// <para>🔴 <b>THIS COLUMN DIPS AT RUNG 13 AND IT IS AUTHORED THAT WAY</b> — 1540 at level 68, then
-    /// **900** at 70. Built verbatim because the CSV is the authority, and raised with him as `BL-261`,
-    /// because three separate checks say the first twelve cells are an older column left behind:</para>
-    /// <list type="bullet">
-    /// <item>rungs 8-12 (1125 … 1540) are the Elf Sword Dance's cells <b>exactly</b>, and rungs 1-7 are
-    /// that same ladder minus 75;</item>
-    /// <item>`war_aoe 4th.csv` opens at <b>1050</b> and climbs +50 a rung — which continues 900 / 950 /
-    /// 1000 perfectly and is far BELOW 1540;</item>
-    /// <item>+50 a rung backwards from 1000 over fifteen rungs lands on <b>300</b>, which is what rung 1
-    /// already says. Both ends of his ladder agree; only the middle disagrees.</item>
-    /// </list>
-    /// <para>⚠ His own rule is that a ladder which RISES is his and a ladder that DIPS is a typo
-    /// (`BL-237`, Armor Mastery). This one dips, so it is asked rather than assumed — and it is asked
-    /// rather than silently corrected, because which twelve cells move is his call, not mine.</para></summary>
+    /// <summary>ONE STROKE of Whirlwind, twenty of which land over four seconds: <b>300, +50 a rung,
+    /// to 1000</b> — and straight on into `war_aoe 4th.csv`'s 1050 without a step change, which is what
+    /// makes it one thirty-rung ladder rather than two.
+    ///
+    /// <para>✅ <b>HE REWROTE TWELVE CELLS ON 2026-09-17</b> (`BL-261`, closed the same day it was
+    /// raised). The column shipped in 0.165.0 exactly as authored and it DIPPED — 1540 at level 68,
+    /// then 900 at 70 — so `SkillCsvSeed --check` printed 🔵 LADDER DIP at it until he moved them.</para>
+    ///
+    /// <para>🔑 <b>THE THREE CHECKS THAT FOUND IT ARE WORTH KEEPING</b>, because none of them needed the
+    /// game to be run: rungs 8-12 were the Elf Sword Dance's cells <b>exactly</b> (and 1-7 that ladder
+    /// minus 75) — two skills in two files do not agree to the unit by accident; the 4th file opened at
+    /// 1050, far BELOW rung 12's 1540; and +50 backwards from 1000 over fifteen rungs lands on <b>300</b>,
+    /// which is what rung 1 already said. <b>Both ends of a ladder agreeing while the middle disagrees
+    /// is a transcription defect, every time.</b></para>
+    ///
+    /// <para>⚠ It mattered more than the cells look: this column is multiplied by TWENTY. At rung 12 as
+    /// first authored, one Whirlwind was 30,800 power against Shocking Shout's 3,400 on the same rung —
+    /// and levelling 68 → 76 would have COST a third of the skill's damage.</para></summary>
     internal static readonly int[] WaraoeWhirlwindPower =
-        { 300, 415, 525, 640, 715, 825, 940, 1125, 1240, 1350, 1465, 1540, 900, 950, 1000 };
+        { 300, 350, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950, 1000 };
 
     // ---- THE THREE ROTS. Same three channels as the Ravager's Slashes, same plateau at rung 6. ----
     private static readonly float[] WaraoeHumanShoutDef =

@@ -7,11 +7,30 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.166.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.166.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-17 (latest) — 0.166.0: `war_aoe 4th.csv` is built, and the WARLORD is finished
+## 2026-09-17 (latest) — 0.166.1: Whirlwind's power column is one ladder again
+
+*"i fixed wirlwind rungs -> 300 +50/rung"*. `BL-261` closed within the hour it was raised.
+**300 / 350 / … / 1000** across the 3rd tier, running straight into `war_aoe 4th.csv`'s 1050 with no
+step at the tier boundary — thirty rungs of one +50 stride.
+
+🔑 **The three checks that found it are the part worth keeping**, because none of them needed the game
+to be run: rungs 8-12 were the Elf Sword Dance's cells **exactly** (and 1-7 that ladder minus 75) — two
+skills in two files do not agree to the unit by accident; the 4th file opened at 1050, far *below* rung
+12's 1540; and +50 backwards from 1000 over fifteen rungs lands on **300**, which is what rung 1 already
+said. **Both ends of a ladder agreeing while the middle disagrees is a transcription defect, every time.**
+
+⚠ It was worth chasing because this column is multiplied by **twenty**: at rung 12 as first authored,
+one Whirlwind was 30,800 power against Shocking Shout's 3,400 on the same rung — and levelling 68 → 76
+would have *cost* a third of the skill's damage.
+
+✅ **`SkillCsvSeed --check` now reports "No discrepancies" on every walked file** — no drift, no
+unauthored extras, no ladder dips. First time that has been true since `war_aoe 3rd` was written.
+
+## 2026-09-17 — 0.166.0: `war_aoe 4th.csv` is built, and the WARLORD is finished
 
 **`BL-237` is closed and archived.** Both of his Warlord files are mirrored in the code, `--check` is
 clean on both, and `war_aoe 4th` has earned its `Check.Specs` line — *"im done with war_aoe 3rd/4th"*.
