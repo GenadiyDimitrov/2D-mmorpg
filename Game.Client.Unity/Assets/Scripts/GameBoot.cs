@@ -184,6 +184,28 @@ namespace Game.Client
 
         public bool IsLocked(string defId) =>
             !string.IsNullOrEmpty(defId) && LockedItems.Contains(defId);
+
+        /// <summary>`BL-241` — the MINIMUM rarity this character picks up, per bag category, indexed by
+        /// <see cref="ItemCatalog.PickupCategories"/> (Gear, Use, Mats). Sent with the bag, for the same
+        /// reason the lock set is: the buttons live in the bag window.
+        ///
+        /// <para>⚠ This copy is for DRAWING the buttons only. The filter is a LOOT RULE the server
+        /// enforces — a filtered player leaves the party's loot roster for that drop — so nothing here
+        /// decides anything.</para></summary>
+        public readonly ItemRarity[] PickupMinRarity =
+            new ItemRarity[ItemCatalog.PickupCategories.Length];
+
+        /// <summary>Bumped when the pickup filter changes. Folded into the bag's revision stamp, since
+        /// a filter change moves no item and the bag would otherwise never repaint its button.</summary>
+        public int PickupRevision { get; private set; }
+
+        /// <summary>The filter for one category, or Common ("take everything") for a category that
+        /// cannot be filtered.</summary>
+        public ItemRarity PickupFilter(ItemCategory c)
+        {
+            int i = ItemCatalog.PickupCategoryIndex(c);
+            return i < 0 ? ItemRarity.Common : PickupMinRarity[i];
+        }
         public InventoryItemDto[] Warehouse { get; private set; } = new InventoryItemDto[0];
 
         /// <summary>The ACCOUNT bank — shared by every character on the account.</summary>
@@ -246,6 +268,15 @@ namespace Game.Client
             if (Phase != ClientPhase.InWorld || string.IsNullOrEmpty(defId)) return;
             try { await _net.SetItemLockAsync(defId, locked); }
             catch (Exception ex) { ClientLog.Warn("SetItemLock: " + ex.Message); }
+        }
+
+        /// <summary>`BL-241` — set one bag category's minimum pickup rarity. The server echoes the whole
+        /// filter back with the bag; nothing is applied optimistically here.</summary>
+        public async void SetPickupFilter(ItemCategory category, ItemRarity minRarity)
+        {
+            if (Phase != ClientPhase.InWorld) return;
+            try { await _net.SetPickupFilterAsync((int)category, (int)minRarity); }
+            catch (Exception ex) { ClientLog.Warn("SetPickupFilter: " + ex.Message); }
         }
 
         public async void DisassembleItem(Guid instanceId)
@@ -1354,6 +1385,20 @@ namespace Game.Client
             _net.InventoryReceived += i => Main(() =>
             {
                 Inventory = i?.Items ?? new InventoryItemDto[0];
+
+                // `BL-241` — the pickup filter travels with the bag too. Read FIRST: the lock block
+                // below returns early when the lock set is unchanged, and a filter change almost never
+                // comes with one.
+                var filters = i?.PickupMinRarity;
+                for (int f = 0; f < PickupMinRarity.Length; f++)
+                {
+                    var want = filters != null && f < filters.Length
+                        ? (ItemRarity)filters[f] : ItemRarity.Common;
+                    if (PickupMinRarity[f] == want) continue;
+                    PickupMinRarity[f] = want;
+                    PickupRevision++;
+                }
+
                 // `BL-239` — the lock set travels WITH the bag, so it can never be a push behind it.
                 var locks = i?.LockedDefIds;
                 bool same = locks != null && locks.Length == LockedItems.Count;

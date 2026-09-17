@@ -216,6 +216,7 @@ public class GameLoopService : BackgroundService
                 case BuyBackCmd c: HandleBuyBack(c); break;
                 case DisassembleItemCmd c: HandleDisassembleItem(c); break;
                 case SetItemLockCmd c: HandleSetItemLock(c); break;
+                case SetPickupFilterCmd c: HandleSetPickupFilter(c); break;
                 case OpenWarehouseCmd c: HandleOpenWarehouse(c); break;
                 case WarehouseDepositCmd c: HandleWarehouseDeposit(c); break;
                 case WarehouseWithdrawCmd c: HandleWarehouseWithdraw(c); break;
@@ -15326,11 +15327,21 @@ public class GameLoopService : BackgroundService
         {
             if (ItemCatalog.Get(entry.ItemId) is not ItemDef def || copies <= 0)
                 return;
+            // `BL-241` — THE ROSTER FOR THIS ITEM. Computed once per entry, because the filter is a
+            // property of the ITEM (its category and rarity) and not of the kill: a party may be a full
+            // roster for the weapon and a roster of one for the common mats off the same corpse.
+            // Empty = nobody in range accepts it, and it is left on the floor.
+            var roster = eligible.Count == 1
+                ? (PickupWanted(eligible[0], def) ? eligible : new List<Entity>())
+                : eligible.Where(m => PickupWanted(m, def)).ToList();
+            if (roster.Count == 0)
+                return;
             bool stack = def.IsStackable;
             var perPlayer = new Dictionary<Entity, int>();
             for (int c = 0; c < copies; c++)
             {
-                var who = LootRecipient(killer, eligible, party);
+                var who = LootRecipient(killer, roster, party);
+                if (who is null) return;
                 // A stackable accumulates its rolled QUANTITY; a piece of gear is one item per copy
                 // (AddItem writes Quantity=1 for anything non-stackable, so a count is all that means).
                 int n = stack ? _rng.Next(entry.MinQty, entry.MaxQty + 1) : 1;
@@ -15430,11 +15441,16 @@ public class GameLoopService : BackgroundService
         }
 
         // Boss/elite pile goes to ONE recipient per the loot rule (mats stay together).
+        //
+        // ⚠ `BL-241` — this recipient is drawn from the UNFILTERED roster, and the filter is applied
+        // ITEM BY ITEM inside RollBossBonus instead. The pile is a dozen different defs across two
+        // categories, so there is no single "does he want it" to ask here; what he filtered out is
+        // skipped and the rest of the pile still arrives.
         var bossTo = LootRecipient(killer, eligible, party);
         // The RECIPE roll inside takes the same rate every other drop on this kill takes — the global
         // rate × the "other" group × the killer's own Rune of Drop × the level-gap penalty. See the
         // comment on the roll itself (`BL-247`): it used to be a raw _rng roll no knob touched.
-        if (RollBossBonus(bossTo, mob, mobType,
+        if (bossTo is not null && RollBossBonus(bossTo, mob, mobType,
                 MobCatalog.EffectiveRate(0, dropMult) * dropGap))
             touched.Add(bossTo);
 
@@ -15470,31 +15486,46 @@ public class GameLoopService : BackgroundService
             Pay(m, each + (m.Id == killer.Id ? remainder : 0));
     }
 
-    /// <summary>Pick who receives one loot item, per the party's <see cref="LootMode"/>. Solo, no
-    /// party, or a single eligible member always returns the killer.</summary>
-    private Entity LootRecipient(Entity killer, List<Entity> eligible, Party? party)
+    /// <summary>Pick who receives one loot item, per the party's <see cref="LootMode"/>. Solo or no
+    /// party returns the killer.
+    ///
+    /// <para>🔑 `BL-241` — <paramref name="roster"/> is the in-range members who ACCEPT this particular
+    /// item, not simply everyone in range: a pickup filter takes you out of the roster for that drop
+    /// (<see cref="PickupWanted"/>). So the list differs per item, and the answer is NULLABLE — nobody
+    /// in range wanted it, and it is left on the floor. Every branch that used to fall back to
+    /// <paramref name="killer"/> now falls back to him ONLY IF HE IS IN THE ROSTER, which is the whole
+    /// point: a filtered killer must not receive by the back door of a fallback.</para></summary>
+    private Entity? LootRecipient(Entity killer, List<Entity> roster, Party? party)
     {
-        if (party is null || eligible.Count <= 1)
-            return killer;
+        if (roster.Count == 0)
+            return null;                                   // `BL-241` — everyone filtered this one out
+        if (party is null)
+            return roster[0];                              // solo: the roster is [killer] or empty
         switch (party.LootMode)
         {
             case LootMode.Random:
-                return eligible[_rng.Next(eligible.Count)];
+                return roster[_rng.Next(roster.Count)];
             case LootMode.LeaderOnly:
-                return eligible.FirstOrDefault(m => m.Id == party.LeaderId) ?? killer;
+                // Leader first; the killer if the leader is out of range OR does not want it; and
+                // failing both, whoever is left — an item nobody is owed still beats an item destroyed.
+                return roster.FirstOrDefault(m => m.Id == party.LeaderId)
+                    ?? roster.FirstOrDefault(m => m.Id == killer.Id)
+                    ?? roster[0];
             case LootMode.RoundRobin:
-                // Rotate over in-range members in stable join order.
+                // Rotate over the roster in stable join order. A filtered member is simply not in it,
+                // so the rotation SKIPS his turn rather than spending it on an item he refused.
                 var ordered = party.Members
-                    .Where(id => eligible.Any(e => e.Id == id))
-                    .Select(id => eligible.First(e => e.Id == id))
+                    .Where(id => roster.Any(e => e.Id == id))
+                    .Select(id => roster.First(e => e.Id == id))
                     .ToList();
                 if (ordered.Count == 0)
-                    return killer;
+                    return roster[0];
                 party.RoundRobinCursor++;
                 return ordered[party.RoundRobinCursor % ordered.Count];
             case LootMode.FindersKeepers:
             default:
-                return killer;
+                // Finders keepers means the finder and nobody else — so if HE filtered it, it drops.
+                return roster.FirstOrDefault(m => m.Id == killer.Id);
         }
     }
 
@@ -15514,9 +15545,17 @@ public class GameLoopService : BackgroundService
             _ => MaterialType.Ingot,
         };
 
+        // `BL-241` — the pickup filter applies to the pile, one item at a time. A mats filter set to
+        // Rare skips the Common ingots and still takes the Rare hide off the same boss. `gave` tracks
+        // whether ANYTHING landed, so a recipient who filtered the whole pile is neither told he got
+        // materials nor pushed a bag that did not change.
+        bool gave = false;
         void GiveMat(MaterialType t, ItemRarity r, int qty)
         {
-            if (qty > 0) AddItem(recipient, Crafting.MaterialId(t, r), qty);
+            if (qty <= 0) return;
+            string matId = Crafting.MaterialId(t, r);
+            if (ItemCatalog.Get(matId) is ItemDef matDef && !PickupWanted(recipient, matDef)) return;
+            if (AddItem(recipient, matId, qty)) gave = true;
         }
 
         GiveMat(primary, ItemRarity.Common, boss ? _rng.Next(6, 11) : _rng.Next(2, 4));
@@ -15556,7 +15595,15 @@ public class GameLoopService : BackgroundService
                 int copies = MobCatalog.DropCopies(
                     delivered / OtherGroupRate * recipeRate, _rng.NextDouble());
                 for (int i = 0; i < copies; i++)
-                    if (!AddItem(recipient, PickRecipe(keys))) break;
+                {
+                    // `BL-241` — a filter can refuse a recipe book too; each copy re-rolls WHICH book,
+                    // so the check is per copy rather than per roll.
+                    string bookId = PickRecipe(keys);
+                    if (ItemCatalog.Get(bookId) is ItemDef bookDef && !PickupWanted(recipient, bookDef))
+                        continue;
+                    if (!AddItem(recipient, bookId)) break;
+                    gave = true;
+                }
             }
             if (boss)
             {
@@ -15571,6 +15618,8 @@ public class GameLoopService : BackgroundService
             }
         }
 
+        if (!gave)
+            return false;   // `BL-241` — the whole pile was filtered out; say nothing, push nothing
         SendSystemToEntity(recipient, $"{mob.Name} dropped crafting materials!");
         return true;
     }
@@ -17299,7 +17348,9 @@ public class GameLoopService : BackgroundService
     {
         SendTo(player, "Inventory", new InventoryUpdate(
             player.Inventory.Select(i => i.ToDto()).ToArray(),
-            player.LockedItems.ToArray()));   // `BL-239` — the lock set rides with the bag it describes
+            player.LockedItems.ToArray(),     // `BL-239` — the lock set rides with the bag it describes
+            // `BL-241` — and so does the pickup filter, in ItemCatalog.PickupCategories order.
+            ItemCatalog.PickupCategories.Select(c => (int)player.PickupMinRarity(c)).ToArray()));
 
         // A COLLECT step is credited HERE, off the one funnel every item gain and loss already pushes
         // through — see AdvanceCollectQuests for why. ⚠ Re-entrancy: the advance pushes the quest log,
@@ -17847,6 +17898,60 @@ public class GameLoopService : BackgroundService
         SendSystemToEntity(player, cmd.Locked
             ? $"{def.Name} is locked. It can't be sold, binned, broken down, banked or traded."
             : $"{def.Name} is unlocked.");
+        SendInventory(player);
+    }
+
+    // ===== `BL-241`: THE PICKUP FILTER ==============================================================
+    //
+    // Owner, 2026-09-16: *"we need in bag rarity filter for any type gear/mats/use to be able to select
+    // min rarity for pickup .. For 'gear' I make it rare and for 'use' I mkae it unc -> any
+    // uncommon/common gear is ignored and not picked up and any 'use' that is common Is ignored as well;
+    // (if in party I'm ignored in the roster if that rarity is filtered for me)"*.
+    //
+    // 🔑 THE BRACKET IS THE FEATURE. A filter is not "bin it after it lands" — it takes the player OUT
+    // OF THE LOOT ROSTER for that drop, so Round Robin skips his turn and Random never rolls him, and
+    // the item goes to somebody who wants it instead of being destroyed. That makes this a loot rule,
+    // and it is why the filter is character state on the SERVER rather than a client preference: the
+    // roster is decided in RollDrop, where no client is asked anything.
+    //
+    // 🔑 ONE QUESTION, ONE PLACE — PickupWanted below. Every drop site asks it: the per-entry Award, the
+    // elite/boss mat pile and the recipe roll. A drop path added later gets the filter by calling this,
+    // or it gets it never (the same rule, and the same reason, as LockRefuses above).
+    //
+    // ⚠ It gates DROPS ONLY, never AddItem: a quest reward, a crafted piece, a vendor purchase and a
+    // warehouse withdrawal are all things you asked for by name. Filtering those would be a bag that
+    // refuses what you just paid for.
+
+    /// <summary>`BL-241` — does <paramref name="player"/> accept this item from a drop? False only when
+    /// the item's bag category carries a minimum rarity and the item sits below it. A quest token is
+    /// always wanted (its category cannot be filtered at all).</summary>
+    private static bool PickupWanted(Entity player, ItemDef def)
+    {
+        var cat = ItemCatalog.CategoryOf(def);
+        if (ItemCatalog.PickupCategoryIndex(cat) < 0) return true;
+        return def.Rarity >= player.PickupMinRarity(cat);
+    }
+
+    /// <summary>`BL-241` — set one category's minimum pickup rarity. Idempotent, and it pushes the bag
+    /// so the client's copy (which rides on <see cref="InventoryUpdate"/>) is never a frame behind.</summary>
+    private void HandleSetPickupFilter(SetPickupFilterCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player)) return;
+
+        var cat = (ItemCategory)cmd.Category;
+        if (ItemCatalog.PickupCategoryIndex(cat) < 0) return;
+        if (!Enum.IsDefined(typeof(ItemRarity), cmd.MinRarity)) return;
+        var rarity = (ItemRarity)cmd.MinRarity;
+
+        if (player.PickupMinRarity(cat) == rarity) return;
+        // Common is the absence of a filter, not a filter set to Common — so it REMOVES the entry and
+        // the CSV column shrinks back to "" for a character who has turned everything off again.
+        if (rarity == ItemRarity.Common) player.PickupFilters.Remove(cat);
+        else player.PickupFilters[cat] = rarity;
+
+        SendSystemToEntity(player, rarity == ItemRarity.Common
+            ? $"{cat} pickup filter off — you take everything."
+            : $"{cat} pickup: {rarity} and above. Anything lower is left for the rest of the party.");
         SendInventory(player);
     }
 

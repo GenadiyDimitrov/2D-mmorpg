@@ -769,6 +769,19 @@ public class PersistenceService
         foreach (var lid in rec.LockedItemsCsv.Split(',', StringSplitOptions.RemoveEmptyEntries))
             if (ItemCatalog.Get(lid) is not null) entity.LockedItems.Add(lid);
 
+        // `BL-241` — the pickup filter. Same shape and the same forgiveness: a pair naming a category
+        // that can no longer be filtered, or a rarity that no longer parses, is dropped rather than
+        // defaulting to something — a filter you did not set is the one thing this must never invent.
+        foreach (var pair in rec.PickupFiltersCsv.Split(',', StringSplitOptions.RemoveEmptyEntries))
+        {
+            int colon = pair.IndexOf(':');
+            if (colon <= 0) continue;
+            if (!Enum.TryParse<ItemCategory>(pair.Substring(0, colon), ignoreCase: true, out var cat)) continue;
+            if (!Enum.TryParse<ItemRarity>(pair.Substring(colon + 1), ignoreCase: true, out var rar)) continue;
+            if (ItemCatalog.PickupCategoryIndex(cat) < 0) continue;
+            entity.PickupFilters[cat] = rar;
+        }
+
         foreach (var fn in rec.FriendsCsv.Split(',', StringSplitOptions.RemoveEmptyEntries))
             entity.Friends.Add(fn);
         foreach (var bn in rec.BlockedCsv.Split(',', StringSplitOptions.RemoveEmptyEntries))
@@ -1007,7 +1020,7 @@ public class PersistenceService
         int SecondClass, int ThirdClass, int FourthClass, int SkillPoints, int Profession, int CraftExp,
         int Con, int Atk, int Wit, int Agi, int Spt, float X, float Y,
         string LearnedSkillsCsv, string CompletedQuestsCsv, string ActiveQuestsJson,
-        string KnownRecipesCsv, string LockedItemsCsv,
+        string KnownRecipesCsv, string LockedItemsCsv, string PickupFiltersCsv,
         string FriendsCsv, string BlockedCsv, string AutoHuntJson, string EquipPresetsJson,
         string BuffsJson,
         int ActiveSubclassSlot, IReadOnlyList<SubclassSnapshot> Subclasses,
@@ -1054,6 +1067,7 @@ public class PersistenceService
                 JsonSerializer.Serialize(e.ActiveQuests.Values.ToList()),
                 string.Join(',', e.KnownRecipes),
                 string.Join(',', e.LockedItems),
+                string.Join(',', e.PickupFilters.Select(kv => $"{kv.Key}:{kv.Value}")),
                 string.Join(',', e.Friends),
                 string.Join(',', e.Blocked),
                 JsonSerializer.Serialize(new AutoHuntConfigDto(
@@ -1191,6 +1205,7 @@ public class PersistenceService
         rec.ActiveQuestsJson = snap.ActiveQuestsJson;
         rec.KnownRecipesCsv = snap.KnownRecipesCsv;
         rec.LockedItemsCsv = snap.LockedItemsCsv;
+        rec.PickupFiltersCsv = snap.PickupFiltersCsv;
         rec.FriendsCsv = snap.FriendsCsv;
         rec.BlockedCsv = snap.BlockedCsv;
         rec.SocialOptions = snap.SocialOptions;

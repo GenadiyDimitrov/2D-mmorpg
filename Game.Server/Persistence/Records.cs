@@ -132,6 +132,11 @@ public class CharacterRecord
     /// to recreate.)</summary>
     public string LockedItemsCsv { get; set; } = "";
 
+    /// <summary>`BL-241` — the pickup filter, as `Category:Rarity` pairs (e.g. `Gear:Rare,Use:Uncommon`).
+    /// Names, not indices, so the column survives a reordering of either enum. (Schema change — delete
+    /// game.db to recreate.)</summary>
+    public string PickupFiltersCsv { get; set; } = "";
+
     /// <summary>Friend character names, comma-separated. Per character.</summary>
     public string FriendsCsv { get; set; } = "";
 

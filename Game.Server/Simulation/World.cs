@@ -409,6 +409,11 @@ public record RestoreItemCmd(string ConnectionId, int Index) : IGameCommand;
 /// instance here to lose. <paramref name="Locked"/> false unlocks.</summary>
 public record SetItemLockCmd(string ConnectionId, string DefId, bool Locked) : IGameCommand;
 
+/// <summary>`BL-241` — set the pickup filter for ONE bag category. <paramref name="Category"/> is an
+/// <see cref="ItemCategory"/> and must be one of <see cref="ItemCatalog.PickupCategories"/>;
+/// <paramref name="MinRarity"/> is an <see cref="ItemRarity"/>, Common meaning "take everything".</summary>
+public record SetPickupFilterCmd(string ConnectionId, int Category, int MinRarity) : IGameCommand;
+
 /// <summary>Open the private warehouse (fetch its contents). Gated to safe zones.</summary>
 public record OpenWarehouseCmd(string ConnectionId) : IGameCommand;
 /// <summary>Move a whole item instance bag → warehouse.</summary>

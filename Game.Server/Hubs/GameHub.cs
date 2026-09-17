@@ -279,6 +279,15 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    /// <summary>`BL-241` — set the minimum rarity this character picks up in one bag category
+    /// (gear / use / mats). A filtered player is also skipped in the party's loot roster for that
+    /// drop, which is why it is character state on the server and not a client preference.</summary>
+    public Task SetPickupFilter(int category, int rarity)
+    {
+        _world.Commands.Enqueue(new SetPickupFilterCmd(Context.ConnectionId, category, rarity));
+        return Task.CompletedTask;
+    }
+
     /// <summary>`BL-240` — sell every item of one rarity within one vendor tab, in one tap.</summary>
     public Task InstantSell(Guid npcEntityId, int category, int rarity)
     {

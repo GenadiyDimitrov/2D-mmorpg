@@ -6138,6 +6138,23 @@ vendor-refused item is never in it. ⚠ One thing found on the way: `ItemCategor
 Unity client, so the server had no way to mean the same "Gear" the tab does — it now lives in
 `Game.Shared` alongside `ItemTag`, for the same reason `ItemTag` does.
 
+## `BL-241` ✅ BUILT 2026-09-17 in **0.159.0** — the per-type pickup rarity filter, and it edits the party loot roster. The entry as filed.
+
+**2026-09-16.** *"we need in bag rarity filter for any type gear/mats/use to be able to select min
+rarity for pickup.. For 'gear' I make it rare and for 'use' I mkae it unc -> any uncommon/common gear
+is ignored and not picked up and any 'use' that is common Is ignored as well; (if in party I'm ignored
+in the roster if that rarity is filtered for me)"*
+
+🔑 **THE PARTY CLAUSE IS THE INTERESTING HALF** and it is easy to miss: a filtered player is skipped
+in the **loot roster** for that drop, not merely prevented from picking it up himself. So the filter
+changes who the party's loot modes hand an item to — it is a loot-rule change, not a UI toggle.
+
+**Built as that.** `Entity.PickupFilters` is character state (persisted, `PickupFiltersCsv`), pushed to
+the client with the bag; `GameLoopService.PickupWanted` is the single gate every drop site asks, and
+`LootRecipient` now takes the per-item ROSTER and returns a nullable — nobody wanted it, it is left on
+the floor. Every loot-mode fallback checks the roster before falling back to the killer. The three
+categories are the bag's own tabs (Gear / Use / Mats); Quest cannot be filtered. Protocol 42.
+
 ## `BL-242` ✅ BUILT 2026-09-17 in **0.156.0** — the sell list shows the enchant and the attributes. The entry as filed.
 
 **2026-09-16.** *"sale list don't show enchant value and in the description of the sell item row should

@@ -631,6 +631,27 @@ public class Entity
     /// are matched that way everywhere else.</para></summary>
     public HashSet<string> LockedItems { get; } = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>`BL-241` — the PICKUP FILTER: the minimum rarity this character accepts from a drop,
+    /// per bag category. Owner, 2026-09-16: *"we need in bag rarity filter for any type gear/mats/use to
+    /// be able to select min rarity for pickup .. For 'gear' I make it rare and for 'use' I mkae it unc
+    /// -&gt; any uncommon/common gear is ignored and not picked up and any 'use' that is common Is
+    /// ignored as well; (if in party I'm ignored in the roster if that rarity is filtered for me)"*.
+    ///
+    /// <para>🔑 <b>It is a LOOT RULE, not a bag setting.</b> The bracket is the second sentence: a
+    /// filtered player is skipped in the party's LOOT ROSTER for that drop, so the filter changes who
+    /// Round Robin and Random hand an item to — it does not merely bin it after the fact. See
+    /// <c>GameLoopService.PickupWanted</c>, which is the one place the question is asked.</para>
+    ///
+    /// <para>Only the three categories in <see cref="ItemCatalog.PickupCategories"/> can be filtered;
+    /// a missing entry means <see cref="ItemRarity.Common"/>, i.e. take everything. Persisted as a CSV
+    /// of <c>Category:Rarity</c> pairs, like <see cref="LockedItems"/>.</para></summary>
+    public Dictionary<ItemCategory, ItemRarity> PickupFilters { get; } = new();
+
+    /// <summary>The minimum rarity this character accepts in <paramref name="category"/>. Unset, or a
+    /// category that cannot be filtered at all, reads as <see cref="ItemRarity.Common"/> — everything.</summary>
+    public ItemRarity PickupMinRarity(ItemCategory category) =>
+        PickupFilters.TryGetValue(category, out var r) ? r : ItemRarity.Common;
+
     /// <summary>Friend CHARACTER names (case-preserved; matched case-insensitively). When a friend comes
     /// online you get a "&lt;friend&gt; is back online" message. Per character. Persisted as a CSV.</summary>
     public HashSet<string> Friends { get; } = new(StringComparer.OrdinalIgnoreCase);

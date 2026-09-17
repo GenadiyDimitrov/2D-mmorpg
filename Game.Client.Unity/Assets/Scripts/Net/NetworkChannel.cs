@@ -268,6 +268,10 @@ namespace Game.Client
         public Task SetItemLockAsync(string defId, bool locked) =>
             _connection.SendAsync("SetItemLock", defId, locked);
 
+        /// <summary>`BL-241` — the per-category pickup rarity filter.</summary>
+        public Task SetPickupFilterAsync(int category, int minRarity) =>
+            _connection.SendAsync("SetPickupFilter", category, minRarity);
+
         /// <summary>`BL-240` — sell every item of one rarity within one vendor tab.</summary>
         public Task InstantSellAsync(Guid npcEntityId, int category, int rarity) =>
             _connection.SendAsync("InstantSell", npcEntityId, category, rarity);

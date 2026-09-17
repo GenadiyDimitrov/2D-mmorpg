@@ -439,6 +439,92 @@ namespace Game.Client
             OpenWindow(_selectPopup);
         }
 
+        // ----- `BL-241`: THE PICKUP FILTER POPUP ----------------------------------------------------
+        //
+        // Owner, 2026-09-16: *"we need in bag rarity filter for any type gear/mats/use to be able to
+        // select min rarity for pickup .. For 'gear' I make it rare and for 'use' I mkae it unc"*.
+        //
+        // ⚠ THE UI IS THE SMALL HALF. The filter is a LOOT RULE — a filtered player is skipped in the
+        // party's loot roster for that drop — so everything that matters happens on the server
+        // (GameLoopService.PickupWanted). These buttons only say what to ask for.
+        //
+        // 🔑 THE ROWS REPAINT FROM THE SERVER'S ECHO, never from the tap. A tap sends and nothing else;
+        // the label changes when the bag comes back carrying the new filter. That is the same rule the
+        // lock toggle runs on, and it is what stops the popup from showing a setting the server refused.
+
+        /// <summary>The open pickup-filter rows, so the server's echo can relabel them in place.
+        /// Empty whenever the popup is closed.</summary>
+        private readonly List<(Button Btn, ItemCategory Cat)> _pickupRows =
+            new List<(Button, ItemCategory)>();
+
+        private int _pickupRevisionSeen = -1;
+
+        /// <summary>The rarity ladder the button cycles through, lowest first. Common means "no filter".</summary>
+        private static readonly ItemRarity[] PickupLadder =
+        {
+            ItemRarity.Common, ItemRarity.Uncommon, ItemRarity.Rare,
+            ItemRarity.Epic, ItemRarity.Legendary, ItemRarity.Mythic,
+        };
+
+        private static string PickupRowLabel(ItemCategory cat, ItemRarity min) =>
+            min == ItemRarity.Common
+                ? cat + ":  take everything"
+                : cat + ":  " + Coloured(min.ToString(), min) + " and above";
+
+        /// <summary>The bag's [Pick] caption: how many of the three categories carry a filter. A count
+        /// rather than the settings themselves, because three words do not fit in a 96px button — and
+        /// "is anything filtered at all" is the question the bag has to answer without being opened.</summary>
+        private void PaintPickupButton()
+        {
+            if (_bagPickupButton == null) return;
+            int on = 0;
+            foreach (var c in ItemCatalog.PickupCategories)
+                if (Boot.PickupFilter(c) != ItemRarity.Common) on++;
+            UiKit.SetButtonText(_bagPickupButton, on == 0 ? "Pick: off" : "Pick: " + on);
+            _bagPickupButton.targetGraphic.color = on == 0 ? UiKit.PanelLight : ItemLockedColour;
+        }
+
+        /// <summary>Open the three-row filter. Each tap steps that category one rung up the rarity
+        /// ladder and wraps back to "take everything" past Mythic — a cycle, like the bag's other two
+        /// header buttons, so there is nothing to learn beyond "tap until it says what you want".</summary>
+        private void ShowPickupFilter()
+        {
+            _selectTitle.text = "Pick up — minimum rarity";
+            _selectConfirm.gameObject.SetActive(false);
+            UiKit.Rect(_selectCancel.gameObject).anchoredPosition = new Vector2(0f, 16f);
+            for (int i = _selectOptions.childCount - 1; i >= 0; i--)
+                Destroy(_selectOptions.GetChild(i).gameObject);
+            _pickupRows.Clear();
+
+            foreach (var cat in ItemCatalog.PickupCategories)
+            {
+                var c = cat;
+                var button = UiKit.TextButton(_selectOptions, PickupRowLabel(c, Boot.PickupFilter(c)), () =>
+                {
+                    int rung = Array.IndexOf(PickupLadder, Boot.PickupFilter(c));
+                    var next = PickupLadder[(rung < 0 ? 0 : rung + 1) % PickupLadder.Length];
+                    Boot.SetPickupFilter(c, next);
+                }, 16f);
+                button.gameObject.AddComponent<LayoutElement>().minHeight = 46f;
+                _pickupRows.Add((button, c));
+            }
+
+            _pickupRevisionSeen = Boot.PickupRevision;
+            OpenWindow(_selectPopup);
+        }
+
+        /// <summary>Relabel the open filter rows when the server's echo arrives. Also drops the row list
+        /// once the popup is closed, so a later Selection popup's rows are never mistaken for these.</summary>
+        private void RefreshPickupFilter()
+        {
+            if (_pickupRows.Count == 0) return;
+            if (!IsOpen(_selectPopup)) { _pickupRows.Clear(); return; }
+            if (_pickupRevisionSeen == Boot.PickupRevision) return;
+            _pickupRevisionSeen = Boot.PickupRevision;
+            foreach (var (btn, cat) in _pickupRows)
+                if (btn != null) UiKit.SetButtonText(btn, PickupRowLabel(cat, Boot.PickupFilter(cat)));
+        }
+
         /// <summary>The same popup, but each row is a QUANTITY and one Confirm sends them all — what a
         /// pick-many box (the Blessing Box: 10 of 17) needs and a pick-one box must not have.
         ///

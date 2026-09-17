@@ -326,7 +326,15 @@ public static class ItemTag
 /// message would let the two arrive out of order and paint a locked row unlocked for a frame.
 /// 🔑 It is a set of <b>DEF</b> ids, not instance ids — you lock the ITEM, so a stack you consume and
 /// re-loot comes back locked. Never null from this server; an older client just ignores it.</para></summary>
-public record InventoryUpdate(InventoryItemDto[] Items, string[]? LockedDefIds = null);
+///
+/// <para>`BL-241` — <paramref name="PickupMinRarity"/> rides along for the same reason: the pickup
+/// filter is a property of the bag, and its three buttons live in the bag window. THREE entries, in
+/// the fixed order <b>Gear, Use, Mats</b> (see <see cref="ItemCatalog.PickupCategories"/>), each an
+/// <see cref="ItemRarity"/> — the MINIMUM rarity this character will accept from a drop.
+/// <see cref="ItemRarity.Common"/> (0) is the default and means "everything", which is why the whole
+/// array is optional: an older client reads the bag exactly as before.</para></summary>
+public record InventoryUpdate(InventoryItemDto[] Items, string[]? LockedDefIds = null,
+                              int[]? PickupMinRarity = null);
 
 /// <summary>The character's private warehouse contents (same shape as the bag). Sent when the warehouse
 /// window is opened and after every deposit/withdraw.</summary>

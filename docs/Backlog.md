@@ -64,7 +64,11 @@ game with no confirmation behind it. ⚠ **A `game.db` delete** — the locks ar
 else. It moved `ItemCategory` out of the Unity client into `Game.Shared`, because the sweep runs on the
 server and has to mean exactly what the tab you are looking at means.
 
-**`BL-241` and `BL-246`** are still 🔵 waiting to be built.
+✅ **AND `BL-241` WITH THEM (0.159.0)** — the per-type pickup rarity filter. Built as the loot-rule
+change your bracket asked for: a filtered player leaves the party's LOOT ROSTER for that drop, so the
+item goes to somebody who wants it rather than being destroyed. ⚠ **A `game.db` delete** — a new column.
+
+**`BL-246`** is still 🔵 waiting to be built.
 
 ✅✅ **AND `BL-247` IS BUILT AND ARCHIVED (0.151.0)** — you took the recommendation (*"fill the gap with
 the elits+boss, and fix the blueprints to take the rates multiplier"*). Four new elite camps (68 / 72 /
@@ -243,9 +247,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-233` | ❓ | THE DEMON BUFFER'S P.DEF — measured three ways and heavy is AHEAD; I need your two sheets | classes |
 | `BL-234` | ❓ | URGENT LESSER HEAL — built to your four numbers; the per-rank falloff is mine to confirm | classes |
 | `BL-237` | 🔵 | THE WARLORD'S DAMAGE ROWS — all that is left of WARRIOR 3rd+4th; `war_aoe 3rd/4th.csv` author none | classes |
-
-
-| `BL-241` | 🔵 | A PER-TYPE RARITY FILTER ON PICKUP — and it drops you from the party LOOT ROSTER too | items |
 | `BL-246` | 🔵 | THE STATS WINDOW BECOMES TWO TABS — your full layout; several rows have no source yet | ui |
 | `BL-250` | 🟡 | THE SUBCLASS SYSTEM — **the server half is BUILT (0.155.0)**; what is left is the CLIENT dialogue + panel (APK) and the SIGIL half (§1-§4). ❓ one new question in §9.6 | classes |
 | `BL-253` | 🔵 | A DROP DATABASE — name an item, see every source; the BalanceMatrix half is built, the in-game window is owed | items |
@@ -1857,17 +1858,6 @@ until you write them. That line is the reminder; nothing is invented in the mean
 
 ---
 
-
-## `BL-241` 🔵 A PER-TYPE RARITY FILTER ON PICKUP
-
-**2026-09-16.** *"we need in bag rarity filter for any type gear/mats/use to be able to select min
-rarity for pickup.. For 'gear' I make it rare and for 'use' I mkae it unc -> any uncommon/common gear
-is ignored and not picked up and any 'use' that is common Is ignored as well; (if in party I'm ignored
-in the roster if that rarity is filtered for me)"*
-
-🔑 **THE PARTY CLAUSE IS THE INTERESTING HALF** and it is easy to miss: a filtered player is skipped
-in the **loot roster** for that drop, not merely prevented from picking it up himself. So the filter
-changes who the party's loot modes hand an item to — it is a loot-rule change, not a UI toggle.
 
 ## `BL-246` 🔵 THE STATS WINDOW BECOMES TWO TABS
 

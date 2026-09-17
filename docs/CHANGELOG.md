@@ -7,11 +7,54 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.158.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.159.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-17 (latest) — 0.158.0: `BL-240` — INSTANT SALE: ONE RARITY, ONE TAB, ONE TAP
+## 2026-09-17 (latest) — 0.159.0: `BL-241` — THE PICKUP FILTER, AND IT IS A LOOT RULE
+
+⚠ **Needs an APK** (the filter is set from the bag) and ⚠ **a `game.db` delete** (a new column — it
+joins the one `BL-239` already owed).
+
+*"we need in bag rarity filter for any type gear/mats/use to be able to select min rarity for pickup..
+For 'gear' I make it rare and for 'use' I mkae it unc -> any uncommon/common gear is ignored and not
+picked up and any 'use' that is common Is ignored as well; (if in party I'm ignored in the roster if
+that rarity is filtered for me)"*.
+
+🔑 **THE BRACKET IS THE FEATURE.** A filter is not "bin it after it lands": it takes you OUT OF THE
+PARTY'S LOOT ROSTER for that drop. Round Robin skips your turn, Random never rolls you, and the item
+goes to someone who wants it instead of being destroyed — so this is a change to the loot rules, not a
+bag toggle. It is why the filter is character state on the SERVER and not a client preference: the
+roster is decided in `RollDrop`, where no client is asked anything.
+
+**What it is, exactly:** three categories — Gear, Use, Mats — each carrying a minimum
+`ItemRarity`. Common means "take everything" and is the default on every character, so nothing changes
+until you set one. Quest tokens cannot be filtered at all: a quest item you refused is a quest you
+cannot finish.
+
+**One question, one place.** `GameLoopService.PickupWanted` is asked by every drop site — the per-entry
+award, the elite/boss mat pile and the recipe roll — the same shape (and the same reason) as
+`BL-239`'s `LockRefuses`. A drop path added later gets the filter by calling it, or it gets it never.
+
+**Where it deliberately does NOT apply:** `AddItem` itself. A quest reward, a crafted piece, a vendor
+purchase and a warehouse withdrawal are all things you asked for by name; a bag that refuses what you
+just paid for is not a filter, it is a bug.
+
+**Every loot-mode fallback now checks the roster first.** `LootRecipient` used to fall back to the
+killer in three branches; it falls back to him only if he is *in* the roster, because a filtered killer
+receiving by the back door of a fallback would undo the whole thing. Finders Keepers with a filtered
+killer therefore drops the item — that is what finders keepers means. Leader Only still prefers the
+leader, then the killer, then whoever is left: an item nobody is owed still beats an item destroyed.
+
+**The bag grows a `[Pick]` button** whose caption is how many categories are filtered, so an active
+filter is visible without opening anything. It opens a three-row popup that cycles each category up the
+rarity ladder and wraps back to "take everything". The rows relabel from the **server's echo**, never
+from the tap — the same rule the lock toggle runs on.
+
+**Protocol 42** — `InventoryUpdate.PickupMinRarity` (three ints, riding with the bag it describes, like
+`LockedDefIds`) and the `SetPickupFilter` hub method.
+
+## 2026-09-17 — 0.158.0: `BL-240` — INSTANT SALE: ONE RARITY, ONE TAB, ONE TAP
 
 ⚠ **Needs an APK** (the button is in the vendor's Sell tab). No `game.db` delete.
 

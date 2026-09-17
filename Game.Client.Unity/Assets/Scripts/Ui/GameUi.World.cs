@@ -148,6 +148,10 @@ namespace Game.Client
             { ItemCategory.All, ItemCategory.Gear, ItemCategory.Use, ItemCategory.Mats, ItemCategory.Quest };
         private Button _bagDelToggle;
 
+        /// <summary>`BL-241` — the bag's [Pick] button. Its caption is the number of categories with a
+        /// filter set, so an active filter is visible without opening the popup.</summary>
+        private Button _bagPickupButton;
+
         /// <summary>`BL-244` — the fast-action button is a THREE-STATE CYCLE now, not a bool:
         /// <c>DEL:OFF -> DEL:ON -> BRAKE:ON -> DEL:OFF</c> (owner, 2026-09-16). Off shows no per-row
         /// action at all; Del shows a no-confirm bin; Brake shows a no-confirm BREAK DOWN, coloured
@@ -1142,6 +1146,16 @@ namespace Game.Client
             BuildOrderButton(inner, new Vector2(208f, -chrome - 36f), 86f,
                              () => _bagRevision = -1);
 
+            // `BL-241` — the PICKUP filter. One button opening a three-row popup, rather than three
+            // controls in a header that is already full: the three settings are read together ("what am
+            // I taking?"), they are changed rarely, and a row that says `Gear: Rare and up` in words is
+            // worth far more here than three abbreviations that have to fit in 80px. The caption carries
+            // the state — `Pick: 2` — so the bag still tells you at a glance that a filter is ON, which
+            // is the one thing you must never have to open a window to discover.
+            _bagPickupButton = UiKit.TextButton(inner, "Pick: off", ShowPickupFilter, 14f);
+            UiKit.Place(UiKit.Rect(_bagPickupButton.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(300f, -chrome - 36f), new Vector2(96f, 32f));
+
             // The item list is a FIXED-width column, so widening the window for the equip column never
             // stretches it — it just slides.
             ScrollRect scroll;
@@ -1231,6 +1245,7 @@ namespace Game.Client
             RefreshTitlesTab();
             RefreshBag();
             RefreshItemDetails();    // `BL-141` — the open item redraws from the push, like every window here
+            RefreshPickupFilter();   // `BL-241` — the filter rows relabel from the server's echo
             RefreshSkillsWindow();
             RefreshStatsWindow();
             RefreshTargetWindow();
@@ -2017,7 +2032,8 @@ namespace Game.Client
 
             int revision = items.Length * 17 + (int)_bagTab * 7919 + (int)_bagFastMode * 104729
                          + (int)(Boot.Gold % 1_000_000) + (int)(Boot.Platinum % 1_000_000) * 7
-                         + Boot.LockRevision * 1013;   // `BL-239` — a lock removes the fast button
+                         + Boot.LockRevision * 1013    // `BL-239` — a lock removes the fast button
+                         + Boot.PickupRevision * 2027; // `BL-241` — a filter change relabels [Pick]
             foreach (var item in items)
                 revision = revision * 31 + item.InstanceId.GetHashCode()
                          + (item.Equipped ? 1 : 0) + item.Quantity * 7 + item.Enchant;
@@ -2040,6 +2056,7 @@ namespace Game.Client
                 BagFastMode.Brake  => BagBrakeColour,
                 _                  => UiKit.PanelLight,
             };
+            PaintPickupButton();
 
             for (int i = _bagContent.childCount - 1; i >= 0; i--)
                 Destroy(_bagContent.GetChild(i).gameObject);

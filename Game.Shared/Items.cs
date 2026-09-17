@@ -3016,6 +3016,26 @@ public static class ItemCatalog
         return tab == ItemCategory.All ? c != ItemCategory.Quest : c == tab;
     }
 
+    // ===== `BL-241`: THE PICKUP FILTER'S THREE CATEGORIES ==========================================
+    //
+    // Owner, 2026-09-16: *"we need in bag rarity filter for any type gear/mats/use to be able to select
+    // min rarity for pickup"*. His three words are exactly three of the tabs the bag already has, which
+    // is why the filter is keyed on `ItemCategory` rather than on a parallel enum of its own — you set
+    // it on the tab you are looking at, and it means that tab.
+    //
+    // 🔑 `All` and `Quest` are deliberately NOT filterable. `All` is not a kind of item, and a quest
+    // token you refused would be a quest you cannot finish — the one drop that must always land.
+
+    /// <summary>The three categories a pickup filter can be set on, in the order they are sent on the
+    /// wire (<c>InventoryUpdate.PickupMinRarity</c>) and drawn in the bag. Never reorder this: the
+    /// array is positional on both sides and persisted by INDEX nowhere — but the wire is by index.</summary>
+    public static readonly ItemCategory[] PickupCategories =
+        { ItemCategory.Gear, ItemCategory.Use, ItemCategory.Mats };
+
+    /// <summary>Index of <paramref name="c"/> in <see cref="PickupCategories"/>, or -1 for a category
+    /// that cannot be filtered (All, Quest).</summary>
+    public static int PickupCategoryIndex(ItemCategory c) => Array.IndexOf(PickupCategories, c);
+
     /// <summary>The level at which an ITEM reaches FULL power (below it you may still equip it, but the
     /// GRADE PENALTY scales your stats down by the grade GAP). Not a hard equip gate. Takes the DEF, not
     /// the grade: the real tier is <see cref="ItemDef.ItemLevel"/> — the ItemGrade enum has no C/D and is
