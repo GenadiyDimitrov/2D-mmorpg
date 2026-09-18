@@ -54,7 +54,7 @@ Plus the school-blind `CcResist` from armour, its own factor: **0% common, 0% ra
 
 *"the con/spt resists are on a single marks not on the harmony one ... Ppl will chose harmony mark"*
 — confirmed in the code. **Harmony Mark carries no control resistance at all**, and all four Marks
-share `MarkKey` with `FlatRank`, so taking it costs you the Holy/Life Mark's grant outright. Both
+share `MarkKey`, so taking it costs you the Holy/Life Mark's grant outright. Both
 cases are measured below.
 
 ⚠ One correction to your arithmetic: the SPT Mark (Holy) is **15%**, not 10% — 10% is the CON one

@@ -506,8 +506,11 @@ public static partial class SkillCatalog
             // 🔑 THE BUFFER'S MARK, and it carries the HEALER'S KEY on purpose — an ally wears ONE
             //    Mark, whichever class got to them. That was written into Skills.Lightbringer4th.cs
             //    the day the three healer Marks were built, naming this id in advance.
-            // 🔑 FLAT RANK for the same reason the healer's three are: four skills share one key, so a
-            //    rung must not ride in the rank or a Lv2 Harmony Mark would lock out a Lv1 Holy Mark.
+            // 🔑 THE RUNG IS THE RANK, for the same reason the healer's three are — `BL-164`, his
+            //    ruling of 2026-09-18. A Lv2 Harmony Mark DOES now outrank a Lv1 Holy Mark, and that
+            //    is the point: nothing weaker may overwrite what you are wearing. Cross-class swaps at
+            //    the SAME rung stay free, because equal rank replaces since `BL-263`. The full reason
+            //    the old `FlatRank: true` had to go is on the healer's `Mark(...)` helper.
             // ⚠ IT IS THE PARTY-WIDE ONE — the healer's three are single-target. That, the 2-minute
             //   reuse and the ten Skill Stones are what it pays for covering everybody at once.
             //
@@ -535,7 +538,7 @@ public static partial class SkillCatalog
             new(HarmonyMark, "Harmony Mark", BaseClass.Mage,
                 markMags2.Aggregate(SkillEffect.None, (a, m) => a | m.Effect),
                 MpCost: 300, CastTicks: 50, CooldownTicks: 1200, Range: 900, Power: 0,
-                DurationTicks: 3000, BuffKey: MarkKey, Rank: 1, FlatRank: true,
+                DurationTicks: 3000, BuffKey: MarkKey, Rank: 1, SharesLadderKey: true,
                 Category: SkillCategory.Buff, SpCost: sp79,
                 TargetMode: TargetMode.AlliesInRadius, AreaRadius: 800f,
                 ConsumableId: ItemCatalog.SkillStone, ConsumableAmount: 10,

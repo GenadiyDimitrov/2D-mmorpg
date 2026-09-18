@@ -459,13 +459,25 @@ public static partial class SkillCatalog
                 // ⚠ 150 MP, not 300 — his 2026-09-02 edit halved it on all three.
                 MpCost: 150, CastTicks: 50, CooldownTicks: 50, Range: 900, Power: 0,
                 DurationTicks: 3000, BuffKey: MarkKey, Rank: 1,
-                // 🔑 FLAT RANK, the Great Might / Great Bulwark rule (`BL-85`'s guard names it). Three
-                // Marks share one key ON PURPOSE — an ally wears one, never two — so the rung must NOT
-                // ride in the rank: a Lv2 Holy Mark carrying rank 2 would lock out a Human healer's
-                // Lv1 Life Mark, which is the opposite of "whichever got there first". Only became
-                // load-bearing when the second rung landed; with one rung each there was nothing to
-                // carry. Re-casting your own higher rung still replaces, on duration.
-                FlatRank: true,
+                // 🔑 THE RUNG *IS* THE RANK (`BL-164`, his ruling of 2026-09-18: *"a Life mark L2 to
+                // be replaced only by other l2 marks .. not some1 to be able to put lower rank ->
+                // admin of buffer gives me rank2 and stupid me goes to npc and overrites it .. it
+                // shouldnt"*). So rung 1 lands at rank 1 and rung 2 at rank 2, and the NPC's rung-1
+                // Mark can no longer overwrite a Lightbringer's rung 2 — `BuffWouldLand` refuses it
+                // before the 300,000 gold is taken.
+                //
+                // 🔴 IT USED TO BE `FlatRank: true`, for a reason that DID hold until 0.176.0: four
+                // Marks share one key on purpose (an ally wears one, never two), and while equal rank
+                // was broken by DURATION a rung-2 Mark carrying rank 2 was the ONLY thing standing
+                // between a rung-1 NPC Mark and an hour of lock-out. `BL-263` removed that tiebreak —
+                // equal rank now means "whoever cast last" — so cross-race swapping at the SAME rung
+                // is free without the flat rank, and the flat rank was buying nothing but this bug.
+                //
+                // ⚠ `SharesLadderKey` IS THE DECLARATION THE `BL-85` STARTUP GUARD DEMANDS: four
+                // childless multi-rung defs on one key would otherwise fail the catalog check. It is
+                // the right escape and not the flat one — these ARE four versions of the same buff
+                // that SHOULD compete rung for rung, which is exactly what that field means.
+                SharesLadderKey: true,
                 Category: SkillCategory.Buff, SpCost: sp78,
                 TargetMode: TargetMode.SelfOrTarget,
                 ConsumableId: ItemCatalog.SkillStone, ConsumableAmount: 4,

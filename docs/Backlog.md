@@ -207,15 +207,15 @@ with you, the 75 ceiling is gone, eight single harmonies and the three Marks are
 joined the Mage preset. See it with `dotnet run --project tools/BalanceMatrix -- --npcshelf`
 · ✅ `BL-163` — the buffer shelf as an EXTERNAL file is **BUILT (0.173.0) and archived**:
 `docs/data/npc_buff_shelf.csv`, fifty rows, edited and restarted with no rebuild, so *"a pvp server
-won't require new npc just change of id's"* holds · **`BL-164`**
-(the Marks' rank tie, found while building `BL-161` — your call between three fixes) · `BL-156` (debuff
+won't require new npc just change of id's"* holds · ✅ `BL-164` — the Marks now carry their
+RUNG in their rank, so nothing weaker overwrites one: **BUILT (0.177.0) and archived** · `BL-156` (debuff
 duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed) ·
 `BL-93` (the visuals conversation, yours to start) · `BL-102` (blocked on one file from you) ·
 `BL-02` (the 40+ kits, blocked on your CSVs).
 
 ---
 
-## Index — 49 open entries
+## Index — 48 open entries
 
 | id | | what it is | area |
 |---|---|---|---|
@@ -253,7 +253,6 @@ duration — **BUILT and CLOSED**, in the archive) · `BL-157` (the worm, a seed
 | `BL-104` | 🔵 | The warrior's sword-vs-blunt split — ruled, nothing to attach it to yet | classes |
 | `BL-106` | ❓ | Your cross-chain id rule — six ids disobey it; three answers wanted | classes |
 | `BL-157` | 🔵 | The worm — a polymorph debuffer/nuker class, a seed only | classes |
-| `BL-164` | 🔵 | The three Marks share one Rank, so the weaker rung can out-hold the stronger | classes |
 | `BL-165` | 🔵 | What the tank's 4th tier LEFT OPEN — the two AoE pulls (yours), and one clamp | combat |
 | `BL-170` | 🔵 | THE CLIFF AT 80 — party dps triples across the S-grade flip; three ways out, your pick | combat |
 | `BL-171` | 🔵 | THE WORLD BOSS — stats built; the encounter, mass-PvP rules and loot are owed | combat |
@@ -848,38 +847,6 @@ that size (`BL-97`). A new discipline either takes a free slot or replaces one, 
 not a design detail. Say where it sits before anything is drawn.
 
 
-
-### `BL-164` 🔵 The three Marks share one Rank, so the weaker rung can out-hold the stronger
-
-Found while building `BL-161`, and flagged rather than absorbed because the fix is a judgement call.
-
-`Mark(...)` hardcodes `Rank: 1` for BOTH rungs (the Lightbringer learns rung 1 at 78, rung 2 at 83), and
-all three Marks share one `BuffKey` so they never stack — which is correct and is your rule. The problem
-is the tie: `ApplyBuff` resolves EQUAL rank by keeping the **longer remaining time**. So an NPC Mark,
-sold at rung 1 for an hour, will refuse a Lightbringer's rung-2 Mark at 83 for up to 55 minutes — the
-weaker buff holding out the stronger one.
-
-⚠ **It is not caused by the NPC being a wrapper, and `BL-163` would not fix it.** Any delivery of rung 1
-with an hour on it beats a 5-minute rung 2 at equal rank.
-
-Three ways out, and it is your call which:
-1. **Rank = rung** on the Mark ladder (rung 2 → rank 2), so the stronger one always wins. Cleanest, and
-   it is how every other family here already behaves.
-2. **The NPC's Mark runs 5 minutes**, like the class skill — but that contradicts your `buffs.csv`
-   header (*"NPC marks default duration 1 h"*) and makes 300,000 gold a hard sell.
-3. **Leave it** — the same "strategy" answer you gave for the harmony case, since a player with a
-   Lightbringer in the party has no reason to buy the NPC's Mark.
-
-Nothing is blocked on this; it only bites a level-83+ character who bought a Mark and then joined a
-party with a 4th-class Lightbringer.
-
-🔴 **REOPENED-AND-CHANGED BY `BL-263` (0.176.0, 2026-09-18).** Removing the duration tiebreak flips
-this bug rather than fixing it. The complaint above — *the weaker rung out-holding the stronger* — is
-**gone**: a Lightbringer's rung-2 Mark now replaces an NPC rung-1 Mark on the spot. But the reverse is
-now possible and was not before: **buying the NPC's rung-1 Mark while wearing your own rung 2 will
-overwrite it**, because at equal rank the last cast wins and `BuffWouldLand` no longer refuses it, so
-the gold is taken too. **Option 1 (Rank = rung on the Mark ladder) is the fix, and it now closes both
-directions at once.** ⚠ Option 3 ("leave it") no longer means what it meant when you read it.
 
 ### `BL-165` 🔵 What the tank's 4th tier left open — the two AoE pulls, and one clamp
 

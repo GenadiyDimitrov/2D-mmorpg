@@ -1459,7 +1459,7 @@ if (args.Length > 0 && args[0] == "--mcrit")
     // 🔴🔑 THE SHELF ALREADY HANDS OUT A MARK. `NewbieBuffSet` concatenates `NpcMarkSet`, and a
     //    healer's Mark carries magic crit DAMAGE — so a naive "shelf, then add Harmony Mark" row wears
     //    TWO Marks and double-counts +20%, which the game never allows (all four Marks share `MarkKey`
-    //    with `FlatRank`, so exactly one is ever on you). The shelf is stripped of Marks here and the
+    //    — ONE key, so exactly one is ever on you). The shelf is stripped of Marks here and the
     //    one being measured is put on explicitly. Getting this wrong would have reported ×3.74 for a
     //    caster who can only ever reach ×3.12.
     static void Shelf(Entity e)
@@ -7120,7 +7120,7 @@ static void ApplyNpcBuffs(Entity e, bool fullShelf = false)
     //    `NewbieBuffSet` has CONTAINED `NpcSingleHarmonySet` and `NpcMarkSet` since `BL-160`/`BL-161`
     //    (read its own tail: "19 + 8 + 3 = THIRTY"). This method still concatenated both again for
     //    `fullShelf`, so the eight harmonies landed twice and the Marks four times — and even the
-    //    PLAIN shelf wore all three Marks, where all three share `MarkKey` with `FlatRank` and the
+    //    PLAIN shelf wore all three Marks, where all three share `MarkKey` and the
     //    engine allows exactly ONE. Every "buffed" row this tool has printed since 0.113.0 was a
     //    character wearing buffs the game cannot give him.
     //
@@ -7422,7 +7422,7 @@ static void DedupeByKey(Entity e)
 
 /// <summary>Replace whichever Mark the shelf handed out with the WARCHANTER'S Harmony Mark — the one
 /// most players will actually pick, and the one that carries no control resistance at all.
-/// <para>All four Marks share `MarkKey` with `FlatRank`, so exactly one is ever on you; swapping is a
+/// <para>All four Marks share `MarkKey` — ONE key, so exactly one is ever on you; swapping is a
 /// remove-then-add rather than an add.</para></summary>
 static void SwapToHarmonyMark(Entity e)
 {
@@ -7618,7 +7618,7 @@ static void CcLand(string[] args)
         ("+ WARCHANTER + Holy Mark", e => { ApplyNpcBuffs(e, fullShelf: true); WarchanterParty(e); }),
         // 🔑 HIS POINT, 2026-09-13: *"the con/spt resists are on a single marks not on the harmony
         //    one ... Ppl will chose harmony mark"*. He is right — Harmony Mark carries NO control
-        //    resistance, and all four Marks share `MarkKey` with `FlatRank`, so taking it costs you
+        //    resistance, and all four Marks share `MarkKey`, so taking it costs you
         //    the Holy/Life Mark's 15%/10% outright. This is the realistic endgame row.
         ("+ WARCHANTER + Harmony Mk", e => { ApplyNpcBuffs(e, fullShelf: true); WarchanterParty(e);
                                               SwapToHarmonyMark(e); }),

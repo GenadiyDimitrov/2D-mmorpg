@@ -7,11 +7,67 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.176.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.177.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
-## 2026-09-18 (latest) — 0.176.0: duration stops deciding buffs, and Might gets three faces — `BL-263`
+## 2026-09-18 (latest) — 0.177.0: a Mark's rung is its rank — `BL-164`
+
+> *"i want mark to have ranks .. a Life mark L2 to be replaced only by other l2 marks .. not some1 to
+> be able to put lower rank -> admin of buffer gives me rank2 and stupid me goes to npc and overrites
+> it ... it shouldnt"*
+
+His scenario, exactly: an admin `/buff` (or a 4th-class Lightbringer) puts **rung 2** of a Mark on you,
+you walk to the Spirit Helper, buy the **rung 1** she sells for 300,000 gold — and since 0.176.0 took
+duration out of the tiebreak, it landed and **replaced the stronger one**. Gold gone, Mark downgraded.
+
+### The fix — option 1 of the three the entry listed
+
+All four Marks (Holy, Life, Blood and the buffer's Harmony) stopped being `FlatRank: true`. They now
+carry the **rung in the rank**: rung 1 lands at rank 1, rung 2 at rank 2, which is what every other
+childless multi-rung buff in the game has done since `BL-85`.
+
+| you are wearing | incoming | before | now |
+|---|---|---|---|
+| Life Mark **Lv2** | NPC Holy Mark **Lv1** | replaced it (gold taken) | 🔴 refused, **and the gold is not taken** |
+| Life Mark **Lv1** | NPC Holy Mark **Lv1** | replaced it | replaced it — unchanged |
+| Life Mark **Lv1** | Holy Mark **Lv2** | replaced it | replaced it — unchanged |
+| Life Mark **Lv2** | Harmony Mark **Lv2** | replaced it | replaced it — unchanged |
+
+**One Mark at a time is untouched.** That has always been the shared `BuffKey` (`healer_mark`), never
+the flat rank — the two were easy to conflate and three comments in `BalanceMatrix` did, so they were
+corrected in the same pass. Swapping between the four **at the same rung** stays free, because equal
+rank replaces since `BL-263`.
+
+### 🔑 `SharesLadderKey: true` is the declaration, not a workaround
+
+The `BL-85` startup guard refuses two childless multi-rung defs on one buff key, because their rungs
+silently start competing with each other. It offers two escapes and the Marks took the wrong one:
+`FlatRank` pins every rung to one number, which is right for Great Might / Great Bulwark ("one or the
+other, never both") and was wrong here. `SharesLadderKey` is the other, and it says what is actually
+true of these four — **four versions of the same buff that SHOULD compete rung for rung**.
+
+### 🔴 What the old `FlatRank` was really buying, since it is worth knowing why it survived so long
+
+It was load-bearing right up until yesterday, in the *opposite* direction. While equal rank was broken
+by **duration**, a rung-2 Mark carrying rank 2 would have locked out a different race's rung-1 Mark for
+up to an hour — which contradicted "an ally wears one Mark, whichever healer got to them first". So the
+flat rank bought cross-race swapping, at the price of this bug. `BL-263` removed the duration tiebreak,
+so equal rank now replaces on its own and the swapping is free without it. **The flat rank was paying
+for something the engine started giving away, and kept only the cost.**
+
+⚠ This is the second time in two days that a `BL-263` consequence has been the whole story (the first
+was `HarmonyRank`, kept for the reverse reason). **When a tiebreak is removed, every workaround that
+existed because of it is either newly unnecessary or newly load-bearing — check which, one by one.**
+
+### Verified
+
+- `dotnet build Game.sln` clean; server **boots** (`L2Clone server v0.177.0 starting.`) — which is
+  where the `BL-85` guard actually runs, so the boot is the test of the declaration.
+- `dotnet run --project tools/SkillCsvSeed -- --check` — no discrepancies, all fifteen walked files.
+- No CSV owes a row: rank is not an authored column, and no Mark's numbers, duration, MP or text moved.
+
+## 2026-09-18 — 0.176.0: duration stops deciding buffs, and Might gets three faces — `BL-263`
 
 His first three rulings on the wrapper model, built. The fourth (*"leave groups to cover only
 families no rank"*) is a **decline** and cost no code — see §2.

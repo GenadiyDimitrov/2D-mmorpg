@@ -2818,6 +2818,61 @@ An admin reload command would be a nice-to-have; startup-read is enough to satis
 ⚠ **Nothing is broken today** — this is a refactor for editability, not a fix. Your own words:
 *"but whatever is working"*. Queued behind the tank pass unless you say otherwise.
 
+
+---
+
+## `BL-164` — the Marks' rank (cut 2026-09-18, built in 0.177.0)
+
+✅ **RULED AND BUILT THE SAME DAY.** You picked option 1, and stated the failure it had to close in
+your own terms: *"i want mark to have ranks .. a Life mark L2 to be replaced only by other l2 marks ..
+not some1 to be able to put lower rank -> admin of buffer gives me rank2 and stupid me goes to npc and
+overrites it ... it shouldnt"*.
+
+**What changed:** all four Marks (Holy, Life, Blood, Harmony) stopped being `FlatRank: true` and now
+carry the rung in the rank — rung 1 lands at rank 1, rung 2 at rank 2. `SharesLadderKey: true` is the
+declaration the `BL-85` startup guard demands for four childless multi-rung defs on one key, and it is
+the honest one: these ARE four versions of the same buff that should compete rung for rung. Nothing
+else moved — one key still means one Mark at a time, and a same-rung Mark from another race or from the
+buffer still replaces freely, because equal rank replaces since `BL-263`.
+
+The NPC's rung-1 Mark is now refused before the 300,000 gold is taken: the purchase path already asks
+`BuffWouldLand` first, so the wall and the wallet agree.
+
+Below is the entry as it stood, including the `BL-263` reopening that made option 1 close both
+directions at once.
+
+### `BL-164` 🔵 The three Marks share one Rank, so the weaker rung can out-hold the stronger
+
+Found while building `BL-161`, and flagged rather than absorbed because the fix is a judgement call.
+
+`Mark(...)` hardcodes `Rank: 1` for BOTH rungs (the Lightbringer learns rung 1 at 78, rung 2 at 83), and
+all three Marks share one `BuffKey` so they never stack — which is correct and is your rule. The problem
+is the tie: `ApplyBuff` resolves EQUAL rank by keeping the **longer remaining time**. So an NPC Mark,
+sold at rung 1 for an hour, will refuse a Lightbringer's rung-2 Mark at 83 for up to 55 minutes — the
+weaker buff holding out the stronger one.
+
+⚠ **It is not caused by the NPC being a wrapper, and `BL-163` would not fix it.** Any delivery of rung 1
+with an hour on it beats a 5-minute rung 2 at equal rank.
+
+Three ways out, and it is your call which:
+1. **Rank = rung** on the Mark ladder (rung 2 → rank 2), so the stronger one always wins. Cleanest, and
+   it is how every other family here already behaves.
+2. **The NPC's Mark runs 5 minutes**, like the class skill — but that contradicts your `buffs.csv`
+   header (*"NPC marks default duration 1 h"*) and makes 300,000 gold a hard sell.
+3. **Leave it** — the same "strategy" answer you gave for the harmony case, since a player with a
+   Lightbringer in the party has no reason to buy the NPC's Mark.
+
+Nothing is blocked on this; it only bites a level-83+ character who bought a Mark and then joined a
+party with a 4th-class Lightbringer.
+
+🔴 **REOPENED-AND-CHANGED BY `BL-263` (0.176.0, 2026-09-18).** Removing the duration tiebreak flips
+this bug rather than fixing it. The complaint above — *the weaker rung out-holding the stronger* — is
+**gone**: a Lightbringer's rung-2 Mark now replaces an NPC rung-1 Mark on the spot. But the reverse is
+now possible and was not before: **buying the NPC's rung-1 Mark while wearing your own rung 2 will
+overwrite it**, because at equal rank the last cast wins and `BuffWouldLand` no longer refuses it, so
+the gold is taken too. **Option 1 (Rank = rung on the Mark ladder) is the fix, and it now closes both
+directions at once.** ⚠ Option 3 ("leave it") no longer means what it meant when you read it.
+
 ---
 
 ## `BL-166` … `BL-169` — the boss rework and the rig behind it (cut 2026-09-05, built in 0.113.0)
